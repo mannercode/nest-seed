@@ -1,7 +1,7 @@
 import { expect } from '@jest/globals'
 import { maps, nullObjectId, OrderDirection, pickIds, pickItems } from 'common'
-import { expectEqualUnsorted } from 'common'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
+import { expectEqualUnsorted } from 'testlib'
 import { MongooseException } from '../exceptions'
 import {
     createFixture,

@@ -2,7 +2,7 @@ import { expect } from '@jest/globals'
 import { TestingModule } from '@nestjs/testing'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { OrderDirection, TypeormException, nullUUID } from 'common'
-import { createTestingModule } from 'common'
+import { createTestingModule } from 'testlib'
 import {
     Sample,
     SamplesModule,
