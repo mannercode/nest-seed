@@ -1,0 +1,28 @@
+#!/bin/bash
+set -e
+. ./common.cfg
+
+reset_all
+create_user_and_login
+
+TITLE "Retrieve User"
+GET /customers/$USER_ID \
+    -H "Authorization: Bearer $ACCESS_TOKEN"
+
+TITLE "Retrieve All Users"
+GET /customers \
+    -H "Authorization: Bearer $ACCESS_TOKEN"
+
+TITLE "Update User"
+PATCH /customers/$USER_ID \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $ACCESS_TOKEN" \
+    -d '{
+ "name": "new name",
+ "email": "new@mail.com",
+ "birthdate": "2000-01-01"
+ }'
+
+TITLE "Delete User with Specific ID"
+DELETE /customers/$USER_ID \
+    -H "Authorization: Bearer $ACCESS_TOKEN"

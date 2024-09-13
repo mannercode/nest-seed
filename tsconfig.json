@@ -1,0 +1,38 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "declaration": true,
+        "removeComments": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "allowSyntheticDefaultImports": true,
+        "incremental": true,
+        "skipLibCheck": true,
+        "strictNullChecks": true,
+        "noImplicitAny": true,
+        "strictBindCallApply": true,
+        "forceConsistentCasingInFileNames": true,
+        "noFallthroughCasesInSwitch": true,
+        "target": "ES2021",
+        "sourceMap": true,
+        "outDir": "./_output/build",
+        "baseUrl": ".",
+        "paths": {
+            "services/*": [
+                "src/app/services/*"
+            ],
+            "common": [
+                "src/common/index"
+            ],
+            "testlib": [
+                "src/testlib/index"
+            ],
+            "config": [
+                "src/config/index"
+            ]
+        }
+    },
+    "include": [
+        "src/**/*"
+    ]
+}

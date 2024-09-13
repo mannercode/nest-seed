@@ -1,0 +1,93 @@
+# https://docs.docker.com/compose/compose-file/05-services/
+x-logging: &default-logging
+    options:
+        max-size: '10m'
+        max-file: '3'
+
+x-mongo-common: &mongo-common
+    image: mongo:latest
+    profiles: ['infra']
+    logging: *default-logging
+    environment:
+        MONGO_INITDB_ROOT_USERNAME: ${MONGO_DB_USERNAME}
+        MONGO_INITDB_ROOT_PASSWORD: ${MONGO_DB_PASSWORD}
+    command: 'mongod --replSet ${MONGO_DB_REPLICA_NAME} --keyFile /etc/mongodb/mongodb.key --bind_ip_all'
+    volumes:
+        - mongodb_key:/etc/mongodb
+    networks:
+        - default
+    restart: always
+
+services:
+    redis:
+        image: redis:latest
+        profiles: ['infra']
+        container_name: ${REDIS_HOST}
+        logging: *default-logging
+        networks:
+            - default
+        restart: always
+
+    mongo-key-generator:
+        container_name: mongo-key-generator
+        image: mongo:latest
+        command: sh -c "openssl rand -base64 768 > mongodb.key && chmod 400 mongodb.key && chown mongodb:mongodb mongodb.key"
+        volumes:
+            - mongodb_key:/mongodb_key
+        working_dir: /mongodb_key
+
+    mongo1:
+        <<: *mongo-common
+        container_name: ${MONGO_DB_HOST1}
+        depends_on:
+            - mongo-key-generator
+    mongo2:
+        <<: *mongo-common
+        container_name: ${MONGO_DB_HOST2}
+        depends_on:
+            - mongo1
+    mongo3:
+        <<: *mongo-common
+        container_name: ${MONGO_DB_HOST3}
+        depends_on:
+            - mongo2
+
+    mongo-express:
+        image: mongo-express:latest
+        profiles: ['infra']
+        container_name: $PROJECT_NAME-mongo-express
+        logging: *default-logging
+        environment:
+            ME_CONFIG_BASICAUTH_USERNAME: user
+            ME_CONFIG_BASICAUTH_PASSWORD: password
+            ME_CONFIG_MONGODB_ENABLE_ADMIN: true
+            ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_DB_USERNAME}
+            ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_DB_PASSWORD}
+            ME_CONFIG_MONGODB_SERVER: ${MONGO_DB_HOST1}
+            ME_CONFIG_MONGODB_PORT: ${MONGO_DB_PORT}
+        networks:
+            - default
+        restart: always
+
+    app:
+        image: $PROJECT_NAME
+        build: .
+        profiles: ['apps']
+        container_name: $PROJECT_NAME
+        logging: *default-logging
+        environment:
+            - NODE_ENV=production
+        env_file: .env.development
+        volumes:
+            - ./_output/logs:/app/_output/logs
+            - ./_output/uploads:/app/_output/uploads
+        networks:
+            - default
+
+networks:
+    default:
+        external: true
+        name: ${PROJECT_NAME}
+
+volumes:
+    mongodb_key:

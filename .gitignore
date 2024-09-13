@@ -1,0 +1,8 @@
+.DS_Store
+desktop.ini
+
+/_output
+/node_modules/
+/.env
+/.env.*
+!/.env.development

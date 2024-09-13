@@ -1,0 +1,11 @@
+# Ignore everything
+*
+
+# Allow specific files
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.build.json
+!webpack.config.js
+!nest-cli.json
+!src
