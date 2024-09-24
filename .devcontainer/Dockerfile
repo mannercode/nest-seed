@@ -21,5 +21,3 @@ RUN apt-get install -y ca-certificates curl gnupg && \
   tee /etc/apt/sources.list.d/docker.list > /dev/null && \
   apt-get update && \
   apt-get install -y docker-ce-cli
-
-EXPOSE 3000

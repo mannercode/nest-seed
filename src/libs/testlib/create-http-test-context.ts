@@ -3,7 +3,7 @@ import { TestingModule } from '@nestjs/testing'
 import * as express from 'express'
 import { ModuleMetadataEx, createTestingModule } from './create-testing-module'
 import { HttpTestClient } from './http.test-client'
-import { addAppLogger, getAvailablePort } from './utils'
+import { getAvailablePort } from './utils'
 
 export interface HttpTestContext {
     server: any
@@ -17,7 +17,9 @@ export async function createHttpTestContext(metadata: ModuleMetadataEx): Promise
     const module = await createTestingModule(metadata)
 
     const app = module.createNestApplication()
-    addAppLogger(app)
+
+    const isDebuggingEnabled = process.env.NODE_OPTIONS !== undefined
+    app.useLogger(isDebuggingEnabled ? console : false)
 
     if (process.env.HTTP_REQUEST_PAYLOAD_LIMIT) {
         const limit = process.env.HTTP_REQUEST_PAYLOAD_LIMIT

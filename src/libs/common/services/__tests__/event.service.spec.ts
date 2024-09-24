@@ -2,12 +2,13 @@ import { EventEmitterModule } from '@nestjs/event-emitter'
 import { TestingModule } from '@nestjs/testing'
 import { createTestingModule } from 'testlib'
 import { EventService } from '../event.service'
-import { AppEventListener, SampleEvent } from './events.fixture'
+import { AppEventListener, SampleEvent } from './event.service.fixture'
 
-describe('AppEvent', () => {
+describe('EventService', () => {
     let module: TestingModule
     let eventListener: AppEventListener
     let eventService: EventService
+
     beforeEach(async () => {
         module = await createTestingModule({
             imports: [EventEmitterModule.forRoot({ wildcard: true, delimiter: '.' })],

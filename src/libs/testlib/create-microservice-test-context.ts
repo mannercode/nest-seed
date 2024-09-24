@@ -4,7 +4,7 @@ import { TestingModule } from '@nestjs/testing'
 import { HttpToRpcExceptionFilter } from 'common'
 import { createTestingModule, ModuleMetadataEx } from './create-testing-module'
 import { MicroserviceTestClient } from './microservice.test-client'
-import { addAppLogger, getAvailablePort } from './utils'
+import { getAvailablePort } from './utils'
 
 export interface MicroserviceTestContext {
     module: TestingModule
@@ -24,7 +24,10 @@ export async function createMicroserviceTestContext(metadata: ModuleMetadataEx) 
     } as const
 
     const app = module.createNestMicroservice<MicroserviceOptions>(rpcOptions)
-    addAppLogger(app)
+
+    const isDebuggingEnabled = process.env.NODE_OPTIONS !== undefined
+    app.useLogger(isDebuggingEnabled ? console : false)
+
     app.useGlobalFilters(new HttpToRpcExceptionFilter())
 
     await app.listen()

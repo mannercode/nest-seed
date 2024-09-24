@@ -10,8 +10,8 @@
         "watch:app": "nest start --debug 9230 --watch",
         "watch:test": "bash scripts/reset_output.sh && node --inspect=9330 -r ts-node/register ./node_modules/.bin/jest --watch --onlyChanged",
         "test:all": "bash scripts/reset_output.sh && jest --coverage --config ./jest.config.ts",
-        "test:app": "bash scripts/reset_output.sh && jest --coverage --config ./jest.app.config.ts",
-        "test:common": "bash scripts/reset_output.sh && jest --coverage --config ./jest.common.config.ts"
+        "test:app": "bash scripts/reset_output.sh && jest --coverage --config ./jest.config.app.ts",
+        "test:common": "bash scripts/reset_output.sh && jest --coverage --config ./jest.config.common.ts"
     },
     "dependencies": {
         "@nestjs/bull": "^10.1.1",

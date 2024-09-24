@@ -5,18 +5,8 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Attach to Gateway",
+            "name": "Attach to App",
             "port": 9230,
-            "request": "attach",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "type": "node",
-            "restart": true
-        },
-        {
-            "name": "Attach to Services",
-            "port": 9231,
             "request": "attach",
             "skipFiles": [
                 "<node_internals>/**"

@@ -20,7 +20,7 @@ describe('ClientProxyService', () => {
         httpContext = await createHttpTestContext({
             imports: [
                 ClientProxyModule.registerAsync({
-                    name: 'SERVICES2',
+                    name: 'SERVICES',
                     useFactory: () => ({
                         transport: Transport.TCP,
                         options: { host: '0.0.0.0', port: microContext.port }
@@ -37,12 +37,12 @@ describe('ClientProxyService', () => {
         await microContext?.close()
     })
 
-    it('should return 200 OK when GET /send endpoint is called', async () => {
+    it('should return OK(200) when GET /send endpoint is called', async () => {
         const result = await client.get('/send').ok()
         expect(result.body).toEqual({ result: 'success' })
     })
 
-    it('should return 200 OK when GET /get endpoint is called', async () => {
+    it('should return OK(200) when GET /get endpoint is called', async () => {
         const result = await client.get('/get').ok()
         expect(result.body).toEqual({ result: 'success' })
     })

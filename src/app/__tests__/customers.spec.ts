@@ -4,7 +4,12 @@ import { CustomerDto } from 'services/customers'
 import { AppModule } from '../app.module'
 import { CustomerJwtAuthGuard } from '../controllers/guards'
 import { createCustomer, createCustomers, makeCustomerDto } from './customers.fixture'
-import { HttpTestContext, HttpTestClient, createHttpTestContext, expectEqualUnsorted } from 'testlib'
+import {
+    HttpTestContext,
+    HttpTestClient,
+    createHttpTestContext,
+    expectEqualUnsorted
+} from 'testlib'
 
 describe('/customers', () => {
     let testContext: HttpTestContext

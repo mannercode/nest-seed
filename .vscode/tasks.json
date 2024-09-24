@@ -10,16 +10,16 @@
             "command": "npm run ${input:testSuite}"
         },
         {
-            "label": "Watch Start",
+            "label": "Watch App",
             "detail": "Start the Nest development server and watch for file changes.",
             "type": "shell",
-            "command": "npm start"
+            "command": "npm run watch:app"
         },
         {
             "label": "Watch Test",
             "detail": "Run Jest tests and watch for file changes.",
             "type": "shell",
-            "command": "npm test"
+            "command": "npm run watch:test"
         },
         {
             "label": "Workspace Setup",
@@ -38,10 +38,10 @@
         {
             "id": "testSuite",
             "type": "pickString",
+            "default": "test:app",
             "options": [
                 "test:all",
-                "test:services",
-                "test:gateway",
+                "test:app",
                 "test:common"
             ],
             "description": "Select a test suite to run."

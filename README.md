@@ -1,80 +1,66 @@
 # NEST-SEED
 
-A template for starting NestJS projects, including essential features and configurations.
+NestJS 프로젝트를 시작하기 위한 템플릿으로 필수 기능과 설정을 포함하고 있습니다.
 
-## Requirements
+## 요구사항
 
-The following prerequisites must be installed on the host to run this project:
+이 프로젝트를 실행하려면 호스트에 다음 필수 구성 요소가 설치되어 있어야 합니다:
 
-- Docker
-- VSCode & extensions
-- Dev Containers (ms-vscode-remote.remote-containers)
+-   Docker
+-   VSCode & extensions
+    -   Dev Containers (ms-vscode-remote.remote-containers) extension
 
-It is recommended to configure and use the "Remote - SSH" (ms-vscode-remote.remote-ssh) extension if possible.
+> Windows 환경은 테스트 하지 않았습니다. Windows 사용자는 VMware를 사용하여 우분투에서 VSCode를 실행하는 것을 추천합니다.
 
-> Windows environments are not supported. Windows users should run VSCode in Ubuntu using VMware.
+## 프로젝트 이름 변경
 
-## Changing the Project Name
+프로젝트 이름을 변경하려면 필요에 따라 다음 설정을 검토하고 수정합니다:
 
-To change the project name, review and modify the following settings as needed:
+-   .env.development
+-   devcontainer.json
+    -   forwardPorts
+-   package.json
+    -   name
 
-- .env.development
-- devcontainer.json
-  - forwardPorts
-- package.json
-  - name
+## 개발 환경
 
-## Development Environment Setup
+-   호스트에서 [git credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials) 설정 후, vscode에서 Reopen container를 실행하면 개발 환경이 자동으로 구성됩니다.
+-   개발 환경을 초기화 하려면 vscode의 "Dev Containers: Rebuild Container"를 실행한다.
 
-After setting up [git credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials) on the host, launch VSCode and the development environment will be configured automatically.
+## 실행과 디버깅
 
-## Running the Development Environment
+-   개발 환경 실행 구성은 /.vscode/tasks.json에 정의되어 있습니다.
+-   디버깅 구성은 /.vscode/launch.json에 정의되어 있습니다.
+-   VSCode에 “Jest Runner” 및 code lens” extension이 설치되어 있는 경우, Jest 테스트에 대해 "Run | Debug" 메뉴가 나타납니다.
+    -   "Debug"를 클릭하면 디버거를 자동으로 연결하고 테스트를 실행합니다.
 
-- Development tasks are defined in /.vscode/tasks.json
-- Run "Menu/Terminal/Run Task..." to see related menus
-- "Watch Start" and "Watch Test" should be running while modifying source code
-- "Watch Start": Starts the Nest application in debug mode and automatically restarts on file changes
-- "Watch Test": Runs test code and automatically re-runs tests on file changes
+## 테스트
 
-## Debugging
+-   End-to-end 테스트는 bash 스크립트로 작성했습니다.
+    -   Run `bash test/e2e/run.sh`
 
-Debugging configurations are defined in /.vscode/launch.json
+## 빌드
 
-- To debug "Watch Start", run "Run and Debug/Attach to Start"
-- To debug "Watch Test", run "Run and Debug/Attach to Test"
-- If VSCode has the "Jest Runner" and "code lens" extensions installed, a "Run | Debug" menu will appear for Jest tests. Clicking "Debug" will automatically attach the debugger and run that test.
+제품을 빌드하고 실행하려면 docker에 대한 지식이 필요하다.
+상세 정보는 다음을 참고한다:
 
-## Testing
+-   Dockerfile
+-   docker-compose.yml
 
-- End-to-end tests are written as bash scripts
-- Run `/test/e2e/run.sh`
+## 그 외
 
-## Production Deployment
+본 문서에서 다루지 않는 중요 정보는 아래 문서에 정리했다.
 
-To build and run for production:
+-   [Design Guide](./docs/guides/design.guide.md)
+-   [Problems with Feature Modules](./docs/guides/problems-with-feature-modules.md)
+-   [Implementation Guide](./docs/guides/implementation.guide.md)
 
-```bash
-$ npm test:all
-$ npm run build
-$ npm run start
-```
+## 이슈
 
-## Guides
-
-Important information not covered in the README:
-
-- [Design Guide](./docs/guides/design.guide.md)
-- [Problems with Feature Modules](./docs/guides/problems-with-feature-modules.md)
-- [Implementation Guide](./docs/guides/implementation.guide.md)
-
-## Known Issues
-
-- To view UML diagrams in md files with "PlantUML Preview", the cursor must be between `@startuml` and `@enduml`
-- If UML diagrams don't appear in "Preview markdown", secure settings may be needed. Click "..." in the upper right of the Preview screen to "change preview security setting"
-- On Linux hosts, if running jest gives a "System limit for number of file watchers reached" error, run this script on the host:
-
-```sh
-echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
-```
-
-- On Linux VMs running Docker containers with bridged networking, issues connecting to external networks may occur occasionally. Restarting Linux usually resolves this, but the root cause is unknown.
+-   "PlantUML Preview"에서 md 파일 내 UML 다이어그램을 보려면 커서가 `@startuml`과 `@enduml` 사이에 있어야 합니다.
+-   UML 다이어그램이 "Preview markdown"에서 나타나지 않으면 보안 설정이 필요할 수 있습니다. 미리보기 화면 오른쪽 상단의 "..." 버튼을 클릭하여 "미리보기 보안 설정 변경"을 선택하세요.
+-   Linux 호스트에서 jest 실행 시 "System limit for number of file watchers reached" 오류가 발생하면, 호스트에서 이 스크립트를 실행하세요:
+    ```sh
+    echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+    ```
+-   VMWare에서 호스트를 Suspend로 일시 정지 후 재개하면 docker container의 네트워크가 동작하지 않는 문제를 발견했다. 원인은 불명이다.

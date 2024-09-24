@@ -8,8 +8,8 @@ const config: Config = {
     testRegex: '.*\\.spec\\.ts$',
     moduleNameMapper: {
         '^services/(.*)$': '<rootDir>/src/app/services/$1',
-        '^common$': '<rootDir>/src/common/index',
-        '^testlib$': '<rootDir>/src/testlib/index',
+        '^common$': '<rootDir>/src/libs/common/index',
+        '^testlib$': '<rootDir>/src/libs/testlib/index',
         '^config$': '<rootDir>/src/config/index'
     },
     testEnvironment: 'node',
@@ -26,7 +26,7 @@ const config: Config = {
     },
     collectCoverageFrom: [
         'src/app/**/*.ts',
-        'src/common/**/*.ts',
+        'src/libs/common/**/*.ts',
         '!**/main.ts',
         '!**/index.ts',
         '!**/*.module.ts'

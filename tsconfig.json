@@ -22,10 +22,10 @@
                 "src/app/services/*"
             ],
             "common": [
-                "src/common/index"
+                "src/libs/common/index"
             ],
             "testlib": [
-                "src/testlib/index"
+                "src/libs/testlib/index"
             ],
             "config": [
                 "src/config/index"
