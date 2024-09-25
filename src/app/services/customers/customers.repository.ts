@@ -73,6 +73,6 @@ export class CustomersRepository extends MongooseRepository<Customer> {
 
     @MethodLog({ level: 'verbose' })
     async findByEmail(email: string): Promise<Customer | null> {
-        return this.model.findOne({ email })
+        return this.model.findOne({ email: escapeRegExp(email) });
     }
 }
