@@ -52,7 +52,6 @@ NestJS 프로젝트를 시작하기 위한 템플릿으로 필수 기능과 설�
 본 문서에서 다루지 않는 중요 정보는 아래 문서에 정리했다.
 
 -   [Design Guide](./docs/guides/design.guide.md)
--   [Problems with Feature Modules](./docs/guides/problems-with-feature-modules.md)
 -   [Implementation Guide](./docs/guides/implementation.guide.md)
 
 ## 이슈
