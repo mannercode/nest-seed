@@ -14,7 +14,8 @@ import {
     notUsed,
     pickIds,
     pickItems,
-    sleep
+    sleep,
+    validateEmail
 } from '..'
 
 describe('common/utils/etc', () => {
@@ -299,6 +300,19 @@ describe('common/utils/etc', () => {
             expect(maps([], Target)).toEqual([])
         })
     })
+
+    describe('validateEmail', () => {
+        it('should return true for valid email addresses', () => {
+            expect(validateEmail('test@example.com')).toBe(true)
+            expect(validateEmail('user.name@domain.co')).toBe(true)
+        })
+
+        it('should return false for invalid email addresses', () => {
+            expect(validateEmail('plainaddress')).toBe(false)
+            expect(validateEmail('user@domain')).toBe(false)
+        })
+    })
+
     describe('for coverage', () => {
         notUsed()
         comment()

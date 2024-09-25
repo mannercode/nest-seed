@@ -41,8 +41,15 @@ describe('customer authentication', () => {
         it('should return UNAUTHORIZED(401) status when providing a non-existent email', async () => {
             return client
                 .post('/customers/login')
-                .body({ email: 'unknown@mail.com', password: '' })
+                .body({ email: 'unknown@mail.com', password: '.' })
                 .unauthorized()
+        })
+
+        it('should return BAD_REQUEST(400) status when providing a invalid email', async () => {
+            return client
+                .post('/customers/login')
+                .body({ email: 'wrong.email', password: '.' })
+                .badRequest()
         })
     })
 
