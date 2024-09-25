@@ -1,4 +1,4 @@
-FROM node:lts-bullseye
+FROM node:22-bullseye
 
 RUN apt-get update
 RUN apt-get install -y git curl jq tree vim net-tools
