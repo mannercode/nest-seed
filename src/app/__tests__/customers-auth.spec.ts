@@ -90,9 +90,11 @@ describe('customer authentication', () => {
         })
 
         it('should return UNAUTHORIZED(401) status when providing an accessToken with an incorrect format', async () => {
+            const invalidToken = 'SampleToken'
+
             await client
                 .get(`/customers/${credentials.customerId}`)
-                .headers({ Authorization: 'Bearer INVALID_ACCESS_TOKEN' })
+                .headers({ Authorization: `Bearer ${invalidToken}` })
                 .unauthorized()
         })
 
