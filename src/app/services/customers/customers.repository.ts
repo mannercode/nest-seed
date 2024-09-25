@@ -1,6 +1,17 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import {
+    BadRequestException,
+    ConflictException,
+    Injectable,
+    NotFoundException
+} from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MethodLog, MongooseRepository, PaginationOption, PaginationResult } from 'common'
+import {
+    MethodLog,
+    MongooseRepository,
+    PaginationOption,
+    PaginationResult,
+    validateEmail
+} from 'common'
 import { escapeRegExp } from 'lodash'
 import { FilterQuery, Model } from 'mongoose'
 import { CreateCustomerDto, QueryCustomersDto, UpdateCustomerDto } from './dto'
@@ -73,6 +84,10 @@ export class CustomersRepository extends MongooseRepository<Customer> {
 
     @MethodLog({ level: 'verbose' })
     async findByEmail(email: string): Promise<Customer | null> {
-        return this.model.findOne({ email: escapeRegExp(email) });
+        if (!validateEmail(email)) {
+            throw new BadRequestException('Invalid email format')
+        }
+
+        return this.model.findOne({ email })
     }
 }
