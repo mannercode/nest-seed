@@ -90,9 +90,9 @@ describe('customer authentication', () => {
         })
 
         it('should return UNAUTHORIZED(401) status when providing an accessToken with an incorrect format', async () => {
-            return client
+            await client
                 .get(`/customers/${credentials.customerId}`)
-                .headers({ Authorization: 'Bearer invalid_access_token' })
+                .headers({ Authorization: 'Bearer INVALID_ACCESS_TOKEN' })
                 .unauthorized()
         })
 
@@ -104,7 +104,7 @@ describe('customer authentication', () => {
                 { secret: Config.auth.accessSecret, expiresIn: '15m' }
             )
 
-            return client
+            await client
                 .get(`/customers/${credentials.customerId}`)
                 .headers({ Authorization: `Bearer ${wrongUserIdToken}` })
                 .unauthorized()
