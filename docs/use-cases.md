@@ -7,11 +7,13 @@
 
 ## glossary
 
-- 상영중 showing
-- 예매 booking
-- 구매 purchase
-- 환불 refund
-- 상영관 room
+-   상영중 showing
+-   상영시간 showtime
+-   상영일 showdate
+-   예매 booking
+-   구매 purchase
+-   환불 refund
+-   상영관 room
 
 ## 영화 예매 시스템 유스케이스
 
@@ -24,23 +26,29 @@ actor Administrator
 component PaymentGateway
 
 package "Movie Ticketing System"{
-    usecase "상영 중인 영화 검색" as BrowseShowingMovies
-    usecase "티켓 구매" as PurchaseTickets #yellow
-    usecase "티켓 환불" as RefundTickets
+    package showtimes {
+        usecase "상영시간 등록" as CreateShowtimes
+        usecase "상영시간 검색" as FindShowtimes
+    }
 
-    usecase "극장 관리" as ManageTheaters
-    usecase "영화 관리" as ManageMovies
-    usecase "티켓 관리" as ManageTickets
+    package tickets {
+        usecase "티켓 구매" as PurchaseTickets #yellow
+        usecase "티켓 생성" as GenerateTickets #yellow
+        usecase "티켓 환불" as RefundTickets
+    }
 }
-Customer --> BrowseShowingMovies
-Customer --> PurchaseTickets
-Customer --> RefundTickets
-Administrator --> ManageTheaters
-Administrator --> ManageMovies
-Administrator --> ManageTickets
-ManageTickets ..> RefundTickets : include
+
+Customer --> PurchaseTickets #line:red
+Customer --> RefundTickets #line:red
+Customer --> FindShowtimes #line:red
+
+Administrator --> tickets #line:blue
+Administrator --> showtimes #line:blue
+
 PurchaseTickets ..> PaymentGateway
 RefundTickets ..> PaymentGateway
+CreateShowtimes ..> GenerateTickets
+
 @enduml
 ```
 
@@ -48,14 +56,36 @@ RefundTickets ..> PaymentGateway
 @startuml
 left to right direction
 
+actor Customer
 actor Administrator
 
-package "Manage Tickets"{
-    usecase "티켓 생성" as GenerateTickets #yellow
-    usecase "티켓 환불" as RefundTickets
+package "Movie Ticketing System"{
+
+    package theaters {
+        usecase "극장 등록" as AddTheaters
+        usecase "극장 검색" as FindTheaters
+    }
+
+    package movies {
+        usecase "영화 등록" as AddMovies
+        usecase "영화 검색" as FindMovies
+    }
+
+    package customers {
+        usecase "고객 등록" as RegisterCustomer
+        usecase "고객 로그인" as LoginCustomer
+        usecase "고객 검색" as FindCustomers
+    }
 }
 
-Administrator --> GenerateTickets
-Administrator --> RefundTickets
+Customer --> RegisterCustomer #line:red
+Customer --> LoginCustomer #line:red
+Customer --> FindTheaters #line:red
+Customer --> FindMovies #line:red
+
+Administrator --> theaters #line:blue
+Administrator --> movies #line:blue
+Administrator --> FindCustomers #line:blue
+
 @enduml
 ```
