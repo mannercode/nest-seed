@@ -99,7 +99,8 @@ CreateShowtimesRequest {
 }
 end note
 
-ShowtimeCreation -> Showtimes: validateCreateShowtimesRequest(request)
+ShowtimeCreation -> ShowtimeCreation: validateCreateShowtimesRequest(request)
+activate ShowtimeCreation
 loop theater of request.theaters
     loop startTime of request.startTimes
         ShowtimeCreation -> Showtimes: createShowtime({theaterId, movieId, startTime, duration})
@@ -115,6 +116,7 @@ Showtime {
     endTime
 }
 end note
+deactivate ShowtimeCreation
 
 ShowtimeCreation -> ShowtimeCreation: createTickets(createdShowtimes)
 activate ShowtimeCreation
