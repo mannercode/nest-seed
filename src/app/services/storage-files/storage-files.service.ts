@@ -41,7 +41,7 @@ export class StorageFilesService {
         await this.repository.deleteStorageFile(fileId)
 
         const targetPath = this.getStoragePath(fileId)
-        Path.delete(targetPath)
+        await Path.delete(targetPath)
 
         return true
     }
