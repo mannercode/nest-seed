@@ -79,7 +79,7 @@ Admin <-- Frontend: 상영시간 목록 제공
 Admin -> Frontend: 상영시간 선택
 
 Admin -> Frontend: 상영시간 등록버튼 클릭
-    Frontend -> Backend: 상영시간 등록 요청\nPOST /showtime-creation/create-showtimes
+    Frontend -> Backend: 상영시간 등록 요청\nPOST /showtime-creation/showtimes
         Backend -> ShowtimeCreation: CreateShowtimes(request)
         Backend <-- ShowtimeCreation: CreateShowtimesResponse(success)
     Frontend <-- Backend: OK(201)
