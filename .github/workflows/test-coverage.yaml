@@ -12,7 +12,7 @@ on:
 jobs:
     test-coverage:
         runs-on: ubuntu-latest
-        container: node:20-bullseye
+        container: node:22-bullseye
         env:
             WORKSPACE_ROOT: ${{ github.workspace }}
             PROJECT_NAME: ${{ github.event.repository.name }}
