@@ -50,7 +50,7 @@ jobs:
             - name: initializeCommand
               run: |
                   docker network create ${PROJECT_NAME}
-                  docker network connect ${PROJECT_NAME} $(docker ps --filter "ancestor=node:20-bullseye" --format "{{.ID}}")
+                  docker network connect ${PROJECT_NAME} $(docker ps --filter "ancestor=node:22-bullseye" --format "{{.ID}}")
 
             # Run All Tests
             - name: Setup Workspace
