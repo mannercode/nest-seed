@@ -26,11 +26,10 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "ms-azuretools.vscode-docker",
                 "dbaeumer.vscode-eslint",
-                "github.vscode-pull-request-github",
                 "firsttris.vscode-jest-runner",
                 "ms-vscode.live-server",
+                "ms-azuretools.vscode-docker",
                 "jebbs.plantuml",
                 "esbenp.prettier-vscode",
                 "mutantdino.resourcemonitor",
@@ -44,12 +43,21 @@
                 "remote.downloadExtensionsLocally": true,
                 "typescript.format.enable": false,
                 "javascript.format.enable": false,
+                "javascript.validate.enable": false,
+                "javascript.updateImportsOnFileMove.enabled": "never",
+                "typescript.updateImportsOnFileMove.enabled": "never",
                 "editor.defaultFormatter": "esbenp.prettier-vscode",
                 "[dockerfile]": {
                     "editor.defaultFormatter": "ms-azuretools.vscode-docker"
                 },
+                "[json]": {
+                    "editor.defaultFormatter": "vscode.json-language-features"
+                },
                 "[jsonc]": {
                     "editor.defaultFormatter": "vscode.json-language-features"
+                },
+                "[html]": {
+                    "editor.defaultFormatter": "vscode.html-language-features"
                 },
                 "[dotenv]": {
                     "editor.defaultFormatter": "foxundermoon.shell-format"
@@ -65,6 +73,9 @@
                 },
                 "plantuml.server": "https://www.plantuml.com/plantuml",
                 "plantuml.render": "PlantUMLServer",
+                "githubPullRequests.pullBranch": "never",
+                "githubPullRequests.createOnPublishBranch": "never",
+                "githubPullRequests.fileListLayout": "flat",
                 "githubIssues.queries": [
                     {
                         "label": "My Issues",
