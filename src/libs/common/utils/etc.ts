@@ -145,7 +145,7 @@ export async function getChecksum(
     algorithm: 'md5' | 'sha1' | 'sha256' | 'sha512' = 'sha256'
 ): Promise<string> {
     const readStream = createReadStream(filePath)
-    const hash: Hash = createHash(algorithm)
+    const hash = createHash(algorithm)
 
     const promisifiedPipeline = promisify(pipeline)
     await promisifiedPipeline(readStream, hash as unknown as Writable)
