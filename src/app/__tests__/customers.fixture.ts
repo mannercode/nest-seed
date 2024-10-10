@@ -1,5 +1,24 @@
 import { omit } from 'lodash'
-import { HttpTestClient } from 'testlib'
+import { createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
+import { AppModule } from '../app.module'
+import { CustomerJwtAuthGuard } from '../controllers/guards'
+
+export interface IsolatedFixture {
+    testContext: HttpTestContext
+}
+
+export async function createIsolatedFixture() {
+    const testContext = await createHttpTestContext({
+        imports: [AppModule],
+        ignoreGuards: [CustomerJwtAuthGuard]
+    })
+
+    return { testContext }
+}
+
+export async function closeIsolatedFixture(fixture: IsolatedFixture) {
+    await fixture.testContext.close()
+}
 
 export const makeCustomerDto = (overrides = {}) => {
     const createDto = {

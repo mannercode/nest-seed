@@ -1,113 +1,84 @@
 import { getChecksum, nullObjectId, Path } from 'common'
 import { Config } from 'config'
-import { writeFile } from 'fs/promises'
 import { StorageFileDto } from 'services/storage-files'
-import { createDummyFile, createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
-import { AppModule } from '../app.module'
+import { HttpTestClient } from 'testlib'
+import {
+    closeIsolatedFixture,
+    closeSharedFixture,
+    createIsolatedFixture,
+    createSharedFixture,
+    IsolatedFixture,
+    SharedFixture
+} from './storage-files.fixture'
 
 describe('/storage-files', () => {
-    let testContext: HttpTestContext
+    let shared: SharedFixture
+    let isolated: IsolatedFixture
     let client: HttpTestClient
 
-    let tempDir: string
-    let notAllowFile: string
-    let oversizedFile: string
-    let largeFile: string
-    let smallFile: string
-
     beforeAll(async () => {
-        tempDir = await Path.createTempDirectory()
-
-        largeFile = Path.join(tempDir, 'large.txt')
-        await createDummyFile(largeFile, Config.fileUpload.maxFileSizeBytes - 1)
-
-        smallFile = Path.join(tempDir, 'small.txt')
-        await createDummyFile(smallFile, 1024)
-
-        notAllowFile = Path.join(tempDir, 'file.json')
-        await writeFile(notAllowFile, '{"name":"nest-seed"}')
-
-        oversizedFile = Path.join(tempDir, 'oversized.txt')
-        await createDummyFile(oversizedFile, Config.fileUpload.maxFileSizeBytes + 1)
+        shared = await createSharedFixture()
     })
 
     afterAll(async () => {
-        await Path.delete(tempDir)
+        await closeSharedFixture(shared)
     })
 
     beforeEach(async () => {
-        Config.fileUpload = {
-            directory: await Path.createTempDirectory(),
-            maxFileSizeBytes: 1024 * 1024 * 100,
-            maxFilesPerUpload: 2,
-            allowedMimeTypes: ['text/plain']
-        }
-
-        testContext = await createHttpTestContext({ imports: [AppModule] })
-        client = testContext.client
+        isolated = await createIsolatedFixture()
+        client = isolated.testContext.client
     })
 
     afterEach(async () => {
-        await testContext?.close()
-        await Path.delete(Config.fileUpload.directory)
+        await closeIsolatedFixture(isolated)
     })
 
-    async function uploadFile(filePath: string, name = 'test') {
-        return client
-            .post('/storage-files')
-            .attachs([{ name: 'files', file: filePath }])
-            .fields([{ name: 'name', value: name }])
-            .created()
-    }
-
     describe('POST /storage-files', () => {
-        it('Should return CREATED(201) when uploaded file is identical to stored file', async () => {
-            const { body } = await uploadFile(largeFile)
-            const uploadedFile = body.storageFiles[0]
-            expect(uploadedFile.checksum).toEqual(await getChecksum(largeFile))
+        it('업로드된 파일이 저장된 파일과 동일해야 한다', async () => {
+            const { body } = await isolated
+                .uploadFile([{ name: 'files', file: shared.file }])
+                .created()
+
+            expect(body.storageFiles[0].checksum).toEqual(await getChecksum(shared.file))
         })
 
-        it('Should allow uploading multiple files', async () => {
-            const { body } = await client
-                .post('/storage-files')
-                .attachs([
-                    { name: 'files', file: largeFile },
-                    { name: 'files', file: smallFile }
+        it('여러 파일을 업로드할 수 있어야 한다', async () => {
+            const { body } = await isolated
+                .uploadFile([
+                    { name: 'files', file: shared.file },
+                    { name: 'files', file: shared.largeFile }
                 ])
-                .fields([{ name: 'name', value: 'test' }])
                 .created()
 
-            expect(body.storageFiles[0].checksum).toEqual(await getChecksum(largeFile))
-            expect(body.storageFiles[1].checksum).toEqual(await getChecksum(smallFile))
+            expect(body.storageFiles[0].checksum).toEqual(await getChecksum(shared.file))
+            expect(body.storageFiles[1].checksum).toEqual(await getChecksum(shared.largeFile))
         })
 
-        it('Should return CREATED(201) when upload is successful even with no file attached', async () => {
-            await client
-                .post('/storage-files')
-                .attachs([])
-                .fields([{ name: 'name', value: 'test' }])
-                .created()
+        it('파일을 첨부하지 않아도 업로드가 성공해야 한다', async () => {
+            await isolated.uploadFile([]).created()
         })
 
-        it('Should return PAYLOAD_TOO_LARGE(413) when uploading file exceeding allowed size', async () => {
-            await client
-                .post('/storage-files')
-                .attachs([{ name: 'files', file: oversizedFile }])
-                .payloadTooLarge()
+        it('허용된 크기를 초과하는 파일을 업로드하면 PAYLOAD_TOO_LARGE(413)를 반환해야 한다', async () => {
+            await isolated
+                .uploadFile([{ name: 'files', file: shared.oversizedFile }])
+                .payloadTooLarge('File too large')
         })
 
-        it('Should return BAD_REQUEST(400) when uploading more files than allowed', async () => {
+        it('허용된 파일 개수를 초과하여 업로드하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
             const limitOver = Config.fileUpload.maxFilesPerUpload + 1
-            const excessFiles = Array(limitOver).fill({ name: 'files', file: smallFile })
+            const excessFiles = Array(limitOver).fill({ name: 'files', file: shared.file })
 
-            await client.post('/storage-files').attachs(excessFiles).badRequest()
+            await isolated.uploadFile(excessFiles).badRequest('Too many files')
         })
 
-        it('should return BAD_REQUEST(400) when uploading a file with disallowed MIME type', async () => {
-            await client
-                .post('/storage-files')
-                .attachs([{ name: 'files', file: notAllowFile }])
-                .badRequest()
+        it('허용되지 않는 MIME 타입의 파일을 업로드하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
+            await isolated
+                .uploadFile([{ name: 'files', file: shared.notAllowFile }])
+                .badRequest('File type not allowed. Allowed types are: text/plain')
+        })
+
+        it('name 필드를 설정하지 않으면 BAD_REQUEST(400)를 반환해야 한다', async () => {
+            await isolated.uploadFile([], []).badRequest(['name must be a string'])
         })
     })
 
@@ -115,20 +86,24 @@ describe('/storage-files', () => {
         let uploadedFile: StorageFileDto
 
         beforeEach(async () => {
-            const { body } = await uploadFile(largeFile)
+            const { body } = await isolated
+                .uploadFile([{ name: 'files', file: shared.largeFile }])
+                .created()
             uploadedFile = body.storageFiles[0]
         })
 
-        it('should get a file', async () => {
-            const downloadPath = Path.join(tempDir, 'download.txt')
+        it('파일을 다운로드해야 한다', async () => {
+            const downloadPath = Path.join(shared.tempDir, 'download.txt')
 
             await client.get(`/storage-files/${uploadedFile.id}`).download(downloadPath).ok()
 
             expect(uploadedFile.checksum).toEqual(await getChecksum(downloadPath))
         })
 
-        it('should return NOT_FOUND(404) when file does not exist', async () => {
-            await client.get(`/storage-files/${nullObjectId}`).notFound()
+        it('파일이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
+            await client
+                .get(`/storage-files/${nullObjectId}`)
+                .notFound('StorageFile with ID 000000000000000000000000 not found')
         })
     })
 
@@ -136,22 +111,29 @@ describe('/storage-files', () => {
         let uploadedFile: StorageFileDto
 
         beforeEach(async () => {
-            const { body } = await uploadFile(largeFile)
+            const { body } = await isolated
+                .uploadFile([{ name: 'files', file: shared.largeFile }])
+                .created()
             uploadedFile = body.storageFiles[0]
         })
 
-        it('should delete a file', async () => {
+        it('파일을 삭제해야 한다', async () => {
             const filePath = Path.join(Config.fileUpload.directory, `${uploadedFile.id}.file`)
+
             expect(Path.existsSync(filePath)).toBeTruthy()
 
             await client.delete(`/storage-files/${uploadedFile.id}`).ok()
-            await client.get(`/storage-files/${uploadedFile.id}`).notFound()
+            await client
+                .get(`/storage-files/${uploadedFile.id}`)
+                .notFound(`StorageFile with ID ${uploadedFile.id} not found`)
 
             expect(Path.existsSync(filePath)).toBeFalsy()
         })
 
-        it('should return NOT_FOUND(404) when file does not exist', async () => {
-            return client.delete(`/storage-files/${nullObjectId}`).notFound()
+        it('파일이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
+            await client
+                .delete(`/storage-files/${nullObjectId}`)
+                .notFound('StorageFile with ID 000000000000000000000000 not found')
         })
     })
 })

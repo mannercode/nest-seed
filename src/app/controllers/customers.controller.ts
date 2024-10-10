@@ -3,6 +3,7 @@ import {
     Controller,
     Delete,
     Get,
+    HttpCode,
     Param,
     Patch,
     Post,
@@ -60,6 +61,7 @@ export class CustomersController {
     }
 
     @UseGuards(CustomerLocalAuthGuard)
+    @HttpCode(200)
     @Post('login')
     async login(@Req() req: { user: CustomerDto }) {
         Assert.defined(req.user, 'req.user must be returned in LocalStrategy.validate')
@@ -68,6 +70,7 @@ export class CustomersController {
     }
 
     @Public()
+    @HttpCode(200)
     @Post('refresh')
     async refreshToken(@Body('refreshToken') refreshToken: string) {
         return this.service.refreshAuthTokens(refreshToken)

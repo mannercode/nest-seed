@@ -1,48 +1,49 @@
 import { JwtService } from '@nestjs/jwt'
 import { nullObjectId } from 'common'
 import { Config } from 'config'
-import { createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
-import { AppModule } from '../app.module'
-import { createCredentials, Credentials } from './customers-auth.fixture'
+import { HttpTestClient } from 'testlib'
+import {
+    closeIsolatedFixture,
+    createIsolatedFixture,
+    Credentials,
+    IsolatedFixture
+} from './customers-auth.fixture'
 
 describe('customer authentication', () => {
-    let testContext: HttpTestContext
+    let isolated: IsolatedFixture
     let client: HttpTestClient
-
     let credentials: Credentials
 
     beforeEach(async () => {
-        testContext = await createHttpTestContext({ imports: [AppModule] })
-        client = testContext.client
-        credentials = await createCredentials(client)
+        isolated = await createIsolatedFixture()
+        client = isolated.testContext.client
+        credentials = isolated.credentials
     })
 
     afterEach(async () => {
-        await testContext?.close()
+        await closeIsolatedFixture(isolated)
     })
 
     describe('POST /login', () => {
-        it('should return CREATED(201) status and AuthTokens on successful login', async () => {
-            const res = await client.post('/customers/login').body(credentials).created()
-
-            expect(res.body).toEqual({
+        it('로그인에 성공하면 인증 토큰을 반환해야 한다', async () => {
+            await client.post('/customers/login').body(credentials).ok({
                 accessToken: expect.anything(),
                 refreshToken: expect.anything()
             })
         })
 
-        it('should return UNAUTHORIZED(401) status when providing an incorrect password', async () => {
-            return client
+        it('비밀번호가 틀리면 UNAUTHORIZED(401)를 반환해야 한다', async () => {
+            await client
                 .post('/customers/login')
                 .body({ email: credentials.email, password: 'wrong password' })
-                .unauthorized()
+                .unauthorized({ message: 'Unauthorized', statusCode: 401 })
         })
 
-        it('should return UNAUTHORIZED(401) status when providing a non-existent email', async () => {
-            return client
+        it('이메일이 존재하지 않으면 UNAUTHORIZED(401)를 반환해야 한다', async () => {
+            await client
                 .post('/customers/login')
                 .body({ email: 'unknown@mail.com', password: '.' })
-                .unauthorized()
+                .unauthorized({ message: 'Unauthorized', statusCode: 401 })
         })
     })
 
@@ -51,54 +52,51 @@ describe('customer authentication', () => {
         let refreshToken: string
 
         beforeEach(async () => {
-            const { body } = await client.post('/customers/login').body(credentials).created()
+            const { body } = await client.post('/customers/login').body(credentials).ok()
             accessToken = body.accessToken
             refreshToken = body.refreshToken
         })
 
-        it('should return new AuthTokens when providing a valid refreshToken', async () => {
-            const { body } = await client
-                .post('/customers/refresh')
-                .body({ refreshToken })
-                .created()
+        it('유효한 refreshToken을 제공하면 새로운 인증 토큰을 반환해야 한다', async () => {
+            const { body } = await client.post('/customers/refresh').body({ refreshToken }).ok()
 
             expect(body.accessToken).not.toEqual(accessToken)
             expect(body.refreshToken).not.toEqual(refreshToken)
         })
 
-        it('should return UNAUTHORIZED(401) status when providing an incorrect refreshToken', async () => {
-            return client
+        it('잘못된 refreshToken을 제공하면 UNAUTHORIZED(401)를 반환해야 한다', async () => {
+            await client
                 .post('/customers/refresh')
                 .body({ refreshToken: 'invalid-token' })
-                .unauthorized()
+                .unauthorized('jwt malformed')
         })
     })
 
-    describe('JWT Authentication', () => {
+    describe('JWT 인증', () => {
         let accessToken: string
 
         beforeEach(async () => {
-            const { body } = await client.post('/customers/login').body(credentials).created()
+            const { body } = await client.post('/customers/login').body(credentials).ok()
             accessToken = body.accessToken
         })
 
-        it('should allow access when providing a valid accessToken', async () => {
+        it('유효한 accessToken을 제공하면 접근이 허용되어야 한다', async () => {
             await client
                 .get(`/customers/${credentials.customerId}`)
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .ok()
         })
 
-        it('should return UNAUTHORIZED(401) status when providing an accessToken with an incorrect format', async () => {
+        it('잘못된 accessToken을 제공하면 UNAUTHORIZED(401)를 반환해야 한다', async () => {
             const invalidToken = 'SampleToken'
 
             await client
                 .get(`/customers/${credentials.customerId}`)
                 .headers({ Authorization: `Bearer ${invalidToken}` })
-                .unauthorized()
+                .unauthorized({"message": "Unauthorized", "statusCode": 401})
         })
 
-        it('should return UNAUTHORIZED(401) status when providing an accessToken containing incorrect data', async () => {
+        it('잘못된 데이터가 포함된 accessToken을 제공하면 UNAUTHORIZED(401)를 반환해야 한다', async () => {
             const jwtService = new JwtService()
 
             const wrongUserIdToken = jwtService.sign(
@@ -109,7 +107,7 @@ describe('customer authentication', () => {
             await client
                 .get(`/customers/${credentials.customerId}`)
                 .headers({ Authorization: `Bearer ${wrongUserIdToken}` })
-                .unauthorized()
+                .unauthorized({"message": "Unauthorized", "statusCode": 401})
         })
     })
 })
