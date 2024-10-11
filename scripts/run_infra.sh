@@ -11,6 +11,9 @@ docker_compose --profile infra down --volumes --remove-orphans --timeout 0
 docker_compose --profile infra up -d
 
 wait_for_service "${MONGO_DB_HOST1}" "run_mongo 'db.version()'"
+wait_for_service "${MONGO_DB_HOST2}" "run_mongo 'db.version()'"
+wait_for_service "${MONGO_DB_HOST3}" "run_mongo 'db.version()'"
+
 run_mongo "
 rs.initiate({
     _id: \"${MONGO_DB_REPLICA_NAME}\",
