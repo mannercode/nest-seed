@@ -9,7 +9,7 @@ import {
     IsolatedFixture
 } from './customers-auth.fixture'
 
-describe('customer authentication', () => {
+describe('/customers authentication', () => {
     let isolated: IsolatedFixture
     let client: HttpTestClient
     let credentials: Credentials
@@ -72,7 +72,7 @@ describe('customer authentication', () => {
         })
     })
 
-    describe('JWT 인증', () => {
+    describe('accessToken 검증', () => {
         let accessToken: string
 
         beforeEach(async () => {
