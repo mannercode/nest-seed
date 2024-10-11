@@ -28,20 +28,20 @@ export class HttpTestClient {
         return this
     }
 
-    query(query: Record<string, any>): this {
-        this.client = this.client.query(query)
-        return this
-    }
-
     headers(headers: Record<string, string>): this {
         Object.entries(headers).forEach(([key, value]) => {
-            this.client = this.client.set(key, value)
+            this.client.set(key, value)
         })
         return this
     }
 
+    query(query: Record<string, any>): this {
+        this.client.query(query)
+        return this
+    }
+
     body(body: Record<string, any>): this {
-        this.client = this.client.send(body)
+        this.client.send(body)
         return this
     }
 
@@ -53,14 +53,14 @@ export class HttpTestClient {
         }>
     ): this {
         attachs.forEach(({ name, file, options }) => {
-            this.client = this.client.attach(name, file, options)
+            this.client.attach(name, file, options)
         })
         return this
     }
 
     fields(fields: Array<{ name: string; value: string }>): this {
         fields.forEach(({ name, value }) => {
-            this.client = this.client.field(name, value)
+            this.client.field(name, value)
         })
         return this
     }
@@ -102,24 +102,32 @@ export class HttpTestClient {
         return this
     }
 
-    async send(status: HttpStatus): Promise<supertest.Test> {
+    async send(status: HttpStatus, expected?: any): Promise<supertest.Response> {
         const res = await this.client
+
         if (res.status !== status) {
             console.log(res.body)
         }
+
         expect(res.status).toEqual(status)
+
         res.body = jsonToObject(res.body)
+
+        if (expected) {
+            expect(res.body).toEqual(expected)
+        }
+
         return res
     }
-    created = () => this.send(HttpStatus.CREATED)
-    ok = () => this.send(HttpStatus.OK)
-    accepted = () => this.send(HttpStatus.ACCEPTED)
-    badRequest = () => this.send(HttpStatus.BAD_REQUEST)
-    unauthorized = () => this.send(HttpStatus.UNAUTHORIZED)
-    conflict = () => this.send(HttpStatus.CONFLICT)
-    notFound = () => this.send(HttpStatus.NOT_FOUND)
-    payloadTooLarge = () => this.send(HttpStatus.PAYLOAD_TOO_LARGE)
-    internalServerError = () => this.send(HttpStatus.INTERNAL_SERVER_ERROR)
+    created = (expected?: any) => this.send(HttpStatus.CREATED, expected)
+    ok = (expected?: any) => this.send(HttpStatus.OK, expected)
+    accepted = (expected?: any) => this.send(HttpStatus.ACCEPTED, expected)
+    badRequest = (expected?: any) => this.send(HttpStatus.BAD_REQUEST, expected)
+    unauthorized = (expected?: any) => this.send(HttpStatus.UNAUTHORIZED, expected)
+    conflict = (expected?: any) => this.send(HttpStatus.CONFLICT, expected)
+    notFound = (expected?: any) => this.send(HttpStatus.NOT_FOUND, expected)
+    payloadTooLarge = (expected?: any) => this.send(HttpStatus.PAYLOAD_TOO_LARGE, expected)
+    internalServerError = (expected?: any) => this.send(HttpStatus.INTERNAL_SERVER_ERROR, expected)
 }
 
 interface EventData {

@@ -29,7 +29,7 @@ export class StorageFilesController {
 
     @Post()
     @UseInterceptors(
-        FilesInterceptor('files', Config.fileUpload.maxFilesPerUpload, {
+        FilesInterceptor('files', undefined, {
             storage: diskStorage({
                 destination: (_req, _file, cb) => cb(null, Config.fileUpload.directory),
                 filename: (_req, _file, cb) => cb(null, `${generateUUID()}.tmp`)
@@ -46,7 +46,8 @@ export class StorageFilesController {
                 cb(error, error === null)
             },
             limits: {
-                fileSize: Config.fileUpload.maxFileSizeBytes
+                fileSize: Config.fileUpload.maxFileSizeBytes,
+                files: Config.fileUpload.maxFilesPerUpload
             }
         })
     )

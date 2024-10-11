@@ -9,17 +9,15 @@ describe('createHttpTestContext', () => {
     let testContext: MicroserviceTestContext
     let client: MicroserviceTestClient
 
-    const serviceMock = {
-        getMessage: jest.fn().mockReturnValue({ message: 'This is Mock' })
-    }
-
     beforeEach(async () => {
         testContext = await createMicroserviceTestContext({
             imports: [SampleModule],
             overrideProviders: [
                 {
                     original: SampleService,
-                    replacement: serviceMock
+                    replacement: {
+                        getMessage: jest.fn().mockReturnValue({ message: 'This is Mock' })
+                    }
                 }
             ]
         })
@@ -30,7 +28,7 @@ describe('createHttpTestContext', () => {
         await testContext?.close()
     })
 
-    it('should return mock message', async () => {
+    it('overrideProviders에 설정한 서비스가 동작해야 한다', async () => {
         const message = await client.send('getMessage', 'args')
 
         expect(message).toEqual({ message: 'This is Mock' })
