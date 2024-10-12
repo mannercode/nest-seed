@@ -1,14 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import {
-    Expect,
-    MethodLog,
-    MongooseRepository,
-    objectIds,
-    PaginationOption,
-    PaginationResult
-} from 'common'
-import { differenceWith, escapeRegExp, uniq } from 'lodash'
+import { MethodLog, MongooseRepository, objectIds, PaginationResult } from 'common'
+import { escapeRegExp } from 'lodash'
 import { FilterQuery, Model } from 'mongoose'
 import { CreateMovieDto, QueryMoviesDto, UpdateMovieDto } from './dto'
 import { Movie } from './schemas'
@@ -69,10 +62,19 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findMovies(queryDto: QueryMoviesDto, pagination: PaginationOption) {
-        const paginated = await this.findWithPagination((helpers) => {
-            const { title, genre, releaseDate, plot, durationMinutes, director, rating } = queryDto
+    async findMovies(queryDto: QueryMoviesDto) {
+        const {
+            title,
+            genre,
+            releaseDate,
+            plot,
+            durationMinutes,
+            director,
+            rating,
+            ...pagination
+        } = queryDto
 
+        const paginated = await this.findWithPagination((helpers) => {
             const query: FilterQuery<Movie> = {}
             if (title) query.title = new RegExp(escapeRegExp(title), 'i')
             if (genre) query.genre = genre
@@ -88,20 +90,20 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         return paginated as PaginationResult<Movie>
     }
 
-    async getMoviesByIds(movieIds: string[]) {
-        const uniqueIds = uniq(movieIds)
+    // async getMoviesByIds(movieIds: string[]) {
+    //     const uniqueIds = uniq(movieIds)
 
-        Expect.equalLength(uniqueIds, movieIds, `Duplicate movie IDs are not allowed:${movieIds}`)
+    //     Expect.equalLength(uniqueIds, movieIds, `Duplicate movie IDs are not allowed:${movieIds}`)
 
-        const movies = await this.findByIds(uniqueIds)
-        const notFoundIds = differenceWith(uniqueIds, movies, (id, movie) => id === movie.id)
+    //     const movies = await this.findByIds(uniqueIds)
+    //     const notFoundIds = differenceWith(uniqueIds, movies, (id, movie) => id === movie.id)
 
-        if (notFoundIds.length > 0) {
-            throw new NotFoundException(
-                `One or more movies with IDs ${notFoundIds.join(', ')} not found`
-            )
-        }
+    //     if (notFoundIds.length > 0) {
+    //         throw new NotFoundException(
+    //             `One or more movies with IDs ${notFoundIds.join(', ')} not found`
+    //         )
+    //     }
 
-        return movies
-    }
+    //     return movies
+    // }
 }

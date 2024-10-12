@@ -141,7 +141,7 @@ describe('/movies', () => {
         })
 
         it('기본 페이지네이션 설정으로 고객 목록을 가져와야 한다', async () => {
-            const { body } = await client.get('/movies').ok()
+            const { body } = await client.get('/movies').query({ skip: 0 }).ok()
             const { items, ...paginated } = body
 
             expect(paginated).toEqual({
@@ -152,9 +152,11 @@ describe('/movies', () => {
             expectEqualUnsorted(items, movies)
         })
 
-        it('잘못된 항목으로 검색하면 결과가 없어야 한다', async () => {
-            const { body } = await client.get('/movies').query({ wrong: 'value' }).ok()
-            expect(body.items).toHaveLength(0)
+        it('잘못된 필드로 검색하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
+            await client
+                .get('/movies')
+                .query({ wrong: 'value' })
+                .badRequest(['property wrong should not exist'])
         })
 
         it('제목의 일부로 영화를 검색할 수 있어야 한다', async () => {
@@ -214,6 +216,5 @@ describe('/movies', () => {
             const expected = movies.filter((movie) => movie.rating === rating)
             expectEqualUnsorted(body.items, expected)
         })
-
     })
 })

@@ -144,6 +144,13 @@ describe('/customers', () => {
             expectEqualUnsorted(items, customers)
         })
 
+        it('잘못된 필드로 검색하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
+            await client
+                .get('/customers')
+                .query({ wrong: 'value' })
+                .badRequest(['property wrong should not exist'])
+        })
+
         it('이름의 일부로 고객을 검색할 수 있어야 한다', async () => {
             const partialName = 'Customer-1'
             const { body } = await client.get('/customers').query({ name: partialName }).ok()

@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MethodLog, MongooseRepository, PaginationOption, PaginationResult } from 'common'
+import { MethodLog, MongooseRepository, PaginationResult } from 'common'
 import { escapeRegExp } from 'lodash'
 import { FilterQuery, Model } from 'mongoose'
 import { CreateCustomerDto, QueryCustomersDto, UpdateCustomerDto } from './dto'
@@ -57,10 +57,10 @@ export class CustomersRepository extends MongooseRepository<Customer> {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findCustomers(queryDto: QueryCustomersDto, pagination: PaginationOption) {
-        const paginated = await this.findWithPagination((helpers) => {
-            const { name, email } = queryDto
+    async findCustomers(queryDto: QueryCustomersDto) {
+        const { name, email, ...pagination } = queryDto
 
+        const paginated = await this.findWithPagination((helpers) => {
             const query: FilterQuery<Customer> = {}
             if (name) query.name = new RegExp(escapeRegExp(name), 'i')
             if (email) query.email = new RegExp(escapeRegExp(email), 'i')

@@ -54,11 +54,8 @@ export class CustomersController {
 
     @UsePipes(new PaginationPipe(Config.http.paginationDefaultSize))
     @Get()
-    async findCustomers(
-        @Query() queryDto: QueryCustomersDto,
-        @Query() pagination: PaginationOption
-    ) {
-        return this.service.findCustomers(queryDto, pagination)
+    async findCustomers(@Query() queryDto: QueryCustomersDto) {
+        return this.service.findCustomers(queryDto)
     }
 
     @UseGuards(CustomerLocalAuthGuard)

@@ -1,6 +1,7 @@
 import { IsOptional } from 'class-validator'
+import { PaginationOption } from 'common'
 
-export class QueryCustomersDto {
+export class QueryCustomersDto extends PaginationOption {
     @IsOptional()
     name?: string
 

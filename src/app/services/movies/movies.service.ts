@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { maps, MethodLog, PaginationOption, PaginationResult } from 'common'
+import { maps, MethodLog, PaginationResult } from 'common'
 import { CreateStorageFileDto, StorageFilesService } from '../storage-files'
 import { CreateMovieDto, MovieDto, QueryMoviesDto, UpdateMovieDto } from './dto'
 import { MoviesRepository } from './movies.repository'
@@ -42,20 +42,20 @@ export class MoviesService {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findMovies(queryDto: QueryMoviesDto, pagination: PaginationOption) {
-        const { items, ...paginated } = await this.repository.findMovies(queryDto, pagination)
+    async findMovies(queryDto: QueryMoviesDto) {
+        const { items, ...paginated } = await this.repository.findMovies(queryDto)
 
         return { ...paginated, items: maps(items, MovieDto) } as PaginationResult<MovieDto>
     }
 
-    @MethodLog({ level: 'verbose' })
-    async getMoviesByIds(movieIds: string[]) {
-        const movies = await this.repository.getMoviesByIds(movieIds)
-        return maps(movies, MovieDto)
-    }
+    // @MethodLog({ level: 'verbose' })
+    // async getMoviesByIds(movieIds: string[]) {
+    //     const movies = await this.repository.getMoviesByIds(movieIds)
+    //     return maps(movies, MovieDto)
+    // }
 
-    @MethodLog({ level: 'verbose' })
-    async moviesExist(movieIds: string[]): Promise<boolean> {
-        return this.repository.existsByIds(movieIds)
-    }
+    // @MethodLog({ level: 'verbose' })
+    // async moviesExist(movieIds: string[]): Promise<boolean> {
+    //     return this.repository.existsByIds(movieIds)
+    // }
 }
