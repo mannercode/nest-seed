@@ -69,7 +69,7 @@ describe('/movies', () => {
             movie = await createMovie(client)
         })
 
-        it('고객 정보를 업데이트해야 한다', async () => {
+        it('영화 정보를 업데이트해야 한다', async () => {
             const updateDto = {
                 title: 'update title',
                 genre: ['Romance', 'Thriller'],
@@ -79,16 +79,13 @@ describe('/movies', () => {
                 director: 'Steven Spielberg',
                 rating: MovieRating.R
             }
+            const expected = { ...movie, ...updateDto }
 
-            const updated = await client
-                .patch(`/movies/${movie.id}`)
-                .body(updateDto)
-                .ok({ ...movie, ...updateDto })
-
-            await client.get(`/movies/${movie.id}`).ok(updated.body)
+            await client.patch(`/movies/${movie.id}`).body(updateDto).ok(expected)
+            await client.get(`/movies/${movie.id}`).ok(expected)
         })
 
-        it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
+        it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client
                 .patch(`/movies/${nullObjectId}`)
                 .body({})
@@ -103,12 +100,12 @@ describe('/movies', () => {
             movie = await createMovie(client)
         })
 
-        it('고객을 삭제해야 한다', async () => {
+        it('영화를 삭제해야 한다', async () => {
             await client.delete(`/movies/${movie.id}`).ok()
             await client.get(`/movies/${movie.id}`).notFound(`Movie with ID ${movie.id} not found`)
         })
 
-        it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
+        it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client
                 .delete(`/movies/${nullObjectId}`)
                 .notFound('Movie with ID 000000000000000000000000 not found')
@@ -122,11 +119,11 @@ describe('/movies', () => {
             movie = await createMovie(client)
         })
 
-        it('고객 정보를 가져와야 한다', async () => {
+        it('영화 정보를 가져와야 한다', async () => {
             await client.get(`/movies/${movie.id}`).ok(movie)
         })
 
-        it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
+        it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client
                 .get(`/movies/${nullObjectId}`)
                 .notFound('Movie with ID 000000000000000000000000 not found')
@@ -140,7 +137,7 @@ describe('/movies', () => {
             movies = await createMovies(client)
         })
 
-        it('기본 페이지네이션 설정으로 고객 목록을 가져와야 한다', async () => {
+        it('기본 페이지네이션 설정으로 영화를 가져와야 한다', async () => {
             const { body } = await client.get('/movies').query({ skip: 0 }).ok()
             const { items, ...paginated } = body
 

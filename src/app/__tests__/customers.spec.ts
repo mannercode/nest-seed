@@ -69,13 +69,10 @@ describe('/customers', () => {
                 email: 'new@mail.com',
                 birthdate: new Date('1900-12-31')
             }
+            const expected = { ...customer, ...updateDto }
 
-            const updated = await client
-                .patch(`/customers/${customer.id}`)
-                .body(updateDto)
-                .ok({ ...customer, ...updateDto })
-
-            await client.get(`/customers/${customer.id}`).ok(updated.body)
+            await client.patch(`/customers/${customer.id}`).body(updateDto).ok(expected)
+            await client.get(`/customers/${customer.id}`).ok(expected)
         })
 
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
@@ -132,7 +129,7 @@ describe('/customers', () => {
             customers = await createCustomers(client)
         })
 
-        it('기본 페이지네이션 설정으로 고객 목록을 가져와야 한다', async () => {
+        it('기본 페이지네이션 설정으로 고객을 가져와야 한다', async () => {
             const { body } = await client.get('/customers').ok()
             const { items, ...paginated } = body
 
