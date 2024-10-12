@@ -13,6 +13,7 @@ import {
     UsePipes
 } from '@nestjs/common'
 import { Assert, PaginationOption, PaginationPipe } from 'common'
+import { Config } from 'config'
 import {
     CreateCustomerDto,
     CustomerDto,
@@ -51,7 +52,7 @@ export class CustomersController {
         return this.service.deleteCustomer(customerId)
     }
 
-    @UsePipes(new PaginationPipe(50))
+    @UsePipes(new PaginationPipe(Config.http.paginationDefaultSize))
     @Get()
     async findCustomers(
         @Query() queryDto: QueryCustomersDto,

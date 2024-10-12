@@ -13,7 +13,6 @@ if (matchesEnv('development')) {
 export const Config = {
     http: {
         requestPayloadLimit: getString('HTTP_REQUEST_PAYLOAD_LIMIT'),
-        paginationMaxSize: getNumber('HTTP_PAGINATION_MAX_SIZE'),
         paginationDefaultSize: getNumber('HTTP_PAGINATION_DEFAULT_SIZE')
     },
     service: {

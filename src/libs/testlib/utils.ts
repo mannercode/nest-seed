@@ -39,3 +39,25 @@ export function getAvailablePort(): Promise<number> {
         })
     })
 }
+
+export const objectToFields = (createDto: any) => {
+    const fields = Object.entries(createDto).map(([key, value]) => {
+        let processedValue
+
+        if (typeof value === 'string') {
+            processedValue = value
+        } else if (value instanceof Date) {
+            processedValue = value.toISOString()
+        } else if (Array.isArray(value)) {
+            processedValue = JSON.stringify(value)
+        } else if (value === null || value === undefined) {
+            processedValue = ''
+        } else {
+            processedValue = JSON.stringify(value)
+        }
+
+        return { name: key, value: processedValue }
+    })
+
+    return fields
+}

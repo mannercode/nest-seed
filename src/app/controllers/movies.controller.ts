@@ -5,27 +5,22 @@ import {
     Delete,
     Get,
     Param,
+    Patch,
     Post,
-    StreamableFile,
+    Query,
     UploadedFiles,
-    UseInterceptors
+    UseInterceptors,
+    UsePipes
 } from '@nestjs/common'
 import { FilesInterceptor } from '@nestjs/platform-express'
-import { IsString } from 'class-validator'
-import { generateUUID } from 'common'
+import { generateUUID, PaginationOption, PaginationPipe } from 'common'
 import { Config } from 'config'
-import { createReadStream } from 'fs'
 import { diskStorage } from 'multer'
-import { StorageFilesService } from 'services/storage-files'
+import { CreateMovieDto, MoviesService, QueryMoviesDto, UpdateMovieDto } from 'services/movies'
 
-class UploadFileDto {
-    @IsString()
-    name?: string
-}
-
-@Controller('storage-files')
-export class StorageFilesController {
-    constructor(private service: StorageFilesService) {}
+@Controller('movies')
+export class MoviesController {
+    constructor(private service: MoviesService) {}
 
     @UseInterceptors(
         FilesInterceptor('files', undefined, {
@@ -51,33 +46,38 @@ export class StorageFilesController {
         })
     )
     @Post()
-    async saveFiles(@UploadedFiles() files: Express.Multer.File[], @Body() _body: UploadFileDto) {
-        const createDtos = files.map((file) => ({
+    async createMovie(
+        @UploadedFiles() files: Express.Multer.File[],
+        @Body() createMovieDto: CreateMovieDto
+    ) {
+        const createStorageFileDtos = files.map((file) => ({
             originalname: file.originalname,
             mimetype: file.mimetype,
             size: file.size,
             uploadedFilePath: file.path
         }))
 
-        const storageFiles = await this.service.saveFiles(createDtos)
-        return { storageFiles }
+        return this.service.createMovie(createStorageFileDtos, createMovieDto)
     }
 
-    @Get(':fileId')
-    async downloadFile(@Param('fileId') fileId: string) {
-        const file = await this.service.getStorageFile(fileId)
-
-        const readStream = createReadStream(file.storedPath)
-
-        return new StreamableFile(readStream, {
-            type: file.mimetype,
-            disposition: `attachment; filename="${encodeURIComponent(file.originalname)}"`,
-            length: file.size
-        })
+    @Patch(':movieId')
+    async updateMovie(@Param('movieId') movieId: string, @Body() updateDto: UpdateMovieDto) {
+        return this.service.updateMovie(movieId, updateDto)
     }
 
-    @Delete(':fileId')
-    async deleteStorageFile(@Param('fileId') fileId: string) {
-        return this.service.deleteStorageFile(fileId)
+    @Get(':movieId')
+    async getMovie(@Param('movieId') movieId: string) {
+        return this.service.getMovie(movieId)
+    }
+
+    @Delete(':movieId')
+    async deleteMovie(@Param('movieId') movieId: string) {
+        return this.service.deleteMovie(movieId)
+    }
+
+    @UsePipes(new PaginationPipe(Config.http.paginationDefaultSize))
+    @Get()
+    async findMovies(@Query() queryDto: QueryMoviesDto, @Query() pagination: PaginationOption) {
+        return this.service.findMovies(queryDto, pagination)
     }
 }

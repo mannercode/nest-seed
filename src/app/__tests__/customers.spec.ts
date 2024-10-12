@@ -1,7 +1,7 @@
 import { expect } from '@jest/globals'
 import { nullObjectId } from 'common'
 import { CustomerDto } from 'services/customers'
-import { HttpTestClient, expectEqualUnsorted } from 'testlib'
+import { expectEqualUnsorted, HttpTestClient } from 'testlib'
 import {
     closeIsolatedFixture,
     createCustomer,
@@ -144,7 +144,7 @@ describe('/customers', () => {
             expectEqualUnsorted(items, customers)
         })
 
-        it('이름의 일부로 고객 목록을 검색할 수 있어야 한다', async () => {
+        it('이름의 일부로 고객을 검색할 수 있어야 한다', async () => {
             const partialName = 'Customer-1'
             const { body } = await client.get('/customers').query({ name: partialName }).ok()
 
@@ -152,7 +152,7 @@ describe('/customers', () => {
             expectEqualUnsorted(body.items, expected)
         })
 
-        it('이메일의 일부로 고객 목록을 검색할 수 있어야 한다', async () => {
+        it('이메일의 일부로 고객을 검색할 수 있어야 한다', async () => {
             const partialEmail = 'user-1'
             const { body } = await client.get('/customers').query({ email: partialEmail }).ok()
 

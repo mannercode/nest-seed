@@ -36,7 +36,6 @@ export async function closeSharedFixture(fixture: SharedFixture) {
 
 export interface IsolatedFixture {
     testContext: HttpTestContext
-    uploadFile: (attachs: any[], fields?: any[]) => HttpTestClient
 }
 
 export async function createIsolatedFixture() {
@@ -48,17 +47,17 @@ export async function createIsolatedFixture() {
 
     const testContext = await createHttpTestContext({ imports: [AppModule] })
 
-    const uploadFile = (attachs: any[], fields?: any[]) => {
-        return testContext.client
-            .post('/storage-files')
-            .attachs(attachs)
-            .fields(fields ?? [{ name: 'name', value: 'test' }])
-    }
-
-    return { testContext, uploadFile }
+    return { testContext }
 }
 
 export async function closeIsolatedFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
     await Path.delete(Config.fileUpload.directory)
+}
+
+export function uploadFile(client: HttpTestClient, attachs: any[], fields?: any[]) {
+    return client
+        .post('/storage-files')
+        .attachs(attachs)
+        .fields(fields ?? [{ name: 'name', value: 'test' }])
 }
