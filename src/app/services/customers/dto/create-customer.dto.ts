@@ -7,7 +7,6 @@ export class CreateCustomerDto {
     name: string
 
     @IsEmail()
-    @IsNotEmpty()
     email: string
 
     @IsDate()

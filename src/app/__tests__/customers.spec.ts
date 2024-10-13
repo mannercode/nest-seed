@@ -42,14 +42,12 @@ describe('/customers', () => {
         })
 
         it('필수 필드가 누락되면 BAD_REQUEST(400)를 반환해야 한다', async () => {
-            // TODO not be empty 이거 안 나오게 못하나
             await client
                 .post('/customers')
                 .body({})
                 .badRequest([
                     'name should not be empty',
                     'name must be a string',
-                    'email should not be empty',
                     'email must be an email',
                     'birthdate must be a Date instance',
                     'password must be a string'
