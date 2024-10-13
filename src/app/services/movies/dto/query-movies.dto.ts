@@ -15,9 +15,6 @@ export class QueryMoviesDto extends PaginationOption {
     plot?: string
 
     @IsOptional()
-    durationMinutes?: number
-
-    @IsOptional()
     director?: string
 
     @IsOptional()

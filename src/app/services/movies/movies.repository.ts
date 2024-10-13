@@ -63,16 +63,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
 
     @MethodLog({ level: 'verbose' })
     async findMovies(queryDto: QueryMoviesDto) {
-        const {
-            title,
-            genre,
-            releaseDate,
-            plot,
-            durationMinutes,
-            director,
-            rating,
-            ...pagination
-        } = queryDto
+        const { title, genre, releaseDate, plot, director, rating, ...pagination } = queryDto
 
         const paginated = await this.findWithPagination((helpers) => {
             const query: FilterQuery<Movie> = {}
@@ -80,7 +71,6 @@ export class MoviesRepository extends MongooseRepository<Movie> {
             if (genre) query.genre = genre
             if (releaseDate) query.releaseDate = releaseDate
             if (plot) query.plot = new RegExp(escapeRegExp(plot), 'i')
-            if (durationMinutes) query.durationMinutes = durationMinutes
             if (director) query.director = new RegExp(escapeRegExp(director), 'i')
             if (rating) query.rating = rating
 

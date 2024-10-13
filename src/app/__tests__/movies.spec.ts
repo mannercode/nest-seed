@@ -190,14 +190,6 @@ describe('/movies', () => {
             expectEqualUnsorted(body.items, expected)
         })
 
-        it('상영시간으로 영화를 검색할 수 있어야 한다', async () => {
-            const durationMinutes = 90
-            const { body } = await client.get('/movies').query({ durationMinutes }).ok()
-
-            const expected = movies.filter((movie) => movie.durationMinutes === durationMinutes)
-            expectEqualUnsorted(body.items, expected)
-        })
-
         it('감독의 일부로 영화를 검색할 수 있어야 한다', async () => {
             const partialDirector = 'James'
             const { body } = await client.get('/movies').query({ director: partialDirector }).ok()

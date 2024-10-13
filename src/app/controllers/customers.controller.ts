@@ -4,6 +4,7 @@ import {
     Delete,
     Get,
     HttpCode,
+    HttpStatus,
     Param,
     Patch,
     Post,
@@ -12,7 +13,7 @@ import {
     UseGuards,
     UsePipes
 } from '@nestjs/common'
-import { Assert, PaginationOption, PaginationPipe } from 'common'
+import { Assert, PaginationPipe } from 'common'
 import { Config } from 'config'
 import {
     CreateCustomerDto,
@@ -59,7 +60,7 @@ export class CustomersController {
     }
 
     @UseGuards(CustomerLocalAuthGuard)
-    @HttpCode(200)
+    @HttpCode(HttpStatus.OK)
     @Post('login')
     async login(@Req() req: { user: CustomerDto }) {
         Assert.defined(req.user, 'req.user must be returned in LocalStrategy.validate')
@@ -68,7 +69,7 @@ export class CustomersController {
     }
 
     @Public()
-    @HttpCode(200)
+    @HttpCode(HttpStatus.OK)
     @Post('refresh')
     async refreshToken(@Body('refreshToken') refreshToken: string) {
         return this.service.refreshAuthTokens(refreshToken)
