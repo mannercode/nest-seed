@@ -14,10 +14,10 @@ import {
 import { PaginationPipe } from 'common'
 import { Config } from 'config'
 import {
-    CreateTheaterDto,
-    QueryTheatersDto,
+    TheaterCreationDto,
+    TheaterQueryDto,
     TheatersService,
-    UpdateTheaterDto
+    TheaterUpdateDto
 } from 'services/theaters'
 
 @Controller('theaters')
@@ -25,14 +25,14 @@ export class TheatersController {
     constructor(private service: TheatersService) {}
 
     @Post()
-    async createTheater(@Body() createDto: CreateTheaterDto) {
+    async createTheater(@Body() createDto: TheaterCreationDto) {
         return this.service.createTheater(createDto)
     }
 
     @Patch(':theaterId')
     async updateTheater(
         @Param('theaterId') theaterId: string,
-        @Body() updateDto: UpdateTheaterDto
+        @Body() updateDto: TheaterUpdateDto
     ) {
         return this.service.updateTheater(theaterId, updateDto)
     }
@@ -49,7 +49,7 @@ export class TheatersController {
 
     @UsePipes(new PaginationPipe(Config.http.paginationDefaultSize))
     @Get()
-    async findTheaters(@Query() queryDto: QueryTheatersDto) {
+    async findTheaters(@Query() queryDto: TheaterQueryDto) {
         return this.service.findTheaters(queryDto)
     }
 

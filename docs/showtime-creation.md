@@ -101,8 +101,8 @@ end note
 
 ShowtimeCreation -> ShowtimeCreation: validateCreateShowtimesRequest(request)
 activate ShowtimeCreation
-loop theater of request.theaters
-    loop startTime of request.startTimes
+loop theater in request.theaters
+    loop startTime in request.startTimes
         ShowtimeCreation -> Showtimes: createShowtime({theaterId, movieId, startTime, duration})
         ShowtimeCreation <-- Showtimes: showtime
         ShowtimeCreation -> Showtimes: createdShowtimes.add(showtime)
@@ -120,10 +120,10 @@ deactivate ShowtimeCreation
 
 ShowtimeCreation -> ShowtimeCreation: createTickets(createdShowtimes)
 activate ShowtimeCreation
-loop showtime of createdShowtimes
+loop showtime in createdShowtimes
     ShowtimeCreation -> Theaters: getTheater(showtime.theaterId)
     ShowtimeCreation <-- Theaters: theater
-    loop seat of theater.seats
+    loop seat in theater.seats
         ShowtimeCreation -> Tickets: createTicket(seat, showtime.id)
         ShowtimeCreation <-- Tickets: ticket
     end
@@ -131,6 +131,61 @@ end
 deactivate ShowtimeCreation
 
 Backend <-- ShowtimeCreation: CreateShowtimesResponse
+@enduml
+```
+
+검증과 생성에 오랜시간이 걸리기 때문에 위의 동기 요청(Synchronous Request)은 UX에 부정적이다. 그래서 클라이언트가 생성 요청을 하면 batchId를 리턴하고 후에 SSE로 처리 결과 이벤트를 발생시킨다.
+
+```
+CreateShowtimesRequest {
+    "movieId": "movie#1",
+    "theaterIds": ["theater#1","theater#2"],
+    "durationMinutes": 90,
+    "startTimes": [202012120900, 202012121100, 202012121300]
+}
+
+Showtime {
+    theaterId
+    movieId
+    startTime
+    endTime
+}
+```
+
+```plantuml
+@startuml
+Backend -> ShowtimeCreation: requestShowtimeCreation(request)
+        ShowtimeCreation -> ShowtimeCreation: enqueueShowtimeCreationTask(request)
+        ShowtimeCreation --> ShowtimeCreation: batchId
+Backend <-- ShowtimeCreation: batchId
+
+[o-> ShowtimeCreation: queue에서 task(batchId, request) 전달
+    ShowtimeCreation -> ShowtimeCreation: validateShowtimeCreationRequest(request)
+
+    ShowtimeCreation -> ShowtimeCreation: createShowtimes(request, batchId)
+    activate ShowtimeCreation #yellow
+        loop theater in request.theaters
+            loop startTime in request.startTimes
+                ShowtimeCreation -> ShowtimeCreation: createShowtimeCreationDto({theaterId, movieId, startTime, duration})
+            end
+        end
+
+        ShowtimeCreation -> Showtimes: createShowtimes(showtimeCreationDtos, batchId)
+        ShowtimeCreation <-- Showtimes: showtimes
+    deactivate ShowtimeCreation
+
+    ShowtimeCreation -> ShowtimeCreation: createTickets(showtimes, batchId)
+    activate ShowtimeCreation #yellow
+        loop showtime in showtimes
+            ShowtimeCreation -> Theaters: getTheater(showtime.theaterId)
+            ShowtimeCreation <-- Theaters: theater
+            loop seat in theater.seats
+                ShowtimeCreation -> ShowtimeCreation: createTicketCreationDto(seat, showtime.id)
+            end
+            ShowtimeCreation -> Tickets: createTickets(createTicketDtos,batchId)
+        end
+    deactivate ShowtimeCreation
+Backend <-- ShowtimeCreation: showtimeCreationResult(result)
 @enduml
 ```
 

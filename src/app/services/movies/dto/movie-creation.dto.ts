@@ -2,7 +2,7 @@ import { Transform, Type } from 'class-transformer'
 import { IsArray, IsDate, IsEnum, IsInt, IsNotEmpty, IsString, MaxLength } from 'class-validator'
 import { MovieGenre, MovieRating } from '../schemas'
 
-export class CreateMovieDto {
+export class MovieCreationDto {
     @IsString()
     @IsNotEmpty()
     title: string

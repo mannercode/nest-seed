@@ -16,7 +16,7 @@ import { FilesInterceptor } from '@nestjs/platform-express'
 import { generateUUID, PaginationOption, PaginationPipe } from 'common'
 import { Config } from 'config'
 import { diskStorage } from 'multer'
-import { CreateMovieDto, MoviesService, QueryMoviesDto, UpdateMovieDto } from 'services/movies'
+import { MovieCreationDto, MoviesService, MovieQueryDto, MovieUpdateDto } from 'services/movies'
 
 @Controller('movies')
 export class MoviesController {
@@ -48,7 +48,7 @@ export class MoviesController {
     @Post()
     async createMovie(
         @UploadedFiles() files: Express.Multer.File[],
-        @Body() createMovieDto: CreateMovieDto
+        @Body() createMovieDto: MovieCreationDto
     ) {
         const createStorageFileDtos = files.map((file) => ({
             originalname: file.originalname,
@@ -61,7 +61,7 @@ export class MoviesController {
     }
 
     @Patch(':movieId')
-    async updateMovie(@Param('movieId') movieId: string, @Body() updateDto: UpdateMovieDto) {
+    async updateMovie(@Param('movieId') movieId: string, @Body() updateDto: MovieUpdateDto) {
         return this.service.updateMovie(movieId, updateDto)
     }
 
@@ -77,7 +77,7 @@ export class MoviesController {
 
     @UsePipes(new PaginationPipe(Config.http.paginationDefaultSize))
     @Get()
-    async findMovies(@Query() queryDto: QueryMoviesDto) {
+    async findMovies(@Query() queryDto: MovieQueryDto) {
         return this.service.findMovies(queryDto)
     }
 }

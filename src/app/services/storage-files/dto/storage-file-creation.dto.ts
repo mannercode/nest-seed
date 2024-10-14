@@ -1,6 +1,6 @@
 import { IsInt, IsNotEmpty, IsString } from 'class-validator'
 
-export class CreateStorageFileDto {
+export class StorageFileCreationDto {
     @IsString()
     @IsNotEmpty()
     originalname: string

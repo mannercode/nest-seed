@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { DocumentId, getChecksum, MethodLog, Path } from 'common'
 import { Config } from 'config'
-import { CreateStorageFileDto, StorageFileDto } from './dto'
+import { StorageFileCreationDto, StorageFileDto } from './dto'
 import { StorageFile } from './schemas'
 import { StorageFilesRepository } from './storage-files.repository'
 
@@ -10,7 +10,7 @@ export class StorageFilesService {
     constructor(private repository: StorageFilesRepository) {}
 
     @MethodLog()
-    async saveFiles(createDtos: CreateStorageFileDto[]) {
+    async saveFiles(createDtos: StorageFileCreationDto[]) {
         const storageFiles = await this.repository.withTransaction(async (session) => {
             const storageFiles: StorageFile[] = []
 

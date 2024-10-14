@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { maps, MethodLog, PaginationResult } from 'common'
-import { CreateTheaterDto, QueryTheatersDto, TheaterDto, UpdateTheaterDto } from './dto'
+import { TheaterCreationDto, TheaterQueryDto, TheaterDto, TheaterUpdateDto } from './dto'
 import { TheatersRepository } from './theaters.repository'
 
 @Injectable()
@@ -8,13 +8,13 @@ export class TheatersService {
     constructor(private repository: TheatersRepository) {}
 
     @MethodLog()
-    async createTheater(createDto: CreateTheaterDto) {
+    async createTheater(createDto: TheaterCreationDto) {
         const theater = await this.repository.createTheater(createDto)
         return new TheaterDto(theater)
     }
 
     @MethodLog()
-    async updateTheater(theaterId: string, updateDto: UpdateTheaterDto) {
+    async updateTheater(theaterId: string, updateDto: TheaterUpdateDto) {
         const theater = await this.repository.updateTheater(theaterId, updateDto)
         return new TheaterDto(theater)
     }
@@ -32,7 +32,7 @@ export class TheatersService {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findTheaters(queryDto: QueryTheatersDto) {
+    async findTheaters(queryDto: TheaterQueryDto) {
         const { items, ...paginated } = await this.repository.findTheaters(queryDto)
 
         return { ...paginated, items: maps(items, TheaterDto) } as PaginationResult<TheaterDto>

@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose'
 import { Expect, MethodLog, MongooseRepository, PaginationResult } from 'common'
 import { differenceWith, escapeRegExp, uniq } from 'lodash'
 import { FilterQuery, Model } from 'mongoose'
-import { CreateTheaterDto, QueryTheatersDto, UpdateTheaterDto } from './dto'
+import { TheaterCreationDto, TheaterQueryDto, TheaterUpdateDto } from './dto'
 import { Theater } from './schemas'
 
 @Injectable()
@@ -17,7 +17,7 @@ export class TheatersRepository extends MongooseRepository<Theater> {
     }
 
     @MethodLog()
-    async createTheater(createDto: CreateTheaterDto) {
+    async createTheater(createDto: TheaterCreationDto) {
         const theater = this.newDocument()
         theater.name = createDto.name
         theater.latlong = createDto.latlong
@@ -27,7 +27,7 @@ export class TheatersRepository extends MongooseRepository<Theater> {
     }
 
     @MethodLog()
-    async updateTheater(theaterId: string, updateDto: UpdateTheaterDto) {
+    async updateTheater(theaterId: string, updateDto: TheaterUpdateDto) {
         const theater = await this.getTheater(theaterId)
 
         if (updateDto.name) theater.name = updateDto.name
@@ -53,7 +53,7 @@ export class TheatersRepository extends MongooseRepository<Theater> {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findTheaters(queryDto: QueryTheatersDto) {
+    async findTheaters(queryDto: TheaterQueryDto) {
         const { name, ...pagination } = queryDto
 
         const paginated = await this.findWithPagination((helpers) => {

@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose'
 import { MethodLog, MongooseRepository, PaginationResult } from 'common'
 import { escapeRegExp } from 'lodash'
 import { FilterQuery, Model } from 'mongoose'
-import { CreateCustomerDto, QueryCustomersDto, UpdateCustomerDto } from './dto'
+import { CustomerCreationDto, CustomerQueryDto, CustomerUpdateDto } from './dto'
 import { Customer } from './schemas'
 
 @Injectable()
@@ -17,7 +17,7 @@ export class CustomersRepository extends MongooseRepository<Customer> {
     }
 
     @MethodLog()
-    async createCustomer(createDto: CreateCustomerDto) {
+    async createCustomer(createDto: CustomerCreationDto) {
         if (await this.findByEmail(createDto.email))
             throw new ConflictException(`Customer with email ${createDto.email} already exists`)
 
@@ -31,7 +31,7 @@ export class CustomersRepository extends MongooseRepository<Customer> {
     }
 
     @MethodLog()
-    async updateCustomer(customerId: string, updateDto: UpdateCustomerDto) {
+    async updateCustomer(customerId: string, updateDto: CustomerUpdateDto) {
         const customer = await this.getCustomer(customerId)
 
         if (updateDto.name) customer.name = updateDto.name
@@ -57,7 +57,7 @@ export class CustomersRepository extends MongooseRepository<Customer> {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findCustomers(queryDto: QueryCustomersDto) {
+    async findCustomers(queryDto: CustomerQueryDto) {
         const { name, email, ...pagination } = queryDto
 
         const paginated = await this.findWithPagination((helpers) => {

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { maps, MethodLog, PaginationResult } from 'common'
-import { CreateStorageFileDto, StorageFilesService } from '../storage-files'
-import { CreateMovieDto, MovieDto, QueryMoviesDto, UpdateMovieDto } from './dto'
+import { StorageFileCreationDto, StorageFilesService } from '../storage-files'
+import { MovieCreationDto, MovieDto, MovieQueryDto, MovieUpdateDto } from './dto'
 import { MoviesRepository } from './movies.repository'
 
 @Injectable()
@@ -13,8 +13,8 @@ export class MoviesService {
 
     @MethodLog()
     async createMovie(
-        createStorageFileDtos: CreateStorageFileDto[],
-        createMovieDto: CreateMovieDto
+        createStorageFileDtos: StorageFileCreationDto[],
+        createMovieDto: MovieCreationDto
     ) {
         const storageFiles = await this.storageFilesService.saveFiles(createStorageFileDtos)
         const storageFileIds = storageFiles.map((file) => file.id.toString())
@@ -24,7 +24,7 @@ export class MoviesService {
     }
 
     @MethodLog()
-    async updateMovie(movieId: string, updateDto: UpdateMovieDto) {
+    async updateMovie(movieId: string, updateDto: MovieUpdateDto) {
         const movie = await this.repository.updateMovie(movieId, updateDto)
         return new MovieDto(movie)
     }
@@ -42,7 +42,7 @@ export class MoviesService {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findMovies(queryDto: QueryMoviesDto) {
+    async findMovies(queryDto: MovieQueryDto) {
         const { items, ...paginated } = await this.repository.findMovies(queryDto)
 
         return { ...paginated, items: maps(items, MovieDto) } as PaginationResult<MovieDto>

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { JwtAuthService, maps, MethodLog, PaginationResult, Password } from 'common'
 import { CustomersRepository } from './customers.repository'
-import { CreateCustomerDto, CustomerDto, QueryCustomersDto, UpdateCustomerDto } from './dto'
+import { CustomerCreationDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from './dto'
 
 @Injectable()
 export class CustomersService {
@@ -11,7 +11,7 @@ export class CustomersService {
     ) {}
 
     @MethodLog()
-    async createCustomer(createDto: CreateCustomerDto) {
+    async createCustomer(createDto: CustomerCreationDto) {
         const customer = await this.repository.createCustomer({
             ...createDto,
             password: await Password.hash(createDto.password)
@@ -21,7 +21,7 @@ export class CustomersService {
     }
 
     @MethodLog()
-    async updateCustomer(customerId: string, updateDto: UpdateCustomerDto) {
+    async updateCustomer(customerId: string, updateDto: CustomerUpdateDto) {
         const customer = await this.repository.updateCustomer(customerId, updateDto)
         return new CustomerDto(customer)
     }
@@ -39,7 +39,7 @@ export class CustomersService {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findCustomers(queryDto: QueryCustomersDto) {
+    async findCustomers(queryDto: CustomerQueryDto) {
         const { items, ...paginated } = await this.repository.findCustomers(queryDto)
 
         return { ...paginated, items: maps(items, CustomerDto) } as PaginationResult<CustomerDto>

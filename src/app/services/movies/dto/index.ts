@@ -1,4 +1,4 @@
-export * from './create-movie.dto'
+export * from './movie-creation.dto'
+export * from './movie-query.dto'
+export * from './movie-update.dto'
 export * from './movie.dto'
-export * from './query-movies.dto'
-export * from './update-movie.dto'

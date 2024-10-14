@@ -16,11 +16,11 @@ import {
 import { Assert, PaginationPipe } from 'common'
 import { Config } from 'config'
 import {
-    CreateCustomerDto,
+    CustomerCreationDto,
     CustomerDto,
     CustomersService,
-    QueryCustomersDto,
-    UpdateCustomerDto
+    CustomerQueryDto,
+    CustomerUpdateDto
 } from 'services/customers'
 import { CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
 
@@ -31,14 +31,14 @@ export class CustomersController {
 
     @Public()
     @Post()
-    async createCustomer(@Body() createDto: CreateCustomerDto) {
+    async createCustomer(@Body() createDto: CustomerCreationDto) {
         return this.service.createCustomer(createDto)
     }
 
     @Patch(':customerId')
     async updateCustomer(
         @Param('customerId') customerId: string,
-        @Body() updateDto: UpdateCustomerDto
+        @Body() updateDto: CustomerUpdateDto
     ) {
         return this.service.updateCustomer(customerId, updateDto)
     }
@@ -55,7 +55,7 @@ export class CustomersController {
 
     @UsePipes(new PaginationPipe(Config.http.paginationDefaultSize))
     @Get()
-    async findCustomers(@Query() queryDto: QueryCustomersDto) {
+    async findCustomers(@Query() queryDto: CustomerQueryDto) {
         return this.service.findCustomers(queryDto)
     }
 

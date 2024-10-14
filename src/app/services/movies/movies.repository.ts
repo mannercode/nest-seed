@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose'
 import { MethodLog, MongooseRepository, objectIds, PaginationResult } from 'common'
 import { escapeRegExp } from 'lodash'
 import { FilterQuery, Model } from 'mongoose'
-import { CreateMovieDto, QueryMoviesDto, UpdateMovieDto } from './dto'
+import { MovieCreationDto, MovieQueryDto, MovieUpdateDto } from './dto'
 import { Movie } from './schemas'
 
 @Injectable()
@@ -17,7 +17,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     }
 
     @MethodLog()
-    async createMovie(createDto: CreateMovieDto, storageFileIds: string[]) {
+    async createMovie(createDto: MovieCreationDto, storageFileIds: string[]) {
         const movie = this.newDocument()
         movie.title = createDto.title
         movie.genre = createDto.genre
@@ -32,7 +32,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     }
 
     @MethodLog()
-    async updateMovie(movieId: string, updateDto: UpdateMovieDto) {
+    async updateMovie(movieId: string, updateDto: MovieUpdateDto) {
         const movie = await this.getMovie(movieId)
 
         if (updateDto.title) movie.title = updateDto.title
@@ -62,7 +62,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findMovies(queryDto: QueryMoviesDto) {
+    async findMovies(queryDto: MovieQueryDto) {
         const { title, genre, releaseDate, plot, director, rating, ...pagination } = queryDto
 
         const paginated = await this.findWithPagination((helpers) => {
