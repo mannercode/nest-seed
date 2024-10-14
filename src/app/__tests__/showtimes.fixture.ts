@@ -19,14 +19,29 @@ export async function closeIsolatedFixture(fixture: IsolatedFixture) {
 }
 
 export const generateShowtimeCreationDtos = (overrides = {}) => {
-    const creationDtos = {
-        name: `showtime name`,
-        latlong: { latitude: 38.123, longitude: 138.678 },
-        seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', seats: 'OOOOXXOOOO' }] }] },
+    const createDto = {
+        movieId: movie.id,
+        theaterIds: pickIds(theaters),
+        durationMinutes: 1,
+        startTimes: [new Date(0)],
         ...overrides
-    }
+    } as CreateShowtimesDto
 
-    const expectedDto = { id: expect.anything(), ...creationDtos }
+    if (!createDto.movieId || !createDto.theaterIds)
+        throw new Error('movie or theaters is not defined')
 
-    return { creationDto: creationDtos, expectedDto }
+    const expectedDtos = createDto.theaterIds.flatMap((theaterId) =>
+        createDto.startTimes.map(
+            (startTime) =>
+                ({
+                    id: expect.anything(),
+                    movieId: createDto.movieId,
+                    theaterId,
+                    startTime,
+                    endTime: addMinutes(startTime, createDto.durationMinutes)
+                }) as ShowtimeDto
+        )
+    )
+
+    return { creationDtos, expectedDtos }
 }

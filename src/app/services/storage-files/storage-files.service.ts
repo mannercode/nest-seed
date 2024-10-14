@@ -27,13 +27,13 @@ export class StorageFilesService {
             return storageFiles
         })
 
-        return storageFiles.map((file) => this.makeStorageFileDto(file))
+        return storageFiles.map((file) => this.createStorageFileDto(file))
     }
 
     @MethodLog({ level: 'verbose' })
     async getStorageFile(fileId: string) {
         const file = await this.repository.getStorageFile(fileId)
-        return this.makeStorageFileDto(file!)
+        return this.createStorageFileDto(file!)
     }
 
     @MethodLog()
@@ -46,7 +46,7 @@ export class StorageFilesService {
         return true
     }
 
-    private makeStorageFileDto(file: StorageFile) {
+    private createStorageFileDto(file: StorageFile) {
         const dto = new StorageFileDto(file, this.getStoragePath(file.id))
         return dto
     }
