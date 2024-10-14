@@ -87,6 +87,8 @@ Admin <-- Frontend: 상영시간 등록성공 화면
 @enduml
 ```
 
+v1, 이건 삭제해야 한다.
+
 ```plantuml
 @startuml
 Backend -> ShowtimeCreation: CreateShowtimes(request)
@@ -134,7 +136,8 @@ Backend <-- ShowtimeCreation: CreateShowtimesResponse
 @enduml
 ```
 
-검증과 생성에 오랜시간이 걸리기 때문에 위의 동기 요청(Synchronous Request)은 UX에 부정적이다. 그래서 클라이언트가 생성 요청을 하면 batchId를 리턴하고 후에 SSE로 처리 결과 이벤트를 발생시킨다.
+-   검증과 생성에 오랜시간이 걸리기 때문에 위의 동기 요청(Synchronous Request)은 UX에 부정적이다. 그래서 클라이언트가 생성 요청을 하면 batchId를 리턴하고 후에 SSE로 처리 결과 이벤트를 발생시킨다.
+-   ShowtimeCreationService는 애플리케이션 서비스이고 다른 서비스에 영향을 주지 않는다. 설계를 최소화 하고 많은 부분은 구현 단계에서 정한다. 예를 들어 중간에 실패했을 때 롤백 전략 같은 것들.
 
 ```
 CreateShowtimesRequest {
@@ -190,6 +193,37 @@ Backend <-- ShowtimeCreation: showtimeCreationResult(result)
 @enduml
 ```
 
+이건 예전 설계.
+- ShowtimeCreation이 없기 때문에 Showtimes에서 생성 작업 큐를 관리하고 Tickets를 직접 핸들링 한다. 단순 생성 작업인데도 얼마나 복잡했겠는가. 모듈이 복잡하면 테스트도 어렵다
+
+```plantuml
+@startuml
+Backend -> Showtimes: createShowtimes(creationRequest)
+Showtimes -> Showtimes: validateShowtimesCreationRequest(creationRequest)
+loop theater of creationRequest.theaters
+    loop startTime of creationRequest.startTimes
+        Showtimes -> Showtimes: createShowtime({theaterId, movieId, startTime, duration})
+        Showtimes <-- Showtimes: showtime
+        Showtimes -> Showtimes: createdShowtimes.add(showtime)
+    end
+end
+
+Showtimes -> Tickets: createTickets(createdShowtimes)
+loop showtime of createdShowtimes
+    Tickets -> Theaters: getTheater(showtime.theaterId)
+    Tickets <-- Theaters: theater
+    loop block of theater.seatmap.blocks
+        loop row of block.rows
+            loop seat of row.seats
+                Tickets -> Tickets: createTicket(block.name,row.name,seatIndex,showtime.id)
+            end
+        end
+    end
+end
+Showtimes <-- Tickets: completed
+Backend <- Showtimes : completed
+@enduml
+```
 ## 3. 상영시간 충돌 검증 알고리즘
 
 ```

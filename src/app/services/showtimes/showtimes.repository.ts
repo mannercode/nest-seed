@@ -5,11 +5,10 @@ import {
     MongooseRepository,
     objectId,
     objectIds,
-    PaginationResult,
-    SchemeBody
+    PaginationResult
 } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { QueryShowtimesDto } from './dto'
+import { ShowtimeQueryDto, ShowtimeCreationDto } from './dto'
 import { Showtime } from './schemas'
 
 @Injectable()
@@ -23,7 +22,7 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
     }
 
     @MethodLog()
-    async createShowtimes(createDtos: SchemeBody<Showtime>[]) {
+    async createShowtimes(createDtos: ShowtimeCreationDto[]) {
         const showtimes = createDtos.map((dto) => {
             const showtime = this.newDocument()
             showtime.batchId = objectId(dto.batchId)
@@ -35,7 +34,7 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
             return showtime
         })
 
-        return this.saveAll(showtimes)
+        await this.saveAll(showtimes)
     }
 
     @MethodLog({ level: 'verbose' })
@@ -48,7 +47,7 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findShowtimes(queryDto: QueryShowtimesDto) {
+    async findShowtimes(queryDto: ShowtimeQueryDto) {
         const { showtimeIds, movieId, theaterId, batchId, ...pagination } = queryDto
 
         const paginated = await this.findWithPagination((helpers) => {

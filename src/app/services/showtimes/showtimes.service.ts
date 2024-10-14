@@ -1,11 +1,6 @@
 import { Injectable } from '@nestjs/common'
-import {
-    maps,
-    MethodLog,
-    newObjectId,
-    PaginationResult
-} from 'common'
-import { CreateShowtimesDto, CreateShowtimesResponse, QueryShowtimesDto, ShowtimeDto } from './dto'
+import { maps, MethodLog, PaginationResult } from 'common'
+import { ShowtimeCreationDto, ShowtimeDto, ShowtimeQueryDto } from './dto'
 import { ShowtimesRepository } from './showtimes.repository'
 
 @Injectable()
@@ -13,11 +8,10 @@ export class ShowtimesService {
     constructor(private repository: ShowtimesRepository) {}
 
     @MethodLog()
-    async createShowtimes(createDto: CreateShowtimesDto) {
-        const batchId = newObjectId()
+    async createShowtimes(createDtos: ShowtimeCreationDto[]) {
+        await this.repository.createShowtimes(createDtos)
 
-
-        return { batchId } as CreateShowtimesResponse
+        return { success: true, count: createDtos.length }
     }
 
     @MethodLog({ level: 'verbose' })
@@ -27,7 +21,7 @@ export class ShowtimesService {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findShowtimes(queryDto: QueryShowtimesDto) {
+    async findShowtimes(queryDto: ShowtimeQueryDto) {
         const { items, ...paginated } = await this.repository.findShowtimes(queryDto)
 
         return { ...paginated, items: maps(items, ShowtimeDto) } as PaginationResult<ShowtimeDto>
