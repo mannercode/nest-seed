@@ -28,5 +28,5 @@ export const generateShowtimeCreationDtos = (overrides = {}) => {
 
     const expectedDto = { id: expect.anything(), ...creationDtos }
 
-    return { createDto: creationDtos, expectedDto }
+    return { creationDto: creationDtos, expectedDto }
 }

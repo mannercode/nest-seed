@@ -17,15 +17,15 @@ export class CustomersRepository extends MongooseRepository<Customer> {
     }
 
     @MethodLog()
-    async createCustomer(createDto: CustomerCreationDto) {
-        if (await this.findByEmail(createDto.email))
-            throw new ConflictException(`Customer with email ${createDto.email} already exists`)
+    async createCustomer(creationDto: CustomerCreationDto) {
+        if (await this.findByEmail(creationDto.email))
+            throw new ConflictException(`Customer with email ${creationDto.email} already exists`)
 
         const customer = this.newDocument()
-        customer.name = createDto.name
-        customer.email = createDto.email
-        customer.birthdate = createDto.birthdate
-        customer.password = createDto.password
+        customer.name = creationDto.name
+        customer.email = creationDto.email
+        customer.birthdate = creationDto.birthdate
+        customer.password = creationDto.password
 
         return customer.save()
     }

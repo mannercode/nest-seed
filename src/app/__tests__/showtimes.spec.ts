@@ -21,10 +21,10 @@ describe('ShowtimesModule', () => {
 
     describe('createShowtimes', () => {
         it('상영시간을 생성해야 한다', async () => {
-            const { createDtos, expectedDtos } = generateShowtimeCreationDtos()
+            const { creationDtos, expectedDtos } = generateShowtimeCreationDtos()
 
-            await service.createShowtimes(createDtos)
-            await client.post('/showtimes').body(createDto).created(expectedDto)
+            await service.createShowtimes(creationDtos)
+            await client.post('/showtimes').body(creationDto).created(expectedDto)
         })
 
         it('필수 필드가 누락되면 BAD_REQUEST(400)를 반환해야 한다', async () => {

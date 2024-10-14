@@ -7,7 +7,6 @@ import { TheatersModule } from 'services/theaters'
 import {
     CustomersController,
     MoviesController,
-    ShowtimesController,
     StorageFilesController,
     TheatersController
 } from './controllers'
@@ -24,12 +23,6 @@ import { CoreModule } from './core'
         ShowtimesModule
     ],
     providers: [CustomerLocalStrategy, CustomerJwtStrategy],
-    controllers: [
-        CustomersController,
-        StorageFilesController,
-        MoviesController,
-        TheatersController,
-        ShowtimesController
-    ]
+    controllers: [CustomersController, StorageFilesController, MoviesController, TheatersController]
 })
 export class AppModule {}

@@ -17,11 +17,11 @@ export class TheatersRepository extends MongooseRepository<Theater> {
     }
 
     @MethodLog()
-    async createTheater(createDto: TheaterCreationDto) {
+    async createTheater(creationDto: TheaterCreationDto) {
         const theater = this.newDocument()
-        theater.name = createDto.name
-        theater.latlong = createDto.latlong
-        theater.seatmap = createDto.seatmap
+        theater.name = creationDto.name
+        theater.latlong = creationDto.latlong
+        theater.seatmap = creationDto.seatmap
 
         return theater.save()
     }

@@ -10,16 +10,16 @@ export class StorageFilesService {
     constructor(private repository: StorageFilesRepository) {}
 
     @MethodLog()
-    async saveFiles(createDtos: StorageFileCreationDto[]) {
+    async saveFiles(creationDtos: StorageFileCreationDto[]) {
         const storageFiles = await this.repository.withTransaction(async (session) => {
             const storageFiles: StorageFile[] = []
 
-            for (const createDto of createDtos) {
+            for (const creationDto of creationDtos) {
                 const storageFile = await this.repository.createStorageFile(
-                    { ...createDto, checksum: await getChecksum(createDto.uploadedFilePath) },
+                    { ...creationDto, checksum: await getChecksum(creationDto.uploadedFilePath) },
                     session
                 )
-                Path.copy(createDto.uploadedFilePath, this.getStoragePath(storageFile.id))
+                Path.copy(creationDto.uploadedFilePath, this.getStoragePath(storageFile.id))
 
                 storageFiles.push(storageFile)
             }

@@ -8,8 +8,8 @@ export class TheatersService {
     constructor(private repository: TheatersRepository) {}
 
     @MethodLog()
-    async createTheater(createDto: TheaterCreationDto) {
-        const theater = await this.repository.createTheater(createDto)
+    async createTheater(creationDto: TheaterCreationDto) {
+        const theater = await this.repository.createTheater(creationDto)
         return new TheaterDto(theater)
     }
 

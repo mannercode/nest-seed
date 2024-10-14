@@ -22,8 +22,8 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
     }
 
     @MethodLog()
-    async createShowtimes(createDtos: ShowtimeCreationDto[]) {
-        const showtimes = createDtos.map((dto) => {
+    async createShowtimes(creationDtos: ShowtimeCreationDto[]) {
+        const showtimes = creationDtos.map((dto) => {
             const showtime = this.newDocument()
             showtime.batchId = objectId(dto.batchId)
             showtime.theaterId = objectId(dto.theaterId)

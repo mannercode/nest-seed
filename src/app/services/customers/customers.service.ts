@@ -11,10 +11,10 @@ export class CustomersService {
     ) {}
 
     @MethodLog()
-    async createCustomer(createDto: CustomerCreationDto) {
+    async createCustomer(creationDto: CustomerCreationDto) {
         const customer = await this.repository.createCustomer({
-            ...createDto,
-            password: await Password.hash(createDto.password)
+            ...creationDto,
+            password: await Password.hash(creationDto.password)
         })
 
         return new CustomerDto(customer)

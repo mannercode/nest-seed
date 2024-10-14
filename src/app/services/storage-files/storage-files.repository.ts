@@ -15,12 +15,12 @@ export class StorageFilesRepository extends MongooseRepository<StorageFile> {
     }
 
     @MethodLog({ excludeArgs: ['session'] })
-    async createStorageFile(createDto: SchemeBody<StorageFile>, session?: ClientSession) {
+    async createStorageFile(creationDto: SchemeBody<StorageFile>, session?: ClientSession) {
         const storageFile = this.newDocument()
-        storageFile.originalname = createDto.originalname
-        storageFile.mimetype = createDto.mimetype
-        storageFile.size = createDto.size
-        storageFile.checksum = createDto.checksum
+        storageFile.originalname = creationDto.originalname
+        storageFile.mimetype = creationDto.mimetype
+        storageFile.size = creationDto.size
+        storageFile.checksum = creationDto.checksum
 
         return storageFile.save({ session })
     }

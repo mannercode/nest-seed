@@ -31,8 +31,8 @@ export class CustomersController {
 
     @Public()
     @Post()
-    async createCustomer(@Body() createDto: CustomerCreationDto) {
-        return this.service.createCustomer(createDto)
+    async createCustomer(@Body() creationDto: CustomerCreationDto) {
+        return this.service.createCustomer(creationDto)
     }
 
     @Patch(':customerId')

@@ -25,8 +25,8 @@ export class TheatersController {
     constructor(private service: TheatersService) {}
 
     @Post()
-    async createTheater(@Body() createDto: TheaterCreationDto) {
-        return this.service.createTheater(createDto)
+    async createTheater(@Body() creationDto: TheaterCreationDto) {
+        return this.service.createTheater(creationDto)
     }
 
     @Patch(':theaterId')

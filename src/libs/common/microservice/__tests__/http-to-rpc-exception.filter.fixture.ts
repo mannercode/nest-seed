@@ -24,8 +24,8 @@ class SampleController {
     }
 
     @MessagePattern({ cmd: 'createSample' })
-    async createSample(createDto: CreateSampleDto) {
-        return createDto
+    async createSample(creationDto: CreateSampleDto) {
+        return creationDto
     }
 }
 

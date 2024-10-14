@@ -17,22 +17,22 @@ export async function closeIsolatedFixture(fixture: IsolatedFixture) {
 }
 
 export const makeTheaterDto = (overrides = {}) => {
-    const createDto = {
+    const creationDto = {
         name: `theater name`,
         latlong: { latitude: 38.123, longitude: 138.678 },
         seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', seats: 'OOOOXXOOOO' }] }] },
         ...overrides
     }
 
-    const expectedDto = { id: expect.anything(), ...createDto }
+    const expectedDto = { id: expect.anything(), ...creationDto }
 
-    return { createDto, expectedDto }
+    return { creationDto, expectedDto }
 }
 
 export const createTheater = async (client: HttpTestClient, override = {}) => {
-    const { createDto } = makeTheaterDto(override)
+    const { creationDto } = makeTheaterDto(override)
 
-    const { body } = await client.post('/theaters').body(createDto).created()
+    const { body } = await client.post('/theaters').body(creationDto).created()
     return body
 }
 

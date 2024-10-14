@@ -40,8 +40,8 @@ export function getAvailablePort(): Promise<number> {
     })
 }
 
-export const objectToFields = (createDto: any) => {
-    const fields = Object.entries(createDto).map(([key, value]) => {
+export const objectToFields = (creationDto: any) => {
+    const fields = Object.entries(creationDto).map(([key, value]) => {
         let processedValue
 
         if (typeof value === 'string') {

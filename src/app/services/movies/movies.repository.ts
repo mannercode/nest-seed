@@ -17,15 +17,15 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     }
 
     @MethodLog()
-    async createMovie(createDto: MovieCreationDto, storageFileIds: string[]) {
+    async createMovie(creationDto: MovieCreationDto, storageFileIds: string[]) {
         const movie = this.newDocument()
-        movie.title = createDto.title
-        movie.genre = createDto.genre
-        movie.releaseDate = createDto.releaseDate
-        movie.plot = createDto.plot
-        movie.durationMinutes = createDto.durationMinutes
-        movie.director = createDto.director
-        movie.rating = createDto.rating
+        movie.title = creationDto.title
+        movie.genre = creationDto.genre
+        movie.releaseDate = creationDto.releaseDate
+        movie.plot = creationDto.plot
+        movie.durationMinutes = creationDto.durationMinutes
+        movie.director = creationDto.director
+        movie.rating = creationDto.rating
         movie.storageFileIds = objectIds(storageFileIds)
 
         return movie.save()

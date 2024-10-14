@@ -8,10 +8,10 @@ export class ShowtimesService {
     constructor(private repository: ShowtimesRepository) {}
 
     @MethodLog()
-    async createShowtimes(createDtos: ShowtimeCreationDto[]) {
-        await this.repository.createShowtimes(createDtos)
+    async createShowtimes(creationDtos: ShowtimeCreationDto[]) {
+        await this.repository.createShowtimes(creationDtos)
 
-        return { success: true, count: createDtos.length }
+        return { success: true, count: creationDtos.length }
     }
 
     @MethodLog({ level: 'verbose' })
