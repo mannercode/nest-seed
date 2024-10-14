@@ -155,7 +155,7 @@ Showtime {
 ```plantuml
 @startuml
 Backend -> ShowtimeCreation: requestShowtimeCreation(request)
-        ShowtimeCreation -> ShowtimeCreation: enqueueShowtimeCreationTask(request)
+        ShowtimeCreation -> ShowtimeCreation: enqueueTask(request)
         ShowtimeCreation --> ShowtimeCreation: batchId
 Backend <-- ShowtimeCreation: batchId
 
@@ -182,7 +182,8 @@ Backend <-- ShowtimeCreation: batchId
             loop seat in theater.seats
                 ShowtimeCreation -> ShowtimeCreation: createTicketCreationDto(seat, showtime.id)
             end
-            ShowtimeCreation -> Tickets: createTickets(createTicketDtos,batchId)
+            ShowtimeCreation -> Tickets: createTickets(ticketCreationDtos,batchId)
+            ShowtimeCreation <-- Tickets: tickets
         end
     deactivate ShowtimeCreation
 Backend <-- ShowtimeCreation: showtimeCreationResult(result)
