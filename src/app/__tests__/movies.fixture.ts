@@ -17,7 +17,7 @@ export async function closeIsolatedFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
 }
 
-export const generateMovieDto = (overrides = {}) => {
+export const createMovieDto = (overrides = {}) => {
     const creationDto = {
         title: `MovieTitle`,
         genre: [MovieGenre.Action],
@@ -35,7 +35,7 @@ export const generateMovieDto = (overrides = {}) => {
 }
 
 export const createMovie = async (client: HttpTestClient, override = {}) => {
-    const { creationDto } = generateMovieDto(override)
+    const { creationDto } = createMovieDto(override)
 
     const { body } = await client
         .post('/movies')

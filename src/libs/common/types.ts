@@ -1,4 +1,5 @@
-import { IsNumber, Max, Min } from 'class-validator'
+import { Type } from 'class-transformer'
+import { IsDate, IsNumber, Max, Min } from 'class-validator'
 
 export class LatLong {
     @IsNumber()
@@ -10,4 +11,14 @@ export class LatLong {
     @Min(-180)
     @Max(180)
     longitude: number
+}
+
+export class DateRange {
+    @IsDate()
+    @Type(() => Date)
+    start: Date
+
+    @IsDate()
+    @Type(() => Date)
+    end: Date
 }

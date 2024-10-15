@@ -1,5 +1,6 @@
 /**
  * AVOID USING IT IF POSSIBLE. useFakeTimers() CAUSES A LOT OF UNEXPECTED PROBLEMS.
+ * Especially, Mongoose(MongoDB) is not working properly.
  */
 
 describe('Timer', () => {

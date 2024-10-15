@@ -16,7 +16,7 @@ export async function closeIsolatedFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
 }
 
-export const generateTheaterDto = (overrides = {}) => {
+export const createTheaterDto = (overrides = {}) => {
     const creationDto = {
         name: `theater name`,
         latlong: { latitude: 38.123, longitude: 138.678 },
@@ -30,7 +30,7 @@ export const generateTheaterDto = (overrides = {}) => {
 }
 
 export const createTheater = async (client: HttpTestClient, override = {}) => {
-    const { creationDto } = generateTheaterDto(override)
+    const { creationDto } = createTheaterDto(override)
 
     const { body } = await client.post('/theaters').body(creationDto).created()
     return body

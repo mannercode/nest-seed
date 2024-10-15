@@ -20,7 +20,7 @@ export async function closeIsolatedFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
 }
 
-export const generateCustomerDto = (overrides = {}) => {
+export const createCustomerDto = (overrides = {}) => {
     const creationDto = {
         name: 'name',
         email: 'name@mail.com',
@@ -35,7 +35,7 @@ export const generateCustomerDto = (overrides = {}) => {
 }
 
 export const createCustomer = async (client: HttpTestClient, override = {}) => {
-    const { creationDto } = generateCustomerDto(override)
+    const { creationDto } = createCustomerDto(override)
 
     const { body } = await client.post('/customers').body(creationDto).created()
     return body

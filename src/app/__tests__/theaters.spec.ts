@@ -8,7 +8,7 @@ import {
     createTheater,
     createTheaters,
     IsolatedFixture,
-    generateTheaterDto
+    createTheaterDto
 } from './theaters.fixture'
 
 describe('/theaters', () => {
@@ -26,7 +26,7 @@ describe('/theaters', () => {
 
     describe('POST /theaters', () => {
         it('극장을 생성해야 한다', async () => {
-            const { creationDto, expectedDto } = generateTheaterDto()
+            const { creationDto, expectedDto } = createTheaterDto()
 
             await client.post('/theaters').body(creationDto).created(expectedDto)
         })

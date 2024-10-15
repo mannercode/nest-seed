@@ -11,11 +11,11 @@ export class ShowtimeCreationDto {
     theaterId: string
 
     @IsDate()
-    @Type(() => Date)
+    // @Type(() => Date) controller에서 사용하지 않아서 제거함
     startTime: Date
 
     @IsDate()
-    @Type(() => Date)
+    // @Type(() => Date) controller에서 사용하지 않아서 제거함
     endTime: Date
 
     @IsString()

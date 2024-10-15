@@ -8,7 +8,7 @@ import {
     createCustomers,
     createIsolatedFixture,
     IsolatedFixture,
-    generateCustomerDto
+    createCustomerDto
 } from './customers.fixture'
 
 describe('/customers', () => {
@@ -26,13 +26,13 @@ describe('/customers', () => {
 
     describe('POST /customers', () => {
         it('고객을 생성해야 한다', async () => {
-            const { creationDto, expectedDto } = generateCustomerDto()
+            const { creationDto, expectedDto } = createCustomerDto()
 
             await client.post('/customers').body(creationDto).created(expectedDto)
         })
 
         it('이메일이 이미 존재하면 CONFLICT(409)를 반환해야 한다', async () => {
-            const { creationDto } = generateCustomerDto()
+            const { creationDto } = createCustomerDto()
 
             await client.post('/customers').body(creationDto).created()
             await client

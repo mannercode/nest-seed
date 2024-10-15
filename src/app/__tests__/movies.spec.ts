@@ -8,7 +8,7 @@ import {
     createMovie,
     createMovies,
     IsolatedFixture,
-    generateMovieDto
+    createMovieDto
 } from './movies.fixture'
 
 describe('/movies', () => {
@@ -26,7 +26,7 @@ describe('/movies', () => {
 
     describe('POST /movies', () => {
         it('영화를 생성해야 한다', async () => {
-            const { creationDto, expectedDto } = generateMovieDto()
+            const { creationDto, expectedDto } = createMovieDto()
             const body = await createMovie(client, creationDto)
 
             expect(body).toEqual(expectedDto)
@@ -34,7 +34,7 @@ describe('/movies', () => {
 
         it('허용되지 않은 MIME type의 파일을 업로드 하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
             const notAllowFile = './test/fixtures/text.txt'
-            const { creationDto } = generateMovieDto()
+            const { creationDto } = createMovieDto()
 
             await client
                 .post('/movies')

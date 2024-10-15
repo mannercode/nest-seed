@@ -1,10 +1,12 @@
-import { ShowtimesService } from 'services/showtimes'
+import { ShowtimeDto, ShowtimesService } from 'services/showtimes'
 import {
     closeIsolatedFixture,
     createIsolatedFixture,
-    generateShowtimeCreationDtos,
+    createShowtimes,
+    createShowtimeDtos,
     IsolatedFixture
 } from './showtimes.fixture'
+import { addMinutes, nullObjectId, pickIds, pickItems } from 'common'
 
 describe('ShowtimesModule', () => {
     let isolated: IsolatedFixture
@@ -19,124 +21,182 @@ describe('ShowtimesModule', () => {
         await closeIsolatedFixture(isolated)
     })
 
-    describe('createShowtimes', () => {
-        it('상영시간을 생성해야 한다', async () => {
-            const { creationDtos, expectedDtos } = generateShowtimeCreationDtos()
+    it('createShowtimes', async () => {
+        const { creationDtos, expectedDtos } = createShowtimeDtos()
 
-            await service.createShowtimes(creationDtos)
-            await client.post('/showtimes').body(creationDto).created(expectedDto)
+        const showtimes = await createShowtimes(service, creationDtos)
+        expect(showtimes).toEqual(expectedDtos)
+    })
+
+    describe('findAllShowtimes', () => {
+        let showtimes: ShowtimeDto[]
+
+        beforeEach(async () => {
+            const { creationDtos } = createShowtimeDtos()
+            showtimes = await createShowtimes(service, creationDtos)
         })
 
-        it('필수 필드가 누락되면 BAD_REQUEST(400)를 반환해야 한다', async () => {
-            await client
-                .post('/showtimes')
-                .body({})
-                .badRequest([
-                    'name should not be empty',
-                    'name must be a string',
-                    'seatmap should not be empty'
-                ])
+        const findAllShowtimes = async (overrides = {}) => {
+            const { creationDtos, expectedDtos } = createShowtimeDtos(overrides)
+            await service.createShowtimes(creationDtos)
+
+            const showtimes = await service.findAllShowtimes(overrides)
+            expect(showtimes).toEqual(expectedDtos)
+        }
+
+        it('batchId', async () => {
+            const batchId = '100000000000000000000001'
+            await findAllShowtimes({ batchId })
+        })
+
+        it('movieId', async () => {
+            const movieId = '100000000000000000000002'
+            await findAllShowtimes({ movieId })
+        })
+
+        it('theaterId', async () => {
+            const theaterId = '100000000000000000000003'
+            await findAllShowtimes({ theaterId })
+        })
+
+        it('startTimeRange', async () => {
+            const startTimeRange = {
+                start: new Date(2000, 0, 1, 0, 0),
+                end: new Date(2000, 0, 1, 49, 0)
+            }
+
+            const showtimes = await service.findAllShowtimes({ startTimeRange })
+            expect(showtimes).toHaveLength(50)
+        })
+
+        it('1개 이상의 필터를 설정하지 않으면 BAD_REQUEST(400)를 반환해야 한다', async () => {
+            const promise = findAllShowtimes({})
+            await expect(promise).rejects.toThrow('At least one filter condition must be provided.')
         })
     })
 
-    // describe('PATCH /showtimes/:id', () => {
-    //     let showtime: ShowtimeDto
+    describe('getShowtime', () => {
+        let showtimes: ShowtimeDto[]
 
-    //     beforeEach(async () => {
-    //         showtime = await createShowtime(client)
-    //     })
+        beforeEach(async () => {
+            const { creationDtos } = createShowtimeDtos()
+            showtimes = await createShowtimes(service, creationDtos)
+        })
 
-    //     it('상영시간 정보를 업데이트해야 한다', async () => {
-    //         const updateDto = {
-    //             name: `Update-Name`,
-    //             latlong: { latitude: 30.0, longitude: 120.0 },
-    //             seatmap: []
-    //         }
-    //         const expected = { ...showtime, ...updateDto }
+        it('상영시간 정보를 가져와야 한다', async () => {
+            const gotShowtime = await service.getShowtime(showtimes[0].id)
+            expect(gotShowtime).toEqual(showtimes[0])
+        })
 
-    //         await client.patch(`/showtimes/${showtime.id}`).body(updateDto).ok(expected)
-    //         await client.get(`/showtimes/${showtime.id}`).ok(expected)
-    //     })
+        it('상영시간이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
+            const promise = service.getShowtime(nullObjectId)
+            await expect(promise).rejects.toThrow(
+                'Showtime with ID 000000000000000000000000 not found'
+            )
+        })
+    })
 
-    //     it('상영시간이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-    //         await client
-    //             .patch(`/showtimes/${nullObjectId}`)
-    //             .body({})
-    //             .notFound('Showtime with ID 000000000000000000000000 not found')
-    //     })
-    // })
+    it('findShowingMovieIds', async () => {
+        const base = {
+            batchId: '000000000000000000000001',
+            movieId: '000000000000000000000002',
+            theaterId: '000000000000000000000003'
+        }
 
-    // describe('DELETE /showtimes/:id', () => {
-    //     let showtime: ShowtimeDto
+        const now = new Date()
+        const creationDtos = [
+            {
+                ...base,
+                startTime: addMinutes(now, -90),
+                endTime: addMinutes(now, -30)
+            },
+            {
+                ...base,
+                movieId: '100000000000000000000001',
+                startTime: addMinutes(now, 30),
+                endTime: addMinutes(now, 90)
+            },
+            {
+                ...base,
+                movieId: '100000000000000000000002',
+                startTime: addMinutes(now, 120),
+                endTime: addMinutes(now, 150)
+            }
+        ]
 
-    //     beforeEach(async () => {
-    //         showtime = await createShowtime(client)
-    //     })
+        const { success } = await service.createShowtimes(creationDtos)
+        expect(success).toBeTruthy()
 
-    //     it('상영시간을 삭제해야 한다', async () => {
-    //         await client.delete(`/showtimes/${showtime.id}`).ok()
-    //         await client
-    //             .get(`/showtimes/${showtime.id}`)
-    //             .notFound(`Showtime with ID ${showtime.id} not found`)
-    //     })
+        const movieIds = await service.findShowingMovieIds()
+        expect(movieIds).toEqual(['100000000000000000000001', '100000000000000000000002'])
+    })
 
-    //     it('상영시간이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-    //         await client
-    //             .delete(`/showtimes/${nullObjectId}`)
-    //             .notFound('Showtime with ID 000000000000000000000000 not found')
-    //     })
-    // })
+    it('findTheaterIdsShowingMovie', async () => {
+        const base = {
+            batchId: '000000000000000000000001',
+            startTime: new Date(0),
+            endTime: new Date(0)
+        }
 
-    // describe('GET /showtimes/:id', () => {
-    //     let showtime: ShowtimeDto
+        const movieId = '100000000000000000000002'
+        const creationDtos = [
+            {
+                ...base,
+                movieId: '100000000000000000000001',
+                theaterId: '200000000000000000000001'
+            },
+            {
+                ...base,
+                movieId,
+                theaterId: '200000000000000000000002'
+            },
+            {
+                ...base,
+                movieId,
+                theaterId: '200000000000000000000003'
+            }
+        ]
 
-    //     beforeEach(async () => {
-    //         showtime = await createShowtime(client)
-    //     })
+        const { success } = await service.createShowtimes(creationDtos)
+        expect(success).toBeTruthy()
 
-    //     it('상영시간 정보를 가져와야 한다', async () => {
-    //         await client.get(`/showtimes/${showtime.id}`).ok(showtime)
-    //     })
+        const theaterIds = await service.findTheaterIdsShowingMovie(movieId)
+        expect(theaterIds).toEqual(['200000000000000000000002', '200000000000000000000003'])
+    })
 
-    //     it('상영시간이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-    //         await client
-    //             .get(`/showtimes/${nullObjectId}`)
-    //             .notFound('Showtime with ID 000000000000000000000000 not found')
-    //     })
-    // })
+    it('findShowdates', async () => {
+        const base = {
+            batchId: '000000000000000000000001',
+            movieId: '000000000000000000000002',
+            theaterId: '000000000000000000000003'
+        }
 
-    // describe('GET /showtimes', () => {
-    //     let showtimes: ShowtimeDto[]
+        const creationDtos = [
+            {
+                ...base,
+                startTime: new Date('2000-01-02'),
+                endTime: new Date('2000-01-03')
+            },
+            {
+                ...base,
+                startTime: new Date('2000-01-04'),
+                endTime: new Date('2000-01-04')
+            },
+            {
+                ...base,
+                theaterId: '000000000000000000000000',
+                startTime: new Date('2000-01-05'),
+                endTime: new Date('2000-01-06')
+            }
+        ]
 
-    //     beforeEach(async () => {
-    //         showtimes = await createShowtimes(client)
-    //     })
+        const { success } = await service.createShowtimes(creationDtos)
+        expect(success).toBeTruthy()
 
-    //     it('기본 페이지네이션 설정으로 상영시간을 가져와야 한다', async () => {
-    //         const { body } = await client.get('/showtimes').ok()
-    //         const { items, ...paginated } = body
-
-    //         expect(paginated).toEqual({
-    //             skip: 0,
-    //             take: expect.any(Number),
-    //             total: showtimes.length
-    //         })
-    //         expectEqualUnsorted(items, showtimes)
-    //     })
-
-    //     it('잘못된 필드로 검색하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
-    //         await client
-    //             .get('/showtimes')
-    //             .query({ wrong: 'value' })
-    //             .badRequest(['property wrong should not exist'])
-    //     })
-
-    //     it('이름의 일부로 상영시간을 검색할 수 있어야 한다', async () => {
-    //         const partialName = 'Showtime-'
-    //         const { body } = await client.get('/showtimes').query({ name: partialName }).ok()
-
-    //         const expected = showtimes.filter((showtime) => showtime.name.startsWith(partialName))
-    //         expectEqualUnsorted(body.items, expected)
-    //     })
-    // })
+        const showdates = await service.findShowdates(base.movieId, base.theaterId)
+        expect(showdates.map((showdate) => showdate.getTime())).toEqual([
+            new Date('2000-01-02').getTime(),
+            new Date('2000-01-04').getTime()
+        ])
+    })
 })
