@@ -12,6 +12,7 @@ import {
 } from './controllers'
 import { CustomerJwtStrategy, CustomerLocalStrategy } from './controllers/guards'
 import { CoreModule } from './core'
+import { TicketsModule } from 'services/tickets'
 
 @Module({
     imports: [
@@ -20,7 +21,8 @@ import { CoreModule } from './core'
         StorageFilesModule,
         MoviesModule,
         TheatersModule,
-        ShowtimesModule
+        ShowtimesModule,
+        TicketsModule
     ],
     providers: [CustomerLocalStrategy, CustomerJwtStrategy],
     controllers: [CustomersController, StorageFilesController, MoviesController, TheatersController]

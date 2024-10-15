@@ -27,6 +27,7 @@ export class MongooseSchema {
     __v: number
 }
 
+// TODO 없애라
 export type SchemeBody<T> = Omit<T, keyof MongooseSchema>
 
 const BaseSchemaClass = SchemaFactory.createForClass(MongooseSchema)

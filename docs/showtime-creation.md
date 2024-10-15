@@ -195,6 +195,7 @@ Backend <-- ShowtimeCreation: showtimeCreationResult(result)
 
 이건 예전 설계.
 - ShowtimeCreation이 없기 때문에 Showtimes에서 생성 작업 큐를 관리하고 Tickets를 직접 핸들링 한다. 단순 생성 작업인데도 얼마나 복잡했겠는가. 모듈이 복잡하면 테스트도 어렵다
+- showtimes만 단독으로 테스트는 어려웠고 사실상 tickets와 같이 테스트를 하게 된다. 테스트 코드도 공유한다. 즉, 둘은 한 모듈처럼 되는 것이다.
 
 ```plantuml
 @startuml

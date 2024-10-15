@@ -20,11 +20,11 @@ export async function closeIsolatedFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
 }
 
-export const createShowtimeDtos = (overrides = {}) => {
+export const createShowtimeDtos = (overrides = {}, length: number = 100) => {
     const creationDtos: ShowtimeCreationDto[] = []
     const expectedDtos: ShowtimeDto[] = []
 
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < length; i++) {
         const creationDto = {
             batchId: '000000000000000000000001',
             movieId: '000000000000000000000002',
