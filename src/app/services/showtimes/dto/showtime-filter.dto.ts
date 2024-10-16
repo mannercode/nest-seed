@@ -1,16 +1,15 @@
 import { IsOptional } from 'class-validator'
 import { DateRange } from 'common'
 
-// TODO 배열로 모두 바꿔라
 export class ShowtimeFilterDto {
     @IsOptional()
-    batchId?: string
+    batchIds?: string[]
 
     @IsOptional()
-    movieId?: string
+    movieIds?: string[]
 
     @IsOptional()
-    theaterId?: string
+    theaterIds?: string[]
 
     @IsOptional()
     startTimeRange?: DateRange

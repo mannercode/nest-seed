@@ -34,17 +34,17 @@ export class TheatersController {
         @Param('theaterId') theaterId: string,
         @Body() updateDto: TheaterUpdateDto
     ) {
-        return this.service.updateTheater(objectId(theaterId), updateDto)
+        return this.service.updateTheater(theaterId, updateDto)
     }
 
     @Get(':theaterId')
     async getTheater(@Param('theaterId') theaterId: string) {
-        return this.service.getTheater(objectId(theaterId))
+        return this.service.getTheater(theaterId)
     }
 
     @Delete(':theaterId')
     async deleteTheater(@Param('theaterId') theaterId: string) {
-        return this.service.deleteTheater(objectId(theaterId))
+        return this.service.deleteTheater(theaterId)
     }
 
     @UsePipes(new PaginationPipe(Config.http.paginationDefaultSize))
@@ -56,6 +56,6 @@ export class TheatersController {
     @HttpCode(HttpStatus.OK)
     @Post('getByIds')
     async getByIds(@Body('theaterIds') theaterIds: string[]) {
-        return this.service.getTheatersByIds(objectIds(theaterIds))
+        return this.service.getTheatersByIds(theaterIds)
     }
 }

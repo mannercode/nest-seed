@@ -18,8 +18,8 @@ import { Config } from 'config'
 import {
     CustomerCreationDto,
     CustomerDto,
-    CustomersService,
     CustomerQueryDto,
+    CustomersService,
     CustomerUpdateDto
 } from 'services/customers'
 import { CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
@@ -40,17 +40,17 @@ export class CustomersController {
         @Param('customerId') customerId: string,
         @Body() updateDto: CustomerUpdateDto
     ) {
-        return this.service.updateCustomer(objectId(customerId), updateDto)
+        return this.service.updateCustomer(customerId, updateDto)
     }
 
     @Get(':customerId')
     async getCustomer(@Param('customerId') customerId: string) {
-        return this.service.getCustomer(objectId(customerId))
+        return this.service.getCustomer(customerId)
     }
 
     @Delete(':customerId')
     async deleteCustomer(@Param('customerId') customerId: string) {
-        return this.service.deleteCustomer(objectId(customerId))
+        return this.service.deleteCustomer(customerId)
     }
 
     @UsePipes(new PaginationPipe(Config.http.paginationDefaultSize))

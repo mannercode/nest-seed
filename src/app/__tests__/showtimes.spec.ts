@@ -7,6 +7,7 @@ import {
     IsolatedFixture
 } from './showtimes.fixture'
 import { addMinutes, nullObjectId, objectId, pickIds, pickItems } from 'common'
+import { expectEqualUnsorted } from 'testlib'
 
 describe('ShowtimesModule', () => {
     let isolated: IsolatedFixture
@@ -36,27 +37,27 @@ describe('ShowtimesModule', () => {
             showtimes = await createShowtimes(service, creationDtos)
         })
 
-        const findAllShowtimes = async (overrides = {}) => {
+        const findAllShowtimes = async (overrides = {}, findFilter = {}) => {
             const { creationDtos, expectedDtos } = createShowtimeDtos(overrides)
             await service.createShowtimes(creationDtos)
 
-            const showtimes = await service.findAllShowtimes(overrides)
-            expect(showtimes).toEqual(expectedDtos)
+            const showtimes = await service.findAllShowtimes(findFilter)
+            expectEqualUnsorted(showtimes, expectedDtos)
         }
 
-        it('batchId', async () => {
+        it('batchIds', async () => {
             const batchId = '100000000000000000000001'
-            await findAllShowtimes({ batchId })
+            await findAllShowtimes({ batchId }, { batchIds: [batchId] })
         })
 
-        it('movieId', async () => {
+        it('movieIds', async () => {
             const movieId = '100000000000000000000002'
-            await findAllShowtimes({ movieId })
+            await findAllShowtimes({ movieId }, { movieIds: [movieId] })
         })
 
-        it('theaterId', async () => {
+        it('theaterIds', async () => {
             const theaterId = '100000000000000000000003'
-            await findAllShowtimes({ theaterId })
+            await findAllShowtimes({ theaterId }, { theaterIds: [theaterId] })
         })
 
         it('startTimeRange', async () => {
@@ -84,12 +85,12 @@ describe('ShowtimesModule', () => {
         })
 
         it('상영시간 정보를 가져와야 한다', async () => {
-            const gotShowtime = await service.getShowtime(objectId(showtimes[0].id))
+            const gotShowtime = await service.getShowtime(showtimes[0].id)
             expect(gotShowtime).toEqual(showtimes[0])
         })
 
         it('상영시간이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            const promise = service.getShowtime(objectId(nullObjectId))
+            const promise = service.getShowtime(nullObjectId)
             await expect(promise).rejects.toThrow(
                 'Showtime with ID 000000000000000000000000 not found'
             )
@@ -160,7 +161,7 @@ describe('ShowtimesModule', () => {
         const { success } = await service.createShowtimes(creationDtos)
         expect(success).toBeTruthy()
 
-        const theaterIds = await service.findTheaterIdsShowingMovie(objectId(movieId))
+        const theaterIds = await service.findTheaterIdsShowingMovie(movieId)
         expect(theaterIds).toEqual(['200000000000000000000002', '200000000000000000000003'])
     })
 
@@ -193,10 +194,7 @@ describe('ShowtimesModule', () => {
         const { success } = await service.createShowtimes(creationDtos)
         expect(success).toBeTruthy()
 
-        const showdates = await service.findShowdates(
-            objectId(base.movieId),
-            objectId(base.theaterId)
-        )
+        const showdates = await service.findShowdates(base.movieId, base.theaterId)
         expect(showdates.map((showdate) => showdate.getTime())).toEqual([
             new Date('2000-01-02').getTime(),
             new Date('2000-01-04').getTime()

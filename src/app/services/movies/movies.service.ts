@@ -24,20 +24,20 @@ export class MoviesService {
     }
 
     @MethodLog()
-    async updateMovie(movieId: ObjectId, updateDto: MovieUpdateDto) {
-        const movie = await this.repository.updateMovie(movieId, updateDto)
+    async updateMovie(movieId: string, updateDto: MovieUpdateDto) {
+        const movie = await this.repository.updateMovie(objectId(movieId), updateDto)
         return new MovieDto(movie)
     }
 
     @MethodLog({ level: 'verbose' })
-    async getMovie(movieId: ObjectId) {
-        const movie = await this.repository.getMovie(movieId)
+    async getMovie(movieId: string) {
+        const movie = await this.repository.getMovie(objectId(movieId))
         return new MovieDto(movie)
     }
 
     @MethodLog()
-    async deleteMovie(movieId: ObjectId) {
-        await this.repository.deleteMovie(movieId)
+    async deleteMovie(movieId: string) {
+        await this.repository.deleteMovie(objectId(movieId))
         return true
     }
 

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MethodLog, ModelAttributes, MongooseRepository, ObjectId, objectId } from 'common'
+import { MethodLog, ModelAttributes, MongooseRepository, ObjectId, objectIds } from 'common'
 import { FilterQuery, Model } from 'mongoose'
 import { ShowtimeFilterDto } from './dto'
 import { Showtime } from './models'
@@ -37,12 +37,12 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
 
     @MethodLog({ level: 'verbose' })
     async findAllShowtimes(filterDto: ShowtimeFilterDto) {
-        const { batchId, movieId, theaterId, startTimeRange } = filterDto
+        const { batchIds, movieIds, theaterIds, startTimeRange } = filterDto
 
         const query: FilterQuery<Showtime> = {}
-        if (batchId) query.batchId = objectId(batchId)
-        if (movieId) query.movieId = objectId(movieId)
-        if (theaterId) query.theaterId = objectId(theaterId)
+        if (batchIds) query.batchId = { $in: objectIds(batchIds) }
+        if (movieIds) query.movieId = { $in: objectIds(movieIds) }
+        if (theaterIds) query.theaterId = { $in: objectIds(theaterIds) }
         if (startTimeRange)
             query.startTime = { $gte: startTimeRange.start, $lte: startTimeRange.end }
 

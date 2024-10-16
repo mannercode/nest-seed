@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { maps, MethodLog, objectId, ObjectId } from 'common'
+import { maps, MethodLog, objectId } from 'common'
 import { ShowtimeCreationDto, ShowtimeDto, ShowtimeFilterDto } from './dto'
 import { ShowtimesRepository } from './showtimes.repository'
 
@@ -22,15 +22,14 @@ export class ShowtimesService {
     }
 
     @MethodLog({ level: 'verbose' })
-    async getShowtime(showtimeId: ObjectId) {
-        const showtime = await this.repository.getShowtime(showtimeId)
+    async getShowtime(showtimeId: string) {
+        const showtime = await this.repository.getShowtime(objectId(showtimeId))
         return new ShowtimeDto(showtime)
     }
 
     @MethodLog({ level: 'verbose' })
     async findAllShowtimes(filterDto: ShowtimeFilterDto) {
         const showtimes = await this.repository.findAllShowtimes(filterDto)
-
         return maps(showtimes, ShowtimeDto)
     }
 
@@ -41,12 +40,12 @@ export class ShowtimesService {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findTheaterIdsShowingMovie(movieId: ObjectId) {
-        return this.repository.findTheaterIdsShowingMovie(movieId)
+    async findTheaterIdsShowingMovie(movieId: string) {
+        return this.repository.findTheaterIdsShowingMovie(objectId(movieId))
     }
 
     @MethodLog({ level: 'verbose' })
-    async findShowdates(movieId: ObjectId, theaterId: ObjectId) {
-        return this.repository.findShowdates(movieId, theaterId)
+    async findShowdates(movieId: string, theaterId: string) {
+        return this.repository.findShowdates(objectId(movieId), objectId(theaterId))
     }
 }

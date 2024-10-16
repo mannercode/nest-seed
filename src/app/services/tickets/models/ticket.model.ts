@@ -19,8 +19,7 @@ export class Ticket extends MongooseSchema {
     @Prop({ type: ObjectId, required: true })
     movieId: ObjectId
 
-    // TODO default 제거해라
-    @Prop({ type: String, enum: TicketStatus, default: TicketStatus.open, required: true })
+    @Prop({ type: String, enum: TicketStatus, required: true })
     status: TicketStatus
 
     @Prop({ type: Object, required: true })

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { JwtAuthService, maps, MethodLog, ObjectId, PaginationResult, Password } from 'common'
+import { JwtAuthService, maps, MethodLog, objectId, ObjectId, objectIds, PaginationResult, Password } from 'common'
 import { CustomersRepository } from './customers.repository'
 import { CustomerCreationDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from './dto'
 
@@ -21,20 +21,20 @@ export class CustomersService {
     }
 
     @MethodLog()
-    async updateCustomer(customerId: ObjectId, updateDto: CustomerUpdateDto) {
-        const customer = await this.repository.updateCustomer(customerId, updateDto)
+    async updateCustomer(customerId: string, updateDto: CustomerUpdateDto) {
+        const customer = await this.repository.updateCustomer(objectId(customerId), updateDto)
         return new CustomerDto(customer)
     }
 
     @MethodLog({ level: 'verbose' })
-    async getCustomer(customerId: ObjectId) {
-        const customer = await this.repository.getCustomer(customerId)
+    async getCustomer(customerId: string) {
+        const customer = await this.repository.getCustomer(objectId(customerId))
         return new CustomerDto(customer)
     }
 
     @MethodLog()
-    async deleteCustomer(customerId: ObjectId) {
-        await this.repository.deleteCustomer(customerId)
+    async deleteCustomer(customerId: string) {
+        await this.repository.deleteCustomer(objectId(customerId))
         return true
     }
 
@@ -46,8 +46,8 @@ export class CustomersService {
     }
 
     @MethodLog()
-    async customersExist(customerIds: ObjectId[]) {
-        return this.repository.existsByIds(customerIds)
+    async customersExist(customerIds: string[]) {
+        return this.repository.existsByIds(objectIds(customerIds))
     }
 
     @MethodLog()
