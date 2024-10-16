@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { StorageFile, StorageFileSchema } from './schemas'
+import { StorageFile, StorageFileSchema } from './models'
 import { StorageFilesRepository } from './storage-files.repository'
 import { StorageFilesService } from './storage-files.service'
 

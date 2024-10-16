@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MethodLog, MongooseRepository, objectId, objectIds, PaginationResult } from 'common'
+import { MethodLog, ModelAttributes, MongooseRepository, ObjectId, objectId } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { ShowtimeQueryDto, ShowtimeCreationDto, ShowtimeFilterDto } from './dto'
-import { Showtime } from './schemas'
+import { ShowtimeFilterDto } from './dto'
+import { Showtime } from './models'
 
 @Injectable()
 export class ShowtimesRepository extends MongooseRepository<Showtime> {
@@ -16,23 +16,18 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
     }
 
     @MethodLog()
-    async createShowtimes(creationDtos: ShowtimeCreationDto[]) {
+    async createShowtimes(creationDtos: ModelAttributes<Showtime>[]) {
         const showtimes = creationDtos.map((dto) => {
-            const showtime = this.newDocument()
-            showtime.batchId = objectId(dto.batchId)
-            showtime.theaterId = objectId(dto.theaterId)
-            showtime.movieId = objectId(dto.movieId)
-            showtime.startTime = dto.startTime
-            showtime.endTime = dto.endTime
-
-            return showtime
+            const document = this.newDocument()
+            Object.assign(document, dto)
+            return document
         })
 
         await this.saveAll(showtimes)
     }
 
     @MethodLog({ level: 'verbose' })
-    async getShowtime(showtimeId: string) {
+    async getShowtime(showtimeId: ObjectId) {
         const showtime = await this.findById(showtimeId)
 
         if (!showtime) throw new NotFoundException(`Showtime with ID ${showtimeId} not found`)
@@ -66,17 +61,15 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findTheaterIdsShowingMovie(movieId: string) {
-        const theaterIds = await this.model
-            .distinct('theaterId', { movieId: objectId(movieId) })
-            .exec()
+    async findTheaterIdsShowingMovie(movieId: ObjectId) {
+        const theaterIds = await this.model.distinct('theaterId', { movieId }).exec()
         return theaterIds.map((id) => id.toString())
     }
 
     @MethodLog({ level: 'verbose' })
-    async findShowdates(movieId: string, theaterId: string) {
+    async findShowdates(movieId: ObjectId, theaterId: ObjectId) {
         const showdates = await this.model.aggregate([
-            { $match: { movieId: objectId(movieId), theaterId: objectId(theaterId) } },
+            { $match: { movieId, theaterId } },
             { $project: { date: { $dateToString: { format: '%Y-%m-%d', date: '$startTime' } } } },
             { $group: { _id: '$date' } },
             { $sort: { _id: 1 } }

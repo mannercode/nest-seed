@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { Showtime, ShowtimeSchema } from './schemas'
+import { Showtime, ShowtimeSchema } from './models'
 import { ShowtimesRepository } from './showtimes.repository'
 import { ShowtimesService } from './showtimes.service'
 

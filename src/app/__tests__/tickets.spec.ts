@@ -7,7 +7,7 @@ import {
     IsolatedFixture
 } from './tickets.fixture'
 import { expectEqualUnsorted } from 'testlib'
-import { pickIds } from 'common'
+import { objectIds, pickIds } from 'common'
 
 describe('TicketsModule', () => {
     let isolated: IsolatedFixture
@@ -77,7 +77,10 @@ describe('TicketsModule', () => {
         const ticket = tickets[0]
         expect(ticket.status).toEqual(TicketStatus.open)
 
-        const updatedTickets = await service.updateTicketStatus([ticket.id], TicketStatus.sold)
+        const updatedTickets = await service.updateTicketStatus(
+            objectIds([ticket.id]),
+            TicketStatus.sold
+        )
         const updatedStatuses = updatedTickets.map((ticket) => ticket.status)
         expect(updatedStatuses).toEqual([TicketStatus.sold])
     })
@@ -90,7 +93,7 @@ describe('TicketsModule', () => {
         const { creationDtos } = createTicketDtos({ showtimeId }, ticketCount)
         const tickets = await createTickets(service, creationDtos)
         const ticketIds = pickIds(tickets.slice(0, soldCount))
-        await service.updateTicketStatus(ticketIds, TicketStatus.sold)
+        await service.updateTicketStatus(objectIds(ticketIds), TicketStatus.sold)
         const salesStatuses = await service.getSalesStatuses([showtimeId])
 
         expect(salesStatuses).toEqual([

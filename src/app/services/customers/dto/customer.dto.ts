@@ -1,4 +1,4 @@
-import { Customer } from '../schemas'
+import { Customer } from '../models'
 
 export class CustomerDto {
     id: string

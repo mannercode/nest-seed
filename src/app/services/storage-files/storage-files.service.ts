@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common'
-import { DocumentId, getChecksum, MethodLog, Path } from 'common'
+import { getChecksum, MethodLog, ObjectId, Path } from 'common'
 import { Config } from 'config'
 import { StorageFileCreationDto, StorageFileDto } from './dto'
-import { StorageFile } from './schemas'
+import { StorageFile } from './models'
 import { StorageFilesRepository } from './storage-files.repository'
 
 @Injectable()
@@ -31,13 +31,13 @@ export class StorageFilesService {
     }
 
     @MethodLog({ level: 'verbose' })
-    async getStorageFile(fileId: string) {
+    async getStorageFile(fileId: ObjectId) {
         const file = await this.repository.getStorageFile(fileId)
         return this.createStorageFileDto(file!)
     }
 
     @MethodLog()
-    async deleteStorageFile(fileId: string) {
+    async deleteStorageFile(fileId: ObjectId) {
         await this.repository.deleteStorageFile(fileId)
 
         const targetPath = this.getStoragePath(fileId)
@@ -51,7 +51,7 @@ export class StorageFilesService {
         return dto
     }
 
-    private getStoragePath(fileId: DocumentId) {
+    private getStoragePath(fileId: ObjectId) {
         const path = Path.join(Config.fileUpload.directory, `${fileId}.file`)
         return path
     }

@@ -1,4 +1,4 @@
-import { StorageFile } from '../schemas'
+import { StorageFile } from '../models'
 
 export class StorageFileDto {
     id: string

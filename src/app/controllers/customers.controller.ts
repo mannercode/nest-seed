@@ -13,7 +13,7 @@ import {
     UseGuards,
     UsePipes
 } from '@nestjs/common'
-import { Assert, PaginationPipe } from 'common'
+import { Assert, objectId, PaginationPipe } from 'common'
 import { Config } from 'config'
 import {
     CustomerCreationDto,
@@ -40,17 +40,17 @@ export class CustomersController {
         @Param('customerId') customerId: string,
         @Body() updateDto: CustomerUpdateDto
     ) {
-        return this.service.updateCustomer(customerId, updateDto)
+        return this.service.updateCustomer(objectId(customerId), updateDto)
     }
 
     @Get(':customerId')
     async getCustomer(@Param('customerId') customerId: string) {
-        return this.service.getCustomer(customerId)
+        return this.service.getCustomer(objectId(customerId))
     }
 
     @Delete(':customerId')
     async deleteCustomer(@Param('customerId') customerId: string) {
-        return this.service.deleteCustomer(customerId)
+        return this.service.deleteCustomer(objectId(customerId))
     }
 
     @UsePipes(new PaginationPipe(Config.http.paginationDefaultSize))

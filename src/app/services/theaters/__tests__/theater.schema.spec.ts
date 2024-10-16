@@ -1,4 +1,4 @@
-import { getAllSeats, getSeatCount } from '../schemas'
+import { getAllSeats, getSeatCount } from '../models'
 
 describe('theater utilities', () => {
     it('getSeatCount and getAllSeats', async () => {

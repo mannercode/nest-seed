@@ -3,7 +3,7 @@ import { Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Types } from 'mongoose'
 
 export class ObjectId extends Types.ObjectId {}
-export type DocumentId = ObjectId | string
+
 export class MongooseUpdateResult {
     modifiedCount: number
     matchedCount: number
@@ -21,14 +21,13 @@ export class MongooseUpdateResult {
     collation: { locale: 'en_US', strength: 1 }
 })
 export class MongooseSchema {
-    id: DocumentId
+    id: ObjectId
     createdAt: Date
     updatedAt: Date
     __v: number
 }
 
-// TODO 없애라
-export type SchemeBody<T> = Omit<T, keyof MongooseSchema>
+export type ModelAttributes<T> = Omit<T, keyof MongooseSchema>
 
 const BaseSchemaClass = SchemaFactory.createForClass(MongooseSchema)
 

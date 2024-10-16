@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MethodLog, MongooseRepository, objectIds, PaginationResult } from 'common'
+import { MethodLog, ModelAttributes, MongooseRepository, ObjectId, PaginationResult } from 'common'
 import { escapeRegExp } from 'lodash'
 import { FilterQuery, Model } from 'mongoose'
-import { MovieCreationDto, MovieQueryDto, MovieUpdateDto } from './dto'
-import { Movie } from './schemas'
+import { MovieQueryDto } from './dto'
+import { Movie } from './models'
 
 @Injectable()
 export class MoviesRepository extends MongooseRepository<Movie> {
@@ -17,22 +17,15 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     }
 
     @MethodLog()
-    async createMovie(creationDto: MovieCreationDto, storageFileIds: string[]) {
+    async createMovie(creationDto: ModelAttributes<Movie>) {
         const movie = this.newDocument()
-        movie.title = creationDto.title
-        movie.genre = creationDto.genre
-        movie.releaseDate = creationDto.releaseDate
-        movie.plot = creationDto.plot
-        movie.durationMinutes = creationDto.durationMinutes
-        movie.director = creationDto.director
-        movie.rating = creationDto.rating
-        movie.storageFileIds = objectIds(storageFileIds)
+        Object.assign(movie, creationDto)
 
         return movie.save()
     }
 
     @MethodLog()
-    async updateMovie(movieId: string, updateDto: MovieUpdateDto) {
+    async updateMovie(movieId: ObjectId, updateDto: Partial<ModelAttributes<Movie>>) {
         const movie = await this.getMovie(movieId)
 
         if (updateDto.title) movie.title = updateDto.title
@@ -47,13 +40,13 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     }
 
     @MethodLog()
-    async deleteMovie(movieId: string) {
+    async deleteMovie(movieId: ObjectId) {
         const movie = await this.getMovie(movieId)
         await movie.deleteOne()
     }
 
     @MethodLog({ level: 'verbose' })
-    async getMovie(movieId: string) {
+    async getMovie(movieId: ObjectId) {
         const movie = await this.findById(movieId)
 
         if (!movie) throw new NotFoundException(`Movie with ID ${movieId} not found`)

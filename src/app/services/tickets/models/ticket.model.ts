@@ -1,5 +1,5 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { DocumentId, MongooseSchema, ObjectId, createMongooseSchema } from 'common'
+import { MongooseSchema, ObjectId, createMongooseSchema } from 'common'
 import { Seat } from '../../theaters'
 
 export enum TicketStatus {
@@ -11,13 +11,13 @@ export enum TicketStatus {
 @Schema()
 export class Ticket extends MongooseSchema {
     @Prop({ type: ObjectId, required: true })
-    showtimeId: DocumentId
+    showtimeId: ObjectId
 
     @Prop({ type: ObjectId, required: true })
-    theaterId: DocumentId
+    theaterId: ObjectId
 
     @Prop({ type: ObjectId, required: true })
-    movieId: DocumentId
+    movieId: ObjectId
 
     // TODO default 제거해라
     @Prop({ type: String, enum: TicketStatus, default: TicketStatus.open, required: true })
@@ -27,7 +27,7 @@ export class Ticket extends MongooseSchema {
     seat: Seat
 
     @Prop({ type: ObjectId, required: true })
-    batchId: DocumentId
+    batchId: ObjectId
 }
 
 export const TicketSchema = createMongooseSchema(Ticket)

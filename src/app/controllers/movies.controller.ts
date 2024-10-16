@@ -13,7 +13,7 @@ import {
     UsePipes
 } from '@nestjs/common'
 import { FilesInterceptor } from '@nestjs/platform-express'
-import { generateUUID, PaginationOption, PaginationPipe } from 'common'
+import { generateUUID, objectId, PaginationPipe } from 'common'
 import { Config } from 'config'
 import { diskStorage } from 'multer'
 import { MovieCreationDto, MoviesService, MovieQueryDto, MovieUpdateDto } from 'services/movies'
@@ -22,6 +22,7 @@ import { MovieCreationDto, MoviesService, MovieQueryDto, MovieUpdateDto } from '
 export class MoviesController {
     constructor(private service: MoviesService) {}
 
+    // TODO 이거 공통함수로 만들 수 없나
     @UseInterceptors(
         FilesInterceptor('files', undefined, {
             storage: diskStorage({
@@ -62,17 +63,17 @@ export class MoviesController {
 
     @Patch(':movieId')
     async updateMovie(@Param('movieId') movieId: string, @Body() updateDto: MovieUpdateDto) {
-        return this.service.updateMovie(movieId, updateDto)
+        return this.service.updateMovie(objectId(movieId), updateDto)
     }
 
     @Get(':movieId')
     async getMovie(@Param('movieId') movieId: string) {
-        return this.service.getMovie(movieId)
+        return this.service.getMovie(objectId(movieId))
     }
 
     @Delete(':movieId')
     async deleteMovie(@Param('movieId') movieId: string) {
-        return this.service.deleteMovie(movieId)
+        return this.service.deleteMovie(objectId(movieId))
     }
 
     @UsePipes(new PaginationPipe(Config.http.paginationDefaultSize))

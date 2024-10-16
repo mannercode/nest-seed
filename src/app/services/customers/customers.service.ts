@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { JwtAuthService, maps, MethodLog, PaginationResult, Password } from 'common'
+import { JwtAuthService, maps, MethodLog, ObjectId, PaginationResult, Password } from 'common'
 import { CustomersRepository } from './customers.repository'
 import { CustomerCreationDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from './dto'
 
@@ -21,19 +21,19 @@ export class CustomersService {
     }
 
     @MethodLog()
-    async updateCustomer(customerId: string, updateDto: CustomerUpdateDto) {
+    async updateCustomer(customerId: ObjectId, updateDto: CustomerUpdateDto) {
         const customer = await this.repository.updateCustomer(customerId, updateDto)
         return new CustomerDto(customer)
     }
 
     @MethodLog({ level: 'verbose' })
-    async getCustomer(customerId: string) {
+    async getCustomer(customerId: ObjectId) {
         const customer = await this.repository.getCustomer(customerId)
         return new CustomerDto(customer)
     }
 
     @MethodLog()
-    async deleteCustomer(customerId: string) {
+    async deleteCustomer(customerId: ObjectId) {
         await this.repository.deleteCustomer(customerId)
         return true
     }
@@ -46,13 +46,13 @@ export class CustomersService {
     }
 
     @MethodLog()
-    async customersExist(customerIds: string[]) {
+    async customersExist(customerIds: ObjectId[]) {
         return this.repository.existsByIds(customerIds)
     }
 
     @MethodLog()
-    async login(customerId: string, email: string) {
-        return this.jwtAuthService.generateAuthTokens(customerId, email)
+    async login(userId: string, email: string) {
+        return this.jwtAuthService.generateAuthTokens(userId, email)
     }
 
     @MethodLog()

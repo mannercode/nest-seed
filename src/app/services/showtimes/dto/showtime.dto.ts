@@ -1,4 +1,4 @@
-import { Showtime } from '../schemas'
+import { Showtime } from '../models'
 
 export class ShowtimeDto {
     id: string

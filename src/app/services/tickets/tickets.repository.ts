@@ -2,16 +2,16 @@ import { BadRequestException, Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import {
     MethodLog,
+    ModelAttributes,
     MongooseRepository,
     MongooseUpdateResult,
-    objectId,
-    objectIds,
-    SchemeBody
+    ObjectId,
+    objectIds
 } from 'common'
 import { FilterQuery, Model } from 'mongoose'
 import { TicketSalesStatusDto } from './dto'
 import { TicketFilterDto } from './dto/ticket-filter.dto'
-import { Ticket, TicketStatus } from './schemas'
+import { Ticket, TicketStatus } from './models'
 
 @Injectable()
 export class TicketsRepository extends MongooseRepository<Ticket> {
@@ -24,16 +24,10 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
     }
 
     @MethodLog()
-    async createTickets(createDtos: SchemeBody<Ticket>[]) {
+    async createTickets(createDtos: ModelAttributes<Ticket>[]) {
         const tickets = createDtos.map((dto) => {
             const ticket = this.newDocument()
-            ticket.batchId = objectId(dto.batchId)
-            ticket.showtimeId = objectId(dto.showtimeId)
-            ticket.theaterId = objectId(dto.theaterId)
-            ticket.movieId = objectId(dto.movieId)
-            ticket.status = dto.status
-            ticket.seat = dto.seat
-
+            Object.assign(ticket, dto)
             return ticket
         })
 
@@ -42,11 +36,11 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
 
     @MethodLog()
     async updateTicketStatus(
-        ticketIds: string[],
+        ticketIds: ObjectId[],
         status: TicketStatus
     ): Promise<MongooseUpdateResult> {
         const result = await this.model.updateMany(
-            { _id: { $in: objectIds(ticketIds) } },
+            { _id: { $in: ticketIds } },
             { $set: { status } }
         )
 

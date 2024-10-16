@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { maps, MethodLog, PaginationResult } from 'common'
+import { maps, MethodLog, objectId, ObjectId, PaginationResult } from 'common'
 import { StorageFileCreationDto, StorageFilesService } from '../storage-files'
 import { MovieCreationDto, MovieDto, MovieQueryDto, MovieUpdateDto } from './dto'
 import { MoviesRepository } from './movies.repository'
@@ -17,26 +17,26 @@ export class MoviesService {
         movieCreationDto: MovieCreationDto
     ) {
         const storageFiles = await this.storageFilesService.saveFiles(storageFileCreationDtos)
-        const storageFileIds = storageFiles.map((file) => file.id.toString())
+        const storageFileIds = storageFiles.map((file) => objectId(file.id))
 
-        const movie = await this.repository.createMovie(movieCreationDto, storageFileIds)
+        const movie = await this.repository.createMovie({ ...movieCreationDto, storageFileIds })
         return new MovieDto(movie)
     }
 
     @MethodLog()
-    async updateMovie(movieId: string, updateDto: MovieUpdateDto) {
+    async updateMovie(movieId: ObjectId, updateDto: MovieUpdateDto) {
         const movie = await this.repository.updateMovie(movieId, updateDto)
         return new MovieDto(movie)
     }
 
     @MethodLog({ level: 'verbose' })
-    async getMovie(movieId: string) {
+    async getMovie(movieId: ObjectId) {
         const movie = await this.repository.getMovie(movieId)
         return new MovieDto(movie)
     }
 
     @MethodLog()
-    async deleteMovie(movieId: string) {
+    async deleteMovie(movieId: ObjectId) {
         await this.repository.deleteMovie(movieId)
         return true
     }

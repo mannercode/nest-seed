@@ -5,7 +5,7 @@ import { JwtAuthService } from 'common'
 import { Config } from 'config'
 import { CustomersRepository } from './customers.repository'
 import { CustomersService } from './customers.service'
-import { Customer, CustomerSchema } from './schemas'
+import { Customer, CustomerSchema } from './models'
 
 @Module({
     imports: [

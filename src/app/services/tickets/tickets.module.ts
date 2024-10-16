@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { Ticket, TicketSchema } from './schemas'
+import { Ticket, TicketSchema } from './models'
 import { TicketsRepository } from './tickets.repository'
 import { TicketsService } from './tickets.service'
 

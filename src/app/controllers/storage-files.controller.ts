@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common'
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { IsString } from 'class-validator'
-import { generateUUID } from 'common'
+import { generateUUID, objectId } from 'common'
 import { Config } from 'config'
 import { createReadStream } from 'fs'
 import { diskStorage } from 'multer'
@@ -65,7 +65,7 @@ export class StorageFilesController {
 
     @Get(':fileId')
     async downloadFile(@Param('fileId') fileId: string) {
-        const file = await this.service.getStorageFile(fileId)
+        const file = await this.service.getStorageFile(objectId(fileId))
 
         const readStream = createReadStream(file.storedPath)
 
@@ -78,6 +78,6 @@ export class StorageFilesController {
 
     @Delete(':fileId')
     async deleteStorageFile(@Param('fileId') fileId: string) {
-        return this.service.deleteStorageFile(fileId)
+        return this.service.deleteStorageFile(objectId(fileId))
     }
 }

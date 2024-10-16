@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsString } from 'class-validator'
 import { Seat } from 'services/theaters'
-import { TicketStatus } from '../schemas'
+import { TicketStatus } from '../models'
 
 export class TicketCreationDto {
     @IsString()

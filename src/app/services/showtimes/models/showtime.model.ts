@@ -1,13 +1,13 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { DocumentId, MongooseSchema, ObjectId, createMongooseSchema } from 'common'
+import { MongooseSchema, ObjectId, createMongooseSchema } from 'common'
 
 @Schema()
 export class Showtime extends MongooseSchema {
     @Prop({ type: ObjectId, required: true })
-    theaterId: DocumentId
+    theaterId: ObjectId
 
     @Prop({ type: ObjectId, required: true })
-    movieId: DocumentId
+    movieId: ObjectId
 
     @Prop({ required: true })
     startTime: Date
@@ -16,7 +16,7 @@ export class Showtime extends MongooseSchema {
     endTime: Date
 
     @Prop({ type: ObjectId, required: true })
-    batchId: DocumentId
+    batchId: ObjectId
 }
 
 export const ShowtimeSchema = createMongooseSchema(Showtime)

@@ -1,4 +1,4 @@
-import { Movie, MovieGenre, MovieRating } from '../schemas'
+import { Movie, MovieGenre, MovieRating } from '../models'
 
 export class MovieDto {
     id: string
@@ -25,7 +25,7 @@ export class MovieDto {
         } = movie
 
         Object.assign(this, {
-            id: id.toString(),
+            id,
             title,
             genre,
             releaseDate,

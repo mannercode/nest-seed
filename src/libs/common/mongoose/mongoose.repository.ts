@@ -1,7 +1,7 @@
 import {
     Assert,
-    DocumentId,
     MongooseSchema,
+    ObjectId,
     OrderDirection,
     PaginationOption,
     PaginationResult
@@ -34,26 +34,26 @@ export abstract class MongooseRepository<Doc extends MongooseSchema> {
     }
 
     async findById(
-        id: DocumentId,
+        id: ObjectId,
         session: SeesionArg = undefined
     ): Promise<HydratedDocument<Doc> | null> {
         return this.model.findById(id, null, { session })
     }
 
     async findByIds(
-        ids: DocumentId[],
+        ids: ObjectId[],
         session: SeesionArg = undefined
     ): Promise<HydratedDocument<Doc>[]> {
         return this.model.find({ _id: { $in: ids } as any }, null, { session })
     }
 
-    async deleteByIds(ids: DocumentId[], session: SeesionArg = undefined) {
+    async deleteByIds(ids: ObjectId[], session: SeesionArg = undefined) {
         const result = await this.model.deleteMany({ _id: { $in: ids } as any }, { session })
 
         return result.deletedCount
     }
 
-    async existsByIds(ids: DocumentId[], session: SeesionArg = undefined): Promise<boolean> {
+    async existsByIds(ids: ObjectId[], session: SeesionArg = undefined): Promise<boolean> {
         const count = await this.model.countDocuments({ _id: { $in: ids } } as any, { session })
 
         return count === ids.length
