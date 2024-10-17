@@ -8,12 +8,8 @@ import { Config } from 'config'
 @Module({
     imports: [
         NestCacheModule.registerAsync({
-            isGlobal: true,
             useFactory: async () => {
-                return {
-                    ...Config.redis,
-                    store: redisStore
-                }
+                return { ...Config.redis, store: redisStore }
             }
         })
     ],
