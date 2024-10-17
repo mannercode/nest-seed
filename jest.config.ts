@@ -10,7 +10,7 @@ const config: Config = {
         '^services/(.*)$': '<rootDir>/src/app/services/$1',
         '^common$': '<rootDir>/src/libs/common/index',
         '^testlib$': '<rootDir>/src/libs/testlib/index',
-        '^config$': '<rootDir>/src/config/index'
+        '^config$': '<rootDir>/src/app/config/index'
     },
     testEnvironment: 'node',
     transform: {

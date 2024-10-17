@@ -38,6 +38,7 @@ describe('/theaters', () => {
                 .badRequest([
                     'name should not be empty',
                     'name must be a string',
+                    'latlong should not be empty',
                     'seatmap should not be empty'
                 ])
         })

@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsString } from 'class-validator'
+import { Type } from 'class-transformer'
+import { IsEnum, IsNotEmpty, IsString, ValidateNested } from 'class-validator'
 import { Seat } from 'services/theaters'
 import { TicketStatus } from '../models'
 
@@ -19,8 +20,12 @@ export class TicketCreationDto {
     @IsNotEmpty()
     showtimeId: string
 
+    @IsEnum(TicketStatus)
     status: TicketStatus
-    // TODO
-    // @Prop({ type: Object, required: true })
+
+    // controller가 없어서 사용하지 않음
+    // @IsNotEmpty()
+    // @ValidateNested()
+    // @Type(() => Seat)
     seat: Seat
 }

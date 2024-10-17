@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as Joi from 'joi'
-import { getString } from './utils'
 
-export const isEnv = (env: 'production' | 'development') => getString('NODE_ENV') === env
+export const isEnv = (env: 'production' | 'development') => process.env.NODE_ENV === env
 
 export const configSchema = Joi.object({
     NODE_ENV: Joi.string().valid('development', 'production').required(),
@@ -90,6 +89,7 @@ export class AppConfigService {
     }
 
     private validateKey(key: string) {
+        /* istanbul ignore if */
         if (!configSchema.describe().keys[key]) {
             console.error(
                 `Configuration validation error: Key "${key}" is not defined in the configSchema`

@@ -8,7 +8,6 @@ import { existsSync } from 'fs'
 import { exit } from 'process'
 import { AppModule } from './app.module'
 
-// TODO 테스트에 이것도 설정해야 하지 않나?
 export function setupApp(app: INestApplication<any>) {
     app.use(compression())
 
@@ -20,14 +19,14 @@ export function setupApp(app: INestApplication<any>) {
     app.use(express.json({ limit }))
     app.use(express.urlencoded({ limit, extended: true }))
 
-    if (!existsSync(config.fileUpload.directory)) {
-        console.log(`File upload directory does not exist: ${config.fileUpload.directory}`)
-        exit(1)
-    }
-
-    if (!existsSync(config.log.directory)) {
-        console.log(`Log directory does not exist: ${config.log.directory}`)
-        exit(1)
+    for (const dir of [
+        { name: 'FileUpload', path: config.fileUpload.directory },
+        { name: 'Log', path: config.log.directory }
+    ]) {
+        if (!existsSync(dir.path)) {
+            console.error(`${dir.name} directory does not exist: ${dir.path}`)
+            exit(1)
+        }
     }
 }
 

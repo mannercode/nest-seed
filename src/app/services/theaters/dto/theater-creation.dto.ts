@@ -8,10 +8,13 @@ export class TheaterCreationDto {
     @IsNotEmpty()
     name: string
 
+    @IsNotEmpty()
     @ValidateNested()
     @Type(() => LatLong)
     latlong: LatLong
 
     @IsNotEmpty()
+    @ValidateNested()
+    @Type(() => Seatmap)
     seatmap: Seatmap
 }
