@@ -1,8 +1,11 @@
+import { ConfigService } from '@nestjs/config'
 import { Path } from 'common'
-import { Config } from 'config'
+import { AppConfigService } from 'config'
 import { writeFile } from 'fs/promises'
 import { createDummyFile, createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
 import { AppModule } from '../app.module'
+
+const maxFileSizeBytes = 50000000
 
 export interface SharedFixture {
     tempDir: string
@@ -19,13 +22,13 @@ export async function createSharedFixture() {
     await createDummyFile(file, 1024)
 
     const largeFile = Path.join(tempDir, 'large.txt')
-    await createDummyFile(largeFile, Config.fileUpload.maxFileSizeBytes - 1)
+    await createDummyFile(largeFile, maxFileSizeBytes - 1)
 
     const notAllowFile = Path.join(tempDir, 'file.json')
     await writeFile(notAllowFile, '{"name":"nest-seed"}')
 
     const oversizedFile = Path.join(tempDir, 'oversized.txt')
-    await createDummyFile(oversizedFile, Config.fileUpload.maxFileSizeBytes + 1)
+    await createDummyFile(oversizedFile, maxFileSizeBytes + 1)
 
     return { tempDir, notAllowFile, oversizedFile, largeFile, file }
 }
@@ -36,23 +39,45 @@ export async function closeSharedFixture(fixture: SharedFixture) {
 
 export interface IsolatedFixture {
     testContext: HttpTestContext
+    config: AppConfigService
+    tempDir: string
 }
 
 export async function createIsolatedFixture() {
-    Config.fileUpload = {
-        ...Config.fileUpload,
-        directory: await Path.createTempDirectory(),
-        allowedMimeTypes: ['text/plain']
+    const tempDir = await Path.createTempDirectory()
+
+    const realConfigService = new ConfigService()
+
+    const mockConfigService = {
+        get: jest.fn((key: string) => {
+            const mockValues: Record<string, any> = {
+                FILE_UPLOAD_DIRECTORY: tempDir,
+                FILE_UPLOAD_MAX_FILE_SIZE_BYTES: maxFileSizeBytes,
+                FILE_UPLOAD_MAX_FILES_PER_UPLOAD: 2,
+                FILE_UPLOAD_ALLOWED_FILE_TYPES: 'text/plain'
+            }
+
+            if (key in mockValues) {
+                return mockValues[key]
+            }
+
+            return realConfigService.get(key)
+        })
     }
 
-    const testContext = await createHttpTestContext({ imports: [AppModule] })
+    const testContext = await createHttpTestContext({
+        imports: [AppModule],
+        overrideProviders: [{ original: ConfigService, replacement: mockConfigService }]
+    })
 
-    return { testContext }
+    const config = testContext.app.get(AppConfigService)
+
+    return { testContext, config, tempDir }
 }
 
 export async function closeIsolatedFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
-    await Path.delete(Config.fileUpload.directory)
+    await Path.delete(fixture.tempDir)
 }
 
 export function uploadFile(client: HttpTestClient, attachs: any[], fields?: any[]) {

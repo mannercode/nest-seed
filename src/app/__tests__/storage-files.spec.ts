@@ -1,5 +1,5 @@
 import { getChecksum, nullObjectId, Path } from 'common'
-import { Config } from 'config'
+import { AppConfigService } from 'config'
 import { StorageFileDto } from 'services/storage-files'
 import { HttpTestClient } from 'testlib'
 import {
@@ -16,6 +16,7 @@ describe('/storage-files', () => {
     let shared: SharedFixture
     let isolated: IsolatedFixture
     let client: HttpTestClient
+    let config: AppConfigService
 
     beforeAll(async () => {
         shared = await createSharedFixture()
@@ -28,6 +29,7 @@ describe('/storage-files', () => {
     beforeEach(async () => {
         isolated = await createIsolatedFixture()
         client = isolated.testContext.client
+        config = isolated.config
     })
 
     afterEach(async () => {
@@ -64,7 +66,7 @@ describe('/storage-files', () => {
         })
 
         it('허용된 파일 개수를 초과하여 업로드하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
-            const limitOver = Config.fileUpload.maxFilesPerUpload + 1
+            const limitOver = config.fileUpload.maxFilesPerUpload + 1
             const excessFiles = Array(limitOver).fill({ name: 'files', file: shared.file })
 
             await uploadFile(client, excessFiles).badRequest('Too many files')
@@ -117,7 +119,7 @@ describe('/storage-files', () => {
         })
 
         it('파일을 삭제해야 한다', async () => {
-            const filePath = Path.join(Config.fileUpload.directory, `${uploadedFile.id}.file`)
+            const filePath = Path.join(config.fileUpload.directory, `${uploadedFile.id}.file`)
 
             expect(Path.existsSync(filePath)).toBeTruthy()
 

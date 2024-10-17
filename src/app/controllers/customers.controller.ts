@@ -13,8 +13,7 @@ import {
     UseGuards,
     UsePipes
 } from '@nestjs/common'
-import { Assert, objectId, PaginationPipe } from 'common'
-import { Config } from 'config'
+import { Assert } from 'common'
 import {
     CustomerCreationDto,
     CustomerDto,
@@ -23,6 +22,7 @@ import {
     CustomerUpdateDto
 } from 'services/customers'
 import { CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
+import { DefaultPaginationPipe } from './pipes'
 
 @Controller('customers')
 @UseGuards(CustomerJwtAuthGuard)
@@ -53,7 +53,7 @@ export class CustomersController {
         return this.service.deleteCustomer(customerId)
     }
 
-    @UsePipes(new PaginationPipe(Config.http.paginationDefaultSize))
+    @UsePipes(DefaultPaginationPipe)
     @Get()
     async findCustomers(@Query() queryDto: CustomerQueryDto) {
         return this.service.findCustomers(queryDto)

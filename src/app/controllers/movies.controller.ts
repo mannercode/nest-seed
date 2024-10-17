@@ -11,15 +11,15 @@ import {
     UseInterceptors,
     UsePipes
 } from '@nestjs/common'
-import { createFilesInterceptor, PaginationPipe } from 'common'
-import { Config } from 'config'
+import { FilesInterceptor } from '@nestjs/platform-express'
 import { MovieCreationDto, MovieQueryDto, MoviesService, MovieUpdateDto } from 'services/movies'
+import { DefaultPaginationPipe } from './pipes'
 
 @Controller('movies')
 export class MoviesController {
     constructor(private service: MoviesService) {}
 
-    @UseInterceptors(createFilesInterceptor(() => ({ ...Config.fileUpload, fieldName: 'files' })))
+    @UseInterceptors(FilesInterceptor('files'))
     @Post()
     async createMovie(
         @UploadedFiles() files: Express.Multer.File[],
@@ -50,7 +50,7 @@ export class MoviesController {
         return this.service.deleteMovie(movieId)
     }
 
-    @UsePipes(new PaginationPipe(Config.http.paginationDefaultSize))
+    @UsePipes(DefaultPaginationPipe)
     @Get()
     async findMovies(@Query() queryDto: MovieQueryDto) {
         return this.service.findMovies(queryDto)

@@ -1,6 +1,6 @@
 import { Injectable, Module, OnModuleDestroy } from '@nestjs/common'
 import { AppLoggerService, LoggerConfiguration, initializeLogger } from 'common'
-import { Config } from 'config'
+import { AppConfigService } from 'config'
 import winston from 'winston'
 
 @Injectable()
@@ -8,7 +8,7 @@ class WinstonConfigService implements OnModuleDestroy {
     private loggerInstance: winston.Logger
     private setupPromise: Promise<void>
 
-    constructor() {
+    constructor(private config: AppConfigService) {
         this.setupPromise = this.setupLogger()
     }
 
@@ -19,7 +19,7 @@ class WinstonConfigService implements OnModuleDestroy {
     }
 
     private async setupLogger() {
-        this.loggerInstance = await initializeLogger(Config.log as LoggerConfiguration)
+        this.loggerInstance = await initializeLogger(this.config.log as LoggerConfiguration)
     }
 
     async getLoggerService() {

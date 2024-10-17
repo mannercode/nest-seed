@@ -1,0 +1,35 @@
+import { BadRequestException, Injectable } from '@nestjs/common'
+import { MulterOptionsFactory } from '@nestjs/platform-express'
+import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface'
+import { generateUUID } from 'common'
+import { AppConfigService } from 'config'
+import { diskStorage } from 'multer'
+
+@Injectable()
+export class MulterConfigService implements MulterOptionsFactory {
+    constructor(private config: AppConfigService) {}
+
+    createMulterOptions(): MulterOptions {
+        return {
+            storage: diskStorage({
+                destination: (_req, _file, cb) => cb(null, this.config.fileUpload.directory),
+                filename: (_req, _file, cb) => cb(null, `${generateUUID()}.tmp`)
+            }),
+            fileFilter: (_req, file, cb) => {
+                let error: Error | null = null
+
+                if (!this.config.fileUpload.allowedMimeTypes.includes(file.mimetype)) {
+                    error = new BadRequestException(
+                        `File type not allowed. Allowed types are: ${this.config.fileUpload.allowedMimeTypes.join(', ')}`
+                    )
+                }
+
+                cb(error, error === null)
+            },
+            limits: {
+                fileSize: this.config.fileUpload.maxFileSizeBytes,
+                files: this.config.fileUpload.maxFilesPerUpload
+            }
+        }
+    }
+}

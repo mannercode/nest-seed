@@ -11,14 +11,13 @@ import {
     Query,
     UsePipes
 } from '@nestjs/common'
-import { objectId, objectIds, PaginationPipe } from 'common'
-import { Config } from 'config'
 import {
     TheaterCreationDto,
     TheaterQueryDto,
     TheatersService,
     TheaterUpdateDto
 } from 'services/theaters'
+import { DefaultPaginationPipe } from './pipes'
 
 @Controller('theaters')
 export class TheatersController {
@@ -47,7 +46,7 @@ export class TheatersController {
         return this.service.deleteTheater(theaterId)
     }
 
-    @UsePipes(new PaginationPipe(Config.http.paginationDefaultSize))
+    @UsePipes(DefaultPaginationPipe)
     @Get()
     async findTheaters(@Query() queryDto: TheaterQueryDto) {
         return this.service.findTheaters(queryDto)

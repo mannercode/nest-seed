@@ -1,17 +1,20 @@
+import { AppConfigService } from 'config'
 import { omit } from 'lodash'
 import { createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
 import { AppModule } from '../app.module'
 
 export interface IsolatedFixture {
     testContext: HttpTestContext
+    config: AppConfigService
     credentials: Credentials
 }
 
 export async function createIsolatedFixture() {
     const testContext = await createHttpTestContext({ imports: [AppModule] })
+    const config = testContext.app.get(AppConfigService)
     const credentials = await createCredentials(testContext.client)
 
-    return { testContext, credentials }
+    return { testContext, config, credentials }
 }
 
 export async function closeIsolatedFixture(fixture: IsolatedFixture) {
