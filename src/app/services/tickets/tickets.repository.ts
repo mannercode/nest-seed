@@ -1,12 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import {
+    addInQuery,
     MethodLog,
     ModelAttributes,
     MongooseRepository,
     MongooseUpdateResult,
     ObjectId,
-    objectIds
+    objectIds,
+    validateFilters
 } from 'common'
 import { FilterQuery, Model } from 'mongoose'
 import { TicketSalesStatusDto } from './dto'
@@ -52,14 +54,12 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         const { batchIds, movieIds, theaterIds, showtimeIds } = filterDto
 
         const query: FilterQuery<Ticket> = {}
-        if (batchIds) query.batchId = { $in: objectIds(batchIds) }
-        if (movieIds) query.movieId = { $in: objectIds(movieIds) }
-        if (theaterIds) query.theaterId = { $in: objectIds(theaterIds) }
-        if (showtimeIds) query.showtimeId = { $in: objectIds(showtimeIds) }
+        addInQuery(query, 'batchId', batchIds)
+        addInQuery(query, 'movieId', movieIds)
+        addInQuery(query, 'theaterId', theaterIds)
+        addInQuery(query, 'showtimeId', showtimeIds)
 
-        if (Object.keys(query).length === 0) {
-            throw new BadRequestException('At least one filter condition must be provided.')
-        }
+        validateFilters(query)
 
         const tickets = await this.model.find(query).sort({ batchId: 1 }).exec()
         return tickets as Ticket[]

@@ -61,3 +61,33 @@ export const objectToFields = (creationDto: any) => {
 
     return fields
 }
+
+export interface EventMessage {
+    event: string
+    id: number
+    data: string
+}
+
+export function parseEventMessage(input: string): EventMessage {
+    const lines = input.split('\n')
+    const result: Partial<EventMessage> = {}
+
+    lines.forEach((line) => {
+        const [key, value] = line.split(': ')
+        if (key && value) {
+            switch (key) {
+                case 'event':
+                    result.event = value
+                    break
+                case 'id':
+                    result.id = parseInt(value, 10)
+                    break
+                case 'data':
+                    result.data = value
+                    break
+            }
+        }
+    })
+
+    return result as EventMessage
+}

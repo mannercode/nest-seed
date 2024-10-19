@@ -140,11 +140,18 @@ Backend <-- ShowtimeCreation: CreateShowtimesResponse
 -   ShowtimeCreationService는 애플리케이션 서비스이고 다른 서비스에 영향을 주지 않는다. 설계를 최소화 하고 많은 부분은 구현 단계에서 정한다. 예를 들어 중간에 실패했을 때 롤백 전략 같은 것들.
 
 ```
-CreateShowtimesRequest {
+ShowtimeBatchCreationDto {
     "movieId": "movie#1",
     "theaterIds": ["theater#1","theater#2"],
     "durationMinutes": 90,
     "startTimes": [202012120900, 202012121100, 202012121300]
+}
+
+ShowtimeBatchCreationResult{
+    "batchId": "batchid#1",
+    "result": "complete",
+    "createdShowtimes": 100,
+    "createdTickets": 500
 }
 
 Showtime {
@@ -189,13 +196,14 @@ Backend <-- ShowtimeCreation: batchId
             ShowtimeCreation <-- Tickets: tickets
         end
     deactivate ShowtimeCreation
-Backend <-- ShowtimeCreation: showtimeCreationResult(result)
+Backend <-- ShowtimeCreation: ShowtimeBatchCreationResult(success)
 @enduml
 ```
 
 이건 예전 설계.
-- ShowtimeCreation이 없기 때문에 Showtimes에서 생성 작업 큐를 관리하고 Tickets를 직접 핸들링 한다. 단순 생성 작업인데도 얼마나 복잡했겠는가. 모듈이 복잡하면 테스트도 어렵다
-- showtimes만 단독으로 테스트는 어려웠고 사실상 tickets와 같이 테스트를 하게 된다. 테스트 코드도 공유한다. 즉, 둘은 한 모듈처럼 되는 것이다.
+
+-   ShowtimeCreation이 없기 때문에 Showtimes에서 생성 작업 큐를 관리하고 Tickets를 직접 핸들링 한다. 단순 생성 작업인데도 얼마나 복잡했겠는가. 모듈이 복잡하면 테스트도 어렵다
+-   showtimes만 단독으로 테스트는 어려웠고 사실상 tickets와 같이 테스트를 하게 된다. 테스트 코드도 공유한다. 즉, 둘은 한 모듈처럼 되는 것이다.
 
 ```plantuml
 @startuml
@@ -225,6 +233,7 @@ Showtimes <-- Tickets: completed
 Backend <- Showtimes : completed
 @enduml
 ```
+
 ## 3. 상영시간 충돌 검증 알고리즘
 
 ```

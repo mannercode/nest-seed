@@ -1,18 +1,33 @@
+import { addMinutes } from 'common'
 import { omit } from 'lodash'
+import { MovieDto } from 'services/movies'
 import { ShowtimeCreationDto, ShowtimeDto, ShowtimesService } from 'services/showtimes'
+import { TheaterDto } from 'services/theaters'
 import { HttpTestContext, createHttpTestContext } from 'testlib'
 import { AppModule } from '../app.module'
+import { createMovie } from './movies.fixture'
+import { createShowtimes } from './showtimes.fixture'
+import { createTheater } from './theaters.fixture'
 
 export interface IsolatedFixture {
     testContext: HttpTestContext
     service: ShowtimesService
+    movie: MovieDto
+    theater: TheaterDto
+    showtimes: ShowtimeDto[]
 }
 
 export async function createIsolatedFixture() {
     const testContext = await createHttpTestContext({ imports: [AppModule] })
     const service = testContext.module.get(ShowtimesService)
-
-    return { testContext, service }
+    const movie = await createMovie(testContext.client)
+    const theater = await createTheater(testContext.client)
+    const { creationDtos } = createShowtimeDtos({
+        movieId: movie.id,
+        theaterId: theater.id
+    })
+    const showtimes = await createShowtimes(service, creationDtos)
+    return { testContext, service, movie, theater, showtimes }
 }
 
 export async function closeIsolatedFixture(fixture: IsolatedFixture) {
@@ -23,13 +38,15 @@ export const createShowtimeDtos = (overrides = {}, length: number = 100) => {
     const creationDtos: ShowtimeCreationDto[] = []
     const expectedDtos: ShowtimeDto[] = []
 
+    const now = new Date()
+
     for (let i = 0; i < length; i++) {
         const creationDto = {
             batchId: '000000000000000000000001',
             movieId: '000000000000000000000002',
             theaterId: '000000000000000000000003',
-            startTime: new Date(2000, 0, 1, i, 0),
-            endTime: new Date(2000, 0, 1, i, 90),
+            startTime: addMinutes(now, i * 120),
+            endTime: addMinutes(now, i * 120 + 90),
             ...overrides
         }
 
@@ -40,17 +57,4 @@ export const createShowtimeDtos = (overrides = {}, length: number = 100) => {
     }
 
     return { creationDtos, expectedDtos }
-}
-
-export async function createShowtimes(
-    service: ShowtimesService,
-    creationDtos: ShowtimeCreationDto[]
-) {
-    const { success } = await service.createShowtimes(creationDtos)
-    expect(success).toBeTruthy()
-
-    const showtimes = await service.findAllShowtimes({
-        startTimeRange: { start: new Date(0), end: new Date('9999') }
-    })
-    return showtimes
 }

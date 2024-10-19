@@ -1,6 +1,14 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MethodLog, ModelAttributes, MongooseRepository, ObjectId, objectIds } from 'common'
+import {
+    addInQuery,
+    addRangeQuery,
+    MethodLog,
+    ModelAttributes,
+    MongooseRepository,
+    ObjectId,
+    validateFilters
+} from 'common'
 import { FilterQuery, Model } from 'mongoose'
 import { ShowtimeFilterDto } from './dto'
 import { Showtime } from './models'
@@ -37,18 +45,16 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
 
     @MethodLog({ level: 'verbose' })
     async findAllShowtimes(filterDto: ShowtimeFilterDto) {
-        const { batchIds, movieIds, theaterIds, startTimeRange } = filterDto
+        const { batchIds, movieIds, theaterIds, startTimeRange, endTimeRange } = filterDto
 
         const query: FilterQuery<Showtime> = {}
-        if (batchIds) query.batchId = { $in: objectIds(batchIds) }
-        if (movieIds) query.movieId = { $in: objectIds(movieIds) }
-        if (theaterIds) query.theaterId = { $in: objectIds(theaterIds) }
-        if (startTimeRange)
-            query.startTime = { $gte: startTimeRange.start, $lte: startTimeRange.end }
+        addInQuery(query, 'batchId', batchIds)
+        addInQuery(query, 'movieId', movieIds)
+        addInQuery(query, 'theaterId', theaterIds)
+        addRangeQuery(query, 'startTime', startTimeRange)
+        addRangeQuery(query, 'endTime', endTimeRange)
 
-        if (Object.keys(query).length === 0) {
-            throw new BadRequestException('At least one filter condition must be provided.')
-        }
+        validateFilters(query)
 
         const showtimes = await this.model.find(query).sort({ startTime: 1 }).exec()
         return showtimes as Showtime[]

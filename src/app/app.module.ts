@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { CustomersModule } from 'services/customers'
 import { MoviesModule } from 'services/movies'
+import { ShowtimeCreationModule } from 'services/showtime-creation'
 import { ShowtimesModule } from 'services/showtimes'
 import { StorageFilesModule } from 'services/storage-files'
 import { TheatersModule } from 'services/theaters'
@@ -8,6 +9,7 @@ import { TicketsModule } from 'services/tickets'
 import {
     CustomersController,
     MoviesController,
+    ShowtimeCreationController,
     StorageFilesController,
     TheatersController
 } from './controllers'
@@ -22,9 +24,16 @@ import { CoreModule } from './core'
         MoviesModule,
         TheatersModule,
         ShowtimesModule,
-        TicketsModule
+        TicketsModule,
+        ShowtimeCreationModule
     ],
     providers: [CustomerLocalStrategy, CustomerJwtStrategy],
-    controllers: [CustomersController, StorageFilesController, MoviesController, TheatersController]
+    controllers: [
+        CustomersController,
+        StorageFilesController,
+        MoviesController,
+        TheatersController,
+        ShowtimeCreationController
+    ]
 })
 export class AppModule {}

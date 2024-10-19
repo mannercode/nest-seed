@@ -1,6 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MethodLog, ModelAttributes, MongooseRepository, ObjectId, PaginationResult } from 'common'
+import {
+    addRegexQuery,
+    MethodLog,
+    ModelAttributes,
+    MongooseRepository,
+    ObjectId,
+    PaginationResult
+} from 'common'
 import { escapeRegExp } from 'lodash'
 import { FilterQuery, Model } from 'mongoose'
 import { MovieQueryDto } from './dto'
@@ -60,11 +67,11 @@ export class MoviesRepository extends MongooseRepository<Movie> {
 
         const paginated = await this.findWithPagination((helpers) => {
             const query: FilterQuery<Movie> = {}
-            if (title) query.title = new RegExp(escapeRegExp(title), 'i')
+            addRegexQuery(query, 'title', title)
             if (genre) query.genre = genre
             if (releaseDate) query.releaseDate = releaseDate
-            if (plot) query.plot = new RegExp(escapeRegExp(plot), 'i')
-            if (director) query.director = new RegExp(escapeRegExp(director), 'i')
+            addRegexQuery(query, 'plot', plot)
+            addRegexQuery(query, 'director', director)
             if (rating) query.rating = rating
 
             helpers.setQuery(query)

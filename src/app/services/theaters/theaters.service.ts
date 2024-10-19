@@ -44,8 +44,8 @@ export class TheatersService {
         return maps(theaters, TheaterDto)
     }
 
-    // @MethodLog({ level: 'verbose' })
-    // async theatersExist(theaterIds: string[]): Promise<boolean> {
-    //     return this.repository.existsByIds(theaterIds)
-    // }
+    @MethodLog({ level: 'verbose' })
+    async theatersExist(theaterIds: string[]): Promise<boolean> {
+        return this.repository.existsByIds(objectIds(theaterIds))
+    }
 }

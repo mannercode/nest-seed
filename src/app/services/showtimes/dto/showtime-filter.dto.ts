@@ -13,4 +13,7 @@ export class ShowtimeFilterDto {
 
     @IsOptional()
     startTimeRange?: DateRange
+
+    @IsOptional()
+    endTimeRange?: DateRange
 }

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import {
+    addRegexQuery,
     Expect,
     MethodLog,
     ModelAttributes,
@@ -63,7 +64,7 @@ export class TheatersRepository extends MongooseRepository<Theater> {
 
         const paginated = await this.findWithPagination((helpers) => {
             const query: FilterQuery<Theater> = {}
-            if (name) query.name = new RegExp(escapeRegExp(name), 'i')
+            addRegexQuery(query, 'name', name)
 
             helpers.setQuery(query)
         }, pagination)

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { maps, MethodLog, objectId, ObjectId, PaginationResult } from 'common'
+import { maps, MethodLog, objectId, ObjectId, objectIds, PaginationResult } from 'common'
 import { StorageFileCreationDto, StorageFilesService } from '../storage-files'
 import { MovieCreationDto, MovieDto, MovieQueryDto, MovieUpdateDto } from './dto'
 import { MoviesRepository } from './movies.repository'
@@ -48,14 +48,14 @@ export class MoviesService {
         return { ...paginated, items: maps(items, MovieDto) } as PaginationResult<MovieDto>
     }
 
+    @MethodLog({ level: 'verbose' })
+    async moviesExist(movieIds: string[]): Promise<boolean> {
+        return this.repository.existsByIds(objectIds(movieIds))
+    }
+
     // @MethodLog({ level: 'verbose' })
     // async getMoviesByIds(movieIds: string[]) {
     //     const movies = await this.repository.getMoviesByIds(movieIds)
     //     return maps(movies, MovieDto)
-    // }
-
-    // @MethodLog({ level: 'verbose' })
-    // async moviesExist(movieIds: string[]): Promise<boolean> {
-    //     return this.repository.existsByIds(movieIds)
     // }
 }
