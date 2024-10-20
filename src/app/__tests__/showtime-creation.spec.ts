@@ -1,6 +1,6 @@
 import { MovieDto } from 'services/movies'
 import { ShowtimeDto, ShowtimesService } from 'services/showtimes'
-import { TheaterDto } from 'services/theaters'
+import { getSeatCount, TheaterDto } from 'services/theaters'
 import { expectEqualUnsorted, HttpTestClient, parseEventMessage } from 'testlib'
 import {
     closeIsolatedFixture,
@@ -56,11 +56,15 @@ describe('ShowtimeCreation', () => {
 
     describe('상영시간 등록 요청', () => {
         it('상영시간 등록 요청이 성공해야 한다', async () => {
+            const theaterIds = [theater.id]
+            const startTimes = [299912310900, 299912311100, 299912131300]
+            const seatCount = getSeatCount(theater.seatmap)
+
             const showtimeBatchCreationRequest = {
                 movieId: movie.id,
-                theaterIds: [theater.id],
-                durationMinutes: 90,
-                startTimes: [299912310900, 299912311100, 299912131300]
+                theaterIds,
+                startTimes,
+                durationMinutes: 90
             }
 
             const { body } = await client
@@ -72,11 +76,17 @@ describe('ShowtimeCreation', () => {
 
             const promise = new Promise<{ status: string }>((resolve, reject) => {
                 client.get('/showtime-creation/events').sse(async (data: any) => {
+                    console.log(data)
                     resolve(data)
                 }, reject)
             })
 
-            await expect(promise).resolves.toEqual({ batchId: body.batchId, status: 'complete' })
+            await expect(promise).resolves.toEqual({
+                batchId: body.batchId,
+                status: 'complete',
+                showtimeCreatedCount: theaterIds.length * startTimes.length,
+                ticketCreatedCount: theaterIds.length * startTimes.length * seatCount
+            })
         })
     })
 })

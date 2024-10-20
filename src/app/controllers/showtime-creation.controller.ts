@@ -40,7 +40,7 @@ export class ShowtimeCreationController {
 
     @HttpCode(HttpStatus.ACCEPTED)
     @Post('showtimes')
-    async createBatchShowtimes(creationDto: ShowtimeBatchCreationDto) {
+    async createBatchShowtimes(@Body() creationDto: ShowtimeBatchCreationDto) {
         return this.service.createBatchShowtimes(creationDto)
     }
 

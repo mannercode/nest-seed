@@ -1,7 +1,7 @@
 import { InjectQueue, OnQueueFailed, Process, Processor } from '@nestjs/bull'
 import { Injectable } from '@nestjs/common'
 import { Job, Queue } from 'bull'
-import { addMinutes, MethodLog } from 'common'
+import { addMinutes, jsonToObject, MethodLog } from 'common'
 import { ShowtimeDto, ShowtimesService } from 'services/showtimes'
 import { getAllSeats, TheaterDto, TheatersService } from 'services/theaters'
 import { TicketsService, TicketStatus } from 'services/tickets'
@@ -39,7 +39,7 @@ export class ShowtimeCreationProcessorService {
 
     @Process('showtimes.create')
     async onShowtimesCreation(job: Job<ShowtimeBatchCreationTask>) {
-        await this._onShowtimesCreation(job.data)
+        await this._onShowtimesCreation(jsonToObject(job.data))
     }
 
     @MethodLog()
@@ -85,26 +85,28 @@ export class ShowtimeCreationProcessorService {
 
         const theaters: Map<string, TheaterDto> = new Map()
 
-        showtimes.forEach(async (showtime) => {
-            let theater = theaters.get(showtime.theaterId)
+        await Promise.all(
+            showtimes.map(async (showtime) => {
+                let theater = theaters.get(showtime.theaterId)
 
-            if (!theater) {
-                theater = await this.theatersService.getTheater(showtime.theaterId)
-                theaters.set(showtime.theaterId, theater)
-            }
+                if (!theater) {
+                    theater = await this.theatersService.getTheater(showtime.theaterId)
+                    theaters.set(showtime.theaterId, theater)
+                }
 
-            const ticketCreationDtos = getAllSeats(theater!.seatmap).map((seat) => ({
-                showtimeId: showtime.id,
-                theaterId: showtime.theaterId,
-                movieId: showtime.movieId,
-                status: TicketStatus.open,
-                seat,
-                batchId
-            }))
+                const ticketCreationDtos = getAllSeats(theater!.seatmap).map((seat) => ({
+                    showtimeId: showtime.id,
+                    theaterId: showtime.theaterId,
+                    movieId: showtime.movieId,
+                    status: TicketStatus.open,
+                    seat,
+                    batchId
+                }))
 
-            const { count } = await this.ticketsService.createTickets(ticketCreationDtos)
-            totalCount += count
-        })
+                const { count } = await this.ticketsService.createTickets(ticketCreationDtos)
+                totalCount += count
+            })
+        )
 
         return totalCount
     }
