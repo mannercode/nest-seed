@@ -54,7 +54,7 @@ export class ShowtimeCreationProcessorService {
             const createdShowtimes = await this.createShowtimes(data)
             const ticketCreatedCount = await this.createTickets(createdShowtimes, data.batchId)
 
-            await this.eventService.emitComplete(
+            this.eventService.emitComplete(
                 data.batchId,
                 createdShowtimes.length,
                 ticketCreatedCount

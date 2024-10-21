@@ -101,7 +101,7 @@ export class HttpTestClient {
                         const message = parseEventMessage(data)
 
                         if (message.event !== 'error' && message.data) {
-                            messageHandler(JSON.parse(message.data))
+                            messageHandler(message.data)
                         } else {
                             reject(message)
                         }
@@ -109,7 +109,7 @@ export class HttpTestClient {
                         /**
                          * {"message":"Cannot GET /showtime-creation/events2","error":"Not Found","statusCode":404}
                          */
-                        reject(JSON.parse(data))
+                        reject(data)
                     }
                 })
                 res.on('end', (error) => {

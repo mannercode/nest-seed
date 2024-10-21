@@ -1,60 +1,78 @@
-import { addMinutes } from 'common'
-import { omit } from 'lodash'
+import { addMinutes, convertStringToDate, jsonToObject, nullObjectId } from 'common'
 import { MovieDto } from 'services/movies'
-import { ShowtimeCreationDto, ShowtimeDto, ShowtimesService } from 'services/showtimes'
+import { ShowtimeCreationDto, ShowtimesService } from 'services/showtimes'
 import { TheaterDto } from 'services/theaters'
-import { HttpTestContext, createHttpTestContext } from 'testlib'
+import { createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
 import { AppModule } from '../app.module'
 import { createMovie } from './movies.fixture'
-import { createShowtimes } from './showtimes.fixture'
 import { createTheater } from './theaters.fixture'
 
 export interface IsolatedFixture {
     testContext: HttpTestContext
-    service: ShowtimesService
+    showtimesService: ShowtimesService
     movie: MovieDto
     theater: TheaterDto
-    showtimes: ShowtimeDto[]
 }
 
 export async function createIsolatedFixture() {
     const testContext = await createHttpTestContext({ imports: [AppModule] })
-    const service = testContext.module.get(ShowtimesService)
+    const showtimesService = testContext.module.get(ShowtimesService)
     const movie = await createMovie(testContext.client)
     const theater = await createTheater(testContext.client)
-    const { creationDtos } = createShowtimeDtos({
-        movieId: movie.id,
-        theaterId: theater.id
-    })
-    const showtimes = await createShowtimes(service, creationDtos)
-    return { testContext, service, movie, theater, showtimes }
+
+    return { testContext, showtimesService, movie, theater }
 }
 
 export async function closeIsolatedFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
 }
 
-export const createShowtimeDtos = (overrides = {}, length: number = 100) => {
+export const createShowtimeDtos = (startTimeStrs: string[], overrides = {}) => {
     const creationDtos: ShowtimeCreationDto[] = []
-    const expectedDtos: ShowtimeDto[] = []
 
-    const now = new Date()
+    startTimeStrs.map((timeString) => {
+        const startTime = convertStringToDate(timeString)
 
-    for (let i = 0; i < length; i++) {
         const creationDto = {
-            batchId: '000000000000000000000001',
-            movieId: '000000000000000000000002',
-            theaterId: '000000000000000000000003',
-            startTime: addMinutes(now, i * 120),
-            endTime: addMinutes(now, i * 120 + 90),
+            batchId: nullObjectId,
+            movieId: nullObjectId,
+            theaterId: nullObjectId,
+            startTime,
+            endTime: addMinutes(startTime, 90),
             ...overrides
         }
 
-        const expectedDto = { id: expect.anything(), ...omit(creationDto, 'batchId') }
-
         creationDtos.push(creationDto)
-        expectedDtos.push(expectedDto)
-    }
+    })
 
-    return { creationDtos, expectedDtos }
+    return creationDtos
+}
+
+export const monitorEvents = (client: HttpTestClient, waitStatuses: string[]) => {
+    return new Promise((resolve, reject) => {
+        client.get('/showtime-creation/events').sse(async (data: any) => {
+            const result = jsonToObject(JSON.parse(data))
+
+            if (['complete', 'fail', 'error'].includes(result.status)) {
+                waitStatuses.includes(result.status) ? resolve(result) : reject(result)
+            } else if (!result.status) {
+                reject(data)
+            }
+        }, reject)
+    })
+}
+
+export const requestShowtimeCreation = async (
+    client: HttpTestClient,
+    movieId: string,
+    theaterIds: string[],
+    startTimes: string[],
+    durationMinutes: number
+) => {
+    const { body } = await client
+        .post('/showtime-creation/showtimes')
+        .body({ movieId, theaterIds, startTimes, durationMinutes })
+        .accepted()
+
+    return body
 }

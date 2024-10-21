@@ -1,6 +1,9 @@
 import { Type } from 'class-transformer'
 import { IsDate, IsNumber, IsOptional, Max, Min } from 'class-validator'
 
+export type Resolve = (value: unknown) => void
+export type Reject = (reason?: any) => void
+
 export class LatLong {
     @IsNumber()
     @Min(-90)

@@ -97,7 +97,9 @@ export class ShowtimeCreationValidatorService {
     private async checkTheatersExist(theaterIds: string[]): Promise<void> {
         const theaterExists = await this.theatersService.theatersExist(theaterIds)
         if (!theaterExists) {
-            throw new NotFoundException(`Theater with IDs ${theaterIds.join(', ')} not found`)
+            throw new NotFoundException(
+                `Some of the theater IDs [${theaterIds.join(', ')}] do not exist`
+            )
         }
     }
 }

@@ -11,97 +11,28 @@ import {
 } from '..'
 
 describe('common/utils/date', () => {
-    describe('stringToMillisecs', () => {
-        it('30m == 30*60*1000', () => {
-            const result = stringToMillisecs('30m')
-            expect(result).toEqual(30 * 60 * 1000)
-        })
-
-        it('45s == 45*1000', () => {
-            const result = stringToMillisecs('45s')
-            expect(result).toEqual(45 * 1000)
-        })
-
-        it('1d == 24*60*60*1000', () => {
-            const result = stringToMillisecs('1d')
-            expect(result).toEqual(24 * 60 * 60 * 1000)
-        })
-
-        it('2h == 2*60*60*1000', () => {
-            const result = stringToMillisecs('2h')
-            expect(result).toEqual(2 * 60 * 60 * 1000)
-        })
-
-        it('1d 2h == (24+2)*60*60*1000', () => {
-            const result = stringToMillisecs('1d 2h')
-            expect(result).toEqual((24 + 2) * 60 * 60 * 1000)
-        })
-
-        it('1d2h == (24+2)*60*60*1000', () => {
-            const result = stringToMillisecs('1d2h')
-            expect(result).toEqual((24 + 2) * 60 * 60 * 1000)
-        })
-
-        it('-30s == -30*1000', () => {
-            const result = stringToMillisecs('-30s')
-            expect(result).toEqual(-30 * 1000)
-        })
-
-        it('0.5s == 0.5*1000', () => {
-            const result = stringToMillisecs('0.5s')
-            expect(result).toEqual(0.5 * 1000)
-        })
-
-        it('500ms == 500', () => {
-            const result = stringToMillisecs('500ms')
-            expect(result).toEqual(500)
-        })
-
-        it('throws an Exception if the format is invalid', () => {
-            expect(() => stringToMillisecs('2z')).toThrow(Exception)
-        })
+    it('stringToMillisecs', () => {
+        expect(stringToMillisecs('30m')).toEqual(30 * 60 * 1000)
+        expect(stringToMillisecs('45s')).toEqual(45 * 1000)
+        expect(stringToMillisecs('1d')).toEqual(24 * 60 * 60 * 1000)
+        expect(stringToMillisecs('2h')).toEqual(2 * 60 * 60 * 1000)
+        expect(stringToMillisecs('1d 2h')).toEqual((24 + 2) * 60 * 60 * 1000)
+        expect(stringToMillisecs('1d2h')).toEqual((24 + 2) * 60 * 60 * 1000)
+        expect(stringToMillisecs('-30s')).toEqual(-30 * 1000)
+        expect(stringToMillisecs('0.5s')).toEqual(0.5 * 1000)
+        expect(stringToMillisecs('500ms')).toEqual(500)
+        expect(() => stringToMillisecs('2z')).toThrow(Exception)
     })
 
-    describe('millisecsToString', () => {
-        it('30*60*1000 == 30m', () => {
-            const result = millisecsToString(30 * 60 * 1000)
-            expect(result).toEqual('30m')
-        })
-
-        it('45*1000 == 45s', () => {
-            const result = millisecsToString(45 * 1000)
-            expect(result).toEqual('45s')
-        })
-
-        it('24*60*60*1000 == 1d', () => {
-            const result = millisecsToString(24 * 60 * 60 * 1000)
-            expect(result).toEqual('1d')
-        })
-
-        it('2*60*60*1000 == 2h', () => {
-            const result = millisecsToString(2 * 60 * 60 * 1000)
-            expect(result).toEqual('2h')
-        })
-
-        it('(24+2)*60*60*1000 == 1d2h', () => {
-            const result = millisecsToString((24 + 2) * 60 * 60 * 1000)
-            expect(result).toEqual('1d2h')
-        })
-
-        it('500ms == 500', () => {
-            const result = millisecsToString(500)
-            expect(result).toEqual('500ms')
-        })
-
-        it('0ms == 0', () => {
-            const result = millisecsToString(0)
-            expect(result).toEqual('0ms')
-        })
-
-        it('-30*1000 == -30s', () => {
-            const result = millisecsToString(-30 * 1000)
-            expect(result).toEqual('-30s')
-        })
+    it('millisecsToString', () => {
+        expect(millisecsToString(30 * 60 * 1000)).toEqual('30m')
+        expect(millisecsToString(45 * 1000)).toEqual('45s')
+        expect(millisecsToString(24 * 60 * 60 * 1000)).toEqual('1d')
+        expect(millisecsToString(2 * 60 * 60 * 1000)).toEqual('2h')
+        expect(millisecsToString((24 + 2) * 60 * 60 * 1000)).toEqual('1d2h')
+        expect(millisecsToString(500)).toEqual('500ms')
+        expect(millisecsToString(0)).toEqual('0ms')
+        expect(millisecsToString(-30 * 1000)).toEqual('-30s')
     })
 
     it('addDays', () => {
@@ -143,11 +74,13 @@ describe('common/utils/date', () => {
     })
 
     it('convertStringToDate', () => {
-        const date = convertStringToDate('19990102')
+        const date = convertStringToDate('199901020930')
 
         expect(date.getFullYear()).toEqual(1999)
         expect(date.getMonth()).toEqual(0)
         expect(date.getDate()).toEqual(2)
+        expect(date.getHours()).toEqual(9)
+        expect(date.getMinutes()).toEqual(30)
 
         const callback = () => convertStringToDate('')
         expect(callback).toThrow()
