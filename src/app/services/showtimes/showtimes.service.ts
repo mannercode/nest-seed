@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { maps, MethodLog, objectId } from 'common'
-import { ShowtimeCreationDto, ShowtimeDto, ShowtimeFilterDto } from './dto'
+import { ShowtimeCreateDto, ShowtimeDto, ShowtimeFilterDto } from './dtos'
 import { ShowtimesRepository } from './showtimes.repository'
 
 @Injectable()
@@ -8,8 +8,8 @@ export class ShowtimesService {
     constructor(private repository: ShowtimesRepository) {}
 
     @MethodLog()
-    async createShowtimes(creationDtos: ShowtimeCreationDto[]) {
-        const showtimesToCreate = creationDtos.map((dto) => ({
+    async createShowtimes(createDtos: ShowtimeCreateDto[]) {
+        const showtimesToCreate = createDtos.map((dto) => ({
             ...dto,
             batchId: objectId(dto.batchId),
             theaterId: objectId(dto.theaterId),

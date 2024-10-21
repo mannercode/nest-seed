@@ -12,7 +12,7 @@ import {
     UsePipes
 } from '@nestjs/common'
 import {
-    TheaterCreationDto,
+    TheaterCreateDto,
     TheaterQueryDto,
     TheatersService,
     TheaterUpdateDto
@@ -24,8 +24,8 @@ export class TheatersController {
     constructor(private service: TheatersService) {}
 
     @Post()
-    async createTheater(@Body() creationDto: TheaterCreationDto) {
-        return this.service.createTheater(creationDto)
+    async createTheater(@Body() createDto: TheaterCreateDto) {
+        return this.service.createTheater(createDto)
     }
 
     @Patch(':theaterId')

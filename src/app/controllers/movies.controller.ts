@@ -12,7 +12,7 @@ import {
     UsePipes
 } from '@nestjs/common'
 import { FilesInterceptor } from '@nestjs/platform-express'
-import { MovieCreationDto, MovieQueryDto, MoviesService, MovieUpdateDto } from 'services/movies'
+import { MovieCreateDto, MovieQueryDto, MoviesService, MovieUpdateDto } from 'services/movies'
 import { DefaultPaginationPipe } from './pipes'
 
 @Controller('movies')
@@ -23,16 +23,16 @@ export class MoviesController {
     @Post()
     async createMovie(
         @UploadedFiles() files: Express.Multer.File[],
-        @Body() movieCreationDto: MovieCreationDto
+        @Body() movieCreateDto: MovieCreateDto
     ) {
-        const storageFileCreationDtos = files.map((file) => ({
+        const storageFileCreateDtos = files.map((file) => ({
             originalname: file.originalname,
             mimetype: file.mimetype,
             size: file.size,
             uploadedFilePath: file.path
         }))
 
-        return this.service.createMovie(storageFileCreationDtos, movieCreationDto)
+        return this.service.createMovie(storageFileCreateDtos, movieCreateDto)
     }
 
     @Patch(':movieId')

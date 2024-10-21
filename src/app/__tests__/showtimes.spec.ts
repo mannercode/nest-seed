@@ -23,9 +23,9 @@ describe('ShowtimesModule', () => {
     })
 
     it('createShowtimes', async () => {
-        const { creationDtos, expectedDtos } = createShowtimeDtos()
+        const { createDtos, expectedDtos } = createShowtimeDtos()
 
-        const showtimes = await createShowtimes(service, creationDtos)
+        const showtimes = await createShowtimes(service, createDtos)
         expect(showtimes).toEqual(expectedDtos)
     })
 
@@ -33,13 +33,13 @@ describe('ShowtimesModule', () => {
         let showtimes: ShowtimeDto[]
 
         beforeEach(async () => {
-            const { creationDtos } = createShowtimeDtos()
-            showtimes = await createShowtimes(service, creationDtos)
+            const { createDtos } = createShowtimeDtos()
+            showtimes = await createShowtimes(service, createDtos)
         })
 
         const findAllShowtimes = async (overrides = {}, findFilter = {}) => {
-            const { creationDtos, expectedDtos } = createShowtimeDtos(overrides)
-            await service.createShowtimes(creationDtos)
+            const { createDtos, expectedDtos } = createShowtimeDtos(overrides)
+            await service.createShowtimes(createDtos)
 
             const showtimes = await service.findAllShowtimes(findFilter)
             expectEqualUnsorted(showtimes, expectedDtos)
@@ -80,8 +80,8 @@ describe('ShowtimesModule', () => {
         let showtimes: ShowtimeDto[]
 
         beforeEach(async () => {
-            const { creationDtos } = createShowtimeDtos()
-            showtimes = await createShowtimes(service, creationDtos)
+            const { createDtos } = createShowtimeDtos()
+            showtimes = await createShowtimes(service, createDtos)
         })
 
         it('상영시간 정보를 가져와야 한다', async () => {
@@ -105,7 +105,7 @@ describe('ShowtimesModule', () => {
         }
 
         const now = new Date()
-        const creationDtos = [
+        const createDtos = [
             {
                 ...base,
                 startTime: addMinutes(now, -90),
@@ -125,7 +125,7 @@ describe('ShowtimesModule', () => {
             }
         ]
 
-        const { success } = await service.createShowtimes(creationDtos)
+        const { success } = await service.createShowtimes(createDtos)
         expect(success).toBeTruthy()
 
         const movieIds = await service.findShowingMovieIds()
@@ -140,7 +140,7 @@ describe('ShowtimesModule', () => {
         }
 
         const movieId = '100000000000000000000002'
-        const creationDtos = [
+        const createDtos = [
             {
                 ...base,
                 movieId: '100000000000000000000001',
@@ -158,7 +158,7 @@ describe('ShowtimesModule', () => {
             }
         ]
 
-        const { success } = await service.createShowtimes(creationDtos)
+        const { success } = await service.createShowtimes(createDtos)
         expect(success).toBeTruthy()
 
         const theaterIds = await service.findTheaterIdsShowingMovie(movieId)
@@ -172,7 +172,7 @@ describe('ShowtimesModule', () => {
             theaterId: '000000000000000000000003'
         }
 
-        const creationDtos = [
+        const createDtos = [
             {
                 ...base,
                 startTime: new Date('2000-01-02'),
@@ -191,7 +191,7 @@ describe('ShowtimesModule', () => {
             }
         ]
 
-        const { success } = await service.createShowtimes(creationDtos)
+        const { success } = await service.createShowtimes(createDtos)
         expect(success).toBeTruthy()
 
         const showdates = await service.findShowdates(base.movieId, base.theaterId)

@@ -3,8 +3,8 @@ import { MethodLog, newObjectId, PaginationOption } from 'common'
 import { MoviesService } from 'services/movies'
 import { ShowtimesService } from 'services/showtimes'
 import { TheatersService } from 'services/theaters'
-import { ShowtimeBatchCreationDto, ShowtimeBatchCreationResponse } from './dto'
-import { ShowtimeCreationEventsService, ShowtimeCreationProcessorService } from './services'
+import { ShowtimeBatchCreateDto, ShowtimeBatchCreateResponse } from './dtos'
+import { ShowtimeCreationEventsService, ShowtimeCreationWorkerService } from './services'
 
 @Injectable()
 export class ShowtimeCreationService {
@@ -12,7 +12,7 @@ export class ShowtimeCreationService {
         private theatersService: TheatersService,
         private moviesService: MoviesService,
         private showtimesService: ShowtimesService,
-        private batchCreationService: ShowtimeCreationProcessorService,
+        private batchCreationService: ShowtimeCreationWorkerService,
         private eventService: ShowtimeCreationEventsService
     ) {}
 
@@ -35,12 +35,12 @@ export class ShowtimeCreationService {
     }
 
     @MethodLog()
-    async createBatchShowtimes(creationDto: ShowtimeBatchCreationDto) {
+    async createBatchShowtimes(createDto: ShowtimeBatchCreateDto) {
         const batchId = newObjectId()
 
-        this.batchCreationService.enqueueTask({ ...creationDto, batchId })
+        this.batchCreationService.enqueueTask({ ...createDto, batchId })
 
-        return { batchId } as ShowtimeBatchCreationResponse
+        return { batchId } as ShowtimeBatchCreateResponse
     }
 
     @MethodLog()

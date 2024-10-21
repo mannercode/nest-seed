@@ -3,9 +3,9 @@ import { Assert, MethodLog, addMinutes, findMaxDate, findMinDate } from 'common'
 import { MoviesService } from 'services/movies'
 import { ShowtimeDto, ShowtimesService } from 'services/showtimes'
 import { TheatersService } from 'services/theaters'
-import { ShowtimeBatchCreationTask } from '../dto'
+import { ShowtimeBatchCreateJobData } from './types'
 
-type Timeslot = Map<number, ShowtimeDto>
+type TimeslotMap = Map<number, ShowtimeDto>
 
 @Injectable()
 export class ShowtimeCreationValidatorService {
@@ -15,24 +15,22 @@ export class ShowtimeCreationValidatorService {
         private showtimesService: ShowtimesService
     ) {}
 
-    async validate(task: ShowtimeBatchCreationTask) {
-        await this.checkMovieExists(task.movieId)
-        await this.checkTheatersExist(task.theaterIds)
+    async validate(data: ShowtimeBatchCreateJobData) {
+        await this.ensureMovieExists(data.movieId)
+        await this.ensureTheatersExist(data.theaterIds)
 
-        const conflictShowtimes = await this.checkForTimeConflicts(task)
+        const conflictingShowtimes = await this.checkTimeConflicts(data)
 
-        return conflictShowtimes
+        return conflictingShowtimes
     }
 
     @MethodLog()
-    private async checkForTimeConflicts(
-        request: ShowtimeBatchCreationTask
-    ): Promise<ShowtimeDto[]> {
-        const { movieId, durationMinutes, startTimes, theaterIds } = request
+    private async checkTimeConflicts(data: ShowtimeBatchCreateJobData): Promise<ShowtimeDto[]> {
+        const { durationMinutes, startTimes, theaterIds } = data
 
-        const timeslotsByTheater = await this.createTimeslotsByTheater(request)
+        const timeslotsByTheater = await this.generateTimeslotMapByTheater(data)
 
-        const conflictShowtimes: ShowtimeDto[] = []
+        const conflictingShowtimes: ShowtimeDto[] = []
 
         for (const theaterId of theaterIds) {
             const timeslots = timeslotsByTheater.get(theaterId)!
@@ -46,26 +44,26 @@ export class ShowtimeCreationValidatorService {
                     const showtime = timeslots.get(time)
 
                     if (showtime) {
-                        conflictShowtimes.push(showtime)
+                        conflictingShowtimes.push(showtime)
                         return false
                     }
                 })
             }
         }
 
-        return conflictShowtimes
+        return conflictingShowtimes
     }
 
-    private async createTimeslotsByTheater(
-        request: ShowtimeBatchCreationTask
-    ): Promise<Map<string, Timeslot>> {
-        const { theaterIds, durationMinutes, startTimes } = request
+    private async generateTimeslotMapByTheater(
+        data: ShowtimeBatchCreateJobData
+    ): Promise<Map<string, TimeslotMap>> {
+        const { theaterIds, durationMinutes, startTimes } = data
 
         const startDate = findMinDate(startTimes)
         const maxDate = findMaxDate(startTimes)
         const endDate = addMinutes(maxDate, durationMinutes)
 
-        const timeslotsByTheater = new Map<string, Timeslot>()
+        const timeslotMapByTheater = new Map<string, TimeslotMap>()
 
         for (const theaterId of theaterIds) {
             const fetchedShowtimes = await this.showtimesService.findAllShowtimes({
@@ -81,20 +79,20 @@ export class ShowtimeCreationValidatorService {
                 })
             }
 
-            timeslotsByTheater.set(theaterId, timeslots)
+            timeslotMapByTheater.set(theaterId, timeslots)
         }
 
-        return timeslotsByTheater
+        return timeslotMapByTheater
     }
 
-    private async checkMovieExists(movieId: string): Promise<void> {
+    private async ensureMovieExists(movieId: string): Promise<void> {
         const movieExists = await this.moviesService.moviesExist([movieId])
         if (!movieExists) {
             throw new NotFoundException(`Movie with ID ${movieId} not found`)
         }
     }
 
-    private async checkTheatersExist(theaterIds: string[]): Promise<void> {
+    private async ensureTheatersExist(theaterIds: string[]): Promise<void> {
         const theaterExists = await this.theatersService.theatersExist(theaterIds)
         if (!theaterExists) {
             throw new NotFoundException(

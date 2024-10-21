@@ -3,7 +3,7 @@ import { IsEnum, IsNotEmpty, IsString, ValidateNested } from 'class-validator'
 import { Seat } from 'services/theaters'
 import { TicketStatus } from '../models'
 
-export class TicketCreationDto {
+export class TicketCreateDto {
     @IsString()
     @IsNotEmpty()
     batchId: string

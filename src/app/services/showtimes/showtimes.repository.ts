@@ -10,7 +10,7 @@ import {
     validateFilters
 } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { ShowtimeFilterDto } from './dto'
+import { ShowtimeFilterDto } from './dtos'
 import { Showtime } from './models'
 
 @Injectable()
@@ -24,8 +24,8 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
     }
 
     @MethodLog()
-    async createShowtimes(creationDtos: ModelAttributes<Showtime>[]) {
-        const showtimes = creationDtos.map((dto) => {
+    async createShowtimes(createDtos: ModelAttributes<Showtime>[]) {
+        const showtimes = createDtos.map((dto) => {
             const document = this.newDocument()
             Object.assign(document, dto)
             return document

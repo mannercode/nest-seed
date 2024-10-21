@@ -11,8 +11,8 @@ import {
     validateFilters
 } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { TicketSalesStatusDto } from './dto'
-import { TicketFilterDto } from './dto/ticket-filter.dto'
+import { TicketSalesStatusDto } from './dtos'
+import { TicketFilterDto } from './dtos/ticket-filter.dto'
 import { Ticket, TicketStatus } from './models'
 
 @Injectable()

@@ -140,7 +140,7 @@ Backend <-- ShowtimeCreation: CreateShowtimesResponse
 -   ShowtimeCreationService는 애플리케이션 서비스이고 다른 서비스에 영향을 주지 않는다. 설계를 최소화 하고 많은 부분은 구현 단계에서 정한다. 예를 들어 중간에 실패했을 때 롤백 전략 같은 것들.
 
 ```
-ShowtimeBatchCreationDto {
+ShowtimeBatchCreateDto {
     "movieId": "movie#1",
     "theaterIds": ["theater#1","theater#2"],
     "durationMinutes": 90,
@@ -176,11 +176,11 @@ Backend <-- ShowtimeCreation: batchId
     activate ShowtimeCreation #yellow
         loop theater in request.theaters
             loop startTime in request.startTimes
-                ShowtimeCreation -> ShowtimeCreation: createShowtimeCreationDto({theaterId, movieId, startTime, duration})
+                ShowtimeCreation -> ShowtimeCreation: createShowtimeCreateDto({theaterId, movieId, startTime, duration})
             end
         end
 
-        ShowtimeCreation -> Showtimes: createShowtimes(showtimeCreationDtos, batchId)
+        ShowtimeCreation -> Showtimes: createShowtimes(showtimeCreateDtos, batchId)
         ShowtimeCreation <-- Showtimes: showtimes
     deactivate ShowtimeCreation
 
@@ -190,9 +190,9 @@ Backend <-- ShowtimeCreation: batchId
             ShowtimeCreation -> Theaters: getTheater(showtime.theaterId)
             ShowtimeCreation <-- Theaters: theater
             loop seat in theater.seats
-                ShowtimeCreation -> ShowtimeCreation: createTicketCreationDto(seat, showtime.id)
+                ShowtimeCreation -> ShowtimeCreation: createTicketCreateDto(seat, showtime.id)
             end
-            ShowtimeCreation -> Tickets: createTickets(ticketCreationDtos,batchId)
+            ShowtimeCreation -> Tickets: createTickets(ticketCreateDtos,batchId)
             ShowtimeCreation <-- Tickets: tickets
         end
     deactivate ShowtimeCreation
@@ -252,7 +252,7 @@ const timeslots: Set<number> = new Set([
 ```
 
 ```ts
-const conflictShowtimes:Showtime[] = []
+const conflictingShowtimes:Showtime[] = []
 const timeslots: Set<number> = new Set([])
 
 for startTime of startTimes {
@@ -269,7 +269,7 @@ for theater of theaters{
     for showtime of showtimes{
         for(timeslot = startTime;timeslot <= endTime;timeslot+=10) {
             if(timeslots.has(timeslot)){
-                conflictShowtimes.push(showtime)
+                conflictingShowtimes.push(showtime)
                 break
             }
         }

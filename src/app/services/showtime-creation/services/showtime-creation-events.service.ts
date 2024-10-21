@@ -28,8 +28,8 @@ export class ShowtimeCreationEventsService {
         })
     }
 
-    emitFail(batchId: string, conflictShowtimes: ShowtimeDto[]) {
-        this.sseService.sendEvent({ batchId, status: 'fail', conflictShowtimes })
+    emitFail(batchId: string, conflictingShowtimes: ShowtimeDto[]) {
+        this.sseService.sendEvent({ batchId, status: 'fail', conflictingShowtimes })
     }
 
     emitError(batchId: string, message: string) {

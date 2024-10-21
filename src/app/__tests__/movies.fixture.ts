@@ -18,7 +18,7 @@ export async function closeIsolatedFixture(fixture: IsolatedFixture) {
 }
 
 export const createMovieDto = (overrides = {}) => {
-    const creationDto = {
+    const createDto = {
         title: `MovieTitle`,
         genre: [MovieGenre.Action],
         releaseDate: new Date('1900-01-01'),
@@ -29,18 +29,18 @@ export const createMovieDto = (overrides = {}) => {
         ...overrides
     }
 
-    const expectedDto = { id: expect.anything(), images: expect.any(Array), ...creationDto }
+    const expectedDto = { id: expect.anything(), images: expect.any(Array), ...createDto }
 
-    return { creationDto, expectedDto }
+    return { createDto, expectedDto }
 }
 
 export const createMovie = async (client: HttpTestClient, override = {}) => {
-    const { creationDto } = createMovieDto(override)
+    const { createDto } = createMovieDto(override)
 
     const { body } = await client
         .post('/movies')
         .attachs([{ name: 'files', file: './test/fixtures/image.png' }])
-        .fields(objectToFields(creationDto))
+        .fields(objectToFields(createDto))
         .created()
 
     return body

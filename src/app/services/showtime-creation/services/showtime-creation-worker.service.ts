@@ -5,18 +5,18 @@ import { addMinutes, jsonToObject, MethodLog } from 'common'
 import { ShowtimeDto, ShowtimesService } from 'services/showtimes'
 import { getAllSeats, TheaterDto, TheatersService } from 'services/theaters'
 import { TicketsService, TicketStatus } from 'services/tickets'
-import { ShowtimeBatchCreationTask } from '../dto'
 import { ShowtimeCreationEventsService } from './showtime-creation-events.service'
 import { ShowtimeCreationValidatorService } from './showtime-creation-validator.service'
+import { ShowtimeBatchCreateJobData } from './types'
 
 @Injectable()
 @Processor('showtime-creation')
-export class ShowtimeCreationProcessorService {
+export class ShowtimeCreationWorkerService {
     constructor(
         private theatersService: TheatersService,
         private showtimesService: ShowtimesService,
-        private eventService: ShowtimeCreationEventsService,
-        private validateService: ShowtimeCreationValidatorService,
+        private eventsService: ShowtimeCreationEventsService,
+        private validatorService: ShowtimeCreationValidatorService,
         private ticketsService: TicketsService,
         @InjectQueue('showtime-creation') private batchQueue: Queue
     ) {}
@@ -25,36 +25,36 @@ export class ShowtimeCreationProcessorService {
         await this.batchQueue.close()
     }
 
-    async enqueueTask(task: ShowtimeBatchCreationTask) {
-        this.eventService.emitWaiting(task.batchId)
-        await this.batchQueue.add('showtimes.create', task)
+    async enqueueTask(data: ShowtimeBatchCreateJobData) {
+        this.eventsService.emitWaiting(data.batchId)
+        await this.batchQueue.add('showtimes.create', data)
     }
 
     /* istanbul ignore next */
     @OnQueueFailed()
     @MethodLog()
     async onFailed({ data, failedReason }: Job) {
-        this.eventService.emitError(data.batchId, failedReason ?? '')
+        this.eventsService.emitError(data.batchId, failedReason ?? '')
     }
 
     @Process('showtimes.create')
-    async onShowtimesCreation(job: Job<ShowtimeBatchCreationTask>) {
-        await this._onShowtimesCreation(jsonToObject(job.data))
+    async handleShowtimesCreation(job: Job<ShowtimeBatchCreateJobData>) {
+        await this.executeShowtimesCreation(jsonToObject(job.data))
     }
 
     @MethodLog()
-    async _onShowtimesCreation(data: ShowtimeBatchCreationTask) {
-        this.eventService.emitProcessing(data.batchId)
+    private async executeShowtimesCreation(data: ShowtimeBatchCreateJobData) {
+        this.eventsService.emitProcessing(data.batchId)
 
-        const conflictShowtimes = await this.validateService.validate(data)
+        const conflictingShowtimes = await this.validatorService.validate(data)
 
-        if (0 < conflictShowtimes.length) {
-            this.eventService.emitFail(data.batchId, conflictShowtimes)
+        if (0 < conflictingShowtimes.length) {
+            this.eventsService.emitFail(data.batchId, conflictingShowtimes)
         } else {
             const createdShowtimes = await this.createShowtimes(data)
             const ticketCreatedCount = await this.createTickets(createdShowtimes, data.batchId)
 
-            this.eventService.emitComplete(
+            this.eventsService.emitComplete(
                 data.batchId,
                 createdShowtimes.length,
                 ticketCreatedCount
@@ -62,10 +62,10 @@ export class ShowtimeCreationProcessorService {
         }
     }
 
-    private async createShowtimes(task: ShowtimeBatchCreationTask) {
-        const { batchId, movieId, theaterIds, durationMinutes, startTimes } = task
+    private async createShowtimes(data: ShowtimeBatchCreateJobData) {
+        const { batchId, movieId, theaterIds, durationMinutes, startTimes } = data
 
-        const creationDtos = theaterIds.flatMap((theaterId) =>
+        const createDtos = theaterIds.flatMap((theaterId) =>
             startTimes.map((startTime) => ({
                 batchId,
                 movieId,
@@ -75,7 +75,7 @@ export class ShowtimeCreationProcessorService {
             }))
         )
 
-        await this.showtimesService.createShowtimes(creationDtos)
+        await this.showtimesService.createShowtimes(createDtos)
         const showtimes = this.showtimesService.findAllShowtimes({ batchIds: [batchId] })
         return showtimes
     }
@@ -83,18 +83,18 @@ export class ShowtimeCreationProcessorService {
     private async createTickets(showtimes: ShowtimeDto[], batchId: string) {
         let totalCount = 0
 
-        const theaters: Map<string, TheaterDto> = new Map()
+        const theaterMap: Map<string, TheaterDto> = new Map()
 
         await Promise.all(
             showtimes.map(async (showtime) => {
-                let theater = theaters.get(showtime.theaterId)
+                let theater = theaterMap.get(showtime.theaterId)
 
                 if (!theater) {
                     theater = await this.theatersService.getTheater(showtime.theaterId)
-                    theaters.set(showtime.theaterId, theater)
+                    theaterMap.set(showtime.theaterId, theater)
                 }
 
-                const ticketCreationDtos = getAllSeats(theater!.seatmap).map((seat) => ({
+                const ticketCreateDtos = getAllSeats(theater!.seatmap).map((seat) => ({
                     showtimeId: showtime.id,
                     theaterId: showtime.theaterId,
                     movieId: showtime.movieId,
@@ -103,7 +103,7 @@ export class ShowtimeCreationProcessorService {
                     batchId
                 }))
 
-                const { count } = await this.ticketsService.createTickets(ticketCreationDtos)
+                const { count } = await this.ticketsService.createTickets(ticketCreateDtos)
                 totalCount += count
             })
         )

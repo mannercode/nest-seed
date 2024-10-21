@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { Assert, maps, MethodLog, objectId, ObjectId } from 'common'
-import { TicketCreationDto, TicketDto } from './dto'
-import { TicketFilterDto } from './dto/ticket-filter.dto'
+import { TicketCreateDto, TicketDto } from './dtos'
+import { TicketFilterDto } from './dtos/ticket-filter.dto'
 import { TicketStatus } from './models'
 import { TicketsRepository } from './tickets.repository'
 
@@ -10,8 +10,8 @@ export class TicketsService {
     constructor(private repository: TicketsRepository) {}
 
     @MethodLog()
-    async createTickets(creationDtos: TicketCreationDto[]) {
-        const ticketsToCreate = creationDtos.map((dto) => ({
+    async createTickets(createDtos: TicketCreateDto[]) {
+        const ticketsToCreate = createDtos.map((dto) => ({
             ...dto,
             batchId: objectId(dto.batchId),
             theaterId: objectId(dto.theaterId),

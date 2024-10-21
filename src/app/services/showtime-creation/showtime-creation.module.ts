@@ -7,7 +7,7 @@ import { TheatersModule } from 'services/theaters'
 import { TicketsModule } from 'services/tickets'
 import {
     ShowtimeCreationEventsService,
-    ShowtimeCreationProcessorService,
+    ShowtimeCreationWorkerService,
     ShowtimeCreationValidatorService
 } from './services'
 import { ShowtimeCreationService } from './showtime-creation.service'
@@ -24,7 +24,7 @@ import { ShowtimeCreationService } from './showtime-creation.service'
         ShowtimeCreationService,
         ServerSentEventsService,
         ShowtimeCreationEventsService,
-        ShowtimeCreationProcessorService,
+        ShowtimeCreationWorkerService,
         ShowtimeCreationValidatorService
     ],
     exports: [ShowtimeCreationService]

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { maps, MethodLog, objectId, objectIds, PaginationResult } from 'common'
-import { TheaterCreationDto, TheaterDto, TheaterQueryDto, TheaterUpdateDto } from './dto'
+import { TheaterCreateDto, TheaterDto, TheaterQueryDto, TheaterUpdateDto } from './dtos'
 import { TheatersRepository } from './theaters.repository'
 
 @Injectable()
@@ -8,8 +8,8 @@ export class TheatersService {
     constructor(private repository: TheatersRepository) {}
 
     @MethodLog()
-    async createTheater(creationDto: TheaterCreationDto) {
-        const theater = await this.repository.createTheater(creationDto)
+    async createTheater(createDto: TheaterCreateDto) {
+        const theater = await this.repository.createTheater(createDto)
         return new TheaterDto(theater)
     }
 

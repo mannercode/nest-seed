@@ -15,9 +15,9 @@ export class StorageFilesRepository extends MongooseRepository<StorageFile> {
     }
 
     @MethodLog({ excludeArgs: ['session'] })
-    async createStorageFile(creationDto: ModelAttributes<StorageFile>, session?: ClientSession) {
+    async createStorageFile(createDto: ModelAttributes<StorageFile>, session?: ClientSession) {
         const storageFile = this.newDocument()
-        Object.assign(storageFile, creationDto)
+        Object.assign(storageFile, createDto)
 
         return storageFile.save({ session })
     }

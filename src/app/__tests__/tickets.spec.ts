@@ -23,9 +23,9 @@ describe('TicketsModule', () => {
     })
 
     it('createTickets', async () => {
-        const { creationDtos, expectedDtos } = createTicketDtos()
+        const { createDtos, expectedDtos } = createTicketDtos()
 
-        const tickets = await createTickets(service, creationDtos)
+        const tickets = await createTickets(service, createDtos)
         expectEqualUnsorted(tickets, expectedDtos)
     })
 
@@ -33,13 +33,13 @@ describe('TicketsModule', () => {
         let tickets: TicketDto[]
 
         beforeEach(async () => {
-            const { creationDtos } = createTicketDtos()
-            tickets = await createTickets(service, creationDtos)
+            const { createDtos } = createTicketDtos()
+            tickets = await createTickets(service, createDtos)
         })
 
         const findAllTickets = async (overrides = {}, findFilter = {}) => {
-            const { creationDtos, expectedDtos } = createTicketDtos(overrides)
-            await service.createTickets(creationDtos)
+            const { createDtos, expectedDtos } = createTicketDtos(overrides)
+            await service.createTickets(createDtos)
 
             const tickets = await service.findAllTickets(findFilter)
             expectEqualUnsorted(tickets, expectedDtos)
@@ -72,8 +72,8 @@ describe('TicketsModule', () => {
     })
 
     it('updateTicketStatus', async () => {
-        const { creationDtos } = createTicketDtos({})
-        const tickets = await createTickets(service, creationDtos)
+        const { createDtos } = createTicketDtos({})
+        const tickets = await createTickets(service, createDtos)
         const ticket = tickets[0]
         expect(ticket.status).toEqual(TicketStatus.open)
 
@@ -90,8 +90,8 @@ describe('TicketsModule', () => {
         const ticketCount = 50
         const soldCount = 5
 
-        const { creationDtos } = createTicketDtos({ showtimeId }, ticketCount)
-        const tickets = await createTickets(service, creationDtos)
+        const { createDtos } = createTicketDtos({ showtimeId }, ticketCount)
+        const tickets = await createTickets(service, createDtos)
         const ticketIds = pickIds(tickets.slice(0, soldCount))
         await service.updateTicketStatus(objectIds(ticketIds), TicketStatus.sold)
         const salesStatuses = await service.getSalesStatuses([showtimeId])

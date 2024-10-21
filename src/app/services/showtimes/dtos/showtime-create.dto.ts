@@ -1,7 +1,6 @@
-import { Type } from 'class-transformer'
 import { IsDate, IsNotEmpty, IsString } from 'class-validator'
 
-export class ShowtimeCreationDto {
+export class ShowtimeCreateDto {
     @IsString()
     @IsNotEmpty()
     movieId: string

@@ -11,7 +11,7 @@ import {
 } from 'common'
 import { differenceWith, escapeRegExp, uniq } from 'lodash'
 import { FilterQuery, Model } from 'mongoose'
-import { TheaterQueryDto } from './dto'
+import { TheaterQueryDto } from './dtos'
 import { Theater } from './models'
 
 @Injectable()
@@ -25,9 +25,9 @@ export class TheatersRepository extends MongooseRepository<Theater> {
     }
 
     @MethodLog()
-    async createTheater(creationDto: ModelAttributes<Theater>) {
+    async createTheater(createDto: ModelAttributes<Theater>) {
         const theater = this.newDocument()
-        Object.assign(theater, creationDto)
+        Object.assign(theater, createDto)
 
         return theater.save()
     }

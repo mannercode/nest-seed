@@ -21,7 +21,7 @@ export async function closeIsolatedFixture(fixture: IsolatedFixture) {
 }
 
 export const createCustomerDto = (overrides = {}) => {
-    const creationDto = {
+    const createDto = {
         name: 'name',
         email: 'name@mail.com',
         birthdate: new Date('2020-12-12'),
@@ -29,15 +29,15 @@ export const createCustomerDto = (overrides = {}) => {
         ...overrides
     }
 
-    const expectedDto = { id: expect.anything(), ...omit(creationDto, 'password') }
+    const expectedDto = { id: expect.anything(), ...omit(createDto, 'password') }
 
-    return { creationDto, expectedDto }
+    return { createDto, expectedDto }
 }
 
 export const createCustomer = async (client: HttpTestClient, override = {}) => {
-    const { creationDto } = createCustomerDto(override)
+    const { createDto } = createCustomerDto(override)
 
-    const { body } = await client.post('/customers').body(creationDto).created()
+    const { body } = await client.post('/customers').body(createDto).created()
     return body
 }
 

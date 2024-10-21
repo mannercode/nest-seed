@@ -1,6 +1,6 @@
-import { addMinutes, convertStringToDate, jsonToObject, nullObjectId } from 'common'
+import { addMinutes, jsonToObject, nullObjectId } from 'common'
 import { MovieDto } from 'services/movies'
-import { ShowtimeCreationDto, ShowtimesService } from 'services/showtimes'
+import { ShowtimeCreateDto, ShowtimesService } from 'services/showtimes'
 import { TheaterDto } from 'services/theaters'
 import { createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
 import { AppModule } from '../app.module'
@@ -27,13 +27,11 @@ export async function closeIsolatedFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
 }
 
-export const createShowtimeDtos = (startTimeStrs: string[], overrides = {}) => {
-    const creationDtos: ShowtimeCreationDto[] = []
+export const createShowtimeDtos = (startTimes: Date[], overrides = {}) => {
+    const createDtos: ShowtimeCreateDto[] = []
 
-    startTimeStrs.map((timeString) => {
-        const startTime = convertStringToDate(timeString)
-
-        const creationDto = {
+    startTimes.map((startTime) => {
+        const createDto = {
             batchId: nullObjectId,
             movieId: nullObjectId,
             theaterId: nullObjectId,
@@ -42,10 +40,10 @@ export const createShowtimeDtos = (startTimeStrs: string[], overrides = {}) => {
             ...overrides
         }
 
-        creationDtos.push(creationDto)
+        createDtos.push(createDto)
     })
 
-    return creationDtos
+    return createDtos
 }
 
 export const monitorEvents = (client: HttpTestClient, waitStatuses: string[]) => {
@@ -62,11 +60,11 @@ export const monitorEvents = (client: HttpTestClient, waitStatuses: string[]) =>
     })
 }
 
-export const requestShowtimeCreation = async (
+export const createBatchShowtimes = async (
     client: HttpTestClient,
     movieId: string,
     theaterIds: string[],
-    startTimes: string[],
+    startTimes: Date[],
     durationMinutes: number
 ) => {
     const { body } = await client

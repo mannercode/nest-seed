@@ -8,7 +8,7 @@ import {
     createShowtimeDtos,
     IsolatedFixture,
     monitorEvents,
-    requestShowtimeCreation
+    createBatchShowtimes
 } from './showtime-creation.fixture'
 import { createShowtimes } from './showtimes.fixture'
 import { nullObjectId } from 'common'
@@ -52,12 +52,16 @@ describe('ShowtimeCreation', () => {
         let showtimes: ShowtimeDto[]
 
         beforeEach(async () => {
-            const creationDtos = createShowtimeDtos(
-                ['210001010900', '210001011100', '210001011300'],
+            const createDtos = createShowtimeDtos(
+                [
+                    new Date('2100-01-01T09:00'),
+                    new Date('2100-01-01T11:00'),
+                    new Date('2100-01-01T13:00')
+                ],
                 { theaterId: theater.id }
             )
 
-            showtimes = await createShowtimes(showtimesService, creationDtos)
+            showtimes = await createShowtimes(showtimesService, createDtos)
         })
 
         it('예정된 상영시간 목록을 반환해야 한다', async () => {
@@ -75,9 +79,13 @@ describe('ShowtimeCreation', () => {
             const monitorPromise = monitorEvents(client, ['complete'])
 
             const theaterIds = [theater.id]
-            const startTimes = ['299912310900', '299912311100', '299912131300']
+            const startTimes = [
+                new Date('2100-01-01T09:00'),
+                new Date('2100-01-01T11:00'),
+                new Date('2100-01-01T13:00')
+            ]
 
-            const { batchId } = await requestShowtimeCreation(
+            const { batchId } = await createBatchShowtimes(
                 client,
                 movie.id,
                 theaterIds,
@@ -102,11 +110,11 @@ describe('ShowtimeCreation', () => {
         it('movie가 존재하지 않으면 작업 요청이 실패해야 한다', async () => {
             const monitorPromise = monitorEvents(client, ['error'])
 
-            const { batchId } = await requestShowtimeCreation(
+            const { batchId } = await createBatchShowtimes(
                 client,
                 nullObjectId,
                 [theater.id],
-                ['200012310000'],
+                [new Date(0)],
                 90
             )
 
@@ -120,11 +128,11 @@ describe('ShowtimeCreation', () => {
         it('theater가 존재하지 않으면 작업 요청이 실패해야 한다', async () => {
             const monitorPromise = monitorEvents(client, ['error'])
 
-            const { batchId } = await requestShowtimeCreation(
+            const { batchId } = await createBatchShowtimes(
                 client,
                 movie.id,
                 [nullObjectId],
-                ['200012310000'],
+                [new Date(0)],
                 90
             )
 
@@ -140,22 +148,31 @@ describe('ShowtimeCreation', () => {
         let showtimes: ShowtimeDto[]
 
         beforeEach(async () => {
-            const creationDtos = createShowtimeDtos(
-                ['201301311200', '201301311400', '201301311630', '201301311830'],
+            const createDtos = createShowtimeDtos(
+                [
+                    new Date('2013-01-31T12:00'),
+                    new Date('2013-01-31T14:00'),
+                    new Date('2013-01-31T16:30'),
+                    new Date('2013-01-31T18:30')
+                ],
                 { theaterId: theater.id, durationMinutes: 90 }
             )
 
-            showtimes = await createShowtimes(showtimesService, creationDtos)
+            showtimes = await createShowtimes(showtimesService, createDtos)
         })
 
         it('생성 요청이 기존 상영시간 충돌할 때 충돌 정보를 반환해야 한다', async () => {
             const monitorPromise = monitorEvents(client, ['fail'])
 
-            const { batchId } = await requestShowtimeCreation(
+            const { batchId } = await createBatchShowtimes(
                 client,
                 movie.id,
                 [theater.id],
-                ['201301311200', '201301311600', '201301312000'],
+                [
+                    new Date('2013-01-31T12:00'),
+                    new Date('2013-01-31T16:00'),
+                    new Date('2013-01-31T20:00')
+                ],
                 30
             )
 
@@ -168,9 +185,9 @@ describe('ShowtimeCreation', () => {
                     new Date('2013-01-31T18:30').getTime()
                 ].includes(showtime.startTime.getTime())
             )
-            const { conflictShowtimes, ...result } = (await monitorPromise) as any
+            const { conflictingShowtimes, ...result } = (await monitorPromise) as any
             expect(result).toEqual({ batchId, status: 'fail' })
-            expectEqualUnsorted(conflictShowtimes, expected)
+            expectEqualUnsorted(conflictingShowtimes, expected)
         })
     })
 })

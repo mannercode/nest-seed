@@ -12,8 +12,7 @@ import {
 } from '@nestjs/common'
 import { PaginationOption } from 'common'
 import { Observable } from 'rxjs'
-import { ShowtimeCreationService } from 'services/showtime-creation'
-import { ShowtimeBatchCreationDto } from 'services/showtime-creation/dto'
+import { ShowtimeBatchCreateDto, ShowtimeCreationService } from 'services/showtime-creation'
 import { DefaultPaginationPipe } from './pipes'
 
 @Controller('showtime-creation')
@@ -40,8 +39,8 @@ export class ShowtimeCreationController {
 
     @HttpCode(HttpStatus.ACCEPTED)
     @Post('showtimes')
-    async createBatchShowtimes(@Body() creationDto: ShowtimeBatchCreationDto) {
-        return this.service.createBatchShowtimes(creationDto)
+    async createBatchShowtimes(@Body() createDto: ShowtimeBatchCreateDto) {
+        return this.service.createBatchShowtimes(createDto)
     }
 
     @Sse('events')

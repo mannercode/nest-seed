@@ -26,9 +26,9 @@ describe('/theaters', () => {
 
     describe('POST /theaters', () => {
         it('극장을 생성해야 한다', async () => {
-            const { creationDto, expectedDto } = createTheaterDto()
+            const { createDto, expectedDto } = createTheaterDto()
 
-            await client.post('/theaters').body(creationDto).created(expectedDto)
+            await client.post('/theaters').body(createDto).created(expectedDto)
         })
 
         it('필수 필드가 누락되면 BAD_REQUEST(400)를 반환해야 한다', async () => {

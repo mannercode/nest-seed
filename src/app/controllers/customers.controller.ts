@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common'
 import { Assert } from 'common'
 import {
-    CustomerCreationDto,
+    CustomerCreateDto,
     CustomerDto,
     CustomerQueryDto,
     CustomersService,
@@ -31,8 +31,8 @@ export class CustomersController {
 
     @Public()
     @Post()
-    async createCustomer(@Body() creationDto: CustomerCreationDto) {
-        return this.service.createCustomer(creationDto)
+    async createCustomer(@Body() createDto: CustomerCreateDto) {
+        return this.service.createCustomer(createDto)
     }
 
     @Patch(':customerId')

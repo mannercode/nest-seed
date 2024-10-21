@@ -10,7 +10,7 @@ import {
 } from 'common'
 import { escapeRegExp } from 'lodash'
 import { FilterQuery, Model } from 'mongoose'
-import { MovieQueryDto } from './dto'
+import { MovieQueryDto } from './dtos'
 import { Movie } from './models'
 
 @Injectable()
@@ -24,9 +24,9 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     }
 
     @MethodLog()
-    async createMovie(creationDto: ModelAttributes<Movie>) {
+    async createMovie(createDto: ModelAttributes<Movie>) {
         const movie = this.newDocument()
-        Object.assign(movie, creationDto)
+        Object.assign(movie, createDto)
 
         return movie.save()
     }

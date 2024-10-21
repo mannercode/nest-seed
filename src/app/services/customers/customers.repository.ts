@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose'
 import { addRegexQuery, MethodLog, ModelAttributes, MongooseRepository, ObjectId, PaginationResult } from 'common'
 import { escapeRegExp } from 'lodash'
 import { FilterQuery, Model } from 'mongoose'
-import { CustomerQueryDto } from './dto'
+import { CustomerQueryDto } from './dtos'
 import { Customer } from './models'
 
 @Injectable()
@@ -17,12 +17,12 @@ export class CustomersRepository extends MongooseRepository<Customer> {
     }
 
     @MethodLog()
-    async createCustomer(creationDto: ModelAttributes<Customer>) {
-        if (await this.findByEmail(creationDto.email))
-            throw new ConflictException(`Customer with email ${creationDto.email} already exists`)
+    async createCustomer(createDto: ModelAttributes<Customer>) {
+        if (await this.findByEmail(createDto.email))
+            throw new ConflictException(`Customer with email ${createDto.email} already exists`)
 
         const customer = this.newDocument()
-        Object.assign(customer, creationDto)
+        Object.assign(customer, createDto)
 
         return customer.save()
     }

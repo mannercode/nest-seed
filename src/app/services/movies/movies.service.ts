@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { maps, MethodLog, objectId, ObjectId, objectIds, PaginationResult } from 'common'
-import { StorageFileCreationDto, StorageFilesService } from '../storage-files'
-import { MovieCreationDto, MovieDto, MovieQueryDto, MovieUpdateDto } from './dto'
+import { StorageFileCreateDto, StorageFilesService } from '../storage-files'
+import { MovieCreateDto, MovieDto, MovieQueryDto, MovieUpdateDto } from './dtos'
 import { MoviesRepository } from './movies.repository'
 
 @Injectable()
@@ -13,13 +13,13 @@ export class MoviesService {
 
     @MethodLog()
     async createMovie(
-        storageFileCreationDtos: StorageFileCreationDto[],
-        movieCreationDto: MovieCreationDto
+        storageFileCreateDtos: StorageFileCreateDto[],
+        movieCreateDto: MovieCreateDto
     ) {
-        const storageFiles = await this.storageFilesService.saveFiles(storageFileCreationDtos)
+        const storageFiles = await this.storageFilesService.saveFiles(storageFileCreateDtos)
         const storageFileIds = storageFiles.map((file) => objectId(file.id))
 
-        const movie = await this.repository.createMovie({ ...movieCreationDto, storageFileIds })
+        const movie = await this.repository.createMovie({ ...movieCreateDto, storageFileIds })
         return new MovieDto(movie)
     }
 

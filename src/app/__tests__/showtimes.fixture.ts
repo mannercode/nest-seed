@@ -1,5 +1,5 @@
 import { omit } from 'lodash'
-import { ShowtimeCreationDto, ShowtimeDto, ShowtimesService } from 'services/showtimes'
+import { ShowtimeCreateDto, ShowtimeDto, ShowtimesService } from 'services/showtimes'
 import { HttpTestContext, createHttpTestContext } from 'testlib'
 import { AppModule } from '../app.module'
 
@@ -20,11 +20,11 @@ export async function closeIsolatedFixture(fixture: IsolatedFixture) {
 }
 
 export const createShowtimeDtos = (overrides = {}, length: number = 100) => {
-    const creationDtos: ShowtimeCreationDto[] = []
+    const createDtos: ShowtimeCreateDto[] = []
     const expectedDtos: ShowtimeDto[] = []
 
     for (let i = 0; i < length; i++) {
-        const creationDto = {
+        const createDto = {
             batchId: '000000000000000000000001',
             movieId: '000000000000000000000002',
             theaterId: '000000000000000000000003',
@@ -33,20 +33,20 @@ export const createShowtimeDtos = (overrides = {}, length: number = 100) => {
             ...overrides
         }
 
-        const expectedDto = { id: expect.anything(), ...omit(creationDto, 'batchId') }
+        const expectedDto = { id: expect.anything(), ...omit(createDto, 'batchId') }
 
-        creationDtos.push(creationDto)
+        createDtos.push(createDto)
         expectedDtos.push(expectedDto)
     }
 
-    return { creationDtos, expectedDtos }
+    return { createDtos, expectedDtos }
 }
 
 export async function createShowtimes(
     service: ShowtimesService,
-    creationDtos: ShowtimeCreationDto[]
+    createDtos: ShowtimeCreateDto[]
 ) {
-    const { success } = await service.createShowtimes(creationDtos)
+    const { success } = await service.createShowtimes(createDtos)
     expect(success).toBeTruthy()
 
     const showtimes = await service.findAllShowtimes({

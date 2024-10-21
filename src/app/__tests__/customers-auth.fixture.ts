@@ -22,7 +22,7 @@ export async function closeIsolatedFixture(fixture: IsolatedFixture) {
 }
 
 export const createCustomerDto = (overrides = {}) => {
-    const creationDto = {
+    const createDto = {
         name: 'name',
         email: 'name@mail.com',
         birthdate: new Date('2020-12-12'),
@@ -30,14 +30,14 @@ export const createCustomerDto = (overrides = {}) => {
         ...overrides
     }
 
-    const expectedDto = { id: expect.anything(), ...omit(creationDto, 'password') }
+    const expectedDto = { id: expect.anything(), ...omit(createDto, 'password') }
 
-    return { creationDto, expectedDto }
+    return { createDto, expectedDto }
 }
 
 export const createCustomer = async (client: HttpTestClient, override = {}) => {
-    const { creationDto } = createCustomerDto(override)
-    const { body } = await client.post('/customers').body(creationDto).created()
+    const { createDto } = createCustomerDto(override)
+    const { body } = await client.post('/customers').body(createDto).created()
     return body
 }
 
@@ -48,16 +48,16 @@ export interface Credentials {
 }
 
 export async function createCredentials(client: HttpTestClient): Promise<Credentials> {
-    const creationDto = {
+    const createDto = {
         email: 'user@mail.com',
         password: 'password'
     }
 
-    const customer = await createCustomer(client, creationDto)
+    const customer = await createCustomer(client, createDto)
 
     return {
         customerId: customer.id,
-        email: creationDto.email,
-        password: creationDto.password
+        email: createDto.email,
+        password: createDto.password
     }
 }
