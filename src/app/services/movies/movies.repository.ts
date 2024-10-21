@@ -3,15 +3,13 @@ import { InjectModel } from '@nestjs/mongoose'
 import {
     addRegexQuery,
     MethodLog,
-    ModelAttributes,
     MongooseRepository,
     ObjectId,
     PaginationResult
 } from 'common'
-import { escapeRegExp } from 'lodash'
 import { FilterQuery, Model } from 'mongoose'
 import { MovieQueryDto } from './dtos'
-import { Movie } from './models'
+import { Movie, MovieCreateData, MovieUpdateData } from './models'
 
 @Injectable()
 export class MoviesRepository extends MongooseRepository<Movie> {
@@ -24,7 +22,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     }
 
     @MethodLog()
-    async createMovie(createDto: ModelAttributes<Movie>) {
+    async createMovie(createDto: MovieCreateData) {
         const movie = this.newDocument()
         Object.assign(movie, createDto)
 
@@ -32,7 +30,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     }
 
     @MethodLog()
-    async updateMovie(movieId: ObjectId, updateDto: Partial<ModelAttributes<Movie>>) {
+    async updateMovie(movieId: ObjectId, updateDto: MovieUpdateData) {
         const movie = await this.getMovie(movieId)
 
         if (updateDto.title) movie.title = updateDto.title

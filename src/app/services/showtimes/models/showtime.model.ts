@@ -1,5 +1,5 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, ObjectId, createMongooseSchema } from 'common'
+import { ModelAttributes, MongooseSchema, ObjectId, createMongooseSchema } from 'common'
 
 @Schema()
 export class Showtime extends MongooseSchema {
@@ -20,3 +20,5 @@ export class Showtime extends MongooseSchema {
 }
 
 export const ShowtimeSchema = createMongooseSchema(Showtime)
+
+export type ShowtimeCreateData = ModelAttributes<Showtime>

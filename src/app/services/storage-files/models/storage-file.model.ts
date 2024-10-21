@@ -1,5 +1,5 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, createMongooseSchema } from 'common'
+import { ModelAttributes, MongooseSchema, createMongooseSchema } from 'common'
 
 @Schema()
 export class StorageFile extends MongooseSchema {
@@ -14,3 +14,5 @@ export class StorageFile extends MongooseSchema {
 }
 
 export const StorageFileSchema = createMongooseSchema(StorageFile)
+
+export type StorageFileCreateData = ModelAttributes<StorageFile>

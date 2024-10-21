@@ -1,5 +1,6 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, createMongooseSchema } from 'common'
+import { ModelAttributes, MongooseSchema, createMongooseSchema } from 'common'
+import * as mongooseDelete from 'mongoose-delete'
 
 @Schema()
 export class Customer extends MongooseSchema {
@@ -19,6 +20,11 @@ export class Customer extends MongooseSchema {
 export const CustomerSchema = createMongooseSchema(Customer)
 CustomerSchema.index({ email: 1 })
 CustomerSchema.index({ name: 'text' })
+CustomerSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' })
+
+export type CustomerCreateData = ModelAttributes<Customer>
+export type CustomerUpdateData = Partial<ModelAttributes<Customer>>
+
 
 /*
 1. `CustomerSchema.index({ email: 1 })`

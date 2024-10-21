@@ -1,5 +1,6 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, ObjectId, createMongooseSchema } from 'common'
+import { ModelAttributes, MongooseSchema, ObjectId, createMongooseSchema } from 'common'
+import * as mongooseDelete from 'mongoose-delete'
 
 export enum MovieGenre {
     Action = 'Action',
@@ -49,3 +50,7 @@ export class Movie extends MongooseSchema {
 }
 
 export const MovieSchema = createMongooseSchema(Movie)
+MovieSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' })
+
+export type MovieCreateData = ModelAttributes<Movie>
+export type MovieUpdateData = Partial<ModelAttributes<Movie>>

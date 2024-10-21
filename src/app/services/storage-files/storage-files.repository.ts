@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MethodLog, ModelAttributes, MongooseRepository, ObjectId } from 'common'
+import { MethodLog, MongooseRepository, ObjectId } from 'common'
 import { ClientSession, Model } from 'mongoose'
-import { StorageFile } from './models'
+import { StorageFile, StorageFileCreateData } from './models'
 
 @Injectable()
 export class StorageFilesRepository extends MongooseRepository<StorageFile> {
@@ -15,7 +15,7 @@ export class StorageFilesRepository extends MongooseRepository<StorageFile> {
     }
 
     @MethodLog({ excludeArgs: ['session'] })
-    async createStorageFile(createDto: ModelAttributes<StorageFile>, session?: ClientSession) {
+    async createStorageFile(createDto: StorageFileCreateData, session?: ClientSession) {
         const storageFile = this.newDocument()
         Object.assign(storageFile, createDto)
 

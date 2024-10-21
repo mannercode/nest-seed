@@ -1,10 +1,9 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { addRegexQuery, MethodLog, ModelAttributes, MongooseRepository, ObjectId, PaginationResult } from 'common'
-import { escapeRegExp } from 'lodash'
+import { addRegexQuery, MethodLog, MongooseRepository, ObjectId, PaginationResult } from 'common'
 import { FilterQuery, Model } from 'mongoose'
 import { CustomerQueryDto } from './dtos'
-import { Customer } from './models'
+import { Customer, CustomerCreateData, CustomerUpdateData } from './models'
 
 @Injectable()
 export class CustomersRepository extends MongooseRepository<Customer> {
@@ -17,7 +16,7 @@ export class CustomersRepository extends MongooseRepository<Customer> {
     }
 
     @MethodLog()
-    async createCustomer(createDto: ModelAttributes<Customer>) {
+    async createCustomer(createDto: CustomerCreateData) {
         if (await this.findByEmail(createDto.email))
             throw new ConflictException(`Customer with email ${createDto.email} already exists`)
 
@@ -28,7 +27,7 @@ export class CustomersRepository extends MongooseRepository<Customer> {
     }
 
     @MethodLog()
-    async updateCustomer(customerId: ObjectId, updateDto: Partial<ModelAttributes<Customer>>) {
+    async updateCustomer(customerId: ObjectId, updateDto: CustomerUpdateData) {
         const customer = await this.getCustomer(customerId)
 
         if (updateDto.name) customer.name = updateDto.name

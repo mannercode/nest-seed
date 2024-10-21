@@ -13,7 +13,7 @@ import {
 import { FilterQuery, Model } from 'mongoose'
 import { TicketSalesStatusDto } from './dtos'
 import { TicketFilterDto } from './dtos/ticket-filter.dto'
-import { Ticket, TicketStatus } from './models'
+import { Ticket, TicketCreateData, TicketStatus } from './models'
 
 @Injectable()
 export class TicketsRepository extends MongooseRepository<Ticket> {
@@ -26,7 +26,7 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
     }
 
     @MethodLog()
-    async createTickets(createDtos: ModelAttributes<Ticket>[]) {
+    async createTickets(createDtos: TicketCreateData[]) {
         const tickets = createDtos.map((dto) => {
             const ticket = this.newDocument()
             Object.assign(ticket, dto)

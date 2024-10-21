@@ -9,10 +9,10 @@ import {
     ObjectId,
     PaginationResult
 } from 'common'
-import { differenceWith, escapeRegExp, uniq } from 'lodash'
+import { differenceWith, uniq } from 'lodash'
 import { FilterQuery, Model } from 'mongoose'
 import { TheaterQueryDto } from './dtos'
-import { Theater } from './models'
+import { Theater, TheaterCreateData, TheaterUpdateData } from './models'
 
 @Injectable()
 export class TheatersRepository extends MongooseRepository<Theater> {
@@ -25,20 +25,20 @@ export class TheatersRepository extends MongooseRepository<Theater> {
     }
 
     @MethodLog()
-    async createTheater(createDto: ModelAttributes<Theater>) {
+    async createTheater(createData: TheaterCreateData) {
         const theater = this.newDocument()
-        Object.assign(theater, createDto)
+        Object.assign(theater, createData)
 
         return theater.save()
     }
 
     @MethodLog()
-    async updateTheater(theaterId: ObjectId, updateDto: Partial<ModelAttributes<Theater>>) {
+    async updateTheater(theaterId: ObjectId, updateData: TheaterUpdateData) {
         const theater = await this.getTheater(theaterId)
 
-        if (updateDto.name) theater.name = updateDto.name
-        if (updateDto.latlong) theater.latlong = updateDto.latlong
-        if (updateDto.seatmap) theater.seatmap = updateDto.seatmap
+        if (updateData.name) theater.name = updateData.name
+        if (updateData.latlong) theater.latlong = updateData.latlong
+        if (updateData.seatmap) theater.seatmap = updateData.seatmap
 
         return theater.save()
     }
