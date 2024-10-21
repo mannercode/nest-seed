@@ -80,20 +80,54 @@ Admin -> Frontend: 상영시간 선택
 
 Admin -> Frontend: 상영시간 등록버튼 클릭
     Frontend -> Backend: 상영시간 등록 요청\nPOST /showtime-creation/showtimes
-        Backend -> ShowtimeCreation: CreateShowtimes(request)
-        Backend <-- ShowtimeCreation: CreateShowtimesResponse(success)
+        Backend -> ShowtimeCreation: createBatchShowtimes(request)
+        Backend <-- ShowtimeCreation: ShowtimeBatchCreateResponse(success)
     Frontend <-- Backend: OK(201)
 Admin <-- Frontend: 상영시간 등록성공 화면
 @enduml
 ```
 
-v1, 이건 삭제해야 한다.
+이건 예전 설계.
+
+-   ShowtimeCreation이 없기 때문에 Showtimes에서 생성 작업 큐를 관리하고 Tickets를 직접 핸들링 한다. 단순 생성 작업인데도 얼마나 복잡했겠는가. 모듈이 복잡하면 테스트도 어렵다
+-   showtimes만 단독으로 테스트는 어려웠고 사실상 tickets와 같이 테스트를 하게 된다. 테스트 코드도 공유한다. 즉, 둘은 한 모듈처럼 되는 것이다.
 
 ```plantuml
 @startuml
-Backend -> ShowtimeCreation: CreateShowtimes(request)
+Backend -> Showtimes: createShowtimes(creationRequest)
+Showtimes -> Showtimes: validateShowtimesCreationRequest(creationRequest)
+loop theater of creationRequest.theaters
+    loop startTime of creationRequest.startTimes
+        Showtimes -> Showtimes: createShowtime({theaterId, movieId, startTime, duration})
+        Showtimes <-- Showtimes: showtime
+        Showtimes -> Showtimes: createdShowtimes.add(showtime)
+    end
+end
+
+Showtimes -> Tickets: createTickets(createdShowtimes)
+loop showtime of createdShowtimes
+    Tickets -> Theaters: getTheater(showtime.theaterId)
+    Tickets <-- Theaters: theater
+    loop block of theater.seatmap.blocks
+        loop row of block.rows
+            loop seat of row.seats
+                Tickets -> Tickets: createTicket(block.name,row.name,seatIndex,showtime.id)
+            end
+        end
+    end
+end
+Showtimes <-- Tickets: completed
+Backend <- Showtimes : completed
+@enduml
+```
+
+v2,
+
+```plantuml
+@startuml
+Backend -> ShowtimeCreation: createBatchShowtimes(request)
 note right
-CreateShowtimesRequest {
+ShowtimeBatchCreateDto {
     "movieId": "movie#1",
     "theaterIds": ["theater#1","theater#2"],
     "durationMinutes": 90,
@@ -147,7 +181,7 @@ ShowtimeBatchCreateDto {
     "startTimes": [202012120900, 202012121100, 202012121300]
 }
 
-ShowtimeBatchCreationResult{
+ShowtimeBatchCreateResult{
     "batchId": "batchid#1",
     "result": "complete",
     "createdShowtimes": 100,
@@ -164,7 +198,7 @@ Showtime {
 
 ```plantuml
 @startuml
-Backend -> ShowtimeCreation: requestShowtimeCreation(request)
+Backend -> ShowtimeCreation: createBatchShowtimes(request)
         ShowtimeCreation -> ShowtimeCreation: enqueueTask(request)
         ShowtimeCreation --> ShowtimeCreation: batchId
 Backend <-- ShowtimeCreation: batchId
@@ -200,39 +234,7 @@ Backend <-- ShowtimeCreation: ShowtimeBatchCreationResult(success)
 @enduml
 ```
 
-이건 예전 설계.
 
--   ShowtimeCreation이 없기 때문에 Showtimes에서 생성 작업 큐를 관리하고 Tickets를 직접 핸들링 한다. 단순 생성 작업인데도 얼마나 복잡했겠는가. 모듈이 복잡하면 테스트도 어렵다
--   showtimes만 단독으로 테스트는 어려웠고 사실상 tickets와 같이 테스트를 하게 된다. 테스트 코드도 공유한다. 즉, 둘은 한 모듈처럼 되는 것이다.
-
-```plantuml
-@startuml
-Backend -> Showtimes: createShowtimes(creationRequest)
-Showtimes -> Showtimes: validateShowtimesCreationRequest(creationRequest)
-loop theater of creationRequest.theaters
-    loop startTime of creationRequest.startTimes
-        Showtimes -> Showtimes: createShowtime({theaterId, movieId, startTime, duration})
-        Showtimes <-- Showtimes: showtime
-        Showtimes -> Showtimes: createdShowtimes.add(showtime)
-    end
-end
-
-Showtimes -> Tickets: createTickets(createdShowtimes)
-loop showtime of createdShowtimes
-    Tickets -> Theaters: getTheater(showtime.theaterId)
-    Tickets <-- Theaters: theater
-    loop block of theater.seatmap.blocks
-        loop row of block.rows
-            loop seat of row.seats
-                Tickets -> Tickets: createTicket(block.name,row.name,seatIndex,showtime.id)
-            end
-        end
-    end
-end
-Showtimes <-- Tickets: completed
-Backend <- Showtimes : completed
-@enduml
-```
 
 ## 3. 상영시간 충돌 검증 알고리즘
 

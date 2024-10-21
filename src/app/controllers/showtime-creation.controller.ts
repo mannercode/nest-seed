@@ -33,7 +33,7 @@ export class ShowtimeCreationController {
 
     @HttpCode(HttpStatus.OK)
     @Post('showtimes/find')
-    async getByIds(@Body('theaterIds') theaterIds: string[]) {
+    async findShowtimesByTheaterIds(@Body('theaterIds') theaterIds: string[]) {
         return this.service.findShowtimes(theaterIds)
     }
 
