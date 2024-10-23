@@ -33,7 +33,8 @@
                 "jebbs.plantuml",
                 "esbenp.prettier-vscode",
                 "mutantdino.resourcemonitor",
-                "foxundermoon.shell-format"
+                "foxundermoon.shell-format",
+                "github.vscode-pull-request-github"
             ],
             "settings": {
                 "typescript.tsc.autoDetect": "off",
