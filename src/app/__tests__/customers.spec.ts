@@ -1,14 +1,14 @@
 import { expect } from '@jest/globals'
 import { nullObjectId } from 'common'
 import { CustomerDto } from 'services/customers'
-import { HttpTestClient, expectEqualUnsorted } from 'testlib'
+import { expectEqualUnsorted, HttpTestClient } from 'testlib'
 import {
     closeIsolatedFixture,
     createCustomer,
     createCustomers,
     createIsolatedFixture,
     IsolatedFixture,
-    makeCustomerDto
+    createCustomerDto
 } from './customers.fixture'
 
 describe('/customers', () => {
@@ -26,13 +26,13 @@ describe('/customers', () => {
 
     describe('POST /customers', () => {
         it('고객을 생성해야 한다', async () => {
-            const { createDto, expectedDto } = makeCustomerDto()
+            const { createDto, expectedDto } = createCustomerDto()
 
             await client.post('/customers').body(createDto).created(expectedDto)
         })
 
         it('이메일이 이미 존재하면 CONFLICT(409)를 반환해야 한다', async () => {
-            const { createDto } = makeCustomerDto()
+            const { createDto } = createCustomerDto()
 
             await client.post('/customers').body(createDto).created()
             await client
@@ -48,7 +48,6 @@ describe('/customers', () => {
                 .badRequest([
                     'name should not be empty',
                     'name must be a string',
-                    'email should not be empty',
                     'email must be an email',
                     'birthdate must be a Date instance',
                     'password must be a string'
@@ -69,13 +68,10 @@ describe('/customers', () => {
                 email: 'new@mail.com',
                 birthdate: new Date('1900-12-31')
             }
+            const expected = { ...customer, ...updateDto }
 
-            const updated = await client
-                .patch(`/customers/${customer.id}`)
-                .body(updateDto)
-                .ok({ ...customer, ...updateDto })
-
-            await client.get(`/customers/${customer.id}`).ok(updated.body)
+            await client.patch(`/customers/${customer.id}`).body(updateDto).ok(expected)
+            await client.get(`/customers/${customer.id}`).ok(expected)
         })
 
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
@@ -132,7 +128,7 @@ describe('/customers', () => {
             customers = await createCustomers(client)
         })
 
-        it('기본 페이지네이션 설정으로 고객 목록을 가져와야 한다', async () => {
+        it('기본 페이지네이션 설정으로 고객을 가져와야 한다', async () => {
             const { body } = await client.get('/customers').ok()
             const { items, ...paginated } = body
 
@@ -144,7 +140,14 @@ describe('/customers', () => {
             expectEqualUnsorted(items, customers)
         })
 
-        it('이름의 일부로 고객 목록을 검색할 수 있어야 한다', async () => {
+        it('잘못된 필드로 검색하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
+            await client
+                .get('/customers')
+                .query({ wrong: 'value' })
+                .badRequest(['property wrong should not exist'])
+        })
+
+        it('이름의 일부로 고객을 검색할 수 있어야 한다', async () => {
             const partialName = 'Customer-1'
             const { body } = await client.get('/customers').query({ name: partialName }).ok()
 
@@ -152,7 +155,7 @@ describe('/customers', () => {
             expectEqualUnsorted(body.items, expected)
         })
 
-        it('이메일의 일부로 고객 목록을 검색할 수 있어야 한다', async () => {
+        it('이메일의 일부로 고객을 검색할 수 있어야 한다', async () => {
             const partialEmail = 'user-1'
             const { body } = await client.get('/customers').query({ email: partialEmail }).ok()
 

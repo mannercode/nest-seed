@@ -1,14 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import {
-    JwtAuthService,
-    maps,
-    MethodLog,
-    PaginationOption,
-    PaginationResult,
-    Password
-} from 'common'
+import { JwtAuthService, maps, MethodLog, objectId, ObjectId, objectIds, PaginationResult, Password } from 'common'
 import { CustomersRepository } from './customers.repository'
-import { CreateCustomerDto, CustomerDto, QueryCustomersDto, UpdateCustomerDto } from './dto'
+import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
 
 @Injectable()
 export class CustomersService {
@@ -18,7 +11,7 @@ export class CustomersService {
     ) {}
 
     @MethodLog()
-    async createCustomer(createDto: CreateCustomerDto) {
+    async createCustomer(createDto: CustomerCreateDto) {
         const customer = await this.repository.createCustomer({
             ...createDto,
             password: await Password.hash(createDto.password)
@@ -28,38 +21,38 @@ export class CustomersService {
     }
 
     @MethodLog()
-    async updateCustomer(customerId: string, updateDto: UpdateCustomerDto) {
-        const customer = await this.repository.updateCustomer(customerId, updateDto)
+    async updateCustomer(customerId: string, updateDto: CustomerUpdateDto) {
+        const customer = await this.repository.updateCustomer(objectId(customerId), updateDto)
         return new CustomerDto(customer)
     }
 
     @MethodLog({ level: 'verbose' })
     async getCustomer(customerId: string) {
-        const customer = await this.repository.getCustomer(customerId)
+        const customer = await this.repository.getCustomer(objectId(customerId))
         return new CustomerDto(customer)
     }
 
     @MethodLog()
     async deleteCustomer(customerId: string) {
-        await this.repository.deleteCustomer(customerId)
+        await this.repository.deleteCustomer(objectId(customerId))
         return true
     }
 
     @MethodLog({ level: 'verbose' })
-    async findCustomers(queryDto: QueryCustomersDto, pagination: PaginationOption) {
-        const { items, ...paginated } = await this.repository.findCustomers(queryDto, pagination)
+    async findCustomers(queryDto: CustomerQueryDto) {
+        const { items, ...paginated } = await this.repository.findCustomers(queryDto)
 
         return { ...paginated, items: maps(items, CustomerDto) } as PaginationResult<CustomerDto>
     }
 
     @MethodLog()
     async customersExist(customerIds: string[]) {
-        return this.repository.existsByIds(customerIds)
+        return this.repository.existsByIds(objectIds(customerIds))
     }
 
     @MethodLog()
-    async login(customerId: string, email: string) {
-        return this.jwtAuthService.generateAuthTokens(customerId, email)
+    async login(userId: string, email: string) {
+        return this.jwtAuthService.generateAuthTokens(userId, email)
     }
 
     @MethodLog()

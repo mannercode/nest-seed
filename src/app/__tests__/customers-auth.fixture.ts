@@ -1,24 +1,27 @@
+import { AppConfigService } from 'config'
 import { omit } from 'lodash'
 import { createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
 import { AppModule } from '../app.module'
 
 export interface IsolatedFixture {
     testContext: HttpTestContext
+    config: AppConfigService
     credentials: Credentials
 }
 
 export async function createIsolatedFixture() {
     const testContext = await createHttpTestContext({ imports: [AppModule] })
+    const config = testContext.app.get(AppConfigService)
     const credentials = await createCredentials(testContext.client)
 
-    return { testContext, credentials }
+    return { testContext, config, credentials }
 }
 
 export async function closeIsolatedFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
 }
 
-export const makeCustomerDto = (overrides = {}) => {
+export const createCustomerDto = (overrides = {}) => {
     const createDto = {
         name: 'name',
         email: 'name@mail.com',
@@ -33,7 +36,7 @@ export const makeCustomerDto = (overrides = {}) => {
 }
 
 export const createCustomer = async (client: HttpTestClient, override = {}) => {
-    const { createDto } = makeCustomerDto(override)
+    const { createDto } = createCustomerDto(override)
     const { body } = await client.post('/customers').body(createDto).created()
     return body
 }

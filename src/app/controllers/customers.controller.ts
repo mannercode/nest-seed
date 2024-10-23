@@ -4,6 +4,7 @@ import {
     Delete,
     Get,
     HttpCode,
+    HttpStatus,
     Param,
     Patch,
     Post,
@@ -12,15 +13,16 @@ import {
     UseGuards,
     UsePipes
 } from '@nestjs/common'
-import { Assert, PaginationOption, PaginationPipe } from 'common'
+import { Assert } from 'common'
 import {
-    CreateCustomerDto,
+    CustomerCreateDto,
     CustomerDto,
+    CustomerQueryDto,
     CustomersService,
-    QueryCustomersDto,
-    UpdateCustomerDto
+    CustomerUpdateDto
 } from 'services/customers'
 import { CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
+import { DefaultPaginationPipe } from './pipes'
 
 @Controller('customers')
 @UseGuards(CustomerJwtAuthGuard)
@@ -29,14 +31,14 @@ export class CustomersController {
 
     @Public()
     @Post()
-    async createCustomer(@Body() createDto: CreateCustomerDto) {
+    async createCustomer(@Body() createDto: CustomerCreateDto) {
         return this.service.createCustomer(createDto)
     }
 
     @Patch(':customerId')
     async updateCustomer(
         @Param('customerId') customerId: string,
-        @Body() updateDto: UpdateCustomerDto
+        @Body() updateDto: CustomerUpdateDto
     ) {
         return this.service.updateCustomer(customerId, updateDto)
     }
@@ -51,17 +53,14 @@ export class CustomersController {
         return this.service.deleteCustomer(customerId)
     }
 
-    @UsePipes(new PaginationPipe(50))
+    @UsePipes(DefaultPaginationPipe)
     @Get()
-    async findCustomers(
-        @Query() queryDto: QueryCustomersDto,
-        @Query() pagination: PaginationOption
-    ) {
-        return this.service.findCustomers(queryDto, pagination)
+    async findCustomers(@Query() queryDto: CustomerQueryDto) {
+        return this.service.findCustomers(queryDto)
     }
 
     @UseGuards(CustomerLocalAuthGuard)
-    @HttpCode(200)
+    @HttpCode(HttpStatus.OK)
     @Post('login')
     async login(@Req() req: { user: CustomerDto }) {
         Assert.defined(req.user, 'req.user must be returned in LocalStrategy.validate')
@@ -70,7 +69,7 @@ export class CustomersController {
     }
 
     @Public()
-    @HttpCode(200)
+    @HttpCode(HttpStatus.OK)
     @Post('refresh')
     async refreshToken(@Body('refreshToken') refreshToken: string) {
         return this.service.refreshAuthTokens(refreshToken)

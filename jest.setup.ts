@@ -1,3 +1,4 @@
+import 'reflect-metadata'
 import { createHash } from 'crypto'
 import { exit } from 'process'
 

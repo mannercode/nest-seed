@@ -59,8 +59,8 @@ export class PaginationResult<E> {
 }
 
 @Injectable()
-export class PaginationPipe implements PipeTransform {
-    constructor(private takeLimit: number) {}
+export abstract class PaginationPipe implements PipeTransform {
+    abstract get takeLimit(): number
 
     transform(value: any, metadata: ArgumentMetadata) {
         if (metadata.type === 'query') {

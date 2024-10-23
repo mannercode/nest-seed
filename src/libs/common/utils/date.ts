@@ -83,11 +83,20 @@ export function convertDateToString(date: Date): string {
 }
 
 export function convertStringToDate(dateString: string): Date {
-    if (dateString.length !== 8) {
-        throw new Error('Invalid date string format. Expected YYYYMMDD.')
+    if (!(dateString.length === 8 || dateString.length === 12)) {
+        throw new Error('Invalid date string format. Expected YYYYMMDD or YYYYMMDDHHmm.')
     }
+
     const year = parseInt(dateString.substring(0, 4), 10)
     const month = parseInt(dateString.substring(4, 6), 10) - 1 // Subtract 1 as months are represented as 0-11
     const day = parseInt(dateString.substring(6, 8), 10)
-    return new Date(year, month, day)
+    let hours = 0
+    let minutes = 0
+
+    if (dateString.length === 12) {
+        hours = parseInt(dateString.substring(8, 10), 10)
+        minutes = parseInt(dateString.substring(10, 12), 10)
+    }
+
+    return new Date(year, month, day, hours, minutes)
 }

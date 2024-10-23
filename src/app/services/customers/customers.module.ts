@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'
 import { JwtAuthService } from 'common'
-import { Config } from 'config'
+import { AppConfigService } from 'config'
 import { CustomersRepository } from './customers.repository'
 import { CustomersService } from './customers.service'
-import { Customer, CustomerSchema } from './schemas'
+import { Customer, CustomerSchema } from './models'
 
 @Module({
     imports: [
@@ -16,7 +16,11 @@ import { Customer, CustomerSchema } from './schemas'
         CustomersService,
         CustomersRepository,
         JwtAuthService,
-        { provide: 'AuthConfig', useFactory: () => Config.auth }
+        {
+            provide: 'AuthConfig',
+            useFactory: (config: AppConfigService) => config.auth,
+            inject: [AppConfigService]
+        }
     ],
     exports: [CustomersService]
 })

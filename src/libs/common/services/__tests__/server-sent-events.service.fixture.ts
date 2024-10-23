@@ -17,9 +17,3 @@ export class SseController {
         return { success: true }
     }
 }
-
-@Module({
-    controllers: [SseController],
-    providers: [ServerSentEventsService]
-})
-export class AppModule {}

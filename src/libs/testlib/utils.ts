@@ -39,3 +39,55 @@ export function getAvailablePort(): Promise<number> {
         })
     })
 }
+
+export const objectToFields = (createDto: any) => {
+    const fields = Object.entries(createDto).map(([key, value]) => {
+        let processedValue
+
+        if (typeof value === 'string') {
+            processedValue = value
+        } else if (value instanceof Date) {
+            processedValue = value.toISOString()
+        } else if (Array.isArray(value)) {
+            processedValue = JSON.stringify(value)
+        } else if (value === null || value === undefined) {
+            processedValue = ''
+        } else {
+            processedValue = JSON.stringify(value)
+        }
+
+        return { name: key, value: processedValue }
+    })
+
+    return fields
+}
+
+export interface EventMessage {
+    event: string
+    id: number
+    data: string
+}
+
+export function parseEventMessage(input: string): EventMessage {
+    const lines = input.split('\n')
+    const result: Partial<EventMessage> = {}
+
+    lines.forEach((line) => {
+        const [key, value] = line.split(': ')
+        if (key && value) {
+            switch (key) {
+                case 'event':
+                    result.event = value
+                    break
+                case 'id':
+                    result.id = parseInt(value, 10)
+                    break
+                case 'data':
+                    result.data = value
+                    break
+            }
+        }
+    })
+
+    return result as EventMessage
+}

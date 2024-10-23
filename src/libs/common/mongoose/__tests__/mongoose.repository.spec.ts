@@ -1,5 +1,5 @@
 import { expect } from '@jest/globals'
-import { maps, nullObjectId, OrderDirection, pickIds, pickItems } from 'common'
+import { maps, nullObjectId, objectId, objectIds, OrderDirection, pickIds, pickItems } from 'common'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import { expectEqualUnsorted } from 'testlib'
 import { MongooseException } from '../exceptions'
@@ -170,12 +170,12 @@ describe('MongoRepository', () => {
         })
 
         it('should return true if the IDs does exist', async () => {
-            const exists = await repository.existsByIds(pickItems(samples, 'id'))
+            const exists = await repository.existsByIds(objectIds(pickItems(samples, 'id')))
             expect(exists).toBeTruthy()
         })
 
         it('should return false if any ID does not exist', async () => {
-            const exists = await repository.existsByIds([nullObjectId])
+            const exists = await repository.existsByIds(objectIds([nullObjectId]))
             expect(exists).toBeFalsy()
         })
     })
@@ -189,13 +189,13 @@ describe('MongoRepository', () => {
         })
 
         it('should find a document by ID', async () => {
-            const doc = await repository.findById(sample.id)
+            const doc = await repository.findById(objectId(sample.id))
 
             expect(new SampleDto(doc!)).toEqual(sample)
         })
 
         it('should return null if the ID does not exist', async () => {
-            const doc = await repository.findById(nullObjectId)
+            const doc = await repository.findById(objectId(nullObjectId))
 
             expect(doc).toBeNull()
         })
@@ -211,13 +211,13 @@ describe('MongoRepository', () => {
 
         it('should find documents by multiple IDs', async () => {
             const ids = pickIds(samples)
-            const docs = await repository.findByIds(ids)
+            const docs = await repository.findByIds(objectIds(ids))
 
             expectEqualUnsorted(maps(docs, SampleDto), samples)
         })
 
         it('should ignore non-existent IDs', async () => {
-            const docs = await repository.findByIds([nullObjectId])
+            const docs = await repository.findByIds(objectIds([nullObjectId]))
             expect(docs).toHaveLength(0)
         })
     })
@@ -233,16 +233,16 @@ describe('MongoRepository', () => {
         it('should delete multiple documents successfully', async () => {
             const ids = pickIds(samples.slice(0, 10))
 
-            const deletedCount = await repository.deleteByIds(ids)
+            const deletedCount = await repository.deleteByIds(objectIds(ids))
             expect(deletedCount).toEqual(ids.length)
 
-            const docs = await repository.findByIds(ids)
+            const docs = await repository.findByIds(objectIds(ids))
 
             expect(docs).toHaveLength(0)
         })
 
         it('should ignore non-existent IDs without errors', async () => {
-            const deletedCount = await repository.deleteByIds([nullObjectId])
+            const deletedCount = await repository.deleteByIds(objectIds([nullObjectId]))
 
             expect(deletedCount).toEqual(0)
         })

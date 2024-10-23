@@ -1,5 +1,4 @@
 import {
-    BadRequestException,
     Body,
     Controller,
     Delete,
@@ -12,10 +11,7 @@ import {
 } from '@nestjs/common'
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { IsString } from 'class-validator'
-import { generateUUID } from 'common'
-import { Config } from 'config'
 import { createReadStream } from 'fs'
-import { diskStorage } from 'multer'
 import { StorageFilesService } from 'services/storage-files'
 
 class UploadFileDto {
@@ -25,33 +21,13 @@ class UploadFileDto {
 
 @Controller('storage-files')
 export class StorageFilesController {
-    constructor(private service: StorageFilesService) {}
+    constructor(
+        private service: StorageFilesService,
+    ) {}
 
+    @UseInterceptors(FilesInterceptor('files'))
     @Post()
-    @UseInterceptors(
-        FilesInterceptor('files', undefined, {
-            storage: diskStorage({
-                destination: (_req, _file, cb) => cb(null, Config.fileUpload.directory),
-                filename: (_req, _file, cb) => cb(null, `${generateUUID()}.tmp`)
-            }),
-            fileFilter: (_req, file, cb) => {
-                let error: Error | null = null
-
-                if (!Config.fileUpload.allowedMimeTypes.includes(file.mimetype)) {
-                    error = new BadRequestException(
-                        `File type not allowed. Allowed types are: ${Config.fileUpload.allowedMimeTypes.join(', ')}`
-                    )
-                }
-
-                cb(error, error === null)
-            },
-            limits: {
-                fileSize: Config.fileUpload.maxFileSizeBytes,
-                files: Config.fileUpload.maxFilesPerUpload
-            }
-        })
-    )
-    async uploadFiles(@UploadedFiles() files: Express.Multer.File[], @Body() _body: UploadFileDto) {
+    async saveFiles(@UploadedFiles() files: Express.Multer.File[], @Body() _body: UploadFileDto) {
         const createDtos = files.map((file) => ({
             originalname: file.originalname,
             mimetype: file.mimetype,

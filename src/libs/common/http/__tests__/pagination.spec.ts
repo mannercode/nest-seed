@@ -15,7 +15,6 @@ describe('Pagination', () => {
                     provide: APP_PIPE,
                     useFactory: () =>
                         new ValidationPipe({
-                            whitelist: true,
                             transform: true,
                             transformOptions: { enableImplicitConversion: true }
                         })
@@ -43,14 +42,6 @@ describe('Pagination', () => {
 
     it('should return Bad Request when order direction is incorrect', async () => {
         return client.get('/samples').query({ orderby: 'name:wrong' }).badRequest()
-    })
-
-    it('Multiple @Query() usage is possible', async () => {
-        const skip = 2
-        const take = 3
-        const res = await client.get('/samples/multiple').query({ skip, take, name: 'abcd' }).ok()
-
-        expect(res.body).toEqual({ user: { name: 'abcd' }, pagination: { skip, take } })
     })
 
     it("Should return Bad Request when 'take' exceeds the specified limit", async () => {

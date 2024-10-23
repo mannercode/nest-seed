@@ -28,7 +28,7 @@
                 "src/libs/testlib/index"
             ],
             "config": [
-                "src/config/index"
+                "src/app/config/index"
             ]
         }
     },

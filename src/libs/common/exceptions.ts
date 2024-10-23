@@ -16,3 +16,8 @@ export class FatalException extends Exception {}
  * This is usually caused by a programmer's mistake.
  */
 export class LogicException extends FatalException {}
+
+/**
+ * The exception occurred due to a configuration error.
+ */
+export class ConfigException extends FatalException {}

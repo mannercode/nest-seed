@@ -1,6 +1,6 @@
 import { JwtService } from '@nestjs/jwt'
 import { nullObjectId } from 'common'
-import { Config } from 'config'
+import { AppConfigService } from 'config'
 import { HttpTestClient } from 'testlib'
 import {
     closeIsolatedFixture,
@@ -13,10 +13,12 @@ describe('/customers authentication', () => {
     let isolated: IsolatedFixture
     let client: HttpTestClient
     let credentials: Credentials
+    let config: AppConfigService
 
     beforeEach(async () => {
         isolated = await createIsolatedFixture()
         client = isolated.testContext.client
+        config = isolated.config
         credentials = isolated.credentials
     })
 
@@ -93,7 +95,7 @@ describe('/customers authentication', () => {
             await client
                 .get(`/customers/${credentials.customerId}`)
                 .headers({ Authorization: `Bearer ${invalidToken}` })
-                .unauthorized({"message": "Unauthorized", "statusCode": 401})
+                .unauthorized({ message: 'Unauthorized', statusCode: 401 })
         })
 
         it('잘못된 데이터가 포함된 accessToken을 제공하면 UNAUTHORIZED(401)를 반환해야 한다', async () => {
@@ -101,13 +103,13 @@ describe('/customers authentication', () => {
 
             const wrongUserIdToken = jwtService.sign(
                 { userId: nullObjectId },
-                { secret: Config.auth.accessSecret, expiresIn: '15m' }
+                { secret: config.auth.accessSecret, expiresIn: '15m' }
             )
 
             await client
                 .get(`/customers/${credentials.customerId}`)
                 .headers({ Authorization: `Bearer ${wrongUserIdToken}` })
-                .unauthorized({"message": "Unauthorized", "statusCode": 401})
+                .unauthorized({ message: 'Unauthorized', statusCode: 401 })
         })
     })
 })

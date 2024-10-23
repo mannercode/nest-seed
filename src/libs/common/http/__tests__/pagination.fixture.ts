@@ -1,10 +1,11 @@
-import { UsePipes, Controller, Get, Module, Query } from '@nestjs/common'
-import { IsNotEmpty } from 'class-validator'
+import { Controller, Get, Injectable, Module, Query, UsePipes } from '@nestjs/common'
 import { PaginationOption, PaginationPipe } from '../pagination'
 
-export class UserQuery {
-    @IsNotEmpty()
-    name: string
+@Injectable()
+class DefaultPaginationPipe extends PaginationPipe {
+    get takeLimit(): number {
+        return 50
+    }
 }
 
 @Controller('samples')
@@ -14,14 +15,8 @@ class SamplesController {
         return query
     }
 
-    @Get('multiple')
-    @UsePipes(new PaginationPipe(50))
-    async handleMultiple(@Query() pagination: PaginationOption, @Query() user: UserQuery) {
-        return { pagination, user }
-    }
-
     @Get('takeLimit')
-    @UsePipes(new PaginationPipe(50))
+    @UsePipes(DefaultPaginationPipe)
     async handleMaxsize(@Query() pagination: PaginationOption) {
         return pagination
     }

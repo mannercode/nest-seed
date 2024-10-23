@@ -80,58 +80,75 @@ Admin -> Frontend: 상영시간 선택
 
 Admin -> Frontend: 상영시간 등록버튼 클릭
     Frontend -> Backend: 상영시간 등록 요청\nPOST /showtime-creation/showtimes
-        Backend -> ShowtimeCreation: CreateShowtimes(request)
-        Backend <-- ShowtimeCreation: CreateShowtimesResponse(success)
+        Backend -> ShowtimeCreation: createBatchShowtimes(request)
+        Backend <-- ShowtimeCreation: ShowtimeBatchCreateResponse(success)
     Frontend <-- Backend: OK(201)
 Admin <-- Frontend: 상영시간 등록성공 화면
 @enduml
 ```
 
+-   검증과 생성에 오랜시간이 걸리기 때문에 위의 동기 요청(Synchronous Request)은 UX에 부정적이다. 그래서 클라이언트가 생성 요청을 하면 batchId를 리턴하고 후에 SSE로 처리 결과 이벤트를 발생시킨다.
+-   ShowtimeCreationService는 애플리케이션 서비스이고 다른 서비스에 영향을 주지 않는다. 설계를 최소화 하고 많은 부분은 구현 단계에서 정한다. 예를 들어 중간에 실패했을 때 롤백 전략 같은 것들.
+
 ```plantuml
 @startuml
-Backend -> ShowtimeCreation: CreateShowtimes(request)
-note right
-CreateShowtimesRequest {
+Backend -> ShowtimeCreation: createBatchShowtimes(request)
+        ShowtimeCreation -> ShowtimeCreation: enqueueTask(request)
+        ShowtimeCreation --> ShowtimeCreation: batchId
+Backend <-- ShowtimeCreation: batchId
+
+[o-> ShowtimeCreation: queue에서 task(batchId, request) 전달
+    ShowtimeCreation -> ShowtimeCreation: validateShowtimeCreationRequest(request)
+
+    ShowtimeCreation -> ShowtimeCreation: createShowtimes(request, batchId)
+    activate ShowtimeCreation #yellow
+        loop theater in request.theaters
+            loop startTime in request.startTimes
+                ShowtimeCreation -> ShowtimeCreation: createShowtimeCreateDto({theaterId, movieId, startTime, duration})
+            end
+        end
+
+        ShowtimeCreation -> Showtimes: createShowtimes(showtimeCreateDtos, batchId)
+        ShowtimeCreation <-- Showtimes: showtimes
+    deactivate ShowtimeCreation
+
+    ShowtimeCreation -> ShowtimeCreation: createTickets(showtimes, batchId)
+    activate ShowtimeCreation #yellow
+        loop showtime in showtimes
+            ShowtimeCreation -> Theaters: getTheater(showtime.theaterId)
+            ShowtimeCreation <-- Theaters: theater
+            loop seat in theater.seats
+                ShowtimeCreation -> ShowtimeCreation: createTicketCreateDto(seat, showtime.id)
+            end
+            ShowtimeCreation -> Tickets: createTickets(ticketCreateDtos,batchId)
+            ShowtimeCreation <-- Tickets: tickets
+        end
+    deactivate ShowtimeCreation
+Backend <-- ShowtimeCreation: ShowtimeBatchCreationResult(success)
+@enduml
+```
+
+```
+ShowtimeBatchCreateDto {
     "movieId": "movie#1",
     "theaterIds": ["theater#1","theater#2"],
     "durationMinutes": 90,
     "startTimes": [202012120900, 202012121100, 202012121300]
 }
-end note
 
-ShowtimeCreation -> ShowtimeCreation: validateCreateShowtimesRequest(request)
-activate ShowtimeCreation
-loop theater of request.theaters
-    loop startTime of request.startTimes
-        ShowtimeCreation -> Showtimes: createShowtime({theaterId, movieId, startTime, duration})
-        ShowtimeCreation <-- Showtimes: showtime
-        ShowtimeCreation -> Showtimes: createdShowtimes.add(showtime)
-    end
-end
-note right
+ShowtimeBatchCreateResult{
+    "batchId": "batchid#1",
+    "result": "complete",
+    "createdShowtimes": 100,
+    "createdTickets": 500
+}
+
 Showtime {
     theaterId
     movieId
     startTime
     endTime
 }
-end note
-deactivate ShowtimeCreation
-
-ShowtimeCreation -> ShowtimeCreation: createTickets(createdShowtimes)
-activate ShowtimeCreation
-loop showtime of createdShowtimes
-    ShowtimeCreation -> Theaters: getTheater(showtime.theaterId)
-    ShowtimeCreation <-- Theaters: theater
-    loop seat of theater.seats
-        ShowtimeCreation -> Tickets: createTicket(seat, showtime.id)
-        ShowtimeCreation <-- Tickets: ticket
-    end
-end
-deactivate ShowtimeCreation
-
-Backend <-- ShowtimeCreation: CreateShowtimesResponse
-@enduml
 ```
 
 ## 3. 상영시간 충돌 검증 알고리즘
@@ -152,7 +169,7 @@ const timeslots: Set<number> = new Set([
 ```
 
 ```ts
-const conflictShowtimes:Showtime[] = []
+const conflictingShowtimes:Showtime[] = []
 const timeslots: Set<number> = new Set([])
 
 for startTime of startTimes {
@@ -169,7 +186,7 @@ for theater of theaters{
     for showtime of showtimes{
         for(timeslot = startTime;timeslot <= endTime;timeslot+=10) {
             if(timeslots.has(timeslot)){
-                conflictShowtimes.push(showtime)
+                conflictingShowtimes.push(showtime)
                 break
             }
         }
