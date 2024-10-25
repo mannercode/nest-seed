@@ -1,8 +1,18 @@
-import { CacheModule as NestCacheModule } from '@nestjs/cache-manager'
-import { Global, Module } from '@nestjs/common'
+import { CACHE_MANAGER, CacheModule as NestCacheModule } from '@nestjs/cache-manager'
+import { Global, Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
+import { Cache } from 'cache-manager'
 import { redisStore } from 'cache-manager-ioredis-yet'
-import { CacheService } from 'common'
 import { AppConfigService } from 'config'
+
+@Injectable()
+export class CacheDisconnectService implements OnModuleDestroy {
+    constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+
+    onModuleDestroy() {
+        const client = (this.cacheManager.store as any).client
+        client?.disconnect()
+    }
+}
 
 @Global()
 @Module({
@@ -14,7 +24,7 @@ import { AppConfigService } from 'config'
             inject: [AppConfigService]
         })
     ],
-    providers: [CacheService],
-    exports: [CacheService]
+    providers: [CacheDisconnectService],
+    exports: [NestCacheModule]
 })
 export class CacheModule {}

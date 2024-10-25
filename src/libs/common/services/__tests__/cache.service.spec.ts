@@ -1,7 +1,7 @@
 import { CacheModule } from '@nestjs/cache-manager'
 import { Test, TestingModule } from '@nestjs/testing'
 import { sleep } from 'common'
-import { CacheService } from '..'
+import { CACHE_TAG, CacheService } from '..'
 
 describe('CacheService', () => {
     let module: TestingModule
@@ -10,7 +10,7 @@ describe('CacheService', () => {
     beforeEach(async () => {
         module = await Test.createTestingModule({
             imports: [CacheModule.register()],
-            providers: [CacheService]
+            providers: [CacheService, { provide: CACHE_TAG, useValue: 'myTag' }]
         }).compile()
 
         cacheService = module.get(CacheService)
@@ -20,10 +20,10 @@ describe('CacheService', () => {
         if (module) await module.close()
     })
 
-    it('sets a value in the cache', async () => {
-        const key = 'key'
-        const value = 'value'
+    const key = 'key'
+    const value = 'value'
 
+    it('sets a value in the cache', async () => {
         await cacheService.set(key, value)
         const cachedValue = await cacheService.get(key)
 
@@ -31,9 +31,6 @@ describe('CacheService', () => {
     })
 
     it('deletes a value from the cache', async () => {
-        const key = 'key'
-        const value = 'value'
-
         await cacheService.set(key, value)
         const initialValue = await cacheService.get(key)
         expect(initialValue).toEqual(value)
@@ -44,9 +41,7 @@ describe('CacheService', () => {
     })
 
     it('sets an expiration time', async () => {
-        const key = 'key'
-        const value = 'value'
-        const ttl = '1s'
+        const ttl = 1000
 
         await cacheService.set(key, value, ttl)
         const initialValue = await cacheService.get(key)
@@ -57,24 +52,8 @@ describe('CacheService', () => {
         expect(deletedValue).toBeUndefined()
     })
 
-    it('expresses milliseconds as a decimal', async () => {
-        const key = 'key'
-        const value = 'value'
-        const ttl = '0.5s'
-
-        await cacheService.set(key, value, ttl)
-        const initialValue = await cacheService.get(key)
-        expect(initialValue).toEqual(value)
-
-        await sleep(500 + 100)
-        const deletedValue = await cacheService.get(key)
-        expect(deletedValue).toBeUndefined()
-    })
-
     it('throws an exception if the expiration time is negative', async () => {
-        const key = 'key'
-        const value = 'value'
-        const wrongTTL = '-1s'
+        const wrongTTL = -100
 
         await expect(cacheService.set(key, value, wrongTTL)).rejects.toThrow(Error)
     })

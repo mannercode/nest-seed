@@ -1,33 +1,30 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common'
+import { Inject, Injectable } from '@nestjs/common'
 import { Cache } from 'cache-manager'
-import { Exception, stringToMillisecs } from 'common'
+import { Exception } from 'common'
+
+export const CACHE_TAG = 'CACHE_TAG'
 
 @Injectable()
-export class CacheService implements OnModuleDestroy {
-    constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+export class CacheService {
+    constructor(
+        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        @Inject(CACHE_TAG) private tag: string
+    ) {}
 
-    onModuleDestroy() {
-        const client = (this.cacheManager.store as any).client
-
-        client?.disconnect()
-    }
-
-    async set(key: string, value: string, expireTime = '0s'): Promise<void> {
-        const expireMillisecs = stringToMillisecs(expireTime)
-
+    async set(key: string, value: unknown, expireMillisecs = 0): Promise<void> {
         if (expireMillisecs < 0) {
             throw new Exception('ttlMiliseconds should not be negative')
         }
 
-        await this.cacheManager.set(key, value, expireMillisecs)
+        await this.cacheManager.set(this.tag + ':' + key, value, expireMillisecs)
     }
 
-    async get(key: string): Promise<string | undefined> {
-        return this.cacheManager.get(key)
+    async get<T>(key: string): Promise<T | undefined> {
+        return this.cacheManager.get(this.tag + ':' + key)
     }
 
     async delete(key: string): Promise<void> {
-        return this.cacheManager.del(key)
+        return this.cacheManager.del(this.tag + ':' + key)
     }
 }

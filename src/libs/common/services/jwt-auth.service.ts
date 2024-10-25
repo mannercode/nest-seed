@@ -1,9 +1,7 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import { generateUUID, notUsed } from 'common'
+import { generateUUID, notUsed, stringToMillisecs } from '../utils'
 import { CacheService } from './cache.service'
-
-const REFRESH_TOKEN_PREFIX = 'refreshToken:'
 
 export interface AuthTokenPayload {
     userId: string
@@ -82,13 +80,13 @@ export class JwtAuthService {
 
     private async storeRefreshToken(userId: string, refreshToken: string) {
         await this.cache.set(
-            `${REFRESH_TOKEN_PREFIX}${userId}`,
+            userId,
             refreshToken,
-            this.config.refreshTokenExpiration
+            stringToMillisecs(this.config.refreshTokenExpiration)
         )
     }
 
     private async getStoredRefreshToken(userId: string) {
-        return this.cache.get(`${REFRESH_TOKEN_PREFIX}${userId}`)
+        return this.cache.get(userId)
     }
 }

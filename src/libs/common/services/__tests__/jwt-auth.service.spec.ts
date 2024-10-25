@@ -1,7 +1,7 @@
 import { CacheModule } from '@nestjs/cache-manager'
 import { JwtModule } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
-import { CacheService, JwtAuthService } from '..'
+import { CACHE_TAG, CacheService, JwtAuthService } from '..'
 import { sleep } from '../../utils'
 
 describe('JwtAuthService', () => {
@@ -12,7 +12,6 @@ describe('JwtAuthService', () => {
         module = await Test.createTestingModule({
             imports: [CacheModule.register(), JwtModule.register({ global: true })],
             providers: [
-                CacheService,
                 JwtAuthService,
                 {
                     provide: 'AuthConfig',
@@ -22,7 +21,9 @@ describe('JwtAuthService', () => {
                         accessTokenExpiration: '3s',
                         refreshTokenExpiration: '3s'
                     }
-                }
+                },
+                CacheService,
+                { provide: CACHE_TAG, useValue: 'JwtAuthService' }
             ]
         }).compile()
 
