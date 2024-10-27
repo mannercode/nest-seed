@@ -39,7 +39,7 @@ async function bootstrap() {
     console.log(`Application is running on: ${await app.getUrl()}`)
 }
 
-if (isEnv('development') || isEnv('production')) {
+if (isEnv('production')) {
     bootstrap()
 } else {
     console.error('NODE_ENV is not set. Exiting...')
