@@ -1,7 +1,7 @@
 import { CacheModule } from '@nestjs/cache-manager'
 import { JwtModule } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
-import { CACHE_TAG, CacheService, JwtAuthService } from '..'
+import { CacheService, JwtAuthService } from '..'
 import { sleep } from '../../utils'
 
 describe('JwtAuthService', () => {
@@ -22,8 +22,7 @@ describe('JwtAuthService', () => {
                         refreshTokenExpiration: '3s'
                     }
                 },
-                CacheService,
-                { provide: CACHE_TAG, useValue: 'JwtAuthService' }
+                CacheService
             ]
         }).compile()
 

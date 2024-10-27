@@ -1,17 +1,30 @@
-import { CacheModule } from '@nestjs/cache-manager'
-import { Test, TestingModule } from '@nestjs/testing'
+import { TestingModule } from '@nestjs/testing'
+import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
 import { sleep } from 'common'
-import { CACHE_TAG, CacheService } from '..'
+import { createTestingModule } from 'testlib'
+import { CacheModule, CacheService } from '..'
 
 describe('CacheService', () => {
     let module: TestingModule
     let cacheService: CacheService
+    let redisContainer: StartedRedisContainer
+    let host: string
+    let port: number
+
+    beforeAll(async () => {
+        redisContainer = await new RedisContainer().start()
+        host = redisContainer.getHost()
+        port = redisContainer.getMappedPort(6379)
+    }, 60 * 1000)
+
+    afterAll(async () => {
+        await redisContainer.stop()
+    })
 
     beforeEach(async () => {
-        module = await Test.createTestingModule({
-            imports: [CacheModule.register()],
-            providers: [CacheService, { provide: CACHE_TAG, useValue: 'myTag' }]
-        }).compile()
+        module = await createTestingModule({
+            imports: [CacheModule.forRootAsync({ useFactory: () => ({ host, port }) })]
+        })
 
         cacheService = module.get(CacheService)
     })

@@ -20,6 +20,7 @@ export interface AuthConfig {
     refreshTokenExpiration: string
 }
 
+// TODO 'AuthConfig' export const로 정의해라
 @Injectable()
 export class JwtAuthService {
     constructor(
