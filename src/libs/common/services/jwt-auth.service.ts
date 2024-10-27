@@ -20,13 +20,14 @@ export interface AuthConfig {
     refreshTokenExpiration: string
 }
 
-// TODO 'AuthConfig' export const로 정의해라
+export const AUTH_CONFIG = 'AuthConfig'
+
 @Injectable()
 export class JwtAuthService {
     constructor(
         private readonly jwtService: JwtService,
         private readonly cache: CacheService,
-        @Inject('AuthConfig') private readonly config: AuthConfig
+        @Inject(AUTH_CONFIG) private readonly config: AuthConfig
     ) {}
 
     async generateAuthTokens(userId: string, email: string): Promise<JwtAuthTokens> {

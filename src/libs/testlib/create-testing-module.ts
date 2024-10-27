@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, ModuleMetadata } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
-import { CacheConnectionService } from 'common'
+import { CacheService } from 'common'
 
 export interface ModuleMetadataEx extends ModuleMetadata {
     ignoreGuards?: any[]
@@ -32,8 +32,8 @@ export async function createTestingModule(metadata: ModuleMetadataEx) {
     const module = await builder.compile()
 
     try {
-        const cacheServices = module.get(CacheConnectionService, { each: true })
-        await Promise.all(cacheServices.map(async (service) => await service.flushAll()))
+        const cacheServices = module.get(CacheService, { each: true })
+        cacheServices.map(async (service) => await service.enablePrefix())
     } catch (_error) {}
 
     return module

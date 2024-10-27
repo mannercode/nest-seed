@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule, MongooseModuleFactoryOptions } from '@nestjs/mongoose'
+import { generateUUID } from 'common'
 import { AppConfigService, isEnv } from 'config'
-import { Connection } from 'mongoose'
 
 @Module({
     imports: [
@@ -9,8 +9,7 @@ import { Connection } from 'mongoose'
             useFactory: async (config: AppConfigService) => {
                 const { user, pass, host1, host2, port, replica, database } = config.mongo
                 const uri = `mongodb://${user}:${pass}@${host1}:${port},${host2}:${port}/?replicaSet=${replica}`
-                const uniqueId = (global as any).JEST_UNIQUE_ID
-                const dbName = isEnv('development') && uniqueId ? 'test_' + uniqueId : database
+                const dbName = isEnv('test') ? 'test_' + generateUUID() : database
 
                 return {
                     uri,
@@ -22,15 +21,8 @@ import { Connection } from 'mongoose'
                         wtimeoutMS: 5000
                     },
                     bufferCommands: true,
-                    autoIndex: isEnv('development'),
-                    autoCreate: false,
-                    connectionFactory: async (connection: Connection) => {
-                        if (isEnv('development')) {
-                            await connection.dropDatabase()
-                        }
-
-                        return connection
-                    }
+                    autoIndex: !isEnv('production'),
+                    autoCreate: false
                 } as MongooseModuleFactoryOptions
             },
             inject: [AppConfigService]

@@ -1,6 +1,7 @@
 import { BullModule } from '@nestjs/bull'
 import { Global, Module } from '@nestjs/common'
-import { AppConfigService } from 'config'
+import { generateUUID } from 'common'
+import { AppConfigService, isEnv } from 'config'
 
 @Global()
 @Module({
@@ -8,8 +9,8 @@ import { AppConfigService } from 'config'
         BullModule.forRootAsync({
             useFactory: async (config: AppConfigService) => {
                 return {
-                    prefix: (global as any).JEST_UNIQUE_ID ?? 'queue',
-                    redis: { ...config.redis }
+                    prefix: isEnv('test') ? 'test:' + generateUUID() : 'queue',
+                    redis: { ...config.queue }
                 }
             },
             inject: [AppConfigService]

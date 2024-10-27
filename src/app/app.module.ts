@@ -5,6 +5,7 @@ import { ShowtimeCreationModule } from 'services/showtime-creation'
 import { ShowtimesModule } from 'services/showtimes'
 import { StorageFilesModule } from 'services/storage-files'
 import { TheatersModule } from 'services/theaters'
+import { TicketHoldingModule } from 'services/ticket-holding'
 import { TicketsModule } from 'services/tickets'
 import {
     CustomersController,
@@ -25,7 +26,8 @@ import { CoreModule } from './core'
         TheatersModule,
         ShowtimesModule,
         TicketsModule,
-        ShowtimeCreationModule
+        ShowtimeCreationModule,
+        TicketHoldingModule
     ],
     providers: [CustomerLocalStrategy, CustomerJwtStrategy],
     controllers: [

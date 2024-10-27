@@ -156,12 +156,21 @@ Customer -> Frontend : 상영 시간 선택
         Backend <-- Booking: tickets[]
     Frontend <-- Backend : tickets[]
 Customer <-- Frontend : 구매 가능한 티켓 목록 제공
+```
+
+```plantuml
+@startuml
+actor Customer
 
 Customer -> Frontend: 티켓 선택
-    Frontend -> Backend: 티켓 선점\nPATCH /booking/showtimes/{}/tickets
-        Backend -> Booking : holdTickets(showtimeId, ticketIds[])
-            Booking -> TicketHolding : holdTickets(showtimeId, ticketIds[])
-            Booking <-- TicketHolding : 티켓 선점(성공)
+    Frontend -> Backend: 티켓 선점\nPATCH /booking/tickets
+        Backend -> Booking : holdTickets(customerId, ticketIds[])
+            Booking -> TicketHolding : holdTickets(customerId, ticketIds[], durationInMinutes)
+            Booking <-- TicketHolding : true
+            Booking -> TicketHolding : findHeldTicketIds(customerId)
+            Booking <-- TicketHolding : heldTicketIds[]
+            Booking -> TicketHolding : releaseTickets(omit(foundTicketIds,ticketIds))
+            Booking <-- TicketHolding : true
         Backend <-- Booking: 티켓 선점(성공)
     Frontend <-- Backend: 티켓 선점(성공)
 Customer <-- Frontend: 선점 완료
@@ -175,8 +184,9 @@ actor Customer
 Customer -> Frontend: 티켓 선택 완료
     Frontend -> Backend: 결제\nPOST /purchases/tickets
         Backend -> Purchases: purchaseTickets(ticketIds[],customerId)
-            Purchases -> TicketHolding: areTicketsHeldByCustomer(ticketIds[],customerId)
-            Purchases <-- TicketHolding: true
+            Purchases -> TicketHolding: findHeldTicketIds(customerId)
+            Purchases <-- TicketHolding: heldTicketIds[]
+            Purchases -> Purchases: heldTicketIds.in(ticketIds)
             Purchases -> Payment: createPayment(totalPrice,customer)
             Purchases <-- Payment: success
             Purchases -> Tickets: updateTicketStatus(ticketIds[], 'sold')
@@ -186,3 +196,9 @@ Customer -> Frontend: 티켓 선택 완료
 Customer <-- Frontend: 구매 완료
 @enduml
 ```
+
+`purchaseTickets(ticketIds[],customerId)` 대신 `createPurchase(customerId, {ticketIds[]})` 이렇게 일반적인 구매함수로 만들 수 있다. 그러나 현재 단계에서 이것은 지나치게 일반적이다. 일단 구체적인 항목을 구매하도록 설계하고 향후 기능이 확장되면 기존 함수는 유지하면서 `createPurchase(customerId, {ticketIds[]})`를 새로 만들어서 점진적인 개발을 진행하는 것이 안전하다. 너무 일찍 일반화 함수를 정의하면 나중에 요구사항이 변경될 때 기존에 정의한 규칙이 제대로 대응하지 못하고 `createPurchase2`함수를 만들어야 하는 상황이 될 수 있다.
+
+구현 순서는 어떻게 할까? 뿌리에 가까운 서비스부터 한다. 그럼 이것은 down-up이 아닌가? 레이어 아래부터 한다면 모를까 서비스를 코어부터 구현한다고 down-up으로 보긴 어렵다. 설계가 없다면 앱 서비스부터 구현했을 것이다. 그러나 설계가 있다면 코어부터 구현하는 것이 효율적이다.
+
+커버리지는 100%여야 한다.

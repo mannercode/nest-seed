@@ -18,15 +18,26 @@ x-mongo-common: &mongo-common
         - default
     restart: always
 
+x-redis-common: &redis-common
+    image: redis:latest
+    profiles: ['infra']
+    logging: *default-logging
+    networks:
+        - default
+    restart: always
+
 services:
-    redis:
-        image: redis:latest
-        profiles: ['infra']
-        container_name: ${REDIS_HOST}
-        logging: *default-logging
-        networks:
-            - default
-        restart: always
+    queue:
+        <<: *redis-common
+        container_name: ${QUEUE_HOST}
+
+    ticket-holding:
+        <<: *redis-common
+        container_name: ${TICKET_HOLDING_HOST}
+
+    customer-auth:
+        <<: *redis-common
+        container_name: ${CUSTOMER_AUTH_HOST}
 
     mongo-key-generator:
         container_name: mongo-key-generator
@@ -55,7 +66,7 @@ services:
     mongo-express:
         image: mongo-express:latest
         profiles: ['infra']
-        container_name: $PROJECT_NAME-mongo-express
+        container_name: ${MONGO_DB_HOST1}-express
         logging: *default-logging
         environment:
             ME_CONFIG_BASICAUTH_USERNAME: user
@@ -77,7 +88,7 @@ services:
         logging: *default-logging
         environment:
             - NODE_ENV=production
-        env_file: .env.development
+        env_file: .env.test
         volumes:
             - ./_output/logs:/app/_output/logs
             - ./_output/uploads:/app/_output/uploads

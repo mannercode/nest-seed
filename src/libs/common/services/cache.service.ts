@@ -6,33 +6,41 @@ import { Exception, generateUUID } from 'common'
 
 @Injectable()
 export class CacheService {
-    constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+    constructor(
+        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        @Inject('PREFIX') public prefix: string
+    ) {}
+
+    private prefixEnabled = false
+
+    enablePrefix() {
+        this.prefixEnabled = true
+    }
+
+    makeKey(key: string) {
+        return this.prefixEnabled ? `${this.prefix}:${key}` : key
+    }
 
     async set(key: string, value: unknown, expireMillisecs = 0) {
         if (expireMillisecs < 0) {
             throw new Exception('ttlMiliseconds should not be negative')
         }
 
-        await this.cacheManager.set(key, value, expireMillisecs)
+        await this.cacheManager.set(this.makeKey(key), value, expireMillisecs)
     }
 
     async get<T>(key: string): Promise<T | undefined> {
-        return this.cacheManager.get(key)
+        return this.cacheManager.get(this.makeKey(key))
     }
 
     async delete(key: string) {
-        await this.cacheManager.del(key)
+        await this.cacheManager.del(this.makeKey(key))
     }
 }
 
 @Injectable()
-export class CacheConnectionService implements OnModuleDestroy {
+class CacheConnectionService implements OnModuleDestroy {
     constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
-
-    async flushAll() {
-        const client = (this.cacheManager.store as any).client
-        await client?.flushall()
-    }
 
     async onModuleDestroy() {
         const client = (this.cacheManager.store as any).client
@@ -65,11 +73,7 @@ export class CacheModule {
             providers: [
                 CacheService,
                 CacheConnectionService,
-                /**
-                 * 고유한 값을 가지지 않으면 아래 코드를 실행했을 때 1개의 인스턴스만 반환한다
-                 * testContext.module.get(CacheDisconnectService, { each: true })
-                 */
-                { provide: 'MODULE_UNIQUE_ID', useValue: generateUUID() }
+                { provide: 'PREFIX', useValue: 'test:' + generateUUID() }
             ],
             exports: [CacheService]
         }

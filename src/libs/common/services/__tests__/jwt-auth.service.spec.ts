@@ -1,30 +1,46 @@
-import { CacheModule } from '@nestjs/cache-manager'
 import { JwtModule } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
-import { CacheService, JwtAuthService } from '..'
+import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
+import { AUTH_CONFIG, CacheModule, CacheService, JwtAuthService } from '..'
 import { sleep } from '../../utils'
+import { createTestingModule } from 'testlib'
 
 describe('JwtAuthService', () => {
     let module: TestingModule
     let jwtService: JwtAuthService
+    let redisContainer: StartedRedisContainer
+    let host: string
+    let port: number
+
+    beforeAll(async () => {
+        redisContainer = await new RedisContainer().start()
+        host = redisContainer.getHost()
+        port = redisContainer.getMappedPort(6379)
+    }, 60 * 1000)
+
+    afterAll(async () => {
+        await redisContainer.stop()
+    })
 
     beforeEach(async () => {
-        module = await Test.createTestingModule({
-            imports: [CacheModule.register(), JwtModule.register({ global: true })],
+        module = await createTestingModule({
+            imports: [
+                CacheModule.forRootAsync({ useFactory: () => ({ host, port }) }),
+                JwtModule.register({ global: true })
+            ],
             providers: [
                 JwtAuthService,
                 {
-                    provide: 'AuthConfig',
+                    provide: AUTH_CONFIG,
                     useValue: {
                         accessSecret: 'accessSecret',
                         refreshSecret: 'refreshSecret',
                         accessTokenExpiration: '3s',
                         refreshTokenExpiration: '3s'
                     }
-                },
-                CacheService
+                }
             ]
-        }).compile()
+        })
 
         jwtService = module.get(JwtAuthService)
     })

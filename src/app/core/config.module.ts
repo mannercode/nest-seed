@@ -8,7 +8,7 @@ import { AppConfigService, configSchema, isEnv } from 'config'
         NestConfigModule.forRoot({
             cache: isEnv('production'),
             ignoreEnvFile: isEnv('production'),
-            envFilePath: '.env.development',
+            envFilePath: '.env.test',
             validationSchema: configSchema,
             validationOptions: { abortEarly: false }
         })
