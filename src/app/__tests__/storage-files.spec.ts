@@ -98,6 +98,7 @@ describe('/storage-files', () => {
 
             await client.get(`/storage-files/${uploadedFile.id}`).download(downloadPath).ok()
 
+            expect(uploadedFile.size).toEqual(await Path.getSize(downloadPath))
             expect(uploadedFile.checksum).toEqual(await getChecksum(downloadPath))
         })
 
