@@ -1,32 +1,32 @@
 import { HttpStatus } from '@nestjs/common'
-import { jsonToObject } from 'common'
+import { jsonToObject, stringToBytes } from 'common'
 import { createWriteStream } from 'fs'
 import { reject } from 'lodash'
-import * as supertest from 'supertest'
+import * as superagent from 'superagent'
 import { parseEventMessage } from './utils'
 
 export class HttpTestClient {
-    public client: supertest.Test
+    public client: superagent.Request
 
-    constructor(public server: any) {}
+    constructor(public serverUrl: string) {}
 
     post(url: string): this {
-        this.client = supertest(this.server).post(url)
+        this.client = superagent.post(`${this.serverUrl}${url}`)
         return this
     }
 
     patch(url: string): this {
-        this.client = supertest(this.server).patch(url)
+        this.client = superagent.patch(`${this.serverUrl}${url}`)
         return this
     }
 
     get(url: string): this {
-        this.client = supertest(this.server).get(url)
+        this.client = superagent.get(`${this.serverUrl}${url}`)
         return this
     }
 
     delete(url: string): this {
-        this.client = supertest(this.server).delete(url)
+        this.client = superagent.delete(`${this.serverUrl}${url}`)
         return this
     }
 
@@ -67,16 +67,20 @@ export class HttpTestClient {
         return this
     }
 
-    download(downloadFilePath: string): this {
+    download(downloadFilePath: string) {
         const writeStream = createWriteStream(downloadFilePath)
+
+        // 기본값인 200MB 제한을 해제함
+        this.client.maxResponseSize(stringToBytes('1TB'))
 
         this.client.buffer().parse((res, callback) => {
             res.on('data', (chunk: any) => {
                 writeStream.write(chunk)
             })
             res.on('end', () => {
-                writeStream.end()
-                callback(null, '')
+                writeStream.close(() => {
+                    callback(null, '')
+                })
             })
         })
 
@@ -117,14 +121,15 @@ export class HttpTestClient {
                 })
             })
             .end((err) => {
-                err && errorHandler(err)
+                if (err) errorHandler(err)
             })
 
         return this
     }
 
-    async send(status: HttpStatus, expected?: any): Promise<supertest.Response> {
-        const res = await this.client
+    async send(status: number, expected?: any): Promise<superagent.Response> {
+        // ok(() => true)는 모든 상태 코드를 허용합니다.
+        const res = await this.client.ok(() => true)
 
         if (res.status !== status) {
             console.log(res.body)
@@ -140,6 +145,7 @@ export class HttpTestClient {
 
         return res
     }
+
     created = (expected?: any) => this.send(HttpStatus.CREATED, expected)
     ok = (expected?: any) => this.send(HttpStatus.OK, expected)
     accepted = (expected?: any) => this.send(HttpStatus.ACCEPTED, expected)

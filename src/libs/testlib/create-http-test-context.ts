@@ -35,7 +35,7 @@ export async function createHttpTestContext(metadata: ModuleMetadataEx): Promise
     const port = await getAvailablePort()
     await server.listen(port)
 
-    const client = new HttpTestClient(server)
+    const client = new HttpTestClient(`http://localhost:${port}`)
 
     const close = async () => {
         await app.close()
