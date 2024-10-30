@@ -23,7 +23,9 @@ describe('CacheService', () => {
 
     beforeEach(async () => {
         module = await createTestingModule({
-            imports: [CacheModule.forRootAsync({ useFactory: () => ({ host, port }) })]
+            imports: [
+                CacheModule.forRootAsync({ useFactory: () => ({ host, port, prefix: 'test' }) })
+            ]
         })
 
         cacheService = module.get(CacheService)

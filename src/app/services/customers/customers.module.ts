@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'
-import { AUTH_CONFIG, CacheModule, JwtAuthService } from 'common'
-import { AppConfigService } from 'config'
+import { AUTH_CONFIG, CacheModule, generateUUID, JwtAuthService } from 'common'
+import { AppConfigService, isEnv } from 'config'
 import { CustomersRepository } from './customers.repository'
 import { CustomersService } from './customers.service'
 import { Customer, CustomerSchema } from './models'
@@ -12,7 +12,10 @@ import { Customer, CustomerSchema } from './models'
         MongooseModule.forFeature([{ name: Customer.name, schema: CustomerSchema }]),
         PassportModule,
         CacheModule.forRootAsync({
-            useFactory: (configService: AppConfigService) => configService.customerAuth,
+            useFactory: (configService: AppConfigService) => ({
+                ...configService.customerAuth,
+                prefix: isEnv('test') ? 'test:' + generateUUID() : 'CustomerAuth'
+            }),
             inject: [AppConfigService]
         })
     ],

@@ -31,10 +31,5 @@ export async function createTestingModule(metadata: ModuleMetadataEx) {
 
     const module = await builder.compile()
 
-    try {
-        const cacheServices = module.get(CacheService, { each: true })
-        cacheServices.map(async (service) => await service.enablePrefix())
-    } catch (_error) {}
-
     return module
 }

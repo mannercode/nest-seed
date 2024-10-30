@@ -2,23 +2,17 @@ import { CACHE_MANAGER, CacheModule as NestCacheModule } from '@nestjs/cache-man
 import { DynamicModule, Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
 import { Cache } from 'cache-manager'
 import { redisStore } from 'cache-manager-ioredis-yet'
-import { Exception, generateUUID } from 'common'
+import { Exception } from 'common'
 
 @Injectable()
 export class CacheService {
     constructor(
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
-        @Inject('PREFIX') public prefix: string
+        @Inject('PREFIX') private prefix?: string
     ) {}
 
-    private prefixEnabled = false
-
-    enablePrefix() {
-        this.prefixEnabled = true
-    }
-
-    makeKey(key: string) {
-        return this.prefixEnabled ? `${this.prefix}:${key}` : key
+    private makeKey(key: string) {
+        return this.prefix ? `${this.prefix}:${key}` : key
     }
 
     async set(key: string, value: unknown, expireMillisecs = 0) {
@@ -49,6 +43,7 @@ class CacheConnectionService implements OnModuleDestroy {
 }
 
 export interface CacheModuleOptions {
+    prefix?: string
     host: string
     port: number
 }
@@ -73,7 +68,14 @@ export class CacheModule {
             providers: [
                 CacheService,
                 CacheConnectionService,
-                { provide: 'PREFIX', useValue: 'test:' + generateUUID() }
+                {
+                    provide: 'PREFIX',
+                    useFactory: async (...args: any[]) => {
+                        const cacheOptions = options.useFactory(...args)
+                        return cacheOptions.prefix
+                    },
+                    inject: options.inject
+                }
             ],
             exports: [CacheService]
         }
