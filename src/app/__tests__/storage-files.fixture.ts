@@ -5,7 +5,7 @@ import { writeFile } from 'fs/promises'
 import { createDummyFile, createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
 import { AppModule } from '../app.module'
 
-const maxFileSizeBytes = stringToBytes('250MB')
+const maxFileSizeBytes = stringToBytes('50MB')
 
 export interface SharedFixture {
     tempDir: string

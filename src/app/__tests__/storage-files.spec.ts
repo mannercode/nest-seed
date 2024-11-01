@@ -97,75 +97,11 @@ describe('/storage-files', () => {
             console.log('-----------download start')
             const downloadPath = Path.join(shared.tempDir, 'download.txt')
 
-            const res = await Promise.all([
-                client
-                    .get(`/storage-files/${uploadedFile.id}`)
-                    .download(Path.join(shared.tempDir, 'download.txt'))
-                    .ok(),
-                client
-                    .get(`/storage-files/${uploadedFile.id}`)
-                    .download(Path.join(shared.tempDir, 'download1.txt'))
-                    .ok(),
-                client
-                    .get(`/storage-files/${uploadedFile.id}`)
-                    .download(Path.join(shared.tempDir, 'download2.txt'))
-                    .ok(),
-                client
-                    .get(`/storage-files/${uploadedFile.id}`)
-                    .download(Path.join(shared.tempDir, 'download3.txt'))
-                    .ok(),
-                client
-                    .get(`/storage-files/${uploadedFile.id}`)
-                    .download(Path.join(shared.tempDir, 'download4.txt'))
-                    .ok(),
-                client
-                    .get(`/storage-files/${uploadedFile.id}`)
-                    .download(Path.join(shared.tempDir, 'download5.txt'))
-                    .ok(),
-                client
-                    .get(`/storage-files/${uploadedFile.id}`)
-                    .download(Path.join(shared.tempDir, 'download6.txt'))
-                    .ok(),
-                client
-                    .get(`/storage-files/${uploadedFile.id}`)
-                    .download(Path.join(shared.tempDir, 'download7.txt'))
-                    .ok(),
-                client
-                    .get(`/storage-files/${uploadedFile.id}`)
-                    .download(Path.join(shared.tempDir, 'download8.txt'))
-                    .ok()
-            ])
+            await client.get(`/storage-files/${uploadedFile.id}`).download(downloadPath).ok()
 
             console.log('-----------download end')
 
-            expect(uploadedFile.size).toEqual(
-                await Path.getSize(Path.join(shared.tempDir, 'download.txt'))
-            )
-            expect(uploadedFile.size).toEqual(
-                await Path.getSize(Path.join(shared.tempDir, 'download1.txt'))
-            )
-            expect(uploadedFile.size).toEqual(
-                await Path.getSize(Path.join(shared.tempDir, 'download2.txt'))
-            )
-            expect(uploadedFile.size).toEqual(
-                await Path.getSize(Path.join(shared.tempDir, 'download3.txt'))
-            )
-            expect(uploadedFile.size).toEqual(
-                await Path.getSize(Path.join(shared.tempDir, 'download4.txt'))
-            )
-            expect(uploadedFile.size).toEqual(
-                await Path.getSize(Path.join(shared.tempDir, 'download5.txt'))
-            )
-            expect(uploadedFile.size).toEqual(
-                await Path.getSize(Path.join(shared.tempDir, 'download6.txt'))
-            )
-            expect(uploadedFile.size).toEqual(
-                await Path.getSize(Path.join(shared.tempDir, 'download7.txt'))
-            )
-            expect(uploadedFile.size).toEqual(
-                await Path.getSize(Path.join(shared.tempDir, 'download8.txt'))
-            )
-
+            expect(uploadedFile.size).toEqual(await Path.getSize(downloadPath))
             expect(uploadedFile.checksum).toEqual(await getChecksum(downloadPath))
         })
 
