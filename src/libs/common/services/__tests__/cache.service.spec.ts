@@ -52,7 +52,7 @@ describe('CacheService', () => {
 
         await cacheService.delete(key)
         const deletedValue = await cacheService.get(key)
-        expect(deletedValue).toBeUndefined()
+        expect(deletedValue).toBeNull()
     })
 
     it('sets an expiration time', async () => {
@@ -64,7 +64,7 @@ describe('CacheService', () => {
 
         await sleep(1000 + 100)
         const deletedValue = await cacheService.get(key)
-        expect(deletedValue).toBeUndefined()
+        expect(deletedValue).toBeNull()
     })
 
     it('throws an exception if the expiration time is negative', async () => {

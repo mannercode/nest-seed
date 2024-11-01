@@ -1,13 +1,12 @@
-import { CACHE_MANAGER, CacheModule as NestCacheModule } from '@nestjs/cache-manager'
+import { InjectRedis, RedisModule } from '@nestjs-modules/ioredis'
 import { DynamicModule, Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
-import { Cache } from 'cache-manager'
-import { redisStore } from 'cache-manager-ioredis-yet'
 import { Exception } from 'common'
+import Redis from 'ioredis'
 
 @Injectable()
 export class CacheService {
     constructor(
-        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        @InjectRedis() private readonly redis: Redis,
         @Inject('PREFIX') private prefix?: string
     ) {}
 
@@ -15,30 +14,33 @@ export class CacheService {
         return this.prefix ? `${this.prefix}:${key}` : key
     }
 
-    async set(key: string, value: unknown, expireMillisecs = 0) {
-        if (expireMillisecs < 0) {
+    async set(key: string, value: string, milliseconds = 0) {
+        if (milliseconds < 0) {
             throw new Exception('ttlMiliseconds should not be negative')
         }
 
-        await this.cacheManager.set(this.makeKey(key), value, expireMillisecs)
+        if (0 < milliseconds) {
+            await this.redis.set(this.makeKey(key), value, 'PX', milliseconds)
+        } else {
+            await this.redis.set(this.makeKey(key), value)
+        }
     }
 
-    async get<T>(key: string): Promise<T | undefined> {
-        return this.cacheManager.get(this.makeKey(key))
+    async get(key: string): Promise<string | null> {
+        return this.redis.get(this.makeKey(key))
     }
 
     async delete(key: string) {
-        await this.cacheManager.del(this.makeKey(key))
+        await this.redis.del(this.makeKey(key))
     }
 }
 
 @Injectable()
 class CacheConnectionService implements OnModuleDestroy {
-    constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+    constructor(@InjectRedis() private readonly redis: Redis) {}
 
     async onModuleDestroy() {
-        const client = (this.cacheManager.store as any).client
-        await client?.disconnect()
+        await this.redis.quit()
     }
 }
 
@@ -57,10 +59,11 @@ export class CacheModule {
         return {
             module: CacheModule,
             imports: [
-                NestCacheModule.registerAsync({
+                RedisModule.forRootAsync({
                     useFactory: async (...args: any[]) => {
-                        const cacheOptions = options.useFactory(...args)
-                        return { ...cacheOptions, store: redisStore }
+                        const { host, port } = options.useFactory(...args)
+
+                        return { type: 'single', url: `redis://${host}:${port}` }
                     },
                     inject: options.inject
                 })
