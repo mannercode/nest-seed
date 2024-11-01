@@ -14,7 +14,7 @@ describe('CacheService', () => {
     beforeAll(async () => {
         redisContainer = await new RedisContainer().start()
         host = redisContainer.getHost()
-        port = redisContainer.getMappedPort(6379)
+        port = redisContainer.getFirstMappedPort()
     }, 60 * 1000)
 
     afterAll(async () => {
