@@ -78,9 +78,20 @@ export class HttpTestClient {
                 writeStream.write(chunk)
             })
             res.on('end', () => {
-                writeStream.close(() => {
+                console.log('-----------closing')
+                writeStream.close((err) => {
+                    if (err) {
+                        console.log('-----------error', err)
+                    }
                     callback(null, '')
+
+                    console.log('-----------closed')
                 })
+            })
+            res.on('error', (err: any) => {
+                console.error('-----------response error', err)
+                writeStream.destroy(err)
+                callback(err, '')
             })
         })
 

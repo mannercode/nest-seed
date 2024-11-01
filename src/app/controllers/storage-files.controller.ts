@@ -9,6 +9,7 @@ import {
     UploadedFiles,
     UseInterceptors
 } from '@nestjs/common'
+import { StreamableHandlerResponse } from '@nestjs/common/file-stream/interfaces'
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { IsString } from 'class-validator'
 import { createReadStream } from 'fs'
@@ -21,9 +22,11 @@ class UploadFileDto {
 
 @Controller('storage-files')
 export class StorageFilesController {
-    constructor(
-        private service: StorageFilesService,
-    ) {}
+    constructor(private service: StorageFilesService) {}
+
+    async onModuleDestroy() {
+        console.log('StorageFilesController.onModuleDestroy()')
+    }
 
     @UseInterceptors(FilesInterceptor('files'))
     @Post()
@@ -45,11 +48,17 @@ export class StorageFilesController {
 
         const readStream = createReadStream(file.storedPath)
 
-        return new StreamableFile(readStream, {
+        const stream = new StreamableFile(readStream, {
             type: file.mimetype,
             disposition: `attachment; filename="${encodeURIComponent(file.originalname)}"`,
             length: file.size
         })
+
+        stream.setErrorHandler((err: Error, response: StreamableHandlerResponse) => {
+            console.log('------stream.setErrorHandler-----', err, file)
+        })
+
+        return stream
     }
 
     @Delete(':fileId')
