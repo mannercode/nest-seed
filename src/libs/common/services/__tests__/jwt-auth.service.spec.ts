@@ -1,9 +1,10 @@
 import { JwtModule } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
-import { AUTH_CONFIG, CacheModule, CacheService, JwtAuthService } from '..'
+import { AUTH_CONFIG, RedisService, JwtAuthService } from '..'
 import { sleep } from '../../utils'
 import { createTestingModule } from 'testlib'
+import { RedisModule } from '@nestjs-modules/ioredis'
 
 describe('JwtAuthService', () => {
     let module: TestingModule
@@ -25,7 +26,9 @@ describe('JwtAuthService', () => {
     beforeEach(async () => {
         module = await createTestingModule({
             imports: [
-                CacheModule.forRootAsync({ useFactory: () => ({ host, port }) }),
+                RedisModule.forRootAsync({
+                    useFactory: async () => ({ type: 'single', url: `redis://${host}:${port}` })
+                }),
                 JwtModule.register({ global: true })
             ],
             providers: [
@@ -38,7 +41,9 @@ describe('JwtAuthService', () => {
                         accessTokenExpiration: '3s',
                         refreshTokenExpiration: '3s'
                     }
-                }
+                },
+                RedisService,
+                { provide: 'PREFIX', useValue: 'prefix' }
             ]
         })
 

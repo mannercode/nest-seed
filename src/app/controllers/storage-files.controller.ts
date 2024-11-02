@@ -54,7 +54,9 @@ export class StorageFilesController {
             length: file.size
         })
 
+        /* istanbul ignore next */
         stream.setErrorHandler((err: Error, response: StreamableHandlerResponse) => {
+            /* istanbul ignore next */
             console.log('------stream.setErrorHandler-----', err, file)
         })
 

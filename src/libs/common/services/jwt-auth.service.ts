@@ -1,7 +1,7 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { generateUUID, notUsed, stringToMillisecs } from '../utils'
-import { CacheService } from './cache.service'
+import { RedisService } from './redis.service'
 
 export interface AuthTokenPayload {
     userId: string
@@ -26,7 +26,7 @@ export const AUTH_CONFIG = 'AuthConfig'
 export class JwtAuthService {
     constructor(
         private readonly jwtService: JwtService,
-        private readonly cache: CacheService,
+        private readonly cache: RedisService,
         @Inject(AUTH_CONFIG) private readonly config: AuthConfig
     ) {}
 

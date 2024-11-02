@@ -1,6 +1,5 @@
 import { CanActivate, ExecutionContext, Injectable, ModuleMetadata } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
-import { CacheService } from 'common'
 
 export interface ModuleMetadataEx extends ModuleMetadata {
     ignoreGuards?: any[]

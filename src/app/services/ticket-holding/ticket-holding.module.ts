@@ -1,19 +1,28 @@
+import { RedisModule } from '@nestjs-modules/ioredis'
 import { Module } from '@nestjs/common'
-import { CacheModule, generateUUID } from 'common'
 import { AppConfigService, isEnv } from 'config'
 import { TicketHoldingService } from './ticket-holding.service'
+import { RedisService, generateUUID } from 'common'
 
 @Module({
     imports: [
-        CacheModule.forRootAsync({
-            useFactory: (configService: AppConfigService) => ({
-                ...configService.ticketHolding,
-                prefix: isEnv('test') ? 'test:' + generateUUID() : 'TicketHolding'
-            }),
+        RedisModule.forRootAsync({
+            useFactory: async (configService: AppConfigService) => {
+                const { host, port } = configService.ticketHolding
+
+                return { type: 'single', url: `redis://${host}:${port}` }
+            },
             inject: [AppConfigService]
         })
     ],
-    providers: [TicketHoldingService],
+    providers: [
+        TicketHoldingService,
+        RedisService,
+        {
+            provide: 'PREFIX',
+            useFactory: () => (isEnv('test') ? 'ticket:' + generateUUID() : 'TicketHolding')
+        }
+    ],
     exports: [TicketHoldingService]
 })
 export class TicketHoldingModule {}

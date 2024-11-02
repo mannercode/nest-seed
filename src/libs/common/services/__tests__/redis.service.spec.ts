@@ -1,12 +1,13 @@
+import { RedisModule } from '@nestjs-modules/ioredis'
 import { TestingModule } from '@nestjs/testing'
 import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
 import { sleep } from 'common'
 import { createTestingModule } from 'testlib'
-import { CacheModule, CacheService } from '..'
+import { RedisService } from '..'
 
 describe('CacheService', () => {
     let module: TestingModule
-    let cacheService: CacheService
+    let cacheService: RedisService
     let redisContainer: StartedRedisContainer
     let host: string
     let port: number
@@ -24,11 +25,14 @@ describe('CacheService', () => {
     beforeEach(async () => {
         module = await createTestingModule({
             imports: [
-                CacheModule.forRootAsync({ useFactory: () => ({ host, port, prefix: 'test' }) })
-            ]
+                RedisModule.forRootAsync({
+                    useFactory: async () => ({ type: 'single', url: `redis://${host}:${port}` })
+                })
+            ],
+            providers: [RedisService, { provide: 'PREFIX', useValue: 'prefix' }]
         })
 
-        cacheService = module.get(CacheService)
+        cacheService = module.get(RedisService)
     })
 
     afterEach(async () => {

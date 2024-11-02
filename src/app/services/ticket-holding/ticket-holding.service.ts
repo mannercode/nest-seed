@@ -1,43 +1,56 @@
 import { Injectable } from '@nestjs/common'
-import { CacheService, MethodLog } from 'common'
+import { RedisService, MethodLog } from 'common'
 
 const CustomerTag = 'Customer:'
 const TicketTag = 'Ticket:'
 
 @Injectable()
 export class TicketHoldingService {
-    constructor(private cacheService: CacheService) {}
+    constructor(private cacheService: RedisService) {}
 
     @MethodLog()
-    async holdTickets(customerId: string, ticketIds: string[], durationInMinutes: number) {
+    async holdTickets(customerId: string, ticketIds: string[], holdDuration: number) {
         const ticketOwnerIds = await Promise.all(
-            ticketIds.map(
-                async (ticketId) => await this.cacheService.get<string>(TicketTag + ticketId)
-            )
+            ticketIds.map(async (ticketId) => await this.cacheService.get(TicketTag + ticketId))
         )
 
         for (const ownerId of ticketOwnerIds) {
-            if (undefined !== ownerId && ownerId !== customerId) {
+            if (ownerId && ownerId !== customerId) {
                 return false
             }
         }
 
-        await this.cacheService.set(
-            CustomerTag + customerId,
-            ticketIds,
-            durationInMinutes * 60 * 1000
+        await this.releaseAllTickets(customerId)
+
+        await Promise.all(
+            ticketIds.map(
+                async (ticketId) =>
+                    await this.cacheService.set(TicketTag + ticketId, customerId, holdDuration)
+            )
         )
 
-        return false
+        await this.cacheService.set(CustomerTag + customerId, JSON.stringify(ticketIds), holdDuration)
+
+        return true
     }
 
     @MethodLog({ level: 'verbose' })
-    async findHeldTicketIds(customerId: string) {
-        return []
+    async findHeldTicketIds(customerId: string): Promise<string[]> {
+        const tickets = await this.cacheService.get(CustomerTag + customerId)
+
+        return tickets ? JSON.parse(tickets) : []
     }
 
     @MethodLog()
-    async releaseTickets(ticketIds: string[]) {
-        return false
+    async releaseAllTickets(customerId: string) {
+        const tickets = await this.findHeldTicketIds(customerId)
+
+        await Promise.all(
+            tickets.map(async (ticketId) => await this.cacheService.delete(TicketTag + ticketId))
+        )
+
+        await this.cacheService.delete(CustomerTag + customerId)
+
+        return true
     }
 }
