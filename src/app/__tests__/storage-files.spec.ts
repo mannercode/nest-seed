@@ -1,4 +1,4 @@
-import { getChecksum, nullObjectId, Path } from 'common'
+import { generateUUID, getChecksum, nullObjectId, Path } from 'common'
 import { AppConfigService } from 'config'
 import { StorageFileDto } from 'services/storage-files'
 import { HttpTestClient } from 'testlib'
@@ -94,15 +94,12 @@ describe('/storage-files', () => {
         })
 
         it('파일을 다운로드해야 한다', async () => {
-            console.log('-----------download start')
-            const downloadPath = Path.join(shared.tempDir, 'download.txt')
+            const downloadPath = Path.join(shared.tempDir, generateUUID() + '.txt')
 
             await client.get(`/storage-files/${uploadedFile.id}`).download(downloadPath).ok()
 
-            console.log('-----------download end')
-
-            expect(uploadedFile.size).toEqual(await Path.getSize(downloadPath))
-            expect(uploadedFile.checksum).toEqual(await getChecksum(downloadPath))
+            expect(await Path.getSize(downloadPath)).toEqual(uploadedFile.size)
+            expect(await getChecksum(downloadPath)).toEqual(uploadedFile.checksum)
         })
 
         it('파일이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {

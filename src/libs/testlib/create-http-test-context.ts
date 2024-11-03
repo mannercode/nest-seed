@@ -24,7 +24,7 @@ export async function createHttpTestContext(
     configureApp && configureApp(app)
 
     const isDebuggingEnabled = process.env.NODE_OPTIONS !== undefined
-    if (!isDebuggingEnabled) app.useLogger(false)
+    app.useLogger(isDebuggingEnabled ? console : false)
 
     if (process.env.HTTP_REQUEST_PAYLOAD_LIMIT) {
         const limit = process.env.HTTP_REQUEST_PAYLOAD_LIMIT
