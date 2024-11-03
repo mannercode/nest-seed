@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common'
-import { RedisService, MethodLog } from 'common'
+import { CacheService, MethodLog } from 'common'
 
 const CustomerTag = 'Customer:'
 const TicketTag = 'Ticket:'
 
 @Injectable()
 export class TicketHoldingService {
-    constructor(private cacheService: RedisService) {}
+    constructor(private cacheService: CacheService) {}
 
     @MethodLog()
     async holdTickets(customerId: string, ticketIds: string[], holdDuration: number) {

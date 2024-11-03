@@ -1,10 +1,8 @@
-import { JwtModule } from '@nestjs/jwt'
-import { Test, TestingModule } from '@nestjs/testing'
+import { TestingModule } from '@nestjs/testing'
 import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
-import { AUTH_CONFIG, RedisService, JwtAuthService } from '..'
-import { sleep } from '../../utils'
 import { createTestingModule } from 'testlib'
-import { RedisModule } from '@nestjs-modules/ioredis'
+import { JwtAuthModule, JwtAuthService } from '..'
+import { sleep } from '../../utils'
 
 describe('JwtAuthService', () => {
     let module: TestingModule
@@ -26,24 +24,22 @@ describe('JwtAuthService', () => {
     beforeEach(async () => {
         module = await createTestingModule({
             imports: [
-                RedisModule.forRootAsync({
-                    useFactory: async () => ({ type: 'single', url: `redis://${host}:${port}` })
-                }),
-                JwtModule.register({ global: true })
-            ],
-            providers: [
-                JwtAuthService,
-                {
-                    provide: AUTH_CONFIG,
-                    useValue: {
-                        accessSecret: 'accessSecret',
-                        refreshSecret: 'refreshSecret',
-                        accessTokenExpiration: '3s',
-                        refreshTokenExpiration: '3s'
-                    }
-                },
-                RedisService,
-                { provide: 'PREFIX', useValue: 'prefix' }
+                JwtAuthModule.forRootAsync(
+                    {
+                        useFactory: () => {
+                            return {
+                                host,
+                                port,
+                                prefix: 'prefix',
+                                accessSecret: 'accessSecret',
+                                refreshSecret: 'refreshSecret',
+                                accessTokenExpiration: '3s',
+                                refreshTokenExpiration: '3s'
+                            }
+                        }
+                    },
+                    'JwtAuth'
+                )
             ]
         })
 

@@ -8,10 +8,9 @@ import { TicketHoldingService } from './ticket-holding.service'
         CacheModule.forRootAsync(
             {
                 useFactory: (config: AppConfigService) => {
-                    const { host, port } = config.ticketHolding
                     const prefix = isEnv('test') ? 'ticket:' + generateUUID() : 'TicketHolding'
 
-                    return { host, port, prefix }
+                    return { ...config.ticketHolding, prefix }
                 },
                 inject: [AppConfigService]
             },

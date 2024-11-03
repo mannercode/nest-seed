@@ -1,16 +1,14 @@
 import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
-import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
+import { DynamicModule, Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
 import { Exception } from 'common'
 import Redis from 'ioredis'
 
 @Injectable()
-export class RedisService {
+export class CacheService implements OnModuleDestroy {
     constructor(
         private readonly redis: Redis,
-        @Inject('PREFIX') private prefix: string
-    ) {
-        console.log('this.prefix', this.prefix)
-    }
+        private readonly prefix: string
+    ) {}
 
     async onModuleDestroy() {
         await this.redis.quit()
@@ -20,13 +18,13 @@ export class RedisService {
         return `${this.prefix}:${key}`
     }
 
-    async set(key: string, value: string, milliseconds = 0) {
-        if (milliseconds < 0) {
-            throw new Exception('ttlMiliseconds should not be negative')
+    async set(key: string, value: string, ttlMs = 0) {
+        if (ttlMs < 0) {
+            throw new Exception('TTL must not be negative')
         }
 
-        if (0 < milliseconds) {
-            await this.redis.set(this.makeKey(key), value, 'PX', milliseconds)
+        if (0 < ttlMs) {
+            await this.redis.set(this.makeKey(key), value, 'PX', ttlMs)
         } else {
             await this.redis.set(this.makeKey(key), value)
         }
@@ -56,14 +54,6 @@ export class CacheModule {
         },
         name: string
     ): DynamicModule {
-        const redisServiceProvider = {
-            provide: RedisService,
-            useFactory: (redis: Redis, prefix: string) => {
-                return new RedisService(redis, prefix)
-            },
-            inject: [getRedisConnectionToken(name), 'PREFIX']
-        }
-
         return {
             module: CacheModule,
             imports: [
@@ -81,16 +71,22 @@ export class CacheModule {
             ],
             providers: [
                 {
+                    provide: CacheService,
+                    useFactory: (redis: Redis, prefix: string) => {
+                        return new CacheService(redis, prefix)
+                    },
+                    inject: [getRedisConnectionToken(name), 'PREFIX']
+                },
+                {
                     provide: 'PREFIX',
                     useFactory: async (...args: any[]) => {
                         const { prefix } = await options.useFactory(...args)
                         return prefix
                     },
                     inject: options.inject || []
-                },
-                redisServiceProvider
+                }
             ],
-            exports: [redisServiceProvider]
+            exports: [CacheService]
         }
     }
 }
