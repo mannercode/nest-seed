@@ -3,9 +3,10 @@ import { MovieDto } from 'services/movies'
 import { ShowtimeCreateDto, ShowtimesService } from 'services/showtimes'
 import { TheaterDto } from 'services/theaters'
 import { createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
-import { AppModule } from '../app.module'
+import { AppModule, configureApp } from '../app.module'
 import { createMovie } from './movies.fixture'
 import { createTheater } from './theaters.fixture'
+
 
 export interface IsolatedFixture {
     testContext: HttpTestContext
@@ -15,7 +16,7 @@ export interface IsolatedFixture {
 }
 
 export async function createIsolatedFixture() {
-    const testContext = await createHttpTestContext({ imports: [AppModule] })
+    const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
     const showtimesService = testContext.module.get(ShowtimesService)
     const movie = await createMovie(testContext.client)
     const theater = await createTheater(testContext.client)

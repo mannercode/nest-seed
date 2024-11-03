@@ -15,7 +15,7 @@ describe('JwtAuthService', () => {
         redisContainer = await new RedisContainer().start()
         host = redisContainer.getHost()
         port = redisContainer.getFirstMappedPort()
-    }, 60 * 1000)
+    }, 120 * 1000)
 
     afterAll(async () => {
         await redisContainer.stop()

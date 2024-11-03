@@ -24,10 +24,6 @@ class UploadFileDto {
 export class StorageFilesController {
     constructor(private service: StorageFilesService) {}
 
-    async onModuleDestroy() {
-        console.log('StorageFilesController.onModuleDestroy()')
-    }
-
     @UseInterceptors(FilesInterceptor('files'))
     @Post()
     async saveFiles(@UploadedFiles() files: Express.Multer.File[], @Body() _body: UploadFileDto) {

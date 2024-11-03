@@ -1,6 +1,6 @@
 import { TicketHoldingService } from 'services/ticket-holding'
 import { HttpTestContext, createHttpTestContext } from 'testlib'
-import { AppModule } from '../app.module'
+import { AppModule, configureApp } from '../app.module'
 
 export interface IsolatedFixture {
     testContext: HttpTestContext
@@ -8,7 +8,7 @@ export interface IsolatedFixture {
 }
 
 export async function createIsolatedFixture() {
-    const testContext = await createHttpTestContext({ imports: [AppModule] })
+    const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
     const service = testContext.module.get(TicketHoldingService)
 
     return { testContext, service }

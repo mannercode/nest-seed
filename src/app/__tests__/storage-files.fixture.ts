@@ -3,7 +3,7 @@ import { Path, stringToBytes } from 'common'
 import { AppConfigService } from 'config'
 import { writeFile } from 'fs/promises'
 import { createDummyFile, createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
-import { AppModule } from '../app.module'
+import { AppModule, configureApp } from '../app.module'
 
 const maxFileSizeBytes = stringToBytes('50MB')
 
@@ -65,10 +65,13 @@ export async function createIsolatedFixture() {
         })
     }
 
-    const testContext = await createHttpTestContext({
-        imports: [AppModule],
-        overrideProviders: [{ original: ConfigService, replacement: mockConfigService }]
-    })
+    const testContext = await createHttpTestContext(
+        {
+            imports: [AppModule],
+            overrideProviders: [{ original: ConfigService, replacement: mockConfigService }]
+        },
+        configureApp
+    )
 
     const config = testContext.app.get(AppConfigService)
 

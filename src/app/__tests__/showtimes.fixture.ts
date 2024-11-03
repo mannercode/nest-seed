@@ -1,7 +1,7 @@
 import { omit } from 'lodash'
 import { ShowtimeCreateDto, ShowtimeDto, ShowtimesService } from 'services/showtimes'
 import { HttpTestContext, createHttpTestContext } from 'testlib'
-import { AppModule } from '../app.module'
+import { AppModule, configureApp } from '../app.module'
 
 export interface IsolatedFixture {
     testContext: HttpTestContext
@@ -9,7 +9,7 @@ export interface IsolatedFixture {
 }
 
 export async function createIsolatedFixture() {
-    const testContext = await createHttpTestContext({ imports: [AppModule] })
+    const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
     const service = testContext.module.get(ShowtimesService)
 
     return { testContext, service }
@@ -42,10 +42,7 @@ export const createShowtimeDtos = (overrides = {}, length: number = 100) => {
     return { createDtos, expectedDtos }
 }
 
-export async function createShowtimes(
-    service: ShowtimesService,
-    createDtos: ShowtimeCreateDto[]
-) {
+export async function createShowtimes(service: ShowtimesService, createDtos: ShowtimeCreateDto[]) {
     const { success } = await service.createShowtimes(createDtos)
     expect(success).toBeTruthy()
 

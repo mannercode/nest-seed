@@ -13,13 +13,18 @@ export interface HttpTestContext {
     close: () => Promise<void>
 }
 
-export async function createHttpTestContext(metadata: ModuleMetadataEx): Promise<HttpTestContext> {
+export async function createHttpTestContext(
+    metadata: ModuleMetadataEx,
+    configureApp?: (app: INestApplication<any>) => void
+): Promise<HttpTestContext> {
     const module = await createTestingModule(metadata)
 
     const app = module.createNestApplication()
 
+    configureApp && configureApp(app)
+
     const isDebuggingEnabled = process.env.NODE_OPTIONS !== undefined
-    app.useLogger(isDebuggingEnabled ? console : false)
+    if (!isDebuggingEnabled) app.useLogger(false)
 
     if (process.env.HTTP_REQUEST_PAYLOAD_LIMIT) {
         const limit = process.env.HTTP_REQUEST_PAYLOAD_LIMIT

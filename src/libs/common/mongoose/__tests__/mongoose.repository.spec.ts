@@ -20,7 +20,7 @@ describe('MongoRepository', () => {
 
     beforeAll(async () => {
         mongod = await MongoMemoryReplSet.create({ replSet: { count: 1 } })
-    }, 60 * 1000)
+    }, 120 * 1000)
 
     afterAll(async () => {
         await mongod.stop()

@@ -1,6 +1,6 @@
 import { omit } from 'lodash'
 import { createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
-import { AppModule } from '../app.module'
+import { AppModule, configureApp } from '../app.module'
 import { CustomerJwtAuthGuard } from '../controllers/guards'
 
 export interface IsolatedFixture {
@@ -8,10 +8,13 @@ export interface IsolatedFixture {
 }
 
 export async function createIsolatedFixture() {
-    const testContext = await createHttpTestContext({
-        imports: [AppModule],
-        ignoreGuards: [CustomerJwtAuthGuard]
-    })
+    const testContext = await createHttpTestContext(
+        {
+            imports: [AppModule],
+            ignoreGuards: [CustomerJwtAuthGuard]
+        },
+        configureApp
+    )
 
     return { testContext }
 }
