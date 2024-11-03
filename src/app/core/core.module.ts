@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common'
-import { JwtModule } from '@nestjs/jwt'
 import { ConfigModule } from './config.module'
 import { EventModule } from './event.module'
 import { HttpModule } from './http.module'
@@ -10,7 +9,6 @@ import { QueueModule } from './queue.module'
 
 @Module({
     imports: [
-        JwtModule.register({ global: true }),
         ConfigModule,
         EventModule,
         HttpModule,

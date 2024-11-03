@@ -1,7 +1,7 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common'
-import { JwtService } from '@nestjs/jwt'
+import { DynamicModule, Inject, Injectable, Module, UnauthorizedException } from '@nestjs/common'
+import { JwtModule, JwtService } from '@nestjs/jwt'
 import { generateUUID, notUsed, stringToMillisecs } from '../utils'
-import { RedisService } from './redis.service'
+import { CacheModule, CacheModuleOptions, RedisService } from './redis.service'
 
 export interface AuthTokenPayload {
     userId: string
@@ -90,5 +90,47 @@ export class JwtAuthService {
 
     private async getStoredRefreshToken(userId: string) {
         return this.cache.get(userId)
+    }
+}
+
+@Module({})
+export class JwtAuthModule {
+    static forRootAsync(
+        options: {
+            useFactory: (
+                ...args: any[]
+            ) => Promise<CacheModuleOptions & AuthConfig> | (CacheModuleOptions & AuthConfig)
+            inject?: any[]
+        },
+        name: string
+    ): DynamicModule {
+        return {
+            module: CacheModule,
+            imports: [
+                JwtModule.register({}),
+                CacheModule.forRootAsync(
+                    {
+                        useFactory: async (...args: any[]) => {
+                            const { host, port, prefix } = await options.useFactory(...args)
+                            return { host, port, prefix }
+                        },
+                        inject: options.inject
+                    },
+                    name
+                )
+            ],
+            providers: [
+                JwtAuthService,
+                {
+                    provide: AUTH_CONFIG,
+                    useFactory: async (...args: any[]) => {
+                        const auth = await options.useFactory(...args)
+                        return auth
+                    },
+                    inject: options.inject
+                }
+            ],
+            exports: [JwtAuthService]
+        }
     }
 }

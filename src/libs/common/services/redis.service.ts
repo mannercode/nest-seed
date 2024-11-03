@@ -1,12 +1,12 @@
-import { InjectRedis } from '@nestjs-modules/ioredis'
-import { Inject, Injectable } from '@nestjs/common'
+import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
+import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
 import { Exception } from 'common'
 import Redis from 'ioredis'
 
 @Injectable()
 export class RedisService {
     constructor(
-        @InjectRedis() private readonly redis: Redis,
+        private readonly redis: Redis,
         @Inject('PREFIX') private prefix: string
     ) {
         console.log('this.prefix', this.prefix)
@@ -38,5 +38,59 @@ export class RedisService {
 
     async delete(key: string) {
         await this.redis.del(this.makeKey(key))
+    }
+}
+
+export interface CacheModuleOptions {
+    host: string
+    port: number
+    prefix: string
+}
+
+@Module({})
+export class CacheModule {
+    static forRootAsync(
+        options: {
+            useFactory: (...args: any[]) => Promise<CacheModuleOptions> | CacheModuleOptions
+            inject?: any[]
+        },
+        name: string
+    ): DynamicModule {
+        const redisServiceProvider = {
+            provide: RedisService,
+            useFactory: (redis: Redis, prefix: string) => {
+                return new RedisService(redis, prefix)
+            },
+            inject: [getRedisConnectionToken(name), 'PREFIX']
+        }
+
+        return {
+            module: CacheModule,
+            imports: [
+                RedisModule.forRootAsync(
+                    {
+                        useFactory: async (...args: any[]) => {
+                            const { host, port } = await options.useFactory(...args)
+
+                            return { type: 'single', url: `redis://${host}:${port}` }
+                        },
+                        inject: options.inject
+                    },
+                    name
+                )
+            ],
+            providers: [
+                {
+                    provide: 'PREFIX',
+                    useFactory: async (...args: any[]) => {
+                        const { prefix } = await options.useFactory(...args)
+                        return prefix
+                    },
+                    inject: options.inject || []
+                },
+                redisServiceProvider
+            ],
+            exports: [redisServiceProvider]
+        }
     }
 }
