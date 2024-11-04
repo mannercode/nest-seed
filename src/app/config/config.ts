@@ -8,20 +8,16 @@ export const configSchema = Joi.object({
     NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
     HTTP_REQUEST_PAYLOAD_LIMIT: Joi.string().required(),
     HTTP_PAGINATION_DEFAULT_SIZE: Joi.number().required(),
-    CUSTOMER_AUTH_HOST: Joi.string().required(),
-    CUSTOMER_AUTH_PORT: Joi.number().required(),
-    CUSTOMER_AUTH_ACCESS_SECRET: Joi.string().required(),
-    CUSTOMER_AUTH_ACCESS_TOKEN_EXPIRATION: Joi.string().required(),
-    CUSTOMER_AUTH_REFRESH_SECRET: Joi.string().required(),
-    CUSTOMER_AUTH_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
+    AUTH_ACCESS_SECRET: Joi.string().required(),
+    AUTH_ACCESS_TOKEN_EXPIRATION: Joi.string().required(),
+    AUTH_REFRESH_SECRET: Joi.string().required(),
+    AUTH_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
     LOG_DIRECTORY: Joi.string().required(),
     LOG_DAYS_TO_KEEP: Joi.string().required(),
     LOG_FILE_LEVEL: Joi.string().required(),
     LOG_CONSOLE_LEVEL: Joi.string().required(),
-    QUEUE_HOST: Joi.string().required(),
-    QUEUE_PORT: Joi.number().required(),
-    TICKET_HOLDING_HOST: Joi.string().required(),
-    TICKET_HOLDING_PORT: Joi.number().required(),
+    REDIS_HOST: Joi.string().required(),
+    REDIS_PORT: Joi.number().required(),
     MONGO_DB_HOST1: Joi.string().required(),
     MONGO_DB_HOST2: Joi.string().required(),
     MONGO_DB_HOST3: Joi.string().required(),
@@ -46,14 +42,12 @@ export class AppConfigService {
             paginationDefaultSize: this.getNumber('HTTP_PAGINATION_DEFAULT_SIZE')
         }
     }
-    get customerAuth() {
+    get auth() {
         return {
-            host: this.getString('CUSTOMER_AUTH_HOST'),
-            port: this.getNumber('CUSTOMER_AUTH_PORT'),
-            accessSecret: this.getString('CUSTOMER_AUTH_ACCESS_SECRET'),
-            accessTokenExpiration: this.getString('CUSTOMER_AUTH_ACCESS_TOKEN_EXPIRATION'),
-            refreshSecret: this.getString('CUSTOMER_AUTH_REFRESH_SECRET'),
-            refreshTokenExpiration: this.getString('CUSTOMER_AUTH_REFRESH_TOKEN_EXPIRATION')
+            accessSecret: this.getString('AUTH_ACCESS_SECRET'),
+            accessTokenExpiration: this.getString('AUTH_ACCESS_TOKEN_EXPIRATION'),
+            refreshSecret: this.getString('AUTH_REFRESH_SECRET'),
+            refreshTokenExpiration: this.getString('AUTH_REFRESH_TOKEN_EXPIRATION')
         }
     }
     get log() {
@@ -64,17 +58,11 @@ export class AppConfigService {
             consoleLogLevel: this.getString('LOG_CONSOLE_LEVEL')
         }
     }
-    get queue() {
+    get redis() {
         return {
-            host: this.getString('QUEUE_HOST'),
-            port: this.getNumber('QUEUE_PORT')
+            host: this.getString('REDIS_HOST'),
+            port: this.getNumber('REDIS_PORT')
             // ttl: defaults to 5
-        }
-    }
-    get ticketHolding() {
-        return {
-            host: this.getString('TICKET_HOLDING_HOST'),
-            port: this.getNumber('TICKET_HOLDING_PORT')
         }
     }
     get mongo() {

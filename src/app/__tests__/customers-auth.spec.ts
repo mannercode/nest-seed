@@ -103,7 +103,7 @@ describe('/customers authentication', () => {
 
             const wrongUserIdToken = jwtService.sign(
                 { userId: nullObjectId },
-                { secret: config.customerAuth.accessSecret, expiresIn: '15m' }
+                { secret: config.auth.accessSecret, expiresIn: '15m' }
             )
 
             await client

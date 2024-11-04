@@ -5,7 +5,7 @@ x-logging: &default-logging
         max-file: '3'
 
 x-mongo-common: &mongo-common
-    image: mongo:latest
+    image: mongo:8.0
     profiles: ['infra']
     logging: *default-logging
     environment:
@@ -19,7 +19,7 @@ x-mongo-common: &mongo-common
     restart: always
 
 x-redis-common: &redis-common
-    image: redis:latest
+    image: redis:7.4
     profiles: ['infra']
     logging: *default-logging
     networks:
@@ -27,21 +27,13 @@ x-redis-common: &redis-common
     restart: always
 
 services:
-    queue:
+    redis:
         <<: *redis-common
-        container_name: ${QUEUE_HOST}
-
-    ticket-holding:
-        <<: *redis-common
-        container_name: ${TICKET_HOLDING_HOST}
-
-    customer-auth:
-        <<: *redis-common
-        container_name: ${CUSTOMER_AUTH_HOST}
+        container_name: ${REDIS_HOST}
 
     mongo-key-generator:
         container_name: mongo-key-generator
-        image: mongo:latest
+        image: mongo:8.0
         command: sh -c "openssl rand -base64 768 > mongodb.key && chmod 400 mongodb.key && chown mongodb:mongodb mongodb.key"
         volumes:
             - mongodb_key:/mongodb_key

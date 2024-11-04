@@ -10,7 +10,7 @@ import { AppConfigService, isEnv } from 'config'
             useFactory: async (config: AppConfigService) => {
                 return {
                     prefix: isEnv('test') ? 'test:' + generateUUID() : 'queue',
-                    redis: { ...config.queue }
+                    redis: config.redis
                 }
             },
             inject: [AppConfigService]

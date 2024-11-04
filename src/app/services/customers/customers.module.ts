@@ -14,13 +14,13 @@ import { Customer, CustomerSchema } from './models'
         JwtAuthModule.forRootAsync(
             {
                 useFactory: (config: AppConfigService) => {
-                    const prefix = isEnv('test') ? 'auth:' + generateUUID() : 'CustomerAuth'
+                    const prefix = isEnv('test') ? 'auth:' + generateUUID() : 'Auth'
 
-                    return { ...config.customerAuth, prefix }
+                    return { ...config.auth, ...config.redis, prefix }
                 },
                 inject: [AppConfigService]
             },
-            'CustomerAuth'
+            'Auth'
         )
     ],
     providers: [CustomersService, CustomersRepository],

@@ -10,7 +10,7 @@ import { TicketHoldingService } from './ticket-holding.service'
                 useFactory: (config: AppConfigService) => {
                     const prefix = isEnv('test') ? 'ticket:' + generateUUID() : 'TicketHolding'
 
-                    return { ...config.ticketHolding, prefix }
+                    return { ...config.redis, prefix }
                 },
                 inject: [AppConfigService]
             },

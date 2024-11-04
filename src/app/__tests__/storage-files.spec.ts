@@ -139,3 +139,50 @@ describe('/storage-files', () => {
         })
     })
 })
+
+describe.skip('aborted 오류 테스트', () => {
+    let shared: SharedFixture
+    let isolated: IsolatedFixture
+    let client: HttpTestClient
+    let config: AppConfigService
+
+    beforeAll(async () => {
+        shared = await createSharedFixture()
+
+        isolated = await createIsolatedFixture()
+        client = isolated.testContext.client
+        config = isolated.config
+    }, 10000)
+
+    afterAll(async () => {
+        await closeIsolatedFixture(isolated)
+        await closeSharedFixture(shared)
+    })
+
+    it(
+        '파일을 다운로드해야 한다',
+        async () => {
+            await Promise.all(
+                Array.from({ length: 100 }, async (_, index) => {
+                    console.log('start', index)
+                    const downloadPath = Path.join(shared.tempDir, generateUUID() + '.txt')
+
+                    const { body } = await uploadFile(client, [
+                        { name: 'files', file: shared.largeFile }
+                    ]).created()
+
+                    const uploadedFile = body.storageFiles[0]
+
+                    await client
+                        .get(`/storage-files/${uploadedFile.id}`)
+                        .download(downloadPath)
+                        .ok()
+
+                    expect(await Path.getSize(downloadPath)).toEqual(uploadedFile.size)
+                    console.log('finish', index)
+                })
+            )
+        },
+        500 * 1000
+    )
+})
