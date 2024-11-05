@@ -7,11 +7,11 @@ import { TicketHoldingService } from './ticket-holding.service'
     imports: [
         CacheModule.forRootAsync(
             {
-                useFactory: (config: AppConfigService) => {
-                    const prefix = isEnv('test') ? 'ticket:' + generateUUID() : 'TicketHolding'
-
-                    return { ...config.redis, prefix }
-                },
+                useFactory: (config: AppConfigService) => ({
+                    type: 'cluster',
+                    nodes: config.redis.nodes,
+                    prefix: isEnv('test') ? 'ticket:' + generateUUID() : 'TicketHolding'
+                }),
                 inject: [AppConfigService]
             },
             'TicketHolding'

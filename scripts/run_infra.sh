@@ -3,26 +3,23 @@ set -e
 . "$(dirname "$0")"/common.cfg
 . $ENV_FILE
 
-run_mongo() (
-  docker exec ${MONGO_DB_HOST1} mongosh -u ${MONGO_DB_USERNAME} -p ${MONGO_DB_PASSWORD} --authenticationDatabase admin --eval "$@"
-)
-
 docker_compose --profile infra down --volumes --remove-orphans --timeout 0
 docker_compose --profile infra up -d
 
-wait_for_service "${MONGO_DB_HOST1}" "run_mongo 'db.version()'"
-wait_for_service "${MONGO_DB_HOST2}" "run_mongo 'db.version()'"
-wait_for_service "${MONGO_DB_HOST3}" "run_mongo 'db.version()'"
+check_and_remove() {
+    container=$1
 
-run_mongo "
-rs.initiate({
-    _id: \"${MONGO_DB_REPLICA_NAME}\",
-    members: [
-        {_id: 0, host: \"${MONGO_DB_HOST1}\"},
-        {_id: 1, host: \"${MONGO_DB_HOST2}\"},
-        {_id: 2, host: \"${MONGO_DB_HOST3}\"}
-    ]
-})
-"
+    for ((i = 1; i <= 10; i++)); do
+        status=$(docker inspect -f '{{.State.Status}}' "$container" 2>/dev/null)
+        if [ "$status" == "exited" ]; then
+            docker rm "$container"
+            break
+        fi
+        echo "waiting: $container"
+        sleep 1
+    done
+}
 
-docker rm mongo-key-generator
+check_and_remove mongo-key-generator
+check_and_remove mongo-cluster-setup
+check_and_remove redis-cluster-setup

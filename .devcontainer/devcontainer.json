@@ -20,9 +20,6 @@
         "--name",
         "${containerWorkspaceFolderBasename}-vscode"
     ],
-    "forwardPorts": [
-        "nest-mongo1-express:8081"
-    ],
     "customizations": {
         "vscode": {
             "extensions": [

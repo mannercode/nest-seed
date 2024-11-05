@@ -14,6 +14,7 @@ async function bootstrap() {
 if (isEnv('production')) {
     bootstrap()
 } else {
+    // TODO msg 변경
     console.error('NODE_ENV is not set. Exiting...')
     process.exit(1)
 }

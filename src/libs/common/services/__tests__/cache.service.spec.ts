@@ -25,7 +25,13 @@ describe('CacheService', () => {
         module = await createTestingModule({
             imports: [
                 CacheModule.forRootAsync(
-                    { useFactory: () => ({ host, port, prefix: 'prefix' }) },
+                    {
+                        useFactory: () => ({
+                            type: 'single',
+                            nodes: [{ host, port }],
+                            prefix: 'prefix'
+                        })
+                    },
                     'connName'
                 )
             ]
@@ -100,8 +106,13 @@ describe('CacheModule', () => {
                 CacheModule.forRootAsync(
                     {
                         useFactory: () => ({
-                            host: redisContainer1.getHost(),
-                            port: redisContainer1.getFirstMappedPort(),
+                            type: 'single',
+                            nodes: [
+                                {
+                                    host: redisContainer1.getHost(),
+                                    port: redisContainer1.getFirstMappedPort()
+                                }
+                            ],
                             prefix: 'prefix'
                         })
                     },
@@ -110,8 +121,13 @@ describe('CacheModule', () => {
                 CacheModule.forRootAsync(
                     {
                         useFactory: () => ({
-                            host: redisContainer2.getHost(),
-                            port: redisContainer2.getFirstMappedPort(),
+                            type: 'single',
+                            nodes: [
+                                {
+                                    host: redisContainer2.getHost(),
+                                    port: redisContainer2.getFirstMappedPort()
+                                }
+                            ],
                             prefix: 'prefix'
                         })
                     },

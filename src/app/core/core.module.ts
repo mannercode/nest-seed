@@ -5,7 +5,6 @@ import { HttpModule } from './http.module'
 import { LoggerModule } from './logger.module'
 import { MongoDbModule } from './mongo.db.module'
 import { MulterModule } from './multer.module'
-import { QueueModule } from './queue.module'
 
 @Module({
     imports: [
@@ -14,7 +13,6 @@ import { QueueModule } from './queue.module'
         HttpModule,
         LoggerModule,
         MongoDbModule,
-        QueueModule,
         MulterModule
     ],
     exports: [MulterModule]

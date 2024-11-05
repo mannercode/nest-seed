@@ -1,5 +1,5 @@
 import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
-import { DynamicModule, Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
+import { DynamicModule, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
 import { Exception } from 'common'
 import Redis from 'ioredis'
 
@@ -40,8 +40,8 @@ export class CacheService implements OnModuleDestroy {
 }
 
 export interface CacheModuleOptions {
-    host: string
-    port: number
+    type: 'cluster' | 'single'
+    nodes: { host: string; port: number }[]
     prefix: string
 }
 
@@ -60,9 +60,16 @@ export class CacheModule {
                 RedisModule.forRootAsync(
                     {
                         useFactory: async (...args: any[]) => {
-                            const { host, port } = await options.useFactory(...args)
+                            const { type, nodes } = await options.useFactory(...args)
 
-                            return { type: 'single', url: `redis://${host}:${port}` }
+                            if (type === 'single') {
+                                const { host, port } = nodes[0]
+                                return { type: 'single', url: `redis://${host}:${port}` }
+                            }
+
+                            // jest에서 redis cluster를 테스트 하기 어렵다.
+                            /* istanbul ignore next */
+                            return { type, nodes }
                         },
                         inject: options.inject
                     },

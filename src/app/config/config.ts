@@ -16,7 +16,12 @@ export const configSchema = Joi.object({
     LOG_DAYS_TO_KEEP: Joi.string().required(),
     LOG_FILE_LEVEL: Joi.string().required(),
     LOG_CONSOLE_LEVEL: Joi.string().required(),
-    REDIS_HOST: Joi.string().required(),
+    REDIS_HOST1: Joi.string().required(),
+    REDIS_HOST2: Joi.string().required(),
+    REDIS_HOST3: Joi.string().required(),
+    REDIS_HOST4: Joi.string().required(),
+    REDIS_HOST5: Joi.string().required(),
+    REDIS_HOST6: Joi.string().required(),
     REDIS_PORT: Joi.number().required(),
     MONGO_DB_HOST1: Joi.string().required(),
     MONGO_DB_HOST2: Joi.string().required(),
@@ -59,11 +64,18 @@ export class AppConfigService {
         }
     }
     get redis() {
-        return {
-            host: this.getString('REDIS_HOST'),
-            port: this.getNumber('REDIS_PORT')
-            // ttl: defaults to 5
-        }
+        const hosts = [
+            this.getString('REDIS_HOST1'),
+            this.getString('REDIS_HOST2'),
+            this.getString('REDIS_HOST3'),
+            this.getString('REDIS_HOST4'),
+            this.getString('REDIS_HOST5'),
+            this.getString('REDIS_HOST6')
+        ]
+        const port = this.getNumber('REDIS_PORT')
+        const nodes = hosts.map((host) => ({ host, port }))
+
+        return { hosts, port, nodes }
     }
     get mongo() {
         return {

@@ -12,7 +12,7 @@ on:
 jobs:
     test-coverage:
         runs-on: ubuntu-latest
-        container: node:22-bullseye
+        container: node:22-bookworm
         env:
             WORKSPACE_ROOT: ${{ github.workspace }}
             PROJECT_NAME: ${{ github.event.repository.name }}
@@ -28,9 +28,6 @@ jobs:
 
             - name: Install Tools
               run: apt-get install -y git curl jq tree vim
-
-            - name: Install Bash
-              run: apt-get install -y bash bash-completion
 
             - name: Install Docker
               run: |
@@ -50,7 +47,7 @@ jobs:
             - name: initializeCommand
               run: |
                   docker network create ${PROJECT_NAME}
-                  docker network connect ${PROJECT_NAME} $(docker ps --filter "ancestor=node:22-bullseye" --format "{{.ID}}")
+                  docker network connect ${PROJECT_NAME} $(docker ps --filter "ancestor=node:22-bookworm" --format "{{.ID}}")
 
             # Run All Tests
             - name: Setup Workspace

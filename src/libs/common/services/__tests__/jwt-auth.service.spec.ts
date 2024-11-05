@@ -28,8 +28,8 @@ describe('JwtAuthService', () => {
                     {
                         useFactory: () => {
                             return {
-                                host,
-                                port,
+                                type: 'single',
+                                nodes: [{ host, port }],
                                 prefix: 'prefix',
                                 accessSecret: 'accessSecret',
                                 refreshSecret: 'refreshSecret',

@@ -111,8 +111,8 @@ export class JwtAuthModule {
                 CacheModule.forRootAsync(
                     {
                         useFactory: async (...args: any[]) => {
-                            const { host, port, prefix } = await options.useFactory(...args)
-                            return { host, port, prefix }
+                            const { type, nodes, prefix } = await options.useFactory(...args)
+                            return { type, nodes, prefix }
                         },
                         inject: options.inject
                     },

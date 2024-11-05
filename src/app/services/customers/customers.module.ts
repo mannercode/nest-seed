@@ -13,11 +13,12 @@ import { Customer, CustomerSchema } from './models'
         PassportModule,
         JwtAuthModule.forRootAsync(
             {
-                useFactory: (config: AppConfigService) => {
-                    const prefix = isEnv('test') ? 'auth:' + generateUUID() : 'Auth'
-
-                    return { ...config.auth, ...config.redis, prefix }
-                },
+                useFactory: (config: AppConfigService) => ({
+                    ...config.auth,
+                    type: 'cluster',
+                    nodes: config.redis.nodes,
+                    prefix: isEnv('test') ? 'auth:' + generateUUID() : 'Auth'
+                }),
                 inject: [AppConfigService]
             },
             'Auth'
