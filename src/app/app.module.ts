@@ -22,6 +22,7 @@ import {
 } from './controllers'
 import { CustomerJwtStrategy, CustomerLocalStrategy } from './controllers/guards'
 import { CoreModule } from './core'
+import { HealthModule } from './health.module'
 
 @Module({
     imports: [
@@ -33,7 +34,8 @@ import { CoreModule } from './core'
         ShowtimesModule,
         TicketsModule,
         ShowtimeCreationModule,
-        TicketHoldingModule
+        TicketHoldingModule,
+        HealthModule
     ],
     providers: [CustomerLocalStrategy, CustomerJwtStrategy],
     controllers: [

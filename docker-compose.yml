@@ -118,6 +118,7 @@ services:
     mongo-key-generator:
         image: *mongo-image
         container_name: mongo-key-generator
+        profiles: ['infra']
         command: sh -c "openssl rand -base64 768 > mongodb.key && chmod 400 mongodb.key && chown mongodb:mongodb mongodb.key"
         volumes:
             - mongodb_key:/mongodb_key
@@ -157,13 +158,18 @@ services:
             - default
 
     app:
-        image: $PROJECT_NAME
         build: .
+        image: $PROJECT_NAME
         profiles: ['apps']
         container_name: $PROJECT_NAME
         logging: *default-logging
         environment:
             - NODE_ENV=production
+        healthcheck:
+            test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
+            interval: 5s
+            timeout: 10s
+            retries: 5
         env_file: .env.test
         volumes:
             - ./_output/logs:/app/_output/logs
