@@ -54,6 +54,8 @@ x-redis-common: &redis-common
             '--appendonly',
             'yes',
             '--requirepass',
+            $REDIS_PASSWORD,
+            '--masterauth',
             $REDIS_PASSWORD
         ]
     profiles: ['infra']
