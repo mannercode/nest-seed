@@ -1,55 +1,87 @@
 import { Injectable } from '@nestjs/common'
 import { CacheService, MethodLog } from 'common'
 
-const CustomerTag = 'Customer:'
-const TicketTag = 'Ticket:'
+const makeCustomerKey = (showtimeId: string, customerId: string) =>
+    `Customer:{${showtimeId}}:${customerId}`
+const makeTicketKey = (showtimeId: string, ticketId: string) => `Ticket:{${showtimeId}}:${ticketId}`
 
 @Injectable()
 export class TicketHoldingService {
     constructor(private cacheService: CacheService) {}
 
-    @MethodLog()
-    async holdTickets(customerId: string, ticketIds: string[], holdDuration: number) {
-        const ticketOwnerIds = await Promise.all(
-            ticketIds.map(async (ticketId) => await this.cacheService.get(TicketTag + ticketId))
-        )
+    @MethodLog({ level: 'verbose' })
+    async holdTickets(showtimeId: string, customerId: string, ticketIds: string[], ttlMs: number) {
+        const ticketKeys = ticketIds.map((ticketId) => makeTicketKey(showtimeId, ticketId))
+        const customerKeyStr = makeCustomerKey(showtimeId, customerId)
+        const keys = [...ticketKeys, customerKeyStr]
 
-        for (const ownerId of ticketOwnerIds) {
-            if (ownerId && ownerId !== customerId) {
-                return false
-            }
-        }
+        const script = `
+            local customerId = ARGV[1]
+            local ttlMs = tonumber(ARGV[2])
+            local ticketIdsJson = ARGV[3]
+            local prefix = ARGV[4]
+            local showtimeId = ARGV[5]
 
-        await this.releaseAllTickets(customerId)
+            -- 티켓이 이미 다른 고객에 의해 선점되었는지 확인
+            for i = 1, #KEYS - 1 do
+                local key = KEYS[i]
+                local ownerId = redis.call('GET', key)
+                if ownerId and ownerId ~= customerId then
+                    return 0 -- 티켓 선점 실패
+                end
+            end
 
-        await Promise.all(
-            ticketIds.map(
-                async (ticketId) =>
-                    await this.cacheService.set(TicketTag + ticketId, customerId, holdDuration)
-            )
-        )
+            -- 고객 키 (KEYS 배열의 마지막 요소)
+            local customerKey = KEYS[#KEYS]
 
-        await this.cacheService.set(CustomerTag + customerId, JSON.stringify(ticketIds), holdDuration)
+            -- 이전에 고객이 선점한 티켓 목록 가져오기
+            local previousTicketIdsJson = redis.call('GET', customerKey)
+            if previousTicketIdsJson then
+                local previousTicketIds = cjson.decode(previousTicketIdsJson)
+                for _, ticketId in ipairs(previousTicketIds) do
+                    local ticketKey = prefix .. ':Ticket:{' .. showtimeId .. '}:' .. ticketId
+                    redis.call('DEL', ticketKey)
+                end
+            end
 
-        return true
+            -- 모든 티켓을 현재 고객으로 설정
+            for i = 1, #KEYS - 1 do
+                local key = KEYS[i]
+                redis.call('SET', key, customerId, 'PX', ttlMs)
+            end
+
+            -- 고객에 대한 티켓 목록 저장
+            redis.call('SET', customerKey, ticketIdsJson, 'PX', ttlMs)
+
+            return 1 -- 티켓 선점 성공
+        `
+        const result = await this.cacheService.executeScript(script, keys, [
+            customerId,
+            ttlMs.toString(),
+            JSON.stringify(ticketIds),
+            this.cacheService.prefix,
+            showtimeId
+        ])
+
+        return result === 1
     }
 
     @MethodLog({ level: 'verbose' })
-    async findHeldTicketIds(customerId: string): Promise<string[]> {
-        const tickets = await this.cacheService.get(CustomerTag + customerId)
+    async findTicketIds(showtimeId: string, customerId: string): Promise<string[]> {
+        const tickets = await this.cacheService.get(makeCustomerKey(showtimeId, customerId))
 
         return tickets ? JSON.parse(tickets) : []
     }
 
-    @MethodLog()
-    async releaseAllTickets(customerId: string) {
-        const tickets = await this.findHeldTicketIds(customerId)
+    @MethodLog({ level: 'verbose' })
+    async releaseTickets(showtimeId: string, customerId: string) {
+        const tickets = await this.findTicketIds(customerId, showtimeId)
 
         await Promise.all(
-            tickets.map(async (ticketId) => await this.cacheService.delete(TicketTag + ticketId))
+            tickets.map((ticketId) => this.cacheService.delete(makeTicketKey(showtimeId, ticketId)))
         )
 
-        await this.cacheService.delete(CustomerTag + customerId)
+        await this.cacheService.delete(makeCustomerKey(showtimeId, customerId))
 
         return true
     }

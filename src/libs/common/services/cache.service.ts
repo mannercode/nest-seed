@@ -7,7 +7,7 @@ import Redis from 'ioredis'
 export class CacheService implements OnModuleDestroy {
     constructor(
         private readonly redis: Redis,
-        private readonly prefix: string
+        public readonly prefix: string
     ) {}
 
     async onModuleDestroy() {
@@ -36,6 +36,10 @@ export class CacheService implements OnModuleDestroy {
 
     async delete(key: string) {
         await this.redis.del(this.makeKey(key))
+    }
+
+    async executeScript(script: string, keys: string[], args: string[]): Promise<any> {
+        return this.redis.eval(script, keys.length, ...keys.map(this.makeKey.bind(this)), ...args)
     }
 }
 

@@ -82,11 +82,11 @@ describe('CacheService', () => {
         await expect(cacheService.set(key, value, wrongTTL)).rejects.toThrow(Error)
     })
 
-    it.skip('동시 쓰기 테스트', async () => {
+    it('동시 쓰기 테스트', async () => {
         fail('')
     })
 
-    it.skip('타임 아웃 이벤트 수신', async () => {
+    it('타임 아웃 이벤트 수신', async () => {
         fail('')
     })
 })
