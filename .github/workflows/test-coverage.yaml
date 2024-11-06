@@ -47,11 +47,11 @@ jobs:
             - name: initializeCommand
               run: |
                   docker network create ${PROJECT_NAME}
-                  docker network connect ${PROJECT_NAME} $(docker ps --filter "ancestor=node:22-bookworm" --format "{{.ID}}")
+                  docker network connect ${PROJECT_NAME} ${{ job.container.id }}
 
-            # Run All Tests
-            - name: Setup Workspace
+            - name: postCreateCommand
               run: bash scripts/workspace_setup.sh
 
+            # Run All Tests
             - name: Run All Tests
               run: bash scripts/test_all.sh
