@@ -75,7 +75,7 @@ export class TicketHoldingService {
 
     @MethodLog({ level: 'verbose' })
     async releaseTickets(showtimeId: string, customerId: string) {
-        const tickets = await this.findTicketIds(customerId, showtimeId)
+        const tickets = await this.findTicketIds(showtimeId, customerId)
 
         await Promise.all(
             tickets.map((ticketId) => this.cacheService.delete(makeTicketKey(showtimeId, ticketId)))

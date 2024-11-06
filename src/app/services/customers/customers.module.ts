@@ -15,8 +15,8 @@ import { Customer, CustomerSchema } from './models'
             {
                 useFactory: (config: AppConfigService) => ({
                     ...config.auth,
+                    ...config.redis,
                     type: 'cluster',
-                    nodes: config.redis.nodes,
                     prefix: isEnv('test') ? 'auth:' + generateUUID() : 'Auth'
                 }),
                 inject: [AppConfigService]

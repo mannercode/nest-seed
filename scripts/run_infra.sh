@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 . "$(dirname "$0")"/common.cfg
-. $ENV_FILE
 
 docker_compose --profile infra down --volumes --remove-orphans --timeout 0
 docker_compose --profile infra up -d

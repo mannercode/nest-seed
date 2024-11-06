@@ -22,6 +22,7 @@ export const configSchema = Joi.object({
     REDIS_HOST4: Joi.string().required(),
     REDIS_HOST5: Joi.string().required(),
     REDIS_HOST6: Joi.string().required(),
+    REDIS_PASSWORD: Joi.string().optional(),
     REDIS_PORT: Joi.number().required(),
     MONGO_DB_HOST1: Joi.string().required(),
     MONGO_DB_HOST2: Joi.string().required(),
@@ -73,9 +74,10 @@ export class AppConfigService {
             this.getString('REDIS_HOST6')
         ]
         const port = this.getNumber('REDIS_PORT')
+        const password = this.getString('REDIS_PASSWORD')
         const nodes = hosts.map((host) => ({ host, port }))
 
-        return { hosts, port, nodes }
+        return { nodes, password }
     }
     get mongo() {
         return {

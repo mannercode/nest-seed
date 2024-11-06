@@ -23,7 +23,7 @@ import { ShowtimeCreationService } from './showtime-creation.service'
         BullModule.forRootAsync({
             useFactory: async (config: AppConfigService) => ({
                 prefix: isEnv('test') ? `queue:{${generateUUID()}}` : '{queue}',
-                connection: new Redis.Cluster(config.redis.nodes)
+                connection: new Redis.Cluster(config.redis.nodes, { redisOptions: config.redis })
             }),
             inject: [AppConfigService]
         }),

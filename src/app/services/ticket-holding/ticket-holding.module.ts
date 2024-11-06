@@ -8,8 +8,8 @@ import { TicketHoldingService } from './ticket-holding.service'
         CacheModule.forRootAsync(
             {
                 useFactory: (config: AppConfigService) => ({
+                    ...config.redis,
                     type: 'cluster',
-                    nodes: config.redis.nodes,
                     prefix: isEnv('test') ? 'ticket:' + generateUUID() : 'TicketHolding'
                 }),
                 inject: [AppConfigService]

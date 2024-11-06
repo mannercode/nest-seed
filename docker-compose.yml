@@ -1,13 +1,11 @@
 # https://docs.docker.com/compose/compose-file/05-services/
-x-mongo-image: &mongo-image mongo:8.0
-x-redis-image: &redis-image redis:7.4
 x-logging: &default-logging
     options:
         max-size: '10m'
         max-file: '3'
 
 x-mongo-common: &mongo-common
-    image: *mongo-image
+    image: mongo:${MONGO_DB_VERSION}
     profiles: ['infra']
     logging: *default-logging
     environment:
@@ -41,7 +39,7 @@ x-mongo-common: &mongo-common
         retries: 5
 
 x-redis-common: &redis-common
-    image: *redis-image
+    image: redis:${REDIS_VERSION}
     command:
         [
             'redis-server',
@@ -54,7 +52,9 @@ x-redis-common: &redis-common
             '--cluster-node-timeout',
             '5000',
             '--appendonly',
-            'yes'
+            'yes',
+            '--requirepass',
+            $REDIS_PASSWORD
         ]
     profiles: ['infra']
     logging: *default-logging
@@ -62,7 +62,7 @@ x-redis-common: &redis-common
         - default
     restart: always
     healthcheck:
-        test: ['CMD', 'redis-cli', 'ping']
+        test: ['CMD', 'redis-cli', '-a', $REDIS_PASSWORD, 'ping']
         interval: 5s
         timeout: 5s
         retries: 5
@@ -87,7 +87,7 @@ services:
         <<: *redis-common
         container_name: ${REDIS_HOST6}
     redis_cluster_setup:
-        image: *redis-image
+        image: redis:${REDIS_VERSION}
         container_name: redis-cluster-setup
         profiles: ['infra']
         depends_on:
@@ -104,7 +104,7 @@ services:
             redis6:
                 condition: service_healthy
         command: >
-            sh -c "echo 'yes' | redis-cli --cluster create
+            sh -c "echo 'yes' | redis-cli -a $REDIS_PASSWORD --cluster create
             redis1:$REDIS_PORT
             redis2:$REDIS_PORT
             redis3:$REDIS_PORT
@@ -116,7 +116,7 @@ services:
             - default
 
     mongo-key-generator:
-        image: *mongo-image
+        image: mongo:${MONGO_DB_VERSION}
         container_name: mongo-key-generator
         profiles: ['infra']
         command: sh -c "openssl rand -base64 768 > mongodb.key && chmod 400 mongodb.key && chown mongodb:mongodb mongodb.key"
@@ -133,7 +133,7 @@ services:
         <<: *mongo-common
         container_name: ${MONGO_DB_HOST3}
     mongo_cluster_setup:
-        image: *mongo-image
+        image: mongo:${MONGO_DB_VERSION}
         container_name: mongo-cluster-setup
         profiles: ['infra']
         depends_on:
@@ -170,7 +170,7 @@ services:
             interval: 5s
             timeout: 10s
             retries: 5
-        env_file: .env.test
+        env_file: .env.app
         volumes:
             - ./_output/logs:/app/_output/logs
             - ./_output/uploads:/app/_output/uploads

@@ -81,7 +81,7 @@ describe('TicketHolding Module', () => {
             '티켓이 중복 선점되면 안 된다',
             async () => {
                 const results = await Promise.all(
-                    Array.from({ length: 100 }, async (_, index) => {
+                    Array.from({ length: 100 }, async () => {
                         const showtimeId = generateUUID()
                         const tickets = Array.from({ length: 5 }, generateUUID)
                         const customers = Array.from({ length: 10 }, generateUUID)
@@ -134,6 +134,9 @@ describe('TicketHolding Module', () => {
 
             const heldTickets = await service.findTicketIds(showtimeId, customerA)
             expect(heldTickets).toEqual([])
+
+            const secondResult = await service.holdTickets(showtimeId, customerB, tickets, ttlMs)
+            expect(secondResult).toBeTruthy()
         })
     })
 })

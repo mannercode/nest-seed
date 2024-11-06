@@ -22,12 +22,6 @@
             "command": "npm run watch:test"
         },
         {
-            "label": "Workspace Setup",
-            "detail": "Set up the development environment and install necessary dependencies.",
-            "type": "shell",
-            "command": "bash scripts/workspace_setup.sh"
-        },
-        {
             "label": "Workspace Cleanup",
             "detail": "Reset the development environment and remove all data.",
             "type": "shell",

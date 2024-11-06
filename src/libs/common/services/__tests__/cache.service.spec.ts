@@ -82,12 +82,16 @@ describe('CacheService', () => {
         await expect(cacheService.set(key, value, wrongTTL)).rejects.toThrow(Error)
     })
 
-    it('동시 쓰기 테스트', async () => {
-        fail('')
-    })
+    it('should execute Lua script and set keys correctly', async () => {
+        const script = `return redis.call('SET', KEYS[1], ARGV[1])`
+        const keys = ['key1']
+        const args = ['value1']
 
-    it('타임 아웃 이벤트 수신', async () => {
-        fail('')
+        const result = await cacheService.executeScript(script, keys, args)
+        expect(result).toBe('OK')
+
+        const storedValue = await cacheService.get('key1')
+        expect(storedValue).toBe('value1')
     })
 })
 

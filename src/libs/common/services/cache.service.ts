@@ -1,6 +1,6 @@
-import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
+import { getRedisConnectionToken, RedisModule, RedisModuleOptions } from '@nestjs-modules/ioredis'
 import { DynamicModule, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
-import { Exception } from 'common'
+import { Assert, Exception } from 'common'
 import Redis from 'ioredis'
 
 @Injectable()
@@ -31,7 +31,8 @@ export class CacheService implements OnModuleDestroy {
     }
 
     async get(key: string): Promise<string | null> {
-        return this.redis.get(this.makeKey(key))
+        const value = await this.redis.get(this.makeKey(key))
+        return value
     }
 
     async delete(key: string) {
@@ -39,7 +40,13 @@ export class CacheService implements OnModuleDestroy {
     }
 
     async executeScript(script: string, keys: string[], args: string[]): Promise<any> {
-        return this.redis.eval(script, keys.length, ...keys.map(this.makeKey.bind(this)), ...args)
+        const result = await this.redis.eval(
+            script,
+            keys.length,
+            ...keys.map(this.makeKey.bind(this)),
+            ...args
+        )
+        return result
     }
 }
 
@@ -47,6 +54,7 @@ export interface CacheModuleOptions {
     type: 'cluster' | 'single'
     nodes: { host: string; port: number }[]
     prefix: string
+    password?: string
 }
 
 @Module({})
@@ -64,16 +72,26 @@ export class CacheModule {
                 RedisModule.forRootAsync(
                     {
                         useFactory: async (...args: any[]) => {
-                            const { type, nodes } = await options.useFactory(...args)
+                            const { type, nodes, password } = await options.useFactory(...args)
 
-                            if (type === 'single') {
-                                const { host, port } = nodes[0]
-                                return { type: 'single', url: `redis://${host}:${port}` }
+                            let redisOptions: RedisModuleOptions = {
+                                type: 'cluster',
+                                nodes,
+                                options: { redisOptions: { password } }
                             }
 
-                            // jest에서 redis cluster를 테스트 하기 어렵다.
-                            /* istanbul ignore next */
-                            return { type, nodes }
+                            if (type === 'single') {
+                                Assert.undefined(
+                                    password,
+                                    'The single type in Redis does not use a password for testing purposes.'
+                                )
+
+                                const { host, port } = nodes[0]
+
+                                redisOptions = { type: 'single', url: `redis://${host}:${port}` }
+                            }
+
+                            return redisOptions
                         },
                         inject: options.inject
                     },
