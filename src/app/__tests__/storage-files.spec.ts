@@ -144,14 +144,11 @@ describe.skip('aborted 오류 테스트', () => {
     let shared: SharedFixture
     let isolated: IsolatedFixture
     let client: HttpTestClient
-    let config: AppConfigService
 
     beforeAll(async () => {
         shared = await createSharedFixture()
-
         isolated = await createIsolatedFixture()
         client = isolated.testContext.client
-        config = isolated.config
     }, 10000)
 
     afterAll(async () => {
