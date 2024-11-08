@@ -1,24 +1,19 @@
 import { TestingModule } from '@nestjs/testing'
-import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
 import { sleep } from 'common'
-import { createTestingModule } from 'testlib'
+import { createRedisContainer, createTestingModule, RedisContainerContext } from 'testlib'
 import { CacheModule, CacheService } from '..'
 
 describe('CacheService', () => {
     let module: TestingModule
     let cacheService: CacheService
-    let redisContainer: StartedRedisContainer
-    let host: string
-    let port: number
+    let redisCtx: RedisContainerContext
 
     beforeAll(async () => {
-        redisContainer = await new RedisContainer().start()
-        host = redisContainer.getHost()
-        port = redisContainer.getFirstMappedPort()
+        redisCtx = await createRedisContainer()
     }, 120 * 1000)
 
     afterAll(async () => {
-        await redisContainer.stop()
+        await redisCtx.close()
     })
 
     beforeEach(async () => {
@@ -28,7 +23,7 @@ describe('CacheService', () => {
                     {
                         useFactory: () => ({
                             type: 'single',
-                            nodes: [{ host, port }],
+                            nodes: [{ host: redisCtx.host, port: redisCtx.port }],
                             prefix: 'prefix'
                         })
                     },
@@ -98,12 +93,12 @@ describe('CacheService', () => {
 describe('CacheModule', () => {
     let module: TestingModule
     let cacheServices: CacheService[]
-    let redisContainer1: StartedRedisContainer
-    let redisContainer2: StartedRedisContainer
+    let redisCtx1: RedisContainerContext
+    let redisCtx2: RedisContainerContext
 
     beforeEach(async () => {
-        redisContainer1 = await new RedisContainer().start()
-        redisContainer2 = await new RedisContainer().start()
+        redisCtx1 = await createRedisContainer()
+        redisCtx2 = await createRedisContainer()
 
         module = await createTestingModule({
             imports: [
@@ -111,12 +106,7 @@ describe('CacheModule', () => {
                     {
                         useFactory: () => ({
                             type: 'single',
-                            nodes: [
-                                {
-                                    host: redisContainer1.getHost(),
-                                    port: redisContainer1.getFirstMappedPort()
-                                }
-                            ],
+                            nodes: [{ host: redisCtx1.host, port: redisCtx1.port }],
                             prefix: 'prefix'
                         })
                     },
@@ -126,12 +116,7 @@ describe('CacheModule', () => {
                     {
                         useFactory: () => ({
                             type: 'single',
-                            nodes: [
-                                {
-                                    host: redisContainer2.getHost(),
-                                    port: redisContainer2.getFirstMappedPort()
-                                }
-                            ],
+                            nodes: [{ host: redisCtx2.host, port: redisCtx2.port }],
                             prefix: 'prefix'
                         })
                     },
@@ -146,8 +131,8 @@ describe('CacheModule', () => {
     afterEach(async () => {
         if (module) await module.close()
 
-        await redisContainer1.stop()
-        await redisContainer2.stop()
+        await redisCtx1.close()
+        await redisCtx2.close()
     })
 
     it('CacheService 인스턴스는 2개여야 한다', async () => {

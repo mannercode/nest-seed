@@ -1,24 +1,19 @@
 import { TestingModule } from '@nestjs/testing'
-import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
-import { createTestingModule } from 'testlib'
+import { createRedisContainer, createTestingModule, RedisContainerContext } from 'testlib'
 import { JwtAuthModule, JwtAuthService } from '..'
 import { sleep } from '../../utils'
 
 describe('JwtAuthService', () => {
     let module: TestingModule
     let jwtService: JwtAuthService
-    let redisContainer: StartedRedisContainer
-    let host: string
-    let port: number
+    let redisCtx: RedisContainerContext
 
     beforeAll(async () => {
-        redisContainer = await new RedisContainer().start()
-        host = redisContainer.getHost()
-        port = redisContainer.getFirstMappedPort()
+        redisCtx = await createRedisContainer()
     }, 120 * 1000)
 
     afterAll(async () => {
-        await redisContainer.stop()
+        await redisCtx.close()
     })
 
     beforeEach(async () => {
@@ -29,7 +24,7 @@ describe('JwtAuthService', () => {
                         useFactory: () => {
                             return {
                                 type: 'single',
-                                nodes: [{ host, port }],
+                                nodes: [{ host: redisCtx.host, port: redisCtx.port }],
                                 prefix: 'prefix',
                                 accessSecret: 'accessSecret',
                                 refreshSecret: 'refreshSecret',

@@ -62,7 +62,7 @@
 actor Customer
 
 Customer -> Frontend : 영화 예매 시스템에 접속
-Frontend -> Backend : 추천 영화 목록 요청\nGET /movies/recommendations?customerId={}
+Frontend -> Backend : 추천 영화 목록 요청\nGET /movies/recommendations\n?customerId={}
 Backend -> Recommendations : findMovieRecommendations({customerId})
 Recommendations -> Showtimes : findShowingMovieIds()
 Showtimes --> Recommendations : showingMovieIds
@@ -76,7 +76,7 @@ group if customer exists
     Recommendations -> Movies : findMovies(movieIds[] from tickets)
     Movies --> Recommendations : watchedMovies
 end
-Recommendations -> Recommendations : generateMovieRecommendations(movies, watchedMovies)
+Recommendations -> Recommendations : generateMovieRecommendations\n(movies, watchedMovies)
 Backend <-- Recommendations : movieRecommendations[]
 Frontend <-- Backend : movieRecommendations[]
 Customer <-- Frontend : 영화 목록 제공
@@ -103,7 +103,7 @@ generateMovieRecommendations(movies, watchedMovies){
 actor Customer
 
 Customer -> Frontend : 영화 선택
-    Frontend -> Backend : 상영 극장 목록 요청\nGET /booking/movies/{movieId}/theaters?latlong=37.123,128.678
+    Frontend -> Backend : 상영 극장 목록 요청\nGET /booking/movies/{movieId}/theaters\n?latlong=37.123,128.678
         Backend -> Booking: findShowingTheaters({movieId, latlong})
             Booking -> Showtimes: findShowingTheaterIds({movieId})
             Booking <-- Showtimes: theaterIds[]
@@ -115,7 +115,7 @@ Customer -> Frontend : 영화 선택
 Customer <-- Frontend : 상영 극장 목록 제공
 
 Customer -> Frontend : 상영 극장 선택
-    Frontend -> Backend : 상영일 목록 요청\nGET /booking/movies/{movieId}/theaters/{theaterId}/showdates
+    Frontend -> Backend : 상영일 목록 요청\nGET /booking/movies/{movieId}/\ntheaters/{theaterId}/showdates
         Backend -> Booking: findShowdates({movieId, theaterId})
             Booking -> Showtimes: findShowdates({movieId, theaterId})
                 note left
@@ -127,8 +127,8 @@ Customer -> Frontend : 상영 극장 선택
 Customer <-- Frontend : 상영일 목록 제공
 
 Customer -> Frontend : 상영일 선택
-    Frontend -> Backend : 상영 시간 목록 요청\nGET /booking/movies/{movieId}/theaters/{theaterId}/showdates/{}/showtimes
-        Backend -> Booking: getShowtimesWithSalesStatus({movieId, theaterId, showdate})
+    Frontend -> Backend : 상영 시간 목록 요청\nGET /booking/movies/{movieId}/\ntheaters/{theaterId}/showdates/{}/showtimes
+        Backend -> Booking: getShowtimesWithSalesStatus\n({movieId, theaterId, showdate})
             Booking -> Showtimes: findShowtimes({movieId, theaterId, showdate})
             Booking <-- Showtimes: showtimes[]
             Booking -> Tickets: getSalesStatuses({ showtimeIds })
@@ -143,7 +143,7 @@ Customer -> Frontend : 상영일 선택
                 }
             }
             end note
-            Booking -> Booking: generateShowtimesWithSalesStatus(Showtimes[], salesStatuses)
+            Booking -> Booking: generateShowtimesWithSalesStatus\n(Showtimes[], salesStatuses)
         Backend <-- Booking: showtimesWithSalesStatus[]
     Frontend <-- Backend : showtimesWithSalesStatus[]
 Customer <-- Frontend : 상영 시간 목록 제공
@@ -163,36 +163,41 @@ Customer <-- Frontend : 구매 가능한 티켓 목록 제공
 actor Customer
 
 Customer -> Frontend: 티켓 선택
-    Frontend -> Backend: 티켓 선점\nPATCH /booking/tickets
-        Backend -> Booking : holdTickets(customerId, ticketIds[])
-            Booking -> TicketHolding : holdTickets(customerId, ticketIds[], durationInMinutes)
-            Booking <-- TicketHolding : true
-            Booking -> TicketHolding : findHeldTicketIds(customerId)
-            Booking <-- TicketHolding : heldTicketIds[]
-            Booking -> TicketHolding : releaseTickets(omit(foundTicketIds,ticketIds))
-            Booking <-- TicketHolding : true
-        Backend <-- Booking: 티켓 선점(성공)
-    Frontend <-- Backend: 티켓 선점(성공)
+    Frontend -> Backend: 티켓 선점\nPOST /booking/showtimes/{}/tickets/hold
+        Backend -> Booking: holdTickets(showtimeId, customerId, ticketIds[])
+            Booking -> TicketHolding: holdTickets(showtimeId, customerId, ticketIds[], ttlMs=10*60*1000)
+                TicketHolding -> TicketHolding: releaseTickets(showtimeId, customerId)
+                TicketHolding -> TicketHolding: holdTickets(showtimeId, customerId)
+            Booking <-- TicketHolding: 성공
+        Backend <-- Booking: 티켓 선점 완료
+    Frontend <-- Backend: 티켓 선점 완료
 Customer <-- Frontend: 선점 완료
-@enduml
-```
 
-```plantuml
-@startuml
-actor Customer
-
-Customer -> Frontend: 티켓 선택 완료
-    Frontend -> Backend: 결제\nPOST /purchases/tickets
-        Backend -> Purchases: purchaseTickets(ticketIds[],customerId)
-            Purchases -> TicketHolding: findHeldTicketIds(customerId)
-            Purchases <-- TicketHolding: heldTicketIds[]
-            Purchases -> Purchases: heldTicketIds.in(ticketIds)
-            Purchases -> Payment: createPayment(totalPrice,customer)
-            Purchases <-- Payment: success
-            Purchases -> Tickets: updateTicketStatus(ticketIds[], 'sold')
-            Purchases <-- Tickets: done
-        Backend <-- Purchases: 결제 완료 및 티켓 정보
-    Frontend <-- Backend: 결제(성공)
+Customer -> Frontend: 결제 정보 입력
+    Frontend -> Backend: 결제 요청\nPOST /booking/showtimes/{}/tickets/purchase
+        Backend -> Booking: purchaseTickets(showtimeId, customerId, ticketIds[])
+            Booking -> Booking: validatePurchase(showtimeId, customerId, ticketIds[])
+            activate Booking
+            note left
+                - 좌석이 선점된 상태여야 한다.
+                - 상영 30분 전까지만 온라인으로 티켓을 구매할 수 있다.
+                - 고객은 한 번에 최대 10장의 티켓을 구매할 수 있다.
+            end note
+            Booking -> Booking: validateTicketQuantity(ticketIds[])
+            Booking -> Booking: validatePurchaseTime(showtimeId)
+            Booking -> TicketHolding: findHeldTicketIds(showtimeId, customerId)
+            Booking <-- TicketHolding: heldTicketIds[]
+            Booking -> Booking: heldTicketIds.in(ticketIds)
+            Booking <-- Booking: true
+            deactivate Booking
+            Booking -> Purchases: createPurchase(customerId, ticketIds[])
+                Purchases -> Payment: processPayment(totalPrice, customer)
+                Purchases <-- Payment: 결제 성공
+                Purchases -> Tickets: markTicketsAsSold(ticketIds[])
+                Purchases <-- Tickets: 완료
+            Booking <-- Purchases: 구매 완료
+        Backend <-- Booking: 결제 완료 및 티켓 정보
+    Frontend <-- Backend: 결제 성공
 Customer <-- Frontend: 구매 완료
 @enduml
 ```

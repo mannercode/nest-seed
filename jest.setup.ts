@@ -4,4 +4,5 @@ import 'reflect-metadata'
 dotenv.config({ path: ['.env.app', '.env.infra'] })
 
 process.env.NODE_ENV = 'test'
-process.env.MONGOMS_VERSION = process.env.MONGO_DB_VERSION
+// testcontainers에서 testcontainers/ryuk 이미지 사용하지 않게 한다
+process.env.TESTCONTAINERS_RYUK_DISABLED = 'true'

@@ -1,7 +1,6 @@
 import { expect } from '@jest/globals'
 import { maps, nullObjectId, objectId, objectIds, OrderDirection, pickIds, pickItems } from 'common'
-import { MongoMemoryReplSet } from 'mongodb-memory-server'
-import { expectEqualUnsorted } from 'testlib'
+import { expectEqualUnsorted, MongoContainerContext, createMongoContainer } from 'testlib'
 import { MongooseException } from '../exceptions'
 import {
     createFixture,
@@ -14,26 +13,26 @@ import {
 } from './mongoose.repository.fixture'
 
 describe('MongoRepository', () => {
-    let mongod: MongoMemoryReplSet
+    let mongoCtx: MongoContainerContext
     let repository: SamplesRepository
-    let teardown: () => void
+    let close: () => void
 
     beforeAll(async () => {
-        mongod = await MongoMemoryReplSet.create({ replSet: { count: 1 } })
+        mongoCtx = await createMongoContainer()
     }, 120 * 1000)
 
     afterAll(async () => {
-        await mongod.stop()
+        await mongoCtx.close()
     })
 
     beforeEach(async () => {
-        const fixture = await createFixture(mongod.getUri())
+        const fixture = await createFixture(mongoCtx.uri)
         repository = fixture.repository
-        teardown = fixture.close
+        close = fixture.close
     })
 
     afterEach(async () => {
-        await teardown()
+        await close()
     })
 
     describe('save', () => {

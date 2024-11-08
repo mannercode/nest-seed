@@ -2,8 +2,10 @@
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.122.1/containers/docker-existing-dockerfile
 {
     "name": "${containerWorkspaceFolderBasename}",
-    "context": ".",
-    "dockerFile": "Dockerfile",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": "."
+    },
     "mounts": [
         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
     ],
@@ -13,6 +15,7 @@
         "NODE_ENV": "development"
     },
     "initializeCommand": "docker network create ${containerWorkspaceFolderBasename} >/dev/null 2>&1 || true",
+    "onCreateCommand": "docker tag $(docker images -q vsc-${containerWorkspaceFolderBasename}-*) vscode-${containerWorkspaceFolderBasename} && docker rmi $(docker images --filter=reference=vsc-${containerWorkspaceFolderBasename}-* --format {{.Repository}})",
     "postCreateCommand": "bash scripts/workspace_setup.sh",
     "runArgs": [
         "--network",

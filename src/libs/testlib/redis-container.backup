@@ -1,0 +1,131 @@
+import {
+    GenericContainer,
+    Network,
+    StartedNetwork,
+    StartedTestContainer,
+    Wait
+} from 'testcontainers'
+
+const CONTAINER_IMAGE = process.env.REDIS_IMAGE
+if (!CONTAINER_IMAGE) {
+    console.error('REDIS_IMAGE is not defined')
+    process.exit(1)
+}
+
+const PORT = 6379
+const PASSWORD = 'pass'
+
+const startContainers = async (network: StartedNetwork): Promise<StartedTestContainer[]> => {
+    const containers: StartedTestContainer[] = []
+
+    for (let i = 0; i < 6; i++) {
+        const container = await new GenericContainer(CONTAINER_IMAGE)
+            .withExposedPorts(PORT)
+            .withCommand([
+                'redis-server',
+                '--port',
+                PORT.toString(),
+                '--cluster-enabled',
+                'yes',
+                '--cluster-config-file',
+                'nodes.conf',
+                '--cluster-node-timeout',
+                '5000',
+                '--appendonly',
+                'yes',
+                '--requirepass',
+                PASSWORD,
+                '--masterauth',
+                PASSWORD
+            ])
+            .withWaitStrategy(Wait.forLogMessage('Ready to accept connections tcp'))
+            // .withNetworkMode(network.getName())
+            .start()
+
+        containers.push(container)
+    }
+
+    return containers
+    // return Promise.all(
+    //     Array.from({ length: 6 }, async () => {
+    //         const container = await new GenericContainer(CONTAINER_IMAGE)
+    //             .withExposedPorts(PORT)
+    //             .withCommand([
+    //                 'redis-server',
+    //                 '--port',
+    //                 PORT.toString(),
+    //                 '--cluster-enabled',
+    //                 'yes',
+    //                 '--cluster-config-file',
+    //                 'nodes.conf',
+    //                 '--cluster-node-timeout',
+    //                 '5000',
+    //                 '--appendonly',
+    //                 'yes',
+    //                 '--requirepass',
+    //                 PASSWORD,
+    //                 '--masterauth',
+    //                 PASSWORD
+    //             ])
+    //             .withWaitStrategy(Wait.forLogMessage('Ready to accept connections tcp'))
+    //             .withNetworkMode(network.getName())
+    //             .start()
+
+    //         return container
+    //     })
+    // )
+}
+
+const initiateContainers = async (containers: StartedTestContainer[], network: StartedNetwork) => {
+    const initCommand = [
+        'sh',
+        '-c',
+        `echo 'yes' | redis-cli -a ${PASSWORD} --cluster create ` +
+            // `${containers[0].getName().replace(/^\//, '')}:${PORT} ` +
+            // `${containers[1].getName().replace(/^\//, '')}:${PORT} ` +
+            // `${containers[2].getName().replace(/^\//, '')}:${PORT} ` +
+            // `${containers[3].getName().replace(/^\//, '')}:${PORT} ` +
+            // `${containers[4].getName().replace(/^\//, '')}:${PORT} ` +
+            // `${containers[5].getName().replace(/^\//, '')}:${PORT} ` +
+            `${containers[0].getHost()}:${containers[0].getMappedPort(PORT)} ` +
+            `${containers[1].getHost()}:${containers[1].getMappedPort(PORT)} ` +
+            `${containers[2].getHost()}:${containers[2].getMappedPort(PORT)} ` +
+            `${containers[3].getHost()}:${containers[3].getMappedPort(PORT)} ` +
+            `${containers[4].getHost()}:${containers[4].getMappedPort(PORT)} ` +
+            `${containers[5].getHost()}:${containers[5].getMappedPort(PORT)} ` +
+            '--cluster-replicas 1'
+    ]
+
+    const replicaSetInitiator = await new GenericContainer(CONTAINER_IMAGE)
+        .withCommand(initCommand)
+        .withWaitStrategy(Wait.forLogMessage('slots covered.'))
+        // .withNetworkMode(network.getName())
+        .start()
+
+    await replicaSetInitiator.stop()
+}
+
+export interface RedisContainerContext {
+    nodes: { host: string; port: number }[]
+    password?: string
+    close: () => void
+}
+
+export async function createRedisContainer(): Promise<RedisContainerContext> {
+    const network = await new Network().start()
+    const containers = await startContainers(network)
+    await initiateContainers(containers, network)
+
+    const close = async () => {
+        await Promise.all(containers.map((container) => container.stop()))
+        await network.stop()
+    }
+
+    const nodes = containers.map((container) => ({
+        host: container.getHost(),
+        port: container.getMappedPort(PORT)
+    }))
+
+    console.log(nodes)
+    return { nodes, password: PASSWORD, close }
+}
