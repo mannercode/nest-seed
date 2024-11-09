@@ -1,15 +1,16 @@
+import { sleep } from 'common'
 import * as mongoose from 'mongoose'
-import {
-    GenericContainer,
-    Network,
-    StartedNetwork,
-    StartedTestContainer,
-    Wait
-} from 'testcontainers'
+import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers'
 
 const CONTAINER_IMAGE = process.env.MONGO_DB_IMAGE
 if (!CONTAINER_IMAGE) {
     console.error('MONGO_DB_IMAGE is not defined')
+    process.exit(1)
+}
+
+const NETWORK = process.env.DOCKER_NETWORK
+if (!NETWORK) {
+    console.error('DOCKER_NETWORK is not defined')
     process.exit(1)
 }
 
@@ -18,6 +19,8 @@ const REPLICA_SET_NAME = 'repset'
 const USERNAME = 'user'
 const PASSWORD = 'pass'
 const KEYFILE_VOLUME_NAME = 'mongodb_test_key'
+
+const getName = (container: StartedTestContainer) => container.getName().replace(/^\//, '')
 
 const generateReplicaSetKeyfile = async () => {
     const keyfileGenerator = await new GenericContainer(CONTAINER_IMAGE)
@@ -33,11 +36,10 @@ const generateReplicaSetKeyfile = async () => {
     await keyfileGenerator.stop()
 }
 
-const startContainers = async (network: StartedNetwork): Promise<StartedTestContainer[]> => {
+const startContainers = async () => {
     return Promise.all(
         Array.from({ length: 3 }, async () => {
             const container = await new GenericContainer(CONTAINER_IMAGE)
-                .withExposedPorts(PORT)
                 .withEnvironment({
                     MONGO_INITDB_ROOT_USERNAME: USERNAME,
                     MONGO_INITDB_ROOT_PASSWORD: PASSWORD
@@ -52,9 +54,12 @@ const startContainers = async (network: StartedNetwork): Promise<StartedTestCont
                 ])
                 .withBindMounts([{ source: KEYFILE_VOLUME_NAME, target: '/etc/mongodb' }])
                 .withWaitStrategy(
-                    Wait.forLogMessage('MongoDB init process complete; ready for start up.')
+                    Wait.forLogMessage(
+                        'Start up cluster time keys manager with a local/direct keys client'
+                    )
+                    // Wait.forLogMessage('MongoDB init process complete; ready for start up.')
                 )
-                .withNetworkMode(network.getName())
+                .withNetworkMode(NETWORK)
                 .start()
 
             return container
@@ -62,20 +67,18 @@ const startContainers = async (network: StartedNetwork): Promise<StartedTestCont
     )
 }
 
-const initiateContainers = async (containers: StartedTestContainer[], network: StartedNetwork) => {
-    const primaryContainer = containers[0]
+const initiateContainers = async (containers: StartedTestContainer[]) => {
     const initCommand = [
         'sh',
         '-c',
-        `mongosh --host ${primaryContainer.getHost()} --port ${primaryContainer.getMappedPort(
-            PORT
-        )} -u ${USERNAME} -p ${PASSWORD} --authenticationDatabase admin --eval ` +
+        // `mongosh --host ${containers[0].getHost()} --port ${containers[0].getMappedPort(PORT)} -u ${USERNAME} -p ${PASSWORD} --authenticationDatabase admin --eval ` +
+        `mongosh --host ${getName(containers[0])} --port ${PORT} -u ${USERNAME} -p ${PASSWORD} --authenticationDatabase admin --eval ` +
             `"rs.initiate({
           _id: '${REPLICA_SET_NAME}',
           members: [
-            {_id: 0, host: '${containers[0].getHost()}:${containers[0].getMappedPort(PORT)}'},
-            {_id: 1, host: '${containers[1].getHost()}:${containers[1].getMappedPort(PORT)}'},
-            {_id: 2, host: '${containers[2].getHost()}:${containers[2].getMappedPort(PORT)}'}
+            {_id: 0, host: '${getName(containers[0])}:${PORT}'},
+            {_id: 1, host: '${getName(containers[1])}:${PORT}'},
+            {_id: 2, host: '${getName(containers[2])}:${PORT}'}
           ]
         })"`
     ]
@@ -83,6 +86,7 @@ const initiateContainers = async (containers: StartedTestContainer[], network: S
     const replicaSetInitiator = await new GenericContainer(CONTAINER_IMAGE)
         .withCommand(initCommand)
         .withWaitStrategy(Wait.forLogMessage('{ ok: 1 }'))
+        .withNetworkMode(NETWORK)
         .start()
 
     await replicaSetInitiator.stop()
@@ -97,13 +101,13 @@ export interface MongoContainerContext {
 // Sets up the MongoDB replica set and returns connection details
 export const createMongoContainer = async (): Promise<MongoContainerContext> => {
     await generateReplicaSetKeyfile()
-    const network = await new Network().start()
-    const containers = await startContainers(network)
-    await initiateContainers(containers, network)
+    const containers = await startContainers()
 
-    const uri = `mongodb://${USERNAME}:${PASSWORD}@${containers[0].getHost()}:${containers[0].getMappedPort(
-        PORT
-    )}/?replicaSet=${REPLICA_SET_NAME}`
+    // await sleep(1000)
+
+    await initiateContainers(containers)
+
+    const uri = `mongodb://${USERNAME}:${PASSWORD}@${getName(containers[0])}:${PORT}/?replicaSet=${REPLICA_SET_NAME}`
 
     // Connect once to ensure the cluster is fully initialized
     await mongoose.connect(uri, { dbName: 'testdb' })
@@ -114,8 +118,9 @@ export const createMongoContainer = async (): Promise<MongoContainerContext> => 
 
     const close = async () => {
         await Promise.all(containers.map((container) => container.stop()))
-        await network.stop()
     }
 
     return { uri, close }
 }
+
+// docker rm -f $(docker ps -a -q --filter ancestor=mongo:8.0)

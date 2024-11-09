@@ -9,8 +9,8 @@ describe('CacheService', () => {
     let redisCtx: RedisContainerContext
 
     beforeAll(async () => {
-        redisCtx = await createRedisContainer()
-    }, 120 * 1000)
+        redisCtx = await createRedisContainer('cluster')
+    }, 60 * 1000)
 
     afterAll(async () => {
         await redisCtx.close()
@@ -22,8 +22,9 @@ describe('CacheService', () => {
                 CacheModule.forRootAsync(
                     {
                         useFactory: () => ({
-                            type: 'single',
-                            nodes: [{ host: redisCtx.host, port: redisCtx.port }],
+                            type: 'cluster',
+                            nodes: redisCtx.nodes,
+                            password: redisCtx.password,
                             prefix: 'prefix'
                         })
                     },
@@ -96,17 +97,18 @@ describe('CacheModule', () => {
     let redisCtx1: RedisContainerContext
     let redisCtx2: RedisContainerContext
 
-    beforeEach(async () => {
-        redisCtx1 = await createRedisContainer()
-        redisCtx2 = await createRedisContainer()
+    beforeAll(async () => {
+        redisCtx1 = await createRedisContainer('cluster')
+        redisCtx2 = await createRedisContainer('single')
 
         module = await createTestingModule({
             imports: [
                 CacheModule.forRootAsync(
                     {
                         useFactory: () => ({
-                            type: 'single',
-                            nodes: [{ host: redisCtx1.host, port: redisCtx1.port }],
+                            type: 'cluster',
+                            nodes: redisCtx1.nodes,
+                            password: redisCtx1.password,
                             prefix: 'prefix'
                         })
                     },
@@ -116,7 +118,8 @@ describe('CacheModule', () => {
                     {
                         useFactory: () => ({
                             type: 'single',
-                            nodes: [{ host: redisCtx2.host, port: redisCtx2.port }],
+                            nodes: redisCtx2.nodes,
+                            password: redisCtx2.password,
                             prefix: 'prefix'
                         })
                     },
@@ -126,9 +129,9 @@ describe('CacheModule', () => {
         })
 
         cacheServices = module.get(CacheService, { each: true })
-    }, 120 * 1000)
+    }, 60 * 1000)
 
-    afterEach(async () => {
+    afterAll(async () => {
         if (module) await module.close()
 
         await redisCtx1.close()

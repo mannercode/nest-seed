@@ -12,17 +12,17 @@
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
         "PROJECT_NAME": "${containerWorkspaceFolderBasename}",
-        "NODE_ENV": "development"
+        "DOCKER_NETWORK": "${containerWorkspaceFolderBasename}"
     },
-    "initializeCommand": "docker network create ${containerWorkspaceFolderBasename} >/dev/null 2>&1 || true",
-    "onCreateCommand": "docker tag $(docker images -q vsc-${containerWorkspaceFolderBasename}-*) vscode-${containerWorkspaceFolderBasename} && docker rmi $(docker images --filter=reference=vsc-${containerWorkspaceFolderBasename}-* --format {{.Repository}})",
-    "postCreateCommand": "bash scripts/workspace_setup.sh",
     "runArgs": [
         "--network",
         "${containerWorkspaceFolderBasename}",
         "--name",
         "${containerWorkspaceFolderBasename}-vscode"
     ],
+    "initializeCommand": "docker network create ${containerWorkspaceFolderBasename} >/dev/null 2>&1 || true",
+    "onCreateCommand": "docker tag $(docker images -q vsc-${containerWorkspaceFolderBasename}-*) vscode-${containerWorkspaceFolderBasename} && docker rmi $(docker images --filter=reference=vsc-${containerWorkspaceFolderBasename}-* --format {{.Repository}})",
+    "postCreateCommand": "bash scripts/workspace_setup.sh",
     "customizations": {
         "vscode": {
             "extensions": [

@@ -9,8 +9,8 @@ describe('JwtAuthService', () => {
     let redisCtx: RedisContainerContext
 
     beforeAll(async () => {
-        redisCtx = await createRedisContainer()
-    }, 120 * 1000)
+        redisCtx = await createRedisContainer('single')
+    }, 60 * 1000)
 
     afterAll(async () => {
         await redisCtx.close()
@@ -24,7 +24,8 @@ describe('JwtAuthService', () => {
                         useFactory: () => {
                             return {
                                 type: 'single',
-                                nodes: [{ host: redisCtx.host, port: redisCtx.port }],
+                                nodes: redisCtx.nodes,
+                                password: redisCtx.password,
                                 prefix: 'prefix',
                                 accessSecret: 'accessSecret',
                                 refreshSecret: 'refreshSecret',

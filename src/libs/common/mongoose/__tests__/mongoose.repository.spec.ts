@@ -19,7 +19,7 @@ describe('MongoRepository', () => {
 
     beforeAll(async () => {
         mongoCtx = await createMongoContainer()
-    }, 120 * 1000)
+    }, 60 * 1000)
 
     afterAll(async () => {
         await mongoCtx.close()

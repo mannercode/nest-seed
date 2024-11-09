@@ -50,9 +50,14 @@ export class CacheService implements OnModuleDestroy {
     }
 }
 
+export interface CacheNodeType {
+    host: string
+    port: number
+}
+
 export interface CacheModuleOptions {
     type: 'cluster' | 'single'
-    nodes: { host: string; port: number }[]
+    nodes: CacheNodeType[]
     prefix: string
     password?: string
 }
@@ -74,21 +79,24 @@ export class CacheModule {
                         useFactory: async (...args: any[]) => {
                             const { type, nodes, password } = await options.useFactory(...args)
 
-                            let redisOptions: RedisModuleOptions = {
-                                type: 'cluster',
-                                nodes,
-                                options: { redisOptions: { password } }
-                            }
+                            let redisOptions: RedisModuleOptions
 
-                            if (type === 'single') {
-                                Assert.undefined(
-                                    password,
-                                    'The single type in Redis does not use a password for testing purposes.'
-                                )
-
+                            if (type === 'cluster') {
+                                redisOptions = {
+                                    type,
+                                    nodes,
+                                    options: { redisOptions: { password } }
+                                }
+                            } else if (type === 'single') {
                                 const { host, port } = nodes[0]
 
-                                redisOptions = { type: 'single', url: `redis://${host}:${port}` }
+                                redisOptions = {
+                                    type,
+                                    url: `redis://${host}:${port}`,
+                                    options: { password }
+                                }
+                            } else {
+                                throw new Error(`${type} is an unknown Redis type`)
                             }
 
                             return redisOptions
