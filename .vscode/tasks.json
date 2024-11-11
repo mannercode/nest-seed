@@ -4,20 +4,14 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Run Test Suites",
-            "detail": "Execute the selected test suites using npm.",
+            "label": "Test",
+            "detail": "Execute the selected test suites",
             "type": "shell",
             "command": "npm run ${input:testSuite}"
         },
         {
-            "label": "Run Test Suite 100 Times",
-            "detail": "Execute the selected test suite 100 times in a loop.",
-            "type": "shell",
-            "command": "for i in {1..100}; do npm run ${input:testSuite} || { echo \"Test failed at iteration $i\"; exit 1; }; done"
-        },
-        {
-            "label": "Run CLI",
-            "detail": "Execute the selected CLI tool.",
+            "label": "CLI",
+            "detail": "Execute the selected CLI tool",
             "type": "shell",
             "command": "bash scripts/run_cli.sh ${input:cliTool}",
             "runOptions": {
@@ -26,19 +20,19 @@
         },
         {
             "label": "Watch App",
-            "detail": "Start the Nest development server and watch for file changes.",
+            "detail": "Start the Nest development server and watch for file changes",
             "type": "shell",
             "command": "npm run watch:app"
         },
         {
             "label": "Watch Test",
-            "detail": "Run Jest tests and watch for file changes.",
+            "detail": "Run Jest tests and watch for file changes",
             "type": "shell",
             "command": "npm run watch:test"
         },
         {
             "label": "Workspace Cleanup",
-            "detail": "Reset the development environment and remove all data.",
+            "detail": "Reset the development environment and remove all data",
             "type": "shell",
             "command": "bash scripts/workspace_cleanup.sh"
         }
@@ -51,9 +45,10 @@
             "options": [
                 "test:all",
                 "test:app",
-                "test:common"
+                "test:common",
+                "test:100x"
             ],
-            "description": "Select a test suite to run."
+            "description": "Select a test suite to run"
         },
         {
             "id": "cliTool",
@@ -62,7 +57,7 @@
                 "redis",
                 "mongo"
             ],
-            "description": "Select the CLI tool to execute."
+            "description": "Select the CLI tool to execute"
         }
     ]
 }
