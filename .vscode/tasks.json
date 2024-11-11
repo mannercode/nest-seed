@@ -5,9 +5,15 @@
     "tasks": [
         {
             "label": "Run Test Suites",
-            "detail": "Run selected test suites.",
+            "detail": "Execute the selected test suites using npm.",
             "type": "shell",
             "command": "npm run ${input:testSuite}"
+        },
+        {
+            "label": "Run Test Suite 100 Times",
+            "detail": "Execute the selected test suite 100 times in a loop.",
+            "type": "shell",
+            "command": "for i in {1..100}; do npm run ${input:testSuite} || { echo \"Test failed at iteration $i\"; exit 1; }; done"
         },
         {
             "label": "Run CLI",
@@ -41,7 +47,7 @@
         {
             "id": "testSuite",
             "type": "pickString",
-            "default": "test:app",
+            "default": "test:all",
             "options": [
                 "test:all",
                 "test:app",

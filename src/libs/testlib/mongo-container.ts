@@ -1,4 +1,3 @@
-import { sleep } from 'common'
 import * as mongoose from 'mongoose'
 import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers'
 
@@ -54,10 +53,13 @@ const startContainers = async () => {
                 ])
                 .withBindMounts([{ source: KEYFILE_VOLUME_NAME, target: '/etc/mongodb' }])
                 .withWaitStrategy(
+                    /*
+                    'MongoDB init process complete; ready for start up.'
+                    위 로그 후에 cluster 관련 작업이 완료될 때 까지 기다려야 한다.
+                    */
                     Wait.forLogMessage(
                         'Start up cluster time keys manager with a local/direct keys client'
                     )
-                    // Wait.forLogMessage('MongoDB init process complete; ready for start up.')
                 )
                 .withNetworkMode(NETWORK)
                 .start()
@@ -71,7 +73,6 @@ const initiateContainers = async (containers: StartedTestContainer[]) => {
     const initCommand = [
         'sh',
         '-c',
-        // `mongosh --host ${containers[0].getHost()} --port ${containers[0].getMappedPort(PORT)} -u ${USERNAME} -p ${PASSWORD} --authenticationDatabase admin --eval ` +
         `mongosh --host ${getName(containers[0])} --port ${PORT} -u ${USERNAME} -p ${PASSWORD} --authenticationDatabase admin --eval ` +
             `"rs.initiate({
           _id: '${REPLICA_SET_NAME}',
@@ -92,29 +93,29 @@ const initiateContainers = async (containers: StartedTestContainer[]) => {
     await replicaSetInitiator.stop()
 }
 
-// Interface representing the MongoDB replica set
-export interface MongoContainerContext {
-    uri: string
-    close: () => Promise<void>
-}
-
-// Sets up the MongoDB replica set and returns connection details
-export const createMongoContainer = async (): Promise<MongoContainerContext> => {
-    await generateReplicaSetKeyfile()
-    const containers = await startContainers()
-
-    // await sleep(1000)
-
-    await initiateContainers(containers)
-
-    const uri = `mongodb://${USERNAME}:${PASSWORD}@${getName(containers[0])}:${PORT}/?replicaSet=${REPLICA_SET_NAME}`
-
-    // Connect once to ensure the cluster is fully initialized
+const initCluster = async (uri: string) => {
+    // 접속을 해야 클러스터 설정을 하는 것 같다.
     await mongoose.connect(uri, { dbName: 'testdb' })
     const testSchema = new mongoose.Schema({ name: String })
     const TestModel = mongoose.model('Test', testSchema, 'testcol')
     await TestModel.create({ name: 'test' })
     await mongoose.connection.close()
+}
+
+export interface MongoContainerContext {
+    uri: string
+    close: () => Promise<void>
+}
+
+export const createMongoCluster = async (): Promise<MongoContainerContext> => {
+    await generateReplicaSetKeyfile()
+    const containers = await startContainers()
+
+    await initiateContainers(containers)
+
+    const uri = `mongodb://${USERNAME}:${PASSWORD}@${getName(containers[0])}:${PORT}/?replicaSet=${REPLICA_SET_NAME}`
+
+    await initCluster(uri)
 
     const close = async () => {
         await Promise.all(containers.map((container) => container.stop()))
@@ -122,5 +123,3 @@ export const createMongoContainer = async (): Promise<MongoContainerContext> => 
 
     return { uri, close }
 }
-
-// docker rm -f $(docker ps -a -q --filter ancestor=mongo:8.0)

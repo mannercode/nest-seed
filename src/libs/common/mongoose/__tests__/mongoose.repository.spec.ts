@@ -1,6 +1,6 @@
 import { expect } from '@jest/globals'
 import { maps, nullObjectId, objectId, objectIds, OrderDirection, pickIds, pickItems } from 'common'
-import { expectEqualUnsorted, MongoContainerContext, createMongoContainer } from 'testlib'
+import { expectEqualUnsorted, MongoContainerContext, createMongoCluster } from 'testlib'
 import { MongooseException } from '../exceptions'
 import {
     createFixture,
@@ -18,7 +18,7 @@ describe('MongoRepository', () => {
     let close: () => void
 
     beforeAll(async () => {
-        mongoCtx = await createMongoContainer()
+        mongoCtx = await createMongoCluster()
     }, 60 * 1000)
 
     afterAll(async () => {

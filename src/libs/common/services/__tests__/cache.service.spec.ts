@@ -1,6 +1,11 @@
 import { TestingModule } from '@nestjs/testing'
 import { sleep } from 'common'
-import { createRedisContainer, createTestingModule, RedisContainerContext } from 'testlib'
+import {
+    createRedisCluster,
+    createRedisSingle,
+    createTestingModule,
+    RedisContainerContext
+} from 'testlib'
 import { CacheModule, CacheService } from '..'
 
 describe('CacheService', () => {
@@ -9,7 +14,7 @@ describe('CacheService', () => {
     let redisCtx: RedisContainerContext
 
     beforeAll(async () => {
-        redisCtx = await createRedisContainer('cluster')
+        redisCtx = await createRedisCluster()
     }, 60 * 1000)
 
     afterAll(async () => {
@@ -98,8 +103,8 @@ describe('CacheModule', () => {
     let redisCtx2: RedisContainerContext
 
     beforeAll(async () => {
-        redisCtx1 = await createRedisContainer('cluster')
-        redisCtx2 = await createRedisContainer('single')
+        redisCtx1 = await createRedisCluster()
+        redisCtx2 = await createRedisSingle()
 
         module = await createTestingModule({
             imports: [

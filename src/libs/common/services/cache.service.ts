@@ -1,6 +1,6 @@
 import { getRedisConnectionToken, RedisModule, RedisModuleOptions } from '@nestjs-modules/ioredis'
 import { DynamicModule, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
-import { Assert, Exception } from 'common'
+import { Exception } from 'common'
 import Redis from 'ioredis'
 
 @Injectable()
@@ -79,24 +79,20 @@ export class CacheModule {
                         useFactory: async (...args: any[]) => {
                             const { type, nodes, password } = await options.useFactory(...args)
 
-                            let redisOptions: RedisModuleOptions
+                            let redisOptions: RedisModuleOptions = {
+                                type: 'cluster',
+                                nodes,
+                                options: { redisOptions: { password } }
+                            }
 
-                            if (type === 'cluster') {
-                                redisOptions = {
-                                    type,
-                                    nodes,
-                                    options: { redisOptions: { password } }
-                                }
-                            } else if (type === 'single') {
+                            if (type === 'single') {
                                 const { host, port } = nodes[0]
 
                                 redisOptions = {
-                                    type,
+                                    type: 'single',
                                     url: `redis://${host}:${port}`,
                                     options: { password }
                                 }
-                            } else {
-                                throw new Error(`${type} is an unknown Redis type`)
                             }
 
                             return redisOptions

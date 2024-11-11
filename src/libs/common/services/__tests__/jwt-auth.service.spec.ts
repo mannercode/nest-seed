@@ -1,5 +1,5 @@
 import { TestingModule } from '@nestjs/testing'
-import { createRedisContainer, createTestingModule, RedisContainerContext } from 'testlib'
+import { createRedisSingle, createTestingModule, RedisContainerContext } from 'testlib'
 import { JwtAuthModule, JwtAuthService } from '..'
 import { sleep } from '../../utils'
 
@@ -9,7 +9,7 @@ describe('JwtAuthService', () => {
     let redisCtx: RedisContainerContext
 
     beforeAll(async () => {
-        redisCtx = await createRedisContainer('single')
+        redisCtx = await createRedisSingle()
     }, 60 * 1000)
 
     afterAll(async () => {

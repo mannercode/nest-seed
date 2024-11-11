@@ -1,6 +1,6 @@
 import { expect } from '@jest/globals'
 import { maps, pickItems } from 'common'
-import { MongoContainerContext, createMongoContainer } from 'testlib'
+import { MongoContainerContext, createMongoCluster } from 'testlib'
 import {
     createFixture,
     createSamples,
@@ -14,7 +14,7 @@ describe('MongooseRepository - withTransaction', () => {
     let close: () => void
 
     beforeAll(async () => {
-        mongoCtx = await createMongoContainer()
+        mongoCtx = await createMongoCluster()
     }, 60 * 1000)
 
     afterAll(async () => {
