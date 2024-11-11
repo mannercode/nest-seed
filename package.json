@@ -12,7 +12,7 @@
         "test:all": "bash scripts/reset_output.sh && jest --coverage --config ./jest.config.ts",
         "test:app": "bash scripts/reset_output.sh && jest --coverage --config ./jest.config.app.ts",
         "test:common": "bash scripts/reset_output.sh && jest --coverage --config ./jest.config.common.ts",
-        "test:100x": "for i in {1..100}; do npm run test:all || { echo \"Test failed at iteration $i\"; exit 1; }; done"
+        "test:100x": "bash -c 'for i in {1..100}; do npm run test:all || { echo \"Test failed at iteration $i\"; exit 1; }; done'"
     },
     "dependencies": {
         "@nestjs-modules/ioredis": "^2.0.2",

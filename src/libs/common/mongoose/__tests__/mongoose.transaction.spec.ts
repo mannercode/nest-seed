@@ -14,7 +14,7 @@ describe('MongooseRepository - withTransaction', () => {
     let close: () => void
 
     beforeAll(async () => {
-        mongoCtx = await createMongoCluster()
+        mongoCtx = await createMongoCluster(1)
     }, 60 * 1000)
 
     afterAll(async () => {

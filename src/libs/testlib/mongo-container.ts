@@ -35,9 +35,9 @@ const generateReplicaSetKeyfile = async () => {
     await keyfileGenerator.stop()
 }
 
-const startContainers = async () => {
+const startContainers = async (length: number) => {
     return Promise.all(
-        Array.from({ length: 3 }, async () => {
+        Array.from({ length }, async () => {
             const container = await new GenericContainer(CONTAINER_IMAGE)
                 .withEnvironment({
                     MONGO_INITDB_ROOT_USERNAME: USERNAME,
@@ -69,19 +69,17 @@ const startContainers = async () => {
     )
 }
 
-const initiateContainers = async (containers: StartedTestContainer[]) => {
+const initiateContainers = async (containers: StartedTestContainer[], length: number) => {
+    const members = Array.from(
+        { length },
+        (_, i) => `{ _id: ${i}, host: '${getName(containers[i])}:${PORT}' }`
+    ).join(',')
+
     const initCommand = [
         'sh',
         '-c',
         `mongosh --host ${getName(containers[0])} --port ${PORT} -u ${USERNAME} -p ${PASSWORD} --authenticationDatabase admin --eval ` +
-            `"rs.initiate({
-          _id: '${REPLICA_SET_NAME}',
-          members: [
-            {_id: 0, host: '${getName(containers[0])}:${PORT}'},
-            {_id: 1, host: '${getName(containers[1])}:${PORT}'},
-            {_id: 2, host: '${getName(containers[2])}:${PORT}'}
-          ]
-        })"`
+            `"rs.initiate({ _id: '${REPLICA_SET_NAME}', members: [${members}]})"`
     ]
 
     const replicaSetInitiator = await new GenericContainer(CONTAINER_IMAGE)
@@ -107,11 +105,11 @@ export interface MongoContainerContext {
     close: () => Promise<void>
 }
 
-export const createMongoCluster = async (): Promise<MongoContainerContext> => {
+export const createMongoCluster = async (length: number): Promise<MongoContainerContext> => {
     await generateReplicaSetKeyfile()
-    const containers = await startContainers()
+    const containers = await startContainers(length)
 
-    await initiateContainers(containers)
+    await initiateContainers(containers, length)
 
     const uri = `mongodb://${USERNAME}:${PASSWORD}@${getName(containers[0])}:${PORT}/?replicaSet=${REPLICA_SET_NAME}`
 
