@@ -1,9 +1,9 @@
 import { Injectable, MessageEvent, OnModuleDestroy } from '@nestjs/common'
-import { Observable, Subject } from 'rxjs'
+import { Observable, ReplaySubject } from 'rxjs'
 
 @Injectable()
 export class ServerSentEventsService implements OnModuleDestroy {
-    private eventSubject = new Subject<MessageEvent>()
+    private eventSubject = new ReplaySubject<MessageEvent>(1)
 
     async onModuleDestroy() {
         this.eventSubject.complete()
