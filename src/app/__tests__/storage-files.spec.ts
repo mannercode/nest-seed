@@ -62,24 +62,38 @@ describe('/storage-files', () => {
         it('허용된 크기를 초과하는 파일을 업로드하면 PAYLOAD_TOO_LARGE(413)를 반환해야 한다', async () => {
             await uploadFile(client, [
                 { name: 'files', file: shared.oversizedFile }
-            ]).payloadTooLarge('File too large')
+            ]).payloadTooLarge({
+                error: 'Payload Too Large',
+                message: 'File too large',
+                statusCode: 413
+            })
         })
 
         it('허용된 파일 개수를 초과하여 업로드하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
             const limitOver = config.fileUpload.maxFilesPerUpload + 1
             const excessFiles = Array(limitOver).fill({ name: 'files', file: shared.file })
 
-            await uploadFile(client, excessFiles).badRequest('Too many files')
+            await uploadFile(client, excessFiles).badRequest({
+                error: 'Bad Request',
+                message: 'Too many files',
+                statusCode: 400
+            })
         })
 
         it('허용되지 않는 MIME 타입의 파일을 업로드하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
-            await uploadFile(client, [{ name: 'files', file: shared.notAllowFile }]).badRequest(
-                'File type not allowed. Allowed types are: text/plain'
-            )
+            await uploadFile(client, [{ name: 'files', file: shared.notAllowFile }]).badRequest({
+                error: 'Bad Request',
+                message: 'File type not allowed. Allowed types are: text/plain',
+                statusCode: 400
+            })
         })
 
         it('name 필드를 설정하지 않으면 BAD_REQUEST(400)를 반환해야 한다', async () => {
-            await uploadFile(client, [], []).badRequest(['name must be a string'])
+            await uploadFile(client, [], []).badRequest({
+                error: 'Bad Request',
+                message: ['name must be a string'],
+                statusCode: 400
+            })
         })
     })
 
@@ -103,9 +117,11 @@ describe('/storage-files', () => {
         })
 
         it('파일이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client
-                .get(`/storage-files/${nullObjectId}`)
-                .notFound('StorageFile with ID 000000000000000000000000 not found')
+            await client.get(`/storage-files/${nullObjectId}`).notFound({
+                error: 'Not Found',
+                message: 'StorageFile with ID 000000000000000000000000 not found',
+                statusCode: 404
+            })
         })
     })
 
@@ -125,17 +141,21 @@ describe('/storage-files', () => {
             expect(Path.existsSync(filePath)).toBeTruthy()
 
             await client.delete(`/storage-files/${uploadedFile.id}`).ok()
-            await client
-                .get(`/storage-files/${uploadedFile.id}`)
-                .notFound(`StorageFile with ID ${uploadedFile.id} not found`)
+            await client.get(`/storage-files/${uploadedFile.id}`).notFound({
+                error: 'Not Found',
+                message: `StorageFile with ID ${uploadedFile.id} not found`,
+                statusCode: 404
+            })
 
             expect(Path.existsSync(filePath)).toBeFalsy()
         })
 
         it('파일이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client
-                .delete(`/storage-files/${nullObjectId}`)
-                .notFound('StorageFile with ID 000000000000000000000000 not found')
+            await client.delete(`/storage-files/${nullObjectId}`).notFound({
+                error: 'Not Found',
+                message: 'StorageFile with ID 000000000000000000000000 not found',
+                statusCode: 404
+            })
         })
     })
 })

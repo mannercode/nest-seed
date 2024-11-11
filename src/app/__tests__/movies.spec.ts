@@ -47,18 +47,22 @@ describe('/movies', () => {
             await client
                 .post('/movies')
                 .body({})
-                .badRequest([
-                    'title should not be empty',
-                    'title must be a string',
-                    'each value in genre must be one of the following values: Action, Comedy, Drama, Fantasy, Horror, Mystery, Romance, Thriller, Western',
-                    'genre must be an array',
-                    'releaseDate must be a Date instance',
-                    'plot must be shorter than or equal to 5000 characters',
-                    'plot must be a string',
-                    'durationMinutes must be an integer number',
-                    'director must be a string',
-                    'rating must be one of the following values: G, PG, PG13, R, NC17'
-                ])
+                .badRequest({
+                    error: 'Bad Request',
+                    message: [
+                        'title should not be empty',
+                        'title must be a string',
+                        'each value in genre must be one of the following values: Action, Comedy, Drama, Fantasy, Horror, Mystery, Romance, Thriller, Western',
+                        'genre must be an array',
+                        'releaseDate must be a Date instance',
+                        'plot must be shorter than or equal to 5000 characters',
+                        'plot must be a string',
+                        'durationMinutes must be an integer number',
+                        'director must be a string',
+                        'rating must be one of the following values: G, PG, PG13, R, NC17'
+                    ],
+                    statusCode: 400
+                })
         })
     })
 
@@ -86,10 +90,11 @@ describe('/movies', () => {
         })
 
         it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client
-                .patch(`/movies/${nullObjectId}`)
-                .body({})
-                .notFound('Movie with ID 000000000000000000000000 not found')
+            await client.patch(`/movies/${nullObjectId}`).body({}).notFound({
+                error: 'Not Found',
+                message: 'Movie with ID 000000000000000000000000 not found',
+                statusCode: 404
+            })
         })
     })
 
@@ -102,13 +107,21 @@ describe('/movies', () => {
 
         it('영화를 삭제해야 한다', async () => {
             await client.delete(`/movies/${movie.id}`).ok()
-            await client.get(`/movies/${movie.id}`).notFound(`Movie with ID ${movie.id} not found`)
+            await client
+                .get(`/movies/${movie.id}`)
+                .notFound({
+                    error: 'Not Found',
+                    message: `Movie with ID ${movie.id} not found`,
+                    statusCode: 404
+                })
         })
 
         it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client
-                .delete(`/movies/${nullObjectId}`)
-                .notFound('Movie with ID 000000000000000000000000 not found')
+            await client.delete(`/movies/${nullObjectId}`).notFound({
+                error: 'Not Found',
+                message: 'Movie with ID 000000000000000000000000 not found',
+                statusCode: 404
+            })
         })
     })
 
@@ -124,9 +137,11 @@ describe('/movies', () => {
         })
 
         it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client
-                .get(`/movies/${nullObjectId}`)
-                .notFound('Movie with ID 000000000000000000000000 not found')
+            await client.get(`/movies/${nullObjectId}`).notFound({
+                error: 'Not Found',
+                message: 'Movie with ID 000000000000000000000000 not found',
+                statusCode: 404
+            })
         })
     })
 
@@ -153,7 +168,11 @@ describe('/movies', () => {
             await client
                 .get('/movies')
                 .query({ wrong: 'value' })
-                .badRequest(['property wrong should not exist'])
+                .badRequest({
+                    error: 'Bad Request',
+                    message: ['property wrong should not exist'],
+                    statusCode: 400
+                })
         })
 
         it('제목의 일부로 영화를 검색할 수 있어야 한다', async () => {

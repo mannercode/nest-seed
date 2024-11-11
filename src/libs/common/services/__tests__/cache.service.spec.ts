@@ -14,7 +14,7 @@ describe('CacheService', () => {
     let redisCtx: RedisContainerContext
 
     beforeAll(async () => {
-        redisCtx = await createRedisCluster()
+        redisCtx = await createRedisSingle()
     }, 60 * 1000)
 
     afterAll(async () => {
@@ -27,7 +27,7 @@ describe('CacheService', () => {
                 CacheModule.forRootAsync(
                     {
                         useFactory: () => ({
-                            type: 'cluster',
+                            type: 'single',
                             nodes: redisCtx.nodes,
                             password: redisCtx.password,
                             prefix: 'prefix'
@@ -103,7 +103,7 @@ describe('CacheModule', () => {
     let redisCtx2: RedisContainerContext
 
     beforeAll(async () => {
-        redisCtx1 = await createRedisCluster()
+        redisCtx1 = await createRedisSingle()
         redisCtx2 = await createRedisSingle()
 
         module = await createTestingModule({
@@ -111,7 +111,7 @@ describe('CacheModule', () => {
                 CacheModule.forRootAsync(
                     {
                         useFactory: () => ({
-                            type: 'cluster',
+                            type: 'single',
                             nodes: redisCtx1.nodes,
                             password: redisCtx1.password,
                             prefix: 'prefix'

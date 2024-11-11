@@ -1,11 +1,6 @@
 import { Module, ValidationPipe } from '@nestjs/common'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
-import {
-    HttpErrorFilter,
-    HttpExceptionFilter,
-    HttpSuccessInterceptor,
-    RpcToHttpExceptionInterceptor
-} from 'common'
+import { HttpErrorFilter, HttpExceptionFilter, HttpSuccessInterceptor } from 'common'
 
 @Module({
     providers: [
@@ -36,10 +31,6 @@ import {
         {
             provide: APP_INTERCEPTOR,
             useClass: HttpSuccessInterceptor
-        },
-        {
-            provide: APP_INTERCEPTOR,
-            useClass: RpcToHttpExceptionInterceptor
         }
     ]
 })
