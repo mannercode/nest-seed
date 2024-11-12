@@ -45,8 +45,7 @@
             "options": [
                 "test:all",
                 "test:app",
-                "test:common",
-                "test:100x"
+                "test:common"
             ],
             "description": "Select a test suite to run"
         },

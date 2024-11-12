@@ -53,5 +53,8 @@ jobs:
               run: bash scripts/workspace_setup.sh
 
             # Run All Tests
-            - name: Run All Tests
-              run: bash scripts/test_all.sh
+            - name: Run Test Suites
+              run: npm run test:all:lowram
+
+            - name: Run E2E Tests
+              run: npm run build --prefix $WORKSPACE_ROOT && bash test/e2e/run.sh

@@ -10,9 +10,10 @@
         "watch:app": "nest start --debug 9230 --watch",
         "watch:test": "bash scripts/reset_output.sh && node --inspect=9330 -r ts-node/register ./node_modules/.bin/jest --watch --onlyChanged",
         "test:all": "bash scripts/reset_output.sh && jest --coverage --config ./jest.config.ts",
+        "test:all:lowram": "bash scripts/reset_output.sh && jest -i --coverage --config ./jest.config.ts",
+        "test:all:100x": "bash -c 'for i in {1..100}; do npm run test:all || { echo \"Test failed at iteration $i\"; exit 1; }; done'",
         "test:app": "bash scripts/reset_output.sh && jest --coverage --config ./jest.config.app.ts",
-        "test:common": "bash scripts/reset_output.sh && jest --coverage --config ./jest.config.common.ts",
-        "test:100x": "bash -c 'for i in {1..100}; do npm run test:all || { echo \"Test failed at iteration $i\"; exit 1; }; done'"
+        "test:common": "bash scripts/reset_output.sh && jest --coverage --config ./jest.config.common.ts"
     },
     "dependencies": {
         "@nestjs-modules/ioredis": "^2.0.2",
