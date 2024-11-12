@@ -2,7 +2,7 @@
 set -e
 . "$(dirname "$0")"/common.cfg
 
-docker_compose --profile infra down --volumes --remove-orphans --timeout 0
+docker_compose --profile infra down --volumes --timeout 0
 docker_compose --profile infra up -d
 
 check_and_remove() {
@@ -11,7 +11,7 @@ check_and_remove() {
     for ((i = 1; i <= 10; i++)); do
         status=$(docker inspect -f '{{.State.Status}}' "$container" 2>/dev/null)
         if [ "$status" == "exited" ]; then
-            docker rm "$container"
+            docker rm -v "$container"
             break
         fi
         echo "waiting: $container"

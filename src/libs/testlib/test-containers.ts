@@ -3,30 +3,34 @@ import { CacheNodeType } from 'common'
 function getString(key: string): string {
     const value = process.env[key]
     if (!value) {
-        console.error(`${key} is not defined`)
-        process.exit(1)
+        throw new Error(`Environment variable ${key} is not defined`)
     }
     return value
 }
 
 function getNumber(key: string): number {
-    return parseInt(getString(key))
+    const value = getString(key)
+    const parsed = parseInt(value, 10)
+    if (isNaN(parsed)) {
+        throw new Error(`Environment variable ${key} must be a valid number`)
+    }
+    return parsed
 }
 
-export interface RedisContainerContext {
+export interface RedisConnectionContext {
     nodes: CacheNodeType[]
     password: string
 }
 
-export function createRedisCluster() {
+export function getRedisTestConnection(): RedisConnectionContext {
     const hosts = [
-        getString('TEST_REDIS_HOST1'),
-        getString('TEST_REDIS_HOST2'),
-        getString('TEST_REDIS_HOST3'),
-        getString('TEST_REDIS_HOST4'),
-        getString('TEST_REDIS_HOST5'),
-        getString('TEST_REDIS_HOST6')
-    ]
+        'TEST_REDIS_HOST1',
+        'TEST_REDIS_HOST2',
+        'TEST_REDIS_HOST3',
+        'TEST_REDIS_HOST4',
+        'TEST_REDIS_HOST5',
+        'TEST_REDIS_HOST6'
+    ].map((key) => getString(key))
     const port = getNumber('TEST_REDIS_PORT')
     const password = getString('TEST_REDIS_PASSWORD')
     const nodes = hosts.map((host) => ({ host, port }))
@@ -34,20 +38,16 @@ export function createRedisCluster() {
     return { nodes, password }
 }
 
-export interface MongoContainerContext {
-    uri: string
-}
-
-export const createMongoCluster = () => {
-    const host1 = getString('TEST_MONGO_DB_HOST1')
-    const host2 = getString('TEST_MONGO_DB_HOST2')
-    const host3 = getString('TEST_MONGO_DB_HOST3')
+export const getMongoTestConnection = (): string => {
+    const hosts = ['TEST_MONGO_DB_HOST1', 'TEST_MONGO_DB_HOST2', 'TEST_MONGO_DB_HOST3'].map((key) =>
+        getString(key)
+    )
     const port = getNumber('TEST_MONGO_DB_PORT')
     const replicaName = getString('TEST_MONGO_DB_REPLICA_NAME')
     const username = getString('TEST_MONGO_DB_USERNAME')
     const password = getString('TEST_MONGO_DB_PASSWORD')
+    const nodes = hosts.map((host) => `${host}:${port}`).join(',')
 
-    const uri = `mongodb://${username}:${password}@${host1}:${port},${host2}:${port},${host3}:${port}/?replicaSet=${replicaName}`
-
-    return { uri }
+    const uri = `mongodb://${username}:${password}@${nodes}/?replicaSet=${replicaName}`
+    return uri
 }

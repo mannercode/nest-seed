@@ -67,34 +67,6 @@ export class HttpTestClient {
         return this
     }
 
-    /*
-        console.error
-      -----------response error Error: aborted
-          at Socket.socketCloseListener (node:_http_client:466:19)
-          at Socket.emit (node:events:530:35)
-          at TCP.<anonymous> (node:net:343:12) {
-        code: 'ECONNRESET'
-      }
-
-      90 |             })
-      91 |             res.on('error', (err: any) => {
-    > 92 |                 console.error('-----------response error', err)
-         |                         ^
-      93 |                 writeStream.destroy(err)
-      94 |                 callback(err, '')
-      95 |             })
-
-      at IncomingMessage.<anonymous> (src/libs/testlib/http.test-client.ts:92:25)
-
-    console.warn
-      superagent: double callback bug
-
-      at Request.warn [as callback] (node_modules/superagent/src/node/index.js:869:35)
-      at IncomingMessage.callback (node_modules/superagent/src/node/index.js:1196:12)
-
-    console.log
-      StorageFilesController.onModuleDestroy()
-    */
     download(downloadFilePath: string) {
         const writeStream = createWriteStream(downloadFilePath)
 
@@ -107,14 +79,14 @@ export class HttpTestClient {
             })
             res.on('end', () => {
                 writeStream.close((err) => {
-                    if (err) {
-                        console.log('-----------error', err)
-                    }
+                    if (!writeStream.closed) console.error('writeStream not closed')
+                    if (err) console.error('error', err)
+
                     callback(null, '')
                 })
             })
             res.on('error', (err: any) => {
-                console.error('-----------response error', err)
+                console.error('response error', err)
                 writeStream.destroy(err)
             })
         })

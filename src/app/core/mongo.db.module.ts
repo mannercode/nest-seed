@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { MongooseModule, MongooseModuleFactoryOptions } from '@nestjs/mongoose'
+import { MongooseModule } from '@nestjs/mongoose'
 import { generateUUID } from 'common'
 import { AppConfigService, isEnv } from 'config'
 
@@ -23,7 +23,7 @@ import { AppConfigService, isEnv } from 'config'
                     bufferCommands: true,
                     autoIndex: !isEnv('production'),
                     autoCreate: false
-                } as MongooseModuleFactoryOptions
+                }
             },
             inject: [AppConfigService]
         })

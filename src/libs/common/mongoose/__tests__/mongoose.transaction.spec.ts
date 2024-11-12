@@ -1,6 +1,6 @@
 import { expect } from '@jest/globals'
 import { maps, pickItems } from 'common'
-import { MongoContainerContext, createMongoCluster } from 'testlib'
+import { getMongoTestConnection } from 'testlib'
 import {
     createFixture,
     createSamples,
@@ -13,9 +13,9 @@ describe('MongooseRepository - withTransaction', () => {
     let close: () => void
 
     beforeEach(async () => {
-        const mongoCtx = createMongoCluster()
+        const uri = getMongoTestConnection()
 
-        const fixture = await createFixture(mongoCtx.uri)
+        const fixture = await createFixture(uri)
         repository = fixture.repository
         close = fixture.close
     })

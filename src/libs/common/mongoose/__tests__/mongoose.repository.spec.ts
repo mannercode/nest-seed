@@ -1,6 +1,6 @@
 import { expect } from '@jest/globals'
 import { maps, nullObjectId, objectId, objectIds, OrderDirection, pickIds, pickItems } from 'common'
-import { expectEqualUnsorted, MongoContainerContext, createMongoCluster } from 'testlib'
+import { expectEqualUnsorted, getMongoTestConnection } from 'testlib'
 import { MongooseException } from '../exceptions'
 import {
     createFixture,
@@ -17,9 +17,9 @@ describe('MongoRepository', () => {
     let close: () => void
 
     beforeEach(async () => {
-        const mongoCtx = createMongoCluster()
+        const uri = getMongoTestConnection()
 
-        const fixture = await createFixture(mongoCtx.uri)
+        const fixture = await createFixture(uri)
         repository = fixture.repository
         close = fixture.close
     })

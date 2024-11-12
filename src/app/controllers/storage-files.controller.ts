@@ -3,6 +3,7 @@ import {
     Controller,
     Delete,
     Get,
+    Logger,
     Param,
     Post,
     StreamableFile,
@@ -22,7 +23,11 @@ class UploadFileDto {
 
 @Controller('storage-files')
 export class StorageFilesController {
-    constructor(private service: StorageFilesService) {}
+    private logger: Logger
+
+    constructor(private service: StorageFilesService) {
+        this.logger = new Logger(StorageFilesController.name)
+    }
 
     @UseInterceptors(FilesInterceptor('files'))
     @Post()
@@ -51,9 +56,9 @@ export class StorageFilesController {
         })
 
         /* istanbul ignore next */
-        stream.setErrorHandler((err: Error, response: StreamableHandlerResponse) => {
+        stream.setErrorHandler((err: Error, _response: StreamableHandlerResponse) => {
             /* istanbul ignore next */
-            console.log('------stream.setErrorHandler-----', err, file)
+            this.logger.log(err.message, file)
         })
 
         return stream

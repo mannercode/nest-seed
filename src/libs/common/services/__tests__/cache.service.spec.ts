@@ -1,10 +1,6 @@
 import { TestingModule } from '@nestjs/testing'
 import { sleep } from 'common'
-import {
-    createRedisCluster,
-    createTestingModule,
-    RedisContainerContext
-} from 'testlib'
+import { createTestingModule, getRedisTestConnection } from 'testlib'
 import { CacheModule, CacheService } from '..'
 
 describe('CacheService', () => {
@@ -12,7 +8,7 @@ describe('CacheService', () => {
     let cacheService: CacheService
 
     beforeEach(async () => {
-        const redisCtx = createRedisCluster()
+        const redisCtx = getRedisTestConnection()
 
         module = await createTestingModule({
             imports: [

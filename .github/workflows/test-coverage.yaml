@@ -50,7 +50,7 @@ jobs:
                   docker network connect ${PROJECT_NAME} ${{ job.container.id }}
 
             - name: postCreateCommand
-              run: bash scripts/workspace_setup.sh
+              run: npm ci
 
             # Run All Tests
             - name: Run Test Suites

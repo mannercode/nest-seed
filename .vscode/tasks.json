@@ -41,7 +41,7 @@
         {
             "id": "testSuite",
             "type": "pickString",
-            "default": "test:all",
+            "default": "test:app",
             "options": [
                 "test:all",
                 "test:app",

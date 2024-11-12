@@ -1,5 +1,5 @@
 import { TestingModule } from '@nestjs/testing'
-import { createRedisCluster, createTestingModule, RedisContainerContext } from 'testlib'
+import { createTestingModule, getRedisTestConnection } from 'testlib'
 import { JwtAuthModule, JwtAuthService } from '..'
 import { sleep } from '../../utils'
 
@@ -8,7 +8,7 @@ describe('JwtAuthService', () => {
     let jwtService: JwtAuthService
 
     beforeEach(async () => {
-        const redisCtx = createRedisCluster()
+        const redisCtx = getRedisTestConnection()
 
         module = await createTestingModule({
             imports: [
