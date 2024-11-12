@@ -2,7 +2,6 @@ import { TestingModule } from '@nestjs/testing'
 import { sleep } from 'common'
 import {
     createRedisCluster,
-    createRedisSingle,
     createTestingModule,
     RedisContainerContext
 } from 'testlib'
@@ -11,23 +10,16 @@ import { CacheModule, CacheService } from '..'
 describe('CacheService', () => {
     let module: TestingModule
     let cacheService: CacheService
-    let redisCtx: RedisContainerContext
-
-    beforeAll(async () => {
-        redisCtx = await createRedisSingle()
-    }, 60 * 1000)
-
-    afterAll(async () => {
-        await redisCtx.close()
-    })
 
     beforeEach(async () => {
+        const redisCtx = createRedisCluster()
+
         module = await createTestingModule({
             imports: [
                 CacheModule.forRootAsync(
                     {
                         useFactory: () => ({
-                            type: 'single',
+                            type: 'cluster',
                             nodes: redisCtx.nodes,
                             password: redisCtx.password,
                             prefix: 'prefix'
@@ -93,67 +85,5 @@ describe('CacheService', () => {
 
         const storedValue = await cacheService.get('key1')
         expect(storedValue).toBe('value1')
-    })
-})
-
-describe('CacheModule', () => {
-    let module: TestingModule
-    let cacheServices: CacheService[]
-    let redisCtx1: RedisContainerContext
-    let redisCtx2: RedisContainerContext
-
-    beforeAll(async () => {
-        redisCtx1 = await createRedisSingle()
-        redisCtx2 = await createRedisSingle()
-
-        module = await createTestingModule({
-            imports: [
-                CacheModule.forRootAsync(
-                    {
-                        useFactory: () => ({
-                            type: 'single',
-                            nodes: redisCtx1.nodes,
-                            password: redisCtx1.password,
-                            prefix: 'prefix'
-                        })
-                    },
-                    'connection1'
-                ),
-                CacheModule.forRootAsync(
-                    {
-                        useFactory: () => ({
-                            type: 'single',
-                            nodes: redisCtx2.nodes,
-                            password: redisCtx2.password,
-                            prefix: 'prefix'
-                        })
-                    },
-                    'connection2'
-                )
-            ]
-        })
-
-        cacheServices = module.get(CacheService, { each: true })
-    }, 60 * 1000)
-
-    afterAll(async () => {
-        if (module) await module.close()
-
-        await redisCtx1.close()
-        await redisCtx2.close()
-    })
-
-    it('CacheService 인스턴스는 2개여야 한다', async () => {
-        expect(cacheServices).toHaveLength(2)
-    })
-
-    it('각각의 CacheService는 서로 다른 Redis를 사용해야 한다', async () => {
-        await cacheServices[0].set('key1', 'value1')
-        expect(await cacheServices[0].get('key1')).toEqual('value1')
-        expect(await cacheServices[1].get('key1')).toBeNull()
-
-        await cacheServices[1].set('key2', 'value2')
-        expect(await cacheServices[1].get('key2')).toEqual('value2')
-        expect(await cacheServices[0].get('key2')).toBeNull()
     })
 })

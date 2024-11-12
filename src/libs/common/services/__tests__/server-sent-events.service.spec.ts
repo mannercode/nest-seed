@@ -37,6 +37,3 @@ describe('ServerSentEventsService', () => {
         console.log('SSE 9')
     })
 })
-
-// 4 5 7 2 3 8 1
-// 4 5 7 1 2 3 6 8 9

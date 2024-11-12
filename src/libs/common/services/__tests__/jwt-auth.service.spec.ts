@@ -1,29 +1,22 @@
 import { TestingModule } from '@nestjs/testing'
-import { createRedisSingle, createTestingModule, RedisContainerContext } from 'testlib'
+import { createRedisCluster, createTestingModule, RedisContainerContext } from 'testlib'
 import { JwtAuthModule, JwtAuthService } from '..'
 import { sleep } from '../../utils'
 
 describe('JwtAuthService', () => {
     let module: TestingModule
     let jwtService: JwtAuthService
-    let redisCtx: RedisContainerContext
-
-    beforeAll(async () => {
-        redisCtx = await createRedisSingle()
-    }, 60 * 1000)
-
-    afterAll(async () => {
-        await redisCtx.close()
-    })
 
     beforeEach(async () => {
+        const redisCtx = createRedisCluster()
+
         module = await createTestingModule({
             imports: [
                 JwtAuthModule.forRootAsync(
                     {
                         useFactory: () => {
                             return {
-                                type: 'single',
+                                type: 'cluster',
                                 nodes: redisCtx.nodes,
                                 password: redisCtx.password,
                                 prefix: 'prefix',

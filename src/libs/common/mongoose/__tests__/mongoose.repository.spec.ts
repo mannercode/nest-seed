@@ -13,19 +13,12 @@ import {
 } from './mongoose.repository.fixture'
 
 describe('MongoRepository', () => {
-    let mongoCtx: MongoContainerContext
     let repository: SamplesRepository
     let close: () => void
 
-    beforeAll(async () => {
-        mongoCtx = await createMongoCluster(1)
-    }, 60 * 1000)
-
-    afterAll(async () => {
-        await mongoCtx.close()
-    })
-
     beforeEach(async () => {
+        const mongoCtx = createMongoCluster()
+
         const fixture = await createFixture(mongoCtx.uri)
         repository = fixture.repository
         close = fixture.close

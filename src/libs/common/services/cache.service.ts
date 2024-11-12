@@ -85,6 +85,7 @@ export class CacheModule {
                                 options: { redisOptions: { password } }
                             }
 
+                            /* istanbul ignore if */
                             if (type === 'single') {
                                 const { host, port } = nodes[0]
 

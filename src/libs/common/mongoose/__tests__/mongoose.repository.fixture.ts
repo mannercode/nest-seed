@@ -1,7 +1,13 @@
 import { Injectable, Module } from '@nestjs/common'
 import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
-import { createMongooseSchema, MongooseRepository, MongooseSchema, padNumber } from 'common'
-import { Connection, Model } from 'mongoose'
+import {
+    createMongooseSchema,
+    generateUUID,
+    MongooseRepository,
+    MongooseSchema,
+    padNumber
+} from 'common'
+import { Model } from 'mongoose'
 import { createTestingModule } from 'testlib'
 
 @Schema()
@@ -50,14 +56,14 @@ export class SampleModule {}
 export async function createFixture(uri: string) {
     const module = await createTestingModule({
         imports: [
-            MongooseModule.forRoot(uri, {
-                autoIndex: true,
-                autoCreate: false,
-                bufferCommands: true,
-                connectionFactory: async (connection: Connection) => {
-                    await connection.dropDatabase()
-                    return connection
-                }
+            MongooseModule.forRootAsync({
+                useFactory: () => ({
+                    uri,
+                    dbName: 'test_' + generateUUID(),
+                    autoIndex: true,
+                    autoCreate: false,
+                    bufferCommands: true
+                })
             }),
             SampleModule
         ]
