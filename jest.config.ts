@@ -5,7 +5,7 @@ const config: Config = {
     moduleFileExtensions: ['js', 'json', 'ts'],
     rootDir: '.',
     roots: ['<rootDir>/src'],
-    testRegex: '.*\\.spec\\.ts$',
+    testRegex: '.*\\.spec\\.(ts|js)$',
     moduleNameMapper: {
         '^services/(.*)$': '<rootDir>/src/app/services/$1',
         '^common$': '<rootDir>/src/libs/common/index',
@@ -14,7 +14,7 @@ const config: Config = {
     },
     testEnvironment: 'node',
     transform: {
-        '^.+\\.(t|j)s$': 'ts-jest'
+        '^.+\\.ts$': 'ts-jest'
     },
     coverageThreshold: {
         global: {
@@ -33,8 +33,7 @@ const config: Config = {
     ],
     coverageReporters: ['lcov', 'text'],
     coveragePathIgnorePatterns: ['__tests__'],
-    coverageDirectory: '<rootDir>/_output/coverage',
-    testTimeout: 15000
+    coverageDirectory: '<rootDir>/_output/coverage'
 }
 
 export default config

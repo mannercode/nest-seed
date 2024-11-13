@@ -62,40 +62,40 @@
 actor Customer
 
 Customer -> Frontend : 영화 예매 시스템에 접속
-    Frontend -> Backend : 추천 영화 목록 요청\nGET /movies/recommendations?customerId={}
-            Backend -> Recommendations: getRecommendedMovies({customerId})
-            Recommendations -> Showtimes : getShowingMovieIds()
-            Recommendations <-- Showtimes : showingMovieIds
-            Recommendations -> Movies : getMovies({movieIds: showingMovieIds})
-            Recommendations <-- Movies : movies
-            group if customer does exist
-            Recommendations -> Purchases : findPurchases(customerId)
-            Recommendations <-- Purchases : purchases[]
-            Recommendations -> Recommendations: getIds(purchases,ticketId)
-            Recommendations <-- Recommendations: ticketIds[]
-            Recommendations -> Tickets : findTickets(ticketIds)
-            Recommendations <-- Tickets: tickets
-            Recommendations -> Recommendations: getIds(tickets,movieId)
-            Recommendations <-- Recommendations: movieIds[]
-            Recommendations -> Movies : findMovies(movieIds)
-            Recommendations <-- Movies: watchedMovies
-            end
-            Recommendations -> Recommendations : generateRecommendedMovies(movies, watchedMovies)
-                note right
-                아래 순서로 간단하게 구현한다.
-                1. genre 일치
-                2. 최신 개봉일
-
-                showingMovies는 ShowingService에서 관리한다.
-                ShowingMovie{
-                    ...
-                    theaterIds:[]
-                }
-                end note
-        Backend <-- Recommendations : recommendedMovies[]
-    Frontend <-- Backend : recommendedMovies[]
+Frontend -> Backend : 추천 영화 목록 요청\nGET /movies/recommendations\n?customerId={}
+Backend -> Recommendations : findMovieRecommendations({customerId})
+Recommendations -> Showtimes : findShowingMovieIds()
+Showtimes --> Recommendations : showingMovieIds
+Recommendations -> Movies : getMovies({movieIds: showingMovieIds})
+Movies --> Recommendations : movies
+group if customer exists
+    Recommendations -> Purchases : findPurchases(customerId)
+    Purchases --> Recommendations : purchases[]
+    Recommendations -> Tickets : findTickets(ticketIds[] from purchases)
+    Tickets --> Recommendations : tickets
+    Recommendations -> Movies : findMovies(movieIds[] from tickets)
+    Movies --> Recommendations : watchedMovies
+end
+Recommendations -> Recommendations : generateMovieRecommendations\n(movies, watchedMovies)
+Backend <-- Recommendations : movieRecommendations[]
+Frontend <-- Backend : movieRecommendations[]
 Customer <-- Frontend : 영화 목록 제공
 @enduml
+```
+
+```
+generateMovieRecommendations(movies, watchedMovies){
+    아래 순서로 간단하게 구현한다.
+    1. genre 일치
+    2. 최신 개봉일
+
+    showingMovies는 ShowingService에서 관리한다.
+    ShowingMovie{
+    ...
+    theaterIds:[]
+    }
+}
+
 ```
 
 ```plantuml
@@ -103,19 +103,19 @@ Customer <-- Frontend : 영화 목록 제공
 actor Customer
 
 Customer -> Frontend : 영화 선택
-    Frontend -> Backend : 상영 극장 목록 요청\nGET /booking/movies/{movieId}/theaters?latlong=37.123,128.678
-            Backend -> Booking: findShowingTheaters({movieId, latlong})
-                Booking -> Showtimes: findShowingTheaterIds({movieId})
-                Booking <-- Showtimes: theaterIds[]
-                Booking -> Theaters: getTheaters({theaterIds})
-                Booking <-- Theaters: theaters[]
-                Booking -> Booking: sortTheatersByDistance({theaters, latlong})
-            Backend <-- Booking: showingTheaters[]
+    Frontend -> Backend : 상영 극장 목록 요청\nGET /booking/movies/{movieId}/theaters\n?latlong=37.123,128.678
+        Backend -> Booking: findShowingTheaters({movieId, latlong})
+            Booking -> Showtimes: findShowingTheaterIds({movieId})
+            Booking <-- Showtimes: theaterIds[]
+            Booking -> Theaters: getTheaters({theaterIds})
+            Booking <-- Theaters: theaters[]
+            Booking -> Booking: sortTheatersByDistance({theaters, latlong})
+        Backend <-- Booking: showingTheaters[]
     Frontend <-- Backend : showingTheaters[]
 Customer <-- Frontend : 상영 극장 목록 제공
 
 Customer -> Frontend : 상영 극장 선택
-    Frontend -> Backend : 상영일 목록 요청\nGET /booking/movies/{movieId}/theaters/{theaterId}/showdates
+    Frontend -> Backend : 상영일 목록 요청\nGET /booking/movies/{movieId}/\ntheaters/{theaterId}/showdates
         Backend -> Booking: findShowdates({movieId, theaterId})
             Booking -> Showtimes: findShowdates({movieId, theaterId})
                 note left
@@ -127,8 +127,8 @@ Customer -> Frontend : 상영 극장 선택
 Customer <-- Frontend : 상영일 목록 제공
 
 Customer -> Frontend : 상영일 선택
-    Frontend -> Backend : 상영 시간 목록 요청\nGET /booking/movies/{movieId}/theaters/{theaterId}/showdates/{}/showtimes
-        Backend -> Booking: getShowtimesWithSalesStatus({movieId, theaterId, showdate})
+    Frontend -> Backend : 상영 시간 목록 요청\nGET /booking/movies/{movieId}/\ntheaters/{theaterId}/showdates/{}/showtimes
+        Backend -> Booking: getShowtimesWithSalesStatus\n({movieId, theaterId, showdate})
             Booking -> Showtimes: findShowtimes({movieId, theaterId, showdate})
             Booking <-- Showtimes: showtimes[]
             Booking -> Tickets: getSalesStatuses({ showtimeIds })
@@ -143,7 +143,7 @@ Customer -> Frontend : 상영일 선택
                 }
             }
             end note
-            Booking -> Booking: generateShowtimesWithSalesStatus(Showtimes[], salesStatuses)
+            Booking -> Booking: generateShowtimesWithSalesStatus\n(Showtimes[], salesStatuses)
         Backend <-- Booking: showtimesWithSalesStatus[]
     Frontend <-- Backend : showtimesWithSalesStatus[]
 Customer <-- Frontend : 상영 시간 목록 제공
@@ -151,38 +151,59 @@ Customer <-- Frontend : 상영 시간 목록 제공
 Customer -> Frontend : 상영 시간 선택
     Frontend -> Backend : 구매 가능한 티켓 목록 요청\nGET /booking/showtimes/{}/tickets
         Backend -> Booking : getTicketsForShowtime(showtimeId)
-            Booking -> Tickets : getTicketsForShowtime(showtimeId)
+            Booking -> Tickets : findAllTickets({showtimeId})
             Booking <-- Tickets : tickets[]
         Backend <-- Booking: tickets[]
     Frontend <-- Backend : tickets[]
 Customer <-- Frontend : 구매 가능한 티켓 목록 제공
-
-Customer -> Frontend: 티켓 선택
-    Frontend -> Backend: 티켓 선점\nPATCH /booking/showtimes/{}/tickets
-        Backend -> Booking : holdTickets(showtimeId, ticketIds[])
-            Booking -> TicketHolding : holdTickets(showtimeId, ticketIds[])
-            Booking <-- TicketHolding : 티켓 선점(성공)
-        Backend <-- Booking: 티켓 선점(성공)
-    Frontend <-- Backend: 티켓 선점(성공)
-Customer <-- Frontend: 선점 완료
-@enduml
 ```
 
 ```plantuml
 @startuml
 actor Customer
 
-Customer -> Frontend: 티켓 선택 완료
-    Frontend -> Backend: 결제\nPOST /purchases/tickets
-        Backend -> Purchases: purchaseTickets(ticketIds[],customerId)
-            Purchases -> TicketHolding: areTicketsHeldByCustomer(ticketIds[],customerId)
-            Purchases <-- TicketHolding: true
-            Purchases -> Payment: createPayment(totalPrice,customer)
-            Purchases <-- Payment: success
-            Purchases -> Tickets: updateTicketStatus(ticketIds[], 'sold')
-            Purchases <-- Tickets: done
-        Backend <-- Purchases: 결제 완료 및 티켓 정보
-    Frontend <-- Backend: 결제(성공)
+Customer -> Frontend: 티켓 선택
+    Frontend -> Backend: 티켓 선점\nPOST /booking/showtimes/{}/tickets/hold
+        Backend -> Booking: holdTickets(showtimeId, customerId, ticketIds[])
+            Booking -> TicketHolding: holdTickets(showtimeId, customerId, ticketIds[], ttlMs=10*60*1000)
+                TicketHolding -> TicketHolding: releaseTickets(showtimeId, customerId)
+                TicketHolding -> TicketHolding: holdTickets(showtimeId, customerId)
+            Booking <-- TicketHolding: 성공
+        Backend <-- Booking: 티켓 선점 완료
+    Frontend <-- Backend: 티켓 선점 완료
+Customer <-- Frontend: 선점 완료
+
+Customer -> Frontend: 결제 정보 입력
+    Frontend -> Backend: 결제 요청\nPOST /booking/showtimes/{}/tickets/purchase
+        Backend -> Booking: purchaseTickets(showtimeId, customerId, ticketIds[])
+            Booking -> Booking: validatePurchase(showtimeId, customerId, ticketIds[])
+            activate Booking
+            note left
+                - 좌석이 선점된 상태여야 한다.
+                - 상영 30분 전까지만 온라인으로 티켓을 구매할 수 있다.
+                - 고객은 한 번에 최대 10장의 티켓을 구매할 수 있다.
+            end note
+            Booking -> Booking: validateTicketQuantity(ticketIds[])
+            Booking -> Booking: validatePurchaseTime(showtimeId)
+            Booking -> TicketHolding: findHeldTicketIds(showtimeId, customerId)
+            Booking <-- TicketHolding: heldTicketIds[]
+            Booking -> Booking: heldTicketIds.in(ticketIds)
+            Booking <-- Booking: true
+            deactivate Booking
+            Booking -> Purchases: createPurchase(customerId, ticketIds[])
+                Purchases -> Payment: processPayment(totalPrice, customer)
+                Purchases <-- Payment: 결제 성공
+                Purchases -> Tickets: markTicketsAsSold(ticketIds[])
+                Purchases <-- Tickets: 완료
+            Booking <-- Purchases: 구매 완료
+        Backend <-- Booking: 결제 완료 및 티켓 정보
+    Frontend <-- Backend: 결제 성공
 Customer <-- Frontend: 구매 완료
 @enduml
 ```
+
+`purchaseTickets(ticketIds[],customerId)` 대신 `createPurchase(customerId, {ticketIds[]})` 이렇게 일반적인 구매함수로 만들 수 있다. 그러나 현재 단계에서 이것은 지나치게 일반적이다. 일단 구체적인 항목을 구매하도록 설계하고 향후 기능이 확장되면 기존 함수는 유지하면서 `createPurchase(customerId, {ticketIds[]})`를 새로 만들어서 점진적인 개발을 진행하는 것이 안전하다. 너무 일찍 일반화 함수를 정의하면 나중에 요구사항이 변경될 때 기존에 정의한 규칙이 제대로 대응하지 못하고 `createPurchase2`함수를 만들어야 하는 상황이 될 수 있다.
+
+구현 순서는 어떻게 할까? 뿌리에 가까운 서비스부터 한다. 그럼 이것은 down-up이 아닌가? 레이어 아래부터 한다면 모를까 서비스를 코어부터 구현한다고 down-up으로 보긴 어렵다. 설계가 없다면 앱 서비스부터 구현했을 것이다. 그러나 설계가 있다면 코어부터 구현하는 것이 효율적이다.
+
+커버리지는 100%여야 한다.

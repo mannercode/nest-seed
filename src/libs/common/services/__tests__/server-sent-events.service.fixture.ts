@@ -14,6 +14,7 @@ export class SseController {
     @Post('trigger-event')
     triggerEvent(@Body() body: { message: string }) {
         this.eventService.sendEvent(body.message)
+
         return { success: true }
     }
 }

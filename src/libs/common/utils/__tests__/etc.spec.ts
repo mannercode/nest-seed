@@ -4,6 +4,7 @@ import {
     Password,
     Path,
     addQuotesToNumbers,
+    bytesToString,
     comment,
     equalsIgnoreCase,
     generateUUID,
@@ -15,6 +16,7 @@ import {
     pickIds,
     pickItems,
     sleep,
+    stringToBytes,
     validateEmail
 } from '..'
 
@@ -313,8 +315,45 @@ describe('common/utils/etc', () => {
         })
     })
 
-    describe('for coverage', () => {
-        notUsed()
-        comment()
+    describe('stringToBytes', () => {
+        it('should convert valid size strings to bytes', () => {
+            expect(stringToBytes('1024B')).toEqual(1024)
+            expect(stringToBytes('1KB')).toEqual(1024)
+            expect(stringToBytes('1MB')).toEqual(1024 * 1024)
+            expect(stringToBytes('1GB')).toEqual(1024 * 1024 * 1024)
+            expect(stringToBytes('1TB')).toEqual(1024 * 1024 * 1024 * 1024)
+            expect(stringToBytes('1KB 512B')).toEqual(1536)
+            expect(stringToBytes('1.5KB')).toEqual(1536)
+            expect(stringToBytes('-1KB')).toEqual(-1024)
+            expect(stringToBytes('1GB 256MB 128KB')).toEqual(
+                1 * 1024 * 1024 * 1024 + 256 * 1024 * 1024 + 128 * 1024
+            )
+        })
+
+        it('should throw an error for invalid formats', () => {
+            expect(() => stringToBytes('invalid')).toThrow()
+            expect(() => stringToBytes('123')).toThrow()
+            expect(() => stringToBytes('123XB')).toThrow()
+            expect(() => stringToBytes('1KB -')).toThrow()
+        })
     })
+
+    describe('bytesToString', () => {
+        it('should convert bytes to human-readable strings', () => {
+            expect(bytesToString(0)).toEqual('0B')
+            expect(bytesToString(1024)).toEqual('1KB')
+            expect(bytesToString(1536)).toEqual('1KB512B')
+            expect(bytesToString(1024 * 1024)).toEqual('1MB')
+            expect(bytesToString(1024 * 1024 * 1.5)).toEqual('1MB512KB')
+            expect(bytesToString(-1024)).toEqual('-1KB')
+            expect(bytesToString(1 * 1024 * 1024 * 1024 + 256 * 1024 * 1024 + 128 * 1024)).toEqual(
+                '1GB256MB128KB'
+            )
+        })
+    })
+})
+
+describe('for coverage', () => {
+    notUsed()
+    comment()
 })

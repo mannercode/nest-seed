@@ -16,7 +16,7 @@ NestJS 프로젝트를 시작하기 위한 템플릿으로 필수 기능과 설�
 
 프로젝트 이름을 변경하려면 필요에 따라 다음 설정을 검토하고 수정합니다:
 
--   .env.development
+-   .env.test
 -   devcontainer.json
     -   forwardPorts
 -   package.json

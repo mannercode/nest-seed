@@ -70,7 +70,7 @@ describe('/customers authentication', () => {
             await client
                 .post('/customers/refresh')
                 .body({ refreshToken: 'invalid-token' })
-                .unauthorized('jwt malformed')
+                .unauthorized({ error: 'Unauthorized', message: 'jwt malformed', statusCode: 401 })
         })
     })
 

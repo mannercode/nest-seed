@@ -35,12 +35,16 @@ describe('/theaters', () => {
             await client
                 .post('/theaters')
                 .body({})
-                .badRequest([
-                    'name should not be empty',
-                    'name must be a string',
-                    'latlong should not be empty',
-                    'seatmap should not be empty'
-                ])
+                .badRequest({
+                    error: 'Bad Request',
+                    message: [
+                        'name should not be empty',
+                        'name must be a string',
+                        'latlong should not be empty',
+                        'seatmap should not be empty'
+                    ],
+                    statusCode: 400
+                })
         })
     })
 
@@ -64,10 +68,11 @@ describe('/theaters', () => {
         })
 
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client
-                .patch(`/theaters/${nullObjectId}`)
-                .body({})
-                .notFound('Theater with ID 000000000000000000000000 not found')
+            await client.patch(`/theaters/${nullObjectId}`).body({}).notFound({
+                error: 'Not Found',
+                message: 'Theater with ID 000000000000000000000000 not found',
+                statusCode: 404
+            })
         })
     })
 
@@ -80,15 +85,19 @@ describe('/theaters', () => {
 
         it('극장을 삭제해야 한다', async () => {
             await client.delete(`/theaters/${theater.id}`).ok()
-            await client
-                .get(`/theaters/${theater.id}`)
-                .notFound(`Theater with ID ${theater.id} not found`)
+            await client.get(`/theaters/${theater.id}`).notFound({
+                error: 'Not Found',
+                message: `Theater with ID ${theater.id} not found`,
+                statusCode: 404
+            })
         })
 
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client
-                .delete(`/theaters/${nullObjectId}`)
-                .notFound('Theater with ID 000000000000000000000000 not found')
+            await client.delete(`/theaters/${nullObjectId}`).notFound({
+                error: 'Not Found',
+                message: 'Theater with ID 000000000000000000000000 not found',
+                statusCode: 404
+            })
         })
     })
 
@@ -104,9 +113,11 @@ describe('/theaters', () => {
         })
 
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client
-                .get(`/theaters/${nullObjectId}`)
-                .notFound('Theater with ID 000000000000000000000000 not found')
+            await client.get(`/theaters/${nullObjectId}`).notFound({
+                error: 'Not Found',
+                message: 'Theater with ID 000000000000000000000000 not found',
+                statusCode: 404
+            })
         })
     })
 
@@ -133,7 +144,11 @@ describe('/theaters', () => {
             await client
                 .get('/theaters')
                 .query({ wrong: 'value' })
-                .badRequest(['property wrong should not exist'])
+                .badRequest({
+                    error: 'Bad Request',
+                    message: ['property wrong should not exist'],
+                    statusCode: 400
+                })
         })
 
         it('이름의 일부로 극장을 검색할 수 있어야 한다', async () => {

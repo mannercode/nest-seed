@@ -1,6 +1,6 @@
 import { expect } from '@jest/globals'
 import { maps, pickItems } from 'common'
-import { MongoMemoryReplSet } from 'mongodb-memory-server'
+import { getMongoTestConnection } from 'testlib'
 import {
     createFixture,
     createSamples,
@@ -9,20 +9,13 @@ import {
 } from './mongoose.repository.fixture'
 
 describe('MongooseRepository - withTransaction', () => {
-    let mongod: MongoMemoryReplSet
     let repository: SamplesRepository
     let close: () => void
 
-    beforeAll(async () => {
-        mongod = await MongoMemoryReplSet.create({ replSet: { count: 1 } })
-    }, 60000)
-
-    afterAll(async () => {
-        await mongod.stop()
-    })
-
     beforeEach(async () => {
-        const fixture = await createFixture(mongod.getUri())
+        const uri = getMongoTestConnection()
+
+        const fixture = await createFixture(uri)
         repository = fixture.repository
         close = fixture.close
     })

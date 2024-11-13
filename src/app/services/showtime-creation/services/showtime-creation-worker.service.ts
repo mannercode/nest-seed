@@ -1,6 +1,6 @@
-import { InjectQueue, OnQueueFailed, Process, Processor } from '@nestjs/bull'
+import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
 import { Injectable } from '@nestjs/common'
-import { Job, Queue } from 'bull'
+import { Job, Queue } from 'bullmq'
 import { addMinutes, jsonToObject, MethodLog } from 'common'
 import { ShowtimeDto, ShowtimesService } from 'services/showtimes'
 import { getAllSeats, TheaterDto, TheatersService } from 'services/theaters'
@@ -11,35 +11,35 @@ import { ShowtimeBatchCreateJobData } from './types'
 
 @Injectable()
 @Processor('showtime-creation')
-export class ShowtimeCreationWorkerService {
+export class ShowtimeCreationWorkerService extends WorkerHost {
     constructor(
         private theatersService: TheatersService,
         private showtimesService: ShowtimesService,
         private eventsService: ShowtimeCreationEventsService,
         private validatorService: ShowtimeCreationValidatorService,
         private ticketsService: TicketsService,
-        @InjectQueue('showtime-creation') private batchQueue: Queue
-    ) {}
+        @InjectQueue('showtime-creation') private queue: Queue
+    ) {
+        super()
+    }
 
     async onModuleDestroy() {
-        await this.batchQueue.close()
+        await this.queue.close()
+        const client = await this.queue.client
+        client.disconnect()
     }
 
     async enqueueTask(data: ShowtimeBatchCreateJobData) {
         this.eventsService.emitWaiting(data.batchId)
-        await this.batchQueue.add('showtimes.create', data)
+        await this.queue.add('showtimes.create', data)
     }
 
-    /* istanbul ignore next */
-    @OnQueueFailed()
-    @MethodLog()
-    async onFailed({ data, failedReason }: Job) {
-        this.eventsService.emitError(data.batchId, failedReason ?? '')
-    }
-
-    @Process('showtimes.create')
-    async handleShowtimesCreation(job: Job<ShowtimeBatchCreateJobData>) {
-        await this.executeShowtimesCreation(jsonToObject(job.data))
+    async process(job: Job<ShowtimeBatchCreateJobData>) {
+        try {
+            await this.executeShowtimesCreation(jsonToObject(job.data))
+        } catch (error) {
+            this.eventsService.emitError(job.data.batchId, error.message)
+        }
     }
 
     @MethodLog()
@@ -48,7 +48,7 @@ export class ShowtimeCreationWorkerService {
 
         const conflictingShowtimes = await this.validatorService.validate(data)
 
-        if (0 < conflictingShowtimes.length) {
+        if (conflictingShowtimes.length > 0) {
             this.eventsService.emitFail(data.batchId, conflictingShowtimes)
         } else {
             const createdShowtimes = await this.createShowtimes(data)
@@ -76,7 +76,7 @@ export class ShowtimeCreationWorkerService {
         )
 
         await this.showtimesService.createShowtimes(createDtos)
-        const showtimes = this.showtimesService.findAllShowtimes({ batchIds: [batchId] })
+        const showtimes = await this.showtimesService.findAllShowtimes({ batchIds: [batchId] })
         return showtimes
     }
 

@@ -13,10 +13,15 @@ export interface HttpTestContext {
     close: () => Promise<void>
 }
 
-export async function createHttpTestContext(metadata: ModuleMetadataEx): Promise<HttpTestContext> {
+export async function createHttpTestContext(
+    metadata: ModuleMetadataEx,
+    configureApp?: (app: INestApplication<any>) => void
+): Promise<HttpTestContext> {
     const module = await createTestingModule(metadata)
 
     const app = module.createNestApplication()
+
+    configureApp && configureApp(app)
 
     const isDebuggingEnabled = process.env.NODE_OPTIONS !== undefined
     app.useLogger(isDebuggingEnabled ? console : false)
@@ -35,7 +40,7 @@ export async function createHttpTestContext(metadata: ModuleMetadataEx): Promise
     const port = await getAvailablePort()
     await server.listen(port)
 
-    const client = new HttpTestClient(server)
+    const client = new HttpTestClient(`http://localhost:${port}`)
 
     const close = async () => {
         await app.close()

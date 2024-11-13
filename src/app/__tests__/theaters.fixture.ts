@@ -1,13 +1,13 @@
 import { padNumber } from 'common'
 import { HttpTestClient, HttpTestContext, createHttpTestContext } from 'testlib'
-import { AppModule } from '../app.module'
+import { AppModule, configureApp } from '../app.module'
 
 export interface IsolatedFixture {
     testContext: HttpTestContext
 }
 
 export async function createIsolatedFixture() {
-    const testContext = await createHttpTestContext({ imports: [AppModule] })
+    const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
 
     return { testContext }
 }

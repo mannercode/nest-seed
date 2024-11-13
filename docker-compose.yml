@@ -5,7 +5,7 @@ x-logging: &default-logging
         max-file: '3'
 
 x-mongo-common: &mongo-common
-    image: mongo:latest
+    image: ${MONGO_DB_IMAGE}
     profiles: ['infra']
     logging: *default-logging
     environment:
@@ -17,67 +17,170 @@ x-mongo-common: &mongo-common
     networks:
         - default
     restart: always
+    depends_on:
+        - mongo-key-generator
+    healthcheck:
+        test:
+            [
+                'CMD',
+                'mongosh',
+                '--quiet',
+                '-u',
+                $MONGO_DB_USERNAME,
+                '-p',
+                $MONGO_DB_PASSWORD,
+                '--authenticationDatabase',
+                'admin',
+                '--eval',
+                'rs.isMaster().ismaster || rs.isMaster().secondary'
+            ]
+        interval: 5s
+        timeout: 10s
+        retries: 5
+
+x-redis-common: &redis-common
+    image: ${REDIS_IMAGE}
+    command:
+        [
+            'redis-server',
+            '--port',
+            $REDIS_PORT,
+            '--cluster-enabled',
+            'yes',
+            '--cluster-config-file',
+            'nodes.conf',
+            '--cluster-node-timeout',
+            '5000',
+            '--appendonly',
+            'yes',
+            '--requirepass',
+            $REDIS_PASSWORD,
+            '--masterauth',
+            $REDIS_PASSWORD
+        ]
+    profiles: ['infra']
+    logging: *default-logging
+    networks:
+        - default
+    restart: always
+    healthcheck:
+        test: ['CMD', 'redis-cli', '-a', $REDIS_PASSWORD, 'ping']
+        interval: 5s
+        timeout: 5s
+        retries: 5
 
 services:
-    redis:
-        image: redis:latest
+    redis1:
+        <<: *redis-common
+        container_name: ${REDIS_HOST1}
+    redis2:
+        <<: *redis-common
+        container_name: ${REDIS_HOST2}
+    redis3:
+        <<: *redis-common
+        container_name: ${REDIS_HOST3}
+    redis4:
+        <<: *redis-common
+        container_name: ${REDIS_HOST4}
+    redis5:
+        <<: *redis-common
+        container_name: ${REDIS_HOST5}
+    redis6:
+        <<: *redis-common
+        container_name: ${REDIS_HOST6}
+    redis-cluster-setup:
+        image: ${REDIS_IMAGE}
+        container_name: ${PROJECT_NAME}-redis-cluster-setup
         profiles: ['infra']
-        container_name: ${REDIS_HOST}
-        logging: *default-logging
+        depends_on:
+            redis1:
+                condition: service_healthy
+            redis2:
+                condition: service_healthy
+            redis3:
+                condition: service_healthy
+            redis4:
+                condition: service_healthy
+            redis5:
+                condition: service_healthy
+            redis6:
+                condition: service_healthy
+        command: >
+            sh -c "echo 'yes' | redis-cli -a $REDIS_PASSWORD --cluster create
+            redis1:$REDIS_PORT
+            redis2:$REDIS_PORT
+            redis3:$REDIS_PORT
+            redis4:$REDIS_PORT
+            redis5:$REDIS_PORT
+            redis6:$REDIS_PORT
+            --cluster-replicas 1"
         networks:
             - default
-        restart: always
 
     mongo-key-generator:
-        container_name: mongo-key-generator
-        image: mongo:latest
+        image: ${MONGO_DB_IMAGE}
+        container_name: ${PROJECT_NAME}-mongo-key-generator
+        profiles: ['infra']
         command: sh -c "openssl rand -base64 768 > mongodb.key && chmod 400 mongodb.key && chown mongodb:mongodb mongodb.key"
         volumes:
             - mongodb_key:/mongodb_key
         working_dir: /mongodb_key
-
     mongo1:
         <<: *mongo-common
         container_name: ${MONGO_DB_HOST1}
-        depends_on:
-            - mongo-key-generator
     mongo2:
         <<: *mongo-common
         container_name: ${MONGO_DB_HOST2}
-        depends_on:
-            - mongo1
     mongo3:
         <<: *mongo-common
         container_name: ${MONGO_DB_HOST3}
-        depends_on:
-            - mongo2
-
-    mongo-express:
-        image: mongo-express:latest
+    mongo-cluster-setup:
+        image: ${MONGO_DB_IMAGE}
+        container_name: ${PROJECT_NAME}-mongo-cluster-setup
         profiles: ['infra']
-        container_name: $PROJECT_NAME-mongo-express
-        logging: *default-logging
-        environment:
-            ME_CONFIG_BASICAUTH_USERNAME: user
-            ME_CONFIG_BASICAUTH_PASSWORD: password
-            ME_CONFIG_MONGODB_ENABLE_ADMIN: true
-            ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_DB_USERNAME}
-            ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_DB_PASSWORD}
-            ME_CONFIG_MONGODB_SERVER: ${MONGO_DB_HOST1}
-            ME_CONFIG_MONGODB_PORT: ${MONGO_DB_PORT}
+        depends_on:
+            mongo1:
+                condition: service_healthy
+            mongo2:
+                condition: service_healthy
+            mongo3:
+                condition: service_healthy
+        command: >
+            sh -c "
+            mongosh --host ${MONGO_DB_HOST1} --port ${MONGO_DB_PORT} -u ${MONGO_DB_USERNAME} -p ${MONGO_DB_PASSWORD} --authenticationDatabase admin --eval
+            \"rs.initiate({
+                _id: \\\"${MONGO_DB_REPLICA_NAME}\\\",
+                members: [
+                    {_id: 0, host: \\\"${MONGO_DB_HOST1}\\\"},
+                    {_id: 1, host: \\\"${MONGO_DB_HOST2}\\\"},
+                    {_id: 2, host: \\\"${MONGO_DB_HOST3}\\\"}
+                ]
+            })\"
+
+            MONGO_URI=\"mongodb://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@${MONGO_DB_HOST1}:${MONGO_DB_PORT},${MONGO_DB_HOST2}:${MONGO_DB_PORT},${MONGO_DB_HOST3}:${MONGO_DB_PORT}\"
+
+            until mongosh \"$${MONGO_URI}/?authSource=admin&replicaSet=${MONGO_DB_REPLICA_NAME}\" --eval \"db.test.insertOne({test: 'test'})\" ; do
+              echo 'The cluster is not ready yet. Retrying in 1 second.';
+              sleep 1;
+            done;
+            "
         networks:
             - default
-        restart: always
 
     app:
-        image: $PROJECT_NAME
         build: .
+        image: $PROJECT_NAME
         profiles: ['apps']
         container_name: $PROJECT_NAME
         logging: *default-logging
         environment:
             - NODE_ENV=production
-        env_file: .env.development
+        healthcheck:
+            test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
+            interval: 5s
+            timeout: 10s
+            retries: 5
+        env_file: .env.app
         volumes:
             - ./_output/logs:/app/_output/logs
             - ./_output/uploads:/app/_output/uploads

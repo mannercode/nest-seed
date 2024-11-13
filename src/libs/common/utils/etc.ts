@@ -161,3 +161,58 @@ export function validateEmail(email: string): boolean {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
     return emailRegex.test(email)
 }
+
+export function stringToBytes(str: string): number {
+    const sizeUnits: { [key: string]: number } = {
+        B: 1,
+        KB: 1024,
+        MB: 1024 * 1024,
+        GB: 1024 * 1024 * 1024,
+        TB: 1024 * 1024 * 1024 * 1024
+    }
+
+    // 유효한 형식인지 확인하는 정규식
+    const validFormatRegex = /^(-?\d+(\.\d+)?)(B|KB|MB|GB|TB)(\s*(-?\d+(\.\d+)?)(B|KB|MB|GB|TB))*$/
+
+    if (!validFormatRegex.test(str)) {
+        throw new Error(`잘못된 크기 형식(${str})`)
+    }
+
+    const regex = /(-?\d+(\.\d+)?)(B|KB|MB|GB|TB)/g
+    let totalBytes = 0
+
+    let match
+    while ((match = regex.exec(str)) !== null) {
+        const amount = parseFloat(match[1])
+        const unit = match[3]
+
+        totalBytes += amount * sizeUnits[unit]
+    }
+
+    return totalBytes
+}
+
+export function bytesToString(bytes: number): string {
+    if (bytes === 0) {
+        return '0B'
+    }
+
+    const negative = bytes < 0
+    bytes = Math.abs(bytes)
+
+    const units = ['TB', 'GB', 'MB', 'KB', 'B']
+    const sizes = [1024 * 1024 * 1024 * 1024, 1024 * 1024 * 1024, 1024 * 1024, 1024, 1]
+
+    let result = ''
+
+    for (let i = 0; i < units.length; i++) {
+        const unitValue = sizes[i]
+        if (bytes >= unitValue) {
+            const unitAmount = Math.floor(bytes / unitValue)
+            bytes %= unitValue
+            result += `${unitAmount}${units[i]}`
+        }
+    }
+
+    return (negative ? '-' : '') + result.trim()
+}

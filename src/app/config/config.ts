@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as Joi from 'joi'
 
-export const isEnv = (env: 'production' | 'development') => process.env.NODE_ENV === env
+export const isEnv = (env: 'production' | 'development' | 'test') => process.env.NODE_ENV === env
 
 export const configSchema = Joi.object({
-    NODE_ENV: Joi.string().valid('development', 'production').required(),
+    NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
     HTTP_REQUEST_PAYLOAD_LIMIT: Joi.string().required(),
     HTTP_PAGINATION_DEFAULT_SIZE: Joi.number().required(),
     AUTH_ACCESS_SECRET: Joi.string().required(),
@@ -16,7 +16,13 @@ export const configSchema = Joi.object({
     LOG_DAYS_TO_KEEP: Joi.string().required(),
     LOG_FILE_LEVEL: Joi.string().required(),
     LOG_CONSOLE_LEVEL: Joi.string().required(),
-    REDIS_HOST: Joi.string().required(),
+    REDIS_HOST1: Joi.string().required(),
+    REDIS_HOST2: Joi.string().required(),
+    REDIS_HOST3: Joi.string().required(),
+    REDIS_HOST4: Joi.string().required(),
+    REDIS_HOST5: Joi.string().required(),
+    REDIS_HOST6: Joi.string().required(),
+    REDIS_PASSWORD: Joi.string().optional(),
     REDIS_PORT: Joi.number().required(),
     MONGO_DB_HOST1: Joi.string().required(),
     MONGO_DB_HOST2: Joi.string().required(),
@@ -59,11 +65,19 @@ export class AppConfigService {
         }
     }
     get redis() {
-        return {
-            host: this.getString('REDIS_HOST'),
-            port: this.getNumber('REDIS_PORT')
-            // ttl: defaults to 5
-        }
+        const hosts = [
+            this.getString('REDIS_HOST1'),
+            this.getString('REDIS_HOST2'),
+            this.getString('REDIS_HOST3'),
+            this.getString('REDIS_HOST4'),
+            this.getString('REDIS_HOST5'),
+            this.getString('REDIS_HOST6')
+        ]
+        const port = this.getNumber('REDIS_PORT')
+        const password = this.getString('REDIS_PASSWORD')
+        const nodes = hosts.map((host) => ({ host, port }))
+
+        return { nodes, password }
     }
     get mongo() {
         return {

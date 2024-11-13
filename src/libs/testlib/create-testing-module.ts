@@ -28,5 +28,7 @@ export async function createTestingModule(metadata: ModuleMetadataEx) {
         builder.overrideProvider(provider.original).useValue(provider.replacement)
     )
 
-    return builder.compile()
+    const module = await builder.compile()
+
+    return module
 }

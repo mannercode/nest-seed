@@ -38,20 +38,28 @@ describe('/customers', () => {
             await client
                 .post('/customers')
                 .body(createDto)
-                .conflict(`Customer with email ${createDto.email} already exists`)
+                .conflict({
+                    error: 'Conflict',
+                    message: `Customer with email ${createDto.email} already exists`,
+                    statusCode: 409
+                })
         })
 
         it('필수 필드가 누락되면 BAD_REQUEST(400)를 반환해야 한다', async () => {
             await client
                 .post('/customers')
                 .body({})
-                .badRequest([
-                    'name should not be empty',
-                    'name must be a string',
-                    'email must be an email',
-                    'birthdate must be a Date instance',
-                    'password must be a string'
-                ])
+                .badRequest({
+                    error: 'Bad Request',
+                    message: [
+                        'name should not be empty',
+                        'name must be a string',
+                        'email must be an email',
+                        'birthdate must be a Date instance',
+                        'password must be a string'
+                    ],
+                    statusCode: 400
+                })
         })
     })
 
@@ -75,10 +83,11 @@ describe('/customers', () => {
         })
 
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client
-                .patch(`/customers/${nullObjectId}`)
-                .body({})
-                .notFound('Customer with ID 000000000000000000000000 not found')
+            await client.patch(`/customers/${nullObjectId}`).body({}).notFound({
+                error: 'Not Found',
+                message: 'Customer with ID 000000000000000000000000 not found',
+                statusCode: 404
+            })
         })
     })
 
@@ -91,15 +100,19 @@ describe('/customers', () => {
 
         it('고객을 삭제해야 한다', async () => {
             await client.delete(`/customers/${customer.id}`).ok()
-            await client
-                .get(`/customers/${customer.id}`)
-                .notFound(`Customer with ID ${customer.id} not found`)
+            await client.get(`/customers/${customer.id}`).notFound({
+                error: 'Not Found',
+                message: `Customer with ID ${customer.id} not found`,
+                statusCode: 404
+            })
         })
 
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client
-                .delete(`/customers/${nullObjectId}`)
-                .notFound('Customer with ID 000000000000000000000000 not found')
+            await client.delete(`/customers/${nullObjectId}`).notFound({
+                error: 'Not Found',
+                message: 'Customer with ID 000000000000000000000000 not found',
+                statusCode: 404
+            })
         })
     })
 
@@ -115,9 +128,11 @@ describe('/customers', () => {
         })
 
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client
-                .get(`/customers/${nullObjectId}`)
-                .notFound('Customer with ID 000000000000000000000000 not found')
+            await client.get(`/customers/${nullObjectId}`).notFound({
+                error: 'Not Found',
+                message: 'Customer with ID 000000000000000000000000 not found',
+                statusCode: 404
+            })
         })
     })
 
@@ -144,7 +159,11 @@ describe('/customers', () => {
             await client
                 .get('/customers')
                 .query({ wrong: 'value' })
-                .badRequest(['property wrong should not exist'])
+                .badRequest({
+                    error: 'Bad Request',
+                    message: ['property wrong should not exist'],
+                    statusCode: 400
+                })
         })
 
         it('이름의 일부로 고객을 검색할 수 있어야 한다', async () => {

@@ -20,9 +20,7 @@ describe('ServerSentEventsService', () => {
 
     it('SSE를 모니터링 해야 한다', async () => {
         const promise = new Promise((resolve, reject) => {
-            client.get('/sse/events').sse((value) => {
-                return resolve(value)
-            }, reject)
+            client.get('/sse/events').sse((value) => resolve(value), reject)
         })
 
         await client.post('/sse/trigger-event').body({ message: 'text message' }).created()

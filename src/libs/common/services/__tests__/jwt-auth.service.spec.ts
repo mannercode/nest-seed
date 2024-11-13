@@ -1,7 +1,6 @@
-import { CacheModule } from '@nestjs/cache-manager'
-import { JwtModule } from '@nestjs/jwt'
-import { Test, TestingModule } from '@nestjs/testing'
-import { CacheService, JwtAuthService } from '..'
+import { TestingModule } from '@nestjs/testing'
+import { createTestingModule, getRedisTestConnection } from 'testlib'
+import { JwtAuthModule, JwtAuthService } from '..'
 import { sleep } from '../../utils'
 
 describe('JwtAuthService', () => {
@@ -9,22 +8,29 @@ describe('JwtAuthService', () => {
     let jwtService: JwtAuthService
 
     beforeEach(async () => {
-        module = await Test.createTestingModule({
-            imports: [CacheModule.register(), JwtModule.register({ global: true })],
-            providers: [
-                CacheService,
-                JwtAuthService,
-                {
-                    provide: 'AuthConfig',
-                    useValue: {
-                        accessSecret: 'accessSecret',
-                        refreshSecret: 'refreshSecret',
-                        accessTokenExpiration: '3s',
-                        refreshTokenExpiration: '3s'
-                    }
-                }
+        const redisCtx = getRedisTestConnection()
+
+        module = await createTestingModule({
+            imports: [
+                JwtAuthModule.forRootAsync(
+                    {
+                        useFactory: () => {
+                            return {
+                                type: 'cluster',
+                                nodes: redisCtx.nodes,
+                                password: redisCtx.password,
+                                prefix: 'prefix',
+                                accessSecret: 'accessSecret',
+                                refreshSecret: 'refreshSecret',
+                                accessTokenExpiration: '3s',
+                                refreshTokenExpiration: '3s'
+                            }
+                        }
+                    },
+                    'JwtAuth'
+                )
             ]
-        }).compile()
+        })
 
         jwtService = module.get(JwtAuthService)
     })

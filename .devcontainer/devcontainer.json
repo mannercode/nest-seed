@@ -2,27 +2,27 @@
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.122.1/containers/docker-existing-dockerfile
 {
     "name": "${containerWorkspaceFolderBasename}",
-    "context": ".",
-    "dockerFile": "Dockerfile",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": "."
+    },
     "mounts": [
         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
     ],
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
         "PROJECT_NAME": "${containerWorkspaceFolderBasename}",
-        "NODE_ENV": "development"
+        "DOCKER_NETWORK": "${containerWorkspaceFolderBasename}"
     },
-    "initializeCommand": "docker network create ${containerWorkspaceFolderBasename} >/dev/null 2>&1 || true",
-    "postCreateCommand": "bash scripts/workspace_setup.sh",
     "runArgs": [
         "--network",
         "${containerWorkspaceFolderBasename}",
         "--name",
         "${containerWorkspaceFolderBasename}-vscode"
     ],
-    "forwardPorts": [
-        "nest-seed-mongo-express:8081"
-    ],
+    "initializeCommand": "docker network create ${containerWorkspaceFolderBasename} >/dev/null 2>&1 || true",
+    "onCreateCommand": "docker tag $(docker images -q vsc-${containerWorkspaceFolderBasename}-*) vscode-${containerWorkspaceFolderBasename} && docker rmi $(docker images --filter=reference=vsc-${containerWorkspaceFolderBasename}-* --format {{.Repository}})",
+    "postCreateCommand": "npm ci",
     "customizations": {
         "vscode": {
             "extensions": [

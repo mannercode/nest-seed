@@ -1,28 +1,11 @@
 #!/bin/bash
 set -e
 . "$(dirname "$0")"/common.cfg
-. $ENV_FILE
 
-run_mongo() (
-  docker exec ${MONGO_DB_HOST1} mongosh -u ${MONGO_DB_USERNAME} -p ${MONGO_DB_PASSWORD} --authenticationDatabase admin --eval "$@"
-)
-
-docker_compose --profile infra down --volumes --remove-orphans --timeout 0
+docker_compose --profile infra down --volumes --timeout 0
 docker_compose --profile infra up -d
 
-wait_for_service "${MONGO_DB_HOST1}" "run_mongo 'db.version()'"
-wait_for_service "${MONGO_DB_HOST2}" "run_mongo 'db.version()'"
-wait_for_service "${MONGO_DB_HOST3}" "run_mongo 'db.version()'"
+SETUP_CONTAINERS="${PROJECT_NAME}-mongo-key-generator ${PROJECT_NAME}-mongo-cluster-setup ${PROJECT_NAME}-redis-cluster-setup"
 
-run_mongo "
-rs.initiate({
-    _id: \"${MONGO_DB_REPLICA_NAME}\",
-    members: [
-        {_id: 0, host: \"${MONGO_DB_HOST1}\"},
-        {_id: 1, host: \"${MONGO_DB_HOST2}\"},
-        {_id: 2, host: \"${MONGO_DB_HOST3}\"}
-    ]
-})
-"
-
-docker rm mongo-key-generator
+docker wait $SETUP_CONTAINERS
+docker rm -v $SETUP_CONTAINERS

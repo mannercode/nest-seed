@@ -1,8 +1,8 @@
-import { addMinutes } from 'common'
-import { TicketCreateDto, TicketDto, TicketsService, TicketStatus } from 'services/tickets'
-import { HttpTestContext, createHttpTestContext } from 'testlib'
-import { AppModule } from '../app.module'
 import { omit } from 'lodash'
+import { TicketCreateDto, TicketDto, TicketsService, TicketStatus } from 'services/tickets'
+import { createHttpTestContext, HttpTestContext } from 'testlib'
+import { AppModule, configureApp } from '../app.module'
+
 
 export interface IsolatedFixture {
     testContext: HttpTestContext
@@ -10,7 +10,7 @@ export interface IsolatedFixture {
 }
 
 export async function createIsolatedFixture() {
-    const testContext = await createHttpTestContext({ imports: [AppModule] })
+    const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
     const service = testContext.module.get(TicketsService)
 
     return { testContext, service }
