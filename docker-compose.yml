@@ -26,13 +26,13 @@ x-mongo-common: &mongo-common
                 'mongosh',
                 '--quiet',
                 '-u',
-                '$MONGO_DB_USERNAME',
+                $MONGO_DB_USERNAME,
                 '-p',
                 $MONGO_DB_PASSWORD,
                 '--authenticationDatabase',
                 'admin',
                 '--eval',
-                'db.version()'
+                'rs.isMaster().ismaster || rs.isMaster().secondary'
             ]
         interval: 5s
         timeout: 10s
@@ -88,9 +88,9 @@ services:
     redis6:
         <<: *redis-common
         container_name: ${REDIS_HOST6}
-    redis_cluster_setup:
+    redis-cluster-setup:
         image: ${REDIS_IMAGE}
-        container_name: redis-cluster-setup
+        container_name: ${PROJECT_NAME}-redis-cluster-setup
         profiles: ['infra']
         depends_on:
             redis1:
@@ -119,7 +119,7 @@ services:
 
     mongo-key-generator:
         image: ${MONGO_DB_IMAGE}
-        container_name: mongo-key-generator
+        container_name: ${PROJECT_NAME}-mongo-key-generator
         profiles: ['infra']
         command: sh -c "openssl rand -base64 768 > mongodb.key && chmod 400 mongodb.key && chown mongodb:mongodb mongodb.key"
         volumes:
@@ -134,9 +134,9 @@ services:
     mongo3:
         <<: *mongo-common
         container_name: ${MONGO_DB_HOST3}
-    mongo_cluster_setup:
+    mongo-cluster-setup:
         image: ${MONGO_DB_IMAGE}
-        container_name: mongo-cluster-setup
+        container_name: ${PROJECT_NAME}-mongo-cluster-setup
         profiles: ['infra']
         depends_on:
             mongo1:
@@ -146,7 +146,8 @@ services:
             mongo3:
                 condition: service_healthy
         command: >
-            sh -c "mongosh --host ${MONGO_DB_HOST1} --port ${MONGO_DB_PORT} -u ${MONGO_DB_USERNAME} -p ${MONGO_DB_PASSWORD} --authenticationDatabase admin --eval
+            sh -c "
+            mongosh --host ${MONGO_DB_HOST1} --port ${MONGO_DB_PORT} -u ${MONGO_DB_USERNAME} -p ${MONGO_DB_PASSWORD} --authenticationDatabase admin --eval
             \"rs.initiate({
                 _id: \\\"${MONGO_DB_REPLICA_NAME}\\\",
                 members: [
@@ -155,6 +156,11 @@ services:
                     {_id: 2, host: \\\"${MONGO_DB_HOST3}\\\"}
                 ]
             })\"
+
+            until mongosh --host ${MONGO_DB_HOST1} --port ${MONGO_DB_PORT} -u ${MONGO_DB_USERNAME} -p ${MONGO_DB_PASSWORD} --authenticationDatabase admin --eval \"db.test.insertOne({test: 'test'})\"; do
+              echo 'The cluster is not ready yet. Retrying in 1 second.';
+              sleep 1;
+            done;
             "
         networks:
             - default

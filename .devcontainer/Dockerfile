@@ -33,4 +33,4 @@ RUN apt-get install -y ca-certificates curl gnupg && \
     apt-get install -y docker-ce-cli
 
 # Remove all containers based on a specific Docker image
-RUN echo 'rmcons() { docker rm -f $(docker ps -a -q --filter ancestor="$1"); }' >> ~/.bashrc
+RUN echo 'rmcons() { docker rm -vf $(docker ps -aq --filter ancestor="$1"); }' >> ~/.bashrc

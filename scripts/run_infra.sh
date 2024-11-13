@@ -5,20 +5,7 @@ set -e
 docker_compose --profile infra down --volumes --timeout 0
 docker_compose --profile infra up -d
 
-check_and_remove() {
-    container=$1
+SETUP_CONTAINERS="${PROJECT_NAME}-mongo-key-generator ${PROJECT_NAME}-mongo-cluster-setup ${PROJECT_NAME}-redis-cluster-setup"
 
-    for ((i = 1; i <= 10; i++)); do
-        status=$(docker inspect -f '{{.State.Status}}' "$container" 2>/dev/null)
-        if [ "$status" == "exited" ]; then
-            docker rm -v "$container"
-            break
-        fi
-        echo "waiting: $container"
-        sleep 1
-    done
-}
-
-check_and_remove mongo-key-generator
-check_and_remove mongo-cluster-setup
-check_and_remove redis-cluster-setup
+docker wait $SETUP_CONTAINERS
+docker rm -v $SETUP_CONTAINERS
