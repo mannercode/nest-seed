@@ -54,7 +54,7 @@ jobs:
 
             # Run All Tests
             - name: Run Test Suites
-              run: npm run test:all:lowram
+              run: npm run test:all
 
             - name: Run E2E Tests
-              run: npm run build --prefix $WORKSPACE_ROOT && bash test/e2e/run.sh
+              run: bash test/e2e/run.sh

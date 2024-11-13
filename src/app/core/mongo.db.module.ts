@@ -7,8 +7,8 @@ import { AppConfigService, isEnv } from 'config'
     imports: [
         MongooseModule.forRootAsync({
             useFactory: async (config: AppConfigService) => {
-                const { user, pass, host1, host2, port, replica, database } = config.mongo
-                const uri = `mongodb://${user}:${pass}@${host1}:${port},${host2}:${port}/?replicaSet=${replica}`
+                const { user, pass, host1, host2, host3, port, replica, database } = config.mongo
+                const uri = `mongodb://${user}:${pass}@${host1}:${port},${host2}:${port},${host3}:${port}/?replicaSet=${replica}`
                 const dbName = isEnv('test') ? 'test_' + generateUUID() : database
 
                 return {

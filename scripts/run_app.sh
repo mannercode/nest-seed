@@ -5,4 +5,4 @@ set -e
 docker_compose --profile apps down
 docker_compose --profile apps up -d --build
 
-wait_for_container $PROJECT_NAME
+wait_for_healthy $PROJECT_NAME
