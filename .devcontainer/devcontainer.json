@@ -11,8 +11,7 @@
     ],
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
-        "PROJECT_NAME": "${containerWorkspaceFolderBasename}",
-        "DOCKER_NETWORK": "${containerWorkspaceFolderBasename}"
+        "PROJECT_NAME": "${containerWorkspaceFolderBasename}"
     },
     "runArgs": [
         "--network",
