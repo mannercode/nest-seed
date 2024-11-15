@@ -14,7 +14,7 @@ export class CacheService implements OnModuleDestroy {
         await this.redis.quit()
     }
 
-    private makeKey(key: string) {
+    private getKey(key: string) {
         return `${this.prefix}:${key}`
     }
 
@@ -24,26 +24,26 @@ export class CacheService implements OnModuleDestroy {
         }
 
         if (0 < ttlMs) {
-            await this.redis.set(this.makeKey(key), value, 'PX', ttlMs)
+            await this.redis.set(this.getKey(key), value, 'PX', ttlMs)
         } else {
-            await this.redis.set(this.makeKey(key), value)
+            await this.redis.set(this.getKey(key), value)
         }
     }
 
     async get(key: string): Promise<string | null> {
-        const value = await this.redis.get(this.makeKey(key))
+        const value = await this.redis.get(this.getKey(key))
         return value
     }
 
     async delete(key: string) {
-        await this.redis.del(this.makeKey(key))
+        await this.redis.del(this.getKey(key))
     }
 
     async executeScript(script: string, keys: string[], args: string[]): Promise<any> {
         const result = await this.redis.eval(
             script,
             keys.length,
-            ...keys.map(this.makeKey.bind(this)),
+            ...keys.map(this.getKey.bind(this)),
             ...args
         )
         return result
