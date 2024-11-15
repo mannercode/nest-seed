@@ -7,6 +7,7 @@ import {
     bytesToString,
     comment,
     equalsIgnoreCase,
+    generateShortId,
     generateUUID,
     getChecksum,
     jsonToObject,
@@ -50,6 +51,23 @@ describe('common/utils/etc', () => {
             const uuid2 = generateUUID()
 
             expect(uuid1).not.toEqual(uuid2)
+        })
+    })
+
+    describe('generateShortId', () => {
+        it('generates a short ID of 8 characters', () => {
+            const id = generateShortId()
+            // nanoid typically uses A-Z, a-z, 0-9, _ and - as the character set
+            const regex = /^[A-Za-z0-9_-]{8}$/
+
+            expect(id).toMatch(regex)
+        })
+
+        it('generates unique IDs each time it is called', () => {
+            const id1 = generateShortId()
+            const id2 = generateShortId()
+
+            expect(id1).not.toEqual(id2)
         })
     })
 

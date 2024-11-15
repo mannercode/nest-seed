@@ -2,7 +2,7 @@ import { Injectable, Module } from '@nestjs/common'
 import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import {
     createMongooseSchema,
-    generateUUID,
+    generateShortId,
     MongooseRepository,
     MongooseSchema,
     padNumber
@@ -59,7 +59,7 @@ export async function createFixture(uri: string) {
             MongooseModule.forRootAsync({
                 useFactory: () => ({
                     uri,
-                    dbName: 'test_' + generateUUID(),
+                    dbName: 'test_' + generateShortId(),
                     autoIndex: true,
                     autoCreate: false,
                     bufferCommands: true

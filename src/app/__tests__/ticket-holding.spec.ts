@@ -1,4 +1,4 @@
-import { generateUUID, sleep } from 'common'
+import { generateShortId, sleep } from 'common'
 import { TicketHoldingService } from 'services/ticket-holding'
 import {
     closeIsolatedFixture,
@@ -82,9 +82,9 @@ describe('TicketHolding Module', () => {
             async () => {
                 const results = await Promise.all(
                     Array.from({ length: 100 }, async () => {
-                        const showtimeId = generateUUID()
-                        const tickets = Array.from({ length: 5 }, generateUUID)
-                        const customers = Array.from({ length: 10 }, generateUUID)
+                        const showtimeId = generateShortId()
+                        const tickets = Array.from({ length: 5 }, generateShortId)
+                        const customers = Array.from({ length: 10 }, generateShortId)
 
                         await Promise.all(
                             customers.map((customer) =>
@@ -93,7 +93,9 @@ describe('TicketHolding Module', () => {
                         )
 
                         const findResults = await Promise.all(
-                            customers.map((customer) => service.findHeldTicketIds(showtimeId, customer))
+                            customers.map((customer) =>
+                                service.findHeldTicketIds(showtimeId, customer)
+                            )
                         )
 
                         return findResults.flat().length === tickets.length

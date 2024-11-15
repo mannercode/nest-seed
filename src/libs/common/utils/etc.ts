@@ -1,7 +1,8 @@
 import { compare, hash } from 'bcrypt'
 import { LatLong } from 'common'
-import { createHash, Hash, randomUUID } from 'crypto'
+import { createHash, randomUUID } from 'crypto'
 import { createReadStream } from 'fs'
+import { nanoid } from 'nanoid'
 import { pipeline, Writable } from 'stream'
 import { promisify } from 'util'
 
@@ -11,6 +12,10 @@ export async function sleep(timeoutInMS: number): Promise<void> {
 
 export function generateUUID() {
     return randomUUID()
+}
+
+export function generateShortId() {
+    return nanoid(8)
 }
 
 export const nullUUID = '00000000000000000000000000000000'

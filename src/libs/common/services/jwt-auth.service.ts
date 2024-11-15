@@ -1,6 +1,6 @@
 import { DynamicModule, Inject, Injectable, Module, UnauthorizedException } from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
-import { generateUUID, notUsed, stringToMillisecs } from '../utils'
+import { generateShortId, generateUUID, notUsed, stringToMillisecs } from '../utils'
 import { CacheModule, CacheModuleOptions, CacheService } from './cache.service'
 
 export interface AuthTokenPayload {
@@ -74,7 +74,7 @@ export class JwtAuthService {
 
     private async createToken(payload: AuthTokenPayload, secret: string, expiresIn: string) {
         const token = await this.jwtService.signAsync(
-            { ...payload, jti: generateUUID() },
+            { ...payload, jti: generateShortId() },
             { secret, expiresIn }
         )
         return token

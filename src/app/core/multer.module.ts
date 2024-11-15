@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, Module } from '@nestjs/common'
-import { MulterModule as NestMulterModule, MulterOptionsFactory } from '@nestjs/platform-express'
+import { MulterOptionsFactory, MulterModule as NestMulterModule } from '@nestjs/platform-express'
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface'
-import { generateUUID } from 'common'
+import { generateShortId } from 'common'
 import { AppConfigService } from 'config'
 import { diskStorage } from 'multer'
 
@@ -13,7 +13,7 @@ export class MulterConfigService implements MulterOptionsFactory {
         return {
             storage: diskStorage({
                 destination: (_req, _file, cb) => cb(null, this.config.fileUpload.directory),
-                filename: (_req, _file, cb) => cb(null, `${generateUUID()}.tmp`)
+                filename: (_req, _file, cb) => cb(null, `${generateShortId()}.tmp`)
             }),
             fileFilter: (_req, file, cb) => {
                 let error: Error | null = null

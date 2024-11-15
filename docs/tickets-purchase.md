@@ -156,14 +156,9 @@ Customer -> Frontend : 상영 시간 선택
         Backend <-- Booking: tickets[]
     Frontend <-- Backend : tickets[]
 Customer <-- Frontend : 구매 가능한 티켓 목록 제공
-```
-
-```plantuml
-@startuml
-actor Customer
 
 Customer -> Frontend: 티켓 선택
-    Frontend -> Backend: 티켓 선점\nPOST /booking/showtimes/{}/tickets/hold
+    Frontend -> Backend: 티켓 선점\nPOST /booking/showtimes/{}/tickets
         Backend -> Booking: holdTickets(showtimeId, customerId, ticketIds[])
             Booking -> TicketHolding: holdTickets(showtimeId, customerId, ticketIds[], ttlMs=10*60*1000)
                 TicketHolding -> TicketHolding: releaseTickets(showtimeId, customerId)
@@ -173,30 +168,57 @@ Customer -> Frontend: 티켓 선택
     Frontend <-- Backend: 티켓 선점 완료
 Customer <-- Frontend: 선점 완료
 
+```
+
+```plantuml
+@startuml
+actor Customer
+
 Customer -> Frontend: 결제 정보 입력
-    Frontend -> Backend: 결제 요청\nPOST /booking/showtimes/{}/tickets/purchase
-        Backend -> Booking: purchaseTickets(showtimeId, customerId, ticketIds[])
-            Booking -> Booking: validatePurchase(showtimeId, customerId, ticketIds[])
-            activate Booking
+    Frontend -> Backend: 결제 요청\nPOST /purchases
+    note right
+    body {
+        customerId,
+        items: [
+            {
+                type: 'ticket',
+                showtimeId: '...',
+                ticketIds: ['...']
+            }
+        ]
+    }
+    end note
+        Backend -> Purchases: createPurchase(body)
+            Purchases -> Purchases: newPurchase(body)
+            Purchases <-- Purchases: purchaseId
+            Purchases ->> TicketPurchases: validatePurchase(purchaseId, items)
+            activate TicketPurchases
             note left
-                - 좌석이 선점된 상태여야 한다.
-                - 상영 30분 전까지만 온라인으로 티켓을 구매할 수 있다.
-                - 고객은 한 번에 최대 10장의 티켓을 구매할 수 있다.
+                - 좌석이 선점된 상태여야 합니다.
+                - 상영 30분 전까지만 온라인으로 티켓을 구매할 수 있습니다.
+                - 고객은 한 번에 최대 10장의 티켓을 구매할 수 있습니다.
             end note
-            Booking -> Booking: validateTicketQuantity(ticketIds[])
-            Booking -> Booking: validatePurchaseTime(showtimeId)
-            Booking -> TicketHolding: findHeldTicketIds(showtimeId, customerId)
-            Booking <-- TicketHolding: heldTicketIds[]
-            Booking -> Booking: heldTicketIds.in(ticketIds)
-            Booking <-- Booking: true
-            deactivate Booking
-            Booking -> Purchases: createPurchase(customerId, ticketIds[])
-                Purchases -> Payment: processPayment(totalPrice, customer)
-                Purchases <-- Payment: 결제 성공
-                Purchases -> Tickets: markTicketsAsSold(ticketIds[])
-                Purchases <-- Tickets: 완료
-            Booking <-- Purchases: 구매 완료
-        Backend <-- Booking: 결제 완료 및 티켓 정보
+            TicketPurchases -> TicketPurchases: validateTicketQuantity(ticketIds[])
+            TicketPurchases -> TicketPurchases: validatePurchaseTime(showtimeId)
+            TicketPurchases -> TicketHolding: findHeldTicketIds(showtimeId, customerId)
+            TicketPurchases <-- TicketHolding: heldTicketIds[]
+            TicketPurchases -> TicketPurchases: validateHeldTickets(ticketIds[], heldTicketIds[])
+            Purchases <<-- TicketPurchases: purchaseValidated({items:[0]})
+            deactivate TicketPurchases
+            Purchases -> Purchases: updateItemStatus(purchaseId, {items:[0]}, 'validated')
+            Purchases -> Purchases: isPurchaseValidated(purchaseId)
+            Purchases <-- Purchases: true
+            Purchases -> Payments: processPayment(totalPrice, customer)
+            Purchases <-- Payments: 결제 성공
+            Purchases <-- Purchases: 구매 완료
+            Purchases ->> TicketPurchases: confirmPurchase(purchaseId, items)
+            activate TicketPurchases
+            TicketPurchases -> Tickets: updateTicketStatus(ticketIds[], 'sold')
+            TicketPurchases <-- Tickets: 완료
+            Purchases <<-- TicketPurchases: purchaseConfirmed(purchaseId, {items:[0]})
+            deactivate TicketPurchases
+            Purchases -> Purchases: updateItemStatus(purchaseId, {items:[0]}, 'confirmed')
+        Backend <-- Purchases: 결제 완료 및 티켓 정보
     Frontend <-- Backend: 결제 성공
 Customer <-- Frontend: 구매 완료
 @enduml
@@ -207,3 +229,8 @@ Customer <-- Frontend: 구매 완료
 구현 순서는 어떻게 할까? 뿌리에 가까운 서비스부터 한다. 그럼 이것은 down-up이 아닌가? 레이어 아래부터 한다면 모를까 서비스를 코어부터 구현한다고 down-up으로 보긴 어렵다. 설계가 없다면 앱 서비스부터 구현했을 것이다. 그러나 설계가 있다면 코어부터 구현하는 것이 효율적이다.
 
 커버리지는 100%여야 한다.
+
+Payments와 StorageFile은 외부 인프라를 사용하기 위한 서비스다. 이것은 infra 서비스다
+Purchase는 Core서비스다. 그런데 TicketPurchase서비스를 참조? 아니 이건 의존 역전으로 구현한다.
+
+core,app,infra로 나누려는 이유. 이렇게 안 하면 단순 트리 구조로만 생각할 것 같아서. 단일 책임 원칙에 소홀할까봐

@@ -1,4 +1,4 @@
-import { generateUUID, getChecksum, nullObjectId, Path } from 'common'
+import { generateShortId, getChecksum, nullObjectId, Path } from 'common'
 import { AppConfigService } from 'config'
 import { StorageFileDto } from 'services/storage-files'
 import { HttpTestClient } from 'testlib'
@@ -108,7 +108,7 @@ describe('/storage-files', () => {
         })
 
         it('파일을 다운로드해야 한다', async () => {
-            const downloadPath = Path.join(shared.tempDir, generateUUID() + '.txt')
+            const downloadPath = Path.join(shared.tempDir, generateShortId() + '.txt')
 
             await client.get(`/storage-files/${uploadedFile.id}`).download(downloadPath).ok()
 

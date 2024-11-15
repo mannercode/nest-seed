@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { CacheModule, generateUUID } from 'common'
+import { CacheModule, generateShortId } from 'common'
 import { AppConfigService, isEnv } from 'config'
 import { TicketHoldingService } from './ticket-holding.service'
 
@@ -10,7 +10,7 @@ import { TicketHoldingService } from './ticket-holding.service'
                 useFactory: (config: AppConfigService) => ({
                     ...config.redis,
                     type: 'cluster',
-                    prefix: isEnv('test') ? 'ticket:' + generateUUID() : 'TicketHolding'
+                    prefix: isEnv('test') ? 'ticket:' + generateShortId() : 'TicketHolding'
                 }),
                 inject: [AppConfigService]
             },
