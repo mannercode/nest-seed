@@ -167,7 +167,7 @@ Customer -> Frontend: 티켓 선택
         Backend <-- Booking: 티켓 선점 완료
     Frontend <-- Backend: 티켓 선점 완료
 Customer <-- Frontend: 선점 완료
-
+@enduml
 ```
 
 ```plantuml
@@ -179,31 +179,28 @@ Customer -> Frontend: 결제 정보 입력
     note right
     body {
         customerId,
+        totalPrice,
         items: [
-            {
-                type: 'ticket',
-                showtimeId: '...',
-                ticketIds: ['...']
-            }
+            { type: 'ticket', ticketId: ticketId#1 }
         ]
     }
     end note
         Backend -> Purchases: createPurchase(body)
             Purchases -> Purchases: newPurchase(body)
             Purchases <-- Purchases: purchaseId
-            Purchases ->> TicketPurchases: validatePurchase(purchaseId, items)
+            Purchases ->> TicketPurchases: validatePurchaseRequest(purchaseId, items)
             activate TicketPurchases
-            note left
+            note right
                 - 좌석이 선점된 상태여야 합니다.
                 - 상영 30분 전까지만 온라인으로 티켓을 구매할 수 있습니다.
                 - 고객은 한 번에 최대 10장의 티켓을 구매할 수 있습니다.
             end note
-            TicketPurchases -> TicketPurchases: validateTicketQuantity(ticketIds[])
+            TicketPurchases -> Tickets: getTicket(ticketId)
+            TicketPurchases -> TicketPurchases: validateTicketQuantity(items)
             TicketPurchases -> TicketPurchases: validatePurchaseTime(showtimeId)
-            TicketPurchases -> TicketHolding: findHeldTicketIds(showtimeId, customerId)
-            TicketPurchases <-- TicketHolding: heldTicketIds[]
-            TicketPurchases -> TicketPurchases: validateHeldTickets(ticketIds[], heldTicketIds[])
-            Purchases <<-- TicketPurchases: purchaseValidated({items:[0]})
+            TicketPurchases -> TicketHolding: isHeldTickets(showtimeId, customerId)
+            TicketPurchases <-- TicketHolding: true
+            Purchases <<-- TicketPurchases: purchaseRequestValidated({items:[0]})
             deactivate TicketPurchases
             Purchases -> Purchases: updateItemStatus(purchaseId, {items:[0]}, 'validated')
             Purchases -> Purchases: isPurchaseValidated(purchaseId)
@@ -211,13 +208,13 @@ Customer -> Frontend: 결제 정보 입력
             Purchases -> Payments: processPayment(totalPrice, customer)
             Purchases <-- Payments: 결제 성공
             Purchases <-- Purchases: 구매 완료
-            Purchases ->> TicketPurchases: confirmPurchase(purchaseId, items)
+            Purchases ->> TicketPurchases: completePurchase(purchaseId, items)
             activate TicketPurchases
-            TicketPurchases -> Tickets: updateTicketStatus(ticketIds[], 'sold')
-            TicketPurchases <-- Tickets: 완료
-            Purchases <<-- TicketPurchases: purchaseConfirmed(purchaseId, {items:[0]})
+                TicketPurchases -> Tickets: updateTicketStatus(ticketIds[], 'sold')
+                TicketPurchases <-- Tickets: 완료
+            Purchases <<-- TicketPurchases: purchaseCompleted(purchaseId, {items:[0]})
             deactivate TicketPurchases
-            Purchases -> Purchases: updateItemStatus(purchaseId, {items:[0]}, 'confirmed')
+            Purchases -> Purchases: updateItemStatus(purchaseId, {items:[0]}, 'completed')
         Backend <-- Purchases: 결제 완료 및 티켓 정보
     Frontend <-- Backend: 결제 성공
 Customer <-- Frontend: 구매 완료
