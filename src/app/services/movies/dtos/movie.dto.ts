@@ -1,3 +1,4 @@
+import { STORAGE_FILES_ROUTE } from 'config'
 import { Movie, MovieGenre, MovieRating } from '../models'
 
 export class MovieDto {
@@ -25,7 +26,7 @@ export class MovieDto {
         } = movie
 
         Object.assign(this, {
-            id,
+            id: id.toString(),
             title,
             genre,
             releaseDate,
@@ -33,7 +34,7 @@ export class MovieDto {
             durationMinutes,
             director,
             rating,
-            images: [`/storage-files/${storageFileIds.map((id) => id.toString())}`]
+            images: storageFileIds.map((id) => `${STORAGE_FILES_ROUTE}/${id.toString()}`)
         })
     }
 }

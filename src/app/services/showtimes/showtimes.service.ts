@@ -9,16 +9,16 @@ export class ShowtimesService {
 
     @MethodLog()
     async createShowtimes(createDtos: ShowtimeCreateDto[]) {
-        const showtimesToCreate = createDtos.map((dto) => ({
+        const payloads = createDtos.map((dto) => ({
             ...dto,
             batchId: objectId(dto.batchId),
             theaterId: objectId(dto.theaterId),
             movieId: objectId(dto.movieId)
         }))
 
-        await this.repository.createShowtimes(showtimesToCreate)
+        await this.repository.createShowtimes(payloads)
 
-        return { success: true, count: showtimesToCreate.length }
+        return { success: true, count: payloads.length }
     }
 
     @MethodLog({ level: 'verbose' })

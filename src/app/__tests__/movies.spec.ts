@@ -11,7 +11,7 @@ import {
     createMovieDto
 } from './movies.fixture'
 
-describe('/movies', () => {
+describe('Movies Module', () => {
     let isolated: IsolatedFixture
     let client: HttpTestClient
 

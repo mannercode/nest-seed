@@ -15,4 +15,4 @@ export class StorageFile extends MongooseSchema {
 
 export const StorageFileSchema = createMongooseSchema(StorageFile)
 
-export type StorageFileCreateData = ModelAttributes<StorageFile>
+export type StorageFileCreatePayload = ModelAttributes<StorageFile>

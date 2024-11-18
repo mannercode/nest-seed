@@ -11,7 +11,7 @@ import {
     createTheaterDto
 } from './theaters.fixture'
 
-describe('/theaters', () => {
+describe('Theaters Module', () => {
     let isolated: IsolatedFixture
     let client: HttpTestClient
 

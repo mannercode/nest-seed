@@ -13,6 +13,7 @@ import {
 import { StreamableHandlerResponse } from '@nestjs/common/file-stream/interfaces'
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { IsString } from 'class-validator'
+import { STORAGE_FILES_ROUTE } from 'config'
 import { createReadStream } from 'fs'
 import { StorageFilesService } from 'services/storage-files'
 
@@ -21,7 +22,7 @@ class UploadFileDto {
     name?: string
 }
 
-@Controller('storage-files')
+@Controller(STORAGE_FILES_ROUTE)
 export class StorageFilesController {
     private logger: Logger
 

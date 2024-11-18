@@ -9,7 +9,7 @@ import {
 import { addMinutes, nullObjectId, objectId, pickIds, pickItems } from 'common'
 import { expectEqualUnsorted } from 'testlib'
 
-describe('ShowtimesModule', () => {
+describe('Showtimes Module', () => {
     let isolated: IsolatedFixture
     let service: ShowtimesService
 

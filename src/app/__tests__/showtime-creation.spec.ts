@@ -13,7 +13,7 @@ import {
 import { createShowtimes } from './showtimes.fixture'
 import { nullObjectId } from 'common'
 
-describe('ShowtimeCreation', () => {
+describe('ShowtimeCreation Module', () => {
     let isolated: IsolatedFixture
     let client: HttpTestClient
     let showtimesService: ShowtimesService

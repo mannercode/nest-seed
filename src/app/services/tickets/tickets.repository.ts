@@ -1,9 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import {
     addInQuery,
     MethodLog,
-    ModelAttributes,
     MongooseRepository,
     MongooseUpdateResult,
     ObjectId,
@@ -13,7 +12,7 @@ import {
 import { FilterQuery, Model } from 'mongoose'
 import { TicketSalesStatusDto } from './dtos'
 import { TicketFilterDto } from './dtos/ticket-filter.dto'
-import { Ticket, TicketCreateData, TicketStatus } from './models'
+import { Ticket, TicketCreatePayload, TicketStatus } from './models'
 
 @Injectable()
 export class TicketsRepository extends MongooseRepository<Ticket> {
@@ -21,13 +20,9 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         super(model)
     }
 
-    async onModuleInit() {
-        await this.model.createCollection()
-    }
-
     @MethodLog()
-    async createTickets(createDtos: TicketCreateData[]) {
-        const tickets = createDtos.map((dto) => {
+    async createTickets(payloads: TicketCreatePayload[]) {
+        const tickets = payloads.map((dto) => {
             const ticket = this.newDocument()
             Object.assign(ticket, dto)
             return ticket

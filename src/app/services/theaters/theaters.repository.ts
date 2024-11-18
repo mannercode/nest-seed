@@ -4,7 +4,6 @@ import {
     addRegexQuery,
     Expect,
     MethodLog,
-    ModelAttributes,
     MongooseRepository,
     ObjectId,
     PaginationResult
@@ -12,7 +11,7 @@ import {
 import { differenceWith, uniq } from 'lodash'
 import { FilterQuery, Model } from 'mongoose'
 import { TheaterQueryDto } from './dtos'
-import { Theater, TheaterCreateData, TheaterUpdateData } from './models'
+import { Theater, TheaterCreatePayload, TheaterUpdatePayload } from './models'
 
 @Injectable()
 export class TheatersRepository extends MongooseRepository<Theater> {
@@ -20,25 +19,21 @@ export class TheatersRepository extends MongooseRepository<Theater> {
         super(model)
     }
 
-    async onModuleInit() {
-        await this.model.createCollection()
-    }
-
     @MethodLog()
-    async createTheater(createData: TheaterCreateData) {
+    async createTheater(payload: TheaterCreatePayload) {
         const theater = this.newDocument()
-        Object.assign(theater, createData)
+        Object.assign(theater, payload)
 
         return theater.save()
     }
 
     @MethodLog()
-    async updateTheater(theaterId: ObjectId, updateData: TheaterUpdateData) {
+    async updateTheater(theaterId: ObjectId, payload: TheaterUpdatePayload) {
         const theater = await this.getTheater(theaterId)
 
-        if (updateData.name) theater.name = updateData.name
-        if (updateData.latlong) theater.latlong = updateData.latlong
-        if (updateData.seatmap) theater.seatmap = updateData.seatmap
+        if (payload.name) theater.name = payload.name
+        if (payload.latlong) theater.latlong = payload.latlong
+        if (payload.seatmap) theater.seatmap = payload.seatmap
 
         return theater.save()
     }

@@ -15,6 +15,18 @@ const DEFAULT_TAKE_SIZE = 100
 export abstract class MongooseRepository<Doc extends MongooseSchema> {
     constructor(protected model: Model<Doc>) {}
 
+    /*
+    Issue   : document.save() internally calls createCollection
+    Symptom : Concurrent save() calls can cause "Collection namespace is already in use" errors.
+              (more frequent in transactions)
+    Solution: "await this.model.createCollection()"
+    Note    : This problem mainly occurs in unit test environments with frequent initializations
+    Ref     : https://mongoosejs.com/docs/api/model.html#Model.createCollection()
+    */
+    async onModuleInit() {
+        await this.model.createCollection()
+    }
+
     newDocument(): HydratedDocument<Doc> {
         return new this.model()
     }

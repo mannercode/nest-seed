@@ -12,7 +12,7 @@ import {
     uploadFile
 } from './storage-files.fixture'
 
-describe('/storage-files', () => {
+describe('StorageFiles Module', () => {
     let shared: SharedFixture
     let isolated: IsolatedFixture
     let client: HttpTestClient

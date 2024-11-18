@@ -21,4 +21,4 @@ export class Showtime extends MongooseSchema {
 
 export const ShowtimeSchema = createMongooseSchema(Showtime)
 
-export type ShowtimeCreateData = ModelAttributes<Showtime>
+export type ShowtimeCreatePayload = ModelAttributes<Showtime>

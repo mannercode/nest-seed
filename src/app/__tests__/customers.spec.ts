@@ -11,7 +11,7 @@ import {
     createCustomerDto
 } from './customers.fixture'
 
-describe('/customers', () => {
+describe('Customers Module', () => {
     let isolated: IsolatedFixture
     let client: HttpTestClient
 

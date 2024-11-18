@@ -11,7 +11,7 @@ export class TicketsService {
 
     @MethodLog()
     async createTickets(createDtos: TicketCreateDto[]) {
-        const ticketsToCreate = createDtos.map((dto) => ({
+        const payloads = createDtos.map((dto) => ({
             ...dto,
             batchId: objectId(dto.batchId),
             theaterId: objectId(dto.theaterId),
@@ -19,9 +19,9 @@ export class TicketsService {
             showtimeId: objectId(dto.showtimeId)
         }))
 
-        await this.repository.createTickets(ticketsToCreate)
+        await this.repository.createTickets(payloads)
 
-        return { success: true, count: ticketsToCreate.length }
+        return { success: true, count: payloads.length }
     }
 
     @MethodLog()

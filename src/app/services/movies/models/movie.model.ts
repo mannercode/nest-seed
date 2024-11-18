@@ -52,5 +52,5 @@ export class Movie extends MongooseSchema {
 export const MovieSchema = createMongooseSchema(Movie)
 MovieSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' })
 
-export type MovieCreateData = ModelAttributes<Movie>
-export type MovieUpdateData = Partial<ModelAttributes<Movie>>
+export type MovieCreatePayload = ModelAttributes<Movie>
+export type MovieUpdatePayload = Partial<ModelAttributes<Movie>>

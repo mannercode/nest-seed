@@ -25,5 +25,5 @@ export class Theater extends MongooseSchema {
 export const TheaterSchema = createMongooseSchema(Theater)
 TheaterSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' })
 
-export type TheaterCreateData = ModelAttributes<Theater>
-export type TheaterUpdateData = Partial<ModelAttributes<Theater>>
+export type TheaterCreatePayload = ModelAttributes<Theater>
+export type TheaterUpdatePayload = Partial<ModelAttributes<Theater>>

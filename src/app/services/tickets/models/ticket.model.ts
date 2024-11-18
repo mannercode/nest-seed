@@ -31,4 +31,4 @@ export class Ticket extends MongooseSchema {
 
 export const TicketSchema = createMongooseSchema(Ticket)
 
-export type TicketCreateData = ModelAttributes<Ticket>
+export type TicketCreatePayload = ModelAttributes<Ticket>

@@ -10,7 +10,7 @@ import {
 } from 'common'
 import { FilterQuery, Model } from 'mongoose'
 import { ShowtimeFilterDto } from './dtos'
-import { Showtime, ShowtimeCreateData } from './models'
+import { Showtime, ShowtimeCreatePayload } from './models'
 
 @Injectable()
 export class ShowtimesRepository extends MongooseRepository<Showtime> {
@@ -18,13 +18,9 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         super(model)
     }
 
-    async onModuleInit() {
-        await this.model.createCollection()
-    }
-
     @MethodLog()
-    async createShowtimes(createDtos: ShowtimeCreateData[]) {
-        const showtimes = createDtos.map((dto) => {
+    async createShowtimes(payloads: ShowtimeCreatePayload[]) {
+        const showtimes = payloads.map((dto) => {
             const document = this.newDocument()
             Object.assign(document, dto)
             return document

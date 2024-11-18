@@ -6,6 +6,12 @@ export const newObjectId = () => new ObjectId().toString()
 export const objectId = (id: string) => new ObjectId(id)
 export const objectIds = (ids: string[]) => ids.map((id) => objectId(id))
 
+export const addEqualQuery = (query: any, field: string, id?: string) => {
+    if (id) {
+        query[field] = objectId(id)
+    }
+}
+
 export const addInQuery = (query: any, field: string, ids?: string[]) => {
     if (ids && ids.length > 0) {
         query[field] = { $in: objectIds(ids) }

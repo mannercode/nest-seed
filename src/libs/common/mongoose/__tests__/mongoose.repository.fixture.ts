@@ -33,18 +33,6 @@ export class SamplesRepository extends MongooseRepository<Sample> {
     constructor(@InjectModel(Sample.name) model: Model<Sample>) {
         super(model)
     }
-
-    /*
-    Issue   : document.save() internally calls createCollection
-    Symptom : Concurrent save() calls can cause "Collection namespace is already in use" errors.
-              (more frequent in transactions)
-    Solution: "await this.model.createCollection()"
-    Note    : This problem mainly occurs in unit test environments with frequent initializations
-    Ref     : https://mongoosejs.com/docs/api/model.html#Model.createCollection()
-    */
-    async onModuleInit() {
-        await this.model.createCollection()
-    }
 }
 
 @Module({

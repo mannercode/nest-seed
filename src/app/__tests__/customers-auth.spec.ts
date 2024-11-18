@@ -9,7 +9,7 @@ import {
     IsolatedFixture
 } from './customers-auth.fixture'
 
-describe('/customers authentication', () => {
+describe('Customer Authentication', () => {
     let isolated: IsolatedFixture
     let client: HttpTestClient
     let credentials: Credentials

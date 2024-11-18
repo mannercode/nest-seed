@@ -22,8 +22,8 @@ CustomerSchema.index({ email: 1 })
 CustomerSchema.index({ name: 'text' })
 CustomerSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' })
 
-export type CustomerCreateData = ModelAttributes<Customer>
-export type CustomerUpdateData = Partial<ModelAttributes<Customer>>
+export type CustomerCreatePayload = ModelAttributes<Customer>
+export type CustomerUpdatePayload = Partial<ModelAttributes<Customer>>
 
 
 /*

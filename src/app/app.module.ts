@@ -13,6 +13,7 @@ import { StorageFilesModule } from 'services/storage-files'
 import { TheatersModule } from 'services/theaters'
 import { TicketHoldingModule } from 'services/ticket-holding'
 import { TicketsModule } from 'services/tickets'
+import { WatchRecordsModule } from 'services/watch-records'
 import {
     CustomersController,
     MoviesController,
@@ -35,7 +36,8 @@ import { HealthModule } from './health.module'
         TicketsModule,
         ShowtimeCreationModule,
         TicketHoldingModule,
-        HealthModule
+        HealthModule,
+        WatchRecordsModule
     ],
     providers: [CustomerLocalStrategy, CustomerJwtStrategy],
     controllers: [
