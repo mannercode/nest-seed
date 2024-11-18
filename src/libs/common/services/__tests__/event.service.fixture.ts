@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { OnEvent } from '@nestjs/event-emitter'
-import { AppEvent, EventName } from 'common'
+import { BaseEvent, DefineEvent } from 'common'
 
-@EventName('sample.event')
-export class SampleEvent extends AppEvent {
+@DefineEvent('sample.event')
+export class SampleEvent extends BaseEvent {
     constructor(public text: string) {
         super()
     }
