@@ -19,11 +19,13 @@ export class StorageFilesService {
             const storageFiles: HydratedDocument<StorageFile>[] = []
 
             for (const createDto of createDtos) {
+                const checksum = await getChecksum(createDto.uploadedFilePath)
                 const storageFile = await this.repository.createStorageFile(
-                    { ...createDto, checksum: await getChecksum(createDto.uploadedFilePath) },
+                    { ...createDto, checksum },
                     session
                 )
-                Path.copy(createDto.uploadedFilePath, this.getStoragePath(storageFile.id))
+                // move가 아니라 copy하기 때문에 성능 영향이 있다
+                await Path.copy(createDto.uploadedFilePath, this.getStoragePath(storageFile.id))
 
                 storageFiles.push(storageFile)
             }
