@@ -8,7 +8,7 @@ export interface IsolatedFixture {
     watchRecordsService: WatchRecordsService
 }
 
-export async function createIsolatedFixture() {
+export async function createFixture() {
     const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
     const watchRecordsService = testContext.module.get(WatchRecordsService)
     const customerId = 'customerId#1'
@@ -16,7 +16,7 @@ export async function createIsolatedFixture() {
     return { testContext, watchRecordsService, customerId }
 }
 
-export async function closeIsolatedFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
 }
 

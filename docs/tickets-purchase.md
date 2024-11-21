@@ -62,15 +62,15 @@
 actor Customer
 
 Customer -> Frontend: 영화 예매 시스템에 접속
-Frontend -> Backend: 추천 영화 목록 요청\nGET /movies/recommendations\n?customerId={}
-Backend -> Recommendations: findMovieRecommendations({customerId})
-Recommendations -> Showtimes: findShowingMovieIds()
-Showtimes --> Recommendations: showingMovieIds
-Recommendations -> Movies: getMovies({movieIds: showingMovieIds})
-Movies --> Recommendations: movies
+Frontend -> Backend: 추천 영화 목록 요청\nGET /movies/recommended
+Backend -> Recommendation: findRecommendedMovies({customerId})
+Recommendation -> Showtimes: findShowingMovieIds()
+Showtimes --> Recommendation: showingMovieIds
+Recommendation -> Movies: getMovies({movieIds: showingMovieIds})
+Movies --> Recommendation: movies
 group if customer exists
-    Recommendations -> WatchRecordsService: findWatchRecords(customerId)
-    Recommendations <-- WatchRecordsService: watchRecords[]
+    Recommendation -> WatchRecordsService: findWatchRecords(customerId)
+    Recommendation <-- WatchRecordsService: watchRecords[]
     note left
     WatchRecord {
         customerId,
@@ -79,12 +79,12 @@ group if customer exists
         purchaseId,
     }
     end note
-    Recommendations -> Movies: findMovies(movieIds[] from watchRecords)
-    Recommendations <-- Movies: watchedMovies
+    Recommendation -> Movies: findMovies(movieIds[] from watchRecords)
+    Recommendation <-- Movies: watchedMovies
 end
-Recommendations -> Recommendations: generateMovieRecommendations\n(movies, watchedMovies)
-Backend <-- Recommendations: movieRecommendations[]
-Frontend <-- Backend: movieRecommendations[]
+Recommendation -> Recommendation: generateRecommendedMovies\n(movies, watchedMovies)
+Backend <-- Recommendation: recommendedMovies[]
+Frontend <-- Backend: recommendedMovies[]
 Customer <-- Frontend: 영화 목록 제공
 @enduml
 ```
@@ -101,7 +101,6 @@ generateMovieRecommendations(movies, watchedMovies){
     theaterIds:[]
     }
 }
-
 ```
 
 ```plantuml

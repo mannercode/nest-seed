@@ -1,19 +1,21 @@
 import { padNumber } from 'common'
-import { MovieDto, MovieGenre, MovieRating } from 'services/movies'
-import { createHttpTestContext, HttpTestClient, HttpTestContext, objectToFields } from 'testlib'
+import { MovieDto, MovieGenre, MovieRating, MoviesService } from 'services/movies'
+import { createHttpTestContext, HttpTestContext } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
 
 export interface IsolatedFixture {
     testContext: HttpTestContext
+    moviesService: MoviesService
 }
 
-export async function createIsolatedFixture() {
+export async function createFixture() {
     const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
+    const moviesService = testContext.module.get(MoviesService)
 
-    return { testContext }
+    return { testContext, moviesService }
 }
 
-export async function closeIsolatedFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
 }
 
@@ -34,19 +36,13 @@ export const createMovieDto = (overrides = {}) => {
     return { createDto, expectedDto }
 }
 
-export const createMovie = async (client: HttpTestClient, override = {}) => {
+export const createMovie = async (moviesService: MoviesService, override = {}) => {
     const { createDto } = createMovieDto(override)
-
-    const { body } = await client
-        .post('/movies')
-        .attachs([{ name: 'files', file: './test/fixtures/image.png' }])
-        .fields(objectToFields(createDto))
-        .created()
-
-    return body
+    const movie = await moviesService.createMovie([], createDto)
+    return movie
 }
 
-export const createMovies = async (client: HttpTestClient, overrides = {}) => {
+export const createMovies = async (moviesService: MoviesService, overrides = {}) => {
     const promises: Promise<MovieDto>[] = []
 
     const genres = [
@@ -63,7 +59,13 @@ export const createMovies = async (client: HttpTestClient, overrides = {}) => {
             const title = `title-${tag}`
             const plot = `plot-${tag}`
 
-            const promise = createMovie(client, { title, plot, genre, director, ...overrides })
+            const promise = createMovie(moviesService, {
+                title,
+                plot,
+                genre,
+                director,
+                ...overrides
+            })
 
             promises.push(promise)
         })

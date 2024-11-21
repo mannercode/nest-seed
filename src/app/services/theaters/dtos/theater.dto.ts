@@ -8,8 +8,8 @@ export class TheaterDto {
     seatmap: Seatmap
 
     constructor(theater: Theater) {
-        const { id, name, latlong, seatmap } = theater
+        const { createdAt, updatedAt, __v, ...rest } = theater
 
-        Object.assign(this, { id, name, latlong, seatmap })
+        Object.assign(this, rest)
     }
 }

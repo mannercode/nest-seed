@@ -25,7 +25,6 @@ CustomerSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' 
 export type CustomerCreatePayload = ModelAttributes<Customer>
 export type CustomerUpdatePayload = Partial<ModelAttributes<Customer>>
 
-
 /*
 1. `CustomerSchema.index({ email: 1 })`
    This command creates an ascending (1) index on the `email` field.

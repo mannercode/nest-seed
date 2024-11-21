@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { maps, MethodLog, objectId, PaginationResult } from 'common'
+import { MethodLog, objectId, toDto, toDtos } from 'common'
 import { WatchRecordCreateDto, WatchRecordDto, WatchRecordQueryDto } from './dtos'
 import { WatchRecordsRepository } from './watch-records.repository'
 
@@ -18,16 +18,13 @@ export class WatchRecordsService {
 
         const watchRecord = await this.repository.createWatchRecords(payloads)
 
-        return new WatchRecordDto(watchRecord)
+        return toDto(watchRecord, WatchRecordDto)
     }
 
     @MethodLog({ level: 'verbose' })
     async findWatchRecords(queryDto: WatchRecordQueryDto) {
         const { items, ...paginated } = await this.repository.findWatchRecords(queryDto)
 
-        return {
-            ...paginated,
-            items: maps(items, WatchRecordDto)
-        } as PaginationResult<WatchRecordDto>
+        return { ...paginated, items: toDtos(items, WatchRecordDto) }
     }
 }

@@ -1,5 +1,5 @@
 import { expect } from '@jest/globals'
-import { maps, pickItems } from 'common'
+import { pickItems, toDtos } from 'common'
 import { getMongoTestConnection } from 'testlib'
 import {
     createFixture,
@@ -41,7 +41,7 @@ describe('MongooseRepository - withTransaction', () => {
         })
 
         const foundSamples = await repository.findByIds(pickItems(docs, '_id'))
-        expect(maps(foundSamples, SampleDto)).toEqual(maps(docs, SampleDto))
+        expect(toDtos(foundSamples, SampleDto)).toEqual(toDtos(docs, SampleDto))
     })
 
     it('should rollback changes when an exception occurs during a transaction', async () => {
@@ -76,6 +76,6 @@ describe('MongooseRepository - withTransaction', () => {
         })
 
         const foundSamples = await repository.findByIds(ids)
-        expect(maps(foundSamples, SampleDto)).toEqual(maps(samples, SampleDto))
+        expect(toDtos(foundSamples, SampleDto)).toEqual(toDtos(samples, SampleDto))
     })
 })

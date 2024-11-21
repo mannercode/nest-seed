@@ -52,7 +52,7 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         validateFilters(query)
 
         const showtimes = await this.model.find(query).sort({ startTime: 1 }).exec()
-        return showtimes as Showtime[]
+        return showtimes
     }
 
     @MethodLog({ level: 'verbose' })

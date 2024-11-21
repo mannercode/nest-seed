@@ -18,10 +18,23 @@ export class MongooseUpdateResult {
     timestamps: true,
     validateBeforeSave: true,
     // https://mongoosejs.com/docs/guide.html#collation
-    collation: { locale: 'en_US', strength: 1 }
+    collation: { locale: 'en_US', strength: 1 },
+    toJSON: {
+        virtuals: true,
+        transform: function (doc, ret) {
+            delete ret._id
+            delete ret.deleted
+
+            for (const key in ret) {
+                if (ret[key] instanceof Types.ObjectId) {
+                    ret[key] = ret[key].toString()
+                }
+            }
+        }
+    }
 })
 export class MongooseSchema {
-    id: ObjectId
+    id: string
     createdAt: Date
     updatedAt: Date
     __v: number

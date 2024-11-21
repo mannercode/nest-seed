@@ -8,14 +8,17 @@ export class ShowtimeDto {
     movieId: string
 
     constructor(showtime: Showtime) {
-        const { id, startTime, endTime, theaterId, movieId } = showtime
+        const { createdAt, updatedAt, __v, batchId, ...rest } = showtime
 
-        Object.assign(this, {
-            id: id.toString(),
-            startTime,
-            endTime,
-            theaterId: theaterId.toString(),
-            movieId: movieId.toString()
-        })
+        Object.assign(this, rest)
+        // const { id, startTime, endTime, theaterId, movieId } = showtime
+
+        // Object.assign(this, {
+        //     id: id.toString(),
+        //     startTime,
+        //     endTime,
+        //     theaterId: theaterId.toString(),
+        //     movieId: movieId.toString()
+        // })
     }
 }

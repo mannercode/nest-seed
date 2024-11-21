@@ -1,12 +1,11 @@
 import { addMinutes, jsonToObject, nullObjectId } from 'common'
-import { MovieDto } from 'services/movies'
+import { MovieDto, MoviesService } from 'services/movies'
 import { ShowtimeCreateDto, ShowtimesService } from 'services/showtimes'
-import { TheaterDto } from 'services/theaters'
+import { TheaterDto, TheatersService } from 'services/theaters'
 import { createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
 import { createMovie } from './movies.fixture'
 import { createTheater } from './theaters.fixture'
-
 
 export interface IsolatedFixture {
     testContext: HttpTestContext
@@ -15,16 +14,18 @@ export interface IsolatedFixture {
     theater: TheaterDto
 }
 
-export async function createIsolatedFixture() {
+export async function createFixture() {
     const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
     const showtimesService = testContext.module.get(ShowtimesService)
-    const movie = await createMovie(testContext.client)
-    const theater = await createTheater(testContext.client)
+    const moviesService = testContext.module.get(MoviesService)
+    const movie = await createMovie(moviesService)
+    const theatersService = testContext.module.get(TheatersService)
+    const theater = await createTheater(theatersService)
 
     return { testContext, showtimesService, movie, theater }
 }
 
-export async function closeIsolatedFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
 }
 
@@ -59,19 +60,4 @@ export const monitorEvents = (client: HttpTestClient, waitStatuses: string[]) =>
             }
         }, reject)
     })
-}
-
-export const createBatchShowtimes = async (
-    client: HttpTestClient,
-    movieId: string,
-    theaterIds: string[],
-    startTimes: Date[],
-    durationMinutes: number
-) => {
-    const { body } = await client
-        .post('/showtime-creation/showtimes')
-        .body({ movieId, theaterIds, startTimes, durationMinutes })
-        .accepted()
-
-    return body
 }

@@ -9,15 +9,18 @@ export class StorageFileDto {
     checksum: string
 
     constructor(file: StorageFile, storedPath: string) {
-        const { id, originalname, mimetype, size, checksum } = file
+        // const { id, originalname, mimetype, size, checksum } = file
 
-        Object.assign(this, {
-            id: id.toString(),
-            originalname,
-            mimetype,
-            size,
-            storedPath,
-            checksum
-        })
+        // Object.assign(this, {
+        //     id: id.toString(),
+        //     originalname,
+        //     mimetype,
+        //     size,
+        //     storedPath,
+        //     checksum
+        // })
+        const { createdAt, updatedAt, __v, ...rest } = file
+
+        Object.assign(this, { ...rest, storedPath })
     }
 }

@@ -5,17 +5,17 @@ import { AppModule, configureApp } from '../app.module'
 
 export interface IsolatedFixture {
     testContext: HttpTestContext
-    service: ShowtimesService
+    showtimesService: ShowtimesService
 }
 
-export async function createIsolatedFixture() {
+export async function createFixture() {
     const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
-    const service = testContext.module.get(ShowtimesService)
+    const showtimesService = testContext.module.get(ShowtimesService)
 
-    return { testContext, service }
+    return { testContext, showtimesService }
 }
 
-export async function closeIsolatedFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
 }
 

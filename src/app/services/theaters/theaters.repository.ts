@@ -64,7 +64,7 @@ export class TheatersRepository extends MongooseRepository<Theater> {
             helpers.setQuery(query)
         }, pagination)
 
-        return paginated as PaginationResult<Theater>
+        return paginated
     }
 
     @MethodLog({ level: 'verbose' })

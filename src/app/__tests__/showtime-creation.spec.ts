@@ -1,35 +1,32 @@
+import { nullObjectId } from 'common'
 import { MovieDto } from 'services/movies'
-import { ShowtimeDto, ShowtimesService } from 'services/showtimes'
+import { ShowtimeDto } from 'services/showtimes'
 import { getSeatCount, TheaterDto } from 'services/theaters'
 import { expectEqualUnsorted, HttpTestClient } from 'testlib'
 import {
-    closeIsolatedFixture,
-    createIsolatedFixture,
+    closeFixture,
+    createFixture,
     createShowtimeDtos,
     IsolatedFixture,
-    monitorEvents,
-    createBatchShowtimes
+    monitorEvents
 } from './showtime-creation.fixture'
 import { createShowtimes } from './showtimes.fixture'
-import { nullObjectId } from 'common'
 
 describe('ShowtimeCreation Module', () => {
-    let isolated: IsolatedFixture
+    let fixture: IsolatedFixture
     let client: HttpTestClient
-    let showtimesService: ShowtimesService
     let movie: MovieDto
     let theater: TheaterDto
 
     beforeEach(async () => {
-        isolated = await createIsolatedFixture()
-        client = isolated.testContext.client
-        showtimesService = isolated.showtimesService
-        movie = isolated.movie
-        theater = isolated.theater
+        fixture = await createFixture()
+        client = fixture.testContext.client
+        movie = fixture.movie
+        theater = fixture.theater
     })
 
     afterEach(async () => {
-        await closeIsolatedFixture(isolated)
+        await closeFixture(fixture)
     })
 
     it('영화 목록 요청', async () => {
@@ -61,7 +58,7 @@ describe('ShowtimeCreation Module', () => {
                 { theaterId: theater.id }
             )
 
-            showtimes = await createShowtimes(showtimesService, createDtos)
+            showtimes = await createShowtimes(fixture.showtimesService, createDtos)
         })
 
         it('예정된 상영시간 목록을 반환해야 한다', async () => {
@@ -75,6 +72,20 @@ describe('ShowtimeCreation Module', () => {
     })
 
     describe('상영시간 등록 요청', () => {
+        const createBatchShowtimes = async (
+            movieId: string,
+            theaterIds: string[],
+            startTimes: Date[],
+            durationMinutes: number
+        ) => {
+            const { body } = await client
+                .post('/showtime-creation/showtimes')
+                .body({ movieId, theaterIds, startTimes, durationMinutes })
+                .accepted()
+
+            return body
+        }
+
         it('상영시간 등록 요청이 성공해야 한다', async () => {
             const monitorPromise = monitorEvents(client, ['complete'])
 
@@ -85,20 +96,13 @@ describe('ShowtimeCreation Module', () => {
                 new Date('2100-01-01T13:00')
             ]
 
-            const { batchId } = await createBatchShowtimes(
-                client,
-                movie.id,
-                theaterIds,
-                startTimes,
-                90
-            )
+            const { batchId } = await createBatchShowtimes(movie.id, theaterIds, startTimes, 90)
 
             expect(batchId).toBeDefined()
 
             const seatCount = getSeatCount(theater.seatmap)
             const showtimeCreatedCount = theaterIds.length * startTimes.length
             const ticketCreatedCount = showtimeCreatedCount * seatCount
-
             await expect(monitorPromise).resolves.toEqual({
                 batchId,
                 status: 'complete',
@@ -111,12 +115,13 @@ describe('ShowtimeCreation Module', () => {
             const monitorPromise = monitorEvents(client, ['error'])
 
             const { batchId } = await createBatchShowtimes(
-                client,
                 nullObjectId,
                 [theater.id],
                 [new Date(0)],
                 90
             )
+
+            expect(batchId).toBeDefined()
 
             await expect(monitorPromise).resolves.toEqual({
                 batchId,
@@ -129,12 +134,13 @@ describe('ShowtimeCreation Module', () => {
             const monitorPromise = monitorEvents(client, ['error'])
 
             const { batchId } = await createBatchShowtimes(
-                client,
                 movie.id,
                 [nullObjectId],
                 [new Date(0)],
                 90
             )
+
+            expect(batchId).toBeDefined()
 
             await expect(monitorPromise).resolves.toEqual({
                 batchId,
@@ -158,24 +164,27 @@ describe('ShowtimeCreation Module', () => {
                 { theaterId: theater.id, durationMinutes: 90 }
             )
 
-            showtimes = await createShowtimes(showtimesService, createDtos)
+            showtimes = await createShowtimes(fixture.showtimesService, createDtos)
         })
 
         it('생성 요청이 기존 상영시간 충돌할 때 충돌 정보를 반환해야 한다', async () => {
             const monitorPromise = monitorEvents(client, ['fail'])
 
-            const { batchId } = await createBatchShowtimes(
-                client,
-                movie.id,
-                [theater.id],
-                [
-                    new Date('2013-01-31T12:00'),
-                    new Date('2013-01-31T16:00'),
-                    new Date('2013-01-31T20:00')
-                ],
-                30
-            )
+            const { body } = await client
+                .post('/showtime-creation/showtimes')
+                .body({
+                    movieId: movie.id,
+                    theaterIds: [theater.id],
+                    startTimes: [
+                        new Date('2013-01-31T12:00'),
+                        new Date('2013-01-31T16:00'),
+                        new Date('2013-01-31T20:00')
+                    ],
+                    durationMinutes: 30
+                })
+                .accepted()
 
+            const { batchId } = body
             expect(batchId).toBeDefined()
 
             const expected = showtimes.filter((showtime) =>

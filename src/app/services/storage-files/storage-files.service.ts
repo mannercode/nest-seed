@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common'
-import { getChecksum, MethodLog, objectId, ObjectId, Path } from 'common'
+import { getChecksum, MethodLog, objectId, ObjectId, Path, toDto } from 'common'
 import { AppConfigService } from 'config'
 import { StorageFileCreateDto, StorageFileDto } from './dtos'
 import { StorageFile } from './models'
 import { StorageFilesRepository } from './storage-files.repository'
+import { HydratedDocument } from 'mongoose'
 
 @Injectable()
 export class StorageFilesService {
@@ -15,7 +16,7 @@ export class StorageFilesService {
     @MethodLog()
     async saveFiles(createDtos: StorageFileCreateDto[]) {
         const storageFiles = await this.repository.withTransaction(async (session) => {
-            const storageFiles: StorageFile[] = []
+            const storageFiles: HydratedDocument<StorageFile>[] = []
 
             for (const createDto of createDtos) {
                 const storageFile = await this.repository.createStorageFile(
@@ -36,7 +37,7 @@ export class StorageFilesService {
     @MethodLog({ level: 'verbose' })
     async getStorageFile(fileId: string) {
         const file = await this.repository.getStorageFile(objectId(fileId))
-        return this.createStorageFileDto(file!)
+        return this.createStorageFileDto(file)
     }
 
     @MethodLog()
@@ -49,8 +50,8 @@ export class StorageFilesService {
         return true
     }
 
-    private createStorageFileDto(file: StorageFile) {
-        const dto = new StorageFileDto(file, this.getStoragePath(file.id))
+    private createStorageFileDto(file: HydratedDocument<StorageFile>) {
+        const dto = toDto(file, StorageFileDto, this.getStoragePath(file.id))
         return dto
     }
 

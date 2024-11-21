@@ -3,9 +3,9 @@ import { AppConfigService } from 'config'
 import { StorageFileDto } from 'services/storage-files'
 import { HttpTestClient } from 'testlib'
 import {
-    closeIsolatedFixture,
+    closeFixture,
     closeSharedFixture,
-    createIsolatedFixture,
+    createFixture,
     createSharedFixture,
     IsolatedFixture,
     SharedFixture,
@@ -27,13 +27,13 @@ describe('StorageFiles Module', () => {
     })
 
     beforeEach(async () => {
-        isolated = await createIsolatedFixture()
+        isolated = await createFixture()
         client = isolated.testContext.client
         config = isolated.config
     })
 
     afterEach(async () => {
-        await closeIsolatedFixture(isolated)
+        await closeFixture(isolated)
     })
 
     describe('POST /storage-files', () => {

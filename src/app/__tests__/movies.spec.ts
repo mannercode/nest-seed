@@ -3,12 +3,12 @@ import { nullObjectId } from 'common'
 import { MovieDto, MovieGenre, MovieRating } from 'services/movies'
 import { expectEqualUnsorted, HttpTestClient, objectToFields } from 'testlib'
 import {
-    closeIsolatedFixture,
-    createIsolatedFixture,
+    closeFixture,
+    createFixture,
     createMovie,
+    createMovieDto,
     createMovies,
-    IsolatedFixture,
-    createMovieDto
+    IsolatedFixture
 } from './movies.fixture'
 
 describe('Movies Module', () => {
@@ -16,18 +16,22 @@ describe('Movies Module', () => {
     let client: HttpTestClient
 
     beforeEach(async () => {
-        isolated = await createIsolatedFixture()
+        isolated = await createFixture()
         client = isolated.testContext.client
     })
 
     afterEach(async () => {
-        await closeIsolatedFixture(isolated)
+        await closeFixture(isolated)
     })
 
     describe('POST /movies', () => {
         it('영화를 생성해야 한다', async () => {
             const { createDto, expectedDto } = createMovieDto()
-            const body = await createMovie(client, createDto)
+            const { body } = await client
+                .post('/movies')
+                .attachs([{ name: 'files', file: './test/fixtures/image.png' }])
+                .fields(objectToFields(createDto))
+                .created()
 
             expect(body).toEqual(expectedDto)
         })
@@ -70,7 +74,7 @@ describe('Movies Module', () => {
         let movie: MovieDto
 
         beforeEach(async () => {
-            movie = await createMovie(client)
+            movie = await createMovie(isolated.moviesService)
         })
 
         it('영화 정보를 업데이트해야 한다', async () => {
@@ -102,18 +106,16 @@ describe('Movies Module', () => {
         let movie: MovieDto
 
         beforeEach(async () => {
-            movie = await createMovie(client)
+            movie = await createMovie(isolated.moviesService)
         })
 
         it('영화를 삭제해야 한다', async () => {
             await client.delete(`/movies/${movie.id}`).ok()
-            await client
-                .get(`/movies/${movie.id}`)
-                .notFound({
-                    error: 'Not Found',
-                    message: `Movie with ID ${movie.id} not found`,
-                    statusCode: 404
-                })
+            await client.get(`/movies/${movie.id}`).notFound({
+                error: 'Not Found',
+                message: `Movie with ID ${movie.id} not found`,
+                statusCode: 404
+            })
         })
 
         it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
@@ -129,7 +131,7 @@ describe('Movies Module', () => {
         let movie: MovieDto
 
         beforeEach(async () => {
-            movie = await createMovie(client)
+            movie = await createMovie(isolated.moviesService)
         })
 
         it('영화 정보를 가져와야 한다', async () => {
@@ -149,7 +151,7 @@ describe('Movies Module', () => {
         let movies: MovieDto[]
 
         beforeEach(async () => {
-            movies = await createMovies(client)
+            movies = await createMovies(isolated.moviesService)
         })
 
         it('기본 페이지네이션 설정으로 영화를 가져와야 한다', async () => {

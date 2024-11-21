@@ -2,8 +2,8 @@ import { expect } from '@jest/globals'
 import { WatchRecordDto, WatchRecordsService } from 'services/watch-records'
 import { expectEqualUnsorted } from 'testlib'
 import {
-    closeIsolatedFixture,
-    createIsolatedFixture,
+    closeFixture,
+    createFixture,
     createWatchRecordDto,
     createWatchRecords,
     IsolatedFixture
@@ -15,12 +15,12 @@ describe('WatchRecords Module', () => {
     let service: WatchRecordsService
 
     beforeEach(async () => {
-        isolated = await createIsolatedFixture()
+        isolated = await createFixture()
         service = isolated.watchRecordsService
     })
 
     afterEach(async () => {
-        await closeIsolatedFixture(isolated)
+        await closeFixture(isolated)
     })
 
     describe('createWatchRecords', () => {

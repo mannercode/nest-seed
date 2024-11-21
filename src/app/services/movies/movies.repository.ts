@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { addRegexQuery, MethodLog, MongooseRepository, ObjectId, PaginationResult } from 'common'
+import { addEqualQuery, addRegexQuery, MethodLog, MongooseRepository, ObjectId } from 'common'
 import { FilterQuery, Model } from 'mongoose'
 import { MovieQueryDto } from './dtos'
 import { Movie, MovieCreatePayload, MovieUpdatePayload } from './models'
@@ -56,16 +56,16 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         const paginated = await this.findWithPagination((helpers) => {
             const query: FilterQuery<Movie> = {}
             addRegexQuery(query, 'title', title)
-            if (genre) query.genre = genre
-            if (releaseDate) query.releaseDate = releaseDate
+            addEqualQuery(query, 'genre', genre)
+            addEqualQuery(query, 'releaseDate', releaseDate)
             addRegexQuery(query, 'plot', plot)
             addRegexQuery(query, 'director', director)
-            if (rating) query.rating = rating
+            addEqualQuery(query, 'rating', rating)
 
             helpers.setQuery(query)
         }, pagination)
 
-        return paginated as PaginationResult<Movie>
+        return paginated
     }
 
     // async getMoviesByIds(movieIds: string[]) {

@@ -43,7 +43,7 @@ export interface IsolatedFixture {
     tempDir: string
 }
 
-export async function createIsolatedFixture() {
+export async function createFixture() {
     const tempDir = await Path.createTempDirectory()
 
     const realConfigService = new ConfigService()
@@ -78,7 +78,7 @@ export async function createIsolatedFixture() {
     return { testContext, config, tempDir }
 }
 
-export async function closeIsolatedFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
     await Path.delete(fixture.tempDir)
 }

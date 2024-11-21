@@ -57,7 +57,7 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         validateFilters(query)
 
         const tickets = await this.model.find(query).sort({ batchId: 1 }).exec()
-        return tickets as Ticket[]
+        return tickets
     }
 
     @MethodLog({ level: 'verbose' })

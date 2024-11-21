@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { JwtAuthService, maps, MethodLog, objectId, objectIds, PaginationResult, Password } from 'common'
+import { JwtAuthService, MethodLog, objectId, objectIds, Password, toDto, toDtos } from 'common'
 import { CustomersRepository } from './customers.repository'
 import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
 
@@ -17,19 +17,19 @@ export class CustomersService {
             password: await Password.hash(createDto.password)
         })
 
-        return new CustomerDto(customer)
+        return toDto(customer, CustomerDto)
     }
 
     @MethodLog()
     async updateCustomer(customerId: string, updateDto: CustomerUpdateDto) {
         const customer = await this.repository.updateCustomer(objectId(customerId), updateDto)
-        return new CustomerDto(customer)
+        return toDto(customer, CustomerDto)
     }
 
     @MethodLog({ level: 'verbose' })
     async getCustomer(customerId: string) {
         const customer = await this.repository.getCustomer(objectId(customerId))
-        return new CustomerDto(customer)
+        return toDto(customer, CustomerDto)
     }
 
     @MethodLog()
@@ -42,7 +42,7 @@ export class CustomersService {
     async findCustomers(queryDto: CustomerQueryDto) {
         const { items, ...paginated } = await this.repository.findCustomers(queryDto)
 
-        return { ...paginated, items: maps(items, CustomerDto) } as PaginationResult<CustomerDto>
+        return { ...paginated, items: toDtos(items, CustomerDto) }
     }
 
     @MethodLog()
@@ -65,7 +65,7 @@ export class CustomersService {
         const customer = await this.repository.findByEmail(email)
 
         if (customer && (await Password.validate(password, customer.password)))
-            return new CustomerDto(customer)
+            return toDto(customer, CustomerDto)
 
         return null
     }

@@ -1,18 +1,20 @@
 import { padNumber } from 'common'
-import { HttpTestClient, HttpTestContext, createHttpTestContext } from 'testlib'
+import { TheatersService } from 'services/theaters'
+import { HttpTestContext, createHttpTestContext } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
 
 export interface IsolatedFixture {
     testContext: HttpTestContext
+    theatersService: TheatersService
 }
 
-export async function createIsolatedFixture() {
+export async function createFixture() {
     const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
-
-    return { testContext }
+    const theatersService = testContext.module.get(TheatersService)
+    return { testContext, theatersService }
 }
 
-export async function closeIsolatedFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
 }
 
@@ -29,21 +31,20 @@ export const createTheaterDto = (overrides = {}) => {
     return { createDto, expectedDto }
 }
 
-export const createTheater = async (client: HttpTestClient, override = {}) => {
+export const createTheater = async (theatersService: TheatersService, override = {}) => {
     const { createDto } = createTheaterDto(override)
-
-    const { body } = await client.post('/theaters').body(createDto).created()
-    return body
+    const theater = await theatersService.createTheater(createDto)
+    return theater
 }
 
 export const createTheaters = async (
-    client: HttpTestClient,
+    theatersService: TheatersService,
     length: number = 20,
     overrides = {}
 ) => {
     return Promise.all(
         Array.from({ length }, async (_, index) =>
-            createTheater(client, {
+            createTheater(theatersService, {
                 name: `Theater-${padNumber(index, 3)}`,
                 latlong: { latitude: 38.123, longitude: 138.678 },
                 seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', seats: 'OOOOXXOOOO' }] }] },

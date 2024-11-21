@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common'
-import { maps, MethodLog, objectId, ObjectId, objectIds, PaginationResult } from 'common'
+import { MethodLog, objectId, objectIds, PaginationResult } from 'common'
+import { STORAGE_FILES_ROUTE } from 'config'
+import { HydratedDocument } from 'mongoose'
 import { StorageFileCreateDto, StorageFilesService } from '../storage-files'
 import { MovieCreateDto, MovieDto, MovieQueryDto, MovieUpdateDto } from './dtos'
+import { Movie } from './models'
 import { MoviesRepository } from './movies.repository'
 
 @Injectable()
@@ -20,19 +23,19 @@ export class MoviesService {
         const storageFileIds = storageFiles.map((file) => objectId(file.id))
 
         const movie = await this.repository.createMovie({ ...movieCreateDto, storageFileIds })
-        return new MovieDto(movie)
+        return this.createMovieDto(movie)
     }
 
     @MethodLog()
     async updateMovie(movieId: string, updateDto: MovieUpdateDto) {
         const movie = await this.repository.updateMovie(objectId(movieId), updateDto)
-        return new MovieDto(movie)
+        return this.createMovieDto(movie)
     }
 
     @MethodLog({ level: 'verbose' })
     async getMovie(movieId: string) {
         const movie = await this.repository.getMovie(objectId(movieId))
-        return new MovieDto(movie)
+        return this.createMovieDto(movie)
     }
 
     @MethodLog()
@@ -45,7 +48,10 @@ export class MoviesService {
     async findMovies(queryDto: MovieQueryDto) {
         const { items, ...paginated } = await this.repository.findMovies(queryDto)
 
-        return { ...paginated, items: maps(items, MovieDto) } as PaginationResult<MovieDto>
+        return {
+            ...paginated,
+            items: items.map((item) => this.createMovieDto(item))
+        } as PaginationResult<MovieDto>
     }
 
     @MethodLog({ level: 'verbose' })
@@ -53,9 +59,15 @@ export class MoviesService {
         return this.repository.existsByIds(objectIds(movieIds))
     }
 
+    private createMovieDto(movie: HydratedDocument<Movie>) {
+        const images = movie.storageFileIds.map((id) => `${STORAGE_FILES_ROUTE}/${id.toString()}`)
+
+        return new MovieDto(movie.toJSON(), images)
+    }
+
     // @MethodLog({ level: 'verbose' })
     // async getMoviesByIds(movieIds: string[]) {
     //     const movies = await this.repository.getMoviesByIds(movieIds)
-    //     return maps(movies, MovieDto)
+    //     return toDtos(movies, MovieDto)
     // }
 }

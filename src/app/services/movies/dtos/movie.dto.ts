@@ -1,4 +1,3 @@
-import { STORAGE_FILES_ROUTE } from 'config'
 import { Movie, MovieGenre, MovieRating } from '../models'
 
 export class MovieDto {
@@ -12,29 +11,9 @@ export class MovieDto {
     rating: MovieRating
     images: string[]
 
-    constructor(movie: Movie) {
-        const {
-            id,
-            title,
-            genre,
-            releaseDate,
-            plot,
-            durationMinutes,
-            director,
-            rating,
-            storageFileIds
-        } = movie
+    constructor(movie: Movie, images: string[]) {
+        const { createdAt, updatedAt, __v, storageFileIds, ...rest } = movie
 
-        Object.assign(this, {
-            id: id.toString(),
-            title,
-            genre,
-            releaseDate,
-            plot,
-            durationMinutes,
-            director,
-            rating,
-            images: storageFileIds.map((id) => `${STORAGE_FILES_ROUTE}/${id.toString()}`)
-        })
+        Object.assign(this, { ...rest, images })
     }
 }

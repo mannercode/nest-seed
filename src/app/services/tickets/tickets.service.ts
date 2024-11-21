@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { Assert, maps, MethodLog, objectId, ObjectId } from 'common'
+import { Assert, MethodLog, objectId, ObjectId, toDtos } from 'common'
 import { TicketCreateDto, TicketDto } from './dtos'
 import { TicketFilterDto } from './dtos/ticket-filter.dto'
 import { TicketStatus } from './models'
@@ -35,13 +35,15 @@ export class TicketsService {
         )
 
         const tickets = await this.repository.findByIds(ticketIds)
-        return maps(tickets, TicketDto)
+
+        return toDtos(tickets, TicketDto)
     }
 
     @MethodLog({ level: 'verbose' })
     async findAllTickets(filterDto: TicketFilterDto) {
         const tickets = await this.repository.findAllTickets(filterDto)
-        return maps(tickets, TicketDto)
+
+        return toDtos(tickets, TicketDto)
     }
 
     @MethodLog({ level: 'verbose' })

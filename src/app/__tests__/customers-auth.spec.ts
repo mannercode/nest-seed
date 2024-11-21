@@ -3,27 +3,27 @@ import { nullObjectId } from 'common'
 import { AppConfigService } from 'config'
 import { HttpTestClient } from 'testlib'
 import {
-    closeIsolatedFixture,
-    createIsolatedFixture,
+    closeFixture,
+    createFixture,
     Credentials,
     IsolatedFixture
 } from './customers-auth.fixture'
 
 describe('Customer Authentication', () => {
-    let isolated: IsolatedFixture
+    let fixture: IsolatedFixture
     let client: HttpTestClient
     let credentials: Credentials
     let config: AppConfigService
 
     beforeEach(async () => {
-        isolated = await createIsolatedFixture()
-        client = isolated.testContext.client
-        config = isolated.config
-        credentials = isolated.credentials
+        fixture = await createFixture()
+        client = fixture.testContext.client
+        config = fixture.config
+        credentials = fixture.credentials
     })
 
     afterEach(async () => {
-        await closeIsolatedFixture(isolated)
+        await closeFixture(fixture)
     })
 
     describe('POST /login', () => {

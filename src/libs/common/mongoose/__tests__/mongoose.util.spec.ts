@@ -2,6 +2,7 @@ import { expect } from '@jest/globals'
 import { BadRequestException } from '@nestjs/common'
 import {
     addEqualQuery,
+    addIdQuery,
     addInQuery,
     addRangeQuery,
     addRegexQuery,
@@ -9,6 +10,7 @@ import {
     objectId,
     ObjectId,
     objectIds,
+    toDtos,
     validateFilters
 } from 'common'
 import { escapeRegExp } from 'lodash'
@@ -62,12 +64,35 @@ describe('MongooseRepository Utils', () => {
     })
 
     describe('addEqualQuery', () => {
+        it('should add equal query when value is provided', () => {
+            const query: any = {}
+            const field = 'movieId'
+            const value = '60d5ec49f8d2e30d8c8b4567'
+
+            addEqualQuery(query, field, value)
+
+            expect(query).toHaveProperty(field)
+            expect(query[field]).toEqual(value)
+        })
+
+        it('should not add query when value is not provided', () => {
+            const query: any = {}
+            const field = 'movieId'
+            const value = undefined
+
+            addEqualQuery(query, field, value)
+
+            expect(query).not.toHaveProperty(field)
+        })
+    })
+
+    describe('addIdQuery', () => {
         it('should add equal query when id is provided', () => {
             const query: any = {}
             const field = 'movieId'
             const id = '60d5ec49f8d2e30d8c8b4567'
 
-            addEqualQuery(query, field, id)
+            addIdQuery(query, field, id)
 
             expect(query).toHaveProperty(field)
             expect(query[field]).toEqual(objectId(id))
@@ -78,7 +103,7 @@ describe('MongooseRepository Utils', () => {
             const field = 'movieId'
             const id = undefined
 
-            addEqualQuery(query, field, id)
+            addIdQuery(query, field, id)
 
             expect(query).not.toHaveProperty(field)
         })

@@ -3,25 +3,25 @@ import { nullObjectId } from 'common'
 import { CustomerDto } from 'services/customers'
 import { expectEqualUnsorted, HttpTestClient } from 'testlib'
 import {
-    closeIsolatedFixture,
+    closeFixture,
     createCustomer,
+    createCustomerDto,
     createCustomers,
-    createIsolatedFixture,
-    IsolatedFixture,
-    createCustomerDto
+    createFixture,
+    Fixture
 } from './customers.fixture'
 
 describe('Customers Module', () => {
-    let isolated: IsolatedFixture
+    let fixture: Fixture
     let client: HttpTestClient
 
     beforeEach(async () => {
-        isolated = await createIsolatedFixture()
-        client = isolated.testContext.client
+        fixture = await createFixture()
+        client = fixture.testContext.client
     })
 
     afterEach(async () => {
-        await closeIsolatedFixture(isolated)
+        await closeFixture(fixture)
     })
 
     describe('POST /customers', () => {
@@ -67,7 +67,7 @@ describe('Customers Module', () => {
         let customer: CustomerDto
 
         beforeEach(async () => {
-            customer = await createCustomer(client)
+            customer = await createCustomer(fixture.customersService)
         })
 
         it('고객 정보를 업데이트해야 한다', async () => {
@@ -95,7 +95,7 @@ describe('Customers Module', () => {
         let customer: CustomerDto
 
         beforeEach(async () => {
-            customer = await createCustomer(client)
+            customer = await createCustomer(fixture.customersService)
         })
 
         it('고객을 삭제해야 한다', async () => {
@@ -120,7 +120,7 @@ describe('Customers Module', () => {
         let customer: CustomerDto
 
         beforeEach(async () => {
-            customer = await createCustomer(client)
+            customer = await createCustomer(fixture.customersService)
         })
 
         it('고객 정보를 가져와야 한다', async () => {
@@ -140,7 +140,7 @@ describe('Customers Module', () => {
         let customers: CustomerDto[]
 
         beforeEach(async () => {
-            customers = await createCustomers(client)
+            customers = await createCustomers(fixture.customersService)
         })
 
         it('기본 페이지네이션 설정으로 고객을 가져와야 한다', async () => {

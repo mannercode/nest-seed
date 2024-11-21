@@ -1,8 +1,8 @@
 import { AppConfigService } from 'config'
-import { omit } from 'lodash'
-import { createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
+import { CustomersService } from 'services/customers'
+import { createHttpTestContext, HttpTestContext } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
-
+import { createCustomer } from './customers.fixture'
 
 export interface IsolatedFixture {
     testContext: HttpTestContext
@@ -10,36 +10,17 @@ export interface IsolatedFixture {
     credentials: Credentials
 }
 
-export async function createIsolatedFixture() {
+export async function createFixture() {
     const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
-    const config = testContext.app.get(AppConfigService)
-    const credentials = await createCredentials(testContext.client)
+    const config = testContext.module.get(AppConfigService)
+    const customersService = testContext.module.get(CustomersService)
+    const credentials = await createCredentials(customersService)
 
     return { testContext, config, credentials }
 }
 
-export async function closeIsolatedFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
-}
-
-export const createCustomerDto = (overrides = {}) => {
-    const createDto = {
-        name: 'name',
-        email: 'name@mail.com',
-        birthdate: new Date('2020-12-12'),
-        password: 'password',
-        ...overrides
-    }
-
-    const expectedDto = { id: expect.anything(), ...omit(createDto, 'password') }
-
-    return { createDto, expectedDto }
-}
-
-export const createCustomer = async (client: HttpTestClient, override = {}) => {
-    const { createDto } = createCustomerDto(override)
-    const { body } = await client.post('/customers').body(createDto).created()
-    return body
 }
 
 export interface Credentials {
@@ -48,13 +29,13 @@ export interface Credentials {
     password: string
 }
 
-export async function createCredentials(client: HttpTestClient): Promise<Credentials> {
+export async function createCredentials(customersService: CustomersService): Promise<Credentials> {
     const createDto = {
         email: 'user@mail.com',
         password: 'password'
     }
 
-    const customer = await createCustomer(client, createDto)
+    const customer = await createCustomer(customersService, createDto)
 
     return {
         customerId: customer.id,

@@ -1,7 +1,7 @@
 import { ShowtimeDto, ShowtimesService } from 'services/showtimes'
 import {
-    closeIsolatedFixture,
-    createIsolatedFixture,
+    closeFixture,
+    createFixture,
     createShowtimes,
     createShowtimeDtos,
     IsolatedFixture
@@ -10,31 +10,36 @@ import { addMinutes, nullObjectId, objectId, pickIds, pickItems } from 'common'
 import { expectEqualUnsorted } from 'testlib'
 
 describe('Showtimes Module', () => {
-    let isolated: IsolatedFixture
+    let fixture: IsolatedFixture
     let service: ShowtimesService
 
     beforeEach(async () => {
-        isolated = await createIsolatedFixture()
-        service = isolated.service
+        fixture = await createFixture()
+        service = fixture.showtimesService
     })
 
     afterEach(async () => {
-        await closeIsolatedFixture(isolated)
+        await closeFixture(fixture)
     })
 
     it('createShowtimes', async () => {
         const { createDtos, expectedDtos } = createShowtimeDtos()
 
-        const showtimes = await createShowtimes(service, createDtos)
+        const { success } = await service.createShowtimes(createDtos)
+        expect(success).toBeTruthy()
+
+        const showtimes = await service.findAllShowtimes({
+            startTimeRange: { start: new Date(0), end: new Date('9999') }
+        })
+
         expect(showtimes).toEqual(expectedDtos)
     })
 
     describe('findAllShowtimes', () => {
-        let showtimes: ShowtimeDto[]
-
         beforeEach(async () => {
             const { createDtos } = createShowtimeDtos()
-            showtimes = await createShowtimes(service, createDtos)
+            const { success } = await service.createShowtimes(createDtos)
+            expect(success).toBeTruthy()
         })
 
         const findAllShowtimes = async (overrides = {}, findFilter = {}) => {

@@ -1,8 +1,8 @@
 import { generateShortId, sleep } from 'common'
 import { TicketHoldingService } from 'services/ticket-holding'
 import {
-    closeIsolatedFixture,
-    createIsolatedFixture,
+    closeFixture,
+    createFixture,
     IsolatedFixture
 } from './ticket-holding.fixture'
 
@@ -17,12 +17,12 @@ describe('TicketHolding Module', () => {
     const ttlMs = 60 * 1000
 
     beforeEach(async () => {
-        isolated = await createIsolatedFixture()
+        isolated = await createFixture()
         service = isolated.service
     })
 
     afterEach(async () => {
-        await closeIsolatedFixture(isolated)
+        await closeFixture(isolated)
     })
 
     describe('holdTickets', () => {

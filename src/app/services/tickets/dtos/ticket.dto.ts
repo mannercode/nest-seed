@@ -10,15 +10,18 @@ export class TicketDto {
     status: string
 
     constructor(ticket: Ticket) {
-        const { id, showtimeId, theaterId, movieId, seat, status } = ticket
+        // const { id, showtimeId, theaterId, movieId, seat, status } = ticket
 
-        Object.assign(this, {
-            id: id.toString(),
-            showtimeId: showtimeId.toString(),
-            theaterId: theaterId.toString(),
-            movieId: movieId.toString(),
-            seat,
-            status
-        })
+        // Object.assign(this, {
+        //     id: id.toString(),
+        //     showtimeId: showtimeId.toString(),
+        //     theaterId: theaterId.toString(),
+        //     movieId: movieId.toString(),
+        //     seat,
+        //     status
+        // })
+        const { createdAt, updatedAt, __v, batchId, ...rest } = ticket
+
+        Object.assign(this, rest)
     }
 }

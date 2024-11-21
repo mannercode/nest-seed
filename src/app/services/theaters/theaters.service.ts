@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { maps, MethodLog, objectId, objectIds, PaginationResult } from 'common'
+import { MethodLog, objectId, objectIds, toDto, toDtos } from 'common'
 import { TheaterCreateDto, TheaterDto, TheaterQueryDto, TheaterUpdateDto } from './dtos'
 import { TheatersRepository } from './theaters.repository'
 
@@ -10,19 +10,19 @@ export class TheatersService {
     @MethodLog()
     async createTheater(createDto: TheaterCreateDto) {
         const theater = await this.repository.createTheater(createDto)
-        return new TheaterDto(theater)
+        return new TheaterDto(theater.toJSON())
     }
 
     @MethodLog()
     async updateTheater(theaterId: string, updateDto: TheaterUpdateDto) {
         const theater = await this.repository.updateTheater(objectId(theaterId), updateDto)
-        return new TheaterDto(theater)
+        return toDto(theater, TheaterDto)
     }
 
     @MethodLog({ level: 'verbose' })
     async getTheater(theaterId: string) {
         const theater = await this.repository.getTheater(objectId(theaterId))
-        return new TheaterDto(theater)
+        return toDto(theater, TheaterDto)
     }
 
     @MethodLog()
@@ -35,13 +35,16 @@ export class TheatersService {
     async findTheaters(queryDto: TheaterQueryDto) {
         const { items, ...paginated } = await this.repository.findTheaters(queryDto)
 
-        return { ...paginated, items: maps(items, TheaterDto) } as PaginationResult<TheaterDto>
+        return {
+            ...paginated,
+            items: toDtos(items, TheaterDto)
+        }
     }
 
     @MethodLog({ level: 'verbose' })
     async getTheatersByIds(theaterIds: string[]) {
         const theaters = await this.repository.getTheatersByIds(objectIds(theaterIds))
-        return maps(theaters, TheaterDto)
+        return toDtos(theaters, TheaterDto)
     }
 
     @MethodLog({ level: 'verbose' })

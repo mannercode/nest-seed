@@ -9,14 +9,14 @@ export interface IsolatedFixture {
     service: TicketsService
 }
 
-export async function createIsolatedFixture() {
+export async function createFixture() {
     const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
     const service = testContext.module.get(TicketsService)
 
     return { testContext, service }
 }
 
-export async function closeIsolatedFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: IsolatedFixture) {
     await fixture.testContext.close()
 }
 

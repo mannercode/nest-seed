@@ -60,11 +60,11 @@ export class CustomersRepository extends MongooseRepository<Customer> {
             helpers.setQuery(query)
         }, pagination)
 
-        return paginated as PaginationResult<Customer>
+        return paginated
     }
 
     @MethodLog({ level: 'verbose' })
-    async findByEmail(email: string): Promise<Customer | null> {
+    async findByEmail(email: string) {
         return this.model.findOne({ email: { $eq: email } })
     }
 }

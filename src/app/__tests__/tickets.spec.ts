@@ -1,7 +1,7 @@
 import { TicketDto, TicketsService, TicketStatus } from 'services/tickets'
 import {
-    closeIsolatedFixture,
-    createIsolatedFixture,
+    closeFixture,
+    createFixture,
     createTicketDtos,
     createTickets,
     IsolatedFixture
@@ -14,12 +14,12 @@ describe('Tickets Module', () => {
     let service: TicketsService
 
     beforeEach(async () => {
-        isolated = await createIsolatedFixture()
+        isolated = await createFixture()
         service = isolated.service
     })
 
     afterEach(async () => {
-        await closeIsolatedFixture(isolated)
+        await closeFixture(isolated)
     })
 
     it('createTickets', async () => {

@@ -3,25 +3,25 @@ import { nullObjectId, pickIds } from 'common'
 import { TheaterDto } from 'services/theaters'
 import { expectEqualUnsorted, HttpTestClient } from 'testlib'
 import {
-    closeIsolatedFixture,
-    createIsolatedFixture,
+    closeFixture,
+    createFixture,
     createTheater,
+    createTheaterDto,
     createTheaters,
-    IsolatedFixture,
-    createTheaterDto
+    IsolatedFixture
 } from './theaters.fixture'
 
 describe('Theaters Module', () => {
-    let isolated: IsolatedFixture
+    let fixture: IsolatedFixture
     let client: HttpTestClient
 
     beforeEach(async () => {
-        isolated = await createIsolatedFixture()
-        client = isolated.testContext.client
+        fixture = await createFixture()
+        client = fixture.testContext.client
     })
 
     afterEach(async () => {
-        await closeIsolatedFixture(isolated)
+        await closeFixture(fixture)
     })
 
     describe('POST /theaters', () => {
@@ -52,7 +52,7 @@ describe('Theaters Module', () => {
         let theater: TheaterDto
 
         beforeEach(async () => {
-            theater = await createTheater(client)
+            theater = await createTheater(fixture.theatersService)
         })
 
         it('극장 정보를 업데이트해야 한다', async () => {
@@ -80,7 +80,7 @@ describe('Theaters Module', () => {
         let theater: TheaterDto
 
         beforeEach(async () => {
-            theater = await createTheater(client)
+            theater = await createTheater(fixture.theatersService)
         })
 
         it('극장을 삭제해야 한다', async () => {
@@ -105,7 +105,7 @@ describe('Theaters Module', () => {
         let theater: TheaterDto
 
         beforeEach(async () => {
-            theater = await createTheater(client)
+            theater = await createTheater(fixture.theatersService)
         })
 
         it('극장 정보를 가져와야 한다', async () => {
@@ -125,7 +125,7 @@ describe('Theaters Module', () => {
         let theaters: TheaterDto[]
 
         beforeEach(async () => {
-            theaters = await createTheaters(client)
+            theaters = await createTheaters(fixture.theatersService)
         })
 
         it('기본 페이지네이션 설정으로 극장을 가져와야 한다', async () => {
@@ -164,7 +164,7 @@ describe('Theaters Module', () => {
         let theaters: TheaterDto[]
 
         beforeEach(async () => {
-            theaters = await createTheaters(client)
+            theaters = await createTheaters(fixture.theatersService)
         })
 
         it('theaterIds로 극장을 검색할 수 있어야 한다', async () => {
