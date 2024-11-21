@@ -8,11 +8,11 @@ import {
     createTheater,
     createTheaterDto,
     createTheaters,
-    IsolatedFixture
+    Fixture
 } from './theaters.fixture'
 
 describe('Theaters Module', () => {
-    let fixture: IsolatedFixture
+    let fixture: Fixture
     let client: HttpTestClient
 
     beforeEach(async () => {

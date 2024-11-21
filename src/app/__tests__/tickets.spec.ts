@@ -1,25 +1,25 @@
+import { objectIds, pickIds } from 'common'
 import { TicketDto, TicketsService, TicketStatus } from 'services/tickets'
+import { expectEqualUnsorted } from 'testlib'
 import {
     closeFixture,
     createFixture,
     createTicketDtos,
     createTickets,
-    IsolatedFixture
+    Fixture
 } from './tickets.fixture'
-import { expectEqualUnsorted } from 'testlib'
-import { objectIds, pickIds } from 'common'
 
 describe('Tickets Module', () => {
-    let isolated: IsolatedFixture
+    let fixture: Fixture
     let service: TicketsService
 
     beforeEach(async () => {
-        isolated = await createFixture()
-        service = isolated.service
+        fixture = await createFixture()
+        service = fixture.ticketsService
     })
 
     afterEach(async () => {
-        await closeFixture(isolated)
+        await closeFixture(fixture)
     })
 
     it('createTickets', async () => {
@@ -30,11 +30,9 @@ describe('Tickets Module', () => {
     })
 
     describe('findAllTickets', () => {
-        let tickets: TicketDto[]
-
         beforeEach(async () => {
             const { createDtos } = createTicketDtos()
-            tickets = await createTickets(service, createDtos)
+            await createTickets(service, createDtos)
         })
 
         const findAllTickets = async (overrides = {}, findFilter = {}) => {

@@ -4,13 +4,13 @@ import {
     createFixture,
     createShowtimes,
     createShowtimeDtos,
-    IsolatedFixture
+    Fixture
 } from './showtimes.fixture'
 import { addMinutes, nullObjectId, objectId, pickIds, pickItems } from 'common'
 import { expectEqualUnsorted } from 'testlib'
 
 describe('Showtimes Module', () => {
-    let fixture: IsolatedFixture
+    let fixture: Fixture
     let service: ShowtimesService
 
     beforeEach(async () => {

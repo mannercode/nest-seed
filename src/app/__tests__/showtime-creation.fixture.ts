@@ -7,7 +7,7 @@ import { AppModule, configureApp } from '../app.module'
 import { createMovie } from './movies.fixture'
 import { createTheater } from './theaters.fixture'
 
-export interface IsolatedFixture {
+export interface Fixture {
     testContext: HttpTestContext
     showtimesService: ShowtimesService
     movie: MovieDto
@@ -25,7 +25,7 @@ export async function createFixture() {
     return { testContext, showtimesService, movie, theater }
 }
 
-export async function closeFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: Fixture) {
     await fixture.testContext.close()
 }
 

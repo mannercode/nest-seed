@@ -3,7 +3,7 @@ import { MovieDto, MovieGenre, MovieRating, MoviesService } from 'services/movie
 import { createHttpTestContext, HttpTestContext } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
 
-export interface IsolatedFixture {
+export interface Fixture {
     testContext: HttpTestContext
     moviesService: MoviesService
 }
@@ -15,7 +15,7 @@ export async function createFixture() {
     return { testContext, moviesService }
 }
 
-export async function closeFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: Fixture) {
     await fixture.testContext.close()
 }
 

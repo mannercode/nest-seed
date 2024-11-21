@@ -3,7 +3,7 @@ import { TheatersService } from 'services/theaters'
 import { HttpTestContext, createHttpTestContext } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
 
-export interface IsolatedFixture {
+export interface Fixture {
     testContext: HttpTestContext
     theatersService: TheatersService
 }
@@ -14,7 +14,7 @@ export async function createFixture() {
     return { testContext, theatersService }
 }
 
-export async function closeFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: Fixture) {
     await fixture.testContext.close()
 }
 

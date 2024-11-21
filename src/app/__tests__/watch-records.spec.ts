@@ -6,12 +6,12 @@ import {
     createFixture,
     createWatchRecordDto,
     createWatchRecords,
-    IsolatedFixture
+    Fixture
 } from './watch-records.fixture'
 import { OrderDirection } from 'common'
 
 describe('WatchRecords Module', () => {
-    let isolated: IsolatedFixture
+    let isolated: Fixture
     let service: WatchRecordsService
 
     beforeEach(async () => {

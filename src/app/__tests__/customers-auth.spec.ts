@@ -6,11 +6,11 @@ import {
     closeFixture,
     createFixture,
     Credentials,
-    IsolatedFixture
+    Fixture
 } from './customers-auth.fixture'
 
 describe('Customer Authentication', () => {
-    let fixture: IsolatedFixture
+    let fixture: Fixture
     let client: HttpTestClient
     let credentials: Credentials
     let config: AppConfigService

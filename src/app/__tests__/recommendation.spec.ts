@@ -5,11 +5,11 @@ import { HttpTestClient } from 'testlib'
 import {
     closeFixture,
     createFixture,
-    IsolatedFixture
+    Fixture
 } from './showtime-creation.fixture'
 
 describe.skip('Recommendation Module', () => {
-    let isolated: IsolatedFixture
+    let isolated: Fixture
     let client: HttpTestClient
     let showtimesService: ShowtimesService
     let movie: MovieDto

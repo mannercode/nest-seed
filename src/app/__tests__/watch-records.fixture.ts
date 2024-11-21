@@ -3,7 +3,7 @@ import { HttpTestContext, createHttpTestContext } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
 import { WatchRecordsService } from 'services/watch-records'
 
-export interface IsolatedFixture {
+export interface Fixture {
     testContext: HttpTestContext
     watchRecordsService: WatchRecordsService
 }
@@ -16,7 +16,7 @@ export async function createFixture() {
     return { testContext, watchRecordsService, customerId }
 }
 
-export async function closeFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: Fixture) {
     await fixture.testContext.close()
 }
 

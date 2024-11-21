@@ -2,18 +2,18 @@ import { TicketHoldingService } from 'services/ticket-holding'
 import { HttpTestContext, createHttpTestContext } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
 
-export interface IsolatedFixture {
+export interface Fixture {
     testContext: HttpTestContext
-    service: TicketHoldingService
+    ticketHoldingService: TicketHoldingService
 }
 
 export async function createFixture() {
     const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
-    const service = testContext.module.get(TicketHoldingService)
+    const ticketHoldingService = testContext.module.get(TicketHoldingService)
 
-    return { testContext, service }
+    return { testContext, ticketHoldingService }
 }
 
-export async function closeFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: Fixture) {
     await fixture.testContext.close()
 }

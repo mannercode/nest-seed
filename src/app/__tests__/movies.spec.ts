@@ -8,11 +8,11 @@ import {
     createMovie,
     createMovieDto,
     createMovies,
-    IsolatedFixture
+    Fixture
 } from './movies.fixture'
 
 describe('Movies Module', () => {
-    let isolated: IsolatedFixture
+    let isolated: Fixture
     let client: HttpTestClient
 
     beforeEach(async () => {

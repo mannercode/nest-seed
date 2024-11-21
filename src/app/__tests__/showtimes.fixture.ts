@@ -3,7 +3,7 @@ import { ShowtimeCreateDto, ShowtimeDto, ShowtimesService } from 'services/showt
 import { HttpTestContext, createHttpTestContext } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
 
-export interface IsolatedFixture {
+export interface Fixture {
     testContext: HttpTestContext
     showtimesService: ShowtimesService
 }
@@ -15,7 +15,7 @@ export async function createFixture() {
     return { testContext, showtimesService }
 }
 
-export async function closeFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: Fixture) {
     await fixture.testContext.close()
 }
 

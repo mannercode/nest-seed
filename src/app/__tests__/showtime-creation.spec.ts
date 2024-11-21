@@ -7,13 +7,13 @@ import {
     closeFixture,
     createFixture,
     createShowtimeDtos,
-    IsolatedFixture,
+    Fixture,
     monitorEvents
 } from './showtime-creation.fixture'
 import { createShowtimes } from './showtimes.fixture'
 
 describe('ShowtimeCreation Module', () => {
-    let fixture: IsolatedFixture
+    let fixture: Fixture
     let client: HttpTestClient
     let movie: MovieDto
     let theater: TheaterDto

@@ -16,10 +16,10 @@ export class MoviesService {
 
     @MethodLog()
     async createMovie(
-        storageFileCreateDtos: StorageFileCreateDto[],
+        fileCreateDtos: StorageFileCreateDto[],
         movieCreateDto: MovieCreateDto
     ) {
-        const storageFiles = await this.storageFilesService.saveFiles(storageFileCreateDtos)
+        const storageFiles = await this.storageFilesService.saveFiles(fileCreateDtos)
         const storageFileIds = storageFiles.map((file) => objectId(file.id))
 
         const movie = await this.repository.createMovie({ ...movieCreateDto, storageFileIds })

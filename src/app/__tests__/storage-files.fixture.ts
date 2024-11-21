@@ -4,6 +4,7 @@ import { AppConfigService } from 'config'
 import { writeFile } from 'fs/promises'
 import { createDummyFile, createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
+import { StorageFilesService } from 'services/storage-files'
 
 const maxFileSizeBytes = stringToBytes('50MB')
 
@@ -13,6 +14,7 @@ export interface SharedFixture {
     oversizedFile: string
     file: string
     largeFile: string
+    largeFileSize: number
 }
 
 export async function createSharedFixture() {
@@ -22,7 +24,8 @@ export async function createSharedFixture() {
     await createDummyFile(file, 1024)
 
     const largeFile = Path.join(tempDir, 'large.txt')
-    await createDummyFile(largeFile, maxFileSizeBytes - 1)
+    const largeFileSize = maxFileSizeBytes - 1
+    await createDummyFile(largeFile, largeFileSize)
 
     const notAllowFile = Path.join(tempDir, 'file.json')
     await writeFile(notAllowFile, '{"name":"nest-seed"}')
@@ -30,17 +33,18 @@ export async function createSharedFixture() {
     const oversizedFile = Path.join(tempDir, 'oversized.txt')
     await createDummyFile(oversizedFile, maxFileSizeBytes + 1)
 
-    return { tempDir, notAllowFile, oversizedFile, largeFile, file }
+    return { tempDir, notAllowFile, oversizedFile, largeFile, largeFileSize, file }
 }
 
 export async function closeSharedFixture(fixture: SharedFixture) {
     await Path.delete(fixture.tempDir)
 }
 
-export interface IsolatedFixture {
+export interface Fixture {
     testContext: HttpTestContext
     config: AppConfigService
     tempDir: string
+    storageFilesService: StorageFilesService
 }
 
 export async function createFixture() {
@@ -73,19 +77,25 @@ export async function createFixture() {
         configureApp
     )
 
-    const config = testContext.app.get(AppConfigService)
-
-    return { testContext, config, tempDir }
+    const config = testContext.module.get(AppConfigService)
+    const storageFilesService = testContext.module.get(StorageFilesService)
+    return { testContext, config, tempDir, storageFilesService }
 }
 
-export async function closeFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: Fixture) {
     await fixture.testContext.close()
     await Path.delete(fixture.tempDir)
 }
 
-export function uploadFile(client: HttpTestClient, attachs: any[], fields?: any[]) {
-    return client
-        .post('/storage-files')
-        .attachs(attachs)
-        .fields(fields ?? [{ name: 'name', value: 'test' }])
+export async function saveFile(service: StorageFilesService, fixture: SharedFixture) {
+    const files = await service.saveFiles([
+        {
+            originalname: 'large.txt',
+            mimetype: 'text/plain',
+            size: fixture.largeFileSize,
+            path: fixture.largeFile
+        }
+    ])
+
+    return files[0]
 }

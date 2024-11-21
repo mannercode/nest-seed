@@ -14,6 +14,7 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { MovieCreateDto, MovieQueryDto, MoviesService, MovieUpdateDto } from 'services/movies'
 import { DefaultPaginationPipe } from './pipes'
+import { pick } from 'lodash'
 
 @Controller('movies')
 export class MoviesController {
@@ -25,14 +26,11 @@ export class MoviesController {
         @UploadedFiles() files: Express.Multer.File[],
         @Body() movieCreateDto: MovieCreateDto
     ) {
-        const storageFileCreateDtos = files.map((file) => ({
-            originalname: file.originalname,
-            mimetype: file.mimetype,
-            size: file.size,
-            uploadedFilePath: file.path
-        }))
+        const fileCreateDtos = files.map((file) =>
+            pick(file, 'originalname', 'mimetype', 'size', 'path')
+        )
 
-        return this.service.createMovie(storageFileCreateDtos, movieCreateDto)
+        return this.service.createMovie(fileCreateDtos, movieCreateDto)
     }
 
     @Patch(':movieId')

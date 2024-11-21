@@ -4,7 +4,7 @@ import { createHttpTestContext, HttpTestContext } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
 import { createCustomer } from './customers.fixture'
 
-export interface IsolatedFixture {
+export interface Fixture {
     testContext: HttpTestContext
     config: AppConfigService
     credentials: Credentials
@@ -19,7 +19,7 @@ export async function createFixture() {
     return { testContext, config, credentials }
 }
 
-export async function closeFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: Fixture) {
     await fixture.testContext.close()
 }
 

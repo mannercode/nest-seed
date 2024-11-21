@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common'
 import { getChecksum, MethodLog, objectId, ObjectId, Path, toDto } from 'common'
 import { AppConfigService } from 'config'
+import { HydratedDocument } from 'mongoose'
 import { StorageFileCreateDto, StorageFileDto } from './dtos'
 import { StorageFile } from './models'
 import { StorageFilesRepository } from './storage-files.repository'
-import { HydratedDocument } from 'mongoose'
 
 @Injectable()
 export class StorageFilesService {
@@ -19,13 +19,13 @@ export class StorageFilesService {
             const storageFiles: HydratedDocument<StorageFile>[] = []
 
             for (const createDto of createDtos) {
-                const checksum = await getChecksum(createDto.uploadedFilePath)
+                const checksum = await getChecksum(createDto.path)
                 const storageFile = await this.repository.createStorageFile(
                     { ...createDto, checksum },
                     session
                 )
                 // move가 아니라 copy하기 때문에 성능 영향이 있다
-                await Path.copy(createDto.uploadedFilePath, this.getStoragePath(storageFile.id))
+                await Path.copy(createDto.path, this.getStoragePath(storageFile.id))
 
                 storageFiles.push(storageFile)
             }
