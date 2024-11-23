@@ -70,7 +70,7 @@ describe('Theaters Module', () => {
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.patch(`/theaters/${nullObjectId}`).body({}).notFound({
                 error: 'Not Found',
-                message: 'Theater with ID 000000000000000000000000 not found',
+                message: `Theater with ID ${nullObjectId} not found`,
                 statusCode: 404
             })
         })
@@ -95,7 +95,7 @@ describe('Theaters Module', () => {
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.delete(`/theaters/${nullObjectId}`).notFound({
                 error: 'Not Found',
-                message: 'Theater with ID 000000000000000000000000 not found',
+                message: `Theater with ID ${nullObjectId} not found`,
                 statusCode: 404
             })
         })
@@ -115,7 +115,7 @@ describe('Theaters Module', () => {
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.get(`/theaters/${nullObjectId}`).notFound({
                 error: 'Not Found',
-                message: 'Theater with ID 000000000000000000000000 not found',
+                message: `Theater with ID ${nullObjectId} not found`,
                 statusCode: 404
             })
         })

@@ -125,7 +125,7 @@ describe('ShowtimeCreation Module', () => {
             await expect(monitorPromise).resolves.toEqual({
                 batchId,
                 status: 'error',
-                message: 'Movie with ID 000000000000000000000000 not found'
+                message: `Movie with ID ${nullObjectId} not found`
             })
         })
 
@@ -144,7 +144,7 @@ describe('ShowtimeCreation Module', () => {
             await expect(monitorPromise).resolves.toEqual({
                 batchId,
                 status: 'error',
-                message: 'Some of the theater IDs [000000000000000000000000] do not exist'
+                message: `Some of the theater IDs [${nullObjectId}] do not exist`
             })
         })
     })

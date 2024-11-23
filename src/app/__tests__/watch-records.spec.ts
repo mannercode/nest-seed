@@ -1,6 +1,7 @@
 import { expect } from '@jest/globals'
+import { OrderDirection } from 'common'
 import { WatchRecordDto, WatchRecordsService } from 'services/watch-records'
-import { expectEqualUnsorted } from 'testlib'
+import { expectEqualUnsorted, testObjectId } from 'testlib'
 import {
     closeFixture,
     createFixture,
@@ -8,7 +9,6 @@ import {
     createWatchRecords,
     Fixture
 } from './watch-records.fixture'
-import { OrderDirection } from 'common'
 
 describe('WatchRecords Module', () => {
     let isolated: Fixture
@@ -25,12 +25,7 @@ describe('WatchRecords Module', () => {
 
     describe('createWatchRecords', () => {
         it('관람 기록을 생성해야 한다', async () => {
-            const { createDto, expectedDto } = createWatchRecordDto({
-                customerId: '000000000000000000000001',
-                movieId: '000000000000000000000002',
-                purchaseId: '000000000000000000000003',
-                watchDate: new Date('2020-12-12T09:30')
-            })
+            const { createDto, expectedDto } = createWatchRecordDto()
 
             const watchRecord = await service.createWatchRecord(createDto)
             expect(watchRecord).toEqual(expectedDto)
@@ -39,13 +34,13 @@ describe('WatchRecords Module', () => {
 
     describe('findWatchRecords', () => {
         let records: WatchRecordDto[]
+        const customerId = testObjectId('A1')
 
         beforeEach(async () => {
-            records = await createWatchRecords(service)
+            records = await createWatchRecords(service, { customerId })
         })
 
         it('기본 페이지네이션 설정으로 관람 기록을 가져와야 한다', async () => {
-            const customerId = records[0].customerId
             const { items, ...paginated } = await service.findWatchRecords({
                 customerId,
                 orderby: { name: 'watchDate', direction: OrderDirection.desc }

@@ -84,7 +84,7 @@ describe('Customers Module', () => {
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.patch(`/customers/${nullObjectId}`).body({}).notFound({
                 error: 'Not Found',
-                message: 'Customer with ID 000000000000000000000000 not found',
+                message: `Customer with ID ${nullObjectId} not found`,
                 statusCode: 404
             })
         })

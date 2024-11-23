@@ -95,7 +95,7 @@ describe('Movies Module', () => {
         it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.patch(`/movies/${nullObjectId}`).body({}).notFound({
                 error: 'Not Found',
-                message: 'Movie with ID 000000000000000000000000 not found',
+                message: `Movie with ID ${nullObjectId} not found`,
                 statusCode: 404
             })
         })
@@ -120,7 +120,7 @@ describe('Movies Module', () => {
         it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.delete(`/movies/${nullObjectId}`).notFound({
                 error: 'Not Found',
-                message: 'Movie with ID 000000000000000000000000 not found',
+                message: `Movie with ID ${nullObjectId} not found`,
                 statusCode: 404
             })
         })
@@ -140,7 +140,7 @@ describe('Movies Module', () => {
         it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.get(`/movies/${nullObjectId}`).notFound({
                 error: 'Not Found',
-                message: 'Movie with ID 000000000000000000000000 not found',
+                message: `Movie with ID ${nullObjectId} not found`,
                 statusCode: 404
             })
         })

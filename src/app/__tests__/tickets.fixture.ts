@@ -1,8 +1,7 @@
 import { omit } from 'lodash'
 import { TicketCreateDto, TicketDto, TicketsService, TicketStatus } from 'services/tickets'
-import { createHttpTestContext, HttpTestContext } from 'testlib'
+import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
-
 
 export interface Fixture {
     testContext: HttpTestContext
@@ -26,10 +25,10 @@ export const createTicketDtos = (overrides = {}, length: number = 100) => {
 
     for (let i = 0; i < length; i++) {
         const createDto = {
-            batchId: '100000000000000000000000',
-            movieId: '200000000000000000000000',
-            theaterId: '300000000000000000000000',
-            showtimeId: '400000000000000000000000',
+            batchId: nullObjectId,
+            movieId: nullObjectId,
+            theaterId: nullObjectId,
+            showtimeId: nullObjectId,
             status: TicketStatus.open,
             seat: { block: '1b', row: '1r', seatnum: 1 },
             ...overrides

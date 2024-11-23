@@ -1,6 +1,6 @@
 import { objectIds, pickIds } from 'common'
 import { TicketDto, TicketsService, TicketStatus } from 'services/tickets'
-import { expectEqualUnsorted } from 'testlib'
+import { expectEqualUnsorted, testObjectId } from 'testlib'
 import {
     closeFixture,
     createFixture,
@@ -35,7 +35,7 @@ describe('Tickets Module', () => {
             await createTickets(service, createDtos)
         })
 
-        const findAllTickets = async (overrides = {}, findFilter = {}) => {
+        const createAndFindTickets = async (overrides = {}, findFilter = {}) => {
             const { createDtos, expectedDtos } = createTicketDtos(overrides)
             await service.createTickets(createDtos)
 
@@ -44,27 +44,27 @@ describe('Tickets Module', () => {
         }
 
         it('batchIds', async () => {
-            const batchId = '100000000000000000000001'
-            await findAllTickets({ batchId }, { batchIds: [batchId] })
+            const batchId = testObjectId('a1')
+            await createAndFindTickets({ batchId }, { batchIds: [batchId] })
         })
 
         it('movieIds', async () => {
-            const movieId = '100000000000000000000002'
-            await findAllTickets({ movieId }, { movieIds: [movieId] })
+            const movieId = testObjectId('a1')
+            await createAndFindTickets({ movieId }, { movieIds: [movieId] })
         })
 
         it('theaterIds', async () => {
-            const theaterId = '100000000000000000000003'
-            await findAllTickets({ theaterId }, { theaterIds: [theaterId] })
+            const theaterId = testObjectId('a1')
+            await createAndFindTickets({ theaterId }, { theaterIds: [theaterId] })
         })
 
         it('showtimeIds', async () => {
-            const showtimeId = '100000000000000000000004'
-            await findAllTickets({ showtimeId }, { showtimeIds: [showtimeId] })
+            const showtimeId = testObjectId('a1')
+            await createAndFindTickets({ showtimeId }, { showtimeIds: [showtimeId] })
         })
 
         it('1개 이상의 필터를 설정하지 않으면 BAD_REQUEST(400)를 반환해야 한다', async () => {
-            const promise = findAllTickets({})
+            const promise = createAndFindTickets({})
             await expect(promise).rejects.toThrow('At least one filter condition must be provided.')
         })
     })
@@ -84,7 +84,7 @@ describe('Tickets Module', () => {
     })
 
     it('getSalesStatuses', async () => {
-        const showtimeId = '400000000000000000000001'
+        const showtimeId = testObjectId('a1')
         const ticketCount = 50
         const soldCount = 5
 

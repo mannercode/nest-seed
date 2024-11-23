@@ -118,7 +118,7 @@ describe('StorageFiles Module', () => {
         it('파일이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.get(`/storage-files/${nullObjectId}`).notFound({
                 error: 'Not Found',
-                message: 'StorageFile with ID 000000000000000000000000 not found',
+                message: `StorageFile with ID ${nullObjectId} not found`,
                 statusCode: 404
             })
         })
@@ -149,7 +149,7 @@ describe('StorageFiles Module', () => {
         it('파일이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.delete(`/storage-files/${nullObjectId}`).notFound({
                 error: 'Not Found',
-                message: 'StorageFile with ID 000000000000000000000000 not found',
+                message: `StorageFile with ID ${nullObjectId} not found`,
                 statusCode: 404
             })
         })

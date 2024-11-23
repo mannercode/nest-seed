@@ -99,7 +99,7 @@ describe('Showtimes Module', () => {
         it('상영시간이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             const promise = service.getShowtime(nullObjectId)
             await expect(promise).rejects.toThrow(
-                'Showtime with ID 000000000000000000000000 not found'
+                `Showtime with ID ${nullObjectId} not found`
             )
         })
     })
@@ -153,8 +153,8 @@ describe('Showtimes Module', () => {
     })
 
     it('findShowdates', async () => {
-        const movieId = testObjectId('A1')
-        const theaterId = testObjectId('B1')
+        const movieId = testObjectId('a1')
+        const theaterId = testObjectId('b1')
         const createDtos = [
             createShowtimeDto({
                 movieId,

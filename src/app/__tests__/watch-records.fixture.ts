@@ -1,6 +1,6 @@
 import { addDays } from 'common'
 import { WatchRecordsService } from 'services/watch-records'
-import { HttpTestContext, createHttpTestContext } from 'testlib'
+import { HttpTestContext, createHttpTestContext, nullObjectId, testObjectId } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
 
 export interface Fixture {
@@ -11,9 +11,8 @@ export interface Fixture {
 export async function createFixture() {
     const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
     const watchRecordsService = testContext.module.get(WatchRecordsService)
-    const customerId = 'customerId#1'
 
-    return { testContext, watchRecordsService, customerId }
+    return { testContext, watchRecordsService }
 }
 
 export async function closeFixture(fixture: Fixture) {
@@ -22,10 +21,10 @@ export async function closeFixture(fixture: Fixture) {
 
 export const createWatchRecordDto = (overrides = {}) => {
     const createDto = {
-        customerId: '000000000000000000000001',
-        movieId: '000000000000000000000002',
-        purchaseId: '000000000000000000000003',
-        watchDate: new Date('2020-12-12T09:30'),
+        customerId: nullObjectId,
+        movieId: nullObjectId,
+        purchaseId: nullObjectId,
+        watchDate: new Date(0),
         ...overrides
     }
 
@@ -42,14 +41,12 @@ export const createWatchRecord = async (service: WatchRecordsService, override =
 }
 
 export const createWatchRecords = async (service: WatchRecordsService, overrides = {}) => {
-    const baseDate = new Date('2020-12-12T09:30')
+    const baseDate = new Date(0)
 
     return Promise.all(
         Array.from({ length: 10 }, async (_, index) =>
             createWatchRecord(service, {
-                customerId: '000000000000000000000001',
-                purchaseId: '000000000000000000000003',
-                movieId: `00000000000000000000000${index}`,
+                movieId: testObjectId(`${index}`),
                 watchDate: addDays(baseDate, index),
                 ...overrides
             })
