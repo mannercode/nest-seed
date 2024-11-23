@@ -7,6 +7,7 @@ import { existsSync } from 'fs'
 import { exit } from 'process'
 import { CustomersModule } from 'services/customers'
 import { MoviesModule } from 'services/movies'
+import { RecommendationModule } from 'services/recommendation'
 import { ShowtimeCreationModule } from 'services/showtime-creation'
 import { ShowtimesModule } from 'services/showtimes'
 import { StorageFilesModule } from 'services/storage-files'
@@ -37,7 +38,8 @@ import { HealthModule } from './health.module'
         ShowtimeCreationModule,
         TicketHoldingModule,
         HealthModule,
-        WatchRecordsModule
+        WatchRecordsModule,
+        RecommendationModule
     ],
     providers: [CustomerLocalStrategy, CustomerJwtStrategy],
     controllers: [

@@ -7,18 +7,26 @@ import {
     Patch,
     Post,
     Query,
+    Req,
     UploadedFiles,
+    UseGuards,
     UseInterceptors,
     UsePipes
 } from '@nestjs/common'
 import { FilesInterceptor } from '@nestjs/platform-express'
-import { MovieCreateDto, MovieQueryDto, MoviesService, MovieUpdateDto } from 'services/movies'
-import { DefaultPaginationPipe } from './pipes'
+import { AuthTokenPayload } from 'common'
 import { pick } from 'lodash'
+import { MovieCreateDto, MovieQueryDto, MoviesService, MovieUpdateDto } from 'services/movies'
+import { RecommendationService } from 'services/recommendation'
+import { CustomerOptionalJwtAuthGuard } from './guards'
+import { DefaultPaginationPipe } from './pipes'
 
 @Controller('movies')
 export class MoviesController {
-    constructor(private service: MoviesService) {}
+    constructor(
+        private service: MoviesService,
+        private recommendationService: RecommendationService
+    ) {}
 
     @UseInterceptors(FilesInterceptor('files'))
     @Post()
@@ -36,6 +44,13 @@ export class MoviesController {
     @Patch(':movieId')
     async updateMovie(@Param('movieId') movieId: string, @Body() updateDto: MovieUpdateDto) {
         return this.service.updateMovie(movieId, updateDto)
+    }
+
+    @UseGuards(CustomerOptionalJwtAuthGuard)
+    @Get('recommended')
+    async findRecommendedMovies(@Req() req: { user: AuthTokenPayload }) {
+        const customerId = req.user.userId
+        return this.recommendationService.findRecommendedMovies(customerId)
     }
 
     @Get(':movieId')

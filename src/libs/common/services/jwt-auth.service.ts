@@ -1,6 +1,6 @@
 import { DynamicModule, Inject, Injectable, Module, UnauthorizedException } from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
-import { generateShortId, generateUUID, notUsed, stringToMillisecs } from '../utils'
+import { generateShortId, notUsed, stringToMillisecs } from '../utils'
 import { CacheModule, CacheModuleOptions, CacheService } from './cache.service'
 
 export interface AuthTokenPayload {

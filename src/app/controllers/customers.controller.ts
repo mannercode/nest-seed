@@ -13,7 +13,7 @@ import {
     UseGuards,
     UsePipes
 } from '@nestjs/common'
-import { Assert } from 'common'
+import { Assert, AuthTokenPayload } from 'common'
 import {
     CustomerCreateDto,
     CustomerDto,
@@ -62,10 +62,10 @@ export class CustomersController {
     @UseGuards(CustomerLocalAuthGuard)
     @HttpCode(HttpStatus.OK)
     @Post('login')
-    async login(@Req() req: { user: CustomerDto }) {
+    async login(@Req() req: { user: AuthTokenPayload }) {
         Assert.defined(req.user, 'req.user must be returned in LocalStrategy.validate')
 
-        return this.service.login(req.user.id, req.user.email)
+        return this.service.login(req.user.userId, req.user.email)
     }
 
     @Public()

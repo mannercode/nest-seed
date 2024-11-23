@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { JwtAuthService, MethodLog, objectId, objectIds, Password, toDto, toDtos } from 'common'
+import { JwtAuthService, MethodLog, objectId, Password, toDto, toDtos } from 'common'
 import { CustomersRepository } from './customers.repository'
 import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
 
@@ -45,10 +45,10 @@ export class CustomersService {
         return { ...paginated, items: toDtos(items, CustomerDto) }
     }
 
-    @MethodLog()
-    async customersExist(customerIds: string[]) {
-        return this.repository.existsByIds(objectIds(customerIds))
-    }
+    // @MethodLog()
+    // async customersExist(customerIds: string[]) {
+    //     return this.repository.existsByIds(objectIds(customerIds))
+    // }
 
     @MethodLog()
     async login(userId: string, email: string) {
