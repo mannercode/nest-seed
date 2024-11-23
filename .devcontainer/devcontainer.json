@@ -21,7 +21,7 @@
     ],
     "initializeCommand": "docker network create ${containerWorkspaceFolderBasename} >/dev/null 2>&1 || true",
     "onCreateCommand": "docker tag $(docker images -q vsc-${containerWorkspaceFolderBasename}-*) vscode-${containerWorkspaceFolderBasename} && docker rmi $(docker images --filter=reference=vsc-${containerWorkspaceFolderBasename}-* --format {{.Repository}})",
-    "postCreateCommand": "npm ci",
+    "postCreateCommand": "npm run infra && npm ci",
     "customizations": {
         "vscode": {
             "extensions": [

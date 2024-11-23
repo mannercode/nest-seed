@@ -1,7 +1,7 @@
-import { addDays, nullObjectId, padNumber } from 'common'
+import { addDays } from 'common'
+import { WatchRecordsService } from 'services/watch-records'
 import { HttpTestContext, createHttpTestContext } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
-import { WatchRecordsService } from 'services/watch-records'
 
 export interface Fixture {
     testContext: HttpTestContext
@@ -37,7 +37,7 @@ export const createWatchRecordDto = (overrides = {}) => {
 export const createWatchRecord = async (service: WatchRecordsService, override = {}) => {
     const { createDto } = createWatchRecordDto(override)
 
-    const watchRecord = await service.createWatchRecords(createDto)
+    const watchRecord = await service.createWatchRecord(createDto)
     return watchRecord
 }
 

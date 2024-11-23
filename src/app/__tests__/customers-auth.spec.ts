@@ -1,13 +1,7 @@
 import { JwtService } from '@nestjs/jwt'
-import { nullObjectId } from 'common'
 import { AppConfigService } from 'config'
-import { HttpTestClient } from 'testlib'
-import {
-    closeFixture,
-    createFixture,
-    Credentials,
-    Fixture
-} from './customers-auth.fixture'
+import { HttpTestClient, nullObjectId } from 'testlib'
+import { closeFixture, createFixture, Credentials, Fixture } from './customers-auth.fixture'
 
 describe('Customer Authentication', () => {
     let fixture: Fixture

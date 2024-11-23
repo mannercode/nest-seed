@@ -1,5 +1,12 @@
+import { ObjectId } from 'common'
 import * as fs from 'fs/promises'
 import * as net from 'net'
+
+export const toObjectId = (value: number) => new ObjectId(value).toString()
+
+export const nullUUID = '00000000000000000000000000000000'
+export const nullObjectId = '000000000000000000000000'
+export const testObjectId = (hex: string) => hex.padStart(24, '0')
 
 export async function createDummyFile(filePath: string, sizeInBytes: number) {
     const file = await fs.open(filePath, 'w')

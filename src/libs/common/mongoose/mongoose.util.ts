@@ -24,7 +24,7 @@ export function toDtos<S, T>(
 }
 
 export const addEqualQuery = (query: any, field: string, value?: any) => {
-    if (value) {
+    if (value !== undefined && value !== null) {
         query[field] = value
     }
 }

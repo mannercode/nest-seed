@@ -32,7 +32,7 @@ describe('WatchRecords Module', () => {
                 watchDate: new Date('2020-12-12T09:30')
             })
 
-            const watchRecord = await service.createWatchRecords(createDto)
+            const watchRecord = await service.createWatchRecord(createDto)
             expect(watchRecord).toEqual(expectedDto)
         })
     })

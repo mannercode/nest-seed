@@ -8,15 +8,15 @@ export class WatchRecordsService {
     constructor(private repository: WatchRecordsRepository) {}
 
     @MethodLog()
-    async createWatchRecords(createDto: WatchRecordCreateDto) {
-        const payloads = {
+    async createWatchRecord(createDto: WatchRecordCreateDto) {
+        const payload = {
             ...createDto,
             customerId: objectId(createDto.customerId),
             movieId: objectId(createDto.movieId),
             purchaseId: objectId(createDto.purchaseId)
         }
 
-        const watchRecord = await this.repository.createWatchRecords(payloads)
+        const watchRecord = await this.repository.createWatchRecord(payload)
 
         return toDto(watchRecord, WatchRecordDto)
     }

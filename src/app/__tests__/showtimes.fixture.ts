@@ -1,6 +1,6 @@
 import { omit } from 'lodash'
 import { ShowtimeCreateDto, ShowtimeDto, ShowtimesService } from 'services/showtimes'
-import { HttpTestContext, createHttpTestContext } from 'testlib'
+import { HttpTestContext, createHttpTestContext, nullObjectId } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
 
 export interface Fixture {
@@ -19,19 +19,25 @@ export async function closeFixture(fixture: Fixture) {
     await fixture.testContext.close()
 }
 
+export const createShowtimeDto = (overrides = {}) => ({
+    batchId: nullObjectId,
+    movieId: nullObjectId,
+    theaterId: nullObjectId,
+    startTime: new Date('2000-01-01T12:00'),
+    endTime: new Date('2000-01-01T13:30'),
+    ...overrides
+})
+
 export const createShowtimeDtos = (overrides = {}, length: number = 100) => {
     const createDtos: ShowtimeCreateDto[] = []
     const expectedDtos: ShowtimeDto[] = []
 
     for (let i = 0; i < length; i++) {
-        const createDto = {
-            batchId: '000000000000000000000001',
-            movieId: '000000000000000000000002',
-            theaterId: '000000000000000000000003',
+        const createDto = createShowtimeDto({
             startTime: new Date(2000, 0, 1, i, 0),
             endTime: new Date(2000, 0, 1, i, 90),
             ...overrides
-        }
+        })
 
         const expectedDto = { id: expect.anything(), ...omit(createDto, 'batchId') }
 

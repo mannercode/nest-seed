@@ -1,7 +1,6 @@
 import { expect } from '@jest/globals'
-import { nullObjectId } from 'common'
 import { MovieDto, MovieGenre, MovieRating } from 'services/movies'
-import { expectEqualUnsorted, HttpTestClient, objectToFields } from 'testlib'
+import { expectEqualUnsorted, HttpTestClient, nullObjectId, objectToFields } from 'testlib'
 import {
     closeFixture,
     createFixture,

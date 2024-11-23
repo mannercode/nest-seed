@@ -18,9 +18,6 @@ export function generateShortId() {
     return nanoid(8)
 }
 
-export const nullUUID = '00000000000000000000000000000000'
-export const nullObjectId = '000000000000000000000000'
-
 /**
  * Functions that wrap numeric values in quotes
  * When a 64-bit integer comes in json, you can't get the exact value because it is treated as a number, not a BigInt.

@@ -1,8 +1,7 @@
-import { nullObjectId } from 'common'
 import { MovieDto } from 'services/movies'
 import { ShowtimeDto } from 'services/showtimes'
 import { getSeatCount, TheaterDto } from 'services/theaters'
-import { expectEqualUnsorted, HttpTestClient } from 'testlib'
+import { expectEqualUnsorted, HttpTestClient, nullObjectId } from 'testlib'
 import {
     closeFixture,
     createFixture,

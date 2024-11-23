@@ -12,7 +12,7 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
     }
 
     @MethodLog()
-    async createWatchRecords(payload: WatchRecordCreatePayload) {
+    async createWatchRecord(payload: WatchRecordCreatePayload) {
         const watchRecord = this.newDocument()
         Object.assign(watchRecord, payload)
 
