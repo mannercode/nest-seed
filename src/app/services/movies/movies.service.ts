@@ -31,13 +31,13 @@ export class MoviesService {
 
     @MethodLog({ level: 'verbose' })
     async getMovie(movieId: string) {
-        const movie = await this.repository.getMovie(objectId(movieId))
+        const movie = await this.repository.getById(objectId(movieId))
         return this.createMovieDto(movie)
     }
 
     @MethodLog()
     async deleteMovie(movieId: string) {
-        await this.repository.deleteMovie(objectId(movieId))
+        await this.repository.deleteById(objectId(movieId))
         return true
     }
 

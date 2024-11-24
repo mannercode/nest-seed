@@ -30,21 +30,6 @@ export class TheatersRepository extends MongooseRepository<Theater> {
         return theater.save()
     }
 
-    // @MethodLog()
-    // async deleteTheater(theaterId: ObjectId) {
-    //     const theater = await this.getTheater(theaterId)
-    //     await theater.deleteOne()
-    // }
-
-    // @MethodLog({ level: 'verbose' })
-    // async getTheater(theaterId: ObjectId) {
-    //     const theater = await this.findById(theaterId)
-
-    //     if (!theater) throw new NotFoundException(`Theater with ID ${theaterId} not found`)
-
-    //     return theater
-    // }
-
     @MethodLog({ level: 'verbose' })
     async findTheaters(queryDto: TheaterQueryDto) {
         const { name, ...pagination } = queryDto

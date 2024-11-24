@@ -24,28 +24,13 @@ export class CustomersRepository extends MongooseRepository<Customer> {
 
     @MethodLog()
     async updateCustomer(customerId: ObjectId, payload: CustomerUpdatePayload) {
-        const customer = await this.getCustomer(customerId)
+        const customer = await this.getById(customerId)
 
         if (payload.name) customer.name = payload.name
         if (payload.email) customer.email = payload.email
         if (payload.birthdate) customer.birthdate = payload.birthdate
 
         return customer.save()
-    }
-
-    @MethodLog()
-    async deleteCustomer(customerId: ObjectId) {
-        const customer = await this.getCustomer(customerId)
-        await customer.deleteOne()
-    }
-
-    @MethodLog({ level: 'verbose' })
-    async getCustomer(customerId: ObjectId) {
-        const customer = await this.findById(customerId)
-
-        if (!customer) throw new NotFoundException(`Customer with ID ${customerId} not found`)
-
-        return customer
     }
 
     @MethodLog({ level: 'verbose' })

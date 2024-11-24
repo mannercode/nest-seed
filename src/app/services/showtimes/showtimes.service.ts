@@ -23,7 +23,7 @@ export class ShowtimesService {
 
     @MethodLog({ level: 'verbose' })
     async getShowtime(showtimeId: string) {
-        const showtime = await this.repository.getShowtime(objectId(showtimeId))
+        const showtime = await this.repository.getById(objectId(showtimeId))
 
         return toDto(showtime, ShowtimeDto)
     }

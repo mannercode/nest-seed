@@ -1,12 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import {
-    addEqualQuery,
-    addRegexQuery,
-    MethodLog,
-    MongooseRepository,
-    ObjectId
-} from 'common'
+import { addEqualQuery, addRegexQuery, MethodLog, MongooseRepository, ObjectId } from 'common'
 import { FilterQuery, Model } from 'mongoose'
 import { MovieQueryDto } from './dtos'
 import { Movie, MovieCreatePayload, MovieUpdatePayload } from './models'
@@ -27,7 +21,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
 
     @MethodLog()
     async updateMovie(movieId: ObjectId, payload: MovieUpdatePayload) {
-        const movie = await this.getMovie(movieId)
+        const movie = await this.getById(movieId)
 
         if (payload.title) movie.title = payload.title
         if (payload.genre) movie.genre = payload.genre
@@ -38,21 +32,6 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         if (payload.rating) movie.rating = payload.rating
 
         return movie.save()
-    }
-
-    @MethodLog()
-    async deleteMovie(movieId: ObjectId) {
-        const movie = await this.getMovie(movieId)
-        await movie.deleteOne()
-    }
-
-    @MethodLog({ level: 'verbose' })
-    async getMovie(movieId: ObjectId) {
-        const movie = await this.findById(movieId)
-
-        if (!movie) throw new NotFoundException(`Movie with ID ${movieId} not found`)
-
-        return movie
     }
 
     @MethodLog({ level: 'verbose' })

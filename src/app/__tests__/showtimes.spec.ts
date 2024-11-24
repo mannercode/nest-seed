@@ -99,7 +99,7 @@ describe('Showtimes Module', () => {
         it('상영시간이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             const promise = service.getShowtime(nullObjectId)
             await expect(promise).rejects.toThrow(
-                `Showtime with ID ${nullObjectId} not found`
+                `Document with ID ${nullObjectId} not found`
             )
         })
     })

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import {
     addInQuery,
@@ -27,15 +27,6 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         })
 
         await this.saveAll(showtimes)
-    }
-
-    @MethodLog({ level: 'verbose' })
-    async getShowtime(showtimeId: ObjectId) {
-        const showtime = await this.findById(showtimeId)
-
-        if (!showtime) throw new NotFoundException(`Showtime with ID ${showtimeId} not found`)
-
-        return showtime
     }
 
     @MethodLog({ level: 'verbose' })

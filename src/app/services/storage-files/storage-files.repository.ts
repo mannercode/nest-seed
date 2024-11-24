@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MethodLog, MongooseRepository, ObjectId } from 'common'
+import { MethodLog, MongooseRepository } from 'common'
 import { ClientSession, Model } from 'mongoose'
 import { StorageFile, StorageFileCreatePayload } from './models'
 
@@ -16,20 +16,5 @@ export class StorageFilesRepository extends MongooseRepository<StorageFile> {
         Object.assign(storageFile, createDto)
 
         return storageFile.save({ session })
-    }
-
-    @MethodLog()
-    async deleteStorageFile(fileId: ObjectId) {
-        const file = await this.getStorageFile(fileId)
-        await file.deleteOne()
-    }
-
-    @MethodLog({ level: 'verbose' })
-    async getStorageFile(fileId: ObjectId) {
-        const file = await this.findById(fileId)
-
-        if (!file) throw new NotFoundException(`StorageFile with ID ${fileId} not found`)
-
-        return file
     }
 }

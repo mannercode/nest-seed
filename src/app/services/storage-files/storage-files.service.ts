@@ -38,13 +38,13 @@ export class StorageFilesService {
 
     @MethodLog({ level: 'verbose' })
     async getStorageFile(fileId: string) {
-        const file = await this.repository.getStorageFile(objectId(fileId))
+        const file = await this.repository.getById(objectId(fileId))
         return this.createStorageFileDto(file)
     }
 
     @MethodLog()
     async deleteStorageFile(fileId: string) {
-        await this.repository.deleteStorageFile(objectId(fileId))
+        await this.repository.deleteById(objectId(fileId))
 
         const targetPath = this.getStoragePath(objectId(fileId))
         await Path.delete(targetPath)

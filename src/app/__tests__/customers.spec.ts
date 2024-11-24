@@ -84,7 +84,7 @@ describe('Customers Module', () => {
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.patch(`/customers/${nullObjectId}`).body({}).notFound({
                 error: 'Not Found',
-                message: `Customer with ID ${nullObjectId} not found`,
+                message: `Document with ID ${nullObjectId} not found`,
                 statusCode: 404
             })
         })
@@ -101,7 +101,7 @@ describe('Customers Module', () => {
             await client.delete(`/customers/${customer.id}`).ok()
             await client.get(`/customers/${customer.id}`).notFound({
                 error: 'Not Found',
-                message: `Customer with ID ${customer.id} not found`,
+                message: `Document with ID ${customer.id} not found`,
                 statusCode: 404
             })
         })
@@ -109,7 +109,7 @@ describe('Customers Module', () => {
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.delete(`/customers/${nullObjectId}`).notFound({
                 error: 'Not Found',
-                message: 'Customer with ID 000000000000000000000000 not found',
+                message: 'Document with ID 000000000000000000000000 not found',
                 statusCode: 404
             })
         })
@@ -129,7 +129,7 @@ describe('Customers Module', () => {
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.get(`/customers/${nullObjectId}`).notFound({
                 error: 'Not Found',
-                message: 'Customer with ID 000000000000000000000000 not found',
+                message: 'Document with ID 000000000000000000000000 not found',
                 statusCode: 404
             })
         })

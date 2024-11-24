@@ -15,6 +15,12 @@ import { MongooseException } from './exceptions'
 type SeesionArg = ClientSession | undefined
 const DEFAULT_TAKE_SIZE = 100
 
+/**
+ * 합성이 아니라 상속해서 사용하도록 했다.
+ * 합성은 onModuleInit()을 자동으로 호출할 수 없다.
+ * 결국 MongooseRepository을 사용하는 모든 Repository에서 onModuleInit을 반드시 호출해야 한다.
+ * 이런 불편함을 감수하면서까지 상속을 피해야 하는가?
+ */
 export abstract class MongooseRepository<Doc extends MongooseSchema> {
     constructor(protected model: Model<Doc>) {}
 

@@ -28,13 +28,13 @@ export class CustomersService {
 
     @MethodLog({ level: 'verbose' })
     async getCustomer(customerId: string) {
-        const customer = await this.repository.getCustomer(objectId(customerId))
+        const customer = await this.repository.getById(objectId(customerId))
         return toDto(customer, CustomerDto)
     }
 
     @MethodLog()
     async deleteCustomer(customerId: string) {
-        await this.repository.deleteCustomer(objectId(customerId))
+        await this.repository.deleteById(objectId(customerId))
         return true
     }
 
@@ -44,11 +44,6 @@ export class CustomersService {
 
         return { ...paginated, items: toDtos(items, CustomerDto) }
     }
-
-    // @MethodLog()
-    // async customersExist(customerIds: string[]) {
-    //     return this.repository.existsByIds(objectIds(customerIds))
-    // }
 
     @MethodLog()
     async login(userId: string, email: string) {
