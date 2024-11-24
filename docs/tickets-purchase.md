@@ -133,7 +133,7 @@ Customer <-- Frontend: 상영일 목록 제공
 
 Customer -> Frontend: 상영일 선택
     Frontend -> Backend: 상영 시간 목록 요청\nGET /booking/movies/{movieId}/\ntheaters/{theaterId}/showdates/{}/showtimes
-        Backend -> Booking: getShowtimesWithSalesStatus\n({movieId, theaterId, showdate})
+        Backend -> Booking: findShowtimes({movieId, theaterId, showdate})
             Booking -> Showtimes: findShowtimes({movieId, theaterId, showdate})
             Booking <-- Showtimes: showtimes[]
             Booking -> Tickets: getSalesStatuses({ showtimeIds })
@@ -155,7 +155,7 @@ Customer <-- Frontend: 상영 시간 목록 제공
 
 Customer -> Frontend: 상영 시간 선택
     Frontend -> Backend: 구매 가능한 티켓 목록 요청\nGET /booking/showtimes/{}/tickets
-        Backend -> Booking: getTicketsForShowtime(showtimeId)
+        Backend -> Booking: getAvailableTickets(showtimeId)
             Booking -> Tickets: findAllTickets({showtimeId})
             Booking <-- Tickets: tickets[]
         Backend <-- Booking: tickets[]

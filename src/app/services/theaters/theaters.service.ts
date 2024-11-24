@@ -21,13 +21,13 @@ export class TheatersService {
 
     @MethodLog({ level: 'verbose' })
     async getTheater(theaterId: string) {
-        const theater = await this.repository.getTheater(objectId(theaterId))
+        const theater = await this.repository.getById(objectId(theaterId))
         return toDto(theater, TheaterDto)
     }
 
     @MethodLog()
     async deleteTheater(theaterId: string) {
-        await this.repository.deleteTheater(objectId(theaterId))
+        await this.repository.deleteById(objectId(theaterId))
         return true
     }
 
@@ -43,7 +43,8 @@ export class TheatersService {
 
     @MethodLog({ level: 'verbose' })
     async getTheatersByIds(theaterIds: string[]) {
-        const theaters = await this.repository.getTheatersByIds(objectIds(theaterIds))
+        const theaters = await this.repository.getByIds(objectIds(theaterIds))
+
         return toDtos(theaters, TheaterDto)
     }
 

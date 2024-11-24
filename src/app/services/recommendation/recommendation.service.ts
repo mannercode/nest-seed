@@ -17,7 +17,7 @@ export class RecommendationService {
     async findRecommendedMovies(customerId: string | null) {
         const showingMovieIds = await this.showtimesService.findShowingMovieIds()
 
-        const showingMovies = await this.moviesService.findAllMovies({ movieIds: showingMovieIds })
+        const showingMovies = await this.moviesService.getMoviesByIds(showingMovieIds)
         let watchedMovies: MovieDto[] = []
 
         if (customerId) {
@@ -27,7 +27,7 @@ export class RecommendationService {
                 orderby: { name: 'watchDate', direction: OrderDirection.desc }
             })
             const movieIds = items.map((record) => record.movieId)
-            watchedMovies = await this.moviesService.findAllMovies({ movieIds })
+            watchedMovies = await this.moviesService.getMoviesByIds(movieIds)
         }
 
         const recommendedMovies = generateRecommendedMovies(showingMovies, watchedMovies)

@@ -1,16 +1,4 @@
-import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    HttpCode,
-    HttpStatus,
-    Param,
-    Patch,
-    Post,
-    Query,
-    UsePipes
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UsePipes } from '@nestjs/common'
 import {
     TheaterCreateDto,
     TheaterQueryDto,
@@ -50,11 +38,5 @@ export class TheatersController {
     @Get()
     async findTheaters(@Query() queryDto: TheaterQueryDto) {
         return this.service.findTheaters(queryDto)
-    }
-
-    @HttpCode(HttpStatus.OK)
-    @Post('getByIds')
-    async getByIds(@Body('theaterIds') theaterIds: string[]) {
-        return this.service.getTheatersByIds(theaterIds)
     }
 }

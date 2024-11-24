@@ -43,8 +43,8 @@ export class ShowtimesService {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findTheaterIdsShowingMovie(movieId: string) {
-        return this.repository.findTheaterIdsShowingMovie(objectId(movieId))
+    async findTheaterIdsByMovieId(movieId: string) {
+        return this.repository.findTheaterIdsByMovieId(objectId(movieId))
     }
 
     @MethodLog({ level: 'verbose' })

@@ -2,15 +2,13 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import {
     addEqualQuery,
-    addInQuery,
     addRegexQuery,
     MethodLog,
     MongooseRepository,
-    ObjectId,
-    validateFilters
+    ObjectId
 } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { MovieFilterDto, MovieQueryDto } from './dtos'
+import { MovieQueryDto } from './dtos'
 import { Movie, MovieCreatePayload, MovieUpdatePayload } from './models'
 
 @Injectable()
@@ -74,17 +72,5 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         }, pagination)
 
         return paginated
-    }
-
-    @MethodLog({ level: 'verbose' })
-    async findAllMovies(filterDto: MovieFilterDto) {
-        const { movieIds } = filterDto
-
-        const query: FilterQuery<Movie> = {}
-        addInQuery(query, '_id', movieIds)
-        validateFilters(query)
-
-        const movies = await this.model.find(query).exec()
-        return movies
     }
 }

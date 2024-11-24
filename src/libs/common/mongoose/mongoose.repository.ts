@@ -1,11 +1,14 @@
+import { NotFoundException } from '@nestjs/common'
 import {
     Assert,
+    Expect,
     MongooseSchema,
     ObjectId,
     OrderDirection,
     PaginationOption,
     PaginationResult
 } from 'common'
+import { differenceWith, uniqBy } from 'lodash'
 import { ClientSession, HydratedDocument, Model, QueryWithHelpers } from 'mongoose'
 import { MongooseException } from './exceptions'
 
@@ -59,15 +62,44 @@ export abstract class MongooseRepository<Doc extends MongooseSchema> {
         return this.model.find({ _id: { $in: ids } as any }, null, { session })
     }
 
+    async getById(id: ObjectId, session: SeesionArg = undefined) {
+        const doc = await this.findById(id, session)
+
+        if (!doc) throw new NotFoundException(`Document with ID ${id} not found`)
+
+        return doc
+    }
+
+    async getByIds(ids: ObjectId[], session: SeesionArg = undefined) {
+        const uniqueIds = uniqBy(ids, (id) => id.toHexString())
+
+        Expect.equalLength(uniqueIds, ids, `Duplicate IDs detected and removed:${ids}`)
+
+        const docs = await this.model.find({ _id: { $in: uniqueIds } as any }, null, { session })
+
+        const notFoundIds = differenceWith(uniqueIds, docs, (id, doc) => id.equals(doc._id))
+
+        if (notFoundIds.length > 0) {
+            throw new NotFoundException(
+                `One or more Documents with IDs ${notFoundIds.join(', ')} not found`
+            )
+        }
+
+        return docs
+    }
+
+    async deleteById(id: ObjectId, session: SeesionArg = undefined) {
+        const doc = await this.getById(id, session)
+        await doc.deleteOne({ session })
+    }
+
     async deleteByIds(ids: ObjectId[], session: SeesionArg = undefined) {
         const result = await this.model.deleteMany({ _id: { $in: ids } as any }, { session })
-
         return result.deletedCount
     }
 
     async existsByIds(ids: ObjectId[], session: SeesionArg = undefined): Promise<boolean> {
         const count = await this.model.countDocuments({ _id: { $in: ids } } as any, { session })
-
         return count === ids.length
     }
 

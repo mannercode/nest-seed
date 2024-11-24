@@ -10,7 +10,6 @@ import {
     objectId,
     ObjectId,
     objectIds,
-    toDtos,
     validateFilters
 } from 'common'
 import { escapeRegExp } from 'lodash'

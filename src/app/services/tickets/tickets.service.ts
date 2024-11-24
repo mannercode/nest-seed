@@ -34,7 +34,7 @@ export class TicketsService {
             'The status of all tickets must be changed.'
         )
 
-        const tickets = await this.repository.findByIds(ticketIds)
+        const tickets = await this.repository.getByIds(ticketIds)
 
         return toDtos(tickets, TicketDto)
     }

@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog, objectId, objectIds, PaginationResult, toDto } from 'common'
+import { MethodLog, objectId, objectIds, toDto } from 'common'
 import { STORAGE_FILES_ROUTE } from 'config'
 import { HydratedDocument } from 'mongoose'
 import { StorageFileCreateDto, StorageFilesService } from '../storage-files'
-import { MovieCreateDto, MovieDto, MovieFilterDto, MovieQueryDto, MovieUpdateDto } from './dtos'
+import { MovieCreateDto, MovieDto, MovieQueryDto, MovieUpdateDto } from './dtos'
 import { Movie } from './models'
 import { MoviesRepository } from './movies.repository'
 
@@ -48,8 +48,10 @@ export class MoviesService {
         return { ...paginated, items: items.map((item) => this.createMovieDto(item)) }
     }
 
-    async findAllMovies(filterDto: MovieFilterDto) {
-        const movies = await this.repository.findAllMovies(filterDto)
+    @MethodLog({ level: 'verbose' })
+    async getMoviesByIds(movieIds: string[]) {
+        const movies = await this.repository.getByIds(objectIds(movieIds))
+
         return movies.map((movie) => this.createMovieDto(movie))
     }
 

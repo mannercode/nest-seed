@@ -62,7 +62,7 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findTheaterIdsShowingMovie(movieId: ObjectId) {
+    async findTheaterIdsByMovieId(movieId: ObjectId) {
         const theaterIds = await this.model.distinct('theaterId', { movieId }).exec()
         return theaterIds.map((id) => id.toString())
     }

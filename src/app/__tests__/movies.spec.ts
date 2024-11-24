@@ -9,18 +9,19 @@ import {
     createMovies,
     Fixture
 } from './movies.fixture'
+import { pickIds } from 'common'
 
 describe('Movies Module', () => {
-    let isolated: Fixture
+    let fixture: Fixture
     let client: HttpTestClient
 
     beforeEach(async () => {
-        isolated = await createFixture()
-        client = isolated.testContext.client
+        fixture = await createFixture()
+        client = fixture.testContext.client
     })
 
     afterEach(async () => {
-        await closeFixture(isolated)
+        await closeFixture(fixture)
     })
 
     describe('POST /movies', () => {
@@ -73,7 +74,7 @@ describe('Movies Module', () => {
         let movie: MovieDto
 
         beforeEach(async () => {
-            movie = await createMovie(isolated.moviesService)
+            movie = await createMovie(fixture.moviesService)
         })
 
         it('영화 정보를 업데이트해야 한다', async () => {
@@ -93,11 +94,14 @@ describe('Movies Module', () => {
         })
 
         it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client.patch(`/movies/${nullObjectId}`).body({}).notFound({
-                error: 'Not Found',
-                message: `Movie with ID ${nullObjectId} not found`,
-                statusCode: 404
-            })
+            await client
+                .patch(`/movies/${nullObjectId}`)
+                .body({})
+                .notFound({
+                    error: 'Not Found',
+                    message: `Movie with ID ${nullObjectId} not found`,
+                    statusCode: 404
+                })
         })
     })
 
@@ -105,7 +109,7 @@ describe('Movies Module', () => {
         let movie: MovieDto
 
         beforeEach(async () => {
-            movie = await createMovie(isolated.moviesService)
+            movie = await createMovie(fixture.moviesService)
         })
 
         it('영화를 삭제해야 한다', async () => {
@@ -130,7 +134,7 @@ describe('Movies Module', () => {
         let movie: MovieDto
 
         beforeEach(async () => {
-            movie = await createMovie(isolated.moviesService)
+            movie = await createMovie(fixture.moviesService)
         })
 
         it('영화 정보를 가져와야 한다', async () => {
@@ -150,7 +154,7 @@ describe('Movies Module', () => {
         let movies: MovieDto[]
 
         beforeEach(async () => {
-            movies = await createMovies(isolated.moviesService)
+            movies = await createMovies(fixture.moviesService)
         })
 
         it('기본 페이지네이션 설정으로 영화를 가져와야 한다', async () => {
@@ -224,6 +228,31 @@ describe('Movies Module', () => {
 
             const expected = movies.filter((movie) => movie.rating === rating)
             expectEqualUnsorted(body.items, expected)
+        })
+    })
+
+    describe('getMoviesByIds', () => {
+        let movies: MovieDto[]
+
+        beforeEach(async () => {
+            movies = await createMovies(fixture.moviesService)
+        })
+
+        it('movieIds로 영화를 검색할 수 있어야 한다', async () => {
+            const expectedMovies = movies.slice(0, 5)
+            const movieIds = pickIds(expectedMovies)
+
+            const gotMovies = await fixture.moviesService.getMoviesByIds(movieIds)
+
+            expectEqualUnsorted(gotMovies, expectedMovies)
+        })
+
+        it('영화가 존재하지 않으면 NotFoundException을 던져야 한다', async () => {
+            const promise = fixture.moviesService.getMoviesByIds([nullObjectId])
+
+            await expect(promise).rejects.toThrow(
+                `One or more Documents with IDs ${nullObjectId} not found`
+            )
         })
     })
 })

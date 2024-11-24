@@ -128,7 +128,7 @@ describe('Showtimes Module', () => {
         expect(foundIds).toEqual(movieIds)
     })
 
-    it('findTheaterIdsShowingMovie', async () => {
+    it('findTheaterIdsByMovieId', async () => {
         const movieId = testObjectId('a1')
         const createDtos = [
             createShowtimeDto({
@@ -148,7 +148,7 @@ describe('Showtimes Module', () => {
         const { success } = await service.createShowtimes(createDtos)
         expect(success).toBeTruthy()
 
-        const theaterIds = await service.findTheaterIdsShowingMovie(movieId)
+        const theaterIds = await service.findTheaterIdsByMovieId(movieId)
         expect(theaterIds).toEqual([testObjectId('b2'), testObjectId('b3')])
     })
 
