@@ -1,5 +1,5 @@
 import { AppConfigService } from 'config'
-import { CustomersService } from 'services/customers'
+import { CustomerDto, CustomersService } from 'services/customers'
 import { createHttpTestContext, HttpTestContext } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
 import { createCustomer } from './customers.fixture'
@@ -7,39 +7,32 @@ import { createCustomer } from './customers.fixture'
 export interface Fixture {
     testContext: HttpTestContext
     config: AppConfigService
-    credentials: Credentials
+    password: string
+    customer: CustomerDto
 }
 
 export async function createFixture() {
     const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
     const config = testContext.module.get(AppConfigService)
     const customersService = testContext.module.get(CustomersService)
-    const credentials = await createCredentials(customersService)
+    const email = 'user@mail.com'
+    const password = 'password'
+    const customer = await createCustomer(customersService, { email, password })
 
-    return { testContext, config, credentials }
+    return { testContext, config, password, customer }
 }
 
 export async function closeFixture(fixture: Fixture) {
     await fixture.testContext.close()
 }
 
-export interface Credentials {
-    customerId: string
-    email: string
-    password: string
-}
+export async function createCustomerAndLogin(customersService: CustomersService) {
+    const email = 'user@mail.com'
+    const password = 'password'
+    const customer = await createCustomer(customersService, { email, password })
 
-export async function createCredentials(customersService: CustomersService): Promise<Credentials> {
-    const createDto = {
-        email: 'user@mail.com',
-        password: 'password'
-    }
+    const authTokens = await customersService.login(customer.id, email)
+    const accessToken = authTokens.accessToken
 
-    const customer = await createCustomer(customersService, createDto)
-
-    return {
-        customerId: customer.id,
-        email: createDto.email,
-        password: createDto.password
-    }
+    return { customer, accessToken }
 }

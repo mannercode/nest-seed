@@ -155,6 +155,11 @@ Customer <-- Frontend: 상영 시간 목록 제공
 
 Customer -> Frontend: 상영 시간 선택
     Frontend -> Backend: 구매 가능한 티켓 목록 요청\nGET /booking/showtimes/{}/tickets
+    note right
+        HoldTicketDto{
+            ticketIds:[id1,id2]
+        }
+    end note
         Backend -> Booking: getTicketsForShowtime(showtimeId)
             Booking -> Tickets: findAllTickets({showtimeId})
             Booking <-- Tickets: tickets[]
@@ -163,7 +168,7 @@ Customer -> Frontend: 상영 시간 선택
 Customer <-- Frontend: 구매 가능한 티켓 목록 제공
 
 Customer -> Frontend: 티켓 선택
-    Frontend -> Backend: 티켓 선점\nPOST /booking/showtimes/{}/tickets
+    Frontend -> Backend: 티켓 선점\nPATCH /booking/showtimes/{}/tickets
         Backend -> Booking: holdTickets(showtimeId, customerId, ticketIds[])
             Booking -> TicketHolding: holdTickets(showtimeId, customerId, ticketIds[], ttlMs=10*60*1000)
                 TicketHolding -> TicketHolding: releaseTickets(showtimeId, customerId)

@@ -1,18 +1,23 @@
 import { AppConfigService } from 'config'
 import { HttpTestClient } from 'testlib'
-import { closeFixture, createFixture, Credentials, Fixture } from './customers-auth.fixture'
+import { closeFixture, createFixture, Fixture } from './customers-auth.fixture'
+import { CustomerDto } from 'services/customers'
 
 describe('Customer Authentication', () => {
     let fixture: Fixture
     let client: HttpTestClient
-    let credentials: Credentials
     let config: AppConfigService
+    let customer: CustomerDto
+    let email: string
+    let password: string
 
     beforeEach(async () => {
         fixture = await createFixture()
         client = fixture.testContext.client
         config = fixture.config
-        credentials = fixture.credentials
+        customer = fixture.customer
+        email = customer.email
+        password = fixture.password
     })
 
     afterEach(async () => {
@@ -21,7 +26,7 @@ describe('Customer Authentication', () => {
 
     describe('POST /login', () => {
         it('로그인에 성공하면 인증 토큰을 반환해야 한다', async () => {
-            await client.post('/customers/login').body(credentials).ok({
+            await client.post('/customers/login').body({ email, password }).ok({
                 accessToken: expect.anything(),
                 refreshToken: expect.anything()
             })
@@ -30,7 +35,7 @@ describe('Customer Authentication', () => {
         it('비밀번호가 틀리면 UNAUTHORIZED(401)를 반환해야 한다', async () => {
             await client
                 .post('/customers/login')
-                .body({ email: credentials.email, password: 'wrong password' })
+                .body({ email, password: 'wrong password' })
                 .unauthorized({ message: 'Unauthorized', statusCode: 401 })
         })
 
@@ -47,7 +52,7 @@ describe('Customer Authentication', () => {
         let refreshToken: string
 
         beforeEach(async () => {
-            const { body } = await client.post('/customers/login').body(credentials).ok()
+            const { body } = await client.post('/customers/login').body({ email, password }).ok()
             accessToken = body.accessToken
             refreshToken = body.refreshToken
         })
@@ -71,13 +76,13 @@ describe('Customer Authentication', () => {
         let accessToken: string
 
         beforeEach(async () => {
-            const { body } = await client.post('/customers/login').body(credentials).ok()
+            const { body } = await client.post('/customers/login').body({ email, password }).ok()
             accessToken = body.accessToken
         })
 
         it('유효한 accessToken을 제공하면 접근이 허용되어야 한다', async () => {
             await client
-                .get(`/customers/${credentials.customerId}`)
+                .get(`/customers/${customer.id}`)
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .ok()
         })
@@ -86,7 +91,7 @@ describe('Customer Authentication', () => {
             const invalidToken = 'SampleToken'
 
             await client
-                .get(`/customers/${credentials.customerId}`)
+                .get(`/customers/${customer.id}`)
                 .headers({ Authorization: `Bearer ${invalidToken}` })
                 .unauthorized({ message: 'Unauthorized', statusCode: 401 })
         })

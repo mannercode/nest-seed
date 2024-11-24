@@ -1,10 +1,10 @@
-import { CustomersService } from 'services/customers'
+import { CustomerDto, CustomersService } from 'services/customers'
 import { MovieDto, MoviesService } from 'services/movies'
 import { ShowtimesService } from 'services/showtimes'
 import { WatchRecordsService } from 'services/watch-records'
 import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
-import { createCredentials } from './customers-auth.fixture'
+import { createCustomerAndLogin } from './customers-auth.fixture'
 import { createShowtimes } from './showtimes.fixture'
 import { createMovie } from './movies.fixture'
 
@@ -13,7 +13,7 @@ export interface Fixture {
     moviesService: MoviesService
     watchRecordsService: WatchRecordsService
     showtimesService: ShowtimesService
-    customerId: string
+    customer: CustomerDto
     accessToken: string
 }
 
@@ -23,17 +23,14 @@ export async function createFixture() {
     const watchRecordsService = testContext.module.get(WatchRecordsService)
     const showtimesService = testContext.module.get(ShowtimesService)
     const customersService = testContext.module.get(CustomersService)
-    const credentials = await createCredentials(customersService)
-    const customerId = credentials.customerId
-    const authTokens = await customersService.login(customerId, credentials.email)
-    const accessToken = authTokens.accessToken
+    const { customer, accessToken } = await createCustomerAndLogin(customersService)
 
     return {
         testContext,
         moviesService,
         watchRecordsService,
         showtimesService,
-        customerId,
+        customer,
         accessToken
     }
 }
@@ -48,7 +45,7 @@ export const createWatchedMovies = async (fixture: Fixture, dtos: Partial<MovieD
             const movie = await createMovie(fixture.moviesService, dto)
 
             fixture.watchRecordsService.createWatchRecord({
-                customerId: fixture.customerId,
+                customerId: fixture.customer.id,
                 purchaseId: nullObjectId,
                 watchDate: new Date(0),
                 movieId: movie.id

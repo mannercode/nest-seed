@@ -20,6 +20,11 @@ export class HttpTestClient {
         return this
     }
 
+    put(url: string): this {
+        this.client = superagent.put(`${this.serverUrl}${url}`)
+        return this
+    }
+
     get(url: string): this {
         this.client = superagent.get(`${this.serverUrl}${url}`)
         return this
