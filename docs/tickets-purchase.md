@@ -66,7 +66,7 @@ Frontend -> Backend: 추천 영화 목록 요청\nGET /movies/recommended
 Backend -> Recommendation: findRecommendedMovies({customerId})
 Recommendation -> Showtimes: findShowingMovieIds()
 Showtimes --> Recommendation: showingMovieIds
-Recommendation -> Movies: getMovies({movieIds: showingMovieIds})
+Recommendation -> Movies: findAllMovies({movieIds: showingMovieIds})
 Movies --> Recommendation: movies
 group if customer exists
     Recommendation -> WatchRecordsService: findWatchRecords(customerId)
@@ -79,7 +79,7 @@ group if customer exists
         purchaseId,
     }
     end note
-    Recommendation -> Movies: findMovies(movieIds[] from watchRecords)
+    Recommendation -> Movies: findAllMovies({movieIds: watchRecords.movieIds})
     Recommendation <-- Movies: watchedMovies
 end
 Recommendation -> Recommendation: generateRecommendedMovies\n(movies, watchedMovies)

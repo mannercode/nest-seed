@@ -23,7 +23,6 @@ describe('Recommendation Module', () => {
 
     describe('추천 영화 목록 요청', () => {
         let showingMovies: MovieDto[]
-        let expectedRecommendedMovies: MovieDto[]
 
         beforeEach(async () => {
             await createWatchedMovies(fixture, [
@@ -36,57 +35,59 @@ describe('Recommendation Module', () => {
             ])
 
             showingMovies = await createShowingMovies(fixture, [
-                { title: 'Fantasy', genre: [MovieGenre.Fantasy] },
+                {
+                    title: 'Fantasy',
+                    genre: [MovieGenre.Fantasy],
+                    releaseDate: new Date('2900-01-01')
+                },
                 {
                     title: 'Comedy1',
                     genre: [MovieGenre.Comedy],
-                    releaseDate: new Date('2900-01-01')
+                    releaseDate: new Date('2900-02-01')
                 },
                 {
                     title: 'Comedy2',
                     genre: [MovieGenre.Comedy],
-                    releaseDate: new Date('2900-02-01')
+                    releaseDate: new Date('2900-03-01')
                 },
-                { title: 'Action', genre: [MovieGenre.Action] },
-                { title: 'Drama', genre: [MovieGenre.Drama] }
+                {
+                    title: 'Action',
+                    genre: [MovieGenre.Action],
+                    releaseDate: new Date('2900-04-01')
+                },
+                {
+                    title: 'Drama',
+                    genre: [MovieGenre.Drama],
+                    releaseDate: new Date('2900-05-01')
+                }
             ])
-
-            expectedRecommendedMovies = [
-                showingMovies[3],
-                showingMovies[2],
-                showingMovies[1],
-                showingMovies[4],
-                showingMovies[0]
-            ]
         })
 
-        it('가장 많이 관람한 genre, 최신 개봉일 순서로 추천 영화 목록을 반환해야 한다', async () => {
+        it('고객이 가장 많이 관람한 genre, 최신 개봉일 순서로 추천 영화 목록을 반환해야 한다', async () => {
             const { body } = await client
                 .get('/movies/recommended')
                 .headers({ Authorization: `Bearer ${fixture.accessToken}` })
                 .ok()
 
-            const { items, ...paginated } = body
-
-            expect(paginated).toEqual({
-                skip: 0,
-                take: expectedRecommendedMovies.length,
-                total: showingMovies.length
-            })
-            expect(items).toEqual(expectedRecommendedMovies)
+            expect(body).toEqual([
+                showingMovies[3], // Action
+                showingMovies[2], // Comedy2, 2900-03-01
+                showingMovies[1], // Comedy1, 2900-02-01
+                showingMovies[4], // Drama
+                showingMovies[0] // Fantasy
+            ])
         })
 
-        it('로그인을 하지 않아도 추천 영화 목록을 반환해야 한다', async () => {
+        it('로그인을 하지 않으면 최신 개봉일 순서로 추천 영화 목록을 반환해야 한다', async () => {
             const { body } = await client.get('/movies/recommended').ok()
 
-            const { items, ...paginated } = body
-
-            expect(paginated).toEqual({
-                skip: 0,
-                take: expectedRecommendedMovies.length,
-                total: showingMovies.length
-            })
-            expect(items).toEqual(expectedRecommendedMovies)
+            expect(body).toEqual([
+                showingMovies[4], // 2900-05-01
+                showingMovies[3], // 2900-04-01
+                showingMovies[2], // 2900-03-01
+                showingMovies[1], // 2900-02-01
+                showingMovies[0] // 2900-01-01
+            ])
         })
     })
 })

@@ -1,7 +1,8 @@
 import { BadRequestException } from '@nestjs/common'
-import { escapeRegExp } from 'lodash'
+import { escapeRegExp, uniq } from 'lodash'
 import { ObjectId } from './mongoose.schema'
 import { FlattenMaps, HydratedDocument, Require_id } from 'mongoose'
+import { Expect } from '../expect'
 
 export const newObjectId = () => new ObjectId().toString()
 export const objectId = (id: string) => new ObjectId(id)
@@ -37,7 +38,10 @@ export const addIdQuery = (query: any, field: string, id?: string) => {
 
 export const addInQuery = (query: any, field: string, ids?: string[]) => {
     if (ids && ids.length > 0) {
-        query[field] = { $in: objectIds(ids) }
+        const uniqueIds = uniq(ids)
+        Expect.equalLength(uniqueIds, ids, `Duplicate ${field} IDs detected and removed:${ids}`)
+
+        query[field] = { $in: objectIds(uniqueIds) }
     }
 }
 

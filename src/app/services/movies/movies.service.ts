@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog, objectId, objectIds, PaginationResult } from 'common'
+import { MethodLog, objectId, objectIds, PaginationResult, toDto } from 'common'
 import { STORAGE_FILES_ROUTE } from 'config'
 import { HydratedDocument } from 'mongoose'
 import { StorageFileCreateDto, StorageFilesService } from '../storage-files'
-import { MovieCreateDto, MovieDto, MovieQueryDto, MovieUpdateDto } from './dtos'
+import { MovieCreateDto, MovieDto, MovieFilterDto, MovieQueryDto, MovieUpdateDto } from './dtos'
 import { Movie } from './models'
 import { MoviesRepository } from './movies.repository'
 
@@ -15,10 +15,7 @@ export class MoviesService {
     ) {}
 
     @MethodLog()
-    async createMovie(
-        fileCreateDtos: StorageFileCreateDto[],
-        movieCreateDto: MovieCreateDto
-    ) {
+    async createMovie(fileCreateDtos: StorageFileCreateDto[], movieCreateDto: MovieCreateDto) {
         const storageFiles = await this.storageFilesService.saveFiles(fileCreateDtos)
         const storageFileIds = storageFiles.map((file) => objectId(file.id))
 
@@ -48,10 +45,12 @@ export class MoviesService {
     async findMovies(queryDto: MovieQueryDto) {
         const { items, ...paginated } = await this.repository.findMovies(queryDto)
 
-        return {
-            ...paginated,
-            items: items.map((item) => this.createMovieDto(item))
-        } as PaginationResult<MovieDto>
+        return { ...paginated, items: items.map((item) => this.createMovieDto(item)) }
+    }
+
+    async findAllMovies(filterDto: MovieFilterDto) {
+        const movies = await this.repository.findAllMovies(filterDto)
+        return movies.map((movie) => this.createMovieDto(movie))
     }
 
     @MethodLog({ level: 'verbose' })
@@ -61,13 +60,6 @@ export class MoviesService {
 
     private createMovieDto(movie: HydratedDocument<Movie>) {
         const images = movie.storageFileIds.map((id) => `${STORAGE_FILES_ROUTE}/${id.toString()}`)
-
-        return new MovieDto(movie.toJSON(), images)
+        return toDto(movie, MovieDto, images)
     }
-
-    // @MethodLog({ level: 'verbose' })
-    // async getMoviesByIds(movieIds: string[]) {
-    //     const movies = await this.repository.getMoviesByIds(movieIds)
-    //     return toDtos(movies, MovieDto)
-    // }
 }

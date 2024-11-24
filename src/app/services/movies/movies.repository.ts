@@ -1,8 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { addEqualQuery, addRegexQuery, MethodLog, MongooseRepository, ObjectId } from 'common'
+import {
+    addEqualQuery,
+    addInQuery,
+    addRegexQuery,
+    MethodLog,
+    MongooseRepository,
+    ObjectId,
+    validateFilters
+} from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { MovieQueryDto } from './dtos'
+import { MovieFilterDto, MovieQueryDto } from './dtos'
 import { Movie, MovieCreatePayload, MovieUpdatePayload } from './models'
 
 @Injectable()
@@ -68,20 +76,15 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         return paginated
     }
 
-    // async getMoviesByIds(movieIds: string[]) {
-    //     const uniqueIds = uniq(movieIds)
+    @MethodLog({ level: 'verbose' })
+    async findAllMovies(filterDto: MovieFilterDto) {
+        const { movieIds } = filterDto
 
-    //     Expect.equalLength(uniqueIds, movieIds, `Duplicate movie IDs are not allowed:${movieIds}`)
+        const query: FilterQuery<Movie> = {}
+        addInQuery(query, '_id', movieIds)
+        validateFilters(query)
 
-    //     const movies = await this.findByIds(uniqueIds)
-    //     const notFoundIds = differenceWith(uniqueIds, movies, (id, movie) => id === movie.id)
-
-    //     if (notFoundIds.length > 0) {
-    //         throw new NotFoundException(
-    //             `One or more movies with IDs ${notFoundIds.join(', ')} not found`
-    //         )
-    //     }
-
-    //     return movies
-    // }
+        const movies = await this.model.find(query).exec()
+        return movies
+    }
 }
