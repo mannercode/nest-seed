@@ -24,7 +24,7 @@ describe('Booking 시나리오 테스트', () => {
         await closeFixture(fixture)
     })
 
-    describe('상영 극장 목록 요청', () => {
+    describe('1. 상영 극장 목록 요청', () => {
         it('상영 극장 목록을 반환해야 한다', async () => {
             const latlong = '31.9,131.9'
             const { body: theaters } = await client
@@ -45,7 +45,7 @@ describe('Booking 시나리오 테스트', () => {
         })
     })
 
-    describe('상영일 목록 요청', () => {
+    describe('2. 상영일 목록 요청', () => {
         it('상영일 목록을 반환해야 한다', async () => {
             const { body: showdates } = await client
                 .get(`/booking/movies/${movieId}/theaters/${theaterId}/showdates`)
@@ -56,7 +56,7 @@ describe('Booking 시나리오 테스트', () => {
         })
     })
 
-    describe('상영 시간 목록 요청', () => {
+    describe('3. 상영 시간 목록 요청', () => {
         it('상영 시간 목록을 반환해야 한다', async () => {
             const { body: showtimes } = await client
                 .get(
@@ -77,7 +77,7 @@ describe('Booking 시나리오 테스트', () => {
         })
     })
 
-    describe('구매 가능한 티켓 목록 요청', () => {
+    describe('4. 구매 가능한 티켓 목록 요청', () => {
         it('구매 가능한 티켓 목록을 반환해야 한다', async () => {
             const { body } = await client.get(`/booking/showtimes/${showtimeId}/tickets`).ok()
             tickets = body
@@ -85,7 +85,7 @@ describe('Booking 시나리오 테스트', () => {
         })
     })
 
-    describe('티켓 선점', () => {
+    describe('5. 티켓 선점', () => {
         it('티켓을 선점해야 한다', async () => {
             const ticketIds = pickIds(tickets.slice(0, 4))
 

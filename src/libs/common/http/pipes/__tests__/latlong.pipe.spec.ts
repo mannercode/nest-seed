@@ -1,5 +1,5 @@
 import { HttpTestClient, HttpTestContext, createHttpTestContext } from 'testlib'
-import { TestModule } from './pipes.fixture'
+import { TestModule } from './latlong.pipe.fixture'
 
 describe('common/http/pipes', () => {
     let testContext: HttpTestContext

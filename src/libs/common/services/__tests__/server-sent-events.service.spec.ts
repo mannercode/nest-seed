@@ -1,5 +1,5 @@
+import { ServerSentEventsService } from 'common'
 import { createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
-import { ServerSentEventsService } from '../server-sent-events.service'
 import { SseController } from './server-sent-events.service.fixture'
 
 describe('ServerSentEventsService', () => {

@@ -1,6 +1,6 @@
 import { TestingModule } from '@nestjs/testing'
+import { EventModule, EventService } from 'common'
 import { createTestingModule } from 'testlib'
-import { EventModule, EventService } from '../event.service'
 import { AppEventListener, SampleEvent } from './event.service.fixture'
 
 describe('EventService', () => {

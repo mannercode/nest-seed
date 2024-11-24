@@ -1,4 +1,4 @@
-import { MethodLog } from '../method-log'
+import { MethodLog } from 'common'
 
 export const mockLogger = {
     log: jest.fn().mockImplementation(),

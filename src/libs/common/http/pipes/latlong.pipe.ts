@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common'
 import { plainToClass } from 'class-transformer'
 import { validate } from 'class-validator'
-import { LatLong } from '../types'
+import { LatLong } from 'common'
 
 @Injectable()
 export class LatLongPipe implements PipeTransform<string, Promise<LatLong>> {

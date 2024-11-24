@@ -1,6 +1,6 @@
-import { Body, Controller, MessageEvent, Module, Post, Sse } from '@nestjs/common'
+import { Body, Controller, MessageEvent, Post, Sse } from '@nestjs/common'
+import { ServerSentEventsService } from 'common'
 import { Observable } from 'rxjs'
-import { ServerSentEventsService } from '../server-sent-events.service'
 
 @Controller('sse')
 export class SseController {

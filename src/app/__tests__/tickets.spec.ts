@@ -73,7 +73,7 @@ describe('Tickets Module', () => {
         const { createDtos } = createTicketDtos({})
         const tickets = await createTickets(service, createDtos)
         const ticket = tickets[0]
-        expect(ticket.status).toEqual(TicketStatus.open)
+        expect(ticket.status).toEqual(TicketStatus.available)
 
         const updatedTickets = await service.updateTicketStatus(
             objectIds([ticket.id]),

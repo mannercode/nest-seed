@@ -1,6 +1,5 @@
-import { LatLong } from 'common'
-import * as fs from 'fs/promises'
 import {
+    LatLong,
     Password,
     Path,
     addQuotesToNumbers,
@@ -18,7 +17,8 @@ import {
     sleep,
     stringToBytes,
     validateEmail
-} from '..'
+} from 'common'
+import * as fs from 'fs/promises'
 
 describe('common/utils/etc', () => {
     describe('sleep', () => {

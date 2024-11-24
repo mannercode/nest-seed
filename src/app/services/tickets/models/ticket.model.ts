@@ -3,8 +3,7 @@ import { ModelAttributes, MongooseSchema, ObjectId, createMongooseSchema } from 
 import { Seat } from '../../theaters'
 
 export enum TicketStatus {
-    open = 'open',
-    reserved = 'reserved',
+    available = 'available',
     sold = 'sold'
 }
 

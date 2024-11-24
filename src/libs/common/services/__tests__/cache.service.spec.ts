@@ -1,7 +1,6 @@
 import { TestingModule } from '@nestjs/testing'
-import { sleep } from 'common'
+import { CacheModule, CacheService, sleep } from 'common'
 import { createTestingModule, getRedisTestConnection } from 'testlib'
-import { CacheModule, CacheService } from '..'
 
 describe('CacheService', () => {
     let module: TestingModule

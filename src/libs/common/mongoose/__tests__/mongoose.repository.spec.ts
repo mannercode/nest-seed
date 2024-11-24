@@ -1,7 +1,6 @@
 import { expect } from '@jest/globals'
-import { objectId, objectIds, OrderDirection, pickIds, pickItems, toDtos } from 'common'
+import { MongooseException, objectId, objectIds, OrderDirection, pickIds, pickItems, toDtos } from 'common'
 import { expectEqualUnsorted, getMongoTestConnection, nullObjectId } from 'testlib'
-import { MongooseException } from '../exceptions'
 import {
     createFixture,
     createSample,

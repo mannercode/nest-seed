@@ -98,7 +98,7 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
                     showtimeId: showtime.id,
                     theaterId: showtime.theaterId,
                     movieId: showtime.movieId,
-                    status: TicketStatus.open,
+                    status: TicketStatus.available,
                     seat,
                     batchId
                 }))

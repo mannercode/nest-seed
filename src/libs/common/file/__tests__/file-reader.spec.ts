@@ -1,6 +1,5 @@
-import { Path } from 'common'
+import { Path, readFile } from 'common'
 import * as fs from 'fs/promises'
-import { readFile } from '..'
 
 describe('FileReader', () => {
     const testContent = 'Hello\nWorld\nThis is a test file\n'

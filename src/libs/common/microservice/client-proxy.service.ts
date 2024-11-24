@@ -1,7 +1,7 @@
 import { DynamicModule, Global, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
 import { ClientProxy, ClientsModule, ClientsProviderAsyncOptions } from '@nestjs/microservices'
+import { jsonToObject } from 'common'
 import { lastValueFrom } from 'rxjs'
-import { jsonToObject } from '../utils'
 
 @Injectable()
 export class ClientProxyService implements OnModuleDestroy {

@@ -29,7 +29,7 @@ export const createTicketDtos = (overrides = {}, length: number = 100) => {
             movieId: nullObjectId,
             theaterId: nullObjectId,
             showtimeId: nullObjectId,
-            status: TicketStatus.open,
+            status: TicketStatus.available,
             seat: { block: '1b', row: '1r', seatnum: 1 },
             ...overrides
         }
@@ -37,7 +37,7 @@ export const createTicketDtos = (overrides = {}, length: number = 100) => {
         const expectedDto = {
             id: expect.anything(),
             ...omit(createDto, 'batchId'),
-            status: 'open'
+            status: 'available'
         }
 
         createDtos.push(createDto)
