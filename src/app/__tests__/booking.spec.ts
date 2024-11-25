@@ -1,8 +1,8 @@
+import { convertDateToString, pickIds } from 'common'
 import { getSeatCount } from 'services/theaters'
 import { TicketDto } from 'services/tickets'
 import { HttpTestClient } from 'testlib'
 import { closeFixture, createFixture, Fixture } from './booking.fixture'
-import { pickIds } from 'common'
 
 describe('Booking 시나리오 테스트', () => {
     let fixture: Fixture
@@ -51,8 +51,13 @@ describe('Booking 시나리오 테스트', () => {
                 .get(`/booking/movies/${movieId}/theaters/${theaterId}/showdates`)
                 .ok()
 
-            expect(showdates).toEqual(['29990101', '29990102', '29990103', '29990104'])
-            showdate = showdates[0]
+            expect(showdates).toEqual([
+                new Date('2999-01-01'),
+                new Date('2999-01-02'),
+                new Date('2999-01-03')
+            ])
+
+            showdate = convertDateToString(showdates[0])
         })
     })
 

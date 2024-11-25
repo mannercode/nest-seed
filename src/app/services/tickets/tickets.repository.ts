@@ -10,9 +10,9 @@ import {
     validateFilters
 } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { TicketSalesStatusDto } from './dtos'
 import { TicketFilterDto } from './dtos/ticket-filter.dto'
 import { Ticket, TicketCreatePayload, TicketStatus } from './models'
+import { SalesStatusByShowtimeDto } from './dtos'
 
 @Injectable()
 export class TicketsRepository extends MongooseRepository<Ticket> {
@@ -61,9 +61,9 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
     }
 
     @MethodLog({ level: 'verbose' })
-    async getSalesStatuses(showtimeIds: string[]): Promise<TicketSalesStatusDto[]> {
+    async getSalesStatuses(showtimeIds: ObjectId[]) {
         const salesStatuses = await this.model.aggregate([
-            { $match: { showtimeId: { $in: objectIds(showtimeIds) } } },
+            { $match: { showtimeId: { $in: showtimeIds } } },
             {
                 $group: {
                     _id: '$showtimeId',
@@ -82,10 +82,12 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
                     total: 1,
                     sold: 1,
                     available: { $subtract: ['$total', '$sold'] }
+                    // TODO 이거 계산을 이렇게 하면 안 된다.
                 }
             }
         ])
 
-        return salesStatuses
+        return salesStatuses as SalesStatusByShowtimeDto[]
     }
 }
+// TODO repository에서 objectId 변환해라

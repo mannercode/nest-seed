@@ -10,7 +10,7 @@ import { validate } from 'class-validator'
 import { LatLong } from 'common'
 
 @Injectable()
-export class LatLongPipe implements PipeTransform<string, Promise<LatLong>> {
+class LatLongPipe implements PipeTransform<string, Promise<LatLong>> {
     async transform(value: string): Promise<LatLong> {
         if (!value) {
             throw new BadRequestException('Latlong query parameter is required')

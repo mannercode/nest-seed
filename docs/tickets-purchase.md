@@ -141,11 +141,9 @@ Customer -> Frontend: 상영일 선택
             note left
             ShowtimeSalesStatus = {
                 showtimeId: string
-                salesStatus:{
-                    total: number
-                    sold: number
-                    available: number
-                }
+                total: number
+                sold: number
+                available: number
             }
             end note
             Booking -> Booking: generateShowtimesWithSalesStatus\n(Showtimes[], salesStatuses)

@@ -48,7 +48,12 @@ export class ShowtimesService {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findShowdates(movieId: string, theaterId: string) {
-        return this.repository.findShowdates(objectId(movieId), objectId(theaterId))
+    async findShowdates(args: { movieId: string; theaterId: string }) {
+        const { movieId, theaterId } = args
+
+        return this.repository.findShowdates({
+            movieId: objectId(movieId),
+            theaterId: objectId(theaterId)
+        })
     }
 }

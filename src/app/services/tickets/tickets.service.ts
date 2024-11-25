@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { Assert, MethodLog, objectId, ObjectId, toDtos } from 'common'
+import { Assert, MethodLog, objectId, objectIds, toDtos } from 'common'
 import { TicketCreateDto, TicketDto } from './dtos'
 import { TicketFilterDto } from './dtos/ticket-filter.dto'
 import { TicketStatus } from './models'
@@ -25,8 +25,8 @@ export class TicketsService {
     }
 
     @MethodLog()
-    async updateTicketStatus(ticketIds: ObjectId[], status: TicketStatus): Promise<TicketDto[]> {
-        const result = await this.repository.updateTicketStatus(ticketIds, status)
+    async updateTicketStatus(ticketIds: string[], status: TicketStatus): Promise<TicketDto[]> {
+        const result = await this.repository.updateTicketStatus(objectIds(ticketIds), status)
 
         Assert.equals(
             result.matchedCount,
@@ -34,7 +34,7 @@ export class TicketsService {
             'The status of all tickets must be changed.'
         )
 
-        const tickets = await this.repository.getByIds(ticketIds)
+        const tickets = await this.repository.getByIds(objectIds(ticketIds))
 
         return toDtos(tickets, TicketDto)
     }
@@ -48,7 +48,7 @@ export class TicketsService {
 
     @MethodLog({ level: 'verbose' })
     async getSalesStatuses(showtimeIds: string[]) {
-        const statuses = await this.repository.getSalesStatuses(showtimeIds)
+        const statuses = await this.repository.getSalesStatuses(objectIds(showtimeIds))
         return statuses
     }
 }

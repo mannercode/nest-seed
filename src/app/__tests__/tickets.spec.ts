@@ -1,5 +1,5 @@
-import { objectIds, pickIds } from 'common'
-import { TicketDto, TicketsService, TicketStatus } from 'services/tickets'
+import { pickIds } from 'common'
+import { TicketsService, TicketStatus } from 'services/tickets'
 import { expectEqualUnsorted, testObjectId } from 'testlib'
 import {
     closeFixture,
@@ -75,10 +75,7 @@ describe('Tickets Module', () => {
         const ticket = tickets[0]
         expect(ticket.status).toEqual(TicketStatus.available)
 
-        const updatedTickets = await service.updateTicketStatus(
-            objectIds([ticket.id]),
-            TicketStatus.sold
-        )
+        const updatedTickets = await service.updateTicketStatus([ticket.id], TicketStatus.sold)
         const updatedStatuses = updatedTickets.map((ticket) => ticket.status)
         expect(updatedStatuses).toEqual([TicketStatus.sold])
     })
@@ -91,7 +88,7 @@ describe('Tickets Module', () => {
         const { createDtos } = createTicketDtos({ showtimeId }, ticketCount)
         const tickets = await createTickets(service, createDtos)
         const ticketIds = pickIds(tickets.slice(0, soldCount))
-        await service.updateTicketStatus(objectIds(ticketIds), TicketStatus.sold)
+        await service.updateTicketStatus(ticketIds, TicketStatus.sold)
         const salesStatuses = await service.getSalesStatuses([showtimeId])
 
         expect(salesStatuses).toEqual([

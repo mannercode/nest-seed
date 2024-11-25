@@ -59,9 +59,9 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findShowdates(movieId: ObjectId, theaterId: ObjectId) {
+    async findShowdates(args: { movieId: ObjectId; theaterId: ObjectId }) {
         const showdates = await this.model.aggregate([
-            { $match: { movieId, theaterId } },
+            { $match: args },
             { $project: { date: { $dateToString: { format: '%Y-%m-%d', date: '$startTime' } } } },
             { $group: { _id: '$date' } },
             { $sort: { _id: 1 } }

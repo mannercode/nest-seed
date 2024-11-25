@@ -38,10 +38,10 @@ export async function createFixture() {
     const startTimes = [
         new Date('2999-01-01T12:00'),
         new Date('2999-01-01T14:00'),
-        new Date('2999-01-02T12:00'),
-        new Date('2999-01-02T14:00'),
         new Date('2999-01-03T12:00'),
-        new Date('2999-01-03T14:00')
+        new Date('2999-01-03T14:00'),
+        new Date('2999-01-02T12:00'),
+        new Date('2999-01-02T14:00')
     ]
     const showtimeDtos = theaters.slice(0, 5).flatMap((theater) =>
         startTimes.map((startTime) =>
@@ -55,6 +55,7 @@ export async function createFixture() {
     )
     await createShowtimes(showtimesService, showtimeDtos)
 
+    // TODO ticket 생성해서 상태 업데이트 해야한다
     return { testContext, movie, accessToken }
 }
 

@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common'
-import { LatLong, MethodLog } from 'common'
+import { LatLong, MethodLog, pickIds } from 'common'
 import { ShowtimesService } from 'services/showtimes'
 import { TheatersService } from 'services/theaters'
 import { TicketHoldingService } from 'services/ticket-holding'
 import { TicketsService } from 'services/tickets'
-import { sortTheatersByDistance } from './booking.utils'
+import { generateShowtimesWithSalesStatus, sortTheatersByDistance } from './booking.utils'
 
 @Injectable()
 export class BookingService {
@@ -19,7 +19,6 @@ export class BookingService {
     async findShowingTheaters(args: { movieId: string; latlong: LatLong }) {
         const { movieId, latlong } = args
         const theaterIds = await this.showtimesService.findTheaterIdsByMovieId(movieId)
-
         const theaters = await this.theatersService.getTheatersByIds(theaterIds)
         const showingTheaters = sortTheatersByDistance(theaters, latlong)
 
@@ -28,35 +27,34 @@ export class BookingService {
 
     @MethodLog({ level: 'verbose' })
     async findShowdates(args: { movieId: string; theaterId: string }) {
-        const { movieId, theaterId } = args
-        // Booking -> Showtimes: findShowdates({movieId, theaterId})
-        // Booking <-- Showtimes: showdates[]
-        // Backend <-- Booking: showdates[]
-
-        // return this.service.findShowdates(movieId, theaterId)
+        return this.showtimesService.findShowdates(args)
     }
 
     @MethodLog({ level: 'verbose' })
-    async findShowtimes(args: { movieId: string; theaterId: string; showdate: string }) {
+    async findShowtimes(args: { movieId: string; theaterId: string; showdate: Date }) {
         const { movieId, theaterId, showdate } = args
-        // Booking -> Showtimes: findShowtimes({movieId, theaterId, showdate})
-        // Booking <-- Showtimes: showtimes[]
-        // Booking -> Tickets: getSalesStatuses({ showtimeIds })
-        // Booking <-- Tickets: salesStatuses[]
-        // note left
-        // ShowtimeSalesStatus = {
-        //     showtimeId: string
-        //     salesStatus:{
-        //         total: number
-        //         sold: number
-        //         available: number
-        //     }
-        // }
-        // end note
-        // Booking -> Booking: generateShowtimesWithSalesStatus\n(Showtimes[], salesStatuses)
-        // Backend <-- Booking: showtimesWithSalesStatus[]
 
-        // return this.service.findShowtimes(movieId, theaterId, showdate)
+        const startOfDay = new Date(showdate)
+        startOfDay.setHours(0, 0, 0, 0)
+
+        const endOfDay = new Date(showdate)
+        endOfDay.setHours(23, 59, 59, 999)
+
+        const showtimes = await this.showtimesService.findAllShowtimes({
+            movieIds: [movieId],
+            theaterIds: [theaterId],
+            startTimeRange: { start: startOfDay, end: endOfDay }
+        })
+
+        const ids= pickIds(showtimes)
+        const salesStatuses = await this.ticketsService.getSalesStatuses(ids)
+
+        const showtimesWithSalesStatus = generateShowtimesWithSalesStatus(
+            showtimes,
+            salesStatuses
+        )
+
+        return showtimesWithSalesStatus
     }
 
     @MethodLog({ level: 'verbose' })

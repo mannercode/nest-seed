@@ -1,41 +1,45 @@
-import { Body, Controller, Get, Param, Patch, Query, Req, UseGuards } from '@nestjs/common'
-import { AuthTokenPayload, LatLong, LatLongPipe } from 'common'
-import { CustomerJwtAuthGuard } from './guards'
+import { Body, Controller, Get, Param, Patch, Req, UseGuards } from '@nestjs/common'
+import { AuthTokenPayload, convertStringToDate, LatLong, LatLongQuery } from 'common'
 import { BookingService } from 'services/booking'
+import { CustomerJwtAuthGuard } from './guards'
 
 @Controller('booking')
 export class BookingController {
     constructor(private service: BookingService) {}
 
-    @Get('booking/movies/:movieId/theaters')
+    @Get('movies/:movieId/theaters')
     async findShowingTheaters(
         @Param('movieId') movieId: string,
-        @Query('latlong', LatLongPipe) latlong: LatLong
+        @LatLongQuery('latlong') latlong: LatLong
     ) {
         return this.service.findShowingTheaters({ movieId, latlong })
     }
 
-    @Get('booking/movies/:movieId/theaters/:theaterId/showdates')
+    @Get('movies/:movieId/theaters/:theaterId/showdates')
     async findShowdates(@Param('movieId') movieId: string, @Param('theaterId') theaterId: string) {
         return this.service.findShowdates({ movieId, theaterId })
     }
 
-    @Get('booking/movies/:movieId/theaters/:theaterId/showdates/:showdate/showtimes')
+    @Get('movies/:movieId/theaters/:theaterId/showdates/:showdate/showtimes')
     async findShowtimes(
         @Param('movieId') movieId: string,
         @Param('theaterId') theaterId: string,
         @Param('showdate') showdate: string
     ) {
-        return this.service.findShowtimes({ movieId, theaterId, showdate })
+        return this.service.findShowtimes({
+            movieId,
+            theaterId,
+            showdate: convertStringToDate(showdate)
+        })
     }
 
-    @Get('booking/showtimes/${showtimeId}/tickets')
+    @Get('showtimes/:showtimeId/tickets')
     async getTicketsForShowtime(@Param('showtimeId') showtimeId: string) {
         return this.service.getAvailableTickets(showtimeId)
     }
 
     @UseGuards(CustomerJwtAuthGuard)
-    @Patch('booking/showtimes/${showtimeId}/tickets')
+    @Patch('showtimes/:showtimeId/tickets')
     async holdTickets(
         @Param('showtimeId') showtimeId: string,
         @Body('ticketIds') ticketIds: string[],
