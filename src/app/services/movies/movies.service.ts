@@ -60,7 +60,7 @@ export class MoviesService {
     }
 
     private createMovieDto(movie: HydratedDocument<Movie>) {
-        const images = movie.storageFileIds.map((id) => `${STORAGE_FILES_ROUTE}/${id.toString()}`)
+        const images = movie.posterFileIds.map((id) => `${STORAGE_FILES_ROUTE}/${id.toString()}`)
         return toDto(movie, MovieDto, images)
     }
 }

@@ -72,8 +72,18 @@ describe('Booking 시나리오 테스트', () => {
             expect(showtimes).toEqual(
                 expect.arrayContaining(
                     [
-                        { movieId, theaterId, startTime: new Date('2999-01-01T12:00') },
-                        { movieId, theaterId, startTime: new Date('2999-01-01T14:00') }
+                        {
+                            movieId,
+                            theaterId,
+                            startTime: new Date('2999-01-01T12:00'),
+                            salesStatus: { total: seatCount, sold: 0, available: seatCount }
+                        },
+                        {
+                            movieId,
+                            theaterId,
+                            startTime: new Date('2999-01-01T14:00'),
+                            salesStatus: { total: seatCount, sold: 0, available: seatCount }
+                        }
                     ].map((item) => expect.objectContaining(item))
                 )
             )

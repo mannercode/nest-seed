@@ -1,14 +1,16 @@
 import { addMinutes } from 'common'
 import { CustomersService } from 'services/customers'
 import { MovieDto, MoviesService } from 'services/movies'
-import { ShowtimesService } from 'services/showtimes'
-import { TheatersService } from 'services/theaters'
-import { createHttpTestContext, HttpTestContext } from 'testlib'
+import { ShowtimeDto, ShowtimesService } from 'services/showtimes'
+import { getAllSeats, TheaterDto, TheatersService } from 'services/theaters'
+import { TicketsService, TicketStatus } from 'services/tickets'
+import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
 import { createCustomerAndLogin } from './customers-auth.fixture'
 import { createMovie } from './movies.fixture'
 import { createShowtimeDto, createShowtimes } from './showtimes.fixture'
 import { createTheater } from './theaters.fixture'
+import { createTickets } from './tickets.fixture'
 
 export interface Fixture {
     testContext: HttpTestContext
@@ -53,12 +55,37 @@ export async function createFixture() {
             })
         )
     )
-    await createShowtimes(showtimesService, showtimeDtos)
+    const showtimes = await createShowtimes(showtimesService, showtimeDtos)
 
-    // TODO ticket 생성해서 상태 업데이트 해야한다
+    const ticketsService = testContext.module.get(TicketsService)
+    await createAllTickets(ticketsService, theaters, showtimes)
+
     return { testContext, movie, accessToken }
 }
 
 export async function closeFixture(fixture: Fixture) {
     await fixture.testContext.close()
+}
+
+const createAllTickets = async (
+    ticketsService: TicketsService,
+    theaters: TheaterDto[],
+    showtimes: ShowtimeDto[]
+) => {
+    const theatersMap = new Map(theaters.map((theater) => [theater.id, theater]))
+
+    const createDtos = showtimes.flatMap((showtime) => {
+        const theater = theatersMap.get(showtime.theaterId)!
+
+        return getAllSeats(theater.seatmap).map((seat) => ({
+            batchId: nullObjectId,
+            movieId: showtime.movieId,
+            theaterId: showtime.theaterId,
+            showtimeId: showtime.id,
+            status: TicketStatus.available,
+            seat
+        }))
+    })
+
+    await createTickets(ticketsService, createDtos)
 }

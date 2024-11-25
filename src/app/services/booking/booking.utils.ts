@@ -18,11 +18,11 @@ export function generateShowtimesWithSalesStatus(
 ) {
     const salesStatusMap = new Map(salesStatuses.map((status) => [status.showtimeId, status]))
 
-    const showtimeSalesStatuses: ShowtimeSalesStatusDto[] = showtimes.map((showtime) => {
+    const showtimeSalesStatuses = showtimes.map((showtime) => {
         const { total, sold, available } = salesStatusMap.get(showtime.id)!
 
         return { ...showtime, salesStatus: { total, sold, available } }
     })
 
-    return showtimeSalesStatuses
+    return showtimeSalesStatuses as ShowtimeSalesStatusDto[]
 }

@@ -12,7 +12,7 @@ export class MovieDto {
     images: string[]
 
     constructor(movie: Movie, images: string[]) {
-        const { createdAt, updatedAt, __v, storageFileIds, ...rest } = movie
+        const { createdAt, updatedAt, __v, posterFileIds: storageFileIds, ...rest } = movie
 
         Object.assign(this, { ...rest, images })
     }

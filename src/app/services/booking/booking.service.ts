@@ -5,6 +5,7 @@ import { TheatersService } from 'services/theaters'
 import { TicketHoldingService } from 'services/ticket-holding'
 import { TicketsService } from 'services/tickets'
 import { generateShowtimesWithSalesStatus, sortTheatersByDistance } from './booking.utils'
+import { ShowtimeSalesStatusDto } from './dtos'
 
 @Injectable()
 export class BookingService {
@@ -46,23 +47,18 @@ export class BookingService {
             startTimeRange: { start: startOfDay, end: endOfDay }
         })
 
-        const ids= pickIds(showtimes)
+        const ids = pickIds(showtimes)
         const salesStatuses = await this.ticketsService.getSalesStatuses(ids)
 
-        const showtimesWithSalesStatus = generateShowtimesWithSalesStatus(
-            showtimes,
-            salesStatuses
-        )
+        const showtimesWithSalesStatus = generateShowtimesWithSalesStatus(showtimes, salesStatuses)
 
-        return showtimesWithSalesStatus
+        return showtimesWithSalesStatus as ShowtimeSalesStatusDto[]
     }
 
     @MethodLog({ level: 'verbose' })
     async getAvailableTickets(showtimeId: string) {
-        //     Booking -> Tickets: findAllTickets({showtimeId})
-        //     Booking <-- Tickets: tickets[]
-        // Backend <-- Booking: tickets[]
-        // return this.service.getTicketsForShowtime(showtimeId)
+        const tickets = await this.ticketsService.findAllTickets({ showtimeIds: [showtimeId] })
+        return tickets
     }
 
     @MethodLog({ level: 'verbose' })
@@ -70,11 +66,16 @@ export class BookingService {
         const { customerId, showtimeId, ticketIds } = args
         const seatHoldExpirationTime = 10 * 60 * 1000
 
-        // Booking -> TicketHolding: holdTickets(showtimeId, customerId, ticketIds[], ttlMs=10*60*1000)
-        // TicketHolding -> TicketHolding: releaseTickets(showtimeId, customerId)
-        // TicketHolding -> TicketHolding: holdTickets(showtimeId, customerId)
-        // Booking <-- TicketHolding: 성공
+        // TODO
+        // 객체 vs 개별 매개변수
+        // 객체로 전달하게 바꿔라
+        await this.ticketHoldingService.holdTickets(
+            showtimeId,
+            customerId,
+            ticketIds,
+            seatHoldExpirationTime
+        )
 
-        // return this.service.holdTickets(showtimeId, customerId, ticketIds, seatHoldExpirationTime)
+        return { heldTicketIds: ticketIds }
     }
 }
