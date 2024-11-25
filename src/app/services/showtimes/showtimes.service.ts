@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog, objectId, toDto, toDtos } from 'common'
+import { MethodLog, toDto, toDtos } from 'common'
 import { ShowtimeCreateDto, ShowtimeDto, ShowtimeFilterDto } from './dtos'
 import { ShowtimesRepository } from './showtimes.repository'
 
@@ -9,21 +9,14 @@ export class ShowtimesService {
 
     @MethodLog()
     async createShowtimes(createDtos: ShowtimeCreateDto[]) {
-        const payloads = createDtos.map((dto) => ({
-            ...dto,
-            batchId: objectId(dto.batchId),
-            theaterId: objectId(dto.theaterId),
-            movieId: objectId(dto.movieId)
-        }))
+        await this.repository.createShowtimes(createDtos)
 
-        await this.repository.createShowtimes(payloads)
-
-        return { success: true, count: payloads.length }
+        return { success: true, count: createDtos.length }
     }
 
     @MethodLog({ level: 'verbose' })
     async getShowtime(showtimeId: string) {
-        const showtime = await this.repository.getById(objectId(showtimeId))
+        const showtime = await this.repository.getById(showtimeId)
 
         return toDto(showtime, ShowtimeDto)
     }
@@ -36,7 +29,7 @@ export class ShowtimesService {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findShowingMovieIds(): Promise<string[]> {
+    async findShowingMovieIds() {
         const currentTime = new Date()
 
         return this.repository.findMovieIdsShowingAfter(currentTime)
@@ -44,16 +37,11 @@ export class ShowtimesService {
 
     @MethodLog({ level: 'verbose' })
     async findTheaterIdsByMovieId(movieId: string) {
-        return this.repository.findTheaterIdsByMovieId(objectId(movieId))
+        return this.repository.findTheaterIdsByMovieId(movieId)
     }
 
     @MethodLog({ level: 'verbose' })
     async findShowdates(args: { movieId: string; theaterId: string }) {
-        const { movieId, theaterId } = args
-
-        return this.repository.findShowdates({
-            movieId: objectId(movieId),
-            theaterId: objectId(theaterId)
-        })
+        return this.repository.findShowdates(args)
     }
 }

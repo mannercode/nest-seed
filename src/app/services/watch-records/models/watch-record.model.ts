@@ -1,5 +1,5 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { ModelAttributes, MongooseSchema, ObjectId, createMongooseSchema } from 'common'
+import { MongooseSchema, ObjectId, createMongooseSchema } from 'common'
 
 @Schema()
 export class WatchRecord extends MongooseSchema {
@@ -17,5 +17,3 @@ export class WatchRecord extends MongooseSchema {
 }
 
 export const WatchRecordSchema = createMongooseSchema(WatchRecord)
-
-export type WatchRecordCreatePayload = ModelAttributes<WatchRecord>

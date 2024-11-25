@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { addIdQuery, MethodLog, MongooseRepository } from 'common'
+import { addIdQuery, MethodLog, MongooseRepository, objectId } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { WatchRecordQueryDto } from './dtos'
-import { WatchRecord, WatchRecordCreatePayload } from './models'
+import { WatchRecordCreateDto, WatchRecordQueryDto } from './dtos'
+import { WatchRecord } from './models'
 
 @Injectable()
 export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
@@ -12,9 +12,12 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
     }
 
     @MethodLog()
-    async createWatchRecord(payload: WatchRecordCreatePayload) {
+    async createWatchRecord(createDto: WatchRecordCreateDto) {
         const watchRecord = this.newDocument()
-        Object.assign(watchRecord, payload)
+        watchRecord.customerId = objectId(createDto.customerId)
+        watchRecord.movieId = objectId(createDto.movieId)
+        watchRecord.purchaseId = objectId(createDto.purchaseId)
+        watchRecord.watchDate = createDto.watchDate
 
         return watchRecord.save()
     }

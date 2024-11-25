@@ -38,7 +38,7 @@ export const createMovieDto = (overrides = {}) => {
 
 export const createMovie = async (moviesService: MoviesService, override = {}) => {
     const { createDto } = createMovieDto(override)
-    const movie = await moviesService.createMovie([], createDto)
+    const movie = await moviesService.createMovie(createDto, [])
     return movie
 }
 

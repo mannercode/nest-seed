@@ -45,12 +45,10 @@ export class Movie extends MongooseSchema {
     @Prop({ type: String, enum: MovieRating })
     rating: MovieRating
 
+    // TODO imageFileIds로 변경해야지
     @Prop({ type: ObjectId, required: true })
     storageFileIds: ObjectId[]
 }
 
 export const MovieSchema = createMongooseSchema(Movie)
 MovieSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' })
-
-export type MovieCreatePayload = ModelAttributes<Movie>
-export type MovieUpdatePayload = Partial<ModelAttributes<Movie>>

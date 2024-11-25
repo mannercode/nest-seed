@@ -5,12 +5,12 @@ import {
     addRangeQuery,
     MethodLog,
     MongooseRepository,
-    ObjectId,
+    objectId,
     validateFilters
 } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { ShowtimeFilterDto } from './dtos'
-import { Showtime, ShowtimeCreatePayload } from './models'
+import { ShowtimeCreateDto, ShowtimeFilterDto } from './dtos'
+import { Showtime } from './models'
 
 @Injectable()
 export class ShowtimesRepository extends MongooseRepository<Showtime> {
@@ -19,11 +19,16 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
     }
 
     @MethodLog()
-    async createShowtimes(payloads: ShowtimeCreatePayload[]) {
-        const showtimes = payloads.map((dto) => {
-            const document = this.newDocument()
-            Object.assign(document, dto)
-            return document
+    async createShowtimes(createDtos: ShowtimeCreateDto[]) {
+        const showtimes = createDtos.map((dto) => {
+            const doc = this.newDocument()
+            doc.movieId = objectId(dto.movieId)
+            doc.theaterId = objectId(dto.theaterId)
+            doc.startTime = dto.startTime
+            doc.endTime = dto.endTime
+            doc.batchId = objectId(dto.batchId)
+
+            return doc
         })
 
         await this.saveAll(showtimes)
@@ -53,15 +58,19 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findTheaterIdsByMovieId(movieId: ObjectId) {
-        const theaterIds = await this.model.distinct('theaterId', { movieId }).exec()
+    async findTheaterIdsByMovieId(movieId: string) {
+        const theaterIds = await this.model
+            .distinct('theaterId', { movieId: objectId(movieId) })
+            .exec()
         return theaterIds.map((id) => id.toString())
     }
 
     @MethodLog({ level: 'verbose' })
-    async findShowdates(args: { movieId: ObjectId; theaterId: ObjectId }) {
+    async findShowdates(args: { movieId: string; theaterId: string }) {
+        const { movieId, theaterId } = args
+
         const showdates = await this.model.aggregate([
-            { $match: args },
+            { $match: { movieId: objectId(movieId), theaterId: objectId(theaterId) } },
             { $project: { date: { $dateToString: { format: '%Y-%m-%d', date: '$startTime' } } } },
             { $group: { _id: '$date' } },
             { $sort: { _id: 1 } }

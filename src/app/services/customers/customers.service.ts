@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common'
-import { JwtAuthService, MethodLog, objectId, Password, toDto, toDtos } from 'common'
+import { ConflictException, Injectable } from '@nestjs/common'
+import { JwtAuthService, MethodLog, Password, toDto, toDtos } from 'common'
 import { CustomersRepository } from './customers.repository'
 import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
 
@@ -12,6 +12,9 @@ export class CustomersService {
 
     @MethodLog()
     async createCustomer(createDto: CustomerCreateDto) {
+        if (await this.repository.findByEmail(createDto.email))
+            throw new ConflictException(`Customer with email ${createDto.email} already exists`)
+
         const customer = await this.repository.createCustomer({
             ...createDto,
             password: await Password.hash(createDto.password)
@@ -22,19 +25,19 @@ export class CustomersService {
 
     @MethodLog()
     async updateCustomer(customerId: string, updateDto: CustomerUpdateDto) {
-        const customer = await this.repository.updateCustomer(objectId(customerId), updateDto)
+        const customer = await this.repository.updateCustomer(customerId, updateDto)
         return toDto(customer, CustomerDto)
     }
 
     @MethodLog({ level: 'verbose' })
     async getCustomer(customerId: string) {
-        const customer = await this.repository.getById(objectId(customerId))
+        const customer = await this.repository.getById(customerId)
         return toDto(customer, CustomerDto)
     }
 
     @MethodLog()
     async deleteCustomer(customerId: string) {
-        await this.repository.deleteById(objectId(customerId))
+        await this.repository.deleteById(customerId)
         return true
     }
 

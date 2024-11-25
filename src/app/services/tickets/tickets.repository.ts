@@ -5,14 +5,14 @@ import {
     MethodLog,
     MongooseRepository,
     MongooseUpdateResult,
-    ObjectId,
+    objectId,
     objectIds,
     validateFilters
 } from 'common'
 import { FilterQuery, Model } from 'mongoose'
+import { SalesStatusByShowtimeDto, TicketCreateDto } from './dtos'
 import { TicketFilterDto } from './dtos/ticket-filter.dto'
-import { Ticket, TicketCreatePayload, TicketStatus } from './models'
-import { SalesStatusByShowtimeDto } from './dtos'
+import { Ticket, TicketStatus } from './models'
 
 @Injectable()
 export class TicketsRepository extends MongooseRepository<Ticket> {
@@ -21,10 +21,16 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
     }
 
     @MethodLog()
-    async createTickets(payloads: TicketCreatePayload[]) {
-        const tickets = payloads.map((dto) => {
+    async createTickets(createDtos: TicketCreateDto[]) {
+        const tickets = createDtos.map((dto) => {
             const ticket = this.newDocument()
-            Object.assign(ticket, dto)
+            ticket.batchId = objectId(dto.batchId)
+            ticket.movieId = objectId(dto.movieId)
+            ticket.theaterId = objectId(dto.theaterId)
+            ticket.showtimeId = objectId(dto.showtimeId)
+            ticket.status = dto.status
+            ticket.seat = dto.seat
+
             return ticket
         })
 
@@ -32,16 +38,13 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
     }
 
     @MethodLog()
-    async updateTicketStatus(
-        ticketIds: ObjectId[],
-        status: TicketStatus
-    ): Promise<MongooseUpdateResult> {
+    async updateTicketStatus(ticketIds: string[], status: TicketStatus) {
         const result = await this.model.updateMany(
-            { _id: { $in: ticketIds } },
+            { _id: { $in: objectIds(ticketIds) } },
             { $set: { status } }
         )
 
-        return result
+        return result as MongooseUpdateResult
     }
 
     @MethodLog({ level: 'verbose' })
@@ -61,9 +64,9 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
     }
 
     @MethodLog({ level: 'verbose' })
-    async getSalesStatuses(showtimeIds: ObjectId[]) {
+    async getSalesStatuses(showtimeIds: string[]) {
         const salesStatuses = await this.model.aggregate([
-            { $match: { showtimeId: { $in: showtimeIds } } },
+            { $match: { showtimeId: { $in: objectIds(showtimeIds) } } },
             {
                 $group: {
                     _id: '$showtimeId',
@@ -82,7 +85,6 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
                     total: 1,
                     sold: 1,
                     available: { $subtract: ['$total', '$sold'] }
-                    // TODO 이거 계산을 이렇게 하면 안 된다.
                 }
             }
         ])
@@ -90,4 +92,3 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         return salesStatuses as SalesStatusByShowtimeDto[]
     }
 }
-// TODO repository에서 objectId 변환해라

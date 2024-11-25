@@ -1,5 +1,5 @@
 import { expect } from '@jest/globals'
-import { pickItems, toDtos } from 'common'
+import { ObjectId, pickIds, toDtos } from 'common'
 import { getMongoTestConnection } from 'testlib'
 import {
     createFixture,
@@ -33,6 +33,7 @@ describe('MongooseRepository - withTransaction', () => {
             ].map((data) => {
                 const doc = repository.newDocument()
                 doc.name = data.name
+                doc.objId = new ObjectId()
                 return doc
             })
 
@@ -40,7 +41,7 @@ describe('MongooseRepository - withTransaction', () => {
             return docs
         })
 
-        const foundSamples = await repository.findByIds(pickItems(docs, '_id'))
+        const foundSamples = await repository.findByIds(pickIds(docs))
         expect(toDtos(foundSamples, SampleDto)).toEqual(toDtos(docs, SampleDto))
     })
 
@@ -53,6 +54,7 @@ describe('MongooseRepository - withTransaction', () => {
             ].map((data) => {
                 const doc = repository.newDocument()
                 doc.name = data.name
+                doc.objId = new ObjectId()
                 return doc
             })
 
@@ -68,7 +70,7 @@ describe('MongooseRepository - withTransaction', () => {
 
     it('rollback a transaction', async () => {
         const samples = await createSamples(repository)
-        const ids = pickItems(samples, '_id')
+        const ids = pickIds(samples)
 
         await repository.withTransaction(async (session, rollback) => {
             await repository.deleteByIds(ids, session)

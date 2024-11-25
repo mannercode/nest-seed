@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog, objectId, objectIds, toDto } from 'common'
+import { MethodLog, pickIds, toDto } from 'common'
 import { STORAGE_FILES_ROUTE } from 'config'
 import { HydratedDocument } from 'mongoose'
 import { StorageFileCreateDto, StorageFilesService } from '../storage-files'
@@ -15,29 +15,28 @@ export class MoviesService {
     ) {}
 
     @MethodLog()
-    async createMovie(fileCreateDtos: StorageFileCreateDto[], movieCreateDto: MovieCreateDto) {
+    async createMovie(movieCreateDto: MovieCreateDto, fileCreateDtos: StorageFileCreateDto[]) {
         const storageFiles = await this.storageFilesService.saveFiles(fileCreateDtos)
-        const storageFileIds = storageFiles.map((file) => objectId(file.id))
 
-        const movie = await this.repository.createMovie({ ...movieCreateDto, storageFileIds })
+        const movie = await this.repository.createMovie(movieCreateDto, pickIds(storageFiles))
         return this.createMovieDto(movie)
     }
 
     @MethodLog()
     async updateMovie(movieId: string, updateDto: MovieUpdateDto) {
-        const movie = await this.repository.updateMovie(objectId(movieId), updateDto)
+        const movie = await this.repository.updateMovie(movieId, updateDto)
         return this.createMovieDto(movie)
     }
 
     @MethodLog({ level: 'verbose' })
     async getMovie(movieId: string) {
-        const movie = await this.repository.getById(objectId(movieId))
+        const movie = await this.repository.getById(movieId)
         return this.createMovieDto(movie)
     }
 
     @MethodLog()
     async deleteMovie(movieId: string) {
-        await this.repository.deleteById(objectId(movieId))
+        await this.repository.deleteById(movieId)
         return true
     }
 
@@ -50,14 +49,14 @@ export class MoviesService {
 
     @MethodLog({ level: 'verbose' })
     async getMoviesByIds(movieIds: string[]) {
-        const movies = await this.repository.getByIds(objectIds(movieIds))
+        const movies = await this.repository.getByIds(movieIds)
 
         return movies.map((movie) => this.createMovieDto(movie))
     }
 
     @MethodLog({ level: 'verbose' })
     async moviesExist(movieIds: string[]): Promise<boolean> {
-        return this.repository.existsByIds(objectIds(movieIds))
+        return this.repository.existsByIds(movieIds)
     }
 
     private createMovieDto(movie: HydratedDocument<Movie>) {

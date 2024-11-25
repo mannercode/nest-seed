@@ -38,7 +38,7 @@ export class MoviesController {
             pick(file, 'originalname', 'mimetype', 'size', 'path')
         )
 
-        return this.service.createMovie(fileCreateDtos, movieCreateDto)
+        return this.service.createMovie(movieCreateDto, fileCreateDtos)
     }
 
     @Patch(':movieId')

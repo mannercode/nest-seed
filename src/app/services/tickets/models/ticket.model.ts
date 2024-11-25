@@ -1,5 +1,5 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { ModelAttributes, MongooseSchema, ObjectId, createMongooseSchema } from 'common'
+import { MongooseSchema, ObjectId, createMongooseSchema } from 'common'
 import { Seat } from '../../theaters'
 
 export enum TicketStatus {
@@ -29,5 +29,3 @@ export class Ticket extends MongooseSchema {
 }
 
 export const TicketSchema = createMongooseSchema(Ticket)
-
-export type TicketCreatePayload = ModelAttributes<Ticket>

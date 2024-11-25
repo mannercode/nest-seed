@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { addRegexQuery, MethodLog, MongooseRepository, ObjectId } from 'common'
+import { addRegexQuery, MethodLog, MongooseRepository } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { TheaterQueryDto } from './dtos'
-import { Theater, TheaterCreatePayload, TheaterUpdatePayload } from './models'
+import { TheaterCreateDto, TheaterQueryDto, TheaterUpdateDto } from './dtos'
+import { Theater } from './models'
 
 @Injectable()
 export class TheatersRepository extends MongooseRepository<Theater> {
@@ -12,20 +12,22 @@ export class TheatersRepository extends MongooseRepository<Theater> {
     }
 
     @MethodLog()
-    async createTheater(payload: TheaterCreatePayload) {
+    async createTheater(createDto: TheaterCreateDto) {
         const theater = this.newDocument()
-        Object.assign(theater, payload)
+        theater.name = createDto.name
+        theater.latlong = createDto.latlong
+        theater.seatmap = createDto.seatmap
 
         return theater.save()
     }
 
     @MethodLog()
-    async updateTheater(theaterId: ObjectId, payload: TheaterUpdatePayload) {
+    async updateTheater(theaterId: string, updateDto: TheaterUpdateDto) {
         const theater = await this.getById(theaterId)
 
-        if (payload.name) theater.name = payload.name
-        if (payload.latlong) theater.latlong = payload.latlong
-        if (payload.seatmap) theater.seatmap = payload.seatmap
+        if (updateDto.name) theater.name = updateDto.name
+        if (updateDto.latlong) theater.latlong = updateDto.latlong
+        if (updateDto.seatmap) theater.seatmap = updateDto.seatmap
 
         return theater.save()
     }

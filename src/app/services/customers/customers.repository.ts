@@ -1,9 +1,9 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { addRegexQuery, MethodLog, MongooseRepository, ObjectId } from 'common'
+import { addRegexQuery, MethodLog, MongooseRepository } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { CustomerQueryDto } from './dtos'
-import { Customer, CustomerCreatePayload, CustomerUpdatePayload } from './models'
+import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
+import { Customer } from './models'
 
 @Injectable()
 export class CustomersRepository extends MongooseRepository<Customer> {
@@ -12,23 +12,22 @@ export class CustomersRepository extends MongooseRepository<Customer> {
     }
 
     @MethodLog()
-    async createCustomer(payload: CustomerCreatePayload) {
-        if (await this.findByEmail(payload.email))
-            throw new ConflictException(`Customer with email ${payload.email} already exists`)
-
+    async createCustomer(createDto: CustomerCreateDto) {
         const customer = this.newDocument()
-        Object.assign(customer, payload)
+        customer.name = createDto.name
+        customer.email = createDto.email
+        customer.birthdate = createDto.birthdate
+        customer.password = createDto.password
 
         return customer.save()
     }
 
     @MethodLog()
-    async updateCustomer(customerId: ObjectId, payload: CustomerUpdatePayload) {
+    async updateCustomer(customerId: string, updateDto: CustomerUpdateDto) {
         const customer = await this.getById(customerId)
-
-        if (payload.name) customer.name = payload.name
-        if (payload.email) customer.email = payload.email
-        if (payload.birthdate) customer.birthdate = payload.birthdate
+        if (updateDto.name) customer.name = updateDto.name
+        if (updateDto.email) customer.email = updateDto.email
+        if (updateDto.birthdate) customer.birthdate = updateDto.birthdate
 
         return customer.save()
     }

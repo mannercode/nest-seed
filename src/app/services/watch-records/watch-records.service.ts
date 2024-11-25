@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog, objectId, toDto, toDtos } from 'common'
+import { MethodLog, toDto, toDtos } from 'common'
 import { WatchRecordCreateDto, WatchRecordDto, WatchRecordQueryDto } from './dtos'
 import { WatchRecordsRepository } from './watch-records.repository'
 
@@ -9,14 +9,7 @@ export class WatchRecordsService {
 
     @MethodLog()
     async createWatchRecord(createDto: WatchRecordCreateDto) {
-        const payload = {
-            ...createDto,
-            customerId: objectId(createDto.customerId),
-            movieId: objectId(createDto.movieId),
-            purchaseId: objectId(createDto.purchaseId)
-        }
-
-        const watchRecord = await this.repository.createWatchRecord(payload)
+        const watchRecord = await this.repository.createWatchRecord(createDto)
 
         return toDto(watchRecord, WatchRecordDto)
     }

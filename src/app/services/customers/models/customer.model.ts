@@ -1,5 +1,5 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { ModelAttributes, MongooseSchema, createMongooseSchema } from 'common'
+import { MongooseSchema, createMongooseSchema } from 'common'
 import * as mongooseDelete from 'mongoose-delete'
 
 @Schema()
@@ -21,9 +21,6 @@ export const CustomerSchema = createMongooseSchema(Customer)
 CustomerSchema.index({ email: 1 })
 CustomerSchema.index({ name: 'text' })
 CustomerSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' })
-
-export type CustomerCreatePayload = ModelAttributes<Customer>
-export type CustomerUpdatePayload = Partial<ModelAttributes<Customer>>
 
 /*
 1. `CustomerSchema.index({ email: 1 })`

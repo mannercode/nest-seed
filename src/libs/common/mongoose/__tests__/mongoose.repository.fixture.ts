@@ -5,6 +5,7 @@ import {
     generateShortId,
     MongooseRepository,
     MongooseSchema,
+    ObjectId,
     padNumber
 } from 'common'
 import { Model } from 'mongoose'
@@ -14,6 +15,9 @@ import { createTestingModule } from 'testlib'
 export class Sample extends MongooseSchema {
     @Prop({ required: true })
     name: string
+
+    @Prop({ required: true })
+    objId: ObjectId
 }
 
 export const SampleSchema = createMongooseSchema(Sample)
@@ -74,6 +78,7 @@ export const sortByNameDescending = (documents: SampleDto[]) =>
 export const createSample = (repository: SamplesRepository) => {
     const doc = repository.newDocument()
     doc.name = 'Sample-Name'
+    doc.objId = new ObjectId()
     return doc.save()
 }
 
@@ -82,6 +87,7 @@ export const createSamples = async (repository: SamplesRepository) =>
         Array.from({ length: 20 }, async (_, index) => {
             const doc = repository.newDocument()
             doc.name = `Sample-${padNumber(index, 3)}`
+            doc.objId = new ObjectId()
             return doc.save()
         })
     )

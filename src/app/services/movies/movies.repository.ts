@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { addEqualQuery, addRegexQuery, MethodLog, MongooseRepository, ObjectId } from 'common'
+import { addEqualQuery, addRegexQuery, MethodLog, MongooseRepository, objectIds } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { MovieQueryDto } from './dtos'
-import { Movie, MovieCreatePayload, MovieUpdatePayload } from './models'
+import { MovieCreateDto, MovieQueryDto, MovieUpdateDto } from './dtos'
+import { Movie } from './models'
 
 @Injectable()
 export class MoviesRepository extends MongooseRepository<Movie> {
@@ -12,24 +12,31 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     }
 
     @MethodLog()
-    async createMovie(payload: MovieCreatePayload) {
+    async createMovie(createDto: MovieCreateDto, storageFileIds: string[]) {
         const movie = this.newDocument()
-        Object.assign(movie, payload)
+        movie.title = createDto.title
+        movie.genre = createDto.genre
+        movie.releaseDate = createDto.releaseDate
+        movie.plot = createDto.plot
+        movie.durationMinutes = createDto.durationMinutes
+        movie.director = createDto.director
+        movie.rating = createDto.rating
+        movie.storageFileIds = objectIds(storageFileIds)
 
         return movie.save()
     }
 
     @MethodLog()
-    async updateMovie(movieId: ObjectId, payload: MovieUpdatePayload) {
+    async updateMovie(movieId: string, updateDto: MovieUpdateDto) {
         const movie = await this.getById(movieId)
 
-        if (payload.title) movie.title = payload.title
-        if (payload.genre) movie.genre = payload.genre
-        if (payload.releaseDate) movie.releaseDate = payload.releaseDate
-        if (payload.plot) movie.plot = payload.plot
-        if (payload.durationMinutes) movie.durationMinutes = payload.durationMinutes
-        if (payload.director) movie.director = payload.director
-        if (payload.rating) movie.rating = payload.rating
+        if (updateDto.title) movie.title = updateDto.title
+        if (updateDto.genre) movie.genre = updateDto.genre
+        if (updateDto.releaseDate) movie.releaseDate = updateDto.releaseDate
+        if (updateDto.plot) movie.plot = updateDto.plot
+        if (updateDto.durationMinutes) movie.durationMinutes = updateDto.durationMinutes
+        if (updateDto.director) movie.director = updateDto.director
+        if (updateDto.rating) movie.rating = updateDto.rating
 
         return movie.save()
     }

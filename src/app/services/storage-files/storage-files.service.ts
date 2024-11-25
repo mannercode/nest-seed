@@ -21,7 +21,8 @@ export class StorageFilesService {
             for (const createDto of createDtos) {
                 const checksum = await getChecksum(createDto.path)
                 const storageFile = await this.repository.createStorageFile(
-                    { ...createDto, checksum },
+                    createDto,
+                    checksum,
                     session
                 )
                 // move가 아니라 copy하기 때문에 성능 영향이 있다
@@ -38,15 +39,15 @@ export class StorageFilesService {
 
     @MethodLog({ level: 'verbose' })
     async getStorageFile(fileId: string) {
-        const file = await this.repository.getById(objectId(fileId))
+        const file = await this.repository.getById(fileId)
         return this.createStorageFileDto(file)
     }
 
     @MethodLog()
     async deleteStorageFile(fileId: string) {
-        await this.repository.deleteById(objectId(fileId))
+        await this.repository.deleteById(fileId)
 
-        const targetPath = this.getStoragePath(objectId(fileId))
+        const targetPath = this.getStoragePath(fileId)
         await Path.delete(targetPath)
 
         return true
@@ -57,7 +58,7 @@ export class StorageFilesService {
         return dto
     }
 
-    private getStoragePath(fileId: ObjectId) {
+    private getStoragePath(fileId: string) {
         const path = Path.join(this.config.fileUpload.directory, `${fileId}.file`)
         return path
     }

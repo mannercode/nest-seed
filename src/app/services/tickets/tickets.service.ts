@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { Assert, MethodLog, objectId, objectIds, toDtos } from 'common'
+import { Assert, MethodLog, toDtos } from 'common'
 import { TicketCreateDto, TicketDto } from './dtos'
 import { TicketFilterDto } from './dtos/ticket-filter.dto'
 import { TicketStatus } from './models'
@@ -11,22 +11,14 @@ export class TicketsService {
 
     @MethodLog()
     async createTickets(createDtos: TicketCreateDto[]) {
-        const payloads = createDtos.map((dto) => ({
-            ...dto,
-            batchId: objectId(dto.batchId),
-            theaterId: objectId(dto.theaterId),
-            movieId: objectId(dto.movieId),
-            showtimeId: objectId(dto.showtimeId)
-        }))
+        await this.repository.createTickets(createDtos)
 
-        await this.repository.createTickets(payloads)
-
-        return { success: true, count: payloads.length }
+        return { success: true, count: createDtos.length }
     }
 
     @MethodLog()
     async updateTicketStatus(ticketIds: string[], status: TicketStatus): Promise<TicketDto[]> {
-        const result = await this.repository.updateTicketStatus(objectIds(ticketIds), status)
+        const result = await this.repository.updateTicketStatus(ticketIds, status)
 
         Assert.equals(
             result.matchedCount,
@@ -34,7 +26,7 @@ export class TicketsService {
             'The status of all tickets must be changed.'
         )
 
-        const tickets = await this.repository.getByIds(objectIds(ticketIds))
+        const tickets = await this.repository.getByIds(ticketIds)
 
         return toDtos(tickets, TicketDto)
     }
@@ -48,7 +40,7 @@ export class TicketsService {
 
     @MethodLog({ level: 'verbose' })
     async getSalesStatuses(showtimeIds: string[]) {
-        const statuses = await this.repository.getSalesStatuses(objectIds(showtimeIds))
+        const statuses = await this.repository.getSalesStatuses(showtimeIds)
         return statuses
     }
 }

@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { MethodLog, MongooseRepository } from 'common'
 import { ClientSession, Model } from 'mongoose'
-import { StorageFile, StorageFileCreatePayload } from './models'
+import { StorageFileCreateDto } from './dtos'
+import { StorageFile } from './models'
 
 @Injectable()
 export class StorageFilesRepository extends MongooseRepository<StorageFile> {
@@ -11,9 +12,16 @@ export class StorageFilesRepository extends MongooseRepository<StorageFile> {
     }
 
     @MethodLog({ excludeArgs: ['session'] })
-    async createStorageFile(createDto: StorageFileCreatePayload, session?: ClientSession) {
+    async createStorageFile(
+        createDto: StorageFileCreateDto,
+        checksum: string,
+        session?: ClientSession
+    ) {
         const storageFile = this.newDocument()
-        Object.assign(storageFile, createDto)
+        storageFile.originalname = createDto.originalname
+        storageFile.mimetype = createDto.mimetype
+        storageFile.size = createDto.size
+        storageFile.checksum = checksum
 
         return storageFile.save({ session })
     }
