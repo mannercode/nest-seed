@@ -36,13 +36,16 @@ export class CustomersRepository extends MongooseRepository<Customer> {
     async findCustomers(queryDto: CustomerQueryDto) {
         const { name, email, ...pagination } = queryDto
 
-        const paginated = await this.findWithPagination((helpers) => {
-            const query: FilterQuery<Customer> = {}
-            addRegexQuery(query, 'name', name)
-            addRegexQuery(query, 'email', email)
+        const paginated = await this.findWithPagination({
+            callback: (helpers) => {
+                const query: FilterQuery<Customer> = {}
+                addRegexQuery(query, 'name', name)
+                addRegexQuery(query, 'email', email)
 
-            helpers.setQuery(query)
-        }, pagination)
+                helpers.setQuery(query)
+            },
+            pagination
+        })
 
         return paginated
     }

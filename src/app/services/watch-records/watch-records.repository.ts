@@ -26,12 +26,15 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
     async findWatchRecords(queryDto: WatchRecordQueryDto) {
         const { customerId, ...pagination } = queryDto
 
-        const paginated = await this.findWithPagination((helpers) => {
-            const query: FilterQuery<WatchRecord> = {}
-            addIdQuery(query, 'customerId', customerId)
+        const paginated = await this.findWithPagination({
+            callback: (helpers) => {
+                const query: FilterQuery<WatchRecord> = {}
+                addIdQuery(query, 'customerId', customerId)
 
-            helpers.setQuery(query)
-        }, pagination)
+                helpers.setQuery(query)
+            },
+            pagination
+        })
 
         return paginated
     }

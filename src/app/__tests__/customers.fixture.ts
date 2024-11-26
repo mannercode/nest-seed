@@ -32,7 +32,7 @@ export const createCustomerDto = (overrides = {}) => {
         ...overrides
     }
 
-    const expectedDto = { id: expect.anything(), ...omit(createDto, 'password') }
+    const expectedDto = { id: expect.any(String), ...omit(createDto, 'password') }
 
     return { createDto, expectedDto }
 }

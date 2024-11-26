@@ -27,8 +27,8 @@ describe('Customer Authentication', () => {
     describe('POST /login', () => {
         it('로그인에 성공하면 인증 토큰을 반환해야 한다', async () => {
             await client.post('/customers/login').body({ email, password }).ok({
-                accessToken: expect.anything(),
-                refreshToken: expect.anything()
+                accessToken: expect.any(String),
+                refreshToken: expect.any(String)
             })
         })
 

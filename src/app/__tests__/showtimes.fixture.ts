@@ -39,7 +39,7 @@ export const createShowtimeDtos = (overrides = {}, length: number = 100) => {
             ...overrides
         })
 
-        const expectedDto = { id: expect.anything(), ...omit(createDto, 'batchId') }
+        const expectedDto = { id: expect.any(String), ...omit(createDto, 'batchId') }
 
         createDtos.push(createDto)
         expectedDtos.push(expectedDto)

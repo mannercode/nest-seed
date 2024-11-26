@@ -21,7 +21,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         movie.durationMinutes = createDto.durationMinutes
         movie.director = createDto.director
         movie.rating = createDto.rating
-        movie.posterFileIds = objectIds(storageFileIds)
+        movie.imageFileIds = objectIds(storageFileIds)
 
         return movie.save()
     }
@@ -45,17 +45,20 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     async findMovies(queryDto: MovieQueryDto) {
         const { title, genre, releaseDate, plot, director, rating, ...pagination } = queryDto
 
-        const paginated = await this.findWithPagination((helpers) => {
-            const query: FilterQuery<Movie> = {}
-            addRegexQuery(query, 'title', title)
-            addEqualQuery(query, 'genre', genre)
-            addEqualQuery(query, 'releaseDate', releaseDate)
-            addRegexQuery(query, 'plot', plot)
-            addRegexQuery(query, 'director', director)
-            addEqualQuery(query, 'rating', rating)
+        const paginated = await this.findWithPagination({
+            callback: (helpers) => {
+                const query: FilterQuery<Movie> = {}
+                addRegexQuery(query, 'title', title)
+                addEqualQuery(query, 'genre', genre)
+                addEqualQuery(query, 'releaseDate', releaseDate)
+                addRegexQuery(query, 'plot', plot)
+                addRegexQuery(query, 'director', director)
+                addEqualQuery(query, 'rating', rating)
 
-            helpers.setQuery(query)
-        }, pagination)
+                helpers.setQuery(query)
+            },
+            pagination
+        })
 
         return paginated
     }

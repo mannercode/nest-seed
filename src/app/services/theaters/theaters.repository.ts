@@ -36,12 +36,15 @@ export class TheatersRepository extends MongooseRepository<Theater> {
     async findTheaters(queryDto: TheaterQueryDto) {
         const { name, ...pagination } = queryDto
 
-        const paginated = await this.findWithPagination((helpers) => {
-            const query: FilterQuery<Theater> = {}
-            addRegexQuery(query, 'name', name)
+        const paginated = await this.findWithPagination({
+            callback: (helpers) => {
+                const query: FilterQuery<Theater> = {}
+                addRegexQuery(query, 'name', name)
 
-            helpers.setQuery(query)
-        }, pagination)
+                helpers.setQuery(query)
+            },
+            pagination
+        })
 
         return paginated
     }

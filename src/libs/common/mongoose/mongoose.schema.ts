@@ -1,28 +1,7 @@
-import { FlattenMaps, HydratedDocument, SchemaOptions, Types } from 'mongoose'
-
-// TODO optimisticConcurrency 테스트로 만들어라
-export const defaultSchemaOption = {
-    // https://mongoosejs.com/docs/guide.html#optimisticConcurrency
-    optimisticConcurrency: true,
-    minimize: false,
-    strict: 'throw',
-    strictQuery: 'throw',
-    timestamps: true,
-    validateBeforeSave: true,
-    // https://mongoosejs.com/docs/guide.html#collation
-    collation: { locale: 'en_US', strength: 1 },
-    toJSON: {
-        virtuals: true,
-        flattenObjectIds: true,
-        versionKey: false,
-        transform: function (_doc, ret) {
-            delete ret._id
-            delete ret.deleted
-            delete ret.createdAt
-            delete ret.updatedAt
-        }
-    }
-} as SchemaOptions
+import { Type } from '@nestjs/common'
+import { SchemaFactory } from '@nestjs/mongoose'
+import { FlattenMaps, SchemaOptions, Types } from 'mongoose'
+import * as mongooseDelete from 'mongoose-delete'
 
 /*
 toObject와 toJSON의 차이는 toJSON는 flattenMaps의 기본값이 true라는 것 뿐이다.
@@ -40,47 +19,79 @@ console.log(sample.toJSON())
 attributes: { key1: 'value1', key2: 'value2' },
 */
 
-export class MongooseSchema {
+type SchemaOptionType = {
+    timestamps?: boolean
+    json?: {
+        omits?: readonly string[]
+        includes?: { timestamps?: boolean }
+    }
+}
+export const createSchemaOptions = (options: SchemaOptionType): SchemaOptions => {
+    const { timestamps, json } = options
+
+    return {
+        // https://mongoosejs.com/docs/guide.html#optimisticConcurrency
+        optimisticConcurrency: true,
+        minimize: false,
+        strict: 'throw',
+        strictQuery: 'throw',
+        timestamps: timestamps ?? true,
+        validateBeforeSave: true,
+        // https://mongoosejs.com/docs/guide.html#collation
+        collation: { locale: 'en_US', strength: 1 },
+        toJSON: {
+            virtuals: true,
+            flattenObjectIds: true,
+            versionKey: false,
+            transform: function (_doc, ret) {
+                delete ret._id
+                delete ret.deleted
+
+                let timestamps = false
+
+                if (json) {
+                    const { omits, includes } = json
+
+                    if (omits) {
+                        omits.forEach((omit) => delete ret[omit])
+                    }
+
+                    if (includes) {
+                        timestamps = includes.timestamps ?? false
+                    }
+                }
+
+                if (!timestamps) {
+                    delete ret.createdAt
+                    delete ret.updatedAt
+                }
+            }
+        }
+    }
+}
+
+export abstract class MongooseSchema {
     id: string
-    createdAt: Date
-    updatedAt: Date
-    __v: number
 }
 
 type ReplaceObjectIdWithString<T> = {
     [K in keyof T]: T[K] extends Types.ObjectId ? string : T[K]
 }
+type OmitKey<T, K extends keyof T = never> = FlattenMaps<ReplaceObjectIdWithString<Omit<T, K>>>
+type ExtractKeys<O extends readonly any[]> = O[number]
+export type SchemaJson<T, O extends readonly (keyof T)[] = []> = OmitKey<T, ExtractKeys<O>>
 
-export type SchemaJson<T> = FlattenMaps<ReplaceObjectIdWithString<T>>
+type MongooseSchemaOptions = { softDeletion?: boolean }
+export function createMongooseSchema<T extends Type<MongooseSchema>>(
+    cls: T,
+    options: MongooseSchemaOptions
+) {
+    const schema = SchemaFactory.createForClass(cls)
+    const { softDeletion } = options
 
-export function toDto2<S, T>(item: HydratedDocument<S>) {
-    return item.toJSON<T>()
+    if (softDeletion !== false) {
+        schema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' })
+    }
+
+    return schema
 }
-
-export function toDtos2<S, T>(items: HydratedDocument<S>[]) {
-    return items.map((item) => item.toJSON<T>())
-}
-
-
-// // export enum MovieGenre {
-// //     Action = 'Action',
-// //     Comedy = 'Comedy'
-// // }
-
-// @Schema(defaultSchemaOption)
-// export class Sample extends MongooseSchema {
-//     @Prop({ required: true })
-//     name: string
-
-//     // @Prop({ required: true })
-//     // objId: Types.ObjectId
-
-//     // @Prop({ type: Map, of: String })
-//     // attributes: Map<string, string>
-
-//     // @Prop({ required: true })
-//     // releaseDate: Date
-
-//     // @Prop({ type: [String], enum: MovieGenre, default: [] })
-//     // genre: MovieGenre[]
-// }

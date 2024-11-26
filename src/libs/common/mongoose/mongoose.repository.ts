@@ -1,11 +1,10 @@
-import { NotFoundException } from '@nestjs/common'
+import { NotFoundException, OnModuleInit } from '@nestjs/common'
 import {
     Assert,
     Expect,
     MethodLog,
     objectId,
     objectIds,
-    OrderDirection,
     PaginationOption,
     PaginationResult
 } from 'common'
@@ -19,26 +18,19 @@ export class MongooseUpdateResult {
 }
 
 type SeesionArg = ClientSession | undefined
-const DEFAULT_TAKE_SIZE = 100
 
-/**
- * 합성이 아니라 상속해서 사용하도록 했다.
- * 합성은 onModuleInit()을 자동으로 호출할 수 없다.
- * 결국 MongooseRepository을 사용하는 모든 Repository에서 onModuleInit을 반드시 호출해야 한다.
- * 이런 불편함을 감수하면서까지 상속을 피해야 하는가?
- */
-export abstract class MongooseRepository<Doc> {
+export abstract class MongooseRepository<Doc> implements OnModuleInit {
     constructor(protected model: Model<Doc>) {}
 
-    /*
-    Issue   : document.save() internally calls createCollection
-    Symptom : Concurrent save() calls can cause "Collection namespace is already in use" errors.
-              (more frequent in transactions)
-    Solution: "await this.model.createCollection()"
-    Note    : This problem mainly occurs in unit test environments with frequent initializations
-    Ref     : https://mongoosejs.com/docs/api/model.html#Model.createCollection()
-    */
     async onModuleInit() {
+        /*
+        Issue   : document.save() internally calls createCollection
+        Symptom : Concurrent save() calls can cause "Collection namespace is already in use" errors.
+                (more frequent in transactions)
+        Solution: "await this.model.createCollection()"
+        Note    : This problem mainly occurs in unit test environments with frequent initializations
+        Ref     : https://mongoosejs.com/docs/api/model.html#Model.createCollection()
+        */
         await this.model.createCollection()
     }
 
@@ -47,7 +39,7 @@ export abstract class MongooseRepository<Doc> {
     }
 
     @MethodLog({ excludeArgs: ['session'] })
-    async saveAll(docs: HydratedDocument<Doc>[], session: SeesionArg = undefined) {
+    async saveMany(docs: HydratedDocument<Doc>[], session: SeesionArg = undefined) {
         const { insertedCount, matchedCount, deletedCount } = await this.model.bulkSave(docs, {
             session
         })
@@ -62,18 +54,12 @@ export abstract class MongooseRepository<Doc> {
     }
 
     @MethodLog({ level: 'verbose', excludeArgs: ['session'] })
-    async findById(
-        id: string,
-        session: SeesionArg = undefined
-    ): Promise<HydratedDocument<Doc> | null> {
+    async findById(id: string, session: SeesionArg = undefined) {
         return this.model.findById(objectId(id), null, { session })
     }
 
     @MethodLog({ level: 'verbose', excludeArgs: ['session'] })
-    async findByIds(
-        ids: string[],
-        session: SeesionArg = undefined
-    ): Promise<HydratedDocument<Doc>[]> {
+    async findByIds(ids: string[], session: SeesionArg = undefined) {
         return this.model.find({ _id: { $in: objectIds(ids) } as any }, null, { session })
     }
 
@@ -121,41 +107,53 @@ export abstract class MongooseRepository<Doc> {
     }
 
     @MethodLog({ level: 'verbose', excludeArgs: ['session'] })
-    async existsByIds(ids: string[], session: SeesionArg = undefined): Promise<boolean> {
+    async existByIds(ids: string[], session: SeesionArg = undefined) {
         const count = await this.model.countDocuments({ _id: { $in: objectIds(ids) } } as any, {
             session
         })
         return count === ids.length
     }
 
-    @MethodLog({ level: 'verbose', excludeArgs: ['callback', 'session'] })
-    async findWithPagination(
-        callback: (helpers: QueryWithHelpers<Array<Doc>, Doc>) => void = () => {},
-        pagination: PaginationOption = {},
-        session: SeesionArg = undefined
-    ) {
-        const take = pagination.take ?? DEFAULT_TAKE_SIZE
-        const skip = pagination.skip ?? 0
-        const { orderby } = pagination
+    @MethodLog({ level: 'verbose', excludeArgs: ['session', 'callback'] })
+    async findWithPagination(args: {
+        callback?: (helpers: QueryWithHelpers<Array<Doc>, Doc>) => void
+        pagination: PaginationOption
+        session?: SeesionArg
+    }) {
+        const { callback, pagination, session } = args
 
-        if (take <= 0) {
-            throw new MongooseException(
-                `Invalid pagination: 'take' must be a positive number. Received: ${take}`
-            )
+        if (!pagination.take) {
+            throw new MongooseException(`Invalid pagination: 'take' must be specified.`)
         }
 
         const helpers = this.model.find({}, null, { session })
 
-        helpers.skip(skip)
-        helpers.limit(take)
+        let take = 0
+        let skip = 0
 
-        if (orderby) {
-            helpers.sort({ [orderby.name]: orderby.direction })
-        } else {
-            helpers.sort({ createdAt: OrderDirection.asc })
+        if (pagination.take) {
+            take = pagination.take
+            if (take <= 0) {
+                throw new MongooseException(
+                    `Invalid pagination: 'take' must be a positive number. Received: ${take}`
+                )
+            }
+            helpers.limit(take)
         }
 
-        await callback(helpers)
+        if (pagination.skip) {
+            skip = pagination.skip
+            helpers.skip(skip)
+        }
+
+        if (pagination.orderby) {
+            const { name, direction } = pagination.orderby
+            helpers.sort({ [name]: direction })
+        }
+
+        if (callback) {
+            await callback(helpers)
+        }
 
         const items = await helpers.exec()
         const total = await this.model.countDocuments(helpers.getQuery()).exec()

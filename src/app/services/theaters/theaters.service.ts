@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog, toDto, toDtos } from 'common'
-import { TheaterCreateDto, TheaterDto, TheaterQueryDto, TheaterUpdateDto } from './dtos'
+import { MethodLog } from 'common'
+import { TheaterCreateDto, TheaterQueryDto, TheaterUpdateDto } from './dtos'
+import { TheaterDocument, TheaterDto } from './models'
 import { TheatersRepository } from './theaters.repository'
 
 @Injectable()
@@ -10,19 +11,19 @@ export class TheatersService {
     @MethodLog()
     async createTheater(createDto: TheaterCreateDto) {
         const theater = await this.repository.createTheater(createDto)
-        return toDto(theater, TheaterDto)
+        return this.toDto(theater)
     }
 
     @MethodLog()
     async updateTheater(theaterId: string, updateDto: TheaterUpdateDto) {
         const theater = await this.repository.updateTheater(theaterId, updateDto)
-        return toDto(theater, TheaterDto)
+        return this.toDto(theater)
     }
 
     @MethodLog({ level: 'verbose' })
     async getTheater(theaterId: string) {
         const theater = await this.repository.getById(theaterId)
-        return toDto(theater, TheaterDto)
+        return this.toDto(theater)
     }
 
     @MethodLog()
@@ -37,7 +38,7 @@ export class TheatersService {
 
         return {
             ...paginated,
-            items: toDtos(items, TheaterDto)
+            items: this.toDtos(items)
         }
     }
 
@@ -45,11 +46,14 @@ export class TheatersService {
     async getTheatersByIds(theaterIds: string[]) {
         const theaters = await this.repository.getByIds(theaterIds)
 
-        return toDtos(theaters, TheaterDto)
+        return this.toDtos(theaters)
     }
 
     @MethodLog({ level: 'verbose' })
-    async theatersExist(theaterIds: string[]): Promise<boolean> {
-        return this.repository.existsByIds(theaterIds)
+    async theatersExist(theaterIds: string[]) {
+        return this.repository.existByIds(theaterIds)
     }
+
+    private toDto = (theater: TheaterDocument) => theater.toJSON<TheaterDto>()
+    private toDtos = (theaters: TheaterDocument[]) => theaters.map((theater) => this.toDto(theater))
 }

@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { Assert, MethodLog, toDtos } from 'common'
-import { TicketCreateDto, TicketDto } from './dtos'
-import { TicketFilterDto } from './dtos/ticket-filter.dto'
-import { TicketStatus } from './models'
+import { Assert, MethodLog } from 'common'
+import { TicketCreateDto, TicketFilterDto } from './dtos'
+import { TicketDocument, TicketDto, TicketStatus } from './models'
 import { TicketsRepository } from './tickets.repository'
 
 @Injectable()
@@ -28,19 +27,22 @@ export class TicketsService {
 
         const tickets = await this.repository.getByIds(ticketIds)
 
-        return toDtos(tickets, TicketDto)
+        return this.toDtos(tickets)
     }
 
     @MethodLog({ level: 'verbose' })
     async findAllTickets(filterDto: TicketFilterDto) {
         const tickets = await this.repository.findAllTickets(filterDto)
 
-        return toDtos(tickets, TicketDto)
+        return this.toDtos(tickets)
     }
 
     @MethodLog({ level: 'verbose' })
-    async getSalesStatuses(showtimeIds: string[]) {
-        const statuses = await this.repository.getSalesStatuses(showtimeIds)
+    async getSalesStatuses(ticketIds: string[]) {
+        const statuses = await this.repository.getSalesStatuses(ticketIds)
         return statuses
     }
+
+    private toDto = (ticket: TicketDocument) => ticket.toJSON<TicketDto>()
+    private toDtos = (tickets: TicketDocument[]) => tickets.map((ticket) => this.toDto(ticket))
 }

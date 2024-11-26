@@ -31,7 +31,7 @@ export const createMovieDto = (overrides = {}) => {
         ...overrides
     }
 
-    const expectedDto = { id: expect.anything(), images: expect.any(Array), ...createDto }
+    const expectedDto = { id: expect.any(String), images: expect.any(Array), ...createDto }
 
     return { createDto, expectedDto }
 }

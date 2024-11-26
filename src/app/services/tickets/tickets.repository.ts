@@ -34,7 +34,7 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
             return ticket
         })
 
-        return this.saveAll(tickets)
+        return this.saveMany(tickets)
     }
 
     @MethodLog()

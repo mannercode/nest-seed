@@ -15,7 +15,7 @@ export function generateUUID() {
 }
 
 export function generateShortId() {
-    return nanoid(8)
+    return nanoid(10)
 }
 
 /**

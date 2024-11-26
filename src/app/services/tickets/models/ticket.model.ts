@@ -1,5 +1,6 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, ObjectId, createMongooseSchema } from 'common'
+import { MongooseSchema, SchemaJson, createMongooseSchema, createSchemaOptions } from 'common'
+import { HydratedDocument, Types } from 'mongoose'
 import { Seat } from '../../theaters'
 
 export enum TicketStatus {
@@ -7,16 +8,18 @@ export enum TicketStatus {
     sold = 'sold'
 }
 
-@Schema()
+const omits = ['batchId'] as const
+
+@Schema(createSchemaOptions({ timestamps: false, json: { omits } }))
 export class Ticket extends MongooseSchema {
-    @Prop({ type: ObjectId, required: true })
-    showtimeId: ObjectId
+    @Prop({ required: true })
+    showtimeId: Types.ObjectId
 
-    @Prop({ type: ObjectId, required: true })
-    theaterId: ObjectId
+    @Prop({ required: true })
+    theaterId: Types.ObjectId
 
-    @Prop({ type: ObjectId, required: true })
-    movieId: ObjectId
+    @Prop({ required: true })
+    movieId: Types.ObjectId
 
     @Prop({ type: String, enum: TicketStatus, required: true })
     status: TicketStatus
@@ -24,8 +27,10 @@ export class Ticket extends MongooseSchema {
     @Prop({ type: Object, required: true })
     seat: Seat
 
-    @Prop({ type: ObjectId, required: true })
-    batchId: ObjectId
+    @Prop({ required: true })
+    batchId: Types.ObjectId
 }
+export type TicketDto = SchemaJson<Ticket, typeof omits>
 
-export const TicketSchema = createMongooseSchema(Ticket)
+export type TicketDocument = HydratedDocument<Ticket>
+export const TicketSchema = createMongooseSchema(Ticket, {})

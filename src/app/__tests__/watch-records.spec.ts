@@ -43,12 +43,13 @@ describe('WatchRecords Module', () => {
         it('기본 페이지네이션 설정으로 관람 기록을 가져와야 한다', async () => {
             const { items, ...paginated } = await service.findWatchRecords({
                 customerId,
+                take: 100,
                 orderby: { name: 'watchDate', direction: OrderDirection.desc }
             })
 
             expect(paginated).toEqual({
                 skip: 0,
-                take: expect.any(Number),
+                take: 100,
                 total: records.length
             })
             expectEqualUnsorted(items, records)

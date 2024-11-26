@@ -35,9 +35,8 @@ export const createTicketDtos = (overrides = {}, length: number = 100) => {
         }
 
         const expectedDto = {
-            id: expect.anything(),
-            ...omit(createDto, 'batchId'),
-            status: 'available'
+            id: expect.any(String),
+            ...omit(createDto, 'batchId')
         }
 
         createDtos.push(createDto)

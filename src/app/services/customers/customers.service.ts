@@ -1,7 +1,8 @@
 import { ConflictException, Injectable } from '@nestjs/common'
-import { JwtAuthService, MethodLog, Password, toDto, toDtos } from 'common'
+import { JwtAuthService, MethodLog, Password } from 'common'
 import { CustomersRepository } from './customers.repository'
-import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
+import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
+import { CustomerDocument, CustomerDto } from './models'
 
 @Injectable()
 export class CustomersService {
@@ -20,19 +21,19 @@ export class CustomersService {
             password: await Password.hash(createDto.password)
         })
 
-        return toDto(customer, CustomerDto)
+        return this.toDto(customer)
     }
 
     @MethodLog()
     async updateCustomer(customerId: string, updateDto: CustomerUpdateDto) {
         const customer = await this.repository.updateCustomer(customerId, updateDto)
-        return toDto(customer, CustomerDto)
+        return this.toDto(customer)
     }
 
     @MethodLog({ level: 'verbose' })
     async getCustomer(customerId: string) {
         const customer = await this.repository.getById(customerId)
-        return toDto(customer, CustomerDto)
+        return this.toDto(customer)
     }
 
     @MethodLog()
@@ -45,7 +46,7 @@ export class CustomersService {
     async findCustomers(queryDto: CustomerQueryDto) {
         const { items, ...paginated } = await this.repository.findCustomers(queryDto)
 
-        return { ...paginated, items: toDtos(items, CustomerDto) }
+        return { ...paginated, items: this.toDtos(items) }
     }
 
     @MethodLog()
@@ -63,8 +64,12 @@ export class CustomersService {
         const customer = await this.repository.findByEmail(email)
 
         if (customer && (await Password.validate(password, customer.password)))
-            return toDto(customer, CustomerDto)
+            return this.toDto(customer)
 
         return null
     }
+
+    private toDto = (customer: CustomerDocument) => customer.toJSON<CustomerDto>()
+    private toDtos = (customers: CustomerDocument[]) =>
+        customers.map((customer) => this.toDto(customer))
 }

@@ -1,7 +1,7 @@
 import { expect } from '@jest/globals'
-import { pickIds, toDtos2 } from 'common'
+import { pickIds } from 'common'
 import { getMongoTestConnection } from 'testlib'
-import { createFixture, createSamples, SamplesRepository } from './mongoose.repository.fixture'
+import { createFixture, createSamples, SamplesRepository } from './mongoose.transaction.fixture'
 
 describe('MongooseRepository - withTransaction', () => {
     let repository: SamplesRepository
@@ -31,12 +31,14 @@ describe('MongooseRepository - withTransaction', () => {
                 return doc
             })
 
-            await repository.saveAll(docs, session)
+            await repository.saveMany(docs, session)
             return docs
         })
 
         const foundSamples = await repository.findByIds(pickIds(docs))
-        expect(toDtos2(foundSamples)).toEqual(toDtos2(docs))
+        expect(foundSamples.map((sample) => sample.toJSON())).toEqual(
+            docs.map((sample) => sample.toJSON())
+        )
     })
 
     it('should rollback changes when an exception occurs during a transaction', async () => {
@@ -51,13 +53,13 @@ describe('MongooseRepository - withTransaction', () => {
                 return doc
             })
 
-            await repository.saveAll(docs, session)
+            await repository.saveMany(docs, session)
             throw new Error('')
         })
 
         await expect(promise).rejects.toThrowError()
 
-        const foundSamples = await repository.findWithPagination()
+        const foundSamples = await repository.findWithPagination({ pagination: { take: 50 } })
         expect(foundSamples.total).toEqual(0)
     })
 
@@ -71,6 +73,8 @@ describe('MongooseRepository - withTransaction', () => {
         })
 
         const foundSamples = await repository.findByIds(ids)
-        expect(toDtos2(foundSamples)).toEqual(toDtos2(samples))
+        expect(foundSamples.map((sample) => sample.toJSON())).toEqual(
+            samples.map((sample) => sample.toJSON())
+        )
     })
 })

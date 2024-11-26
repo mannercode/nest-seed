@@ -1,8 +1,10 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, createMongooseSchema } from 'common'
-import * as mongooseDelete from 'mongoose-delete'
+import { MongooseSchema, SchemaJson, createMongooseSchema, createSchemaOptions } from 'common'
+import { HydratedDocument } from 'mongoose'
 
-@Schema()
+const omits = ['password'] as const
+
+@Schema(createSchemaOptions({ json: { omits } }))
 export class Customer extends MongooseSchema {
     @Prop({ required: true })
     name: string
@@ -16,12 +18,12 @@ export class Customer extends MongooseSchema {
     @Prop({ required: true })
     password: string
 }
+export type CustomerDto = SchemaJson<Customer, typeof omits>
 
-export const CustomerSchema = createMongooseSchema(Customer)
+export type CustomerDocument = HydratedDocument<Customer>
+export const CustomerSchema = createMongooseSchema(Customer, {})
 CustomerSchema.index({ email: 1 })
 CustomerSchema.index({ name: 'text' })
-CustomerSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' })
-
 /*
 1. `CustomerSchema.index({ email: 1 })`
    This command creates an ascending (1) index on the `email` field.

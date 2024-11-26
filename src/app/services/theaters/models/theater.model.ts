@@ -1,9 +1,15 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { LatLong, MongooseSchema, createMongooseSchema } from 'common'
-import * as mongooseDelete from 'mongoose-delete'
+import {
+    LatLong,
+    MongooseSchema,
+    SchemaJson,
+    createMongooseSchema,
+    createSchemaOptions
+} from 'common'
+import { HydratedDocument } from 'mongoose'
 import { Seatmap } from './seatmap.model'
 
-@Schema()
+@Schema(createSchemaOptions({}))
 export class Theater extends MongooseSchema {
     @Prop({ required: true })
     name: string
@@ -21,6 +27,7 @@ export class Theater extends MongooseSchema {
     @Prop({ type: Object, required: true })
     seatmap: Seatmap
 }
+export type TheaterDto = SchemaJson<Theater>
 
-export const TheaterSchema = createMongooseSchema(Theater)
-TheaterSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' })
+export type TheaterDocument = HydratedDocument<Theater>
+export const TheaterSchema = createMongooseSchema(Theater, {})

@@ -31,7 +31,7 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
             return doc
         })
 
-        await this.saveAll(showtimes)
+        await this.saveMany(showtimes)
     }
 
     @MethodLog({ level: 'verbose' })

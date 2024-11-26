@@ -28,7 +28,7 @@ export const createWatchRecordDto = (overrides = {}) => {
         ...overrides
     }
 
-    const expectedDto = { id: expect.anything(), ...createDto }
+    const expectedDto = { id: expect.any(String), ...createDto }
 
     return { createDto, expectedDto }
 }

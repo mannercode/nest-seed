@@ -54,10 +54,10 @@ describe('common/utils/etc', () => {
     })
 
     describe('generateShortId', () => {
-        it('generates a short ID of 8 characters', () => {
+        it('generates a short ID of 10 characters', () => {
             const id = generateShortId()
             // nanoid typically uses A-Z, a-z, 0-9, _ and - as the character set
-            const regex = /^[A-Za-z0-9_-]{8}$/
+            const regex = /^[A-Za-z0-9_-]{10}$/
 
             expect(id).toMatch(regex)
         })
