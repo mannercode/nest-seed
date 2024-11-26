@@ -7,17 +7,26 @@ import {
     Patch,
     Post,
     Query,
+    Req,
     UploadedFiles,
+    UseGuards,
     UseInterceptors,
     UsePipes
 } from '@nestjs/common'
 import { FilesInterceptor } from '@nestjs/platform-express'
+import { AuthTokenPayload } from 'common'
+import { pick } from 'lodash'
 import { MovieCreateDto, MovieQueryDto, MoviesService, MovieUpdateDto } from 'services/movies'
+import { RecommendationService } from 'services/recommendation'
+import { CustomerOptionalJwtAuthGuard } from './guards'
 import { DefaultPaginationPipe } from './pipes'
 
 @Controller('movies')
 export class MoviesController {
-    constructor(private service: MoviesService) {}
+    constructor(
+        private service: MoviesService,
+        private recommendationService: RecommendationService
+    ) {}
 
     @UseInterceptors(FilesInterceptor('files'))
     @Post()
@@ -25,19 +34,23 @@ export class MoviesController {
         @UploadedFiles() files: Express.Multer.File[],
         @Body() movieCreateDto: MovieCreateDto
     ) {
-        const storageFileCreateDtos = files.map((file) => ({
-            originalname: file.originalname,
-            mimetype: file.mimetype,
-            size: file.size,
-            uploadedFilePath: file.path
-        }))
+        const fileCreateDtos = files.map((file) =>
+            pick(file, 'originalname', 'mimetype', 'size', 'path')
+        )
 
-        return this.service.createMovie(storageFileCreateDtos, movieCreateDto)
+        return this.service.createMovie(movieCreateDto, fileCreateDtos)
     }
 
     @Patch(':movieId')
     async updateMovie(@Param('movieId') movieId: string, @Body() updateDto: MovieUpdateDto) {
         return this.service.updateMovie(movieId, updateDto)
+    }
+
+    @UseGuards(CustomerOptionalJwtAuthGuard)
+    @Get('recommended')
+    async findRecommendedMovies(@Req() req: { user: AuthTokenPayload }) {
+        const customerId = req.user.userId
+        return this.recommendationService.findRecommendedMovies(customerId)
     }
 
     @Get(':movieId')

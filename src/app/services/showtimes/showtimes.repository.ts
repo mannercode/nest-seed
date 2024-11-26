@@ -1,16 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import {
     addInQuery,
     addRangeQuery,
     MethodLog,
     MongooseRepository,
-    ObjectId,
+    objectId,
     validateFilters
 } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { ShowtimeFilterDto } from './dtos'
-import { Showtime, ShowtimeCreateData } from './models'
+import { ShowtimeCreateDto, ShowtimeFilterDto } from './dtos'
+import { Showtime } from './models'
 
 @Injectable()
 export class ShowtimesRepository extends MongooseRepository<Showtime> {
@@ -18,28 +18,20 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         super(model)
     }
 
-    async onModuleInit() {
-        await this.model.createCollection()
-    }
-
     @MethodLog()
-    async createShowtimes(createDtos: ShowtimeCreateData[]) {
+    async createShowtimes(createDtos: ShowtimeCreateDto[]) {
         const showtimes = createDtos.map((dto) => {
-            const document = this.newDocument()
-            Object.assign(document, dto)
-            return document
+            const doc = this.newDocument()
+            doc.movieId = objectId(dto.movieId)
+            doc.theaterId = objectId(dto.theaterId)
+            doc.startTime = dto.startTime
+            doc.endTime = dto.endTime
+            doc.batchId = objectId(dto.batchId)
+
+            return doc
         })
 
-        await this.saveAll(showtimes)
-    }
-
-    @MethodLog({ level: 'verbose' })
-    async getShowtime(showtimeId: ObjectId) {
-        const showtime = await this.findById(showtimeId)
-
-        if (!showtime) throw new NotFoundException(`Showtime with ID ${showtimeId} not found`)
-
-        return showtime
+        await this.saveMany(showtimes)
     }
 
     @MethodLog({ level: 'verbose' })
@@ -56,7 +48,7 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         validateFilters(query)
 
         const showtimes = await this.model.find(query).sort({ startTime: 1 }).exec()
-        return showtimes as Showtime[]
+        return showtimes
     }
 
     @MethodLog({ level: 'verbose' })
@@ -66,15 +58,19 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
     }
 
     @MethodLog({ level: 'verbose' })
-    async findTheaterIdsShowingMovie(movieId: ObjectId) {
-        const theaterIds = await this.model.distinct('theaterId', { movieId }).exec()
+    async findTheaterIdsByMovieId(movieId: string) {
+        const theaterIds = await this.model
+            .distinct('theaterId', { movieId: objectId(movieId) })
+            .exec()
         return theaterIds.map((id) => id.toString())
     }
 
     @MethodLog({ level: 'verbose' })
-    async findShowdates(movieId: ObjectId, theaterId: ObjectId) {
+    async findShowdates(args: { movieId: string; theaterId: string }) {
+        const { movieId, theaterId } = args
+
         const showdates = await this.model.aggregate([
-            { $match: { movieId, theaterId } },
+            { $match: { movieId: objectId(movieId), theaterId: objectId(theaterId) } },
             { $project: { date: { $dateToString: { format: '%Y-%m-%d', date: '$startTime' } } } },
             { $group: { _id: '$date' } },
             { $sort: { _id: 1 } }

@@ -1,7 +1,6 @@
 import { TestingModule } from '@nestjs/testing'
+import { JwtAuthModule, JwtAuthService, sleep } from 'common'
 import { createTestingModule, getRedisTestConnection } from 'testlib'
-import { JwtAuthModule, JwtAuthService } from '..'
-import { sleep } from '../../utils'
 
 describe('JwtAuthService', () => {
     let module: TestingModule

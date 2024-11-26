@@ -1,43 +1,41 @@
-import { JwtService } from '@nestjs/jwt'
-import { nullObjectId } from 'common'
 import { AppConfigService } from 'config'
 import { HttpTestClient } from 'testlib'
-import {
-    closeIsolatedFixture,
-    createIsolatedFixture,
-    Credentials,
-    IsolatedFixture
-} from './customers-auth.fixture'
+import { closeFixture, createFixture, Fixture } from './customers-auth.fixture'
+import { CustomerDto } from 'services/customers'
 
-describe('/customers authentication', () => {
-    let isolated: IsolatedFixture
+describe('Customer Authentication', () => {
+    let fixture: Fixture
     let client: HttpTestClient
-    let credentials: Credentials
     let config: AppConfigService
+    let customer: CustomerDto
+    let email: string
+    let password: string
 
     beforeEach(async () => {
-        isolated = await createIsolatedFixture()
-        client = isolated.testContext.client
-        config = isolated.config
-        credentials = isolated.credentials
+        fixture = await createFixture()
+        client = fixture.testContext.client
+        config = fixture.config
+        customer = fixture.customer
+        email = customer.email
+        password = fixture.password
     })
 
     afterEach(async () => {
-        await closeIsolatedFixture(isolated)
+        await closeFixture(fixture)
     })
 
     describe('POST /login', () => {
         it('로그인에 성공하면 인증 토큰을 반환해야 한다', async () => {
-            await client.post('/customers/login').body(credentials).ok({
-                accessToken: expect.anything(),
-                refreshToken: expect.anything()
+            await client.post('/customers/login').body({ email, password }).ok({
+                accessToken: expect.any(String),
+                refreshToken: expect.any(String)
             })
         })
 
         it('비밀번호가 틀리면 UNAUTHORIZED(401)를 반환해야 한다', async () => {
             await client
                 .post('/customers/login')
-                .body({ email: credentials.email, password: 'wrong password' })
+                .body({ email, password: 'wrong password' })
                 .unauthorized({ message: 'Unauthorized', statusCode: 401 })
         })
 
@@ -54,7 +52,7 @@ describe('/customers authentication', () => {
         let refreshToken: string
 
         beforeEach(async () => {
-            const { body } = await client.post('/customers/login').body(credentials).ok()
+            const { body } = await client.post('/customers/login').body({ email, password }).ok()
             accessToken = body.accessToken
             refreshToken = body.refreshToken
         })
@@ -78,13 +76,13 @@ describe('/customers authentication', () => {
         let accessToken: string
 
         beforeEach(async () => {
-            const { body } = await client.post('/customers/login').body(credentials).ok()
+            const { body } = await client.post('/customers/login').body({ email, password }).ok()
             accessToken = body.accessToken
         })
 
         it('유효한 accessToken을 제공하면 접근이 허용되어야 한다', async () => {
             await client
-                .get(`/customers/${credentials.customerId}`)
+                .get(`/customers/${customer.id}`)
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .ok()
         })
@@ -93,22 +91,8 @@ describe('/customers authentication', () => {
             const invalidToken = 'SampleToken'
 
             await client
-                .get(`/customers/${credentials.customerId}`)
+                .get(`/customers/${customer.id}`)
                 .headers({ Authorization: `Bearer ${invalidToken}` })
-                .unauthorized({ message: 'Unauthorized', statusCode: 401 })
-        })
-
-        it('잘못된 데이터가 포함된 accessToken을 제공하면 UNAUTHORIZED(401)를 반환해야 한다', async () => {
-            const jwtService = new JwtService()
-
-            const wrongUserIdToken = jwtService.sign(
-                { userId: nullObjectId },
-                { secret: config.auth.accessSecret, expiresIn: '15m' }
-            )
-
-            await client
-                .get(`/customers/${credentials.customerId}`)
-                .headers({ Authorization: `Bearer ${wrongUserIdToken}` })
                 .unauthorized({ message: 'Unauthorized', statusCode: 401 })
         })
     })

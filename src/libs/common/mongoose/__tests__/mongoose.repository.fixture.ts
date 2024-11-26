@@ -2,48 +2,34 @@ import { Injectable, Module } from '@nestjs/common'
 import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import {
     createMongooseSchema,
-    generateUUID,
+    createSchemaOptions,
+    generateShortId,
     MongooseRepository,
     MongooseSchema,
-    padNumber
+    padNumber,
+    SchemaJson
 } from 'common'
-import { Model } from 'mongoose'
-import { createTestingModule } from 'testlib'
+import { HydratedDocument, Model } from 'mongoose'
+import { createHttpTestContext } from 'testlib'
 
-@Schema()
+const omits = ['password'] as const
+@Schema(createSchemaOptions({ json: { omits, includes: { timestamps: false } } }))
 export class Sample extends MongooseSchema {
     @Prop({ required: true })
     name: string
+
+    @Prop({ required: true })
+    password: string
 }
 
-export const SampleSchema = createMongooseSchema(Sample)
-
-export class SampleDto {
-    id: string
-    name: string
-
-    constructor(sample: Sample) {
-        const { id, name } = sample
-        Object.assign(this, { id: id.toString(), name })
-    }
-}
+export const SampleSchema = createMongooseSchema(Sample, {})
+export type SampleDocument = HydratedDocument<Sample>
+export type SampleDto = SchemaJson<Sample, typeof omits>
 
 @Injectable()
 export class SamplesRepository extends MongooseRepository<Sample> {
     constructor(@InjectModel(Sample.name) model: Model<Sample>) {
         super(model)
-    }
-
-    /*
-    Issue   : document.save() internally calls createCollection
-    Symptom : Concurrent save() calls can cause "Collection namespace is already in use" errors.
-              (more frequent in transactions)
-    Solution: "await this.model.createCollection()"
-    Note    : This problem mainly occurs in unit test environments with frequent initializations
-    Ref     : https://mongoosejs.com/docs/api/model.html#Model.createCollection()
-    */
-    async onModuleInit() {
-        await this.model.createCollection()
     }
 }
 
@@ -54,27 +40,18 @@ export class SamplesRepository extends MongooseRepository<Sample> {
 export class SampleModule {}
 
 export async function createFixture(uri: string) {
-    const module = await createTestingModule({
+    const testContext = await createHttpTestContext({
         imports: [
             MongooseModule.forRootAsync({
-                useFactory: () => ({
-                    uri,
-                    dbName: 'test_' + generateUUID(),
-                    autoIndex: true,
-                    autoCreate: false,
-                    bufferCommands: true
-                })
+                useFactory: () => ({ uri, dbName: 'test_' + generateShortId() })
             }),
             SampleModule
         ]
     })
-    const app = module.createNestApplication()
-    await app.init()
 
-    const repository = module.get(SamplesRepository)
-    const close = async () => await module.close()
+    const repository = testContext.module.get(SamplesRepository)
 
-    return { module, repository, close }
+    return { testContext, repository }
 }
 
 export const sortByName = (documents: SampleDto[]) =>
@@ -86,6 +63,7 @@ export const sortByNameDescending = (documents: SampleDto[]) =>
 export const createSample = (repository: SamplesRepository) => {
     const doc = repository.newDocument()
     doc.name = 'Sample-Name'
+    doc.password = 'password'
     return doc.save()
 }
 
@@ -94,6 +72,15 @@ export const createSamples = async (repository: SamplesRepository) =>
         Array.from({ length: 20 }, async (_, index) => {
             const doc = repository.newDocument()
             doc.name = `Sample-${padNumber(index, 3)}`
+            doc.password = 'password'
             return doc.save()
         })
     )
+
+export function toDto(item: SampleDocument) {
+    return item.toJSON<SampleDto>()
+}
+
+export function toDtos(items: SampleDocument[]) {
+    return items.map((item) => toDto(item))
+}

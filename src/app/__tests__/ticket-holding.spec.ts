@@ -1,13 +1,9 @@
-import { generateUUID, sleep } from 'common'
+import { generateShortId, sleep } from 'common'
 import { TicketHoldingService } from 'services/ticket-holding'
-import {
-    closeIsolatedFixture,
-    createIsolatedFixture,
-    IsolatedFixture
-} from './ticket-holding.fixture'
+import { closeFixture, createFixture, Fixture } from './ticket-holding.fixture'
 
 describe('TicketHolding Module', () => {
-    let isolated: IsolatedFixture
+    let fixture: Fixture
     let service: TicketHoldingService
 
     const customerA = 'customerId#1'
@@ -17,12 +13,12 @@ describe('TicketHolding Module', () => {
     const ttlMs = 60 * 1000
 
     beforeEach(async () => {
-        isolated = await createIsolatedFixture()
-        service = isolated.service
+        fixture = await createFixture()
+        service = fixture.ticketHoldingService
     })
 
     afterEach(async () => {
-        await closeIsolatedFixture(isolated)
+        await closeFixture(fixture)
     })
 
     describe('holdTickets', () => {
@@ -82,9 +78,9 @@ describe('TicketHolding Module', () => {
             async () => {
                 const results = await Promise.all(
                     Array.from({ length: 100 }, async () => {
-                        const showtimeId = generateUUID()
-                        const tickets = Array.from({ length: 5 }, generateUUID)
-                        const customers = Array.from({ length: 10 }, generateUUID)
+                        const showtimeId = generateShortId()
+                        const tickets = Array.from({ length: 5 }, generateShortId)
+                        const customers = Array.from({ length: 10 }, generateShortId)
 
                         await Promise.all(
                             customers.map((customer) =>
@@ -93,7 +89,9 @@ describe('TicketHolding Module', () => {
                         )
 
                         const findResults = await Promise.all(
-                            customers.map((customer) => service.findHeldTicketIds(showtimeId, customer))
+                            customers.map((customer) =>
+                                service.findHeldTicketIds(showtimeId, customer)
+                            )
                         )
 
                         return findResults.flat().length === tickets.length

@@ -1,63 +1,70 @@
+import { addMinutes } from 'common'
 import { ShowtimeDto, ShowtimesService } from 'services/showtimes'
+import { expectEqualUnsorted, nullObjectId, testObjectId } from 'testlib'
 import {
-    closeIsolatedFixture,
-    createIsolatedFixture,
-    createShowtimes,
+    closeFixture,
+    createFixture,
+    createShowtimeDto,
     createShowtimeDtos,
-    IsolatedFixture
+    createShowtimes,
+    Fixture
 } from './showtimes.fixture'
-import { addMinutes, nullObjectId, objectId, pickIds, pickItems } from 'common'
-import { expectEqualUnsorted } from 'testlib'
 
-describe('ShowtimesModule', () => {
-    let isolated: IsolatedFixture
+describe('Showtimes Module', () => {
+    let fixture: Fixture
     let service: ShowtimesService
 
     beforeEach(async () => {
-        isolated = await createIsolatedFixture()
-        service = isolated.service
+        fixture = await createFixture()
+        service = fixture.showtimesService
     })
 
     afterEach(async () => {
-        await closeIsolatedFixture(isolated)
+        await closeFixture(fixture)
     })
 
     it('createShowtimes', async () => {
         const { createDtos, expectedDtos } = createShowtimeDtos()
 
-        const showtimes = await createShowtimes(service, createDtos)
+        const { success } = await service.createShowtimes(createDtos)
+        expect(success).toBeTruthy()
+
+        const showtimes = await service.findAllShowtimes({
+            startTimeRange: { start: new Date(0), end: new Date('9999') }
+        })
+
         expect(showtimes).toEqual(expectedDtos)
     })
 
     describe('findAllShowtimes', () => {
-        let showtimes: ShowtimeDto[]
-
         beforeEach(async () => {
             const { createDtos } = createShowtimeDtos()
-            showtimes = await createShowtimes(service, createDtos)
+            const { success } = await service.createShowtimes(createDtos)
+            expect(success).toBeTruthy()
         })
 
-        const findAllShowtimes = async (overrides = {}, findFilter = {}) => {
+        const createAndFindShowtimes = async (overrides = {}, findFilter = {}) => {
             const { createDtos, expectedDtos } = createShowtimeDtos(overrides)
-            await service.createShowtimes(createDtos)
+            const { success } = await service.createShowtimes(createDtos)
+            expect(success).toBeTruthy()
 
             const showtimes = await service.findAllShowtimes(findFilter)
             expectEqualUnsorted(showtimes, expectedDtos)
         }
 
         it('batchIds', async () => {
-            const batchId = '100000000000000000000001'
-            await findAllShowtimes({ batchId }, { batchIds: [batchId] })
+            const batchId = testObjectId('a1')
+            await createAndFindShowtimes({ batchId }, { batchIds: [batchId] })
         })
 
         it('movieIds', async () => {
-            const movieId = '100000000000000000000002'
-            await findAllShowtimes({ movieId }, { movieIds: [movieId] })
+            const movieId = testObjectId('a1')
+            await createAndFindShowtimes({ movieId }, { movieIds: [movieId] })
         })
 
         it('theaterIds', async () => {
-            const theaterId = '100000000000000000000003'
-            await findAllShowtimes({ theaterId }, { theaterIds: [theaterId] })
+            const theaterId = testObjectId('a1')
+            await createAndFindShowtimes({ theaterId }, { theaterIds: [theaterId] })
         })
 
         it('startTimeRange', async () => {
@@ -71,7 +78,7 @@ describe('ShowtimesModule', () => {
         })
 
         it('1개 이상의 필터를 설정하지 않으면 BAD_REQUEST(400)를 반환해야 한다', async () => {
-            const promise = findAllShowtimes({})
+            const promise = createAndFindShowtimes({})
             await expect(promise).rejects.toThrow('At least one filter condition must be provided.')
         })
     })
@@ -91,110 +98,86 @@ describe('ShowtimesModule', () => {
 
         it('상영시간이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             const promise = service.getShowtime(nullObjectId)
-            await expect(promise).rejects.toThrow(
-                'Showtime with ID 000000000000000000000000 not found'
-            )
+            await expect(promise).rejects.toThrow(`Document with ID ${nullObjectId} not found`)
         })
     })
 
     it('findShowingMovieIds', async () => {
-        const base = {
-            batchId: '000000000000000000000001',
-            movieId: '000000000000000000000002',
-            theaterId: '000000000000000000000003'
-        }
-
+        const movieIds = [testObjectId('a1'), testObjectId('a2')]
         const now = new Date()
         const createDtos = [
-            {
-                ...base,
-                startTime: addMinutes(now, -90),
-                endTime: addMinutes(now, -30)
-            },
-            {
-                ...base,
-                movieId: '100000000000000000000001',
+            createShowtimeDto({ startTime: addMinutes(now, -90), endTime: addMinutes(now, -30) }),
+            createShowtimeDto({
+                movieId: movieIds[0],
                 startTime: addMinutes(now, 30),
                 endTime: addMinutes(now, 90)
-            },
-            {
-                ...base,
-                movieId: '100000000000000000000002',
+            }),
+            createShowtimeDto({
+                movieId: movieIds[1],
                 startTime: addMinutes(now, 120),
                 endTime: addMinutes(now, 150)
-            }
+            })
         ]
 
         const { success } = await service.createShowtimes(createDtos)
         expect(success).toBeTruthy()
 
-        const movieIds = await service.findShowingMovieIds()
-        expect(movieIds).toEqual(['100000000000000000000001', '100000000000000000000002'])
+        const foundIds = await service.findShowingMovieIds()
+        expect(foundIds).toEqual(movieIds)
     })
 
-    it('findTheaterIdsShowingMovie', async () => {
-        const base = {
-            batchId: '000000000000000000000001',
-            startTime: new Date(0),
-            endTime: new Date(0)
-        }
-
-        const movieId = '100000000000000000000002'
+    it('findTheaterIdsByMovieId', async () => {
+        const movieId = testObjectId('a1')
         const createDtos = [
-            {
-                ...base,
-                movieId: '100000000000000000000001',
-                theaterId: '200000000000000000000001'
-            },
-            {
-                ...base,
+            createShowtimeDto({
+                movieId: testObjectId('a2'),
+                theaterId: testObjectId('b1')
+            }),
+            createShowtimeDto({
                 movieId,
-                theaterId: '200000000000000000000002'
-            },
-            {
-                ...base,
+                theaterId: testObjectId('b2')
+            }),
+            createShowtimeDto({
                 movieId,
-                theaterId: '200000000000000000000003'
-            }
+                theaterId: testObjectId('b3')
+            })
         ]
 
         const { success } = await service.createShowtimes(createDtos)
         expect(success).toBeTruthy()
 
-        const theaterIds = await service.findTheaterIdsShowingMovie(movieId)
-        expect(theaterIds).toEqual(['200000000000000000000002', '200000000000000000000003'])
+        const theaterIds = await service.findTheaterIdsByMovieId(movieId)
+        expect(theaterIds).toEqual([testObjectId('b2'), testObjectId('b3')])
     })
 
     it('findShowdates', async () => {
-        const base = {
-            batchId: '000000000000000000000001',
-            movieId: '000000000000000000000002',
-            theaterId: '000000000000000000000003'
-        }
-
+        const movieId = testObjectId('a1')
+        const theaterId = testObjectId('b1')
         const createDtos = [
-            {
-                ...base,
+            createShowtimeDto({
+                movieId,
+                theaterId,
                 startTime: new Date('2000-01-02'),
                 endTime: new Date('2000-01-03')
-            },
-            {
-                ...base,
+            }),
+            createShowtimeDto({
+                movieId,
+                theaterId,
                 startTime: new Date('2000-01-04'),
                 endTime: new Date('2000-01-04')
-            },
-            {
-                ...base,
-                theaterId: '000000000000000000000000',
+            }),
+            createShowtimeDto({
+                movieId,
+                theaterId: testObjectId('A1'),
                 startTime: new Date('2000-01-05'),
                 endTime: new Date('2000-01-06')
-            }
+            })
         ]
 
         const { success } = await service.createShowtimes(createDtos)
         expect(success).toBeTruthy()
 
-        const showdates = await service.findShowdates(base.movieId, base.theaterId)
+        const showdates = await service.findShowdates({ movieId, theaterId })
         expect(showdates.map((showdate) => showdate.getTime())).toEqual([
             new Date('2000-01-02').getTime(),
             new Date('2000-01-04').getTime()

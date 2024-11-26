@@ -1,6 +1,6 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { ModelAttributes, MongooseSchema, ObjectId, createMongooseSchema } from 'common'
-import * as mongooseDelete from 'mongoose-delete'
+import { MongooseSchema, SchemaJson, createMongooseSchema, createSchemaOptions } from 'common'
+import { HydratedDocument, Types } from 'mongoose'
 
 export enum MovieGenre {
     Action = 'Action',
@@ -22,7 +22,9 @@ export enum MovieRating {
     NC17 = 'NC17'
 }
 
-@Schema()
+const omits = ['imageFileIds'] as const
+
+@Schema(createSchemaOptions({ json: { omits } }))
 export class Movie extends MongooseSchema {
     @Prop({ required: true })
     title: string
@@ -45,12 +47,10 @@ export class Movie extends MongooseSchema {
     @Prop({ type: String, enum: MovieRating })
     rating: MovieRating
 
-    @Prop({ type: ObjectId, required: true })
-    storageFileIds: ObjectId[]
+    @Prop({ required: true })
+    imageFileIds: Types.ObjectId[]
 }
+export type MovieDto = SchemaJson<Movie, typeof omits> & { images: string[] }
 
-export const MovieSchema = createMongooseSchema(Movie)
-MovieSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' })
-
-export type MovieCreateData = ModelAttributes<Movie>
-export type MovieUpdateData = Partial<ModelAttributes<Movie>>
+export type MovieDocument = HydratedDocument<Movie>
+export const MovieSchema = createMongooseSchema(Movie, {})

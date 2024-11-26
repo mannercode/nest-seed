@@ -1,27 +1,27 @@
 import { expect } from '@jest/globals'
-import { nullObjectId, pickIds } from 'common'
+import { pickIds } from 'common'
 import { TheaterDto } from 'services/theaters'
-import { expectEqualUnsorted, HttpTestClient } from 'testlib'
+import { expectEqualUnsorted, HttpTestClient, nullObjectId } from 'testlib'
 import {
-    closeIsolatedFixture,
-    createIsolatedFixture,
+    closeFixture,
+    createFixture,
     createTheater,
+    createTheaterDto,
     createTheaters,
-    IsolatedFixture,
-    createTheaterDto
+    Fixture
 } from './theaters.fixture'
 
-describe('/theaters', () => {
-    let isolated: IsolatedFixture
+describe('Theaters Module', () => {
+    let fixture: Fixture
     let client: HttpTestClient
 
     beforeEach(async () => {
-        isolated = await createIsolatedFixture()
-        client = isolated.testContext.client
+        fixture = await createFixture()
+        client = fixture.testContext.client
     })
 
     afterEach(async () => {
-        await closeIsolatedFixture(isolated)
+        await closeFixture(fixture)
     })
 
     describe('POST /theaters', () => {
@@ -52,7 +52,7 @@ describe('/theaters', () => {
         let theater: TheaterDto
 
         beforeEach(async () => {
-            theater = await createTheater(client)
+            theater = await createTheater(fixture.theatersService)
         })
 
         it('극장 정보를 업데이트해야 한다', async () => {
@@ -68,11 +68,14 @@ describe('/theaters', () => {
         })
 
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client.patch(`/theaters/${nullObjectId}`).body({}).notFound({
-                error: 'Not Found',
-                message: 'Theater with ID 000000000000000000000000 not found',
-                statusCode: 404
-            })
+            await client
+                .patch(`/theaters/${nullObjectId}`)
+                .body({})
+                .notFound({
+                    error: 'Not Found',
+                    message: `Document with ID ${nullObjectId} not found`,
+                    statusCode: 404
+                })
         })
     })
 
@@ -80,14 +83,14 @@ describe('/theaters', () => {
         let theater: TheaterDto
 
         beforeEach(async () => {
-            theater = await createTheater(client)
+            theater = await createTheater(fixture.theatersService)
         })
 
         it('극장을 삭제해야 한다', async () => {
             await client.delete(`/theaters/${theater.id}`).ok()
             await client.get(`/theaters/${theater.id}`).notFound({
                 error: 'Not Found',
-                message: `Theater with ID ${theater.id} not found`,
+                message: `Document with ID ${theater.id} not found`,
                 statusCode: 404
             })
         })
@@ -95,7 +98,7 @@ describe('/theaters', () => {
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.delete(`/theaters/${nullObjectId}`).notFound({
                 error: 'Not Found',
-                message: 'Theater with ID 000000000000000000000000 not found',
+                message: `Document with ID ${nullObjectId} not found`,
                 statusCode: 404
             })
         })
@@ -105,7 +108,7 @@ describe('/theaters', () => {
         let theater: TheaterDto
 
         beforeEach(async () => {
-            theater = await createTheater(client)
+            theater = await createTheater(fixture.theatersService)
         })
 
         it('극장 정보를 가져와야 한다', async () => {
@@ -115,7 +118,7 @@ describe('/theaters', () => {
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.get(`/theaters/${nullObjectId}`).notFound({
                 error: 'Not Found',
-                message: 'Theater with ID 000000000000000000000000 not found',
+                message: `Document with ID ${nullObjectId} not found`,
                 statusCode: 404
             })
         })
@@ -125,7 +128,7 @@ describe('/theaters', () => {
         let theaters: TheaterDto[]
 
         beforeEach(async () => {
-            theaters = await createTheaters(client)
+            theaters = await createTheaters(fixture.theatersService)
         })
 
         it('기본 페이지네이션 설정으로 극장을 가져와야 한다', async () => {
@@ -160,26 +163,28 @@ describe('/theaters', () => {
         })
     })
 
-    describe('POST /theaters/getByIds', () => {
+    describe('getTheatersByIds', () => {
         let theaters: TheaterDto[]
 
         beforeEach(async () => {
-            theaters = await createTheaters(client)
+            theaters = await createTheaters(fixture.theatersService)
         })
 
         it('theaterIds로 극장을 검색할 수 있어야 한다', async () => {
             const expectedTheaters = theaters.slice(0, 5)
-            const queryDto = { theaterIds: pickIds(expectedTheaters) }
+            const theaterIds = pickIds(expectedTheaters)
 
-            const { body } = await client.post('/theaters/getByIds').body(queryDto).ok()
+            const gotTheaters = await fixture.theatersService.getTheatersByIds(theaterIds)
 
-            expectEqualUnsorted(body, expectedTheaters)
+            expectEqualUnsorted(gotTheaters, expectedTheaters)
         })
 
-        it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            const queryDto = { theaterIds: [nullObjectId] }
+        it('극장이 존재하지 않으면 NotFoundException을 던져야 한다', async () => {
+            const promise = fixture.theatersService.getTheatersByIds([nullObjectId])
 
-            return client.post('/theaters/getByIds').body(queryDto).notFound()
+            await expect(promise).rejects.toThrow(
+                `One or more Documents with IDs ${nullObjectId} not found`
+            )
         })
     })
 })

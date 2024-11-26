@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common'
-import { EventEmitter2 } from '@nestjs/event-emitter'
+import { DynamicModule, Injectable, Module } from '@nestjs/common'
+import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter'
+import { EventEmitterModuleOptions } from '@nestjs/event-emitter/dist/interfaces'
 
-export abstract class AppEvent {
+export abstract class BaseEvent {
     static eventName: string
     public name: string
 
@@ -10,8 +11,8 @@ export abstract class AppEvent {
     }
 }
 
-export function EventName(name: string) {
-    return function <T extends new (...args: any[]) => AppEvent>(constructor: T) {
+export function DefineEvent(name: string) {
+    return function <T extends new (...args: any[]) => BaseEvent>(constructor: T) {
         return class extends constructor {
             static eventName = name
             constructor(...args: any[]) {
@@ -26,7 +27,30 @@ export function EventName(name: string) {
 export class EventService {
     constructor(private eventEmitter: EventEmitter2) {}
 
-    async emit(event: AppEvent) {
+    async emit(event: BaseEvent) {
         await this.eventEmitter.emitAsync(event.name, event)
+    }
+}
+
+@Module({})
+export class EventModule {
+    static forRoot(options?: EventEmitterModuleOptions): DynamicModule {
+        return {
+            module: EventModule,
+            imports: [
+                EventEmitterModule.forRoot({
+                    global: true,
+                    wildcard: true,
+                    delimiter: '.',
+                    newListener: false,
+                    removeListener: false,
+                    maxListeners: 10,
+                    verboseMemoryLeak: false,
+                    ignoreErrors: false,
+                    ...options
+                })
+            ],
+            exports: [EventEmitterModule]
+        }
     }
 }

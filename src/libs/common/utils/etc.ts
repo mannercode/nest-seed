@@ -1,7 +1,8 @@
 import { compare, hash } from 'bcrypt'
 import { LatLong } from 'common'
-import { createHash, Hash, randomUUID } from 'crypto'
+import { createHash, randomUUID } from 'crypto'
 import { createReadStream } from 'fs'
+import { nanoid } from 'nanoid'
 import { pipeline, Writable } from 'stream'
 import { promisify } from 'util'
 
@@ -13,8 +14,9 @@ export function generateUUID() {
     return randomUUID()
 }
 
-export const nullUUID = '00000000000000000000000000000000'
-export const nullObjectId = '000000000000000000000000'
+export function generateShortId() {
+    return nanoid(10)
+}
 
 /**
  * Functions that wrap numeric values in quotes
@@ -151,10 +153,6 @@ export async function getChecksum(
     await promisifiedPipeline(readStream, hash as unknown as Writable)
 
     return hash.digest('hex')
-}
-
-export function maps<S, T>(items: S[], Target: new (item: S) => T): T[] {
-    return items.map((item) => new Target(item))
 }
 
 export function validateEmail(email: string): boolean {

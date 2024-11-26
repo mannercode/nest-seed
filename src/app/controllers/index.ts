@@ -1,3 +1,4 @@
+export * from './booking.controller'
 export * from './customers.controller'
 export * from './movies.controller'
 export * from './showtime-creation.controller'

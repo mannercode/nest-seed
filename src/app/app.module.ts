@@ -5,15 +5,19 @@ import { AppConfigService } from 'config'
 import * as express from 'express'
 import { existsSync } from 'fs'
 import { exit } from 'process'
+import { BookingModule } from 'services/booking'
 import { CustomersModule } from 'services/customers'
 import { MoviesModule } from 'services/movies'
+import { RecommendationModule } from 'services/recommendation'
 import { ShowtimeCreationModule } from 'services/showtime-creation'
 import { ShowtimesModule } from 'services/showtimes'
 import { StorageFilesModule } from 'services/storage-files'
 import { TheatersModule } from 'services/theaters'
 import { TicketHoldingModule } from 'services/ticket-holding'
 import { TicketsModule } from 'services/tickets'
+import { WatchRecordsModule } from 'services/watch-records'
 import {
+    BookingController,
     CustomersController,
     MoviesController,
     ShowtimeCreationController,
@@ -35,7 +39,10 @@ import { HealthModule } from './health.module'
         TicketsModule,
         ShowtimeCreationModule,
         TicketHoldingModule,
-        HealthModule
+        HealthModule,
+        WatchRecordsModule,
+        RecommendationModule,
+        BookingModule
     ],
     providers: [CustomerLocalStrategy, CustomerJwtStrategy],
     controllers: [
@@ -43,7 +50,8 @@ import { HealthModule } from './health.module'
         StorageFilesController,
         MoviesController,
         TheatersController,
-        ShowtimeCreationController
+        ShowtimeCreationController,
+        BookingController
     ]
 })
 export class AppModule {}

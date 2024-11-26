@@ -1,6 +1,5 @@
 import { Controller, Get, Module } from '@nestjs/common'
-import { LatLong } from '../../types'
-import { LatLongQuery } from '../pipes'
+import { LatLong, LatLongQuery } from 'common'
 
 @Controller('')
 class TestController {

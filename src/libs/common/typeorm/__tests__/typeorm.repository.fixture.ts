@@ -50,7 +50,7 @@ export function sortByNameDescending(samples: Sample[]) {
 }
 
 export const baseFields = {
-    id: expect.anything(),
+    id: expect.any(String),
     createdAt: expect.anything(),
     updatedAt: expect.anything(),
     version: expect.anything()

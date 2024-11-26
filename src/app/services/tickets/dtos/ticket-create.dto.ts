@@ -1,5 +1,4 @@
-import { Type } from 'class-transformer'
-import { IsEnum, IsNotEmpty, IsString, ValidateNested } from 'class-validator'
+import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
 import { Seat } from 'services/theaters'
 import { TicketStatus } from '../models'
 

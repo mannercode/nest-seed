@@ -1,27 +1,26 @@
 import { expect } from '@jest/globals'
-import { nullObjectId } from 'common'
 import { CustomerDto } from 'services/customers'
-import { expectEqualUnsorted, HttpTestClient } from 'testlib'
+import { expectEqualUnsorted, HttpTestClient, nullObjectId } from 'testlib'
 import {
-    closeIsolatedFixture,
+    closeFixture,
     createCustomer,
+    createCustomerDto,
     createCustomers,
-    createIsolatedFixture,
-    IsolatedFixture,
-    createCustomerDto
+    createFixture,
+    Fixture
 } from './customers.fixture'
 
-describe('/customers', () => {
-    let isolated: IsolatedFixture
+describe('Customers Module', () => {
+    let fixture: Fixture
     let client: HttpTestClient
 
     beforeEach(async () => {
-        isolated = await createIsolatedFixture()
-        client = isolated.testContext.client
+        fixture = await createFixture()
+        client = fixture.testContext.client
     })
 
     afterEach(async () => {
-        await closeIsolatedFixture(isolated)
+        await closeFixture(fixture)
     })
 
     describe('POST /customers', () => {
@@ -67,7 +66,7 @@ describe('/customers', () => {
         let customer: CustomerDto
 
         beforeEach(async () => {
-            customer = await createCustomer(client)
+            customer = await createCustomer(fixture.customersService)
         })
 
         it('고객 정보를 업데이트해야 한다', async () => {
@@ -85,7 +84,7 @@ describe('/customers', () => {
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.patch(`/customers/${nullObjectId}`).body({}).notFound({
                 error: 'Not Found',
-                message: 'Customer with ID 000000000000000000000000 not found',
+                message: `Document with ID ${nullObjectId} not found`,
                 statusCode: 404
             })
         })
@@ -95,14 +94,14 @@ describe('/customers', () => {
         let customer: CustomerDto
 
         beforeEach(async () => {
-            customer = await createCustomer(client)
+            customer = await createCustomer(fixture.customersService)
         })
 
         it('고객을 삭제해야 한다', async () => {
             await client.delete(`/customers/${customer.id}`).ok()
             await client.get(`/customers/${customer.id}`).notFound({
                 error: 'Not Found',
-                message: `Customer with ID ${customer.id} not found`,
+                message: `Document with ID ${customer.id} not found`,
                 statusCode: 404
             })
         })
@@ -110,7 +109,7 @@ describe('/customers', () => {
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.delete(`/customers/${nullObjectId}`).notFound({
                 error: 'Not Found',
-                message: 'Customer with ID 000000000000000000000000 not found',
+                message: 'Document with ID 000000000000000000000000 not found',
                 statusCode: 404
             })
         })
@@ -120,7 +119,7 @@ describe('/customers', () => {
         let customer: CustomerDto
 
         beforeEach(async () => {
-            customer = await createCustomer(client)
+            customer = await createCustomer(fixture.customersService)
         })
 
         it('고객 정보를 가져와야 한다', async () => {
@@ -130,7 +129,7 @@ describe('/customers', () => {
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.get(`/customers/${nullObjectId}`).notFound({
                 error: 'Not Found',
-                message: 'Customer with ID 000000000000000000000000 not found',
+                message: 'Document with ID 000000000000000000000000 not found',
                 statusCode: 404
             })
         })
@@ -140,7 +139,7 @@ describe('/customers', () => {
         let customers: CustomerDto[]
 
         beforeEach(async () => {
-            customers = await createCustomers(client)
+            customers = await createCustomers(fixture.customersService)
         })
 
         it('기본 페이지네이션 설정으로 고객을 가져와야 한다', async () => {

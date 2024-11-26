@@ -1,14 +1,30 @@
 import { BadRequestException } from '@nestjs/common'
-import { escapeRegExp } from 'lodash'
-import { ObjectId } from './mongoose.schema'
+import { Expect } from 'common'
+import { escapeRegExp, uniq } from 'lodash'
+import { Types } from 'mongoose'
 
-export const newObjectId = () => new ObjectId().toString()
-export const objectId = (id: string) => new ObjectId(id)
+export const newObjectId = () => new Types.ObjectId().toString()
+export const objectId = (id: string) => new Types.ObjectId(id)
 export const objectIds = (ids: string[]) => ids.map((id) => objectId(id))
+
+export const addEqualQuery = (query: any, field: string, value?: any) => {
+    if (value !== undefined && value !== null) {
+        query[field] = value
+    }
+}
+
+export const addIdQuery = (query: any, field: string, id?: string) => {
+    if (id) {
+        query[field] = objectId(id)
+    }
+}
 
 export const addInQuery = (query: any, field: string, ids?: string[]) => {
     if (ids && ids.length > 0) {
-        query[field] = { $in: objectIds(ids) }
+        const uniqueIds = uniq(ids)
+        Expect.equalLength(uniqueIds, ids, `Duplicate ${field} IDs detected and removed:${ids}`)
+
+        query[field] = { $in: objectIds(uniqueIds) }
     }
 }
 

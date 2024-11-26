@@ -13,7 +13,9 @@ import {
 import { StreamableHandlerResponse } from '@nestjs/common/file-stream/interfaces'
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { IsString } from 'class-validator'
+import { STORAGE_FILES_ROUTE } from 'config'
 import { createReadStream } from 'fs'
+import { pick } from 'lodash'
 import { StorageFilesService } from 'services/storage-files'
 
 class UploadFileDto {
@@ -21,7 +23,7 @@ class UploadFileDto {
     name?: string
 }
 
-@Controller('storage-files')
+@Controller(STORAGE_FILES_ROUTE)
 export class StorageFilesController {
     private logger: Logger
 
@@ -32,12 +34,9 @@ export class StorageFilesController {
     @UseInterceptors(FilesInterceptor('files'))
     @Post()
     async saveFiles(@UploadedFiles() files: Express.Multer.File[], @Body() _body: UploadFileDto) {
-        const createDtos = files.map((file) => ({
-            originalname: file.originalname,
-            mimetype: file.mimetype,
-            size: file.size,
-            uploadedFilePath: file.path
-        }))
+        const createDtos = files.map((file) =>
+            pick(file, 'originalname', 'mimetype', 'size', 'path')
+        )
 
         const storageFiles = await this.service.saveFiles(createDtos)
         return { storageFiles }

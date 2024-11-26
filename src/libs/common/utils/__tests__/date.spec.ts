@@ -1,14 +1,14 @@
-import { Exception } from 'common'
 import {
     addDays,
     addMinutes,
     convertDateToString,
     convertStringToDate,
+    Exception,
     findMaxDate,
     findMinDate,
     millisecsToString,
     stringToMillisecs
-} from '..'
+} from 'common'
 
 describe('common/utils/date', () => {
     it('stringToMillisecs', () => {

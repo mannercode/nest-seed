@@ -39,17 +39,59 @@ Nest에서는 일반적으로 Controller, Service, Repository가 같은 모듈�
 
 ### 1.2. 서비스의 분리
 
-이 프로젝트의 서비스는 크게 Core Serivce와 Application Service로 나눈다
+이 프로젝트의 서비스는 크게 Application, Core, Infrastructure로 나눈다
+
+Infrastructure Service의 특징은 다음과 같다.
+
+1. 파일과 같은 시스템의 자원이나 결제 같은 외부 서비스를 사용하기 위한 인터페이스를 가진다.
+1. 다른 서비스를 참조하지 않는다.
 
 Core Serivce의 특징은 다음과 같다.
 
 1. 다른 서비스에 존재하지 않는 독립적인 repository를 가진다.
-1. 다른 서비스를 참조하지 않는다.
+1. Infrastructure 서비스를 제외한 다른 서비스를 참조하지 않는다.
 
 Application Service의 특징은 다음과 같다.
 
 1. repository가 존재하지 않거나 다른 서비스에 존재하는 데이터로 생성 가능한 데이터를 가진다
-1. 다른 서비스를 참조할 수 있다.
+1. Core와 Infrastructure 서비스를 참조할 수 있다.
+
+```plantuml
+@startditaa
++----------------------------------------------+
+|             Application Services             |
++----------------+---------------------+-------+
+                 |                     |
+                 v                     |
++-------------------------------+      |
+|         Core Services         |      |
++----------------+--------------+      |
+                 |                     |
+                 v                     v
++----------------------------------------------+
+|         Infrastructure Services              |
++-----------------------+----------------------+
+                        |
+                        v
++----------------------------------------------+
+|          Infrastructure Resources            |
++----------------------------------------------+
+@endditaa
+```
+
+### 1.3. 서비스의 이름
+
+프로세스 중심 서비스는 단수형으로 명명하는 것이 일반적입니다.
+
+1. AuthenticationService: 사용자 인증 프로세스를 처리합니다.
+1. AuthorizationService: 권한 부여 프로세스를 처리합니다.
+1. RecommendationService: 컨텐츠를 추천합니다.
+
+엔티티 관리 서비스는 복수형으로 명명하는 것이 일반적입니다.
+
+1. UsersService: 사용자 엔티티를 관리합니다.
+1. OrdersService: 주문 엔티티를 관리합니다.
+1. ProductsService: 제품 엔티티를 관리합니다.
 
 ## 2. REST API
 

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { maps, MethodLog, objectId, objectIds, PaginationResult } from 'common'
-import { TheaterCreateDto, TheaterDto, TheaterQueryDto, TheaterUpdateDto } from './dtos'
+import { MethodLog } from 'common'
+import { TheaterCreateDto, TheaterQueryDto, TheaterUpdateDto } from './dtos'
+import { TheaterDocument, TheaterDto } from './models'
 import { TheatersRepository } from './theaters.repository'
 
 @Injectable()
@@ -10,24 +11,24 @@ export class TheatersService {
     @MethodLog()
     async createTheater(createDto: TheaterCreateDto) {
         const theater = await this.repository.createTheater(createDto)
-        return new TheaterDto(theater)
+        return this.toDto(theater)
     }
 
     @MethodLog()
     async updateTheater(theaterId: string, updateDto: TheaterUpdateDto) {
-        const theater = await this.repository.updateTheater(objectId(theaterId), updateDto)
-        return new TheaterDto(theater)
+        const theater = await this.repository.updateTheater(theaterId, updateDto)
+        return this.toDto(theater)
     }
 
     @MethodLog({ level: 'verbose' })
     async getTheater(theaterId: string) {
-        const theater = await this.repository.getTheater(objectId(theaterId))
-        return new TheaterDto(theater)
+        const theater = await this.repository.getById(theaterId)
+        return this.toDto(theater)
     }
 
     @MethodLog()
     async deleteTheater(theaterId: string) {
-        await this.repository.deleteTheater(objectId(theaterId))
+        await this.repository.deleteById(theaterId)
         return true
     }
 
@@ -35,17 +36,24 @@ export class TheatersService {
     async findTheaters(queryDto: TheaterQueryDto) {
         const { items, ...paginated } = await this.repository.findTheaters(queryDto)
 
-        return { ...paginated, items: maps(items, TheaterDto) } as PaginationResult<TheaterDto>
+        return {
+            ...paginated,
+            items: this.toDtos(items)
+        }
     }
 
     @MethodLog({ level: 'verbose' })
     async getTheatersByIds(theaterIds: string[]) {
-        const theaters = await this.repository.getTheatersByIds(objectIds(theaterIds))
-        return maps(theaters, TheaterDto)
+        const theaters = await this.repository.getByIds(theaterIds)
+
+        return this.toDtos(theaters)
     }
 
     @MethodLog({ level: 'verbose' })
-    async theatersExist(theaterIds: string[]): Promise<boolean> {
-        return this.repository.existsByIds(objectIds(theaterIds))
+    async theatersExist(theaterIds: string[]) {
+        return this.repository.existByIds(theaterIds)
     }
+
+    private toDto = (theater: TheaterDocument) => theater.toJSON<TheaterDto>()
+    private toDtos = (theaters: TheaterDocument[]) => theaters.map((theater) => this.toDto(theater))
 }

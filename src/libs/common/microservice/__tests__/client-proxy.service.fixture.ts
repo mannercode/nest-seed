@@ -1,6 +1,6 @@
 import { Controller, Get, Module } from '@nestjs/common'
 import { MessagePattern } from '@nestjs/microservices'
-import { ClientProxyService } from '../client-proxy.service'
+import { ClientProxyService } from 'common'
 
 @Controller()
 class MicroserviceController {

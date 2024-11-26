@@ -101,7 +101,7 @@ export class Path {
     }
 
     static async getSize(filePath: string): Promise<number> {
-        const stats = await fs.stat(filePath)
-        return stats.size
+        const { size } = await fs.stat(filePath)
+        return size
     }
 }

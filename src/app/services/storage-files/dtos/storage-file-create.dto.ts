@@ -14,5 +14,5 @@ export class StorageFileCreateDto {
 
     @IsString()
     @IsNotEmpty()
-    uploadedFilePath: string
+    path: string
 }

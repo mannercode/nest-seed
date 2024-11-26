@@ -1,6 +1,6 @@
 {
     "name": "nest-seed",
-    "version": "1.0.0",
+    "version": "0.0.1",
     "private": true,
     "scripts": {
         "start": "node _output/dist/app/main",
@@ -42,6 +42,7 @@
         "lodash": "^4.17.21",
         "mongoose": "^8.4.5",
         "mongoose-delete": "^1.0.2",
+        "nanoid": "^3.3.7",
         "passport-jwt": "^4.0.1",
         "passport-local": "^1.0.0",
         "pg": "^8.12.0",

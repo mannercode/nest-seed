@@ -1,5 +1,5 @@
 import { Controller, Get, Injectable, Module, Query, UsePipes } from '@nestjs/common'
-import { PaginationOption, PaginationPipe } from '../pagination'
+import { PaginationOption, PaginationPipe } from 'common'
 
 @Injectable()
 class DefaultPaginationPipe extends PaginationPipe {

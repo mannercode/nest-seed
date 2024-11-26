@@ -1,19 +1,18 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import {
     addInQuery,
     MethodLog,
-    ModelAttributes,
     MongooseRepository,
     MongooseUpdateResult,
-    ObjectId,
+    objectId,
     objectIds,
     validateFilters
 } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { TicketSalesStatusDto } from './dtos'
+import { SalesStatusByShowtimeDto, TicketCreateDto } from './dtos'
 import { TicketFilterDto } from './dtos/ticket-filter.dto'
-import { Ticket, TicketCreateData, TicketStatus } from './models'
+import { Ticket, TicketStatus } from './models'
 
 @Injectable()
 export class TicketsRepository extends MongooseRepository<Ticket> {
@@ -21,32 +20,31 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         super(model)
     }
 
-    async onModuleInit() {
-        await this.model.createCollection()
-    }
-
     @MethodLog()
-    async createTickets(createDtos: TicketCreateData[]) {
+    async createTickets(createDtos: TicketCreateDto[]) {
         const tickets = createDtos.map((dto) => {
             const ticket = this.newDocument()
-            Object.assign(ticket, dto)
+            ticket.batchId = objectId(dto.batchId)
+            ticket.movieId = objectId(dto.movieId)
+            ticket.theaterId = objectId(dto.theaterId)
+            ticket.showtimeId = objectId(dto.showtimeId)
+            ticket.status = dto.status
+            ticket.seat = dto.seat
+
             return ticket
         })
 
-        return this.saveAll(tickets)
+        return this.saveMany(tickets)
     }
 
     @MethodLog()
-    async updateTicketStatus(
-        ticketIds: ObjectId[],
-        status: TicketStatus
-    ): Promise<MongooseUpdateResult> {
+    async updateTicketStatus(ticketIds: string[], status: TicketStatus) {
         const result = await this.model.updateMany(
-            { _id: { $in: ticketIds } },
+            { _id: { $in: objectIds(ticketIds) } },
             { $set: { status } }
         )
 
-        return result
+        return result as MongooseUpdateResult
     }
 
     @MethodLog({ level: 'verbose' })
@@ -62,11 +60,11 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         validateFilters(query)
 
         const tickets = await this.model.find(query).sort({ batchId: 1 }).exec()
-        return tickets as Ticket[]
+        return tickets
     }
 
     @MethodLog({ level: 'verbose' })
-    async getSalesStatuses(showtimeIds: string[]): Promise<TicketSalesStatusDto[]> {
+    async getSalesStatuses(showtimeIds: string[]) {
         const salesStatuses = await this.model.aggregate([
             { $match: { showtimeId: { $in: objectIds(showtimeIds) } } },
             {
@@ -91,6 +89,6 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
             }
         ])
 
-        return salesStatuses
+        return salesStatuses as SalesStatusByShowtimeDto[]
     }
 }

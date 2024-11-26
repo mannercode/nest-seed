@@ -1,25 +1,25 @@
-import { TicketDto, TicketsService, TicketStatus } from 'services/tickets'
+import { pickIds } from 'common'
+import { TicketsService, TicketStatus } from 'services/tickets'
+import { expectEqualUnsorted, testObjectId } from 'testlib'
 import {
-    closeIsolatedFixture,
-    createIsolatedFixture,
+    closeFixture,
+    createFixture,
     createTicketDtos,
     createTickets,
-    IsolatedFixture
+    Fixture
 } from './tickets.fixture'
-import { expectEqualUnsorted } from 'testlib'
-import { objectIds, pickIds } from 'common'
 
-describe('TicketsModule', () => {
-    let isolated: IsolatedFixture
+describe('Tickets Module', () => {
+    let fixture: Fixture
     let service: TicketsService
 
     beforeEach(async () => {
-        isolated = await createIsolatedFixture()
-        service = isolated.service
+        fixture = await createFixture()
+        service = fixture.ticketsService
     })
 
     afterEach(async () => {
-        await closeIsolatedFixture(isolated)
+        await closeFixture(fixture)
     })
 
     it('createTickets', async () => {
@@ -30,14 +30,12 @@ describe('TicketsModule', () => {
     })
 
     describe('findAllTickets', () => {
-        let tickets: TicketDto[]
-
         beforeEach(async () => {
             const { createDtos } = createTicketDtos()
-            tickets = await createTickets(service, createDtos)
+            await createTickets(service, createDtos)
         })
 
-        const findAllTickets = async (overrides = {}, findFilter = {}) => {
+        const createAndFindTickets = async (overrides = {}, findFilter = {}) => {
             const { createDtos, expectedDtos } = createTicketDtos(overrides)
             await service.createTickets(createDtos)
 
@@ -46,27 +44,27 @@ describe('TicketsModule', () => {
         }
 
         it('batchIds', async () => {
-            const batchId = '100000000000000000000001'
-            await findAllTickets({ batchId }, { batchIds: [batchId] })
+            const batchId = testObjectId('a1')
+            await createAndFindTickets({ batchId }, { batchIds: [batchId] })
         })
 
         it('movieIds', async () => {
-            const movieId = '100000000000000000000002'
-            await findAllTickets({ movieId }, { movieIds: [movieId] })
+            const movieId = testObjectId('a1')
+            await createAndFindTickets({ movieId }, { movieIds: [movieId] })
         })
 
         it('theaterIds', async () => {
-            const theaterId = '100000000000000000000003'
-            await findAllTickets({ theaterId }, { theaterIds: [theaterId] })
+            const theaterId = testObjectId('a1')
+            await createAndFindTickets({ theaterId }, { theaterIds: [theaterId] })
         })
 
         it('showtimeIds', async () => {
-            const showtimeId = '100000000000000000000004'
-            await findAllTickets({ showtimeId }, { showtimeIds: [showtimeId] })
+            const showtimeId = testObjectId('a1')
+            await createAndFindTickets({ showtimeId }, { showtimeIds: [showtimeId] })
         })
 
         it('1개 이상의 필터를 설정하지 않으면 BAD_REQUEST(400)를 반환해야 한다', async () => {
-            const promise = findAllTickets({})
+            const promise = createAndFindTickets({})
             await expect(promise).rejects.toThrow('At least one filter condition must be provided.')
         })
     })
@@ -75,25 +73,22 @@ describe('TicketsModule', () => {
         const { createDtos } = createTicketDtos({})
         const tickets = await createTickets(service, createDtos)
         const ticket = tickets[0]
-        expect(ticket.status).toEqual(TicketStatus.open)
+        expect(ticket.status).toEqual(TicketStatus.available)
 
-        const updatedTickets = await service.updateTicketStatus(
-            objectIds([ticket.id]),
-            TicketStatus.sold
-        )
+        const updatedTickets = await service.updateTicketStatus([ticket.id], TicketStatus.sold)
         const updatedStatuses = updatedTickets.map((ticket) => ticket.status)
         expect(updatedStatuses).toEqual([TicketStatus.sold])
     })
 
     it('getSalesStatuses', async () => {
-        const showtimeId = '400000000000000000000001'
+        const showtimeId = testObjectId('a1')
         const ticketCount = 50
         const soldCount = 5
 
         const { createDtos } = createTicketDtos({ showtimeId }, ticketCount)
         const tickets = await createTickets(service, createDtos)
         const ticketIds = pickIds(tickets.slice(0, soldCount))
-        await service.updateTicketStatus(objectIds(ticketIds), TicketStatus.sold)
+        await service.updateTicketStatus(ticketIds, TicketStatus.sold)
         const salesStatuses = await service.getSalesStatuses([showtimeId])
 
         expect(salesStatuses).toEqual([

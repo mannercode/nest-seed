@@ -1,39 +1,94 @@
 import { Type } from '@nestjs/common'
-import { Schema, SchemaFactory } from '@nestjs/mongoose'
-import { Types } from 'mongoose'
+import { SchemaFactory } from '@nestjs/mongoose'
+import { FlattenMaps, SchemaOptions, Types } from 'mongoose'
+import * as mongooseDelete from 'mongoose-delete'
 
-export class ObjectId extends Types.ObjectId {}
+/*
+toObject와 toJSON의 차이는 toJSON는 flattenMaps의 기본값이 true라는 것 뿐이다.
 
-export class MongooseUpdateResult {
-    modifiedCount: number
-    matchedCount: number
+@Schema()
+export class Sample {
+    @Prop({ type: Map, of: String })
+    attributes: Map<string, string>
 }
 
-@Schema({
-    // https://mongoosejs.com/docs/guide.html#optimisticConcurrency
-    optimisticConcurrency: true,
-    minimize: false,
-    strict: 'throw',
-    strictQuery: 'throw',
-    timestamps: true,
-    validateBeforeSave: true,
-    // https://mongoosejs.com/docs/guide.html#collation
-    collation: { locale: 'en_US', strength: 1 }
-})
-export class MongooseSchema {
-    id: ObjectId
-    createdAt: Date
-    updatedAt: Date
-    __v: number
+console.log(sample.toObject())
+attributes: Map(2) { 'key1' => 'value1', 'key2' => 'value2' },
+
+console.log(sample.toJSON())
+attributes: { key1: 'value1', key2: 'value2' },
+*/
+
+type SchemaOptionType = {
+    timestamps?: boolean
+    json?: {
+        omits?: readonly string[]
+        includes?: { timestamps?: boolean }
+    }
+}
+export const createSchemaOptions = (options: SchemaOptionType): SchemaOptions => {
+    const { timestamps, json } = options
+
+    return {
+        // https://mongoosejs.com/docs/guide.html#optimisticConcurrency
+        optimisticConcurrency: true,
+        minimize: false,
+        strict: 'throw',
+        strictQuery: 'throw',
+        timestamps: timestamps ?? true,
+        validateBeforeSave: true,
+        // https://mongoosejs.com/docs/guide.html#collation
+        collation: { locale: 'en_US', strength: 1 },
+        toJSON: {
+            virtuals: true,
+            flattenObjectIds: true,
+            versionKey: false,
+            transform: function (_doc, ret) {
+                delete ret._id
+                delete ret.deleted
+
+                let timestamps = false
+
+                if (json) {
+                    const { omits, includes } = json
+
+                    if (omits) {
+                        omits.forEach((omit) => delete ret[omit])
+                    }
+
+                    if (includes) {
+                        timestamps = includes.timestamps ?? false
+                    }
+                }
+
+                if (!timestamps) {
+                    delete ret.createdAt
+                    delete ret.updatedAt
+                }
+            }
+        }
+    }
 }
 
-export type ModelAttributes<T> = Omit<T, keyof MongooseSchema>
+export abstract class MongooseSchema {
+    id: string
+}
 
-const BaseSchemaClass = SchemaFactory.createForClass(MongooseSchema)
+type ReplaceObjectIdWithString<T> = {
+    [K in keyof T]: T[K] extends Types.ObjectId ? string : T[K]
+}
+type OmitKey<T, K extends keyof T = never> = FlattenMaps<ReplaceObjectIdWithString<Omit<T, K>>>
+type ExtractKeys<O extends readonly any[]> = O[number]
+export type SchemaJson<T, O extends readonly (keyof T)[] = []> = OmitKey<T, ExtractKeys<O>>
 
-export function createMongooseSchema<T extends Type<MongooseSchema>>(cls: T) {
+type MongooseSchemaOptions = { softDeletion?: boolean }
+export function createMongooseSchema<T>(cls: Type<T>, options: MongooseSchemaOptions) {
     const schema = SchemaFactory.createForClass(cls)
-    schema.add(BaseSchemaClass)
+    const { softDeletion } = options
+
+    if (softDeletion !== false) {
+        schema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' })
+    }
 
     return schema
 }

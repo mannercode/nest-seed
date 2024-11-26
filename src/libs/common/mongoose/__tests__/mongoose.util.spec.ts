@@ -1,12 +1,13 @@
 import { expect } from '@jest/globals'
 import { BadRequestException } from '@nestjs/common'
 import {
+    addEqualQuery,
+    addIdQuery,
     addInQuery,
     addRangeQuery,
     addRegexQuery,
     newObjectId,
     objectId,
-    ObjectId,
     objectIds,
     validateFilters
 } from 'common'
@@ -24,7 +25,7 @@ describe('MongooseRepository Utils', () => {
             const idString = '507f1f77bcf86cd799439011'
             const result = objectId(idString)
 
-            expect(result).toBeInstanceOf(ObjectId)
+            expect(result).toBeInstanceOf(Types.ObjectId)
             expect(result.toString()).toBe(idString)
         })
 
@@ -42,7 +43,7 @@ describe('MongooseRepository Utils', () => {
 
             expect(result).toHaveLength(2)
             result.forEach((id, index) => {
-                expect(id).toBeInstanceOf(ObjectId)
+                expect(id).toBeInstanceOf(Types.ObjectId)
                 expect(id.toString()).toBe(idStrings[index])
             })
         })
@@ -57,6 +58,52 @@ describe('MongooseRepository Utils', () => {
             const idStrings = ['507f1f77bcf86cd799439011', 'invalid-id']
 
             expect(() => objectIds(idStrings)).toThrow()
+        })
+    })
+
+    describe('addEqualQuery', () => {
+        it('should add equal query when value is provided', () => {
+            const query: any = {}
+            const field = 'movieId'
+            const value = '60d5ec49f8d2e30d8c8b4567'
+
+            addEqualQuery(query, field, value)
+
+            expect(query).toHaveProperty(field)
+            expect(query[field]).toEqual(value)
+        })
+
+        it('should not add query when value is not provided', () => {
+            const query: any = {}
+            const field = 'movieId'
+            const value = undefined
+
+            addEqualQuery(query, field, value)
+
+            expect(query).not.toHaveProperty(field)
+        })
+    })
+
+    describe('addIdQuery', () => {
+        it('should add equal query when id is provided', () => {
+            const query: any = {}
+            const field = 'movieId'
+            const id = '60d5ec49f8d2e30d8c8b4567'
+
+            addIdQuery(query, field, id)
+
+            expect(query).toHaveProperty(field)
+            expect(query[field]).toEqual(objectId(id))
+        })
+
+        it('should not add query when id is not provided', () => {
+            const query: any = {}
+            const field = 'movieId'
+            const id = undefined
+
+            addIdQuery(query, field, id)
+
+            expect(query).not.toHaveProperty(field)
         })
     })
 

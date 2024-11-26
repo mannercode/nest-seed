@@ -1,4 +1,5 @@
 import { Transport } from '@nestjs/microservices'
+import { ClientProxyModule } from 'common'
 import {
     HttpTestClient,
     HttpTestContext,
@@ -6,7 +7,6 @@ import {
     createHttpTestContext,
     createMicroserviceTestContext
 } from 'testlib'
-import { ClientProxyModule } from '../client-proxy.service'
 import { HttpController, MicroserviceModule } from './client-proxy.service.fixture'
 
 describe('ClientProxyService', () => {

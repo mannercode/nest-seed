@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { CacheService, MethodLog } from 'common'
 
-const makeCustomerKey = (showtimeId: string, customerId: string) =>
+const getCustomerKey = (showtimeId: string, customerId: string) =>
     `Customer:{${showtimeId}}:${customerId}`
-const makeTicketKey = (showtimeId: string, ticketId: string) => `Ticket:{${showtimeId}}:${ticketId}`
+const getTicketKey = (showtimeId: string, ticketId: string) => `Ticket:{${showtimeId}}:${ticketId}`
 
 @Injectable()
 export class TicketHoldingService {
@@ -11,8 +11,8 @@ export class TicketHoldingService {
 
     @MethodLog({ level: 'verbose' })
     async holdTickets(showtimeId: string, customerId: string, ticketIds: string[], ttlMs: number) {
-        const ticketKeys = ticketIds.map((ticketId) => makeTicketKey(showtimeId, ticketId))
-        const customerKeyStr = makeCustomerKey(showtimeId, customerId)
+        const ticketKeys = ticketIds.map((ticketId) => getTicketKey(showtimeId, ticketId))
+        const customerKeyStr = getCustomerKey(showtimeId, customerId)
         const keys = [...ticketKeys, customerKeyStr]
 
         const script = `
@@ -68,7 +68,7 @@ export class TicketHoldingService {
 
     @MethodLog({ level: 'verbose' })
     async findHeldTicketIds(showtimeId: string, customerId: string): Promise<string[]> {
-        const tickets = await this.cacheService.get(makeCustomerKey(showtimeId, customerId))
+        const tickets = await this.cacheService.get(getCustomerKey(showtimeId, customerId))
 
         return tickets ? JSON.parse(tickets) : []
     }
@@ -78,10 +78,10 @@ export class TicketHoldingService {
         const tickets = await this.findHeldTicketIds(showtimeId, customerId)
 
         await Promise.all(
-            tickets.map((ticketId) => this.cacheService.delete(makeTicketKey(showtimeId, ticketId)))
+            tickets.map((ticketId) => this.cacheService.delete(getTicketKey(showtimeId, ticketId)))
         )
 
-        await this.cacheService.delete(makeCustomerKey(showtimeId, customerId))
+        await this.cacheService.delete(getCustomerKey(showtimeId, customerId))
 
         return true
     }

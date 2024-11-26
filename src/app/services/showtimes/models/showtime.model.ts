@@ -1,13 +1,16 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { ModelAttributes, MongooseSchema, ObjectId, createMongooseSchema } from 'common'
+import { MongooseSchema, SchemaJson, createMongooseSchema, createSchemaOptions } from 'common'
+import { HydratedDocument, Types } from 'mongoose'
 
-@Schema()
+const omits = ['batchId'] as const
+
+@Schema(createSchemaOptions({ timestamps: false, json: { omits } }))
 export class Showtime extends MongooseSchema {
-    @Prop({ type: ObjectId, required: true })
-    theaterId: ObjectId
+    @Prop({ required: true })
+    theaterId: Types.ObjectId
 
-    @Prop({ type: ObjectId, required: true })
-    movieId: ObjectId
+    @Prop({ required: true })
+    movieId: Types.ObjectId
 
     @Prop({ required: true })
     startTime: Date
@@ -15,10 +18,10 @@ export class Showtime extends MongooseSchema {
     @Prop({ required: true })
     endTime: Date
 
-    @Prop({ type: ObjectId, required: true })
-    batchId: ObjectId
+    @Prop({ required: true })
+    batchId: Types.ObjectId
 }
+export type ShowtimeDto = SchemaJson<Showtime, typeof omits>
 
-export const ShowtimeSchema = createMongooseSchema(Showtime)
-
-export type ShowtimeCreateData = ModelAttributes<Showtime>
+export type ShowtimeDocument = HydratedDocument<Showtime>
+export const ShowtimeSchema = createMongooseSchema(Showtime, {})

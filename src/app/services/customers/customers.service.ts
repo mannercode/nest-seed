@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common'
-import { JwtAuthService, maps, MethodLog, objectId, ObjectId, objectIds, PaginationResult, Password } from 'common'
+import { ConflictException, Injectable } from '@nestjs/common'
+import { JwtAuthService, MethodLog, Password } from 'common'
 import { CustomersRepository } from './customers.repository'
-import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
+import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
+import { CustomerDocument, CustomerDto } from './models'
 
 @Injectable()
 export class CustomersService {
@@ -12,29 +13,32 @@ export class CustomersService {
 
     @MethodLog()
     async createCustomer(createDto: CustomerCreateDto) {
+        if (await this.repository.findByEmail(createDto.email))
+            throw new ConflictException(`Customer with email ${createDto.email} already exists`)
+
         const customer = await this.repository.createCustomer({
             ...createDto,
             password: await Password.hash(createDto.password)
         })
 
-        return new CustomerDto(customer)
+        return this.toDto(customer)
     }
 
     @MethodLog()
     async updateCustomer(customerId: string, updateDto: CustomerUpdateDto) {
-        const customer = await this.repository.updateCustomer(objectId(customerId), updateDto)
-        return new CustomerDto(customer)
+        const customer = await this.repository.updateCustomer(customerId, updateDto)
+        return this.toDto(customer)
     }
 
     @MethodLog({ level: 'verbose' })
     async getCustomer(customerId: string) {
-        const customer = await this.repository.getCustomer(objectId(customerId))
-        return new CustomerDto(customer)
+        const customer = await this.repository.getById(customerId)
+        return this.toDto(customer)
     }
 
     @MethodLog()
     async deleteCustomer(customerId: string) {
-        await this.repository.deleteCustomer(objectId(customerId))
+        await this.repository.deleteById(customerId)
         return true
     }
 
@@ -42,12 +46,7 @@ export class CustomersService {
     async findCustomers(queryDto: CustomerQueryDto) {
         const { items, ...paginated } = await this.repository.findCustomers(queryDto)
 
-        return { ...paginated, items: maps(items, CustomerDto) } as PaginationResult<CustomerDto>
-    }
-
-    @MethodLog()
-    async customersExist(customerIds: string[]) {
-        return this.repository.existsByIds(objectIds(customerIds))
+        return { ...paginated, items: this.toDtos(items) }
     }
 
     @MethodLog()
@@ -65,8 +64,12 @@ export class CustomersService {
         const customer = await this.repository.findByEmail(email)
 
         if (customer && (await Password.validate(password, customer.password)))
-            return new CustomerDto(customer)
+            return this.toDto(customer)
 
         return null
     }
+
+    private toDto = (customer: CustomerDocument) => customer.toJSON<CustomerDto>()
+    private toDtos = (customers: CustomerDocument[]) =>
+        customers.map((customer) => this.toDto(customer))
 }

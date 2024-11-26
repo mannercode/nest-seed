@@ -1,18 +1,22 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { ModelAttributes, MongooseSchema, createMongooseSchema } from 'common'
+import { MongooseSchema, SchemaJson, createMongooseSchema, createSchemaOptions } from 'common'
+import { HydratedDocument } from 'mongoose'
 
-@Schema()
+@Schema(createSchemaOptions({}))
 export class StorageFile extends MongooseSchema {
     @Prop({ required: true })
     originalname: string
+
     @Prop({ required: true })
     mimetype: string
+
     @Prop({ required: true })
     size: number
+
     @Prop({ required: true })
     checksum: string
 }
+export type StorageFileDto = SchemaJson<StorageFile> & { storedPath: string }
 
-export const StorageFileSchema = createMongooseSchema(StorageFile)
-
-export type StorageFileCreateData = ModelAttributes<StorageFile>
+export type StorageFileDocument = HydratedDocument<StorageFile>
+export const StorageFileSchema = createMongooseSchema(StorageFile, {})

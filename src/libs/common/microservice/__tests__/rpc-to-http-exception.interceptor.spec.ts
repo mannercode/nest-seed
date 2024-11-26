@@ -7,7 +7,7 @@ import {
     createHttpTestContext,
     createMicroserviceTestContext
 } from 'testlib'
-import { RpcToHttpExceptionInterceptor } from '../rpc-to-http-exception.interceptor'
+import { RpcToHttpExceptionInterceptor } from 'common'
 import { HttpController, MicroserviceModule } from './rpc-to-http-exception.interceptor.fixture'
 
 describe('RpcToHttpExceptionInterceptor', () => {

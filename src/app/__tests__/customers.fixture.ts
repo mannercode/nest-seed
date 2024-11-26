@@ -1,25 +1,25 @@
 import { omit } from 'lodash'
-import { createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
+import { CustomersService } from 'services/customers'
+import { createHttpTestContext, HttpTestContext } from 'testlib'
 import { AppModule, configureApp } from '../app.module'
 import { CustomerJwtAuthGuard } from '../controllers/guards'
 
-export interface IsolatedFixture {
+export interface Fixture {
     testContext: HttpTestContext
+    customersService: CustomersService
 }
 
-export async function createIsolatedFixture() {
+export async function createFixture() {
     const testContext = await createHttpTestContext(
-        {
-            imports: [AppModule],
-            ignoreGuards: [CustomerJwtAuthGuard]
-        },
+        { imports: [AppModule], ignoreGuards: [CustomerJwtAuthGuard] },
         configureApp
     )
+    const customersService = testContext.module.get(CustomersService)
 
-    return { testContext }
+    return { testContext, customersService }
 }
 
-export async function closeIsolatedFixture(fixture: IsolatedFixture) {
+export async function closeFixture(fixture: Fixture) {
     await fixture.testContext.close()
 }
 
@@ -32,26 +32,25 @@ export const createCustomerDto = (overrides = {}) => {
         ...overrides
     }
 
-    const expectedDto = { id: expect.anything(), ...omit(createDto, 'password') }
+    const expectedDto = { id: expect.any(String), ...omit(createDto, 'password') }
 
     return { createDto, expectedDto }
 }
 
-export const createCustomer = async (client: HttpTestClient, override = {}) => {
+export const createCustomer = async (customersService: CustomersService, override = {}) => {
     const { createDto } = createCustomerDto(override)
-
-    const { body } = await client.post('/customers').body(createDto).created()
-    return body
+    const customer = customersService.createCustomer(createDto)
+    return customer
 }
 
 export const createCustomers = async (
-    client: HttpTestClient,
+    customersService: CustomersService,
     length: number = 20,
     overrides = {}
 ) => {
     return Promise.all(
         Array.from({ length }, async (_, index) =>
-            createCustomer(client, {
+            createCustomer(customersService, {
                 name: `Customer-${index}`,
                 email: `user-${index}@mail.com`,
                 ...overrides

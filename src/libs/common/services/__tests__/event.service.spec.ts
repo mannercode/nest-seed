@@ -1,7 +1,6 @@
-import { EventEmitterModule } from '@nestjs/event-emitter'
 import { TestingModule } from '@nestjs/testing'
+import { EventModule, EventService } from 'common'
 import { createTestingModule } from 'testlib'
-import { EventService } from '../event.service'
 import { AppEventListener, SampleEvent } from './event.service.fixture'
 
 describe('EventService', () => {
@@ -11,7 +10,7 @@ describe('EventService', () => {
 
     beforeEach(async () => {
         module = await createTestingModule({
-            imports: [EventEmitterModule.forRoot({ wildcard: true, delimiter: '.' })],
+            imports: [EventModule.forRoot({ wildcard: true, delimiter: '.' })],
             providers: [AppEventListener, EventService]
         })
         const app = module.createNestApplication()
