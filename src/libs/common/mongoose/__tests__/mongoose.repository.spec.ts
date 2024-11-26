@@ -1,7 +1,7 @@
 import { expect } from '@jest/globals'
 import { NotFoundException } from '@nestjs/common'
 import { MongooseException, OrderDirection, pickIds, pickItems } from 'common'
-import { expectEqualUnsorted, getMongoTestConnection, nullObjectId } from 'testlib'
+import { expectEqualUnsorted, getMongoTestConnection, HttpTestContext, nullObjectId } from 'testlib'
 import {
     createFixture,
     createSample,
@@ -15,19 +15,19 @@ import {
 } from './mongoose.repository.fixture'
 
 describe('MongoRepository', () => {
+    let testContext: HttpTestContext
     let repository: SamplesRepository
-    let close: () => void
 
     beforeEach(async () => {
         const uri = getMongoTestConnection()
 
         const fixture = await createFixture(uri)
+        testContext = fixture.testContext
         repository = fixture.repository
-        close = fixture.close
     })
 
     afterEach(async () => {
-        await close()
+        await testContext?.close()
     })
 
     describe('save', () => {

@@ -9,7 +9,7 @@ import {
     padNumber
 } from 'common'
 import { HydratedDocument, Model } from 'mongoose'
-import { createTestingModule } from 'testlib'
+import { createHttpTestContext } from 'testlib'
 
 @Schema(createSchemaOptions({ json: { includes: {} } }))
 export class Sample extends MongooseSchema {
@@ -34,7 +34,7 @@ export class SamplesRepository extends MongooseRepository<Sample> {
 export class SampleModule {}
 
 export async function createFixture(uri: string) {
-    const module = await createTestingModule({
+    const testContext = await createHttpTestContext({
         imports: [
             MongooseModule.forRootAsync({
                 useFactory: () => ({ uri, dbName: 'test_' + generateShortId() })
@@ -42,13 +42,10 @@ export async function createFixture(uri: string) {
             SampleModule
         ]
     })
-    const app = module.createNestApplication()
-    await app.init()
 
-    const repository = module.get(SamplesRepository)
-    const close = async () => await module.close()
+    const repository = testContext.module.get(SamplesRepository)
 
-    return { module, repository, close }
+    return { testContext, repository }
 }
 
 export const createSample = (repository: SamplesRepository) => {

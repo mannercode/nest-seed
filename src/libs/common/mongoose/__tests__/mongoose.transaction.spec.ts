@@ -1,22 +1,22 @@
 import { expect } from '@jest/globals'
 import { pickIds } from 'common'
-import { getMongoTestConnection } from 'testlib'
+import { getMongoTestConnection, HttpTestContext } from 'testlib'
 import { createFixture, createSamples, SamplesRepository } from './mongoose.transaction.fixture'
 
 describe('MongooseRepository - withTransaction', () => {
+    let testContext: HttpTestContext
     let repository: SamplesRepository
-    let close: () => void
 
     beforeEach(async () => {
         const uri = getMongoTestConnection()
 
         const fixture = await createFixture(uri)
+        testContext = fixture.testContext
         repository = fixture.repository
-        close = fixture.close
     })
 
     afterEach(async () => {
-        await close()
+        await testContext?.close()
     })
 
     it('commit a transaction', async () => {
