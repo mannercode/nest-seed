@@ -3,7 +3,6 @@ import {
     Assert,
     Expect,
     MethodLog,
-    MongooseSchema,
     objectId,
     objectIds,
     OrderDirection,
@@ -14,6 +13,11 @@ import { differenceWith, uniq } from 'lodash'
 import { ClientSession, HydratedDocument, Model, QueryWithHelpers } from 'mongoose'
 import { MongooseException } from './exceptions'
 
+export class MongooseUpdateResult {
+    modifiedCount: number
+    matchedCount: number
+}
+
 type SeesionArg = ClientSession | undefined
 const DEFAULT_TAKE_SIZE = 100
 
@@ -23,7 +27,7 @@ const DEFAULT_TAKE_SIZE = 100
  * 결국 MongooseRepository을 사용하는 모든 Repository에서 onModuleInit을 반드시 호출해야 한다.
  * 이런 불편함을 감수하면서까지 상속을 피해야 하는가?
  */
-export abstract class MongooseRepository<Doc extends MongooseSchema> {
+export abstract class MongooseRepository<Doc> {
     constructor(protected model: Model<Doc>) {}
 
     /*

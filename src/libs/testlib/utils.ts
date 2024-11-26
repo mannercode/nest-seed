@@ -1,8 +1,5 @@
-import { ObjectId } from 'common'
 import * as fs from 'fs/promises'
 import * as net from 'net'
-
-export const toObjectId = (value: number) => new ObjectId(value).toString()
 
 export const nullUUID = '00000000000000000000000000000000'
 export const nullObjectId = '000000000000000000000000'

@@ -1,12 +1,7 @@
 import { expect } from '@jest/globals'
-import { ObjectId, pickIds, toDtos } from 'common'
+import { pickIds, toDtos2 } from 'common'
 import { getMongoTestConnection } from 'testlib'
-import {
-    createFixture,
-    createSamples,
-    SampleDto,
-    SamplesRepository
-} from './mongoose.repository.fixture'
+import { createFixture, createSamples, SamplesRepository } from './mongoose.repository.fixture'
 
 describe('MongooseRepository - withTransaction', () => {
     let repository: SamplesRepository
@@ -33,7 +28,6 @@ describe('MongooseRepository - withTransaction', () => {
             ].map((data) => {
                 const doc = repository.newDocument()
                 doc.name = data.name
-                doc.objId = new ObjectId()
                 return doc
             })
 
@@ -42,7 +36,7 @@ describe('MongooseRepository - withTransaction', () => {
         })
 
         const foundSamples = await repository.findByIds(pickIds(docs))
-        expect(toDtos(foundSamples, SampleDto)).toEqual(toDtos(docs, SampleDto))
+        expect(toDtos2(foundSamples)).toEqual(toDtos2(docs))
     })
 
     it('should rollback changes when an exception occurs during a transaction', async () => {
@@ -54,7 +48,6 @@ describe('MongooseRepository - withTransaction', () => {
             ].map((data) => {
                 const doc = repository.newDocument()
                 doc.name = data.name
-                doc.objId = new ObjectId()
                 return doc
             })
 
@@ -78,6 +71,6 @@ describe('MongooseRepository - withTransaction', () => {
         })
 
         const foundSamples = await repository.findByIds(ids)
-        expect(toDtos(foundSamples, SampleDto)).toEqual(toDtos(samples, SampleDto))
+        expect(toDtos2(foundSamples)).toEqual(toDtos2(samples))
     })
 })

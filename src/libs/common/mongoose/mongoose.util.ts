@@ -1,28 +1,11 @@
 import { BadRequestException } from '@nestjs/common'
 import { Expect } from 'common'
 import { escapeRegExp, uniq } from 'lodash'
-import { FlattenMaps, HydratedDocument, Require_id } from 'mongoose'
-import { ObjectId } from './mongoose.schema'
+import { Types } from 'mongoose'
 
-export const newObjectId = () => new ObjectId().toString()
-export const objectId = (id: string) => new ObjectId(id)
+export const newObjectId = () => new Types.ObjectId().toString()
+export const objectId = (id: string) => new Types.ObjectId(id)
 export const objectIds = (ids: string[]) => ids.map((id) => objectId(id))
-
-export function toDto<S, T>(
-    item: HydratedDocument<S>,
-    Target: new (item: FlattenMaps<Require_id<S>>, ...args: any[]) => T,
-    ...args: any[]
-): T {
-    return new Target(item.toJSON(), ...args)
-}
-
-export function toDtos<S, T>(
-    items: HydratedDocument<S>[],
-    Target: new (item: FlattenMaps<Require_id<S>>, ...args: any[]) => T,
-    ...args: any[]
-): T[] {
-    return items.map((item) => toDto(item, Target, args))
-}
 
 export const addEqualQuery = (query: any, field: string, value?: any) => {
     if (value !== undefined && value !== null) {

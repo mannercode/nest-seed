@@ -8,7 +8,6 @@ import {
     addRegexQuery,
     newObjectId,
     objectId,
-    ObjectId,
     objectIds,
     validateFilters
 } from 'common'
@@ -26,7 +25,7 @@ describe('MongooseRepository Utils', () => {
             const idString = '507f1f77bcf86cd799439011'
             const result = objectId(idString)
 
-            expect(result).toBeInstanceOf(ObjectId)
+            expect(result).toBeInstanceOf(Types.ObjectId)
             expect(result.toString()).toBe(idString)
         })
 
@@ -44,7 +43,7 @@ describe('MongooseRepository Utils', () => {
 
             expect(result).toHaveLength(2)
             result.forEach((id, index) => {
-                expect(id).toBeInstanceOf(ObjectId)
+                expect(id).toBeInstanceOf(Types.ObjectId)
                 expect(id.toString()).toBe(idStrings[index])
             })
         })

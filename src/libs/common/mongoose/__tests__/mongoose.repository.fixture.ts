@@ -1,36 +1,30 @@
 import { Injectable, Module } from '@nestjs/common'
-import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
+import { InjectModel, MongooseModule, Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import {
-    createMongooseSchema,
+    defaultSchemaOption,
     generateShortId,
     MongooseRepository,
     MongooseSchema,
-    ObjectId,
-    padNumber
+    padNumber,
+    SchemaJson
 } from 'common'
-import { Model } from 'mongoose'
+import { HydratedDocument, Model } from 'mongoose'
+import * as mongooseDelete from 'mongoose-delete'
 import { createTestingModule } from 'testlib'
 
-@Schema()
+@Schema(defaultSchemaOption)
 export class Sample extends MongooseSchema {
     @Prop({ required: true })
     name: string
-
-    @Prop({ required: true })
-    objId: ObjectId
 }
 
-export const SampleSchema = createMongooseSchema(Sample)
+export const SampleSchema = SchemaFactory.createForClass(Sample)
+SampleSchema.index({ name: 'text' })
+SampleSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: 'all' })
 
-export class SampleDto {
-    id: string
-    name: string
+export type SampleDocument = HydratedDocument<Sample>
 
-    constructor(sample: Sample) {
-        const { id, name } = sample
-        Object.assign(this, { id: id.toString(), name })
-    }
-}
+export type SampleDto = SchemaJson<Sample>
 
 @Injectable()
 export class SamplesRepository extends MongooseRepository<Sample> {
@@ -78,7 +72,6 @@ export const sortByNameDescending = (documents: SampleDto[]) =>
 export const createSample = (repository: SamplesRepository) => {
     const doc = repository.newDocument()
     doc.name = 'Sample-Name'
-    doc.objId = new ObjectId()
     return doc.save()
 }
 
@@ -87,7 +80,6 @@ export const createSamples = async (repository: SamplesRepository) =>
         Array.from({ length: 20 }, async (_, index) => {
             const doc = repository.newDocument()
             doc.name = `Sample-${padNumber(index, 3)}`
-            doc.objId = new ObjectId()
             return doc.save()
         })
     )
