@@ -52,6 +52,11 @@ export class CustomersRepository extends MongooseRepository<Customer> {
 
     @MethodLog({ level: 'verbose' })
     async findByEmail(email: string) {
+        // TODO
+        // @Prop({ required: true, select: false })
+        // public password!: string;
+
+        // const user = await UserModel.findById(userId).select('+password');
         return this.model.findOne({ email: { $eq: email } })
     }
 }

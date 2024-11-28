@@ -12,19 +12,15 @@ import {
 import { HydratedDocument, Model } from 'mongoose'
 import { createHttpTestContext } from 'testlib'
 
-const omits = ['password'] as const
-@Schema(createSchemaOptions({ json: { omits, includes: { timestamps: false } } }))
+@Schema(createSchemaOptions({}))
 export class Sample extends MongooseSchema {
     @Prop({ required: true })
     name: string
-
-    @Prop({ required: true })
-    password: string
 }
 
 export const SampleSchema = createMongooseSchema(Sample, {})
 export type SampleDocument = HydratedDocument<Sample>
-export type SampleDto = SchemaJson<Sample, typeof omits>
+export type SampleDto = SchemaJson<Sample>
 
 @Injectable()
 export class SamplesRepository extends MongooseRepository<Sample> {
@@ -63,7 +59,6 @@ export const sortByNameDescending = (documents: SampleDto[]) =>
 export const createSample = (repository: SamplesRepository) => {
     const doc = repository.newDocument()
     doc.name = 'Sample-Name'
-    doc.password = 'password'
     return doc.save()
 }
 
@@ -72,7 +67,6 @@ export const createSamples = async (repository: SamplesRepository) =>
         Array.from({ length: 20 }, async (_, index) => {
             const doc = repository.newDocument()
             doc.name = `Sample-${padNumber(index, 3)}`
-            doc.password = 'password'
             return doc.save()
         })
     )

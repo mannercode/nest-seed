@@ -81,7 +81,7 @@ type OmitKey<T, K extends keyof T = never> = FlattenMaps<ReplaceObjectIdWithStri
 type ExtractKeys<O extends readonly any[]> = O[number]
 export type SchemaJson<T, O extends readonly (keyof T)[] = []> = OmitKey<T, ExtractKeys<O>>
 
-type MongooseSchemaOptions = { softDeletion?: boolean }
+export type MongooseSchemaOptions = { softDeletion?: boolean }
 export function createMongooseSchema<T>(cls: Type<T>, options: MongooseSchemaOptions) {
     const schema = SchemaFactory.createForClass(cls)
     const { softDeletion } = options

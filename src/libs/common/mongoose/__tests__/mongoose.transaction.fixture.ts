@@ -5,8 +5,7 @@ import {
     createSchemaOptions,
     generateShortId,
     MongooseRepository,
-    MongooseSchema,
-    padNumber
+    MongooseSchema
 } from 'common'
 import { HydratedDocument, Model } from 'mongoose'
 import { createHttpTestContext } from 'testlib'
@@ -47,18 +46,3 @@ export async function createFixture(uri: string) {
 
     return { testContext, repository }
 }
-
-export const createSample = (repository: SamplesRepository) => {
-    const doc = repository.newDocument()
-    doc.name = 'Sample-Name'
-    return doc.save()
-}
-
-export const createSamples = async (repository: SamplesRepository) =>
-    Promise.all(
-        Array.from({ length: 20 }, async (_, index) => {
-            const doc = repository.newDocument()
-            doc.name = `Sample-${padNumber(index, 3)}`
-            return doc.save()
-        })
-    )
