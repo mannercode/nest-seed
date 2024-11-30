@@ -21,7 +21,7 @@ import { AppConfigService, isEnv } from 'config'
                         wtimeoutMS: 5000
                     },
                     bufferCommands: true,
-                    autoIndex: !isEnv('production'),
+                    autoIndex: false,
                     autoCreate: false
                 }
             },

@@ -192,15 +192,3 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         }
     }
 }
-
-// export abstract class MongooseSoftRepository<Doc> extends MongooseRepository<Doc> {
-//     constructor(model: Model<Doc>) {
-//         super(model)
-//     }
-
-//     @MethodLog({ excludeArgs: ['session'] })
-//     async deleteById(id: string, session: SeesionArg = undefined) {
-//         console.log('MongooseSoftRepository.deleteById')
-//         await super.deleteById(id,session)
-//     }
-// }

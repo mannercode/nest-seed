@@ -159,7 +159,6 @@ describe('MongooseSchema', () => {
                     await model.delete({ _id: { $in: [doc._id, doc2._id] } as any })
 
                     const found = await model.findDeleted({})
-                    console.log(found)
                     expect(found[0]).toMatchObject({ deleted: true, deletedAt: expect.any(Date) })
                     expect(found[1]).toMatchObject({ deleted: true, deletedAt: expect.any(Date) })
                 })

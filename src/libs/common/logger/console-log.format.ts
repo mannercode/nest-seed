@@ -100,16 +100,21 @@ export const consoleLogFormat = winston.format.combine(
         const formattedTimestamp = chalk.gray(timestamp)
 
         if (etc[0] === 'HTTP') {
-            return formatHttpLog(formattedMessage, formattedLevel, formattedTimestamp, etc[1] ?? {})
+            return formatHttpLog(
+                formattedMessage,
+                formattedLevel,
+                formattedTimestamp,
+                etc[1] as any
+            )
         } else if (etc[0] === 'DB') {
             return formatDatabaseLog(
                 formattedMessage,
                 formattedLevel,
                 formattedTimestamp,
-                etc[1] ?? {}
+                etc[1] as any
             )
         } else {
-            return formatGenericLog(formattedMessage, formattedLevel, formattedTimestamp, etc ?? {})
+            return formatGenericLog(formattedMessage, formattedLevel, formattedTimestamp, etc)
         }
     })
 )
