@@ -24,7 +24,7 @@ import { MulterModule } from './multer.module'
             },
             'redis'
         ),
-        BullModule.forRootAsync('bullmq', {
+        BullModule.forRootAsync('queue', {
             useFactory: async (redis: Redis) => {
                 return {
                     prefix: isEnv('test') ? `queue:{${generateShortId()}}` : '{queue}',

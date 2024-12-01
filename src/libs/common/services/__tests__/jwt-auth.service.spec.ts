@@ -1,13 +1,5 @@
 import { TestingModule } from '@nestjs/testing'
-import {
-    CacheModule,
-    CacheService,
-    generateShortId,
-    JwtAuthModule,
-    JwtAuthService,
-    RedisModule,
-    sleep
-} from 'common'
+import { generateShortId, JwtAuthModule, JwtAuthService, RedisModule, sleep } from 'common'
 import Redis from 'ioredis'
 import { createTestingModule, getRedisTestConnection } from 'testlib'
 
@@ -21,18 +13,12 @@ describe('JwtAuthService', () => {
         module = await createTestingModule({
             imports: [
                 RedisModule.forRootAsync({ useFactory: () => redisCtx }, 'redis'),
-                CacheModule.forRootAsync(
-                    {
-                        useFactory: (redis: Redis) => ({ redis, prefix: generateShortId() }),
-                        inject: [RedisModule.getToken('redis')]
-                    },
-                    'cache'
-                ),
                 JwtAuthModule.forRootAsync(
                     {
-                        useFactory: (cache: CacheService) => {
+                        useFactory: (redis: Redis) => {
                             return {
-                                cache,
+                                redis,
+                                prefix: generateShortId(),
                                 auth: {
                                     accessSecret: 'accessSecret',
                                     refreshSecret: 'refreshSecret',
@@ -41,7 +27,7 @@ describe('JwtAuthService', () => {
                                 }
                             }
                         },
-                        inject: [CacheService.getToken('cache')]
+                        inject: [RedisModule.getToken('redis')]
                     },
                     'JwtAuth'
                 )

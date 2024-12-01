@@ -1,6 +1,12 @@
 import { DynamicModule, Injectable, Module, UnauthorizedException } from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
-import { CacheService, generateShortId, notUsed, stringToMillisecs } from 'common'
+import {
+    CacheModuleOptions,
+    CacheService,
+    generateShortId,
+    notUsed,
+    stringToMillisecs
+} from 'common'
 
 export interface AuthTokenPayload {
     userId: string
@@ -28,7 +34,7 @@ export class JwtAuthService {
     ) {}
 
     static getToken(name: string) {
-        return `JwtService_${name}`
+        return `JwtAuthService_${name}`
     }
 
     async generateAuthTokens(userId: string, email: string): Promise<JwtAuthTokens> {
@@ -95,7 +101,7 @@ export class JwtAuthService {
     }
 }
 
-export type JwtAuthModuleOptions = { auth: AuthConfig; cache: CacheService }
+export type JwtAuthModuleOptions = CacheModuleOptions & { auth: AuthConfig }
 
 @Module({})
 export class JwtAuthModule {
@@ -115,7 +121,9 @@ export class JwtAuthModule {
                 {
                     provide: jwtServiceToken,
                     useFactory: async (jwtService: JwtService, ...args: any[]) => {
-                        const { auth, cache } = await options.useFactory(...args)
+                        const { auth, redis, prefix } = await options.useFactory(...args)
+                        const cache = new CacheService(redis, prefix)
+
                         return new JwtAuthService(jwtService, auth, cache)
                     },
                     inject: [JwtService, ...options.inject]

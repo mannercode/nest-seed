@@ -18,7 +18,7 @@ import { ShowtimeCreationService } from './showtime-creation.service'
         TheatersModule,
         ShowtimesModule,
         TicketsModule,
-        BullModule.registerQueue({ configKey: 'bullmq', name: 'showtime-creation' })
+        BullModule.registerQueue({ configKey: 'queue', name: 'showtime-creation' })
     ],
     providers: [
         ShowtimeCreationService,
