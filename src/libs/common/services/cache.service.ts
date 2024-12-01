@@ -1,5 +1,5 @@
 import { DynamicModule, Global, Injectable, Module } from '@nestjs/common'
-import { Exception, RedisModule, RedisOptions } from 'common'
+import { Exception } from 'common'
 import Redis from 'ioredis'
 
 @Injectable()
@@ -8,6 +8,10 @@ export class CacheService {
         private readonly redis: Redis,
         public readonly prefix: string
     ) {}
+
+    static getToken(name: string) {
+        return `CacheService_${name}`
+    }
 
     private getKey(key: string) {
         return `${this.prefix}:${key}`
@@ -45,10 +49,6 @@ export class CacheService {
     }
 }
 
-export function getCacheServiceToken(name: string) {
-    return `CacheService_${name}`
-}
-
 export type CacheModuleOptions = { redis: Redis; prefix: string }
 
 @Global()
@@ -61,7 +61,8 @@ export class CacheModule {
         },
         name: string
     ): DynamicModule {
-        const cacheServiceToken = getCacheServiceToken(name)
+        const cacheServiceToken = CacheService.getToken(name)
+
         return {
             module: CacheModule,
             providers: [

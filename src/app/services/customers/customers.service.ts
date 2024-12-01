@@ -1,5 +1,5 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common'
-import { getJwtServiceToken, JwtAuthService, MethodLog, Password } from 'common'
+import { JwtAuthService, MethodLog, Password } from 'common'
 import { CustomersRepository } from './customers.repository'
 import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
 import { CustomerDocument, CustomerDto } from './models'
@@ -8,7 +8,7 @@ import { CustomerDocument, CustomerDto } from './models'
 export class CustomersService {
     constructor(
         private repository: CustomersRepository,
-        @Inject(getJwtServiceToken('Customer')) private jwtAuthService: JwtAuthService
+        @Inject(JwtAuthService.getToken('customer')) private jwtAuthService: JwtAuthService
     ) {}
     @MethodLog()
     async createCustomer(createDto: CustomerCreateDto) {

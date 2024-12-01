@@ -1,5 +1,13 @@
 import { TestingModule } from '@nestjs/testing'
-import { getJwtServiceToken, JwtAuthModule, JwtAuthService, RedisModule, sleep } from 'common'
+import {
+    CacheModule,
+    CacheService,
+    generateShortId,
+    JwtAuthModule,
+    JwtAuthService,
+    RedisModule,
+    sleep
+} from 'common'
 import Redis from 'ioredis'
 import { createTestingModule, getRedisTestConnection } from 'testlib'
 
@@ -12,22 +20,19 @@ describe('JwtAuthService', () => {
 
         module = await createTestingModule({
             imports: [
-                RedisModule.forRootAsync(
+                RedisModule.forRootAsync({ useFactory: () => redisCtx }, 'redis'),
+                CacheModule.forRootAsync(
                     {
-                        useFactory: () => ({
-                            type: 'cluster',
-                            nodes: redisCtx.nodes,
-                            password: redisCtx.password,
-                            prefix: 'prefix'
-                        })
+                        useFactory: (redis: Redis) => ({ redis, prefix: generateShortId() }),
+                        inject: [RedisModule.getToken('redis')]
                     },
-                    'redis'
+                    'cache'
                 ),
                 JwtAuthModule.forRootAsync(
                     {
-                        useFactory: (redis: Redis) => {
+                        useFactory: (cache: CacheService) => {
                             return {
-                                redis,
+                                cache,
                                 auth: {
                                     accessSecret: 'accessSecret',
                                     refreshSecret: 'refreshSecret',
@@ -36,14 +41,14 @@ describe('JwtAuthService', () => {
                                 }
                             }
                         },
-                        inject: [RedisModule.getConnectionToken('redis')]
+                        inject: [CacheService.getToken('cache')]
                     },
                     'JwtAuth'
                 )
             ]
         })
 
-        jwtService = module.get(getJwtServiceToken('JwtAuth'))
+        jwtService = module.get(JwtAuthService.getToken('JwtAuth'))
     })
 
     afterEach(async () => {

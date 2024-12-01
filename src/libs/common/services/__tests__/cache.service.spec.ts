@@ -1,5 +1,5 @@
 import { TestingModule } from '@nestjs/testing'
-import { CacheModule, CacheService, getCacheServiceToken, RedisModule, sleep } from 'common'
+import { CacheModule, CacheService, generateShortId, RedisModule, sleep } from 'common'
 import Redis from 'ioredis'
 import { createTestingModule, getRedisTestConnection } from 'testlib'
 
@@ -12,31 +12,18 @@ describe('CacheService', () => {
 
         module = await createTestingModule({
             imports: [
-                RedisModule.forRootAsync(
-                    {
-                        useFactory: () => ({
-                            type: 'cluster',
-                            nodes: redisCtx.nodes,
-                            password: redisCtx.password,
-                            prefix: 'prefix'
-                        })
-                    },
-                    'redis'
-                ),
+                RedisModule.forRootAsync({ useFactory: () => redisCtx }, 'redis'),
                 CacheModule.forRootAsync(
                     {
-                        useFactory: (redis: Redis) => ({
-                            redis,
-                            prefix: 'prefix'
-                        }),
-                        inject: [RedisModule.getConnectionToken('redis')]
+                        useFactory: (redis: Redis) => ({ redis, prefix: generateShortId() }),
+                        inject: [RedisModule.getToken('redis')]
                     },
-                    'connName'
+                    'cache'
                 )
             ]
         })
 
-        cacheService = module.get(getCacheServiceToken('connName'))
+        cacheService = module.get(CacheService.getToken('cache'))
     })
 
     afterEach(async () => {

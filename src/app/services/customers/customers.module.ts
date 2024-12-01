@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'
-import { generateShortId, JwtAuthModule, RedisModule } from 'common'
+import { CacheModule, CacheService, generateShortId, JwtAuthModule, RedisModule } from 'common'
 import { AppConfigService, isEnv } from 'config'
 import Redis from 'ioredis'
 import { CustomersRepository } from './customers.repository'
@@ -12,16 +12,25 @@ import { Customer, CustomerSchema } from './models'
     imports: [
         MongooseModule.forFeature([{ name: Customer.name, schema: CustomerSchema }], 'mongo'),
         PassportModule,
+        CacheModule.forRootAsync(
+            {
+                useFactory: (redis: Redis) => ({
+                    redis,
+                    prefix: isEnv('test') ? 'customer:' + generateShortId() : 'customer'
+                }),
+                inject: [RedisModule.getToken('redis')]
+            },
+            'customer'
+        ),
         JwtAuthModule.forRootAsync(
             {
-                useFactory: (config: AppConfigService, redis: Redis) => ({
+                useFactory: (config: AppConfigService, cache: CacheService) => ({
                     auth: config.auth,
-                    prefix: isEnv('test') ? 'auth:' + generateShortId() : 'Auth',
-                    redis
+                    cache
                 }),
-                inject: [AppConfigService, RedisModule.getConnectionToken('redis')]
+                inject: [AppConfigService, CacheService.getToken('customer')]
             },
-            'Customer'
+            'customer'
         )
     ],
     providers: [CustomersService, CustomersRepository],

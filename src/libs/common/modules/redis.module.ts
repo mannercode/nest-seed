@@ -21,14 +21,13 @@ export interface RedisNode {
 }
 
 export interface RedisOptions {
-    type: 'cluster' | 'single'
     nodes: RedisNode[]
     password?: string
 }
 
 @Module({})
 export class RedisModule {
-    static getConnectionToken(name: string) {
+    static getToken(name: string) {
         return getRedisConnectionToken(name)
     }
 
@@ -45,23 +44,12 @@ export class RedisModule {
                 NestRedisModule.forRootAsync(
                     {
                         useFactory: async (...args: any[]) => {
-                            const { type, nodes, password } = await options.useFactory(...args)
+                            const { nodes, password } = await options.useFactory(...args)
 
                             let redisOptions: RedisModuleOptions = {
                                 type: 'cluster',
                                 nodes,
                                 options: { redisOptions: { password } }
-                            }
-
-                            /* istanbul ignore if */
-                            if (type === 'single') {
-                                const { host, port } = nodes[0]
-
-                                redisOptions = {
-                                    type: 'single',
-                                    url: `redis://${host}:${port}`,
-                                    options: { password }
-                                }
                             }
 
                             return redisOptions
@@ -75,7 +63,7 @@ export class RedisModule {
                 {
                     provide: RedisShutdownService,
                     useFactory: (redis: Redis) => new RedisShutdownService(redis),
-                    inject: [RedisModule.getConnectionToken(name)]
+                    inject: [RedisModule.getToken(name)]
                 }
             ],
             exports: [NestRedisModule]
