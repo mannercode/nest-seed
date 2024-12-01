@@ -7,7 +7,7 @@ import { Movie } from './models'
 
 @Injectable()
 export class MoviesRepository extends MongooseRepository<Movie> {
-    constructor(@InjectModel(Movie.name) model: Model<Movie>) {
+    constructor(@InjectModel(Movie.name, 'mongo') model: Model<Movie>) {
         super(model)
     }
 

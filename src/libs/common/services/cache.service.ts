@@ -1,18 +1,13 @@
-import { getRedisConnectionToken, RedisModule, RedisModuleOptions } from '@nestjs-modules/ioredis'
-import { DynamicModule, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
-import { Exception } from 'common'
+import { DynamicModule, Global, Injectable, Module } from '@nestjs/common'
+import { Exception, RedisModule, RedisOptions } from 'common'
 import Redis from 'ioredis'
 
 @Injectable()
-export class CacheService implements OnModuleDestroy {
+export class CacheService {
     constructor(
         private readonly redis: Redis,
         public readonly prefix: string
     ) {}
-
-    async onModuleDestroy() {
-        await this.redis.quit()
-    }
 
     private getKey(key: string) {
         return `${this.prefix}:${key}`
@@ -50,18 +45,13 @@ export class CacheService implements OnModuleDestroy {
     }
 }
 
-export interface CacheNodeType {
-    host: string
-    port: number
+export function getCacheServiceToken(name: string) {
+    return `CacheService_${name}`
 }
 
-export interface CacheModuleOptions {
-    type: 'cluster' | 'single'
-    nodes: CacheNodeType[]
-    prefix: string
-    password?: string
-}
+export type CacheModuleOptions = { redis: Redis; prefix: string }
 
+@Global()
 @Module({})
 export class CacheModule {
     static forRootAsync(
@@ -71,56 +61,20 @@ export class CacheModule {
         },
         name: string
     ): DynamicModule {
+        const cacheServiceToken = getCacheServiceToken(name)
         return {
             module: CacheModule,
-            imports: [
-                RedisModule.forRootAsync(
-                    {
-                        useFactory: async (...args: any[]) => {
-                            const { type, nodes, password } = await options.useFactory(...args)
-
-                            let redisOptions: RedisModuleOptions = {
-                                type: 'cluster',
-                                nodes,
-                                options: { redisOptions: { password } }
-                            }
-
-                            /* istanbul ignore if */
-                            if (type === 'single') {
-                                const { host, port } = nodes[0]
-
-                                redisOptions = {
-                                    type: 'single',
-                                    url: `redis://${host}:${port}`,
-                                    options: { password }
-                                }
-                            }
-
-                            return redisOptions
-                        },
-                        inject: options.inject
-                    },
-                    name
-                )
-            ],
             providers: [
                 {
-                    provide: CacheService,
-                    useFactory: (redis: Redis, prefix: string) => {
+                    provide: cacheServiceToken,
+                    useFactory: async (...args: any[]) => {
+                        const { redis, prefix } = await options.useFactory(...args)
                         return new CacheService(redis, prefix)
                     },
-                    inject: [getRedisConnectionToken(name), 'PREFIX']
-                },
-                {
-                    provide: 'PREFIX',
-                    useFactory: async (...args: any[]) => {
-                        const { prefix } = await options.useFactory(...args)
-                        return prefix
-                    },
-                    inject: options.inject || []
+                    inject: options.inject
                 }
             ],
-            exports: [CacheService]
+            exports: [cacheServiceToken]
         }
     }
 }

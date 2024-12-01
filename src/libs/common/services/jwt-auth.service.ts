@@ -1,7 +1,7 @@
-import { DynamicModule, Inject, Injectable, Module, UnauthorizedException } from '@nestjs/common'
+import { DynamicModule, Injectable, Module, UnauthorizedException } from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
 import { generateShortId, notUsed, stringToMillisecs } from 'common'
-import { CacheModule, CacheModuleOptions, CacheService } from './cache.service'
+import Redis from 'ioredis'
 
 export interface AuthTokenPayload {
     userId: string
@@ -20,14 +20,13 @@ export interface AuthConfig {
     refreshTokenExpiration: string
 }
 
-const AUTH_CONFIG = 'AuthConfig'
-
 @Injectable()
 export class JwtAuthService {
     constructor(
         private readonly jwtService: JwtService,
-        private readonly cache: CacheService,
-        @Inject(AUTH_CONFIG) private readonly config: AuthConfig
+        private readonly redis: Redis,
+        private readonly config: AuthConfig,
+        private readonly prefix: string
     ) {}
 
     async generateAuthTokens(userId: string, email: string): Promise<JwtAuthTokens> {
@@ -81,58 +80,49 @@ export class JwtAuthService {
     }
 
     private async storeRefreshToken(userId: string, refreshToken: string) {
-        await this.cache.set(
-            userId,
+        await this.redis.set(
+            this.prefix + ':' + userId,
             refreshToken,
+            'PX',
             stringToMillisecs(this.config.refreshTokenExpiration)
         )
     }
 
     private async getStoredRefreshToken(userId: string) {
-        return this.cache.get(userId)
+        return this.redis.get(this.prefix + ':' + userId)
     }
+}
+
+export type JwtAuthModuleOptions = { redis: Redis; auth: AuthConfig; prefix: string }
+
+export function getJwtServiceToken(name: string) {
+    return `JwtService_${name}`
 }
 
 @Module({})
 export class JwtAuthModule {
     static forRootAsync(
         options: {
-            useFactory: (
-                ...args: any[]
-            ) => Promise<CacheModuleOptions & AuthConfig> | (CacheModuleOptions & AuthConfig)
-            inject?: any[]
+            useFactory: (...args: any[]) => Promise<JwtAuthModuleOptions> | JwtAuthModuleOptions
+            inject: any[]
         },
         name: string
     ): DynamicModule {
+        const jwtServiceToken = getJwtServiceToken(name)
         return {
-            module: CacheModule,
-            imports: [
-                JwtModule.register({}),
-                CacheModule.forRootAsync(
-                    {
-                        useFactory: async (...args: any[]) => {
-                            const { type, nodes, prefix, password } = await options.useFactory(
-                                ...args
-                            )
-                            return { type, nodes, prefix, password }
-                        },
-                        inject: options.inject
-                    },
-                    name
-                )
-            ],
+            module: JwtAuthModule,
+            imports: [JwtModule.register({})],
             providers: [
-                JwtAuthService,
                 {
-                    provide: AUTH_CONFIG,
-                    useFactory: async (...args: any[]) => {
-                        const auth = await options.useFactory(...args)
-                        return auth
+                    provide: jwtServiceToken,
+                    useFactory: async (jwtService: JwtService, ...args: any[]) => {
+                        const { redis, auth, prefix } = await options.useFactory(...args)
+                        return new JwtAuthService(jwtService, redis, auth, prefix)
                     },
-                    inject: options.inject
+                    inject: [JwtService, ...options.inject]
                 }
             ],
-            exports: [JwtAuthService]
+            exports: [jwtServiceToken]
         }
     }
 }

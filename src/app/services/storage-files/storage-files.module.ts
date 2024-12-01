@@ -5,7 +5,7 @@ import { StorageFilesRepository } from './storage-files.repository'
 import { StorageFilesService } from './storage-files.service'
 
 @Module({
-    imports: [MongooseModule.forFeature([{ name: StorageFile.name, schema: StorageFileSchema }])],
+    imports: [MongooseModule.forFeature([{ name: StorageFile.name, schema: StorageFileSchema }], 'mongo')],
     providers: [StorageFilesService, StorageFilesRepository],
     exports: [StorageFilesService]
 })

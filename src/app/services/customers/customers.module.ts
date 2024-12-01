@@ -1,27 +1,27 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'
-import { generateShortId, generateUUID, JwtAuthModule } from 'common'
+import { generateShortId, JwtAuthModule, RedisModule } from 'common'
 import { AppConfigService, isEnv } from 'config'
+import Redis from 'ioredis'
 import { CustomersRepository } from './customers.repository'
 import { CustomersService } from './customers.service'
 import { Customer, CustomerSchema } from './models'
 
 @Module({
     imports: [
-        MongooseModule.forFeature([{ name: Customer.name, schema: CustomerSchema }]),
+        MongooseModule.forFeature([{ name: Customer.name, schema: CustomerSchema }], 'mongo'),
         PassportModule,
         JwtAuthModule.forRootAsync(
             {
-                useFactory: (config: AppConfigService) => ({
-                    ...config.auth,
-                    ...config.redis,
-                    type: 'cluster',
-                    prefix: isEnv('test') ? 'auth:' + generateShortId() : 'Auth'
+                useFactory: (config: AppConfigService, redis: Redis) => ({
+                    auth: config.auth,
+                    prefix: isEnv('test') ? 'auth:' + generateShortId() : 'Auth',
+                    redis
                 }),
-                inject: [AppConfigService]
+                inject: [AppConfigService, RedisModule.getConnectionToken('redis')]
             },
-            'Auth'
+            'Customer'
         )
     ],
     providers: [CustomersService, CustomersRepository],

@@ -5,7 +5,7 @@ import { TheatersRepository } from './theaters.repository'
 import { TheatersService } from './theaters.service'
 
 @Module({
-    imports: [MongooseModule.forFeature([{ name: Theater.name, schema: TheaterSchema }])],
+    imports: [MongooseModule.forFeature([{ name: Theater.name, schema: TheaterSchema }], 'mongo')],
     providers: [TheatersService, TheatersRepository],
     exports: [TheatersService]
 })

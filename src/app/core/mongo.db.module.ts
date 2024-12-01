@@ -6,6 +6,7 @@ import { AppConfigService, isEnv } from 'config'
 @Module({
     imports: [
         MongooseModule.forRootAsync({
+            connectionName: 'mongo',
             useFactory: async (config: AppConfigService) => {
                 const { user, pass, host1, host2, host3, port, replica, database } = config.mongo
                 const uri = `mongodb://${user}:${pass}@${host1}:${port},${host2}:${port},${host3}:${port}/?replicaSet=${replica}`

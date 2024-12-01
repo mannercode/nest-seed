@@ -24,9 +24,8 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
     }
 
     async onModuleDestroy() {
-        await this.queue.close()
-        const client = await this.queue.client
-        client.disconnect()
+        // await this.worker.close(false)
+        // await this.queue.close()
     }
 
     async enqueueTask(data: ShowtimeBatchCreateJobData) {

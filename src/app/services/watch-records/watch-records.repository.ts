@@ -7,7 +7,7 @@ import { WatchRecord } from './models'
 
 @Injectable()
 export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
-    constructor(@InjectModel(WatchRecord.name) model: Model<WatchRecord>) {
+    constructor(@InjectModel(WatchRecord.name, 'mongo') model: Model<WatchRecord>) {
         super(model)
     }
 

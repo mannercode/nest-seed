@@ -1,5 +1,5 @@
-import { ConflictException, Injectable } from '@nestjs/common'
-import { JwtAuthService, MethodLog, Password } from 'common'
+import { ConflictException, Inject, Injectable } from '@nestjs/common'
+import { getJwtServiceToken, JwtAuthService, MethodLog, Password } from 'common'
 import { CustomersRepository } from './customers.repository'
 import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
 import { CustomerDocument, CustomerDto } from './models'
@@ -8,9 +8,8 @@ import { CustomerDocument, CustomerDto } from './models'
 export class CustomersService {
     constructor(
         private repository: CustomersRepository,
-        private jwtAuthService: JwtAuthService
+        @Inject(getJwtServiceToken('Customer')) private jwtAuthService: JwtAuthService
     ) {}
-
     @MethodLog()
     async createCustomer(createDto: CustomerCreateDto) {
         if (await this.repository.findByEmail(createDto.email))

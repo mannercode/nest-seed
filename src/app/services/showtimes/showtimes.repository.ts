@@ -14,7 +14,7 @@ import { Showtime } from './models'
 
 @Injectable()
 export class ShowtimesRepository extends MongooseRepository<Showtime> {
-    constructor(@InjectModel(Showtime.name) model: Model<Showtime>) {
+    constructor(@InjectModel(Showtime.name, 'mongo') model: Model<Showtime>) {
         super(model)
     }
 

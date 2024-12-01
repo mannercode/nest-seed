@@ -7,7 +7,7 @@ import { StorageFile } from './models'
 
 @Injectable()
 export class StorageFilesRepository extends MongooseRepository<StorageFile> {
-    constructor(@InjectModel(StorageFile.name) model: Model<StorageFile>) {
+    constructor(@InjectModel(StorageFile.name, 'mongo') model: Model<StorageFile>) {
         super(model)
     }
 

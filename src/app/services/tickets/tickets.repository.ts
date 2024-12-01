@@ -16,7 +16,7 @@ import { Ticket, TicketStatus } from './models'
 
 @Injectable()
 export class TicketsRepository extends MongooseRepository<Ticket> {
-    constructor(@InjectModel(Ticket.name) model: Model<Ticket>) {
+    constructor(@InjectModel(Ticket.name, 'mongo') model: Model<Ticket>) {
         super(model)
     }
 

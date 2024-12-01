@@ -19,6 +19,12 @@ describe('ShowtimeCreation Module', () => {
 
     beforeEach(async () => {
         fixture = await createFixture()
+
+        // const containers = await (fixture.testContext.app as any).getModulesToTriggerHooksOn()
+        // for (const container of containers) {
+        //     console.log(container.metatype, container.exports[0])
+        // }
+
         client = fixture.testContext.client
         movie = fixture.movie
         theater = fixture.theater

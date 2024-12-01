@@ -1,5 +1,6 @@
 import { TestingModule } from '@nestjs/testing'
-import { JwtAuthModule, JwtAuthService, sleep } from 'common'
+import { getJwtServiceToken, JwtAuthModule, JwtAuthService, RedisModule, sleep } from 'common'
+import Redis from 'ioredis'
 import { createTestingModule, getRedisTestConnection } from 'testlib'
 
 describe('JwtAuthService', () => {
@@ -11,27 +12,38 @@ describe('JwtAuthService', () => {
 
         module = await createTestingModule({
             imports: [
+                RedisModule.forRootAsync(
+                    {
+                        useFactory: () => ({
+                            type: 'cluster',
+                            nodes: redisCtx.nodes,
+                            password: redisCtx.password,
+                            prefix: 'prefix'
+                        })
+                    },
+                    'redis'
+                ),
                 JwtAuthModule.forRootAsync(
                     {
-                        useFactory: () => {
+                        useFactory: (redis: Redis) => {
                             return {
-                                type: 'cluster',
-                                nodes: redisCtx.nodes,
-                                password: redisCtx.password,
-                                prefix: 'prefix',
-                                accessSecret: 'accessSecret',
-                                refreshSecret: 'refreshSecret',
-                                accessTokenExpiration: '3s',
-                                refreshTokenExpiration: '3s'
+                                redis,
+                                auth: {
+                                    accessSecret: 'accessSecret',
+                                    refreshSecret: 'refreshSecret',
+                                    accessTokenExpiration: '3s',
+                                    refreshTokenExpiration: '3s'
+                                }
                             }
-                        }
+                        },
+                        inject: [RedisModule.getConnectionToken('redis')]
                     },
                     'JwtAuth'
                 )
             ]
         })
 
-        jwtService = module.get(JwtAuthService)
+        jwtService = module.get(getJwtServiceToken('JwtAuth'))
     })
 
     afterEach(async () => {

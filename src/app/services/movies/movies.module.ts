@@ -7,7 +7,7 @@ import { StorageFilesModule } from 'services/storage-files'
 
 @Module({
     imports: [
-        MongooseModule.forFeature([{ name: Movie.name, schema: MovieSchema }]),
+        MongooseModule.forFeature([{ name: Movie.name, schema: MovieSchema }], 'mongo'),
         StorageFilesModule
     ],
     providers: [MoviesService, MoviesRepository],

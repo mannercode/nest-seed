@@ -1,8 +1,6 @@
 import { BullModule } from '@nestjs/bullmq'
 import { Module } from '@nestjs/common'
-import { generateShortId, ServerSentEventsService } from 'common'
-import { AppConfigService, isEnv } from 'config'
-import Redis from 'ioredis'
+import { ServerSentEventsService } from 'common'
 import { MoviesModule } from 'services/movies'
 import { ShowtimesModule } from 'services/showtimes'
 import { TheatersModule } from 'services/theaters'
@@ -20,14 +18,7 @@ import { ShowtimeCreationService } from './showtime-creation.service'
         TheatersModule,
         ShowtimesModule,
         TicketsModule,
-        BullModule.forRootAsync({
-            useFactory: async (config: AppConfigService) => ({
-                prefix: isEnv('test') ? `queue:{${generateShortId()}}` : '{queue}',
-                connection: new Redis.Cluster(config.redis.nodes, { redisOptions: config.redis })
-            }),
-            inject: [AppConfigService]
-        }),
-        BullModule.registerQueue({ name: 'showtime-creation' })
+        BullModule.registerQueue({ configKey: 'bullmq', name: 'showtime-creation' })
     ],
     providers: [
         ShowtimeCreationService,

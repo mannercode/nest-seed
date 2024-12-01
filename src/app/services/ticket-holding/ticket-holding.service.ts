@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common'
-import { CacheService, MethodLog } from 'common'
+import { Inject, Injectable } from '@nestjs/common'
+import { CacheService, getCacheServiceToken, MethodLog } from 'common'
 
 const getCustomerKey = (showtimeId: string, customerId: string) =>
     `Customer:{${showtimeId}}:${customerId}`
@@ -7,7 +7,8 @@ const getTicketKey = (showtimeId: string, ticketId: string) => `Ticket:{${showti
 
 @Injectable()
 export class TicketHoldingService {
-    constructor(private cacheService: CacheService) {}
+    // TODO name 받아야 한다
+    constructor(@Inject(getCacheServiceToken('TicketHolding')) private cacheService: CacheService) {}
 
     @MethodLog({ level: 'verbose' })
     async holdTickets(showtimeId: string, customerId: string, ticketIds: string[], ttlMs: number) {
