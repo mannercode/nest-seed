@@ -1,4 +1,4 @@
-import { DynamicModule, Global, Injectable, Module } from '@nestjs/common'
+import { DynamicModule, Global, Inject, Injectable, Module } from '@nestjs/common'
 import { Exception } from 'common'
 import Redis from 'ioredis'
 
@@ -6,7 +6,7 @@ import Redis from 'ioredis'
 export class CacheService {
     constructor(
         private readonly redis: Redis,
-        public readonly prefix: string
+        private readonly prefix: string
     ) {}
 
     static getToken(name: string) {
@@ -43,39 +43,78 @@ export class CacheService {
             script,
             keys.length,
             ...keys.map(this.getKey.bind(this)),
+            this.prefix,
             ...args
         )
         return result
     }
 }
 
-export type CacheModuleOptions = { redis: Redis; prefix: string }
+/* istanbul ignore next */
+export function InjectCache(name: string): ParameterDecorator {
+    return Inject(CacheService.getToken(name))
+}
+
+export type CacheModuleOptions = { connection: Redis; prefix: string }
 
 @Global()
 @Module({})
 export class CacheModule {
+    static getRedisToken(name: string) {
+        return `CACHE_REDIS_${name}`
+    }
+
+    static getPrefixToken(name: string) {
+        return `CACHE_PREFIX_${name}`
+    }
+
     static forRootAsync(
+        configKey: string,
         options: {
             useFactory: (...args: any[]) => Promise<CacheModuleOptions> | CacheModuleOptions
-            inject?: any[]
-        },
-        name: string
+            inject: any[]
+        }
     ): DynamicModule {
-        const cacheServiceToken = CacheService.getToken(name)
+        const redisProvider = {
+            provide: CacheModule.getRedisToken(configKey),
+            useFactory: async (...args: any[]) => {
+                const { connection } = await options.useFactory(...args)
+                return connection
+            },
+            inject: options.inject
+        }
+        const prefixProvider = {
+            provide: CacheModule.getPrefixToken(configKey),
+            useFactory: async (...args: any[]) => {
+                const { prefix } = await options.useFactory(...args)
+                return prefix
+            },
+            inject: options.inject
+        }
 
         return {
             module: CacheModule,
-            providers: [
-                {
-                    provide: cacheServiceToken,
-                    useFactory: async (...args: any[]) => {
-                        const { redis, prefix } = await options.useFactory(...args)
-                        return new CacheService(redis, prefix)
-                    },
-                    inject: options.inject
-                }
-            ],
-            exports: [cacheServiceToken]
+            providers: [redisProvider, prefixProvider],
+            exports: [redisProvider, prefixProvider]
+        }
+    }
+
+    static registerCache(options: { configKey: string; name: string }): DynamicModule {
+        const cacheProvider = {
+            provide: CacheService.getToken(options.name),
+            useFactory: (redis: Redis, prefix: string) => {
+                return new CacheService(redis, prefix + ':' + options.name)
+            },
+            inject: [
+                CacheModule.getRedisToken(options.configKey),
+                CacheModule.getPrefixToken(options.configKey)
+            ]
+        }
+
+        return {
+            module: CacheModule,
+            providers: [cacheProvider],
+            exports: [cacheProvider]
         }
     }
 }

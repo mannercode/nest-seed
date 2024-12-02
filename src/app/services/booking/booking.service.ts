@@ -63,19 +63,10 @@ export class BookingService {
 
     @MethodLog({ level: 'verbose' })
     async holdTickets(args: { customerId: string; showtimeId: string; ticketIds: string[] }) {
-        const { customerId, showtimeId, ticketIds } = args
         const seatHoldExpirationTime = 10 * 60 * 1000
 
-        // TODO
-        // 객체 vs 개별 매개변수
-        // 객체로 전달하게 바꿔라
-        await this.ticketHoldingService.holdTickets(
-            showtimeId,
-            customerId,
-            ticketIds,
-            seatHoldExpirationTime
-        )
+        await this.ticketHoldingService.holdTickets({ ...args, ttlMs: seatHoldExpirationTime })
 
-        return { heldTicketIds: ticketIds }
+        return { heldTicketIds: args.ticketIds }
     }
 }

@@ -1,5 +1,5 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common'
-import { JwtAuthService, MethodLog, Password } from 'common'
+import { ConflictException, Injectable } from '@nestjs/common'
+import { InjectJwtAuth, JwtAuthService, MethodLog, Password } from 'common'
 import { CustomersRepository } from './customers.repository'
 import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
 import { CustomerDocument, CustomerDto } from './models'
@@ -8,7 +8,7 @@ import { CustomerDocument, CustomerDto } from './models'
 export class CustomersService {
     constructor(
         private repository: CustomersRepository,
-        @Inject(JwtAuthService.getToken('customer')) private jwtAuthService: JwtAuthService
+        @InjectJwtAuth('customer') private jwtAuthService: JwtAuthService
     ) {}
     @MethodLog()
     async createCustomer(createDto: CustomerCreateDto) {
@@ -59,11 +59,16 @@ export class CustomersService {
     }
 
     @MethodLog({ level: 'verbose' })
-    async getCustomerByCredentials(email: string, password: string) {
+    async authenticateCustomer(email: string, password: string) {
         const customer = await this.repository.findByEmail(email)
 
-        if (customer && (await Password.validate(password, customer.password)))
-            return this.toDto(customer)
+        if (!customer) return null
+
+        const gotPassword = await this.repository.getPassword(customer.id)
+
+        if (await Password.validate(password, gotPassword)) {
+            return customer.id
+        }
 
         return null
     }

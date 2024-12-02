@@ -1,12 +1,12 @@
 import { BullModule } from '@nestjs/bullmq'
 import { Module } from '@nestjs/common'
-import { EventModule, generateShortId, RedisModule } from 'common'
+import { CacheModule, EventModule, generateShortId, JwtAuthModule, RedisModule } from 'common'
 import { AppConfigService, isEnv } from 'config'
 import Redis from 'ioredis'
 import { ConfigModule } from './config.module'
 import { HttpModule } from './http.module'
 import { LoggerModule } from './logger.module'
-import { MongoDbModule } from './mongo.db.module'
+import { MongooseModule } from './mongoose.module'
 import { MulterModule } from './multer.module'
 
 @Module({
@@ -15,22 +15,31 @@ import { MulterModule } from './multer.module'
         EventModule,
         HttpModule,
         LoggerModule,
-        MongoDbModule,
+        MongooseModule,
         MulterModule,
         RedisModule.forRootAsync(
-            {
-                useFactory: (config: AppConfigService) => config.redis,
-                inject: [AppConfigService]
-            },
+            { useFactory: (config: AppConfigService) => config.redis, inject: [AppConfigService] },
             'redis'
         ),
+        CacheModule.forRootAsync('cache', {
+            useFactory: async (redis: Redis) => ({
+                prefix: isEnv('test') ? `cache:${generateShortId()}` : 'cache',
+                connection: redis
+            }),
+            inject: [RedisModule.getToken('redis')]
+        }),
+        JwtAuthModule.forRootAsync('jwtauth', {
+            useFactory: async (redis: Redis) => ({
+                prefix: isEnv('test') ? `jwtauth:${generateShortId()}` : 'jwtauth',
+                connection: redis
+            }),
+            inject: [RedisModule.getToken('redis')]
+        }),
         BullModule.forRootAsync('queue', {
-            useFactory: async (redis: Redis) => {
-                return {
-                    prefix: isEnv('test') ? `queue:{${generateShortId()}}` : '{queue}',
-                    connection: redis
-                }
-            },
+            useFactory: async (redis: Redis) => ({
+                prefix: isEnv('test') ? `{queue:${generateShortId()}}` : '{queue}',
+                connection: redis
+            }),
             inject: [RedisModule.getToken('redis')]
         })
     ],

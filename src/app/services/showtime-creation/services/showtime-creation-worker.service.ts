@@ -23,11 +23,6 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
         super()
     }
 
-    async onModuleDestroy() {
-        // await this.worker.close(false)
-        // await this.queue.close()
-    }
-
     async enqueueTask(data: ShowtimeBatchCreateJobData) {
         this.eventsService.emitWaiting(data.batchId)
         await this.queue.add('showtimes.create', data)

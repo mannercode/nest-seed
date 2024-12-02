@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { addRegexQuery, MethodLog, MongooseRepository } from 'common'
+import { addRegexQuery, MethodLog, MongooseRepository, objectId } from 'common'
 import { FilterQuery, Model } from 'mongoose'
 import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
 import { Customer } from './models'
@@ -52,11 +52,16 @@ export class CustomersRepository extends MongooseRepository<Customer> {
 
     @MethodLog({ level: 'verbose' })
     async findByEmail(email: string) {
-        // TODO
-        // @Prop({ required: true, select: false })
-        // public password!: string;
-
-        // const user = await UserModel.findById(userId).select('+password');
         return this.model.findOne({ email: { $eq: email } })
+    }
+
+    @MethodLog({ level: 'verbose' })
+    async getPassword(customerId: string) {
+        const customer = await this.model.findById(objectId(customerId)).select('+password')
+
+        /* istanbul ignore if */
+        if (!customer) throw new NotFoundException(`Customer with ID ${customerId} not found`)
+
+        return customer.password
     }
 }

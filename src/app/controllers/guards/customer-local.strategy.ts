@@ -13,8 +13,8 @@ export class CustomerLocalStrategy extends PassportStrategy(Strategy, 'customer-
     }
 
     async validate(email: string, password: string) {
-        const customer = await this.service.getCustomerByCredentials(email, password)
+        const userId = await this.service.authenticateCustomer(email, password)
 
-        return customer ? { userId: customer.id, email } : null
+        return userId ? { userId, email } : null
     }
 }

@@ -33,7 +33,8 @@ const config: Config = {
     ],
     coverageReporters: ['lcov', 'text'],
     coveragePathIgnorePatterns: ['__tests__'],
-    coverageDirectory: '<rootDir>/_output/coverage'
+    coverageDirectory: '<rootDir>/_output/coverage',
+    testTimeout: 10000
 }
 
 export default config

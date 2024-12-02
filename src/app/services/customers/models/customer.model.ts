@@ -15,7 +15,7 @@ export class Customer extends MongooseSchema {
     @Prop({ required: true })
     birthdate: Date
 
-    @Prop({ required: true })
+    @Prop({ required: true, select: false })
     password: string
 }
 export type CustomerDto = SchemaJson<Customer, typeof omits>

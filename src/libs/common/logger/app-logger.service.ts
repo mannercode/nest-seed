@@ -5,7 +5,7 @@ import * as winston from 'winston'
 export class AppLoggerService implements LoggerService {
     constructor(private logger: winston.Logger) {}
 
-    async onModuleDestroy() {
+    onModuleDestroy() {
         this.logger.close()
     }
 

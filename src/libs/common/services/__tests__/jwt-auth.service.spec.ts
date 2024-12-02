@@ -13,28 +13,30 @@ describe('JwtAuthService', () => {
         module = await createTestingModule({
             imports: [
                 RedisModule.forRootAsync({ useFactory: () => redisCtx }, 'redis'),
-                JwtAuthModule.forRootAsync(
-                    {
-                        useFactory: (redis: Redis) => {
-                            return {
-                                redis,
-                                prefix: generateShortId(),
-                                auth: {
-                                    accessSecret: 'accessSecret',
-                                    refreshSecret: 'refreshSecret',
-                                    accessTokenExpiration: '3s',
-                                    refreshTokenExpiration: '3s'
-                                }
-                            }
-                        },
-                        inject: [RedisModule.getToken('redis')]
-                    },
-                    'JwtAuth'
-                )
+                JwtAuthModule.forRootAsync('jwtauth', {
+                    useFactory: async (redis: Redis) => ({
+                        prefix: generateShortId(),
+                        connection: redis
+                    }),
+                    inject: [RedisModule.getToken('redis')]
+                }),
+                JwtAuthModule.registerJwtAuth({
+                    configKey: 'jwtauth',
+                    name: 'customer',
+                    useFactory: () => ({
+                        auth: {
+                            accessSecret: 'accessSecret',
+                            refreshSecret: 'refreshSecret',
+                            accessTokenTtlMs: 3000,
+                            refreshTokenTtlMs: 3000
+                        }
+                    }),
+                    inject: []
+                })
             ]
         })
 
-        jwtService = module.get(JwtAuthService.getToken('JwtAuth'))
+        jwtService = module.get(JwtAuthService.getToken('customer'))
     })
 
     afterEach(async () => {

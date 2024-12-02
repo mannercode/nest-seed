@@ -17,7 +17,7 @@ describe('AppLoggerService', () => {
     })
 
     afterEach(() => {
-        winstonLogger.close()
+        appLoggerService.onModuleDestroy()
         jest.restoreAllMocks()
     })
 

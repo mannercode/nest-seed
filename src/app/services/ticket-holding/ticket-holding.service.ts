@@ -1,5 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common'
-import { CacheService, MethodLog } from 'common'
+import { Injectable } from '@nestjs/common'
+import { CacheService, InjectCache, MethodLog } from 'common'
 
 const getCustomerKey = (showtimeId: string, customerId: string) =>
     `Customer:{${showtimeId}}:${customerId}`
@@ -7,21 +7,26 @@ const getTicketKey = (showtimeId: string, ticketId: string) => `Ticket:{${showti
 
 @Injectable()
 export class TicketHoldingService {
-    constructor(
-        @Inject(CacheService.getToken('ticket-holding')) private cacheService: CacheService
-    ) {}
+    constructor(@InjectCache('ticket-holding') private cacheService: CacheService) {}
 
     @MethodLog({ level: 'verbose' })
-    async holdTickets(showtimeId: string, customerId: string, ticketIds: string[], ttlMs: number) {
+    async holdTickets(args: {
+        customerId: string
+        showtimeId: string
+        ticketIds: string[]
+        ttlMs: number
+    }) {
+        const { customerId, showtimeId, ticketIds, ttlMs } = args
+
         const ticketKeys = ticketIds.map((ticketId) => getTicketKey(showtimeId, ticketId))
         const customerKeyStr = getCustomerKey(showtimeId, customerId)
         const keys = [...ticketKeys, customerKeyStr]
 
         const script = `
-            local customerId = ARGV[1]
-            local ttlMs = tonumber(ARGV[2])
-            local ticketIdsJson = ARGV[3]
-            local prefix = ARGV[4]
+            local prefix = ARGV[1]
+            local customerId = ARGV[2]
+            local ttlMs = tonumber(ARGV[3])
+            local ticketIdsJson = ARGV[4]
             local showtimeId = ARGV[5]
 
             -- 티켓이 이미 다른 고객에 의해 선점되었는지 확인
@@ -61,7 +66,6 @@ export class TicketHoldingService {
             customerId,
             ttlMs.toString(),
             JSON.stringify(ticketIds),
-            this.cacheService.prefix,
             showtimeId
         ])
 

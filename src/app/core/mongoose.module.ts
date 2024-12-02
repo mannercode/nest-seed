@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common'
-import { MongooseModule } from '@nestjs/mongoose'
+import { MongooseModule as NestMongooseModule } from '@nestjs/mongoose'
 import { generateShortId } from 'common'
 import { AppConfigService, isEnv } from 'config'
 
 @Module({
     imports: [
-        MongooseModule.forRootAsync({
+        NestMongooseModule.forRootAsync({
             connectionName: 'mongo',
             useFactory: async (config: AppConfigService) => {
                 const { user, pass, host1, host2, host3, port, replica, database } = config.mongo
@@ -30,4 +30,4 @@ import { AppConfigService, isEnv } from 'config'
         })
     ]
 })
-export class MongoDbModule {}
+export class MongooseModule {}

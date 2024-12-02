@@ -13,17 +13,18 @@ describe('CacheService', () => {
         module = await createTestingModule({
             imports: [
                 RedisModule.forRootAsync({ useFactory: () => redisCtx }, 'redis'),
-                CacheModule.forRootAsync(
-                    {
-                        useFactory: (redis: Redis) => ({ redis, prefix: generateShortId() }),
-                        inject: [RedisModule.getToken('redis')]
-                    },
-                    'cache'
-                )
+                CacheModule.forRootAsync('cache', {
+                    useFactory: async (redis: Redis) => ({
+                        prefix: generateShortId(),
+                        connection: redis
+                    }),
+                    inject: [RedisModule.getToken('redis')]
+                }),
+                CacheModule.registerCache({ configKey: 'cache', name: 'name' })
             ]
         })
 
-        cacheService = module.get(CacheService.getToken('cache'))
+        cacheService = module.get(CacheService.getToken('name'))
     })
 
     afterEach(async () => {
@@ -69,7 +70,7 @@ describe('CacheService', () => {
     })
 
     it('should execute Lua script and set keys correctly', async () => {
-        const script = `return redis.call('SET', KEYS[1], ARGV[1])`
+        const script = `return redis.call('SET', KEYS[1], ARGV[2])`
         const keys = ['key1']
         const args = ['value1']
 
