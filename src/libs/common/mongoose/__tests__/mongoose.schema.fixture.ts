@@ -1,7 +1,7 @@
 import { DynamicModule, Module, ModuleMetadata } from '@nestjs/common'
 import { getModelToken, MongooseModule } from '@nestjs/mongoose'
 import { generateShortId } from 'common'
-import { SoftDeleteModel } from 'mongoose-delete'
+import { Model } from 'mongoose'
 import { createHttpTestContext, getMongoTestConnection } from 'testlib'
 
 @Module({})
@@ -25,7 +25,7 @@ export async function createFixture(schema: any) {
         ]
     })
 
-    const model = testContext.module.get<SoftDeleteModel<any>>(getModelToken('schema'))
+    const model = testContext.module.get<Model<any>>(getModelToken('schema'))
 
     return { testContext, model }
 }

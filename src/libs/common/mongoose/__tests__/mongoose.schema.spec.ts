@@ -1,8 +1,7 @@
 import { expect } from '@jest/globals'
 import { Type } from '@nestjs/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { HydratedDocument } from 'mongoose'
-import { SoftDeleteModel } from 'mongoose-delete'
+import { HydratedDocument, Model } from 'mongoose'
 import { HttpTestContext } from 'testlib'
 import {
     createMongooseSchema,
@@ -14,7 +13,7 @@ import { createFixture } from './mongoose.schema.fixture'
 
 describe('MongooseSchema', () => {
     let testContext: HttpTestContext
-    let model: SoftDeleteModel<any>
+    let model: Model<any>
 
     const createModel = async <T>(cls: Type<T>, options: MongooseSchemaOptions) => {
         const SampleSchema = createMongooseSchema(cls, options)
@@ -139,28 +138,31 @@ describe('MongooseSchema', () => {
                     await doc.save()
                 })
 
-                it('기본 옵션으로 생성된 문서는 softDeletion 필드를 포함한다', async () => {
-                    expect(doc).toMatchObject({ deleted: false })
+                it('기본 옵션으로 생성된 문서는 Soft Deletion으로 동작해야 한다', async () => {
+                    expect(doc).toMatchObject({ deletedAt: null })
                 })
 
-                it('삭제된 문서는 deletedAt 필드를 포함한다', async () => {
-                    await model.deleteById(doc.id)
+                it('삭제된 문서는 deletedAt의 값이 유효하다', async () => {
+                    await model.deleteOne({ _id: doc._id })
 
-                    const found = await model.findOneDeleted({ _id: { $eq: doc._id } })
+                    const found = await model
+                        .findOne({ _id: { $eq: doc._id } })
+                        .setOptions({ withDeleted: true })
+                        .exec()
 
-                    expect(found).toMatchObject({ deleted: true, deletedAt: expect.any(Date) })
+                    expect(found.deletedAt).toEqual(expect.any(Date))
                 })
 
-                it('여러개의 문서를 삭제해도 deletedAt 필드를 포함해야 한다', async () => {
+                it('여러개의 문서를 삭제해도 deletedAt의 값이 유효해야 한다', async () => {
                     const doc2 = new model()
                     doc2.name = 'name'
                     await doc2.save()
 
-                    await model.delete({ _id: { $in: [doc._id, doc2._id] } as any })
+                    await model.deleteMany({ _id: { $in: [doc._id, doc2._id] } as any })
 
-                    const found = await model.findDeleted({})
-                    expect(found[0]).toMatchObject({ deleted: true, deletedAt: expect.any(Date) })
-                    expect(found[1]).toMatchObject({ deleted: true, deletedAt: expect.any(Date) })
+                    const found = await model.find({}).setOptions({ withDeleted: true })
+                    expect(found[0]).toMatchObject({ deletedAt: expect.any(Date) })
+                    expect(found[1]).toMatchObject({ deletedAt: expect.any(Date) })
                 })
             })
 
@@ -173,12 +175,12 @@ describe('MongooseSchema', () => {
 
                 beforeEach(async () => await createModel(Sample, { softDeletion: false }))
 
-                it('softDeletion가 false면 생성된 문서는 deleted 필드가 없어야 한다', async () => {
+                it('softDeletion가 false면 생성된 문서는 deletedAt 필드가 없어야 한다', async () => {
                     const doc = new model()
                     doc.name = 'name'
                     await doc.save()
 
-                    expect(doc).not.toHaveProperty('deleted')
+                    expect(doc).not.toHaveProperty('deletedAt')
                 })
             })
         })
