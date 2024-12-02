@@ -2,7 +2,6 @@ import { compare, hash } from 'bcrypt'
 import { LatLong } from 'common'
 import { createHash, randomUUID } from 'crypto'
 import { createReadStream } from 'fs'
-import { nanoid } from 'nanoid'
 import { pipeline, Writable } from 'stream'
 import { promisify } from 'util'
 
@@ -14,8 +13,14 @@ export function generateUUID() {
     return randomUUID()
 }
 
-export function generateShortId() {
-    return nanoid(10)
+export function generateShortId(length: number = 10): string {
+    const characters = 'useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict'
+    let result = ''
+    const charactersLength = characters.length
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength))
+    }
+    return result
 }
 
 /**
