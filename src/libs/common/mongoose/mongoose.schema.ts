@@ -1,7 +1,13 @@
-import { merge } from 'lodash'
 import { Type } from '@nestjs/common'
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { CallbackWithoutResultAndOptionalError, FlattenMaps, SchemaOptions, Types } from 'mongoose'
+import { merge } from 'lodash'
+import {
+    CallbackWithoutResultAndOptionalError,
+    ClientSession,
+    FlattenMaps,
+    SchemaOptions,
+    Types
+} from 'mongoose'
 
 /*
 toObject와 toJSON의 차이는 toJSON는 flattenMaps의 기본값이 true라는 것 뿐이다.
@@ -112,13 +118,23 @@ export function createMongooseSchema<T>(cls: Type<T>, options: MongooseSchemaOpt
             this.pipeline().unshift({ $match: { deletedAt: null } })
             next()
         })
-        schema.statics.deleteOne = async function (conditions) {
-            const ret = await this.updateOne(conditions, { deletedAt: new Date() }).exec()
+        schema.statics.deleteOne = async function (
+            conditions,
+            options?: { session?: ClientSession }
+        ) {
+            const ret = await this.updateOne(conditions, { deletedAt: new Date() }, options).exec()
             return { deletedCount: ret.modifiedCount }
         }
-        schema.statics.deleteMany = async function (conditions) {
-            const ret = await this.updateMany(conditions, { deletedAt: new Date() }).exec()
+        schema.statics.deleteMany = async function (
+            conditions,
+            options?: { session?: ClientSession }
+        ) {
+            const ret = await this.updateMany(conditions, { deletedAt: new Date() }, options).exec()
             return { deletedCount: ret.modifiedCount }
+        }
+        schema.methods.deleteOne = async function (options?: { session?: ClientSession }) {
+            this.deletedAt = new Date()
+            return await this.save(options)
         }
     }
 
