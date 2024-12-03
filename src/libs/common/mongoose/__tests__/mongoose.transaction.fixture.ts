@@ -10,7 +10,7 @@ import {
 import { HydratedDocument, Model } from 'mongoose'
 import { createHttpTestContext } from 'testlib'
 
-@Schema(createSchemaOptions({ json: { includes: {} } }))
+@Schema(createSchemaOptions({}))
 export class Sample extends MongooseSchema {
     @Prop({ required: true })
     name: string

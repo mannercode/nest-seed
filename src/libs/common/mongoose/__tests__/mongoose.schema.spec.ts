@@ -78,8 +78,8 @@ describe('MongooseSchema', () => {
             })
         })
 
-        describe('createSchemaOptions({ json: { includes: { timestamps: true } } })', () => {
-            @Schema(createSchemaOptions({ json: { includes: { timestamps: true } } }))
+        describe('createSchemaOptions({ json: { timestamps: true  } })', () => {
+            @Schema(createSchemaOptions({ json: { timestamps: true } }))
             class Sample extends MongooseSchema {
                 @Prop()
                 name: string

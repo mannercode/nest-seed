@@ -20,10 +20,7 @@ attributes: { key1: 'value1', key2: 'value2' },
 
 type SchemaOptionType = {
     timestamps?: boolean
-    json?: {
-        omits?: readonly string[]
-        includes?: { timestamps?: boolean }
-    }
+    json?: { omits?: readonly string[]; timestamps?: boolean }
 }
 export const createSchemaOptions = (options: SchemaOptionType): SchemaOptions => {
     const { timestamps, json } = options
@@ -49,14 +46,12 @@ export const createSchemaOptions = (options: SchemaOptionType): SchemaOptions =>
                 let timestamps = false
 
                 if (json) {
-                    const { omits, includes } = json
-
-                    if (omits) {
-                        omits.forEach((omit) => delete ret[omit])
+                    if (json.omits) {
+                        json.omits.forEach((omit) => delete ret[omit])
                     }
 
-                    if (includes) {
-                        timestamps = includes.timestamps ?? false
+                    if (json.timestamps) {
+                        timestamps = json.timestamps
                     }
                 }
 

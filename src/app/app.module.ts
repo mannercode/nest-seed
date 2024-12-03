@@ -8,6 +8,7 @@ import { exit } from 'process'
 import { BookingModule } from 'services/booking'
 import { CustomersModule } from 'services/customers'
 import { MoviesModule } from 'services/movies'
+import { PaymentsModule } from 'services/payments'
 import { RecommendationModule } from 'services/recommendation'
 import { ShowtimeCreationModule } from 'services/showtime-creation'
 import { ShowtimesModule } from 'services/showtimes'
@@ -42,7 +43,8 @@ import { HealthModule } from './health.module'
         HealthModule,
         WatchRecordsModule,
         RecommendationModule,
-        BookingModule
+        BookingModule,
+        PaymentsModule
     ],
     providers: [CustomerLocalStrategy, CustomerJwtStrategy],
     controllers: [
