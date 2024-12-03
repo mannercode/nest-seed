@@ -1,3 +1,4 @@
+import { merge } from 'lodash'
 import { Type } from '@nestjs/common'
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { CallbackWithoutResultAndOptionalError, FlattenMaps, SchemaOptions, Types } from 'mongoose'
@@ -22,8 +23,14 @@ type SchemaOptionType = {
     timestamps?: boolean
     json?: { omits?: readonly string[]; timestamps?: boolean }
 }
-export const createSchemaOptions = (options: SchemaOptionType): SchemaOptions => {
-    const { timestamps, json } = options
+
+export const createSchemaOptions = (overrides: Partial<SchemaOptionType>): SchemaOptions => {
+    const defaultOptions: SchemaOptionType = {
+        timestamps: true,
+        json: { omits: [], timestamps: false }
+    }
+
+    const { timestamps, json } = merge({}, defaultOptions, overrides)
 
     return {
         // https://mongoosejs.com/docs/guide.html#optimisticConcurrency
@@ -31,7 +38,7 @@ export const createSchemaOptions = (options: SchemaOptionType): SchemaOptions =>
         minimize: false,
         strict: 'throw',
         strictQuery: 'throw',
-        timestamps: timestamps ?? true,
+        timestamps,
         validateBeforeSave: true,
         // https://mongoosejs.com/docs/guide.html#collation
         collation: { locale: 'en_US', strength: 1 },
@@ -43,21 +50,17 @@ export const createSchemaOptions = (options: SchemaOptionType): SchemaOptions =>
                 delete ret._id
                 delete ret.deletedAt
 
-                let timestamps = false
-
                 if (json) {
-                    if (json.omits) {
-                        json.omits.forEach((omit) => delete ret[omit])
+                    const { omits, timestamps } = json
+
+                    if (omits) {
+                        omits.forEach((omit) => delete ret[omit])
                     }
 
-                    if (json.timestamps) {
-                        timestamps = json.timestamps
+                    if (!timestamps) {
+                        delete ret.createdAt
+                        delete ret.updatedAt
                     }
-                }
-
-                if (!timestamps) {
-                    delete ret.createdAt
-                    delete ret.updatedAt
                 }
             }
         }
@@ -109,8 +112,9 @@ export function createMongooseSchema<T>(cls: Type<T>, options: MongooseSchemaOpt
             this.pipeline().unshift({ $match: { deletedAt: null } })
             next()
         })
-        schema.statics.deleteOne = function (conditions) {
-            return this.updateOne(conditions, { deletedAt: new Date() })
+        schema.statics.deleteOne = async function (conditions) {
+            const ret = await this.updateOne(conditions, { deletedAt: new Date() }).exec()
+            return { deletedCount: ret.modifiedCount }
         }
         schema.statics.deleteMany = async function (conditions) {
             const ret = await this.updateMany(conditions, { deletedAt: new Date() }).exec()

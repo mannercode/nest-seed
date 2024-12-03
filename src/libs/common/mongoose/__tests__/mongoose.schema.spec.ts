@@ -121,7 +121,7 @@ describe('MongooseSchema', () => {
         })
 
         describe('createMongooseSchema', () => {
-            describe('createMongooseSchema({})', () => {
+            describe('createMongooseSchema({ softDeletion: true })', () => {
                 @Schema(createSchemaOptions({}))
                 class Sample extends MongooseSchema {
                     @Prop()
@@ -131,7 +131,7 @@ describe('MongooseSchema', () => {
                 let doc: HydratedDocument<Sample>
 
                 beforeEach(async () => {
-                    await createModel(Sample, {})
+                    await createModel(Sample, { softDeletion: true })
 
                     doc = new model()
                     doc.name = 'name'
@@ -163,6 +163,14 @@ describe('MongooseSchema', () => {
                     const found = await model.find({}).setOptions({ withDeleted: true })
                     expect(found[0]).toMatchObject({ deletedAt: expect.any(Date) })
                     expect(found[1]).toMatchObject({ deletedAt: expect.any(Date) })
+                })
+
+                it('삭제된 문서는 aggregate에서 검색되지 않아야 한다', async () => {
+                    await model.deleteOne({ _id: doc._id })
+
+                    const got = await model.aggregate([{ $match: { name: 'name' } }])
+
+                    expect(got).toHaveLength(0)
                 })
             })
 
