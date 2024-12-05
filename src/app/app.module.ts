@@ -9,6 +9,7 @@ import { BookingModule } from 'services/booking'
 import { CustomersModule } from 'services/customers'
 import { MoviesModule } from 'services/movies'
 import { PaymentsModule } from 'services/payments'
+import { PurchasesModule } from 'services/purchases'
 import { RecommendationModule } from 'services/recommendation'
 import { ShowtimeCreationModule } from 'services/showtime-creation'
 import { ShowtimesModule } from 'services/showtimes'
@@ -21,6 +22,7 @@ import {
     BookingController,
     CustomersController,
     MoviesController,
+    PurchasesController,
     ShowtimeCreationController,
     StorageFilesController,
     TheatersController
@@ -44,7 +46,8 @@ import { HealthModule } from './health.module'
         WatchRecordsModule,
         RecommendationModule,
         BookingModule,
-        PaymentsModule
+        PaymentsModule,
+        PurchasesModule
     ],
     providers: [CustomerLocalStrategy, CustomerJwtStrategy],
     controllers: [
@@ -53,7 +56,8 @@ import { HealthModule } from './health.module'
         MoviesController,
         TheatersController,
         ShowtimeCreationController,
-        BookingController
+        BookingController,
+        PurchasesController
     ]
 })
 export class AppModule {}

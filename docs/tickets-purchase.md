@@ -185,13 +185,13 @@ actor Customer
 Customer -> Frontend: 결제 정보 입력
     Frontend -> Backend: 결제 요청\nPOST /purchases
     note right
-    body {
-        customerId,
-        totalPrice,
-        items: [
-            { type: 'ticket', ticketId: ticketId#1 }
-        ]
-    }
+        body {
+            customerId,
+            totalPrice,
+            items: [
+                { type: 'ticket', ticketId: ticketId#1 }
+            ]
+        }
     end note
         Backend -> Purchases: createPurchase(body)
             Purchases -> Purchases: newPurchase(body)
@@ -228,6 +228,17 @@ Customer -> Frontend: 결제 정보 입력
             deactivate TicketPurchases
             Purchases -> Purchases: updateItemStatus(purchaseId, {items:[0]}, 'completed')
         Backend <-- Purchases: 결제 완료 및 티켓 정보
+        note right
+            Created, {
+                id,
+                purchasedAt,
+                customerId,
+                totalPrice,
+                items: [
+                    { type: 'ticket', ticketId: ticketId#1 }
+                ]
+            }
+        end note
     Frontend <-- Backend: 결제 성공
 Customer <-- Frontend: 구매 완료
 @enduml

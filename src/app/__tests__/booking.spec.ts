@@ -4,7 +4,7 @@ import { TicketDto } from 'services/tickets'
 import { HttpTestClient } from 'testlib'
 import { closeFixture, createFixture, Fixture } from './booking.fixture'
 
-describe('Booking 시나리오 테스트', () => {
+describe('Scenario: Booking', () => {
     let fixture: Fixture
     let client: HttpTestClient
     let movieId: string

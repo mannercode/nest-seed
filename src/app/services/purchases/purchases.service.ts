@@ -1,0 +1,29 @@
+import { Injectable } from '@nestjs/common'
+import { MethodLog } from 'common'
+import { PurchaseCreateDto } from './dtos'
+import { PurchaseDocument, PurchaseDto } from './models'
+import { PurchasesRepository } from './purchases.repository'
+
+@Injectable()
+export class PurchasesService {
+    constructor(private repository: PurchasesRepository) {}
+
+    @MethodLog()
+    async processPurchase(createDto: PurchaseCreateDto) {
+        const purchase = await this.repository.createPurchase(createDto)
+
+        return this.toDto(purchase)
+    }
+
+    @MethodLog({ level: 'verbose' })
+    async getPurchase(purchaseId: string) {
+        const purchase = await this.repository.getById(purchaseId)
+
+        return this.toDto(purchase)
+    }
+
+    private toDto = (purchase: PurchaseDocument) => {
+        const dto = purchase.toJSON<PurchaseDto>()
+        return dto
+    }
+}
