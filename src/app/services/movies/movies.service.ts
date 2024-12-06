@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog, pickIds } from 'common'
+import { mapDocToDto, MethodLog, pickIds } from 'common'
 import { STORAGE_FILES_ROUTE } from 'config'
 import { StorageFileCreateDto, StorageFilesService } from '../storage-files'
-import { MovieCreateDto, MovieQueryDto, MovieUpdateDto } from './dtos'
-import { MovieDocument, MovieDto } from './models'
+import { MovieCreateDto, MovieDto, MovieQueryDto, MovieUpdateDto } from './dtos'
+import { MovieDocument } from './models'
 import { MoviesRepository } from './movies.repository'
 
 @Injectable()
@@ -59,8 +59,18 @@ export class MoviesService {
     }
 
     private toDto = (movie: MovieDocument) => {
-        const dto = movie.toJSON<MovieDto>()
+        const dto = mapDocToDto(movie, MovieDto, [
+            'id',
+            'title',
+            'genre',
+            'releaseDate',
+            'plot',
+            'durationMinutes',
+            'director',
+            'rating'
+        ])
         dto.images = movie.imageFileIds.map((id) => `${STORAGE_FILES_ROUTE}/${id.toString()}`)
+
         return dto
     }
     private toDtos = (movies: MovieDocument[]) => movies.map((movie) => this.toDto(movie))

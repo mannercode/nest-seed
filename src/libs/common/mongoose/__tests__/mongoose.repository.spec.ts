@@ -177,7 +177,7 @@ describe('MongooseRepository', () => {
         })
 
         it('should return true if the IDs does exist', async () => {
-            const exists = await repository.existByIds(pickItems(samples, 'id'))
+            const exists = await repository.existByIds(pickIds(samples))
             expect(exists).toBeTruthy()
         })
 
@@ -198,7 +198,7 @@ describe('MongooseRepository', () => {
         it('should find a document by ID', async () => {
             const doc = await repository.findById(sample.id)
 
-            expect(doc?.toJSON()).toEqual(sample)
+            expect(toDto(doc!)).toEqual(sample)
         })
 
         it('should return null if the ID does not exist', async () => {
@@ -234,13 +234,13 @@ describe('MongooseRepository', () => {
 
         beforeEach(async () => {
             const doc = await createSample(repository)
-            sample = doc.toJSON<SampleDto>()
+            sample = toDto(doc)
         })
 
         it('should find a document by ID', async () => {
             const doc = await repository.getById(sample.id)
 
-            expect(doc?.toJSON()).toEqual(sample)
+            expect(toDto(doc)).toEqual(sample)
         })
 
         it('should throw an exception if the ID does not exist', async () => {
@@ -277,7 +277,7 @@ describe('MongooseRepository', () => {
 
         beforeEach(async () => {
             const doc = await createSample(repository)
-            sample = doc.toJSON<SampleDto>()
+            sample = toDto(doc)
         })
 
         it('should find a document by ID', async () => {

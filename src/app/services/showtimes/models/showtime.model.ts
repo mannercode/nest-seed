@@ -1,10 +1,10 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, SchemaJson, createMongooseSchema, createSchemaOptions } from 'common'
+import { HardDelete, MongooseSchema, createMongooseSchema } from 'common'
+import { Mongoose } from 'config'
 import { HydratedDocument, Types } from 'mongoose'
 
-const omits = ['batchId'] as const
-
-@Schema(createSchemaOptions({ timestamps: false, json: { omits } }))
+@HardDelete()
+@Schema(Mongoose.defaultSchemaOptions)
 export class Showtime extends MongooseSchema {
     @Prop({ required: true })
     theaterId: Types.ObjectId
@@ -21,7 +21,5 @@ export class Showtime extends MongooseSchema {
     @Prop({ required: true })
     batchId: Types.ObjectId
 }
-export type ShowtimeDto = SchemaJson<Showtime, typeof omits>
-
 export type ShowtimeDocument = HydratedDocument<Showtime>
-export const ShowtimeSchema = createMongooseSchema(Showtime, {})
+export const ShowtimeSchema = createMongooseSchema(Showtime)

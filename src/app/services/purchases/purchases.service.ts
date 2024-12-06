@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog } from 'common'
-import { PurchaseCreateDto } from './dtos'
-import { PurchaseDocument, PurchaseDto } from './models'
+import { mapDocToDto, MethodLog } from 'common'
+import { PurchaseCreateDto, PurchaseDto } from './dtos'
+import { PurchaseDocument } from './models'
 import { PurchasesRepository } from './purchases.repository'
 
 @Injectable()
@@ -22,8 +22,13 @@ export class PurchasesService {
         return this.toDto(purchase)
     }
 
-    private toDto = (purchase: PurchaseDocument) => {
-        const dto = purchase.toJSON<PurchaseDto>()
-        return dto
-    }
+    private toDto = (purchase: PurchaseDocument) =>
+        mapDocToDto(purchase, PurchaseDto, [
+            'id',
+            'customerId',
+            'totalPrice',
+            'items',
+            'createdAt',
+            'updatedAt'
+        ])
 }

@@ -1,8 +1,9 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, SchemaJson, createMongooseSchema, createSchemaOptions } from 'common'
+import { MongooseSchema, createMongooseSchema } from 'common'
+import { Mongoose } from 'config'
 import { HydratedDocument, Types } from 'mongoose'
 
-@Schema(createSchemaOptions({}))
+@Schema(Mongoose.defaultSchemaOptions)
 export class WatchRecord extends MongooseSchema {
     @Prop({ required: true })
     customerId: Types.ObjectId
@@ -16,7 +17,5 @@ export class WatchRecord extends MongooseSchema {
     @Prop({ required: true })
     watchDate: Date
 }
-export type WatchRecordDto = SchemaJson<WatchRecord>
-
 export type WatchRecordDocument = HydratedDocument<WatchRecord>
-export const WatchRecordSchema = createMongooseSchema(WatchRecord, {})
+export const WatchRecordSchema = createMongooseSchema(WatchRecord)

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog } from 'common'
-import { TheaterCreateDto, TheaterQueryDto, TheaterUpdateDto } from './dtos'
-import { TheaterDocument, TheaterDto } from './models'
+import { mapDocToDto, MethodLog } from 'common'
+import { TheaterCreateDto, TheaterDto, TheaterQueryDto, TheaterUpdateDto } from './dtos'
+import { TheaterDocument } from './models'
 import { TheatersRepository } from './theaters.repository'
 
 @Injectable()
@@ -54,6 +54,8 @@ export class TheatersService {
         return this.repository.existByIds(theaterIds)
     }
 
-    private toDto = (theater: TheaterDocument) => theater.toJSON<TheaterDto>()
+    private toDto = (theater: TheaterDocument) =>
+        mapDocToDto(theater, TheaterDto, ['id', 'name', 'latlong', 'seatmap'])
+
     private toDtos = (theaters: TheaterDocument[]) => theaters.map((theater) => this.toDto(theater))
 }

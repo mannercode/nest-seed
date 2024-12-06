@@ -1,8 +1,9 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, SchemaJson, createMongooseSchema, createSchemaOptions } from 'common'
+import { MongooseSchema, createMongooseSchema } from 'common'
+import { Mongoose } from 'config'
 import { HydratedDocument } from 'mongoose'
 
-@Schema(createSchemaOptions({}))
+@Schema(Mongoose.defaultSchemaOptions)
 export class StorageFile extends MongooseSchema {
     @Prop({ required: true })
     originalname: string
@@ -16,7 +17,5 @@ export class StorageFile extends MongooseSchema {
     @Prop({ required: true })
     checksum: string
 }
-export type StorageFileDto = SchemaJson<StorageFile> & { storedPath: string }
-
 export type StorageFileDocument = HydratedDocument<StorageFile>
-export const StorageFileSchema = createMongooseSchema(StorageFile, {})
+export const StorageFileSchema = createMongooseSchema(StorageFile)

@@ -2,25 +2,27 @@ import { Injectable, Module } from '@nestjs/common'
 import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import {
     createMongooseSchema,
-    createSchemaOptions,
     generateShortId,
+    mapDocToDto,
     MongooseRepository,
     MongooseSchema,
-    padNumber,
-    SchemaJson
+    padNumber
 } from 'common'
 import { HydratedDocument, Model } from 'mongoose'
 import { createHttpTestContext } from 'testlib'
 
-@Schema(createSchemaOptions({}))
+@Schema({ toJSON: { virtuals: true } })
 export class Sample extends MongooseSchema {
     @Prop({ required: true })
     name: string
 }
-
-export const SampleSchema = createMongooseSchema(Sample, {})
 export type SampleDocument = HydratedDocument<Sample>
-export type SampleDto = SchemaJson<Sample>
+export const SampleSchema = createMongooseSchema(Sample)
+
+export class SampleDto {
+    id: string
+    name: string
+}
 
 @Injectable()
 export class SamplesRepository extends MongooseRepository<Sample> {
@@ -71,10 +73,5 @@ export const createSamples = async (repository: SamplesRepository) =>
         })
     )
 
-export function toDto(item: SampleDocument) {
-    return item.toJSON<SampleDto>()
-}
-
-export function toDtos(items: SampleDocument[]) {
-    return items.map((item) => toDto(item))
-}
+export const toDto = (item: SampleDocument) => mapDocToDto(item, SampleDto, ['id', 'name'])
+export const toDtos = (items: SampleDocument[]) => items.map((item) => toDto(item))

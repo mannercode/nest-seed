@@ -1,10 +1,9 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, SchemaJson, createMongooseSchema, createSchemaOptions } from 'common'
+import { MongooseSchema, createMongooseSchema } from 'common'
+import { Mongoose } from 'config'
 import { HydratedDocument } from 'mongoose'
 
-const omits = ['password'] as const
-
-@Schema(createSchemaOptions({ json: { omits } }))
+@Schema(Mongoose.defaultSchemaOptions)
 export class Customer extends MongooseSchema {
     @Prop({ required: true })
     name: string
@@ -18,10 +17,8 @@ export class Customer extends MongooseSchema {
     @Prop({ required: true, select: false })
     password: string
 }
-export type CustomerDto = SchemaJson<Customer, typeof omits>
-
 export type CustomerDocument = HydratedDocument<Customer>
-export const CustomerSchema = createMongooseSchema(Customer, {})
+export const CustomerSchema = createMongooseSchema(Customer)
 CustomerSchema.index({ email: 1 })
 CustomerSchema.index({ name: 'text' })
 /*

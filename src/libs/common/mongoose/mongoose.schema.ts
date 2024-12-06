@@ -1,11 +1,9 @@
 import { Type } from '@nestjs/common'
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { merge } from 'lodash'
+import { SchemaFactory } from '@nestjs/mongoose'
 import {
     CallbackWithoutResultAndOptionalError,
     ClientSession,
-    FlattenMaps,
-    SchemaOptions,
+    HydratedDocument,
     Types
 } from 'mongoose'
 
@@ -25,69 +23,18 @@ console.log(sample.toJSON())
 attributes: { key1: 'value1', key2: 'value2' },
 */
 
-type SchemaOptionType = {
-    timestamps?: boolean
-    json?: { omits?: readonly string[]; timestamps?: boolean }
-}
-
-export const createSchemaOptions = (overrides: Partial<SchemaOptionType>): SchemaOptions => {
-    const defaultOptions: SchemaOptionType = {
-        timestamps: true,
-        json: { omits: [], timestamps: false }
-    }
-
-    const { timestamps, json } = merge({}, defaultOptions, overrides)
-
-    return {
-        // https://mongoosejs.com/docs/guide.html#optimisticConcurrency
-        optimisticConcurrency: true,
-        minimize: false,
-        strict: 'throw',
-        strictQuery: 'throw',
-        timestamps,
-        validateBeforeSave: true,
-        // https://mongoosejs.com/docs/guide.html#collation
-        collation: { locale: 'en_US', strength: 1 },
-        toJSON: {
-            virtuals: true,
-            flattenObjectIds: true,
-            versionKey: false,
-            transform: function (_doc, ret) {
-                delete ret._id
-                delete ret.deletedAt
-
-                if (json) {
-                    const { omits, timestamps } = json
-
-                    if (omits) {
-                        omits.forEach((omit) => delete ret[omit])
-                    }
-
-                    if (!timestamps) {
-                        delete ret.createdAt
-                        delete ret.updatedAt
-                    }
-                }
-            }
-        }
-    }
-}
-
-export class MongooseSchema {
+export abstract class MongooseSchema {
     id: string
+    createdAt: Date
+    updatedAt: Date
+    deletedAt: Date | null
 }
 
-type ReplaceObjectIdWithString<T> = {
-    [K in keyof T]: T[K] extends Types.ObjectId ? string : T[K]
-}
-type OmitKey<T, K extends keyof T = never> = FlattenMaps<ReplaceObjectIdWithString<Omit<T, K>>>
-type ExtractKeys<O extends readonly any[]> = O[number]
-export type SchemaJson<T, O extends readonly (keyof T)[] = []> = OmitKey<T, ExtractKeys<O>>
-
-@Schema({})
-export class SoftDeletionSchema {
-    @Prop({ default: null })
-    deletedAt: Date
+const HARD_DELETE_KEY = 'HardDelete'
+export function HardDelete() {
+    return (target: Function) => {
+        Reflect.defineMetadata(HARD_DELETE_KEY, true, target)
+    }
 }
 
 function excludeDeletedMiddleware(next: CallbackWithoutResultAndOptionalError) {
@@ -97,19 +44,17 @@ function excludeDeletedMiddleware(next: CallbackWithoutResultAndOptionalError) {
     next()
 }
 
-export type MongooseSchemaOptions = { softDeletion?: boolean }
-export function createMongooseSchema<T>(cls: Type<T>, options: MongooseSchemaOptions) {
+export function createMongooseSchema<T>(cls: Type<T>) {
     const schema = SchemaFactory.createForClass(cls)
 
-    const { softDeletion } = options
+    const isHardDelete = Reflect.getMetadata(HARD_DELETE_KEY, cls) || false
 
-    if (softDeletion !== false) {
-        /**
-         * softDeletion는 다양한 상황을 테스트 하지 않았음.
-         * 불완전한 기능이다.
-         */
-        const SoftDeletionSchemaClass = SchemaFactory.createForClass(SoftDeletionSchema)
-        schema.add(SoftDeletionSchemaClass)
+    /**
+     * softDelete는 다양한 상황을 테스트 하지 않았음.
+     * 불완전한 기능이다.
+     */
+    if (isHardDelete === false) {
+        schema.add({ deletedAt: { type: Date, default: null } } as any)
         schema.pre('find', excludeDeletedMiddleware)
         schema.pre('findOne', excludeDeletedMiddleware)
         schema.pre('findOneAndUpdate', excludeDeletedMiddleware)
@@ -139,4 +84,21 @@ export function createMongooseSchema<T>(cls: Type<T>, options: MongooseSchemaOpt
     }
 
     return schema
+}
+
+type SchemaJson<T> = { [K in keyof T]: T[K] extends Types.ObjectId ? string : T[K] }
+export function mapDocToDto<
+    DOC extends object,
+    DTO extends object,
+    K extends keyof DOC & keyof DTO
+>(doc: HydratedDocument<DOC>, DtoClass: new () => DTO, keys: K[]): DTO {
+    const json = doc.toJSON<SchemaJson<DOC>>()
+    const dto = new DtoClass()
+
+    for (const key of keys) {
+        if (json[key] !== undefined) {
+            dto[key] = json[key] as DTO[K]
+        }
+    }
+    return dto
 }

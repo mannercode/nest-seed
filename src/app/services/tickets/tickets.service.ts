@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { Assert, MethodLog } from 'common'
-import { TicketCreateDto, TicketFilterDto } from './dtos'
-import { TicketDocument, TicketDto, TicketStatus } from './models'
+import { Assert, mapDocToDto, MethodLog } from 'common'
+import { TicketCreateDto, TicketDto, TicketFilterDto } from './dtos'
+import { TicketDocument, TicketStatus } from './models'
 import { TicketsRepository } from './tickets.repository'
 
 @Injectable()
@@ -16,7 +16,7 @@ export class TicketsService {
     }
 
     @MethodLog()
-    async updateTicketStatus(ticketIds: string[], status: TicketStatus): Promise<TicketDto[]> {
+    async updateTicketStatus(ticketIds: string[], status: TicketStatus) {
         const result = await this.repository.updateTicketStatus(ticketIds, status)
 
         Assert.equals(
@@ -43,6 +43,15 @@ export class TicketsService {
         return statuses
     }
 
-    private toDto = (ticket: TicketDocument) => ticket.toJSON<TicketDto>()
+    private toDto = (ticket: TicketDocument) =>
+        mapDocToDto(ticket, TicketDto, [
+            'id',
+            'showtimeId',
+            'theaterId',
+            'movieId',
+            'status',
+            'seat'
+        ])
+
     private toDtos = (tickets: TicketDocument[]) => tickets.map((ticket) => this.toDto(ticket))
 }

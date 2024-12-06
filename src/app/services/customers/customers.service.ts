@@ -1,8 +1,8 @@
 import { ConflictException, Injectable } from '@nestjs/common'
-import { InjectJwtAuth, JwtAuthService, MethodLog, Password } from 'common'
+import { InjectJwtAuth, JwtAuthService, mapDocToDto, MethodLog, Password } from 'common'
 import { CustomersRepository } from './customers.repository'
-import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
-import { CustomerDocument, CustomerDto } from './models'
+import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
+import { CustomerDocument } from './models'
 
 @Injectable()
 export class CustomersService {
@@ -73,7 +73,9 @@ export class CustomersService {
         return null
     }
 
-    private toDto = (customer: CustomerDocument) => customer.toJSON<CustomerDto>()
+    private toDto = (customer: CustomerDocument) =>
+        mapDocToDto(customer, CustomerDto, ['id', 'name', 'email', 'birthdate'])
+
     private toDtos = (customers: CustomerDocument[]) =>
         customers.map((customer) => this.toDto(customer))
 }

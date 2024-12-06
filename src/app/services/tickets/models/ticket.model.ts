@@ -1,5 +1,6 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, SchemaJson, createMongooseSchema, createSchemaOptions } from 'common'
+import { MongooseSchema, createMongooseSchema } from 'common'
+import { Mongoose } from 'config'
 import { HydratedDocument, Types } from 'mongoose'
 import { Seat } from '../../theaters'
 
@@ -8,9 +9,7 @@ export enum TicketStatus {
     sold = 'sold'
 }
 
-const omits = ['batchId'] as const
-
-@Schema(createSchemaOptions({ timestamps: false, json: { omits } }))
+@Schema(Mongoose.defaultSchemaOptions)
 export class Ticket extends MongooseSchema {
     @Prop({ required: true })
     showtimeId: Types.ObjectId
@@ -30,7 +29,5 @@ export class Ticket extends MongooseSchema {
     @Prop({ required: true })
     batchId: Types.ObjectId
 }
-export type TicketDto = SchemaJson<Ticket, typeof omits>
-
 export type TicketDocument = HydratedDocument<Ticket>
-export const TicketSchema = createMongooseSchema(Ticket, {})
+export const TicketSchema = createMongooseSchema(Ticket)

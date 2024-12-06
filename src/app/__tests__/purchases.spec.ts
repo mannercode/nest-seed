@@ -39,4 +39,29 @@ describe('Purchases Module', () => {
                 })
         })
     })
+
+    describe('GET /purchases/:purchaseId', () => {
+        it('결제 정보를 조회해야 한다', async () => {
+            const customerId = customer.id
+            const totalPrice = 1000
+            const items = tickets.map((ticket) => ({ type: 'ticket', ticketId: ticket.id }))
+
+            const { body } = await client
+                .post('/purchases')
+                .body({ customerId, totalPrice, items })
+                .created()
+
+            await client
+                .get(`/purchases/${body.id}`)
+                .body({ customerId, totalPrice, items })
+                .ok({
+                    id: body.id,
+                    createdAt: expect.any(Date),
+                    updatedAt: expect.any(Date),
+                    customerId,
+                    totalPrice,
+                    items
+                })
+        })
+    })
 })

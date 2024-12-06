@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog } from 'common'
-import { PaymentCreateDto } from './dtos'
-import { PaymentDocument, PaymentDto } from './models'
+import { mapDocToDto, MethodLog } from 'common'
+import { PaymentCreateDto, PaymentDto } from './dtos'
+import { PaymentDocument } from './models'
 import { PaymentsRepository } from './payments.repository'
 
 @Injectable()
@@ -22,5 +22,6 @@ export class PaymentsService {
         return this.toDto(payment)
     }
 
-    private toDto = (payment: PaymentDocument) => payment.toJSON<PaymentDto>()
+    private toDto = (payment: PaymentDocument) =>
+        mapDocToDto(payment, PaymentDto, ['id', 'customerId', 'amount', 'createdAt', 'updatedAt'])
 }

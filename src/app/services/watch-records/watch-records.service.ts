@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog } from 'common'
-import { WatchRecordCreateDto, WatchRecordQueryDto } from './dtos'
-import { WatchRecordDocument, WatchRecordDto } from './models'
+import { mapDocToDto, MethodLog } from 'common'
+import { WatchRecordCreateDto, WatchRecordDto, WatchRecordQueryDto } from './dtos'
+import { WatchRecordDocument } from './models'
 import { WatchRecordsRepository } from './watch-records.repository'
 
 @Injectable()
@@ -22,7 +22,15 @@ export class WatchRecordsService {
         return { ...paginated, items: this.toDtos(items) }
     }
 
-    private toDto = (watchRecord: WatchRecordDocument) => watchRecord.toJSON<WatchRecordDto>()
+    private toDto = (watchRecord: WatchRecordDocument) =>
+        mapDocToDto(watchRecord, WatchRecordDto, [
+            'id',
+            'customerId',
+            'movieId',
+            'purchaseId',
+            'watchDate'
+        ])
+
     private toDtos = (watchRecords: WatchRecordDocument[]) =>
         watchRecords.map((watchRecord) => this.toDto(watchRecord))
 }

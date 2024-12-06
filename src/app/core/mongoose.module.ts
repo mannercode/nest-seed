@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { MongooseModule as NestMongooseModule } from '@nestjs/mongoose'
 import { generateShortId } from 'common'
 import { AppConfigService, isEnv } from 'config'
+import { SchemaOptions } from 'mongoose'
 
 @Module({
     imports: [

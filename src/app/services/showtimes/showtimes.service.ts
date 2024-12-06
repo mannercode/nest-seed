@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog } from 'common'
-import { ShowtimeCreateDto, ShowtimeFilterDto } from './dtos'
-import { ShowtimeDocument, ShowtimeDto } from './models'
+import { mapDocToDto, MethodLog } from 'common'
+import { ShowtimeCreateDto, ShowtimeDto, ShowtimeFilterDto } from './dtos'
+import { ShowtimeDocument } from './models'
 import { ShowtimesRepository } from './showtimes.repository'
 
 @Injectable()
@@ -46,7 +46,9 @@ export class ShowtimesService {
         return this.repository.findShowdates(args)
     }
 
-    private toDto = (showtime: ShowtimeDocument) => showtime.toJSON<ShowtimeDto>()
+    private toDto = (showtime: ShowtimeDocument) =>
+        mapDocToDto(showtime, ShowtimeDto, ['id', 'theaterId', 'movieId', 'startTime', 'endTime'])
+
     private toDtos = (showtimes: ShowtimeDocument[]) =>
         showtimes.map((showtime) => this.toDto(showtime))
 }

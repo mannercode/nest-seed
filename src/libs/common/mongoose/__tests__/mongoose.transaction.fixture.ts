@@ -1,22 +1,16 @@
 import { Injectable, Module } from '@nestjs/common'
 import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
-import {
-    createMongooseSchema,
-    createSchemaOptions,
-    generateShortId,
-    MongooseRepository,
-    MongooseSchema
-} from 'common'
+import { createMongooseSchema, generateShortId, MongooseRepository, MongooseSchema } from 'common'
 import { HydratedDocument, Model } from 'mongoose'
 import { createHttpTestContext } from 'testlib'
 
-@Schema(createSchemaOptions({}))
+@Schema()
 export class Sample extends MongooseSchema {
     @Prop({ required: true })
     name: string
 }
 
-export const SampleSchema = createMongooseSchema(Sample, {})
+export const SampleSchema = createMongooseSchema(Sample)
 export type SampleDocument = HydratedDocument<Sample>
 
 @Injectable()

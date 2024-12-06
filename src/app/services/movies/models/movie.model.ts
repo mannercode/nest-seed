@@ -1,5 +1,6 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, SchemaJson, createMongooseSchema, createSchemaOptions } from 'common'
+import { MongooseSchema, createMongooseSchema } from 'common'
+import { Mongoose } from 'config'
 import { HydratedDocument, Types } from 'mongoose'
 
 export enum MovieGenre {
@@ -22,9 +23,7 @@ export enum MovieRating {
     NC17 = 'NC17'
 }
 
-const omits = ['imageFileIds'] as const
-
-@Schema(createSchemaOptions({ json: { omits } }))
+@Schema(Mongoose.defaultSchemaOptions)
 export class Movie extends MongooseSchema {
     @Prop({ required: true })
     title: string
@@ -50,7 +49,5 @@ export class Movie extends MongooseSchema {
     @Prop({ required: true })
     imageFileIds: Types.ObjectId[]
 }
-export type MovieDto = SchemaJson<Movie, typeof omits> & { images: string[] }
-
 export type MovieDocument = HydratedDocument<Movie>
-export const MovieSchema = createMongooseSchema(Movie, {})
+export const MovieSchema = createMongooseSchema(Movie)
