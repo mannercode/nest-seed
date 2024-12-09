@@ -20,7 +20,7 @@ describe('CacheService', () => {
                     }),
                     inject: [RedisModule.getToken('redis')]
                 }),
-                CacheModule.registerCache({ configKey: 'cache', name: 'name' })
+                CacheModule.register({ configKey: 'cache', name: 'name' })
             ]
         })
 

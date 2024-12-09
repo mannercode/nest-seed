@@ -1,5 +1,4 @@
-import { Injectable, Module } from '@nestjs/common'
-import { ModuleRef } from '@nestjs/core'
+import { Inject, Injectable, Module } from '@nestjs/common'
 import { getConnectionToken } from '@nestjs/mongoose'
 import {
     HealthCheckService,
@@ -7,8 +6,10 @@ import {
     MongooseHealthIndicator,
     TerminusModule
 } from '@nestjs/terminus'
-import { Byte } from 'common'
-import { isTest, MongooseConfig } from 'config'
+import { Byte, RedisHealthIndicator, RedisModule } from 'common'
+import { isTest, MongooseConfig, RedisConfig } from 'config'
+import Redis from 'ioredis'
+import mongoose from 'mongoose'
 
 @Injectable()
 export class HealthService {
@@ -16,23 +17,16 @@ export class HealthService {
         private health: HealthCheckService,
         private mongoose: MongooseHealthIndicator,
         private memory: MemoryHealthIndicator,
-        private moduleRef: ModuleRef
+        private redis: RedisHealthIndicator,
+        @Inject(getConnectionToken(MongooseConfig.connName)) private mongoConn: mongoose.Connection,
+        @Inject(RedisModule.getToken(RedisConfig.connName)) private redisConn: Redis
     ) {}
-
-    private mongoConnection: any
-    async onModuleInit() {
-        try {
-            this.mongoConnection = this.moduleRef.get(getConnectionToken(MongooseConfig.connName), {
-                strict: false
-            })
-        } catch (err) {
-            console.log(err)
-        }
-    }
 
     check() {
         const checks = [
-            async () => this.mongoose.pingCheck('mongoose', { connection: this.mongoConnection })
+            async () =>
+                this.mongoose.pingCheck(MongooseConfig.connName, { connection: this.mongoConn }),
+            async () => this.redis.pingCheck(RedisConfig.connName, this.redisConn)
         ]
 
         /* istanbul ignore next */
@@ -49,7 +43,7 @@ export class HealthService {
 
 @Module({
     imports: [TerminusModule],
-    providers: [HealthService],
+    providers: [HealthService, RedisHealthIndicator],
     exports: [HealthService]
 })
 export class HealthModule {}

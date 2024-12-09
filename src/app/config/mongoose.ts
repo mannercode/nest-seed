@@ -15,3 +15,7 @@ export class MongooseConfig {
         toJSON: { virtuals: true, flattenObjectIds: true, versionKey: false }
     }
 }
+
+export class RedisConfig {
+    static connName = 'redis'
+}

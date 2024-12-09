@@ -99,7 +99,7 @@ export class CacheModule {
         }
     }
 
-    static registerCache(options: { configKey: string; name: string }): DynamicModule {
+    static register(options: { configKey: string; name: string }): DynamicModule {
         const cacheProvider = {
             provide: CacheService.getToken(options.name),
             useFactory: (redis: Redis, prefix: string) => {
