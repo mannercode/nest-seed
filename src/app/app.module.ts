@@ -49,7 +49,7 @@ import { CoreModule } from './core'
         StorageFilesController,
         MoviesController,
         TheatersController,
-    ShowtimeCreationController,
+ShowtimeCreationController,
         BookingController,
         PurchasesController
     ]
