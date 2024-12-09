@@ -13,14 +13,14 @@ describe('CacheService', () => {
         module = await createTestingModule({
             imports: [
                 RedisModule.forRootAsync({ useFactory: () => redisCtx }, 'redis'),
-                CacheModule.forRootAsync('cache', {
+                CacheModule.register({
+                    name: 'name',
+                    redisName: 'redis',
                     useFactory: async (redis: Redis) => ({
                         prefix: generateShortId(),
                         connection: redis
-                    }),
-                    inject: [RedisModule.getToken('redis')]
-                }),
-                CacheModule.register({ configKey: 'cache', name: 'name' })
+                    })
+                })
             ]
         })
 

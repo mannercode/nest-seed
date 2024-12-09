@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'
-import { JwtAuthModule, stringToMillisecs } from 'common'
-import { AppConfigService, MongooseConfig } from 'config'
+import { generateShortId, JwtAuthModule, stringToMillisecs } from 'common'
+import { AppConfigService, isTest, MongooseConfig, RedisConfig } from 'config'
 import { CustomersRepository } from './customers.repository'
 import { CustomersService } from './customers.service'
 import { Customer, CustomerSchema } from './models'
@@ -14,10 +14,11 @@ import { Customer, CustomerSchema } from './models'
             MongooseConfig.connName
         ),
         PassportModule,
-        JwtAuthModule.registerJwtAuth({
-            configKey: 'jwtauth',
+        JwtAuthModule.register({
             name: 'customer',
+            redisName: RedisConfig.connName,
             useFactory: ({ auth }: AppConfigService) => ({
+                prefix: isTest() ? `jwtauth:${generateShortId()}` : 'jwtauth',
                 auth: {
                     accessSecret: auth.accessSecret,
                     accessTokenTtlMs: stringToMillisecs(auth.accessTokenExpiration),

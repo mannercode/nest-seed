@@ -1,13 +1,6 @@
-import {
-    DynamicModule,
-    Global,
-    Inject,
-    Injectable,
-    Module,
-    UnauthorizedException
-} from '@nestjs/common'
+import { DynamicModule, Inject, Injectable, Module, UnauthorizedException } from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
-import { CacheModuleOptions, generateShortId, millisecsToString, notUsed } from 'common'
+import { generateShortId, millisecsToString, notUsed, RedisModule } from 'common'
 import Redis from 'ioredis'
 
 export interface AuthTokenPayload {
@@ -111,73 +104,26 @@ export function InjectJwtAuth(name: string): ParameterDecorator {
     return Inject(JwtAuthService.getToken(name))
 }
 
-@Global()
+type JwtAuthFactory = { auth: AuthConfig; prefix: string }
+
 @Module({})
 export class JwtAuthModule {
-    static getRedisToken(name: string) {
-        return `JWT_AUTH_REDIS_${name}`
-    }
-
-    static getPrefixToken(name: string) {
-        return `JWT_AUTH_PREFIX_${name}`
-    }
-
-    static forRootAsync(
-        configKey: string,
-        options: {
-            useFactory: (...args: any[]) => Promise<CacheModuleOptions> | CacheModuleOptions
-            inject: any[]
-        }
-    ): DynamicModule {
-        const redisProvider = {
-            provide: JwtAuthModule.getRedisToken(configKey),
-            useFactory: async (...args: any[]) => {
-                const { connection } = await options.useFactory(...args)
-                return connection
-            },
-            inject: options.inject
-        }
-        const prefixProvider = {
-            provide: JwtAuthModule.getPrefixToken(configKey),
-            useFactory: async (...args: any[]) => {
-                const { prefix } = await options.useFactory(...args)
-                return prefix
-            },
-            inject: options.inject
-        }
-
-        return {
-            module: JwtAuthModule,
-            providers: [redisProvider, prefixProvider],
-            exports: [redisProvider, prefixProvider]
-        }
-    }
-
-    static registerJwtAuth(options: {
-        configKey: string
+    static register(options: {
         name: string
-        useFactory: (...args: any[]) => Promise<{ auth: AuthConfig }> | { auth: AuthConfig }
-        inject: any[]
+        redisName: string
+        useFactory: (...args: any[]) => Promise<JwtAuthFactory> | JwtAuthFactory
+        inject?: any[]
     }): DynamicModule {
-        const { configKey, name, useFactory, inject } = options
+        /* prefix를 useFactory에서 받아야 런타임에 생성된다. */
+        const { name, redisName, useFactory, inject } = options
 
         const cacheProvider = {
             provide: JwtAuthService.getToken(name),
-            useFactory: async (
-                jwtService: JwtService,
-                redis: Redis,
-                prefix: string,
-                ...args: any[]
-            ) => {
-                const { auth } = await useFactory(...args)
+            useFactory: async (jwtService: JwtService, redis: Redis, ...args: any[]) => {
+                const { auth, prefix } = await useFactory(...args)
                 return new JwtAuthService(jwtService, auth, redis, prefix + ':' + name)
             },
-            inject: [
-                JwtService,
-                JwtAuthModule.getRedisToken(configKey),
-                JwtAuthModule.getPrefixToken(configKey),
-                ...inject
-            ]
+            inject: [JwtService, RedisModule.getToken(redisName), ...(inject ?? [])]
         }
 
         return {

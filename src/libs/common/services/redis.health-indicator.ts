@@ -14,8 +14,10 @@ export class RedisHealthIndicator extends HealthIndicator {
             if (pong === 'PONG') {
                 return this.getStatus(key, true)
             }
+            /* istanbul ignore next */
             throw new Error('Redis ping failed')
         } catch (_error) {
+            /* istanbul ignore next */
             throw new HealthCheckError('RedisHealthIndicator failed', this.getStatus(key, false))
         }
     }
