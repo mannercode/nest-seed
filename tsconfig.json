@@ -14,13 +14,12 @@
         "forceConsistentCasingInFileNames": true,
         "noFallthroughCasesInSwitch": true,
         "target": "ES2021",
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
         "sourceMap": true,
         "outDir": "./_output/build",
         "baseUrl": ".",
         "paths": {
-            "services/*": [
-                "src/app/services/*"
-            ],
             "common": [
                 "src/libs/common/index"
             ],
@@ -29,6 +28,12 @@
             ],
             "config": [
                 "src/app/config/index"
+            ],
+            "services/*": [
+                "src/app/services/*"
+            ],
+            "app/*": [
+                "src/app/*"
             ]
         }
     },

@@ -14,7 +14,7 @@ import {
     toDtos
 } from './mongoose.repository.fixture'
 
-describe('MongoRepository', () => {
+describe('MongooseRepository', () => {
     let testContext: HttpTestContext
     let repository: SamplesRepository
 
@@ -34,7 +34,6 @@ describe('MongoRepository', () => {
         it('should successfully create a document', async () => {
             const newDoc = repository.newDocument()
             newDoc.name = 'document name'
-            newDoc.password = 'password'
             await newDoc.save()
 
             const findDoc = await repository.findById(newDoc.id)
@@ -50,12 +49,10 @@ describe('MongoRepository', () => {
         it('should successfully update a document', async () => {
             const newDoc = repository.newDocument()
             newDoc.name = 'name1'
-            newDoc.password = 'password'
             await newDoc.save()
 
             const updateDoc = (await repository.findById(newDoc.id))!
             updateDoc.name = 'name2'
-            updateDoc.password = 'password'
             await updateDoc!.save()
 
             const findDoc = await repository.findById(newDoc.id)
@@ -73,7 +70,6 @@ describe('MongoRepository', () => {
             ].map((data) => {
                 const doc = repository.newDocument()
                 doc.name = data.name
-                doc.password = 'password'
                 return doc
             })
 
@@ -181,7 +177,7 @@ describe('MongoRepository', () => {
         })
 
         it('should return true if the IDs does exist', async () => {
-            const exists = await repository.existByIds(pickItems(samples, 'id'))
+            const exists = await repository.existByIds(pickIds(samples))
             expect(exists).toBeTruthy()
         })
 
@@ -202,7 +198,7 @@ describe('MongoRepository', () => {
         it('should find a document by ID', async () => {
             const doc = await repository.findById(sample.id)
 
-            expect(doc?.toJSON()).toEqual(sample)
+            expect(toDto(doc!)).toEqual(sample)
         })
 
         it('should return null if the ID does not exist', async () => {
@@ -238,13 +234,13 @@ describe('MongoRepository', () => {
 
         beforeEach(async () => {
             const doc = await createSample(repository)
-            sample = doc.toJSON<SampleDto>()
+            sample = toDto(doc)
         })
 
         it('should find a document by ID', async () => {
             const doc = await repository.getById(sample.id)
 
-            expect(doc?.toJSON()).toEqual(sample)
+            expect(toDto(doc)).toEqual(sample)
         })
 
         it('should throw an exception if the ID does not exist', async () => {
@@ -281,7 +277,7 @@ describe('MongoRepository', () => {
 
         beforeEach(async () => {
             const doc = await createSample(repository)
-            sample = doc.toJSON<SampleDto>()
+            sample = toDto(doc)
         })
 
         it('should find a document by ID', async () => {
@@ -321,17 +317,6 @@ describe('MongoRepository', () => {
             const deletedCount = await repository.deleteByIds([nullObjectId])
 
             expect(deletedCount).toEqual(0)
-        })
-    })
-
-    describe('toJSON', () => {
-        it('should omit the password field when converting to JSON', async () => {
-            const newDoc = repository.newDocument()
-            newDoc.name = 'document name'
-            newDoc.password = 'password'
-            const json = newDoc.toJSON()
-
-            expect(json.password).toBeUndefined()
         })
     })
 })

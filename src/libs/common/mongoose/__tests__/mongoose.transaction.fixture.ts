@@ -1,23 +1,16 @@
 import { Injectable, Module } from '@nestjs/common'
 import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
-import {
-    createMongooseSchema,
-    createSchemaOptions,
-    generateShortId,
-    MongooseRepository,
-    MongooseSchema,
-    padNumber
-} from 'common'
+import { createMongooseSchema, generateShortId, MongooseRepository, MongooseSchema } from 'common'
 import { HydratedDocument, Model } from 'mongoose'
 import { createHttpTestContext } from 'testlib'
 
-@Schema(createSchemaOptions({ json: { includes: {} } }))
+@Schema()
 export class Sample extends MongooseSchema {
     @Prop({ required: true })
     name: string
 }
 
-export const SampleSchema = createMongooseSchema(Sample, {})
+export const SampleSchema = createMongooseSchema(Sample)
 export type SampleDocument = HydratedDocument<Sample>
 
 @Injectable()
@@ -47,18 +40,3 @@ export async function createFixture(uri: string) {
 
     return { testContext, repository }
 }
-
-export const createSample = (repository: SamplesRepository) => {
-    const doc = repository.newDocument()
-    doc.name = 'Sample-Name'
-    return doc.save()
-}
-
-export const createSamples = async (repository: SamplesRepository) =>
-    Promise.all(
-        Array.from({ length: 20 }, async (_, index) => {
-            const doc = repository.newDocument()
-            doc.name = `Sample-${padNumber(index, 3)}`
-            return doc.save()
-        })
-    )

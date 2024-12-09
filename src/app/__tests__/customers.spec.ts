@@ -1,5 +1,5 @@
 import { expect } from '@jest/globals'
-import { CustomerDto } from 'services/customers'
+import { CustomerDto } from 'services/core'
 import { expectEqualUnsorted, HttpTestClient, nullObjectId } from 'testlib'
 import {
     closeFixture,
@@ -82,11 +82,14 @@ describe('Customers Module', () => {
         })
 
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client.patch(`/customers/${nullObjectId}`).body({}).notFound({
-                error: 'Not Found',
-                message: `Document with ID ${nullObjectId} not found`,
-                statusCode: 404
-            })
+            await client
+                .patch(`/customers/${nullObjectId}`)
+                .body({})
+                .notFound({
+                    error: 'Not Found',
+                    message: `Document with ID ${nullObjectId} not found`,
+                    statusCode: 404
+                })
         })
     })
 

@@ -1,9 +1,13 @@
 import { Injectable, LoggerService } from '@nestjs/common'
-import * as winston from 'winston'
+import winston from 'winston'
 
 @Injectable()
 export class AppLoggerService implements LoggerService {
     constructor(private logger: winston.Logger) {}
+
+    onModuleDestroy() {
+        this.logger.close()
+    }
 
     log(message: any, ...optionalParams: any[]) {
         this.logger.info(message, optionalParams)

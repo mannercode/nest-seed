@@ -1,5 +1,5 @@
-import * as fs from 'fs/promises'
-import * as net from 'net'
+import fs from 'fs/promises'
+import net from 'net'
 
 export const nullUUID = '00000000000000000000000000000000'
 export const nullObjectId = '000000000000000000000000'

@@ -1,8 +1,8 @@
 import { HttpStatus } from '@nestjs/common'
-import { jsonToObject, stringToBytes } from 'common'
+import { jsonToObject, Byte } from 'common'
 import { createWriteStream } from 'fs'
 import { reject } from 'lodash'
-import * as superagent from 'superagent'
+import superagent from 'superagent'
 import { parseEventMessage } from './utils'
 
 export class HttpTestClient {
@@ -76,7 +76,7 @@ export class HttpTestClient {
         const writeStream = createWriteStream(downloadFilePath)
 
         // 기본값인 200MB 제한을 해제함
-        this.client.maxResponseSize(stringToBytes('1TB'))
+        this.client.maxResponseSize(Byte.fromString('1TB'))
 
         this.client.buffer().parse((res, callback) => {
             res.on('data', (chunk: any) => {

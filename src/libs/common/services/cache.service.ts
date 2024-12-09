@@ -1,17 +1,16 @@
-import { getRedisConnectionToken, RedisModule, RedisModuleOptions } from '@nestjs-modules/ioredis'
-import { DynamicModule, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
-import { Exception } from 'common'
+import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
+import { Exception, RedisModule } from 'common'
 import Redis from 'ioredis'
 
 @Injectable()
-export class CacheService implements OnModuleDestroy {
+export class CacheService {
     constructor(
         private readonly redis: Redis,
-        public readonly prefix: string
+        private readonly prefix: string
     ) {}
 
-    async onModuleDestroy() {
-        await this.redis.quit()
+    static getToken(name: string) {
+        return `CacheService_${name}`
     }
 
     private getKey(key: string) {
@@ -44,83 +43,44 @@ export class CacheService implements OnModuleDestroy {
             script,
             keys.length,
             ...keys.map(this.getKey.bind(this)),
+            this.prefix,
             ...args
         )
         return result
     }
 }
 
-export interface CacheNodeType {
-    host: string
-    port: number
+/* istanbul ignore next */
+export function InjectCache(name: string): ParameterDecorator {
+    return Inject(CacheService.getToken(name))
 }
 
-export interface CacheModuleOptions {
-    type: 'cluster' | 'single'
-    nodes: CacheNodeType[]
-    prefix: string
-    password?: string
-}
+type CacheFactory = { prefix: string }
 
 @Module({})
 export class CacheModule {
-    static forRootAsync(
-        options: {
-            useFactory: (...args: any[]) => Promise<CacheModuleOptions> | CacheModuleOptions
-            inject?: any[]
-        },
+    static register(options: {
         name: string
-    ): DynamicModule {
+        redisName: string
+        useFactory: (...args: any[]) => Promise<CacheFactory> | CacheFactory
+        inject?: any[]
+    }): DynamicModule {
+        /* prefix를 useFactory에서 받아야 런타임에 생성된다. */
+        const { name, redisName, useFactory, inject } = options
+
+        const provider = {
+            provide: CacheService.getToken(name),
+            useFactory: async (redis: Redis, ...args: any[]) => {
+                const { prefix } = await useFactory(...args)
+                return new CacheService(redis, prefix + ':' + name)
+            },
+            inject: [RedisModule.getToken(redisName), ...(inject ?? [])]
+        }
+
         return {
             module: CacheModule,
-            imports: [
-                RedisModule.forRootAsync(
-                    {
-                        useFactory: async (...args: any[]) => {
-                            const { type, nodes, password } = await options.useFactory(...args)
-
-                            let redisOptions: RedisModuleOptions = {
-                                type: 'cluster',
-                                nodes,
-                                options: { redisOptions: { password } }
-                            }
-
-                            /* istanbul ignore if */
-                            if (type === 'single') {
-                                const { host, port } = nodes[0]
-
-                                redisOptions = {
-                                    type: 'single',
-                                    url: `redis://${host}:${port}`,
-                                    options: { password }
-                                }
-                            }
-
-                            return redisOptions
-                        },
-                        inject: options.inject
-                    },
-                    name
-                )
-            ],
-            providers: [
-                {
-                    provide: CacheService,
-                    useFactory: (redis: Redis, prefix: string) => {
-                        return new CacheService(redis, prefix)
-                    },
-                    inject: [getRedisConnectionToken(name), 'PREFIX']
-                },
-                {
-                    provide: 'PREFIX',
-                    useFactory: async (...args: any[]) => {
-                        const { prefix } = await options.useFactory(...args)
-                        return prefix
-                    },
-                    inject: options.inject || []
-                }
-            ],
-            exports: [CacheService]
+            providers: [provider],
+            exports: [provider]
         }
     }
 }

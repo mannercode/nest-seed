@@ -5,12 +5,7 @@ const config: Config = {
     ...baseOption,
     rootDir: '.',
     roots: ['<rootDir>/src/libs/common'],
-    collectCoverageFrom: [
-        'src/libs/common/**/*.ts',
-        '!**/main.ts',
-        '!**/index.ts',
-        '!**/*.module.ts'
-    ]
+    collectCoverageFrom: ['src/libs/common/**/*.ts', '!**/index.ts', '!**/*.module.ts']
 }
 
 export default config

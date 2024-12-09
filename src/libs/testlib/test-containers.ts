@@ -1,4 +1,4 @@
-import { CacheNodeType } from 'common'
+import { RedisNode } from 'common'
 
 function getString(key: string): string {
     const value = process.env[key]
@@ -18,7 +18,7 @@ function getNumber(key: string): number {
 }
 
 export interface RedisConnectionContext {
-    nodes: CacheNodeType[]
+    nodes: RedisNode[]
     password: string
 }
 

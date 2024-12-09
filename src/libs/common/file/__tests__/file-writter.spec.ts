@@ -1,5 +1,5 @@
 import { Path, writeFile } from 'common'
-import * as fs from 'fs/promises'
+import fs from 'fs/promises'
 
 describe('FileWriter', () => {
     let tempDir: string

@@ -1,5 +1,5 @@
 import { AppLoggerService } from 'common'
-import * as winston from 'winston'
+import winston from 'winston'
 
 describe('AppLoggerService', () => {
     let appLoggerService: AppLoggerService
@@ -17,7 +17,7 @@ describe('AppLoggerService', () => {
     })
 
     afterEach(() => {
-        winstonLogger.close()
+        appLoggerService.onModuleDestroy()
         jest.restoreAllMocks()
     })
 

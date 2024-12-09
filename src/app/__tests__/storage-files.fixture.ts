@@ -1,12 +1,13 @@
 import { ConfigService } from '@nestjs/config'
-import { Path, stringToBytes } from 'common'
+import { AppModule } from 'app/app.module'
+import { configureApp } from 'app/main'
+import { Path, Byte } from 'common'
 import { AppConfigService } from 'config'
 import { writeFile } from 'fs/promises'
-import { createDummyFile, createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
-import { AppModule, configureApp } from '../app.module'
-import { StorageFilesService } from 'services/storage-files'
+import { StorageFilesService } from 'services/infra'
+import { createDummyFile, createHttpTestContext, HttpTestContext } from 'testlib'
 
-const maxFileSizeBytes = stringToBytes('50MB')
+const maxFileSizeBytes = Byte.fromString('50MB')
 
 export interface SharedFixture {
     tempDir: string

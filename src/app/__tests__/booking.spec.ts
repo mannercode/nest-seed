@@ -1,10 +1,10 @@
 import { convertDateToString, pickIds } from 'common'
-import { getSeatCount } from 'services/theaters'
-import { TicketDto } from 'services/tickets'
+import { TicketDto } from 'services/core'
+import { Seatmap } from 'services/types'
 import { HttpTestClient } from 'testlib'
 import { closeFixture, createFixture, Fixture } from './booking.fixture'
 
-describe('Booking 시나리오 테스트', () => {
+describe('Scenario: Booking', () => {
     let fixture: Fixture
     let client: HttpTestClient
     let movieId: string
@@ -41,7 +41,7 @@ describe('Booking 시나리오 테스트', () => {
                 ].map((item) => expect.objectContaining(item))
             )
             theaterId = theaters[0].id
-            seatCount = getSeatCount(theaters[0].seatmap)
+            seatCount = Seatmap.getSeatCount(theaters[0].seatmap)
         })
     })
 

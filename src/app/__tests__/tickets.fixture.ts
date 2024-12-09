@@ -1,7 +1,8 @@
+import { AppModule } from 'app/app.module'
+import { configureApp } from 'app/main'
 import { omit } from 'lodash'
-import { TicketCreateDto, TicketDto, TicketsService, TicketStatus } from 'services/tickets'
+import { TicketCreateDto, TicketDto, TicketsService, TicketStatus } from 'services/core'
 import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
-import { AppModule, configureApp } from '../app.module'
 
 export interface Fixture {
     testContext: HttpTestContext
@@ -19,25 +20,24 @@ export async function closeFixture(fixture: Fixture) {
     await fixture.testContext.close()
 }
 
+export const createTicketDto = (overrides = {}) => ({
+    batchId: nullObjectId,
+    movieId: nullObjectId,
+    theaterId: nullObjectId,
+    showtimeId: nullObjectId,
+    status: TicketStatus.available,
+    seat: { block: '1b', row: '1r', seatnum: 1 },
+    ...overrides
+})
+
 export const createTicketDtos = (overrides = {}, length: number = 100) => {
     const createDtos: TicketCreateDto[] = []
     const expectedDtos: TicketDto[] = []
 
     for (let i = 0; i < length; i++) {
-        const createDto = {
-            batchId: nullObjectId,
-            movieId: nullObjectId,
-            theaterId: nullObjectId,
-            showtimeId: nullObjectId,
-            status: TicketStatus.available,
-            seat: { block: '1b', row: '1r', seatnum: 1 },
-            ...overrides
-        }
+        const createDto = createTicketDto(overrides)
 
-        const expectedDto = {
-            id: expect.any(String),
-            ...omit(createDto, 'batchId')
-        }
+        const expectedDto = { id: expect.any(String), ...omit(createDto, 'batchId') }
 
         createDtos.push(createDto)
         expectedDtos.push(expectedDto)

@@ -1,9 +1,15 @@
+import { AppModule } from 'app/app.module'
+import { configureApp } from 'app/main'
 import { addMinutes, jsonToObject } from 'common'
-import { MovieDto, MoviesService } from 'services/movies'
-import { ShowtimeCreateDto, ShowtimesService } from 'services/showtimes'
-import { TheaterDto, TheatersService } from 'services/theaters'
+import {
+    MovieDto,
+    MoviesService,
+    ShowtimeCreateDto,
+    ShowtimesService,
+    TheaterDto,
+    TheatersService
+} from 'services/core'
 import { createHttpTestContext, HttpTestClient, HttpTestContext, nullObjectId } from 'testlib'
-import { AppModule, configureApp } from '../app.module'
 import { createMovie } from './movies.fixture'
 import { createTheater } from './theaters.fixture'
 
@@ -54,7 +60,11 @@ export const monitorEvents = (client: HttpTestClient, waitStatuses: string[]) =>
             const result = jsonToObject(JSON.parse(data))
 
             if (['complete', 'fail', 'error'].includes(result.status)) {
-                waitStatuses.includes(result.status) ? resolve(result) : reject(result)
+                if (waitStatuses.includes(result.status)) {
+                    resolve(result)
+                } else {
+                    reject(result)
+                }
             } else if (!result.status) {
                 reject(data)
             }

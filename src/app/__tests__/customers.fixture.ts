@@ -1,8 +1,9 @@
+import { AppModule } from 'app/app.module'
+import { CustomerJwtAuthGuard } from 'app/controllers'
+import { configureApp } from 'app/main'
 import { omit } from 'lodash'
-import { CustomersService } from 'services/customers'
+import { CustomersService } from 'services/core'
 import { createHttpTestContext, HttpTestContext } from 'testlib'
-import { AppModule, configureApp } from '../app.module'
-import { CustomerJwtAuthGuard } from '../controllers/guards'
 
 export interface Fixture {
     testContext: HttpTestContext

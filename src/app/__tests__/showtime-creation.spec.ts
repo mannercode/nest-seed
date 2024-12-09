@@ -1,6 +1,5 @@
-import { MovieDto } from 'services/movies'
-import { ShowtimeDto } from 'services/showtimes'
-import { getSeatCount, TheaterDto } from 'services/theaters'
+import { MovieDto, ShowtimeDto, TheaterDto } from 'services/core'
+import { Seatmap } from 'services/types'
 import { expectEqualUnsorted, HttpTestClient, nullObjectId } from 'testlib'
 import {
     closeFixture,
@@ -99,7 +98,7 @@ describe('ShowtimeCreation Module', () => {
 
             expect(batchId).toBeDefined()
 
-            const seatCount = getSeatCount(theater.seatmap)
+            const seatCount = Seatmap.getSeatCount(theater.seatmap)
             const showtimeCreatedCount = theaterIds.length * startTimes.length
             const ticketCreatedCount = showtimeCreatedCount * seatCount
             await expect(monitorPromise).resolves.toEqual({

@@ -1,5 +1,6 @@
 import { TestingModule } from '@nestjs/testing'
-import { CacheModule, CacheService, sleep } from 'common'
+import { CacheModule, CacheService, generateShortId, RedisModule, sleep } from 'common'
+import Redis from 'ioredis'
 import { createTestingModule, getRedisTestConnection } from 'testlib'
 
 describe('CacheService', () => {
@@ -11,21 +12,19 @@ describe('CacheService', () => {
 
         module = await createTestingModule({
             imports: [
-                CacheModule.forRootAsync(
-                    {
-                        useFactory: () => ({
-                            type: 'cluster',
-                            nodes: redisCtx.nodes,
-                            password: redisCtx.password,
-                            prefix: 'prefix'
-                        })
-                    },
-                    'connName'
-                )
+                RedisModule.forRootAsync({ useFactory: () => redisCtx }, 'redis'),
+                CacheModule.register({
+                    name: 'name',
+                    redisName: 'redis',
+                    useFactory: async (redis: Redis) => ({
+                        prefix: generateShortId(),
+                        connection: redis
+                    })
+                })
             ]
         })
 
-        cacheService = module.get(CacheService)
+        cacheService = module.get(CacheService.getToken('name'))
     })
 
     afterEach(async () => {
@@ -71,7 +70,7 @@ describe('CacheService', () => {
     })
 
     it('should execute Lua script and set keys correctly', async () => {
-        const script = `return redis.call('SET', KEYS[1], ARGV[1])`
+        const script = `return redis.call('SET', KEYS[1], ARGV[2])`
         const keys = ['key1']
         const args = ['value1']
 

@@ -1,12 +1,12 @@
 import { Global, Module } from '@nestjs/common'
 import { ConfigModule as NestConfigModule } from '@nestjs/config'
-import { AppConfigService, configSchema, isEnv } from 'config'
+import { AppConfigService, configSchema } from 'config'
 
 @Global()
 @Module({
     imports: [
         NestConfigModule.forRoot({
-            cache: isEnv('production'),
+            cache: true,
             ignoreEnvFile: true,
             validationSchema: configSchema,
             validationOptions: { abortEarly: false }

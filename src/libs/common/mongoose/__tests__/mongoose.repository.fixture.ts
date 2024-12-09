@@ -2,29 +2,27 @@ import { Injectable, Module } from '@nestjs/common'
 import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import {
     createMongooseSchema,
-    createSchemaOptions,
     generateShortId,
+    mapDocToDto,
     MongooseRepository,
     MongooseSchema,
-    padNumber,
-    SchemaJson
+    padNumber
 } from 'common'
 import { HydratedDocument, Model } from 'mongoose'
 import { createHttpTestContext } from 'testlib'
 
-const omits = ['password'] as const
-@Schema(createSchemaOptions({ json: { omits, includes: { timestamps: false } } }))
+@Schema({ toJSON: { virtuals: true } })
 export class Sample extends MongooseSchema {
     @Prop({ required: true })
     name: string
-
-    @Prop({ required: true })
-    password: string
 }
-
-export const SampleSchema = createMongooseSchema(Sample, {})
 export type SampleDocument = HydratedDocument<Sample>
-export type SampleDto = SchemaJson<Sample, typeof omits>
+export const SampleSchema = createMongooseSchema(Sample)
+
+export class SampleDto {
+    id: string
+    name: string
+}
 
 @Injectable()
 export class SamplesRepository extends MongooseRepository<Sample> {
@@ -63,7 +61,6 @@ export const sortByNameDescending = (documents: SampleDto[]) =>
 export const createSample = (repository: SamplesRepository) => {
     const doc = repository.newDocument()
     doc.name = 'Sample-Name'
-    doc.password = 'password'
     return doc.save()
 }
 
@@ -72,15 +69,9 @@ export const createSamples = async (repository: SamplesRepository) =>
         Array.from({ length: 20 }, async (_, index) => {
             const doc = repository.newDocument()
             doc.name = `Sample-${padNumber(index, 3)}`
-            doc.password = 'password'
             return doc.save()
         })
     )
 
-export function toDto(item: SampleDocument) {
-    return item.toJSON<SampleDto>()
-}
-
-export function toDtos(items: SampleDocument[]) {
-    return items.map((item) => toDto(item))
-}
+export const toDto = (item: SampleDocument) => mapDocToDto(item, SampleDto, ['id', 'name'])
+export const toDtos = (items: SampleDocument[]) => items.map((item) => toDto(item))

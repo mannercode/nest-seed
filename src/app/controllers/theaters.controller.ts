@@ -1,10 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UsePipes } from '@nestjs/common'
-import {
-    TheaterCreateDto,
-    TheaterQueryDto,
-    TheatersService,
-    TheaterUpdateDto
-} from 'services/theaters'
+import { TheaterCreateDto, TheaterQueryDto, TheatersService, TheaterUpdateDto } from 'services/core'
 import { DefaultPaginationPipe } from './pipes'
 
 @Controller('theaters')

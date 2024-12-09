@@ -16,11 +16,10 @@ import {
 import { Assert, AuthTokenPayload } from 'common'
 import {
     CustomerCreateDto,
-    CustomerDto,
     CustomerQueryDto,
     CustomersService,
     CustomerUpdateDto
-} from 'services/customers'
+} from 'services/core'
 import { CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
 import { DefaultPaginationPipe } from './pipes'
 

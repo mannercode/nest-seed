@@ -1,7 +1,8 @@
+import { AppModule } from 'app/app.module'
+import { configureApp } from 'app/main'
 import { addDays } from 'common'
-import { WatchRecordsService } from 'services/watch-records'
+import { WatchRecordsService } from 'services/core'
 import { HttpTestContext, createHttpTestContext, nullObjectId, testObjectId } from 'testlib'
-import { AppModule, configureApp } from '../app.module'
 
 export interface Fixture {
     testContext: HttpTestContext

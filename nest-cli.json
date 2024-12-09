@@ -5,6 +5,5 @@
         "deleteOutDir": true,
         "webpack": false
     },
-    "sourceRoot": "src",
-    "entryFile": "app/main"
+    "sourceRoot": "src"
 }

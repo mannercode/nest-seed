@@ -105,7 +105,9 @@ export abstract class TypeormRepository<Entity extends TypeormEntity> {
             qb.orderBy(`entity.${orderby.name}`, order)
         }
 
-        queryCustomizer && queryCustomizer(qb)
+        if (queryCustomizer) {
+            queryCustomizer(qb)
+        }
 
         const [items, total] = await qb.getManyAndCount()
 
