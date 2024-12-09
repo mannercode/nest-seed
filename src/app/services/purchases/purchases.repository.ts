@@ -16,7 +16,10 @@ export class PurchasesRepository extends MongooseRepository<Purchase> {
         const purchase = this.newDocument()
         purchase.customerId = objectId(createDto.customerId)
         purchase.totalPrice = createDto.totalPrice
-        purchase.items = createDto.items
+        purchase.items = createDto.items.map((item) => ({
+            ...item,
+            ticketId: objectId(item.ticketId)
+        }))
 
         await purchase.save()
 

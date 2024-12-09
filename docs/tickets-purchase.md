@@ -193,8 +193,8 @@ Customer -> Frontend: 결제 정보 입력
             ]
         }
     end note
-        Backend -> Purchases: createPurchase(body)
-            Purchases -> Purchases: newPurchase(body)
+        Backend -> Purchases: processPurchase(body)
+            Purchases -> Purchases: createPurchase(body)
             Purchases <-- Purchases: purchaseId
             Purchases ->> TicketPurchases: validatePurchaseRequest(purchaseId, items)
             activate TicketPurchases

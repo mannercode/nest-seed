@@ -3,9 +3,13 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { Purchase, PurchaseSchema } from './models'
 import { PurchasesRepository } from './purchases.repository'
 import { PurchasesService } from './purchases.service'
+import { PaymentsModule } from 'services/payments'
 
 @Module({
-    imports: [MongooseModule.forFeature([{ name: Purchase.name, schema: PurchaseSchema }], 'mongo')],
+    imports: [
+        MongooseModule.forFeature([{ name: Purchase.name, schema: PurchaseSchema }], 'mongo'),
+        PaymentsModule
+    ],
     providers: [PurchasesService, PurchasesRepository],
     exports: [PurchasesService]
 })

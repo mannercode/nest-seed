@@ -1,7 +1,8 @@
 import { CustomerDto } from 'services/customers'
 import { TicketDto } from 'services/tickets'
 import { HttpTestClient } from 'testlib'
-import { closeFixture, createFixture, Fixture } from './purchases.fixture'
+import { closeFixture, createFixture, createPurchase, Fixture } from './purchases.fixture'
+import { PurchaseDto } from 'services/purchases'
 
 describe('Purchases Module', () => {
     let fixture: Fixture
@@ -21,7 +22,7 @@ describe('Purchases Module', () => {
     })
 
     describe('POST /purchases', () => {
-        it('결제 요청을 성공적으로 처리해야 한다', async () => {
+        it('구매 요청을 성공적으로 처리해야 한다', async () => {
             const customerId = customer.id
             const totalPrice = 1000
             const items = tickets.map((ticket) => ({ type: 'ticket', ticketId: ticket.id }))
@@ -31,6 +32,7 @@ describe('Purchases Module', () => {
                 .body({ customerId, totalPrice, items })
                 .created({
                     id: expect.any(String),
+                    paymentId: expect.any(String),
                     createdAt: expect.any(Date),
                     updatedAt: expect.any(Date),
                     customerId,
@@ -41,27 +43,19 @@ describe('Purchases Module', () => {
     })
 
     describe('GET /purchases/:purchaseId', () => {
+        let purchase: PurchaseDto
+
+        beforeEach(async () => {
+            purchase = await createPurchase(fixture.purchasesService, {})
+        })
+
+        it('구매 정보를 조회해야 한다', async () => {
+            await client.get(`/purchases/${purchase.id}`).ok(purchase)
+        })
+
         it('결제 정보를 조회해야 한다', async () => {
-            const customerId = customer.id
-            const totalPrice = 1000
-            const items = tickets.map((ticket) => ({ type: 'ticket', ticketId: ticket.id }))
-
-            const { body } = await client
-                .post('/purchases')
-                .body({ customerId, totalPrice, items })
-                .created()
-
-            await client
-                .get(`/purchases/${body.id}`)
-                .body({ customerId, totalPrice, items })
-                .ok({
-                    id: body.id,
-                    createdAt: expect.any(Date),
-                    updatedAt: expect.any(Date),
-                    customerId,
-                    totalPrice,
-                    items
-                })
+            const payment = await fixture.paymentsService.getPayment(purchase.paymentId)
+            expect(payment.amount).toEqual(purchase.totalPrice)
         })
     })
 })

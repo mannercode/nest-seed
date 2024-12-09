@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer'
 import { IsArray, IsNotEmpty, IsPositive, IsString, ValidateNested } from 'class-validator'
 import { PurchaseItem } from '../models'
+import { PurchaseItemDto } from './purchase.dto'
 
 export class PurchaseCreateDto {
     @IsString()
@@ -15,5 +16,5 @@ export class PurchaseCreateDto {
     @IsNotEmpty()
     @ValidateNested({ each: true })
     @Type(() => PurchaseItem)
-    items: PurchaseItem[]
+    items: PurchaseItemDto[]
 }

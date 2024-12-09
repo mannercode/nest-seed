@@ -4,13 +4,13 @@ import { MongooseSchema, createMongooseSchema } from 'common'
 import { Mongoose } from 'config'
 import { HydratedDocument, Types } from 'mongoose'
 
-export enum PurchaseType {
+export enum PurchaseItemType {
     ticket = 'ticket'
 }
 
 export class PurchaseItem {
-    @IsEnum(PurchaseType)
-    type: PurchaseType
+    @IsEnum(PurchaseItemType)
+    type: PurchaseItemType
 
     @IsString()
     @IsNotEmpty()
@@ -21,6 +21,9 @@ export class PurchaseItem {
 export class Purchase extends MongooseSchema {
     @Prop({ required: true })
     customerId: Types.ObjectId
+
+    @Prop({ default: null })
+    paymentId: Types.ObjectId
 
     @Prop({ required: true })
     totalPrice: number

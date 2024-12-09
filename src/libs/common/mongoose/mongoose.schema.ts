@@ -86,7 +86,7 @@ export function createMongooseSchema<T>(cls: Type<T>) {
     return schema
 }
 
-type SchemaJson<T> = { [K in keyof T]: T[K] extends Types.ObjectId ? string : T[K] }
+export type SchemaJson<T> = { [K in keyof T]: T[K] extends Types.ObjectId ? string : T[K] }
 export function mapDocToDto<
     DOC extends object,
     DTO extends object,
