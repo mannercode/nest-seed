@@ -1,5 +1,11 @@
 import { SchemaOptions } from 'mongoose'
 
+export const isTest = () => process.env.NODE_ENV === 'test'
+
+export class Routes {
+    static StorageFiles = '/storage-files' // MovieDto에서 경로를 참조한다.
+}
+
 export class MongooseConfig {
     static connName = 'mongo'
     static schemaOptions: SchemaOptions = {

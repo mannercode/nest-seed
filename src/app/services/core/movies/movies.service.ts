@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { mapDocToDto, MethodLog, pickIds } from 'common'
-import { STORAGE_FILES_ROUTE } from 'config'
+import { Routes } from 'config'
 import { StorageFileCreateDto, StorageFilesService } from 'services/infra'
 import { MovieCreateDto, MovieDto, MovieQueryDto, MovieUpdateDto } from './dtos'
 import { MovieDocument } from './models'
@@ -69,7 +69,7 @@ export class MoviesService {
             'director',
             'rating'
         ])
-        dto.images = movie.imageFileIds.map((id) => `${STORAGE_FILES_ROUTE}/${id.toString()}`)
+        dto.images = movie.imageFileIds.map((id) => `${Routes.StorageFiles}/${id.toString()}`)
 
         return dto
     }

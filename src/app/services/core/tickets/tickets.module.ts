@@ -7,7 +7,10 @@ import { TicketsService } from './tickets.service'
 
 @Module({
     imports: [
-        MongooseModule.forFeature([{ name: Ticket.name, schema: TicketSchema }], MongooseConfig.connName)
+        MongooseModule.forFeature(
+            [{ name: Ticket.name, schema: TicketSchema }],
+            MongooseConfig.connName
+        )
     ],
     providers: [TicketsService, TicketsRepository],
     exports: [TicketsService]

@@ -2,8 +2,6 @@ import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import Joi from 'joi'
 
-export const isTest = () => process.env.NODE_ENV === 'test'
-
 export const configSchema = Joi.object({
     NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
     HTTP_REQUEST_PAYLOAD_LIMIT: Joi.string().required(),
@@ -87,7 +85,7 @@ export class AppConfigService {
             port: this.getNumber('MONGO_DB_PORT'),
             replica: this.getString('MONGO_DB_REPLICA_NAME'),
             user: this.getString('MONGO_DB_USERNAME'),
-            pass: this.getString('MONGO_DB_PASSWORD'),
+            password: this.getString('MONGO_DB_PASSWORD'),
             database: this.getString('MONGO_DB_DATABASE')
         }
     }
@@ -97,10 +95,6 @@ export class AppConfigService {
             maxFileSizeBytes: this.getNumber('FILE_UPLOAD_MAX_FILE_SIZE_BYTES'),
             maxFilesPerUpload: this.getNumber('FILE_UPLOAD_MAX_FILES_PER_UPLOAD'),
             allowedMimeTypes: this.getString('FILE_UPLOAD_ALLOWED_FILE_TYPES').split(',')
-
-            // allowedMimeTypes: this.configService
-            //     .get<string>('FILE_UPLOAD_ALLOWED_FILE_TYPES')
-            //     .split(',')
         }
     }
 

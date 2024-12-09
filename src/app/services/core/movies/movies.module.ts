@@ -8,7 +8,10 @@ import { MoviesService } from './movies.service'
 
 @Module({
     imports: [
-        MongooseModule.forFeature([{ name: Movie.name, schema: MovieSchema }], MongooseConfig.connName),
+        MongooseModule.forFeature(
+            [{ name: Movie.name, schema: MovieSchema }],
+            MongooseConfig.connName
+        ),
         StorageFilesModule
     ],
     providers: [MoviesService, MoviesRepository],

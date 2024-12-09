@@ -8,8 +8,9 @@ import { AppConfigService, isTest, MongooseConfig } from 'config'
         NestMongooseModule.forRootAsync({
             connectionName: MongooseConfig.connName,
             useFactory: async (config: AppConfigService) => {
-                const { user, pass, host1, host2, host3, port, replica, database } = config.mongo
-                const uri = `mongodb://${user}:${pass}@${host1}:${port},${host2}:${port},${host3}:${port}/?replicaSet=${replica}`
+                const { user, password, host1, host2, host3, port, replica, database } =
+                    config.mongo
+                const uri = `mongodb://${user}:${password}@${host1}:${port},${host2}:${port},${host3}:${port}/?replicaSet=${replica}`
                 const dbName = isTest() ? 'test_' + generateShortId() : database
 
                 return {
