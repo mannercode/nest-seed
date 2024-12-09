@@ -1,17 +1,28 @@
-import { CustomerDto, CustomersService } from 'services/customers'
-import { MoviesService } from 'services/movies'
-import { ShowtimeDto, ShowtimesService } from 'services/showtimes'
-import { getAllSeats, TheaterDto, TheatersService } from 'services/theaters'
-import { TicketDto, TicketsService, TicketStatus } from 'services/tickets'
+import { AppModule } from 'app/app.module'
+import { configureApp } from 'app/main'
+import {
+    CustomerDto,
+    CustomersService,
+    MoviesService,
+    PurchaseCreateDto,
+    PurchaseItemType,
+    PurchasesService,
+    ShowtimeDto,
+    ShowtimesService,
+    TheaterDto,
+    TheatersService,
+    TicketDto,
+    TicketsService,
+    TicketStatus
+} from 'services/core'
+import { PaymentsService } from 'services/infra'
+import { Seatmap } from 'services/types'
 import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
-import { AppModule, configureApp } from '../app.module'
 import { createCustomer } from './customers.fixture'
 import { createMovie } from './movies.fixture'
 import { createShowtimeDto, createShowtimes } from './showtimes.fixture'
 import { createTheater } from './theaters.fixture'
 import { createTicketDto, createTickets } from './tickets.fixture'
-import { PurchaseCreateDto, PurchasesService, PurchaseItemType } from 'services/purchases'
-import { PaymentsService } from 'services/payments'
 
 export interface Fixture {
     testContext: HttpTestContext
@@ -55,7 +66,7 @@ const createAllTickets = async (
     theater: TheaterDto,
     showtime: ShowtimeDto
 ) => {
-    const createDtos = getAllSeats(theater.seatmap).map((seat) =>
+    const createDtos = Seatmap.getAllSeats(theater.seatmap).map((seat) =>
         createTicketDto({
             movieId: showtime.movieId,
             theaterId: showtime.theaterId,

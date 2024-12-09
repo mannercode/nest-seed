@@ -1,9 +1,10 @@
 import { BullModule } from '@nestjs/bullmq'
 import { Module } from '@nestjs/common'
 import { CacheModule, EventModule, generateShortId, JwtAuthModule, RedisModule } from 'common'
-import { AppConfigService, isEnv } from 'config'
+import { AppConfigService, isTest } from 'config'
 import Redis from 'ioredis'
 import { ConfigModule } from './config.module'
+import { HealthModule } from './health.module'
 import { HttpModule } from './http.module'
 import { LoggerModule } from './logger.module'
 import { MongooseModule } from './mongoose.module'
@@ -13,6 +14,7 @@ import { MulterModule } from './multer.module'
     imports: [
         ConfigModule,
         EventModule,
+        HealthModule,
         HttpModule,
         LoggerModule,
         MongooseModule,
@@ -23,26 +25,26 @@ import { MulterModule } from './multer.module'
         ),
         CacheModule.forRootAsync('cache', {
             useFactory: async (redis: Redis) => ({
-                prefix: isEnv('test') ? `cache:${generateShortId()}` : 'cache',
+                prefix: isTest() ? `cache:${generateShortId()}` : 'cache',
                 connection: redis
             }),
             inject: [RedisModule.getToken('redis')]
         }),
         JwtAuthModule.forRootAsync('jwtauth', {
             useFactory: async (redis: Redis) => ({
-                prefix: isEnv('test') ? `jwtauth:${generateShortId()}` : 'jwtauth',
+                prefix: isTest() ? `jwtauth:${generateShortId()}` : 'jwtauth',
                 connection: redis
             }),
             inject: [RedisModule.getToken('redis')]
         }),
         BullModule.forRootAsync('queue', {
             useFactory: async (redis: Redis) => ({
-                prefix: isEnv('test') ? `{queue:${generateShortId()}}` : '{queue}',
+                prefix: isTest() ? `{queue:${generateShortId()}}` : '{queue}',
                 connection: redis
             }),
             inject: [RedisModule.getToken('redis')]
         })
     ],
-    exports: [MulterModule]
+    exports: [MulterModule, HealthModule]
 })
 export class CoreModule {}

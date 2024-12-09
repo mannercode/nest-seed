@@ -1,6 +1,6 @@
 import { convertDateToString, pickIds } from 'common'
-import { getSeatCount } from 'services/theaters'
-import { TicketDto } from 'services/tickets'
+import { TicketDto } from 'services/core'
+import { Seatmap } from 'services/types'
 import { HttpTestClient } from 'testlib'
 import { closeFixture, createFixture, Fixture } from './booking.fixture'
 
@@ -41,7 +41,7 @@ describe('Scenario: Booking', () => {
                 ].map((item) => expect.objectContaining(item))
             )
             theaterId = theaters[0].id
-            seatCount = getSeatCount(theaters[0].seatmap)
+            seatCount = Seatmap.getSeatCount(theaters[0].seatmap)
         })
     })
 

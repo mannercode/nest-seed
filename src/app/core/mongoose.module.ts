@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule as NestMongooseModule } from '@nestjs/mongoose'
 import { generateShortId } from 'common'
-import { AppConfigService, isEnv } from 'config'
-import { SchemaOptions } from 'mongoose'
+import { AppConfigService, isTest } from 'config'
 
 @Module({
     imports: [
@@ -11,7 +10,7 @@ import { SchemaOptions } from 'mongoose'
             useFactory: async (config: AppConfigService) => {
                 const { user, pass, host1, host2, host3, port, replica, database } = config.mongo
                 const uri = `mongodb://${user}:${pass}@${host1}:${port},${host2}:${port},${host3}:${port}/?replicaSet=${replica}`
-                const dbName = isEnv('test') ? 'test_' + generateShortId() : database
+                const dbName = isTest() ? 'test_' + generateShortId() : database
 
                 return {
                     uri,

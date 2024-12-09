@@ -1,5 +1,5 @@
 import { generateShortId, sleep } from 'common'
-import { TicketHoldingService } from 'services/ticket-holding'
+import { TicketHoldingService } from 'services/core'
 import { closeFixture, createFixture, Fixture } from './ticket-holding.fixture'
 
 describe('TicketHolding Module', () => {

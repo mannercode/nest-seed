@@ -1,7 +1,8 @@
+import { AppModule } from 'app/app.module'
+import { configureApp } from 'app/main'
 import { omit } from 'lodash'
-import { ShowtimeCreateDto, ShowtimeDto, ShowtimesService } from 'services/showtimes'
+import { ShowtimeCreateDto, ShowtimeDto, ShowtimesService } from 'services/core'
 import { HttpTestContext, createHttpTestContext, nullObjectId } from 'testlib'
-import { AppModule, configureApp } from '../app.module'
 
 export interface Fixture {
     testContext: HttpTestContext

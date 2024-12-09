@@ -1,7 +1,7 @@
 import { AppConfigService } from 'config'
+import { CustomerDto } from 'services/core'
 import { HttpTestClient } from 'testlib'
 import { closeFixture, createFixture, Fixture } from './customers-auth.fixture'
-import { CustomerDto } from 'services/customers'
 
 describe('Customer Authentication', () => {
     let fixture: Fixture
@@ -26,10 +26,13 @@ describe('Customer Authentication', () => {
 
     describe('POST /login', () => {
         it('로그인에 성공하면 인증 토큰을 반환해야 한다', async () => {
-            await client.post('/customers/login').body({ email, password }).ok({
-                accessToken: expect.any(String),
-                refreshToken: expect.any(String)
-            })
+            await client
+                .post('/customers/login')
+                .body({ email, password })
+                .ok({
+                    accessToken: expect.any(String),
+                    refreshToken: expect.any(String)
+                })
         })
 
         it('비밀번호가 틀리면 UNAUTHORIZED(401)를 반환해야 한다', async () => {

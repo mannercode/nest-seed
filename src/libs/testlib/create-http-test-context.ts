@@ -16,7 +16,7 @@ export interface HttpTestContext {
 export async function createHttpTestContext(
     metadata: ModuleMetadataEx,
     configureApp?: (app: INestApplication<any>) => void
-): Promise<HttpTestContext> {
+) {
     const module = await createTestingModule(metadata)
 
     const app = module.createNestApplication()
@@ -46,5 +46,5 @@ export async function createHttpTestContext(
         await app.close()
     }
 
-    return { server, module, app, client, close }
+    return { server, module, app, client, close } as HttpTestContext
 }

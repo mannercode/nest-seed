@@ -1,12 +1,17 @@
-import { CustomerDto, CustomersService } from 'services/customers'
-import { MovieDto, MoviesService } from 'services/movies'
-import { ShowtimesService } from 'services/showtimes'
-import { WatchRecordsService } from 'services/watch-records'
+import { AppModule } from 'app/app.module'
+import { configureApp } from 'app/main'
+import {
+    CustomerDto,
+    CustomersService,
+    MovieDto,
+    MoviesService,
+    ShowtimesService,
+    WatchRecordsService
+} from 'services/core'
 import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
-import { AppModule, configureApp } from '../app.module'
 import { createCustomerAndLogin } from './customers-auth.fixture'
-import { createShowtimes } from './showtimes.fixture'
 import { createMovie } from './movies.fixture'
+import { createShowtimes } from './showtimes.fixture'
 
 export interface Fixture {
     testContext: HttpTestContext

@@ -18,6 +18,9 @@
         "outDir": "./_output/build",
         "baseUrl": ".",
         "paths": {
+            "app/*": [
+                "src/app/*"
+            ],
             "services/*": [
                 "src/app/services/*"
             ],

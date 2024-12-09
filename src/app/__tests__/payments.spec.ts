@@ -1,4 +1,4 @@
-import { PaymentsService } from 'services/payments'
+import { PaymentsService } from 'services/infra'
 import { closeFixture, createFixture, createPaymentDto, Fixture } from './payments.fixture'
 
 describe('Payments Module', () => {

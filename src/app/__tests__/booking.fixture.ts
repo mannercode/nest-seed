@@ -1,11 +1,19 @@
+import { AppModule } from 'app/app.module'
+import { configureApp } from 'app/main'
 import { addMinutes } from 'common'
-import { CustomersService } from 'services/customers'
-import { MovieDto, MoviesService } from 'services/movies'
-import { ShowtimeDto, ShowtimesService } from 'services/showtimes'
-import { getAllSeats, TheaterDto, TheatersService } from 'services/theaters'
-import { TicketsService, TicketStatus } from 'services/tickets'
+import {
+    CustomersService,
+    MovieDto,
+    MoviesService,
+    ShowtimeDto,
+    ShowtimesService,
+    TheaterDto,
+    TheatersService,
+    TicketsService,
+    TicketStatus
+} from 'services/core'
+import { Seatmap } from 'services/types'
 import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
-import { AppModule, configureApp } from '../app.module'
 import { createCustomerAndLogin } from './customers-auth.fixture'
 import { createMovie } from './movies.fixture'
 import { createShowtimeDto, createShowtimes } from './showtimes.fixture'
@@ -77,7 +85,7 @@ const createAllTickets = async (
     const createDtos = showtimes.flatMap((showtime) => {
         const theater = theatersMap.get(showtime.theaterId)!
 
-        return getAllSeats(theater.seatmap).map((seat) => ({
+        return Seatmap.getAllSeats(theater.seatmap).map((seat) => ({
             batchId: nullObjectId,
             movieId: showtime.movieId,
             theaterId: showtime.theaterId,

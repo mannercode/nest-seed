@@ -1,5 +1,6 @@
 import { expect } from '@jest/globals'
-import { MovieDto, MovieGenre, MovieRating } from 'services/movies'
+import { pickIds } from 'common'
+import { MovieDto, MovieGenre, MovieRating } from 'services/core'
 import { expectEqualUnsorted, HttpTestClient, nullObjectId, objectToFields } from 'testlib'
 import {
     closeFixture,
@@ -9,7 +10,6 @@ import {
     createMovies,
     Fixture
 } from './movies.fixture'
-import { pickIds } from 'common'
 
 describe('Movies Module', () => {
     let fixture: Fixture

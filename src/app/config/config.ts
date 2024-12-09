@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as Joi from 'joi'
 
-export const isEnv = (env: 'production' | 'development' | 'test') => process.env.NODE_ENV === env
+export const isTest = () => process.env.NODE_ENV === 'test'
 
 export const configSchema = Joi.object({
     NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),

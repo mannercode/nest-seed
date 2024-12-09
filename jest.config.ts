@@ -7,6 +7,7 @@ const config: Config = {
     roots: ['<rootDir>/src'],
     testRegex: '.*\\.spec\\.(ts|js)$',
     moduleNameMapper: {
+        '^app/(.*)$': '<rootDir>/src/app/$1',
         '^services/(.*)$': '<rootDir>/src/app/services/$1',
         '^common$': '<rootDir>/src/libs/common/index',
         '^testlib$': '<rootDir>/src/libs/testlib/index',

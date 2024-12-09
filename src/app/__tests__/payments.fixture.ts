@@ -1,6 +1,7 @@
-import { PaymentCreateDto, PaymentsService } from 'services/payments'
+import { AppModule } from 'app/app.module'
+import { configureApp } from 'app/main'
+import { PaymentsService } from 'services/infra'
 import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
-import { AppModule, configureApp } from '../app.module'
 
 export interface Fixture {
     testContext: HttpTestContext
