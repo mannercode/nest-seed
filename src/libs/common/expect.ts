@@ -4,8 +4,8 @@ import { Logger } from '@nestjs/common'
 import { isEqual } from 'lodash'
 
 export class Expect {
-    static equalLength(a: any[], b: any[], message: string) {
-        if (a.length !== b.length) {
+    static equalLength(a: any, b: any, message: string) {
+        if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
             Logger.warn(message)
         }
     }
