@@ -19,7 +19,7 @@ const config: Config = {
     collectCoverageFrom: [
         'src/app/**/*.ts',
         'src/libs/common/**/*.ts',
-        '!**/main.ts',
+        '!src/app/*.ts',
         '!**/index.ts',
         '!**/*.module.ts'
     ],
