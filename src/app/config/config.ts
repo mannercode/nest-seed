@@ -15,7 +15,7 @@ export const configSchema = Joi.object({
     LOG_FILE_LEVEL: Joi.string().required(),
     LOG_CONSOLE_LEVEL: Joi.string().required(),
     REDIS_HOST1: Joi.string().required(),
-    REDIS_HOST2: Joi.string().required(),
+REDIS_HOST2: Joi.string().required(),
 REDIS_HOST3: Joi.string().required(),
     REDIS_HOST4: Joi.string().required(),
     REDIS_HOST5: Joi.string().required(),
