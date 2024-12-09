@@ -18,7 +18,7 @@ export const configSchema = Joi.object({
     REDIS_HOST2: Joi.string().required(),
     REDIS_HOST3: Joi.string().required(),
     REDIS_HOST4: Joi.string().required(),
-REDIS_HOST5: Joi.string().required(),
+    REDIS_HOST5: Joi.string().required(),
     REDIS_HOST6: Joi.string().required(),
     REDIS_PASSWORD: Joi.string().optional(),
     REDIS_PORT: Joi.number().required(),
