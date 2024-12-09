@@ -1,13 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { addRegexQuery, MethodLog, MongooseRepository, objectId } from 'common'
+import { MongooseConfig } from 'config'
 import { FilterQuery, Model } from 'mongoose'
 import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
 import { Customer } from './models'
 
 @Injectable()
 export class CustomersRepository extends MongooseRepository<Customer> {
-    constructor(@InjectModel(Customer.name, 'mongo') model: Model<Customer>) {
+    constructor(@InjectModel(Customer.name, MongooseConfig.connName) model: Model<Customer>) {
         super(model)
     }
 

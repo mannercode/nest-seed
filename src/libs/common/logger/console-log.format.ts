@@ -1,7 +1,7 @@
 /* istanbul ignore file */
 
-import * as winston from 'winston'
-import * as chalk from 'chalk'
+import winston from 'winston'
+import chalk from 'chalk'
 
 const colorHttpMethod = (method: string) => {
     const METHOD = (method ?? 'METHOD').toUpperCase()

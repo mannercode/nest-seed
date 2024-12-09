@@ -1,7 +1,7 @@
-import * as syncFs from 'fs'
-import * as fs from 'fs/promises'
+import syncFs from 'fs'
+import fs from 'fs/promises'
 import { tmpdir } from 'os'
-import * as p from 'path'
+import p from 'path'
 
 export class Path {
     static async getAbsolute(src: string): Promise<string> {

@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule as NestMongooseModule } from '@nestjs/mongoose'
 import { generateShortId } from 'common'
-import { AppConfigService, isTest } from 'config'
+import { AppConfigService, isTest, MongooseConfig } from 'config'
 
 @Module({
     imports: [
         NestMongooseModule.forRootAsync({
-            connectionName: 'mongo',
+            connectionName: MongooseConfig.connName,
             useFactory: async (config: AppConfigService) => {
                 const { user, pass, host1, host2, host3, port, replica, database } = config.mongo
                 const uri = `mongodb://${user}:${pass}@${host1}:${port},${host2}:${port},${host3}:${port}/?replicaSet=${replica}`
@@ -16,11 +16,7 @@ import { AppConfigService, isTest } from 'config'
                     uri,
                     dbName,
                     waitQueueTimeoutMS: 5000,
-                    writeConcern: {
-                        w: 'majority',
-                        journal: true,
-                        wtimeoutMS: 5000
-                    },
+                    writeConcern: { w: 'majority', journal: true, wtimeoutMS: 5000 },
                     bufferCommands: true,
                     autoIndex: false,
                     autoCreate: false

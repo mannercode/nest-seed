@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common'
 import { TestingModule } from '@nestjs/testing'
-import * as express from 'express'
+import express from 'express'
 import { ModuleMetadataEx, createTestingModule } from './create-testing-module'
 import { HttpTestClient } from './http.test-client'
 import { getAvailablePort } from './utils'

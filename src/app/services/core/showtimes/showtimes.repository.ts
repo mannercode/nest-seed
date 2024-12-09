@@ -8,13 +8,14 @@ import {
     objectId,
     validateFilters
 } from 'common'
+import { MongooseConfig } from 'config'
 import { FilterQuery, Model } from 'mongoose'
 import { ShowtimeCreateDto, ShowtimeFilterDto } from './dtos'
 import { Showtime } from './models'
 
 @Injectable()
 export class ShowtimesRepository extends MongooseRepository<Showtime> {
-    constructor(@InjectModel(Showtime.name, 'mongo') model: Model<Showtime>) {
+    constructor(@InjectModel(Showtime.name, MongooseConfig.connName) model: Model<Showtime>) {
         super(model)
     }
 

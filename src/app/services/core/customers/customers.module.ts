@@ -2,14 +2,17 @@ import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'
 import { JwtAuthModule, stringToMillisecs } from 'common'
-import { AppConfigService } from 'config'
+import { AppConfigService, MongooseConfig } from 'config'
 import { CustomersRepository } from './customers.repository'
 import { CustomersService } from './customers.service'
 import { Customer, CustomerSchema } from './models'
 
 @Module({
     imports: [
-        MongooseModule.forFeature([{ name: Customer.name, schema: CustomerSchema }], 'mongo'),
+        MongooseModule.forFeature(
+            [{ name: Customer.name, schema: CustomerSchema }],
+            MongooseConfig.connName
+        ),
         PassportModule,
         JwtAuthModule.registerJwtAuth({
             configKey: 'jwtauth',

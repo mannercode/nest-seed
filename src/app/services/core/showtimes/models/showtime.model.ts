@@ -1,10 +1,10 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { HardDelete, MongooseSchema, createMongooseSchema } from 'common'
-import { Mongoose } from 'config'
+import { MongooseConfig } from 'config'
 import { HydratedDocument, Types } from 'mongoose'
 
 @HardDelete()
-@Schema(Mongoose.defaultSchemaOptions)
+@Schema(MongooseConfig.schemaOptions)
 export class Showtime extends MongooseSchema {
     @Prop({ required: true })
     theaterId: Types.ObjectId

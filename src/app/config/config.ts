@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import * as Joi from 'joi'
+import Joi from 'joi'
 
 export const isTest = () => process.env.NODE_ENV === 'test'
 

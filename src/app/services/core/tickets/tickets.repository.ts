@@ -9,6 +9,7 @@ import {
     objectIds,
     validateFilters
 } from 'common'
+import { MongooseConfig } from 'config'
 import { FilterQuery, Model } from 'mongoose'
 import { SalesStatusByShowtimeDto, TicketCreateDto } from './dtos'
 import { TicketFilterDto } from './dtos/ticket-filter.dto'
@@ -16,7 +17,7 @@ import { Ticket, TicketStatus } from './models'
 
 @Injectable()
 export class TicketsRepository extends MongooseRepository<Ticket> {
-    constructor(@InjectModel(Ticket.name, 'mongo') model: Model<Ticket>) {
+    constructor(@InjectModel(Ticket.name, MongooseConfig.connName) model: Model<Ticket>) {
         super(model)
     }
 

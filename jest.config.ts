@@ -18,10 +18,10 @@ const config: Config = {
     coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },
     collectCoverageFrom: [
         'src/app/**/*.ts',
-        'src/libs/common/**/*.ts',
         '!src/app/*.ts',
+        'src/libs/common/**/*.ts',
         '!**/index.ts',
-        '!**/*.module.ts'
+        '!**/*.module.ts',
     ],
     coverageReporters: ['lcov', 'text'],
     coveragePathIgnorePatterns: ['__tests__'],

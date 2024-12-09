@@ -1,6 +1,6 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { Mongoose } from 'config'
+import { MongooseConfig } from 'config'
 import { HydratedDocument, Types } from 'mongoose'
 import { Seat } from 'services/types'
 
@@ -9,7 +9,7 @@ export enum TicketStatus {
     sold = 'sold'
 }
 
-@Schema(Mongoose.defaultSchemaOptions)
+@Schema(MongooseConfig.schemaOptions)
 export class Ticket extends MongooseSchema {
     @Prop({ required: true })
     showtimeId: Types.ObjectId

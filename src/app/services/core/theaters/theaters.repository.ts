@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { addRegexQuery, MethodLog, MongooseRepository } from 'common'
+import { MongooseConfig } from 'config'
 import { FilterQuery, Model } from 'mongoose'
 import { TheaterCreateDto, TheaterQueryDto, TheaterUpdateDto } from './dtos'
 import { Theater } from './models'
 
 @Injectable()
 export class TheatersRepository extends MongooseRepository<Theater> {
-    constructor(@InjectModel(Theater.name, 'mongo') model: Model<Theater>) {
+    constructor(@InjectModel(Theater.name, MongooseConfig.connName) model: Model<Theater>) {
         super(model)
     }
 

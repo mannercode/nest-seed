@@ -1,7 +1,8 @@
 import { SchemaOptions } from 'mongoose'
 
-export class Mongoose {
-    static defaultSchemaOptions: SchemaOptions = {
+export class MongooseConfig {
+    static connName = 'mongo'
+    static schemaOptions: SchemaOptions = {
         // https://mongoosejs.com/docs/guide.html#optimisticConcurrency
         optimisticConcurrency: true,
         minimize: false,

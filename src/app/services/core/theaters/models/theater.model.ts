@@ -1,10 +1,10 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { LatLong, MongooseSchema, createMongooseSchema } from 'common'
-import { Mongoose } from 'config'
+import { MongooseConfig } from 'config'
 import { HydratedDocument } from 'mongoose'
 import { Seatmap } from 'services/types'
 
-@Schema(Mongoose.defaultSchemaOptions)
+@Schema(MongooseConfig.schemaOptions)
 export class Theater extends MongooseSchema {
     @Prop({ required: true })
     name: string

@@ -1,9 +1,9 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { Mongoose } from 'config'
+import { MongooseConfig } from 'config'
 import { HydratedDocument, Types } from 'mongoose'
 
-@Schema(Mongoose.defaultSchemaOptions)
+@Schema(MongooseConfig.schemaOptions)
 export class WatchRecord extends MongooseSchema {
     @Prop({ required: true })
     customerId: Types.ObjectId

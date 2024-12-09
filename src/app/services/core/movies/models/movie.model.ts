@@ -1,6 +1,6 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { Mongoose } from 'config'
+import { MongooseConfig } from 'config'
 import { HydratedDocument, Types } from 'mongoose'
 
 export enum MovieGenre {
@@ -23,7 +23,7 @@ export enum MovieRating {
     NC17 = 'NC17'
 }
 
-@Schema(Mongoose.defaultSchemaOptions)
+@Schema(MongooseConfig.schemaOptions)
 export class Movie extends MongooseSchema {
     @Prop({ required: true })
     title: string

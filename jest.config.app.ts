@@ -7,9 +7,9 @@ const config: Config = {
     roots: ['<rootDir>/src/app'],
     collectCoverageFrom: [
         'src/app/**/*.ts',
-        '!**/main.ts',
+        '!src/app/*.ts',
         '!**/index.ts',
-        '!**/*.module.ts'
+        '!**/*.module.ts',
     ]
 }
 

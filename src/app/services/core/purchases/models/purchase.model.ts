@@ -1,7 +1,7 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { Mongoose } from 'config'
+import { MongooseConfig } from 'config'
 import { HydratedDocument, Types } from 'mongoose'
 
 export enum PurchaseItemType {
@@ -17,7 +17,7 @@ export class PurchaseItem {
     ticketId: Types.ObjectId
 }
 
-@Schema(Mongoose.defaultSchemaOptions)
+@Schema(MongooseConfig.schemaOptions)
 export class Purchase extends MongooseSchema {
     @Prop({ required: true })
     customerId: Types.ObjectId

@@ -16,7 +16,6 @@ describe('Health Check', () => {
     })
 
     it('health 체크를 해야 한다', async () => {
-        const a = await client.get('/health').ok()
-        console.log(a)
+        await client.get('/health').ok()
     })
 })
