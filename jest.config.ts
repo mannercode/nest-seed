@@ -14,17 +14,8 @@ const config: Config = {
         '^config$': '<rootDir>/src/app/config/index'
     },
     testEnvironment: 'node',
-    transform: {
-        '^.+\\.ts$': 'ts-jest'
-    },
-    coverageThreshold: {
-        global: {
-            branches: 100,
-            functions: 100,
-            lines: 100,
-            statements: 100
-        }
-    },
+    transform: { '^.+\\.ts$': 'ts-jest' },
+    coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },
     collectCoverageFrom: [
         'src/app/**/*.ts',
         'src/libs/common/**/*.ts',

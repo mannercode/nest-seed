@@ -5,7 +5,9 @@ import { ShowtimesRepository } from './showtimes.repository'
 import { ShowtimesService } from './showtimes.service'
 
 @Module({
-    imports: [MongooseModule.forFeature([{ name: Showtime.name, schema: ShowtimeSchema }], 'mongo')],
+    imports: [
+        MongooseModule.forFeature([{ name: Showtime.name, schema: ShowtimeSchema }], 'mongo')
+    ],
     providers: [ShowtimesService, ShowtimesRepository],
     exports: [ShowtimesService]
 })

@@ -32,7 +32,7 @@ export abstract class MongooseSchema {
 
 const HARD_DELETE_KEY = 'HardDelete'
 export function HardDelete() {
-    return (target: Function) => {
+    return (target: object) => {
         Reflect.defineMetadata(HARD_DELETE_KEY, true, target)
     }
 }

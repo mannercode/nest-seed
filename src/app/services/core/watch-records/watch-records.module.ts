@@ -5,7 +5,9 @@ import { WatchRecordsRepository } from './watch-records.repository'
 import { WatchRecordsService } from './watch-records.service'
 
 @Module({
-    imports: [MongooseModule.forFeature([{ name: WatchRecord.name, schema: WatchRecordSchema }], 'mongo')],
+    imports: [
+        MongooseModule.forFeature([{ name: WatchRecord.name, schema: WatchRecordSchema }], 'mongo')
+    ],
     providers: [WatchRecordsService, WatchRecordsRepository],
     exports: [WatchRecordsService]
 })

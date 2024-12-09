@@ -1,4 +1,3 @@
-import { AppConfigService } from 'config'
 import { CustomerDto } from 'services/core'
 import { HttpTestClient } from 'testlib'
 import { closeFixture, createFixture, Fixture } from './customers-auth.fixture'
@@ -6,7 +5,6 @@ import { closeFixture, createFixture, Fixture } from './customers-auth.fixture'
 describe('Customer Authentication', () => {
     let fixture: Fixture
     let client: HttpTestClient
-    let config: AppConfigService
     let customer: CustomerDto
     let email: string
     let password: string
@@ -14,7 +12,6 @@ describe('Customer Authentication', () => {
     beforeEach(async () => {
         fixture = await createFixture()
         client = fixture.testContext.client
-        config = fixture.config
         customer = fixture.customer
         email = customer.email
         password = fixture.password

@@ -40,7 +40,7 @@ export const configSchema = Joi.object({
 
 @Injectable()
 export class AppConfigService {
-    constructor(private configService: ConfigService<{}, true>) {}
+    constructor(private configService: ConfigService<object, true>) {}
 
     get http() {
         return {
@@ -96,9 +96,11 @@ export class AppConfigService {
             directory: this.getString('FILE_UPLOAD_DIRECTORY'),
             maxFileSizeBytes: this.getNumber('FILE_UPLOAD_MAX_FILE_SIZE_BYTES'),
             maxFilesPerUpload: this.getNumber('FILE_UPLOAD_MAX_FILES_PER_UPLOAD'),
-            allowedMimeTypes: this.configService
-                .get<string>('FILE_UPLOAD_ALLOWED_FILE_TYPES')
-                .split(',')
+            allowedMimeTypes: this.getString('FILE_UPLOAD_ALLOWED_FILE_TYPES').split(',')
+
+            // allowedMimeTypes: this.configService
+            //     .get<string>('FILE_UPLOAD_ALLOWED_FILE_TYPES')
+            //     .split(',')
         }
     }
 

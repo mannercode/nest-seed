@@ -1,1 +1,1 @@
-export * from './seatmap';
+export * from './seatmap'

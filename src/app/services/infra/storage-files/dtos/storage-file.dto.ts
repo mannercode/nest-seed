@@ -1,4 +1,4 @@
-export class StorageFileDto  {
+export class StorageFileDto {
     id: string
     originalname: string
     mimetype: string

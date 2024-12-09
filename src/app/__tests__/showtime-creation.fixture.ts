@@ -60,7 +60,11 @@ export const monitorEvents = (client: HttpTestClient, waitStatuses: string[]) =>
             const result = jsonToObject(JSON.parse(data))
 
             if (['complete', 'fail', 'error'].includes(result.status)) {
-                waitStatuses.includes(result.status) ? resolve(result) : reject(result)
+                if (waitStatuses.includes(result.status)) {
+                    resolve(result)
+                } else {
+                    reject(result)
+                }
             } else if (!result.status) {
                 reject(data)
             }

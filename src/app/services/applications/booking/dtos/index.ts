@@ -1,1 +1,1 @@
-export * from './showtime-sales-status.dto';
+export * from './showtime-sales-status.dto'

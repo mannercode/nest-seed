@@ -10,7 +10,7 @@ import Redis from 'ioredis'
 class RedisShutdownService implements OnApplicationShutdown {
     constructor(private readonly redis: Redis) {}
 
-    async onApplicationShutdown(signal?: string) {
+    async onApplicationShutdown(_signal?: string) {
         await this.redis.quit()
     }
 }
