@@ -7,10 +7,9 @@ import {
     ShowtimesService,
     TheaterDto,
     TheatersService,
-    TicketsService,
-    TicketStatus
+    TicketsService
 } from 'services/cores'
-import { Seatmap } from 'services/types'
+import { Seatmap, TicketStatus } from 'services/types'
 import { ShowtimeCreationEventsService } from './showtime-creation-events.service'
 import { ShowtimeCreationValidatorService } from './showtime-creation-validator.service'
 import { ShowtimeBatchCreateJobData } from './types'

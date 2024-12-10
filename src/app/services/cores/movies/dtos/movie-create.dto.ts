@@ -1,6 +1,6 @@
 import { Transform, Type } from 'class-transformer'
 import { IsArray, IsDate, IsEnum, IsInt, IsNotEmpty, IsString, MaxLength } from 'class-validator'
-import { MovieGenre, MovieRating } from '../models'
+import { MovieGenre, MovieRating } from 'services/types'
 
 export class MovieCreateDto {
     @IsString()

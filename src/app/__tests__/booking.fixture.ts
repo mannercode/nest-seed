@@ -9,10 +9,9 @@ import {
     ShowtimesService,
     TheaterDto,
     TheatersService,
-    TicketsService,
-    TicketStatus
+    TicketsService
 } from 'services/cores'
-import { Seatmap } from 'services/types'
+import { Seatmap, TicketStatus } from 'services/types'
 import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
 import { createCustomerAndLogin } from './customers-auth.fixture'
 import { createMovie } from './movies.fixture'
