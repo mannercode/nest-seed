@@ -1,4 +1,4 @@
-import { MovieDto, ShowtimeDto, TheaterDto } from 'services/core'
+import { MovieDto, ShowtimeDto, TheaterDto } from 'services/cores'
 import { Seatmap } from 'services/types'
 import { expectEqualUnsorted, HttpTestClient, nullObjectId } from 'testlib'
 import {

@@ -11,7 +11,7 @@ import {
     TheatersService,
     TicketsService,
     TicketStatus
-} from 'services/core'
+} from 'services/cores'
 import { Seatmap } from 'services/types'
 import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
 import { createCustomerAndLogin } from './customers-auth.fixture'

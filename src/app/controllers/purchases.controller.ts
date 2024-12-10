@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common'
-import { PurchaseCreateDto, PurchasesService } from 'services/core'
+import { PurchaseCreateDto, PurchasesService } from 'services/cores'
 
 @Controller('purchases')
 export class PurchasesController {

@@ -5,18 +5,16 @@ import {
     CustomersService,
     MoviesService,
     PurchaseCreateDto,
-    PurchaseItemType,
     PurchasesService,
     ShowtimeDto,
     ShowtimesService,
     TheaterDto,
     TheatersService,
     TicketDto,
-    TicketsService,
-    TicketStatus
-} from 'services/core'
-import { PaymentsService } from 'services/infra'
-import { Seatmap } from 'services/types'
+    TicketsService
+} from 'services/cores'
+import { PaymentsService } from 'services/infrastructures'
+import { PurchaseItemType, Seatmap, TicketStatus } from 'services/types'
 import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
 import { createCustomer } from './customers.fixture'
 import { createMovie } from './movies.fixture'
@@ -30,6 +28,7 @@ export interface Fixture {
     tickets: TicketDto[]
     purchasesService: PurchasesService
     paymentsService: PaymentsService
+    ticketsService: TicketsService
 }
 
 export async function createFixture() {
@@ -54,7 +53,7 @@ export async function createFixture() {
     const purchasesService = testContext.module.get(PurchasesService)
     const paymentsService = testContext.module.get(PaymentsService)
 
-    return { testContext, customer, tickets, purchasesService, paymentsService }
+    return { testContext, customer, tickets, purchasesService, paymentsService, ticketsService }
 }
 
 export async function closeFixture(fixture: Fixture) {

@@ -1,7 +1,7 @@
 import { AppModule } from 'app/app.module'
 import { configureApp } from 'app/main'
 import { padNumber } from 'common'
-import { TheatersService } from 'services/core'
+import { TheatersService } from 'services/cores'
 import { HttpTestContext, createHttpTestContext } from 'testlib'
 
 export interface Fixture {

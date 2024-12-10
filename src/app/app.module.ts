@@ -9,8 +9,8 @@ import {
     TicketHoldingModule,
     TicketsModule,
     WatchRecordsModule
-} from 'services/core'
-import { PaymentsModule, StorageFilesModule } from 'services/infra'
+} from 'services/cores'
+import { PaymentsModule, StorageFilesModule } from 'services/infrastructures'
 import {
     BookingController,
     CustomerJwtStrategy,

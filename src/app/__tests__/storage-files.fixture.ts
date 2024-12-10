@@ -4,7 +4,7 @@ import { configureApp } from 'app/main'
 import { Path, Byte } from 'common'
 import { AppConfigService } from 'config'
 import { writeFile } from 'fs/promises'
-import { StorageFilesService } from 'services/infra'
+import { StorageFilesService } from 'services/infrastructures'
 import { createDummyFile, createHttpTestContext, HttpTestContext } from 'testlib'
 
 const maxFileSizeBytes = Byte.fromString('50MB')

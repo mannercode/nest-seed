@@ -1,5 +1,5 @@
 import { addMinutes } from 'common'
-import { ShowtimeDto, ShowtimesService } from 'services/core'
+import { ShowtimeDto, ShowtimesService } from 'services/cores'
 import { expectEqualUnsorted, nullObjectId, testObjectId } from 'testlib'
 import {
     closeFixture,

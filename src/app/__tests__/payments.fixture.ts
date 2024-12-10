@@ -1,6 +1,6 @@
 import { AppModule } from 'app/app.module'
 import { configureApp } from 'app/main'
-import { PaymentsService } from 'services/infra'
+import { PaymentsService } from 'services/infrastructures'
 import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
 
 export interface Fixture {

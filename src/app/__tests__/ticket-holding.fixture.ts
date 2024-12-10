@@ -1,6 +1,6 @@
 import { AppModule } from 'app/app.module'
 import { configureApp } from 'app/main'
-import { TicketHoldingService } from 'services/core'
+import { TicketHoldingService } from 'services/cores'
 import { HttpTestContext, createHttpTestContext } from 'testlib'
 
 export interface Fixture {

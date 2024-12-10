@@ -1,4 +1,4 @@
-import { MovieDto, MovieGenre } from 'services/core'
+import { MovieDto, MovieGenre } from 'services/cores'
 import { HttpTestClient } from 'testlib'
 import {
     closeFixture,

@@ -1,3 +1,9 @@
+/**
+ * seatmap은 theaters에서 관리해야 하는 모델처럼 보인다.
+ * 그러나 theaters 서비스에서 seatmap은 value object로 취급한다
+ * seatmap은 tickets,theaters 등 여러 서비스에 걸쳐서 사용되며 독립된 모델로 취급해야 한다.
+ */
+
 import { Type } from 'class-transformer'
 import { IsNotEmpty, IsNumber, IsString, ValidateNested } from 'class-validator'
 

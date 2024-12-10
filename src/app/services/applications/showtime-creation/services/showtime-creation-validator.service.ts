@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { Assert, MethodLog, addMinutes, findMaxDate, findMinDate } from 'common'
-import { MoviesService, ShowtimeDto, ShowtimesService, TheatersService } from 'services/core'
+import { MoviesService, ShowtimeDto, ShowtimesService, TheatersService } from 'services/cores'
 import { ShowtimeBatchCreateJobData } from './types'
 
 type TimeslotMap = Map<number, ShowtimeDto>

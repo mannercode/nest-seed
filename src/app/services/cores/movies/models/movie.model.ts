@@ -2,26 +2,7 @@ import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
 import { MongooseConfig } from 'config'
 import { HydratedDocument, Types } from 'mongoose'
-
-export enum MovieGenre {
-    Action = 'Action',
-    Comedy = 'Comedy',
-    Drama = 'Drama',
-    Fantasy = 'Fantasy',
-    Horror = 'Horror',
-    Mystery = 'Mystery',
-    Romance = 'Romance',
-    Thriller = 'Thriller',
-    Western = 'Western'
-}
-
-export enum MovieRating {
-    G = 'G',
-    PG = 'PG',
-    PG13 = 'PG13',
-    R = 'R',
-    NC17 = 'NC17'
-}
+import { MovieGenre, MovieRating } from 'services/types'
 
 @Schema(MongooseConfig.schemaOptions)
 export class Movie extends MongooseSchema {

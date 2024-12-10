@@ -9,7 +9,7 @@ import {
     TheatersService,
     TicketsService,
     TicketStatus
-} from 'services/core'
+} from 'services/cores'
 import { Seatmap } from 'services/types'
 import { ShowtimeCreationEventsService } from './showtime-creation-events.service'
 import { ShowtimeCreationValidatorService } from './showtime-creation-validator.service'

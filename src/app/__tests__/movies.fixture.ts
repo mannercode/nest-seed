@@ -1,7 +1,7 @@
 import { AppModule } from 'app/app.module'
 import { configureApp } from 'app/main'
 import { padNumber } from 'common'
-import { MovieDto, MovieGenre, MovieRating, MoviesService } from 'services/core'
+import { MovieDto, MovieGenre, MovieRating, MoviesService } from 'services/cores'
 import { createHttpTestContext, HttpTestContext } from 'testlib'
 
 export interface Fixture {

@@ -1,4 +1,4 @@
-import { CustomerDto } from 'services/core'
+import { CustomerDto } from 'services/cores'
 import { HttpTestClient } from 'testlib'
 import { closeFixture, createFixture, Fixture } from './customers-auth.fixture'
 
