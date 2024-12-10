@@ -12,7 +12,7 @@ export class Expect {
 
     static equals<T>(a: T, b: T, message: string) {
         if (!isEqual(a, b)) {
-    Logger.warn(`${JSON.stringify(a)} !== ${JSON.stringify(b)}, ${message}`)
+            Logger.warn(`${JSON.stringify(a)} !== ${JSON.stringify(b)}, ${message}`)
         }
     }
 
