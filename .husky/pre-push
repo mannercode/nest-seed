@@ -1,2 +1,2 @@
 npx eslint
-npx prettier src/**/*.ts
+npx prettier -c 'src/**/*.ts'
