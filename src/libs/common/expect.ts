@@ -18,7 +18,7 @@ export class Expect {
 
     static defined(value: any, message: string) {
         if (!value) {
-            Logger.warn(message)
+    Logger.warn(message)
         }
     }
 
