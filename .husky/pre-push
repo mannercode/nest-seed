@@ -1,0 +1,2 @@
+npx eslint
+npx prettier src/**/*.ts
