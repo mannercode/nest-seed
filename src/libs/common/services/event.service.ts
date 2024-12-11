@@ -1,4 +1,4 @@
-import { DynamicModule, Global, Injectable, Module } from '@nestjs/common'
+import { DynamicModule, Injectable, Module } from '@nestjs/common'
 import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter'
 import { EventEmitterModuleOptions } from '@nestjs/event-emitter/dist/interfaces'
 
