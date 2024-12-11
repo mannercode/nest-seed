@@ -2,7 +2,7 @@ import { Prop, Schema } from '@nestjs/mongoose'
 import { LatLong, MongooseSchema, createMongooseSchema } from 'common'
 import { MongooseConfig } from 'config'
 import { HydratedDocument } from 'mongoose'
-import { Seatmap } from 'services/types'
+import { Seatmap } from './seatmap'
 
 @Schema(MongooseConfig.schemaOptions)
 export class Theater extends MongooseSchema {

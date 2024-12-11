@@ -1,5 +1,5 @@
 import { LatLong } from 'common'
-import { Seatmap } from 'services/types'
+import { Seatmap } from '../models'
 
 export class TheaterDto {
     id: string

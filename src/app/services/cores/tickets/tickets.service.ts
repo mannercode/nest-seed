@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common'
 import { Assert, mapDocToDto, MethodLog } from 'common'
 import { TicketCreateDto, TicketDto, TicketFilterDto } from './dtos'
-import { TicketDocument } from './models'
+import { TicketDocument, TicketStatus } from './models'
 import { TicketsRepository } from './tickets.repository'
-import { TicketStatus } from 'services/types'
 
 @Injectable()
 export class TicketsService {

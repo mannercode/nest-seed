@@ -2,7 +2,12 @@ import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
 import { MongooseConfig } from 'config'
 import { HydratedDocument, Types } from 'mongoose'
-import { Seat, TicketStatus } from 'services/types'
+import { Seat } from 'services/cores/theaters'
+
+export enum TicketStatus {
+    available = 'available',
+    sold = 'sold'
+}
 
 @Schema(MongooseConfig.schemaOptions)
 export class Ticket extends MongooseSchema {

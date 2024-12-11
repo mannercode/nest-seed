@@ -1,6 +1,5 @@
 import { convertDateToString, pickIds } from 'common'
-import { TicketDto } from 'services/cores'
-import { Seatmap } from 'services/types'
+import { Seatmap, TicketDto } from 'services/cores'
 import { HttpTestClient } from 'testlib'
 import { closeFixture, createFixture, Fixture } from './booking.fixture'
 

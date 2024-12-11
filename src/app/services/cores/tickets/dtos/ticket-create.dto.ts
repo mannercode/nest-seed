@@ -1,5 +1,6 @@
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
-import { Seat, TicketStatus } from 'services/types'
+import { TicketStatus } from '../models'
+import { Seat } from 'services/cores/theaters'
 
 export class TicketCreateDto {
     @IsString()

@@ -11,10 +11,9 @@ import {
 } from 'common'
 import { MongooseConfig } from 'config'
 import { FilterQuery, Model } from 'mongoose'
-import { TicketStatus } from 'services/types'
 import { SalesStatusByShowtimeDto, TicketCreateDto } from './dtos'
 import { TicketFilterDto } from './dtos/ticket-filter.dto'
-import { Ticket } from './models'
+import { Ticket, TicketStatus } from './models'
 
 @Injectable()
 export class TicketsRepository extends MongooseRepository<Ticket> {

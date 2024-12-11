@@ -5,13 +5,14 @@ import {
     CustomersService,
     MovieDto,
     MoviesService,
+    Seatmap,
     ShowtimeDto,
     ShowtimesService,
     TheaterDto,
     TheatersService,
-    TicketsService
+    TicketsService,
+    TicketStatus
 } from 'services/cores'
-import { Seatmap, TicketStatus } from 'services/types'
 import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
 import { createCustomerAndLogin } from './customers-auth.fixture'
 import { createMovie } from './movies.fixture'

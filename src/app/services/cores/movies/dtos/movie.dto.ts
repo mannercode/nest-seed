@@ -1,4 +1,4 @@
-import { MovieGenre, MovieRating } from 'services/types'
+import { MovieGenre, MovieRating } from '../models'
 
 export class MovieDto {
     id: string

@@ -3,13 +3,14 @@ import { Injectable } from '@nestjs/common'
 import { Job, Queue } from 'bullmq'
 import { addMinutes, jsonToObject, MethodLog } from 'common'
 import {
+    Seatmap,
     ShowtimeDto,
     ShowtimesService,
     TheaterDto,
     TheatersService,
-    TicketsService
+    TicketsService,
+    TicketStatus
 } from 'services/cores'
-import { Seatmap, TicketStatus } from 'services/types'
 import { ShowtimeCreationEventsService } from './showtime-creation-events.service'
 import { ShowtimeCreationValidatorService } from './showtime-creation-validator.service'
 import { ShowtimeBatchCreateJobData } from './types'

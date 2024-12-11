@@ -5,16 +5,18 @@ import {
     CustomersService,
     MoviesService,
     PurchaseCreateDto,
+    PurchaseItemType,
     PurchasesService,
+    Seatmap,
     ShowtimeDto,
     ShowtimesService,
     TheaterDto,
     TheatersService,
     TicketDto,
-    TicketsService
+    TicketsService,
+    TicketStatus
 } from 'services/cores'
 import { PaymentsService } from 'services/infrastructures'
-import { PurchaseItemType, Seatmap, TicketStatus } from 'services/types'
 import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
 import { createCustomer } from './customers.fixture'
 import { createMovie } from './movies.fixture'

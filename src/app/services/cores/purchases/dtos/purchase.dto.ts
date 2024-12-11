@@ -1,4 +1,4 @@
-import { PurchaseItemType } from 'services/types'
+import { PurchaseItemType } from '../models'
 
 export class PurchaseItemDto {
     type: PurchaseItemType

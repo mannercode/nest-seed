@@ -1,8 +1,7 @@
 import { AppModule } from 'app/app.module'
 import { configureApp } from 'app/main'
 import { omit } from 'lodash'
-import { TicketCreateDto, TicketDto, TicketsService } from 'services/cores'
-import { TicketStatus } from 'services/types'
+import { TicketCreateDto, TicketDto, TicketsService, TicketStatus } from 'services/cores'
 import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
 
 export interface Fixture {

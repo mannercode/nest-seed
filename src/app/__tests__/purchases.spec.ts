@@ -1,8 +1,7 @@
-import { CustomerDto, PurchaseDto, TicketDto } from 'services/cores'
-import { PurchaseItemType, TicketStatus } from 'services/types'
+import { pickIds } from 'common'
+import { CustomerDto, PurchaseDto, PurchaseItemType, TicketDto, TicketStatus } from 'services/cores'
 import { HttpTestClient } from 'testlib'
 import { closeFixture, createFixture, createPurchase, Fixture } from './purchases.fixture'
-import { pickIds } from 'common'
 
 describe('Purchases Module', () => {
     let fixture: Fixture

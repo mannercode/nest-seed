@@ -1,4 +1,5 @@
-import { Seat, TicketStatus } from 'services/types'
+import { Seat } from "services/cores/theaters"
+import { TicketStatus } from "../models"
 
 export class TicketDto {
     id: string

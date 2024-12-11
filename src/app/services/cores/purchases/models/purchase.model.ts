@@ -3,7 +3,10 @@ import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
 import { MongooseSchema, createMongooseSchema } from 'common'
 import { MongooseConfig } from 'config'
 import { HydratedDocument, Types } from 'mongoose'
-import { PurchaseItemType } from 'services/types'
+
+export enum PurchaseItemType {
+    ticket = 'ticket'
+}
 
 export class PurchaseItem {
     @IsEnum(PurchaseItemType)
