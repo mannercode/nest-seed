@@ -44,12 +44,12 @@ export class TicketsService {
         return statuses
     }
 
-    // @MethodLog({ level: 'verbose' })
-    // async getTickets(ticketIds: string[]) {
-    //     const tickets = await this.repository.getByIds(ticketIds)
+    @MethodLog({ level: 'verbose' })
+    async getTickets(ticketIds: string[]) {
+        const tickets = await this.repository.getByIds(ticketIds)
 
-    //     return this.toDtos(tickets)
-    // }
+        return this.toDtos(tickets)
+    }
 
     private toDto = (ticket: TicketDocument) =>
         mapDocToDto(ticket, TicketDto, [

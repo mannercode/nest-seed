@@ -1,7 +1,8 @@
 import { CustomerDto, PurchaseDto, TicketDto } from 'services/cores'
-import { PurchaseItemType } from 'services/types'
+import { PurchaseItemType, TicketStatus } from 'services/types'
 import { HttpTestClient } from 'testlib'
 import { closeFixture, createFixture, createPurchase, Fixture } from './purchases.fixture'
+import { pickIds } from 'common'
 
 describe('Purchases Module', () => {
     let fixture: Fixture
@@ -64,14 +65,14 @@ describe('Purchases Module', () => {
             purchase = await createPurchase(fixture.purchasesService, { items })
         })
 
-        // it('구매한 티켓은 sold 상태여야 한다', async () => {
-        //     const gotTickets = await fixture.ticketsService.getTickets(pickIds(tickets))
-        //     gotTickets.forEach((ticket) => expect(ticket.status).toBe(TicketStatus.sold))
-        // })
-
         it('결제 정보를 조회해야 한다', async () => {
             const payment = await fixture.paymentsService.getPayment(purchase.paymentId)
             expect(payment.amount).toEqual(purchase.totalPrice)
+        })
+
+        it('구매한 티켓은 sold 상태여야 한다', async () => {
+            const gotTickets = await fixture.ticketsService.getTickets(pickIds(tickets))
+            gotTickets.forEach((ticket) => expect(ticket.status).toBe(TicketStatus.sold))
         })
     })
 })

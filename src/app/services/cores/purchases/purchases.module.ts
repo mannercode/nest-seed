@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
+import { EventService } from 'common'
 import { MongooseConfig } from 'config'
 import { PaymentsModule } from 'services/infrastructures'
 import { Purchase, PurchaseSchema } from './models'
@@ -14,7 +15,7 @@ import { PurchasesService } from './purchases.service'
         ),
         PaymentsModule
     ],
-    providers: [PurchasesService, PurchasesRepository],
+    providers: [PurchasesService, PurchasesRepository, EventService],
     exports: [PurchasesService]
 })
 export class PurchasesModule {}
