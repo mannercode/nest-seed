@@ -1,38 +1,28 @@
 import { Injectable } from '@nestjs/common'
-import { EventService, mapDocToDto, MethodLog, objectId } from 'common'
+import { mapDocToDto, MethodLog } from 'common'
 import { PaymentsService } from 'services/infrastructures'
 import { PurchaseCreateDto, PurchaseDto } from './dtos'
 import { PurchaseDocument } from './models'
 import { PurchasesRepository } from './purchases.repository'
-import { PurchaseCreatedEvent } from './purchases.events'
 
 @Injectable()
 export class PurchasesService {
     constructor(
         private repository: PurchasesRepository,
-        private paymentsService: PaymentsService,
-        private eventService: EventService
-    ) {
-        // await eventService.emit(new SampleEvent('event'))
-    }
-
-    // @OnEvent(SampleEvent.eventName)
-    // onSampleEvent(_: SampleEvent): void {}
+        private paymentsService: PaymentsService
+    ) {}
 
     @MethodLog()
-    async processPurchase(createDto: PurchaseCreateDto) {
-        const purchase = await this.repository.createPurchase(createDto)
-
-        const createdEvent = new PurchaseCreatedEvent()
-        await this.eventService.emit(createdEvent)
-
+    async createPurchase(createDto: PurchaseCreateDto) {
         const payment = await this.paymentsService.processPayment({
-            customerId: purchase.customerId.toString(),
-            amount: purchase.totalPrice
+            customerId: createDto.customerId,
+            amount: createDto.totalPrice
         })
 
-        purchase.paymentId = objectId(payment.id)
-        await purchase.save()
+        const purchase = await this.repository.createPurchase({
+            ...createDto,
+            paymentId: payment.id
+        })
 
         return this.toDto(purchase)
     }

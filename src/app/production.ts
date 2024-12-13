@@ -1,3 +1,5 @@
-import { bootstrap } from './main'
+import dotenv from 'dotenv'
+dotenv.config({ path: ['.env.rule'] })
 
+import { bootstrap } from './main'
 bootstrap()

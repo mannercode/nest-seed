@@ -11,7 +11,7 @@ import {
     Fixture
 } from './theaters.fixture'
 
-describe('Theaters Module', () => {
+describe('/theaters', () => {
     let fixture: Fixture
     let client: HttpTestClient
 

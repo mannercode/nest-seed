@@ -4,12 +4,12 @@
 
 **선행 조건**:
 
--   고객이 시스템에 로그인되어 있어야 한다.
--   원하는 영화와 극장의 상영 시간 및 좌석이 사용 가능해야 한다.
+- 고객이 시스템에 로그인되어 있어야 한다.
+- 원하는 영화와 극장의 상영 시간 및 좌석이 사용 가능해야 한다.
 
 **트리거**:
 
--   고객은 극장 예매 시스템에 접속한다.
+- 고객은 극장 예매 시스템에 접속한다.
 
 **기본 흐름**:
 
@@ -35,25 +35,25 @@
 
 **대안 흐름**:
 
--   A1. 원하는 상영 시간이나 좌석이 사용 불가능한 경우:
-    -   시스템은 사용 불가능한 메시지를 표시하고, 다른 상영 시간이나 좌석을 선택하도록 유도한다.
--   A2. 결제가 실패한 경우:
-    -   시스템은 결제 실패 메시지를 표시하고, 결제 정보를 재입력하거나 다른 결제 방법을 선택하도록 유도한다.
+- A1. 원하는 상영 시간이나 좌석이 사용 불가능한 경우:
+    - 시스템은 사용 불가능한 메시지를 표시하고, 다른 상영 시간이나 좌석을 선택하도록 유도한다.
+- A2. 결제가 실패한 경우:
+    - 시스템은 결제 실패 메시지를 표시하고, 결제 정보를 재입력하거나 다른 결제 방법을 선택하도록 유도한다.
 
 **후행 조건**:
 
--   고객은 구매한 티켓에 대한 전자 티켓을 이메일로 받는다.
--   시스템은 구매된 티켓의 좌석을 사용 불가능으로 업데이트한다.
+- 고객은 구매한 티켓에 대한 전자 티켓을 이메일로 받는다.
+- 시스템은 구매된 티켓의 좌석을 사용 불가능으로 업데이트한다.
 
 **특별 요구 사항**:
 
--   시스템은 결제 처리를 위해 외부 결제 게이트웨이(PaymentGateway)와 통신해야 한다.
--   시스템은 고객이 선택한 좌석이 동시에 다른 고객에게 판매되지 않도록 동시성 관리를 해야 한다.
+- 시스템은 결제 처리를 위해 외부 결제 게이트웨이(PaymentGateway)와 통신해야 한다.
+- 시스템은 고객이 선택한 좌석이 동시에 다른 고객에게 판매되지 않도록 동시성 관리를 해야 한다.
 
 **비즈니스 규칙**:
 
--   고객은 한 번에 최대 10장의 티켓을 구매할 수 있다.
--   상영 30분 전까지만 온라인으로 티켓을 구매할 수 있다.
+- 고객은 한 번에 최대 10장의 티켓을 구매할 수 있다.
+- 상영 30분 전까지만 온라인으로 티켓을 구매할 수 있다.
 
 ## 2. 티켓 구매 시퀀스 다이어그램
 
@@ -203,7 +203,6 @@ Customer -> Frontend: 결제 정보 입력
                 - 상영 30분 전까지만 온라인으로 티켓을 구매할 수 있습니다.
                 - 고객은 한 번에 최대 10장의 티켓을 구매할 수 있습니다.
             end note
-            TicketPurchases -> Tickets: getTicket(ticketId)
             TicketPurchases -> TicketPurchases: validateTicketQuantity(items)
             TicketPurchases -> TicketPurchases: validatePurchaseTime(showtimeId)
             TicketPurchases -> TicketHolding: isHeldTickets(showtimeId, customerId)
@@ -254,3 +253,66 @@ Payments와 StorageFile은 외부 인프라를 사용하기 위한 서비스다.
 Purchase는 Core서비스다. 그런데 TicketPurchase서비스를 참조? 아니 이건 의존 역전으로 구현한다.
 
 core,app,infra로 나누려는 이유. 이렇게 안 하면 단순 트리 구조로만 생각할 것 같아서. 단일 책임 원칙에 소홀할까봐
+
+```plantuml
+@startuml
+actor Customer
+
+Customer -> Frontend: 결제 정보 입력
+    Frontend -> Backend: 결제 요청\nPOST /purchases
+    note right
+        body {
+            customerId,
+            totalPrice,
+            items: [
+                { type: 'ticket', ticketId: ticketId#1 }
+            ]
+        }
+    end note
+        Backend -> PurchaseProcess: processPurchase(body)
+            PurchaseProcess -> TicketProcessor: validatePurchase(purchaseId, items)
+            activate TicketProcessor
+                TicketProcessor -> TicketProcessor: validateTicketQuantity(items)
+                note right: 고객은 한 번에 최대 10장의 티켓을 구매할 수 있습니다.
+                TicketProcessor -> TicketProcessor: validatePurchaseTime(showtimeId)
+                note right: 상영 30분 전까지만 온라인으로 티켓을 구매할 수 있습니다.
+                TicketProcessor -> TicketHolding: isHeldTickets(showtimeId, customerId)
+                note right: 좌석이 선점된 상태여야 합니다.
+                TicketProcessor <-- TicketHolding: true
+                return ok
+            deactivate TicketProcessor
+
+            PurchaseProcess -> Purchases: createPurchase(body)
+            Purchases -> Payments: processPayment(totalPrice, customer)
+            Purchases <-- Payments: 결제 성공
+            PurchaseProcess <-- Purchases: purchaseId
+
+            PurchaseProcess -> TicketProcessor: completePurchase(purchaseId, items)
+            activate TicketProcessor
+                TicketProcessor -> Tickets: updateTicketStatus(ticketIds[], 'sold')
+                TicketProcessor <-- Tickets: 완료
+                TicketProcessor ->o]: ticketPurchasedEvent(customer, ticketIds[])
+                note left: WatchRecordsService에서 필요하다
+                return ok
+            deactivate TicketProcessor
+
+        Backend <-- PurchaseProcess: 결제 완료 및 티켓 정보
+        note right
+            Created, {
+                id,
+                purchasedAt,
+                customerId,
+                totalPrice,
+                items: [
+                    { type: 'ticket', ticketId: ticketId#1 }
+                ]
+            }
+        end note
+    Frontend <-- Backend: 결제 성공
+Customer <-- Frontend: 구매 완료
+@enduml
+```
+
+이전 설계는 구현이 복잡하기 때문에 위와 같이 단순화 한다.
+
+PurchaseProcess를 제거하고 Purchases를 루트로 넣고 싶을 수 있다. 그렇게 되면 Purchases는 applications가 되고 다른 서비스가 참조할 수 없게 된다.

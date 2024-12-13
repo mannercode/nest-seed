@@ -16,10 +16,10 @@ export class ShowtimesService {
     }
 
     @MethodLog({ level: 'verbose' })
-    async getShowtime(showtimeId: string) {
-        const showtime = await this.repository.getById(showtimeId)
+    async getShowtimes(showtimeIds: string[]) {
+        const showtimes = await this.repository.getByIds(showtimeIds)
 
-        return this.toDto(showtime)
+        return this.toDtos(showtimes)
     }
 
     @MethodLog({ level: 'verbose' })

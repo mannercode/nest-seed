@@ -9,7 +9,7 @@ import {
 } from './showtime-creation.fixture'
 import { createShowtimes } from './showtimes.fixture'
 
-describe('ShowtimeCreation Module', () => {
+describe('/showtime-creation', () => {
     let fixture: Fixture
     let client: HttpTestClient
     let movie: MovieDto

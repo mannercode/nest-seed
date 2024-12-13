@@ -12,7 +12,7 @@ import {
     SharedFixture
 } from './storage-files.fixture'
 
-describe('StorageFiles Module', () => {
+describe('/storage-files', () => {
     let shared: SharedFixture
     let fixture: Fixture
     let client: HttpTestClient

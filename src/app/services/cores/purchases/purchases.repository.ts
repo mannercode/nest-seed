@@ -13,9 +13,10 @@ export class PurchasesRepository extends MongooseRepository<Purchase> {
     }
 
     @MethodLog()
-    async createPurchase(createDto: PurchaseCreateDto) {
+    async createPurchase(createDto: PurchaseCreateDto & { paymentId: string }) {
         const purchase = this.newDocument()
         purchase.customerId = objectId(createDto.customerId)
+        purchase.paymentId = objectId(createDto.paymentId)
         purchase.totalPrice = createDto.totalPrice
         purchase.items = createDto.items.map((item) => ({
             ...item,

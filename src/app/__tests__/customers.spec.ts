@@ -10,7 +10,7 @@ import {
     Fixture
 } from './customers.fixture'
 
-describe('Customers Module', () => {
+describe('/customers', () => {
     let fixture: Fixture
     let client: HttpTestClient
 
