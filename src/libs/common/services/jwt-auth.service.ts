@@ -60,7 +60,10 @@ export class JwtAuthService {
 
         /* istanbul ignore if */
         if (storedRefreshToken !== refreshToken) {
-            throw new UnauthorizedException(`RefreshToken for ${payload.userId} does not exist`)
+            throw new UnauthorizedException({
+                code: 'ERR_REFRESH_TOKEN_INVALID',
+                message: 'The provided refresh token is invalid.'
+            })
         }
 
         return this.generateAuthTokens(payload.userId, payload.email)
@@ -75,7 +78,10 @@ export class JwtAuthService {
             notUsed(exp, iat, jti)
             return payload
         } catch (error) {
-            throw new UnauthorizedException(error.message)
+            throw new UnauthorizedException({
+                code: 'ERR_REFRESH_TOKEN_VERIFICATION_FAILED',
+                message: error.message
+            })
         }
     }
 

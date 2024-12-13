@@ -34,14 +34,11 @@ describe('/customers', () => {
             const { createDto } = createCustomerDto()
 
             await client.post('/customers').body(createDto).created()
-            await client
-                .post('/customers')
-                .body(createDto)
-                .conflict({
-                    error: 'Conflict',
-                    message: `Customer with email ${createDto.email} already exists`,
-                    statusCode: 409
-                })
+            await client.post('/customers').body(createDto).conflict({
+                code: 'ERR_CUSTOMER_EMAIL_ALREADY_EXISTS',
+                email: createDto.email,
+                message: 'Customer with email already exists'
+            })
         })
 
         it('필수 필드가 누락되면 BAD_REQUEST(400)를 반환해야 한다', async () => {
@@ -49,15 +46,29 @@ describe('/customers', () => {
                 .post('/customers')
                 .body({})
                 .badRequest({
-                    error: 'Bad Request',
-                    message: [
-                        'name should not be empty',
-                        'name must be a string',
-                        'email must be an email',
-                        'birthdate must be a Date instance',
-                        'password must be a string'
+                    code: 'ERR_VALIDATION_FAILED',
+                    details: [
+                        {
+                            constraints: {
+                                isNotEmpty: 'name should not be empty',
+                                isString: 'name must be a string'
+                            },
+                            field: 'name'
+                        },
+                        {
+                            constraints: { isEmail: 'email must be an email' },
+                            field: 'email'
+                        },
+                        {
+                            constraints: { isDate: 'birthdate must be a Date instance' },
+                            field: 'birthdate'
+                        },
+                        {
+                            constraints: { isString: 'password must be a string' },
+                            field: 'password'
+                        }
                     ],
-                    statusCode: 400
+                    message: 'Validation failed'
                 })
         })
     })
@@ -82,14 +93,11 @@ describe('/customers', () => {
         })
 
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client
-                .patch(`/customers/${nullObjectId}`)
-                .body({})
-                .notFound({
-                    error: 'Not Found',
-                    message: `Document with ID ${nullObjectId} not found`,
-                    statusCode: 404
-                })
+            await client.patch(`/customers/${nullObjectId}`).body({}).notFound({
+                code: 'ERR_DOCUMENT_NOT_FOUND',
+                message: 'Document not found',
+                notFoundId: nullObjectId
+            })
         })
     })
 
@@ -103,17 +111,17 @@ describe('/customers', () => {
         it('고객을 삭제해야 한다', async () => {
             await client.delete(`/customers/${customer.id}`).ok()
             await client.get(`/customers/${customer.id}`).notFound({
-                error: 'Not Found',
-                message: `Document with ID ${customer.id} not found`,
-                statusCode: 404
+                code: 'ERR_DOCUMENT_NOT_FOUND',
+                message: 'Document not found',
+                notFoundId: customer.id
             })
         })
 
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.delete(`/customers/${nullObjectId}`).notFound({
-                error: 'Not Found',
-                message: 'Document with ID 000000000000000000000000 not found',
-                statusCode: 404
+                code: 'ERR_DOCUMENT_NOT_FOUND',
+                message: 'Document not found',
+                notFoundId: nullObjectId
             })
         })
     })
@@ -131,9 +139,9 @@ describe('/customers', () => {
 
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.get(`/customers/${nullObjectId}`).notFound({
-                error: 'Not Found',
-                message: 'Document with ID 000000000000000000000000 not found',
-                statusCode: 404
+                code: 'ERR_DOCUMENT_NOT_FOUND',
+                message: 'Document not found',
+                notFoundId: nullObjectId
             })
         })
     })
@@ -162,9 +170,14 @@ describe('/customers', () => {
                 .get('/customers')
                 .query({ wrong: 'value' })
                 .badRequest({
-                    error: 'Bad Request',
-                    message: ['property wrong should not exist'],
-                    statusCode: 400
+                    code: 'ERR_VALIDATION_FAILED',
+                    details: [
+                        {
+                            constraints: { whitelistValidation: 'property wrong should not exist' },
+                            field: 'wrong'
+                        }
+                    ],
+                    message: 'Validation failed'
                 })
         })
 

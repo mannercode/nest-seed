@@ -31,13 +31,19 @@ export class PaginationOption {
         const parts = value.split(':')
 
         if (parts.length !== 2) {
-            throw new BadRequestException('Invalid orderby format. It should be name:direction')
+            throw new BadRequestException({
+                code: 'ERR_ORDERBY_FORMAT_INVALID',
+                message: 'Invalid orderby format. It should be "name:direction".'
+            })
         }
 
         const [name, direction] = parts
 
         if (!(direction in OrderDirection)) {
-            throw new BadRequestException('Invalid direction. It should be either "asc" or "desc".')
+            throw new BadRequestException({
+                code: 'ERR_ORDERBY_DIRECTION_INVALID',
+                message: 'Invalid direction. It should be either "asc" or "desc".'
+            })
         }
 
         return { name, direction }
@@ -71,9 +77,12 @@ export abstract class PaginationPipe implements PipeTransform {
 
                 if (value.take) {
                     if (this.takeLimit < value.take) {
-                        throw new BadRequestException(
-                            `The 'take' parameter exceeds the maximum allowed limit of ${this.takeLimit}.`
-                        )
+                        throw new BadRequestException({
+                            code: 'ERR_PAGINATION_TAKE_LIMIT_EXCEEDED',
+                            message: "The 'take' parameter exceeds the maximum allowed limit.",
+                            take: value.take,
+                            takeLimit: this.takeLimit
+                        })
                     }
                 } else {
                     value.take = this.takeLimit

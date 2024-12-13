@@ -123,7 +123,7 @@ describe('/showtime-creation', () => {
             await expect(monitorPromise).resolves.toEqual({
                 batchId,
                 status: 'error',
-                message: `Movie with ID ${nullObjectId} not found`
+                message: 'The requested movie could not be found.'
             })
         })
 
@@ -142,7 +142,7 @@ describe('/showtime-creation', () => {
             await expect(monitorPromise).resolves.toEqual({
                 batchId,
                 status: 'error',
-                message: `Some of the theater IDs [${nullObjectId}] do not exist`
+                message: 'One or more requested theaters could not be found.'
             })
         })
     })

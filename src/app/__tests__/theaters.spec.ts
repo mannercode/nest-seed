@@ -36,14 +36,25 @@ describe('/theaters', () => {
                 .post('/theaters')
                 .body({})
                 .badRequest({
-                    error: 'Bad Request',
-                    message: [
-                        'name should not be empty',
-                        'name must be a string',
-                        'latlong should not be empty',
-                        'seatmap should not be empty'
-                    ],
-                    statusCode: 400
+                    code: 'ERR_VALIDATION_FAILED',
+                    message: 'Validation failed',
+                    details: [
+                        {
+                            constraints: {
+                                isNotEmpty: 'name should not be empty',
+                                isString: 'name must be a string'
+                            },
+                            field: 'name'
+                        },
+                        {
+                            constraints: { isNotEmpty: 'latlong should not be empty' },
+                            field: 'latlong'
+                        },
+                        {
+                            constraints: { isNotEmpty: 'seatmap should not be empty' },
+                            field: 'seatmap'
+                        }
+                    ]
                 })
         })
     })
@@ -68,14 +79,11 @@ describe('/theaters', () => {
         })
 
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client
-                .patch(`/theaters/${nullObjectId}`)
-                .body({})
-                .notFound({
-                    error: 'Not Found',
-                    message: `Document with ID ${nullObjectId} not found`,
-                    statusCode: 404
-                })
+            await client.patch(`/theaters/${nullObjectId}`).body({}).notFound({
+                code: 'ERR_DOCUMENT_NOT_FOUND',
+                message: 'Document not found',
+                notFoundId: '000000000000000000000000'
+            })
         })
     })
 
@@ -88,18 +96,14 @@ describe('/theaters', () => {
 
         it('극장을 삭제해야 한다', async () => {
             await client.delete(`/theaters/${theater.id}`).ok()
-            await client.get(`/theaters/${theater.id}`).notFound({
-                error: 'Not Found',
-                message: `Document with ID ${theater.id} not found`,
-                statusCode: 404
-            })
+            await client.get(`/theaters/${theater.id}`).notFound()
         })
 
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.delete(`/theaters/${nullObjectId}`).notFound({
-                error: 'Not Found',
-                message: `Document with ID ${nullObjectId} not found`,
-                statusCode: 404
+                code: 'ERR_DOCUMENT_NOT_FOUND',
+                message: 'Document not found',
+                notFoundId: nullObjectId
             })
         })
     })
@@ -117,9 +121,9 @@ describe('/theaters', () => {
 
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.get(`/theaters/${nullObjectId}`).notFound({
-                error: 'Not Found',
-                message: `Document with ID ${nullObjectId} not found`,
-                statusCode: 404
+                code: 'ERR_DOCUMENT_NOT_FOUND',
+                message: 'Document not found',
+                notFoundId: nullObjectId
             })
         })
     })
@@ -148,9 +152,14 @@ describe('/theaters', () => {
                 .get('/theaters')
                 .query({ wrong: 'value' })
                 .badRequest({
-                    error: 'Bad Request',
-                    message: ['property wrong should not exist'],
-                    statusCode: 400
+                    code: 'ERR_VALIDATION_FAILED',
+                    details: [
+                        {
+                            constraints: { whitelistValidation: 'property wrong should not exist' },
+                            field: 'wrong'
+                        }
+                    ],
+                    message: 'Validation failed'
                 })
         })
 
@@ -182,9 +191,7 @@ describe('/theaters', () => {
         it('극장이 존재하지 않으면 NotFoundException을 던져야 한다', async () => {
             const promise = fixture.theatersService.getTheatersByIds([nullObjectId])
 
-            await expect(promise).rejects.toThrow(
-                `One or more Documents with IDs ${nullObjectId} not found`
-            )
+            await expect(promise).rejects.toThrow('One or more Documents with IDs not found')
         })
     })
 })

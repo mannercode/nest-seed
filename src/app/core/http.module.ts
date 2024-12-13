@@ -1,4 +1,4 @@
-import { Module, ValidationPipe } from '@nestjs/common'
+import { BadRequestException, Module, ValidationPipe } from '@nestjs/common'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import { HttpErrorFilter, HttpExceptionFilter, HttpSuccessInterceptor } from 'common'
 
@@ -8,6 +8,15 @@ import { HttpErrorFilter, HttpExceptionFilter, HttpSuccessInterceptor } from 'co
             provide: APP_PIPE,
             useFactory: () =>
                 new ValidationPipe({
+                    exceptionFactory: (errors) =>
+                        new BadRequestException({
+                            code: 'ERR_VALIDATION_FAILED',
+                            message: 'Validation failed',
+                            details: errors.map((error) => ({
+                                field: error.property,
+                                constraints: error.constraints
+                            }))
+                        }),
                     enableDebugMessages: false, // Changing it to true doesn't make any difference.
                     disableErrorMessages: false,
                     whitelist: true, // Properties without decorators will be removed.

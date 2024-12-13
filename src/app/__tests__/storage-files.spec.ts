@@ -84,17 +84,17 @@ describe('/storage-files', () => {
 
         it('허용되지 않는 MIME 타입의 파일을 업로드하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
             await uploadFile([{ name: 'files', file: shared.notAllowFile }]).badRequest({
-                error: 'Bad Request',
-                message: 'File type not allowed. Allowed types are: text/plain',
-                statusCode: 400
+                allowedTypes: ['text/plain'],
+                code: 'ERR_INVALID_PAGINATION',
+                message: 'File type not allowed.'
             })
         })
 
         it('name 필드를 설정하지 않으면 BAD_REQUEST(400)를 반환해야 한다', async () => {
             await uploadFile([], []).badRequest({
-                error: 'Bad Request',
-                message: ['name must be a string'],
-                statusCode: 400
+                code: 'ERR_VALIDATION_FAILED',
+                details: [{ constraints: { isString: 'name must be a string' }, field: 'name' }],
+                message: 'Validation failed'
             })
         })
     })
@@ -117,9 +117,9 @@ describe('/storage-files', () => {
 
         it('파일이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.get(`/storage-files/${nullObjectId}`).notFound({
-                error: 'Not Found',
-                message: `Document with ID ${nullObjectId} not found`,
-                statusCode: 404
+                code: 'ERR_DOCUMENT_NOT_FOUND',
+                message: 'Document not found',
+                notFoundId: nullObjectId
             })
         })
     })
@@ -138,9 +138,9 @@ describe('/storage-files', () => {
 
             await client.delete(`/storage-files/${uploadedFile.id}`).ok()
             await client.get(`/storage-files/${uploadedFile.id}`).notFound({
-                error: 'Not Found',
-                message: `Document with ID ${uploadedFile.id} not found`,
-                statusCode: 404
+                code: 'ERR_DOCUMENT_NOT_FOUND',
+                message: 'Document not found',
+                notFoundId: uploadedFile.id
             })
 
             expect(Path.existsSync(filePath)).toBeFalsy()
@@ -148,9 +148,9 @@ describe('/storage-files', () => {
 
         it('파일이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.delete(`/storage-files/${nullObjectId}`).notFound({
-                error: 'Not Found',
-                message: `Document with ID ${nullObjectId} not found`,
-                statusCode: 404
+                code: 'ERR_DOCUMENT_NOT_FOUND',
+                message: 'Document not found',
+                notFoundId: nullObjectId
             })
         })
     })

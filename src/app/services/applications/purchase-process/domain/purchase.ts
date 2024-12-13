@@ -8,7 +8,7 @@ export function checkMaxTicketsForPurchase(ticketCount: number) {
     if (PURCHASE_MAX_TICKETS < ticketCount) {
         throw new BadRequestException({
             code: 'ERR_PURCHASE_MAX_TICKETS_EXCEEDED',
-            message: `Customers can purchase up to ${PURCHASE_MAX_TICKETS} tickets at once.`,
+            message: 'You have exceeded the maximum number of tickets allowed for purchase.',
             maxCount: PURCHASE_MAX_TICKETS
         })
     }
@@ -22,7 +22,7 @@ export function checkPurchaseDeadline(startTime: Date) {
 
         throw new BadRequestException({
             code: 'ERR_PURCHASE_DEADLINE_EXCEEDED',
-            message: `You can only purchase tickets online until ${PURCHASE_DEADLINE_MINUTES} minutes before the showtime.`,
+            message: 'The purchase deadline has passed.',
             deadlineMinutes: PURCHASE_DEADLINE_MINUTES
         })
     }
@@ -34,7 +34,7 @@ export function checkHeldTickets(heldTicketIds: string[], purchaseTicketIds: str
     if (!isAllExist) {
         throw new BadRequestException({
             code: 'ERR_TICKET_NOT_HELD',
-            message: `Tickets must be held first.`
+            message: 'Only held tickets can be purchased.'
         })
     }
 }
