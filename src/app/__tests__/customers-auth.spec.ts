@@ -1,8 +1,8 @@
-import { CustomerDto } from 'services/core'
+import { CustomerDto } from 'services/cores'
 import { HttpTestClient } from 'testlib'
 import { closeFixture, createFixture, Fixture } from './customers-auth.fixture'
 
-describe('Customer Authentication', () => {
+describe('/customers(authentication)', () => {
     let fixture: Fixture
     let client: HttpTestClient
     let customer: CustomerDto
@@ -68,7 +68,10 @@ describe('Customer Authentication', () => {
             await client
                 .post('/customers/refresh')
                 .body({ refreshToken: 'invalid-token' })
-                .unauthorized({ error: 'Unauthorized', message: 'jwt malformed', statusCode: 401 })
+                .unauthorized({
+                    code: 'ERR_REFRESH_TOKEN_VERIFICATION_FAILED',
+                    message: 'jwt malformed'
+                })
         })
     })
 

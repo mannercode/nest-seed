@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { Assert, MethodLog, addMinutes, findMaxDate, findMinDate } from 'common'
-import { MoviesService, ShowtimeDto, ShowtimesService, TheatersService } from 'services/core'
+import { MoviesService, ShowtimeDto, ShowtimesService, TheatersService } from 'services/cores'
 import { ShowtimeBatchCreateJobData } from './types'
 
 type TimeslotMap = Map<number, ShowtimeDto>
@@ -86,16 +86,22 @@ export class ShowtimeCreationValidatorService {
     private async ensureMovieExists(movieId: string): Promise<void> {
         const movieExists = await this.moviesService.moviesExist([movieId])
         if (!movieExists) {
-            throw new NotFoundException(`Movie with ID ${movieId} not found`)
+            throw new NotFoundException({
+                code: 'ERR_MOVIE_NOT_FOUND',
+                message: 'The requested movie could not be found.',
+                movieId
+            })
         }
     }
 
     private async ensureTheatersExist(theaterIds: string[]): Promise<void> {
-        const theaterExists = await this.theatersService.theatersExist(theaterIds)
-        if (!theaterExists) {
-            throw new NotFoundException(
-                `Some of the theater IDs [${theaterIds.join(', ')}] do not exist`
-            )
+        const theatersExist = await this.theatersService.theatersExist(theaterIds)
+        if (!theatersExist) {
+            throw new NotFoundException({
+                code: 'ERR_THEATERS_NOT_FOUND',
+                message: 'One or more requested theaters could not be found.',
+                theaterIds
+            })
         }
     }
 }

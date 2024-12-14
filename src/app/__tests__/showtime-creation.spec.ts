@@ -1,5 +1,4 @@
-import { MovieDto, ShowtimeDto, TheaterDto } from 'services/core'
-import { Seatmap } from 'services/types'
+import { MovieDto, Seatmap, ShowtimeDto, TheaterDto } from 'services/cores'
 import { expectEqualUnsorted, HttpTestClient, nullObjectId } from 'testlib'
 import {
     closeFixture,
@@ -10,7 +9,7 @@ import {
 } from './showtime-creation.fixture'
 import { createShowtimes } from './showtimes.fixture'
 
-describe('ShowtimeCreation Module', () => {
+describe('/showtime-creation', () => {
     let fixture: Fixture
     let client: HttpTestClient
     let movie: MovieDto
@@ -124,7 +123,7 @@ describe('ShowtimeCreation Module', () => {
             await expect(monitorPromise).resolves.toEqual({
                 batchId,
                 status: 'error',
-                message: `Movie with ID ${nullObjectId} not found`
+                message: 'The requested movie could not be found.'
             })
         })
 
@@ -143,7 +142,7 @@ describe('ShowtimeCreation Module', () => {
             await expect(monitorPromise).resolves.toEqual({
                 batchId,
                 status: 'error',
-                message: `Some of the theater IDs [${nullObjectId}] do not exist`
+                message: 'One or more requested theaters could not be found.'
             })
         })
     })

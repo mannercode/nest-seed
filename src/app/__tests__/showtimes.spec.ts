@@ -1,5 +1,5 @@
-import { addMinutes } from 'common'
-import { ShowtimeDto, ShowtimesService } from 'services/core'
+import { addMinutes, pickIds } from 'common'
+import { ShowtimeDto, ShowtimesService } from 'services/cores'
 import { expectEqualUnsorted, nullObjectId, testObjectId } from 'testlib'
 import {
     closeFixture,
@@ -83,7 +83,7 @@ describe('Showtimes Module', () => {
         })
     })
 
-    describe('getShowtime', () => {
+    describe('getShowtimes', () => {
         let showtimes: ShowtimeDto[]
 
         beforeEach(async () => {
@@ -92,13 +92,13 @@ describe('Showtimes Module', () => {
         })
 
         it('상영시간 정보를 가져와야 한다', async () => {
-            const gotShowtime = await service.getShowtime(showtimes[0].id)
-            expect(gotShowtime).toEqual(showtimes[0])
+            const gotShowtime = await service.getShowtimes(pickIds(showtimes))
+            expect(gotShowtime).toEqual(showtimes)
         })
 
         it('상영시간이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            const promise = service.getShowtime(nullObjectId)
-            await expect(promise).rejects.toThrow(`Document with ID ${nullObjectId} not found`)
+            const promise = service.getShowtimes([nullObjectId])
+            await expect(promise).rejects.toThrow(`One or more Documents with IDs not found`)
         })
     })
 

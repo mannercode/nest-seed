@@ -7,7 +7,7 @@ import {
     MoviesService,
     ShowtimesService,
     WatchRecordsService
-} from 'services/core'
+} from 'services/cores'
 import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
 import { createCustomerAndLogin } from './customers-auth.fixture'
 import { createMovie } from './movies.fixture'

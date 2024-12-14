@@ -4,8 +4,10 @@ x-logging: &default-logging
         max-size: '10m'
         max-file: '3'
 
+x-mongo-image: &mongo-image
+    image: mongo:8.0
 x-mongo-common: &mongo-common
-    image: ${MONGO_DB_IMAGE}
+    <<: *mongo-image
     profiles: ['infra']
     logging: *default-logging
     environment:
@@ -38,8 +40,10 @@ x-mongo-common: &mongo-common
         timeout: 10s
         retries: 5
 
+x-redis-image: &redis-image
+    image: redis:7.4
 x-redis-common: &redis-common
-    image: ${REDIS_IMAGE}
+    <<: *redis-image
     command:
         [
             'redis-server',
@@ -89,7 +93,7 @@ services:
         <<: *redis-common
         container_name: ${REDIS_HOST6}
     redis-cluster-setup:
-        image: ${REDIS_IMAGE}
+        <<: *redis-image
         container_name: ${PROJECT_NAME}-redis-cluster-setup
         profiles: ['infra']
         depends_on:
@@ -118,7 +122,7 @@ services:
             - default
 
     mongo-key-generator:
-        image: ${MONGO_DB_IMAGE}
+        <<: *mongo-image
         container_name: ${PROJECT_NAME}-mongo-key-generator
         profiles: ['infra']
         command: sh -c "openssl rand -base64 768 > mongodb.key && chmod 400 mongodb.key && chown mongodb:mongodb mongodb.key"
@@ -135,7 +139,7 @@ services:
         <<: *mongo-common
         container_name: ${MONGO_DB_HOST3}
     mongo-cluster-setup:
-        image: ${MONGO_DB_IMAGE}
+        <<: *mongo-image
         container_name: ${PROJECT_NAME}-mongo-cluster-setup
         profiles: ['infra']
         depends_on:

@@ -49,6 +49,9 @@ export const addRangeQuery = (query: any, field: string, range?: { start?: Date;
 
 export const validateFilters = (query: any): void => {
     if (Object.keys(query).length === 0) {
-        throw new BadRequestException('At least one filter condition must be provided.')
+        throw new BadRequestException({
+            code: 'ERR_MONGOOSE_FILTERS_REQUIRED',
+            message: 'At least one filter condition must be provided.'
+        })
     }
 }

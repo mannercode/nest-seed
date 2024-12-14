@@ -1,5 +1,10 @@
 import { Module } from '@nestjs/common'
-import { BookingModule, RecommendationModule, ShowtimeCreationModule } from 'services/applications'
+import {
+    BookingModule,
+    PurchaseProcessModule,
+    RecommendationModule,
+    ShowtimeCreationModule
+} from 'services/applications'
 import {
     CustomersModule,
     MoviesModule,
@@ -9,8 +14,8 @@ import {
     TicketHoldingModule,
     TicketsModule,
     WatchRecordsModule
-} from 'services/core'
-import { PaymentsModule, StorageFilesModule } from 'services/infra'
+} from 'services/cores'
+import { PaymentsModule, StorageFilesModule } from 'services/infrastructures'
 import {
     BookingController,
     CustomerJwtStrategy,
@@ -40,7 +45,8 @@ import { CoreModule } from './core'
         RecommendationModule,
         BookingModule,
         PaymentsModule,
-        PurchasesModule
+        PurchasesModule,
+        PurchaseProcessModule
     ],
     providers: [CustomerLocalStrategy, CustomerJwtStrategy],
     controllers: [

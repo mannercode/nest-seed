@@ -1,5 +1,5 @@
 import dotenv from 'dotenv'
-dotenv.config({ path: ['.env.app', '.env.infra'] })
+dotenv.config({ path: ['.env.rule', '.env.app'] })
 process.env.NODE_ENV = 'development'
 
 import { bootstrap } from './main'

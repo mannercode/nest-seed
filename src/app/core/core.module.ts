@@ -13,7 +13,7 @@ import { MulterModule } from './multer.module'
 @Module({
     imports: [
         ConfigModule,
-        EventModule,
+        EventModule.forRoot(),
         HealthModule,
         HttpModule,
         LoggerModule,

@@ -1,4 +1,4 @@
-import { MethodLog } from 'common'
+import { MethodLog, MethodLogOnEvent } from 'common'
 
 export const mockLogger = {
     log: jest.fn().mockImplementation(),
@@ -32,6 +32,9 @@ export class TestService {
 
     @MethodLog()
     syncMethod() {}
+
+    @MethodLogOnEvent('eventName')
+    eventMethod() {}
 }
 
 describe('@MethodLog()', () => {
@@ -74,6 +77,16 @@ describe('@MethodLog()', () => {
         await service.syncMethod()
 
         expect(mockLogger.log).toHaveBeenCalledWith('TestService.syncMethod', {
+            args: [],
+            duration: expect.any(Number),
+            return: undefined
+        })
+    })
+
+    it('eventMethod', async () => {
+        await service.eventMethod()
+
+        expect(mockLogger.log).toHaveBeenCalledWith('TestService.eventMethod', {
             args: [],
             duration: expect.any(Number),
             return: undefined

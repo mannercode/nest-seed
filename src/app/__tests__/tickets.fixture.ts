@@ -1,7 +1,7 @@
 import { AppModule } from 'app/app.module'
 import { configureApp } from 'app/main'
-import { omit } from 'lodash'
-import { TicketCreateDto, TicketDto, TicketsService, TicketStatus } from 'services/core'
+import { omit, uniq } from 'lodash'
+import { TicketCreateDto, TicketDto, TicketsService, TicketStatus } from 'services/cores'
 import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
 
 export interface Fixture {
@@ -50,7 +50,7 @@ export async function createTickets(service: TicketsService, createDtos: TicketC
     const { success } = await service.createTickets(createDtos)
     expect(success).toBeTruthy()
 
-    const batchIds = Array.from(new Set(createDtos.map((dto) => dto.batchId)))
+    const batchIds = uniq(createDtos.map((dto) => dto.batchId))
 
     const tickets = await service.findAllTickets({ batchIds })
     return tickets

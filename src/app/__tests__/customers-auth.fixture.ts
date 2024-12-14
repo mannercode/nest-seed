@@ -1,7 +1,7 @@
 import { AppModule } from 'app/app.module'
 import { configureApp } from 'app/main'
 import { AppConfigService } from 'config'
-import { CustomerDto, CustomersService } from 'services/core'
+import { CustomerDto, CustomersService } from 'services/cores'
 import { createHttpTestContext, HttpTestContext } from 'testlib'
 import { createCustomer } from './customers.fixture'
 

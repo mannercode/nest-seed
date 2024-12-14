@@ -2,7 +2,7 @@ import { AppModule } from 'app/app.module'
 import { configureApp } from 'app/main'
 import { createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
 
-describe('Health Check', () => {
+describe('/health', () => {
     let testContext: HttpTestContext
     let client: HttpTestClient
 

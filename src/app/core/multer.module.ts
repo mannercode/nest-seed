@@ -19,9 +19,11 @@ export class MulterConfigService implements MulterOptionsFactory {
                 let error: Error | null = null
 
                 if (!this.config.fileUpload.allowedMimeTypes.includes(file.mimetype)) {
-                    error = new BadRequestException(
-                        `File type not allowed. Allowed types are: ${this.config.fileUpload.allowedMimeTypes.join(', ')}`
-                    )
+                    error = new BadRequestException({
+                        code: 'ERR_INVALID_PAGINATION',
+                        message: 'File type not allowed.',
+                        allowedTypes: this.config.fileUpload.allowedMimeTypes
+                    })
                 }
 
                 cb(error, error === null)

@@ -5,6 +5,7 @@ import { HttpTestContext } from 'testlib'
 import { createMongooseSchema } from '../mongoose.schema'
 import { createFixture, HardDeleteSample, SoftDeleteSample } from './mongoose.schema.fixture'
 
+// TODO mongoose의 기능들 테스트 해야 한다. 스키마의 각 타입들 포함
 describe('MongooseSchema', () => {
     let testContext: HttpTestContext
     let model: Model<any>

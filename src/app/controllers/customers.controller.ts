@@ -19,7 +19,7 @@ import {
     CustomerQueryDto,
     CustomersService,
     CustomerUpdateDto
-} from 'services/core'
+} from 'services/cores'
 import { CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
 import { DefaultPaginationPipe } from './pipes'
 

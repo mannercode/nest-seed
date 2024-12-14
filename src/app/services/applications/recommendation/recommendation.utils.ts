@@ -1,4 +1,4 @@
-import { MovieDto } from 'services/core'
+import { MovieDto } from 'services/cores'
 
 export function generateRecommendedMovies(showingMovies: MovieDto[], watchedMovies: MovieDto[]) {
     // 이미 본 영화 ID를 저장하여 추천 목록에서 제외

@@ -5,7 +5,7 @@ import {
     TheatersService,
     TicketHoldingService,
     TicketsService
-} from 'services/core'
+} from 'services/cores'
 import { generateShowtimesWithSalesStatus, sortTheatersByDistance } from './booking.utils'
 import { ShowtimeSalesStatusDto } from './dtos'
 

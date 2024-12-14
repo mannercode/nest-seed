@@ -1,4 +1,4 @@
-import { MovieDto, MovieGenre } from 'services/core'
+import { MovieDto, MovieGenre } from 'services/cores'
 import { HttpTestClient } from 'testlib'
 import {
     closeFixture,
@@ -21,7 +21,7 @@ describe('Recommendation Module', () => {
         await closeFixture(fixture)
     })
 
-    describe('추천 영화 목록 요청', () => {
+    describe('/movies/recommended', () => {
         let showingMovies: MovieDto[]
 
         beforeEach(async () => {

@@ -1,6 +1,6 @@
 import { expect } from '@jest/globals'
-import { NotFoundException } from '@nestjs/common'
-import { MongooseException, OrderDirection, pickIds, pickItems } from 'common'
+import { BadRequestException, NotFoundException } from '@nestjs/common'
+import { OrderDirection, pickIds, pickItems } from 'common'
 import { expectEqualUnsorted, getMongoTestConnection, HttpTestContext, nullObjectId } from 'testlib'
 import {
     createFixture,
@@ -134,13 +134,13 @@ describe('MongooseRepository', () => {
         it('should throw an exception if ‘take’ is not positive number', async () => {
             const promise = repository.findWithPagination({ pagination: { take: -1 } })
 
-            await expect(promise).rejects.toThrow(MongooseException)
+            await expect(promise).rejects.toThrow(BadRequestException)
         })
 
         it('should throw an exception if ‘take’ is not specified', async () => {
             const promise = repository.findWithPagination({ pagination: {} })
 
-            await expect(promise).rejects.toThrow(MongooseException)
+            await expect(promise).rejects.toThrow(BadRequestException)
         })
 
         it('Should set conditions using the QueryHelper', async () => {

@@ -1,7 +1,7 @@
 import { AppModule } from 'app/app.module'
 import { configureApp } from 'app/main'
-import { omit } from 'lodash'
-import { ShowtimeCreateDto, ShowtimeDto, ShowtimesService } from 'services/core'
+import { omit, uniq } from 'lodash'
+import { ShowtimeCreateDto, ShowtimeDto, ShowtimesService } from 'services/cores'
 import { HttpTestContext, createHttpTestContext, nullObjectId } from 'testlib'
 
 export interface Fixture {
@@ -53,8 +53,8 @@ export async function createShowtimes(service: ShowtimesService, createDtos: Sho
     const { success } = await service.createShowtimes(createDtos)
     expect(success).toBeTruthy()
 
-    const showtimes = await service.findAllShowtimes({
-        startTimeRange: { start: new Date(0), end: new Date('9999') }
-    })
+    const batchIds = uniq(createDtos.map((dto) => dto.batchId))
+
+    const showtimes = await service.findAllShowtimes({ batchIds })
     return showtimes
 }

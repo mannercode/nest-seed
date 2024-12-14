@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { ShowtimesModule, TheatersModule, TicketHoldingModule, TicketsModule } from 'services/core'
+import { ShowtimesModule, TheatersModule, TicketHoldingModule, TicketsModule } from 'services/cores'
 import { BookingService } from './booking.service'
 
 @Module({
