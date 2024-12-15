@@ -16,7 +16,7 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { AuthTokenPayload } from 'common'
 import { pick } from 'lodash'
-import { MoviesService, RecommendationService } from 'services'
+import { MoviesService, RecommendationService } from 'proxy'
 import { MovieCreateDto, MovieQueryDto, MovieUpdateDto } from 'types'
 import { CustomerOptionalJwtAuthGuard } from './guards'
 import { DefaultPaginationPipe } from './pipes'

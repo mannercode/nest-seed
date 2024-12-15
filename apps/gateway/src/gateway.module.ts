@@ -9,7 +9,7 @@ import {
     ShowtimeCreationService,
     StorageFilesService,
     TheatersService
-} from 'services'
+} from 'proxy'
 import {
     BookingController,
     CustomerJwtStrategy,

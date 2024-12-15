@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common'
-import { PurchaseProcessService, PurchasesService } from 'services'
+import { PurchaseProcessService, PurchasesService } from 'proxy'
 import { PurchaseCreateDto } from 'types'
 
 @Controller('purchases')

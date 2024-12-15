@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Req, UseGuards } from '@nestjs/common'
 import { AuthTokenPayload, convertStringToDate, LatLong, LatLongQuery } from 'common'
-import { BookingService } from 'services'
+import { BookingService } from 'proxy'
 import { CustomerJwtAuthGuard } from './guards'
 
 @Controller('booking')

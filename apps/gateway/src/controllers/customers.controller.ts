@@ -14,10 +14,10 @@ import {
     UsePipes
 } from '@nestjs/common'
 import { Assert, AuthTokenPayload } from 'common'
+import { CustomersService } from 'proxy'
 import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from 'types'
 import { CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
 import { DefaultPaginationPipe } from './pipes'
-import { CustomersService } from 'services'
 
 @Controller('customers')
 @UseGuards(CustomerJwtAuthGuard)

@@ -29,11 +29,14 @@
             "types": [
                 "libs/@types/index"
             ],
-            "services": [
-                "libs/services/index"
+            "proxy": [
+                "libs/proxy/index"
             ],
             "config": [
                 "libs/config/index"
+            ],
+            "services/*": [
+                "apps/services/src/*"
             ]
         }
     },

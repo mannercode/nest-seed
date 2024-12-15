@@ -12,6 +12,12 @@
             "root": "apps/gateway",
             "entryFile": "development",
             "sourceRoot": "apps/gateway/src"
+        },
+        "services": {
+            "type": "application",
+            "root": "apps/services",
+            "entryFile": "development",
+            "sourceRoot": "apps/services/src"
         }
     }
 }

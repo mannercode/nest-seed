@@ -1,6 +1,7 @@
 export * from './booking.controller'
 export * from './customers.controller'
 export * from './guards'
+export * from './health.controller'
 export * from './movies.controller'
 export * from './purchases.controller'
 export * from './showtime-creation.controller'
