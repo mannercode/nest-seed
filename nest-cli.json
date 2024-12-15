@@ -5,5 +5,13 @@
         "deleteOutDir": true,
         "webpack": false
     },
-    "sourceRoot": "src"
+    "monorepo": true,
+    "projects": {
+        "gateway": {
+            "type": "application",
+            "root": "apps/gateway",
+            "entryFile": "development",
+            "sourceRoot": "apps/gateway/src"
+        }
+    }
 }

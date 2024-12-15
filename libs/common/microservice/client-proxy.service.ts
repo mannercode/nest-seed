@@ -24,7 +24,7 @@ export class ClientProxyService implements OnModuleDestroy {
 @Module({})
 export class ClientProxyModule {
     static registerAsync(options: ClientsProviderAsyncOptions): DynamicModule {
-        const { name, useFactory, inject = [] } = options
+        const { name, useFactory, inject } = options
         return {
             module: ClientProxyModule,
             imports: [ClientsModule.registerAsync([{ name, useFactory, inject }])],

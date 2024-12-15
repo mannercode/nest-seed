@@ -21,23 +21,24 @@
         "baseUrl": ".",
         "paths": {
             "common": [
-                "src/libs/common/index"
+                "libs/common/index"
             ],
             "testlib": [
-                "src/libs/testlib/index"
+                "libs/testlib/index"
+            ],
+            "types": [
+                "libs/@types/index"
+            ],
+            "services": [
+                "libs/services/index"
             ],
             "config": [
-                "src/app/config/index"
-            ],
-            "services/*": [
-                "src/app/services/*"
-            ],
-            "app/*": [
-                "src/app/*"
+                "libs/config/index"
             ]
         }
     },
     "include": [
-        "src/**/*"
+        "libs/**/*",
+        "apps/**/src/**/*"
     ]
 }
