@@ -4,14 +4,16 @@ const config: Config = {
     setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
     moduleFileExtensions: ['js', 'json', 'ts'],
     rootDir: '.',
-    roots: ['<rootDir>/src'],
+    roots: ['<rootDir>/apps','<rootDir>/libs'],
     testRegex: '.*\\.spec\\.(ts|js)$',
     moduleNameMapper: {
-        '^app/(.*)$': '<rootDir>/src/app/$1',
-        '^services/(.*)$': '<rootDir>/src/app/services/$1',
-        '^common$': '<rootDir>/src/libs/common/index',
-        '^testlib$': '<rootDir>/src/libs/testlib/index',
-        '^config$': '<rootDir>/src/app/config/index'
+        '^common$': '<rootDir>/libs/common/index',
+        '^testlib$': '<rootDir>/libs/testlib/index',
+        '^types$': '<rootDir>/libs/@types/index',
+        '^proxy$': '<rootDir>/libs/proxy/index',
+        '^config$': '<rootDir>/libs/config/index',
+        '^services/(.*)$': '<rootDir>/apps/services/src/$1',
+        '^gateway/(.*)$': '<rootDir>/apps/gateway/src/$1'
     },
     testEnvironment: 'node',
     transform: { '^.+\\.ts$': 'ts-jest' },
@@ -21,7 +23,7 @@ const config: Config = {
         '!src/app/*.ts',
         'src/libs/common/**/*.ts',
         '!**/index.ts',
-        '!**/*.module.ts',
+        '!**/*.module.ts'
     ],
     coverageReporters: ['lcov', 'text'],
     coveragePathIgnorePatterns: ['__tests__'],

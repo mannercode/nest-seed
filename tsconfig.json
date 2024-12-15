@@ -37,11 +37,15 @@
             ],
             "services/*": [
                 "apps/services/src/*"
+            ],
+            "gateway/*": [
+                "apps/gateway/src/*"
             ]
         }
     },
     "include": [
         "libs/**/*",
-        "apps/**/src/**/*"
+        "apps/**/src/**/*",
+        "apps/__tests__/*"
     ]
 }

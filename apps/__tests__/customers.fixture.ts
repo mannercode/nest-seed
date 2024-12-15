@@ -1,27 +1,64 @@
-import { AppModule } from 'app/app.module'
-import { CustomerJwtAuthGuard } from 'app/controllers'
-import { configureApp } from 'app/main'
+import { ConfigService } from '@nestjs/config'
+import { CustomerJwtAuthGuard } from 'gateway/controllers'
+import { getProxyValue } from 'common'
+import { GatewayModule } from 'gateway/gateway.module'
+import { configureGateway } from 'gateway/main'
 import { omit } from 'lodash'
+import { configureServices } from 'services/main'
+import { ServicesModule } from 'services/services.module'
+import {
+    HttpTestContext,
+    MicroserviceTestContext,
+    createHttpTestContext,
+    createMicroserviceTestContext
+} from 'testlib'
 import { CustomersService } from 'services/cores'
-import { createHttpTestContext, HttpTestContext } from 'testlib'
 
 export interface Fixture {
-    testContext: HttpTestContext
+    httpContext: HttpTestContext
+    msContext: MicroserviceTestContext
     customersService: CustomersService
 }
 
 export async function createFixture() {
-    const testContext = await createHttpTestContext(
-        { imports: [AppModule], ignoreGuards: [CustomerJwtAuthGuard] },
-        configureApp
+    const msContext = await createMicroserviceTestContext(
+        { imports: [ServicesModule] },
+        configureServices
     )
-    const customersService = testContext.module.get(CustomersService)
 
-    return { testContext, customersService }
+    const realConfigService = new ConfigService()
+
+    const mockConfigService = {
+        get: jest.fn((key: string) => {
+            const mockValues: Record<string, any> = {
+                SERVICE_PORT: msContext.port
+            }
+
+            if (key in mockValues) {
+                return mockValues[key]
+            }
+
+            return realConfigService.get(key)
+        })
+    }
+
+    const httpContext = await createHttpTestContext(
+        {
+            imports: [GatewayModule],
+            overrideProviders: [{ original: ConfigService, replacement: mockConfigService }],
+            ignoreGuards: [CustomerJwtAuthGuard]
+        },
+        configureGateway
+    )
+
+    const customersService = msContext.module.get(CustomersService)
+
+    return { httpContext, customersService, msContext }
 }
 
 export async function closeFixture(fixture: Fixture) {
-    await fixture.testContext.close()
+    await fixture.httpContext.close()
+    await fixture.msContext.close()
 }
 
 export const createCustomerDto = (overrides = {}) => {
@@ -40,7 +77,7 @@ export const createCustomerDto = (overrides = {}) => {
 
 export const createCustomer = async (customersService: CustomersService, override = {}) => {
     const { createDto } = createCustomerDto(override)
-    const customer = customersService.createCustomer(createDto)
+    const customer = await customersService.createCustomer(createDto)
     return customer
 }
 

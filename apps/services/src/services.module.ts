@@ -38,4 +38,4 @@ import { HealthModule, PaymentsModule, StorageFilesModule } from './infrastructu
         PurchaseProcessModule
     ]
 })
-export class AppModule {}
+export class ServicesModule {}

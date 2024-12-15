@@ -1,6 +1,6 @@
 import { expect } from '@jest/globals'
-import { CustomerDto } from 'services/cores'
 import { expectEqualUnsorted, HttpTestClient, nullObjectId } from 'testlib'
+import { CustomerDto } from 'types'
 import {
     closeFixture,
     createCustomer,
@@ -16,7 +16,7 @@ describe('/customers', () => {
 
     beforeEach(async () => {
         fixture = await createFixture()
-        client = fixture.testContext.client
+        client = fixture.httpContext.client
     })
 
     afterEach(async () => {

@@ -8,7 +8,7 @@ import { existsSync } from 'fs'
 import { exit } from 'process'
 import { GatewayModule } from './gateway.module'
 
-export function configureApp(app: INestApplication<any>) {
+export function configureGateway(app: INestApplication<any>) {
     app.use(compression())
 
     const logger = app.get(AppLoggerService)
@@ -32,7 +32,7 @@ export function configureApp(app: INestApplication<any>) {
 
 export async function bootstrap() {
     const app = await NestFactory.create(GatewayModule)
-    configureApp(app)
+    configureGateway(app)
 
     // for Kubernetes to manage containers' lifecycles
     app.enableShutdownHooks()

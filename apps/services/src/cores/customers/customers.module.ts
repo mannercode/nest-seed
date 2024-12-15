@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'
 import { generateShortId, JwtAuthModule, stringToMillisecs } from 'common'
 import { AppConfigService, isTest, MongooseConfig, RedisConfig } from 'config'
+import { CustomersController } from './customers.controller'
 import { CustomersRepository } from './customers.repository'
 import { CustomersService } from './customers.service'
 import { Customer, CustomerSchema } from './models'
@@ -30,6 +31,7 @@ import { Customer, CustomerSchema } from './models'
         })
     ],
     providers: [CustomersService, CustomersRepository],
+    controllers: [CustomersController],
     exports: [CustomersService]
 })
 export class CustomersModule {}

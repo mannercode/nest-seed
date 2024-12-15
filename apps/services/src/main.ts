@@ -5,9 +5,9 @@ import { AppLoggerService, HttpToRpcExceptionFilter } from 'common'
 import { AppConfigService } from 'config'
 import { existsSync } from 'fs'
 import { exit } from 'process'
-import { AppModule } from './app.module'
+import { ServicesModule } from './services.module'
 
-export function configureApp(app: INestMicroservice) {
+export function configureServices(app: INestMicroservice) {
     const logger = app.get(AppLoggerService)
     app.useLogger(logger)
     app.useGlobalFilters(new HttpToRpcExceptionFilter())
@@ -27,11 +27,11 @@ export function configureApp(app: INestMicroservice) {
 
 export async function bootstrap() {
     const port = 3001
-    const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
+    const app = await NestFactory.createMicroservice<MicroserviceOptions>(ServicesModule, {
         transport: Transport.TCP,
         options: { retryAttempts: 5, retryDelay: 3000, port, host: '0.0.0.0' }
     })
-    configureApp(app)
+    configureServices(app)
 
     app.enableShutdownHooks() // for Kubernetes to manage containers' lifecycles
 

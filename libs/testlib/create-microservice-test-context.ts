@@ -14,7 +14,10 @@ export interface MicroserviceTestContext {
     port: number
 }
 
-export async function createMicroserviceTestContext(metadata: ModuleMetadataEx) {
+export async function createMicroserviceTestContext(
+    metadata: ModuleMetadataEx,
+    configureApp?: (app: INestMicroservice) => void
+) {
     const module = await createTestingModule(metadata)
 
     const port = await getAvailablePort()
@@ -24,6 +27,8 @@ export async function createMicroserviceTestContext(metadata: ModuleMetadataEx) 
     } as const
 
     const app = module.createNestMicroservice<MicroserviceOptions>(rpcOptions)
+
+    configureApp && configureApp(app)
 
     const isDebuggingEnabled = process.env.NODE_OPTIONS !== undefined
     app.useLogger(isDebuggingEnabled ? console : false)
