@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common'
+import { ClientProxyService } from 'common'
 
 @Injectable()
 export class HealthService {
-    constructor() {}
+    constructor(private service: ClientProxyService) {}
 
     check() {
-        return { status: 'ok' }
+        return this.service.send('health.check', {})
     }
 }

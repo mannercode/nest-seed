@@ -1,38 +1,39 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog } from 'common'
-import { nullShowtimeDto, ShowtimeCreateDto, ShowtimeDto, ShowtimeFilterDto } from 'types'
+import { ClientProxyService, MethodLog } from 'common'
+import { Observable } from 'rxjs'
+import { ShowtimeCreateDto, ShowtimeDto, ShowtimeFilterDto } from 'types'
 
 @Injectable()
 export class ShowtimesService {
-    constructor() {}
+    constructor(private service: ClientProxyService) {}
 
-    @MethodLog()
-    async createShowtimes(createDtos: ShowtimeCreateDto[]): Promise<ShowtimeDto> {
-        return nullShowtimeDto
+    @MethodLog({ level: 'verbose' })
+    createShowtimes(createDtos: ShowtimeCreateDto[]): Observable<ShowtimeDto> {
+        return this.service.send('createShowtimes', createDtos)
     }
 
     @MethodLog({ level: 'verbose' })
-    async getShowtimes(showtimeIds: string[]): Promise<ShowtimeDto[]> {
-        return []
+    getShowtimes(showtimeIds: string[]): Observable<ShowtimeDto[]> {
+        return this.service.send('getShowtimes', showtimeIds)
     }
 
     @MethodLog({ level: 'verbose' })
-    async findAllShowtimes(filterDto: ShowtimeFilterDto): Promise<ShowtimeDto[]> {
-        return []
+    findAllShowtimes(filterDto: ShowtimeFilterDto): Observable<ShowtimeDto[]> {
+        return this.service.send('findAllShowtimes', filterDto)
     }
 
     @MethodLog({ level: 'verbose' })
-    async findShowingMovieIds(): Promise<string[]> {
-        return []
+    findShowingMovieIds(): Observable<string[]> {
+        return this.service.send('findShowingMovieIds')
     }
 
     @MethodLog({ level: 'verbose' })
-    async findTheaterIdsByMovieId(movieId: string): Promise<string[]> {
-        return []
+    findTheaterIdsByMovieId(movieId: string): Observable<string[]> {
+        return this.service.send('findTheaterIdsByMovieId', movieId)
     }
 
     @MethodLog({ level: 'verbose' })
-    async findShowdates(args: { movieId: string; theaterId: string }): Promise<Date[]> {
-        return []
+    findShowdates(args: { movieId: string; theaterId: string }): Observable<Date[]> {
+        return this.service.send('findShowdates', args)
     }
 }

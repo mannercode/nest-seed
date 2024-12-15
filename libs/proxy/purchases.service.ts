@@ -1,18 +1,19 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog } from 'common'
-import { nullPurchase, PurchaseCreateDto, PurchaseDto } from 'types'
+import { ClientProxyService, MethodLog } from 'common'
+import { Observable } from 'rxjs'
+import { PurchaseCreateDto, PurchaseDto } from 'types'
 
 @Injectable()
 export class PurchasesService {
-    constructor() {}
+    constructor(private service: ClientProxyService) {}
 
-    @MethodLog()
-    async createPurchase(createDto: PurchaseCreateDto): Promise<PurchaseDto> {
-        return nullPurchase
+    @MethodLog({ level: 'verbose' })
+    createPurchase(createDto: PurchaseCreateDto): Observable<PurchaseDto> {
+        return this.service.send('createPurchase', createDto)
     }
 
     @MethodLog({ level: 'verbose' })
-    async getPurchase(purchaseId: string): Promise<PurchaseDto> {
-        return nullPurchase
+    getPurchase(purchaseId: string): Observable<PurchaseDto> {
+        return this.service.send('getPurchase', purchaseId)
     }
 }

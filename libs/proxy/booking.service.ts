@@ -1,43 +1,40 @@
 import { Injectable } from '@nestjs/common'
-import { LatLong, MethodLog } from 'common'
+import { ClientProxyService, LatLong, MethodLog } from 'common'
+import { Observable } from 'rxjs'
 import { ShowtimeSalesStatusDto, TheaterDto, TicketDto } from 'types'
 
 @Injectable()
 export class BookingService {
-    constructor() {}
+    constructor(private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
-    async findShowingTheaters(args: { movieId: string; latlong: LatLong }): Promise<TheaterDto[]> {
-        return []
+    findShowingTheaters(args: { movieId: string; latlong: LatLong }): Observable<TheaterDto[]> {
+        return this.service.send('findShowingTheaters', args)
     }
 
     @MethodLog({ level: 'verbose' })
-    async findShowdates(args: { movieId: string; theaterId: string }): Promise<Date[]> {
-        return []
+    findShowdates(args: { movieId: string; theaterId: string }): Observable<Date[]> {
+        return this.service.send('findShowdates', args)
     }
 
     @MethodLog({ level: 'verbose' })
-    async findShowtimes(args: {
+    findShowtimes(args: {
         movieId: string
         theaterId: string
         showdate: Date
-    }): Promise<ShowtimeSalesStatusDto[]> {
-        return []
+    }): Observable<ShowtimeSalesStatusDto[]> {
+        return this.service.send('findShowtimes', args)
     }
 
     @MethodLog({ level: 'verbose' })
-    async getAvailableTickets(showtimeId: string): Promise<TicketDto[]> {
-        return []
+    getAvailableTickets(showtimeId: string): Observable<TicketDto[]> {
+        return this.service.send('getAvailableTickets', showtimeId)
     }
 
     @MethodLog({ level: 'verbose' })
-    async holdTickets(args: {
-        customerId: string
-        showtimeId: string
-        ticketIds: string[]
-    }): Promise<{
+    holdTickets(args: { customerId: string; showtimeId: string; ticketIds: string[] }): Observable<{
         heldTicketIds: string[]
     }> {
-        return { heldTicketIds: [] }
+        return this.service.send('holdTickets', args)
     }
 }

@@ -1,54 +1,49 @@
 import { Injectable } from '@nestjs/common'
-import { JwtAuthTokens, MethodLog } from 'common'
-import {
-    CustomerCreateDto,
-    CustomerDto,
-    CustomerUpdateDto,
-    CustomerQueryDto,
-    nullCustomer
-} from 'types'
+import { ClientProxyService, JwtAuthTokens, MethodLog } from 'common'
+import { Observable } from 'rxjs'
+import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from 'types'
 
 @Injectable()
 export class CustomersService {
-    constructor() {}
+    constructor(private service: ClientProxyService) {}
 
-    @MethodLog()
-    async createCustomer(createDto: CustomerCreateDto): Promise<CustomerDto> {
-        return nullCustomer
-    }
-
-    @MethodLog()
-    async updateCustomer(customerId: string, updateDto: CustomerUpdateDto): Promise<CustomerDto> {
-        return nullCustomer
+    @MethodLog({ level: 'verbose' })
+    createCustomer(createDto: CustomerCreateDto): Observable<CustomerDto> {
+        return this.service.send('createCustomer', createDto)
     }
 
     @MethodLog({ level: 'verbose' })
-    async getCustomer(customerId: string): Promise<CustomerDto> {
-        return nullCustomer
-    }
-
-    @MethodLog()
-    async deleteCustomer(customerId: string): Promise<boolean> {
-        return true
+    updateCustomer(customerId: string, updateDto: CustomerUpdateDto): Observable<CustomerDto> {
+        return this.service.send('updateCustomer', { customerId, updateDto })
     }
 
     @MethodLog({ level: 'verbose' })
-    async findCustomers(queryDto: CustomerQueryDto): Promise<CustomerDto[]> {
-        return []
-    }
-
-    @MethodLog()
-    async login(userId: string, email: string): Promise<JwtAuthTokens> {
-        return { accessToken: '', refreshToken: '' }
-    }
-
-    @MethodLog()
-    async refreshAuthTokens(refreshToken: string): Promise<JwtAuthTokens> {
-        return { accessToken: '', refreshToken: '' }
+    getCustomer(customerId: string): Observable<CustomerDto> {
+        return this.service.send('getCustomer', customerId)
     }
 
     @MethodLog({ level: 'verbose' })
-    async authenticateCustomer(email: string, password: string): Promise<string | null> {
-        return null
+    deleteCustomer(customerId: string): Observable<boolean> {
+        return this.service.send('deleteCustomer', customerId)
+    }
+
+    @MethodLog({ level: 'verbose' })
+    findCustomers(queryDto: CustomerQueryDto): Observable<CustomerDto[]> {
+        return this.service.send('findCustomers', queryDto)
+    }
+
+    @MethodLog({ level: 'verbose' })
+    login(userId: string, email: string): Observable<JwtAuthTokens> {
+        return this.service.send('login', { userId, email })
+    }
+
+    @MethodLog({ level: 'verbose' })
+    refreshAuthTokens(refreshToken: string): Observable<JwtAuthTokens> {
+        return this.service.send('refreshAuthTokens', refreshToken)
+    }
+
+    @MethodLog({ level: 'verbose' })
+    authenticateCustomer(email: string, password: string): Observable<string | null> {
+        return this.service.send('authenticateCustomer', { email, password })
     }
 }

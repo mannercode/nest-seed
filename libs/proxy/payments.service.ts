@@ -1,18 +1,19 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog } from 'common'
-import { nullPaymentDto, PaymentCreateDto, PaymentDto } from 'types'
+import { ClientProxyService, MethodLog } from 'common'
+import { Observable } from 'rxjs'
+import { PaymentCreateDto, PaymentDto } from 'types'
 
 @Injectable()
 export class PaymentsService {
-    constructor() {}
+    constructor(private service: ClientProxyService) {}
 
-    @MethodLog()
-    async processPayment(createDto: PaymentCreateDto): Promise<PaymentDto> {
-        return nullPaymentDto
+    @MethodLog({ level: 'verbose' })
+    processPayment(createDto: PaymentCreateDto): Observable<PaymentDto> {
+        return this.service.send('processPayment', createDto)
     }
 
     @MethodLog({ level: 'verbose' })
-    async getPayment(paymentId: string): Promise<PaymentDto> {
-        return nullPaymentDto
+    getPayment(paymentId: string): Observable<PaymentDto> {
+        return this.service.send('getPayment', paymentId)
     }
 }

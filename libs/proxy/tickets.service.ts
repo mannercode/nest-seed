@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog } from 'common'
+import { ClientProxyService, MethodLog } from 'common'
+import { Observable } from 'rxjs'
 import {
     SalesStatusByShowtimeDto,
     TicketCreateDto,
@@ -10,32 +11,30 @@ import {
 
 @Injectable()
 export class TicketsService {
-    constructor() {}
+    constructor(private service: ClientProxyService) {}
 
-    @MethodLog()
-    async createTickets(
-        createDtos: TicketCreateDto[]
-    ): Promise<{ success: boolean; count: number }> {
-        return { success: true, count: 0 }
-    }
-
-    @MethodLog()
-    async updateTicketStatus(ticketIds: string[], status: TicketStatus): Promise<TicketDto[]> {
-        return []
+    @MethodLog({ level: 'verbose' })
+    createTickets(createDtos: TicketCreateDto[]): Observable<{ success: boolean; count: number }> {
+        return this.service.send('createTickets', createDtos)
     }
 
     @MethodLog({ level: 'verbose' })
-    async findAllTickets(filterDto: TicketFilterDto): Promise<TicketDto[]> {
-        return []
+    updateTicketStatus(ticketIds: string[], status: TicketStatus): Observable<TicketDto[]> {
+        return this.service.send('updateTicketStatus', { ticketIds, status })
     }
 
     @MethodLog({ level: 'verbose' })
-    async getSalesStatuses(ticketIds: string[]): Promise<SalesStatusByShowtimeDto[]> {
-        return []
+    findAllTickets(filterDto: TicketFilterDto): Observable<TicketDto[]> {
+        return this.service.send('findAllTickets', filterDto)
     }
 
     @MethodLog({ level: 'verbose' })
-    async getTickets(ticketIds: string[]): Promise<TicketDto[]> {
-        return []
+    getSalesStatuses(ticketIds: string[]): Observable<SalesStatusByShowtimeDto[]> {
+        return this.service.send('getSalesStatuses', ticketIds)
+    }
+
+    @MethodLog({ level: 'verbose' })
+    getTickets(ticketIds: string[]): Observable<TicketDto[]> {
+        return this.service.send('getTickets', ticketIds)
     }
 }

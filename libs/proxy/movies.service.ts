@@ -1,53 +1,53 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog } from 'common'
+import { ClientProxyService, MethodLog } from 'common'
+import { Observable } from 'rxjs'
 import {
     MovieCreateDto,
     MovieDto,
     MovieQueryDto,
     MovieUpdateDto,
-    nullMovieDto,
     StorageFileCreateDto
 } from 'types'
 
 @Injectable()
 export class MoviesService {
-    constructor() {}
+    constructor(private service: ClientProxyService) {}
 
-    @MethodLog()
-    async createMovie(
+    @MethodLog({ level: 'verbose' })
+    createMovie(
         movieCreateDto: MovieCreateDto,
         fileCreateDtos: StorageFileCreateDto[]
-    ): Promise<MovieDto> {
-        return nullMovieDto
-    }
-
-    @MethodLog()
-    async updateMovie(movieId: string, updateDto: MovieUpdateDto): Promise<MovieDto> {
-        return nullMovieDto
+    ): Observable<MovieDto> {
+        return this.service.send('createMovie', { movieCreateDto, fileCreateDtos })
     }
 
     @MethodLog({ level: 'verbose' })
-    async getMovie(movieId: string): Promise<MovieDto> {
-        return nullMovieDto
-    }
-
-    @MethodLog()
-    async deleteMovie(movieId: string): Promise<boolean> {
-        return true
+    updateMovie(movieId: string, updateDto: MovieUpdateDto): Observable<MovieDto> {
+        return this.service.send('updateMovie', { movieId, updateDto })
     }
 
     @MethodLog({ level: 'verbose' })
-    async findMovies(queryDto: MovieQueryDto): Promise<MovieDto[]> {
-        return []
+    getMovie(movieId: string): Observable<MovieDto> {
+        return this.service.send('getMovie', movieId)
     }
 
     @MethodLog({ level: 'verbose' })
-    async getMoviesByIds(movieIds: string[]): Promise<MovieDto[]> {
-        return []
+    deleteMovie(movieId: string): Observable<boolean> {
+        return this.service.send('deleteMovie', movieId)
     }
 
     @MethodLog({ level: 'verbose' })
-    async moviesExist(movieIds: string[]): Promise<boolean> {
-        return true
+    findMovies(queryDto: MovieQueryDto): Observable<MovieDto[]> {
+        return this.service.send('findMovies', queryDto)
+    }
+
+    @MethodLog({ level: 'verbose' })
+    getMoviesByIds(movieIds: string[]): Observable<MovieDto[]> {
+        return this.service.send('getMoviesByIds', movieIds)
+    }
+
+    @MethodLog({ level: 'verbose' })
+    moviesExist(movieIds: string[]): Observable<boolean> {
+        return this.service.send('moviesExist', movieIds)
     }
 }

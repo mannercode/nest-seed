@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog, PaginationOption } from 'common'
-import { EMPTY, Observable } from 'rxjs'
+import { ClientProxyService, MethodLog, PaginationOption } from 'common'
+import { Observable } from 'rxjs'
 import {
     MovieDto,
     ShowtimeBatchCreateDto,
@@ -11,32 +11,32 @@ import {
 
 @Injectable()
 export class ShowtimeCreationService {
-    constructor() {}
+    constructor(private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
-    async findMovies(queryDto: PaginationOption): Promise<MovieDto[]> {
-        return []
+    findMovies(queryDto: PaginationOption): Observable<MovieDto[]> {
+        return this.service.send('findMovies', queryDto)
     }
 
     @MethodLog({ level: 'verbose' })
-    async findTheaters(queryDto: PaginationOption): Promise<TheaterDto[]> {
-        return []
+    findTheaters(queryDto: PaginationOption): Observable<TheaterDto[]> {
+        return this.service.send('findTheaters', queryDto)
     }
 
     @MethodLog({ level: 'verbose' })
-    async findShowtimes(theaterIds: string[]): Promise<ShowtimeDto[]> {
-        return []
+    findShowtimes(theaterIds: string[]): Observable<ShowtimeDto[]> {
+        return this.service.send('findShowtimes', theaterIds)
     }
 
-    @MethodLog()
-    async createBatchShowtimes(
+    @MethodLog({ level: 'verbose' })
+    createBatchShowtimes(
         createDto: ShowtimeBatchCreateDto
-    ): Promise<ShowtimeBatchCreateResponse> {
-        return { batchId: '' }
+    ): Observable<ShowtimeBatchCreateResponse> {
+        return this.service.send('createBatchShowtimes', createDto)
     }
 
-    @MethodLog()
+    @MethodLog({ level: 'verbose' })
     monitorEvents(): Observable<MessageEvent> {
-        return EMPTY
+        return this.service.send('monitorEvents')
     }
 }
