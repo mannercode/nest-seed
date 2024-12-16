@@ -47,8 +47,8 @@ export class TestService {
     }
 
     @MethodLog({ level: 'debug' })
-    debugLog(data: string) {
-        return data
+    debugLog() {
+        return 'value'
     }
 
     @MethodLogOnEvent('eventName')
@@ -123,6 +123,16 @@ describe('@MethodLog()', () => {
             args: ['value'],
             duration: expect.any(Number),
             error: 'value'
+        })
+    })
+
+    it('debugLog', () => {
+        service.debugLog()
+
+        expect(mockLogger.debug).toHaveBeenCalledWith('TestService.debugLog', {
+            args: [],
+            duration: expect.any(Number),
+            return: 'value'
         })
     })
 

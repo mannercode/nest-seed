@@ -7,9 +7,9 @@ const config: Config = {
     roots: ['<rootDir>/apps','<rootDir>/libs'],
     testRegex: '.*\\.spec\\.(ts|js)$',
     moduleNameMapper: {
-        '^common$': '<rootDir>/libs/common/index',
+        '^common$': '<rootDir>/libs/common/src/index',
         '^testlib$': '<rootDir>/libs/testlib/index',
-        '^types$': '<rootDir>/libs/@types/index',
+        '^types$': '<rootDir>/libs/types/index',
         '^proxy$': '<rootDir>/libs/proxy/index',
         '^config$': '<rootDir>/libs/config/index',
         '^services/(.*)$': '<rootDir>/apps/services/src/$1',

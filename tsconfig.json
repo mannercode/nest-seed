@@ -21,13 +21,13 @@
         "baseUrl": ".",
         "paths": {
             "common": [
-                "libs/common/index"
+                "libs/common/src/index"
             ],
             "testlib": [
                 "libs/testlib/index"
             ],
             "types": [
-                "libs/@types/index"
+                "libs/types/index"
             ],
             "proxy": [
                 "libs/proxy/index"

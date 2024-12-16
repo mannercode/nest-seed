@@ -24,6 +24,6 @@ export class HttpController {
 
     @Get('get')
     get() {
-        return getProxyValue(this.client.send('method', {}))
+        return getProxyValue(this.client.send('method'))
     }
 }
