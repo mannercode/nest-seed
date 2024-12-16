@@ -45,7 +45,9 @@
     },
     "include": [
         "libs/**/*",
-        "apps/**/src/**/*",
-        "apps/__tests__/*"
+        "apps/**/*"
+    ],
+    "exclude": [
+        "apps/**/jest.config.ts",
     ]
 }

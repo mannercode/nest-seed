@@ -1,16 +1,16 @@
-import { AppModule } from 'app/app.module'
-import { configureApp } from 'app/main'
 import { omit, uniq } from 'lodash'
-import { ShowtimeCreateDto, ShowtimeDto, ShowtimesService } from 'services/cores'
-import { HttpTestContext, createHttpTestContext, nullObjectId } from 'testlib'
+import { ShowtimesService } from 'services/cores'
+import { nullObjectId } from 'testlib'
+import { ShowtimeCreateDto, ShowtimeDto } from 'types'
+import { TestContext, createTestContext } from './test.util'
 
 export interface Fixture {
-    testContext: HttpTestContext
+    testContext: TestContext
     showtimesService: ShowtimesService
 }
 
 export async function createFixture() {
-    const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
+    const testContext = await createTestContext()
     const showtimesService = testContext.module.get(ShowtimesService)
 
     return { testContext, showtimesService }

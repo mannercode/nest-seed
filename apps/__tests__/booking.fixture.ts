@@ -1,33 +1,28 @@
-import { AppModule } from 'app/app.module'
-import { configureApp } from 'app/main'
 import { addMinutes } from 'common'
 import {
     CustomersService,
-    MovieDto,
     MoviesService,
-    Seatmap,
-    ShowtimeDto,
     ShowtimesService,
-    TheaterDto,
     TheatersService,
-    TicketsService,
-    TicketStatus
+    TicketsService
 } from 'services/cores'
-import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
+import { nullObjectId } from 'testlib'
+import { MovieDto, Seatmap, ShowtimeDto, TheaterDto, TicketStatus } from 'types'
 import { createCustomerAndLogin } from './customers-auth.fixture'
 import { createMovie } from './movies.fixture'
 import { createShowtimeDto, createShowtimes } from './showtimes.fixture'
+import { createTestContext, TestContext } from './test.util'
 import { createTheater } from './theaters.fixture'
 import { createTickets } from './tickets.fixture'
 
 export interface Fixture {
-    testContext: HttpTestContext
+    testContext: TestContext
     movie: MovieDto
     accessToken: string
 }
 
 export async function createFixture() {
-    const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
+    const testContext = await createTestContext()
 
     const customersService = testContext.module.get(CustomersService)
     const { accessToken } = await createCustomerAndLogin(customersService)

@@ -1,5 +1,12 @@
 import { ConflictException, Injectable } from '@nestjs/common'
-import { InjectJwtAuth, JwtAuthService, mapDocToDto, MethodLog, Password } from 'common'
+import {
+    InjectJwtAuth,
+    JwtAuthService,
+    mapDocToDto,
+    MethodLog,
+    PaginationResult,
+    Password
+} from 'common'
 import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from 'types'
 import { CustomersRepository } from './customers.repository'
 import { CustomerDocument } from './models'
@@ -48,7 +55,6 @@ export class CustomersService {
     @MethodLog({ level: 'verbose' })
     async findCustomers(queryDto: CustomerQueryDto) {
         const { items, ...paginated } = await this.repository.findCustomers(queryDto)
-
         return { ...paginated, items: this.toDtos(items) }
     }
 

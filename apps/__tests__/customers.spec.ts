@@ -16,7 +16,7 @@ describe('/customers', () => {
 
     beforeEach(async () => {
         fixture = await createFixture()
-        client = fixture.httpContext.client
+        client = fixture.testContext.client
     })
 
     afterEach(async () => {

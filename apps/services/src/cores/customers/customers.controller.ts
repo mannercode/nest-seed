@@ -46,10 +46,7 @@ export class CustomersController {
     }
 
     @MessagePattern({ cmd: 'authenticateCustomer' })
-    async authenticateCustomer(
-        @Payload('email') email: string,
-        @Payload('password') password: string
-    ) {
+    authenticateCustomer(@Payload('email') email: string, @Payload('password') password: string) {
         return this.service.authenticateCustomer(email, password)
     }
 }

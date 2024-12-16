@@ -1,16 +1,15 @@
-import { AppModule } from 'app/app.module'
-import { configureApp } from 'app/main'
 import { padNumber } from 'common'
-import { MovieDto, MovieGenre, MovieRating, MoviesService } from 'services/cores'
-import { createHttpTestContext, HttpTestContext } from 'testlib'
+import { MovieGenre, MovieRating, MoviesService } from 'services/cores'
+import { MovieDto } from 'types'
+import { TestContext, createTestContext } from './test.util'
 
 export interface Fixture {
-    testContext: HttpTestContext
+    testContext: TestContext
     moviesService: MoviesService
 }
 
 export async function createFixture() {
-    const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
+    const testContext = await createTestContext()
     const moviesService = testContext.module.get(MoviesService)
 
     return { testContext, moviesService }
