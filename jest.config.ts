@@ -3,9 +3,11 @@ import type { Config } from 'jest'
 const config: Config = {
     setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
     moduleFileExtensions: ['js', 'json', 'ts'],
-    rootDir: '.',
-    roots: ['<rootDir>/apps','<rootDir>/libs'],
     testRegex: '.*\\.spec\\.(ts|js)$',
+    testEnvironment: 'node',
+    transform: { '^.+\\.ts$': 'ts-jest' },
+    rootDir: '.',
+    roots: ['<rootDir>/apps', '<rootDir>/libs'],
     moduleNameMapper: {
         '^common$': '<rootDir>/libs/common/src/index',
         '^testlib$': '<rootDir>/libs/testlib/index',
@@ -15,9 +17,6 @@ const config: Config = {
         '^services/(.*)$': '<rootDir>/apps/services/src/$1',
         '^gateway/(.*)$': '<rootDir>/apps/gateway/src/$1'
     },
-    testEnvironment: 'node',
-    transform: { '^.+\\.ts$': 'ts-jest' },
-    coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },
     collectCoverageFrom: [
         'src/app/**/*.ts',
         '!src/app/*.ts',
@@ -25,6 +24,7 @@ const config: Config = {
         '!**/index.ts',
         '!**/*.module.ts'
     ],
+    coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },
     coverageReporters: ['lcov', 'text'],
     coveragePathIgnorePatterns: ['__tests__'],
     coverageDirectory: '<rootDir>/_output/coverage',

@@ -65,9 +65,8 @@ describe('/storage-files', () => {
 
         it('허용된 크기를 초과하는 파일을 업로드하면 PAYLOAD_TOO_LARGE(413)를 반환해야 한다', async () => {
             await uploadFile([{ name: 'files', file: shared.oversizedFile }]).payloadTooLarge({
-                error: 'Payload Too Large',
-                message: 'File too large',
-                statusCode: 413
+                code: 'ERR_MAX_SIZE_EXCEED',
+                message: 'File too large'
             })
         })
 
@@ -76,17 +75,16 @@ describe('/storage-files', () => {
             const excessFiles = Array(limitOver).fill({ name: 'files', file: shared.file })
 
             await uploadFile(excessFiles).badRequest({
-                error: 'Bad Request',
-                message: 'Too many files',
-                statusCode: 400
+                code: 'ERR_MAX_COUNT_EXCEED',
+                message: 'Too many files'
             })
         })
 
         it('허용되지 않는 MIME 타입의 파일을 업로드하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
             await uploadFile([{ name: 'files', file: shared.notAllowFile }]).badRequest({
-                allowedTypes: ['text/plain'],
-                code: 'ERR_INVALID_PAGINATION',
-                message: 'File type not allowed.'
+                code: 'ERR_INVALID_FILE_TYPE',
+                message: 'File type not allowed.',
+                allowedTypes: ['text/plain']
             })
         })
 

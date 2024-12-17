@@ -1,7 +1,6 @@
 import { INestMicroservice } from '@nestjs/common'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 import { TestingModule } from '@nestjs/testing'
-import { HttpToRpcExceptionFilter } from 'common'
 import { createTestingModule, ModuleMetadataEx } from './create-testing-module'
 import { MicroserviceTestClient } from './microservice.test-client'
 import { getAvailablePort } from './utils'
@@ -14,28 +13,44 @@ export interface MicroserviceTestContext {
     port: number
 }
 
+async function startMicroservice(
+    module: TestingModule,
+    configureApp?: (app: INestMicroservice) => void
+) {
+    let tryCount = 0
+
+    while (true) {
+        try {
+            const port = await getAvailablePort()
+            const rpcOptions = {
+                transport: Transport.TCP,
+                options: { host: '0.0.0.0', port }
+            } as const
+
+            const app = module.createNestMicroservice<MicroserviceOptions>(rpcOptions)
+            configureApp && configureApp(app)
+
+            const isDebuggingEnabled = process.env.NODE_OPTIONS !== undefined
+            app.useLogger(isDebuggingEnabled ? console : false)
+
+            await app.listen()
+
+            return { app, port, rpcOptions }
+        } catch (error) {
+            tryCount = tryCount + 1
+
+            if (3 <= tryCount) throw error
+        }
+    }
+}
+
 export async function createMicroserviceTestContext(
     metadata: ModuleMetadataEx,
     configureApp?: (app: INestMicroservice) => void
 ) {
     const module = await createTestingModule(metadata)
 
-    const port = await getAvailablePort()
-    const rpcOptions = {
-        transport: Transport.TCP,
-        options: { host: '0.0.0.0', port }
-    } as const
-
-    const app = module.createNestMicroservice<MicroserviceOptions>(rpcOptions)
-
-    configureApp && configureApp(app)
-
-    const isDebuggingEnabled = process.env.NODE_OPTIONS !== undefined
-    app.useLogger(isDebuggingEnabled ? console : false)
-
-    app.useGlobalFilters(new HttpToRpcExceptionFilter())
-
-    await app.listen()
+    const { app, port, rpcOptions } = await startMicroservice(module, configureApp)
 
     const client = await MicroserviceTestClient.create(rpcOptions)
 

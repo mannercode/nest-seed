@@ -7,24 +7,27 @@ describe('Scenario: Booking', () => {
     let fixture: Fixture
     let client: HttpTestClient
     let movieId: string
-    let theaterId: string
-    let seatCount: number
-    let showdate: string
-    let showtimeId: string
-    let tickets: TicketDto[]
 
-    beforeAll(async () => {
+    beforeEach(async () => {
         fixture = await createFixture()
         client = fixture.testContext.client
         movieId = fixture.movie.id
     })
 
-    afterAll(async () => {
+    afterEach(async () => {
         await closeFixture(fixture)
     })
 
-    describe('1. 상영 극장 목록 요청', () => {
-        it('상영 극장 목록을 반환해야 한다', async () => {
+    it('전체 시나리오를 하나의 테스트로 실행한다', async () => {
+        const step = (_name: string, fn: () => void) => fn()
+
+        let theaterId: string
+        let seatCount: number
+        let showdate: string
+        let showtimeId: string
+        let tickets: TicketDto[]
+
+        await step('1. 상영 극장 목록 요청', async () => {
             const latlong = '31.9,131.9'
             const { body: theaters } = await client
                 .get(`/booking/movies/${movieId}/theaters?latlong=${latlong}`)
@@ -39,13 +42,12 @@ describe('Scenario: Booking', () => {
                     { latlong: { latitude: 34.0, longitude: 134.0 } } // distance = 2.1
                 ].map((item) => expect.objectContaining(item))
             )
+
             theaterId = theaters[0].id
             seatCount = Seatmap.getSeatCount(theaters[0].seatmap)
         })
-    })
 
-    describe('2. 상영일 목록 요청', () => {
-        it('상영일 목록을 반환해야 한다', async () => {
+        await step('2. 상영일 목록 요청', async () => {
             const { body: showdates } = await client
                 .get(`/booking/movies/${movieId}/theaters/${theaterId}/showdates`)
                 .ok()
@@ -58,10 +60,8 @@ describe('Scenario: Booking', () => {
 
             showdate = convertDateToString(showdates[0])
         })
-    })
 
-    describe('3. 상영 시간 목록 요청', () => {
-        it('상영 시간 목록을 반환해야 한다', async () => {
+        await step('3. 상영 시간 목록 요청', async () => {
             const { body: showtimes } = await client
                 .get(
                     `/booking/movies/${movieId}/theaters/${theaterId}/showdates/${showdate}/showtimes`
@@ -89,18 +89,14 @@ describe('Scenario: Booking', () => {
 
             showtimeId = showtimes[0].id
         })
-    })
 
-    describe('4. 구매 가능한 티켓 목록 요청', () => {
-        it('구매 가능한 티켓 목록을 반환해야 한다', async () => {
+        await step('4. 구매 가능한 티켓 목록 요청', async () => {
             const { body } = await client.get(`/booking/showtimes/${showtimeId}/tickets`).ok()
             tickets = body
             expect(tickets).toHaveLength(seatCount)
         })
-    })
 
-    describe('5. 티켓 선점', () => {
-        it('티켓을 선점해야 한다', async () => {
+        await step('5. 티켓 선점', async () => {
             const ticketIds = pickIds(tickets.slice(0, 4))
 
             await client

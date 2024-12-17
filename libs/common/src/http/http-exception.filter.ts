@@ -9,7 +9,19 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const request = ctx.getRequest<Request>()
 
         const statusCode = exception.getStatus()
-        const responseBody = exception.getResponse()
+        let responseBody = exception.getResponse()
+
+        if (
+            typeof responseBody === 'object' &&
+            !('code' in responseBody) &&
+            'message' in responseBody
+        ) {
+            if (statusCode === 400 && responseBody.message === 'Too many files') {
+                responseBody = { code: 'ERR_MAX_COUNT_EXCEED', message: responseBody.message }
+            } else if (statusCode === 413 && responseBody.message === 'File too large') {
+                responseBody = { code: 'ERR_MAX_SIZE_EXCEED', message: responseBody.message }
+            }
+        }
 
         response.status(statusCode).json(responseBody)
 

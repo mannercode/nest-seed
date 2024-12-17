@@ -1,6 +1,9 @@
 import { BadRequestException, Injectable, Module } from '@nestjs/common'
-import { MulterOptionsFactory, MulterModule as NestMulterModule } from '@nestjs/platform-express'
-import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface'
+import {
+    MulterModuleOptions,
+    MulterOptionsFactory,
+    MulterModule as NestMulterModule
+} from '@nestjs/platform-express'
 import { generateShortId } from 'common'
 import { AppConfigService } from 'config'
 import { diskStorage } from 'multer'
@@ -9,7 +12,7 @@ import { diskStorage } from 'multer'
 export class MulterConfigService implements MulterOptionsFactory {
     constructor(private config: AppConfigService) {}
 
-    createMulterOptions(): MulterOptions {
+    createMulterOptions(): MulterModuleOptions {
         return {
             storage: diskStorage({
                 destination: (_req, _file, cb) => cb(null, this.config.fileUpload.directory),
@@ -20,7 +23,7 @@ export class MulterConfigService implements MulterOptionsFactory {
 
                 if (!this.config.fileUpload.allowedMimeTypes.includes(file.mimetype)) {
                     error = new BadRequestException({
-                        code: 'ERR_INVALID_PAGINATION',
+                        code: 'ERR_INVALID_FILE_TYPE',
                         message: 'File type not allowed.',
                         allowedTypes: this.config.fileUpload.allowedMimeTypes
                     })
@@ -37,11 +40,7 @@ export class MulterConfigService implements MulterOptionsFactory {
 }
 
 @Module({
-    imports: [
-        NestMulterModule.registerAsync({
-            useClass: MulterConfigService
-        })
-    ],
+    imports: [NestMulterModule.registerAsync({ useClass: MulterConfigService })],
     exports: [NestMulterModule]
 })
 export class MulterModule {}
