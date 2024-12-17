@@ -1,16 +1,16 @@
-import { AppModule } from 'app/app.module'
-import { configureApp } from 'app/main'
 import { omit, uniq } from 'lodash'
-import { TicketCreateDto, TicketDto, TicketsService, TicketStatus } from 'services/cores'
-import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
+import { TicketsService } from 'services/cores'
+import { nullObjectId } from 'testlib'
+import { TicketCreateDto, TicketDto, TicketStatus } from 'types'
+import { createTestContext, TestContext } from './test.util'
 
 export interface Fixture {
-    testContext: HttpTestContext
+    testContext: TestContext
     ticketsService: TicketsService
 }
 
 export async function createFixture() {
-    const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
+    const testContext = await createTestContext()
     const ticketsService = testContext.module.get(TicketsService)
 
     return { testContext, ticketsService }

@@ -1,27 +1,20 @@
-import { AppModule } from 'app/app.module'
-import { configureApp } from 'app/main'
 import { addMinutes, jsonToObject } from 'common'
-import {
-    MovieDto,
-    MoviesService,
-    ShowtimeCreateDto,
-    ShowtimesService,
-    TheaterDto,
-    TheatersService
-} from 'services/cores'
-import { createHttpTestContext, HttpTestClient, HttpTestContext, nullObjectId } from 'testlib'
+import { MoviesService, ShowtimesService, TheatersService } from 'services/cores'
+import { HttpTestClient, nullObjectId } from 'testlib'
+import { MovieDto, ShowtimeCreateDto, TheaterDto } from 'types'
 import { createMovie } from './movies.fixture'
+import { createTestContext, TestContext } from './test.util'
 import { createTheater } from './theaters.fixture'
 
 export interface Fixture {
-    testContext: HttpTestContext
+    testContext: TestContext
     showtimesService: ShowtimesService
     movie: MovieDto
     theater: TheaterDto
 }
 
 export async function createFixture() {
-    const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
+    const testContext = await createTestContext()
     const showtimesService = testContext.module.get(ShowtimesService)
     const moviesService = testContext.module.get(MoviesService)
     const movie = await createMovie(moviesService)

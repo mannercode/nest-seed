@@ -1,20 +1,18 @@
-import { AppModule } from 'app/app.module'
-import { configureApp } from 'app/main'
 import {
-    CustomerDto,
     CustomersService,
-    MovieDto,
     MoviesService,
     ShowtimesService,
     WatchRecordsService
 } from 'services/cores'
-import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
+import { nullObjectId } from 'testlib'
+import { CustomerDto, MovieDto } from 'types'
 import { createCustomerAndLogin } from './customers-auth.fixture'
 import { createMovie } from './movies.fixture'
 import { createShowtimes } from './showtimes.fixture'
+import { createTestContext, TestContext } from './test.util'
 
 export interface Fixture {
-    testContext: HttpTestContext
+    testContext: TestContext
     moviesService: MoviesService
     watchRecordsService: WatchRecordsService
     showtimesService: ShowtimesService
@@ -23,7 +21,7 @@ export interface Fixture {
 }
 
 export async function createFixture() {
-    const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
+    const testContext = await createTestContext()
     const moviesService = testContext.module.get(MoviesService)
     const watchRecordsService = testContext.module.get(WatchRecordsService)
     const showtimesService = testContext.module.get(ShowtimesService)

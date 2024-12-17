@@ -1,15 +1,13 @@
-import { AppModule } from 'app/app.module'
-import { configureApp } from 'app/main'
 import { TicketHoldingService } from 'services/cores'
-import { HttpTestContext, createHttpTestContext } from 'testlib'
+import { createTestContext, TestContext } from './test.util'
 
 export interface Fixture {
-    testContext: HttpTestContext
+    testContext: TestContext
     ticketHoldingService: TicketHoldingService
 }
 
 export async function createFixture() {
-    const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
+    const testContext = await createTestContext()
     const ticketHoldingService = testContext.module.get(TicketHoldingService)
 
     return { testContext, ticketHoldingService }

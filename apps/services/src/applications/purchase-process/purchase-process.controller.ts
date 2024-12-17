@@ -8,7 +8,7 @@ export class PurchaseProcessController {
     constructor(private service: PurchaseProcessService) {}
 
     @MessagePattern({ cmd: 'processPurchase' })
-    async processPurchase(@Payload() createDto: PurchaseCreateDto) {
+    processPurchase(@Payload() createDto: PurchaseCreateDto) {
         return this.service.processPurchase(createDto)
     }
 }

@@ -1,34 +1,35 @@
-import { AppModule } from 'app/app.module'
-import { configureApp } from 'app/main'
 import { addMinutes, pickIds } from 'common'
 import {
-    CustomerDto,
     CustomersService,
-    MovieDto,
     MoviesService,
-    PurchaseCreateDto,
-    PurchaseItemType,
     PurchasesService,
-    Seatmap,
-    ShowtimeDto,
     ShowtimesService,
-    TheaterDto,
     TheatersService,
-    TicketDto,
     TicketHoldingService,
-    TicketsService,
-    TicketStatus
+    TicketsService
 } from 'services/cores'
 import { PaymentsService } from 'services/infrastructures'
-import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
+import { nullObjectId } from 'testlib'
+import {
+    CustomerDto,
+    MovieDto,
+    PurchaseCreateDto,
+    PurchaseItemType,
+    Seatmap,
+    ShowtimeDto,
+    TheaterDto,
+    TicketDto,
+    TicketStatus
+} from 'types'
 import { createCustomer } from './customers.fixture'
 import { createMovie } from './movies.fixture'
 import { createShowtimeDto, createShowtimes } from './showtimes.fixture'
+import { createTestContext, TestContext } from './test.util'
 import { createTheater } from './theaters.fixture'
 import { createTicketDto, createTickets } from './tickets.fixture'
 
 export interface Fixture {
-    testContext: HttpTestContext
+    testContext: TestContext
     customer: CustomerDto
     movie: MovieDto
     theater: TheaterDto
@@ -40,7 +41,7 @@ export interface Fixture {
 }
 
 export async function createFixture() {
-    const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
+    const testContext = await createTestContext()
 
     const customersService = testContext.module.get(CustomersService)
     const customer = await createCustomer(customersService)

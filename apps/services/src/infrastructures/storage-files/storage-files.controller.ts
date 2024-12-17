@@ -8,17 +8,17 @@ export class StorageFilesController {
     constructor(private service: StorageFilesService) {}
 
     @MessagePattern({ cmd: 'saveFiles' })
-    async saveFiles(@Payload() createDtos: StorageFileCreateDto[]) {
+    saveFiles(@Payload() createDtos: StorageFileCreateDto[]) {
         return this.service.saveFiles(createDtos)
     }
 
     @MessagePattern({ cmd: 'getStorageFile' })
-    async getStorageFile(@Payload() fileId: string) {
+    getStorageFile(@Payload() fileId: string) {
         return this.service.getStorageFile(fileId)
     }
 
     @MessagePattern({ cmd: 'deleteStorageFile' })
-    async deleteStorageFile(@Payload() fileId: string) {
+    deleteStorageFile(@Payload() fileId: string) {
         return this.service.deleteStorageFile(fileId)
     }
 }

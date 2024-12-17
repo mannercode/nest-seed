@@ -14,17 +14,17 @@ class SampleController {
     constructor() {}
 
     @MessagePattern({ cmd: 'throwHttpException' })
-    async throwHttpException() {
+    throwHttpException() {
         throw new NotFoundException('not found exception')
     }
 
     @MessagePattern({ cmd: 'throwError' })
-    async getMessage() {
+    getMessage() {
         throw new Error('error')
     }
 
     @MessagePattern({ cmd: 'createSample' })
-    async createSample(createDto: CreateSampleDto) {
+    createSample(createDto: CreateSampleDto) {
         return createDto
     }
 }

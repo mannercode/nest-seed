@@ -9,12 +9,12 @@ export class BookingService {
 
     @MethodLog({ level: 'verbose' })
     findShowingTheaters(args: { movieId: string; latlong: LatLong }): Observable<TheaterDto[]> {
-        return this.service.send('findShowingTheaters', args)
+        return this.service.send('booking.findShowingTheaters', args)
     }
 
     @MethodLog({ level: 'verbose' })
     findShowdates(args: { movieId: string; theaterId: string }): Observable<Date[]> {
-        return this.service.send('findShowdates', args)
+        return this.service.send('booking.findShowdates', args)
     }
 
     @MethodLog({ level: 'verbose' })
@@ -23,18 +23,18 @@ export class BookingService {
         theaterId: string
         showdate: Date
     }): Observable<ShowtimeSalesStatusDto[]> {
-        return this.service.send('findShowtimes', args)
+        return this.service.send('booking.findShowtimes', args)
     }
 
     @MethodLog({ level: 'verbose' })
     getAvailableTickets(showtimeId: string): Observable<TicketDto[]> {
-        return this.service.send('getAvailableTickets', showtimeId)
+        return this.service.send('booking.getAvailableTickets', showtimeId)
     }
 
     @MethodLog({ level: 'verbose' })
     holdTickets(args: { customerId: string; showtimeId: string; ticketIds: string[] }): Observable<{
         heldTicketIds: string[]
     }> {
-        return this.service.send('holdTickets', args)
+        return this.service.send('booking.holdTickets', args)
     }
 }

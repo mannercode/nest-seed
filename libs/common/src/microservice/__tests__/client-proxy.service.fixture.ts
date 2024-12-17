@@ -5,7 +5,7 @@ import { ClientProxyService, getProxyValue } from 'common'
 @Controller()
 class MicroserviceController {
     @MessagePattern({ cmd: 'method' })
-    async method() {
+    method() {
         return { result: 'success' }
     }
 }

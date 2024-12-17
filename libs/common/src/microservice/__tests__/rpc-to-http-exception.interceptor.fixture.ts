@@ -4,12 +4,12 @@ import { ClientProxy, MessagePattern } from '@nestjs/microservices'
 @Controller()
 class MicroserviceController {
     @MessagePattern({ cmd: 'throwHttpException' })
-    async throwHttpException() {
+    throwHttpException() {
         throw new BadRequestException('not found exception')
     }
 
     @MessagePattern({ cmd: 'throwError' })
-    async throwError() {
+    throwError() {
         throw new Error('error message')
     }
 }
@@ -22,12 +22,12 @@ export class HttpController {
     constructor(@Inject('SERVICES') private client: ClientProxy) {}
 
     @Get('throwHttpException')
-    async throwHttpException() {
+    throwHttpException() {
         return this.client.send({ cmd: 'throwHttpException' }, {})
     }
 
     @Get('throwError')
-    async throwError() {
+    throwError() {
         return this.client.send({ cmd: 'throwError' }, {})
     }
 }

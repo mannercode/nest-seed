@@ -15,7 +15,7 @@ class SampleController {
     constructor(private service: SampleService) {}
 
     @MessagePattern({ cmd: 'getMessage' })
-    async getMessage(arg: string) {
+    getMessage(arg: string) {
         return this.service.getMessage(arg)
     }
 }

@@ -1,15 +1,14 @@
-import { AppModule } from 'app/app.module'
-import { configureApp } from 'app/main'
 import { PaymentsService } from 'services/infrastructures'
-import { createHttpTestContext, HttpTestContext, nullObjectId } from 'testlib'
+import { nullObjectId } from 'testlib'
+import { createTestContext, TestContext } from './test.util'
 
 export interface Fixture {
-    testContext: HttpTestContext
+    testContext: TestContext
     paymentsService: PaymentsService
 }
 
 export async function createFixture() {
-    const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
+    const testContext = await createTestContext()
     const paymentsService = testContext.module.get(PaymentsService)
 
     return { testContext, paymentsService }

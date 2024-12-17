@@ -37,17 +37,17 @@ export class TestContext {
     close: () => Promise<void>
 }
 
-export async function createTestContext(metadata: ModuleMetadataEx = {}) {
-    const { ignoreGuards, ignoreProviders, overrideProviders } = metadata
+export async function createTestContext(
+    metadata: ModuleMetadataEx & { config?: Record<string, any> } = {}
+) {
+    const { ignoreGuards, ignoreProviders, overrideProviders, config } = metadata
 
     const msContext = await createMicroserviceTestContext(
         { imports: [ServicesModule], ignoreProviders, overrideProviders },
         configureServices
     )
 
-    const mockConfigService = createConfigServiceMock({
-        SERVICE_PORT: msContext.port
-    })
+    const mockConfigService = createConfigServiceMock({ ...config, SERVICE_PORT: msContext.port })
 
     const httpContext = await createHttpTestContext(
         {

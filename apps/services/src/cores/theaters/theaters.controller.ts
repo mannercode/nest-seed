@@ -8,12 +8,12 @@ export class TheatersController {
     constructor(private service: TheatersService) {}
 
     @MessagePattern({ cmd: 'createTheater' })
-    async createTheater(@Payload() createDto: TheaterCreateDto) {
+    createTheater(@Payload() createDto: TheaterCreateDto) {
         return this.service.createTheater(createDto)
     }
 
     @MessagePattern({ cmd: 'updateTheater' })
-    async updateTheater(
+    updateTheater(
         @Payload('theaterId') theaterId: string,
         @Payload('updateDto') updateDto: TheaterUpdateDto
     ) {
@@ -21,27 +21,27 @@ export class TheatersController {
     }
 
     @MessagePattern({ cmd: 'getTheater' })
-    async getTheater(@Payload() theaterId: string) {
+    getTheater(@Payload() theaterId: string) {
         return this.service.getTheater(theaterId)
     }
 
     @MessagePattern({ cmd: 'deleteTheater' })
-    async deleteTheater(@Payload() theaterId: string) {
+    deleteTheater(@Payload() theaterId: string) {
         return this.service.deleteTheater(theaterId)
     }
 
     @MessagePattern({ cmd: 'findTheaters' })
-    async findTheaters(@Payload() queryDto: TheaterQueryDto) {
+    findTheaters(@Payload() queryDto: TheaterQueryDto) {
         return this.service.findTheaters(queryDto)
     }
 
     @MessagePattern({ cmd: 'getTheatersByIds' })
-    async getTheatersByIds(@Payload() theaterIds: string[]) {
+    getTheatersByIds(@Payload() theaterIds: string[]) {
         return this.service.getTheatersByIds(theaterIds)
     }
 
     @MessagePattern({ cmd: 'theatersExist' })
-    async theatersExist(@Payload() theaterIds: string[]) {
+    theatersExist(@Payload() theaterIds: string[]) {
         return this.service.theatersExist(theaterIds)
     }
 }

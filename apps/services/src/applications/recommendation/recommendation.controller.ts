@@ -7,7 +7,7 @@ export class RecommendationController {
     constructor(private service: RecommendationService) {}
 
     @MessagePattern({ cmd: 'findRecommendedMovies' })
-    async findRecommendedMovies(@Payload() customerId: string | null) {
-        this.service.findRecommendedMovies(customerId)
+    findRecommendedMovies(@Payload() customerId: string | null) {
+        return this.service.findRecommendedMovies(customerId === '' ? null : customerId)
     }
 }

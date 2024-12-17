@@ -1,9 +1,15 @@
+import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
+
 export enum PurchaseItemType {
     ticket = 'ticket'
 }
 
 export class PurchaseItemDto {
+    @IsEnum(PurchaseItemType)
     type: PurchaseItemType
+
+    @IsString()
+    @IsNotEmpty()
     ticketId: string
 }
 

@@ -8,12 +8,12 @@ export class TicketsController {
     constructor(private service: TicketsService) {}
 
     @MessagePattern({ cmd: 'createTickets' })
-    async createTickets(@Payload() createDtos: TicketCreateDto[]) {
+    createTickets(@Payload() createDtos: TicketCreateDto[]) {
         return this.service.createTickets(createDtos)
     }
 
     @MessagePattern({ cmd: 'updateTicketStatus' })
-    async updateTicketStatus(
+    updateTicketStatus(
         @Payload('ticketIds') ticketIds: string[],
         @Payload('status') status: TicketStatus
     ) {
@@ -21,17 +21,17 @@ export class TicketsController {
     }
 
     @MessagePattern({ cmd: 'findAllTickets' })
-    async findAllTickets(@Payload() filterDto: TicketFilterDto) {
+    findAllTickets(@Payload() filterDto: TicketFilterDto) {
         return this.service.findAllTickets(filterDto)
     }
 
     @MessagePattern({ cmd: 'getSalesStatuses' })
-    async getSalesStatuses(@Payload() ticketIds: string[]) {
+    getSalesStatuses(@Payload() ticketIds: string[]) {
         return this.service.getSalesStatuses(ticketIds)
     }
 
     @MessagePattern({ cmd: 'getTickets' })
-    async getTickets(@Payload() ticketIds: string[]) {
+    getTickets(@Payload() ticketIds: string[]) {
         return this.service.getTickets(ticketIds)
     }
 }

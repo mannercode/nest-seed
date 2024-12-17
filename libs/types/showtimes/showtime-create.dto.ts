@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer'
 import { IsDate, IsNotEmpty, IsString } from 'class-validator'
 
 export class ShowtimeCreateDto {
@@ -10,11 +11,11 @@ export class ShowtimeCreateDto {
     theaterId: string
 
     @IsDate()
-    // @Type(() => Date) controller에서 사용하지 않아서 제거함
+    @Type(() => Date)
     startTime: Date
 
     @IsDate()
-    // @Type(() => Date) controller에서 사용하지 않아서 제거함
+    @Type(() => Date)
     endTime: Date
 
     @IsString()

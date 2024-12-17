@@ -7,7 +7,7 @@ export class TicketHoldingController {
     constructor(private service: TicketHoldingService) {}
 
     @MessagePattern({ cmd: 'holdTickets' })
-    async holdTickets(
+    holdTickets(
         @Payload('customerId') customerId: string,
         @Payload('showtimeId') showtimeId: string,
         @Payload('ticketIds') ticketIds: string[],
@@ -22,7 +22,7 @@ export class TicketHoldingController {
     }
 
     @MessagePattern({ cmd: 'findHeldTicketIds' })
-    async findHeldTicketIds(
+    findHeldTicketIds(
         @Payload('showtimeId') showtimeId: string,
         @Payload('customerId') customerId: string
     ) {
@@ -30,7 +30,7 @@ export class TicketHoldingController {
     }
 
     @MessagePattern({ cmd: 'releaseTickets' })
-    async releaseTickets(
+    releaseTickets(
         @Payload('showtimeId') showtimeId: string,
         @Payload('customerId') customerId: string
     ) {

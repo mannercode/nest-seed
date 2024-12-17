@@ -8,12 +8,12 @@ export class WatchRecordsController {
     constructor(private service: WatchRecordsService) {}
 
     @MessagePattern({ cmd: 'createWatchRecord' })
-    async createWatchRecord(@Payload() createDto: WatchRecordCreateDto) {
+    createWatchRecord(@Payload() createDto: WatchRecordCreateDto) {
         return this.service.createWatchRecord(createDto)
     }
 
     @MessagePattern({ cmd: 'findWatchRecords' })
-    async findWatchRecords(@Payload() queryDto: WatchRecordQueryDto) {
+    findWatchRecords(@Payload() queryDto: WatchRecordQueryDto) {
         return this.service.findWatchRecords(queryDto)
     }
 }

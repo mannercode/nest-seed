@@ -9,6 +9,6 @@ export class RecommendationService {
 
     @MethodLog({ level: 'verbose' })
     findRecommendedMovies(customerId: string | null): Observable<MovieDto[]> {
-        return this.service.send('findRecommendedMovies', customerId)
+        return this.service.send('findRecommendedMovies', customerId ?? '')
     }
 }

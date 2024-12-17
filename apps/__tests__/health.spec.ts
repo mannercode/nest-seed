@@ -1,13 +1,12 @@
-import { AppModule } from 'app/app.module'
-import { configureApp } from 'app/main'
-import { createHttpTestContext, HttpTestClient, HttpTestContext } from 'testlib'
+import { HttpTestClient } from 'testlib'
+import { createTestContext, TestContext } from './test.util'
 
 describe('/health', () => {
-    let testContext: HttpTestContext
+    let testContext: TestContext
     let client: HttpTestClient
 
     beforeEach(async () => {
-        testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
+        testContext = await createTestContext()
         client = testContext.client
     })
 

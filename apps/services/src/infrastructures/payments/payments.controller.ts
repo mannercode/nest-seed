@@ -8,12 +8,12 @@ export class PaymentsController {
     constructor(private service: PaymentsService) {}
 
     @MessagePattern({ cmd: 'processPayment' })
-    async processPayment(@Payload() createDto: PaymentCreateDto) {
+    processPayment(@Payload() createDto: PaymentCreateDto) {
         return this.service.processPayment(createDto)
     }
 
     @MessagePattern({ cmd: 'getPayment' })
-    async getPayment(@Payload() paymentId: string) {
+    getPayment(@Payload() paymentId: string) {
         return this.service.getPayment(paymentId)
     }
 }

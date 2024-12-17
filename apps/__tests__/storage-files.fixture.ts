@@ -1,11 +1,10 @@
 import { ConfigService } from '@nestjs/config'
-import { AppModule } from 'app/app.module'
-import { configureApp } from 'app/main'
-import { Path, Byte } from 'common'
+import { Byte, Path } from 'common'
 import { AppConfigService } from 'config'
 import { writeFile } from 'fs/promises'
 import { StorageFilesService } from 'services/infrastructures'
-import { createDummyFile, createHttpTestContext, HttpTestContext } from 'testlib'
+import { createDummyFile } from 'testlib'
+import { createTestContext, TestContext } from './test.util'
 
 const maxFileSizeBytes = Byte.fromString('50MB')
 
@@ -42,7 +41,7 @@ export async function closeSharedFixture(fixture: SharedFixture) {
 }
 
 export interface Fixture {
-    testContext: HttpTestContext
+    testContext: TestContext
     config: AppConfigService
     tempDir: string
     storageFilesService: StorageFilesService
@@ -51,32 +50,14 @@ export interface Fixture {
 export async function createFixture() {
     const tempDir = await Path.createTempDirectory()
 
-    const realConfigService = new ConfigService()
-
-    const mockConfigService = {
-        get: jest.fn((key: string) => {
-            const mockValues: Record<string, any> = {
-                FILE_UPLOAD_DIRECTORY: tempDir,
-                FILE_UPLOAD_MAX_FILE_SIZE_BYTES: maxFileSizeBytes,
-                FILE_UPLOAD_MAX_FILES_PER_UPLOAD: 2,
-                FILE_UPLOAD_ALLOWED_FILE_TYPES: 'text/plain'
-            }
-
-            if (key in mockValues) {
-                return mockValues[key]
-            }
-
-            return realConfigService.get(key)
-        })
-    }
-
-    const testContext = await createHttpTestContext(
-        {
-            imports: [AppModule],
-            overrideProviders: [{ original: ConfigService, replacement: mockConfigService }]
-        },
-        configureApp
-    )
+    const testContext = await createTestContext({
+        config: {
+            FILE_UPLOAD_DIRECTORY: tempDir,
+            FILE_UPLOAD_MAX_FILE_SIZE_BYTES: maxFileSizeBytes,
+            FILE_UPLOAD_MAX_FILES_PER_UPLOAD: 2,
+            FILE_UPLOAD_ALLOWED_FILE_TYPES: 'text/plain'
+        }
+    })
 
     const config = testContext.module.get(AppConfigService)
     const storageFilesService = testContext.module.get(StorageFilesService)

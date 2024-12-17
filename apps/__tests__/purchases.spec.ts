@@ -1,6 +1,7 @@
-import { PurchaseDto, PurchaseItemType, PurchasesService } from 'services/cores'
+import { PurchasesService } from 'services/cores'
 import { PaymentsService } from 'services/infrastructures'
 import { nullObjectId } from 'testlib'
+import { PurchaseDto, PurchaseItemType } from 'types'
 import { closeFixture, createFixture, Fixture } from './purchases.fixture'
 
 describe('Purchases Module', () => {

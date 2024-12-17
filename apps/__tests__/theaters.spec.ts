@@ -1,7 +1,7 @@
 import { expect } from '@jest/globals'
 import { pickIds } from 'common'
-import { TheaterDto } from 'services/cores'
 import { expectEqualUnsorted, HttpTestClient, nullObjectId } from 'testlib'
+import { TheaterDto } from 'types'
 import {
     closeFixture,
     createFixture,

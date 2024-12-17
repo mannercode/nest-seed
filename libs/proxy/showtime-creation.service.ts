@@ -15,28 +15,28 @@ export class ShowtimeCreationService {
 
     @MethodLog({ level: 'verbose' })
     findMovies(queryDto: PaginationOption): Observable<MovieDto[]> {
-        return this.service.send('findMovies', queryDto)
+        return this.service.send('showtime-creation.findMovies', queryDto)
     }
 
     @MethodLog({ level: 'verbose' })
     findTheaters(queryDto: PaginationOption): Observable<TheaterDto[]> {
-        return this.service.send('findTheaters', queryDto)
+        return this.service.send('showtime-creation.findTheaters', queryDto)
     }
 
     @MethodLog({ level: 'verbose' })
     findShowtimes(theaterIds: string[]): Observable<ShowtimeDto[]> {
-        return this.service.send('findShowtimes', theaterIds)
+        return this.service.send('showtime-creation.findShowtimes', theaterIds)
     }
 
     @MethodLog({ level: 'verbose' })
     createBatchShowtimes(
         createDto: ShowtimeBatchCreateDto
     ): Observable<ShowtimeBatchCreateResponse> {
-        return this.service.send('createBatchShowtimes', createDto)
+        return this.service.send('showtime-creation.createBatchShowtimes', createDto)
     }
 
     @MethodLog({ level: 'verbose' })
     monitorEvents(): Observable<MessageEvent> {
-        return this.service.send('monitorEvents')
+        return this.service.send('showtime-creation.monitorEvents')
     }
 }

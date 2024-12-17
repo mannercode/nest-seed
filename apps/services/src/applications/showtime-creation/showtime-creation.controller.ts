@@ -9,22 +9,22 @@ export class ShowtimeCreationController {
     constructor(private service: ShowtimeCreationService) {}
 
     @MessagePattern({ cmd: 'showtime-creation.findMovies' })
-    async findMovies(@Payload() queryDto: PaginationOption) {
+    findMovies(@Payload() queryDto: PaginationOption) {
         return this.service.findMovies(queryDto)
     }
 
     @MessagePattern({ cmd: 'showtime-creation.findTheaters' })
-    async findTheaters(@Payload() queryDto: PaginationOption) {
+    findTheaters(@Payload() queryDto: PaginationOption) {
         return this.service.findTheaters(queryDto)
     }
 
     @MessagePattern({ cmd: 'showtime-creation.findShowtimes' })
-    async findShowtimes(@Payload() theaterIds: string[]) {
+    findShowtimes(@Payload() theaterIds: string[]) {
         return this.service.findShowtimes(theaterIds)
     }
 
     @MessagePattern({ cmd: 'showtime-creation.createBatchShowtimes' })
-    async createBatchShowtimes(@Payload() createDto: ShowtimeBatchCreateDto) {
+    createBatchShowtimes(@Payload() createDto: ShowtimeBatchCreateDto) {
         return this.service.createBatchShowtimes(createDto)
     }
 

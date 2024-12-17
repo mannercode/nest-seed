@@ -1,4 +1,5 @@
 import { addMinutes } from 'common'
+import { HttpTestClient } from 'testlib'
 import {
     PurchaseDto,
     PurchaseItemDto,
@@ -6,8 +7,7 @@ import {
     ShowtimeDto,
     TicketDto,
     TicketStatus
-} from 'services/cores'
-import { HttpTestClient } from 'testlib'
+} from 'types'
 import {
     closeFixture,
     createAllTickets,

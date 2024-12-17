@@ -39,7 +39,7 @@ export class StorageFilesController {
             pick(file, 'originalname', 'mimetype', 'size', 'path')
         )
 
-        const storageFiles = await this.service.saveFiles(createDtos)
+        const storageFiles = await getProxyValue(this.service.saveFiles(createDtos))
         return { storageFiles }
     }
 

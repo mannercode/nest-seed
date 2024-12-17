@@ -1,16 +1,14 @@
-import { AppModule } from 'app/app.module'
-import { configureApp } from 'app/main'
 import { padNumber } from 'common'
 import { TheatersService } from 'services/cores'
-import { HttpTestContext, createHttpTestContext } from 'testlib'
+import { createTestContext, TestContext } from './test.util'
 
 export interface Fixture {
-    testContext: HttpTestContext
+    testContext: TestContext
     theatersService: TheatersService
 }
 
 export async function createFixture() {
-    const testContext = await createHttpTestContext({ imports: [AppModule] }, configureApp)
+    const testContext = await createTestContext()
     const theatersService = testContext.module.get(TheatersService)
     return { testContext, theatersService }
 }
