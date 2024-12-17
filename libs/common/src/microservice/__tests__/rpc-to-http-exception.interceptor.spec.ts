@@ -1,5 +1,7 @@
+import { INestMicroservice } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { ClientsModule, Transport } from '@nestjs/microservices'
+import { HttpToRpcExceptionFilter, RpcToHttpExceptionInterceptor } from 'common'
 import {
     HttpTestClient,
     HttpTestContext,
@@ -7,7 +9,6 @@ import {
     createHttpTestContext,
     createMicroserviceTestContext
 } from 'testlib'
-import { RpcToHttpExceptionInterceptor } from 'common'
 import { HttpController, MicroserviceModule } from './rpc-to-http-exception.interceptor.fixture'
 
 describe('RpcToHttpExceptionInterceptor', () => {
@@ -16,7 +17,10 @@ describe('RpcToHttpExceptionInterceptor', () => {
     let client: HttpTestClient
 
     beforeEach(async () => {
-        microContext = await createMicroserviceTestContext({ imports: [MicroserviceModule] })
+        microContext = await createMicroserviceTestContext(
+            { imports: [MicroserviceModule] },
+            (app: INestMicroservice) => app.useGlobalFilters(new HttpToRpcExceptionFilter())
+        )
 
         httpContext = await createHttpTestContext({
             imports: [

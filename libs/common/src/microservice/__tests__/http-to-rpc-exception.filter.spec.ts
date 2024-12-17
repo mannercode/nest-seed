@@ -1,8 +1,10 @@
+import { INestMicroservice } from '@nestjs/common'
 import {
     createMicroserviceTestContext,
     MicroserviceTestClient,
     MicroserviceTestContext
 } from 'testlib'
+import { HttpToRpcExceptionFilter } from '../http-to-rpc-exception.filter'
 import { SampleModule } from './http-to-rpc-exception.filter.fixture'
 
 describe('HttpToRpcExceptionFilter', () => {
@@ -10,9 +12,12 @@ describe('HttpToRpcExceptionFilter', () => {
     let client: MicroserviceTestClient
 
     beforeEach(async () => {
-        testContext = await createMicroserviceTestContext({
-            imports: [SampleModule]
-        })
+        testContext = await createMicroserviceTestContext(
+            {
+                imports: [SampleModule]
+            },
+            (app: INestMicroservice) => app.useGlobalFilters(new HttpToRpcExceptionFilter())
+        )
         client = testContext.client
     })
 

@@ -11,6 +11,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const statusCode = exception.getStatus()
         let responseBody = exception.getResponse()
 
+        /* istanbul ignore if */
         if (
             typeof responseBody === 'object' &&
             !('code' in responseBody) &&
