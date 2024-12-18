@@ -3,14 +3,14 @@ import baseOption from './jest.config'
 
 const config: Config = {
     ...baseOption,
-    rootDir: '.',
-    roots: ['<rootDir>/apps'],
+    roots: ['<rootDir>/src/apps', '<rootDir>/src/libs'],
     collectCoverageFrom: [
         'apps/**/*.ts',
-        '!apps/**/index.ts',
-        '!apps/**/*.module.ts',
         '!apps/**/src/*.ts',
-        '!apps/**/*.controller.ts'
+        '!apps/**/*.controller.ts',
+        'libs/common/src/**/*.ts',
+        '!**/index.ts',
+        '!**/*.module.ts'
     ]
 }
 

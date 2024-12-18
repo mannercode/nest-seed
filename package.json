@@ -3,18 +3,15 @@
     "version": "0.0.1",
     "private": true,
     "scripts": {
-        "start": "node _output/dist/index.js",
-        "build": "rm -rf _output/dist && nest build --webpack",
+        "start": "node _output/dist/${TARGET_NAME}/index.js",
+        "build": "rm -rf _output/dist && nest build ${TARGET_NAME} -b webpack --webpackPath configs/webpack.config.js ",
         "lint": "prettier --write 'apps/**/*.ts' 'libs/**/*.ts' && eslint apps libs",
         "infra": "bash scripts/run_infra.sh && bash scripts/reset_output.sh",
         "watch:gateway": "nest start gateway --debug 9230 --watch",
         "watch:services": "nest start services --debug 9231 --watch",
-        "watch:app": "npm run infra && nest start --entryFile app/development --debug 9230 --watch",
         "watch:test": "npm run infra && node --inspect=9330 -r ts-node/register ./node_modules/.bin/jest --watch --onlyChanged",
-        "test:all": "npm run infra && jest --coverage --config ./jest.config.ts",
-        "test:app": "npm run infra && jest --coverage --config ./jest.config.app.ts",
-        "test:common": "npm run infra && jest --coverage --config ./libs/common/jest.config.ts",
-        "test:100x": "bash -c 'for i in {1..100}; do npm run test:all || { echo \"Test failed at iteration $i\"; exit 1; }; done'"
+        "test:base": "npm run infra && jest --coverage --config ./configs/jest.config.${TARGET_NAME}.ts",
+        "test:100x": "bash -c 'for i in {1..100}; do npm run test:base || { echo \"Test failed at iteration $i\"; exit 1; }; done'"
     },
     "TODO": "chalk,nanoid 등 esm은 node에서 사용 가능하나 jest는 아직이다. node 24에서 jest 다시 점검해라",
     "dependencies": {

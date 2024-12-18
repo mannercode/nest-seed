@@ -17,37 +17,33 @@
         "resolveJsonModule": true,
         "esModuleInterop": true,
         "sourceMap": true,
-        "outDir": "./_output/build",
         "baseUrl": ".",
+        "outDir": "./_output/build",
         "paths": {
             "common": [
-                "libs/common/src/index"
+                "src/libs/common/index"
             ],
             "testlib": [
-                "libs/testlib/index"
+                "src/libs/testlib/index"
             ],
             "types": [
-                "libs/types/index"
+                "src/libs/types/index"
             ],
             "proxy": [
-                "libs/proxy/index"
+                "src/libs/proxy/index"
             ],
             "config": [
-                "libs/config/index"
+                "src/libs/config/index"
             ],
             "services/*": [
-                "apps/services/src/*"
+                "src/apps/services/*"
             ],
             "gateway/*": [
-                "apps/gateway/src/*"
+                "src/apps/gateway/*"
             ]
         }
     },
     "include": [
-        "libs/**/*",
-        "apps/**/*"
-    ],
-    "exclude": [
-        "apps/**/jest.config.ts",
+        "src/**/*"
     ]
 }

@@ -9,15 +9,15 @@
     "projects": {
         "gateway": {
             "type": "application",
-            "root": "apps/gateway",
+            "root": "src/apps/gateway",
             "entryFile": "development",
-            "sourceRoot": "apps/gateway/src"
+            "sourceRoot": "src/apps/gateway"
         },
         "services": {
             "type": "application",
-            "root": "apps/services",
+            "root": "src/apps/services",
             "entryFile": "development",
-            "sourceRoot": "apps/services/src"
+            "sourceRoot": "src/apps/services"
         }
     }
 }
