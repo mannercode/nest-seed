@@ -1,4 +1,6 @@
 import { ShowtimeDto } from '../showtimes'
 import { TicketSalesStatusDto } from '../tickets'
 
-export type ShowtimeSalesStatusDto = ShowtimeDto & { salesStatus: TicketSalesStatusDto }
+export class ShowtimeSalesStatusDto extends ShowtimeDto {
+    salesStatus: TicketSalesStatusDto
+}
