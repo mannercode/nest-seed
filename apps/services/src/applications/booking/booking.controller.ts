@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { convertStringToDate, LatLong } from 'common'
+import { LatLong } from 'common'
 import { BookingService } from './booking.service'
 
 @Injectable()

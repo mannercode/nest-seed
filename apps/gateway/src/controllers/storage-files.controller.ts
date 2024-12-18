@@ -13,7 +13,6 @@ import {
 import { StreamableHandlerResponse } from '@nestjs/common/file-stream/interfaces'
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { IsString } from 'class-validator'
-import { getProxyValue } from 'common'
 import { Routes } from 'config'
 import { createReadStream } from 'fs'
 import { pick } from 'lodash'
@@ -39,13 +38,13 @@ export class StorageFilesController {
             pick(file, 'originalname', 'mimetype', 'size', 'path')
         )
 
-        const storageFiles = await getProxyValue(this.service.saveFiles(createDtos))
+        const storageFiles = await this.service.saveFiles(createDtos)
         return { storageFiles }
     }
 
     @Get(':fileId')
     async downloadFile(@Param('fileId') fileId: string) {
-        const file = await getProxyValue(this.service.getStorageFile(fileId))
+        const file = await this.service.getStorageFile(fileId)
 
         const readStream = createReadStream(file.storedPath)
 

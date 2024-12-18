@@ -27,7 +27,7 @@ export class TestService {
     }
 
     @MethodLog()
-    observableMethod(data: string): Observable<{}> {
+    observableMethod(data: string): Observable<string> {
         return of(data)
     }
 

@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, MethodLog } from 'common'
-import { Observable } from 'rxjs'
+import { ClientProxyService, getProxyValue, MethodLog } from 'common'
 import {
     MovieCreateDto,
     MovieDto,
@@ -17,37 +16,37 @@ export class MoviesService {
     createMovie(
         movieCreateDto: MovieCreateDto,
         fileCreateDtos: StorageFileCreateDto[]
-    ): Observable<MovieDto> {
-        return this.service.send('createMovie', { movieCreateDto, fileCreateDtos })
+    ): Promise<MovieDto> {
+        return getProxyValue(this.service.send('createMovie', { movieCreateDto, fileCreateDtos }))
     }
 
     @MethodLog({ level: 'verbose' })
-    updateMovie(movieId: string, updateDto: MovieUpdateDto): Observable<MovieDto> {
-        return this.service.send('updateMovie', { movieId, updateDto })
+    updateMovie(movieId: string, updateDto: MovieUpdateDto): Promise<MovieDto> {
+        return getProxyValue(this.service.send('updateMovie', { movieId, updateDto }))
     }
 
     @MethodLog({ level: 'verbose' })
-    getMovie(movieId: string): Observable<MovieDto> {
-        return this.service.send('getMovie', movieId)
+    getMovie(movieId: string): Promise<MovieDto> {
+        return getProxyValue(this.service.send('getMovie', movieId))
     }
 
     @MethodLog({ level: 'verbose' })
-    deleteMovie(movieId: string): Observable<boolean> {
-        return this.service.send('deleteMovie', movieId)
+    deleteMovie(movieId: string): Promise<boolean> {
+        return getProxyValue(this.service.send('deleteMovie', movieId))
     }
 
     @MethodLog({ level: 'verbose' })
-    findMovies(queryDto: MovieQueryDto): Observable<MovieDto[]> {
-        return this.service.send('findMovies', queryDto)
+    findMovies(queryDto: MovieQueryDto): Promise<MovieDto[]> {
+        return getProxyValue(this.service.send('findMovies', queryDto))
     }
 
     @MethodLog({ level: 'verbose' })
-    getMoviesByIds(movieIds: string[]): Observable<MovieDto[]> {
-        return this.service.send('getMoviesByIds', movieIds)
+    getMoviesByIds(movieIds: string[]): Promise<MovieDto[]> {
+        return getProxyValue(this.service.send('getMoviesByIds', movieIds))
     }
 
     @MethodLog({ level: 'verbose' })
-    moviesExist(movieIds: string[]): Observable<boolean> {
-        return this.service.send('moviesExist', movieIds)
+    moviesExist(movieIds: string[]): Promise<boolean> {
+        return getProxyValue(this.service.send('moviesExist', movieIds))
     }
 }

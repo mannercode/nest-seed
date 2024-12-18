@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, MethodLog, PaginationOption } from 'common'
+import { ClientProxyService, getProxyValue, MethodLog, PaginationOption } from 'common'
 import { Observable } from 'rxjs'
 import {
     MovieDto,
@@ -14,25 +14,23 @@ export class ShowtimeCreationService {
     constructor(private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
-    findMovies(queryDto: PaginationOption): Observable<MovieDto[]> {
-        return this.service.send('showtime-creation.findMovies', queryDto)
+    findMovies(queryDto: PaginationOption): Promise<MovieDto[]> {
+        return getProxyValue(this.service.send('showtime-creation.findMovies', queryDto))
     }
 
     @MethodLog({ level: 'verbose' })
-    findTheaters(queryDto: PaginationOption): Observable<TheaterDto[]> {
-        return this.service.send('showtime-creation.findTheaters', queryDto)
+    findTheaters(queryDto: PaginationOption): Promise<TheaterDto[]> {
+        return getProxyValue(this.service.send('showtime-creation.findTheaters', queryDto))
     }
 
     @MethodLog({ level: 'verbose' })
-    findShowtimes(theaterIds: string[]): Observable<ShowtimeDto[]> {
-        return this.service.send('showtime-creation.findShowtimes', theaterIds)
+    findShowtimes(theaterIds: string[]): Promise<ShowtimeDto[]> {
+        return getProxyValue(this.service.send('showtime-creation.findShowtimes', theaterIds))
     }
 
     @MethodLog({ level: 'verbose' })
-    createBatchShowtimes(
-        createDto: ShowtimeBatchCreateDto
-    ): Observable<ShowtimeBatchCreateResponse> {
-        return this.service.send('showtime-creation.createBatchShowtimes', createDto)
+    createBatchShowtimes(createDto: ShowtimeBatchCreateDto): Promise<ShowtimeBatchCreateResponse> {
+        return getProxyValue(this.service.send('showtime-creation.createBatchShowtimes', createDto))
     }
 
     @MethodLog({ level: 'verbose' })

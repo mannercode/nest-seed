@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, MethodLog } from 'common'
-import { Observable } from 'rxjs'
+import { ClientProxyService, getProxyValue, MethodLog } from 'common'
 import { MovieDto } from 'types'
 
 @Injectable()
@@ -8,7 +7,8 @@ export class RecommendationService {
     constructor(private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
-    findRecommendedMovies(customerId: string | null): Observable<MovieDto[]> {
-        return this.service.send('findRecommendedMovies', customerId ?? '')
+    findRecommendedMovies(customerId: string | null): Promise<MovieDto[]> {
+        // send()는 null을 넘기지 못한다
+        return getProxyValue(this.service.send('findRecommendedMovies', customerId ?? ''))
     }
 }

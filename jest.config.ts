@@ -18,9 +18,10 @@ const config: Config = {
         '^gateway/(.*)$': '<rootDir>/apps/gateway/src/$1'
     },
     collectCoverageFrom: [
-        'src/app/**/*.ts',
-        '!src/app/*.ts',
-        'src/libs/common/**/*.ts',
+        'apps/**/*.ts',
+        '!apps/**/src/*.ts',
+        '!apps/**/*.controller.ts',
+        'libs/common/src/**/*.ts',
         '!**/index.ts',
         '!**/*.module.ts'
     ],

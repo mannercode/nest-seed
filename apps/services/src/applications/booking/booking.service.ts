@@ -1,13 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { LatLong, MethodLog, pickIds } from 'common';
+import { Injectable } from '@nestjs/common'
+import { LatLong, MethodLog, pickIds } from 'common'
 import {
     ShowtimesService,
     TheatersService,
     TicketHoldingService,
     TicketsService
-} from 'services/cores';
-import { ShowtimeSalesStatusDto } from 'types';
-import { generateShowtimesWithSalesStatus, sortTheatersByDistance } from './booking.utils';
+} from 'services/cores'
+import { ShowtimeSalesStatusDto } from 'types'
+import { generateShowtimesWithSalesStatus, sortTheatersByDistance } from './booking.utils'
 
 @Injectable()
 export class BookingService {

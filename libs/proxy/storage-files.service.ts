@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, MethodLog } from 'common'
-import { Observable } from 'rxjs'
+import { ClientProxyService, getProxyValue, MethodLog } from 'common'
 import { StorageFileCreateDto, StorageFileDto } from 'types'
 
 @Injectable()
@@ -8,17 +7,17 @@ export class StorageFilesService {
     constructor(private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
-    saveFiles(createDtos: StorageFileCreateDto[]): Observable<StorageFileDto[]> {
-        return this.service.send('saveFiles', createDtos)
+    saveFiles(createDtos: StorageFileCreateDto[]): Promise<StorageFileDto[]> {
+        return getProxyValue(this.service.send('saveFiles', createDtos))
     }
 
     @MethodLog({ level: 'verbose' })
-    getStorageFile(fileId: string): Observable<StorageFileDto> {
-        return this.service.send('getStorageFile', fileId)
+    getStorageFile(fileId: string): Promise<StorageFileDto> {
+        return getProxyValue(this.service.send('getStorageFile', fileId))
     }
 
     @MethodLog({ level: 'verbose' })
-    deleteStorageFile(fileId: string): Observable<boolean> {
-        return this.service.send('deleteStorageFile', fileId)
+    deleteStorageFile(fileId: string): Promise<boolean> {
+        return getProxyValue(this.service.send('deleteStorageFile', fileId))
     }
 }

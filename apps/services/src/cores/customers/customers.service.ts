@@ -1,12 +1,5 @@
 import { ConflictException, Injectable } from '@nestjs/common'
-import {
-    InjectJwtAuth,
-    JwtAuthService,
-    mapDocToDto,
-    MethodLog,
-    PaginationResult,
-    Password
-} from 'common'
+import { InjectJwtAuth, JwtAuthService, mapDocToDto, MethodLog, Password } from 'common'
 import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from 'types'
 import { CustomersRepository } from './customers.repository'
 import { CustomerDocument } from './models'

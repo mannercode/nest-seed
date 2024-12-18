@@ -28,7 +28,7 @@ async function startMicroservice(
             } as const
 
             const app = module.createNestMicroservice<MicroserviceOptions>(rpcOptions)
-            configureApp && configureApp(app)
+            if (configureApp) configureApp(app)
 
             const isDebuggingEnabled = process.env.NODE_OPTIONS !== undefined
             app.useLogger(isDebuggingEnabled ? console : false)

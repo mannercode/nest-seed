@@ -33,10 +33,7 @@ export class ShowtimesController {
     }
 
     @MessagePattern({ cmd: 'findShowdates' })
-    findShowdates(
-        @Payload('movieId') movieId: string,
-        @Payload('theaterId') theaterId: string
-    ) {
+    findShowdates(@Payload('movieId') movieId: string, @Payload('theaterId') theaterId: string) {
         return this.service.findShowdates({ movieId, theaterId })
     }
 }

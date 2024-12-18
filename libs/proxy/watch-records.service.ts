@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, MethodLog } from 'common'
-import { Observable } from 'rxjs'
+import { ClientProxyService, getProxyValue, MethodLog } from 'common'
 import { WatchRecordCreateDto, WatchRecordDto, WatchRecordQueryDto } from 'types'
 
 @Injectable()
@@ -8,12 +7,12 @@ export class WatchRecordsService {
     constructor(private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
-    createWatchRecord(createDto: WatchRecordCreateDto): Observable<WatchRecordDto> {
-        return this.service.send('createWatchRecord', createDto)
+    createWatchRecord(createDto: WatchRecordCreateDto): Promise<WatchRecordDto> {
+        return getProxyValue(this.service.send('createWatchRecord', createDto))
     }
 
     @MethodLog({ level: 'verbose' })
-    findWatchRecords(queryDto: WatchRecordQueryDto): Observable<WatchRecordDto[]> {
-        return this.service.send('findWatchRecords', queryDto)
+    findWatchRecords(queryDto: WatchRecordQueryDto): Promise<WatchRecordDto[]> {
+        return getProxyValue(this.service.send('findWatchRecords', queryDto))
     }
 }

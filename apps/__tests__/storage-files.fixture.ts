@@ -1,4 +1,3 @@
-import { ConfigService } from '@nestjs/config'
 import { Byte, Path } from 'common'
 import { AppConfigService } from 'config'
 import { writeFile } from 'fs/promises'

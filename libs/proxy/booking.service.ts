@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, LatLong, MethodLog } from 'common'
-import { Observable } from 'rxjs'
+import { ClientProxyService, getProxyValue, LatLong, MethodLog } from 'common'
 import { ShowtimeSalesStatusDto, TheaterDto, TicketDto } from 'types'
 
 @Injectable()
@@ -8,13 +7,13 @@ export class BookingService {
     constructor(private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
-    findShowingTheaters(args: { movieId: string; latlong: LatLong }): Observable<TheaterDto[]> {
-        return this.service.send('booking.findShowingTheaters', args)
+    findShowingTheaters(args: { movieId: string; latlong: LatLong }): Promise<TheaterDto[]> {
+        return getProxyValue(this.service.send('booking.findShowingTheaters', args))
     }
 
     @MethodLog({ level: 'verbose' })
-    findShowdates(args: { movieId: string; theaterId: string }): Observable<Date[]> {
-        return this.service.send('booking.findShowdates', args)
+    findShowdates(args: { movieId: string; theaterId: string }): Promise<Date[]> {
+        return getProxyValue(this.service.send('booking.findShowdates', args))
     }
 
     @MethodLog({ level: 'verbose' })
@@ -22,19 +21,19 @@ export class BookingService {
         movieId: string
         theaterId: string
         showdate: Date
-    }): Observable<ShowtimeSalesStatusDto[]> {
-        return this.service.send('booking.findShowtimes', args)
+    }): Promise<ShowtimeSalesStatusDto[]> {
+        return getProxyValue(this.service.send('booking.findShowtimes', args))
     }
 
     @MethodLog({ level: 'verbose' })
-    getAvailableTickets(showtimeId: string): Observable<TicketDto[]> {
-        return this.service.send('booking.getAvailableTickets', showtimeId)
+    getAvailableTickets(showtimeId: string): Promise<TicketDto[]> {
+        return getProxyValue(this.service.send('booking.getAvailableTickets', showtimeId))
     }
 
     @MethodLog({ level: 'verbose' })
-    holdTickets(args: { customerId: string; showtimeId: string; ticketIds: string[] }): Observable<{
+    holdTickets(args: { customerId: string; showtimeId: string; ticketIds: string[] }): Promise<{
         heldTicketIds: string[]
     }> {
-        return this.service.send('booking.holdTickets', args)
+        return getProxyValue(this.service.send('booking.holdTickets', args))
     }
 }

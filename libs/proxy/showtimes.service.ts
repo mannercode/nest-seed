@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, MethodLog } from 'common'
-import { Observable } from 'rxjs'
+import { ClientProxyService, getProxyValue, MethodLog } from 'common'
 import { ShowtimeCreateDto, ShowtimeDto, ShowtimeFilterDto } from 'types'
 
 @Injectable()
@@ -8,32 +7,32 @@ export class ShowtimesService {
     constructor(private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
-    createShowtimes(createDtos: ShowtimeCreateDto[]): Observable<ShowtimeDto> {
-        return this.service.send('createShowtimes', createDtos)
+    createShowtimes(createDtos: ShowtimeCreateDto[]): Promise<ShowtimeDto> {
+        return getProxyValue(this.service.send('createShowtimes', createDtos))
     }
 
     @MethodLog({ level: 'verbose' })
-    getShowtimes(showtimeIds: string[]): Observable<ShowtimeDto[]> {
-        return this.service.send('getShowtimes', showtimeIds)
+    getShowtimes(showtimeIds: string[]): Promise<ShowtimeDto[]> {
+        return getProxyValue(this.service.send('getShowtimes', showtimeIds))
     }
 
     @MethodLog({ level: 'verbose' })
-    findAllShowtimes(filterDto: ShowtimeFilterDto): Observable<ShowtimeDto[]> {
-        return this.service.send('findAllShowtimes', filterDto)
+    findAllShowtimes(filterDto: ShowtimeFilterDto): Promise<ShowtimeDto[]> {
+        return getProxyValue(this.service.send('findAllShowtimes', filterDto))
     }
 
     @MethodLog({ level: 'verbose' })
-    findShowingMovieIds(): Observable<string[]> {
-        return this.service.send('findShowingMovieIds')
+    findShowingMovieIds(): Promise<string[]> {
+        return getProxyValue(this.service.send('findShowingMovieIds'))
     }
 
     @MethodLog({ level: 'verbose' })
-    findTheaterIdsByMovieId(movieId: string): Observable<string[]> {
-        return this.service.send('findTheaterIdsByMovieId', movieId)
+    findTheaterIdsByMovieId(movieId: string): Promise<string[]> {
+        return getProxyValue(this.service.send('findTheaterIdsByMovieId', movieId))
     }
 
     @MethodLog({ level: 'verbose' })
-    findShowdates(args: { movieId: string; theaterId: string }): Observable<Date[]> {
-        return this.service.send('findShowdates', args)
+    findShowdates(args: { movieId: string; theaterId: string }): Promise<Date[]> {
+        return getProxyValue(this.service.send('findShowdates', args))
     }
 }

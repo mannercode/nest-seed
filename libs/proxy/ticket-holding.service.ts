@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, MethodLog } from 'common'
-import { Observable } from 'rxjs'
+import { ClientProxyService, getProxyValue, MethodLog } from 'common'
 
 @Injectable()
 export class TicketHoldingService {
@@ -12,17 +11,17 @@ export class TicketHoldingService {
         showtimeId: string
         ticketIds: string[]
         ttlMs: number
-    }): Observable<boolean> {
-        return this.service.send('holdTickets', args)
+    }): Promise<boolean> {
+        return getProxyValue(this.service.send('holdTickets', args))
     }
 
     @MethodLog({ level: 'verbose' })
-    findHeldTicketIds(showtimeId: string, customerId: string): Observable<string[]> {
-        return this.service.send('findHeldTicketIds', { showtimeId, customerId })
+    findHeldTicketIds(showtimeId: string, customerId: string): Promise<string[]> {
+        return getProxyValue(this.service.send('findHeldTicketIds', { showtimeId, customerId }))
     }
 
     @MethodLog({ level: 'verbose' })
-    releaseTickets(showtimeId: string, customerId: string): Observable<boolean> {
-        return this.service.send('releaseTickets', { showtimeId, customerId })
+    releaseTickets(showtimeId: string, customerId: string): Promise<boolean> {
+        return getProxyValue(this.service.send('releaseTickets', { showtimeId, customerId }))
     }
 }
