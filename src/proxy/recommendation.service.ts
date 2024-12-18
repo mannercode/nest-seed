@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, getProxyValue, MethodLog } from 'common'
+import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
 import { MovieDto } from 'types'
 
 @Injectable()
 export class RecommendationService {
-    constructor(private service: ClientProxyService) {}
+    constructor(@InjectClientProxy('SERVICES_CLIENT') private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
     findRecommendedMovies(customerId: string | null): Promise<MovieDto[]> {

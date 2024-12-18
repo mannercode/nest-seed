@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, getProxyValue, MethodLog, PaginationOption } from 'common'
+import {
+    ClientProxyService,
+    getProxyValue,
+    InjectClientProxy,
+    MethodLog,
+    PaginationOption
+} from 'common'
 import { Observable } from 'rxjs'
 import {
     MovieDto,
@@ -11,7 +17,7 @@ import {
 
 @Injectable()
 export class ShowtimeCreationService {
-    constructor(private service: ClientProxyService) {}
+    constructor(@InjectClientProxy('SERVICES_CLIENT') private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
     findMovies(queryDto: PaginationOption): Promise<MovieDto[]> {

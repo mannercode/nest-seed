@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, getProxyValue, MethodLog } from 'common'
+import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
 import {
     MovieCreateDto,
     MovieDto,
@@ -10,7 +10,7 @@ import {
 
 @Injectable()
 export class MoviesService {
-    constructor(private service: ClientProxyService) {}
+    constructor(@InjectClientProxy('SERVICES_CLIENT') private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
     createMovie(

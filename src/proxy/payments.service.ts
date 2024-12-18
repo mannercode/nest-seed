@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, getProxyValue, MethodLog } from 'common'
+import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
 import { PaymentCreateDto, PaymentDto } from 'types'
 
 @Injectable()
 export class PaymentsService {
-    constructor(private service: ClientProxyService) {}
+    constructor(@InjectClientProxy('SERVICES_CLIENT') private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
     processPayment(createDto: PaymentCreateDto): Promise<PaymentDto> {

@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, getProxyValue, MethodLog } from 'common'
+import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
 import { ShowtimeCreateDto, ShowtimeDto, ShowtimeFilterDto } from 'types'
 
 @Injectable()
 export class ShowtimesService {
-    constructor(private service: ClientProxyService) {}
+    constructor(@InjectClientProxy('SERVICES_CLIENT') private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
     createShowtimes(createDtos: ShowtimeCreateDto[]): Promise<ShowtimeDto> {

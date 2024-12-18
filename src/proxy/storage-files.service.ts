@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, getProxyValue, MethodLog } from 'common'
+import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
 import { StorageFileCreateDto, StorageFileDto } from 'types'
 
 @Injectable()
 export class StorageFilesService {
-    constructor(private service: ClientProxyService) {}
+    constructor(@InjectClientProxy('SERVICES_CLIENT') private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
     saveFiles(createDtos: StorageFileCreateDto[]): Promise<StorageFileDto[]> {
