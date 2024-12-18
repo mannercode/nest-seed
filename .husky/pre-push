@@ -1,2 +1,1 @@
-npx eslint
-npx prettier -c 'src/**/*.ts'
+npm run lint
