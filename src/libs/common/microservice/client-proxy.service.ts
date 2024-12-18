@@ -34,17 +34,17 @@ export async function getProxyValue<T>(observer: Observable<T>): Promise<T> {
 export class ClientProxyModule {
     static registerAsync(options: ClientsProviderAsyncOptions): DynamicModule {
         const { name, useFactory, inject } = options
+        const provider = {
+            provide: ClientProxyService.getToken(name as string),
+            useFactory: (client: ClientProxy) => new ClientProxyService(client),
+            inject: [name]
+        }
+
         return {
             module: ClientProxyModule,
             imports: [ClientsModule.registerAsync([{ name, useFactory, inject }])],
-            providers: [
-                {
-                    provide: ClientProxyService.getToken(name as string),
-                    useFactory: (client: ClientProxy) => new ClientProxyService(client),
-                    inject: [name]
-                }
-            ],
-            exports: [ClientProxyService]
+            providers: [provider],
+            exports: [provider]
         }
     }
 }
