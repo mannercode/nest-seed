@@ -12,9 +12,9 @@ const config: Config = {
     moduleNameMapper: {
         '^common$': '<rootDir>/src/libs/common/index',
         '^testlib$': '<rootDir>/src/libs/testlib/index',
-        '^types$': '<rootDir>/src/libs/types/index',
-        '^proxy$': '<rootDir>/src/libs/proxy/index',
-        '^config$': '<rootDir>/src/libs/config/index',
+        '^types$': '<rootDir>/src/types/index',
+        '^proxy$': '<rootDir>/src/proxy/index',
+        '^config$': '<rootDir>/src/config/index',
         '^services/(.*)$': '<rootDir>/src/apps/services/$1',
         '^gateway/(.*)$': '<rootDir>/src/apps/gateway/$1'
     },
