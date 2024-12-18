@@ -1,5 +1,5 @@
 import dotenv from 'dotenv'
-dotenv.config({ path: ['.env.app', '.env.infra'] })
+dotenv.config({ path: ['.env.test'] })
 process.env.NODE_ENV = 'test'
 
 import 'reflect-metadata'

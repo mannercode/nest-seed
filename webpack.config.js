@@ -7,10 +7,11 @@ module.exports = (options) => {
     const output = {
         ...options,
         entry: path.resolve(dirname, 'production.ts'),
-        output: { filename: `../_output/dist/${basename}/index.js` }
+        output: {
+            path: path.resolve(__dirname, `./_output/dist/${basename}`),
+            filename: 'index.js'
+        }
     }
-
-    console.log('Webpack options:', output)
 
     return output
 }

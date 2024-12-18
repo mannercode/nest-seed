@@ -184,7 +184,7 @@ services:
             interval: 5s
             timeout: 10s
             retries: 5
-        env_file: .env.app
+        env_file: .env.test
         volumes:
             - ./_output/logs:/app/_output/logs
             - ./_output/uploads:/app/_output/uploads

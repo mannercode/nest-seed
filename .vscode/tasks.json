@@ -7,7 +7,7 @@
             "label": "Test",
             "detail": "Execute the selected test suites",
             "type": "shell",
-            "command": "TARGET_NAME=${input:projects} npm run test:base"
+            "command": "TEST_NAME=${input:tests} npm run test:base"
         },
         {
             "label": "CLI",
@@ -22,7 +22,10 @@
             "label": "Watch App",
             "detail": "Start the Nest development server and watch for file changes",
             "type": "shell",
-            "command": "npm run watch:app"
+            "command": "${input:apps} npm run watch:app",
+            "runOptions": {
+                "instanceLimit": 10
+            }
         },
         {
             "label": "Watch Test",
@@ -39,7 +42,7 @@
     ],
     "inputs": [
         {
-            "id": "projects",
+            "id": "tests",
             "type": "pickString",
             "default": "apps",
             "options": [
@@ -47,18 +50,16 @@
                 "apps",
                 "common",
             ],
-            "description": "Select a project to run"
+            "description": "Select a test suite to run."
         },
         {
-            "id": "testSuite",
+            "id": "apps",
             "type": "pickString",
-            "default": "test:app",
             "options": [
-                "test:all",
-                "test:app",
-                "test:common"
+                "APP_NAME=gateway DEBUG_PORT=9230",
+                "APP_NAME=services DEBUG_PORT=9231"
             ],
-            "description": "Select a test suite to run"
+            "description": "Select a app to run."
         },
         {
             "id": "cliTool",

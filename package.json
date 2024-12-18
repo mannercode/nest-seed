@@ -3,14 +3,13 @@
     "version": "0.0.1",
     "private": true,
     "scripts": {
-        "start": "node _output/dist/${TARGET_NAME}/index.js",
-        "build": "rm -rf _output/dist && nest build ${TARGET_NAME} -b webpack --webpackPath configs/webpack.config.js ",
+        "start": "node _output/dist/${APP_NAME}/index.js",
+        "build": "nest build ${APP_NAME} -b webpack",
         "lint": "prettier --write 'src/**/*.ts' && eslint src",
         "infra": "bash scripts/run_infra.sh && bash scripts/reset_output.sh",
-        "watch:gateway": "nest start gateway --debug 9230 --watch",
-        "watch:services": "nest start services --debug 9231 --watch",
+        "watch:app": "nest start ${APP_NAME} --watch --debug ${DEBUG_PORT}",
         "watch:test": "npm run infra && node --inspect=9330 -r ts-node/register ./node_modules/.bin/jest --watch --onlyChanged",
-        "test:base": "npm run infra && jest --coverage --config ./configs/jest.config.${TARGET_NAME}.ts",
+        "test:base": "npm run infra && jest --coverage --config ./configs/jest.config.${TEST_NAME}.ts",
         "test:100x": "bash -c 'for i in {1..100}; do npm run test:base || { echo \"Test failed at iteration $i\"; exit 1; }; done'"
     },
     "TODO": "chalk,nanoid 등 esm은 node에서 사용 가능하나 jest는 아직이다. node 24에서 jest 다시 점검해라",
