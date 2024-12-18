@@ -36,6 +36,7 @@
                 "github.vscode-pull-request-github"
             ],
             "settings": {
+                "remote.autoForwardPorts": false,
                 "typescript.tsc.autoDetect": "off",
                 "typescript.disableAutomaticTypeAcquisition": true,
                 "prettier.enableDebugLogs": true,
