@@ -5,7 +5,6 @@ import {
     RecommendationModule,
     ShowtimeCreationModule
 } from './applications'
-import { CoreModule } from './core'
 import {
     CustomersModule,
     MoviesModule,
@@ -17,10 +16,11 @@ import {
     WatchRecordsModule
 } from './cores'
 import { HealthModule, PaymentsModule, StorageFilesModule } from './infrastructures'
+import { Modules } from './modules'
 
 @Module({
     imports: [
-        CoreModule,
+        Modules,
         CustomersModule,
         HealthModule,
         StorageFilesModule,

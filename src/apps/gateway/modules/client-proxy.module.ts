@@ -1,19 +1,11 @@
 import { Module } from '@nestjs/common'
-import { ClientProxyModule } from 'common'
-import { ConfigModule } from './config.module'
-import { HttpModule } from './http.module'
-import { LoggerModule } from './logger.module'
-import { MulterModule } from './multer.module'
 import { Transport } from '@nestjs/microservices'
+import { ClientProxyModule as OrgClientProxyModule } from 'common'
 import { AppConfigService } from 'config'
 
 @Module({
     imports: [
-        ConfigModule,
-        HttpModule,
-        LoggerModule,
-        MulterModule,
-        ClientProxyModule.registerAsync({
+        OrgClientProxyModule.registerAsync({
             name: 'SERVICES_CLIENT',
             useFactory: async (config: AppConfigService) => ({
                 transport: Transport.TCP,
@@ -21,7 +13,6 @@ import { AppConfigService } from 'config'
             }),
             inject: [AppConfigService]
         })
-    ],
-    exports: [MulterModule]
+    ]
 })
-export class CoreModule {}
+export class ClientProxyModule {}

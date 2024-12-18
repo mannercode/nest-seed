@@ -7,7 +7,7 @@
             "label": "Test",
             "detail": "Execute the selected test suites",
             "type": "shell",
-            "command": "npm run ${input:testSuite}"
+            "command": "TARGET_NAME=${input:projects} npm run test:base"
         },
         {
             "label": "CLI",
@@ -38,6 +38,17 @@
         }
     ],
     "inputs": [
+        {
+            "id": "projects",
+            "type": "pickString",
+            "default": "apps",
+            "options": [
+                "all",
+                "apps",
+                "common",
+            ],
+            "description": "Select a project to run"
+        },
         {
             "id": "testSuite",
             "type": "pickString",

@@ -23,10 +23,10 @@ import {
     StorageFilesController,
     TheatersController
 } from './controllers'
-import { CoreModule } from './core'
+import { Modules } from './modules'
 
 @Module({
-    imports: [CoreModule],
+    imports: [Modules],
     providers: [
         CustomerLocalStrategy,
         CustomerJwtStrategy,

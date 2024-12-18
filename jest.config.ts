@@ -2,12 +2,13 @@ import * as path from 'path'
 import type { Config } from 'jest'
 
 const config: Config = {
-    setupFilesAfterEnv: [path.resolve(__dirname, 'jest.setup.ts')],
+    setupFilesAfterEnv: ['<rootDir>/configs/jest.setup.ts'],
     moduleFileExtensions: ['js', 'json', 'ts'],
     testRegex: '.*\\.spec\\.(ts|js)$',
     testEnvironment: 'node',
     transform: { '^.+\\.ts$': 'ts-jest' },
-    rootDir: '..',
+    rootDir: '.',
+    roots: ['<rootDir>/src'],
     moduleNameMapper: {
         '^common$': '<rootDir>/src/libs/common/index',
         '^testlib$': '<rootDir>/src/libs/testlib/index',
@@ -17,6 +18,15 @@ const config: Config = {
         '^services/(.*)$': '<rootDir>/src/apps/services/$1',
         '^gateway/(.*)$': '<rootDir>/src/apps/gateway/$1'
     },
+    collectCoverageFrom: [
+        '!**/*.controller.ts',
+        '!**/production.ts',
+        '!**/development.ts',
+        '!**/main.ts',
+        '!**/modules/*',
+        '!**/index.ts',
+        '!**/*.module.ts'
+    ],
     coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },
     coverageReporters: ['lcov', 'text'],
     coveragePathIgnorePatterns: ['__tests__'],

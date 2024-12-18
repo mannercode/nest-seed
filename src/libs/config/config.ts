@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { BaseConfigService } from 'common'
 import Joi from 'joi'
 
 export const configSchema = Joi.object({
@@ -38,8 +39,10 @@ export const configSchema = Joi.object({
 })
 
 @Injectable()
-export class AppConfigService {
-    constructor(private configService: ConfigService<object, true>) {}
+export class AppConfigService extends BaseConfigService {
+    constructor(configService: ConfigService<object, true>) {
+        super(configService, configSchema)
+    }
 
     get http() {
         return {
@@ -101,25 +104,5 @@ export class AppConfigService {
 
     get service() {
         return { port: this.getNumber('SERVICE_PORT') }
-    }
-
-    private validateKey(key: string) {
-        /* istanbul ignore if */
-        if (!configSchema.describe().keys[key]) {
-            console.error(
-                `Configuration validation error: Key "${key}" is not defined in the configSchema`
-            )
-            process.exit(1)
-        }
-    }
-
-    private getString(key: string): string {
-        this.validateKey(key)
-        return this.configService.get<string>(key)
-    }
-
-    private getNumber(key: string): number {
-        this.validateKey(key)
-        return this.configService.get<number>(key)
     }
 }
