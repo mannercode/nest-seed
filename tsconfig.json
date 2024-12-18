@@ -27,13 +27,13 @@
                 "src/libs/testlib/index"
             ],
             "types": [
-                "src/types/index"
+                "src/shared/types/index"
             ],
             "proxy": [
-                "src/proxy/index"
+                "src/shared/proxy/index"
             ],
             "config": [
-                "src/config/index"
+                "src/shared/config/index"
             ],
             "services/*": [
                 "src/apps/services/*"
