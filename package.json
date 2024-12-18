@@ -5,7 +5,7 @@
     "scripts": {
         "start": "node _output/dist/${TARGET_NAME}/index.js",
         "build": "rm -rf _output/dist && nest build ${TARGET_NAME} -b webpack --webpackPath configs/webpack.config.js ",
-        "lint": "prettier --write 'apps/**/*.ts' 'libs/**/*.ts' && eslint apps libs",
+        "lint": "prettier --write 'src/**/*.ts' && eslint src",
         "infra": "bash scripts/run_infra.sh && bash scripts/reset_output.sh",
         "watch:gateway": "nest start gateway --debug 9230 --watch",
         "watch:services": "nest start services --debug 9231 --watch",
