@@ -1,10 +1,8 @@
-import {
-    getQueueToken,
-    BullModule as NestBullModule,
-    SharedBullAsyncConfiguration
-} from '@nestjs/bullmq'
+import { getQueueToken, BullModule as NestBullModule } from '@nestjs/bullmq'
 import { Injectable, Module, OnModuleInit } from '@nestjs/common'
 import { Queue } from 'bullmq'
+import Redis from 'ioredis'
+import { RedisModule } from './redis.module'
 
 @Injectable()
 class BullInitService implements OnModuleInit {
@@ -19,13 +17,28 @@ class BullInitService implements OnModuleInit {
     }
 }
 
+type BullFactory = { prefix: string }
+
 @Module({})
 export class BullModule {
-    static forRootAsync(name: string, asyncBullConfig: SharedBullAsyncConfiguration) {
+    static forRootAsync(options: {
+        name: string
+        redisName: string
+        useFactory: (...args: any[]) => Promise<BullFactory> | BullFactory
+        inject?: any[]
+    }) {
+        const { name, redisName, useFactory, inject } = options
+
         return {
             module: BullModule,
             imports: [
-                NestBullModule.forRootAsync(name, asyncBullConfig),
+                NestBullModule.forRootAsync(name, {
+                    useFactory: async (redis: Redis, ...args: any[]) => {
+                        const { prefix } = await useFactory(...args)
+                        return { prefix, connection: redis }
+                    },
+                    inject: [RedisModule.getToken(redisName), ...(inject ?? [])]
+                }),
                 NestBullModule.registerQueue({ configKey: name, name })
             ],
             providers: [

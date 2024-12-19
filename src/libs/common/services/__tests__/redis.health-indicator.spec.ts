@@ -17,10 +17,7 @@ describe('RedisHealthIndicator', () => {
                 CacheModule.register({
                     name: 'name',
                     redisName: 'redis',
-                    useFactory: async (redis: Redis) => ({
-                        prefix: generateShortId(),
-                        connection: redis
-                    })
+                    useFactory: () => ({ prefix: generateShortId() })
                 })
             ],
             providers: [RedisHealthIndicator]
