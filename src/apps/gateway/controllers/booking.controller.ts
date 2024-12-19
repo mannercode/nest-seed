@@ -1,11 +1,11 @@
 import { Body, Controller, Get, Param, Patch, Req, UseGuards } from '@nestjs/common'
+import { BookingProxy } from 'applications'
 import { AuthTokenPayload, convertStringToDate, LatLong, LatLongQuery } from 'common'
-import { BookingService } from 'shared/proxy'
 import { CustomerJwtAuthGuard } from './guards'
 
 @Controller('booking')
 export class BookingController {
-    constructor(private service: BookingService) {}
+    constructor(private service: BookingProxy) {}
 
     @Get('movies/:movieId/theaters')
     async findShowingTheaters(

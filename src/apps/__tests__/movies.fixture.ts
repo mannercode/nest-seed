@@ -9,7 +9,8 @@ export interface Fixture {
 
 export async function createFixture() {
     const testContext = await createTestContext()
-    const moviesService = testContext.module.get(MoviesService)
+    const module = testContext.coresContext.module
+    const moviesService = module.get(MoviesService)
 
     return { testContext, moviesService }
 }

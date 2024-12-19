@@ -32,17 +32,14 @@
             "gateway": [
                 "src/apps/gateway/index"
             ],
-            "services": [
-                "src/apps/services/index"
-            ],
             "applications": [
-                "src/apps/services/applications/index"
+                "src/apps/applications/index"
             ],
             "cores": [
-                "src/apps/services/cores/index"
+                "src/apps/cores/index"
             ],
             "infrastructures": [
-                "src/apps/services/infrastructures/index"
+                "src/apps/infrastructures/index"
             ],
         }
     },

@@ -10,7 +10,8 @@ export interface Fixture {
 
 export async function createFixture() {
     const testContext = await createTestContext({ http: { ignoreGuards: [CustomerJwtAuthGuard] } })
-    const customersService = testContext.module.get(CustomersService)
+    const module = testContext.coresContext.module
+    const customersService = module.get(CustomersService)
 
     return { testContext, customersService }
 }

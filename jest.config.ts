@@ -13,10 +13,9 @@ const config: Config = {
         '^testlib$': '<rootDir>/src/libs/testlib/index',
         '^shared/(.*)$': '<rootDir>/src/apps/shared/$1',
         '^gateway$': '<rootDir>/src/apps/gateway/index',
-        '^services$': '<rootDir>/src/apps/services/index',
-        '^applications$': '<rootDir>/src/apps/services/applications/index',
-        '^cores$': '<rootDir>/src/apps/services/cores/index',
-        '^infrastructures$': '<rootDir>/src/apps/services/infrastructures/index',
+        '^applications$': '<rootDir>/src/apps/applications/index',
+        '^cores$': '<rootDir>/src/apps/cores/index',
+        '^infrastructures$': '<rootDir>/src/apps/infrastructures/index'
     },
     collectCoverageFrom: [
         '!**/*.controller.ts',

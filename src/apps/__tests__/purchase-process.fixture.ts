@@ -40,23 +40,24 @@ export interface Fixture {
 
 export async function createFixture() {
     const testContext = await createTestContext()
+    const module = testContext.coresContext.module
 
-    const customersService = testContext.module.get(CustomersService)
+    const customersService = module.get(CustomersService)
     const customer = await createCustomer(customersService)
 
-    const moviesService = testContext.module.get(MoviesService)
+    const moviesService = module.get(MoviesService)
     const movie = await createMovie(moviesService)
 
-    const theatersService = testContext.module.get(TheatersService)
+    const theatersService = module.get(TheatersService)
     const theater = await createTheater(theatersService, {
         seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', seats: 'OOOOOOOOOOOO' }] }] }
     })
 
-    const showtimesService = testContext.module.get(ShowtimesService)
-    const ticketsService = testContext.module.get(TicketsService)
-    const ticketHoldingService = testContext.module.get(TicketHoldingService)
-    const purchasesService = testContext.module.get(PurchasesService)
-    const paymentsService = testContext.module.get(PaymentsService)
+    const showtimesService = module.get(ShowtimesService)
+    const ticketsService = module.get(TicketsService)
+    const ticketHoldingService = module.get(TicketHoldingService)
+    const purchasesService = module.get(PurchasesService)
+    const paymentsService = testContext.infrasContext.module.get(PaymentsService)
 
     return {
         testContext,

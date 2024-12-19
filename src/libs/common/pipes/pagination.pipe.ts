@@ -28,6 +28,11 @@ export class PaginationOption {
 
     @IsOptional()
     @Transform(({ value }) => {
+        /* istanbul ignore next */
+        if (value.direction && value.name) {
+            return value
+        }
+
         const parts = value.split(':')
 
         if (parts.length !== 2) {

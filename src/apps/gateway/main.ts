@@ -8,7 +8,7 @@ import { exit } from 'process'
 import { GatewayConfigService } from './config'
 import { GatewayModule } from './gateway.module'
 
-export function configureGateway(app: INestApplication<any>) {
+export async function configureGateway(app: INestApplication<any>) {
     app.use(compression())
 
     const logger = app.get(AppLoggerService)

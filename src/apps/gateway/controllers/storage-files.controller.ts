@@ -14,8 +14,8 @@ import { StreamableHandlerResponse } from '@nestjs/common/file-stream/interfaces
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { IsString } from 'class-validator'
 import { createReadStream } from 'fs'
+import { StorageFilesProxy } from 'infrastructures'
 import { pick } from 'lodash'
-import { StorageFilesService } from 'shared/proxy'
 import { Routes } from 'shared/config'
 
 class UploadFileDto {
@@ -27,7 +27,7 @@ class UploadFileDto {
 export class StorageFilesController {
     private logger: Logger
 
-    constructor(private service: StorageFilesService) {
+    constructor(private service: StorageFilesProxy) {
         this.logger = new Logger(StorageFilesController.name)
     }
 

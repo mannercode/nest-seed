@@ -10,7 +10,8 @@ export interface Fixture {
 
 export async function createFixture() {
     const testContext = await createTestContext()
-    const customersService = testContext.module.get(CustomersService)
+    const module = testContext.coresContext.module
+    const customersService = module.get(CustomersService)
     const email = 'user@mail.com'
     const password = 'password'
     const customer = await createCustomer(customersService, { email, password })

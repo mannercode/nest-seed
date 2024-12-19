@@ -14,18 +14,18 @@ import {
     UsePipes
 } from '@nestjs/common'
 import { FilesInterceptor } from '@nestjs/platform-express'
+import { RecommendationProxy } from 'applications'
 import { AuthTokenPayload } from 'common'
+import { MovieCreateDto, MovieQueryDto, MoviesProxy, MovieUpdateDto } from 'cores'
 import { pick } from 'lodash'
-import { MoviesService, RecommendationService } from 'shared/proxy'
-import { MovieCreateDto, MovieQueryDto, MovieUpdateDto } from 'cores'
 import { CustomerOptionalJwtAuthGuard } from './guards'
 import { DefaultPaginationPipe } from './pipes'
 
 @Controller('movies')
 export class MoviesController {
     constructor(
-        private service: MoviesService,
-        private recommendationService: RecommendationService
+        private moviesService: MoviesProxy,
+        private recommendationService: RecommendationProxy
     ) {}
 
     @UseInterceptors(FilesInterceptor('files'))
@@ -38,12 +38,12 @@ export class MoviesController {
             pick(file, 'originalname', 'mimetype', 'size', 'path')
         )
 
-        return this.service.createMovie(movieCreateDto, fileCreateDtos)
+        return this.moviesService.createMovie(movieCreateDto, fileCreateDtos)
     }
 
     @Patch(':movieId')
     async updateMovie(@Param('movieId') movieId: string, @Body() updateDto: MovieUpdateDto) {
-        return this.service.updateMovie(movieId, updateDto)
+        return this.moviesService.updateMovie(movieId, updateDto)
     }
 
     @UseGuards(CustomerOptionalJwtAuthGuard)
@@ -55,17 +55,17 @@ export class MoviesController {
 
     @Get(':movieId')
     async getMovie(@Param('movieId') movieId: string) {
-        return this.service.getMovie(movieId)
+        return this.moviesService.getMovie(movieId)
     }
 
     @Delete(':movieId')
     async deleteMovie(@Param('movieId') movieId: string) {
-        return this.service.deleteMovie(movieId)
+        return this.moviesService.deleteMovie(movieId)
     }
 
     @UsePipes(DefaultPaginationPipe)
     @Get()
     async findMovies(@Query() queryDto: MovieQueryDto) {
-        return this.service.findMovies(queryDto)
+        return this.moviesService.findMovies(queryDto)
     }
 }

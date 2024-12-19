@@ -58,11 +58,12 @@ export async function createFixture() {
                 FILE_UPLOAD_ALLOWED_FILE_TYPES: 'text/plain'
             }
         },
-        svc: { config: { FILE_UPLOAD_DIRECTORY: tempDir } }
+        infras: { config: { FILE_UPLOAD_DIRECTORY: tempDir } }
     })
 
     const config = testContext.httpContext.module.get(GatewayConfigService)
-    const storageFilesService = testContext.module.get(StorageFilesService)
+    const module = testContext.infrasContext.module
+    const storageFilesService = module.get(StorageFilesService)
     return { testContext, config, tempDir, storageFilesService }
 }
 

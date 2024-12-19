@@ -1,16 +1,12 @@
 import { Module } from '@nestjs/common'
 import {
-    BookingService,
-    CustomersService,
-    HealthService,
-    MoviesService,
-    PurchaseProcessService,
-    PurchasesService,
-    RecommendationService,
-    ShowtimeCreationService,
-    StorageFilesService,
-    TheatersService
-} from 'shared/proxy'
+    BookingProxy,
+    PurchaseProcessProxy,
+    RecommendationProxy,
+    ShowtimeCreationProxy
+} from 'applications'
+import { CustomersProxy, MoviesProxy, PurchasesProxy, TheatersProxy } from 'cores'
+import { HealthProxy, StorageFilesProxy } from 'infrastructures'
 import {
     BookingController,
     CustomerJwtStrategy,
@@ -30,16 +26,16 @@ import { Modules } from './modules'
     providers: [
         CustomerLocalStrategy,
         CustomerJwtStrategy,
-        CustomersService,
-        StorageFilesService,
-        MoviesService,
-        TheatersService,
-        ShowtimeCreationService,
-        BookingService,
-        PurchasesService,
-        RecommendationService,
-        PurchaseProcessService,
-        HealthService
+        CustomersProxy,
+        StorageFilesProxy,
+        MoviesProxy,
+        TheatersProxy,
+        ShowtimeCreationProxy,
+        BookingProxy,
+        PurchasesProxy,
+        RecommendationProxy,
+        PurchaseProcessProxy,
+        HealthProxy
     ],
     controllers: [
         CustomersController,

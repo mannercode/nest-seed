@@ -39,7 +39,7 @@ export async function createHttpTestContext(
 
     const app = module.createNestApplication()
 
-    if (configureApp) configureApp(app)
+    if (configureApp) await configureApp(app)
 
     const isDebuggingEnabled = process.env.NODE_OPTIONS !== undefined
     app.useLogger(isDebuggingEnabled ? console : false)

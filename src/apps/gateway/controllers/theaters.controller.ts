@@ -1,11 +1,10 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UsePipes } from '@nestjs/common'
-import { TheaterCreateDto, TheaterQueryDto, TheaterUpdateDto } from 'cores'
-import { TheatersService } from 'shared/proxy'
+import { TheaterCreateDto, TheaterQueryDto, TheatersProxy, TheaterUpdateDto } from 'cores'
 import { DefaultPaginationPipe } from './pipes'
 
 @Controller('theaters')
 export class TheatersController {
-    constructor(private service: TheatersService) {}
+    constructor(private service: TheatersProxy) {}
 
     @Post()
     async createTheater(@Body() createDto: TheaterCreateDto) {

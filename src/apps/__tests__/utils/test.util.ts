@@ -1,7 +1,10 @@
+import { Type } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { TestingModule } from '@nestjs/testing'
+import { ApplicationsModule, configureApplications } from 'applications'
+import { sleep } from 'common'
+import { configureCores, CoresModule } from 'cores'
 import { configureGateway, GatewayModule } from 'gateway'
-import { configureServices, ServicesModule } from 'services'
+import { configureInfrastructures, InfrastructuresModule } from 'infrastructures'
 import {
     createHttpTestContext,
     createMicroserviceTestContext,
@@ -11,98 +14,119 @@ import {
     ModuleMetadataEx
 } from 'testlib'
 
-export function createConfigServiceMock(mockValues: Record<string, any>) {
+function createConfigServiceMock(mockValues: Record<string, any>) {
     const realConfigService = new ConfigService()
 
-    const mockConfigService = {
+    return {
         get: jest.fn((key: string) => {
             if (key in mockValues) {
                 return mockValues[key]
             }
-
             return realConfigService.get(key)
         })
     }
-
-    return mockConfigService
-}
-
-export class TestContext {
-    httpContext: HttpTestContext
-    msContext: MicroserviceTestContext
-    module: TestingModule
-    client: HttpTestClient
-    close: () => Promise<void>
-}
-
-async function createHttpContext(
-    metadata: ModuleMetadataEx & { config?: Record<string, any> } = {},
-    servicePort: number
-) {
-    const { ignoreGuards, ignoreProviders, overrideProviders, config } = metadata
-
-    const httpContext = await createHttpTestContext(
-        {
-            imports: [GatewayModule],
-            overrideProviders: [
-                {
-                    original: ConfigService,
-                    replacement: createConfigServiceMock({
-                        ...config,
-                        SERVICE_PORT: servicePort
-                    })
-                },
-                ...(overrideProviders ?? [])
-            ],
-            ignoreGuards,
-            ignoreProviders
-        },
-        configureGateway
-    )
-
-    return httpContext
-}
-
-async function createServiceContext(
-    metadata: ModuleMetadataEx & { config?: Record<string, any> } = {}
-) {
-    const { ignoreGuards, ignoreProviders, overrideProviders, config } = metadata
-
-    const msContext = await createMicroserviceTestContext(
-        {
-            imports: [ServicesModule],
-            ignoreProviders,
-            ignoreGuards,
-            overrideProviders: [
-                {
-                    original: ConfigService,
-                    replacement: createConfigServiceMock({ ...config })
-                },
-                ...(overrideProviders ?? [])
-            ]
-        },
-        configureServices
-    )
-
-    return msContext
 }
 
 type TestContextOpts = ModuleMetadataEx & { config?: Record<string, any> }
 
+async function createContext<T>(
+    contextCreator: (meta: ModuleMetadataEx, configureFn: (app: any) => void) => Promise<T>,
+    module: Type<any>,
+    configure: (app: any) => void,
+    metadata: TestContextOpts = {},
+    mockValues: Record<string, any> = {}
+): Promise<T> {
+    const { ignoreGuards, ignoreProviders, overrideProviders, config } = metadata
+    const mergedMockValues = { ...mockValues, ...config }
+    const configMock = createConfigServiceMock(mergedMockValues)
+
+    return contextCreator(
+        {
+            imports: [module],
+            ignoreProviders,
+            ignoreGuards,
+            overrideProviders: [
+                { original: ConfigService, replacement: configMock },
+                ...(overrideProviders ?? [])
+            ]
+        },
+        configure
+    )
+}
+
+export class TestContext {
+    httpContext: HttpTestContext
+    appsContext: MicroserviceTestContext
+    coresContext: MicroserviceTestContext
+    infrasContext: MicroserviceTestContext
+    client: HttpTestClient
+    close: () => Promise<void>
+}
+
 export async function createTestContext({
     http,
-    svc
+    apps,
+    cores,
+    infras
 }: {
     http?: TestContextOpts
-    svc?: TestContextOpts
-} = {}) {
-    const msContext = await createServiceContext(svc)
-    const httpContext = await createHttpContext(http, msContext.port)
+    apps?: TestContextOpts
+    cores?: TestContextOpts
+    infras?: TestContextOpts
+} = {}): Promise<TestContext> {
+    const infrasContext = await createContext<MicroserviceTestContext>(
+        createMicroserviceTestContext,
+        InfrastructuresModule,
+        configureInfrastructures,
+        infras
+    )
+
+    const coresContext = await createContext<MicroserviceTestContext>(
+        createMicroserviceTestContext,
+        CoresModule,
+        configureCores,
+        cores,
+        { INFRASTRUCTURES_CLIENT_PORT: infrasContext.port }
+    )
+
+    const appsContext = await createContext<MicroserviceTestContext>(
+        createMicroserviceTestContext,
+        ApplicationsModule,
+        configureApplications,
+        apps,
+        {
+            CORES_CLIENT_PORT: coresContext.port,
+            INFRASTRUCTURES_CLIENT_PORT: infrasContext.port
+        }
+    )
+
+    const httpContext = await createContext<HttpTestContext>(
+        createHttpTestContext,
+        GatewayModule,
+        configureGateway,
+        http,
+        {
+            APPLICATIONS_CLIENT_PORT: appsContext.port,
+            CORES_CLIENT_PORT: coresContext.port,
+            INFRASTRUCTURES_CLIENT_PORT: infrasContext.port
+        }
+    )
+
+    await sleep(500)
 
     const close = async () => {
         await httpContext.close()
-        await msContext.close()
+        await appsContext.close()
+        await coresContext.close()
+        await infrasContext.close()
     }
 
-    return { httpContext, msContext, close, module: msContext.module, client: httpContext.client }
+    return {
+        httpContext,
+        appsContext,
+        coresContext,
+        infrasContext,
+        close,
+        client: httpContext.client
+    }
 }

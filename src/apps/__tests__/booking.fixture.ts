@@ -27,14 +27,15 @@ export interface Fixture {
 
 export async function createFixture() {
     const testContext = await createTestContext()
+    const module = testContext.coresContext.module
 
-    const customersService = testContext.module.get(CustomersService)
+    const customersService = module.get(CustomersService)
     const { accessToken } = await createCustomerAndLogin(customersService)
 
-    const moviesService = testContext.module.get(MoviesService)
+    const moviesService = module.get(MoviesService)
     const movie = await createMovie(moviesService, {})
 
-    const theatersService = testContext.module.get(TheatersService)
+    const theatersService = module.get(TheatersService)
     const theaters = await Promise.all(
         Array.from({ length: 10 }, (_, index) =>
             createTheater(theatersService, {
@@ -43,7 +44,7 @@ export async function createFixture() {
         )
     )
 
-    const showtimesService = testContext.module.get(ShowtimesService)
+    const showtimesService = module.get(ShowtimesService)
     const startTimes = [
         new Date('2999-01-01T12:00'),
         new Date('2999-01-01T14:00'),
@@ -64,7 +65,7 @@ export async function createFixture() {
     )
     const showtimes = await createShowtimes(showtimesService, showtimeDtos)
 
-    const ticketsService = testContext.module.get(TicketsService)
+    const ticketsService = module.get(TicketsService)
     await createAllTickets(ticketsService, theaters, showtimes)
 
     return { testContext, movie, accessToken }

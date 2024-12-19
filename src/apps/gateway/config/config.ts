@@ -16,7 +16,9 @@ export const configSchema = Joi.object({
     FILE_UPLOAD_MAX_FILE_SIZE_BYTES: Joi.number().required(),
     FILE_UPLOAD_MAX_FILES_PER_UPLOAD: Joi.number().required(),
     FILE_UPLOAD_ALLOWED_FILE_TYPES: Joi.string().required(),
-    SERVICE_PORT: Joi.number().required()
+    APPLICATIONS_CLIENT_PORT: Joi.number().required(),
+    CORES_CLIENT_PORT: Joi.number().required(),
+    INFRASTRUCTURES_CLIENT_PORT: Joi.number().required()
 })
 
 @Injectable()
@@ -54,7 +56,11 @@ export class GatewayConfigService extends BaseConfigService {
         }
     }
 
-    get service() {
-        return { port: this.getNumber('SERVICE_PORT') }
+    get clients() {
+        return {
+            applications: { port: this.getNumber('APPLICATIONS_CLIENT_PORT') },
+            cores: { port: this.getNumber('CORES_CLIENT_PORT') },
+            infrastructures: { port: this.getNumber('INFRASTRUCTURES_CLIENT_PORT') }
+        }
     }
 }

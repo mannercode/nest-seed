@@ -23,10 +23,12 @@ export interface Fixture {
 
 export async function createFixture() {
     const testContext = await createTestContext()
-    const moviesService = testContext.module.get(MoviesService)
-    const watchRecordsService = testContext.module.get(WatchRecordsService)
-    const showtimesService = testContext.module.get(ShowtimesService)
-    const customersService = testContext.module.get(CustomersService)
+    const module = testContext.coresContext.module
+
+    const moviesService = module.get(MoviesService)
+    const watchRecordsService = module.get(WatchRecordsService)
+    const showtimesService = module.get(ShowtimesService)
+    const customersService = module.get(CustomersService)
     const { customer, accessToken } = await createCustomerAndLogin(customersService)
 
     return {

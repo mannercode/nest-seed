@@ -14,15 +14,14 @@ import {
     UsePipes
 } from '@nestjs/common'
 import { Assert, AuthTokenPayload } from 'common'
-import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from 'cores'
-import { CustomersService } from 'shared/proxy'
+import { CustomerCreateDto, CustomerQueryDto, CustomersProxy, CustomerUpdateDto } from 'cores'
 import { CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
 import { DefaultPaginationPipe } from './pipes'
 
 @Controller('customers')
 @UseGuards(CustomerJwtAuthGuard)
 export class CustomersController {
-    constructor(private service: CustomersService) {}
+    constructor(private service: CustomersProxy) {}
 
     @Public()
     @Post()

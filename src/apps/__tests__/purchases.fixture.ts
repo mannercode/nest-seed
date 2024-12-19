@@ -11,8 +11,8 @@ export interface Fixture {
 export async function createFixture() {
     const testContext = await createTestContext()
 
-    const purchasesService = testContext.module.get(PurchasesService)
-    const paymentsService = testContext.module.get(PaymentsService)
+    const purchasesService = testContext.coresContext.module.get(PurchasesService)
+    const paymentsService = testContext.infrasContext.module.get(PaymentsService)
 
     return { testContext, purchasesService, paymentsService }
 }
