@@ -14,7 +14,6 @@ import { StorageFilesService } from './storage-files.service'
         )
     ],
     providers: [StorageFilesService, StorageFilesRepository],
-    controllers: [StorageFilesController],
-    exports: [StorageFilesService]
+    controllers: [StorageFilesController]
 })
 export class StorageFilesModule {}

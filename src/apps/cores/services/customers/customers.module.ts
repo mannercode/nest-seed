@@ -31,7 +31,6 @@ import { Customer, CustomerSchema } from './models'
         })
     ],
     providers: [CustomersService, CustomersRepository],
-    controllers: [CustomersController],
-    exports: [CustomersService]
+    controllers: [CustomersController]
 })
 export class CustomersModule {}

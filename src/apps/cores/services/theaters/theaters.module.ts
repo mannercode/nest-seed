@@ -14,7 +14,6 @@ import { TheatersService } from './theaters.service'
         )
     ],
     providers: [TheatersService, TheatersRepository],
-    controllers: [TheatersController],
-    exports: [TheatersService]
+    controllers: [TheatersController]
 })
 export class TheatersModule {}

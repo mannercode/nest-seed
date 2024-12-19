@@ -14,7 +14,6 @@ import { ShowtimesService } from './showtimes.service'
         )
     ],
     providers: [ShowtimesService, ShowtimesRepository],
-    controllers: [ShowtimesController],
-    exports: [ShowtimesService]
+    controllers: [ShowtimesController]
 })
 export class ShowtimesModule {}

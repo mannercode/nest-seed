@@ -23,7 +23,6 @@ import { ShowtimeCreationService } from './showtime-creation.service'
         ShowtimeCreationWorkerService,
         ShowtimeCreationValidatorService
     ],
-    controllers: [ShowtimeCreationController],
-    exports: [ShowtimeCreationService]
+    controllers: [ShowtimeCreationController]
 })
 export class ShowtimeCreationModule {}

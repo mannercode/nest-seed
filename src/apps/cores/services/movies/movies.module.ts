@@ -15,7 +15,6 @@ import { MoviesService } from './movies.service'
         )
     ],
     providers: [MoviesService, MoviesRepository, StorageFilesProxy],
-    controllers: [MoviesController],
-    exports: [MoviesService]
+    controllers: [MoviesController]
 })
 export class MoviesModule {}

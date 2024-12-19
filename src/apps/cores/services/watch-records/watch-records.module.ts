@@ -14,7 +14,6 @@ import { WatchRecordsService } from './watch-records.service'
         )
     ],
     providers: [WatchRecordsService, WatchRecordsRepository],
-    controllers: [WatchRecordsController],
-    exports: [WatchRecordsService]
+    controllers: [WatchRecordsController]
 })
 export class WatchRecordsModule {}

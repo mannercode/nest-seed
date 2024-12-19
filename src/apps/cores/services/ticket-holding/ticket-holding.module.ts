@@ -13,7 +13,6 @@ import { TicketHoldingService } from './ticket-holding.service'
         })
     ],
     providers: [TicketHoldingService],
-    controllers: [TicketHoldingController],
-    exports: [TicketHoldingService]
+    controllers: [TicketHoldingController]
 })
 export class TicketHoldingModule {}

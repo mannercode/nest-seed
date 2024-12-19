@@ -14,7 +14,6 @@ import { TicketsService } from './tickets.service'
         )
     ],
     providers: [TicketsService, TicketsRepository],
-    controllers: [TicketsController],
-    exports: [TicketsService]
+    controllers: [TicketsController]
 })
 export class TicketsModule {}

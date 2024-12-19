@@ -13,7 +13,6 @@ import { PurchaseProcessService } from './purchase-process.service'
         PurchasesProxy,
         ShowtimesProxy
     ],
-    controllers: [PurchaseProcessController],
-    exports: [PurchaseProcessService]
+    controllers: [PurchaseProcessController]
 })
 export class PurchaseProcessModule {}
