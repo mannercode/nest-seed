@@ -5,7 +5,10 @@ import { CoresConfigService, RedisConfig } from '../config'
 @Module({
     imports: [
         OrgRedisModule.forRootAsync(
-            { useFactory: (config: CoresConfigService) => config.redis, inject: [CoresConfigService] },
+            {
+                useFactory: (config: CoresConfigService) => config.redis,
+                inject: [CoresConfigService]
+            },
             RedisConfig.connName
         )
     ]
