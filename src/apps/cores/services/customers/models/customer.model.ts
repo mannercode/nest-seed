@@ -19,7 +19,7 @@ export class Customer extends MongooseSchema {
 }
 export type CustomerDocument = HydratedDocument<Customer>
 export const CustomerSchema = createMongooseSchema(Customer)
-CustomerSchema.index({ email: 1 })
+CustomerSchema.index({ name: 1 })
 CustomerSchema.index({ name: 'text' })
 /*
 1. `CustomerSchema.index({ email: 1 })`
