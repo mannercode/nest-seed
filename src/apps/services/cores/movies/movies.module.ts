@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { MongooseConfig } from 'config'
+import { MongooseConfig } from 'services/config'
 import { StorageFilesModule } from 'services/infrastructures'
 import { Movie, MovieSchema } from './models'
+import { MoviesController } from './movies.controller'
 import { MoviesRepository } from './movies.repository'
 import { MoviesService } from './movies.service'
-import { MoviesController } from './movies.controller'
 
 @Module({
     imports: [

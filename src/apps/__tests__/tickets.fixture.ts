@@ -2,7 +2,7 @@ import { omit, uniq } from 'lodash'
 import { TicketsService } from 'services/cores'
 import { nullObjectId } from 'testlib'
 import { TicketCreateDto, TicketDto, TicketStatus } from 'types'
-import { createTestContext, TestContext } from './test.util'
+import { createTestContext, TestContext } from './utils'
 
 export interface Fixture {
     testContext: TestContext

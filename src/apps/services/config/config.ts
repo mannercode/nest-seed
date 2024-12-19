@@ -5,6 +5,11 @@ import Joi from 'joi'
 
 export const configSchema = Joi.object({
     NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
+    // TODO AUTH_ACCESS_SECRET이 양쪽에 존재한다. 하나로 통일해야 한다.
+    AUTH_ACCESS_SECRET: Joi.string().required(),
+    AUTH_ACCESS_TOKEN_EXPIRATION: Joi.string().required(),
+    AUTH_REFRESH_SECRET: Joi.string().required(),
+    AUTH_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
     LOG_DIRECTORY: Joi.string().required(),
     LOG_DAYS_TO_KEEP: Joi.string().required(),
     LOG_FILE_LEVEL: Joi.string().required(),
@@ -35,12 +40,6 @@ export class AppConfigService extends BaseConfigService {
         super(configService, configSchema)
     }
 
-    get http() {
-        return {
-            requestPayloadLimit: this.getString('HTTP_REQUEST_PAYLOAD_LIMIT'),
-            paginationDefaultSize: this.getNumber('HTTP_PAGINATION_DEFAULT_SIZE')
-        }
-    }
     get auth() {
         return {
             accessSecret: this.getString('AUTH_ACCESS_SECRET'),
@@ -49,6 +48,7 @@ export class AppConfigService extends BaseConfigService {
             refreshTokenExpiration: this.getString('AUTH_REFRESH_TOKEN_EXPIRATION')
         }
     }
+
     get log() {
         return {
             directory: this.getString('LOG_DIRECTORY'),

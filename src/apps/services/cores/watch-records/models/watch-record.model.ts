@@ -1,7 +1,7 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { MongooseConfig } from 'config'
 import { HydratedDocument, Types } from 'mongoose'
+import { MongooseConfig } from 'services/config'
 
 @Schema(MongooseConfig.schemaOptions)
 export class WatchRecord extends MongooseSchema {

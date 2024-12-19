@@ -1,9 +1,9 @@
 import { Byte, Path } from 'common'
-import { AppConfigService } from 'config'
 import { writeFile } from 'fs/promises'
+import { GatewayConfigService } from 'gateway/config'
 import { StorageFilesService } from 'services/infrastructures'
 import { createDummyFile } from 'testlib'
-import { createTestContext, TestContext } from './test.util'
+import { createTestContext, TestContext } from './utils'
 
 const maxFileSizeBytes = Byte.fromString('50MB')
 
@@ -41,7 +41,7 @@ export async function closeSharedFixture(fixture: SharedFixture) {
 
 export interface Fixture {
     testContext: TestContext
-    config: AppConfigService
+    config: GatewayConfigService
     tempDir: string
     storageFilesService: StorageFilesService
 }
@@ -50,15 +50,18 @@ export async function createFixture() {
     const tempDir = await Path.createTempDirectory()
 
     const testContext = await createTestContext({
-        config: {
-            FILE_UPLOAD_DIRECTORY: tempDir,
-            FILE_UPLOAD_MAX_FILE_SIZE_BYTES: maxFileSizeBytes,
-            FILE_UPLOAD_MAX_FILES_PER_UPLOAD: 2,
-            FILE_UPLOAD_ALLOWED_FILE_TYPES: 'text/plain'
-        }
+        http: {
+            config: {
+                FILE_UPLOAD_DIRECTORY: tempDir,
+                FILE_UPLOAD_MAX_FILE_SIZE_BYTES: maxFileSizeBytes,
+                FILE_UPLOAD_MAX_FILES_PER_UPLOAD: 2,
+                FILE_UPLOAD_ALLOWED_FILE_TYPES: 'text/plain'
+            }
+        },
+        svc: { config: { FILE_UPLOAD_DIRECTORY: tempDir } }
     })
 
-    const config = testContext.module.get(AppConfigService)
+    const config = testContext.httpContext.module.get(GatewayConfigService)
     const storageFilesService = testContext.module.get(StorageFilesService)
     return { testContext, config, tempDir, storageFilesService }
 }

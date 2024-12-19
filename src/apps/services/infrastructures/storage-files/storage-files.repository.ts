@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { MethodLog, MongooseRepository } from 'common'
-import { MongooseConfig } from 'config'
 import { ClientSession, Model } from 'mongoose'
+import { MongooseConfig } from 'services/config'
 import { StorageFileCreateDto } from 'types'
 import { StorageFile } from './models'
 

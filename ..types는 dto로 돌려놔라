@@ -1,0 +1,6 @@
+modules를 공통으로 만든다.
+proxy,moduels는 config와 관련있다.
+
+services 3개로 쪼갠다.
+경로는 services에서 cores, applications, infrastructures로 바꾼다.
+types는 각 서비스의 dto로 옮긴다

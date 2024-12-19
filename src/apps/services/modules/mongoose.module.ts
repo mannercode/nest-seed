@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule as NestMongooseModule } from '@nestjs/mongoose'
 import { generateShortId } from 'common'
-import { AppConfigService, isTest, MongooseConfig } from 'config'
+import { AppConfigService, isTest, MongooseConfig } from '../config'
 
 @Module({
     imports: [

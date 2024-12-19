@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common'
+import { APP_PIPE } from '@nestjs/core'
+import { AppValidationPipe } from 'common'
+import { BullModule, ConfigModule, LoggerModule, MongooseModule, RedisModule } from './modules'
 import {
     BookingModule,
     PurchaseProcessModule,
@@ -16,11 +19,14 @@ import {
     WatchRecordsModule
 } from './cores'
 import { HealthModule, PaymentsModule, StorageFilesModule } from './infrastructures'
-import { Modules } from './modules'
 
 @Module({
     imports: [
-        Modules,
+        LoggerModule,
+        MongooseModule,
+        RedisModule,
+        BullModule,
+        ConfigModule,
         CustomersModule,
         HealthModule,
         StorageFilesModule,
@@ -36,6 +42,7 @@ import { Modules } from './modules'
         PaymentsModule,
         PurchasesModule,
         PurchaseProcessModule
-    ]
+    ],
+    providers: [{ provide: APP_PIPE, useClass: AppValidationPipe }]
 })
 export class ServicesModule {}

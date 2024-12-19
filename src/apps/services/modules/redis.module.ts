@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { RedisModule as OrgRedisModule } from 'common'
-import { AppConfigService, RedisConfig } from 'config'
+import { AppConfigService, RedisConfig } from '../config'
 
 @Module({
     imports: [

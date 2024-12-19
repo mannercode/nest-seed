@@ -1,6 +1,6 @@
 import { PaymentsService } from 'services/infrastructures'
 import { nullObjectId } from 'testlib'
-import { createTestContext, TestContext } from './test.util'
+import { createTestContext, TestContext } from './utils'
 
 export interface Fixture {
     testContext: TestContext

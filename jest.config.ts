@@ -14,7 +14,7 @@ const config: Config = {
         '^testlib$': '<rootDir>/src/libs/testlib/index',
         '^types$': '<rootDir>/src/shared/types/index',
         '^proxy$': '<rootDir>/src/shared/proxy/index',
-        '^config$': '<rootDir>/src/shared/config/index',
+        '^shared/(.*)$': '<rootDir>/src/shared/$1',
         '^services/(.*)$': '<rootDir>/src/apps/services/$1',
         '^gateway/(.*)$': '<rootDir>/src/apps/gateway/$1'
     },

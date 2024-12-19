@@ -3,8 +3,8 @@ import { MoviesService, ShowtimesService, TheatersService } from 'services/cores
 import { HttpTestClient, nullObjectId } from 'testlib'
 import { MovieDto, ShowtimeCreateDto, TheaterDto } from 'types'
 import { createMovie } from './movies.fixture'
-import { createTestContext, TestContext } from './test.util'
 import { createTheater } from './theaters.fixture'
+import { createTestContext, TestContext } from './utils'
 
 export interface Fixture {
     testContext: TestContext

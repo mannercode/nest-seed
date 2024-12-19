@@ -11,9 +11,9 @@ import { MovieDto, Seatmap, ShowtimeDto, TheaterDto, TicketStatus } from 'types'
 import { createCustomerAndLogin } from './customers-auth.fixture'
 import { createMovie } from './movies.fixture'
 import { createShowtimeDto, createShowtimes } from './showtimes.fixture'
-import { createTestContext, TestContext } from './test.util'
 import { createTheater } from './theaters.fixture'
 import { createTickets } from './tickets.fixture'
+import { createTestContext, TestContext } from './utils'
 
 export interface Fixture {
     testContext: TestContext

@@ -1,5 +1,5 @@
 import { HttpTestClient } from 'testlib'
-import { createTestContext, TestContext } from './test.util'
+import { createTestContext, TestContext } from './utils'
 
 describe('/health', () => {
     let testContext: TestContext

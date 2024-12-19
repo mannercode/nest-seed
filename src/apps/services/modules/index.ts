@@ -1,3 +1,5 @@
+export * from './bull.module'
 export * from './config.module'
-export * from './modules'
+export * from './logger.module'
 export * from './mongoose.module'
+export * from './redis.module'

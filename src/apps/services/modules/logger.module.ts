@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { AppLoggerService, LoggerConfiguration, initializeLogger } from 'common'
-import { AppConfigService } from 'config'
+import { AppConfigService } from '../config'
 
 @Module({
     providers: [

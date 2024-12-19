@@ -1,7 +1,7 @@
 import { padNumber } from 'common'
 import { MovieGenre, MovieRating, MoviesService } from 'services/cores'
 import { MovieDto } from 'types'
-import { TestContext, createTestContext } from './test.util'
+import { createTestContext, TestContext } from './utils'
 
 export interface Fixture {
     testContext: TestContext

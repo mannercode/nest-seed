@@ -9,8 +9,8 @@ import {
     objectIds,
     validateFilters
 } from 'common'
-import { MongooseConfig } from 'config'
 import { FilterQuery, Model } from 'mongoose'
+import { MongooseConfig } from 'services/config'
 import { SalesStatusByShowtimeDto, TicketCreateDto, TicketFilterDto, TicketStatus } from 'types'
 import { Ticket } from './models'
 

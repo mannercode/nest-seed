@@ -24,9 +24,9 @@ import {
 import { createCustomer } from './customers.fixture'
 import { createMovie } from './movies.fixture'
 import { createShowtimeDto, createShowtimes } from './showtimes.fixture'
-import { createTestContext, TestContext } from './test.util'
 import { createTheater } from './theaters.fixture'
 import { createTicketDto, createTickets } from './tickets.fixture'
+import { createTestContext, TestContext } from './utils'
 
 export interface Fixture {
     testContext: TestContext

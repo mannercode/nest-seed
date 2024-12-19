@@ -9,7 +9,7 @@ import { CustomerDto, MovieDto } from 'types'
 import { createCustomerAndLogin } from './customers-auth.fixture'
 import { createMovie } from './movies.fixture'
 import { createShowtimes } from './showtimes.fixture'
-import { createTestContext, TestContext } from './test.util'
+import { createTestContext, TestContext } from './utils'
 
 export interface Fixture {
     testContext: TestContext

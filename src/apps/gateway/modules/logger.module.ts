@@ -1,17 +1,17 @@
 import { Module } from '@nestjs/common'
 import { AppLoggerService, LoggerConfiguration, initializeLogger } from 'common'
-import { AppConfigService } from 'config'
+import { GatewayConfigService } from 'gateway/config'
 
 @Module({
     providers: [
         {
             provide: AppLoggerService,
-            useFactory: async (config: AppConfigService) => {
+            useFactory: async (config: GatewayConfigService) => {
                 const loggerInstance = await initializeLogger(config.log as LoggerConfiguration)
 
                 return new AppLoggerService(loggerInstance)
             },
-            inject: [AppConfigService]
+            inject: [GatewayConfigService]
         }
     ]
 })

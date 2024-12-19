@@ -1,6 +1,6 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { MongooseConfig } from 'config'
+import { MongooseConfig } from 'services/config'
 import { HydratedDocument } from 'mongoose'
 
 @Schema(MongooseConfig.schemaOptions)

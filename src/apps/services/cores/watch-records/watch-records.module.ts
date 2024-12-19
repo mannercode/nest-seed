@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { MongooseConfig } from 'config'
+import { MongooseConfig } from 'services/config'
 import { WatchRecord, WatchRecordSchema } from './models'
+import { WatchRecordsController } from './watch-records.controller'
 import { WatchRecordsRepository } from './watch-records.repository'
 import { WatchRecordsService } from './watch-records.service'
-import { WatchRecordsController } from './watch-records.controller'
 
 @Module({
     imports: [

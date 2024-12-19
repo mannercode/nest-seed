@@ -1,6 +1,6 @@
 import { PurchasesService } from 'services/cores'
 import { PaymentsService } from 'services/infrastructures'
-import { createTestContext, TestContext } from './test.util'
+import { createTestContext, TestContext } from './utils'
 
 export interface Fixture {
     testContext: TestContext

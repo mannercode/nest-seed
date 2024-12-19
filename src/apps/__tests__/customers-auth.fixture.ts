@@ -1,25 +1,22 @@
-import { AppConfigService } from 'config'
 import { CustomersService } from 'services/cores'
 import { CustomerDto } from 'types'
 import { createCustomer } from './customers.fixture'
-import { createTestContext, TestContext } from './test.util'
+import { createTestContext, TestContext } from './utils'
 
 export interface Fixture {
     testContext: TestContext
-    config: AppConfigService
     password: string
     customer: CustomerDto
 }
 
 export async function createFixture() {
     const testContext = await createTestContext()
-    const config = testContext.module.get(AppConfigService)
     const customersService = testContext.module.get(CustomersService)
     const email = 'user@mail.com'
     const password = 'password'
     const customer = await createCustomer(customersService, { email, password })
 
-    return { testContext, config, password, customer }
+    return { testContext, password, customer }
 }
 
 export async function closeFixture(fixture: Fixture) {

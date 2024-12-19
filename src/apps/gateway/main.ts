@@ -2,9 +2,9 @@ import { INestApplication } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { AppLoggerService } from 'common'
 import compression from 'compression'
-import { AppConfigService } from 'config'
 import express from 'express'
 import { existsSync } from 'fs'
+import { GatewayConfigService } from 'gateway/config'
 import { exit } from 'process'
 import { GatewayModule } from './gateway.module'
 
@@ -14,7 +14,7 @@ export function configureGateway(app: INestApplication<any>) {
     const logger = app.get(AppLoggerService)
     app.useLogger(logger)
 
-    const config = app.get(AppConfigService)
+    const config = app.get(GatewayConfigService)
     const limit = config.http.requestPayloadLimit
     app.use(express.json({ limit }))
     app.use(express.urlencoded({ limit, extended: true }))

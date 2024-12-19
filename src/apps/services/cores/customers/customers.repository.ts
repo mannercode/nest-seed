@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { addRegexQuery, MethodLog, MongooseRepository, objectId } from 'common'
-import { MongooseConfig } from 'config'
+import { MongooseConfig } from 'services/config'
 import { FilterQuery, Model } from 'mongoose'
 import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from 'types'
 import { Customer } from './models'

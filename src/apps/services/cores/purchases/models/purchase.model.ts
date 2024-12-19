@@ -1,8 +1,8 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { MongooseConfig } from 'config'
 import { HydratedDocument, Types } from 'mongoose'
+import { MongooseConfig } from 'services/config'
 import { PurchaseItemType } from 'types'
 
 export class PurchaseItem {

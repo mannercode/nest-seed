@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { addRegexQuery, MethodLog, MongooseRepository } from 'common'
-import { MongooseConfig } from 'config'
 import { FilterQuery, Model } from 'mongoose'
+import { MongooseConfig } from 'services/config'
 import { TheaterCreateDto, TheaterQueryDto, TheaterUpdateDto } from 'types'
 import { Theater } from './models'
 

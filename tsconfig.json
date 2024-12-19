@@ -32,8 +32,8 @@
             "proxy": [
                 "src/shared/proxy/index"
             ],
-            "config": [
-                "src/shared/config/index"
+            "shared/*": [
+                "src/shared//*"
             ],
             "services/*": [
                 "src/apps/services/*"

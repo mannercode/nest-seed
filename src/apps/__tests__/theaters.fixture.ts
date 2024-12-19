@@ -1,6 +1,6 @@
 import { padNumber } from 'common'
 import { TheatersService } from 'services/cores'
-import { createTestContext, TestContext } from './test.util'
+import { createTestContext, TestContext } from './utils'
 
 export interface Fixture {
     testContext: TestContext

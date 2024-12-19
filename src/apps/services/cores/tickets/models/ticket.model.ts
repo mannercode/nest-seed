@@ -1,7 +1,7 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { MongooseConfig } from 'config'
 import { HydratedDocument, Types } from 'mongoose'
+import { MongooseConfig } from 'services/config'
 import { Seat, TicketStatus } from 'types'
 
 @Schema(MongooseConfig.schemaOptions)

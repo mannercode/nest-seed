@@ -6,9 +6,9 @@ import {
     MongooseHealthIndicator
 } from '@nestjs/terminus'
 import { Byte, RedisHealthIndicator, RedisModule } from 'common'
-import { isTest, MongooseConfig, RedisConfig } from 'config'
 import Redis from 'ioredis'
 import mongoose from 'mongoose'
+import { isTest, MongooseConfig, RedisConfig } from 'services/config'
 
 @Injectable()
 export class HealthService {

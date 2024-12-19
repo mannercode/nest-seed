@@ -2,9 +2,9 @@ import { INestMicroservice } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 import { AppLoggerService, HttpToRpcExceptionFilter } from 'common'
-import { AppConfigService } from 'config'
 import { existsSync } from 'fs'
 import { exit } from 'process'
+import { AppConfigService } from './config'
 import { ServicesModule } from './services.module'
 
 export function configureServices(app: INestMicroservice) {

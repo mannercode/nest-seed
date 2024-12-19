@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { addEqualQuery, addRegexQuery, MethodLog, MongooseRepository, objectIds } from 'common'
-import { MongooseConfig } from 'config'
 import { FilterQuery, Model } from 'mongoose'
+import { MongooseConfig } from 'services/config'
 import { MovieCreateDto, MovieQueryDto, MovieUpdateDto } from 'types'
 import { Movie } from './models'
 

@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common'
 import { PaginationPipe } from 'common'
-import { AppConfigService } from 'config'
+import { GatewayConfigService } from 'gateway/config'
 
 @Injectable()
 export class DefaultPaginationPipe extends PaginationPipe {
-    constructor(protected config: AppConfigService) {
+    constructor(protected config: GatewayConfigService) {
         super()
     }
 

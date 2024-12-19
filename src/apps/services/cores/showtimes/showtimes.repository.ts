@@ -8,8 +8,8 @@ import {
     objectId,
     validateFilters
 } from 'common'
-import { MongooseConfig } from 'config'
 import { FilterQuery, Model } from 'mongoose'
+import { MongooseConfig } from 'services/config'
 import { ShowtimeCreateDto, ShowtimeFilterDto } from 'types'
 import { Showtime } from './models'
 

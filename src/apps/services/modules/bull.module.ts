@@ -1,8 +1,8 @@
 import { BullModule as NestedBullModule } from '@nestjs/bullmq'
 import { Module } from '@nestjs/common'
 import { generateShortId, RedisModule } from 'common'
-import { isTest, RedisConfig } from 'config'
 import Redis from 'ioredis'
+import { isTest, RedisConfig } from '../config'
 
 @Module({
     imports: [
