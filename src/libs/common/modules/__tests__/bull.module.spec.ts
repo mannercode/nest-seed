@@ -14,7 +14,7 @@ describe('CacheService', () => {
             imports: [
                 RedisModule.forRootAsync({ useFactory: () => redisCtx }, 'redis'),
                 BullModule.forRootAsync({
-                    name:'name',
+                    name: 'name',
                     redisName: 'redis',
                     useFactory: () => ({ prefix: `{queue:${generateShortId()}}` })
                 }),
