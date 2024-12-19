@@ -1,7 +1,6 @@
 import { Type } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ApplicationsModule, configureApplications } from 'applications'
-import { sleep } from 'common'
 import { configureCores, CoresModule } from 'cores'
 import { configureGateway, GatewayModule } from 'gateway'
 import { configureInfrastructures, InfrastructuresModule } from 'infrastructures'
@@ -111,8 +110,6 @@ export async function createTestContext({
             INFRASTRUCTURES_CLIENT_PORT: infrasContext.port
         }
     )
-
-    await sleep(500)
 
     const close = async () => {
         await httpContext.close()
