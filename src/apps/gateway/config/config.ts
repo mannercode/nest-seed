@@ -8,9 +8,6 @@ export const configSchema = Joi.object({
     HTTP_REQUEST_PAYLOAD_LIMIT: Joi.string().required(),
     HTTP_PAGINATION_DEFAULT_SIZE: Joi.number().required(),
     AUTH_ACCESS_SECRET: Joi.string().required(),
-    AUTH_ACCESS_TOKEN_EXPIRATION: Joi.string().required(),
-    AUTH_REFRESH_SECRET: Joi.string().required(),
-    AUTH_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
     LOG_DIRECTORY: Joi.string().required(),
     LOG_DAYS_TO_KEEP: Joi.string().required(),
     LOG_FILE_LEVEL: Joi.string().required(),
@@ -36,10 +33,7 @@ export class GatewayConfigService extends BaseConfigService {
     }
     get auth() {
         return {
-            accessSecret: this.getString('AUTH_ACCESS_SECRET'),
-            accessTokenExpiration: this.getString('AUTH_ACCESS_TOKEN_EXPIRATION'),
-            refreshSecret: this.getString('AUTH_REFRESH_SECRET'),
-            refreshTokenExpiration: this.getString('AUTH_REFRESH_TOKEN_EXPIRATION')
+            accessSecret: this.getString('AUTH_ACCESS_SECRET')
         }
     }
     get log() {

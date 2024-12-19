@@ -11,8 +11,7 @@ const config: Config = {
     moduleNameMapper: {
         '^common$': '<rootDir>/src/libs/common/index',
         '^testlib$': '<rootDir>/src/libs/testlib/index',
-        '^proxy$': '<rootDir>/src/shared/proxy/index',
-        '^shared/(.*)$': '<rootDir>/src/shared/$1',
+        '^shared/(.*)$': '<rootDir>/src/apps/shared/$1',
         '^gateway$': '<rootDir>/src/apps/gateway/index',
         '^services$': '<rootDir>/src/apps/services/index',
         '^applications$': '<rootDir>/src/apps/services/applications/index',

@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common'
 import { ShowtimeBatchCreateDto } from 'applications'
 import { PaginationOption } from 'common'
-import { ShowtimeCreationService } from 'proxy'
+import { ShowtimeCreationService } from 'shared/proxy'
 import { Observable } from 'rxjs'
 import { DefaultPaginationPipe } from './pipes'
 

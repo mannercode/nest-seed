@@ -15,7 +15,7 @@ import { FilesInterceptor } from '@nestjs/platform-express'
 import { IsString } from 'class-validator'
 import { createReadStream } from 'fs'
 import { pick } from 'lodash'
-import { StorageFilesService } from 'proxy'
+import { StorageFilesService } from 'shared/proxy'
 import { Routes } from 'shared/config'
 
 class UploadFileDto {

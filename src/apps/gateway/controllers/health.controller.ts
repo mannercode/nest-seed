@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common'
 import { HealthCheck } from '@nestjs/terminus'
-import { HealthService } from 'proxy'
+import { HealthService } from 'shared/proxy'
 
 @Controller('health')
 export class HealthController {

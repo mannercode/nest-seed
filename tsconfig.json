@@ -26,11 +26,8 @@
             "testlib": [
                 "src/libs/testlib/index"
             ],
-            "proxy": [
-                "src/shared/proxy/index"
-            ],
             "shared/*": [
-                "src/shared/*"
+                "src/apps/shared/*"
             ],
             "gateway": [
                 "src/apps/gateway/index"
