@@ -1,5 +1,5 @@
 import { LatLong, nullLatLong } from 'common'
-import { nullSeatmap, Seatmap } from './seatmap'
+import { nullSeatmap, Seatmap } from '../models'
 
 export class TheaterDto {
     id: string

@@ -1,9 +1,7 @@
 import { ConfigService } from '@nestjs/config'
 import { TestingModule } from '@nestjs/testing'
-import { GatewayModule } from 'gateway/gateway.module'
-import { configureGateway } from 'gateway/main'
-import { configureServices } from 'services/main'
-import { ServicesModule } from 'services/services.module'
+import { configureGateway, GatewayModule } from 'gateway'
+import { configureServices, ServicesModule } from 'services'
 import {
     createHttpTestContext,
     createMicroserviceTestContext,

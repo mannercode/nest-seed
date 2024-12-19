@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { mapDocToDto, MethodLog } from 'common'
-import { TheaterCreateDto, TheaterDto, TheaterQueryDto, TheaterUpdateDto } from 'types'
+import { TheaterCreateDto, TheaterDto, TheaterQueryDto, TheaterUpdateDto } from './dtos'
 import { TheaterDocument } from './models'
 import { TheatersRepository } from './theaters.repository'
 

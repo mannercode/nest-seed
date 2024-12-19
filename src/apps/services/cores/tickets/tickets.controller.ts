@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { TicketCreateDto, TicketFilterDto, TicketStatus } from 'types'
+import { TicketCreateDto, TicketFilterDto } from './dtos'
+import { TicketStatus } from './models'
 import { TicketsService } from './tickets.service'
 
 @Injectable()

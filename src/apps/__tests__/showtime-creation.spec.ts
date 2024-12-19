@@ -1,5 +1,5 @@
+import { MovieDto, Seatmap, ShowtimeDto, TheaterDto } from 'cores'
 import { expectEqualUnsorted, HttpTestClient, nullObjectId } from 'testlib'
-import { MovieDto, Seatmap, ShowtimeDto, TheaterDto } from 'types'
 import {
     closeFixture,
     createFixture,

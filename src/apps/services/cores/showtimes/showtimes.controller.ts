@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { ShowtimeCreateDto, ShowtimeFilterDto } from 'types'
+import { ShowtimeCreateDto, ShowtimeFilterDto } from './dtos'
 import { ShowtimesService } from './showtimes.service'
 
 @Injectable()

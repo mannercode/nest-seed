@@ -1,7 +1,7 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { MongooseConfig } from 'services/config'
 import { HydratedDocument } from 'mongoose'
+import { MongooseConfig } from '../../../config'
 
 @Schema(MongooseConfig.schemaOptions)
 export class StorageFile extends MongooseSchema {

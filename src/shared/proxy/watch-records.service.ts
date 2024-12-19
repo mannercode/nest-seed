@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
-import { WatchRecordCreateDto, WatchRecordDto, WatchRecordQueryDto } from 'types'
+import { WatchRecordCreateDto, WatchRecordDto, WatchRecordQueryDto } from 'cores'
 
 @Injectable()
 export class WatchRecordsService {

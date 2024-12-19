@@ -1,4 +1,3 @@
-import * as path from 'path'
 import type { Config } from 'jest'
 
 const config: Config = {
@@ -12,11 +11,13 @@ const config: Config = {
     moduleNameMapper: {
         '^common$': '<rootDir>/src/libs/common/index',
         '^testlib$': '<rootDir>/src/libs/testlib/index',
-        '^types$': '<rootDir>/src/shared/types/index',
         '^proxy$': '<rootDir>/src/shared/proxy/index',
         '^shared/(.*)$': '<rootDir>/src/shared/$1',
-        '^services/(.*)$': '<rootDir>/src/apps/services/$1',
-        '^gateway/(.*)$': '<rootDir>/src/apps/gateway/$1'
+        '^gateway$': '<rootDir>/src/apps/gateway/index',
+        '^services$': '<rootDir>/src/apps/services/index',
+        '^applications$': '<rootDir>/src/apps/services/applications/index',
+        '^cores$': '<rootDir>/src/apps/services/cores/index',
+        '^infrastructures$': '<rootDir>/src/apps/services/infrastructures/index',
     },
     collectCoverageFrom: [
         '!**/*.controller.ts',

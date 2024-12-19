@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { StorageFileCreateDto } from 'types'
+import { StorageFileCreateDto } from './dtos'
 import { StorageFilesService } from './storage-files.service'
 
 @Injectable()

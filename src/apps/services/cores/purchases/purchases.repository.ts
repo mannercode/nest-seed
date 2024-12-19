@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { MethodLog, MongooseRepository, objectId } from 'common'
 import { Model } from 'mongoose'
-import { MongooseConfig } from 'services/config'
-import { PurchaseCreateDto } from 'types'
+import { MongooseConfig } from '../../config'
+import { PurchaseCreateDto } from './dtos'
 import { Purchase } from './models'
 
 @Injectable()

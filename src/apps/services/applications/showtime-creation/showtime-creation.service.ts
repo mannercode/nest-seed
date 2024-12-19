@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { MethodLog, newObjectId, PaginationOption } from 'common'
-import { MoviesService, ShowtimesService, TheatersService } from 'services/cores'
-import { ShowtimeBatchCreateDto, ShowtimeBatchCreateResponse } from 'types'
+import { MoviesService, ShowtimesService, TheatersService } from 'cores'
+import { ShowtimeBatchCreateDto, ShowtimeBatchCreateResponse } from './dtos'
 import { ShowtimeCreationEventsService, ShowtimeCreationWorkerService } from './services'
 
 @Injectable()

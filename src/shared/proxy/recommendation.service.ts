@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
-import { MovieDto } from 'types'
+import { MovieDto } from 'cores'
 
 @Injectable()
 export class RecommendationService {

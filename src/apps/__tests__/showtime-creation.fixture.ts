@@ -1,7 +1,13 @@
 import { addMinutes, jsonToObject } from 'common'
-import { MoviesService, ShowtimesService, TheatersService } from 'services/cores'
+import {
+    MovieDto,
+    MoviesService,
+    ShowtimeCreateDto,
+    ShowtimesService,
+    TheaterDto,
+    TheatersService
+} from 'cores'
 import { HttpTestClient, nullObjectId } from 'testlib'
-import { MovieDto, ShowtimeCreateDto, TheaterDto } from 'types'
 import { createMovie } from './movies.fixture'
 import { createTheater } from './theaters.fixture'
 import { createTestContext, TestContext } from './utils'

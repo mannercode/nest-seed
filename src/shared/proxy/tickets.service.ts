@@ -6,7 +6,7 @@ import {
     TicketDto,
     TicketFilterDto,
     TicketStatus
-} from 'types'
+} from 'cores'
 
 @Injectable()
 export class TicketsService {

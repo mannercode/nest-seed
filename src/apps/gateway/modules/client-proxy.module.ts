@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { Transport } from '@nestjs/microservices'
 import { ClientProxyModule as OrgClientProxyModule } from 'common'
-import { GatewayConfigService } from 'gateway/config'
+import { GatewayConfigService } from '../config'
 
 @Module({
     imports: [

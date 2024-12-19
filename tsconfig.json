@@ -26,21 +26,27 @@
             "testlib": [
                 "src/libs/testlib/index"
             ],
-            "types": [
-                "src/shared/types/index"
-            ],
             "proxy": [
                 "src/shared/proxy/index"
             ],
             "shared/*": [
-                "src/shared//*"
+                "src/shared/*"
             ],
-            "services/*": [
-                "src/apps/services/*"
+            "gateway": [
+                "src/apps/gateway/index"
             ],
-            "gateway/*": [
-                "src/apps/gateway/*"
-            ]
+            "services": [
+                "src/apps/services/index"
+            ],
+            "applications": [
+                "src/apps/services/applications/index"
+            ],
+            "cores": [
+                "src/apps/services/cores/index"
+            ],
+            "infrastructures": [
+                "src/apps/services/infrastructures/index"
+            ],
         }
     },
     "include": [

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common'
 import { getChecksum, mapDocToDto, MethodLog, Path } from 'common'
 import { HydratedDocument } from 'mongoose'
-import { AppConfigService } from 'services/config'
-import { StorageFileCreateDto, StorageFileDto } from 'types'
+import { AppConfigService } from '../../config'
+import { StorageFileCreateDto, StorageFileDto } from './dtos'
 import { StorageFile, StorageFileDocument } from './models'
 import { StorageFilesRepository } from './storage-files.repository'
 

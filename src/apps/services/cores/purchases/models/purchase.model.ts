@@ -2,8 +2,11 @@ import { Prop, Schema } from '@nestjs/mongoose'
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
 import { MongooseSchema, createMongooseSchema } from 'common'
 import { HydratedDocument, Types } from 'mongoose'
-import { MongooseConfig } from 'services/config'
-import { PurchaseItemType } from 'types'
+import { MongooseConfig } from '../../../config'
+
+export enum PurchaseItemType {
+    ticket = 'ticket'
+}
 
 export class PurchaseItem {
     @IsEnum(PurchaseItemType)

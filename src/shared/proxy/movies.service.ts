@@ -1,12 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
-import {
-    MovieCreateDto,
-    MovieDto,
-    MovieQueryDto,
-    MovieUpdateDto,
-    StorageFileCreateDto
-} from 'types'
+import { MovieCreateDto, MovieDto, MovieQueryDto, MovieUpdateDto } from 'cores'
+import { StorageFileCreateDto } from 'infrastructures'
 
 @Injectable()
 export class MoviesService {

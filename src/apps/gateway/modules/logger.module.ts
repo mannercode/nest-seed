@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { AppLoggerService, LoggerConfiguration, initializeLogger } from 'common'
-import { GatewayConfigService } from 'gateway/config'
+import { GatewayConfigService } from '../config'
 
 @Module({
     providers: [

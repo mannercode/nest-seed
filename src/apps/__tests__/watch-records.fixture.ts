@@ -1,5 +1,5 @@
 import { addDays } from 'common'
-import { WatchRecordsService } from 'services/cores'
+import { WatchRecordsService } from 'cores'
 import { nullObjectId, testObjectId } from 'testlib'
 import { createTestContext, TestContext } from './utils'
 

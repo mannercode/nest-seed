@@ -1,6 +1,5 @@
 import { padNumber } from 'common'
-import { MovieGenre, MovieRating, MoviesService } from 'services/cores'
-import { MovieDto } from 'types'
+import { MovieDto, MovieGenre, MovieRating, MoviesService } from 'cores'
 import { createTestContext, TestContext } from './utils'
 
 export interface Fixture {

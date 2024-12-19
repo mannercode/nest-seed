@@ -1,7 +1,7 @@
 import { Injectable, MessageEvent } from '@nestjs/common'
 import { ServerSentEventsService } from 'common'
+import { ShowtimeDto } from 'cores'
 import { Observable } from 'rxjs'
-import { ShowtimeDto } from 'types'
 
 @Injectable()
 export class ShowtimeCreationEventsService {

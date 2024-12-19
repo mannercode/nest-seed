@@ -10,10 +10,10 @@ import {
     Sse,
     UsePipes
 } from '@nestjs/common'
+import { ShowtimeBatchCreateDto } from 'applications'
 import { PaginationOption } from 'common'
 import { ShowtimeCreationService } from 'proxy'
 import { Observable } from 'rxjs'
-import { ShowtimeBatchCreateDto } from 'types'
 import { DefaultPaginationPipe } from './pipes'
 
 @Controller('showtime-creation')

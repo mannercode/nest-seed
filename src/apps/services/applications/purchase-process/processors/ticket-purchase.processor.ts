@@ -1,14 +1,16 @@
 import { Injectable } from '@nestjs/common'
 import { MethodLog, pickItems } from 'common'
-import { uniq } from 'lodash'
-import { ShowtimesService, TicketHoldingService, TicketsService } from 'services/cores'
 import {
     PurchaseCreateDto,
     PurchaseItemDto,
     PurchaseItemType,
     ShowtimeDto,
+    ShowtimesService,
+    TicketHoldingService,
+    TicketsService,
     TicketStatus
-} from 'types'
+} from 'cores'
+import { uniq } from 'lodash'
 import { checkHeldTickets, checkMaxTicketsForPurchase, checkPurchaseDeadline } from '../domain'
 
 @Injectable()

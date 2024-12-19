@@ -1,22 +1,4 @@
-export enum MovieGenre {
-    Action = 'Action',
-    Comedy = 'Comedy',
-    Drama = 'Drama',
-    Fantasy = 'Fantasy',
-    Horror = 'Horror',
-    Mystery = 'Mystery',
-    Romance = 'Romance',
-    Thriller = 'Thriller',
-    Western = 'Western'
-}
-
-export enum MovieRating {
-    G = 'G',
-    PG = 'PG',
-    PG13 = 'PG13',
-    R = 'R',
-    NC17 = 'NC17'
-}
+import { MovieGenre, MovieRating } from '../models'
 
 export class MovieDto {
     id: string

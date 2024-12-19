@@ -1,7 +1,7 @@
 import { Byte, Path } from 'common'
 import { writeFile } from 'fs/promises'
-import { GatewayConfigService } from 'gateway/config'
-import { StorageFilesService } from 'services/infrastructures'
+import { GatewayConfigService } from 'gateway'
+import { StorageFilesService } from 'infrastructures'
 import { createDummyFile } from 'testlib'
 import { createTestContext, TestContext } from './utils'
 

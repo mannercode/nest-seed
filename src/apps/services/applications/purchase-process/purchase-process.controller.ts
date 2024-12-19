@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { PurchaseCreateDto } from 'types'
+import { PurchaseCreateDto } from 'cores'
 import { PurchaseProcessService } from './purchase-process.service'
 
 @Injectable()

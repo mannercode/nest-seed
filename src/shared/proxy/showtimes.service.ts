@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
-import { ShowtimeCreateDto, ShowtimeDto, ShowtimeFilterDto } from 'types'
+import { ShowtimeCreateDto, ShowtimeDto, ShowtimeFilterDto } from 'cores'
 
 @Injectable()
 export class ShowtimesService {

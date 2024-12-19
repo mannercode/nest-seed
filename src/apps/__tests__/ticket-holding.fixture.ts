@@ -1,4 +1,4 @@
-import { TicketHoldingService } from 'services/cores'
+import { TicketHoldingService } from 'cores'
 import { createTestContext, TestContext } from './utils'
 
 export interface Fixture {

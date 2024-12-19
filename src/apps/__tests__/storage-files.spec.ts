@@ -1,7 +1,7 @@
 import { generateShortId, getChecksum, Path } from 'common'
-import { GatewayConfigService } from 'gateway/config'
+import { GatewayConfigService } from 'gateway'
+import { StorageFileDto } from 'infrastructures'
 import { HttpTestClient, nullObjectId } from 'testlib'
-import { StorageFileDto } from 'types'
 import {
     closeFixture,
     closeSharedFixture,

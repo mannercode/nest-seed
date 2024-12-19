@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { MethodLog } from 'common'
-import { PurchasesService } from 'services/cores'
-import { PurchaseCreateDto } from 'types'
+import { PurchaseCreateDto, PurchasesService } from 'cores'
 import { TicketPurchaseProcessor } from './processors'
 
 @Injectable()

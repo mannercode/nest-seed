@@ -1,7 +1,7 @@
 import { BullModule } from '@nestjs/bullmq'
 import { Module } from '@nestjs/common'
 import { ServerSentEventsService } from 'common'
-import { MoviesModule, ShowtimesModule, TheatersModule, TicketsModule } from 'services/cores'
+import { MoviesModule, ShowtimesModule, TheatersModule, TicketsModule } from 'cores'
 import {
     ShowtimeCreationEventsService,
     ShowtimeCreationValidatorService,

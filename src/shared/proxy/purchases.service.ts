@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
-import { PurchaseCreateDto, PurchaseDto } from 'types'
+import { PurchaseCreateDto, PurchaseDto } from 'cores'
 
 @Injectable()
 export class PurchasesService {

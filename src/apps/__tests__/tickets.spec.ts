@@ -1,7 +1,6 @@
 import { pickIds } from 'common'
-import { TicketsService } from 'services/cores'
+import { TicketsService, TicketStatus } from 'cores'
 import { expectEqualUnsorted, testObjectId } from 'testlib'
-import { TicketStatus } from 'types'
 import {
     closeFixture,
     createFixture,

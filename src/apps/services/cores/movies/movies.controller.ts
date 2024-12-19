@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { MovieCreateDto, MovieQueryDto, MovieUpdateDto, StorageFileCreateDto } from 'types'
+import { StorageFileCreateDto } from 'infrastructures'
+import { MovieCreateDto, MovieQueryDto, MovieUpdateDto } from './dtos'
 import { MoviesService } from './movies.service'
 
 @Injectable()

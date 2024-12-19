@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { PaymentCreateDto } from 'types'
+import { PaymentCreateDto } from './dtos'
 import { PaymentsService } from './payments.service'
 
 @Injectable()

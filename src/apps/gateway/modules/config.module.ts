@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common'
 import { ConfigModule as NestConfigModule } from '@nestjs/config'
-import { GatewayConfigService, configSchema } from 'gateway/config'
+import { GatewayConfigService, configSchema } from '../config'
 
 @Global()
 @Module({

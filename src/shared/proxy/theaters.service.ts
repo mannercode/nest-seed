@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
-import { TheaterCreateDto, TheaterDto, TheaterQueryDto, TheaterUpdateDto } from 'types'
+import { TheaterCreateDto, TheaterDto, TheaterQueryDto, TheaterUpdateDto } from 'cores'
 
 @Injectable()
 export class TheatersService {

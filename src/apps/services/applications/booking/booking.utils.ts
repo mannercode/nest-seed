@@ -1,5 +1,6 @@
 import { LatLong, latlongDistanceInMeters } from 'common'
-import { SalesStatusByShowtimeDto, ShowtimeDto, ShowtimeSalesStatusDto, TheaterDto } from 'types'
+import { SalesStatusByShowtimeDto, ShowtimeDto, TheaterDto } from 'cores'
+import { ShowtimeSalesStatusDto } from './dtos'
 
 export function sortTheatersByDistance(theaters: TheaterDto[], latlong: LatLong) {
     return theaters.sort(

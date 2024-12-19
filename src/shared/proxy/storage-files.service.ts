@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
-import { StorageFileCreateDto, StorageFileDto } from 'types'
+import { StorageFileCreateDto, StorageFileDto } from 'infrastructures'
 
 @Injectable()
 export class StorageFilesService {

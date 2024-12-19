@@ -8,7 +8,7 @@ import {
 import { Byte, RedisHealthIndicator, RedisModule } from 'common'
 import Redis from 'ioredis'
 import mongoose from 'mongoose'
-import { isTest, MongooseConfig, RedisConfig } from 'services/config'
+import { isTest, MongooseConfig, RedisConfig } from '../../config'
 
 @Injectable()
 export class HealthService {

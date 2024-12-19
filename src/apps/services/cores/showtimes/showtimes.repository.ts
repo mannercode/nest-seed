@@ -9,8 +9,8 @@ import {
     validateFilters
 } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { MongooseConfig } from 'services/config'
-import { ShowtimeCreateDto, ShowtimeFilterDto } from 'types'
+import { MongooseConfig } from '../../config'
+import { ShowtimeCreateDto, ShowtimeFilterDto } from './dtos'
 import { Showtime } from './models'
 
 @Injectable()

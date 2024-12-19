@@ -1,9 +1,5 @@
-import { Seat } from '../theaters'
-
-export enum TicketStatus {
-    available = 'available',
-    sold = 'sold'
-}
+import { Seat } from '../../theaters'
+import { TicketStatus } from '../models'
 
 export class TicketDto {
     id: string

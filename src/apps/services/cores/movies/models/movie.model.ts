@@ -1,7 +1,7 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
 import { HydratedDocument, Types } from 'mongoose'
-import { MongooseConfig } from 'services/config'
+import { MongooseConfig } from '../../../config'
 
 export enum MovieGenre {
     Action = 'Action',

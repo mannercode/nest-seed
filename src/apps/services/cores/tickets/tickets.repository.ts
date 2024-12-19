@@ -10,9 +10,9 @@ import {
     validateFilters
 } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { MongooseConfig } from 'services/config'
-import { SalesStatusByShowtimeDto, TicketCreateDto, TicketFilterDto, TicketStatus } from 'types'
-import { Ticket } from './models'
+import { MongooseConfig } from '../../config'
+import { SalesStatusByShowtimeDto, TicketCreateDto, TicketFilterDto } from './dtos'
+import { Ticket, TicketStatus } from './models'
 
 @Injectable()
 export class TicketsRepository extends MongooseRepository<Ticket> {

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { MongooseConfig } from 'services/config'
+import { MongooseConfig } from '../../config'
 import { WatchRecord, WatchRecordSchema } from './models'
 import { WatchRecordsController } from './watch-records.controller'
 import { WatchRecordsRepository } from './watch-records.repository'

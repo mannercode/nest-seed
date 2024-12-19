@@ -1,4 +1,4 @@
-import { PaymentsService } from 'services/infrastructures'
+import { PaymentsService } from 'infrastructures'
 import { nullObjectId } from 'testlib'
 import { createTestContext, TestContext } from './utils'
 

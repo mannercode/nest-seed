@@ -1,11 +1,12 @@
 import {
+    CustomerDto,
     CustomersService,
+    MovieDto,
     MoviesService,
     ShowtimesService,
     WatchRecordsService
-} from 'services/cores'
+} from 'cores'
 import { nullObjectId } from 'testlib'
-import { CustomerDto, MovieDto } from 'types'
 import { createCustomerAndLogin } from './customers-auth.fixture'
 import { createMovie } from './movies.fixture'
 import { createShowtimes } from './showtimes.fixture'

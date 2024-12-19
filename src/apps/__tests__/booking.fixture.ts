@@ -1,13 +1,17 @@
 import { addMinutes } from 'common'
 import {
     CustomersService,
+    MovieDto,
     MoviesService,
+    Seatmap,
+    ShowtimeDto,
     ShowtimesService,
+    TheaterDto,
     TheatersService,
-    TicketsService
-} from 'services/cores'
+    TicketsService,
+    TicketStatus
+} from 'cores'
 import { nullObjectId } from 'testlib'
-import { MovieDto, Seatmap, ShowtimeDto, TheaterDto, TicketStatus } from 'types'
 import { createCustomerAndLogin } from './customers-auth.fixture'
 import { createMovie } from './movies.fixture'
 import { createShowtimeDto, createShowtimes } from './showtimes.fixture'

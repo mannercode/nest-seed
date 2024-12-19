@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { MoviesModule, ShowtimesModule, WatchRecordsModule } from 'services/cores'
+import { MoviesModule, ShowtimesModule, WatchRecordsModule } from 'cores'
 import { RecommendationController } from './recommendation.controller'
 import { RecommendationService } from './recommendation.service'
 

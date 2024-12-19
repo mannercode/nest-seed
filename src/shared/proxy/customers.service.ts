@@ -6,7 +6,7 @@ import {
     JwtAuthTokens,
     MethodLog
 } from 'common'
-import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from 'types'
+import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from 'cores'
 
 @Injectable()
 export class CustomersService {

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { PaginationOption } from 'common'
 import { ShowtimeCreationService } from './showtime-creation.service'
-import { ShowtimeBatchCreateDto } from 'types'
+import { ShowtimeBatchCreateDto } from './dtos'
 
 @Injectable()
 export class ShowtimeCreationController {

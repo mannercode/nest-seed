@@ -4,8 +4,8 @@ import { AppLoggerService } from 'common'
 import compression from 'compression'
 import express from 'express'
 import { existsSync } from 'fs'
-import { GatewayConfigService } from 'gateway/config'
 import { exit } from 'process'
+import { GatewayConfigService } from './config'
 import { GatewayModule } from './gateway.module'
 
 export function configureGateway(app: INestApplication<any>) {

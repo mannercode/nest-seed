@@ -1,26 +1,24 @@
 import { addMinutes, pickIds } from 'common'
 import {
-    CustomersService,
-    MoviesService,
-    PurchasesService,
-    ShowtimesService,
-    TheatersService,
-    TicketHoldingService,
-    TicketsService
-} from 'services/cores'
-import { PaymentsService } from 'services/infrastructures'
-import { nullObjectId } from 'testlib'
-import {
     CustomerDto,
+    CustomersService,
     MovieDto,
+    MoviesService,
     PurchaseCreateDto,
     PurchaseItemType,
+    PurchasesService,
     Seatmap,
     ShowtimeDto,
+    ShowtimesService,
     TheaterDto,
+    TheatersService,
     TicketDto,
+    TicketHoldingService,
+    TicketsService,
     TicketStatus
-} from 'types'
+} from 'cores'
+import { PaymentsService } from 'infrastructures'
+import { nullObjectId } from 'testlib'
 import { createCustomer } from './customers.fixture'
 import { createMovie } from './movies.fixture'
 import { createShowtimeDto, createShowtimes } from './showtimes.fixture'

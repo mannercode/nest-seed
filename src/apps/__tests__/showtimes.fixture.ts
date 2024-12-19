@@ -1,7 +1,6 @@
+import { ShowtimeCreateDto, ShowtimeDto, ShowtimesService } from 'cores'
 import { omit, uniq } from 'lodash'
-import { ShowtimesService } from 'services/cores'
 import { nullObjectId } from 'testlib'
-import { ShowtimeCreateDto, ShowtimeDto } from 'types'
 import { createTestContext, TestContext } from './utils'
 
 export interface Fixture {
