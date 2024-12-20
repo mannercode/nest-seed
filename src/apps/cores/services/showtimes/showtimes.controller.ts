@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, ParseArrayPipe } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { ShowtimeCreateDto, ShowtimeFilterDto } from './dtos'
 import { ShowtimesService } from './showtimes.service'
@@ -8,7 +8,9 @@ export class ShowtimesController {
     constructor(private service: ShowtimesService) {}
 
     @MessagePattern({ cmd: 'createShowtimes' })
-    createShowtimes(@Payload() createDtos: ShowtimeCreateDto[]) {
+    createShowtimes(
+        @Payload(new ParseArrayPipe({ items: ShowtimeCreateDto })) createDtos: ShowtimeCreateDto[]
+    ) {
         return this.service.createShowtimes(createDtos)
     }
 

@@ -18,8 +18,13 @@ class SampleController {
         throw new NotFoundException('not found exception')
     }
 
+    @MessagePattern({ cmd: 'rethrow' })
+    rethrow() {
+        throw { status: 400, response: { message: 'error message' } }
+    }
+
     @MessagePattern({ cmd: 'throwError' })
-    getMessage() {
+    throwError() {
         throw new Error('error')
     }
 

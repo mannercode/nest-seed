@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, ParseArrayPipe } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { TicketCreateDto, TicketFilterDto } from './dtos'
 import { TicketStatus } from './models'
@@ -9,7 +9,9 @@ export class TicketsController {
     constructor(private service: TicketsService) {}
 
     @MessagePattern({ cmd: 'createTickets' })
-    createTickets(@Payload() createDtos: TicketCreateDto[]) {
+    createTickets(
+        @Payload(new ParseArrayPipe({ items: TicketCreateDto })) createDtos: TicketCreateDto[]
+    ) {
         return this.service.createTickets(createDtos)
     }
 

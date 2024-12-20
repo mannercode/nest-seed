@@ -7,7 +7,7 @@ export class ShowtimesProxy {
     constructor(@InjectClientProxy('CORES_CLIENT') private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
-    createShowtimes(createDtos: ShowtimeCreateDto[]): Promise<ShowtimeDto> {
+    createShowtimes(createDtos: ShowtimeCreateDto[]): Promise<{ success: true; count: number }> {
         return getProxyValue(this.service.send('createShowtimes', createDtos))
     }
 

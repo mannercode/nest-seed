@@ -144,7 +144,7 @@ export class HttpTestClient {
         const res = await this.client.ok(() => true)
 
         if (res.status !== status) {
-            console.log(res.body)
+            console.log(JSON.stringify(res.body))
         }
 
         expect(res.status).toEqual(status)

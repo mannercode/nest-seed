@@ -11,8 +11,8 @@ export class PaymentsProxy {
         return getProxyValue(this.service.send('processPayment', createDto))
     }
 
-    @MethodLog({ level: 'verbose' })
-    getPayment(paymentId: string): Promise<PaymentDto> {
-        return getProxyValue(this.service.send('getPayment', paymentId))
-    }
+    // @MethodLog({ level: 'verbose' })
+    // getPayment(paymentId: string): Promise<PaymentDto> {
+    //     return getProxyValue(this.service.send('getPayment', paymentId))
+    // }
 }

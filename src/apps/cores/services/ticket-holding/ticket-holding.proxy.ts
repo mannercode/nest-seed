@@ -20,8 +20,8 @@ export class TicketHoldingProxy {
         return getProxyValue(this.service.send('findHeldTicketIds', { showtimeId, customerId }))
     }
 
-    @MethodLog({ level: 'verbose' })
-    releaseTickets(showtimeId: string, customerId: string): Promise<boolean> {
-        return getProxyValue(this.service.send('releaseTickets', { showtimeId, customerId }))
-    }
+    // @MethodLog({ level: 'verbose' })
+    // releaseTickets(showtimeId: string, customerId: string): Promise<boolean> {
+    //     return getProxyValue(this.service.send('releaseTickets', { showtimeId, customerId }))
+    // }
 }

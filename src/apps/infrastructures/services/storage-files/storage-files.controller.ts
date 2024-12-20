@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, ParseArrayPipe } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { StorageFileCreateDto } from './dtos'
 import { StorageFilesService } from './storage-files.service'
@@ -8,7 +8,10 @@ export class StorageFilesController {
     constructor(private service: StorageFilesService) {}
 
     @MessagePattern({ cmd: 'saveFiles' })
-    saveFiles(@Payload() createDtos: StorageFileCreateDto[]) {
+    saveFiles(
+        @Payload(new ParseArrayPipe({ items: StorageFileCreateDto }))
+        createDtos: StorageFileCreateDto[]
+    ) {
         return this.service.saveFiles(createDtos)
     }
 

@@ -36,6 +36,10 @@ describe('HttpToRpcExceptionFilter', () => {
         )
     })
 
+    it('should handle {status, response} properly for RPC', async () => {
+        await client.error('rethrow', {}, { status: 400, response: { message: 'error message' } })
+    })
+
     it('should handle Error properly for RPC', async () => {
         await client.error('throwError', {}, { status: 500 })
     })

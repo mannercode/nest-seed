@@ -1,18 +1,28 @@
 import { Injectable } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
+import { Type } from 'class-transformer'
+import { IsArray, ValidateNested } from 'class-validator'
 import { StorageFileCreateDto } from 'infrastructures'
 import { MovieCreateDto, MovieQueryDto, MovieUpdateDto } from './dtos'
 import { MoviesService } from './movies.service'
+
+class CreateMovieDto {
+    @ValidateNested({})
+    @Type(() => MovieCreateDto)
+    movieCreateDto: MovieCreateDto
+
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => StorageFileCreateDto)
+    fileCreateDtos: StorageFileCreateDto[]
+}
 
 @Injectable()
 export class MoviesController {
     constructor(private service: MoviesService) {}
 
     @MessagePattern({ cmd: 'createMovie' })
-    createMovie(
-        @Payload('movieCreateDto') movieCreateDto: MovieCreateDto,
-        @Payload('fileCreateDtos') fileCreateDtos: StorageFileCreateDto[]
-    ) {
+    createMovie(@Payload() { movieCreateDto, fileCreateDtos }: CreateMovieDto) {
         return this.service.createMovie(movieCreateDto, fileCreateDtos)
     }
 

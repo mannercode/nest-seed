@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common'
-import { APP_PIPE } from '@nestjs/core'
 import { Transport } from '@nestjs/microservices'
-import { AppValidationPipe, ClientProxyModule } from 'common'
+import { ClientProxyModule } from 'common'
 import { CoresConfigService } from '../config'
 
 @Module({
@@ -14,7 +13,6 @@ import { CoresConfigService } from '../config'
             }),
             inject: [CoresConfigService]
         })
-    ],
-    providers: [{ provide: APP_PIPE, useClass: AppValidationPipe }]
+    ]
 })
 export class ClientProxiesModule {}
