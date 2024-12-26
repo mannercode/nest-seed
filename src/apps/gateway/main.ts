@@ -36,7 +36,10 @@ export async function bootstrap() {
 
     app.enableShutdownHooks()
 
-    await app.listen(3000)
+    const config = app.get(AppConfigService)
+    const { port } = config.services.gateway
+
+    await app.listen(port)
 
     console.log(`Application is running on: ${await app.getUrl()}`)
 }

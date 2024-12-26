@@ -9,7 +9,7 @@ import { AppConfigService } from 'shared/config'
             name: 'INFRASTRUCTURES_CLIENT',
             useFactory: async (config: AppConfigService) => ({
                 transport: Transport.TCP,
-                options: { host: '127.0.0.1', port: config.clients.infrastructures.port }
+                options: config.services.infrastructures
             }),
             inject: [AppConfigService]
         })

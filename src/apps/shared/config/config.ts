@@ -35,9 +35,17 @@ export const configSchema = Joi.object({
     FILE_UPLOAD_MAX_FILE_SIZE_BYTES: Joi.number().required(),
     FILE_UPLOAD_MAX_FILES_PER_UPLOAD: Joi.number().required(),
     FILE_UPLOAD_ALLOWED_FILE_TYPES: Joi.string().required(),
-    APPLICATIONS_PROXY_PORT: Joi.number().required(),
-    CORES_PROXY_PORT: Joi.number().required(),
-    INFRASTRUCTURES_PROXY_PORT: Joi.number().required()
+    SERVICE_GATEWAY_HOST: Joi.string().required(),
+    SERVICE_GATEWAY_PORT: Joi.number().required(),
+    SERVICE_APPLICATIONS_HOST: Joi.string().required(),
+    SERVICE_APPLICATIONS_PORT: Joi.number().required(),
+    SERVICE_APPLICATIONS_HEALTH_PORT: Joi.number().required(),
+    SERVICE_CORES_HOST: Joi.string().required(),
+    SERVICE_CORES_PORT: Joi.number().required(),
+    SERVICE_CORES_HEALTH_PORT: Joi.number().required(),
+    SERVICE_INFRASTRUCTURES_HOST: Joi.string().required(),
+    SERVICE_INFRASTRUCTURES_PORT: Joi.number().required(),
+    SERVICE_INFRASTRUCTURES_HEALTH_PORT: Joi.number().required()
 })
 
 @Injectable()
@@ -107,11 +115,27 @@ export class AppConfigService extends BaseConfigService {
         }
     }
 
-    get clients() {
+    get services() {
         return {
-            applications: { port: this.getNumber('APPLICATIONS_PROXY_PORT') },
-            cores: { port: this.getNumber('CORES_PROXY_PORT') },
-            infrastructures: { port: this.getNumber('INFRASTRUCTURES_PROXY_PORT') }
+            gateway: {
+                host: this.getString('SERVICE_GATEWAY_HOST'),
+                port: this.getNumber('SERVICE_GATEWAY_PORT')
+            },
+            applications: {
+                host: this.getString('SERVICE_APPLICATIONS_HOST'),
+                port: this.getNumber('SERVICE_APPLICATIONS_PORT'),
+                healthPort: this.getNumber('SERVICE_APPLICATIONS_HEALTH_PORT')
+            },
+            cores: {
+                host: this.getString('SERVICE_CORES_HOST'),
+                port: this.getNumber('SERVICE_CORES_PORT'),
+                healthPort: this.getNumber('SERVICE_CORES_HEALTH_PORT')
+            },
+            infrastructures: {
+                host: this.getString('SERVICE_INFRASTRUCTURES_HOST'),
+                port: this.getNumber('SERVICE_INFRASTRUCTURES_PORT'),
+                healthPort: this.getNumber('SERVICE_INFRASTRUCTURES_HEALTH_PORT')
+            }
         }
     }
 }

@@ -23,15 +23,15 @@ export async function configureCores(app: INestApplication<any>) {
 }
 
 export async function bootstrap() {
-    const host = '0.0.0.0'
-    const port = 3004
-    const httpPort = 3005
-
     const app = await NestFactory.create(CoresModule)
 
     configureCores(app)
 
     app.enableShutdownHooks()
+
+    const config = app.get(AppConfigService)
+    const { port, healthPort } = config.services.cores
+    const host = '0.0.0.0'
 
     app.connectMicroservice<MicroserviceOptions>({
         transport: Transport.TCP,
@@ -39,7 +39,7 @@ export async function bootstrap() {
     })
 
     await app.startAllMicroservices()
-    await app.listen(httpPort)
+    await app.listen(healthPort)
 
     console.log(`Cores is running:
         - tcp://${host}:${port}

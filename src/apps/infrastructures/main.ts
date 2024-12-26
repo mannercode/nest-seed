@@ -26,15 +26,15 @@ export async function configureInfrastructures(app: INestApplication<any>) {
 }
 
 export async function bootstrap() {
-    const host = '0.0.0.0'
-    const port = 3006
-    const httpPort = 3007
-
     const app = await NestFactory.create(InfrastructuresModule)
 
     configureInfrastructures(app)
 
     app.enableShutdownHooks()
+
+    const config = app.get(AppConfigService)
+    const { port, healthPort } = config.services.infrastructures
+    const host = '0.0.0.0'
 
     app.connectMicroservice<MicroserviceOptions>({
         transport: Transport.TCP,
@@ -42,7 +42,7 @@ export async function bootstrap() {
     })
 
     await app.startAllMicroservices()
-    await app.listen(httpPort)
+    await app.listen(healthPort)
 
     console.log(`Infrastructures is running:
         - tcp://${host}:${port}

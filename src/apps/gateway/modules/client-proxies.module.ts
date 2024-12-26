@@ -9,7 +9,7 @@ import { AppConfigService } from 'shared/config'
             name: 'APPLICATIONS_CLIENT',
             useFactory: async (config: AppConfigService) => ({
                 transport: Transport.TCP,
-                options: { host: '0.0.0.0', port: config.clients.applications.port }
+                options: config.services.applications
             }),
             inject: [AppConfigService]
         }),
@@ -17,7 +17,7 @@ import { AppConfigService } from 'shared/config'
             name: 'CORES_CLIENT',
             useFactory: async (config: AppConfigService) => ({
                 transport: Transport.TCP,
-                options: { host: '0.0.0.0', port: config.clients.cores.port }
+                options: config.services.cores
             }),
             inject: [AppConfigService]
         }),
@@ -25,7 +25,7 @@ import { AppConfigService } from 'shared/config'
             name: 'INFRASTRUCTURES_CLIENT',
             useFactory: async (config: AppConfigService) => ({
                 transport: Transport.TCP,
-                options: { host: '0.0.0.0', port: config.clients.infrastructures.port }
+                options: config.services.infrastructures
             }),
             inject: [AppConfigService]
         })

@@ -5,5 +5,5 @@ set -e
 docker_compose --profile apps down
 docker_compose --profile apps up -d --build
 
-docker wait ${PROJECT_NAME}-setup
-docker rm ${PROJECT_NAME}-setup
+docker wait ${PROJECT_NAME}-apps-setup
+docker rm ${PROJECT_NAME}-apps-setup
