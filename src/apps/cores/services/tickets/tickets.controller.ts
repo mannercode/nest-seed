@@ -1,10 +1,10 @@
-import { Injectable, ParseArrayPipe } from '@nestjs/common'
+import { Controller, ParseArrayPipe } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { TicketCreateDto, TicketFilterDto } from './dtos'
 import { TicketStatus } from './models'
 import { TicketsService } from './tickets.service'
 
-@Injectable()
+@Controller()
 export class TicketsController {
     constructor(private service: TicketsService) {}
 

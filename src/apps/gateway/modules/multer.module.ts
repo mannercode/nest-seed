@@ -6,11 +6,11 @@ import {
 } from '@nestjs/platform-express'
 import { generateShortId } from 'common'
 import { diskStorage } from 'multer'
-import { GatewayConfigService } from '../config'
+import { AppConfigService } from 'shared/config'
 
 @Injectable()
 export class MulterConfigService implements MulterOptionsFactory {
-    constructor(private config: GatewayConfigService) {}
+    constructor(private config: AppConfigService) {}
 
     createMulterOptions(): MulterModuleOptions {
         return {

@@ -1,18 +1,18 @@
-import { INestMicroservice } from '@nestjs/common'
+import { INestApplication } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 import { AppLoggerService, HttpToRpcExceptionFilter } from 'common'
 import { existsSync } from 'fs'
 import { exit } from 'process'
-import { CoresConfigService } from './config'
+import { AppConfigService } from 'shared/config'
 import { CoresModule } from './cores.module'
 
-export async function configureCores(app: INestMicroservice) {
+export async function configureCores(app: INestApplication<any>) {
     const logger = app.get(AppLoggerService)
     app.useLogger(logger)
     app.useGlobalFilters(new HttpToRpcExceptionFilter())
 
-    const config = app.get(CoresConfigService)
+    const config = app.get(AppConfigService)
 
     for (const dir of [{ name: 'Log', path: config.log.directory }]) {
         if (!existsSync(dir.path)) {
@@ -23,16 +23,25 @@ export async function configureCores(app: INestMicroservice) {
 }
 
 export async function bootstrap() {
-    const port = 3002
-    const app = await NestFactory.createMicroservice<MicroserviceOptions>(CoresModule, {
-        transport: Transport.TCP,
-        options: { retryAttempts: 5, retryDelay: 3000, port, host: '0.0.0.0' }
-    })
+    const host = '0.0.0.0'
+    const port = 3004
+    const httpPort = 3005
+
+    const app = await NestFactory.create(CoresModule)
+
     configureCores(app)
 
-    app.enableShutdownHooks() // for Kubernetes to manage containers' lifecycles
+    app.enableShutdownHooks()
 
-    await app.listen()
+    app.connectMicroservice<MicroserviceOptions>({
+        transport: Transport.TCP,
+        options: { retryAttempts: 5, retryDelay: 2000, port, host }
+    })
 
-    console.log(`Application is running on: ${port}`)
+    await app.startAllMicroservices()
+    await app.listen(httpPort)
+
+    console.log(`Cores is running:
+        - tcp://${host}:${port}
+        - ${await app.getUrl()}`)
 }

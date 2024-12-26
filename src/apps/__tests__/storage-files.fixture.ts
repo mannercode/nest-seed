@@ -1,7 +1,7 @@
 import { Byte, Path } from 'common'
 import { writeFile } from 'fs/promises'
-import { GatewayConfigService } from 'gateway'
 import { StorageFilesService } from 'infrastructures'
+import { AppConfigService } from 'shared/config'
 import { createDummyFile } from 'testlib'
 import { createTestContext, TestContext } from './utils'
 
@@ -41,7 +41,7 @@ export async function closeSharedFixture(fixture: SharedFixture) {
 
 export interface Fixture {
     testContext: TestContext
-    config: GatewayConfigService
+    config: AppConfigService
     tempDir: string
     storageFilesService: StorageFilesService
 }
@@ -61,7 +61,7 @@ export async function createFixture() {
         infras: { config: { FILE_UPLOAD_DIRECTORY: tempDir } }
     })
 
-    const config = testContext.httpContext.module.get(GatewayConfigService)
+    const config = testContext.httpContext.module.get(AppConfigService)
     const module = testContext.infrasContext.module
     const storageFilesService = module.get(StorageFilesService)
     return { testContext, config, tempDir, storageFilesService }

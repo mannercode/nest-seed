@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Type } from 'class-transformer'
 import { IsArray, ValidateNested } from 'class-validator'
@@ -17,7 +17,7 @@ class CreateMovieDto {
     fileCreateDtos: StorageFileCreateDto[]
 }
 
-@Injectable()
+@Controller()
 export class MoviesController {
     constructor(private service: MoviesService) {}
 

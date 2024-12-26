@@ -57,7 +57,9 @@
             "type": "pickString",
             "options": [
                 "APP_NAME=gateway DEBUG_PORT=9230",
-                "APP_NAME=services DEBUG_PORT=9231"
+                "APP_NAME=applications DEBUG_PORT=9231",
+                "APP_NAME=cores DEBUG_PORT=9232",
+                "APP_NAME=infrastructures DEBUG_PORT=9233"
             ],
             "description": "Select a app to run."
         },

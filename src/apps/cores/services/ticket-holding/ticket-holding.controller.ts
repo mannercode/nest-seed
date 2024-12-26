@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common'
+import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { TicketHoldingService } from './ticket-holding.service'
 
-@Injectable()
+@Controller()
 export class TicketHoldingController {
     constructor(private service: TicketHoldingService) {}
 

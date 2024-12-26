@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { getChecksum, mapDocToDto, MethodLog, Path } from 'common'
 import { HydratedDocument } from 'mongoose'
-import { InfrastructuresConfigService } from '../../config'
+import { AppConfigService } from 'shared/config'
 import { StorageFileCreateDto, StorageFileDto } from './dtos'
 import { StorageFile, StorageFileDocument } from './models'
 import { StorageFilesRepository } from './storage-files.repository'
@@ -10,7 +10,7 @@ import { StorageFilesRepository } from './storage-files.repository'
 export class StorageFilesService {
     constructor(
         private repository: StorageFilesRepository,
-        private config: InfrastructuresConfigService
+        private config: AppConfigService
     ) {}
 
     @MethodLog()

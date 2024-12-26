@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { generateShortId, BullModule as OrgBullModule } from 'common'
-import { isTest, RedisConfig } from '../config'
+import { RedisConfig, isTest } from 'shared/config'
 
 @Module({
     imports: [

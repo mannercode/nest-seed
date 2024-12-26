@@ -17,7 +17,7 @@ class MicroserviceController {
 @Module({ controllers: [MicroserviceController] })
 export class MicroserviceModule {}
 
-@Controller('/')
+@Controller()
 export class HttpController {
     constructor(@Inject('SERVICES') private client: ClientProxy) {}
 

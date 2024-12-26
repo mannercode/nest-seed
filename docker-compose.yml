@@ -1,11 +1,14 @@
 # https://docs.docker.com/compose/compose-file/05-services/
+x-mongo-image: &mongo-image
+    image: mongo:8.0
+x-redis-image: &redis-image
+    image: redis:7.4
+
 x-logging: &default-logging
     options:
         max-size: '10m'
         max-file: '3'
 
-x-mongo-image: &mongo-image
-    image: mongo:8.0
 x-mongo-common: &mongo-common
     <<: *mongo-image
     profiles: ['infra']
@@ -37,11 +40,9 @@ x-mongo-common: &mongo-common
                 'rs.isMaster().ismaster || rs.isMaster().secondary'
             ]
         interval: 5s
-        timeout: 10s
+        timeout: 5s
         retries: 5
 
-x-redis-image: &redis-image
-    image: redis:7.4
 x-redis-common: &redis-common
     <<: *redis-image
     command:
@@ -72,6 +73,15 @@ x-redis-common: &redis-common
         interval: 5s
         timeout: 5s
         retries: 5
+
+x-apps-common: &apps-common
+    profiles: ['apps']
+    logging: *default-logging
+    environment:
+        - NODE_ENV=production
+    env_file: .env.test
+    networks:
+        - default
 
 services:
     redis1:
@@ -171,25 +181,95 @@ services:
         networks:
             - default
 
-    app:
-        build: .
-        image: $PROJECT_NAME
-        profiles: ['apps']
-        container_name: $PROJECT_NAME
-        logging: *default-logging
-        environment:
-            - NODE_ENV=production
+    gateway:
+        <<: *apps-common
+        build:
+            context: .
+            args:
+                APPNAME: gateway
+        image: ${PROJECT_NAME}-gateway
+        container_name: ${PROJECT_NAME}-gateway
+        ports:
+            - 3000:3000
         healthcheck:
             test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
             interval: 5s
-            timeout: 10s
+            timeout: 5s
             retries: 5
-        env_file: .env.test
         volumes:
-            - ./_output/logs:/app/_output/logs
+            - ./_output/logs/gateway:/app/_output/logs
             - ./_output/uploads:/app/_output/uploads
-        networks:
-            - default
+
+    applications:
+        <<: *apps-common
+        build:
+            context: .
+            args:
+                APPNAME: applications
+                APP_PORT: 3002
+        image: ${PROJECT_NAME}-applications
+        container_name: ${PROJECT_NAME}-applications
+        ports:
+            - 3002:3002
+        healthcheck:
+            test: ['CMD', 'curl', '-f', 'http://localhost:3003/health']
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        volumes:
+            - ./_output/logs/applications:/app/_output/logs
+
+    cores:
+        <<: *apps-common
+        build:
+            context: .
+            args:
+                APPNAME: cores
+                APP_PORT: 3004
+        image: ${PROJECT_NAME}-cores
+        container_name: ${PROJECT_NAME}-cores
+        ports:
+            - 3004:3004
+        healthcheck:
+            test: ['CMD', 'curl', '-f', 'http://localhost:3005/health']
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        volumes:
+            - ./_output/logs/cores:/app/_output/logs
+
+    infrastructures:
+        <<: *apps-common
+        build:
+            context: .
+            args:
+                APPNAME: infrastructures
+        image: ${PROJECT_NAME}-infrastructures
+        container_name: ${PROJECT_NAME}-infrastructures
+        ports:
+            - 3006:3006
+        healthcheck:
+            test: ['CMD', 'curl', '-f', 'http://localhost:3007/health']
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        volumes:
+            - ./_output/logs/infrastructures:/app/_output/logs
+            - ./_output/uploads:/app/_output/uploads
+
+    setup-apps:
+        image: node:22-alpine
+        container_name: ${PROJECT_NAME}-setup
+        profiles: ['apps']
+        depends_on:
+            gateway:
+                condition: service_healthy
+            applications:
+                condition: service_healthy
+            cores:
+                condition: service_healthy
+            infrastructures:
+                condition: service_healthy
 
 networks:
     default:

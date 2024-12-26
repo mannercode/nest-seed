@@ -9,7 +9,7 @@ import {
     validateFilters
 } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { MongooseConfig } from '../../config'
+import { MongooseConfig } from 'shared/config'
 import { ShowtimeCreateDto, ShowtimeFilterDto } from './dtos'
 import { Showtime } from './models'
 

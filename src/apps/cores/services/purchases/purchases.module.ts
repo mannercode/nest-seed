@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { PaymentsProxy } from 'infrastructures'
-import { MongooseConfig } from '../../config'
+import { MongooseConfig } from 'shared/config'
 import { Purchase, PurchaseSchema } from './models'
 import { PurchasesController } from './purchases.controller'
 import { PurchasesRepository } from './purchases.repository'

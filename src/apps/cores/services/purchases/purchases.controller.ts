@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common'
+import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { PurchaseCreateDto } from './dtos'
 import { PurchasesService } from './purchases.service'
 
-@Injectable()
+@Controller()
 export class PurchasesController {
     constructor(private service: PurchasesService) {}
 

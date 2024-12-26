@@ -1,9 +1,9 @@
-import { Injectable, ParseArrayPipe } from '@nestjs/common'
+import { Controller, ParseArrayPipe } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { ShowtimeCreateDto, ShowtimeFilterDto } from './dtos'
 import { ShowtimesService } from './showtimes.service'
 
-@Injectable()
+@Controller()
 export class ShowtimesController {
     constructor(private service: ShowtimesService) {}
 

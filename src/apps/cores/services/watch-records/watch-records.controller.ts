@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common'
+import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { WatchRecordCreateDto, WatchRecordQueryDto } from './dtos'
 import { WatchRecordsService } from './watch-records.service'
 
-@Injectable()
+@Controller()
 export class WatchRecordsController {
     constructor(private service: WatchRecordsService) {}
 

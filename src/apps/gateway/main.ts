@@ -5,8 +5,8 @@ import compression from 'compression'
 import express from 'express'
 import { existsSync } from 'fs'
 import { exit } from 'process'
-import { GatewayConfigService } from './config'
 import { GatewayModule } from './gateway.module'
+import { AppConfigService } from 'shared/config'
 
 export async function configureGateway(app: INestApplication<any>) {
     app.use(compression())
@@ -14,7 +14,7 @@ export async function configureGateway(app: INestApplication<any>) {
     const logger = app.get(AppLoggerService)
     app.useLogger(logger)
 
-    const config = app.get(GatewayConfigService)
+    const config = app.get(AppConfigService)
     const limit = config.http.requestPayloadLimit
     app.use(express.json({ limit }))
     app.use(express.urlencoded({ limit, extended: true }))
@@ -34,7 +34,6 @@ export async function bootstrap() {
     const app = await NestFactory.create(GatewayModule)
     configureGateway(app)
 
-    // for Kubernetes to manage containers' lifecycles
     app.enableShutdownHooks()
 
     await app.listen(3000)

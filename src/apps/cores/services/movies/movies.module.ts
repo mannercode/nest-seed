@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { StorageFilesProxy } from 'infrastructures'
-import { MongooseConfig } from '../../config'
+import { MongooseConfig } from 'shared/config'
 import { Movie, MovieSchema } from './models'
 import { MoviesController } from './movies.controller'
 import { MoviesRepository } from './movies.repository'

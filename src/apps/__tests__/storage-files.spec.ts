@@ -1,6 +1,6 @@
 import { generateShortId, getChecksum, Path } from 'common'
-import { GatewayConfigService } from 'gateway'
 import { StorageFileDto } from 'infrastructures'
+import { AppConfigService } from 'shared/config'
 import { HttpTestClient, nullObjectId } from 'testlib'
 import {
     closeFixture,
@@ -16,7 +16,7 @@ describe('/storage-files', () => {
     let shared: SharedFixture
     let fixture: Fixture
     let client: HttpTestClient
-    let config: GatewayConfigService
+    let config: AppConfigService
 
     beforeAll(async () => {
         shared = await createSharedFixture()

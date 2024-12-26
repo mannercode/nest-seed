@@ -85,7 +85,7 @@ export async function createTestContext({
         CoresModule,
         configureCores,
         cores,
-        { INFRASTRUCTURES_CLIENT_PORT: infrasContext.port }
+        { INFRASTRUCTURES_PROXY_PORT: infrasContext.port }
     )
 
     const appsContext = await createContext<MicroserviceTestContext>(
@@ -94,8 +94,8 @@ export async function createTestContext({
         configureApplications,
         apps,
         {
-            CORES_CLIENT_PORT: coresContext.port,
-            INFRASTRUCTURES_CLIENT_PORT: infrasContext.port
+            CORES_PROXY_PORT: coresContext.port,
+            INFRASTRUCTURES_PROXY_PORT: infrasContext.port
         }
     )
 
@@ -105,9 +105,9 @@ export async function createTestContext({
         configureGateway,
         http,
         {
-            APPLICATIONS_CLIENT_PORT: appsContext.port,
-            CORES_CLIENT_PORT: coresContext.port,
-            INFRASTRUCTURES_CLIENT_PORT: infrasContext.port
+            APPLICATIONS_PROXY_PORT: appsContext.port,
+            CORES_PROXY_PORT: coresContext.port,
+            INFRASTRUCTURES_PROXY_PORT: infrasContext.port
         }
     )
 

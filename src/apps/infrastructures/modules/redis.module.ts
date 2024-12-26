@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common'
 import { RedisModule as OrgRedisModule } from 'common'
-import { InfrastructuresConfigService, RedisConfig } from '../config'
+import { AppConfigService, RedisConfig } from 'shared/config'
 
 @Module({
     imports: [
         OrgRedisModule.forRootAsync(
             {
-                useFactory: (config: InfrastructuresConfigService) => config.redis,
-                inject: [InfrastructuresConfigService]
+                useFactory: (config: AppConfigService) => config.redis,
+                inject: [AppConfigService]
             },
             RedisConfig.connName
         )

@@ -1,18 +1,18 @@
-import { INestMicroservice } from '@nestjs/common'
+import { INestApplication } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 import { AppLoggerService, HttpToRpcExceptionFilter } from 'common'
 import { existsSync } from 'fs'
 import { exit } from 'process'
-import { ApplicationsConfigService } from './config'
+import { AppConfigService } from 'shared/config'
 import { ApplicationsModule } from './applications.module'
 
-export async function configureApplications(app: INestMicroservice) {
+export async function configureApplications(app: INestApplication<any>) {
     const logger = app.get(AppLoggerService)
     app.useLogger(logger)
     app.useGlobalFilters(new HttpToRpcExceptionFilter())
 
-    const config = app.get(ApplicationsConfigService)
+    const config = app.get(AppConfigService)
 
     for (const dir of [{ name: 'Log', path: config.log.directory }]) {
         if (!existsSync(dir.path)) {
@@ -23,16 +23,25 @@ export async function configureApplications(app: INestMicroservice) {
 }
 
 export async function bootstrap() {
-    const port = 3001
-    const app = await NestFactory.createMicroservice<MicroserviceOptions>(ApplicationsModule, {
-        transport: Transport.TCP,
-        options: { retryAttempts: 5, retryDelay: 3000, port, host: '0.0.0.0' }
-    })
+    const host = '0.0.0.0'
+    const port = 3002
+    const httpPort = 3003
+
+    const app = await NestFactory.create(ApplicationsModule)
+
     configureApplications(app)
 
-    app.enableShutdownHooks() // for Kubernetes to manage containers' lifecycles
+    app.enableShutdownHooks()
 
-    await app.listen()
+    app.connectMicroservice<MicroserviceOptions>({
+        transport: Transport.TCP,
+        options: { retryAttempts: 5, retryDelay: 2000, port, host }
+    })
 
-    console.log(`Application is running on: ${port}`)
+    await app.startAllMicroservices()
+    await app.listen(httpPort)
+
+    console.log(`Applications is running:
+        - tcp://${host}:${port}
+        - ${await app.getUrl()}`)
 }

@@ -5,4 +5,5 @@ set -e
 docker_compose --profile apps down
 docker_compose --profile apps up -d --build
 
-wait_for_healthy $PROJECT_NAME
+docker wait ${PROJECT_NAME}-setup
+docker rm ${PROJECT_NAME}-setup

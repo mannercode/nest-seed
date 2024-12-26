@@ -1,7 +1,7 @@
 import { Controller, Get, Module } from '@nestjs/common'
 import { LatLong, LatLongQuery } from 'common'
 
-@Controller('')
+@Controller()
 class TestController {
     @Get('latlong')
     async testLatlong(@LatLongQuery('location') latlong: LatLong) {

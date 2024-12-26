@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule as NestMongooseModule } from '@nestjs/mongoose'
 import { generateShortId } from 'common'
-import { CoresConfigService, isTest, MongooseConfig } from '../config'
+import { AppConfigService, isTest, MongooseConfig } from 'shared/config'
 
 @Module({
     imports: [
         NestMongooseModule.forRootAsync({
             connectionName: MongooseConfig.connName,
-            useFactory: async (config: CoresConfigService) => {
+            useFactory: async (config: AppConfigService) => {
                 const { user, password, host1, host2, host3, port, replica, database } =
                     config.mongo
                 const uri = `mongodb://${user}:${password}@${host1}:${port},${host2}:${port},${host3}:${port}/?replicaSet=${replica}`
@@ -23,7 +23,7 @@ import { CoresConfigService, isTest, MongooseConfig } from '../config'
                     autoCreate: false
                 }
             },
-            inject: [CoresConfigService]
+            inject: [AppConfigService]
         })
     ]
 })

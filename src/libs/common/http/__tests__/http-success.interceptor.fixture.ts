@@ -2,7 +2,7 @@ import { Controller, Get, Module } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { HttpSuccessInterceptor } from 'common'
 
-@Controller('/')
+@Controller()
 class TestController {
     @Get()
     async responseSuccess() {}

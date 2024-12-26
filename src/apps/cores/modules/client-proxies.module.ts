@@ -1,17 +1,17 @@
 import { Module } from '@nestjs/common'
 import { Transport } from '@nestjs/microservices'
 import { ClientProxyModule } from 'common'
-import { CoresConfigService } from '../config'
+import { AppConfigService } from 'shared/config'
 
 @Module({
     imports: [
         ClientProxyModule.registerAsync({
             name: 'INFRASTRUCTURES_CLIENT',
-            useFactory: async (config: CoresConfigService) => ({
+            useFactory: async (config: AppConfigService) => ({
                 transport: Transport.TCP,
-                options: { host: '0.0.0.0', port: config.clients.infrastructures.port }
+                options: { host: '127.0.0.1', port: config.clients.infrastructures.port }
             }),
-            inject: [CoresConfigService]
+            inject: [AppConfigService]
         })
     ]
 })

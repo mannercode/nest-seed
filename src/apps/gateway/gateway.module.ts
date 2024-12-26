@@ -6,13 +6,12 @@ import {
     ShowtimeCreationProxy
 } from 'applications'
 import { CustomersProxy, MoviesProxy, PurchasesProxy, TheatersProxy } from 'cores'
-import { HealthProxy, StorageFilesProxy } from 'infrastructures'
+import { StorageFilesProxy } from 'infrastructures'
 import {
     BookingController,
     CustomerJwtStrategy,
     CustomerLocalStrategy,
     CustomersController,
-    HealthController,
     MoviesController,
     PurchasesController,
     ShowtimeCreationController,
@@ -34,8 +33,7 @@ import { Modules } from './modules'
         BookingProxy,
         PurchasesProxy,
         RecommendationProxy,
-        PurchaseProcessProxy,
-        HealthProxy
+        PurchaseProcessProxy
     ],
     controllers: [
         CustomersController,
@@ -44,8 +42,7 @@ import { Modules } from './modules'
         TheatersController,
         ShowtimeCreationController,
         BookingController,
-        PurchasesController,
-        HealthController
+        PurchasesController
     ]
 })
 export class GatewayModule {}

@@ -3,8 +3,6 @@ import { ConfigService } from '@nestjs/config'
 import { BaseConfigService } from 'common'
 import Joi from 'joi'
 
-export const isTest = () => process.env.NODE_ENV === 'test'
-
 export const configSchema = Joi.object({
     NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
     LOG_DIRECTORY: Joi.string().required(),
@@ -27,11 +25,23 @@ export const configSchema = Joi.object({
     MONGO_DB_USERNAME: Joi.string().required(),
     MONGO_DB_PASSWORD: Joi.string().required(),
     MONGO_DB_DATABASE: Joi.string().required(),
-    FILE_UPLOAD_DIRECTORY: Joi.string().required()
+    HTTP_REQUEST_PAYLOAD_LIMIT: Joi.string().required(),
+    HTTP_PAGINATION_DEFAULT_SIZE: Joi.number().required(),
+    AUTH_ACCESS_SECRET: Joi.string().required(),
+    AUTH_ACCESS_TOKEN_EXPIRATION: Joi.string().required(),
+    AUTH_REFRESH_SECRET: Joi.string().required(),
+    AUTH_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
+    FILE_UPLOAD_DIRECTORY: Joi.string().required(),
+    FILE_UPLOAD_MAX_FILE_SIZE_BYTES: Joi.number().required(),
+    FILE_UPLOAD_MAX_FILES_PER_UPLOAD: Joi.number().required(),
+    FILE_UPLOAD_ALLOWED_FILE_TYPES: Joi.string().required(),
+    APPLICATIONS_PROXY_PORT: Joi.number().required(),
+    CORES_PROXY_PORT: Joi.number().required(),
+    INFRASTRUCTURES_PROXY_PORT: Joi.number().required()
 })
 
 @Injectable()
-export class InfrastructuresConfigService extends BaseConfigService {
+export class AppConfigService extends BaseConfigService {
     constructor(configService: ConfigService<object, true>) {
         super(configService, configSchema)
     }
@@ -71,9 +81,37 @@ export class InfrastructuresConfigService extends BaseConfigService {
             database: this.getString('MONGO_DB_DATABASE')
         }
     }
+
+    get http() {
+        return {
+            requestPayloadLimit: this.getString('HTTP_REQUEST_PAYLOAD_LIMIT'),
+            paginationDefaultSize: this.getNumber('HTTP_PAGINATION_DEFAULT_SIZE')
+        }
+    }
+
+    get auth() {
+        return {
+            accessSecret: this.getString('AUTH_ACCESS_SECRET'),
+            accessTokenExpiration: this.getString('AUTH_ACCESS_TOKEN_EXPIRATION'),
+            refreshSecret: this.getString('AUTH_REFRESH_SECRET'),
+            refreshTokenExpiration: this.getString('AUTH_REFRESH_TOKEN_EXPIRATION')
+        }
+    }
+
     get fileUpload() {
         return {
-            directory: this.getString('FILE_UPLOAD_DIRECTORY')
+            directory: this.getString('FILE_UPLOAD_DIRECTORY'),
+            maxFileSizeBytes: this.getNumber('FILE_UPLOAD_MAX_FILE_SIZE_BYTES'),
+            maxFilesPerUpload: this.getNumber('FILE_UPLOAD_MAX_FILES_PER_UPLOAD'),
+            allowedMimeTypes: this.getString('FILE_UPLOAD_ALLOWED_FILE_TYPES').split(',')
+        }
+    }
+
+    get clients() {
+        return {
+            applications: { port: this.getNumber('APPLICATIONS_PROXY_PORT') },
+            cores: { port: this.getNumber('CORES_PROXY_PORT') },
+            infrastructures: { port: this.getNumber('INFRASTRUCTURES_PROXY_PORT') }
         }
     }
 }

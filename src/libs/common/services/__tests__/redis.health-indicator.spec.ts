@@ -31,7 +31,7 @@ describe('RedisHealthIndicator', () => {
         if (module) await module.close()
     })
 
-    it('sets a value in the cache', async () => {
+    it('should return status "up" when Redis is healthy', async () => {
         const res = await redisIndicator.pingCheck('key', redis)
 
         expect(res).toEqual({ key: { status: 'up' } })

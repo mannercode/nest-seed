@@ -2,7 +2,7 @@ import { BadRequestException, Controller, Get, Module } from '@nestjs/common'
 import { APP_FILTER } from '@nestjs/core'
 import { HttpExceptionFilter } from 'common'
 
-@Controller('/')
+@Controller()
 class TestController {
     @Get()
     async throwHttpException() {

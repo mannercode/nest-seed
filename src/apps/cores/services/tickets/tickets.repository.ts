@@ -10,7 +10,7 @@ import {
     validateFilters
 } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { MongooseConfig } from '../../config'
+import { MongooseConfig } from 'shared/config'
 import { SalesStatusByShowtimeDto, TicketCreateDto, TicketFilterDto } from './dtos'
 import { Ticket, TicketStatus } from './models'
 

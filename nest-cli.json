@@ -12,9 +12,19 @@
             "entryFile": "apps/gateway/development",
             "sourceRoot": "src"
         },
-        "services": {
+        "applications": {
             "type": "application",
-            "entryFile": "apps/services/development",
+            "entryFile": "apps/applications/development",
+            "sourceRoot": "src"
+        },
+        "cores": {
+            "type": "application",
+            "entryFile": "apps/cores/development",
+            "sourceRoot": "src"
+        },
+        "infrastructures": {
+            "type": "application",
+            "entryFile": "apps/infrastructures/development",
             "sourceRoot": "src"
         }
     }

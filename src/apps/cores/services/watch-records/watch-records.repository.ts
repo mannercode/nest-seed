@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { addIdQuery, MethodLog, MongooseRepository, objectId } from 'common'
 import { FilterQuery, Model } from 'mongoose'
-import { MongooseConfig } from '../../config'
+import { MongooseConfig } from 'shared/config'
 import { WatchRecordCreateDto, WatchRecordQueryDto } from './dtos'
 import { WatchRecord } from './models'
 

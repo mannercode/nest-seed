@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common'
 import { ConfigModule as NestConfigModule } from '@nestjs/config'
-import { GatewayConfigService, configSchema } from '../config'
+import { AppConfigService, configSchema } from 'shared/config'
 
 @Global()
 @Module({
@@ -12,7 +12,7 @@ import { GatewayConfigService, configSchema } from '../config'
             validationOptions: { abortEarly: false }
         })
     ],
-    providers: [GatewayConfigService],
-    exports: [GatewayConfigService]
+    providers: [AppConfigService],
+    exports: [AppConfigService]
 })
 export class ConfigModule {}

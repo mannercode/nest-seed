@@ -52,8 +52,14 @@ jobs:
               run: npm ci
 
             # Run All Tests
+            - name: Run Prettier
+              run: npx prettier 'src/**/*.ts'
+
+            - name: Run Lint
+              run: npx eslint src
+
             - name: Run Test Suites
-              run: npm run test:all
+              run: TEST_NAME=all npm run test:base
 
             - name: Run E2E Tests
               run: bash test/e2e/run.sh

@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common'
+import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { PaginationOption } from 'common'
-import { ShowtimeCreationService } from './showtime-creation.service'
 import { ShowtimeBatchCreateDto } from './dtos'
+import { ShowtimeCreationService } from './showtime-creation.service'
 
-@Injectable()
+@Controller()
 export class ShowtimeCreationController {
     constructor(private service: ShowtimeCreationService) {}
 

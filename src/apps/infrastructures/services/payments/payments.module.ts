@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { MongooseConfig } from '../../config'
+import { MongooseConfig } from 'shared/config'
 import { Payment, PaymentSchema } from './models'
 import { PaymentsController } from './payments.controller'
 import { PaymentsRepository } from './payments.repository'

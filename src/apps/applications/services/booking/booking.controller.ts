@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common'
+import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { LatLong } from 'common'
 import { BookingService } from './booking.service'
 
-@Injectable()
+@Controller()
 export class BookingController {
     constructor(private service: BookingService) {}
 
