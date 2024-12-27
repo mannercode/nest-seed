@@ -1,4 +1,3 @@
-import { HttpStatus } from '@nestjs/common'
 import { ClientOptions, ClientProxy, ClientProxyFactory } from '@nestjs/microservices'
 import { jsonToObject } from 'common'
 import { lastValueFrom, Observer } from 'rxjs'
@@ -29,8 +28,8 @@ export class MicroserviceTestClient {
         return this.client.send({ cmd }, payload).subscribe(observerOrNext)
     }
 
-    async error(cmd: string, payload: any, status: HttpStatus) {
+    async error(cmd: string, payload: any, expected: any) {
         const res = lastValueFrom(this.client.send({ cmd }, payload))
-        await expect(res).rejects.toMatchObject({ status, message: expect.any(String) })
+        await expect(res).rejects.toMatchObject(expected)
     }
 }

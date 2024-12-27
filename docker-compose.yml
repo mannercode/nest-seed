@@ -1,11 +1,14 @@
 # https://docs.docker.com/compose/compose-file/05-services/
+x-mongo-image: &mongo-image
+    image: mongo:8.0
+x-redis-image: &redis-image
+    image: redis:7.4
+
 x-logging: &default-logging
     options:
         max-size: '10m'
         max-file: '3'
 
-x-mongo-image: &mongo-image
-    image: mongo:8.0
 x-mongo-common: &mongo-common
     <<: *mongo-image
     profiles: ['infra']
@@ -37,11 +40,9 @@ x-mongo-common: &mongo-common
                 'rs.isMaster().ismaster || rs.isMaster().secondary'
             ]
         interval: 5s
-        timeout: 10s
+        timeout: 5s
         retries: 5
 
-x-redis-image: &redis-image
-    image: redis:7.4
 x-redis-common: &redis-common
     <<: *redis-image
     command:
@@ -73,6 +74,15 @@ x-redis-common: &redis-common
         timeout: 5s
         retries: 5
 
+x-apps-common: &apps-common
+    profiles: ['apps']
+    logging: *default-logging
+    environment:
+        - NODE_ENV=production
+    env_file: .env.test
+    networks:
+        - default
+
 services:
     redis1:
         <<: *redis-common
@@ -92,9 +102,9 @@ services:
     redis6:
         <<: *redis-common
         container_name: ${REDIS_HOST6}
-    redis-cluster-setup:
+    redis-setup:
         <<: *redis-image
-        container_name: ${PROJECT_NAME}-redis-cluster-setup
+        container_name: ${PROJECT_NAME}-redis-setup
         profiles: ['infra']
         depends_on:
             redis1:
@@ -138,9 +148,9 @@ services:
     mongo3:
         <<: *mongo-common
         container_name: ${MONGO_DB_HOST3}
-    mongo-cluster-setup:
+    mongo-setup:
         <<: *mongo-image
-        container_name: ${PROJECT_NAME}-mongo-cluster-setup
+        container_name: ${PROJECT_NAME}-mongo-setup
         profiles: ['infra']
         depends_on:
             mongo1:
@@ -171,25 +181,85 @@ services:
         networks:
             - default
 
-    app:
-        build: .
-        image: $PROJECT_NAME
-        profiles: ['apps']
-        container_name: $PROJECT_NAME
-        logging: *default-logging
-        environment:
-            - NODE_ENV=production
+    gateway:
+        <<: *apps-common
+        build:
+            context: .
+            args:
+                APP_NAME: gateway
+        image: ${SERVICE_GATEWAY_HOST}
+        container_name: ${SERVICE_GATEWAY_HOST}
         healthcheck:
-            test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
+            test: ['CMD', 'curl', '-f', "http://localhost:${SERVICE_GATEWAY_PORT}/health"]
             interval: 5s
-            timeout: 10s
+            timeout: 5s
             retries: 5
-        env_file: .env.app
         volumes:
-            - ./_output/logs:/app/_output/logs
+            - ./_output/logs/gateway:/app/_output/logs
             - ./_output/uploads:/app/_output/uploads
-        networks:
-            - default
+
+    applications:
+        <<: *apps-common
+        build:
+            context: .
+            args:
+                APP_NAME: applications
+        image: ${SERVICE_APPLICATIONS_HOST}
+        container_name: ${SERVICE_APPLICATIONS_HOST}
+        healthcheck:
+            test: ['CMD', 'curl', '-f', "http://localhost:${SERVICE_APPLICATIONS_HEALTH_PORT}/health"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        volumes:
+            - ./_output/logs/applications:/app/_output/logs
+
+    cores:
+        <<: *apps-common
+        build:
+            context: .
+            args:
+                APP_NAME: cores
+        image: ${SERVICE_CORES_HOST}
+        container_name: ${SERVICE_CORES_HOST}
+        healthcheck:
+            test: ['CMD', 'curl', '-f', "http://localhost:${SERVICE_CORES_HEALTH_PORT}/health"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        volumes:
+            - ./_output/logs/cores:/app/_output/logs
+
+    infrastructures:
+        <<: *apps-common
+        build:
+            context: .
+            args:
+                APP_NAME: infrastructures
+        image: ${SERVICE_INFRASTRUCTURES_HOST}
+        container_name: ${SERVICE_INFRASTRUCTURES_HOST}
+        healthcheck:
+            test: ['CMD', 'curl', '-f', "http://localhost:${SERVICE_INFRASTRUCTURES_HEALTH_PORT}/health"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        volumes:
+            - ./_output/logs/infrastructures:/app/_output/logs
+            - ./_output/uploads:/app/_output/uploads
+
+    apps-setup:
+        image: node:22-alpine
+        container_name: ${PROJECT_NAME}-apps-setup
+        profiles: ['apps']
+        depends_on:
+            gateway:
+                condition: service_healthy
+            applications:
+                condition: service_healthy
+            cores:
+                condition: service_healthy
+            infrastructures:
+                condition: service_healthy
 
 networks:
     default:

@@ -1,6 +1,7 @@
 import { Logger, LogLevel } from '@nestjs/common'
 import { OnEvent } from '@nestjs/event-emitter'
 import 'reflect-metadata'
+import { catchError, isObservable, tap } from 'rxjs'
 
 export interface MethodLogOptions {
     level?: LogLevel
@@ -23,21 +24,59 @@ export function MethodLog(options: MethodLogOptions = {}): MethodDecorator {
         const className = target.constructor.name
         const logger = new Logger(className)
 
-        descriptor.value = async function (...args: any[]) {
+        descriptor.value = function (...args: any[]) {
             const paramNames = getParameterNames(originalMethod)
             const filteredArgs = args.filter((_, index) => !excludeArgs.includes(paramNames[index]))
-
             const start = Date.now()
 
             try {
-                const result = await originalMethod.apply(this, args)
+                const result = originalMethod.apply(this, args)
 
-                logger[level](`${className}.${propertyKey}`, {
-                    args: filteredArgs,
-                    return: result,
-                    duration: Date.now() - start
-                })
-                return result
+                if (isObservable(result)) {
+                    return result.pipe(
+                        tap((value) => {
+                            logger[level](`${className}.${propertyKey}`, {
+                                args: filteredArgs,
+                                return: value,
+                                duration: Date.now() - start
+                            })
+                        }),
+                        catchError((error) => {
+                            logger.error(`${className}.${propertyKey}`, {
+                                args: filteredArgs,
+                                error: error.message,
+                                duration: Date.now() - start
+                            })
+                            throw error
+                        })
+                    )
+                } else if (result instanceof Promise) {
+                    return result
+                        .then((value) => {
+                            logger[level](`${className}.${propertyKey}`, {
+                                args: filteredArgs,
+                                return: value,
+                                duration: Date.now() - start
+                            })
+                            return value
+                        })
+                        .catch((error) => {
+                            logger.error(`${className}.${propertyKey}`, {
+                                args: filteredArgs,
+                                error: error.message,
+                                duration: Date.now() - start
+                            })
+                            throw error
+                        })
+                } else {
+                    // 동기 반환값인 경우
+                    logger[level](`${className}.${propertyKey}`, {
+                        args: filteredArgs,
+                        return: result,
+                        duration: Date.now() - start
+                    })
+                    return result
+                }
             } catch (error) {
                 logger.error(`${className}.${propertyKey}`, {
                     args: filteredArgs,

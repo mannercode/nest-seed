@@ -15,6 +15,7 @@ export class LatLong {
     @Max(180)
     longitude: number
 }
+export const nullLatLong = { latitude: 0, longitude: 0 }
 
 export class DateRange {
     @IsDate()

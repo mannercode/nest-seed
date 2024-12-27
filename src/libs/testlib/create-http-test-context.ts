@@ -13,6 +13,24 @@ export interface HttpTestContext {
     close: () => Promise<void>
 }
 
+async function listen(server: any) {
+    let tryCount = 0
+
+    while (true) {
+        try {
+            const port = await getAvailablePort()
+            // const port =3000
+            await server.listen(port)
+
+            return port
+        } catch (error) {
+            tryCount = tryCount + 1
+
+            if (3 <= tryCount) throw error
+        }
+    }
+}
+
 export async function createHttpTestContext(
     metadata: ModuleMetadataEx,
     configureApp?: (app: INestApplication<any>) => void
@@ -21,7 +39,7 @@ export async function createHttpTestContext(
 
     const app = module.createNestApplication()
 
-    configureApp && configureApp(app)
+    if (configureApp) await configureApp(app)
 
     const isDebuggingEnabled = process.env.NODE_OPTIONS !== undefined
     app.useLogger(isDebuggingEnabled ? console : false)
@@ -37,8 +55,7 @@ export async function createHttpTestContext(
 
     const server = app.getHttpServer()
 
-    const port = await getAvailablePort()
-    await server.listen(port)
+    let port = await listen(server)
 
     const client = new HttpTestClient(`http://localhost:${port}`)
 

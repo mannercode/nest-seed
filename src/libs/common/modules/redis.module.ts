@@ -10,6 +10,10 @@ import Redis from 'ioredis'
 class RedisShutdownService implements OnApplicationShutdown {
     constructor(private readonly redis: Redis) {}
 
+    static getToken(name: string) {
+        return `RedisShutdownService_${name}`
+    }
+
     async onApplicationShutdown(_signal?: string) {
         await this.redis.quit()
     }
@@ -61,7 +65,7 @@ export class RedisModule {
             ],
             providers: [
                 {
-                    provide: RedisShutdownService,
+                    provide: RedisShutdownService.getToken(name),
                     useFactory: (redis: Redis) => new RedisShutdownService(redis),
                     inject: [RedisModule.getToken(name)]
                 }

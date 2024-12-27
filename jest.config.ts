@@ -1,28 +1,32 @@
 import type { Config } from 'jest'
 
 const config: Config = {
-    setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+    setupFilesAfterEnv: ['<rootDir>/configs/jest.setup.ts'],
     moduleFileExtensions: ['js', 'json', 'ts'],
-    rootDir: '.',
-    roots: ['<rootDir>/src'],
     testRegex: '.*\\.spec\\.(ts|js)$',
-    moduleNameMapper: {
-        '^app/(.*)$': '<rootDir>/src/app/$1',
-        '^services/(.*)$': '<rootDir>/src/app/services/$1',
-        '^common$': '<rootDir>/src/libs/common/index',
-        '^testlib$': '<rootDir>/src/libs/testlib/index',
-        '^config$': '<rootDir>/src/app/config/index'
-    },
     testEnvironment: 'node',
     transform: { '^.+\\.ts$': 'ts-jest' },
-    coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },
+    rootDir: '.',
+    roots: ['<rootDir>/src'],
+    moduleNameMapper: {
+        '^common$': '<rootDir>/src/libs/common/index',
+        '^testlib$': '<rootDir>/src/libs/testlib/index',
+        '^shared/(.*)$': '<rootDir>/src/apps/shared/$1',
+        '^gateway$': '<rootDir>/src/apps/gateway/index',
+        '^applications$': '<rootDir>/src/apps/applications/index',
+        '^cores$': '<rootDir>/src/apps/cores/index',
+        '^infrastructures$': '<rootDir>/src/apps/infrastructures/index'
+    },
     collectCoverageFrom: [
-        'src/app/**/*.ts',
-        '!src/app/*.ts',
-        'src/libs/common/**/*.ts',
+        '!**/*.controller.ts',
+        '!**/production.ts',
+        '!**/development.ts',
+        '!**/main.ts',
+        '!**/modules/*',
         '!**/index.ts',
-        '!**/*.module.ts',
+        '!**/*.module.ts'
     ],
+    coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },
     coverageReporters: ['lcov', 'text'],
     coveragePathIgnorePatterns: ['__tests__'],
     coverageDirectory: '<rootDir>/_output/coverage',

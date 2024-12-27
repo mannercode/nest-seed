@@ -2,7 +2,7 @@ import { Controller, Get, Module } from '@nestjs/common'
 import { APP_FILTER } from '@nestjs/core'
 import { HttpErrorFilter } from 'common'
 
-@Controller('/')
+@Controller()
 class TestController {
     @Get()
     async throwError() {

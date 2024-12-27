@@ -1,6 +1,5 @@
 import { TestingModule } from '@nestjs/testing'
 import { CacheModule, CacheService, generateShortId, RedisModule, sleep } from 'common'
-import Redis from 'ioredis'
 import { createTestingModule, getRedisTestConnection } from 'testlib'
 
 describe('CacheService', () => {
@@ -16,10 +15,7 @@ describe('CacheService', () => {
                 CacheModule.register({
                     name: 'name',
                     redisName: 'redis',
-                    useFactory: async (redis: Redis) => ({
-                        prefix: generateShortId(),
-                        connection: redis
-                    })
+                    useFactory: () => ({ prefix: generateShortId() })
                 })
             ]
         })

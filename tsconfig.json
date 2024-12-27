@@ -17,8 +17,8 @@
         "resolveJsonModule": true,
         "esModuleInterop": true,
         "sourceMap": true,
-        "outDir": "./_output/build",
         "baseUrl": ".",
+        "outDir": "./_output/build",
         "paths": {
             "common": [
                 "src/libs/common/index"
@@ -26,15 +26,21 @@
             "testlib": [
                 "src/libs/testlib/index"
             ],
-            "config": [
-                "src/app/config/index"
+            "shared/*": [
+                "src/apps/shared/*"
             ],
-            "services/*": [
-                "src/app/services/*"
+            "gateway": [
+                "src/apps/gateway/index"
             ],
-            "app/*": [
-                "src/app/*"
-            ]
+            "applications": [
+                "src/apps/applications/index"
+            ],
+            "cores": [
+                "src/apps/cores/index"
+            ],
+            "infrastructures": [
+                "src/apps/infrastructures/index"
+            ],
         }
     },
     "include": [
