@@ -186,7 +186,7 @@ services:
         build:
             context: .
             args:
-                APPNAME: gateway
+                APP_NAME: gateway
         image: ${SERVICE_GATEWAY_HOST}
         container_name: ${SERVICE_GATEWAY_HOST}
         healthcheck:
@@ -203,7 +203,7 @@ services:
         build:
             context: .
             args:
-                APPNAME: applications
+                APP_NAME: applications
         image: ${SERVICE_APPLICATIONS_HOST}
         container_name: ${SERVICE_APPLICATIONS_HOST}
         healthcheck:
@@ -219,7 +219,7 @@ services:
         build:
             context: .
             args:
-                APPNAME: cores
+                APP_NAME: cores
         image: ${SERVICE_CORES_HOST}
         container_name: ${SERVICE_CORES_HOST}
         healthcheck:
@@ -235,7 +235,7 @@ services:
         build:
             context: .
             args:
-                APPNAME: infrastructures
+                APP_NAME: infrastructures
         image: ${SERVICE_INFRASTRUCTURES_HOST}
         container_name: ${SERVICE_INFRASTRUCTURES_HOST}
         healthcheck:
