@@ -189,8 +189,6 @@ services:
                 APPNAME: gateway
         image: ${SERVICE_GATEWAY_HOST}
         container_name: ${SERVICE_GATEWAY_HOST}
-        ports:
-            - ${SERVICE_GATEWAY_PORT}:${SERVICE_GATEWAY_PORT}
         healthcheck:
             test: ['CMD', 'curl', '-f', "http://localhost:${SERVICE_GATEWAY_PORT}/health"]
             interval: 5s
@@ -208,8 +206,6 @@ services:
                 APPNAME: applications
         image: ${SERVICE_APPLICATIONS_HOST}
         container_name: ${SERVICE_APPLICATIONS_HOST}
-        ports:
-            - ${SERVICE_APPLICATIONS_PORT}:${SERVICE_APPLICATIONS_PORT}
         healthcheck:
             test: ['CMD', 'curl', '-f', "http://localhost:${SERVICE_APPLICATIONS_HEALTH_PORT}/health"]
             interval: 5s
@@ -226,8 +222,6 @@ services:
                 APPNAME: cores
         image: ${SERVICE_CORES_HOST}
         container_name: ${SERVICE_CORES_HOST}
-        ports:
-            - ${SERVICE_CORES_PORT}:${SERVICE_CORES_PORT}
         healthcheck:
             test: ['CMD', 'curl', '-f', "http://localhost:${SERVICE_CORES_HEALTH_PORT}/health"]
             interval: 5s
@@ -244,8 +238,6 @@ services:
                 APPNAME: infrastructures
         image: ${SERVICE_INFRASTRUCTURES_HOST}
         container_name: ${SERVICE_INFRASTRUCTURES_HOST}
-        ports:
-            - ${SERVICE_INFRASTRUCTURES_PORT}:${SERVICE_INFRASTRUCTURES_PORT}
         healthcheck:
             test: ['CMD', 'curl', '-f', "http://localhost:${SERVICE_INFRASTRUCTURES_HEALTH_PORT}/health"]
             interval: 5s
