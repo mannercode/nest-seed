@@ -330,8 +330,8 @@ services:
             context: .
             args:
                 APP_NAME: applications
-        image: ${PROJECT_NAME}-apps
-        container_name: ${PROJECT_NAME}-apps
+        image: ${SERVICE_APPLICATIONS_HOST}
+        container_name: ${SERVICE_APPLICATIONS_HOST}
         healthcheck:
             test:
                 ['CMD', 'curl', '-f', 'http://localhost:${SERVICE_APPLICATIONS_HEALTH_PORT}/health']
@@ -346,8 +346,8 @@ services:
             context: .
             args:
                 APP_NAME: cores
-        image: ${PROJECT_NAME}-cores
-        container_name: ${PROJECT_NAME}-cores
+        image: ${SERVICE_CORES_HOST}
+        container_name: ${SERVICE_CORES_HOST}
         healthcheck:
             test: ['CMD', 'curl', '-f', 'http://localhost:${SERVICE_CORES_HEALTH_PORT}/health']
             interval: 5s
@@ -361,8 +361,8 @@ services:
             context: .
             args:
                 APP_NAME: infrastructures
-        image: ${PROJECT_NAME}-infras
-        container_name: ${PROJECT_NAME}-infras
+        image: ${SERVICE_INFRASTRUCTURES_HOST}
+        container_name: ${SERVICE_INFRASTRUCTURES_HOST}
         healthcheck:
             test:
                 [
