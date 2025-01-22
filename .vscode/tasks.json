@@ -13,7 +13,7 @@
             "label": "CLI",
             "detail": "Execute the selected CLI tool",
             "type": "shell",
-            "command": "bash scripts/run_cli.sh ${input:cliTool}",
+            "command": "bash scripts/run-cli.sh ${input:cliTool}",
             "runOptions": {
                 "instanceLimit": 10
             }
@@ -37,7 +37,7 @@
             "label": "Workspace Cleanup",
             "detail": "Reset the development environment and remove all data",
             "type": "shell",
-            "command": "bash scripts/workspace_cleanup.sh"
+            "command": "bash scripts/workspace-cleanup.sh"
         }
     ],
     "inputs": [

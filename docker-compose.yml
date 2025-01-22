@@ -2,6 +2,8 @@ x-mongo-image: &mongo-image
     image: mongo:8.0
 x-redis-image: &redis-image
     image: redis:7.4
+x-kafka-image: &kafka-image
+    image: apache/kafka:3.9.0
 
 x-logging: &default-logging
     options:
@@ -73,44 +75,50 @@ x-redis-common: &redis-common
         timeout: 5s
         retries: 5
 
-x-kafka-controller: &kafka-controller
-    image: apache/kafka:3.9.0
+x-kafka-common: &kafka-common
+    <<: *kafka-image
     working_dir: /opt/kafka/bin
     profiles: ['infra']
     logging: *default-logging
     networks:
         - default
-
-x-kafka-controller-env: &kafka-controller-env
-    KAFKA_PROCESS_ROLES: controller
-    KAFKA_LISTENERS: CONTROLLER://:9093
+x-kafka-env: &kafka-common-env
     KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
     KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
     KAFKA_CONTROLLER_QUORUM_VOTERS: 1@${PROJECT_NAME}-kafka-ctl-1:9093,2@${PROJECT_NAME}-kafka-ctl-2:9093,3@${PROJECT_NAME}-kafka-ctl-3:9093
     KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
+x-kafka-controller: &kafka-controller
+    <<: *kafka-common
+    healthcheck:
+        test: nc -z localhost 9093
+        interval: 10s
+        timeout: 5s
+
+x-kafka-controller-env: &kafka-controller-env
+    <<: *kafka-common-env
+    KAFKA_PROCESS_ROLES: controller
+    KAFKA_LISTENERS: CONTROLLER://:9093
+
 x-kafka-broker: &kafka-broker
-    image: apache/kafka:3.9.0
-    working_dir: /opt/kafka/bin
+    <<: *kafka-common
+    healthcheck:
+        test: /opt/kafka/bin/kafka-client-metrics.sh --bootstrap-server localhost:${KAFKA_PORT} --list
+        interval: 10s
+        timeout: 5s
     depends_on:
         - kafka-controller-1
         - kafka-controller-2
         - kafka-controller-3
-    profiles: ['infra']
-    logging: *default-logging
-    networks:
-        - default
 
 x-kafka-broker-env: &kafka-broker-env
+    <<: *kafka-common-env
     KAFKA_PROCESS_ROLES: broker
-    KAFKA_LISTENERS: 'PLAINTEXT://:${KAFKA_PORT},PLAINTEXT_HOST://:9092'
-    KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-    KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-    KAFKA_CONTROLLER_QUORUM_VOTERS: 1@${PROJECT_NAME}-kafka-ctl-1:9093,2@${PROJECT_NAME}-kafka-ctl-2:9093,3@${PROJECT_NAME}-kafka-ctl-3:9093
-    KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    # broker를 외부에 노출할 때 PLAINTEXT_HOST를 설정해야 한다. 공식 kafka docker image 설명을 참고해라
+    KAFKA_LISTENERS: 'PLAINTEXT://:${KAFKA_PORT}'
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
 
-x-apps-common: &apps-common
+x-app-common: &app-common
     profiles: ['apps']
     logging: *default-logging
     environment:
@@ -219,63 +227,51 @@ services:
 
     kafka-controller-1:
         <<: *kafka-controller
-        container_name: ${PROJECT_NAME}-kafka-ctl1
+        container_name: ${PROJECT_NAME}-kafka-ctl-1
         environment:
             <<: *kafka-controller-env
             KAFKA_NODE_ID: 1
+
     kafka-controller-2:
         <<: *kafka-controller
-        container_name: ${PROJECT_NAME}-kafka-ctl2
+        container_name: ${PROJECT_NAME}-kafka-ctl-2
         environment:
             <<: *kafka-controller-env
             KAFKA_NODE_ID: 2
+
     kafka-controller-3:
         <<: *kafka-controller
-        container_name: ${PROJECT_NAME}-kafka-ctl3
+        container_name: ${PROJECT_NAME}-kafka-ctl-3
         environment:
             <<: *kafka-controller-env
             KAFKA_NODE_ID: 3
+
     kafka-broker-1:
         <<: *kafka-broker
         container_name: ${KAFKA_BROKER1}
-        ports:
-            - 29092:9092
         environment:
             <<: *kafka-broker-env
             KAFKA_NODE_ID: 4
-            KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://${KAFKA_BROKER1}:${KAFKA_PORT},PLAINTEXT_HOST://localhost:29092'
-        healthcheck:
-            test: /opt/kafka/bin/kafka-client-metrics.sh --bootstrap-server ${KAFKA_BROKER1}:${KAFKA_PORT} --list
-            interval: 30s
-            timeout: 10s
+            KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://${KAFKA_BROKER1}:${KAFKA_PORT}'
+
     kafka-broker-2:
         <<: *kafka-broker
         container_name: ${KAFKA_BROKER2}
-        ports:
-            - 39092:9092
         environment:
             <<: *kafka-broker-env
             KAFKA_NODE_ID: 5
-            KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://${KAFKA_BROKER2}:${KAFKA_PORT},PLAINTEXT_HOST://localhost:39092'
-        healthcheck:
-            test: /opt/kafka/bin/kafka-client-metrics.sh --bootstrap-server ${KAFKA_BROKER2}:${KAFKA_PORT} --list
-            interval: 30s
-            timeout: 10s
+            KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://${KAFKA_BROKER2}:${KAFKA_PORT}'
+
     kafka-broker-3:
         <<: *kafka-broker
         container_name: ${KAFKA_BROKER3}
-        ports:
-            - 49092:9092
         environment:
             <<: *kafka-broker-env
             KAFKA_NODE_ID: 6
-            KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://${KAFKA_BROKER3}:${KAFKA_PORT},PLAINTEXT_HOST://localhost:49092'
-        healthcheck:
-            test: /opt/kafka/bin/kafka-client-metrics.sh --bootstrap-server ${KAFKA_BROKER3}:${KAFKA_PORT} --list
-            interval: 30s
-            timeout: 10s
+            KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://${KAFKA_BROKER3}:${KAFKA_PORT}'
+
     gateway:
-        <<: *apps-common
+        <<: *app-common
         build:
             context: .
             args:
@@ -291,7 +287,7 @@ services:
             - ./_output/logs/gateway:/app/_output/logs
             - ./_output/uploads:/app/_output/uploads
     applications:
-        <<: *apps-common
+        <<: *app-common
         build:
             context: .
             args:
@@ -307,7 +303,7 @@ services:
         volumes:
             - ./_output/logs/applications:/app/_output/logs
     cores:
-        <<: *apps-common
+        <<: *app-common
         build:
             context: .
             args:
@@ -322,7 +318,7 @@ services:
         volumes:
             - ./_output/logs/cores:/app/_output/logs
     infrastructures:
-        <<: *apps-common
+        <<: *app-common
         build:
             context: .
             args:
@@ -364,8 +360,6 @@ networks:
 
 volumes:
     mongodb_key:
-
-
 # docker exec --workdir /opt/kafka/bin/ -it nest-kafka1 sh
 # ./kafka-topics.sh --bootstrap-server nest-kafka1:19092,nest-kafka2:19092,nest-kafka3:19092 --create --topic test-topic
 # ./kafka-console-producer.sh --bootstrap-server nest-kafka1:19092,nest-kafka2:19092,nest-kafka3:19092 --topic test-topic
