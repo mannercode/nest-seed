@@ -270,6 +270,44 @@ services:
             KAFKA_NODE_ID: 6
             KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://${KAFKA_BROKER3}:${KAFKA_PORT}'
 
+    kafka-setup:
+        <<: *kafka-image
+        container_name: ${PROJECT_NAME}-kafka-setup
+        profiles: ['infra']
+        depends_on:
+            kafka-controller-1:
+                condition: service_healthy
+            kafka-controller-2:
+                condition: service_healthy
+            kafka-controller-3:
+                condition: service_healthy
+            kafka-broker-1:
+                condition: service_healthy
+            kafka-broker-2:
+                condition: service_healthy
+            kafka-broker-3:
+                condition: service_healthy
+        working_dir: /opt/kafka/bin
+        command: >
+            sh -c "
+            set -x;
+            BROKER_LIST=\"${KAFKA_BROKER1}:${KAFKA_PORT},${KAFKA_BROKER2}:${KAFKA_PORT},${KAFKA_BROKER3}:${KAFKA_PORT}\"
+
+            until ./kafka-topics.sh --bootstrap-server $${BROKER_LIST} --create --topic test-topic; do
+              sleep 1;
+            done;
+            until echo \"hello kafka\" | ./kafka-console-producer.sh --bootstrap-server $${BROKER_LIST} --topic test-topic; do
+              sleep 1;
+            done;
+            until ./kafka-console-consumer.sh --bootstrap-server $${BROKER_LIST} --topic test-topic --from-beginning --max-messages 1; do
+              sleep 1;
+            done;
+
+            ./kafka-topics.sh --bootstrap-server $${BROKER_LIST} --delete --topic test-topic;
+            "
+        networks:
+            - default
+
     gateway:
         <<: *app-common
         build:
@@ -360,7 +398,3 @@ networks:
 
 volumes:
     mongodb_key:
-# docker exec --workdir /opt/kafka/bin/ -it nest-kafka1 sh
-# ./kafka-topics.sh --bootstrap-server nest-kafka1:19092,nest-kafka2:19092,nest-kafka3:19092 --create --topic test-topic
-# ./kafka-console-producer.sh --bootstrap-server nest-kafka1:19092,nest-kafka2:19092,nest-kafka3:19092 --topic test-topic
-# ./kafka-console-consumer.sh --bootstrap-server nest-kafka1:19092,nest-kafka2:19092,nest-kafka3:19092 --topic test-topic --from-beginning
