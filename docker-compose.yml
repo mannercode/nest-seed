@@ -1,4 +1,3 @@
-# https://docs.docker.com/compose/compose-file/05-services/
 x-mongo-image: &mongo-image
     image: mongo:8.0
 x-redis-image: &redis-image
@@ -73,6 +72,43 @@ x-redis-common: &redis-common
         interval: 5s
         timeout: 5s
         retries: 5
+
+x-kafka-controller: &kafka-controller
+    image: apache/kafka:3.9.0
+    working_dir: /opt/kafka/bin
+    profiles: ['infra']
+    logging: *default-logging
+    networks:
+        - default
+
+x-kafka-controller-env: &kafka-controller-env
+    KAFKA_PROCESS_ROLES: controller
+    KAFKA_LISTENERS: CONTROLLER://:9093
+    KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+    KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+    KAFKA_CONTROLLER_QUORUM_VOTERS: 1@${PROJECT_NAME}-kafka-ctl-1:9093,2@${PROJECT_NAME}-kafka-ctl-2:9093,3@${PROJECT_NAME}-kafka-ctl-3:9093
+    KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+x-kafka-broker: &kafka-broker
+    image: apache/kafka:3.9.0
+    working_dir: /opt/kafka/bin
+    depends_on:
+        - kafka-controller-1
+        - kafka-controller-2
+        - kafka-controller-3
+    profiles: ['infra']
+    logging: *default-logging
+    networks:
+        - default
+
+x-kafka-broker-env: &kafka-broker-env
+    KAFKA_PROCESS_ROLES: broker
+    KAFKA_LISTENERS: 'PLAINTEXT://:${KAFKA_PORT},PLAINTEXT_HOST://:9092'
+    KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+    KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+    KAFKA_CONTROLLER_QUORUM_VOTERS: 1@${PROJECT_NAME}-kafka-ctl-1:9093,2@${PROJECT_NAME}-kafka-ctl-2:9093,3@${PROJECT_NAME}-kafka-ctl-3:9093
+    KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
 x-apps-common: &apps-common
     profiles: ['apps']
@@ -181,6 +217,63 @@ services:
         networks:
             - default
 
+    kafka-controller-1:
+        <<: *kafka-controller
+        container_name: ${PROJECT_NAME}-kafka-ctl1
+        environment:
+            <<: *kafka-controller-env
+            KAFKA_NODE_ID: 1
+    kafka-controller-2:
+        <<: *kafka-controller
+        container_name: ${PROJECT_NAME}-kafka-ctl2
+        environment:
+            <<: *kafka-controller-env
+            KAFKA_NODE_ID: 2
+    kafka-controller-3:
+        <<: *kafka-controller
+        container_name: ${PROJECT_NAME}-kafka-ctl3
+        environment:
+            <<: *kafka-controller-env
+            KAFKA_NODE_ID: 3
+    kafka-broker-1:
+        <<: *kafka-broker
+        container_name: ${KAFKA_BROKER1}
+        ports:
+            - 29092:9092
+        environment:
+            <<: *kafka-broker-env
+            KAFKA_NODE_ID: 4
+            KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://${KAFKA_BROKER1}:${KAFKA_PORT},PLAINTEXT_HOST://localhost:29092'
+        healthcheck:
+            test: /opt/kafka/bin/kafka-client-metrics.sh --bootstrap-server ${KAFKA_BROKER1}:${KAFKA_PORT} --list
+            interval: 30s
+            timeout: 10s
+    kafka-broker-2:
+        <<: *kafka-broker
+        container_name: ${KAFKA_BROKER2}
+        ports:
+            - 39092:9092
+        environment:
+            <<: *kafka-broker-env
+            KAFKA_NODE_ID: 5
+            KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://${KAFKA_BROKER2}:${KAFKA_PORT},PLAINTEXT_HOST://localhost:39092'
+        healthcheck:
+            test: /opt/kafka/bin/kafka-client-metrics.sh --bootstrap-server ${KAFKA_BROKER2}:${KAFKA_PORT} --list
+            interval: 30s
+            timeout: 10s
+    kafka-broker-3:
+        <<: *kafka-broker
+        container_name: ${KAFKA_BROKER3}
+        ports:
+            - 49092:9092
+        environment:
+            <<: *kafka-broker-env
+            KAFKA_NODE_ID: 6
+            KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://${KAFKA_BROKER3}:${KAFKA_PORT},PLAINTEXT_HOST://localhost:49092'
+        healthcheck:
+            test: /opt/kafka/bin/kafka-client-metrics.sh --bootstrap-server ${KAFKA_BROKER3}:${KAFKA_PORT} --list
+            interval: 30s
+            timeout: 10s
     gateway:
         <<: *apps-common
         build:
@@ -190,63 +283,66 @@ services:
         image: ${SERVICE_GATEWAY_HOST}
         container_name: ${SERVICE_GATEWAY_HOST}
         healthcheck:
-            test: ['CMD', 'curl', '-f', "http://localhost:${SERVICE_GATEWAY_PORT}/health"]
+            test: ['CMD', 'curl', '-f', 'http://localhost:${SERVICE_GATEWAY_PORT}/health']
             interval: 5s
             timeout: 5s
             retries: 5
         volumes:
             - ./_output/logs/gateway:/app/_output/logs
             - ./_output/uploads:/app/_output/uploads
-
     applications:
         <<: *apps-common
         build:
             context: .
             args:
                 APP_NAME: applications
-        image: ${SERVICE_APPLICATIONS_HOST}
-        container_name: ${SERVICE_APPLICATIONS_HOST}
+        image: ${PROJECT_NAME}-apps
+        container_name: ${PROJECT_NAME}-apps
         healthcheck:
-            test: ['CMD', 'curl', '-f', "http://localhost:${SERVICE_APPLICATIONS_HEALTH_PORT}/health"]
+            test:
+                ['CMD', 'curl', '-f', 'http://localhost:${SERVICE_APPLICATIONS_HEALTH_PORT}/health']
             interval: 5s
             timeout: 5s
             retries: 5
         volumes:
             - ./_output/logs/applications:/app/_output/logs
-
     cores:
         <<: *apps-common
         build:
             context: .
             args:
                 APP_NAME: cores
-        image: ${SERVICE_CORES_HOST}
-        container_name: ${SERVICE_CORES_HOST}
+        image: ${PROJECT_NAME}-cores
+        container_name: ${PROJECT_NAME}-cores
         healthcheck:
-            test: ['CMD', 'curl', '-f', "http://localhost:${SERVICE_CORES_HEALTH_PORT}/health"]
+            test: ['CMD', 'curl', '-f', 'http://localhost:${SERVICE_CORES_HEALTH_PORT}/health']
             interval: 5s
             timeout: 5s
             retries: 5
         volumes:
             - ./_output/logs/cores:/app/_output/logs
-
     infrastructures:
         <<: *apps-common
         build:
             context: .
             args:
                 APP_NAME: infrastructures
-        image: ${SERVICE_INFRASTRUCTURES_HOST}
-        container_name: ${SERVICE_INFRASTRUCTURES_HOST}
+        image: ${PROJECT_NAME}-infras
+        container_name: ${PROJECT_NAME}-infras
         healthcheck:
-            test: ['CMD', 'curl', '-f', "http://localhost:${SERVICE_INFRASTRUCTURES_HEALTH_PORT}/health"]
+            test:
+                [
+                    'CMD',
+                    'curl',
+                    '-f',
+                    'http://localhost:${SERVICE_INFRASTRUCTURES_HEALTH_PORT}/health'
+                ]
             interval: 5s
             timeout: 5s
             retries: 5
         volumes:
             - ./_output/logs/infrastructures:/app/_output/logs
             - ./_output/uploads:/app/_output/uploads
-
     apps-setup:
         image: node:22-alpine
         container_name: ${PROJECT_NAME}-apps-setup
@@ -268,3 +364,9 @@ networks:
 
 volumes:
     mongodb_key:
+
+
+# docker exec --workdir /opt/kafka/bin/ -it nest-kafka1 sh
+# ./kafka-topics.sh --bootstrap-server nest-kafka1:19092,nest-kafka2:19092,nest-kafka3:19092 --create --topic test-topic
+# ./kafka-console-producer.sh --bootstrap-server nest-kafka1:19092,nest-kafka2:19092,nest-kafka3:19092 --topic test-topic
+# ./kafka-console-consumer.sh --bootstrap-server nest-kafka1:19092,nest-kafka2:19092,nest-kafka3:19092 --topic test-topic --from-beginning

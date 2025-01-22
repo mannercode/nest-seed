@@ -5,10 +5,12 @@ import Joi from 'joi'
 
 export const configSchema = Joi.object({
     NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
+
     LOG_DIRECTORY: Joi.string().required(),
     LOG_DAYS_TO_KEEP: Joi.string().required(),
     LOG_FILE_LEVEL: Joi.string().required(),
     LOG_CONSOLE_LEVEL: Joi.string().required(),
+
     REDIS_HOST1: Joi.string().required(),
     REDIS_HOST2: Joi.string().required(),
     REDIS_HOST3: Joi.string().required(),
@@ -17,6 +19,7 @@ export const configSchema = Joi.object({
     REDIS_HOST6: Joi.string().required(),
     REDIS_PASSWORD: Joi.string().optional(),
     REDIS_PORT: Joi.number().required(),
+
     MONGO_DB_HOST1: Joi.string().required(),
     MONGO_DB_HOST2: Joi.string().required(),
     MONGO_DB_HOST3: Joi.string().required(),
@@ -25,16 +28,25 @@ export const configSchema = Joi.object({
     MONGO_DB_USERNAME: Joi.string().required(),
     MONGO_DB_PASSWORD: Joi.string().required(),
     MONGO_DB_DATABASE: Joi.string().required(),
+
     HTTP_REQUEST_PAYLOAD_LIMIT: Joi.string().required(),
     HTTP_PAGINATION_DEFAULT_SIZE: Joi.number().required(),
+
     AUTH_ACCESS_SECRET: Joi.string().required(),
     AUTH_ACCESS_TOKEN_EXPIRATION: Joi.string().required(),
     AUTH_REFRESH_SECRET: Joi.string().required(),
     AUTH_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
+
     FILE_UPLOAD_DIRECTORY: Joi.string().required(),
     FILE_UPLOAD_MAX_FILE_SIZE_BYTES: Joi.number().required(),
     FILE_UPLOAD_MAX_FILES_PER_UPLOAD: Joi.number().required(),
     FILE_UPLOAD_ALLOWED_FILE_TYPES: Joi.string().required(),
+
+    KAFKA_BROKER1: Joi.string().required(),
+    KAFKA_BROKER2: Joi.string().required(),
+    KAFKA_BROKER3: Joi.string().required(),
+    KAFKA_PORT: Joi.number().required(),
+
     SERVICE_GATEWAY_HOST: Joi.string().required(),
     SERVICE_GATEWAY_PORT: Joi.number().required(),
     SERVICE_APPLICATIONS_HOST: Joi.string().required(),
@@ -116,6 +128,16 @@ export class AppConfigService extends BaseConfigService {
     }
 
     get services() {
+        const broker1 = this.getString('KAFKA_BROKER1')
+        const broker2 = this.getString('KAFKA_BROKER2')
+        const broker3 = this.getString('KAFKA_BROKER3')
+        const brokerPort = this.getNumber('KAFKA_PORT')
+        const brokers = [
+            `${broker1}:${brokerPort}`,
+            `${broker2}:${brokerPort}`,
+            `${broker3}:${brokerPort}`
+        ]
+
         return {
             gateway: {
                 host: this.getString('SERVICE_GATEWAY_HOST'),

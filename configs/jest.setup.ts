@@ -20,3 +20,8 @@ process.env.TEST_MONGO_DB_PORT = process.env.MONGO_DB_PORT
 process.env.TEST_MONGO_DB_REPLICA_NAME = process.env.MONGO_DB_REPLICA_NAME
 process.env.TEST_MONGO_DB_USERNAME = process.env.MONGO_DB_USERNAME
 process.env.TEST_MONGO_DB_PASSWORD = process.env.MONGO_DB_PASSWORD
+
+process.env.TEST_KAFKA_BROKER1 = process.env.KAFKA_BROKER1
+process.env.TEST_KAFKA_BROKER2 = process.env.KAFKA_BROKER2
+process.env.TEST_KAFKA_BROKER3 = process.env.KAFKA_BROKER3
+process.env.TEST_KAFKA_PORT = process.env.KAFKA_PORT

@@ -51,3 +51,13 @@ export const getMongoTestConnection = (): string => {
     const uri = `mongodb://${username}:${password}@${nodes}/?replicaSet=${replicaName}`
     return uri
 }
+
+export function getKafkaTestConnection(): string[] {
+    const hosts = ['TEST_KAFKA_BROKER1', 'TEST_KAFKA_BROKER2', 'TEST_KAFKA_BROKER3'].map((key) =>
+        getString(key)
+    )
+    const port = getNumber('KAFKA_PORT')
+    const brokers = hosts.map((host) => `${host}:${port}`)
+
+    return brokers
+}
