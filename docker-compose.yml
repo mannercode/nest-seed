@@ -17,7 +17,7 @@ x-mongo-common: &mongo-common
     environment:
         MONGO_INITDB_ROOT_USERNAME: ${MONGO_DB_USERNAME}
         MONGO_INITDB_ROOT_PASSWORD: ${MONGO_DB_PASSWORD}
-    command: 'mongod --replSet ${MONGO_DB_REPLICA_NAME} --keyFile /etc/mongodb/mongodb.key --bind_ip_all'
+    command: mongod --replSet ${MONGO_DB_REPLICA_NAME} --keyFile /etc/mongodb/mongodb.key --bind_ip_all
     volumes:
         - mongodb_key:/etc/mongodb
     networks:
@@ -26,96 +26,64 @@ x-mongo-common: &mongo-common
     depends_on:
         - mongo-key-generator
     healthcheck:
-        test:
-            [
-                'CMD',
-                'mongosh',
-                '--quiet',
-                '-u',
-                $MONGO_DB_USERNAME,
-                '-p',
-                $MONGO_DB_PASSWORD,
-                '--authenticationDatabase',
-                'admin',
-                '--eval',
-                'rs.isMaster().ismaster || rs.isMaster().secondary'
-            ]
+        test: mongosh --quiet -u $MONGO_DB_USERNAME -p $MONGO_DB_PASSWORD --authenticationDatabase admin --eval 'rs.isMaster().ismaster || rs.isMaster().secondary'
         interval: 5s
         timeout: 5s
-        retries: 5
 
 x-redis-common: &redis-common
     <<: *redis-image
-    command:
-        [
-            'redis-server',
-            '--port',
-            $REDIS_PORT,
-            '--cluster-enabled',
-            'yes',
-            '--cluster-config-file',
-            'nodes.conf',
-            '--cluster-node-timeout',
-            '5000',
-            '--appendonly',
-            'yes',
-            '--requirepass',
-            $REDIS_PASSWORD,
-            '--masterauth',
-            $REDIS_PASSWORD
-        ]
+    command: redis-server --port $REDIS_PORT --requirepass $REDIS_PASSWORD --masterauth $REDIS_PASSWORD --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
     profiles: ['infra']
     logging: *default-logging
     networks:
         - default
     restart: always
     healthcheck:
-        test: ['CMD', 'redis-cli', '-a', $REDIS_PASSWORD, 'ping']
+        test: redis-cli -a $REDIS_PASSWORD ping
         interval: 5s
         timeout: 5s
-        retries: 5
 
 x-kafka-common: &kafka-common
     <<: *kafka-image
-    working_dir: /opt/kafka/bin
     profiles: ['infra']
     logging: *default-logging
     networks:
         - default
-x-kafka-env: &kafka-common-env
-    KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-    KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-    KAFKA_CONTROLLER_QUORUM_VOTERS: 1@${PROJECT_NAME}-kafka-ctl-1:9093,2@${PROJECT_NAME}-kafka-ctl-2:9093,3@${PROJECT_NAME}-kafka-ctl-3:9093
-    KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
 x-kafka-controller: &kafka-controller
     <<: *kafka-common
     healthcheck:
         test: nc -z localhost 9093
-        interval: 10s
+        interval: 5s
         timeout: 5s
-
-x-kafka-controller-env: &kafka-controller-env
-    <<: *kafka-common-env
-    KAFKA_PROCESS_ROLES: controller
-    KAFKA_LISTENERS: CONTROLLER://:9093
 
 x-kafka-broker: &kafka-broker
     <<: *kafka-common
     healthcheck:
         test: /opt/kafka/bin/kafka-client-metrics.sh --bootstrap-server localhost:${KAFKA_PORT} --list
-        interval: 10s
+        interval: 5s
         timeout: 5s
     depends_on:
         - kafka-controller-1
         - kafka-controller-2
         - kafka-controller-3
 
+x-kafka-common-env: &kafka-common-env
+    KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+    KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+    KAFKA_CONTROLLER_QUORUM_VOTERS: 1@${PROJECT_NAME}-kafka-ctl-1:9093,2@${PROJECT_NAME}-kafka-ctl-2:9093,3@${PROJECT_NAME}-kafka-ctl-3:9093
+    KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+x-kafka-controller-env: &kafka-controller-env
+    <<: *kafka-common-env
+    KAFKA_PROCESS_ROLES: controller
+    KAFKA_LISTENERS: CONTROLLER://:9093
+
 x-kafka-broker-env: &kafka-broker-env
     <<: *kafka-common-env
     KAFKA_PROCESS_ROLES: broker
     # broker를 외부에 노출할 때 PLAINTEXT_HOST를 설정해야 한다. 공식 kafka docker image 설명을 참고해라
-    KAFKA_LISTENERS: 'PLAINTEXT://:${KAFKA_PORT}'
+    KAFKA_LISTENERS: PLAINTEXT://:${KAFKA_PORT}
     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
 
 x-app-common: &app-common
@@ -290,7 +258,6 @@ services:
         working_dir: /opt/kafka/bin
         command: >
             sh -c "
-            set -x;
             BROKER_LIST=\"${KAFKA_BROKER1}:${KAFKA_PORT},${KAFKA_BROKER2}:${KAFKA_PORT},${KAFKA_BROKER3}:${KAFKA_PORT}\"
 
             until ./kafka-topics.sh --bootstrap-server $${BROKER_LIST} --create --topic test-topic; do
@@ -317,10 +284,9 @@ services:
         image: ${SERVICE_GATEWAY_HOST}
         container_name: ${SERVICE_GATEWAY_HOST}
         healthcheck:
-            test: ['CMD', 'curl', '-f', 'http://localhost:${SERVICE_GATEWAY_PORT}/health']
+            test: curl -f http://localhost:${SERVICE_GATEWAY_PORT}/health
             interval: 5s
             timeout: 5s
-            retries: 5
         volumes:
             - ./_output/logs/gateway:/app/_output/logs
             - ./_output/uploads:/app/_output/uploads
@@ -333,11 +299,9 @@ services:
         image: ${SERVICE_APPLICATIONS_HOST}
         container_name: ${SERVICE_APPLICATIONS_HOST}
         healthcheck:
-            test:
-                ['CMD', 'curl', '-f', 'http://localhost:${SERVICE_APPLICATIONS_HEALTH_PORT}/health']
+            test: curl -f http://localhost:${SERVICE_APPLICATIONS_HEALTH_PORT}/health
             interval: 5s
             timeout: 5s
-            retries: 5
         volumes:
             - ./_output/logs/applications:/app/_output/logs
     cores:
@@ -349,10 +313,9 @@ services:
         image: ${SERVICE_CORES_HOST}
         container_name: ${SERVICE_CORES_HOST}
         healthcheck:
-            test: ['CMD', 'curl', '-f', 'http://localhost:${SERVICE_CORES_HEALTH_PORT}/health']
+            test: curl -f http://localhost:${SERVICE_CORES_HEALTH_PORT}/health
             interval: 5s
             timeout: 5s
-            retries: 5
         volumes:
             - ./_output/logs/cores:/app/_output/logs
     infrastructures:
@@ -364,16 +327,9 @@ services:
         image: ${SERVICE_INFRASTRUCTURES_HOST}
         container_name: ${SERVICE_INFRASTRUCTURES_HOST}
         healthcheck:
-            test:
-                [
-                    'CMD',
-                    'curl',
-                    '-f',
-                    'http://localhost:${SERVICE_INFRASTRUCTURES_HEALTH_PORT}/health'
-                ]
+            test: curl -f http://localhost:${SERVICE_INFRASTRUCTURES_HEALTH_PORT}/health
             interval: 5s
             timeout: 5s
-            retries: 5
         volumes:
             - ./_output/logs/infrastructures:/app/_output/logs
             - ./_output/uploads:/app/_output/uploads
@@ -395,6 +351,5 @@ networks:
     default:
         external: true
         name: ${PROJECT_NAME}
-
 volumes:
     mongodb_key:
