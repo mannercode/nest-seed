@@ -6,6 +6,7 @@ const config: Config = {
     testRegex: '.*\\.spec\\.(ts|js)$',
     testEnvironment: 'node',
     transform: { '^.+\\.ts$': 'ts-jest' },
+    clearMocks: true,
     rootDir: '.',
     roots: ['<rootDir>/src'],
     moduleNameMapper: {

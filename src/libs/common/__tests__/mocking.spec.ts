@@ -25,13 +25,20 @@ jest.mock('./mocking.fixture', () => {
 
 describe('mocking examples', () => {
     afterEach(() => {
-        // This method resets all calls and instances of the mock function.
-        // It also deletes any implementations set on the mock function.
-        // jest.resetAllMocks()
+        /**
+         이 테스트에서 jest.clearAllMocks()을 하지 않으면 에러가 발생한다.
+         그러나 jest.config.ts에서 clearMocks: true로 설정하면 jest.clearAllMocks()를 하지 않아도 된다.
 
-        // This method only initialises the call count and instance information
-        // for all mock functions.
-        jest.clearAllMocks()
+         resetAllMocks()와 clearAllMocks()의 차이점
+
+         jest.resetAllMocks()
+         This method resets all calls and instances of the mock function.
+         It also deletes any implementations set on the mock function.
+
+         jest.clearAllMocks()
+         This method only initialises the call count and instance information
+         for all mock functions.
+         */
     })
 
     it('Verifies class instantiation and method call', () => {

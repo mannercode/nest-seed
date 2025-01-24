@@ -12,7 +12,7 @@ class SampleModule {
 }
 
 export async function createFixture(schema: any) {
-    const uri = getMongoTestConnection()
+    const { uri } = getMongoTestConnection()
 
     const testContext = await createHttpTestContext({
         imports: [

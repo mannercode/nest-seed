@@ -7,7 +7,7 @@ describe('MongooseRepository - withTransaction', () => {
     let repository: SamplesRepository
 
     beforeEach(async () => {
-        const uri = getMongoTestConnection()
+        const {uri} = getMongoTestConnection()
 
         const fixture = await createFixture(uri)
         testContext = fixture.testContext

@@ -61,7 +61,6 @@ describe('@MethodLog()', () => {
     let service: TestService
 
     beforeEach(() => {
-        jest.clearAllMocks()
         service = new TestService()
     })
 

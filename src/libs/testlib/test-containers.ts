@@ -38,7 +38,11 @@ export function getRedisTestConnection(): RedisConnectionContext {
     return { nodes, password }
 }
 
-export const getMongoTestConnection = (): string => {
+export interface MongoConnectionContext {
+    uri: string
+}
+
+export const getMongoTestConnection = (): MongoConnectionContext => {
     const hosts = ['TEST_MONGO_DB_HOST1', 'TEST_MONGO_DB_HOST2', 'TEST_MONGO_DB_HOST3'].map((key) =>
         getString(key)
     )
@@ -49,15 +53,19 @@ export const getMongoTestConnection = (): string => {
     const nodes = hosts.map((host) => `${host}:${port}`).join(',')
 
     const uri = `mongodb://${username}:${password}@${nodes}/?replicaSet=${replicaName}`
-    return uri
+    return { uri }
 }
 
-export function getKafkaTestConnection(): string[] {
+export interface KafkaConnectionContext {
+    brokers: string[]
+}
+
+export function getKafkaTestConnection(): KafkaConnectionContext {
     const hosts = ['TEST_KAFKA_BROKER1', 'TEST_KAFKA_BROKER2', 'TEST_KAFKA_BROKER3'].map((key) =>
         getString(key)
     )
-    const port = getNumber('KAFKA_PORT')
+    const port = getNumber('TEST_KAFKA_PORT')
     const brokers = hosts.map((host) => `${host}:${port}`)
 
-    return brokers
+    return { brokers }
 }
