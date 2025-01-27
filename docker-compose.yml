@@ -47,6 +47,7 @@ x-kafka-common: &kafka-common
     <<: *kafka-image
     profiles: ['infra']
     logging: *default-logging
+    restart: always
     networks:
         - default
 
