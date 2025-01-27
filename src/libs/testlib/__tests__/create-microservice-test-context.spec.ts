@@ -3,24 +3,14 @@ import {
     MicroserviceTestContext,
     createMicroserviceTestContext
 } from '../create-microservice-test-context'
-import { SampleModule, SampleService } from './create-microservice-test-context.fixture'
+import { SampleModule } from './create-microservice-test-context.fixture'
 
-describe('createHttpTestContext', () => {
+describe('createMicroserviceTestContext', () => {
     let testContext: MicroserviceTestContext
     let client: MicroserviceTestClient
 
     beforeEach(async () => {
-        testContext = await createMicroserviceTestContext({
-            imports: [SampleModule],
-            overrideProviders: [
-                {
-                    original: SampleService,
-                    replacement: {
-                        getMessage: jest.fn().mockReturnValue({ message: 'This is Mock' })
-                    }
-                }
-            ]
-        })
+        testContext = await createMicroserviceTestContext({ imports: [SampleModule] })
         client = testContext.client
     })
 
@@ -28,9 +18,9 @@ describe('createHttpTestContext', () => {
         await testContext?.close()
     })
 
-    it('overrideProviders에 설정한 서비스가 동작해야 한다', async () => {
-        const message = await client.send('getMessage', 'args')
+    it('메시지를 전송하면 응답해야 한다', async () => {
+        const message = await client.send('getMessage', 'value')
 
-        expect(message).toEqual({ message: 'This is Mock' })
+        expect(message).toEqual({ received: 'value' })
     })
 })
