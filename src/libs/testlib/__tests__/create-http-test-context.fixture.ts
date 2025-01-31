@@ -1,26 +1,12 @@
-import { Controller, Get, Injectable, Module } from '@nestjs/common'
-
-@Injectable()
-export class SampleService {
-    constructor() {}
-
-    async getMessage() {
-        throw new Error('This method should be mocked.')
-    }
-}
+import { Controller, Get, Module, Param } from '@nestjs/common'
 
 @Controller()
 class SampleController {
-    constructor(private service: SampleService) {}
-
-    @Get()
-    async getMessage() {
-        return this.service.getMessage()
+    @Get('message/:arg')
+    async getMessage(@Param('arg') arg: string) {
+        return { received: arg }
     }
 }
 
-@Module({
-    controllers: [SampleController],
-    providers: [SampleService]
-})
+@Module({ controllers: [SampleController] })
 export class SampleModule {}

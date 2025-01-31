@@ -3,9 +3,10 @@ import { jsonToObject } from 'common'
 import { lastValueFrom, Observer } from 'rxjs'
 
 export class MicroserviceTestClient {
-    static async create(option: ClientOptions) {
+    static async create(option: ClientOptions, messages: string[] = []) {
         const client = ClientProxyFactory.create(option) as ClientKafka
-        client.subscribeToResponseOf('getMessage')
+
+        messages.forEach((msg) => client.subscribeToResponseOf(msg))
 
         await client.connect()
 

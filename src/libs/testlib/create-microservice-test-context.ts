@@ -1,10 +1,10 @@
 import { INestMicroservice } from '@nestjs/common'
 import { KafkaOptions, Transport } from '@nestjs/microservices'
 import { TestingModule } from '@nestjs/testing'
+import { generateShortId } from 'common'
 import { createTestingModule, ModuleMetadataEx } from './create-testing-module'
 import { MicroserviceTestClient } from './microservice.test-client'
 import { getKafkaTestConnection } from './test-containers'
-import { generateShortId } from 'common'
 
 export interface MicroserviceTestContext {
     module: TestingModule
@@ -15,9 +15,10 @@ export interface MicroserviceTestContext {
 }
 
 export async function createMicroserviceTestContext(
-    metadata: ModuleMetadataEx,
+    msMetadata: ModuleMetadataEx & { messages?: string[] },
     configureApp?: (app: INestMicroservice) => void
 ) {
+    const { messages, ...metadata } = msMetadata
     const module = await createTestingModule(metadata)
 
     const { brokers } = getKafkaTestConnection()
@@ -56,7 +57,7 @@ export async function createMicroserviceTestContext(
 
     await app.listen()
 
-    const client = await MicroserviceTestClient.create(rpcOptions)
+    const client = await MicroserviceTestClient.create(rpcOptions, messages)
 
     const close = async () => {
         await client.close()

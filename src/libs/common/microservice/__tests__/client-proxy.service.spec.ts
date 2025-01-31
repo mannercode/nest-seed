@@ -1,11 +1,12 @@
 import { Transport } from '@nestjs/microservices'
-import { ClientProxyModule } from 'common'
+import { ClientProxyModule, generateShortId } from 'common'
 import {
     HttpTestClient,
     HttpTestContext,
     MicroserviceTestContext,
     createHttpTestContext,
-    createMicroserviceTestContext
+    createMicroserviceTestContext,
+    getKafkaTestConnection
 } from 'testlib'
 import { HttpController, MicroserviceModule } from './client-proxy.service.fixture'
 
@@ -21,10 +22,18 @@ describe('ClientProxyService', () => {
             imports: [
                 ClientProxyModule.registerAsync({
                     name: 'SERVICES',
-                    useFactory: () => ({
-                        transport: Transport.TCP,
-                        options: { host: '0.0.0.0', port: microContext.port }
-                    })
+                    useFactory: () => {
+                        const { brokers } = getKafkaTestConnection()
+
+                        return {
+                            transport: Transport.KAFKA,
+                            options: {
+                                client: { brokers },
+                                consumer: { groupId: generateShortId(), maxWaitTimeInMs: 0 }
+                            }
+                        }
+                    },
+                    messages: ['test.method']
                 })
             ],
             controllers: [HttpController]

@@ -1,6 +1,6 @@
 import { TestingModule } from '@nestjs/testing'
 import { createTestingModule } from '..'
-import { SampleModule, SampleService } from './create-microservice-test-context.fixture'
+import { SampleModule, SampleService } from './create-testing-module.fixture'
 
 describe('createTestingModule', () => {
     let module: TestingModule

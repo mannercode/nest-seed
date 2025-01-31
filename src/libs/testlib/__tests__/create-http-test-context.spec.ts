@@ -1,23 +1,12 @@
 import { HttpTestClient, HttpTestContext, createHttpTestContext } from '..'
-import { SampleModule, SampleService } from './create-http-test-context.fixture'
+import { SampleModule } from './create-http-test-context.fixture'
 
 describe('createHttpTestContext', () => {
     let testContext: HttpTestContext
     let client: HttpTestClient
 
     beforeEach(async () => {
-        testContext = await createHttpTestContext({
-            imports: [SampleModule],
-            overrideProviders: [
-                {
-                    original: SampleService,
-                    replacement: {
-                        getMessage: jest.fn().mockReturnValue({ message: 'This is Mock' })
-                    }
-                }
-            ]
-        })
-
+        testContext = await createHttpTestContext({ imports: [SampleModule] })
         client = testContext.client
     })
 
@@ -25,9 +14,9 @@ describe('createHttpTestContext', () => {
         await testContext?.close()
     })
 
-    it('overrideProviders에 설정한 서비스가 동작해야 한다', async () => {
-        const res = await client.get('/').ok()
+    it('메시지를 전송하면 응답해야 한다', async () => {
+        const res = await client.get('/message/value').ok()
 
-        expect(res.body).toEqual({ message: 'This is Mock' })
+        expect(res.body).toEqual({ received: 'value' })
     })
 })

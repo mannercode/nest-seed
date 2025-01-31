@@ -13,9 +13,7 @@ describe('HttpToRpcExceptionFilter', () => {
 
     beforeEach(async () => {
         testContext = await createMicroserviceTestContext(
-            {
-                imports: [SampleModule]
-            },
+            { imports: [SampleModule] },
             (app: INestMicroservice) => app.useGlobalFilters(new HttpToRpcExceptionFilter())
         )
         client = testContext.client

@@ -45,7 +45,8 @@ x-redis-common: &redis-common
 
 x-kafka-common: &kafka-common
     <<: *kafka-image
-    profiles: ['infra']
+    profiles: ['infra', 'kafka']
+    working_dir: /opt/kafka/bin
     logging: *default-logging
     restart: always
     networks:
@@ -86,6 +87,7 @@ x-kafka-broker-env: &kafka-broker-env
     # broker를 외부에 노출할 때 PLAINTEXT_HOST를 설정해야 한다. 공식 kafka docker image 설명을 참고해라
     KAFKA_LISTENERS: PLAINTEXT://:${KAFKA_PORT}
     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+    KAFKA_AUTO_CREATE_TOPICS_ENABLE: FALSE
 
 x-app-common: &app-common
     profiles: ['apps']
@@ -242,7 +244,7 @@ services:
     kafka-setup:
         <<: *kafka-image
         container_name: ${PROJECT_NAME}-kafka-setup
-        profiles: ['infra']
+        profiles: ['infra', 'kafka']
         depends_on:
             kafka-controller-1:
                 condition: service_healthy
