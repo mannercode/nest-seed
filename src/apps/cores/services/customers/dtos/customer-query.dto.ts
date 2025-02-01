@@ -7,4 +7,8 @@ export class CustomerQueryDto extends PaginationOption {
 
     @IsOptional()
     email?: string
+
+    toString() {
+        return JSON.stringify(this)
+    }
 }

@@ -1,4 +1,4 @@
-import { BaseDto } from "common"
+import { BaseDto } from 'common'
 
 export class PaymentDto extends BaseDto {
     id: string

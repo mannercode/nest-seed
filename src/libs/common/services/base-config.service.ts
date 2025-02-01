@@ -20,11 +20,14 @@ export class BaseConfigService {
 
     protected getString(key: string): string {
         this.validateKey(key)
-        return this.configService.get<string>(key)
+        const value = this.configService.get<string>(key)
+        return value
     }
 
     protected getNumber(key: string): number {
         this.validateKey(key)
-        return this.configService.get<number>(key)
+        const value = this.configService.get<string>(key)
+        const num = parseInt(value, 10)
+        return num
     }
 }

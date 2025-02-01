@@ -1,4 +1,4 @@
-import { BaseDto } from "common"
+import { BaseDto } from 'common'
 
 export class ShowtimeDto extends BaseDto {
     id: string
