@@ -5,43 +5,43 @@ import { MovieCreateDto, MovieDto, MovieQueryDto, MovieUpdateDto } from './dtos'
 
 @Injectable()
 export class MoviesProxy {
-    constructor(@InjectClientProxy('CORES_CLIENT') private service: ClientProxyService) {}
+    constructor(@InjectClientProxy('clientProxy') private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
     createMovie(
         movieCreateDto: MovieCreateDto,
         fileCreateDtos: StorageFileCreateDto[]
     ): Promise<MovieDto> {
-        return getProxyValue(this.service.send('createMovie', { movieCreateDto, fileCreateDtos }))
+        return getProxyValue(this.service.send('cores.movies.createMovie', { movieCreateDto, fileCreateDtos }))
     }
 
     @MethodLog({ level: 'verbose' })
     updateMovie(movieId: string, updateDto: MovieUpdateDto): Promise<MovieDto> {
-        return getProxyValue(this.service.send('updateMovie', { movieId, updateDto }))
+        return getProxyValue(this.service.send('cores.movies.updateMovie', { movieId, updateDto }))
     }
 
     @MethodLog({ level: 'verbose' })
     getMovie(movieId: string): Promise<MovieDto> {
-        return getProxyValue(this.service.send('getMovie', movieId))
+        return getProxyValue(this.service.send('cores.movies.getMovie', movieId))
     }
 
     @MethodLog({ level: 'verbose' })
     deleteMovie(movieId: string): Promise<boolean> {
-        return getProxyValue(this.service.send('deleteMovie', movieId))
+        return getProxyValue(this.service.send('cores.movies.deleteMovie', movieId))
     }
 
     @MethodLog({ level: 'verbose' })
     findMovies(queryDto: MovieQueryDto): Promise<MovieDto[]> {
-        return getProxyValue(this.service.send('findMovies', queryDto))
+        return getProxyValue(this.service.send('cores.movies.findMovies', queryDto))
     }
 
     @MethodLog({ level: 'verbose' })
     getMoviesByIds(movieIds: string[]): Promise<MovieDto[]> {
-        return getProxyValue(this.service.send('getMoviesByIds', movieIds))
+        return getProxyValue(this.service.send('cores.movies.getMoviesByIds', movieIds))
     }
 
     @MethodLog({ level: 'verbose' })
     moviesExist(movieIds: string[]): Promise<boolean> {
-        return getProxyValue(this.service.send('moviesExist', movieIds))
+        return getProxyValue(this.service.send('cores.movies.moviesExist', movieIds))
     }
 }

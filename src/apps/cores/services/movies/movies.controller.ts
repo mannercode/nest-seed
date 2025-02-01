@@ -21,12 +21,12 @@ class CreateMovieDto {
 export class MoviesController {
     constructor(private service: MoviesService) {}
 
-    @MessagePattern({ cmd: 'createMovie' })
+    @MessagePattern('cores.movies.createMovie' )
     createMovie(@Payload() { movieCreateDto, fileCreateDtos }: CreateMovieDto) {
         return this.service.createMovie(movieCreateDto, fileCreateDtos)
     }
 
-    @MessagePattern({ cmd: 'updateMovie' })
+    @MessagePattern('cores.movies.updateMovie' )
     updateMovie(
         @Payload('movieId') movieId: string,
         @Payload('updateDto') updateDto: MovieUpdateDto
@@ -34,27 +34,27 @@ export class MoviesController {
         return this.service.updateMovie(movieId, updateDto)
     }
 
-    @MessagePattern({ cmd: 'getMovie' })
+    @MessagePattern('cores.movies.getMovie' )
     getMovie(@Payload() movieId: string) {
         return this.service.getMovie(movieId)
     }
 
-    @MessagePattern({ cmd: 'deleteMovie' })
+    @MessagePattern('cores.movies.deleteMovie' )
     deleteMovie(@Payload() movieId: string) {
         return this.service.deleteMovie(movieId)
     }
 
-    @MessagePattern({ cmd: 'findMovies' })
+    @MessagePattern('cores.movies.findMovies' )
     findMovies(@Payload() queryDto: MovieQueryDto) {
         return this.service.findMovies(queryDto)
     }
 
-    @MessagePattern({ cmd: 'getMoviesByIds' })
+    @MessagePattern('cores.movies.getMoviesByIds' )
     getMoviesByIds(@Payload() movieIds: string[]) {
         return this.service.getMoviesByIds(movieIds)
     }
 
-    @MessagePattern({ cmd: 'moviesExist' })
+    @MessagePattern('cores.movies.moviesExist' )
     moviesExist(@Payload() movieIds: string[]) {
         return this.service.moviesExist(movieIds)
     }

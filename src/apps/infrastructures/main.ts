@@ -1,11 +1,12 @@
 import { INestApplication } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
-import { AppLoggerService, HttpToRpcExceptionFilter } from 'common'
+import { AppLoggerService, generateShortId, HttpToRpcExceptionFilter } from 'common'
 import { existsSync } from 'fs'
 import { exit } from 'process'
-import { AppConfigService } from 'shared/config'
+import { AppConfigService, isTest } from 'shared/config'
 import { InfrastructuresModule } from './infrastructures.module'
+import { Partitioners } from 'kafkajs'
 
 export async function configureInfrastructures(app: INestApplication<any>) {
     const logger = app.get(AppLoggerService)
@@ -33,18 +34,29 @@ export async function bootstrap() {
     app.enableShutdownHooks()
 
     const config = app.get(AppConfigService)
-    const { port, healthPort } = config.services.infrastructures
-    const host = '0.0.0.0'
+    const brokers = config.brokers
+    const healthPort = config.services.infrastructures.healthPort
+    const groupId = isTest() ? 'test_' + generateShortId() : 'infrastructures'
+    const clientId = 'infrastructures'
 
     app.connectMicroservice<MicroserviceOptions>({
-        transport: Transport.TCP,
-        options: { retryAttempts: 5, retryDelay: 2000, port, host }
+        transport: Transport.KAFKA,
+        options: {
+            client: { brokers, clientId },
+            producer: {
+                allowAutoTopicCreation: false,
+                createPartitioner: Partitioners.DefaultPartitioner
+            },
+            consumer: {
+                groupId,
+                allowAutoTopicCreation: false,
+                maxWaitTimeInMs: 0
+            }
+        }
     })
 
     await app.startAllMicroservices()
     await app.listen(healthPort)
 
-    console.log(`Infrastructures is running:
-        - tcp://${host}:${port}
-        - ${await app.getUrl()}`)
+    console.log(`Infrastructures is running: ${await app.getUrl()}`)
 }

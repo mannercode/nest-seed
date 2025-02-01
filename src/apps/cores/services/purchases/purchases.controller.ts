@@ -7,12 +7,12 @@ import { PurchasesService } from './purchases.service'
 export class PurchasesController {
     constructor(private service: PurchasesService) {}
 
-    @MessagePattern({ cmd: 'createPurchase' })
+    @MessagePattern('cores.purchases.createPurchase')
     createPurchase(@Payload() createDto: PurchaseCreateDto) {
         return this.service.createPurchase(createDto)
     }
 
-    @MessagePattern({ cmd: 'getPurchase' })
+    @MessagePattern('cores.purchases.getPurchase')
     getPurchase(@Payload() purchaseId: string) {
         return this.service.getPurchase(purchaseId)
     }

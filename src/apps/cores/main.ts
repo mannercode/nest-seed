@@ -1,10 +1,11 @@
 import { INestApplication } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
-import { AppLoggerService, HttpToRpcExceptionFilter } from 'common'
+import { AppLoggerService, generateShortId, HttpToRpcExceptionFilter } from 'common'
 import { existsSync } from 'fs'
+import { Partitioners } from 'kafkajs'
 import { exit } from 'process'
-import { AppConfigService } from 'shared/config'
+import { AppConfigService, isTest } from 'shared/config'
 import { CoresModule } from './cores.module'
 
 export async function configureCores(app: INestApplication<any>) {
@@ -30,18 +31,29 @@ export async function bootstrap() {
     app.enableShutdownHooks()
 
     const config = app.get(AppConfigService)
-    const { port, healthPort } = config.services.cores
-    const host = '0.0.0.0'
+    const healthPort = config.services.cores.healthPort
+    const brokers = config.brokers
+    const groupId = isTest() ? 'test_' + generateShortId() : 'cores'
+    const clientId = 'cores'
 
     app.connectMicroservice<MicroserviceOptions>({
-        transport: Transport.TCP,
-        options: { retryAttempts: 5, retryDelay: 2000, port, host }
+        transport: Transport.KAFKA,
+        options: {
+            client: { brokers, clientId },
+            producer: {
+                allowAutoTopicCreation: false,
+                createPartitioner: Partitioners.DefaultPartitioner
+            },
+            consumer: {
+                groupId,
+                allowAutoTopicCreation: false,
+                maxWaitTimeInMs: 0
+            }
+        }
     })
 
     await app.startAllMicroservices()
     await app.listen(healthPort)
 
-    console.log(`Cores is running:
-        - tcp://${host}:${port}
-        - ${await app.getUrl()}`)
+    console.log(`Cores is running: ${await app.getUrl()}`)
 }

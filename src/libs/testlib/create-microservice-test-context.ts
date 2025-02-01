@@ -5,6 +5,7 @@ import { generateShortId } from 'common'
 import { createTestingModule, ModuleMetadataEx } from './create-testing-module'
 import { MicroserviceTestClient } from './microservice.test-client'
 import { getKafkaTestConnection } from './test-containers'
+import { Partitioners } from 'kafkajs'
 
 export interface MicroserviceTestContext {
     module: TestingModule
@@ -28,9 +29,11 @@ export async function createMicroserviceTestContext(
             client: { brokers },
             producer: {
                 /*
-                allowAutoTopicCreation은 topic을 생성하는 데 시간이 걸리기 때문에 사용하지 않는다.
+                kafkajs의 allowAutoTopicCreation은 오류가 있기 때문에 사용하지 않는다.
                 */
-                allowAutoTopicCreation: false
+                allowAutoTopicCreation: false,
+                /* Partitioner를 지정하지 않으면 경고 발생 */
+                createPartitioner: Partitioners.DefaultPartitioner
             },
             consumer: {
                 groupId: generateShortId(),

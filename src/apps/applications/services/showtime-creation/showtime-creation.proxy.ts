@@ -12,30 +12,30 @@ import { ShowtimeBatchCreateDto, ShowtimeBatchCreateResponse } from './dtos'
 
 @Injectable()
 export class ShowtimeCreationProxy {
-    constructor(@InjectClientProxy('APPLICATIONS_CLIENT') private service: ClientProxyService) {}
+    constructor(@InjectClientProxy('clientProxy') private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
     findMovies(queryDto: PaginationOption): Promise<MovieDto[]> {
-        return getProxyValue(this.service.send('showtime-creation.findMovies', queryDto))
+        return getProxyValue(this.service.send('applications.showtimeCreation.findMovies', queryDto))
     }
 
     @MethodLog({ level: 'verbose' })
     findTheaters(queryDto: PaginationOption): Promise<TheaterDto[]> {
-        return getProxyValue(this.service.send('showtime-creation.findTheaters', queryDto))
+        return getProxyValue(this.service.send('applications.showtimeCreation.findTheaters', queryDto))
     }
 
     @MethodLog({ level: 'verbose' })
     findShowtimes(theaterIds: string[]): Promise<ShowtimeDto[]> {
-        return getProxyValue(this.service.send('showtime-creation.findShowtimes', theaterIds))
+        return getProxyValue(this.service.send('applications.showtimeCreation.findShowtimes', theaterIds))
     }
 
     @MethodLog({ level: 'verbose' })
     createBatchShowtimes(createDto: ShowtimeBatchCreateDto): Promise<ShowtimeBatchCreateResponse> {
-        return getProxyValue(this.service.send('showtime-creation.createBatchShowtimes', createDto))
+        return getProxyValue(this.service.send('applications.showtimeCreation.createBatchShowtimes', createDto))
     }
 
     @MethodLog({ level: 'verbose' })
     monitorEvents(): Observable<MessageEvent> {
-        return this.service.send('showtime-creation.monitorEvents')
+        return this.service.send('applications.showtimeCreation.monitorEvents')
     }
 }

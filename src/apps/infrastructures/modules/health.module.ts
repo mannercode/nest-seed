@@ -1,5 +1,4 @@
 import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
-import { MessagePattern } from '@nestjs/microservices'
 import { getConnectionToken } from '@nestjs/mongoose'
 import { HealthCheckService, MongooseHealthIndicator, TerminusModule } from '@nestjs/terminus'
 import { RedisHealthIndicator, RedisModule } from 'common'
@@ -35,11 +34,6 @@ class HealthController {
     @Get('health')
     health() {
         return this.service.check()
-    }
-
-    @MessagePattern({ cmd: 'health' })
-    method() {
-        return { status: 'ok' }
     }
 }
 

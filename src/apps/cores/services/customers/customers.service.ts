@@ -12,13 +12,16 @@ export class CustomersService {
     ) {}
     @MethodLog()
     async createCustomer(createDto: CustomerCreateDto) {
-        if (await this.repository.findByEmail(createDto.email)) {
+        const foundEmail = await this.repository.findByEmail(createDto.email)
+
+        if (foundEmail) {
             throw new ConflictException({
                 code: 'ERR_CUSTOMER_EMAIL_ALREADY_EXISTS',
                 message: 'Customer with email already exists',
                 email: createDto.email
             })
         }
+
         const customer = await this.repository.createCustomer({
             ...createDto,
             password: await Password.hash(createDto.password)

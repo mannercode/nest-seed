@@ -5,7 +5,7 @@ import { Ctx, KafkaContext, MessagePattern, Payload } from '@nestjs/microservice
 @Controller()
 class SampleController {
     @MessagePattern('test.testlib.getMessage')
-    getMessage(@Payload() arg: string, @Ctx() _ctx: KafkaContext) {
+    getMessage(@Payload('arg') arg: string, @Ctx() _ctx: KafkaContext) {
         return { received: arg }
     }
 }

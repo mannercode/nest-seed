@@ -1,5 +1,4 @@
 import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
-import { MessagePattern } from '@nestjs/microservices'
 import { HealthCheckService, TerminusModule } from '@nestjs/terminus'
 import { RedisHealthIndicator, RedisModule } from 'common'
 import Redis from 'ioredis'
@@ -27,11 +26,6 @@ class HealthController {
     @Get('health')
     health() {
         return this.service.check()
-    }
-
-    @MessagePattern({ cmd: 'health' })
-    method() {
-        return { status: 'ok' }
     }
 }
 

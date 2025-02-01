@@ -84,39 +84,21 @@ export async function createTestContext({
         createMicroserviceTestContext,
         CoresModule,
         configureCores,
-        cores,
-        {
-            SERVICE_INFRASTRUCTURES_HOST: '127.0.0.1',
-            SERVICE_INFRASTRUCTURES_PORT: infrasContext.port
-        }
+        cores
     )
 
     const appsContext = await createContext<MicroserviceTestContext>(
         createMicroserviceTestContext,
         ApplicationsModule,
         configureApplications,
-        apps,
-        {
-            SERVICE_CORES_HOST: '127.0.0.1',
-            SERVICE_CORES_PORT: coresContext.port,
-            SERVICE_INFRASTRUCTURES_HOST: '127.0.0.1',
-            SERVICE_INFRASTRUCTURES_PORT: infrasContext.port
-        }
+        apps
     )
 
     const httpContext = await createContext<HttpTestContext>(
         createHttpTestContext,
         GatewayModule,
         configureGateway,
-        http,
-        {
-            SERVICE_APPLICATIONS_HOST: '127.0.0.1',
-            SERVICE_APPLICATIONS_PORT: appsContext.port,
-            SERVICE_CORES_HOST: '127.0.0.1',
-            SERVICE_CORES_PORT: coresContext.port,
-            SERVICE_INFRASTRUCTURES_HOST: '127.0.0.1',
-            SERVICE_INFRASTRUCTURES_PORT: infrasContext.port
-        }
+        http
     )
 
     const close = async () => {

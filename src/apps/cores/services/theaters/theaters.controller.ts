@@ -7,12 +7,12 @@ import { TheatersService } from './theaters.service'
 export class TheatersController {
     constructor(private service: TheatersService) {}
 
-    @MessagePattern({ cmd: 'createTheater' })
+    @MessagePattern('cores.theaters.createTheater')
     createTheater(@Payload() createDto: TheaterCreateDto) {
         return this.service.createTheater(createDto)
     }
 
-    @MessagePattern({ cmd: 'updateTheater' })
+    @MessagePattern('cores.theaters.updateTheater')
     updateTheater(
         @Payload('theaterId') theaterId: string,
         @Payload('updateDto') updateDto: TheaterUpdateDto
@@ -20,27 +20,27 @@ export class TheatersController {
         return this.service.updateTheater(theaterId, updateDto)
     }
 
-    @MessagePattern({ cmd: 'getTheater' })
+    @MessagePattern('cores.theaters.getTheater')
     getTheater(@Payload() theaterId: string) {
         return this.service.getTheater(theaterId)
     }
 
-    @MessagePattern({ cmd: 'deleteTheater' })
+    @MessagePattern('cores.theaters.deleteTheater')
     deleteTheater(@Payload() theaterId: string) {
         return this.service.deleteTheater(theaterId)
     }
 
-    @MessagePattern({ cmd: 'findTheaters' })
+    @MessagePattern('cores.theaters.findTheaters')
     findTheaters(@Payload() queryDto: TheaterQueryDto) {
         return this.service.findTheaters(queryDto)
     }
 
-    @MessagePattern({ cmd: 'getTheatersByIds' })
+    @MessagePattern('cores.theaters.getTheatersByIds')
     getTheatersByIds(@Payload() theaterIds: string[]) {
         return this.service.getTheatersByIds(theaterIds)
     }
 
-    @MessagePattern({ cmd: 'theatersExist' })
+    @MessagePattern('cores.theaters.theatersExist')
     theatersExist(@Payload() theaterIds: string[]) {
         return this.service.theatersExist(theaterIds)
     }

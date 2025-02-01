@@ -5,30 +5,30 @@ import { TicketStatus } from './models'
 
 @Injectable()
 export class TicketsProxy {
-    constructor(@InjectClientProxy('CORES_CLIENT') private service: ClientProxyService) {}
+    constructor(@InjectClientProxy('clientProxy') private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
     createTickets(createDtos: TicketCreateDto[]): Promise<{ success: boolean; count: number }> {
-        return getProxyValue(this.service.send('createTickets', createDtos))
+        return getProxyValue(this.service.send('cores.tickets.createTickets', createDtos))
     }
 
     @MethodLog({ level: 'verbose' })
     updateTicketStatus(ticketIds: string[], status: TicketStatus): Promise<TicketDto[]> {
-        return getProxyValue(this.service.send('updateTicketStatus', { ticketIds, status }))
+        return getProxyValue(this.service.send('cores.tickets.updateTicketStatus', { ticketIds, status }))
     }
 
     @MethodLog({ level: 'verbose' })
     findAllTickets(filterDto: TicketFilterDto): Promise<TicketDto[]> {
-        return getProxyValue(this.service.send('findAllTickets', filterDto))
+        return getProxyValue(this.service.send('cores.tickets.findAllTickets', filterDto))
     }
 
     @MethodLog({ level: 'verbose' })
     getSalesStatuses(ticketIds: string[]): Promise<SalesStatusByShowtimeDto[]> {
-        return getProxyValue(this.service.send('getSalesStatuses', ticketIds))
+        return getProxyValue(this.service.send('cores.tickets.getSalesStatuses', ticketIds))
     }
 
     @MethodLog({ level: 'verbose' })
     getTickets(ticketIds: string[]): Promise<TicketDto[]> {
-        return getProxyValue(this.service.send('getTickets', ticketIds))
+        return getProxyValue(this.service.send('cores.tickets.getTickets', ticketIds))
     }
 }

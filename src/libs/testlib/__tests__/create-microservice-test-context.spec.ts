@@ -22,7 +22,7 @@ describe('createMicroserviceTestContext', () => {
     })
 
     it('메시지를 전송하면 응답해야 한다', async () => {
-        const message = await client.send('test.testlib.getMessage', 'value')
+        const message = await client.send('test.testlib.getMessage', { arg: 'value' })
 
         expect(message).toEqual({ received: 'value' })
     })

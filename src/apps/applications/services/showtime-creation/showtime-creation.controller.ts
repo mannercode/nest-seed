@@ -8,27 +8,27 @@ import { ShowtimeCreationService } from './showtime-creation.service'
 export class ShowtimeCreationController {
     constructor(private service: ShowtimeCreationService) {}
 
-    @MessagePattern({ cmd: 'showtime-creation.findMovies' })
+    @MessagePattern('applications.showtimeCreation.findMovies')
     findMovies(@Payload() queryDto: PaginationOption) {
         return this.service.findMovies(queryDto)
     }
 
-    @MessagePattern({ cmd: 'showtime-creation.findTheaters' })
+    @MessagePattern('applications.showtimeCreation.findTheaters')
     findTheaters(@Payload() queryDto: PaginationOption) {
         return this.service.findTheaters(queryDto)
     }
 
-    @MessagePattern({ cmd: 'showtime-creation.findShowtimes' })
+    @MessagePattern('applications.showtimeCreation.findShowtimes')
     findShowtimes(@Payload() theaterIds: string[]) {
         return this.service.findShowtimes(theaterIds)
     }
 
-    @MessagePattern({ cmd: 'showtime-creation.createBatchShowtimes' })
+    @MessagePattern('applications.showtimeCreation.createBatchShowtimes')
     createBatchShowtimes(@Payload() createDto: ShowtimeBatchCreateDto) {
         return this.service.createBatchShowtimes(createDto)
     }
 
-    @MessagePattern({ cmd: 'showtime-creation.monitorEvents' })
+    @MessagePattern('applications.showtimeCreation.monitorEvents')
     monitorEvents() {
         return this.service.monitorEvents()
     }

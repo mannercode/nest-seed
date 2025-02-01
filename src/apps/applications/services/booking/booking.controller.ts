@@ -7,17 +7,17 @@ import { BookingService } from './booking.service'
 export class BookingController {
     constructor(private service: BookingService) {}
 
-    @MessagePattern({ cmd: 'booking.findShowingTheaters' })
+    @MessagePattern('applications.booking.findShowingTheaters')
     findShowingTheaters(@Payload('movieId') movieId: string, @Payload('latlong') latlong: LatLong) {
         return this.service.findShowingTheaters({ movieId, latlong })
     }
 
-    @MessagePattern({ cmd: 'booking.findShowdates' })
+    @MessagePattern('applications.booking.findShowdates')
     findShowdates(@Payload('movieId') movieId: string, @Payload('theaterId') theaterId: string) {
         return this.service.findShowdates({ movieId, theaterId })
     }
 
-    @MessagePattern({ cmd: 'booking.findShowtimes' })
+    @MessagePattern('applications.booking.findShowtimes')
     findShowtimes(
         @Payload('movieId') movieId: string,
         @Payload('theaterId') theaterId: string,
@@ -26,12 +26,12 @@ export class BookingController {
         return this.service.findShowtimes({ movieId, theaterId, showdate })
     }
 
-    @MessagePattern({ cmd: 'booking.getAvailableTickets' })
+    @MessagePattern('applications.booking.getAvailableTickets')
     getAvailableTickets(@Payload() showtimeId: string) {
         return this.service.getAvailableTickets(showtimeId)
     }
 
-    @MessagePattern({ cmd: 'booking.holdTickets' })
+    @MessagePattern('applications.booking.holdTickets')
     holdTickets(
         @Payload('customerId') customerId: string,
         @Payload('showtimeId') showtimeId: string,

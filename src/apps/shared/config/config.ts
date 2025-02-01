@@ -127,7 +127,7 @@ export class AppConfigService extends BaseConfigService {
         }
     }
 
-    get services() {
+    get brokers() {
         const broker1 = this.getString('KAFKA_BROKER1')
         const broker2 = this.getString('KAFKA_BROKER2')
         const broker3 = this.getString('KAFKA_BROKER3')
@@ -138,6 +138,11 @@ export class AppConfigService extends BaseConfigService {
             `${broker3}:${brokerPort}`
         ]
 
+        return brokers
+    }
+
+    // TODO healthPort -> httpPort
+    get services() {
         return {
             gateway: {
                 host: this.getString('SERVICE_GATEWAY_HOST'),

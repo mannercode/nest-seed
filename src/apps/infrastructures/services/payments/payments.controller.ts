@@ -7,12 +7,12 @@ import { PaymentsService } from './payments.service'
 export class PaymentsController {
     constructor(private service: PaymentsService) {}
 
-    @MessagePattern({ cmd: 'processPayment' })
+    @MessagePattern('infrastructures.payments.processPayment')
     processPayment(@Payload() createDto: PaymentCreateDto) {
         return this.service.processPayment(createDto)
     }
 
-    @MessagePattern({ cmd: 'getPayment' })
+    @MessagePattern('infrastructures.payments.getPayment')
     getPayment(@Payload() paymentId: string) {
         return this.service.getPayment(paymentId)
     }

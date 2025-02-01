@@ -6,7 +6,7 @@ import { TicketHoldingService } from './ticket-holding.service'
 export class TicketHoldingController {
     constructor(private service: TicketHoldingService) {}
 
-    @MessagePattern({ cmd: 'holdTickets' })
+    @MessagePattern('cores.ticketHolding.holdTickets')
     holdTickets(
         @Payload('customerId') customerId: string,
         @Payload('showtimeId') showtimeId: string,
@@ -21,7 +21,7 @@ export class TicketHoldingController {
         })
     }
 
-    @MessagePattern({ cmd: 'findHeldTicketIds' })
+    @MessagePattern('cores.ticketHolding.findHeldTicketIds')
     findHeldTicketIds(
         @Payload('showtimeId') showtimeId: string,
         @Payload('customerId') customerId: string
@@ -29,7 +29,7 @@ export class TicketHoldingController {
         return this.service.findHeldTicketIds(showtimeId, customerId)
     }
 
-    @MessagePattern({ cmd: 'releaseTickets' })
+    @MessagePattern('cores.ticketHolding.releaseTickets')
     releaseTickets(
         @Payload('showtimeId') showtimeId: string,
         @Payload('customerId') customerId: string

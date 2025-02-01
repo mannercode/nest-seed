@@ -7,34 +7,34 @@ import { ShowtimesService } from './showtimes.service'
 export class ShowtimesController {
     constructor(private service: ShowtimesService) {}
 
-    @MessagePattern({ cmd: 'createShowtimes' })
+    @MessagePattern('cores.showtimes.createShowtimes')
     createShowtimes(
         @Payload(new ParseArrayPipe({ items: ShowtimeCreateDto })) createDtos: ShowtimeCreateDto[]
     ) {
         return this.service.createShowtimes(createDtos)
     }
 
-    @MessagePattern({ cmd: 'getShowtimes' })
+    @MessagePattern('cores.showtimes.getShowtimes')
     getShowtimes(@Payload() showtimeIds: string[]) {
         return this.service.getShowtimes(showtimeIds)
     }
 
-    @MessagePattern({ cmd: 'findAllShowtimes' })
+    @MessagePattern('cores.showtimes.findAllShowtimes')
     findAllShowtimes(@Payload() filterDto: ShowtimeFilterDto) {
         return this.service.findAllShowtimes(filterDto)
     }
 
-    @MessagePattern({ cmd: 'findShowingMovieIds' })
+    @MessagePattern('cores.showtimes.findShowingMovieIds')
     findShowingMovieIds() {
         return this.service.findShowingMovieIds()
     }
 
-    @MessagePattern({ cmd: 'findTheaterIdsByMovieId' })
+    @MessagePattern('cores.showtimes.findTheaterIdsByMovieId')
     findTheaterIdsByMovieId(@Payload() movieId: string) {
         return this.service.findTheaterIdsByMovieId(movieId)
     }
 
-    @MessagePattern({ cmd: 'findShowdates' })
+    @MessagePattern('cores.showtimes.findShowdates')
     findShowdates(@Payload('movieId') movieId: string, @Payload('theaterId') theaterId: string) {
         return this.service.findShowdates({ movieId, theaterId })
     }
