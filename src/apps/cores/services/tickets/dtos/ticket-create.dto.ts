@@ -1,9 +1,10 @@
 import { Type } from 'class-transformer'
 import { IsEnum, IsNotEmpty, IsString, ValidateNested } from 'class-validator'
+import { BaseDto } from 'common'
 import { Seat } from '../../theaters'
 import { TicketStatus } from '../models'
 
-export class TicketCreateDto {
+export class TicketCreateDto extends BaseDto {
     @IsString()
     @IsNotEmpty()
     batchId: string

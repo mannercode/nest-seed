@@ -1,4 +1,6 @@
-export class PaymentDto {
+import { BaseDto } from "common"
+
+export class PaymentDto extends BaseDto {
     id: string
     customerId: string
     amount: number

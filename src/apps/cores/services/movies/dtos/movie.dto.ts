@@ -1,6 +1,7 @@
+import { BaseDto } from 'common'
 import { MovieGenre, MovieRating } from '../models'
 
-export class MovieDto {
+export class MovieDto extends BaseDto {
     id: string
     title: string
     genre: MovieGenre[]

@@ -8,16 +8,22 @@ export class StorageFilesProxy {
 
     @MethodLog({ level: 'verbose' })
     saveFiles(createDtos: StorageFileCreateDto[]): Promise<StorageFileDto[]> {
-        return getProxyValue(this.service.send('infrastructures.storageFiles.saveFiles', createDtos))
+        return getProxyValue(
+            this.service.send('infrastructures.storageFiles.saveFiles', createDtos)
+        )
     }
 
     @MethodLog({ level: 'verbose' })
     getStorageFile(fileId: string): Promise<StorageFileDto> {
-        return getProxyValue(this.service.send('infrastructures.storageFiles.getStorageFile', fileId))
+        return getProxyValue(
+            this.service.send('infrastructures.storageFiles.getStorageFile', fileId)
+        )
     }
 
     @MethodLog({ level: 'verbose' })
     deleteStorageFile(fileId: string): Promise<boolean> {
-        return getProxyValue(this.service.send('infrastructures.storageFiles.deleteStorageFile', fileId))
+        return getProxyValue(
+            this.service.send('infrastructures.storageFiles.deleteStorageFile', fileId)
+        )
     }
 }

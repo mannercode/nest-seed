@@ -3,12 +3,10 @@ import {
     ClientProxyService,
     getProxyValue,
     InjectClientProxy,
-    jsonToObject,
     JwtAuthTokens,
     MethodLog
 } from 'common'
 import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
-import { lastValueFrom } from 'rxjs'
 
 @Injectable()
 export class CustomersProxy {
@@ -16,11 +14,9 @@ export class CustomersProxy {
 
     @MethodLog({ level: 'verbose' })
     async createCustomer(createDto: CustomerCreateDto): Promise<CustomerDto> {
-        const observer = this.service.send<CustomerDto>('cores.customers.createCustomer', createDto)
-        const value = await lastValueFrom(observer)
-        const json = jsonToObject(value)
-        return json
-        // return getProxyValue(observer)
+        return getProxyValue(
+            this.service.send<CustomerDto>('cores.customers.createCustomer', createDto)
+        )
     }
 
     @MethodLog({ level: 'verbose' })

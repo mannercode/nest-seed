@@ -1,7 +1,8 @@
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
+import { BaseDto } from 'common'
 import { PurchaseItemType } from '../models'
 
-export class PurchaseItemDto {
+export class PurchaseItemDto extends BaseDto {
     @IsEnum(PurchaseItemType)
     type: PurchaseItemType
 
@@ -10,7 +11,7 @@ export class PurchaseItemDto {
     ticketId: string
 }
 
-export class PurchaseDto {
+export class PurchaseDto extends BaseDto {
     id: string
     customerId: string
     paymentId: string

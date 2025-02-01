@@ -14,7 +14,9 @@ export class TicketsProxy {
 
     @MethodLog({ level: 'verbose' })
     updateTicketStatus(ticketIds: string[], status: TicketStatus): Promise<TicketDto[]> {
-        return getProxyValue(this.service.send('cores.tickets.updateTicketStatus', { ticketIds, status }))
+        return getProxyValue(
+            this.service.send('cores.tickets.updateTicketStatus', { ticketIds, status })
+        )
     }
 
     @MethodLog({ level: 'verbose' })

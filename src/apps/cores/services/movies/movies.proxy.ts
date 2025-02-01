@@ -12,7 +12,9 @@ export class MoviesProxy {
         movieCreateDto: MovieCreateDto,
         fileCreateDtos: StorageFileCreateDto[]
     ): Promise<MovieDto> {
-        return getProxyValue(this.service.send('cores.movies.createMovie', { movieCreateDto, fileCreateDtos }))
+        return getProxyValue(
+            this.service.send('cores.movies.createMovie', { movieCreateDto, fileCreateDtos })
+        )
     }
 
     @MethodLog({ level: 'verbose' })

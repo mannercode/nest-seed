@@ -9,9 +9,7 @@ export class CustomersController {
 
     @MessagePattern('cores.customers.createCustomer')
     async createCustomer(@Payload() createDto: CustomerCreateDto) {
-        const dto = await this.service.createCustomer(createDto)
-        return Object.assign({}, dto)
-        // return dto
+        return this.service.createCustomer(createDto)
     }
 
     @MessagePattern('cores.customers.updateCustomer')

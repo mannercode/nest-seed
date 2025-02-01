@@ -1,4 +1,6 @@
-export class CustomerDto {
+import { BaseDto } from "common"
+
+export class CustomerDto extends BaseDto {
     id: string
     name: string
     email: string

@@ -13,7 +13,9 @@ export class TheatersProxy {
 
     @MethodLog({ level: 'verbose' })
     updateTheater(theaterId: string, updateDto: TheaterUpdateDto): Promise<TheaterDto> {
-        return getProxyValue(this.service.send('cores.theaters.updateTheater', { theaterId, updateDto }))
+        return getProxyValue(
+            this.service.send('cores.theaters.updateTheater', { theaterId, updateDto })
+        )
     }
 
     @MethodLog({ level: 'verbose' })

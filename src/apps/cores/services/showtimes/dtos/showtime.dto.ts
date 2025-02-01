@@ -1,4 +1,6 @@
-export class ShowtimeDto {
+import { BaseDto } from "common"
+
+export class ShowtimeDto extends BaseDto {
     id: string
     theaterId: string
     movieId: string

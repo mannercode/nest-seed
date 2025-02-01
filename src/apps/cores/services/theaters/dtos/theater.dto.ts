@@ -1,7 +1,7 @@
-import { LatLong, nullLatLong } from 'common'
+import { BaseDto, LatLong, nullLatLong } from 'common'
 import { nullSeatmap, Seatmap } from '../models'
 
-export class TheaterDto {
+export class TheaterDto extends BaseDto {
     id: string
     name: string
     latlong: LatLong

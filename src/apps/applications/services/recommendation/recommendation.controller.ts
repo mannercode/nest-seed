@@ -6,7 +6,7 @@ import { RecommendationService } from './recommendation.service'
 export class RecommendationController {
     constructor(private service: RecommendationService) {}
 
-    @MessagePattern('applications.recommendation.findRecommendedMovies' )
+    @MessagePattern('applications.recommendation.findRecommendedMovies')
     findRecommendedMovies(@Payload() customerId: string | null) {
         return this.service.findRecommendedMovies(customerId === '' ? null : customerId)
     }
