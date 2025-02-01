@@ -106,12 +106,12 @@ export const createPurchase = async (
     purchasesService: PurchasesService,
     override: Partial<PurchaseCreateDto>
 ) => {
-    const createDto: PurchaseCreateDto = {
+    const createDto = {
         customerId: nullObjectId,
         totalPrice: 1000,
         items: [{ type: PurchaseItemType.ticket, ticketId: nullObjectId }],
         ...override
-    }
+    } as PurchaseCreateDto
 
     return purchasesService.createPurchase(createDto)
 }

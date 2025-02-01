@@ -4,7 +4,7 @@ import {
     getProxyValue,
     InjectClientProxy,
     MethodLog,
-    PaginationOption
+    PaginationOptionDto
 } from 'common'
 import { MovieDto, ShowtimeDto, TheaterDto } from 'cores'
 import { Observable } from 'rxjs'
@@ -15,14 +15,14 @@ export class ShowtimeCreationProxy {
     constructor(@InjectClientProxy('clientProxy') private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
-    findMovies(queryDto: PaginationOption): Promise<MovieDto[]> {
+    findMovies(queryDto: PaginationOptionDto): Promise<MovieDto[]> {
         return getProxyValue(
             this.service.send('applications.showtimeCreation.findMovies', queryDto)
         )
     }
 
     @MethodLog({ level: 'verbose' })
-    findTheaters(queryDto: PaginationOption): Promise<TheaterDto[]> {
+    findTheaters(queryDto: PaginationOptionDto): Promise<TheaterDto[]> {
         return getProxyValue(
             this.service.send('applications.showtimeCreation.findTheaters', queryDto)
         )

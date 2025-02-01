@@ -11,7 +11,7 @@ import {
     UsePipes
 } from '@nestjs/common'
 import { ShowtimeBatchCreateDto, ShowtimeCreationProxy } from 'applications'
-import { PaginationOption } from 'common'
+import { PaginationOptionDto } from 'common'
 import { Observable } from 'rxjs'
 import { DefaultPaginationPipe } from './pipes'
 
@@ -21,13 +21,13 @@ export class ShowtimeCreationController {
 
     @UsePipes(DefaultPaginationPipe)
     @Get('theaters')
-    async findTheaters(@Query() queryDto: PaginationOption) {
+    async findTheaters(@Query() queryDto: PaginationOptionDto) {
         return this.service.findTheaters(queryDto)
     }
 
     @UsePipes(DefaultPaginationPipe)
     @Get('movies')
-    async findMovies(@Query() queryDto: PaginationOption) {
+    async findMovies(@Query() queryDto: PaginationOptionDto) {
         return this.service.findMovies(queryDto)
     }
 

@@ -57,7 +57,7 @@ describe('/storage-files', () => {
 
             expect(body.storageFiles[0].checksum).toEqual(await getChecksum(shared.file))
             expect(body.storageFiles[1].checksum).toEqual(await getChecksum(shared.largeFile))
-        })
+        }, 100000)
 
         it('파일을 첨부하지 않아도 업로드가 성공해야 한다', async () => {
             await uploadFile([]).created()

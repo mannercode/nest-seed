@@ -1,6 +1,7 @@
 import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from '@nestjs/common'
 import { Transform } from 'class-transformer'
 import { IsInt, IsOptional, IsString, Min } from 'class-validator'
+import { BaseDto } from '../types'
 
 export enum OrderDirection {
     asc = 'asc',
@@ -15,7 +16,7 @@ export class OrderOption {
     direction: OrderDirection
 }
 
-export class PaginationOption {
+export class PaginationOptionDto extends BaseDto {
     @IsOptional()
     @IsInt()
     @Min(1)
@@ -75,7 +76,7 @@ export abstract class PaginationPipe implements PipeTransform {
 
     transform(value: any, metadata: ArgumentMetadata) {
         if (metadata.type === 'query') {
-            if (value instanceof PaginationOption) {
+            if (value instanceof PaginationOptionDto) {
                 if (!value.skip) {
                     value.skip = 0
                 }

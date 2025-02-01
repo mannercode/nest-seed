@@ -1,5 +1,5 @@
 import { Controller, Get, Injectable, Module, Query, UsePipes } from '@nestjs/common'
-import { PaginationOption, PaginationPipe } from 'common'
+import { PaginationOptionDto, PaginationPipe } from 'common'
 
 @Injectable()
 class DefaultPaginationPipe extends PaginationPipe {
@@ -11,13 +11,13 @@ class DefaultPaginationPipe extends PaginationPipe {
 @Controller('samples')
 class SamplesController {
     @Get()
-    async handleQuery(@Query() query: PaginationOption) {
+    async handleQuery(@Query() query: PaginationOptionDto) {
         return query
     }
 
     @Get('takeLimit')
     @UsePipes(DefaultPaginationPipe)
-    async handleMaxsize(@Query() pagination: PaginationOption) {
+    async handleMaxsize(@Query() pagination: PaginationOptionDto) {
         return pagination
     }
 }
