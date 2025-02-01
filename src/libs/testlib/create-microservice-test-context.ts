@@ -30,7 +30,8 @@ export async function createMicroserviceTestContext(
                 /*
                 allowAutoTopicCreation은 topic을 생성하는 데 시간이 걸리기 때문에 사용하지 않는다.
                 */
-                 allowAutoTopicCreation: false },
+                allowAutoTopicCreation: false
+            },
             consumer: {
                 groupId: generateShortId(),
                 allowAutoTopicCreation: false,
