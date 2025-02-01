@@ -1,15 +1,25 @@
 import { INestMicroservice } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
-import { ClientsModule, Transport } from '@nestjs/microservices'
-import { HttpToRpcExceptionFilter, RpcToHttpExceptionInterceptor } from 'common'
+import { Transport } from '@nestjs/microservices'
 import {
+    ClientProxyModule,
+    generateShortId,
+    HttpToRpcExceptionFilter,
+    RpcToHttpExceptionInterceptor
+} from 'common'
+import {
+    createHttpTestContext,
+    createMicroserviceTestContext,
+    getKafkaTestConnection,
     HttpTestClient,
     HttpTestContext,
-    MicroserviceTestContext,
-    createHttpTestContext,
-    createMicroserviceTestContext
+    MicroserviceTestContext
 } from 'testlib'
-import { HttpController, MicroserviceModule } from './rpc-to-http-exception.interceptor.fixture'
+import {
+    HttpController,
+    messages,
+    MicroserviceModule
+} from './rpc-to-http-exception.interceptor.fixture'
 
 describe('RpcToHttpExceptionInterceptor', () => {
     let microContext: MicroserviceTestContext
@@ -24,15 +34,21 @@ describe('RpcToHttpExceptionInterceptor', () => {
 
         httpContext = await createHttpTestContext({
             imports: [
-                ClientsModule.registerAsync([
-                    {
-                        name: 'SERVICES',
-                        useFactory: () => ({
-                            transport: Transport.TCP,
-                            options: { host: '0.0.0.0', port: microContext.port }
-                        })
-                    }
-                ])
+                ClientProxyModule.registerAsync({
+                    name: 'name',
+                    useFactory: () => {
+                        const { brokers } = getKafkaTestConnection()
+
+                        return {
+                            transport: Transport.KAFKA,
+                            options: {
+                                client: { brokers },
+                                consumer: { groupId: generateShortId(), maxWaitTimeInMs: 0 }
+                            }
+                        }
+                    },
+                    messages: [messages.throwError, messages.throwHttpException]
+                })
             ],
             controllers: [HttpController],
             providers: [{ provide: APP_INTERCEPTOR, useClass: RpcToHttpExceptionInterceptor }]

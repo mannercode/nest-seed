@@ -4,8 +4,8 @@ import { Injectable, Module } from '@nestjs/common'
 export class SampleService {
     constructor() {}
 
-    async getMessage(_arg: string) {
-        return '이 코드는 실행되면 안 된다'
+    async getMessage() {
+        return 'This method should not be called'
     }
 }
 

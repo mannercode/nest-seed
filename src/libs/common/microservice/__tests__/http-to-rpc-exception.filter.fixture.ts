@@ -9,26 +9,33 @@ export class CreateSampleDto {
     name: string
 }
 
+export const messages = {
+    throwHttpException: 'test.common.HttpToRpcExceptionFilter.throwHttpException',
+    rethrow: 'test.common.HttpToRpcExceptionFilter.rethrow',
+    throwError: 'test.common.HttpToRpcExceptionFilter.throwError',
+    createSample: 'test.common.HttpToRpcExceptionFilter.createSample'
+}
+
 @Controller()
 class SampleController {
     constructor() {}
 
-    @MessagePattern({ cmd: 'throwHttpException' })
+    @MessagePattern(messages.throwHttpException)
     throwHttpException() {
         throw new NotFoundException('not found exception')
     }
 
-    @MessagePattern({ cmd: 'rethrow' })
+    @MessagePattern(messages.rethrow)
     rethrow() {
         throw { status: 400, response: { message: 'error message' } }
     }
 
-    @MessagePattern({ cmd: 'throwError' })
+    @MessagePattern(messages.throwError)
     throwError() {
         throw new Error('error')
     }
 
-    @MessagePattern({ cmd: 'createSample' })
+    @MessagePattern(messages.createSample)
     createSample(createDto: CreateSampleDto) {
         return createDto
     }

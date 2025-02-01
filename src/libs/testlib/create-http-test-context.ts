@@ -55,7 +55,7 @@ export async function createHttpTestContext(
 
     const server = app.getHttpServer()
 
-    let port = await listen(server)
+    const port = await listen(server)
 
     const client = new HttpTestClient(`http://localhost:${port}`)
 

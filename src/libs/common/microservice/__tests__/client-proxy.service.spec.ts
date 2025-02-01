@@ -8,7 +8,7 @@ import {
     createMicroserviceTestContext,
     getKafkaTestConnection
 } from 'testlib'
-import { HttpController, MicroserviceModule } from './client-proxy.service.fixture'
+import { HttpController, messages, MicroserviceModule } from './client-proxy.service.fixture'
 
 describe('ClientProxyService', () => {
     let microContext: MicroserviceTestContext
@@ -21,7 +21,7 @@ describe('ClientProxyService', () => {
         httpContext = await createHttpTestContext({
             imports: [
                 ClientProxyModule.registerAsync({
-                    name: 'SERVICES',
+                    name: 'name',
                     useFactory: () => {
                         const { brokers } = getKafkaTestConnection()
 
@@ -33,7 +33,7 @@ describe('ClientProxyService', () => {
                             }
                         }
                     },
-                    messages: ['test.method']
+                    messages: [messages.method]
                 })
             ],
             controllers: [HttpController]
@@ -46,13 +46,13 @@ describe('ClientProxyService', () => {
         await microContext?.close()
     })
 
-    it('should return OK(200) when GET /send endpoint is called', async () => {
-        const result = await client.get('/send').ok()
+    it('HttpController는 Observable로 응답할 수 있다', async () => {
+        const result = await client.get('/observable').ok()
         expect(result.body).toEqual({ result: 'success' })
     })
 
-    it('should return OK(200) when GET /get endpoint is called', async () => {
-        const result = await client.get('/get').ok()
+    it('Observable의 값을 읽어서 반환할 수 있다', async () => {
+        const result = await client.get('/value').ok()
         expect(result.body).toEqual({ result: 'success' })
     })
 })

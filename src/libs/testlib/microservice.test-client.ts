@@ -23,16 +23,16 @@ export class MicroserviceTestClient {
         return jsonToObject(await lastValueFrom(this.kafka.send(cmd, payload)))
     }
 
-    async subscribe(
-        cmd: string,
-        payload: any,
-        observerOrNext?: Partial<Observer<any>> | ((value: any) => void)
-    ) {
-        return this.kafka.send(cmd, payload).subscribe(observerOrNext)
-    }
+    // async subscribe(
+    //     cmd: string,
+    //     payload: any,
+    //     observerOrNext?: Partial<Observer<any>> | ((value: any) => void)
+    // ) {
+    //     return this.kafka.send(cmd, payload).subscribe(observerOrNext)
+    // }
 
     async error(cmd: string, payload: any, expected: any) {
-        const res = lastValueFrom(this.kafka.send({ cmd }, payload))
-        await expect(res).rejects.toMatchObject(expected)
+        const promise = lastValueFrom(this.kafka.send(cmd, payload))
+        await expect(promise).rejects.toMatchObject(expected)
     }
 }

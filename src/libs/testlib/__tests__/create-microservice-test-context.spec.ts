@@ -12,7 +12,7 @@ describe('createMicroserviceTestContext', () => {
     beforeEach(async () => {
         testContext = await createMicroserviceTestContext({
             imports: [SampleModule],
-            messages: ['test.getMessage']
+            messages: ['test.testlib.getMessage']
         })
         client = testContext.client
     })
@@ -22,7 +22,7 @@ describe('createMicroserviceTestContext', () => {
     })
 
     it('메시지를 전송하면 응답해야 한다', async () => {
-        const message = await client.send('test.getMessage', 'value')
+        const message = await client.send('test.testlib.getMessage', 'value')
 
         expect(message).toEqual({ received: 'value' })
     })

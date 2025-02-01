@@ -11,7 +11,6 @@ export interface MicroserviceTestContext {
     app: INestMicroservice
     client: MicroserviceTestClient
     close: () => Promise<void>
-    port: number
 }
 
 export async function createMicroserviceTestContext(
@@ -22,11 +21,16 @@ export async function createMicroserviceTestContext(
     const module = await createTestingModule(metadata)
 
     const { brokers } = getKafkaTestConnection()
+
     const rpcOptions: KafkaOptions = {
         transport: Transport.KAFKA,
         options: {
             client: { brokers },
-            producer: { allowAutoTopicCreation: false },
+            producer: {
+                /*
+                allowAutoTopicCreation은 topic을 생성하는 데 시간이 걸리기 때문에 사용하지 않는다.
+                */
+                 allowAutoTopicCreation: false },
             consumer: {
                 groupId: generateShortId(),
                 allowAutoTopicCreation: false,

@@ -1,14 +1,20 @@
-import { BadRequestException, Controller, Get, Inject, Module } from '@nestjs/common'
-import { ClientProxy, MessagePattern } from '@nestjs/microservices'
+import { BadRequestException, Controller, Get, Module } from '@nestjs/common'
+import { MessagePattern } from '@nestjs/microservices'
+import { ClientProxyService, InjectClientProxy } from 'common'
+
+export const messages = {
+    throwHttpException: 'test.common.RpcToHttpExceptionInterceptor.throwHttpException',
+    throwError: 'test.common.RpcToHttpExceptionInterceptor.throwError'
+}
 
 @Controller()
 class MicroserviceController {
-    @MessagePattern({ cmd: 'throwHttpException' })
+    @MessagePattern(messages.throwHttpException)
     throwHttpException() {
-        throw new BadRequestException('not found exception')
+        throw new BadRequestException('http exception')
     }
 
-    @MessagePattern({ cmd: 'throwError' })
+    @MessagePattern(messages.throwError)
     throwError() {
         throw new Error('error message')
     }
@@ -19,15 +25,15 @@ export class MicroserviceModule {}
 
 @Controller()
 export class HttpController {
-    constructor(@Inject('SERVICES') private client: ClientProxy) {}
+    constructor(@InjectClientProxy('name') private client: ClientProxyService) {}
 
     @Get('throwHttpException')
     throwHttpException() {
-        return this.client.send({ cmd: 'throwHttpException' }, {})
+        return this.client.send(messages.throwHttpException, {})
     }
 
     @Get('throwError')
     throwError() {
-        return this.client.send({ cmd: 'throwError' }, {})
+        return this.client.send(messages.throwError, {})
     }
 }
