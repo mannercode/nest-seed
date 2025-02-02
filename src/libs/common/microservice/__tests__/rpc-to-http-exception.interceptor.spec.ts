@@ -43,7 +43,7 @@ describe('RpcToHttpExceptionInterceptor', () => {
                             transport: Transport.KAFKA,
                             options: {
                                 client: { brokers },
-                                consumer: { groupId: generateShortId(), maxWaitTimeInMs: 0 }
+                                consumer: { groupId: generateShortId(), maxWaitTimeInMs: 500 }
                             }
                         }
                     },

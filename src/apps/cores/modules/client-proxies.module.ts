@@ -11,7 +11,7 @@ import { AppConfigService, isTest, microserviceMessages } from 'shared/config'
             useFactory: async (config: AppConfigService) => {
                 const brokers = config.brokers
                 const groupId = isTest() ? 'test_' + generateShortId() : 'cores'
-                const clientId = 'cores'
+                const clientId = groupId
 
                 return {
                     transport: Transport.KAFKA,
@@ -24,7 +24,7 @@ import { AppConfigService, isTest, microserviceMessages } from 'shared/config'
                         consumer: {
                             groupId,
                             allowAutoTopicCreation: false,
-                            maxWaitTimeInMs: 0
+                            maxWaitTimeInMs: 500
                         }
                     }
                 }

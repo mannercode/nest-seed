@@ -37,7 +37,7 @@ export async function bootstrap() {
     const brokers = config.brokers
     const healthPort = config.services.infrastructures.healthPort
     const groupId = isTest() ? 'test_' + generateShortId() : 'infrastructures'
-    const clientId = 'infrastructures'
+    const clientId = groupId
 
     app.connectMicroservice<MicroserviceOptions>({
         transport: Transport.KAFKA,
@@ -50,7 +50,7 @@ export async function bootstrap() {
             consumer: {
                 groupId,
                 allowAutoTopicCreation: false,
-                maxWaitTimeInMs: 0
+                maxWaitTimeInMs: 500
             }
         }
     })

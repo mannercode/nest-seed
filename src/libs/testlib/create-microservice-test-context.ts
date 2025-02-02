@@ -52,7 +52,7 @@ export async function createMicroserviceTestContext(
 
                 close 하는데 시간이 걸리는 경우가 있어서 0으로 설정합니다.
                 */
-                maxWaitTimeInMs: 0
+                maxWaitTimeInMs: 500
             }
         }
     }
