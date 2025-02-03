@@ -1,16 +1,16 @@
 import { ClientKafka, ClientOptions, ClientProxyFactory } from '@nestjs/microservices'
 import { jsonToObject } from 'common'
-import { lastValueFrom, Observer } from 'rxjs'
+import { lastValueFrom } from 'rxjs'
 
 export class MicroserviceTestClient {
     static async create(option: ClientOptions, messages: string[] = []) {
-        const client = ClientProxyFactory.create(option) as ClientKafka
+        const kafka = ClientProxyFactory.create(option) as ClientKafka
 
-        messages.forEach((msg) => client.subscribeToResponseOf(msg))
+        messages.forEach((msg) => kafka.subscribeToResponseOf(msg))
 
-        await client.connect()
+        await kafka.connect()
 
-        return new MicroserviceTestClient(client)
+        return new MicroserviceTestClient(kafka)
     }
 
     constructor(public kafka: ClientKafka) {}

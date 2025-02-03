@@ -12,8 +12,10 @@
         "test:base": "npm run infra && jest --coverage --config ./configs/jest.config.${TEST_NAME}.ts",
         "test:100x": "bash -c 'for i in {1..100}; do npm run test:base || { echo \"Test failed at iteration $i\"; exit 1; }; done'"
     },
-    "APP_NAMES": "applications cores gateway infrastructures",
-    "TEST_NAMES": "all apps common",
+    "comments": {
+        "APP_NAMES": "applications cores gateway infrastructures",
+        "TEST_NAMES": "all apps common"
+    },
     "TODO": "chalk,nanoid 등 esm은 node에서 사용 가능하나 jest는 아직이다. node 24에서 jest 다시 점검해라",
     "dependencies": {
         "@nestjs-modules/ioredis": "^2.0.2",

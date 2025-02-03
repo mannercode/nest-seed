@@ -52,7 +52,7 @@ export async function createMicroserviceTestContext(
 
                 close 하는데 시간이 걸리는 경우가 있어서 0으로 설정합니다.
                 */
-                maxWaitTimeInMs: 500
+                maxWaitTimeInMs: 3000
             }
         }
     }
@@ -68,8 +68,11 @@ export async function createMicroserviceTestContext(
     const client = await MicroserviceTestClient.create(rpcOptions, messages)
 
     const close = async () => {
+        console.log('------------------1')
         await client.close()
+        console.log('------------------2')
         await app.close()
+        console.log('------------------3')
     }
 
     return { module, app, close, client } as MicroserviceTestContext
