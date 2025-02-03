@@ -1,0 +1,142 @@
+x-kafka-image: &kafka-image
+    image: apache/kafka:3.9.0
+
+x-logging: &default-logging
+    options:
+        max-size: '10m'
+        max-file: '3'
+
+x-kafka-common: &kafka-common
+    <<: *kafka-image
+    profiles: ['infra', 'kafka']
+    working_dir: /opt/kafka/bin
+    logging: *default-logging
+    restart: always
+    networks:
+        - default
+
+x-kafka-controller: &kafka-controller
+    <<: *kafka-common
+    healthcheck:
+        test: nc -z localhost 9093
+        interval: 5s
+        timeout: 5s
+
+x-kafka-broker: &kafka-broker
+    <<: *kafka-common
+    healthcheck:
+        test: /opt/kafka/bin/kafka-client-metrics.sh --bootstrap-server localhost:${KAFKA_PORT} --list
+        interval: 5s
+        timeout: 5s
+    depends_on:
+        - kafka-controller-1
+        - kafka-controller-2
+        - kafka-controller-3
+
+x-kafka-common-env: &kafka-common-env
+    KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+    KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+    KAFKA_CONTROLLER_QUORUM_VOTERS: 1@${PROJECT_NAME}-kafka-ctl-1:9093,2@${PROJECT_NAME}-kafka-ctl-2:9093,3@${PROJECT_NAME}-kafka-ctl-3:9093
+    KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+x-kafka-controller-env: &kafka-controller-env
+    <<: *kafka-common-env
+    KAFKA_PROCESS_ROLES: controller
+    KAFKA_LISTENERS: CONTROLLER://:9093
+
+x-kafka-broker-env: &kafka-broker-env
+    <<: *kafka-common-env
+    KAFKA_PROCESS_ROLES: broker
+    # broker를 외부에 노출할 때 PLAINTEXT_HOST를 설정해야 한다. 공식 kafka docker image 설명을 참고해라
+    KAFKA_LISTENERS: PLAINTEXT://:${KAFKA_PORT}
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+    KAFKA_AUTO_CREATE_TOPICS_ENABLE: FALSE
+    KAFKA_NUM_PARTITIONS: 10
+
+services:
+    kafka-controller-1:
+        <<: *kafka-controller
+        container_name: ${PROJECT_NAME}-kafka-ctl-1
+        environment:
+            <<: *kafka-controller-env
+            KAFKA_NODE_ID: 1
+
+    kafka-controller-2:
+        <<: *kafka-controller
+        container_name: ${PROJECT_NAME}-kafka-ctl-2
+        environment:
+            <<: *kafka-controller-env
+            KAFKA_NODE_ID: 2
+
+    kafka-controller-3:
+        <<: *kafka-controller
+        container_name: ${PROJECT_NAME}-kafka-ctl-3
+        environment:
+            <<: *kafka-controller-env
+            KAFKA_NODE_ID: 3
+
+    kafka-broker-1:
+        <<: *kafka-broker
+        container_name: ${KAFKA_BROKER1}
+        environment:
+            <<: *kafka-broker-env
+            KAFKA_NODE_ID: 4
+            KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://${KAFKA_BROKER1}:${KAFKA_PORT}'
+
+    kafka-broker-2:
+        <<: *kafka-broker
+        container_name: ${KAFKA_BROKER2}
+        environment:
+            <<: *kafka-broker-env
+            KAFKA_NODE_ID: 5
+            KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://${KAFKA_BROKER2}:${KAFKA_PORT}'
+
+    kafka-broker-3:
+        <<: *kafka-broker
+        container_name: ${KAFKA_BROKER3}
+        environment:
+            <<: *kafka-broker-env
+            KAFKA_NODE_ID: 6
+            KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://${KAFKA_BROKER3}:${KAFKA_PORT}'
+
+    kafka-setup:
+        <<: *kafka-image
+        container_name: ${PROJECT_NAME}-kafka-setup
+        profiles: ['infra', 'kafka']
+        depends_on:
+            kafka-controller-1:
+                condition: service_healthy
+            kafka-controller-2:
+                condition: service_healthy
+            kafka-controller-3:
+                condition: service_healthy
+            kafka-broker-1:
+                condition: service_healthy
+            kafka-broker-2:
+                condition: service_healthy
+            kafka-broker-3:
+                condition: service_healthy
+        working_dir: /opt/kafka/bin
+        command: >
+            sh -c "
+            BROKER_LIST=\"${KAFKA_BROKER1}:${KAFKA_PORT},${KAFKA_BROKER2}:${KAFKA_PORT},${KAFKA_BROKER3}:${KAFKA_PORT}\"
+
+            until ./kafka-topics.sh --bootstrap-server $${BROKER_LIST} --create --topic test-topic; do
+              sleep 1;
+            done;
+            until echo \"hello kafka\" | ./kafka-console-producer.sh --bootstrap-server $${BROKER_LIST} --topic test-topic; do
+              sleep 1;
+            done;
+            until ./kafka-console-consumer.sh --bootstrap-server $${BROKER_LIST} --topic test-topic --from-beginning --max-messages 1; do
+              sleep 1;
+            done;
+
+            ./kafka-topics.sh --bootstrap-server $${BROKER_LIST} --delete --topic test-topic;
+            "
+        networks:
+            - default
+
+networks:
+    default:
+        external: true
+        name: ${PROJECT_NAME}
