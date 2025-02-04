@@ -1,103 +1,44 @@
-x-mongo-image: &mongo-image
-    image: mongo:8.0
-x-redis-image: &redis-image
-    image: redis:7.4
-# x-kafka-image: &kafka-image
-#     image: apache/kafka:3.9.0
+x-mongo-image: &mongo-image { image: mongo:8.0 }
+x-redis-image: &redis-image { image: redis:7.4 }
 
 x-logging: &default-logging
-    options:
-        max-size: '10m'
-        max-file: '3'
+    options: { max-size: '10m', max-file: '3' }
 
 x-mongo-common: &mongo-common
     <<: *mongo-image
     profiles: ['infra']
     logging: *default-logging
     environment:
-        MONGO_INITDB_ROOT_USERNAME: ${MONGO_DB_USERNAME}
-        MONGO_INITDB_ROOT_PASSWORD: ${MONGO_DB_PASSWORD}
+        MONGO_INITDB_ROOT_USERNAME: '${MONGO_DB_USERNAME}'
+        MONGO_INITDB_ROOT_PASSWORD: '${MONGO_DB_PASSWORD}'
     command: mongod --replSet ${MONGO_DB_REPLICA_NAME} --keyFile /etc/mongodb/mongodb.key --bind_ip_all
-    volumes:
-        - mongodb_key:/etc/mongodb
-    networks:
-        - default
+    volumes: ['mongodb_key:/etc/mongodb']
+    networks: ['default']
     restart: always
-    depends_on:
-        - mongo-key-generator
+    depends_on: ['mongo-key-generator']
     healthcheck:
-        test: mongosh --quiet -u $MONGO_DB_USERNAME -p $MONGO_DB_PASSWORD --authenticationDatabase admin --eval 'rs.isMaster().ismaster || rs.isMaster().secondary'
+        test: "mongosh --quiet -u $MONGO_DB_USERNAME -p $MONGO_DB_PASSWORD --authenticationDatabase admin --eval 'rs.isMaster().ismaster || rs.isMaster().secondary'"
         interval: 5s
         timeout: 5s
 
 x-redis-common: &redis-common
     <<: *redis-image
-    command: redis-server --port $REDIS_PORT --requirepass $REDIS_PASSWORD --masterauth $REDIS_PASSWORD --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    command: 'redis-server --port $REDIS_PORT --requirepass $REDIS_PASSWORD --masterauth $REDIS_PASSWORD --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes'
     profiles: ['infra']
     logging: *default-logging
-    networks:
-        - default
+    networks: ['default']
     restart: always
     healthcheck:
-        test: redis-cli -a $REDIS_PASSWORD ping
+        test: 'redis-cli -a $REDIS_PASSWORD ping'
         interval: 5s
         timeout: 5s
-
-# x-kafka-common: &kafka-common
-#     <<: *kafka-image
-#     profiles: ['infra', 'kafka']
-#     working_dir: /opt/kafka/bin
-#     logging: *default-logging
-#     restart: always
-#     networks:
-#         - default
-
-# x-kafka-controller: &kafka-controller
-#     <<: *kafka-common
-#     healthcheck:
-#         test: nc -z localhost 9093
-#         interval: 5s
-#         timeout: 5s
-
-# x-kafka-broker: &kafka-broker
-#     <<: *kafka-common
-#     healthcheck:
-#         test: /opt/kafka/bin/kafka-client-metrics.sh --bootstrap-server localhost:${KAFKA_PORT} --list
-#         interval: 5s
-#         timeout: 5s
-#     depends_on:
-#         - kafka-controller-1
-#         - kafka-controller-2
-#         - kafka-controller-3
-
-# x-kafka-common-env: &kafka-common-env
-#     KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-#     KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-#     KAFKA_CONTROLLER_QUORUM_VOTERS: 1@${PROJECT_NAME}-kafka-ctl-1:9093,2@${PROJECT_NAME}-kafka-ctl-2:9093,3@${PROJECT_NAME}-kafka-ctl-3:9093
-#     KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-
-# x-kafka-controller-env: &kafka-controller-env
-#     <<: *kafka-common-env
-#     KAFKA_PROCESS_ROLES: controller
-#     KAFKA_LISTENERS: CONTROLLER://:9093
-
-# x-kafka-broker-env: &kafka-broker-env
-#     <<: *kafka-common-env
-#     KAFKA_PROCESS_ROLES: broker
-#     # broker를 외부에 노출할 때 PLAINTEXT_HOST를 설정해야 한다. 공식 kafka docker image 설명을 참고해라
-#     KAFKA_LISTENERS: PLAINTEXT://:${KAFKA_PORT}
-#     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-#     KAFKA_AUTO_CREATE_TOPICS_ENABLE: FALSE
-#     KAFKA_NUM_PARTITIONS: 10
 
 x-app-common: &app-common
     profiles: ['apps']
     logging: *default-logging
-    environment:
-        - NODE_ENV=production
+    environment: ['NODE_ENV=production']
     env_file: .env.test
-    networks:
-        - default
+    networks: ['default']
 
 services:
     redis1:
@@ -123,37 +64,26 @@ services:
         container_name: ${PROJECT_NAME}-redis-setup
         profiles: ['infra']
         depends_on:
-            redis1:
-                condition: service_healthy
-            redis2:
-                condition: service_healthy
-            redis3:
-                condition: service_healthy
-            redis4:
-                condition: service_healthy
-            redis5:
-                condition: service_healthy
-            redis6:
-                condition: service_healthy
-        command: >
-            sh -c "echo 'yes' | redis-cli -a $REDIS_PASSWORD --cluster create
-            redis1:$REDIS_PORT
-            redis2:$REDIS_PORT
-            redis3:$REDIS_PORT
-            redis4:$REDIS_PORT
-            redis5:$REDIS_PORT
-            redis6:$REDIS_PORT
-            --cluster-replicas 1"
-        networks:
-            - default
+            redis1: { condition: service_healthy }
+            redis2: { condition: service_healthy }
+            redis3: { condition: service_healthy }
+            redis4: { condition: service_healthy }
+            redis5: { condition: service_healthy }
+            redis6: { condition: service_healthy }
+        command: >-
+            sh -c "
+            REDIS_LIST=\"redis1:$REDIS_PORT redis2:$REDIS_PORT redis3:$REDIS_PORT redis4:$REDIS_PORT redis5:$REDIS_PORT redis6:$REDIS_PORT\"
+
+            echo 'yes' | redis-cli -a $REDIS_PASSWORD --cluster create $${REDIS_LIST} --cluster-replicas 1
+            "
+        networks: ['default']
 
     mongo-key-generator:
         <<: *mongo-image
         container_name: ${PROJECT_NAME}-mongo-key-generator
         profiles: ['infra']
-        command: sh -c "openssl rand -base64 768 > mongodb.key && chmod 400 mongodb.key && chown mongodb:mongodb mongodb.key"
-        volumes:
-            - mongodb_key:/mongodb_key
+        command: 'sh -c "openssl rand -base64 768 > mongodb.key && chmod 400 mongodb.key && chown mongodb:mongodb mongodb.key"'
+        volumes: ['mongodb_key:/mongodb_key']
         working_dir: /mongodb_key
     mongo1:
         <<: *mongo-common
@@ -169,191 +99,86 @@ services:
         container_name: ${PROJECT_NAME}-mongo-setup
         profiles: ['infra']
         depends_on:
-            mongo1:
-                condition: service_healthy
-            mongo2:
-                condition: service_healthy
-            mongo3:
-                condition: service_healthy
+            mongo1: { condition: service_healthy }
+            mongo2: { condition: service_healthy }
+            mongo3: { condition: service_healthy }
+        networks: ['default']
         command: >
             sh -c "
-            mongosh --host ${MONGO_DB_HOST1} --port ${MONGO_DB_PORT} -u ${MONGO_DB_USERNAME} -p ${MONGO_DB_PASSWORD} --authenticationDatabase admin --eval
-            \"rs.initiate({
-                _id: \\\"${MONGO_DB_REPLICA_NAME}\\\",
-                members: [
-                    {_id: 0, host: \\\"${MONGO_DB_HOST1}\\\"},
-                    {_id: 1, host: \\\"${MONGO_DB_HOST2}\\\"},
-                    {_id: 2, host: \\\"${MONGO_DB_HOST3}\\\"}
-                ]
-            })\"
+            MONGO_HOST1_URI=\"mongodb://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@${MONGO_DB_HOST1}:${MONGO_DB_PORT}/?authSource=admin\"
 
-            MONGO_URI=\"mongodb://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@${MONGO_DB_HOST1}:${MONGO_DB_PORT},${MONGO_DB_HOST2}:${MONGO_DB_PORT},${MONGO_DB_HOST3}:${MONGO_DB_PORT}\"
+            mongosh $${MONGO_HOST1_URI} --eval \"
+                rs.initiate({
+                    _id: \\\"${MONGO_DB_REPLICA_NAME}\\\",
+                    members: [{_id: 0, host: \\\"${MONGO_DB_HOST1}\\\"}, {_id: 1, host: \\\"${MONGO_DB_HOST2}\\\"}, {_id: 2, host: \\\"${MONGO_DB_HOST3}\\\"}]
+                })
+            \"
 
-            until mongosh \"$${MONGO_URI}/?authSource=admin&replicaSet=${MONGO_DB_REPLICA_NAME}\" --eval \"db.test.insertOne({test: 'test'})\" ; do
-              echo 'The cluster is not ready yet. Retrying in 1 second.';
-              sleep 1;
-            done;
+            MONGO_DB_HOSTS=\"${MONGO_DB_HOST1}:${MONGO_DB_PORT},${MONGO_DB_HOST2}:${MONGO_DB_PORT},${MONGO_DB_HOST3}:${MONGO_DB_PORT}\";
+            MONGO_URI=\"mongodb://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@$${MONGO_DB_HOSTS}/?authSource=admin&replicaSet=${MONGO_DB_REPLICA_NAME}\";
+
+            mongosh $${MONGO_URI} --eval \"db.test.insertOne({test: 'test'})\"
             "
-        networks:
-            - default
-
-    # kafka-controller-1:
-    #     <<: *kafka-controller
-    #     container_name: ${PROJECT_NAME}-kafka-ctl-1
-    #     environment:
-    #         <<: *kafka-controller-env
-    #         KAFKA_NODE_ID: 1
-
-    # kafka-controller-2:
-    #     <<: *kafka-controller
-    #     container_name: ${PROJECT_NAME}-kafka-ctl-2
-    #     environment:
-    #         <<: *kafka-controller-env
-    #         KAFKA_NODE_ID: 2
-
-    # kafka-controller-3:
-    #     <<: *kafka-controller
-    #     container_name: ${PROJECT_NAME}-kafka-ctl-3
-    #     environment:
-    #         <<: *kafka-controller-env
-    #         KAFKA_NODE_ID: 3
-
-    # kafka-broker-1:
-    #     <<: *kafka-broker
-    #     container_name: ${KAFKA_BROKER1}
-    #     environment:
-    #         <<: *kafka-broker-env
-    #         KAFKA_NODE_ID: 4
-    #         KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://${KAFKA_BROKER1}:${KAFKA_PORT}'
-
-    # kafka-broker-2:
-    #     <<: *kafka-broker
-    #     container_name: ${KAFKA_BROKER2}
-    #     environment:
-    #         <<: *kafka-broker-env
-    #         KAFKA_NODE_ID: 5
-    #         KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://${KAFKA_BROKER2}:${KAFKA_PORT}'
-
-    # kafka-broker-3:
-    #     <<: *kafka-broker
-    #     container_name: ${KAFKA_BROKER3}
-    #     environment:
-    #         <<: *kafka-broker-env
-    #         KAFKA_NODE_ID: 6
-    #         KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://${KAFKA_BROKER3}:${KAFKA_PORT}'
-
-    # kafka-setup:
-    #     <<: *kafka-image
-    #     container_name: ${PROJECT_NAME}-kafka-setup
-    #     profiles: ['infra', 'kafka']
-    #     depends_on:
-    #         kafka-controller-1:
-    #             condition: service_healthy
-    #         kafka-controller-2:
-    #             condition: service_healthy
-    #         kafka-controller-3:
-    #             condition: service_healthy
-    #         kafka-broker-1:
-    #             condition: service_healthy
-    #         kafka-broker-2:
-    #             condition: service_healthy
-    #         kafka-broker-3:
-    #             condition: service_healthy
-    #     working_dir: /opt/kafka/bin
-    #     command: >
-    #         sh -c "
-    #         BROKER_LIST=\"${KAFKA_BROKER1}:${KAFKA_PORT},${KAFKA_BROKER2}:${KAFKA_PORT},${KAFKA_BROKER3}:${KAFKA_PORT}\"
-
-    #         until ./kafka-topics.sh --bootstrap-server $${BROKER_LIST} --create --topic test-topic; do
-    #           sleep 1;
-    #         done;
-    #         until echo \"hello kafka\" | ./kafka-console-producer.sh --bootstrap-server $${BROKER_LIST} --topic test-topic; do
-    #           sleep 1;
-    #         done;
-    #         until ./kafka-console-consumer.sh --bootstrap-server $${BROKER_LIST} --topic test-topic --from-beginning --max-messages 1; do
-    #           sleep 1;
-    #         done;
-
-    #         ./kafka-topics.sh --bootstrap-server $${BROKER_LIST} --delete --topic test-topic;
-    #         "
-    #     networks:
-    #         - default
-
     gateway:
         <<: *app-common
-        build:
-            context: .
-            args:
-                APP_NAME: gateway
+        build: { context: ., args: { APP_NAME: gateway } }
         image: ${SERVICE_GATEWAY_HOST}
         container_name: ${SERVICE_GATEWAY_HOST}
         healthcheck:
-            test: curl -f http://localhost:${SERVICE_GATEWAY_PORT}/health
+            test: 'curl -f http://localhost:${SERVICE_GATEWAY_PORT}/health'
             interval: 5s
             timeout: 5s
         volumes:
             - ./_output/logs/gateway:/app/_output/logs
             - ./_output/uploads:/app/_output/uploads
+
     applications:
         <<: *app-common
-        build:
-            context: .
-            args:
-                APP_NAME: applications
+        build: { context: ., args: { APP_NAME: applications } }
         image: ${SERVICE_APPLICATIONS_HOST}
         container_name: ${SERVICE_APPLICATIONS_HOST}
         healthcheck:
-            test: curl -f http://localhost:${SERVICE_APPLICATIONS_HEALTH_PORT}/health
+            test: 'curl -f http://localhost:${SERVICE_APPLICATIONS_HEALTH_PORT}/health'
             interval: 5s
             timeout: 5s
-        volumes:
-            - ./_output/logs/applications:/app/_output/logs
+        volumes: ['./_output/logs/applications:/app/_output/logs']
+
     cores:
         <<: *app-common
-        build:
-            context: .
-            args:
-                APP_NAME: cores
+        build: { context: ., args: { APP_NAME: cores } }
         image: ${SERVICE_CORES_HOST}
         container_name: ${SERVICE_CORES_HOST}
         healthcheck:
-            test: curl -f http://localhost:${SERVICE_CORES_HEALTH_PORT}/health
+            test: 'curl -f http://localhost:${SERVICE_CORES_HEALTH_PORT}/health'
             interval: 5s
             timeout: 5s
-        volumes:
-            - ./_output/logs/cores:/app/_output/logs
+        volumes: ['./_output/logs/cores:/app/_output/logs']
+
     infrastructures:
         <<: *app-common
-        build:
-            context: .
-            args:
-                APP_NAME: infrastructures
+        build: { context: ., args: { APP_NAME: infrastructures } }
         image: ${SERVICE_INFRASTRUCTURES_HOST}
         container_name: ${SERVICE_INFRASTRUCTURES_HOST}
         healthcheck:
-            test: curl -f http://localhost:${SERVICE_INFRASTRUCTURES_HEALTH_PORT}/health
+            test: 'curl -f http://localhost:${SERVICE_INFRASTRUCTURES_HEALTH_PORT}/health'
             interval: 5s
             timeout: 5s
         volumes:
-            - ./_output/logs/infrastructures:/app/_output/logs
-            - ./_output/uploads:/app/_output/uploads
+            - './_output/logs/infrastructures:/app/_output/logs'
+            - './_output/uploads:/app/_output/uploads'
+
     apps-setup:
         image: node:22-alpine
         container_name: ${PROJECT_NAME}-apps-setup
         profiles: ['apps']
         depends_on:
-            gateway:
-                condition: service_healthy
-            applications:
-                condition: service_healthy
-            cores:
-                condition: service_healthy
-            infrastructures:
-                condition: service_healthy
+            gateway: { condition: service_healthy }
+            applications: { condition: service_healthy }
+            cores: { condition: service_healthy }
+            infrastructures: { condition: service_healthy }
 
 networks:
-    default:
-        external: true
-        name: ${PROJECT_NAME}
+    default: { external: true, name: '${PROJECT_NAME}' }
+
 volumes:
-    mongodb_key:
+    mongodb_key: {}
