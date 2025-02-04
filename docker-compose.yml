@@ -1,5 +1,6 @@
 x-mongo-image: &mongo-image { image: mongo:8.0 }
 x-redis-image: &redis-image { image: redis:7.4 }
+x-nats-image: &nats-image { image: nats:2.10-alpine }
 
 x-logging: &default-logging
     options: { max-size: '10m', max-file: '3' }
@@ -30,6 +31,16 @@ x-redis-common: &redis-common
     restart: always
     healthcheck:
         test: 'redis-cli -a $REDIS_PASSWORD ping'
+        interval: 5s
+        timeout: 5s
+
+x-nats-common: &nats-common
+    <<: *nats-image
+    profiles: ['infra']
+    logging: *default-logging
+    networks: ['default']
+    healthcheck:
+        test: wget -qO- http://localhost:8222/varz || exit 1
         interval: 5s
         timeout: 5s
 
@@ -105,20 +116,51 @@ services:
         networks: ['default']
         command: >
             sh -c "
-            MONGO_HOST1_URI=\"mongodb://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@${MONGO_DB_HOST1}:${MONGO_DB_PORT}/?authSource=admin\"
+            MONGO_HOST1_URI=\"mongodb://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@mongo1:${MONGO_DB_PORT}/?authSource=admin\"
 
             mongosh $${MONGO_HOST1_URI} --eval \"
                 rs.initiate({
                     _id: \\\"${MONGO_DB_REPLICA_NAME}\\\",
-                    members: [{_id: 0, host: \\\"${MONGO_DB_HOST1}\\\"}, {_id: 1, host: \\\"${MONGO_DB_HOST2}\\\"}, {_id: 2, host: \\\"${MONGO_DB_HOST3}\\\"}]
+                    members: [{_id: 0, host: \\\"mongo1\\\"}, {_id: 1, host: \\\"mongo2\\\"}, {_id: 2, host: \\\"mongo3\\\"}]
                 })
             \"
 
-            MONGO_DB_HOSTS=\"${MONGO_DB_HOST1}:${MONGO_DB_PORT},${MONGO_DB_HOST2}:${MONGO_DB_PORT},${MONGO_DB_HOST3}:${MONGO_DB_PORT}\";
+            MONGO_DB_HOSTS=\"mongo1:${MONGO_DB_PORT},mongo2:${MONGO_DB_PORT},mongo3:${MONGO_DB_PORT}\";
             MONGO_URI=\"mongodb://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@$${MONGO_DB_HOSTS}/?authSource=admin&replicaSet=${MONGO_DB_REPLICA_NAME}\";
 
             mongosh $${MONGO_URI} --eval \"db.test.insertOne({test: 'test'})\"
             "
+    nats1:
+        <<: *nats-common
+        container_name: ${NATS_HOST1}
+        command: '--cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222'
+    nats2:
+        <<: *nats-common
+        container_name: ${NATS_HOST2}
+        command: '--cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222 --routes=nats://nats1:6222'
+        depends_on: ['nats1']
+    nats3:
+        <<: *nats-common
+        container_name: ${NATS_HOST3}
+        command: '--cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222 --routes=nats://nats1:6222'
+        depends_on: ['nats1']
+    nats-setup:
+        image: natsio/nats-box
+        container_name: ${PROJECT_NAME}-nats-setup
+        profiles: ['infra']
+        depends_on:
+            nats1: { condition: service_healthy }
+            nats2: { condition: service_healthy }
+            nats3: { condition: service_healthy }
+        networks: ['default']
+        command: >
+            sh -c "
+            set -e;
+            nats sub -s nats://nats1:4222 hello &
+            nats pub -s "nats://nats2:4222" hello first;
+            nats pub -s "nats://nats3:4222" hello second;
+            "
+
     gateway:
         <<: *app-common
         build: { context: ., args: { APP_NAME: gateway } }
