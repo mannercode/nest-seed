@@ -1,7 +1,7 @@
 import { IsOptional } from 'class-validator'
-import { BaseDto, DateRange } from 'common'
+import { DateRange } from 'common'
 
-export class ShowtimeFilterDto extends BaseDto {
+export class ShowtimeFilterDto {
     @IsOptional()
     batchIds?: string[]
 

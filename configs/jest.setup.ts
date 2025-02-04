@@ -13,6 +13,7 @@ process.env.TEST_REDIS_HOST6 = process.env.REDIS_HOST6
 process.env.TEST_REDIS_PORT = process.env.REDIS_PORT
 process.env.TEST_REDIS_PASSWORD = process.env.REDIS_PASSWORD
 
+// TODO MONGO_DB는 MONGO로 줄이는게 맞지 않나?
 process.env.TEST_MONGO_DB_HOST1 = process.env.MONGO_DB_HOST1
 process.env.TEST_MONGO_DB_HOST2 = process.env.MONGO_DB_HOST2
 process.env.TEST_MONGO_DB_HOST3 = process.env.MONGO_DB_HOST3
@@ -21,7 +22,7 @@ process.env.TEST_MONGO_DB_REPLICA_NAME = process.env.MONGO_DB_REPLICA_NAME
 process.env.TEST_MONGO_DB_USERNAME = process.env.MONGO_DB_USERNAME
 process.env.TEST_MONGO_DB_PASSWORD = process.env.MONGO_DB_PASSWORD
 
-process.env.TEST_KAFKA_BROKER1 = process.env.KAFKA_BROKER1
-process.env.TEST_KAFKA_BROKER2 = process.env.KAFKA_BROKER2
-process.env.TEST_KAFKA_BROKER3 = process.env.KAFKA_BROKER3
-process.env.TEST_KAFKA_PORT = process.env.KAFKA_PORT
+process.env.TEST_NATS_HOST1 = process.env.NATS_HOST1
+process.env.TEST_NATS_HOST2 = process.env.NATS_HOST2
+process.env.TEST_NATS_HOST3 = process.env.NATS_HOST3
+process.env.TEST_NATS_PORT = process.env.NATS_PORT

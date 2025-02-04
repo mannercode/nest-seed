@@ -2,19 +2,14 @@ import { BadRequestException, Controller, Get, Module } from '@nestjs/common'
 import { MessagePattern } from '@nestjs/microservices'
 import { ClientProxyService, InjectClientProxy } from 'common'
 
-export const messages = {
-    throwHttpException: 'test.common.RpcToHttpExceptionInterceptor.throwHttpException',
-    throwError: 'test.common.RpcToHttpExceptionInterceptor.throwError'
-}
-
 @Controller()
 class MicroserviceController {
-    @MessagePattern(messages.throwHttpException)
+    @MessagePattern('test.common.RpcToHttpExceptionInterceptor.throwHttpException.*')
     throwHttpException() {
         throw new BadRequestException('http exception')
     }
 
-    @MessagePattern(messages.throwError)
+    @MessagePattern('test.common.RpcToHttpExceptionInterceptor.throwError.*')
     throwError() {
         throw new Error('error message')
     }
@@ -29,11 +24,11 @@ export class HttpController {
 
     @Get('throwHttpException')
     throwHttpException() {
-        return this.client.send(messages.throwHttpException, {})
+        return this.client.send('test.common.RpcToHttpExceptionInterceptor.throwHttpException', {})
     }
 
     @Get('throwError')
     throwError() {
-        return this.client.send(messages.throwError, {})
+        return this.client.send('test.common.RpcToHttpExceptionInterceptor.throwError', {})
     }
 }

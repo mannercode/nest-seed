@@ -7,17 +7,17 @@ import { BookingService } from './booking.service'
 export class BookingController {
     constructor(private service: BookingService) {}
 
-    @MessagePattern('applications.booking.findShowingTheaters')
+    @MessagePattern('nestSeed.applications.booking.findShowingTheaters.*')
     findShowingTheaters(@Payload('movieId') movieId: string, @Payload('latlong') latlong: LatLong) {
         return this.service.findShowingTheaters({ movieId, latlong })
     }
 
-    @MessagePattern('applications.booking.findShowdates')
+    @MessagePattern('nestSeed.applications.booking.findShowdates.*')
     findShowdates(@Payload('movieId') movieId: string, @Payload('theaterId') theaterId: string) {
         return this.service.findShowdates({ movieId, theaterId })
     }
 
-    @MessagePattern('applications.booking.findShowtimes')
+    @MessagePattern('nestSeed.applications.booking.findShowtimes.*')
     findShowtimes(
         @Payload('movieId') movieId: string,
         @Payload('theaterId') theaterId: string,
@@ -26,12 +26,12 @@ export class BookingController {
         return this.service.findShowtimes({ movieId, theaterId, showdate })
     }
 
-    @MessagePattern('applications.booking.getAvailableTickets')
+    @MessagePattern('nestSeed.applications.booking.getAvailableTickets.*')
     getAvailableTickets(@Payload() showtimeId: string) {
         return this.service.getAvailableTickets(showtimeId)
     }
 
-    @MessagePattern('applications.booking.holdTickets')
+    @MessagePattern('nestSeed.applications.booking.holdTickets.*')
     holdTickets(
         @Payload('customerId') customerId: string,
         @Payload('showtimeId') showtimeId: string,

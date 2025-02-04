@@ -2,13 +2,9 @@ import { Controller, Get, Module } from '@nestjs/common'
 import { MessagePattern } from '@nestjs/microservices'
 import { ClientProxyService, getProxyValue, InjectClientProxy } from 'common'
 
-export const messages = {
-    method: 'test.common.ClientProxyService.method'
-}
-
 @Controller()
 class MicroserviceController {
-    @MessagePattern(messages.method)
+    @MessagePattern('test.common.ClientProxyService.method.*')
     method() {
         return { result: 'success' }
     }
@@ -23,12 +19,12 @@ export class HttpController {
 
     @Get('observable')
     getObservable() {
-        return this.client.send(messages.method, {})
+        return this.client.send('test.common.ClientProxyService.method', {})
     }
 
     @Get('value')
     getValue() {
-        const observer = this.client.send(messages.method)
+        const observer = this.client.send('test.common.ClientProxyService.method')
         return getProxyValue(observer)
     }
 }

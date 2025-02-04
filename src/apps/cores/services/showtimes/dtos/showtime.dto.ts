@@ -1,6 +1,6 @@
-import { BaseDto } from 'common'
 
-export class ShowtimeDto extends BaseDto {
+
+export class ShowtimeDto {
     id: string
     theaterId: string
     movieId: string

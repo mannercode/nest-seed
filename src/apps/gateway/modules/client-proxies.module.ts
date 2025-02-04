@@ -1,36 +1,18 @@
 import { Module } from '@nestjs/common'
 import { Transport } from '@nestjs/microservices'
 import { ClientProxyModule, generateShortId } from 'common'
-import { Partitioners } from 'kafkajs'
-import { AppConfigService, isTest, microserviceMessages } from 'shared/config'
+import { AppConfigService, isTest } from 'shared/config'
 
 @Module({
     imports: [
         ClientProxyModule.registerAsync({
             name: 'clientProxy',
+            tag: () => (isTest() ? 'test_' + generateShortId() : 'gateway'),
             useFactory: async (config: AppConfigService) => {
-                const brokers = config.brokers
-                const groupId = isTest() ? 'test_' + generateShortId() : 'gateway'
-                const clientId = groupId
-
-                return {
-                    transport: Transport.KAFKA,
-                    options: {
-                        client: { brokers, clientId },
-                        producer: {
-                            allowAutoTopicCreation: false,
-                            createPartitioner: Partitioners.DefaultPartitioner
-                        },
-                        consumer: {
-                            groupId,
-                            allowAutoTopicCreation: false,
-                            maxWaitTimeInMs: 500
-                        }
-                    }
-                }
+                const { servers } = config.nats
+                return { transport: Transport.NATS, options: { servers } }
             },
-            inject: [AppConfigService],
-            messages: microserviceMessages
+            inject: [AppConfigService]
         })
     ]
 })

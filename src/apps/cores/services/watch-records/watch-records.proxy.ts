@@ -14,6 +14,6 @@ export class WatchRecordsProxy {
 
     @MethodLog({ level: 'verbose' })
     findWatchRecords(queryDto: WatchRecordQueryDto): Promise<PaginationResult<WatchRecordDto>> {
-        return getProxyValue(this.service.send('cores.watchRecords.findWatchRecords', queryDto))
+        return getProxyValue(this.service.send('nestSeed.cores.watchRecords.findWatchRecords', queryDto))
     }
 }

@@ -8,14 +8,14 @@ import { TicketsService } from './tickets.service'
 export class TicketsController {
     constructor(private service: TicketsService) {}
 
-    @MessagePattern('cores.tickets.createTickets')
+    @MessagePattern('nestSeed.cores.tickets.createTickets.*')
     createTickets(
         @Payload(new ParseArrayPipe({ items: TicketCreateDto })) createDtos: TicketCreateDto[]
     ) {
         return this.service.createTickets(createDtos)
     }
 
-    @MessagePattern('cores.tickets.updateTicketStatus')
+    @MessagePattern('nestSeed.cores.tickets.updateTicketStatus.*')
     updateTicketStatus(
         @Payload('ticketIds') ticketIds: string[],
         @Payload('status') status: TicketStatus
@@ -23,17 +23,17 @@ export class TicketsController {
         return this.service.updateTicketStatus(ticketIds, status)
     }
 
-    @MessagePattern('cores.tickets.findAllTickets')
+    @MessagePattern('nestSeed.cores.tickets.findAllTickets.*')
     findAllTickets(@Payload() filterDto: TicketFilterDto) {
         return this.service.findAllTickets(filterDto)
     }
 
-    @MessagePattern('cores.tickets.getSalesStatuses')
+    @MessagePattern('nestSeed.cores.tickets.getSalesStatuses.*')
     getSalesStatuses(@Payload() ticketIds: string[]) {
         return this.service.getSalesStatuses(ticketIds)
     }
 
-    @MessagePattern('cores.tickets.getTickets')
+    @MessagePattern('nestSeed.cores.tickets.getTickets.*')
     getTickets(@Payload() ticketIds: string[]) {
         return this.service.getTickets(ticketIds)
     }

@@ -1,23 +1,28 @@
 import { DynamicModule, Global, Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
-import { ClientKafka, ClientsModule, ClientsProviderAsyncOptions } from '@nestjs/microservices'
+import { ClientProxy, ClientsModule, ClientsProviderAsyncOptions } from '@nestjs/microservices'
 import { jsonToObject } from 'common'
 import { lastValueFrom, Observable } from 'rxjs'
 
 @Injectable()
 export class ClientProxyService implements OnModuleDestroy {
-    constructor(private client: ClientKafka) {}
+    constructor(
+        private proxy: ClientProxy,
+        private name: string
+    ) {}
 
     static getToken(name: string) {
         return `ClientProxyService_${name}`
     }
 
     async onModuleDestroy() {
-        await this.client.close()
+        await this.proxy.close()
     }
 
     // TODO {} 기본값 없애라
     send<T>(cmd: string, payload: any = {}): Observable<T> {
-        return this.client.send(cmd, payload)
+        const taggedCmd = `${cmd}.${this.name}`
+        console.log('taggedCmd', taggedCmd)
+        return this.proxy.send(taggedCmd, payload)
     }
 }
 
@@ -34,15 +39,14 @@ export async function getProxyValue<T>(observer: Observable<T>): Promise<T> {
 @Module({})
 export class ClientProxyModule {
     static registerAsync(
-        options: ClientsProviderAsyncOptions & { messages?: string[] }
+        options: ClientsProviderAsyncOptions & { tag: () => string }
     ): DynamicModule {
-        const { name, useFactory, inject, messages } = options
+        const { name, useFactory, inject, tag } = options
+
         const provider = {
             provide: ClientProxyService.getToken(name as string),
-            useFactory: async (client: ClientKafka) => {
-                messages?.forEach((msg) => client.subscribeToResponseOf(msg))
-                await client.connect()
-                return new ClientProxyService(client)
+            useFactory: async (proxy: ClientProxy) => {
+                return new ClientProxyService(proxy, tag())
             },
             inject: [name]
         }

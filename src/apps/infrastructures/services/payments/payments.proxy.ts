@@ -9,7 +9,7 @@ export class PaymentsProxy {
     @MethodLog({ level: 'verbose' })
     processPayment(createDto: PaymentCreateDto): Promise<PaymentDto> {
         return getProxyValue(
-            this.service.send('infrastructures.payments.processPayment', createDto)
+            this.service.send('nestSeed.infrastructures.payments.processPayment', createDto)
         )
     }
 }

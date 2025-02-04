@@ -1,7 +1,7 @@
 import { IsInt, IsNotEmpty, IsString } from 'class-validator'
-import { BaseDto } from 'common'
 
-export class StorageFileCreateDto extends BaseDto {
+
+export class StorageFileCreateDto {
     @IsString()
     @IsNotEmpty()
     originalname: string

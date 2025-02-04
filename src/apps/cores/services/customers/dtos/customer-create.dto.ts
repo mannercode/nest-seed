@@ -1,8 +1,8 @@
 import { Type } from 'class-transformer'
 import { IsDate, IsEmail, IsNotEmpty, IsString } from 'class-validator'
-import { BaseDto } from 'common'
 
-export class CustomerCreateDto extends BaseDto {
+
+export class CustomerCreateDto {
     @IsString()
     @IsNotEmpty()
     name: string

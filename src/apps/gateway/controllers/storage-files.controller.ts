@@ -13,13 +13,13 @@ import {
 import { StreamableHandlerResponse } from '@nestjs/common/file-stream/interfaces'
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { IsString } from 'class-validator'
-import { BaseDto } from 'common'
+
 import { createReadStream } from 'fs'
 import { StorageFilesProxy } from 'infrastructures'
 import { pick } from 'lodash'
 import { Routes } from 'shared/config'
 
-class UploadFileDto extends BaseDto {
+class UploadFileDto {
     @IsString()
     name?: string
 }

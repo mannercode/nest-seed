@@ -32,24 +32,11 @@ export async function bootstrap() {
 
     const config = app.get(AppConfigService)
     const healthPort = config.services.cores.healthPort
-    const brokers = config.brokers
-    const groupId = isTest() ? 'test_' + generateShortId() : 'cores'
-    const clientId = groupId
+    const { servers } = config.nats
 
     app.connectMicroservice<MicroserviceOptions>({
-        transport: Transport.KAFKA,
-        options: {
-            client: { brokers, clientId },
-            producer: {
-                allowAutoTopicCreation: false,
-                createPartitioner: Partitioners.DefaultPartitioner
-            },
-            consumer: {
-                groupId,
-                allowAutoTopicCreation: false,
-                maxWaitTimeInMs: 500
-            }
-        }
+        transport: Transport.NATS,
+        options: { servers }
     })
 
     await app.startAllMicroservices()

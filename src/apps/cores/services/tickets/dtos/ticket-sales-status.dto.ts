@@ -1,6 +1,6 @@
-import { BaseDto } from 'common'
 
-export class TicketSalesStatusDto extends BaseDto {
+
+export class TicketSalesStatusDto {
     total: number
     sold: number
     available: number

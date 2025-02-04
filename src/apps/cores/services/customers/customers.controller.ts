@@ -7,12 +7,12 @@ import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
 export class CustomersController {
     constructor(private service: CustomersService) {}
 
-    @MessagePattern('cores.customers.createCustomer')
+    @MessagePattern('nestSeed.cores.customers.createCustomer.*')
     async createCustomer(@Payload() createDto: CustomerCreateDto) {
         return this.service.createCustomer(createDto)
     }
 
-    @MessagePattern('cores.customers.updateCustomer')
+    @MessagePattern('nestSeed.cores.customers.updateCustomer.*')
     updateCustomer(
         @Payload('customerId') customerId: string,
         @Payload('updateDto') updateDto: CustomerUpdateDto
@@ -20,32 +20,32 @@ export class CustomersController {
         return this.service.updateCustomer(customerId, updateDto)
     }
 
-    @MessagePattern('cores.customers.getCustomer')
+    @MessagePattern('nestSeed.cores.customers.getCustomer.*')
     getCustomer(@Payload() customerId: string) {
         return this.service.getCustomer(customerId)
     }
 
-    @MessagePattern('cores.customers.deleteCustomer')
+    @MessagePattern('nestSeed.cores.customers.deleteCustomer.*')
     deleteCustomer(@Payload() customerId: string) {
         return this.service.deleteCustomer(customerId)
     }
 
-    @MessagePattern('cores.customers.findCustomers')
+    @MessagePattern('nestSeed.cores.customers.findCustomers.*')
     findCustomers(@Payload() queryDto: CustomerQueryDto) {
         return this.service.findCustomers(queryDto)
     }
 
-    @MessagePattern('cores.customers.login')
+    @MessagePattern('nestSeed.cores.customers.login.*')
     login(@Payload('userId') userId: string, @Payload('email') email: string) {
         return this.service.login(userId, email)
     }
 
-    @MessagePattern('cores.customers.refreshAuthTokens')
+    @MessagePattern('nestSeed.cores.customers.refreshAuthTokens.*')
     refreshAuthTokens(@Payload() refreshToken: string) {
         return this.service.refreshAuthTokens(refreshToken)
     }
 
-    @MessagePattern('cores.customers.authenticateCustomer')
+    @MessagePattern('nestSeed.cores.customers.authenticateCustomer.*')
     authenticateCustomer(@Payload('email') email: string, @Payload('password') password: string) {
         return this.service.authenticateCustomer(email, password)
     }

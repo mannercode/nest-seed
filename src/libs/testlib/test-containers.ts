@@ -56,16 +56,16 @@ export const getMongoTestConnection = (): MongoConnectionContext => {
     return { uri }
 }
 
-export interface KafkaConnectionContext {
-    brokers: string[]
+export interface NatsConnectionContext {
+    servers: string[]
 }
 
-export function getKafkaTestConnection(): KafkaConnectionContext {
-    const hosts = ['TEST_KAFKA_BROKER1', 'TEST_KAFKA_BROKER2', 'TEST_KAFKA_BROKER3'].map((key) =>
+export function getNatsTestConnection(): NatsConnectionContext {
+    const hosts = ['TEST_NATS_HOST1', 'TEST_NATS_HOST2', 'TEST_NATS_HOST3'].map((key) =>
         getString(key)
     )
-    const port = getNumber('TEST_KAFKA_PORT')
-    const brokers = hosts.map((host) => `${host}:${port}`)
+    const port = getNumber('TEST_NATS_PORT')
+    const servers = hosts.map((host) => `nats://${host}:${port}`)
 
-    return { brokers }
+    return { servers }
 }

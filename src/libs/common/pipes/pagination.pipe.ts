@@ -1,7 +1,6 @@
 import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from '@nestjs/common'
 import { Transform } from 'class-transformer'
 import { IsInt, IsOptional, IsString, Min } from 'class-validator'
-import { BaseDto } from '../types'
 
 export enum OrderDirection {
     asc = 'asc',
@@ -16,7 +15,7 @@ export class OrderOption {
     direction: OrderDirection
 }
 
-export class PaginationOptionDto extends BaseDto {
+export class PaginationOptionDto {
     @IsOptional()
     @IsInt()
     @Min(1)

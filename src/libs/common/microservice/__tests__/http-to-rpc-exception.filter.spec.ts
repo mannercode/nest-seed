@@ -5,7 +5,7 @@ import {
     MicroserviceTestContext
 } from 'testlib'
 import { HttpToRpcExceptionFilter } from 'common'
-import { messages, SampleModule } from './http-to-rpc-exception.filter.fixture'
+import { SampleModule } from './http-to-rpc-exception.filter.fixture'
 
 describe('HttpToRpcExceptionFilter', () => {
     let testContext: MicroserviceTestContext
@@ -13,15 +13,7 @@ describe('HttpToRpcExceptionFilter', () => {
 
     beforeEach(async () => {
         testContext = await createMicroserviceTestContext(
-            {
-                imports: [SampleModule],
-                messages: [
-                    messages.throwHttpException,
-                    messages.rethrow,
-                    messages.throwError,
-                    messages.createSample
-                ]
-            },
+            { imports: [SampleModule] },
             (app: INestMicroservice) => app.useGlobalFilters(new HttpToRpcExceptionFilter())
         )
         client = testContext.client
@@ -33,7 +25,7 @@ describe('HttpToRpcExceptionFilter', () => {
 
     it('should handle HttpException properly for RPC', async () => {
         await client.error(
-            messages.throwHttpException,
+            'test.common.HttpToRpcExceptionFilter.throwHttpException',
             {},
             {
                 response: { error: 'Not Found', message: 'not found exception', statusCode: 404 },
@@ -44,19 +36,19 @@ describe('HttpToRpcExceptionFilter', () => {
 
     it('should handle {status, response} properly for RPC', async () => {
         await client.error(
-            messages.rethrow,
+            'test.common.HttpToRpcExceptionFilter.rethrow',
             {},
             { status: 400, response: { message: 'error message' } }
         )
     })
 
     it('should handle Error properly for RPC', async () => {
-        await client.error(messages.throwError, {}, { status: 500 })
+        await client.error('test.common.HttpToRpcExceptionFilter.throwError', {}, { status: 500 })
     })
 
     it('should validate input and return error for incorrect data format', async () => {
         await client.error(
-            messages.createSample,
+            'test.common.HttpToRpcExceptionFilter.createSample',
             { wrong: 'wrong field' },
             {
                 response: {

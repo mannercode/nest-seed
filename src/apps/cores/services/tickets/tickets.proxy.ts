@@ -9,28 +9,28 @@ export class TicketsProxy {
 
     @MethodLog({ level: 'verbose' })
     createTickets(createDtos: TicketCreateDto[]): Promise<{ success: boolean; count: number }> {
-        return getProxyValue(this.service.send('cores.tickets.createTickets', createDtos))
+        return getProxyValue(this.service.send('nestSeed.cores.tickets.createTickets', createDtos))
     }
 
     @MethodLog({ level: 'verbose' })
     updateTicketStatus(ticketIds: string[], status: TicketStatus): Promise<TicketDto[]> {
         return getProxyValue(
-            this.service.send('cores.tickets.updateTicketStatus', { ticketIds, status })
+            this.service.send('nestSeed.cores.tickets.updateTicketStatus', { ticketIds, status })
         )
     }
 
     @MethodLog({ level: 'verbose' })
     findAllTickets(filterDto: TicketFilterDto): Promise<TicketDto[]> {
-        return getProxyValue(this.service.send('cores.tickets.findAllTickets', filterDto))
+        return getProxyValue(this.service.send('nestSeed.cores.tickets.findAllTickets', filterDto))
     }
 
     @MethodLog({ level: 'verbose' })
     getSalesStatuses(ticketIds: string[]): Promise<SalesStatusByShowtimeDto[]> {
-        return getProxyValue(this.service.send('cores.tickets.getSalesStatuses', ticketIds))
+        return getProxyValue(this.service.send('nestSeed.cores.tickets.getSalesStatuses', ticketIds))
     }
 
     @MethodLog({ level: 'verbose' })
     getTickets(ticketIds: string[]): Promise<TicketDto[]> {
-        return getProxyValue(this.service.send('cores.tickets.getTickets', ticketIds))
+        return getProxyValue(this.service.send('nestSeed.cores.tickets.getTickets', ticketIds))
     }
 }

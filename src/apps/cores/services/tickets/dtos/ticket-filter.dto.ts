@@ -1,7 +1,7 @@
 import { IsOptional } from 'class-validator'
-import { BaseDto } from 'common'
 
-export class TicketFilterDto extends BaseDto {
+
+export class TicketFilterDto {
     @IsOptional()
     batchIds?: string[]
 

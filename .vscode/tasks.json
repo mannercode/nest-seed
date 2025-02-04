@@ -68,8 +68,7 @@
             "type": "pickString",
             "options": [
                 "redis",
-                "mongo",
-                "kafka"
+                "mongo"
             ],
             "description": "Select the CLI tool to execute"
         }

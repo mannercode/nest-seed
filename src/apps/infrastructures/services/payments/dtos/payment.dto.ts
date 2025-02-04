@@ -1,6 +1,6 @@
-import { BaseDto } from 'common'
 
-export class PaymentDto extends BaseDto {
+
+export class PaymentDto {
     id: string
     customerId: string
     amount: number

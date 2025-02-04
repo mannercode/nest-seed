@@ -7,12 +7,12 @@ import { TheatersService } from './theaters.service'
 export class TheatersController {
     constructor(private service: TheatersService) {}
 
-    @MessagePattern('cores.theaters.createTheater')
+    @MessagePattern('nestSeed.cores.theaters.createTheater.*')
     createTheater(@Payload() createDto: TheaterCreateDto) {
         return this.service.createTheater(createDto)
     }
 
-    @MessagePattern('cores.theaters.updateTheater')
+    @MessagePattern('nestSeed.cores.theaters.updateTheater.*')
     updateTheater(
         @Payload('theaterId') theaterId: string,
         @Payload('updateDto') updateDto: TheaterUpdateDto
@@ -20,27 +20,27 @@ export class TheatersController {
         return this.service.updateTheater(theaterId, updateDto)
     }
 
-    @MessagePattern('cores.theaters.getTheater')
+    @MessagePattern('nestSeed.cores.theaters.getTheater.*')
     getTheater(@Payload() theaterId: string) {
         return this.service.getTheater(theaterId)
     }
 
-    @MessagePattern('cores.theaters.deleteTheater')
+    @MessagePattern('nestSeed.cores.theaters.deleteTheater.*')
     deleteTheater(@Payload() theaterId: string) {
         return this.service.deleteTheater(theaterId)
     }
 
-    @MessagePattern('cores.theaters.findTheaters')
+    @MessagePattern('nestSeed.cores.theaters.findTheaters.*')
     findTheaters(@Payload() queryDto: TheaterQueryDto) {
         return this.service.findTheaters(queryDto)
     }
 
-    @MessagePattern('cores.theaters.getTheatersByIds')
+    @MessagePattern('nestSeed.cores.theaters.getTheatersByIds.*')
     getTheatersByIds(@Payload() theaterIds: string[]) {
         return this.service.getTheatersByIds(theaterIds)
     }
 
-    @MessagePattern('cores.theaters.theatersExist')
+    @MessagePattern('nestSeed.cores.theaters.theatersExist.*')
     theatersExist(@Payload() theaterIds: string[]) {
         return this.service.theatersExist(theaterIds)
     }

@@ -1,7 +1,7 @@
 import { IsDate, IsNotEmpty, IsString } from 'class-validator'
-import { BaseDto } from 'common'
 
-export class WatchRecordCreateDto extends BaseDto {
+
+export class WatchRecordCreateDto {
     @IsString()
     @IsNotEmpty()
     customerId: string

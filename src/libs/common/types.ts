@@ -26,9 +26,3 @@ export class DateRange {
     @Type(() => Date)
     end?: Date
 }
-
-export abstract class BaseDto {
-    toString() {
-        return JSON.stringify(this)
-    }
-}

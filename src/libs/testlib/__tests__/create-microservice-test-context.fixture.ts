@@ -1,12 +1,22 @@
 import { Controller, Module } from '@nestjs/common'
-import { Ctx, KafkaContext, MessagePattern, Payload } from '@nestjs/microservices'
+import { Ctx, MessagePattern, NatsContext, Payload } from '@nestjs/microservices'
 
-// TODO 로거도 붙여야 한다.
+class ResponseDto {
+    id: string
+}
+
+export class RequestDto {
+    arg: string
+}
+
 @Controller()
 class SampleController {
-    @MessagePattern('test.testlib.getMessage')
-    getMessage(@Payload('arg') arg: string, @Ctx() _ctx: KafkaContext) {
-        return { received: arg }
+    @MessagePattern('test.testlib.getMessage.*')
+    getMessage(@Payload() request: RequestDto, @Ctx() _ctx: NatsContext) {
+        const dto = new ResponseDto()
+        dto.id = request.arg
+
+        return dto
     }
 }
 

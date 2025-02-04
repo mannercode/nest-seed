@@ -1,6 +1,6 @@
-import { BaseDto } from 'common'
 
-export class StorageFileDto extends BaseDto {
+
+export class StorageFileDto {
     id: string
     originalname: string
     mimetype: string

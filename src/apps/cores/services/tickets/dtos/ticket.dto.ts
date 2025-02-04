@@ -1,8 +1,8 @@
-import { BaseDto } from 'common'
+
 import { Seat } from '../../theaters'
 import { TicketStatus } from '../models'
 
-export class TicketDto extends BaseDto {
+export class TicketDto {
     id: string
     showtimeId: string
     theaterId: string

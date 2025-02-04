@@ -1,8 +1,8 @@
 import { Type } from 'class-transformer'
 import { ArrayNotEmpty, IsArray, IsDate, IsNotEmpty, IsPositive, IsString } from 'class-validator'
-import { BaseDto } from 'common'
 
-export class ShowtimeBatchCreateDto extends BaseDto {
+
+export class ShowtimeBatchCreateDto {
     @IsString()
     @IsNotEmpty()
     movieId: string

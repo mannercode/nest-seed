@@ -1,9 +1,9 @@
 import { Transform, Type } from 'class-transformer'
 import { IsArray, IsDate, IsEnum, IsInt, IsNotEmpty, IsString, MaxLength } from 'class-validator'
-import { BaseDto } from 'common'
+
 import { MovieGenre, MovieRating } from '../models'
 
-export class MovieCreateDto extends BaseDto {
+export class MovieCreateDto {
     @IsString()
     @IsNotEmpty()
     title: string

@@ -1,9 +1,9 @@
 import { Type } from 'class-transformer'
 import { IsArray, IsNotEmpty, IsPositive, IsString, ValidateNested } from 'class-validator'
-import { BaseDto } from 'common'
+
 import { PurchaseItemDto } from './purchase.dto'
 
-export class PurchaseCreateDto extends BaseDto {
+export class PurchaseCreateDto {
     @IsString()
     @IsNotEmpty()
     customerId: string

@@ -8,11 +8,11 @@ export class PurchasesProxy {
 
     @MethodLog({ level: 'verbose' })
     createPurchase(createDto: PurchaseCreateDto): Promise<PurchaseDto> {
-        return getProxyValue(this.service.send('cores.purchases.createPurchase', createDto))
+        return getProxyValue(this.service.send('nestSeed.cores.purchases.createPurchase', createDto))
     }
 
     @MethodLog({ level: 'verbose' })
     getPurchase(purchaseId: string): Promise<PurchaseDto> {
-        return getProxyValue(this.service.send('cores.purchases.getPurchase', purchaseId))
+        return getProxyValue(this.service.send('nestSeed.cores.purchases.getPurchase', purchaseId))
     }
 }

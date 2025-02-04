@@ -1,6 +1,6 @@
-import { BaseDto } from 'common'
 
-export class WatchRecordDto extends BaseDto {
+
+export class WatchRecordDto {
     id: string
     customerId: string
     movieId: string

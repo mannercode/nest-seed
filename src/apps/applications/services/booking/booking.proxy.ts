@@ -9,12 +9,12 @@ export class BookingProxy {
 
     @MethodLog({ level: 'verbose' })
     findShowingTheaters(args: { movieId: string; latlong: LatLong }): Promise<TheaterDto[]> {
-        return getProxyValue(this.service.send('applications.booking.findShowingTheaters', args))
+        return getProxyValue(this.service.send('nestSeed.applications.booking.findShowingTheaters', args))
     }
 
     @MethodLog({ level: 'verbose' })
     findShowdates(args: { movieId: string; theaterId: string }): Promise<Date[]> {
-        return getProxyValue(this.service.send('applications.booking.findShowdates', args))
+        return getProxyValue(this.service.send('nestSeed.applications.booking.findShowdates', args))
     }
 
     @MethodLog({ level: 'verbose' })
@@ -23,13 +23,13 @@ export class BookingProxy {
         theaterId: string
         showdate: Date
     }): Promise<ShowtimeSalesStatusDto[]> {
-        return getProxyValue(this.service.send('applications.booking.findShowtimes', args))
+        return getProxyValue(this.service.send('nestSeed.applications.booking.findShowtimes', args))
     }
 
     @MethodLog({ level: 'verbose' })
     getAvailableTickets(showtimeId: string): Promise<TicketDto[]> {
         return getProxyValue(
-            this.service.send('applications.booking.getAvailableTickets', showtimeId)
+            this.service.send('nestSeed.applications.booking.getAvailableTickets', showtimeId)
         )
     }
 
@@ -37,6 +37,6 @@ export class BookingProxy {
     holdTickets(args: { customerId: string; showtimeId: string; ticketIds: string[] }): Promise<{
         heldTicketIds: string[]
     }> {
-        return getProxyValue(this.service.send('applications.booking.holdTickets', args))
+        return getProxyValue(this.service.send('nestSeed.applications.booking.holdTickets', args))
     }
 }

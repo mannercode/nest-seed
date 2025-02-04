@@ -7,12 +7,12 @@ import { WatchRecordsService } from './watch-records.service'
 export class WatchRecordsController {
     constructor(private service: WatchRecordsService) {}
 
-    @MessagePattern('cores.watchRecords.createWatchRecord')
+    @MessagePattern('nestSeed.cores.watchRecords.createWatchRecord.*')
     createWatchRecord(@Payload() createDto: WatchRecordCreateDto) {
         return this.service.createWatchRecord(createDto)
     }
 
-    @MessagePattern('cores.watchRecords.findWatchRecords')
+    @MessagePattern('nestSeed.cores.watchRecords.findWatchRecords.*')
     findWatchRecords(@Payload() queryDto: WatchRecordQueryDto) {
         return this.service.findWatchRecords(queryDto)
     }

@@ -42,10 +42,10 @@ export const configSchema = Joi.object({
     FILE_UPLOAD_MAX_FILES_PER_UPLOAD: Joi.number().required(),
     FILE_UPLOAD_ALLOWED_FILE_TYPES: Joi.string().required(),
 
-    KAFKA_BROKER1: Joi.string().required(),
-    KAFKA_BROKER2: Joi.string().required(),
-    KAFKA_BROKER3: Joi.string().required(),
-    KAFKA_PORT: Joi.number().required(),
+    NATS_HOST1: Joi.string().required(),
+    NATS_HOST2: Joi.string().required(),
+    NATS_HOST3: Joi.string().required(),
+    NATS_PORT: Joi.number().required(),
 
     SERVICE_GATEWAY_HOST: Joi.string().required(),
     SERVICE_GATEWAY_PORT: Joi.number().required(),
@@ -127,18 +127,12 @@ export class AppConfigService extends BaseConfigService {
         }
     }
 
-    get brokers() {
-        const broker1 = this.getString('KAFKA_BROKER1')
-        const broker2 = this.getString('KAFKA_BROKER2')
-        const broker3 = this.getString('KAFKA_BROKER3')
-        const brokerPort = this.getNumber('KAFKA_PORT')
-        const brokers = [
-            `${broker1}:${brokerPort}`,
-            `${broker2}:${brokerPort}`,
-            `${broker3}:${brokerPort}`
-        ]
+    get nats() {
+        const hosts = ['NATS_HOST1', 'NATS_HOST2', 'NATS_HOST3'].map((key) => this.getString(key))
+        const port = this.getNumber('NATS_PORT')
+        const servers = hosts.map((host) => `nats://${host}:${port}`)
 
-        return brokers
+        return { servers }
     }
 
     // TODO healthPort -> httpPort

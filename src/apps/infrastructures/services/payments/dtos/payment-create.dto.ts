@@ -1,7 +1,7 @@
 import { IsNotEmpty, IsPositive, IsString } from 'class-validator'
-import { BaseDto } from 'common'
 
-export class PaymentCreateDto extends BaseDto {
+
+export class PaymentCreateDto {
     @IsString()
     @IsNotEmpty()
     customerId: string

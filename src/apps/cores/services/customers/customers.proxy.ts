@@ -15,46 +15,46 @@ export class CustomersProxy {
     @MethodLog({ level: 'verbose' })
     async createCustomer(createDto: CustomerCreateDto): Promise<CustomerDto> {
         return getProxyValue(
-            this.service.send<CustomerDto>('cores.customers.createCustomer', createDto)
+            this.service.send<CustomerDto>('nestSeed.cores.customers.createCustomer', createDto)
         )
     }
 
     @MethodLog({ level: 'verbose' })
     updateCustomer(customerId: string, updateDto: CustomerUpdateDto): Promise<CustomerDto> {
         return getProxyValue(
-            this.service.send('cores.customers.updateCustomer', { customerId, updateDto })
+            this.service.send('nestSeed.cores.customers.updateCustomer', { customerId, updateDto })
         )
     }
 
     @MethodLog({ level: 'verbose' })
     getCustomer(customerId: string): Promise<CustomerDto> {
-        return getProxyValue(this.service.send('cores.customers.getCustomer', customerId))
+        return getProxyValue(this.service.send('nestSeed.cores.customers.getCustomer', customerId))
     }
 
     @MethodLog({ level: 'verbose' })
     deleteCustomer(customerId: string): Promise<boolean> {
-        return getProxyValue(this.service.send('cores.customers.deleteCustomer', customerId))
+        return getProxyValue(this.service.send('nestSeed.cores.customers.deleteCustomer', customerId))
     }
 
     @MethodLog({ level: 'verbose' })
     findCustomers(queryDto: CustomerQueryDto): Promise<CustomerDto[]> {
-        return getProxyValue(this.service.send('cores.customers.findCustomers', queryDto))
+        return getProxyValue(this.service.send('nestSeed.cores.customers.findCustomers', queryDto))
     }
 
     @MethodLog({ level: 'verbose' })
     login(userId: string, email: string): Promise<JwtAuthTokens> {
-        return getProxyValue(this.service.send('cores.customers.login', { userId, email }))
+        return getProxyValue(this.service.send('nestSeed.cores.customers.login', { userId, email }))
     }
 
     @MethodLog({ level: 'verbose' })
     refreshAuthTokens(refreshToken: string): Promise<JwtAuthTokens> {
-        return getProxyValue(this.service.send('cores.customers.refreshAuthTokens', refreshToken))
+        return getProxyValue(this.service.send('nestSeed.cores.customers.refreshAuthTokens', refreshToken))
     }
 
     @MethodLog({ level: 'verbose' })
     authenticateCustomer(email: string, password: string): Promise<string | null> {
         return getProxyValue(
-            this.service.send('cores.customers.authenticateCustomer', { email, password })
+            this.service.send('nestSeed.cores.customers.authenticateCustomer', { email, password })
         )
     }
 }
