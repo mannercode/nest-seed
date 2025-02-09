@@ -9,21 +9,21 @@ export class StorageFilesProxy {
     @MethodLog({ level: 'verbose' })
     saveFiles(createDtos: StorageFileCreateDto[]): Promise<StorageFileDto[]> {
         return getProxyValue(
-            this.service.send('nestSeed.infrastructures.storageFiles.saveFiles', createDtos)
+            this.service.send('infrastructures.storageFiles.saveFiles', createDtos)
         )
     }
 
     @MethodLog({ level: 'verbose' })
     getStorageFile(fileId: string): Promise<StorageFileDto> {
         return getProxyValue(
-            this.service.send('nestSeed.infrastructures.storageFiles.getStorageFile', fileId)
+            this.service.send('infrastructures.storageFiles.getStorageFile', fileId)
         )
     }
 
     @MethodLog({ level: 'verbose' })
     deleteStorageFile(fileId: string): Promise<boolean> {
         return getProxyValue(
-            this.service.send('nestSeed.infrastructures.storageFiles.deleteStorageFile', fileId)
+            this.service.send('infrastructures.storageFiles.deleteStorageFile', fileId)
         )
     }
 }
