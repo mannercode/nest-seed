@@ -57,7 +57,7 @@ export const createShowtimeDtos = (startTimes: Date[], overrides = {}) => {
 
 export const monitorEvents = (client: HttpTestClient, waitStatuses: string[]) => {
     return new Promise((resolve, reject) => {
-        client.get('/showtime-creation/events').sse(async (data: any) => {
+        client.get('/showtime-creation/events').sse((data) => {
             const result = jsonToObject(JSON.parse(data))
 
             if (['complete', 'fail', 'error'].includes(result.status)) {
