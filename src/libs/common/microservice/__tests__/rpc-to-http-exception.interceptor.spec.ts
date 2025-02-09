@@ -1,16 +1,11 @@
 import { INestMicroservice } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { Transport } from '@nestjs/microservices'
-import {
-    ClientProxyModule,
-    generateShortId,
-    HttpToRpcExceptionFilter,
-    RpcToHttpExceptionInterceptor
-} from 'common'
+import { ClientProxyModule, HttpToRpcExceptionFilter, RpcToHttpExceptionInterceptor } from 'common'
 import {
     createHttpTestContext,
     createMicroserviceTestContext,
-    getNatsTestConnection,
+    createNatsContainers,
     HttpTestClient,
     HttpTestContext,
     MicroserviceTestContext
@@ -21,22 +16,24 @@ describe('RpcToHttpExceptionInterceptor', () => {
     let microContext: MicroserviceTestContext
     let httpContext: HttpTestContext
     let client: HttpTestClient
+    let closeNats: () => Promise<void>
 
     beforeEach(async () => {
-        microContext = await createMicroserviceTestContext(
-            { imports: [MicroserviceModule] },
-            (app: INestMicroservice) => app.useGlobalFilters(new HttpToRpcExceptionFilter())
-        )
+        const { servers, close } = await createNatsContainers()
+        closeNats = close
+
+        microContext = await createMicroserviceTestContext({
+            metadata: { imports: [MicroserviceModule] },
+            nats: { servers },
+            configureApp: (app: INestMicroservice) =>
+                app.useGlobalFilters(new HttpToRpcExceptionFilter())
+        })
 
         httpContext = await createHttpTestContext({
             imports: [
                 ClientProxyModule.registerAsync({
                     name: 'name',
-                    tag: () => generateShortId(),
-                    useFactory: () => {
-                        const { servers } = getNatsTestConnection()
-                        return { transport: Transport.NATS, options: { servers } }
-                    }
+                    useFactory: () => ({ transport: Transport.NATS, options: { servers } })
                 })
             ],
             controllers: [HttpController],
@@ -48,6 +45,7 @@ describe('RpcToHttpExceptionInterceptor', () => {
     afterEach(async () => {
         await httpContext?.close()
         await microContext?.close()
+        await closeNats?.()
     })
 
     it('should return BAD_REQUEST(400) status', async () => {

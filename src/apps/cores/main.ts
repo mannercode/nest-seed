@@ -1,11 +1,10 @@
 import { INestApplication } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
-import { AppLoggerService, generateShortId, HttpToRpcExceptionFilter } from 'common'
+import { AppLoggerService, HttpToRpcExceptionFilter } from 'common'
 import { existsSync } from 'fs'
-import { Partitioners } from 'kafkajs'
 import { exit } from 'process'
-import { AppConfigService, isTest } from 'shared/config'
+import { AppConfigService } from 'shared/config'
 import { CoresModule } from './cores.module'
 
 export async function configureCores(app: INestApplication<any>) {

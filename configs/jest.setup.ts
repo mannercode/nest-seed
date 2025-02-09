@@ -1,28 +1,19 @@
+import 'reflect-metadata'
 import dotenv from 'dotenv'
-dotenv.config({ path: ['.env.test'] })
+dotenv.config({ path: ['.env.test', '.env.infra'] })
 process.env.NODE_ENV = 'test'
 
-import 'reflect-metadata'
+function generateShortId(length: number = 10): string {
+    const characters = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
+    let result = ''
+    const charactersLength = characters.length
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength))
+    }
 
-process.env.TEST_REDIS_HOST1 = process.env.REDIS_HOST1
-process.env.TEST_REDIS_HOST2 = process.env.REDIS_HOST2
-process.env.TEST_REDIS_HOST3 = process.env.REDIS_HOST3
-process.env.TEST_REDIS_HOST4 = process.env.REDIS_HOST4
-process.env.TEST_REDIS_HOST5 = process.env.REDIS_HOST5
-process.env.TEST_REDIS_HOST6 = process.env.REDIS_HOST6
-process.env.TEST_REDIS_PORT = process.env.REDIS_PORT
-process.env.TEST_REDIS_PASSWORD = process.env.REDIS_PASSWORD
+    return result
+}
 
-// TODO MONGO_DB는 MONGO로 줄이는게 맞지 않나?
-process.env.TEST_MONGO_DB_HOST1 = process.env.MONGO_DB_HOST1
-process.env.TEST_MONGO_DB_HOST2 = process.env.MONGO_DB_HOST2
-process.env.TEST_MONGO_DB_HOST3 = process.env.MONGO_DB_HOST3
-process.env.TEST_MONGO_DB_PORT = process.env.MONGO_DB_PORT
-process.env.TEST_MONGO_DB_REPLICA_NAME = process.env.MONGO_DB_REPLICA_NAME
-process.env.TEST_MONGO_DB_USERNAME = process.env.MONGO_DB_USERNAME
-process.env.TEST_MONGO_DB_PASSWORD = process.env.MONGO_DB_PASSWORD
-
-process.env.TEST_NATS_HOST1 = process.env.NATS_HOST1
-process.env.TEST_NATS_HOST2 = process.env.NATS_HOST2
-process.env.TEST_NATS_HOST3 = process.env.NATS_HOST3
-process.env.TEST_NATS_PORT = process.env.NATS_PORT
+global.beforeEach(() => {
+    process.env.TEST_ID = generateShortId()
+})

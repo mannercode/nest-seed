@@ -6,7 +6,7 @@ import { TicketHoldingService } from './ticket-holding.service'
 export class TicketHoldingController {
     constructor(private service: TicketHoldingService) {}
 
-    @MessagePattern('nestSeed.cores.ticketHolding.holdTickets.*')
+    @MessagePattern('nestSeed.cores.ticketHolding.holdTickets')
     holdTickets(
         @Payload('customerId') customerId: string,
         @Payload('showtimeId') showtimeId: string,
@@ -21,7 +21,7 @@ export class TicketHoldingController {
         })
     }
 
-    @MessagePattern('nestSeed.cores.ticketHolding.findHeldTicketIds.*')
+    @MessagePattern('nestSeed.cores.ticketHolding.findHeldTicketIds')
     findHeldTicketIds(
         @Payload('showtimeId') showtimeId: string,
         @Payload('customerId') customerId: string
@@ -29,7 +29,7 @@ export class TicketHoldingController {
         return this.service.findHeldTicketIds(showtimeId, customerId)
     }
 
-    @MessagePattern('nestSeed.cores.ticketHolding.releaseTickets.*')
+    @MessagePattern('nestSeed.cores.ticketHolding.releaseTickets')
     releaseTickets(
         @Payload('showtimeId') showtimeId: string,
         @Payload('customerId') customerId: string

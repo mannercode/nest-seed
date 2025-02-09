@@ -1,22 +1,11 @@
 import { Controller, Module } from '@nestjs/common'
-import { Ctx, MessagePattern, NatsContext, Payload } from '@nestjs/microservices'
-
-class ResponseDto {
-    id: string
-}
-
-export class RequestDto {
-    arg: string
-}
+import { MessagePattern, Payload } from '@nestjs/microservices'
 
 @Controller()
 class SampleController {
-    @MessagePattern('test.testlib.getMessage.*')
-    getMessage(@Payload() request: RequestDto, @Ctx() _ctx: NatsContext) {
-        const dto = new ResponseDto()
-        dto.id = request.arg
-
-        return dto
+    @MessagePattern('test.getMessage')
+    getMessage(@Payload() request: { arg: string }) {
+        return { id: request.arg }
     }
 }
 

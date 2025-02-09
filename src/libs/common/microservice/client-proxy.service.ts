@@ -5,10 +5,7 @@ import { lastValueFrom, Observable } from 'rxjs'
 
 @Injectable()
 export class ClientProxyService implements OnModuleDestroy {
-    constructor(
-        private proxy: ClientProxy,
-        private name: string
-    ) {}
+    constructor(private proxy: ClientProxy) {}
 
     static getToken(name: string) {
         return `ClientProxyService_${name}`
@@ -20,9 +17,7 @@ export class ClientProxyService implements OnModuleDestroy {
 
     // TODO {} 기본값 없애라
     send<T>(cmd: string, payload: any = {}): Observable<T> {
-        const taggedCmd = `${cmd}.${this.name}`
-        console.log('taggedCmd', taggedCmd)
-        return this.proxy.send(taggedCmd, payload)
+        return this.proxy.send(cmd, payload)
     }
 }
 
@@ -38,15 +33,13 @@ export async function getProxyValue<T>(observer: Observable<T>): Promise<T> {
 @Global()
 @Module({})
 export class ClientProxyModule {
-    static registerAsync(
-        options: ClientsProviderAsyncOptions & { tag: () => string }
-    ): DynamicModule {
-        const { name, useFactory, inject, tag } = options
+    static registerAsync(options: ClientsProviderAsyncOptions): DynamicModule {
+        const { name, useFactory, inject } = options
 
         const provider = {
             provide: ClientProxyService.getToken(name as string),
             useFactory: async (proxy: ClientProxy) => {
-                return new ClientProxyService(proxy, tag())
+                return new ClientProxyService(proxy)
             },
             inject: [name]
         }

@@ -20,14 +20,14 @@ export const configSchema = Joi.object({
     REDIS_PASSWORD: Joi.string().optional(),
     REDIS_PORT: Joi.number().required(),
 
-    MONGO_DB_HOST1: Joi.string().required(),
-    MONGO_DB_HOST2: Joi.string().required(),
-    MONGO_DB_HOST3: Joi.string().required(),
-    MONGO_DB_PORT: Joi.number().required(),
-    MONGO_DB_REPLICA_NAME: Joi.string().required(),
-    MONGO_DB_USERNAME: Joi.string().required(),
-    MONGO_DB_PASSWORD: Joi.string().required(),
-    MONGO_DB_DATABASE: Joi.string().required(),
+    MONGO_HOST1: Joi.string().required(),
+    MONGO_HOST2: Joi.string().required(),
+    MONGO_HOST3: Joi.string().required(),
+    MONGO_PORT: Joi.number().required(),
+    MONGO_REPLICA: Joi.string().required(),
+    MONGO_USERNAME: Joi.string().required(),
+    MONGO_PASSWORD: Joi.string().required(),
+    MONGO_DATABASE: Joi.string().required(),
 
     HTTP_REQUEST_PAYLOAD_LIMIT: Joi.string().required(),
     HTTP_PAGINATION_DEFAULT_SIZE: Joi.number().required(),
@@ -91,14 +91,14 @@ export class AppConfigService extends BaseConfigService {
     }
     get mongo() {
         return {
-            host1: this.getString('MONGO_DB_HOST1'),
-            host2: this.getString('MONGO_DB_HOST2'),
-            host3: this.getString('MONGO_DB_HOST3'),
-            port: this.getNumber('MONGO_DB_PORT'),
-            replica: this.getString('MONGO_DB_REPLICA_NAME'),
-            user: this.getString('MONGO_DB_USERNAME'),
-            password: this.getString('MONGO_DB_PASSWORD'),
-            database: this.getString('MONGO_DB_DATABASE')
+            host1: this.getString('MONGO_HOST1'),
+            host2: this.getString('MONGO_HOST2'),
+            host3: this.getString('MONGO_HOST3'),
+            port: this.getNumber('MONGO_PORT'),
+            replica: this.getString('MONGO_REPLICA'),
+            user: this.getString('MONGO_USERNAME'),
+            password: this.getString('MONGO_PASSWORD'),
+            database: this.getString('MONGO_DATABASE')
         }
     }
 

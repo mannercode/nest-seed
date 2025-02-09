@@ -4,12 +4,12 @@ import { ClientProxyService, InjectClientProxy } from 'common'
 
 @Controller()
 class MicroserviceController {
-    @MessagePattern('test.common.RpcToHttpExceptionInterceptor.throwHttpException.*')
+    @MessagePattern('test.common.RpcToHttpExceptionInterceptor.throwHttpException')
     throwHttpException() {
         throw new BadRequestException('http exception')
     }
 
-    @MessagePattern('test.common.RpcToHttpExceptionInterceptor.throwError.*')
+    @MessagePattern('test.common.RpcToHttpExceptionInterceptor.throwError')
     throwError() {
         throw new Error('error message')
     }

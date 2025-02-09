@@ -4,7 +4,7 @@ import { ClientProxyService, getProxyValue, InjectClientProxy } from 'common'
 
 @Controller()
 class MicroserviceController {
-    @MessagePattern('test.common.ClientProxyService.method.*')
+    @MessagePattern('test.method')
     method() {
         return { result: 'success' }
     }
@@ -19,12 +19,12 @@ export class HttpController {
 
     @Get('observable')
     getObservable() {
-        return this.client.send('test.common.ClientProxyService.method', {})
+        return this.client.send('test.method', {})
     }
 
     @Get('value')
     getValue() {
-        const observer = this.client.send('test.common.ClientProxyService.method')
+        const observer = this.client.send('test.method')
         return getProxyValue(observer)
     }
 }

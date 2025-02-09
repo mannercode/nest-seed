@@ -13,22 +13,22 @@ export class CreateSampleDto {
 class SampleController {
     constructor() {}
 
-    @MessagePattern('test.common.HttpToRpcExceptionFilter.throwHttpException.*')
+    @MessagePattern('test.throwHttpException')
     throwHttpException() {
         throw new NotFoundException('not found exception')
     }
 
-    @MessagePattern('test.common.HttpToRpcExceptionFilter.rethrow.*')
+    @MessagePattern('test.rethrow')
     rethrow() {
         throw { status: 400, response: { message: 'error message' } }
     }
 
-    @MessagePattern('test.common.HttpToRpcExceptionFilter.throwError.*')
+    @MessagePattern('test.throwError')
     throwError() {
         throw new Error('error')
     }
 
-    @MessagePattern('test.common.HttpToRpcExceptionFilter.createSample.*')
+    @MessagePattern('test.createSample')
     createSample(createDto: CreateSampleDto) {
         return createDto
     }

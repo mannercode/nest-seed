@@ -1,31 +1,39 @@
 import { INestMicroservice } from '@nestjs/common'
+import { HttpToRpcExceptionFilter } from 'common'
 import {
     createMicroserviceTestContext,
+    createNatsContainers,
     MicroserviceTestClient,
     MicroserviceTestContext
 } from 'testlib'
-import { HttpToRpcExceptionFilter } from 'common'
 import { SampleModule } from './http-to-rpc-exception.filter.fixture'
 
 describe('HttpToRpcExceptionFilter', () => {
     let testContext: MicroserviceTestContext
     let client: MicroserviceTestClient
+    let closeNats: () => Promise<void>
 
     beforeEach(async () => {
-        testContext = await createMicroserviceTestContext(
-            { imports: [SampleModule] },
-            (app: INestMicroservice) => app.useGlobalFilters(new HttpToRpcExceptionFilter())
-        )
+        const { servers, close } = await createNatsContainers()
+        closeNats = close
+
+        testContext = await createMicroserviceTestContext({
+            metadata: { imports: [SampleModule] },
+            nats: { servers },
+            configureApp: (app: INestMicroservice) =>
+                app.useGlobalFilters(new HttpToRpcExceptionFilter())
+        })
         client = testContext.client
     })
 
     afterEach(async () => {
         await testContext?.close()
+        await closeNats?.()
     })
 
     it('should handle HttpException properly for RPC', async () => {
         await client.error(
-            'test.common.HttpToRpcExceptionFilter.throwHttpException',
+            'test.throwHttpException',
             {},
             {
                 response: { error: 'Not Found', message: 'not found exception', statusCode: 404 },
@@ -36,19 +44,19 @@ describe('HttpToRpcExceptionFilter', () => {
 
     it('should handle {status, response} properly for RPC', async () => {
         await client.error(
-            'test.common.HttpToRpcExceptionFilter.rethrow',
+            'test.rethrow',
             {},
             { status: 400, response: { message: 'error message' } }
         )
     })
 
     it('should handle Error properly for RPC', async () => {
-        await client.error('test.common.HttpToRpcExceptionFilter.throwError', {}, { status: 500 })
+        await client.error('test.throwError', {}, { status: 500 })
     })
 
     it('should validate input and return error for incorrect data format', async () => {
         await client.error(
-            'test.common.HttpToRpcExceptionFilter.createSample',
+            'test.createSample',
             { wrong: 'wrong field' },
             {
                 response: {

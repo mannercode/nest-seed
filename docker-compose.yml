@@ -1,29 +1,25 @@
-x-mongo-image: &mongo-image { image: mongo:8.0 }
-x-redis-image: &redis-image { image: redis:7.4 }
-x-nats-image: &nats-image { image: nats:2.10-alpine }
-
 x-logging: &default-logging
     options: { max-size: '10m', max-file: '3' }
 
 x-mongo-common: &mongo-common
-    <<: *mongo-image
+    image: ${MONGO_IMAGE}
     profiles: ['infra']
     logging: *default-logging
     environment:
-        MONGO_INITDB_ROOT_USERNAME: '${MONGO_DB_USERNAME}'
-        MONGO_INITDB_ROOT_PASSWORD: '${MONGO_DB_PASSWORD}'
-    command: mongod --replSet ${MONGO_DB_REPLICA_NAME} --keyFile /etc/mongodb/mongodb.key --bind_ip_all
+        MONGO_INITDB_ROOT_USERNAME: '${MONGO_USERNAME}'
+        MONGO_INITDB_ROOT_PASSWORD: '${MONGO_PASSWORD}'
+    command: mongod --replSet ${MONGO_REPLICA} --keyFile /etc/mongodb/mongodb.key --bind_ip_all
     volumes: ['mongodb_key:/etc/mongodb']
     networks: ['default']
     restart: always
     depends_on: ['mongo-key-generator']
     healthcheck:
-        test: "mongosh --quiet -u $MONGO_DB_USERNAME -p $MONGO_DB_PASSWORD --authenticationDatabase admin --eval 'rs.isMaster().ismaster || rs.isMaster().secondary'"
+        test: "mongosh --quiet -u $MONGO_USERNAME -p $MONGO_PASSWORD --authenticationDatabase admin --eval 'rs.isMaster().ismaster || rs.isMaster().secondary'"
         interval: 5s
         timeout: 5s
 
 x-redis-common: &redis-common
-    <<: *redis-image
+    image: ${REDIS_IMAGE}
     command: 'redis-server --port $REDIS_PORT --requirepass $REDIS_PASSWORD --masterauth $REDIS_PASSWORD --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes'
     profiles: ['infra']
     logging: *default-logging
@@ -35,7 +31,7 @@ x-redis-common: &redis-common
         timeout: 5s
 
 x-nats-common: &nats-common
-    <<: *nats-image
+    image: ${NATS_IMAGE}
     profiles: ['infra']
     logging: *default-logging
     networks: ['default']
@@ -71,7 +67,7 @@ services:
         <<: *redis-common
         container_name: ${REDIS_HOST6}
     redis-setup:
-        <<: *redis-image
+        image: ${REDIS_IMAGE}
         container_name: ${PROJECT_NAME}-redis-setup
         profiles: ['infra']
         depends_on:
@@ -90,7 +86,7 @@ services:
         networks: ['default']
 
     mongo-key-generator:
-        <<: *mongo-image
+        image: ${MONGO_IMAGE}
         container_name: ${PROJECT_NAME}-mongo-key-generator
         profiles: ['infra']
         command: 'sh -c "openssl rand -base64 768 > mongodb.key && chmod 400 mongodb.key && chown mongodb:mongodb mongodb.key"'
@@ -98,15 +94,15 @@ services:
         working_dir: /mongodb_key
     mongo1:
         <<: *mongo-common
-        container_name: ${MONGO_DB_HOST1}
+        container_name: ${MONGO_HOST1}
     mongo2:
         <<: *mongo-common
-        container_name: ${MONGO_DB_HOST2}
+        container_name: ${MONGO_HOST2}
     mongo3:
         <<: *mongo-common
-        container_name: ${MONGO_DB_HOST3}
+        container_name: ${MONGO_HOST3}
     mongo-setup:
-        <<: *mongo-image
+        image: ${MONGO_IMAGE}
         container_name: ${PROJECT_NAME}-mongo-setup
         profiles: ['infra']
         depends_on:
@@ -116,17 +112,17 @@ services:
         networks: ['default']
         command: >
             sh -c "
-            MONGO_HOST1_URI=\"mongodb://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@mongo1:${MONGO_DB_PORT}/?authSource=admin\"
+            MONGO_HOST1_URI=\"mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo1:${MONGO_PORT}/?authSource=admin\"
 
             mongosh $${MONGO_HOST1_URI} --eval \"
                 rs.initiate({
-                    _id: \\\"${MONGO_DB_REPLICA_NAME}\\\",
+                    _id: \\\"${MONGO_REPLICA}\\\",
                     members: [{_id: 0, host: \\\"mongo1\\\"}, {_id: 1, host: \\\"mongo2\\\"}, {_id: 2, host: \\\"mongo3\\\"}]
                 })
             \"
 
-            MONGO_DB_HOSTS=\"mongo1:${MONGO_DB_PORT},mongo2:${MONGO_DB_PORT},mongo3:${MONGO_DB_PORT}\";
-            MONGO_URI=\"mongodb://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@$${MONGO_DB_HOSTS}/?authSource=admin&replicaSet=${MONGO_DB_REPLICA_NAME}\";
+            MONGO_HOSTS=\"mongo1:${MONGO_PORT},mongo2:${MONGO_PORT},mongo3:${MONGO_PORT}\";
+            MONGO_URI=\"mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@$${MONGO_HOSTS}/?authSource=admin&replicaSet=${MONGO_REPLICA}\";
 
             mongosh $${MONGO_URI} --eval \"db.test.insertOne({test: 'test'})\"
             "
@@ -163,7 +159,7 @@ services:
 
     gateway:
         <<: *app-common
-        build: { context: ., args: { APP_NAME: gateway } }
+        build: { context: ., args: { APP_IMAGE: $APP_IMAGE, APP_NAME: gateway } }
         image: ${SERVICE_GATEWAY_HOST}
         container_name: ${SERVICE_GATEWAY_HOST}
         healthcheck:
@@ -176,7 +172,7 @@ services:
 
     applications:
         <<: *app-common
-        build: { context: ., args: { APP_NAME: applications } }
+        build: { context: ., args: { APP_IMAGE: $APP_IMAGE, APP_NAME: applications } }
         image: ${SERVICE_APPLICATIONS_HOST}
         container_name: ${SERVICE_APPLICATIONS_HOST}
         healthcheck:
@@ -187,7 +183,7 @@ services:
 
     cores:
         <<: *app-common
-        build: { context: ., args: { APP_NAME: cores } }
+        build: { context: ., args: { APP_IMAGE: $APP_IMAGE, APP_NAME: cores } }
         image: ${SERVICE_CORES_HOST}
         container_name: ${SERVICE_CORES_HOST}
         healthcheck:
@@ -198,7 +194,7 @@ services:
 
     infrastructures:
         <<: *app-common
-        build: { context: ., args: { APP_NAME: infrastructures } }
+        build: { context: ., args: { APP_IMAGE: $APP_IMAGE, APP_NAME: infrastructures } }
         image: ${SERVICE_INFRASTRUCTURES_HOST}
         container_name: ${SERVICE_INFRASTRUCTURES_HOST}
         healthcheck:
@@ -210,7 +206,7 @@ services:
             - './_output/uploads:/app/_output/uploads'
 
     apps-setup:
-        image: node:22-alpine
+        image: ${APP_IMAGE}
         container_name: ${PROJECT_NAME}-apps-setup
         profiles: ['apps']
         depends_on:

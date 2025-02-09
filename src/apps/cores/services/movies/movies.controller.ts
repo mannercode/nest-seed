@@ -23,12 +23,12 @@ class CreateMovieDto {
 export class MoviesController {
     constructor(private service: MoviesService) {}
 
-    @MessagePattern('nestSeed.cores.movies.createMovie.*')
+    @MessagePattern('nestSeed.cores.movies.createMovie')
     createMovie(@Payload() { movieCreateDto, fileCreateDtos }: CreateMovieDto) {
         return this.service.createMovie(movieCreateDto, fileCreateDtos)
     }
 
-    @MessagePattern('nestSeed.cores.movies.updateMovie.*')
+    @MessagePattern('nestSeed.cores.movies.updateMovie')
     updateMovie(
         @Payload('movieId') movieId: string,
         @Payload('updateDto') updateDto: MovieUpdateDto
@@ -36,27 +36,27 @@ export class MoviesController {
         return this.service.updateMovie(movieId, updateDto)
     }
 
-    @MessagePattern('nestSeed.cores.movies.getMovie.*')
+    @MessagePattern('nestSeed.cores.movies.getMovie')
     getMovie(@Payload() movieId: string) {
         return this.service.getMovie(movieId)
     }
 
-    @MessagePattern('nestSeed.cores.movies.deleteMovie.*')
+    @MessagePattern('nestSeed.cores.movies.deleteMovie')
     deleteMovie(@Payload() movieId: string) {
         return this.service.deleteMovie(movieId)
     }
 
-    @MessagePattern('nestSeed.cores.movies.findMovies.*')
+    @MessagePattern('nestSeed.cores.movies.findMovies')
     findMovies(@Payload() queryDto: MovieQueryDto) {
         return this.service.findMovies(queryDto)
     }
 
-    @MessagePattern('nestSeed.cores.movies.getMoviesByIds.*')
+    @MessagePattern('nestSeed.cores.movies.getMoviesByIds')
     getMoviesByIds(@Payload() movieIds: string[]) {
         return this.service.getMoviesByIds(movieIds)
     }
 
-    @MessagePattern('nestSeed.cores.movies.moviesExist.*')
+    @MessagePattern('nestSeed.cores.movies.moviesExist')
     moviesExist(@Payload() movieIds: string[]) {
         return this.service.moviesExist(movieIds)
     }

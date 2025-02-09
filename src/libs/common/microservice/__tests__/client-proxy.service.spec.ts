@@ -1,9 +1,9 @@
 import { Transport } from '@nestjs/microservices'
-import { ClientProxyModule, generateShortId } from 'common'
+import { ClientProxyModule } from 'common'
 import {
     createHttpTestContext,
     createMicroserviceTestContext,
-    getNatsTestConnection,
+    createNatsContainers,
     HttpTestClient,
     HttpTestContext,
     MicroserviceTestContext
@@ -14,19 +14,22 @@ describe('ClientProxyService', () => {
     let microContext: MicroserviceTestContext
     let httpContext: HttpTestContext
     let client: HttpTestClient
+    let closeNats: () => Promise<void>
 
     beforeEach(async () => {
-        microContext = await createMicroserviceTestContext({ imports: [MicroserviceModule] })
+        const { servers, close } = await createNatsContainers()
+        closeNats = close
+
+        microContext = await createMicroserviceTestContext({
+            metadata: { imports: [MicroserviceModule] },
+            nats: { servers }
+        })
 
         httpContext = await createHttpTestContext({
             imports: [
                 ClientProxyModule.registerAsync({
                     name: 'name',
-                    tag: () => generateShortId(),
-                    useFactory: () => {
-                        const { servers } = getNatsTestConnection()
-                        return { transport: Transport.NATS, options: { servers } }
-                    }
+                    useFactory: () => ({ transport: Transport.NATS, options: { servers } })
                 })
             ],
             controllers: [HttpController]
@@ -37,6 +40,7 @@ describe('ClientProxyService', () => {
     afterEach(async () => {
         await httpContext?.close()
         await microContext?.close()
+        await closeNats?.()
     })
 
     it('HttpController는 Observable로 응답할 수 있다', async () => {

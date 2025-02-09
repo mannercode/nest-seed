@@ -7,7 +7,7 @@ import { PurchaseProcessService } from './purchase-process.service'
 export class PurchaseProcessController {
     constructor(private service: PurchaseProcessService) {}
 
-    @MessagePattern('nestSeed.applications.purchaseProcess.processPurchase.*')
+    @MessagePattern('nestSeed.applications.purchaseProcess.processPurchase')
     processPurchase(@Payload() createDto: PurchaseCreateDto) {
         return this.service.processPurchase(createDto)
     }

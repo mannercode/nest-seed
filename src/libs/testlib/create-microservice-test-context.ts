@@ -1,9 +1,8 @@
 import { INestMicroservice } from '@nestjs/common'
-import { NatsOptions, Transport } from '@nestjs/microservices'
+import { Transport } from '@nestjs/microservices'
 import { TestingModule } from '@nestjs/testing'
 import { createTestingModule, ModuleMetadataEx } from './create-testing-module'
 import { MicroserviceTestClient } from './microservice.test-client'
-import { getNatsTestConnection } from './test-containers'
 
 export interface MicroserviceTestContext {
     module: TestingModule
@@ -12,20 +11,24 @@ export interface MicroserviceTestContext {
     close: () => Promise<void>
 }
 
-export async function createMicroserviceTestContext(
-    metadata: ModuleMetadataEx,
+export async function createMicroserviceTestContext({
+    metadata,
+    nats,
+    configureApp
+}: {
+    metadata: ModuleMetadataEx
+    nats: { servers: string[] }
     configureApp?: (app: INestMicroservice) => void
-) {
+}) {
     const module = await createTestingModule(metadata)
 
-    const { servers } = getNatsTestConnection()
-
-    const rpcOptions: NatsOptions = {
+    const rpcOptions = {
         transport: Transport.NATS,
-        options: { servers, queue: 'test-queue' }
-    }
+        options: { servers: nats.servers }
+    } as const
 
-    const app = module.createNestMicroservice<NatsOptions>(rpcOptions)
+    const app = module.createNestMicroservice(rpcOptions)
+
     if (configureApp) await configureApp(app)
 
     const isDebuggingEnabled = process.env.NODE_OPTIONS !== undefined

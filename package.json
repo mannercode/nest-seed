@@ -49,6 +49,7 @@
         "pg": "^8.13.1",
         "reflect-metadata": "^0.2.2",
         "rxjs": "^7.8.1",
+        "testcontainers": "^10.18.0",
         "winston": "^3.17.0",
         "winston-daily-rotate-file": "^5.0.0"
     },
