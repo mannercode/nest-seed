@@ -2,6 +2,7 @@ import { Logger, LogLevel } from '@nestjs/common'
 import { OnEvent } from '@nestjs/event-emitter'
 import 'reflect-metadata'
 import { catchError, isObservable, tap } from 'rxjs'
+import { generateShortId } from '../utils'
 
 export interface MethodLogOptions {
     level?: LogLevel
@@ -29,20 +30,23 @@ export function MethodLog(options: MethodLogOptions = {}): MethodDecorator {
             const filteredArgs = args.filter((_, index) => !excludeArgs.includes(paramNames[index]))
             const start = Date.now()
 
+            const callId = generateShortId()
+            logger[level](`Begin ${className}.${propertyKey}.${callId}`)
+
             try {
                 const result = originalMethod.apply(this, args)
 
                 if (isObservable(result)) {
                     return result.pipe(
                         tap((value) => {
-                            logger[level](`${className}.${propertyKey}`, {
+                            logger[level](`End ${className}.${propertyKey}.${callId}`, {
                                 args: filteredArgs,
                                 return: value,
                                 duration: Date.now() - start
                             })
                         }),
                         catchError((error) => {
-                            logger.error(`${className}.${propertyKey}`, {
+                            logger.error(`End ${className}.${propertyKey}.${callId}`, {
                                 args: filteredArgs,
                                 error: error.message,
                                 duration: Date.now() - start
@@ -53,7 +57,7 @@ export function MethodLog(options: MethodLogOptions = {}): MethodDecorator {
                 } else if (result instanceof Promise) {
                     return result
                         .then((value) => {
-                            logger[level](`${className}.${propertyKey}`, {
+                            logger[level](`End ${className}.${propertyKey}.${callId}`, {
                                 args: filteredArgs,
                                 return: value,
                                 duration: Date.now() - start
@@ -61,7 +65,7 @@ export function MethodLog(options: MethodLogOptions = {}): MethodDecorator {
                             return value
                         })
                         .catch((error) => {
-                            logger.error(`${className}.${propertyKey}`, {
+                            logger.error(`End ${className}.${propertyKey}.${callId}`, {
                                 args: filteredArgs,
                                 error: error.message,
                                 duration: Date.now() - start
@@ -70,7 +74,7 @@ export function MethodLog(options: MethodLogOptions = {}): MethodDecorator {
                         })
                 } else {
                     // 동기 반환값인 경우
-                    logger[level](`${className}.${propertyKey}`, {
+                    logger[level](`End ${className}.${propertyKey}.${callId}`, {
                         args: filteredArgs,
                         return: result,
                         duration: Date.now() - start
@@ -78,7 +82,7 @@ export function MethodLog(options: MethodLogOptions = {}): MethodDecorator {
                     return result
                 }
             } catch (error) {
-                logger.error(`${className}.${propertyKey}`, {
+                logger.error(`End ${className}.${propertyKey}.${callId}`, {
                     args: filteredArgs,
                     error: error.message,
                     duration: Date.now() - start
