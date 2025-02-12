@@ -1,4 +1,3 @@
-
 import { Seat } from '../../theaters'
 import { TicketStatus } from '../models'
 

@@ -1,5 +1,3 @@
-
-
 export class PaymentDto {
     id: string
     customerId: string

@@ -9,7 +9,7 @@ import { AppConfigService } from 'shared/config'
             name: 'clientProxy',
             useFactory: async (config: AppConfigService) => {
                 const { servers } = config.nats
-                return { transport: Transport.NATS, options: { servers ,queue:'applications'} }
+                return { transport: Transport.NATS, options: { servers, queue: 'applications' } }
             },
             inject: [AppConfigService]
         })

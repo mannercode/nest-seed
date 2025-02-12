@@ -1,5 +1,3 @@
-
-
 export class ShowtimeDto {
     id: string
     theaterId: string

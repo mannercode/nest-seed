@@ -1,5 +1,3 @@
-
-
 export class TicketSalesStatusDto {
     total: number
     sold: number

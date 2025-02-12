@@ -1,6 +1,5 @@
 import { IsDate, IsNotEmpty, IsString } from 'class-validator'
 
-
 export class WatchRecordCreateDto {
     @IsString()
     @IsNotEmpty()

@@ -1,7 +1,6 @@
 import { Type } from 'class-transformer'
 import { IsDate, IsNotEmpty, IsString } from 'class-validator'
 
-
 export class ShowtimeCreateDto {
     @IsString()
     @IsNotEmpty()

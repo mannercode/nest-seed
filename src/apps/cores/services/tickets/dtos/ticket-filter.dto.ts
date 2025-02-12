@@ -1,6 +1,5 @@
 import { IsOptional } from 'class-validator'
 
-
 export class TicketFilterDto {
     @IsOptional()
     batchIds?: string[]

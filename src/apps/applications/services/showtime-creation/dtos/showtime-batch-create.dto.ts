@@ -1,7 +1,6 @@
 import { Type } from 'class-transformer'
 import { ArrayNotEmpty, IsArray, IsDate, IsNotEmpty, IsPositive, IsString } from 'class-validator'
 
-
 export class ShowtimeBatchCreateDto {
     @IsString()
     @IsNotEmpty()

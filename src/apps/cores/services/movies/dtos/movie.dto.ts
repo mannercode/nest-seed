@@ -1,4 +1,3 @@
-
 import { MovieGenre, MovieRating } from '../models'
 
 export class MovieDto {
