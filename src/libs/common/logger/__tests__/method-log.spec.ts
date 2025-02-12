@@ -1,4 +1,4 @@
-import { MethodLog, MethodLogOnEvent } from 'common'
+import { MethodLog } from 'common'
 import { lastValueFrom, Observable, of, throwError } from 'rxjs'
 
 export const mockLogger = {
@@ -14,7 +14,6 @@ jest.mock('@nestjs/common', () => ({
     Logger: jest.fn().mockImplementation(() => mockLogger)
 }))
 
-// Due to initialization issues with jest.mock, I couldn't separate TestRepository into fixture.ts
 export class TestService {
     @MethodLog()
     syncMethod(data: string) {
@@ -50,11 +49,6 @@ export class TestService {
     debugLog() {
         return 'value'
     }
-
-    @MethodLogOnEvent('eventName')
-    methodLogOnEvent(data: string) {
-        return data
-    }
 }
 
 describe('@MethodLog()', () => {
@@ -64,84 +58,105 @@ describe('@MethodLog()', () => {
         service = new TestService()
     })
 
-    it('syncMethod', () => {
+    it('should log correct data for a synchronous method', () => {
         service.syncMethod('value')
 
-        expect(mockLogger.log).toHaveBeenCalledWith('TestService.syncMethod', {
-            args: ['value'],
-            duration: expect.any(Number),
-            return: 'value'
-        })
+        expect(mockLogger.log).toHaveBeenNthCalledWith(
+            1,
+            expect.stringContaining('Begin TestService.syncMethod')
+        )
+
+        expect(mockLogger.log).toHaveBeenNthCalledWith(
+            2,
+            expect.stringContaining('End TestService.syncMethod'),
+            { args: ['value'], duration: expect.any(Number), return: 'value' }
+        )
     })
 
-    it('asyncMethod', async () => {
+    it('should log correct data for an asynchronous method', async () => {
         await service.asyncMethod('value')
 
-        expect(mockLogger.log).toHaveBeenCalledWith('TestService.asyncMethod', {
-            args: ['value'],
-            duration: expect.any(Number),
-            return: 'value'
-        })
+        expect(mockLogger.log).toHaveBeenNthCalledWith(
+            1,
+            expect.stringContaining('Begin TestService.asyncMethod')
+        )
+
+        expect(mockLogger.log).toHaveBeenNthCalledWith(
+            2,
+            expect.stringContaining('End TestService.asyncMethod'),
+            { args: ['value'], duration: expect.any(Number), return: 'value' }
+        )
     })
 
-    it('observableMethod', async () => {
+    it('should log correct data for an observable method', async () => {
         await lastValueFrom(service.observableMethod('value'))
 
-        expect(mockLogger.log).toHaveBeenCalledWith('TestService.observableMethod', {
-            args: ['value'],
-            duration: expect.any(Number),
-            return: 'value'
-        })
+        expect(mockLogger.log).toHaveBeenNthCalledWith(
+            1,
+            expect.stringContaining('Begin TestService.observableMethod')
+        )
+
+        expect(mockLogger.log).toHaveBeenNthCalledWith(
+            2,
+            expect.stringContaining('End TestService.observableMethod'),
+            { args: ['value'], duration: expect.any(Number), return: 'value' }
+        )
     })
 
-    it('throwSyncError', () => {
-        const callback = () => service.throwSyncError('value')
-        expect(callback).toThrow('value')
+    it('should log an error with correct data for a synchronous error method', () => {
+        expect(() => service.throwSyncError('value')).toThrow('value')
 
-        expect(mockLogger.error).toHaveBeenCalledWith('TestService.throwSyncError', {
-            args: ['value'],
-            duration: expect.any(Number),
-            error: 'value'
-        })
+        expect(mockLogger.log).toHaveBeenNthCalledWith(
+            1,
+            expect.stringContaining('Begin TestService.throwSyncError')
+        )
+
+        expect(mockLogger.error).toHaveBeenCalledWith(
+            expect.stringContaining('End TestService.throwSyncError'),
+            { args: ['value'], duration: expect.any(Number), error: 'value' }
+        )
     })
 
-    it('throwAsyncError', async () => {
+    it('should log an error with correct data for an asynchronous error method', async () => {
         await expect(service.throwAsyncError('value')).rejects.toThrow()
 
-        expect(mockLogger.error).toHaveBeenCalledWith('TestService.throwAsyncError', {
-            args: ['value'],
-            duration: expect.any(Number),
-            error: 'value'
-        })
+        expect(mockLogger.log).toHaveBeenNthCalledWith(
+            1,
+            expect.stringContaining('Begin TestService.throwAsyncError')
+        )
+
+        expect(mockLogger.error).toHaveBeenCalledWith(
+            expect.stringContaining('End TestService.throwAsyncError'),
+            { args: ['value'], duration: expect.any(Number), error: 'value' }
+        )
     })
 
-    it('throwObservableError', async () => {
+    it('should log an error with correct data for an observable error method', async () => {
         await expect(lastValueFrom(service.throwObservableError('value'))).rejects.toThrow()
 
-        expect(mockLogger.error).toHaveBeenCalledWith('TestService.throwObservableError', {
-            args: ['value'],
-            duration: expect.any(Number),
-            error: 'value'
-        })
+        expect(mockLogger.log).toHaveBeenNthCalledWith(
+            1,
+            expect.stringContaining('Begin TestService.throwObservableError')
+        )
+
+        expect(mockLogger.error).toHaveBeenCalledWith(
+            expect.stringContaining('End TestService.throwObservableError'),
+            { args: ['value'], duration: expect.any(Number), error: 'value' }
+        )
     })
 
-    it('debugLog', () => {
+    it('should log correct data using debug level logging', () => {
         service.debugLog()
 
-        expect(mockLogger.debug).toHaveBeenCalledWith('TestService.debugLog', {
-            args: [],
-            duration: expect.any(Number),
-            return: 'value'
-        })
-    })
+        expect(mockLogger.debug).toHaveBeenNthCalledWith(
+            1,
+            expect.stringContaining('Begin TestService.debugLog')
+        )
 
-    it('methodLogOnEvent', async () => {
-        await service.methodLogOnEvent('value')
-
-        expect(mockLogger.log).toHaveBeenCalledWith('TestService.methodLogOnEvent', {
-            args: ['value'],
-            duration: expect.any(Number),
-            return: 'value'
-        })
+        expect(mockLogger.debug).toHaveBeenNthCalledWith(
+            2,
+            expect.stringContaining('End TestService.debugLog'),
+            { args: [], duration: expect.any(Number), return: 'value' }
+        )
     })
 })

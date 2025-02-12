@@ -1,5 +1,4 @@
 import { Logger, LogLevel } from '@nestjs/common'
-import { OnEvent } from '@nestjs/event-emitter'
 import 'reflect-metadata'
 import { catchError, isObservable, tap } from 'rxjs'
 import { generateShortId } from '../utils'
@@ -90,22 +89,5 @@ export function MethodLog(options: MethodLogOptions = {}): MethodDecorator {
                 throw error
             }
         }
-    }
-}
-
-export function MethodLogOnEvent(
-    eventName: string,
-    logOptions?: MethodLogOptions
-): MethodDecorator {
-    return (target, propertyKey, descriptor) => {
-        /* 순서가 중요함 methodLog 적용 후 onEvent 적용해야 한다 */
-
-        const methodLogDecorator = MethodLog(logOptions)
-        methodLogDecorator(target, propertyKey, descriptor)
-
-        const onEventDecorator = OnEvent(eventName)
-        onEventDecorator(target, propertyKey, descriptor)
-
-        return descriptor
     }
 }
