@@ -8,9 +8,9 @@ import {
 } from 'testlib'
 import { SampleModule } from './create-test-context.fixture'
 
-describe('createMicroserviceTestContext', () => {
+describe('createTestContext', () => {
     let testContext: TestContext
-    let msClient: MicroserviceTestClient
+    let microClient: MicroserviceTestClient
     let httpClient: HttpTestClient
     let closeNats: () => Promise<void>
 
@@ -28,18 +28,18 @@ describe('createMicroserviceTestContext', () => {
             }
         })
 
-        msClient = MicroserviceTestClient.create(brokerOpts)
+        microClient = MicroserviceTestClient.create(brokerOpts)
         httpClient = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
     })
 
     afterEach(async () => {
-        await msClient?.close()
+        await microClient?.close()
         await testContext?.close()
         await closeNats?.()
     })
 
     it('Microservice 메시지를 전송하면 응답해야 한다', async () => {
-        const message = await msClient.send('test.getMicroserviceMessage', { arg: 'value' })
+        const message = await microClient.send('test.getMicroserviceMessage', { arg: 'value' })
 
         expect(message).toEqual({ id: 'value' })
     })

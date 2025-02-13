@@ -17,3 +17,5 @@ function generateShortId(length: number = 10): string {
 global.beforeEach(() => {
     process.env.TEST_ID = generateShortId()
 })
+
+process.env.TESTCONTAINERS_RYUK_DISABLED = 'true'
