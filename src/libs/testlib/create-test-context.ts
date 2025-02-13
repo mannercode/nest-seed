@@ -1,3 +1,4 @@
+import express from 'express'
 import { INestApplication } from '@nestjs/common'
 import { TestingModule } from '@nestjs/testing'
 import { ModuleMetadataEx, createTestingModule } from './create-testing-module'
@@ -53,4 +54,13 @@ export async function createTestContext({
     const close = () => app.close()
 
     return { module, app, httpPort, close }
+}
+
+export async function createHttpTestContext(metadata: ModuleMetadataEx) {
+    return createTestContext({
+        metadata,
+        configureApp: async (app) => {
+            app.use(express.urlencoded({ extended: true }))
+        }
+    })
 }

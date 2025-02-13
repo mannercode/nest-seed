@@ -1,5 +1,4 @@
-import express from 'express'
-import { HttpTestClient, TestContext, createTestContext } from 'testlib'
+import { HttpTestClient, TestContext, createHttpTestContext } from 'testlib'
 import { TestModule } from './latlong.pipe.fixture'
 
 describe('common/http/pipes', () => {
@@ -7,12 +6,7 @@ describe('common/http/pipes', () => {
     let client: HttpTestClient
 
     beforeEach(async () => {
-        testContext = await createTestContext({
-            metadata: { imports: [TestModule] },
-            configureApp: async (app) => {
-                app.use(express.urlencoded({ extended: true }))
-            }
-        })
+        testContext = await createHttpTestContext({ imports: [TestModule] })
 
         client = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
     })

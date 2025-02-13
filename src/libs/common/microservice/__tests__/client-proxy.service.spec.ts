@@ -1,7 +1,12 @@
 import { Transport } from '@nestjs/microservices'
 import { ClientProxyModule } from 'common'
-import express from 'express'
-import { createNatsContainers, createTestContext, HttpTestClient, TestContext } from 'testlib'
+import {
+    createHttpTestContext,
+    createNatsContainers,
+    createTestContext,
+    HttpTestClient,
+    TestContext
+} from 'testlib'
 import { HttpController, MicroserviceModule } from './client-proxy.service.fixture'
 
 describe('ClientProxyService', () => {
@@ -26,19 +31,14 @@ describe('ClientProxyService', () => {
             }
         })
 
-        httpContext = await createTestContext({
-            metadata: {
-                imports: [
-                    ClientProxyModule.registerAsync({
-                        name: 'name',
-                        useFactory: () => ({ transport: Transport.NATS, options: { servers } })
-                    })
-                ],
-                controllers: [HttpController]
-            },
-            configureApp: async (app) => {
-                app.use(express.urlencoded({ extended: true }))
-            }
+        httpContext = await createHttpTestContext({
+            imports: [
+                ClientProxyModule.registerAsync({
+                    name: 'name',
+                    useFactory: () => ({ transport: Transport.NATS, options: { servers } })
+                })
+            ],
+            controllers: [HttpController]
         })
 
         client = new HttpTestClient(`http://localhost:${httpContext.httpPort}`)

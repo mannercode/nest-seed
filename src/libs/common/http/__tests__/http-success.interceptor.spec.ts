@@ -1,6 +1,5 @@
 import { Logger } from '@nestjs/common'
-import express from 'express'
-import { HttpTestClient, TestContext, createTestContext } from 'testlib'
+import { HttpTestClient, TestContext, createHttpTestContext } from 'testlib'
 import { TestModule } from './http-success.interceptor.fixture'
 
 describe('HttpSuccessInterceptor', () => {
@@ -11,12 +10,7 @@ describe('HttpSuccessInterceptor', () => {
     beforeEach(async () => {
         spy = jest.spyOn(Logger, 'verbose').mockImplementation(() => {})
 
-        testContext = await createTestContext({
-            metadata: { imports: [TestModule] },
-            configureApp: async (app) => {
-                app.use(express.urlencoded({ extended: true }))
-            }
-        })
+        testContext = await createHttpTestContext({ imports: [TestModule] })
 
         client = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
     })

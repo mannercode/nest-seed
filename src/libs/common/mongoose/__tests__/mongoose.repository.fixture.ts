@@ -10,7 +10,7 @@ import {
 } from 'common'
 import express from 'express'
 import { HydratedDocument, Model } from 'mongoose'
-import { createTestContext } from 'testlib'
+import { createHttpTestContext, createTestContext } from 'testlib'
 
 @Schema({ toJSON: { virtuals: true } })
 export class Sample extends MongooseSchema {
@@ -39,18 +39,13 @@ export class SamplesRepository extends MongooseRepository<Sample> {
 export class SampleModule {}
 
 export async function createFixture(uri: string) {
-    const testContext = await createTestContext({
-        metadata: {
-            imports: [
-                MongooseModule.forRootAsync({
-                    useFactory: () => ({ uri, dbName: 'test_' + generateShortId() })
-                }),
-                SampleModule
-            ]
-        },
-        configureApp: async (app) => {
-            app.use(express.urlencoded({ extended: true }))
-        }
+    const testContext = await createHttpTestContext({
+        imports: [
+            MongooseModule.forRootAsync({
+                useFactory: () => ({ uri, dbName: 'test_' + generateShortId() })
+            }),
+            SampleModule
+        ]
     })
 
     const repository = testContext.module.get(SamplesRepository)

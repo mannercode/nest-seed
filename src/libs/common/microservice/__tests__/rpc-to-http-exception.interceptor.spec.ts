@@ -1,8 +1,13 @@
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 import { ClientProxyModule, HttpToRpcExceptionFilter, RpcToHttpExceptionInterceptor } from 'common'
-import express from 'express'
-import { createNatsContainers, createTestContext, HttpTestClient, TestContext } from 'testlib'
+import {
+    createHttpTestContext,
+    createNatsContainers,
+    createTestContext,
+    HttpTestClient,
+    TestContext
+} from 'testlib'
 import { HttpController, MicroserviceModule } from './rpc-to-http-exception.interceptor.fixture'
 
 describe('RpcToHttpExceptionInterceptor', () => {
@@ -28,20 +33,15 @@ describe('RpcToHttpExceptionInterceptor', () => {
             }
         })
 
-        httpContext = await createTestContext({
-            metadata: {
-                imports: [
-                    ClientProxyModule.registerAsync({
-                        name: 'name',
-                        useFactory: () => ({ transport: Transport.NATS, options: { servers } })
-                    })
-                ],
-                controllers: [HttpController],
-                providers: [{ provide: APP_INTERCEPTOR, useClass: RpcToHttpExceptionInterceptor }]
-            },
-            configureApp: async (app) => {
-                app.use(express.urlencoded({ extended: true }))
-            }
+        httpContext = await createHttpTestContext({
+            imports: [
+                ClientProxyModule.registerAsync({
+                    name: 'name',
+                    useFactory: () => ({ transport: Transport.NATS, options: { servers } })
+                })
+            ],
+            controllers: [HttpController],
+            providers: [{ provide: APP_INTERCEPTOR, useClass: RpcToHttpExceptionInterceptor }]
         })
 
         client = new HttpTestClient(`http://localhost:${httpContext.httpPort}`)

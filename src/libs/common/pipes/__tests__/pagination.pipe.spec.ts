@@ -1,7 +1,6 @@
 import { ValidationPipe } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
-import express from 'express'
-import { HttpTestClient, TestContext, createTestContext } from 'testlib'
+import { HttpTestClient, TestContext, createHttpTestContext } from 'testlib'
 import { SamplesModule } from './pagination.pipe.fixture'
 
 describe('Pagination', () => {
@@ -9,23 +8,18 @@ describe('Pagination', () => {
     let client: HttpTestClient
 
     beforeEach(async () => {
-        testContext = await createTestContext({
-            metadata: {
-                imports: [SamplesModule],
-                providers: [
-                    {
-                        provide: APP_PIPE,
-                        useFactory: () =>
-                            new ValidationPipe({
-                                transform: true,
-                                transformOptions: { enableImplicitConversion: true }
-                            })
-                    }
-                ]
-            },
-            configureApp: async (app) => {
-                app.use(express.urlencoded({ extended: true }))
-            }
+        testContext = await createHttpTestContext({
+            imports: [SamplesModule],
+            providers: [
+                {
+                    provide: APP_PIPE,
+                    useFactory: () =>
+                        new ValidationPipe({
+                            transform: true,
+                            transformOptions: { enableImplicitConversion: true }
+                        })
+                }
+            ]
         })
 
         client = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
