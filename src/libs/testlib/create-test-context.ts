@@ -3,54 +3,54 @@ import { TestingModule } from '@nestjs/testing'
 import { ModuleMetadataEx, createTestingModule } from './create-testing-module'
 import { getAvailablePort } from './utils'
 
-export interface TestContext {
-    module: TestingModule
-    app: INestApplication<any>
-    port: number
-    close: () => Promise<void>
-}
-
-async function listen(server: any) {
-    let tryCount = 0
+async function listenOnAvailablePort(server: any): Promise<number> {
+    const maxAttempts = 3
+    let attemptCount = 0
 
     while (true) {
         try {
             const port = await getAvailablePort()
-
             await server.listen(port)
-
             return port
         } catch (error) {
-            tryCount = tryCount + 1
-
-            if (3 <= tryCount) throw error
+            attemptCount++
+            if (attemptCount >= maxAttempts) throw error
         }
     }
 }
 
-export async function createTestContext(
-    metadata: ModuleMetadataEx,
-    servers: string[],
-    configureApp: (app: INestApplication<any>, servers: string[]) => Promise<void>
-) {
-    const module = await createTestingModule(metadata)
+export interface TestContext {
+    module: TestingModule
+    app: INestApplication<any>
+    httpPort: number
+    close: () => Promise<void>
+}
 
+export interface TestContextArgs {
+    metadata: ModuleMetadataEx
+    brokers?: string[]
+    configureApp?: (app: INestApplication<any>, brokers: string[] | undefined) => Promise<void>
+}
+
+export async function createTestContext({
+    metadata,
+    brokers,
+    configureApp
+}: TestContextArgs): Promise<TestContext> {
+    const module = await createTestingModule(metadata)
     const app = module.createNestApplication()
 
-    await configureApp(app, servers)
+    if (configureApp) await configureApp(app, brokers)
 
     const isDebuggingEnabled = process.env.NODE_OPTIONS !== undefined
     app.useLogger(isDebuggingEnabled ? console : false)
 
     await app.init()
 
-    const server = app.getHttpServer()
+    const httpServer = app.getHttpServer()
+    const httpPort = await listenOnAvailablePort(httpServer)
 
-    const port = await listen(server)
+    const close = () => app.close()
 
-    const close = async () => {
-        await app.close()
-    }
-
-    return { module, app, port, close } as TestContext
+    return { module, app, httpPort, close }
 }

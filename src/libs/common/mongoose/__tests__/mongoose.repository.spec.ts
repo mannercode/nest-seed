@@ -1,7 +1,7 @@
 import { expect } from '@jest/globals'
 import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { OrderDirection, pickIds, pickItems } from 'common'
-import { expectEqualUnsorted, getMongoTestConnection, HttpTestContext, nullObjectId } from 'testlib'
+import { expectEqualUnsorted, getMongoTestConnection, nullObjectId, TestContext } from 'testlib'
 import {
     createFixture,
     createSample,
@@ -15,7 +15,7 @@ import {
 } from './mongoose.repository.fixture'
 
 describe('MongooseRepository', () => {
-    let testContext: HttpTestContext
+    let testContext: TestContext
     let repository: SamplesRepository
 
     beforeEach(async () => {

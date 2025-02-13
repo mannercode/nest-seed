@@ -1,8 +1,9 @@
 import { DynamicModule, Module, ModuleMetadata } from '@nestjs/common'
 import { getModelToken, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { generateShortId, HardDelete, MongooseSchema } from 'common'
+import express from 'express'
 import { Model } from 'mongoose'
-import { createHttpTestContext, getMongoTestConnection } from 'testlib'
+import { createTestContext, getMongoTestConnection } from 'testlib'
 
 @Module({})
 class SampleModule {
@@ -14,15 +15,20 @@ class SampleModule {
 export async function createFixture(schema: any) {
     const { uri } = getMongoTestConnection()
 
-    const testContext = await createHttpTestContext({
-        imports: [
-            MongooseModule.forRootAsync({
-                useFactory: () => ({ uri, dbName: 'test_' + generateShortId() })
-            }),
-            SampleModule.forRoot({
-                imports: [MongooseModule.forFeature([{ name: 'schema', schema }])]
-            })
-        ]
+    const testContext = await createTestContext({
+        metadata: {
+            imports: [
+                MongooseModule.forRootAsync({
+                    useFactory: () => ({ uri, dbName: 'test_' + generateShortId() })
+                }),
+                SampleModule.forRoot({
+                    imports: [MongooseModule.forFeature([{ name: 'schema', schema }])]
+                })
+            ]
+        },
+        configureApp: async (app) => {
+            app.use(express.urlencoded({ extended: true }))
+        }
     })
 
     const model = testContext.module.get<Model<any>>(getModelToken('schema'))

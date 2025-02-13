@@ -1,18 +1,25 @@
 import { APP_PIPE } from '@nestjs/core'
 import { AppValidationPipe } from 'common'
-import { HttpTestClient, HttpTestContext, createHttpTestContext } from 'testlib'
+import express from 'express'
+import { createTestContext, HttpTestClient, TestContext } from 'testlib'
 import { SamplesModule } from './app-validation.pipe.fixture'
 
 describe('AppValidationPipe', () => {
-    let testContext: HttpTestContext
+    let testContext: TestContext
     let client: HttpTestClient
 
     beforeEach(async () => {
-        testContext = await createHttpTestContext({
-            imports: [SamplesModule],
-            providers: [{ provide: APP_PIPE, useClass: AppValidationPipe }]
+        testContext = await createTestContext({
+            metadata: {
+                imports: [SamplesModule],
+                providers: [{ provide: APP_PIPE, useClass: AppValidationPipe }]
+            },
+            configureApp: async (app) => {
+                app.use(express.urlencoded({ extended: true }))
+            }
         })
-        client = testContext.client
+
+        client = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
     })
 
     afterEach(async () => {

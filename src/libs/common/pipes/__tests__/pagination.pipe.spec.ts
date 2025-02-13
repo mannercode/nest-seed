@@ -1,27 +1,34 @@
 import { ValidationPipe } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
-import { HttpTestClient, HttpTestContext, createHttpTestContext } from 'testlib'
+import express from 'express'
+import { HttpTestClient, TestContext, createTestContext } from 'testlib'
 import { SamplesModule } from './pagination.pipe.fixture'
 
 describe('Pagination', () => {
-    let testContext: HttpTestContext
+    let testContext: TestContext
     let client: HttpTestClient
 
     beforeEach(async () => {
-        testContext = await createHttpTestContext({
-            imports: [SamplesModule],
-            providers: [
-                {
-                    provide: APP_PIPE,
-                    useFactory: () =>
-                        new ValidationPipe({
-                            transform: true,
-                            transformOptions: { enableImplicitConversion: true }
-                        })
-                }
-            ]
+        testContext = await createTestContext({
+            metadata: {
+                imports: [SamplesModule],
+                providers: [
+                    {
+                        provide: APP_PIPE,
+                        useFactory: () =>
+                            new ValidationPipe({
+                                transform: true,
+                                transformOptions: { enableImplicitConversion: true }
+                            })
+                    }
+                ]
+            },
+            configureApp: async (app) => {
+                app.use(express.urlencoded({ extended: true }))
+            }
         })
-        client = testContext.client
+
+        client = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
     })
 
     afterEach(async () => {

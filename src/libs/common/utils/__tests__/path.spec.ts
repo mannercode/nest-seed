@@ -12,7 +12,6 @@ describe('Path', () => {
 
     afterEach(async () => {
         await Path.delete(tempDir)
-        jest.restoreAllMocks()
     })
 
     it('tempDir should exist', async () => {

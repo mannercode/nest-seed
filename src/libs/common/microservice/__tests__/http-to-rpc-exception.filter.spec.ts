@@ -1,5 +1,4 @@
-import { INestApplication } from '@nestjs/common'
-import { MicroserviceOptions, Transport } from '@nestjs/microservices'
+import { MicroserviceOptions, NatsOptions, Transport } from '@nestjs/microservices'
 import { HttpToRpcExceptionFilter } from 'common'
 import {
     createNatsContainers,
@@ -18,24 +17,19 @@ describe('HttpToRpcExceptionFilter', () => {
         const { servers, close } = await createNatsContainers()
         closeNats = close
 
-        testContext = await createTestContext(
-            { imports: [SampleModule] },
-            servers,
-            async (app: INestApplication<any>, servers: string[]) => {
+        const brokerOpts = { transport: Transport.NATS, options: { servers } } as NatsOptions
+
+        testContext = await createTestContext({
+            metadata: { imports: [SampleModule] },
+            configureApp: async (app) => {
                 app.useGlobalFilters(new HttpToRpcExceptionFilter())
 
-                app.connectMicroservice<MicroserviceOptions>(
-                    { transport: Transport.NATS, options: { servers } },
-                    { inheritAppConfig: true }
-                )
+                app.connectMicroservice<MicroserviceOptions>(brokerOpts, { inheritAppConfig: true })
                 await app.startAllMicroservices()
             }
-        )
-
-        client = await MicroserviceTestClient.create({
-            transport: Transport.NATS,
-            options: { servers }
         })
+
+        client = MicroserviceTestClient.create(brokerOpts)
     })
 
     afterEach(async () => {

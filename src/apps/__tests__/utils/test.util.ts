@@ -1,4 +1,4 @@
-import { INestApplication, Type } from '@nestjs/common'
+import { Type } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ApplicationsModule, configureApplications } from 'applications'
 import { configureCores, CoresModule } from 'cores'
@@ -27,30 +27,24 @@ function createConfigServiceMock(mockValues: Record<string, any>) {
 
 type TestContextOpts = ModuleMetadataEx & { config?: Record<string, any> }
 
-async function createHttpContext(
+function createMetadata(
     module: Type<any>,
-    servers: string[],
-    configureApp: (app: INestApplication<any>, servers: string[]) => Promise<void>,
     metadata: TestContextOpts = {},
     mockValues: Record<string, any> = {}
-): Promise<TestContext> {
+): ModuleMetadataEx {
     const { ignoreGuards, ignoreProviders, overrideProviders, config } = metadata
     const mergedMockValues = { ...mockValues, ...config }
     const configMock = createConfigServiceMock(mergedMockValues)
 
-    return createTestContext(
-        {
-            imports: [module],
-            ignoreProviders,
-            ignoreGuards,
-            overrideProviders: [
-                { original: ConfigService, replacement: configMock },
-                ...(overrideProviders ?? [])
-            ]
-        },
-        servers,
-        configureApp
-    )
+    return {
+        imports: [module],
+        ignoreProviders,
+        ignoreGuards,
+        overrideProviders: [
+            { original: ConfigService, replacement: configMock },
+            ...(overrideProviders ?? [])
+        ]
+    }
 }
 
 export class AllTestContexts {
@@ -79,27 +73,37 @@ export async function createAllTestContexts({
     */
     process.setMaxListeners(20)
 
-    const { servers, hosts, close: closeNats } = await createNatsContainers()
+    const { servers: brokers, hosts, close: closeNats } = await createNatsContainers()
     process.env.NATS_HOST1 = hosts[0]
     process.env.NATS_HOST2 = hosts[1]
     process.env.NATS_HOST3 = hosts[2]
 
-    const infrasContext = await createHttpContext(
-        InfrastructuresModule,
-        servers,
-        configureInfrastructures,
-        infras
-    )
-    const coresContext = await createHttpContext(CoresModule, servers, configureCores, cores)
-    const appsContext = await createHttpContext(
-        ApplicationsModule,
-        servers,
-        configureApplications,
-        apps
-    )
+    const infrasContext = await createTestContext({
+        metadata: createMetadata(InfrastructuresModule, infras),
+        brokers,
+        configureApp: configureInfrastructures
+    })
 
-    const httpContext = await createHttpContext(GatewayModule, servers, configureGateway, http)
-    const client = new HttpTestClient(`http://localhost:${httpContext.port}`)
+    const coresContext = await createTestContext({
+        metadata: createMetadata(CoresModule, cores),
+        brokers,
+        configureApp: configureCores
+    })
+
+    const appsContext = await createTestContext({
+        metadata: createMetadata(ApplicationsModule, apps),
+        brokers,
+        configureApp: configureApplications
+    })
+
+    // TODO http -> gateway
+    const httpContext = await createTestContext({
+        metadata: createMetadata(GatewayModule, http),
+        brokers,
+        configureApp: configureGateway
+    })
+
+    const client = new HttpTestClient(`http://localhost:${httpContext.httpPort}`)
 
     const close = async () => {
         await httpContext.close()

@@ -3,7 +3,7 @@ import { jsonToObject } from 'common'
 import { lastValueFrom } from 'rxjs'
 
 export class MicroserviceTestClient {
-    static async create(option: NatsOptions) {
+    static create(option: NatsOptions) {
         const proxy = ClientProxyFactory.create(option)
 
         return new MicroserviceTestClient(proxy)

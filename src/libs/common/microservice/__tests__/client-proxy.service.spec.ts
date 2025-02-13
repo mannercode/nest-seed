@@ -1,18 +1,12 @@
 import { Transport } from '@nestjs/microservices'
 import { ClientProxyModule } from 'common'
-import {
-    createHttpTestContext,
-    createMicroserviceTestContext,
-    createNatsContainers,
-    HttpTestClient,
-    HttpTestContext,
-    MicroserviceTestContext
-} from 'testlib'
+import express from 'express'
+import { createNatsContainers, createTestContext, HttpTestClient, TestContext } from 'testlib'
 import { HttpController, MicroserviceModule } from './client-proxy.service.fixture'
 
 describe('ClientProxyService', () => {
-    let microContext: MicroserviceTestContext
-    let httpContext: HttpTestContext
+    let microContext: TestContext
+    let httpContext: TestContext
     let client: HttpTestClient
     let closeNats: () => Promise<void>
 
@@ -20,21 +14,34 @@ describe('ClientProxyService', () => {
         const { servers, close } = await createNatsContainers()
         closeNats = close
 
-        microContext = await createMicroserviceTestContext({
+        microContext = await createTestContext({
             metadata: { imports: [MicroserviceModule] },
-            nats: { servers }
+            brokers: servers,
+            configureApp: async (app, servers) => {
+                app.connectMicroservice(
+                    { transport: Transport.NATS, options: { servers } },
+                    { inheritAppConfig: true }
+                )
+                await app.startAllMicroservices()
+            }
         })
 
-        httpContext = await createHttpTestContext({
-            imports: [
-                ClientProxyModule.registerAsync({
-                    name: 'name',
-                    useFactory: () => ({ transport: Transport.NATS, options: { servers } })
-                })
-            ],
-            controllers: [HttpController]
+        httpContext = await createTestContext({
+            metadata: {
+                imports: [
+                    ClientProxyModule.registerAsync({
+                        name: 'name',
+                        useFactory: () => ({ transport: Transport.NATS, options: { servers } })
+                    })
+                ],
+                controllers: [HttpController]
+            },
+            configureApp: async (app) => {
+                app.use(express.urlencoded({ extended: true }))
+            }
         })
-        client = httpContext.client
+
+        client = new HttpTestClient(`http://localhost:${httpContext.httpPort}`)
     })
 
     afterEach(async () => {

@@ -1,9 +1,9 @@
 import { expect } from '@jest/globals'
-import { getMongoTestConnection, HttpTestContext } from 'testlib'
+import { getMongoTestConnection, TestContext } from 'testlib'
 import { createFixture, SamplesRepository } from './mongoose.transaction.fixture'
 
 describe('MongooseRepository - withTransaction', () => {
-    let testContext: HttpTestContext
+    let testContext: TestContext
     let repository: SamplesRepository
 
     beforeEach(async () => {

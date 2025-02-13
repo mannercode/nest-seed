@@ -1,20 +1,13 @@
-import { INestApplication } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 import { ClientProxyModule, HttpToRpcExceptionFilter, RpcToHttpExceptionInterceptor } from 'common'
-import {
-    createHttpTestContext,
-    createNatsContainers,
-    createTestContext,
-    HttpTestClient,
-    HttpTestContext,
-    TestContext
-} from 'testlib'
+import express from 'express'
+import { createNatsContainers, createTestContext, HttpTestClient, TestContext } from 'testlib'
 import { HttpController, MicroserviceModule } from './rpc-to-http-exception.interceptor.fixture'
 
 describe('RpcToHttpExceptionInterceptor', () => {
     let microContext: TestContext
-    let httpContext: HttpTestContext
+    let httpContext: TestContext
     let client: HttpTestClient
     let closeNats: () => Promise<void>
 
@@ -22,10 +15,10 @@ describe('RpcToHttpExceptionInterceptor', () => {
         const { servers, close } = await createNatsContainers()
         closeNats = close
 
-        microContext = await createTestContext(
-            { imports: [MicroserviceModule] },
-            servers,
-            async (app: INestApplication<any>, servers: string[]) => {
+        microContext = await createTestContext({
+            metadata: { imports: [MicroserviceModule] },
+            brokers: servers,
+            configureApp: async (app, servers) => {
                 app.useGlobalFilters(new HttpToRpcExceptionFilter())
                 app.connectMicroservice<MicroserviceOptions>(
                     { transport: Transport.NATS, options: { servers } },
@@ -33,19 +26,25 @@ describe('RpcToHttpExceptionInterceptor', () => {
                 )
                 await app.startAllMicroservices()
             }
-        )
-
-        httpContext = await createHttpTestContext({
-            imports: [
-                ClientProxyModule.registerAsync({
-                    name: 'name',
-                    useFactory: () => ({ transport: Transport.NATS, options: { servers } })
-                })
-            ],
-            controllers: [HttpController],
-            providers: [{ provide: APP_INTERCEPTOR, useClass: RpcToHttpExceptionInterceptor }]
         })
-        client = httpContext.client
+
+        httpContext = await createTestContext({
+            metadata: {
+                imports: [
+                    ClientProxyModule.registerAsync({
+                        name: 'name',
+                        useFactory: () => ({ transport: Transport.NATS, options: { servers } })
+                    })
+                ],
+                controllers: [HttpController],
+                providers: [{ provide: APP_INTERCEPTOR, useClass: RpcToHttpExceptionInterceptor }]
+            },
+            configureApp: async (app) => {
+                app.use(express.urlencoded({ extended: true }))
+            }
+        })
+
+        client = new HttpTestClient(`http://localhost:${httpContext.httpPort}`)
     })
 
     afterEach(async () => {
