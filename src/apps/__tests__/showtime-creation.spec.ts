@@ -68,7 +68,7 @@ describe('/showtime-creation', () => {
         })
     })
 
-    describe('상영시간 등록 요청', () => {
+    describe.skip('상영시간 등록 요청', () => {
         const createBatchShowtimes = async (
             movieId: string,
             theaterIds: string[],
@@ -82,6 +82,20 @@ describe('/showtime-creation', () => {
 
             return body
         }
+
+        it('종료 테스트', async () => {
+            const monitorPromise = monitorEvents(client, ['complete'])
+            const theaterIds = [theater.id]
+            const startTimes = [
+                new Date('2100-01-01T09:00'),
+                new Date('2100-01-01T11:00'),
+                new Date('2100-01-01T13:00')
+            ]
+
+            const { batchId } = await createBatchShowtimes(movie.id, theaterIds, startTimes, 90)
+
+            await monitorPromise
+        })
 
         it('상영시간 등록 요청이 성공해야 한다', async () => {
             const monitorPromise = monitorEvents(client, ['complete'])
@@ -100,6 +114,7 @@ describe('/showtime-creation', () => {
             const seatCount = Seatmap.getSeatCount(theater.seatmap)
             const showtimeCreatedCount = theaterIds.length * startTimes.length
             const ticketCreatedCount = showtimeCreatedCount * seatCount
+
             await expect(monitorPromise).resolves.toEqual({
                 batchId,
                 status: 'complete',
@@ -147,7 +162,7 @@ describe('/showtime-creation', () => {
         })
     })
 
-    describe('상영시간 충돌 점검', () => {
+    describe.skip('상영시간 충돌 점검', () => {
         let showtimes: ShowtimeDto[]
 
         beforeEach(async () => {

@@ -1,23 +1,16 @@
 import { INestApplication } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
+import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 import { AppLoggerService } from 'common'
 import compression from 'compression'
 import express from 'express'
 import { existsSync } from 'fs'
 import { exit } from 'process'
-import { GatewayModule } from './gateway.module'
 import { AppConfigService } from 'shared/config'
+import { GatewayModule } from './gateway.module'
 
-export async function configureGateway(app: INestApplication<any>) {
-    app.use(compression())
-
-    const logger = app.get(AppLoggerService)
-    app.useLogger(logger)
-
+export async function configureGateway(app: INestApplication<any>, servers: string[]) {
     const config = app.get(AppConfigService)
-    const limit = config.http.requestPayloadLimit
-    app.use(express.json({ limit }))
-    app.use(express.urlencoded({ limit, extended: true }))
 
     for (const dir of [
         { name: 'FileUpload', path: config.fileUpload.directory },
@@ -28,18 +21,36 @@ export async function configureGateway(app: INestApplication<any>) {
             exit(1)
         }
     }
+
+    app.use(compression())
+
+    const limit = config.http.requestPayloadLimit
+    app.use(express.json({ limit }))
+    app.use(express.urlencoded({ limit, extended: true }))
+
+    app.connectMicroservice<MicroserviceOptions>(
+        { transport: Transport.NATS, options: { servers } },
+        { inheritAppConfig: true }
+    )
+
+    await app.startAllMicroservices()
+
+    const logger = app.get(AppLoggerService)
+    app.useLogger(logger)
 }
 
 export async function bootstrap() {
     const app = await NestFactory.create(GatewayModule)
-    configureGateway(app)
+
+    const config = app.get(AppConfigService)
+
+    const { servers } = config.nats
+    configureGateway(app, servers)
 
     app.enableShutdownHooks()
 
-    const config = app.get(AppConfigService)
-    const { port } = config.services.gateway
+    const { httpPort } = config.services.gateway
+    await app.listen(httpPort)
 
-    await app.listen(port)
-
-    console.log(`Application is running on: ${await app.getUrl()}`)
+    console.log(`Gateway is running on: ${await app.getUrl()}`)
 }

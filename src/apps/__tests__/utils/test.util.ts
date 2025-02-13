@@ -1,17 +1,15 @@
-import { Type } from '@nestjs/common'
+import { INestApplication, Type } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ApplicationsModule, configureApplications } from 'applications'
 import { configureCores, CoresModule } from 'cores'
 import { configureGateway, GatewayModule } from 'gateway'
 import { configureInfrastructures, InfrastructuresModule } from 'infrastructures'
 import {
-    createHttpTestContext,
-    createMicroserviceTestContext,
     createNatsContainers,
+    createTestContext,
     HttpTestClient,
-    HttpTestContext,
-    MicroserviceTestContext,
-    ModuleMetadataEx
+    ModuleMetadataEx,
+    TestContext
 } from 'testlib'
 
 function createConfigServiceMock(mockValues: Record<string, any>) {
@@ -29,43 +27,18 @@ function createConfigServiceMock(mockValues: Record<string, any>) {
 
 type TestContextOpts = ModuleMetadataEx & { config?: Record<string, any> }
 
-async function createMicroserviceContext(
-    module: Type<any>,
-    servers: string[],
-    configureApp: (app: any) => void,
-    metadata: TestContextOpts = {},
-    mockValues: Record<string, any> = {}
-): Promise<MicroserviceTestContext> {
-    const { ignoreGuards, ignoreProviders, overrideProviders, config } = metadata
-    const mergedMockValues = { ...mockValues, ...config }
-    const configMock = createConfigServiceMock(mergedMockValues)
-
-    return createMicroserviceTestContext({
-        metadata: {
-            imports: [module],
-            ignoreProviders,
-            ignoreGuards,
-            overrideProviders: [
-                { original: ConfigService, replacement: configMock },
-                ...(overrideProviders ?? [])
-            ]
-        },
-        nats: { servers },
-        configureApp
-    })
-}
-
 async function createHttpContext(
     module: Type<any>,
-    configure: (app: any) => void,
+    servers: string[],
+    configureApp: (app: INestApplication<any>, servers: string[]) => Promise<void>,
     metadata: TestContextOpts = {},
     mockValues: Record<string, any> = {}
-): Promise<HttpTestContext> {
+): Promise<TestContext> {
     const { ignoreGuards, ignoreProviders, overrideProviders, config } = metadata
     const mergedMockValues = { ...mockValues, ...config }
     const configMock = createConfigServiceMock(mergedMockValues)
 
-    return createHttpTestContext(
+    return createTestContext(
         {
             imports: [module],
             ignoreProviders,
@@ -75,20 +48,21 @@ async function createHttpContext(
                 ...(overrideProviders ?? [])
             ]
         },
-        configure
+        servers,
+        configureApp
     )
 }
 
-export class TestContext {
-    httpContext: HttpTestContext
-    appsContext: MicroserviceTestContext
-    coresContext: MicroserviceTestContext
-    infrasContext: MicroserviceTestContext
+export class AllTestContexts {
+    httpContext: TestContext
+    appsContext: TestContext
+    coresContext: TestContext
+    infrasContext: TestContext
     client: HttpTestClient
     close: () => Promise<void>
 }
 
-export async function createTestContext({
+export async function createAllTestContexts({
     http,
     apps,
     cores,
@@ -98,7 +72,7 @@ export async function createTestContext({
     apps?: TestContextOpts
     cores?: TestContextOpts
     infras?: TestContextOpts
-} = {}): Promise<TestContext> {
+} = {}): Promise<AllTestContexts> {
     /*
     (node:803910) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 uncaughtException listeners added to [process]. MaxListeners is 10.
     Use emitter.setMaxListeners() to increase limit (Use node --trace-warnings ... to show where the warning was created)
@@ -110,26 +84,22 @@ export async function createTestContext({
     process.env.NATS_HOST2 = hosts[1]
     process.env.NATS_HOST3 = hosts[2]
 
-    const infrasContext = await createMicroserviceContext(
+    const infrasContext = await createHttpContext(
         InfrastructuresModule,
         servers,
         configureInfrastructures,
         infras
     )
-    const coresContext = await createMicroserviceContext(
-        CoresModule,
-        servers,
-        configureCores,
-        cores
-    )
-    const appsContext = await createMicroserviceContext(
+    const coresContext = await createHttpContext(CoresModule, servers, configureCores, cores)
+    const appsContext = await createHttpContext(
         ApplicationsModule,
         servers,
         configureApplications,
         apps
     )
 
-    const httpContext = await createHttpContext(GatewayModule, configureGateway, http)
+    const httpContext = await createHttpContext(GatewayModule, servers, configureGateway, http)
+    const client = new HttpTestClient(`http://localhost:${httpContext.port}`)
 
     const close = async () => {
         await httpContext.close()
@@ -145,6 +115,6 @@ export async function createTestContext({
         coresContext,
         infrasContext,
         close,
-        client: httpContext.client
+        client
     }
 }

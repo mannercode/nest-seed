@@ -3,7 +3,7 @@ import { writeFile } from 'fs/promises'
 import { StorageFilesService } from 'infrastructures'
 import { AppConfigService } from 'shared/config'
 import { createDummyFile } from 'testlib'
-import { createTestContext, TestContext } from './utils'
+import { createAllTestContexts, AllTestContexts } from './utils'
 
 const maxFileSizeBytes = Byte.fromString('50MB')
 
@@ -40,7 +40,7 @@ export async function closeSharedFixture(fixture: SharedFixture) {
 }
 
 export interface Fixture {
-    testContext: TestContext
+    testContext: AllTestContexts
     config: AppConfigService
     tempDir: string
     storageFilesService: StorageFilesService
@@ -49,7 +49,7 @@ export interface Fixture {
 export async function createFixture() {
     const tempDir = await Path.createTempDirectory()
 
-    const testContext = await createTestContext({
+    const testContext = await createAllTestContexts({
         http: {
             config: {
                 FILE_UPLOAD_DIRECTORY: tempDir,

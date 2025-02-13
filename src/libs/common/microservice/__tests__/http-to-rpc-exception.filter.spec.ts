@@ -1,15 +1,16 @@
-import { INestMicroservice } from '@nestjs/common'
+import { INestApplication } from '@nestjs/common'
+import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 import { HttpToRpcExceptionFilter } from 'common'
 import {
-    createMicroserviceTestContext,
     createNatsContainers,
+    createTestContext,
     MicroserviceTestClient,
-    MicroserviceTestContext
+    TestContext
 } from 'testlib'
 import { SampleModule } from './http-to-rpc-exception.filter.fixture'
 
 describe('HttpToRpcExceptionFilter', () => {
-    let testContext: MicroserviceTestContext
+    let testContext: TestContext
     let client: MicroserviceTestClient
     let closeNats: () => Promise<void>
 
@@ -17,16 +18,28 @@ describe('HttpToRpcExceptionFilter', () => {
         const { servers, close } = await createNatsContainers()
         closeNats = close
 
-        testContext = await createMicroserviceTestContext({
-            metadata: { imports: [SampleModule] },
-            nats: { servers },
-            configureApp: (app: INestMicroservice) =>
+        testContext = await createTestContext(
+            { imports: [SampleModule] },
+            servers,
+            async (app: INestApplication<any>, servers: string[]) => {
                 app.useGlobalFilters(new HttpToRpcExceptionFilter())
+
+                app.connectMicroservice<MicroserviceOptions>(
+                    { transport: Transport.NATS, options: { servers } },
+                    { inheritAppConfig: true }
+                )
+                await app.startAllMicroservices()
+            }
+        )
+
+        client = await MicroserviceTestClient.create({
+            transport: Transport.NATS,
+            options: { servers }
         })
-        client = testContext.client
     })
 
     afterEach(async () => {
+        await client?.close()
         await testContext?.close()
         await closeNats?.()
     })

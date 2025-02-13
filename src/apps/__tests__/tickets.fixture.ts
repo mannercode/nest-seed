@@ -1,15 +1,15 @@
 import { TicketCreateDto, TicketDto, TicketsService, TicketStatus } from 'cores'
 import { omit, uniq } from 'lodash'
 import { nullObjectId } from 'testlib'
-import { createTestContext, TestContext } from './utils'
+import { createAllTestContexts, AllTestContexts } from './utils'
 
 export interface Fixture {
-    testContext: TestContext
+    testContext: AllTestContexts
     ticketsService: TicketsService
 }
 
 export async function createFixture() {
-    const testContext = await createTestContext()
+    const testContext = await createAllTestContexts()
     const module = testContext.coresContext.module
     const ticketsService = module.get(TicketsService)
 

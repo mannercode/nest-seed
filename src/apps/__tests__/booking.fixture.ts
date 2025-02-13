@@ -17,16 +17,16 @@ import { createMovie } from './movies.fixture'
 import { createShowtimeDto, createShowtimes } from './showtimes.fixture'
 import { createTheater } from './theaters.fixture'
 import { createTickets } from './tickets.fixture'
-import { createTestContext, TestContext } from './utils'
+import { createAllTestContexts, AllTestContexts } from './utils'
 
 export interface Fixture {
-    testContext: TestContext
+    testContext: AllTestContexts
     movie: MovieDto
     accessToken: string
 }
 
 export async function createFixture() {
-    const testContext = await createTestContext()
+    const testContext = await createAllTestContexts()
     const module = testContext.coresContext.module
 
     const customersService = module.get(CustomersService)

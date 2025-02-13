@@ -51,13 +51,10 @@ export const configSchema = Joi.object({
     SERVICE_GATEWAY_PORT: Joi.number().required(),
     SERVICE_APPLICATIONS_HOST: Joi.string().required(),
     SERVICE_APPLICATIONS_PORT: Joi.number().required(),
-    SERVICE_APPLICATIONS_HEALTH_PORT: Joi.number().required(),
     SERVICE_CORES_HOST: Joi.string().required(),
     SERVICE_CORES_PORT: Joi.number().required(),
-    SERVICE_CORES_HEALTH_PORT: Joi.number().required(),
     SERVICE_INFRASTRUCTURES_HOST: Joi.string().required(),
-    SERVICE_INFRASTRUCTURES_PORT: Joi.number().required(),
-    SERVICE_INFRASTRUCTURES_HEALTH_PORT: Joi.number().required()
+    SERVICE_INFRASTRUCTURES_PORT: Joi.number().required()
 })
 
 @Injectable()
@@ -140,22 +137,19 @@ export class AppConfigService extends BaseConfigService {
         return {
             gateway: {
                 host: this.getString('SERVICE_GATEWAY_HOST'),
-                port: this.getNumber('SERVICE_GATEWAY_PORT')
+                httpPort: this.getNumber('SERVICE_GATEWAY_PORT')
             },
             applications: {
                 host: this.getString('SERVICE_APPLICATIONS_HOST'),
-                port: this.getNumber('SERVICE_APPLICATIONS_PORT'),
-                healthPort: this.getNumber('SERVICE_APPLICATIONS_HEALTH_PORT')
+                httpPort: this.getNumber('SERVICE_APPLICATIONS_PORT')
             },
             cores: {
                 host: this.getString('SERVICE_CORES_HOST'),
-                port: this.getNumber('SERVICE_CORES_PORT'),
-                healthPort: this.getNumber('SERVICE_CORES_HEALTH_PORT')
+                httpPort: this.getNumber('SERVICE_CORES_PORT')
             },
             infrastructures: {
                 host: this.getString('SERVICE_INFRASTRUCTURES_HOST'),
-                port: this.getNumber('SERVICE_INFRASTRUCTURES_PORT'),
-                healthPort: this.getNumber('SERVICE_INFRASTRUCTURES_HEALTH_PORT')
+                httpPort: this.getNumber('SERVICE_INFRASTRUCTURES_PORT')
             }
         }
     }

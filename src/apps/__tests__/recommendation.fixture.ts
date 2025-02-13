@@ -10,10 +10,10 @@ import { nullObjectId } from 'testlib'
 import { createCustomerAndLogin } from './customers-auth.fixture'
 import { createMovie } from './movies.fixture'
 import { createShowtimes } from './showtimes.fixture'
-import { createTestContext, TestContext } from './utils'
+import { createAllTestContexts, AllTestContexts } from './utils'
 
 export interface Fixture {
-    testContext: TestContext
+    testContext: AllTestContexts
     moviesService: MoviesService
     watchRecordsService: WatchRecordsService
     showtimesService: ShowtimesService
@@ -22,7 +22,7 @@ export interface Fixture {
 }
 
 export async function createFixture() {
-    const testContext = await createTestContext()
+    const testContext = await createAllTestContexts()
     const module = testContext.coresContext.module
 
     const moviesService = module.get(MoviesService)

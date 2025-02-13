@@ -1,15 +1,17 @@
 import { CustomerJwtAuthGuard } from 'gateway'
 import { omit } from 'lodash'
 import { CustomersService } from 'cores'
-import { createTestContext, TestContext } from './utils'
+import { createAllTestContexts, AllTestContexts } from './utils'
 
 export interface Fixture {
-    testContext: TestContext
+    testContext: AllTestContexts
     customersService: CustomersService
 }
 
 export async function createFixture() {
-    const testContext = await createTestContext({ http: { ignoreGuards: [CustomerJwtAuthGuard] } })
+    const testContext = await createAllTestContexts({
+        http: { ignoreGuards: [CustomerJwtAuthGuard] }
+    })
     const module = testContext.coresContext.module
     const customersService = module.get(CustomersService)
 
