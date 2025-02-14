@@ -61,7 +61,7 @@ export async function createFixture() {
         infras: { config: { FILE_UPLOAD_DIRECTORY: tempDir } }
     })
 
-    const config = testContext.httpContext.module.get(AppConfigService)
+    const config = testContext.gatewayContext.module.get(AppConfigService)
     const module = testContext.infrasContext.module
     const storageFilesService = module.get(StorageFilesService)
     return { testContext, config, tempDir, storageFilesService }

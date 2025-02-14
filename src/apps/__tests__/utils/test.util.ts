@@ -48,7 +48,7 @@ function createMetadata(
 }
 
 export class AllTestContexts {
-    httpContext: TestContext
+    gatewayContext: TestContext
     appsContext: TestContext
     coresContext: TestContext
     infrasContext: TestContext
@@ -67,7 +67,7 @@ export async function createAllTestContexts({
     cores?: TestContextOpts
     infras?: TestContextOpts
 } = {}): Promise<AllTestContexts> {
-    /*
+    /* TODO 삭제?
     (node:803910) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 uncaughtException listeners added to [process]. MaxListeners is 10.
     Use emitter.setMaxListeners() to increase limit (Use node --trace-warnings ... to show where the warning was created)
     */
@@ -96,17 +96,16 @@ export async function createAllTestContexts({
         configureApp: configureApplications
     })
 
-    // TODO http -> gateway
-    const httpContext = await createTestContext({
+    const gatewayContext = await createTestContext({
         metadata: createMetadata(GatewayModule, http),
         brokers,
         configureApp: configureGateway
     })
 
-    const client = new HttpTestClient(`http://localhost:${httpContext.httpPort}`)
+    const client = new HttpTestClient(`http://localhost:${gatewayContext.httpPort}`)
 
     const close = async () => {
-        await httpContext.close()
+        await gatewayContext.close()
         await appsContext.close()
         await coresContext.close()
         await infrasContext.close()
@@ -114,7 +113,7 @@ export async function createAllTestContexts({
     }
 
     return {
-        httpContext,
+        gatewayContext,
         appsContext,
         coresContext,
         infrasContext,
