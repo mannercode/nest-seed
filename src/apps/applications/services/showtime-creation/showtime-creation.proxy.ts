@@ -44,6 +44,6 @@ export class ShowtimeCreationProxy {
 
     @MethodLog({ level: 'verbose' })
     monitorEvents(): Observable<MessageEvent> {
-        return this.service.send('applications.showtimeCreation.monitorEvents')
+        return this.service.send('applications.showtimeCreation.monitorEvents', {})
     }
 }

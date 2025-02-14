@@ -24,7 +24,7 @@ export class HttpController {
 
     @Get('value')
     getValue() {
-        const observer = this.client.send('test.method')
+        const observer = this.client.send('test.method', {})
         return getProxyValue(observer)
     }
 }

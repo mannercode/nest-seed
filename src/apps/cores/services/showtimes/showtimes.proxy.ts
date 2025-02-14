@@ -23,7 +23,7 @@ export class ShowtimesProxy {
 
     @MethodLog({ level: 'verbose' })
     findShowingMovieIds(): Promise<string[]> {
-        return getProxyValue(this.service.send('cores.showtimes.findShowingMovieIds'))
+        return getProxyValue(this.service.send('cores.showtimes.findShowingMovieIds', {}))
     }
 
     @MethodLog({ level: 'verbose' })
