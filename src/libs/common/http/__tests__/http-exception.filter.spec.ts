@@ -27,7 +27,7 @@ describe('HttpExceptionFilter', () => {
             'http-exception',
             'HTTP',
             expect.objectContaining({
-                request: { body: {}, method: 'GET', url: '/' },
+                request: { body: undefined, method: 'GET', url: '/' },
                 response: { error: 'Bad Request', message: 'http-exception', statusCode: 400 },
                 stack: expect.any(String)
             })

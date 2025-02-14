@@ -30,7 +30,7 @@ describe('ErrorFilter', () => {
                 statusCode: 500,
                 method: 'GET',
                 url: '/',
-                body: {},
+                body: undefined,
                 stack: expect.any(String)
             })
         )
