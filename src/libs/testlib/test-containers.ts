@@ -106,7 +106,9 @@ export async function createNatsContainers(): Promise<NatsContainersContext> {
     const servers = hosts.map((host) => `nats://${host}:${4222}`)
 
     const close = async () => {
-        await Promise.all(containers.map((container) => container.stop()))
+        await Promise.all(
+            containers.map((container) => container.stop({ remove: true, removeVolumes: true }))
+        )
     }
 
     return { servers, close, hosts }
