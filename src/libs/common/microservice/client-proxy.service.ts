@@ -15,9 +15,9 @@ export class ClientProxyService implements OnModuleDestroy {
         await this.proxy.close()
     }
 
-    // TODO {} 기본값 없애라
     send<T>(cmd: string, payload: any): Observable<T> {
-        return this.proxy.send(cmd, payload)
+        // send()는 null을 넘기지 못한다
+        return this.proxy.send(cmd, payload ?? '')
     }
 }
 
