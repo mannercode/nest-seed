@@ -163,7 +163,7 @@ services:
         image: ${SERVICE_GATEWAY_HOST}
         container_name: ${SERVICE_GATEWAY_HOST}
         healthcheck:
-            test: 'curl -f http://localhost:${SERVICE_GATEWAY_PORT}/health'
+            test: 'curl -f http://localhost:${SERVICE_GATEWAY_HTTP_PORT}/health'
             interval: 5s
             timeout: 5s
         volumes:
