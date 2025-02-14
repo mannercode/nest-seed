@@ -15,8 +15,7 @@
     "comments": {
         "TODO": "chalk,nanoid 등 esm은 node에서 사용 가능하나 jest는 아직이다. node 24에서 jest 다시 점검해라",
         "APP_NAMES": "applications cores gateway infrastructures",
-        "TEST_NAMES": "all apps common",
-        "TODO2": "npm install express@^5.0.1"
+        "TEST_NAMES": "all apps common"
     },
     "dependencies": {
         "@nestjs-modules/ioredis": "^2.0.2",
