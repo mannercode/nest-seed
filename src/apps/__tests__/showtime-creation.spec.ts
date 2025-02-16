@@ -92,7 +92,7 @@ describe('/showtime-creation', () => {
                 new Date('2100-01-01T13:00')
             ]
 
-            const { batchId } = await createBatchShowtimes(movie.id, theaterIds, startTimes, 90)
+            await createBatchShowtimes(movie.id, theaterIds, startTimes, 90)
 
             await monitorPromise
         })

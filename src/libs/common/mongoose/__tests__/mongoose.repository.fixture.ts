@@ -8,9 +8,8 @@ import {
     MongooseSchema,
     padNumber
 } from 'common'
-import express from 'express'
 import { HydratedDocument, Model } from 'mongoose'
-import { createHttpTestContext, createTestContext } from 'testlib'
+import { createHttpTestContext } from 'testlib'
 
 @Schema({ toJSON: { virtuals: true } })
 export class Sample extends MongooseSchema {

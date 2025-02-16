@@ -19,6 +19,10 @@ export class ClientProxyService implements OnModuleDestroy {
         // payload는 null을 전달하지 못한다
         return this.proxy.send(cmd, payload ?? '')
     }
+
+    emit(event: string, payload: any) {
+        return this.proxy.emit(event, payload ?? '')
+    }
 }
 
 /* istanbul ignore next */

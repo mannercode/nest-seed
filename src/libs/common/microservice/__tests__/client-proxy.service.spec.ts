@@ -1,17 +1,10 @@
 import { Transport } from '@nestjs/microservices'
 import { ClientProxyModule } from 'common'
-import {
-    createHttpTestContext,
-    createNatsContainers,
-    createTestContext,
-    HttpTestClient,
-    TestContext
-} from 'testlib'
-import { HttpController, MicroserviceModule } from './client-proxy.service.fixture'
+import { createNatsContainers, createTestContext, HttpTestClient, TestContext } from 'testlib'
+import { HttpController } from './client-proxy.service.fixture'
 
 describe('ClientProxyService', () => {
-    let microContext: TestContext
-    let httpContext: TestContext
+    let context: TestContext
     let client: HttpTestClient
     let closeNats: () => Promise<void>
 
@@ -19,34 +12,29 @@ describe('ClientProxyService', () => {
         const { servers, close } = await createNatsContainers()
         closeNats = close
 
-        microContext = await createTestContext({
-            metadata: { imports: [MicroserviceModule] },
-            brokers: servers,
-            configureApp: async (app, servers) => {
-                app.connectMicroservice(
-                    { transport: Transport.NATS, options: { servers } },
-                    { inheritAppConfig: true }
-                )
+        const natsOpts = { transport: Transport.NATS, options: { servers } } as const
+
+        context = await createTestContext({
+            metadata: {
+                imports: [
+                    ClientProxyModule.registerAsync({
+                        name: 'name',
+                        useFactory: () => natsOpts
+                    })
+                ],
+                controllers: [HttpController]
+            },
+            configureApp: async (app) => {
+                app.connectMicroservice(natsOpts, { inheritAppConfig: true })
                 await app.startAllMicroservices()
             }
         })
 
-        httpContext = await createHttpTestContext({
-            imports: [
-                ClientProxyModule.registerAsync({
-                    name: 'name',
-                    useFactory: () => ({ transport: Transport.NATS, options: { servers } })
-                })
-            ],
-            controllers: [HttpController]
-        })
-
-        client = new HttpTestClient(`http://localhost:${httpContext.httpPort}`)
+        client = new HttpTestClient(`http://localhost:${context.httpPort}`)
     })
 
     afterEach(async () => {
-        await httpContext?.close()
-        await microContext?.close()
+        await context?.close()
         await closeNats?.()
     })
 
@@ -58,5 +46,14 @@ describe('ClientProxyService', () => {
     it('Observable의 값을 읽어서 반환할 수 있다', async () => {
         const result = await client.get('/value').ok()
         expect(result.body).toEqual({ result: 'success' })
+    })
+
+    it('Microservice 이벤트를 전송해야 한다', async () => {
+        const promise = new Promise((resolve, reject) => {
+            client.get('/handle-event').sse((value) => resolve(value), reject)
+        })
+
+        await client.get('/emit-event').ok()
+        await expect(promise).resolves.toEqual('{"arg":"value"}')
     })
 })
