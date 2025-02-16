@@ -9,7 +9,7 @@
         "infra": "bash scripts/run-infra.sh && bash scripts/reset-output.sh",
         "watch:app": "nest start ${APP_NAME} --watch --debug ${DEBUG_PORT}",
         "watch:test": "npm run infra && node --inspect=9330 -r ts-node/register ./node_modules/.bin/jest --watch --onlyChanged",
-        "test:base": "npm run infra && jest --no-cache --coverage  --config ./configs/jest.config.${TEST_NAME}.ts",
+        "test:base": "npm run infra && jest --no-cache --coverage --config ./configs/jest.config.${TEST_NAME}.ts",
         "test:100x": "bash -c 'for i in {1..100}; do npm run test:base || { echo \"Test failed at iteration $i\"; exit 1; }; done'"
     },
     "comments": {

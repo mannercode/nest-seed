@@ -29,7 +29,7 @@ export async function configureGateway(app: INestApplication<any>, servers: stri
     app.use(express.urlencoded({ limit, extended: true }))
 
     app.connectMicroservice<MicroserviceOptions>(
-        { transport: Transport.NATS, options: { servers } },
+        { transport: Transport.NATS, options: { servers, queue: 'gateway' } },
         { inheritAppConfig: true }
     )
 

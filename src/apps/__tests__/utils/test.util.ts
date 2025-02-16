@@ -71,7 +71,7 @@ export async function createAllTestContexts({
     (node:803910) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 uncaughtException listeners added to [process]. MaxListeners is 10.
     Use emitter.setMaxListeners() to increase limit (Use node --trace-warnings ... to show where the warning was created)
     */
-    process.setMaxListeners(20)
+    // process.setMaxListeners(20)
 
     const { servers: brokers, hosts, close: closeNats } = await createNatsContainers()
     process.env.NATS_HOST1 = hosts[0]

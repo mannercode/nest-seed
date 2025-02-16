@@ -1,3 +1,4 @@
+export * from './movie-create-with-files.dto'
 export * from './movie-create.dto'
 export * from './movie-query.dto'
 export * from './movie-update.dto'
