@@ -9,7 +9,7 @@ export class PurchaseProcessProxy {
     @MethodLog({ level: 'verbose' })
     processPurchase(createDto: PurchaseCreateDto): Promise<PurchaseDto> {
         return getProxyValue(
-            this.service.send('applications.purchaseProcess.processPurchase', createDto)
+            this.service.send('applications.purchase-process.processPurchase', createDto)
         )
     }
 }

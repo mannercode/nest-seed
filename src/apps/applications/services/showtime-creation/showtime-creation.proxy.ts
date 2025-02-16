@@ -17,33 +17,33 @@ export class ShowtimeCreationProxy {
     @MethodLog({ level: 'verbose' })
     findMovies(queryDto: PaginationOptionDto): Promise<MovieDto[]> {
         return getProxyValue(
-            this.service.send('applications.showtimeCreation.findMovies', queryDto)
+            this.service.send('applications.showtime-creation.findMovies', queryDto)
         )
     }
 
     @MethodLog({ level: 'verbose' })
     findTheaters(queryDto: PaginationOptionDto): Promise<TheaterDto[]> {
         return getProxyValue(
-            this.service.send('applications.showtimeCreation.findTheaters', queryDto)
+            this.service.send('applications.showtime-creation.findTheaters', queryDto)
         )
     }
 
     @MethodLog({ level: 'verbose' })
     findShowtimes(theaterIds: string[]): Promise<ShowtimeDto[]> {
         return getProxyValue(
-            this.service.send('applications.showtimeCreation.findShowtimes', theaterIds)
+            this.service.send('applications.showtime-creation.findShowtimes', theaterIds)
         )
     }
 
     @MethodLog({ level: 'verbose' })
     createBatchShowtimes(createDto: ShowtimeBatchCreateDto): Promise<ShowtimeBatchCreateResponse> {
         return getProxyValue(
-            this.service.send('applications.showtimeCreation.createBatchShowtimes', createDto)
+            this.service.send('applications.showtime-creation.createBatchShowtimes', createDto)
         )
     }
 
     @MethodLog({ level: 'verbose' })
     monitorEvents(): Observable<MessageEvent> {
-        return this.service.send('applications.showtimeCreation.monitorEvents', {})
+        return this.service.send('applications.showtime-creation.monitorEvents', {})
     }
 }

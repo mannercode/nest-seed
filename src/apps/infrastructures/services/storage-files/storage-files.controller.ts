@@ -7,7 +7,7 @@ import { StorageFilesService } from './storage-files.service'
 export class StorageFilesController {
     constructor(private service: StorageFilesService) {}
 
-    @MessagePattern('infrastructures.storageFiles.saveFiles')
+    @MessagePattern('infrastructures.storage-files.saveFiles')
     saveFiles(
         @Payload(new ParseArrayPipe({ items: StorageFileCreateDto }))
         createDtos: StorageFileCreateDto[]
@@ -15,12 +15,12 @@ export class StorageFilesController {
         return this.service.saveFiles(createDtos)
     }
 
-    @MessagePattern('infrastructures.storageFiles.getStorageFile')
+    @MessagePattern('infrastructures.storage-files.getStorageFile')
     getStorageFile(@Payload() fileId: string) {
         return this.service.getStorageFile(fileId)
     }
 
-    @MessagePattern('infrastructures.storageFiles.deleteStorageFile')
+    @MessagePattern('infrastructures.storage-files.deleteStorageFile')
     deleteStorageFile(@Payload() fileId: string) {
         return this.service.deleteStorageFile(fileId)
     }

@@ -12,13 +12,13 @@ export class TicketHoldingProxy {
         ticketIds: string[]
         ttlMs: number
     }): Promise<boolean> {
-        return getProxyValue(this.service.send('cores.ticketHolding.holdTickets', args))
+        return getProxyValue(this.service.send('cores.ticket-holding.holdTickets', args))
     }
 
     @MethodLog({ level: 'verbose' })
     findHeldTicketIds(showtimeId: string, customerId: string): Promise<string[]> {
         return getProxyValue(
-            this.service.send('cores.ticketHolding.findHeldTicketIds', { showtimeId, customerId })
+            this.service.send('cores.ticket-holding.findHeldTicketIds', { showtimeId, customerId })
         )
     }
 }
