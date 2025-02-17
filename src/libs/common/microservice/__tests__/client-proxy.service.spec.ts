@@ -56,4 +56,7 @@ describe('ClientProxyService', () => {
         await client.get('/emit-event').ok()
         await expect(promise).resolves.toEqual('{"arg":"value"}')
     })
+
+    it.skip('메시지는queue 그룹 마다 한 번만 전달되어야 한다', async () => {})
+    it.skip('이벤트는 queue 그룹과 상관없이 모든 인스턴스에 전달되어야 한다', async () => {})
 })
