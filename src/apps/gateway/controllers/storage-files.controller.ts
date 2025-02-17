@@ -13,7 +13,6 @@ import {
 import { StreamableHandlerResponse } from '@nestjs/common/file-stream/interfaces'
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { IsString } from 'class-validator'
-
 import { createReadStream } from 'fs'
 import { StorageFilesProxy } from 'infrastructures'
 import { pick } from 'lodash'

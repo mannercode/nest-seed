@@ -176,7 +176,7 @@ services:
         image: ${SERVICE_APPLICATIONS_HOST}
         container_name: ${SERVICE_APPLICATIONS_HOST}
         healthcheck:
-            test: 'curl -f http://localhost:${SERVICE_APPLICATIONS_HEALTH_PORT}/health'
+            test: 'curl -f http://localhost:${SERVICE_APPLICATIONS_HTTP_PORT}/health'
             interval: 5s
             timeout: 5s
         volumes: ['./_output/logs/applications:/app/_output/logs']
@@ -187,7 +187,7 @@ services:
         image: ${SERVICE_CORES_HOST}
         container_name: ${SERVICE_CORES_HOST}
         healthcheck:
-            test: 'curl -f http://localhost:${SERVICE_CORES_HEALTH_PORT}/health'
+            test: 'curl -f http://localhost:${SERVICE_CORES_HTTP_PORT}/health'
             interval: 5s
             timeout: 5s
         volumes: ['./_output/logs/cores:/app/_output/logs']
@@ -198,7 +198,7 @@ services:
         image: ${SERVICE_INFRASTRUCTURES_HOST}
         container_name: ${SERVICE_INFRASTRUCTURES_HOST}
         healthcheck:
-            test: 'curl -f http://localhost:${SERVICE_INFRASTRUCTURES_HEALTH_PORT}/health'
+            test: 'curl -f http://localhost:${SERVICE_INFRASTRUCTURES_HTTP_PORT}/health'
             interval: 5s
             timeout: 5s
         volumes:

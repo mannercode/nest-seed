@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ClientProxyService, getProxyValue, InjectClientProxy, LatLong, MethodLog } from 'common';
 import { TheaterDto, TicketDto } from 'cores';
-import { Routes } from 'shared/config';
+import { Messages } from 'shared/config';
 import { ShowtimeSalesStatusDto } from './dtos';
 
 @Injectable()
@@ -10,12 +10,12 @@ export class BookingProxy {
 
     @MethodLog({ level: 'verbose' })
     findShowingTheaters(args: { movieId: string; latlong: LatLong }): Promise<TheaterDto[]> {
-        return getProxyValue(this.service.send(Routes.Messages.Booking.findShowingTheaters, args))
+        return getProxyValue(this.service.send(Messages.Booking.findShowingTheaters, args))
     }
 
     @MethodLog({ level: 'verbose' })
     findShowdates(args: { movieId: string; theaterId: string }): Promise<Date[]> {
-        return getProxyValue(this.service.send(Routes.Messages.Booking.findShowdates, args))
+        return getProxyValue(this.service.send(Messages.Booking.findShowdates, args))
     }
 
     @MethodLog({ level: 'verbose' })
@@ -24,13 +24,13 @@ export class BookingProxy {
         theaterId: string
         showdate: Date
     }): Promise<ShowtimeSalesStatusDto[]> {
-        return getProxyValue(this.service.send(Routes.Messages.Booking.findShowtimes, args))
+        return getProxyValue(this.service.send(Messages.Booking.findShowtimes, args))
     }
 
     @MethodLog({ level: 'verbose' })
     getAvailableTickets(showtimeId: string): Promise<TicketDto[]> {
         return getProxyValue(
-            this.service.send(Routes.Messages.Booking.getAvailableTickets, showtimeId)
+            this.service.send(Messages.Booking.getAvailableTickets, showtimeId)
         )
     }
 
@@ -38,6 +38,6 @@ export class BookingProxy {
     holdTickets(args: { customerId: string; showtimeId: string; ticketIds: string[] }): Promise<{
         heldTicketIds: string[]
     }> {
-        return getProxyValue(this.service.send(Routes.Messages.Booking.holdTickets, args))
+        return getProxyValue(this.service.send(Messages.Booking.holdTickets, args))
     }
 }

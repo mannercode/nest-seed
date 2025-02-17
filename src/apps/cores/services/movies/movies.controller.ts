@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { Routes } from 'shared/config'
+import { Messages } from 'shared/config'
 import { MovieCreateWithFilesDto, MovieQueryDto, MovieUpdateDto } from './dtos'
 import { MoviesService } from './movies.service'
 
@@ -8,12 +8,12 @@ import { MoviesService } from './movies.service'
 export class MoviesController {
     constructor(private service: MoviesService) {}
 
-    @MessagePattern(Routes.Messages.Movies.createMovie)
+    @MessagePattern(Messages.Movies.createMovie)
     createMovie(@Payload() { movieCreateDto, fileCreateDtos }: MovieCreateWithFilesDto) {
         return this.service.createMovie(movieCreateDto, fileCreateDtos)
     }
 
-    @MessagePattern(Routes.Messages.Movies.updateMovie)
+    @MessagePattern(Messages.Movies.updateMovie)
     updateMovie(
         @Payload('movieId') movieId: string,
         @Payload('updateDto') updateDto: MovieUpdateDto
@@ -21,27 +21,27 @@ export class MoviesController {
         return this.service.updateMovie(movieId, updateDto)
     }
 
-    @MessagePattern(Routes.Messages.Movies.getMovie)
+    @MessagePattern(Messages.Movies.getMovie)
     getMovie(@Payload() movieId: string) {
         return this.service.getMovie(movieId)
     }
 
-    @MessagePattern(Routes.Messages.Movies.deleteMovie)
+    @MessagePattern(Messages.Movies.deleteMovie)
     deleteMovie(@Payload() movieId: string) {
         return this.service.deleteMovie(movieId)
     }
 
-    @MessagePattern(Routes.Messages.Movies.findMovies)
+    @MessagePattern(Messages.Movies.findMovies)
     findMovies(@Payload() queryDto: MovieQueryDto) {
         return this.service.findMovies(queryDto)
     }
 
-    @MessagePattern(Routes.Messages.Movies.getMoviesByIds)
+    @MessagePattern(Messages.Movies.getMoviesByIds)
     getMoviesByIds(@Payload() movieIds: string[]) {
         return this.service.getMoviesByIds(movieIds)
     }
 
-    @MessagePattern(Routes.Messages.Movies.moviesExist)
+    @MessagePattern(Messages.Movies.moviesExist)
     moviesExist(@Payload() movieIds: string[]) {
         return this.service.moviesExist(movieIds)
     }

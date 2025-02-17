@@ -1,22 +1,5 @@
-import { RedisNode } from 'common'
+import { Environment, RedisNode } from 'common'
 import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers'
-
-function getString(key: string): string {
-    const value = process.env[key]
-    if (!value) {
-        throw new Error(`Environment variable ${key} is not defined`)
-    }
-    return value
-}
-
-function getNumber(key: string): number {
-    const value = getString(key)
-    const parsed = parseInt(value, 10)
-    if (isNaN(parsed)) {
-        throw new Error(`Environment variable ${key} must be a valid number`)
-    }
-    return parsed
-}
 
 function getContainerName(container: StartedTestContainer): string {
     const name = container.getName()
@@ -36,9 +19,9 @@ export function getRedisTestConnection(): RedisConnectionContext {
         'REDIS_HOST4',
         'REDIS_HOST5',
         'REDIS_HOST6'
-    ].map((key) => getString(key))
-    const port = getNumber('REDIS_PORT')
-    const password = getString('REDIS_PASSWORD')
+    ].map((key) => Environment.getString(key))
+    const port = Environment.getNumber('REDIS_PORT')
+    const password = Environment.getString('REDIS_PASSWORD')
     const nodes = hosts.map((host) => ({ host, port }))
 
     return { nodes, password }
@@ -49,11 +32,11 @@ export interface MongoConnectionContext {
 }
 
 export const getMongoTestConnection = (): MongoConnectionContext => {
-    const hosts = ['MONGO_HOST1', 'MONGO_HOST2', 'MONGO_HOST3'].map((key) => getString(key))
-    const port = getNumber('MONGO_PORT')
-    const replicaName = getString('MONGO_REPLICA')
-    const username = getString('MONGO_USERNAME')
-    const password = getString('MONGO_PASSWORD')
+    const hosts = ['MONGO_HOST1', 'MONGO_HOST2', 'MONGO_HOST3'].map((key) => Environment.getString(key))
+    const port = Environment.getNumber('MONGO_PORT')
+    const replicaName = Environment.getString('MONGO_REPLICA')
+    const username = Environment.getString('MONGO_USERNAME')
+    const password = Environment.getString('MONGO_PASSWORD')
     const nodes = hosts.map((host) => `${host}:${port}`).join(',')
 
     const uri = `mongodb://${username}:${password}@${nodes}/?replicaSet=${replicaName}`
@@ -70,7 +53,7 @@ export async function createNatsContainers(): Promise<NatsContainersContext> {
     const containers = new Array<StartedTestContainer>()
 
     const createContainer = async (name: string, addCommand: string[], waitMessage: RegExp) => {
-        const natsImage = getString('NATS_IMAGE')
+        const natsImage = Environment.getString('NATS_IMAGE')
 
         return await new GenericContainer(natsImage)
             .withCommand([
@@ -86,7 +69,7 @@ export async function createNatsContainers(): Promise<NatsContainersContext> {
             .start()
     }
 
-    const testId = getString('TEST_ID')
+    const testId = Environment.getString('TEST_ID')
     containers.push(await createContainer(`${testId}-nats1`, [], /Server is ready/))
     containers.push(
         await createContainer(

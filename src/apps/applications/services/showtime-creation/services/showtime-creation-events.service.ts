@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common'
 import { ClientProxyService, InjectClientProxy } from 'common'
 import { ShowtimeDto } from 'cores'
-import { Routes } from 'shared/config'
+import { Events } from 'shared/config'
 
 @Injectable()
 export class ShowtimeCreationEventsService {
     constructor(@InjectClientProxy('clientProxy') private service: ClientProxyService) {}
 
     private emit(payload: any) {
-        this.service.emit(Routes.Events.ShowtimeCreation.event, payload)
+        this.service.emit(Events.ShowtimeCreation.event, payload)
     }
 
     emitWaiting(batchId: string) {
