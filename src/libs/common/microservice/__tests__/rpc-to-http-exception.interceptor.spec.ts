@@ -3,8 +3,8 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 import { ClientProxyModule, HttpToRpcExceptionFilter, RpcToHttpExceptionInterceptor } from 'common'
 import {
     createHttpTestContext,
-    createNatsContainers,
     createTestContext,
+    getNatsTestConnection,
     HttpTestClient,
     TestContext
 } from 'testlib'
@@ -14,11 +14,9 @@ describe('RpcToHttpExceptionInterceptor', () => {
     let microContext: TestContext
     let httpContext: TestContext
     let client: HttpTestClient
-    let closeNats: () => Promise<void>
 
     beforeEach(async () => {
-        const { servers, close } = await createNatsContainers()
-        closeNats = close
+        const { servers } = await getNatsTestConnection()
 
         microContext = await createTestContext({
             metadata: { imports: [MicroserviceModule] },
@@ -50,7 +48,6 @@ describe('RpcToHttpExceptionInterceptor', () => {
     afterEach(async () => {
         await httpContext?.close()
         await microContext?.close()
-        await closeNats?.()
     })
 
     it('should return BAD_REQUEST(400) status', async () => {

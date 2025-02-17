@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { ClientProxyService, getProxyValue, InjectClientProxy, LatLong, MethodLog } from 'common';
-import { TheaterDto, TicketDto } from 'cores';
-import { Messages } from 'shared/config';
-import { ShowtimeSalesStatusDto } from './dtos';
+import { Injectable } from '@nestjs/common'
+import { ClientProxyService, getProxyValue, InjectClientProxy, LatLong, MethodLog } from 'common'
+import { TheaterDto, TicketDto } from 'cores'
+import { Messages } from 'shared/config'
+import { ShowtimeSalesStatusDto } from './dtos'
 
 @Injectable()
 export class BookingProxy {
@@ -29,9 +29,7 @@ export class BookingProxy {
 
     @MethodLog({ level: 'verbose' })
     getAvailableTickets(showtimeId: string): Promise<TicketDto[]> {
-        return getProxyValue(
-            this.service.send(Messages.Booking.getAvailableTickets, showtimeId)
-        )
+        return getProxyValue(this.service.send(Messages.Booking.getAvailableTickets, showtimeId))
     }
 
     @MethodLog({ level: 'verbose' })

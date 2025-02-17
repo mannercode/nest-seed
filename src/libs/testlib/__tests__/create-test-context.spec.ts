@@ -3,8 +3,8 @@ import {
     HttpTestClient,
     MicroserviceTestClient,
     TestContext,
-    createNatsContainers,
-    createTestContext
+    createTestContext,
+    getNatsTestConnection
 } from 'testlib'
 import { SampleModule } from './create-test-context.fixture'
 
@@ -12,11 +12,9 @@ describe('createTestContext', () => {
     let testContext: TestContext
     let microClient: MicroserviceTestClient
     let httpClient: HttpTestClient
-    let closeNats: () => Promise<void>
 
     beforeEach(async () => {
-        const { servers, close } = await createNatsContainers()
-        closeNats = close
+        const { servers } = await getNatsTestConnection()
 
         const brokerOpts = { transport: Transport.NATS, options: { servers } } as NatsOptions
 
@@ -35,7 +33,6 @@ describe('createTestContext', () => {
     afterEach(async () => {
         await microClient?.close()
         await testContext?.close()
-        await closeNats?.()
     })
 
     it('Microservice 메시지를 전송하면 응답해야 한다', async () => {

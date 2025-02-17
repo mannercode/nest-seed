@@ -2,20 +2,15 @@ import { expect } from '@jest/globals'
 import { pickIds } from 'common'
 import { MovieDto, MovieGenre, MovieRating } from 'cores'
 import { expectEqualUnsorted, HttpTestClient, nullObjectId, objectToFields } from 'testlib'
-import {
-    closeFixture,
-    createFixture,
-    createMovie,
-    createMovieDto,
-    createMovies,
-    Fixture
-} from './movies.fixture'
+import { closeFixture, createMovie, createMovieDto, createMovies, Fixture } from './movies.fixture'
 
 describe('/movies', () => {
     let fixture: Fixture
     let client: HttpTestClient
 
     beforeEach(async () => {
+        const { createFixture } = await import('./movies.fixture')
+
         fixture = await createFixture()
         client = fixture.testContext.client
     })

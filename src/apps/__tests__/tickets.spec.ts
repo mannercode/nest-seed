@@ -1,19 +1,15 @@
 import { pickIds } from 'common'
 import { TicketsService, TicketStatus } from 'cores'
 import { expectEqualUnsorted, testObjectId } from 'testlib'
-import {
-    closeFixture,
-    createFixture,
-    createTicketDtos,
-    createTickets,
-    Fixture
-} from './tickets.fixture'
+import { closeFixture, createTicketDtos, createTickets, Fixture } from './tickets.fixture'
 
 describe('Tickets Module', () => {
     let fixture: Fixture
     let service: TicketsService
 
     beforeEach(async () => {
+        const { createFixture } = await import('./tickets.fixture')
+
         fixture = await createFixture()
         service = fixture.ticketsService
     })

@@ -1,7 +1,7 @@
 import { CustomerJwtAuthGuard } from 'gateway'
 import { omit } from 'lodash'
 import { CustomersService } from 'cores'
-import { createAllTestContexts, AllTestContexts } from './utils'
+import { AllTestContexts, createAllTestContexts } from './utils'
 
 export interface Fixture {
     testContext: AllTestContexts

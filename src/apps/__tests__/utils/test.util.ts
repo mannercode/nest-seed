@@ -5,8 +5,8 @@ import { configureCores, CoresModule } from 'cores'
 import { configureGateway, GatewayModule } from 'gateway'
 import { configureInfrastructures, InfrastructuresModule } from 'infrastructures'
 import {
-    createNatsContainers,
     createTestContext,
+    getNatsTestConnection,
     HttpTestClient,
     ModuleMetadataEx,
     TestContext
@@ -67,10 +67,7 @@ export async function createAllTestContexts({
     cores?: TestContextOpts
     infras?: TestContextOpts
 } = {}): Promise<AllTestContexts> {
-    const { servers: brokers, hosts, close: closeNats } = await createNatsContainers()
-    process.env.NATS_HOST1 = hosts[0]
-    process.env.NATS_HOST2 = hosts[1]
-    process.env.NATS_HOST3 = hosts[2]
+    const { servers: brokers } = await getNatsTestConnection()
 
     const infrasContext = await createTestContext({
         metadata: createMetadata(InfrastructuresModule, infras),
@@ -103,7 +100,6 @@ export async function createAllTestContexts({
         await appsContext.close()
         await coresContext.close()
         await infrasContext.close()
-        await closeNats()
     }
 
     return {

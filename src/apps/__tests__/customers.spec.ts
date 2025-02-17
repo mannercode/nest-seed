@@ -6,7 +6,6 @@ import {
     createCustomer,
     createCustomerDto,
     createCustomers,
-    createFixture,
     Fixture
 } from './customers.fixture'
 
@@ -15,6 +14,8 @@ describe('/customers', () => {
     let client: HttpTestClient
 
     beforeEach(async () => {
+        const { createFixture } = await import('./customers.fixture')
+
         fixture = await createFixture()
         client = fixture.testContext.client
     })

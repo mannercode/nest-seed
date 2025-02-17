@@ -5,7 +5,6 @@ import { HttpTestClient, nullObjectId } from 'testlib'
 import {
     closeFixture,
     closeSharedFixture,
-    createFixture,
     createSharedFixture,
     Fixture,
     saveFile,
@@ -27,6 +26,8 @@ describe('/storage-files', () => {
     })
 
     beforeEach(async () => {
+        const { createFixture } = await import('./storage-files.fixture')
+
         fixture = await createFixture()
         client = fixture.testContext.client
         config = fixture.config

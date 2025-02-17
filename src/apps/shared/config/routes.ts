@@ -1,4 +1,5 @@
-import { createRoutes } from 'common'
+import { createRoutes, Environment } from 'common'
+import { isTest } from './etc'
 
 const Http = {
     // MoviesService에서 경로를 참조한다.
@@ -94,14 +95,15 @@ export const Messages = createRoutes(
             holdTickets: null
         }
     },
-    'nest-seed'
+    isTest() ? Environment.getString('TEST_ID') : 'nest-seed'
 )
 
+// TODO 이거 하나로 합칠까? 충돌 가능성이 있을지도
 export const Events = createRoutes(
     {
         ShowtimeCreation: {
             event: null
         }
     },
-    'nest-seed'
+    isTest() ? Environment.getString('TEST_ID') : 'nest-seed'
 )

@@ -9,9 +9,7 @@ export class ShowtimesProxy {
 
     @MethodLog({ level: 'verbose' })
     createShowtimes(createDtos: ShowtimeCreateDto[]): Promise<{ success: true; count: number }> {
-        return getProxyValue(
-            this.service.send(Messages.Showtimes.createShowtimes, createDtos)
-        )
+        return getProxyValue(this.service.send(Messages.Showtimes.createShowtimes, createDtos))
     }
 
     @MethodLog({ level: 'verbose' })
@@ -21,9 +19,7 @@ export class ShowtimesProxy {
 
     @MethodLog({ level: 'verbose' })
     findAllShowtimes(filterDto: ShowtimeFilterDto): Promise<ShowtimeDto[]> {
-        return getProxyValue(
-            this.service.send(Messages.Showtimes.findAllShowtimes, filterDto)
-        )
+        return getProxyValue(this.service.send(Messages.Showtimes.findAllShowtimes, filterDto))
     }
 
     @MethodLog({ level: 'verbose' })
@@ -33,9 +29,7 @@ export class ShowtimesProxy {
 
     @MethodLog({ level: 'verbose' })
     findTheaterIdsByMovieId(movieId: string): Promise<string[]> {
-        return getProxyValue(
-            this.service.send(Messages.Showtimes.findTheaterIdsByMovieId, movieId)
-        )
+        return getProxyValue(this.service.send(Messages.Showtimes.findTheaterIdsByMovieId, movieId))
     }
 
     @MethodLog({ level: 'verbose' })

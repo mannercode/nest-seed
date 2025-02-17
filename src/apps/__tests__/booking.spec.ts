@@ -1,7 +1,7 @@
 import { convertDateToString, pickIds } from 'common'
 import { Seatmap, TicketDto } from 'cores'
 import { HttpTestClient } from 'testlib'
-import { closeFixture, createFixture, Fixture } from './booking.fixture'
+import { closeFixture, Fixture } from './booking.fixture'
 
 describe('Booking', () => {
     let fixture: Fixture
@@ -9,6 +9,8 @@ describe('Booking', () => {
     let movieId: string
 
     beforeEach(async () => {
+        const { createFixture } = await import('./booking.fixture')
+
         fixture = await createFixture()
         client = fixture.testContext.client
         movieId = fixture.movie.id

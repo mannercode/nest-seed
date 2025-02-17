@@ -3,7 +3,6 @@ import { ShowtimeDto, ShowtimesService } from 'cores'
 import { expectEqualUnsorted, nullObjectId, testObjectId } from 'testlib'
 import {
     closeFixture,
-    createFixture,
     createShowtimeDto,
     createShowtimeDtos,
     createShowtimes,
@@ -15,6 +14,8 @@ describe('Showtimes Module', () => {
     let service: ShowtimesService
 
     beforeEach(async () => {
+        const { createFixture } = await import('./showtimes.fixture')
+
         fixture = await createFixture()
         service = fixture.showtimesService
     })

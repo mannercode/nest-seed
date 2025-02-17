@@ -1,11 +1,13 @@
 import { PaymentsService } from 'infrastructures'
-import { closeFixture, createFixture, createPaymentDto, Fixture } from './payments.fixture'
+import { closeFixture, createPaymentDto, Fixture } from './payments.fixture'
 
 describe('Payments Module', () => {
     let fixture: Fixture
     let service: PaymentsService
 
     beforeEach(async () => {
+        const { createFixture } = await import('./payments.fixture')
+
         fixture = await createFixture()
         service = fixture.paymentsService
     })

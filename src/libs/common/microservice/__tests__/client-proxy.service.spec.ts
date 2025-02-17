@@ -1,17 +1,14 @@
 import { Transport } from '@nestjs/microservices'
 import { ClientProxyModule } from 'common'
-import { createNatsContainers, createTestContext, HttpTestClient, TestContext } from 'testlib'
+import { createTestContext, getNatsTestConnection, HttpTestClient, TestContext } from 'testlib'
 import { HttpController } from './client-proxy.service.fixture'
 
 describe('ClientProxyService', () => {
     let context: TestContext
     let client: HttpTestClient
-    let closeNats: () => Promise<void>
 
     beforeEach(async () => {
-        const { servers, close } = await createNatsContainers()
-        closeNats = close
-
+        const { servers } = await getNatsTestConnection()
         const natsOpts = { transport: Transport.NATS, options: { servers } } as const
 
         context = await createTestContext({
@@ -35,7 +32,6 @@ describe('ClientProxyService', () => {
 
     afterEach(async () => {
         await context?.close()
-        await closeNats?.()
     })
 
     it('HttpController는 Observable로 응답할 수 있다', async () => {

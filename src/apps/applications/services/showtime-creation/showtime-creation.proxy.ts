@@ -16,23 +16,17 @@ export class ShowtimeCreationProxy {
 
     @MethodLog({ level: 'verbose' })
     findMovies(queryDto: PaginationOptionDto): Promise<MovieDto[]> {
-        return getProxyValue(
-            this.service.send(Messages.ShowtimeCreation.findMovies, queryDto)
-        )
+        return getProxyValue(this.service.send(Messages.ShowtimeCreation.findMovies, queryDto))
     }
 
     @MethodLog({ level: 'verbose' })
     findTheaters(queryDto: PaginationOptionDto): Promise<TheaterDto[]> {
-        return getProxyValue(
-            this.service.send(Messages.ShowtimeCreation.findTheaters, queryDto)
-        )
+        return getProxyValue(this.service.send(Messages.ShowtimeCreation.findTheaters, queryDto))
     }
 
     @MethodLog({ level: 'verbose' })
     findShowtimes(theaterIds: string[]): Promise<ShowtimeDto[]> {
-        return getProxyValue(
-            this.service.send(Messages.ShowtimeCreation.findShowtimes, theaterIds)
-        )
+        return getProxyValue(this.service.send(Messages.ShowtimeCreation.findShowtimes, theaterIds))
     }
 
     @MethodLog({ level: 'verbose' })

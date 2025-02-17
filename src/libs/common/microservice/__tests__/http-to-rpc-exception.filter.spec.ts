@@ -1,8 +1,8 @@
 import { MicroserviceOptions, NatsOptions, Transport } from '@nestjs/microservices'
 import { HttpToRpcExceptionFilter } from 'common'
 import {
-    createNatsContainers,
     createTestContext,
+    getNatsTestConnection,
     MicroserviceTestClient,
     TestContext
 } from 'testlib'
@@ -11,11 +11,9 @@ import { SampleModule } from './http-to-rpc-exception.filter.fixture'
 describe('HttpToRpcExceptionFilter', () => {
     let testContext: TestContext
     let client: MicroserviceTestClient
-    let closeNats: () => Promise<void>
 
     beforeEach(async () => {
-        const { servers, close } = await createNatsContainers()
-        closeNats = close
+        const { servers } = await getNatsTestConnection()
 
         const brokerOpts = { transport: Transport.NATS, options: { servers } } as NatsOptions
 
@@ -35,7 +33,6 @@ describe('HttpToRpcExceptionFilter', () => {
     afterEach(async () => {
         await client?.close()
         await testContext?.close()
-        await closeNats?.()
     })
 
     it('should handle HttpException properly for RPC', async () => {

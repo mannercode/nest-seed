@@ -2,7 +2,6 @@ import { MovieDto, Seatmap, ShowtimeDto, TheaterDto } from 'cores'
 import { expectEqualUnsorted, HttpTestClient, nullObjectId } from 'testlib'
 import {
     closeFixture,
-    createFixture,
     createShowtimeDtos,
     Fixture,
     monitorEvents
@@ -16,6 +15,8 @@ describe('/showtime-creation', () => {
     let theater: TheaterDto
 
     beforeEach(async () => {
+        const { createFixture } = await import('./showtime-creation.fixture')
+
         fixture = await createFixture()
         client = fixture.testContext.client
         movie = fixture.movie

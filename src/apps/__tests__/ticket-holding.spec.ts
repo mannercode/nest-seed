@@ -1,6 +1,6 @@
 import { generateShortId, sleep } from 'common'
 import { TicketHoldingService } from 'cores'
-import { closeFixture, createFixture, Fixture } from './ticket-holding.fixture'
+import { closeFixture, Fixture } from './ticket-holding.fixture'
 
 describe('TicketHolding Module', () => {
     let fixture: Fixture
@@ -13,6 +13,8 @@ describe('TicketHolding Module', () => {
     const ttlMs = 60 * 1000
 
     beforeEach(async () => {
+        const { createFixture } = await import('./ticket-holding.fixture')
+
         fixture = await createFixture()
         service = fixture.ticketHoldingService
     })

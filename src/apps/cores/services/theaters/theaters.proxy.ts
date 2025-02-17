@@ -36,9 +36,7 @@ export class TheatersProxy {
 
     @MethodLog({ level: 'verbose' })
     getTheatersByIds(theaterIds: string[]): Promise<TheaterDto[]> {
-        return getProxyValue(
-            this.service.send(Messages.Theaters.getTheatersByIds, theaterIds)
-        )
+        return getProxyValue(this.service.send(Messages.Theaters.getTheatersByIds, theaterIds))
     }
 
     @MethodLog({ level: 'verbose' })

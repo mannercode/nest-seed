@@ -11,20 +11,21 @@ import { HttpTestClient } from 'testlib'
 import {
     closeFixture,
     createAllTickets,
-    createFixture,
     createPurchase,
     createShowtime,
     Fixture,
     holdTickets
 } from './purchase-process.fixture'
 
-describe('/purchases', () => {
+describe('/purchase-process', () => {
     let fixture: Fixture
     let client: HttpTestClient
     let customerId: string
     const totalPrice = 1000
 
     beforeEach(async () => {
+        const { createFixture } = await import('./purchase-process.fixture')
+
         fixture = await createFixture()
         client = fixture.testContext.client
         customerId = fixture.customer.id
