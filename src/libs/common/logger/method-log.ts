@@ -1,5 +1,4 @@
 import { Logger, LogLevel } from '@nestjs/common'
-import 'reflect-metadata'
 import { catchError, isObservable, tap } from 'rxjs'
 import { generateShortId } from '../utils'
 

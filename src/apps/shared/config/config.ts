@@ -47,13 +47,9 @@ export const configSchema = Joi.object({
     NATS_HOST3: Joi.string().required(),
     NATS_PORT: Joi.number().required(),
 
-    SERVICE_GATEWAY_HOST: Joi.string().required(),
     SERVICE_GATEWAY_HTTP_PORT: Joi.number().required(),
-    SERVICE_APPLICATIONS_HOST: Joi.string().required(),
     SERVICE_APPLICATIONS_HTTP_PORT: Joi.number().required(),
-    SERVICE_CORES_HOST: Joi.string().required(),
     SERVICE_CORES_HTTP_PORT: Joi.number().required(),
-    SERVICE_INFRASTRUCTURES_HOST: Joi.string().required(),
     SERVICE_INFRASTRUCTURES_HTTP_PORT: Joi.number().required()
 })
 
@@ -132,22 +128,20 @@ export class AppConfigService extends BaseConfigService {
         return { servers }
     }
 
+    // services는 main.ts에서만 호출돼서 coverage에 포함되지 않는다.
+    /* istanbul ignore next */
     get services() {
         return {
             gateway: {
-                host: this.getString('SERVICE_GATEWAY_HOST'),
                 httpPort: this.getNumber('SERVICE_GATEWAY_HTTP_PORT')
             },
             applications: {
-                host: this.getString('SERVICE_APPLICATIONS_HOST'),
                 httpPort: this.getNumber('SERVICE_APPLICATIONS_HTTP_PORT')
             },
             cores: {
-                host: this.getString('SERVICE_CORES_HOST'),
                 httpPort: this.getNumber('SERVICE_CORES_HTTP_PORT')
             },
             infrastructures: {
-                host: this.getString('SERVICE_INFRASTRUCTURES_HOST'),
                 httpPort: this.getNumber('SERVICE_INFRASTRUCTURES_HTTP_PORT')
             }
         }

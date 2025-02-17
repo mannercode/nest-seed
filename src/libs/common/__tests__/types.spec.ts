@@ -1,7 +1,6 @@
 import { plainToInstance } from 'class-transformer'
 import { validate } from 'class-validator'
 import { DateRange } from 'common'
-import 'reflect-metadata'
 
 describe('types', () => {
     it('DateRange', async () => {
