@@ -159,4 +159,8 @@ describe('@MethodLog()', () => {
             { args: [], duration: expect.any(Number), return: 'value' }
         )
     })
+
+    it('순서에 상관없이 다른 데코레이터와 사용할 수 있어야 한다', () => {
+
+    })
 })
