@@ -1,6 +1,7 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { PaginationOptionDto } from 'common'
+import { Routes } from 'shared/config'
 import { ShowtimeBatchCreateDto } from './dtos'
 import { ShowtimeCreationService } from './showtime-creation.service'
 
@@ -8,22 +9,22 @@ import { ShowtimeCreationService } from './showtime-creation.service'
 export class ShowtimeCreationController {
     constructor(private service: ShowtimeCreationService) {}
 
-    @MessagePattern('applications.showtime-creation.findMovies')
+    @MessagePattern(Routes.Messages.ShowtimeCreation.findMovies)
     findMovies(@Payload() queryDto: PaginationOptionDto) {
         return this.service.findMovies(queryDto)
     }
 
-    @MessagePattern('applications.showtime-creation.findTheaters')
+    @MessagePattern(Routes.Messages.ShowtimeCreation.findTheaters)
     findTheaters(@Payload() queryDto: PaginationOptionDto) {
         return this.service.findTheaters(queryDto)
     }
 
-    @MessagePattern('applications.showtime-creation.findShowtimes')
+    @MessagePattern(Routes.Messages.ShowtimeCreation.findShowtimes)
     findShowtimes(@Payload() theaterIds: string[]) {
         return this.service.findShowtimes(theaterIds)
     }
 
-    @MessagePattern('applications.showtime-creation.createBatchShowtimes')
+    @MessagePattern(Routes.Messages.ShowtimeCreation.createBatchShowtimes)
     createBatchShowtimes(@Payload() createDto: ShowtimeBatchCreateDto) {
         return this.service.createBatchShowtimes(createDto)
     }

@@ -31,7 +31,7 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
 
     async enqueueTask(data: ShowtimeBatchCreateJobData) {
         this.eventsService.emitWaiting(data.batchId)
-        await this.queue.add('showtimes.create', data)
+        await this.queue.add('showtime-creation.create', data)
     }
 
     async process(job: Job<ShowtimeBatchCreateJobData>) {

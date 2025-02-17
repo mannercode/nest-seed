@@ -1,5 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
+import { Routes } from 'shared/config'
 import { PurchaseCreateDto } from './dtos'
 import { PurchasesService } from './purchases.service'
 
@@ -7,12 +8,12 @@ import { PurchasesService } from './purchases.service'
 export class PurchasesController {
     constructor(private service: PurchasesService) {}
 
-    @MessagePattern('cores.purchases.createPurchase')
+    @MessagePattern(Routes.Messages.Purchases.createPurchase)
     createPurchase(@Payload() createDto: PurchaseCreateDto) {
         return this.service.createPurchase(createDto)
     }
 
-    @MessagePattern('cores.purchases.getPurchase')
+    @MessagePattern(Routes.Messages.Purchases.getPurchase)
     getPurchase(@Payload() purchaseId: string) {
         return this.service.getPurchase(purchaseId)
     }

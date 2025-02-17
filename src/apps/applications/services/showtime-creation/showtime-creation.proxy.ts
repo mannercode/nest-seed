@@ -7,6 +7,7 @@ import {
     PaginationOptionDto
 } from 'common'
 import { MovieDto, ShowtimeDto, TheaterDto } from 'cores'
+import { Routes } from 'shared/config'
 import { ShowtimeBatchCreateDto, ShowtimeBatchCreateResponse } from './dtos'
 
 @Injectable()
@@ -16,28 +17,28 @@ export class ShowtimeCreationProxy {
     @MethodLog({ level: 'verbose' })
     findMovies(queryDto: PaginationOptionDto): Promise<MovieDto[]> {
         return getProxyValue(
-            this.service.send('applications.showtime-creation.findMovies', queryDto)
+            this.service.send(Routes.Messages.ShowtimeCreation.findMovies, queryDto)
         )
     }
 
     @MethodLog({ level: 'verbose' })
     findTheaters(queryDto: PaginationOptionDto): Promise<TheaterDto[]> {
         return getProxyValue(
-            this.service.send('applications.showtime-creation.findTheaters', queryDto)
+            this.service.send(Routes.Messages.ShowtimeCreation.findTheaters, queryDto)
         )
     }
 
     @MethodLog({ level: 'verbose' })
     findShowtimes(theaterIds: string[]): Promise<ShowtimeDto[]> {
         return getProxyValue(
-            this.service.send('applications.showtime-creation.findShowtimes', theaterIds)
+            this.service.send(Routes.Messages.ShowtimeCreation.findShowtimes, theaterIds)
         )
     }
 
     @MethodLog({ level: 'verbose' })
     createBatchShowtimes(createDto: ShowtimeBatchCreateDto): Promise<ShowtimeBatchCreateResponse> {
         return getProxyValue(
-            this.service.send('applications.showtime-creation.createBatchShowtimes', createDto)
+            this.service.send(Routes.Messages.ShowtimeCreation.createBatchShowtimes, createDto)
         )
     }
 }

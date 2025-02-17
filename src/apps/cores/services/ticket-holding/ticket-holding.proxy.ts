@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
+import { Routes } from 'shared/config'
 
 @Injectable()
 export class TicketHoldingProxy {
@@ -12,13 +13,13 @@ export class TicketHoldingProxy {
         ticketIds: string[]
         ttlMs: number
     }): Promise<boolean> {
-        return getProxyValue(this.service.send('cores.ticket-holding.holdTickets', args))
+        return getProxyValue(this.service.send(Routes.Messages.TicketHolding.holdTickets, args))
     }
 
     @MethodLog({ level: 'verbose' })
     findHeldTicketIds(showtimeId: string, customerId: string): Promise<string[]> {
         return getProxyValue(
-            this.service.send('cores.ticket-holding.findHeldTicketIds', { showtimeId, customerId })
+            this.service.send(Routes.Messages.TicketHolding.findHeldTicketIds, { showtimeId, customerId })
         )
     }
 }

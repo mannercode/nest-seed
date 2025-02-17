@@ -1,5 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
+import { Routes } from 'shared/config'
 import { WatchRecordCreateDto, WatchRecordQueryDto } from './dtos'
 import { WatchRecordsService } from './watch-records.service'
 
@@ -7,12 +8,12 @@ import { WatchRecordsService } from './watch-records.service'
 export class WatchRecordsController {
     constructor(private service: WatchRecordsService) {}
 
-    @MessagePattern('cores.watch-records.createWatchRecord')
+    @MessagePattern(Routes.Messages.WatchRecords.createWatchRecord)
     createWatchRecord(@Payload() createDto: WatchRecordCreateDto) {
         return this.service.createWatchRecord(createDto)
     }
 
-    @MessagePattern('cores.watch-records.findWatchRecords')
+    @MessagePattern(Routes.Messages.WatchRecords.findWatchRecords)
     findWatchRecords(@Payload() queryDto: WatchRecordQueryDto) {
         return this.service.findWatchRecords(queryDto)
     }

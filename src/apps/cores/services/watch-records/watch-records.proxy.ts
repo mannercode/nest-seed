@@ -6,6 +6,7 @@ import {
     MethodLog,
     PaginationResult
 } from 'common'
+import { Routes } from 'shared/config'
 import { WatchRecordDto, WatchRecordQueryDto } from './dtos'
 
 @Injectable()
@@ -14,6 +15,6 @@ export class WatchRecordsProxy {
 
     @MethodLog({ level: 'verbose' })
     findWatchRecords(queryDto: WatchRecordQueryDto): Promise<PaginationResult<WatchRecordDto>> {
-        return getProxyValue(this.service.send('cores.watch-records.findWatchRecords', queryDto))
+        return getProxyValue(this.service.send(Routes.Messages.WatchRecords.findWatchRecords, queryDto))
     }
 }

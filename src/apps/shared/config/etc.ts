@@ -20,8 +20,4 @@ export class RedisConfig {
     static connName = 'redis'
 }
 
-export class Routes {
-    static StorageFiles = '/storage-files' // MovieDto에서 경로를 참조한다.
-}
-
 export const isTest = () => process.env.NODE_ENV === 'test' && process.env.TEST_ID

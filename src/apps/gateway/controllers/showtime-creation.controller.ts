@@ -13,9 +13,10 @@ import {
 } from '@nestjs/common'
 import { EventPattern } from '@nestjs/microservices'
 import { ShowtimeBatchCreateDto, ShowtimeCreationProxy } from 'applications'
-import { MethodLog, PaginationOptionDto } from 'common'
+import { PaginationOptionDto } from 'common'
 import { Observable, Subject } from 'rxjs'
 import { DefaultPaginationPipe } from './pipes'
+import { Routes } from 'shared/config'
 
 @Controller('showtime-creation')
 export class ShowtimeCreationController implements OnModuleDestroy {
@@ -56,7 +57,7 @@ export class ShowtimeCreationController implements OnModuleDestroy {
         return this.sseEventSubject.asObservable()
     }
 
-    @EventPattern('applications.showtime-creation.event', { queue: false })
+    @EventPattern(Routes.Events.ShowtimeCreation.event, { queue: false })
     handleEvent(data: any) {
         this.sseEventSubject.next({ data })
     }

@@ -24,7 +24,7 @@ class UploadFileDto {
     name?: string
 }
 
-@Controller(Routes.StorageFiles)
+@Controller(Routes.Http.StorageFiles)
 export class StorageFilesController {
     private logger: Logger
 

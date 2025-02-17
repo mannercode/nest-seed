@@ -1,5 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
+import { Routes } from 'shared/config'
 import { PaymentCreateDto } from './dtos'
 import { PaymentsService } from './payments.service'
 
@@ -7,12 +8,12 @@ import { PaymentsService } from './payments.service'
 export class PaymentsController {
     constructor(private service: PaymentsService) {}
 
-    @MessagePattern('infrastructures.payments.processPayment')
+    @MessagePattern(Routes.Messages.Payments.processPayment)
     processPayment(@Payload() createDto: PaymentCreateDto) {
         return this.service.processPayment(createDto)
     }
 
-    @MessagePattern('infrastructures.payments.getPayment')
+    @MessagePattern(Routes.Messages.Payments.getPayment)
     getPayment(@Payload() paymentId: string) {
         return this.service.getPayment(paymentId)
     }

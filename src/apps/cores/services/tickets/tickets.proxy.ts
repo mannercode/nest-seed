@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
+import { Routes } from 'shared/config'
 import { SalesStatusByShowtimeDto, TicketCreateDto, TicketDto, TicketFilterDto } from './dtos'
 import { TicketStatus } from './models'
 
@@ -9,28 +10,28 @@ export class TicketsProxy {
 
     @MethodLog({ level: 'verbose' })
     createTickets(createDtos: TicketCreateDto[]): Promise<{ success: boolean; count: number }> {
-        return getProxyValue(this.service.send('cores.tickets.createTickets', createDtos))
+        return getProxyValue(this.service.send(Routes.Messages.Tickets.createTickets, createDtos))
     }
 
     @MethodLog({ level: 'verbose' })
     updateTicketStatus(ticketIds: string[], status: TicketStatus): Promise<TicketDto[]> {
         return getProxyValue(
-            this.service.send('cores.tickets.updateTicketStatus', { ticketIds, status })
+            this.service.send(Routes.Messages.Tickets.updateTicketStatus, { ticketIds, status })
         )
     }
 
     @MethodLog({ level: 'verbose' })
     findAllTickets(filterDto: TicketFilterDto): Promise<TicketDto[]> {
-        return getProxyValue(this.service.send('cores.tickets.findAllTickets', filterDto))
+        return getProxyValue(this.service.send(Routes.Messages.Tickets.findAllTickets, filterDto))
     }
 
     @MethodLog({ level: 'verbose' })
     getSalesStatuses(ticketIds: string[]): Promise<SalesStatusByShowtimeDto[]> {
-        return getProxyValue(this.service.send('cores.tickets.getSalesStatuses', ticketIds))
+        return getProxyValue(this.service.send(Routes.Messages.Tickets.getSalesStatuses, ticketIds))
     }
 
     @MethodLog({ level: 'verbose' })
     getTickets(ticketIds: string[]): Promise<TicketDto[]> {
-        return getProxyValue(this.service.send('cores.tickets.getTickets', ticketIds))
+        return getProxyValue(this.service.send(Routes.Messages.Tickets.getTickets, ticketIds))
     }
 }
