@@ -3,6 +3,7 @@ import { Transport } from '@nestjs/microservices'
 import { ClientProxyModule } from 'common'
 import { AppConfigService } from 'shared/config'
 
+// TODO name을 설정해야 한다.
 @Module({
     imports: [
         ClientProxyModule.registerAsync({
