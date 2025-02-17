@@ -63,7 +63,8 @@ describe('@MethodLog()', () => {
 
         expect(mockLogger.log).toHaveBeenNthCalledWith(
             1,
-            expect.stringContaining('Begin TestService.syncMethod')
+            expect.stringContaining('Begin TestService.syncMethod'),
+            { args: ['value'] }
         )
 
         expect(mockLogger.log).toHaveBeenNthCalledWith(
@@ -78,7 +79,8 @@ describe('@MethodLog()', () => {
 
         expect(mockLogger.log).toHaveBeenNthCalledWith(
             1,
-            expect.stringContaining('Begin TestService.asyncMethod')
+            expect.stringContaining('Begin TestService.asyncMethod'),
+            { args: ['value'] }
         )
 
         expect(mockLogger.log).toHaveBeenNthCalledWith(
@@ -93,7 +95,8 @@ describe('@MethodLog()', () => {
 
         expect(mockLogger.log).toHaveBeenNthCalledWith(
             1,
-            expect.stringContaining('Begin TestService.observableMethod')
+            expect.stringContaining('Begin TestService.observableMethod'),
+            { args: ['value'] }
         )
 
         expect(mockLogger.log).toHaveBeenNthCalledWith(
@@ -108,11 +111,12 @@ describe('@MethodLog()', () => {
 
         expect(mockLogger.log).toHaveBeenNthCalledWith(
             1,
-            expect.stringContaining('Begin TestService.throwSyncError')
+            expect.stringContaining('Begin TestService.throwSyncError'),
+            { args: ['value'] }
         )
 
         expect(mockLogger.error).toHaveBeenCalledWith(
-            expect.stringContaining('End TestService.throwSyncError'),
+            expect.stringContaining('Error TestService.throwSyncError'),
             { args: ['value'], duration: expect.any(Number), error: 'value' }
         )
     })
@@ -122,11 +126,12 @@ describe('@MethodLog()', () => {
 
         expect(mockLogger.log).toHaveBeenNthCalledWith(
             1,
-            expect.stringContaining('Begin TestService.throwAsyncError')
+            expect.stringContaining('Begin TestService.throwAsyncError'),
+            { args: ['value'] }
         )
 
         expect(mockLogger.error).toHaveBeenCalledWith(
-            expect.stringContaining('End TestService.throwAsyncError'),
+            expect.stringContaining('Error TestService.throwAsyncError'),
             { args: ['value'], duration: expect.any(Number), error: 'value' }
         )
     })
@@ -136,11 +141,12 @@ describe('@MethodLog()', () => {
 
         expect(mockLogger.log).toHaveBeenNthCalledWith(
             1,
-            expect.stringContaining('Begin TestService.throwObservableError')
+            expect.stringContaining('Begin TestService.throwObservableError'),
+            { args: ['value'] }
         )
 
         expect(mockLogger.error).toHaveBeenCalledWith(
-            expect.stringContaining('End TestService.throwObservableError'),
+            expect.stringContaining('Error TestService.throwObservableError'),
             { args: ['value'], duration: expect.any(Number), error: 'value' }
         )
     })
@@ -150,7 +156,8 @@ describe('@MethodLog()', () => {
 
         expect(mockLogger.debug).toHaveBeenNthCalledWith(
             1,
-            expect.stringContaining('Begin TestService.debugLog')
+            expect.stringContaining('Begin TestService.debugLog'),
+            { args: [] }
         )
 
         expect(mockLogger.debug).toHaveBeenNthCalledWith(
@@ -160,7 +167,5 @@ describe('@MethodLog()', () => {
         )
     })
 
-    it('순서에 상관없이 다른 데코레이터와 사용할 수 있어야 한다', () => {
-
-    })
+    it('순서에 상관없이 다른 데코레이터와 사용할 수 있어야 한다', () => {})
 })
