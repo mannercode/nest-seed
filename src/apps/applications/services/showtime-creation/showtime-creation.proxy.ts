@@ -7,7 +7,6 @@ import {
     PaginationOptionDto
 } from 'common'
 import { MovieDto, ShowtimeDto, TheaterDto } from 'cores'
-import { Observable } from 'rxjs'
 import { ShowtimeBatchCreateDto, ShowtimeBatchCreateResponse } from './dtos'
 
 @Injectable()
@@ -40,10 +39,5 @@ export class ShowtimeCreationProxy {
         return getProxyValue(
             this.service.send('applications.showtime-creation.createBatchShowtimes', createDto)
         )
-    }
-
-    @MethodLog({ level: 'verbose' })
-    monitorEvents(): Observable<MessageEvent> {
-        return this.service.send('applications.showtime-creation.monitorEvents', {})
     }
 }

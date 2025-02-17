@@ -1,38 +1,32 @@
-import { Injectable, MessageEvent } from '@nestjs/common'
-import { ServerSentEventsService } from 'common'
+import { Injectable } from '@nestjs/common'
+import { ClientProxyService, InjectClientProxy } from 'common'
 import { ShowtimeDto } from 'cores'
-import { Observable } from 'rxjs'
 
 @Injectable()
 export class ShowtimeCreationEventsService {
-    constructor(private sseService: ServerSentEventsService) {}
+    constructor(@InjectClientProxy('clientProxy') private service: ClientProxyService) {}
 
-    monitorEvents(): Observable<MessageEvent> {
-        return this.sseService.getEventObservable()
+    private emit(payload: any) {
+        this.service.emit('applications.showtime-creation.event', payload)
     }
 
     emitWaiting(batchId: string) {
-        this.sseService.sendEvent({ batchId, status: 'waiting' })
+        this.emit({ batchId, status: 'waiting' })
     }
 
     emitProcessing(batchId: string) {
-        this.sseService.sendEvent({ batchId, status: 'processing' })
+        this.emit({ batchId, status: 'processing' })
     }
 
     emitComplete(batchId: string, showtimeCreatedCount: number, ticketCreatedCount: number) {
-        this.sseService.sendEvent({
-            batchId,
-            status: 'complete',
-            showtimeCreatedCount,
-            ticketCreatedCount
-        })
+        this.emit({ batchId, status: 'complete', showtimeCreatedCount, ticketCreatedCount })
     }
 
     emitFail(batchId: string, conflictingShowtimes: ShowtimeDto[]) {
-        this.sseService.sendEvent({ batchId, status: 'fail', conflictingShowtimes })
+        this.emit({ batchId, status: 'fail', conflictingShowtimes })
     }
 
     emitError(batchId: string, message: string) {
-        this.sseService.sendEvent({ batchId, status: 'error', message })
+        this.emit({ batchId, status: 'error', message })
     }
 }

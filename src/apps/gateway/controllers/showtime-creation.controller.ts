@@ -5,19 +5,27 @@ import {
     HttpCode,
     HttpStatus,
     MessageEvent,
+    OnModuleDestroy,
     Post,
     Query,
     Sse,
     UsePipes
 } from '@nestjs/common'
+import { EventPattern } from '@nestjs/microservices'
 import { ShowtimeBatchCreateDto, ShowtimeCreationProxy } from 'applications'
 import { PaginationOptionDto } from 'common'
-import { Observable } from 'rxjs'
+import { Observable, Subject } from 'rxjs'
 import { DefaultPaginationPipe } from './pipes'
 
 @Controller('showtime-creation')
-export class ShowtimeCreationController {
+export class ShowtimeCreationController implements OnModuleDestroy {
+    private sseEventSubject = new Subject<MessageEvent>()
+
     constructor(private service: ShowtimeCreationProxy) {}
+
+    onModuleDestroy() {
+        this.sseEventSubject.complete()
+    }
 
     @UsePipes(DefaultPaginationPipe)
     @Get('theaters')
@@ -43,8 +51,14 @@ export class ShowtimeCreationController {
         return this.service.createBatchShowtimes(createDto)
     }
 
+    // @MethodLog()
     @Sse('events')
     events(): Observable<MessageEvent> {
-        return this.service.monitorEvents()
+        return this.sseEventSubject.asObservable()
+    }
+
+    @EventPattern('applications.showtime-creation.event')
+    async handleEvent(data: any) {
+        this.sseEventSubject.next({ data })
     }
 }

@@ -27,9 +27,4 @@ export class ShowtimeCreationController {
     createBatchShowtimes(@Payload() createDto: ShowtimeBatchCreateDto) {
         return this.service.createBatchShowtimes(createDto)
     }
-
-    @MessagePattern('applications.showtime-creation.monitorEvents')
-    monitorEvents() {
-        return this.service.monitorEvents()
-    }
 }

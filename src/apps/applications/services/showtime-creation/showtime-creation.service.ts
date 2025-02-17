@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { MethodLog, newObjectId, PaginationOptionDto } from 'common'
 import { MoviesProxy, ShowtimesProxy, TheatersProxy } from 'cores'
 import { ShowtimeBatchCreateDto, ShowtimeBatchCreateResponse } from './dtos'
-import { ShowtimeCreationEventsService, ShowtimeCreationWorkerService } from './services'
+import { ShowtimeCreationWorkerService } from './services'
 
 @Injectable()
 export class ShowtimeCreationService {
@@ -10,8 +10,7 @@ export class ShowtimeCreationService {
         private theatersService: TheatersProxy,
         private moviesService: MoviesProxy,
         private showtimesService: ShowtimesProxy,
-        private batchCreationService: ShowtimeCreationWorkerService,
-        private eventService: ShowtimeCreationEventsService
+        private batchCreationService: ShowtimeCreationWorkerService
     ) {}
 
     @MethodLog({ level: 'verbose' })
@@ -39,10 +38,5 @@ export class ShowtimeCreationService {
         this.batchCreationService.enqueueTask({ ...createDto, batchId })
 
         return { batchId } as ShowtimeBatchCreateResponse
-    }
-
-    @MethodLog()
-    monitorEvents() {
-        return this.eventService.monitorEvents()
     }
 }
