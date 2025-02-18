@@ -1,33 +1,15 @@
-import { MicroserviceOptions, NatsOptions, Transport } from '@nestjs/microservices'
-import { HttpToRpcExceptionFilter } from 'common'
-import {
-    createTestContext,
-    getNatsTestConnection,
-    MicroserviceTestClient,
-    TestContext
-} from 'testlib'
-import { SampleModule } from './http-to-rpc-exception.filter.fixture'
+import { MicroserviceTestClient, TestContext } from 'testlib'
 
 describe('HttpToRpcExceptionFilter', () => {
     let testContext: TestContext
     let client: MicroserviceTestClient
 
     beforeEach(async () => {
-        const { servers } = await getNatsTestConnection()
+        const { createFixture } = await import('./http-to-rpc-exception.filter.fixture')
+        const fixture = await createFixture()
 
-        const brokerOpts = { transport: Transport.NATS, options: { servers } } as NatsOptions
-
-        testContext = await createTestContext({
-            metadata: { imports: [SampleModule] },
-            configureApp: async (app) => {
-                app.useGlobalFilters(new HttpToRpcExceptionFilter())
-
-                app.connectMicroservice<MicroserviceOptions>(brokerOpts, { inheritAppConfig: true })
-                await app.startAllMicroservices()
-            }
-        })
-
-        client = MicroserviceTestClient.create(brokerOpts)
+        testContext = fixture.testContext
+        client = MicroserviceTestClient.create(fixture.brokerOptions)
     })
 
     afterEach(async () => {

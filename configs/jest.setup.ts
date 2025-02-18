@@ -14,7 +14,7 @@ function generateShortId(length: number = 10): string {
     return result
 }
 
-global.beforeEach(() => {
+global.beforeEach(async () => {
     /*
     - 배경
     메시지 브로커로 사용하는 Nats가 group과 같은 기능을 지원하지 않아서
@@ -32,6 +32,7 @@ global.beforeEach(() => {
     - 동적 import 방법
     const { createFixture } = await import('./customers.fixture')
     */
-    jest.resetModules()
+    // jest.resetModules()
+    // await import('reflect-metadata')
     process.env.TEST_ID = generateShortId()
 })

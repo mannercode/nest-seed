@@ -1,6 +1,19 @@
 import { BadRequestException, Controller, Get, Module } from '@nestjs/common'
-import { MessagePattern } from '@nestjs/microservices'
-import { ClientProxyService, InjectClientProxy } from 'common'
+import { APP_INTERCEPTOR } from '@nestjs/core'
+import { MessagePattern, MicroserviceOptions, Transport } from '@nestjs/microservices'
+import {
+    ClientProxyModule,
+    ClientProxyService,
+    HttpToRpcExceptionFilter,
+    InjectClientProxy,
+    RpcToHttpExceptionInterceptor
+} from 'common'
+import {
+    createHttpTestContext,
+    createTestContext,
+    getNatsTestConnection,
+    HttpTestClient
+} from 'testlib'
 
 @Controller()
 class MicroserviceController {
@@ -16,10 +29,10 @@ class MicroserviceController {
 }
 
 @Module({ controllers: [MicroserviceController] })
-export class MicroserviceModule {}
+class MicroserviceModule {}
 
 @Controller()
-export class HttpController {
+class HttpController {
     constructor(@InjectClientProxy('name') private client: ClientProxyService) {}
 
     @Get('throwHttpException')
@@ -31,4 +44,35 @@ export class HttpController {
     throwError() {
         return this.client.send('test.common.RpcToHttpExceptionInterceptor.throwError', {})
     }
+}
+
+export async function createFixture() {
+    const { servers } = await getNatsTestConnection()
+
+    const microContext = await createTestContext({
+        metadata: { imports: [MicroserviceModule] },
+        brokers: servers,
+        configureApp: async (app, servers) => {
+            app.useGlobalFilters(new HttpToRpcExceptionFilter())
+            app.connectMicroservice<MicroserviceOptions>(
+                { transport: Transport.NATS, options: { servers } },
+                { inheritAppConfig: true }
+            )
+            await app.startAllMicroservices()
+        }
+    })
+
+    const httpContext = await createHttpTestContext({
+        imports: [
+            ClientProxyModule.registerAsync({
+                name: 'name',
+                useFactory: () => ({ transport: Transport.NATS, options: { servers } })
+            })
+        ],
+        controllers: [HttpController],
+        providers: [{ provide: APP_INTERCEPTOR, useClass: RpcToHttpExceptionInterceptor }]
+    })
+    const client = new HttpTestClient(`http://localhost:${httpContext.httpPort}`)
+
+    return { microContext, httpContext, client }
 }

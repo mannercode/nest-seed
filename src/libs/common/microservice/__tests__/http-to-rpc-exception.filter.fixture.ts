@@ -1,9 +1,11 @@
 import { Controller, Module, NotFoundException, ValidationPipe } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
-import { MessagePattern } from '@nestjs/microservices'
+import { MessagePattern, MicroserviceOptions, NatsOptions, Transport } from '@nestjs/microservices'
 import { IsNotEmpty, IsString } from 'class-validator'
+import { createTestContext, getNatsTestConnection } from 'testlib'
+import { HttpToRpcExceptionFilter } from '../http-to-rpc-exception.filter'
 
-export class CreateSampleDto {
+class CreateSampleDto {
     @IsString()
     @IsNotEmpty()
     name: string
@@ -38,4 +40,21 @@ class SampleController {
     controllers: [SampleController],
     providers: [{ provide: APP_PIPE, useFactory: () => new ValidationPipe() }]
 })
-export class SampleModule {}
+class SampleModule {}
+
+export async function createFixture() {
+    const { servers } = await getNatsTestConnection()
+    const brokerOptions = { transport: Transport.NATS, options: { servers } } as NatsOptions
+
+    const testContext = await createTestContext({
+        metadata: { imports: [SampleModule] },
+        configureApp: async (app) => {
+            app.useGlobalFilters(new HttpToRpcExceptionFilter())
+
+            app.connectMicroservice<MicroserviceOptions>(brokerOptions, { inheritAppConfig: true })
+            await app.startAllMicroservices()
+        }
+    })
+
+    return { testContext, brokerOptions }
+}

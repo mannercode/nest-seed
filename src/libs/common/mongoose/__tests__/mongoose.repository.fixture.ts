@@ -1,4 +1,4 @@
-import { Injectable, Module } from '@nestjs/common'
+import { BadRequestException, Injectable, Module, NotFoundException } from '@nestjs/common'
 import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import {
     createMongooseSchema,
@@ -9,15 +9,15 @@ import {
     padNumber
 } from 'common'
 import { HydratedDocument, Model } from 'mongoose'
-import { createHttpTestContext } from 'testlib'
+import { createHttpTestContext, getMongoTestConnection } from 'testlib'
 
 @Schema({ toJSON: { virtuals: true } })
-export class Sample extends MongooseSchema {
+class Sample extends MongooseSchema {
     @Prop({ required: true })
     name: string
 }
-export type SampleDocument = HydratedDocument<Sample>
-export const SampleSchema = createMongooseSchema(Sample)
+type SampleDocument = HydratedDocument<Sample>
+const SampleSchema = createMongooseSchema(Sample)
 
 export class SampleDto {
     id: string
@@ -35,22 +35,7 @@ export class SamplesRepository extends MongooseRepository<Sample> {
     imports: [MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])],
     providers: [SamplesRepository]
 })
-export class SampleModule {}
-
-export async function createFixture(uri: string) {
-    const testContext = await createHttpTestContext({
-        imports: [
-            MongooseModule.forRootAsync({
-                useFactory: () => ({ uri, dbName: 'test_' + generateShortId() })
-            }),
-            SampleModule
-        ]
-    })
-
-    const repository = testContext.module.get(SamplesRepository)
-
-    return { testContext, repository }
-}
+class SampleModule {}
 
 export const sortByName = (documents: SampleDto[]) =>
     documents.sort((a, b) => a.name.localeCompare(b.name))
@@ -75,3 +60,28 @@ export const createSamples = async (repository: SamplesRepository) =>
 
 export const toDto = (item: SampleDocument) => mapDocToDto(item, SampleDto, ['id', 'name'])
 export const toDtos = (items: SampleDocument[]) => items.map((item) => toDto(item))
+
+export async function createFixture() {
+    const { uri } = getMongoTestConnection()
+
+    const testContext = await createHttpTestContext({
+        imports: [
+            MongooseModule.forRootAsync({
+                useFactory: () => ({ uri, dbName: 'test_' + generateShortId() })
+            }),
+            SampleModule
+        ]
+    })
+
+    const repository = testContext.module.get(SamplesRepository)
+
+    /* TODO Module Cache 테스트 코드 작성
+        resetModules가 true면 createFixture()에서 로드하는 BadRequestException가 달라진다.
+        비교를 위해서 로드된 BadRequestException를 전달하는 것이다.
+
+        만약 spec.ts에서 직접 import한 BadRequestException로 비교하면 아래 코드는 실패하게 된다.
+        await expect(promise).rejects.toThrow(BadRequestException)
+        */
+
+    return { testContext, repository, BadRequestException, NotFoundException }
+}

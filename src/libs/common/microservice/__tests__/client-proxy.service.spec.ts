@@ -1,37 +1,19 @@
-import { Transport } from '@nestjs/microservices'
-import { ClientProxyModule } from 'common'
-import { createTestContext, getNatsTestConnection, HttpTestClient, TestContext } from 'testlib'
-import { HttpController } from './client-proxy.service.fixture'
+import { HttpTestClient, TestContext } from 'testlib'
 
 describe('ClientProxyService', () => {
-    let context: TestContext
+    let testContext: TestContext
     let client: HttpTestClient
 
     beforeEach(async () => {
-        const { servers } = await getNatsTestConnection()
-        const natsOpts = { transport: Transport.NATS, options: { servers } } as const
+        const { createFixture } = await import('./client-proxy.service.fixture')
+        const fixture = await createFixture()
 
-        context = await createTestContext({
-            metadata: {
-                imports: [
-                    ClientProxyModule.registerAsync({
-                        name: 'name',
-                        useFactory: () => natsOpts
-                    })
-                ],
-                controllers: [HttpController]
-            },
-            configureApp: async (app) => {
-                app.connectMicroservice(natsOpts, { inheritAppConfig: true })
-                await app.startAllMicroservices()
-            }
-        })
-
-        client = new HttpTestClient(`http://localhost:${context.httpPort}`)
+        testContext = fixture.testContext
+        client = fixture.client
     })
 
     afterEach(async () => {
-        await context?.close()
+        await testContext?.close()
     })
 
     it('HttpController는 Observable로 응답할 수 있다', async () => {

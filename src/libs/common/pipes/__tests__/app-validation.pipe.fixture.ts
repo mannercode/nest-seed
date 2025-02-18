@@ -1,8 +1,11 @@
 import { Body, Controller, Module, ParseArrayPipe, Post } from '@nestjs/common'
+import { APP_PIPE } from '@nestjs/core'
 import { Type } from 'class-transformer'
 import { IsDate, IsNotEmpty, IsString } from 'class-validator'
+import { AppValidationPipe } from 'common'
+import { createHttpTestContext, HttpTestClient } from 'testlib'
 
-export class SampleDto {
+class SampleDto {
     @IsString()
     @IsNotEmpty()
     sampleId: string
@@ -35,4 +38,14 @@ class SamplesController {
 @Module({
     controllers: [SamplesController]
 })
-export class SamplesModule {}
+class SamplesModule {}
+
+export async function createFixture() {
+    const testContext = await createHttpTestContext({
+        imports: [SamplesModule],
+        providers: [{ provide: APP_PIPE, useClass: AppValidationPipe }]
+    })
+    const client = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
+
+    return { testContext, client }
+}

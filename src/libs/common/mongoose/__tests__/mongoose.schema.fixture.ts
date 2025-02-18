@@ -1,6 +1,7 @@
+import { Type } from '@nestjs/common'
 import { DynamicModule, Module, ModuleMetadata } from '@nestjs/common'
 import { getModelToken, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
-import { generateShortId, HardDelete, MongooseSchema } from 'common'
+import { createMongooseSchema, generateShortId, HardDelete, MongooseSchema } from 'common'
 import { Model } from 'mongoose'
 import { createHttpTestContext, getMongoTestConnection } from 'testlib'
 
@@ -11,7 +12,9 @@ class SampleModule {
     }
 }
 
-export async function createFixture(schema: any) {
+export async function createFixture<T>(cls: Type<T>) {
+    const schema = createMongooseSchema(cls)
+
     const { uri } = getMongoTestConnection()
 
     const testContext = await createHttpTestContext({
@@ -26,8 +29,11 @@ export async function createFixture(schema: any) {
     })
 
     const model = testContext.module.get<Model<any>>(getModelToken('schema'))
+    const doc = new model()
+    doc.name = 'name'
+    await doc.save()
 
-    return { testContext, model }
+    return { testContext, model, doc }
 }
 
 @HardDelete()

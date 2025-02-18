@@ -1,5 +1,6 @@
 import { Controller, Get, Module } from '@nestjs/common'
 import { LatLong, LatLongQuery } from 'common'
+import { createHttpTestContext, HttpTestClient } from 'testlib'
 
 @Controller()
 class TestController {
@@ -12,4 +13,11 @@ class TestController {
 @Module({
     controllers: [TestController]
 })
-export class TestModule {}
+class TestModule {}
+
+export async function createFixture() {
+    const testContext = await createHttpTestContext({ imports: [TestModule] })
+    const client = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
+
+    return { testContext, client }
+}

@@ -6,6 +6,7 @@ import superagent from 'superagent'
 import { parseEventMessage } from './utils'
 
 export class HttpTestClient {
+    // client -> agent
     public client: superagent.Request
 
     constructor(public serverUrl: string) {}

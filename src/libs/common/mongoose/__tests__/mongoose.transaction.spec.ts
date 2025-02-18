@@ -1,15 +1,15 @@
 import { expect } from '@jest/globals'
-import { getMongoTestConnection, TestContext } from 'testlib'
-import { createFixture, SamplesRepository } from './mongoose.transaction.fixture'
+import { TestContext } from 'testlib'
+import { SamplesRepository } from './mongoose.transaction.fixture'
 
 describe('MongooseRepository - withTransaction', () => {
     let testContext: TestContext
     let repository: SamplesRepository
 
     beforeEach(async () => {
-        const { uri } = getMongoTestConnection()
+        const { createFixture } = await import('./mongoose.transaction.fixture')
+        const fixture = await createFixture()
 
-        const fixture = await createFixture(uri)
         testContext = fixture.testContext
         repository = fixture.repository
     })

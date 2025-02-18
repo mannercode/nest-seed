@@ -1,6 +1,4 @@
-import { Logger } from '@nestjs/common'
-import { HttpTestClient, TestContext, createHttpTestContext } from 'testlib'
-import { TestModule } from './http-error.filter.fixture'
+import { HttpTestClient, TestContext } from 'testlib'
 
 describe('ErrorFilter', () => {
     let testContext: TestContext
@@ -8,11 +6,12 @@ describe('ErrorFilter', () => {
     let spy: jest.SpyInstance
 
     beforeEach(async () => {
-        spy = jest.spyOn(Logger, 'error').mockImplementation(() => {})
+        const { createFixture } = await import('./http-error.filter.fixture')
+        const fixture = await createFixture()
 
-        testContext = await createHttpTestContext({ imports: [TestModule] })
-
-        client = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
+        testContext = fixture.testContext
+        spy = fixture.spy
+        client = fixture.client
     })
 
     afterEach(async () => {

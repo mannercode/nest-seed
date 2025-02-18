@@ -1,14 +1,15 @@
-import { HttpTestClient, TestContext, createHttpTestContext } from 'testlib'
-import { TestModule } from './latlong.pipe.fixture'
+import { HttpTestClient, TestContext } from 'testlib'
 
 describe('common/http/pipes', () => {
     let testContext: TestContext
     let client: HttpTestClient
 
     beforeEach(async () => {
-        testContext = await createHttpTestContext({ imports: [TestModule] })
+        const { createFixture } = await import('./latlong.pipe.fixture')
+        const fixture = await createFixture()
 
-        client = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
+        testContext = fixture.testContext
+        client = fixture.client
     })
 
     afterEach(async () => {

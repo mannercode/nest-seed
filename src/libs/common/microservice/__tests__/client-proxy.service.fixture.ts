@@ -1,7 +1,8 @@
 import { Controller, Get, MessageEvent, Sse } from '@nestjs/common'
-import { EventPattern, MessagePattern } from '@nestjs/microservices'
-import { ClientProxyService, getProxyValue, InjectClientProxy } from 'common'
+import { EventPattern, MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
+import { ClientProxyModule, ClientProxyService, getProxyValue, InjectClientProxy } from 'common'
 import { Observable, Subject } from 'rxjs'
+import { createTestContext, getNatsTestConnection, HttpTestClient } from 'testlib'
 
 @Controller()
 export class HttpController {
@@ -40,4 +41,26 @@ export class HttpController {
     observeEvent(): Observable<MessageEvent> {
         return this.eventSubject.asObservable()
     }
+}
+
+export async function createFixture() {
+    const { servers } = getNatsTestConnection()
+    const brokerOptions = { transport: Transport.NATS, options: { servers } } as NatsOptions
+
+    const testContext = await createTestContext({
+        metadata: {
+            imports: [
+                ClientProxyModule.registerAsync({ name: 'name', useFactory: () => brokerOptions })
+            ],
+            controllers: [HttpController]
+        },
+        configureApp: async (app) => {
+            app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
+            await app.startAllMicroservices()
+        }
+    })
+
+    const client = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
+
+    return { testContext, client }
 }

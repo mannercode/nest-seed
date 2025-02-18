@@ -1,31 +1,24 @@
 import { expect } from '@jest/globals'
-import { Type } from '@nestjs/common'
 import { HydratedDocument, Model } from 'mongoose'
 import { TestContext } from 'testlib'
-import { createMongooseSchema } from '../mongoose.schema'
-import { createFixture, HardDeleteSample, SoftDeleteSample } from './mongoose.schema.fixture'
+import { HardDeleteSample, SoftDeleteSample } from './mongoose.schema.fixture'
 
 // TODO mongoose의 기능들 테스트 해야 한다. 스키마의 각 타입들 포함
 describe('MongooseSchema', () => {
-    let testContext: TestContext
-    let model: Model<any>
-    let doc: HydratedDocument<SoftDeleteSample>
-
-    const createModel = async <T>(cls: Type<T>) => {
-        const SampleSchema = createMongooseSchema(cls)
-        const fixture = await createFixture(SampleSchema)
-        testContext = fixture.testContext
-        model = fixture.model
-
-        doc = new model()
-        doc.name = 'name'
-        await doc.save()
-    }
-
-    afterEach(async () => await testContext?.close())
-
     describe('Soft Delete', () => {
-        beforeEach(async () => await createModel(SoftDeleteSample))
+        let testContext: TestContext
+        let model: Model<any>
+        let doc: HydratedDocument<SoftDeleteSample>
+
+        beforeEach(async () => {
+            const { createFixture } = await import('./mongoose.schema.fixture')
+            const fixture = await createFixture(SoftDeleteSample)
+
+            testContext = fixture.testContext
+            model = fixture.model
+            doc = fixture.doc
+        })
+        afterEach(async () => await testContext?.close())
 
         it('deletedAt의 초기값은 null이다', async () => {
             expect(doc).toMatchObject({ deletedAt: null })
@@ -64,9 +57,19 @@ describe('MongooseSchema', () => {
     })
 
     describe('Hard Delete', () => {
-        beforeEach(async () => await createModel(HardDeleteSample))
+        let testContext: TestContext
+        let doc: HydratedDocument<HardDeleteSample>
 
-        it('@HardDelete()를 지정하면 데이터를 완전히 삭제해야 한다', async () => {
+        beforeEach(async () => {
+            const { createFixture } = await import('./mongoose.schema.fixture')
+            const fixture = await createFixture(HardDeleteSample)
+
+            testContext = fixture.testContext
+            doc = fixture.doc
+        })
+        afterEach(async () => await testContext?.close())
+
+        it('데이터를 완전히 삭제해야 한다', async () => {
             expect(doc).not.toHaveProperty('deletedAt')
         })
     })
