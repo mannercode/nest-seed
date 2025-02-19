@@ -1,15 +1,15 @@
 import { PurchasesService } from 'cores'
 import { PaymentsService } from 'infrastructures'
-import { createTestContext, TestContext } from './utils'
+import { createAllTestContexts, AllTestContexts } from './utils'
 
 export interface Fixture {
-    testContext: TestContext
+    testContext: AllTestContexts
     purchasesService: PurchasesService
     paymentsService: PaymentsService
 }
 
 export async function createFixture() {
-    const testContext = await createTestContext()
+    const testContext = await createAllTestContexts()
 
     const purchasesService = testContext.coresContext.module.get(PurchasesService)
     const paymentsService = testContext.infrasContext.module.get(PaymentsService)

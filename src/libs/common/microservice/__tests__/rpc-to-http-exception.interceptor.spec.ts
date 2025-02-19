@@ -1,43 +1,17 @@
-import { INestMicroservice } from '@nestjs/common'
-import { APP_INTERCEPTOR } from '@nestjs/core'
-import { ClientsModule, Transport } from '@nestjs/microservices'
-import { HttpToRpcExceptionFilter, RpcToHttpExceptionInterceptor } from 'common'
-import {
-    HttpTestClient,
-    HttpTestContext,
-    MicroserviceTestContext,
-    createHttpTestContext,
-    createMicroserviceTestContext
-} from 'testlib'
-import { HttpController, MicroserviceModule } from './rpc-to-http-exception.interceptor.fixture'
+import { HttpTestClient, TestContext } from 'testlib'
 
 describe('RpcToHttpExceptionInterceptor', () => {
-    let microContext: MicroserviceTestContext
-    let httpContext: HttpTestContext
+    let microContext: TestContext
+    let httpContext: TestContext
     let client: HttpTestClient
 
     beforeEach(async () => {
-        microContext = await createMicroserviceTestContext(
-            { imports: [MicroserviceModule] },
-            (app: INestMicroservice) => app.useGlobalFilters(new HttpToRpcExceptionFilter())
-        )
+        const { createFixture } = await import('./rpc-to-http-exception.interceptor.fixture')
+        const fixture = await createFixture()
 
-        httpContext = await createHttpTestContext({
-            imports: [
-                ClientsModule.registerAsync([
-                    {
-                        name: 'SERVICES',
-                        useFactory: () => ({
-                            transport: Transport.TCP,
-                            options: { host: '0.0.0.0', port: microContext.port }
-                        })
-                    }
-                ])
-            ],
-            controllers: [HttpController],
-            providers: [{ provide: APP_INTERCEPTOR, useClass: RpcToHttpExceptionInterceptor }]
-        })
-        client = httpContext.client
+        microContext = fixture.microContext
+        httpContext = fixture.httpContext
+        client = fixture.client
     })
 
     afterEach(async () => {

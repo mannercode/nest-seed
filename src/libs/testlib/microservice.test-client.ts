@@ -1,35 +1,26 @@
-import { ClientOptions, ClientProxy, ClientProxyFactory } from '@nestjs/microservices'
+import { ClientProxy, ClientProxyFactory, NatsOptions } from '@nestjs/microservices'
 import { jsonToObject } from 'common'
-import { lastValueFrom, Observer } from 'rxjs'
+import { lastValueFrom } from 'rxjs'
 
 export class MicroserviceTestClient {
-    static async create(option: ClientOptions) {
-        const client = ClientProxyFactory.create(option)
-        await client.connect()
+    static create(option: NatsOptions) {
+        const proxy = ClientProxyFactory.create(option)
 
-        return new MicroserviceTestClient(client)
+        return new MicroserviceTestClient(proxy)
     }
 
-    constructor(private client: ClientProxy) {}
+    constructor(public proxy: ClientProxy) {}
 
     async close() {
-        await this.client.close()
+        await this.proxy.close()
     }
 
     async send(cmd: string, payload: any) {
-        return jsonToObject(await lastValueFrom(this.client.send({ cmd }, payload)))
-    }
-
-    async subscribe(
-        cmd: string,
-        payload: any,
-        observerOrNext?: Partial<Observer<any>> | ((value: any) => void)
-    ) {
-        return this.client.send({ cmd }, payload).subscribe(observerOrNext)
+        return jsonToObject(await lastValueFrom(this.proxy.send(cmd, payload)))
     }
 
     async error(cmd: string, payload: any, expected: any) {
-        const res = lastValueFrom(this.client.send({ cmd }, payload))
-        await expect(res).rejects.toMatchObject(expected)
+        const promise = lastValueFrom(this.proxy.send(cmd, payload))
+        await expect(promise).rejects.toMatchObject(expected)
     }
 }

@@ -1,22 +1,26 @@
-import { APP_PIPE } from '@nestjs/core'
-import { AppValidationPipe } from 'common'
-import { HttpTestClient, HttpTestContext, createHttpTestContext } from 'testlib'
-import { SamplesModule } from './app-validation.pipe.fixture'
+import { HttpTestClient, TestContext } from 'testlib'
 
 describe('AppValidationPipe', () => {
-    let testContext: HttpTestContext
+    let testContext: TestContext
     let client: HttpTestClient
 
     beforeEach(async () => {
-        testContext = await createHttpTestContext({
-            imports: [SamplesModule],
-            providers: [{ provide: APP_PIPE, useClass: AppValidationPipe }]
-        })
-        client = testContext.client
+        const { createFixture } = await import('./app-validation.pipe.fixture')
+        const fixture = await createFixture()
+
+        testContext = fixture.testContext
+        client = fixture.client
     })
 
     afterEach(async () => {
         await testContext?.close()
+    })
+
+    it('배열의 각 필드가 올바른지 검증해야 한다', async () => {
+        await client
+            .post('/array')
+            .body([{ sampleId: 'id', date: new Date(0) }])
+            .created([{ sampleId: 'id', date: new Date(0) }])
     })
 
     it('필드가 올바른지 검증해야 한다', async () => {
@@ -28,13 +32,6 @@ describe('AppValidationPipe', () => {
 
     it('잘못된 필드를 전송하면 Bad Request를 반환해야 한다', async () => {
         await client.post('/').body({ wrong: 'id' }).badRequest()
-    })
-
-    it('배열의 각 필드가 올바른지 검증해야 한다', async () => {
-        await client
-            .post('/array')
-            .body([{ sampleId: 'id', date: new Date(0) }])
-            .created([{ sampleId: 'id', date: new Date(0) }])
     })
 
     it('잘못된 필드를 배열로 전송하면 Bad Request를 반환해야 한다', async () => {

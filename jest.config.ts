@@ -6,6 +6,13 @@ const config: Config = {
     testRegex: '.*\\.spec\\.(ts|js)$',
     testEnvironment: 'node',
     transform: { '^.+\\.ts$': 'ts-jest' },
+    // This method only initialises the call count and instance information for all mock functions.
+    clearMocks: true,
+    // This method resets all calls and instances of the mock function.
+    // It also deletes any implementations set on the mock function.
+    resetMocks: true,
+    restoreMocks: true,
+    resetModules: true,
     rootDir: '.',
     roots: ['<rootDir>/src'],
     moduleNameMapper: {

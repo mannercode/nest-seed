@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common'
 import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
+import { Messages } from 'shared/config'
 
 @Injectable()
 export class TicketHoldingProxy {
-    constructor(@InjectClientProxy('CORES_CLIENT') private service: ClientProxyService) {}
+    constructor(@InjectClientProxy('clientProxy') private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
     holdTickets(args: {
@@ -12,16 +13,13 @@ export class TicketHoldingProxy {
         ticketIds: string[]
         ttlMs: number
     }): Promise<boolean> {
-        return getProxyValue(this.service.send('holdTickets', args))
+        return getProxyValue(this.service.send(Messages.TicketHolding.holdTickets, args))
     }
 
     @MethodLog({ level: 'verbose' })
     findHeldTicketIds(showtimeId: string, customerId: string): Promise<string[]> {
-        return getProxyValue(this.service.send('findHeldTicketIds', { showtimeId, customerId }))
+        return getProxyValue(
+            this.service.send(Messages.TicketHolding.findHeldTicketIds, { showtimeId, customerId })
+        )
     }
-
-    // @MethodLog({ level: 'verbose' })
-    // releaseTickets(showtimeId: string, customerId: string): Promise<boolean> {
-    //     return getProxyValue(this.service.send('releaseTickets', { showtimeId, customerId }))
-    // }
 }

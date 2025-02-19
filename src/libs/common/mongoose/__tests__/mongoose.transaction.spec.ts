@@ -1,15 +1,15 @@
 import { expect } from '@jest/globals'
-import { getMongoTestConnection, HttpTestContext } from 'testlib'
-import { createFixture, SamplesRepository } from './mongoose.transaction.fixture'
+import { TestContext } from 'testlib'
+import { SamplesRepository } from './mongoose.transaction.fixture'
 
 describe('MongooseRepository - withTransaction', () => {
-    let testContext: HttpTestContext
+    let testContext: TestContext
     let repository: SamplesRepository
 
     beforeEach(async () => {
-        const uri = getMongoTestConnection()
+        const { createFixture } = await import('./mongoose.transaction.fixture')
+        const fixture = await createFixture()
 
-        const fixture = await createFixture(uri)
         testContext = fixture.testContext
         repository = fixture.repository
     })
@@ -38,7 +38,7 @@ describe('MongooseRepository - withTransaction', () => {
             throw new Error('An error occurred during the transaction.')
         })
 
-        await expect(promise).rejects.toThrowError()
+        await expect(promise).rejects.toThrow()
 
         const { total } = await repository.findWithPagination({ pagination: { take: 1 } })
         expect(total).toEqual(0)

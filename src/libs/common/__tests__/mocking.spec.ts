@@ -6,32 +6,27 @@ jest.mock('@nestjs/common', () => {
         static log = jest.fn()
         static error = jest.fn()
         static warn = jest.fn()
-        static verbose = jest.fn().mockReturnValue('Mocked verbose')
+        static verbose = jest.fn()
     }
 
     return { ...jest.requireActual('@nestjs/common'), Logger }
 })
 
-const mockHelloClass = {
-    getHello: jest.fn().mockReturnValue('Mocked getHello')
-}
+const mockHelloClass = { getHello: jest.fn() }
 
 jest.mock('./mocking.fixture', () => {
     return {
-        HelloClass: jest.fn().mockImplementation(() => mockHelloClass),
+        HelloClass: jest.fn(),
         getGreeting: jest.fn()
     }
 })
 
 describe('mocking examples', () => {
-    afterEach(() => {
-        // This method resets all calls and instances of the mock function.
-        // It also deletes any implementations set on the mock function.
-        // jest.resetAllMocks()
-
-        // This method only initialises the call count and instance information
-        // for all mock functions.
-        jest.clearAllMocks()
+    beforeEach(() => {
+        // resetMocks: true로 인해 mock 함수가 초기화되므로, 각 테스트 전에 반환 값을 재설정
+        mockHelloClass.getHello.mockReturnValue('Mocked getHello')
+        ;(HelloClass as jest.Mock).mockImplementation(() => mockHelloClass)
+        ;(Logger.verbose as jest.Mock).mockReturnValue('Mocked verbose')
     })
 
     it('Verifies class instantiation and method call', () => {

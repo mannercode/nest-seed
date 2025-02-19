@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-. "$(dirname "$0")"/common.cfg
+. "$(dirname "$0")/common.cfg"
 
 docker_compose --profile apps --profile infra down --rmi all
 

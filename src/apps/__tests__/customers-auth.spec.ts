@@ -1,6 +1,6 @@
 import { CustomerDto } from 'cores'
 import { HttpTestClient } from 'testlib'
-import { closeFixture, createFixture, Fixture } from './customers-auth.fixture'
+import { closeFixture, Fixture } from './customers-auth.fixture'
 
 describe('/customers(authentication)', () => {
     let fixture: Fixture
@@ -10,6 +10,8 @@ describe('/customers(authentication)', () => {
     let password: string
 
     beforeEach(async () => {
+        const { createFixture } = await import('./customers-auth.fixture')
+
         fixture = await createFixture()
         client = fixture.testContext.client
         customer = fixture.customer

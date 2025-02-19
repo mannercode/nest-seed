@@ -2,7 +2,6 @@ import { MovieDto, Seatmap, ShowtimeDto, TheaterDto } from 'cores'
 import { expectEqualUnsorted, HttpTestClient, nullObjectId } from 'testlib'
 import {
     closeFixture,
-    createFixture,
     createShowtimeDtos,
     Fixture,
     monitorEvents
@@ -16,6 +15,8 @@ describe('/showtime-creation', () => {
     let theater: TheaterDto
 
     beforeEach(async () => {
+        const { createFixture } = await import('./showtime-creation.fixture')
+
         fixture = await createFixture()
         client = fixture.testContext.client
         movie = fixture.movie
@@ -100,6 +101,7 @@ describe('/showtime-creation', () => {
             const seatCount = Seatmap.getSeatCount(theater.seatmap)
             const showtimeCreatedCount = theaterIds.length * startTimes.length
             const ticketCreatedCount = showtimeCreatedCount * seatCount
+
             await expect(monitorPromise).resolves.toEqual({
                 batchId,
                 status: 'complete',

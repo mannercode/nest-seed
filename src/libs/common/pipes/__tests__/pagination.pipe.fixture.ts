@@ -1,5 +1,15 @@
-import { Controller, Get, Injectable, Module, Query, UsePipes } from '@nestjs/common'
-import { PaginationOption, PaginationPipe } from 'common'
+import {
+    Controller,
+    Get,
+    Injectable,
+    Module,
+    Query,
+    UsePipes,
+    ValidationPipe
+} from '@nestjs/common'
+import { APP_PIPE } from '@nestjs/core'
+import { PaginationOptionDto, PaginationPipe } from 'common'
+import { createHttpTestContext, HttpTestClient } from 'testlib'
 
 @Injectable()
 class DefaultPaginationPipe extends PaginationPipe {
@@ -11,13 +21,13 @@ class DefaultPaginationPipe extends PaginationPipe {
 @Controller('samples')
 class SamplesController {
     @Get()
-    async handleQuery(@Query() query: PaginationOption) {
+    async handleQuery(@Query() query: PaginationOptionDto) {
         return query
     }
 
     @Get('takeLimit')
     @UsePipes(DefaultPaginationPipe)
-    async handleMaxsize(@Query() pagination: PaginationOption) {
+    async handleMaxsize(@Query() pagination: PaginationOptionDto) {
         return pagination
     }
 }
@@ -25,4 +35,24 @@ class SamplesController {
 @Module({
     controllers: [SamplesController]
 })
-export class SamplesModule {}
+class SamplesModule {}
+
+export async function createFixture() {
+    const testContext = await createHttpTestContext({
+        imports: [SamplesModule],
+        providers: [
+            {
+                provide: APP_PIPE,
+                useFactory: () =>
+                    new ValidationPipe({
+                        transform: true,
+                        transformOptions: { enableImplicitConversion: true }
+                    })
+            }
+        ]
+    })
+
+    const client = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
+
+    return { testContext, client }
+}

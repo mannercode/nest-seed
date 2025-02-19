@@ -4,7 +4,6 @@ import { TheaterDto } from 'cores'
 import { expectEqualUnsorted, HttpTestClient, nullObjectId } from 'testlib'
 import {
     closeFixture,
-    createFixture,
     createTheater,
     createTheaterDto,
     createTheaters,
@@ -16,6 +15,8 @@ describe('/theaters', () => {
     let client: HttpTestClient
 
     beforeEach(async () => {
+        const { createFixture } = await import('./theaters.fixture')
+
         fixture = await createFixture()
         client = fixture.testContext.client
     })

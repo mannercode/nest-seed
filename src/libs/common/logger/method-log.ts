@@ -1,7 +1,6 @@
 import { Logger, LogLevel } from '@nestjs/common'
-import { OnEvent } from '@nestjs/event-emitter'
-import 'reflect-metadata'
 import { catchError, isObservable, tap } from 'rxjs'
+import { generateShortId } from '../utils'
 
 export interface MethodLogOptions {
     level?: LogLevel
@@ -24,84 +23,83 @@ export function MethodLog(options: MethodLogOptions = {}): MethodDecorator {
         const className = target.constructor.name
         const logger = new Logger(className)
 
-        descriptor.value = function (...args: any[]) {
+        // 래핑된 함수 정의
+        function wrappedMethod(...args: any[]) {
             const paramNames = getParameterNames(originalMethod)
             const filteredArgs = args.filter((_, index) => !excludeArgs.includes(paramNames[index]))
             const start = Date.now()
+            const callId = generateShortId()
+            logger[level](`Begin ${className}.${propertyKey}.${callId}`, { args: filteredArgs })
 
+            let result
             try {
-                const result = originalMethod.apply(this, args)
-
-                if (isObservable(result)) {
-                    return result.pipe(
-                        tap((value) => {
-                            logger[level](`${className}.${propertyKey}`, {
-                                args: filteredArgs,
-                                return: value,
-                                duration: Date.now() - start
-                            })
-                        }),
-                        catchError((error) => {
-                            logger.error(`${className}.${propertyKey}`, {
-                                args: filteredArgs,
-                                error: error.message,
-                                duration: Date.now() - start
-                            })
-                            throw error
-                        })
-                    )
-                } else if (result instanceof Promise) {
-                    return result
-                        .then((value) => {
-                            logger[level](`${className}.${propertyKey}`, {
-                                args: filteredArgs,
-                                return: value,
-                                duration: Date.now() - start
-                            })
-                            return value
-                        })
-                        .catch((error) => {
-                            logger.error(`${className}.${propertyKey}`, {
-                                args: filteredArgs,
-                                error: error.message,
-                                duration: Date.now() - start
-                            })
-                            throw error
-                        })
-                } else {
-                    // 동기 반환값인 경우
-                    logger[level](`${className}.${propertyKey}`, {
-                        args: filteredArgs,
-                        return: result,
-                        duration: Date.now() - start
-                    })
-                    return result
-                }
+                result = originalMethod.apply(this, args)
             } catch (error) {
-                logger.error(`${className}.${propertyKey}`, {
+                logger.error(`Error ${className}.${propertyKey}.${callId}`, {
                     args: filteredArgs,
                     error: error.message,
                     duration: Date.now() - start
                 })
                 throw error
             }
+
+            // Promise 반환인 경우
+            if (result instanceof Promise) {
+                result
+                    .then((value) => {
+                        logger[level](`End ${className}.${propertyKey}.${callId}`, {
+                            args: filteredArgs,
+                            return: value,
+                            duration: Date.now() - start
+                        })
+                    })
+                    .catch((error) => {
+                        logger.error(`Error ${className}.${propertyKey}.${callId}`, {
+                            args: filteredArgs,
+                            error: error.message,
+                            duration: Date.now() - start
+                        })
+                    })
+                return result
+            }
+            // Observable 반환인 경우
+            else if (isObservable(result)) {
+                return result.pipe(
+                    tap((value) => {
+                        logger[level](`End ${className}.${propertyKey}.${callId}`, {
+                            args: filteredArgs,
+                            return: value,
+                            duration: Date.now() - start
+                        })
+                    }),
+                    catchError((error) => {
+                        logger.error(`Error ${className}.${propertyKey}.${callId}`, {
+                            args: filteredArgs,
+                            error: error.message,
+                            duration: Date.now() - start
+                        })
+                        throw error
+                    })
+                )
+            }
+            // 동기 반환인 경우
+            else {
+                logger[level](`End ${className}.${propertyKey}.${callId}`, {
+                    args: filteredArgs,
+                    return: result,
+                    duration: Date.now() - start
+                })
+                return result
+            }
         }
-    }
-}
 
-export function MethodLogOnEvent(
-    eventName: string,
-    logOptions?: MethodLogOptions
-): MethodDecorator {
-    return (target, propertyKey, descriptor) => {
-        /* 순서가 중요함 methodLog 적용 후 onEvent 적용해야 한다 */
+        // 다른 데코레이터가 영향을 받지 않도록 원본 메소드에 설정된 모든 메타데이터를 wrappedMethod로 복사
+        const metadataKeys = Reflect.getMetadataKeys(originalMethod)
+        for (const key of metadataKeys) {
+            const metadata = Reflect.getMetadata(key, originalMethod)
+            Reflect.defineMetadata(key, metadata, wrappedMethod)
+        }
 
-        const methodLogDecorator = MethodLog(logOptions)
-        methodLogDecorator(target, propertyKey, descriptor)
-
-        const onEventDecorator = OnEvent(eventName)
-        onEventDecorator(target, propertyKey, descriptor)
-
-        return descriptor
+        descriptor.value = wrappedMethod
     }
 }

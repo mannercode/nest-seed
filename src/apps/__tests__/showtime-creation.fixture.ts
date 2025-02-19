@@ -10,17 +10,17 @@ import {
 import { HttpTestClient, nullObjectId } from 'testlib'
 import { createMovie } from './movies.fixture'
 import { createTheater } from './theaters.fixture'
-import { createTestContext, TestContext } from './utils'
+import { createAllTestContexts, AllTestContexts } from './utils'
 
 export interface Fixture {
-    testContext: TestContext
+    testContext: AllTestContexts
     showtimesService: ShowtimesService
     movie: MovieDto
     theater: TheaterDto
 }
 
 export async function createFixture() {
-    const testContext = await createTestContext()
+    const testContext = await createAllTestContexts()
     const module = testContext.coresContext.module
 
     const showtimesService = module.get(ShowtimesService)
@@ -57,7 +57,7 @@ export const createShowtimeDtos = (startTimes: Date[], overrides = {}) => {
 
 export const monitorEvents = (client: HttpTestClient, waitStatuses: string[]) => {
     return new Promise((resolve, reject) => {
-        client.get('/showtime-creation/events').sse(async (data: any) => {
+        client.get('/showtime-creation/events').sse((data) => {
             const result = jsonToObject(JSON.parse(data))
 
             if (['complete', 'fail', 'error'].includes(result.status)) {

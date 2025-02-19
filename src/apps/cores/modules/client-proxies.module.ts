@@ -6,11 +6,11 @@ import { AppConfigService } from 'shared/config'
 @Module({
     imports: [
         ClientProxyModule.registerAsync({
-            name: 'INFRASTRUCTURES_CLIENT',
-            useFactory: async (config: AppConfigService) => ({
-                transport: Transport.TCP,
-                options: config.services.infrastructures
-            }),
+            name: 'clientProxy',
+            useFactory: async (config: AppConfigService) => {
+                const { servers } = config.nats
+                return { transport: Transport.NATS, options: { servers, queue: 'cores' } }
+            },
             inject: [AppConfigService]
         })
     ]

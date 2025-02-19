@@ -1,7 +1,7 @@
 import { PurchaseDto, PurchaseItemType, PurchasesService } from 'cores'
 import { PaymentsService } from 'infrastructures'
 import { nullObjectId } from 'testlib'
-import { closeFixture, createFixture, Fixture } from './purchases.fixture'
+import { closeFixture, Fixture } from './purchases.fixture'
 
 describe('Purchases Module', () => {
     let fixture: Fixture
@@ -14,6 +14,8 @@ describe('Purchases Module', () => {
     const items = [{ type: PurchaseItemType.ticket, ticketId: nullObjectId }]
 
     beforeEach(async () => {
+        const { createFixture } = await import('./purchases.fixture')
+
         fixture = await createFixture()
         purchasesService = fixture.purchasesService
         paymentsService = fixture.paymentsService

@@ -1,5 +1,7 @@
 import { SchemaOptions } from 'mongoose'
 
+export const ProjectName = 'nest-seed'
+
 export class MongooseConfig {
     static connName = 'mongo'
     static schemaOptions: SchemaOptions = {
@@ -20,8 +22,12 @@ export class RedisConfig {
     static connName = 'redis'
 }
 
-export class Routes {
-    static StorageFiles = '/storage-files' // MovieDto에서 경로를 참조한다.
-}
+export function uniqueWhenTesting(prefix: string) {
+    const testId = process.env.TEST_ID
 
-export const isTest = () => process.env.NODE_ENV === 'test'
+    if (process.env.NODE_ENV === 'test' && testId !== undefined) {
+        return `${prefix}-${testId}`
+    }
+
+    return prefix
+}

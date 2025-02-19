@@ -1,7 +1,7 @@
 import { IsOptional } from 'class-validator'
-import { PaginationOption } from 'common'
+import { PaginationOptionDto } from 'common'
 
-export class MovieQueryDto extends PaginationOption {
+export class MovieQueryDto extends PaginationOptionDto {
     @IsOptional()
     title?: string
 

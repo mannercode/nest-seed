@@ -6,19 +6,15 @@ import {
     MethodLog,
     PaginationResult
 } from 'common'
+import { Messages } from 'shared/config'
 import { WatchRecordDto, WatchRecordQueryDto } from './dtos'
 
 @Injectable()
 export class WatchRecordsProxy {
-    constructor(@InjectClientProxy('CORES_CLIENT') private service: ClientProxyService) {}
-
-    // @MethodLog({ level: 'verbose' })
-    // createWatchRecord(createDto: WatchRecordCreateDto): Promise<WatchRecordDto> {
-    //     return getProxyValue(this.service.send('createWatchRecord', createDto))
-    // }
+    constructor(@InjectClientProxy('clientProxy') private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
     findWatchRecords(queryDto: WatchRecordQueryDto): Promise<PaginationResult<WatchRecordDto>> {
-        return getProxyValue(this.service.send('findWatchRecords', queryDto))
+        return getProxyValue(this.service.send(Messages.WatchRecords.findWatchRecords, queryDto))
     }
 }

@@ -1,49 +1,53 @@
-import { Transport } from '@nestjs/microservices'
-import { ClientProxyModule } from 'common'
-import {
-    HttpTestClient,
-    HttpTestContext,
-    MicroserviceTestContext,
-    createHttpTestContext,
-    createMicroserviceTestContext
-} from 'testlib'
-import { HttpController, MicroserviceModule } from './client-proxy.service.fixture'
+import { HttpTestClient, TestContext } from 'testlib'
 
 describe('ClientProxyService', () => {
-    let microContext: MicroserviceTestContext
-    let httpContext: HttpTestContext
+    let testContext: TestContext
     let client: HttpTestClient
 
     beforeEach(async () => {
-        microContext = await createMicroserviceTestContext({ imports: [MicroserviceModule] })
+        const { createFixture } = await import('./client-proxy.service.fixture')
+        const fixture = await createFixture()
 
-        httpContext = await createHttpTestContext({
-            imports: [
-                ClientProxyModule.registerAsync({
-                    name: 'SERVICES',
-                    useFactory: () => ({
-                        transport: Transport.TCP,
-                        options: { host: '0.0.0.0', port: microContext.port }
-                    })
-                })
-            ],
-            controllers: [HttpController]
-        })
-        client = httpContext.client
+        testContext = fixture.testContext
+        client = fixture.client
     })
 
     afterEach(async () => {
-        await httpContext?.close()
-        await microContext?.close()
+        await testContext?.close()
     })
 
-    it('should return OK(200) when GET /send endpoint is called', async () => {
-        const result = await client.get('/send').ok()
-        expect(result.body).toEqual({ result: 'success' })
+    describe('send', () => {
+        it('HttpController는 Observable로 응답할 수 있다', async () => {
+            const result = await client.get('/observable').ok()
+            expect(result.body).toEqual({ result: 'success' })
+        })
+
+        it('HttpController는 Observable의 값을 읽어서 반환할 수 있다', async () => {
+            const result = await client.get('/value').ok()
+            expect(result.body).toEqual({ result: 'success' })
+        })
+
+        it('null payload를 보낼 수 있다', async () => {
+            const result = await client.get('/send-null').ok()
+            expect(result.body).toEqual({ result: 'success' })
+        })
     })
 
-    it('should return OK(200) when GET /get endpoint is called', async () => {
-        const result = await client.get('/get').ok()
-        expect(result.body).toEqual({ result: 'success' })
+    describe('emit', () => {
+        it('Microservice 이벤트를 전송해야 한다', async () => {
+            const promise = new Promise((resolve, reject) => {
+                client.get('/handle-event').sse((value) => resolve(value), reject)
+            })
+
+            await client.get('/emit-event').ok()
+            await expect(promise).resolves.toEqual('{"arg":"value"}')
+        })
+
+        it('null payload를 보낼 수 있다', async () => {
+            await client.get('/emit-null').ok()
+        })
     })
+
+    it.skip('메시지는 queue 그룹 마다 한 번만 전달되어야 한다', async () => {})
+    it.skip('이벤트는 queue 그룹과 상관없이 모든 인스턴스에 전달되어야 한다', async () => {})
 })

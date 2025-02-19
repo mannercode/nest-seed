@@ -5,7 +5,7 @@ import {
     MethodLog,
     objectId,
     objectIds,
-    PaginationOption,
+    PaginationOptionDto,
     PaginationResult
 } from 'common'
 import { differenceWith, uniq } from 'lodash'
@@ -123,7 +123,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     @MethodLog({ level: 'verbose', excludeArgs: ['session', 'callback'] })
     async findWithPagination(args: {
         callback?: (helpers: QueryWithHelpers<Array<Doc>, Doc>) => void
-        pagination: PaginationOption
+        pagination: PaginationOptionDto
         session?: SeesionArg
     }) {
         const { callback, pagination, session } = args

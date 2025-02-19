@@ -1,6 +1,5 @@
 import { BullModule } from '@nestjs/bullmq'
 import { Module } from '@nestjs/common'
-import { ServerSentEventsService } from 'common'
 import { MoviesProxy, ShowtimesProxy, TheatersProxy, TicketsProxy } from 'cores'
 import {
     ShowtimeCreationEventsService,
@@ -18,7 +17,6 @@ import { ShowtimeCreationService } from './showtime-creation.service'
         ShowtimesProxy,
         TicketsProxy,
         ShowtimeCreationService,
-        ServerSentEventsService,
         ShowtimeCreationEventsService,
         ShowtimeCreationWorkerService,
         ShowtimeCreationValidatorService

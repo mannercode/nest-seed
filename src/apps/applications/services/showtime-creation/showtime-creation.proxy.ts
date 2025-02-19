@@ -4,38 +4,35 @@ import {
     getProxyValue,
     InjectClientProxy,
     MethodLog,
-    PaginationOption
+    PaginationOptionDto
 } from 'common'
 import { MovieDto, ShowtimeDto, TheaterDto } from 'cores'
-import { Observable } from 'rxjs'
+import { Messages } from 'shared/config'
 import { ShowtimeBatchCreateDto, ShowtimeBatchCreateResponse } from './dtos'
 
 @Injectable()
 export class ShowtimeCreationProxy {
-    constructor(@InjectClientProxy('APPLICATIONS_CLIENT') private service: ClientProxyService) {}
+    constructor(@InjectClientProxy('clientProxy') private service: ClientProxyService) {}
 
     @MethodLog({ level: 'verbose' })
-    findMovies(queryDto: PaginationOption): Promise<MovieDto[]> {
-        return getProxyValue(this.service.send('showtime-creation.findMovies', queryDto))
+    findMovies(queryDto: PaginationOptionDto): Promise<MovieDto[]> {
+        return getProxyValue(this.service.send(Messages.ShowtimeCreation.findMovies, queryDto))
     }
 
     @MethodLog({ level: 'verbose' })
-    findTheaters(queryDto: PaginationOption): Promise<TheaterDto[]> {
-        return getProxyValue(this.service.send('showtime-creation.findTheaters', queryDto))
+    findTheaters(queryDto: PaginationOptionDto): Promise<TheaterDto[]> {
+        return getProxyValue(this.service.send(Messages.ShowtimeCreation.findTheaters, queryDto))
     }
 
     @MethodLog({ level: 'verbose' })
     findShowtimes(theaterIds: string[]): Promise<ShowtimeDto[]> {
-        return getProxyValue(this.service.send('showtime-creation.findShowtimes', theaterIds))
+        return getProxyValue(this.service.send(Messages.ShowtimeCreation.findShowtimes, theaterIds))
     }
 
     @MethodLog({ level: 'verbose' })
     createBatchShowtimes(createDto: ShowtimeBatchCreateDto): Promise<ShowtimeBatchCreateResponse> {
-        return getProxyValue(this.service.send('showtime-creation.createBatchShowtimes', createDto))
-    }
-
-    @MethodLog({ level: 'verbose' })
-    monitorEvents(): Observable<MessageEvent> {
-        return this.service.send('showtime-creation.monitorEvents')
+        return getProxyValue(
+            this.service.send(Messages.ShowtimeCreation.createBatchShowtimes, createDto)
+        )
     }
 }

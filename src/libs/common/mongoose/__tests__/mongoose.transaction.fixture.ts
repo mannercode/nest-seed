@@ -1,17 +1,16 @@
 import { Injectable, Module } from '@nestjs/common'
 import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
-import { createMongooseSchema, generateShortId, MongooseRepository, MongooseSchema } from 'common'
-import { HydratedDocument, Model } from 'mongoose'
-import { createHttpTestContext } from 'testlib'
+import { createMongooseSchema, MongooseRepository, MongooseSchema } from 'common'
+import { Model } from 'mongoose'
+import { createHttpTestContext, getMongoTestConnection, withTestId } from 'testlib'
 
 @Schema()
-export class Sample extends MongooseSchema {
+class Sample extends MongooseSchema {
     @Prop({ required: true })
     name: string
 }
 
-export const SampleSchema = createMongooseSchema(Sample)
-export type SampleDocument = HydratedDocument<Sample>
+const SampleSchema = createMongooseSchema(Sample)
 
 @Injectable()
 export class SamplesRepository extends MongooseRepository<Sample> {
@@ -24,13 +23,15 @@ export class SamplesRepository extends MongooseRepository<Sample> {
     imports: [MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])],
     providers: [SamplesRepository]
 })
-export class SampleModule {}
+class SampleModule {}
 
-export async function createFixture(uri: string) {
+export async function createFixture() {
+    const { uri } = getMongoTestConnection()
+
     const testContext = await createHttpTestContext({
         imports: [
             MongooseModule.forRootAsync({
-                useFactory: () => ({ uri, dbName: 'test_' + generateShortId() })
+                useFactory: () => ({ uri, dbName: withTestId('test') })
             }),
             SampleModule
         ]

@@ -9,7 +9,6 @@ describe('Timer', () => {
     })
 
     afterEach(() => {
-        jest.clearAllMocks()
         jest.useRealTimers()
     })
 

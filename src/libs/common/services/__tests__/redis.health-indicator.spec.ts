@@ -1,7 +1,7 @@
 import { TestingModule } from '@nestjs/testing'
-import { CacheModule, generateShortId, RedisHealthIndicator, RedisModule } from 'common'
+import { CacheModule, RedisHealthIndicator, RedisModule } from 'common'
 import Redis from 'ioredis'
-import { createTestingModule, getRedisTestConnection } from 'testlib'
+import { createTestingModule, getRedisTestConnection, withTestId } from 'testlib'
 
 describe('RedisHealthIndicator', () => {
     let module: TestingModule
@@ -17,7 +17,7 @@ describe('RedisHealthIndicator', () => {
                 CacheModule.register({
                     name: 'name',
                     redisName: 'redis',
-                    useFactory: () => ({ prefix: generateShortId() })
+                    useFactory: () => ({ prefix: withTestId('redis-health') })
                 })
             ],
             providers: [RedisHealthIndicator]

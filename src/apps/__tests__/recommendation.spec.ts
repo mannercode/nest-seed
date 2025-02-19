@@ -2,7 +2,6 @@ import { MovieDto, MovieGenre } from 'cores'
 import { HttpTestClient } from 'testlib'
 import {
     closeFixture,
-    createFixture,
     createShowingMovies,
     createWatchedMovies,
     Fixture
@@ -13,6 +12,8 @@ describe('Recommendation Module', () => {
     let client: HttpTestClient
 
     beforeEach(async () => {
+        const { createFixture } = await import('./recommendation.fixture')
+
         fixture = await createFixture()
         client = fixture.testContext.client
     })

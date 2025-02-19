@@ -1,33 +1,25 @@
-import { INestMicroservice } from '@nestjs/common'
-import {
-    createMicroserviceTestContext,
-    MicroserviceTestClient,
-    MicroserviceTestContext
-} from 'testlib'
-import { HttpToRpcExceptionFilter } from '../http-to-rpc-exception.filter'
-import { SampleModule } from './http-to-rpc-exception.filter.fixture'
+import { MicroserviceTestClient, TestContext } from 'testlib'
 
 describe('HttpToRpcExceptionFilter', () => {
-    let testContext: MicroserviceTestContext
+    let testContext: TestContext
     let client: MicroserviceTestClient
 
     beforeEach(async () => {
-        testContext = await createMicroserviceTestContext(
-            {
-                imports: [SampleModule]
-            },
-            (app: INestMicroservice) => app.useGlobalFilters(new HttpToRpcExceptionFilter())
-        )
-        client = testContext.client
+        const { createFixture } = await import('./http-to-rpc-exception.filter.fixture')
+        const fixture = await createFixture()
+
+        testContext = fixture.testContext
+        client = MicroserviceTestClient.create(fixture.brokerOptions)
     })
 
     afterEach(async () => {
+        await client?.close()
         await testContext?.close()
     })
 
     it('should handle HttpException properly for RPC', async () => {
         await client.error(
-            'throwHttpException',
+            'test.throwHttpException',
             {},
             {
                 response: { error: 'Not Found', message: 'not found exception', statusCode: 404 },
@@ -37,16 +29,20 @@ describe('HttpToRpcExceptionFilter', () => {
     })
 
     it('should handle {status, response} properly for RPC', async () => {
-        await client.error('rethrow', {}, { status: 400, response: { message: 'error message' } })
+        await client.error(
+            'test.rethrow',
+            {},
+            { status: 400, response: { message: 'error message' } }
+        )
     })
 
     it('should handle Error properly for RPC', async () => {
-        await client.error('throwError', {}, { status: 500 })
+        await client.error('test.throwError', {}, { status: 500 })
     })
 
     it('should validate input and return error for incorrect data format', async () => {
         await client.error(
-            'createSample',
+            'test.createSample',
             { wrong: 'wrong field' },
             {
                 response: {

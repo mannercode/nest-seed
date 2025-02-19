@@ -1,14 +1,16 @@
 import { convertDateToString, pickIds } from 'common'
 import { Seatmap, TicketDto } from 'cores'
 import { HttpTestClient } from 'testlib'
-import { closeFixture, createFixture, Fixture } from './booking.fixture'
+import { closeFixture, Fixture } from './booking.fixture'
 
-describe('Scenario: Booking', () => {
+describe('Booking', () => {
     let fixture: Fixture
     let client: HttpTestClient
     let movieId: string
 
     beforeEach(async () => {
+        const { createFixture } = await import('./booking.fixture')
+
         fixture = await createFixture()
         client = fixture.testContext.client
         movieId = fixture.movie.id
@@ -18,7 +20,7 @@ describe('Scenario: Booking', () => {
         await closeFixture(fixture)
     })
 
-    it('전체 시나리오를 하나의 테스트로 실행한다', async () => {
+    it('티켓 예매 시나리오', async () => {
         const step = (_name: string, fn: () => void) => fn()
 
         let theaterId: string

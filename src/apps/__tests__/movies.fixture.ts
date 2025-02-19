@@ -1,14 +1,14 @@
 import { padNumber } from 'common'
 import { MovieDto, MovieGenre, MovieRating, MoviesService } from 'cores'
-import { createTestContext, TestContext } from './utils'
+import { createAllTestContexts, AllTestContexts } from './utils'
 
 export interface Fixture {
-    testContext: TestContext
+    testContext: AllTestContexts
     moviesService: MoviesService
 }
 
 export async function createFixture() {
-    const testContext = await createTestContext()
+    const testContext = await createAllTestContexts()
     const module = testContext.coresContext.module
     const moviesService = module.get(MoviesService)
 

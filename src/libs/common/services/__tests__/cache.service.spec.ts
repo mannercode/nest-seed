@@ -1,6 +1,6 @@
 import { TestingModule } from '@nestjs/testing'
-import { CacheModule, CacheService, generateShortId, RedisModule, sleep } from 'common'
-import { createTestingModule, getRedisTestConnection } from 'testlib'
+import { CacheModule, CacheService, RedisModule, sleep } from 'common'
+import { createTestingModule, getRedisTestConnection, withTestId } from 'testlib'
 
 describe('CacheService', () => {
     let module: TestingModule
@@ -15,7 +15,7 @@ describe('CacheService', () => {
                 CacheModule.register({
                     name: 'name',
                     redisName: 'redis',
-                    useFactory: () => ({ prefix: generateShortId() })
+                    useFactory: () => ({ prefix: withTestId('cache') })
                 })
             ]
         })

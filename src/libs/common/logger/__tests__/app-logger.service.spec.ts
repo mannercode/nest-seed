@@ -18,7 +18,6 @@ describe('AppLoggerService', () => {
 
     afterEach(() => {
         appLoggerService.onModuleDestroy()
-        jest.restoreAllMocks()
     })
 
     it('info', () => {

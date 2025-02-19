@@ -7,11 +7,7 @@ import { exit } from 'process'
 import { AppConfigService } from 'shared/config'
 import { CoresModule } from './cores.module'
 
-export async function configureCores(app: INestApplication<any>) {
-    const logger = app.get(AppLoggerService)
-    app.useLogger(logger)
-    app.useGlobalFilters(new HttpToRpcExceptionFilter())
-
+export async function configureCores(app: INestApplication<any>, servers: string[]) {
     const config = app.get(AppConfigService)
 
     for (const dir of [{ name: 'Log', path: config.log.directory }]) {
@@ -20,28 +16,32 @@ export async function configureCores(app: INestApplication<any>) {
             exit(1)
         }
     }
+
+    app.useGlobalFilters(new HttpToRpcExceptionFilter())
+
+    app.connectMicroservice<MicroserviceOptions>(
+        { transport: Transport.NATS, options: { servers, queue: 'cores' } },
+        { inheritAppConfig: true }
+    )
+
+    await app.startAllMicroservices()
+
+    const logger = app.get(AppLoggerService)
+    app.useLogger(logger)
 }
 
 export async function bootstrap() {
     const app = await NestFactory.create(CoresModule)
 
-    configureCores(app)
+    const config = app.get(AppConfigService)
+
+    const { servers } = config.nats
+    configureCores(app, servers)
 
     app.enableShutdownHooks()
 
-    const config = app.get(AppConfigService)
-    const { port, healthPort } = config.services.cores
-    const host = '0.0.0.0'
+    const { httpPort } = config.services.cores
+    await app.listen(httpPort)
 
-    app.connectMicroservice<MicroserviceOptions>({
-        transport: Transport.TCP,
-        options: { retryAttempts: 5, retryDelay: 2000, port, host }
-    })
-
-    await app.startAllMicroservices()
-    await app.listen(healthPort)
-
-    console.log(`Cores is running:
-        - tcp://${host}:${port}
-        - ${await app.getUrl()}`)
+    console.log(`Cores is running: ${await app.getUrl()}`)
 }

@@ -5,29 +5,38 @@ import {
     HttpCode,
     HttpStatus,
     MessageEvent,
+    OnModuleDestroy,
     Post,
     Query,
     Sse,
     UsePipes
 } from '@nestjs/common'
+import { EventPattern } from '@nestjs/microservices'
 import { ShowtimeBatchCreateDto, ShowtimeCreationProxy } from 'applications'
-import { PaginationOption } from 'common'
-import { Observable } from 'rxjs'
+import { PaginationOptionDto } from 'common'
+import { Observable, Subject } from 'rxjs'
+import { Events } from 'shared/config'
 import { DefaultPaginationPipe } from './pipes'
 
 @Controller('showtime-creation')
-export class ShowtimeCreationController {
+export class ShowtimeCreationController implements OnModuleDestroy {
+    private sseEventSubject = new Subject<MessageEvent>()
+
     constructor(private service: ShowtimeCreationProxy) {}
+
+    onModuleDestroy() {
+        this.sseEventSubject.complete()
+    }
 
     @UsePipes(DefaultPaginationPipe)
     @Get('theaters')
-    async findTheaters(@Query() queryDto: PaginationOption) {
+    async findTheaters(@Query() queryDto: PaginationOptionDto) {
         return this.service.findTheaters(queryDto)
     }
 
     @UsePipes(DefaultPaginationPipe)
     @Get('movies')
-    async findMovies(@Query() queryDto: PaginationOption) {
+    async findMovies(@Query() queryDto: PaginationOptionDto) {
         return this.service.findMovies(queryDto)
     }
 
@@ -45,6 +54,11 @@ export class ShowtimeCreationController {
 
     @Sse('events')
     events(): Observable<MessageEvent> {
-        return this.service.monitorEvents()
+        return this.sseEventSubject.asObservable()
+    }
+
+    @EventPattern(Events.ShowtimeCreation.event, { queue: false })
+    handleEvent(data: any) {
+        this.sseEventSubject.next({ data })
     }
 }

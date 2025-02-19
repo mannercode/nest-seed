@@ -1,21 +1,21 @@
-import { Logger } from '@nestjs/common'
-import { HttpTestClient, HttpTestContext, createHttpTestContext } from 'testlib'
-import { TestModule } from './http-success.interceptor.fixture'
+import { HttpTestClient, TestContext } from 'testlib'
 
 describe('HttpSuccessInterceptor', () => {
-    let testContext: HttpTestContext
+    let testContext: TestContext
     let client: HttpTestClient
     let spy: jest.SpyInstance
 
     beforeEach(async () => {
-        testContext = await createHttpTestContext({ imports: [TestModule] })
-        client = testContext.client
-        spy = jest.spyOn(Logger, 'verbose').mockImplementation(() => {})
+        const { createFixture } = await import('./http-success.interceptor.fixture')
+
+        const fixture = await createFixture()
+        testContext = fixture.testContext
+        spy = fixture.spy
+        client = fixture.client
     })
 
     afterEach(async () => {
         await testContext?.close()
-        jest.restoreAllMocks()
     })
 
     it('should call Logger.verbose() when an success occurs', async () => {

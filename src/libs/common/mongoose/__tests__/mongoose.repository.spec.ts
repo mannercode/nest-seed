@@ -1,9 +1,7 @@
 import { expect } from '@jest/globals'
-import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { OrderDirection, pickIds, pickItems } from 'common'
-import { expectEqualUnsorted, getMongoTestConnection, HttpTestContext, nullObjectId } from 'testlib'
+import { expectEqualUnsorted, nullObjectId, TestContext } from 'testlib'
 import {
-    createFixture,
     createSample,
     createSamples,
     SampleDto,
@@ -15,15 +13,20 @@ import {
 } from './mongoose.repository.fixture'
 
 describe('MongooseRepository', () => {
-    let testContext: HttpTestContext
+    let BadRequestException: any
+    let NotFoundException: any
+
+    let testContext: TestContext
     let repository: SamplesRepository
 
     beforeEach(async () => {
-        const uri = getMongoTestConnection()
+        const { createFixture } = await import('./mongoose.repository.fixture')
+        const fixture = await createFixture()
 
-        const fixture = await createFixture(uri)
         testContext = fixture.testContext
         repository = fixture.repository
+        BadRequestException = fixture.BadRequestException
+        NotFoundException = fixture.NotFoundException
     })
 
     afterEach(async () => {
@@ -43,7 +46,7 @@ describe('MongooseRepository', () => {
         it('should throw an exception if required fields are missing', async () => {
             const doc = repository.newDocument()
             const promise = doc.save()
-            await expect(promise).rejects.toThrowError()
+            await expect(promise).rejects.toThrow()
         })
 
         it('should successfully update a document', async () => {
@@ -83,7 +86,7 @@ describe('MongooseRepository', () => {
 
             const promise = repository.saveMany(docs)
 
-            await expect(promise).rejects.toThrowError()
+            await expect(promise).rejects.toThrow()
         })
     })
 
@@ -91,6 +94,8 @@ describe('MongooseRepository', () => {
         let samples: SampleDto[]
 
         beforeEach(async () => {
+            const { createSamples } = await import('./mongoose.repository.fixture')
+
             const docs = await createSamples(repository)
             samples = toDtos(docs)
         })

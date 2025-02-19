@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule as NestMongooseModule } from '@nestjs/mongoose'
-import { generateShortId } from 'common'
-import { AppConfigService, isTest, MongooseConfig } from 'shared/config'
+import { AppConfigService, MongooseConfig, uniqueWhenTesting } from 'shared/config'
 
 @Module({
     imports: [
@@ -11,7 +10,7 @@ import { AppConfigService, isTest, MongooseConfig } from 'shared/config'
                 const { user, password, host1, host2, host3, port, replica, database } =
                     config.mongo
                 const uri = `mongodb://${user}:${password}@${host1}:${port},${host2}:${port},${host3}:${port}/?replicaSet=${replica}`
-                const dbName = isTest() ? 'test_' + generateShortId() : database
+                const dbName = uniqueWhenTesting(database)
 
                 return {
                     uri,

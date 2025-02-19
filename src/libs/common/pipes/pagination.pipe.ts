@@ -15,7 +15,7 @@ export class OrderOption {
     direction: OrderDirection
 }
 
-export class PaginationOption {
+export class PaginationOptionDto {
     @IsOptional()
     @IsInt()
     @Min(1)
@@ -75,7 +75,7 @@ export abstract class PaginationPipe implements PipeTransform {
 
     transform(value: any, metadata: ArgumentMetadata) {
         if (metadata.type === 'query') {
-            if (value instanceof PaginationOption) {
+            if (value instanceof PaginationOptionDto) {
                 if (!value.skip) {
                     value.skip = 0
                 }

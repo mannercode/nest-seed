@@ -1,4 +1,6 @@
-FROM node:22-alpine AS build
+ARG APP_IMAGE
+
+FROM ${APP_IMAGE} AS build
 ARG APP_NAME
 
 WORKDIR /app
@@ -11,7 +13,7 @@ COPY . .
 
 RUN APP_NAME=$APP_NAME npm run build
 
-FROM node:22-alpine
+FROM ${APP_IMAGE}
 ARG APP_NAME
 
 RUN apk add --no-cache curl

@@ -1,13 +1,6 @@
 import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
-import { MessagePattern } from '@nestjs/microservices'
 import { HealthCheckService, TerminusModule } from '@nestjs/terminus'
-import {
-    ClientProxyHealthIndicator,
-    ClientProxyService,
-    InjectClientProxy,
-    RedisHealthIndicator,
-    RedisModule
-} from 'common'
+import { RedisHealthIndicator, RedisModule } from 'common'
 import Redis from 'ioredis'
 import { RedisConfig } from 'shared/config'
 
@@ -16,18 +9,11 @@ class HealthService {
     constructor(
         private health: HealthCheckService,
         private redis: RedisHealthIndicator,
-        @Inject(RedisModule.getToken(RedisConfig.connName)) private redisConn: Redis,
-        private proxyIndicator: ClientProxyHealthIndicator,
-        @InjectClientProxy('CORES_CLIENT') private coresProxy: ClientProxyService,
-        @InjectClientProxy('INFRASTRUCTURES_CLIENT') private infaProxy: ClientProxyService
+        @Inject(RedisModule.getToken(RedisConfig.connName)) private redisConn: Redis
     ) {}
 
     check() {
-        const checks = [
-            async () => this.redis.pingCheck(RedisConfig.connName, this.redisConn),
-            async () => this.proxyIndicator.pingCheck('cores_proxy', this.coresProxy),
-            async () => this.proxyIndicator.pingCheck('infrastructures_proxy', this.infaProxy)
-        ]
+        const checks = [async () => this.redis.pingCheck(RedisConfig.connName, this.redisConn)]
 
         return this.health.check(checks)
     }
@@ -41,16 +27,11 @@ class HealthController {
     health() {
         return this.service.check()
     }
-
-    @MessagePattern({ cmd: 'health' })
-    method() {
-        return { status: 'ok' }
-    }
 }
 
 @Module({
     imports: [TerminusModule],
-    providers: [HealthService, RedisHealthIndicator, ClientProxyHealthIndicator],
+    providers: [HealthService, RedisHealthIndicator],
     controllers: [HealthController]
 })
 export class HealthModule {}

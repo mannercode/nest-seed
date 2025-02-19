@@ -1,5 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
+import { Messages } from 'shared/config'
 import { TheaterCreateDto, TheaterQueryDto, TheaterUpdateDto } from './dtos'
 import { TheatersService } from './theaters.service'
 
@@ -7,12 +8,12 @@ import { TheatersService } from './theaters.service'
 export class TheatersController {
     constructor(private service: TheatersService) {}
 
-    @MessagePattern({ cmd: 'createTheater' })
+    @MessagePattern(Messages.Theaters.createTheater)
     createTheater(@Payload() createDto: TheaterCreateDto) {
         return this.service.createTheater(createDto)
     }
 
-    @MessagePattern({ cmd: 'updateTheater' })
+    @MessagePattern(Messages.Theaters.updateTheater)
     updateTheater(
         @Payload('theaterId') theaterId: string,
         @Payload('updateDto') updateDto: TheaterUpdateDto
@@ -20,27 +21,27 @@ export class TheatersController {
         return this.service.updateTheater(theaterId, updateDto)
     }
 
-    @MessagePattern({ cmd: 'getTheater' })
+    @MessagePattern(Messages.Theaters.getTheater)
     getTheater(@Payload() theaterId: string) {
         return this.service.getTheater(theaterId)
     }
 
-    @MessagePattern({ cmd: 'deleteTheater' })
+    @MessagePattern(Messages.Theaters.deleteTheater)
     deleteTheater(@Payload() theaterId: string) {
         return this.service.deleteTheater(theaterId)
     }
 
-    @MessagePattern({ cmd: 'findTheaters' })
+    @MessagePattern(Messages.Theaters.findTheaters)
     findTheaters(@Payload() queryDto: TheaterQueryDto) {
         return this.service.findTheaters(queryDto)
     }
 
-    @MessagePattern({ cmd: 'getTheatersByIds' })
+    @MessagePattern(Messages.Theaters.getTheatersByIds)
     getTheatersByIds(@Payload() theaterIds: string[]) {
         return this.service.getTheatersByIds(theaterIds)
     }
 
-    @MessagePattern({ cmd: 'theatersExist' })
+    @MessagePattern(Messages.Theaters.theatersExist)
     theatersExist(@Payload() theaterIds: string[]) {
         return this.service.theatersExist(theaterIds)
     }

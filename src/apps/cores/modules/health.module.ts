@@ -1,14 +1,7 @@
 import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
-import { MessagePattern } from '@nestjs/microservices'
 import { getConnectionToken } from '@nestjs/mongoose'
 import { HealthCheckService, MongooseHealthIndicator, TerminusModule } from '@nestjs/terminus'
-import {
-    ClientProxyHealthIndicator,
-    ClientProxyService,
-    InjectClientProxy,
-    RedisHealthIndicator,
-    RedisModule
-} from 'common'
+import { RedisHealthIndicator, RedisModule } from 'common'
 import Redis from 'ioredis'
 import mongoose from 'mongoose'
 import { MongooseConfig, RedisConfig } from 'shared/config'
@@ -20,17 +13,14 @@ class HealthService {
         private mongoose: MongooseHealthIndicator,
         private redis: RedisHealthIndicator,
         @Inject(getConnectionToken(MongooseConfig.connName)) private mongoConn: mongoose.Connection,
-        @Inject(RedisModule.getToken(RedisConfig.connName)) private redisConn: Redis,
-        private proxyIndicator: ClientProxyHealthIndicator,
-        @InjectClientProxy('INFRASTRUCTURES_CLIENT') private infaProxy: ClientProxyService
+        @Inject(RedisModule.getToken(RedisConfig.connName)) private redisConn: Redis
     ) {}
 
     check() {
         const checks = [
             async () =>
                 this.mongoose.pingCheck(MongooseConfig.connName, { connection: this.mongoConn }),
-            async () => this.redis.pingCheck(RedisConfig.connName, this.redisConn),
-            async () => this.proxyIndicator.pingCheck('infrastructures_proxy', this.infaProxy)
+            async () => this.redis.pingCheck(RedisConfig.connName, this.redisConn)
         ]
 
         return this.health.check(checks)
@@ -45,16 +35,11 @@ class HealthController {
     health() {
         return this.service.check()
     }
-
-    @MessagePattern({ cmd: 'health' })
-    method() {
-        return { status: 'ok' }
-    }
 }
 
 @Module({
     imports: [TerminusModule],
-    providers: [HealthService, RedisHealthIndicator, ClientProxyHealthIndicator],
+    providers: [HealthService, RedisHealthIndicator],
     controllers: [HealthController]
 })
 export class HealthModule {}
