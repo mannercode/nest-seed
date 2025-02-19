@@ -3,15 +3,13 @@ import dotenv from 'dotenv'
 dotenv.config({ path: ['.env.test', '.env.infra'] })
 process.env.NODE_ENV = 'test'
 
-function generateShortId(length: number = 10): string {
+function generateTestId() {
     const characters = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
-    let result = ''
-    const charactersLength = characters.length
-    for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength))
-    }
 
-    return result
+    return Array.from(
+        { length: 10 },
+        () => characters[Math.floor(Math.random() * characters.length)]
+    ).join('')
 }
 
 global.beforeEach(async () => {
@@ -34,5 +32,5 @@ global.beforeEach(async () => {
     */
     // jest.resetModules()
     // await import('reflect-metadata')
-    process.env.TEST_ID = generateShortId()
+    process.env.TEST_ID = generateTestId()
 })

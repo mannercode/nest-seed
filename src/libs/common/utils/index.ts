@@ -1,5 +1,4 @@
-export * from './create-routes'
+export * from './create-route-map'
 export * from './date'
-export * from './environment'
 export * from './etc'
 export * from './path'

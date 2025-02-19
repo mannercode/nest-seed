@@ -5,9 +5,7 @@ import { Observable, Subject } from 'rxjs'
 import { createTestContext, getNatsTestConnection, HttpTestClient } from 'testlib'
 
 @Controller()
-export class HttpController {
-    private eventSubject = new Subject<MessageEvent>()
-
+class SendTestController {
     constructor(@InjectClientProxy('name') private client: ClientProxyService) {}
 
     @MessagePattern('test.method')
@@ -22,9 +20,21 @@ export class HttpController {
 
     @Get('value')
     getValue() {
-        const observer = this.client.send('test.method', null)
+        const observer = this.client.send('test.method', {})
         return getProxyValue(observer)
     }
+
+    @Get('send-null')
+    sendNull() {
+        return this.client.send('test.method', null)
+    }
+}
+
+@Controller()
+class EmitTestController {
+    private eventSubject = new Subject<MessageEvent>()
+
+    constructor(@InjectClientProxy('name') private client: ClientProxyService) {}
 
     @EventPattern('test.emitEvent')
     async handleEvent(data: any) {
@@ -35,6 +45,11 @@ export class HttpController {
     @Get('emit-event')
     emitEvent() {
         return this.client.emit('test.emitEvent', { arg: 'value' })
+    }
+
+    @Get('emit-null')
+    sendNull() {
+        return this.client.emit('test.emitEvent', null)
     }
 
     @Sse('handle-event')
@@ -52,7 +67,7 @@ export async function createFixture() {
             imports: [
                 ClientProxyModule.registerAsync({ name: 'name', useFactory: () => brokerOptions })
             ],
-            controllers: [HttpController]
+            controllers: [SendTestController, EmitTestController]
         },
         configureApp: async (app) => {
             app.connectMicroservice(brokerOptions, { inheritAppConfig: true })

@@ -14,6 +14,12 @@ jest.mock('@nestjs/common', () => ({
     Logger: jest.fn().mockImplementation(() => mockLogger)
 }))
 
+function CustomMetadataDecorator(value: string): MethodDecorator {
+    return (target, propertyKey, descriptor) => {
+        Reflect.defineMetadata('CUSTOM_KEY', value, descriptor.value!)
+    }
+}
+
 export class TestService {
     @MethodLog()
     syncMethod(data: string) {
@@ -49,6 +55,12 @@ export class TestService {
     debugLog() {
         return 'value'
     }
+
+    @MethodLog()
+    @CustomMetadataDecorator('TEST_VALUE')
+    nestedDecorator() {
+        return 'value'
+    }
 }
 
 describe('@MethodLog()', () => {
@@ -56,6 +68,16 @@ describe('@MethodLog()', () => {
 
     beforeEach(() => {
         service = new TestService()
+    })
+
+    it('중첩된 데코레이터에 영향을 주면 안 된다', () => {
+        service.nestedDecorator()
+
+        expect(mockLogger.log).toHaveBeenNthCalledWith(
+            2,
+            expect.stringContaining('End TestService.nestedDecorator'),
+            { args: [], duration: expect.any(Number), return: 'value' }
+        )
     })
 
     it('should log correct data for a synchronous method', () => {

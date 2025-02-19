@@ -1,8 +1,8 @@
 import { getQueueToken, BullModule as NestBullModule } from '@nestjs/bullmq'
 import { TestingModule } from '@nestjs/testing'
 import { Queue } from 'bullmq'
-import { BullModule, generateShortId, RedisModule } from 'common'
-import { createTestingModule, getRedisTestConnection } from 'testlib'
+import { BullModule, RedisModule } from 'common'
+import { createTestingModule, getRedisTestConnection, withTestId } from 'testlib'
 
 describe('CacheService', () => {
     let module: TestingModule
@@ -16,7 +16,7 @@ describe('CacheService', () => {
                 BullModule.forRootAsync({
                     name: 'name',
                     redisName: 'redis',
-                    useFactory: () => ({ prefix: `{queue:${generateShortId()}}` })
+                    useFactory: () => ({ prefix: `{queue:${withTestId('bullModule')}}` })
                 }),
                 NestBullModule.registerQueue({ configKey: 'name', name: 'queue' })
             ]

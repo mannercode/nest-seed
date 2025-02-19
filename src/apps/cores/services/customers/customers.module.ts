@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'
-import { generateShortId, JwtAuthModule, stringToMillisecs } from 'common'
-import { AppConfigService, isTest, MongooseConfig, RedisConfig } from 'shared/config'
+import { JwtAuthModule, stringToMillisecs } from 'common'
+import { AppConfigService, MongooseConfig, ProjectName, RedisConfig, uniqueWhenTesting } from 'shared/config'
 import { CustomersController } from './customers.controller'
 import { CustomersRepository } from './customers.repository'
 import { CustomersService } from './customers.service'
@@ -19,7 +19,7 @@ import { Customer, CustomerSchema } from './models'
             name: 'customer',
             redisName: RedisConfig.connName,
             useFactory: ({ auth }: AppConfigService) => ({
-                prefix: isTest() ? `jwtauth:${generateShortId()}` : 'jwtauth',
+                prefix: `jwtauth:${uniqueWhenTesting(ProjectName)}`,
                 auth: {
                     accessSecret: auth.accessSecret,
                     accessTokenTtlMs: stringToMillisecs(auth.accessTokenExpiration),

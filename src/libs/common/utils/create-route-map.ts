@@ -4,7 +4,7 @@ type Paths<T, ParentPath extends string = ''> = {
         : `${ParentPath}${K & string}`
 }
 
-export function createRoutes<T extends Record<string, any>>(
+export function createRouteMap<T extends Record<string, any>>(
     obj: T,
     parentPath: string = ''
 ): Paths<T> {
@@ -14,7 +14,7 @@ export function createRoutes<T extends Record<string, any>>(
         const value = obj[key]
 
         if (typeof value === 'object' && value !== null) {
-            result[key] = createRoutes(value, currentPath)
+            result[key] = createRouteMap(value, currentPath)
         } else {
             result[key] = currentPath
         }

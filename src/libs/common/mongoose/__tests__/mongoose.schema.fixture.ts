@@ -1,9 +1,8 @@
-import { Type } from '@nestjs/common'
-import { DynamicModule, Module, ModuleMetadata } from '@nestjs/common'
+import { DynamicModule, Module, ModuleMetadata, Type } from '@nestjs/common'
 import { getModelToken, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
-import { createMongooseSchema, generateShortId, HardDelete, MongooseSchema } from 'common'
+import { createMongooseSchema, HardDelete, MongooseSchema } from 'common'
 import { Model } from 'mongoose'
-import { createHttpTestContext, getMongoTestConnection } from 'testlib'
+import { createHttpTestContext, getMongoTestConnection, withTestId } from 'testlib'
 
 @Module({})
 class SampleModule {
@@ -20,7 +19,7 @@ export async function createFixture<T>(cls: Type<T>) {
     const testContext = await createHttpTestContext({
         imports: [
             MongooseModule.forRootAsync({
-                useFactory: () => ({ uri, dbName: 'test_' + generateShortId() })
+                useFactory: () => ({ uri, dbName: withTestId('test') })
             }),
             SampleModule.forRoot({
                 imports: [MongooseModule.forFeature([{ name: 'schema', schema }])]

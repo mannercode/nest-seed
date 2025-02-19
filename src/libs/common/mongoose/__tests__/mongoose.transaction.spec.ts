@@ -38,7 +38,7 @@ describe('MongooseRepository - withTransaction', () => {
             throw new Error('An error occurred during the transaction.')
         })
 
-        await expect(promise).rejects.toThrowError()
+        await expect(promise).rejects.toThrow()
 
         const { total } = await repository.findWithPagination({ pagination: { take: 1 } })
         expect(total).toEqual(0)

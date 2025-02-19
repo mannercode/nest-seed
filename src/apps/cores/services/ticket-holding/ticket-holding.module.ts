@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
-import { CacheModule, generateShortId } from 'common'
-import { isTest, RedisConfig } from 'shared/config'
+import { CacheModule } from 'common'
+import { ProjectName, RedisConfig, uniqueWhenTesting } from 'shared/config'
 import { TicketHoldingController } from './ticket-holding.controller'
 import { TicketHoldingService } from './ticket-holding.service'
 
@@ -9,7 +9,7 @@ import { TicketHoldingService } from './ticket-holding.service'
         CacheModule.register({
             name: 'ticket-holding',
             redisName: RedisConfig.connName,
-            useFactory: () => ({ prefix: isTest() ? `cache:${generateShortId()}` : 'cache' })
+            useFactory: () => ({ prefix: `cache:${uniqueWhenTesting(ProjectName)}` })
         })
     ],
     providers: [TicketHoldingService],

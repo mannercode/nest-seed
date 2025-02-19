@@ -46,7 +46,7 @@ describe('MongooseRepository', () => {
         it('should throw an exception if required fields are missing', async () => {
             const doc = repository.newDocument()
             const promise = doc.save()
-            await expect(promise).rejects.toThrowError()
+            await expect(promise).rejects.toThrow()
         })
 
         it('should successfully update a document', async () => {
@@ -86,7 +86,7 @@ describe('MongooseRepository', () => {
 
             const promise = repository.saveMany(docs)
 
-            await expect(promise).rejects.toThrowError()
+            await expect(promise).rejects.toThrow()
         })
     })
 

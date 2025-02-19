@@ -95,3 +95,32 @@ export function parseEventMessage(input: string): EventMessage {
 
     return result as EventMessage
 }
+
+export function withTestId(prefix: string) {
+    const testId = process.env.TEST_ID
+
+    if (testId === undefined) {
+        throw new Error('TEST_ID is not defined')
+    }
+
+    return `${prefix}-${testId}`
+}
+
+export class EnvVars {
+    static getString(key: string): string {
+        const value = process.env[key]
+        if (!value) {
+            throw new Error(`Environment variable ${key} is not defined`)
+        }
+        return value
+    }
+
+    static getNumber(key: string): number {
+        const value = this.getString(key)
+        const parsed = parseInt(value, 10)
+        if (isNaN(parsed)) {
+            throw new Error(`Environment variable ${key} must be a valid number`)
+        }
+        return parsed
+    }
+}

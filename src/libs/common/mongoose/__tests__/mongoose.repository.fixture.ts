@@ -2,14 +2,13 @@ import { BadRequestException, Injectable, Module, NotFoundException } from '@nes
 import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import {
     createMongooseSchema,
-    generateShortId,
     mapDocToDto,
     MongooseRepository,
     MongooseSchema,
     padNumber
 } from 'common'
 import { HydratedDocument, Model } from 'mongoose'
-import { createHttpTestContext, getMongoTestConnection } from 'testlib'
+import { createHttpTestContext, getMongoTestConnection, withTestId } from 'testlib'
 
 @Schema({ toJSON: { virtuals: true } })
 class Sample extends MongooseSchema {
@@ -67,7 +66,7 @@ export async function createFixture() {
     const testContext = await createHttpTestContext({
         imports: [
             MongooseModule.forRootAsync({
-                useFactory: () => ({ uri, dbName: 'test_' + generateShortId() })
+                useFactory: () => ({ uri, dbName: withTestId('test') })
             }),
             SampleModule
         ]

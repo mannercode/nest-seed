@@ -1,8 +1,8 @@
-import { createRoutes } from 'common'
+import { createRouteMap } from 'common'
 
 describe('createRoutes', () => {
     it('2단계 경로를 정의해야 한다', async () => {
-        const Messages = createRoutes({
+        const Messages = createRouteMap({
             Movies: {
                 findMovies: null,
                 createMovies: null
@@ -13,7 +13,7 @@ describe('createRoutes', () => {
     })
 
     it('3단계 경로를 정의해야 한다', async () => {
-        const Messages = createRoutes({
+        const Messages = createRouteMap({
             Apps: {
                 Tickets: {
                     findTickets: null
@@ -25,7 +25,7 @@ describe('createRoutes', () => {
     })
 
     it('prefix를 설정해야 한다', async () => {
-        const Messages = createRoutes(
+        const Messages = createRouteMap(
             {
                 Movies: {
                     findMovies: null,

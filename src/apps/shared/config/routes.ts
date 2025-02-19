@@ -1,5 +1,5 @@
-import { createRoutes, Environment } from 'common'
-import { isTest } from './etc'
+import { createRouteMap } from 'common'
+import { uniqueWhenTesting } from './etc'
 
 const Http = {
     // MoviesService에서 경로를 참조한다.
@@ -8,7 +8,7 @@ const Http = {
 
 export const Routes = { Http }
 
-export const Messages = createRoutes(
+export const Messages = createRouteMap(
     {
         StorageFiles: {
             saveFiles: null,
@@ -95,15 +95,15 @@ export const Messages = createRoutes(
             holdTickets: null
         }
     },
-    isTest() ? Environment.getString('TEST_ID') : 'nest-seed'
+    uniqueWhenTesting('nest-seed')
 )
 
 // TODO 이거 하나로 합칠까? 충돌 가능성이 있을지도
-export const Events = createRoutes(
+export const Events = createRouteMap(
     {
         ShowtimeCreation: {
             event: null
         }
     },
-    isTest() ? Environment.getString('TEST_ID') : 'nest-seed'
+    uniqueWhenTesting('nest-seed')
 )

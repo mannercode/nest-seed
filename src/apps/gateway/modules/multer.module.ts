@@ -13,10 +13,12 @@ export class MulterConfigService implements MulterOptionsFactory {
     constructor(private config: AppConfigService) {}
 
     createMulterOptions(): MulterModuleOptions {
+        const tempFileLength = 20
+
         return {
             storage: diskStorage({
                 destination: (_req, _file, cb) => cb(null, this.config.fileUpload.directory),
-                filename: (_req, _file, cb) => cb(null, `${generateShortId()}.tmp`)
+                filename: (_req, _file, cb) => cb(null, `${generateShortId(tempFileLength)}.tmp`)
             }),
             fileFilter: (_req, file, cb) => {
                 let error: Error | null = null
