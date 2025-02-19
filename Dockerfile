@@ -1,4 +1,4 @@
-ARG APP_IMAGE=node:22-alpine
+ARG APP_IMAGE
 
 FROM ${APP_IMAGE} AS build
 ARG APP_NAME

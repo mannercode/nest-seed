@@ -2,7 +2,13 @@ import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'
 import { JwtAuthModule, stringToMillisecs } from 'common'
-import { AppConfigService, MongooseConfig, ProjectName, RedisConfig, uniqueWhenTesting } from 'shared/config'
+import {
+    AppConfigService,
+    MongooseConfig,
+    ProjectName,
+    RedisConfig,
+    uniqueWhenTesting
+} from 'shared/config'
 import { CustomersController } from './customers.controller'
 import { CustomersRepository } from './customers.repository'
 import { CustomersService } from './customers.service'
