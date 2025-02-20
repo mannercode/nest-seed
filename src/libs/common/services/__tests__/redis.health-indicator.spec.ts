@@ -17,7 +17,7 @@ describe('RedisHealthIndicator', () => {
                 CacheModule.register({
                     name: 'name',
                     redisName: 'redis',
-                    useFactory: () => ({ prefix: withTestId('redis-health') })
+                    prefix: withTestId('redis-health')
                 })
             ],
             providers: [RedisHealthIndicator]

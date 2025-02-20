@@ -15,7 +15,7 @@ describe('CacheService', () => {
                 CacheModule.register({
                     name: 'name',
                     redisName: 'redis',
-                    useFactory: () => ({ prefix: withTestId('cache') })
+                    prefix: withTestId('cache')
                 })
             ]
         })

@@ -55,26 +55,17 @@ export function InjectCache(name: string): ParameterDecorator {
     return Inject(CacheService.getToken(name))
 }
 
-type CacheFactory = { prefix: string }
-
 @Module({})
 export class CacheModule {
-    static register(options: {
-        name: string
-        redisName: string
-        useFactory: (...args: any[]) => Promise<CacheFactory> | CacheFactory
-        inject?: any[]
-    }): DynamicModule {
-        /* prefix를 useFactory에서 받아야 런타임에 생성된다. */
-        const { name, redisName, useFactory, inject } = options
+    static register(options: { name: string; redisName: string; prefix: string }): DynamicModule {
+        const { name, redisName, prefix } = options
 
         const provider = {
             provide: CacheService.getToken(name),
-            useFactory: async (redis: Redis, ...args: any[]) => {
-                const { prefix } = await useFactory(...args)
+            useFactory: async (redis: Redis) => {
                 return new CacheService(redis, prefix + ':' + name)
             },
-            inject: [RedisModule.getToken(redisName), ...(inject ?? [])]
+            inject: [RedisModule.getToken(redisName)]
         }
 
         return {

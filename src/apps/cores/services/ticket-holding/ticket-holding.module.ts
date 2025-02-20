@@ -9,7 +9,7 @@ import { TicketHoldingService } from './ticket-holding.service'
         CacheModule.register({
             name: 'ticket-holding',
             redisName: RedisConfig.connName,
-            useFactory: () => ({ prefix: `cache:${uniqueWhenTesting(ProjectName)}` })
+            prefix: `cache:${uniqueWhenTesting(ProjectName)}`
         })
     ],
     providers: [TicketHoldingService],
