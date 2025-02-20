@@ -9,15 +9,14 @@ describe('JwtAuthService', () => {
     beforeEach(async () => {
         const redisCtx = getRedisTestConnection()
 
-        // TODO
         module = await createTestingModule({
             imports: [
                 RedisModule.forRootAsync({ useFactory: () => redisCtx }, 'redis'),
                 JwtAuthModule.register({
                     name: 'jwtauth',
                     redisName: 'redis',
+                    prefix: withTestId('jwt-auth'),
                     useFactory: () => ({
-                        prefix: withTestId('jwt-auth'),
                         auth: {
                             accessSecret: 'accessSecret',
                             refreshSecret: 'refreshSecret',

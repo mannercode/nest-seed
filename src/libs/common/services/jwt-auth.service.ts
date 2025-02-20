@@ -110,23 +110,24 @@ export function InjectJwtAuth(name: string): ParameterDecorator {
     return Inject(JwtAuthService.getToken(name))
 }
 
-type JwtAuthFactory = { auth: AuthConfig; prefix: string }
+type JwtAuthFactory = { auth: AuthConfig }
 
 @Module({})
 export class JwtAuthModule {
     static register(options: {
         name: string
         redisName: string
+        prefix: string
         useFactory: (...args: any[]) => Promise<JwtAuthFactory> | JwtAuthFactory
         inject?: any[]
     }): DynamicModule {
-        /* prefix를 useFactory에서 받아야 런타임에 생성된다. */
-        const { name, redisName, useFactory, inject } = options
+        const { name, redisName, prefix, useFactory, inject } = options
 
         const cacheProvider = {
             provide: JwtAuthService.getToken(name),
             useFactory: async (jwtService: JwtService, redis: Redis, ...args: any[]) => {
-                const { auth, prefix } = await useFactory(...args)
+                const { auth } = await useFactory(...args)
+
                 return new JwtAuthService(jwtService, auth, redis, prefix + ':' + name)
             },
             inject: [JwtService, RedisModule.getToken(redisName), ...(inject ?? [])]
