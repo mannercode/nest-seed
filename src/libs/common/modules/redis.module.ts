@@ -6,6 +6,7 @@ import {
 import { DynamicModule, Injectable, Module, OnApplicationShutdown } from '@nestjs/common'
 import Redis from 'ioredis'
 
+// TODO 이건 독립시키고 RedisModule은 삭제한다
 @Injectable()
 class RedisShutdownService implements OnApplicationShutdown {
     constructor(private readonly redis: Redis) {}
@@ -14,7 +15,8 @@ class RedisShutdownService implements OnApplicationShutdown {
         return `RedisShutdownService_${name}`
     }
 
-    async onApplicationShutdown(_signal?: string) {
+    // onModuleDestroy에서 quit()를 하면 bullmq와 같이 redis를 사용하는 다른 모듈에서 에러가 발생한다.
+    async onApplicationShutdown() {
         await this.redis.quit()
     }
 }
@@ -53,9 +55,8 @@ export class RedisModule {
                             let redisOptions: RedisModuleOptions = {
                                 type: 'cluster',
                                 nodes,
-                                options: { redisOptions: { password } }
+                                options: { redisOptions: { password }, enableOfflineQueue: true }
                             }
-
                             return redisOptions
                         },
                         inject: options.inject
@@ -66,7 +67,9 @@ export class RedisModule {
             providers: [
                 {
                     provide: RedisShutdownService.getToken(name),
-                    useFactory: (redis: Redis) => new RedisShutdownService(redis),
+                    useFactory: async (redis: Redis) => {
+                        return new RedisShutdownService(redis)
+                    },
                     inject: [RedisModule.getToken(name)]
                 }
             ],

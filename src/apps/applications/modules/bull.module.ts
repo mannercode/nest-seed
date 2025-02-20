@@ -1,15 +1,17 @@
+import { BullModule as NestBullModule } from '@nestjs/bullmq'
 import { Module } from '@nestjs/common'
-import { BullModule as OrgBullModule } from 'common'
+import { RedisModule } from 'common'
+import Redis from 'ioredis'
 import { ProjectName, RedisConfig, uniqueWhenTesting } from 'shared/config'
 
 @Module({
     imports: [
-        OrgBullModule.forRootAsync({
-            name: 'queue',
-            redisName: RedisConfig.connName,
-            useFactory: () => ({
-                prefix: `{queue:${uniqueWhenTesting(ProjectName)}}`
-            })
+        NestBullModule.forRootAsync('queue', {
+            useFactory: (redis: Redis) => ({
+                prefix: `{queue:${uniqueWhenTesting(ProjectName)}}`,
+                connection: redis
+            }),
+            inject: [RedisModule.getToken(RedisConfig.connName)]
         })
     ]
 })
