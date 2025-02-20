@@ -1,6 +1,7 @@
+import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import { DynamicModule, Inject, Injectable, Module, UnauthorizedException } from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
-import { generateShortId, millisecsToString, notUsed, RedisModule } from 'common'
+import { generateShortId, millisecsToString, notUsed } from 'common'
 import Redis from 'ioredis'
 
 export interface AuthTokenPayload {
@@ -130,7 +131,7 @@ export class JwtAuthModule {
 
                 return new JwtAuthService(jwtService, auth, redis, prefix + ':' + name)
             },
-            inject: [JwtService, RedisModule.getToken(redisName), ...(inject ?? [])]
+            inject: [JwtService, getRedisConnectionToken(redisName), ...(inject ?? [])]
         }
 
         return {

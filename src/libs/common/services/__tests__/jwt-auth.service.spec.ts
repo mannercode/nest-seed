@@ -1,17 +1,23 @@
+import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
 import { TestingModule } from '@nestjs/testing'
-import { JwtAuthModule, JwtAuthService, RedisModule, sleep } from 'common'
+import { JwtAuthModule, JwtAuthService, sleep } from 'common'
+import Redis from 'ioredis'
 import { createTestingModule, getRedisTestConnection, withTestId } from 'testlib'
 
 describe('JwtAuthService', () => {
     let module: TestingModule
     let jwtService: JwtAuthService
+    let redis: Redis
 
     beforeEach(async () => {
-        const redisCtx = getRedisTestConnection()
+        const { nodes, password } = getRedisTestConnection()
 
         module = await createTestingModule({
             imports: [
-                RedisModule.forRootAsync({ useFactory: () => redisCtx }, 'redis'),
+                RedisModule.forRoot(
+                    { type: 'cluster', nodes, options: { redisOptions: { password } } },
+                    'redis'
+                ),
                 JwtAuthModule.register({
                     name: 'jwtauth',
                     redisName: 'redis',
@@ -29,10 +35,12 @@ describe('JwtAuthService', () => {
         })
 
         jwtService = module.get(JwtAuthService.getToken('jwtauth'))
+        redis = module.get(getRedisConnectionToken('redis'))
     })
 
     afterEach(async () => {
-        if (module) await module.close()
+        await module?.close()
+        await redis.quit()
     })
 
     it('generateAuthTokens', async () => {

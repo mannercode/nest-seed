@@ -29,10 +29,6 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
         super()
     }
 
-    async onModuleInit() {
-        await this.worker.waitUntilReady()
-    }
-
     async onModuleDestroy() {
         await this.worker.close(true)
     }

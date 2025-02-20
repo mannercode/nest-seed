@@ -1,5 +1,6 @@
+import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
-import { Exception, RedisModule } from 'common'
+import { Exception } from 'common'
 import Redis from 'ioredis'
 
 @Injectable()
@@ -65,7 +66,7 @@ export class CacheModule {
             useFactory: async (redis: Redis) => {
                 return new CacheService(redis, prefix + ':' + name)
             },
-            inject: [RedisModule.getToken(redisName)]
+            inject: [getRedisConnectionToken(redisName)]
         }
 
         return {
