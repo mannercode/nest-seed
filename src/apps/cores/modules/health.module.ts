@@ -1,11 +1,7 @@
 import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
 import { getConnectionToken } from '@nestjs/mongoose'
-import {
-    HealthCheckService,
-    MongooseHealthIndicator,
-    TerminusModule
-} from '@nestjs/terminus'
+import { HealthCheckService, MongooseHealthIndicator, TerminusModule } from '@nestjs/terminus'
 import { RedisHealthIndicator } from 'common'
 import Redis from 'ioredis'
 import mongoose from 'mongoose'
