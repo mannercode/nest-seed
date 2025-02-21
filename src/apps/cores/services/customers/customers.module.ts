@@ -24,8 +24,8 @@ import { Customer, CustomerSchema } from './models'
         JwtAuthModule.register({
             name: 'customer',
             redisName: RedisConfig.connName,
+            prefix: `jwtauth:${uniqueWhenTesting(ProjectName)}`,
             useFactory: ({ auth }: AppConfigService) => ({
-                prefix: `jwtauth:${uniqueWhenTesting(ProjectName)}`,
                 auth: {
                     accessSecret: auth.accessSecret,
                     accessTokenTtlMs: stringToMillisecs(auth.accessTokenExpiration),

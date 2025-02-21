@@ -8,7 +8,7 @@ const Http = {
 
 export const Routes = { Http }
 
-export const Messages = createRouteMap(
+export const Subjects = createRouteMap(
     {
         StorageFiles: {
             saveFiles: null,
@@ -79,7 +79,8 @@ export const Messages = createRouteMap(
             findMovies: null,
             findTheaters: null,
             findShowtimes: null,
-            createBatchShowtimes: null
+            createBatchShowtimes: null,
+            event: null
         },
         Recommendation: {
             findRecommendedMovies: null
@@ -93,16 +94,6 @@ export const Messages = createRouteMap(
             findShowtimes: null,
             getAvailableTickets: null,
             holdTickets: null
-        }
-    },
-    uniqueWhenTesting('nest-seed')
-)
-
-// TODO 이거 하나로 합칠까? 충돌 가능성이 있을지도
-export const Events = createRouteMap(
-    {
-        ShowtimeCreation: {
-            event: null
         }
     },
     uniqueWhenTesting('nest-seed')

@@ -1,5 +1,7 @@
+import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
+import { HealthIndicatorService } from '@nestjs/terminus'
 import { TestingModule } from '@nestjs/testing'
-import { CacheModule, RedisHealthIndicator, RedisModule } from 'common'
+import { CacheModule, RedisHealthIndicator } from 'common'
 import Redis from 'ioredis'
 import { createTestingModule, getRedisTestConnection, withTestId } from 'testlib'
 
@@ -9,30 +11,34 @@ describe('RedisHealthIndicator', () => {
     let redis: Redis
 
     beforeEach(async () => {
-        const redisCtx = getRedisTestConnection()
+        const { nodes, password } = getRedisTestConnection()
 
         module = await createTestingModule({
             imports: [
-                RedisModule.forRootAsync({ useFactory: () => redisCtx }, 'redis'),
+                RedisModule.forRoot(
+                    { type: 'cluster', nodes, options: { redisOptions: { password } } },
+                    'redis'
+                ),
                 CacheModule.register({
                     name: 'name',
                     redisName: 'redis',
-                    useFactory: () => ({ prefix: withTestId('redis-health') })
+                    prefix: withTestId('redis-health')
                 })
             ],
-            providers: [RedisHealthIndicator]
+            providers: [RedisHealthIndicator, HealthIndicatorService]
         })
 
         redisIndicator = module.get(RedisHealthIndicator)
-        redis = module.get(RedisModule.getToken('redis'))
+        redis = module.get(getRedisConnectionToken('redis'))
     })
 
     afterEach(async () => {
-        if (module) await module.close()
+        await module?.close()
+        await redis.quit()
     })
 
     it('should return status "up" when Redis is healthy', async () => {
-        const res = await redisIndicator.pingCheck('key', redis)
+        const res = await redisIndicator.isHealthy('key', redis)
 
         expect(res).toEqual({ key: { status: 'up' } })
     })

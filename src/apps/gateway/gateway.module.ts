@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common'
+import { MulterModule } from '@nestjs/platform-express'
 import {
     BookingProxy,
     PurchaseProcessProxy,
@@ -7,6 +8,7 @@ import {
 } from 'applications'
 import { CustomersProxy, MoviesProxy, PurchasesProxy, TheatersProxy } from 'cores'
 import { StorageFilesProxy } from 'infrastructures'
+import { SharedModules } from 'shared/modules'
 import {
     BookingController,
     CustomerJwtStrategy,
@@ -18,10 +20,15 @@ import {
     StorageFilesController,
     TheatersController
 } from './controllers'
-import { Modules } from './modules'
+import { HealthModule, MulterConfigService, PipesModule } from './modules'
 
 @Module({
-    imports: [Modules],
+    imports: [
+        SharedModules,
+        HealthModule,
+        PipesModule,
+        MulterModule.registerAsync({ useClass: MulterConfigService })
+    ],
     providers: [
         CustomerLocalStrategy,
         CustomerJwtStrategy,

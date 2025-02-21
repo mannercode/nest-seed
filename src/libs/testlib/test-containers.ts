@@ -1,8 +1,7 @@
-import { RedisNode } from 'common'
 import { EnvVars } from './utils'
 
 export interface RedisConnectionContext {
-    nodes: RedisNode[]
+    nodes: { host: string; port: number }[]
     password: string
 }
 

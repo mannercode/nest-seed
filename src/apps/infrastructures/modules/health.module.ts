@@ -1,7 +1,8 @@
+import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
 import { getConnectionToken } from '@nestjs/mongoose'
 import { HealthCheckService, MongooseHealthIndicator, TerminusModule } from '@nestjs/terminus'
-import { RedisHealthIndicator, RedisModule } from 'common'
+import { RedisHealthIndicator } from 'common'
 import Redis from 'ioredis'
 import mongoose from 'mongoose'
 import { MongooseConfig, RedisConfig } from 'shared/config'
@@ -13,14 +14,14 @@ class HealthService {
         private mongoose: MongooseHealthIndicator,
         private redis: RedisHealthIndicator,
         @Inject(getConnectionToken(MongooseConfig.connName)) private mongoConn: mongoose.Connection,
-        @Inject(RedisModule.getToken(RedisConfig.connName)) private redisConn: Redis
+        @Inject(getRedisConnectionToken(RedisConfig.connName)) private redisConn: Redis
     ) {}
 
     check() {
         const checks = [
             async () =>
                 this.mongoose.pingCheck(MongooseConfig.connName, { connection: this.mongoConn }),
-            async () => this.redis.pingCheck(RedisConfig.connName, this.redisConn)
+            async () => this.redis.isHealthy(RedisConfig.connName, this.redisConn)
         ]
 
         return this.health.check(checks)

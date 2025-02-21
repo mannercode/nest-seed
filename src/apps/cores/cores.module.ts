@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common'
-import { Modules } from './modules'
+import { APP_PIPE } from '@nestjs/core'
+import { AppValidationPipe } from 'common'
+import { SharedModules } from 'shared/modules'
+import { HealthModule } from './modules'
 import {
     CustomersModule,
     MoviesModule,
@@ -13,7 +16,8 @@ import {
 
 @Module({
     imports: [
-        Modules,
+        SharedModules,
+        HealthModule,
         CustomersModule,
         MoviesModule,
         TheatersModule,
@@ -22,6 +26,7 @@ import {
         TicketHoldingModule,
         WatchRecordsModule,
         PurchasesModule
-    ]
+    ],
+    providers: [{ provide: APP_PIPE, useClass: AppValidationPipe }]
 })
 export class CoresModule {}

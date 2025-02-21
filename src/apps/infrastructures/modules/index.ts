@@ -1,1 +1,1 @@
-export * from './modules'
+export * from './health.module'

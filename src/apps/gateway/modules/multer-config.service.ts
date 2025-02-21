@@ -1,9 +1,5 @@
-import { BadRequestException, Injectable, Module } from '@nestjs/common'
-import {
-    MulterModuleOptions,
-    MulterOptionsFactory,
-    MulterModule as NestMulterModule
-} from '@nestjs/platform-express'
+import { BadRequestException, Injectable } from '@nestjs/common'
+import { MulterModuleOptions, MulterOptionsFactory } from '@nestjs/platform-express'
 import { generateShortId } from 'common'
 import { diskStorage } from 'multer'
 import { AppConfigService } from 'shared/config'
@@ -40,9 +36,3 @@ export class MulterConfigService implements MulterOptionsFactory {
         }
     }
 }
-
-@Module({
-    imports: [NestMulterModule.registerAsync({ useClass: MulterConfigService })],
-    exports: [NestMulterModule]
-})
-export class MulterModule {}

@@ -1,9 +1,11 @@
+import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import { Type } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ApplicationsModule, configureApplications } from 'applications'
 import { configureCores, CoresModule } from 'cores'
 import { configureGateway, GatewayModule } from 'gateway'
 import { configureInfrastructures, InfrastructuresModule } from 'infrastructures'
+import { RedisConfig } from 'shared/config'
 import {
     createTestContext,
     getNatsTestConnection,
@@ -96,10 +98,23 @@ export async function createAllTestContexts({
     const client = new HttpTestClient(`http://localhost:${gatewayContext.httpPort}`)
 
     const close = async () => {
+        const redisToken = getRedisConnectionToken(RedisConfig.connName)
+
         await gatewayContext.close()
+        const gatewayRedis = gatewayContext.module.get(redisToken)
+        await gatewayRedis.quit()
+
         await appsContext.close()
+        const appsRedis = appsContext.module.get(redisToken)
+        await appsRedis.quit()
+
         await coresContext.close()
+        const coresRedis = coresContext.module.get(redisToken)
+        await coresRedis.quit()
+
         await infrasContext.close()
+        const infrasRedis = infrasContext.module.get(redisToken)
+        await infrasRedis.quit()
     }
 
     return {
