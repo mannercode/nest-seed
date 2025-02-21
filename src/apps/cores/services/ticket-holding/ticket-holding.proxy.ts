@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
-import { Messages } from 'shared/config'
+import { ClientProxyConfig, Messages } from 'shared/config'
 
 @Injectable()
 export class TicketHoldingProxy {
-    constructor(@InjectClientProxy('clientProxy') private service: ClientProxyService) {}
+    constructor(
+        @InjectClientProxy(ClientProxyConfig.connName) private service: ClientProxyService
+    ) {}
 
     @MethodLog({ level: 'verbose' })
     holdTickets(args: {

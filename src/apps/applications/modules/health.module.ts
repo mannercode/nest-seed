@@ -1,6 +1,7 @@
+import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
 import { HealthCheckService, TerminusModule } from '@nestjs/terminus'
-import { RedisHealthIndicator, RedisModule } from 'common'
+import { RedisHealthIndicator } from 'common'
 import Redis from 'ioredis'
 import { RedisConfig } from 'shared/config'
 
@@ -9,7 +10,7 @@ class HealthService {
     constructor(
         private health: HealthCheckService,
         private redis: RedisHealthIndicator,
-        @Inject(RedisModule.getToken(RedisConfig.connName)) private redisConn: Redis
+        @Inject(getRedisConnectionToken(RedisConfig.connName)) private redisConn: Redis
     ) {}
 
     check() {

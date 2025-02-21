@@ -7,12 +7,14 @@ import {
     PaginationOptionDto
 } from 'common'
 import { MovieDto, ShowtimeDto, TheaterDto } from 'cores'
-import { Messages } from 'shared/config'
+import { ClientProxyConfig, Messages } from 'shared/config'
 import { ShowtimeBatchCreateDto, ShowtimeBatchCreateResponse } from './dtos'
 
 @Injectable()
 export class ShowtimeCreationProxy {
-    constructor(@InjectClientProxy('clientProxy') private service: ClientProxyService) {}
+    constructor(
+        @InjectClientProxy(ClientProxyConfig.connName) private service: ClientProxyService
+    ) {}
 
     @MethodLog({ level: 'verbose' })
     findMovies(queryDto: PaginationOptionDto): Promise<MovieDto[]> {

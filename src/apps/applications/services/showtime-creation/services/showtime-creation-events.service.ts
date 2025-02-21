@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common'
 import { ClientProxyService, InjectClientProxy } from 'common'
 import { ShowtimeDto } from 'cores'
-import { Events } from 'shared/config'
+import { ClientProxyConfig, Events } from 'shared/config'
 
 @Injectable()
 export class ShowtimeCreationEventsService {
-    constructor(@InjectClientProxy('clientProxy') private service: ClientProxyService) {}
+    constructor(
+        @InjectClientProxy(ClientProxyConfig.connName) private service: ClientProxyService
+    ) {}
 
     private emit(payload: any) {
         this.service.emit(Events.ShowtimeCreation.event, payload)

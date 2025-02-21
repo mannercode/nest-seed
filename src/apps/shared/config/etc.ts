@@ -22,6 +22,10 @@ export class RedisConfig {
     static connName = 'redis'
 }
 
+export class ClientProxyConfig {
+    static connName = 'client-proxy'
+}
+
 export function uniqueWhenTesting(prefix: string) {
     const testId = process.env.TEST_ID
 

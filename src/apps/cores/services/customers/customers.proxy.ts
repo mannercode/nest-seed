@@ -6,12 +6,14 @@ import {
     JwtAuthTokens,
     MethodLog
 } from 'common'
-import { Messages } from 'shared/config'
+import { ClientProxyConfig, Messages } from 'shared/config'
 import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
 
 @Injectable()
 export class CustomersProxy {
-    constructor(@InjectClientProxy('clientProxy') private service: ClientProxyService) {}
+    constructor(
+        @InjectClientProxy(ClientProxyConfig.connName) private service: ClientProxyService
+    ) {}
 
     @MethodLog({ level: 'verbose' })
     async createCustomer(createDto: CustomerCreateDto): Promise<CustomerDto> {

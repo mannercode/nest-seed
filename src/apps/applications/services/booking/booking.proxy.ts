@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common'
 import { ClientProxyService, getProxyValue, InjectClientProxy, LatLong, MethodLog } from 'common'
 import { TheaterDto, TicketDto } from 'cores'
-import { Messages } from 'shared/config'
+import { ClientProxyConfig, Messages } from 'shared/config'
 import { ShowtimeSalesStatusDto } from './dtos'
 
 @Injectable()
 export class BookingProxy {
-    constructor(@InjectClientProxy('clientProxy') private service: ClientProxyService) {}
+    constructor(
+        @InjectClientProxy(ClientProxyConfig.connName) private service: ClientProxyService
+    ) {}
 
     @MethodLog({ level: 'verbose' })
     findShowingTheaters(args: { movieId: string; latlong: LatLong }): Promise<TheaterDto[]> {
