@@ -3,14 +3,12 @@ import { HttpTestClient, TestContext } from 'testlib'
 describe('HttpExceptionFilter', () => {
     let testContext: TestContext
     let client: HttpTestClient
-    let spy: jest.SpyInstance
 
     beforeEach(async () => {
         const { createFixture } = await import('./http-exception.filter.fixture')
 
         const fixture = await createFixture()
         testContext = fixture.testContext
-        spy = fixture.spy
         client = fixture.client
     })
 
@@ -18,18 +16,25 @@ describe('HttpExceptionFilter', () => {
         await testContext?.close()
     })
 
-    it('should call Logger.warn() when an HttpException occurs', async () => {
-        await client.get('/').badRequest()
+    it('HttpException을 던지면 해당하는 StatusCode를 반환해야 한다', async () => {
+        await client.get('/bad-request').badRequest({
+            error: 'Bad Request',
+            message: 'http-exception',
+            statusCode: 400
+        })
+    })
 
-        expect(spy).toHaveBeenCalledTimes(1)
-        expect(spy).toHaveBeenCalledWith(
-            'http-exception',
-            'HTTP',
-            expect.objectContaining({
-                request: { body: undefined, method: 'GET', url: '/' },
-                response: { error: 'Bad Request', message: 'http-exception', statusCode: 400 },
-                stack: expect.any(String)
-            })
-        )
+    it('BadRequestException("Too many files")을 반환해야 한다', async () => {
+        await client.get('/too-many-files').badRequest({
+            code: 'ERR_MAX_COUNT_EXCEED',
+            message: 'Too many files'
+        })
+    })
+
+    it('PayloadTooLargeException("File too large")을 반환해야 한다', async () => {
+        await client.get('/file-too-large').payloadTooLarge({
+            code: 'ERR_MAX_SIZE_EXCEED',
+            message: 'File too large'
+        })
     })
 })

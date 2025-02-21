@@ -16,11 +16,12 @@ export class ClientProxyService implements OnModuleDestroy {
     }
 
     send<T>(cmd: string, payload: any): Observable<T> {
-        // payload는 null을 전달하지 못한다
+        // payload는 null일 수 없음
         return this.proxy.send(cmd, payload ?? '')
     }
 
     emit(event: string, payload: any) {
+        // payload는 null일 수 없음
         return this.proxy.emit(event, payload ?? '')
     }
 }

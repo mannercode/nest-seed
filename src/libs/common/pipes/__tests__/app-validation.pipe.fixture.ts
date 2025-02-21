@@ -45,7 +45,7 @@ export async function createFixture() {
         imports: [SamplesModule],
         providers: [{ provide: APP_PIPE, useClass: AppValidationPipe }]
     })
-    const client = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
+    const client = new HttpTestClient(testContext.httpPort)
 
     return { testContext, client }
 }

@@ -20,7 +20,6 @@ export async function createFixture() {
 
     const { Logger } = await import('@nestjs/common')
     const spy = jest.spyOn(Logger, 'verbose').mockImplementation(() => {})
-    const client = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
-
+    const client = new HttpTestClient(testContext.httpPort)
     return { testContext, spy, client }
 }

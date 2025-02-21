@@ -18,7 +18,7 @@ export class HttpErrorFilter implements ExceptionFilter {
             body: request.body
         }
 
-        response.status(statusCode).json({ ...additionalInfo, message: 'Internal Server Error' })
+        response.status(statusCode).json({ ...additionalInfo, message: 'Internal server error' })
 
         Logger.error(message, 'HTTP', { ...additionalInfo, stack: error.stack })
     }

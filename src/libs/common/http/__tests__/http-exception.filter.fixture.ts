@@ -1,13 +1,29 @@
-import { BadRequestException, Controller, Get, Module } from '@nestjs/common'
+import {
+    BadRequestException,
+    Controller,
+    Get,
+    Module,
+    PayloadTooLargeException
+} from '@nestjs/common'
 import { APP_FILTER } from '@nestjs/core'
 import { HttpExceptionFilter } from 'common'
 import { createHttpTestContext, HttpTestClient } from 'testlib'
 
 @Controller()
 class TestController {
-    @Get()
+    @Get('bad-request')
     async throwHttpException() {
         throw new BadRequestException('http-exception')
+    }
+
+    @Get('too-many-files')
+    async tooManyFiles() {
+        throw new BadRequestException('Too many files')
+    }
+
+    @Get('file-too-large')
+    async fileTooLarge() {
+        throw new PayloadTooLargeException('File too large')
     }
 }
 
@@ -20,9 +36,7 @@ class TestModule {}
 export async function createFixture() {
     const testContext = await createHttpTestContext({ imports: [TestModule] })
 
-    const { Logger } = await import('@nestjs/common')
-    const spy = jest.spyOn(Logger, 'warn').mockImplementation(() => {})
-    const client = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
+    const client = new HttpTestClient(testContext.httpPort)
 
-    return { testContext, spy, client }
+    return { testContext, client }
 }

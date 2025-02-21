@@ -72,7 +72,7 @@ export async function createFixture() {
         controllers: [HttpController],
         providers: [{ provide: APP_INTERCEPTOR, useClass: RpcToHttpExceptionInterceptor }]
     })
-    const client = new HttpTestClient(`http://localhost:${httpContext.httpPort}`)
+    const client = new HttpTestClient(httpContext.httpPort)
 
     return { microContext, httpContext, client }
 }

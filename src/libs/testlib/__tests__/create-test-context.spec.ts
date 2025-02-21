@@ -27,7 +27,7 @@ describe('createTestContext', () => {
         })
 
         microClient = MicroserviceTestClient.create(brokerOpts)
-        httpClient = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
+        httpClient = new HttpTestClient(testContext.httpPort)
     })
 
     afterEach(async () => {

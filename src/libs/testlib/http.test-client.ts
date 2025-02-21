@@ -6,50 +6,52 @@ import superagent from 'superagent'
 import { parseEventMessage } from './utils'
 
 export class HttpTestClient {
-    // client -> agent
-    public client: superagent.Request
+    private agent: superagent.Request
+    private serverUrl: string
 
-    constructor(public serverUrl: string) {}
+    constructor(private port: number) {
+        this.serverUrl = `http://localhost:${port}`
+    }
 
     post(url: string): this {
-        this.client = superagent.post(`${this.serverUrl}${url}`)
+        this.agent = superagent.post(`${this.serverUrl}${url}`)
         return this
     }
 
     patch(url: string): this {
-        this.client = superagent.patch(`${this.serverUrl}${url}`)
+        this.agent = superagent.patch(`${this.serverUrl}${url}`)
         return this
     }
 
     put(url: string): this {
-        this.client = superagent.put(`${this.serverUrl}${url}`)
+        this.agent = superagent.put(`${this.serverUrl}${url}`)
         return this
     }
 
     get(url: string): this {
-        this.client = superagent.get(`${this.serverUrl}${url}`)
+        this.agent = superagent.get(`${this.serverUrl}${url}`)
         return this
     }
 
     delete(url: string): this {
-        this.client = superagent.delete(`${this.serverUrl}${url}`)
+        this.agent = superagent.delete(`${this.serverUrl}${url}`)
         return this
     }
 
     headers(headers: Record<string, string>): this {
         Object.entries(headers).forEach(([key, value]) => {
-            this.client.set(key, value)
+            this.agent.set(key, value)
         })
         return this
     }
 
     query(query: Record<string, any>): this {
-        this.client.query(query)
+        this.agent.query(query)
         return this
     }
 
     body(body: Record<string, any>): this {
-        this.client.send(body)
+        this.agent.send(body)
         return this
     }
 
@@ -61,14 +63,14 @@ export class HttpTestClient {
         }>
     ): this {
         attachs.forEach(({ name, file, options }) => {
-            this.client.attach(name, file, options)
+            this.agent.attach(name, file, options)
         })
         return this
     }
 
     fields(fields: Array<{ name: string; value: string }>): this {
         fields.forEach(({ name, value }) => {
-            this.client.field(name, value)
+            this.agent.field(name, value)
         })
         return this
     }
@@ -77,9 +79,9 @@ export class HttpTestClient {
         const writeStream = createWriteStream(downloadFilePath)
 
         // 기본값인 200MB 제한을 해제함
-        this.client.maxResponseSize(Byte.fromString('1TB'))
+        this.agent.maxResponseSize(Byte.fromString('1TB'))
 
-        this.client.buffer().parse((res, callback) => {
+        this.agent.buffer().parse((res, callback) => {
             res.on('data', (chunk: any) => {
                 writeStream.write(chunk)
             })
@@ -101,7 +103,7 @@ export class HttpTestClient {
     }
 
     sse(messageHandler: (data: string) => void, errorHandler: (reason: any) => void): this {
-        this.client
+        this.agent
             .set('Accept', 'text/event-stream')
             .buffer(true)
             .parse((res, _) => {
@@ -142,7 +144,7 @@ export class HttpTestClient {
 
     async send(status: number, expected?: any): Promise<superagent.Response> {
         // ok(() => true)를 하지 않으면 400 이상 상태 코드는 예외를 던진다.
-        const res = await this.client.ok(() => true)
+        const res = await this.agent.ok(() => true)
 
         if (res.status !== status) {
             console.log(JSON.stringify(res.body))

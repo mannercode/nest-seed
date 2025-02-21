@@ -95,7 +95,7 @@ export async function createAllTestContexts({
         configureApp: configureGateway
     })
 
-    const client = new HttpTestClient(`http://localhost:${gatewayContext.httpPort}`)
+    const client = new HttpTestClient(gatewayContext.httpPort)
 
     const close = async () => {
         const redisToken = getRedisConnectionToken(RedisConfig.connName)

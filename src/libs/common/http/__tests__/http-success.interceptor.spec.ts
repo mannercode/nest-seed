@@ -18,7 +18,7 @@ describe('HttpSuccessInterceptor', () => {
         await testContext?.close()
     })
 
-    it('should call Logger.verbose() when an success occurs', async () => {
+    it('Http 요청이 성공하면 Logger.verbose()로 기록해야 한다', async () => {
         await client.get('/').ok()
 
         expect(spy).toHaveBeenCalledTimes(1)
