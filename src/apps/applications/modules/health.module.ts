@@ -14,7 +14,7 @@ class HealthService {
     ) {}
 
     check() {
-        const checks = [async () => this.redis.pingCheck(RedisConfig.connName, this.redisConn)]
+        const checks = [async () => this.redis.isHealthy(RedisConfig.connName, this.redisConn)]
 
         return this.health.check(checks)
     }

@@ -1,4 +1,5 @@
 import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
+import { HealthIndicatorService } from '@nestjs/terminus'
 import { TestingModule } from '@nestjs/testing'
 import { CacheModule, RedisHealthIndicator } from 'common'
 import Redis from 'ioredis'
@@ -24,7 +25,7 @@ describe('RedisHealthIndicator', () => {
                     prefix: withTestId('redis-health')
                 })
             ],
-            providers: [RedisHealthIndicator]
+            providers: [RedisHealthIndicator, HealthIndicatorService]
         })
 
         redisIndicator = module.get(RedisHealthIndicator)
@@ -37,7 +38,7 @@ describe('RedisHealthIndicator', () => {
     })
 
     it('should return status "up" when Redis is healthy', async () => {
-        const res = await redisIndicator.pingCheck('key', redis)
+        const res = await redisIndicator.isHealthy('key', redis)
 
         expect(res).toEqual({ key: { status: 'up' } })
     })

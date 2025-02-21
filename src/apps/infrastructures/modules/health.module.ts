@@ -21,7 +21,7 @@ class HealthService {
         const checks = [
             async () =>
                 this.mongoose.pingCheck(MongooseConfig.connName, { connection: this.mongoConn }),
-            async () => this.redis.pingCheck(RedisConfig.connName, this.redisConn)
+            async () => this.redis.isHealthy(RedisConfig.connName, this.redisConn)
         ]
 
         return this.health.check(checks)
