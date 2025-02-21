@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { ClientProxyService, InjectClientProxy } from 'common'
 import { ShowtimeDto } from 'cores'
-import { ClientProxyConfig, Events } from 'shared/config'
+import { ClientProxyConfig, Subjects } from 'shared/config'
 
 @Injectable()
 export class ShowtimeCreationEventsService {
@@ -10,7 +10,7 @@ export class ShowtimeCreationEventsService {
     ) {}
 
     private emit(payload: any) {
-        this.service.emit(Events.ShowtimeCreation.event, payload)
+        this.service.emit(Subjects.ShowtimeCreation.event, payload)
     }
 
     emitWaiting(batchId: string) {

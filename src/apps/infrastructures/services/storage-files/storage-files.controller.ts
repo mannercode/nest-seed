@@ -1,6 +1,6 @@
 import { Controller, ParseArrayPipe } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { Messages } from 'shared/config'
+import { Subjects } from 'shared/config'
 import { StorageFileCreateDto } from './dtos'
 import { StorageFilesService } from './storage-files.service'
 
@@ -8,7 +8,7 @@ import { StorageFilesService } from './storage-files.service'
 export class StorageFilesController {
     constructor(private service: StorageFilesService) {}
 
-    @MessagePattern(Messages.StorageFiles.saveFiles)
+    @MessagePattern(Subjects.StorageFiles.saveFiles)
     saveFiles(
         @Payload(new ParseArrayPipe({ items: StorageFileCreateDto }))
         createDtos: StorageFileCreateDto[]
@@ -16,12 +16,12 @@ export class StorageFilesController {
         return this.service.saveFiles(createDtos)
     }
 
-    @MessagePattern(Messages.StorageFiles.getStorageFile)
+    @MessagePattern(Subjects.StorageFiles.getStorageFile)
     getStorageFile(@Payload() fileId: string) {
         return this.service.getStorageFile(fileId)
     }
 
-    @MessagePattern(Messages.StorageFiles.deleteStorageFile)
+    @MessagePattern(Subjects.StorageFiles.deleteStorageFile)
     deleteStorageFile(@Payload() fileId: string) {
         return this.service.deleteStorageFile(fileId)
     }
