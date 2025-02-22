@@ -1,19 +1,19 @@
-import { HttpTestClient, TestContext } from 'testlib'
+import { HttpTestClient } from 'testlib'
 
 describe('HttpExceptionFilter', () => {
-    let testContext: TestContext
+    let closeFixture: () => void
     let client: HttpTestClient
 
     beforeEach(async () => {
         const { createFixture } = await import('./http-exception.filter.fixture')
 
         const fixture = await createFixture()
-        testContext = fixture.testContext
+        closeFixture = fixture.closeFixture
         client = fixture.client
     })
 
     afterEach(async () => {
-        await testContext?.close()
+        await closeFixture?.()
     })
 
     it('HttpException을 던지면 해당하는 StatusCode를 반환해야 한다', async () => {

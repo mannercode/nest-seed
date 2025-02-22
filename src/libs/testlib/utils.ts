@@ -124,3 +124,5 @@ export class EnvVars {
         return parsed
     }
 }
+
+export type CloseFixture = () => Promise<void>

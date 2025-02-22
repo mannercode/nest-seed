@@ -37,7 +37,7 @@ describe('RedisHealthIndicator', () => {
         await redis.quit()
     })
 
-    it('should return status "up" when Redis is healthy', async () => {
+    it('Redis가 정상일 때 상태가 "up"이어야 한다', async () => {
         const res = await redisIndicator.isHealthy('key', redis)
 
         expect(res).toEqual({ key: { status: 'up' } })

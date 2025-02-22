@@ -1,21 +1,21 @@
 import { expect } from '@jest/globals'
-import { TestContext } from 'testlib'
+import { CloseFixture } from 'testlib'
 import { SamplesRepository } from './mongoose.transaction.fixture'
 
 describe('MongooseRepository - withTransaction', () => {
-    let testContext: TestContext
+    let closeFixture: CloseFixture
     let repository: SamplesRepository
 
     beforeEach(async () => {
         const { createFixture } = await import('./mongoose.transaction.fixture')
-        const fixture = await createFixture()
 
-        testContext = fixture.testContext
+        const fixture = await createFixture()
+        closeFixture = fixture.closeFixture
         repository = fixture.repository
     })
 
     afterEach(async () => {
-        await testContext?.close()
+        await closeFixture?.()
     })
 
     it('commit a transaction', async () => {
@@ -29,7 +29,7 @@ describe('MongooseRepository - withTransaction', () => {
         expect(found?.toJSON()).toEqual(newDoc.toJSON())
     })
 
-    it('should rollback changes when an exception occurs during a transaction', async () => {
+    it('트랜잭션 중 예외가 발생하면 변경 사항을 롤백해야 한다', async () => {
         const promise = repository.withTransaction(async (session) => {
             const doc = repository.newDocument()
             doc.name = 'name'

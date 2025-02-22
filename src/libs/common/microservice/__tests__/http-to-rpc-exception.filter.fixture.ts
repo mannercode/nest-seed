@@ -2,7 +2,12 @@ import { Controller, Module, NotFoundException, ValidationPipe } from '@nestjs/c
 import { APP_PIPE } from '@nestjs/core'
 import { MessagePattern, MicroserviceOptions, NatsOptions, Transport } from '@nestjs/microservices'
 import { IsNotEmpty, IsString } from 'class-validator'
-import { createTestContext, getNatsTestConnection, withTestId } from 'testlib'
+import {
+    createTestContext,
+    getNatsTestConnection,
+    MicroserviceTestClient,
+    withTestId
+} from 'testlib'
 import { HttpToRpcExceptionFilter } from '../http-to-rpc-exception.filter'
 
 class CreateSampleDto {
@@ -56,5 +61,12 @@ export async function createFixture() {
         }
     })
 
-    return { testContext, brokerOptions }
+    const client = MicroserviceTestClient.create(brokerOptions)
+
+    const closeFixture = async () => {
+        await client?.close()
+        await testContext?.close()
+    }
+
+    return { testContext, closeFixture, client }
 }

@@ -1,31 +1,23 @@
-import { TestingModule } from '@nestjs/testing'
-import { createTestingModule } from '..'
-import { SampleModule, SampleService } from './create-testing-module.fixture'
+import { SampleService } from './create-testing-module.fixture'
 
 describe('createTestingModule', () => {
-    let module: TestingModule
+    let closeFixture: () => void
+    let sampleService: SampleService
 
     beforeEach(async () => {
-        module = await createTestingModule({
-            imports: [SampleModule],
-            overrideProviders: [
-                {
-                    original: SampleService,
-                    replacement: {
-                        getMessage: jest.fn().mockReturnValue({ message: 'This is Mock' })
-                    }
-                }
-            ]
-        })
+        const { createFixture } = await import('./create-testing-module.fixture')
+
+        const fixture = await createFixture()
+        closeFixture = fixture.closeFixture
+        sampleService = fixture.sampleService
     })
 
     afterEach(async () => {
-        await module?.close()
+        await closeFixture?.()
     })
 
     it('overrideProviders에 설정한 mock 서비스가 응답해야 한다', async () => {
-        const service = module.get(SampleService)
-        const message = await service.getMessage()
+        const message = await sampleService.getMessage()
 
         expect(message).toEqual({ message: 'This is Mock' })
     })

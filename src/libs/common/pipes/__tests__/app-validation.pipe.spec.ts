@@ -1,19 +1,19 @@
-import { HttpTestClient, TestContext } from 'testlib'
+import { CloseFixture, HttpTestClient } from 'testlib'
 
 describe('AppValidationPipe', () => {
-    let testContext: TestContext
+    let closeFixture: CloseFixture
     let client: HttpTestClient
 
     beforeEach(async () => {
         const { createFixture } = await import('./app-validation.pipe.fixture')
-        const fixture = await createFixture()
 
-        testContext = fixture.testContext
+        const fixture = await createFixture()
+        closeFixture = fixture.closeFixture
         client = fixture.client
     })
 
     afterEach(async () => {
-        await testContext?.close()
+        await closeFixture?.()
     })
 
     it('배열의 각 필드가 올바른지 검증해야 한다', async () => {

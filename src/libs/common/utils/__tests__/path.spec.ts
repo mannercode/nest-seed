@@ -14,15 +14,15 @@ describe('Path', () => {
         await Path.delete(tempDir)
     })
 
-    it('tempDir should exist', async () => {
+    it('tempDir이 존재해야 한다', async () => {
         const exists = await Path.exists(tempDir)
         expect(exists).toBeTruthy()
 
-        // ensure it's under OS temp directory
+        // OS의 임시 디렉터리 아래에 있는지 확인
         expect(tempDir.startsWith(os.tmpdir())).toBeTruthy()
     })
 
-    it('should correctly check if the specified path exists (async)', async () => {
+    it('지정된 경로가 존재하는지 비동기 방식으로 올바르게 확인해야 한다', async () => {
         const filePath = Path.join(tempDir, 'file.txt')
         await fs.writeFile(filePath, 'hello world')
 
@@ -30,7 +30,7 @@ describe('Path', () => {
         expect(exists).toBeTruthy()
     })
 
-    it('should correctly check if the specified path exists (sync)', async () => {
+    it('지정된 경로가 존재하는지 동기 방식으로 올바르게 확인해야 한다', async () => {
         const filePath = Path.join(tempDir, 'file.txt')
         await fs.writeFile(filePath, 'hello world')
 
@@ -38,12 +38,12 @@ describe('Path', () => {
         expect(exists).toBeTruthy()
     })
 
-    it('should correctly check if the specified path is a directory', async () => {
+    it('지정된 경로가 디렉터리인지 올바르게 확인해야 한다', async () => {
         const exists = await Path.isDirectory(tempDir)
         expect(exists).toBeTruthy()
     })
 
-    it('should correctly create and delete a directory', async () => {
+    it('디렉터리를 올바르게 생성하고 삭제해야 한다', async () => {
         const dirPath = Path.join(tempDir, 'testdir')
 
         await Path.mkdir(dirPath)
@@ -55,7 +55,7 @@ describe('Path', () => {
         expect(existsAfterDelete).toBeFalsy()
     })
 
-    it('should correctly list subdirectories', async () => {
+    it('하위 디렉터리를 올바르게 나열해야 한다', async () => {
         const subDir1 = Path.join(tempDir, 'subdir1')
         await Path.mkdir(subDir1)
 
@@ -66,7 +66,7 @@ describe('Path', () => {
         expect(subDirs).toEqual(['subdir1', 'subdir2'])
     })
 
-    it('should correctly copy a file', async () => {
+    it('파일을 올바르게 복사해야 한다', async () => {
         const srcFilePath = Path.join(tempDir, 'file.txt')
         await fs.writeFile(srcFilePath, 'hello world')
 
@@ -76,12 +76,12 @@ describe('Path', () => {
         const copiedExists = await Path.exists(destFilePath)
         expect(copiedExists).toBeTruthy()
 
-        // check the contents of the copied file
+        // 복사된 파일의 내용 확인
         const content = await fs.readFile(destFilePath, 'utf-8')
         expect(content).toEqual('hello world')
     })
 
-    it('should correctly copy a directory', async () => {
+    it('디렉터리를 올바르게 복사해야 한다', async () => {
         const srcDirPath = Path.join(tempDir, 'testdir')
         await Path.mkdir(srcDirPath)
 
@@ -94,45 +94,45 @@ describe('Path', () => {
         const copiedDirExists = await Path.exists(destDirPath)
         expect(copiedDirExists).toBeTruthy()
 
-        // check that the file was also copied
+        // 파일도 함께 복사되었는지 확인
         const copiedFilePath = Path.join(destDirPath, 'file.txt')
         const copiedFileExists = await Path.exists(copiedFilePath)
         expect(copiedFileExists).toBeTruthy()
 
-        // check the contents of the copied file
+        // 복사된 파일의 내용 확인
         const content = await fs.readFile(copiedFilePath, 'utf-8')
         expect(content).toEqual('hello from the original dir')
     })
 
-    it('should return an absolute path', async () => {
+    it('절대 경로를 반환해야 한다', async () => {
         const relativePath = `.${Path.sep()}file.txt`
         const absolutePath = await Path.getAbsolute(relativePath)
 
         expect(p.isAbsolute(absolutePath)).toBeTruthy()
     })
 
-    it('should return the same path if it is already an absolute path', async () => {
+    it('이미 절대 경로인 경우 그대로 반환해야 한다', async () => {
         const absolutePath = p.join(os.tmpdir(), 'file.txt')
         const result = await Path.getAbsolute(absolutePath)
 
         expect(result).toEqual(absolutePath)
     })
 
-    it('should return the basename', () => {
+    it('basename을 반환해야 한다', () => {
         const path = 'dir/file.txt'
         const basename = Path.basename(path)
 
         expect(basename).toEqual('file.txt')
     })
 
-    it('should return the dirname', () => {
+    it('dirname을 반환해야 한다', () => {
         const path = 'dir/file.txt'
         const dirname = Path.dirname(path)
 
         expect(dirname).toEqual('dir')
     })
 
-    it('should return true if the path is writable', async () => {
+    it('경로가 쓰기 가능한 경우 true를 반환해야 한다', async () => {
         jest.spyOn(fs, 'access').mockResolvedValueOnce(undefined)
 
         const result = await Path.isWritable('/test/path')
@@ -141,7 +141,7 @@ describe('Path', () => {
         expect(fs.access).toHaveBeenCalledWith('/test/path', fs.constants.W_OK)
     })
 
-    it('should return false if the path is not writable', async () => {
+    it('경로가 쓰기 불가능한 경우 false를 반환해야 한다', async () => {
         jest.spyOn(fs, 'access').mockRejectedValueOnce(new Error('Not writable'))
 
         const result = await Path.isWritable('/test/path')
@@ -150,7 +150,7 @@ describe('Path', () => {
         expect(fs.access).toHaveBeenCalledWith('/test/path', fs.constants.W_OK)
     })
 
-    it('move', async () => {
+    it('파일을 이동시켜야 한다', async () => {
         const srcFilePath = Path.join(tempDir, 'file.txt')
         await fs.writeFile(srcFilePath, 'hello world')
 
@@ -167,7 +167,7 @@ describe('Path', () => {
         expect(content).toEqual('hello world')
     })
 
-    it('getSize', async () => {
+    it('파일 크기를 반환해야 한다', async () => {
         const testContent = 'Hello, World!'
         const testFilePath = Path.join(tempDir, 'test-file.txt')
         await fs.writeFile(testFilePath, testContent)

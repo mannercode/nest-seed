@@ -1,13 +1,13 @@
-import { HttpTestClient } from 'testlib'
+import { CloseFixture, HttpTestClient } from 'testlib'
 
 describe('HttpErrorFilter', () => {
-    let closeFixture: () => void
+    let closeFixture: CloseFixture
     let client: HttpTestClient
 
     beforeEach(async () => {
         const { createFixture } = await import('./http-error.filter.fixture')
-        const fixture = await createFixture()
 
+        const fixture = await createFixture()
         closeFixture = fixture.closeFixture
         client = fixture.client
     })

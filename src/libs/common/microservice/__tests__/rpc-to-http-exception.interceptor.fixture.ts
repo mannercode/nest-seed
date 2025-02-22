@@ -16,7 +16,6 @@ import {
     withTestId
 } from 'testlib'
 
-// TODO MessagePattern subject 검토
 @Controller()
 class MicroserviceController {
     @MessagePattern(withTestId('subject.throwHttpException'))
@@ -76,5 +75,10 @@ export async function createFixture() {
     })
     const client = new HttpTestClient(httpContext.httpPort)
 
-    return { microContext, httpContext, client }
+    const closeFixture = async () => {
+        await httpContext?.close()
+        await microContext?.close()
+    }
+
+    return { closeFixture, microContext, httpContext, client }
 }
