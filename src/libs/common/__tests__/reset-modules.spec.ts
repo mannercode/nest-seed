@@ -12,7 +12,7 @@ import { getCounter, incrementCounter } from './reset-modules.fixture'
  * resetModules: true로 설정해서 각 테스트 마다 module cache를 초기화합니다.
  *
  * 아래 테스트는 문제 검증과 해결 방법을 보여줍니다.
-*/
+ */
 
 describe('resetModules 기능 검증', () => {
     it('카운터 초기값 확인 및 증가 테스트', () => {
