@@ -22,5 +22,9 @@ export async function createFixture() {
 
     const client = new HttpTestClient(testContext.httpPort)
 
-    return { testContext, client }
+    const closeFixture = async () => {
+        await testContext?.close()
+    }
+
+    return { closeFixture, client }
 }

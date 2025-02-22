@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import { Type } from 'class-transformer'
 import { IsDate, IsNumber, Max, Min } from 'class-validator'
 

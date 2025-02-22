@@ -7,21 +7,21 @@ import {
     Types
 } from 'mongoose'
 
-/*
-toObject와 toJSON의 차이는 toJSON는 flattenMaps의 기본값이 true라는 것 뿐이다.
-
-@Schema()
-export class Sample {
-    @Prop({ type: Map, of: String })
-    attributes: Map<string, string>
-}
-
-console.log(sample.toObject())
-attributes: Map(2) { 'key1' => 'value1', 'key2' => 'value2' },
-
-console.log(sample.toJSON())
-attributes: { key1: 'value1', key2: 'value2' },
-*/
+/**
+ * toObject와 toJSON의 차이는 toJSON는 flattenMaps의 기본값이 true라는 것 뿐이다.
+ *
+ * @Schema()
+ * export class Sample {
+ *     @Prop({ type: Map, of: String })
+ *     attributes: Map<string, string>
+ * }
+ *
+ * console.log(sample.toObject())
+ * attributes: Map(2) { 'key1' => 'value1', 'key2' => 'value2' },
+ *
+ * console.log(sample.toJSON())
+ * attributes: { key1: 'value1', key2: 'value2' },
+ */
 
 export abstract class MongooseSchema {
     id: string

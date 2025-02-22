@@ -74,13 +74,5 @@ export async function createFixture() {
 
     const repository = testContext.module.get(SamplesRepository)
 
-    /* TODO Module Cache 테스트 코드 작성
-        resetModules가 true면 createFixture()에서 로드하는 BadRequestException가 달라진다.
-        비교를 위해서 로드된 BadRequestException를 전달하는 것이다.
-
-        만약 spec.ts에서 직접 import한 BadRequestException로 비교하면 아래 코드는 실패하게 된다.
-        await expect(promise).rejects.toThrow(BadRequestException)
-        */
-
     return { testContext, repository, BadRequestException, NotFoundException }
 }

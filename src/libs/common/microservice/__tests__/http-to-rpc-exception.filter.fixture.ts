@@ -2,7 +2,7 @@ import { Controller, Module, NotFoundException, ValidationPipe } from '@nestjs/c
 import { APP_PIPE } from '@nestjs/core'
 import { MessagePattern, MicroserviceOptions, NatsOptions, Transport } from '@nestjs/microservices'
 import { IsNotEmpty, IsString } from 'class-validator'
-import { createTestContext, getNatsTestConnection } from 'testlib'
+import { createTestContext, getNatsTestConnection, withTestId } from 'testlib'
 import { HttpToRpcExceptionFilter } from '../http-to-rpc-exception.filter'
 
 class CreateSampleDto {
@@ -15,22 +15,22 @@ class CreateSampleDto {
 class SampleController {
     constructor() {}
 
-    @MessagePattern('test.throwHttpException')
+    @MessagePattern(withTestId('subject.throwHttpException'))
     throwHttpException() {
         throw new NotFoundException('not found exception')
     }
 
-    @MessagePattern('test.rethrow')
+    @MessagePattern(withTestId('subject.rethrow'))
     rethrow() {
         throw { status: 400, response: { message: 'error message' } }
     }
 
-    @MessagePattern('test.throwError')
+    @MessagePattern(withTestId('subject.throwError'))
     throwError() {
         throw new Error('error')
     }
 
-    @MessagePattern('test.createSample')
+    @MessagePattern(withTestId('subject.createSample'))
     createSample(createDto: CreateSampleDto) {
         return createDto
     }

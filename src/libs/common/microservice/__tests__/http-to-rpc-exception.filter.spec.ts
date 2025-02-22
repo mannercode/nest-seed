@@ -1,4 +1,4 @@
-import { MicroserviceTestClient, TestContext } from 'testlib'
+import { MicroserviceTestClient, TestContext, withTestId } from 'testlib'
 
 describe('HttpToRpcExceptionFilter', () => {
     let testContext: TestContext
@@ -19,7 +19,7 @@ describe('HttpToRpcExceptionFilter', () => {
 
     it('should handle HttpException properly for RPC', async () => {
         await client.error(
-            'test.throwHttpException',
+            withTestId('subject.throwHttpException'),
             {},
             {
                 response: { error: 'Not Found', message: 'not found exception', statusCode: 404 },
@@ -30,19 +30,19 @@ describe('HttpToRpcExceptionFilter', () => {
 
     it('should handle {status, response} properly for RPC', async () => {
         await client.error(
-            'test.rethrow',
+            withTestId('subject.rethrow'),
             {},
             { status: 400, response: { message: 'error message' } }
         )
     })
 
     it('should handle Error properly for RPC', async () => {
-        await client.error('test.throwError', {}, { status: 500 })
+        await client.error(withTestId('subject.throwError'), {}, { status: 500 })
     })
 
     it('should validate input and return error for incorrect data format', async () => {
         await client.error(
-            'test.createSample',
+            withTestId('subject.createSample'),
             { wrong: 'wrong field' },
             {
                 response: {

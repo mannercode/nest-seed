@@ -23,7 +23,7 @@ describe('HttpSuccessInterceptor', () => {
 
         expect(spy).toHaveBeenCalledTimes(1)
         expect(spy).toHaveBeenCalledWith(
-            'SUCCESS',
+            'Success',
             'HTTP',
             expect.objectContaining({
                 statusCode: 200,

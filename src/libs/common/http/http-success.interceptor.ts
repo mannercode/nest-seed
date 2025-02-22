@@ -20,7 +20,7 @@ export class HttpSuccessInterceptor implements NestInterceptor {
                         runningTime: `${Date.now() - now}ms`
                     }
 
-                    Logger.verbose('SUCCESS', 'HTTP', additionalInfo)
+                    Logger.verbose('Success', 'HTTP', additionalInfo)
                 }
             })
         )
