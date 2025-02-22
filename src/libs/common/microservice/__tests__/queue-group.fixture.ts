@@ -1,34 +1,59 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
-import { ClientProxyModule } from 'common'
-import { createTestContext, getNatsTestConnection, HttpTestClient, withTestId } from 'testlib'
+import {
+    createTestContext,
+    getNatsTestConnection,
+    MicroserviceTestClient,
+    TestContextOptions,
+    withTestId
+} from 'testlib'
 
 @Controller()
-class SendTestController {
-    @MessagePattern(withTestId('subject.method'), { queue: 'queue-group' })
-    method() {
+export class MessageController {
+    @MessagePattern(withTestId('subject.queue'))
+    handleQueueMessage() {
+        this.processQueueLogic()
+
         return { result: 'success' }
     }
+
+    processQueueLogic() {}
+
+    @MessagePattern(withTestId('subject.broadcast'), { queue: false })
+    handleBroadcastMessage() {
+        this.processBroadcastLogic()
+
+        return { result: 'success' }
+    }
+
+    processBroadcastLogic() {}
 }
 
 export async function createFixture() {
     const { servers } = getNatsTestConnection()
-    const brokerOptions = { transport: Transport.NATS, options: { servers } } as NatsOptions
+    const brokerOptions = {
+        transport: Transport.NATS,
+        options: { servers, queue: 'queue-group' }
+    } as NatsOptions
 
-    const testContext = await createTestContext({
-        metadata: {
-            imports: [
-                ClientProxyModule.registerAsync({ name: 'name', useFactory: () => brokerOptions })
-            ],
-            controllers: [SendTestController]
-        },
+    const options: TestContextOptions = {
+        metadata: { controllers: [MessageController] },
         configureApp: async (app) => {
             app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
             await app.startAllMicroservices()
         }
-    })
+    }
 
-    const client = new HttpTestClient(testContext.httpPort)
+    const testContext1 = await createTestContext(options)
+    const testContext2 = await createTestContext(options)
 
-    return { testContext, client }
+    const client = MicroserviceTestClient.create(brokerOptions)
+
+    const closeFixture = async () => {
+        await client?.close()
+        await testContext1?.close()
+        await testContext2?.close()
+    }
+
+    return { closeFixture, client, MessageController }
 }

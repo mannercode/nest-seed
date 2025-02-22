@@ -1,21 +1,35 @@
-import { HttpTestClient, TestContext } from 'testlib'
+import { CloseFixture, MicroserviceTestClient, withTestId } from 'testlib'
 
 describe('ClientProxyService', () => {
-    let testContext: TestContext
-    let client: HttpTestClient
+    let closeFixture: CloseFixture
+    let client: MicroserviceTestClient
+    let queueSpy: jest.SpyInstance
+    let broadcastSpy: jest.SpyInstance
 
     beforeEach(async () => {
-        const { createFixture } = await import('./queue-group.fixture')
-        const fixture = await createFixture()
+        const { createFixture, MessageController } = await import('./queue-group.fixture')
 
-        testContext = fixture.testContext
+        queueSpy = jest.spyOn(MessageController.prototype, 'processQueueLogic')
+        broadcastSpy = jest.spyOn(MessageController.prototype, 'processBroadcastLogic')
+
+        const fixture = await createFixture()
+        closeFixture = fixture.closeFixture
         client = fixture.client
     })
 
     afterEach(async () => {
-        await testContext?.close()
+        await closeFixture?.()
     })
 
-    it.skip('메시지는 queue 그룹 마다 한 번만 전달되어야 한다', async () => {})
-    it.skip('이벤트는 queue 그룹과 상관없이 모든 인스턴스에 전달되어야 한다', async () => {})
+    it('queue 그룹을 설정하면 한 인스턴스에만 전달되어야 한다', async () => {
+        const result = await client.send(withTestId('subject.queue'), {})
+        expect(result).toEqual({ result: 'success' })
+        expect(queueSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it('queue 그룹을 설정하지 않으면 모든 인스턴스에 전달되어야 한다', async () => {
+        const result = await client.send(withTestId('subject.broadcast'), {})
+        expect(result).toEqual({ result: 'success' })
+        expect(broadcastSpy).toHaveBeenCalledTimes(2)
+    })
 })

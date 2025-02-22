@@ -27,7 +27,7 @@ export interface TestContext {
     close: () => Promise<void>
 }
 
-export interface TestContextArgs {
+export interface TestContextOptions {
     metadata: ModuleMetadataEx
     brokers?: string[]
     configureApp?: (app: INestApplication<any>, brokers: string[] | undefined) => Promise<void>
@@ -37,7 +37,7 @@ export async function createTestContext({
     metadata,
     brokers,
     configureApp
-}: TestContextArgs): Promise<TestContext> {
+}: TestContextOptions): Promise<TestContext> {
     const module = await createTestingModule(metadata)
     const app = module.createNestApplication()
 

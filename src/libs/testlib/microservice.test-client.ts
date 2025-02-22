@@ -16,7 +16,9 @@ export class MicroserviceTestClient {
     }
 
     async send(cmd: string, payload: any) {
-        return jsonToObject(await lastValueFrom(this.proxy.send(cmd, payload)))
+        const ob = this.proxy.send(cmd, payload)
+        const value = await lastValueFrom(ob)
+        return jsonToObject(value)
     }
 
     async error(cmd: string, payload: any, expected: any) {
