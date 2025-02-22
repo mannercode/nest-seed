@@ -14,7 +14,7 @@ describe('FileWriter', () => {
         await Path.delete(tempDir)
     })
 
-    it('should write data to file', async () => {
+    it('파일에 데이터를 기록해야 한다', async () => {
         await writeFile(testFilePath, async (writer) => {
             await writer.write('Hello, World!')
         })
@@ -23,7 +23,7 @@ describe('FileWriter', () => {
         expect(content).toBe('Hello, World!')
     })
 
-    it('should write string at specific position', async () => {
+    it('특정 위치에 문자열을 기록해야 한다', async () => {
         await writeFile(testFilePath, async (writer) => {
             await writer.write('Hello, World!')
             await writer.writeAt(7, 'Node.js')
@@ -33,7 +33,7 @@ describe('FileWriter', () => {
         expect(content).toBe('Hello, Node.js')
     })
 
-    it('should write buffer at specific position', async () => {
+    it('특정 위치에 버퍼를 기록해야 한다', async () => {
         await writeFile(testFilePath, async (writer) => {
             await writer.write('Hello, World!')
             await writer.writeAt(7, Buffer.from('Node.js'))
@@ -43,7 +43,7 @@ describe('FileWriter', () => {
         expect(content).toBe('Hello, Node.js')
     })
 
-    it('should append string to file', async () => {
+    it('파일에 문자열을 추가해야 한다', async () => {
         await writeFile(testFilePath, async (writer) => {
             await writer.write('Hello, World!')
         })
@@ -52,7 +52,7 @@ describe('FileWriter', () => {
         expect(content).toBe('Hello, World!')
     })
 
-    it('should append buffer to file', async () => {
+    it('파일에 버퍼를 추가해야 한다', async () => {
         await writeFile(testFilePath, async (writer) => {
             await writer.write(Buffer.from('Hello, World!'))
         })
@@ -61,7 +61,7 @@ describe('FileWriter', () => {
         expect(content).toBe('Hello, World!')
     })
 
-    it('should truncate file', async () => {
+    it('파일을 잘라내야 한다', async () => {
         await writeFile(testFilePath, async (writer) => {
             await writer.write('Hello, World!')
             await writer.truncate(5)
@@ -71,11 +71,13 @@ describe('FileWriter', () => {
         expect(content).toBe('Hello')
     })
 
-    it('should get and set position', async () => {
+    it('파일 포지션을 가져오고 설정해야 한다', async () => {
         await writeFile(testFilePath, async (writer) => {
             expect(writer.getPosition()).toBe(0)
+
             await writer.write('Hello')
             expect(writer.getPosition()).toBe(5)
+
             writer.setPosition(0)
             await writer.write('World')
         })

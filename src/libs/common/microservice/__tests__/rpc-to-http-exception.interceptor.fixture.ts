@@ -12,17 +12,18 @@ import {
     createHttpTestContext,
     createTestContext,
     getNatsTestConnection,
-    HttpTestClient
+    HttpTestClient,
+    withTestId
 } from 'testlib'
 
 @Controller()
 class MicroserviceController {
-    @MessagePattern('test.common.RpcToHttpExceptionInterceptor.throwHttpException')
+    @MessagePattern(withTestId('subject.throwHttpException'))
     throwHttpException() {
         throw new BadRequestException('http exception')
     }
 
-    @MessagePattern('test.common.RpcToHttpExceptionInterceptor.throwError')
+    @MessagePattern(withTestId('subject.throwError'))
     throwError() {
         throw new Error('error message')
     }
@@ -37,12 +38,12 @@ class HttpController {
 
     @Get('throwHttpException')
     throwHttpException() {
-        return this.client.send('test.common.RpcToHttpExceptionInterceptor.throwHttpException', {})
+        return this.client.send(withTestId('subject.throwHttpException'), {})
     }
 
     @Get('throwError')
     throwError() {
-        return this.client.send('test.common.RpcToHttpExceptionInterceptor.throwError', {})
+        return this.client.send(withTestId('subject.throwError'), {})
     }
 }
 
@@ -72,7 +73,12 @@ export async function createFixture() {
         controllers: [HttpController],
         providers: [{ provide: APP_INTERCEPTOR, useClass: RpcToHttpExceptionInterceptor }]
     })
-    const client = new HttpTestClient(`http://localhost:${httpContext.httpPort}`)
+    const client = new HttpTestClient(httpContext.httpPort)
 
-    return { microContext, httpContext, client }
+    const closeFixture = async () => {
+        await httpContext?.close()
+        await microContext?.close()
+    }
+
+    return { closeFixture, microContext, httpContext, client }
 }

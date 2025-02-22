@@ -1,12 +1,12 @@
 describe('jest examples', () => {
     it('toBe vs toEqual', () => {
         // toEqual
-        // For objects or arrays, each property or element value is compared recursively.
-        // Even if the references of objects or arrays are different, toEqual passes if the contents are the same.
+        // 객체나 배열의 경우, 각 프로퍼티나 요소의 값이 재귀적으로 비교됩니다.
+        // 객체나 배열의 참조가 다르더라도, 내용이 같으면 toEqual은 통과합니다.
 
         // toBe
-        // For primitive values, both the value and the type must match.
-        // For objects or arrays, the reference must be the same.
+        // 원시 값의 경우, 값과 타입 모두 일치해야 합니다.
+        // 객체나 배열의 경우, 참조가 동일해야 합니다.
 
         expect('hello').toBe('hello')
         expect('hello').toEqual('hello')
@@ -25,7 +25,7 @@ describe('jest examples', () => {
         expect(arr1).not.toBe(arr2)
     })
 
-    test('Comparing arrays of objects', () => {
+    test('객체 배열 비교', () => {
         const array1 = [
             { id: 1, name: 'A' },
             { id: 2, name: 'B' }
@@ -38,7 +38,7 @@ describe('jest examples', () => {
         expect(array1).toEqual(expect.arrayContaining(array2))
     })
 
-    test('Comparing partial objects', () => {
+    test('부분 객체 배열 비교', () => {
         const array1 = [
             { id: 1, name: 'A', extra: 'info' },
             { id: 2, name: 'B', extra: 'data' }

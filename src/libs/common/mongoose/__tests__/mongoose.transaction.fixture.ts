@@ -39,5 +39,9 @@ export async function createFixture() {
 
     const repository = testContext.module.get(SamplesRepository)
 
-    return { testContext, repository }
+    const closeFixture = async () => {
+        await testContext?.close()
+    }
+
+    return { testContext, closeFixture, repository }
 }

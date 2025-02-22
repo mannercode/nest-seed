@@ -17,7 +17,12 @@ class TestModule {}
 
 export async function createFixture() {
     const testContext = await createHttpTestContext({ imports: [TestModule] })
-    const client = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
 
-    return { testContext, client }
+    const client = new HttpTestClient(testContext.httpPort)
+
+    const closeFixture = async () => {
+        await testContext?.close()
+    }
+
+    return { testContext, closeFixture, client }
 }

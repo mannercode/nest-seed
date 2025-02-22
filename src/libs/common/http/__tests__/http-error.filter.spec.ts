@@ -1,37 +1,27 @@
-import { HttpTestClient, TestContext } from 'testlib'
+import { CloseFixture, HttpTestClient } from 'testlib'
 
-describe('ErrorFilter', () => {
-    let testContext: TestContext
+describe('HttpErrorFilter', () => {
+    let closeFixture: CloseFixture
     let client: HttpTestClient
-    let spy: jest.SpyInstance
 
     beforeEach(async () => {
         const { createFixture } = await import('./http-error.filter.fixture')
-        const fixture = await createFixture()
 
-        testContext = fixture.testContext
-        spy = fixture.spy
+        const fixture = await createFixture()
+        closeFixture = fixture.closeFixture
         client = fixture.client
     })
 
     afterEach(async () => {
-        await testContext?.close()
+        await closeFixture?.()
     })
 
-    it('should call Logger.error() when an error occurs', async () => {
-        await client.get('/').internalServerError()
-
-        expect(spy).toHaveBeenCalledTimes(1)
-        expect(spy).toHaveBeenCalledWith(
-            'test',
-            'HTTP',
-            expect.objectContaining({
-                statusCode: 500,
-                method: 'GET',
-                url: '/',
-                body: undefined,
-                stack: expect.any(String)
-            })
-        )
+    it('Error를 던지면 INTERNAL_SERVER_ERROR(500)를 반환해야 한다', async () => {
+        await client.get('/').internalServerError({
+            message: 'Internal server error',
+            method: 'GET',
+            statusCode: 500,
+            url: '/'
+        })
     })
 })

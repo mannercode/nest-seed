@@ -72,6 +72,7 @@ describe('/storage-files', () => {
         })
 
         /**
+         * TODO
          * 종종 write EPIPE 예외가 발생하면서 테스트를 실패한다.
          * superagent의 문제로 보이며 업로드가 끝나기 전에 수신을 종료하고 응답하는 경우 발생하는 것으로 판단된다.
          */

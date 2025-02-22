@@ -43,7 +43,7 @@ describe('JwtAuthService', () => {
         await redis.quit()
     })
 
-    it('generateAuthTokens', async () => {
+    it('인증 토큰을 생성해야 한다', async () => {
         const tokens = await jwtService.generateAuthTokens('userId', 'email')
 
         expect(tokens).toEqual({
@@ -62,19 +62,19 @@ describe('JwtAuthService', () => {
             refreshToken = tokens.refreshToken
         })
 
-        it('Returns a new AuthTokens when providing a valid refreshToken', async () => {
+        it('유효한 refreshToken을 제공하면 새로운 인증 토큰을 반환해야 한다', async () => {
             const tokens = await jwtService.refreshAuthTokens(refreshToken)
 
             expect(tokens!.accessToken).not.toEqual(accessToken)
             expect(tokens!.refreshToken).not.toEqual(refreshToken)
         })
 
-        it('Returns null status when providing an incorrect refreshToken', async () => {
+        it('잘못된 refreshToken을 제공하면 예외를 발생시켜야 한다', async () => {
             const promise = jwtService.refreshAuthTokens('invalid-token')
             expect(promise).rejects.toThrow()
         })
 
-        it('Returns null status when providing an expired refreshToken', async () => {
+        it('만료된 refreshToken을 제공하면 예외를 발생시켜야 한다', async () => {
             await sleep(3500)
 
             const promise = jwtService.refreshAuthTokens(refreshToken)

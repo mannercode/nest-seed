@@ -2,31 +2,31 @@ import { Controller, Get, MessageEvent, Sse } from '@nestjs/common'
 import { EventPattern, MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
 import { ClientProxyModule, ClientProxyService, getProxyValue, InjectClientProxy } from 'common'
 import { Observable, Subject } from 'rxjs'
-import { createTestContext, getNatsTestConnection, HttpTestClient } from 'testlib'
+import { createTestContext, getNatsTestConnection, HttpTestClient, withTestId } from 'testlib'
 
 @Controller()
 class SendTestController {
     constructor(@InjectClientProxy('name') private client: ClientProxyService) {}
 
-    @MessagePattern('test.method')
+    @MessagePattern(withTestId('subject.method'))
     method() {
         return { result: 'success' }
     }
 
     @Get('observable')
     getObservable() {
-        return this.client.send('test.method', {})
+        return this.client.send(withTestId('subject.method'), {})
     }
 
     @Get('value')
     getValue() {
-        const observer = this.client.send('test.method', {})
+        const observer = this.client.send(withTestId('subject.method'), {})
         return getProxyValue(observer)
     }
 
     @Get('send-null')
     sendNull() {
-        return this.client.send('test.method', null)
+        return this.client.send(withTestId('subject.method'), null)
     }
 }
 
@@ -36,7 +36,7 @@ class EmitTestController {
 
     constructor(@InjectClientProxy('name') private client: ClientProxyService) {}
 
-    @EventPattern('test.emitEvent')
+    @EventPattern(withTestId('subject.emitEvent'))
     async handleEvent(data: any) {
         this.eventSubject.next({ data })
         this.eventSubject.complete()
@@ -44,12 +44,12 @@ class EmitTestController {
 
     @Get('emit-event')
     emitEvent() {
-        return this.client.emit('test.emitEvent', { arg: 'value' })
+        return this.client.emit(withTestId('subject.emitEvent'), { arg: 'value' })
     }
 
     @Get('emit-null')
     sendNull() {
-        return this.client.emit('test.emitEvent', null)
+        return this.client.emit(withTestId('subject.emitEvent'), null)
     }
 
     @Sse('handle-event')
@@ -75,7 +75,11 @@ export async function createFixture() {
         }
     })
 
-    const client = new HttpTestClient(`http://localhost:${testContext.httpPort}`)
+    const client = new HttpTestClient(testContext.httpPort)
 
-    return { testContext, client }
+    const closeFixture = async () => {
+        await testContext?.close()
+    }
+
+    return { testContext, closeFixture, client }
 }

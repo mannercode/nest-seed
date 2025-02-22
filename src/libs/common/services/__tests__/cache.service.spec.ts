@@ -38,14 +38,14 @@ describe('CacheService', () => {
     const key = 'key'
     const value = 'value'
 
-    it('sets a value in the cache', async () => {
+    it('캐시에 값을 설정해야 한다', async () => {
         await cacheService.set(key, value)
         const cachedValue = await cacheService.get(key)
 
         expect(cachedValue).toEqual(value)
     })
 
-    it('deletes a value from the cache', async () => {
+    it('캐시에서 값을 삭제해야 한다', async () => {
         await cacheService.set(key, value)
         const initialValue = await cacheService.get(key)
         expect(initialValue).toEqual(value)
@@ -55,7 +55,7 @@ describe('CacheService', () => {
         expect(deletedValue).toBeNull()
     })
 
-    it('sets an expiration time', async () => {
+    it('만료 시간을 설정해야 한다', async () => {
         const ttl = 1000
 
         await cacheService.set(key, value, ttl)
@@ -67,13 +67,13 @@ describe('CacheService', () => {
         expect(deletedValue).toBeNull()
     })
 
-    it('throws an exception if the expiration time is negative', async () => {
+    it('만료 시간이 음수이면 예외를 발생시켜야 한다', async () => {
         const wrongTTL = -100
 
         await expect(cacheService.set(key, value, wrongTTL)).rejects.toThrow(Error)
     })
 
-    it('should execute Lua script and set keys correctly', async () => {
+    it('Lua 스크립트를 실행하여 키를 올바르게 설정해야 한다', async () => {
         const script = `return redis.call('SET', KEYS[1], ARGV[2])`
         const keys = ['key1']
         const args = ['value1']

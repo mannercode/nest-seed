@@ -97,13 +97,13 @@ Application Service의 특징은 다음과 같다.
 
 ### 2.1. GET과 POST 선택
 
-10,000명의 user정보 조회 요청은 너무 길어서 GET 메소드로 전달할 수 없다.
+10,000명의 user정보 조회 요청은 너무 길어서 GET 메서드로 전달할 수 없다.
 
 ```sh
 GET /users?user-id=userid1, userid2, userid3 ...
 ```
 
-이렇게 `GET`이나 `DELETE` 메소드인데 쿼리가 너무 길다면 아래처럼 POST로 요청한다.
+이렇게 `GET`이나 `DELETE` 메서드인데 쿼리가 너무 길다면 아래처럼 POST로 요청한다.
 
 ```sh
 # 찾는다
@@ -117,7 +117,7 @@ DELETE /movies?...
 POST /movies/delete
 ```
 
-POST 메소드는 일반적으로 `Create`를 의미하지만 `함수를 실행한다`는 의미로도 사용한다.
+POST 메서드는 일반적으로 `Create`를 의미하지만 `함수를 실행한다`는 의미로도 사용한다.
 
 GET과 POST를 선택할 때는 다음의 사항을 고려해야 한다.
 

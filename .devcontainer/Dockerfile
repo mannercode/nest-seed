@@ -8,7 +8,7 @@ RUN echo 'PS1="\[\033[32m\]\w\[\033[00m\] "' >> ~/.bashrc
 RUN echo "alias ls='ls --color=auto'" >> ~/.bashrc
 RUN echo "alias l='ls --color=auto -lA'" >> ~/.bashrc
 
-# jest에서 한글 사용하려면 필요하다
+# for Korean
 RUN apt-get install -y locales \
     && sed -i '/ko_KR.UTF-8/s/^# //g' /etc/locale.gen \
     && locale-gen ko_KR.UTF-8 \

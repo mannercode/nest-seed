@@ -1,24 +1,27 @@
 import { expect } from '@jest/globals'
 import { HydratedDocument, Model } from 'mongoose'
-import { TestContext } from 'testlib'
+import { CloseFixture } from 'testlib'
 import { HardDeleteSample, SoftDeleteSample } from './mongoose.schema.fixture'
 
 // TODO mongoose의 기능들 테스트 해야 한다. 스키마의 각 타입들 포함
 describe('MongooseSchema', () => {
     describe('Soft Delete', () => {
-        let testContext: TestContext
+        let closeFixture: CloseFixture
         let model: Model<any>
         let doc: HydratedDocument<SoftDeleteSample>
 
         beforeEach(async () => {
             const { createFixture } = await import('./mongoose.schema.fixture')
-            const fixture = await createFixture(SoftDeleteSample)
 
-            testContext = fixture.testContext
+            const fixture = await createFixture(SoftDeleteSample)
+            closeFixture = fixture.closeFixture
             model = fixture.model
             doc = fixture.doc
         })
-        afterEach(async () => await testContext?.close())
+
+        afterEach(async () => {
+            await closeFixture?.()
+        })
 
         it('deletedAt의 초기값은 null이다', async () => {
             expect(doc).toMatchObject({ deletedAt: null })
@@ -57,17 +60,20 @@ describe('MongooseSchema', () => {
     })
 
     describe('Hard Delete', () => {
-        let testContext: TestContext
+        let closeFixture: CloseFixture
         let doc: HydratedDocument<HardDeleteSample>
 
         beforeEach(async () => {
             const { createFixture } = await import('./mongoose.schema.fixture')
-            const fixture = await createFixture(HardDeleteSample)
 
-            testContext = fixture.testContext
+            const fixture = await createFixture(HardDeleteSample)
+            closeFixture = fixture.closeFixture
             doc = fixture.doc
         })
-        afterEach(async () => await testContext?.close())
+
+        afterEach(async () => {
+            await closeFixture?.()
+        })
 
         it('데이터를 완전히 삭제해야 한다', async () => {
             expect(doc).not.toHaveProperty('deletedAt')

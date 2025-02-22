@@ -1,29 +1,26 @@
-import { HttpTestClient, TestContext } from 'testlib'
+import { CloseFixture, HttpTestClient } from 'testlib'
 
 describe('RpcToHttpExceptionInterceptor', () => {
-    let microContext: TestContext
-    let httpContext: TestContext
+    let closeFixture: CloseFixture
     let client: HttpTestClient
 
     beforeEach(async () => {
         const { createFixture } = await import('./rpc-to-http-exception.interceptor.fixture')
-        const fixture = await createFixture()
 
-        microContext = fixture.microContext
-        httpContext = fixture.httpContext
+        const fixture = await createFixture()
+        closeFixture = fixture.closeFixture
         client = fixture.client
     })
 
     afterEach(async () => {
-        await httpContext?.close()
-        await microContext?.close()
+        await closeFixture?.()
     })
 
-    it('should return BAD_REQUEST(400) status', async () => {
+    it('BAD_REQUEST(400) 상태를 반환해야 한다', async () => {
         await client.get('/throwHttpException').badRequest()
     })
 
-    it('should return INTERNAL_SERVER_ERROR(500) status', async () => {
+    it('INTERNAL_SERVER_ERROR(500) 상태를 반환해야 한다', async () => {
         await client.get('/throwError').internalServerError()
     })
 })

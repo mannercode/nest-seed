@@ -16,14 +16,14 @@ describe('FileReader', () => {
         await Path.delete(tempDir)
     })
 
-    it('should read entire file content', async () => {
+    it('파일 전체 내용을 읽어야 한다', async () => {
         await readFile(testFilePath, async (reader) => {
             const content = await reader.readAll()
             expect(content.toString()).toBe(testContent)
         })
     })
 
-    it('should read file in chunks', async () => {
+    it('파일을 청크 단위로 읽어야 한다', async () => {
         await readFile(testFilePath, async (reader) => {
             const chunk1 = await reader.read(5)
             expect(chunk1.toString()).toBe('Hello')
@@ -33,14 +33,14 @@ describe('FileReader', () => {
         })
     })
 
-    it('should read file at specific position', async () => {
+    it('특정 위치에서 파일을 읽어야 한다', async () => {
         await readFile(testFilePath, async (reader) => {
             const chunk = await reader.readAt(6, 5)
             expect(chunk.toString()).toBe('World')
         })
     })
 
-    it('should iterate over file content', async () => {
+    it('파일 내용을 순회하면서 읽어야 한다', async () => {
         await readFile(testFilePath, async (reader) => {
             let content = ''
             for await (const chunk of reader) {
@@ -50,7 +50,7 @@ describe('FileReader', () => {
         })
     })
 
-    it('should read file line by line', async () => {
+    it('파일을 한 줄씩 읽어야 한다', async () => {
         const lines: string[] = []
 
         await readFile(testFilePath, async (reader) => {
@@ -62,7 +62,7 @@ describe('FileReader', () => {
         expect(lines).toEqual(['Hello', 'World', 'This is a test file'])
     })
 
-    it('should read file line with \n', async () => {
+    it('줄바꿈 문자(\\n)가 포함된 파일 줄을 읽어야 한다', async () => {
         const testFilePath = Path.join(tempDir, 'readlines2.txt')
         await fs.writeFile(testFilePath, 'hello')
 
@@ -77,7 +77,7 @@ describe('FileReader', () => {
         expect(lines).toEqual(['hello'])
     })
 
-    it('should read file line by line', async () => {
+    it('파일을 한 줄씩 읽어야 한다', async () => {
         await readFile(testFilePath, async (reader) => {
             const lines = []
             for await (const line of reader.readLines()) {
@@ -87,14 +87,14 @@ describe('FileReader', () => {
         })
     })
 
-    it('should get file size', async () => {
+    it('파일 크기를 가져와야 한다', async () => {
         await readFile(testFilePath, async (reader) => {
             const size = await reader.getSize()
             expect(size).toBe(testContent.length)
         })
     })
 
-    it('should get and set position', async () => {
+    it('파일 포지션을 가져오고 설정해야 한다', async () => {
         await readFile(testFilePath, async (reader) => {
             expect(reader.getPosition()).toBe(0)
             reader.setPosition(6)

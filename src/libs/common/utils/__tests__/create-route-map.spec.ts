@@ -1,7 +1,7 @@
 import { createRouteMap } from 'common'
 
 describe('createRoutes', () => {
-    it('2단계 경로를 정의해야 한다', async () => {
+    it('2단계 경로를 생성해야 한다', async () => {
         const Messages = createRouteMap({
             Movies: {
                 findMovies: null,
@@ -12,7 +12,7 @@ describe('createRoutes', () => {
         expect(Messages.Movies.findMovies).toEqual('Movies.findMovies')
     })
 
-    it('3단계 경로를 정의해야 한다', async () => {
+    it('3단계 경로를 생성해야 한다', async () => {
         const Messages = createRouteMap({
             Apps: {
                 Tickets: {

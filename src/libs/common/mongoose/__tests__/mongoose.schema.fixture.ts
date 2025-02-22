@@ -32,7 +32,11 @@ export async function createFixture<T>(cls: Type<T>) {
     doc.name = 'name'
     await doc.save()
 
-    return { testContext, model, doc }
+    const closeFixture = async () => {
+        await testContext?.close()
+    }
+
+    return { testContext, closeFixture, model, doc }
 }
 
 @HardDelete()
