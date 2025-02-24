@@ -1,4 +1,4 @@
-import { Controller, Get, Module, Param } from '@nestjs/common'
+import { Controller, Get, Param } from '@nestjs/common'
 import {
     MessagePattern,
     MicroserviceOptions,
@@ -25,16 +25,13 @@ class SampleController {
     }
 }
 
-@Module({ controllers: [SampleController] })
-class SampleModule {}
-
 export async function createFixture() {
     const { servers } = await getNatsTestConnection()
 
     const brokerOpts = { transport: Transport.NATS, options: { servers } } as NatsOptions
 
     const testContext = await createTestContext({
-        metadata: { imports: [SampleModule] },
+        metadata: { controllers: [SampleController] },
         configureApp: async (app) => {
             app.connectMicroservice<MicroserviceOptions>(brokerOpts, { inheritAppConfig: true })
             await app.startAllMicroservices()

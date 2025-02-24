@@ -1,4 +1,4 @@
-import { Body, Controller, Module, ParseArrayPipe, Post } from '@nestjs/common'
+import { Body, Controller, ParseArrayPipe, Post } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
 import { Type } from 'class-transformer'
 import { IsDate, IsNotEmpty, IsString } from 'class-validator'
@@ -35,14 +35,9 @@ class SamplesController {
     }
 }
 
-@Module({
-    controllers: [SamplesController]
-})
-class SamplesModule {}
-
 export async function createFixture() {
     const testContext = await createHttpTestContext({
-        imports: [SamplesModule],
+        controllers: [SamplesController],
         providers: [{ provide: APP_PIPE, useClass: AppValidationPipe }]
     })
 

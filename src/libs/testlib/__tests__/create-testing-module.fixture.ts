@@ -1,4 +1,4 @@
-import { Injectable, Module } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { createTestingModule } from '../create-testing-module'
 
 @Injectable()
@@ -10,12 +10,9 @@ export class SampleService {
     }
 }
 
-@Module({ providers: [SampleService] })
-class SampleModule {}
-
 export async function createFixture() {
     const module = await createTestingModule({
-        imports: [SampleModule],
+        providers: [SampleService],
         overrideProviders: [
             {
                 original: SampleService,

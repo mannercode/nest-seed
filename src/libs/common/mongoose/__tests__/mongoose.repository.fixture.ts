@@ -30,12 +30,6 @@ export class SamplesRepository extends MongooseRepository<Sample> {
     }
 }
 
-@Module({
-    imports: [MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])],
-    providers: [SamplesRepository]
-})
-class SampleModule {}
-
 export const sortByName = (documents: SampleDto[]) =>
     documents.sort((a, b) => a.name.localeCompare(b.name))
 
@@ -68,8 +62,9 @@ export async function createFixture() {
             MongooseModule.forRootAsync({
                 useFactory: () => ({ uri, dbName: withTestId('test') })
             }),
-            SampleModule
-        ]
+            MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])
+        ],
+        providers: [SamplesRepository]
     })
 
     const repository = testContext.module.get(SamplesRepository)

@@ -1,4 +1,4 @@
-import { Controller, Module, NotFoundException, ValidationPipe } from '@nestjs/common'
+import { Controller, NotFoundException, ValidationPipe } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
 import { MessagePattern, MicroserviceOptions, NatsOptions, Transport } from '@nestjs/microservices'
 import { IsNotEmpty, IsString } from 'class-validator'
@@ -41,18 +41,15 @@ class SampleController {
     }
 }
 
-@Module({
-    controllers: [SampleController],
-    providers: [{ provide: APP_PIPE, useFactory: () => new ValidationPipe() }]
-})
-class SampleModule {}
-
 export async function createFixture() {
     const { servers } = await getNatsTestConnection()
     const brokerOptions = { transport: Transport.NATS, options: { servers } } as NatsOptions
 
     const testContext = await createTestContext({
-        metadata: { imports: [SampleModule] },
+        metadata: {
+            controllers: [SampleController],
+            providers: [{ provide: APP_PIPE, useFactory: () => new ValidationPipe() }]
+        },
         configureApp: async (app) => {
             app.useGlobalFilters(new HttpToRpcExceptionFilter())
 

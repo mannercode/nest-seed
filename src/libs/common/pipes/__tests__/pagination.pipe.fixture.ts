@@ -1,12 +1,4 @@
-import {
-    Controller,
-    Get,
-    Injectable,
-    Module,
-    Query,
-    UsePipes,
-    ValidationPipe
-} from '@nestjs/common'
+import { Controller, Get, Injectable, Query, UsePipes, ValidationPipe } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
 import { PaginationOptionDto, PaginationPipe } from 'common'
 import { createHttpTestContext, HttpTestClient } from 'testlib'
@@ -32,14 +24,9 @@ class SamplesController {
     }
 }
 
-@Module({
-    controllers: [SamplesController]
-})
-class SamplesModule {}
-
 export async function createFixture() {
     const testContext = await createHttpTestContext({
-        imports: [SamplesModule],
+        controllers: [SamplesController],
         providers: [
             {
                 provide: APP_PIPE,
