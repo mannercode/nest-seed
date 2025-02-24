@@ -24,7 +24,6 @@ describe('Soft Delete', () => {
         doc.name = 'name'
         await doc.save()
 
-
         await model.deleteOne({ _id: doc._id })
 
         const found = await model
