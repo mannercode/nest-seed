@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Module, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import {
     createMongooseSchema,
