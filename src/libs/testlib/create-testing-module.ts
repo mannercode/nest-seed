@@ -16,9 +16,9 @@ class NullGuard implements CanActivate {
 @Injectable()
 class NullProvider {}
 
-export async function createTestingModule(metadata: ModuleMetadataEx) {
-    const { ignoreGuards, ignoreProviders, overrideProviders, ...moduleConfig } = metadata
-    const builder = Test.createTestingModule(moduleConfig)
+export async function createTestingModule(metadataEx: ModuleMetadataEx) {
+    const { ignoreGuards, ignoreProviders, overrideProviders, ...metadata } = metadataEx
+    const builder = Test.createTestingModule(metadata)
 
     ignoreGuards?.forEach((guard) => builder.overrideGuard(guard).useClass(NullGuard))
     ignoreProviders?.forEach((provider) =>

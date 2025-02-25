@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Module } from '@nestjs/common'
+import { BadRequestException, Controller, Get } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { MessagePattern, MicroserviceOptions, Transport } from '@nestjs/microservices'
 import {
@@ -29,9 +29,6 @@ class MicroserviceController {
     }
 }
 
-@Module({ controllers: [MicroserviceController] })
-class MicroserviceModule {}
-
 @Controller()
 class HttpController {
     constructor(@InjectClientProxy('name') private client: ClientProxyService) {}
@@ -51,7 +48,7 @@ export async function createFixture() {
     const { servers } = await getNatsTestConnection()
 
     const microContext = await createTestContext({
-        metadata: { imports: [MicroserviceModule] },
+        metadata: { controllers: [MicroserviceController] },
         brokers: servers,
         configureApp: async (app, servers) => {
             app.useGlobalFilters(new HttpToRpcExceptionFilter())
