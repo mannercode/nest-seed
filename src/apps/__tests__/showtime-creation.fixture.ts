@@ -1,4 +1,4 @@
-import { addMinutes, jsonToObject } from 'common'
+import { DateUtil, jsonToObject } from 'common'
 import {
     MovieDto,
     MoviesService,
@@ -10,7 +10,7 @@ import {
 import { HttpTestClient, nullObjectId } from 'testlib'
 import { createMovie } from './movies.fixture'
 import { createTheater } from './theaters.fixture'
-import { createAllTestContexts, AllTestContexts } from './utils'
+import { AllTestContexts, createAllTestContexts } from './utils'
 
 export interface Fixture {
     testContext: AllTestContexts
@@ -45,7 +45,7 @@ export const createShowtimeDtos = (startTimes: Date[], overrides = {}) => {
             movieId: nullObjectId,
             theaterId: nullObjectId,
             startTime,
-            endTime: addMinutes(startTime, 90),
+            endTime: DateUtil.addMinutes(startTime, 90),
             ...overrides
         }
 

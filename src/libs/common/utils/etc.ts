@@ -56,14 +56,6 @@ export function latlongDistanceInMeters(latlong1: LatLong, latlong2: LatLong) {
     return R * c // distance in meters
 }
 
-export function equalsIgnoreCase(str1: any, str2: any): boolean {
-    if (typeof str1 === 'string' && typeof str2 === 'string') {
-        return str1.toLowerCase() === str2.toLowerCase()
-    }
-
-    return false
-}
-
 export function notUsed(..._args: any[]) {}
 export function comment(..._args: any[]) {}
 

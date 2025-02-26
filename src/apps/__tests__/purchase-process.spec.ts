@@ -1,4 +1,4 @@
-import { addMinutes } from 'common'
+import { DateUtil } from 'common'
 import {
     PurchaseDto,
     PurchaseItemDto,
@@ -42,7 +42,7 @@ describe('/purchase-process', () => {
         let items: PurchaseItemDto[]
 
         beforeEach(async () => {
-            showtime = await createShowtime(fixture, addMinutes(new Date(), 120))
+            showtime = await createShowtime(fixture, DateUtil.addMinutes(new Date(), 120))
             tickets = await createAllTickets(fixture, showtime)
             items = tickets
                 .slice(0, 4)
@@ -89,7 +89,7 @@ describe('/purchase-process', () => {
 
     describe('errors', () => {
         it('최대 구매 수량을 초과하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
-            const showtime = await createShowtime(fixture, addMinutes(new Date(), 120))
+            const showtime = await createShowtime(fixture, DateUtil.addMinutes(new Date(), 120))
             const tickets = await createAllTickets(fixture, showtime)
             const items = tickets.map((ticket) => ({
                 type: PurchaseItemType.ticket,
@@ -124,7 +124,7 @@ describe('/purchase-process', () => {
         })
 
         it('선점되지 않은 티켓을 구매하려하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
-            const showtime = await createShowtime(fixture, addMinutes(new Date(), 120))
+            const showtime = await createShowtime(fixture, DateUtil.addMinutes(new Date(), 120))
             const tickets = await createAllTickets(fixture, showtime)
             const items = [{ type: PurchaseItemType.ticket, ticketId: tickets[0].id }]
 

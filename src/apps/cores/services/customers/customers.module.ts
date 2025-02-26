@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'
-import { JwtAuthModule, stringToMillisecs } from 'common'
+import { JwtAuthModule, DateUtil } from 'common'
 import {
     AppConfigService,
     MongooseConfig,
@@ -28,9 +28,9 @@ import { Customer, CustomerSchema } from './models'
             useFactory: ({ auth }: AppConfigService) => ({
                 auth: {
                     accessSecret: auth.accessSecret,
-                    accessTokenTtlMs: stringToMillisecs(auth.accessTokenExpiration),
+                    accessTokenTtlMs: DateUtil.toMs(auth.accessTokenExpiration),
                     refreshSecret: auth.refreshSecret,
-                    refreshTokenTtlMs: stringToMillisecs(auth.refreshTokenExpiration)
+                    refreshTokenTtlMs: DateUtil.toMs(auth.refreshTokenExpiration)
                 }
             }),
             inject: [AppConfigService]

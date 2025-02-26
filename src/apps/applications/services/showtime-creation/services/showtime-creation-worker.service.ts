@@ -1,7 +1,7 @@
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
 import { Injectable } from '@nestjs/common'
 import { Job, Queue } from 'bullmq'
-import { addMinutes, jsonToObject, MethodLog } from 'common'
+import { DateUtil, jsonToObject, MethodLog } from 'common'
 import {
     Seatmap,
     ShowtimeDto,
@@ -71,7 +71,7 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
                 movieId,
                 theaterId,
                 startTime,
-                endTime: addMinutes(startTime, durationMinutes)
+                endTime: DateUtil.addMinutes(startTime, durationMinutes)
             }))
         )
 

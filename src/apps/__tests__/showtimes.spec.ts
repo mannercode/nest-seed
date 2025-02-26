@@ -1,4 +1,4 @@
-import { addMinutes, pickIds } from 'common'
+import { DateUtil, pickIds } from 'common'
 import { ShowtimeDto, ShowtimesService } from 'cores'
 import { expectEqualUnsorted, nullObjectId, testObjectId } from 'testlib'
 import {
@@ -107,16 +107,16 @@ describe('Showtimes Module', () => {
         const movieIds = [testObjectId('a1'), testObjectId('a2')]
         const now = new Date()
         const createDtos = [
-            createShowtimeDto({ startTime: addMinutes(now, -90), endTime: addMinutes(now, -30) }),
+            createShowtimeDto({ startTime: DateUtil.addMinutes(now, -90), endTime: DateUtil.addMinutes(now, -30) }),
             createShowtimeDto({
                 movieId: movieIds[0],
-                startTime: addMinutes(now, 30),
-                endTime: addMinutes(now, 90)
+                startTime: DateUtil.addMinutes(now, 30),
+                endTime: DateUtil.addMinutes(now, 90)
             }),
             createShowtimeDto({
                 movieId: movieIds[1],
-                startTime: addMinutes(now, 120),
-                endTime: addMinutes(now, 150)
+                startTime: DateUtil.addMinutes(now, 120),
+                endTime: DateUtil.addMinutes(now, 150)
             })
         ]
 

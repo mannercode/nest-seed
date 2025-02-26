@@ -1,5 +1,5 @@
-import { Logger, BadRequestException } from '@nestjs/common'
-import { addMinutes } from 'common'
+import { BadRequestException, Logger } from '@nestjs/common'
+import { DateUtil } from 'common'
 
 const PURCHASE_MAX_TICKETS = 10
 const PURCHASE_DEADLINE_MINUTES = 30
@@ -15,7 +15,7 @@ export function checkMaxTicketsForPurchase(ticketCount: number) {
 }
 
 export function checkPurchaseDeadline(startTime: Date) {
-    const cutoffTime = addMinutes(new Date(), PURCHASE_DEADLINE_MINUTES)
+    const cutoffTime = DateUtil.addMinutes(new Date(), PURCHASE_DEADLINE_MINUTES)
 
     if (startTime.getTime() < cutoffTime.getTime()) {
         Logger.error(startTime.toLocaleTimeString(), cutoffTime.toLocaleTimeString())

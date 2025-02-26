@@ -32,7 +32,7 @@
             "BUILD_RUN": {
                 "description": "멀티 앱 구조로 APP_NAME 지정 필수",
                 "examples": [
-                    "APP_NAME=apps npm run watch:app",
+                    "APP_NAME=cores npm run watch:app",
                     "APP_NAME=gateway npm start"
                 ],
                 "availableOptions": [

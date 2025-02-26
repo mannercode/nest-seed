@@ -5,7 +5,6 @@ import {
     addQuotesToNumbers,
     Byte,
     comment,
-    equalsIgnoreCase,
     generateShortId,
     generateUUID,
     getChecksum,
@@ -140,26 +139,6 @@ describe('common/utils/etc', () => {
             const data = JSON.parse(processedText)
 
             expect(data[0].bit32).toEqual('123456')
-        })
-    })
-
-    describe('equalsIgnoreCase', () => {
-        it('대소문자가 다른 두 문자열이 동일하다고 판단되어야 한다', () => {
-            const isEqual = equalsIgnoreCase('hello', 'HELLO')
-
-            expect(isEqual).toBeTruthy()
-        })
-
-        it('두 문자열이 다르면 false를 반환해야 한다', () => {
-            const isEqual = equalsIgnoreCase('hello', 'world')
-
-            expect(isEqual).toBeFalsy()
-        })
-
-        it('두 입력값 모두 undefined인 경우 false를 반환해야 한다', () => {
-            const isEqual = equalsIgnoreCase(undefined, undefined)
-
-            expect(isEqual).toBeFalsy()
         })
     })
 

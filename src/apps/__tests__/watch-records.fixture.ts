@@ -1,7 +1,7 @@
-import { addDays } from 'common'
+import { DateUtil } from 'common'
 import { WatchRecordsService } from 'cores'
 import { nullObjectId, testObjectId } from 'testlib'
-import { createAllTestContexts, AllTestContexts } from './utils'
+import { AllTestContexts, createAllTestContexts } from './utils'
 
 export interface Fixture {
     testContext: AllTestContexts
@@ -48,7 +48,7 @@ export const createWatchRecords = async (service: WatchRecordsService, overrides
         Array.from({ length: 10 }, async (_, index) =>
             createWatchRecord(service, {
                 movieId: testObjectId(`${index}`),
-                watchDate: addDays(baseDate, index),
+                watchDate: DateUtil.addDays(baseDate, index),
                 ...overrides
             })
         )
