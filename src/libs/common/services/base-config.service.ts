@@ -1,9 +1,7 @@
-/* istanbul ignore file */
-
 import { ConfigService } from '@nestjs/config'
 import Joi from 'joi'
 
-export class BaseConfigService {
+export abstract class BaseConfigService {
     constructor(
         private configService: ConfigService<object, true>,
         private configSchema: Joi.ObjectSchema<any>

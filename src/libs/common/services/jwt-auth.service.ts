@@ -1,7 +1,7 @@
 import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import { DynamicModule, Inject, Injectable, Module, UnauthorizedException } from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
-import { generateShortId, DateUtil, notUsed } from 'common'
+import { DateUtil, generateShortId, notUsed } from 'common'
 import Redis from 'ioredis'
 
 export interface AuthTokenPayload {
@@ -59,7 +59,6 @@ export class JwtAuthService {
 
         const storedRefreshToken = await this.getStoredRefreshToken(payload.userId)
 
-        /* istanbul ignore if */
         if (storedRefreshToken !== refreshToken) {
             throw new UnauthorizedException({
                 code: 'ERR_REFRESH_TOKEN_INVALID',
@@ -106,7 +105,6 @@ export class JwtAuthService {
     }
 }
 
-/* istanbul ignore next */
 export function InjectJwtAuth(name: string): ParameterDecorator {
     return Inject(JwtAuthService.getToken(name))
 }

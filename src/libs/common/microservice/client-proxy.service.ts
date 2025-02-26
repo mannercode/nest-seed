@@ -26,7 +26,6 @@ export class ClientProxyService implements OnModuleDestroy {
     }
 }
 
-/* istanbul ignore next */
 export function InjectClientProxy(name: string): ParameterDecorator {
     return Inject(ClientProxyService.getToken(name))
 }

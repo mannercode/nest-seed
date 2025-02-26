@@ -146,7 +146,7 @@ export class DateUtil {
      */
     static fromYMD(dateString: string): Date {
         if (!(dateString.length === 8 || dateString.length === 12)) {
-            throw new Error('Invalid date string format. Expected YYYYMMDD or YYYYMMDDHHmm.')
+            throw new Exception('Invalid date string format. Expected YYYYMMDD or YYYYMMDDHHmm.')
         }
 
         const year = parseInt(dateString.substring(0, 4), 10)

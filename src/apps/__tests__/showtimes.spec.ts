@@ -107,7 +107,10 @@ describe('Showtimes Module', () => {
         const movieIds = [testObjectId('a1'), testObjectId('a2')]
         const now = new Date()
         const createDtos = [
-            createShowtimeDto({ startTime: DateUtil.addMinutes(now, -90), endTime: DateUtil.addMinutes(now, -30) }),
+            createShowtimeDto({
+                startTime: DateUtil.addMinutes(now, -90),
+                endTime: DateUtil.addMinutes(now, -30)
+            }),
             createShowtimeDto({
                 movieId: movieIds[0],
                 startTime: DateUtil.addMinutes(now, 30),

@@ -6,20 +6,17 @@ import Redis from 'ioredis'
 export class RedisHealthIndicator {
     constructor(private readonly healthIndicatorService: HealthIndicatorService) {}
 
-    async isHealthy(key: string, connection: Redis) {
-        // Start the health indicator check for the given key
+    async isHealthy(key: string, redis: Redis) {
         const indicator = this.healthIndicatorService.check(key)
 
         try {
-            const pong = await connection.ping()
+            const pong = await redis.ping()
             if (pong === 'PONG') {
                 return indicator.up()
             }
 
-            /* istanbul ignore next */
             return indicator.down({ reason: 'Redis ping failed' })
         } catch (error) {
-            /* istanbul ignore next */
             return indicator.down({ reason: error.message ?? 'RedisHealthIndicator failed' })
         }
     }

@@ -1,8 +1,14 @@
 import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
+import { Injectable } from '@nestjs/common'
 import { TestingModule } from '@nestjs/testing'
-import { CacheModule, CacheService, sleep } from 'common'
+import { CacheModule, CacheService, InjectCache, sleep } from 'common'
 import Redis from 'ioredis'
 import { createTestingModule, getRedisTestConnection, withTestId } from 'testlib'
+
+@Injectable()
+export class TestCacheService {
+    constructor(@InjectCache('name') _service: CacheService) {}
+}
 
 describe('CacheService', () => {
     let module: TestingModule
@@ -23,7 +29,8 @@ describe('CacheService', () => {
                     redisName: 'redis',
                     prefix: withTestId('cache')
                 })
-            ]
+            ],
+            providers: [TestCacheService]
         })
 
         cacheService = module.get(CacheService.getToken('name'))
