@@ -3,13 +3,13 @@
     "version": "0.0.1",
     "private": true,
     "scripts": {
-        "start": "node _output/dist/${APP_NAME}/index.js",
-        "build": "echo APP_NAME=${APP_NAME} && nest build ${APP_NAME} -b webpack",
+        "start": "node _output/dist/${APP}/index.js",
+        "build": "echo APP=${APP} && nest build ${APP} -b webpack",
         "lint": "prettier --write 'src/**/*.ts' && eslint src",
         "infra": "bash scripts/run-infra.sh && bash scripts/reset-output.sh",
-        "watch:app": "nest start ${APP_NAME} --watch --debug ${DEBUG_PORT}",
+        "watch:app": "nest start ${APP} --watch --debug ${DEBUG_PORT}",
         "watch:test": "npm run infra && node --inspect=9330 -r ts-node/register ./node_modules/.bin/jest --watch --onlyChanged",
-        "test:base": "npm run infra && jest --no-cache --coverage --config ./configs/jest.config.${TEST_NAME}.ts",
+        "test:base": "npm run infra && jest --no-cache --coverage --config ./configs/jest.config.${TEST}.ts",
         "test:100x": "bash -c 'for i in {1..100}; do npm run test:base || { echo \"Test failed at iteration $i\"; exit 1; }; done'"
     },
     "comments": {
@@ -18,10 +18,10 @@
         ],
         "INSTRUCTIONS": {
             "TESTING": {
-                "description": "테스트 실행시 TEST_NAME 환경변수 필수",
+                "description": "테스트 실행시 TEST 환경변수 필수",
                 "examples": [
-                    "TEST_NAME=all npm run test:100x",
-                    "TEST_NAME=common npm run test:base"
+                    "TEST=all npm run test:100x",
+                    "TEST=common npm run test:base"
                 ],
                 "availableOptions": [
                     "all",
@@ -30,10 +30,10 @@
                 ]
             },
             "BUILD_RUN": {
-                "description": "멀티 앱 구조로 APP_NAME 지정 필수",
+                "description": "멀티 앱 구조로 APP 지정 필수",
                 "examples": [
-                    "APP_NAME=cores npm run watch:app",
-                    "APP_NAME=gateway npm start"
+                    "APP=cores npm run watch:app",
+                    "APP=gateway npm start"
                 ],
                 "availableOptions": [
                     "applications",
