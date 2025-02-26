@@ -20,6 +20,11 @@ class CreateSampleDto {
 class SampleController {
     constructor() {}
 
+    @MessagePattern(withTestId('subject.createSample'))
+    createSample(createDto: CreateSampleDto) {
+        return createDto
+    }
+
     @MessagePattern(withTestId('subject.throwHttpException'))
     throwHttpException() {
         throw new NotFoundException('not found exception')
@@ -35,9 +40,9 @@ class SampleController {
         throw new Error('error')
     }
 
-    @MessagePattern(withTestId('subject.createSample'))
-    createSample(createDto: CreateSampleDto) {
-        return createDto
+    @MessagePattern(withTestId('subject.throwObjectWithoutMessage'))
+    throwObjectWithoutMessage() {
+        throw { someKey: 'value' }
     }
 }
 

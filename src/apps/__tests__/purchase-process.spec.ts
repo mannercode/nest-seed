@@ -87,7 +87,7 @@ describe('/purchase-process', () => {
         })
     })
 
-    describe('errors', () => {
+    describe('구매 가능 확인', () => {
         it('최대 구매 수량을 초과하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
             const showtime = await createShowtime(fixture, DateUtil.addMinutes(new Date(), 120))
             const tickets = await createAllTickets(fixture, showtime)
@@ -132,6 +132,28 @@ describe('/purchase-process', () => {
                 .post('/purchases')
                 .body({ customerId, totalPrice, items })
                 .badRequest({ code: 'ERR_TICKET_NOT_HELD', message: expect.any(String) })
+        })
+    })
+
+    describe('errors', () => {
+        it('구매 완료 단계에서 예외가 발생하면 InternalServerError(500)를 반환해야 한다', async () => {
+            const showtime = await createShowtime(fixture, DateUtil.addMinutes(new Date(), 120))
+            const tickets = await createAllTickets(fixture, showtime)
+            const items = [{ type: PurchaseItemType.ticket, ticketId: tickets[0].id }]
+            await holdTickets(fixture, showtime.id, tickets)
+
+            jest.spyOn(fixture.ticketsService, 'updateTicketStatus').mockImplementationOnce(() => {
+                throw new Error('purchase error')
+            })
+
+            const spyRollback = jest.spyOn(fixture.ticketPurchaseProcessor, 'rollbackPurchase')
+
+            await client
+                .post('/purchases')
+                .body({ customerId, totalPrice, items })
+                .internalServerError({ statusCode: 500, message: 'Internal server error' })
+
+            expect(spyRollback).toHaveBeenCalledTimes(1)
         })
     })
 

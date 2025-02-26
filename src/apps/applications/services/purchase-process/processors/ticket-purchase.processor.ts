@@ -12,13 +12,15 @@ import {
 } from 'cores'
 import { uniq } from 'lodash'
 import { checkHeldTickets, checkMaxTicketsForPurchase, checkPurchaseDeadline } from '../domain'
+import { PurchaseProcessProxy } from '../purchase-process.proxy'
 
 @Injectable()
 export class TicketPurchaseProcessor {
     constructor(
         private ticketsService: TicketsProxy,
         private showtimesService: ShowtimesProxy,
-        private ticketHoldingService: TicketHoldingProxy
+        private ticketHoldingService: TicketHoldingProxy,
+        private purchaseProcessProxy: PurchaseProcessProxy
     ) {}
 
     @MethodLog()
@@ -76,19 +78,20 @@ export class TicketPurchaseProcessor {
 
         await this.ticketsService.updateTicketStatus(ticketIds, TicketStatus.sold)
 
-        // TicketProcessor ->o]: ticketPurchasedEvent(customer, ticketIds[])
+        await this.purchaseProcessProxy.emitTicketPurchased(createDto.customerId, ticketIds)
+
         return true
     }
 
     @MethodLog()
-    /* istanbul ignore next */
     async rollbackPurchase(createDto: PurchaseCreateDto) {
         const ticketItems = createDto.items.filter((item) => item.type === PurchaseItemType.ticket)
         const ticketIds = ticketItems.map((item) => item.ticketId)
 
         await this.ticketsService.updateTicketStatus(ticketIds, TicketStatus.available)
 
-        // TicketProcessor ->o]: ticketPurchasedEvent(customer, ticketIds[])
+        await this.purchaseProcessProxy.emitTicketPurchaseCanceled(createDto.customerId, ticketIds)
+
         return true
     }
 }

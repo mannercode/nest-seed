@@ -3,6 +3,7 @@ import { ClientProxyService, InjectClientProxy } from 'common'
 import { ShowtimeDto } from 'cores'
 import { ClientProxyConfig, Subjects } from 'shared/config'
 
+// TODO proxy로 옮겨라
 @Injectable()
 export class ShowtimeCreationEventsService {
     constructor(

@@ -11,7 +11,6 @@ export class HttpToRpcExceptionFilter implements RpcExceptionFilter<any> {
         } else if (exception.status && exception.response) {
             error = exception
         } else {
-            /* istanbul ignore next */
             error = { status: 500, message: exception.message ?? 'Internal server error' }
         }
 

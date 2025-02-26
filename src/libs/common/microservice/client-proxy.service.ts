@@ -30,8 +30,12 @@ export function InjectClientProxy(name: string): ParameterDecorator {
     return Inject(ClientProxyService.getToken(name))
 }
 
+export async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
+    return lastValueFrom(observer)
+}
+
 export async function getProxyValue<T>(observer: Observable<T>): Promise<T> {
-    return jsonToObject(await lastValueFrom(observer))
+    return jsonToObject(await waitProxyValue(observer))
 }
 
 @Global()

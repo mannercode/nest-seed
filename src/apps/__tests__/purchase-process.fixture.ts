@@ -25,6 +25,7 @@ import { createShowtimeDto, createShowtimes } from './showtimes.fixture'
 import { createTheater } from './theaters.fixture'
 import { createTicketDto, createTickets } from './tickets.fixture'
 import { AllTestContexts, createAllTestContexts } from './utils'
+import { TicketPurchaseProcessor } from '../applications/services/purchase-process/processors'
 
 export interface Fixture {
     testContext: AllTestContexts
@@ -36,6 +37,7 @@ export interface Fixture {
     paymentsService: PaymentsService
     ticketsService: TicketsService
     ticketHoldingService: TicketHoldingService
+    ticketPurchaseProcessor: TicketPurchaseProcessor
 }
 
 export async function createFixture() {
@@ -58,6 +60,7 @@ export async function createFixture() {
     const ticketHoldingService = module.get(TicketHoldingService)
     const purchasesService = module.get(PurchasesService)
     const paymentsService = testContext.infrasContext.module.get(PaymentsService)
+    const ticketPurchaseProcessor = testContext.appsContext.module.get(TicketPurchaseProcessor)
 
     return {
         testContext,
@@ -68,7 +71,8 @@ export async function createFixture() {
         paymentsService,
         ticketsService,
         ticketHoldingService,
-        showtimesService
+        showtimesService,
+        ticketPurchaseProcessor
     }
 }
 
