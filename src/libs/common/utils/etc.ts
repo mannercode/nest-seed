@@ -27,7 +27,6 @@ export function generateShortId(length: number = 15): string {
     return result
 }
 
-
 /**
  * JSON 문자열 내의 숫자(정수)를 큰 정밀도를 유지하기 위해 문자열로 감싸 반환합니다.
  * JSON에 64비트 정수가 있으면 object 변환 과정에서 number 타입으로 처리되므로 정확한 값을 얻을 수 없다.
