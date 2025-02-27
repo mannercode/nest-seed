@@ -7,7 +7,7 @@
             "label": "Test",
             "detail": "Execute the selected test suites",
             "type": "shell",
-            "command": "TEST_NAME=${input:tests} npm run test:base"
+            "command": "TEST=${input:tests} npm run test:base"
         },
         {
             "label": "CLI",
