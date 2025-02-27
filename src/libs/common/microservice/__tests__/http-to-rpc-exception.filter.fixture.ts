@@ -1,14 +1,16 @@
-import { Controller, NotFoundException, ValidationPipe } from '@nestjs/common'
+import { Controller, Get, NotFoundException, ValidationPipe } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
 import { MessagePattern, MicroserviceOptions, NatsOptions, Transport } from '@nestjs/microservices'
 import { IsNotEmpty, IsString } from 'class-validator'
 import {
     createTestContext,
     getNatsTestConnection,
+    HttpTestClient,
     MicroserviceTestClient,
     withTestId
 } from 'testlib'
 import { HttpToRpcExceptionFilter } from '../http-to-rpc-exception.filter'
+import { ClientProxyModule, ClientProxyService, InjectClientProxy } from '../client-proxy.service'
 
 class CreateSampleDto {
     @IsString()
@@ -18,31 +20,26 @@ class CreateSampleDto {
 
 @Controller()
 class SampleController {
-    constructor() {}
-
-    @MessagePattern(withTestId('subject.createSample'))
-    createSample(createDto: CreateSampleDto) {
-        return createDto
-    }
+    constructor(@InjectClientProxy('name') private client: ClientProxyService) {}
 
     @MessagePattern(withTestId('subject.throwHttpException'))
     throwHttpException() {
         throw new NotFoundException('not found exception')
     }
 
-    @MessagePattern(withTestId('subject.rethrow'))
-    rethrow() {
-        throw { status: 400, response: { message: 'error message' } }
-    }
-
     @MessagePattern(withTestId('subject.throwError'))
     throwError() {
-        throw new Error('error')
+        throw new Error('error message')
     }
 
-    @MessagePattern(withTestId('subject.throwObjectWithoutMessage'))
-    throwObjectWithoutMessage() {
-        throw { someKey: 'value' }
+    @MessagePattern(withTestId('subject.verifyDto'))
+    verifyDto(createDto: CreateSampleDto) {
+        return createDto
+    }
+
+    @Get('throwHttpException')
+    getThrowHttpException() {
+        throw new NotFoundException('not found exception')
     }
 }
 
@@ -52,6 +49,9 @@ export async function createFixture() {
 
     const testContext = await createTestContext({
         metadata: {
+            imports: [
+                ClientProxyModule.registerAsync({ name: 'name', useFactory: () => brokerOptions })
+            ],
             controllers: [SampleController],
             providers: [{ provide: APP_PIPE, useFactory: () => new ValidationPipe() }]
         },
@@ -64,11 +64,12 @@ export async function createFixture() {
     })
 
     const client = MicroserviceTestClient.create(brokerOptions)
+    const httpClient = new HttpTestClient(testContext.httpPort)
 
     const closeFixture = async () => {
         await client?.close()
         await testContext?.close()
     }
 
-    return { testContext, closeFixture, client }
+    return { testContext, closeFixture, client, httpClient }
 }

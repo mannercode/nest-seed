@@ -1,7 +1,6 @@
 import { DynamicModule, Global, Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
 import { ClientProxy, ClientsModule, ClientsProviderAsyncOptions } from '@nestjs/microservices'
-import { jsonToObject } from 'common'
-import { lastValueFrom, Observable } from 'rxjs'
+import { Observable } from 'rxjs'
 
 @Injectable()
 export class ClientProxyService implements OnModuleDestroy {
@@ -28,14 +27,6 @@ export class ClientProxyService implements OnModuleDestroy {
 
 export function InjectClientProxy(name: string): ParameterDecorator {
     return Inject(ClientProxyService.getToken(name))
-}
-
-export async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
-    return lastValueFrom(observer)
-}
-
-export async function getProxyValue<T>(observer: Observable<T>): Promise<T> {
-    return jsonToObject(await waitProxyValue(observer))
 }
 
 @Global()

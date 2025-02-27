@@ -128,7 +128,7 @@ export class AppConfigService extends BaseConfigService {
         return { servers }
     }
 
-    // services는 main.ts에서만 호출돼서 coverage에 포함되지 않는다.
+    // TODO services는 main.ts에서만 호출돼서 coverage에 포함되지 않는다.
     /* istanbul ignore next */
     get services() {
         return {

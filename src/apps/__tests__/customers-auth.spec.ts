@@ -1,6 +1,8 @@
-import { CustomerDto } from 'cores'
+import { Customer, CustomerDto } from 'cores'
 import { HttpTestClient } from 'testlib'
 import { closeFixture, Fixture } from './customers-auth.fixture'
+import { getModelToken } from '@nestjs/mongoose'
+import { MongooseConfig } from 'shared/config'
 
 describe('/customers(authentication)', () => {
     let fixture: Fixture
@@ -46,6 +48,26 @@ describe('/customers(authentication)', () => {
                 .post('/customers/login')
                 .body({ email: 'unknown@mail.com', password: '.' })
                 .unauthorized({ message: 'Unauthorized', statusCode: 401 })
+        })
+
+        it('customer가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
+            const model = fixture.testContext.coresContext.module.get(
+                getModelToken(Customer.name, MongooseConfig.connName)
+            )
+            jest.spyOn(model, 'findById').mockImplementation(() => ({
+                select: jest.fn().mockImplementation(() => ({
+                    exec: jest.fn()
+                }))
+            }))
+
+            await client
+                .post('/customers/login')
+                .body({ email, password })
+                .notFound({
+                    message: 'Customer not found',
+                    code: 'ERR_CUSTOMER_NOT_FOUND',
+                    customerId: customer.id
+                })
         })
     })
 

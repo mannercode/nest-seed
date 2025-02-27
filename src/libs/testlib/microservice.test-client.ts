@@ -23,6 +23,6 @@ export class MicroserviceTestClient {
 
     async error(cmd: string, payload: any, expected: any) {
         const promise = lastValueFrom(this.proxy.send(cmd, payload))
-        await expect(promise).rejects.toMatchObject(expected)
+        await expect(promise).rejects.toEqual(expected)
     }
 }
