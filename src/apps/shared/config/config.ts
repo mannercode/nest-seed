@@ -67,6 +67,7 @@ export class AppConfigService extends BaseConfigService {
             consoleLogLevel: this.getString('LOG_CONSOLE_LEVEL')
         }
     }
+
     get redis() {
         const hosts = [
             this.getString('REDIS_HOST1'),
@@ -82,6 +83,7 @@ export class AppConfigService extends BaseConfigService {
 
         return { nodes, password }
     }
+
     get mongo() {
         return {
             host1: this.getString('MONGO_HOST1'),
@@ -128,8 +130,6 @@ export class AppConfigService extends BaseConfigService {
         return { servers }
     }
 
-    // TODO services는 main.ts에서만 호출돼서 coverage에 포함되지 않는다.
-    /* istanbul ignore next */
     get services() {
         return {
             gateway: {

@@ -79,8 +79,7 @@ export const Messages = createRouteMap(
             findMovies: null,
             findTheaters: null,
             findShowtimes: null,
-            createBatchShowtimes: null,
-            event: null
+            createBatchShowtimes: null
         },
         Recommendation: {
             findRecommendedMovies: null
@@ -98,5 +97,14 @@ export const Messages = createRouteMap(
             holdTickets: null
         }
     },
-    uniqueWhenTesting(ProjectName)
+    uniqueWhenTesting(`${ProjectName}.message`)
+)
+
+export const Events = createRouteMap(
+    {
+        ShowtimeCreation: {
+            statusChanged: null
+        }
+    },
+    uniqueWhenTesting(`${ProjectName}.event`)
 )
