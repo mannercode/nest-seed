@@ -86,7 +86,9 @@ export const Subjects = createRouteMap(
             findRecommendedMovies: null
         },
         PurchaseProcess: {
-            processPurchase: null
+            processPurchase: null,
+            TicketPurchased: null,
+            TicketPurchaseCanceled: null
         },
         Booking: {
             findShowingTheaters: null,
