@@ -1,8 +1,8 @@
+import { getModelToken } from '@nestjs/mongoose'
 import { Customer, CustomerDto } from 'cores'
+import { MongooseConfig } from 'shared/config'
 import { HttpTestClient } from 'testlib'
 import { closeFixture, Fixture } from './customers-auth.fixture'
-import { getModelToken } from '@nestjs/mongoose'
-import { MongooseConfig } from 'shared/config'
 
 describe('/customers(authentication)', () => {
     let fixture: Fixture
@@ -60,14 +60,11 @@ describe('/customers(authentication)', () => {
                 }))
             }))
 
-            await client
-                .post('/customers/login')
-                .body({ email, password })
-                .notFound({
-                    message: 'Customer not found',
-                    code: 'ERR_CUSTOMER_NOT_FOUND',
-                    customerId: customer.id
-                })
+            await client.post('/customers/login').body({ email, password }).notFound({
+                message: 'Customer not found',
+                code: 'ERR_CUSTOMER_NOT_FOUND',
+                customerId: customer.id
+            })
         })
     })
 
