@@ -1,5 +1,5 @@
 import { createRouteMap } from 'common'
-import { uniqueWhenTesting } from './etc'
+import { ProjectName, uniqueWhenTesting } from './etc'
 
 const Http = {
     // MoviesService에서 경로를 참조한다.
@@ -8,7 +8,7 @@ const Http = {
 
 export const Routes = { Http }
 
-export const Subjects = createRouteMap(
+export const Messages = createRouteMap(
     {
         StorageFiles: {
             saveFiles: null,
@@ -98,5 +98,5 @@ export const Subjects = createRouteMap(
             holdTickets: null
         }
     },
-    uniqueWhenTesting('nest-seed')
+    uniqueWhenTesting(ProjectName)
 )

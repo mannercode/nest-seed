@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { Subjects } from 'shared/config'
+import { Messages } from 'shared/config'
 import { CustomersService } from './customers.service'
 import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
 
@@ -8,12 +8,12 @@ import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
 export class CustomersController {
     constructor(private service: CustomersService) {}
 
-    @MessagePattern(Subjects.Customers.createCustomer)
+    @MessagePattern(Messages.Customers.createCustomer)
     async createCustomer(@Payload() createDto: CustomerCreateDto) {
         return this.service.createCustomer(createDto)
     }
 
-    @MessagePattern(Subjects.Customers.updateCustomer)
+    @MessagePattern(Messages.Customers.updateCustomer)
     updateCustomer(
         @Payload('customerId') customerId: string,
         @Payload('updateDto') updateDto: CustomerUpdateDto
@@ -21,32 +21,32 @@ export class CustomersController {
         return this.service.updateCustomer(customerId, updateDto)
     }
 
-    @MessagePattern(Subjects.Customers.getCustomer)
+    @MessagePattern(Messages.Customers.getCustomer)
     getCustomer(@Payload() customerId: string) {
         return this.service.getCustomer(customerId)
     }
 
-    @MessagePattern(Subjects.Customers.deleteCustomer)
+    @MessagePattern(Messages.Customers.deleteCustomer)
     deleteCustomer(@Payload() customerId: string) {
         return this.service.deleteCustomer(customerId)
     }
 
-    @MessagePattern(Subjects.Customers.findCustomers)
+    @MessagePattern(Messages.Customers.findCustomers)
     findCustomers(@Payload() queryDto: CustomerQueryDto) {
         return this.service.findCustomers(queryDto)
     }
 
-    @MessagePattern(Subjects.Customers.login)
+    @MessagePattern(Messages.Customers.login)
     login(@Payload('userId') userId: string, @Payload('email') email: string) {
         return this.service.login(userId, email)
     }
 
-    @MessagePattern(Subjects.Customers.refreshAuthTokens)
+    @MessagePattern(Messages.Customers.refreshAuthTokens)
     refreshAuthTokens(@Payload() refreshToken: string) {
         return this.service.refreshAuthTokens(refreshToken)
     }
 
-    @MessagePattern(Subjects.Customers.authenticateCustomer)
+    @MessagePattern(Messages.Customers.authenticateCustomer)
     authenticateCustomer(@Payload('email') email: string, @Payload('password') password: string) {
         return this.service.authenticateCustomer(email, password)
     }

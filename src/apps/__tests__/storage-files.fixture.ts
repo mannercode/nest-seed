@@ -27,7 +27,7 @@ export async function createSharedFixture() {
     await createDummyFile(largeFile, largeFileSize)
 
     const notAllowFile = Path.join(tempDir, 'file.json')
-    await writeFile(notAllowFile, '{"name":"nest-seed"}')
+    await writeFile(notAllowFile, '{"name":"json value"}')
 
     const oversizedFile = Path.join(tempDir, 'oversized.txt')
     await createDummyFile(oversizedFile, maxFileSizeBytes + 1)

@@ -6,7 +6,7 @@ import {
     MethodLog,
     PaginationResult
 } from 'common'
-import { ClientProxyConfig, Subjects } from 'shared/config'
+import { ClientProxyConfig, Messages } from 'shared/config'
 import { WatchRecordDto, WatchRecordQueryDto } from './dtos'
 
 @Injectable()
@@ -17,6 +17,6 @@ export class WatchRecordsProxy {
 
     @MethodLog({ level: 'verbose' })
     findWatchRecords(queryDto: WatchRecordQueryDto): Promise<PaginationResult<WatchRecordDto>> {
-        return getProxyValue(this.service.send(Subjects.WatchRecords.findWatchRecords, queryDto))
+        return getProxyValue(this.service.send(Messages.WatchRecords.findWatchRecords, queryDto))
     }
 }
