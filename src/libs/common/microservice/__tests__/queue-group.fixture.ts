@@ -29,6 +29,8 @@ export class MessageController {
     processBroadcastLogic() {}
 }
 
+export const numberOfInstance = 10
+
 export async function createFixture() {
     const { servers } = getNatsTestConnection()
     const brokerOptions = {
@@ -44,15 +46,15 @@ export async function createFixture() {
         }
     }
 
-    const testContext1 = await createTestContext(options)
-    const testContext2 = await createTestContext(options)
+    const testContexts = await Promise.all(
+        Array.from({ length: numberOfInstance }, async () => createTestContext(options))
+    )
 
     const client = MicroserviceTestClient.create(brokerOptions)
 
     const closeFixture = async () => {
         await client?.close()
-        await testContext1?.close()
-        await testContext2?.close()
+        await Promise.all(testContexts.map(async (context) => context.close()))
     }
 
     return { closeFixture, client, MessageController }
