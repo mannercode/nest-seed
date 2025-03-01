@@ -57,8 +57,9 @@ export class ShowtimeCreationController implements OnModuleDestroy {
         return this.sseEventSubject.asObservable()
     }
 
-    private static allInstancesReceive = { queue: false }
-    @EventPattern(Events.ShowtimeCreation.statusChanged, ShowtimeCreationController.allInstancesReceive)
+    @EventPattern(Events.ShowtimeCreation.statusChanged, {
+        queue: false // 모든 인스턴스에 이벤트 브로드캐스팅 설정
+    })
     handleEvent(data: any) {
         this.sseEventSubject.next({ data })
     }
