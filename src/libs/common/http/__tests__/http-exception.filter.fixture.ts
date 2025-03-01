@@ -1,7 +1,7 @@
 import { BadRequestException, Controller, Get, PayloadTooLargeException } from '@nestjs/common'
 import { APP_FILTER } from '@nestjs/core'
 import { HttpExceptionFilter } from 'common'
-import { createHttpTestContext, HttpTestClient } from 'testlib'
+import { createHttpTestContext } from 'testlib'
 
 @Controller()
 class TestController {
@@ -23,15 +23,15 @@ class TestController {
 
 export async function createFixture() {
     const testContext = await createHttpTestContext({
-        controllers: [TestController],
-        providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }]
+        metadata: {
+            controllers: [TestController],
+            providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }]
+        }
     })
-
-    const client = new HttpTestClient(testContext.httpPort)
 
     const closeFixture = async () => {
         await testContext?.close()
     }
 
-    return { testContext, closeFixture, client }
+    return { testContext, closeFixture, client: testContext.httpClient }
 }

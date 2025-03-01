@@ -7,6 +7,7 @@ import { configureGateway, GatewayModule } from 'gateway'
 import { configureInfrastructures, InfrastructuresModule } from 'infrastructures'
 import { RedisConfig } from 'shared/config'
 import {
+    createHttpTestContext,
     createTestContext,
     getNatsTestConnection,
     HttpTestClient,
@@ -89,13 +90,11 @@ export async function createAllTestContexts({
         configureApp: configureApplications
     })
 
-    const gatewayContext = await createTestContext({
+    const gatewayContext = await createHttpTestContext({
         metadata: createMetadata(GatewayModule, http),
         brokers,
         configureApp: configureGateway
     })
-
-    const client = new HttpTestClient(gatewayContext.httpPort)
 
     const close = async () => {
         const redisToken = getRedisConnectionToken(RedisConfig.connName)
@@ -123,6 +122,6 @@ export async function createAllTestContexts({
         coresContext,
         infrasContext,
         close,
-        client
+        client: gatewayContext.httpClient
     }
 }

@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common'
 import { LatLong, LatLongQuery } from 'common'
-import { createHttpTestContext, HttpTestClient } from 'testlib'
+import { createHttpTestContext } from 'testlib'
 
 @Controller()
 class TestController {
@@ -11,13 +11,15 @@ class TestController {
 }
 
 export async function createFixture() {
-    const testContext = await createHttpTestContext({ controllers: [TestController] })
-
-    const client = new HttpTestClient(testContext.httpPort)
+    const testContext = await createHttpTestContext({
+        metadata: {
+            controllers: [TestController]
+        }
+    })
 
     const closeFixture = async () => {
         await testContext?.close()
     }
 
-    return { testContext, closeFixture, client }
+    return { testContext, closeFixture, client: testContext.httpClient }
 }

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { createMongooseSchema, MongooseRepository, MongooseSchema } from 'common'
 import { Model } from 'mongoose'
-import { createHttpTestContext, getMongoTestConnection, withTestId } from 'testlib'
+import { createTestContext, getMongoTestConnection, withTestId } from 'testlib'
 
 @Schema()
 class Sample extends MongooseSchema {
@@ -22,14 +22,16 @@ export class SamplesRepository extends MongooseRepository<Sample> {
 export async function createFixture() {
     const { uri } = getMongoTestConnection()
 
-    const testContext = await createHttpTestContext({
-        imports: [
-            MongooseModule.forRootAsync({
-                useFactory: () => ({ uri, dbName: withTestId('test') })
-            }),
-            MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])
-        ],
-        providers: [SamplesRepository]
+    const testContext = await createTestContext({
+        metadata: {
+            imports: [
+                MongooseModule.forRootAsync({
+                    useFactory: () => ({ uri, dbName: withTestId('test') })
+                }),
+                MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])
+            ],
+            providers: [SamplesRepository]
+        }
     })
 
     const repository = testContext.module.get(SamplesRepository)

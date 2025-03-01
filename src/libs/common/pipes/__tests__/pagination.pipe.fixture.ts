@@ -1,7 +1,7 @@
 import { Controller, Get, Injectable, Query, UsePipes, ValidationPipe } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
 import { PaginationOptionDto, PaginationPipe } from 'common'
-import { createHttpTestContext, HttpTestClient } from 'testlib'
+import { createHttpTestContext } from 'testlib'
 
 @Injectable()
 class DefaultPaginationPipe extends PaginationPipe {
@@ -26,24 +26,24 @@ class SamplesController {
 
 export async function createFixture() {
     const testContext = await createHttpTestContext({
-        controllers: [SamplesController],
-        providers: [
-            {
-                provide: APP_PIPE,
-                useFactory: () =>
-                    new ValidationPipe({
-                        transform: true,
-                        transformOptions: { enableImplicitConversion: true }
-                    })
-            }
-        ]
+        metadata: {
+            controllers: [SamplesController],
+            providers: [
+                {
+                    provide: APP_PIPE,
+                    useFactory: () =>
+                        new ValidationPipe({
+                            transform: true,
+                            transformOptions: { enableImplicitConversion: true }
+                        })
+                }
+            ]
+        }
     })
-
-    const client = new HttpTestClient(testContext.httpPort)
 
     const closeFixture = async () => {
         await testContext?.close()
     }
 
-    return { testContext, closeFixture, client }
+    return { testContext, closeFixture, client: testContext.httpClient }
 }

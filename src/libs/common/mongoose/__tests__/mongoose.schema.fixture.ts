@@ -2,7 +2,7 @@ import { getModelToken, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { createMongooseSchema, MongooseSchema } from 'common'
 import * as mongoose from 'mongoose'
 import { Model } from 'mongoose'
-import { createHttpTestContext, getMongoTestConnection, withTestId } from 'testlib'
+import { createTestContext, getMongoTestConnection, withTestId } from 'testlib'
 
 @Schema({
     toJSON: {
@@ -55,7 +55,6 @@ export class SchemaTypeSample extends MongooseSchema {
     @Prop({ type: [mongoose.Schema.Types.Mixed] })
     ofMixed: any[]
 
-    // 중첩 객체 (lowercase와 trim 옵션 포함)
     @Prop({ type: { stuff: { type: String, lowercase: true, trim: true } } })
     nested: { stuff: string }
 
@@ -71,13 +70,15 @@ export async function createFixture() {
 
     const { uri } = getMongoTestConnection()
 
-    const testContext = await createHttpTestContext({
-        imports: [
-            MongooseModule.forRootAsync({
-                useFactory: () => ({ uri, dbName: withTestId('test') })
-            }),
-            MongooseModule.forFeature([{ name: 'schema', schema }])
-        ]
+    const testContext = await createTestContext({
+        metadata: {
+            imports: [
+                MongooseModule.forRootAsync({
+                    useFactory: () => ({ uri, dbName: withTestId('test') })
+                }),
+                MongooseModule.forFeature([{ name: 'schema', schema }])
+            ]
+        }
     })
 
     const model = testContext.module.get<Model<SchemaTypeSample>>(getModelToken('schema'))

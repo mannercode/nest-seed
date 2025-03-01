@@ -6,13 +6,11 @@ const config: Config = {
     testRegex: '.*\\.spec\\.(ts|js)$',
     testEnvironment: 'node',
     transform: { '^.+\\.ts$': 'ts-jest' },
-    // This method only initialises the call count and instance information for all mock functions.
-    clearMocks: true,
-    // This method resets all calls and instances of the mock function.
-    // It also deletes any implementations set on the mock function.
-    resetMocks: true,
-    restoreMocks: true,
-    resetModules: true,
+    // 테스트 간 격리를 위해 모의 함수/모듈 상태를 완전히 초기화
+    clearMocks: true, // 각 테스트 후 mock 호출 기록 제거
+    resetMocks: true, // 각 테스트 후 mock 구현 초기화
+    restoreMocks: true, // 각 테스트 후 원본 구현 복원(spyOn)
+    resetModules: true, // 모듈 캐시 리셋(테스트 간 모듈 상태 격리)
     rootDir: '.',
     roots: ['<rootDir>/src'],
     moduleNameMapper: {

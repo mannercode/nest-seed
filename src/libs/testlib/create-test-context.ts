@@ -3,6 +3,7 @@ import { INestApplication } from '@nestjs/common'
 import { TestingModule } from '@nestjs/testing'
 import { ModuleMetadataEx, createTestingModule } from './create-testing-module'
 import { getAvailablePort } from './utils'
+import { HttpTestClient } from './http.test-client'
 
 async function listenOnAvailablePort(server: any): Promise<number> {
     const maxAttempts = 3
@@ -23,8 +24,11 @@ async function listenOnAvailablePort(server: any): Promise<number> {
 export interface TestContext {
     module: TestingModule
     app: INestApplication<any>
-    httpPort: number
     close: () => Promise<void>
+}
+
+export interface HttpTestContext extends TestContext {
+    httpClient: HttpTestClient
 }
 
 export interface TestContextOptions {
@@ -41,26 +45,31 @@ export async function createTestContext({
     const module = await createTestingModule(metadata)
     const app = module.createNestApplication()
 
-    if (configureApp) await configureApp(app, brokers)
+    await configureApp?.(app, brokers)
 
     const isDebuggingEnabled = process.env.NODE_OPTIONS !== undefined
     app.useLogger(isDebuggingEnabled ? console : false)
 
     await app.init()
 
-    const httpServer = app.getHttpServer()
-    const httpPort = await listenOnAvailablePort(httpServer)
-
     const close = () => app.close()
 
-    return { module, app, httpPort, close }
+    return { module, app, close }
 }
 
-export async function createHttpTestContext(metadata: ModuleMetadataEx) {
-    return createTestContext({
-        metadata,
+export async function createHttpTestContext(options: TestContextOptions): Promise<HttpTestContext> {
+    const testContext = await createTestContext({
+        ...options,
         configureApp: async (app) => {
             app.use(express.urlencoded({ extended: true }))
+
+            await options.configureApp?.(app, options.brokers)
         }
     })
+
+    const httpServer = testContext.app.getHttpServer()
+    const httpPort = await listenOnAvailablePort(httpServer)
+    const httpClient = new HttpTestClient(httpPort)
+
+    return { ...testContext, httpClient }
 }

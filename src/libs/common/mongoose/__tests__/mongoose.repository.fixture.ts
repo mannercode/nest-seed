@@ -8,7 +8,7 @@ import {
     padNumber
 } from 'common'
 import { HydratedDocument, Model } from 'mongoose'
-import { createHttpTestContext, getMongoTestConnection, withTestId } from 'testlib'
+import { createTestContext, getMongoTestConnection, withTestId } from 'testlib'
 
 @Schema({ toJSON: { virtuals: true } })
 class Sample extends MongooseSchema {
@@ -57,14 +57,16 @@ export const toDtos = (items: SampleDocument[]) => items.map((item) => toDto(ite
 export async function createFixture() {
     const { uri } = getMongoTestConnection()
 
-    const testContext = await createHttpTestContext({
-        imports: [
-            MongooseModule.forRootAsync({
-                useFactory: () => ({ uri, dbName: withTestId('test') })
-            }),
-            MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])
-        ],
-        providers: [SamplesRepository]
+    const testContext = await createTestContext({
+        metadata: {
+            imports: [
+                MongooseModule.forRootAsync({
+                    useFactory: () => ({ uri, dbName: withTestId('test') })
+                }),
+                MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])
+            ],
+            providers: [SamplesRepository]
+        }
     })
 
     const repository = testContext.module.get(SamplesRepository)
