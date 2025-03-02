@@ -8,7 +8,7 @@ CLI_OPTIONS=("redis" "mongo")
 if [ $# -ge 1 ]; then
     SELECTED_CLI="$1"
 else
-    echo -e "\nSelect Cli (↑↓ to navigate, Enter to select)"
+    echo -e "\nSelect CLI"
 
     SELECTED_CLI=$(prompt_selection "${CLI_OPTIONS[@]}")
 fi

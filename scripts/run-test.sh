@@ -8,11 +8,11 @@ if [ $# -ge 2 ]; then
     TEST_SUITE="$1"
     TEST_RUNS="$2"
 else
-    echo -e "\nSelect Test Target (↑↓ to navigate, Enter to select)"
+    echo -e "\nSelect Test Suites"
 
     TEST_SUITE=$(prompt_selection "${TEST_OPTIONS[@]}")
 
-    read -p "Enter number of runs (default 1): " runs
+    read -p "Enter number of runs (default 1): " TEST_RUNS
     TEST_RUNS=${TEST_RUNS:-1}
 fi
 
@@ -30,7 +30,7 @@ else
     EXTRA_OPTIONS=()
 fi
 
-for ((i = 1; i <= TEST_RUNS; i++)); do
+for ((i = 1; i <= $TEST_RUNS; i++)); do
     echo "[Run #$i/$TEST_RUNS]"
     bash $WORKSPACE_ROOT/scripts/reset-infra.sh
 
