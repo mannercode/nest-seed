@@ -34,6 +34,9 @@ export async function configureGateway(app: INestApplication<any>, servers: stri
     )
 
     await app.startAllMicroservices()
+
+    const logger = app.get(AppLoggerService)
+    app.useLogger(logger)
 }
 
 export async function bootstrap() {
@@ -43,9 +46,6 @@ export async function bootstrap() {
 
     const { servers } = config.nats
     configureGateway(app, servers)
-
-    const logger = app.get(AppLoggerService)
-    app.useLogger(logger)
 
     app.enableShutdownHooks()
 

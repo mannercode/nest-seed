@@ -4,23 +4,24 @@ import { WatchRecordDto, WatchRecordsService } from 'cores'
 import { expectEqualUnsorted, testObjectId } from 'testlib'
 import {
     closeFixture,
-    createFixture,
     createWatchRecordDto,
     createWatchRecords,
     Fixture
 } from './watch-records.fixture'
 
 describe('WatchRecords Module', () => {
-    let isolated: Fixture
+    let fixture: Fixture
     let service: WatchRecordsService
 
     beforeEach(async () => {
-        isolated = await createFixture()
-        service = isolated.watchRecordsService
+        const { createFixture } = await import('./watch-records.fixture')
+
+        fixture = await createFixture()
+        service = fixture.watchRecordsService
     })
 
     afterEach(async () => {
-        await closeFixture(isolated)
+        await closeFixture(fixture)
     })
 
     describe('createWatchRecords', () => {

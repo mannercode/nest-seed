@@ -25,6 +25,9 @@ export async function configureApplications(app: INestApplication<any>, servers:
     )
 
     await app.startAllMicroservices()
+
+    const logger = app.get(AppLoggerService)
+    app.useLogger(logger)
 }
 
 export async function bootstrap() {
@@ -34,9 +37,6 @@ export async function bootstrap() {
 
     const { servers } = config.nats
     configureApplications(app, servers)
-
-    const logger = app.get(AppLoggerService)
-    app.useLogger(logger)
 
     app.enableShutdownHooks()
 
