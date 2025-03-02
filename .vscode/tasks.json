@@ -4,6 +4,12 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Test",
+            "detail": "Execute the selected test suites",
+            "type": "shell",
+            "command": "bash scripts/run-test.sh ${input:tests} 1"
+        },
+        {
             "label": "CLI",
             "detail": "Execute the selected CLI tool",
             "type": "shell",
@@ -19,4 +25,17 @@
             "command": "bash scripts/workspace-cleanup.sh"
         }
     ],
+    "inputs": [
+        {
+            "id": "tests",
+            "type": "pickString",
+            "default": "apps",
+            "options": [
+                "all",
+                "apps",
+                "common",
+            ],
+            "description": "Select a test suite to run."
+        },
+    ]
 }
