@@ -3,12 +3,22 @@ set -e
 . "$(dirname "$0")/common.cfg"
 . $TEST_ENV_FILE
 
+CLI_OPTIONS=("redis" "mongo")
+
+if [ $# -ge 1 ]; then
+    SELECTED_CLI="$1"
+else
+    echo -e "\nSelect Cli (↑↓ to navigate, Enter to select)"
+
+    SELECTED_CLI=$(prompt_selection "${CLI_OPTIONS[@]}")
+fi
+
 # 입력값 받기
-if [ "$1" == "redis" ]; then
+if [ "$SELECTED_CLI" == "redis" ]; then
     docker exec -it "${REDIS_HOST1}" redis-cli -c -a $REDIS_PASSWORD
-elif [ "$1" == "mongo" ]; then
+elif [ "$SELECTED_CLI" == "mongo" ]; then
     docker exec -it "${MONGO_HOST1}" mongosh -u "$MONGO_USERNAME" -p "$MONGO_PASSWORD" --authenticationDatabase admin
 else
-    echo "Usage: $0 {redis|mongo}"
+    echo "unknown cli: $SELECTED_CLI {${CLI_OPTIONS[@]}}"
     exit 1
 fi

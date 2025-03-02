@@ -3,47 +3,16 @@
     "version": "0.0.1",
     "private": true,
     "scripts": {
-        "start": "node _output/dist/${APP_NAME}/index.js",
-        "build": "echo APP_NAME=${APP_NAME} && nest build ${APP_NAME} -b webpack",
+        "start": "node _output/dist/${TARGET_APP}/index.js",
+        "build": "nest build ${TARGET_APP} -b webpack",
+        "debug": "nest start ${TARGET_APP} --watch",
         "lint": "prettier --write 'src/**/*.ts' && eslint src",
-        "infra": "bash scripts/run-infra.sh && bash scripts/reset-output.sh",
-        "watch:app": "nest start ${APP_NAME} --watch --debug ${DEBUG_PORT}",
-        "watch:test": "npm run infra && node --inspect=9330 -r ts-node/register ./node_modules/.bin/jest --watch --onlyChanged",
-        "test:base": "npm run infra && jest --no-cache --coverage --config ./configs/jest.config.${TEST_NAME}.ts",
-        "test:100x": "bash -c 'for i in {1..100}; do npm run test:base || { echo \"Test failed at iteration $i\"; exit 1; }; done'"
+        "test": "bash scripts/run-test.sh",
+        "test:e2e": "bash test/e2e/run.sh"
     },
-    "comments": {
-        "TODO": [
-            "chalk,nanoid 등 esm은 node에서 사용 가능하나 jest는 아직이다. node 24에서 jest 다시 점검해라"
-        ],
-        "INSTRUCTIONS": {
-            "TESTING": {
-                "description": "테스트 실행시 TEST_NAME 환경변수 필수",
-                "examples": [
-                    "TEST_NAME=all npm run test:100x",
-                    "TEST_NAME=common npm run test:base"
-                ],
-                "availableOptions": [
-                    "all",
-                    "apps",
-                    "common"
-                ]
-            },
-            "BUILD_RUN": {
-                "description": "멀티 앱 구조로 APP_NAME 지정 필수",
-                "examples": [
-                    "APP_NAME=apps npm run watch:app",
-                    "APP_NAME=gateway npm start"
-                ],
-                "availableOptions": [
-                    "applications",
-                    "cores",
-                    "gateway",
-                    "infrastructures"
-                ]
-            }
-        }
-    },
+    "comments": [
+        "chalk,nanoid 등 esm은 node에서 사용 가능하나 jest는 아직이다. node 24에서 jest 다시 점검해라"
+    ],
     "dependencies": {
         "@nestjs-modules/ioredis": "^2.0.2",
         "@nestjs/bullmq": "^11.0.2",

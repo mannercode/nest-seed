@@ -18,18 +18,15 @@ describe('ClientProxyService', () => {
 
     describe('send', () => {
         it('HttpController는 Observable로 응답할 수 있다', async () => {
-            const result = await client.get('/observable').ok()
-            expect(result.body).toEqual({ result: 'success' })
+            await client.get('/observable').ok({ result: 'success' })
         })
 
         it('HttpController는 Observable의 값을 읽어서 반환할 수 있다', async () => {
-            const result = await client.get('/value').ok()
-            expect(result.body).toEqual({ result: 'success' })
+            await client.get('/value').ok({ result: 'success' })
         })
 
         it('null payload를 보낼 수 있다', async () => {
-            const result = await client.get('/send-null').ok()
-            expect(result.body).toEqual({ result: 'success' })
+            await client.get('/send-null').ok({ result: 'success' })
         })
     })
 

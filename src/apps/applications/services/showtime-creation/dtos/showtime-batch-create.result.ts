@@ -4,3 +4,11 @@ export class ShowtimeBatchCreateResult {
     showtimeCreatedCount: number
     ticketCreatedCount: number
 }
+
+export enum ShowtimeBatchCreateStatus {
+    waiting = 'waiting',
+    processing = 'processing',
+    complete = 'complete',
+    fail = 'fail',
+    error = 'error'
+}

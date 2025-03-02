@@ -1,7 +1,7 @@
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
 import { Injectable } from '@nestjs/common'
 import { Job, Queue } from 'bullmq'
-import { addMinutes, jsonToObject, MethodLog } from 'common'
+import { ClientProxyService, DateUtil, InjectClientProxy, jsonToObject, MethodLog } from 'common'
 import {
     Seatmap,
     ShowtimeDto,
@@ -11,7 +11,8 @@ import {
     TicketsProxy,
     TicketStatus
 } from 'cores'
-import { ShowtimeCreationEventsService } from './showtime-creation-events.service'
+import { ClientProxyConfig, Events } from 'shared/config'
+import { ShowtimeBatchCreateStatus } from '../dtos'
 import { ShowtimeCreationValidatorService } from './showtime-creation-validator.service'
 import { ShowtimeBatchCreateJobData } from './types'
 
@@ -22,15 +23,16 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
         private theatersService: TheatersProxy,
         private showtimesService: ShowtimesProxy,
         private ticketsService: TicketsProxy,
-        private eventsService: ShowtimeCreationEventsService,
         private validatorService: ShowtimeCreationValidatorService,
+        @InjectClientProxy(ClientProxyConfig.connName) private service: ClientProxyService,
         @InjectQueue('showtime-creation') private queue: Queue
     ) {
         super()
     }
 
     async enqueueTask(data: ShowtimeBatchCreateJobData) {
-        this.eventsService.emitWaiting(data.batchId)
+        this.emit({ status: ShowtimeBatchCreateStatus.waiting, batchId: data.batchId })
+
         await this.queue.add('showtime-creation.create', data)
     }
 
@@ -38,28 +40,41 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
         try {
             await this.executeShowtimesCreation(jsonToObject(job.data))
         } catch (error) {
-            this.eventsService.emitError(job.data.batchId, error.message)
+            this.emit({
+                status: ShowtimeBatchCreateStatus.error,
+                batchId: job.data.batchId,
+                message: error.message
+            })
         }
     }
 
     @MethodLog()
     private async executeShowtimesCreation(data: ShowtimeBatchCreateJobData) {
-        this.eventsService.emitProcessing(data.batchId)
+        this.emit({ status: ShowtimeBatchCreateStatus.processing, batchId: data.batchId })
 
         const conflictingShowtimes = await this.validatorService.validate(data)
 
         if (conflictingShowtimes.length > 0) {
-            this.eventsService.emitFail(data.batchId, conflictingShowtimes)
+            this.emit({
+                status: ShowtimeBatchCreateStatus.fail,
+                batchId: data.batchId,
+                conflictingShowtimes
+            })
         } else {
             const createdShowtimes = await this.createShowtimes(data)
             const ticketCreatedCount = await this.createTickets(createdShowtimes, data.batchId)
 
-            this.eventsService.emitComplete(
-                data.batchId,
-                createdShowtimes.length,
+            this.emit({
+                status: ShowtimeBatchCreateStatus.complete,
+                batchId: data.batchId,
+                showtimeCreatedCount: createdShowtimes.length,
                 ticketCreatedCount
-            )
+            })
         }
+    }
+
+    private emit(payload: any) {
+        this.service.emit(Events.ShowtimeCreation.statusChanged, payload)
     }
 
     private async createShowtimes(data: ShowtimeBatchCreateJobData) {
@@ -71,7 +86,7 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
                 movieId,
                 theaterId,
                 startTime,
-                endTime: addMinutes(startTime, durationMinutes)
+                endTime: DateUtil.addMinutes(startTime, durationMinutes)
             }))
         )
 

@@ -1,4 +1,4 @@
-import { addMinutes, pickIds } from 'common'
+import { DateUtil, pickIds } from 'common'
 import {
     CustomerDto,
     CustomersService,
@@ -24,7 +24,8 @@ import { createMovie } from './movies.fixture'
 import { createShowtimeDto, createShowtimes } from './showtimes.fixture'
 import { createTheater } from './theaters.fixture'
 import { createTicketDto, createTickets } from './tickets.fixture'
-import { createAllTestContexts, AllTestContexts } from './utils'
+import { AllTestContexts, createAllTestContexts } from './utils'
+import { TicketPurchaseProcessor } from '../applications/services/purchase-process/processors'
 
 export interface Fixture {
     testContext: AllTestContexts
@@ -36,6 +37,7 @@ export interface Fixture {
     paymentsService: PaymentsService
     ticketsService: TicketsService
     ticketHoldingService: TicketHoldingService
+    ticketPurchaseProcessor: TicketPurchaseProcessor
 }
 
 export async function createFixture() {
@@ -58,6 +60,7 @@ export async function createFixture() {
     const ticketHoldingService = module.get(TicketHoldingService)
     const purchasesService = module.get(PurchasesService)
     const paymentsService = testContext.infrasContext.module.get(PaymentsService)
+    const ticketPurchaseProcessor = testContext.appsContext.module.get(TicketPurchaseProcessor)
 
     return {
         testContext,
@@ -68,7 +71,8 @@ export async function createFixture() {
         paymentsService,
         ticketsService,
         ticketHoldingService,
-        showtimesService
+        showtimesService,
+        ticketPurchaseProcessor
     }
 }
 
@@ -81,7 +85,7 @@ export const createShowtime = async (fixture: Fixture, startTime: Date) => {
         movieId: fixture.movie.id,
         theaterId: fixture.theater.id,
         startTime,
-        endTime: addMinutes(startTime, 90)
+        endTime: DateUtil.addMinutes(startTime, 90)
     })
     const showtimes = await createShowtimes(fixture.showtimesService, [createDto])
     return showtimes[0]

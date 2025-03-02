@@ -5,7 +5,6 @@ import p from 'path'
 
 export class Path {
     static async getAbsolute(src: string): Promise<string> {
-        // resolve function converts relative paths to absolute paths
         return p.isAbsolute(src) ? src : p.resolve(src)
     }
 

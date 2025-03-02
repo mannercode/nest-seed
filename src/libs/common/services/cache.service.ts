@@ -51,7 +51,6 @@ export class CacheService {
     }
 }
 
-/* istanbul ignore next */
 export function InjectCache(name: string): ParameterDecorator {
     return Inject(CacheService.getToken(name))
 }

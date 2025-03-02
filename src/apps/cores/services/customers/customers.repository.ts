@@ -60,11 +60,10 @@ export class CustomersRepository extends MongooseRepository<Customer> {
     async getPassword(customerId: string) {
         const customer = await this.model.findById(objectId(customerId)).select('+password').exec()
 
-        /* istanbul ignore if */
         if (!customer) {
             throw new NotFoundException({
                 code: 'ERR_CUSTOMER_NOT_FOUND',
-                message: 'Customer not found.',
+                message: 'Customer not found',
                 customerId
             })
         }

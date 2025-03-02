@@ -3,7 +3,7 @@ import { APP_PIPE } from '@nestjs/core'
 import { Type } from 'class-transformer'
 import { IsDate, IsNotEmpty, IsString } from 'class-validator'
 import { AppValidationPipe } from 'common'
-import { createHttpTestContext, HttpTestClient } from 'testlib'
+import { createHttpTestContext } from 'testlib'
 
 class SampleDto {
     @IsString()
@@ -37,15 +37,15 @@ class SamplesController {
 
 export async function createFixture() {
     const testContext = await createHttpTestContext({
-        controllers: [SamplesController],
-        providers: [{ provide: APP_PIPE, useClass: AppValidationPipe }]
+        metadata: {
+            controllers: [SamplesController],
+            providers: [{ provide: APP_PIPE, useClass: AppValidationPipe }]
+        }
     })
-
-    const client = new HttpTestClient(testContext.httpPort)
 
     const closeFixture = async () => {
         await testContext?.close()
     }
 
-    return { testContext, closeFixture, client }
+    return { testContext, closeFixture, client: testContext.httpClient }
 }

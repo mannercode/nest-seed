@@ -1,17 +1,12 @@
 import {
-    LatLong,
-    Password,
-    Path,
     addQuotesToNumbers,
-    Byte,
     comment,
-    equalsIgnoreCase,
     generateShortId,
     generateUUID,
     getChecksum,
     jsonToObject,
-    latlongDistanceInMeters,
     notUsed,
+    Path,
     pickIds,
     pickItems,
     sleep,
@@ -30,9 +25,9 @@ describe('common/utils/etc', () => {
             const end = Date.now()
             const elapsed = end - start
 
-            // timeout이 1000ms로 설정되어 있으므로, 실제 대기 시간은 ±100ms 범위 내여야 한다
-            expect(elapsed).toBeGreaterThan(timeout - 100)
-            expect(elapsed).toBeLessThan(timeout + 100)
+            // timeout이 1000ms로 설정되어 있으나 ±50ms 오차를 둔다.
+            expect(elapsed).toBeGreaterThan(timeout - 50)
+            expect(elapsed).toBeLessThan(timeout + 50)
         })
     })
 
@@ -53,10 +48,10 @@ describe('common/utils/etc', () => {
     })
 
     describe('generateShortId', () => {
-        it('10자리의 짧은 ID를 생성해야 한다', () => {
+        it('15자리의 짧은 ID를 생성해야 한다', () => {
             const id = generateShortId()
-            // nanoid는 일반적으로 A-Z, a-z, 0-9, _ 및 -를 사용
-            const regex = /^[A-Za-z0-9_-]{10}$/
+            // nanoid는 일반적으로 A-Z, a-z, 0-9를 사용
+            const regex = /^[A-Za-z0-9]{15}$/
 
             expect(id).toMatch(regex)
         })
@@ -66,62 +61,6 @@ describe('common/utils/etc', () => {
             const id2 = generateShortId()
 
             expect(id1).not.toEqual(id2)
-        })
-    })
-
-    describe('Password', () => {
-        it('비밀번호를 해싱해야 한다', async () => {
-            const password = 'password'
-            const hashedPassword = await Password.hash(password)
-
-            expect(hashedPassword).not.toEqual(password)
-        })
-
-        it('비밀번호가 일치하면 true를 반환해야 한다', async () => {
-            const password = 'password'
-            const hashedPassword = await Password.hash(password)
-
-            const isValidPassword = await Password.validate(password, hashedPassword)
-
-            expect(isValidPassword).toBeTruthy()
-        })
-
-        it('비밀번호가 일치하지 않으면 false를 반환해야 한다', async () => {
-            const password = 'password'
-            const hashedPassword = await Password.hash(password)
-
-            const isValidPassword = await Password.validate('wrongpassword', hashedPassword)
-
-            expect(isValidPassword).toBeFalsy()
-        })
-    })
-
-    describe('latlongDistanceInMeters', () => {
-        it('두 위경도 간의 거리를 미터 단위로 계산해야 한다', () => {
-            // 서울의 위경도
-            const seoul: LatLong = {
-                latitude: 37.5665,
-                longitude: 126.978
-            }
-
-            // 부산의 위경도
-            const busan: LatLong = {
-                latitude: 35.1796,
-                longitude: 129.0756
-            }
-
-            // 서울과 부산 사이의 대략적인 거리 (약 325km)
-            const expectedDistance = 325000
-
-            // 함수로부터 실제 거리를 구함
-            const actualDistance = latlongDistanceInMeters(seoul, busan)
-
-            // 오차 범위(5%)를 설정
-            const tolerance = 0.05 * expectedDistance
-
-            // 실제 거리가 예상 범위 내에 있는지 확인
-            expect(actualDistance).toBeGreaterThan(expectedDistance - tolerance)
-            expect(actualDistance).toBeLessThan(expectedDistance + tolerance)
         })
     })
 
@@ -140,26 +79,6 @@ describe('common/utils/etc', () => {
             const data = JSON.parse(processedText)
 
             expect(data[0].bit32).toEqual('123456')
-        })
-    })
-
-    describe('equalsIgnoreCase', () => {
-        it('대소문자가 다른 두 문자열이 동일하다고 판단되어야 한다', () => {
-            const isEqual = equalsIgnoreCase('hello', 'HELLO')
-
-            expect(isEqual).toBeTruthy()
-        })
-
-        it('두 문자열이 다르면 false를 반환해야 한다', () => {
-            const isEqual = equalsIgnoreCase('hello', 'world')
-
-            expect(isEqual).toBeFalsy()
-        })
-
-        it('두 입력값 모두 undefined인 경우 false를 반환해야 한다', () => {
-            const isEqual = equalsIgnoreCase(undefined, undefined)
-
-            expect(isEqual).toBeFalsy()
         })
     })
 
@@ -293,53 +212,6 @@ describe('common/utils/etc', () => {
         it('유효하지 않은 이메일 주소에 대해 false를 반환해야 한다', () => {
             expect(validateEmail('plainaddress')).toBe(false)
             expect(validateEmail('user@domain')).toBe(false)
-        })
-    })
-
-    describe('Byte', () => {
-        describe('fromString', () => {
-            it('유효한 크기 문자열을 바이트 단위 숫자로 변환해야 한다', () => {
-                expect(Byte.fromString('1024B')).toEqual(1024)
-                expect(Byte.fromString('1KB')).toEqual(1024)
-                expect(Byte.fromString('1MB')).toEqual(1024 * 1024)
-                expect(Byte.fromString('1GB')).toEqual(1024 * 1024 * 1024)
-                expect(Byte.fromString('1TB')).toEqual(1024 * 1024 * 1024 * 1024)
-                expect(Byte.fromString('1KB 512B')).toEqual(1536)
-                expect(Byte.fromString('1.5KB')).toEqual(1536)
-                expect(Byte.fromString('-1KB')).toEqual(-1024)
-                expect(Byte.fromString('1GB 256MB 128KB')).toEqual(
-                    1 * 1024 * 1024 * 1024 + 256 * 1024 * 1024 + 128 * 1024
-                )
-            })
-
-            it('소문자 단위의 문자열을 바이트로 변환해야 한다', () => {
-                expect(Byte.fromString('1024b')).toEqual(1024)
-                expect(Byte.fromString('1kb')).toEqual(1024)
-                expect(Byte.fromString('1mb')).toEqual(1024 * 1024)
-                expect(Byte.fromString('1gb')).toEqual(1024 * 1024 * 1024)
-                expect(Byte.fromString('1tb')).toEqual(1024 * 1024 * 1024 * 1024)
-            })
-
-            it('잘못된 형식인 경우 에러를 발생시켜야 한다', () => {
-                expect(() => Byte.fromString('invalid')).toThrow()
-                expect(() => Byte.fromString('123')).toThrow()
-                expect(() => Byte.fromString('123XB')).toThrow()
-                expect(() => Byte.fromString('1KB -')).toThrow()
-            })
-        })
-
-        describe('toString', () => {
-            it('바이트 값을 사람이 읽기 쉬운 문자열로 변환해야 한다', () => {
-                expect(Byte.toString(0)).toEqual('0B')
-                expect(Byte.toString(1024)).toEqual('1KB')
-                expect(Byte.toString(1536)).toEqual('1KB512B')
-                expect(Byte.toString(1024 * 1024)).toEqual('1MB')
-                expect(Byte.toString(1024 * 1024 * 1.5)).toEqual('1MB512KB')
-                expect(Byte.toString(-1024)).toEqual('-1KB')
-                expect(
-                    Byte.toString(1 * 1024 * 1024 * 1024 + 256 * 1024 * 1024 + 128 * 1024)
-                ).toEqual('1GB256MB128KB')
-            })
         })
     })
 })

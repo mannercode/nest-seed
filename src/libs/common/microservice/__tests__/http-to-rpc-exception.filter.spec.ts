@@ -1,8 +1,11 @@
-import { CloseFixture, MicroserviceTestClient, withTestId } from 'testlib'
+import { InternalServerErrorException, NotFoundException } from '@nestjs/common'
+import { CloseFixture, HttpTestClient, MicroserviceTestClient, withTestId } from 'testlib'
+import { getProxyValue } from 'common'
 
 describe('HttpToRpcExceptionFilter', () => {
     let closeFixture: CloseFixture
     let client: MicroserviceTestClient
+    let httpClient: HttpTestClient
 
     beforeEach(async () => {
         const { createFixture } = await import('./http-to-rpc-exception.filter.fixture')
@@ -10,38 +13,36 @@ describe('HttpToRpcExceptionFilter', () => {
         const fixture = await createFixture()
         closeFixture = fixture.closeFixture
         client = fixture.client
+        httpClient = fixture.httpClient
     })
 
     afterEach(async () => {
         await closeFixture?.()
     })
 
-    it('RPC에 대해 HttpException을 올바르게 처리해야 한다', async () => {
-        await client.error(
-            withTestId('subject.throwHttpException'),
-            {},
-            {
-                response: { error: 'Not Found', message: 'not found exception', statusCode: 404 },
-                status: 404
-            }
+    it('RpcController에서 던지는 HttpException이 복원되어야 한다', async () => {
+        const promise = getProxyValue(
+            client.proxy.send(withTestId('subject.throwHttpException'), {})
         )
+
+        await expect(promise).rejects.toEqual(new NotFoundException('not found exception'))
     })
 
-    it('RPC에 대해 {status, response}를 올바르게 처리해야 한다', async () => {
-        await client.error(
-            withTestId('subject.rethrow'),
-            {},
-            { status: 400, response: { message: 'error message' } }
-        )
+    it('RpcController에서 던지는 Error가 복원되어야 한다', async () => {
+        const promise = getProxyValue(client.proxy.send(withTestId('subject.throwError'), {}))
+
+        await expect(promise).rejects.toEqual(new InternalServerErrorException('error message'))
     })
 
-    it('RPC에 대해 Error를 올바르게 처리해야 한다', async () => {
-        await client.error(withTestId('subject.throwError'), {}, { status: 500 })
+    it('HttpController에서 던지는 예외에는 영향이 없어야 한다', async () => {
+        await httpClient
+            .get('/throwHttpException')
+            .notFound({ error: 'Not Found', message: 'not found exception', statusCode: 404 })
     })
 
     it('잘못된 데이터 형식에 대해 입력을 검증하고 오류를 반환해야 한다', async () => {
         await client.error(
-            withTestId('subject.createSample'),
+            withTestId('subject.verifyDto'),
             { wrong: 'wrong field' },
             {
                 response: {

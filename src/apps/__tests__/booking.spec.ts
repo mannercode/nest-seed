@@ -1,4 +1,4 @@
-import { convertDateToString, pickIds } from 'common'
+import { DateUtil, pickIds } from 'common'
 import { Seatmap, TicketDto } from 'cores'
 import { HttpTestClient } from 'testlib'
 import { closeFixture, Fixture } from './booking.fixture'
@@ -60,7 +60,7 @@ describe('Booking', () => {
                 new Date('2999-01-03')
             ])
 
-            showdate = convertDateToString(showdates[0])
+            showdate = DateUtil.toYMD(showdates[0])
         })
 
         await step('3. 상영 시간 목록 요청', async () => {

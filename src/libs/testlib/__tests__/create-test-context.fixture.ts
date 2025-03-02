@@ -6,8 +6,7 @@ import {
     Payload,
     Transport
 } from '@nestjs/microservices'
-import { createTestContext } from '../create-test-context'
-import { HttpTestClient } from '../http.test-client'
+import { createHttpTestContext } from '../create-test-context'
 import { MicroserviceTestClient } from '../microservice.test-client'
 import { getNatsTestConnection } from '../test-containers'
 import { withTestId } from '../utils'
@@ -30,7 +29,7 @@ export async function createFixture() {
 
     const brokerOpts = { transport: Transport.NATS, options: { servers } } as NatsOptions
 
-    const testContext = await createTestContext({
+    const testContext = await createHttpTestContext({
         metadata: { controllers: [SampleController] },
         configureApp: async (app) => {
             app.connectMicroservice<MicroserviceOptions>(brokerOpts, { inheritAppConfig: true })
@@ -39,12 +38,11 @@ export async function createFixture() {
     })
 
     const microClient = MicroserviceTestClient.create(brokerOpts)
-    const httpClient = new HttpTestClient(testContext.httpPort)
 
     const closeFixture = async () => {
         await microClient?.close()
         await testContext?.close()
     }
 
-    return { closeFixture, microClient, httpClient }
+    return { closeFixture, microClient, httpClient: testContext.httpClient }
 }

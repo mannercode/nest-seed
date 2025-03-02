@@ -28,7 +28,7 @@ export function MethodLog(options: MethodLogOptions = {}): MethodDecorator {
             const paramNames = getParameterNames(originalMethod)
             const filteredArgs = args.filter((_, index) => !excludeArgs.includes(paramNames[index]))
             const start = Date.now()
-            const callId = generateShortId()
+            const callId = generateShortId(10)
             logger[level](`Begin ${className}.${propertyKey}.${callId}`, { args: filteredArgs })
 
             let result

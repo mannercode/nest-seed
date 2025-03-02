@@ -1,4 +1,4 @@
-import { addMinutes } from 'common'
+import { DateUtil } from 'common'
 import {
     CustomersService,
     MovieDto,
@@ -17,7 +17,7 @@ import { createMovie } from './movies.fixture'
 import { createShowtimeDto, createShowtimes } from './showtimes.fixture'
 import { createTheater } from './theaters.fixture'
 import { createTickets } from './tickets.fixture'
-import { createAllTestContexts, AllTestContexts } from './utils'
+import { AllTestContexts, createAllTestContexts } from './utils'
 
 export interface Fixture {
     testContext: AllTestContexts
@@ -59,7 +59,7 @@ export async function createFixture() {
                 movieId: movie.id,
                 theaterId: theater.id,
                 startTime,
-                endTime: addMinutes(startTime, 90)
+                endTime: DateUtil.addMinutes(startTime, 90)
             })
         )
     )

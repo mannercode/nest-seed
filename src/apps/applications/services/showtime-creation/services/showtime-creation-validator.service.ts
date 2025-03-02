@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { Assert, MethodLog, addMinutes, findMaxDate, findMinDate } from 'common'
+import { Assert, DateUtil, MethodLog } from 'common'
 import { MoviesProxy, ShowtimeDto, ShowtimesProxy, TheatersProxy } from 'cores'
 import { ShowtimeBatchCreateJobData } from './types'
 
@@ -36,7 +36,7 @@ export class ShowtimeCreationValidatorService {
             Assert.defined(timeslots, `Timeslots must be defined for theater ID: ${theaterId}`)
 
             for (const startTime of startTimes) {
-                const endTime = addMinutes(startTime, durationMinutes)
+                const endTime = DateUtil.addMinutes(startTime, durationMinutes)
 
                 iterateEvery10Mins(startTime, endTime, (time) => {
                     const showtime = timeslots.get(time)
@@ -57,9 +57,9 @@ export class ShowtimeCreationValidatorService {
     ): Promise<Map<string, TimeslotMap>> {
         const { theaterIds, durationMinutes, startTimes } = data
 
-        const startDate = findMinDate(startTimes)
-        const maxDate = findMaxDate(startTimes)
-        const endDate = addMinutes(maxDate, durationMinutes)
+        const startDate = DateUtil.earliest(startTimes)
+        const maxDate = DateUtil.latest(startTimes)
+        const endDate = DateUtil.addMinutes(maxDate, durationMinutes)
 
         const timeslotMapByTheater = new Map<string, TimeslotMap>()
 

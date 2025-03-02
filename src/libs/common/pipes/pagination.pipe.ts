@@ -28,7 +28,6 @@ export class PaginationOptionDto {
 
     @IsOptional()
     @Transform(({ value }) => {
-        /* istanbul ignore next */
         if (value.direction && value.name) {
             return value
         }

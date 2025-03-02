@@ -1,12 +1,12 @@
-import { LatLong, latlongDistanceInMeters } from 'common'
+import { LatLong } from 'common'
 import { SalesStatusByShowtimeDto, ShowtimeDto, TheaterDto } from 'cores'
 import { ShowtimeSalesStatusDto } from './dtos'
 
 export function sortTheatersByDistance(theaters: TheaterDto[], latlong: LatLong) {
     return theaters.sort(
         (a, b) =>
-            Math.abs(latlongDistanceInMeters(a.latlong, latlong)) -
-            Math.abs(latlongDistanceInMeters(b.latlong, latlong))
+            Math.abs(LatLong.distanceInMeters(a.latlong, latlong)) -
+            Math.abs(LatLong.distanceInMeters(b.latlong, latlong))
     )
 }
 

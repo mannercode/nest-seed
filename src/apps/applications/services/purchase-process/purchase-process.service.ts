@@ -20,7 +20,7 @@ export class PurchaseProcessService {
             await this.ticketProcessor.completePurchase(createDto)
 
             return purchase
-        } catch (error) /* istanbul ignore next */ {
+        } catch (error) {
             await this.ticketProcessor.rollbackPurchase(createDto)
             throw error
         }

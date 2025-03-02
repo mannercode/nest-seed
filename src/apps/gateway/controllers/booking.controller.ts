@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Req, UseGuards } from '@nestjs/common'
 import { BookingProxy } from 'applications'
-import { AuthTokenPayload, convertStringToDate, LatLong, LatLongQuery } from 'common'
+import { AuthTokenPayload, DateUtil, LatLong, LatLongQuery } from 'common'
 import { CustomerJwtAuthGuard } from './guards'
 
 @Controller('booking')
@@ -29,7 +29,7 @@ export class BookingController {
         return this.service.findShowtimes({
             movieId,
             theaterId,
-            showdate: convertStringToDate(showdate)
+            showdate: DateUtil.fromYMD(showdate)
         })
     }
 

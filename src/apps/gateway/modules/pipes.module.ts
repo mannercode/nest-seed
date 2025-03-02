@@ -4,8 +4,7 @@ import {
     AppValidationPipe,
     HttpErrorFilter,
     HttpExceptionFilter,
-    HttpSuccessInterceptor,
-    RpcToHttpExceptionInterceptor
+    HttpSuccessInterceptor
 } from 'common'
 
 @Module({
@@ -25,10 +24,6 @@ import {
         {
             provide: APP_INTERCEPTOR,
             useClass: HttpSuccessInterceptor
-        },
-        {
-            provide: APP_INTERCEPTOR,
-            useClass: RpcToHttpExceptionInterceptor
         }
     ]
 })
