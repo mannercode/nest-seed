@@ -5,24 +5,37 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Attach to App",
-            "port": 9230,
-            "request": "attach",
+            "name": "Debug App",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "debug:app",
+            ],
+            "autoAttachChildProcesses": true,
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "env": {
+                "TARGET_APP": "${input:apps}",
+            },
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "type": "node",
             "restart": true
-        },
+        }
+    ],
+    "inputs": [
         {
-            "name": "Attach to Test",
-            "port": 9330,
-            "request": "attach",
-            "skipFiles": [
-                "<node_internals>/**"
+            "id": "apps",
+            "type": "pickString",
+            "options": [
+                "gateway",
+                "applications",
+                "cores",
+                "infrastructures"
             ],
-            "type": "node",
-            "restart": true
+            "description": "Select a app to debug"
         }
     ]
 }

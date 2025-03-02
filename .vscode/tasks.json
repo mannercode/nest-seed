@@ -4,34 +4,13 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Test",
-            "detail": "Execute the selected test suites",
-            "type": "shell",
-            "command": "TEST=${input:tests} npm run test:base"
-        },
-        {
             "label": "CLI",
             "detail": "Execute the selected CLI tool",
             "type": "shell",
-            "command": "bash scripts/run-cli.sh ${input:cliTool}",
+            "command": "bash scripts/run-cli.sh",
             "runOptions": {
-                "instanceLimit": 10
+                "instanceLimit": 99
             }
-        },
-        {
-            "label": "Watch App",
-            "detail": "Start the Nest development server and watch for file changes",
-            "type": "shell",
-            "command": "${input:apps} npm run watch:app",
-            "runOptions": {
-                "instanceLimit": 10
-            }
-        },
-        {
-            "label": "Watch Test",
-            "detail": "Run Jest tests and watch for file changes",
-            "type": "shell",
-            "command": "npm run watch:test"
         },
         {
             "label": "Workspace Cleanup",
@@ -40,37 +19,4 @@
             "command": "bash scripts/workspace-cleanup.sh"
         }
     ],
-    "inputs": [
-        {
-            "id": "tests",
-            "type": "pickString",
-            "default": "apps",
-            "options": [
-                "all",
-                "apps",
-                "common",
-            ],
-            "description": "Select a test suite to run."
-        },
-        {
-            "id": "apps",
-            "type": "pickString",
-            "options": [
-                "APP=gateway DEBUG_PORT=9230",
-                "APP=applications DEBUG_PORT=9231",
-                "APP=cores DEBUG_PORT=9232",
-                "APP=infrastructures DEBUG_PORT=9233"
-            ],
-            "description": "Select a app to run."
-        },
-        {
-            "id": "cliTool",
-            "type": "pickString",
-            "options": [
-                "redis",
-                "mongo"
-            ],
-            "description": "Select the CLI tool to execute"
-        }
-    ]
 }

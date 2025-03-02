@@ -159,7 +159,7 @@ services:
 
     gateway:
         <<: *app-common
-        build: { context: ., args: { APP_IMAGE: $APP_IMAGE, APP: gateway } }
+        build: { context: ., args: { APP_IMAGE: $APP_IMAGE, TARGET_APP: gateway } }
         image: ${SERVICE_GATEWAY_HOST}
         container_name: ${SERVICE_GATEWAY_HOST}
         healthcheck:
@@ -172,7 +172,7 @@ services:
 
     applications:
         <<: *app-common
-        build: { context: ., args: { APP_IMAGE: $APP_IMAGE, APP: applications } }
+        build: { context: ., args: { APP_IMAGE: $APP_IMAGE, TARGET_APP: applications } }
         image: ${SERVICE_APPLICATIONS_HOST}
         container_name: ${SERVICE_APPLICATIONS_HOST}
         healthcheck:
@@ -183,7 +183,7 @@ services:
 
     cores:
         <<: *app-common
-        build: { context: ., args: { APP_IMAGE: $APP_IMAGE, APP: cores } }
+        build: { context: ., args: { APP_IMAGE: $APP_IMAGE, TARGET_APP: cores } }
         image: ${SERVICE_CORES_HOST}
         container_name: ${SERVICE_CORES_HOST}
         healthcheck:
@@ -194,7 +194,7 @@ services:
 
     infrastructures:
         <<: *app-common
-        build: { context: ., args: { APP_IMAGE: $APP_IMAGE, APP: infrastructures } }
+        build: { context: ., args: { APP_IMAGE: $APP_IMAGE, TARGET_APP: infrastructures } }
         image: ${SERVICE_INFRASTRUCTURES_HOST}
         container_name: ${SERVICE_INFRASTRUCTURES_HOST}
         healthcheck:
