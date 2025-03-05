@@ -1,7 +1,14 @@
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
-import { Injectable } from '@nestjs/common'
+import { Injectable, OnApplicationShutdown } from '@nestjs/common'
 import { Job, Queue } from 'bullmq'
-import { ClientProxyService, DateUtil, InjectClientProxy, jsonToObject, MethodLog } from 'common'
+import {
+    ClientProxyService,
+    DateUtil,
+    InjectClientProxy,
+    jsonToObject,
+    MethodLog,
+    sleep
+} from 'common'
 import {
     Seatmap,
     ShowtimeDto,
@@ -28,6 +35,20 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
         @InjectQueue('showtime-creation') private queue: Queue
     ) {
         super()
+    }
+
+    async onModuleDestroy() {
+        // await this.worker.close(true)
+
+        // for (let i = 0; i < 50; i++) {
+        //     if (this.worker.isRunning() === false) break
+            // await sleep(100)
+        //     console.log('count',i)
+        // }
+    }
+
+    async onApplicationShutdown() {
+        console.log('isRunning', this.worker.isRunning())
     }
 
     async enqueueTask(data: ShowtimeBatchCreateJobData) {

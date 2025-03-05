@@ -8,7 +8,7 @@ import {
 } from 'applications'
 import { CustomersProxy, MoviesProxy, PurchasesProxy, TheatersProxy } from 'cores'
 import { StorageFilesProxy } from 'infrastructures'
-import { SharedModules } from 'shared/modules'
+import { CommonConfigModule } from 'shared/modules'
 import {
     BookingController,
     CustomerJwtStrategy,
@@ -24,7 +24,7 @@ import { HealthModule, MulterConfigService, PipesModule } from './modules'
 
 @Module({
     imports: [
-        SharedModules,
+        CommonConfigModule,
         HealthModule,
         PipesModule,
         MulterModule.registerAsync({ useClass: MulterConfigService })

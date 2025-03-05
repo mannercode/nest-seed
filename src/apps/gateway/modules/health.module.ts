@@ -1,6 +1,5 @@
 import { Controller, Get, Injectable, Module } from '@nestjs/common'
 import { HealthCheckService, HealthIndicatorFunction, TerminusModule } from '@nestjs/terminus'
-import { RedisHealthIndicator } from 'common'
 
 @Injectable()
 class HealthService {
@@ -25,7 +24,7 @@ class HealthController {
 
 @Module({
     imports: [TerminusModule],
-    providers: [HealthService, RedisHealthIndicator],
+    providers: [HealthService],
     controllers: [HealthController]
 })
 export class HealthModule {}

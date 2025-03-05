@@ -4,6 +4,7 @@ import { generateShortId } from 'common'
 import { diskStorage } from 'multer'
 import { AppConfigService } from 'shared/config'
 
+// TODO 모듈 여기로 옮겨라
 @Injectable()
 export class MulterConfigService implements MulterOptionsFactory {
     constructor(private config: AppConfigService) {}

@@ -5,7 +5,7 @@ import { APP_PIPE } from '@nestjs/core'
 import { AppValidationPipe } from 'common'
 import Redis from 'ioredis'
 import { ProjectName, RedisConfig, uniqueWhenTesting } from 'shared/config'
-import { SharedModules } from 'shared/modules'
+import { CommonConfigModule, RedisConfigModule } from 'shared/modules'
 import { HealthModule } from './modules'
 import {
     BookingModule,
@@ -16,7 +16,8 @@ import {
 
 @Module({
     imports: [
-        SharedModules,
+        CommonConfigModule,
+        RedisConfigModule,
         HealthModule,
         BullModule.forRootAsync('queue', {
             useFactory: (redis: Redis) => ({
