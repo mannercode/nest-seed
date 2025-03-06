@@ -29,8 +29,8 @@ import { AppConfigService, ClientProxyConfig, configSchema, ProjectName } from '
         AppConfigService,
         {
             provide: AppLoggerService,
-            useFactory: async (config: AppConfigService) => {
-                const loggerInstance = await createWinstonLogger(config.log)
+            useFactory: (config: AppConfigService) => {
+                const loggerInstance = createWinstonLogger(config.log)
                 return new AppLoggerService(loggerInstance)
             },
             inject: [AppConfigService]

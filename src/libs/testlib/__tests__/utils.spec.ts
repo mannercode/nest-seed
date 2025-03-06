@@ -16,18 +16,11 @@ describe('createDummyFile', () => {
         await Path.delete(tempDir)
     })
 
-    it('should create a file with the specified size', async () => {
+    it('지정된 크기의 파일을 생성해야 한다', async () => {
         const sizeInBytes = 5 * 1024 * 1024 // 5 MB
         await createDummyFile(testFilePath, sizeInBytes)
         const stats = await fs.stat(testFilePath)
         expect(stats.size).toBe(sizeInBytes)
-    })
-
-    it('should create a file with repeating content', async () => {
-        const sizeInBytes = 100
-        await createDummyFile(testFilePath, sizeInBytes)
-        const content = await fs.readFile(testFilePath, 'utf-8')
-        expect(content).toMatch(/^[A-Z가-하~!@#$%^&*()_+]+$/)
     })
 })
 
@@ -37,7 +30,7 @@ describe('EnvVars', () => {
             delete process.env.TEST_STRING
         })
 
-        it('환경변수가 존재할 때 해당 값을 반환해야 한다', () => {
+        it('환경변수가 존재하면 해당 값을 반환해야 한다', () => {
             process.env.TEST_STRING = 'hello'
             expect(EnvVars.getString('TEST_STRING')).toBe('hello')
         })

@@ -1,8 +1,8 @@
-/* istanbul ignore file */
-
-import winston from 'winston'
 import chalk from 'chalk'
+import winston from 'winston'
+import DailyRotateFile from 'winston-daily-rotate-file'
 
+/* istanbul ignore next */
 const colorHttpMethod = (method: string) => {
     const METHOD = (method ?? 'METHOD').toUpperCase()
 
@@ -22,6 +22,7 @@ const colorHttpMethod = (method: string) => {
     }
 }
 
+/* istanbul ignore next */
 const colorLevels = (level: string) => {
     const LEVEL = (level ?? 'LEVEL').toUpperCase()
 
@@ -42,9 +43,10 @@ interface HttpLogInfo {
     statusCode: string
     url: string
     body: unknown
-    runningTime: string
+    duration: string
 }
 
+/* istanbul ignore next */
 const formatHttpLog = (
     formattedMessage: string,
     formattedLevel: string,
@@ -54,29 +56,10 @@ const formatHttpLog = (
     const httpMethod = colorHttpMethod(etc.method)
     const httpStatus = chalk.magenta(etc.statusCode)
     const url = chalk.green(etc.url)
-    const requestBody = etc.body ? chalk.blueBright(JSON.stringify(etc.body)) : ''
-    const runningTime = chalk.magenta(etc.runningTime ?? '')
+    const requestBody = chalk.blueBright(JSON.stringify(etc.body ?? {}))
+    const duration = chalk.magenta(etc.duration ?? '')
 
-    return `${formattedTimestamp} ${formattedLevel} HTTP ${httpStatus} ${httpMethod} ${url} ${requestBody} ${formattedMessage}  ${runningTime}`
-}
-
-interface DatabaseLogInfo {
-    query: string
-    parameters: string
-    runningTime: string
-}
-
-const formatDatabaseLog = (
-    formattedMessage: string,
-    formattedLevel: string,
-    formattedTimestamp: string,
-    etc: DatabaseLogInfo
-) => {
-    const query = chalk.green(etc.query ?? '')
-    const parameters = chalk.blueBright(etc.parameters ?? '')
-    const runningTime = chalk.magenta(etc.runningTime ?? '')
-
-    return `${formattedTimestamp} ${formattedLevel} TYPEORM ${formattedMessage} ${query} ${parameters} ${runningTime}`
+    return `${formattedTimestamp} ${formattedLevel} HTTP ${httpStatus} ${httpMethod} ${url} ${requestBody} ${formattedMessage}  ${duration}`
 }
 
 const formatGenericLog = (
@@ -90,7 +73,7 @@ const formatGenericLog = (
     return `${formattedTimestamp} ${formattedLevel} ${formattedMessage} ${formattedEtc}`
 }
 
-export const consoleLogFormat = winston.format.combine(
+const consoleLogFormat = winston.format.combine(
     winston.format.timestamp({ format: 'HH:mm:ss' }),
     winston.format.printf((info) => {
         const { message, level, timestamp, ...etc } = info
@@ -106,15 +89,54 @@ export const consoleLogFormat = winston.format.combine(
                 formattedTimestamp,
                 etc[1] as any
             )
-        } else if (etc[0] === 'DB') {
-            return formatDatabaseLog(
-                formattedMessage,
-                formattedLevel,
-                formattedTimestamp,
-                etc[1] as any
-            )
         } else {
             return formatGenericLog(formattedMessage, formattedLevel, formattedTimestamp, etc)
         }
     })
 )
+
+export interface LoggerConfiguration {
+    directory: string
+    daysToKeepLogs: string
+    fileLogLevel: string
+    consoleLogLevel: string
+}
+
+export function createWinstonLogger(config: LoggerConfiguration) {
+    const { directory, daysToKeepLogs, fileLogLevel, consoleLogLevel } = config
+
+    const transports: winston.transport[] = []
+
+    transports.push(
+        new DailyRotateFile({
+            dirname: directory,
+            zippedArchive: false,
+            maxSize: '10m',
+            createSymlink: true,
+            format: winston.format.combine(
+                winston.format.timestamp({ format: 'HH:mm:ss.SSS' }),
+                winston.format.json()
+            ),
+            handleExceptions: true,
+            handleRejections: true,
+            datePattern: 'YYYY-MM-DD',
+            maxFiles: daysToKeepLogs,
+            symlinkName: `current.log`,
+            filename: `%DATE%.log`,
+            level: fileLogLevel
+        })
+    )
+
+    transports.push(
+        new winston.transports.Console({
+            format: consoleLogFormat,
+            level: consoleLogLevel,
+            handleExceptions: true,
+            handleRejections: true
+        })
+    )
+
+    const logger = winston.createLogger({ format: winston.format.json(), transports })
+
+    return logger
+}
