@@ -2,7 +2,6 @@ import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import { Type } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ApplicationsModule, configureApplications } from 'applications'
-import { sleep } from 'common'
 import { configureCores, CoresModule } from 'cores'
 import { configureGateway, GatewayModule } from 'gateway'
 import { configureInfrastructures, InfrastructuresModule } from 'infrastructures'
@@ -98,8 +97,6 @@ export async function createAllTestContexts({
     })
 
     const close = async () => {
-        await sleep(100)
-
         const redisToken = getRedisConnectionToken(RedisConfig.connName)
 
         await gatewayContext.close()

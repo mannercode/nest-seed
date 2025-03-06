@@ -1,14 +1,7 @@
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
-import { Injectable, OnApplicationShutdown } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { Job, Queue } from 'bullmq'
-import {
-    ClientProxyService,
-    DateUtil,
-    InjectClientProxy,
-    jsonToObject,
-    MethodLog,
-    sleep
-} from 'common'
+import { ClientProxyService, DateUtil, InjectClientProxy, jsonToObject, MethodLog } from 'common'
 import {
     Seatmap,
     ShowtimeDto,
@@ -37,18 +30,14 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
         super()
     }
 
-    async onModuleDestroy() {
-        // await this.worker.close(true)
-
-        // for (let i = 0; i < 50; i++) {
-        //     if (this.worker.isRunning() === false) break
-            // await sleep(100)
-        //     console.log('count',i)
-        // }
-    }
-
-    async onApplicationShutdown() {
-        console.log('isRunning', this.worker.isRunning())
+    async onModuleInit() {
+        /**
+         * onModuleInit에서 Redis가 오프라인이면 BullMQ 초기화 작업이 offlineQueue에 대기한다.
+         * 이 상태에서 Redis가 온라인 되기 전에 onModuleDestroy가 호출되면,
+         * offlineQueue의 작업들이 'Error: Connection is closed' 오류를 발생시킨다.
+         * 이를 해결하기 위해 waitUntilReady로 Redis가 온라인 될 때까지 대기한다.
+         */
+        await this.worker.waitUntilReady()
     }
 
     async enqueueTask(data: ShowtimeBatchCreateJobData) {
