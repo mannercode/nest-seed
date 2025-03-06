@@ -1,5 +1,4 @@
 export * from './exceptions'
-export * from './file'
 export * from './http'
 export * from './logger'
 export * from './microservice'
