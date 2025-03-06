@@ -1,12 +1,11 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
-import { MulterModuleOptions, MulterOptionsFactory } from '@nestjs/platform-express'
+import { BadRequestException, Injectable, Module } from '@nestjs/common'
+import { MulterModule, MulterModuleOptions, MulterOptionsFactory } from '@nestjs/platform-express'
 import { generateShortId } from 'common'
 import { diskStorage } from 'multer'
 import { AppConfigService } from 'shared/config'
 
-// TODO 모듈 여기로 옮겨라
 @Injectable()
-export class MulterConfigService implements MulterOptionsFactory {
+class MulterConfigService implements MulterOptionsFactory {
     constructor(private config: AppConfigService) {}
 
     createMulterOptions(): MulterModuleOptions {
@@ -37,3 +36,9 @@ export class MulterConfigService implements MulterOptionsFactory {
         }
     }
 }
+
+@Module({
+    imports: [MulterModule.registerAsync({ useClass: MulterConfigService })],
+    exports: [MulterModule]
+})
+export class MulterConfigModule {}
