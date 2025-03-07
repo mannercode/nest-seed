@@ -1,5 +1,5 @@
 import { createWinstonLogger, Path, sleep } from 'common'
-import { readFile, realpath } from 'fs/promises'
+import { readFile } from 'fs/promises'
 import winston from 'winston'
 
 describe('logger', () => {
@@ -23,8 +23,7 @@ describe('logger', () => {
     })
 
     const getLogEntry = async () => {
-        const realPath = await realpath(Path.join(tempDir, 'current.log'))
-        const content = await readFile(realPath, 'utf-8')
+        const content = await readFile(Path.join(tempDir, 'current.log'), 'utf-8')
         const entry = JSON.parse(content)
         return entry
     }
