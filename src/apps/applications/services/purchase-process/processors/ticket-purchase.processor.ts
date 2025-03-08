@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog, pickItems } from 'common'
+import { pickItems } from 'common'
 import {
     PurchaseCreateDto,
     PurchaseItemDto,
@@ -23,7 +23,6 @@ export class TicketPurchaseProcessor {
         private purchaseProcessProxy: PurchaseProcessProxy
     ) {}
 
-    @MethodLog()
     async validatePurchase(createDto: PurchaseCreateDto) {
         const ticketItems = createDto.items.filter((item) => item.type === PurchaseItemType.ticket)
         const showtimes = await this.getShowtimes(ticketItems)
@@ -71,7 +70,6 @@ export class TicketPurchaseProcessor {
         checkHeldTickets(heldTicketIds, purchaseTicketIds)
     }
 
-    @MethodLog()
     async completePurchase(createDto: PurchaseCreateDto) {
         const ticketItems = createDto.items.filter((item) => item.type === PurchaseItemType.ticket)
         const ticketIds = ticketItems.map((item) => item.ticketId)
@@ -83,7 +81,6 @@ export class TicketPurchaseProcessor {
         return true
     }
 
-    @MethodLog()
     async rollbackPurchase(createDto: PurchaseCreateDto) {
         const ticketItems = createDto.items.filter((item) => item.type === PurchaseItemType.ticket)
         const ticketIds = ticketItems.map((item) => item.ticketId)

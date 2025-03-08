@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { addRegexQuery, MethodLog, MongooseRepository } from 'common'
+import { addRegexQuery, MongooseRepository } from 'common'
 import { FilterQuery, Model } from 'mongoose'
 import { MongooseConfig } from 'shared/config'
 import { TheaterCreateDto, TheaterQueryDto, TheaterUpdateDto } from './dtos'
@@ -12,7 +12,6 @@ export class TheatersRepository extends MongooseRepository<Theater> {
         super(model)
     }
 
-    @MethodLog()
     async createTheater(createDto: TheaterCreateDto) {
         const theater = this.newDocument()
         theater.name = createDto.name
@@ -22,7 +21,6 @@ export class TheatersRepository extends MongooseRepository<Theater> {
         return theater.save()
     }
 
-    @MethodLog()
     async updateTheater(theaterId: string, updateDto: TheaterUpdateDto) {
         const theater = await this.getById(theaterId)
 
@@ -33,7 +31,6 @@ export class TheatersRepository extends MongooseRepository<Theater> {
         return theater.save()
     }
 
-    @MethodLog({ level: 'verbose' })
     async findTheaters(queryDto: TheaterQueryDto) {
         const { name, ...pagination } = queryDto
 

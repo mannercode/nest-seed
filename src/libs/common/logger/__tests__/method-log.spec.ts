@@ -131,6 +131,22 @@ describe('@MethodLog()', () => {
         )
     })
 
+    it('excludeArgs로 설정한 전달인자는 기록하지 않아야 한다', () => {
+        service.excludeArgs('1', '2')
+
+        expect(mockLogger.log).toHaveBeenNthCalledWith(
+            1,
+            expect.stringContaining('Begin TestService.excludeArgs'),
+            { args: ['1'] }
+        )
+
+        expect(mockLogger.log).toHaveBeenNthCalledWith(
+            2,
+            expect.stringContaining('End TestService.excludeArgs'),
+            { args: ['1'], duration: expect.any(Number), return: '1+2' }
+        )
+    })
+
     it('다른 데코레이터와 함께 사용해도 정상적으로 로깅되어야 한다', () => {
         service.nestedDecorator()
 

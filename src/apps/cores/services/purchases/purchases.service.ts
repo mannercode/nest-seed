@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { mapDocToDto, MethodLog } from 'common'
+import { mapDocToDto } from 'common'
 import { PaymentsProxy } from 'infrastructures'
 import { PurchaseCreateDto, PurchaseDto } from './dtos'
 import { PurchaseDocument } from './models'
@@ -12,7 +12,6 @@ export class PurchasesService {
         private paymentsService: PaymentsProxy
     ) {}
 
-    @MethodLog()
     async createPurchase(createDto: PurchaseCreateDto) {
         const payment = await this.paymentsService.processPayment({
             customerId: createDto.customerId,
@@ -27,7 +26,6 @@ export class PurchasesService {
         return this.toDto(purchase)
     }
 
-    @MethodLog({ level: 'verbose' })
     async getPurchase(purchaseId: string) {
         const purchase = await this.repository.getById(purchaseId)
 

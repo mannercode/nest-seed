@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { Assert, DateUtil, MethodLog } from 'common'
+import { ApplicationsErrors } from 'applications/application-errors'
+import { Assert, DateUtil } from 'common'
 import { MoviesProxy, ShowtimeDto, ShowtimesProxy, TheatersProxy } from 'cores'
 import { ShowtimeBatchCreateJobData } from './types'
-import { ApplicationsErrors } from 'applications/application-errors'
 
 type TimeslotMap = Map<number, ShowtimeDto>
 
@@ -23,7 +23,6 @@ export class ShowtimeCreationValidatorService {
         return conflictingShowtimes
     }
 
-    @MethodLog()
     private async checkTimeConflicts(data: ShowtimeBatchCreateJobData): Promise<ShowtimeDto[]> {
         const { durationMinutes, startTimes, theaterIds } = data
 

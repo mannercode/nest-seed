@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { mapDocToDto, MethodLog, pickIds } from 'common'
+import { mapDocToDto, pickIds } from 'common'
 import { StorageFileCreateDto, StorageFilesProxy } from 'infrastructures'
 import { Routes } from 'shared/config'
 import { MovieCreateDto, MovieDto, MovieQueryDto, MovieUpdateDto } from './dtos'
@@ -13,7 +13,6 @@ export class MoviesService {
         private storageFilesService: StorageFilesProxy
     ) {}
 
-    @MethodLog()
     async createMovie(movieCreateDto: MovieCreateDto, fileCreateDtos: StorageFileCreateDto[]) {
         const storageFiles = await this.storageFilesService.saveFiles(fileCreateDtos)
 
@@ -21,39 +20,33 @@ export class MoviesService {
         return this.toDto(movie)
     }
 
-    @MethodLog()
     async updateMovie(movieId: string, updateDto: MovieUpdateDto) {
         const movie = await this.repository.updateMovie(movieId, updateDto)
         return this.toDto(movie)
     }
 
-    @MethodLog({ level: 'verbose' })
     async getMovie(movieId: string) {
         const movie = await this.repository.getById(movieId)
         return this.toDto(movie)
     }
 
-    @MethodLog()
     async deleteMovie(movieId: string) {
         await this.repository.deleteById(movieId)
         return true
     }
 
-    @MethodLog({ level: 'verbose' })
     async findMovies(queryDto: MovieQueryDto) {
         const { items, ...paginated } = await this.repository.findMovies(queryDto)
 
         return { ...paginated, items: this.toDtos(items) }
     }
 
-    @MethodLog({ level: 'verbose' })
     async getMoviesByIds(movieIds: string[]) {
         const movies = await this.repository.getByIds(movieIds)
 
         return this.toDtos(movies)
     }
 
-    @MethodLog({ level: 'verbose' })
     async moviesExist(movieIds: string[]): Promise<boolean> {
         return this.repository.existByIds(movieIds)
     }

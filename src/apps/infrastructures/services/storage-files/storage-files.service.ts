@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { getChecksum, mapDocToDto, MethodLog, Path } from 'common'
+import { getChecksum, mapDocToDto, Path } from 'common'
 import { HydratedDocument } from 'mongoose'
 import { AppConfigService } from 'shared/config'
 import { StorageFileCreateDto, StorageFileDto } from './dtos'
@@ -13,7 +13,6 @@ export class StorageFilesService {
         private config: AppConfigService
     ) {}
 
-    @MethodLog()
     async saveFiles(createDtos: StorageFileCreateDto[]) {
         const storageFiles = await this.repository.withTransaction(async (session) => {
             const storageFiles: HydratedDocument<StorageFile>[] = []
@@ -37,13 +36,11 @@ export class StorageFilesService {
         return this.toDtos(storageFiles)
     }
 
-    @MethodLog({ level: 'verbose' })
     async getStorageFile(fileId: string) {
         const file = await this.repository.getById(fileId)
         return this.toDto(file)
     }
 
-    @MethodLog()
     async deleteStorageFile(fileId: string) {
         await this.repository.deleteById(fileId)
 

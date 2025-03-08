@@ -1,9 +1,9 @@
 import { ConflictException, Injectable } from '@nestjs/common'
-import { InjectJwtAuth, JwtAuthService, mapDocToDto, MethodLog, Password } from 'common'
-import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
-import { CustomersRepository } from './customers.repository'
-import { CustomerDocument } from './models'
+import { InjectJwtAuth, JwtAuthService, mapDocToDto, Password } from 'common'
 import { CoreErrors } from 'cores/core-errors'
+import { CustomersRepository } from './customers.repository'
+import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
+import { CustomerDocument } from './models'
 
 @Injectable()
 export class CustomersService {
@@ -11,7 +11,7 @@ export class CustomersService {
         private repository: CustomersRepository,
         @InjectJwtAuth('customer') private jwtAuthService: JwtAuthService
     ) {}
-    @MethodLog()
+
     async createCustomer(createDto: CustomerCreateDto) {
         const foundEmail = await this.repository.findByEmail(createDto.email)
 
@@ -30,41 +30,34 @@ export class CustomersService {
         return this.toDto(customer)
     }
 
-    @MethodLog()
     async updateCustomer(customerId: string, updateDto: CustomerUpdateDto) {
         const customer = await this.repository.updateCustomer(customerId, updateDto)
         return this.toDto(customer)
     }
 
-    @MethodLog({ level: 'verbose' })
     async getCustomer(customerId: string) {
         const customer = await this.repository.getById(customerId)
         return this.toDto(customer)
     }
 
-    @MethodLog()
     async deleteCustomer(customerId: string) {
         await this.repository.deleteById(customerId)
         return true
     }
 
-    @MethodLog({ level: 'verbose' })
     async findCustomers(queryDto: CustomerQueryDto) {
         const { items, ...paginated } = await this.repository.findCustomers(queryDto)
         return { ...paginated, items: this.toDtos(items) }
     }
 
-    @MethodLog()
     async login(userId: string, email: string) {
         return this.jwtAuthService.generateAuthTokens(userId, email)
     }
 
-    @MethodLog()
     async refreshAuthTokens(refreshToken: string) {
         return this.jwtAuthService.refreshAuthTokens(refreshToken)
     }
 
-    @MethodLog({ level: 'verbose' })
     async authenticateCustomer(email: string, password: string) {
         const customer = await this.repository.findByEmail(email)
 

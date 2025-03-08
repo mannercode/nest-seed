@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MethodLog, MongooseRepository, objectId } from 'common'
+import { MongooseRepository, objectId } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfig } from 'shared/config'
 import { PurchaseCreateDto } from './dtos'
@@ -12,7 +12,6 @@ export class PurchasesRepository extends MongooseRepository<Purchase> {
         super(model)
     }
 
-    @MethodLog()
     async createPurchase(createDto: PurchaseCreateDto & { paymentId: string }) {
         const purchase = this.newDocument()
         purchase.customerId = objectId(createDto.customerId)

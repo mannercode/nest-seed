@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import {
     addInQuery,
-    MethodLog,
     MongooseRepository,
     MongooseUpdateResult,
     objectId,
@@ -20,7 +19,6 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         super(model)
     }
 
-    @MethodLog()
     async createTickets(createDtos: TicketCreateDto[]) {
         const tickets = createDtos.map((dto) => {
             const ticket = this.newDocument()
@@ -37,7 +35,6 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         return this.saveMany(tickets)
     }
 
-    @MethodLog()
     async updateTicketStatus(ticketIds: string[], status: TicketStatus) {
         const result = await this.model.updateMany(
             { _id: { $in: objectIds(ticketIds) } },
@@ -47,7 +44,6 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         return result as MongooseUpdateResult
     }
 
-    @MethodLog({ level: 'verbose' })
     async findAllTickets(filterDto: TicketFilterDto) {
         const { batchIds, movieIds, theaterIds, showtimeIds } = filterDto
 
@@ -63,7 +59,6 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         return tickets
     }
 
-    @MethodLog({ level: 'verbose' })
     async getSalesStatuses(showtimeIds: string[]) {
         const salesStatuses = await this.model.aggregate([
             { $match: { showtimeId: { $in: objectIds(showtimeIds) } } },

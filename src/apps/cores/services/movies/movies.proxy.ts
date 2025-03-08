@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, InjectClientProxy, MethodLog } from 'common'
+import { ClientProxyService, InjectClientProxy } from 'common'
 import { StorageFileCreateDto } from 'infrastructures'
 import { ClientProxyConfig, Messages } from 'shared/config'
 import { MovieCreateDto, MovieDto, MovieQueryDto, MovieUpdateDto } from './dtos'
@@ -10,7 +10,6 @@ export class MoviesProxy {
         @InjectClientProxy(ClientProxyConfig.connName) private service: ClientProxyService
     ) {}
 
-    @MethodLog({ level: 'verbose' })
     createMovie(
         movieCreateDto: MovieCreateDto,
         fileCreateDtos: StorageFileCreateDto[]
@@ -18,32 +17,26 @@ export class MoviesProxy {
         return this.service.getJson(Messages.Movies.createMovie, { movieCreateDto, fileCreateDtos })
     }
 
-    @MethodLog({ level: 'verbose' })
     updateMovie(movieId: string, updateDto: MovieUpdateDto): Promise<MovieDto> {
         return this.service.getJson(Messages.Movies.updateMovie, { movieId, updateDto })
     }
 
-    @MethodLog({ level: 'verbose' })
     getMovie(movieId: string): Promise<MovieDto> {
         return this.service.getJson(Messages.Movies.getMovie, movieId)
     }
 
-    @MethodLog({ level: 'verbose' })
     deleteMovie(movieId: string): Promise<boolean> {
         return this.service.getJson(Messages.Movies.deleteMovie, movieId)
     }
 
-    @MethodLog({ level: 'verbose' })
     findMovies(queryDto: MovieQueryDto): Promise<MovieDto[]> {
         return this.service.getJson(Messages.Movies.findMovies, queryDto)
     }
 
-    @MethodLog({ level: 'verbose' })
     getMoviesByIds(movieIds: string[]): Promise<MovieDto[]> {
         return this.service.getJson(Messages.Movies.getMoviesByIds, movieIds)
     }
 
-    @MethodLog({ level: 'verbose' })
     moviesExist(movieIds: string[]): Promise<boolean> {
         return this.service.getJson(Messages.Movies.moviesExist, movieIds)
     }

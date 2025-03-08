@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { MethodLog, OrderDirection } from 'common'
+import { OrderDirection } from 'common'
 import { MovieDto, MoviesProxy, ShowtimesProxy, WatchRecordsProxy } from 'cores'
 import { generateRecommendedMovies } from './recommendation.utils'
 
@@ -11,7 +11,6 @@ export class RecommendationService {
         private watchRecordsService: WatchRecordsProxy
     ) {}
 
-    @MethodLog({ level: 'verbose' })
     async findRecommendedMovies(customerId: string | null) {
         const showingMovieIds = await this.showtimesService.findShowingMovieIds()
 

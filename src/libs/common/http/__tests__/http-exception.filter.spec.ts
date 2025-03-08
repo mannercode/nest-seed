@@ -1,4 +1,4 @@
-import { BadRequestException, InternalServerErrorException } from '@nestjs/common'
+import { BadRequestException } from '@nestjs/common'
 import { ClientProxyService, CommonErrors } from 'common'
 import { HttpTestClient, withTestId } from 'testlib'
 

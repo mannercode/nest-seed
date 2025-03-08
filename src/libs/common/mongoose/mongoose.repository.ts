@@ -2,7 +2,6 @@ import { BadRequestException, NotFoundException, OnModuleInit } from '@nestjs/co
 import { differenceWith, uniq } from 'lodash'
 import { ClientSession, HydratedDocument, Model, QueryWithHelpers } from 'mongoose'
 import { CommonErrors } from '../common-errors'
-import { MethodLog } from '../logger'
 import { PaginationOptionDto, PaginationResult } from '../pipes'
 import { Assert, Expect } from '../validator'
 import { objectId, objectIds } from './mongoose.util'
@@ -33,7 +32,6 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return new this.model()
     }
 
-    @MethodLog({ excludeArgs: ['session'] })
     async saveMany(docs: HydratedDocument<Doc>[], session: SeesionArg = undefined) {
         const { insertedCount, matchedCount, deletedCount } = await this.model.bulkSave(docs, {
             session
@@ -48,17 +46,14 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return true
     }
 
-    @MethodLog({ level: 'verbose', excludeArgs: ['session'] })
     async findById(id: string, session: SeesionArg = undefined) {
         return this.model.findById(objectId(id), null, { session })
     }
 
-    @MethodLog({ level: 'verbose', excludeArgs: ['session'] })
     async findByIds(ids: string[], session: SeesionArg = undefined) {
         return this.model.find({ _id: { $in: objectIds(ids) } as any }, null, { session })
     }
 
-    @MethodLog({ level: 'verbose', excludeArgs: ['session'] })
     async getById(id: string, session: SeesionArg = undefined) {
         const doc = await this.findById(id, session)
 
@@ -71,7 +66,6 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return doc
     }
 
-    @MethodLog({ level: 'verbose', excludeArgs: ['session'] })
     async getByIds(ids: string[], session: SeesionArg = undefined) {
         const uniqueIds = uniq(ids)
 
@@ -91,13 +85,11 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return docs
     }
 
-    @MethodLog({ excludeArgs: ['session'] })
     async deleteById(id: string, session: SeesionArg = undefined) {
         const doc = await this.getById(id, session)
         await doc.deleteOne({ session })
     }
 
-    @MethodLog({ excludeArgs: ['session'] })
     async deleteByIds(ids: string[], session: SeesionArg = undefined) {
         const result = await this.model.deleteMany(
             { _id: { $in: objectIds(ids) } as any },
@@ -106,7 +98,6 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return result.deletedCount
     }
 
-    @MethodLog({ level: 'verbose', excludeArgs: ['session'] })
     async existByIds(ids: string[], session: SeesionArg = undefined) {
         const count = await this.model.countDocuments({ _id: { $in: objectIds(ids) } } as any, {
             session
@@ -114,7 +105,6 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return count === ids.length
     }
 
-    @MethodLog({ level: 'verbose', excludeArgs: ['session', 'callback'] })
     async findWithPagination(args: {
         callback?: (helpers: QueryWithHelpers<Array<Doc>, Doc>) => void
         pagination: PaginationOptionDto
@@ -159,7 +149,6 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return { skip, take, total, items } as PaginationResult<HydratedDocument<Doc>>
     }
 
-    @MethodLog({ level: 'verbose', excludeArgs: ['callback'] })
     async withTransaction<T>(
         callback: (session: ClientSession, rollback: () => void) => Promise<T>
     ) {

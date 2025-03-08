@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { CacheService, InjectCache, MethodLog } from 'common'
+import { CacheService, InjectCache } from 'common'
 
 const getCustomerKey = (showtimeId: string, customerId: string) =>
     `Customer:{${showtimeId}}:${customerId}`
@@ -9,7 +9,6 @@ const getTicketKey = (showtimeId: string, ticketId: string) => `Ticket:{${showti
 export class TicketHoldingService {
     constructor(@InjectCache('ticket-holding') private cacheService: CacheService) {}
 
-    @MethodLog({ level: 'verbose' })
     async holdTickets(args: {
         customerId: string
         showtimeId: string
@@ -72,14 +71,12 @@ export class TicketHoldingService {
         return result === 1
     }
 
-    @MethodLog({ level: 'verbose' })
     async findHeldTicketIds(showtimeId: string, customerId: string): Promise<string[]> {
         const tickets = await this.cacheService.get(getCustomerKey(showtimeId, customerId))
 
         return tickets ? JSON.parse(tickets) : []
     }
 
-    @MethodLog({ level: 'verbose' })
     async releaseTickets(showtimeId: string, customerId: string) {
         const tickets = await this.findHeldTicketIds(showtimeId, customerId)
 

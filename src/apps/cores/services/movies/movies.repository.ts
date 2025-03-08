@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { addEqualQuery, addRegexQuery, MethodLog, MongooseRepository, objectIds } from 'common'
+import { addEqualQuery, addRegexQuery, MongooseRepository, objectIds } from 'common'
 import { FilterQuery, Model } from 'mongoose'
 import { MongooseConfig } from 'shared/config'
 import { MovieCreateDto, MovieQueryDto, MovieUpdateDto } from './dtos'
@@ -12,7 +12,6 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         super(model)
     }
 
-    @MethodLog()
     async createMovie(createDto: MovieCreateDto, storageFileIds: string[]) {
         const movie = this.newDocument()
         movie.title = createDto.title
@@ -27,7 +26,6 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         return movie.save()
     }
 
-    @MethodLog()
     async updateMovie(movieId: string, updateDto: MovieUpdateDto) {
         const movie = await this.getById(movieId)
 
@@ -42,7 +40,6 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         return movie.save()
     }
 
-    @MethodLog({ level: 'verbose' })
     async findMovies(queryDto: MovieQueryDto) {
         const { title, genre, releaseDate, plot, director, rating, ...pagination } = queryDto
 

@@ -1,13 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import {
-    addInQuery,
-    addRangeQuery,
-    MethodLog,
-    MongooseRepository,
-    objectId,
-    validateFilters
-} from 'common'
+import { addInQuery, addRangeQuery, MongooseRepository, objectId, validateFilters } from 'common'
 import { FilterQuery, Model } from 'mongoose'
 import { MongooseConfig } from 'shared/config'
 import { ShowtimeCreateDto, ShowtimeFilterDto } from './dtos'
@@ -19,7 +12,6 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         super(model)
     }
 
-    @MethodLog()
     async createShowtimes(createDtos: ShowtimeCreateDto[]) {
         const showtimes = createDtos.map((dto) => {
             const doc = this.newDocument()
@@ -35,7 +27,6 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         await this.saveMany(showtimes)
     }
 
-    @MethodLog({ level: 'verbose' })
     async findAllShowtimes(filterDto: ShowtimeFilterDto) {
         const { batchIds, movieIds, theaterIds, startTimeRange, endTimeRange } = filterDto
 
@@ -52,13 +43,11 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         return showtimes
     }
 
-    @MethodLog({ level: 'verbose' })
     async findMovieIdsShowingAfter(time: Date) {
         const movieIds = await this.model.distinct('movieId', { startTime: { $gt: time } }).exec()
         return movieIds.map((id) => id.toString())
     }
 
-    @MethodLog({ level: 'verbose' })
     async findTheaterIdsByMovieId(movieId: string) {
         const theaterIds = await this.model
             .distinct('theaterId', { movieId: objectId(movieId) })
@@ -66,7 +55,6 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         return theaterIds.map((id) => id.toString())
     }
 
-    @MethodLog({ level: 'verbose' })
     async findShowdates(args: { movieId: string; theaterId: string }) {
         const { movieId, theaterId } = args
 

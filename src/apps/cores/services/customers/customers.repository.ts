@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { addRegexQuery, MethodLog, MongooseRepository, objectId } from 'common'
+import { addRegexQuery, MongooseRepository, objectId } from 'common'
+import { CoreErrors } from 'cores/core-errors'
 import { FilterQuery, Model } from 'mongoose'
 import { MongooseConfig } from 'shared/config'
 import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
 import { Customer } from './models'
-import { CoreErrors } from 'cores/core-errors'
 
 @Injectable()
 export class CustomersRepository extends MongooseRepository<Customer> {
@@ -13,7 +13,6 @@ export class CustomersRepository extends MongooseRepository<Customer> {
         super(model)
     }
 
-    @MethodLog()
     async createCustomer(createDto: CustomerCreateDto) {
         const customer = this.newDocument()
         customer.name = createDto.name
@@ -24,7 +23,6 @@ export class CustomersRepository extends MongooseRepository<Customer> {
         return customer.save()
     }
 
-    @MethodLog()
     async updateCustomer(customerId: string, updateDto: CustomerUpdateDto) {
         const customer = await this.getById(customerId)
         if (updateDto.name) customer.name = updateDto.name
@@ -34,7 +32,6 @@ export class CustomersRepository extends MongooseRepository<Customer> {
         return customer.save()
     }
 
-    @MethodLog({ level: 'verbose' })
     async findCustomers(queryDto: CustomerQueryDto) {
         const { name, email, ...pagination } = queryDto
 
@@ -52,12 +49,10 @@ export class CustomersRepository extends MongooseRepository<Customer> {
         return paginated
     }
 
-    @MethodLog({ level: 'verbose' })
     async findByEmail(email: string) {
         return this.model.findOne({ email: { $eq: email } })
     }
 
-    @MethodLog({ level: 'verbose' })
     async getPassword(customerId: string) {
         const customer = await this.model.findById(objectId(customerId)).select('+password').exec()
 

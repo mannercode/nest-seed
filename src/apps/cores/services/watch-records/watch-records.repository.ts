@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { addIdQuery, MethodLog, MongooseRepository, objectId } from 'common'
+import { addIdQuery, MongooseRepository, objectId } from 'common'
 import { FilterQuery, Model } from 'mongoose'
 import { MongooseConfig } from 'shared/config'
 import { WatchRecordCreateDto, WatchRecordQueryDto } from './dtos'
@@ -12,7 +12,6 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
         super(model)
     }
 
-    @MethodLog()
     async createWatchRecord(createDto: WatchRecordCreateDto) {
         const watchRecord = this.newDocument()
         watchRecord.customerId = objectId(createDto.customerId)
@@ -23,7 +22,6 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
         return watchRecord.save()
     }
 
-    @MethodLog({ level: 'verbose' })
     async findWatchRecords(queryDto: WatchRecordQueryDto) {
         const { customerId, ...pagination } = queryDto
 

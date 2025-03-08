@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MethodLog, MongooseRepository } from 'common'
+import { MongooseRepository } from 'common'
 import { ClientSession, Model } from 'mongoose'
 import { MongooseConfig } from 'shared/config'
 import { StorageFileCreateDto } from './dtos'
@@ -12,7 +12,6 @@ export class StorageFilesRepository extends MongooseRepository<StorageFile> {
         super(model)
     }
 
-    @MethodLog({ excludeArgs: ['session'] })
     async createStorageFile(
         createDto: StorageFileCreateDto,
         checksum: string,

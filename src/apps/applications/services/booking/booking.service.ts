@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { LatLong, MethodLog, pickIds } from 'common'
+import { LatLong, pickIds } from 'common'
 import { ShowtimesProxy, TheatersProxy, TicketHoldingProxy, TicketsProxy } from 'cores'
 import { generateShowtimesWithSalesStatus, sortTheatersByDistance } from './booking.utils'
 import { ShowtimeSalesStatusDto } from './dtos'
@@ -13,7 +13,6 @@ export class BookingService {
         private ticketsService: TicketsProxy
     ) {}
 
-    @MethodLog({ level: 'verbose' })
     async findShowingTheaters(args: { movieId: string; latlong: LatLong }) {
         const { movieId, latlong } = args
         const theaterIds = await this.showtimesService.findTheaterIdsByMovieId(movieId)
@@ -23,12 +22,10 @@ export class BookingService {
         return showingTheaters
     }
 
-    @MethodLog({ level: 'verbose' })
     async findShowdates(args: { movieId: string; theaterId: string }) {
         return this.showtimesService.findShowdates(args)
     }
 
-    @MethodLog({ level: 'verbose' })
     async findShowtimes(args: { movieId: string; theaterId: string; showdate: Date }) {
         const { movieId, theaterId, showdate } = args
 
@@ -52,13 +49,11 @@ export class BookingService {
         return showtimesWithSalesStatus as ShowtimeSalesStatusDto[]
     }
 
-    @MethodLog({ level: 'verbose' })
     async getAvailableTickets(showtimeId: string) {
         const tickets = await this.ticketsService.findAllTickets({ showtimeIds: [showtimeId] })
         return tickets
     }
 
-    @MethodLog({ level: 'verbose' })
     async holdTickets(args: { customerId: string; showtimeId: string; ticketIds: string[] }) {
         const seatHoldExpirationTime = 10 * 60 * 1000
 
