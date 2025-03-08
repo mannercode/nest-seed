@@ -1,4 +1,4 @@
-import { CommonErrors } from "common";
+import { CommonErrors } from 'common'
 
 export const CoreErrors = {
     ...CommonErrors,
