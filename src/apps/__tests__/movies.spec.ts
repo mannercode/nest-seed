@@ -79,7 +79,7 @@ describe('/movies', () => {
 
         it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.patch(`/movies/${nullObjectId}`).body({}).notFound({
-                code: 'ERR_DOCUMENT_NOT_FOUND',
+                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
                 message: 'Document not found',
                 notFoundId: nullObjectId
             })
@@ -96,7 +96,7 @@ describe('/movies', () => {
         it('영화를 삭제해야 한다', async () => {
             await client.delete(`/movies/${movie.id}`).ok()
             await client.get(`/movies/${movie.id}`).notFound({
-                code: 'ERR_DOCUMENT_NOT_FOUND',
+                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
                 message: 'Document not found',
                 notFoundId: movie.id
             })
@@ -104,7 +104,7 @@ describe('/movies', () => {
 
         it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.delete(`/movies/${nullObjectId}`).notFound({
-                code: 'ERR_DOCUMENT_NOT_FOUND',
+                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
                 message: 'Document not found',
                 notFoundId: nullObjectId
             })
@@ -124,7 +124,7 @@ describe('/movies', () => {
 
         it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.get(`/movies/${nullObjectId}`).notFound({
-                code: 'ERR_DOCUMENT_NOT_FOUND',
+                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
                 message: 'Document not found',
                 notFoundId: nullObjectId
             })
@@ -236,7 +236,7 @@ describe('/movies', () => {
         it('영화가 존재하지 않으면 NotFoundException을 던져야 한다', async () => {
             const promise = fixture.moviesService.getMoviesByIds([nullObjectId])
 
-            await expect(promise).rejects.toThrow('One or more Documents with IDs not found')
+            await expect(promise).rejects.toThrow('One or more documents not found')
         })
     })
 })

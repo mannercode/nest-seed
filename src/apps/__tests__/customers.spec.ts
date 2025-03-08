@@ -95,7 +95,7 @@ describe('/customers', () => {
 
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.patch(`/customers/${nullObjectId}`).body({}).notFound({
-                code: 'ERR_DOCUMENT_NOT_FOUND',
+                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
                 message: 'Document not found',
                 notFoundId: nullObjectId
             })
@@ -112,7 +112,7 @@ describe('/customers', () => {
         it('고객을 삭제해야 한다', async () => {
             await client.delete(`/customers/${customer.id}`).ok()
             await client.get(`/customers/${customer.id}`).notFound({
-                code: 'ERR_DOCUMENT_NOT_FOUND',
+                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
                 message: 'Document not found',
                 notFoundId: customer.id
             })
@@ -120,7 +120,7 @@ describe('/customers', () => {
 
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.delete(`/customers/${nullObjectId}`).notFound({
-                code: 'ERR_DOCUMENT_NOT_FOUND',
+                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
                 message: 'Document not found',
                 notFoundId: nullObjectId
             })
@@ -140,7 +140,7 @@ describe('/customers', () => {
 
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.get(`/customers/${nullObjectId}`).notFound({
-                code: 'ERR_DOCUMENT_NOT_FOUND',
+                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
                 message: 'Document not found',
                 notFoundId: nullObjectId
             })

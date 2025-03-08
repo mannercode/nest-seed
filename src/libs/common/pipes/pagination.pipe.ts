@@ -83,7 +83,7 @@ export abstract class PaginationPipe implements PipeTransform {
                 if (value.take) {
                     if (this.takeLimit < value.take) {
                         throw new BadRequestException({
-                            ...CommonErrors.PaginationTakeLimitExceeded,
+                            ...CommonErrors.Pagination.TakeLimitExceeded,
                             take: value.take,
                             takeLimit: this.takeLimit
                         })

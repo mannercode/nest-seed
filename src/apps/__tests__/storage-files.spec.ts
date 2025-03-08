@@ -66,7 +66,7 @@ describe('/storage-files', () => {
 
         it('허용된 크기를 초과하는 파일을 업로드하면 PAYLOAD_TOO_LARGE(413)를 반환해야 한다', async () => {
             await uploadFile([{ name: 'files', file: shared.oversizedFile }]).payloadTooLarge({
-                code: 'ERR_FILE_UPLOAD_MAX_SIZE_EXCEED',
+                code: 'ERR_FILE_UPLOAD_MAX_SIZE_EXCEEDED',
                 message: 'File too large'
             })
         })
@@ -76,7 +76,7 @@ describe('/storage-files', () => {
             const excessFiles = Array(limitOver).fill({ name: 'files', file: shared.file })
 
             await uploadFile(excessFiles).badRequest({
-                code: 'ERR_FILE_UPLOAD_MAX_COUNT_EXCEED',
+                code: 'ERR_FILE_UPLOAD_MAX_COUNT_EXCEEDED',
                 message: 'Too many files'
             })
         })
@@ -116,7 +116,7 @@ describe('/storage-files', () => {
 
         it('파일이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.get(`/storage-files/${nullObjectId}`).notFound({
-                code: 'ERR_DOCUMENT_NOT_FOUND',
+                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
                 message: 'Document not found',
                 notFoundId: nullObjectId
             })
@@ -137,7 +137,7 @@ describe('/storage-files', () => {
 
             await client.delete(`/storage-files/${uploadedFile.id}`).ok()
             await client.get(`/storage-files/${uploadedFile.id}`).notFound({
-                code: 'ERR_DOCUMENT_NOT_FOUND',
+                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
                 message: 'Document not found',
                 notFoundId: uploadedFile.id
             })
@@ -147,7 +147,7 @@ describe('/storage-files', () => {
 
         it('파일이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.delete(`/storage-files/${nullObjectId}`).notFound({
-                code: 'ERR_DOCUMENT_NOT_FOUND',
+                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
                 message: 'Document not found',
                 notFoundId: nullObjectId
             })

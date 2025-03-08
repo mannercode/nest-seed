@@ -80,7 +80,7 @@ describe('Showtimes Module', () => {
 
         it('1개 이상의 필터를 설정하지 않으면 BAD_REQUEST(400)를 반환해야 한다', async () => {
             const promise = createAndFindShowtimes({})
-            await expect(promise).rejects.toThrow('At least one filter condition must be provided.')
+            await expect(promise).rejects.toThrow('At least one filter condition must be provided')
         })
     })
 
@@ -99,7 +99,7 @@ describe('Showtimes Module', () => {
 
         it('상영시간이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             const promise = service.getShowtimes([nullObjectId])
-            await expect(promise).rejects.toThrow(`One or more Documents with IDs not found`)
+            await expect(promise).rejects.toThrow(`One or more documents not found`)
         })
     })
 

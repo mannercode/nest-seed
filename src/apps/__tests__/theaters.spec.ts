@@ -81,7 +81,7 @@ describe('/theaters', () => {
 
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.patch(`/theaters/${nullObjectId}`).body({}).notFound({
-                code: 'ERR_DOCUMENT_NOT_FOUND',
+                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
                 message: 'Document not found',
                 notFoundId: '000000000000000000000000'
             })
@@ -102,7 +102,7 @@ describe('/theaters', () => {
 
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.delete(`/theaters/${nullObjectId}`).notFound({
-                code: 'ERR_DOCUMENT_NOT_FOUND',
+                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
                 message: 'Document not found',
                 notFoundId: nullObjectId
             })
@@ -122,7 +122,7 @@ describe('/theaters', () => {
 
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.get(`/theaters/${nullObjectId}`).notFound({
-                code: 'ERR_DOCUMENT_NOT_FOUND',
+                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
                 message: 'Document not found',
                 notFoundId: nullObjectId
             })
@@ -192,7 +192,7 @@ describe('/theaters', () => {
         it('극장이 존재하지 않으면 NotFoundException을 던져야 한다', async () => {
             const promise = fixture.theatersService.getTheatersByIds([nullObjectId])
 
-            await expect(promise).rejects.toThrow('One or more Documents with IDs not found')
+            await expect(promise).rejects.toThrow('One or more documents not found')
         })
     })
 })

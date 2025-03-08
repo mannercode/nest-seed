@@ -14,13 +14,13 @@ import { LatLong } from '../types'
 class LatLongPipe implements PipeTransform<string, Promise<LatLong>> {
     async transform(value: string): Promise<LatLong> {
         if (!value) {
-            throw new BadRequestException(CommonErrors.LatlongRequired)
+            throw new BadRequestException(CommonErrors.LatLong.Required)
         }
 
         const [latStr, longStr] = value.split(',')
 
         if (!latStr || !longStr) {
-            throw new BadRequestException(CommonErrors.LatlongFormatInvalid)
+            throw new BadRequestException(CommonErrors.LatLong.FormatInvalid)
         }
 
         const latLong = plainToClass(LatLong, {
@@ -31,7 +31,7 @@ class LatLongPipe implements PipeTransform<string, Promise<LatLong>> {
         const errors = await validate(latLong)
         if (errors.length > 0) {
             throw new BadRequestException({
-                ...CommonErrors.LatlongValidationFailed,
+                ...CommonErrors.LatLong.ValidationFailed,
                 details: errors.map((error) => ({
                     field: error.property,
                     constraints: error.constraints

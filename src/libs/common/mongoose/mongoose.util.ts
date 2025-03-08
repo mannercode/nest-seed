@@ -50,6 +50,6 @@ export const addRangeQuery = (query: any, field: string, range?: { start?: Date;
 
 export const validateFilters = (query: any): void => {
     if (Object.keys(query).length === 0) {
-        throw new BadRequestException(CommonErrors.MongooseFiltersRequired)
+        throw new BadRequestException(CommonErrors.Mongoose.FiltersRequired)
     }
 }

@@ -5,7 +5,7 @@ import { createHttpTestContext } from 'testlib'
 @Controller()
 class TestController {
     @Get('latlong')
-    async testLatlong(@LatLongQuery('location') latlong: LatLong) {
+    async testLatLong(@LatLongQuery('location') latlong: LatLong) {
         return latlong
     }
 }
