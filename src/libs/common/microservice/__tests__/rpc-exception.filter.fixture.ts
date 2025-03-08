@@ -9,7 +9,7 @@ import {
     withTestId
 } from 'testlib'
 import { ClientProxyModule, ClientProxyService, InjectClientProxy } from '../client-proxy.service'
-import { RpcExceptionFilter } from '../http-to-rpc-exception.filter'
+import { RpcExceptionFilter } from '../rpc-exception.filter'
 
 class CreateSampleDto {
     @IsString()
