@@ -242,7 +242,7 @@ describe('MongooseRepository Utils', () => {
 
             expect(() => validateFilters(query)).toThrow(BadRequestException)
             expect(() => validateFilters(query)).toThrow(
-                'At least one filter condition must be provided.'
+                'At least one filter condition must be provided'
             )
         })
 

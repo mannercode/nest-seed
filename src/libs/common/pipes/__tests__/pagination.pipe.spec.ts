@@ -53,7 +53,7 @@ describe('Pagination', () => {
         const take = 51
         await client.get('/samples/takeLimit').query({ take }).badRequest({
             code: 'ERR_PAGINATION_TAKE_LIMIT_EXCEEDED',
-            message: "The 'take' parameter exceeds the maximum allowed limit.",
+            message: "The 'take' parameter exceeds the maximum allowed limit",
             take,
             takeLimit: 50
         })

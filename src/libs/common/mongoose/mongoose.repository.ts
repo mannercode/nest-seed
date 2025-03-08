@@ -62,7 +62,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     async getById(id: string, session: SeesionArg = undefined) {
         const doc = await this.findById(id, session)
 
-        if (!doc) throw new NotFoundException({ ...CommonErrors.DocumentNotFound1, notFoundId: id })
+        if (!doc) throw new NotFoundException({ ...CommonErrors.DocumentNotFound, notFoundId: id })
 
         return doc
     }
@@ -79,7 +79,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
 
         if (notFoundIds.length > 0) {
             throw new NotFoundException({
-                ...CommonErrors.DocumentNotFound2,
+                ...CommonErrors.MultipleDocumentsNotFound,
                 notFoundIds: notFoundIds
             })
         }
@@ -119,7 +119,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         const { callback, pagination, session } = args
 
         if (!pagination.take) {
-            throw new BadRequestException(CommonErrors.InvalidPagination1)
+            throw new BadRequestException(CommonErrors.PaginationTakeMissing)
         }
 
         const helpers = this.model.find({}, null, { session })
@@ -130,7 +130,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         if (pagination.take) {
             take = pagination.take
             if (take <= 0) {
-                throw new BadRequestException({ ...CommonErrors.InvalidPagination2, take })
+                throw new BadRequestException({ ...CommonErrors.PaginationTakeInvalid, take })
             }
             helpers.limit(take)
         }

@@ -92,7 +92,7 @@ describe('JwtAuthService', () => {
             jest.spyOn(redis, 'get').mockResolvedValueOnce('unknown token')
 
             const promise = jwtService.refreshAuthTokens(refreshToken)
-            await expect(promise).rejects.toThrow('The provided refresh token is invalid.')
+            await expect(promise).rejects.toThrow('The provided refresh token is invalid')
         })
     })
 })

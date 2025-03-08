@@ -18,9 +18,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
             'message' in responseBody
         ) {
             if (statusCode === 400 && responseBody.message === 'Too many files') {
-                responseBody = CommonErrors.FileUploadMaxCountExceed
+                responseBody = CommonErrors.FileUploadMaxCountExceeded
             } else if (statusCode === 413 && responseBody.message === 'File too large') {
-                responseBody = CommonErrors.FileUploadMaxSizeExceed
+                responseBody = CommonErrors.FileUploadMaxSizeExceeded
             }
         }
 
