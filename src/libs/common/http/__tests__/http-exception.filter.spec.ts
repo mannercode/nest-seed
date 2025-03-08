@@ -1,9 +1,11 @@
-import { CommonErrors } from 'common'
-import { HttpTestClient } from 'testlib'
+import { BadRequestException, InternalServerErrorException } from '@nestjs/common'
+import { ClientProxyService, CommonErrors } from 'common'
+import { HttpTestClient, withTestId } from 'testlib'
 
 describe('HttpExceptionFilter', () => {
     let closeFixture: () => void
     let client: HttpTestClient
+    let proxyService: ClientProxyService
 
     beforeEach(async () => {
         const { createFixture } = await import('./http-exception.filter.fixture')
@@ -11,6 +13,7 @@ describe('HttpExceptionFilter', () => {
         const fixture = await createFixture()
         closeFixture = fixture.closeFixture
         client = fixture.client
+        proxyService = fixture.proxyService
     })
 
     afterEach(async () => {
@@ -20,7 +23,7 @@ describe('HttpExceptionFilter', () => {
     it('HttpException을 던지면 해당하는 StatusCode를 반환해야 한다', async () => {
         await client.get('/bad-request').badRequest({
             error: 'Bad Request',
-            message: 'http-exception'
+            message: 'throwHttpException'
         })
     })
 
@@ -37,5 +40,11 @@ describe('HttpExceptionFilter', () => {
 
     it('PayloadTooLargeException("File too large")을 반환해야 한다', async () => {
         await client.get('/file-too-large').payloadTooLarge(CommonErrors.FileUpload.MaxSizeExceeded)
+    })
+
+    it('RpcController에서 던지는 예외에는 영향이 없어야 한다', async () => {
+        const promise = proxyService.getJson(withTestId('subject.throwException'), {})
+
+        await expect(promise).rejects.toEqual(new BadRequestException('throwRpcException'))
     })
 })

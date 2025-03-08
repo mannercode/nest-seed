@@ -2,6 +2,7 @@ import { ClientProxy, ClientProxyFactory, NatsOptions } from '@nestjs/microservi
 import { jsonToObject } from 'common'
 import { lastValueFrom } from 'rxjs'
 
+// TODO 제거해라. error 말고는 필요도 없다
 export class MicroserviceTestClient {
     static create(option: NatsOptions) {
         const proxy = ClientProxyFactory.create(option)

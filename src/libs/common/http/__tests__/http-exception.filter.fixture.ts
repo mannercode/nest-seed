@@ -1,13 +1,14 @@
 import { BadRequestException, Controller, Get, PayloadTooLargeException } from '@nestjs/common'
 import { APP_FILTER } from '@nestjs/core'
-import { HttpExceptionFilter } from 'common'
-import { createHttpTestContext } from 'testlib'
+import { MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
+import { ClientProxyModule, ClientProxyService, HttpExceptionFilter } from 'common'
+import { createHttpTestContext, getNatsTestConnection, withTestId } from 'testlib'
 
 @Controller()
 class TestController {
     @Get('bad-request')
     async throwHttpException() {
-        throw new BadRequestException('http-exception')
+        throw new BadRequestException('throwHttpException')
     }
 
     @Get('error')
@@ -24,19 +25,36 @@ class TestController {
     async fileTooLarge() {
         throw new PayloadTooLargeException('File too large')
     }
+
+    @MessagePattern(withTestId('subject.throwException'))
+    async throwRpcException() {
+        throw new BadRequestException('throwRpcException')
+    }
 }
 
 export async function createFixture() {
+    const { servers } = getNatsTestConnection()
+    const brokerOptions = { transport: Transport.NATS, options: { servers } } as NatsOptions
+
     const testContext = await createHttpTestContext({
         metadata: {
+            imports: [
+                ClientProxyModule.registerAsync({ name: 'name', useFactory: () => brokerOptions })
+            ],
             controllers: [TestController],
             providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }]
+        },
+        configureApp: async (app) => {
+            app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
+            await app.startAllMicroservices()
         }
     })
+
+    const proxyService = testContext.module.get(ClientProxyService.getToken('name'))
 
     const closeFixture = async () => {
         await testContext?.close()
     }
 
-    return { testContext, closeFixture, client: testContext.httpClient }
+    return { testContext, closeFixture, client: testContext.httpClient, proxyService }
 }

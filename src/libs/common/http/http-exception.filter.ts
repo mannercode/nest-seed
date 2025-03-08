@@ -1,6 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, Logger } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { CommonErrors } from '../common-errors'
+import { throwError } from 'rxjs'
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -53,8 +54,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
             }
 
             Logger.warn(message, 'HTTP', { ...logDetails, stack: exception.stack })
-        } else {
-            throw exception
+        } else if (contextType === 'rpc') {
+            return throwError(() => exception)
         }
     }
 }
