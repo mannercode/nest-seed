@@ -1,6 +1,7 @@
 import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from '@nestjs/common'
 import { Transform } from 'class-transformer'
 import { IsInt, IsOptional, IsString, Min } from 'class-validator'
+import { CommonErrors } from '../common-errors'
 
 export enum OrderDirection {
     asc = 'asc',
@@ -82,8 +83,7 @@ export abstract class PaginationPipe implements PipeTransform {
                 if (value.take) {
                     if (this.takeLimit < value.take) {
                         throw new BadRequestException({
-                            code: 'ERR_PAGINATION_TAKE_LIMIT_EXCEEDED',
-                            message: "The 'take' parameter exceeds the maximum allowed limit.",
+                            ...CommonErrors.PaginationTakeLimitExceeded,
                             take: value.take,
                             takeLimit: this.takeLimit
                         })

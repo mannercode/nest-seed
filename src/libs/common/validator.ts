@@ -1,8 +1,7 @@
 /* istanbul ignore file */
 
-import { isEqual } from 'lodash'
-import { LogicException } from './exceptions'
 import { Logger } from '@nestjs/common'
+import { isEqual } from 'lodash'
 
 type FailureHandler = (message: string) => void
 
@@ -59,7 +58,7 @@ class Validator {
 }
 
 export const Assert = new Validator((message) => {
-    throw new LogicException(message)
+    throw new Error(message)
 })
 
 export const Expect = new Validator((message) => {

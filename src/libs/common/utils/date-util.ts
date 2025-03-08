@@ -1,5 +1,3 @@
-import { Exception } from 'common'
-
 export class DateUtil {
     /**
      * 시간 형식 문자열을 밀리초로 변환합니다.
@@ -24,7 +22,7 @@ export class DateUtil {
         const validFormatRegex = /^(-?\d+(\.\d+)?)(ms|s|m|h|d)(\s*(-?\d+(\.\d+)?)(ms|s|m|h|d))*$/
 
         if (!validFormatRegex.test(str)) {
-            throw new Exception(`Invalid time format(${str})`)
+            throw new Error(`Invalid time format(${str})`)
         }
 
         const regex = /(-?\d+(\.\d+)?)(ms|s|m|h|d)/g
@@ -146,7 +144,7 @@ export class DateUtil {
      */
     static fromYMD(dateString: string): Date {
         if (!(dateString.length === 8 || dateString.length === 12)) {
-            throw new Exception('Invalid date string format. Expected YYYYMMDD or YYYYMMDDHHmm.')
+            throw new Error('Invalid date string format. Expected YYYYMMDD or YYYYMMDDHHmm.')
         }
 
         const year = parseInt(dateString.substring(0, 4), 10)

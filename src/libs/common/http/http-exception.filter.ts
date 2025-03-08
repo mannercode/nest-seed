@@ -1,12 +1,13 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, Logger } from '@nestjs/common'
 import { Request, Response } from 'express'
+import { CommonErrors } from '../common-errors'
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
     catch(exception: HttpException, host: ArgumentsHost) {
-        const ctx = host.switchToHttp()
-        const response = ctx.getResponse<Response>()
-        const request = ctx.getRequest<Request>()
+        const http = host.switchToHttp()
+        const response = http.getResponse<Response>()
+        const request = http.getRequest<Request>()
 
         const statusCode = exception.getStatus()
         let responseBody = exception.getResponse()
@@ -17,9 +18,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
             'message' in responseBody
         ) {
             if (statusCode === 400 && responseBody.message === 'Too many files') {
-                responseBody = { code: 'ERR_MAX_COUNT_EXCEED', message: responseBody.message }
+                responseBody = CommonErrors.FileUploadMaxCountExceed
             } else if (statusCode === 413 && responseBody.message === 'File too large') {
-                responseBody = { code: 'ERR_MAX_SIZE_EXCEED', message: responseBody.message }
+                responseBody = CommonErrors.FileUploadMaxSizeExceed
             }
         }
 
@@ -27,18 +28,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
         const message = exception.message
 
-        const additionalInfo = {
+        const logDetails = {
             statusCode,
-            request: {
-                method: request.method,
-                url: request.url,
-                body: request.body
-            },
+            request: { method: request.method, url: request.url, body: request.body },
             response: responseBody
         }
 
-        // 2xx and 5xx errors are not allowed here.
-        // 2xx is not an exception and 5xx is handled by HttpErrorFilter
-        Logger.warn(message, 'HTTP', { ...additionalInfo, stack: exception.stack })
+        Logger.warn(message, 'HTTP', { ...logDetails, stack: exception.stack })
     }
 }

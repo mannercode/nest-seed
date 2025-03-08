@@ -1,4 +1,3 @@
-import { Exception } from '../exceptions'
 
 export class Byte {
     /**
@@ -24,7 +23,7 @@ export class Byte {
             /^(-?\d+(\.\d+)?)(B|KB|MB|GB|TB)(\s+(-?\d+(\.\d+)?)(B|KB|MB|GB|TB))*$/i
 
         if (!validFormatRegex.test(str)) {
-            throw new Exception(`잘못된 크기 형식(${str})`)
+            throw new Error(`Invalid size format(${str})`)
         }
 
         const regex = /(-?\d+(\.\d+)?)(B|KB|MB|GB|TB)/gi

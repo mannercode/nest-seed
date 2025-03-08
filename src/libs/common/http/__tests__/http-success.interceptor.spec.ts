@@ -27,9 +27,8 @@ describe('HttpSuccessInterceptor', () => {
             'HTTP',
             expect.objectContaining({
                 statusCode: 200,
-                method: 'GET',
-                url: '/',
-                runningTime: expect.any(String)
+                request: { method: 'GET', url: '/' },
+                duration: expect.any(String)
             })
         )
     })

@@ -26,14 +26,14 @@ describe('HttpExceptionFilter', () => {
 
     it('BadRequestException("Too many files")을 반환해야 한다', async () => {
         await client.get('/too-many-files').badRequest({
-            code: 'ERR_MAX_COUNT_EXCEED',
+            code: 'ERR_FILE_UPLOAD_MAX_COUNT_EXCEED',
             message: 'Too many files'
         })
     })
 
     it('PayloadTooLargeException("File too large")을 반환해야 한다', async () => {
         await client.get('/file-too-large').payloadTooLarge({
-            code: 'ERR_MAX_SIZE_EXCEED',
+            code: 'ERR_FILE_UPLOAD_MAX_SIZE_EXCEED',
             message: 'File too large'
         })
     })

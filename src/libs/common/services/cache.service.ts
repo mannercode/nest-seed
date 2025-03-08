@@ -1,6 +1,5 @@
 import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
-import { Exception } from 'common'
 import Redis from 'ioredis'
 
 @Injectable()
@@ -20,7 +19,7 @@ export class CacheService {
 
     async set(key: string, value: string, ttlMs = 0) {
         if (ttlMs < 0) {
-            throw new Exception('TTL must not be negative')
+            throw new Error('TTL must not be negative')
         }
 
         if (0 < ttlMs) {

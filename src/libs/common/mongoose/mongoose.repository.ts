@@ -1,15 +1,11 @@
 import { BadRequestException, NotFoundException, OnModuleInit } from '@nestjs/common'
-import {
-    Assert,
-    Expect,
-    MethodLog,
-    objectId,
-    objectIds,
-    PaginationOptionDto,
-    PaginationResult
-} from 'common'
 import { differenceWith, uniq } from 'lodash'
 import { ClientSession, HydratedDocument, Model, QueryWithHelpers } from 'mongoose'
+import { CommonErrors } from '../common-errors'
+import { MethodLog } from '../logger'
+import { PaginationOptionDto, PaginationResult } from '../pipes'
+import { Assert, Expect } from '../validator'
+import { objectId, objectIds } from './mongoose.util'
 
 export class MongooseUpdateResult {
     modifiedCount: number
@@ -66,12 +62,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     async getById(id: string, session: SeesionArg = undefined) {
         const doc = await this.findById(id, session)
 
-        if (!doc)
-            throw new NotFoundException({
-                code: 'ERR_DOCUMENT_NOT_FOUND',
-                message: `Document not found`,
-                notFoundId: id
-            })
+        if (!doc) throw new NotFoundException({ ...CommonErrors.DocumentNotFound1, notFoundId: id })
 
         return doc
     }
@@ -88,8 +79,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
 
         if (notFoundIds.length > 0) {
             throw new NotFoundException({
-                code: 'ERR_DOCUMENT_NOT_FOUND',
-                message: `One or more Documents with IDs not found`,
+                ...CommonErrors.DocumentNotFound2,
                 notFoundIds: notFoundIds
             })
         }
@@ -129,10 +119,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         const { callback, pagination, session } = args
 
         if (!pagination.take) {
-            throw new BadRequestException({
-                code: 'ERR_INVALID_PAGINATION',
-                message: `'take' must be specified.`
-            })
+            throw new BadRequestException(CommonErrors.InvalidPagination1)
         }
 
         const helpers = this.model.find({}, null, { session })
@@ -143,11 +130,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         if (pagination.take) {
             take = pagination.take
             if (take <= 0) {
-                throw new BadRequestException({
-                    code: 'ERR_INVALID_PAGINATION',
-                    message: `'take' must be a positive number`,
-                    take
-                })
+                throw new BadRequestException({ ...CommonErrors.InvalidPagination2, take })
             }
             helpers.limit(take)
         }

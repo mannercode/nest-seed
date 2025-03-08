@@ -1,7 +1,8 @@
 import { BadRequestException } from '@nestjs/common'
-import { Expect } from 'common'
 import { escapeRegExp, uniq } from 'lodash'
 import { Types } from 'mongoose'
+import { CommonErrors } from '../common-errors'
+import { Expect } from '../validator'
 
 export const newObjectId = () => new Types.ObjectId().toString()
 export const objectId = (id: string) => new Types.ObjectId(id)
@@ -49,9 +50,6 @@ export const addRangeQuery = (query: any, field: string, range?: { start?: Date;
 
 export const validateFilters = (query: any): void => {
     if (Object.keys(query).length === 0) {
-        throw new BadRequestException({
-            code: 'ERR_MONGOOSE_FILTERS_REQUIRED',
-            message: 'At least one filter condition must be provided.'
-        })
+        throw new BadRequestException(CommonErrors.MongooseFiltersRequired)
     }
 }

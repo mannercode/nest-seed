@@ -1,3 +1,4 @@
+import { Request, Response } from 'express'
 import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common'
 import { Observable } from 'rxjs'
 import { tap } from 'rxjs/operators'
@@ -7,20 +8,20 @@ export class HttpSuccessInterceptor implements NestInterceptor {
     async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
         const now = Date.now()
 
-        const request = context.switchToHttp().getRequest()
-        const response = context.switchToHttp().getResponse()
+        const http = context.switchToHttp()
+        const response = http.getResponse<Response>()
+        const request = http.getRequest<Request>()
 
         return next.handle().pipe(
             tap({
                 complete: () => {
-                    const additionalInfo = {
+                    const logDetails = {
                         statusCode: response.statusCode,
-                        method: request.method,
-                        url: request.url,
-                        runningTime: `${Date.now() - now}ms`
+                        request: { method: request.method, url: request.url },
+                        duration: `${Date.now() - now}ms`
                     }
 
-                    Logger.verbose('Success', 'HTTP', additionalInfo)
+                    Logger.verbose('Success', 'HTTP', logDetails)
                 }
             })
         )

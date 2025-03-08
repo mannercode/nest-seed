@@ -36,6 +36,7 @@ export class HttpToRpcExceptionFilter implements ExceptionFilter {
     }
 }
 
+// TODO 이거 적절한 위치?
 export async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
     return lastValueFrom(
         observer.pipe(

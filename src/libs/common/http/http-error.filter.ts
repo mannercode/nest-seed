@@ -4,22 +4,20 @@ import { Request, Response } from 'express'
 @Catch(Error)
 export class HttpErrorFilter implements ExceptionFilter {
     async catch(error: Error, host: ArgumentsHost) {
-        const ctx = host.switchToHttp()
-        const response = ctx.getResponse<Response>()
-        const request = ctx.getRequest<Request>()
+        const http = host.switchToHttp()
+        const response = http.getResponse<Response>()
+        const request = http.getRequest<Request>()
 
         const message = error.message
         const statusCode = HttpStatus.INTERNAL_SERVER_ERROR
 
-        const additionalInfo = {
+        const logDetails = {
             statusCode,
-            method: request.method,
-            url: request.url,
-            body: request.body
+            request: { method: request.method, url: request.url, body: request.body }
         }
 
-        response.status(statusCode).json({ ...additionalInfo, message: 'Internal server error' })
+        response.status(statusCode).json({ ...logDetails, message: 'Internal server error' })
 
-        Logger.error(message, 'HTTP', { ...additionalInfo, stack: error.stack })
+        Logger.error(message, 'HTTP', { ...logDetails, stack: error.stack })
     }
 }

@@ -1,4 +1,4 @@
-import { DateUtil, Exception } from 'common'
+import { DateUtil } from 'common'
 
 describe('DateUtil', () => {
     describe('toMs', () => {
@@ -15,7 +15,7 @@ describe('DateUtil', () => {
         })
 
         it('잘못된 형식 입력 시 예외 발생', () => {
-            expect(() => DateUtil.toMs('2z')).toThrow(Exception)
+            expect(() => DateUtil.toMs('2z')).toThrow(Error)
         })
     })
 

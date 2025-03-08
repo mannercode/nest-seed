@@ -19,9 +19,8 @@ describe('HttpErrorFilter', () => {
     it('Error를 던지면 INTERNAL_SERVER_ERROR(500)를 반환해야 한다', async () => {
         await client.get('/').internalServerError({
             message: 'Internal server error',
-            method: 'GET',
             statusCode: 500,
-            url: '/'
+            request: { method: 'GET', url: '/' }
         })
     })
 })
