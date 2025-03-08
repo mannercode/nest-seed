@@ -3,6 +3,7 @@ import { InjectJwtAuth, JwtAuthService, mapDocToDto, MethodLog, Password } from 
 import { CustomerCreateDto, CustomerDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
 import { CustomersRepository } from './customers.repository'
 import { CustomerDocument } from './models'
+import { CoreErrors } from 'cores/core-errors'
 
 @Injectable()
 export class CustomersService {
@@ -16,8 +17,7 @@ export class CustomersService {
 
         if (foundEmail) {
             throw new ConflictException({
-                code: 'ERR_CUSTOMER_EMAIL_ALREADY_EXISTS',
-                message: 'Customer with email already exists',
+                ...CoreErrors.Customer.emailAlreadyExists,
                 email: createDto.email
             })
         }

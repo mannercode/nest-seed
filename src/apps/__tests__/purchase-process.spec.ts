@@ -16,6 +16,7 @@ import {
     Fixture,
     holdTickets
 } from './purchase-process.fixture'
+import { Errors } from './utils'
 
 describe('/purchase-process', () => {
     let fixture: Fixture
@@ -101,9 +102,8 @@ describe('/purchase-process', () => {
                 .post('/purchases')
                 .body({ customerId, totalPrice, items })
                 .badRequest({
-                    code: 'ERR_PURCHASE_MAX_TICKETS_EXCEEDED',
-                    maxCount: expect.any(Number),
-                    message: expect.any(String)
+                    ...Errors.Purchase.MaxTicketsExceeded,
+                    maxCount: expect.any(Number)
                 })
         })
 
@@ -117,9 +117,8 @@ describe('/purchase-process', () => {
                 .post('/purchases')
                 .body({ customerId, totalPrice, items })
                 .badRequest({
-                    code: 'ERR_PURCHASE_DEADLINE_EXCEEDED',
-                    deadlineMinutes: expect.any(Number),
-                    message: expect.any(String)
+                    ...Errors.Purchase.DeadlineExceeded,
+                    deadlineMinutes: expect.any(Number)
                 })
         })
 
@@ -131,7 +130,7 @@ describe('/purchase-process', () => {
             await client
                 .post('/purchases')
                 .body({ customerId, totalPrice, items })
-                .badRequest({ code: 'ERR_TICKET_NOT_HELD', message: expect.any(String) })
+                .badRequest(Errors.Purchase.TicketNotHeld)
         })
     })
 

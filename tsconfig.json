@@ -29,14 +29,26 @@
             "shared/*": [
                 "src/apps/shared/*"
             ],
+            "gateway/*": [
+                "src/apps/gateway/*"
+            ],
             "gateway": [
                 "src/apps/gateway/index"
+            ],
+            "applications/*": [
+                "src/apps/applications/*"
             ],
             "applications": [
                 "src/apps/applications/index"
             ],
+            "cores/*": [
+                "src/apps/cores/*"
+            ],
             "cores": [
                 "src/apps/cores/index"
+            ],
+            "infrastructures/*": [
+                "src/apps/infrastructures/*"
             ],
             "infrastructures": [
                 "src/apps/infrastructures/index"

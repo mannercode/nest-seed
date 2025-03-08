@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, Module } from '@nestjs/common'
 import { MulterModule, MulterModuleOptions, MulterOptionsFactory } from '@nestjs/platform-express'
 import { generateShortId } from 'common'
+import { GatewayErrors } from 'gateway/gateway-errors'
 import { diskStorage } from 'multer'
 import { AppConfigService } from 'shared/config'
 
@@ -21,8 +22,7 @@ class MulterConfigService implements MulterOptionsFactory {
 
                 if (!this.config.fileUpload.allowedMimeTypes.includes(file.mimetype)) {
                     error = new BadRequestException({
-                        code: 'ERR_INVALID_FILE_TYPE',
-                        message: 'File type not allowed.',
+                        ...GatewayErrors.FileUpload.InvalidFileType,
                         allowedTypes: this.config.fileUpload.allowedMimeTypes
                     })
                 }

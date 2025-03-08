@@ -1,5 +1,6 @@
 import { BadRequestException, Logger } from '@nestjs/common'
 import { DateUtil } from 'common'
+import { ApplicationsErrors } from 'applications/application-errors'
 
 const PURCHASE_MAX_TICKETS = 10
 const PURCHASE_DEADLINE_MINUTES = 30
@@ -7,8 +8,7 @@ const PURCHASE_DEADLINE_MINUTES = 30
 export function checkMaxTicketsForPurchase(ticketCount: number) {
     if (PURCHASE_MAX_TICKETS < ticketCount) {
         throw new BadRequestException({
-            code: 'ERR_PURCHASE_MAX_TICKETS_EXCEEDED',
-            message: 'You have exceeded the maximum number of tickets allowed for purchase.',
+            ...ApplicationsErrors.Purchase.MaxTicketsExceeded,
             maxCount: PURCHASE_MAX_TICKETS
         })
     }
@@ -21,8 +21,7 @@ export function checkPurchaseDeadline(startTime: Date) {
         Logger.error(startTime.toLocaleTimeString(), cutoffTime.toLocaleTimeString())
 
         throw new BadRequestException({
-            code: 'ERR_PURCHASE_DEADLINE_EXCEEDED',
-            message: 'The purchase deadline has passed.',
+            ...ApplicationsErrors.Purchase.DeadlineExceeded,
             deadlineMinutes: PURCHASE_DEADLINE_MINUTES
         })
     }
@@ -32,9 +31,6 @@ export function checkHeldTickets(heldTicketIds: string[], purchaseTicketIds: str
     const isAllExist = purchaseTicketIds.every((ticketId) => heldTicketIds.includes(ticketId))
 
     if (!isAllExist) {
-        throw new BadRequestException({
-            code: 'ERR_TICKET_NOT_HELD',
-            message: 'Only held tickets can be purchased.'
-        })
+        throw new BadRequestException(ApplicationsErrors.Purchase.TicketNotHeld)
     }
 }

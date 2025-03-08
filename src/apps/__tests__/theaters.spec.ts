@@ -9,6 +9,8 @@ import {
     createTheaters,
     Fixture
 } from './theaters.fixture'
+import { CoreErrors } from 'cores/core-errors'
+import { Errors } from './utils'
 
 describe('/theaters', () => {
     let fixture: Fixture
@@ -37,8 +39,7 @@ describe('/theaters', () => {
                 .post('/theaters')
                 .body({})
                 .badRequest({
-                    code: 'ERR_VALIDATION_FAILED',
-                    message: 'Validation failed',
+                    ...Errors.ValidationFailed,
                     details: [
                         {
                             constraints: {
@@ -80,11 +81,13 @@ describe('/theaters', () => {
         })
 
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client.patch(`/theaters/${nullObjectId}`).body({}).notFound({
-                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
-                message: 'Document not found',
-                notFoundId: '000000000000000000000000'
-            })
+            await client
+                .patch(`/theaters/${nullObjectId}`)
+                .body({})
+                .notFound({
+                    ...Errors.Mongoose.DocumentNotFound,
+                    notFoundId: '000000000000000000000000'
+                })
         })
     })
 
@@ -102,8 +105,7 @@ describe('/theaters', () => {
 
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.delete(`/theaters/${nullObjectId}`).notFound({
-                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
-                message: 'Document not found',
+                ...CoreErrors.Mongoose.DocumentNotFound,
                 notFoundId: nullObjectId
             })
         })
@@ -122,7 +124,7 @@ describe('/theaters', () => {
 
         it('극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.get(`/theaters/${nullObjectId}`).notFound({
-                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
+                ...CoreErrors.Mongoose.DocumentNotFound,
                 message: 'Document not found',
                 notFoundId: nullObjectId
             })
@@ -153,14 +155,13 @@ describe('/theaters', () => {
                 .get('/theaters')
                 .query({ wrong: 'value' })
                 .badRequest({
-                    code: 'ERR_VALIDATION_FAILED',
+                    ...CoreErrors.ValidationFailed,
                     details: [
                         {
                             constraints: { whitelistValidation: 'property wrong should not exist' },
                             field: 'wrong'
                         }
-                    ],
-                    message: 'Validation failed'
+                    ]
                 })
         })
 

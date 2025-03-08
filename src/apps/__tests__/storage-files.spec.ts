@@ -10,6 +10,8 @@ import {
     saveFile,
     SharedFixture
 } from './storage-files.fixture'
+import { Errors } from './utils'
+import { GatewayErrors } from 'gateway/gateway-errors'
 
 describe('/storage-files', () => {
     let shared: SharedFixture
@@ -65,35 +67,29 @@ describe('/storage-files', () => {
         })
 
         it('허용된 크기를 초과하는 파일을 업로드하면 PAYLOAD_TOO_LARGE(413)를 반환해야 한다', async () => {
-            await uploadFile([{ name: 'files', file: shared.oversizedFile }]).payloadTooLarge({
-                code: 'ERR_FILE_UPLOAD_MAX_SIZE_EXCEEDED',
-                message: 'File too large'
-            })
+            await uploadFile([{ name: 'files', file: shared.oversizedFile }]).payloadTooLarge(
+                Errors.FileUpload.MaxSizeExceeded
+            )
         })
 
         it('허용된 파일 개수를 초과하여 업로드하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
             const limitOver = config.fileUpload.maxFilesPerUpload + 1
             const excessFiles = Array(limitOver).fill({ name: 'files', file: shared.file })
 
-            await uploadFile(excessFiles).badRequest({
-                code: 'ERR_FILE_UPLOAD_MAX_COUNT_EXCEEDED',
-                message: 'Too many files'
-            })
+            await uploadFile(excessFiles).badRequest(Errors.FileUpload.MaxCountExceeded)
         })
 
         it('허용되지 않는 MIME 타입의 파일을 업로드하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
             await uploadFile([{ name: 'files', file: shared.notAllowFile }]).badRequest({
-                code: 'ERR_INVALID_FILE_TYPE',
-                message: 'File type not allowed.',
+                ...GatewayErrors.FileUpload.InvalidFileType,
                 allowedTypes: ['text/plain']
             })
         })
 
         it('name 필드를 설정하지 않으면 BAD_REQUEST(400)를 반환해야 한다', async () => {
             await uploadFile([], []).badRequest({
-                code: 'ERR_VALIDATION_FAILED',
-                details: [{ constraints: { isString: 'name must be a string' }, field: 'name' }],
-                message: 'Validation failed'
+                ...Errors.ValidationFailed,
+                details: [{ constraints: { isString: 'name must be a string' }, field: 'name' }]
             })
         })
     })
@@ -116,8 +112,7 @@ describe('/storage-files', () => {
 
         it('파일이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.get(`/storage-files/${nullObjectId}`).notFound({
-                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
-                message: 'Document not found',
+                ...Errors.Mongoose.DocumentNotFound,
                 notFoundId: nullObjectId
             })
         })
@@ -137,8 +132,7 @@ describe('/storage-files', () => {
 
             await client.delete(`/storage-files/${uploadedFile.id}`).ok()
             await client.get(`/storage-files/${uploadedFile.id}`).notFound({
-                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
-                message: 'Document not found',
+                ...Errors.Mongoose.DocumentNotFound,
                 notFoundId: uploadedFile.id
             })
 
@@ -147,8 +141,7 @@ describe('/storage-files', () => {
 
         it('파일이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.delete(`/storage-files/${nullObjectId}`).notFound({
-                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
-                message: 'Document not found',
+                ...Errors.Mongoose.DocumentNotFound,
                 notFoundId: nullObjectId
             })
         })

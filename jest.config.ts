@@ -17,9 +17,13 @@ const config: Config = {
         '^common$': '<rootDir>/src/libs/common/index',
         '^testlib$': '<rootDir>/src/libs/testlib/index',
         '^shared/(.*)$': '<rootDir>/src/apps/shared/$1',
+        '^gateway/(.*)$': '<rootDir>/src/apps/gateway/$1',
         '^gateway$': '<rootDir>/src/apps/gateway/index',
+        '^applications/(.*)$': '<rootDir>/src/apps/applications/$1',
         '^applications$': '<rootDir>/src/apps/applications/index',
+        '^cores/(.*)$': '<rootDir>/src/apps/cores/$1',
         '^cores$': '<rootDir>/src/apps/cores/index',
+        '^infrastructures/(.*)$': '<rootDir>/src/apps/infrastructures/$1',
         '^infrastructures$': '<rootDir>/src/apps/infrastructures/index'
     },
     collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
@@ -34,7 +38,7 @@ const config: Config = {
         '/modules/',
         '/index\\.ts$',
         '\\.module\\.ts$',
-        '/libs/testlib/',
+        '/libs/testlib/'
     ],
     coverageDirectory: '<rootDir>/_output/coverage',
     testTimeout: 10000

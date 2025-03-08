@@ -1,3 +1,4 @@
+export * from './common-errors'
 export * from './http'
 export * from './logger'
 export * from './microservice'

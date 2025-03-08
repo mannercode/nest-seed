@@ -3,6 +3,7 @@ import { Customer, CustomerDto } from 'cores'
 import { MongooseConfig } from 'shared/config'
 import { HttpTestClient } from 'testlib'
 import { closeFixture, Fixture } from './customers-auth.fixture'
+import { Errors } from './utils'
 
 describe('/customers(authentication)', () => {
     let fixture: Fixture
@@ -60,11 +61,13 @@ describe('/customers(authentication)', () => {
                 }))
             }))
 
-            await client.post('/customers/login').body({ email, password }).notFound({
-                message: 'Customer not found',
-                code: 'ERR_CUSTOMER_NOT_FOUND',
-                customerId: customer.id
-            })
+            await client
+                .post('/customers/login')
+                .body({ email, password })
+                .notFound({
+                    ...Errors.Customer.NotFound,
+                    customerId: customer.id
+                })
         })
     })
 
@@ -90,7 +93,7 @@ describe('/customers(authentication)', () => {
                 .post('/customers/refresh')
                 .body({ refreshToken: 'invalid-token' })
                 .unauthorized({
-                    code: 'ERR_JWT_AUTH_REFRESH_TOKEN_VERIFICATION_FAILED',
+                    ...Errors.JwtAuth.RefreshTokenVerificationFailed,
                     message: 'jwt malformed'
                 })
         })

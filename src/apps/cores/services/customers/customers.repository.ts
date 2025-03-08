@@ -5,6 +5,7 @@ import { FilterQuery, Model } from 'mongoose'
 import { MongooseConfig } from 'shared/config'
 import { CustomerCreateDto, CustomerQueryDto, CustomerUpdateDto } from './dtos'
 import { Customer } from './models'
+import { CoreErrors } from 'cores/core-errors'
 
 @Injectable()
 export class CustomersRepository extends MongooseRepository<Customer> {
@@ -62,8 +63,7 @@ export class CustomersRepository extends MongooseRepository<Customer> {
 
         if (!customer) {
             throw new NotFoundException({
-                code: 'ERR_CUSTOMER_NOT_FOUND',
-                message: 'Customer not found',
+                ...CoreErrors.Customer.NotFound,
                 customerId
             })
         }

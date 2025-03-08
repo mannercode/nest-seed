@@ -3,6 +3,7 @@ import { pickIds } from 'common'
 import { MovieDto, MovieGenre, MovieRating } from 'cores'
 import { expectEqualUnsorted, HttpTestClient, nullObjectId, objectToFields } from 'testlib'
 import { closeFixture, createMovie, createMovieDto, createMovies, Fixture } from './movies.fixture'
+import { Errors } from './utils'
 
 describe('/movies', () => {
     let fixture: Fixture
@@ -46,11 +47,7 @@ describe('/movies', () => {
             await client
                 .post('/movies')
                 .body({})
-                .badRequest({
-                    code: 'ERR_VALIDATION_FAILED',
-                    message: 'Validation failed',
-                    details: expect.any(Array)
-                })
+                .badRequest({ ...Errors.ValidationFailed, details: expect.any(Array) })
         })
     })
 
@@ -78,11 +75,10 @@ describe('/movies', () => {
         })
 
         it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client.patch(`/movies/${nullObjectId}`).body({}).notFound({
-                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
-                message: 'Document not found',
-                notFoundId: nullObjectId
-            })
+            await client
+                .patch(`/movies/${nullObjectId}`)
+                .body({})
+                .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
         })
     })
 
@@ -95,19 +91,15 @@ describe('/movies', () => {
 
         it('영화를 삭제해야 한다', async () => {
             await client.delete(`/movies/${movie.id}`).ok()
-            await client.get(`/movies/${movie.id}`).notFound({
-                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
-                message: 'Document not found',
-                notFoundId: movie.id
-            })
+            await client
+                .get(`/movies/${movie.id}`)
+                .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: movie.id })
         })
 
         it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client.delete(`/movies/${nullObjectId}`).notFound({
-                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
-                message: 'Document not found',
-                notFoundId: nullObjectId
-            })
+            await client
+                .delete(`/movies/${nullObjectId}`)
+                .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
         })
     })
 
@@ -123,11 +115,9 @@ describe('/movies', () => {
         })
 
         it('영화가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client.get(`/movies/${nullObjectId}`).notFound({
-                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
-                message: 'Document not found',
-                notFoundId: nullObjectId
-            })
+            await client
+                .get(`/movies/${nullObjectId}`)
+                .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
         })
     })
 
@@ -155,14 +145,13 @@ describe('/movies', () => {
                 .get('/movies')
                 .query({ wrong: 'value' })
                 .badRequest({
-                    code: 'ERR_VALIDATION_FAILED',
+                    ...Errors.ValidationFailed,
                     details: [
                         {
                             constraints: { whitelistValidation: 'property wrong should not exist' },
                             field: 'wrong'
                         }
-                    ],
-                    message: 'Validation failed'
+                    ]
                 })
         })
 

@@ -8,6 +8,7 @@ import {
     createCustomers,
     Fixture
 } from './customers.fixture'
+import { Errors } from './utils'
 
 describe('/customers', () => {
     let fixture: Fixture
@@ -35,11 +36,13 @@ describe('/customers', () => {
             const { createDto } = createCustomerDto()
 
             await client.post('/customers').body(createDto).created()
-            await client.post('/customers').body(createDto).conflict({
-                code: 'ERR_CUSTOMER_EMAIL_ALREADY_EXISTS',
-                email: createDto.email,
-                message: 'Customer with email already exists'
-            })
+            await client
+                .post('/customers')
+                .body(createDto)
+                .conflict({
+                    ...Errors.Customer.emailAlreadyExists,
+                    email: createDto.email
+                })
         })
 
         it('필수 필드가 누락되면 BAD_REQUEST(400)를 반환해야 한다', async () => {
@@ -47,7 +50,7 @@ describe('/customers', () => {
                 .post('/customers')
                 .body({})
                 .badRequest({
-                    code: 'ERR_VALIDATION_FAILED',
+                    ...Errors.ValidationFailed,
                     details: [
                         {
                             constraints: {
@@ -68,8 +71,7 @@ describe('/customers', () => {
                             constraints: { isString: 'password must be a string' },
                             field: 'password'
                         }
-                    ],
-                    message: 'Validation failed'
+                    ]
                 })
         })
     })
@@ -94,11 +96,13 @@ describe('/customers', () => {
         })
 
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
-            await client.patch(`/customers/${nullObjectId}`).body({}).notFound({
-                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
-                message: 'Document not found',
-                notFoundId: nullObjectId
-            })
+            await client
+                .patch(`/customers/${nullObjectId}`)
+                .body({})
+                .notFound({
+                    ...Errors.Mongoose.DocumentNotFound,
+                    notFoundId: nullObjectId
+                })
         })
     })
 
@@ -112,16 +116,14 @@ describe('/customers', () => {
         it('고객을 삭제해야 한다', async () => {
             await client.delete(`/customers/${customer.id}`).ok()
             await client.get(`/customers/${customer.id}`).notFound({
-                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
-                message: 'Document not found',
+                ...Errors.Mongoose.DocumentNotFound,
                 notFoundId: customer.id
             })
         })
 
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.delete(`/customers/${nullObjectId}`).notFound({
-                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
-                message: 'Document not found',
+                ...Errors.Mongoose.DocumentNotFound,
                 notFoundId: nullObjectId
             })
         })
@@ -140,8 +142,7 @@ describe('/customers', () => {
 
         it('고객이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
             await client.get(`/customers/${nullObjectId}`).notFound({
-                code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
-                message: 'Document not found',
+                ...Errors.Mongoose.DocumentNotFound,
                 notFoundId: nullObjectId
             })
         })
@@ -171,14 +172,13 @@ describe('/customers', () => {
                 .get('/customers')
                 .query({ wrong: 'value' })
                 .badRequest({
-                    code: 'ERR_VALIDATION_FAILED',
+                    ...Errors.ValidationFailed,
                     details: [
                         {
                             constraints: { whitelistValidation: 'property wrong should not exist' },
                             field: 'wrong'
                         }
-                    ],
-                    message: 'Validation failed'
+                    ]
                 })
         })
 
