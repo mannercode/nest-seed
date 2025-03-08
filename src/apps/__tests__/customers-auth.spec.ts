@@ -90,7 +90,7 @@ describe('/customers(authentication)', () => {
                 .post('/customers/refresh')
                 .body({ refreshToken: 'invalid-token' })
                 .unauthorized({
-                    code: 'ERR_REFRESH_TOKEN_VERIFICATION_FAILED',
+                    code: 'ERR_JWT_AUTH_REFRESH_TOKEN_VERIFICATION_FAILED',
                     message: 'jwt malformed'
                 })
         })
