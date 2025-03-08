@@ -11,7 +11,6 @@ import {
     SharedFixture
 } from './storage-files.fixture'
 import { Errors } from './utils'
-import { GatewayErrors } from 'gateway/gateway-errors'
 
 describe('/storage-files', () => {
     let shared: SharedFixture
@@ -81,7 +80,7 @@ describe('/storage-files', () => {
 
         it('허용되지 않는 MIME 타입의 파일을 업로드하면 BAD_REQUEST(400)를 반환해야 한다', async () => {
             await uploadFile([{ name: 'files', file: shared.notAllowFile }]).badRequest({
-                ...GatewayErrors.FileUpload.InvalidFileType,
+                ...Errors.InvalidFileType,
                 allowedTypes: ['text/plain']
             })
         })
