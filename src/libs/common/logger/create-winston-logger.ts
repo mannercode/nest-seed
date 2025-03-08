@@ -76,21 +76,21 @@ const formatGenericLog = (
 const consoleLogFormat = winston.format.combine(
     winston.format.timestamp({ format: 'HH:mm:ss' }),
     winston.format.printf((info) => {
-        const { message, level, timestamp, ...etc } = info
+        const { message, level, timestamp, ...rest } = info
 
         const formattedMessage = chalk.white(message)
         const formattedLevel = colorLevels(level)
         const formattedTimestamp = chalk.gray(timestamp)
 
-        if (etc[0] === 'HTTP') {
+        if (rest[0] === 'HTTP') {
             return formatHttpLog(
                 formattedMessage,
                 formattedLevel,
                 formattedTimestamp,
-                etc[1] as any
+                rest[1] as any
             )
         } else {
-            return formatGenericLog(formattedMessage, formattedLevel, formattedTimestamp, etc)
+            return formatGenericLog(formattedMessage, formattedLevel, formattedTimestamp, rest)
         }
     })
 )

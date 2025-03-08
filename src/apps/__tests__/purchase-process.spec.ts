@@ -150,11 +150,7 @@ describe('/purchase-process', () => {
             await client
                 .post('/purchases')
                 .body({ customerId, totalPrice, items })
-                .internalServerError({
-                    statusCode: 500,
-                    error: 'Internal server error',
-                    message: 'purchase error'
-                })
+                .internalServerError({ error: 'Internal server error', message: 'purchase error' })
 
             expect(spyRollback).toHaveBeenCalledTimes(1)
         })

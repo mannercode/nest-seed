@@ -10,6 +10,11 @@ class TestController {
         throw new BadRequestException('http-exception')
     }
 
+    @Get('error')
+    async throwError() {
+        throw new Error('test')
+    }
+
     @Get('too-many-files')
     async tooManyFiles() {
         throw new BadRequestException('Too many files')

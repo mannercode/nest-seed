@@ -11,6 +11,21 @@ import { ClientProxy, ClientsModule, ClientsProviderAsyncOptions } from '@nestjs
 import { catchError, lastValueFrom, Observable } from 'rxjs'
 import { jsonToObject } from '../utils'
 
+export async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
+    return lastValueFrom(
+        observer.pipe(
+            catchError((error) => {
+                const { statusCode, ...rest } = error
+                throw new HttpException(rest, statusCode)
+            })
+        )
+    )
+}
+
+export async function getProxyValue<T>(observer: Observable<T>): Promise<T> {
+    return jsonToObject(await waitProxyValue(observer))
+}
+
 @Injectable()
 export class ClientProxyService implements OnModuleDestroy {
     constructor(private proxy: ClientProxy) {}
@@ -59,19 +74,4 @@ export class ClientProxyModule {
             exports: [provider]
         }
     }
-}
-
-// TODO 이거 적절한 위치?
-export async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
-    return lastValueFrom(
-        observer.pipe(
-            catchError((error) => {
-                throw new HttpException(error.response, error.status)
-            })
-        )
-    )
-}
-
-export async function getProxyValue<T>(observer: Observable<T>): Promise<T> {
-    return jsonToObject(await waitProxyValue(observer))
 }

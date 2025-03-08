@@ -37,7 +37,7 @@ describe('HttpToRpcExceptionFilter', () => {
     it('HttpController에서 던지는 예외에는 영향이 없어야 한다', async () => {
         await httpClient
             .get('/throwHttpException')
-            .notFound({ error: 'Not Found', message: 'not found exception', statusCode: 404 })
+            .notFound({ error: 'Not Found', message: 'not found exception' })
     })
 
     it('잘못된 데이터 형식에 대해 입력을 검증하고 오류를 반환해야 한다', async () => {
@@ -45,12 +45,9 @@ describe('HttpToRpcExceptionFilter', () => {
             withTestId('subject.verifyDto'),
             { wrong: 'wrong field' },
             {
-                response: {
-                    error: 'Bad Request',
-                    message: ['name should not be empty', 'name must be a string'],
-                    statusCode: 400
-                },
-                status: 400
+                error: 'Bad Request',
+                message: ['name should not be empty', 'name must be a string'],
+                statusCode: 400
             }
         )
     })

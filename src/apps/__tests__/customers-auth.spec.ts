@@ -41,14 +41,14 @@ describe('/customers(authentication)', () => {
             await client
                 .post('/customers/login')
                 .body({ email, password: 'wrong password' })
-                .unauthorized({ message: 'Unauthorized', statusCode: 401 })
+                .unauthorized(Errors.Auth.Unauthorized)
         })
 
         it('이메일이 존재하지 않으면 UNAUTHORIZED(401)를 반환해야 한다', async () => {
             await client
                 .post('/customers/login')
                 .body({ email: 'unknown@mail.com', password: '.' })
-                .unauthorized({ message: 'Unauthorized', statusCode: 401 })
+                .unauthorized(Errors.Auth.Unauthorized)
         })
 
         it('customer가 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다', async () => {
@@ -93,7 +93,7 @@ describe('/customers(authentication)', () => {
                 .post('/customers/refresh')
                 .body({ refreshToken: 'invalid-token' })
                 .unauthorized({
-                    ...Errors.JwtAuth.RefreshTokenVerificationFailed,
+                    ...Errors.Auth.RefreshTokenVerificationFailed,
                     message: 'jwt malformed'
                 })
         })
@@ -120,7 +120,7 @@ describe('/customers(authentication)', () => {
             await client
                 .get(`/customers/${customer.id}`)
                 .headers({ Authorization: `Bearer ${invalidToken}` })
-                .unauthorized({ message: 'Unauthorized', statusCode: 401 })
+                .unauthorized(Errors.Auth.Unauthorized)
         })
     })
 })

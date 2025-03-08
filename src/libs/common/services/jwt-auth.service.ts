@@ -61,7 +61,7 @@ export class JwtAuthService {
         const storedRefreshToken = await this.getStoredRefreshToken(payload.userId)
 
         if (storedRefreshToken !== refreshToken) {
-            throw new UnauthorizedException(CommonErrors.JwtAuth.RefreshTokenInvalid)
+            throw new UnauthorizedException(CommonErrors.Auth.RefreshTokenInvalid)
         }
 
         return this.generateAuthTokens(payload.userId, payload.email)
@@ -77,7 +77,7 @@ export class JwtAuthService {
             return payload
         } catch (error) {
             throw new UnauthorizedException({
-                ...CommonErrors.JwtAuth.RefreshTokenVerificationFailed,
+                ...CommonErrors.Auth.RefreshTokenVerificationFailed,
                 message: error.message
             })
         }

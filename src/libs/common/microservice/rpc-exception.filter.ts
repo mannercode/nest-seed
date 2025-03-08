@@ -8,18 +8,17 @@ export class RpcExceptionFilter implements ExceptionFilter {
         const contextType = host.getType()
 
         if (contextType === 'rpc') {
-            let error = {}
+            let error = { statusCode: -1, message: 'undefined', error: 'undefined' }
 
             if (exception instanceof HttpException) {
-                error = { status: exception.getStatus(), response: exception.getResponse() }
+                const response = exception.getResponse() as { message: string; error: string }
+
+                error = { ...response, statusCode: exception.getStatus() }
             } else if (exception instanceof Error) {
                 error = {
-                    status: 500,
-                    response: {
-                        message: exception.message,
-                        error: 'Internal server error',
-                        statusCode: 500
-                    }
+                    message: exception.message,
+                    error: 'Internal server error',
+                    statusCode: 500
                 }
             }
 
@@ -28,7 +27,7 @@ export class RpcExceptionFilter implements ExceptionFilter {
             const ctx = host.switchToHttp()
             const response = ctx.getResponse<Response>()
             const statusCode = exception.getStatus()
-            const responseBody = exception.getResponse()
+            const { statusCode: _, ...responseBody } = exception.getResponse()
 
             response.status(statusCode).json(responseBody)
         }

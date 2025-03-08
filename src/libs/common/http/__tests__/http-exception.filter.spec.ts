@@ -1,5 +1,5 @@
+import { CommonErrors } from 'common'
 import { HttpTestClient } from 'testlib'
-import { CommonErrors } from '../../common-errors'
 
 describe('HttpExceptionFilter', () => {
     let closeFixture: () => void
@@ -20,8 +20,14 @@ describe('HttpExceptionFilter', () => {
     it('HttpException을 던지면 해당하는 StatusCode를 반환해야 한다', async () => {
         await client.get('/bad-request').badRequest({
             error: 'Bad Request',
-            message: 'http-exception',
-            statusCode: 400
+            message: 'http-exception'
+        })
+    })
+
+    it('Error를 던지면 INTERNAL_SERVER_ERROR(500)를 반환해야 한다', async () => {
+        await client.get('/error').internalServerError({
+            error: 'Internal server error',
+            message: 'test'
         })
     })
 

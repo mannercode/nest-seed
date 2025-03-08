@@ -63,14 +63,18 @@ export const CommonErrors = {
             message: 'File too large'
         }
     },
-    JwtAuth: {
+    Auth: {
         RefreshTokenInvalid: {
-            code: 'ERR_JWT_AUTH_REFRESH_TOKEN_INVALID',
+            code: 'ERR_AUTH_REFRESH_TOKEN_INVALID',
             message: 'The provided refresh token is invalid'
         },
         RefreshTokenVerificationFailed: {
-            code: 'ERR_JWT_AUTH_REFRESH_TOKEN_VERIFICATION_FAILED',
+            code: 'ERR_AUTH_REFRESH_TOKEN_VERIFICATION_FAILED',
             message: 'Refresh token verification failed'
+        },
+        Unauthorized: {
+            code: 'ERR_AUTH_UNAUTHORIZED',
+            message: 'Unauthorized'
         }
     }
 }
