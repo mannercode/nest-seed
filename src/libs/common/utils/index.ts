@@ -1,5 +1,4 @@
 export * from './byte'
-export * from './create-route-map'
 export * from './date-util'
 export * from './etc'
 export * from './password'

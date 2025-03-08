@@ -25,13 +25,3 @@ export class RedisConfig {
 export class ClientProxyConfig {
     static connName = 'client-proxy'
 }
-
-export function uniqueWhenTesting(prefix: string) {
-    const testId = process.env.TEST_ID
-
-    if (process.env.NODE_ENV === 'test' && testId !== undefined) {
-        return `${prefix}-${testId}`
-    }
-
-    return prefix
-}

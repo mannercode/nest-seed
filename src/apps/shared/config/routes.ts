@@ -1,12 +1,11 @@
-import { createRouteMap } from 'common'
-import { ProjectName, uniqueWhenTesting } from './etc'
+import { ProjectName } from './etc'
+import { createRouteMap, uniqueWhenTesting } from './utils'
 
-const Http = {
-    // MoviesService에서 경로를 참조한다.
-    StorageFiles: '/storage-files'
+export const Routes = {
+    Http: {
+        StorageFiles: '/storage-files' // MoviesService에서 경로를 참조한다.
+    }
 }
-
-export const Routes = { Http }
 
 export const Messages = createRouteMap(
     {
