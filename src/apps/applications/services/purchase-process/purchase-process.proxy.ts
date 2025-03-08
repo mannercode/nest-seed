@@ -1,11 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import {
-    ClientProxyService,
-    getProxyValue,
-    InjectClientProxy,
-    MethodLog,
-    waitProxyValue
-} from 'common'
+import { ClientProxyService, InjectClientProxy, MethodLog } from 'common'
 import { PurchaseCreateDto, PurchaseDto } from 'cores'
 import { ClientProxyConfig, Messages } from 'shared/config'
 
@@ -17,21 +11,20 @@ export class PurchaseProcessProxy {
 
     @MethodLog({ level: 'verbose' })
     processPurchase(createDto: PurchaseCreateDto): Promise<PurchaseDto> {
-        return getProxyValue(this.service.send(Messages.PurchaseProcess.processPurchase, createDto))
+        return this.service.getJson(Messages.PurchaseProcess.processPurchase, createDto)
     }
 
     emitTicketPurchased(customerId: string, ticketIds: string[]) {
-        return waitProxyValue(
-            this.service.emit(Messages.PurchaseProcess.TicketPurchased, { customerId, ticketIds })
-        )
+        return this.service.emit(Messages.PurchaseProcess.TicketPurchased, {
+            customerId,
+            ticketIds
+        })
     }
 
     emitTicketPurchaseCanceled(customerId: string, ticketIds: string[]) {
-        return waitProxyValue(
-            this.service.emit(Messages.PurchaseProcess.TicketPurchaseCanceled, {
-                customerId,
-                ticketIds
-            })
-        )
+        return this.service.emit(Messages.PurchaseProcess.TicketPurchaseCanceled, {
+            customerId,
+            ticketIds
+        })
     }
 }

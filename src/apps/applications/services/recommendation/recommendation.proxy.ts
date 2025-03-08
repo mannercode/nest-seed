@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
+import { ClientProxyService, InjectClientProxy, MethodLog } from 'common'
 import { MovieDto } from 'cores'
 import { ClientProxyConfig, Messages } from 'shared/config'
 
@@ -11,8 +11,6 @@ export class RecommendationProxy {
 
     @MethodLog({ level: 'verbose' })
     findRecommendedMovies(customerId: string | null): Promise<MovieDto[]> {
-        return getProxyValue(
-            this.service.send(Messages.Recommendation.findRecommendedMovies, customerId)
-        )
+        return this.service.getJson(Messages.Recommendation.findRecommendedMovies, customerId)
     }
 }

@@ -1,6 +1,6 @@
 import { Controller, Get, MessageEvent, Sse } from '@nestjs/common'
 import { EventPattern, MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
-import { ClientProxyModule, ClientProxyService, getProxyValue, InjectClientProxy } from 'common'
+import { ClientProxyModule, ClientProxyService, InjectClientProxy } from 'common'
 import { Observable, Subject } from 'rxjs'
 import { createHttpTestContext, getNatsTestConnection, withTestId } from 'testlib'
 
@@ -20,8 +20,7 @@ class SendTestController {
 
     @Get('value')
     getValue() {
-        const observer = this.client.send(withTestId('subject.method'), {})
-        return getProxyValue(observer)
+        return this.client.getJson(withTestId('subject.method'), {})
     }
 
     @Get('send-null')

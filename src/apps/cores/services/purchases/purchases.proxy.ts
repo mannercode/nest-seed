@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, getProxyValue, InjectClientProxy, MethodLog } from 'common'
+import { ClientProxyService, InjectClientProxy, MethodLog } from 'common'
 import { ClientProxyConfig, Messages } from 'shared/config'
 import { PurchaseCreateDto, PurchaseDto } from './dtos'
 
@@ -11,11 +11,11 @@ export class PurchasesProxy {
 
     @MethodLog({ level: 'verbose' })
     createPurchase(createDto: PurchaseCreateDto): Promise<PurchaseDto> {
-        return getProxyValue(this.service.send(Messages.Purchases.createPurchase, createDto))
+        return this.service.getJson(Messages.Purchases.createPurchase, createDto)
     }
 
     @MethodLog({ level: 'verbose' })
     getPurchase(purchaseId: string): Promise<PurchaseDto> {
-        return getProxyValue(this.service.send(Messages.Purchases.getPurchase, purchaseId))
+        return this.service.getJson(Messages.Purchases.getPurchase, purchaseId)
     }
 }

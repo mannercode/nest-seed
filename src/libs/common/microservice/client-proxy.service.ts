@@ -11,7 +11,7 @@ import { ClientProxy, ClientsModule, ClientsProviderAsyncOptions } from '@nestjs
 import { catchError, lastValueFrom, Observable } from 'rxjs'
 import { jsonToObject } from '../utils'
 
-export async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
+async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
     return lastValueFrom(
         observer.pipe(
             catchError((error) => {
@@ -38,14 +38,19 @@ export class ClientProxyService implements OnModuleDestroy {
         await this.proxy.close()
     }
 
+    getJson<T>(cmd: string, payload: any): Promise<T> {
+        const observable = this.send<T>(cmd, payload)
+        return getProxyValue(observable)
+    }
+
     send<T>(cmd: string, payload: any): Observable<T> {
         // payload는 null일 수 없음
         return this.proxy.send(cmd, payload ?? '')
     }
 
-    emit(event: string, payload: any) {
+    emit<T>(event: string, payload: any): Promise<T> {
         // payload는 null일 수 없음
-        return this.proxy.emit(event, payload ?? '')
+        return waitProxyValue(this.proxy.emit<T>(event, payload ?? ''))
     }
 }
 
