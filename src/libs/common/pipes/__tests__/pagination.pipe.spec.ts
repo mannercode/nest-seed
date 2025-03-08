@@ -1,6 +1,7 @@
 import { plainToInstance } from 'class-transformer'
 import { CloseFixture, HttpTestClient } from 'testlib'
 import { PaginationOptionDto } from '../pagination.pipe'
+import { CommonErrors } from '../../common-errors'
 
 describe('Pagination', () => {
     let closeFixture: CloseFixture
@@ -36,27 +37,29 @@ describe('Pagination', () => {
     })
 
     it('orderby 형식이 잘못되었을 때 BadRequest를 반환해야 한다', async () => {
-        await client.get('/samples').query({ orderby: 'wrong' }).badRequest({
-            code: 'ERR_ORDERBY_FORMAT_INVALID',
-            message: 'Invalid orderby format. It should be "name:direction".'
-        })
+        await client
+            .get('/samples')
+            .query({ orderby: 'wrong' })
+            .badRequest(CommonErrors.Pagination.FormatInvalid)
     })
 
     it('정렬 방향이 잘못되었을 때 BadRequest를 반환해야 한다', async () => {
-        await client.get('/samples').query({ orderby: 'name:wrong' }).badRequest({
-            code: 'ERR_ORDERBY_DIRECTION_INVALID',
-            message: 'Invalid direction. It should be either "asc" or "desc".'
-        })
+        await client
+            .get('/samples')
+            .query({ orderby: 'name:wrong' })
+            .badRequest(CommonErrors.Pagination.DirectionInvalid)
     })
 
     it("'take' 값이 지정된 제한을 초과하면 BadRequest를 반환해야 한다", async () => {
         const take = 51
-        await client.get('/samples/takeLimit').query({ take }).badRequest({
-            code: 'ERR_PAGINATION_TAKE_LIMIT_EXCEEDED',
-            message: "The 'take' parameter exceeds the maximum allowed limit",
-            take,
-            takeLimit: 50
-        })
+        await client
+            .get('/samples/takeLimit')
+            .query({ take })
+            .badRequest({
+                ...CommonErrors.Pagination.TakeLimitExceeded,
+                take,
+                takeLimit: 50
+            })
     })
 
     it("'take' 값이 지정되지 않은 경우 기본값이 사용되어야 한다", async () => {

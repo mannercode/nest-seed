@@ -62,7 +62,11 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     async getById(id: string, session: SeesionArg = undefined) {
         const doc = await this.findById(id, session)
 
-        if (!doc) throw new NotFoundException({ ...CommonErrors.Mongoose.DocumentNotFound, notFoundId: id })
+        if (!doc)
+            throw new NotFoundException({
+                ...CommonErrors.Mongoose.DocumentNotFound,
+                notFoundId: id
+            })
 
         return doc
     }

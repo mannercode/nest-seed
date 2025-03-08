@@ -1,4 +1,5 @@
 import { HttpTestClient } from 'testlib'
+import { CommonErrors } from '../../common-errors'
 
 describe('HttpExceptionFilter', () => {
     let closeFixture: () => void
@@ -25,16 +26,10 @@ describe('HttpExceptionFilter', () => {
     })
 
     it('BadRequestException("Too many files")을 반환해야 한다', async () => {
-        await client.get('/too-many-files').badRequest({
-            code: 'ERR_FILE_UPLOAD_MAX_COUNT_EXCEEDED',
-            message: 'Too many files'
-        })
+        await client.get('/too-many-files').badRequest(CommonErrors.FileUpload.MaxCountExceeded)
     })
 
     it('PayloadTooLargeException("File too large")을 반환해야 한다', async () => {
-        await client.get('/file-too-large').payloadTooLarge({
-            code: 'ERR_FILE_UPLOAD_MAX_SIZE_EXCEEDED',
-            message: 'File too large'
-        })
+        await client.get('/file-too-large').payloadTooLarge(CommonErrors.FileUpload.MaxSizeExceeded)
     })
 })

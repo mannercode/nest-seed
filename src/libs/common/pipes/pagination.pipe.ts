@@ -36,19 +36,13 @@ export class PaginationOptionDto {
         const parts = value.split(':')
 
         if (parts.length !== 2) {
-            throw new BadRequestException({
-                code: 'ERR_ORDERBY_FORMAT_INVALID',
-                message: 'Invalid orderby format. It should be "name:direction".'
-            })
+            throw new BadRequestException(CommonErrors.Pagination.FormatInvalid)
         }
 
         const [name, direction] = parts
 
         if (!(direction in OrderDirection)) {
-            throw new BadRequestException({
-                code: 'ERR_ORDERBY_DIRECTION_INVALID',
-                message: 'Invalid direction. It should be either "asc" or "desc".'
-            })
+            throw new BadRequestException(CommonErrors.Pagination.DirectionInvalid)
         }
 
         return { name, direction }
