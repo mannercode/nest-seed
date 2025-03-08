@@ -42,6 +42,10 @@ describe('HttpExceptionFilter', () => {
         await client.get('/file-too-large').payloadTooLarge(CommonErrors.FileUpload.MaxSizeExceeded)
     })
 
+    it('UnauthorizedException("Unauthorized")을 반환해야 한다', async () => {
+        await client.get('/unauthorized').unauthorized(CommonErrors.Auth.Unauthorized)
+    })
+
     it('RpcController에서 던지는 예외에는 영향이 없어야 한다', async () => {
         const promise = proxyService.getJson(withTestId('subject.throwException'), {})
 

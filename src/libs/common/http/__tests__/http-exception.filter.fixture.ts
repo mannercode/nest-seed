@@ -1,4 +1,10 @@
-import { BadRequestException, Controller, Get, PayloadTooLargeException } from '@nestjs/common'
+import {
+    BadRequestException,
+    Controller,
+    Get,
+    PayloadTooLargeException,
+    UnauthorizedException
+} from '@nestjs/common'
 import { APP_FILTER } from '@nestjs/core'
 import { MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
 import { ClientProxyModule, ClientProxyService, HttpExceptionFilter } from 'common'
@@ -24,6 +30,11 @@ class TestController {
     @Get('file-too-large')
     async fileTooLarge() {
         throw new PayloadTooLargeException('File too large')
+    }
+
+    @Get('unauthorized')
+    async unauthorized() {
+        throw new UnauthorizedException('Unauthorized')
     }
 
     @MessagePattern(withTestId('subject.throwException'))
