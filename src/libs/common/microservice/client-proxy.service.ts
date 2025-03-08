@@ -1,6 +1,15 @@
-import { DynamicModule, Global, Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
+import {
+    DynamicModule,
+    Global,
+    HttpException,
+    Inject,
+    Injectable,
+    Module,
+    OnModuleDestroy
+} from '@nestjs/common'
 import { ClientProxy, ClientsModule, ClientsProviderAsyncOptions } from '@nestjs/microservices'
-import { Observable } from 'rxjs'
+import { catchError, lastValueFrom, Observable } from 'rxjs'
+import { jsonToObject } from '../utils'
 
 @Injectable()
 export class ClientProxyService implements OnModuleDestroy {
@@ -50,4 +59,19 @@ export class ClientProxyModule {
             exports: [provider]
         }
     }
+}
+
+// TODO 이거 적절한 위치?
+export async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
+    return lastValueFrom(
+        observer.pipe(
+            catchError((error) => {
+                throw new HttpException(error.response, error.status)
+            })
+        )
+    )
+}
+
+export async function getProxyValue<T>(observer: Observable<T>): Promise<T> {
+    return jsonToObject(await waitProxyValue(observer))
 }

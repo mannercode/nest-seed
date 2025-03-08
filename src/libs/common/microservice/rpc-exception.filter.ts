@@ -1,10 +1,9 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/common'
 import { Response } from 'express'
-import { catchError, lastValueFrom, Observable, throwError } from 'rxjs'
-import { jsonToObject } from '../utils'
+import { throwError } from 'rxjs'
 
 @Catch()
-export class HttpToRpcExceptionFilter implements ExceptionFilter {
+export class RpcExceptionFilter implements ExceptionFilter {
     catch(exception: any, host: ArgumentsHost) {
         const contextType = host.getType()
 
@@ -34,19 +33,4 @@ export class HttpToRpcExceptionFilter implements ExceptionFilter {
             response.status(statusCode).json(responseBody)
         }
     }
-}
-
-// TODO 이거 적절한 위치?
-export async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
-    return lastValueFrom(
-        observer.pipe(
-            catchError((error) => {
-                throw new HttpException(error.response, error.status)
-            })
-        )
-    )
-}
-
-export async function getProxyValue<T>(observer: Observable<T>): Promise<T> {
-    return jsonToObject(await waitProxyValue(observer))
 }

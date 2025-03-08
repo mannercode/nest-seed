@@ -1,6 +1,6 @@
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common'
-import { CloseFixture, HttpTestClient, MicroserviceTestClient, withTestId } from 'testlib'
 import { getProxyValue } from 'common'
+import { CloseFixture, HttpTestClient, MicroserviceTestClient, withTestId } from 'testlib'
 
 describe('HttpToRpcExceptionFilter', () => {
     let closeFixture: CloseFixture
@@ -8,7 +8,7 @@ describe('HttpToRpcExceptionFilter', () => {
     let httpClient: HttpTestClient
 
     beforeEach(async () => {
-        const { createFixture } = await import('./http-to-rpc-exception.filter.fixture')
+        const { createFixture } = await import('./rpc-exception.filter.fixture')
 
         const fixture = await createFixture()
         closeFixture = fixture.closeFixture

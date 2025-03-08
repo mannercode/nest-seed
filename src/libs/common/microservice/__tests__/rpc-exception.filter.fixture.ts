@@ -9,7 +9,7 @@ import {
     withTestId
 } from 'testlib'
 import { ClientProxyModule, ClientProxyService, InjectClientProxy } from '../client-proxy.service'
-import { HttpToRpcExceptionFilter } from '../http-to-rpc-exception.filter'
+import { RpcExceptionFilter } from '../http-to-rpc-exception.filter'
 
 class CreateSampleDto {
     @IsString()
@@ -55,7 +55,7 @@ export async function createFixture() {
             providers: [{ provide: APP_PIPE, useFactory: () => new ValidationPipe() }]
         },
         configureApp: async (app) => {
-            app.useGlobalFilters(new HttpToRpcExceptionFilter())
+            app.useGlobalFilters(new RpcExceptionFilter())
 
             app.connectMicroservice<MicroserviceOptions>(brokerOptions, { inheritAppConfig: true })
             await app.startAllMicroservices()
