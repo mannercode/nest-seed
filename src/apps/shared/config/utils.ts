@@ -49,7 +49,7 @@ type Paths<T, ParentPath extends string = ''> = {
         : `${ParentPath}${K & string}`
 }
 
-export const getProjectName = () => {
+export const getProjectId = () => {
     Assert.defined(process.env.PROJECT_ID, 'PROJECT_ID must be defined.')
 
     return process.env.PROJECT_ID

@@ -1,4 +1,4 @@
-import { createMessagePatternMap, getProjectName } from './utils'
+import { createMessagePatternMap, getProjectId } from './utils'
 
 export const Messages = createMessagePatternMap(
     {
@@ -87,5 +87,5 @@ export const Messages = createMessagePatternMap(
             holdTickets: null
         }
     },
-    `${getProjectName()}.message`
+    `${getProjectId()}.message`
 )

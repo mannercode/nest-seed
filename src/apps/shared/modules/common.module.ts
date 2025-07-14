@@ -9,7 +9,7 @@ import {
     ExceptionLoggerFilter,
     SuccessLoggingInterceptor
 } from 'common'
-import { AppConfigService, getProjectName } from '../config'
+import { AppConfigService, getProjectId } from '../config'
 import { RequestValidationPipe } from '../pipes/request-validation.pipe'
 
 @Global()
@@ -27,7 +27,7 @@ import { RequestValidationPipe } from '../pipes/request-validation.pipe'
                     transport: Transport.NATS,
                     options: {
                         servers: config.nats.servers,
-                        queue: getProjectName()
+                        queue: getProjectId()
                     }
                 }
             },
