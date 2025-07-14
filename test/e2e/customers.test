@@ -6,15 +6,15 @@ reset_all
 create_user_and_login
 
 TITLE "Retrieve User"
-GET /customers/$USER_ID \
+GET 200 /customers/$USER_ID \
     -H "Authorization: Bearer $ACCESS_TOKEN"
 
 TITLE "Retrieve All Users"
-GET /customers \
+GET 200 /customers \
     -H "Authorization: Bearer $ACCESS_TOKEN"
 
 TITLE "Update User"
-PATCH /customers/$USER_ID \
+PATCH 200 /customers/$USER_ID \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $ACCESS_TOKEN" \
     -d '{
@@ -24,5 +24,5 @@ PATCH /customers/$USER_ID \
  }'
 
 TITLE "Delete User with Specific ID"
-DELETE /customers/$USER_ID \
+DELETE 200 /customers/$USER_ID \
     -H "Authorization: Bearer $ACCESS_TOKEN"

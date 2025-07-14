@@ -6,7 +6,7 @@ reset_all
 create_user_and_login
 
 TITLE "Request Access Token Refresh"
-POST /customers/refresh \
+POST 200 /customers/refresh \
 -H 'Content-Type: application/json' \
 -d '{
  "refreshToken": "'$REFRESH_TOKEN'"
@@ -16,5 +16,5 @@ ACCESS_TOKEN=$(echo $BODY | jq -r '.accessToken')
 REFRESH_TOKEN=$(echo $BODY | jq -r '.refreshToken')
 
 TITLE "Test Access Token"
-GET /customers \
+GET 200 /customers \
 -H "Authorization: Bearer $ACCESS_TOKEN"
