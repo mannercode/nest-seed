@@ -1,8 +1,8 @@
 import { CustomerDto } from 'apps/cores'
 import { expectEqualUnsorted, nullObjectId } from 'testlib'
+import { Errors } from '../__helpers__'
 import { buildCreateCustomerDto, createCustomer } from '../common.fixture'
 import { Fixture } from './customers.fixture'
-import { Errors } from '../__helpers__'
 
 describe('Customers', () => {
     let fix: Fixture

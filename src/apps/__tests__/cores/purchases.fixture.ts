@@ -9,6 +9,7 @@ import {
 } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { Rules } from 'shared'
+import { CommonFixture, createCommonFixture } from '../__helpers__'
 import {
     buildCreateShowtimeDto,
     buildCreateTicketDto,
@@ -18,7 +19,6 @@ import {
     createTheater,
     createTickets
 } from '../common.fixture'
-import { CommonFixture, createCommonFixture } from '../__helpers__'
 
 const createShowtime = async (fix: Fixture, startTime: Date) => {
     const { createDto } = buildCreateShowtimeDto({

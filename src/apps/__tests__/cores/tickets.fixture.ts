@@ -1,6 +1,6 @@
 import { CreateTicketDto, TicketDto } from 'apps/cores'
-import { buildCreateTicketDto } from '../common.fixture'
 import { CommonFixture, createCommonFixture } from '../__helpers__'
+import { buildCreateTicketDto } from '../common.fixture'
 
 export const buildCreateTicketDtos = (overrides = {}, length: number) => {
     const createDtos: CreateTicketDto[] = []
