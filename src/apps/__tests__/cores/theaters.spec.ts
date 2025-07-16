@@ -41,7 +41,7 @@ describe('Theaters', () => {
         })
 
         // 극장 정보를 업데이트해야 한다
-        it('Should update theater information', async () => {
+        it('Should update theater details', async () => {
             const updateDto = {
                 name: 'update-name',
                 location: { latitude: 30.0, longitude: 120.0 },
@@ -98,8 +98,8 @@ describe('Theaters', () => {
             theater = await createTheater(fix)
         })
 
-        // 극장 정보를 가져와야 한다
-        it('Should retrieve theater information', async () => {
+        // 극장 상세 정보를 반환해야 한다
+        it('Should return theater details', async () => {
             await fix.httpClient.get(`/theaters/${theater.id}`).ok(theater)
         })
 
@@ -125,8 +125,8 @@ describe('Theaters', () => {
             ])
         })
 
-        // 기본 페이지네이션 설정으로 극장을 가져와야 한다
-        it('Should fetch theaters with default pagination settings', async () => {
+        // 기본 페이지네이션으로 극장 목록을 반환해야 한다
+        it('Should return theaters with default pagination', async () => {
             const { body } = await fix.httpClient.get('/theaters').ok()
             const { items, ...paginated } = body
 
@@ -138,6 +138,7 @@ describe('Theaters', () => {
             expectEqualUnsorted(items, theaters)
         })
 
+        // TODO
         // 잘못된 필드로 검색하면 BAD_REQUEST(400)를 반환해야 한다
         it('Should return BAD_REQUEST(400) if searching with an invalid field', async () => {
             await fix.httpClient
@@ -146,8 +147,8 @@ describe('Theaters', () => {
                 .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
         })
 
-        // 이름의 일부로 극장을 검색할 수 있어야 한다
-        it('Should allow searching theaters by partial name', async () => {
+        // 이름의 일부로 극장 목록을 반환해야 한다
+        it('Should return theaters filtered by partial name', async () => {
             const partialName = 'Theater-a'
             const { body } = await fix.httpClient.get('/theaters').query({ name: partialName }).ok()
 

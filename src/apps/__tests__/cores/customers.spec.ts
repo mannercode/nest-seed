@@ -52,7 +52,7 @@ describe('Customers', () => {
         })
 
         // 고객 정보를 업데이트해야 한다
-        it('Should update customer information', async () => {
+        it('Should update customer details', async () => {
             const updateDto = {
                 name: 'update-name',
                 email: 'new@mail.com',
@@ -110,8 +110,8 @@ describe('Customers', () => {
             customer = await createCustomer(fix)
         })
 
-        // 고객 정보를 가져와야 한다
-        it('Should retrieve customer information', async () => {
+        // 고객 상세 정보를 반환해야 한다
+        it('Should return customer details', async () => {
             await fix.httpClient.get(`/customers/${customer.id}`).ok(customer)
         })
 
@@ -137,8 +137,8 @@ describe('Customers', () => {
             ])
         })
 
-        // 기본 페이지네이션 설정으로 고객을 가져와야 한다
-        it('Should fetch customers with default pagination settings', async () => {
+        // 기본 페이지네이션으로 고객 목록을 반환해야 한다
+        it('Should return customers with default pagination', async () => {
             const { body } = await fix.httpClient.get('/customers').ok()
             const { items, ...paginated } = body
 
@@ -150,6 +150,7 @@ describe('Customers', () => {
             expectEqualUnsorted(items, customers)
         })
 
+        // TODO
         // 잘못된 필드로 검색하면 BAD_REQUEST(400)를 반환해야 한다
         it('Should return BAD_REQUEST(400) when searching with invalid fields', async () => {
             await fix.httpClient
@@ -158,8 +159,8 @@ describe('Customers', () => {
                 .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
         })
 
-        // 이름의 일부로 고객을 검색할 수 있어야 한다
-        it('Should allow searching customers by partial name', async () => {
+        // 이름의 일부로 고객 목록을 반환해야 한다
+        it('Should return customers filtered by partial name', async () => {
             const partialName = 'customer-a'
             const { body } = await fix.httpClient
                 .get('/customers')
@@ -169,8 +170,8 @@ describe('Customers', () => {
             expectEqualUnsorted(body.items, [customers[0], customers[1]])
         })
 
-        // 이메일의 일부로 고객을 검색할 수 있어야 한다
-        it('Should allow searching customers by partial email', async () => {
+        // 이메일의 일부로 고객 목록을 반환해야 한다
+        it('Should return customers filtered by partial email', async () => {
             const partialEmail = 'user-b'
             const { body } = await fix.httpClient
                 .get('/customers')

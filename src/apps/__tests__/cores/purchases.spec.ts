@@ -48,7 +48,7 @@ describe('Purchases', () => {
         })
 
         // 결제 정보를 조회할 수 있어야 한다
-        it('Should allow retrieving payment information', async () => {
+        it('Should allow retrieving payment details', async () => {
             const payments = await fix.paymentsService.getPayments([purchase.paymentId])
             expect(payments[0].amount).toEqual(purchase.totalPrice)
         })
@@ -79,8 +79,8 @@ describe('Purchases', () => {
             })
         })
 
-        // 구매 정보를 조회해야 한다
-        it('Should retrieve purchase information', async () => {
+        // 구매 상세 정보를 반환해야 한다.
+        it('Should return purchase details', async () => {
             await fix.httpClient.get(`/purchases/${purchase.id}`).ok(purchase)
         })
     })

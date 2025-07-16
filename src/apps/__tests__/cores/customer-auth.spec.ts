@@ -124,6 +124,7 @@ describe('Customer Authentication', () => {
             accessToken = body.accessToken
         })
 
+        // TODO
         // 유효한 accessToken을 제공하면 접근이 허용되어야 한다
         it('Should allow access if a valid accessToken is provided', async () => {
             await fix.httpClient
@@ -132,7 +133,7 @@ describe('Customer Authentication', () => {
                 .ok()
         })
 
-        // 잘못된 accessToken을 제공하면 UNAUTHORIZED(401)를 반환해야 한다
+        // 잘못된 accessToken이면 UNAUTHORIZED(401)를 반환해야 한다
         it('Should return UNAUTHORIZED(401) if the accessToken is invalid', async () => {
             await fix.httpClient
                 .get(`/customers/${customer.id}`)

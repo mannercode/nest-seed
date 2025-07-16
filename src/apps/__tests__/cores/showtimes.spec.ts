@@ -106,8 +106,8 @@ describe('Showtimes', () => {
             showtimes = await createShowtimes(fix, createDtos)
         })
 
-        // 상영시간 정보를 가져와야 한다
-        it('Should retrieve showtime information', async () => {
+        // 상영시간 상세 정보를 반환해야 한다
+        it('Should return showtime details', async () => {
             const gotShowtime = await fix.showtimesClient.getShowtimes(pickIds(showtimes))
             expect(gotShowtime).toEqual(showtimes)
         })

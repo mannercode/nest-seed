@@ -48,7 +48,7 @@ describe('Movies', () => {
         })
 
         // 영화 정보를 업데이트해야 한다
-        it('Should update movie information', async () => {
+        it('Should update movie details', async () => {
             const updateDto = {
                 title: 'update title',
                 genres: ['romance', 'thriller'],
@@ -119,8 +119,8 @@ describe('Movies', () => {
             movie = await createMovie(fix)
         })
 
-        // 영화 정보를 가져와야 한다
-        it('Should retrieve movie information', async () => {
+        // 영화 상세 정보를 반환해야 한다
+        it('Should return movie details', async () => {
             await fix.httpClient.get(`/movies/${movie.id}`).ok(movie)
         })
 
@@ -173,8 +173,8 @@ describe('Movies', () => {
             ])
         })
 
-        // 기본 페이지네이션 설정으로 영화를 가져와야 한다
-        it('Should fetch movies with default pagination settings', async () => {
+        // 기본 페이지네이션으로 영화 목록을 반환해야 한다
+        it('Should return movies with default pagination', async () => {
             const { body } = await fix.httpClient.get('/movies').query({ skip: 0 }).ok()
             const { items, ...paginated } = body
 
@@ -194,15 +194,15 @@ describe('Movies', () => {
                 .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
         })
 
-        // 제목의 일부로 영화를 검색할 수 있어야 한다
-        it('Should allow searching movies by partial title', async () => {
+        // 제목의 일부로 영화 목록을 반환해야 한다
+        it('Should return movies filtered by partial title', async () => {
             const { body } = await fix.httpClient.get('/movies').query({ title: 'title-a' }).ok()
 
             expectEqualUnsorted(body.items, [movies[0], movies[1]])
         })
 
-        // 장르로 영화를 검색할 수 있어야 한다
-        it('Should allow searching movies by genre', async () => {
+        // 장르로 영화 목록을 반환해야 한다
+        it('Should return movies filtered by genre', async () => {
             const { body } = await fix.httpClient
                 .get('/movies')
                 .query({ genre: MovieGenre.Drama })
@@ -211,8 +211,8 @@ describe('Movies', () => {
             expectEqualUnsorted(body.items, [movies[1], movies[2]])
         })
 
-        // 개봉일로 영화를 검색할 수 있어야 한다
-        it('Should allow searching movies by release date', async () => {
+        // 개봉일로 영화 목록을 반환해야 한다
+        it('Should return movies filtered by release date', async () => {
             const { body } = await fix.httpClient
                 .get('/movies')
                 .query({ releaseDate: new Date('2000-01-02') })
@@ -221,22 +221,22 @@ describe('Movies', () => {
             expectEqualUnsorted(body.items, [movies[1], movies[2]])
         })
 
-        // 줄거리의 일부로 영화를 검색할 수 있어야 한다
-        it('Should allow searching movies by partial plot', async () => {
+        // 줄거리의 일부로 영화 목록을 반환해야 한다
+        it('Should return movies filtered by partial plot', async () => {
             const { body } = await fix.httpClient.get('/movies').query({ plot: 'plot-b' }).ok()
 
             expectEqualUnsorted(body.items, [movies[2], movies[3]])
         })
 
-        // 감독의 일부로 영화를 검색할 수 있어야 한다
-        it('Should allow searching movies by partial director name', async () => {
+        // 감독의 일부로 영화 목록을 반환해야 한다
+        it('Should return movies filtered by partial director name', async () => {
             const { body } = await fix.httpClient.get('/movies').query({ director: 'James' }).ok()
 
             expectEqualUnsorted(body.items, [movies[0], movies[2]])
         })
 
-        // 등급으로 영화를 검색할 수 있어야 한다
-        it('Should allow searching movies by rating', async () => {
+        // 등급으로 영화 목록을 반환해야 한다
+        it('Should return movies filtered by rating', async () => {
             const { body } = await fix.httpClient
                 .get('/movies')
                 .query({ rating: MovieRating.NC17 })
@@ -259,8 +259,8 @@ describe('Movies', () => {
             ])
         })
 
-        // movieIds로 영화를 검색할 수 있어야 한다
-        it('Should allow searching movies by movieIds', async () => {
+        // 주어진 movieIds의 영화를 반환해야 한다
+        it('Should return movies for given movieIds', async () => {
             const expectedMovies = movies.slice(0, 3)
             const movieIds = pickIds(expectedMovies)
 

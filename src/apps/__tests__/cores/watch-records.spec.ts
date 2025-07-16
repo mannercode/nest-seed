@@ -38,8 +38,8 @@ describe('WatchRecords', () => {
             ])
         })
 
-        // 기본 페이지네이션 설정으로 관람 기록을 가져와야 한다
-        it('Should fetch watch records with default pagination settings', async () => {
+        // 기본 페이지네이션으로 관람 기록 목록을 반환해야 한다
+        it('Should return watch records with default pagination', async () => {
             const { items, ...paginated } = await fix.watchRecordsClient.searchWatchRecordsPage({
                 customerId
             })
