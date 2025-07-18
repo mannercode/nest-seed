@@ -124,9 +124,8 @@ describe('Customer Authentication', () => {
             accessToken = body.accessToken
         })
 
-        // TODO
-        // 유효한 accessToken을 제공하면 접근이 허용되어야 한다
-        it('Should allow access if a valid accessToken is provided', async () => {
+        // 유효한 accessToken이면 접근을 허용해야 한다
+        it('Should allow access if the accessToken is valid', async () => {
             await fix.httpClient
                 .get(`/customers/${customer.id}`)
                 .headers({ Authorization: `Bearer ${accessToken}` })

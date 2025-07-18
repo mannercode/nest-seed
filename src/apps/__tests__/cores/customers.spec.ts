@@ -150,9 +150,8 @@ describe('Customers', () => {
             expectEqualUnsorted(items, customers)
         })
 
-        // TODO
-        // 잘못된 필드로 검색하면 BAD_REQUEST(400)를 반환해야 한다
-        it('Should return BAD_REQUEST(400) when searching with invalid fields', async () => {
+        // 잘못된 쿼리 필드가 제공되면 BAD_REQUEST(400)를 반환해야 한다
+        it('Should return BAD_REQUEST(400) if an invalid query field is provided', async () => {
             await fix.httpClient
                 .get('/customers')
                 .query({ wrong: 'value' })
