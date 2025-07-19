@@ -4,7 +4,7 @@ import { Errors } from '../__helpers__'
 import { buildCreateTheaterDto, createTheater } from '../common.fixture'
 import { Fixture } from './theaters.fixture'
 
-describe('Theaters', () => {
+describe('TheatersService', () => {
     let fix: Fixture
 
     beforeEach(async () => {
@@ -17,19 +17,24 @@ describe('Theaters', () => {
     })
 
     describe('POST /theaters', () => {
-        // 극장을 생성해야 한다
-        it('Should create a theater', async () => {
-            const { createDto, expectedDto } = buildCreateTheaterDto()
-
-            await fix.httpClient.post('/theaters').body(createDto).created(expectedDto)
+        // 상황: 유효한 데이터로 요청할 때
+        describe('when given valid data', () => {
+            // 기대 결과: 새로운 극장을 생성한다.
+            it('creates a new theater', async () => {
+                const { createDto, expectedDto } = buildCreateTheaterDto()
+                await fix.httpClient.post('/theaters').body(createDto).created(expectedDto)
+            })
         })
 
-        // 필수 필드가 누락되면 BAD_REQUEST(400)를 반환해야 한다
-        it('Should return BAD_REQUEST(400) if required fields are missing', async () => {
-            await fix.httpClient
-                .post('/theaters')
-                .body({})
-                .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+        // 상황: 필수 필드가 누락되었을 때
+        describe('when required fields are missing', () => {
+            // 기대 결과: 400 Bad Request 에러를 반환한다.
+            it('returns a 400 Bad Request error', async () => {
+                await fix.httpClient
+                    .post('/theaters')
+                    .body({})
+                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+            })
         })
     })
 
@@ -40,29 +45,39 @@ describe('Theaters', () => {
             theater = await createTheater(fix)
         })
 
-        // 극장 정보를 업데이트해야 한다
-        it('Should update theater details', async () => {
-            const updateDto = {
-                name: 'update-name',
-                location: { latitude: 30.0, longitude: 120.0 },
-                seatmap: []
-            }
-            const expected = { ...theater, ...updateDto }
+        // 상황: 유효한 데이터로 요청할 때
+        describe('when given valid update data', () => {
+            // 기대 결과: 극장 정보를 수정한다.
+            it('updates the theater details', async () => {
+                const updateDto = {
+                    name: 'update-name',
+                    location: { latitude: 30.0, longitude: 120.0 },
+                    seatmap: []
+                }
+                const expected = { ...theater, ...updateDto }
 
-            await fix.httpClient.patch(`/theaters/${theater.id}`).body(updateDto).ok(expected)
-            await fix.httpClient.get(`/theaters/${theater.id}`).ok(expected)
+                await fix.httpClient.patch(`/theaters/${theater.id}`).body(updateDto).ok(expected)
+                await fix.httpClient.get(`/theaters/${theater.id}`).ok(expected)
+            })
         })
 
-        it('dummy test for coverage', async () => {
-            await fix.httpClient.patch(`/theaters/${theater.id}`).body({}).ok(theater)
+        // 상황: 빈 데이터로 업데이트 요청할 때
+        describe('when given an empty payload', () => {
+            // 기대 결과: 변경 없이 기존 극장 정보를 반환한다.
+            it('returns the unchanged theater details', async () => {
+                await fix.httpClient.patch(`/theaters/${theater.id}`).body({}).ok(theater)
+            })
         })
 
-        // 극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다
-        it('Should return NOT_FOUND(404) if the theater does not exist', async () => {
-            await fix.httpClient
-                .patch(`/theaters/${nullObjectId}`)
-                .body({})
-                .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
+        // 상황: 존재하지 않는 극장일 때
+        describe('when the theater does not exist', () => {
+            // 기대 결과: 404 Not Found 에러를 반환한다.
+            it('returns a 404 Not Found error', async () => {
+                await fix.httpClient
+                    .patch(`/theaters/${nullObjectId}`)
+                    .body({})
+                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
+            })
         })
     })
 
@@ -73,20 +88,26 @@ describe('Theaters', () => {
             theater = await createTheater(fix)
         })
 
-        // 극장을 삭제해야 한다
-        it('Should delete the theater', async () => {
-            await fix.httpClient.delete(`/theaters/${theater.id}`).ok()
-            await fix.httpClient.get(`/theaters/${theater.id}`).notFound({
-                ...Errors.Mongoose.MultipleDocumentsNotFound,
-                notFoundIds: [theater.id]
+        // 상황: 존재하는 극장일 때
+        describe('when the theater exists', () => {
+            // 기대 결과: 극장을 삭제한다.
+            it('deletes the theater', async () => {
+                await fix.httpClient.delete(`/theaters/${theater.id}`).ok()
+                await fix.httpClient.get(`/theaters/${theater.id}`).notFound({
+                    ...Errors.Mongoose.MultipleDocumentsNotFound,
+                    notFoundIds: [theater.id]
+                })
             })
         })
 
-        // 극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다
-        it('Should return NOT_FOUND(404) if the theater does not exist', async () => {
-            await fix.httpClient.delete(`/theaters/${nullObjectId}`).notFound({
-                ...Errors.Mongoose.MultipleDocumentsNotFound,
-                notFoundIds: [nullObjectId]
+        // 상황: 존재하지 않는 극장일 때
+        describe('when the theater does not exist', () => {
+            // 기대 결과: 404 Not Found 에러를 반환한다.
+            it('returns a 404 Not Found error', async () => {
+                await fix.httpClient.delete(`/theaters/${nullObjectId}`).notFound({
+                    ...Errors.Mongoose.MultipleDocumentsNotFound,
+                    notFoundIds: [nullObjectId]
+                })
             })
         })
     })
@@ -98,16 +119,22 @@ describe('Theaters', () => {
             theater = await createTheater(fix)
         })
 
-        // 극장 상세 정보를 반환해야 한다
-        it('Should return theater details', async () => {
-            await fix.httpClient.get(`/theaters/${theater.id}`).ok(theater)
+        // 상황: 존재하는 극장일 때
+        describe('when the theater exists', () => {
+            // 기대 결과: 극장 상세 정보를 반환한다.
+            it('returns the theater details', async () => {
+                await fix.httpClient.get(`/theaters/${theater.id}`).ok(theater)
+            })
         })
 
-        // 극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다
-        it('Should return NOT_FOUND(404) if the theater does not exist', async () => {
-            await fix.httpClient.get(`/theaters/${nullObjectId}`).notFound({
-                ...Errors.Mongoose.MultipleDocumentsNotFound,
-                notFoundIds: [nullObjectId]
+        // 상황: 존재하지 않는 극장일 때
+        describe('when the theater does not exist', () => {
+            // 기대 결과: 404 Not Found 에러를 반환한다.
+            it('returns a 404 Not Found error', async () => {
+                await fix.httpClient.get(`/theaters/${nullObjectId}`).notFound({
+                    ...Errors.Mongoose.MultipleDocumentsNotFound,
+                    notFoundIds: [nullObjectId]
+                })
             })
         })
     })
@@ -125,33 +152,45 @@ describe('Theaters', () => {
             ])
         })
 
-        // 기본 페이지네이션으로 극장 목록을 반환해야 한다
-        it('Should return theaters with default pagination', async () => {
-            const { body } = await fix.httpClient.get('/theaters').ok()
-            const { items, ...paginated } = body
+        // 상황: 쿼리 파라미터 없이 요청할 때
+        describe('when no query parameters are provided', () => {
+            // 기대 결과: 기본 페이지네이션으로 극장 목록을 반환한다.
+            it('returns a paginated list of theaters', async () => {
+                const { body } = await fix.httpClient.get('/theaters').ok()
+                const { items, ...paginated } = body
 
-            expect(paginated).toEqual({
-                skip: 0,
-                take: expect.any(Number),
-                total: theaters.length
+                expect(paginated).toEqual({
+                    skip: 0,
+                    take: expect.any(Number),
+                    total: theaters.length
+                })
+                expectEqualUnsorted(items, theaters)
             })
-            expectEqualUnsorted(items, theaters)
         })
 
-        // 잘못된 쿼리 필드가 제공되면 BAD_REQUEST(400)를 반환해야 한다
-        it('Should return BAD_REQUEST(400) if an invalid query field is provided', async () => {
-            await fix.httpClient
-                .get('/theaters')
-                .query({ wrong: 'value' })
-                .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+        // 상황: 다양한 조건으로 필터링할 때
+        describe('when filtering with various criteria', () => {
+            // 기대 결과: 부분 이름과 일치하는 영화 목록을 반환한다.
+            it('returns theaters filtered by partial name', async () => {
+                const partialName = 'Theater-a'
+                const { body } = await fix.httpClient
+                    .get('/theaters')
+                    .query({ name: partialName })
+                    .ok()
+
+                expectEqualUnsorted(body.items, [theaters[0], theaters[1]])
+            })
         })
 
-        // 이름의 일부로 극장 목록을 반환해야 한다
-        it('Should return theaters filtered by partial name', async () => {
-            const partialName = 'Theater-a'
-            const { body } = await fix.httpClient.get('/theaters').query({ name: partialName }).ok()
-
-            expectEqualUnsorted(body.items, [theaters[0], theaters[1]])
+        // 상황: 유효하지 않은 쿼리 필드로 요청할 때
+        describe('when an invalid query parameter is provided', () => {
+            // 기대 결과: 400 Bad Request 에러를 반환한다.
+            it('returns a 400 Bad Request error', async () => {
+                await fix.httpClient
+                    .get('/theaters')
+                    .query({ wrong: 'value' })
+                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+            })
         })
     })
 })

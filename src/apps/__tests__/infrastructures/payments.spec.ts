@@ -1,6 +1,7 @@
 import { buildCreatePaymentDto, Fixture } from './payments.fixture'
 
-describe('Payments', () => {
+// 기능 단위: 결제 서비스
+describe('PaymentsService', () => {
     let fix: Fixture
 
     beforeEach(async () => {
@@ -12,18 +13,27 @@ describe('Payments', () => {
         await fix?.teardown()
     })
 
-    it('processPayment', async () => {
-        const { createDto, expectedDto } = buildCreatePaymentDto()
+    describe('processPayment()', () => {
+        // 기대 결과: 결제 요청을 성공적으로 처리한다.
+        it('processes a payment request successfully', async () => {
+            const { createDto, expectedDto } = buildCreatePaymentDto()
 
-        const payment = await fix.paymentsClient.processPayment(createDto)
-        expect(payment).toEqual(expectedDto)
+            const payment = await fix.paymentsClient.processPayment(createDto)
+            expect(payment).toEqual(expectedDto)
+        })
     })
 
-    it('getPayments', async () => {
-        const { createDto } = buildCreatePaymentDto()
-        const createdPayment = await fix.paymentsClient.processPayment(createDto)
+    describe('getPayments()', () => {
+        // 상황: 존재하는 결제 정보일 때
+        describe('when the payments exist', () => {
+            // 기대 결과: 해당하는 결제 정보를 반환한다.
+            it('returns the corresponding payment records', async () => {
+                const { createDto } = buildCreatePaymentDto()
+                const createdPayment = await fix.paymentsClient.processPayment(createDto)
 
-        const gotPayments = await fix.paymentsClient.getPayments([createdPayment.id])
-        expect(gotPayments).toEqual([createdPayment])
+                const gotPayments = await fix.paymentsClient.getPayments([createdPayment.id])
+                expect(gotPayments).toEqual([createdPayment])
+            })
+        })
     })
 })

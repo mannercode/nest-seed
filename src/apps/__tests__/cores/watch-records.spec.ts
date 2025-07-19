@@ -3,7 +3,8 @@ import { expectEqualUnsorted, testObjectId } from 'testlib'
 import { buildCreateWatchRecordDto, createWatchRecord } from '../common.fixture'
 import { Fixture } from './watch-records.fixture'
 
-describe('WatchRecords', () => {
+// 기능 단위: 관람 기록 서비스
+describe('WatchRecordsService', () => {
     let fix: Fixture
 
     beforeEach(async () => {
@@ -15,9 +16,9 @@ describe('WatchRecords', () => {
         await fix?.teardown()
     })
 
-    describe('createWatchRecord', () => {
-        // 관람 기록을 생성해야 한다
-        it('Should create a watch record', async () => {
+    describe('createWatchRecord()', () => {
+        // 기대 결과: 새로운 관람 기록을 성공적으로 생성한다.
+        it('creates new watch record successfully', async () => {
             const { createDto, expectedDto } = buildCreateWatchRecordDto()
 
             const watchRecord = await fix.watchRecordsClient.createWatchRecord(createDto)
@@ -25,7 +26,7 @@ describe('WatchRecords', () => {
         })
     })
 
-    describe('searchWatchRecordsPage', () => {
+    describe('searchWatchRecordsPage()', () => {
         let records: WatchRecordDto[]
         const customerId = testObjectId(0xa1)
 
@@ -38,18 +39,23 @@ describe('WatchRecords', () => {
             ])
         })
 
-        // 기본 페이지네이션으로 관람 기록 목록을 반환해야 한다
-        it('Should return watch records with default pagination', async () => {
-            const { items, ...paginated } = await fix.watchRecordsClient.searchWatchRecordsPage({
-                customerId
-            })
+        // 상황: 다양한 조건으로 필터링할 때
+        describe('when filtering with various criteria', () => {
+            // 기대 결과: customer ID로 필터링된 티켓 목록을 반환한다.
+            it('returns a paginated list of watch records filtered by customer ID', async () => {
+                const { items, ...paginated } = await fix.watchRecordsClient.searchWatchRecordsPage(
+                    {
+                        customerId
+                    }
+                )
 
-            expect(paginated).toEqual({
-                skip: 0,
-                take: expect.any(Number),
-                total: records.length
+                expect(paginated).toEqual({
+                    skip: 0,
+                    take: expect.any(Number),
+                    total: records.length
+                })
+                expectEqualUnsorted(items, records)
             })
-            expectEqualUnsorted(items, records)
         })
     })
 })
