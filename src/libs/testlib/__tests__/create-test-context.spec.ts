@@ -1,7 +1,7 @@
 import { withTestId } from 'testlib'
 import type { Fixture } from './create-test-context.fixture'
 
-describe('createTestContext', () => {
+describe('createTestContext()', () => {
     let fix: Fixture
 
     beforeEach(async () => {
@@ -13,13 +13,19 @@ describe('createTestContext', () => {
         await fix?.teardown()
     })
 
-    // RPC 메시지를 전송하면 응답해야 한다
-    it('Should respond when an RPC message is sent', async () => {
-        await fix.rpcClient.expect(withTestId('getRpcMessage'), { arg: 'value' }, { id: 'value' })
+    // 상황: RPC 메시지를 전송할 때
+    describe('when sending an RPC message', () => {
+        // 기대 결과: 예상된 데이터로 응답한다.
+        it('responds with the expected data', async () => {
+            await fix.rpcClient.expect(withTestId('getRpcMessage'), { arg: 'value' }, { id: 'value' })
+        })
     })
 
-    // Http 메시지를 전송하면 응답해야 한다
-    it('Should respond when an HTTP message is sent', async () => {
-        await fix.httpClient.get('/message/value').ok({ received: 'value' })
+    // 상황: HTTP 메시지를 전송할 때
+    describe('when sending an HTTP message', () => {
+        // 기대 결과: 예상된 데이터로 응답한다.
+        it('responds with the expected data', async () => {
+            await fix.httpClient.get('/message/value').ok({ received: 'value' })
+        })
     })
 })

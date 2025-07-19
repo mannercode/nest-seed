@@ -1,6 +1,5 @@
 import { buildCreatePaymentDto, Fixture } from './payments.fixture'
 
-// 기능 단위: 결제 서비스
 describe('PaymentsService', () => {
     let fix: Fixture
 

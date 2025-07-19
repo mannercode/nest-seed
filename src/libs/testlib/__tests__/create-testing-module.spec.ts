@@ -1,6 +1,6 @@
 import type { Fixture } from './create-testing-module.fixture'
 
-describe('createTestingModule', () => {
+describe('createTestingModule()', () => {
     let fix: Fixture
 
     beforeEach(async () => {
@@ -12,9 +12,12 @@ describe('createTestingModule', () => {
         await fix?.teardown()
     })
 
-    // overrideProviders에 설정한 모의 서비스가 응답해야 한다
-    it('Should respond with the mock service set in overrideProviders', async () => {
-        const message = fix.sampleService.getMessage()
-        expect(message).toEqual({ message: 'This is Mock' })
+    // 상황: overrideProviders를 통해 서비스를 모의(mock) 처리했을 때
+    describe('when a service is mocked via overrideProviders', () => {
+        // 기대 결과: 원본 서비스 대신 모의 처리된 서비스가 사용된다.
+        it('uses the mocked service instead of the original', async () => {
+            const message = fix.sampleService.getMessage()
+            expect(message).toEqual({ message: 'This is Mock' })
+        })
     })
 })

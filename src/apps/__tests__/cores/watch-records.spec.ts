@@ -3,7 +3,6 @@ import { expectEqualUnsorted, testObjectId } from 'testlib'
 import { buildCreateWatchRecordDto, createWatchRecord } from '../common.fixture'
 import { Fixture } from './watch-records.fixture'
 
-// 기능 단위: 관람 기록 서비스
 describe('WatchRecordsService', () => {
     let fix: Fixture
 
@@ -43,11 +42,10 @@ describe('WatchRecordsService', () => {
         describe('when filtering with various criteria', () => {
             // 기대 결과: customer ID로 필터링된 티켓 목록을 반환한다.
             it('returns a paginated list of watch records filtered by customer ID', async () => {
-                const { items, ...pagination } = await fix.watchRecordsClient.searchWatchRecordsPage(
-                    {
+                const { items, ...pagination } =
+                    await fix.watchRecordsClient.searchWatchRecordsPage({
                         customerId
-                    }
-                )
+                    })
 
                 expect(pagination).toEqual({
                     skip: 0,
