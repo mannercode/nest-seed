@@ -17,7 +17,11 @@ describe('createTestContext()', () => {
     describe('when sending an RPC message', () => {
         // 기대 결과: 예상된 데이터로 응답한다.
         it('responds with the expected data', async () => {
-            await fix.rpcClient.expect(withTestId('getRpcMessage'), { arg: 'value' }, { id: 'value' })
+            await fix.rpcClient.expect(
+                withTestId('getRpcMessage'),
+                { arg: 'value' },
+                { id: 'value' }
+            )
         })
     })
 
