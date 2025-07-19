@@ -60,8 +60,8 @@ export class CustomersService {
     }
 
     async searchCustomersPage(searchDto: SearchCustomersPageDto) {
-        const { items, ...paginated } = await this.repository.searchCustomersPage(searchDto)
-        return { ...paginated, items: this.toDtos(items) }
+        const { items, ...pagination } = await this.repository.searchCustomersPage(searchDto)
+        return { ...pagination, items: this.toDtos(items) }
     }
 
     async generateAuthTokens(payload: CustomerAuthPayload) {

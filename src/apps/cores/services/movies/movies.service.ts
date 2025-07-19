@@ -48,9 +48,9 @@ export class MoviesService {
     }
 
     async searchMoviesPage(searchDto: SearchMoviesPageDto) {
-        const { items, ...paginated } = await this.repository.searchMoviesPage(searchDto)
+        const { items, ...pagination } = await this.repository.searchMoviesPage(searchDto)
 
-        return { ...paginated, items: this.toDtos(items) }
+        return { ...pagination, items: this.toDtos(items) }
     }
 
     async getMoviesByIds(movieIds: string[]) {

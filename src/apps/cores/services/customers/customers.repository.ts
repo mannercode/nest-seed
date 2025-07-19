@@ -38,7 +38,7 @@ export class CustomersRepository extends MongooseRepository<Customer> {
     async searchCustomersPage(searchDto: SearchCustomersPageDto) {
         const { take, skip, orderby } = searchDto
 
-        const paginated = await this.findWithPagination({
+        const pagination = await this.findWithPagination({
             configureQuery: (queryHelper) => {
                 const query = this.buildQuery(searchDto, { allowEmpty: true })
 
@@ -47,7 +47,7 @@ export class CustomersRepository extends MongooseRepository<Customer> {
             pagination: { take, skip, orderby }
         })
 
-        return paginated
+        return pagination
     }
 
     async findByEmail(email: string) {

@@ -173,9 +173,9 @@ describe('CustomersService', () => {
             // 기대 결과: 기본 페이지네이션으로 고객 목록을 반환한다.
             it('returns a paginated list of customers', async () => {
                 const { body } = await fix.httpClient.get('/customers').ok()
-                const { items, ...paginated } = body
+                const { items, ...pagination } = body
 
-                expect(paginated).toEqual({
+                expect(pagination).toEqual({
                     skip: 0,
                     take: expect.any(Number),
                     total: customers.length

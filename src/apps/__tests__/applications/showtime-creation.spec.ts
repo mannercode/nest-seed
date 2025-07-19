@@ -22,9 +22,9 @@ describe('ShowtimeCreationService', () => {
                 .get('/showtime-creation/movies')
                 .query({ skip: 0 })
                 .ok()
-            const { items, ...paginated } = body
+            const { items, ...pagination } = body
 
-            expect(paginated).toEqual({ skip: 0, take: expect.any(Number), total: 1 })
+            expect(pagination).toEqual({ skip: 0, take: expect.any(Number), total: 1 })
             expect(items).toEqual([fix.movie])
         })
     })
@@ -36,9 +36,9 @@ describe('ShowtimeCreationService', () => {
                 .get('/showtime-creation/theaters')
                 .query({ skip: 0 })
                 .ok()
-            const { items, ...paginated } = body
+            const { items, ...pagination } = body
 
-            expect(paginated).toEqual({ skip: 0, take: expect.any(Number), total: 1 })
+            expect(pagination).toEqual({ skip: 0, take: expect.any(Number), total: 1 })
             expect(items).toEqual([fix.theater])
         })
     })

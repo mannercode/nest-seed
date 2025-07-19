@@ -101,13 +101,13 @@ describe('MongooseRepository', () => {
         it('Should correctly handle pagination', async () => {
             const skip = 10
             const take = 5
-            const { items, ...paginated } = await fix.repository.findWithPagination({
+            const { items, ...pagination } = await fix.repository.findWithPagination({
                 pagination: { skip, take, orderby: { name: 'name', direction: OrderDirection.Asc } }
             })
 
             sortByName(samples)
             expect(samples.slice(skip, skip + take)).toEqual(toDtos(items))
-            expect(paginated).toEqual({ total: samples.length, skip, take })
+            expect(pagination).toEqual({ total: samples.length, skip, take })
         })
 
         // 오름차순으로 정렬해야 한다

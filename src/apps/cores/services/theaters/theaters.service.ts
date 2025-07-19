@@ -29,9 +29,9 @@ export class TheatersService {
     }
 
     async searchTheatersPage(searchDto: SearchTheatersPageDto) {
-        const { items, ...paginated } = await this.repository.searchTheatersPage(searchDto)
+        const { items, ...pagination } = await this.repository.searchTheatersPage(searchDto)
 
-        return { ...paginated, items: this.toDtos(items) }
+        return { ...pagination, items: this.toDtos(items) }
     }
 
     async theatersExist(theaterIds: string[]) {
