@@ -23,9 +23,9 @@ describe('StorageFilesService', () => {
                 .attachments(attachs)
                 .fields(fields ?? [{ name: 'name', value: 'test' }])
 
-        // 상황: 유효한 파일을 업로드할 때
+        // 유효한 파일을 업로드할 때
         describe('when uploading valid files', () => {
-            // 기대 결과: 단일 파일을 성공적으로 저장한다.
+            // 단일 파일을 성공적으로 저장한다.
             it('stores a single file correctly', async () => {
                 const { body } = await uploadFile([
                     { name: 'files', file: fix.files.small.path }
@@ -36,7 +36,7 @@ describe('StorageFilesService', () => {
                 )
             })
 
-            // 기대 결과: 여러 파일을 성공적으로 저장한다.
+            // 여러 파일을 성공적으로 저장한다.
             it('stores multiple files correctly', async () => {
                 const { body } = await uploadFile([
                     { name: 'files', file: fix.files.small.path },
@@ -51,23 +51,23 @@ describe('StorageFilesService', () => {
                 )
             })
 
-            // 기대 결과: 첨부 파일이 없어도 요청에 성공한다.
+            // 첨부 파일이 없어도 요청에 성공한다.
             it('succeeds even if no file is attached', async () => {
                 await uploadFile([]).created()
             })
         })
 
-        // 상황: 유효하지 않은 파일을 업로드할 때
+        // 유효하지 않은 파일을 업로드할 때
         describe('when uploading invalid files', () => {
-            // 기대 결과: 허용된 크기를 초과하면 413 에러를 반환한다.
+            // 허용된 크기를 초과하면 413 에러를 반환한다.
             it('returns a 413 Payload Too Large error if the file exceeds the size limit', async () => {
                 await uploadFile([
                     { name: 'files', file: fix.files.oversized.path }
                 ]).payloadTooLarge(expect.objectContaining(Errors.FileUpload.MaxSizeExceeded))
             })
 
-            // 기대 결과: 허용된 파일 개수를 초과하면 400 에러를 반환한다.
-            it('returns a 400 Bad Request error if the number of files exceeds the limit', async () => {
+            // 허용된 파일 개수를 초과하면 400 에러를 반환한다.
+            it('returns a BadRequest(400) error if the number of files exceeds the limit', async () => {
                 const limitOver = fix.maxFilesPerUpload + 1
                 const excessFiles = Array(limitOver).fill({
                     name: 'files',
@@ -79,7 +79,7 @@ describe('StorageFilesService', () => {
                 )
             })
 
-            // 기대 결과: 허용되지 않은 MIME 타입이면 415 에러를 반환한다.
+            // 허용되지 않은 MIME 타입이면 415 에러를 반환한다.
             it('returns a 415 Unsupported Media Type error for unallowed MIME types', async () => {
                 await uploadFile([
                     { name: 'files', file: fix.files.notAllowed.path }
@@ -90,10 +90,10 @@ describe('StorageFilesService', () => {
             })
         })
 
-        // 상황: 필수 필드가 누락되었을 때
+        // 필수 필드가 누락되었을 때
         describe('when the required fields are missing', () => {
-            // 기대 결과: 400 Bad Request 에러를 반환한다.
-            it('returns a 400 Bad Request error', async () => {
+            // BadRequest(400) 에러를 반환한다.
+            it('returns a BadRequest(400) error', async () => {
                 await uploadFile([], []).badRequest({
                     ...Errors.RequestValidation.Failed,
                     details: [{ constraints: { isString: 'name must be a string' }, field: 'name' }]
@@ -115,9 +115,9 @@ describe('StorageFilesService', () => {
             await Path.delete(tempDir)
         })
 
-        // 상황: 파일이 존재할 때
+        // 파일이 존재할 때
         describe('when the file exists', () => {
-            // 기대 결과: 파일을 성공적으로 다운로드한다.
+            // 파일을 성공적으로 다운로드한다.
             it('downloads the file successfully', async () => {
                 const downloadPath = Path.join(tempDir, generateShortId() + '.txt')
 
@@ -131,10 +131,10 @@ describe('StorageFilesService', () => {
             })
         })
 
-        // 상황: 파일이 존재하지 않을 때
+        // 파일이 존재하지 않을 때
         describe('when the file does not exist', () => {
-            // 기대 결과: 404 Not Found 에러를 반환한다.
-            it('returns a 404 Not Found error', async () => {
+            // 404 Not Found 에러를 반환한다.
+            it('returns 404 Not Found error', async () => {
                 await fix.httpClient.get(`/storage-files/${nullObjectId}`).notFound({
                     ...Errors.Mongoose.MultipleDocumentsNotFound,
                     notFoundIds: [nullObjectId]
@@ -150,9 +150,9 @@ describe('StorageFilesService', () => {
             uploadedFile = await saveFile(fix, fix.files.large)
         })
 
-        // 상황: 파일이 존재할 때
+        // 파일이 존재할 때
         describe('when the file exists', () => {
-            // 기대 결과: 파일 기록과 물리적 파일을 함께 삭제한다.
+            // 파일 기록과 물리적 파일을 함께 삭제한다.
             it('deletes the file record and the physical file', async () => {
                 const filePath = Path.join(fix.uploadDir, `${uploadedFile.id}.file`)
 
@@ -168,10 +168,10 @@ describe('StorageFilesService', () => {
             })
         })
 
-        // 상황: 파일이 존재하지 않을 때
+        // 파일이 존재하지 않을 때
         describe('when the file does not exist', () => {
-            // 기대 결과: 404 Not Found 에러를 반환한다.
-            it('returns a 404 Not Found error', async () => {
+            // 404 Not Found 에러를 반환한다.
+            it('returns 404 Not Found error', async () => {
                 await fix.httpClient.delete(`/storage-files/${nullObjectId}`).notFound({
                     ...Errors.Mongoose.MultipleDocumentsNotFound,
                     notFoundIds: [nullObjectId]

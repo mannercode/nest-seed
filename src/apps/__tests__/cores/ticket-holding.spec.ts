@@ -16,9 +16,9 @@ describe('TicketHoldingService', () => {
     })
 
     describe('holdTickets()', () => {
-        // 상황: 다른 고객이 이미 티켓을 선점했을 때
+        // 다른 고객이 이미 티켓을 선점했을 때
         describe('when another customer has already held the tickets', () => {
-            // 기대 결과: 선점에 실패한다.
+            // 선점에 실패한다.
             it('fails to hold the same tickets', async () => {
                 const firstCustomerHold = await holdTickets(fix, { customerId: testObjectId(0x1) })
                 expect(firstCustomerHold).toBeTruthy()
@@ -28,9 +28,9 @@ describe('TicketHoldingService', () => {
             })
         })
 
-        // 상황: 동일 고객이 이미 선점한 티켓을 다시 선점할 때
+        // 동일 고객이 이미 선점한 티켓을 다시 선점할 때
         describe('when the same customer re-holds their tickets', () => {
-            // 기대 결과: 선점에 성공한다.
+            // 선점에 성공한다.
             it('succeeds in holding the tickets again', async () => {
                 const firstHold = await holdTickets(fix)
                 expect(firstHold).toBeTruthy()
@@ -40,9 +40,9 @@ describe('TicketHoldingService', () => {
             })
         })
 
-        // 상황: 선점 시간이 만료되었을 때
+        // 선점 시간이 만료되었을 때
         describe('when the hold duration has expired', () => {
-            // 기대 결과: 다른 고객이 해당 티켓을 다시 선점할 수 있다.
+            // 다른 고객이 해당 티켓을 다시 선점할 수 있다.
             it('allows another customer to hold the tickets', async () => {
                 const { Rules } = await import('shared')
                 Rules.Ticket.holdDurationInMs = 1000
@@ -64,9 +64,9 @@ describe('TicketHoldingService', () => {
             })
         })
 
-        // 상황: 동일 고객이 새로운 티켓을 선점할 때
+        // 동일 고객이 새로운 티켓을 선점할 때
         describe('when the same customer holds a new set of tickets', () => {
-            // 기대 결과: 이전에 선점했던 티켓은 자동으로 해제된다.
+            // 이전에 선점했던 티켓은 자동으로 해제된다.
             it('releases the previously held tickets', async () => {
                 const oldTickets = [testObjectId(0x30), testObjectId(0x31)]
                 const newTickets = [testObjectId(0x40), testObjectId(0x41)]
@@ -97,9 +97,9 @@ describe('TicketHoldingService', () => {
             })
         })
 
-        // 상황: 여러 고객이 동시에 선점을 요청할 때 (경쟁 조건)
+        // 여러 고객이 동시에 선점을 요청할 때 (경쟁 조건)
         describe('when multiple customers request holds simultaneously', () => {
-            // 기대 결과: 중복 선점 없이 하나의 고객만 성공한다.
+            // 중복 선점 없이 하나의 고객만 성공한다.
             it(
                 'prevents duplicate holds, ensuring only one customer succeeds',
                 async () => {
@@ -142,9 +142,9 @@ describe('TicketHoldingService', () => {
         const ticketIds = [testObjectId(0x30), testObjectId(0x31)]
         const showtimeId = testObjectId(0x40)
 
-        // 상황: 유효한 티켓을 선점 중일 때
+        // 유효한 티켓을 선점 중일 때
         describe('when tickets are currently held', () => {
-            // 기대 결과: 선점된 티켓 ID 목록을 반환한다.
+            // 선점된 티켓 ID 목록을 반환한다.
             it('returns the list of held ticket IDs', async () => {
                 await holdTickets(fix, { showtimeId, customerId, ticketIds })
                 const heldTickets = await searchHeldTicketIds(fix, showtimeId, customerId)
@@ -152,9 +152,9 @@ describe('TicketHoldingService', () => {
             })
         })
 
-        // 상황: 선점 시간이 만료되었을 때
+        // 선점 시간이 만료되었을 때
         describe('when the hold has expired', () => {
-            // 기대 결과: 빈 목록을 반환한다.
+            // 빈 목록을 반환한다.
             it('returns an empty list', async () => {
                 const { Rules } = await import('shared')
                 Rules.Ticket.holdDurationInMs = 1000
@@ -178,9 +178,9 @@ describe('TicketHoldingService', () => {
         const ticketIds = [testObjectId(0x30), testObjectId(0x31)]
         const showtimeId = testObjectId(0x1)
 
-        // 상황: 고객이 선점한 티켓을 해제할 때
+        // 고객이 선점한 티켓을 해제할 때
         describe('when a customer releases their held tickets', () => {
-            // 기대 결과: 티켓이 해제되어 다른 고객이 선점할 수 있다.
+            // 티켓이 해제되어 다른 고객이 선점할 수 있다.
             it('releases the tickets, making them available for others', async () => {
                 // Customer A holds the tickets
                 // A 고객이 선점

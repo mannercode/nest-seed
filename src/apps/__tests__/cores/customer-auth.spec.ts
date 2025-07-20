@@ -5,7 +5,7 @@ import { Errors } from '../__helpers__'
 import { createCustomer } from '../common.fixture'
 import { Fixture } from './customer-auth.fixture'
 
-describe('CustomersService - Authentication', () => {
+describe('CustomersService – Authentication', () => {
     let fix: Fixture
     let customer: CustomerDto
     const email = 'user@mail.com'
@@ -22,10 +22,10 @@ describe('CustomersService - Authentication', () => {
     })
 
     describe('POST /customers/login', () => {
-        // 유효한 자격증명으로 요청할 때
-        describe('with valid credentials', () => {
-            // 새로운 인증 토큰을 반환한다.
-            it('returns a new set of authentication tokens', async () => {
+        // 올바른 자격 증명을 제공한 경우
+        describe('when credentials are valid', () => {
+            // 새로운 액세스 토큰과 리프레시 토큰을 반환한다
+            it('returns new access and refresh tokens', async () => {
                 await fix.httpClient
                     .post('/customers/login')
                     .body({ email, password })
@@ -36,10 +36,10 @@ describe('CustomersService - Authentication', () => {
             })
         })
 
-        // 비밀번호가 틀렸을 때
-        describe('with an incorrect password', () => {
-            // 401 에러를 반환한다.
-            it('returns a 401 Unauthorized error', async () => {
+        // 비밀번호가 틀린 경우
+        describe('when the password is incorrect', () => {
+            // 401 Unauthorized를 반환한다
+            it('returns 401 Unauthorized', async () => {
                 await fix.httpClient
                     .post('/customers/login')
                     .body({ email, password: 'wrong password' })
@@ -47,10 +47,10 @@ describe('CustomersService - Authentication', () => {
             })
         })
 
-        // 존재하지 않는 이메일일 때
-        describe('with a non-existent email', () => {
-            // 401 에러를 반환한다.
-            it('returns a 401 Unauthorized error', async () => {
+        // 이메일이 존재하지 않는 경우
+        describe('when the email does not exist', () => {
+            // 401 Unauthorized를 반환한다
+            it('returns 401 Unauthorized', async () => {
                 await fix.httpClient
                     .post('/customers/login')
                     .body({ email: 'unknown@mail.com', password: '.' })
@@ -58,10 +58,10 @@ describe('CustomersService - Authentication', () => {
             })
         })
 
-        // 인증은 성공했으나 DB에 고객 정보가 없을 때
-        describe('when the authenticated customer is not found in the database', () => {
-            // 401 에러를 반환한다.
-            it('returns a 401 Unauthorized error', async () => {
+        // 데이터베이스에 고객 정보가 없는 경우
+        describe('when the customer is missing in the database', () => {
+            // 401 Unauthorized를 반환한다
+            it('returns 401 Unauthorized', async () => {
                 const model = fix.coresContext.module.get(
                     getModelToken(Customer.name, MongooseConfigModule.connectionName)
                 )
@@ -93,10 +93,10 @@ describe('CustomersService - Authentication', () => {
             refreshToken = body.refreshToken
         })
 
-        // 유효한 리프레시 토큰일 때
-        describe('with a valid refresh token', () => {
-            // 새로운 인증 토큰을 반환한다.
-            it('returns a new set of authentication tokens', async () => {
+        // 리프레시 토큰이 유효한 경우
+        describe('when the refresh token is valid', () => {
+            // 새로운 액세스 토큰과 리프레시 토큰을 반환한다
+            it('returns new access and refresh tokens', async () => {
                 const { body } = await fix.httpClient
                     .post('/customers/refresh')
                     .body({ refreshToken })
@@ -107,10 +107,10 @@ describe('CustomersService - Authentication', () => {
             })
         })
 
-        // 유효하지 않은 리프레시 토큰일 때
-        describe('with an invalid refresh token', () => {
-            // 401 에러를 반환한다.
-            it('returns a 401 Unauthorized error', async () => {
+        // 리프레시 토큰이 유효하지 않은 경우
+        describe('when the refresh token is invalid', () => {
+            // 401 Unauthorized를 반환한다
+            it('returns 401 Unauthorized', async () => {
                 await fix.httpClient
                     .post('/customers/refresh')
                     .body({ refreshToken: 'invalid-token' })
@@ -122,8 +122,8 @@ describe('CustomersService - Authentication', () => {
         })
     })
 
-    // 액세스 토큰 검증
-    describe('Access Token Verification', () => {
+    // 액세스 토큰 보호 API를 테스트한다
+    describe('access‑token–protected route', () => {
         let accessToken: string
 
         beforeEach(async () => {
@@ -134,10 +134,10 @@ describe('CustomersService - Authentication', () => {
             accessToken = body.accessToken
         })
 
-        // 유효한 액세스 토큰일 때
-        describe('with a valid access token', () => {
-            // 접근을 허용한다.
-            it('allows access to the protected route', async () => {
+        // 액세스 토큰이 유효한 경우
+        describe('when the access token is valid', () => {
+            // 접근을 허용한다
+            it('allows access', async () => {
                 await fix.httpClient
                     .get(`/customers/${customer.id}`)
                     .headers({ Authorization: `Bearer ${accessToken}` })
@@ -145,10 +145,10 @@ describe('CustomersService - Authentication', () => {
             })
         })
 
-        // 유효하지 않은 액세스 토큰일 때
-        describe('with an invalid access token', () => {
-            // 401 에러를 반환한다.
-            it('returns a 401 Unauthorized error', async () => {
+        // 액세스 토큰이 유효하지 않은 경우
+        describe('when the access token is invalid', () => {
+            // 401 Unauthorized를 반환한다
+            it('returns 401 Unauthorized', async () => {
                 await fix.httpClient
                     .get(`/customers/${customer.id}`)
                     .headers({ Authorization: 'Bearer Invalid-Token' })

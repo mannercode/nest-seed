@@ -16,7 +16,7 @@ describe('WatchRecordsService', () => {
     })
 
     describe('createWatchRecord()', () => {
-        // 기대 결과: 새로운 관람 기록을 성공적으로 생성한다.
+        // 새로운 관람 기록을 성공적으로 생성한다.
         it('creates new watch record successfully', async () => {
             const { createDto, expectedDto } = buildCreateWatchRecordDto()
 
@@ -38,9 +38,9 @@ describe('WatchRecordsService', () => {
             ])
         })
 
-        // 상황: 다양한 조건으로 필터링할 때
+        // 다양한 조건으로 필터링할 때
         describe('when filtering with various criteria', () => {
-            // 기대 결과: customer ID로 필터링된 티켓 목록을 반환한다.
+            // customer ID로 필터링된 티켓 목록을 반환한다.
             it('returns a paginated list of watch records filtered by customer ID', async () => {
                 const { items, ...pagination } =
                     await fix.watchRecordsClient.searchWatchRecordsPage({

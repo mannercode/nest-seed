@@ -16,32 +16,33 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('GET /showtime-creation/movies', () => {
-        // 기대 결과: 페이지네이션된 영화 목록을 반환한다.
-        it('returns a paginated list of movies', async () => {
+        // 페이지네이션된 영화 목록을 반환한다
+        it('returns movies with pagination', async () => {
             const { body } = await fix.httpClient
                 .get('/showtime-creation/movies')
                 .query({ skip: 0 })
                 .ok()
-            const { items, ...pagination } = body
 
+            const { items, ...pagination } = body
             expect(pagination).toEqual({ skip: 0, take: expect.any(Number), total: 1 })
             expect(items).toEqual([fix.movie])
         })
     })
 
+    // 극장 목록을 조회한다
     describe('GET /showtime-creation/theaters', () => {
-        // 기대 결과: 페이지네이션된 극장 목록을 반환한다.
-        it('returns a paginated list of theaters', async () => {
+        it('returns theaters with pagination', async () => {
             const { body } = await fix.httpClient
                 .get('/showtime-creation/theaters')
                 .query({ skip: 0 })
                 .ok()
-            const { items, ...pagination } = body
 
+            const { items, ...pagination } = body
             expect(pagination).toEqual({ skip: 0, take: expect.any(Number), total: 1 })
             expect(items).toEqual([fix.theater])
         })
     })
+
 
     describe('POST /showtime-creation/showtimes/search', () => {
         let showtimes: ShowtimeDto[]
@@ -59,8 +60,8 @@ describe('ShowtimeCreationService', () => {
             showtimes = await createShowtimes(fix, createDtos)
         })
 
-        // 기대 결과: 예정된 상영시간 목록을 반환한다.
-        it('returns a list of scheduled showtimes', async () => {
+        // 해당 극장의 상영시간을 반환한다
+        it('returns scheduled showtimes for the given theaters', async () => {
             const { body } = await fix.httpClient
                 .post('/showtime-creation/showtimes/search')
                 .body({ theaterIds: [fix.theater.id] })
@@ -83,10 +84,10 @@ describe('ShowtimeCreationService', () => {
             return body
         }
 
-        // 상황: 유효한 데이터로 생성 요청 시
-        describe('when the creation request is valid', () => {
-            // 기대 결과: 상영시간과 티켓을 성공적으로 생성한다.
-            it('successfully creates the showtimes and tickets', async () => {
+        // 요청이 유효한 경우
+        describe('when the request is valid', () => {
+            // 상영시간과 티켓을 생성한다
+            it('creates the showtimes and tickets', async () => {
                 const monitorPromise = monitorEvents(fix.httpClient, ['succeeded'])
                 const theaterIds = [fix.theater.id]
                 const startTimes = [new Date('2100-01-01T09:00'), new Date('2100-01-01T11:00')]
@@ -111,10 +112,10 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        // 상황: 유효하지 않은 데이터로 생성 요청 시
-        describe('when the creation request contains invalid data', () => {
-            // 기대 결과: 영화가 존재하지 않으면 에러를 보고한다.
-            it('reports an error if the specified movie does not exist', async () => {
+        // 영화가 존재하지 않는 경우
+        describe('when the movie does not exist', () => {
+            // 존재하지 않는 영화에 대해 에러를 반환한다
+            it('reports an error for the missing movie', async () => {
                 const monitorPromise = monitorEvents(fix.httpClient, ['error'])
                 const { transactionId } = await requestShowtimeCreation(
                     nullObjectId,
@@ -130,9 +131,12 @@ describe('ShowtimeCreationService', () => {
                     message: 'The requested movie could not be found.'
                 })
             })
+        })
 
-            // 기대 결과: 극장이 존재하지 않으면 에러를 보고한다.
-            it('reports an error if any specified theater does not exist', async () => {
+        // 극장이 존재하지 않는 경우
+        describe('when any theater does not exist', () => {
+            // 존재하지 않는 극장에 대해 에러를 반환한다
+            it('reports an error for the missing theater', async () => {
                 const monitorPromise = monitorEvents(fix.httpClient, ['error'])
                 const { transactionId } = await requestShowtimeCreation(
                     fix.movie.id,
@@ -150,8 +154,8 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        // 상황: 상영시간이 충돌할 때
-        describe('when there are scheduling conflicts', () => {
+        // 상영시간이 충돌하는 경우
+        describe('when showtimes conflict', () => {
             let existingShowtimes: ShowtimeDto[]
 
             beforeEach(async () => {
@@ -168,8 +172,8 @@ describe('ShowtimeCreationService', () => {
                 existingShowtimes = await createShowtimes(fix, createDtos)
             })
 
-            // 기대 결과: 실패 상태와 함께 충돌하는 상영시간 정보를 반환한다.
-            it('returns a "failed" status with conflicting showtime details', async () => {
+            // 충돌하는 상영시간을 반환한다
+            it('returns the conflicting showtimes', async () => {
                 const monitorPromise = monitorEvents(fix.httpClient, ['failed'])
                 const { body } = await fix.httpClient
                     .post('/showtime-creation/showtimes')

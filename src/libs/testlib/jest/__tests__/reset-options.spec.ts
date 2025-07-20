@@ -40,22 +40,26 @@ describe('Verify Jest reset options', () => {
     const sharedMock = jest.fn()
 
     describe('resetMocks: true', () => {
+        // 첫 번째 테스트에서 호출 횟수를 기록한다
         it('records calls in the first test', () => {
             sharedMock('first')
             expect(sharedMock).toHaveBeenCalledTimes(1)
         })
 
+        // 다음 테스트 전에 호출 횟수를 초기화 한다
         it('resets mock call counts before the next test', () => {
             expect(sharedMock).toHaveBeenCalledTimes(0)
         })
     })
 
     describe('restoreMocks: true', () => {
+        // 첫 번째 테스트에서 Date.now를 덮어쓴다
         it('overrides Date.now in the first test', () => {
             jest.spyOn(Date, 'now').mockReturnValue(42)
             expect(Date.now()).toBe(42)
         })
 
+        // 각 테스트가 끝난 후 Date.now를 원래대로 돌려놓는다
         it('restores original Date.now between tests', () => {
             expect(Date.now()).not.toBe(42)
         })

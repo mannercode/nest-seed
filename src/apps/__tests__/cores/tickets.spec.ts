@@ -17,7 +17,7 @@ describe('TicketsService', () => {
     })
 
     describe('createTickets()', () => {
-        // 기대 결과: 새로운 티켓을 성공적으로 생성한다.
+        // 새로운 티켓을 성공적으로 생성한다.
         it('creates new tickets successfully', async () => {
             const { createDto, expectedDto } = buildCreateTicketDto()
 
@@ -51,36 +51,36 @@ describe('TicketsService', () => {
             expect(success).toBeTruthy()
         })
 
-        // 상황: 다양한 조건으로 필터링할 때
+        // 다양한 조건으로 필터링할 때
         describe('when filtering with various criteria', () => {
-            // 기대 결과: transaction ID로 필터링된 티켓 목록을 반환한다.
+            // transaction ID로 필터링된 티켓 목록을 반환한다.
             it('returns tickets filtered by transaction IDs', async () => {
                 const tickets = await fix.ticketsClient.searchTickets({ transactionIds })
                 expectEqualUnsorted(tickets, [expectedDtos[0], expectedDtos[1]])
             })
 
-            // 기대 결과: movie ID로 필터링된 티켓 목록을 반환한다.
+            // movie ID로 필터링된 티켓 목록을 반환한다.
             it('returns tickets filtered by movie IDs', async () => {
                 const tickets = await fix.ticketsClient.searchTickets({ movieIds })
                 expectEqualUnsorted(tickets, [expectedDtos[2], expectedDtos[3]])
             })
 
-            // 기대 결과: theater ID로 필터링된 티켓 목록을 반환한다.
+            // theater ID로 필터링된 티켓 목록을 반환한다.
             it('returns tickets filtered by theater IDs', async () => {
                 const tickets = await fix.ticketsClient.searchTickets({ theaterIds })
                 expectEqualUnsorted(tickets, [expectedDtos[4], expectedDtos[5]])
             })
 
-            // 기대 결과: showtime ID로 필터링된 티켓 목록을 반환한다.
+            // showtime ID로 필터링된 티켓 목록을 반환한다.
             it('returns tickets filtered by showtime IDs', async () => {
                 const tickets = await fix.ticketsClient.searchTickets({ showtimeIds })
                 expectEqualUnsorted(tickets, [expectedDtos[6], expectedDtos[7]])
             })
         })
 
-        // 상황: 필터 조건이 제공되지 않았을 때
+        // 필터 조건이 제공되지 않았을 때
         describe('when no filter is provided', () => {
-            // 기대 결과: 에러를 던진다.
+            // 에러를 던진다.
             it('throws an error', async () => {
                 const promise = fix.ticketsClient.searchTickets({})
                 await expect(promise).rejects.toThrow(
@@ -112,7 +112,7 @@ describe('TicketsService', () => {
             tickets = await fix.ticketsClient.searchTickets({ transactionIds: [transactionId] })
         })
 
-        // 기대 결과: 지정된 티켓의 상태를 변경한다.
+        // 지정된 티켓의 상태를 변경한다.
         it('changes the status of the specified tickets', async () => {
             expect(await getStatus()).toEqual([TicketStatus.Available, TicketStatus.Available])
 
@@ -130,7 +130,7 @@ describe('TicketsService', () => {
     })
 
     describe('getTicketSalesForShowtimes()', () => {
-        // 기대 결과: 주어진 상영시간에 대한 판매 통계를 반환한다.
+        // 주어진 상영시간에 대한 판매 통계를 반환한다.
         it('returns the sales statistics for the given showtimes', async () => {
             const showtimeId = testObjectId(0x10)
             const ticketCount = 50

@@ -17,20 +17,19 @@ describe('CustomersService', () => {
     })
 
     describe('POST /customers', () => {
-        // 상황: 유효한 데이터로 요청할 때
-        describe('with valid data', () => {
-            // 기대 결과: 새로운 고객을 생성한다.
-            it('creates a new customer', async () => {
+        // 유효한 데이터가 제공된 경우
+        describe('when provided valid data', () => {
+            // 고객을 생성하고 반환한다
+            it('creates and returns the customer', async () => {
                 const { createDto, expectedDto } = buildCreateCustomerDto()
-
                 await fix.httpClient.post('/customers').body(createDto).created(expectedDto)
             })
         })
 
-        // 상황: 이미 존재하는 이메일일 때
+        // 이메일이 이미 존재할 때
         describe('when the email already exists', () => {
-            // 기대 결과: 409 Conflict 에러를 반환한다.
-            it('returns a 409 Conflict error', async () => {
+            // 409 Conflict를 반환한다
+            it('returns 409 Conflict', async () => {
                 const { createDto } = buildCreateCustomerDto()
 
                 await fix.httpClient.post('/customers').body(createDto).created()
@@ -41,10 +40,10 @@ describe('CustomersService', () => {
             })
         })
 
-        // 상황: 필수 필드가 누락되었을 때
-        describe('with missing required fields', () => {
-            // 기대 결과: 400 Bad Request 에러를 반환한다.
-            it('returns a 400 Bad Request error', async () => {
+        // 필수 필드가 누락되었을 때
+        describe('when required fields are missing', () => {
+            // 400 Bad Request를 반환한다
+            it('returns 400 Bad Request', async () => {
                 await fix.httpClient
                     .post('/customers')
                     .body({})
@@ -60,10 +59,10 @@ describe('CustomersService', () => {
             customer = await createCustomer(fix)
         })
 
-        // 상황: 유효한 데이터로 요청할 때
-        describe('with valid update data', () => {
-            // 기대 결과: 고객 정보를 수정한다.
-            it('updates the customer details', async () => {
+        // 유효한 데이터가 제공된 경우
+        describe('when provided valid data', () => {
+            // 고객 정보를 수정한다
+            it('updates the customer', async () => {
                 const updateDto = {
                     name: 'update-name',
                     email: 'new@mail.com',
@@ -76,18 +75,18 @@ describe('CustomersService', () => {
             })
         })
 
-        // 상황: 빈 데이터로 업데이트 요청할 때
-        describe('with an empty update payload', () => {
-            // 기대 결과: 변경 없이 기존 고객 정보를 반환한다.
-            it('returns the unchanged customer details', async () => {
+        // 페이로드가 비어있을 때
+        describe('when the payload is empty', () => {
+            // 원래 고객 정보를 반환한다
+            it('returns the original customer', async () => {
                 await fix.httpClient.patch(`/customers/${customer.id}`).body({}).ok(customer)
             })
         })
 
-        // 상황: 존재하지 않는 고객일 때
+        // 고객이 존재하지 않을 때
         describe('when the customer does not exist', () => {
-            // 기대 결과: 404 Not Found 에러를 반환한다.
-            it('returns a 404 Not Found error', async () => {
+            // 404 Not Found를 반환한다
+            it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .patch(`/customers/${nullObjectId}`)
                     .body({})
@@ -103,9 +102,9 @@ describe('CustomersService', () => {
             customer = await createCustomer(fix)
         })
 
-        // 상황: 존재하는 고객일 때
+        // 고객이 존재할 때
         describe('when the customer exists', () => {
-            // 기대 결과: 고객을 삭제한다.
+            // 고객을 삭제한다
             it('deletes the customer', async () => {
                 await fix.httpClient.delete(`/customers/${customer.id}`).ok()
 
@@ -116,10 +115,10 @@ describe('CustomersService', () => {
             })
         })
 
-        // 상황: 존재하지 않는 고객일 때
+        // 고객이 존재하지 않을 때
         describe('when the customer does not exist', () => {
-            // 기대 결과: 404 Not Found 에러를 반환한다.
-            it('returns a 404 Not Found error', async () => {
+            // 404 Not Found를 반환한다
+            it('returns 404 Not Found', async () => {
                 await fix.httpClient.delete(`/customers/${nullObjectId}`).notFound({
                     ...Errors.Mongoose.MultipleDocumentsNotFound,
                     notFoundIds: [nullObjectId]
@@ -135,18 +134,18 @@ describe('CustomersService', () => {
             customer = await createCustomer(fix)
         })
 
-        // 상황: 존재하는 고객일 때
+        // 고객이 존재할 때
         describe('when the customer exists', () => {
-            // 기대 결과: 고객 상세 정보를 반환한다.
-            it('returns the customer details', async () => {
+            // 고객 정보를 반환한다
+            it('returns the customer', async () => {
                 await fix.httpClient.get(`/customers/${customer.id}`).ok(customer)
             })
         })
 
-        // 상황: 존재하지 않는 고객일 때
+        // 고객이 존재하지 않을 때
         describe('when the customer does not exist', () => {
-            // 기대 결과: 404 Not Found 에러를 반환한다.
-            it('returns a 404 Not Found error', async () => {
+            // 404 Not Found를 반환한다
+            it('returns 404 Not Found', async () => {
                 await fix.httpClient.get(`/customers/${nullObjectId}`).notFound({
                     ...Errors.Mongoose.MultipleDocumentsNotFound,
                     notFoundIds: [nullObjectId]
@@ -168,10 +167,10 @@ describe('CustomersService', () => {
             ])
         })
 
-        // 상황: 쿼리 파라미터 없이 요청할 때
+        // 쿼리 파라미터 없이 요청한 경우
         describe('without any query parameters', () => {
-            // 기대 결과: 기본 페이지네이션으로 고객 목록을 반환한다.
-            it('returns a paginated list of customers', async () => {
+            // 기본 페이지네이션으로 고객을 반환한다
+            it('returns customers with default pagination', async () => {
                 const { body } = await fix.httpClient.get('/customers').ok()
                 const { items, ...pagination } = body
 
@@ -184,42 +183,37 @@ describe('CustomersService', () => {
             })
         })
 
-        // 상황: 유효하지 않은 쿼리 필드로 요청할 때
-        describe('with an invalid query parameter', () => {
-            // 기대 결과: 400 Bad Request 에러를 반환한다.
-            it('returns a 400 Bad Request error', async () => {
-                await fix.httpClient
-                    .get('/customers')
-                    .query({ wrong: 'value' })
-                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
-            })
-        })
-
-        // 상황: 부분 이름으로 필터링할 때
-        describe('when filtering by a partial name', () => {
-            // 기대 결과: 일치하는 고객 목록을 반환한다.
-            it('returns the matching customers', async () => {
-                const partialName = 'customer-a'
+        // 다양한 조건으로 필터링할 때
+        describe('when filtering with various criteria', () => {
+            // 이름으로 고객을 필터링한다
+            it('filters customers by partial name', async () => {
                 const { body } = await fix.httpClient
                     .get('/customers')
-                    .query({ name: partialName })
+                    .query({ name: 'customer-a' })
                     .ok()
 
                 expectEqualUnsorted(body.items, [customers[0], customers[1]])
             })
-        })
 
-        // 상황: 부분 이메일로 필터링할 때
-        describe('when filtering by a partial email', () => {
-            // 기대 결과: 일치하는 고객 목록을 반환한다.
-            it('returns the matching customers', async () => {
-                const partialEmail = 'user-b'
+            // 이메일로 고객을 필터링한다
+            it('filters customers by partial email', async () => {
                 const { body } = await fix.httpClient
                     .get('/customers')
-                    .query({ email: partialEmail })
+                    .query({ email: 'user-b' })
                     .ok()
 
                 expectEqualUnsorted(body.items, [customers[2], customers[3]])
+            })
+        })
+
+        // 잘못된 쿼리 파라미터를 제공한 경우
+        describe('with an invalid query parameter', () => {
+            // 400 Bad Request를 반환한다
+            it('returns 400 Bad Request', async () => {
+                await fix.httpClient
+                    .get('/customers')
+                    .query({ wrong: 'value' })
+                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
             })
         })
     })

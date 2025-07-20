@@ -13,7 +13,7 @@ describe('PaymentsService', () => {
     })
 
     describe('processPayment()', () => {
-        // 기대 결과: 결제 요청을 성공적으로 처리한다.
+        // 결제 요청을 성공적으로 처리한다.
         it('processes a payment request successfully', async () => {
             const { createDto, expectedDto } = buildCreatePaymentDto()
 
@@ -23,9 +23,9 @@ describe('PaymentsService', () => {
     })
 
     describe('getPayments()', () => {
-        // 상황: 존재하는 결제 정보일 때
+        // 존재하는 결제 정보일 때
         describe('when the payments exist', () => {
-            // 기대 결과: 해당하는 결제 정보를 반환한다.
+            // 해당하는 결제 정보를 반환한다.
             it('returns the corresponding payment records', async () => {
                 const { createDto } = buildCreatePaymentDto()
                 const createdPayment = await fix.paymentsClient.processPayment(createDto)

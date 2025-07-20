@@ -64,7 +64,7 @@ Customer -> Frontend : 영화 예매 시스템에 접속
             Showing -> Customers : doesCustomerExist(customerId)
             Showing <-- Customers : true
             group if customer does not exist
-            Backend <-- Showing : 404 Not Found
+            Backend <-- Showing : 404 Not Found
             end
             Showing -> Showtimes : getShowingMovieIds()
             Showing <-- Showtimes : showingMovieIds

@@ -17,19 +17,19 @@ describe('TheatersService', () => {
     })
 
     describe('POST /theaters', () => {
-        // 상황: 유효한 데이터로 요청할 때
-        describe('when given valid data', () => {
-            // 기대 결과: 새로운 극장을 생성한다.
+        // 유효한 데이터일 때
+        describe('when valid data', () => {
+            // 새로운 극장을 생성한다.
             it('creates a new theater', async () => {
                 const { createDto, expectedDto } = buildCreateTheaterDto()
                 await fix.httpClient.post('/theaters').body(createDto).created(expectedDto)
             })
         })
 
-        // 상황: 필수 필드가 누락되었을 때
+        // 필수 필드가 누락되었을 때
         describe('when required fields are missing', () => {
-            // 기대 결과: 400 Bad Request 에러를 반환한다.
-            it('returns a 400 Bad Request error', async () => {
+            // BadRequest(400) 에러를 반환한다.
+            it('returns a BadRequest(400) error', async () => {
                 await fix.httpClient
                     .post('/theaters')
                     .body({})
@@ -45,9 +45,9 @@ describe('TheatersService', () => {
             theater = await createTheater(fix)
         })
 
-        // 상황: 유효한 데이터로 요청할 때
+        // 유효한 업데이트 데이터일 때
         describe('when given valid update data', () => {
-            // 기대 결과: 극장 정보를 수정한다.
+            // 극장 정보를 수정한다.
             it('updates the theater details', async () => {
                 const updateDto = {
                     name: 'update-name',
@@ -61,18 +61,18 @@ describe('TheatersService', () => {
             })
         })
 
-        // 상황: 빈 데이터로 업데이트 요청할 때
-        describe('when given an empty payload', () => {
-            // 기대 결과: 변경 없이 기존 극장 정보를 반환한다.
+        // 빈 페이로드일 때
+        describe('with an empty payload', () => {
+            // 변경 없이 기존 극장 정보를 반환한다.
             it('returns the unchanged theater details', async () => {
                 await fix.httpClient.patch(`/theaters/${theater.id}`).body({}).ok(theater)
             })
         })
 
-        // 상황: 존재하지 않는 극장일 때
+        // 존재하지 않는 극장일 때
         describe('when the theater does not exist', () => {
-            // 기대 결과: 404 Not Found 에러를 반환한다.
-            it('returns a 404 Not Found error', async () => {
+            // 404 Not Found 에러를 반환한다.
+            it('returns 404 Not Found error', async () => {
                 await fix.httpClient
                     .patch(`/theaters/${nullObjectId}`)
                     .body({})
@@ -88,9 +88,9 @@ describe('TheatersService', () => {
             theater = await createTheater(fix)
         })
 
-        // 상황: 존재하는 극장일 때
+        // 존재하는 극장일 때
         describe('when the theater exists', () => {
-            // 기대 결과: 극장을 삭제한다.
+            // 극장을 삭제한다.
             it('deletes the theater', async () => {
                 await fix.httpClient.delete(`/theaters/${theater.id}`).ok()
                 await fix.httpClient.get(`/theaters/${theater.id}`).notFound({
@@ -100,10 +100,10 @@ describe('TheatersService', () => {
             })
         })
 
-        // 상황: 존재하지 않는 극장일 때
+        // 존재하지 않는 극장일 때
         describe('when the theater does not exist', () => {
-            // 기대 결과: 404 Not Found 에러를 반환한다.
-            it('returns a 404 Not Found error', async () => {
+            // 404 Not Found 에러를 반환한다.
+            it('returns 404 Not Found error', async () => {
                 await fix.httpClient.delete(`/theaters/${nullObjectId}`).notFound({
                     ...Errors.Mongoose.MultipleDocumentsNotFound,
                     notFoundIds: [nullObjectId]
@@ -119,18 +119,18 @@ describe('TheatersService', () => {
             theater = await createTheater(fix)
         })
 
-        // 상황: 존재하는 극장일 때
+        // 존재하는 극장일 때
         describe('when the theater exists', () => {
-            // 기대 결과: 극장 상세 정보를 반환한다.
+            // 극장 상세 정보를 반환한다.
             it('returns the theater details', async () => {
                 await fix.httpClient.get(`/theaters/${theater.id}`).ok(theater)
             })
         })
 
-        // 상황: 존재하지 않는 극장일 때
+        // 존재하지 않는 극장일 때
         describe('when the theater does not exist', () => {
-            // 기대 결과: 404 Not Found 에러를 반환한다.
-            it('returns a 404 Not Found error', async () => {
+            // 404 Not Found 에러를 반환한다.
+            it('returns 404 Not Found error', async () => {
                 await fix.httpClient.get(`/theaters/${nullObjectId}`).notFound({
                     ...Errors.Mongoose.MultipleDocumentsNotFound,
                     notFoundIds: [nullObjectId]
@@ -152,9 +152,9 @@ describe('TheatersService', () => {
             ])
         })
 
-        // 상황: 쿼리 파라미터 없이 요청할 때
+        // 쿼리 파라미터가 없을 때
         describe('when no query parameters are provided', () => {
-            // 기대 결과: 기본 페이지네이션으로 극장 목록을 반환한다.
+            // 기본 페이지네이션으로 극장 목록을 반환한다.
             it('returns a paginated list of theaters', async () => {
                 const { body } = await fix.httpClient.get('/theaters').ok()
                 const { items, ...pagination } = body
@@ -168,9 +168,9 @@ describe('TheatersService', () => {
             })
         })
 
-        // 상황: 다양한 조건으로 필터링할 때
+        // 다양한 조건으로 필터링할 때
         describe('when filtering with various criteria', () => {
-            // 기대 결과: 부분 이름과 일치하는 영화 목록을 반환한다.
+            // 부분 이름과 일치하는 영화 목록을 반환한다.
             it('returns theaters filtered by partial name', async () => {
                 const partialName = 'Theater-a'
                 const { body } = await fix.httpClient
@@ -182,10 +182,10 @@ describe('TheatersService', () => {
             })
         })
 
-        // 상황: 유효하지 않은 쿼리 필드로 요청할 때
+        // 유효하지 않은 쿼리 파라미터일 때
         describe('when an invalid query parameter is provided', () => {
-            // 기대 결과: 400 Bad Request 에러를 반환한다.
-            it('returns a 400 Bad Request error', async () => {
+            // BadRequest(400) 에러를 반환한다.
+            it('returns a BadRequest(400) error', async () => {
                 await fix.httpClient
                     .get('/theaters')
                     .query({ wrong: 'value' })

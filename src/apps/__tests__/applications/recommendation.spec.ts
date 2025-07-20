@@ -55,10 +55,10 @@ describe('RecommendationService', () => {
             ])
         })
 
-        // 상황: 로그인한 사용자일 때
-        describe('when the user is logged in', () => {
-            // 기대 결과: 가장 많이 본 장르, 최신 개봉일 순으로 정렬된 영화 목록을 반환한다.
-            it('returns a list of movies sorted by most-watched genres, then by latest release date', async () => {
+        // 고객일 때
+        describe('when the customer', () => {
+            // 고객의 추천 목록을 반환한다
+            it('returns recommendations for the customer', async () => {
                 const { body } = await fix.httpClient
                     .get('/movies/recommended')
                     .headers({ Authorization: `Bearer ${fix.accessToken}` })
@@ -74,10 +74,10 @@ describe('RecommendationService', () => {
             })
         })
 
-        // 상황: 로그인하지 않은 사용자일 때
-        describe('when the user is not logged in', () => {
-            // 기대 결과: 최신 개봉일 순으로 정렬된 영화 목록을 반환한다.
-            it('returns a list of movies sorted by the latest release date', async () => {
+        // 손님일 때
+        describe('when the guest', () => {
+            // 일반 추천 목록을 반환한다
+            it('returns generic recommendations', async () => {
                 const { body } = await fix.httpClient.get('/movies/recommended').ok()
 
                 expect(body).toEqual([

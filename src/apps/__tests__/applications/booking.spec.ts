@@ -16,17 +16,17 @@ describe('BookingService', () => {
         await fix?.teardown()
     })
 
-    // 상황: 성공적인 영화 예매 흐름
-    describe('a successful movie booking flow', () => {
-        // 기대 결과: 예매의 모든 단계를 처음부터 끝까지 성공적으로 완료한다.
-        it('completes the entire booking process from start to finish', async () => {
+    // 성공적인 예매 흐름
+    describe('a successful booking flow', () => {
+        // 예매를 완료한다.
+        it('completes the booking process', async () => {
             let theater: TheaterDto
             let showdate: Date
             let showtime: ShowtimeDto
             let tickets: TicketDto[]
 
-            // 1. 영화를 상영하는 극장 목록을 조회한다.
-            await step('1. requests a list of theaters screening the movie', async () => {
+            // 1. 극장 목록 조회
+            await step('search theater list', async () => {
                 const latLong = '31.9,131.9'
                 const { body: theaters } = await fix.httpClient
                     .get(`/booking/movies/${fix.movie.id}/theaters?latLong=${latLong}`)
@@ -44,8 +44,8 @@ describe('BookingService', () => {
                 theater = theaters[0]
             })
 
-            // 2. 선택한 극장의 상영일 목록을 조회한다.
-            await step('2. requests a list of show dates for the selected theater', async () => {
+            // 2. 상영일 조회
+            await step('search showdates', async () => {
                 const { body: showdates } = await fix.httpClient
                     .get(`/booking/movies/${fix.movie.id}/theaters/${theater.id}/showdates`)
                     .ok()
@@ -58,8 +58,8 @@ describe('BookingService', () => {
                 showdate = showdates[0]
             })
 
-            // 3. 선택한 날짜의 상영 시간 목록을 조회한다.
-            await step('3. requests a list of showtimes for the selected date', async () => {
+            // 3. 상영시간 조회
+            await step('search showtimes', async () => {
                 const movieId = fix.movie.id
                 const theaterId = theater.id
                 const yymmdd = DateUtil.toYMD(showdate)
@@ -86,22 +86,19 @@ describe('BookingService', () => {
                 showtime = showtimes[0]
             })
 
-            // 4. 선택한 상영 시간의 구매 가능한 티켓 목록을 조회한다.
-            await step(
-                '4. requests a list of available tickets for the selected showtime',
-                async () => {
-                    const { body } = await fix.httpClient
-                        .get(`/booking/showtimes/${showtime.id}/tickets`)
-                        .ok()
+            // 4. 구매 가능 티켓 조회
+            await step('search available tickets', async () => {
+                const { body } = await fix.httpClient
+                    .get(`/booking/showtimes/${showtime.id}/tickets`)
+                    .ok()
 
-                    tickets = body
-                    const seatCount = Seatmap.getSeatCount(theater.seatmap)
-                    expect(tickets).toHaveLength(seatCount)
-                }
-            )
+                tickets = body
+                const seatCount = Seatmap.getSeatCount(theater.seatmap)
+                expect(tickets).toHaveLength(seatCount)
+            })
 
-            // 5. 원하는 티켓을 선점한다.
-            await step('5. holds the desired tickets', async () => {
+            // 5. 티켓 선점
+            await step('holds tickets', async () => {
                 const ticketIds = pickIds(tickets.slice(0, 4))
 
                 await fix.httpClient
@@ -114,10 +111,10 @@ describe('BookingService', () => {
     })
 
     describe('GET /booking/showtimes/:id/tickets', () => {
-        // 상황: 상영시간이 존재하지 않을 때
+        // 상영시간이 존재하지 않을 때
         describe('when the showtime does not exist', () => {
-            // 기대 결과: 404 Not Found 에러를 반환한다.
-            it('returns a 404 Not Found error', async () => {
+            // 404 Not Found 에러를 반환한다.
+            it('returns 404 Not Found error', async () => {
                 await fix.httpClient
                     .get(`/booking/showtimes/${nullObjectId}/tickets`)
                     .notFound({ ...Errors.Booking.ShowtimeNotFound, showtimeId: nullObjectId })

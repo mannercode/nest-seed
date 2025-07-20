@@ -17,8 +17,8 @@ describe('PurchasesService', () => {
     })
 
     describe('POST /purchases', () => {
-        // 상황: 유효한 구매 요청할 때
-        describe('with a valid purchase request', () => {
+        // 유효한 데이터가 제공된 경우
+        describe('when provided valid data', () => {
             let purchase: PurchaseDto
             let availableTickets: TicketDto[]
             let purchaseItems: PurchaseItemDto[]
@@ -36,8 +36,8 @@ describe('PurchasesService', () => {
                 purchase = body
             })
 
-            // 기대 결과: 올바른 정보로 구매 기록을 생성한다.
-            it('creates a purchase record with the correct details', async () => {
+            // 구매를 생성한다.
+            it('creates a purchase', async () => {
                 expect(purchase).toEqual({
                     id: expect.any(String),
                     createdAt: expect.any(Date),
@@ -49,20 +49,20 @@ describe('PurchasesService', () => {
                 })
             })
 
-            // 기대 결과: 연관된 결제 기록을 생성한다.
+            // 연관된 결제 기록을 생성한다.
             it('creates a corresponding payment record', async () => {
                 const payments = await fix.paymentsService.getPayments([purchase.paymentId])
                 expect(payments[0].amount).toEqual(purchase.totalPrice)
             })
 
-            // 기대 결과: 구매된 티켓의 상태를 "판매됨"으로 변경한다.
+            // 구매된 티켓의 상태를 "판매됨"으로 변경한다.
             it('updates the status of purchased tickets to "sold"', async () => {
                 const ticketIds = purchaseItems.map((item) => item.ticketId)
                 const retrievedTickets = await fix.ticketsService.getTickets(ticketIds)
                 retrievedTickets.forEach((ticket) => expect(ticket.status).toBe(TicketStatus.Sold))
             })
 
-            // 기대 결과: 구매되지 않은 티켓의 상태는 그대로 유지한다.
+            // 구매되지 않은 티켓의 상태는 그대로 유지한다.
             it('leaves other available tickets unchanged', async () => {
                 const ticketIds = availableTickets.map((ticket) => ticket.id)
                 const retrievedTickets = await fix.ticketsService.getTickets(ticketIds)
@@ -72,10 +72,10 @@ describe('PurchasesService', () => {
             })
         })
 
-        // 상황: 최대 구매 가능 수량을 초과했을 때
+        // 최대 구매 가능 수량을 초과했을 때
         describe('when the number of tickets exceeds the maximum limit', () => {
-            // 기대 결과: 400 Bad Request 에러를 반환한다.
-            it('returns a 400 Bad Request error', async () => {
+            // BadRequest(400) 에러를 반환한다.
+            it('returns a BadRequest(400) error', async () => {
                 const { purchaseItems } = await setupPurchaseData(fix, {
                     holdCount: Rules.Ticket.maxTicketsPerPurchase + 1
                 })
@@ -90,10 +90,10 @@ describe('PurchasesService', () => {
             })
         })
 
-        // 상황: 구매 가능 시간이 지났을 때
+        // 구매 가능 시간이 지났을 때
         describe('when the purchase deadline has passed', () => {
-            // 기대 결과: 400 Bad Request 에러를 반환한다.
-            it('returns a 400 Bad Request error', async () => {
+            // BadRequest(400) 에러를 반환한다.
+            it('returns a BadRequest(400) error', async () => {
                 const { purchaseItems } = await setupPurchaseData(fix, {
                     minutesFromNow: Rules.Ticket.purchaseDeadlineInMinutes
                 })
@@ -110,10 +110,10 @@ describe('PurchasesService', () => {
             })
         })
 
-        // 상황: 선점하지 않은 티켓을 구매하려고 할 때
+        // 선점하지 않은 티켓을 구매하려고 할 때
         describe('when attempting to purchase unheld tickets', () => {
-            // 기대 결과: 400 Bad Request 에러를 반환한다.
-            it('returns a 400 Bad Request error', async () => {
+            // BadRequest(400) 에러를 반환한다.
+            it('returns a BadRequest(400) error', async () => {
                 const { showtime, purchaseItems } = await setupPurchaseData(fix)
                 await fix.ticketHoldingClient.releaseTickets(showtime.id, fix.customer.id)
 
@@ -124,7 +124,7 @@ describe('PurchasesService', () => {
             })
         })
 
-        // 상황: 구매 완료 처리 중 내부 오류가 발생했을 때
+        // 구매 완료 처리 중 내부 오류가 발생했을 때
         describe('when an internal error occurs during the completion phase', () => {
             let spyRollback: jest.SpyInstance
 
@@ -135,7 +135,7 @@ describe('PurchasesService', () => {
                 spyRollback = jest.spyOn(fix.ticketPurchaseProcessor, 'rollbackPurchase')
             })
 
-            // 기대 결과: 500 Internal Server Error를 반환하고 구매 롤백 로직을 실행한다.
+            // 500 Internal Server Error를 반환하고 구매 롤백 로직을 실행한다.
             it('returns a 500 Internal Server Error and triggers the purchase rollback logic', async () => {
                 const { purchaseItems } = await setupPurchaseData(fix)
                 await fix.httpClient
@@ -149,7 +149,7 @@ describe('PurchasesService', () => {
     })
 
     describe('GET /purchases/:purchaseId', () => {
-        // 상황: 구매 내역이 존재할 때
+        // 구매 내역이 존재할 때
         describe('when the purchase exists', () => {
             let purchase: PurchaseDto
 
@@ -161,7 +161,7 @@ describe('PurchasesService', () => {
                 })
             })
 
-            // 기대 결과: 구매 상세 정보를 반환한다.
+            // 구매 상세 정보를 반환한다.
             it('returns the purchase details', async () => {
                 await fix.httpClient.get(`/purchases/${purchase.id}`).ok(purchase)
             })
