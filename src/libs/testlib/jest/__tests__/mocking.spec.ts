@@ -25,7 +25,7 @@ jest.mock('./mocking.fixture', () => {
  *   모듈 전체를 대상으로 자동 목(mock) 처리하여 의존성 제거 및 테스트 대상 코드에 집중할 수 있게 해줍니다.
  */
 describe('jest.mock examples', () => {
-    it('Module mocking', () => {
+    test('Module mocking', () => {
         ;(Logger.verbose as jest.Mock).mockReturnValue('Mocked verbose')
         const value = Logger.verbose('arg1', 'arg2')
 
@@ -33,7 +33,7 @@ describe('jest.mock examples', () => {
         expect(value).toEqual('Mocked verbose')
     })
 
-    it('Class mocking', () => {
+    test('Class mocking', () => {
         ;(HelloClass as jest.Mock).mockImplementation(() => ({
             getHello: jest.fn().mockReturnValue('Mocked getHello')
         }))
@@ -44,15 +44,10 @@ describe('jest.mock examples', () => {
         expect(instance.getHello).toHaveBeenCalledTimes(1)
     })
 
-    it('Function mocking', () => {
+    test('Function mocking', () => {
         ;(getGreeting as jest.Mock).mockReturnValue('Mocked getGreeting')
 
         expect(getGreeting()).toEqual('Mocked getGreeting')
         expect(getGreeting).toHaveBeenCalled()
-    })
-
-    // clearMocks가 모킹 호출 기록을 올바르게 초기화하는지 확인한다
-    it('Checks whether clearMocks properly resets the mock call records', () => {
-        expect(Logger.verbose).not.toHaveBeenCalledWith('arg1', 'arg2')
     })
 })

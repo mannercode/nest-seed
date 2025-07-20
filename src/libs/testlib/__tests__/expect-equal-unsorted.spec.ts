@@ -3,8 +3,8 @@ import { expectEqualUnsorted } from 'testlib'
 describe('expectEqualUnsorted()', () => {
     // 상황: 비교에 성공하는 경우
     describe('when the comparison should succeed', () => {
-        // 기대 결과: 순서가 다른 객체 배열을 성공적으로 비교한다.
-        it('compares arrays of objects successfully regardless of order', () => {
+        // 기대 결과: 순서가 다른 배열을 비교한다.
+        it('compares unordered arrays of objects', () => {
             const actual = [
                 { id: 1, name: 'John', age: 30 },
                 { id: 2, name: 'Jane', age: 25 }
@@ -17,7 +17,7 @@ describe('expectEqualUnsorted()', () => {
             expect(() => expectEqualUnsorted(actual, expected)).not.toThrow()
         })
 
-        // 기대 결과: expect.anything()을 사용한 필드를 무시하고 비교에 성공한다.
+        // 기대 결과: expect.anything() 필드를 무시한다.
         it('ignores fields with expect.anything()', () => {
             const actual = [
                 { id: expect.anything(), name: 'Jane', age: 25 },
@@ -31,16 +31,16 @@ describe('expectEqualUnsorted()', () => {
             expect(() => expectEqualUnsorted(actual, expected)).not.toThrow()
         })
 
-        // 기대 결과: 빈 배열끼리 비교에 성공한다.
-        it('handles empty arrays correctly', () => {
+        // 기대 결과: 빈 배열을 올바르게 처리한다.
+        it('handles empty arrays', () => {
             expect(() => expectEqualUnsorted([], [])).not.toThrow()
         })
     })
 
     // 상황: 비교에 실패하여 예외를 던지는 경우
     describe('when the comparison should fail', () => {
-        // 기대 결과: 배열의 내용이 다르면 예외를 던진다.
-        it('throws an error if the array contents differ', () => {
+        // 기대 결과: 내용이 다른 배열에 대해 예외를 던진다.
+        it('throws an error for arrays with different content', () => {
             const actual = [
                 { id: 1, name: 'John', age: 30 },
                 { id: 2, name: 'Jane', age: 25 }
@@ -53,8 +53,8 @@ describe('expectEqualUnsorted()', () => {
             expect(() => expectEqualUnsorted(actual, expected)).toThrow()
         })
 
-        // 기대 결과: 중첩된 객체의 내용이 다르면 예외를 던진다.
-        it('throws an error if nested objects differ', () => {
+        // 기대 결과: 중첩된 객체의 내용이 다를 때 예외를 던진다.
+        it('throws an error for arrays with different nested objects', () => {
             const actual = [
                 { id: 1, name: 'John', address: { city: 'New York', zip: '-' } },
                 { id: 2, name: 'Jane', address: { city: 'Los Angeles', zip: '90001' } }
@@ -67,8 +67,8 @@ describe('expectEqualUnsorted()', () => {
             expect(() => expectEqualUnsorted(actual, expected)).toThrow()
         })
 
-        // 기대 결과: 배열 중 하나가 undefined이면 예외를 던진다.
-        it('throws an error if either actual or expected is undefined', () => {
+        // 기대 결과: 인자가 undefined일 때 예외를 던진다.
+        it('throws an error when an argument is undefined', () => {
             expect(() => expectEqualUnsorted(undefined, [])).toThrow('actual or expected undefined')
             expect(() => expectEqualUnsorted([], undefined)).toThrow('actual or expected undefined')
         })

@@ -1,5 +1,5 @@
 describe('jest.expect examples', () => {
-    it('toBe vs toEqual', () => {
+    test('toBe vs toEqual', () => {
         /**
          * toEqual
          *   For objects or arrays, each property or element is compared recursively.

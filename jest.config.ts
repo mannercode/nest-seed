@@ -6,12 +6,9 @@ export default {
     moduleFileExtensions: ['js', 'json', 'ts'],
     testRegex: '(__tests__/.*\\.spec\\.(ts|js))$',
     testEnvironment: 'node',
-    // Start of test environment reset configuration
-    clearMocks: true,
-    resetMocks: true,
-    restoreMocks: true,
-    resetModules: true,
-    // End of test environment reset configuration
+    resetModules: true, // Reset module cache between tests
+    resetMocks: true, // Reset mock call counts/instances before each test
+    restoreMocks: true, // Restore original implementations after each test
     rootDir: '.',
     roots: ['<rootDir>/src'],
     moduleNameMapper: {

@@ -1,12 +1,12 @@
 describe('error handlings', () => {
     describe('Asynchronous function handling', () => {
-        it('Return value', async () => {
+        test('Return value', async () => {
             const returnValue = async () => 'ok'
 
             await expect(returnValue()).resolves.toEqual('ok')
         })
 
-        it('Throw exception', async () => {
+        test('Throw exception', async () => {
             const throwException = async () => {
                 throw new Error('error')
             }
@@ -14,7 +14,7 @@ describe('error handlings', () => {
             await expect(throwException()).rejects.toThrow('error')
         })
 
-        it('Catch exception', async () => {
+        test('Catch exception', async () => {
             const throwException = async () => {
                 throw new Error('error')
             }
@@ -28,13 +28,13 @@ describe('error handlings', () => {
     })
 
     describe('Synchronous function handling', () => {
-        it('Return value', () => {
+        test('Return value', () => {
             const returnValue = () => 'ok'
 
             expect(returnValue).not.toThrow()
         })
 
-        it('Throw exception', () => {
+        test('Throw exception', () => {
             const throwException = () => {
                 throw new Error('error')
             }
@@ -42,7 +42,7 @@ describe('error handlings', () => {
             expect(throwException).toThrow('error')
         })
 
-        it('Catch exception', () => {
+        test('Catch exception', () => {
             const throwException = () => {
                 throw new Error('error')
             }
