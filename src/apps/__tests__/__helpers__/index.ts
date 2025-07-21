@@ -1,3 +1,3 @@
-export * from './create-all-test-contexts'
+export * from './create-common-fixture'
 export * from './errors'
 export * from './files'

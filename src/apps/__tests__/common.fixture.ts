@@ -1,12 +1,13 @@
 import {
     CreateShowtimeDto,
     CreateTicketDto,
+    HoldTicketsDto,
     MovieGenre,
     MovieRating,
     TicketStatus
 } from 'apps/cores'
 import { omit, uniq } from 'lodash'
-import { nullDate, nullObjectId } from 'testlib'
+import { nullDate, nullObjectId, testObjectId } from 'testlib'
 import { CommonFixture, TestFiles } from './__helpers__'
 
 export const createCustomerAndLogin = async (fix: CommonFixture) => {
@@ -145,4 +146,13 @@ export const createWatchRecord = async (fix: CommonFixture, override = {}) => {
 
     const watchRecord = await fix.watchRecordsClient.createWatchRecord(createDto)
     return watchRecord
+}
+
+export const holdTickets = async (fix: CommonFixture, holdDto?: Partial<HoldTicketsDto>) => {
+    return fix.ticketHoldingClient.holdTickets({
+        customerId: nullObjectId,
+        showtimeId: nullObjectId,
+        ticketIds: [testObjectId(0x30), testObjectId(0x31)],
+        ...holdDto
+    })
 }

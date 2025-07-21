@@ -1,15 +1,4 @@
-import { HoldTicketsDto } from 'apps/cores'
-import { nullObjectId, testObjectId } from 'testlib'
 import { CommonFixture, createCommonFixture } from '../__helpers__'
-
-export const holdTickets = async (fix: CommonFixture, holdDto?: Partial<HoldTicketsDto>) => {
-    return fix.ticketHoldingClient.holdTickets({
-        customerId: nullObjectId,
-        showtimeId: nullObjectId,
-        ticketIds: [testObjectId(0x30), testObjectId(0x31)],
-        ...holdDto
-    })
-}
 
 export const searchHeldTicketIds = async (
     fix: CommonFixture,

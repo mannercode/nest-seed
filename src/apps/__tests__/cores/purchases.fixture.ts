@@ -1,12 +1,4 @@
-import {
-    CustomerDto,
-    MovieDto,
-    PurchaseItemType,
-    Seatmap,
-    ShowtimeDto,
-    TheaterDto,
-    TicketDto
-} from 'apps/cores'
+import { CustomerDto, MovieDto, Seatmap, TheaterDto, TicketDto } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { Rules } from 'shared'
 import { CommonFixture, createCommonFixture } from '../__helpers__'
@@ -17,23 +9,82 @@ import {
     createMovie,
     createShowtimes,
     createTheater,
-    createTickets
+    createTickets,
+    holdTickets
 } from '../common.fixture'
 
-const createShowtime = async (fix: Fixture, startTime: Date) => {
+export interface Fixture extends CommonFixture {
+    teardown: () => Promise<void>
+    customer: CustomerDto
+    movie: MovieDto
+    theater: TheaterDto
+    heldTickets: TicketDto[]
+    availableTickets: TicketDto[]
+    saleClosedTickets: TicketDto[]
+}
+
+export const createFixture = async (): Promise<Fixture> => {
+    const commonFixture = await createCommonFixture()
+
+    const [customer, movie, theater] = await Promise.all([
+        createCustomer(commonFixture),
+        createMovie(commonFixture),
+        createTheater(commonFixture, {
+            seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', seats: 'OOOOOOOOOOOO' }] }] }
+        })
+    ])
+
+    const startTime = DateUtil.addMinutes(new Date(), Rules.Ticket.purchaseDeadlineInMinutes + 1)
+    const tickets = await createAllTickets(commonFixture, movie, theater, startTime)
+
+    Rules.Ticket.maxTicketsPerPurchase = 4
+    const holdCount = Rules.Ticket.maxTicketsPerPurchase
+    const [heldTickets, availableTickets] = [tickets.slice(0, holdCount), tickets.slice(holdCount)]
+    await holdTickets(commonFixture, {
+        customerId: customer.id,
+        showtimeId: heldTickets[0].showtimeId,
+        ticketIds: pickIds(heldTickets)
+    })
+
+    const deadlineOverTime = DateUtil.addMinutes(
+        new Date(),
+        Rules.Ticket.purchaseDeadlineInMinutes - 1
+    )
+    const saleClosedTickets = await createAllTickets(
+        commonFixture,
+        movie,
+        theater,
+        deadlineOverTime
+    )
+
+    return {
+        ...commonFixture,
+        teardown: () => commonFixture.close(),
+        customer,
+        movie,
+        theater,
+        heldTickets,
+        availableTickets,
+        saleClosedTickets
+    }
+}
+
+const createAllTickets = async (
+    fix: CommonFixture,
+    movie: MovieDto,
+    theater: TheaterDto,
+    startTime: Date
+) => {
     const { createDto } = buildCreateShowtimeDto({
-        movieId: fix.movie.id,
-        theaterId: fix.theater.id,
+        movieId: movie.id,
+        theaterId: theater.id,
         startTime,
         endTime: DateUtil.addMinutes(startTime, 1)
     })
 
-    const showtimes = await createShowtimes(fix, [createDto])
-    return showtimes[0]
-}
+    const showtime = (await createShowtimes(fix, [createDto]))[0]
 
-const createAllTickets = async (fix: Fixture, showtime: ShowtimeDto) => {
-    const createTicketDtos = Seatmap.getAllSeats(fix.theater.seatmap).map((seat) => {
+    const createDtos = Seatmap.getAllSeats(theater.seatmap).map((seat) => {
         const { createDto } = buildCreateTicketDto({
             movieId: showtime.movieId,
             theaterId: showtime.theaterId,
@@ -43,63 +94,5 @@ const createAllTickets = async (fix: Fixture, showtime: ShowtimeDto) => {
         return createDto
     })
 
-    const tickets = await createTickets(fix, createTicketDtos)
-    return tickets
-}
-
-const holdTickets = async (fix: Fixture, showtimeId: string, tickets: TicketDto[]) => {
-    await fix.ticketHoldingService.holdTickets({
-        customerId: fix.customer.id,
-        showtimeId,
-        ticketIds: pickIds(tickets)
-    })
-}
-
-export const setupPurchaseData = async (
-    fix: Fixture,
-    opts?: { holdCount?: number; minutesFromNow?: number }
-) => {
-    const {
-        holdCount: itemCount = Rules.Ticket.maxTicketsPerPurchase,
-        minutesFromNow = Rules.Ticket.purchaseDeadlineInMinutes + 1
-    } = opts || {}
-
-    const showtime = await createShowtime(fix, DateUtil.addMinutes(new Date(), minutesFromNow))
-
-    const tickets = await createAllTickets(fix, showtime)
-
-    const heldTickets = tickets.slice(0, itemCount)
-    const availableTickets = tickets.slice(itemCount)
-
-    await holdTickets(fix, showtime.id, heldTickets)
-
-    const purchaseItems = heldTickets.map((ticket) => ({
-        type: PurchaseItemType.Ticket,
-        ticketId: ticket.id
-    }))
-
-    return { showtime, purchaseItems, availableTickets }
-}
-
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
-    customer: CustomerDto
-    movie: MovieDto
-    theater: TheaterDto
-}
-
-export const createFixture = async () => {
-    const commonFixture = await createCommonFixture()
-
-    const customer = await createCustomer(commonFixture)
-    const movie = await createMovie(commonFixture)
-    const theater = await createTheater(commonFixture, {
-        seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', seats: 'OOOOOOOOOOOO' }] }] }
-    })
-
-    const teardown = async () => {
-        await commonFixture?.close()
-    }
-
-    return { ...commonFixture, teardown, customer, movie, theater }
+    return createTickets(fix, createDtos)
 }

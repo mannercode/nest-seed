@@ -43,7 +43,6 @@ describe('ShowtimeCreationService', () => {
         })
     })
 
-
     describe('POST /showtime-creation/showtimes/search', () => {
         let showtimes: ShowtimeDto[]
 

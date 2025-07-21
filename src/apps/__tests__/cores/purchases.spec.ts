@@ -1,8 +1,8 @@
-import { PurchaseDto, PurchaseItemDto, PurchaseItemType, TicketDto, TicketStatus } from 'apps/cores'
-import { Rules } from 'shared'
+import { PurchaseDto, PurchaseItemType, TicketStatus } from 'apps/cores'
+import { pickIds } from 'common'
 import { nullObjectId } from 'testlib'
 import { Errors } from '../__helpers__'
-import { Fixture, setupPurchaseData } from './purchases.fixture'
+import { Fixture } from './purchases.fixture'
 
 describe('PurchasesService', () => {
     let fix: Fixture
@@ -19,25 +19,20 @@ describe('PurchasesService', () => {
     describe('POST /purchases', () => {
         // 유효한 데이터가 제공된 경우
         describe('when provided valid data', () => {
-            let purchase: PurchaseDto
-            let availableTickets: TicketDto[]
-            let purchaseItems: PurchaseItemDto[]
-
-            beforeEach(async () => {
-                const data = await setupPurchaseData(fix)
-                availableTickets = data.availableTickets
-                purchaseItems = data.purchaseItems
+            // 구매를 생성한다.
+            it('creates a purchase', async () => {
+                const purchaseItems = fix.heldTickets.map(({ id }) => ({
+                    type: PurchaseItemType.Ticket,
+                    ticketId: id
+                }))
 
                 const { body } = await fix.httpClient
                     .post('/purchases')
                     .body({ customerId: fix.customer.id, totalPrice: 1, purchaseItems })
                     .created()
 
-                purchase = body
-            })
+                const purchase = body
 
-            // 구매를 생성한다.
-            it('creates a purchase', async () => {
                 expect(purchase).toEqual({
                     id: expect.any(String),
                     createdAt: expect.any(Date),
@@ -47,28 +42,23 @@ describe('PurchasesService', () => {
                     totalPrice: 1,
                     purchaseItems
                 })
-            })
 
-            // 연관된 결제 기록을 생성한다.
-            it('creates a corresponding payment record', async () => {
+                // creates a corresponding payment record
+                // 연관된 결제 기록을 생성한다.
                 const payments = await fix.paymentsService.getPayments([purchase.paymentId])
                 expect(payments[0].amount).toEqual(purchase.totalPrice)
-            })
 
-            // 구매된 티켓의 상태를 "판매됨"으로 변경한다.
-            it('updates the status of purchased tickets to "sold"', async () => {
-                const ticketIds = purchaseItems.map((item) => item.ticketId)
-                const retrievedTickets = await fix.ticketsService.getTickets(ticketIds)
-                retrievedTickets.forEach((ticket) => expect(ticket.status).toBe(TicketStatus.Sold))
-            })
+                // updates the status of purchased tickets to "sold"
+                // 구매된 티켓의 상태를 "판매됨"으로 변경한다.
+                const gotTickets = await fix.ticketsService.getTickets(pickIds(fix.heldTickets))
+                gotTickets.forEach((ticket) => expect(ticket.status).toBe(TicketStatus.Sold))
 
-            // 구매되지 않은 티켓의 상태는 그대로 유지한다.
-            it('leaves other available tickets unchanged', async () => {
-                const ticketIds = availableTickets.map((ticket) => ticket.id)
-                const retrievedTickets = await fix.ticketsService.getTickets(ticketIds)
-                retrievedTickets.forEach((ticket) =>
-                    expect(ticket.status).toBe(TicketStatus.Available)
+                // 구매되지 않은 티켓의 상태는 그대로 유지한다.
+                // leaves other available tickets unchanged
+                const gotTickets2 = await fix.ticketsService.getTickets(
+                    pickIds(fix.availableTickets)
                 )
+                gotTickets2.forEach((ticket) => expect(ticket.status).toBe(TicketStatus.Available))
             })
         })
 
@@ -76,9 +66,13 @@ describe('PurchasesService', () => {
         describe('when the number of tickets exceeds the maximum limit', () => {
             // BadRequest(400) 에러를 반환한다.
             it('returns a BadRequest(400) error', async () => {
-                const { purchaseItems } = await setupPurchaseData(fix, {
-                    holdCount: Rules.Ticket.maxTicketsPerPurchase + 1
-                })
+                const { Rules } = await import('shared')
+                Rules.Ticket.maxTicketsPerPurchase = fix.heldTickets.length - 1
+
+                const purchaseItems = fix.heldTickets.map(({ id }) => ({
+                    type: PurchaseItemType.Ticket,
+                    ticketId: id
+                }))
 
                 await fix.httpClient
                     .post('/purchases')
@@ -94,9 +88,9 @@ describe('PurchasesService', () => {
         describe('when the purchase deadline has passed', () => {
             // BadRequest(400) 에러를 반환한다.
             it('returns a BadRequest(400) error', async () => {
-                const { purchaseItems } = await setupPurchaseData(fix, {
-                    minutesFromNow: Rules.Ticket.purchaseDeadlineInMinutes
-                })
+                const purchaseItems = [
+                    { type: PurchaseItemType.Ticket, ticketId: fix.saleClosedTickets[0].id }
+                ]
 
                 await fix.httpClient
                     .post('/purchases')
@@ -114,8 +108,9 @@ describe('PurchasesService', () => {
         describe('when attempting to purchase unheld tickets', () => {
             // BadRequest(400) 에러를 반환한다.
             it('returns a BadRequest(400) error', async () => {
-                const { showtime, purchaseItems } = await setupPurchaseData(fix)
-                await fix.ticketHoldingClient.releaseTickets(showtime.id, fix.customer.id)
+                const purchaseItems = [
+                    { type: PurchaseItemType.Ticket, ticketId: fix.availableTickets[0].id }
+                ]
 
                 await fix.httpClient
                     .post('/purchases')
@@ -137,7 +132,11 @@ describe('PurchasesService', () => {
 
             // 500 Internal Server Error를 반환하고 구매 롤백 로직을 실행한다.
             it('returns a 500 Internal Server Error and triggers the purchase rollback logic', async () => {
-                const { purchaseItems } = await setupPurchaseData(fix)
+                const purchaseItems = fix.heldTickets.map(({ id }) => ({
+                    type: PurchaseItemType.Ticket,
+                    ticketId: id
+                }))
+
                 await fix.httpClient
                     .post('/purchases')
                     .body({ customerId: fix.customer.id, totalPrice: 1, purchaseItems })
