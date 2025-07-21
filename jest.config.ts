@@ -2,7 +2,7 @@ import type { Config } from 'jest'
 import { createJsWithTsPreset } from 'ts-jest'
 
 export default {
-    setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+    setupFilesAfterEnv: ['jest-plugin-context/setup', '<rootDir>/jest.setup.ts'],
     moduleFileExtensions: ['js', 'json', 'ts'],
     testRegex: '(__tests__/.*\\.spec\\.(ts|js))$',
     testEnvironment: 'node',

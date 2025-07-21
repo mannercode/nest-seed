@@ -2,6 +2,7 @@ import { PurchaseDto, PurchaseItemType, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { nullObjectId } from 'testlib'
 import { Errors } from '../__helpers__'
+import { getPayments, getTickets } from '../common.fixture'
 import { Fixture } from './purchases.fixture'
 
 describe('PurchasesService', () => {
@@ -45,20 +46,20 @@ describe('PurchasesService', () => {
 
                 // creates a corresponding payment record
                 // 연관된 결제 기록을 생성한다.
-                const payments = await fix.paymentsService.getPayments([purchase.paymentId])
+                const payments = await getPayments(fix, [purchase.paymentId])
                 expect(payments[0].amount).toEqual(purchase.totalPrice)
 
                 // updates the status of purchased tickets to "sold"
                 // 구매된 티켓의 상태를 "판매됨"으로 변경한다.
-                const gotTickets = await fix.ticketsService.getTickets(pickIds(fix.heldTickets))
-                gotTickets.forEach((ticket) => expect(ticket.status).toBe(TicketStatus.Sold))
+                const soldTickets = await getTickets(fix, pickIds(fix.heldTickets))
+                soldTickets.forEach((ticket) => expect(ticket.status).toBe(TicketStatus.Sold))
 
                 // 구매되지 않은 티켓의 상태는 그대로 유지한다.
                 // leaves other available tickets unchanged
-                const gotTickets2 = await fix.ticketsService.getTickets(
-                    pickIds(fix.availableTickets)
+                const remainingTickets = await getTickets(fix, pickIds(fix.availableTickets))
+                remainingTickets.forEach((ticket) =>
+                    expect(ticket.status).toBe(TicketStatus.Available)
                 )
-                gotTickets2.forEach((ticket) => expect(ticket.status).toBe(TicketStatus.Available))
             })
         })
 

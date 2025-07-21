@@ -1,10 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseRepository, objectId, QueryBuilder, QueryBuilderOptions } from 'common'
+import { MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { CreateCustomerDto, SearchCustomersPageDto, UpdateCustomerDto } from './dtos'
-import { CustomerErrors } from './errors'
 import { Customer } from './models'
 
 @Injectable()
@@ -50,18 +49,21 @@ export class CustomersRepository extends MongooseRepository<Customer> {
         return pagination
     }
 
-    async findByEmail(email: string) {
-        return this.model.findOne({ email: { $eq: email } })
+    async existsByEmail(email: string): Promise<boolean> {
+        const result = await this.model.exists({ email: { $eq: email } }).lean()
+
+        // Explicitly converts a value to a boolean
+        // 값을 boolean 타입으로 강제 변환
+        return !!result
     }
 
-    async getPassword(customerId: string) {
-        const customer = await this.model.findById(objectId(customerId)).select('+password').exec()
+    async findByEmailWithPassword(email: string) {
+        const customer = await this.model
+            .findOne({ email: { $eq: email } })
+            .select('+password')
+            .exec()
 
-        if (!customer) {
-            throw new NotFoundException({ ...CustomerErrors.NotFound, customerId })
-        }
-
-        return customer.password
+        return customer
     }
 
     private buildQuery(searchDto: SearchCustomersPageDto, options: QueryBuilderOptions) {

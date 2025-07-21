@@ -9,6 +9,7 @@ import {
 import { omit, uniq } from 'lodash'
 import { nullDate, nullObjectId, testObjectId } from 'testlib'
 import { CommonFixture, TestFiles } from './__helpers__'
+import { newObjectId } from 'common'
 
 export const createCustomerAndLogin = async (fix: CommonFixture) => {
     const email = 'user@mail.com'
@@ -107,7 +108,7 @@ export const createShowtimes = async (fix: CommonFixture, createDtos: CreateShow
 
 export const buildCreateTicketDto = (overrides = {}) => {
     const createDto = {
-        transactionId: nullObjectId,
+        transactionId: newObjectId(),
         movieId: nullObjectId,
         theaterId: nullObjectId,
         showtimeId: nullObjectId,
@@ -155,4 +156,12 @@ export const holdTickets = async (fix: CommonFixture, holdDto?: Partial<HoldTick
         ticketIds: [testObjectId(0x30), testObjectId(0x31)],
         ...holdDto
     })
+}
+
+export const getPayments = async (fix: CommonFixture, paymentIds: string[]) => {
+    return fix.paymentsService.getPayments(paymentIds)
+}
+
+export const getTickets = async (fix: CommonFixture, ticketIds: string[]) => {
+    return fix.ticketsService.getTickets(ticketIds)
 }

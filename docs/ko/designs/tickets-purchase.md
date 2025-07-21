@@ -313,6 +313,6 @@ Customer <-- Frontend: 구매 완료
 @enduml
 ```
 
-이전 설계는 구현이 복잡하기 때문에 위와 같이 단순화 한다.
+이전 설계는 구현이 복잡하기 때문에 위와 같이 단순화한다.
 
 PurchaseProcess를 제거하고 Purchases를 루트로 넣고 싶을 수 있다. 그렇게 되면 Purchases는 applications가 되고 다른 서비스가 참조할 수 없게 된다.

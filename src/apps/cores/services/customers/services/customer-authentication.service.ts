@@ -19,29 +19,28 @@ export class CustomerAuthenticationService {
         return this.jwtAuthService.refreshAuthTokens(refreshToken)
     }
 
-    async authenticateCustomer(email: string, password: string) {
-        const customer = await this.repository.findByEmail(email)
+    async authenticateByEmail(email: string, rawPassword: string): Promise<string | null> {
+        const customer = await this.repository.findByEmailWithPassword(email)
 
-        if (!customer) return null
+        if (customer) {
+            const isValid = await this.validate(rawPassword, customer.password)
 
-        const storedPassword = await this.repository.getPassword(customer.id)
-        const isValidPassword = await this.validate(password, storedPassword)
-
-        if (isValidPassword) {
-            return customer.id
+            if (isValid) {
+                return customer.id
+            }
         }
 
         return null
     }
 
-    async hash(password: string) {
+    async hash(rawPassword: string) {
         const saltRounds = 10
 
-        const hashedPassword = await hash(password, saltRounds)
+        const hashedPassword = await hash(rawPassword, saltRounds)
         return hashedPassword
     }
 
-    async validate(plainPassword: string, hashedPassword: string) {
-        return compare(plainPassword, hashedPassword)
+    async validate(rawPassword: string, hashedPassword: string) {
+        return compare(rawPassword, hashedPassword)
     }
 }

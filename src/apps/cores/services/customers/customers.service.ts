@@ -2,8 +2,8 @@ import { ConflictException, Injectable } from '@nestjs/common'
 import { mapDocToDto } from 'common'
 import { CustomersRepository } from './customers.repository'
 import {
-    CustomerAuthPayload,
     CreateCustomerDto,
+    CustomerAuthPayload,
     CustomerDto,
     SearchCustomersPageDto,
     UpdateCustomerDto
@@ -29,9 +29,9 @@ export class CustomersService {
     ) {}
 
     async createCustomer(createDto: CreateCustomerDto) {
-        const existingCustomer = await this.repository.findByEmail(createDto.email)
+        const emailExists = await this.repository.existsByEmail(createDto.email)
 
-        if (existingCustomer) {
+        if (emailExists) {
             throw new ConflictException({
                 ...CustomerErrors.EmailAlreadyExists,
                 email: createDto.email
@@ -73,7 +73,7 @@ export class CustomersService {
     }
 
     async authenticateCustomer(email: string, password: string) {
-        return this.authenticationService.authenticateCustomer(email, password)
+        return this.authenticationService.authenticateByEmail(email, password)
     }
 
     private toDto = (customer: CustomerDocument) =>
