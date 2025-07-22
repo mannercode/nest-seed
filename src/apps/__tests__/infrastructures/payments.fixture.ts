@@ -19,11 +19,11 @@ export interface Fixture extends CommonFixture {
 }
 
 export const createFixture = async () => {
-    const commonFixture = await createCommonFixture()
+    const fix = await createCommonFixture()
 
     const teardown = async () => {
-        await commonFixture?.close()
+        await fix?.close()
     }
 
-    return { ...commonFixture, teardown }
+    return { ...fix, teardown }
 }

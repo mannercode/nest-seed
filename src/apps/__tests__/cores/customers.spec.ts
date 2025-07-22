@@ -169,7 +169,7 @@ describe('CustomersService', () => {
         })
 
         // 쿼리 파라미터가 유효한 경우
-        describe('when the query parameters are valid', () => {
+        describe('when query parameters are valid', () => {
             // 이름으로 고객을 필터링한다
             it('filters customers by partial name', async () => {
                 const { body } = await fix.httpClient
@@ -192,7 +192,7 @@ describe('CustomersService', () => {
         })
 
         // 쿼리 파라미터가 유효하지 않은 경우
-        describe('when the query parameters are invalid', () => {
+        describe('when query parameters are invalid', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient

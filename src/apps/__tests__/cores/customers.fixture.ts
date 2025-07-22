@@ -9,15 +9,15 @@ export interface Fixture extends CommonFixture {
 }
 
 export const createFixture = async () => {
-    const commonFixture = await createCommonFixture({
+    const fix = await createCommonFixture({
         gateway: { ignoreGuards: [CustomerJwtAuthGuard] }
     })
 
-    const customer = await createCustomer(commonFixture, { email: 'user@mail.com' })
+    const customer = await createCustomer(fix, { email: 'user@mail.com' })
 
     const teardown = async () => {
-        await commonFixture?.close()
+        await fix?.close()
     }
 
-    return { ...commonFixture, teardown, customer }
+    return { ...fix, teardown, customer }
 }

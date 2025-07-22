@@ -57,13 +57,13 @@ export interface Fixture extends CommonFixture {
 }
 
 export const createFixture = async () => {
-    const commonFixture = await createCommonFixture()
-    const movie = await createMovie(commonFixture)
-    const theater = await createTheater(commonFixture)
+    const fix = await createCommonFixture()
+    const movie = await createMovie(fix)
+    const theater = await createTheater(fix)
 
     const teardown = async () => {
-        await commonFixture?.close()
+        await fix?.close()
     }
 
-    return { ...commonFixture, teardown, movie, theater }
+    return { ...fix, teardown, movie, theater }
 }

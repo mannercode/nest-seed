@@ -1,6 +1,5 @@
-import { PurchaseDto, PurchaseItemType, TicketStatus } from 'apps/cores'
+import { PurchaseItemType, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
-import { nullObjectId } from 'testlib'
 import { Errors } from '../__helpers__'
 import { getPayments, getTickets } from '../common.fixture'
 import { Fixture } from './purchases.fixture'
@@ -18,10 +17,10 @@ describe('PurchasesService', () => {
     })
 
     describe('POST /purchases', () => {
-        // 유효한 데이터가 제공된 경우
-        describe('when provided valid data', () => {
-            // 구매를 생성한다.
-            it('creates a purchase', async () => {
+        // payload가 유효한 경우
+        describe('when the payload is valid', () => {
+            // 구매를 생성하고 반환한다
+            it('creates and returns the purchase', async () => {
                 const purchaseItems = fix.heldTickets.map(({ id }) => ({
                     type: PurchaseItemType.Ticket,
                     ticketId: id
@@ -44,18 +43,18 @@ describe('PurchasesService', () => {
                     purchaseItems
                 })
 
-                // creates a corresponding payment record
-                // 연관된 결제 기록을 생성한다.
+                // Creates a corresponding payment record
+                // 연관된 결제 기록을 생성한다
                 const payments = await getPayments(fix, [purchase.paymentId])
                 expect(payments[0].amount).toEqual(purchase.totalPrice)
 
-                // updates the status of purchased tickets to "sold"
-                // 구매된 티켓의 상태를 "판매됨"으로 변경한다.
+                // Changes the status of purchased tickets to "Sold"
+                // 구매한 티켓의 상태를 "판매됨"으로 변경한다
                 const soldTickets = await getTickets(fix, pickIds(fix.heldTickets))
                 soldTickets.forEach((ticket) => expect(ticket.status).toBe(TicketStatus.Sold))
 
-                // 구매되지 않은 티켓의 상태는 그대로 유지한다.
-                // leaves other available tickets unchanged
+                // Leaves the status of unpurchased tickets unchanged
+                // 구매하지 않은 티켓의 상태는 그대로 유지한다
                 const remainingTickets = await getTickets(fix, pickIds(fix.availableTickets))
                 remainingTickets.forEach((ticket) =>
                     expect(ticket.status).toBe(TicketStatus.Available)
@@ -63,10 +62,10 @@ describe('PurchasesService', () => {
             })
         })
 
-        // 최대 구매 가능 수량을 초과했을 때
-        describe('when the number of tickets exceeds the maximum limit', () => {
-            // BadRequest(400) 에러를 반환한다.
-            it('returns a BadRequest(400) error', async () => {
+        // 최대 구매 수량을 초과한 경우
+        describe('when the number of tickets exceeds the maximum', () => {
+            // 400 Bad Request를 반환한다
+            it('returns 400 Bad Request', async () => {
                 const { Rules } = await import('shared')
                 Rules.Ticket.maxTicketsPerPurchase = fix.heldTickets.length - 1
 
@@ -85,10 +84,10 @@ describe('PurchasesService', () => {
             })
         })
 
-        // 구매 가능 시간이 지났을 때
+        // 구매 가능 시간이 지난 경우
         describe('when the purchase deadline has passed', () => {
-            // BadRequest(400) 에러를 반환한다.
-            it('returns a BadRequest(400) error', async () => {
+            // 400 Bad Request를 반환한다
+            it('returns 400 Bad Request', async () => {
                 const purchaseItems = [
                     { type: PurchaseItemType.Ticket, ticketId: fix.saleClosedTickets[0].id }
                 ]
@@ -105,10 +104,10 @@ describe('PurchasesService', () => {
             })
         })
 
-        // 선점하지 않은 티켓을 구매하려고 할 때
-        describe('when attempting to purchase unheld tickets', () => {
-            // BadRequest(400) 에러를 반환한다.
-            it('returns a BadRequest(400) error', async () => {
+        // 선점하지 않은 티켓을 구매하는 경우
+        describe('when attempting to purchase tickets that have not been held', () => {
+            // 400 Bad Request를 반환한다
+            it('returns 400 Bad Request', async () => {
                 const purchaseItems = [
                     { type: PurchaseItemType.Ticket, ticketId: fix.availableTickets[0].id }
                 ]
@@ -120,8 +119,8 @@ describe('PurchasesService', () => {
             })
         })
 
-        // 구매 완료 처리 중 내부 오류가 발생했을 때
-        describe('when an internal error occurs during the completion phase', () => {
+        // 구매 처리 중 내부 오류가 발생하는 경우
+        describe('when an internal error occurs during purchase', () => {
             let spyRollback: jest.SpyInstance
 
             beforeEach(() => {
@@ -131,8 +130,8 @@ describe('PurchasesService', () => {
                 spyRollback = jest.spyOn(fix.ticketPurchaseProcessor, 'rollbackPurchase')
             })
 
-            // 500 Internal Server Error를 반환하고 구매 롤백 로직을 실행한다.
-            it('returns a 500 Internal Server Error and triggers the purchase rollback logic', async () => {
+            // 구매 롤백을 실행한다
+            it('triggers purchase rollback', async () => {
                 const purchaseItems = fix.heldTickets.map(({ id }) => ({
                     type: PurchaseItemType.Ticket,
                     ticketId: id
@@ -149,21 +148,11 @@ describe('PurchasesService', () => {
     })
 
     describe('GET /purchases/:purchaseId', () => {
-        // 구매 내역이 존재할 때
+        // 구매 정보가 존재하는 경우
         describe('when the purchase exists', () => {
-            let purchase: PurchaseDto
-
-            beforeEach(async () => {
-                purchase = await fix.purchasesService.createPurchase({
-                    customerId: fix.customer.id,
-                    totalPrice: 1,
-                    purchaseItems: [{ type: PurchaseItemType.Ticket, ticketId: nullObjectId }]
-                })
-            })
-
-            // 구매 상세 정보를 반환한다.
-            it('returns the purchase details', async () => {
-                await fix.httpClient.get(`/purchases/${purchase.id}`).ok(purchase)
+            // 구매 정보를 반환한다.
+            it('returns the purchase', async () => {
+                await fix.httpClient.get(`/purchases/${fix.purchase.id}`).ok(fix.purchase)
             })
         })
     })

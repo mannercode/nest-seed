@@ -18,8 +18,8 @@ describe('MoviesService', () => {
     })
 
     describe('POST /movies', () => {
-        // 유효한 데이터와 첨부 파일을 제공한 경우
-        describe('when provided valid data and attachments', () => {
+        // payload가 유효한 경우
+        describe('when the payload is valid', () => {
             // 영화를 생성하고 반환한다
             it('creates and returns the movie', async () => {
                 const { createDto, expectedDto } = buildCreateMovieDto()
@@ -35,7 +35,7 @@ describe('MoviesService', () => {
         })
 
         // 필수 필드가 누락된 경우
-        describe('when required fields are missing', () => {
+        describe('when the required fields are missing', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient
@@ -47,14 +47,8 @@ describe('MoviesService', () => {
     })
 
     describe('PATCH /movies/:id', () => {
-        let movie: MovieDto
-
-        beforeEach(async () => {
-            movie = await createMovie(fix)
-        })
-
-        // 유효한 데이터가 제공된 경우
-        describe('when provided valid data', () => {
+        // payload가 유효한 경우
+        describe('when the payload is valid', () => {
             // 영화를 수정한다
             it('updates the movie', async () => {
                 const updateDto = {
@@ -66,22 +60,22 @@ describe('MoviesService', () => {
                     director: 'Steven Spielberg',
                     rating: 'R'
                 }
-                const expected = { ...movie, ...updateDto }
+                const expected = { ...fix.movie, ...updateDto }
 
-                await fix.httpClient.patch(`/movies/${movie.id}`).body(updateDto).ok(expected)
-                await fix.httpClient.get(`/movies/${movie.id}`).ok(expected)
+                await fix.httpClient.patch(`/movies/${fix.movie.id}`).body(updateDto).ok(expected)
+                await fix.httpClient.get(`/movies/${fix.movie.id}`).ok(expected)
             })
         })
 
-        // 페이로드가 비어있을 때
+        // payload가 비어있는 경우
         describe('when the payload is empty', () => {
             // 원래 영화 정보를 반환한다
             it('returns the original movie', async () => {
-                await fix.httpClient.patch(`/movies/${movie.id}`).body({}).ok(movie)
+                await fix.httpClient.patch(`/movies/${fix.movie.id}`).body({}).ok(fix.movie)
             })
         })
 
-        // 영화가 존재하지 않을 때
+        // 영화가 존재하지 않는 경우
         describe('when the movie does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
@@ -94,24 +88,18 @@ describe('MoviesService', () => {
     })
 
     describe('DELETE /movies/:id', () => {
-        let movie: MovieDto
-
-        beforeEach(async () => {
-            movie = await createMovie(fix)
-        })
-
-        // 영화가 존재할 때
+        // 영화가 존재하는 경우
         describe('when the movie exists', () => {
             // 영화를 삭제하고 파일도 삭제한다
             it('deletes the movie and its files', async () => {
-                const fileUrl = movie.images[0]
+                const fileUrl = fix.movie.images[0]
                 const fileId = Path.basename(fileUrl)
 
-                await fix.httpClient.delete(`/movies/${movie.id}`).ok()
+                await fix.httpClient.delete(`/movies/${fix.movie.id}`).ok()
 
-                await fix.httpClient.get(`/movies/${movie.id}`).notFound({
+                await fix.httpClient.get(`/movies/${fix.movie.id}`).notFound({
                     ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [movie.id]
+                    notFoundIds: [fix.movie.id]
                 })
 
                 await fix.httpClient.get(fileUrl).notFound({
@@ -121,7 +109,7 @@ describe('MoviesService', () => {
             })
         })
 
-        // 영화가 존재하지 않을 때
+        // 영화가 존재하지 않는 경우
         describe('when the movie does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
@@ -134,21 +122,15 @@ describe('MoviesService', () => {
     })
 
     describe('GET /movies/:id', () => {
-        let movie: MovieDto
-
-        beforeEach(async () => {
-            movie = await createMovie(fix)
-        })
-
-        // 영화가 존재할 때
+        // 영화가 존재하는 경우
         describe('when the movie exists', () => {
-            // 해당 영화를 반환한다
+            // 영화 정보를 반환한다
             it('returns the movie', async () => {
-                await fix.httpClient.get(`/movies/${movie.id}`).ok(movie)
+                await fix.httpClient.get(`/movies/${fix.movie.id}`).ok(fix.movie)
             })
         })
 
-        // 영화가 존재하지 않을 때
+        // 영화가 존재하지 않는 경우
         describe('when the movie does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
@@ -164,7 +146,7 @@ describe('MoviesService', () => {
         let movies: MovieDto[]
 
         beforeEach(async () => {
-            movies = await Promise.all([
+            const createdMovies = await Promise.all([
                 createMovie(fix, {
                     title: 'title-a1',
                     plot: 'plot-a1',
@@ -198,12 +180,14 @@ describe('MoviesService', () => {
                     genres: [MovieGenre.Thriller, MovieGenre.Western]
                 })
             ])
+
+            movies = [...createdMovies, fix.movie]
         })
 
-        // 쿼리 파라미터 없이 요청한 경우
-        describe('without any query parameters', () => {
-            // 기본 페이지네이션으로 영화를 반환한다
-            it('returns movies using default pagination', async () => {
+        // 쿼리 파라미터가 없는 경우
+        describe('when query parameters are missing', () => {
+            // 기본 페이지네이션으로 고객을 반환한다
+            it('returns movies with default pagination', async () => {
                 const { body } = await fix.httpClient.get('/movies').query({ skip: 0 }).ok()
                 const { items, ...pagination } = body
 
@@ -216,10 +200,10 @@ describe('MoviesService', () => {
             })
         })
 
-        // 다양한 조건으로 필터링할 때
-        describe('when filtering with various criteria', () => {
+        // 쿼리 파라미터가 유효한 경우
+        describe('when query parameters are valid', () => {
             // 제목 일부로 영화를 필터링한다
-            it('filters movies by partial title', async () => {
+            it('filters movies by a partial title', async () => {
                 const { body } = await fix.httpClient
                     .get('/movies')
                     .query({ title: 'title-a' })
@@ -246,13 +230,13 @@ describe('MoviesService', () => {
             })
 
             // 줄거리 일부로 영화를 필터링한다
-            it('filters movies by partial plot', async () => {
+            it('filters movies by a partial plot', async () => {
                 const { body } = await fix.httpClient.get('/movies').query({ plot: 'plot-b' }).ok()
                 expectEqualUnsorted(body.items, [movies[2], movies[3]])
             })
 
             // 감독 일부로 영화를 필터링한다
-            it('filters movies by partial director', async () => {
+            it('filters movies by a partial director name', async () => {
                 const { body } = await fix.httpClient
                     .get('/movies')
                     .query({ director: 'James' })
@@ -270,8 +254,8 @@ describe('MoviesService', () => {
             })
         })
 
-        // 잘못된 쿼리 파라미터를 제공한 경우
-        describe('with an invalid query parameter', () => {
+        // 쿼리 파라미터가 유효하지 않은 경우
+        describe('when query parameters are invalid', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient
@@ -289,8 +273,8 @@ describe('MoviesService', () => {
             movies = await Promise.all([createMovie(fix), createMovie(fix), createMovie(fix)])
         })
 
-        // 유효한 영화 ID를 제공한 경우
-        describe('when given valid movie IDs', () => {
+        // 영화 ID가 존재하는 경우
+        describe('when the movie IDs exist', () => {
             // 해당 영화들을 반환한다
             it('returns the movies', async () => {
                 const expectedMovies = movies.slice(0, 2)
@@ -300,8 +284,8 @@ describe('MoviesService', () => {
             })
         })
 
-        // 존재하지 않는 영화 ID를 제공한 경우
-        describe('when given a non‑existent movie ID', () => {
+        // 영화 ID가 존재하지 않는 경우
+        describe('when the movie IDs do not exist', () => {
             // NotFoundException을 던진다
             it('throws NotFoundException', async () => {
                 const promise = fix.moviesClient.getMoviesByIds([nullObjectId])

@@ -50,7 +50,7 @@ export const buildCreateMovieDto = (overrides = {}) => {
         releaseDate: new Date('1900-01-01'),
         plot: `MoviePlot`,
         durationInSeconds: 90 * 60,
-        director: 'James Cameron',
+        director: 'Quentin Tarantino',
         rating: MovieRating.PG,
         ...overrides
     }

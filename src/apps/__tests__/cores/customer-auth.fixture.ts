@@ -17,17 +17,17 @@ export const generateAuthTokens = async (fix: CommonFixture, customer: CustomerD
 }
 
 export const createFixture = async () => {
-    const commonFixture = await createCommonFixture()
+    const fix = await createCommonFixture()
 
     const credentials = { email: 'user@mail.com', password: 'password' }
 
-    const customer = await createCustomer(commonFixture, credentials)
+    const customer = await createCustomer(fix, credentials)
 
-    const authTokens = await generateAuthTokens(commonFixture, customer)
+    const authTokens = await generateAuthTokens(fix, customer)
 
     const teardown = async () => {
-        await commonFixture?.close()
+        await fix?.close()
     }
 
-    return { ...commonFixture, teardown, credentials, authTokens }
+    return { ...fix, teardown, credentials, authTokens }
 }

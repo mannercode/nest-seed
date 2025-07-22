@@ -1,6 +1,15 @@
-import { CustomerDto, MovieDto, Seatmap, TheaterDto, TicketDto } from 'apps/cores'
+import {
+    CustomerDto,
+    MovieDto,
+    PurchaseDto,
+    PurchaseItemType,
+    Seatmap,
+    TheaterDto,
+    TicketDto
+} from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { Rules } from 'shared'
+import { nullObjectId } from 'testlib'
 import { CommonFixture, createCommonFixture } from '../__helpers__'
 import {
     buildCreateShowtimeDto,
@@ -19,34 +28,58 @@ export interface Fixture extends CommonFixture {
     heldTickets: TicketDto[]
     availableTickets: TicketDto[]
     saleClosedTickets: TicketDto[]
+    purchase: PurchaseDto
 }
 
 export const createFixture = async (): Promise<Fixture> => {
-    const commonFixture = await createCommonFixture()
+    const fix = await createCommonFixture()
 
     const [customer, movie, theater] = await Promise.all([
-        createCustomer(commonFixture),
-        createMovie(commonFixture),
-        createTheater(commonFixture)
+        createCustomer(fix),
+        createMovie(fix),
+        createTheater(fix)
     ])
 
     const { availableTickets, heldTickets } = await createAvailableAndHeldTickets(
-        commonFixture,
+        fix,
         movie,
         theater,
         customer
     )
 
-    const saleClosedTickets = await createSaleClosedTickets(commonFixture, movie, theater)
+    const saleClosedTickets = await createSaleClosedTickets(fix, movie, theater)
+
+    const purchase = await createPurchase(fix)
 
     return {
-        ...commonFixture,
-        teardown: () => commonFixture.close(),
+        ...fix,
+        teardown: () => fix.close(),
         customer,
         heldTickets,
         availableTickets,
-        saleClosedTickets
+        saleClosedTickets,
+        purchase
     }
+}
+
+export const buildCreatePurchaseDto = (overrides = {}) => {
+    const createDto = {
+        customerId: nullObjectId,
+        totalPrice: 1,
+        purchaseItems: [{ type: PurchaseItemType.Ticket, ticketId: nullObjectId }],
+        ...overrides
+    }
+    const expectedDto = { id: expect.any(String), ...createDto }
+
+    return { createDto, expectedDto }
+}
+
+export const createPurchase = async (fix: CommonFixture, override = {}) => {
+    const { createDto } = buildCreatePurchaseDto(override)
+
+    const purchase = await fix.purchasesService.createPurchase(createDto)
+
+    return purchase
 }
 
 const createAvailableAndHeldTickets = async (

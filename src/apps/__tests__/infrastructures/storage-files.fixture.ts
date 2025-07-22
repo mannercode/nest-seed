@@ -25,7 +25,7 @@ export const createFixture = async () => {
     const maxFileSizeBytes = files.oversized.size
     const maxFilesPerUpload = 2
 
-    const commonFixture = await createCommonFixture({
+    const fix = await createCommonFixture({
         gateway: {
             config: {
                 FILE_UPLOAD_DIRECTORY: uploadDir,
@@ -38,9 +38,9 @@ export const createFixture = async () => {
     })
 
     const teardown = async () => {
-        await commonFixture?.close()
+        await fix?.close()
         await Path.delete(uploadDir)
     }
 
-    return { ...commonFixture, teardown, uploadDir, maxFileSizeBytes, maxFilesPerUpload, files }
+    return { ...fix, teardown, uploadDir, maxFileSizeBytes, maxFilesPerUpload, files }
 }
