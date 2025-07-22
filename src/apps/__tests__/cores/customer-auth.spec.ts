@@ -48,21 +48,10 @@ describe('CustomersService – Authentication', () => {
     describe('POST /customers/refresh', () => {
         // 리프레시 토큰이 유효한 경우
         describe('when the refresh token is valid', () => {
-            let accessToken: string
-            let refreshToken: string
-
-            beforeEach(async () => {
-                const { body } = await fix.httpClient
-                    .post('/customers/login')
-                    .body(fix.credentials)
-                    .ok()
-
-                accessToken = body.accessToken
-                refreshToken = body.refreshToken
-            })
-
             // 새 액세스 토큰과 리프레시 토큰을 반환한다
             it('returns new access and refresh tokens', async () => {
+                const { accessToken, refreshToken } = fix.authTokens
+
                 const { body } = await fix.httpClient
                     .post('/customers/refresh')
                     .body({ refreshToken })
@@ -91,19 +80,10 @@ describe('CustomersService – Authentication', () => {
     describe('CustomerJwtAuthGuard', () => {
         // 액세스 토큰이 유효한 경우
         describe('when the access token is valid', () => {
-            let accessToken: string
-
-            beforeEach(async () => {
-                const { body } = await fix.httpClient
-                    .post('/customers/login')
-                    .body(fix.credentials)
-                    .ok()
-
-                accessToken = body.accessToken
-            })
-
             // 접근을 허용한다
             it('allows access', async () => {
+                const { accessToken } = fix.authTokens
+
                 await fix.httpClient
                     .get('/customers/jwtguard')
                     .headers({ Authorization: `Bearer ${accessToken}` })
