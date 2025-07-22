@@ -10,6 +10,7 @@ import { Messages } from 'shared'
 import {
     CreateCustomerDto,
     CustomerAuthPayload,
+    CustomerCredentials,
     CustomerDto,
     SearchCustomersPageDto,
     UpdateCustomerDto
@@ -40,14 +41,14 @@ export class CustomersClient {
     }
 
     generateAuthTokens(payload: CustomerAuthPayload): Promise<JwtAuthTokens> {
-        return this.proxy.getJson(Messages.Customers.login, payload)
+        return this.proxy.getJson(Messages.Customers.generateAuthTokens, payload)
     }
 
     refreshAuthTokens(refreshToken: string): Promise<JwtAuthTokens> {
         return this.proxy.getJson(Messages.Customers.refreshAuthTokens, refreshToken)
     }
 
-    authenticateCustomer(email: string, password: string): Promise<string | null> {
-        return this.proxy.getJson(Messages.Customers.authenticateCustomer, { email, password })
+    findCustomerByCredentials(credentials: CustomerCredentials): Promise<CustomerDto | null> {
+        return this.proxy.getJson(Messages.Customers.findCustomerByCredentials, credentials)
     }
 }

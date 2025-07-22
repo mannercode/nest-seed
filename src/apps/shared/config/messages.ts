@@ -63,9 +63,9 @@ export const Messages = createMessagePatternMap(
             getCustomers: null,
             deleteCustomers: null,
             searchCustomersPage: null,
-            login: null,
+            generateAuthTokens: null,
             refreshAuthTokens: null,
-            authenticateCustomer: null
+            findCustomerByCredentials: null
         },
         ShowtimeCreation: {
             searchMoviesPage: null,

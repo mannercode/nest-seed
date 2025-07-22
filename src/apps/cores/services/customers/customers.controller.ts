@@ -6,7 +6,8 @@ import {
     CustomerAuthPayload,
     CreateCustomerDto,
     SearchCustomersPageDto,
-    UpdateCustomerDto
+    UpdateCustomerDto,
+    CustomerCredentials
 } from './dtos'
 
 @Controller()
@@ -41,7 +42,7 @@ export class CustomersController {
         return this.service.searchCustomersPage(searchDto)
     }
 
-    @MessagePattern(Messages.Customers.login)
+    @MessagePattern(Messages.Customers.generateAuthTokens)
     generateAuthTokens(@Payload() payload: CustomerAuthPayload) {
         return this.service.generateAuthTokens(payload)
     }
@@ -51,8 +52,8 @@ export class CustomersController {
         return this.service.refreshAuthTokens(refreshToken)
     }
 
-    @MessagePattern(Messages.Customers.authenticateCustomer)
-    authenticateCustomer(@Payload('email') email: string, @Payload('password') password: string) {
-        return this.service.authenticateCustomer(email, password)
+    @MessagePattern(Messages.Customers.findCustomerByCredentials)
+    findCustomerByCredentials(@Payload() credentials: CustomerCredentials) {
+        return this.service.findCustomerByCredentials(credentials)
     }
 }
