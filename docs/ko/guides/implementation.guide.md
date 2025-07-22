@@ -5,7 +5,7 @@
 ## 1. Jest 테스트 명명 가이드
 
 1. **맥락은 `when …` 패턴 사용**
-    - `context('when the X is Y', …)` 형태로 **어떤 조건일 때**를 명확히 기술합니다.
+    - `describe('when the X is Y', …)` 형태로 **어떤 조건일 때**를 명확히 기술합니다.
 
 1. **행위는 동사구(동사 + 목적어)**
     - `it('logs in')`, `it('returns 401 Unauthorized')` 처럼 **동사로 시작해** 무엇을 하는지 바로 알 수 있게 작성합니다.
@@ -16,11 +16,15 @@
     - 예시:
       `it('returns 401 Unauthorized for incorrect password')`
 
+> Jest는 `context`를 지원하지 않는다. 그렇다고 해서 `describe`를 `context`의 alias로 사용하면 안 된다.
+>
+> `Jest Runner` 같은 Jest 도구에서 `context`를 인식하지 못한다.
+
 ```ts
 // 사용자 인증
 describe('User Authentication', () => {
     // 자격 증명이 유효한 경우
-    context('when the credentials are valid', () => {
+    describe('when the credentials are valid', () => {
         // 로그인한다
         it('logs in', async () => {
             /* 테스트 로직 */
@@ -28,7 +32,7 @@ describe('User Authentication', () => {
     })
 
     // 자격 증명이 유효하지 않은 경우
-    context('when the credentials are invalid', () => {
+    describe('when the credentials are invalid', () => {
         // 비밀번호가 틀린 경우 401 Unauthorized를 반환한다
         it('returns 401 Unauthorized for incorrect password', async () => {
             /* 테스트 로직 */
@@ -36,7 +40,7 @@ describe('User Authentication', () => {
     })
 
     // 리프레시 토큰이 유효하지 않은 경우
-    context('when the refresh token is invalid', () => {
+    describe('when the refresh token is invalid', () => {
         // 401 Unauthorized를 반환한다
         it('returns 401 Unauthorized', async () => {
             /* 테스트 로직 */

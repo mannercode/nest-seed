@@ -2,7 +2,7 @@ import type { Config } from 'jest'
 import { createJsWithTsPreset } from 'ts-jest'
 
 export default {
-    setupFilesAfterEnv: ['jest-plugin-context/setup', '<rootDir>/jest.setup.ts'],
+    setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
     moduleFileExtensions: ['js', 'json', 'ts'],
     testRegex: '(__tests__/.*\\.spec\\.(ts|js))$',
     testEnvironment: 'node',
@@ -33,8 +33,9 @@ export default {
     ],
     coverageDirectory: '<rootDir>/_output/coverage',
     testTimeout: 60 * 1000,
+    // https://github.com/kulshekhar/ts-jest/tree/main/examples/js-with-ts
     ...createJsWithTsPreset({ tsconfig: 'tsconfig.json' }),
-    // ECMAScript modules
+    // ECM modules
     transformIgnorePatterns: ['!node_modules/(?!chalk)']
     /**
      * If the number of CPU cores is high relative to available memory,

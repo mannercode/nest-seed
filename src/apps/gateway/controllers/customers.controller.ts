@@ -22,8 +22,8 @@ import { Assert } from 'common'
 import { CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
 import { CustomerAuthRequest } from './types'
 
-@Controller('customers')
 @UseGuards(CustomerJwtAuthGuard)
+@Controller('customers')
 export class CustomersController {
     constructor(private customersService: CustomersClient) {}
 
@@ -39,6 +39,11 @@ export class CustomersController {
         @Body() updateDto: UpdateCustomerDto
     ) {
         return this.customersService.updateCustomer(customerId, updateDto)
+    }
+
+    @Get('jwtguard')
+    async testJwtGuard() {
+        return { message: 'accessToken is valid' }
     }
 
     @Get(':customerId')
