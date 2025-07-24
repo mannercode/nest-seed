@@ -17,20 +17,23 @@ describe('ShowtimesService', () => {
     })
 
     describe('createShowtimes()', () => {
-        // 새로운 상영시간을 성공적으로 생성한다.
-        it('creates new showtimes successfully', async () => {
-            const { createDto, expectedDto } = buildCreateShowtimeDto({
-                transactionId: testObjectId(0x1)
+        // payload가 유효한 경우
+        describe('when the payload is valid', () => {
+            // 상영시간을 생성하고 결과를 반환한다
+            it('Creates showtimes and returns the result', async () => {
+                const { createDto, expectedDto } = buildCreateShowtimeDto({
+                    transactionId: testObjectId(0x1)
+                })
+
+                const { success } = await fix.showtimesClient.createShowtimes([createDto])
+                expect(success).toBeTruthy()
+
+                const showtimes = await fix.showtimesClient.searchShowtimes({
+                    transactionIds: [testObjectId(0x1)]
+                })
+
+                expect(showtimes).toEqual([expectedDto])
             })
-
-            const { success } = await fix.showtimesClient.createShowtimes([createDto])
-            expect(success).toBeTruthy()
-
-            const showtimes = await fix.showtimesClient.searchShowtimes({
-                transactionIds: [testObjectId(0x1)]
-            })
-
-            expect(showtimes).toEqual([expectedDto])
         })
     })
 
@@ -115,19 +118,19 @@ describe('ShowtimesService', () => {
             showtimes = await createShowtimes(fix, createDtos)
         })
 
-        // 상영시간이 존재할 때
-        describe('when the showtimes exist', () => {
-            // 해당하는 상영시간의 상세 정보를 반환한다.
-            it('returns the corresponding showtime details', async () => {
+        // 상영시간 ID가 존재하는 경우
+        describe('when the showtime IDs exist', () => {
+            // 해당 상영시간들을 반환한다
+            it('returns the showtimes', async () => {
                 const gotShowtimes = await fix.showtimesClient.getShowtimes(pickIds(showtimes))
                 expectEqualUnsorted(gotShowtimes, showtimes)
             })
         })
 
-        // 상영시간 중 일부가 존재하지 않을 때
-        describe('when any showtime does not exist', () => {
-            // "문서를 찾을 수 없음" 에러를 던진다.
-            it('throws a "document not found" error', async () => {
+        // 상영시간 ID가 존재하지 않는 경우
+        describe('when the showtime IDs do not exist', () => {
+            // NotFoundException을 던진다
+            it('throws NotFoundException', async () => {
                 const promise = fix.showtimesClient.getShowtimes([nullObjectId])
                 await expect(promise).rejects.toThrow('One or more documents not found')
             })

@@ -53,12 +53,6 @@ export class MoviesService {
         return { ...pagination, items: this.toDtos(items) }
     }
 
-    async getMoviesByIds(movieIds: string[]) {
-        const movies = await this.repository.getByIds(movieIds)
-
-        return this.toDtos(movies)
-    }
-
     async moviesExist(movieIds: string[]): Promise<boolean> {
         return this.repository.existByIds(movieIds)
     }

@@ -1,5 +1,5 @@
 import { MovieDto, MovieGenre, MovieRating } from 'apps/cores'
-import { Path, pickIds } from 'common'
+import { Path } from 'common'
 import { expectEqualUnsorted, nullObjectId, objectToFields } from 'testlib'
 import { Errors } from '../__helpers__'
 import { buildCreateMovieDto, createMovie } from '../common.fixture'
@@ -186,7 +186,7 @@ describe('MoviesService', () => {
 
         // 쿼리 파라미터가 없는 경우
         describe('when query parameters are missing', () => {
-            // 기본 페이지네이션으로 고객을 반환한다
+            // 기본 페이지네이션으로 영화를 반환한다
             it('returns movies with default pagination', async () => {
                 const { body } = await fix.httpClient.get('/movies').query({ skip: 0 }).ok()
                 const { items, ...pagination } = body
@@ -200,60 +200,6 @@ describe('MoviesService', () => {
             })
         })
 
-        // 쿼리 파라미터가 유효한 경우
-        describe('when query parameters are valid', () => {
-            // 제목 일부로 영화를 필터링한다
-            it('filters movies by a partial title', async () => {
-                const { body } = await fix.httpClient
-                    .get('/movies')
-                    .query({ title: 'title-a' })
-                    .ok()
-                expectEqualUnsorted(body.items, [movies[0], movies[1]])
-            })
-
-            // 장르로 영화를 필터링한다
-            it('filters movies by genre', async () => {
-                const { body } = await fix.httpClient
-                    .get('/movies')
-                    .query({ genre: MovieGenre.Drama })
-                    .ok()
-                expectEqualUnsorted(body.items, [movies[1], movies[2]])
-            })
-
-            // 개봉일로 영화를 필터링한다
-            it('filters movies by release date', async () => {
-                const { body } = await fix.httpClient
-                    .get('/movies')
-                    .query({ releaseDate: new Date('2000-01-02') })
-                    .ok()
-                expectEqualUnsorted(body.items, [movies[1], movies[2]])
-            })
-
-            // 줄거리 일부로 영화를 필터링한다
-            it('filters movies by a partial plot', async () => {
-                const { body } = await fix.httpClient.get('/movies').query({ plot: 'plot-b' }).ok()
-                expectEqualUnsorted(body.items, [movies[2], movies[3]])
-            })
-
-            // 감독 일부로 영화를 필터링한다
-            it('filters movies by a partial director name', async () => {
-                const { body } = await fix.httpClient
-                    .get('/movies')
-                    .query({ director: 'James' })
-                    .ok()
-                expectEqualUnsorted(body.items, [movies[0], movies[2]])
-            })
-
-            // 등급으로 영화를 필터링한다
-            it('filters movies by rating', async () => {
-                const { body } = await fix.httpClient
-                    .get('/movies')
-                    .query({ rating: MovieRating.NC17 })
-                    .ok()
-                expectEqualUnsorted(body.items, [movies[0], movies[1]])
-            })
-        })
-
         // 쿼리 파라미터가 유효하지 않은 경우
         describe('when query parameters are invalid', () => {
             // 400 Bad Request를 반환한다
@@ -264,32 +210,73 @@ describe('MoviesService', () => {
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
             })
         })
-    })
 
-    describe('getMoviesByIds()', () => {
-        let movies: MovieDto[]
-
-        beforeEach(async () => {
-            movies = await Promise.all([createMovie(fix), createMovie(fix), createMovie(fix)])
-        })
-
-        // 영화 ID가 존재하는 경우
-        describe('when the movie IDs exist', () => {
-            // 해당 영화들을 반환한다
-            it('returns the movies', async () => {
-                const expectedMovies = movies.slice(0, 2)
-                const movieIds = pickIds(expectedMovies)
-                const gotMovies = await fix.moviesClient.getMoviesByIds(movieIds)
-                expectEqualUnsorted(gotMovies, expectedMovies)
+        // `title` 부분 문자열이 제공된 경우
+        describe('when a partial `title` is provided', () => {
+            // 제목이 해당 부분 문자열을 포함하는 영화를 반환한다
+            it('returns movies whose title contains the given substring', async () => {
+                const { body } = await fix.httpClient
+                    .get('/movies')
+                    .query({ title: 'title-a' })
+                    .ok()
+                expectEqualUnsorted(body.items, [movies[0], movies[1]])
             })
         })
 
-        // 영화 ID가 존재하지 않는 경우
-        describe('when the movie IDs do not exist', () => {
-            // NotFoundException을 던진다
-            it('throws NotFoundException', async () => {
-                const promise = fix.moviesClient.getMoviesByIds([nullObjectId])
-                await expect(promise).rejects.toThrow('One or more documents not found')
+        // `genre`가 제공된 경우
+        describe('when `genre` is provided', () => {
+            // 장르가 일치하는 영화를 반환한다
+            it('returns movies that match the given genre', async () => {
+                const { body } = await fix.httpClient
+                    .get('/movies')
+                    .query({ genre: MovieGenre.Drama })
+                    .ok()
+                expectEqualUnsorted(body.items, [movies[1], movies[2]])
+            })
+        })
+
+        // `releaseDate`가 제공된 경우
+        describe('when `releaseDate` is provided', () => {
+            // 지정된 날짜에 개봉한 영화를 반환한다
+            it('returns movies released on the given date', async () => {
+                const { body } = await fix.httpClient
+                    .get('/movies')
+                    .query({ releaseDate: new Date('2000-01-02') })
+                    .ok()
+                expectEqualUnsorted(body.items, [movies[1], movies[2]])
+            })
+        })
+
+        // `plot` 부분 문자열이 제공된 경우
+        describe('when a partial `plot` is provided', () => {
+            // 줄거리에 해당 부분 문자열을 포함하는 영화를 반환한다
+            it('returns movies whose plot contains the given substring', async () => {
+                const { body } = await fix.httpClient.get('/movies').query({ plot: 'plot-b' }).ok()
+                expectEqualUnsorted(body.items, [movies[2], movies[3]])
+            })
+        })
+
+        // `director` 부분 문자열이 제공된 경우
+        describe('when a partial `director` name is provided', () => {
+            // 감독 이름에 해당 부분 문자열을 포함하는 영화를 반환한다
+            it('returns movies whose director name contains the given substring', async () => {
+                const { body } = await fix.httpClient
+                    .get('/movies')
+                    .query({ director: 'James' })
+                    .ok()
+                expectEqualUnsorted(body.items, [movies[0], movies[2]])
+            })
+        })
+
+        // `rating`이 제공된 경우
+        describe('when `rating` is provided', () => {
+            // 등급이 일치하는 영화를 반환한다
+            it('returns movies that match the given rating', async () => {
+                const { body } = await fix.httpClient
+                    .get('/movies')
+                    .query({ rating: MovieRating.NC17 })
+                    .ok()
+                expectEqualUnsorted(body.items, [movies[0], movies[1]])
             })
         })
     })

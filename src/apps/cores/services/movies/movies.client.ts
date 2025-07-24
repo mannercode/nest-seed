@@ -31,10 +31,6 @@ export class MoviesClient {
         return this.proxy.getJson(Messages.Movies.searchMoviesPage, searchDto)
     }
 
-    getMoviesByIds(movieIds: string[]): Promise<MovieDto[]> {
-        return this.proxy.getJson(Messages.Movies.getMoviesByIds, movieIds)
-    }
-
     moviesExist(movieIds: string[]): Promise<boolean> {
         return this.proxy.getJson(Messages.Movies.moviesExist, movieIds)
     }

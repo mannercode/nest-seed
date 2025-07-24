@@ -54,7 +54,6 @@ export const Messages = createMessagePatternMap(
             getMovies: null,
             deleteMovies: null,
             searchMoviesPage: null,
-            getMoviesByIds: null,
             moviesExist: null
         },
         Customers: {

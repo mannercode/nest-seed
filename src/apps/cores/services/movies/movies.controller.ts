@@ -36,11 +36,6 @@ export class MoviesController {
         return this.service.searchMoviesPage(searchDto)
     }
 
-    @MessagePattern(Messages.Movies.getMoviesByIds)
-    getMoviesByIds(@Payload() movieIds: string[]) {
-        return this.service.getMoviesByIds(movieIds)
-    }
-
     @MessagePattern(Messages.Movies.moviesExist)
     moviesExist(@Payload() movieIds: string[]) {
         return this.service.moviesExist(movieIds)
