@@ -98,9 +98,4 @@ export class Path {
         // rename may fail if moving to a different file-system
         await fs.rename(src, dest)
     }
-
-    static async getSize(filePath: string): Promise<number> {
-        const { size } = await fs.stat(filePath)
-        return size
-    }
 }

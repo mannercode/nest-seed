@@ -1,7 +1,4 @@
-import { createHash, randomUUID } from 'crypto'
-import { createReadStream } from 'fs'
-import { pipeline, Writable } from 'stream'
-import { promisify } from 'util'
+import { randomUUID } from 'crypto'
 
 export async function sleep(timeoutInMs: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, timeoutInMs))
@@ -141,27 +138,6 @@ export function pickItems<T, K extends keyof T>(items: T[], keyOrKeys: K | K[]):
  */
 export function pickIds<T extends { id: string }>(items: T[]): string[] {
     return items.map((item) => item.id)
-}
-
-/**
- * Calculates and returns the checksum of the specified file.
- * 지정된 파일의 체크섬을 계산하여 반환합니다.
- *
- * @param {string} filePath - The path of the file to compute a checksum for.
- * @param {'md5' | 'sha1' | 'sha256' | 'sha512'} [algorithm='sha256'] - The hash algorithm (default: 'sha256').
- * @returns {Promise<string>} A Promise resolving to the checksum (hex string).
- */
-export async function getChecksum(
-    filePath: string,
-    algorithm: 'md5' | 'sha1' | 'sha256' | 'sha512' = 'sha256'
-): Promise<string> {
-    const readStream = createReadStream(filePath)
-    const hash = createHash(algorithm)
-
-    const promisifiedPipeline = promisify(pipeline)
-    await promisifiedPipeline(readStream, hash as unknown as Writable)
-
-    return hash.digest('hex')
 }
 
 /**

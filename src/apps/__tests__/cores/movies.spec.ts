@@ -1,5 +1,5 @@
 import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
-import { generateShortId, getChecksum, Path } from 'common'
+import { FileUtil, generateShortId, Path } from 'common'
 import { expectEqualUnsorted, nullObjectId, objectToFields } from 'testlib'
 import { Errors } from '../__helpers__'
 import { buildCreateMovieDto, createMovie } from '../common.fixture'
@@ -59,8 +59,7 @@ describe('MoviesService', () => {
 
                 await fix.httpClient.get(movie.imageUrls[0]).download(downloadPath).ok()
 
-                expect(await Path.getSize(downloadPath)).toEqual(fix.image.size)
-                expect(await getChecksum(downloadPath)).toEqual(await getChecksum(fix.image.path))
+                expect(await FileUtil.areEqual(downloadPath, fix.image.path)).toBeTruthy()
             })
         })
 

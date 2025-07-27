@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { getChecksum, mapDocToDto, Path } from 'common'
+import { FileUtil, mapDocToDto, Path } from 'common'
 import { HydratedDocument } from 'mongoose'
 import { AppConfigService } from 'shared'
 import { CreateStorageFileDto, StorageFileDto } from './dtos'
@@ -19,7 +19,7 @@ export class StorageFilesService {
         const checksumByPath = new Map<string, string>()
 
         for (const createDto of createDtos) {
-            const checksum = await getChecksum(createDto.path)
+            const checksum = await FileUtil.getChecksum(createDto.path)
             checksumByPath.set(createDto.path, checksum)
         }
 

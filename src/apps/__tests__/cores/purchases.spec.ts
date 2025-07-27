@@ -28,8 +28,6 @@ describe('PurchasesService', () => {
             let createDto: CreatePurchaseDto
             let purchase: PurchaseDto
 
-            // Because this test has multiple assertions, we perform the Arrange and Act phases here and let each it block focus solely on assertions.
-            // Assert가 여러 단계라서 Arrange·Act 단계를 여기서 수행하고 it는 검증만 수행한다.
             beforeEach(async () => {
                 // Arrange
                 const purchaseItems = fix.heldTickets.map(({ id }) => ({

@@ -1,5 +1,5 @@
 import { StorageFileDto } from 'apps/infrastructures'
-import { generateShortId, getChecksum, Path } from 'common'
+import { FileUtil, generateShortId, Path } from 'common'
 import { nullObjectId } from 'testlib'
 import { Errors } from '../__helpers__'
 import { Fixture, saveFile } from './storage-files.fixture'
@@ -32,7 +32,7 @@ describe('StorageFilesService', () => {
                 ]).created()
 
                 expect(body.storageFiles[0].checksum).toEqual(
-                    await getChecksum(fix.files.small.path)
+                    await FileUtil.getChecksum(fix.files.small.path)
                 )
             })
 
@@ -44,10 +44,10 @@ describe('StorageFilesService', () => {
                 ]).created()
 
                 expect(body.storageFiles[0].checksum).toEqual(
-                    await getChecksum(fix.files.small.path)
+                    await FileUtil.getChecksum(fix.files.small.path)
                 )
                 expect(body.storageFiles[1].checksum).toEqual(
-                    await getChecksum(fix.files.large.path)
+                    await FileUtil.getChecksum(fix.files.large.path)
                 )
             })
 
@@ -126,8 +126,8 @@ describe('StorageFilesService', () => {
                     .download(downloadPath)
                     .ok()
 
-                expect(await Path.getSize(downloadPath)).toEqual(uploadedFile.size)
-                expect(await getChecksum(downloadPath)).toEqual(uploadedFile.checksum)
+                expect(await FileUtil.getSize(downloadPath)).toEqual(uploadedFile.size)
+                expect(await FileUtil.getChecksum(downloadPath)).toEqual(uploadedFile.checksum)
             })
         })
 
