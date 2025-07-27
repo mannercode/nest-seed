@@ -1,8 +1,9 @@
-import { TicketDto, TicketStatus } from 'apps/cores'
+import { CreateTicketDto, TicketDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { expectEqualUnsorted, testObjectId } from 'testlib'
 import { buildCreateTicketDto, createTickets } from '../common.fixture'
 import { buildCreateTicketDtos, Fixture } from './tickets.fixture'
+import { omit } from 'lodash'
 
 describe('TicketsService', () => {
     let fix: Fixture
@@ -19,10 +20,12 @@ describe('TicketsService', () => {
     describe('createTickets()', () => {
         // 새로운 티켓을 성공적으로 생성한다.
         it('creates new tickets successfully', async () => {
-            const { createDto, expectedDto } = buildCreateTicketDto()
+            const createDto = buildCreateTicketDto()
 
             const tickets = await createTickets(fix, [createDto])
-            expectEqualUnsorted(tickets, [expectedDto])
+            expectEqualUnsorted(tickets, [
+                { id: expect.any(String), ...omit(createDto, 'transactionId') }
+            ])
         })
     })
 
@@ -31,10 +34,11 @@ describe('TicketsService', () => {
         const movieIds = [testObjectId(0x20), testObjectId(0x21)]
         const theaterIds = [testObjectId(0x30), testObjectId(0x31)]
         const showtimeIds = [testObjectId(0x40), testObjectId(0x41)]
+        let createDtos: CreateTicketDto[] = []
         let expectedDtos: TicketDto[]
 
         beforeEach(async () => {
-            const allDtos = [
+            createDtos = [
                 buildCreateTicketDto({ transactionId: transactionIds[0] }),
                 buildCreateTicketDto({ transactionId: transactionIds[1] }),
                 buildCreateTicketDto({ movieId: movieIds[0] }),
@@ -44,11 +48,14 @@ describe('TicketsService', () => {
                 buildCreateTicketDto({ showtimeId: showtimeIds[0] }),
                 buildCreateTicketDto({ showtimeId: showtimeIds[1] })
             ]
-            const createDtos = allDtos.map((dto) => dto.createDto)
-            expectedDtos = allDtos.map((dto) => dto.expectedDto)
 
             const { success } = await fix.ticketsService.createTickets(createDtos)
             expect(success).toBeTruthy()
+
+            expectedDtos = createDtos.map((createDto) => ({
+                id: expect.any(String),
+                ...omit(createDto, 'transactionId')
+            }))
         })
 
         // 다양한 조건으로 필터링할 때
@@ -103,8 +110,8 @@ describe('TicketsService', () => {
 
         beforeEach(async () => {
             const createDtos = [
-                buildCreateTicketDto({ transactionId }).createDto,
-                buildCreateTicketDto({ transactionId }).createDto
+                buildCreateTicketDto({ transactionId }),
+                buildCreateTicketDto({ transactionId })
             ]
             const { success } = await fix.ticketsClient.createTickets(createDtos)
             expect(success).toBeTruthy()
@@ -136,7 +143,7 @@ describe('TicketsService', () => {
             const ticketCount = 50
             const soldCount = 5
 
-            const { createDtos } = buildCreateTicketDtos({ showtimeId }, ticketCount)
+            const createDtos = buildCreateTicketDtos({ showtimeId }, ticketCount)
             const tickets = await createTickets(fix, createDtos)
 
             const ticketIds = pickIds(tickets.slice(0, soldCount))

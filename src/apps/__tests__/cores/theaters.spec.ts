@@ -21,8 +21,11 @@ describe('TheatersService', () => {
         describe('when valid data', () => {
             // 새로운 극장을 생성한다.
             it('creates a new theater', async () => {
-                const { createDto, expectedDto } = buildCreateTheaterDto()
-                await fix.httpClient.post('/theaters').body(createDto).created(expectedDto)
+                const createDto = buildCreateTheaterDto()
+                await fix.httpClient
+                    .post('/theaters')
+                    .body(createDto)
+                    .created({ id: expect.any(String), ...createDto })
             })
         })
 

@@ -33,7 +33,7 @@ const createAllShowtimes = async (fix: CommonFixture, theaters: TheaterDto[], mo
 
     const createShowtimeDtos = theaters.flatMap((theater) =>
         startTimes.map((startTime) => {
-            const { createDto } = buildCreateShowtimeDto({
+            const createDto = buildCreateShowtimeDto({
                 movieId: movie.id,
                 theaterId: theater.id,
                 startTime,
@@ -57,10 +57,9 @@ const createAllTickets = async (
     const createTicketDtos = showtimes.flatMap(({ movieId, theaterId, id: showtimeId }) => {
         const theater = theatersById.get(theaterId)!
 
-        return Seatmap.getAllSeats(theater.seatmap).map((seat) => {
-            const { createDto } = buildCreateTicketDto({ movieId, theaterId, showtimeId, seat })
-            return createDto
-        })
+        return Seatmap.getAllSeats(theater.seatmap).map((seat) =>
+            buildCreateTicketDto({ movieId, theaterId, showtimeId, seat })
+        )
     })
 
     await createTickets(fix, createTicketDtos)

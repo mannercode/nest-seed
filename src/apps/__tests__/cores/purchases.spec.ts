@@ -1,8 +1,14 @@
-import { PurchaseItemType, TicketStatus } from 'apps/cores'
+import {
+    CreatePurchaseDto,
+    PurchaseDto,
+    PurchaseItemDto,
+    PurchaseItemType,
+    TicketStatus
+} from 'apps/cores'
 import { pickIds } from 'common'
 import { Errors } from '../__helpers__'
 import { getPayments, getTickets } from '../common.fixture'
-import { Fixture } from './purchases.fixture'
+import { buildCreatePurchaseDto, Fixture } from './purchases.fixture'
 
 describe('PurchasesService', () => {
     let fix: Fixture
@@ -19,42 +25,54 @@ describe('PurchasesService', () => {
     describe('POST /purchases', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
-            // 구매를 생성하고 반환한다
-            it('creates and returns the purchase', async () => {
+            let createDto: CreatePurchaseDto
+            let purchase: PurchaseDto
+
+            // Because this test has multiple assertions, we perform the Arrange and Act phases here and let each it block focus solely on assertions.
+            // Assert가 여러 단계라서 Arrange·Act 단계를 여기서 수행하고 it는 검증만 수행한다.
+            beforeEach(async () => {
+                // Arrange
                 const purchaseItems = fix.heldTickets.map(({ id }) => ({
                     type: PurchaseItemType.Ticket,
                     ticketId: id
                 }))
 
-                const { body } = await fix.httpClient
-                    .post('/purchases')
-                    .body({ customerId: fix.customer.id, totalPrice: 1, purchaseItems })
-                    .created()
+                createDto = buildCreatePurchaseDto({
+                    customerId: fix.customer.id,
+                    purchaseItems
+                })
 
-                const purchase = body
+                // Act
+                const { body } = await fix.httpClient.post('/purchases').body(createDto).created()
 
+                purchase = body
+            })
+
+            // 구매를 생성하고 반환한다
+            it('creates and returns the purchase', async () => {
                 expect(purchase).toEqual({
                     id: expect.any(String),
                     createdAt: expect.any(Date),
                     updatedAt: expect.any(Date),
                     paymentId: expect.any(String),
-                    customerId: fix.customer.id,
-                    totalPrice: 1,
-                    purchaseItems
+                    ...createDto
                 })
+            })
 
-                // Creates a corresponding payment record
-                // 연관된 결제 기록을 생성한다
+            // 연관된 결제 기록을 생성한다
+            it('creates a corresponding payment record', async () => {
                 const payments = await getPayments(fix, [purchase.paymentId])
                 expect(payments[0].amount).toEqual(purchase.totalPrice)
+            })
 
-                // Changes the status of purchased tickets to "Sold"
-                // 구매한 티켓의 상태를 "판매됨"으로 변경한다
+            // 구매한 티켓의 상태를 "판매됨"으로 변경한다
+            it('Changes the status of purchased tickets to `Sold`', async () => {
                 const soldTickets = await getTickets(fix, pickIds(fix.heldTickets))
                 soldTickets.forEach((ticket) => expect(ticket.status).toBe(TicketStatus.Sold))
+            })
 
-                // Leaves the status of unpurchased tickets unchanged
-                // 구매하지 않은 티켓의 상태는 그대로 유지한다
+            // 구매하지 않은 티켓의 상태는 그대로 유지한다
+            it('leaves the status of unpurchased tickets unchanged', async () => {
                 const remainingTickets = await getTickets(fix, pickIds(fix.availableTickets))
                 remainingTickets.forEach((ticket) =>
                     expect(ticket.status).toBe(TicketStatus.Available)
@@ -64,19 +82,29 @@ describe('PurchasesService', () => {
 
         // 최대 구매 수량을 초과한 경우
         describe('when the number of tickets exceeds the maximum', () => {
-            // 400 Bad Request를 반환한다
-            it('returns 400 Bad Request', async () => {
+            let exceedingMaxPurchaseItems: PurchaseItemDto[]
+
+            beforeEach(async () => {
                 const { Rules } = await import('shared')
                 Rules.Ticket.maxTicketsPerPurchase = fix.heldTickets.length - 1
 
-                const purchaseItems = fix.heldTickets.map(({ id }) => ({
+                exceedingMaxPurchaseItems = fix.heldTickets.map(({ id }) => ({
                     type: PurchaseItemType.Ticket,
                     ticketId: id
                 }))
+            })
+
+            // 400 Bad Request를 반환한다
+            it('returns 400 Bad Request', async () => {
+                const purchase: CreatePurchaseDto = {
+                    customerId: fix.customer.id,
+                    totalPrice: 1,
+                    purchaseItems: exceedingMaxPurchaseItems
+                }
 
                 await fix.httpClient
                     .post('/purchases')
-                    .body({ customerId: fix.customer.id, totalPrice: 1, purchaseItems })
+                    .body(purchase)
                     .badRequest({
                         ...Errors.TicketPurchase.MaxTicketsExceeded,
                         maxCount: expect.any(Number)
@@ -88,13 +116,17 @@ describe('PurchasesService', () => {
         describe('when the purchase deadline has passed', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                const purchaseItems = [
+                const deadlineExceededPurchaseItems = [
                     { type: PurchaseItemType.Ticket, ticketId: fix.saleClosedTickets[0].id }
                 ]
 
                 await fix.httpClient
                     .post('/purchases')
-                    .body({ customerId: fix.customer.id, totalPrice: 1, purchaseItems })
+                    .body({
+                        customerId: fix.customer.id,
+                        totalPrice: 1,
+                        purchaseItems: deadlineExceededPurchaseItems
+                    })
                     .badRequest({
                         ...Errors.TicketPurchase.DeadlineExceeded,
                         purchaseDeadlineInMinutes: expect.any(Number),
@@ -104,17 +136,21 @@ describe('PurchasesService', () => {
             })
         })
 
-        // 선점하지 않은 티켓을 구매하는 경우
-        describe('when attempting to purchase tickets that have not been held', () => {
+        // 선점되지 않은 티켓을 구매하는 경우
+        describe('when purchasing unheld tickets', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                const purchaseItems = [
+                const unheldPurchaseItems = [
                     { type: PurchaseItemType.Ticket, ticketId: fix.availableTickets[0].id }
                 ]
 
                 await fix.httpClient
                     .post('/purchases')
-                    .body({ customerId: fix.customer.id, totalPrice: 1, purchaseItems })
+                    .body({
+                        customerId: fix.customer.id,
+                        totalPrice: 1,
+                        purchaseItems: unheldPurchaseItems
+                    })
                     .badRequest(Errors.TicketPurchase.TicketNotHeld)
             })
         })
@@ -130,16 +166,15 @@ describe('PurchasesService', () => {
                 spyRollback = jest.spyOn(fix.ticketPurchaseProcessor, 'rollbackPurchase')
             })
 
-            // 구매 롤백을 실행한다
-            it('triggers purchase rollback', async () => {
-                const purchaseItems = fix.heldTickets.map(({ id }) => ({
-                    type: PurchaseItemType.Ticket,
-                    ticketId: id
-                }))
-
+            // 500 Internal Server Error를 반환하고 구매를 롤백한다
+            it('returns 500 Internal Server Error and rolls back the purchase', async () => {
                 await fix.httpClient
                     .post('/purchases')
-                    .body({ customerId: fix.customer.id, totalPrice: 1, purchaseItems })
+                    .body({
+                        customerId: fix.customer.id,
+                        totalPrice: 1,
+                        purchaseItems: fix.purchaseItems
+                    })
                     .internalServerError()
 
                 expect(spyRollback).toHaveBeenCalledTimes(1)

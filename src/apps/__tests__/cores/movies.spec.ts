@@ -22,15 +22,13 @@ describe('MoviesService', () => {
         describe('when the payload is valid', () => {
             // 영화를 생성하고 반환한다
             it('creates and returns the movie', async () => {
-                const { createDto, expectedDto } = buildCreateMovieDto()
+                const createDto = buildCreateMovieDto()
 
-                const { body } = await fix.httpClient
+                await fix.httpClient
                     .post('/movies')
                     .attachments([{ name: 'files', file: fix.image.path }])
                     .fields(objectToFields(createDto))
-                    .created()
-
-                expect(body).toEqual(expectedDto)
+                    .created({ id: expect.any(String), images: expect.any(Array), ...createDto })
             })
         })
 
@@ -49,8 +47,8 @@ describe('MoviesService', () => {
     describe('PATCH /movies/:id', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
-            // 영화를 수정한다
-            it('updates the movie', async () => {
+            // 영화 정보를 수정하고 반환한다
+            it('returns and updates the movie', async () => {
                 const updateDto = {
                     title: 'update title',
                     genres: ['romance', 'thriller'],

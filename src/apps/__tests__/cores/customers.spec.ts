@@ -1,4 +1,5 @@
 import { CustomerDto } from 'apps/cores'
+import { omit } from 'lodash'
 import { expectEqualUnsorted, nullObjectId } from 'testlib'
 import { Errors } from '../__helpers__'
 import { buildCreateCustomerDto, createCustomer } from '../common.fixture'
@@ -21,8 +22,11 @@ describe('CustomersService', () => {
         describe('when the payload is valid', () => {
             // 고객을 생성하고 반환한다
             it('creates and returns the customer', async () => {
-                const { createDto, expectedDto } = buildCreateCustomerDto()
-                await fix.httpClient.post('/customers').body(createDto).created(expectedDto)
+                const createDto = buildCreateCustomerDto()
+                await fix.httpClient
+                    .post('/customers')
+                    .body(createDto)
+                    .created({ id: expect.any(String), ...omit(createDto, 'password') })
             })
         })
 
@@ -30,7 +34,7 @@ describe('CustomersService', () => {
         describe('when the email already exists', () => {
             // 409 Conflict를 반환한다
             it('returns 409 Conflict', async () => {
-                const { createDto } = buildCreateCustomerDto({ email: fix.customer.email })
+                const createDto = buildCreateCustomerDto({ email: fix.customer.email })
 
                 await fix.httpClient
                     .post('/customers')
@@ -54,8 +58,8 @@ describe('CustomersService', () => {
     describe('PATCH /customers/:id', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
-            // 고객 정보를 수정한다
-            it('updates the customer', async () => {
+            // 고객 정보를 수정하고 반환한다
+            it('returns and updates the customer', async () => {
                 const updateDto = {
                     name: 'update-name',
                     email: 'new@mail.com',
@@ -168,29 +172,6 @@ describe('CustomersService', () => {
             })
         })
 
-        // 쿼리 파라미터가 유효한 경우
-        describe('when query parameters are valid', () => {
-            // 이름으로 고객을 필터링한다
-            it('filters customers by partial name', async () => {
-                const { body } = await fix.httpClient
-                    .get('/customers')
-                    .query({ name: 'customer-a' })
-                    .ok()
-
-                expectEqualUnsorted(body.items, [customers[0], customers[1]])
-            })
-
-            // 이메일로 고객을 필터링한다
-            it('filters customers by partial email', async () => {
-                const { body } = await fix.httpClient
-                    .get('/customers')
-                    .query({ email: 'user-b' })
-                    .ok()
-
-                expectEqualUnsorted(body.items, [customers[2], customers[3]])
-            })
-        })
-
         // 쿼리 파라미터가 유효하지 않은 경우
         describe('when query parameters are invalid', () => {
             // 400 Bad Request를 반환한다
@@ -199,6 +180,32 @@ describe('CustomersService', () => {
                     .get('/customers')
                     .query({ wrong: 'value' })
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+            })
+        })
+
+        // `name` 부분 문자열이 제공된 경우
+        describe('when a partial `name` is provided', () => {
+            // 이름이 해당 부분 문자열을 포함하는 영화를 반환한다
+            it('returns customers whose name contains the given substring', async () => {
+                const { body } = await fix.httpClient
+                    .get('/customers')
+                    .query({ name: 'customer-a' })
+                    .ok()
+
+                expectEqualUnsorted(body.items, [customers[0], customers[1]])
+            })
+        })
+
+        // `email` 부분 문자열이 제공된 경우
+        describe('when a partial `email` is provided', () => {
+            // 이메일이 해당 부분 문자열을 포함하는 영화를 반환한다
+            it('returns customers whose email contains the given substring', async () => {
+                const { body } = await fix.httpClient
+                    .get('/customers')
+                    .query({ email: 'user-b' })
+                    .ok()
+
+                expectEqualUnsorted(body.items, [customers[2], customers[3]])
             })
         })
     })

@@ -4,14 +4,7 @@ import { CommonFixture, createCommonFixture } from '../__helpers__'
 export const buildCreatePaymentDto = (overrides = {}) => {
     const createDto = { customerId: nullObjectId, amount: 1, ...overrides }
 
-    const expectedDto = {
-        ...createDto,
-        id: expect.any(String),
-        createdAt: expect.any(Date),
-        updatedAt: expect.any(Date)
-    }
-
-    return { createDto, expectedDto }
+    return createDto
 }
 
 export interface Fixture extends CommonFixture {

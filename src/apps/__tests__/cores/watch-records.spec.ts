@@ -18,10 +18,10 @@ describe('WatchRecordsService', () => {
     describe('createWatchRecord()', () => {
         // 새로운 관람 기록을 성공적으로 생성한다.
         it('creates new watch record successfully', async () => {
-            const { createDto, expectedDto } = buildCreateWatchRecordDto()
+            const createDto = buildCreateWatchRecordDto()
 
             const watchRecord = await fix.watchRecordsClient.createWatchRecord(createDto)
-            expect(watchRecord).toEqual(expectedDto)
+            expect(watchRecord).toEqual({ id: expect.any(String), ...createDto })
         })
     })
 

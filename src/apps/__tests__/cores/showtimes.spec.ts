@@ -1,8 +1,9 @@
 import { ShowtimeDto } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
+import { omit } from 'lodash'
 import { expectEqualUnsorted, nullObjectId, testObjectId } from 'testlib'
 import { buildCreateShowtimeDto, createShowtimes } from '../common.fixture'
-import { buildCreateShowtimeDtos, Fixture } from './showtimes.fixture'
+import { Fixture } from './showtimes.fixture'
 
 describe('ShowtimesService', () => {
     let fix: Fixture
@@ -21,7 +22,7 @@ describe('ShowtimesService', () => {
         describe('when the payload is valid', () => {
             // 상영시간을 생성하고 결과를 반환한다
             it('Creates showtimes and returns the result', async () => {
-                const { createDto, expectedDto } = buildCreateShowtimeDto({
+                const createDto = buildCreateShowtimeDto({
                     transactionId: testObjectId(0x1)
                 })
 
@@ -32,7 +33,9 @@ describe('ShowtimesService', () => {
                     transactionIds: [testObjectId(0x1)]
                 })
 
-                expect(showtimes).toEqual([expectedDto])
+                expect(showtimes).toEqual([
+                    { id: expect.any(String), ...omit(createDto, 'transactionId') }
+                ])
             })
         })
     })
@@ -41,23 +44,26 @@ describe('ShowtimesService', () => {
         const transactionId = testObjectId(0x1)
         const movieId = testObjectId(0x2)
         const theaterId = testObjectId(0x3)
-        const startTimes = [
-            new Date('2000-01-01T12:00'),
-            new Date('2000-01-01T14:00'),
-            new Date('2000-01-02T14:00'),
-            new Date('2000-01-03T12:00')
-        ]
         let expectedDtos: ShowtimeDto[]
 
         beforeEach(async () => {
-            const result = buildCreateShowtimeDtos(startTimes, {
-                transactionId,
-                movieId,
-                theaterId
-            })
-            const { success } = await fix.showtimesClient.createShowtimes(result.createDtos)
+            const createDtos = [
+                buildCreateShowtimeDto({ transactionId }),
+                buildCreateShowtimeDto({ movieId }),
+                buildCreateShowtimeDto({ theaterId }),
+                buildCreateShowtimeDto({ startTime: new Date('2020-01-01T12:00') }),
+                buildCreateShowtimeDto({ startTime: new Date('2020-01-01T14:00') }),
+                buildCreateShowtimeDto({ startTime: new Date('2020-01-02T14:00') }),
+                buildCreateShowtimeDto({ startTime: new Date('2020-01-03T12:00') })
+            ]
+
+            const { success } = await fix.showtimesClient.createShowtimes(createDtos)
             expect(success).toBeTruthy()
-            expectedDtos = result.expectedDtos
+
+            expectedDtos = createDtos.map((createDto) => ({
+                id: expect.any(String),
+                ...omit(createDto, 'transactionId')
+            }))
         })
 
         // 다양한 조건으로 필터링할 때
@@ -67,13 +73,13 @@ describe('ShowtimesService', () => {
                 const showtimes = await fix.showtimesClient.searchShowtimes({
                     transactionIds: [transactionId]
                 })
-                expectEqualUnsorted(showtimes, expectedDtos)
+                expectEqualUnsorted(showtimes, [expectedDtos[0]])
             })
 
             // movie ID로 필터링된 상영시간 목록을 반환한다.
             it('returns showtimes filtered by movie IDs', async () => {
                 const showtimes = await fix.showtimesClient.searchShowtimes({ movieIds: [movieId] })
-                expectEqualUnsorted(showtimes, expectedDtos)
+                expectEqualUnsorted(showtimes, [expectedDtos[1]])
             })
 
             // theater ID로 필터링된 상영시간 목록을 반환한다.
@@ -81,17 +87,17 @@ describe('ShowtimesService', () => {
                 const showtimes = await fix.showtimesClient.searchShowtimes({
                     theaterIds: [theaterId]
                 })
-                expectEqualUnsorted(showtimes, expectedDtos)
+                expectEqualUnsorted(showtimes, [expectedDtos[2]])
             })
 
             // 시작 시간 범위로 필터링된 상영시간 목록을 반환한다.
             it('returns showtimes filtered by a start time range', async () => {
                 const startTimeRange = {
-                    start: new Date('2000-01-01T00:00'),
-                    end: new Date('2000-01-02T12:00')
+                    start: new Date('2020-01-01T00:00'),
+                    end: new Date('2020-01-02T12:00')
                 }
                 const showtimes = await fix.showtimesClient.searchShowtimes({ startTimeRange })
-                expect(showtimes).toHaveLength(2)
+                expectEqualUnsorted(showtimes, [expectedDtos[3], expectedDtos[4]])
             })
         })
 
@@ -111,10 +117,11 @@ describe('ShowtimesService', () => {
         let showtimes: ShowtimeDto[]
 
         beforeEach(async () => {
-            const { createDtos } = buildCreateShowtimeDtos([
-                new Date('2000-01-01T12:00'),
-                new Date('2000-01-01T14:00')
-            ])
+            const createDtos = [
+                buildCreateShowtimeDto({ startTime: new Date('2000-01-01T12:00') }),
+                buildCreateShowtimeDto({ startTime: new Date('2000-01-01T14:00') })
+            ]
+
             showtimes = await createShowtimes(fix, createDtos)
         })
 
@@ -122,7 +129,10 @@ describe('ShowtimesService', () => {
         describe('when the showtime IDs exist', () => {
             // 해당 상영시간들을 반환한다
             it('returns the showtimes', async () => {
-                const gotShowtimes = await fix.showtimesClient.getShowtimes(pickIds(showtimes))
+                const showtimeIds = pickIds(showtimes)
+
+                const gotShowtimes = await fix.showtimesClient.getShowtimes(showtimeIds)
+
                 expectEqualUnsorted(gotShowtimes, showtimes)
             })
         })
@@ -132,6 +142,7 @@ describe('ShowtimesService', () => {
             // NotFoundException을 던진다
             it('throws NotFoundException', async () => {
                 const promise = fix.showtimesClient.getShowtimes([nullObjectId])
+
                 await expect(promise).rejects.toThrow('One or more documents not found')
             })
         })
@@ -146,7 +157,7 @@ describe('ShowtimesService', () => {
                     movieId,
                     startTime,
                     endTime: DateUtil.addMinutes(startTime, 1)
-                }).createDto
+                })
 
             const createDtos = [
                 buildCreateDto(testObjectId(0x1), DateUtil.addMinutes(now, -90)), // 과거
@@ -165,7 +176,7 @@ describe('ShowtimesService', () => {
         it('returns theater IDs that are showing a specific movie', async () => {
             const movieId = testObjectId(0x10)
             const buildCreateDto = (movieId: string, theaterId: string) =>
-                buildCreateShowtimeDto({ movieId, theaterId }).createDto
+                buildCreateShowtimeDto({ movieId, theaterId })
 
             const createDtos = [
                 buildCreateDto(movieId, testObjectId(0x1)),
@@ -188,7 +199,6 @@ describe('ShowtimesService', () => {
             const theaterId = testObjectId(0x2)
             const buildCreateDto = (theaterId: string, startTime: Date) =>
                 buildCreateShowtimeDto({ movieId, theaterId, startTime, endTime: startTime })
-                    .createDto
 
             const createDtos = [
                 buildCreateDto(theaterId, new Date('2000-01-01')),

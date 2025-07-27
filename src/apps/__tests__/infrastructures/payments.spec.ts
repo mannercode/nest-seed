@@ -15,10 +15,15 @@ describe('PaymentsService', () => {
     describe('processPayment()', () => {
         // 결제 요청을 성공적으로 처리한다.
         it('processes a payment request successfully', async () => {
-            const { createDto, expectedDto } = buildCreatePaymentDto()
+            const createDto = buildCreatePaymentDto()
 
             const payment = await fix.paymentsClient.processPayment(createDto)
-            expect(payment).toEqual(expectedDto)
+            expect(payment).toEqual({
+                ...createDto,
+                id: expect.any(String),
+                createdAt: expect.any(Date),
+                updatedAt: expect.any(Date)
+            })
         })
     })
 
@@ -27,7 +32,7 @@ describe('PaymentsService', () => {
         describe('when the payments exist', () => {
             // 해당하는 결제 정보를 반환한다.
             it('returns the corresponding payment records', async () => {
-                const { createDto } = buildCreatePaymentDto()
+                const createDto = buildCreatePaymentDto()
                 const createdPayment = await fix.paymentsClient.processPayment(createDto)
 
                 const gotPayments = await fix.paymentsClient.getPayments([createdPayment.id])

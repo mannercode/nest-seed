@@ -2,6 +2,7 @@ import {
     CustomerDto,
     MovieDto,
     PurchaseDto,
+    PurchaseItemDto,
     PurchaseItemType,
     Seatmap,
     TheaterDto,
@@ -29,6 +30,7 @@ export interface Fixture extends CommonFixture {
     availableTickets: TicketDto[]
     saleClosedTickets: TicketDto[]
     purchase: PurchaseDto
+    purchaseItems: PurchaseItemDto[]
 }
 
 export const createFixture = async (): Promise<Fixture> => {
@@ -49,6 +51,11 @@ export const createFixture = async (): Promise<Fixture> => {
 
     const saleClosedTickets = await createSaleClosedTickets(fix, movie, theater)
 
+    const purchaseItems = heldTickets.map(({ id }) => ({
+        type: PurchaseItemType.Ticket,
+        ticketId: id
+    }))
+
     const purchase = await createPurchase(fix)
 
     return {
@@ -58,7 +65,8 @@ export const createFixture = async (): Promise<Fixture> => {
         heldTickets,
         availableTickets,
         saleClosedTickets,
-        purchase
+        purchase,
+        purchaseItems
     }
 }
 
@@ -69,13 +77,11 @@ export const buildCreatePurchaseDto = (overrides = {}) => {
         purchaseItems: [{ type: PurchaseItemType.Ticket, ticketId: nullObjectId }],
         ...overrides
     }
-    const expectedDto = { id: expect.any(String), ...createDto }
-
-    return { createDto, expectedDto }
+    return createDto
 }
 
 export const createPurchase = async (fix: CommonFixture, override = {}) => {
-    const { createDto } = buildCreatePurchaseDto(override)
+    const createDto = buildCreatePurchaseDto(override)
 
     const purchase = await fix.purchasesService.createPurchase(createDto)
 
@@ -125,7 +131,7 @@ const createAllTickets = async (
     theater: TheaterDto,
     startTime: Date
 ) => {
-    const { createDto } = buildCreateShowtimeDto({
+    const createDto = buildCreateShowtimeDto({
         movieId: movie.id,
         theaterId: theater.id,
         startTime,
@@ -134,15 +140,14 @@ const createAllTickets = async (
 
     const showtime = (await createShowtimes(fix, [createDto]))[0]
 
-    const createDtos = Seatmap.getAllSeats(theater.seatmap).map((seat) => {
-        const { createDto } = buildCreateTicketDto({
+    const createDtos = Seatmap.getAllSeats(theater.seatmap).map((seat) =>
+        buildCreateTicketDto({
             movieId: showtime.movieId,
             theaterId: showtime.theaterId,
             showtimeId: showtime.id,
             seat
         })
-        return createDto
-    })
+    )
 
     return createTickets(fix, createDtos)
 }
