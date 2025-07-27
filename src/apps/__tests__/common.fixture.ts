@@ -90,7 +90,7 @@ export const buildCreateShowtimeDto = (overrides: Partial<CreateShowtimeDto> = {
         movieId: nullObjectId,
         theaterId: nullObjectId,
         startTime: new Date('2000-01-01T12:00'),
-        endTime: new Date('2000-01-01T12:01'),
+        endTime: new Date(0),
         ...overrides
     }
 

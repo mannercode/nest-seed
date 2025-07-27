@@ -49,7 +49,7 @@ describe('PurchasesService', () => {
                 expect(payments[0].amount).toEqual(createdPurchase.totalPrice)
             })
 
-            // 구매한 티켓의 상태를 "판매됨"으로 변경한다
+            // 구매한 티켓의 상태를 `Sold`으로 변경한다
             it('changes the status of purchased tickets to `Sold`', async () => {
                 const soldTickets = await getTickets(fix, pickIds(fix.heldTickets))
 
@@ -57,7 +57,7 @@ describe('PurchasesService', () => {
             })
 
             // 구매하지 않은 티켓의 상태는 그대로 유지한다
-            it('leaves the status of unpurchased tickets unchanged', async () => {
+            it('does not change the status of unpurchased tickets', async () => {
                 const remainingTickets = await getTickets(fix, pickIds(fix.availableTickets))
 
                 remainingTickets.forEach((ticket) =>
