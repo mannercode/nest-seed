@@ -1,6 +1,6 @@
 import { expectEqualUnsorted } from 'testlib'
 
-describe('expectEqualUnsorted()', () => {
+describe('expectEqualUnsorted', () => {
     // 비교에 성공하는 경우
     describe('when the comparison should succeed', () => {
         // 순서가 다른 배열을 비교한다.
@@ -18,7 +18,7 @@ describe('expectEqualUnsorted()', () => {
         })
 
         // expect.anything() 필드를 무시한다.
-        it('ignores fields with expect.anything()', () => {
+        it('ignores fields with expect.anything', () => {
             const actual = [
                 { id: expect.anything(), name: 'Jane', age: 25 },
                 { id: expect.anything(), name: 'John', age: 30 }

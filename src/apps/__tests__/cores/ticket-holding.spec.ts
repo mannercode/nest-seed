@@ -16,7 +16,7 @@ describe('TicketHoldingService', () => {
         await fix?.teardown()
     })
 
-    describe('holdTickets()', () => {
+    describe('holdTickets', () => {
         // 다른 고객이 이미 티켓을 선점했을 때
         describe('when another customer has already held the tickets', () => {
             // 선점에 실패한다.
@@ -138,7 +138,7 @@ describe('TicketHoldingService', () => {
         })
     })
 
-    describe('searchHeldTicketIds()', () => {
+    describe('searchHeldTicketIds', () => {
         const customerId = testObjectId(0x10)
         const ticketIds = [testObjectId(0x30), testObjectId(0x31)]
         const showtimeId = testObjectId(0x40)
@@ -173,7 +173,7 @@ describe('TicketHoldingService', () => {
         })
     })
 
-    describe('releaseTickets()', () => {
+    describe('releaseTickets', () => {
         const customerId = testObjectId(0x1)
         const customerB = testObjectId(0x2)
         const ticketIds = [testObjectId(0x30), testObjectId(0x31)]

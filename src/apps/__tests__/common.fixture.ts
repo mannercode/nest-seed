@@ -4,9 +4,10 @@ import {
     HoldTicketsDto,
     MovieGenre,
     MovieRating,
+    PurchaseItemType,
     TicketStatus
 } from 'apps/cores'
-import { newObjectId } from 'common'
+import { DateUtil, newObjectId } from 'common'
 import { uniq } from 'lodash'
 import { nullDate, nullObjectId, testObjectId } from 'testlib'
 import { CommonFixture, TestFiles } from './__helpers__'
@@ -93,6 +94,7 @@ export const buildCreateShowtimeDto = (overrides: Partial<CreateShowtimeDto> = {
         ...overrides
     }
 
+    createDto.endTime = DateUtil.addMinutes(createDto.startTime, 1)
     return createDto
 }
 
@@ -146,6 +148,24 @@ export const createWatchRecord = async (fix: CommonFixture, override = {}) => {
 
     const watchRecord = await fix.watchRecordsClient.createWatchRecord(createDto)
     return watchRecord
+}
+
+export const buildCreatePurchaseDto = (overrides = {}) => {
+    const createDto = {
+        customerId: nullObjectId,
+        totalPrice: 1,
+        purchaseItems: [{ type: PurchaseItemType.Ticket, ticketId: nullObjectId }],
+        ...overrides
+    }
+    return createDto
+}
+
+export const createPurchase = async (fix: CommonFixture, override = {}) => {
+    const createDto = buildCreatePurchaseDto(override)
+
+    const purchase = await fix.purchasesService.createPurchase(createDto)
+
+    return purchase
 }
 
 export const holdTickets = async (fix: CommonFixture, holdDto?: Partial<HoldTicketsDto>) => {

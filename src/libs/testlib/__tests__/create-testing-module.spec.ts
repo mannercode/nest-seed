@@ -1,6 +1,6 @@
 import type { Fixture } from './create-testing-module.fixture'
 
-describe('createTestingModule()', () => {
+describe('createTestingModule', () => {
     let fix: Fixture
 
     beforeEach(async () => {

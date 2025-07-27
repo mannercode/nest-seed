@@ -72,6 +72,7 @@ describe('CustomersService', () => {
                     .patch(`/customers/${fix.customer.id}`)
                     .body(updateDto)
                     .ok(expected)
+
                 await fix.httpClient.get(`/customers/${fix.customer.id}`).ok(expected)
             })
         })

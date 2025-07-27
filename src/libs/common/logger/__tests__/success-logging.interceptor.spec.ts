@@ -24,7 +24,7 @@ describe('SuccessLoggingInterceptor', () => {
         })
 
         // HTTP 요청이 성공하면 Logger.verbose()로 기록해야 한다
-        it('Should log successful HTTP requests via Logger.verbose()', async () => {
+        it('Should log successful HTTP requests via Logger.verbose', async () => {
             const body = { key: 'value' }
             await fix.httpClient.post('/success').body(body).created({ result: 'success' })
 
@@ -38,7 +38,7 @@ describe('SuccessLoggingInterceptor', () => {
         })
 
         // RPC 요청이 성공하면 Logger.verbose()로 기록해야 한다
-        it('Should log successful RPC requests via Logger.verbose()', async () => {
+        it('Should log successful RPC requests via Logger.verbose', async () => {
             const subject = withTestId('success')
             const data = { key: 'value' }
             await fix.rpcClient.expect(subject, data, { result: 'success' })

@@ -17,7 +17,7 @@ describe('ShowtimesService', () => {
         await fix?.teardown()
     })
 
-    describe('createShowtimes()', () => {
+    describe('createShowtimes', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
             // 상영시간을 생성하고 결과를 반환한다
@@ -40,7 +40,7 @@ describe('ShowtimesService', () => {
         })
     })
 
-    describe('searchShowtimes()', () => {
+    describe('searchShowtimes', () => {
         const transactionId = testObjectId(0x1)
         const movieId = testObjectId(0x2)
         const theaterId = testObjectId(0x3)
@@ -113,7 +113,7 @@ describe('ShowtimesService', () => {
         })
     })
 
-    describe('getShowtimes()', () => {
+    describe('getShowtimes', () => {
         let showtimes: ShowtimeDto[]
 
         beforeEach(async () => {
@@ -148,16 +148,12 @@ describe('ShowtimesService', () => {
         })
     })
 
-    describe('searchShowingMovieIds()', () => {
+    describe('searchShowingMovieIds', () => {
         // 현재 상영 중이거나 곧 상영될 영화의 ID 목록을 반환한다.
         it('returns the IDs of movies currently or soon to be showing', async () => {
             const now = new Date()
             const buildCreateDto = (movieId: string, startTime: Date) =>
-                buildCreateShowtimeDto({
-                    movieId,
-                    startTime,
-                    endTime: DateUtil.addMinutes(startTime, 1)
-                })
+                buildCreateShowtimeDto({ movieId, startTime })
 
             const createDtos = [
                 buildCreateDto(testObjectId(0x1), DateUtil.addMinutes(now, -90)), // 과거
@@ -171,7 +167,7 @@ describe('ShowtimesService', () => {
         })
     })
 
-    describe('searchTheaterIds()', () => {
+    describe('searchTheaterIds', () => {
         // 특정 영화를 상영하는 영화관의 ID 목록을 반환한다.
         it('returns theater IDs that are showing a specific movie', async () => {
             const movieId = testObjectId(0x10)
@@ -192,7 +188,7 @@ describe('ShowtimesService', () => {
         })
     })
 
-    describe('searchShowdates()', () => {
+    describe('searchShowdates', () => {
         // 특정 영화와 영화관의 상영 가능 날짜 목록을 반환한다.
         it('returns available show dates for a specific movie and theater', async () => {
             const movieId = testObjectId(0x1)

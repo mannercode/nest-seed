@@ -17,7 +17,7 @@ describe('TicketsService', () => {
         await fix?.teardown()
     })
 
-    describe('createTickets()', () => {
+    describe('createTickets', () => {
         // 새로운 티켓을 성공적으로 생성한다.
         it('creates new tickets successfully', async () => {
             const createDto = buildCreateTicketDto()
@@ -29,7 +29,7 @@ describe('TicketsService', () => {
         })
     })
 
-    describe('searchTickets()', () => {
+    describe('searchTickets', () => {
         const transactionIds = [testObjectId(0x10), testObjectId(0x11)]
         const movieIds = [testObjectId(0x20), testObjectId(0x21)]
         const theaterIds = [testObjectId(0x30), testObjectId(0x31)]
@@ -97,7 +97,7 @@ describe('TicketsService', () => {
         })
     })
 
-    describe('updateTicketStatus()', () => {
+    describe('updateTicketStatus', () => {
         const transactionId = testObjectId(0x01)
         let tickets: TicketDto[]
 
@@ -136,7 +136,7 @@ describe('TicketsService', () => {
         })
     })
 
-    describe('getTicketSalesForShowtimes()', () => {
+    describe('getTicketSalesForShowtimes', () => {
         // 주어진 상영시간에 대한 판매 통계를 반환한다.
         it('returns the sales statistics for the given showtimes', async () => {
             const showtimeId = testObjectId(0x10)

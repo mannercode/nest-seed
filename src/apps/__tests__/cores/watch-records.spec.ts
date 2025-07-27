@@ -15,7 +15,7 @@ describe('WatchRecordsService', () => {
         await fix?.teardown()
     })
 
-    describe('createWatchRecord()', () => {
+    describe('createWatchRecord', () => {
         // 새로운 관람 기록을 성공적으로 생성한다.
         it('creates new watch record successfully', async () => {
             const createDto = buildCreateWatchRecordDto()
@@ -25,7 +25,7 @@ describe('WatchRecordsService', () => {
         })
     })
 
-    describe('searchWatchRecordsPage()', () => {
+    describe('searchWatchRecordsPage', () => {
         let records: WatchRecordDto[]
         const customerId = testObjectId(0xa1)
 

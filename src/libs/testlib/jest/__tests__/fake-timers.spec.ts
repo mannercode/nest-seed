@@ -15,7 +15,7 @@ describe('jest.useFakeTimers examples', () => {
         jest.useRealTimers()
     })
 
-    test('advanceTimersByTime()', () => {
+    test('advanceTimersByTime', () => {
         const mockCallback = jest.fn()
 
         setTimeout(() => mockCallback('Real value'), 1000)

@@ -1,7 +1,7 @@
 import { lastValueFrom } from 'rxjs'
 import { TestService } from './method-log.fixture'
 
-describe('@MethodLog()', () => {
+describe('@MethodLog', () => {
     let service: TestService
     let spyLog: jest.SpyInstance
     let spyError: jest.SpyInstance

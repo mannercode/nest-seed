@@ -1,7 +1,7 @@
 import { withTestId } from 'testlib'
 import type { Fixture } from './create-test-context.fixture'
 
-describe('createTestContext()', () => {
+describe('createTestContext', () => {
     let fix: Fixture
 
     beforeEach(async () => {

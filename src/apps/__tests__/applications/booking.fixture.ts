@@ -36,8 +36,7 @@ const createAllShowtimes = async (fix: CommonFixture, theaters: TheaterDto[], mo
             const createDto = buildCreateShowtimeDto({
                 movieId: movie.id,
                 theaterId: theater.id,
-                startTime,
-                endTime: DateUtil.addMinutes(startTime, 1)
+                startTime
             })
             return createDto
         })

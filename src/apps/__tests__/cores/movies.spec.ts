@@ -1,5 +1,5 @@
 import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
-import { FileUtil, generateShortId, Path } from 'common'
+import { FileUtil, Path } from 'common'
 import { expectEqualUnsorted, nullObjectId, objectToFields } from 'testlib'
 import { Errors } from '../__helpers__'
 import { buildCreateMovieDto, createMovie } from '../common.fixture'
@@ -27,10 +27,8 @@ describe('MoviesService', () => {
             beforeEach(async () => {
                 tempDir = await Path.createTempDirectory()
 
-                // Arrange
                 createDto = buildCreateMovieDto()
 
-                // Act
                 const { body } = await fix.httpClient
                     .post('/movies')
                     .attachments([{ name: 'files', file: fix.image.path }])
@@ -55,7 +53,7 @@ describe('MoviesService', () => {
 
             // 첨부된 파일을 다운로드한다
             it('downloads the attached file', async () => {
-                const downloadPath = Path.join(tempDir, generateShortId() + '.tmp')
+                const downloadPath = Path.join(tempDir, 'download.tmp')
 
                 await fix.httpClient.get(createdMovie.imageUrls[0]).download(downloadPath).ok()
 

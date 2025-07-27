@@ -12,7 +12,7 @@ describe('PaymentsService', () => {
         await fix?.teardown()
     })
 
-    describe('processPayment()', () => {
+    describe('processPayment', () => {
         // 결제 요청을 성공적으로 처리한다.
         it('processes a payment request successfully', async () => {
             const createDto = buildCreatePaymentDto()
@@ -27,7 +27,7 @@ describe('PaymentsService', () => {
         })
     })
 
-    describe('getPayments()', () => {
+    describe('getPayments', () => {
         // 존재하는 결제 정보일 때
         describe('when the payments exist', () => {
             // 해당하는 결제 정보를 반환한다.
