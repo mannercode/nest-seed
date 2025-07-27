@@ -67,7 +67,7 @@ export const createFixture = async (): Promise<Fixture> => {
     }
 }
 
-export const buildCreatePurchaseDtoFromTickets = (customer: CustomerDto, tickets: TicketDto[]) => {
+export const buildCreateTicketPurchaseDto = (customer: CustomerDto, tickets: TicketDto[]) => {
     const purchaseItems = tickets.map(({ id }) => ({
         type: PurchaseItemType.Ticket,
         ticketId: id

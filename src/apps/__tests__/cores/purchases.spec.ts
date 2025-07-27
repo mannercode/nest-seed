@@ -3,7 +3,7 @@ import { pickIds } from 'common'
 import { nullObjectId } from 'testlib'
 import { Errors } from '../__helpers__'
 import { getPayments, getTickets } from '../common.fixture'
-import { buildCreatePurchaseDtoFromTickets, Fixture } from './purchases.fixture'
+import { buildCreateTicketPurchaseDto, Fixture } from './purchases.fixture'
 
 describe('PurchasesService', () => {
     let fix: Fixture
@@ -24,7 +24,7 @@ describe('PurchasesService', () => {
             let createdPurchase: PurchaseDto
 
             beforeEach(async () => {
-                createDto = buildCreatePurchaseDtoFromTickets(fix.customer, fix.heldTickets)
+                createDto = buildCreateTicketPurchaseDto(fix.customer, fix.heldTickets)
 
                 const { body } = await fix.httpClient.post('/purchases').body(createDto).created()
 
@@ -75,7 +75,7 @@ describe('PurchasesService', () => {
 
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                const createDto = buildCreatePurchaseDtoFromTickets(fix.customer, fix.heldTickets)
+                const createDto = buildCreateTicketPurchaseDto(fix.customer, fix.heldTickets)
 
                 await fix.httpClient
                     .post('/purchases')
@@ -91,7 +91,7 @@ describe('PurchasesService', () => {
         describe('when the purchase deadline has passed', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                const createDto = buildCreatePurchaseDtoFromTickets(
+                const createDto = buildCreateTicketPurchaseDto(
                     fix.customer,
                     fix.closedSaleTickets.slice(0, 2)
                 )
@@ -112,7 +112,7 @@ describe('PurchasesService', () => {
         describe('when purchasing unheld tickets', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                const createDto = buildCreatePurchaseDtoFromTickets(
+                const createDto = buildCreateTicketPurchaseDto(
                     fix.customer,
                     fix.availableTickets.slice(2)
                 )
@@ -137,7 +137,7 @@ describe('PurchasesService', () => {
 
             // 500 Internal Server Error를 반환하고 구매를 롤백한다
             it('returns 500 Internal Server Error and rolls back the purchase', async () => {
-                const createDto = buildCreatePurchaseDtoFromTickets(fix.customer, fix.heldTickets)
+                const createDto = buildCreateTicketPurchaseDto(fix.customer, fix.heldTickets)
 
                 await fix.httpClient.post('/purchases').body(createDto).internalServerError()
 

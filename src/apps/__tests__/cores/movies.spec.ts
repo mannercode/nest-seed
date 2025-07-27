@@ -90,6 +90,7 @@ describe('MoviesService', () => {
                 const expected = { ...fix.movie, ...updateDto }
 
                 await fix.httpClient.patch(`/movies/${fix.movie.id}`).body(updateDto).ok(expected)
+
                 await fix.httpClient.get(`/movies/${fix.movie.id}`).ok(expected)
             })
         })
@@ -252,6 +253,7 @@ describe('MoviesService', () => {
                     .get('/movies')
                     .query({ title: 'title-a' })
                     .ok()
+
                 expectEqualUnsorted(body.items, [movies[0], movies[1]])
             })
         })
@@ -292,7 +294,7 @@ describe('MoviesService', () => {
         // `director` 부분 문자열이 제공된 경우
         describe('when a partial `director` is provided', () => {
             // 감독 이름에 해당 부분 문자열이 포함된 영화 목록을 반환한다
-            it('returns the movie list whose director contains the given substring', async () => {
+            it('returns the movie list whose director`s name contains the given substring', async () => {
                 const { body } = await fix.httpClient
                     .get('/movies')
                     .query({ director: 'James' })
