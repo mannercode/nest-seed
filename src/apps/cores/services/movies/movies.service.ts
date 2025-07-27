@@ -68,7 +68,7 @@ export class MoviesService {
             'director',
             'rating'
         ])
-        dto.images = movie.imageIds.map((id) => `${HttpRoutes.StorageFiles}/${id.toString()}`)
+        dto.imageUrls = movie.imageIds.map((id) => `${HttpRoutes.StorageFiles}/${id.toString()}`)
 
         return dto
     }

@@ -57,7 +57,7 @@ describe('MoviesService', () => {
             it('downloads the attached file', async () => {
                 const downloadPath = Path.join(tempDir, generateShortId() + '.tmp')
 
-                await fix.httpClient.get(movie.images[0]).download(downloadPath).ok()
+                await fix.httpClient.get(movie.imageUrls[0]).download(downloadPath).ok()
 
                 expect(await Path.getSize(downloadPath)).toEqual(fix.image.size)
                 expect(await getChecksum(downloadPath)).toEqual(await getChecksum(fix.image.path))
@@ -122,7 +122,7 @@ describe('MoviesService', () => {
         describe('when the movie exists', () => {
             // 영화를 삭제하고 파일도 삭제한다
             it('deletes the movie and its files', async () => {
-                const fileUrl = fix.movie.images[0]
+                const fileUrl = fix.movie.imageUrls[0]
                 const fileId = Path.basename(fileUrl)
 
                 await fix.httpClient.delete(`/movies/${fix.movie.id}`).ok()

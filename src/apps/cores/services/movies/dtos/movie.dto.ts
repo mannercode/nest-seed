@@ -9,5 +9,5 @@ export class MovieDto {
     durationInSeconds: number
     director: string
     rating: MovieRating
-    images: string[]
+    imageUrls: string[]
 }
