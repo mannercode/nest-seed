@@ -1,8 +1,8 @@
 import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
-import { generateShortId, getChecksum, Path, pickIds } from 'common'
+import { generateShortId, getChecksum, Path } from 'common'
 import { expectEqualUnsorted, nullObjectId, objectToFields } from 'testlib'
 import { Errors } from '../__helpers__'
-import { buildCreateMovieDto, createMovie, getStorageFiles } from '../common.fixture'
+import { buildCreateMovieDto, createMovie } from '../common.fixture'
 import { Fixture } from './movies.fixture'
 
 describe('MoviesService', () => {
@@ -48,7 +48,7 @@ describe('MoviesService', () => {
             it('creates and returns the movie', async () => {
                 expect(movie).toEqual({
                     id: expect.any(String),
-                    images: expect.any(Array),
+                    imageUrls: expect.any(Array),
                     ...createDto
                 })
             })

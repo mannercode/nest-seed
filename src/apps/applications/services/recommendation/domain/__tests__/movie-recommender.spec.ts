@@ -14,7 +14,7 @@ describe('MovieRecommender', () => {
             durationInSeconds: 0,
             director: '.',
             rating: MovieRating.PG,
-            images: []
+            imageUrls: []
         })
 
         // 사용자의 관람 이력이 없을 때, 개봉일 최신 순으로 정렬한다
