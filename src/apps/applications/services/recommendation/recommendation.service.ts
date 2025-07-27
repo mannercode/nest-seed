@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common'
-import { OrderDirection } from 'common'
+import { DateUtil, OrderDirection } from 'common'
 import { MovieDto, MoviesClient, ShowtimesClient, WatchRecordsClient } from 'apps/cores'
 import { MovieRecommender } from './domain'
+import { Rules } from 'shared'
 
 @Injectable()
 export class RecommendationService {
@@ -12,7 +13,11 @@ export class RecommendationService {
     ) {}
 
     async searchRecommendedMovies(customerId: string | null) {
-        const showingMovieIds = await this.showtimesService.searchShowingMovieIds()
+        const startTime = DateUtil.addMinutes(new Date(), Rules.Ticket.purchaseDeadlineInMinutes)
+
+        const showingMovieIds = await this.showtimesService.searchMovieIds({
+            startTimeRange: { start: startTime }
+        })
 
         const showingMovies = await this.moviesService.getMovies(showingMovieIds)
         let watchedMovies: MovieDto[] = []

@@ -39,7 +39,7 @@ export const Messages = createMessagePatternMap(
             createShowtimes: null,
             getShowtimes: null,
             searchShowtimes: null,
-            searchShowingMovieIds: null,
+            searchMovieIds: null,
             searchTheaterIds: null,
             searchShowdates: null,
             allShowtimesExist: null

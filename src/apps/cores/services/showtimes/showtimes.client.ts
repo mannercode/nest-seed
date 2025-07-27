@@ -20,8 +20,8 @@ export class ShowtimesClient {
         return this.proxy.getJson(Messages.Showtimes.searchShowtimes, searchDto)
     }
 
-    searchShowingMovieIds(): Promise<string[]> {
-        return this.proxy.getJson(Messages.Showtimes.searchShowingMovieIds, {})
+    searchMovieIds(searchDto: SearchShowtimesDto): Promise<string[]> {
+        return this.proxy.getJson(Messages.Showtimes.searchMovieIds, searchDto)
     }
 
     searchTheaterIds(searchDto: SearchShowtimesDto): Promise<string[]> {

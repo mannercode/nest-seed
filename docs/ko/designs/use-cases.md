@@ -7,12 +7,13 @@
 
 ## glossary
 
--   상영중 showing
--   상영시간 showtime
--   상영일 showdate
--   예매 booking
--   구매 purchase
--   환불 refund
+- 상영 중 showing: 상영 기간에 포함되어 있다
+- 재생 중 playing: 현재 극장에서 영화를 재생 중이다
+- 상영시간 showtime
+- 상영일 showdate
+- 예매 booking
+- 구매 purchase
+- 환불 refund
 
 ## 영화 예매 시스템 유스케이스
 

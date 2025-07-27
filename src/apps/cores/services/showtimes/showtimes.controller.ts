@@ -26,9 +26,9 @@ export class ShowtimesController {
         return this.service.searchShowtimes(searchDto)
     }
 
-    @MessagePattern(Messages.Showtimes.searchShowingMovieIds)
-    searchShowingMovieIds() {
-        return this.service.searchShowingMovieIds()
+    @MessagePattern(Messages.Showtimes.searchMovieIds)
+    searchMovieIds(@Payload() searchDto: SearchShowtimesDto) {
+        return this.service.searchMovieIds(searchDto)
     }
 
     @MessagePattern(Messages.Showtimes.searchTheaterIds)

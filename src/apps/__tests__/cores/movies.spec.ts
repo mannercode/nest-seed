@@ -290,9 +290,9 @@ describe('MoviesService', () => {
         })
 
         // `director` 부분 문자열이 제공된 경우
-        describe('when a partial `director` name is provided', () => {
+        describe('when a partial `director` is provided', () => {
             // 감독 이름에 해당 부분 문자열이 포함된 영화 목록을 반환한다
-            it('returns the movie list whose director name contains the given substring', async () => {
+            it('returns the movie list whose director contains the given substring', async () => {
                 const { body } = await fix.httpClient
                     .get('/movies')
                     .query({ director: 'James' })

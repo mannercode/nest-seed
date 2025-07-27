@@ -1,5 +1,4 @@
 import { MovieDto, Seatmap, ShowtimeDto, TheaterDto } from 'apps/cores'
-import { DateUtil } from 'common'
 import { CommonFixture, createCommonFixture } from '../__helpers__'
 import {
     buildCreateShowtimeDto,

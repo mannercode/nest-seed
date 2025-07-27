@@ -36,7 +36,7 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         return showtimes
     }
 
-    async findMovieIds(searchDto: SearchShowtimesDto) {
+    async searchMovieIds(searchDto: SearchShowtimesDto) {
         const query = this.buildQuery(searchDto)
 
         const movieIds = await this.model.distinct('movieId', query).exec()
