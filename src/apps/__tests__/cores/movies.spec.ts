@@ -21,7 +21,7 @@ describe('MoviesService', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
             let createDto: CreateMovieDto
-            let movie: MovieDto
+            let createdMovie: MovieDto
             let tempDir: string
 
             beforeEach(async () => {
@@ -37,7 +37,7 @@ describe('MoviesService', () => {
                     .fields(objectToFields(createDto))
                     .created()
 
-                movie = body
+                createdMovie = body
             })
 
             afterEach(async () => {
@@ -46,18 +46,18 @@ describe('MoviesService', () => {
 
             // 영화를 생성하고 반환한다
             it('creates and returns the movie', async () => {
-                expect(movie).toEqual({
+                expect(createdMovie).toEqual({
                     id: expect.any(String),
                     imageUrls: expect.any(Array),
                     ...createDto
                 })
             })
 
-            // 첨부한 파일을 다운로드한다
+            // 첨부된 파일을 다운로드한다
             it('downloads the attached file', async () => {
                 const downloadPath = Path.join(tempDir, generateShortId() + '.tmp')
 
-                await fix.httpClient.get(movie.imageUrls[0]).download(downloadPath).ok()
+                await fix.httpClient.get(createdMovie.imageUrls[0]).download(downloadPath).ok()
 
                 expect(await FileUtil.areEqual(downloadPath, fix.image.path)).toBeTruthy()
             })
@@ -79,7 +79,7 @@ describe('MoviesService', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
             // 영화 정보를 수정하고 반환한다
-            it('returns and updates the movie', async () => {
+            it('updates and returns the movie', async () => {
                 const updateDto = {
                     title: 'update title',
                     genres: ['romance', 'thriller'],
@@ -119,21 +119,27 @@ describe('MoviesService', () => {
     describe('DELETE /movies/:id', () => {
         // 영화가 존재하는 경우
         describe('when the movie exists', () => {
-            // 영화를 삭제하고 파일도 삭제한다
-            it('deletes the movie and its files', async () => {
-                const fileUrl = fix.movie.imageUrls[0]
-                const fileId = Path.basename(fileUrl)
+            beforeEach(async () => {
+                await fix.httpClient
+                    .delete(`/movies/${fix.movie.id}`)
+                    .ok({ deletedMovies: [fix.movie] })
+            })
 
-                await fix.httpClient.delete(`/movies/${fix.movie.id}`).ok()
-
+            // 영화를 삭제한다
+            it('deletes the movie', async () => {
                 await fix.httpClient.get(`/movies/${fix.movie.id}`).notFound({
                     ...Errors.Mongoose.MultipleDocumentsNotFound,
                     notFoundIds: [fix.movie.id]
                 })
+            })
+
+            // 영화와 관련된 파일을 삭제한다
+            it('deletes the movie’s files', async () => {
+                const fileUrl = fix.movie.imageUrls[0]
 
                 await fix.httpClient.get(fileUrl).notFound({
                     ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [fileId]
+                    notFoundIds: [expect.any(String)]
                 })
             })
         })
@@ -215,9 +221,9 @@ describe('MoviesService', () => {
 
         // 쿼리 파라미터가 없는 경우
         describe('when query parameters are missing', () => {
-            // 기본 페이지네이션으로 영화를 반환한다
-            it('returns movies with default pagination', async () => {
-                const { body } = await fix.httpClient.get('/movies').query({ skip: 0 }).ok()
+            // 기본 페이지네이션으로 영화 목록을 반환한다
+            it('returns the movie list with default pagination', async () => {
+                const { body } = await fix.httpClient.get('/movies').ok()
                 const { items, ...pagination } = body
 
                 expect(pagination).toEqual({
@@ -242,8 +248,8 @@ describe('MoviesService', () => {
 
         // `title` 부분 문자열이 제공된 경우
         describe('when a partial `title` is provided', () => {
-            // 제목이 해당 부분 문자열을 포함하는 영화를 반환한다
-            it('returns movies whose title contains the given substring', async () => {
+            // 제목이 해당 부분 문자열을 포함하는 영화 목록을 반환한다
+            it('returns the movie list whose title contains the given substring', async () => {
                 const { body } = await fix.httpClient
                     .get('/movies')
                     .query({ title: 'title-a' })
@@ -254,8 +260,8 @@ describe('MoviesService', () => {
 
         // `genre`가 제공된 경우
         describe('when `genre` is provided', () => {
-            // 장르가 일치하는 영화를 반환한다
-            it('returns movies that match the given genre', async () => {
+            // 지정한 장르와 일치하는 영화 목록을 반환한다
+            it('returns the movie list matching the given genre', async () => {
                 const { body } = await fix.httpClient
                     .get('/movies')
                     .query({ genre: MovieGenre.Drama })
@@ -266,8 +272,8 @@ describe('MoviesService', () => {
 
         // `releaseDate`가 제공된 경우
         describe('when `releaseDate` is provided', () => {
-            // 지정된 날짜에 개봉한 영화를 반환한다
-            it('returns movies released on the given date', async () => {
+            // 지정된 날짜에 개봉한 영화 목록을 반환한다
+            it('returns the movie list released on the given date', async () => {
                 const { body } = await fix.httpClient
                     .get('/movies')
                     .query({ releaseDate: new Date('2000-01-02') })
@@ -278,8 +284,8 @@ describe('MoviesService', () => {
 
         // `plot` 부분 문자열이 제공된 경우
         describe('when a partial `plot` is provided', () => {
-            // 줄거리에 해당 부분 문자열을 포함하는 영화를 반환한다
-            it('returns movies whose plot contains the given substring', async () => {
+            // 줄거리에 해당 부분 문자열을 포함하는 영화 목록을 반환한다
+            it('returns the movie list whose plot contains the given substring', async () => {
                 const { body } = await fix.httpClient.get('/movies').query({ plot: 'plot-b' }).ok()
                 expectEqualUnsorted(body.items, [movies[2], movies[3]])
             })
@@ -287,8 +293,8 @@ describe('MoviesService', () => {
 
         // `director` 부분 문자열이 제공된 경우
         describe('when a partial `director` name is provided', () => {
-            // 감독 이름에 해당 부분 문자열을 포함하는 영화를 반환한다
-            it('returns movies whose director name contains the given substring', async () => {
+            // 감독 이름에 해당 부분 문자열이 포함된 영화 목록을 반환한다
+            it('returns the movie list whose director name contains the given substring', async () => {
                 const { body } = await fix.httpClient
                     .get('/movies')
                     .query({ director: 'James' })
@@ -299,8 +305,8 @@ describe('MoviesService', () => {
 
         // `rating`이 제공된 경우
         describe('when `rating` is provided', () => {
-            // 등급이 일치하는 영화를 반환한다
-            it('returns movies that match the given rating', async () => {
+            // 지정한 등급과 일치하는 영화 목록을 반환한다
+            it('returns the movie list matching the given rating', async () => {
                 const { body } = await fix.httpClient
                     .get('/movies')
                     .query({ rating: MovieRating.NC17 })

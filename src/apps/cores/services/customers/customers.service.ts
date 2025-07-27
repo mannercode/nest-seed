@@ -56,8 +56,9 @@ export class CustomersService {
     }
 
     async deleteCustomers(customerIds: string[]) {
-        const deleteResult = await this.repository.deleteByIds(customerIds)
-        return deleteResult
+        const deletedCustomers = await this.repository.deleteByIds(customerIds)
+
+        return { deletedCustomers: this.toDtos(deletedCustomers) }
     }
 
     async searchCustomersPage(searchDto: SearchCustomersPageDto) {

@@ -52,14 +52,14 @@ export class StorageFilesService {
     }
 
     async deleteFiles(fileIds: string[]) {
-        const deleteResult = await this.repository.deleteByIds(fileIds)
+        const deletedFiles = await this.repository.deleteByIds(fileIds)
 
         for (const fileId of fileIds) {
             const targetPath = this.getStoragePath(fileId)
             await Path.delete(targetPath)
         }
 
-        return deleteResult
+        return { deletedStorageFiles: this.toDtos(deletedFiles) }
     }
 
     private getStoragePath(fileId: string) {

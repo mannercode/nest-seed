@@ -26,7 +26,7 @@ describe('PurchasesService', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
             let createDto: CreatePurchaseDto
-            let purchase: PurchaseDto
+            let createdPurchase: PurchaseDto
 
             beforeEach(async () => {
                 // Arrange
@@ -43,12 +43,12 @@ describe('PurchasesService', () => {
                 // Act
                 const { body } = await fix.httpClient.post('/purchases').body(createDto).created()
 
-                purchase = body
+                createdPurchase = body
             })
 
             // 구매를 생성하고 반환한다
             it('creates and returns the purchase', async () => {
-                expect(purchase).toEqual({
+                expect(createdPurchase).toEqual({
                     id: expect.any(String),
                     createdAt: expect.any(Date),
                     updatedAt: expect.any(Date),
@@ -59,12 +59,12 @@ describe('PurchasesService', () => {
 
             // 연관된 결제 기록을 생성한다
             it('creates a corresponding payment record', async () => {
-                const payments = await getPayments(fix, [purchase.paymentId])
-                expect(payments[0].amount).toEqual(purchase.totalPrice)
+                const payments = await getPayments(fix, [createdPurchase.paymentId])
+                expect(payments[0].amount).toEqual(createdPurchase.totalPrice)
             })
 
             // 구매한 티켓의 상태를 "판매됨"으로 변경한다
-            it('Changes the status of purchased tickets to `Sold`', async () => {
+            it('changes the status of purchased tickets to `Sold`', async () => {
                 const soldTickets = await getTickets(fix, pickIds(fix.heldTickets))
                 soldTickets.forEach((ticket) => expect(ticket.status).toBe(TicketStatus.Sold))
             })
@@ -80,13 +80,13 @@ describe('PurchasesService', () => {
 
         // 최대 구매 수량을 초과한 경우
         describe('when the number of tickets exceeds the maximum', () => {
-            let exceedingMaxPurchaseItems: PurchaseItemDto[]
+            let excessPurchaseItems: PurchaseItemDto[]
 
             beforeEach(async () => {
                 const { Rules } = await import('shared')
                 Rules.Ticket.maxTicketsPerPurchase = fix.heldTickets.length - 1
 
-                exceedingMaxPurchaseItems = fix.heldTickets.map(({ id }) => ({
+                excessPurchaseItems = fix.heldTickets.map(({ id }) => ({
                     type: PurchaseItemType.Ticket,
                     ticketId: id
                 }))
@@ -97,7 +97,7 @@ describe('PurchasesService', () => {
                 const purchase: CreatePurchaseDto = {
                     customerId: fix.customer.id,
                     totalPrice: 1,
-                    purchaseItems: exceedingMaxPurchaseItems
+                    purchaseItems: excessPurchaseItems
                 }
 
                 await fix.httpClient
@@ -114,7 +114,7 @@ describe('PurchasesService', () => {
         describe('when the purchase deadline has passed', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                const deadlineExceededPurchaseItems = [
+                const expiredPurchaseItems = [
                     { type: PurchaseItemType.Ticket, ticketId: fix.saleClosedTickets[0].id }
                 ]
 
@@ -123,7 +123,7 @@ describe('PurchasesService', () => {
                     .body({
                         customerId: fix.customer.id,
                         totalPrice: 1,
-                        purchaseItems: deadlineExceededPurchaseItems
+                        purchaseItems: expiredPurchaseItems
                     })
                     .badRequest({
                         ...Errors.TicketPurchase.DeadlineExceeded,
@@ -155,13 +155,13 @@ describe('PurchasesService', () => {
 
         // 구매 처리 중 내부 오류가 발생하는 경우
         describe('when an internal error occurs during purchase', () => {
-            let spyRollback: jest.SpyInstance
+            let rollbackPurchaseSpy: jest.SpyInstance
 
             beforeEach(() => {
                 jest.spyOn(fix.ticketsService, 'updateTicketStatus').mockImplementationOnce(() => {
                     throw new Error('purchase error')
                 })
-                spyRollback = jest.spyOn(fix.ticketPurchaseProcessor, 'rollbackPurchase')
+                rollbackPurchaseSpy = jest.spyOn(fix.ticketPurchaseProcessor, 'rollbackPurchase')
             })
 
             // 500 Internal Server Error를 반환하고 구매를 롤백한다
@@ -175,7 +175,7 @@ describe('PurchasesService', () => {
                     })
                     .internalServerError()
 
-                expect(spyRollback).toHaveBeenCalledTimes(1)
+                expect(rollbackPurchaseSpy).toHaveBeenCalledTimes(1)
             })
         })
     })

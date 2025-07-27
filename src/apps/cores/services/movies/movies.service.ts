@@ -31,7 +31,8 @@ export class MoviesService {
     }
 
     async deleteMovies(movieIds: string[]) {
-        const success = await this.repository.withTransaction(async (session) => {
+        // TODO saga
+        const movies = await this.repository.withTransaction(async (session) => {
             const movies = await this.repository.getByIds(movieIds)
 
             for (const movie of movies) {
@@ -41,10 +42,10 @@ export class MoviesService {
                 await this.storageFilesService.deleteFiles(fileIds)
             }
 
-            return true
+            return movies
         })
 
-        return success
+        return { deletedMovies: this.toDtos(movies) }
     }
 
     async searchMoviesPage(searchDto: SearchMoviesPageDto) {
