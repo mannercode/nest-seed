@@ -1,8 +1,7 @@
 import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
 import { FileUtil, Path } from 'common'
 import { expectEqualUnsorted, nullObjectId, objectToFields } from 'testlib'
-import { Errors } from '../__helpers__'
-import { buildCreateMovieDto, createMovie } from '../common.fixture'
+import { buildCreateMovieDto, createMovie, Errors } from '../__helpers__'
 import { Fixture } from './movies.fixture'
 
 describe('MoviesService', () => {

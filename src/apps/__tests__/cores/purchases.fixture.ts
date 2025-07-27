@@ -9,11 +9,12 @@ import {
 } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { Rules } from 'shared'
-import { CommonFixture, createCommonFixture } from '../__helpers__'
 import {
     buildCreatePurchaseDto,
     buildCreateShowtimeDto,
     buildCreateTicketDto,
+    CommonFixture,
+    createCommonFixture,
     createCustomer,
     createMovie,
     createPurchase,
@@ -21,7 +22,7 @@ import {
     createTheater,
     createTickets,
     holdTickets
-} from '../common.fixture'
+} from '../__helpers__'
 
 export interface Fixture extends CommonFixture {
     teardown: () => Promise<void>

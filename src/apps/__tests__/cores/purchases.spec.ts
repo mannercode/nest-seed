@@ -1,8 +1,7 @@
 import { CreatePurchaseDto, PurchaseDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { nullObjectId } from 'testlib'
-import { Errors } from '../__helpers__'
-import { getPayments, getTickets } from '../common.fixture'
+import { Errors, getPayments, getTickets } from '../__helpers__'
 import { buildCreateTicketPurchaseDto, Fixture } from './purchases.fixture'
 
 describe('PurchasesService', () => {

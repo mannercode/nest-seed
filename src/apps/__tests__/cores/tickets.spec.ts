@@ -1,9 +1,9 @@
 import { CreateTicketDto, TicketDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
-import { expectEqualUnsorted, testObjectId } from 'testlib'
-import { buildCreateTicketDto, createTickets } from '../common.fixture'
-import { buildCreateTicketDtos, Fixture } from './tickets.fixture'
 import { omit } from 'lodash'
+import { expectEqualUnsorted, testObjectId } from 'testlib'
+import { buildCreateTicketDto, createTickets } from '../__helpers__'
+import { buildCreateTicketDtos, Fixture } from './tickets.fixture'
 
 describe('TicketsService', () => {
     let fix: Fixture

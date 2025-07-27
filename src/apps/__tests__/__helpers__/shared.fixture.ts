@@ -10,7 +10,8 @@ import {
 import { DateUtil, newObjectId } from 'common'
 import { uniq } from 'lodash'
 import { nullDate, nullObjectId, testObjectId } from 'testlib'
-import { CommonFixture, TestFiles } from './__helpers__'
+import { CommonFixture } from './create-common-fixture'
+import { TestFiles } from './files'
 
 export const createCustomerAndLogin = async (fix: CommonFixture) => {
     const email = 'user@mail.com'

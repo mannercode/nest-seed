@@ -1,12 +1,13 @@
 import { CustomerDto, MovieDto } from 'apps/cores'
 import { nullObjectId } from 'testlib'
-import { CommonFixture, createCommonFixture } from '../__helpers__'
 import {
+    CommonFixture,
+    createCommonFixture,
     createCustomerAndLogin,
     createMovie,
     createShowtimes,
     createWatchRecord
-} from '../common.fixture'
+} from '../__helpers__'
 
 export const createWatchedMovies = async (fix: Fixture, dtos: Partial<MovieDto>[]) => {
     const watchedMovies = await Promise.all(

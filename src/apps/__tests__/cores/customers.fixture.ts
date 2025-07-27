@@ -1,7 +1,6 @@
 import { CustomerDto } from 'apps/cores'
 import { CustomerJwtAuthGuard } from 'apps/gateway'
-import { CommonFixture, createCommonFixture } from '../__helpers__'
-import { createCustomer } from '../common.fixture'
+import { CommonFixture, createCommonFixture, createCustomer } from '../__helpers__'
 
 export interface Fixture extends CommonFixture {
     teardown: () => Promise<void>
