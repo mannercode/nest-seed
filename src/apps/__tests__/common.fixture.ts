@@ -164,3 +164,7 @@ export const getPayments = async (fix: CommonFixture, paymentIds: string[]) => {
 export const getTickets = async (fix: CommonFixture, ticketIds: string[]) => {
     return fix.ticketsService.getTickets(ticketIds)
 }
+
+export const getStorageFiles = async (fix: CommonFixture, fileIds: string[]) => {
+    return fix.storageFilesService.getFiles(fileIds)
+}

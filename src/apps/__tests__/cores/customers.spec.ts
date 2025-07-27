@@ -23,6 +23,7 @@ describe('CustomersService', () => {
             // 고객을 생성하고 반환한다
             it('creates and returns the customer', async () => {
                 const createDto = buildCreateCustomerDto()
+
                 await fix.httpClient
                     .post('/customers')
                     .body(createDto)

@@ -1,8 +1,8 @@
-import { MovieDto, MovieGenre, MovieRating } from 'apps/cores'
-import { Path } from 'common'
+import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
+import { generateShortId, getChecksum, Path, pickIds } from 'common'
 import { expectEqualUnsorted, nullObjectId, objectToFields } from 'testlib'
 import { Errors } from '../__helpers__'
-import { buildCreateMovieDto, createMovie } from '../common.fixture'
+import { buildCreateMovieDto, createMovie, getStorageFiles } from '../common.fixture'
 import { Fixture } from './movies.fixture'
 
 describe('MoviesService', () => {
@@ -20,15 +20,47 @@ describe('MoviesService', () => {
     describe('POST /movies', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
-            // 영화를 생성하고 반환한다
-            it('creates and returns the movie', async () => {
-                const createDto = buildCreateMovieDto()
+            let createDto: CreateMovieDto
+            let movie: MovieDto
+            let tempDir: string
 
-                await fix.httpClient
+            beforeEach(async () => {
+                tempDir = await Path.createTempDirectory()
+
+                // Arrange
+                createDto = buildCreateMovieDto()
+
+                // Act
+                const { body } = await fix.httpClient
                     .post('/movies')
                     .attachments([{ name: 'files', file: fix.image.path }])
                     .fields(objectToFields(createDto))
-                    .created({ id: expect.any(String), images: expect.any(Array), ...createDto })
+                    .created()
+
+                movie = body
+            })
+
+            afterEach(async () => {
+                await Path.delete(tempDir)
+            })
+
+            // 영화를 생성하고 반환한다
+            it('creates and returns the movie', async () => {
+                expect(movie).toEqual({
+                    id: expect.any(String),
+                    images: expect.any(Array),
+                    ...createDto
+                })
+            })
+
+            // 첨부한 파일을 다운로드한다
+            it('downloads the attached file', async () => {
+                const downloadPath = Path.join(tempDir, generateShortId() + '.tmp')
+
+                await fix.httpClient.get(movie.images[0]).download(downloadPath).ok()
+
+                expect(await Path.getSize(downloadPath)).toEqual(fix.image.size)
+                expect(await getChecksum(downloadPath)).toEqual(await getChecksum(fix.image.path))
             })
         })
 
