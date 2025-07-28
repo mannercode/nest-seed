@@ -18,7 +18,7 @@ export const createCustomerAndLogin = async (fix: CommonFixture) => {
     const password = 'password'
     const customer = await createCustomer(fix, { email, password })
 
-    const { accessToken } = await fix.customersClient.generateAuthTokens({
+    const { accessToken } = await fix.customersService.generateAuthTokens({
         customerId: customer.id,
         email
     })
@@ -41,7 +41,7 @@ export const buildCreateCustomerDto = (overrides = {}) => {
 export const createCustomer = async (fix: CommonFixture, override = {}) => {
     const createDto = buildCreateCustomerDto(override)
 
-    const customer = await fix.customersClient.createCustomer(createDto)
+    const customer = await fix.customersService.createCustomer(createDto)
     return customer
 }
 
@@ -63,7 +63,7 @@ export const buildCreateMovieDto = (overrides = {}) => {
 export const createMovie = async (fix: CommonFixture, override = {}) => {
     const createDto = buildCreateMovieDto(override)
 
-    const movie = await fix.moviesClient.createMovie(createDto, [TestFiles.image])
+    const movie = await fix.moviesService.createMovie(createDto, [TestFiles.image])
     return movie
 }
 
@@ -81,7 +81,7 @@ export const buildCreateTheaterDto = (overrides = {}) => {
 export const createTheater = async (fix: CommonFixture, override = {}) => {
     const createDto = buildCreateTheaterDto(override)
 
-    const theater = await fix.theatersClient.createTheater(createDto)
+    const theater = await fix.theatersService.createTheater(createDto)
     return theater
 }
 
@@ -108,12 +108,12 @@ export const createShowtimes = async (
 ) => {
     const createDtos = overrides.map((override) => buildCreateShowtimeDto(override))
 
-    const { success } = await fix.showtimesClient.createShowtimes(createDtos)
+    const { success } = await fix.showtimesService.createShowtimes(createDtos)
     expect(success).toBeTruthy()
 
     const transactionIds = uniq(createDtos.map((dto) => dto.transactionId))
 
-    const showtimes = await fix.showtimesClient.searchShowtimes({ transactionIds })
+    const showtimes = await fix.showtimesService.searchShowtimes({ transactionIds })
     return showtimes
 }
 
@@ -131,12 +131,12 @@ export const buildCreateTicketDto = (overrides = {}) => {
 }
 
 export const createTickets = async (fix: CommonFixture, createDtos: CreateTicketDto[]) => {
-    const { success } = await fix.ticketsClient.createTickets(createDtos)
+    const { success } = await fix.ticketsService.createTickets(createDtos)
     expect(success).toBeTruthy()
 
     const transactionIds = uniq(createDtos.map((dto) => dto.transactionId))
 
-    const tickets = await fix.ticketsClient.searchTickets({ transactionIds })
+    const tickets = await fix.ticketsService.searchTickets({ transactionIds })
     return tickets
 }
 
@@ -155,7 +155,7 @@ export const buildCreateWatchRecordDto = (overrides = {}) => {
 export const createWatchRecord = async (fix: CommonFixture, override = {}) => {
     const createDto = buildCreateWatchRecordDto(override)
 
-    const watchRecord = await fix.watchRecordsClient.createWatchRecord(createDto)
+    const watchRecord = await fix.watchRecordsService.createWatchRecord(createDto)
     return watchRecord
 }
 
@@ -172,13 +172,13 @@ export const buildCreatePurchaseDto = (overrides = {}) => {
 export const createPurchase = async (fix: CommonFixture, override = {}) => {
     const createDto = buildCreatePurchaseDto(override)
 
-    const purchase = await fix.purchasesClient.createPurchase(createDto)
+    const purchase = await fix.purchasesService.createPurchase(createDto)
 
     return purchase
 }
 
 export const holdTickets = async (fix: CommonFixture, holdDto?: Partial<HoldTicketsDto>) => {
-    return fix.ticketHoldingClient.holdTickets({
+    return fix.ticketHoldingService.holdTickets({
         customerId: nullObjectId,
         showtimeId: nullObjectId,
         ticketIds: [testObjectId(0x30), testObjectId(0x31)],
@@ -187,13 +187,13 @@ export const holdTickets = async (fix: CommonFixture, holdDto?: Partial<HoldTick
 }
 
 export const getPayments = async (fix: CommonFixture, paymentIds: string[]) => {
-    return fix.paymentsClient.getPayments(paymentIds)
+    return fix.paymentsService.getPayments(paymentIds)
 }
 
 export const getTickets = async (fix: CommonFixture, ticketIds: string[]) => {
-    return fix.ticketsClient.getTickets(ticketIds)
+    return fix.ticketsService.getTickets(ticketIds)
 }
 
 export const getStorageFiles = async (fix: CommonFixture, fileIds: string[]) => {
-    return fix.storageFilesClient.getFiles(fileIds)
+    return fix.storageFilesService.getFiles(fileIds)
 }

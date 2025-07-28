@@ -24,21 +24,21 @@ import { HttpTestContext, TestContext } from 'testlib'
 type InjectionToken<T> = Type<T> | Abstract<T> | string | symbol
 
 export interface AllProviders {
-    customersClient: CustomersClient
-    storageFilesClient: StorageFilesClient
-    moviesClient: MoviesClient
-    theatersClient: TheatersClient
-    showtimeCreationClient: ShowtimeCreationClient
-    bookingClient: BookingClient
-    purchasesClient: PurchasesClient
-    recommendationClient: RecommendationClient
-    purchaseProcessClient: PurchaseProcessClient
-    ticketHoldingClient: TicketHoldingClient
-    ticketsClient: TicketsClient
-    paymentsClient: PaymentsClient
-    watchRecordsClient: WatchRecordsClient
-    showtimesClient: ShowtimesClient
     getProvider: <T = unknown>(token: InjectionToken<T>) => T
+    customersService: CustomersClient
+    storageFilesService: StorageFilesClient
+    moviesService: MoviesClient
+    theatersService: TheatersClient
+    showtimeCreationService: ShowtimeCreationClient
+    bookingService: BookingClient
+    purchasesService: PurchasesClient
+    recommendationService: RecommendationClient
+    purchaseProcessService: PurchaseProcessClient
+    ticketHoldingService: TicketHoldingClient
+    ticketsService: TicketsClient
+    paymentsService: PaymentsClient
+    watchRecordsService: WatchRecordsClient
+    showtimesService: ShowtimesClient
 }
 
 export const getAllProviders = async (
@@ -48,25 +48,8 @@ export const getAllProviders = async (
     infrasContext: TestContext
 ) => {
     const { module: gatewayModule } = gatewayContext
-    const customersClient = gatewayModule.get(CustomersClient)
-    const storageFilesClient = gatewayModule.get(StorageFilesClient)
-    const moviesClient = gatewayModule.get(MoviesClient)
-    const theatersClient = gatewayModule.get(TheatersClient)
-    const showtimeCreationClient = gatewayModule.get(ShowtimeCreationClient)
-    const bookingClient = gatewayModule.get(BookingClient)
-    const purchasesClient = gatewayModule.get(PurchasesClient)
-    const recommendationClient = gatewayModule.get(RecommendationClient)
-    const purchaseProcessClient = gatewayModule.get(PurchaseProcessClient)
-
     const { module: appsModule } = appsContext
-    const ticketHoldingClient = appsModule.get(TicketHoldingClient)
-    const ticketsClient = appsModule.get(TicketsClient)
-    const showtimesClient = appsModule.get(ShowtimesClient)
-    const watchRecordsClient = appsModule.get(WatchRecordsClient)
-
     const { module: coresModule } = coresContext
-    const paymentsClient = coresModule.get(PaymentsClient)
-
     const { module: infrasModule } = infrasContext
 
     const getProvider = <T = unknown>(token: InjectionToken<T>): T => {
@@ -92,21 +75,38 @@ export const getAllProviders = async (
         )
     }
 
+    const customersService = gatewayModule.get(CustomersClient)
+    const storageFilesService = gatewayModule.get(StorageFilesClient)
+    const moviesService = gatewayModule.get(MoviesClient)
+    const theatersService = gatewayModule.get(TheatersClient)
+    const showtimeCreationService = gatewayModule.get(ShowtimeCreationClient)
+    const bookingService = gatewayModule.get(BookingClient)
+    const purchasesService = gatewayModule.get(PurchasesClient)
+    const recommendationService = gatewayModule.get(RecommendationClient)
+    const purchaseProcessService = gatewayModule.get(PurchaseProcessClient)
+
+    const ticketHoldingService = appsModule.get(TicketHoldingClient)
+    const ticketsService = appsModule.get(TicketsClient)
+    const showtimesService = appsModule.get(ShowtimesClient)
+    const watchRecordsService = appsModule.get(WatchRecordsClient)
+
+    const paymentsService = coresModule.get(PaymentsClient)
+
     return {
-        customersClient,
-        storageFilesClient,
-        moviesClient,
-        theatersClient,
-        showtimeCreationClient,
-        bookingClient,
-        purchasesClient,
-        recommendationClient,
-        purchaseProcessClient,
-        ticketHoldingClient,
-        ticketsClient,
-        paymentsClient,
-        watchRecordsClient,
-        showtimesClient,
-        getProvider
+        getProvider,
+        customersService,
+        storageFilesService,
+        moviesService,
+        theatersService,
+        showtimeCreationService,
+        bookingService,
+        purchasesService,
+        recommendationService,
+        purchaseProcessService,
+        ticketHoldingService,
+        ticketsService,
+        paymentsService,
+        watchRecordsService,
+        showtimesService
     }
 }

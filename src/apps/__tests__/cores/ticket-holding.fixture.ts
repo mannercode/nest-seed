@@ -5,7 +5,7 @@ export const searchHeldTicketIds = async (
     showtimeId: string,
     customerId: string
 ) => {
-    return fix.ticketHoldingClient.searchHeldTicketIds(showtimeId, customerId)
+    return fix.ticketHoldingService.searchHeldTicketIds(showtimeId, customerId)
 }
 
 export const releaseTickets = async (
@@ -13,7 +13,7 @@ export const releaseTickets = async (
     showtimeId: string,
     customerId: string
 ) => {
-    return fix.ticketHoldingClient.releaseTickets(showtimeId, customerId)
+    return fix.ticketHoldingService.releaseTickets(showtimeId, customerId)
 }
 
 export interface Fixture extends CommonFixture {

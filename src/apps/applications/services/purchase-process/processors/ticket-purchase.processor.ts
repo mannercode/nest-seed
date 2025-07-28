@@ -29,6 +29,7 @@ export const TicketPurchaseErrors = {
     }
 }
 
+// TODO 이름 고민, Service가 붙어야 할 것 같다
 @Injectable()
 export class TicketPurchaseProcessor {
     constructor(

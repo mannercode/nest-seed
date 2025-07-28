@@ -17,7 +17,7 @@ describe('PaymentsService', () => {
         it('processes a payment request successfully', async () => {
             const createDto = buildCreatePaymentDto()
 
-            const payment = await fix.paymentsClient.processPayment(createDto)
+            const payment = await fix.paymentsService.processPayment(createDto)
             expect(payment).toEqual({
                 ...createDto,
                 id: expect.any(String),
@@ -33,9 +33,9 @@ describe('PaymentsService', () => {
             // 해당하는 결제 정보를 반환한다.
             it('returns the corresponding payment records', async () => {
                 const createDto = buildCreatePaymentDto()
-                const createdPayment = await fix.paymentsClient.processPayment(createDto)
+                const createdPayment = await fix.paymentsService.processPayment(createDto)
 
-                const gotPayments = await fix.paymentsClient.getPayments([createdPayment.id])
+                const gotPayments = await fix.paymentsService.getPayments([createdPayment.id])
                 expect(gotPayments).toEqual([createdPayment])
             })
         })

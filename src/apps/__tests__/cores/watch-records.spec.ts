@@ -20,7 +20,7 @@ describe('WatchRecordsService', () => {
         it('creates new watch record successfully', async () => {
             const createDto = buildCreateWatchRecordDto()
 
-            const watchRecord = await fix.watchRecordsClient.createWatchRecord(createDto)
+            const watchRecord = await fix.watchRecordsService.createWatchRecord(createDto)
             expect(watchRecord).toEqual({ id: expect.any(String), ...createDto })
         })
     })
@@ -43,7 +43,7 @@ describe('WatchRecordsService', () => {
             // customer ID로 필터링된 티켓 목록을 반환한다.
             it('returns a paginated list of watch records filtered by customer ID', async () => {
                 const { items, ...pagination } =
-                    await fix.watchRecordsClient.searchWatchRecordsPage({
+                    await fix.watchRecordsService.searchWatchRecordsPage({
                         customerId
                     })
 

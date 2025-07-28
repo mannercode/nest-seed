@@ -23,7 +23,7 @@ describe('ShowtimesService', () => {
             it('creates showtimes and returns the result', async () => {
                 const createDtos = [buildCreateShowtimeDto({ transactionId: testObjectId(0x1) })]
 
-                const { success } = await fix.showtimesClient.createShowtimes(createDtos)
+                const { success } = await fix.showtimesService.createShowtimes(createDtos)
 
                 expect(success).toBeTruthy()
             })
@@ -54,7 +54,7 @@ describe('ShowtimesService', () => {
         describe('when `transactionIds` are provided', () => {
             // 지정한 transactionIds와 일치하는 상영시간 목록을 반환한다.
             it('returns the showtimes matching the given transactionIds', async () => {
-                const showtimes = await fix.showtimesClient.searchShowtimes({
+                const showtimes = await fix.showtimesService.searchShowtimes({
                     transactionIds: [transactionId]
                 })
 
@@ -66,7 +66,9 @@ describe('ShowtimesService', () => {
         describe('when `movieIds` are provided', () => {
             // 지정한 movieIds와 일치하는 상영시간 목록을 반환한다.
             it('returns the showtimes matching the given movieIds', async () => {
-                const showtimes = await fix.showtimesClient.searchShowtimes({ movieIds: [movieId] })
+                const showtimes = await fix.showtimesService.searchShowtimes({
+                    movieIds: [movieId]
+                })
 
                 expectEqualUnsorted(showtimes, [createdShowtimes[1]])
             })
@@ -76,7 +78,7 @@ describe('ShowtimesService', () => {
         describe('when `theaterIds` are provided', () => {
             // 지정한 theaterIds와 일치하는 상영시간 목록을 반환한다.
             it('returns the showtimes matching the given theaterIds', async () => {
-                const showtimes = await fix.showtimesClient.searchShowtimes({
+                const showtimes = await fix.showtimesService.searchShowtimes({
                     theaterIds: [theaterId]
                 })
 
@@ -93,7 +95,7 @@ describe('ShowtimesService', () => {
                     end: new Date('2020-01-02T12:00')
                 }
 
-                const showtimes = await fix.showtimesClient.searchShowtimes({ startTimeRange })
+                const showtimes = await fix.showtimesService.searchShowtimes({ startTimeRange })
 
                 expectEqualUnsorted(showtimes, [createdShowtimes[3], createdShowtimes[4]])
             })
@@ -103,7 +105,7 @@ describe('ShowtimesService', () => {
         describe('when the filter is empty', () => {
             // 에러를 던진다.
             it('throws an error', async () => {
-                const promise = fix.showtimesClient.searchShowtimes({})
+                const promise = fix.showtimesService.searchShowtimes({})
 
                 await expect(promise).rejects.toThrow(
                     'At least one filter condition must be provided'
@@ -130,7 +132,7 @@ describe('ShowtimesService', () => {
             it('returns the showtimes', async () => {
                 const showtimeIds = pickIds(showtimes)
 
-                const gotShowtimes = await fix.showtimesClient.getShowtimes(showtimeIds)
+                const gotShowtimes = await fix.showtimesService.getShowtimes(showtimeIds)
 
                 expectEqualUnsorted(gotShowtimes, showtimes)
             })
@@ -140,7 +142,7 @@ describe('ShowtimesService', () => {
         describe('when the showtimes do not exist', () => {
             // NotFoundException을 던진다
             it('throws NotFoundException', async () => {
-                const promise = fix.showtimesClient.getShowtimes([nullObjectId])
+                const promise = fix.showtimesService.getShowtimes([nullObjectId])
 
                 await expect(promise).rejects.toThrow('One or more documents not found')
             })
@@ -165,7 +167,7 @@ describe('ShowtimesService', () => {
 
             // startTimeRange에 포함되는 영화 ID 목록을 반환한다
             it('returns the movie IDs within the given startTimeRange', async () => {
-                const movieIds = await fix.showtimesClient.searchMovieIds({
+                const movieIds = await fix.showtimesService.searchMovieIds({
                     startTimeRange: { start: new Date() }
                 })
 
@@ -191,7 +193,7 @@ describe('ShowtimesService', () => {
 
             // movieIds를 상영하는 극장의 ID 목록을 반환한다
             it('returns the theater IDs for the given movieIds', async () => {
-                const theaterIds = await fix.showtimesClient.searchTheaterIds({
+                const theaterIds = await fix.showtimesService.searchTheaterIds({
                     movieIds: [movieId]
                 })
 
@@ -218,7 +220,7 @@ describe('ShowtimesService', () => {
 
             // theaterIds에서 상영하는 movieIds의 상영일 목록을 반환한다.
             it('returns the showdates for the given movieIds and theaterIds', async () => {
-                const showdates = await fix.showtimesClient.searchShowdates({
+                const showdates = await fix.showtimesService.searchShowdates({
                     movieIds: [movieId],
                     theaterIds: [theaterId]
                 })

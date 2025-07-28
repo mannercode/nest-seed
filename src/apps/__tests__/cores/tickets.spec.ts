@@ -49,7 +49,7 @@ describe('TicketsService', () => {
                 buildCreateTicketDto({ showtimeId: showtimeIds[1] })
             ]
 
-            const { success } = await fix.ticketsClient.createTickets(createDtos)
+            const { success } = await fix.ticketsService.createTickets(createDtos)
             expect(success).toBeTruthy()
 
             expectedDtos = createDtos.map((createDto) => ({
@@ -62,25 +62,25 @@ describe('TicketsService', () => {
         describe('when filtering with various criteria', () => {
             // transaction ID로 필터링된 티켓 목록을 반환한다.
             it('returns tickets filtered by transaction IDs', async () => {
-                const tickets = await fix.ticketsClient.searchTickets({ transactionIds })
+                const tickets = await fix.ticketsService.searchTickets({ transactionIds })
                 expectEqualUnsorted(tickets, [expectedDtos[0], expectedDtos[1]])
             })
 
             // movie ID로 필터링된 티켓 목록을 반환한다.
             it('returns tickets filtered by movie IDs', async () => {
-                const tickets = await fix.ticketsClient.searchTickets({ movieIds })
+                const tickets = await fix.ticketsService.searchTickets({ movieIds })
                 expectEqualUnsorted(tickets, [expectedDtos[2], expectedDtos[3]])
             })
 
             // theater ID로 필터링된 티켓 목록을 반환한다.
             it('returns tickets filtered by theater IDs', async () => {
-                const tickets = await fix.ticketsClient.searchTickets({ theaterIds })
+                const tickets = await fix.ticketsService.searchTickets({ theaterIds })
                 expectEqualUnsorted(tickets, [expectedDtos[4], expectedDtos[5]])
             })
 
             // showtime ID로 필터링된 티켓 목록을 반환한다.
             it('returns tickets filtered by showtime IDs', async () => {
-                const tickets = await fix.ticketsClient.searchTickets({ showtimeIds })
+                const tickets = await fix.ticketsService.searchTickets({ showtimeIds })
                 expectEqualUnsorted(tickets, [expectedDtos[6], expectedDtos[7]])
             })
         })
@@ -89,7 +89,7 @@ describe('TicketsService', () => {
         describe('when no filter is provided', () => {
             // 에러를 던진다.
             it('throws an error', async () => {
-                const promise = fix.ticketsClient.searchTickets({})
+                const promise = fix.ticketsService.searchTickets({})
                 await expect(promise).rejects.toThrow(
                     'At least one filter condition must be provided'
                 )
@@ -102,7 +102,7 @@ describe('TicketsService', () => {
         let tickets: TicketDto[]
 
         const getStatus = async () => {
-            const tickets = await fix.ticketsClient.searchTickets({
+            const tickets = await fix.ticketsService.searchTickets({
                 transactionIds: [transactionId]
             })
             return tickets.map((ticket) => ticket.status)
@@ -113,17 +113,17 @@ describe('TicketsService', () => {
                 buildCreateTicketDto({ transactionId }),
                 buildCreateTicketDto({ transactionId })
             ]
-            const { success } = await fix.ticketsClient.createTickets(createDtos)
+            const { success } = await fix.ticketsService.createTickets(createDtos)
             expect(success).toBeTruthy()
 
-            tickets = await fix.ticketsClient.searchTickets({ transactionIds: [transactionId] })
+            tickets = await fix.ticketsService.searchTickets({ transactionIds: [transactionId] })
         })
 
         // 지정된 티켓의 상태를 변경한다.
         it('changes the status of the specified tickets', async () => {
             expect(await getStatus()).toEqual([TicketStatus.Available, TicketStatus.Available])
 
-            const updatedTickets = await fix.ticketsClient.updateTicketStatus(
+            const updatedTickets = await fix.ticketsService.updateTicketStatus(
                 pickIds(tickets),
                 TicketStatus.Sold
             )
@@ -147,9 +147,9 @@ describe('TicketsService', () => {
             const tickets = await createTickets(fix, createDtos)
 
             const ticketIds = pickIds(tickets.slice(0, soldCount))
-            await fix.ticketsClient.updateTicketStatus(ticketIds, TicketStatus.Sold)
+            await fix.ticketsService.updateTicketStatus(ticketIds, TicketStatus.Sold)
 
-            const ticketSalesForShowtimes = await fix.ticketsClient.getTicketSalesForShowtimes([
+            const ticketSalesForShowtimes = await fix.ticketsService.getTicketSalesForShowtimes([
                 showtimeId
             ])
 
