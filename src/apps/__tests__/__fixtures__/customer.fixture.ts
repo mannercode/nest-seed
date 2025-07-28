@@ -1,3 +1,4 @@
+import { CustomerDto } from 'apps/cores'
 import { CommonFixture } from '../__helpers__'
 
 export const createCustomerAndLogin = async (fix: CommonFixture) => {
@@ -5,12 +6,16 @@ export const createCustomerAndLogin = async (fix: CommonFixture) => {
     const password = 'password'
     const customer = await createCustomer(fix, { email, password })
 
-    const { accessToken } = await fix.customersService.generateAuthTokens({
-        customerId: customer.id,
-        email
-    })
+    const { accessToken } = await generateAuthTokens(fix, customer)
 
     return { customer, accessToken }
+}
+
+export const generateAuthTokens = async (fix: CommonFixture, customer: CustomerDto) => {
+    return fix.customersService.generateAuthTokens({
+        customerId: customer.id,
+        email: customer.email
+    })
 }
 
 export const buildCreateCustomerDto = (overrides = {}) => {

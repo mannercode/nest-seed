@@ -1,19 +1,11 @@
-import { CustomerDto } from 'apps/cores'
 import { JwtAuthTokens } from 'common'
-import { createCustomer } from '../__fixtures__'
+import { createCustomer, generateAuthTokens } from '../__fixtures__'
 import { CommonFixture, createCommonFixture } from '../__helpers__'
 
 export interface Fixture extends CommonFixture {
     teardown: () => Promise<void>
     credentials: { email: string; password: string }
     authTokens: JwtAuthTokens
-}
-
-export const generateAuthTokens = async (fix: CommonFixture, customer: CustomerDto) => {
-    return fix.customersService.generateAuthTokens({
-        customerId: customer.id,
-        email: customer.email
-    })
 }
 
 export const createFixture = async () => {

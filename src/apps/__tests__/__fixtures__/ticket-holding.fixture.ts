@@ -11,3 +11,19 @@ export const holdTickets = async (fix: CommonFixture, holdDto?: Partial<HoldTick
         ...holdDto
     })
 }
+
+export const releaseTickets = async (
+    fix: CommonFixture,
+    showtimeId: string,
+    customerId: string
+) => {
+    return fix.ticketHoldingService.releaseTickets(showtimeId, customerId)
+}
+
+export const searchHeldTicketIds = async (
+    fix: CommonFixture,
+    showtimeId: string,
+    customerId: string
+) => {
+    return fix.ticketHoldingService.searchHeldTicketIds(showtimeId, customerId)
+}
