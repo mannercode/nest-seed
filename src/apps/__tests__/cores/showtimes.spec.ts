@@ -1,7 +1,7 @@
 import { ShowtimeDto } from 'apps/cores'
 import { DateUtil, newObjectId, pickIds } from 'common'
 import { expectEqualUnsorted, nullObjectId, testObjectId } from 'testlib'
-import { buildCreateShowtimeDto, createShowtimes } from '../__helpers__'
+import { buildCreateShowtimeDto, createShowtimes } from '../__fixtures__'
 import { Fixture } from './showtimes.fixture'
 
 describe('ShowtimesService', () => {

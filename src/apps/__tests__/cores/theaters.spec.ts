@@ -1,6 +1,6 @@
 import { TheaterDto } from 'apps/cores'
 import { expectEqualUnsorted, nullObjectId } from 'testlib'
-import { buildCreateTheaterDto, createTheater, Errors } from '../__helpers__'
+import { buildCreateTheaterDto, createTheater, Errors } from '../__fixtures__'
 import { Fixture } from './theaters.fixture'
 
 describe('TheatersService', () => {

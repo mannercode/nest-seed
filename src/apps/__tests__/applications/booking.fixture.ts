@@ -1,14 +1,13 @@
 import { MovieDto, Seatmap, ShowtimeDto, TheaterDto } from 'apps/cores'
 import {
     buildCreateTicketDto,
-    CommonFixture,
-    createCommonFixture,
     createCustomerAndLogin,
     createMovie,
     createShowtimes,
     createTheater,
     createTickets
-} from '../__helpers__'
+} from '../__fixtures__'
+import { CommonFixture, createCommonFixture } from '../__helpers__'
 
 const createTheaters = async (fix: CommonFixture) => {
     const theaters = await Promise.all([

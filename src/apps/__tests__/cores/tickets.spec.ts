@@ -2,7 +2,7 @@ import { CreateTicketDto, TicketDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { omit } from 'lodash'
 import { expectEqualUnsorted, testObjectId } from 'testlib'
-import { buildCreateTicketDto, createTickets } from '../__helpers__'
+import { buildCreateTicketDto, createTickets } from '../__fixtures__'
 import { buildCreateTicketDtos, Fixture } from './tickets.fixture'
 
 describe('TicketsService', () => {

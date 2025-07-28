@@ -1,7 +1,7 @@
 import { generateShortId, sleep } from 'common'
 import { isEqual, sortBy } from 'lodash'
 import { testObjectId } from 'testlib'
-import { holdTickets } from '../__helpers__'
+import { holdTickets } from '../__fixtures__'
 import { Fixture, releaseTickets, searchHeldTicketIds } from './ticket-holding.fixture'
 
 describe('TicketHoldingService', () => {

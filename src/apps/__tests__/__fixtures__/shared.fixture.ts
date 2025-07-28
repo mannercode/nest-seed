@@ -10,7 +10,7 @@ import {
 import { DateUtil, newObjectId } from 'common'
 import { uniq } from 'lodash'
 import { nullDate, testObjectId } from 'testlib'
-import { CommonFixture } from './create-common-fixture'
+import { CommonFixture } from '../__helpers__'
 import { TestFiles } from './files'
 
 export const createCustomerAndLogin = async (fix: CommonFixture) => {

@@ -1,7 +1,7 @@
 import { Seatmap, ShowtimeDto, TheaterDto, TicketDto } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, step } from 'testlib'
-import { Errors } from '../__helpers__'
+import { Errors } from '../__fixtures__'
 import { Fixture } from './booking.fixture'
 
 describe('BookingService', () => {

@@ -1,5 +1,6 @@
 import { TheaterDto } from 'apps/cores'
-import { CommonFixture, createCommonFixture, createTheater } from '../__helpers__'
+import { createTheater } from '../__fixtures__'
+import { CommonFixture, createCommonFixture } from '../__helpers__'
 
 export interface Fixture extends CommonFixture {
     teardown: () => Promise<void>
