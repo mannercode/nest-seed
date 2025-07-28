@@ -21,10 +21,16 @@ describe('TicketHoldingService', () => {
         describe('when another customer has already held the tickets', () => {
             // 선점에 실패한다.
             it('fails to hold the same tickets', async () => {
-                const firstCustomerHold = await holdTickets(fix, { customerId: testObjectId(0x1) })
+                const firstCustomerHold = await holdTickets(fix, {
+                    customerId: testObjectId(0x1),
+                    showtimeId: testObjectId(0x1)
+                })
                 expect(firstCustomerHold).toBeTruthy()
 
-                const secondCustomerHold = await holdTickets(fix, { customerId: testObjectId(0x2) })
+                const secondCustomerHold = await holdTickets(fix, {
+                    customerId: testObjectId(0x2),
+                    showtimeId: testObjectId(0x1)
+                })
                 expect(secondCustomerHold).toBeFalsy()
             })
         })
@@ -48,19 +54,28 @@ describe('TicketHoldingService', () => {
                 const { Rules } = await import('shared')
                 Rules.Ticket.holdDurationInMs = 1000
 
-                const initialHold = await holdTickets(fix, { customerId: testObjectId(0x1) })
+                const initialHold = await holdTickets(fix, {
+                    customerId: testObjectId(0x1),
+                    showtimeId: testObjectId(0x1)
+                })
                 expect(initialHold).toBeTruthy()
 
                 // Attempt to hold before expiry (should fail)
                 // 만료 전 선점 시도 (실패)
-                const holdBeforeExpiry = await holdTickets(fix, { customerId: testObjectId(0x2) })
+                const holdBeforeExpiry = await holdTickets(fix, {
+                    customerId: testObjectId(0x2),
+                    showtimeId: testObjectId(0x1)
+                })
                 expect(holdBeforeExpiry).toBeFalsy()
 
                 await sleep(Rules.Ticket.holdDurationInMs + 500)
 
                 // Attempt to hold after expiry (should succeed)
                 // 만료 후 선점 시도 (성공)
-                const holdAfterExpiry = await holdTickets(fix, { customerId: testObjectId(0x2) })
+                const holdAfterExpiry = await holdTickets(fix, {
+                    customerId: testObjectId(0x2),
+                    showtimeId: testObjectId(0x1)
+                })
                 expect(holdAfterExpiry).toBeTruthy()
             })
         })

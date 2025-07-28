@@ -9,7 +9,7 @@ import {
 } from 'apps/cores'
 import { DateUtil, newObjectId } from 'common'
 import { uniq } from 'lodash'
-import { nullDate, nullObjectId, testObjectId } from 'testlib'
+import { nullDate, testObjectId } from 'testlib'
 import { CommonFixture } from './create-common-fixture'
 import { TestFiles } from './files'
 
@@ -70,7 +70,7 @@ export const createMovie = async (fix: CommonFixture, override = {}) => {
 export const buildCreateTheaterDto = (overrides = {}) => {
     const createDto = {
         name: `theater name`,
-        location: { latitude: 38.123, longitude: 138.678 },
+        location: { latitude: 0, longitude: 0 },
         seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', seats: 'OOOOXXOOOO' }] }] },
         ...overrides
     }
@@ -88,8 +88,8 @@ export const createTheater = async (fix: CommonFixture, override = {}) => {
 export const buildCreateShowtimeDto = (overrides: Partial<CreateShowtimeDto> = {}) => {
     const createDto = {
         transactionId: newObjectId(),
-        movieId: nullObjectId,
-        theaterId: nullObjectId,
+        movieId: newObjectId(),
+        theaterId: newObjectId(),
         startTime: new Date(0),
         endTime: new Date(0),
         ...overrides
@@ -120,9 +120,9 @@ export const createShowtimes = async (
 export const buildCreateTicketDto = (overrides = {}) => {
     const createDto = {
         transactionId: newObjectId(),
-        movieId: nullObjectId,
-        theaterId: nullObjectId,
-        showtimeId: nullObjectId,
+        movieId: newObjectId(),
+        theaterId: newObjectId(),
+        showtimeId: newObjectId(),
         status: TicketStatus.Available,
         seat: { block: '1b', row: '1r', seatNumber: 1 },
         ...overrides
@@ -142,9 +142,9 @@ export const createTickets = async (fix: CommonFixture, createDtos: CreateTicket
 
 export const buildCreateWatchRecordDto = (overrides = {}) => {
     const createDto = {
-        customerId: nullObjectId,
-        movieId: nullObjectId,
-        purchaseId: nullObjectId,
+        customerId: newObjectId(),
+        movieId: newObjectId(),
+        purchaseId: newObjectId(),
         watchDate: nullDate,
         ...overrides
     }
@@ -161,9 +161,9 @@ export const createWatchRecord = async (fix: CommonFixture, override = {}) => {
 
 export const buildCreatePurchaseDto = (overrides = {}) => {
     const createDto = {
-        customerId: nullObjectId,
+        customerId: newObjectId(),
         totalPrice: 1,
-        purchaseItems: [{ type: PurchaseItemType.Ticket, ticketId: nullObjectId }],
+        purchaseItems: [{ type: PurchaseItemType.Ticket, ticketId: newObjectId() }],
         ...overrides
     }
     return createDto
@@ -179,9 +179,9 @@ export const createPurchase = async (fix: CommonFixture, override = {}) => {
 
 export const holdTickets = async (fix: CommonFixture, holdDto?: Partial<HoldTicketsDto>) => {
     return fix.ticketHoldingService.holdTickets({
-        customerId: nullObjectId,
-        showtimeId: nullObjectId,
-        ticketIds: [testObjectId(0x30), testObjectId(0x31)],
+        customerId: newObjectId(),
+        showtimeId: newObjectId(),
+        ticketIds: [testObjectId(0x1), testObjectId(0x2)],
         ...holdDto
     })
 }

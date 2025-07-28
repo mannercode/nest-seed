@@ -1,5 +1,5 @@
 import { ShowtimeDto } from 'apps/cores'
-import { DateUtil, pickIds } from 'common'
+import { DateUtil, newObjectId, pickIds } from 'common'
 import { expectEqualUnsorted, nullObjectId, testObjectId } from 'testlib'
 import { buildCreateShowtimeDto, createShowtimes } from '../__helpers__'
 import { Fixture } from './showtimes.fixture'
@@ -185,7 +185,7 @@ describe('ShowtimesService', () => {
                 const createDtos = [
                     { movieId, theaterId: testObjectId(0x1) },
                     { movieId, theaterId: testObjectId(0x2) },
-                    { movieId: nullObjectId, theaterId: testObjectId(0x3) }
+                    { movieId: newObjectId(), theaterId: testObjectId(0x3) }
                 ]
 
                 await createShowtimes(fix, createDtos)
@@ -212,7 +212,7 @@ describe('ShowtimesService', () => {
                 const createDtos = [
                     { movieId, theaterId, startTime: new Date('2000-01-01') },
                     { movieId, theaterId, startTime: new Date('2000-01-02') },
-                    { movieId, theaterId: nullObjectId, startTime: new Date('2000-01-03') }
+                    { movieId, theaterId: newObjectId(), startTime: new Date('2000-01-03') }
                 ]
 
                 await createShowtimes(fix, createDtos)
