@@ -127,11 +127,18 @@ describe('PurchasesService', () => {
         describe('when an internal error occurs during purchase', () => {
             let rollbackPurchaseSpy: jest.SpyInstance
 
-            beforeEach(() => {
-                jest.spyOn(fix.ticketsService, 'updateTicketStatus').mockImplementationOnce(() => {
+            beforeEach(async () => {
+                const { TicketsService } = await import('apps/cores')
+                const ticketsService = fix.getProvider(TicketsService)
+
+                jest.spyOn(ticketsService, 'updateTicketStatus').mockImplementationOnce(() => {
                     throw new Error('purchase error')
                 })
-                rollbackPurchaseSpy = jest.spyOn(fix.ticketPurchaseProcessor, 'rollbackPurchase')
+
+                const { TicketPurchaseProcessor } = await import('apps/applications')
+                const ticketPurchaseProcessor = fix.getProvider(TicketPurchaseProcessor)
+
+                rollbackPurchaseSpy = jest.spyOn(ticketPurchaseProcessor, 'rollbackPurchase')
             })
 
             // 500 Internal Server Error를 반환하고 구매를 롤백한다

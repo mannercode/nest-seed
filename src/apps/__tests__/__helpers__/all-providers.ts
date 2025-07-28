@@ -1,38 +1,27 @@
+import { Abstract } from '@nestjs/common'
+import { Type } from '@nestjs/common/interfaces'
+import { UnknownElementException } from '@nestjs/core/errors/exceptions'
+import { TestingModule } from '@nestjs/testing'
 import {
     BookingClient,
-    BookingService,
     PurchaseProcessClient,
-    PurchaseProcessService,
     RecommendationClient,
-    RecommendationService,
-    ShowtimeCreationClient,
-    ShowtimeCreationService,
-    TicketPurchaseProcessor
+    ShowtimeCreationClient
 } from 'apps/applications'
 import {
     CustomersClient,
-    CustomersService,
     MoviesClient,
-    MoviesService,
     PurchasesClient,
-    PurchasesService,
     ShowtimesClient,
     TheatersClient,
-    TheatersService,
     TicketHoldingClient,
-    TicketHoldingService,
     TicketsClient,
-    TicketsService,
-    WatchRecordsClient,
-    WatchRecordsService
+    WatchRecordsClient
 } from 'apps/cores'
-import {
-    PaymentsClient,
-    PaymentsService,
-    StorageFilesClient,
-    StorageFilesService
-} from 'apps/infrastructures'
+import { PaymentsClient, StorageFilesClient } from 'apps/infrastructures'
 import { HttpTestContext, TestContext } from 'testlib'
+
+type InjectionToken<T> = Type<T> | Abstract<T> | string | symbol
 
 export interface AllProviders {
     customersClient: CustomersClient
@@ -47,22 +36,9 @@ export interface AllProviders {
     ticketHoldingClient: TicketHoldingClient
     ticketsClient: TicketsClient
     paymentsClient: PaymentsClient
-    paymentsService: PaymentsService
-    bookingService: BookingService
-    purchaseProcessService: PurchaseProcessService
-    recommendationService: RecommendationService
-    showtimeCreationService: ShowtimeCreationService
-    customersService: CustomersService
-    moviesService: MoviesService
-    purchasesService: PurchasesService
-    theatersService: TheatersService
-    ticketHoldingService: TicketHoldingService
-    ticketsService: TicketsService
-    storageFilesService: StorageFilesService
-    ticketPurchaseProcessor: TicketPurchaseProcessor
-    watchRecordsService: WatchRecordsService
     watchRecordsClient: WatchRecordsClient
     showtimesClient: ShowtimesClient
+    getProvider: <T = unknown>(token: InjectionToken<T>) => T
 }
 
 export const getAllProviders = async (
@@ -85,27 +61,36 @@ export const getAllProviders = async (
     const { module: appsModule } = appsContext
     const ticketHoldingClient = appsModule.get(TicketHoldingClient)
     const ticketsClient = appsModule.get(TicketsClient)
-    const bookingService = appsModule.get(BookingService)
-    const purchaseProcessService = appsModule.get(PurchaseProcessService)
-    const recommendationService = appsModule.get(RecommendationService)
-    const showtimeCreationService = appsModule.get(ShowtimeCreationService)
-    const ticketPurchaseProcessor = appsModule.get(TicketPurchaseProcessor)
     const showtimesClient = appsModule.get(ShowtimesClient)
     const watchRecordsClient = appsModule.get(WatchRecordsClient)
 
     const { module: coresModule } = coresContext
     const paymentsClient = coresModule.get(PaymentsClient)
-    const customersService = coresModule.get(CustomersService)
-    const moviesService = coresModule.get(MoviesService)
-    const purchasesService = coresModule.get(PurchasesService)
-    const theatersService = coresModule.get(TheatersService)
-    const ticketHoldingService = coresModule.get(TicketHoldingService)
-    const ticketsService = coresModule.get(TicketsService)
-    const watchRecordsService = coresModule.get(WatchRecordsService)
 
     const { module: infrasModule } = infrasContext
-    const storageFilesService = infrasModule.get(StorageFilesService)
-    const paymentsService = infrasModule.get(PaymentsService)
+
+    const getProvider = <T = unknown>(token: InjectionToken<T>): T => {
+        const pools: TestingModule[] = [appsModule, coresModule, infrasModule, gatewayModule]
+
+        for (const ref of pools) {
+            try {
+                return ref.get<T>(token)
+            } catch (err) {
+                if (!(err instanceof UnknownElementException)) throw err
+            }
+        }
+
+        const tokenToString = (token: InjectionToken<T>): string => {
+            if (typeof token === 'string') return token
+            if (typeof token === 'symbol') return token.description ?? token.toString()
+            if (typeof token === 'function') return token.name
+            return '[unknown-token]'
+        }
+
+        throw new Error(
+            `Nest could not find ${tokenToString(token)} element (this provider does not exist in the current context)`
+        )
+    }
 
     return {
         customersClient,
@@ -120,21 +105,8 @@ export const getAllProviders = async (
         ticketHoldingClient,
         ticketsClient,
         paymentsClient,
-        bookingService,
-        purchaseProcessService,
-        recommendationService,
-        showtimeCreationService,
-        customersService,
-        moviesService,
-        purchasesService,
-        theatersService,
-        ticketHoldingService,
-        ticketsService,
-        storageFilesService,
-        ticketPurchaseProcessor,
-        paymentsService,
-        watchRecordsService,
         watchRecordsClient,
-        showtimesClient
+        showtimesClient,
+        getProvider
     }
 }

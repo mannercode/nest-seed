@@ -9,7 +9,7 @@ export interface Fixture extends CommonFixture {
 }
 
 export const generateAuthTokens = async (fix: CommonFixture, customer: CustomerDto) => {
-    return fix.customersService.generateAuthTokens({
+    return fix.customersClient.generateAuthTokens({
         customerId: customer.id,
         email: customer.email
     })

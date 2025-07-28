@@ -172,7 +172,7 @@ export const buildCreatePurchaseDto = (overrides = {}) => {
 export const createPurchase = async (fix: CommonFixture, override = {}) => {
     const createDto = buildCreatePurchaseDto(override)
 
-    const purchase = await fix.purchasesService.createPurchase(createDto)
+    const purchase = await fix.purchasesClient.createPurchase(createDto)
 
     return purchase
 }
@@ -187,13 +187,13 @@ export const holdTickets = async (fix: CommonFixture, holdDto?: Partial<HoldTick
 }
 
 export const getPayments = async (fix: CommonFixture, paymentIds: string[]) => {
-    return fix.paymentsService.getPayments(paymentIds)
+    return fix.paymentsClient.getPayments(paymentIds)
 }
 
 export const getTickets = async (fix: CommonFixture, ticketIds: string[]) => {
-    return fix.ticketsService.getTickets(ticketIds)
+    return fix.ticketsClient.getTickets(ticketIds)
 }
 
 export const getStorageFiles = async (fix: CommonFixture, fileIds: string[]) => {
-    return fix.storageFilesService.getFiles(fileIds)
+    return fix.storageFilesClient.getFiles(fileIds)
 }

@@ -49,7 +49,7 @@ describe('TicketsService', () => {
                 buildCreateTicketDto({ showtimeId: showtimeIds[1] })
             ]
 
-            const { success } = await fix.ticketsService.createTickets(createDtos)
+            const { success } = await fix.ticketsClient.createTickets(createDtos)
             expect(success).toBeTruthy()
 
             expectedDtos = createDtos.map((createDto) => ({
