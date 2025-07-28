@@ -25,5 +25,5 @@ done
 # The file is too large to save, so it will be created.
 RES_PATH=$WORKSPACE_ROOT/src/apps/__tests__/__fixtures__/res
 
-dd if=/dev/zero bs=49999999 count=1 | tr '\0' 'a' > $RES_PATH/large.txt
-dd if=/dev/zero bs=50000000 count=1 | tr '\0' 'a' > $RES_PATH/oversized.txt
+dd if=/dev/zero bs=49999999 count=1 | tr '\0' 'a' >$RES_PATH/large.txt
+dd if=/dev/zero bs=50000000 count=1 | tr '\0' 'a' >$RES_PATH/oversized.txt

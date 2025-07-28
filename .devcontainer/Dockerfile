@@ -1,7 +1,7 @@
 FROM node:24-bookworm
 
 RUN apt-get update
-RUN apt-get install -y git curl jq tree vim net-tools
+RUN apt-get install -y git curl jq tree vim net-tools shfmt
 
 # bash
 RUN echo 'PS1="\[\033[32m\]\w\[\033[00m\] "' >> ~/.bashrc

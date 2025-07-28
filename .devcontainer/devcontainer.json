@@ -34,6 +34,7 @@
                 "firsttris.vscode-jest-runner",
                 "ms-vscode.live-server",
                 "ms-azuretools.vscode-docker",
+                "ms-azuretools.vscode-containers",
                 "jebbs.plantuml",
                 "esbenp.prettier-vscode",
                 "mutantdino.resourcemonitor",
@@ -45,7 +46,6 @@
                 "remote.downloadExtensionsLocally": true,
                 "prettier.enableDebugLogs": true,
                 "livePreview.portNumber": 3030,
-                "docker.enableDockerComposeLanguageService": false,
                 "typescript.tsc.autoDetect": "off",
                 "typescript.disableAutomaticTypeAcquisition": true,
                 "typescript.format.enable": false,
@@ -55,7 +55,7 @@
                 "typescript.updateImportsOnFileMove.enabled": "never",
                 "editor.defaultFormatter": "esbenp.prettier-vscode",
                 "[dockerfile]": {
-                    "editor.defaultFormatter": "ms-azuretools.vscode-docker"
+                    "editor.defaultFormatter": "ms-azuretools.vscode-containers"
                 },
                 "[json]": {
                     "editor.defaultFormatter": "vscode.json-language-features"
