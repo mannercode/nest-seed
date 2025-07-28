@@ -8,6 +8,7 @@ import {
     createShowtimes,
     createWatchRecord
 } from '../__helpers__'
+import { newObjectId } from 'common'
 
 export const createWatchedMovies = async (fix: Fixture, dtos: Partial<MovieDto>[]) => {
     const watchedMovies = await Promise.all(
@@ -26,7 +27,7 @@ export const createShowingMovies = async (fix: CommonFixture, dtos: Partial<Movi
 
     const createShowtimesDtos = showingMovies.map((movie) => ({
         movieId: movie.id,
-        transactionId: nullObjectId,
+        transactionId: newObjectId(),
         theaterId: nullObjectId,
         startTime: new Date('2999-01-01'),
         endTime: new Date('2999-01-02')

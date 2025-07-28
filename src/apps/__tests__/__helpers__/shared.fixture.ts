@@ -30,7 +30,7 @@ export const buildCreateCustomerDto = (overrides = {}) => {
     const createDto = {
         name: 'name',
         email: 'name@mail.com',
-        birthDate: new Date('2020-12-12'),
+        birthDate: new Date(0),
         password: 'password',
         ...overrides
     }
@@ -49,7 +49,7 @@ export const buildCreateMovieDto = (overrides = {}) => {
     const createDto = {
         title: `MovieTitle`,
         genres: [MovieGenre.Action],
-        releaseDate: new Date('1900-01-01'),
+        releaseDate: new Date(0),
         plot: `MoviePlot`,
         durationInSeconds: 90 * 60,
         director: 'Quentin Tarantino',
@@ -87,7 +87,7 @@ export const createTheater = async (fix: CommonFixture, override = {}) => {
 
 export const buildCreateShowtimeDto = (overrides: Partial<CreateShowtimeDto> = {}) => {
     const createDto = {
-        transactionId: nullObjectId,
+        transactionId: newObjectId(),
         movieId: nullObjectId,
         theaterId: nullObjectId,
         startTime: new Date(0),
