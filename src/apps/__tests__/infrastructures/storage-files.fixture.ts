@@ -1,8 +1,8 @@
 import { Path } from 'common'
-import { TestFile, TestFiles } from '../__fixtures__'
+import { FixtureFile, fixtureFiles } from '../__fixtures__'
 import { CommonFixture, createCommonFixture } from '../__helpers__'
 
-export const saveFile = async (fixture: CommonFixture, file: TestFile) => {
+export const saveFile = async (fixture: CommonFixture, file: FixtureFile) => {
     const files = await fixture.storageFilesService.saveFiles([file])
     return files[0]
 }
@@ -12,15 +12,15 @@ export interface Fixture extends CommonFixture {
     uploadDir: string
     maxFileSizeBytes: number
     maxFilesPerUpload: number
-    files: { notAllowed: TestFile; oversized: TestFile; large: TestFile; small: TestFile }
+    files: { notAllowed: FixtureFile; oversized: FixtureFile; large: FixtureFile; small: FixtureFile }
 }
 
 export const createFixture = async () => {
     const files = {
-        notAllowed: TestFiles.json,
-        oversized: TestFiles.oversized,
-        large: TestFiles.large,
-        small: TestFiles.small
+        notAllowed: fixtureFiles.json,
+        oversized: fixtureFiles.oversized,
+        large: fixtureFiles.large,
+        small: fixtureFiles.small
     }
     const uploadDir = await Path.createTempDirectory()
     const maxFileSizeBytes = files.oversized.size

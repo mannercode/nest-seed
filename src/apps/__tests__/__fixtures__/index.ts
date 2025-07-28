@@ -1,5 +1,5 @@
 export * from './errors'
-export * from './files'
+export * from './fixture-files'
 export * from './customer.fixture'
 export * from './movie.fixture'
 export * from './payment.fixture'

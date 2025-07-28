@@ -1,10 +1,10 @@
 import { MovieDto } from 'apps/cores'
-import { createMovie, TestFile, TestFiles } from '../__fixtures__'
+import { createMovie, FixtureFile, fixtureFiles } from '../__fixtures__'
 import { CommonFixture, createCommonFixture } from '../__helpers__'
 
 export interface Fixture extends CommonFixture {
     teardown: () => Promise<void>
-    image: TestFile
+    image: FixtureFile
     movie: MovieDto
 }
 
@@ -17,5 +17,5 @@ export const createFixture = async () => {
         await fix?.close()
     }
 
-    return { ...fix, teardown, image: TestFiles.image, movie }
+    return { ...fix, teardown, image: fixtureFiles.image, movie }
 }

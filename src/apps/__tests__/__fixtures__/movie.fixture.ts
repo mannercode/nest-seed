@@ -1,6 +1,6 @@
 import { MovieGenre, MovieRating } from 'apps/cores'
 import { CommonFixture } from '../__helpers__'
-import { TestFiles } from './files'
+import { fixtureFiles } from './fixture-files'
 
 export const buildCreateMovieDto = (overrides = {}) => {
     const createDto = {
@@ -20,6 +20,6 @@ export const buildCreateMovieDto = (overrides = {}) => {
 export const createMovie = async (fix: CommonFixture, override = {}) => {
     const createDto = buildCreateMovieDto(override)
 
-    const movie = await fix.moviesService.createMovie(createDto, [TestFiles.image])
+    const movie = await fix.moviesService.createMovie(createDto, [fixtureFiles.image])
     return movie
 }

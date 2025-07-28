@@ -1,40 +1,40 @@
 import { Path } from 'common'
 import fs from 'fs'
 
-export interface TestFile {
+export interface FixtureFile {
     path: string
     size: number
     originalName: string
     mimeType: string
 }
 
-export const TestFiles = {
+export const fixtureFiles = {
     image: {
-        path: Path.join(__dirname, 'res', 'image.png'),
+        path: Path.join(__dirname, 'files', 'image.png'),
         size: 0,
         originalName: 'image.png',
         mimeType: 'image/png'
     },
     json: {
-        path: Path.join(__dirname, 'res', 'file.json'),
+        path: Path.join(__dirname, 'files', 'file.json'),
         size: 0,
         originalName: 'file.json',
         mimeType: 'application/json'
     },
     small: {
-        path: Path.join(__dirname, 'res', 'small.txt'),
+        path: Path.join(__dirname, 'files', 'small.txt'),
         size: 0,
         originalName: 'small.txt',
         mimeType: 'text/plain'
     },
     large: {
-        path: Path.join(__dirname, 'res', 'large.txt'),
+        path: Path.join(__dirname, 'files', 'large.txt'),
         size: 0,
         originalName: 'large.txt',
         mimeType: 'text/plain'
     },
     oversized: {
-        path: Path.join(__dirname, 'res', 'oversized.txt'),
+        path: Path.join(__dirname, 'files', 'oversized.txt'),
         size: 0,
         originalName: 'oversized.txt',
         mimeType: 'text/plain'
@@ -42,9 +42,9 @@ export const TestFiles = {
 }
 
 // size update
-for (const key in TestFiles) {
-    if (TestFiles.hasOwnProperty(key)) {
-        const file = (TestFiles as any)[key]
+for (const key in fixtureFiles) {
+    if (fixtureFiles.hasOwnProperty(key)) {
+        const file = (fixtureFiles as any)[key]
         file.size = fs.statSync(file.path).size
     }
 }
