@@ -11,7 +11,6 @@ import { DateUtil, pickIds } from 'common'
 import { Rules } from 'shared'
 import {
     buildCreatePurchaseDto,
-    buildCreateShowtimeDto,
     buildCreateTicketDto,
     CommonFixture,
     createCommonFixture,
@@ -140,13 +139,10 @@ const createAllTickets = async ({
     theater: TheaterDto
     startTime: Date
 }) => {
-    const createShowtimeDto = buildCreateShowtimeDto({
-        movieId: movie.id,
-        theaterId: theater.id,
-        startTime
-    })
+    const createShowtimeDto = { movieId: movie.id, theaterId: theater.id, startTime }
+    const showtimes = await createShowtimes(fix, [createShowtimeDto])
 
-    const showtime = (await createShowtimes(fix, [createShowtimeDto]))[0]
+    const showtime = showtimes[0]
 
     const createTicketDtos = Seatmap.getAllSeats(theater.seatmap).map((seat) =>
         buildCreateTicketDto({

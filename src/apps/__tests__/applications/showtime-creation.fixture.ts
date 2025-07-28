@@ -1,6 +1,6 @@
 import { CreateShowtimeDto, MovieDto, TheaterDto } from 'apps/cores'
 import { DateUtil, jsonToObject, notUsed } from 'common'
-import { HttpTestClient, nullObjectId } from 'testlib'
+import { HttpTestClient } from 'testlib'
 import { CommonFixture, createCommonFixture, createMovie, createTheater } from '../__helpers__'
 
 export const createShowtimeDtos = ({
@@ -12,12 +12,10 @@ export const createShowtimeDtos = ({
     theaterId: string
     durationInMinutes: number
 }) => {
-    const createDtos: CreateShowtimeDto[] = []
+    const createDtos: Partial<CreateShowtimeDto>[] = []
 
     startTimes.map((startTime) => {
         const createDto = {
-            transactionId: nullObjectId,
-            movieId: nullObjectId,
             theaterId,
             startTime,
             endTime: DateUtil.addMinutes(startTime, durationInMinutes)

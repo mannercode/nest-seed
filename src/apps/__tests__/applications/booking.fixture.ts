@@ -1,6 +1,5 @@
 import { MovieDto, Seatmap, ShowtimeDto, TheaterDto } from 'apps/cores'
 import {
-    buildCreateShowtimeDto,
     buildCreateTicketDto,
     CommonFixture,
     createCommonFixture,
@@ -31,18 +30,15 @@ const createAllShowtimes = async (fix: CommonFixture, theaters: TheaterDto[], mo
         new Date('2999-01-02T14:00')
     ]
 
-    const createShowtimeDtos = theaters.flatMap((theater) =>
-        startTimes.map((startTime) => {
-            const createDto = buildCreateShowtimeDto({
-                movieId: movie.id,
-                theaterId: theater.id,
-                startTime
-            })
-            return createDto
-        })
+    const createDtos = startTimes.flatMap((startTime) =>
+        theaters.map((theater) => ({
+            movieId: movie.id,
+            theaterId: theater.id,
+            startTime
+        }))
     )
 
-    const showtimes = await createShowtimes(fix, createShowtimeDtos)
+    const showtimes = await createShowtimes(fix, createDtos)
     return showtimes
 }
 

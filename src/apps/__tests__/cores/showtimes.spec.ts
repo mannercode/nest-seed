@@ -1,6 +1,5 @@
 import { ShowtimeDto } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
-import { omit } from 'lodash'
 import { expectEqualUnsorted, nullObjectId, testObjectId } from 'testlib'
 import { buildCreateShowtimeDto, createShowtimes } from '../__helpers__'
 import { Fixture } from './showtimes.fixture'
@@ -22,11 +21,9 @@ describe('ShowtimesService', () => {
         describe('when the payload is valid', () => {
             // 상영시간을 생성하고 결과를 반환한다
             it('creates showtimes and returns the result', async () => {
-                const createDto = buildCreateShowtimeDto({
-                    transactionId: testObjectId(0x1)
-                })
+                const createDtos = [buildCreateShowtimeDto({ transactionId: testObjectId(0x1) })]
 
-                const { success } = await fix.showtimesClient.createShowtimes([createDto])
+                const { success } = await fix.showtimesClient.createShowtimes(createDtos)
 
                 expect(success).toBeTruthy()
             })
@@ -37,26 +34,20 @@ describe('ShowtimesService', () => {
         const transactionId = testObjectId(0x1)
         const movieId = testObjectId(0x2)
         const theaterId = testObjectId(0x3)
-        let expectedDtos: ShowtimeDto[]
+        let createdShowtimes: ShowtimeDto[]
 
         beforeEach(async () => {
             const createDtos = [
-                buildCreateShowtimeDto({ transactionId }),
-                buildCreateShowtimeDto({ movieId }),
-                buildCreateShowtimeDto({ theaterId }),
-                buildCreateShowtimeDto({ startTime: new Date('2020-01-01T12:00') }),
-                buildCreateShowtimeDto({ startTime: new Date('2020-01-01T14:00') }),
-                buildCreateShowtimeDto({ startTime: new Date('2020-01-02T14:00') }),
-                buildCreateShowtimeDto({ startTime: new Date('2020-01-03T12:00') })
+                { transactionId },
+                { movieId },
+                { theaterId },
+                { startTime: new Date('2020-01-01T12:00') },
+                { startTime: new Date('2020-01-01T14:00') },
+                { startTime: new Date('2020-01-02T14:00') },
+                { startTime: new Date('2020-01-03T12:00') }
             ]
 
-            const { success } = await fix.showtimesClient.createShowtimes(createDtos)
-            expect(success).toBeTruthy()
-
-            expectedDtos = createDtos.map((createDto) => ({
-                id: expect.any(String),
-                ...omit(createDto, 'transactionId')
-            }))
+            createdShowtimes = await createShowtimes(fix, createDtos)
         })
 
         // `transactionIds`가 제공된 경우
@@ -67,7 +58,7 @@ describe('ShowtimesService', () => {
                     transactionIds: [transactionId]
                 })
 
-                expectEqualUnsorted(showtimes, [expectedDtos[0]])
+                expectEqualUnsorted(showtimes, [createdShowtimes[0]])
             })
         })
 
@@ -77,7 +68,7 @@ describe('ShowtimesService', () => {
             it('returns the showtimes matching the given movieIds', async () => {
                 const showtimes = await fix.showtimesClient.searchShowtimes({ movieIds: [movieId] })
 
-                expectEqualUnsorted(showtimes, [expectedDtos[1]])
+                expectEqualUnsorted(showtimes, [createdShowtimes[1]])
             })
         })
 
@@ -89,7 +80,7 @@ describe('ShowtimesService', () => {
                     theaterIds: [theaterId]
                 })
 
-                expectEqualUnsorted(showtimes, [expectedDtos[2]])
+                expectEqualUnsorted(showtimes, [createdShowtimes[2]])
             })
         })
 
@@ -104,7 +95,7 @@ describe('ShowtimesService', () => {
 
                 const showtimes = await fix.showtimesClient.searchShowtimes({ startTimeRange })
 
-                expectEqualUnsorted(showtimes, [expectedDtos[3], expectedDtos[4]])
+                expectEqualUnsorted(showtimes, [createdShowtimes[3], createdShowtimes[4]])
             })
         })
 
@@ -126,8 +117,8 @@ describe('ShowtimesService', () => {
 
         beforeEach(async () => {
             const createDtos = [
-                buildCreateShowtimeDto({ startTime: new Date('2000-01-01T12:00') }),
-                buildCreateShowtimeDto({ startTime: new Date('2000-01-01T14:00') })
+                { startTime: new Date('2000-01-01T12:00') },
+                { startTime: new Date('2000-01-01T14:00') }
             ]
 
             showtimes = await createShowtimes(fix, createDtos)
@@ -160,20 +151,16 @@ describe('ShowtimesService', () => {
         // `startTimeRange`가 제공된 경우
         describe('when `startTimeRange` is provided', () => {
             beforeEach(async () => {
-                const makeDto = (movieId: string, minutesOffset: number) =>
-                    buildCreateShowtimeDto({
-                        movieId,
-                        startTime: DateUtil.addMinutes(new Date(), minutesOffset)
-                    })
+                const now = (minutes: number) => DateUtil.addMinutes(new Date(), minutes)
 
                 const createDtos = [
-                    makeDto(testObjectId(0x1), -90), // 과거
-                    makeDto(testObjectId(0x2), 0), // 지금
-                    makeDto(testObjectId(0x3), 1), // 미래
-                    makeDto(testObjectId(0x4), 120) // 미래
+                    { movieId: testObjectId(0x1), startTime: now(-90) },
+                    { movieId: testObjectId(0x2), startTime: now(0) },
+                    { movieId: testObjectId(0x3), startTime: now(1) },
+                    { movieId: testObjectId(0x4), startTime: now(120) }
                 ]
 
-                await fix.showtimesClient.createShowtimes(createDtos)
+                await createShowtimes(fix, createDtos)
             })
 
             // startTimeRange에 포함되는 영화 ID 목록을 반환한다
@@ -193,16 +180,13 @@ describe('ShowtimesService', () => {
         // `movieIds`가 제공된 경우
         describe('when `movieIds` are provided', () => {
             beforeEach(async () => {
-                const makeDto = (movieId: string, theaterId: string) =>
-                    buildCreateShowtimeDto({ movieId, theaterId })
-
                 const createDtos = [
-                    makeDto(movieId, testObjectId(0x1)),
-                    makeDto(movieId, testObjectId(0x2)),
-                    makeDto(nullObjectId, testObjectId(0x3)) // 다른 영화
+                    { movieId, theaterId: testObjectId(0x1) },
+                    { movieId, theaterId: testObjectId(0x2) },
+                    { movieId: nullObjectId, theaterId: testObjectId(0x3) }
                 ]
 
-                await fix.showtimesClient.createShowtimes(createDtos)
+                await createShowtimes(fix, createDtos)
             })
 
             // movieIds를 상영하는 극장의 ID 목록을 반환한다
@@ -223,16 +207,13 @@ describe('ShowtimesService', () => {
         // `movieIds`와 `theaterIds`가 제공된 경우
         describe('when `movieIds` and `theaterIds` are provided', () => {
             beforeEach(async () => {
-                const makeDto = (theaterId: string, date: string) =>
-                    buildCreateShowtimeDto({ movieId, theaterId, startTime: new Date(date) })
-
                 const createDtos = [
-                    makeDto(theaterId, '2000-01-01'),
-                    makeDto(theaterId, '2000-01-02'),
-                    makeDto(nullObjectId, '2000-01-03')
+                    { movieId, theaterId, startTime: new Date('2000-01-01') },
+                    { movieId, theaterId, startTime: new Date('2000-01-02') },
+                    { movieId, theaterId: nullObjectId, startTime: new Date('2000-01-03') }
                 ]
 
-                await fix.showtimesClient.createShowtimes(createDtos)
+                await createShowtimes(fix, createDtos)
             })
 
             // theaterIds에서 상영하는 movieIds의 상영일 목록을 반환한다.

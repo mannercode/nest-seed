@@ -90,16 +90,24 @@ export const buildCreateShowtimeDto = (overrides: Partial<CreateShowtimeDto> = {
         transactionId: nullObjectId,
         movieId: nullObjectId,
         theaterId: nullObjectId,
-        startTime: new Date('2000-01-01T12:00'),
+        startTime: new Date(0),
         endTime: new Date(0),
         ...overrides
     }
 
-    createDto.endTime = DateUtil.addMinutes(createDto.startTime, 1)
+    if (overrides.endTime === undefined) {
+        createDto.endTime = DateUtil.addMinutes(createDto.startTime, 1)
+    }
+
     return createDto
 }
 
-export const createShowtimes = async (fix: CommonFixture, createDtos: CreateShowtimeDto[]) => {
+export const createShowtimes = async (
+    fix: CommonFixture,
+    overrides: Partial<CreateShowtimeDto>[]
+) => {
+    const createDtos = overrides.map((override) => buildCreateShowtimeDto(override))
+
     const { success } = await fix.showtimesClient.createShowtimes(createDtos)
     expect(success).toBeTruthy()
 
