@@ -12,7 +12,12 @@ export interface Fixture extends CommonFixture {
     uploadDir: string
     maxFileSizeBytes: number
     maxFilesPerUpload: number
-    files: { notAllowed: FixtureFile; oversized: FixtureFile; large: FixtureFile; small: FixtureFile }
+    files: {
+        notAllowed: FixtureFile
+        oversized: FixtureFile
+        large: FixtureFile
+        small: FixtureFile
+    }
 }
 
 export const createFixture = async () => {
