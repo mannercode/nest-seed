@@ -17,7 +17,7 @@ export const Messages = createMessagePatternMap(
         },
         Tickets: {
             createTickets: null,
-            updateTicketStatus: null,
+            updateTicketsStatus: null,
             searchTickets: null,
             getTicketSalesForShowtimes: null,
             getTickets: null

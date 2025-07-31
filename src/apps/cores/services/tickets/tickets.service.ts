@@ -14,8 +14,8 @@ export class TicketsService {
         return { success: true, count: createDtos.length } as CreateTicketsResult
     }
 
-    async updateTicketStatus(ticketIds: string[], status: TicketStatus) {
-        const result = await this.repository.updateTicketStatus(ticketIds, status)
+    async updateTicketsStatus(ticketIds: string[], status: TicketStatus) {
+        const result = await this.repository.updateTicketsStatus(ticketIds, status)
 
         Assert.equals(
             result.matchedCount,

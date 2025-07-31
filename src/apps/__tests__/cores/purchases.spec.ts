@@ -131,7 +131,7 @@ describe('PurchasesService', () => {
                 const { TicketsService } = await import('apps/cores')
                 const ticketsService = fix.getProvider(TicketsService)
 
-                jest.spyOn(ticketsService, 'updateTicketStatus').mockImplementationOnce(() => {
+                jest.spyOn(ticketsService, 'updateTicketsStatus').mockImplementationOnce(() => {
                     throw new Error('purchase error')
                 })
 

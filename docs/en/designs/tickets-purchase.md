@@ -217,7 +217,7 @@ Customer -> Frontend: 결제 정보 입력
             Purchases <-- Purchases: 구매 완료
             Purchases ->> TicketPurchases: completePurchase(purchaseId, items)
             activate TicketPurchases
-                TicketPurchases -> Tickets: updateTicketStatus(ticketIds[], 'sold')
+                TicketPurchases -> Tickets: updateTicketsStatus(ticketIds[], 'sold')
                 TicketPurchases <-- Tickets: 완료
                 TicketPurchases ->o]: ticketPurchasedEvent(customer, ticketIds[])
                 note left
@@ -289,7 +289,7 @@ Customer -> Frontend: 결제 정보 입력
 
             PurchaseProcess -> TicketProcessor: completePurchase(purchaseId, items)
             activate TicketProcessor
-                TicketProcessor -> Tickets: updateTicketStatus(ticketIds[], 'sold')
+                TicketProcessor -> Tickets: updateTicketsStatus(ticketIds[], 'sold')
                 TicketProcessor <-- Tickets: 완료
                 TicketProcessor ->o]: ticketPurchasedEvent(customer, ticketIds[])
                 note left: WatchRecordsService에서 필요하다

@@ -30,7 +30,7 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         return this.saveMany(tickets)
     }
 
-    async updateTicketStatus(ticketIds: string[], status: TicketStatus) {
+    async updateTicketsStatus(ticketIds: string[], status: TicketStatus) {
         const result = await this.model.updateMany(
             { _id: { $in: objectIds(ticketIds) } },
             { $set: { status } }

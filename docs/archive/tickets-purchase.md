@@ -179,7 +179,7 @@ Customer->>Frontend: 좌석 선택
     Frontend->>Backend: 티켓 구매\nPOST /payments
         Backend->>Payment: createPayment(ticketIds[])
             Payment->>Tickets: notifyTicketsPurchased(ticketIds[])
-                Tickets->>Tickets: updateTicketStatus(ticketIds[], 'sold')
+                Tickets->>Tickets: updateTicketsStatus(ticketIds[], 'sold')
             Tickets-->>Payment: 티켓 구매 처리 완료
         Payment-->>Backend: 결제 완료 및 티켓 정보
     Backend-->>Frontend: 티켓 구매 결과(성공)

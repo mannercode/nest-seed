@@ -119,7 +119,7 @@ export class TicketPurchaseProcessor {
         )
         const ticketIds = ticketItems.map((item) => item.ticketId)
 
-        await this.ticketsService.updateTicketStatus(ticketIds, TicketStatus.Sold)
+        await this.ticketsService.updateTicketsStatus(ticketIds, TicketStatus.Sold)
 
         await this.events.emitTicketPurchased(createDto.customerId, ticketIds)
 
@@ -132,7 +132,7 @@ export class TicketPurchaseProcessor {
         )
         const ticketIds = ticketItems.map((item) => item.ticketId)
 
-        await this.ticketsService.updateTicketStatus(ticketIds, TicketStatus.Available)
+        await this.ticketsService.updateTicketsStatus(ticketIds, TicketStatus.Available)
 
         await this.events.emitTicketPurchaseCanceled(createDto.customerId, ticketIds)
 

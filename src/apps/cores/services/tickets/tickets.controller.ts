@@ -16,12 +16,12 @@ export class TicketsController {
         return this.service.createTickets(createDtos)
     }
 
-    @MessagePattern(Messages.Tickets.updateTicketStatus)
-    updateTicketStatus(
+    @MessagePattern(Messages.Tickets.updateTicketsStatus)
+    updateTicketsStatus(
         @Payload('ticketIds') ticketIds: string[],
         @Payload('status') status: TicketStatus
     ) {
-        return this.service.updateTicketStatus(ticketIds, status)
+        return this.service.updateTicketsStatus(ticketIds, status)
     }
 
     @MessagePattern(Messages.Tickets.searchTickets)
