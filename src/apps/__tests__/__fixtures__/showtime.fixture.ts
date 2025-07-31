@@ -1,13 +1,14 @@
 import { CreateShowtimeDto } from 'apps/cores'
 import { DateUtil, newObjectId } from 'common'
 import { uniq } from 'lodash'
+import { oid } from 'testlib'
 import { CommonFixture } from '../__helpers__'
 
 export const buildCreateShowtimeDto = (overrides: Partial<CreateShowtimeDto> = {}) => {
     const createDto = {
         transactionId: newObjectId(),
-        movieId: newObjectId(),
-        theaterId: newObjectId(),
+        movieId: oid(0x0),
+        theaterId: oid(0x0),
         startTime: new Date(0),
         endTime: new Date(0),
         ...overrides

@@ -1,12 +1,12 @@
 import { PurchaseItemType } from 'apps/cores'
-import { newObjectId } from 'common'
+import { oid } from 'testlib'
 import { CommonFixture } from '../__helpers__'
 
 export const buildCreatePurchaseDto = (overrides = {}) => {
     const createDto = {
-        customerId: newObjectId(),
+        customerId: oid(0x0),
         totalPrice: 1,
-        purchaseItems: [{ type: PurchaseItemType.Ticket, ticketId: newObjectId() }],
+        purchaseItems: [{ type: PurchaseItemType.Ticket, ticketId: oid(0x0) }],
         ...overrides
     }
     return createDto

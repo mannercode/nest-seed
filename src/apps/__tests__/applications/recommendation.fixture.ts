@@ -1,5 +1,6 @@
 import { CustomerDto, MovieDto } from 'apps/cores'
 import { newObjectId } from 'common'
+import { oid } from 'testlib'
 import {
     createCustomerAndLogin,
     createMovie,
@@ -24,9 +25,9 @@ export const createShowingMovies = async (fix: CommonFixture, dtos: Partial<Movi
     const showingMovies = await Promise.all(dtos.map((dto) => createMovie(fix, dto)))
 
     const createShowtimesDtos = showingMovies.map((movie) => ({
-        movieId: movie.id,
         transactionId: newObjectId(),
-        theaterId: newObjectId(),
+        movieId: movie.id,
+        theaterId: oid(0x0),
         startTime: new Date('2999-01-01'),
         endTime: new Date('2999-01-02')
     }))

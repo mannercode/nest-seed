@@ -1,8 +1,8 @@
-import { newObjectId } from 'common'
+import { oid } from 'testlib'
 import { CommonFixture, createCommonFixture } from '../__helpers__'
 
 export const buildCreatePaymentDto = (overrides = {}) => {
-    const createDto = { customerId: newObjectId(), amount: 1, ...overrides }
+    const createDto = { customerId: oid(0x0), amount: 1, ...overrides }
 
     return createDto
 }

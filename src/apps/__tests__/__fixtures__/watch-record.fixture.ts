@@ -1,12 +1,11 @@
-import { newObjectId } from 'common'
-import { nullDate } from 'testlib'
+import { nullDate, oid } from 'testlib'
 import { CommonFixture } from '../__helpers__'
 
 export const buildCreateWatchRecordDto = (overrides = {}) => {
     const createDto = {
-        customerId: newObjectId(),
-        movieId: newObjectId(),
-        purchaseId: newObjectId(),
+        customerId: oid(0x0),
+        movieId: oid(0x0),
+        purchaseId: oid(0x0),
         watchDate: nullDate,
         ...overrides
     }
