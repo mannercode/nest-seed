@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { ClientProxyService, InjectClientProxy } from 'common'
 import { Messages } from 'shared'
 import {
+    AggregateTicketSalesDto,
     CreateTicketDto,
     CreateTicketsResult,
     SearchTicketsDto,
@@ -26,8 +27,10 @@ export class TicketsClient {
         return this.proxy.getJson(Messages.Tickets.searchTickets, searchDto)
     }
 
-    getTicketSalesForShowtimes(showtimeIds: string[]): Promise<TicketSalesForShowtimeDto[]> {
-        return this.proxy.getJson(Messages.Tickets.getTicketSalesForShowtimes, showtimeIds)
+    aggregateTicketSales(
+        aggregateDto: AggregateTicketSalesDto
+    ): Promise<TicketSalesForShowtimeDto[]> {
+        return this.proxy.getJson(Messages.Tickets.aggregateTicketSales, aggregateDto)
     }
 
     getTickets(ticketIds: string[]): Promise<TicketDto[]> {

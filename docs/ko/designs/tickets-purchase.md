@@ -136,7 +136,7 @@ Customer -> Frontend: 상영일 선택
         Backend -> Booking: searchShowtimes({movieId, theaterId, showdate})
             Booking -> Showtimes: searchShowtimes({movieId, theaterId, showdate})
             Booking <-- Showtimes: showtimes[]
-            Booking -> Tickets: getTicketSalesForShowtimes({ showtimeIds })
+            Booking -> Tickets: aggregateTicketSales({ showtimeIds })
             Booking <-- Tickets: salesStatuses[]
             note left
             ShowtimeSalesStatus = {

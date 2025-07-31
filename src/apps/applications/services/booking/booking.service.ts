@@ -59,8 +59,10 @@ export class BookingService {
             startTimeRange: { start: startOfDay, end: endOfDay }
         })
 
-        const ids = pickIds(showtimes)
-        const ticketSalesForShowtimes = await this.ticketsService.getTicketSalesForShowtimes(ids)
+        const showtimeIds = pickIds(showtimes)
+        const ticketSalesForShowtimes = await this.ticketsService.aggregateTicketSales({
+            showtimeIds
+        })
 
         const showtimesForBooking = generateShowtimesForBooking(showtimes, ticketSalesForShowtimes)
 

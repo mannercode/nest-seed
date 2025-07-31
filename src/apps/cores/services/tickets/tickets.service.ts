@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { Assert, mapDocToDto } from 'common'
-import { CreateTicketDto, CreateTicketsResult, SearchTicketsDto, TicketDto } from './dtos'
+import {
+    AggregateTicketSalesDto,
+    CreateTicketDto,
+    CreateTicketsResult,
+    SearchTicketsDto,
+    TicketDto
+} from './dtos'
 import { TicketDocument, TicketStatus } from './models'
 import { TicketsRepository } from './tickets.repository'
 
@@ -34,8 +40,8 @@ export class TicketsService {
         return this.toDtos(tickets)
     }
 
-    async getTicketSalesForShowtimes(showtimeIds: string[]) {
-        const statuses = await this.repository.getTicketSalesForShowtimes(showtimeIds)
+    async aggregateTicketSales(aggregateDto: AggregateTicketSalesDto) {
+        const statuses = await this.repository.aggregateTicketSales(aggregateDto)
         return statuses
     }
 

@@ -155,7 +155,7 @@ describe('TicketsService', () => {
         })
     })
 
-    describe('getTicketSalesForShowtimes', () => {
+    describe('aggregateTicketSales', () => {
         // 티켓이 존재하는 경우
         describe('when the tickets exist', () => {
             // 주어진 상영시간에 대한 판매 통계를 반환한다.
@@ -170,9 +170,9 @@ describe('TicketsService', () => {
                 const ticketIds = pickIds(tickets.slice(0, soldCount))
                 await fix.ticketsService.updateTicketsStatus(ticketIds, TicketStatus.Sold)
 
-                const ticketSalesForShowtimes = await fix.ticketsService.getTicketSalesForShowtimes(
-                    [showtimeId]
-                )
+                const ticketSalesForShowtimes = await fix.ticketsService.aggregateTicketSales({
+                    showtimeIds: [showtimeId]
+                })
 
                 expect(ticketSalesForShowtimes).toEqual([
                     {
