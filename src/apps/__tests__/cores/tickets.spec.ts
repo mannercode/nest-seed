@@ -1,7 +1,7 @@
 import { CreateTicketDto, TicketDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { omit } from 'lodash'
-import { expectEqualUnsorted, testObjectId } from 'testlib'
+import { expectEqualUnsorted, oid } from 'testlib'
 import { buildCreateTicketDto, createTickets } from '../__fixtures__'
 import { buildCreateTicketDtos, Fixture } from './tickets.fixture'
 
@@ -30,10 +30,10 @@ describe('TicketsService', () => {
     })
 
     describe('searchTickets', () => {
-        const transactionIds = [testObjectId(0x10), testObjectId(0x11)]
-        const movieIds = [testObjectId(0x20), testObjectId(0x21)]
-        const theaterIds = [testObjectId(0x30), testObjectId(0x31)]
-        const showtimeIds = [testObjectId(0x40), testObjectId(0x41)]
+        const transactionIds = [oid(0x10), oid(0x11)]
+        const movieIds = [oid(0x20), oid(0x21)]
+        const theaterIds = [oid(0x30), oid(0x31)]
+        const showtimeIds = [oid(0x40), oid(0x41)]
         let createDtos: CreateTicketDto[] = []
         let expectedDtos: TicketDto[]
 
@@ -98,7 +98,7 @@ describe('TicketsService', () => {
     })
 
     describe('updateTicketStatus', () => {
-        const transactionId = testObjectId(0x01)
+        const transactionId = oid(0x01)
         let tickets: TicketDto[]
 
         const getStatus = async () => {
@@ -139,7 +139,7 @@ describe('TicketsService', () => {
     describe('getTicketSalesForShowtimes', () => {
         // 주어진 상영시간에 대한 판매 통계를 반환한다.
         it('returns the sales statistics for the given showtimes', async () => {
-            const showtimeId = testObjectId(0x10)
+            const showtimeId = oid(0x10)
             const ticketCount = 50
             const soldCount = 5
 

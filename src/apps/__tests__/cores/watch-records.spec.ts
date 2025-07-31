@@ -1,5 +1,5 @@
 import { WatchRecordDto } from 'apps/cores'
-import { expectEqualUnsorted, testObjectId } from 'testlib'
+import { expectEqualUnsorted, oid } from 'testlib'
 import { buildCreateWatchRecordDto, createWatchRecord } from '../__fixtures__'
 import { Fixture } from './watch-records.fixture'
 
@@ -27,7 +27,7 @@ describe('WatchRecordsService', () => {
 
     describe('searchWatchRecordsPage', () => {
         let records: WatchRecordDto[]
-        const customerId = testObjectId(0xa1)
+        const customerId = oid(0xa1)
 
         beforeEach(async () => {
             records = await Promise.all([
