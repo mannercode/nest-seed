@@ -1,7 +1,7 @@
 import { CustomerDto } from 'apps/cores'
 import { omit } from 'lodash'
 import { expectEqualUnsorted, nullObjectId } from 'testlib'
-import { buildCreateCustomerDto, createCustomer, Errors } from '../__fixtures__'
+import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
 import { Fixture } from './customers.fixture'
 
 describe('CustomersService', () => {

@@ -1,5 +1,5 @@
 import { CustomerDto } from 'apps/cores'
-import { CommonFixture } from '../__helpers__'
+import { CommonFixture } from '../create-common-fixture'
 
 export const createCustomerAndLogin = async (fix: CommonFixture) => {
     const email = 'user@mail.com'

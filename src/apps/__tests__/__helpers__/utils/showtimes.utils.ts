@@ -2,7 +2,7 @@ import { CreateShowtimeDto } from 'apps/cores'
 import { DateUtil, newObjectId } from 'common'
 import { uniq } from 'lodash'
 import { oid } from 'testlib'
-import { CommonFixture } from '../__helpers__'
+import { CommonFixture } from '../create-common-fixture'
 
 export const buildCreateShowtimeDto = (overrides: Partial<CreateShowtimeDto> = {}) => {
     const createDto = {

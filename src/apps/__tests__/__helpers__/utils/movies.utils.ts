@@ -1,6 +1,6 @@
 import { MovieGenre, MovieRating } from 'apps/cores'
-import { CommonFixture } from '../__helpers__'
-import { fixtureFiles } from './fixture-files'
+import { CommonFixture } from '../create-common-fixture'
+import { fixtureFiles } from '../fixture-files'
 
 export const buildCreateMovieDto = (overrides = {}) => {
     const createDto = {

@@ -1,6 +1,11 @@
 import { MovieDto } from 'apps/cores'
-import { createMovie, FixtureFile, fixtureFiles } from '../__fixtures__'
-import { CommonFixture, createCommonFixture } from '../__helpers__'
+import {
+    CommonFixture,
+    createCommonFixture,
+    createMovie,
+    FixtureFile,
+    fixtureFiles
+} from '../__helpers__'
 
 export interface Fixture extends CommonFixture {
     teardown: () => Promise<void>

@@ -1,6 +1,6 @@
 import { Seatmap, ShowtimeDto } from 'apps/cores'
 import { expectEqualUnsorted, nullDate, nullObjectId } from 'testlib'
-import { createShowtimes } from '../__fixtures__'
+import { createShowtimes } from '../__helpers__'
 import { createShowtimeDtos, Fixture, monitorEvents } from './showtime-creation.fixture'
 
 describe('ShowtimeCreationService', () => {

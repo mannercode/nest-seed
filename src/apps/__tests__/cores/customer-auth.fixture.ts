@@ -1,6 +1,10 @@
 import { JwtAuthTokens } from 'common'
-import { createCustomer, generateAuthTokens } from '../__fixtures__'
-import { CommonFixture, createCommonFixture } from '../__helpers__'
+import {
+    CommonFixture,
+    createCommonFixture,
+    createCustomer,
+    generateAuthTokens
+} from '../__helpers__'
 
 export interface Fixture extends CommonFixture {
     teardown: () => Promise<void>

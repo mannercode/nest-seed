@@ -1,4 +1,4 @@
-import { Errors } from '../__fixtures__'
+import { Errors } from '../__helpers__'
 import { Fixture } from './customer-auth.fixture'
 
 describe('CustomersService – Authentication', () => {

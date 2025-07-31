@@ -12,6 +12,8 @@ import { Rules } from 'shared'
 import {
     buildCreatePurchaseDto,
     buildCreateTicketDto,
+    CommonFixture,
+    createCommonFixture,
     createCustomer,
     createMovie,
     createPurchase,
@@ -19,8 +21,7 @@ import {
     createTheater,
     createTickets,
     holdTickets
-} from '../__fixtures__'
-import { CommonFixture, createCommonFixture } from '../__helpers__'
+} from '../__helpers__'
 
 export interface Fixture extends CommonFixture {
     teardown: () => Promise<void>

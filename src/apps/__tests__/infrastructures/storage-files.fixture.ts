@@ -1,6 +1,5 @@
 import { Path } from 'common'
-import { FixtureFile, fixtureFiles } from '../__fixtures__'
-import { CommonFixture, createCommonFixture } from '../__helpers__'
+import { CommonFixture, createCommonFixture, FixtureFile, fixtureFiles } from '../__helpers__'
 
 export const saveFile = async (fixture: CommonFixture, file: FixtureFile) => {
     const files = await fixture.storageFilesService.saveFiles([file])

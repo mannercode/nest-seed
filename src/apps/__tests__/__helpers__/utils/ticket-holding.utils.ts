@@ -1,6 +1,6 @@
 import { HoldTicketsDto } from 'apps/cores'
 import { oid } from 'testlib'
-import { CommonFixture } from '../__helpers__'
+import { CommonFixture } from '../create-common-fixture'
 
 export const holdTickets = async (fix: CommonFixture, holdDto?: Partial<HoldTicketsDto>) => {
     return fix.ticketHoldingService.holdTickets({
