@@ -4,5 +4,4 @@ export class StorageFileDto {
     mimeType: string
     size: number
     checksum: string
-    storedPath: string
 }

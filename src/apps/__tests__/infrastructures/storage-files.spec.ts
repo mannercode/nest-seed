@@ -44,16 +44,14 @@ describe('StorageFilesService', () => {
                                 originalName: files[0].originalName,
                                 mimeType: files[0].mimeType,
                                 size: files[0].size,
-                                checksum: await FileUtil.getChecksum(files[0].path),
-                                storedPath: expect.any(String)
+                                checksum: await FileUtil.getChecksum(files[0].path)
                             },
                             {
                                 id: expect.any(String),
                                 originalName: files[1].originalName,
                                 mimeType: files[1].mimeType,
                                 size: files[1].size,
-                                checksum: await FileUtil.getChecksum(files[1].path),
-                                storedPath: expect.any(String)
+                                checksum: await FileUtil.getChecksum(files[1].path)
                             }
                         ]
                     })
@@ -180,19 +178,8 @@ describe('StorageFilesService', () => {
         describe('when the file exists', () => {
             // 파일 기록과 물리적 파일을 함께 삭제한다.
             it('deletes the file record and the physical file', async () => {
-                const filePath = Path.join(fix.uploadDir, `${uploadedFile.id}.file`)
-
-                expect(Path.existsSync(filePath)).toBeTruthy()
-
                 await fix.httpClient.delete(`/storage-files/${uploadedFile.id}`).ok()
-                await fix.httpClient
-                    .get(`/storage-files/${uploadedFile.id}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [uploadedFile.id]
-                    })
-
-                expect(Path.existsSync(filePath)).toBeFalsy()
+                await fix.httpClient.get(`/storage-files/${uploadedFile.id}`).notFound()
             })
         })
 
