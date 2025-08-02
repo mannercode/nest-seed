@@ -122,10 +122,10 @@ describe('BookingService', () => {
     })
 
     describe('GET /booking/showtimes/:id/tickets', () => {
-        // 상영시간이 존재하지 않을 때
+        // 상영시간이 존재하지 않는 경우
         describe('when the showtime does not exist', () => {
-            // 404 Not Found 에러를 반환한다.
-            it('returns 404 Not Found error', async () => {
+            // 404 Not Found를 반환한다
+            it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .get(`/booking/showtimes/${nullObjectId}/tickets`)
                     .notFound({ ...Errors.Booking.ShowtimeNotFound, showtimeId: nullObjectId })
