@@ -54,17 +54,15 @@ describe('BookingService', () => {
                 const latLong = '31.9,131.9'
                 const { body: theaters } = await fix.httpClient
                     .get(`/booking/movies/${movie.id}/theaters?latLong=${latLong}`)
-                    .ok()
-
-                expect(theaters).toEqual(
-                    [
-                        { location: { latitude: 32.0, longitude: 132.0 } }, // distance = 0.1
-                        { location: { latitude: 31.0, longitude: 131.0 } }, // distance = 0.9
-                        { location: { latitude: 33.0, longitude: 133.0 } }, // distance = 1.1
-                        { location: { latitude: 30.0, longitude: 130.0 } }, // distance = 1.9
-                        { location: { latitude: 34.0, longitude: 134.0 } } // distance = 2.1
-                    ].map((item) => expect.objectContaining(item))
-                )
+                    .ok(
+                        [
+                            { location: { latitude: 32.0, longitude: 132.0 } }, // distance = 0.1
+                            { location: { latitude: 31.0, longitude: 131.0 } }, // distance = 0.9
+                            { location: { latitude: 33.0, longitude: 133.0 } }, // distance = 1.1
+                            { location: { latitude: 30.0, longitude: 130.0 } }, // distance = 1.9
+                            { location: { latitude: 34.0, longitude: 134.0 } } // distance = 2.1
+                        ].map((item) => expect.objectContaining(item))
+                    )
 
                 theater = theaters[0]
             })
@@ -73,13 +71,7 @@ describe('BookingService', () => {
             await step('searches showdates', async () => {
                 const { body: showdates } = await fix.httpClient
                     .get(`/booking/movies/${movie.id}/theaters/${theater.id}/showdates`)
-                    .ok()
-
-                expect(showdates).toEqual([
-                    new Date('2999-01-01'),
-                    new Date('2999-01-02'),
-                    new Date('2999-01-03')
-                ])
+                    .ok([new Date('2999-01-01'), new Date('2999-01-02'), new Date('2999-01-03')])
 
                 showdate = showdates[0]
             })
@@ -116,7 +108,10 @@ describe('BookingService', () => {
                     .ok()
 
                 tickets = body
-                tickets.forEach((ticket) => expect(ticket.status).toBe(TicketStatus.Available))
+
+                expect(tickets.map((ticket) => ticket.status)).toEqual(
+                    Array(tickets.length).fill(TicketStatus.Available)
+                )
             })
 
             // 5. 티켓을 선점한다

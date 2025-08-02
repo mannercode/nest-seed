@@ -42,11 +42,8 @@ describe('objectIds', () => {
         const idStrings = ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012']
         const result = objectIds(idStrings)
 
-        expect(result).toHaveLength(2)
-        result.forEach((id, index) => {
-            expect(id).toBeInstanceOf(Types.ObjectId)
-            expect(id.toString()).toBe(idStrings[index])
-        })
+        expect(result.map((id) => id.toString())).toEqual(idStrings)
+        expect(result).toEqual([expect.any(Types.ObjectId), expect.any(Types.ObjectId)])
     })
 
     // 빈 배열이 주어지면 빈 배열을 반환해야 한다

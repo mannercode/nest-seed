@@ -52,15 +52,17 @@ describe('PurchasesService', () => {
             it('changes the status of purchased tickets to `Sold`', async () => {
                 const soldTickets = await getTickets(fix, pickIds(fix.heldTickets))
 
-                soldTickets.forEach((ticket) => expect(ticket.status).toBe(TicketStatus.Sold))
+                expect(soldTickets.map((ticket) => ticket.status)).toEqual(
+                    Array(soldTickets.length).fill(TicketStatus.Sold)
+                )
             })
 
             // 구매하지 않은 티켓의 상태는 그대로 유지한다
             it('does not change the status of unpurchased tickets', async () => {
                 const remainingTickets = await getTickets(fix, pickIds(fix.availableTickets))
 
-                remainingTickets.forEach((ticket) =>
-                    expect(ticket.status).toBe(TicketStatus.Available)
+                expect(remainingTickets.map((ticket) => ticket.status)).toEqual(
+                    Array(remainingTickets.length).fill(TicketStatus.Available)
                 )
             })
         })

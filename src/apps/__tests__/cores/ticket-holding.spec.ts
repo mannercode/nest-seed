@@ -148,10 +148,16 @@ describe('TicketHoldingService', () => {
                         })
                     )
 
-                    batchResults.forEach(({ successfulCount, heldTicketIds }) => {
-                        expect(successfulCount).toBe(1)
-                        expect(sortBy(heldTicketIds)).toEqual(ticketIds)
+                    const actual = batchResults.map(({ successfulCount, heldTicketIds }) => ({
+                        successfulCount,
+                        heldTicketIds: sortBy(heldTicketIds)
+                    }))
+                    const expected = Array(batchResults.length).fill({
+                        successfulCount: 1,
+                        heldTicketIds: ticketIds
                     })
+
+                    expect(actual).toEqual(expected)
                 },
                 60 * 1000
             )
