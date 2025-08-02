@@ -34,6 +34,7 @@ describe('PaymentsService', () => {
 
     describe('getPayments', () => {
         let createdPayment: PaymentDto
+
         // 결제 정보가 존재하는 경우
         describe('when the payments exist', () => {
             beforeEach(async () => {
