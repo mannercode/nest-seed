@@ -46,6 +46,7 @@ export class StorageFilesController {
         const files = await this.storageFilesService.getFiles([fileId])
         const file = files[0]
 
+        // TODO 스트림으로 전달하도록 변경해야 한다. storedPath는 지워야 한다.
         const readStream = createReadStream(file.storedPath)
 
         const stream = new StreamableFile(readStream, {

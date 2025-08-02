@@ -1,5 +1,5 @@
 import { StorageFileDto } from 'apps/infrastructures'
-import { FileUtil, generateShortId, Path } from 'common'
+import { FileUtil, Path } from 'common'
 import { nullObjectId } from 'testlib'
 import { Errors, uploadStorageFiles } from '../__helpers__'
 import type { Fixture } from './storage-files.fixture'
@@ -16,18 +16,13 @@ describe('StorageFilesService', () => {
         await fix?.teardown()
     })
 
-    const uploadFile = (attachs: any[], fields?: any[]) =>
-        fix.httpClient
-            .post('/storage-files')
-            .attachments(attachs)
-            .fields(fields ?? [{ name: 'name', value: 'test' }])
-
     describe('POST /storage-files', () => {
         const fields = [{ name: 'name', value: 'test' }]
 
-        // 여러 파일을 성공적으로 저장한다.
-        describe('???', () => {
-            it('stores multiple files correctly', async () => {
+        // payload가 유효한 경우
+        describe('when the payload is valid', () => {
+            // 파일을 저장하고 반환한다
+            it('stores and returns the files', async () => {
                 const files = [fix.localFiles.small, fix.localFiles.large]
 
                 await fix.httpClient
@@ -44,22 +39,25 @@ describe('StorageFilesService', () => {
                                 originalName: files[0].originalName,
                                 mimeType: files[0].mimeType,
                                 size: files[0].size,
-                                checksum: await FileUtil.getChecksum(files[0].path)
+                                checksum: await FileUtil.getChecksum(files[0].path),
+                                storedPath: expect.any(String)
                             },
                             {
                                 id: expect.any(String),
                                 originalName: files[1].originalName,
                                 mimeType: files[1].mimeType,
                                 size: files[1].size,
-                                checksum: await FileUtil.getChecksum(files[1].path)
+                                checksum: await FileUtil.getChecksum(files[1].path),
+                                storedPath: expect.any(String)
                             }
                         ]
                     })
             })
         })
 
-        // 첨부 파일이 없어도 요청에 성공한다.
-        describe('???', () => {
+        // 첨부 파일이 없는 경우
+        describe('when no file is attached', () => {
+            // 201 Created를 반환한다
             it('succeeds even if no file is attached', async () => {
                 await fix.httpClient
                     .post('/storage-files')
@@ -69,9 +67,10 @@ describe('StorageFilesService', () => {
             })
         })
 
-        // 허용된 크기를 초과하면 413 에러를 반환한다.
-        describe('???', () => {
-            it('returns a 413 Payload Too Large error if the file exceeds the size limit', async () => {
+        // 허용된 크기를 초과하는 경우
+        describe('when the file size exceeds the limit', () => {
+            // 413 Payload Too Large를 반환한다
+            it('returns 413 Payload Too Large', async () => {
                 await fix.httpClient
                     .post('/storage-files')
                     .attachments([{ name: 'files', file: fix.localFiles.oversized.path }])
@@ -80,9 +79,10 @@ describe('StorageFilesService', () => {
             })
         })
 
-        // 허용된 파일 개수를 초과하면 400 에러를 반환한다.
-        describe('???', () => {
-            it('returns a BadRequest(400) error if the number of files exceeds the limit', async () => {
+        // 허용된 파일 개수를 초과하는 경우
+        describe('when the number of files exceeds the limit', () => {
+            // 400 Bad Request를 반환한다
+            it('returns 400 Bad Request', async () => {
                 const attachments = fix.overLimitFiles.map((file) => ({
                     name: 'files',
                     file: file.path
@@ -96,9 +96,10 @@ describe('StorageFilesService', () => {
             })
         })
 
-        // 허용되지 않은 MIME 타입이면 415 에러를 반환한다.
-        describe('???', () => {
-            it('returns a 415 Unsupported Media Type error for unallowed MIME types', async () => {
+        // 허용되지 않은 파일 형식인 경우
+        describe('when the file type is not allowed', () => {
+            // 415 Unsupported Media Type를 반환한다
+            it('returns 415 Unsupported Media Type', async () => {
                 await fix.httpClient
                     .post('/storage-files')
                     .attachments([{ name: 'files', file: fix.localFiles.notAllowed.path }])
@@ -114,48 +115,54 @@ describe('StorageFilesService', () => {
         describe('when the required fields are missing', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                await uploadFile([], []).badRequest({
-                    ...Errors.RequestValidation.Failed,
-                    details: [{ constraints: { isString: 'name must be a string' }, field: 'name' }]
-                })
+                await fix.httpClient
+                    .post('/storage-files')
+                    .attachments([])
+                    .fields([])
+                    .badRequest({
+                        ...Errors.RequestValidation.Failed,
+                        details: [
+                            { constraints: { isString: 'name must be a string' }, field: 'name' }
+                        ]
+                    })
             })
         })
     })
 
     describe('GET /storage-files/:fileId', () => {
         let uploadedFile: StorageFileDto
-        let tempDir: string
+        let downloadPath: string
 
         beforeEach(async () => {
-            tempDir = await Path.createTempDirectory()
+            downloadPath = await Path.createTempDirectory()
             const uploadedFiles = await uploadStorageFiles(fix, [fix.localFiles.large])
             uploadedFile = uploadedFiles[0]
         })
 
         afterEach(async () => {
-            await Path.delete(tempDir)
+            await Path.delete(downloadPath)
         })
 
-        // 파일이 존재할 때
+        // 파일이 존재하는 경우
         describe('when the file exists', () => {
-            // 파일을 성공적으로 다운로드한다.
-            it('downloads the file successfully', async () => {
-                const downloadPath = Path.join(tempDir, generateShortId() + '.txt')
+            // 파일을 다운로드한다
+            it('downloads the file', async () => {
+                const downloadFile = Path.join(downloadPath, 'download.txt')
 
                 await fix.httpClient
                     .get(`/storage-files/${uploadedFile.id}`)
-                    .download(downloadPath)
+                    .download(downloadFile)
                     .ok()
 
-                expect(await FileUtil.getSize(downloadPath)).toEqual(uploadedFile.size)
-                expect(await FileUtil.getChecksum(downloadPath)).toEqual(uploadedFile.checksum)
+                expect(await FileUtil.getSize(downloadFile)).toEqual(uploadedFile.size)
+                expect(await FileUtil.getChecksum(downloadFile)).toEqual(uploadedFile.checksum)
             })
         })
 
-        // 파일이 존재하지 않을 때
+        // 파일이 존재하지 않는 경우
         describe('when the file does not exist', () => {
-            // 404 Not Found 에러를 반환한다.
-            it('returns 404 Not Found error', async () => {
+            // 404 Not Found를 반환한다
+            it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .get(`/storage-files/${nullObjectId}`)
                     .notFound({
@@ -167,26 +174,40 @@ describe('StorageFilesService', () => {
     })
 
     describe('DELETE /storage-files/:fileId', () => {
-        let uploadedFile: StorageFileDto
-
-        beforeEach(async () => {
-            const uploadedFiles = await uploadStorageFiles(fix, [fix.localFiles.large])
-            uploadedFile = uploadedFiles[0]
-        })
-
-        // 파일이 존재할 때
+        // 파일이 존재하는 경우
         describe('when the file exists', () => {
-            // 파일 기록과 물리적 파일을 함께 삭제한다.
-            it('deletes the file record and the physical file', async () => {
-                await fix.httpClient.delete(`/storage-files/${uploadedFile.id}`).ok()
+            let uploadedFile: StorageFileDto
+
+            beforeEach(async () => {
+                const uploadedFiles = await uploadStorageFiles(fix, [fix.localFiles.large])
+                uploadedFile = uploadedFiles[0]
+            })
+
+            // 파일을 삭제한다
+            it('deletes the file', async () => {
+                await fix.httpClient
+                    .delete(`/storage-files/${uploadedFile.id}`)
+                    .ok({
+                        deletedStorageFiles: [
+                            {
+                                id: expect.any(String),
+                                originalName: uploadedFile.originalName,
+                                mimeType: uploadedFile.mimeType,
+                                size: uploadedFile.size,
+                                checksum: uploadedFile.checksum,
+                                storedPath: expect.any(String)
+                            }
+                        ]
+                    })
+
                 await fix.httpClient.get(`/storage-files/${uploadedFile.id}`).notFound()
             })
         })
 
-        // 파일이 존재하지 않을 때
+        // 파일이 존재하지 않는 경우
         describe('when the file does not exist', () => {
-            // 404 Not Found 에러를 반환한다.
-            it('returns 404 Not Found error', async () => {
+            // 404 Not Found를 반환한다
+            it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .delete(`/storage-files/${nullObjectId}`)
                     .notFound({

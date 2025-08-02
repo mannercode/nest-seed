@@ -55,6 +55,29 @@ describe('CustomersService', () => {
         })
     })
 
+    describe('GET /customers/:id', () => {
+        // 고객이 존재하는 경우
+        describe('when the customer exists', () => {
+            // 고객 정보를 반환한다
+            it('returns the customer', async () => {
+                await fix.httpClient.get(`/customers/${fix.customer.id}`).ok(fix.customer)
+            })
+        })
+
+        // 고객이 존재하지 않는 경우
+        describe('when the customer does not exist', () => {
+            // 404 Not Found를 반환한다
+            it('returns 404 Not Found', async () => {
+                await fix.httpClient
+                    .get(`/customers/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
+            })
+        })
+    })
+
     describe('PATCH /customers/:id', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
@@ -118,29 +141,6 @@ describe('CustomersService', () => {
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .delete(`/customers/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
-            })
-        })
-    })
-
-    describe('GET /customers/:id', () => {
-        // 고객이 존재하는 경우
-        describe('when the customer exists', () => {
-            // 고객 정보를 반환한다
-            it('returns the customer', async () => {
-                await fix.httpClient.get(`/customers/${fix.customer.id}`).ok(fix.customer)
-            })
-        })
-
-        // 고객이 존재하지 않는 경우
-        describe('when the customer does not exist', () => {
-            // 404 Not Found를 반환한다
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .get(`/customers/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
                         notFoundIds: [nullObjectId]

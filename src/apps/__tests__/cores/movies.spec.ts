@@ -72,6 +72,29 @@ describe('MoviesService', () => {
         })
     })
 
+    describe('GET /movies/:id', () => {
+        // 영화가 존재하는 경우
+        describe('when the movie exists', () => {
+            // 영화 정보를 반환한다
+            it('returns the movie', async () => {
+                await fix.httpClient.get(`/movies/${fix.movie.id}`).ok(fix.movie)
+            })
+        })
+
+        // 영화가 존재하지 않는 경우
+        describe('when the movie does not exist', () => {
+            // 404 Not Found를 반환한다
+            it('returns 404 Not Found', async () => {
+                await fix.httpClient
+                    .get(`/movies/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
+            })
+        })
+    })
+
     describe('PATCH /movies/:id', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
@@ -152,29 +175,6 @@ describe('MoviesService', () => {
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .delete(`/movies/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
-            })
-        })
-    })
-
-    describe('GET /movies/:id', () => {
-        // 영화가 존재하는 경우
-        describe('when the movie exists', () => {
-            // 영화 정보를 반환한다
-            it('returns the movie', async () => {
-                await fix.httpClient.get(`/movies/${fix.movie.id}`).ok(fix.movie)
-            })
-        })
-
-        // 영화가 존재하지 않는 경우
-        describe('when the movie does not exist', () => {
-            // 404 Not Found를 반환한다
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .get(`/movies/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
                         notFoundIds: [nullObjectId]

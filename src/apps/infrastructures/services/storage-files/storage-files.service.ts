@@ -75,6 +75,7 @@ export class StorageFilesService {
             'size',
             'checksum'
         ])
+        dto.storedPath = this.getStoragePath(file.id)
 
         return dto
     }

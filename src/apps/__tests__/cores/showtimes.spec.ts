@@ -30,6 +30,41 @@ describe('ShowtimesService', () => {
         })
     })
 
+    describe('getShowtimes', () => {
+        let showtimes: ShowtimeDto[]
+
+        beforeEach(async () => {
+            const createDtos = [
+                { startTime: new Date('2000-01-01T12:00') },
+                { startTime: new Date('2000-01-01T14:00') }
+            ]
+
+            showtimes = await createShowtimes(fix, createDtos)
+        })
+
+        // 상영시간이 존재하는 경우
+        describe('when the showtimes exist', () => {
+            // 상영시간들을 반환한다
+            it('returns the showtimes', async () => {
+                const showtimeIds = pickIds(showtimes)
+
+                const gotShowtimes = await fix.showtimesService.getShowtimes(showtimeIds)
+
+                expectEqualUnsorted(gotShowtimes, showtimes)
+            })
+        })
+
+        // 상영시간이 존재하지 않는 경우
+        describe('when the showtimes do not exist', () => {
+            // NotFoundException을 던진다
+            it('throws NotFoundException', async () => {
+                const promise = fix.showtimesService.getShowtimes([nullObjectId])
+
+                await expect(promise).rejects.toThrow('One or more documents not found')
+            })
+        })
+    })
+
     describe('searchShowtimes', () => {
         const transactionId = oid(0x1)
         const movieId = oid(0x2)
@@ -110,41 +145,6 @@ describe('ShowtimesService', () => {
                 await expect(promise).rejects.toThrow(
                     'At least one filter condition must be provided'
                 )
-            })
-        })
-    })
-
-    describe('getShowtimes', () => {
-        let showtimes: ShowtimeDto[]
-
-        beforeEach(async () => {
-            const createDtos = [
-                { startTime: new Date('2000-01-01T12:00') },
-                { startTime: new Date('2000-01-01T14:00') }
-            ]
-
-            showtimes = await createShowtimes(fix, createDtos)
-        })
-
-        // 상영시간이 존재하는 경우
-        describe('when the showtimes exist', () => {
-            // 상영시간들을 반환한다
-            it('returns the showtimes', async () => {
-                const showtimeIds = pickIds(showtimes)
-
-                const gotShowtimes = await fix.showtimesService.getShowtimes(showtimeIds)
-
-                expectEqualUnsorted(gotShowtimes, showtimes)
-            })
-        })
-
-        // 상영시간이 존재하지 않는 경우
-        describe('when the showtimes do not exist', () => {
-            // NotFoundException을 던진다
-            it('throws NotFoundException', async () => {
-                const promise = fix.showtimesService.getShowtimes([nullObjectId])
-
-                await expect(promise).rejects.toThrow('One or more documents not found')
             })
         })
     })
