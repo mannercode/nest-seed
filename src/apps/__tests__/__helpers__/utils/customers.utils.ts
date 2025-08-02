@@ -6,9 +6,9 @@ export const createCustomerAndLogin = async (fix: CommonFixture) => {
     const password = 'password'
     const customer = await createCustomer(fix, { email, password })
 
-    const { accessToken } = await generateAuthTokens(fix, customer)
+    const { accessToken, refreshToken } = await generateAuthTokens(fix, customer)
 
-    return { customer, accessToken }
+    return { customer, accessToken, refreshToken }
 }
 
 export const generateAuthTokens = async (fix: CommonFixture, customer: CustomerDto) => {

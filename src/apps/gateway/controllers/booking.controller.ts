@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, Patch, Req, UseGuards } from '@nestjs/common'
+import {
+    Body,
+    Controller,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Param,
+    Post,
+    Req,
+    UseGuards
+} from '@nestjs/common'
 import { BookingClient } from 'apps/applications'
 import { DateUtil, LatLong, LatLongQuery } from 'common'
 import { CustomerJwtAuthGuard } from './guards'
@@ -43,7 +53,8 @@ export class BookingController {
     }
 
     @UseGuards(CustomerJwtAuthGuard)
-    @Patch('showtimes/:showtimeId/tickets')
+    @HttpCode(HttpStatus.OK)
+    @Post('showtimes/:showtimeId/tickets/hold')
     async holdTickets(
         @Param('showtimeId') showtimeId: string,
         @Body('ticketIds') ticketIds: string[],
