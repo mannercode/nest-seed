@@ -1,6 +1,6 @@
 import { PaymentDto } from 'apps/infrastructures'
 import { buildCreatePaymentDto, createPayment } from '../__helpers__'
-import { Fixture } from './payments.fixture'
+import type { Fixture } from './payments.fixture'
 
 describe('PaymentsService', () => {
     let fix: Fixture

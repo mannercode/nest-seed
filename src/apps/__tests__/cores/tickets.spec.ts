@@ -2,7 +2,7 @@ import { TicketDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { expectEqualUnsorted, oid } from 'testlib'
 import { buildCreateTicketDto, createTickets } from '../__helpers__'
-import { Fixture } from './tickets.fixture'
+import type { Fixture } from './tickets.fixture'
 
 describe('TicketsService', () => {
     let fix: Fixture

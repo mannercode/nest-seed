@@ -2,7 +2,7 @@ import { sleep } from 'common'
 import { intersection, sortBy } from 'lodash'
 import { oid } from 'testlib'
 import { holdTickets, releaseTickets, searchHeldTicketIds } from '../__helpers__'
-import { Fixture } from './ticket-holding.fixture'
+import type { Fixture } from './ticket-holding.fixture'
 
 describe('TicketHoldingService', () => {
     let fix: Fixture

@@ -1,5 +1,5 @@
 import { Errors } from '../__helpers__'
-import { Fixture } from './customer-auth.fixture'
+import type { Fixture } from './customer-auth.fixture'
 
 describe('CustomersService – Authentication', () => {
     let fix: Fixture

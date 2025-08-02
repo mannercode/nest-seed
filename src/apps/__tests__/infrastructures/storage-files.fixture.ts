@@ -1,11 +1,6 @@
 import { Path } from 'common'
 import { CommonFixture, createCommonFixture, FixtureFile, fixtureFiles } from '../__helpers__'
 
-export const saveFile = async (fixture: CommonFixture, file: FixtureFile) => {
-    const files = await fixture.storageFilesService.saveFiles([file])
-    return files[0]
-}
-
 export interface Fixture extends CommonFixture {
     teardown: () => Promise<void>
     uploadDir: string
@@ -27,7 +22,7 @@ export const createFixture = async () => {
     }
     const uploadDir = await Path.createTempDirectory()
     const maxFileSizeBytes = localFiles.oversized.size
-    const maxFilesPerUpload = 2
+    const maxFilesPerUpload = 3
 
     const fix = await createCommonFixture({
         gateway: {

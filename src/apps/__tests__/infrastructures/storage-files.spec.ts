@@ -1,8 +1,8 @@
 import { StorageFileDto } from 'apps/infrastructures'
 import { FileUtil, generateShortId, Path } from 'common'
 import { nullObjectId } from 'testlib'
-import { Errors } from '../__helpers__'
-import { Fixture, saveFile } from './storage-files.fixture'
+import { Errors, uploadStorageFiles } from '../__helpers__'
+import type { Fixture } from './storage-files.fixture'
 
 describe('StorageFilesService', () => {
     let fix: Fixture
@@ -130,7 +130,8 @@ describe('StorageFilesService', () => {
 
         beforeEach(async () => {
             tempDir = await Path.createTempDirectory()
-            uploadedFile = await saveFile(fix, fix.localFiles.large)
+            const uploadedFiles = await uploadStorageFiles(fix, [fix.localFiles.large])
+            uploadedFile = uploadedFiles[0]
         })
 
         afterEach(async () => {
@@ -171,7 +172,8 @@ describe('StorageFilesService', () => {
         let uploadedFile: StorageFileDto
 
         beforeEach(async () => {
-            uploadedFile = await saveFile(fix, fix.localFiles.large)
+            const uploadedFiles = await uploadStorageFiles(fix, [fix.localFiles.large])
+            uploadedFile = uploadedFiles[0]
         })
 
         // 파일이 존재할 때
