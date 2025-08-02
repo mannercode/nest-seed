@@ -21,22 +21,22 @@ describe('BookingService', () => {
         let movie: MovieDto
         let accessToken: string
 
+        const locations = [
+            { latitude: 30.0, longitude: 130.0 },
+            { latitude: 31.0, longitude: 131.0 },
+            { latitude: 32.0, longitude: 132.0 },
+            { latitude: 33.0, longitude: 133.0 },
+            { latitude: 34.0, longitude: 134.0 }
+        ]
+
+        const startTimes = [
+            new Date('2999-01-01T12:00'),
+            new Date('2999-01-01T14:00'),
+            new Date('2999-01-03T12:00'),
+            new Date('2999-01-02T14:00')
+        ]
+
         beforeEach(async () => {
-            const locations = [
-                { latitude: 30.0, longitude: 130.0 },
-                { latitude: 31.0, longitude: 131.0 },
-                { latitude: 32.0, longitude: 132.0 },
-                { latitude: 33.0, longitude: 133.0 },
-                { latitude: 34.0, longitude: 134.0 }
-            ]
-
-            const startTimes = [
-                new Date('2999-01-01T12:00'),
-                new Date('2999-01-01T14:00'),
-                new Date('2999-01-03T12:00'),
-                new Date('2999-01-02T14:00')
-            ]
-
             const resources = await createAllResources(fix, locations, startTimes)
             movie = resources.movie
             accessToken = resources.accessToken
@@ -56,11 +56,11 @@ describe('BookingService', () => {
                     .get(`/booking/movies/${movie.id}/theaters?latLong=${latLong}`)
                     .ok(
                         [
-                            { location: { latitude: 32.0, longitude: 132.0 } }, // distance = 0.1
-                            { location: { latitude: 31.0, longitude: 131.0 } }, // distance = 0.9
-                            { location: { latitude: 33.0, longitude: 133.0 } }, // distance = 1.1
-                            { location: { latitude: 30.0, longitude: 130.0 } }, // distance = 1.9
-                            { location: { latitude: 34.0, longitude: 134.0 } } // distance = 2.1
+                            { location: locations[2] }, // distance = 0.1
+                            { location: locations[1] }, // distance = 0.9
+                            { location: locations[3] }, // distance = 1.1
+                            { location: locations[0] }, // distance = 1.9
+                            { location: locations[4] } // distance = 2.1
                         ].map((item) => expect.objectContaining(item))
                     )
 
@@ -84,16 +84,8 @@ describe('BookingService', () => {
                 const { body: showtimes } = await fix.httpClient.get(url).ok(
                     expect.arrayContaining(
                         [
-                            {
-                                movieId: movie.id,
-                                theaterId: theater.id,
-                                startTime: new Date('2999-01-01T12:00')
-                            },
-                            {
-                                movieId: movie.id,
-                                theaterId: theater.id,
-                                startTime: new Date('2999-01-01T14:00')
-                            }
+                            { movieId: movie.id, theaterId: theater.id, startTime: startTimes[0] },
+                            { movieId: movie.id, theaterId: theater.id, startTime: startTimes[1] }
                         ].map((item) => expect.objectContaining(item))
                     )
                 )
@@ -109,8 +101,10 @@ describe('BookingService', () => {
 
                 tickets = body
 
-                expect(tickets.map((ticket) => ticket.status)).toEqual(
-                    Array(tickets.length).fill(TicketStatus.Available)
+                expect(tickets).toEqual(
+                    Array(tickets.length).fill(
+                        expect.objectContaining({ status: TicketStatus.Available })
+                    )
                 )
             })
 
