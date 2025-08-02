@@ -116,10 +116,12 @@ describe('CustomersService', () => {
         describe('when the customer does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient.delete(`/customers/${nullObjectId}`).notFound({
-                    ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [nullObjectId]
-                })
+                await fix.httpClient
+                    .delete(`/customers/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
             })
         })
     })
@@ -137,10 +139,12 @@ describe('CustomersService', () => {
         describe('when the customer does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient.get(`/customers/${nullObjectId}`).notFound({
-                    ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [nullObjectId]
-                })
+                await fix.httpClient
+                    .get(`/customers/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
             })
         })
     })

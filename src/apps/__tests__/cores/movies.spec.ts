@@ -125,20 +125,24 @@ describe('MoviesService', () => {
 
             // 영화를 삭제한다
             it('deletes the movie', async () => {
-                await fix.httpClient.get(`/movies/${fix.movie.id}`).notFound({
-                    ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [fix.movie.id]
-                })
+                await fix.httpClient
+                    .get(`/movies/${fix.movie.id}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [fix.movie.id]
+                    })
             })
 
             // 영화와 관련된 파일을 삭제한다
             it('deletes the movie’s files', async () => {
                 const fileUrl = fix.movie.imageUrls[0]
 
-                await fix.httpClient.get(fileUrl).notFound({
-                    ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [expect.any(String)]
-                })
+                await fix.httpClient
+                    .get(fileUrl)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [expect.any(String)]
+                    })
             })
         })
 
@@ -146,10 +150,12 @@ describe('MoviesService', () => {
         describe('when the movie does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient.delete(`/movies/${nullObjectId}`).notFound({
-                    ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [nullObjectId]
-                })
+                await fix.httpClient
+                    .delete(`/movies/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
             })
         })
     })
@@ -167,10 +173,12 @@ describe('MoviesService', () => {
         describe('when the movie does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient.get(`/movies/${nullObjectId}`).notFound({
-                    ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [nullObjectId]
-                })
+                await fix.httpClient
+                    .get(`/movies/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
             })
         })
     })

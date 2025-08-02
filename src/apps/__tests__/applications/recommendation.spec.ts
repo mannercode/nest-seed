@@ -47,11 +47,7 @@ describe('RecommendationService', () => {
                     genres: [MovieGenre.Action],
                     releaseDate: new Date('2900-04-01')
                 },
-                {
-                    title: 'Drama',
-                    genres: [MovieGenre.Drama],
-                    releaseDate: new Date('2900-05-01')
-                }
+                { title: 'Drama', genres: [MovieGenre.Drama], releaseDate: new Date('2900-05-01') }
             ])
         })
 

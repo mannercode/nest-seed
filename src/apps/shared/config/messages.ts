@@ -2,19 +2,9 @@ import { createMessagePatternMap, getProjectId } from './utils'
 
 export const Messages = createMessagePatternMap(
     {
-        StorageFiles: {
-            saveFiles: null,
-            getFiles: null,
-            deleteFiles: null
-        },
-        Payments: {
-            createPayment: null,
-            getPayments: null
-        },
-        WatchRecords: {
-            createWatchRecord: null,
-            searchWatchRecordsPage: null
-        },
+        StorageFiles: { saveFiles: null, getFiles: null, deleteFiles: null },
+        Payments: { createPayment: null, getPayments: null },
+        WatchRecords: { createWatchRecord: null, searchWatchRecordsPage: null },
         Tickets: {
             createTickets: null,
             updateTicketsStatus: null,
@@ -22,11 +12,7 @@ export const Messages = createMessagePatternMap(
             aggregateTicketSales: null,
             getTickets: null
         },
-        TicketHolding: {
-            holdTickets: null,
-            searchHeldTicketIds: null,
-            releaseTickets: null
-        },
+        TicketHolding: { holdTickets: null, searchHeldTicketIds: null, releaseTickets: null },
         Theaters: {
             createTheater: null,
             updateTheater: null,
@@ -44,10 +30,7 @@ export const Messages = createMessagePatternMap(
             searchShowdates: null,
             allShowtimesExist: null
         },
-        Purchases: {
-            createPurchase: null,
-            getPurchases: null
-        },
+        Purchases: { createPurchase: null, getPurchases: null },
         Movies: {
             createMovie: null,
             updateMovie: null,
@@ -72,12 +55,8 @@ export const Messages = createMessagePatternMap(
             searchShowtimes: null,
             requestShowtimeCreation: null
         },
-        Recommendation: {
-            searchRecommendedMovies: null
-        },
-        PurchaseProcess: {
-            processPurchase: null
-        },
+        Recommendation: { searchRecommendedMovies: null },
+        PurchaseProcess: { processPurchase: null },
         Booking: {
             searchTheaters: null,
             searchShowdates: null,

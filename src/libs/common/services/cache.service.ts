@@ -73,10 +73,6 @@ export class CacheModule {
             inject: [getRedisConnectionToken(redisName)]
         }
 
-        return {
-            module: CacheModule,
-            providers: [provider],
-            exports: [provider]
-        }
+        return { module: CacheModule, providers: [provider], exports: [provider] }
     }
 }

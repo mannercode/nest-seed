@@ -1,5 +1,3 @@
 import { RequestValidationPipeErrors } from './pipes'
 
-export const SharedErrors = {
-    RequestValidation: RequestValidationPipeErrors
-}
+export const SharedErrors = { RequestValidation: RequestValidationPipeErrors }

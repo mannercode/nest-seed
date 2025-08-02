@@ -3,5 +3,6 @@
     "trailingComma": "none",
     "tabWidth": 4,
     "semi": false,
-    "singleQuote": true
+    "singleQuote": true,
+    "objectWrap": "collapse"
 }

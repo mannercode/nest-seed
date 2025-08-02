@@ -31,11 +31,7 @@ const createAllShowtimes = async (fix: CommonFixture, theaters: TheaterDto[], mo
     ]
 
     const createDtos = startTimes.flatMap((startTime) =>
-        theaters.map((theater) => ({
-            movieId: movie.id,
-            theaterId: theater.id,
-            startTime
-        }))
+        theaters.map((theater) => ({ movieId: movie.id, theaterId: theater.id, startTime }))
     )
 
     const showtimes = await createShowtimes(fix, createDtos)

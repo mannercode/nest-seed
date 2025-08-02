@@ -13,10 +13,7 @@ jest.mock('@nestjs/common', () => {
 })
 
 jest.mock('./mocking.fixture', () => {
-    return {
-        HelloClass: jest.fn(),
-        getGreeting: jest.fn()
-    }
+    return { HelloClass: jest.fn(), getGreeting: jest.fn() }
 })
 
 /**

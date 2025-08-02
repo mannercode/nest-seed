@@ -5,10 +5,7 @@ import { DateTimeRange, PartialDateTimeRange } from 'common'
 describe('DateTimeRange', () => {
     // 문자열 날짜를 Date 객체로 변환하고 유효성 검사를 통과해야 함
     it('Should convert string dates to Date objects and pass validation', () => {
-        const plainData = {
-            start: '2023-01-01T00:00:00Z',
-            end: '2023-01-02T00:00:00Z'
-        }
+        const plainData = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z' }
 
         const instance = plainToInstance(DateTimeRange, plainData)
 
@@ -21,10 +18,7 @@ describe('DateTimeRange', () => {
 
     // 유효하지 않은 날짜 문자열은 변환 후 유효성 검사 실패해야 함
     it('Should fail validation if the date string is invalid', () => {
-        const plainData = {
-            start: 'invalid-date-string',
-            end: '2023-01-02T00:00:00Z'
-        }
+        const plainData = { start: 'invalid-date-string', end: '2023-01-02T00:00:00Z' }
 
         const instance = plainToInstance(DateTimeRange, plainData)
 
@@ -49,10 +43,7 @@ describe('DateTimeRange', () => {
 
         // start와 days가 주어졌을 때 DateTimeRange 생성해야 한다
         it('Should create DateTimeRange with start and days', () => {
-            const result = DateTimeRange.create({
-                start: new Date('2023-01-01'),
-                days: 2
-            })
+            const result = DateTimeRange.create({ start: new Date('2023-01-01'), days: 2 })
             expect(result).toEqual({ start: new Date('2023-01-01'), end: new Date('2023-01-03') })
         })
 
@@ -85,10 +76,7 @@ describe('DateTimeRange', () => {
 describe('PartialDateTimeRange', () => {
     // 문자열 날짜를 Date 객체로 변환하고 유효성 검사를 통과해야 함
     it('Should convert string dates to Date objects and pass validation', () => {
-        const plainData = {
-            start: '2023-01-01T00:00:00Z',
-            end: '2023-01-02T00:00:00Z'
-        }
+        const plainData = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z' }
 
         const instance = plainToInstance(PartialDateTimeRange, plainData)
 

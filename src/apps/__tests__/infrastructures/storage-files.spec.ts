@@ -16,84 +16,106 @@ describe('StorageFilesService', () => {
         await fix?.teardown()
     })
 
+    const uploadFile = (attachs: any[], fields?: any[]) =>
+        fix.httpClient
+            .post('/storage-files')
+            .attachments(attachs)
+            .fields(fields ?? [{ name: 'name', value: 'test' }])
+
     describe('POST /storage-files', () => {
-        const uploadFile = (attachs: any[], fields?: any[]) =>
-            fix.httpClient
-                .post('/storage-files')
-                .attachments(attachs)
-                .fields(fields ?? [{ name: 'name', value: 'test' }])
+        const fields = [{ name: 'name', value: 'test' }]
 
-        // 유효한 파일을 업로드할 때
-        describe('when uploading valid files', () => {
-            // 단일 파일을 성공적으로 저장한다.
-            it('stores a single file correctly', async () => {
-                const { body } = await uploadFile([
-                    { name: 'files', file: fix.files.small.path }
-                ]).created()
-
-                expect(body.storageFiles[0].checksum).toEqual(
-                    await FileUtil.getChecksum(fix.files.small.path)
-                )
-            })
-
-            // 여러 파일을 성공적으로 저장한다.
+        // 여러 파일을 성공적으로 저장한다.
+        describe('???', () => {
             it('stores multiple files correctly', async () => {
-                const { body } = await uploadFile([
-                    { name: 'files', file: fix.files.small.path },
-                    { name: 'files', file: fix.files.large.path }
-                ]).created()
+                const files = [fix.localFiles.small, fix.localFiles.large]
 
-                expect(body.storageFiles[0].checksum).toEqual(
-                    await FileUtil.getChecksum(fix.files.small.path)
-                )
-                expect(body.storageFiles[1].checksum).toEqual(
-                    await FileUtil.getChecksum(fix.files.large.path)
-                )
+                await fix.httpClient
+                    .post('/storage-files')
+                    .attachments([
+                        { name: 'files', file: files[0].path },
+                        { name: 'files', file: files[1].path }
+                    ])
+                    .fields(fields)
+                    .created({
+                        storageFiles: [
+                            {
+                                id: expect.any(String),
+                                originalName: files[0].originalName,
+                                mimeType: files[0].mimeType,
+                                size: files[0].size,
+                                checksum: await FileUtil.getChecksum(files[0].path),
+                                storedPath: expect.any(String)
+                            },
+                            {
+                                id: expect.any(String),
+                                originalName: files[1].originalName,
+                                mimeType: files[1].mimeType,
+                                size: files[1].size,
+                                checksum: await FileUtil.getChecksum(files[1].path),
+                                storedPath: expect.any(String)
+                            }
+                        ]
+                    })
             })
+        })
 
-            // 첨부 파일이 없어도 요청에 성공한다.
+        // 첨부 파일이 없어도 요청에 성공한다.
+        describe('???', () => {
             it('succeeds even if no file is attached', async () => {
-                await uploadFile([]).created()
+                await fix.httpClient
+                    .post('/storage-files')
+                    .attachments([])
+                    .fields(fields)
+                    .created({ storageFiles: [] })
             })
         })
 
-        // 유효하지 않은 파일을 업로드할 때
-        describe('when uploading invalid files', () => {
-            // 허용된 크기를 초과하면 413 에러를 반환한다.
+        // 허용된 크기를 초과하면 413 에러를 반환한다.
+        describe('???', () => {
             it('returns a 413 Payload Too Large error if the file exceeds the size limit', async () => {
-                await uploadFile([
-                    { name: 'files', file: fix.files.oversized.path }
-                ]).payloadTooLarge(expect.objectContaining(Errors.FileUpload.MaxSizeExceeded))
-            })
-
-            // 허용된 파일 개수를 초과하면 400 에러를 반환한다.
-            it('returns a BadRequest(400) error if the number of files exceeds the limit', async () => {
-                const limitOver = fix.maxFilesPerUpload + 1
-                const excessFiles = Array(limitOver).fill({
-                    name: 'files',
-                    file: fix.files.small.path
-                })
-
-                await uploadFile(excessFiles).badRequest(
-                    expect.objectContaining(Errors.FileUpload.MaxCountExceeded)
-                )
-            })
-
-            // 허용되지 않은 MIME 타입이면 415 에러를 반환한다.
-            it('returns a 415 Unsupported Media Type error for unallowed MIME types', async () => {
-                await uploadFile([
-                    { name: 'files', file: fix.files.notAllowed.path }
-                ]).unsupportedMediaType({
-                    ...Errors.FileUpload.InvalidFileType,
-                    allowedTypes: ['text/plain']
-                })
+                await fix.httpClient
+                    .post('/storage-files')
+                    .attachments([{ name: 'files', file: fix.localFiles.oversized.path }])
+                    .fields(fields)
+                    .payloadTooLarge(expect.objectContaining(Errors.FileUpload.MaxSizeExceeded))
             })
         })
 
-        // 필수 필드가 누락되었을 때
+        // 허용된 파일 개수를 초과하면 400 에러를 반환한다.
+        describe('???', () => {
+            it('returns a BadRequest(400) error if the number of files exceeds the limit', async () => {
+                const attachments = fix.overLimitFiles.map((file) => ({
+                    name: 'files',
+                    file: file.path
+                }))
+
+                await fix.httpClient
+                    .post('/storage-files')
+                    .attachments(attachments)
+                    .fields(fields)
+                    .badRequest(expect.objectContaining(Errors.FileUpload.MaxCountExceeded))
+            })
+        })
+
+        // 허용되지 않은 MIME 타입이면 415 에러를 반환한다.
+        describe('???', () => {
+            it('returns a 415 Unsupported Media Type error for unallowed MIME types', async () => {
+                await fix.httpClient
+                    .post('/storage-files')
+                    .attachments([{ name: 'files', file: fix.localFiles.notAllowed.path }])
+                    .fields(fields)
+                    .unsupportedMediaType({
+                        ...Errors.FileUpload.InvalidFileType,
+                        allowedTypes: ['text/plain']
+                    })
+            })
+        })
+
+        // 필수 필드가 누락된 경우
         describe('when the required fields are missing', () => {
-            // BadRequest(400) 에러를 반환한다.
-            it('returns a BadRequest(400) error', async () => {
+            // 400 Bad Request를 반환한다
+            it('returns 400 Bad Request', async () => {
                 await uploadFile([], []).badRequest({
                     ...Errors.RequestValidation.Failed,
                     details: [{ constraints: { isString: 'name must be a string' }, field: 'name' }]
@@ -108,7 +130,7 @@ describe('StorageFilesService', () => {
 
         beforeEach(async () => {
             tempDir = await Path.createTempDirectory()
-            uploadedFile = await saveFile(fix, fix.files.large)
+            uploadedFile = await saveFile(fix, fix.localFiles.large)
         })
 
         afterEach(async () => {
@@ -135,10 +157,12 @@ describe('StorageFilesService', () => {
         describe('when the file does not exist', () => {
             // 404 Not Found 에러를 반환한다.
             it('returns 404 Not Found error', async () => {
-                await fix.httpClient.get(`/storage-files/${nullObjectId}`).notFound({
-                    ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [nullObjectId]
-                })
+                await fix.httpClient
+                    .get(`/storage-files/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
             })
         })
     })
@@ -147,7 +171,7 @@ describe('StorageFilesService', () => {
         let uploadedFile: StorageFileDto
 
         beforeEach(async () => {
-            uploadedFile = await saveFile(fix, fix.files.large)
+            uploadedFile = await saveFile(fix, fix.localFiles.large)
         })
 
         // 파일이 존재할 때
@@ -159,10 +183,12 @@ describe('StorageFilesService', () => {
                 expect(Path.existsSync(filePath)).toBeTruthy()
 
                 await fix.httpClient.delete(`/storage-files/${uploadedFile.id}`).ok()
-                await fix.httpClient.get(`/storage-files/${uploadedFile.id}`).notFound({
-                    ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [uploadedFile.id]
-                })
+                await fix.httpClient
+                    .get(`/storage-files/${uploadedFile.id}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [uploadedFile.id]
+                    })
 
                 expect(Path.existsSync(filePath)).toBeFalsy()
             })
@@ -172,10 +198,12 @@ describe('StorageFilesService', () => {
         describe('when the file does not exist', () => {
             // 404 Not Found 에러를 반환한다.
             it('returns 404 Not Found error', async () => {
-                await fix.httpClient.delete(`/storage-files/${nullObjectId}`).notFound({
-                    ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [nullObjectId]
-                })
+                await fix.httpClient
+                    .delete(`/storage-files/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
             })
         })
     })

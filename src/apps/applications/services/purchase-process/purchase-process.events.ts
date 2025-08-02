@@ -7,10 +7,7 @@ export class PurchaseProcessEvents {
     constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
 
     emitTicketPurchased(customerId: string, ticketIds: string[]) {
-        return this.proxy.emit(Events.PurchaseProcess.TicketPurchased, {
-            customerId,
-            ticketIds
-        })
+        return this.proxy.emit(Events.PurchaseProcess.TicketPurchased, { customerId, ticketIds })
     }
 
     emitTicketPurchaseCanceled(customerId: string, ticketIds: string[]) {

@@ -155,9 +155,7 @@ describe('MongooseRepository', () => {
         // 'take' 값이 지정되지 않은 경우 기본값이 사용되어야 한다
         it("should use the default value if the 'take' value is not specified", async () => {
             const { take } = await fix.repository.findWithPagination({
-                pagination: {
-                    orderby: { name: 'name', direction: OrderDirection.Desc }
-                }
+                pagination: { orderby: { name: 'name', direction: OrderDirection.Desc } }
             })
 
             expect(take).toEqual(maxTake)

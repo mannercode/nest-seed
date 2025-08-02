@@ -155,9 +155,7 @@ describe('QueryBuilder', () => {
         it('Should add $gte and $lte if both start and end are provided', () => {
             const range = { start: new Date('2023-01-01'), end: new Date('2023-12-31') }
             builder.addRange('createdAt', range)
-            expect(builder.build({})).toEqual({
-                createdAt: { $gte: range.start, $lte: range.end }
-            })
+            expect(builder.build({})).toEqual({ createdAt: { $gte: range.start, $lte: range.end } })
         })
 
         // start만 주어지면 $gte를 쿼리에 추가해야 한다
@@ -231,10 +229,6 @@ describe('mapDocToDto', () => {
 
         const dto = mapDocToDto(doc, SampleDto, ['id', 'name', 'optional'])
 
-        expect(dto).toEqual({
-            id: expect.any(String),
-            name: 'name',
-            optional: undefined
-        })
+        expect(dto).toEqual({ id: expect.any(String), name: 'name', optional: undefined })
     })
 })

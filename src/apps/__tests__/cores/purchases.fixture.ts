@@ -68,10 +68,7 @@ export const createFixture = async (): Promise<Fixture> => {
 }
 
 export const buildCreateTicketPurchaseDto = (customer: CustomerDto, tickets: TicketDto[]) => {
-    const purchaseItems = tickets.map(({ id }) => ({
-        type: PurchaseItemType.Ticket,
-        ticketId: id
-    }))
+    const purchaseItems = tickets.map(({ id }) => ({ type: PurchaseItemType.Ticket, ticketId: id }))
 
     return buildCreatePurchaseDto({ customerId: customer.id, purchaseItems })
 }
@@ -86,12 +83,7 @@ const createAvailableAndHeldTickets = async (
         new Date(),
         Rules.Ticket.purchaseDeadlineInMinutes + 1
     )
-    const createdTickets = await createAllTickets({
-        fix,
-        movie,
-        theater,
-        startTime: purchasableAt
-    })
+    const createdTickets = await createAllTickets({ fix, movie, theater, startTime: purchasableAt })
 
     const holdCount = 4
     Rules.Ticket.maxTicketsPerPurchase = holdCount

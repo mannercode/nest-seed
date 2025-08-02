@@ -30,10 +30,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
             const http = host.switchToHttp()
             const { method, url, body } = http.getRequest<Request>()
 
-            const common = {
-                contextType,
-                request: { method, url, body }
-            }
+            const common = { contextType, request: { method, url, body } }
 
             if (exception instanceof HttpException) {
                 const log = {
@@ -68,11 +65,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
         } else if (contextType === 'rpc') {
             const ctx = host.switchToRpc()
 
-            const common = {
-                contextType,
-                context: ctx.getContext(),
-                data: ctx.getData()
-            }
+            const common = { contextType, context: ctx.getContext(), data: ctx.getData() }
 
             if (exception instanceof HttpException) {
                 const log = {

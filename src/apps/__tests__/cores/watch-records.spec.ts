@@ -47,9 +47,7 @@ describe('WatchRecordsService', () => {
             // 지정한 customerId와 일치하는 관람 기록 페이지를 반환한다.
             it('returns the paginated watch records matching the given customerId', async () => {
                 const { items, ...pagination } =
-                    await fix.watchRecordsService.searchWatchRecordsPage({
-                        customerId
-                    })
+                    await fix.watchRecordsService.searchWatchRecordsPage({ customerId })
 
                 expect(pagination).toEqual({
                     skip: 0,

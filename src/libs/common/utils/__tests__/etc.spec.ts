@@ -90,9 +90,7 @@ describe('addQuotesToNumbers', () => {
 describe('jsonToObject', () => {
     // ISO 8601 형식의 날짜 문자열을 Date 객체로 변환해야 한다
     it('Should convert ISO 8601 date strings to Date objects', () => {
-        const obj = jsonToObject({
-            date: '2023-06-18T12:12:34.567Z'
-        })
+        const obj = jsonToObject({ date: '2023-06-18T12:12:34.567Z' })
 
         expect(obj.date).toBeInstanceOf(Date)
         expect((obj.date as any).toISOString()).toEqual('2023-06-18T12:12:34.567Z')
@@ -103,11 +101,7 @@ describe('jsonToObject', () => {
         const obj = jsonToObject({
             level1: {
                 date: '2023-06-18T12:12:34.567Z',
-                level2: {
-                    date: ['2023-06-19T12:12:34.567Z'],
-                    date2: nullDate,
-                    null: null
-                }
+                level2: { date: ['2023-06-19T12:12:34.567Z'], date2: nullDate, null: null }
             }
         })
         expect(obj.level1.date).toBeInstanceOf(Date)
@@ -117,18 +111,13 @@ describe('jsonToObject', () => {
 
     // 날짜 형식이 아닌 문자열은 무시해야 한다
     it('Should ignore strings that are not in date format', () => {
-        const obj = jsonToObject({
-            text: 'Hello, world!'
-        })
+        const obj = jsonToObject({ text: 'Hello, world!' })
         expect(obj.text).toEqual('Hello, world!')
     })
 
     // 문자열이 아닌 타입은 변환하지 않아야 한다
     it('Should not convert types that are not strings', () => {
-        const obj = jsonToObject({
-            number: 123,
-            boolean: true
-        })
+        const obj = jsonToObject({ number: 123, boolean: true })
 
         expect(obj.number).toEqual(123)
         expect(obj.boolean).toBe(true)

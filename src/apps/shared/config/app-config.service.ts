@@ -132,18 +132,10 @@ export class AppConfigService extends BaseConfigService {
 
     get services() {
         return {
-            gateway: {
-                httpPort: this.getNumber('SERVICE_GATEWAY_HTTP_PORT')
-            },
-            applications: {
-                httpPort: this.getNumber('SERVICE_APPLICATIONS_HTTP_PORT')
-            },
-            cores: {
-                httpPort: this.getNumber('SERVICE_CORES_HTTP_PORT')
-            },
-            infrastructures: {
-                httpPort: this.getNumber('SERVICE_INFRASTRUCTURES_HTTP_PORT')
-            }
+            gateway: { httpPort: this.getNumber('SERVICE_GATEWAY_HTTP_PORT') },
+            applications: { httpPort: this.getNumber('SERVICE_APPLICATIONS_HTTP_PORT') },
+            cores: { httpPort: this.getNumber('SERVICE_CORES_HTTP_PORT') },
+            infrastructures: { httpPort: this.getNumber('SERVICE_INFRASTRUCTURES_HTTP_PORT') }
         }
     }
 }

@@ -9,9 +9,8 @@ export const saveFile = async (fixture: CommonFixture, file: FixtureFile) => {
 export interface Fixture extends CommonFixture {
     teardown: () => Promise<void>
     uploadDir: string
-    maxFileSizeBytes: number
-    maxFilesPerUpload: number
-    files: {
+    overLimitFiles: FixtureFile[]
+    localFiles: {
         notAllowed: FixtureFile
         oversized: FixtureFile
         large: FixtureFile
@@ -20,14 +19,14 @@ export interface Fixture extends CommonFixture {
 }
 
 export const createFixture = async () => {
-    const files = {
+    const localFiles = {
         notAllowed: fixtureFiles.json,
         oversized: fixtureFiles.oversized,
         large: fixtureFiles.large,
         small: fixtureFiles.small
     }
     const uploadDir = await Path.createTempDirectory()
-    const maxFileSizeBytes = files.oversized.size
+    const maxFileSizeBytes = localFiles.oversized.size
     const maxFilesPerUpload = 2
 
     const fix = await createCommonFixture({
@@ -42,10 +41,12 @@ export const createFixture = async () => {
         infras: { config: { FILE_UPLOAD_DIRECTORY: uploadDir } }
     })
 
+    const overLimitFiles = Array(maxFilesPerUpload + 1).fill(localFiles.small)
+
     const teardown = async () => {
         await fix?.close()
         await Path.delete(uploadDir)
     }
 
-    return { ...fix, teardown, uploadDir, maxFileSizeBytes, maxFilesPerUpload, files }
+    return { ...fix, teardown, uploadDir, overLimitFiles, localFiles }
 }

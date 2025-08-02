@@ -22,9 +22,5 @@ class HealthController {
     }
 }
 
-@Module({
-    imports: [TerminusModule],
-    providers: [HealthService],
-    controllers: [HealthController]
-})
+@Module({ imports: [TerminusModule], providers: [HealthService], controllers: [HealthController] })
 export class HealthModule {}

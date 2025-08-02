@@ -38,11 +38,7 @@ export class MovieRecommender {
                         genreScore += favoriteGenres.length - index
                     }
                 }
-                return {
-                    movie,
-                    genreScore,
-                    releaseDate: movie.releaseDate.getTime()
-                }
+                return { movie, genreScore, releaseDate: movie.releaseDate.getTime() }
             })
 
         // If the user has no watch history, sort by most recent release date first.
