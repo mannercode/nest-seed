@@ -8,7 +8,7 @@ export const Messages = createMessagePatternMap(
             deleteFiles: null
         },
         Payments: {
-            processPayment: null,
+            createPayment: null,
             getPayments: null
         },
         WatchRecords: {

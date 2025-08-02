@@ -212,7 +212,7 @@ Customer -> Frontend: 결제 정보 입력
             Purchases -> Purchases: updateItemStatus(purchaseId, {items:[0]}, 'validated')
             Purchases -> Purchases: isPurchaseValidated(purchaseId)
             Purchases <-- Purchases: true
-            Purchases -> Payments: processPayment(totalPrice, customer)
+            Purchases -> Payments: createPayment(totalPrice, customer)
             Purchases <-- Payments: 결제 성공
             Purchases <-- Purchases: 구매 완료
             Purchases ->> TicketPurchases: completePurchase(purchaseId, items)
@@ -283,7 +283,7 @@ Customer -> Frontend: 결제 정보 입력
             deactivate TicketProcessor
 
             PurchaseProcess -> Purchases: createPurchase(body)
-            Purchases -> Payments: processPayment(totalPrice, customer)
+            Purchases -> Payments: createPayment(totalPrice, customer)
             Purchases <-- Payments: 결제 성공
             PurchaseProcess <-- Purchases: purchaseId
 

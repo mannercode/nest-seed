@@ -13,7 +13,7 @@ export class PurchasesService {
     ) {}
 
     async createPurchase(createDto: CreatePurchaseDto) {
-        const payment = await this.paymentsService.processPayment({
+        const payment = await this.paymentsService.createPayment({
             customerId: createDto.customerId,
             amount: createDto.totalPrice
         })

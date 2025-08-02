@@ -7,8 +7,8 @@ import { CreatePaymentDto, PaymentDto } from './dtos'
 export class PaymentsClient {
     constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
 
-    processPayment(createDto: CreatePaymentDto): Promise<PaymentDto> {
-        return this.proxy.getJson(Messages.Payments.processPayment, createDto)
+    createPayment(createDto: CreatePaymentDto): Promise<PaymentDto> {
+        return this.proxy.getJson(Messages.Payments.createPayment, createDto)
     }
 
     getPayments(paymentIds: string[]): Promise<PaymentDto[]> {
