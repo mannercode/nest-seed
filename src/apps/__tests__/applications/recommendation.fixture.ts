@@ -1,6 +1,4 @@
-import { CustomerDto, MovieDto } from 'apps/cores'
-import { newObjectId } from 'common'
-import { oid } from 'testlib'
+import { MovieDto } from 'apps/cores'
 import {
     CommonFixture,
     createCommonFixture,
@@ -10,48 +8,43 @@ import {
     createWatchRecord
 } from '../__helpers__'
 
-export const createWatchedMovies = async (fix: Fixture, dtos: Partial<MovieDto>[]) => {
-    const watchedMovies = await Promise.all(
-        dtos.map(async (dto) => {
-            const movie = await createMovie(fix, dto)
-            createWatchRecord(fix, { customerId: fix.customer.id, movieId: movie.id })
-            return movie
-        })
+export const createWatchedMovies = async (fix: CommonFixture, dtos: Partial<MovieDto>[]) => {
+    const movies = await Promise.all(dtos.map((dto) => createMovie(fix, dto)))
+
+    const { customer, accessToken } = await createCustomerAndLogin(fix)
+
+    const watchRecords = await Promise.all(
+        movies.map((movie) =>
+            createWatchRecord(fix, { customerId: customer.id, movieId: movie.id })
+        )
     )
 
-    return watchedMovies
+    return { customer, accessToken, movies, watchRecords }
 }
 
 export const createShowingMovies = async (fix: CommonFixture, dtos: Partial<MovieDto>[]) => {
-    const showingMovies = await Promise.all(dtos.map((dto) => createMovie(fix, dto)))
+    const movies = await Promise.all(dtos.map((dto) => createMovie(fix, dto)))
 
-    const createShowtimesDtos = showingMovies.map((movie) => ({
-        transactionId: newObjectId(),
+    const createShowtimesDtos = movies.map((movie) => ({
         movieId: movie.id,
-        theaterId: oid(0x0),
-        startTime: new Date('2999-01-01'),
-        endTime: new Date('2999-01-02')
+        startTime: new Date('2999-01-01')
     }))
 
-    await createShowtimes(fix, createShowtimesDtos)
+    const showtimes = await createShowtimes(fix, createShowtimesDtos)
 
-    return showingMovies
+    return { movies, showtimes }
 }
 
 export interface Fixture extends CommonFixture {
     teardown: () => Promise<void>
-    customer: CustomerDto
-    accessToken: string
 }
 
 export const createFixture = async () => {
     const fix = await createCommonFixture()
 
-    const { customer, accessToken } = await createCustomerAndLogin(fix)
-
     const teardown = async () => {
         await fix?.close()
     }
 
-    return { ...fix, teardown, customer, accessToken }
+    return { ...fix, teardown }
 }
