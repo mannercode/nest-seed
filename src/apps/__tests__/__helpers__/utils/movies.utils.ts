@@ -1,4 +1,5 @@
 import { MovieGenre, MovieRating } from 'apps/cores'
+import { TestContext } from 'testlib'
 import { CommonFixture } from '../create-common-fixture'
 import { fixtureFiles } from '../fixture-files'
 
@@ -21,5 +22,15 @@ export const createMovie = async (fix: CommonFixture, override = {}) => {
     const createDto = buildCreateMovieDto(override)
 
     const movie = await fix.moviesService.createMovie(createDto, [fixtureFiles.image])
+    return movie
+}
+
+export const createMovie2 = async ({ module }: TestContext, override = {}) => {
+    const { MoviesClient } = await import('apps/cores')
+    const moviesService = module.get(MoviesClient)
+
+    const createDto = buildCreateMovieDto(override)
+
+    const movie = await moviesService.createMovie(createDto, [fixtureFiles.image])
     return movie
 }

@@ -1,29 +1,28 @@
+import { CustomersClient, CustomersModule } from 'apps/cores'
+import { CustomerJwtStrategy, CustomerLocalStrategy, CustomersController } from 'apps/gateway'
 import { JwtAuthTokens } from 'common'
 import {
-    CommonFixture,
-    createCommonFixture,
-    createCustomer,
-    generateAuthTokens
+    createCustomer2,
+    generateAuthTokens2,
+    HttpTestFixture,
+    setupHttpTestContext
 } from '../__helpers__'
 
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
+export interface CustomersAuthFixture extends HttpTestFixture {
     credentials: { email: string; password: string }
     authTokens: JwtAuthTokens
 }
 
 export const createFixture = async () => {
-    const fix = await createCommonFixture()
+    const context = await setupHttpTestContext({
+        imports: [CustomersModule],
+        providers: [CustomersClient, CustomerLocalStrategy, CustomerJwtStrategy],
+        controllers: [CustomersController]
+    })
 
     const credentials = { email: 'user@mail.com', password: 'password' }
+    const customer = await createCustomer2(context, credentials)
+    const authTokens = await generateAuthTokens2(context, customer)
 
-    const customer = await createCustomer(fix, credentials)
-
-    const authTokens = await generateAuthTokens(fix, customer)
-
-    const teardown = async () => {
-        await fix?.close()
-    }
-
-    return { ...fix, teardown, credentials, authTokens }
+    return { ...context, credentials, authTokens }
 }

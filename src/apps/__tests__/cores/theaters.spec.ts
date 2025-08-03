@@ -1,10 +1,10 @@
 import { TheaterDto } from 'apps/cores'
 import { nullObjectId } from 'testlib'
-import { buildCreateTheaterDto, createTheater, Errors } from '../__helpers__'
-import type { Fixture } from './theaters.fixture'
+import { buildCreateTheaterDto, createTheater2, Errors } from '../__helpers__'
+import type { TheatersFixture } from './theaters.fixture'
 
 describe('TheatersService', () => {
-    let fix: Fixture
+    let fix: TheatersFixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./theaters.fixture')
@@ -46,7 +46,9 @@ describe('TheatersService', () => {
         describe('when the theater exists', () => {
             // 극장 정보를 반환한다
             it('returns the theater', async () => {
-                await fix.httpClient.get(`/theaters/${fix.theater.id}`).ok(fix.theater)
+                await fix.httpClient
+                    .get(`/theaters/${fix.createdTheater.id}`)
+                    .ok(fix.createdTheater)
             })
         })
 
@@ -74,14 +76,14 @@ describe('TheatersService', () => {
                     location: { latitude: 30.0, longitude: 120.0 },
                     seatmap: []
                 }
-                const expected = { ...fix.theater, ...updateDto }
+                const expected = { ...fix.createdTheater, ...updateDto }
 
                 await fix.httpClient
-                    .patch(`/theaters/${fix.theater.id}`)
+                    .patch(`/theaters/${fix.createdTheater.id}`)
                     .body(updateDto)
                     .ok(expected)
 
-                await fix.httpClient.get(`/theaters/${fix.theater.id}`).ok(expected)
+                await fix.httpClient.get(`/theaters/${fix.createdTheater.id}`).ok(expected)
             })
         })
 
@@ -89,7 +91,10 @@ describe('TheatersService', () => {
         describe('when the payload is empty', () => {
             // 원래 극장 정보를 반환한다
             it('returns the original theater', async () => {
-                await fix.httpClient.patch(`/theaters/${fix.theater.id}`).body({}).ok(fix.theater)
+                await fix.httpClient
+                    .patch(`/theaters/${fix.createdTheater.id}`)
+                    .body({})
+                    .ok(fix.createdTheater)
             })
         })
 
@@ -110,13 +115,13 @@ describe('TheatersService', () => {
         describe('when the theater exists', () => {
             // 극장을 삭제한다.
             it('deletes the theater', async () => {
-                await fix.httpClient.delete(`/theaters/${fix.theater.id}`).ok()
+                await fix.httpClient.delete(`/theaters/${fix.createdTheater.id}`).ok()
 
                 await fix.httpClient
-                    .get(`/theaters/${fix.theater.id}`)
+                    .get(`/theaters/${fix.createdTheater.id}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [fix.theater.id]
+                        notFoundIds: [fix.createdTheater.id]
                     })
             })
         })
@@ -140,14 +145,14 @@ describe('TheatersService', () => {
 
         beforeEach(async () => {
             const createdTheaters = await Promise.all([
-                createTheater(fix, { name: 'Theater-a1' }),
-                createTheater(fix, { name: 'Theater-a2' }),
-                createTheater(fix, { name: 'Theater-b1' }),
-                createTheater(fix, { name: 'Theater-b2' }),
-                createTheater(fix, { name: 'Theater-c1' })
+                createTheater2(fix, { name: 'Theater-a1' }),
+                createTheater2(fix, { name: 'Theater-a2' }),
+                createTheater2(fix, { name: 'Theater-b1' }),
+                createTheater2(fix, { name: 'Theater-b2' }),
+                createTheater2(fix, { name: 'Theater-c1' })
             ])
 
-            theaters = [...createdTheaters, fix.theater]
+            theaters = [...createdTheaters, fix.createdTheater]
         })
 
         // 쿼리 파라미터가 없는 경우

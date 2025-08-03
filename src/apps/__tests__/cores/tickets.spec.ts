@@ -1,11 +1,11 @@
 import { TicketDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { oid } from 'testlib'
-import { buildCreateTicketDto, createTickets } from '../__helpers__'
-import type { Fixture } from './tickets.fixture'
+import { buildCreateTicketDto, createTickets2 } from '../__helpers__'
+import type { TicketsFixture } from './tickets.fixture'
 
 describe('TicketsService', () => {
-    let fix: Fixture
+    let fix: TicketsFixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./tickets.fixture')
@@ -40,7 +40,7 @@ describe('TicketsService', () => {
         beforeEach(async () => {
             const createDtos = [{ transactionId }, { movieId }, { theaterId }, { showtimeId }]
 
-            createdTickets = await createTickets(fix, createDtos)
+            createdTickets = await createTickets2(fix, createDtos)
         })
 
         // `transactionIds`가 제공된 경우
@@ -104,7 +104,7 @@ describe('TicketsService', () => {
         let createdTickets: TicketDto[]
 
         beforeEach(async () => {
-            createdTickets = await createTickets(fix, [
+            createdTickets = await createTickets2(fix, [
                 { status: TicketStatus.Available },
                 { status: TicketStatus.Available },
                 { status: TicketStatus.Available }
@@ -137,7 +137,7 @@ describe('TicketsService', () => {
             beforeEach(async () => {
                 const createDtos = Array.from({ length: totalCount }, () => ({ showtimeId }))
 
-                const createdTickets = await createTickets(fix, createDtos)
+                const createdTickets = await createTickets2(fix, createDtos)
 
                 const soldTickets = createdTickets.slice(0, soldCount)
 

@@ -1,11 +1,11 @@
 import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
 import { FileUtil, Path } from 'common'
 import { nullObjectId, objectToFields } from 'testlib'
-import { buildCreateMovieDto, createMovie, Errors } from '../__helpers__'
-import type { Fixture } from './movies.fixture'
+import { buildCreateMovieDto, createMovie2, Errors } from '../__helpers__'
+import { MoviesFixture } from './movies.fixture'
 
 describe('MoviesService', () => {
-    let fix: Fixture
+    let fix: MoviesFixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./movies.fixture')
@@ -77,7 +77,7 @@ describe('MoviesService', () => {
         describe('when the movie exists', () => {
             // 영화 정보를 반환한다
             it('returns the movie', async () => {
-                await fix.httpClient.get(`/movies/${fix.movie.id}`).ok(fix.movie)
+                await fix.httpClient.get(`/movies/${fix.createdMovie.id}`).ok(fix.createdMovie)
             })
         })
 
@@ -109,11 +109,14 @@ describe('MoviesService', () => {
                     director: 'Steven Spielberg',
                     rating: 'R'
                 }
-                const expected = { ...fix.movie, ...updateDto }
+                const expected = { ...fix.createdMovie, ...updateDto }
 
-                await fix.httpClient.patch(`/movies/${fix.movie.id}`).body(updateDto).ok(expected)
+                await fix.httpClient
+                    .patch(`/movies/${fix.createdMovie.id}`)
+                    .body(updateDto)
+                    .ok(expected)
 
-                await fix.httpClient.get(`/movies/${fix.movie.id}`).ok(expected)
+                await fix.httpClient.get(`/movies/${fix.createdMovie.id}`).ok(expected)
             })
         })
 
@@ -121,7 +124,10 @@ describe('MoviesService', () => {
         describe('when the payload is empty', () => {
             // 원래 영화 정보를 반환한다
             it('returns the original movie', async () => {
-                await fix.httpClient.patch(`/movies/${fix.movie.id}`).body({}).ok(fix.movie)
+                await fix.httpClient
+                    .patch(`/movies/${fix.createdMovie.id}`)
+                    .body({})
+                    .ok(fix.createdMovie)
             })
         })
 
@@ -142,23 +148,23 @@ describe('MoviesService', () => {
         describe('when the movie exists', () => {
             beforeEach(async () => {
                 await fix.httpClient
-                    .delete(`/movies/${fix.movie.id}`)
-                    .ok({ deletedMovies: [fix.movie] })
+                    .delete(`/movies/${fix.createdMovie.id}`)
+                    .ok({ deletedMovies: [fix.createdMovie] })
             })
 
             // 영화를 삭제한다
             it('deletes the movie', async () => {
                 await fix.httpClient
-                    .get(`/movies/${fix.movie.id}`)
+                    .get(`/movies/${fix.createdMovie.id}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [fix.movie.id]
+                        notFoundIds: [fix.createdMovie.id]
                     })
             })
 
             // 영화와 관련된 파일을 삭제한다
             it('deletes the movie’s files', async () => {
-                const fileUrl = fix.movie.imageUrls[0]
+                const fileUrl = fix.createdMovie.imageUrls[0]
 
                 await fix.httpClient
                     .get(fileUrl)
@@ -188,7 +194,7 @@ describe('MoviesService', () => {
 
         beforeEach(async () => {
             const createdMovies = await Promise.all([
-                createMovie(fix, {
+                createMovie2(fix, {
                     title: 'title-a1',
                     plot: 'plot-a1',
                     director: 'James Cameron',
@@ -196,7 +202,7 @@ describe('MoviesService', () => {
                     rating: MovieRating.NC17,
                     genres: [MovieGenre.Action, MovieGenre.Comedy]
                 }),
-                createMovie(fix, {
+                createMovie2(fix, {
                     title: 'title-a2',
                     plot: 'plot-a2',
                     director: 'Steven Spielberg',
@@ -204,7 +210,7 @@ describe('MoviesService', () => {
                     rating: MovieRating.NC17,
                     genres: [MovieGenre.Romance, MovieGenre.Drama]
                 }),
-                createMovie(fix, {
+                createMovie2(fix, {
                     title: 'title-b1',
                     plot: 'plot-b1',
                     director: 'James Cameron',
@@ -212,7 +218,7 @@ describe('MoviesService', () => {
                     rating: MovieRating.PG,
                     genres: [MovieGenre.Drama, MovieGenre.Comedy]
                 }),
-                createMovie(fix, {
+                createMovie2(fix, {
                     title: 'title-b2',
                     plot: 'plot-b2',
                     director: 'Steven Spielberg',
@@ -222,7 +228,7 @@ describe('MoviesService', () => {
                 })
             ])
 
-            movies = [...createdMovies, fix.movie]
+            movies = [...createdMovies, fix.createdMovie]
         })
 
         // 쿼리 파라미터가 없는 경우

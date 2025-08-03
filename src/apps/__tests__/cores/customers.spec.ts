@@ -1,11 +1,11 @@
 import { CustomerDto } from 'apps/cores'
 import { omit } from 'lodash'
 import { nullObjectId } from 'testlib'
-import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
-import type { Fixture } from './customers.fixture'
+import { buildCreateCustomerDto, createCustomer2, Errors } from '../__helpers__'
+import type { CustomersFixture } from './customers.fixture'
 
 describe('CustomersService', () => {
-    let fix: Fixture
+    let fix: CustomersFixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./customers.fixture')
@@ -34,7 +34,7 @@ describe('CustomersService', () => {
         describe('when the email already exists', () => {
             // 409 Conflict를 반환한다
             it('returns 409 Conflict', async () => {
-                const createDto = buildCreateCustomerDto({ email: fix.customer.email })
+                const createDto = buildCreateCustomerDto({ email: fix.createdCustomer.email })
 
                 await fix.httpClient
                     .post('/customers')
@@ -60,7 +60,9 @@ describe('CustomersService', () => {
         describe('when the customer exists', () => {
             // 고객 정보를 반환한다
             it('returns the customer', async () => {
-                await fix.httpClient.get(`/customers/${fix.customer.id}`).ok(fix.customer)
+                await fix.httpClient
+                    .get(`/customers/${fix.createdCustomer.id}`)
+                    .ok(fix.createdCustomer)
             })
         })
 
@@ -88,14 +90,14 @@ describe('CustomersService', () => {
                     email: 'new@mail.com',
                     birthDate: new Date('1900-12-31')
                 }
-                const expected = { ...fix.customer, ...updateDto }
+                const expected = { ...fix.createdCustomer, ...updateDto }
 
                 await fix.httpClient
-                    .patch(`/customers/${fix.customer.id}`)
+                    .patch(`/customers/${fix.createdCustomer.id}`)
                     .body(updateDto)
                     .ok(expected)
 
-                await fix.httpClient.get(`/customers/${fix.customer.id}`).ok(expected)
+                await fix.httpClient.get(`/customers/${fix.createdCustomer.id}`).ok(expected)
             })
         })
 
@@ -104,9 +106,9 @@ describe('CustomersService', () => {
             // 원래 고객 정보를 반환한다
             it('returns the original customer', async () => {
                 await fix.httpClient
-                    .patch(`/customers/${fix.customer.id}`)
+                    .patch(`/customers/${fix.createdCustomer.id}`)
                     .body({})
-                    .ok(fix.customer)
+                    .ok(fix.createdCustomer)
             })
         })
 
@@ -128,10 +130,10 @@ describe('CustomersService', () => {
             // 고객을 삭제한다
             it('deletes the customer', async () => {
                 await fix.httpClient
-                    .delete(`/customers/${fix.customer.id}`)
-                    .ok({ deletedCustomers: [fix.customer] })
+                    .delete(`/customers/${fix.createdCustomer.id}`)
+                    .ok({ deletedCustomers: [fix.createdCustomer] })
 
-                await fix.httpClient.get(`/customers/${fix.customer.id}`).notFound()
+                await fix.httpClient.get(`/customers/${fix.createdCustomer.id}`).notFound()
             })
         })
 
@@ -154,14 +156,14 @@ describe('CustomersService', () => {
 
         beforeEach(async () => {
             const createdCustomers = await Promise.all([
-                createCustomer(fix, { name: 'customer-a1', email: 'user-a1@mail.com' }),
-                createCustomer(fix, { name: 'customer-a2', email: 'user-a2@mail.com' }),
-                createCustomer(fix, { name: 'customer-b1', email: 'user-b1@mail.com' }),
-                createCustomer(fix, { name: 'customer-b2', email: 'user-b2@mail.com' }),
-                createCustomer(fix, { name: 'customer-c1', email: 'user-c1@mail.com' })
+                createCustomer2(fix, { name: 'customer-a1', email: 'user-a1@mail.com' }),
+                createCustomer2(fix, { name: 'customer-a2', email: 'user-a2@mail.com' }),
+                createCustomer2(fix, { name: 'customer-b1', email: 'user-b1@mail.com' }),
+                createCustomer2(fix, { name: 'customer-b2', email: 'user-b2@mail.com' }),
+                createCustomer2(fix, { name: 'customer-c1', email: 'user-c1@mail.com' })
             ])
 
-            customers = [...createdCustomers, fix.customer]
+            customers = [...createdCustomers, fix.createdCustomer]
         })
 
         // 쿼리 파라미터가 없는 경우

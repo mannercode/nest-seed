@@ -1,11 +1,11 @@
 import { CreatePurchaseDto, PurchaseDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { nullObjectId } from 'testlib'
-import { Errors, getPayments, getTickets } from '../__helpers__'
-import { buildCreateTicketPurchaseDto, Fixture } from './purchases.fixture'
+import { Errors, getPayments2, getTickets2 } from '../__helpers__'
+import { buildCreateTicketPurchaseDto, PurchasesFixture } from './purchases.fixture'
 
 describe('PurchasesService', () => {
-    let fix: Fixture
+    let fix: PurchasesFixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./purchases.fixture')
@@ -43,14 +43,14 @@ describe('PurchasesService', () => {
 
             // 연관된 결제 기록을 생성한다
             it('creates a corresponding payment record', async () => {
-                const payments = await getPayments(fix, [createdPurchase.paymentId])
+                const payments = await getPayments2(fix, [createdPurchase.paymentId])
 
                 expect(payments[0].amount).toEqual(createdPurchase.totalPrice)
             })
 
             // 구매한 티켓의 상태를 `Sold`으로 변경한다
             it('changes the status of purchased tickets to `Sold`', async () => {
-                const soldTickets = await getTickets(fix, pickIds(fix.heldTickets))
+                const soldTickets = await getTickets2(fix, pickIds(fix.heldTickets))
 
                 expect(soldTickets.map((ticket) => ticket.status)).toEqual(
                     Array(soldTickets.length).fill(TicketStatus.Sold)
@@ -59,7 +59,7 @@ describe('PurchasesService', () => {
 
             // 구매하지 않은 티켓의 상태는 그대로 유지한다
             it('does not change the status of unpurchased tickets', async () => {
-                const remainingTickets = await getTickets(fix, pickIds(fix.availableTickets))
+                const remainingTickets = await getTickets2(fix, pickIds(fix.availableTickets))
 
                 expect(remainingTickets.map((ticket) => ticket.status)).toEqual(
                     Array(remainingTickets.length).fill(TicketStatus.Available)
@@ -131,14 +131,14 @@ describe('PurchasesService', () => {
 
             beforeEach(async () => {
                 const { TicketsService } = await import('apps/cores')
-                const ticketsService = fix.getProvider(TicketsService)
+                const ticketsService = fix.module.get(TicketsService)
 
                 jest.spyOn(ticketsService, 'updateTicketsStatus').mockImplementationOnce(() => {
                     throw new Error('purchase error')
                 })
 
                 const { TicketPurchaseProcessor } = await import('apps/applications')
-                const ticketPurchaseProcessor = fix.getProvider(TicketPurchaseProcessor)
+                const ticketPurchaseProcessor = fix.module.get(TicketPurchaseProcessor)
 
                 rollbackPurchaseSpy = jest.spyOn(ticketPurchaseProcessor, 'rollbackPurchase')
             })

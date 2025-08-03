@@ -1,15 +1,17 @@
-import { CommonFixture, createCommonFixture } from '../__helpers__'
+import { ShowtimesClient, ShowtimesModule } from 'apps/cores'
+import { TestFixture, setupTestContext } from '../__helpers__'
 
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
+export interface ShowtimesFixture extends TestFixture {
+    showtimesService: ShowtimesClient
 }
 
 export const createFixture = async () => {
-    const fix = await createCommonFixture()
+    const context = await setupTestContext({
+        imports: [ShowtimesModule],
+        providers: [ShowtimesClient]
+    })
 
-    const teardown = async () => {
-        await fix?.close()
-    }
+    const showtimesService = context.module.get(ShowtimesClient)
 
-    return { ...fix, teardown }
+    return { ...context, showtimesService }
 }

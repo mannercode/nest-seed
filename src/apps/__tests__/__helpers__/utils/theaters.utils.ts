@@ -1,3 +1,4 @@
+import { TestContext } from 'testlib'
 import { CommonFixture } from '../create-common-fixture'
 
 export const buildCreateTheaterDto = (overrides = {}) => {
@@ -15,5 +16,15 @@ export const createTheater = async (fix: CommonFixture, override = {}) => {
     const createDto = buildCreateTheaterDto(override)
 
     const theater = await fix.theatersService.createTheater(createDto)
+    return theater
+}
+
+export const createTheater2 = async ({ module }: TestContext, override = {}) => {
+    const { TheatersClient } = await import('apps/cores')
+    const theatersService = module.get(TheatersClient)
+
+    const createDto = buildCreateTheaterDto(override)
+
+    const theater = await theatersService.createTheater(createDto)
     return theater
 }

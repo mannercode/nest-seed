@@ -1,29 +1,51 @@
 import {
     CustomerDto,
+    CustomersClient,
+    CustomersModule,
     MovieDto,
+    MoviesClient,
+    MoviesModule,
     PurchaseDto,
     PurchaseItemType,
+    PurchasesClient,
+    PurchasesModule,
     Seatmap,
+    ShowtimesClient,
+    ShowtimesModule,
     TheaterDto,
-    TicketDto
+    TheatersClient,
+    TheatersModule,
+    TicketDto,
+    TicketHoldingClient,
+    TicketHoldingModule,
+    TicketsClient,
+    TicketsModule
 } from 'apps/cores'
+import { PurchasesController } from 'apps/gateway'
+import {
+    PaymentsClient,
+    PaymentsModule,
+    StorageFilesClient,
+    StorageFilesModule
+} from 'apps/infrastructures'
 import { DateUtil, pickIds } from 'common'
 import { Rules } from 'shared'
 import {
     buildCreatePurchaseDto,
-    CommonFixture,
-    createCommonFixture,
-    createCustomer,
-    createMovie,
-    createPurchase,
-    createShowtimes,
-    createTheater,
-    createTickets,
-    holdTickets
+    createCustomer2,
+    createMovie2,
+    createPurchase2,
+    createShowtimes2,
+    createTheater2,
+    createTickets2,
+    holdTickets2,
+    HttpTestFixture,
+    setupHttpTestContext,
+    TestFixture
 } from '../__helpers__'
+import { PurchaseProcessClient, PurchaseProcessModule } from 'apps/applications'
 
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
+export interface PurchasesFixture extends HttpTestFixture {
     customer: CustomerDto
     heldTickets: TicketDto[]
     availableTickets: TicketDto[]
@@ -31,39 +53,53 @@ export interface Fixture extends CommonFixture {
     purchase: PurchaseDto
 }
 
-export const createFixture = async (): Promise<Fixture> => {
-    const fix = await createCommonFixture()
+export const createFixture = async (): Promise<PurchasesFixture> => {
+    const context = await setupHttpTestContext({
+        imports: [
+            MoviesModule,
+            StorageFilesModule,
+            TheatersModule,
+            TicketsModule,
+            PurchasesModule,
+            CustomersModule,
+            ShowtimesModule,
+            TicketHoldingModule,
+            PaymentsModule,
+            PurchaseProcessModule
+        ],
+        providers: [
+            MoviesClient,
+            StorageFilesClient,
+            TheatersClient,
+            TicketsClient,
+            PurchasesClient,
+            CustomersClient,
+            ShowtimesClient,
+            TicketHoldingClient,
+            PaymentsClient,
+            PurchaseProcessClient
+        ],
+        controllers: [PurchasesController]
+    })
 
     const [customer, movie, theater] = await Promise.all([
-        createCustomer(fix),
-        createMovie(fix),
-        createTheater(fix)
+        createCustomer2(context),
+        createMovie2(context),
+        createTheater2(context)
     ])
 
     const { availableTickets, heldTickets } = await createAvailableAndHeldTickets(
-        fix,
+        context,
         movie,
         theater,
         customer
     )
 
-    const closedSaleTickets = await createClosedSaleTickets(fix, movie, theater)
+    const closedSaleTickets = await createClosedSaleTickets(context, movie, theater)
 
-    const purchase = await createPurchase(fix)
+    const purchase = await createPurchase2(context)
 
-    const teardown = async () => {
-        await fix?.close()
-    }
-
-    return {
-        ...fix,
-        teardown,
-        customer,
-        heldTickets,
-        availableTickets,
-        closedSaleTickets,
-        purchase
-    }
+    return { ...context, customer, heldTickets, availableTickets, closedSaleTickets, purchase }
 }
 
 export const buildCreateTicketPurchaseDto = (customer: CustomerDto, tickets: TicketDto[]) => {
@@ -73,7 +109,7 @@ export const buildCreateTicketPurchaseDto = (customer: CustomerDto, tickets: Tic
 }
 
 const createAvailableAndHeldTickets = async (
-    fix: CommonFixture,
+    fix: TestFixture,
     movie: MovieDto,
     theater: TheaterDto,
     customer: CustomerDto
@@ -90,7 +126,7 @@ const createAvailableAndHeldTickets = async (
     const heldTickets = createdTickets.slice(0, holdCount)
     const availableTickets = createdTickets.slice(holdCount)
 
-    await holdTickets(fix, {
+    await holdTickets2(fix, {
         customerId: customer.id,
         showtimeId: heldTickets[0].showtimeId,
         ticketIds: pickIds(heldTickets)
@@ -99,11 +135,7 @@ const createAvailableAndHeldTickets = async (
     return { availableTickets, heldTickets }
 }
 
-const createClosedSaleTickets = async (
-    fix: CommonFixture,
-    movie: MovieDto,
-    theater: TheaterDto
-) => {
+const createClosedSaleTickets = async (fix: TestFixture, movie: MovieDto, theater: TheaterDto) => {
     const nonPurchasableAt = DateUtil.addMinutes(
         new Date(),
         Rules.Ticket.purchaseDeadlineInMinutes - 1
@@ -125,12 +157,12 @@ const createAllTickets = async ({
     theater,
     startTime
 }: {
-    fix: CommonFixture
+    fix: TestFixture
     movie: MovieDto
     theater: TheaterDto
     startTime: Date
 }) => {
-    const showtimes = await createShowtimes(fix, [
+    const showtimes = await createShowtimes2(fix, [
         { movieId: movie.id, theaterId: theater.id, startTime }
     ])
 
@@ -143,5 +175,5 @@ const createAllTickets = async ({
         seat
     }))
 
-    return createTickets(fix, createTicketDtos)
+    return createTickets2(fix, createTicketDtos)
 }

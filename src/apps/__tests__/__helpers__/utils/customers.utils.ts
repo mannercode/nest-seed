@@ -1,4 +1,5 @@
 import { CustomerDto } from 'apps/cores'
+import { TestContext } from 'testlib'
 import { CommonFixture } from '../create-common-fixture'
 
 export const createCustomerAndLogin = async (fix: CommonFixture) => {
@@ -35,4 +36,21 @@ export const createCustomer = async (fix: CommonFixture, override = {}) => {
 
     const customer = await fix.customersService.createCustomer(createDto)
     return customer
+}
+
+export const createCustomer2 = async ({ module }: TestContext, override = {}) => {
+    const { CustomersClient } = await import('apps/cores')
+    const customersService = module.get(CustomersClient)
+
+    const createDto = buildCreateCustomerDto(override)
+
+    const customer = await customersService.createCustomer(createDto)
+    return customer
+}
+
+export const generateAuthTokens2 = async ({ module }: TestContext, customer: CustomerDto) => {
+    const { CustomersClient } = await import('apps/cores')
+    const customersService = module.get(CustomersClient)
+
+    return customersService.generateAuthTokens({ customerId: customer.id, email: customer.email })
 }

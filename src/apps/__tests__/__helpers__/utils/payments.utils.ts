@@ -1,5 +1,5 @@
 import { CreatePaymentDto } from 'apps/infrastructures'
-import { oid } from 'testlib'
+import { oid, TestContext } from 'testlib'
 import { CommonFixture } from '../create-common-fixture'
 
 export const buildCreatePaymentDto = (overrides = {}) => {
@@ -20,4 +20,11 @@ export const createPayment = async (
 
 export const getPayments = async (fix: CommonFixture, paymentIds: string[]) => {
     return fix.paymentsService.getPayments(paymentIds)
+}
+
+export const getPayments2 = async ({ module }: TestContext, paymentIds: string[]) => {
+    const { PaymentsClient } = await import('apps/infrastructures')
+    const paymentsService = module.get(PaymentsClient)
+
+    return paymentsService.getPayments(paymentIds)
 }

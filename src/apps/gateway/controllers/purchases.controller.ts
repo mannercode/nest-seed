@@ -20,3 +20,6 @@ export class PurchasesController {
         return purchases[0]
     }
 }
+
+// TODO purchaseProcess -> purchases
+// purchases -> purchaseRecords

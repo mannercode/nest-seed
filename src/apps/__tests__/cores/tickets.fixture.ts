@@ -1,15 +1,14 @@
-import { CommonFixture, createCommonFixture } from '../__helpers__'
+import { TicketsClient, TicketsModule } from 'apps/cores'
+import { TestFixture, setupTestContext } from '../__helpers__'
 
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
+export interface TicketsFixture extends TestFixture {
+    ticketsService: TicketsClient
 }
 
 export const createFixture = async () => {
-    const fix = await createCommonFixture()
+    const context = await setupTestContext({ imports: [TicketsModule], providers: [TicketsClient] })
 
-    const teardown = async () => {
-        await fix?.close()
-    }
+    const ticketsService = context.module.get(TicketsClient)
 
-    return { ...fix, teardown }
+    return { ...context, ticketsService }
 }

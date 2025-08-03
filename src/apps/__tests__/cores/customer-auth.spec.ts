@@ -1,8 +1,8 @@
 import { Errors } from '../__helpers__'
-import type { Fixture } from './customer-auth.fixture'
+import type { CustomersAuthFixture } from './customer-auth.fixture'
 
 describe('CustomersService – Authentication', () => {
-    let fix: Fixture
+    let fix: CustomersAuthFixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./customer-auth.fixture')
