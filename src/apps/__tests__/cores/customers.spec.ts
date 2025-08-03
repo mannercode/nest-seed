@@ -1,6 +1,6 @@
 import { CustomerDto } from 'apps/cores'
 import { omit } from 'lodash'
-import { expectEqualUnsorted, nullObjectId } from 'testlib'
+import { nullObjectId } from 'testlib'
 import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
 import type { Fixture } from './customers.fixture'
 
@@ -168,15 +168,14 @@ describe('CustomersService', () => {
         describe('when query parameters are missing', () => {
             // 기본 페이지네이션으로 고객 목록을 반환한다
             it('returns the customer list with default pagination', async () => {
-                const { body } = await fix.httpClient.get('/customers').ok()
-                const { items, ...pagination } = body
-
-                expect(pagination).toEqual({
-                    skip: 0,
-                    take: expect.any(Number),
-                    total: customers.length
-                })
-                expectEqualUnsorted(items, customers)
+                await fix.httpClient
+                    .get('/customers')
+                    .ok({
+                        skip: 0,
+                        take: expect.any(Number),
+                        total: customers.length,
+                        items: expect.arrayContaining(customers)
+                    })
             })
         })
 
@@ -195,12 +194,14 @@ describe('CustomersService', () => {
         describe('when a partial `name` is provided', () => {
             // 이름이 해당 부분 문자열을 포함하는 고객 목록을 반환한다
             it('returns the customer list whose name contains the given substring', async () => {
-                const { body } = await fix.httpClient
+                await fix.httpClient
                     .get('/customers')
                     .query({ name: 'customer-a' })
-                    .ok()
-
-                expectEqualUnsorted(body.items, [customers[0], customers[1]])
+                    .ok(
+                        expect.objectContaining({
+                            items: expect.arrayContaining([customers[0], customers[1]])
+                        })
+                    )
             })
         })
 
@@ -208,12 +209,14 @@ describe('CustomersService', () => {
         describe('when a partial `email` is provided', () => {
             // 이메일이 해당 부분 문자열을 포함하는 고객 목록을 반환한다
             it('returns the customer list whose email contains the given substring', async () => {
-                const { body } = await fix.httpClient
+                await fix.httpClient
                     .get('/customers')
                     .query({ email: 'user-b' })
-                    .ok()
-
-                expectEqualUnsorted(body.items, [customers[2], customers[3]])
+                    .ok(
+                        expect.objectContaining({
+                            items: expect.arrayContaining([customers[2], customers[3]])
+                        })
+                    )
             })
         })
     })

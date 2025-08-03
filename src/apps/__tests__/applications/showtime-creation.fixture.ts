@@ -1,31 +1,7 @@
-import { CreateShowtimeDto, MovieDto, TheaterDto } from 'apps/cores'
-import { DateUtil, jsonToObject, notUsed } from 'common'
+import { MovieDto, TheaterDto } from 'apps/cores'
+import { jsonToObject, notUsed } from 'common'
 import { HttpTestClient } from 'testlib'
 import { CommonFixture, createCommonFixture, createMovie, createTheater } from '../__helpers__'
-
-export const createShowtimeDtos = ({
-    startTimes,
-    theaterId,
-    durationInMinutes
-}: {
-    startTimes: Date[]
-    theaterId: string
-    durationInMinutes: number
-}) => {
-    const createDtos: Partial<CreateShowtimeDto>[] = []
-
-    startTimes.map((startTime) => {
-        const createDto = {
-            theaterId,
-            startTime,
-            endTime: DateUtil.addMinutes(startTime, durationInMinutes)
-        }
-
-        createDtos.push(createDto)
-    })
-
-    return createDtos
-}
 
 export const monitorEvents = (client: HttpTestClient, waitStatuses: string[]) => {
     return new Promise((resolve, reject) => {

@@ -1,6 +1,6 @@
 import { TicketDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
-import { expectEqualUnsorted, oid } from 'testlib'
+import { oid } from 'testlib'
 import { buildCreateTicketDto, createTickets } from '../__helpers__'
 import type { Fixture } from './tickets.fixture'
 
@@ -51,7 +51,7 @@ describe('TicketsService', () => {
                     transactionIds: [transactionId]
                 })
 
-                expectEqualUnsorted(tickets, [createdTickets[0]])
+                expect(tickets).toEqual([createdTickets[0]])
             })
         })
 
@@ -61,7 +61,7 @@ describe('TicketsService', () => {
             it('returns the tickets matching the given movieIds', async () => {
                 const tickets = await fix.ticketsService.searchTickets({ movieIds: [movieId] })
 
-                expectEqualUnsorted(tickets, [createdTickets[1]])
+                expect(tickets).toEqual([createdTickets[1]])
             })
         })
 
@@ -71,7 +71,7 @@ describe('TicketsService', () => {
             it('returns the tickets matching the given theaterIds', async () => {
                 const tickets = await fix.ticketsService.searchTickets({ theaterIds: [theaterId] })
 
-                expectEqualUnsorted(tickets, [createdTickets[2]])
+                expect(tickets).toEqual([createdTickets[2]])
             })
         })
 
@@ -83,7 +83,7 @@ describe('TicketsService', () => {
                     showtimeIds: [showtimeId]
                 })
 
-                expectEqualUnsorted(tickets, [createdTickets[3]])
+                expect(tickets).toEqual([createdTickets[3]])
             })
         })
 

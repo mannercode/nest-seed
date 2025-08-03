@@ -1,5 +1,5 @@
 import { WatchRecordDto } from 'apps/cores'
-import { expectEqualUnsorted, oid } from 'testlib'
+import { oid } from 'testlib'
 import { buildCreateWatchRecordDto, createWatchRecord } from '../__helpers__'
 import type { Fixture } from './watch-records.fixture'
 
@@ -46,15 +46,16 @@ describe('WatchRecordsService', () => {
         describe('when `customerId` are provided', () => {
             // 지정한 customerId와 일치하는 관람 기록 페이지를 반환한다.
             it('returns the paginated watch records matching the given customerId', async () => {
-                const { items, ...pagination } =
-                    await fix.watchRecordsService.searchWatchRecordsPage({ customerId })
+                const pagination = await fix.watchRecordsService.searchWatchRecordsPage({
+                    customerId
+                })
 
                 expect(pagination).toEqual({
                     skip: 0,
                     take: expect.any(Number),
-                    total: watchRecords.length
+                    total: watchRecords.length,
+                    items: expect.arrayContaining(watchRecords)
                 })
-                expectEqualUnsorted(items, watchRecords)
             })
         })
     })

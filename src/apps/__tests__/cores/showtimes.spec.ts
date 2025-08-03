@@ -1,6 +1,6 @@
 import { ShowtimeDto } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
-import { expectEqualUnsorted, nullObjectId, oid } from 'testlib'
+import { nullObjectId, oid } from 'testlib'
 import { buildCreateShowtimeDto, createShowtimes } from '../__helpers__'
 import type { Fixture } from './showtimes.fixture'
 
@@ -31,26 +31,26 @@ describe('ShowtimesService', () => {
     })
 
     describe('getShowtimes', () => {
-        let showtimes: ShowtimeDto[]
-
-        beforeEach(async () => {
-            const createDtos = [
-                { startTime: new Date('2000-01-01T12:00') },
-                { startTime: new Date('2000-01-01T14:00') }
-            ]
-
-            showtimes = await createShowtimes(fix, createDtos)
-        })
-
         // 상영시간이 존재하는 경우
         describe('when the showtimes exist', () => {
+            let showtimes: ShowtimeDto[]
+
+            beforeEach(async () => {
+                const createDtos = [
+                    { startTime: new Date('2000-01-01T12:00') },
+                    { startTime: new Date('2000-01-01T14:00') }
+                ]
+
+                showtimes = await createShowtimes(fix, createDtos)
+            })
+
             // 상영시간들을 반환한다
             it('returns the showtimes', async () => {
                 const showtimeIds = pickIds(showtimes)
 
                 const gotShowtimes = await fix.showtimesService.getShowtimes(showtimeIds)
 
-                expectEqualUnsorted(gotShowtimes, showtimes)
+                expect(gotShowtimes).toEqual(expect.arrayContaining(showtimes))
             })
         })
 
@@ -93,7 +93,7 @@ describe('ShowtimesService', () => {
                     transactionIds: [transactionId]
                 })
 
-                expectEqualUnsorted(showtimes, [createdShowtimes[0]])
+                expect(showtimes).toEqual([createdShowtimes[0]])
             })
         })
 
@@ -105,7 +105,7 @@ describe('ShowtimesService', () => {
                     movieIds: [movieId]
                 })
 
-                expectEqualUnsorted(showtimes, [createdShowtimes[1]])
+                expect(showtimes).toEqual([createdShowtimes[1]])
             })
         })
 
@@ -117,7 +117,7 @@ describe('ShowtimesService', () => {
                     theaterIds: [theaterId]
                 })
 
-                expectEqualUnsorted(showtimes, [createdShowtimes[2]])
+                expect(showtimes).toEqual([createdShowtimes[2]])
             })
         })
 
@@ -132,7 +132,9 @@ describe('ShowtimesService', () => {
 
                 const showtimes = await fix.showtimesService.searchShowtimes({ startTimeRange })
 
-                expectEqualUnsorted(showtimes, [createdShowtimes[3], createdShowtimes[4]])
+                expect(showtimes).toEqual(
+                    expect.arrayContaining([createdShowtimes[3], createdShowtimes[4]])
+                )
             })
         })
 

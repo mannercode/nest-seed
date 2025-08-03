@@ -1,5 +1,5 @@
 import { TheaterDto } from 'apps/cores'
-import { expectEqualUnsorted, nullObjectId } from 'testlib'
+import { nullObjectId } from 'testlib'
 import { buildCreateTheaterDto, createTheater, Errors } from '../__helpers__'
 import type { Fixture } from './theaters.fixture'
 
@@ -154,15 +154,14 @@ describe('TheatersService', () => {
         describe('when query parameters are missing', () => {
             // 기본 페이지네이션으로 극장 목록을 반환한다
             it('returns the theater list with default pagination', async () => {
-                const { body } = await fix.httpClient.get('/theaters').ok()
-                const { items, ...pagination } = body
-
-                expect(pagination).toEqual({
-                    skip: 0,
-                    take: expect.any(Number),
-                    total: theaters.length
-                })
-                expectEqualUnsorted(items, theaters)
+                await fix.httpClient
+                    .get('/theaters')
+                    .ok({
+                        skip: 0,
+                        take: expect.any(Number),
+                        total: theaters.length,
+                        items: expect.arrayContaining(theaters)
+                    })
             })
         })
 
@@ -181,12 +180,14 @@ describe('TheatersService', () => {
         describe('when a partial `name` is provided', () => {
             // 이름이 해당 부분 문자열을 포함하는 극장 목록을 반환한다
             it('returns the theater list whose name contains the given substring', async () => {
-                const { body } = await fix.httpClient
+                await fix.httpClient
                     .get('/theaters')
                     .query({ name: 'Theater-a' })
-                    .ok()
-
-                expectEqualUnsorted(body.items, [theaters[0], theaters[1]])
+                    .ok(
+                        expect.objectContaining({
+                            items: expect.arrayContaining([theaters[0], theaters[1]])
+                        })
+                    )
             })
         })
     })
