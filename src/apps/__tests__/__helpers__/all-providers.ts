@@ -7,7 +7,7 @@ import {
 import {
     CustomersClient,
     MoviesClient,
-    PurchasesClient,
+    PurchaseRecordsClient,
     ShowtimesClient,
     TheatersClient,
     TicketHoldingClient,
@@ -24,7 +24,7 @@ export interface AllProviders {
     theatersService: TheatersClient
     showtimeCreationService: ShowtimeCreationClient
     bookingService: BookingClient
-    purchasesService: PurchasesClient
+    purchasesService: PurchaseRecordsClient
     recommendationService: RecommendationClient
     purchaseProcessService: PurchaseProcessClient
     ticketHoldingService: TicketHoldingClient
@@ -47,7 +47,7 @@ export const getAllProviders = async (
     const theatersService = gatewayModule.get(TheatersClient)
     const showtimeCreationService = gatewayModule.get(ShowtimeCreationClient)
     const bookingService = gatewayModule.get(BookingClient)
-    const purchasesService = gatewayModule.get(PurchasesClient)
+    const purchasesService = gatewayModule.get(PurchaseRecordsClient)
     const recommendationService = gatewayModule.get(RecommendationClient)
     const purchaseProcessService = gatewayModule.get(PurchaseProcessClient)
 
@@ -56,9 +56,9 @@ export const getAllProviders = async (
     const ticketsService = appsModule.get(TicketsClient)
     const showtimesService = appsModule.get(ShowtimesClient)
     const watchRecordsService = appsModule.get(WatchRecordsClient)
+    const paymentsService = appsModule.get(PaymentsClient)
 
     const { module: coresModule } = coresContext
-    const paymentsService = coresModule.get(PaymentsClient)
 
     const { module: _infrasModule } = infrasContext
 

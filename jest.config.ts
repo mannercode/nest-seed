@@ -22,7 +22,6 @@ export default {
     coverageReporters: ['lcov', 'text'],
     coveragePathIgnorePatterns: [
         '__tests__',
-        '\\.controller\\.ts$',
         '/production\\.ts$',
         '/development\\.ts$',
         '/main\\.ts$',

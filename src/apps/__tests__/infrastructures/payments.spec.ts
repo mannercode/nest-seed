@@ -18,7 +18,7 @@ describe('PaymentsService', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
             // 결제를 생성하고 반환한다
-            it('creates and returns the payment', async () => {
+            it('creates and returns a payment', async () => {
                 const createDto = buildCreatePaymentDto()
 
                 const payment = await fix.paymentsService.createPayment(createDto)

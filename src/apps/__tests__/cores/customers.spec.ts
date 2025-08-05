@@ -20,7 +20,7 @@ describe('CustomersService', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
             // 고객을 생성하고 반환한다
-            it('creates and returns the customer', async () => {
+            it('creates and returns a customer', async () => {
                 const createDto = buildCreateCustomerDto()
 
                 await fix.httpClient

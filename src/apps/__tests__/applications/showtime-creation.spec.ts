@@ -74,7 +74,7 @@ describe('ShowtimeCreationService', () => {
         // 요청이 유효한 경우
         describe('when the request is valid', () => {
             // 상영시간과 티켓을 생성한다
-            it('creates the showtimes and tickets', async () => {
+            it('creates showtimes and tickets', async () => {
                 // TODO waitEvents로 변경
                 const monitorPromise = monitorEvents(fix.httpClient, ['succeeded'])
                 const theaterIds = [fix.theater.id]

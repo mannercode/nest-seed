@@ -10,7 +10,7 @@ export class PurchaseItemDto {
     ticketId: string
 }
 
-export class PurchaseDto {
+export class PurchaseRecordDto {
     id: string
     customerId: string
     paymentId: string

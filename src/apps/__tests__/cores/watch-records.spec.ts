@@ -19,7 +19,7 @@ describe('WatchRecordsService', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
             // 관람 기록을 생성하고 반환한다
-            it('creates and returns the watch record', async () => {
+            it('creates and returns a watch record', async () => {
                 const createDto = buildCreateWatchRecordDto()
 
                 const watchRecord = await fix.watchRecordsService.createWatchRecord(createDto)

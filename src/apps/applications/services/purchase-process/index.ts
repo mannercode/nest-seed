@@ -1,3 +1,4 @@
+export * from './dtos'
 export * from './processors'
 export * from './purchase-process.client'
 export * from './purchase-process.module'

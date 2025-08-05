@@ -18,7 +18,7 @@ export class PurchaseItem {
 }
 
 @Schema(MongooseConfigModule.schemaOptions)
-export class Purchase extends MongooseSchema {
+export class PurchaseRecord extends MongooseSchema {
     @Prop({ required: true })
     customerId: Types.ObjectId
 
@@ -31,5 +31,5 @@ export class Purchase extends MongooseSchema {
     @Prop({ type: [Object], required: true })
     purchaseItems: PurchaseItem[]
 }
-export type PurchaseDocument = HydratedDocument<Purchase>
-export const PurchaseSchema = createMongooseSchema(Purchase)
+export type PurchaseRecordDocument = HydratedDocument<PurchaseRecord>
+export const PurchaseRecordSchema = createMongooseSchema(PurchaseRecord)

@@ -5,10 +5,10 @@ import {
     MovieDto,
     MoviesClient,
     MoviesModule,
-    PurchaseDto,
+    PurchaseRecordDto,
     PurchaseItemType,
-    PurchasesClient,
-    PurchasesModule,
+    PurchaseRecordsClient,
+    PurchaseRecordsModule,
     Seatmap,
     ShowtimesClient,
     ShowtimesModule,
@@ -31,10 +31,10 @@ import {
 import { DateUtil, pickIds } from 'common'
 import { Rules } from 'shared'
 import {
-    buildCreatePurchaseDto,
+    buildCreatePurchaseRecordDto,
     createCustomer2,
     createMovie2,
-    createPurchase2,
+    createPurchseRecord2,
     createShowtimes2,
     createTheater2,
     createTickets2,
@@ -50,7 +50,7 @@ export interface PurchasesFixture extends HttpTestFixture {
     heldTickets: TicketDto[]
     availableTickets: TicketDto[]
     closedSaleTickets: TicketDto[]
-    purchase: PurchaseDto
+    purchase: PurchaseRecordDto
 }
 
 export const createFixture = async (): Promise<PurchasesFixture> => {
@@ -60,7 +60,7 @@ export const createFixture = async (): Promise<PurchasesFixture> => {
             StorageFilesModule,
             TheatersModule,
             TicketsModule,
-            PurchasesModule,
+            PurchaseRecordsModule,
             CustomersModule,
             ShowtimesModule,
             TicketHoldingModule,
@@ -72,7 +72,7 @@ export const createFixture = async (): Promise<PurchasesFixture> => {
             StorageFilesClient,
             TheatersClient,
             TicketsClient,
-            PurchasesClient,
+            PurchaseRecordsClient,
             CustomersClient,
             ShowtimesClient,
             TicketHoldingClient,
@@ -97,7 +97,7 @@ export const createFixture = async (): Promise<PurchasesFixture> => {
 
     const closedSaleTickets = await createClosedSaleTickets(context, movie, theater)
 
-    const purchase = await createPurchase2(context)
+    const purchase = await createPurchseRecord2(context)
 
     return { ...context, customer, heldTickets, availableTickets, closedSaleTickets, purchase }
 }
@@ -105,7 +105,7 @@ export const createFixture = async (): Promise<PurchasesFixture> => {
 export const buildCreateTicketPurchaseDto = (customer: CustomerDto, tickets: TicketDto[]) => {
     const purchaseItems = tickets.map(({ id }) => ({ type: PurchaseItemType.Ticket, ticketId: id }))
 
-    return buildCreatePurchaseDto({ customerId: customer.id, purchaseItems })
+    return buildCreatePurchaseRecordDto({ customerId: customer.id, purchaseItems })
 }
 
 const createAvailableAndHeldTickets = async (

@@ -19,7 +19,7 @@ describe('TheatersService', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
             // 극장을 생성하고 반환한다
-            it('creates and returns the theater', async () => {
+            it('creates and returns a theater', async () => {
                 const createDto = buildCreateTheaterDto()
 
                 await fix.httpClient

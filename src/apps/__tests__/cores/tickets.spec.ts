@@ -20,7 +20,7 @@ describe('TicketsService', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
             // 티켓을 생성하고 결과를 반환한다
-            it('creates showtimes and returns the result', async () => {
+            it('creates and returns tickets', async () => {
                 const createDtos = [buildCreateTicketDto({ transactionId: oid(0x1) })]
 
                 const { success } = await fix.ticketsService.createTickets(createDtos)

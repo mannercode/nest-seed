@@ -3,18 +3,19 @@ import { InjectModel } from '@nestjs/mongoose'
 import { MongooseRepository, objectId } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import { CreatePurchaseDto } from './dtos'
-import { Purchase } from './models'
+import { CreatePurchaseRecordDto } from './dtos'
+import { PurchaseRecord } from './models'
 
 @Injectable()
-export class PurchasesRepository extends MongooseRepository<Purchase> {
+export class PurchasesRecordRepository extends MongooseRepository<PurchaseRecord> {
     constructor(
-        @InjectModel(Purchase.name, MongooseConfigModule.connectionName) model: Model<Purchase>
+        @InjectModel(PurchaseRecord.name, MongooseConfigModule.connectionName)
+        model: Model<PurchaseRecord>
     ) {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createPurchase(createDto: CreatePurchaseDto & { paymentId: string }) {
+    async createPurchseRecord(createDto: CreatePurchaseRecordDto & { paymentId: string }) {
         const purchase = this.newDocument()
         purchase.customerId = objectId(createDto.customerId)
         purchase.paymentId = objectId(createDto.paymentId)

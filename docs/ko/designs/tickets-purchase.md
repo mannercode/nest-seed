@@ -194,7 +194,7 @@ Customer -> Frontend: 결제 정보 입력
         }
     end note
         Backend -> Purchases: processPurchase(body)
-            Purchases -> Purchases: createPurchase(body)
+            Purchases -> Purchases: createPurchseRecord(body)
             Purchases <-- Purchases: purchaseId
             Purchases ->> TicketPurchases: validatePurchaseRequest(purchaseId, items)
             activate TicketPurchases
@@ -243,7 +243,7 @@ Customer <-- Frontend: 구매 완료
 @enduml
 ```
 
-현재 단계에서 Ticket 이외의 다른 품목을 고려한 Purchase 설계는 과도하다. 너무 일찍 일반화 함수를 정의하면 나중에 요구사항이 변경될 때 기존에 정의한 규칙이 제대로 대응하지 못하고 `createPurchase2`함수를 만들어야 하는 상황이 될 수 있다. 여기서는 설명을 위해 범용적인 설계를 한 것이다. 실제 프로젝트라면 테스트 케이스를 작성하고 바로 구현을 시작했을 것이다.
+현재 단계에서 Ticket 이외의 다른 품목을 고려한 Purchase 설계는 과도하다. 너무 일찍 일반화 함수를 정의하면 나중에 요구사항이 변경될 때 기존에 정의한 규칙이 제대로 대응하지 못하고 `createPurchseRecord2`함수를 만들어야 하는 상황이 될 수 있다. 여기서는 설명을 위해 범용적인 설계를 한 것이다. 실제 프로젝트라면 테스트 케이스를 작성하고 바로 구현을 시작했을 것이다.
 
 구현 순서는 어떻게 할까? 뿌리에 가까운 서비스부터 한다. 그럼 이것은 down-up이 아닌가? 레이어 아래부터 한다면 모를까 서비스를 코어부터 구현한다고 down-up으로 보긴 어렵다. 설계가 없다면 앱 서비스부터 구현했을 것이다. 그러나 설계가 있다면 코어부터 구현하는 것이 효율적이다.
 
@@ -282,7 +282,7 @@ Customer -> Frontend: 결제 정보 입력
                 return ok
             deactivate TicketProcessor
 
-            PurchaseProcess -> Purchases: createPurchase(body)
+            PurchaseProcess -> Purchases: createPurchseRecord(body)
             Purchases -> Payments: createPayment(totalPrice, customer)
             Purchases <-- Payments: 결제 성공
             PurchaseProcess <-- Purchases: purchaseId

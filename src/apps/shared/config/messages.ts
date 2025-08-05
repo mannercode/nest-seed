@@ -30,7 +30,7 @@ export const Messages = createMessagePatternMap(
             searchShowdates: null,
             allShowtimesExist: null
         },
-        Purchases: { createPurchase: null, getPurchases: null },
+        Purchases: { createPurchseRecord: null, getPurchases: null },
         Movies: {
             createMovie: null,
             updateMovie: null,

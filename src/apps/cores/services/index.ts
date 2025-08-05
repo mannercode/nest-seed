@@ -1,6 +1,6 @@
 export * from './customers'
 export * from './movies'
-export * from './purchases'
+export * from './purchase-records'
 export * from './showtimes'
 export * from './theaters'
 export * from './ticket-holding'
