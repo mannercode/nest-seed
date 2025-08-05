@@ -1,7 +1,7 @@
 import { PurchaseClient } from 'apps/applications'
 import { PurchaseRecordDto, PurchaseRecordsClient, PurchaseRecordsModule } from 'apps/cores'
 import { PurchasesController } from 'apps/gateway'
-import { createPurchseRecord2, HttpTestFixture, setupHttpTestContext } from '../__helpers__'
+import { createPurchaseRecord2, HttpTestFixture, setupHttpTestContext } from '../__helpers__'
 
 export interface PurchasesFixture extends HttpTestFixture {
     purchaseRecordsService: PurchaseRecordsClient
@@ -17,7 +17,7 @@ export const createFixture = async (): Promise<PurchasesFixture> => {
 
     const purchaseRecordsService = context.module.get(PurchaseRecordsClient)
 
-    const createdPurchaseRecord = await createPurchseRecord2(context)
+    const createdPurchaseRecord = await createPurchaseRecord2(context)
 
     return { ...context, purchaseRecordsService, createdPurchaseRecord }
 }

@@ -89,21 +89,21 @@ describe('PurchaseService', () => {
         })
 
         // 구매 가능 시간이 지난 경우
-        describe('when the purchase deadline has passed', () => {
+        describe('when the purchase window is closed', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 const createDto = buildCreatePurchaseDto(
                     fix.customer,
-                    fix.closedSaleTickets.slice(0, 2)
+                    fix.closedTickets.slice(0, 2)
                 )
 
                 await fix.httpClient
                     .post('/purchases')
                     .body(createDto)
                     .badRequest({
-                        ...Errors.TicketPurchase.DeadlineExceeded,
-                        purchaseDeadlineInMinutes: expect.any(Number),
-                        cutoffTime: expect.any(String),
+                        ...Errors.TicketPurchase.WindowClosed,
+                        purchaseWindowCloseOffsetMinutes: expect.any(Number),
+                        purchaseWindowCloseTime: expect.any(String),
                         startTime: expect.any(String)
                     })
             })

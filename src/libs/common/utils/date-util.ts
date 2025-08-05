@@ -1,29 +1,5 @@
 export class DateUtil {
     /**
-     * Returns a new date with a specified number of days added to the base date.
-     * 기준 날짜에 지정된 일수를 더한 새 날짜를 반환합니다.
-     *
-     * @param {Date} date - The base date.
-     * @param {number} days - The number of days to add.
-     * @returns {Date} A new Date object with added days.
-     */
-    static addDays(date: Date, days: number): Date {
-        return new Date(date.getTime() + days * 24 * 60 * 60 * 1000)
-    }
-
-    /**
-     * Returns a new date with a specified number of minutes added to the base date.
-     * 기준 날짜에 지정된 분을 더한 새 날짜를 반환합니다.
-     *
-     * @param {Date} date - The base date.
-     * @param {number} minutes - The number of minutes to add.
-     * @returns {Date} A new Date object with added minutes.
-     */
-    static addMinutes(date: Date, minutes: number): Date {
-        return new Date(date.getTime() + minutes * 60 * 1000)
-    }
-
-    /**
      * Returns the earliest date from an array of Date objects.
      * 날짜 배열 중 가장 이른 날짜를 반환합니다.
      *
@@ -93,7 +69,35 @@ export class DateUtil {
         return new Date(year, month, day, hours, minutes)
     }
 
-    // TODO 구현해라
+    static now(): Date {
+        return new Date()
+    }
+
+    /**
+     * Returns a new date with a specified number of days added to the base date.
+     * 기준 날짜에 지정된 일수를 더한 새 날짜를 반환합니다.
+     *
+     * @param {Date} date - The base date.
+     * @param {number} days - The number of days to add.
+     * @returns {Date} A new Date object with added days.
+     */
+    static addDays(date: Date, days: number): Date {
+        return new Date(date.getTime() + days * 24 * 60 * 60 * 1000)
+    }
+
+    /**
+     * Returns a new date with a specified number of minutes added to the base date.
+     * 기준 날짜에 지정된 분을 더한 새 날짜를 반환합니다.
+     *
+     * @param {Date} date - The base date.
+     * @param {number} minutes - The number of minutes to add.
+     * @returns {Date} A new Date object with added minutes.
+     */
+    static addMinutes(date: Date, minutes: number): Date {
+        return new Date(date.getTime() + minutes * 60 * 1000)
+    }
+
+    // TODO 구현해라, addMinutes 같은거 삭제해라
     // 과거: past
     // 미래: future
 }

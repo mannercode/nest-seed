@@ -19,9 +19,9 @@ export const TicketPurchaseErrors = {
         code: 'ERR_PURCHASE_MAX_TICKETS_EXCEEDED',
         message: 'You have exceeded the maximum number of tickets allowed for purchase.'
     },
-    DeadlineExceeded: {
-        code: 'ERR_PURCHASE_DEADLINE_EXCEEDED',
-        message: 'The purchase deadline has passed.'
+    WindowClosed: {
+        code: 'ERR_TICKET_PURCHASE_WINDOW_CLOSED',
+        message: 'Ticket purchase is closed for this showtime.'
     },
     TicketNotHeld: {
         code: 'ERR_PURCHASE_TICKET_NOT_HELD',
@@ -72,17 +72,17 @@ export class TicketPurchasService {
 
     private validatePurchaseTime(showtimes: ShowtimeDto[]) {
         for (const { startTime } of showtimes) {
-            const cutoffTime = DateUtil.addMinutes(
-                new Date(),
-                Rules.Ticket.purchaseDeadlineInMinutes
+            const purchaseWindowCloseTime = DateUtil.addMinutes(
+                startTime,
+                -Rules.Ticket.purchaseWindowCloseOffsetMinutes
             )
 
-            if (startTime.getTime() < cutoffTime.getTime()) {
+            if (purchaseWindowCloseTime.getTime() < DateUtil.now().getTime()) {
                 throw new BadRequestException({
-                    ...TicketPurchaseErrors.DeadlineExceeded,
-                    purchaseDeadlineInMinutes: Rules.Ticket.purchaseDeadlineInMinutes,
+                    ...TicketPurchaseErrors.WindowClosed,
+                    purchaseWindowCloseOffsetMinutes: Rules.Ticket.purchaseWindowCloseOffsetMinutes,
                     startTime: startTime.toString(),
-                    cutoffTime: cutoffTime.toString()
+                    purchaseWindowCloseTime: purchaseWindowCloseTime.toString()
                 })
             }
         }

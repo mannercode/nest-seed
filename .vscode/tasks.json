@@ -35,7 +35,6 @@
         {
             "id": "tests",
             "type": "pickString",
-            "default": "apps",
             "options": [
                 "all",
                 "apps",

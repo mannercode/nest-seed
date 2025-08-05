@@ -13,7 +13,10 @@ export class RecommendationService {
     ) {}
 
     async searchRecommendedMovies(customerId: string | null) {
-        const startTime = DateUtil.addMinutes(new Date(), Rules.Ticket.purchaseDeadlineInMinutes)
+        const startTime = DateUtil.addMinutes(
+            new Date(),
+            Rules.Ticket.purchaseWindowCloseOffsetMinutes
+        )
 
         const showingMovieIds = await this.showtimesService.searchMovieIds({
             startTimeRange: { start: startTime }

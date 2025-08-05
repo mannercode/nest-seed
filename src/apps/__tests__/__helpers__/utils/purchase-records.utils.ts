@@ -21,7 +21,7 @@ export const createPurchseRecord = async (fix: CommonFixture, override = {}) => 
     return purchase
 }
 
-export const createPurchseRecord2 = async ({ module }: TestContext, override = {}) => {
+export const createPurchaseRecord2 = async ({ module }: TestContext, override = {}) => {
     const { PurchaseRecordsClient } = await import('apps/cores')
     const purchasesService = module.get(PurchaseRecordsClient)
 
