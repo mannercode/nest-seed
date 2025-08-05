@@ -269,8 +269,8 @@ Customer -> Frontend: 결제 정보 입력
             ]
         }
     end note
-        Backend -> PurchaseProcess: processPurchase(body)
-            PurchaseProcess -> TicketProcessor: validatePurchase(purchaseId, items)
+        Backend -> Purchase: processPurchase(body)
+            Purchase -> TicketProcessor: validatePurchase(purchaseId, items)
             activate TicketProcessor
                 TicketProcessor -> TicketProcessor: validateTicketQuantity(items)
                 note right: 고객은 한 번에 최대 10장의 티켓을 구매할 수 있습니다.
@@ -282,12 +282,12 @@ Customer -> Frontend: 결제 정보 입력
                 return ok
             deactivate TicketProcessor
 
-            PurchaseProcess -> Purchases: createPurchseRecord(body)
+            Purchase -> Purchases: createPurchseRecord(body)
             Purchases -> Payments: createPayment(totalPrice, customer)
             Purchases <-- Payments: 결제 성공
-            PurchaseProcess <-- Purchases: purchaseId
+            Purchase <-- Purchases: purchaseId
 
-            PurchaseProcess -> TicketProcessor: completePurchase(purchaseId, items)
+            Purchase -> TicketProcessor: completePurchase(purchaseId, items)
             activate TicketProcessor
                 TicketProcessor -> Tickets: updateTicketsStatus(ticketIds[], 'sold')
                 TicketProcessor <-- Tickets: 완료
@@ -296,7 +296,7 @@ Customer -> Frontend: 결제 정보 입력
                 return ok
             deactivate TicketProcessor
 
-        Backend <-- PurchaseProcess: 결제 완료 및 티켓 정보
+        Backend <-- Purchase: 결제 완료 및 티켓 정보
         note right
             Created, {
                 id,
@@ -315,4 +315,4 @@ Customer <-- Frontend: 구매 완료
 
 이전 설계는 구현이 복잡하기 때문에 위와 같이 단순화한다.
 
-PurchaseProcess를 제거하고 Purchases를 루트로 넣고 싶을 수 있다. 그렇게 되면 Purchases는 applications가 되고 다른 서비스가 참조할 수 없게 된다.
+Purchase를 제거하고 Purchases를 루트로 넣고 싶을 수 있다. 그렇게 되면 Purchases는 applications가 되고 다른 서비스가 참조할 수 없게 된다.

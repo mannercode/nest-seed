@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import {
-    CreatePurchaseRecordDto,
     PurchaseItemDto,
     PurchaseItemType,
     ShowtimeDto,
@@ -12,7 +11,8 @@ import {
 import { DateUtil, pickItems } from 'common'
 import { uniq } from 'lodash'
 import { Rules } from 'shared'
-import { PurchaseProcessEvents } from '../purchase-process.events'
+import { CreatePurchaseDto } from '../dtos'
+import { PurchaseEvents } from '../purchase.events'
 
 export const TicketPurchaseErrors = {
     MaxTicketsExceeded: {
@@ -29,17 +29,16 @@ export const TicketPurchaseErrors = {
     }
 }
 
-// TODO 이름 고민, Service가 붙어야 할 것 같다
 @Injectable()
-export class TicketPurchaseProcessor {
+export class TicketPurchasService {
     constructor(
         private ticketsService: TicketsClient,
         private showtimesService: ShowtimesClient,
         private ticketHoldingService: TicketHoldingClient,
-        private events: PurchaseProcessEvents
+        private events: PurchaseEvents
     ) {}
 
-    async validatePurchase(createDto: CreatePurchaseRecordDto) {
+    async validatePurchase(createDto: CreatePurchaseDto) {
         const ticketItems = createDto.purchaseItems.filter(
             (item) => item.type === PurchaseItemType.Ticket
         )
@@ -113,7 +112,7 @@ export class TicketPurchaseProcessor {
         }
     }
 
-    async completePurchase(createDto: CreatePurchaseRecordDto) {
+    async completePurchase(createDto: CreatePurchaseDto) {
         const ticketItems = createDto.purchaseItems.filter(
             (item) => item.type === PurchaseItemType.Ticket
         )
@@ -126,7 +125,7 @@ export class TicketPurchaseProcessor {
         return true
     }
 
-    async rollbackPurchase(createDto: CreatePurchaseRecordDto) {
+    async rollbackPurchase(createDto: CreatePurchaseDto) {
         const ticketItems = createDto.purchaseItems.filter(
             (item) => item.type === PurchaseItemType.Ticket
         )

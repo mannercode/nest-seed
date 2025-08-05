@@ -132,7 +132,7 @@ apps
 프로세스 중심 서비스는 단수형으로 명명합니다.
 
 1. BookingService: 티켓 예약 프로세스를 처리합니다.
-1. PurchaseProcessService: 구매 프로세스를 처리합니다.
+1. PurchaseService: 구매 프로세스를 처리합니다.
 1. RecommendationService: 컨텐츠를 추천합니다.
 
 엔티티 관리 서비스는 복수형으로 명명합니다.

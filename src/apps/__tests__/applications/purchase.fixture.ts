@@ -1,4 +1,4 @@
-import { PurchaseProcessClient, PurchaseProcessModule } from 'apps/applications'
+import { PurchaseClient, PurchaseModule } from 'apps/applications'
 import {
     CustomerDto,
     CustomersClient,
@@ -59,7 +59,7 @@ export const createFixture = async (): Promise<PurchasesFixture> => {
             ShowtimesModule,
             TicketHoldingModule,
             PaymentsModule,
-            PurchaseProcessModule
+            PurchaseModule
         ],
         providers: [
             CustomersClient,
@@ -69,7 +69,7 @@ export const createFixture = async (): Promise<PurchasesFixture> => {
             TheatersClient,
             TicketsClient,
             TicketHoldingClient,
-            PurchaseProcessClient
+            PurchaseClient
         ],
         controllers: [PurchasesController]
     })

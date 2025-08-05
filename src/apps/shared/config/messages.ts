@@ -56,7 +56,7 @@ export const Messages = createMessagePatternMap(
             requestShowtimeCreation: null
         },
         Recommendation: { searchRecommendedMovies: null },
-        PurchaseProcess: { processPurchase: null },
+        Purchase: { processPurchase: null },
         Booking: {
             searchTheaters: null,
             searchShowdates: null,

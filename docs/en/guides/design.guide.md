@@ -132,7 +132,7 @@ apps
 Process-centric services are named using singular nouns.
 
 1.  BookingService: Handles the ticket booking process.
-2.  PurchaseProcessService: Handles the purchase process.
+2.  PurchaseService: Handles the purchase process.
 3.  RecommendationService: Recommends content.
 
 Entity management services are named using plural nouns.

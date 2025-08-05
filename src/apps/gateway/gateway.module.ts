@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import {
     BookingClient,
-    PurchaseProcessClient,
+    PurchaseClient,
     RecommendationClient,
     ShowtimeCreationClient
 } from 'apps/applications'
@@ -34,7 +34,7 @@ import { HealthModule, MulterConfigModule } from './modules'
         BookingClient,
         PurchaseRecordsClient,
         RecommendationClient,
-        PurchaseProcessClient
+        PurchaseClient
     ],
     controllers: [
         CustomersController,

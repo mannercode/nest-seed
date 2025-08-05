@@ -1,6 +1,6 @@
 import {
     BookingClient,
-    PurchaseProcessClient,
+    PurchaseClient,
     RecommendationClient,
     ShowtimeCreationClient
 } from 'apps/applications'
@@ -26,7 +26,7 @@ export interface AllProviders {
     bookingService: BookingClient
     purchasesService: PurchaseRecordsClient
     recommendationService: RecommendationClient
-    purchaseProcessService: PurchaseProcessClient
+    purchaseProcessService: PurchaseClient
     ticketHoldingService: TicketHoldingClient
     ticketsService: TicketsClient
     paymentsService: PaymentsClient
@@ -49,7 +49,7 @@ export const getAllProviders = async (
     const bookingService = gatewayModule.get(BookingClient)
     const purchasesService = gatewayModule.get(PurchaseRecordsClient)
     const recommendationService = gatewayModule.get(RecommendationClient)
-    const purchaseProcessService = gatewayModule.get(PurchaseProcessClient)
+    const purchaseProcessService = gatewayModule.get(PurchaseClient)
 
     const { module: appsModule } = appsContext
     const ticketHoldingService = appsModule.get(TicketHoldingClient)

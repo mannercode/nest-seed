@@ -3,15 +3,15 @@ import { ClientProxyService, InjectClientProxy } from 'common'
 import { Events } from 'shared'
 
 @Injectable()
-export class PurchaseProcessEvents {
+export class PurchaseEvents {
     constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
 
     emitTicketPurchased(customerId: string, ticketIds: string[]) {
-        return this.proxy.emit(Events.PurchaseProcess.TicketPurchased, { customerId, ticketIds })
+        return this.proxy.emit(Events.Purchase.TicketPurchased, { customerId, ticketIds })
     }
 
     emitTicketPurchaseCanceled(customerId: string, ticketIds: string[]) {
-        return this.proxy.emit(Events.PurchaseProcess.TicketPurchaseCanceled, {
+        return this.proxy.emit(Events.Purchase.TicketPurchaseCanceled, {
             customerId,
             ticketIds
         })

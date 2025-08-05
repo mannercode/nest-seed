@@ -1,3 +1,4 @@
+import { CreatePurchaseDto } from 'apps/applications'
 import { PurchaseRecordDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { Errors, getPayments2, getTickets2 } from '../__helpers__'
@@ -35,7 +36,7 @@ describe('PurchaseService', () => {
                     id: expect.any(String),
                     createdAt: expect.any(Date),
                     updatedAt: expect.any(Date),
-                    // paymentId: expect.any(String),
+                    paymentId: expect.any(String),
                     ...createDto
                 })
             })
@@ -136,10 +137,10 @@ describe('PurchaseService', () => {
                     throw new Error('purchase error')
                 })
 
-                const { TicketPurchaseProcessor } = await import('apps/applications')
-                const ticketPurchaseProcessor = fix.module.get(TicketPurchaseProcessor)
+                const { TicketPurchasService } = await import('apps/applications')
+                const ticketPurchaseService = fix.module.get(TicketPurchasService)
 
-                rollbackPurchaseSpy = jest.spyOn(ticketPurchaseProcessor, 'rollbackPurchase')
+                rollbackPurchaseSpy = jest.spyOn(ticketPurchaseService, 'rollbackPurchase')
             })
 
             // 500 Internal Server Error를 반환하고 구매를 롤백한다
