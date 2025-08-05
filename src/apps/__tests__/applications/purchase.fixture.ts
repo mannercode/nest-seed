@@ -1,3 +1,4 @@
+import { PurchaseProcessClient, PurchaseProcessModule } from 'apps/applications'
 import {
     CustomerDto,
     CustomersClient,
@@ -5,8 +6,8 @@ import {
     MovieDto,
     MoviesClient,
     MoviesModule,
-    PurchaseRecordDto,
     PurchaseItemType,
+    PurchaseRecordDto,
     PurchaseRecordsClient,
     PurchaseRecordsModule,
     Seatmap,
@@ -22,16 +23,10 @@ import {
     TicketsModule
 } from 'apps/cores'
 import { PurchasesController } from 'apps/gateway'
-import {
-    PaymentsClient,
-    PaymentsModule,
-    StorageFilesClient,
-    StorageFilesModule
-} from 'apps/infrastructures'
+import { PaymentsModule, StorageFilesModule } from 'apps/infrastructures'
 import { DateUtil, pickIds } from 'common'
 import { Rules } from 'shared'
 import {
-    buildCreatePurchaseRecordDto,
     createCustomer2,
     createMovie2,
     createPurchseRecord2,
@@ -43,7 +38,6 @@ import {
     setupHttpTestContext,
     TestFixture
 } from '../__helpers__'
-import { PurchaseProcessClient, PurchaseProcessModule } from 'apps/applications'
 
 export interface PurchasesFixture extends HttpTestFixture {
     customer: CustomerDto
@@ -68,15 +62,13 @@ export const createFixture = async (): Promise<PurchasesFixture> => {
             PurchaseProcessModule
         ],
         providers: [
+            CustomersClient,
             MoviesClient,
-            StorageFilesClient,
+            PurchaseRecordsClient,
+            ShowtimesClient,
             TheatersClient,
             TicketsClient,
-            PurchaseRecordsClient,
-            CustomersClient,
-            ShowtimesClient,
             TicketHoldingClient,
-            PaymentsClient,
             PurchaseProcessClient
         ],
         controllers: [PurchasesController]
@@ -102,10 +94,15 @@ export const createFixture = async (): Promise<PurchasesFixture> => {
     return { ...context, customer, heldTickets, availableTickets, closedSaleTickets, purchase }
 }
 
-export const buildCreateTicketPurchaseDto = (customer: CustomerDto, tickets: TicketDto[]) => {
+export const buildCreatePurchaseDto = (
+    customer: CustomerDto,
+    tickets: TicketDto[],
+    overrides = {}
+) => {
     const purchaseItems = tickets.map(({ id }) => ({ type: PurchaseItemType.Ticket, ticketId: id }))
 
-    return buildCreatePurchaseRecordDto({ customerId: customer.id, purchaseItems })
+    const createDto = { customerId: customer.id, totalPrice: 1, purchaseItems, ...overrides }
+    return createDto
 }
 
 const createAvailableAndHeldTickets = async (

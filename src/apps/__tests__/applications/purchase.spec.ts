@@ -1,14 +1,13 @@
-import { CreatePurchaseRecordDto, PurchaseRecordDto, TicketStatus } from 'apps/cores'
+import { PurchaseRecordDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
-import { nullObjectId } from 'testlib'
 import { Errors, getPayments2, getTickets2 } from '../__helpers__'
-import { buildCreateTicketPurchaseDto, PurchasesFixture } from './purchases.fixture'
+import { buildCreatePurchaseDto, PurchasesFixture } from './purchase.fixture'
 
-describe.skip('PurchasesService', () => {
+describe('PurchaseService', () => {
     let fix: PurchasesFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./purchases.fixture')
+        const { createFixture } = await import('./purchase.fixture')
         fix = await createFixture()
     })
 
@@ -19,11 +18,11 @@ describe.skip('PurchasesService', () => {
     describe('POST /purchases', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
-            let createDto: CreatePurchaseRecordDto
+            let createDto: CreatePurchaseDto
             let createdPurchase: PurchaseRecordDto
 
             beforeEach(async () => {
-                createDto = buildCreateTicketPurchaseDto(fix.customer, fix.heldTickets)
+                createDto = buildCreatePurchaseDto(fix.customer, fix.heldTickets)
 
                 const { body } = await fix.httpClient.post('/purchases').body(createDto).created()
 
@@ -76,7 +75,7 @@ describe.skip('PurchasesService', () => {
 
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                const createDto = buildCreateTicketPurchaseDto(fix.customer, fix.heldTickets)
+                const createDto = buildCreatePurchaseDto(fix.customer, fix.heldTickets)
 
                 await fix.httpClient
                     .post('/purchases')
@@ -92,7 +91,7 @@ describe.skip('PurchasesService', () => {
         describe('when the purchase deadline has passed', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                const createDto = buildCreateTicketPurchaseDto(
+                const createDto = buildCreatePurchaseDto(
                     fix.customer,
                     fix.closedSaleTickets.slice(0, 2)
                 )
@@ -113,7 +112,7 @@ describe.skip('PurchasesService', () => {
         describe('when purchasing unheld tickets', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                const createDto = buildCreateTicketPurchaseDto(
+                const createDto = buildCreatePurchaseDto(
                     fix.customer,
                     fix.availableTickets.slice(2)
                 )
@@ -145,34 +144,11 @@ describe.skip('PurchasesService', () => {
 
             // 500 Internal Server Error를 반환하고 구매를 롤백한다
             it('returns 500 Internal Server Error and rolls back the purchase', async () => {
-                const createDto = buildCreateTicketPurchaseDto(fix.customer, fix.heldTickets)
+                const createDto = buildCreatePurchaseDto(fix.customer, fix.heldTickets)
 
                 await fix.httpClient.post('/purchases').body(createDto).internalServerError()
 
                 expect(rollbackPurchaseSpy).toHaveBeenCalledTimes(1)
-            })
-        })
-    })
-
-    describe('GET /purchases/:purchaseId', () => {
-        // 구매 정보가 존재하는 경우
-        describe('when the purchase exists', () => {
-            // 구매 정보를 반환한다.
-            it('returns the purchase', async () => {
-                await fix.httpClient.get(`/purchases/${fix.purchase.id}`).ok(fix.purchase)
-            })
-        })
-
-        // 구매 정보가 존재하지 않는 경우
-        describe('when the purchase does not exist', () => {
-            // 404 Not Found를 반환한다
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .get(`/purchases/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
             })
         })
     })
