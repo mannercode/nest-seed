@@ -11,9 +11,6 @@ export class PurchaseEvents {
     }
 
     emitTicketPurchaseCanceled(customerId: string, ticketIds: string[]) {
-        return this.proxy.emit(Events.Purchase.TicketPurchaseCanceled, {
-            customerId,
-            ticketIds
-        })
+        return this.proxy.emit(Events.Purchase.TicketPurchaseCanceled, { customerId, ticketIds })
     }
 }
