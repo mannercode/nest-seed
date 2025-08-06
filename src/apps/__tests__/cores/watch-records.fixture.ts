@@ -1,7 +1,7 @@
 import { WatchRecordsClient, WatchRecordsModule } from 'apps/cores'
 import { TestFixture, setupTestContext } from '../__helpers__'
 
-export interface WatchRecordsFixture extends TestFixture {
+export interface Fixture extends TestFixture {
     watchRecordsService: WatchRecordsClient
 }
 

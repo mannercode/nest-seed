@@ -8,7 +8,7 @@ import {
     setupHttpTestContext
 } from '../__helpers__'
 
-export interface CustomersAuthFixture extends HttpTestFixture {
+export interface Fixture extends HttpTestFixture {
     credentials: { email: string; password: string }
     authTokens: JwtAuthTokens
 }

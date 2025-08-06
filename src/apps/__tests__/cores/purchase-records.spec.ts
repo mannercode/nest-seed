@@ -1,9 +1,9 @@
 import { nullObjectId } from 'testlib'
 import { buildCreatePurchaseRecordDto, Errors } from '../__helpers__'
-import { PurchasesFixture } from './purchase-records.fixture'
+import { Fixture } from './purchase-records.fixture'
 
 describe('PurchaseRecordsService', () => {
-    let fix: PurchasesFixture
+    let fix: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./purchase-records.fixture')

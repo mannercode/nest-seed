@@ -2,10 +2,10 @@ import { TicketDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { oid } from 'testlib'
 import { buildCreateTicketDto, createTickets2 } from '../__helpers__'
-import type { TicketsFixture } from './tickets.fixture'
+import type { Fixture } from './tickets.fixture'
 
 describe('TicketsService', () => {
-    let fix: TicketsFixture
+    let fix: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./tickets.fixture')

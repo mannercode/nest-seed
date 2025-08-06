@@ -2,7 +2,7 @@ import { CustomerDto, CustomersClient, CustomersModule } from 'apps/cores'
 import { CustomerJwtAuthGuard, CustomersController } from 'apps/gateway'
 import { createCustomer2, HttpTestFixture, setupHttpTestContext } from '../__helpers__'
 
-export interface CustomersFixture extends HttpTestFixture {
+export interface Fixture extends HttpTestFixture {
     createdCustomer: CustomerDto
 }
 

@@ -1,10 +1,10 @@
 import { WatchRecordDto } from 'apps/cores'
 import { oid } from 'testlib'
 import { buildCreateWatchRecordDto, createWatchRecord2 } from '../__helpers__'
-import type { WatchRecordsFixture } from './watch-records.fixture'
+import type { Fixture } from './watch-records.fixture'
 
 describe('WatchRecordsService', () => {
-    let fix: WatchRecordsFixture
+    let fix: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./watch-records.fixture')

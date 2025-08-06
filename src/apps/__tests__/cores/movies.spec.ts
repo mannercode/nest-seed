@@ -2,10 +2,10 @@ import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
 import { FileUtil, Path } from 'common'
 import { nullObjectId, objectToFields } from 'testlib'
 import { buildCreateMovieDto, createMovie2, Errors } from '../__helpers__'
-import { MoviesFixture } from './movies.fixture'
+import { Fixture } from './movies.fixture'
 
 describe('MoviesService', () => {
-    let fix: MoviesFixture
+    let fix: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./movies.fixture')

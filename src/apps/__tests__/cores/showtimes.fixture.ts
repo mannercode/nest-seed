@@ -1,7 +1,7 @@
 import { ShowtimesClient, ShowtimesModule } from 'apps/cores'
 import { TestFixture, setupTestContext } from '../__helpers__'
 
-export interface ShowtimesFixture extends TestFixture {
+export interface Fixture extends TestFixture {
     showtimesService: ShowtimesClient
 }
 

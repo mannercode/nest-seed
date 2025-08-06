@@ -1,10 +1,10 @@
 import { TheaterDto } from 'apps/cores'
 import { nullObjectId } from 'testlib'
 import { buildCreateTheaterDto, createTheater2, Errors } from '../__helpers__'
-import type { TheatersFixture } from './theaters.fixture'
+import type { Fixture } from './theaters.fixture'
 
 describe('TheatersService', () => {
-    let fix: TheatersFixture
+    let fix: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./theaters.fixture')

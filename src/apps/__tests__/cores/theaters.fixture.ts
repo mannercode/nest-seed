@@ -2,7 +2,7 @@ import { TheaterDto, TheatersClient, TheatersModule } from 'apps/cores'
 import { TheatersController } from 'apps/gateway'
 import { createTheater2, HttpTestFixture, setupHttpTestContext } from '../__helpers__'
 
-export interface TheatersFixture extends HttpTestFixture {
+export interface Fixture extends HttpTestFixture {
     createdTheater: TheaterDto
 }
 

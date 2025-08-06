@@ -1,7 +1,7 @@
 import { TicketsClient, TicketsModule } from 'apps/cores'
 import { TestFixture, setupTestContext } from '../__helpers__'
 
-export interface TicketsFixture extends TestFixture {
+export interface Fixture extends TestFixture {
     ticketsService: TicketsClient
 }
 

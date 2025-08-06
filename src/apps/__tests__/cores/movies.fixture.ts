@@ -11,7 +11,7 @@ import {
     setupHttpTestContext
 } from '../__helpers__'
 
-export interface MoviesFixture extends HttpTestFixture {
+export interface Fixture extends HttpTestFixture {
     image: FixtureFile
     createdMovie: MovieDto
 }
