@@ -2,7 +2,7 @@ import fs from 'fs/promises'
 import net from 'net'
 
 export const nullObjectId = '000000000000000000000000'
-export const testObjectId = (num: number) => num.toString(16).padStart(24, '0')
+export const oid = (num: number) => num.toString(16).padStart(24, '0')
 export const nullDate = new Date(0)
 
 export async function createDummyFile(filePath: string, sizeInBytes: number) {
@@ -76,14 +76,18 @@ export const objectToFields = (createDto: any) => {
     return fields
 }
 
-export function withTestId(prefix: string) {
+export const getTestId = () => {
     const testId = process.env.TEST_ID
 
     if (testId === undefined) {
         throw new Error('TEST_ID is not defined')
     }
 
-    return `${prefix}-${testId}`
+    return testId
+}
+
+export function withTestId(prefix: string) {
+    return `${prefix}-${getTestId()}`
 }
 
 export class EnvVars {

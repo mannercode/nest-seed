@@ -1,10 +1,9 @@
-import { Server } from 'http'
-import express from 'express'
 import { INestApplication } from '@nestjs/common'
 import { TestingModule } from '@nestjs/testing'
+import { Server } from 'http'
 import { ModuleMetadataEx, createTestingModule } from './create-testing-module'
-import { getAvailablePort } from './utils'
 import { HttpTestClient } from './http.test-client'
+import { getAvailablePort } from './utils'
 
 async function listenOnAvailablePort(server: Server): Promise<number> {
     const maxAttempts = 3
@@ -62,14 +61,7 @@ export async function createTestContext({
 }
 
 export async function createHttpTestContext(options: TestContextOptions): Promise<HttpTestContext> {
-    const testContext = await createTestContext({
-        ...options,
-        configureApp: async (app) => {
-            app.use(express.urlencoded({ extended: true }))
-
-            await options.configureApp?.(app, options.brokers)
-        }
-    })
+    const testContext = await createTestContext(options)
 
     const httpServer = testContext.app.getHttpServer()
     const httpPort = await listenOnAvailablePort(httpServer)

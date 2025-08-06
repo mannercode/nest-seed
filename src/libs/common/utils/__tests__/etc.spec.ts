@@ -3,17 +3,14 @@ import {
     comment,
     generateShortId,
     generateUUID,
-    getChecksum,
     jsonToObject,
     notUsed,
     padNumber,
-    Path,
     pickIds,
     pickItems,
     sleep,
     validateEmail
 } from 'common'
-import fs from 'fs/promises'
 import { nullDate } from 'testlib'
 
 describe('sleep', () => {
@@ -93,9 +90,7 @@ describe('addQuotesToNumbers', () => {
 describe('jsonToObject', () => {
     // ISO 8601 형식의 날짜 문자열을 Date 객체로 변환해야 한다
     it('Should convert ISO 8601 date strings to Date objects', () => {
-        const obj = jsonToObject({
-            date: '2023-06-18T12:12:34.567Z'
-        })
+        const obj = jsonToObject({ date: '2023-06-18T12:12:34.567Z' })
 
         expect(obj.date).toBeInstanceOf(Date)
         expect((obj.date as any).toISOString()).toEqual('2023-06-18T12:12:34.567Z')
@@ -106,11 +101,7 @@ describe('jsonToObject', () => {
         const obj = jsonToObject({
             level1: {
                 date: '2023-06-18T12:12:34.567Z',
-                level2: {
-                    date: ['2023-06-19T12:12:34.567Z'],
-                    date2: nullDate,
-                    null: null
-                }
+                level2: { date: ['2023-06-19T12:12:34.567Z'], date2: nullDate, null: null }
             }
         })
         expect(obj.level1.date).toBeInstanceOf(Date)
@@ -120,18 +111,13 @@ describe('jsonToObject', () => {
 
     // 날짜 형식이 아닌 문자열은 무시해야 한다
     it('Should ignore strings that are not in date format', () => {
-        const obj = jsonToObject({
-            text: 'Hello, world!'
-        })
+        const obj = jsonToObject({ text: 'Hello, world!' })
         expect(obj.text).toEqual('Hello, world!')
     })
 
     // 문자열이 아닌 타입은 변환하지 않아야 한다
     it('Should not convert types that are not strings', () => {
-        const obj = jsonToObject({
-            number: 123,
-            boolean: true
-        })
+        const obj = jsonToObject({ number: 123, boolean: true })
 
         expect(obj.number).toEqual(123)
         expect(obj.boolean).toBe(true)
@@ -191,34 +177,6 @@ describe('pickIds', () => {
     it('Should return an empty array if the input array is empty', () => {
         const result = pickIds([])
         expect(result).toEqual([])
-    })
-})
-
-describe('getChecksum', () => {
-    const testContent = 'Hello, World!'
-    let tempDir: string
-    let helloWorld: string
-
-    beforeEach(async () => {
-        tempDir = await Path.createTempDirectory()
-        helloWorld = Path.join(tempDir, 'test-file.txt')
-        await fs.writeFile(helloWorld, testContent)
-    })
-
-    afterEach(async () => {
-        await Path.delete(tempDir)
-    })
-
-    // MD5 체크섬을 반환해야 한다
-    it('Should return the MD5 checksum', async () => {
-        const checksum = await getChecksum(helloWorld, 'md5')
-        expect(checksum).toBe('65a8e27d8879283831b664bd8b7f0ad4')
-    })
-
-    // SHA256 체크섬을 반환해야 한다
-    it('Should return the SHA256 checksum', async () => {
-        const checksum = await getChecksum(helloWorld)
-        expect(checksum).toBe('dffd6021bb2bd5b0af676290809ec3a53191dd81c7f70a4b28688a362182986f')
     })
 })
 

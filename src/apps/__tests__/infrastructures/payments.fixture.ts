@@ -1,29 +1,14 @@
-import { nullObjectId } from 'testlib'
-import { CommonFixture, createCommonFixture } from '../__helpers__'
+import { PaymentsClient, PaymentsModule } from 'apps/infrastructures'
+import { createTestFixture, TestFixture } from '../__helpers__'
 
-export const buildCreatePaymentDto = (overrides = {}) => {
-    const createDto = { customerId: nullObjectId, amount: 1, ...overrides }
-
-    const expectedDto = {
-        ...createDto,
-        id: expect.any(String),
-        createdAt: expect.any(Date),
-        updatedAt: expect.any(Date)
-    }
-
-    return { createDto, expectedDto }
-}
-
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
+export interface Fixture extends TestFixture {
+    paymentsService: PaymentsClient
 }
 
 export const createFixture = async () => {
-    const commonFixture = await createCommonFixture()
+    const fix = await createTestFixture({ imports: [PaymentsModule], providers: [PaymentsClient] })
 
-    const teardown = async () => {
-        await commonFixture?.close()
-    }
+    const paymentsService = fix.module.get(PaymentsClient)
 
-    return { ...commonFixture, teardown }
+    return { ...fix, paymentsService }
 }

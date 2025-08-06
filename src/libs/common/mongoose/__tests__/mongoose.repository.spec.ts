@@ -101,13 +101,13 @@ describe('MongooseRepository', () => {
         it('Should correctly handle pagination', async () => {
             const skip = 10
             const take = 5
-            const { items, ...paginated } = await fix.repository.findWithPagination({
+            const { items, ...pagination } = await fix.repository.findWithPagination({
                 pagination: { skip, take, orderby: { name: 'name', direction: OrderDirection.Asc } }
             })
 
             sortByName(samples)
             expect(samples.slice(skip, skip + take)).toEqual(toDtos(items))
-            expect(paginated).toEqual({ total: samples.length, skip, take })
+            expect(pagination).toEqual({ total: samples.length, skip, take })
         })
 
         // 오름차순으로 정렬해야 한다
@@ -155,9 +155,7 @@ describe('MongooseRepository', () => {
         // 'take' 값이 지정되지 않은 경우 기본값이 사용되어야 한다
         it("should use the default value if the 'take' value is not specified", async () => {
             const { take } = await fix.repository.findWithPagination({
-                pagination: {
-                    orderby: { name: 'name', direction: OrderDirection.Desc }
-                }
+                pagination: { orderby: { name: 'name', direction: OrderDirection.Desc } }
             })
 
             expect(take).toEqual(maxTake)
@@ -337,13 +335,13 @@ describe('MongooseRepository', () => {
 
         // 여러 문서를 한 번에 삭제해야 한다
         it('Should delete multiple documents at once', async () => {
-            const ids = pickIds(samples.slice(0, 10))
+            const samplesToDelete = samples.slice(5, 10)
+            const ids = pickIds(samplesToDelete)
 
-            const deleteResult = await fix.repository.deleteByIds(ids)
-            expect(deleteResult).toEqual({ deletedCount: ids.length })
+            const deletedDocs = await fix.repository.deleteByIds(ids)
+            expect(toDtos(deletedDocs)).toEqual(samplesToDelete)
 
             const docs = await fix.repository.findByIds(ids)
-
             expect(docs).toHaveLength(0)
         })
 

@@ -1,5 +1,6 @@
 export * from './byte'
 export * from './date-util'
 export * from './etc'
+export * from './file-util'
 export * from './path'
 export * from './time'

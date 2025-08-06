@@ -12,9 +12,12 @@ describe('createTestingModule', () => {
         await fix?.teardown()
     })
 
-    // overrideProviders에 설정한 모의 서비스가 응답해야 한다
-    it('Should respond with the mock service set in overrideProviders', async () => {
-        const message = fix.sampleService.getMessage()
-        expect(message).toEqual({ message: 'This is Mock' })
+    // overrideProviders를 통해 서비스를 모의(mock) 처리했을 때
+    describe('when a service is mocked via overrideProviders', () => {
+        // 모의 처리된 서비스를 사용한다.
+        it('uses the mocked service', async () => {
+            const message = fix.sampleService.getMessage()
+            expect(message).toEqual({ message: 'This is Mock' })
+        })
     })
 })

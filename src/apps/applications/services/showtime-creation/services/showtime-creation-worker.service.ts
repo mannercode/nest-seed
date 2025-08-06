@@ -63,10 +63,7 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
 
     @MethodLog()
     private async processJobData({ transactionId, createDto }: ShowtimeCreationJobData) {
-        this.events.emitStatusChanged({
-            status: ShowtimeCreationStatus.Processing,
-            transactionId
-        })
+        this.events.emitStatusChanged({ status: ShowtimeCreationStatus.Processing, transactionId })
 
         const { isValid, conflictingShowtimes } = await this.validatorService.validate(createDto)
 

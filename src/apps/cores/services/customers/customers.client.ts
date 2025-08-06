@@ -1,16 +1,12 @@
 import { Injectable } from '@nestjs/common'
-import {
-    ClientProxyService,
-    DeleteResult,
-    InjectClientProxy,
-    JwtAuthTokens,
-    PaginationResult
-} from 'common'
+import { ClientProxyService, InjectClientProxy, JwtAuthTokens, PaginationResult } from 'common'
 import { Messages } from 'shared'
 import {
     CreateCustomerDto,
     CustomerAuthPayload,
+    CustomerCredentials,
     CustomerDto,
+    DeleteCustomersResponse,
     SearchCustomersPageDto,
     UpdateCustomerDto
 } from './dtos'
@@ -31,7 +27,7 @@ export class CustomersClient {
         return this.proxy.getJson(Messages.Customers.getCustomers, customerIds)
     }
 
-    deleteCustomers(customerIds: string[]): Promise<DeleteResult> {
+    deleteCustomers(customerIds: string[]): Promise<DeleteCustomersResponse> {
         return this.proxy.getJson(Messages.Customers.deleteCustomers, customerIds)
     }
 
@@ -40,14 +36,14 @@ export class CustomersClient {
     }
 
     generateAuthTokens(payload: CustomerAuthPayload): Promise<JwtAuthTokens> {
-        return this.proxy.getJson(Messages.Customers.login, payload)
+        return this.proxy.getJson(Messages.Customers.generateAuthTokens, payload)
     }
 
     refreshAuthTokens(refreshToken: string): Promise<JwtAuthTokens> {
         return this.proxy.getJson(Messages.Customers.refreshAuthTokens, refreshToken)
     }
 
-    authenticateCustomer(email: string, password: string): Promise<string | null> {
-        return this.proxy.getJson(Messages.Customers.authenticateCustomer, { email, password })
+    findCustomerByCredentials(credentials: CustomerCredentials): Promise<CustomerDto | null> {
+        return this.proxy.getJson(Messages.Customers.findCustomerByCredentials, credentials)
     }
 }

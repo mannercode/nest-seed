@@ -15,11 +15,7 @@ export async function createFixture() {
 
     const module = await createTestingModule({
         imports: [
-            RedisModule.forRoot({
-                type: 'cluster',
-                nodes,
-                options: { redisOptions: { password } }
-            })
+            RedisModule.forRoot({ type: 'cluster', nodes, options: { redisOptions: { password } } })
         ],
         providers: [RedisHealthIndicator, HealthIndicatorService]
     })

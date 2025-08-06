@@ -1,14 +1,9 @@
-import { createMessagePatternMap, getProjectName } from './utils'
+import { createMessagePatternMap, getProjectId } from './utils'
 
 export const Events = createMessagePatternMap(
     {
-        ShowtimeCreation: {
-            statusChanged: null
-        },
-        PurchaseProcess: {
-            TicketPurchased: null,
-            TicketPurchaseCanceled: null
-        }
+        ShowtimeCreation: { statusChanged: null },
+        Purchase: { TicketPurchased: null, TicketPurchaseCanceled: null }
     },
-    `${getProjectName()}.event`
+    `${getProjectId()}.event`
 )

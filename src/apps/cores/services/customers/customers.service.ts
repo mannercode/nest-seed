@@ -2,8 +2,9 @@ import { ConflictException, Injectable } from '@nestjs/common'
 import { mapDocToDto } from 'common'
 import { CustomersRepository } from './customers.repository'
 import {
-    CustomerAuthPayload,
     CreateCustomerDto,
+    CustomerAuthPayload,
+    CustomerCredentials,
     CustomerDto,
     SearchCustomersPageDto,
     UpdateCustomerDto
@@ -29,9 +30,9 @@ export class CustomersService {
     ) {}
 
     async createCustomer(createDto: CreateCustomerDto) {
-        const existingCustomer = await this.repository.findByEmail(createDto.email)
+        const emailExists = await this.repository.existsByEmail(createDto.email)
 
-        if (existingCustomer) {
+        if (emailExists) {
             throw new ConflictException({
                 ...CustomerErrors.EmailAlreadyExists,
                 email: createDto.email
@@ -55,13 +56,14 @@ export class CustomersService {
     }
 
     async deleteCustomers(customerIds: string[]) {
-        const deleteResult = await this.repository.deleteByIds(customerIds)
-        return deleteResult
+        const deletedCustomers = await this.repository.deleteByIds(customerIds)
+
+        return { deletedCustomers: this.toDtos(deletedCustomers) }
     }
 
     async searchCustomersPage(searchDto: SearchCustomersPageDto) {
-        const { items, ...paginated } = await this.repository.searchCustomersPage(searchDto)
-        return { ...paginated, items: this.toDtos(items) }
+        const { items, ...pagination } = await this.repository.searchCustomersPage(searchDto)
+        return { ...pagination, items: this.toDtos(items) }
     }
 
     async generateAuthTokens(payload: CustomerAuthPayload) {
@@ -72,8 +74,9 @@ export class CustomersService {
         return this.authenticationService.refreshAuthTokens(refreshToken)
     }
 
-    async authenticateCustomer(email: string, password: string) {
-        return this.authenticationService.authenticateCustomer(email, password)
+    async findCustomerByCredentials(credentials: CustomerCredentials) {
+        const customer = await this.authenticationService.findCustomerByCredentials(credentials)
+        return customer ? this.toDto(customer) : null
     }
 
     private toDto = (customer: CustomerDocument) =>

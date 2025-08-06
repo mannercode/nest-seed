@@ -1,4 +1,4 @@
 export * from './booking'
-export * from './purchase-process'
+export * from './purchase'
 export * from './recommendation'
 export * from './showtime-creation'

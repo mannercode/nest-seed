@@ -22,7 +22,6 @@ export async function configureGateway(app: INestApplication<any>, servers: stri
 
     const limit = config.http.requestPayloadLimit
     app.use(express.json({ limit }))
-    app.use(express.urlencoded({ limit, extended: true }))
 
     app.connectMicroservice<MicroserviceOptions>(
         { transport: Transport.NATS, options: { servers, queue: 'apps/gateway' } },

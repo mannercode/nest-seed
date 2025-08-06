@@ -64,7 +64,7 @@ Customer -> Frontend : 영화 예매 시스템에 접속
             Showing -> Customers : doesCustomerExist(customerId)
             Showing <-- Customers : true
             group if customer does not exist
-            Backend <-- Showing : 404 Not Found
+            Backend <-- Showing : 404 Not Found
             end
             Showing -> Showtimes : getShowingMovieIds()
             Showing <-- Showtimes : showingMovieIds
@@ -136,7 +136,7 @@ Customer -> Frontend : 상영일 선택
         Backend -> Showing: getShowtimesWithSalesStatus({movieId, theaterId, showdate})
             Showing -> Showtimes: searchShowtimes({movieId, theaterId, showdate})
             Showing <-- Showtimes: showtimes[]
-            Showing -> Tickets: getTicketSalesForShowtimes({ showtimeIds })
+            Showing -> Tickets: aggregateTicketSales({ showtimeIds })
             Showing <-- Tickets: salesStatuses[]
             note left
             ShowtimeSalesStatus = {
@@ -179,7 +179,7 @@ Customer->>Frontend: 좌석 선택
     Frontend->>Backend: 티켓 구매\nPOST /payments
         Backend->>Payment: createPayment(ticketIds[])
             Payment->>Tickets: notifyTicketsPurchased(ticketIds[])
-                Tickets->>Tickets: updateTicketStatus(ticketIds[], 'sold')
+                Tickets->>Tickets: updateTicketsStatus(ticketIds[], 'sold')
             Tickets-->>Payment: 티켓 구매 처리 완료
         Payment-->>Backend: 결제 완료 및 티켓 정보
     Backend-->>Frontend: 티켓 구매 결과(성공)

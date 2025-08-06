@@ -1,7 +1,7 @@
 import { Controller, ParseArrayPipe } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Messages } from 'shared'
-import { CreateTicketDto, SearchTicketsDto } from './dtos'
+import { AggregateTicketSalesDto, CreateTicketDto, SearchTicketsDto } from './dtos'
 import { TicketStatus } from './models'
 import { TicketsService } from './tickets.service'
 
@@ -16,12 +16,12 @@ export class TicketsController {
         return this.service.createTickets(createDtos)
     }
 
-    @MessagePattern(Messages.Tickets.updateTicketStatus)
-    updateTicketStatus(
+    @MessagePattern(Messages.Tickets.updateTicketsStatus)
+    updateTicketsStatus(
         @Payload('ticketIds') ticketIds: string[],
         @Payload('status') status: TicketStatus
     ) {
-        return this.service.updateTicketStatus(ticketIds, status)
+        return this.service.updateTicketsStatus(ticketIds, status)
     }
 
     @MessagePattern(Messages.Tickets.searchTickets)
@@ -29,9 +29,9 @@ export class TicketsController {
         return this.service.searchTickets(searchDto)
     }
 
-    @MessagePattern(Messages.Tickets.getTicketSalesForShowtimes)
-    getTicketSalesForShowtimes(@Payload() showtimeIds: string[]) {
-        return this.service.getTicketSalesForShowtimes(showtimeIds)
+    @MessagePattern(Messages.Tickets.aggregateTicketSales)
+    aggregateTicketSales(@Payload() aggregateDto: AggregateTicketSalesDto) {
+        return this.service.aggregateTicketSales(aggregateDto)
     }
 
     @MessagePattern(Messages.Tickets.getTickets)

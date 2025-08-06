@@ -1,90 +1,90 @@
-import { MovieDto, Seatmap, ShowtimeDto, TheaterDto } from 'apps/cores'
-import { DateUtil } from 'common'
-import { CommonFixture, createCommonFixture } from '../__helpers__'
+import { BookingClient, BookingModule, PurchaseModule } from 'apps/applications'
 import {
-    buildCreateShowtimeDto,
-    buildCreateTicketDto,
-    createCustomerAndLogin,
-    createMovie,
-    createShowtimes,
-    createTheater,
-    createTickets
-} from '../common.fixture'
+    CustomersClient,
+    CustomersModule,
+    MoviesClient,
+    MoviesModule,
+    PurchaseRecordsModule,
+    Seatmap,
+    ShowtimesClient,
+    ShowtimesModule,
+    TheaterLocation,
+    TheatersClient,
+    TheatersModule,
+    TicketHoldingModule,
+    TicketsClient,
+    TicketsModule
+} from 'apps/cores'
+import { BookingController, CustomerJwtStrategy } from 'apps/gateway'
+import { PaymentsModule, StorageFilesModule } from 'apps/infrastructures'
+import {
+    createCustomerAndLogin2,
+    createMovie2,
+    createShowtimes2,
+    createTestFixture,
+    createTheater2,
+    createTickets2,
+    TestFixture
+} from '../__helpers__'
 
-const createTheaters = async (fix: CommonFixture) => {
-    const theaters = await Promise.all([
-        createTheater(fix, { location: { latitude: 30.0, longitude: 130.0 } }),
-        createTheater(fix, { location: { latitude: 31.0, longitude: 131.0 } }),
-        createTheater(fix, { location: { latitude: 32.0, longitude: 132.0 } }),
-        createTheater(fix, { location: { latitude: 33.0, longitude: 133.0 } }),
-        createTheater(fix, { location: { latitude: 34.0, longitude: 134.0 } })
-    ])
+export const createAllResources = async (
+    ctx: TestFixture,
+    locations: TheaterLocation[],
+    startTimes: Date[]
+) => {
+    const { customer, accessToken, refreshToken } = await createCustomerAndLogin2(ctx)
 
-    return theaters
-}
+    const movie = await createMovie2(ctx)
 
-const createAllShowtimes = async (fix: CommonFixture, theaters: TheaterDto[], movie: MovieDto) => {
-    const startTimes = [
-        new Date('2999-01-01T12:00'),
-        new Date('2999-01-01T14:00'),
-        new Date('2999-01-03T12:00'),
-        new Date('2999-01-02T14:00')
-    ]
+    const seatmap = { blocks: [{ name: 'A', rows: [{ name: '1', seats: 'OOOOOOOO' }] }] }
 
-    const createShowtimeDtos = theaters.flatMap((theater) =>
-        startTimes.map((startTime) => {
-            const { createDto } = buildCreateShowtimeDto({
-                movieId: movie.id,
-                theaterId: theater.id,
-                startTime,
-                endTime: DateUtil.addMinutes(startTime, 1)
-            })
-            return createDto
-        })
+    const theaters = await Promise.all(
+        locations.map((location) => createTheater2(ctx, { seatmap, location }))
     )
 
-    const showtimes = await createShowtimes(fix, createShowtimeDtos)
-    return showtimes
+    const createShowtimeDtos = startTimes.flatMap((startTime) =>
+        theaters.map((theater) => ({ movieId: movie.id, theaterId: theater.id, startTime }))
+    )
+
+    const showtimes = await createShowtimes2(ctx, createShowtimeDtos)
+
+    const createTicketDtos = showtimes.flatMap(({ movieId, theaterId, id: showtimeId }) =>
+        Seatmap.getAllSeats(seatmap).map((seat) => ({ movieId, theaterId, showtimeId, seat }))
+    )
+
+    const tickets = await createTickets2(ctx, createTicketDtos)
+
+    return { customer, accessToken, refreshToken, movie, theaters, showtimes, tickets }
 }
 
-const createAllTickets = async (
-    fix: CommonFixture,
-    theaters: TheaterDto[],
-    showtimes: ShowtimeDto[]
-) => {
-    const theatersById = new Map(theaters.map((theater) => [theater.id, theater]))
+export type Fixture = TestFixture
 
-    const createTicketDtos = showtimes.flatMap(({ movieId, theaterId, id: showtimeId }) => {
-        const theater = theatersById.get(theaterId)!
-
-        return Seatmap.getAllSeats(theater.seatmap).map((seat) => {
-            const { createDto } = buildCreateTicketDto({ movieId, theaterId, showtimeId, seat })
-            return createDto
-        })
+export const createFixture = async (): Promise<Fixture> => {
+    const fix = await createTestFixture({
+        imports: [
+            MoviesModule,
+            StorageFilesModule,
+            TheatersModule,
+            TicketsModule,
+            PurchaseRecordsModule,
+            CustomersModule,
+            ShowtimesModule,
+            TicketHoldingModule,
+            PaymentsModule,
+            PurchaseModule,
+            BookingModule
+        ],
+        providers: [
+            CustomerJwtStrategy,
+            CustomersClient,
+            MoviesClient,
+            ShowtimesClient,
+            TheatersClient,
+            TicketsClient,
+            BookingClient
+        ],
+        controllers: [BookingController]
     })
 
-    await createTickets(fix, createTicketDtos)
-}
-
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
-    movie: MovieDto
-    accessToken: string
-}
-
-export const createFixture = async () => {
-    const commonFixture = await createCommonFixture()
-
-    const { accessToken } = await createCustomerAndLogin(commonFixture)
-
-    const theaters = await createTheaters(commonFixture)
-    const movie = await createMovie(commonFixture)
-    const showtimes = await createAllShowtimes(commonFixture, theaters, movie)
-    await createAllTickets(commonFixture, theaters, showtimes)
-
-    const teardown = async () => {
-        await commonFixture?.close()
-    }
-
-    return { ...commonFixture, teardown, movie, accessToken }
+    return { ...fix }
 }

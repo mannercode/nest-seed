@@ -62,11 +62,7 @@ export class Seatmap {
             for (const row of block.rows) {
                 for (let i = 0; i < row.seats.length; i++) {
                     if (row.seats[i] !== 'X') {
-                        yield {
-                            block: block.name,
-                            row: row.name,
-                            seatNumber: i + 1
-                        }
+                        yield { block: block.name, row: row.name, seatNumber: i + 1 }
                     }
                 }
             }

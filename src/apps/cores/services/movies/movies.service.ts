@@ -31,7 +31,8 @@ export class MoviesService {
     }
 
     async deleteMovies(movieIds: string[]) {
-        const success = await this.repository.withTransaction(async (session) => {
+        // TODO saga
+        const movies = await this.repository.withTransaction(async (session) => {
             const movies = await this.repository.getByIds(movieIds)
 
             for (const movie of movies) {
@@ -41,22 +42,16 @@ export class MoviesService {
                 await this.storageFilesService.deleteFiles(fileIds)
             }
 
-            return true
+            return movies
         })
 
-        return success
+        return { deletedMovies: this.toDtos(movies) }
     }
 
     async searchMoviesPage(searchDto: SearchMoviesPageDto) {
-        const { items, ...paginated } = await this.repository.searchMoviesPage(searchDto)
+        const { items, ...pagination } = await this.repository.searchMoviesPage(searchDto)
 
-        return { ...paginated, items: this.toDtos(items) }
-    }
-
-    async getMoviesByIds(movieIds: string[]) {
-        const movies = await this.repository.getByIds(movieIds)
-
-        return this.toDtos(movies)
+        return { ...pagination, items: this.toDtos(items) }
     }
 
     async moviesExist(movieIds: string[]): Promise<boolean> {
@@ -74,7 +69,7 @@ export class MoviesService {
             'director',
             'rating'
         ])
-        dto.images = movie.imageIds.map((id) => `${HttpRoutes.StorageFiles}/${id.toString()}`)
+        dto.imageUrls = movie.imageIds.map((id) => `${HttpRoutes.StorageFiles}/${id.toString()}`)
 
         return dto
     }

@@ -6,10 +6,6 @@ import { Assert, Expect } from '../validator'
 import { MongooseErrors } from './errors'
 import { objectId, objectIds } from './mongoose.util'
 
-export class DeleteResult {
-    deletedCount: number
-}
-
 type SessionArg = ClientSession | undefined
 
 export abstract class MongooseRepository<Doc> implements OnModuleInit {
@@ -94,14 +90,12 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         await doc.deleteOne({ session })
     }
 
-    async deleteByIds(ids: string[], session: SessionArg = undefined): Promise<DeleteResult> {
-        await this.getByIds(ids)
+    async deleteByIds(ids: string[], session: SessionArg = undefined) {
+        const docs = await this.getByIds(ids, session)
 
-        const result = await this.model.deleteMany(
-            { _id: { $in: objectIds(ids) } as any },
-            { session }
-        )
-        return result
+        await this.model.deleteMany({ _id: { $in: objectIds(ids) } as any }, { session })
+
+        return docs
     }
 
     async existByIds(ids: string[], session: SessionArg = undefined) {

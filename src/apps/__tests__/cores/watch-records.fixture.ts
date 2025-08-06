@@ -1,15 +1,17 @@
-import { CommonFixture, createCommonFixture } from '../__helpers__'
+import { WatchRecordsClient, WatchRecordsModule } from 'apps/cores'
+import { TestFixture, createTestFixture } from '../__helpers__'
 
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
+export interface Fixture extends TestFixture {
+    watchRecordsService: WatchRecordsClient
 }
 
 export const createFixture = async () => {
-    const commonFixture = await createCommonFixture()
+    const fix = await createTestFixture({
+        imports: [WatchRecordsModule],
+        providers: [WatchRecordsClient]
+    })
 
-    const teardown = async () => {
-        await commonFixture?.close()
-    }
+    const watchRecordsService = fix.module.get(WatchRecordsClient)
 
-    return { ...commonFixture, teardown }
+    return { ...fix, watchRecordsService }
 }

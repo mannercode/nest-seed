@@ -1,14 +1,8 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/common'
 
 export const MulterExceptionFilterErrors = {
-    MaxCountExceeded: {
-        code: 'ERR_FILE_UPLOAD_MAX_COUNT_EXCEEDED',
-        message: 'Too many files'
-    },
-    MaxSizeExceeded: {
-        code: 'ERR_FILE_UPLOAD_MAX_SIZE_EXCEEDED',
-        message: 'File too large'
-    }
+    MaxCountExceeded: { code: 'ERR_FILE_UPLOAD_MAX_COUNT_EXCEEDED', message: 'Too many files' },
+    MaxSizeExceeded: { code: 'ERR_FILE_UPLOAD_MAX_SIZE_EXCEEDED', message: 'File too large' }
 }
 
 //  Exceptions thrown by Multer cannot be modified directly. Therefore, we handle them by adding the code value through an ExceptionFilter.

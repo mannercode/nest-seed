@@ -26,7 +26,7 @@
     ],
     "initializeCommand": "docker network create ${containerWorkspaceFolderBasename} >/dev/null 2>&1 || true",
     "onCreateCommand": "docker tag $(docker images -q vsc-${containerWorkspaceFolderBasename}-*) vscode-${containerWorkspaceFolderBasename} && docker rmi $(docker images --filter=reference=vsc-${containerWorkspaceFolderBasename}-* --format {{.Repository}})",
-    "postCreateCommand": "bash scripts/reset-infra.sh && npm ci && npx husky",
+    "postCreateCommand": "bash scripts/reset-infra.sh && npm ci && npx husky && npm i -g npm-check-updates",
     "customizations": {
         "vscode": {
             "extensions": [
@@ -34,18 +34,19 @@
                 "firsttris.vscode-jest-runner",
                 "ms-vscode.live-server",
                 "ms-azuretools.vscode-docker",
+                "ms-azuretools.vscode-containers",
                 "jebbs.plantuml",
                 "esbenp.prettier-vscode",
                 "mutantdino.resourcemonitor",
                 "foxundermoon.shell-format",
-                "github.vscode-pull-request-github"
+                "github.vscode-pull-request-github",
+                "GitHub.copilot"
             ],
             "settings": {
                 "remote.autoForwardPorts": false,
                 "remote.downloadExtensionsLocally": true,
                 "prettier.enableDebugLogs": true,
                 "livePreview.portNumber": 3030,
-                "docker.enableDockerComposeLanguageService": false,
                 "typescript.tsc.autoDetect": "off",
                 "typescript.disableAutomaticTypeAcquisition": true,
                 "typescript.format.enable": false,
@@ -55,7 +56,7 @@
                 "typescript.updateImportsOnFileMove.enabled": "never",
                 "editor.defaultFormatter": "esbenp.prettier-vscode",
                 "[dockerfile]": {
-                    "editor.defaultFormatter": "ms-azuretools.vscode-docker"
+                    "editor.defaultFormatter": "ms-azuretools.vscode-containers"
                 },
                 "[json]": {
                     "editor.defaultFormatter": "vscode.json-language-features"
@@ -73,6 +74,9 @@
                     "editor.defaultFormatter": "foxundermoon.shell-format"
                 },
                 "[ignore]": {
+                    "editor.defaultFormatter": "foxundermoon.shell-format"
+                },
+                "[properties]": {
                     "editor.defaultFormatter": "foxundermoon.shell-format"
                 },
                 "[markdown]": {

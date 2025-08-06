@@ -19,11 +19,7 @@ export async function createFixture() {
     const module = await createTestingModule({
         imports: [
             RedisModule.forRoot(
-                {
-                    type: 'cluster',
-                    nodes,
-                    options: { redisOptions: { password } }
-                },
+                { type: 'cluster', nodes, options: { redisOptions: { password } } },
                 'name'
             ),
             CacheModule.register({ prefix: withTestId('cache'), redisName: 'name' })

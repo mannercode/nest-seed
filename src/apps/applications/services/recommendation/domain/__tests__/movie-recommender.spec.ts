@@ -1,6 +1,8 @@
 import { MovieDto, MovieGenre, MovieRating } from 'apps/cores'
 import { MovieRecommender } from '..'
 
+// TODO
+
 describe('MovieRecommender', () => {
     describe('generateRecommendedMovies', () => {
         const createDto = (id: string, genres: MovieGenre[], releaseDate: Date) => ({
@@ -12,10 +14,10 @@ describe('MovieRecommender', () => {
             durationInSeconds: 0,
             director: '.',
             rating: MovieRating.PG,
-            images: []
+            imageUrls: []
         })
 
-        // 사용자의 관람 이력이 없을 때, 개봉일 최신 순으로 정렬한다
+        // 사용자의 관람 이력이 없을 때, 개봉일 순으로 정렬한다
         it('Should sort by the latest release date if the user has no watch history', () => {
             const showingMovies: MovieDto[] = [
                 createDto('1', [MovieGenre.Action], new Date('2023-09-01')),
@@ -26,7 +28,7 @@ describe('MovieRecommender', () => {
 
             const result = MovieRecommender.recommend(showingMovies, watchedMovies)
 
-            expect(result.map((movie) => movie.id)).toEqual(['2', '1', '3'])
+            expect(result.map((movie) => movie.id)).toEqual(['3', '1', '2'])
         })
 
         // 사용자의 선호 장르에 따라 영화가 추천된다
@@ -60,7 +62,7 @@ describe('MovieRecommender', () => {
 
             const result = MovieRecommender.recommend(showingMovies, watchedMovies)
 
-            expect(result.map((movie) => movie.id)).toEqual(['1', '3'])
+            expect(result.map((movie) => movie.id)).toEqual(['3', '1'])
         })
     })
 })

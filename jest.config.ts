@@ -6,12 +6,9 @@ export default {
     moduleFileExtensions: ['js', 'json', 'ts'],
     testRegex: '(__tests__/.*\\.spec\\.(ts|js))$',
     testEnvironment: 'node',
-    // Start of test environment reset configuration
-    clearMocks: true,
-    resetMocks: true,
-    restoreMocks: true,
-    resetModules: true,
-    // End of test environment reset configuration
+    resetModules: true, // Reset module cache between tests
+    resetMocks: true, // Reset mock call counts/instances before each test
+    restoreMocks: true, // Restore original implementations after each test
     rootDir: '.',
     roots: ['<rootDir>/src'],
     moduleNameMapper: {
@@ -25,7 +22,6 @@ export default {
     coverageReporters: ['lcov', 'text'],
     coveragePathIgnorePatterns: [
         '__tests__',
-        '\\.controller\\.ts$',
         '/production\\.ts$',
         '/development\\.ts$',
         '/main\\.ts$',
@@ -36,8 +32,9 @@ export default {
     ],
     coverageDirectory: '<rootDir>/_output/coverage',
     testTimeout: 60 * 1000,
+    // https://github.com/kulshekhar/ts-jest/tree/main/examples/js-with-ts
     ...createJsWithTsPreset({ tsconfig: 'tsconfig.json' }),
-    // ECMAScript modules
+    // ECM modules
     transformIgnorePatterns: ['!node_modules/(?!chalk)']
     /**
      * If the number of CPU cores is high relative to available memory,

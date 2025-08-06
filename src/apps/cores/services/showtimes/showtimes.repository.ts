@@ -36,7 +36,7 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         return showtimes
     }
 
-    async findMovieIds(searchDto: SearchShowtimesDto) {
+    async searchMovieIds(searchDto: SearchShowtimesDto) {
         const query = this.buildQuery(searchDto)
 
         const movieIds = await this.model.distinct('movieId', query).exec()
@@ -55,11 +55,7 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
 
         const showdates = await this.model.aggregate([
             { $match: query },
-            {
-                $project: {
-                    date: { $dateToString: { format: '%Y-%m-%d', date: '$startTime' } }
-                }
-            },
+            { $project: { date: { $dateToString: { format: '%Y-%m-%d', date: '$startTime' } } } },
             { $group: { _id: '$date' } },
             { $sort: { _id: 1 } }
         ])

@@ -192,13 +192,4 @@ describe('Path', () => {
         const content = await fs.readFile(destFilePath, 'utf-8')
         expect(content).toEqual('hello world')
     })
-
-    // 파일 크기를 반환해야 한다
-    it('Should return the file size', async () => {
-        const testContent = 'Hello, World!'
-        const testFilePath = Path.join(tempDir, 'test-file.txt')
-        await fs.writeFile(testFilePath, testContent)
-        const size = await Path.getSize(testFilePath)
-        expect(size).toBe(testContent.length)
-    })
 })

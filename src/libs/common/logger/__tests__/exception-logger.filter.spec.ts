@@ -14,7 +14,7 @@ describe('ExceptionLoggerFilter', () => {
     })
 
     // HttpController에서 HttpException을 던지면 Logger.warn()으로 기록해야 한다
-    it('Should log HttpExceptions in an HttpController via Logger.warn()', async () => {
+    it('Should log HttpExceptions in an HttpController via Logger.warn', async () => {
         await fix.httpClient.get('/exception').notFound({ code: 'ERR_CODE', message: 'message' })
 
         expect(fix.spyWarn).toHaveBeenCalledTimes(1)
@@ -28,7 +28,7 @@ describe('ExceptionLoggerFilter', () => {
     })
 
     // HttpController에서 Error을 던지면 Logger.error()으로 기록해야 한다
-    it('Should log generic Errors in an HttpController via Logger.error()', async () => {
+    it('Should log generic Errors in an HttpController via Logger.error', async () => {
         await fix.httpClient.get('/error').internalServerError()
 
         expect(fix.spyError).toHaveBeenCalledTimes(1)
@@ -42,7 +42,7 @@ describe('ExceptionLoggerFilter', () => {
     })
 
     // HttpController에서 Error가 아닌 것을 던지면 Logger.fatal()으로 기록해야 한다
-    it('Should log non-error events in an HttpController via Logger.fatal()', async () => {
+    it('Should log non-error events in an HttpController via Logger.fatal', async () => {
         await fix.httpClient.get('/fatal').internalServerError()
 
         expect(fix.spyFatal).toHaveBeenCalledTimes(1)
@@ -56,7 +56,7 @@ describe('ExceptionLoggerFilter', () => {
     })
 
     // RpcController에서 HttpException을 던지면 Logger.warn()으로 기록해야 한다
-    it('Should log HttpExceptions in an RpcController via Logger.warn()', async () => {
+    it('Should log HttpExceptions in an RpcController via Logger.warn', async () => {
         const subject = withTestId('exception')
         await fix.rpcClient.error(
             subject,
@@ -78,7 +78,7 @@ describe('ExceptionLoggerFilter', () => {
     })
 
     // RpcController에서 Error을 던지면 Logger.error()으로 기록해야 한다
-    it('Should log generic Errors in an RpcController via Logger.error()', async () => {
+    it('Should log generic Errors in an RpcController via Logger.error', async () => {
         const subject = withTestId('error')
         await fix.rpcClient.error(subject, {}, Error('error message'))
 
@@ -93,7 +93,7 @@ describe('ExceptionLoggerFilter', () => {
     })
 
     // RpcController에서 Error가 아닌 것을 던지면 Logger.fatal()으로 기록해야 한다
-    it('Should log non-error events in an RpcController via Logger.fatal()', async () => {
+    it('Should log non-error events in an RpcController via Logger.fatal', async () => {
         const subject = withTestId('fatal')
         await fix.rpcClient.error(subject, {}, Error('fatal error message'))
 

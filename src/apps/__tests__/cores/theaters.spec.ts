@@ -1,10 +1,9 @@
 import { TheaterDto } from 'apps/cores'
-import { expectEqualUnsorted, nullObjectId } from 'testlib'
-import { buildCreateTheaterDto, createTheater } from '../common.fixture'
-import { Fixture } from './theaters.fixture'
-import { Errors } from '../__helpers__'
+import { nullObjectId } from 'testlib'
+import { buildCreateTheaterDto, createTheater2, Errors } from '../__helpers__'
+import type { Fixture } from './theaters.fixture'
 
-describe('Theaters', () => {
+describe('TheatersService', () => {
     let fix: Fixture
 
     beforeEach(async () => {
@@ -17,97 +16,126 @@ describe('Theaters', () => {
     })
 
     describe('POST /theaters', () => {
-        // 극장을 생성해야 한다
-        it('Should create a theater', async () => {
-            const { createDto, expectedDto } = buildCreateTheaterDto()
+        // payload가 유효한 경우
+        describe('when the payload is valid', () => {
+            // 극장을 생성하고 반환한다
+            it('creates and returns a theater', async () => {
+                const createDto = buildCreateTheaterDto()
 
-            await fix.httpClient.post('/theaters').body(createDto).created(expectedDto)
-        })
-
-        // 필수 필드가 누락되면 BAD_REQUEST(400)를 반환해야 한다
-        it('Should return BAD_REQUEST(400) if required fields are missing', async () => {
-            await fix.httpClient
-                .post('/theaters')
-                .body({})
-                .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
-        })
-    })
-
-    describe('PATCH /theaters/:id', () => {
-        let theater: TheaterDto
-
-        beforeEach(async () => {
-            theater = await createTheater(fix)
-        })
-
-        // 극장 정보를 업데이트해야 한다
-        it('Should update theater information', async () => {
-            const updateDto = {
-                name: 'update-name',
-                location: { latitude: 30.0, longitude: 120.0 },
-                seatmap: []
-            }
-            const expected = { ...theater, ...updateDto }
-
-            await fix.httpClient.patch(`/theaters/${theater.id}`).body(updateDto).ok(expected)
-            await fix.httpClient.get(`/theaters/${theater.id}`).ok(expected)
-        })
-
-        it('dummy test for coverage', async () => {
-            await fix.httpClient.patch(`/theaters/${theater.id}`).body({}).ok(theater)
-        })
-
-        // 극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다
-        it('Should return NOT_FOUND(404) if the theater does not exist', async () => {
-            await fix.httpClient
-                .patch(`/theaters/${nullObjectId}`)
-                .body({})
-                .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
-        })
-    })
-
-    describe('DELETE /theaters/:id', () => {
-        let theater: TheaterDto
-
-        beforeEach(async () => {
-            theater = await createTheater(fix)
-        })
-
-        // 극장을 삭제해야 한다
-        it('Should delete the theater', async () => {
-            await fix.httpClient.delete(`/theaters/${theater.id}`).ok()
-            await fix.httpClient.get(`/theaters/${theater.id}`).notFound({
-                ...Errors.Mongoose.MultipleDocumentsNotFound,
-                notFoundIds: [theater.id]
+                await fix.httpClient
+                    .post('/theaters')
+                    .body(createDto)
+                    .created({ id: expect.any(String), ...createDto })
             })
         })
 
-        // 극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다
-        it('Should return NOT_FOUND(404) if the theater does not exist', async () => {
-            await fix.httpClient.delete(`/theaters/${nullObjectId}`).notFound({
-                ...Errors.Mongoose.MultipleDocumentsNotFound,
-                notFoundIds: [nullObjectId]
+        // 필수 필드가 누락되었을 때
+        describe('when required fields are missing', () => {
+            // 400 Bad Request를 반환한다
+            it('returns 400 Bad Request', async () => {
+                await fix.httpClient
+                    .post('/theaters')
+                    .body({})
+                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
             })
         })
     })
 
     describe('GET /theaters/:id', () => {
-        let theater: TheaterDto
-
-        beforeEach(async () => {
-            theater = await createTheater(fix)
+        // 극장이 존재하는 경우
+        describe('when the theater exists', () => {
+            // 극장 정보를 반환한다
+            it('returns the theater', async () => {
+                await fix.httpClient
+                    .get(`/theaters/${fix.createdTheater.id}`)
+                    .ok(fix.createdTheater)
+            })
         })
 
-        // 극장 정보를 가져와야 한다
-        it('Should retrieve theater information', async () => {
-            await fix.httpClient.get(`/theaters/${theater.id}`).ok(theater)
+        // 극장이 존재하지 않는 경우
+        describe('when the theater does not exist', () => {
+            // 404 Not Found를 반환한다
+            it('returns 404 Not Found', async () => {
+                await fix.httpClient
+                    .get(`/theaters/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
+            })
+        })
+    })
+
+    describe('PATCH /theaters/:id', () => {
+        // payload가 유효한 경우
+        describe('when the payload is valid', () => {
+            // 극장 정보를 수정하고 반환한다
+            it('updates and returns the theater', async () => {
+                const updateDto = {
+                    name: 'update-name',
+                    location: { latitude: 30.0, longitude: 120.0 },
+                    seatmap: []
+                }
+                const expected = { ...fix.createdTheater, ...updateDto }
+
+                await fix.httpClient
+                    .patch(`/theaters/${fix.createdTheater.id}`)
+                    .body(updateDto)
+                    .ok(expected)
+
+                await fix.httpClient.get(`/theaters/${fix.createdTheater.id}`).ok(expected)
+            })
         })
 
-        // 극장이 존재하지 않으면 NOT_FOUND(404)를 반환해야 한다
-        it('Should return NOT_FOUND(404) if the theater does not exist', async () => {
-            await fix.httpClient.get(`/theaters/${nullObjectId}`).notFound({
-                ...Errors.Mongoose.MultipleDocumentsNotFound,
-                notFoundIds: [nullObjectId]
+        // payload가 비어있는 경우
+        describe('when the payload is empty', () => {
+            // 원래 극장 정보를 반환한다
+            it('returns the original theater', async () => {
+                await fix.httpClient
+                    .patch(`/theaters/${fix.createdTheater.id}`)
+                    .body({})
+                    .ok(fix.createdTheater)
+            })
+        })
+
+        // 극장이 존재하지 않는 경우
+        describe('when the theater does not exist', () => {
+            // 404 Not Found를 반환한다
+            it('returns 404 Not Found', async () => {
+                await fix.httpClient
+                    .patch(`/theaters/${nullObjectId}`)
+                    .body({})
+                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
+            })
+        })
+    })
+
+    describe('DELETE /theaters/:id', () => {
+        // 극장이 존재하는 경우
+        describe('when the theater exists', () => {
+            // 극장을 삭제한다.
+            it('deletes the theater', async () => {
+                await fix.httpClient.delete(`/theaters/${fix.createdTheater.id}`).ok()
+
+                await fix.httpClient
+                    .get(`/theaters/${fix.createdTheater.id}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [fix.createdTheater.id]
+                    })
+            })
+        })
+
+        // 극장이 존재하지 않는 경우
+        describe('when the theater does not exist', () => {
+            // 404 Not Found를 반환한다
+            it('returns 404 Not Found', async () => {
+                await fix.httpClient
+                    .delete(`/theaters/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
             })
         })
     })
@@ -116,42 +144,56 @@ describe('Theaters', () => {
         let theaters: TheaterDto[]
 
         beforeEach(async () => {
-            theaters = await Promise.all([
-                createTheater(fix, { name: 'Theater-a1' }),
-                createTheater(fix, { name: 'Theater-a2' }),
-                createTheater(fix, { name: 'Theater-b1' }),
-                createTheater(fix, { name: 'Theater-b2' }),
-                createTheater(fix, { name: 'Theater-c1' })
+            const createdTheaters = await Promise.all([
+                createTheater2(fix, { name: 'Theater-a1' }),
+                createTheater2(fix, { name: 'Theater-a2' }),
+                createTheater2(fix, { name: 'Theater-b1' }),
+                createTheater2(fix, { name: 'Theater-b2' }),
+                createTheater2(fix, { name: 'Theater-c1' })
             ])
+
+            theaters = [...createdTheaters, fix.createdTheater]
         })
 
-        // 기본 페이지네이션 설정으로 극장을 가져와야 한다
-        it('Should fetch theaters with default pagination settings', async () => {
-            const { body } = await fix.httpClient.get('/theaters').ok()
-            const { items, ...paginated } = body
-
-            expect(paginated).toEqual({
-                skip: 0,
-                take: expect.any(Number),
-                total: theaters.length
+        // 쿼리 파라미터가 없는 경우
+        describe('when query parameters are missing', () => {
+            // 기본 페이지네이션으로 극장 목록을 반환한다
+            it('returns the theater list with default pagination', async () => {
+                await fix.httpClient
+                    .get('/theaters')
+                    .ok({
+                        skip: 0,
+                        take: expect.any(Number),
+                        total: theaters.length,
+                        items: expect.arrayContaining(theaters)
+                    })
             })
-            expectEqualUnsorted(items, theaters)
         })
 
-        // 잘못된 필드로 검색하면 BAD_REQUEST(400)를 반환해야 한다
-        it('Should return BAD_REQUEST(400) if searching with an invalid field', async () => {
-            await fix.httpClient
-                .get('/theaters')
-                .query({ wrong: 'value' })
-                .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+        // 쿼리 파라미터가 유효하지 않은 경우
+        describe('when query parameters are invalid', () => {
+            // 400 Bad Request를 반환한다
+            it('returns 400 Bad Request', async () => {
+                await fix.httpClient
+                    .get('/theaters')
+                    .query({ wrong: 'value' })
+                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+            })
         })
 
-        // 이름의 일부로 극장을 검색할 수 있어야 한다
-        it('Should allow searching theaters by partial name', async () => {
-            const partialName = 'Theater-a'
-            const { body } = await fix.httpClient.get('/theaters').query({ name: partialName }).ok()
-
-            expectEqualUnsorted(body.items, [theaters[0], theaters[1]])
+        // `name` 부분 문자열이 제공된 경우
+        describe('when a partial `name` is provided', () => {
+            // 이름이 해당 부분 문자열을 포함하는 극장 목록을 반환한다
+            it('returns the theater list whose name contains the given substring', async () => {
+                await fix.httpClient
+                    .get('/theaters')
+                    .query({ name: 'Theater-a' })
+                    .ok(
+                        expect.objectContaining({
+                            items: expect.arrayContaining([theaters[0], theaters[1]])
+                        })
+                    )
+            })
         })
     })
 })

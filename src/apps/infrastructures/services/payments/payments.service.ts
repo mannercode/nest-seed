@@ -8,7 +8,7 @@ import { PaymentsRepository } from './payments.repository'
 export class PaymentsService {
     constructor(private repository: PaymentsRepository) {}
 
-    async processPayment(createDto: CreatePaymentDto) {
+    async createPayment(createDto: CreatePaymentDto) {
         const payment = await this.repository.createPayment(createDto)
 
         return this.toDto(payment)

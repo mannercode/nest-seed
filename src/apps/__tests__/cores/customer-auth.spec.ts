@@ -1,143 +1,108 @@
-import { getModelToken } from '@nestjs/mongoose'
-import { Customer, CustomerDto } from 'apps/cores'
-import { MongooseConfigModule } from 'shared'
-import { createCustomer } from '../common.fixture'
 import { Errors } from '../__helpers__'
-import { Fixture } from './customer-auth.fixture'
+import type { Fixture } from './customer-auth.fixture'
 
-describe('Customer Authentication', () => {
+describe('CustomersService – Authentication', () => {
     let fix: Fixture
-    let customer: CustomerDto
-    const email = 'user@mail.com'
-    const password = 'password'
 
     beforeEach(async () => {
         const { createFixture } = await import('./customer-auth.fixture')
         fix = await createFixture()
-
-        customer = await createCustomer(fix, { email, password })
     })
 
     afterEach(async () => {
         await fix?.teardown()
     })
 
-    describe('POST /login', () => {
-        // 로그인에 성공하면 인증 토큰을 반환해야 한다
-        it('Should return an authentication token upon successful login', async () => {
-            await fix.httpClient
-                .post('/customers/login')
-                .body({ email, password })
-                .ok({
-                    accessToken: expect.any(String),
-                    refreshToken: expect.any(String)
-                })
-        })
-
-        // 비밀번호가 틀리면 UNAUTHORIZED(401)를 반환해야 한다
-        it('Should return UNAUTHORIZED(401) if the password is incorrect', async () => {
-            await fix.httpClient
-                .post('/customers/login')
-                .body({ email, password: 'wrong password' })
-                .unauthorized(Errors.Auth.Unauthorized)
-        })
-
-        // 이메일이 존재하지 않으면 UNAUTHORIZED(401)를 반환해야 한다
-        it('Should return UNAUTHORIZED(401) if the email does not exist', async () => {
-            await fix.httpClient
-                .post('/customers/login')
-                .body({ email: 'unknown@mail.com', password: '.' })
-                .unauthorized(Errors.Auth.Unauthorized)
-        })
-
-        // customer가 존재하지 않으면 UNAUTHORIZED(401)를 반환해야 한다
-        it('Should return UNAUTHORIZED(401) if the customer does not exist', async () => {
-            /**
-             * Mocking the following code in CustomersRepository. This test is for code coverage.
-             * CustomersRepository의 아래 코드를 모의하는 것이다. 코드 커버리지를 위해 작성한 테스트다.
-             *
-             * this.model.findById(customerId).select('+password').exec()
-             */
-            const model = fix.coresContext.module.get(
-                getModelToken(Customer.name, MongooseConfigModule.connectionName)
-            )
-
-            jest.spyOn(model, 'findById').mockReturnValue({
-                select: jest.fn().mockReturnValue({
-                    exec: jest.fn().mockResolvedValue(null)
-                })
+    describe('POST /customers/login', () => {
+        // 자격 증명이 유효한 경우
+        describe('when the credentials are valid', () => {
+            // access와 refresh 토큰을 반환한다
+            it('returns access and refresh tokens', async () => {
+                await fix.httpClient
+                    .post('/customers/login')
+                    .body(fix.credentials)
+                    .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
             })
+        })
 
-            await fix.httpClient
-                .post('/customers/login')
-                .body({ email, password })
-                .unauthorized(Errors.Auth.Unauthorized)
+        // 비밀번호가 틀린 경우
+        describe('when the password is incorrect', () => {
+            // 401 Unauthorized를 반환한다
+            it('returns 401 Unauthorized', async () => {
+                await fix.httpClient
+                    .post('/customers/login')
+                    .body({ ...fix.credentials, password: 'wrong password' })
+                    .unauthorized(Errors.Auth.Unauthorized)
+            })
+        })
+
+        // 이메일이 존재하지 않는 경우
+        describe('when the email does not exist', () => {
+            // 401 Unauthorized를 반환한다
+            it('returns 401 Unauthorized', async () => {
+                await fix.httpClient
+                    .post('/customers/login')
+                    .body({ email: 'unknown@mail.com', password: '-' })
+                    .unauthorized(Errors.Auth.Unauthorized)
+            })
         })
     })
 
-    describe('POST /refresh', () => {
-        let accessToken: string
-        let refreshToken: string
+    describe('POST /customers/refresh', () => {
+        // 리프레시 토큰이 유효한 경우
+        describe('when the refresh token is valid', () => {
+            // 새로운 access와 refresh 토큰을 반환한다
+            it('returns new access and refresh tokens', async () => {
+                const { accessToken, refreshToken } = fix.authTokens
 
-        beforeEach(async () => {
-            const { body } = await fix.httpClient
-                .post('/customers/login')
-                .body({ email, password })
-                .ok()
+                const { body } = await fix.httpClient
+                    .post('/customers/refresh')
+                    .body({ refreshToken })
+                    .ok()
 
-            accessToken = body.accessToken
-            refreshToken = body.refreshToken
+                expect(body.accessToken).not.toEqual(accessToken)
+                expect(body.refreshToken).not.toEqual(refreshToken)
+            })
         })
 
-        // 유효한 refreshToken을 제공하면 새로운 인증 토큰을 반환해야 한다
-        it('Should return a new authentication token if a valid refreshToken is provided', async () => {
-            const { body } = await fix.httpClient
-                .post('/customers/refresh')
-                .body({ refreshToken })
-                .ok()
-
-            expect(body.accessToken).not.toEqual(accessToken)
-            expect(body.refreshToken).not.toEqual(refreshToken)
-        })
-
-        // 잘못된 refreshToken을 제공하면 UNAUTHORIZED(401)를 반환해야 한다
-        it('Should return UNAUTHORIZED(401) if an invalid refreshToken is provided', async () => {
-            await fix.httpClient
-                .post('/customers/refresh')
-                .body({ refreshToken: 'invalid-token' })
-                .unauthorized({
-                    ...Errors.JwtAuth.RefreshTokenVerificationFailed,
-                    message: 'jwt malformed'
-                })
+        // 리프레시 토큰이 유효하지 않은 경우
+        describe('when the refresh token is invalid', () => {
+            // 401 Unauthorized를 반환한다
+            it('returns 401 Unauthorized', async () => {
+                await fix.httpClient
+                    .post('/customers/refresh')
+                    .body({ refreshToken: 'invalid-token' })
+                    .unauthorized({
+                        ...Errors.JwtAuth.RefreshTokenVerificationFailed,
+                        message: 'jwt malformed'
+                    })
+            })
         })
     })
 
-    describe('accessToken 검증', () => {
-        let accessToken: string
+    describe('CustomerJwtAuthGuard', () => {
+        // 액세스 토큰이 유효한 경우
+        describe('when the access token is valid', () => {
+            // 접근을 허용한다
+            it('allows access', async () => {
+                const { accessToken } = fix.authTokens
 
-        beforeEach(async () => {
-            const { body } = await fix.httpClient
-                .post('/customers/login')
-                .body({ email, password })
-                .ok()
-
-            accessToken = body.accessToken
+                await fix.httpClient
+                    .get('/customers/jwtGuard')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .ok({ message: 'accessToken is valid' })
+            })
         })
 
-        // 유효한 accessToken을 제공하면 접근이 허용되어야 한다
-        it('Should allow access if a valid accessToken is provided', async () => {
-            await fix.httpClient
-                .get(`/customers/${customer.id}`)
-                .headers({ Authorization: `Bearer ${accessToken}` })
-                .ok()
-        })
-
-        // 잘못된 accessToken을 제공하면 UNAUTHORIZED(401)를 반환해야 한다
-        it('Should return UNAUTHORIZED(401) if the accessToken is invalid', async () => {
-            await fix.httpClient
-                .get(`/customers/${customer.id}`)
-                .headers({ Authorization: 'Bearer Invalid-Token' })
-                .unauthorized(Errors.Auth.Unauthorized)
+        // 액세스 토큰이 유효하지 않은 경우
+        describe('when the access token is invalid', () => {
+            // 401 Unauthorized를 반환한다
+            it('returns 401 Unauthorized', async () => {
+                await fix.httpClient
+                    .get('/customers/jwtGuard')
+                    .headers({ Authorization: 'Bearer Invalid-Token' })
+                    .unauthorized(Errors.Auth.Unauthorized)
+            })
         })
     })
 })

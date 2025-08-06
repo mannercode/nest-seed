@@ -1,31 +1,14 @@
-import { CreateTicketDto, TicketDto } from 'apps/cores'
-import { buildCreateTicketDto } from '../common.fixture'
-import { CommonFixture, createCommonFixture } from '../__helpers__'
+import { TicketsClient, TicketsModule } from 'apps/cores'
+import { TestFixture, createTestFixture } from '../__helpers__'
 
-export const buildCreateTicketDtos = (overrides = {}, length: number) => {
-    const createDtos: CreateTicketDto[] = []
-    const expectedDtos: TicketDto[] = []
-
-    for (let i = 0; i < length; i++) {
-        const { createDto, expectedDto } = buildCreateTicketDto(overrides)
-
-        createDtos.push(createDto)
-        expectedDtos.push(expectedDto)
-    }
-
-    return { createDtos, expectedDtos }
-}
-
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
+export interface Fixture extends TestFixture {
+    ticketsService: TicketsClient
 }
 
 export const createFixture = async () => {
-    const commonFixture = await createCommonFixture()
+    const fix = await createTestFixture({ imports: [TicketsModule], providers: [TicketsClient] })
 
-    const teardown = async () => {
-        await commonFixture?.close()
-    }
+    const ticketsService = fix.module.get(TicketsClient)
 
-    return { ...commonFixture, teardown }
+    return { ...fix, ticketsService }
 }

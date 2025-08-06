@@ -1,34 +1,20 @@
-import { CreateShowtimeDto, MovieDto, TheaterDto } from 'apps/cores'
-import { DateUtil, jsonToObject, notUsed } from 'common'
-import { HttpTestClient, nullObjectId } from 'testlib'
-import { createMovie, createTheater } from '../common.fixture'
-import { CommonFixture, createCommonFixture } from '../__helpers__'
-
-export const createShowtimeDtos = ({
-    startTimes,
-    theaterId,
-    durationInMinutes
-}: {
-    startTimes: Date[]
-    theaterId: string
-    durationInMinutes: number
-}) => {
-    const createDtos: CreateShowtimeDto[] = []
-
-    startTimes.map((startTime) => {
-        const createDto = {
-            transactionId: nullObjectId,
-            movieId: nullObjectId,
-            theaterId,
-            startTime,
-            endTime: DateUtil.addMinutes(startTime, durationInMinutes)
-        }
-
-        createDtos.push(createDto)
-    })
-
-    return createDtos
-}
+import { ShowtimeCreationClient, ShowtimeCreationModule } from 'apps/applications'
+import {
+    MovieDto,
+    MoviesClient,
+    MoviesModule,
+    ShowtimesClient,
+    ShowtimesModule,
+    TheaterDto,
+    TheatersClient,
+    TheatersModule,
+    TicketsModule
+} from 'apps/cores'
+import { ShowtimeCreationController } from 'apps/gateway'
+import { StorageFilesModule } from 'apps/infrastructures'
+import { jsonToObject, notUsed } from 'common'
+import { HttpTestClient } from 'testlib'
+import { createMovie2, createTestFixture, createTheater2, TestFixture } from '../__helpers__'
 
 export const monitorEvents = (client: HttpTestClient, waitStatuses: string[]) => {
     return new Promise((resolve, reject) => {
@@ -50,20 +36,27 @@ export const monitorEvents = (client: HttpTestClient, waitStatuses: string[]) =>
     })
 }
 
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
+export interface Fixture extends TestFixture {
     movie: MovieDto
     theater: TheaterDto
 }
 
-export const createFixture = async () => {
-    const commonFixture = await createCommonFixture()
-    const movie = await createMovie(commonFixture)
-    const theater = await createTheater(commonFixture)
+export const createFixture = async (): Promise<Fixture> => {
+    const fix = await createTestFixture({
+        imports: [
+            MoviesModule,
+            StorageFilesModule,
+            TheatersModule,
+            ShowtimesModule,
+            TicketsModule,
+            ShowtimeCreationModule
+        ],
+        providers: [MoviesClient, TheatersClient, ShowtimesClient, ShowtimeCreationClient],
+        controllers: [ShowtimeCreationController]
+    })
 
-    const teardown = async () => {
-        await commonFixture?.close()
-    }
+    const movie = await createMovie2(fix)
+    const theater = await createTheater2(fix)
 
-    return { ...commonFixture, teardown, movie, theater }
+    return { ...fix, movie, theater }
 }

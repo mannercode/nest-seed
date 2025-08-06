@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common'
 import {
     BookingClient,
-    PurchaseProcessClient,
+    PurchaseClient,
     RecommendationClient,
     ShowtimeCreationClient
 } from 'apps/applications'
-import { CustomersClient, MoviesClient, PurchasesClient, TheatersClient } from 'apps/cores'
+import { CustomersClient, MoviesClient, PurchaseRecordsClient, TheatersClient } from 'apps/cores'
 import { StorageFilesClient } from 'apps/infrastructures'
 import { CommonModule } from 'shared'
 import {
@@ -32,9 +32,9 @@ import { HealthModule, MulterConfigModule } from './modules'
         TheatersClient,
         ShowtimeCreationClient,
         BookingClient,
-        PurchasesClient,
+        PurchaseRecordsClient,
         RecommendationClient,
-        PurchaseProcessClient
+        PurchaseClient
     ],
     controllers: [
         CustomersController,

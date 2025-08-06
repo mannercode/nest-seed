@@ -1,18 +1,20 @@
-import { CustomerJwtAuthGuard } from 'apps/gateway'
-import { CommonFixture, createCommonFixture } from '../__helpers__'
+import { CustomerDto, CustomersClient, CustomersModule } from 'apps/cores'
+import { CustomerJwtAuthGuard, CustomersController } from 'apps/gateway'
+import { createCustomer2, TestFixture, createTestFixture } from '../__helpers__'
 
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
+export interface Fixture extends TestFixture {
+    createdCustomer: CustomerDto
 }
 
 export const createFixture = async () => {
-    const commonFixture = await createCommonFixture({
-        gateway: { ignoreGuards: [CustomerJwtAuthGuard] }
+    const fix = await createTestFixture({
+        imports: [CustomersModule],
+        providers: [CustomersClient],
+        controllers: [CustomersController],
+        ignoreGuards: [CustomerJwtAuthGuard]
     })
 
-    const teardown = async () => {
-        await commonFixture?.close()
-    }
+    const createdCustomer = await createCustomer2(fix, { email: 'user@mail.com' })
 
-    return { ...commonFixture, teardown }
+    return { ...fix, createdCustomer }
 }

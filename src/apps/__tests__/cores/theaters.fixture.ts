@@ -1,15 +1,19 @@
-import { CommonFixture, createCommonFixture } from '../__helpers__'
+import { TheaterDto, TheatersClient, TheatersModule } from 'apps/cores'
+import { TheatersController } from 'apps/gateway'
+import { createTheater2, TestFixture, createTestFixture } from '../__helpers__'
 
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
+export interface Fixture extends TestFixture {
+    createdTheater: TheaterDto
 }
 
 export const createFixture = async () => {
-    const commonFixture = await createCommonFixture()
+    const fix = await createTestFixture({
+        imports: [TheatersModule],
+        providers: [TheatersClient],
+        controllers: [TheatersController]
+    })
 
-    const teardown = async () => {
-        await commonFixture?.close()
-    }
+    const createdTheater = await createTheater2(fix)
 
-    return { ...commonFixture, teardown }
+    return { ...fix, createdTheater }
 }

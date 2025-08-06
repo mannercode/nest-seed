@@ -1,9 +1,9 @@
 import { WatchRecordDto } from 'apps/cores'
-import { expectEqualUnsorted, testObjectId } from 'testlib'
-import { buildCreateWatchRecordDto, createWatchRecord } from '../common.fixture'
-import { Fixture } from './watch-records.fixture'
+import { oid } from 'testlib'
+import { buildCreateWatchRecordDto, createWatchRecord2 } from '../__helpers__'
+import type { Fixture } from './watch-records.fixture'
 
-describe('WatchRecords', () => {
+describe('WatchRecordsService', () => {
     let fix: Fixture
 
     beforeEach(async () => {
@@ -16,40 +16,47 @@ describe('WatchRecords', () => {
     })
 
     describe('createWatchRecord', () => {
-        // 관람 기록을 생성해야 한다
-        it('Should create a watch record', async () => {
-            const { createDto, expectedDto } = buildCreateWatchRecordDto()
+        // payload가 유효한 경우
+        describe('when the payload is valid', () => {
+            // 관람 기록을 생성하고 반환한다
+            it('creates and returns a watch record', async () => {
+                const createDto = buildCreateWatchRecordDto()
 
-            const watchRecord = await fix.watchRecordsClient.createWatchRecord(createDto)
-            expect(watchRecord).toEqual(expectedDto)
+                const watchRecord = await fix.watchRecordsService.createWatchRecord(createDto)
+
+                expect(watchRecord).toEqual({ id: expect.any(String), ...createDto })
+            })
         })
     })
 
     describe('searchWatchRecordsPage', () => {
-        let records: WatchRecordDto[]
-        const customerId = testObjectId(0xa1)
+        const customerId = oid(0xa1)
+        let watchRecords: WatchRecordDto[]
 
         beforeEach(async () => {
-            records = await Promise.all([
-                createWatchRecord(fix, { customerId }),
-                createWatchRecord(fix, { customerId }),
-                createWatchRecord(fix, { customerId }),
-                createWatchRecord(fix, { customerId })
+            watchRecords = await Promise.all([
+                createWatchRecord2(fix, { customerId }),
+                createWatchRecord2(fix, { customerId }),
+                createWatchRecord2(fix, { customerId }),
+                createWatchRecord2(fix, { customerId })
             ])
         })
 
-        // 기본 페이지네이션 설정으로 관람 기록을 가져와야 한다
-        it('Should fetch watch records with default pagination settings', async () => {
-            const { items, ...paginated } = await fix.watchRecordsClient.searchWatchRecordsPage({
-                customerId
-            })
+        // `customerId`가 제공된 경우
+        describe('when `customerId` are provided', () => {
+            // 지정한 customerId와 일치하는 관람 기록 페이지를 반환한다.
+            it('returns the paginated watch records matching the given customerId', async () => {
+                const pagination = await fix.watchRecordsService.searchWatchRecordsPage({
+                    customerId
+                })
 
-            expect(paginated).toEqual({
-                skip: 0,
-                take: expect.any(Number),
-                total: records.length
+                expect(pagination).toEqual({
+                    skip: 0,
+                    take: expect.any(Number),
+                    total: watchRecords.length,
+                    items: expect.arrayContaining(watchRecords)
+                })
             })
-            expectEqualUnsorted(items, records)
         })
     })
 })

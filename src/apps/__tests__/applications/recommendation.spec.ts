@@ -1,7 +1,7 @@
 import { MovieDto, MovieGenre } from 'apps/cores'
 import { createShowingMovies, createWatchedMovies, Fixture } from './recommendation.fixture'
 
-describe('Recommendation', () => {
+describe('RecommendationService', () => {
     let fix: Fixture
 
     beforeEach(async () => {
@@ -17,16 +17,7 @@ describe('Recommendation', () => {
         let showingMovies: MovieDto[]
 
         beforeEach(async () => {
-            await createWatchedMovies(fix, [
-                { title: 'Action1', genres: [MovieGenre.Action] },
-                { title: 'Action2', genres: [MovieGenre.Action] },
-                { title: 'Action3', genres: [MovieGenre.Action] },
-                { title: 'Comedy1', genres: [MovieGenre.Comedy] },
-                { title: 'Comedy2', genres: [MovieGenre.Comedy] },
-                { title: 'Drama1', genres: [MovieGenre.Drama] }
-            ])
-
-            showingMovies = await createShowingMovies(fix, [
+            const { movies } = await createShowingMovies(fix, [
                 {
                     title: 'Fantasy',
                     genres: [MovieGenre.Fantasy],
@@ -47,41 +38,56 @@ describe('Recommendation', () => {
                     genres: [MovieGenre.Action],
                     releaseDate: new Date('2900-04-01')
                 },
-                {
-                    title: 'Drama',
-                    genres: [MovieGenre.Drama],
-                    releaseDate: new Date('2900-05-01')
-                }
+                { title: 'Drama', genres: [MovieGenre.Drama], releaseDate: new Date('2900-05-01') }
             ])
+
+            showingMovies = movies
         })
 
-        // 고객이 가장 많이 관람한 genre와 최신 개봉일 순서로 추천 영화 목록을 반환해야 한다
-        it('Should return a list of recommended movies sorted by the most watched genre and the latest release date', async () => {
-            const { body } = await fix.httpClient
-                .get('/movies/recommended')
-                .headers({ Authorization: `Bearer ${fix.accessToken}` })
-                .ok()
+        // 고객인 경우
+        describe('when a customer', () => {
+            let accessToken: string
 
-            expect(body).toEqual([
-                showingMovies[3], // Action
-                showingMovies[2], // Comedy2, 2900-03-01
-                showingMovies[1], // Comedy1, 2900-02-01
-                showingMovies[4], // Drama
-                showingMovies[0] // Fantasy
-            ])
+            beforeEach(async () => {
+                const result = await createWatchedMovies(fix, [
+                    { title: 'Action1', genres: [MovieGenre.Action] },
+                    { title: 'Action2', genres: [MovieGenre.Action] },
+                    { title: 'Action3', genres: [MovieGenre.Action] },
+                    { title: 'Comedy1', genres: [MovieGenre.Comedy] },
+                    { title: 'Comedy2', genres: [MovieGenre.Comedy] },
+                    { title: 'Drama1', genres: [MovieGenre.Drama] }
+                ])
+
+                accessToken = result.accessToken
+            })
+
+            // 고객의 추천 목록을 반환한다
+            it('returns recommendations for the customer', async () => {
+                await fix.httpClient
+                    .get('/movies/recommended')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .ok([
+                        showingMovies[3], // Action
+                        showingMovies[1], // Comedy1, 2900-02-01
+                        showingMovies[2], // Comedy2, 2900-03-01
+                        showingMovies[4], // Drama
+                        showingMovies[0] // Fantasy
+                    ])
+            })
         })
 
-        // 로그인을 하지 않으면 최신 개봉일 순서로 추천 영화 목록을 반환해야 한다
-        it('Should return a list of recommended movies by the latest release date if the user is not logged in', async () => {
-            const { body } = await fix.httpClient.get('/movies/recommended').ok()
-
-            expect(body).toEqual([
-                showingMovies[4], // 2900-05-01
-                showingMovies[3], // 2900-04-01
-                showingMovies[2], // 2900-03-01
-                showingMovies[1], // 2900-02-01
-                showingMovies[0] // 2900-01-01
-            ])
+        // 손님인 경우
+        describe('when a guest user', () => {
+            // 손님의 추천 목록을 반환한다
+            it('returns recommendations for guests', async () => {
+                await fix.httpClient.get('/movies/recommended').ok([
+                    showingMovies[0], // 2900-01-01
+                    showingMovies[1], // 2900-02-01
+                    showingMovies[2], // 2900-03-01
+                    showingMovies[3], // 2900-04-01
+                    showingMovies[4] // 2900-05-01
+                ])
+            })
         })
     })
 })

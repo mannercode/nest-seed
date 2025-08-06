@@ -1,46 +1,47 @@
-import { Path } from 'common'
-import { CommonFixture, createCommonFixture, TestFile, TestFiles } from '../__helpers__'
+import { MulterConfigModule, StorageFilesController } from 'apps/gateway'
+import { StorageFilesClient, StorageFilesModule } from 'apps/infrastructures'
+import {
+    createConfigServiceMock,
+    FixtureFile,
+    fixtureFiles,
+    TestFixture,
+    createTestFixture
+} from '../__helpers__'
 
-export const saveFile = async (fixture: CommonFixture, file: TestFile) => {
-    const files = await fixture.storageFilesClient.saveFiles([file])
-    return files[0]
-}
-
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
-    uploadDir: string
-    maxFileSizeBytes: number
-    maxFilesPerUpload: number
-    files: { notAllowed: TestFile; oversized: TestFile; large: TestFile; small: TestFile }
+export interface Fixture extends TestFixture {
+    overLimitFiles: FixtureFile[]
+    localFiles: {
+        notAllowed: FixtureFile
+        oversized: FixtureFile
+        large: FixtureFile
+        small: FixtureFile
+    }
 }
 
 export const createFixture = async () => {
-    const files = {
-        notAllowed: TestFiles.json,
-        oversized: TestFiles.oversized,
-        large: TestFiles.large,
-        small: TestFiles.small
+    const localFiles = {
+        notAllowed: fixtureFiles.json,
+        oversized: fixtureFiles.oversized,
+        large: fixtureFiles.large,
+        small: fixtureFiles.small
     }
-    const uploadDir = await Path.createTempDirectory()
-    const maxFileSizeBytes = files.oversized.size
-    const maxFilesPerUpload = 2
 
-    const commonFixture = await createCommonFixture({
-        gateway: {
-            config: {
-                FILE_UPLOAD_DIRECTORY: uploadDir,
-                FILE_UPLOAD_MAX_FILE_SIZE_BYTES: maxFileSizeBytes,
-                FILE_UPLOAD_MAX_FILES_PER_UPLOAD: maxFilesPerUpload,
-                FILE_UPLOAD_ALLOWED_FILE_TYPES: 'text/plain'
-            }
-        },
-        infras: { config: { FILE_UPLOAD_DIRECTORY: uploadDir } }
+    const maxFilesPerUpload = 3
+
+    const configMock = createConfigServiceMock({
+        FILE_UPLOAD_MAX_FILE_SIZE_BYTES: localFiles.oversized.size,
+        FILE_UPLOAD_MAX_FILES_PER_UPLOAD: maxFilesPerUpload,
+        FILE_UPLOAD_ALLOWED_FILE_TYPES: 'text/plain'
     })
 
-    const teardown = async () => {
-        await commonFixture?.close()
-        await Path.delete(uploadDir)
-    }
+    const fix = await createTestFixture({
+        imports: [MulterConfigModule, StorageFilesModule],
+        providers: [StorageFilesClient],
+        controllers: [StorageFilesController],
+        overrideProviders: [configMock]
+    })
 
-    return { ...commonFixture, teardown, uploadDir, maxFileSizeBytes, maxFilesPerUpload, files }
+    const overLimitFiles = Array(maxFilesPerUpload + 1).fill(localFiles.small)
+
+    return { ...fix, overLimitFiles, localFiles }
 }

@@ -4,7 +4,7 @@ import { HealthModule } from './modules'
 import {
     CustomersModule,
     MoviesModule,
-    PurchasesModule,
+    PurchaseRecordsModule,
     ShowtimesModule,
     TheatersModule,
     TicketHoldingModule,
@@ -25,7 +25,7 @@ import {
         TicketsModule,
         TicketHoldingModule,
         WatchRecordsModule,
-        PurchasesModule
+        PurchaseRecordsModule
     ]
 })
 export class CoresModule {}

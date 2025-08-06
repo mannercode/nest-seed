@@ -36,7 +36,7 @@ export class ShowtimeBulkCreatorService {
                 movieId,
                 theaterId,
                 startTime,
-                endTime: DateUtil.addMinutes(startTime, durationInMinutes)
+                endTime: DateUtil.add({ minutes: durationInMinutes, base: startTime })
             }))
         )
 

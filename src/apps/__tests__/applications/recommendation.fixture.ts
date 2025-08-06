@@ -1,55 +1,75 @@
-import { CustomerDto, MovieDto } from 'apps/cores'
-import { nullObjectId } from 'testlib'
+import { RecommendationClient, RecommendationModule } from 'apps/applications'
 import {
-    createCustomerAndLogin,
-    createMovie,
-    createShowtimes,
-    createWatchRecord
-} from '../common.fixture'
-import { CommonFixture, createCommonFixture } from '../__helpers__'
+    CustomersClient,
+    CustomersModule,
+    MovieDto,
+    MoviesClient,
+    MoviesModule,
+    ShowtimesClient,
+    ShowtimesModule,
+    WatchRecordsClient,
+    WatchRecordsModule
+} from 'apps/cores'
+import { CustomerJwtStrategy, MoviesController } from 'apps/gateway'
+import { StorageFilesModule } from 'apps/infrastructures'
+import {
+    createCustomerAndLogin2,
+    createMovie2,
+    createShowtimes2,
+    createTestFixture,
+    createWatchRecord2,
+    TestFixture
+} from '../__helpers__'
 
-export const createWatchedMovies = async (fix: Fixture, dtos: Partial<MovieDto>[]) => {
-    const watchedMovies = await Promise.all(
-        dtos.map(async (dto) => {
-            const movie = await createMovie(fix, dto)
-            createWatchRecord(fix, { customerId: fix.customer.id, movieId: movie.id })
-            return movie
-        })
+export const createWatchedMovies = async (ctx: TestFixture, dtos: Partial<MovieDto>[]) => {
+    const movies = await Promise.all(dtos.map((dto) => createMovie2(ctx, dto)))
+
+    const { customer, accessToken } = await createCustomerAndLogin2(ctx)
+
+    const watchRecords = await Promise.all(
+        movies.map((movie) =>
+            createWatchRecord2(ctx, { customerId: customer.id, movieId: movie.id })
+        )
     )
 
-    return watchedMovies
+    return { customer, accessToken, movies, watchRecords }
 }
 
-export const createShowingMovies = async (fix: CommonFixture, dtos: Partial<MovieDto>[]) => {
-    const showingMovies = await Promise.all(dtos.map((dto) => createMovie(fix, dto)))
+export const createShowingMovies = async (ctx: TestFixture, dtos: Partial<MovieDto>[]) => {
+    const movies = await Promise.all(dtos.map((dto) => createMovie2(ctx, dto)))
 
-    const createShowtimesDtos = showingMovies.map((movie) => ({
+    const createShowtimesDtos = movies.map((movie) => ({
         movieId: movie.id,
-        transactionId: nullObjectId,
-        theaterId: nullObjectId,
-        startTime: new Date('2999-01-01'),
-        endTime: new Date('2999-01-02')
+        startTime: new Date('2999-01-01')
     }))
 
-    await createShowtimes(fix, createShowtimesDtos)
+    const showtimes = await createShowtimes2(ctx, createShowtimesDtos)
 
-    return showingMovies
+    return { movies, showtimes }
 }
 
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
-    customer: CustomerDto
-    accessToken: string
-}
+export type Fixture = TestFixture
 
-export const createFixture = async () => {
-    const commonFixture = await createCommonFixture()
+export const createFixture = async (): Promise<Fixture> => {
+    const fix = await createTestFixture({
+        imports: [
+            MoviesModule,
+            StorageFilesModule,
+            CustomersModule,
+            ShowtimesModule,
+            WatchRecordsModule,
+            RecommendationModule
+        ],
+        providers: [
+            CustomerJwtStrategy,
+            CustomersClient,
+            MoviesClient,
+            ShowtimesClient,
+            RecommendationClient,
+            WatchRecordsClient
+        ],
+        controllers: [MoviesController]
+    })
 
-    const { customer, accessToken } = await createCustomerAndLogin(commonFixture)
-
-    const teardown = async () => {
-        await commonFixture?.close()
-    }
-
-    return { ...commonFixture, teardown, customer, accessToken }
+    return { ...fix }
 }

@@ -1,16 +1,29 @@
-import { CommonFixture, createCommonFixture, TestFile, TestFiles } from '../__helpers__'
+import { RecommendationClient } from 'apps/applications'
+import { MovieDto, MoviesClient, MoviesModule } from 'apps/cores'
+import { MoviesController, StorageFilesController } from 'apps/gateway'
+import { MulterConfigModule } from 'apps/gateway/modules'
+import { StorageFilesClient, StorageFilesModule } from 'apps/infrastructures'
+import {
+    createMovie2,
+    FixtureFile,
+    fixtureFiles,
+    TestFixture,
+    createTestFixture
+} from '../__helpers__'
 
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
-    image: TestFile
+export interface Fixture extends TestFixture {
+    image: FixtureFile
+    createdMovie: MovieDto
 }
 
 export const createFixture = async () => {
-    const commonFixture = await createCommonFixture()
+    const fix = await createTestFixture({
+        imports: [MulterConfigModule, MoviesModule, StorageFilesModule],
+        providers: [MoviesClient, RecommendationClient, StorageFilesClient],
+        controllers: [MoviesController, StorageFilesController]
+    })
 
-    const teardown = async () => {
-        await commonFixture?.close()
-    }
+    const createdMovie = await createMovie2(fix)
 
-    return { ...commonFixture, teardown, image: TestFiles.image }
+    return { ...fix, image: fixtureFiles.image, createdMovie }
 }

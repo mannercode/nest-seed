@@ -24,14 +24,15 @@ export class TheatersService {
     }
 
     async deleteTheaters(theaterIds: string[]) {
-        const deleteResult = await this.repository.deleteByIds(theaterIds)
-        return deleteResult
+        const deletedTheaters = await this.repository.deleteByIds(theaterIds)
+
+        return { deletedTheaters: this.toDtos(deletedTheaters) }
     }
 
     async searchTheatersPage(searchDto: SearchTheatersPageDto) {
-        const { items, ...paginated } = await this.repository.searchTheatersPage(searchDto)
+        const { items, ...pagination } = await this.repository.searchTheatersPage(searchDto)
 
-        return { ...paginated, items: this.toDtos(items) }
+        return { ...pagination, items: this.toDtos(items) }
     }
 
     async theatersExist(theaterIds: string[]) {

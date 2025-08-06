@@ -13,14 +13,12 @@ export class DateTimeRange {
     @Type(() => Date)
     end: Date
 
-    static create({ start, end, minutes, days }: DateTimeRangeOptions) {
-        if (start && end) {
-            return { start, end }
-        } else if (start) {
-            if (minutes) {
-                return { start, end: DateUtil.addMinutes(start, minutes) }
-            } else if (days) {
-                return { start, end: DateUtil.addDays(start, days) }
+    static create({ start, end, days, minutes }: DateTimeRangeOptions) {
+        if (start) {
+            if (end) {
+                return { start, end }
+            } else if (days || minutes) {
+                return { start, end: DateUtil.add({ base: start, days, minutes }) }
             }
         }
 

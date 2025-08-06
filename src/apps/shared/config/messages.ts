@@ -1,32 +1,18 @@
-import { createMessagePatternMap, getProjectName } from './utils'
+import { createMessagePatternMap, getProjectId } from './utils'
 
 export const Messages = createMessagePatternMap(
     {
-        StorageFiles: {
-            saveFiles: null,
-            getFiles: null,
-            deleteFiles: null
-        },
-        Payments: {
-            processPayment: null,
-            getPayments: null
-        },
-        WatchRecords: {
-            createWatchRecord: null,
-            searchWatchRecordsPage: null
-        },
+        StorageFiles: { saveFiles: null, getFiles: null, deleteFiles: null },
+        Payments: { createPayment: null, getPayments: null },
+        WatchRecords: { createWatchRecord: null, searchWatchRecordsPage: null },
         Tickets: {
             createTickets: null,
-            updateTicketStatus: null,
+            updateTicketsStatus: null,
             searchTickets: null,
-            getTicketSalesForShowtimes: null,
+            aggregateTicketSales: null,
             getTickets: null
         },
-        TicketHolding: {
-            holdTickets: null,
-            searchHeldTicketIds: null,
-            releaseTickets: null
-        },
+        TicketHolding: { holdTickets: null, searchHeldTicketIds: null, releaseTickets: null },
         Theaters: {
             createTheater: null,
             updateTheater: null,
@@ -39,22 +25,18 @@ export const Messages = createMessagePatternMap(
             createShowtimes: null,
             getShowtimes: null,
             searchShowtimes: null,
-            searchShowingMovieIds: null,
+            searchMovieIds: null,
             searchTheaterIds: null,
             searchShowdates: null,
             allShowtimesExist: null
         },
-        Purchases: {
-            createPurchase: null,
-            getPurchases: null
-        },
+        Purchases: { createPurchaseRecord: null, getPurchases: null },
         Movies: {
             createMovie: null,
             updateMovie: null,
             getMovies: null,
             deleteMovies: null,
             searchMoviesPage: null,
-            getMoviesByIds: null,
             moviesExist: null
         },
         Customers: {
@@ -63,9 +45,9 @@ export const Messages = createMessagePatternMap(
             getCustomers: null,
             deleteCustomers: null,
             searchCustomersPage: null,
-            login: null,
+            generateAuthTokens: null,
             refreshAuthTokens: null,
-            authenticateCustomer: null
+            findCustomerByCredentials: null
         },
         ShowtimeCreation: {
             searchMoviesPage: null,
@@ -73,12 +55,8 @@ export const Messages = createMessagePatternMap(
             searchShowtimes: null,
             requestShowtimeCreation: null
         },
-        Recommendation: {
-            searchRecommendedMovies: null
-        },
-        PurchaseProcess: {
-            processPurchase: null
-        },
+        Recommendation: { searchRecommendedMovies: null },
+        Purchase: { processPurchase: null },
         Booking: {
             searchTheaters: null,
             searchShowdates: null,
@@ -87,5 +65,5 @@ export const Messages = createMessagePatternMap(
             holdTickets: null
         }
     },
-    `${getProjectName()}.message`
+    `${getProjectId()}.message`
 )

@@ -8,9 +8,9 @@ import { PaymentsService } from './payments.service'
 export class PaymentsController {
     constructor(private service: PaymentsService) {}
 
-    @MessagePattern(Messages.Payments.processPayment)
-    processPayment(@Payload() createDto: CreatePaymentDto) {
-        return this.service.processPayment(createDto)
+    @MessagePattern(Messages.Payments.createPayment)
+    createPayment(@Payload() createDto: CreatePaymentDto) {
+        return this.service.createPayment(createDto)
     }
 
     @MessagePattern(Messages.Payments.getPayments)

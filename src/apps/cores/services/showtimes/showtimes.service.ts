@@ -26,10 +26,8 @@ export class ShowtimesService {
         return this.toDtos(showtimes)
     }
 
-    async searchShowingMovieIds() {
-        const currentTime = new Date()
-
-        return this.repository.findMovieIds({ startTimeRange: { start: currentTime } })
+    async searchMovieIds(searchDto: SearchShowtimesDto) {
+        return this.repository.searchMovieIds(searchDto)
     }
 
     async searchTheaterIds(searchDto: SearchShowtimesDto) {

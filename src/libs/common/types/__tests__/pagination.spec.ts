@@ -30,9 +30,7 @@ describe('CommonQuery', () => {
         const take = 3
         const input = { orderby: { direction: 'asc', name: 'name' }, skip, take }
 
-        await fix.rpcClient.expect(withTestId('getRpcPagination'), input, {
-            response: input
-        })
+        await fix.rpcClient.expect(withTestId('getRpcPagination'), input, { response: input })
     })
 
     // orderby 형식이 잘못되었을 때 BadRequest를 반환해야 한다

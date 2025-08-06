@@ -19,9 +19,6 @@ export class TicketHoldingClient {
     }
 
     releaseTickets(showtimeId: string, customerId: string): Promise<boolean> {
-        return this.proxy.getJson(Messages.TicketHolding.releaseTickets, {
-            showtimeId,
-            customerId
-        })
+        return this.proxy.getJson(Messages.TicketHolding.releaseTickets, { showtimeId, customerId })
     }
 }

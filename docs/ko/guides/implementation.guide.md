@@ -2,7 +2,54 @@
 
 구현 과정에서 적용한 규칙을 정리했습니다.
 
-## 1. TypeORM과 도메인의 Entity 관계
+## 1. Jest 테스트 명명 가이드
+
+1. **맥락은 `when …` 패턴 사용**
+    - `describe('when the X is Y', …)` 형태로 **어떤 조건일 때**를 명확히 기술합니다.
+
+1. **행위는 동사구(동사 + 목적어)**
+    - `it('logs in')`, `it('returns 401 Unauthorized')` 처럼 **동사로 시작해** 무엇을 하는지 바로 알 수 있게 작성합니다.
+
+1. **실패 케이스는 이유까지 서술**
+    - 오류 테스트는 **대상·상태·결과**를 모두 포함해
+      _왜 실패하는지_ 명확하게 기술합니다.
+    - 예시:
+      `it('returns 401 Unauthorized for incorrect password')`
+
+> Jest는 `context`를 지원하지 않는다. 그렇다고 해서 `describe`를 `context`의 alias로 사용하면 안 된다.
+>
+> `Jest Runner` 같은 Jest 도구에서 `context`를 인식하지 못한다.
+
+```ts
+// 사용자 인증
+describe('User Authentication', () => {
+    // 자격 증명이 유효한 경우
+    describe('when the credentials are valid', () => {
+        // 로그인한다
+        it('logs in', async () => {
+            /* 테스트 로직 */
+        })
+    })
+
+    // 자격 증명이 유효하지 않은 경우
+    describe('when the credentials are invalid', () => {
+        // 비밀번호가 틀린 경우 401 Unauthorized를 반환한다
+        it('returns 401 Unauthorized for incorrect password', async () => {
+            /* 테스트 로직 */
+        })
+    })
+
+    // 리프레시 토큰이 유효하지 않은 경우
+    describe('when the refresh token is invalid', () => {
+        // 401 Unauthorized를 반환한다
+        it('returns 401 Unauthorized', async () => {
+            /* 테스트 로직 */
+        })
+    })
+})
+```
+
+## 2. TypeORM과 도메인의 Entity 관계
 
 다음은 일반적인 엔티티를 구현한 예시 코드입니다.
 
@@ -31,7 +78,7 @@ export class Seed extends TypeormEntity {
 
 결과적으로, 도메인 객체에 `TypeORM` 코드가 일부 추가된 것은 양쪽을 편리하게 연결하기 위한 방식입니다. `TypeORM`은 엔티티에 의존하지만, 엔티티가 `TypeORM`에 의존하지 않도록 하여, `DDD` 관점에서도 크게 문제되지 않는 구조를 유지합니다.
 
-## 2. import
+## 3. import
 
 아래와 같은 폴더/파일 구조를 가정합니다.
 
@@ -82,7 +129,7 @@ src
 > index.ts에서 여러 모듈을 하나로 묶어서 export해주는 방식을 Barrel import라고 합니다.\
 > 이 프로젝트는 index.ts를 폴더 마다 두고 있는데, 이렇게 하면 순환 참조를 더 빨리 발견할 수 있습니다.
 
-## 3. testlib와 common의 순환 참조
+## 4. testlib와 common의 순환 참조
 
 `src/libs` 폴더에는 `testlib`와 `common`이 있습니다. 언뜻 보면 서로를 참조하는 순환 구조처럼 보일 수 있습니다.
 
@@ -110,7 +157,7 @@ CommonTest --> TestLibClass : import
 @enduml
 ```
 
-## 4. 테스트에서 dynamic import
+## 5. 테스트에서 dynamic import
 
 여러 테스트에서 같은 NATS 서버를 공유하기 때문에, 각 테스트마다 고유한 subject를 생성하기 위해 process.env.TEST_ID를 사용합니다.
 
@@ -132,7 +179,7 @@ describe('Customers', () => {
 })
 ```
 
-## 5. entry file
+## 6. entry file
 
 각 프로젝트의 루트에는 다음 파일들이 존재합니다.
 
@@ -172,7 +219,7 @@ describe('Customers', () => {
     }
 ```
 
-## 6. 테스트 코드를 .spec.ts와 .fixture.ts로 분리
+## 7. 테스트 코드를 .spec.ts와 .fixture.ts로 분리
 
 .spec.ts에 Fixture 설정 코드를 모두 넣으면, 실제 테스트 로직이 무엇을 검증하는지 파악하기가 어렵습니다. 따라서 테스트 로직은 .spec.ts에 집중하고, 테스트에 필요한 리소스나 설정은 .fixture.ts에 둡니다.
 
@@ -198,7 +245,7 @@ export async function getProviders(coresContext: TestContext) {
 }
 ```
 
-## 7. 주석
+## 8. 주석
 
 ```ts
 // 한 줄은 이렇게 한다.
@@ -212,7 +259,7 @@ export async function getProviders(coresContext: TestContext) {
 */
 ```
 
-## 8. ESM modules
+## 9. ESM modules
 
 NestJS는 CommonJS 모듈 시스템을 사용하지만, Node.js >= 22에서는 CommonJS와 ESM을 동시에 지원하므로 호환성 문제가 발생하지 않습니다.
 
