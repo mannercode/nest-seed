@@ -4,25 +4,25 @@ import { JwtAuthTokens } from 'common'
 import {
     createCustomer2,
     generateAuthTokens2,
-    HttpTestFixture,
-    setupHttpTestContext
+    TestFixture,
+    createTestFixture
 } from '../__helpers__'
 
-export interface Fixture extends HttpTestFixture {
+export interface Fixture extends TestFixture {
     credentials: { email: string; password: string }
     authTokens: JwtAuthTokens
 }
 
 export const createFixture = async () => {
-    const context = await setupHttpTestContext({
+    const fix = await createTestFixture({
         imports: [CustomersModule],
         providers: [CustomersClient, CustomerLocalStrategy, CustomerJwtStrategy],
         controllers: [CustomersController]
     })
 
     const credentials = { email: 'user@mail.com', password: 'password' }
-    const customer = await createCustomer2(context, credentials)
-    const authTokens = await generateAuthTokens2(context, customer)
+    const customer = await createCustomer2(fix, credentials)
+    const authTokens = await generateAuthTokens2(fix, customer)
 
-    return { ...context, credentials, authTokens }
+    return { ...fix, credentials, authTokens }
 }

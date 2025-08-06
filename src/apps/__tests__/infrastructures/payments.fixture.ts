@@ -1,15 +1,14 @@
-import { CommonFixture, createCommonFixture } from '../__helpers__'
+import { PaymentsClient, PaymentsModule } from 'apps/infrastructures'
+import { createTestFixture, TestFixture } from '../__helpers__'
 
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
+export interface Fixture extends TestFixture {
+    paymentsService: PaymentsClient
 }
 
 export const createFixture = async () => {
-    const fix = await createCommonFixture()
+    const fix = await createTestFixture({ imports: [PaymentsModule], providers: [PaymentsClient] })
 
-    const teardown = async () => {
-        await fix?.close()
-    }
+    const paymentsService = fix.module.get(PaymentsClient)
 
-    return { ...fix, teardown }
+    return { ...fix, paymentsService }
 }

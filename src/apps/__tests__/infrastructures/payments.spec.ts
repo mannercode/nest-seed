@@ -1,5 +1,5 @@
 import { PaymentDto } from 'apps/infrastructures'
-import { buildCreatePaymentDto, createPayment } from '../__helpers__'
+import { buildCreatePaymentDto, createPayment2 } from '../__helpers__'
 import type { Fixture } from './payments.fixture'
 
 describe('PaymentsService', () => {
@@ -38,7 +38,7 @@ describe('PaymentsService', () => {
         // 결제 정보가 존재하는 경우
         describe('when the payments exist', () => {
             beforeEach(async () => {
-                createdPayment = await createPayment(fix)
+                createdPayment = await createPayment2(fix)
             })
 
             // 결제 정보를 반환한다.

@@ -32,12 +32,11 @@ import {
     createTheater2,
     createTickets2,
     holdTickets2,
-    HttpTestFixture,
-    setupHttpTestContext,
+    createTestFixture,
     TestFixture
 } from '../__helpers__'
 
-export interface PurchasesFixture extends HttpTestFixture {
+export interface PurchasesFixture extends TestFixture {
     customer: CustomerDto
     heldTickets: TicketDto[]
     availableTickets: TicketDto[]
@@ -45,7 +44,7 @@ export interface PurchasesFixture extends HttpTestFixture {
 }
 
 export const createFixture = async (): Promise<PurchasesFixture> => {
-    const context = await setupHttpTestContext({
+    const fix = await createTestFixture({
         imports: [
             MoviesModule,
             StorageFilesModule,
@@ -72,21 +71,21 @@ export const createFixture = async (): Promise<PurchasesFixture> => {
     })
 
     const [customer, movie, theater] = await Promise.all([
-        createCustomer2(context),
-        createMovie2(context),
-        createTheater2(context)
+        createCustomer2(fix),
+        createMovie2(fix),
+        createTheater2(fix)
     ])
 
     const { availableTickets, heldTickets } = await createAvailableAndHeldTickets(
-        context,
+        fix,
         movie,
         theater,
         customer
     )
 
-    const closedSaleTickets = await createClosedTickets(context, movie, theater)
+    const closedSaleTickets = await createClosedTickets(fix, movie, theater)
 
-    return { ...context, customer, heldTickets, availableTickets, closedTickets: closedSaleTickets }
+    return { ...fix, customer, heldTickets, availableTickets, closedTickets: closedSaleTickets }
 }
 
 export const buildCreatePurchaseDto = (

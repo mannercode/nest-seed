@@ -1,17 +1,17 @@
 import { ShowtimesClient, ShowtimesModule } from 'apps/cores'
-import { TestFixture, setupTestContext } from '../__helpers__'
+import { TestFixture, createTestFixture } from '../__helpers__'
 
 export interface Fixture extends TestFixture {
     showtimesService: ShowtimesClient
 }
 
 export const createFixture = async () => {
-    const context = await setupTestContext({
+    const fix = await createTestFixture({
         imports: [ShowtimesModule],
         providers: [ShowtimesClient]
     })
 
-    const showtimesService = context.module.get(ShowtimesClient)
+    const showtimesService = fix.module.get(ShowtimesClient)
 
-    return { ...context, showtimesService }
+    return { ...fix, showtimesService }
 }

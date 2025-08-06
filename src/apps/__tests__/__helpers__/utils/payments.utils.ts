@@ -22,6 +22,19 @@ export const getPayments = async (fix: CommonFixture, paymentIds: string[]) => {
     return fix.paymentsService.getPayments(paymentIds)
 }
 
+export const createPayment2 = async (
+    { module }: TestContext,
+    override: Partial<CreatePaymentDto> = {}
+) => {
+    const { PaymentsClient } = await import('apps/infrastructures')
+    const paymentsService = module.get(PaymentsClient)
+
+    const createDto = buildCreatePaymentDto(override)
+
+    const payment = await paymentsService.createPayment(createDto)
+    return payment
+}
+
 export const getPayments2 = async ({ module }: TestContext, paymentIds: string[]) => {
     const { PaymentsClient } = await import('apps/infrastructures')
     const paymentsService = module.get(PaymentsClient)
