@@ -72,10 +72,10 @@ export class TicketPurchasService {
 
     private validatePurchaseTime(showtimes: ShowtimeDto[]) {
         for (const { startTime } of showtimes) {
-            const purchaseWindowCloseTime = DateUtil.addMinutes(
-                startTime,
-                -Rules.Ticket.purchaseWindowCloseOffsetMinutes
-            )
+            const purchaseWindowCloseTime = DateUtil.add({
+                minutes: -Rules.Ticket.purchaseWindowCloseOffsetMinutes,
+                base: startTime
+            })
 
             if (purchaseWindowCloseTime.getTime() < DateUtil.now().getTime()) {
                 throw new BadRequestException({

@@ -106,10 +106,10 @@ const createAvailableAndHeldTickets = async (
     theater: TheaterDto,
     customer: CustomerDto
 ) => {
-    const beforeCloseTime = DateUtil.addMinutes(
-        new Date(),
-        Rules.Ticket.purchaseWindowCloseOffsetMinutes + 1
-    )
+    const beforeCloseTime = DateUtil.add({
+        minutes: Rules.Ticket.purchaseWindowCloseOffsetMinutes + 1
+    })
+
     const createdTickets = await createAllTickets({
         fix,
         movie,
@@ -133,10 +133,9 @@ const createAvailableAndHeldTickets = async (
 }
 
 const createClosedTickets = async (fix: TestFixture, movie: MovieDto, theater: TheaterDto) => {
-    const afterCloseTime = DateUtil.addMinutes(
-        new Date(),
-        Rules.Ticket.purchaseWindowCloseOffsetMinutes - 1
-    )
+    const afterCloseTime = DateUtil.add({
+        minutes: Rules.Ticket.purchaseWindowCloseOffsetMinutes - 1
+    })
 
     const closedSaleTickets = await createAllTickets({
         fix,

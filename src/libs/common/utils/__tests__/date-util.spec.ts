@@ -62,21 +62,20 @@ describe('DateUtil', () => {
         })
     })
 
-    describe('addDays', () => {
-        // 기준 날짜에 지정된 일수를 더한 날짜 반환
+    describe('add', () => {
+        // 기준 날짜에 지정된 시간을 더한 날짜 반환
         it('Should return the date with the specified number of days added', () => {
-            const baseDate = new Date('2020-01-01T00:00:00Z')
-            const updatedDate = DateUtil.addDays(baseDate, 2)
-            expect(updatedDate).toEqual(new Date('2020-01-03T00:00:00Z'))
-        })
-    })
+            const base = new Date('2020-01-01T00:00:00Z')
+            const updatedDate = DateUtil.add({ base, days: 5, hours: 5, minutes: 5, seconds: 5 })
 
-    describe('addMinutes', () => {
-        // 기준 날짜에 지정된 분을 더한 날짜 반환
-        it('Should return the date with the specified number of minutes added', () => {
-            const baseDate = new Date('2020-01-01T00:00:00Z')
-            const updatedDate = DateUtil.addMinutes(baseDate, 90)
-            expect(updatedDate).toEqual(new Date('2020-01-01T01:30:00Z'))
+            expect(updatedDate).toEqual(new Date('2020-01-06T05:05:05Z'))
+        })
+
+        // 현재 시간에 지정된 시간을 더한 날짜 반환
+        it('??', () => {
+            const now = DateUtil.add({})
+
+            expect(now).toBeDefined()
         })
     })
 })

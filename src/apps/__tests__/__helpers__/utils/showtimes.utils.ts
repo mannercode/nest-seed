@@ -15,7 +15,7 @@ export const buildCreateShowtimeDto = (overrides: Partial<CreateShowtimeDto> = {
     }
 
     if (overrides.endTime === undefined) {
-        createDto.endTime = DateUtil.addMinutes(createDto.startTime, 1)
+        createDto.endTime = DateUtil.add({ base: createDto.startTime, minutes: 1 })
     }
 
     return createDto

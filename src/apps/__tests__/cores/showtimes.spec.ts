@@ -155,7 +155,7 @@ describe('ShowtimesService', () => {
         // `startTimeRange`가 제공된 경우
         describe('when `startTimeRange` is provided', () => {
             beforeEach(async () => {
-                const now = (minutes: number) => DateUtil.addMinutes(new Date(), minutes)
+                const now = (minutes: number) => DateUtil.add({ minutes })
 
                 const createDtos = [
                     { movieId: oid(0x1), startTime: now(-90) },
