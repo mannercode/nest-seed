@@ -11,10 +11,10 @@ RUN echo "alias ls='ls --color=auto'" >> ~/.bashrc
 RUN echo "alias l='ls --color=auto -lA'" >> ~/.bashrc
 
 # for Korean
-RUN apt-get install -y locales \
-    && sed -i '/ko_KR.UTF-8/s/^# //g' /etc/locale.gen \
-    && locale-gen ko_KR.UTF-8 \
-    && update-locale LANG=ko_KR.UTF-8
+# RUN apt-get update && apt-get install -y locales \
+#    && sed -i '/ko_KR.UTF-8/s/^# //g' /etc/locale.gen \
+#    && locale-gen ko_KR.UTF-8 \
+#    && update-locale LANG=ko_KR.UTF-8
 
 ENV LANG=ko_KR.UTF-8 \
     LANGUAGE=ko_KR:ko \
