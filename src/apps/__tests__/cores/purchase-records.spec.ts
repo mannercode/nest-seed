@@ -14,7 +14,7 @@ describe('PurchaseRecordsService', () => {
         await fix?.teardown()
     })
 
-    describe('createPurchseRecord', () => {
+    describe('createPurchaseRecord', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
             // 구매 기록을 생성하고 반환한다
@@ -22,7 +22,7 @@ describe('PurchaseRecordsService', () => {
                 const createDto = buildCreatePurchaseRecordDto({})
 
                 const createdPurchaseRecord =
-                    await fix.purchaseRecordsService.createPurchseRecord(createDto)
+                    await fix.purchaseRecordsService.createPurchaseRecord(createDto)
 
                 expect(createdPurchaseRecord).toEqual({
                     id: expect.any(String),

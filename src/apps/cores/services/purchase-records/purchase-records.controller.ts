@@ -8,9 +8,9 @@ import { PurchaseRecordsService } from './purchase-records.service'
 export class PurchaseRecordsController {
     constructor(private service: PurchaseRecordsService) {}
 
-    @MessagePattern(Messages.Purchases.createPurchseRecord)
-    createPurchseRecord(@Payload() createDto: CreatePurchaseRecordDto) {
-        return this.service.createPurchseRecord(createDto)
+    @MessagePattern(Messages.Purchases.createPurchaseRecord)
+    createPurchaseRecord(@Payload() createDto: CreatePurchaseRecordDto) {
+        return this.service.createPurchaseRecord(createDto)
     }
 
     @MessagePattern(Messages.Purchases.getPurchases)

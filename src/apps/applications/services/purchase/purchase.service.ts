@@ -18,7 +18,7 @@ export class PurchaseService {
             amount: createDto.totalPrice
         })
         await this.ticketProcessor.validatePurchase(createDto)
-        const purchase = await this.purchasesService.createPurchseRecord({
+        const purchase = await this.purchasesService.createPurchaseRecord({
             ...createDto,
             paymentId: payment.id
         })

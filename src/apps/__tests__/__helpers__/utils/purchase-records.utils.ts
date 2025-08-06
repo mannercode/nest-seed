@@ -18,6 +18,6 @@ export const createPurchaseRecord2 = async ({ module }: TestContext, override = 
 
     const createDto = buildCreatePurchaseRecordDto(override)
 
-    const purchase = await purchasesService.createPurchseRecord(createDto)
+    const purchase = await purchasesService.createPurchaseRecord(createDto)
     return purchase
 }

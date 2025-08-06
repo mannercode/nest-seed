@@ -15,7 +15,7 @@ export class PurchasesRecordRepository extends MongooseRepository<PurchaseRecord
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createPurchseRecord(createDto: CreatePurchaseRecordDto & { paymentId: string }) {
+    async createPurchaseRecord(createDto: CreatePurchaseRecordDto & { paymentId: string }) {
         const purchase = this.newDocument()
         purchase.customerId = objectId(createDto.customerId)
         purchase.paymentId = objectId(createDto.paymentId)

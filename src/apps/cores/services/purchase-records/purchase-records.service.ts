@@ -8,8 +8,8 @@ import { PurchasesRecordRepository } from './purchase-records.repository'
 export class PurchaseRecordsService {
     constructor(private repository: PurchasesRecordRepository) {}
 
-    async createPurchseRecord(createDto: CreatePurchaseRecordDto) {
-        const purchase = await this.repository.createPurchseRecord(createDto)
+    async createPurchaseRecord(createDto: CreatePurchaseRecordDto) {
+        const purchase = await this.repository.createPurchaseRecord(createDto)
 
         return this.toDto(purchase)
     }
