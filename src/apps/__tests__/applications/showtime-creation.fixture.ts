@@ -1,7 +1,20 @@
-import { MovieDto, TheaterDto } from 'apps/cores'
+import { ShowtimeCreationClient, ShowtimeCreationModule } from 'apps/applications'
+import {
+    MovieDto,
+    MoviesClient,
+    MoviesModule,
+    ShowtimesClient,
+    ShowtimesModule,
+    TheaterDto,
+    TheatersClient,
+    TheatersModule,
+    TicketsModule
+} from 'apps/cores'
+import { ShowtimeCreationController } from 'apps/gateway'
+import { StorageFilesModule } from 'apps/infrastructures'
 import { jsonToObject, notUsed } from 'common'
 import { HttpTestClient } from 'testlib'
-import { CommonFixture, createCommonFixture, createMovie, createTheater } from '../__helpers__'
+import { createMovie2, createTestFixture, createTheater2, TestFixture } from '../__helpers__'
 
 export const monitorEvents = (client: HttpTestClient, waitStatuses: string[]) => {
     return new Promise((resolve, reject) => {
@@ -23,20 +36,27 @@ export const monitorEvents = (client: HttpTestClient, waitStatuses: string[]) =>
     })
 }
 
-export interface Fixture extends CommonFixture {
-    teardown: () => Promise<void>
+export interface Fixture extends TestFixture {
     movie: MovieDto
     theater: TheaterDto
 }
 
-export const createFixture = async () => {
-    const fix = await createCommonFixture()
-    const movie = await createMovie(fix)
-    const theater = await createTheater(fix)
+export const createFixture = async (): Promise<Fixture> => {
+    const fix = await createTestFixture({
+        imports: [
+            MoviesModule,
+            StorageFilesModule,
+            TheatersModule,
+            ShowtimesModule,
+            TicketsModule,
+            ShowtimeCreationModule
+        ],
+        providers: [MoviesClient, TheatersClient, ShowtimesClient, ShowtimeCreationClient],
+        controllers: [ShowtimeCreationController]
+    })
 
-    const teardown = async () => {
-        await fix?.close()
-    }
+    const movie = await createMovie2(fix)
+    const theater = await createTheater2(fix)
 
-    return { ...fix, teardown, movie, theater }
+    return { ...fix, movie, theater }
 }

@@ -1,11 +1,14 @@
+import { BullModule } from '@nestjs/bullmq'
 import { ConfigService } from '@nestjs/config'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 import compression from 'compression'
 import express from 'express'
+import Redis from 'ioredis'
 import { AppConfigService, CommonModule, MongooseConfigModule, RedisConfigModule } from 'shared'
 import {
     createHttpTestContext,
     getNatsTestConnection,
+    getTestId,
     HttpTestContext,
     ModuleMetadataEx
 } from 'testlib'
@@ -15,7 +18,15 @@ export interface TestFixture extends HttpTestContext {
 }
 
 export const createTestFixture = async (metadata: ModuleMetadataEx) => {
-    metadata.imports?.push(CommonModule, MongooseConfigModule, RedisConfigModule)
+    metadata.imports?.push(
+        CommonModule,
+        MongooseConfigModule,
+        RedisConfigModule,
+        BullModule.forRootAsync('queue', {
+            useFactory: (redis: Redis) => ({ prefix: `{queue:${getTestId()}}`, connection: redis }),
+            inject: [RedisConfigModule.moduleName]
+        })
+    )
 
     const context = await createHttpTestContext({
         metadata,
@@ -28,7 +39,7 @@ export const createTestFixture = async (metadata: ModuleMetadataEx) => {
             const { servers } = await getNatsTestConnection()
 
             app.connectMicroservice<MicroserviceOptions>(
-                { transport: Transport.NATS, options: { servers, queue: process.env.TEST_ID } },
+                { transport: Transport.NATS, options: { servers, queue: getTestId() } },
                 { inheritAppConfig: true }
             )
 

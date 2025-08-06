@@ -76,14 +76,18 @@ export const objectToFields = (createDto: any) => {
     return fields
 }
 
-export function withTestId(prefix: string) {
+export const getTestId = () => {
     const testId = process.env.TEST_ID
 
     if (testId === undefined) {
         throw new Error('TEST_ID is not defined')
     }
 
-    return `${prefix}-${testId}`
+    return testId
+}
+
+export function withTestId(prefix: string) {
+    return `${prefix}-${getTestId()}`
 }
 
 export class EnvVars {

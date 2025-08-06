@@ -1,7 +1,7 @@
 import { Seatmap, ShowtimeDto } from 'apps/cores'
 import { DateUtil } from 'common'
 import { nullDate, nullObjectId } from 'testlib'
-import { createShowtimes } from '../__helpers__'
+import { createShowtimes2 } from '../__helpers__'
 import { Fixture, monitorEvents } from './showtime-creation.fixture'
 
 describe('ShowtimeCreationService', () => {
@@ -46,7 +46,7 @@ describe('ShowtimeCreationService', () => {
                 new Date('2100-01-01T13:00')
             ].map((startTime) => ({ theaterId: fix.theater.id, startTime }))
 
-            showtimes = await createShowtimes(fix, createDtos)
+            showtimes = await createShowtimes2(fix, createDtos)
         })
 
         // 해당 극장의 상영시간을 반환한다
@@ -158,7 +158,7 @@ describe('ShowtimeCreationService', () => {
                     endTime: DateUtil.add({ minutes: 90, base: startTime })
                 }))
 
-                existingShowtimes = await createShowtimes(fix, createDtos)
+                existingShowtimes = await createShowtimes2(fix, createDtos)
             })
 
             // 충돌하는 상영시간을 반환한다
