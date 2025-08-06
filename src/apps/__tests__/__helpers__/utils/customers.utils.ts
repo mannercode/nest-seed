@@ -1,6 +1,7 @@
 import { CustomerDto } from 'apps/cores'
 import { TestContext } from 'testlib'
 import { CommonFixture } from '../create-common-fixture'
+import { TestFixture } from '../setup-http-test-context'
 
 export const createCustomerAndLogin = async (fix: CommonFixture) => {
     const email = 'user@mail.com'
@@ -38,7 +39,7 @@ export const buildCreateCustomerDto = (overrides = {}) => {
     return createDto
 }
 
-export const createCustomerAndLogin2 = async (ctx: TestContext) => {
+export const createCustomerAndLogin2 = async (ctx: TestFixture) => {
     const email = 'user@mail.com'
     const password = 'password'
     const customer = await createCustomer2(ctx, { email, password })

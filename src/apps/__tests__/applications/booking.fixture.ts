@@ -17,7 +17,6 @@ import {
 } from 'apps/cores'
 import { BookingController, CustomerJwtStrategy } from 'apps/gateway'
 import { PaymentsModule, StorageFilesModule } from 'apps/infrastructures'
-import { TestContext } from 'testlib'
 import {
     createCustomerAndLogin2,
     createMovie2,
@@ -29,7 +28,7 @@ import {
 } from '../__helpers__'
 
 export const createAllResources = async (
-    ctx: TestContext,
+    ctx: TestFixture,
     locations: TheaterLocation[],
     startTimes: Date[]
 ) => {

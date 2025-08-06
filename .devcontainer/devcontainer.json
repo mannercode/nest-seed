@@ -39,7 +39,8 @@
                 "esbenp.prettier-vscode",
                 "mutantdino.resourcemonitor",
                 "foxundermoon.shell-format",
-                "github.vscode-pull-request-github"
+                "github.vscode-pull-request-github",
+                "GitHub.copilot"
             ],
             "settings": {
                 "remote.autoForwardPorts": false,
