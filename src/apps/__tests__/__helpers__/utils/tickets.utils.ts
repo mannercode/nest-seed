@@ -2,7 +2,6 @@ import { CreateTicketDto, TicketStatus } from 'apps/cores'
 import { newObjectId } from 'common'
 import { uniq } from 'lodash'
 import { oid, TestContext } from 'testlib'
-import { CommonFixture } from '../create-common-fixture'
 
 export const buildCreateTicketDto = (overrides = {}) => {
     const createDto = {
@@ -15,22 +14,6 @@ export const buildCreateTicketDto = (overrides = {}) => {
         ...overrides
     }
     return createDto
-}
-
-export const createTickets = async (fix: CommonFixture, overrides: Partial<CreateTicketDto>[]) => {
-    const createDtos = overrides.map((override) => buildCreateTicketDto(override))
-
-    const { success } = await fix.ticketsService.createTickets(createDtos)
-    expect(success).toBeTruthy()
-
-    const transactionIds = uniq(createDtos.map((dto) => dto.transactionId))
-
-    const tickets = await fix.ticketsService.searchTickets({ transactionIds })
-    return tickets
-}
-
-export const getTickets = async (fix: CommonFixture, ticketIds: string[]) => {
-    return fix.ticketsService.getTickets(ticketIds)
 }
 
 export const createTickets2 = async (

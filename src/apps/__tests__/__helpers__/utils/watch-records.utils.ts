@@ -1,5 +1,4 @@
 import { nullDate, oid, TestContext } from 'testlib'
-import { CommonFixture } from '../create-common-fixture'
 
 export const buildCreateWatchRecordDto = (overrides = {}) => {
     const createDto = {
@@ -11,13 +10,6 @@ export const buildCreateWatchRecordDto = (overrides = {}) => {
     }
 
     return createDto
-}
-
-export const createWatchRecord = async (fix: CommonFixture, override = {}) => {
-    const createDto = buildCreateWatchRecordDto(override)
-
-    const watchRecord = await fix.watchRecordsService.createWatchRecord(createDto)
-    return watchRecord
 }
 
 export const createWatchRecord2 = async ({ module }: TestContext, override = {}) => {

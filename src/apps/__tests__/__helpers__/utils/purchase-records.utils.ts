@@ -1,6 +1,5 @@
 import { PurchaseItemType } from 'apps/cores'
 import { oid, TestContext } from 'testlib'
-import { CommonFixture } from '../create-common-fixture'
 
 export const buildCreatePurchaseRecordDto = (overrides = {}) => {
     const createDto = {
@@ -11,14 +10,6 @@ export const buildCreatePurchaseRecordDto = (overrides = {}) => {
         ...overrides
     }
     return createDto
-}
-
-export const createPurchseRecord = async (fix: CommonFixture, override = {}) => {
-    const createDto = buildCreatePurchaseRecordDto(override)
-
-    const purchase = await fix.purchasesService.createPurchseRecord(createDto)
-
-    return purchase
 }
 
 export const createPurchaseRecord2 = async ({ module }: TestContext, override = {}) => {
