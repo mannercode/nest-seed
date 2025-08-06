@@ -36,14 +36,14 @@ import {
     TestFixture
 } from '../__helpers__'
 
-export interface PurchasesFixture extends TestFixture {
+export interface Fixture extends TestFixture {
     customer: CustomerDto
     heldTickets: TicketDto[]
     availableTickets: TicketDto[]
     closedTickets: TicketDto[]
 }
 
-export const createFixture = async (): Promise<PurchasesFixture> => {
+export const createFixture = async (): Promise<Fixture> => {
     const fix = await createTestFixture({
         imports: [
             MoviesModule,

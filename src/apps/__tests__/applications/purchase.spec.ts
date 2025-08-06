@@ -2,10 +2,10 @@ import { CreatePurchaseDto } from 'apps/applications'
 import { PurchaseRecordDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { Errors, getPayments2, getTickets2 } from '../__helpers__'
-import { buildCreatePurchaseDto, PurchasesFixture } from './purchase.fixture'
+import { buildCreatePurchaseDto, Fixture } from './purchase.fixture'
 
 describe('PurchaseService', () => {
-    let fix: PurchasesFixture
+    let fix: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./purchase.fixture')

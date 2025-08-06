@@ -19,6 +19,13 @@ export const generateAuthTokens = async (fix: CommonFixture, customer: CustomerD
     })
 }
 
+export const createCustomer = async (fix: CommonFixture, override = {}) => {
+    const createDto = buildCreateCustomerDto(override)
+
+    const customer = await fix.customersService.createCustomer(createDto)
+    return customer
+}
+
 export const buildCreateCustomerDto = (overrides = {}) => {
     const createDto = {
         name: 'name',
@@ -31,11 +38,14 @@ export const buildCreateCustomerDto = (overrides = {}) => {
     return createDto
 }
 
-export const createCustomer = async (fix: CommonFixture, override = {}) => {
-    const createDto = buildCreateCustomerDto(override)
+export const createCustomerAndLogin2 = async (ctx: TestContext) => {
+    const email = 'user@mail.com'
+    const password = 'password'
+    const customer = await createCustomer2(ctx, { email, password })
 
-    const customer = await fix.customersService.createCustomer(createDto)
-    return customer
+    const { accessToken, refreshToken } = await generateAuthTokens2(ctx, customer)
+
+    return { customer, accessToken, refreshToken }
 }
 
 export const createCustomer2 = async ({ module }: TestContext, override = {}) => {
