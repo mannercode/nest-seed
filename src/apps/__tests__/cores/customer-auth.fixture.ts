@@ -1,12 +1,7 @@
 import { CustomersClient, CustomersModule } from 'apps/cores'
 import { CustomerJwtStrategy, CustomerLocalStrategy, CustomersController } from 'apps/gateway'
 import { JwtAuthTokens } from 'common'
-import {
-    createCustomer,
-    generateAuthTokens,
-    TestFixture,
-    createTestFixture
-} from '../__helpers__'
+import { createCustomer, generateAuthTokens, TestFixture, createTestFixture } from '../__helpers__'
 
 export interface Fixture extends TestFixture {
     credentials: { email: string; password: string }
