@@ -26,12 +26,12 @@ import { PaymentsModule, StorageFilesModule } from 'apps/infrastructures'
 import { DateUtil, pickIds } from 'common'
 import { Rules } from 'shared'
 import {
-    createCustomer2,
-    createMovie2,
-    createShowtimes2,
-    createTheater2,
-    createTickets2,
-    holdTickets2,
+    createCustomer,
+    createMovie,
+    createShowtimes,
+    createTheater,
+    createTickets,
+    holdTickets,
     createTestFixture,
     TestFixture
 } from '../__helpers__'
@@ -71,9 +71,9 @@ export const createFixture = async (): Promise<Fixture> => {
     })
 
     const [customer, movie, theater] = await Promise.all([
-        createCustomer2(fix),
-        createMovie2(fix),
-        createTheater2(fix)
+        createCustomer(fix),
+        createMovie(fix),
+        createTheater(fix)
     ])
 
     const { availableTickets, heldTickets } = await createAvailableAndHeldTickets(
@@ -122,7 +122,7 @@ const createAvailableAndHeldTickets = async (
     const heldTickets = createdTickets.slice(0, holdCount)
     const availableTickets = createdTickets.slice(holdCount)
 
-    await holdTickets2(fix, {
+    await holdTickets(fix, {
         customerId: customer.id,
         showtimeId: heldTickets[0].showtimeId,
         ticketIds: pickIds(heldTickets)
@@ -157,7 +157,7 @@ const createAllTickets = async ({
     theater: TheaterDto
     startTime: Date
 }) => {
-    const showtimes = await createShowtimes2(fix, [
+    const showtimes = await createShowtimes(fix, [
         { movieId: movie.id, theaterId: theater.id, startTime }
     ])
 
@@ -170,5 +170,5 @@ const createAllTickets = async ({
         seat
     }))
 
-    return createTickets2(fix, createTicketDtos)
+    return createTickets(fix, createTicketDtos)
 }

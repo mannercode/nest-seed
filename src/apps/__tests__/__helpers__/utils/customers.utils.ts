@@ -14,17 +14,17 @@ export const buildCreateCustomerDto = (overrides = {}) => {
     return createDto
 }
 
-export const createCustomerAndLogin2 = async (ctx: TestFixture) => {
+export const createCustomerAndLogin = async (ctx: TestFixture) => {
     const email = 'user@mail.com'
     const password = 'password'
-    const customer = await createCustomer2(ctx, { email, password })
+    const customer = await createCustomer(ctx, { email, password })
 
-    const { accessToken, refreshToken } = await generateAuthTokens2(ctx, customer)
+    const { accessToken, refreshToken } = await generateAuthTokens(ctx, customer)
 
     return { customer, accessToken, refreshToken }
 }
 
-export const createCustomer2 = async ({ module }: TestContext, override = {}) => {
+export const createCustomer = async ({ module }: TestContext, override = {}) => {
     const { CustomersClient } = await import('apps/cores')
     const customersService = module.get(CustomersClient)
 
@@ -34,7 +34,7 @@ export const createCustomer2 = async ({ module }: TestContext, override = {}) =>
     return customer
 }
 
-export const generateAuthTokens2 = async ({ module }: TestContext, customer: CustomerDto) => {
+export const generateAuthTokens = async ({ module }: TestContext, customer: CustomerDto) => {
     const { CustomersClient } = await import('apps/cores')
     const customersService = module.get(CustomersClient)
 

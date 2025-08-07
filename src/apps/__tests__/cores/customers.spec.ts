@@ -1,7 +1,7 @@
 import { CustomerDto } from 'apps/cores'
 import { omit } from 'lodash'
 import { nullObjectId } from 'testlib'
-import { buildCreateCustomerDto, createCustomer2, Errors } from '../__helpers__'
+import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
 import type { Fixture } from './customers.fixture'
 
 describe('CustomersService', () => {
@@ -156,11 +156,11 @@ describe('CustomersService', () => {
 
         beforeEach(async () => {
             const createdCustomers = await Promise.all([
-                createCustomer2(fix, { name: 'customer-a1', email: 'user-a1@mail.com' }),
-                createCustomer2(fix, { name: 'customer-a2', email: 'user-a2@mail.com' }),
-                createCustomer2(fix, { name: 'customer-b1', email: 'user-b1@mail.com' }),
-                createCustomer2(fix, { name: 'customer-b2', email: 'user-b2@mail.com' }),
-                createCustomer2(fix, { name: 'customer-c1', email: 'user-c1@mail.com' })
+                createCustomer(fix, { name: 'customer-a1', email: 'user-a1@mail.com' }),
+                createCustomer(fix, { name: 'customer-a2', email: 'user-a2@mail.com' }),
+                createCustomer(fix, { name: 'customer-b1', email: 'user-b1@mail.com' }),
+                createCustomer(fix, { name: 'customer-b2', email: 'user-b2@mail.com' }),
+                createCustomer(fix, { name: 'customer-c1', email: 'user-c1@mail.com' })
             ])
 
             customers = [...createdCustomers, fix.createdCustomer]

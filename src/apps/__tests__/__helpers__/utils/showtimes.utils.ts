@@ -20,7 +20,7 @@ export const buildCreateShowtimeDto = (overrides: Partial<CreateShowtimeDto> = {
     return createDto
 }
 
-export const createShowtimes2 = async (
+export const createShowtimes = async (
     { module }: TestContext,
     overrides: Partial<CreateShowtimeDto>[]
 ) => {

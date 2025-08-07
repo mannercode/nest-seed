@@ -1,7 +1,7 @@
 import { Seatmap, ShowtimeDto } from 'apps/cores'
 import { DateUtil } from 'common'
 import { nullDate, nullObjectId } from 'testlib'
-import { createShowtimes2 } from '../__helpers__'
+import { createShowtimes } from '../__helpers__'
 import { Fixture, monitorEvents } from './showtime-creation.fixture'
 
 describe('ShowtimeCreationService', () => {
@@ -17,22 +17,26 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('GET /showtime-creation/movies', () => {
-        // 페이지네이션된 영화 목록을 반환한다
-        it('returns movies with pagination', async () => {
-            const { body } = await fix.httpClient.get('/showtime-creation/movies').ok()
-
-            const { items, ...pagination } = body
-            expect(pagination).toEqual({ skip: 0, take: expect.any(Number), total: 1 })
-            expect(items).toEqual([fix.movie])
+        // 쿼리 파라미터가 없는 경우
+        describe('when query parameters are missing', () => {
+            // 기본 페이지네이션으로 영화 목록을 반환한다
+            it('returns the movie list with default pagination', async () => {
+                await fix.httpClient
+                    .get('/showtime-creation/movies')
+                    .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.movie] })
+            })
         })
     })
 
-    // 극장 목록을 조회한다
     describe('GET /showtime-creation/theaters', () => {
-        it('returns theaters with pagination', async () => {
-            await fix.httpClient
-                .get('/showtime-creation/theaters')
-                .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.theater] })
+        // 쿼리 파라미터가 없는 경우
+        describe('when query parameters are missing', () => {
+            // 기본 페이지네이션으로 극장 목록을 반환한다
+            it('returns the theater list with default pagination', async () => {
+                await fix.httpClient
+                    .get('/showtime-creation/theaters')
+                    .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.theater] })
+            })
         })
     })
 
@@ -46,15 +50,18 @@ describe('ShowtimeCreationService', () => {
                 new Date('2100-01-01T13:00')
             ].map((startTime) => ({ theaterId: fix.theater.id, startTime }))
 
-            showtimes = await createShowtimes2(fix, createDtos)
+            showtimes = await createShowtimes(fix, createDtos)
         })
 
-        // 해당 극장의 상영시간을 반환한다
-        it('returns scheduled showtimes for the given theaters', async () => {
-            await fix.httpClient
-                .post('/showtime-creation/showtimes/search')
-                .body({ theaterIds: [fix.theater.id] })
-                .ok(expect.arrayContaining(showtimes))
+        // `theaterIds`이 제공된 경우
+        describe('when `theaterIds` is provided', () => {
+            // 지정한 theaterIds와 일치하는 영화 목록을 반환한다
+            it('returns showtimes matching the given theaterIds', async () => {
+                await fix.httpClient
+                    .post('/showtime-creation/showtimes/search')
+                    .body({ theaterIds: [fix.theater.id] })
+                    .ok(expect.arrayContaining(showtimes))
+            })
         })
     })
 
@@ -71,21 +78,47 @@ describe('ShowtimeCreationService', () => {
             return body
         }
 
-        // 요청이 유효한 경우
-        describe('when the request is valid', () => {
+        // payload가 유효한 경우
+        describe('when the payload is valid', () => {
+            let transactionId: string
+
+            // beforeEach(async () => {
+            //     const { body } = await fix.httpClient
+            //         .post('/showtime-creation/showtimes')
+            //         .body({
+            //             movieId: fix.movie.id,
+            //             theaterIds: [fix.theater.id],
+            //             startTimes: [new Date('2100-01-01T09:00'), new Date('2100-01-01T11:00')],
+            //             durationInMinutes: 1
+            //         })
+            //         .accepted()
+
+            //     transactionId = body.transactionId
+            // })
+
+            // // transactionId를 반환한다
+            // it('returns a transactionId', async () => {
+            //     expect(transactionId).toBeDefined()
+            // })
+
             // 상영시간과 티켓을 생성한다
             it('creates showtimes and tickets', async () => {
+                const { body } = await fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .body({
+                        movieId: fix.movie.id,
+                        theaterIds: [fix.theater.id],
+                        startTimes: [new Date('2100-01-01T09:00'), new Date('2100-01-01T11:00')],
+                        durationInMinutes: 1
+                    })
+                    .accepted()
+
+                transactionId = body.transactionId
+
                 // TODO waitEvents로 변경
                 const monitorPromise = monitorEvents(fix.httpClient, ['succeeded'])
                 const theaterIds = [fix.theater.id]
                 const startTimes = [new Date('2100-01-01T09:00'), new Date('2100-01-01T11:00')]
-
-                const { transactionId } = await requestShowtimeCreation(
-                    fix.movie.id,
-                    theaterIds,
-                    startTimes
-                )
-                expect(transactionId).toBeDefined()
 
                 const seatCount = Seatmap.getSeatCount(fix.theater.seatmap)
                 const createdShowtimeCount = theaterIds.length * startTimes.length
@@ -158,7 +191,7 @@ describe('ShowtimeCreationService', () => {
                     endTime: DateUtil.add({ minutes: 90, base: startTime })
                 }))
 
-                existingShowtimes = await createShowtimes2(fix, createDtos)
+                existingShowtimes = await createShowtimes(fix, createDtos)
             })
 
             // 충돌하는 상영시간을 반환한다

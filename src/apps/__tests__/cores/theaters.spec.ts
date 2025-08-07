@@ -1,6 +1,6 @@
 import { TheaterDto } from 'apps/cores'
 import { nullObjectId } from 'testlib'
-import { buildCreateTheaterDto, createTheater2, Errors } from '../__helpers__'
+import { buildCreateTheaterDto, createTheater, Errors } from '../__helpers__'
 import type { Fixture } from './theaters.fixture'
 
 describe('TheatersService', () => {
@@ -145,11 +145,11 @@ describe('TheatersService', () => {
 
         beforeEach(async () => {
             const createdTheaters = await Promise.all([
-                createTheater2(fix, { name: 'Theater-a1' }),
-                createTheater2(fix, { name: 'Theater-a2' }),
-                createTheater2(fix, { name: 'Theater-b1' }),
-                createTheater2(fix, { name: 'Theater-b2' }),
-                createTheater2(fix, { name: 'Theater-c1' })
+                createTheater(fix, { name: 'Theater-a1' }),
+                createTheater(fix, { name: 'Theater-a2' }),
+                createTheater(fix, { name: 'Theater-b1' }),
+                createTheater(fix, { name: 'Theater-b2' }),
+                createTheater(fix, { name: 'Theater-c1' })
             ])
 
             theaters = [...createdTheaters, fix.createdTheater]

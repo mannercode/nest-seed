@@ -69,7 +69,7 @@ describe('RecommendationService', () => {
                     .ok([
                         showingMovies[3], // Action
                         showingMovies[1], // Comedy1, 2900-02-01
-                        showingMovies[2], // Comedy2, 2900-03-01
+                        showingMovies[2], // Comedy, 2900-03-01
                         showingMovies[4], // Drama
                         showingMovies[0] // Fantasy
                     ])

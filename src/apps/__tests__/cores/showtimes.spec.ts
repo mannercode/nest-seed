@@ -1,7 +1,7 @@
 import { ShowtimeDto } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, oid } from 'testlib'
-import { buildCreateShowtimeDto, createShowtimes2 } from '../__helpers__'
+import { buildCreateShowtimeDto, createShowtimes } from '../__helpers__'
 import type { Fixture } from './showtimes.fixture'
 
 describe('ShowtimesService', () => {
@@ -41,7 +41,7 @@ describe('ShowtimesService', () => {
                     { startTime: new Date('2000-01-01T14:00') }
                 ]
 
-                showtimes = await createShowtimes2(fix, createDtos)
+                showtimes = await createShowtimes(fix, createDtos)
             })
 
             // 상영시간들을 반환한다
@@ -82,7 +82,7 @@ describe('ShowtimesService', () => {
                 { startTime: new Date('2020-01-03T12:00') }
             ]
 
-            createdShowtimes = await createShowtimes2(fix, createDtos)
+            createdShowtimes = await createShowtimes(fix, createDtos)
         })
 
         // `transactionIds`가 제공된 경우
@@ -164,7 +164,7 @@ describe('ShowtimesService', () => {
                     { movieId: oid(0x4), startTime: now(120) }
                 ]
 
-                await createShowtimes2(fix, createDtos)
+                await createShowtimes(fix, createDtos)
             })
 
             // startTimeRange에 포함되는 영화 ID 목록을 반환한다
@@ -190,7 +190,7 @@ describe('ShowtimesService', () => {
                     { movieId: oid(0x0), theaterId: oid(0x3) }
                 ]
 
-                await createShowtimes2(fix, createDtos)
+                await createShowtimes(fix, createDtos)
             })
 
             // movieIds를 상영하는 극장의 ID 목록을 반환한다
@@ -217,7 +217,7 @@ describe('ShowtimesService', () => {
                     { movieId, theaterId: oid(0x0), startTime: new Date('2000-01-03') }
                 ]
 
-                await createShowtimes2(fix, createDtos)
+                await createShowtimes(fix, createDtos)
             })
 
             // theaterIds에서 상영하는 movieIds의 상영일 목록을 반환한다.

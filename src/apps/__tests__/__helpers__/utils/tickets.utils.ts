@@ -16,7 +16,7 @@ export const buildCreateTicketDto = (overrides = {}) => {
     return createDto
 }
 
-export const createTickets2 = async (
+export const createTickets = async (
     { module }: TestContext,
     overrides: Partial<CreateTicketDto>[]
 ) => {
@@ -34,7 +34,7 @@ export const createTickets2 = async (
     return tickets
 }
 
-export const getTickets2 = async ({ module }: TestContext, ticketIds: string[]) => {
+export const getTickets = async ({ module }: TestContext, ticketIds: string[]) => {
     const { TicketsClient } = await import('apps/cores')
     const ticketsService = module.get(TicketsClient)
 

@@ -14,7 +14,7 @@ import { ShowtimeCreationController } from 'apps/gateway'
 import { StorageFilesModule } from 'apps/infrastructures'
 import { jsonToObject, notUsed } from 'common'
 import { HttpTestClient } from 'testlib'
-import { createMovie2, createTestFixture, createTheater2, TestFixture } from '../__helpers__'
+import { createMovie, createTestFixture, createTheater, TestFixture } from '../__helpers__'
 
 export const monitorEvents = (client: HttpTestClient, waitStatuses: string[]) => {
     return new Promise((resolve, reject) => {
@@ -55,8 +55,8 @@ export const createFixture = async (): Promise<Fixture> => {
         controllers: [ShowtimeCreationController]
     })
 
-    const movie = await createMovie2(fix)
-    const theater = await createTheater2(fix)
+    const movie = await createMovie(fix)
+    const theater = await createTheater(fix)
 
     return { ...fix, movie, theater }
 }

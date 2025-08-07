@@ -1,7 +1,7 @@
 import { CreatePurchaseDto } from 'apps/applications'
 import { PurchaseRecordDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
-import { Errors, getPayments2, getTickets2 } from '../__helpers__'
+import { Errors, getPayments, getTickets } from '../__helpers__'
 import { buildCreatePurchaseDto, Fixture } from './purchase.fixture'
 
 describe('PurchaseService', () => {
@@ -43,14 +43,14 @@ describe('PurchaseService', () => {
 
             // 연관된 결제 기록을 생성한다
             it('creates a corresponding payment record', async () => {
-                const payments = await getPayments2(fix, [createdPurchase.paymentId])
+                const payments = await getPayments(fix, [createdPurchase.paymentId])
 
                 expect(payments[0].amount).toEqual(createdPurchase.totalPrice)
             })
 
             // 구매한 티켓의 상태를 `Sold`으로 변경한다
             it('changes the status of purchased tickets to `Sold`', async () => {
-                const soldTickets = await getTickets2(fix, pickIds(fix.heldTickets))
+                const soldTickets = await getTickets(fix, pickIds(fix.heldTickets))
 
                 expect(soldTickets.map((ticket) => ticket.status)).toEqual(
                     Array(soldTickets.length).fill(TicketStatus.Sold)
@@ -59,7 +59,7 @@ describe('PurchaseService', () => {
 
             // 구매하지 않은 티켓의 상태는 그대로 유지한다
             it('does not change the status of unpurchased tickets', async () => {
-                const remainingTickets = await getTickets2(fix, pickIds(fix.availableTickets))
+                const remainingTickets = await getTickets(fix, pickIds(fix.availableTickets))
 
                 expect(remainingTickets.map((ticket) => ticket.status)).toEqual(
                     Array(remainingTickets.length).fill(TicketStatus.Available)

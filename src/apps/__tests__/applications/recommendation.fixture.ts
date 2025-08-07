@@ -13,22 +13,22 @@ import {
 import { CustomerJwtStrategy, MoviesController } from 'apps/gateway'
 import { StorageFilesModule } from 'apps/infrastructures'
 import {
-    createCustomerAndLogin2,
-    createMovie2,
-    createShowtimes2,
+    createCustomerAndLogin,
+    createMovie,
+    createShowtimes,
     createTestFixture,
-    createWatchRecord2,
+    createWatchRecord,
     TestFixture
 } from '../__helpers__'
 
 export const createWatchedMovies = async (ctx: TestFixture, dtos: Partial<MovieDto>[]) => {
-    const movies = await Promise.all(dtos.map((dto) => createMovie2(ctx, dto)))
+    const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
 
-    const { customer, accessToken } = await createCustomerAndLogin2(ctx)
+    const { customer, accessToken } = await createCustomerAndLogin(ctx)
 
     const watchRecords = await Promise.all(
         movies.map((movie) =>
-            createWatchRecord2(ctx, { customerId: customer.id, movieId: movie.id })
+            createWatchRecord(ctx, { customerId: customer.id, movieId: movie.id })
         )
     )
 
@@ -36,14 +36,14 @@ export const createWatchedMovies = async (ctx: TestFixture, dtos: Partial<MovieD
 }
 
 export const createShowingMovies = async (ctx: TestFixture, dtos: Partial<MovieDto>[]) => {
-    const movies = await Promise.all(dtos.map((dto) => createMovie2(ctx, dto)))
+    const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
 
     const createShowtimesDtos = movies.map((movie) => ({
         movieId: movie.id,
         startTime: new Date('2999-01-01')
     }))
 
-    const showtimes = await createShowtimes2(ctx, createShowtimesDtos)
+    const showtimes = await createShowtimes(ctx, createShowtimesDtos)
 
     return { movies, showtimes }
 }

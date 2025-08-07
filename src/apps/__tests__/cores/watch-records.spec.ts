@@ -1,6 +1,6 @@
 import { WatchRecordDto } from 'apps/cores'
 import { oid } from 'testlib'
-import { buildCreateWatchRecordDto, createWatchRecord2 } from '../__helpers__'
+import { buildCreateWatchRecordDto, createWatchRecord } from '../__helpers__'
 import type { Fixture } from './watch-records.fixture'
 
 describe('WatchRecordsService', () => {
@@ -35,10 +35,10 @@ describe('WatchRecordsService', () => {
 
         beforeEach(async () => {
             watchRecords = await Promise.all([
-                createWatchRecord2(fix, { customerId }),
-                createWatchRecord2(fix, { customerId }),
-                createWatchRecord2(fix, { customerId }),
-                createWatchRecord2(fix, { customerId })
+                createWatchRecord(fix, { customerId }),
+                createWatchRecord(fix, { customerId }),
+                createWatchRecord(fix, { customerId }),
+                createWatchRecord(fix, { customerId })
             ])
         })
 
