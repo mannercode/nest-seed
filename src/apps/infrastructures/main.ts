@@ -1,44 +1,18 @@
-import { INestApplication } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
-import { MicroserviceOptions, Transport } from '@nestjs/microservices'
-import { AppLoggerService, Path } from 'common'
-import { exit } from 'process'
-import { AppConfigService } from 'shared'
+import { AppConfigService, configureApp } from 'shared'
 import { InfrastructuresModule } from './infrastructures.module'
-
-export async function configureInfrastructures(app: INestApplication<any>, servers: string[]) {
-    const config = app.get(AppConfigService)
-
-    for (const directory of [config.fileUpload.directory, config.log.directory]) {
-        if (!(await Path.isWritable(directory))) {
-            console.error(`Error: Directory is not writable: '${directory}'`)
-            exit(1)
-        }
-    }
-
-    app.connectMicroservice<MicroserviceOptions>(
-        { transport: Transport.NATS, options: { servers, queue: 'apps/infrastructures' } },
-        { inheritAppConfig: true }
-    )
-
-    await app.startAllMicroservices()
-
-    const logger = app.get(AppLoggerService)
-    app.useLogger(logger)
-}
 
 export async function bootstrap() {
     const app = await NestFactory.create(InfrastructuresModule)
-
     const config = app.get(AppConfigService)
 
-    const { servers } = config.nats
-    configureInfrastructures(app, servers)
+    await configureApp({
+        app,
+        directories: [config.fileUpload.directory, config.log.directory],
+        natOptions: { servers: config.nats.servers, queue: 'apps/infrastructures' },
+        httpPort: config.services.infrastructures.httpPort,
+        requestPayloadLimit: config.http.requestPayloadLimit
+    })
 
-    app.enableShutdownHooks()
-
-    const { httpPort } = config.services.infrastructures
-    await app.listen(httpPort)
-
-    console.log(`Infrastructures is running: ${await app.getUrl()}`)
+    console.log(`Infrastructures is running on: ${await app.getUrl()}`)
 }
