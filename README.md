@@ -50,24 +50,7 @@ To rename the project, edit the following files:
 
 1. In VSCode, go to **View → Command Palette** → run **Dev Containers: Rebuild Container**.
 
-### 3.3 Language Settings
-
-By default, this project is configured for Korean. To switch to another language, modify:
-
-```dockerfile
-# .devcontainer/Dockerfile
-# for Korean
-RUN apt-get install -y locales \
-    && sed -i '/ko_KR.UTF-8/s/^# //g' /etc/locale.gen \
-    && locale-gen ko_KR.UTF-8 \
-    && update-locale LANG=ko_KR.UTF-8
-
-ENV LANG=ko_KR.UTF-8 \
-    LANGUAGE=ko_KR:ko \
-    LC_ALL=ko_KR.UTF-8
-```
-
-### 3.4 Configuring the Development Infrastructure
+### 3.3 Configuring the Development Infrastructure
 
 To modify development infrastructure settings, edit the following:
 
@@ -90,7 +73,7 @@ To modify development infrastructure settings, edit the following:
             container: node:22-bookworm
     ```
 
-### 3.5 Configuring the Test Infrastructure
+### 3.4 Configuring the Test Infrastructure
 
 The test environment uses Docker-based MongoDB, Redis, and NATS, closely mirroring the production environment. Advantages include:
 
