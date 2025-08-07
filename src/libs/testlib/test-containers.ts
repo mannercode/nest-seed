@@ -7,15 +7,15 @@ export interface RedisConnectionContext {
 
 export function getRedisTestConnection(): RedisConnectionContext {
     const hosts = [
-        'REDIS_HOST1',
-        'REDIS_HOST2',
-        'REDIS_HOST3',
-        'REDIS_HOST4',
-        'REDIS_HOST5',
-        'REDIS_HOST6'
+        'TEST_REDIS_HOST1',
+        'TEST_REDIS_HOST2',
+        'TEST_REDIS_HOST3',
+        'TEST_REDIS_HOST4',
+        'TEST_REDIS_HOST5',
+        'TEST_REDIS_HOST6'
     ].map((key) => EnvVars.getString(key))
-    const port = EnvVars.getNumber('REDIS_PORT')
-    const password = EnvVars.getString('REDIS_PASSWORD')
+    const port = EnvVars.getNumber('TEST_REDIS_PORT')
+    const password = EnvVars.getString('TEST_REDIS_PASSWORD')
     const nodes = hosts.map((host) => ({ host, port }))
 
     return { nodes, password }
@@ -26,11 +26,11 @@ export interface MongoConnectionContext {
 }
 
 export const getMongoTestConnection = (): MongoConnectionContext => {
-    const hosts = ['MONGO_HOST1', 'MONGO_HOST2', 'MONGO_HOST3'].map((key) => EnvVars.getString(key))
-    const port = EnvVars.getNumber('MONGO_PORT')
-    const replicaName = EnvVars.getString('MONGO_REPLICA')
-    const username = EnvVars.getString('MONGO_USERNAME')
-    const password = EnvVars.getString('MONGO_PASSWORD')
+    const hosts = ['TEST_MONGO_HOST1', 'TEST_MONGO_HOST2', 'TEST_MONGO_HOST3'].map((key) => EnvVars.getString(key))
+    const port = EnvVars.getNumber('TEST_MONGO_PORT')
+    const replicaName = EnvVars.getString('TEST_MONGO_REPLICA')
+    const username = EnvVars.getString('TEST_MONGO_USERNAME')
+    const password = EnvVars.getString('TEST_MONGO_PASSWORD')
     const nodes = hosts.map((host) => `${host}:${port}`).join(',')
     const uri = `mongodb://${username}:${password}@${nodes}/?replicaSet=${replicaName}`
 
@@ -42,8 +42,8 @@ export interface NatsConnectionContext {
 }
 
 export const getNatsTestConnection = (): NatsConnectionContext => {
-    const hosts = ['NATS_HOST1', 'NATS_HOST2', 'NATS_HOST3'].map((key) => EnvVars.getString(key))
-    const port = EnvVars.getNumber('NATS_PORT')
+    const hosts = ['TEST_NATS_HOST1', 'TEST_NATS_HOST2', 'TEST_NATS_HOST3'].map((key) => EnvVars.getString(key))
+    const port = EnvVars.getNumber('TEST_NATS_PORT')
     const servers = hosts.map((host) => `nats://${host}:${port}`)
 
     return { servers }
