@@ -58,7 +58,7 @@ describe('StorageFilesService', () => {
         // 첨부 파일이 없는 경우
         describe('when no file is attached', () => {
             // 201 Created를 반환한다
-            it('succeeds even if no file is attached', async () => {
+            it('returns 201 Created', async () => {
                 await fix.httpClient
                     .post('/storage-files')
                     .attachments([])
