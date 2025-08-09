@@ -146,6 +146,10 @@ export class HttpTestClient {
         return this
     }
 
+    abort() {
+        this.agent.abort()
+    }
+
     private parseEventMessage(input: string): EventMessage {
         const lines = input.split('\n')
         const result: Partial<EventMessage> = {}
