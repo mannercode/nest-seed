@@ -17,10 +17,10 @@ describe('CustomerAuthenticationService', () => {
 
         // 같은 비밀번호에 대해서 서로 다른 해시 값을 반환한다
         it('returns different hashes for the same password', async () => {
-            const firstHash = await service.hash('password')
-            const secondHash = await service.hash('password')
+            const hash1 = await service.hash('password')
+            const hash2 = await service.hash('password')
 
-            expect(firstHash).not.toEqual(secondHash)
+            expect(hash1).not.toEqual(hash2)
         })
     })
 
