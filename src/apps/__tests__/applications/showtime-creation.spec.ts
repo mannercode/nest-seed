@@ -178,7 +178,7 @@ describe('ShowtimeCreationService', () => {
                 ].map((startTime) => ({
                     theaterId: fix.theater.id,
                     startTime,
-                    endTime: DateUtil.add({ minutes: 90, base: startTime })
+                    endTime: DateUtil.add({ base: startTime, minutes: 90 })
                 }))
 
                 initialShowtimes = await createShowtimes(fix, createDtos)

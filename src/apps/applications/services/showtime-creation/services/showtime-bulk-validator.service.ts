@@ -84,7 +84,7 @@ export class ShowtimeBulkValidatorService {
 
         const startDate = DateUtil.earliest(startTimes)
         const maxDate = DateUtil.latest(startTimes)
-        const endDate = DateUtil.add({ minutes: durationInMinutes, base: maxDate })
+        const endDate = DateUtil.add({ base: maxDate, minutes: durationInMinutes })
 
         const timeslotsByTheater = new Map<string, TimeslotMap>()
 
