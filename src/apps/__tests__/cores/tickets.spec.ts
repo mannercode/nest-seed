@@ -25,7 +25,7 @@ describe('TicketsService', () => {
 
                 const { success } = await fix.ticketsService.createTickets(createDtos)
 
-                expect(success).toBeTruthy()
+                expect(success).toBe(true)
             })
         })
     })

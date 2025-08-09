@@ -26,7 +26,7 @@ describe('TicketHoldingService', () => {
             it('returns true', async () => {
                 const isHeld = await holdTickets(fix, { customerId: customerA })
 
-                expect(isHeld).toBeTruthy()
+                expect(isHeld).toBe(true)
             })
         })
 
@@ -40,7 +40,7 @@ describe('TicketHoldingService', () => {
             it('returns false', async () => {
                 const isHeld = await holdTickets(fix, { customerId: customerB })
 
-                expect(isHeld).toBeFalsy()
+                expect(isHeld).toBe(false)
             })
         })
 
@@ -70,7 +70,7 @@ describe('TicketHoldingService', () => {
                     ticketIds: prevTicketIds
                 })
 
-                expect(isHeld).toBeTruthy()
+                expect(isHeld).toBe(true)
             })
 
             // 새로운 티켓을 선점하면
@@ -87,7 +87,7 @@ describe('TicketHoldingService', () => {
 
                 // true를 반환한다
                 it('returns true', async () => {
-                    expect(isHeld).toBeTruthy()
+                    expect(isHeld).toBe(true)
                 })
 
                 // 기존에 선점했던 티켓은 해제된다
@@ -112,7 +112,7 @@ describe('TicketHoldingService', () => {
                         ticketIds: prevTicketIds
                     })
 
-                    expect(isHeld).toBeTruthy()
+                    expect(isHeld).toBe(true)
                 })
             })
         })
@@ -217,7 +217,7 @@ describe('TicketHoldingService', () => {
             it('returns true', async () => {
                 const isReleased = await releaseTickets(fix, showtimeId, customerId)
 
-                expect(isReleased).toBeTruthy()
+                expect(isReleased).toBe(true)
             })
         })
 
@@ -227,7 +227,7 @@ describe('TicketHoldingService', () => {
             it('returns true even when there are no tickets to release', async () => {
                 const isReleased = await releaseTickets(fix, showtimeId, customerId)
 
-                expect(isReleased).toBeTruthy()
+                expect(isReleased).toBe(true)
             })
         })
     })

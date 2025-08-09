@@ -26,7 +26,7 @@ export const createTickets = async (
     const createDtos = overrides.map((override) => buildCreateTicketDto(override))
 
     const { success } = await ticketsService.createTickets(createDtos)
-    expect(success).toBeTruthy()
+    expect(success).toBe(true)
 
     const transactionIds = uniq(createDtos.map((dto) => dto.transactionId))
 

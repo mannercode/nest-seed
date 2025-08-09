@@ -49,7 +49,7 @@ describe('MoviesService', () => {
 
                 await fix.httpClient.get(createdMovie.imageUrls[0]).download(downloadPath).ok()
 
-                expect(await FileUtil.areEqual(downloadPath, fix.image.path)).toBeTruthy()
+                expect(await FileUtil.areEqual(downloadPath, fix.image.path)).toBe(true)
             })
         })
 

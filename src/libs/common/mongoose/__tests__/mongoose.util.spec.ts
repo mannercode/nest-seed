@@ -13,7 +13,7 @@ import { model, Types } from 'mongoose'
 
 it('newObjectId', async () => {
     const objectIdValue = newObjectId()
-    expect(Types.ObjectId.isValid(objectIdValue)).toBeTruthy()
+    expect(Types.ObjectId.isValid(objectIdValue)).toBe(true)
 })
 
 describe('objectId', () => {

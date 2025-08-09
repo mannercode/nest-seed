@@ -35,14 +35,14 @@ describe('CustomerAuthenticationService', () => {
         it('returns true when the password matches', async () => {
             const isMatch = await service.validate('password', hashedPassword)
 
-            expect(isMatch).toBeTruthy()
+            expect(isMatch).toBe(true)
         })
 
         // 비밀번호가 일치하지 않는 경우 false를 반환한다
         it('returns false when the password does not match', async () => {
             const isMatch = await service.validate('wrongpassword', hashedPassword)
 
-            expect(isMatch).toBeFalsy()
+            expect(isMatch).toBe(false)
         })
     })
 })

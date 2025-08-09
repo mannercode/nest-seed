@@ -30,7 +30,7 @@ export const createShowtimes = async (
     const createDtos = overrides.map((override) => buildCreateShowtimeDto(override))
 
     const { success } = await showtimesService.createShowtimes(createDtos)
-    expect(success).toBeTruthy()
+    expect(success).toBe(true)
 
     const transactionIds = uniq(createDtos.map((dto) => dto.transactionId))
 

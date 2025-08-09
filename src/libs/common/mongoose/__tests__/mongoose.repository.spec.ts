@@ -74,7 +74,7 @@ describe('MongooseRepository', () => {
 
             const res = await fix.repository.saveMany(docs)
 
-            expect(res).toBeTruthy()
+            expect(res).toBe(true)
         })
 
         // 필수 필드가 누락된 경우 예외를 던져야 한다
@@ -198,13 +198,13 @@ describe('MongooseRepository', () => {
         // ID들이 존재하면 true를 반환해야 한다
         it('Should return true if all IDs exist', async () => {
             const exists = await fix.repository.existByIds(pickIds(samples))
-            expect(exists).toBeTruthy()
+            expect(exists).toBe(true)
         })
 
         // 존재하지 않는 ID가 있으면 false를 반환해야 한다
         it('Should return false if any of the IDs do not exist', async () => {
             const exists = await fix.repository.existByIds([nullObjectId])
-            expect(exists).toBeFalsy()
+            expect(exists).toBe(false)
         })
     })
 

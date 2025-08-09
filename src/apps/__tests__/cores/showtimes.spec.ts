@@ -25,7 +25,7 @@ describe('ShowtimesService', () => {
 
                 const { success } = await fix.showtimesService.createShowtimes(createDtos)
 
-                expect(success).toBeTruthy()
+                expect(success).toBe(true)
             })
         })
     })
