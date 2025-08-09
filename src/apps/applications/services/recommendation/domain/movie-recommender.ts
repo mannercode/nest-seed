@@ -41,17 +41,17 @@ export class MovieRecommender {
             })
 
         // If the user has no watch history, sort by release date first.
-        // 사용자의 관람 이력이 없으면 개봉일 순으로 정렬
+        // 사용자의 관람 이력이 없으면 최신 개봉일 순으로 정렬
         if (watchedMovies.length === 0) {
-            scoredMovies.sort((a, b) => a.releaseDate - b.releaseDate)
+            scoredMovies.sort((a, b) => b.releaseDate - a.releaseDate)
         } else {
             // If there's watch history, sort primarily by genre score, then by release date if tied.
-            // 관람 이력이 있으면 장르 점수 우선 정렬, 동점이면 개봉일 순으로 정렬
+            // 관람 이력이 있으면 장르 점수 우선 정렬, 동점이면 최신 개봉일 순으로 정렬
             scoredMovies.sort((a, b) => {
                 if (b.genreScore !== a.genreScore) {
                     return b.genreScore - a.genreScore
                 } else {
-                    return a.releaseDate - b.releaseDate
+                    return b.releaseDate - a.releaseDate
                 }
             })
         }

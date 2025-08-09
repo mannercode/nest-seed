@@ -52,4 +52,3 @@ export const getNatsTestConnection = (): NatsConnectionContext => {
 
     return { servers }
 }
-// TODO 이거 왜 env를 직접 쓰지? TEST_ 붙여라. setup.ts에서 설정하고

@@ -3,8 +3,6 @@ import { TestingModule } from '@nestjs/testing'
 import { AppConfigService } from 'shared'
 import { createTestingModule } from 'testlib'
 
-// TODO
-
 describe('AppConfigService', () => {
     let module: TestingModule
     let configService: AppConfigService
