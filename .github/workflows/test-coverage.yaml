@@ -46,7 +46,6 @@ jobs:
               run: |
                   GW_IP=$(ip route | awk '/default/ {print $3}')
                   echo "$GW_IP host.docker.internal" | tee -a /etc/hosts
-                  getent hosts host.docker.internal
 
             # - name: initializeCommand
             #   run: |
