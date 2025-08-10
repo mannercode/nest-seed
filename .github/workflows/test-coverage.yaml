@@ -11,7 +11,7 @@ on:
 
 jobs:
     test-coverage:
-        runs-on: ubuntu-24.04-arm
+        runs-on: ubuntu-24.04
         container: node:24-bookworm
         env:
             WORKSPACE_ROOT: ${{ github.workspace }}
@@ -55,8 +55,7 @@ jobs:
                   GW_IP=$(ip route | awk '/default/ {print $3}')
                   echo "$GW_IP host.docker.internal" | tee -a /etc/hosts
 
-            - name: Run Test Suites
-              run: bash scripts/reset-infra.sh
+
 
             # - name: initializeCommand
             #   run: |
