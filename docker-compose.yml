@@ -22,7 +22,7 @@ x-mongo-common: &mongo-common
 
 x-redis-common: &redis-common
     image: ${REDIS_IMAGE}
-    command: 'redis-server --port 6379 --requirepass $REDIS_PASSWORD --masterauth $REDIS_PASSWORD --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes'
+    # command: 'redis-server --port 6379 --requirepass $REDIS_PASSWORD --masterauth $REDIS_PASSWORD --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes'
     profiles: ['infra']
     logging: *default-logging
     networks: ['default']
@@ -60,33 +60,93 @@ services:
     redis1:
         <<: *redis-common
         container_name: redis1
-        ports:
-            - '6379:6379'
+        ports: ['6379:6379', '16379:16379']
+        command: >
+            redis-server --port 6379
+            --cluster-enabled yes
+            --cluster-config-file nodes.conf
+            --cluster-announce-ip host.docker.internal
+            --cluster-announce-port 6379
+            --cluster-announce-bus-port 16379
+            --protected-mode no
+            --appendonly yes
+            --requirepass ${REDIS_PASSWORD}
+            --masterauth ${REDIS_PASSWORD}
     redis2:
         <<: *redis-common
         container_name: redis2
-        ports:
-            - '6380:6379'
+        ports: ['6380:6379', '16380:16379']
+        command: >
+            redis-server --port 6379
+            --cluster-enabled yes
+            --cluster-config-file nodes.conf
+            --cluster-announce-ip host.docker.internal
+            --cluster-announce-port 6380
+            --cluster-announce-bus-port 16380
+            --protected-mode no
+            --appendonly yes
+            --requirepass ${REDIS_PASSWORD}
+            --masterauth ${REDIS_PASSWORD}
     redis3:
         <<: *redis-common
         container_name: redis3
-        ports:
-            - '6381:6379'
+        ports: ['6381:6379', '16381:16379']
+        command: >
+            redis-server --port 6379
+            --cluster-enabled yes
+            --cluster-config-file nodes.conf
+            --cluster-announce-ip host.docker.internal
+            --cluster-announce-port 6381
+            --cluster-announce-bus-port 16381
+            --protected-mode no
+            --appendonly yes
+            --requirepass ${REDIS_PASSWORD}
+            --masterauth ${REDIS_PASSWORD}
     redis4:
         <<: *redis-common
         container_name: redis4
-        ports:
-            - '6382:6379'
+        ports: ['6382:6379', '16382:16379']
+        command: >
+            redis-server --port 6379
+            --cluster-enabled yes
+            --cluster-config-file nodes.conf
+            --cluster-announce-ip host.docker.internal
+            --cluster-announce-port 6382
+            --cluster-announce-bus-port 16382
+            --protected-mode no
+            --appendonly yes
+            --requirepass ${REDIS_PASSWORD}
+            --masterauth ${REDIS_PASSWORD}
     redis5:
         <<: *redis-common
         container_name: redis5
-        ports:
-            - '6383:6379'
+        ports: ['6383:6379', '16383:16379']
+        command: >
+            redis-server --port 6379
+            --cluster-enabled yes
+            --cluster-config-file nodes.conf
+            --cluster-announce-ip host.docker.internal
+            --cluster-announce-port 6383
+            --cluster-announce-bus-port 16383
+            --protected-mode no
+            --appendonly yes
+            --requirepass ${REDIS_PASSWORD}
+            --masterauth ${REDIS_PASSWORD}
     redis6:
         <<: *redis-common
         container_name: redis6
-        ports:
-            - '6384:6379'
+        ports: ['6384:6379', '16384:16379']
+        command: >
+            redis-server --port 6379
+            --cluster-enabled yes
+            --cluster-config-file nodes.conf
+            --cluster-announce-ip host.docker.internal
+            --cluster-announce-port 6384
+            --cluster-announce-bus-port 16384
+            --protected-mode no
+            --appendonly yes
+            --requirepass ${REDIS_PASSWORD}
+            --masterauth ${REDIS_PASSWORD}
     redis-setup:
         image: ${REDIS_IMAGE}
         container_name: redis-setup
@@ -100,15 +160,14 @@ services:
             redis6: { condition: service_healthy }
         command: >-
             sh -c "
-            REDIS_LIST=\"redis1:6379 redis2:6379 redis3:6379 redis4:6379 redis5:6379 redis6:6379 \"
+            REDIS_LIST=\"host.docker.internal:6379 host.docker.internal:6380 host.docker.internal:6381 host.docker.internal:6382 host.docker.internal:6383 host.docker.internal:6384 \"
 
             echo 'yes' | redis-cli -a $REDIS_PASSWORD --cluster create $${REDIS_LIST} --cluster-replicas 1
             "
         networks: ['default']
         extra_hosts:
             - 'host.docker.internal:host-gateway'
-
-            # REDIS_LIST=\"host.docker.internal:6379 host.docker.internal:6380 host.docker.internal:6381 host.docker.internal:6382 host.docker.internal:6383 host.docker.internal:6384 \"
+            # REDIS_LIST=\"redis1:6379 redis2:6379 redis3:6379 redis4:6379 redis5:6379 redis6:6379 \"
 
     mongo-key-generator:
         image: ${MONGO_IMAGE}
