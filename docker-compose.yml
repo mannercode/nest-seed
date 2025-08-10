@@ -26,6 +26,8 @@ x-redis-common: &redis-common
     profiles: ['infra']
     logging: *default-logging
     networks: ['default']
+    extra_hosts:
+        - 'host.docker.internal:host-gateway'
     restart: always
     healthcheck:
         test: 'redis-cli -a $REDIS_PASSWORD ping'
@@ -37,6 +39,8 @@ x-nats-common: &nats-common
     profiles: ['infra']
     logging: *default-logging
     networks: ['default']
+    extra_hosts:
+        - 'host.docker.internal:host-gateway'
     restart: always
     healthcheck:
         test: wget -qO- http://localhost:8222/varz || exit 1
@@ -96,11 +100,14 @@ services:
             redis6: { condition: service_healthy }
         command: >-
             sh -c "
-            REDIS_LIST=\"redis1:6379 redis2:6379 redis3:6379 redis4:6379 redis5:6379 redis6:6379\"
+            REDIS_LIST=\"redis1:6379 redis2:6379 redis3:6379 redis4:6379 redis5:6379 redis6:6379 \"
 
             echo 'yes' | redis-cli -a $REDIS_PASSWORD --cluster create $${REDIS_LIST} --cluster-replicas 1
             "
         networks: ['default']
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+            # REDIS_LIST=\"host.docker.internal:6379 host.docker.internal:6380 host.docker.internal:6381 host.docker.internal:6382 host.docker.internal:6383 host.docker.internal:6384\"
 
     mongo-key-generator:
         image: ${MONGO_IMAGE}
