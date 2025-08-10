@@ -4,7 +4,7 @@ cd "$(dirname "$0")"
 . ./common.cfg
 
 . $WORKSPACE_ROOT/.env.test
-HOST="http://${SERVICE_GATEWAY_HOST}:${SERVICE_GATEWAY_HTTP_PORT}"
+HOST="http://host.docker.internal:${SERVICE_GATEWAY_HTTP_PORT}"
 
 tests=(auth customers)
 

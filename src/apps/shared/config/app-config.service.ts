@@ -13,23 +13,30 @@ export class AppConfigService extends BaseConfigService {
         LOG_FILE_LEVEL: Joi.string().required(),
         LOG_CONSOLE_LEVEL: Joi.string().required(),
 
-        REDIS_HOST1: Joi.string().required(),
-        REDIS_HOST2: Joi.string().required(),
-        REDIS_HOST3: Joi.string().required(),
-        REDIS_HOST4: Joi.string().required(),
-        REDIS_HOST5: Joi.string().required(),
-        REDIS_HOST6: Joi.string().required(),
         REDIS_PASSWORD: Joi.string().optional(),
-        REDIS_PORT: Joi.number().required(),
+        REDIS_HOST1: Joi.string().required(),
+        REDIS_PORT1: Joi.number().required(),
+        REDIS_HOST2: Joi.string().required(),
+        REDIS_PORT2: Joi.number().required(),
+        REDIS_HOST3: Joi.string().required(),
+        REDIS_PORT3: Joi.number().required(),
+        REDIS_HOST4: Joi.string().required(),
+        REDIS_PORT4: Joi.number().required(),
+        REDIS_HOST5: Joi.string().required(),
+        REDIS_PORT5: Joi.number().required(),
+        REDIS_HOST6: Joi.string().required(),
+        REDIS_PORT6: Joi.number().required(),
 
-        MONGO_HOST1: Joi.string().required(),
-        MONGO_HOST2: Joi.string().required(),
-        MONGO_HOST3: Joi.string().required(),
-        MONGO_PORT: Joi.number().required(),
         MONGO_REPLICA: Joi.string().required(),
         MONGO_USERNAME: Joi.string().required(),
         MONGO_PASSWORD: Joi.string().required(),
         MONGO_DATABASE: Joi.string().required(),
+        MONGO_HOST1: Joi.string().required(),
+        MONGO_PORT1: Joi.number().required(),
+        MONGO_HOST2: Joi.string().required(),
+        MONGO_PORT2: Joi.number().required(),
+        MONGO_HOST3: Joi.string().required(),
+        MONGO_PORT3: Joi.number().required(),
 
         HTTP_REQUEST_PAYLOAD_LIMIT: Joi.string().required(),
         HTTP_PAGINATION_DEFAULT_SIZE: Joi.number().required(),
@@ -45,9 +52,11 @@ export class AppConfigService extends BaseConfigService {
         FILE_UPLOAD_ALLOWED_FILE_TYPES: Joi.string().required(),
 
         NATS_HOST1: Joi.string().required(),
+        NATS_PORT1: Joi.number().required(),
         NATS_HOST2: Joi.string().required(),
+        NATS_PORT2: Joi.number().required(),
         NATS_HOST3: Joi.string().required(),
-        NATS_PORT: Joi.number().required(),
+        NATS_PORT3: Joi.number().required(),
 
         SERVICE_GATEWAY_HTTP_PORT: Joi.number().required(),
         SERVICE_APPLICATIONS_HTTP_PORT: Joi.number().required(),
@@ -69,27 +78,34 @@ export class AppConfigService extends BaseConfigService {
     }
 
     get redis() {
-        const hosts = [
-            this.getString('REDIS_HOST1'),
-            this.getString('REDIS_HOST2'),
-            this.getString('REDIS_HOST3'),
-            this.getString('REDIS_HOST4'),
-            this.getString('REDIS_HOST5'),
-            this.getString('REDIS_HOST6')
-        ]
-        const port = this.getNumber('REDIS_PORT')
         const password = this.getString('REDIS_PASSWORD')
-        const nodes = hosts.map((host) => ({ host, port }))
+        const nodes = [
+            { host: this.getString('REDIS_HOST1'), port: this.getNumber('REDIS_PORT1') },
+            { host: this.getString('REDIS_HOST2'), port: this.getNumber('REDIS_PORT2') },
+            { host: this.getString('REDIS_HOST3'), port: this.getNumber('REDIS_PORT3') },
+            { host: this.getString('REDIS_HOST4'), port: this.getNumber('REDIS_PORT4') },
+            { host: this.getString('REDIS_HOST5'), port: this.getNumber('REDIS_PORT5') },
+            { host: this.getString('REDIS_HOST6'), port: this.getNumber('REDIS_PORT6') }
+        ]
 
-        return { nodes, password }
+        return { password, nodes }
+    }
+
+    get nats() {
+        const servers = [
+            `nats://${this.getString('NATS_HOST1')}:${this.getNumber('NATS_PORT1')}`,
+            `nats://${this.getString('NATS_HOST2')}:${this.getNumber('NATS_PORT2')}`,
+            `nats://${this.getString('NATS_HOST3')}:${this.getNumber('NATS_PORT3')}`
+        ]
+
+        return { servers }
     }
 
     get mongo() {
         return {
-            host1: this.getString('MONGO_HOST1'),
-            host2: this.getString('MONGO_HOST2'),
-            host3: this.getString('MONGO_HOST3'),
-            port: this.getNumber('MONGO_PORT'),
+            host1: `${this.getString('MONGO_HOST1')}:${this.getNumber('MONGO_PORT1')}`,
+            host2: `${this.getString('MONGO_HOST2')}:${this.getNumber('MONGO_PORT2')}`,
+            host3: `${this.getString('MONGO_HOST3')}:${this.getNumber('MONGO_PORT3')}`,
             replica: this.getString('MONGO_REPLICA'),
             user: this.getString('MONGO_USERNAME'),
             password: this.getString('MONGO_PASSWORD'),
@@ -120,14 +136,6 @@ export class AppConfigService extends BaseConfigService {
             maxFilesPerUpload: this.getNumber('FILE_UPLOAD_MAX_FILES_PER_UPLOAD'),
             allowedMimeTypes: this.getString('FILE_UPLOAD_ALLOWED_FILE_TYPES').split(',')
         }
-    }
-
-    get nats() {
-        const hosts = ['NATS_HOST1', 'NATS_HOST2', 'NATS_HOST3'].map((key) => this.getString(key))
-        const port = this.getNumber('NATS_PORT')
-        const servers = hosts.map((host) => `nats://${host}:${port}`)
-
-        return { servers }
     }
 
     get services() {

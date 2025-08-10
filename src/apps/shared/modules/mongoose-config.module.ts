@@ -8,11 +8,10 @@ import { AppConfigService } from '../config'
         MongooseModule.forRootAsync({
             connectionName: MongooseConfigModule.connectionName,
             useFactory: async (config: AppConfigService) => {
-                const { user, password, host1, host2, host3, port, replica, database } =
-                    config.mongo
+                const { user, password, host1, host2, host3, replica, database } = config.mongo
 
                 return {
-                    uri: `mongodb://${user}:${password}@${host1}:${port},${host2}:${port},${host3}:${port}/?replicaSet=${replica}`,
+                    uri: `mongodb://${user}:${password}@${host1},${host2},${host3}/?replicaSet=${replica}`,
                     dbName: database,
                     waitQueueTimeoutMS: 5000,
                     writeConcern: { w: 'majority', journal: true, wtimeoutMS: 5000 },
