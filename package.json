@@ -10,16 +10,7 @@
         "test:e2e": "bash test/e2e/run.sh",
         "lint": "prettier --write 'src/**/*.ts' && eslint src"
     },
-    "comments": [
-        {
-            "TARGET_APP": [
-                "applications",
-                "cores",
-                "gateway",
-                "infrastructures"
-            ]
-        }
-    ],
+    "comments": [],
     "dependencies": {
         "@nestjs-modules/ioredis": "^2.0.2",
         "@nestjs/bullmq": "^11.0.3",
@@ -35,7 +26,7 @@
         "@nestjs/platform-express": "^11.1.6",
         "@nestjs/terminus": "^11.0.0",
         "bcrypt": "^6.0.0",
-        "bullmq": "^5.56.9",
+        "bullmq": "^5.56.10",
         "chalk": "5.5.0",
         "class-transformer": "^0.5.1",
         "class-validator": "^0.14.2",

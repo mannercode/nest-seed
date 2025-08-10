@@ -9,14 +9,12 @@ export async function configureApp({
     app,
     directories,
     natOptions,
-    httpPort,
-    requestPayloadLimit
+    http
 }: {
     app: INestApplication<any>
     directories: string[]
     natOptions: { servers: string[]; queue: string }
-    httpPort: number
-    requestPayloadLimit: string
+    http: { port: number; requestPayloadLimit: string }
 }) {
     for (const directory of directories) {
         if (!(await Path.isWritable(directory))) {
@@ -27,7 +25,7 @@ export async function configureApp({
 
     app.use(compression())
 
-    app.use(express.json({ limit: requestPayloadLimit }))
+    app.use(express.json({ limit: http.requestPayloadLimit }))
 
     app.connectMicroservice<MicroserviceOptions>(
         { transport: Transport.NATS, options: natOptions },
@@ -41,5 +39,5 @@ export async function configureApp({
 
     app.enableShutdownHooks()
 
-    await app.listen(httpPort)
+    await app.listen(http.port)
 }

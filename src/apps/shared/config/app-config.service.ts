@@ -40,6 +40,7 @@ export class AppConfigService extends BaseConfigService {
 
         HTTP_REQUEST_PAYLOAD_LIMIT: Joi.string().required(),
         HTTP_PAGINATION_DEFAULT_SIZE: Joi.number().required(),
+        HTTP_PORT: Joi.number().required(),
 
         AUTH_ACCESS_SECRET: Joi.string().required(),
         AUTH_ACCESS_TOKEN_EXPIRATION: Joi.string().required(),
@@ -56,12 +57,7 @@ export class AppConfigService extends BaseConfigService {
         NATS_HOST2: Joi.string().required(),
         NATS_PORT2: Joi.number().required(),
         NATS_HOST3: Joi.string().required(),
-        NATS_PORT3: Joi.number().required(),
-
-        SERVICE_GATEWAY_HTTP_PORT: Joi.number().required(),
-        SERVICE_APPLICATIONS_HTTP_PORT: Joi.number().required(),
-        SERVICE_CORES_HTTP_PORT: Joi.number().required(),
-        SERVICE_INFRASTRUCTURES_HTTP_PORT: Joi.number().required()
+        NATS_PORT3: Joi.number().required()
     })
 
     constructor(configService: ConfigService) {
@@ -116,7 +112,8 @@ export class AppConfigService extends BaseConfigService {
     get http() {
         return {
             requestPayloadLimit: this.getString('HTTP_REQUEST_PAYLOAD_LIMIT'),
-            paginationDefaultSize: this.getNumber('HTTP_PAGINATION_DEFAULT_SIZE')
+            paginationDefaultSize: this.getNumber('HTTP_PAGINATION_DEFAULT_SIZE'),
+            port: this.getNumber('HTTP_PORT')
         }
     }
 
@@ -135,15 +132,6 @@ export class AppConfigService extends BaseConfigService {
             maxFileSizeBytes: this.getNumber('FILE_UPLOAD_MAX_FILE_SIZE_BYTES'),
             maxFilesPerUpload: this.getNumber('FILE_UPLOAD_MAX_FILES_PER_UPLOAD'),
             allowedMimeTypes: this.getString('FILE_UPLOAD_ALLOWED_FILE_TYPES').split(',')
-        }
-    }
-
-    get services() {
-        return {
-            gateway: { httpPort: this.getNumber('SERVICE_GATEWAY_HTTP_PORT') },
-            applications: { httpPort: this.getNumber('SERVICE_APPLICATIONS_HTTP_PORT') },
-            cores: { httpPort: this.getNumber('SERVICE_CORES_HTTP_PORT') },
-            infrastructures: { httpPort: this.getNumber('SERVICE_INFRASTRUCTURES_HTTP_PORT') }
         }
     }
 }

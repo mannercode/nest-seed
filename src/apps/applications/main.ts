@@ -10,8 +10,7 @@ export async function bootstrap() {
         app,
         directories: [config.log.directory],
         natOptions: { servers: config.nats.servers, queue: 'apps/applications' },
-        httpPort: config.services.applications.httpPort,
-        requestPayloadLimit: config.http.requestPayloadLimit
+        http: config.http
     })
 
     console.log(`Applications is running: ${await app.getUrl()}`)

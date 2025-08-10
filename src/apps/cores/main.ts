@@ -10,8 +10,7 @@ export async function bootstrap() {
         app,
         directories: [config.log.directory],
         natOptions: { servers: config.nats.servers, queue: 'apps/cores' },
-        httpPort: config.services.cores.httpPort,
-        requestPayloadLimit: config.http.requestPayloadLimit
+        http: config.http
     })
 
     console.log(`Cores is running on: ${await app.getUrl()}`)
