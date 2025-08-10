@@ -9,7 +9,7 @@ import {
     waitForCompletion
 } from './showtime-creation.fixture'
 
-describe.skip('ShowtimeCreationService', () => {
+describe('ShowtimeCreationService', () => {
     let fix: Fixture
 
     beforeEach(async () => {
