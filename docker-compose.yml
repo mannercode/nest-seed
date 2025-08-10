@@ -16,7 +16,9 @@ x-mongo-base: &mongo-base
     restart: always
     depends_on: ['mongo-key-generator']
     healthcheck:
-        test: "mongosh --quiet -u $MONGO_USERNAME -p $MONGO_PASSWORD --authenticationDatabase admin --eval 'db.hello().isWritablePrimary || db.hello().secondary'"
+        test: >
+            mongosh --quiet -u $MONGO_USERNAME -p $MONGO_PASSWORD --authenticationDatabase admin
+            --eval 'db.hello().isWritablePrimary || db.hello().secondary'
         interval: 5s
         timeout: 5s
 
@@ -134,15 +136,20 @@ services:
                 host.docker.internal:$REDIS_PORT6 \
                 "
 
-            echo "yes" | redis-cli -a ${REDIS_PASSWORD} --cluster create $${REDIS_LIST} --cluster-replicas 1
+            echo "yes" |
+                redis-cli -a ${REDIS_PASSWORD} --cluster create $${REDIS_LIST} --cluster-replicas 1
             '
 
     mongo-key-generator:
         image: ${MONGO_IMAGE}
         container_name: mongo-key-generator
         profiles: ['infra']
-        command: >-
-            sh -euc 'openssl rand -base64 768 > mongodb.key && chmod 400 mongodb.key && chown mongodb:mongodb mongodb.key'
+        command: >
+            sh -euc '
+            openssl rand -base64 768 > mongodb.key &&
+            chmod 400 mongodb.key &&
+            chown mongodb:mongodb mongodb.key
+            '
         volumes: ['mongodb_key:/mongodb_key']
         working_dir: /mongodb_key
 
@@ -172,42 +179,48 @@ services:
             mongo3: { condition: service_healthy }
         command: >
             sh -euc '
-            MONGO_HOST1_URI="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo1:27017/?authSource=admin"
+            MONGO1="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo1:27017"
 
-            mongosh "$$MONGO_HOST1_URI" --eval "
-                rs.initiate({
-                _id: \"${MONGO_REPLICA}\",
-                members: [
-                    { _id: 0, host: \"host.docker.internal:${MONGO_PORT1}\" },
-                    { _id: 1, host: \"host.docker.internal:${MONGO_PORT2}\" },
-                    { _id: 2, host: \"host.docker.internal:${MONGO_PORT3}\" }
-                    ]
-                })
-            "
+            mongosh "$$MONGO1/?authSource=admin" \
+                --eval "
+                    rs.initiate({
+                    _id: \"${MONGO_REPLICA}\",
+                    members: [
+                        { _id: 0, host: \"host.docker.internal:${MONGO_PORT1}\" },
+                        { _id: 1, host: \"host.docker.internal:${MONGO_PORT2}\" },
+                        { _id: 2, host: \"host.docker.internal:${MONGO_PORT3}\" }
+                        ]
+                    })
+                    "
 
-            MONGO_HOSTS="mongo1:27017,mongo2:27017,mongo3:27017"
-            MONGO_URI="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@$${MONGO_HOSTS}/?authSource=admin&replicaSet=${MONGO_REPLICA}"
+            ALL_MONGO="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo1:27017,mongo2:27017,mongo3:27017"
 
-            mongosh "$$MONGO_URI" --eval "db.test.insertOne({ test: \"test\" })"
+            mongosh "$$ALL_MONGO/?authSource=admin&replicaSet=${MONGO_REPLICA}" \
+                --eval "db.test.insertOne({ test: \"test\" })"
             '
 
     nats1:
         <<: *nats-base
         container_name: nats1
-        command: '--cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222'
+        command: >
+            --cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222
         ports: ['$NATS_PORT1:4222']
 
     nats2:
         <<: *nats-base
         container_name: nats2
-        command: '--cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222 --routes=nats://nats1:6222'
+        command: >
+            --cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222
+            --routes=nats://nats1:6222
         ports: ['$NATS_PORT2:4222']
         depends_on: ['nats1']
 
     nats3:
         <<: *nats-base
         container_name: nats3
-        command: '--cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222 --routes=nats://nats1:6222'
+        command: >
+            --cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222
+            --routes=nats://nats1:6222
         ports: ['$NATS_PORT3:4222']
         depends_on: ['nats1']
 
