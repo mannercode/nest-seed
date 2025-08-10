@@ -107,7 +107,8 @@ services:
         networks: ['default']
         extra_hosts:
             - 'host.docker.internal:host-gateway'
-            # REDIS_LIST=\"host.docker.internal:6379 host.docker.internal:6380 host.docker.internal:6381 host.docker.internal:6382 host.docker.internal:6383 host.docker.internal:6384\"
+
+            # REDIS_LIST=\"host.docker.internal:6379 host.docker.internal:6380 host.docker.internal:6381 host.docker.internal:6382 host.docker.internal:6383 host.docker.internal:6384 \"
 
     mongo-key-generator:
         image: ${MONGO_IMAGE}

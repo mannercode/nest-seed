@@ -30,7 +30,7 @@ export function getRedisTestConnection(): RedisConnectionContext {
         },
         { host: EnvVars.getString('TEST_REDIS_HOST6'), port: EnvVars.getNumber('TEST_REDIS_PORT6') }
     ]
-
+    console.log(nodes)
     return { password, nodes }
 }
 
