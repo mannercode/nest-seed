@@ -1,6 +1,6 @@
 import { WatchRecordDto } from 'apps/cores'
 import { oid } from 'testlib'
-import { buildCreateWatchRecordDto, createWatchRecord2 } from '../__helpers__'
+import { buildCreateWatchRecordDto, createWatchRecord } from '../__helpers__'
 import type { Fixture } from './watch-records.fixture'
 
 describe('WatchRecordsService', () => {
@@ -35,15 +35,15 @@ describe('WatchRecordsService', () => {
 
         beforeEach(async () => {
             watchRecords = await Promise.all([
-                createWatchRecord2(fix, { customerId }),
-                createWatchRecord2(fix, { customerId }),
-                createWatchRecord2(fix, { customerId }),
-                createWatchRecord2(fix, { customerId })
+                createWatchRecord(fix, { customerId }),
+                createWatchRecord(fix, { customerId }),
+                createWatchRecord(fix, { customerId }),
+                createWatchRecord(fix, { customerId })
             ])
         })
 
         // `customerId`가 제공된 경우
-        describe('when `customerId` are provided', () => {
+        describe('when `customerId` is provided', () => {
             // 지정한 customerId와 일치하는 관람 기록 페이지를 반환한다.
             it('returns the paginated watch records matching the given customerId', async () => {
                 const pagination = await fix.watchRecordsService.searchWatchRecordsPage({

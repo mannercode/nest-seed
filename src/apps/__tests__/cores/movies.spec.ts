@@ -1,7 +1,7 @@
 import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
 import { FileUtil, Path } from 'common'
 import { nullObjectId, objectToFields } from 'testlib'
-import { buildCreateMovieDto, createMovie2, Errors } from '../__helpers__'
+import { buildCreateMovieDto, createMovie, Errors } from '../__helpers__'
 import { Fixture } from './movies.fixture'
 
 describe('MoviesService', () => {
@@ -21,11 +21,8 @@ describe('MoviesService', () => {
         describe('when the payload is valid', () => {
             let createDto: CreateMovieDto
             let createdMovie: MovieDto
-            let tempDir: string
 
             beforeEach(async () => {
-                tempDir = await Path.createTempDirectory()
-
                 createDto = buildCreateMovieDto()
 
                 const { body } = await fix.httpClient
@@ -35,10 +32,6 @@ describe('MoviesService', () => {
                     .created()
 
                 createdMovie = body
-            })
-
-            afterEach(async () => {
-                await Path.delete(tempDir)
             })
 
             // 영화를 생성하고 반환한다
@@ -52,11 +45,11 @@ describe('MoviesService', () => {
 
             // 첨부된 파일을 다운로드한다
             it('downloads the attached file', async () => {
-                const downloadPath = Path.join(tempDir, 'download.tmp')
+                const downloadPath = Path.join(fix.tempDir, 'download.tmp')
 
                 await fix.httpClient.get(createdMovie.imageUrls[0]).download(downloadPath).ok()
 
-                expect(await FileUtil.areEqual(downloadPath, fix.image.path)).toBeTruthy()
+                expect(await FileUtil.areEqual(downloadPath, fix.image.path)).toBe(true)
             })
         })
 
@@ -194,7 +187,7 @@ describe('MoviesService', () => {
 
         beforeEach(async () => {
             const createdMovies = await Promise.all([
-                createMovie2(fix, {
+                createMovie(fix, {
                     title: 'title-a1',
                     plot: 'plot-a1',
                     director: 'James Cameron',
@@ -202,7 +195,7 @@ describe('MoviesService', () => {
                     rating: MovieRating.NC17,
                     genres: [MovieGenre.Action, MovieGenre.Comedy]
                 }),
-                createMovie2(fix, {
+                createMovie(fix, {
                     title: 'title-a2',
                     plot: 'plot-a2',
                     director: 'Steven Spielberg',
@@ -210,7 +203,7 @@ describe('MoviesService', () => {
                     rating: MovieRating.NC17,
                     genres: [MovieGenre.Romance, MovieGenre.Drama]
                 }),
-                createMovie2(fix, {
+                createMovie(fix, {
                     title: 'title-b1',
                     plot: 'plot-b1',
                     director: 'James Cameron',
@@ -218,7 +211,7 @@ describe('MoviesService', () => {
                     rating: MovieRating.PG,
                     genres: [MovieGenre.Drama, MovieGenre.Comedy]
                 }),
-                createMovie2(fix, {
+                createMovie(fix, {
                     title: 'title-b2',
                     plot: 'plot-b2',
                     director: 'Steven Spielberg',

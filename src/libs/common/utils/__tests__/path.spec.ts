@@ -17,10 +17,10 @@ describe('Path', () => {
     // 임시 디렉터리를 생성해야 한다
     it('Should create a temporary directory', async () => {
         const exists = await Path.exists(tempDir)
-        expect(exists).toBeTruthy()
+        expect(exists).toBe(true)
 
         // OS의 임시 디렉터리 아래에 있는지 확인
-        expect(tempDir.startsWith(os.tmpdir())).toBeTruthy()
+        expect(tempDir.startsWith(os.tmpdir())).toBe(true)
     })
 
     // 지정된 경로가 존재하는지 비동기 방식으로 확인해야 한다
@@ -29,7 +29,7 @@ describe('Path', () => {
         await fs.writeFile(filePath, 'hello world')
 
         const exists = await Path.exists(filePath)
-        expect(exists).toBeTruthy()
+        expect(exists).toBe(true)
     })
 
     // 존재하지 않는 경로에 대해 exists가 false를 반환해야 한다
@@ -37,7 +37,7 @@ describe('Path', () => {
         const nonExistentPath = Path.join(tempDir, 'nonexistent.txt')
 
         const exists = await Path.exists(nonExistentPath)
-        expect(exists).toBeFalsy()
+        expect(exists).toBe(false)
     })
 
     // 지정된 경로가 존재하는지 동기 방식으로 확인해야 한다
@@ -46,13 +46,13 @@ describe('Path', () => {
         await fs.writeFile(filePath, 'hello world')
 
         const exists = Path.existsSync(filePath)
-        expect(exists).toBeTruthy()
+        expect(exists).toBe(true)
     })
 
     // 지정된 경로가 디렉터리인지 확인해야 한다
     it('Should confirm whether the specified path is a directory', async () => {
         const exists = await Path.isDirectory(tempDir)
-        expect(exists).toBeTruthy()
+        expect(exists).toBe(true)
     })
 
     // 디렉터리를 생성하고 삭제해야 한다
@@ -61,11 +61,11 @@ describe('Path', () => {
 
         await Path.mkdir(dirPath)
         const exists = await Path.exists(dirPath)
-        expect(exists).toBeTruthy()
+        expect(exists).toBe(true)
 
         await Path.delete(dirPath)
         const existsAfterDelete = await Path.exists(dirPath)
-        expect(existsAfterDelete).toBeFalsy()
+        expect(existsAfterDelete).toBe(false)
     })
 
     // 하위 디렉터리를 나열해야 한다
@@ -92,7 +92,7 @@ describe('Path', () => {
         await Path.copy(srcFilePath, destFilePath)
 
         const copiedExists = await Path.exists(destFilePath)
-        expect(copiedExists).toBeTruthy()
+        expect(copiedExists).toBe(true)
 
         // 복사된 파일의 내용 확인
         const content = await fs.readFile(destFilePath, 'utf-8')
@@ -111,12 +111,12 @@ describe('Path', () => {
         await Path.copy(srcDirPath, destDirPath)
 
         const copiedDirExists = await Path.exists(destDirPath)
-        expect(copiedDirExists).toBeTruthy()
+        expect(copiedDirExists).toBe(true)
 
         // 파일도 함께 복사되었는지 확인
         const copiedFilePath = Path.join(destDirPath, 'file.txt')
         const copiedFileExists = await Path.exists(copiedFilePath)
-        expect(copiedFileExists).toBeTruthy()
+        expect(copiedFileExists).toBe(true)
 
         // 복사된 파일의 내용 확인
         const content = await fs.readFile(copiedFilePath, 'utf-8')
@@ -128,7 +128,7 @@ describe('Path', () => {
         const relativePath = `.${Path.sep()}file.txt`
         const absolutePath = await Path.getAbsolute(relativePath)
 
-        expect(p.isAbsolute(absolutePath)).toBeTruthy()
+        expect(p.isAbsolute(absolutePath)).toBe(true)
     })
 
     // 이미 절대 경로인 경우 그대로 반환해야 한다
@@ -161,7 +161,7 @@ describe('Path', () => {
 
         const result = await Path.isWritable('/test/path')
 
-        expect(result).toBeTruthy()
+        expect(result).toBe(true)
         expect(fs.access).toHaveBeenCalledWith('/test/path', fs.constants.W_OK)
     })
 
@@ -171,7 +171,7 @@ describe('Path', () => {
 
         const result = await Path.isWritable('/test/path')
 
-        expect(result).toBeFalsy()
+        expect(result).toBe(false)
         expect(fs.access).toHaveBeenCalledWith('/test/path', fs.constants.W_OK)
     })
 
@@ -184,10 +184,10 @@ describe('Path', () => {
         await Path.move(srcFilePath, destFilePath)
 
         const movedExists = await Path.exists(destFilePath)
-        expect(movedExists).toBeTruthy()
+        expect(movedExists).toBe(true)
 
         const srcExists = await Path.exists(srcFilePath)
-        expect(srcExists).toBeFalsy()
+        expect(srcExists).toBe(false)
 
         const content = await fs.readFile(destFilePath, 'utf-8')
         expect(content).toEqual('hello world')

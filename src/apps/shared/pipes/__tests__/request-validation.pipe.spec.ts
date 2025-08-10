@@ -1,14 +1,11 @@
 import { HttpTestClient, nullDate } from 'testlib'
 
-// TODO
-
 describe('RequestValidationPipe', () => {
     let teardown = () => {}
     let client: HttpTestClient
 
     beforeEach(async () => {
         const { createFixture } = await import('./request-validation.pipe.fixture')
-
         const fixture = await createFixture()
         teardown = fixture.teardown
         client = fixture.client
@@ -18,50 +15,51 @@ describe('RequestValidationPipe', () => {
         await teardown()
     })
 
-    // 배열의 각 필드가 올바른지 검증해야 한다
-    it('Should validate each field in the array', async () => {
-        await client
-            .post('/array')
-            .body([{ sampleId: 'id', date: nullDate }])
-            .created([{ sampleId: 'id', date: nullDate }])
+    describe('object', () => {
+        // 페이로드가 유효하면 검증을 통과한다
+        it('passes validation when the payload is valid', async () => {
+            await client.post('/').body({ sampleId: 'id', date: nullDate }).created()
+        })
+
+        // 잘못된/알 수 없는 필드가 포함되면 400 Bad Request를 반환한다
+        it('returns 400 Bad Request when the payload contains invalid or unknown fields', async () => {
+            await client.post('/').body({ wrong: 'id' }).badRequest()
+        })
     })
 
-    // 필드가 올바른지 검증해야 한다
-    it('Should validate the fields', async () => {
-        await client
-            .post('/')
-            .body({ sampleId: 'id', date: nullDate })
-            .created({ sampleId: 'id', date: nullDate })
+    describe('array', () => {
+        // 배열이 유효하면 검증을 통과한다
+        it('passes validation when the array payload is valid', async () => {
+            await client
+                .post('/array')
+                .body([{ sampleId: 'id', date: nullDate }])
+                .created()
+        })
+
+        // 배열 항목 중 하나라도 유효하지 않으면 400 Bad Request를 반환한다
+        it('returns 400 Bad Request when any array item is invalid', async () => {
+            await client
+                .post('/array')
+                .body([{ sampleId: 'id', date: 'wrong' }])
+                .badRequest()
+        })
     })
 
-    // 잘못된 필드를 전송하면 Bad Request를 반환해야 한다
-    it('Should return Bad Request if invalid fields are sent', async () => {
-        await client.post('/').body({ wrong: 'id' }).badRequest()
-    })
+    describe('nested array', () => {
+        // 중첩 배열이 유효하면 검증을 통과한다
+        it('passes validation when the nested array payload is valid', async () => {
+            await client
+                .post('/nested')
+                .body({ samples: [{ sampleId: 'id', date: nullDate }] })
+                .created()
+        })
 
-    // 잘못된 필드를 배열로 전송하면 Bad Request를 반환해야 한다
-    it('Should return Bad Request if invalid fields are sent as an array', async () => {
-        await client
-            .post('/array')
-            .body([{ sampleId: 'id', date: 'wrong' }])
-            .badRequest()
-    })
-
-    // 중첩된 배열의 각 필드가 올바른지 검증해야 한다
-    it('Should validate each field in the nested array', async () => {
-        const sample = { sampleId: 'id', date: nullDate }
-        await client
-            .post('/nested')
-            .body({ samples: [sample] })
-            .created([sample])
-    })
-
-    // 잘못된 필드를 중첩된 배열로 전송하면 Bad Request를 반환해야 한다
-    it('Should return Bad Request if invalid fields are sent in a nested array', async () => {
-        const sample = { sampleId: 'id', date: 'wrong' }
-        await client
-            .post('/nested')
-            .body({ samples: [sample] })
-            .badRequest()
+        // 중첩 배열 항목 중 하나라도 유효하지 않으면 400 Bad Request를 반환한다
+        it('returns 400 Bad Request when any nested array item is invalid', async () => {
+            await client
+                .post('/nested')
+                .body({ samples: [{ sampleId: 'id', date: 'wrong' }] })
+                .badRequest()
+        })
     })
 })

@@ -4,16 +4,18 @@ import { MoviesController, StorageFilesController } from 'apps/gateway'
 import { MulterConfigModule } from 'apps/gateway/modules'
 import { StorageFilesClient, StorageFilesModule } from 'apps/infrastructures'
 import {
-    createMovie2,
+    createMovie,
     FixtureFile,
     fixtureFiles,
     TestFixture,
     createTestFixture
 } from '../__helpers__'
+import { Path } from 'common'
 
 export interface Fixture extends TestFixture {
     image: FixtureFile
     createdMovie: MovieDto
+    tempDir: string
 }
 
 export const createFixture = async () => {
@@ -23,7 +25,14 @@ export const createFixture = async () => {
         controllers: [MoviesController, StorageFilesController]
     })
 
-    const createdMovie = await createMovie2(fix)
+    const tempDir = await Path.createTempDirectory()
 
-    return { ...fix, image: fixtureFiles.image, createdMovie }
+    const createdMovie = await createMovie(fix)
+
+    const teardown = async () => {
+        await fix.teardown()
+        await Path.delete(tempDir)
+    }
+
+    return { ...fix, teardown, image: fixtureFiles.image, createdMovie, tempDir }
 }

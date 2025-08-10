@@ -1,73 +1,120 @@
-x-logging: &default-logging
-    options: { max-size: '10m', max-file: '3' }
+x-common-base: &common-base
+    logging:
+        options: { max-size: '10m', max-file: '3' }
+    networks: ['default']
+    extra_hosts: ['host.docker.internal:host-gateway']
 
-x-mongo-common: &mongo-common
+x-mongo-base: &mongo-base
+    <<: *common-base
     image: ${MONGO_IMAGE}
     profiles: ['infra']
-    logging: *default-logging
     environment:
         MONGO_INITDB_ROOT_USERNAME: '${MONGO_USERNAME}'
         MONGO_INITDB_ROOT_PASSWORD: '${MONGO_PASSWORD}'
     command: mongod --replSet ${MONGO_REPLICA} --keyFile /etc/mongodb/mongodb.key --bind_ip_all
     volumes: ['mongodb_key:/etc/mongodb']
-    networks: ['default']
     restart: always
     depends_on: ['mongo-key-generator']
     healthcheck:
-        test: "mongosh --quiet -u $MONGO_USERNAME -p $MONGO_PASSWORD --authenticationDatabase admin --eval 'rs.isMaster().ismaster || rs.isMaster().secondary'"
+        test: >
+            mongosh --quiet -u $MONGO_USERNAME -p $MONGO_PASSWORD --authenticationDatabase admin
+            --eval 'db.hello().isWritablePrimary || db.hello().secondary'
         interval: 5s
         timeout: 5s
 
-x-redis-common: &redis-common
+x-redis-base: &redis-base
+    <<: *common-base
     image: ${REDIS_IMAGE}
-    command: 'redis-server --port $REDIS_PORT --requirepass $REDIS_PASSWORD --masterauth $REDIS_PASSWORD --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes'
     profiles: ['infra']
-    logging: *default-logging
-    networks: ['default']
     restart: always
     healthcheck:
-        test: 'redis-cli -a $REDIS_PASSWORD ping'
+        test: ['CMD-SHELL', 'redis-cli -a $REDIS_PASSWORD ping']
         interval: 5s
         timeout: 5s
+    command: >
+        sh -euc 'redis-server --port 6379 \
+          --cluster-enabled yes \
+          --cluster-config-file nodes.conf \
+          --cluster-announce-ip host.docker.internal \
+          --cluster-announce-port $$ANNOUNCE_PORT \
+          --cluster-announce-bus-port $$ANNOUNCE_BUS_PORT \
+          --protected-mode no \
+          --appendonly yes \
+          --requirepass $REDIS_PASSWORD \
+          --masterauth $REDIS_PASSWORD
+        '
 
-x-nats-common: &nats-common
+x-nats-base: &nats-base
+    <<: *common-base
     image: ${NATS_IMAGE}
     profiles: ['infra']
-    logging: *default-logging
-    networks: ['default']
     restart: always
     healthcheck:
         test: wget -qO- http://localhost:8222/varz || exit 1
         interval: 5s
         timeout: 5s
 
-x-app-common: &app-common
+x-app-base: &app-base
+    <<: *common-base
     profiles: ['apps']
-    logging: *default-logging
     environment: ['NODE_ENV=production']
+    healthcheck:
+        test: 'curl -f http://localhost:$HTTP_PORT/health'
+        interval: 5s
+        timeout: 5s
     env_file: .env.test
-    networks: ['default']
 
 services:
     redis1:
-        <<: *redis-common
-        container_name: ${REDIS_HOST1}
+        <<: *redis-base
+        container_name: redis1
+        environment:
+            ANNOUNCE_PORT: $REDIS_PORT1
+            ANNOUNCE_BUS_PORT: 1$REDIS_PORT1
+        ports: ['$REDIS_PORT1:6379', '1$REDIS_PORT1:16379']
+
     redis2:
-        <<: *redis-common
-        container_name: ${REDIS_HOST2}
+        <<: *redis-base
+        container_name: redis2
+        environment:
+            ANNOUNCE_PORT: $REDIS_PORT2
+            ANNOUNCE_BUS_PORT: 1$REDIS_PORT2
+        ports: ['$REDIS_PORT2:6379', '1$REDIS_PORT2:16379']
+
     redis3:
-        <<: *redis-common
-        container_name: ${REDIS_HOST3}
+        <<: *redis-base
+        container_name: redis3
+        environment:
+            ANNOUNCE_PORT: $REDIS_PORT3
+            ANNOUNCE_BUS_PORT: 1$REDIS_PORT3
+        ports: ['$REDIS_PORT3:6379', '1$REDIS_PORT3:16379']
+
     redis4:
-        <<: *redis-common
-        container_name: ${REDIS_HOST4}
+        <<: *redis-base
+        container_name: redis4
+        environment:
+            ANNOUNCE_PORT: $REDIS_PORT4
+            ANNOUNCE_BUS_PORT: 1$REDIS_PORT4
+        ports: ['$REDIS_PORT4:6379', '1$REDIS_PORT4:16379']
+
     redis5:
-        <<: *redis-common
-        container_name: ${REDIS_HOST5}
+        <<: *redis-base
+        container_name: redis5
+        environment:
+            ANNOUNCE_PORT: $REDIS_PORT5
+            ANNOUNCE_BUS_PORT: 1$REDIS_PORT5
+        ports: ['$REDIS_PORT5:6379', '1$REDIS_PORT5:16379']
+
     redis6:
-        <<: *redis-common
-        container_name: ${REDIS_HOST6}
+        <<: *redis-base
+        container_name: redis6
+        environment:
+            ANNOUNCE_PORT: $REDIS_PORT6
+            ANNOUNCE_BUS_PORT: 1$REDIS_PORT6
+        ports: ['$REDIS_PORT6:6379', '1$REDIS_PORT6:16379']
+
     redis-setup:
+        <<: *common-base
         image: ${REDIS_IMAGE}
         container_name: redis-setup
         profiles: ['infra']
@@ -79,30 +126,50 @@ services:
             redis5: { condition: service_healthy }
             redis6: { condition: service_healthy }
         command: >-
-            sh -c "
-            REDIS_LIST=\"redis1:$REDIS_PORT redis2:$REDIS_PORT redis3:$REDIS_PORT redis4:$REDIS_PORT redis5:$REDIS_PORT redis6:$REDIS_PORT\"
+            sh -euc '
+            REDIS_LIST="
+                host.docker.internal:$REDIS_PORT1 \
+                host.docker.internal:$REDIS_PORT2 \
+                host.docker.internal:$REDIS_PORT3 \
+                host.docker.internal:$REDIS_PORT4 \
+                host.docker.internal:$REDIS_PORT5 \
+                host.docker.internal:$REDIS_PORT6 \
+                "
 
-            echo 'yes' | redis-cli -a $REDIS_PASSWORD --cluster create $${REDIS_LIST} --cluster-replicas 1
-            "
-        networks: ['default']
+            echo "yes" |
+                redis-cli -a ${REDIS_PASSWORD} --cluster create $${REDIS_LIST} --cluster-replicas 1
+            '
 
     mongo-key-generator:
         image: ${MONGO_IMAGE}
         container_name: mongo-key-generator
         profiles: ['infra']
-        command: 'sh -c "openssl rand -base64 768 > mongodb.key && chmod 400 mongodb.key && chown mongodb:mongodb mongodb.key"'
+        command: >
+            sh -euc '
+            openssl rand -base64 768 > mongodb.key &&
+            chmod 400 mongodb.key &&
+            chown mongodb:mongodb mongodb.key
+            '
         volumes: ['mongodb_key:/mongodb_key']
         working_dir: /mongodb_key
+
     mongo1:
-        <<: *mongo-common
-        container_name: ${MONGO_HOST1}
+        <<: *mongo-base
+        container_name: mongo1
+        ports: ['$MONGO_PORT1:27017']
+
     mongo2:
-        <<: *mongo-common
-        container_name: ${MONGO_HOST2}
+        <<: *mongo-base
+        container_name: mongo2
+        ports: ['$MONGO_PORT2:27017']
+
     mongo3:
-        <<: *mongo-common
-        container_name: ${MONGO_HOST3}
+        <<: *mongo-base
+        container_name: mongo3
+        ports: ['$MONGO_PORT3:27017']
+
     mongo-setup:
+        <<: *common-base
         image: ${MONGO_IMAGE}
         container_name: mongo-setup
         profiles: ['infra']
@@ -110,38 +177,55 @@ services:
             mongo1: { condition: service_healthy }
             mongo2: { condition: service_healthy }
             mongo3: { condition: service_healthy }
-        networks: ['default']
         command: >
-            sh -c "
-            MONGO_HOST1_URI=\"mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo1:${MONGO_PORT}/?authSource=admin\"
+            sh -euc '
+            MONGO1="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo1:27017"
 
-            mongosh $${MONGO_HOST1_URI} --eval \"
-                rs.initiate({
-                    _id: \\\"${MONGO_REPLICA}\\\",
-                    members: [{_id: 0, host: \\\"mongo1\\\"}, {_id: 1, host: \\\"mongo2\\\"}, {_id: 2, host: \\\"mongo3\\\"}]
-                })
-            \"
+            mongosh "$$MONGO1/?authSource=admin" \
+                --eval "
+                    rs.initiate({
+                    _id: \"${MONGO_REPLICA}\",
+                    members: [
+                        { _id: 0, host: \"host.docker.internal:${MONGO_PORT1}\" },
+                        { _id: 1, host: \"host.docker.internal:${MONGO_PORT2}\" },
+                        { _id: 2, host: \"host.docker.internal:${MONGO_PORT3}\" }
+                        ]
+                    })
+                    "
 
-            MONGO_HOSTS=\"mongo1:${MONGO_PORT},mongo2:${MONGO_PORT},mongo3:${MONGO_PORT}\";
-            MONGO_URI=\"mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@$${MONGO_HOSTS}/?authSource=admin&replicaSet=${MONGO_REPLICA}\";
+            ALL_MONGO="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo1:27017,mongo2:27017,mongo3:27017"
 
-            mongosh $${MONGO_URI} --eval \"db.test.insertOne({test: 'test'})\"
-            "
+            mongosh "$$ALL_MONGO/?authSource=admin&replicaSet=${MONGO_REPLICA}" \
+                --eval "db.test.insertOne({ test: \"test\" })"
+            '
+
     nats1:
-        <<: *nats-common
-        container_name: ${NATS_HOST1}
-        command: '--cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222'
+        <<: *nats-base
+        container_name: nats1
+        command: >
+            --cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222
+        ports: ['$NATS_PORT1:4222']
+
     nats2:
-        <<: *nats-common
-        container_name: ${NATS_HOST2}
-        command: '--cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222 --routes=nats://nats1:6222'
+        <<: *nats-base
+        container_name: nats2
+        command: >
+            --cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222
+            --routes=nats://nats1:6222
+        ports: ['$NATS_PORT2:4222']
         depends_on: ['nats1']
+
     nats3:
-        <<: *nats-common
-        container_name: ${NATS_HOST3}
-        command: '--cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222 --routes=nats://nats1:6222'
+        <<: *nats-base
+        container_name: nats3
+        command: >
+            --cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222
+            --routes=nats://nats1:6222
+        ports: ['$NATS_PORT3:4222']
         depends_on: ['nats1']
+
     nats-setup:
+        <<: *common-base
         image: natsio/nats-box
         container_name: nats-setup
         profiles: ['infra']
@@ -149,62 +233,50 @@ services:
             nats1: { condition: service_healthy }
             nats2: { condition: service_healthy }
             nats3: { condition: service_healthy }
-        networks: ['default']
         command: >
-            sh -c "
-            set -e;
-            nats sub -s nats://nats1:4222 hello &
-            nats pub -s "nats://nats2:4222" hello first;
-            nats pub -s "nats://nats3:4222" hello second;
-            "
+            sh -euc '
+            nats sub -s nats://nats1:4222 --count=2 hello >/tmp/sub.log 2>&1 &
+            SUB_PID=$!
+
+            sleep 0.3;
+            nats pub -s nats://nats2:4222 hello first;
+            nats pub -s nats://nats3:4222 hello second;
+            wait $$SUB_PID;
+            cat /tmp/sub.log;
+            '
 
     gateway:
-        <<: *app-common
+        <<: *app-base
         build: { context: ., args: { APP_IMAGE: $APP_IMAGE, TARGET_APP: gateway } }
-        image: ${SERVICE_GATEWAY_HOST}
-        container_name: ${SERVICE_GATEWAY_HOST}
-        healthcheck:
-            test: 'curl -f http://localhost:${SERVICE_GATEWAY_HTTP_PORT}/health'
-            interval: 5s
-            timeout: 5s
-        volumes:
-            - ./_output/logs/gateway:/app/_output/logs
-            - ./_output/uploads:/app/_output/uploads
+        image: gateway
+        container_name: gateway
+        ports: ['${HTTP_PORT}:${HTTP_PORT}']
+        volumes: [./_output/logs/gateway:/app/_output/logs, ./_output/uploads:/app/_output/uploads]
 
     applications:
-        <<: *app-common
+        <<: *app-base
         build: { context: ., args: { APP_IMAGE: $APP_IMAGE, TARGET_APP: applications } }
-        image: ${SERVICE_APPLICATIONS_HOST}
-        container_name: ${SERVICE_APPLICATIONS_HOST}
-        healthcheck:
-            test: 'curl -f http://localhost:${SERVICE_APPLICATIONS_HTTP_PORT}/health'
-            interval: 5s
-            timeout: 5s
+        image: applications
+        container_name: applications
         volumes: ['./_output/logs/applications:/app/_output/logs']
 
     cores:
-        <<: *app-common
+        <<: *app-base
         build: { context: ., args: { APP_IMAGE: $APP_IMAGE, TARGET_APP: cores } }
-        image: ${SERVICE_CORES_HOST}
-        container_name: ${SERVICE_CORES_HOST}
-        healthcheck:
-            test: 'curl -f http://localhost:${SERVICE_CORES_HTTP_PORT}/health'
-            interval: 5s
-            timeout: 5s
+        image: cores
+        container_name: cores
         volumes: ['./_output/logs/cores:/app/_output/logs']
 
     infrastructures:
-        <<: *app-common
+        <<: *app-base
         build: { context: ., args: { APP_IMAGE: $APP_IMAGE, TARGET_APP: infrastructures } }
-        image: ${SERVICE_INFRASTRUCTURES_HOST}
-        container_name: ${SERVICE_INFRASTRUCTURES_HOST}
-        healthcheck:
-            test: 'curl -f http://localhost:${SERVICE_INFRASTRUCTURES_HTTP_PORT}/health'
-            interval: 5s
-            timeout: 5s
+        image: infrastructures
+        container_name: infrastructures
         volumes:
-            - './_output/logs/infrastructures:/app/_output/logs'
-            - './_output/uploads:/app/_output/uploads'
+            [
+                './_output/logs/infrastructures:/app/_output/logs',
+                './_output/uploads:/app/_output/uploads'
+            ]
 
     apps-setup:
         image: ${APP_IMAGE}
@@ -217,7 +289,7 @@ services:
             infrastructures: { condition: service_healthy }
 
 networks:
-    default: { external: true, name: '${NETWORK_NAME}' }
+    default:
 
 volumes:
     mongodb_key: {}

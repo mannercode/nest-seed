@@ -31,7 +31,6 @@ export class MoviesService {
     }
 
     async deleteMovies(movieIds: string[]) {
-        // TODO saga
         const movies = await this.repository.withTransaction(async (session) => {
             const movies = await this.repository.getByIds(movieIds)
 

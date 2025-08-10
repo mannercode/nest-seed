@@ -11,7 +11,7 @@ export const buildCreateTheaterDto = (overrides = {}) => {
     return createDto
 }
 
-export const createTheater2 = async ({ module }: TestContext, override = {}) => {
+export const createTheater = async ({ module }: TestContext, override = {}) => {
     const { TheatersClient } = await import('apps/cores')
     const theatersService = module.get(TheatersClient)
 

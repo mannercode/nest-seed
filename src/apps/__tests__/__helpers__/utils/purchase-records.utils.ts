@@ -12,7 +12,7 @@ export const buildCreatePurchaseRecordDto = (overrides = {}) => {
     return createDto
 }
 
-export const createPurchaseRecord2 = async ({ module }: TestContext, override = {}) => {
+export const createPurchaseRecord = async ({ module }: TestContext, override = {}) => {
     const { PurchaseRecordsClient } = await import('apps/cores')
     const purchasesService = module.get(PurchaseRecordsClient)
 

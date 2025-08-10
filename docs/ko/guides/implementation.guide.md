@@ -221,6 +221,8 @@ describe('Customers', () => {
 
 ## 7. 테스트 코드를 .spec.ts와 .fixture.ts로 분리
 
+### 7.1 예전 방식
+
 .spec.ts에 Fixture 설정 코드를 모두 넣으면, 실제 테스트 로직이 무엇을 검증하는지 파악하기가 어렵습니다. 따라서 테스트 로직은 .spec.ts에 집중하고, 테스트에 필요한 리소스나 설정은 .fixture.ts에 둡니다.
 
 예: `src/apps/__tests__/utils` 폴더에 공통 코드가 모여 있고, 그중 `clients.ts`에서 `module.get()`으로 필요한 `Service 인스턴스`를 미리 가져옵니다. 이렇게 하면 테스트가 간결해지며, 중복 코드를 줄일 수 있습니다.
@@ -244,6 +246,13 @@ export async function getProviders(coresContext: TestContext) {
     return { customersClient, moviesClient }
 }
 ```
+
+### 7.2 현재 방식
+
+<!-- TODO 7. 항목은 정리 다시 -->
+각 모듈에서 필요한 모듈만 생성해서 테스트 한다.
+
+전체 모듈을 생성하는 예전 방식은 테스트 완료에 89s가 걸렸다. 현재 방식은 83s가 걸렸다. 실제 프로젝트에서는 훨씬 큰 차이가 발생할 것이다.
 
 ## 8. 주석
 

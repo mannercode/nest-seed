@@ -1,7 +1,7 @@
 import { HoldTicketsDto } from 'apps/cores'
 import { oid, TestContext } from 'testlib'
 
-export const holdTickets2 = async ({ module }: TestContext, holdDto?: Partial<HoldTicketsDto>) => {
+export const holdTickets = async ({ module }: TestContext, holdDto?: Partial<HoldTicketsDto>) => {
     const { TicketHoldingClient } = await import('apps/cores')
     const ticketHoldingService = module.get(TicketHoldingClient)
 
@@ -13,7 +13,7 @@ export const holdTickets2 = async ({ module }: TestContext, holdDto?: Partial<Ho
     })
 }
 
-export const releaseTickets2 = async (
+export const releaseTickets = async (
     { module }: TestContext,
     showtimeId: string,
     customerId: string
@@ -24,7 +24,7 @@ export const releaseTickets2 = async (
     return ticketHoldingService.releaseTickets(showtimeId, customerId)
 }
 
-export const searchHeldTicketIds2 = async (
+export const searchHeldTicketIds = async (
     { module }: TestContext,
     showtimeId: string,
     customerId: string

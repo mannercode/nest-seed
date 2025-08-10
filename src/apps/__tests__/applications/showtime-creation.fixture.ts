@@ -1,4 +1,8 @@
-import { ShowtimeCreationClient, ShowtimeCreationModule } from 'apps/applications'
+import {
+    BulkCreateShowtimesDto,
+    ShowtimeCreationClient,
+    ShowtimeCreationModule
+} from 'apps/applications'
 import {
     MovieDto,
     MoviesClient,
@@ -12,25 +16,40 @@ import {
 } from 'apps/cores'
 import { ShowtimeCreationController } from 'apps/gateway'
 import { StorageFilesModule } from 'apps/infrastructures'
-import { jsonToObject, notUsed } from 'common'
-import { HttpTestClient } from 'testlib'
-import { createMovie2, createTestFixture, createTheater2, TestFixture } from '../__helpers__'
+import { jsonToObject } from 'common'
+import { oid } from 'testlib'
+import { createMovie, createTestFixture, createTheater, TestFixture } from '../__helpers__'
 
-export const monitorEvents = (client: HttpTestClient, waitStatuses: string[]) => {
+export const buildBulkCreateShowtimesDto = (overrides: Partial<BulkCreateShowtimesDto> = {}) => {
+    const createDto = {
+        movieId: oid(0x0),
+        theaterIds: [oid(0x0)],
+        startTimes: [new Date(0)],
+        durationInMinutes: 1,
+        ...overrides
+    }
+
+    return createDto
+}
+
+export const waitForCompletion = (fix: TestFixture, status: string) => {
     return new Promise((resolve, reject) => {
-        client.get('/showtime-creation/event-stream').sse((data) => {
-            const result = jsonToObject(JSON.parse(data))
+        fix.httpClient.get('/showtime-creation/event-stream').sse((data) => {
+            try {
+                const result = jsonToObject(JSON.parse(data))
 
-            if (['waiting', 'processing'].includes(result.status)) {
-                notUsed('Ignore incomplete statuses')
-            } else if (['succeeded', 'failed', 'error'].includes(result.status)) {
-                if (waitStatuses.includes(result.status)) {
-                    resolve(result)
-                } else {
-                    reject(result)
+                if (['succeeded', 'failed', 'error'].includes(result.status)) {
+                    fix.httpClient.abort()
+
+                    if (status === result.status) {
+                        resolve(result)
+                    } else {
+                        reject(result)
+                    }
                 }
-            } else {
-                reject(data)
+            } catch (error) {
+                fix.httpClient.abort()
+                reject(error)
             }
         }, reject)
     })
@@ -55,8 +74,8 @@ export const createFixture = async (): Promise<Fixture> => {
         controllers: [ShowtimeCreationController]
     })
 
-    const movie = await createMovie2(fix)
-    const theater = await createTheater2(fix)
+    const movie = await createMovie(fix)
+    const theater = await createTheater(fix)
 
     return { ...fix, movie, theater }
 }

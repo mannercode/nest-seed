@@ -18,12 +18,12 @@ import {
 import { BookingController, CustomerJwtStrategy } from 'apps/gateway'
 import { PaymentsModule, StorageFilesModule } from 'apps/infrastructures'
 import {
-    createCustomerAndLogin2,
-    createMovie2,
-    createShowtimes2,
+    createCustomerAndLogin,
+    createMovie,
+    createShowtimes,
     createTestFixture,
-    createTheater2,
-    createTickets2,
+    createTheater,
+    createTickets,
     TestFixture
 } from '../__helpers__'
 
@@ -32,27 +32,27 @@ export const createAllResources = async (
     locations: TheaterLocation[],
     startTimes: Date[]
 ) => {
-    const { customer, accessToken, refreshToken } = await createCustomerAndLogin2(ctx)
+    const { customer, accessToken, refreshToken } = await createCustomerAndLogin(ctx)
 
-    const movie = await createMovie2(ctx)
+    const movie = await createMovie(ctx)
 
     const seatmap = { blocks: [{ name: 'A', rows: [{ name: '1', seats: 'OOOOOOOO' }] }] }
 
     const theaters = await Promise.all(
-        locations.map((location) => createTheater2(ctx, { seatmap, location }))
+        locations.map((location) => createTheater(ctx, { seatmap, location }))
     )
 
     const createShowtimeDtos = startTimes.flatMap((startTime) =>
         theaters.map((theater) => ({ movieId: movie.id, theaterId: theater.id, startTime }))
     )
 
-    const showtimes = await createShowtimes2(ctx, createShowtimeDtos)
+    const showtimes = await createShowtimes(ctx, createShowtimeDtos)
 
     const createTicketDtos = showtimes.flatMap(({ movieId, theaterId, id: showtimeId }) =>
         Seatmap.getAllSeats(seatmap).map((seat) => ({ movieId, theaterId, showtimeId, seat }))
     )
 
-    const tickets = await createTickets2(ctx, createTicketDtos)
+    const tickets = await createTickets(ctx, createTicketDtos)
 
     return { customer, accessToken, refreshToken, movie, theaters, showtimes, tickets }
 }

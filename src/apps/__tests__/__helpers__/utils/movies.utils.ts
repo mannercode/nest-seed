@@ -17,7 +17,7 @@ export const buildCreateMovieDto = (overrides = {}) => {
     return createDto
 }
 
-export const createMovie2 = async ({ module }: TestContext, override = {}) => {
+export const createMovie = async ({ module }: TestContext, override = {}) => {
     const { MoviesClient } = await import('apps/cores')
     const moviesService = module.get(MoviesClient)
 

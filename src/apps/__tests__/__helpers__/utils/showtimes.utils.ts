@@ -20,7 +20,7 @@ export const buildCreateShowtimeDto = (overrides: Partial<CreateShowtimeDto> = {
     return createDto
 }
 
-export const createShowtimes2 = async (
+export const createShowtimes = async (
     { module }: TestContext,
     overrides: Partial<CreateShowtimeDto>[]
 ) => {
@@ -30,7 +30,7 @@ export const createShowtimes2 = async (
     const createDtos = overrides.map((override) => buildCreateShowtimeDto(override))
 
     const { success } = await showtimesService.createShowtimes(createDtos)
-    expect(success).toBeTruthy()
+    expect(success).toBe(true)
 
     const transactionIds = uniq(createDtos.map((dto) => dto.transactionId))
 

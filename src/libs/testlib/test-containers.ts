@@ -6,35 +6,32 @@ export interface RedisConnectionContext {
 }
 
 export function getRedisTestConnection(): RedisConnectionContext {
-    const hosts = [
-        'REDIS_HOST1',
-        'REDIS_HOST2',
-        'REDIS_HOST3',
-        'REDIS_HOST4',
-        'REDIS_HOST5',
-        'REDIS_HOST6'
-    ].map((key) => EnvVars.getString(key))
-    const port = EnvVars.getNumber('REDIS_PORT')
-    const password = EnvVars.getString('REDIS_PASSWORD')
-    const nodes = hosts.map((host) => ({ host, port }))
+    const password = EnvVars.getString('TEST_REDIS_PASSWORD')
+    const nodes = [
+        {
+            host: EnvVars.getString('TEST_REDIS_HOST1'),
+            port: EnvVars.getNumber('TEST_REDIS_PORT1')
+        },
+        {
+            host: EnvVars.getString('TEST_REDIS_HOST2'),
+            port: EnvVars.getNumber('TEST_REDIS_PORT2')
+        },
+        {
+            host: EnvVars.getString('TEST_REDIS_HOST3'),
+            port: EnvVars.getNumber('TEST_REDIS_PORT3')
+        },
+        {
+            host: EnvVars.getString('TEST_REDIS_HOST4'),
+            port: EnvVars.getNumber('TEST_REDIS_PORT4')
+        },
+        {
+            host: EnvVars.getString('TEST_REDIS_HOST5'),
+            port: EnvVars.getNumber('TEST_REDIS_PORT5')
+        },
+        { host: EnvVars.getString('TEST_REDIS_HOST6'), port: EnvVars.getNumber('TEST_REDIS_PORT6') }
+    ]
 
-    return { nodes, password }
-}
-
-export interface MongoConnectionContext {
-    uri: string
-}
-
-export const getMongoTestConnection = (): MongoConnectionContext => {
-    const hosts = ['MONGO_HOST1', 'MONGO_HOST2', 'MONGO_HOST3'].map((key) => EnvVars.getString(key))
-    const port = EnvVars.getNumber('MONGO_PORT')
-    const replicaName = EnvVars.getString('MONGO_REPLICA')
-    const username = EnvVars.getString('MONGO_USERNAME')
-    const password = EnvVars.getString('MONGO_PASSWORD')
-    const nodes = hosts.map((host) => `${host}:${port}`).join(',')
-    const uri = `mongodb://${username}:${password}@${nodes}/?replicaSet=${replicaName}`
-
-    return { uri }
+    return { password, nodes }
 }
 
 export interface NatsConnectionContext {
@@ -42,10 +39,30 @@ export interface NatsConnectionContext {
 }
 
 export const getNatsTestConnection = (): NatsConnectionContext => {
-    const hosts = ['NATS_HOST1', 'NATS_HOST2', 'NATS_HOST3'].map((key) => EnvVars.getString(key))
-    const port = EnvVars.getNumber('NATS_PORT')
-    const servers = hosts.map((host) => `nats://${host}:${port}`)
+    const servers = [
+        `nats://${EnvVars.getString('TEST_NATS_HOST1')}:${EnvVars.getNumber('TEST_NATS_PORT1')}`,
+        `nats://${EnvVars.getString('TEST_NATS_HOST2')}:${EnvVars.getNumber('TEST_NATS_PORT2')}`,
+        `nats://${EnvVars.getString('TEST_NATS_HOST3')}:${EnvVars.getNumber('TEST_NATS_PORT3')}`
+    ]
 
     return { servers }
 }
-// TODO 이거 왜 env를 직접 쓰지? TEST_ 붙여라. setup.ts에서 설정하고
+
+export interface MongoConnectionContext {
+    uri: string
+}
+
+export const getMongoTestConnection = (): MongoConnectionContext => {
+    const replica = EnvVars.getString('TEST_MONGO_REPLICA')
+    const username = EnvVars.getString('TEST_MONGO_USERNAME')
+    const password = EnvVars.getString('TEST_MONGO_PASSWORD')
+    const nodes = [
+        `${EnvVars.getString('TEST_MONGO_HOST1')}:${EnvVars.getNumber('TEST_MONGO_PORT1')}`,
+        `${EnvVars.getString('TEST_MONGO_HOST2')}:${EnvVars.getNumber('TEST_MONGO_PORT2')}`,
+        `${EnvVars.getString('TEST_MONGO_HOST3')}:${EnvVars.getNumber('TEST_MONGO_PORT3')}`
+    ].join(',')
+
+    const uri = `mongodb://${username}:${password}@${nodes}/?replicaSet=${replica}`
+
+    return { uri }
+}

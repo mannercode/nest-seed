@@ -2,10 +2,10 @@
 name: Test and Coverage
 
 on:
-    # main 브렌치를 대상으로 하는 pull request가 create/update하면 실행된다
+    # Runs when a pull request targeting the main branch is created or updated
     pull_request:
         branches: ['main']
-    # merge pull request하면 실행된다
+    # Runs when a pull request is merged into the main branch
     push:
         branches: ['main']
 
@@ -15,22 +15,15 @@ jobs:
         container: node:24-bookworm
         env:
             WORKSPACE_ROOT: ${{ github.workspace }}
-            NETWORK_NAME: ${{ github.event.repository.name }}
             TERM: xterm # This is required to enable use of the `clear` command in bash
         steps:
-            - name: Checkout Code
-              uses: actions/checkout@v4
-
-            # .devcontainer/Dockerfile
-            - name: Update Packages
-              run: apt-get update
+            - uses: actions/checkout@v4
 
             - name: Install Tools
-              run: apt-get install -y git curl jq tree vim
+              run: apt-get update && apt-get install -y curl jq iproute2
 
             - name: Install Docker
               run: |
-                  apt-get update
                   apt-get install -y ca-certificates curl gnupg
                   install -m 0755 -d /etc/apt/keyrings
                   curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
@@ -42,21 +35,19 @@ jobs:
                   apt-get update
                   apt-get install -y docker-ce-cli
 
-            # devcontainer.json
-            - name: initializeCommand
+            - name: Map host.docker.internal in job container
               run: |
-                  docker network create ${NETWORK_NAME}
-                  docker network connect ${NETWORK_NAME} ${{ job.container.id }}
+                  GW_IP=$(ip route | awk '/default/ {print $3}')
+                  echo "$GW_IP host.docker.internal" | tee -a /etc/hosts
 
-            - name: postCreateCommand
+            - name: Install deps
               run: npm ci
 
-            # Run All Tests
-            - name: Run Prettier
-              run: npx prettier 'src/**/*.ts'
+            - name: Prettier
+              run: npx prettier --check 'src/**/*.ts'
 
-            - name: Run Lint
-              run: npx eslint src
+            - name: ESLint
+              run: npx eslint src --max-warnings=0
 
             - name: Run Test Suites
               run: bash scripts/run-test.sh all 1
