@@ -47,6 +47,10 @@ jobs:
             - name: Run Docker
               run: docker network ls
 
+            - name: Run Docker
+              run: wget host.docker.internal:6380
+
+
             # devcontainer.json
             - name: Map host.docker.internal in job container
               run: |
