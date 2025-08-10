@@ -124,7 +124,6 @@ services:
             redis6: { condition: service_healthy }
         command: >-
             sh -c "
-            echo ${REDIS_PASSWORD};
             REDIS_LIST=\"host.docker.internal:$REDIS_PORT1 host.docker.internal:$REDIS_PORT2 host.docker.internal:$REDIS_PORT3 host.docker.internal:$REDIS_PORT4 host.docker.internal:$REDIS_PORT5 host.docker.internal:$REDIS_PORT6 \"
 
             echo 'yes' | redis-cli -a ${REDIS_PASSWORD} --cluster create $${REDIS_LIST} --cluster-replicas 1
