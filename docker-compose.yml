@@ -11,8 +11,7 @@ x-mongo-common: &mongo-common
     command: mongod --replSet ${MONGO_REPLICA} --keyFile /etc/mongodb/mongodb.key --bind_ip_all
     volumes: ['mongodb_key:/etc/mongodb']
     networks: ['default']
-    extra_hosts:
-        - 'host.docker.internal:host-gateway'
+    extra_hosts: ['host.docker.internal:host-gateway']
     restart: always
     depends_on: ['mongo-key-generator']
     healthcheck:
@@ -26,8 +25,7 @@ x-redis-common: &redis-common
     profiles: ['infra']
     logging: *default-logging
     networks: ['default']
-    extra_hosts:
-        - 'host.docker.internal:host-gateway'
+    extra_hosts: ['host.docker.internal:host-gateway']
     restart: always
     healthcheck:
         test: 'redis-cli -a $REDIS_PASSWORD ping'
@@ -39,8 +37,7 @@ x-nats-common: &nats-common
     profiles: ['infra']
     logging: *default-logging
     networks: ['default']
-    extra_hosts:
-        - 'host.docker.internal:host-gateway'
+    extra_hosts: ['host.docker.internal:host-gateway']
     restart: always
     healthcheck:
         test: wget -qO- http://localhost:8222/varz || exit 1
@@ -53,8 +50,7 @@ x-app-common: &app-common
     environment: ['NODE_ENV=production']
     env_file: .env.test
     networks: ['default']
-    extra_hosts:
-        - 'host.docker.internal:host-gateway'
+    extra_hosts: ['host.docker.internal:host-gateway']
 
 services:
     redis1:
@@ -166,7 +162,7 @@ services:
             "
         networks: ['default']
         extra_hosts:
-            - 'host.docker.internal:host-gateway'
+            ['host.docker.internal:host-gateway']
             # REDIS_LIST=\"redis1:6379 redis2:6379 redis3:6379 redis4:6379 redis5:6379 redis6:6379 \"
 
     mongo-key-generator:
@@ -179,18 +175,15 @@ services:
     mongo1:
         <<: *mongo-common
         container_name: mongo1
-        ports:
-            - '27017:27017'
+        ports: ['27017:27017']
     mongo2:
         <<: *mongo-common
         container_name: mongo2
-        ports:
-            - '27018:27017'
+        ports: ['27018:27017']
     mongo3:
         <<: *mongo-common
         container_name: mongo3
-        ports:
-            - '27019:27017'
+        ports: ['27019:27017']
     mongo-setup:
         image: ${MONGO_IMAGE}
         container_name: mongo-setup
@@ -200,8 +193,7 @@ services:
             mongo2: { condition: service_healthy }
             mongo3: { condition: service_healthy }
         networks: ['default']
-        extra_hosts:
-            - 'host.docker.internal:host-gateway'
+        extra_hosts: ['host.docker.internal:host-gateway']
         command: >
             sh -c "
             MONGO_HOST1_URI=\"mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo1:27017/?authSource=admin\"
@@ -227,23 +219,20 @@ services:
         <<: *nats-common
         container_name: nats1
         command: '--cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222'
-        ports:
-            - '4222:4222'
+        ports: ['4222:4222']
 
     nats2:
         <<: *nats-common
         container_name: nats2
         command: '--cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222 --routes=nats://nats1:6222'
-        ports:
-            - '4223:4222'
+        ports: ['4223:4222']
         depends_on: ['nats1']
 
     nats3:
         <<: *nats-common
         container_name: nats3
         command: '--cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222 --routes=nats://nats1:6222'
-        ports:
-            - '4224:4222'
+        ports: ['4224:4222']
         depends_on: ['nats1']
     nats-setup:
         image: natsio/nats-box
@@ -255,11 +244,15 @@ services:
             nats3: { condition: service_healthy }
         networks: ['default']
         command: >
-            sh -c "
-            set -e;
-            nats sub -s nats://nats1:4222 hello &
-            nats pub -s "nats://nats2:4222" hello first;
-            nats pub -s "nats://nats3:4222" hello second;
+            sh -ec "
+            nats sub -s nats://nats1:4222 --count=2 hello >/tmp/sub.log 2>&1 &
+            SUB_PID=$!
+
+            sleep 0.3;
+            nats pub -s nats://nats2:4222 hello first;
+            nats pub -s nats://nats3:4222 hello second;
+            wait $SUB_PID;
+            cat /tmp/sub.log;
             "
 
     gateway:
@@ -267,8 +260,7 @@ services:
         build: { context: ., args: { APP_IMAGE: $APP_IMAGE, TARGET_APP: gateway } }
         image: ${SERVICE_GATEWAY_HOST}
         container_name: ${SERVICE_GATEWAY_HOST}
-        ports:
-            - '${SERVICE_GATEWAY_HTTP_PORT}:${SERVICE_GATEWAY_HTTP_PORT}'
+        ports: ['${SERVICE_GATEWAY_HTTP_PORT}:${SERVICE_GATEWAY_HTTP_PORT}']
         healthcheck:
             test: 'curl -f http://localhost:${SERVICE_GATEWAY_HTTP_PORT}/health'
             interval: 5s
