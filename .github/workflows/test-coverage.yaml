@@ -15,7 +15,6 @@ jobs:
         container: node:24-bookworm
         env:
             WORKSPACE_ROOT: ${{ github.workspace }}
-            # NETWORK_NAME: ${{ github.event.repository.name }}
             TERM: xterm # This is required to enable use of the `clear` command in bash
         steps:
             - name: Checkout Code
@@ -41,39 +40,24 @@ jobs:
                   apt-get update
                   apt-get install -y docker-ce-cli
 
-            - name: Run Docker
-              run: docker ps -a
-
-            - name: Run Docker
-              run: docker network ls
-
-
-
             # devcontainer.json
             - name: Map host.docker.internal in job container
               run: |
                   GW_IP=$(ip route | awk '/default/ {print $3}')
                   echo "$GW_IP host.docker.internal" | tee -a /etc/hosts
 
-
-
-            # - name: initializeCommand
-            #   run: |
-            #       docker network create ${NETWORK_NAME}
-            #       docker network connect ${NETWORK_NAME} ${{ job.container.id }}
-
             - name: postCreateCommand
               run: npm ci
 
-            # # Run All Tests
-            # - name: Run Prettier
-            #   run: npx prettier 'src/**/*.ts'
+            # Run All Tests
+            - name: Run Prettier
+              run: npx prettier 'src/**/*.ts'
 
-            # - name: Run Lint
-            #   run: npx eslint src
+            - name: Run Lint
+              run: npx eslint src
 
             - name: Run Test Suites
-              run: bash scripts/run-test.sh common 1
+              run: bash scripts/run-test.sh all 1
 
-            # - name: Run E2E Tests
-            #   run: bash test/e2e/run.sh
+            - name: Run E2E Tests
+              run: bash test/e2e/run.sh

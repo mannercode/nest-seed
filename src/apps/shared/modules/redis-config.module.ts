@@ -8,7 +8,6 @@ import { AppConfigService } from '../config'
             {
                 useFactory: (config: AppConfigService) => {
                     const { nodes, password } = config.redis
-                    console.log(nodes)
                     const redisOptions: RedisModuleOptions = {
                         type: 'cluster',
                         nodes,
