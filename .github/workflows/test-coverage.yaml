@@ -58,9 +58,6 @@ jobs:
             - name: Run Test Suites
               run: bash scripts/reset-infra.sh
 
-            - name: Run Docker
-              run: wget host.docker.internal:6380
-
             # - name: initializeCommand
             #   run: |
             #       docker network create ${NETWORK_NAME}
