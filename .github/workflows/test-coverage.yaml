@@ -44,20 +44,21 @@ jobs:
             - name: Run Docker
               run: docker ps -a
 
+            # devcontainer.json
+            - name: Map host.docker.internal in job container
+              run: echo "host-gateway host.docker.internal" | tee -a /etc/hosts
 
-            # # devcontainer.json
-            # - name: Map host.docker.internal in job container
+              # run: |
+              #     GW_IP=$(ip route | awk '/default/ {print $3}')
+              #     echo "$GW_IP host.docker.internal" | tee -a /etc/hosts
+
+            # - name: initializeCommand
             #   run: |
-            #       GW_IP=$(ip route | awk '/default/ {print $3}')
-            #       echo "$GW_IP host.docker.internal" | tee -a /etc/hosts
+            #       docker network create ${NETWORK_NAME}
+            #       docker network connect ${NETWORK_NAME} ${{ job.container.id }}
 
-            # # - name: initializeCommand
-            # #   run: |
-            # #       docker network create ${NETWORK_NAME}
-            # #       docker network connect ${NETWORK_NAME} ${{ job.container.id }}
-
-            # - name: postCreateCommand
-            #   run: npm ci
+            - name: postCreateCommand
+              run: npm ci
 
             # # Run All Tests
             # - name: Run Prettier
@@ -66,8 +67,8 @@ jobs:
             # - name: Run Lint
             #   run: npx eslint src
 
-            # - name: Run Test Suites
-            #   run: bash scripts/run-test.sh all 1
+            - name: Run Test Suites
+              run: bash scripts/run-test.sh all 1
 
             # - name: Run E2E Tests
             #   run: bash test/e2e/run.sh
