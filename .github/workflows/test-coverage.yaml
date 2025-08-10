@@ -44,14 +44,14 @@ jobs:
             - name: Run Docker
               run: docker ps -a
 
+            - name: Run Docker
+              run: docker network ls
+
             # devcontainer.json
             - name: Map host.docker.internal in job container
               run: |
                   GW_IP=$(ip route | awk '/default/ {print $3}')
                   echo "$GW_IP host.docker.internal" | tee -a /etc/hosts
-
-            - name: test1
-              run: ip route
 
             # - name: initializeCommand
             #   run: |
