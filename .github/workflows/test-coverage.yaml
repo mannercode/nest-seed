@@ -47,8 +47,6 @@ jobs:
             - name: Run Docker
               run: docker network ls
 
-            - name: Run Docker
-              run: wget host.docker.internal:6380
 
 
             # devcontainer.json
@@ -56,6 +54,12 @@ jobs:
               run: |
                   GW_IP=$(ip route | awk '/default/ {print $3}')
                   echo "$GW_IP host.docker.internal" | tee -a /etc/hosts
+
+            - name: Run Test Suites
+              run: bash scripts/reset-infra.sh
+
+            - name: Run Docker
+              run: wget host.docker.internal:6380
 
             # - name: initializeCommand
             #   run: |
