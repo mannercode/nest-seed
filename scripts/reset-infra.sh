@@ -11,7 +11,7 @@ mkdir -p $WORKSPACE_ROOT/$FILE_UPLOAD_DIRECTORY
 
 docker_compose --profile infra up -d
 
-SETUP_CONTAINERS="mongo-key-generator mongo-setup redis-setup nats-setup"
+SETUP_CONTAINERS="mongo-key-generator mongo-setup redis-setup nats-setup minio-setup"
 
 for CONTAINER in $SETUP_CONTAINERS; do
     if [ "$(docker wait "${CONTAINER}")" -ne 0 ]; then
@@ -21,9 +21,3 @@ for CONTAINER in $SETUP_CONTAINERS; do
         docker rm -v "${CONTAINER}"
     fi
 done
-
-# The file is too large to save, so it will be created.
-FILES_PATH=$WORKSPACE_ROOT/src/apps/__tests__/__helpers__/files
-
-dd if=/dev/zero bs=49999999 count=1 | tr '\0' 'a' >$FILES_PATH/large.txt
-dd if=/dev/zero bs=50000000 count=1 | tr '\0' 'a' >$FILES_PATH/oversized.txt
