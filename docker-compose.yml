@@ -302,32 +302,32 @@ services:
             <<: *hc-common
             test: 'curl -fsS http://localhost:9000/minio/health/ready'
 
-    minio-setup:
-        profiles: ['infra']
-        image: amazon/aws-cli:latest
-        container_name: minio-setup
-        depends_on:
-            minio:
-                condition: service_healthy
-        entrypoint: ['/bin/sh', '-c']
-        command: |
-            set -eu
-            mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
-            # 버킷 생성(없으면)
-            mc ls local/${S3_BUCKET} >/dev/null 2>&1 || mc mb -p local/${S3_BUCKET}
-            # 공개 다운로드(원치 않으면 이 줄 삭제)
-            [ "${S3_BUCKET_PUBLIC:-false}" = "true" ] && mc anonymous set download local/${S3_BUCKET} || true
-            # 앱용 사용자/키 생성(이미 있으면 무시)
-            mc admin user add local "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY" || true
-            mc admin policy attach local readwrite --user "$$S3_ACCESS_KEY" || true
-            echo "✅ MinIO init done."
-        environment:
-            AWS_ACCESS_KEY_ID: ${MINIO_USER}
-            AWS_SECRET_ACCESS_KEY: ${MINIO_PASSWORD}
-            S3_ACCESS_KEY: ${S3_ACCESS_KEY:-nestapp}
-            S3_SECRET_KEY: ${S3_SECRET_KEY:-nestsecret123}
-            S3_BUCKET: ${S3_BUCKET:-app-bucket}
-            S3_BUCKET_PUBLIC: ${S3_BUCKET_PUBLIC:-false}
+    # minio-setup:
+    #     profiles: ['infra']
+    #     image: amazon/aws-cli:latest
+    #     container_name: minio-setup
+    #     depends_on:
+    #         minio:
+    #             condition: service_healthy
+    #     entrypoint: ['/bin/sh', '-c']
+    #     command: |
+    #         set -eu
+    #         mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
+    #         # 버킷 생성(없으면)
+    #         mc ls local/${S3_BUCKET} >/dev/null 2>&1 || mc mb -p local/${S3_BUCKET}
+    #         # 공개 다운로드(원치 않으면 이 줄 삭제)
+    #         [ "${S3_BUCKET_PUBLIC:-false}" = "true" ] && mc anonymous set download local/${S3_BUCKET} || true
+    #         # 앱용 사용자/키 생성(이미 있으면 무시)
+    #         mc admin user add local "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY" || true
+    #         mc admin policy attach local readwrite --user "$$S3_ACCESS_KEY" || true
+    #         echo "✅ MinIO init done."
+    #     environment:
+    #         AWS_ACCESS_KEY_ID: ${MINIO_USER}
+    #         AWS_SECRET_ACCESS_KEY: ${MINIO_PASSWORD}
+    #         S3_ACCESS_KEY: ${S3_ACCESS_KEY:-nestapp}
+    #         S3_SECRET_KEY: ${S3_SECRET_KEY:-nestsecret123}
+    #         S3_BUCKET: ${S3_BUCKET:-app-bucket}
+    #         S3_BUCKET_PUBLIC: ${S3_BUCKET_PUBLIC:-false}
 
 networks:
     default:
