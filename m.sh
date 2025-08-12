@@ -7,27 +7,6 @@ CONSOLE_PORT=9001
 AWS_ACCESS_KEY_ID=admin
 AWS_SECRET_ACCESS_KEY=password
 
-# docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
-# docker run -d --name "${CONTAINER_NAME}" \
-#     -p 9000:9000 -p 9001:9001 \
-#     -e MINIO_ROOT_USER="${AWS_ACCESS_KEY_ID}" \
-#     -e MINIO_ROOT_PASSWORD="${AWS_SECRET_ACCESS_KEY}" \
-#     -e MINIO_BROWSER_REDIRECT_URL="http://localhost:${CONSOLE_PORT}" \
-#     minio/minio server /data --console-address ":${CONSOLE_PORT}" >/dev/null
-
-# # ===== MinIO ready 대기 =====
-# for i in {1..30}; do
-#     if curl -fsS "http://${HOST}/minio/health/ready" >/dev/null; then
-#         echo "MinIO is ready"
-#         break
-#     fi
-#     sleep 1
-#     [[ $i -eq 30 ]] && {
-#         echo "MinIO not ready" >&2
-#         exit 1
-#     }
-# done
-
 
 aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
 aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY

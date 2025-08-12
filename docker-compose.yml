@@ -318,7 +318,6 @@ services:
         environment:
             AWS_ACCESS_KEY_ID: ${MINIO_USER}
             AWS_SECRET_ACCESS_KEY: ${MINIO_PASSWORD}
-            S3_BUCKET: ${MINIO_BUCKET}
 
 networks:
     default:
