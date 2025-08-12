@@ -1,3 +1,7 @@
+x-hc-common: &hc-common
+    interval: 5s
+    timeout: 3s
+
 x-common-base: &common-base
     logging:
         options: { max-size: '10m', max-file: '3' }
@@ -16,11 +20,10 @@ x-mongo-base: &mongo-base
     restart: always
     depends_on: ['mongo-key-generator']
     healthcheck:
+        <<: *hc-common
         test: >
             mongosh --quiet -u $MONGO_USERNAME -p $MONGO_PASSWORD --authenticationDatabase admin
             --eval 'db.hello().isWritablePrimary || db.hello().secondary'
-        interval: 5s
-        timeout: 5s
 
 x-redis-base: &redis-base
     <<: *common-base
@@ -28,9 +31,8 @@ x-redis-base: &redis-base
     profiles: ['infra']
     restart: always
     healthcheck:
+        <<: *hc-common
         test: ['CMD-SHELL', 'redis-cli -a $REDIS_PASSWORD ping']
-        interval: 5s
-        timeout: 5s
     command: >
         sh -euc 'redis-server --port 6379 \
           --cluster-enabled yes \
@@ -50,19 +52,17 @@ x-nats-base: &nats-base
     profiles: ['infra']
     restart: always
     healthcheck:
+        <<: *hc-common
         test: wget -qO- http://localhost:8222/varz || exit 1
-        interval: 5s
-        timeout: 5s
 
 x-app-base: &app-base
     <<: *common-base
     profiles: ['apps']
     environment: ['NODE_ENV=production']
-    healthcheck:
-        test: 'curl -f http://localhost:$HTTP_PORT/health'
-        interval: 5s
-        timeout: 5s
     env_file: .env.test
+    healthcheck:
+        <<: *hc-common
+        test: 'curl -fsS http://localhost:$HTTP_PORT/health'
 
 services:
     redis1:
@@ -288,8 +288,50 @@ services:
             cores: { condition: service_healthy }
             infrastructures: { condition: service_healthy }
 
+    minio:
+        profiles: ['infra']
+        image: minio/minio:latest
+        container_name: minio
+        ports: ['${MINIO_PORT}:9000', '9001:9001']
+        environment:
+            MINIO_ROOT_USER: ${MINIO_USER}
+            MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+            MINIO_BROWSER_REDIRECT_URL: http://${MINIO_HOST}:${MINIO_PORT}
+        command: ['server', '/data', '--console-address', ':9001']
+        healthcheck:
+            <<: *hc-common
+            test: 'curl -fsS http://localhost:9000/minio/health/ready'
+
+    minio-setup:
+        profiles: ['infra']
+        image: amazon/aws-cli:latest
+        container_name: minio-setup
+        depends_on:
+            minio:
+                condition: service_healthy
+        entrypoint: ['/bin/sh', '-c']
+        command: |
+            set -eu
+            mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
+            # 버킷 생성(없으면)
+            mc ls local/${S3_BUCKET} >/dev/null 2>&1 || mc mb -p local/${S3_BUCKET}
+            # 공개 다운로드(원치 않으면 이 줄 삭제)
+            [ "${S3_BUCKET_PUBLIC:-false}" = "true" ] && mc anonymous set download local/${S3_BUCKET} || true
+            # 앱용 사용자/키 생성(이미 있으면 무시)
+            mc admin user add local "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY" || true
+            mc admin policy attach local readwrite --user "$$S3_ACCESS_KEY" || true
+            echo "✅ MinIO init done."
+        environment:
+            AWS_ACCESS_KEY_ID: ${MINIO_USER}
+            AWS_SECRET_ACCESS_KEY: ${MINIO_PASSWORD}
+            S3_ACCESS_KEY: ${S3_ACCESS_KEY:-nestapp}
+            S3_SECRET_KEY: ${S3_SECRET_KEY:-nestsecret123}
+            S3_BUCKET: ${S3_BUCKET:-app-bucket}
+            S3_BUCKET_PUBLIC: ${S3_BUCKET_PUBLIC:-false}
+
 networks:
     default:
 
 volumes:
     mongodb_key: {}
+    minio_data: {}
