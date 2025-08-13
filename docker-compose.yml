@@ -324,4 +324,3 @@ networks:
 
 volumes:
     mongodb_key: {}
-    minio_data: {}
