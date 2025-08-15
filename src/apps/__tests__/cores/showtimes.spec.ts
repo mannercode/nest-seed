@@ -56,11 +56,14 @@ describe('ShowtimesService', () => {
 
         // 상영시간이 존재하지 않는 경우
         describe('when the showtimes do not exist', () => {
-            // NotFoundException을 던진다
-            it('throws NotFoundException', async () => {
+            // 404 status를 던진다
+            it('throws 404 status', async () => {
                 const promise = fix.showtimesService.getShowtimes([nullObjectId])
 
-                await expect(promise).rejects.toThrow('One or more documents not found')
+                await expect(promise).rejects.toMatchObject({
+                    status: 404,
+                    message: 'One or more documents not found'
+                })
             })
         })
     })
@@ -140,13 +143,14 @@ describe('ShowtimesService', () => {
 
         // 필터가 비어있는 경우
         describe('when the filter is empty', () => {
-            // 에러를 던진다.
-            it('throws an error', async () => {
+            // 400 status를 던진다
+            it('throws 404 status', async () => {
                 const promise = fix.showtimesService.searchShowtimes({})
 
-                await expect(promise).rejects.toThrow(
-                    'At least one filter condition must be provided'
-                )
+                await expect(promise).rejects.toMatchObject({
+                    status: 400,
+                    message: 'At least one filter condition must be provided'
+                })
             })
         })
     })

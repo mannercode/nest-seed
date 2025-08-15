@@ -90,13 +90,19 @@ export function withTestId(prefix: string) {
     return `${prefix}-${getTestId()}`
 }
 
-export class EnvVars {
+export class Env {
     static getString(key: string): string {
         const value = process.env[key]
         if (!value) {
             throw new Error(`Environment variable ${key} is not defined`)
         }
         return value
+    }
+
+    static getBoolean(key: string): boolean {
+        const value = this.getString(key)
+
+        return value.toLowerCase() === 'true'
     }
 
     static getNumber(key: string): number {

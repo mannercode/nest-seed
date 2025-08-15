@@ -293,11 +293,11 @@ services:
         profiles: ['infra']
         image: minio/minio:latest
         container_name: minio
-        ports: ['${MINIO_PORT}:9000', '9001:9001']
+        ports: ['9000:9000', '9001:9001']
         environment:
-            MINIO_ROOT_USER: ${MINIO_USER}
-            MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
-            MINIO_BROWSER_REDIRECT_URL: http://${MINIO_HOST}:${MINIO_PORT}
+            MINIO_ROOT_USER: ${AMAZON_S3_ACCESS_KEY_ID}
+            MINIO_ROOT_PASSWORD: ${AMAZON_S3_SECRET_ACCESS_KEY}
+            MINIO_BROWSER_REDIRECT_URL: $AMAZON_S3_ENDPOINT
         command: ['server', '/data', '--console-address', ':9001']
         healthcheck:
             <<: *hc-common
@@ -313,11 +313,11 @@ services:
         entrypoint: ['/bin/sh', '-c']
         command: |
             sh -euc '
-            aws --endpoint-url http://$MINIO_HOST:$MINIO_PORT s3 mb s3://$MINIO_BUCKET
+            aws --endpoint-url $AMAZON_S3_ENDPOINT s3 mb s3://$AMAZON_S3_BUCKET
             '
         environment:
-            AWS_ACCESS_KEY_ID: ${MINIO_USER}
-            AWS_SECRET_ACCESS_KEY: ${MINIO_PASSWORD}
+            AWS_ACCESS_KEY_ID: ${AMAZON_S3_ACCESS_KEY_ID}
+            AWS_SECRET_ACCESS_KEY: ${AMAZON_S3_SECRET_ACCESS_KEY}
 
 networks:
     default:

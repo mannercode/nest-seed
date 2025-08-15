@@ -89,13 +89,14 @@ describe('TicketsService', () => {
 
         // 필터가 비어있는 경우
         describe('when the filter is empty', () => {
-            // 에러를 던진다.
-            it('throws an error', async () => {
+            // 400 status를 던진다
+            it('throws 404 status', async () => {
                 const promise = fix.ticketsService.searchTickets({})
 
-                await expect(promise).rejects.toThrow(
-                    'At least one filter condition must be provided'
-                )
+                await expect(promise).rejects.toMatchObject({
+                    status: 400,
+                    message: 'At least one filter condition must be provided'
+                })
             })
         })
     })
