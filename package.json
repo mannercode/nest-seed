@@ -13,6 +13,7 @@
     "comments": [],
     "dependencies": {
         "@aws-sdk/client-s3": "^3.864.0",
+        "@aws-sdk/s3-request-presigner": "^3.864.0",
         "@nestjs-modules/ioredis": "^2.0.2",
         "@nestjs/bullmq": "^11.0.3",
         "@nestjs/common": "^11.1.6",

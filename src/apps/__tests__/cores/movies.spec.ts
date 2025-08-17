@@ -226,8 +226,8 @@ describe('MoviesService', () => {
 
         // 쿼리 파라미터가 없는 경우
         describe('when query parameters are missing', () => {
-            // 기본 페이지네이션으로 영화 목록을 반환한다
-            it('returns the movie list with default pagination', async () => {
+            // 기본 페이지네이션으로 영화를 반환한다
+            it('returns movies with default pagination', async () => {
                 await fix.httpClient
                     .get('/movies')
                     .ok({
@@ -252,8 +252,8 @@ describe('MoviesService', () => {
 
         // `title` 부분 문자열이 제공된 경우
         describe('when a partial `title` is provided', () => {
-            // 제목이 해당 부분 문자열을 포함하는 영화 목록을 반환한다
-            it('returns the movie list whose title contains the given substring', async () => {
+            // 제목이 해당 부분 문자열을 포함하는 영화를 반환한다
+            it('returns movies whose title contains the given substring', async () => {
                 await fix.httpClient
                     .get('/movies')
                     .query({ title: 'title-a' })
@@ -267,8 +267,8 @@ describe('MoviesService', () => {
 
         // `genre`가 제공된 경우
         describe('when `genre` is provided', () => {
-            // 지정한 장르와 일치하는 영화 목록을 반환한다
-            it('returns the movie list matching the given genre', async () => {
+            // 지정한 장르와 일치하는 영화를 반환한다
+            it('returns movies matching the given genre', async () => {
                 await fix.httpClient
                     .get('/movies')
                     .query({ genre: MovieGenre.Drama })
@@ -282,8 +282,8 @@ describe('MoviesService', () => {
 
         // `releaseDate`가 제공된 경우
         describe('when `releaseDate` is provided', () => {
-            // 지정된 날짜에 개봉한 영화 목록을 반환한다
-            it('returns the movie list released on the given date', async () => {
+            // 지정된 날짜에 개봉한 영화를 반환한다
+            it('returns movies released on the given date', async () => {
                 await fix.httpClient
                     .get('/movies')
                     .query({ releaseDate: new Date('2000-01-02') })
@@ -297,8 +297,8 @@ describe('MoviesService', () => {
 
         // `plot` 부분 문자열이 제공된 경우
         describe('when a partial `plot` is provided', () => {
-            // 줄거리에 해당 부분 문자열을 포함하는 영화 목록을 반환한다
-            it('returns the movie list whose plot contains the given substring', async () => {
+            // 줄거리에 해당 부분 문자열을 포함하는 영화를 반환한다
+            it('returns movies whose plot contains the given substring', async () => {
                 await fix.httpClient
                     .get('/movies')
                     .query({ plot: 'plot-b' })
@@ -312,8 +312,8 @@ describe('MoviesService', () => {
 
         // `director` 부분 문자열이 제공된 경우
         describe('when a partial `director` is provided', () => {
-            // 감독 이름에 해당 부분 문자열이 포함된 영화 목록을 반환한다
-            it('returns the movie list whose director`s name contains the given substring', async () => {
+            // 감독 이름에 해당 부분 문자열이 포함된 영화를 반환한다
+            it('returns movies whose director`s name contains the given substring', async () => {
                 await fix.httpClient
                     .get('/movies')
                     .query({ director: 'James' })
@@ -327,8 +327,8 @@ describe('MoviesService', () => {
 
         // `rating`이 제공된 경우
         describe('when `rating` is provided', () => {
-            // 지정한 등급과 일치하는 영화 목록을 반환한다
-            it('returns the movie list matching the given rating', async () => {
+            // 지정한 등급과 일치하는 영화를 반환한다
+            it('returns movies matching the given rating', async () => {
                 await fix.httpClient
                     .get('/movies')
                     .query({ rating: MovieRating.NC17 })

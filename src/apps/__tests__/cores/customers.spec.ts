@@ -168,8 +168,8 @@ describe('CustomersService', () => {
 
         // 쿼리 파라미터가 없는 경우
         describe('when query parameters are missing', () => {
-            // 기본 페이지네이션으로 고객 목록을 반환한다
-            it('returns the customer list with default pagination', async () => {
+            // 기본 페이지네이션으로 고객을 반환한다
+            it('returns customers with default pagination', async () => {
                 await fix.httpClient
                     .get('/customers')
                     .ok({
@@ -194,8 +194,8 @@ describe('CustomersService', () => {
 
         // `name` 부분 문자열이 제공된 경우
         describe('when a partial `name` is provided', () => {
-            // 이름이 해당 부분 문자열을 포함하는 고객 목록을 반환한다
-            it('returns the customer list whose name contains the given substring', async () => {
+            // 이름이 해당 부분 문자열을 포함하는 고객을 반환한다
+            it('returns customers whose name contains the given substring', async () => {
                 await fix.httpClient
                     .get('/customers')
                     .query({ name: 'customer-a' })
@@ -209,8 +209,8 @@ describe('CustomersService', () => {
 
         // `email` 부분 문자열이 제공된 경우
         describe('when a partial `email` is provided', () => {
-            // 이메일이 해당 부분 문자열을 포함하는 고객 목록을 반환한다
-            it('returns the customer list whose email contains the given substring', async () => {
+            // 이메일이 해당 부분 문자열을 포함하는 고객을 반환한다
+            it('returns customers whose email contains the given substring', async () => {
                 await fix.httpClient
                     .get('/customers')
                     .query({ email: 'user-b' })

@@ -157,8 +157,8 @@ describe('TheatersService', () => {
 
         // 쿼리 파라미터가 없는 경우
         describe('when query parameters are missing', () => {
-            // 기본 페이지네이션으로 극장 목록을 반환한다
-            it('returns the theater list with default pagination', async () => {
+            // 기본 페이지네이션으로 극장을 반환한다
+            it('returns theaters with default pagination', async () => {
                 await fix.httpClient
                     .get('/theaters')
                     .ok({
@@ -183,8 +183,8 @@ describe('TheatersService', () => {
 
         // `name` 부분 문자열이 제공된 경우
         describe('when a partial `name` is provided', () => {
-            // 이름이 해당 부분 문자열을 포함하는 극장 목록을 반환한다
-            it('returns the theater list whose name contains the given substring', async () => {
+            // 이름이 해당 부분 문자열을 포함하는 극장을 반환한다
+            it('returns theaters whose name contains the given substring', async () => {
                 await fix.httpClient
                     .get('/theaters')
                     .query({ name: 'Theater-a' })

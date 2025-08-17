@@ -1,5 +1,5 @@
-import { generateShortId } from '../../utils'
-import type { Fixture } from './amazon-s3.service.fixture'
+import { DownloadResult, UploadResult } from 'common'
+import { newBucketName, uploadObject, type Fixture } from './amazon-s3.service.fixture'
 
 describe('AmazonS3Service', () => {
     let fix: Fixture
@@ -18,26 +18,25 @@ describe('AmazonS3Service', () => {
         describe('when the payload is valid', () => {
             // 버킷을 생성하고 반환한다
             it('creates and returns a bucket', async () => {
-                const bucketName = generateShortId().toLowerCase()
-                const { $metadata, Location } = await fix.s3Service.createBucket(bucketName)
+                const bucket = newBucketName()
+                const result = await fix.s3Service.createBucket(bucket)
 
-                expect($metadata.httpStatusCode).toBe(200)
-                expect(Location).toEqual(`/${bucketName}`)
+                expect(result).toEqual({ status: 200, location: `/${bucket}` })
             })
         })
 
         // 버킷이 이미 존재하는 경우
         describe('when the bucket already exists', () => {
-            let bucketName: string
+            let bucket: string
 
             beforeEach(async () => {
-                bucketName = generateShortId().toLowerCase()
-                await fix.s3Service.createBucket(bucketName)
+                bucket = newBucketName()
+                await fix.s3Service.createBucket(bucket)
             })
 
             // BucketAlreadyOwnedByYou 예외를 던진다
             it('throws a BucketAlreadyOwnedByYou exception', async () => {
-                const promise = fix.s3Service.createBucket(bucketName)
+                const promise = fix.s3Service.createBucket(bucket)
 
                 await expect(promise).rejects.toHaveProperty('name', 'BucketAlreadyOwnedByYou')
             })
@@ -47,8 +46,8 @@ describe('AmazonS3Service', () => {
         describe('when the bucket name is in uppercase', () => {
             // InvalidBucketName 예외를 던진다
             it('throws an InvalidBucketName exception', async () => {
-                const bucketName = 'UPPERCASE'
-                const promise = fix.s3Service.createBucket(bucketName)
+                const bucket = 'UPPERCASE'
+                const promise = fix.s3Service.createBucket(bucket)
 
                 await expect(promise).rejects.toHaveProperty('name', 'InvalidBucketName')
             })
@@ -58,16 +57,20 @@ describe('AmazonS3Service', () => {
     describe('listBuckets', () => {
         // 버킷이 존재하는 경우
         describe('when there are buckets', () => {
-            it('returns all buckets including the newly created ones', async () => {
-                const b1 = generateShortId().toLowerCase()
-                const b2 = generateShortId().toLowerCase()
-                await fix.s3Service.createBucket(b1)
-                await fix.s3Service.createBucket(b2)
+            let bucket: string
 
-                const { Buckets } = await fix.s3Service.listBuckets()
-                const names = (Buckets ?? []).map((b) => b.Name)
+            beforeEach(async () => {
+                bucket = newBucketName()
+                await fix.s3Service.createBucket(bucket)
+            })
 
-                expect(names).toEqual(expect.arrayContaining([b1, b2]))
+            // 모든 버킷을 반환한다
+            it('returns all buckets', async () => {
+                const buckets = await fix.s3Service.listBuckets()
+
+                expect(buckets).toEqual(
+                    expect.arrayContaining([expect.objectContaining({ Name: bucket })])
+                )
             })
         })
     })
@@ -75,26 +78,26 @@ describe('AmazonS3Service', () => {
     describe('deleteBucket', () => {
         // 버킷이 존재하는 경우
         describe('when the bucket exists', () => {
+            let bucket: string
+
+            beforeEach(async () => {
+                bucket = newBucketName()
+                await fix.s3Service.createBucket(bucket)
+            })
+
             // 버킷을 삭제한다
             it('deletes the bucket', async () => {
-                const bucket = generateShortId().toLowerCase()
-                await fix.s3Service.createBucket(bucket)
+                const result = await fix.s3Service.deleteBucket(bucket)
 
-                const { $metadata } = await fix.s3Service.deleteBucket(bucket)
-                expect($metadata.httpStatusCode).toBe(204)
-
-                const { Buckets } = await fix.s3Service.listBuckets()
-                const names = (Buckets ?? []).map((b) => b.Name)
-                expect(names).not.toContain(bucket)
+                expect(result).toEqual({ status: 204, deletedBucket: bucket })
             })
         })
 
         // 버킷이 존재하지 않는 경우
         describe('when the bucket does not exist', () => {
             // NoSuchBucket 예외를 던진다
-            it('throws a NoSuchBucket (or S3ServiceException)', async () => {
-                const bucket = generateShortId().toLowerCase()
-                const promise = fix.s3Service.deleteBucket(bucket)
+            it('throws a NoSuchBucket exception', async () => {
+                const promise = fix.s3Service.deleteBucket('not-exists')
 
                 await expect(promise).rejects.toHaveProperty('name', 'NoSuchBucket')
             })
@@ -102,191 +105,229 @@ describe('AmazonS3Service', () => {
 
         // 버킷이 비어 있지 않은 경우
         describe('when the bucket is not empty', () => {
-            // 예외를 던진다
-            it('throws a BucketNotEmpty exception', async () => {
-                const bucket = generateShortId().toLowerCase()
-                await fix.s3Service.createBucket(bucket)
-                await fix.s3Service.putObject({
-                    bucket,
-                    key: 'hello.txt',
-                    body: Buffer.from('hello'),
-                    contentType: 'text/plain'
-                })
+            let bucket: string
 
+            beforeEach(async () => {
+                bucket = newBucketName()
+                await fix.s3Service.createBucket(bucket)
+
+                await uploadObject(fix.s3Service, bucket, 'key.txt', 'hello')
+            })
+
+            // BucketNotEmpty 예외를 던진다
+            it('throws a BucketNotEmpty exception', async () => {
                 const promise = fix.s3Service.deleteBucket(bucket)
+
                 await expect(promise).rejects.toHaveProperty('name', 'BucketNotEmpty')
             })
         })
     })
 
-    describe('putObject', () => {
+    describe('getUploadUrl', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
-            // 객체를 저장한다
-            it('stores the object', async () => {
-                const bucket = generateShortId().toLowerCase()
+            const key = 'key.txt'
+            const expiresInSec = 60
+            let result: UploadResult
+            let bucket: string
+
+            beforeEach(async () => {
+                bucket = newBucketName()
                 await fix.s3Service.createBucket(bucket)
 
-                const key = 'dir/hello.txt'
-                const body = Buffer.from('hello world')
-                const { $metadata } = await fix.s3Service.putObject({
-                    bucket,
-                    key,
-                    body,
-                    contentType: 'text/plain'
-                })
-                expect($metadata.httpStatusCode).toBe(200)
+                result = await fix.s3Service.getUploadUrl({ bucket, key, expiresInSec })
+            })
 
-                // 검증: 바로 getObject로 내용 확인
-                const obj = await fix.s3Service.getObject({ bucket, key })
-                const received = await streamToBuffer(obj.Body) // 헬퍼가 없다면 아래 유틸 추가
-                expect(received.toString('utf8')).toBe('hello world')
-                expect(obj.ContentType).toBe('text/plain')
+            // uploadUrl을 반환한다
+            it('returns an uploadUrl', async () => {
+                expect(result).toEqual({ bucket, key, expiresInSec, uploadUrl: expect.any(String) })
+            })
+
+            // uploadUrl을 통해 업로드가 가능하다
+            it('allows uploading via the uploadUrl', async () => {
+                const res = await fetch(result.uploadUrl, {
+                    method: 'PUT',
+                    headers: [['Content-Type', 'text/plain']],
+                    body: Buffer.from('hello')
+                })
+
+                expect(res.ok).toBe(true)
             })
         })
 
-        // 존재하지 않는 버킷에 put
+        // 버킷이 존재하지 않는 경우
         describe('when the bucket does not exist', () => {
-            it('throws a NoSuchBucket (or S3ServiceException)', async () => {
-                const bucket = generateShortId().toLowerCase()
-                const promise = fix.s3Service.putObject({
-                    bucket,
-                    key: 'a.txt',
-                    body: Buffer.from('x'),
-                    contentType: 'text/plain'
+            // 업로드 하면 404 Not Found를 반환한다
+            it('returns 404 Not Found when uploading', async () => {
+                const { uploadUrl } = await fix.s3Service.getUploadUrl({
+                    bucket: 'not-exists',
+                    key: 'key',
+                    expiresInSec: 60
                 })
-                await expect(promise).rejects.toHaveProperty('name', 'NoSuchBucket')
+
+                const res = await fetch(uploadUrl, { method: 'PUT', body: Buffer.from('hello') })
+                expect(res.status).toBe(404)
             })
         })
     })
 
-    describe('getObject', () => {
-        // 객체가 존재할 때
+    describe('getDownloadUrl', () => {
+        let bucket: string
+
+        beforeEach(async () => {
+            bucket = newBucketName()
+            await fix.s3Service.createBucket(bucket)
+        })
+
+        // 객체가 존재하는 경우
         describe('when the object exists', () => {
-            it('returns the object body and metadata', async () => {
-                const bucket = generateShortId().toLowerCase()
-                await fix.s3Service.createBucket(bucket)
-                const key = 'foo/data.json'
-                const payload = Buffer.from(JSON.stringify({ ok: true }))
+            const key = 'foo/data.json'
+            const body = 'upload body'
+            const expiresInSec = 60
+            let result: DownloadResult = {} as any
 
-                await fix.s3Service.putObject({
-                    bucket,
-                    key,
-                    body: payload,
-                    contentType: 'application/json'
+            beforeEach(async () => {
+                await uploadObject(fix.s3Service, bucket, key, body)
+
+                result = await fix.s3Service.getDownloadUrl({ bucket, key, expiresInSec })
+            })
+
+            // downloadUrl을 반환한다
+            it('returns an downloadUrl', async () => {
+                expect(result).toEqual({
+                    expiresInSec,
+                    downloadUrl: expect.any(String),
+                    contentType: expect.any(String),
+                    contentLength: expect.any(Number),
+                    metadata: {}
                 })
+            })
 
-                const obj = await fix.s3Service.getObject({ bucket, key })
-                const received = await streamToBuffer(obj.Body)
-                expect(received.equals(payload)).toBe(true)
-                expect(obj.ContentType).toBe('application/json')
+            // downloadUrl을 통해 다운로드가 가능하다
+            it('allows downloading via the downloadUrl', async () => {
+                const res = await fetch(result.downloadUrl)
+                expect(res.ok).toBe(true)
+
+                const arrayBuffer = await res.arrayBuffer()
+                const buffer = Buffer.from(arrayBuffer)
+
+                expect(buffer.toString('utf8')).toBe(body)
             })
         })
 
-        // 객체가 없을 때
+        // 객체가 존재하지 않는 경우
         describe('when the object does not exist', () => {
-            it('throws a NoSuchKey (or S3ServiceException)', async () => {
-                const bucket = generateShortId().toLowerCase()
-                await fix.s3Service.createBucket(bucket)
+            // NotFound 예외를 던진다
+            it('throws a NoSuchBucket exception', async () => {
+                const promise = fix.s3Service.getDownloadUrl({
+                    bucket,
+                    key: 'not-exists',
+                    expiresInSec: 60
+                })
 
-                const promise = fix.s3Service.getObject({ bucket, key: 'missing.bin' })
-                await expect(promise).rejects.toHaveProperty('name', 'NoSuchKey')
+                await expect(promise).rejects.toHaveProperty('name', 'NotFound')
             })
         })
     })
 
     describe('deleteObject', () => {
-        // 객체가 존재할 때
+        let bucket: string
+
+        beforeEach(async () => {
+            bucket = newBucketName()
+            await fix.s3Service.createBucket(bucket)
+        })
+
+        // 객체가 존재하는 경우
         describe('when the object exists', () => {
-            it('deletes the object', async () => {
-                const bucket = generateShortId().toLowerCase()
-                await fix.s3Service.createBucket(bucket)
-                const key = 'to-delete.txt'
+            const key = 'foo/data.json'
 
-                await fix.s3Service.putObject({
-                    bucket,
-                    key,
-                    body: Buffer.from('bye'),
-                    contentType: 'text/plain'
-                })
+            beforeEach(async () => {
+                await uploadObject(fix.s3Service, bucket, key, 'upload body')
+            })
 
-                const { $metadata } = await fix.s3Service.deleteObject({ bucket, key })
-                expect($metadata.httpStatusCode).toBe(204)
+            // 객체를 삭제하고 204 No Content를 반환한다
+            it('deletes the object and returns 204 No Content', async () => {
+                const result = await fix.s3Service.deleteObject(bucket, key)
 
-                const promise = fix.s3Service.getObject({ bucket, key })
-                await expect(promise).rejects.toHaveProperty('name', 'NoSuchKey')
+                expect(result).toEqual({ status: 204, bucket, deletedObject: key })
             })
         })
 
-        // 객체가 없을 때(멱등성)
+        // 객체가 존재하지 않는 경우
         describe('when the object does not exist', () => {
-            it('succeeds as a no-op (idempotent delete)', async () => {
-                const bucket = generateShortId().toLowerCase()
-                await fix.s3Service.createBucket(bucket)
+            // 204 No Content를 반환한다
+            it('returns 204 No Content', async () => {
+                const key = 'not-exist-key'
+                const result = await fix.s3Service.deleteObject(bucket, key)
 
-                const { $metadata } = await fix.s3Service.deleteObject({ bucket, key: 'nope' })
-                // S3는 존재하지 않는 객체 삭제도 204로 성공 처리
-                expect($metadata.httpStatusCode).toBe(204)
+                expect(result).toEqual({ status: 204, bucket, deletedObject: key })
             })
         })
     })
 
     describe('listObjects', () => {
-        describe('when the bucket has objects', () => {
-            it('lists object keys', async () => {
-                const bucket = generateShortId().toLowerCase()
-                await fix.s3Service.createBucket(bucket)
+        let bucket: string
+        const keys = ['a.txt', 'b/c.txt', 'b/d.txt']
 
-                const keys = ['a.txt', 'b/c.txt', 'b/d.txt']
-                for (const k of keys) {
-                    await fix.s3Service.putObject({
-                        bucket,
-                        key: k,
-                        body: Buffer.from(k),
-                        contentType: 'text/plain'
-                    })
-                }
+        beforeEach(async () => {
+            bucket = newBucketName()
+            await fix.s3Service.createBucket(bucket)
 
-                const { Contents } = await fix.s3Service.listObjects({ bucket, prefix: 'b/' }) // 구현에 따라 listObjectsV2
-                const listed = (Contents ?? []).map((o) => o.Key)
+            await Promise.all(
+                keys.map((key) => uploadObject(fix.s3Service, bucket, key, 'upload body'))
+            )
+        })
+
+        // 쿼리 파라미터가 없는 경우
+        describe('when query parameters are missing', () => {
+            // 모든 객체 목록을 반환한다
+            it('lists all objects', async () => {
+                const { contents } = await fix.s3Service.listObjects({ bucket })
+
+                expect(contents).toHaveLength(keys.length)
+            })
+        })
+
+        // `prefix`가 제공된 경우
+        describe('when `prefix` is provided', () => {
+            // 지정된 prefix로 시작하는 키를 가진 객체들을 반환한다
+            it('returns objects whose keys start with the given prefix', async () => {
+                const result = await fix.s3Service.listObjects({ bucket, prefix: 'b/' })
+
+                const listed = result.contents.map((o) => o.key)
                 expect(listed).toEqual(expect.arrayContaining(['b/c.txt', 'b/d.txt']))
                 expect(listed).not.toContain('a.txt')
             })
         })
+
+        // `maxKeys`가 제공된 경우
+        describe('when `maxKeys` is provided', () => {
+            // maxKeys 만큼 객체 목록을 반환한다
+            it('returns at most `maxKeys` objects', async () => {
+                const maxKeys = 2
+                const { contents } = await fix.s3Service.listObjects({ bucket, maxKeys })
+
+                expect(contents).toHaveLength(maxKeys)
+            })
+        })
+
+        // `nextToken`이 제공된 경우
+        describe('when `nextToken` is provided', () => {
+            const maxKeys = 2
+            let nextToken: string
+
+            beforeEach(async () => {
+                const result = await fix.s3Service.listObjects({ bucket, maxKeys })
+                nextToken = result.nextToken!
+            })
+
+            // 다음 페이지의 객체들을 반환한다
+            it('returns the next page of objects', async () => {
+                const { contents } = await fix.s3Service.listObjects({ bucket, maxKeys, nextToken })
+
+                expect(contents).toHaveLength(keys.length - maxKeys)
+            })
+        })
     })
 })
-
-/**
- * 테스트 유틸: S3 getObject의 Body(Stream/Uint8Array 등) -> Buffer
- * 구현체에 따라 Body 타입이 다를 수 있어 안전하게 처리
- */
-async function streamToBuffer(body: any): Promise<Buffer> {
-    if (!body) return Buffer.alloc(0)
-    if (Buffer.isBuffer(body)) return body
-    if (body instanceof Uint8Array) return Buffer.from(body)
-
-    // Node.js ReadableStream 대응
-    return await new Promise<Buffer>((resolve, reject) => {
-        const chunks: Buffer[] = []
-        body.on?.('data', (c: Buffer) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)))
-        body.on?.('end', () => resolve(Buffer.concat(chunks)))
-        body.on?.('error', reject)
-        // WHATWG ReadableStream 대응
-        if (body.getReader) {
-            ;(async () => {
-                try {
-                    const reader = body.getReader()
-                    const parts: Uint8Array[] = []
-                    while (true) {
-                        const { value, done } = await reader.read()
-                        if (done) break
-                        if (value) parts.push(value)
-                    }
-                    resolve(Buffer.concat(parts.map((p) => Buffer.from(p))))
-                } catch (e) {
-                    reject(e)
-                }
-            })()
-        }
-    })
-}

@@ -24,8 +24,8 @@ describe('ShowtimeCreationService', () => {
     describe('GET /showtime-creation/movies', () => {
         // 쿼리 파라미터가 없는 경우
         describe('when query parameters are missing', () => {
-            // 기본 페이지네이션으로 영화 목록을 반환한다
-            it('returns the movie list with default pagination', async () => {
+            // 기본 페이지네이션으로 영화를 반환한다
+            it('returns movies with default pagination', async () => {
                 await fix.httpClient
                     .get('/showtime-creation/movies')
                     .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.movie] })
@@ -36,8 +36,8 @@ describe('ShowtimeCreationService', () => {
     describe('GET /showtime-creation/theaters', () => {
         // 쿼리 파라미터가 없는 경우
         describe('when query parameters are missing', () => {
-            // 기본 페이지네이션으로 극장 목록을 반환한다
-            it('returns the theater list with default pagination', async () => {
+            // 기본 페이지네이션으로 극장을 반환한다
+            it('returns theaters with default pagination', async () => {
                 await fix.httpClient
                     .get('/showtime-creation/theaters')
                     .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.theater] })

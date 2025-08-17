@@ -1,50 +1,49 @@
 import {
+    Bucket,
     CreateBucketCommand,
-    CreateBucketCommandOutput,
     DeleteBucketCommand,
-    DeleteBucketCommandOutput,
     DeleteObjectCommand,
-    DeleteObjectCommandOutput,
     GetObjectCommand,
-    GetObjectCommandOutput,
+    HeadObjectCommand,
     ListBucketsCommand,
-    ListBucketsCommandOutput,
     ListObjectsV2Command,
-    ListObjectsV2CommandOutput,
     PutObjectCommand,
-    PutObjectCommandInput,
-    PutObjectCommandOutput,
     S3Client
 } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
 
-export type PutObjectInput = {
-    bucket: string
-    key: string
-    body: Uint8Array | Buffer | string | ReadableStream<any> | NodeJS.ReadableStream
-    contentType?: string
-    cacheControl?: string
-    contentDisposition?: string
-    contentEncoding?: string
+export type CreateBucketResult = { status: number; location: string }
+
+export type DeleteBucketResult = { status: number; deletedBucket: string }
+
+export type UploadOptions = { bucket: string; key: string; expiresInSec: number }
+export type UploadResult = { uploadUrl: string; bucket: string; key: string; expiresInSec: number }
+
+export type DownloadOptions = { bucket: string; key: string; expiresInSec: number }
+export type DownloadResult = {
+    downloadUrl: string
+    contentType: string
+    contentLength: number
     metadata?: Record<string, string>
+    expiresInSec: number
 }
+export type DeleteObjectResult = { status: number; bucket: string; deletedObject: string }
 
-export type GetObjectInput = {
-    bucket: string
-    key: string
-    /** HTTP Range 헤더 형태: e.g. 'bytes=0-99' */
-    range?: string
-    /** If-Match / If-None-Match / If-Modified-Since / If-Unmodified-Since 등 필요시 확장 */
-}
-
-export type DeleteObjectInput = { bucket: string; key: string }
-
-export type ListObjectsInput = {
+export type ListObjectsOptions = {
     bucket: string
     prefix?: string
-    delimiter?: string
-    continuationToken?: string
+    nextToken?: string
     maxKeys?: number
+}
+export type S3Object = { key: string; lastModified: Date; eTag: string; size: number }
+export type ListObjectsResult = {
+    contents: S3Object[]
+    isTruncated: boolean
+    nextToken?: string
+    maxKeys: number
+    bucket: string
+    prefix: string
 }
 
 @Injectable()
@@ -55,81 +54,92 @@ export class AmazonS3Service {
         return `AmazonS3Service_${name}`
     }
 
-    /** 버킷 생성 */
-    async createBucket(name: string): Promise<CreateBucketCommandOutput> {
+    async createBucket(name: string): Promise<CreateBucketResult> {
         const command = new CreateBucketCommand({ Bucket: name })
-        return await this.s3.send(command)
+        const { $metadata, Location } = await this.s3.send(command)
+
+        return { status: $metadata.httpStatusCode!, location: Location! }
     }
 
-    /** 모든 버킷 목록 조회 */
-    async listBuckets(): Promise<ListBucketsCommandOutput> {
+    async listBuckets(): Promise<Bucket[]> {
         const command = new ListBucketsCommand({})
-        return await this.s3.send(command)
+        const { Buckets } = await this.s3.send(command)
+
+        return Buckets!
     }
 
-    /** 버킷 삭제 (비어있지 않으면 BucketNotEmpty 예외) */
-    async deleteBucket(name: string): Promise<DeleteBucketCommandOutput> {
+    async deleteBucket(name: string): Promise<DeleteBucketResult> {
         const command = new DeleteBucketCommand({ Bucket: name })
-        return await this.s3.send(command)
+        const { $metadata } = await this.s3.send(command)
+
+        return { status: $metadata.httpStatusCode!, deletedBucket: name }
     }
 
-    /** 객체 업로드 */
-    async putObject(input: PutObjectInput): Promise<PutObjectCommandOutput> {
-        const params: PutObjectCommandInput = {
-            Bucket: input.bucket,
-            Key: input.key,
-            Body: input.body as any,
-            ContentType: input.contentType,
-            CacheControl: input.cacheControl,
-            ContentDisposition: input.contentDisposition,
-            ContentEncoding: input.contentEncoding,
-            Metadata: input.metadata
+    async getUploadUrl(opts: UploadOptions): Promise<UploadResult> {
+        const { bucket, key, expiresInSec } = opts
+
+        const cmd = new PutObjectCommand({ Bucket: bucket, Key: key })
+
+        const uploadUrl = await getSignedUrl(this.s3, cmd, { expiresIn: expiresInSec })
+
+        return { uploadUrl, bucket, key, expiresInSec }
+    }
+
+    async getDownloadUrl(opts: DownloadOptions): Promise<DownloadResult> {
+        const { bucket: Bucket, key: Key, expiresInSec } = opts
+        const head = new HeadObjectCommand({ Bucket, Key })
+        const command = new GetObjectCommand({ Bucket, Key })
+
+        const [object, downloadUrl] = await Promise.all([
+            this.s3.send(head),
+            getSignedUrl(this.s3, command, { expiresIn: expiresInSec })
+        ])
+
+        return {
+            downloadUrl,
+            contentType: object.ContentType!,
+            contentLength: object.ContentLength!,
+            metadata: object.Metadata,
+            expiresInSec
         }
-        const command = new PutObjectCommand(params)
-        return await this.s3.send(command)
     }
 
-    /** 객체 조회 (Body는 스트림/버퍼/Uint8Array 등 런타임에 따라 다름) */
-    async getObject(input: GetObjectInput): Promise<GetObjectCommandOutput> {
-        const command = new GetObjectCommand({
-            Bucket: input.bucket,
-            Key: input.key,
-            Range: input.range
-        })
-        return await this.s3.send(command)
+    async deleteObject(bucket: string, key: string): Promise<DeleteObjectResult> {
+        const command = new DeleteObjectCommand({ Bucket: bucket, Key: key })
+
+        const { $metadata } = await this.s3.send(command)
+
+        return { status: $metadata.httpStatusCode!, bucket, deletedObject: key }
     }
 
-    /** 객체 삭제 (존재하지 않는 키 삭제도 204로 성공 처리되는 것이 일반적) */
-    async deleteObject(input: DeleteObjectInput): Promise<DeleteObjectCommandOutput> {
-        const command = new DeleteObjectCommand({ Bucket: input.bucket, Key: input.key })
-        return await this.s3.send(command)
-    }
-
-    /** 객체 목록 조회 (ListObjectsV2) */
-    async listObjects(input: ListObjectsInput): Promise<ListObjectsV2CommandOutput> {
+    async listObjects(options: ListObjectsOptions): Promise<ListObjectsResult> {
         const command = new ListObjectsV2Command({
-            Bucket: input.bucket,
-            Prefix: input.prefix,
-            Delimiter: input.delimiter,
-            ContinuationToken: input.continuationToken,
-            MaxKeys: input.maxKeys
+            Bucket: options.bucket,
+            Prefix: options.prefix,
+            ContinuationToken: options.nextToken,
+            MaxKeys: options.maxKeys
         })
-        return await this.s3.send(command)
+
+        const result = await this.s3.send(command)
+
+        let contents: S3Object[] = []
+
+        contents = result.Contents!.map((content) => ({
+            key: content.Key!,
+            lastModified: content.LastModified!,
+            eTag: content.ETag!,
+            size: content.Size!
+        }))
+
+        return {
+            contents,
+            isTruncated: result.IsTruncated!,
+            nextToken: result.NextContinuationToken,
+            maxKeys: result.MaxKeys!,
+            bucket: result.Name!,
+            prefix: result.Prefix!
+        }
     }
-
-    // --- 선택적 편의 메서드 (원하시면 테스트에 맞춰 사용) ---
-
-    // /** 버킷 존재 여부 확인(headBucket) */
-    // async headBucket(name: string): Promise<void> {
-    //     const cmd = new HeadBucketCommand({ Bucket: name })
-    //     await this.s3.send(cmd)
-    // }
-
-    // /** 객체 메타데이터 확인(headObject) */
-    // async headObject(bucket: string, key: string): Promise<void> {
-    //     const cmd = new HeadObjectCommand({ Bucket: bucket, Key: key })
-    //     await this.s3.send(cmd)
-    // }
 }
 
 export function InjectAmazonS3(name?: string): ParameterDecorator {

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { AmazonS3Module, AmazonS3Service, InjectAmazonS3 } from 'common'
+import { AmazonS3Module, AmazonS3Service, generateShortId, InjectAmazonS3 } from 'common'
 import { createTestingModule, getAmazonS3TestConnection } from 'testlib'
 
 @Injectable()
@@ -36,4 +36,27 @@ export async function createFixture() {
     }
 
     return { teardown, s3Service }
+}
+
+export const newBucketName = () => generateShortId().toLowerCase()
+
+export const uploadObject = async (
+    s3Service: AmazonS3Service,
+    bucket: string,
+    key: string,
+    body: string
+) => {
+    const { uploadUrl } = await s3Service.getUploadUrl({
+        bucket,
+        key,
+        expiresInSec: 60
+    })
+
+    const res = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: [['Content-Type', 'text/plain']],
+        body: Buffer.from(body)
+    })
+
+    expect(res.ok).toBe(true)
 }
