@@ -4,7 +4,6 @@ import {
     DeleteBucketCommand,
     DeleteObjectCommand,
     GetObjectCommand,
-    HeadObjectCommand,
     ListBucketsCommand,
     ListObjectsV2Command,
     PutObjectCommand,
@@ -14,20 +13,11 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
 
 export type CreateBucketResult = { status: number; location: string }
-
 export type DeleteBucketResult = { status: number; deletedBucket: string }
 
 export type UploadOptions = { bucket: string; key: string; expiresInSec: number }
-export type UploadResult = { uploadUrl: string; bucket: string; key: string; expiresInSec: number }
-
 export type DownloadOptions = { bucket: string; key: string; expiresInSec: number }
-export type DownloadResult = {
-    downloadUrl: string
-    contentType: string
-    contentLength: number
-    metadata?: Record<string, string>
-    expiresInSec: number
-}
+
 export type DeleteObjectResult = { status: number; bucket: string; deletedObject: string }
 
 export type ListObjectsOptions = {
@@ -75,33 +65,22 @@ export class AmazonS3Service {
         return { status: $metadata.httpStatusCode!, deletedBucket: name }
     }
 
-    async getUploadUrl(opts: UploadOptions): Promise<UploadResult> {
+    async getUploadUrl(opts: UploadOptions): Promise<string> {
         const { bucket, key, expiresInSec } = opts
 
         const cmd = new PutObjectCommand({ Bucket: bucket, Key: key })
 
         const uploadUrl = await getSignedUrl(this.s3, cmd, { expiresIn: expiresInSec })
-
-        return { uploadUrl, bucket, key, expiresInSec }
+        return uploadUrl
     }
 
-    async getDownloadUrl(opts: DownloadOptions): Promise<DownloadResult> {
-        const { bucket: Bucket, key: Key, expiresInSec } = opts
-        const head = new HeadObjectCommand({ Bucket, Key })
-        const command = new GetObjectCommand({ Bucket, Key })
+    async getDownloadUrl(opts: DownloadOptions): Promise<string> {
+        const { bucket, key, expiresInSec } = opts
 
-        const [object, downloadUrl] = await Promise.all([
-            this.s3.send(head),
-            getSignedUrl(this.s3, command, { expiresIn: expiresInSec })
-        ])
+        const command = new GetObjectCommand({ Bucket: bucket, Key: key })
 
-        return {
-            downloadUrl,
-            contentType: object.ContentType!,
-            contentLength: object.ContentLength!,
-            metadata: object.Metadata,
-            expiresInSec
-        }
+        const downloadUrl = await getSignedUrl(this.s3, command, { expiresIn: expiresInSec })
+        return downloadUrl
     }
 
     async deleteObject(bucket: string, key: string): Promise<DeleteObjectResult> {

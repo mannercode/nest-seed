@@ -1,4 +1,3 @@
-import { DownloadResult, UploadResult } from 'common'
 import { newBucketName, uploadObject, type Fixture } from './amazon-s3.service.fixture'
 
 describe('AmazonS3Service', () => {
@@ -128,24 +127,24 @@ describe('AmazonS3Service', () => {
         describe('when the payload is valid', () => {
             const key = 'key.txt'
             const expiresInSec = 60
-            let result: UploadResult
+            let uploadUrl: string
             let bucket: string
 
             beforeEach(async () => {
                 bucket = newBucketName()
                 await fix.s3Service.createBucket(bucket)
 
-                result = await fix.s3Service.getUploadUrl({ bucket, key, expiresInSec })
+                uploadUrl = await fix.s3Service.getUploadUrl({ bucket, key, expiresInSec })
             })
 
             // uploadUrl을 반환한다
             it('returns an uploadUrl', async () => {
-                expect(result).toEqual({ bucket, key, expiresInSec, uploadUrl: expect.any(String) })
+                expect(uploadUrl).toEqual(expect.any(String))
             })
 
             // uploadUrl을 통해 업로드가 가능하다
             it('allows uploading via the uploadUrl', async () => {
-                const res = await fetch(result.uploadUrl, {
+                const res = await fetch(uploadUrl, {
                     method: 'PUT',
                     headers: [['Content-Type', 'text/plain']],
                     body: Buffer.from('hello')
@@ -159,7 +158,7 @@ describe('AmazonS3Service', () => {
         describe('when the bucket does not exist', () => {
             // 업로드 하면 404 Not Found를 반환한다
             it('returns 404 Not Found when uploading', async () => {
-                const { uploadUrl } = await fix.s3Service.getUploadUrl({
+                const uploadUrl = await fix.s3Service.getUploadUrl({
                     bucket: 'not-exists',
                     key: 'key',
                     expiresInSec: 60
@@ -184,28 +183,22 @@ describe('AmazonS3Service', () => {
             const key = 'foo/data.json'
             const body = 'upload body'
             const expiresInSec = 60
-            let result: DownloadResult = {} as any
+            let downloadUrl: string
 
             beforeEach(async () => {
                 await uploadObject(fix.s3Service, bucket, key, body)
 
-                result = await fix.s3Service.getDownloadUrl({ bucket, key, expiresInSec })
+                downloadUrl = await fix.s3Service.getDownloadUrl({ bucket, key, expiresInSec })
             })
 
             // downloadUrl을 반환한다
             it('returns an downloadUrl', async () => {
-                expect(result).toEqual({
-                    expiresInSec,
-                    downloadUrl: expect.any(String),
-                    contentType: expect.any(String),
-                    contentLength: expect.any(Number),
-                    metadata: {}
-                })
+                expect(downloadUrl).toEqual(expect.any(String))
             })
 
             // downloadUrl을 통해 다운로드가 가능하다
             it('allows downloading via the downloadUrl', async () => {
-                const res = await fetch(result.downloadUrl)
+                const res = await fetch(downloadUrl)
                 expect(res.ok).toBe(true)
 
                 const arrayBuffer = await res.arrayBuffer()
@@ -217,15 +210,16 @@ describe('AmazonS3Service', () => {
 
         // 객체가 존재하지 않는 경우
         describe('when the object does not exist', () => {
-            // NotFound 예외를 던진다
-            it('throws a NoSuchBucket exception', async () => {
-                const promise = fix.s3Service.getDownloadUrl({
+            // 다운로드 하면 404 Not Found를 반환한다
+            it('returns 404 Not Found when downloading', async () => {
+                const downloadUrl = await fix.s3Service.getDownloadUrl({
                     bucket,
                     key: 'not-exists',
                     expiresInSec: 60
                 })
 
-                await expect(promise).rejects.toHaveProperty('name', 'NotFound')
+                const res = await fetch(downloadUrl)
+                expect(res.status).toBe(404)
             })
         })
     })
