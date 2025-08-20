@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config'
 export abstract class BaseConfigService {
     constructor(private configService: ConfigService) {}
 
-    protected getString(key: string): string {
+    getString(key: string): string {
         const value = this.configService.get<string>(key)
 
         if (!value) {
@@ -14,10 +14,24 @@ export abstract class BaseConfigService {
         return value
     }
 
-    protected getNumber(key: string): number {
-        const value = this.getString(key)
+    getNumber(key: string): number {
+        const value = this.configService.get<number>(key)
 
-        const num = parseInt(value, 10)
-        return num
+        if (!value) {
+            console.error(`Key '${key}' is not defined`)
+            process.exit(1)
+        }
+        return value
+    }
+
+    getBoolean(key: string): boolean {
+        const value = this.configService.get<boolean>(key)
+
+        if (!value) {
+            console.error(`Key '${key}' is not defined`)
+            process.exit(1)
+        }
+
+        return value
     }
 }

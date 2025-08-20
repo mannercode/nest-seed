@@ -28,12 +28,14 @@ export async function createFixture() {
     const module = await createTestingModule({
         imports: [
             FileStorageModule.register({
-                endpoint,
-                accessKeyId,
-                secretAccessKey,
-                region,
-                bucket,
-                forcePathStyle
+                useFactory: () => ({
+                    endpoint,
+                    accessKeyId,
+                    secretAccessKey,
+                    region,
+                    bucket,
+                    forcePathStyle
+                })
             })
         ],
         providers: [TestInjectFileStorageService]

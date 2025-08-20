@@ -57,7 +57,14 @@ export class AppConfigService extends BaseConfigService {
         NATS_HOST2: Joi.string().required(),
         NATS_PORT2: Joi.number().required(),
         NATS_HOST3: Joi.string().required(),
-        NATS_PORT3: Joi.number().required()
+        NATS_PORT3: Joi.number().required(),
+
+        AMAZON_S3_ENDPOINT: Joi.string().required(),
+        AMAZON_S3_REGION: Joi.string().required(),
+        AMAZON_S3_BUCKET: Joi.string().required(),
+        AMAZON_S3_ACCESS_KEY_ID: Joi.string().required(),
+        AMAZON_S3_SECRET_ACCESS_KEY: Joi.string().required(),
+        AMAZON_S3_FORCE_PATH_STYLE: Joi.boolean().required()
     })
 
     constructor(configService: ConfigService) {
@@ -132,6 +139,17 @@ export class AppConfigService extends BaseConfigService {
             maxFileSizeBytes: this.getNumber('FILE_UPLOAD_MAX_FILE_SIZE_BYTES'),
             maxFilesPerUpload: this.getNumber('FILE_UPLOAD_MAX_FILES_PER_UPLOAD'),
             allowedMimeTypes: this.getString('FILE_UPLOAD_ALLOWED_FILE_TYPES').split(',')
+        }
+    }
+
+    get amazonS3() {
+        return {
+            endpoint: this.getString('AMAZON_S3_ENDPOINT'),
+            region: this.getString('AMAZON_S3_REGION'),
+            bucket: this.getString('AMAZON_S3_BUCKET'),
+            accessKeyId: this.getString('AMAZON_S3_ACCESS_KEY_ID'),
+            secretAccessKey: this.getString('AMAZON_S3_SECRET_ACCESS_KEY'),
+            forcePathStyle: this.getBoolean('AMAZON_S3_FORCE_PATH_STYLE')
         }
     }
 }

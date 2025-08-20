@@ -81,8 +81,7 @@ export function InjectFileStorage(name?: string): ParameterDecorator {
     return Inject(FileStorageService.getServiceName(name))
 }
 
-export interface FileStorageModuleOptions {
-    name?: string
+type FileStorageFactory = {
     endpoint: string
     accessKeyId: string
     secretAccessKey: string
@@ -91,15 +90,23 @@ export interface FileStorageModuleOptions {
     forcePathStyle: boolean
 }
 
+export interface FileStorageModuleOptions {
+    name?: string
+    useFactory: (...args: any[]) => Promise<FileStorageFactory> | FileStorageFactory
+    inject?: any[]
+}
+
 @Module({})
 export class FileStorageModule {
     static register(options: FileStorageModuleOptions): DynamicModule {
-        const { name, endpoint, accessKeyId, secretAccessKey, region, bucket, forcePathStyle } =
-            options
+        const { name, useFactory, inject } = options
 
         const provider = {
             provide: FileStorageService.getServiceName(name),
-            useFactory: async () => {
+            useFactory: async (...args: any[]) => {
+                const { endpoint, accessKeyId, secretAccessKey, region, bucket, forcePathStyle } =
+                    await useFactory(...args)
+
                 const client = new S3Client({
                     endpoint,
                     region,
@@ -108,7 +115,7 @@ export class FileStorageModule {
                 })
                 return new FileStorageService(bucket, client)
             },
-            inject: []
+            inject
         }
 
         return { module: FileStorageModule, providers: [provider], exports: [provider] }
