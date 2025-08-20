@@ -24,7 +24,6 @@ describe('MoviesService', () => {
 
             beforeEach(async () => {
                 createDto = buildCreateMovieDto()
-
                 const { body } = await fix.httpClient
                     .post('/movies')
                     .attachments([{ name: 'files', file: fix.image.path }])
