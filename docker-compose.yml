@@ -15,7 +15,12 @@ x-mongo-base: &mongo-base
     environment:
         MONGO_INITDB_ROOT_USERNAME: '${MONGO_USERNAME}'
         MONGO_INITDB_ROOT_PASSWORD: '${MONGO_PASSWORD}'
-    command: mongod --replSet ${MONGO_REPLICA} --keyFile /etc/mongodb/mongodb.key --bind_ip_all
+    # ttlMonitorSleepSecs=1 for tests
+    command: >
+        mongod --replSet ${MONGO_REPLICA}
+        --keyFile /etc/mongodb/mongodb.key
+        --bind_ip_all
+        --setParameter ttlMonitorSleepSecs=1
     volumes: ['mongodb_key:/etc/mongodb']
     restart: always
     depends_on: ['mongo-key-generator']
