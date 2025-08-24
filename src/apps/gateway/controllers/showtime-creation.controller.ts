@@ -37,7 +37,7 @@ export class ShowtimeCreationController implements OnModuleDestroy {
     }
 
     @HttpCode(HttpStatus.OK)
-    @Post('showtimes/search')
+    @Post('showtimes\\:search')
     async searchShowtimesByTheaterIds(@Body('theaterIds') theaterIds: string[]) {
         return this.showtimeCreationService.searchShowtimes(theaterIds)
     }
