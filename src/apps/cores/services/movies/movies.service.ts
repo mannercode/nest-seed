@@ -1,8 +1,16 @@
 import { Injectable } from '@nestjs/common'
 import { CreateStorageFileDto, StorageFilesClient } from 'apps/infrastructures'
-import { mapDocToDto, pickIds } from 'common'
+import { DateUtil, mapDocToDto, newObjectId, pickIds } from 'common'
 import { HttpRoutes } from 'shared'
-import { CreateMovieDto, MovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
+import {
+    CreateMovieDto,
+    FinalizeMovieAssetDto,
+    FinalizeMovieDraftDto,
+    MovieDto,
+    PresignMovieAssetDto,
+    SearchMoviesPageDto,
+    UpdateMovieDto
+} from './dtos'
 import { MovieDocument } from './models'
 import { MoviesRepository } from './movies.repository'
 
@@ -12,6 +20,22 @@ export class MoviesService {
         private repository: MoviesRepository,
         private storageFilesService: StorageFilesClient
     ) {}
+
+    async presignMovieAsset(draftId: string, presignDto: PresignMovieAssetDto) {
+        return { draftId, presignDto }
+    }
+
+    async finalizeMovieAsset(draftId: string, finalizeDto: FinalizeMovieAssetDto) {
+        return { draftId, finalizeDto }
+    }
+
+    async finalizeMovieDraft(draftId: string, finalizeDto: FinalizeMovieDraftDto) {
+        return { draftId, finalizeDto }
+    }
+
+    async createMovieDraft() {
+        return { draftId: newObjectId(), expiresAt: DateUtil.add({ days: 1 }) }
+    }
 
     async createMovie(createMovieDto: CreateMovieDto, createFileDtos: CreateStorageFileDto[]) {
         const storageFiles = await this.storageFilesService.saveFiles(createFileDtos)

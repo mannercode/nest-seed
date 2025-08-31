@@ -91,3 +91,22 @@ validator -> validator: verifyShowtimes(showtimes)
 worker <-- validator: true
 @enduml
 ```
+
+## 6. 날짜/시간
+
+- xxxDate
+    - 의미: 달력상의 날짜(YYYY-MM-DD)
+    - 장점: 직관적, 도메인 표현에 자연스러움
+    - 예시: 영화 개봉일 = releaseDate
+- xxxAt
+    - 의미: 특정 시점(timestamp, 시·분·초 포함)
+    - 장점: createdAt, updatedAt 등과 일관성
+    - 예시: DB에 저장되는 개봉 시각 = releasedAt
+
+```ts
+// 개봉일은 시간을 포함하지 않음
+releaseDate: Date
+
+// 만료 시점은 시간을 포함함
+expiresAt: Date
+```

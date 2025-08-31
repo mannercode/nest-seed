@@ -15,7 +15,15 @@ import {
 } from '@nestjs/common'
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { RecommendationClient } from 'apps/applications'
-import { CreateMovieDto, MoviesClient, SearchMoviesPageDto, UpdateMovieDto } from 'apps/cores'
+import {
+    CreateMovieDto,
+    FinalizeMovieAssetDto,
+    FinalizeMovieDraftDto,
+    MoviesClient,
+    PresignMovieAssetDto,
+    SearchMoviesPageDto,
+    UpdateMovieDto
+} from 'apps/cores'
 import { MulterExceptionFilter } from './filters'
 import { CustomerOptionalJwtAuthGuard } from './guards'
 import { CustomerAuthRequest } from './types'
@@ -27,6 +35,49 @@ export class MoviesController {
         private recommendationService: RecommendationClient
     ) {}
 
+    @Post('drafts/:draftId/assets\\:presign')
+    async presignMovieAsset(
+        @Param('draftId') draftId: string,
+        @Body() presignDto: PresignMovieAssetDto
+    ) {
+        return this.moviesService.presignMovieAsset(draftId, presignDto)
+    }
+
+    @Post('drafts/:draftId/assets\\:finalize')
+    async finalizeMovieAsset(
+        @Param('draftId') draftId: string,
+        @Body() finalizeDto: FinalizeMovieAssetDto
+    ) {
+        return this.moviesService.finalizeMovieAsset(draftId, finalizeDto)
+    }
+
+    @Post('drafts/:draftId\\:finalize')
+    async finalizeMovieDraft(
+        @Param('draftId') draftId: string,
+        @Body() finalizeDto: FinalizeMovieDraftDto
+    ) {
+        return this.moviesService.finalizeMovieDraft(draftId, finalizeDto)
+    }
+
+    @Post('drafts')
+    async createMovieDraft() {
+        return this.moviesService.createMovieDraft()
+    }
+
+    @UseGuards(CustomerOptionalJwtAuthGuard)
+    @Get('recommended')
+    async searchRecommendedMovies(@Req() req: CustomerAuthRequest) {
+        const customerId = req.user.customerId
+        return this.recommendationService.searchRecommendedMovies(customerId)
+    }
+
+    // •	POST /v1/movies는 405 Method Not Allowed로 응답하고,
+    // {
+    //   "type": "https://docs.example.com/problems/use-draft",
+    //   "title": "Draft required",
+    //   "detail": "Create a movie by finalizing a draft.",
+    //   "links": { "createDraft": "/v1/movies/drafts" }
+    // }
     @UseFilters(new MulterExceptionFilter())
     @UseInterceptors(FilesInterceptor('files'))
     @Post()
@@ -47,13 +98,6 @@ export class MoviesController {
     @Patch(':movieId')
     async updateMovie(@Param('movieId') movieId: string, @Body() updateDto: UpdateMovieDto) {
         return this.moviesService.updateMovie(movieId, updateDto)
-    }
-
-    @UseGuards(CustomerOptionalJwtAuthGuard)
-    @Get('recommended')
-    async searchRecommendedMovies(@Req() req: CustomerAuthRequest) {
-        const customerId = req.user.customerId
-        return this.recommendationService.searchRecommendedMovies(customerId)
     }
 
     @Get(':movieId')

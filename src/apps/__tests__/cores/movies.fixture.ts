@@ -3,14 +3,14 @@ import { MovieDto, MoviesClient, MoviesModule } from 'apps/cores'
 import { MoviesController, StorageFilesController } from 'apps/gateway'
 import { MulterConfigModule } from 'apps/gateway/modules'
 import { StorageFilesClient, StorageFilesModule } from 'apps/infrastructures'
+import { Path } from 'common'
 import {
     createMovie,
+    createTestFixture,
     FixtureFile,
     fixtureFiles,
-    TestFixture,
-    createTestFixture
+    TestFixture
 } from '../__helpers__'
-import { Path } from 'common'
 
 export interface Fixture extends TestFixture {
     image: FixtureFile

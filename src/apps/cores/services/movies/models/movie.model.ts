@@ -3,6 +3,8 @@ import { MongooseSchema, createMongooseSchema } from 'common'
 import { HydratedDocument, Types } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 
+// TODO 확장자 .model은 지워라. 다른 곳도 마찬가지
+
 export enum MovieGenre {
     Action = 'action',
     Comedy = 'comedy',
