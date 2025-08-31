@@ -1,1 +1,1 @@
-export * from './purchase-record.model'
+export * from './purchase-record'

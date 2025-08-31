@@ -1,1 +1,1 @@
-export * from './watch-record.model'
+export * from './watch-record'

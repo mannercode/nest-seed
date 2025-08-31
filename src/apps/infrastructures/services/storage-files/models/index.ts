@@ -1,1 +1,1 @@
-export * from './storage-file.model'
+export * from './storage-file'

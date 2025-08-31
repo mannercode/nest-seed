@@ -1,1 +1,2 @@
-export * from './movie.model'
+export * from './movie'
+export * from './movie-draft'
