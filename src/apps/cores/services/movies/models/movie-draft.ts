@@ -1,11 +1,35 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { createMongooseSchema } from 'common'
-import { HydratedDocument } from 'mongoose'
+import { createMongooseSchema, MongooseSchema } from 'common'
+import { HydratedDocument, Types } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import { Movie } from './movie'
+import { MovieGenre, MovieRating } from './movie'
 
 @Schema(MongooseConfigModule.schemaOptions)
-export class MovieDraft extends Movie {
+export class MovieDraft extends MongooseSchema {
+    @Prop()
+    title?: string
+
+    @Prop({ type: [String], enum: MovieGenre, default: [] })
+    genres: MovieGenre[]
+
+    @Prop()
+    releaseDate?: Date
+
+    @Prop()
+    plot: string
+
+    @Prop()
+    durationInSeconds: number
+
+    @Prop()
+    director: string
+
+    @Prop({ type: String, enum: MovieRating })
+    rating: MovieRating
+
+    @Prop({ required: true })
+    imageIds: Types.ObjectId[]
+
     @Prop({ required: true })
     expiresAt: Date
 }

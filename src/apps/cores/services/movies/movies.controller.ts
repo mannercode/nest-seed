@@ -15,6 +15,11 @@ import { MoviesService } from './movies.service'
 export class MoviesController {
     constructor(private service: MoviesService) {}
 
+    @MessagePattern(Messages.Movies.createMovieDraft)
+    createMovieDraft() {
+        return this.service.createMovieDraft()
+    }
+
     @MessagePattern(Messages.Movies.presignMovieAsset)
     presignMovieAsset(
         @Payload('draftId') draftId: string,
@@ -37,11 +42,6 @@ export class MoviesController {
         @Payload('finalizeDto') finalizeDto: FinalizeMovieDraftDto
     ) {
         return this.service.finalizeMovieDraft(draftId, finalizeDto)
-    }
-
-    @MessagePattern(Messages.Movies.createMovieDraft)
-    createMovieDraft() {
-        return this.service.createMovieDraft()
     }
 
     @MessagePattern(Messages.Movies.createMovie)

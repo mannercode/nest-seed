@@ -18,6 +18,7 @@ describe('MoviesService', () => {
 
     describe('/movies/drafts', () => {
         let draftId: string
+
         // 영화를 생성한다
         it('creates a movie', async () => {
             await step('POST /movies/drafts', async () => {

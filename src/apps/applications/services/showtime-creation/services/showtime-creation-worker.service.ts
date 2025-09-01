@@ -40,7 +40,10 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
 
         const data = { createDto, transactionId } as ShowtimeCreationJobData
 
-        this.events.emitStatusChanged({ status: ShowtimeCreationStatus.Waiting, transactionId })
+        await this.events.emitStatusChanged({
+            status: ShowtimeCreationStatus.Waiting,
+            transactionId
+        })
 
         await this.queue.add('showtime-creation.create', data)
 
@@ -53,7 +56,7 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
 
             await this.processJobData(data)
         } catch (error) {
-            this.events.emitStatusChanged({
+            await this.events.emitStatusChanged({
                 status: ShowtimeCreationStatus.Error,
                 transactionId: job.data.transactionId,
                 message: error.message
@@ -63,20 +66,23 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
 
     @MethodLog()
     private async processJobData({ transactionId, createDto }: ShowtimeCreationJobData) {
-        this.events.emitStatusChanged({ status: ShowtimeCreationStatus.Processing, transactionId })
+        await this.events.emitStatusChanged({
+            status: ShowtimeCreationStatus.Processing,
+            transactionId
+        })
 
         const { isValid, conflictingShowtimes } = await this.validatorService.validate(createDto)
 
         if (isValid) {
             const result = await this.creatorService.create(createDto, transactionId)
 
-            this.events.emitStatusChanged({
+            await this.events.emitStatusChanged({
                 status: ShowtimeCreationStatus.Succeeded,
                 transactionId,
                 ...result
             })
         } else {
-            this.events.emitStatusChanged({
+            await this.events.emitStatusChanged({
                 status: ShowtimeCreationStatus.Failed,
                 transactionId,
                 conflictingShowtimes

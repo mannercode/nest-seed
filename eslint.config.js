@@ -38,7 +38,11 @@ module.exports = [
                     varsIgnorePattern: '^_',
                     caughtErrorsIgnorePattern: '^_'
                 }
-            ]
+            ],
+            '@typescript-eslint/no-floating-promises': 'error',
+            '@typescript-eslint/return-await': ['error', 'in-try-catch'],
+            'no-return-await': 'error',
+            'require-await': 'off'
         }
     }
 ]

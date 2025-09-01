@@ -74,7 +74,7 @@ export class DateUtil {
     }
 
     static add({
-        base = new Date(),
+        base = this.now(),
         days = 0,
         hours = 0,
         minutes = 0,

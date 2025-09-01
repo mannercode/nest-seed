@@ -17,9 +17,9 @@ describe('createWinstonLogger', () => {
         })
     })
 
-    afterEach(() => {
+    afterEach(async () => {
         winston.close()
-        Path.delete(tempDir)
+        await Path.delete(tempDir)
     })
 
     const getLogEntry = async () => {

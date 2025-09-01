@@ -2,28 +2,31 @@ import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { DateUtil, MongooseRepository } from 'common'
 import { Model } from 'mongoose'
-import { MongooseConfigModule } from 'shared'
+import { MongooseConfigModule, Rules } from 'shared'
 import { UpdateMovieDto } from './dtos'
-import { Movie, MovieRating } from './models'
+import { MovieDraft, MovieRating } from './models'
 
 export class UpdateMovieDraftDto extends UpdateMovieDto {}
 
 @Injectable()
-export class MovieDraftsRepository extends MongooseRepository<Movie> {
-    constructor(@InjectModel(Movie.name, MongooseConfigModule.connectionName) model: Model<Movie>) {
+export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
+    constructor(
+        @InjectModel(MovieDraft.name, MongooseConfigModule.connectionName) model: Model<MovieDraft>
+    ) {
         super(model, MongooseConfigModule.maxTake)
     }
 
     async createMovieDraft() {
         const movie = this.newDocument()
-        movie.title = ''
+        movie.title = 'a'
         movie.genres = []
         movie.releaseDate = DateUtil.now()
-        movie.plot = ''
+        movie.plot = 'a'
         movie.durationInSeconds = 0
-        movie.director = ''
+        movie.director = 'a'
         movie.rating = MovieRating.R
         movie.imageIds = []
+        movie.expiresAt = DateUtil.add({ minutes: Rules.Movie.draftExpiresInMinutes })
 
         return movie.save()
     }

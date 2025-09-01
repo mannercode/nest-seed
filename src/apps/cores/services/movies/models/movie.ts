@@ -3,8 +3,6 @@ import { MongooseSchema, createMongooseSchema } from 'common'
 import { HydratedDocument, Types } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 
-// TODO 확장자 .model은 지워라. 다른 곳도 마찬가지
-
 export enum MovieGenre {
     Action = 'action',
     Comedy = 'comedy',
@@ -30,22 +28,22 @@ export class Movie extends MongooseSchema {
     @Prop({ required: true })
     title: string
 
-    @Prop({ type: [String], enum: MovieGenre, default: [] })
+    @Prop({ required: true, type: [String], enum: MovieGenre, default: [] })
     genres: MovieGenre[]
 
     @Prop({ required: true })
     releaseDate: Date
 
-    @Prop({ default: '' })
+    @Prop({ required: true, default: '' })
     plot: string
 
     @Prop({ required: true })
     durationInSeconds: number
 
-    @Prop({ default: 'John Doe' })
+    @Prop({ required: true, default: 'John Doe' })
     director: string
 
-    @Prop({ type: String, enum: MovieRating })
+    @Prop({ required: true, type: String, enum: MovieRating })
     rating: MovieRating
 
     @Prop({ required: true })

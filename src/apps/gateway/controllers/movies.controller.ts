@@ -35,6 +35,12 @@ export class MoviesController {
         private recommendationService: RecommendationClient
     ) {}
 
+    @Post('drafts')
+    async createMovieDraft() {
+        const draft = await this.moviesService.createMovieDraft()
+        return draft
+    }
+
     @Post('drafts/:draftId/assets\\:presign')
     async presignMovieAsset(
         @Param('draftId') draftId: string,
@@ -57,11 +63,6 @@ export class MoviesController {
         @Body() finalizeDto: FinalizeMovieDraftDto
     ) {
         return this.moviesService.finalizeMovieDraft(draftId, finalizeDto)
-    }
-
-    @Post('drafts')
-    async createMovieDraft() {
-        return this.moviesService.createMovieDraft()
     }
 
     @UseGuards(CustomerOptionalJwtAuthGuard)

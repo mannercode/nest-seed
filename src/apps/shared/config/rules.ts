@@ -25,5 +25,10 @@ export const Rules = {
         // The minimum unit of time used to divide showtimes (in minutes)
         // 상영 시간을 나누는 최소 단위 (분 단위)
         timeslotInMinutes: 10
+    },
+    Movie: {
+        // Minutes until a movie draft automatically expires
+        // 영화 드래프트가 자동으로 만료되는 시간
+        draftExpiresInMinutes: 60
     }
 }

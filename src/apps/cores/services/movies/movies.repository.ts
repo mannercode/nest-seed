@@ -29,13 +29,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     async updateMovie(movieId: string, updateDto: UpdateMovieDto) {
         const movie = await this.getById(movieId)
 
-        if (updateDto.title) movie.title = updateDto.title
-        if (updateDto.genres) movie.genres = updateDto.genres
-        if (updateDto.releaseDate) movie.releaseDate = updateDto.releaseDate
-        if (updateDto.plot) movie.plot = updateDto.plot
-        if (updateDto.durationInSeconds) movie.durationInSeconds = updateDto.durationInSeconds
-        if (updateDto.director) movie.director = updateDto.director
-        if (updateDto.rating) movie.rating = updateDto.rating
+        movie.set(updateDto)
 
         return movie.save()
     }

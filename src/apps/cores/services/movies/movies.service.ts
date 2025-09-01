@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { CreateStorageFileDto, StorageFilesClient } from 'apps/infrastructures'
-import { DateUtil, mapDocToDto, newObjectId, pickIds } from 'common'
+import { mapDocToDto, pickIds } from 'common'
 import { HttpRoutes } from 'shared'
 import {
     CreateMovieDto,
@@ -12,14 +12,21 @@ import {
     UpdateMovieDto
 } from './dtos'
 import { MovieDocument } from './models'
+import { MovieDraftsRepository } from './movie-drafts.repository'
 import { MoviesRepository } from './movies.repository'
 
 @Injectable()
 export class MoviesService {
     constructor(
-        private repository: MoviesRepository,
+        private moviesRepository: MoviesRepository,
+        private movieDraftsRepository: MovieDraftsRepository,
         private storageFilesService: StorageFilesClient
     ) {}
+
+    async createMovieDraft() {
+        const draft = await this.movieDraftsRepository.createMovieDraft()
+        return draft
+    }
 
     async presignMovieAsset(draftId: string, presignDto: PresignMovieAssetDto) {
         return { draftId, presignDto }
@@ -33,30 +40,26 @@ export class MoviesService {
         return { draftId, finalizeDto }
     }
 
-    async createMovieDraft() {
-        return { draftId: newObjectId(), expiresAt: DateUtil.add({ days: 1 }) }
-    }
-
     async createMovie(createMovieDto: CreateMovieDto, createFileDtos: CreateStorageFileDto[]) {
         const storageFiles = await this.storageFilesService.saveFiles(createFileDtos)
 
-        const movie = await this.repository.createMovie(createMovieDto, pickIds(storageFiles))
+        const movie = await this.moviesRepository.createMovie(createMovieDto, pickIds(storageFiles))
         return this.toDto(movie)
     }
 
     async updateMovie(movieId: string, updateDto: UpdateMovieDto) {
-        const movie = await this.repository.updateMovie(movieId, updateDto)
+        const movie = await this.moviesRepository.updateMovie(movieId, updateDto)
         return this.toDto(movie)
     }
 
     async getMovies(movieIds: string[]) {
-        const movies = await this.repository.getByIds(movieIds)
+        const movies = await this.moviesRepository.getByIds(movieIds)
         return this.toDtos(movies)
     }
 
     async deleteMovies(movieIds: string[]) {
-        const movies = await this.repository.withTransaction(async (session) => {
-            const movies = await this.repository.getByIds(movieIds)
+        const movies = await this.moviesRepository.withTransaction(async (session) => {
+            const movies = await this.moviesRepository.getByIds(movieIds)
 
             for (const movie of movies) {
                 await movie.deleteOne({ session })
@@ -72,13 +75,13 @@ export class MoviesService {
     }
 
     async searchMoviesPage(searchDto: SearchMoviesPageDto) {
-        const { items, ...pagination } = await this.repository.searchMoviesPage(searchDto)
+        const { items, ...pagination } = await this.moviesRepository.searchMoviesPage(searchDto)
 
         return { ...pagination, items: this.toDtos(items) }
     }
 
     async moviesExist(movieIds: string[]): Promise<boolean> {
-        return this.repository.existByIds(movieIds)
+        return this.moviesRepository.existByIds(movieIds)
     }
 
     private toDto = (movie: MovieDocument) => {

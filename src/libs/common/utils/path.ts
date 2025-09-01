@@ -87,7 +87,7 @@ export class Path {
     }
 
     static async createTempDirectory(): Promise<string> {
-        return await fs.mkdtemp(`${tmpdir()}${this.sep()}`)
+        return fs.mkdtemp(`${tmpdir()}${this.sep()}`)
     }
 
     static sep() {

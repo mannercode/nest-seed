@@ -77,7 +77,7 @@ export function createMongooseSchema<T>(cls: Type<T>) {
         }
         schema.methods.deleteOne = async function (options?: { session?: ClientSession }) {
             this.deletedAt = new Date()
-            return await this.save(options)
+            return this.save(options)
         }
     }
 
