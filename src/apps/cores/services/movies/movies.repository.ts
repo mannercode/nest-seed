@@ -27,6 +27,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     }
 
     async updateMovie(movieId: string, updateDto: UpdateMovieDto) {
+        // TODO update는 보안 문제 없으면 상위 레벨로 올려라
         const movie = await this.getById(movieId)
 
         movie.set(updateDto)

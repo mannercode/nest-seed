@@ -18,29 +18,16 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
 
     async createMovieDraft() {
         const movie = this.newDocument()
-        movie.title = 'a'
-        movie.genres = []
-        movie.releaseDate = DateUtil.now()
-        movie.plot = 'a'
-        movie.durationInSeconds = 0
-        movie.director = 'a'
-        movie.rating = MovieRating.R
-        movie.imageIds = []
         movie.expiresAt = DateUtil.add({ minutes: Rules.Movie.draftExpiresInMinutes })
 
+        console.log(movie.toJSON())
         return movie.save()
     }
 
     async updateMovie(movieId: string, updateDto: UpdateMovieDraftDto) {
         const movie = await this.getById(movieId)
 
-        if (updateDto.title) movie.title = updateDto.title
-        if (updateDto.genres) movie.genres = updateDto.genres
-        if (updateDto.releaseDate) movie.releaseDate = updateDto.releaseDate
-        if (updateDto.plot) movie.plot = updateDto.plot
-        if (updateDto.durationInSeconds) movie.durationInSeconds = updateDto.durationInSeconds
-        if (updateDto.director) movie.director = updateDto.director
-        if (updateDto.rating) movie.rating = updateDto.rating
+        movie.set(updateDto)
 
         return movie.save()
     }

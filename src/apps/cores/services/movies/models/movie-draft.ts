@@ -9,26 +9,26 @@ export class MovieDraft extends MongooseSchema {
     @Prop()
     title?: string
 
-    @Prop({ type: [String], enum: MovieGenre, default: [] })
-    genres: MovieGenre[]
+    @Prop({ type: [String], enum: MovieGenre })
+    genres?: MovieGenre[]
 
     @Prop()
     releaseDate?: Date
 
     @Prop()
-    plot: string
+    plot?: string
 
     @Prop()
-    durationInSeconds: number
+    durationInSeconds?: number
 
     @Prop()
-    director: string
+    director?: string
 
     @Prop({ type: String, enum: MovieRating })
-    rating: MovieRating
+    rating?: MovieRating
 
-    @Prop({ required: true })
-    imageIds: Types.ObjectId[]
+    @Prop()
+    imageIds?: Types.ObjectId[]
 
     @Prop({ required: true })
     expiresAt: Date
