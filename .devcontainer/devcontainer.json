@@ -19,10 +19,7 @@
     ],
     "features": {
         "ghcr.io/devcontainers/features/docker-in-docker:2": {
-            "version": "latest",
-            "enableNonRootDocker": true,
-            "moby": false,
-            "dockerDashComposeVersion": "v2"
+            "moby": false
         }
     },
     "postCreateCommand": "bash scripts/reset-infra.sh && npm ci && npx husky && npm i -g npm-check-updates",
