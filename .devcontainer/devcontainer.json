@@ -12,8 +12,8 @@
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}"
     },
+    "privileged": true,
     "runArgs": [
-        "--privileged",
         "--add-host",
         "host.docker.internal:127.0.0.1"
     ],
