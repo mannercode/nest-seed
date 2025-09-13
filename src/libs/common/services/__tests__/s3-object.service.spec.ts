@@ -44,6 +44,9 @@ describe('S3ObjectService', () => {
 
                 expect(res.ok).toBe(true)
             })
+
+            it('contentType이 다르면 업로드 실패', async () => {})
+            it('contentLength이 다르면 업로드 실패', async () => {})
         })
     })
 
@@ -76,6 +79,9 @@ describe('S3ObjectService', () => {
 
                 expect(buffer.toString('utf8')).toBe(body)
             })
+
+            it('contentType이 다르면 다운로드 실패', async () => {})
+            it('contentLength이 다르면 다운로드 실패', async () => {})
         })
 
         // 객체가 존재하지 않는 경우
@@ -98,13 +104,13 @@ describe('S3ObjectService', () => {
         describe('when the payload is valid', () => {
             // fileId를 반환한다
             it('returns a fileId', async () => {
-                const { fileId } = await fix.s3Service.putObject({
+                const { key } = await fix.s3Service.putObject({
                     data: testBuffer,
                     filename: 'file.txt',
                     contentType: 'text/plain'
                 })
 
-                expect(fileId).toEqual(expect.any(String))
+                expect(key).toEqual(expect.any(String))
             })
         })
     })
@@ -120,9 +126,7 @@ describe('S3ObjectService', () => {
 
             // 파일 데이터와 메타데이터를 반환한다
             it('returns the file data and metadata', async () => {
-                const { contentType, filename, data } = await fix.s3Service.getObject(
-                    putResult.fileId
-                )
+                const { contentType, filename, data } = await fix.s3Service.getObject(putResult.key)
 
                 expect(Buffer.compare(data, putResult.data)).toBe(0)
                 expect(contentType).toEqual(putResult.contentType)
@@ -226,5 +230,8 @@ describe('S3ObjectService', () => {
                 expect(contents).toHaveLength(keys.length - maxKeys)
             })
         })
+
+        // `delimiter`이 제공된 경우
+        describe('when `delimiter` is provided', () => {})
     })
 })

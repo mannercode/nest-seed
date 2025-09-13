@@ -110,3 +110,42 @@ releaseDate: Date
 // 만료 시점은 시간을 포함함
 expiresAt: Date
 ```
+
+## 7. type vs interface
+
+- 외부가 이 타입을 **보강**할 여지가 있다 → **`interface`**
+- 타입 연산(유니온/매핑/조건부 등)으로 **조합/변형**한다 → **`type`**
+- 그 외 단순 구조 정의는 둘 다 가능하나, **예상치 못한 확장을 막고 싶으면 `type`** 선택
+
+### 1) 앱 내부에서 고정된 데이터 구조
+
+```ts
+export type S3Object = { data: Buffer; filename: string; contentType: string }
+```
+
+### 2) 패키지 퍼블릭 타입(소비자 확장 허용)
+
+```ts
+export interface S3Object {
+    data: Buffer
+    filename: string
+    contentType: string
+}
+
+// 소비자 측 확장(선언 병합 / 모듈 보강)
+declare module 'your-lib' {
+    interface S3Object {
+        metadata?: Record<string, string>
+    }
+}
+```
+
+### 3) 복합 타입이 필요할 때(`type`이 편함)
+
+```ts
+type Base = { data: Buffer; filename: string; contentType: string }
+type WithTTL = Base & { ttl?: number }
+type WithTag = Base & { tag?: string }
+
+export type S3Object = WithTTL | WithTag
+```

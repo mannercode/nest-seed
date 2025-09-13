@@ -7,14 +7,21 @@ import {
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
+import { omitBy, isNil } from 'lodash'
 import { Readable } from 'stream'
 import { newObjectId } from '../mongoose'
 import { HttpUtil } from '../utils'
 
-export type S3Object = { data: Buffer; filename: string; contentType: string }
+export type PresignedUrl = { url: string; key: string; expiresAt: Date }
+export type S3PresignOptions = {
+    key: string
+    expiresInSec: number
+    contentType?: string
+    contentDisposition?: string
+    contentLength?: number
+}
 
-export type S3UploadOptions = { key: string; expiresInSec: number }
-export type S3DownloadOptions = { key: string; expiresInSec: number }
+export type S3Object = { data: Buffer; filename: string; contentType: string }
 
 export type S3DeleteObjectResult = { status: number; deletedObject: string }
 
@@ -39,39 +46,57 @@ export class S3ObjectService {
         return `S3ObjectService_${name}`
     }
 
-    async presignUploadUrl(opts: S3UploadOptions): Promise<string> {
-        const { key, expiresInSec } = opts
+    async presignUploadUrl(opts: S3PresignOptions): Promise<string> {
+        const { key, expiresInSec, contentType, contentDisposition, contentLength } = opts
 
-        const cmd = new PutObjectCommand({ Bucket: this.bucket, Key: key })
+        const extraParams = omitBy(
+            {
+                ContentType: contentType,
+                ContentDisposition: contentDisposition,
+                ContentLength: contentLength
+            },
+            isNil
+        )
 
-        const uploadUrl = await getSignedUrl(this.s3, cmd, { expiresIn: expiresInSec })
+        const command = new PutObjectCommand({ Bucket: this.bucket, Key: key, ...extraParams })
+
+        const uploadUrl = await getSignedUrl(this.s3, command, { expiresIn: expiresInSec })
         return uploadUrl
     }
 
-    async presignDownloadUrl(opts: S3DownloadOptions): Promise<string> {
-        const { key, expiresInSec } = opts
+    async presignDownloadUrl(opts: S3PresignOptions): Promise<string> {
+        const { key, expiresInSec, contentType, contentDisposition, contentLength } = opts
 
-        const command = new GetObjectCommand({ Bucket: this.bucket, Key: key })
+        const extraParams = omitBy(
+            {
+                ContentType: contentType,
+                ContentDisposition: contentDisposition,
+                ContentLength: contentLength
+            },
+            isNil
+        )
+
+        const command = new GetObjectCommand({ Bucket: this.bucket, Key: key, ...extraParams })
 
         const downloadUrl = await getSignedUrl(this.s3, command, { expiresIn: expiresInSec })
         return downloadUrl
     }
 
-    async putObject(object: S3Object): Promise<{ fileId: string }> {
-        const fileId = newObjectId()
+    async putObject(object: S3Object): Promise<{ key: string }> {
+        const key = newObjectId()
         const disposition = HttpUtil.buildContentDisposition(object.filename)
 
         await this.s3.send(
             new PutObjectCommand({
                 Bucket: this.bucket,
-                Key: fileId,
+                Key: key,
                 Body: object.data,
                 ContentType: object.contentType,
                 ContentDisposition: disposition
             })
         )
 
-        return { fileId }
+        return { key }
     }
 
     async getObject(key: string): Promise<S3Object> {
@@ -98,8 +123,8 @@ export class S3ObjectService {
     async deleteObject(key: string): Promise<S3DeleteObjectResult> {
         const command = new DeleteObjectCommand({ Bucket: this.bucket, Key: key })
 
-        const { $metadata } = await this.s3.send(command)
-
+        const { $metadata ,...etc} = await this.s3.send(command)
+        console.log($metadata,etc)
         return { status: $metadata.httpStatusCode!, deletedObject: key }
     }
 

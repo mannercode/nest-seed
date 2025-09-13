@@ -80,11 +80,11 @@ export const testBuffer = Buffer.alloc(
     'ABCDEFGHIJKLMNOPQRSTUVWXYZ가나다라마바사아자차카타파하~!@#$%^&*()_+'
 )
 
-export type PutObjectResult = { fileId: string } & S3Object
+export type PutObjectResult = { key: string } & S3Object
 export const putObject = async (storageService: S3ObjectService, data: Buffer) => {
     const filename = 'file.txt'
     const contentType = 'text/plain'
-    const { fileId } = await storageService.putObject({ data, filename, contentType })
+    const { key } = await storageService.putObject({ data, filename, contentType })
 
-    return { fileId, data, filename, contentType }
+    return { key, data, filename, contentType }
 }
