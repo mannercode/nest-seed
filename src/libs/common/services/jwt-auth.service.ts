@@ -117,13 +117,13 @@ export function InjectJwtAuth(name?: string): ParameterDecorator {
     return Inject(JwtAuthService.getServiceName(name))
 }
 
-type JwtAuthFactory = { auth: AuthConfig }
+type JwtAuthFactoryOptions = { auth: AuthConfig }
 
 export interface JwtAuthModuleOptions {
     name?: string
     redisName?: string
     prefix: string
-    useFactory: (...args: any[]) => Promise<JwtAuthFactory> | JwtAuthFactory
+    useFactory: (...args: any[]) => Promise<JwtAuthFactoryOptions> | JwtAuthFactoryOptions
     inject?: any[]
 }
 

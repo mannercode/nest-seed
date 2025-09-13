@@ -1,22 +1,16 @@
 import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
 import { Injectable } from '@nestjs/common'
-import {
-    FileObject,
-    FileStorageModule,
-    FileStorageService,
-    generateShortId,
-    InjectFileStorage
-} from 'common'
+import { generateShortId, InjectS3Object, S3Object, S3ObjectModule, S3ObjectService } from 'common'
 import { createTestingModule, getAmazonS3TestConnection } from 'testlib'
 
 @Injectable()
-class TestInjectFileStorageService {
-    constructor(@InjectFileStorage() _: FileStorageService) {}
+class TestInjectS3ObjectService {
+    constructor(@InjectS3Object() _: S3ObjectService) {}
 }
 
 export interface Fixture {
     teardown: () => Promise<void>
-    storageService: FileStorageService
+    s3Service: S3ObjectService
 }
 
 export async function createFixture() {
@@ -27,7 +21,7 @@ export async function createFixture() {
 
     const module = await createTestingModule({
         imports: [
-            FileStorageModule.register({
+            S3ObjectModule.register({
                 useFactory: () => ({
                     endpoint,
                     accessKeyId,
@@ -38,16 +32,16 @@ export async function createFixture() {
                 })
             })
         ],
-        providers: [TestInjectFileStorageService]
+        providers: [TestInjectS3ObjectService]
     })
 
-    const storageService = module.get(FileStorageService.getServiceName())
+    const s3Service = module.get(S3ObjectService.getServiceName())
 
     const teardown = async () => {
         await module.close()
     }
 
-    return { teardown, storageService }
+    return { teardown, s3Service }
 }
 
 const createTempBucket = async () => {
@@ -69,16 +63,28 @@ const createTempBucket = async () => {
     return bucket
 }
 
+export const uploadObject = async (s3Service: S3ObjectService, key: string, body: string) => {
+    const uploadUrl = await s3Service.presignUploadUrl({ key, expiresInSec: 60 })
+
+    const res = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'text/plain' },
+        body: Buffer.from(body)
+    })
+
+    expect(res.ok).toBe(true)
+}
+
 export const testBuffer = Buffer.alloc(
     10 * 1024 * 1024,
     'ABCDEFGHIJKLMNOPQRSTUVWXYZ가나다라마바사아자차카타파하~!@#$%^&*()_+'
 )
 
-export type PutFileResult = { fileId: string } & FileObject
-export const putFile = async (storageService: FileStorageService, data: Buffer) => {
+export type PutObjectResult = { fileId: string } & S3Object
+export const putObject = async (storageService: S3ObjectService, data: Buffer) => {
     const filename = 'file.txt'
     const contentType = 'text/plain'
-    const { fileId } = await storageService.putFile({ data, filename, contentType })
+    const { fileId } = await storageService.putObject({ data, filename, contentType })
 
     return { fileId, data, filename, contentType }
 }
