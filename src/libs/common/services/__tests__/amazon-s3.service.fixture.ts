@@ -46,7 +46,7 @@ export const uploadObject = async (
     key: string,
     body: string
 ) => {
-    const uploadUrl = await s3Service.createUploadUrl({ bucket, key, expiresInSec: 60 })
+    const uploadUrl = await s3Service.presignUploadUrl({ bucket, key, expiresInSec: 60 })
 
     const res = await fetch(uploadUrl, {
         method: 'PUT',

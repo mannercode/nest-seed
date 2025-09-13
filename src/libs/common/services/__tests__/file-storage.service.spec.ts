@@ -60,7 +60,7 @@ describe('FileStorageService', () => {
         })
     })
 
-    describe('createDownloadUrl', () => {
+    describe('presignDownloadUrl', () => {
         // 객체가 존재하는 경우
         describe('when the object exists', () => {
             let putResult: PutFileResult
@@ -71,7 +71,7 @@ describe('FileStorageService', () => {
 
             // downloadUrl을 통해 파일을 다운로드할 수 있다
             it('allows downloading via the downloadUrl', async () => {
-                const downloadUrl = await fix.storageService.createDownloadUrl(putResult.fileId)
+                const downloadUrl = await fix.storageService.presignDownloadUrl(putResult.fileId)
 
                 const res = await fetch(downloadUrl)
                 expect(res.ok).toBe(true)

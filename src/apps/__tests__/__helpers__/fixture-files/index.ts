@@ -5,6 +5,7 @@ export interface FixtureFile {
     originalName: string
     size: number
     mimeType: string
+    // checksum generated with: sha256sum <file>
     checksum: { algo: 'sha256'; value: string }
 }
 

@@ -69,7 +69,7 @@ export class FileStorageService {
         await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: fileId }))
     }
 
-    async createDownloadUrl(fileId: string, expiresInSec = 600): Promise<string> {
+    async presignDownloadUrl(fileId: string, expiresInSec = 600): Promise<string> {
         const command = new GetObjectCommand({ Bucket: this.bucket, Key: fileId })
 
         const downloadUrl = await getSignedUrl(this.s3, command, { expiresIn: expiresInSec })

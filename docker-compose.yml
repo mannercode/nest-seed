@@ -22,7 +22,7 @@ x-mongo-base: &mongo-base
         --bind_ip_all
         --setParameter ttlMonitorSleepSecs=1
     volumes: ['mongodb_key:/etc/mongodb']
-    restart: always
+    restart: unless-stopped
     depends_on: ['mongo-key-generator']
     healthcheck:
         <<: *hc-common
@@ -34,7 +34,7 @@ x-redis-base: &redis-base
     <<: *common-base
     image: ${REDIS_IMAGE}
     profiles: ['infra']
-    restart: always
+    restart: unless-stopped
     healthcheck:
         <<: *hc-common
         test: ['CMD-SHELL', 'redis-cli -a $REDIS_PASSWORD ping']
@@ -56,7 +56,7 @@ x-nats-base: &nats-base
     <<: *common-base
     image: ${NATS_IMAGE}
     profiles: ['infra']
-    restart: always
+    restart: unless-stopped
     healthcheck:
         <<: *hc-common
         test: wget -qO- http://localhost:8222/varz || exit 1
@@ -304,7 +304,7 @@ services:
             MINIO_ROOT_PASSWORD: ${AMAZON_S3_SECRET_ACCESS_KEY}
             MINIO_BROWSER_REDIRECT_URL: $AMAZON_S3_ENDPOINT
         command: ['server', '/data', '--console-address', ':9001']
-        restart: always
+        restart: unless-stopped
         healthcheck:
             <<: *hc-common
             test: 'curl -fsS http://localhost:9000/minio/health/ready'

@@ -122,7 +122,7 @@ describe('AmazonS3Service', () => {
         })
     })
 
-    describe('createUploadUrl', () => {
+    describe('presignUploadUrl', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
             const key = 'key.txt'
@@ -134,7 +134,7 @@ describe('AmazonS3Service', () => {
                 bucket = newBucketName()
                 await fix.s3Service.createBucket(bucket)
 
-                uploadUrl = await fix.s3Service.createUploadUrl({ bucket, key, expiresInSec })
+                uploadUrl = await fix.s3Service.presignUploadUrl({ bucket, key, expiresInSec })
             })
 
             // uploadUrl을 반환한다
@@ -158,7 +158,7 @@ describe('AmazonS3Service', () => {
         describe('when the bucket does not exist', () => {
             // 업로드 하면 404 Not Found를 반환한다
             it('returns 404 Not Found when uploading', async () => {
-                const uploadUrl = await fix.s3Service.createUploadUrl({
+                const uploadUrl = await fix.s3Service.presignUploadUrl({
                     bucket: 'not-exists',
                     key: 'key',
                     expiresInSec: 60
@@ -170,7 +170,7 @@ describe('AmazonS3Service', () => {
         })
     })
 
-    describe('createDownloadUrl', () => {
+    describe('presignDownloadUrl', () => {
         let bucket: string
 
         beforeEach(async () => {
@@ -188,7 +188,7 @@ describe('AmazonS3Service', () => {
             beforeEach(async () => {
                 await uploadObject(fix.s3Service, bucket, key, body)
 
-                downloadUrl = await fix.s3Service.createDownloadUrl({ bucket, key, expiresInSec })
+                downloadUrl = await fix.s3Service.presignDownloadUrl({ bucket, key, expiresInSec })
             })
 
             // downloadUrl을 반환한다
@@ -212,7 +212,7 @@ describe('AmazonS3Service', () => {
         describe('when the object does not exist', () => {
             // 다운로드 하면 404 Not Found를 반환한다
             it('returns 404 Not Found when downloading', async () => {
-                const downloadUrl = await fix.s3Service.createDownloadUrl({
+                const downloadUrl = await fix.s3Service.presignDownloadUrl({
                     bucket,
                     key: 'not-exists',
                     expiresInSec: 60

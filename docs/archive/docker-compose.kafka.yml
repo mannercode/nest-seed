@@ -11,7 +11,7 @@ x-kafka-common: &kafka-common
     profiles: ['infra', 'kafka']
     working_dir: /opt/kafka/bin
     logging: *default-logging
-    restart: always
+    restart: unless-stopped
     networks:
         - default
 

@@ -65,7 +65,7 @@ export class AmazonS3Service {
         return { status: $metadata.httpStatusCode!, deletedBucket: name }
     }
 
-    async createUploadUrl(opts: UploadOptions): Promise<string> {
+    async presignUploadUrl(opts: UploadOptions): Promise<string> {
         const { bucket, key, expiresInSec } = opts
 
         const cmd = new PutObjectCommand({ Bucket: bucket, Key: key })
@@ -74,7 +74,7 @@ export class AmazonS3Service {
         return uploadUrl
     }
 
-    async createDownloadUrl(opts: DownloadOptions): Promise<string> {
+    async presignDownloadUrl(opts: DownloadOptions): Promise<string> {
         const { bucket, key, expiresInSec } = opts
 
         const command = new GetObjectCommand({ Bucket: bucket, Key: key })
