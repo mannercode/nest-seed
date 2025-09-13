@@ -1,5 +1,5 @@
-import _ from 'lodash'
 import { MovieGenre, MovieRating } from 'apps/cores'
+import { pick } from 'lodash'
 import { TestContext } from 'testlib'
 import { fixtureFiles } from '../fixture-files'
 
@@ -24,7 +24,7 @@ export const createMovie = async ({ module }: TestContext, override = {}) => {
 
     const createDto = buildCreateMovieDto(override)
 
-    const file = _.pick(fixtureFiles.image, ['originalName', 'mimeType', 'size', 'path'])
+    const file = pick(fixtureFiles.image, ['originalName', 'mimeType', 'size', 'path'])
 
     const movie = await moviesService.createMovie(createDto, [file])
     return movie

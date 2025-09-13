@@ -123,8 +123,8 @@ export class S3ObjectService {
     async deleteObject(key: string): Promise<S3DeleteObjectResult> {
         const command = new DeleteObjectCommand({ Bucket: this.bucket, Key: key })
 
-        const { $metadata ,...etc} = await this.s3.send(command)
-        console.log($metadata,etc)
+        const { $metadata } = await this.s3.send(command)
+
         return { status: $metadata.httpStatusCode!, deletedObject: key }
     }
 
