@@ -3,21 +3,19 @@ import {
     GetObjectCommand,
     ListObjectsV2Command,
     PutObjectCommand,
+    PutObjectCommandInput,
     S3Client
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
-import { omitBy, isNil } from 'lodash'
 import { Readable } from 'stream'
 import { newObjectId } from '../mongoose'
 import { HttpUtil } from '../utils'
 
 export type PresignedUrl = { url: string; key: string; expiresAt: Date }
-export type S3PresignOptions = {
-    key: string
-    expiresInSec: number
+export type S3PresignOptions = { key: string; expiresInSec: number }
+export type S3PresignUploadOptions = S3PresignOptions & {
     contentType?: string
-    contentDisposition?: string
     contentLength?: number
 }
 
@@ -25,14 +23,21 @@ export type S3Object = { data: Buffer; filename: string; contentType: string }
 
 export type S3DeleteObjectResult = { status: number; deletedObject: string }
 
-export type S3ListObjectsOptions = { prefix?: string; nextToken?: string; maxKeys?: number }
+export type S3ListObjectsOptions = {
+    prefix?: string
+    nextToken?: string
+    maxKeys?: number
+    delimiter?: string
+}
 export type S3ObjectSummary = { key: string; lastModified: Date; eTag: string; size: number }
 export type S3ListObjectsResult = {
     contents: S3ObjectSummary[]
+    commonPrefixes?: string[]
     isTruncated: boolean
     nextToken?: string
-    maxKeys: number
-    prefix: string
+    maxKeys?: number
+    prefix?: string
+    delimiter?: string
 }
 
 @Injectable()
@@ -46,37 +51,36 @@ export class S3ObjectService {
         return `S3ObjectService_${name}`
     }
 
-    async presignUploadUrl(opts: S3PresignOptions): Promise<string> {
-        const { key, expiresInSec, contentType, contentDisposition, contentLength } = opts
+    async presignUploadUrl(opts: S3PresignUploadOptions): Promise<string> {
+        const { key, expiresInSec, contentType, contentLength } = opts
 
-        const extraParams = omitBy(
-            {
-                ContentType: contentType,
-                ContentDisposition: contentDisposition,
-                ContentLength: contentLength
-            },
-            isNil
-        )
+        const signableHeaders = new Set<string>()
+        const params: PutObjectCommandInput = { Bucket: this.bucket, Key: key }
 
-        const command = new PutObjectCommand({ Bucket: this.bucket, Key: key, ...extraParams })
+        if (contentType) {
+            params.ContentType = contentType
+            signableHeaders.add('content-type')
+        }
 
-        const uploadUrl = await getSignedUrl(this.s3, command, { expiresIn: expiresInSec })
+        if (contentLength) {
+            params.ContentLength = contentLength
+            signableHeaders.add('content-length')
+        }
+
+        const command = new PutObjectCommand(params)
+
+        const uploadUrl = await getSignedUrl(this.s3, command, {
+            expiresIn: expiresInSec,
+            signableHeaders
+        })
+
         return uploadUrl
     }
 
     async presignDownloadUrl(opts: S3PresignOptions): Promise<string> {
-        const { key, expiresInSec, contentType, contentDisposition, contentLength } = opts
+        const { key, expiresInSec } = opts
 
-        const extraParams = omitBy(
-            {
-                ContentType: contentType,
-                ContentDisposition: contentDisposition,
-                ContentLength: contentLength
-            },
-            isNil
-        )
-
-        const command = new GetObjectCommand({ Bucket: this.bucket, Key: key, ...extraParams })
+        const command = new GetObjectCommand({ Bucket: this.bucket, Key: key })
 
         const downloadUrl = await getSignedUrl(this.s3, command, { expiresIn: expiresInSec })
         return downloadUrl
@@ -133,26 +137,33 @@ export class S3ObjectService {
             Bucket: this.bucket,
             Prefix: options.prefix,
             ContinuationToken: options.nextToken,
-            MaxKeys: options.maxKeys
+            MaxKeys: options.maxKeys,
+            Delimiter: options.delimiter
         })
 
         const result = await this.s3.send(command)
 
-        let contents: S3ObjectSummary[] = []
+        let contents: S3ObjectSummary[] = (result.Contents ?? [])
+            .map((content) => ({
+                key: content.Key!,
+                lastModified: content.LastModified as Date,
+                eTag: content.ETag as string,
+                size: content.Size as number
+            }))
+            .filter((o) => o.key)
 
-        contents = result.Contents!.map((content) => ({
-            key: content.Key!,
-            lastModified: content.LastModified!,
-            eTag: content.ETag!,
-            size: content.Size!
-        }))
+        const commonPrefixes: string[] = (result.CommonPrefixes ?? [])
+            .map((cp) => cp.Prefix)
+            .filter((p): p is string => !!p && p.length > 0)
 
         return {
             contents,
-            isTruncated: result.IsTruncated!,
-            nextToken: result.NextContinuationToken,
-            maxKeys: result.MaxKeys!,
-            prefix: result.Prefix!
+            commonPrefixes,
+            isTruncated: Boolean(result.IsTruncated),
+            nextToken: result.NextContinuationToken || undefined,
+            maxKeys: result.MaxKeys,
+            prefix: result.Prefix || options.prefix,
+            delimiter: result.Delimiter || options.delimiter
         }
     }
 }

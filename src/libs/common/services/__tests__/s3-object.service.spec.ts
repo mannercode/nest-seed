@@ -22,11 +22,17 @@ describe('S3ObjectService', () => {
         // payload가 유효한 경우
         describe('when the payload is valid', () => {
             const key = 'key.txt'
+            const uploadBody = Buffer.from('hello')
             const expiresInSec = 60
             let uploadUrl: string
 
             beforeEach(async () => {
-                uploadUrl = await fix.s3Service.presignUploadUrl({ key, expiresInSec })
+                uploadUrl = await fix.s3Service.presignUploadUrl({
+                    key,
+                    expiresInSec,
+                    contentType: 'text/plain',
+                    contentLength: uploadBody.byteLength
+                })
             })
 
             // uploadUrl을 반환한다
@@ -38,15 +44,34 @@ describe('S3ObjectService', () => {
             it('allows uploading via the uploadUrl', async () => {
                 const res = await fetch(uploadUrl, {
                     method: 'PUT',
-                    headers: [['Content-Type', 'text/plain']],
-                    body: Buffer.from('hello')
+                    headers: [['content-type', 'text/plain']],
+                    body: uploadBody
                 })
 
                 expect(res.ok).toBe(true)
             })
 
-            it('contentType이 다르면 업로드 실패', async () => {})
-            it('contentLength이 다르면 업로드 실패', async () => {})
+            it('contentType이 다르면 업로드 실패', async () => {
+                const res = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    headers: [['content-type', 'image/png']],
+                    body: uploadBody
+                })
+
+                expect(res.ok).toBe(false)
+            })
+
+            it('contentLength이 다르면 업로드 실패', async () => {
+                const mismatchedBody = Buffer.from('mismatched length')
+
+                const res = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    headers: [['content-type', 'text/plain']],
+                    body: mismatchedBody
+                })
+
+                expect(res.ok).toBe(false)
+            })
         })
     })
 
@@ -79,9 +104,6 @@ describe('S3ObjectService', () => {
 
                 expect(buffer.toString('utf8')).toBe(body)
             })
-
-            it('contentType이 다르면 다운로드 실패', async () => {})
-            it('contentLength이 다르면 다운로드 실패', async () => {})
         })
 
         // 객체가 존재하지 않는 경우
@@ -147,7 +169,7 @@ describe('S3ObjectService', () => {
     describe('deleteObject', () => {
         // 객체가 존재하는 경우
         describe('when the object exists', () => {
-            const key = 'foo/data.json'
+            const key = 'foo/data2.json'
 
             beforeEach(async () => {
                 await uploadObject(fix.s3Service, key, 'upload body')
@@ -200,6 +222,13 @@ describe('S3ObjectService', () => {
                 expect(listed).toEqual(expect.arrayContaining(['b/c.txt', 'b/d.txt']))
                 expect(listed).not.toContain('a.txt')
             })
+
+            // `prefix`가 존재하지 않는 경우 빈 객체 목록을 반환한다
+            it('returns an empty contents array when the prefix does not exist', async () => {
+                const { contents } = await fix.s3Service.listObjects({ prefix: 'nonexistent' })
+
+                expect(contents).toHaveLength(0)
+            })
         })
 
         // `maxKeys`가 제공된 경우
@@ -232,6 +261,36 @@ describe('S3ObjectService', () => {
         })
 
         // `delimiter`이 제공된 경우
-        describe('when `delimiter` is provided', () => {})
+        describe('when `delimiter` is provided', () => {
+            // delimiter 경계에서 최상위 객체와 공통 접두사를 구분하여 반환한다
+            it('returns top-level objects and common prefixes at the delimiter boundary', async () => {
+                const { contents, commonPrefixes } = await fix.s3Service.listObjects({
+                    delimiter: '/'
+                })
+
+                const listed = contents.map((o) => o.key)
+
+                expect(listed).toEqual(expect.arrayContaining(['a.txt']))
+                expect(listed).not.toEqual(expect.arrayContaining(['b/c.txt', 'b/d.txt']))
+                expect(contents).toHaveLength(1)
+
+                expect(commonPrefixes).toEqual(expect.arrayContaining(['b/']))
+            })
+
+            // prefix가 주어지면 해당 prefix 바로 아래의 객체들만 반환한다
+            it('returns only direct children under the prefix', async () => {
+                const { contents, commonPrefixes } = await fix.s3Service.listObjects({
+                    prefix: 'b/',
+                    delimiter: '/'
+                })
+
+                const listed = contents.map((o) => o.key)
+
+                expect(listed).toEqual(expect.arrayContaining(['b/c.txt', 'b/d.txt']))
+                expect(listed).not.toEqual(expect.arrayContaining(['a.txt']))
+
+                expect(commonPrefixes ?? []).toHaveLength(0)
+            })
+        })
     })
 })
