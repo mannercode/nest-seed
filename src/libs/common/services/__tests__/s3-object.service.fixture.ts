@@ -14,8 +14,7 @@ export interface Fixture {
 }
 
 export async function createFixture() {
-    const { endpoint, region, accessKeyId, secretAccessKey, forcePathStyle } =
-        getS3TestConnection()
+    const { endpoint, region, accessKeyId, secretAccessKey, forcePathStyle } = getS3TestConnection()
 
     const bucket = await createTempBucket()
 
@@ -45,8 +44,7 @@ export async function createFixture() {
 }
 
 const createTempBucket = async () => {
-    const { endpoint, region, accessKeyId, secretAccessKey, forcePathStyle } =
-        getS3TestConnection()
+    const { endpoint, region, accessKeyId, secretAccessKey, forcePathStyle } = getS3TestConnection()
 
     const client = new S3Client({
         endpoint,
