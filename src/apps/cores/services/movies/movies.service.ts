@@ -6,6 +6,7 @@ import {
     CreateMovieDto,
     FinalizeMovieAssetDto,
     FinalizeMovieDraftDto,
+    MovieDraftDto,
     MovieDto,
     PresignMovieAssetDto,
     SearchMoviesPageDto,
@@ -25,7 +26,8 @@ export class MoviesService {
 
     async createMovieDraft() {
         const draft = await this.movieDraftsRepository.createMovieDraft()
-        return draft
+        const dto = mapDocToDto(draft, MovieDraftDto, ['id', 'expiresAt'])
+        return dto
     }
 
     async presignMovieAsset(draftId: string, presignDto: PresignMovieAssetDto) {

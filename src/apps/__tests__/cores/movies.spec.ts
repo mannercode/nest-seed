@@ -2,7 +2,7 @@ import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
 import { FileUtil, Path } from 'common'
 import { nullObjectId, objectToFields, step } from 'testlib'
 import { buildCreateMovieDto, createMovie, Errors } from '../__helpers__'
-import { Fixture } from './movies.fixture'
+import type { Fixture } from './movies.fixture'
 
 describe('MoviesService', () => {
     let fix: Fixture
@@ -24,14 +24,20 @@ describe('MoviesService', () => {
             await step('POST /movies/drafts', async () => {
                 const { body } = await fix.httpClient.post('/movies/drafts').body({}).created()
 
-                expect(body).toEqual({ draftId: expect.any(String), expiresAt: expect.any(Date) })
-                draftId = body.draftId
+                expect(body).toEqual({ id: expect.any(String), expiresAt: expect.any(Date) })
+                draftId = body.id
+
+                console.log(body)
             })
 
             await step('POST /movies/drafts/{draftId}/assets:presign', async () => {
                 const { body } = await fix.httpClient
                     .post(`/movies/drafts/${draftId}/assets:presign`)
-                    .body({ contentType: 'image/jpeg', size: 5242880, checksum: 'sha256:...' })
+                    .body({
+                        contentType: fix.image.mimeType,
+                        size: fix.image.size,
+                        checksum: fix.image.checksum.value
+                    })
                     .created()
 
                 expect(body).toEqual({

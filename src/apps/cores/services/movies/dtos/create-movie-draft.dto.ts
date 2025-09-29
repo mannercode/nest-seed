@@ -1,7 +1,7 @@
 import { IsNumber, IsString } from 'class-validator'
 
 export class MovieDraftDto {
-    draftId: string
+    id: string
     expiresAt: Date
 }
 

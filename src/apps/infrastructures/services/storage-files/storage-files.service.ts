@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { FileUtil, mapDocToDto, Path } from 'common'
+import { FileUtil, mapDocToDto, Path, S3ObjectService } from 'common'
 import { HydratedDocument } from 'mongoose'
 import { AppConfigService } from 'shared'
 import { CreateStorageFileDto, StorageFileDto } from './dtos'
@@ -10,7 +10,8 @@ import { StorageFilesRepository } from './storage-files.repository'
 export class StorageFilesService {
     constructor(
         private repository: StorageFilesRepository,
-        private config: AppConfigService
+        private config: AppConfigService,
+        private s3Service: S3ObjectService
     ) {}
 
     async saveFiles(createDtos: CreateStorageFileDto[]) {

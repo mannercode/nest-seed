@@ -4,7 +4,7 @@ import { DateUtil, MongooseRepository } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule, Rules } from 'shared'
 import { UpdateMovieDto } from './dtos'
-import { MovieDraft, MovieRating } from './models'
+import { MovieDraft } from './models'
 
 export class UpdateMovieDraftDto extends UpdateMovieDto {}
 
@@ -20,7 +20,6 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
         const movie = this.newDocument()
         movie.expiresAt = DateUtil.add({ minutes: Rules.Movie.draftExpiresInMinutes })
 
-        console.log(movie.toJSON())
         return movie.save()
     }
 

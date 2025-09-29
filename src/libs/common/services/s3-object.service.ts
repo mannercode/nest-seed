@@ -204,6 +204,7 @@ export class S3ObjectModule {
                     credentials: { accessKeyId, secretAccessKey },
                     forcePathStyle
                 })
+
                 return new S3ObjectService(bucket, client)
             },
             inject

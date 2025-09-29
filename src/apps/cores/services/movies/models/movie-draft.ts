@@ -1,9 +1,10 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { createMongooseSchema, MongooseSchema } from 'common'
+import { createMongooseSchema, HardDelete, MongooseSchema } from 'common'
 import { HydratedDocument, Types } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { MovieGenre, MovieRating } from './movie'
 
+@HardDelete()
 @Schema(MongooseConfigModule.schemaOptions)
 export class MovieDraft extends MongooseSchema {
     @Prop()
