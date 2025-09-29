@@ -52,7 +52,7 @@ export const getMongoTestConnection = (): MongoConnectionContext => {
     return { uri }
 }
 
-export interface AmazonS3ConnectionContext {
+export interface S3ConnectionContext {
     endpoint: string
     region: string
     accessKeyId: string
@@ -61,13 +61,13 @@ export interface AmazonS3ConnectionContext {
     forcePathStyle: boolean
 }
 
-export const getAmazonS3TestConnection = (): AmazonS3ConnectionContext => {
-    const endpoint = Env.getString('TEST_AMAZON_S3_ENDPOINT')
-    const region = Env.getString('TEST_AMAZON_S3_REGION')
-    const accessKeyId = Env.getString('TEST_AMAZON_S3_ACCESS_KEY_ID')
-    const secretAccessKey = Env.getString('TEST_AMAZON_S3_SECRET_ACCESS_KEY')
-    const bucket = Env.getString('TEST_AMAZON_S3_BUCKET')
-    const forcePathStyle = Env.getBoolean('TEST_AMAZON_S3_FORCE_PATH_STYLE')
+export const getS3TestConnection = (): S3ConnectionContext => {
+    const endpoint = Env.getString('TEST_S3_ENDPOINT')
+    const region = Env.getString('TEST_S3_REGION')
+    const accessKeyId = Env.getString('TEST_S3_ACCESS_KEY_ID')
+    const secretAccessKey = Env.getString('TEST_S3_SECRET_ACCESS_KEY')
+    const bucket = Env.getString('TEST_S3_BUCKET')
+    const forcePathStyle = Env.getBoolean('TEST_S3_FORCE_PATH_STYLE')
 
     return { endpoint, region, accessKeyId, secretAccessKey, bucket, forcePathStyle }
 }

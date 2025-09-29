@@ -51,9 +51,9 @@ process.env.TEST_NATS_PORT2 = process.env.NATS_PORT2
 process.env.TEST_NATS_HOST3 = process.env.NATS_HOST3
 process.env.TEST_NATS_PORT3 = process.env.NATS_PORT3
 
-process.env.TEST_AMAZON_S3_ENDPOINT = process.env.AMAZON_S3_ENDPOINT
-process.env.TEST_AMAZON_S3_REGION = process.env.AMAZON_S3_REGION
-process.env.TEST_AMAZON_S3_BUCKET = process.env.AMAZON_S3_BUCKET
-process.env.TEST_AMAZON_S3_ACCESS_KEY_ID = process.env.AMAZON_S3_ACCESS_KEY_ID
-process.env.TEST_AMAZON_S3_SECRET_ACCESS_KEY = process.env.AMAZON_S3_SECRET_ACCESS_KEY
-process.env.TEST_AMAZON_S3_FORCE_PATH_STYLE = process.env.AMAZON_S3_FORCE_PATH_STYLE
+process.env.TEST_S3_ENDPOINT = process.env.S3_ENDPOINT
+process.env.TEST_S3_REGION = process.env.S3_REGION
+process.env.TEST_S3_BUCKET = process.env.S3_BUCKET
+process.env.TEST_S3_ACCESS_KEY_ID = process.env.S3_ACCESS_KEY_ID
+process.env.TEST_S3_SECRET_ACCESS_KEY = process.env.S3_SECRET_ACCESS_KEY
+process.env.TEST_S3_FORCE_PATH_STYLE = process.env.S3_FORCE_PATH_STYLE

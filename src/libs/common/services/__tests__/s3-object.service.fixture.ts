@@ -1,7 +1,7 @@
 import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
 import { Injectable } from '@nestjs/common'
 import { generateShortId, InjectS3Object, S3Object, S3ObjectModule, S3ObjectService } from 'common'
-import { createTestingModule, getAmazonS3TestConnection } from 'testlib'
+import { createTestingModule, getS3TestConnection } from 'testlib'
 
 @Injectable()
 class TestInjectS3ObjectService {
@@ -15,7 +15,7 @@ export interface Fixture {
 
 export async function createFixture() {
     const { endpoint, region, accessKeyId, secretAccessKey, forcePathStyle } =
-        getAmazonS3TestConnection()
+        getS3TestConnection()
 
     const bucket = await createTempBucket()
 
@@ -46,7 +46,7 @@ export async function createFixture() {
 
 const createTempBucket = async () => {
     const { endpoint, region, accessKeyId, secretAccessKey, forcePathStyle } =
-        getAmazonS3TestConnection()
+        getS3TestConnection()
 
     const client = new S3Client({
         endpoint,

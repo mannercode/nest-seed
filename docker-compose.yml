@@ -300,9 +300,9 @@ services:
         container_name: minio
         ports: ['9000:9000', '9001:9001']
         environment:
-            MINIO_ROOT_USER: ${AMAZON_S3_ACCESS_KEY_ID}
-            MINIO_ROOT_PASSWORD: ${AMAZON_S3_SECRET_ACCESS_KEY}
-            MINIO_BROWSER_REDIRECT_URL: $AMAZON_S3_ENDPOINT
+            MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID}
+            MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY}
+            MINIO_BROWSER_REDIRECT_URL: $S3_ENDPOINT
         command: ['server', '/data', '--console-address', ':9001']
         restart: unless-stopped
         healthcheck:
@@ -319,11 +319,11 @@ services:
         entrypoint: ['/bin/sh', '-c']
         command: |
             sh -euc '
-            aws --endpoint-url $AMAZON_S3_ENDPOINT s3 mb s3://$AMAZON_S3_BUCKET
+            aws --endpoint-url $S3_ENDPOINT s3 mb s3://$S3_BUCKET
             '
         environment:
-            AWS_ACCESS_KEY_ID: ${AMAZON_S3_ACCESS_KEY_ID}
-            AWS_SECRET_ACCESS_KEY: ${AMAZON_S3_SECRET_ACCESS_KEY}
+            AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+            AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
 
 networks:
     default:

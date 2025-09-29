@@ -59,12 +59,12 @@ export class AppConfigService extends BaseConfigService {
         NATS_HOST3: Joi.string().required(),
         NATS_PORT3: Joi.number().required(),
 
-        AMAZON_S3_ENDPOINT: Joi.string().required(),
-        AMAZON_S3_REGION: Joi.string().required(),
-        AMAZON_S3_BUCKET: Joi.string().required(),
-        AMAZON_S3_ACCESS_KEY_ID: Joi.string().required(),
-        AMAZON_S3_SECRET_ACCESS_KEY: Joi.string().required(),
-        AMAZON_S3_FORCE_PATH_STYLE: Joi.boolean().required()
+        S3_ENDPOINT: Joi.string().required(),
+        S3_REGION: Joi.string().required(),
+        S3_BUCKET: Joi.string().required(),
+        S3_ACCESS_KEY_ID: Joi.string().required(),
+        S3_SECRET_ACCESS_KEY: Joi.string().required(),
+        S3_FORCE_PATH_STYLE: Joi.boolean().required()
     })
 
     constructor(configService: ConfigService) {
@@ -144,12 +144,12 @@ export class AppConfigService extends BaseConfigService {
 
     get amazonS3() {
         return {
-            endpoint: this.getString('AMAZON_S3_ENDPOINT'),
-            region: this.getString('AMAZON_S3_REGION'),
-            bucket: this.getString('AMAZON_S3_BUCKET'),
-            accessKeyId: this.getString('AMAZON_S3_ACCESS_KEY_ID'),
-            secretAccessKey: this.getString('AMAZON_S3_SECRET_ACCESS_KEY'),
-            forcePathStyle: this.getBoolean('AMAZON_S3_FORCE_PATH_STYLE')
+            endpoint: this.getString('S3_ENDPOINT'),
+            region: this.getString('S3_REGION'),
+            bucket: this.getString('S3_BUCKET'),
+            accessKeyId: this.getString('S3_ACCESS_KEY_ID'),
+            secretAccessKey: this.getString('S3_SECRET_ACCESS_KEY'),
+            forcePathStyle: this.getBoolean('S3_FORCE_PATH_STYLE')
         }
     }
 }
