@@ -16,6 +16,9 @@
             "command": "bash scripts/run-cli.sh",
             "runOptions": {
                 "instanceLimit": 99
+            },
+            "presentation": {
+                "focus": true,
             }
         },
         {
