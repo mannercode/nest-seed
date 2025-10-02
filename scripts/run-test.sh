@@ -32,9 +32,9 @@ fi
 
 for ((i = 1; i <= $TEST_RUNS; i++)); do
     echo "[Run #$i/$TEST_RUNS]"
-    bash $WORKSPACE_ROOT/scripts/reset-infra.sh
+    bash $PROJECT_ROOT/scripts/reset-infra.sh
 
-    npx jest --no-cache --coverage --config "$WORKSPACE_ROOT/jest.config.ts" "${EXTRA_OPTIONS[@]}"
+    npx jest --no-cache --coverage --config "$PROJECT_ROOT/jest.config.ts" "${EXTRA_OPTIONS[@]}"
 done
 
 echo "All $TEST_RUNS test runs completed successfully"
