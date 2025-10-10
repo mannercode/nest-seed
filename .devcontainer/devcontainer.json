@@ -23,7 +23,7 @@
             "moby": false
         }
     },
-    "postCreateCommand": "bash scripts/reset-infra.sh && npm ci && npx husky && npm i -g npm-check-updates",
+    "postCreateCommand": "bash scripts/reset-infra.sh && npm ci && npx husky",
     "customizations": {
         "vscode": {
             "extensions": [

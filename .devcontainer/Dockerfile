@@ -14,3 +14,5 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git curl jq tree vim net-tools \
     shfmt \
     && rm -rf /var/lib/apt/lists/*
+
+RUN npm i -g npm-check-updates
