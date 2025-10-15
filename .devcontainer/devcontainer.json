@@ -35,7 +35,7 @@
                 "jebbs.plantuml",
                 "esbenp.prettier-vscode",
                 "mutantdino.resourcemonitor",
-                "foxundermoon.shell-format",
+                "mkhl.shfmt",
                 "github.vscode-pull-request-github",
                 "GitHub.copilot"
             ],
@@ -43,15 +43,16 @@
                 "files.watcherExclude": {
                     "**/.git/objects/**": true,
                     "**/.git/subtree-cache/**": true,
-                    "**/node_modules/*/**": true,
-                    "package-lock.json": true
+                    "**/node_modules/**": true,
+                    "package-lock.json": true,
+                    "**/_output/**": true
                 },
                 "search.exclude": {
-                    "**/node_modules": true,
-                    "**/_output": true
+                    "**/node_modules/**": true,
+                    "**/_output/**": true
                 },
                 "files.exclude": {
-                    "**/node_modules": true,
+                    "**/node_modules/**": true,
                     "package-lock.json": true
                 },
                 "remote.autoForwardPorts": false,
@@ -79,16 +80,16 @@
                     "editor.defaultFormatter": "vscode.html-language-features"
                 },
                 "[dotenv]": {
-                    "editor.defaultFormatter": "foxundermoon.shell-format"
+                    "editor.defaultFormatter": "mkhl.shfmt"
                 },
                 "[shellscript]": {
-                    "editor.defaultFormatter": "foxundermoon.shell-format"
+                    "editor.defaultFormatter": "mkhl.shfmt"
                 },
                 "[ignore]": {
-                    "editor.defaultFormatter": "foxundermoon.shell-format"
+                    "editor.defaultFormatter": "mkhl.shfmt"
                 },
                 "[properties]": {
-                    "editor.defaultFormatter": "foxundermoon.shell-format"
+                    "editor.defaultFormatter": "mkhl.shfmt"
                 },
                 "[markdown]": {
                     "editor.defaultFormatter": "esbenp.prettier-vscode"
