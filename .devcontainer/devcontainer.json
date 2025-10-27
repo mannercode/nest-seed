@@ -12,18 +12,22 @@
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}"
     },
-    "privileged": true,
     "runArgs": [
         "--add-host",
         "host.docker.internal:127.0.0.1",
         "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     ],
+    "privileged": true,
     "features": {
         "ghcr.io/devcontainers/features/docker-in-docker:2": {
             "moby": false
         }
     },
-    "postCreateCommand": "bash scripts/reset-infra.sh && npm ci && npx husky",
+    "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
+    "forwardPorts": [
+        5020,
+        5010
+    ],
     "customizations": {
         "vscode": {
             "extensions": [
@@ -40,25 +44,10 @@
                 "GitHub.copilot"
             ],
             "settings": {
-                "files.watcherExclude": {
-                    "**/.git/objects/**": true,
-                    "**/.git/subtree-cache/**": true,
-                    "**/node_modules/**": true,
-                    "package-lock.json": true,
-                    "**/_output/**": true
-                },
-                "search.exclude": {
-                    "**/node_modules/**": true,
-                    "**/_output/**": true
-                },
-                "files.exclude": {
-                    "**/node_modules/**": true,
-                    "package-lock.json": true
-                },
                 "remote.autoForwardPorts": false,
                 "remote.downloadExtensionsLocally": true,
                 "prettier.enableDebugLogs": true,
-                "livePreview.portNumber": 3030,
+                "livePreview.portNumber": 5010,
                 "typescript.tsc.autoDetect": "off",
                 "typescript.disableAutomaticTypeAcquisition": true,
                 "typescript.format.enable": false,
@@ -94,7 +83,7 @@
                 "[markdown]": {
                     "editor.defaultFormatter": "esbenp.prettier-vscode"
                 },
-                "plantuml.server": "https://www.plantuml.com/plantuml",
+                "plantuml.server": "http://localhost:5020/",
                 "plantuml.render": "PlantUMLServer",
                 "githubPullRequests.pullBranch": "never",
                 "githubPullRequests.createOnPublishBranch": "never",
