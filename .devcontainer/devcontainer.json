@@ -44,6 +44,21 @@
                 "GitHub.copilot"
             ],
             "settings": {
+                "files.watcherExclude": {
+                    "**/.git/objects/**": true,
+                    "**/.git/subtree-cache/**": true,
+                    "**/node_modules/**": true,
+                    "package-lock.json": true,
+                    "**/_output/**": true
+                },
+                "search.exclude": {
+                    "**/node_modules/**": true,
+                    "**/_output/**": true
+                },
+                "files.exclude": {
+                    "**/node_modules/**": true,
+                    "package-lock.json": true
+                },
                 "remote.autoForwardPorts": false,
                 "remote.downloadExtensionsLocally": true,
                 "prettier.enableDebugLogs": true,
