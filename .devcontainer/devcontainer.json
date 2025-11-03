@@ -26,8 +26,8 @@
             "moby": false
         }
     },
-    "remoteUser": "${localEnv:USER:dev}",
-    "containerUser": "${localEnv:USER:dev}",
+    "remoteUser": "${localEnv:USER}",
+    "containerUser": "${localEnv:USER}",
     "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
     "forwardPorts": [
         5020,
