@@ -19,6 +19,12 @@
     ],
     "privileged": true,
     "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": false,
+            "username": "${localEnv:USER}",
+            "uid": "${localEnv:UID}",
+            "gid": "${localEnv:GID}"
+        },
         "ghcr.io/devcontainers/features/docker-in-docker:2": {
             "moby": false
         }
