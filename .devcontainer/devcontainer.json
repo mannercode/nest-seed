@@ -20,15 +20,14 @@
     "privileged": true,
     "features": {
         "ghcr.io/devcontainers/features/common-utils:2": {
-            "installZsh": false,
-            "username": "${localEnv:USER}",
-            "uid": "${localEnv:UID}",
-            "gid": "${localEnv:GID}"
+            "username": "${localEnv:USER}"
         },
         "ghcr.io/devcontainers/features/docker-in-docker:2": {
             "moby": false
         }
     },
+    "remoteUser": "${localEnv:USER:dev}",
+    "containerUser": "${localEnv:USER:dev}",
     "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
     "forwardPorts": [
         5020,
