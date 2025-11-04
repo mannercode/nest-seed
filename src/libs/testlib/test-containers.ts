@@ -35,6 +35,7 @@ export const getNatsTestConnection = (): NatsConnectionContext => {
 
 export interface MongoConnectionContext {
     uri: string
+    dbName: string
 }
 
 export const getMongoTestConnection = (): MongoConnectionContext => {
@@ -48,8 +49,9 @@ export const getMongoTestConnection = (): MongoConnectionContext => {
     ].join(',')
 
     const uri = `mongodb://${username}:${password}@${nodes}/?replicaSet=${replica}`
+    const dbName = Env.getString('TEST_MONGO_DATABASE')
 
-    return { uri }
+    return { uri, dbName }
 }
 
 export interface S3ConnectionContext {

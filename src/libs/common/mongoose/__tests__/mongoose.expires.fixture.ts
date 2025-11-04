@@ -1,7 +1,7 @@
 import { getModelToken, MongooseModule, Schema as NestSchema, Prop } from '@nestjs/mongoose'
 import { createMongooseSchema, MongooseSchema } from 'common'
 import { Model } from 'mongoose'
-import { createTestContext, getMongoTestConnection, withTestId } from 'testlib'
+import { createTestContext, getMongoTestConnection } from 'testlib'
 
 @NestSchema()
 export class ExpireSample extends MongooseSchema {
@@ -20,14 +20,12 @@ export interface Fixture {
 export async function createFixture() {
     const schema = createMongooseSchema(ExpireSample)
 
-    const { uri } = getMongoTestConnection()
+    const { uri, dbName } = getMongoTestConnection()
 
     const testContext = await createTestContext({
         metadata: {
             imports: [
-                MongooseModule.forRootAsync({
-                    useFactory: () => ({ uri, dbName: withTestId('mongoose-expires') })
-                }),
+                MongooseModule.forRootAsync({ useFactory: () => ({ uri, dbName }) }),
                 MongooseModule.forFeature([{ name: 'schema', schema }])
             ]
         }

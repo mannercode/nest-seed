@@ -1,7 +1,53 @@
 import dotenv from 'dotenv'
 import 'reflect-metadata'
+import { MongoClient } from 'mongodb'
+
 dotenv.config({ path: ['.env.test'], quiet: true })
 process.env.NODE_ENV = 'test'
+
+const copyEnvToTest = (keys: readonly string[]) =>
+    keys.forEach((key) => {
+        process.env[`TEST_${key}`] = process.env[key]
+    })
+
+copyEnvToTest([
+    'REDIS_PASSWORD',
+    'REDIS_HOST1',
+    'REDIS_PORT1',
+    'REDIS_HOST2',
+    'REDIS_PORT2',
+    'REDIS_HOST3',
+    'REDIS_PORT3',
+    'REDIS_HOST4',
+    'REDIS_PORT4',
+    'REDIS_HOST5',
+    'REDIS_PORT5',
+    'REDIS_HOST6',
+    'REDIS_PORT6'
+])
+
+copyEnvToTest([
+    'MONGO_REPLICA',
+    'MONGO_USERNAME',
+    'MONGO_PASSWORD',
+    'MONGO_HOST1',
+    'MONGO_PORT1',
+    'MONGO_HOST2',
+    'MONGO_PORT2',
+    'MONGO_HOST3',
+    'MONGO_PORT3'
+])
+
+copyEnvToTest(['NATS_HOST1', 'NATS_PORT1', 'NATS_HOST2', 'NATS_PORT2', 'NATS_HOST3', 'NATS_PORT3'])
+
+copyEnvToTest([
+    'S3_ENDPOINT',
+    'S3_REGION',
+    'S3_BUCKET',
+    'S3_ACCESS_KEY_ID',
+    'S3_SECRET_ACCESS_KEY',
+    'S3_FORCE_PATH_STYLE'
+])
 
 const generateTestId = () => {
     const characters = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
@@ -12,48 +58,46 @@ const generateTestId = () => {
     ).join('')
 }
 
+let mongoClient: MongoClient
+let mongo_uri = ''
+
+beforeAll(async () => {
+    const replica = process.env.TEST_MONGO_REPLICA
+    const username = process.env.TEST_MONGO_USERNAME
+    const password = process.env.TEST_MONGO_PASSWORD
+    const nodes = [
+        `${process.env.TEST_MONGO_HOST1}:${process.env.TEST_MONGO_PORT1}`,
+        `${process.env.TEST_MONGO_HOST2}:${process.env.TEST_MONGO_PORT2}`,
+        `${process.env.TEST_MONGO_HOST3}:${process.env.TEST_MONGO_PORT3}`
+    ].join(',')
+
+    mongo_uri = `mongodb://${username}:${password}@${nodes}/?replicaSet=${replica}`
+
+    mongoClient = new MongoClient(mongo_uri)
+    await mongoClient.connect()
+})
+
 global.beforeEach(async () => {
     const testId = generateTestId()
 
     process.env.TEST_ID = testId
     process.env.PROJECT_ID = `project-${testId}`
     process.env.MONGO_DATABASE = `mongodb-${testId}`
+
+    copyEnvToTest(['MONGO_DATABASE'])
 })
 
-process.env.TEST_REDIS_PASSWORD = process.env.REDIS_PASSWORD
-process.env.TEST_REDIS_HOST1 = process.env.REDIS_HOST1
-process.env.TEST_REDIS_PORT1 = process.env.REDIS_PORT1
-process.env.TEST_REDIS_HOST2 = process.env.REDIS_HOST2
-process.env.TEST_REDIS_PORT2 = process.env.REDIS_PORT2
-process.env.TEST_REDIS_HOST3 = process.env.REDIS_HOST3
-process.env.TEST_REDIS_PORT3 = process.env.REDIS_PORT3
-process.env.TEST_REDIS_HOST4 = process.env.REDIS_HOST4
-process.env.TEST_REDIS_PORT4 = process.env.REDIS_PORT4
-process.env.TEST_REDIS_HOST5 = process.env.REDIS_HOST5
-process.env.TEST_REDIS_PORT5 = process.env.REDIS_PORT5
-process.env.TEST_REDIS_HOST6 = process.env.REDIS_HOST6
-process.env.TEST_REDIS_PORT6 = process.env.REDIS_PORT6
+afterEach(async () => {
+    const dbName = process.env.MONGO_DATABASE
 
-process.env.TEST_MONGO_REPLICA = process.env.MONGO_REPLICA
-process.env.TEST_MONGO_USERNAME = process.env.MONGO_USERNAME
-process.env.TEST_MONGO_PASSWORD = process.env.MONGO_PASSWORD
-process.env.TEST_MONGO_HOST1 = process.env.MONGO_HOST1
-process.env.TEST_MONGO_PORT1 = process.env.MONGO_PORT1
-process.env.TEST_MONGO_HOST2 = process.env.MONGO_HOST2
-process.env.TEST_MONGO_PORT2 = process.env.MONGO_PORT2
-process.env.TEST_MONGO_HOST3 = process.env.MONGO_HOST3
-process.env.TEST_MONGO_PORT3 = process.env.MONGO_PORT3
+    try {
+        await mongoClient.db(dbName).dropDatabase()
+    } catch (err: any) {
+        // 테스트에서 DB를 안 썼다면 컬렉션이 없어도 무시
+        if (err?.codeName !== 'NamespaceNotFound') throw err
+    }
+})
 
-process.env.TEST_NATS_HOST1 = process.env.NATS_HOST1
-process.env.TEST_NATS_PORT1 = process.env.NATS_PORT1
-process.env.TEST_NATS_HOST2 = process.env.NATS_HOST2
-process.env.TEST_NATS_PORT2 = process.env.NATS_PORT2
-process.env.TEST_NATS_HOST3 = process.env.NATS_HOST3
-process.env.TEST_NATS_PORT3 = process.env.NATS_PORT3
-
-process.env.TEST_S3_ENDPOINT = process.env.S3_ENDPOINT
-process.env.TEST_S3_REGION = process.env.S3_REGION
-process.env.TEST_S3_BUCKET = process.env.S3_BUCKET
-process.env.TEST_S3_ACCESS_KEY_ID = process.env.S3_ACCESS_KEY_ID
-process.env.TEST_S3_SECRET_ACCESS_KEY = process.env.S3_SECRET_ACCESS_KEY
-process.env.TEST_S3_FORCE_PATH_STYLE = process.env.S3_FORCE_PATH_STYLE
+afterAll(async () => {
+    await mongoClient?.close()
+})

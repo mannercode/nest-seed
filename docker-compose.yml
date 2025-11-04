@@ -15,14 +15,23 @@ x-mongo-base: &mongo-base
     environment:
         MONGO_INITDB_ROOT_USERNAME: '${MONGO_USERNAME}'
         MONGO_INITDB_ROOT_PASSWORD: '${MONGO_PASSWORD}'
+    deploy:
+        resources:
+            limits:
+                memory: 1g
+    ulimits:
+        # Prevent "Error accepting new connection on local endpoint","Too many open files"
+        nofile:
+            soft: 131072
+            hard: 131072
     # ttlMonitorSleepSecs=1 for tests
     command: >
         mongod --replSet ${MONGO_REPLICA}
         --keyFile /etc/mongodb/mongodb.key
         --bind_ip_all
         --setParameter ttlMonitorSleepSecs=1
+        --wiredTigerCacheSizeGB 0.25
     volumes: ['mongodb_key:/etc/mongodb']
-    restart: unless-stopped
     depends_on: ['mongo-key-generator']
     healthcheck:
         <<: *hc-common
@@ -34,10 +43,13 @@ x-redis-base: &redis-base
     <<: *common-base
     image: ${REDIS_IMAGE}
     profiles: ['infra']
-    restart: unless-stopped
     healthcheck:
         <<: *hc-common
         test: ['CMD-SHELL', 'redis-cli -a $REDIS_PASSWORD ping']
+    deploy:
+        resources:
+            limits:
+                memory: 128m
     command: |
         sh -euc '
           redis-server --port 6379 \
@@ -56,7 +68,10 @@ x-nats-base: &nats-base
     <<: *common-base
     image: ${NATS_IMAGE}
     profiles: ['infra']
-    restart: unless-stopped
+    deploy:
+        resources:
+            limits:
+                memory: 256m
     healthcheck:
         <<: *hc-common
         test: wget -qO- http://localhost:8222/varz || exit 1
@@ -260,8 +275,11 @@ services:
             MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID}
             MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY}
             MINIO_BROWSER_REDIRECT_URL: $S3_ENDPOINT
+        deploy:
+            resources:
+                limits:
+                    memory: 512m
         command: ['server', '/data', '--console-address', ':9001']
-        restart: unless-stopped
         healthcheck:
             <<: *hc-common
             test: 'curl -fsS http://localhost:9000/minio/health/ready'

@@ -2,7 +2,7 @@ import { Type } from '@nestjs/common'
 import { getModelToken, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { createMongooseSchema, HardDelete, MongooseSchema } from 'common'
 import { HydratedDocument, Model } from 'mongoose'
-import { createTestContext, getMongoTestConnection, withTestId } from 'testlib'
+import { createTestContext, getMongoTestConnection } from 'testlib'
 
 @HardDelete()
 @Schema()
@@ -26,14 +26,12 @@ export interface Fixture<T> {
 export async function createFixture<T>(cls: Type<T>) {
     const schema = createMongooseSchema(cls)
 
-    const { uri } = getMongoTestConnection()
+    const { uri, dbName } = getMongoTestConnection()
 
     const testContext = await createTestContext({
         metadata: {
             imports: [
-                MongooseModule.forRootAsync({
-                    useFactory: () => ({ uri, dbName: withTestId('mongoose-delete') })
-                }),
+                MongooseModule.forRootAsync({ useFactory: () => ({ uri, dbName }) }),
                 MongooseModule.forFeature([{ name: 'schema', schema }])
             ]
         }
