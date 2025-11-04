@@ -5,7 +5,8 @@ set -euo pipefail
 
 docker_compose --profile infra down --volumes --timeout 0
 
-rm -rf $PROJECT_ROOT/_output
+# TODO log나 upload 같은 폴더 제거하면 sudo가 필요 없다.
+sudo rm -rf $PROJECT_ROOT/_output
 mkdir -p $PROJECT_ROOT/$LOG_DIRECTORY
 mkdir -p $PROJECT_ROOT/$FILE_UPLOAD_DIRECTORY
 

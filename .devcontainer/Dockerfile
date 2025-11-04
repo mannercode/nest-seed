@@ -4,32 +4,6 @@ RUN groupmod --gid 9999 node \
     && usermod --uid 9999 --gid 9999 node \
     && chown -R 9999:9999 /home/node
 
-# ARG USERNAME=hunjuly
-# ARG USER_UID=1000
-# ARG USER_GID=$USER_UID
-
-
-# # Create the user
-# RUN groupadd --gid 9999 $USERNAME \
-#     && useradd --uid 9999 --gid 9999 -m $USERNAME \
-#     #
-#     # [Optional] Add sudo support. Omit if you don't need to install software after connecting.
-#     && apt-get update \
-#     && apt-get install -y sudo \
-#     && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-#     && chmod 0440 /etc/sudoers.d/$USERNAME
-
-#     RUN groupmod --gid $USER_GID $USERNAME \
-#     && usermod --uid $USER_UID --gid $USER_GID $USERNAME \
-#     && chown -R $USER_UID:$USER_GID /home/$USERNAME
-
-# ********************************************************
-# * Anything else you want to do like clean up goes here *
-# ********************************************************
-
-# [Optional] Set the default user. Omit if you want to keep the default as root.
-# USER $USERNAME
-
 # bash
 RUN echo 'PS1="\[\033[32m\]\w\[\033[00m\] "' >> ~/.bashrc
 RUN echo "alias ls='ls --color=auto'" >> ~/.bashrc
