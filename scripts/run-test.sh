@@ -32,8 +32,6 @@ fi
 
 for ((i = 1; i <= $TEST_RUNS; i++)); do
     echo "[Run #$i/$TEST_RUNS]"
-    bash $PROJECT_ROOT/scripts/reset-infra.sh
-
     npx jest --no-cache --coverage --config "$PROJECT_ROOT/jest.config.ts" "${EXTRA_OPTIONS[@]}"
 done
 
