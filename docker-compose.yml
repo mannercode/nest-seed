@@ -8,6 +8,7 @@ x-common-base: &common-base
     networks: ['default']
     extra_hosts: ['host.docker.internal:host-gateway']
 
+x-mongo-rs-uri: &mongo-rs-uri 'mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo1:27017,mongo2:27017,mongo3:27017/?authSource=admin&replicaSet=${MONGO_REPLICA}'
 x-mongo-base: &mongo-base
     <<: *common-base
     image: ${MONGO_IMAGE}
@@ -20,11 +21,12 @@ x-mongo-base: &mongo-base
             limits:
                 memory: 1g
     ulimits:
-        # Prevent "Error accepting new connection on local endpoint","Too many open files"
         nofile:
-            soft: 131072
-            hard: 131072
-    # ttlMonitorSleepSecs=1 for tests
+            soft: 65536 # Prevents "Too many open files" errors
+            hard: 65536
+    # For tests:
+    # ttlMonitorSleepSecs=1
+    # wiredTigerCacheSizeGB 0.25
     command: >
         mongod --replSet ${MONGO_REPLICA}
         --keyFile /etc/mongodb/mongodb.key
@@ -55,7 +57,7 @@ x-redis-base: &redis-base
           redis-server --port 6379 \
           --cluster-enabled yes \
           --cluster-config-file nodes.conf \
-          --cluster-announce-ip host.docker.internal \
+          --cluster-announce-ip $$ANNOUNCE_IP \
           --cluster-announce-port $$ANNOUNCE_PORT \
           --cluster-announce-bus-port $$ANNOUNCE_BUS_PORT \
           --protected-mode no \
@@ -90,6 +92,7 @@ services:
         <<: *redis-base
         container_name: redis1
         environment:
+            ANNOUNCE_IP: $REDIS_HOST1
             ANNOUNCE_PORT: $REDIS_PORT1
             ANNOUNCE_BUS_PORT: 1$REDIS_PORT1
         ports: ['$REDIS_PORT1:6379', '1$REDIS_PORT1:16379']
@@ -98,6 +101,7 @@ services:
         <<: *redis-base
         container_name: redis2
         environment:
+            ANNOUNCE_IP: $REDIS_HOST2
             ANNOUNCE_PORT: $REDIS_PORT2
             ANNOUNCE_BUS_PORT: 1$REDIS_PORT2
         ports: ['$REDIS_PORT2:6379', '1$REDIS_PORT2:16379']
@@ -106,6 +110,7 @@ services:
         <<: *redis-base
         container_name: redis3
         environment:
+            ANNOUNCE_IP: $REDIS_HOST3
             ANNOUNCE_PORT: $REDIS_PORT3
             ANNOUNCE_BUS_PORT: 1$REDIS_PORT3
         ports: ['$REDIS_PORT3:6379', '1$REDIS_PORT3:16379']
@@ -114,6 +119,7 @@ services:
         <<: *redis-base
         container_name: redis4
         environment:
+            ANNOUNCE_IP: $REDIS_HOST4
             ANNOUNCE_PORT: $REDIS_PORT4
             ANNOUNCE_BUS_PORT: 1$REDIS_PORT4
         ports: ['$REDIS_PORT4:6379', '1$REDIS_PORT4:16379']
@@ -122,6 +128,7 @@ services:
         <<: *redis-base
         container_name: redis5
         environment:
+            ANNOUNCE_IP: $REDIS_HOST5
             ANNOUNCE_PORT: $REDIS_PORT5
             ANNOUNCE_BUS_PORT: 1$REDIS_PORT5
         ports: ['$REDIS_PORT5:6379', '1$REDIS_PORT5:16379']
@@ -130,6 +137,7 @@ services:
         <<: *redis-base
         container_name: redis6
         environment:
+            ANNOUNCE_IP: $REDIS_HOST6
             ANNOUNCE_PORT: $REDIS_PORT6
             ANNOUNCE_BUS_PORT: 1$REDIS_PORT6
         ports: ['$REDIS_PORT6:6379', '1$REDIS_PORT6:16379']
@@ -149,12 +157,12 @@ services:
         command: |
             sh -euc '
             REDIS_LIST=" \
-                host.docker.internal:$REDIS_PORT1 \
-                host.docker.internal:$REDIS_PORT2 \
-                host.docker.internal:$REDIS_PORT3 \
-                host.docker.internal:$REDIS_PORT4 \
-                host.docker.internal:$REDIS_PORT5 \
-                host.docker.internal:$REDIS_PORT6 \
+                $REDIS_HOST1:$REDIS_PORT1 \
+                $REDIS_HOST2:$REDIS_PORT2 \
+                $REDIS_HOST3:$REDIS_PORT3 \
+                $REDIS_HOST4:$REDIS_PORT4 \
+                $REDIS_HOST5:$REDIS_PORT5 \
+                $REDIS_HOST6:$REDIS_PORT6 \
                 "
 
             echo "yes" |
@@ -198,6 +206,8 @@ services:
             mongo1: { condition: service_healthy }
             mongo2: { condition: service_healthy }
             mongo3: { condition: service_healthy }
+        environment:
+            MONGO_RS_URI: *mongo-rs-uri
         command: |
             sh -euc '
             HOST1="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo1:27017"
@@ -207,18 +217,36 @@ services:
                     rs.initiate({
                     _id: \"${MONGO_REPLICA}\",
                     members: [
-                        { _id: 0, host: \"host.docker.internal:${MONGO_PORT1}\" },
-                        { _id: 1, host: \"host.docker.internal:${MONGO_PORT2}\" },
-                        { _id: 2, host: \"host.docker.internal:${MONGO_PORT3}\" }
+                        { _id: 0, host: \"${MONGO_HOST1}:${MONGO_PORT1}\" },
+                        { _id: 1, host: \"${MONGO_HOST2}:${MONGO_PORT2}\" },
+                        { _id: 2, host: \"${MONGO_HOST3}:${MONGO_PORT3}\" }
                         ]
                     })
                     "
 
-            ALL_HOSTS="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo1:27017,mongo2:27017,mongo3:27017"
+            i=0
+            until mongosh "$$MONGO_RS_URI" --quiet --eval "rs.status().members.some(m=>m.stateStr===\"PRIMARY\")" | grep -q true; do
+              i=$$((i+1)); [ $$i -gt 40 ] && { echo "RS not ready"; exit 1; }
+              sleep 0.5
+            done
 
-            mongosh "$$ALL_HOSTS/?authSource=admin&replicaSet=${MONGO_REPLICA}" \
-                --eval "db.test.insertOne({ test: \"test\" })"
+            mongosh "$$MONGO_RS_URI" --eval "db.test.insertOne({ test: \"test\" }); db.dropDatabase()"
             '
+    mongo-console:
+        <<: *common-base
+        image: mongo-express:latest
+        container_name: mongo-console
+        restart: always
+        profiles: ['infra']
+        depends_on:
+            mongo-setup: { condition: service_completed_successfully }
+        environment:
+            ME_CONFIG_BASICAUTH: 'false'
+            ME_CONFIG_MONGODB_URL: *mongo-rs-uri
+        ports: ['8081:8081']
+        healthcheck:
+            <<: *hc-common
+            test: 'curl -fsS http://localhost:8081/'
 
     nats1:
         <<: *nats-base
@@ -343,8 +371,34 @@ services:
             cores: { condition: service_healthy }
             infrastructures: { condition: service_healthy }
 
+    # Redis GUI (RedisInsight)
+    redisinsight:
+        <<: *common-base
+        image: redis/redisinsight:latest
+        container_name: redisinsight
+        profiles: ['infra']
+        ports: ['5540:5540']
+        volumes: ['redisinsight_data:/data']
+        healthcheck:
+            <<: *hc-common
+            test: 'curl -fsS http://localhost:5540/'
+
+    # NATS 관리 GUI (NUI)
+    nats-nui:
+        <<: *common-base
+        image: ghcr.io/nats-nui/nui:latest
+        container_name: nats-nui
+        profiles: ['infra']
+        ports: ['31311:31311']
+        volumes: ['nui_data:/db']
+        healthcheck:
+            <<: *hc-common
+            test: 'curl -fsS http://localhost:31311/'
+
 networks:
     default:
 
 volumes:
     mongodb_key: {}
+    redisinsight_data: {}
+    nui_data: {}
