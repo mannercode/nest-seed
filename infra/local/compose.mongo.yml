@@ -1,0 +1,101 @@
+x-mongo-rs-uri: &mongo-rs-uri 'mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@mongo1:27017,mongo2:27017,mongo3:27017/?authSource=admin&replicaSet=$MONGO_REPLICA'
+x-mongo-base: &mongo-base
+    extends: { file: ./compose.common.yml, service: common-options }
+    image: $MONGO_IMAGE
+    deploy: { resources: { limits: { memory: 1g } } }
+    environment:
+        { MONGO_INITDB_ROOT_USERNAME: $MONGO_USERNAME, MONGO_INITDB_ROOT_PASSWORD: $MONGO_PASSWORD }
+    # Prevents "Too many open files" errors
+    ulimits: { nofile: { soft: 65536, hard: 65536 } }
+    # For tests:
+    # ttlMonitorSleepSecs=1
+    # wiredTigerCacheSizeGB 0.25
+    command: >
+        mongod --replSet $MONGO_REPLICA
+        --keyFile /etc/mongodb/mongodb.key
+        --bind_ip_all
+        --setParameter ttlMonitorSleepSecs=1
+        --wiredTigerCacheSizeGB 0.25
+    volumes: ['mongodb_key:/etc/mongodb']
+    depends_on: ['mongo-key-generator']
+    healthcheck:
+        test: >
+            mongosh --quiet -u $MONGO_USERNAME -p $MONGO_PASSWORD --authenticationDatabase admin
+            --eval 'db.hello().isWritablePrimary || db.hello().secondary'
+
+services:
+    mongo-key-generator:
+        container_name: mongo-key-generator
+        image: $MONGO_IMAGE
+        command: |
+            sh -euc '
+            openssl rand -base64 768 > mongodb.key &&
+            chmod 400 mongodb.key &&
+            chown mongodb:mongodb mongodb.key
+            '
+        volumes: ['mongodb_key:/mongodb_key']
+        working_dir: /mongodb_key
+
+    mongo1:
+        <<: *mongo-base
+        container_name: mongo1
+        ports: ['$MONGO_PORT1:27017']
+
+    mongo2:
+        <<: *mongo-base
+        container_name: mongo2
+        ports: ['$MONGO_PORT2:27017']
+
+    mongo3:
+        <<: *mongo-base
+        container_name: mongo3
+        ports: ['$MONGO_PORT3:27017']
+
+    mongo-setup:
+        extends: { file: ./compose.common.yml, service: common-options }
+        container_name: mongo-setup
+        image: $MONGO_IMAGE
+        depends_on:
+            {
+                mongo1: { condition: service_healthy },
+                mongo2: { condition: service_healthy },
+                mongo3: { condition: service_healthy }
+            }
+        environment: { MONGO_RS_URI: *mongo-rs-uri }
+        command: |
+            sh -euc '
+            HOST1="mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@mongo1:27017"
+
+            mongosh "$$HOST1/?authSource=admin" \
+                --eval "
+                    rs.initiate({
+                    _id: \"$MONGO_REPLICA\",
+                    members: [
+                        { _id: 0, host: \"$MONGO_HOST1:$MONGO_PORT1\" },
+                        { _id: 1, host: \"$MONGO_HOST2:$MONGO_PORT2\" },
+                        { _id: 2, host: \"$MONGO_HOST3:$MONGO_PORT3\" }
+                        ]
+                    })
+                    "
+
+            i=0
+            until mongosh "$$MONGO_RS_URI" --quiet --eval "rs.status().members.some(m=>m.stateStr===\"PRIMARY\")" | grep -q true; do
+              i=$$((i+1)); [ $$i -gt 40 ] && { echo "RS not ready"; exit 1; }
+              sleep 0.5
+            done
+
+            mongosh "$$MONGO_RS_URI" --eval "db.test.insertOne({ test: \"test\" }); db.dropDatabase()"
+            '
+    mongo-console:
+        extends: { file: ./compose.common.yml, service: common-options }
+        container_name: mongo-console
+        image: mongo-express:latest
+        restart: always
+        depends_on: { mongo-setup: { condition: service_completed_successfully } }
+        environment: { ME_CONFIG_BASICAUTH: 'false', ME_CONFIG_MONGODB_URL: *mongo-rs-uri }
+        ports: ['8081:8081']
+        healthcheck:
+            test: 'curl -fsS http://localhost:8081/'
+
+volumes:
+    mongodb_key: {}

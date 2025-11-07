@@ -4,7 +4,7 @@ RUN groupmod --gid 9999 node \
     && usermod --uid 9999 --gid 9999 node \
     && chown -R 9999:9999 /home/node
 
-ARG DEV_TOOLS="git curl jq tree vim net-tools shfmt"
+ARG DEV_TOOLS="git curl jq tree vim net-tools tmux"
 ARG PLANTUML="openjdk-17-jre graphviz fonts-noto-cjk"
 ARG MKHL_SHFMT="shfmt"
 RUN apt-get update && apt-get install -y --no-install-recommends \

@@ -27,7 +27,10 @@ elif [ "$TEST_SUITE" == "apps" ]; then
         --collectCoverageFrom "src/apps/**/*.ts"
     )
 else
-    EXTRA_OPTIONS=()
+	EXTRA_OPTIONS=(
+		--roots "<rootDir>/src"
+		--collectCoverageFrom "src/**/*.ts"
+	)
 fi
 
 for ((i = 1; i <= $TEST_RUNS; i++)); do
