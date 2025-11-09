@@ -52,8 +52,10 @@ services:
             wait $$SUB_PID
             cat /tmp/sub.log
             '
+    # TODO prome+grafana 설정해라. 미완성이다.
     # --- NATS Exporters (각 노드 1개씩) ---
     nats-exporter1:
+        container_name: nats-exporter1
         image: natsio/prometheus-nats-exporter:latest
         command: >
             -varz -connz -subz -routez -gatewayz -leafz -jsz=all -healthz
@@ -61,6 +63,7 @@ services:
         depends_on: { nats1: { condition: service_healthy } }
 
     nats-exporter2:
+        container_name: nats-exporter2
         image: natsio/prometheus-nats-exporter:latest
         command: >
             -varz -connz -subz -routez -gatewayz -leafz -jsz=all -healthz
@@ -68,6 +71,7 @@ services:
         depends_on: { nats2: { condition: service_healthy } }
 
     nats-exporter3:
+        container_name: nats-exporter3
         image: natsio/prometheus-nats-exporter:latest
         command: >
             -varz -connz -subz -routez -gatewayz -leafz -jsz=all -healthz
@@ -92,22 +96,13 @@ services:
     grafana:
         image: grafana/grafana:latest
         container_name: grafana
-        ports: ['3300:3000'] # http://localhost:3300
+        ports: ['3300:3000']
         environment:
             - GF_SECURITY_ADMIN_USER=admin
-            - GF_SECURITY_ADMIN_PASSWORD=admin # 필요시 변경
+            - GF_SECURITY_ADMIN_PASSWORD=admin
         volumes:
             - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
             - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
             - ./grafana/dashboards:/var/lib/grafana/dashboards
         depends_on:
             - prometheus
-
-    # nats-console:
-    #     container_name: nats-console
-    #     image: ghcr.io/nats-nui/nui:latest
-    #     ports: ['31311:31311']
-    #     depends_on: { nats-setup: { condition: service_completed_successfully } }
-    #     volumes:
-    #         - nats-contexts:/config
-    #     command: ['--nats-cli-contexts=/config/nats/context', '-log-level=debug', '-db-path=/tmp']

@@ -28,7 +28,7 @@
     },
     "containerUser": "${localEnv:USER}",
     "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
-    "postStartCommand": "bash scripts/reset-infra.sh",
+    "postStartCommand": "bash infra/local/reset-infra.sh",
     "forwardPorts": [
         5020,
         5010
