@@ -15,6 +15,13 @@ docker_compose() (
 )
 
 docker_compose down --volumes --timeout 0
+
+# TODO logstash 붙이면 삭제해라
+. $TEST_ENV_FILE
+rm -rf $WORKSPACE_ROOT/_output
+mkdir -p $WORKSPACE_ROOT/$LOG_DIRECTORYㅋ
+mkdir -p $WORKSPACE_ROOT/$FILE_UPLOAD_DIRECTORY
+
 docker_compose up -d
 
 SETUP_CONTAINERS=(mongo-key-generator mongo-setup redis-setup nats-setup minio-setup)
