@@ -6,7 +6,6 @@ docker_compose() (
 	docker compose --compatibility \
 		-f $PROJECT_ROOT/compose.yml \
 		--env-file $TEST_ENV_FILE \
-		--env-file $INFRA_ENV_FILE \
 		$@
 )
 

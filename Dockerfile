@@ -1,28 +1,19 @@
-ARG APP_IMAGE
+FROM node:24-alpine AS build
 
-FROM ${APP_IMAGE:-alpine} AS build
 ARG TARGET_APP
-
 WORKDIR /app
-
 COPY package*.json ./
-
 RUN npm ci
-
 COPY . .
+RUN TARGET_APP=${TARGET_APP} npm run build
+RUN cp /app/_output/dist/${TARGET_APP}/index.js /app/_output/dist/index.js
 
-RUN TARGET_APP=$TARGET_APP npm run build
-
-FROM ${APP_IMAGE:-alpine}
-ARG TARGET_APP
+FROM node:24-alpine AS runtime
 
 RUN apk add --no-cache curl
-
 WORKDIR /app
-
 COPY package*.json ./
 RUN npm ci --omit=dev
-
-COPY --from=build /app/_output/dist/${TARGET_APP}/index.js /app/_output/dist/index.js
+COPY --from=build /app/_output/dist/index.js /app/_output/dist/index.js
 
 CMD ["node", "_output/dist/index.js"]

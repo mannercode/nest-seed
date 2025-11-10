@@ -5,27 +5,27 @@ set -euo pipefail
 TEST_OPTIONS=("all" "apps" "common")
 
 if [ $# -ge 2 ]; then
-    TEST_SUITE="$1"
-    TEST_RUNS="$2"
+	TEST_SUITE="$1"
+	TEST_RUNS="$2"
 else
-    echo -e "\nSelect Test Suites"
+	echo -e "\nSelect Test Suites"
 
-    TEST_SUITE=$(prompt_selection "${TEST_OPTIONS[@]}")
+	TEST_SUITE=$(prompt_selection "${TEST_OPTIONS[@]}")
 
-    read -p "Enter number of runs (default 1): " TEST_RUNS
-    TEST_RUNS=${TEST_RUNS:-1}
+	read -p "Enter number of runs (default 1): " TEST_RUNS
+	TEST_RUNS=${TEST_RUNS:-1}
 fi
 
 if [ "$TEST_SUITE" == "common" ]; then
-    EXTRA_OPTIONS=(
-        --roots "<rootDir>/src/libs/common"
-        --collectCoverageFrom "src/libs/common/**/*.ts"
-    )
+	EXTRA_OPTIONS=(
+		--roots "<rootDir>/src/libs/common"
+		--collectCoverageFrom "src/libs/common/**/*.ts"
+	)
 elif [ "$TEST_SUITE" == "apps" ]; then
-    EXTRA_OPTIONS=(
-        --roots "<rootDir>/src/apps"
-        --collectCoverageFrom "src/apps/**/*.ts"
-    )
+	EXTRA_OPTIONS=(
+		--roots "<rootDir>/src/apps"
+		--collectCoverageFrom "src/apps/**/*.ts"
+	)
 else
 	EXTRA_OPTIONS=(
 		--roots "<rootDir>/src"
@@ -34,8 +34,15 @@ else
 fi
 
 for ((i = 1; i <= $TEST_RUNS; i++)); do
-    echo "[Run #$i/$TEST_RUNS]"
-    npx jest --no-cache --coverage --config "$PROJECT_ROOT/jest.config.ts" "${EXTRA_OPTIONS[@]}"
+	echo "[Run #$i/$TEST_RUNS]"
+
+	# TODO logstash 붙이면 삭제해라
+	. $TEST_ENV_FILE
+	sudo rm -rf $WORKSPACE_ROOT/_output
+	mkdir -p $WORKSPACE_ROOT/$LOG_DIRECTORYㅋ
+	mkdir -p $WORKSPACE_ROOT/$FILE_UPLOAD_DIRECTORY
+
+	npx jest --no-cache --coverage --config "$PROJECT_ROOT/jest.config.ts" "${EXTRA_OPTIONS[@]}"
 done
 
 echo "All $TEST_RUNS test runs completed successfully"

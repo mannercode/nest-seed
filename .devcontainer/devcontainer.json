@@ -46,7 +46,8 @@
                 "mutantdino.resourcemonitor",
                 "mkhl.shfmt",
                 "github.vscode-pull-request-github",
-                "GitHub.copilot"
+                "GitHub.copilot",
+                "openai.chatgpt"
             ],
             "settings": {
                 "files.watcherExclude": {

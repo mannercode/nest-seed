@@ -4,7 +4,7 @@ cd "$(dirname "$0")"
 
 PROJECT_ROOT=$WORKSPACE_ROOT
 TEST_ENV_FILE="$PROJECT_ROOT/.env.test"
-INFRA_ENV_FILE="$PROJECT_ROOT/.env.infra"
+INFRA_ENV_FILE=".env.infra"
 
 docker_compose() (
 	docker compose --compatibility \
@@ -18,7 +18,7 @@ docker_compose down --volumes --timeout 0
 
 # TODO logstash 붙이면 삭제해라
 . $TEST_ENV_FILE
-rm -rf $WORKSPACE_ROOT/_output
+sudo rm -rf $WORKSPACE_ROOT/_output
 mkdir -p $WORKSPACE_ROOT/$LOG_DIRECTORYㅋ
 mkdir -p $WORKSPACE_ROOT/$FILE_UPLOAD_DIRECTORY
 
