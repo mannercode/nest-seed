@@ -27,11 +27,16 @@
         }
     },
     "containerUser": "${localEnv:USER}",
+    "mounts": [
+        "source=openai.chatgpt,target=/home/${localEnv:USER}/.codex,type=volume"
+    ],
+    // "remoteUser": "vscode",
+    "postStartCommand": "bash -lc 'mkdir -p ~/.codex && sudo chown -R $(id -u):$(id -g) ~/.codex' && bash infra/local/reset-infra.sh",
     "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
-    "postStartCommand": "bash infra/local/reset-infra.sh",
+    // "postStartCommand": "bash infra/local/reset-infra.sh",
     "forwardPorts": [
-        5020,
-        5010
+        5010,
+        5020
     ],
     "customizations": {
         "vscode": {
