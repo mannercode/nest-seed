@@ -19,21 +19,18 @@
     ],
     "privileged": true,
     "features": {
-        "ghcr.io/devcontainers/features/common-utils:2": {
-            "username": "${localEnv:USER}"
-        },
         "ghcr.io/devcontainers/features/docker-in-docker:2": {
             "moby": false
         }
     },
-    "containerUser": "${localEnv:USER}",
+    "remoteUser": "node",
+    "updateRemoteUserUID": true,
+    "initializeCommand": "mkdir -p ${env:HOME}/.codex",
     "mounts": [
-        "source=openai.chatgpt,target=/home/${localEnv:USER}/.codex,type=volume"
+        "source=${env:HOME}/.codex,target=/home/node/.codex,type=bind"
     ],
-    // "remoteUser": "vscode",
-    "postStartCommand": "bash -lc 'mkdir -p ~/.codex && sudo chown -R $(id -u):$(id -g) ~/.codex' && bash infra/local/reset-infra.sh",
     "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
-    // "postStartCommand": "bash infra/local/reset-infra.sh",
+    "postStartCommand": "bash infra/local/reset-infra.sh",
     "forwardPorts": [
         5010,
         5020

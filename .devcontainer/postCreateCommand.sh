@@ -3,6 +3,5 @@ cd $WORKSPACE_ROOT
 
 nohup java -jar /opt/plantuml.jar -picoweb:5020 > /tmp/plantuml.log 2>&1 &
 
-sudo npm i -g npm-check-updates
-sudo npm i -g husky && npx husky
+npx husky
 npm ci
