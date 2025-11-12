@@ -39,7 +39,7 @@ for ((i = 1; i <= $TEST_RUNS; i++)); do
 	# TODO logstash 붙이면 삭제해라
 	. $TEST_ENV_FILE
 	sudo rm -rf $WORKSPACE_ROOT/_output
-	mkdir -p $WORKSPACE_ROOT/$LOG_DIRECTORYㅋ
+	mkdir -p $WORKSPACE_ROOT/$LOG_DIRECTORY
 	mkdir -p $WORKSPACE_ROOT/$FILE_UPLOAD_DIRECTORY
 
 	npx jest --no-cache --coverage --config "$PROJECT_ROOT/jest.config.ts" "${EXTRA_OPTIONS[@]}"

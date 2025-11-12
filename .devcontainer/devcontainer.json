@@ -1,36 +1,43 @@
 {
     "name": "${containerWorkspaceFolderBasename}",
-    "build": {
-        "dockerfile": "Dockerfile",
-        "context": "."
-    },
     "hostRequirements": {
         "cpus": 4,
         "memory": "16gb",
         "storage": "32gb"
     },
-    "containerEnv": {
-        "WORKSPACE_ROOT": "${containerWorkspaceFolder}"
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": "."
     },
-    "runArgs": [
-        "--add-host",
-        "host.docker.internal:127.0.0.1",
-        "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
-    ],
-    "privileged": true,
     "features": {
         "ghcr.io/devcontainers/features/docker-in-docker:2": {
             "moby": false
         }
     },
-    "remoteUser": "node",
-    "updateRemoteUserUID": true,
     "initializeCommand": "mkdir -p ${env:HOME}/.codex",
     "mounts": [
         "source=${env:HOME}/.codex,target=/home/node/.codex,type=bind"
     ],
-    "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
-    "postStartCommand": "bash infra/local/reset-infra.sh",
+    "privileged": true,
+    "runArgs": [
+        "--add-host",
+        "host.docker.internal:127.0.0.1",
+        "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
+    ],
+    "remoteUser": "node",
+    "remoteEnv": {
+        "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
+        "LANG": "en_US.UTF-8"
+    },
+    "onCreateCommand": {
+        "husky": "npx husky",
+        "ci": "npm ci"
+    },
+    "waitFor": "onCreateCommand",
+    "postStartCommand": {
+        "plantuml": "nohup java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log 2>&1 &",
+        "reset-infra": "bash infra/local/reset-infra.sh"
+    },
     "forwardPorts": [
         5010,
         5020
