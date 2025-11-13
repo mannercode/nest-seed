@@ -26,14 +26,12 @@
     ],
     "remoteUser": "node",
     "remoteEnv": {
-        "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
-        "LANG": "en_US.UTF-8"
+        "WORKSPACE_ROOT": "${containerWorkspaceFolder}"
     },
     "onCreateCommand": {
         "husky": "npx husky",
         "ci": "npm ci"
     },
-    "waitFor": "onCreateCommand",
     "postStartCommand": {
         "plantuml": "nohup java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log 2>&1 &",
         "reset-infra": "bash infra/local/reset-infra.sh"

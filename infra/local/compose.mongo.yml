@@ -21,7 +21,7 @@ x-mongo-base: &mongo-base
     healthcheck:
         test: >
             mongosh --quiet -u $MONGO_USERNAME -p $MONGO_PASSWORD --authenticationDatabase admin
-            --eval 'db.hello().isWritablePrimary || db.hello().secondary'
+            --eval "db.adminCommand('ping')"
 
 services:
     mongo-key-generator:
@@ -64,9 +64,9 @@ services:
         environment: { MONGO_RS_URI: *mongo-rs-uri }
         command: |
             sh -euc '
-            HOST1="mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@mongo1:27017"
-
-            mongosh "$$HOST1/?authSource=admin" \
+            echo "1"
+            PRIMARY_NODE="mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1"
+            mongosh  "$$PRIMARY_NODE/?authSource=admin" \
                 --eval "
                     rs.initiate({
                     _id: \"$MONGO_REPLICA\",
@@ -77,14 +77,12 @@ services:
                         ]
                     })
                     "
-
+            echo "2"
             i=0
-            until mongosh "$$MONGO_RS_URI" --quiet --eval "rs.status().members.some(m=>m.stateStr===\"PRIMARY\")" | grep -q true; do
-              i=$$((i+1)); [ $$i -gt 40 ] && { echo "RS not ready"; exit 1; }
-              sleep 0.5
-            done
-
+            mongosh "$$MONGO_RS_URI" --quiet --eval "rs.status().members.some(m=>m.stateStr===\"PRIMARY\")"
+              echo "3"
             mongosh "$$MONGO_RS_URI" --eval "db.test.insertOne({ test: \"test\" }); db.dropDatabase()"
+              echo "4"
             '
     mongo-console:
         extends: { file: ./compose.common.yml, service: common-options }

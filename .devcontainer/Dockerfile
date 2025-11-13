@@ -1,5 +1,7 @@
 FROM node:24-bookworm
 
+ENV LANG=C.UTF-8
+
 ARG DEV_TOOLS="git curl jq tree vim net-tools screen"
 ARG PLANTUML="openjdk-17-jre graphviz fonts-noto-cjk"
 ARG SHELL_FORMATTER="shfmt"
