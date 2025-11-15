@@ -27,7 +27,7 @@ export class AppConfigService extends BaseConfigService {
         REDIS_HOST6: Joi.string().required(),
         REDIS_PORT6: Joi.number().required(),
 
-        MONGO_REPLICA: Joi.string().required(),
+        MONGO_REPLICA_SET: Joi.string().required(),
         MONGO_USERNAME: Joi.string().required(),
         MONGO_PASSWORD: Joi.string().required(),
         MONGO_DATABASE: Joi.string().required(),
@@ -109,7 +109,7 @@ export class AppConfigService extends BaseConfigService {
             host1: `${this.getString('MONGO_HOST1')}:${this.getNumber('MONGO_PORT1')}`,
             host2: `${this.getString('MONGO_HOST2')}:${this.getNumber('MONGO_PORT2')}`,
             host3: `${this.getString('MONGO_HOST3')}:${this.getNumber('MONGO_PORT3')}`,
-            replica: this.getString('MONGO_REPLICA'),
+            replicaSet: this.getString('MONGO_REPLICA_SET'),
             user: this.getString('MONGO_USERNAME'),
             password: this.getString('MONGO_PASSWORD'),
             database: this.getString('MONGO_DATABASE')

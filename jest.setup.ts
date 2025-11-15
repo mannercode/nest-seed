@@ -27,7 +27,7 @@ copyEnvToTest([
 ])
 
 copyEnvToTest([
-    'MONGO_REPLICA',
+    'MONGO_REPLICA_SET',
     'MONGO_USERNAME',
     'MONGO_PASSWORD',
     'MONGO_HOST1',
@@ -62,7 +62,7 @@ let mongoClient: MongoClient
 let mongo_uri = ''
 
 beforeAll(async () => {
-    const replica = process.env.TEST_MONGO_REPLICA
+    const replicaSet = process.env.TEST_MONGO_REPLICA_SET
     const username = process.env.TEST_MONGO_USERNAME
     const password = process.env.TEST_MONGO_PASSWORD
     const nodes = [
@@ -71,7 +71,7 @@ beforeAll(async () => {
         `${process.env.TEST_MONGO_HOST3}:${process.env.TEST_MONGO_PORT3}`
     ].join(',')
 
-    mongo_uri = `mongodb://${username}:${password}@${nodes}/?replicaSet=${replica}`
+    mongo_uri = `mongodb://${username}:${password}@${nodes}/?replicaSet=${replicaSet}`
 
     mongoClient = new MongoClient(mongo_uri)
     await mongoClient.connect()

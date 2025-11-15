@@ -39,7 +39,7 @@ export interface MongoConnectionContext {
 }
 
 export const getMongoTestConnection = (): MongoConnectionContext => {
-    const replica = Env.getString('TEST_MONGO_REPLICA')
+    const replicaSet = Env.getString('TEST_MONGO_REPLICA_SET')
     const username = Env.getString('TEST_MONGO_USERNAME')
     const password = Env.getString('TEST_MONGO_PASSWORD')
     const nodes = [
@@ -48,7 +48,7 @@ export const getMongoTestConnection = (): MongoConnectionContext => {
         `${Env.getString('TEST_MONGO_HOST3')}:${Env.getNumber('TEST_MONGO_PORT3')}`
     ].join(',')
 
-    const uri = `mongodb://${username}:${password}@${nodes}/?replicaSet=${replica}`
+    const uri = `mongodb://${username}:${password}@${nodes}/?replicaSet=${replicaSet}`
     const dbName = Env.getString('TEST_MONGO_DATABASE')
 
     return { uri, dbName }

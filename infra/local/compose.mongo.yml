@@ -1,4 +1,4 @@
-x-mongo-rs-uri: &mongo-rs-uri 'mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@mongo1:27017,mongo2:27017,mongo3:27017/?authSource=admin&replicaSet=$MONGO_REPLICA'
+x-mongo-rs-uri: &mongo-rs-uri 'mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@mongo1:27017,mongo2:27017,mongo3:27017/?authSource=admin&replicaSet=$MONGO_REPLICA_SET'
 x-mongo-base: &mongo-base
     extends: { file: ./compose.common.yml, service: common-options }
     image: $MONGO_IMAGE
@@ -11,7 +11,7 @@ x-mongo-base: &mongo-base
     # ttlMonitorSleepSecs=1
     # wiredTigerCacheSizeGB 0.25
     command: >
-        mongod --replSet $MONGO_REPLICA
+        mongod --replSet $MONGO_REPLICA_SET
         --keyFile /etc/mongodb/mongodb.key
         --bind_ip_all
         --setParameter ttlMonitorSleepSecs=1
@@ -63,13 +63,13 @@ services:
             }
         environment: { MONGO_RS_URI: *mongo-rs-uri }
         command: |
-            sh -euc '
-            echo "1"
-            PRIMARY_NODE="mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1"
-            mongosh  "$$PRIMARY_NODE/?authSource=admin" \
+            sh -eucx '
+            SEED_URI="mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1"
+
+            mongosh  "$$SEED_URI/?authSource=admin" \
                 --eval "
                     rs.initiate({
-                    _id: \"$MONGO_REPLICA\",
+                    _id: \"$MONGO_REPLICA_SET\",
                     members: [
                         { _id: 0, host: \"$MONGO_HOST1:$MONGO_PORT1\" },
                         { _id: 1, host: \"$MONGO_HOST2:$MONGO_PORT2\" },
@@ -77,12 +77,8 @@ services:
                         ]
                     })
                     "
-            echo "2"
-            i=0
             mongosh "$$MONGO_RS_URI" --quiet --eval "rs.status().members.some(m=>m.stateStr===\"PRIMARY\")"
-              echo "3"
             mongosh "$$MONGO_RS_URI" --eval "db.test.insertOne({ test: \"test\" }); db.dropDatabase()"
-              echo "4"
             '
     mongo-console:
         extends: { file: ./compose.common.yml, service: common-options }

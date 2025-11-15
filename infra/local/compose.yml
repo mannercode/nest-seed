@@ -1,5 +1,5 @@
 include:
-    - ./compose.minio.yml
     - ./compose.mongo.yml
+    - ./compose.minio.yml
     - ./compose.nats.yml
     - ./compose.redis.yml
