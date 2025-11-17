@@ -33,7 +33,7 @@
         "ci": "npm ci"
     },
     "postStartCommand": {
-        "plantuml": "nohup java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log 2>&1 &",
+        "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log 2>&1 &'",
         "reset-infra": "bash infra/local/reset-infra.sh"
     },
     "forwardPorts": [
