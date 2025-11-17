@@ -1,4 +1,3 @@
-x-mongo-rs-uri: &mongo-rs-uri 'mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@mongo1:27017,mongo2:27017,mongo3:27017/?authSource=admin&replicaSet=$MONGO_REPLICA_SET'
 x-mongo-base: &mongo-base
     extends: { file: ./compose.common.yml, service: common-options }
     image: $MONGO_IMAGE
@@ -18,10 +17,6 @@ x-mongo-base: &mongo-base
         --wiredTigerCacheSizeGB 0.25
     volumes: ['mongodb_key:/etc/mongodb']
     depends_on: ['mongo-key-generator']
-    healthcheck:
-        test: >
-            mongosh --quiet -u $MONGO_USERNAME -p $MONGO_PASSWORD --authenticationDatabase admin
-            --eval "db.adminCommand('ping')"
 
 services:
     mongo-key-generator:
@@ -40,16 +35,28 @@ services:
         <<: *mongo-base
         container_name: mongo1
         ports: ['$MONGO_PORT1:27017']
+        healthcheck:
+            test: >
+                mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1/?authSource=admin"
+                --eval "db.adminCommand('ping')"
 
     mongo2:
         <<: *mongo-base
         container_name: mongo2
         ports: ['$MONGO_PORT2:27017']
+        healthcheck:
+            test: >
+                mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST2:$MONGO_PORT2/?authSource=admin"
+                --eval "db.adminCommand('ping')"
 
     mongo3:
         <<: *mongo-base
         container_name: mongo3
         ports: ['$MONGO_PORT3:27017']
+        healthcheck:
+            test: >
+                mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST3:$MONGO_PORT3/?authSource=admin"
+                --eval "db.adminCommand('ping')"
 
     mongo-setup:
         extends: { file: ./compose.common.yml, service: common-options }
@@ -61,12 +68,9 @@ services:
                 mongo2: { condition: service_healthy },
                 mongo3: { condition: service_healthy }
             }
-        environment: { MONGO_RS_URI: *mongo-rs-uri }
         command: |
             sh -eucx '
-            SEED_URI="mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1"
-
-            mongosh  "$$SEED_URI/?authSource=admin" \
+            mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1/?authSource=admin" \
                 --eval "
                     rs.initiate({
                     _id: \"$MONGO_REPLICA_SET\",
@@ -77,8 +81,6 @@ services:
                         ]
                     })
                     "
-            mongosh "$$MONGO_RS_URI" --quiet --eval "rs.status().members.some(m=>m.stateStr===\"PRIMARY\")"
-            mongosh "$$MONGO_RS_URI" --eval "db.test.insertOne({ test: \"test\" }); db.dropDatabase()"
             '
     mongo-console:
         extends: { file: ./compose.common.yml, service: common-options }
@@ -86,7 +88,11 @@ services:
         image: mongo-express:latest
         restart: always
         depends_on: { mongo-setup: { condition: service_completed_successfully } }
-        environment: { ME_CONFIG_BASICAUTH: 'false', ME_CONFIG_MONGODB_URL: *mongo-rs-uri }
+        environment:
+            {
+                ME_CONFIG_BASICAUTH: 'false',
+                ME_CONFIG_MONGODB_URL: 'mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@mongo1:27017,mongo2:27017,mongo3:27017/?authSource=admin&replicaSet=$MONGO_REPLICA_SET'
+            }
         ports: ['8081:8081']
         healthcheck:
             test: 'curl -fsS http://localhost:8081/'
