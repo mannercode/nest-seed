@@ -48,22 +48,22 @@ describe('MongooseRepository', () => {
                 await expect(promise).rejects.toThrow()
             })
         })
+    })
 
+    describe('update', () => {
         // 문서를 업데이트하는 경우
         describe('when updating a document', () => {
             // 성공적으로 업데이트한다
             it('updates the document', async () => {
                 const newDoc = fix.repository.newDocument()
-                newDoc.name = 'name1'
+                newDoc.name = 'new name'
                 await newDoc.save()
 
-                const updateDoc = (await fix.repository.findById(newDoc.id))!
-                updateDoc.name = 'name2'
-                await updateDoc!.save()
+                await fix.repository.update(newDoc.id, { name: 'updated name' })
 
                 const foundDoc = await fix.repository.findById(newDoc.id)
 
-                expect(foundDoc?.name).toEqual('name2')
+                expect(foundDoc?.name).toEqual('updated name')
             })
         })
     })

@@ -10,16 +10,19 @@ export class TheatersService {
 
     async createTheater(createDto: CreateTheaterDto) {
         const theater = await this.repository.createTheater(createDto)
+
         return this.toDto(theater)
     }
 
     async updateTheater(theaterId: string, updateDto: UpdateTheaterDto) {
-        const theater = await this.repository.updateTheater(theaterId, updateDto)
+        const theater = await this.repository.update(theaterId, updateDto)
+
         return this.toDto(theater)
     }
 
     async getTheaters(theaterIds: string[]) {
         const theaters = await this.repository.getByIds(theaterIds)
+
         return this.toDtos(theaters)
     }
 

@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose'
 import { MongooseRepository, objectIds, QueryBuilder, QueryBuilderOptions } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import { CreateMovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
+import { CreateMovieDto, SearchMoviesPageDto } from './dtos'
 import { Movie } from './models'
 
 @Injectable()
@@ -13,6 +13,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     }
 
     async createMovie(createDto: CreateMovieDto, storageFileIds: string[]) {
+        // TODO 하나로 합체?
         const movie = this.newDocument()
         movie.title = createDto.title
         movie.genres = createDto.genres
@@ -22,15 +23,6 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         movie.director = createDto.director
         movie.rating = createDto.rating
         movie.imageIds = objectIds(storageFileIds)
-
-        return movie.save()
-    }
-
-    async updateMovie(movieId: string, updateDto: UpdateMovieDto) {
-        // TODO update는 보안 문제 없으면 상위 레벨로 올려라
-        const movie = await this.getById(movieId)
-
-        movie.set(updateDto)
 
         return movie.save()
     }

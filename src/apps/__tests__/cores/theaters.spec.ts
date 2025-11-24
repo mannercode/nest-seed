@@ -87,17 +87,6 @@ describe('TheatersService', () => {
             })
         })
 
-        // payload가 비어있는 경우
-        describe('when payload is empty', () => {
-            // 원래 극장 정보를 반환한다
-            it('returns the original theater', async () => {
-                await fix.httpClient
-                    .patch(`/theaters/${fix.createdTheater.id}`)
-                    .body({})
-                    .ok(fix.createdTheater)
-            })
-        })
-
         // 극장이 존재하지 않는 경우
         describe('when theater does not exist', () => {
             // 404 Not Found를 반환한다

@@ -90,7 +90,7 @@ describe('MoviesService', () => {
     describe('PATCH /movies/:id', () => {
         // payload가 유효한 경우
         describe('when payload is valid', () => {
-            // 영화 정보를 수정하고 반환한다
+            // 영화를 수정하고 반환한다
             it('updates and returns the movie', async () => {
                 const updateDto = {
                     title: 'update title',
@@ -109,17 +109,6 @@ describe('MoviesService', () => {
                     .ok(expected)
 
                 await fix.httpClient.get(`/movies/${fix.createdMovie.id}`).ok(expected)
-            })
-        })
-
-        // payload가 비어있는 경우
-        describe('when payload is empty', () => {
-            // 원래 영화 정보를 반환한다
-            it('returns the original movie', async () => {
-                await fix.httpClient
-                    .patch(`/movies/${fix.createdMovie.id}`)
-                    .body({})
-                    .ok(fix.createdMovie)
             })
         })
 

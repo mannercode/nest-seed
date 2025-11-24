@@ -17,16 +17,19 @@ export class MoviesService {
         const storageFiles = await this.storageFilesService.saveFiles(createFileDtos)
 
         const movie = await this.moviesRepository.createMovie(createMovieDto, pickIds(storageFiles))
+
         return this.toDto(movie)
     }
 
     async updateMovie(movieId: string, updateDto: UpdateMovieDto) {
-        const movie = await this.moviesRepository.updateMovie(movieId, updateDto)
+        const movie = await this.moviesRepository.update(movieId, updateDto)
+
         return this.toDto(movie)
     }
 
     async getMovies(movieIds: string[]) {
         const movies = await this.moviesRepository.getByIds(movieIds)
+
         return this.toDtos(movies)
     }
 

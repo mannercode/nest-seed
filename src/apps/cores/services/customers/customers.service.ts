@@ -46,12 +46,14 @@ export class CustomersService {
     }
 
     async updateCustomer(customerId: string, updateDto: UpdateCustomerDto) {
-        const customer = await this.repository.updateCustomer(customerId, updateDto)
+        const customer = await this.repository.update(customerId, updateDto)
+
         return this.toDto(customer)
     }
 
     async getCustomers(customerIds: string[]) {
         const customers = await this.repository.getByIds(customerIds)
+
         return this.toDtos(customers)
     }
 
@@ -63,6 +65,7 @@ export class CustomersService {
 
     async searchCustomersPage(searchDto: SearchCustomersPageDto) {
         const { items, ...pagination } = await this.repository.searchCustomersPage(searchDto)
+
         return { ...pagination, items: this.toDtos(items) }
     }
 
@@ -76,6 +79,7 @@ export class CustomersService {
 
     async findCustomerByCredentials(credentials: CustomerCredentials) {
         const customer = await this.authenticationService.findCustomerByCredentials(credentials)
+
         return customer ? this.toDto(customer) : null
     }
 

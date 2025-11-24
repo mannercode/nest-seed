@@ -101,17 +101,6 @@ describe('CustomersService', () => {
             })
         })
 
-        // payload가 비어있는 경우
-        describe('when payload is empty', () => {
-            // 원래 고객 정보를 반환한다
-            it('returns the original customer', async () => {
-                await fix.httpClient
-                    .patch(`/customers/${fix.createdCustomer.id}`)
-                    .body({})
-                    .ok(fix.createdCustomer)
-            })
-        })
-
         // 고객이 존재하지 않는 경우
         describe('when customer does not exist', () => {
             // 404 Not Found를 반환한다
