@@ -105,9 +105,7 @@ describe('jsonToObject', () => {
             }
         })
         expect(converted.level1.date).toBeInstanceOf(Date)
-        expect((converted.level1.date as any).toISOString()).toEqual(
-            '2023-06-18T12:12:34.567Z'
-        )
+        expect((converted.level1.date as any).toISOString()).toEqual('2023-06-18T12:12:34.567Z')
         expect(converted.level1.level2.date).toEqual([new Date('2023-06-19T12:12:34.567Z')])
     })
 

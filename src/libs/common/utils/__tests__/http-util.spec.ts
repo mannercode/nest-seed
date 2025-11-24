@@ -85,7 +85,9 @@ describe('HttpUtil', () => {
             // quoted 값을 추출한다
             it('extracts the quoted filename', () => {
                 const contentDisposition = `attachment; filename="ascii-name.txt"`
-                expect(HttpUtil.extractContentDisposition(contentDisposition)).toBe('ascii-name.txt')
+                expect(HttpUtil.extractContentDisposition(contentDisposition)).toBe(
+                    'ascii-name.txt'
+                )
             })
         })
 
