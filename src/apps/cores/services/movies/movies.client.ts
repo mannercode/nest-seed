@@ -5,10 +5,7 @@ import { Messages } from 'shared'
 import {
     CreateMovieDto,
     DeleteMoviesResponse,
-    FinalizeMovieAssetDto,
-    FinalizeMovieDraftDto,
     MovieDto,
-    PresignMovieAssetDto,
     SearchMoviesPageDto,
     UpdateMovieDto
 } from './dtos'
@@ -16,22 +13,6 @@ import {
 @Injectable()
 export class MoviesClient {
     constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
-
-    presignMovieAsset(draftId: string, presignDto: PresignMovieAssetDto) {
-        return this.proxy.getJson(Messages.Movies.presignMovieAsset, { draftId, presignDto })
-    }
-
-    finalizeMovieAsset(draftId: string, finalizeDto: FinalizeMovieAssetDto) {
-        return this.proxy.getJson(Messages.Movies.finalizeMovieAsset, { draftId, finalizeDto })
-    }
-
-    finalizeMovieDraft(draftId: string, finalizeDto: FinalizeMovieDraftDto) {
-        return this.proxy.getJson(Messages.Movies.finalizeMovieDraft, { draftId, finalizeDto })
-    }
-
-    createMovieDraft() {
-        return this.proxy.getJson(Messages.Movies.createMovieDraft, {})
-    }
 
     createMovie(
         createMovieDto: CreateMovieDto,

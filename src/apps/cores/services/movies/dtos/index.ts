@@ -1,5 +1,4 @@
 export * from './create-movie-and-files.dto'
-export * from './create-movie-draft.dto'
 export * from './create-movie.dto'
 export * from './delete-movies.response'
 export * from './movie.dto'

@@ -15,15 +15,7 @@ import {
 } from '@nestjs/common'
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { RecommendationClient } from 'apps/applications'
-import {
-    CreateMovieDto,
-    FinalizeMovieAssetDto,
-    FinalizeMovieDraftDto,
-    MoviesClient,
-    PresignMovieAssetDto,
-    SearchMoviesPageDto,
-    UpdateMovieDto
-} from 'apps/cores'
+import { CreateMovieDto, MoviesClient, SearchMoviesPageDto, UpdateMovieDto } from 'apps/cores'
 import { MulterExceptionFilter } from './filters'
 import { CustomerOptionalJwtAuthGuard } from './guards'
 import { CustomerAuthRequest } from './types'
@@ -34,36 +26,6 @@ export class MoviesController {
         private moviesService: MoviesClient,
         private recommendationService: RecommendationClient
     ) {}
-
-    @Post('drafts')
-    async createMovieDraft() {
-        const draft = await this.moviesService.createMovieDraft()
-        return draft
-    }
-
-    @Post('drafts/:draftId/assets\\:presign')
-    async presignMovieAsset(
-        @Param('draftId') draftId: string,
-        @Body() presignDto: PresignMovieAssetDto
-    ) {
-        return this.moviesService.presignMovieAsset(draftId, presignDto)
-    }
-
-    @Post('drafts/:draftId/assets\\:finalize')
-    async finalizeMovieAsset(
-        @Param('draftId') draftId: string,
-        @Body() finalizeDto: FinalizeMovieAssetDto
-    ) {
-        return this.moviesService.finalizeMovieAsset(draftId, finalizeDto)
-    }
-
-    @Post('drafts/:draftId\\:finalize')
-    async finalizeMovieDraft(
-        @Param('draftId') draftId: string,
-        @Body() finalizeDto: FinalizeMovieDraftDto
-    ) {
-        return this.moviesService.finalizeMovieDraft(draftId, finalizeDto)
-    }
 
     @UseGuards(CustomerOptionalJwtAuthGuard)
     @Get('recommended')

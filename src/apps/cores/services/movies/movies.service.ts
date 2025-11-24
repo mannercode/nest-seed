@@ -2,45 +2,16 @@ import { Injectable } from '@nestjs/common'
 import { CreateStorageFileDto, StorageFilesClient } from 'apps/infrastructures'
 import { mapDocToDto, pickIds } from 'common'
 import { HttpRoutes } from 'shared'
-import {
-    CreateMovieDto,
-    FinalizeMovieAssetDto,
-    FinalizeMovieDraftDto,
-    MovieDraftDto,
-    MovieDto,
-    PresignMovieAssetDto,
-    SearchMoviesPageDto,
-    UpdateMovieDto
-} from './dtos'
+import { CreateMovieDto, MovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
 import { MovieDocument } from './models'
-import { MovieDraftsRepository } from './movie-drafts.repository'
 import { MoviesRepository } from './movies.repository'
 
 @Injectable()
 export class MoviesService {
     constructor(
         private moviesRepository: MoviesRepository,
-        private movieDraftsRepository: MovieDraftsRepository,
         private storageFilesService: StorageFilesClient
     ) {}
-
-    async createMovieDraft() {
-        const draft = await this.movieDraftsRepository.createMovieDraft()
-        const dto = mapDocToDto(draft, MovieDraftDto, ['id', 'expiresAt'])
-        return dto
-    }
-
-    async presignMovieAsset(draftId: string, presignDto: PresignMovieAssetDto) {
-        return { draftId, presignDto }
-    }
-
-    async finalizeMovieAsset(draftId: string, finalizeDto: FinalizeMovieAssetDto) {
-        return { draftId, finalizeDto }
-    }
-
-    async finalizeMovieDraft(draftId: string, finalizeDto: FinalizeMovieDraftDto) {
-        return { draftId, finalizeDto }
-    }
 
     async createMovie(createMovieDto: CreateMovieDto, createFileDtos: CreateStorageFileDto[]) {
         const storageFiles = await this.storageFilesService.saveFiles(createFileDtos)
