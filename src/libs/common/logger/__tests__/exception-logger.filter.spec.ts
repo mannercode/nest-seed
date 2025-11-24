@@ -18,7 +18,9 @@ describe('ExceptionLoggerFilter', () => {
         describe('when an HttpException is thrown', () => {
             // Logger.warn으로 기록한다
             it('logs via Logger.warn', async () => {
-                await fix.httpClient.get('/exception').notFound({ code: 'ERR_CODE', message: 'message' })
+                await fix.httpClient
+                    .get('/exception')
+                    .notFound({ code: 'ERR_CODE', message: 'message' })
 
                 expect(fix.spyWarn).toHaveBeenCalledTimes(1)
                 expect(fix.spyWarn).toHaveBeenCalledWith('fail', {
@@ -134,7 +136,9 @@ describe('ExceptionLoggerFilter', () => {
         describe('when the ContextType is unknown', () => {
             // Logger.error로 기록한다
             it('logs via Logger.error', async () => {
-                const { ExecutionContextHost } = await import('@nestjs/core/helpers/execution-context-host')
+                const { ExecutionContextHost } = await import(
+                    '@nestjs/core/helpers/execution-context-host'
+                )
                 jest.spyOn(ExecutionContextHost.prototype, 'getType').mockReturnValue('unknown')
 
                 await fix.httpClient.get('/exception').notFound()

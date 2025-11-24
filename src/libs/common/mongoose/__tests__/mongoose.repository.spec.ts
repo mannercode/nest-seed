@@ -119,7 +119,11 @@ describe('MongooseRepository', () => {
                 const skip = 10
                 const take = 5
                 const { items, ...pagination } = await fix.repository.findWithPagination({
-                    pagination: { skip, take, orderby: { name: 'name', direction: OrderDirection.Asc } }
+                    pagination: {
+                        skip,
+                        take,
+                        orderby: { name: 'name', direction: OrderDirection.Asc }
+                    }
                 })
 
                 sortByName(samples)

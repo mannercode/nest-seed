@@ -72,7 +72,10 @@ describe('SuccessLoggingInterceptor', () => {
                 expect(fix.spyError).toHaveBeenCalledTimes(1)
                 expect(fix.spyError).toHaveBeenCalledWith(
                     'unknown context type',
-                    expect.objectContaining({ contextType: 'unknown', duration: expect.any(String) })
+                    expect.objectContaining({
+                        contextType: 'unknown',
+                        duration: expect.any(String)
+                    })
                 )
             })
         })
