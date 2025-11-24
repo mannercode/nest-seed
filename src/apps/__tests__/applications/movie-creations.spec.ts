@@ -1,15 +1,15 @@
 import type { Fixture } from './movie-creations.fixture'
 
 describe.skip('MovieCreationsService', () => {
-    let fix: Fixture
+    let fixture: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./movie-creations.fixture')
-        fix = await createFixture()
+        fixture = await createFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     describe('POST /movie-creations', () => {

@@ -3,15 +3,15 @@ import { withTestId } from 'testlib'
 import { type Fixture } from './pagination.fixture'
 
 describe('CommonQuery', () => {
-    let fix: Fixture
+    let fixture: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./pagination.fixture')
-        fix = await createFixture()
+        fixture = await createFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     describe('HTTP controller', () => {
@@ -21,7 +21,7 @@ describe('CommonQuery', () => {
             it('handles PaginationDto', async () => {
                 const skip = 2
                 const take = 3
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/pagination')
                     .query({ skip, take, orderby: 'name:asc' })
                     .ok({ response: { orderby: { direction: 'asc', name: 'name' }, skip, take } })
@@ -32,7 +32,7 @@ describe('CommonQuery', () => {
         describe('when `orderby` is malformed', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/pagination')
                     .query({ orderby: 'wrong' })
                     .badRequest(CommonErrors.Pagination.FormatInvalid)
@@ -43,7 +43,7 @@ describe('CommonQuery', () => {
         describe('when sort direction is invalid', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/pagination')
                     .query({ orderby: 'name:wrong' })
                     .badRequest(CommonErrors.Pagination.DirectionInvalid)
@@ -60,7 +60,7 @@ describe('CommonQuery', () => {
                 const take = 3
                 const input = { orderby: { direction: 'asc', name: 'name' }, skip, take }
 
-                await fix.rpcClient.expect(withTestId('getRpcPagination'), input, {
+                await fixture.rpcClient.expect(withTestId('getRpcPagination'), input, {
                     response: input
                 })
             })

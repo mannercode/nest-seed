@@ -3,7 +3,7 @@ import { withTestId } from 'testlib'
 import type { Fixture } from './success-logging.interceptor.fixture'
 
 describe('SuccessLoggingInterceptor', () => {
-    let fix: Fixture
+    let fixture: Fixture
     let createFixture: (providers: Provider[]) => Promise<any>
 
     beforeEach(async () => {
@@ -14,13 +14,13 @@ describe('SuccessLoggingInterceptor', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     // 요청이 성공하는 경우
     describe('when requests succeed', () => {
         beforeEach(async () => {
-            fix = await createFixture([])
+            fixture = await createFixture([])
         })
 
         // HTTP 요청이 성공하는 경우
@@ -28,10 +28,10 @@ describe('SuccessLoggingInterceptor', () => {
             // Logger.verbose로 기록한다
             it('logs via Logger.verbose', async () => {
                 const body = { key: 'value' }
-                await fix.httpClient.post('/success').body(body).created({ result: 'success' })
+                await fixture.httpClient.post('/success').body(body).created({ result: 'success' })
 
-                expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
-                expect(fix.spyVerbose).toHaveBeenCalledWith('success', {
+                expect(fixture.spyVerbose).toHaveBeenCalledTimes(1)
+                expect(fixture.spyVerbose).toHaveBeenCalledWith('success', {
                     statusCode: 201,
                     contextType: 'http',
                     request: { method: 'POST', url: '/success', body },
@@ -46,10 +46,10 @@ describe('SuccessLoggingInterceptor', () => {
             it('logs via Logger.verbose', async () => {
                 const subject = withTestId('success')
                 const data = { key: 'value' }
-                await fix.rpcClient.expect(subject, data, { result: 'success' })
+                await fixture.rpcClient.expect(subject, data, { result: 'success' })
 
-                expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
-                expect(fix.spyVerbose).toHaveBeenCalledWith('success', {
+                expect(fixture.spyVerbose).toHaveBeenCalledTimes(1)
+                expect(fixture.spyVerbose).toHaveBeenCalledWith('success', {
                     contextType: 'rpc',
                     context: { args: [subject] },
                     data,
@@ -67,10 +67,10 @@ describe('SuccessLoggingInterceptor', () => {
                 )
                 jest.spyOn(ExecutionContextHost.prototype, 'getType').mockReturnValue('unknown')
 
-                await fix.httpClient.get('/exclude-path').ok()
+                await fixture.httpClient.get('/exclude-path').ok()
 
-                expect(fix.spyError).toHaveBeenCalledTimes(1)
-                expect(fix.spyError).toHaveBeenCalledWith(
+                expect(fixture.spyError).toHaveBeenCalledTimes(1)
+                expect(fixture.spyError).toHaveBeenCalledWith(
                     'unknown context type',
                     expect.objectContaining({
                         contextType: 'unknown',
@@ -83,22 +83,22 @@ describe('SuccessLoggingInterceptor', () => {
 
     describe('LOGGING_EXCLUDE_HTTP_PATHS', () => {
         beforeEach(async () => {
-            fix = await createFixture([
+            fixture = await createFixture([
                 { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/exclude-path'] }
             ])
         })
 
         // 지정된 HTTP 경로는 무시해야 한다
         it('ignores specified HTTP paths', async () => {
-            await fix.httpClient.get('/exclude-path').ok({ result: 'success' })
+            await fixture.httpClient.get('/exclude-path').ok({ result: 'success' })
 
-            expect(fix.spyVerbose).toHaveBeenCalledTimes(0)
+            expect(fixture.spyVerbose).toHaveBeenCalledTimes(0)
         })
     })
 
     describe('LOGGING_EXCLUDE_RPC_PATHS', () => {
         beforeEach(async () => {
-            fix = await createFixture([
+            fixture = await createFixture([
                 { provide: 'LOGGING_EXCLUDE_RPC_PATHS', useValue: [withTestId('exclude-path')] }
             ])
         })
@@ -107,9 +107,9 @@ describe('SuccessLoggingInterceptor', () => {
         it('ignores specified RPC paths', async () => {
             const subject = withTestId('exclude-path')
             const data = { key: 'value' }
-            await fix.rpcClient.expect(subject, data, { result: 'success' })
+            await fixture.rpcClient.expect(subject, data, { result: 'success' })
 
-            expect(fix.spyVerbose).toHaveBeenCalledTimes(0)
+            expect(fixture.spyVerbose).toHaveBeenCalledTimes(0)
         })
     })
 })

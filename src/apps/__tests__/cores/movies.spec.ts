@@ -5,15 +5,15 @@ import { buildCreateMovieDto, createMovie, Errors } from '../__helpers__'
 import type { Fixture } from './movies.fixture'
 
 describe('MoviesService', () => {
-    let fix: Fixture
+    let fixture: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./movies.fixture')
-        fix = await createFixture()
+        fixture = await createFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     describe('POST /movies', () => {
@@ -24,9 +24,9 @@ describe('MoviesService', () => {
 
             beforeEach(async () => {
                 createDto = buildCreateMovieDto()
-                const { body } = await fix.httpClient
+                const { body } = await fixture.httpClient
                     .post('/movies')
-                    .attachments([{ name: 'files', file: fix.image.path }])
+                    .attachments([{ name: 'files', file: fixture.image.path }])
                     .fields(objectToFields(createDto))
                     .created()
 
@@ -44,11 +44,11 @@ describe('MoviesService', () => {
 
             // 첨부된 파일을 다운로드한다
             it('downloads the attached file', async () => {
-                const downloadPath = Path.join(fix.tempDir, 'download.tmp')
+                const downloadPath = Path.join(fixture.tempDir, 'download.tmp')
 
-                await fix.httpClient.get(createdMovie.imageUrls[0]).download(downloadPath).ok()
+                await fixture.httpClient.get(createdMovie.imageUrls[0]).download(downloadPath).ok()
 
-                expect(await FileUtil.areEqual(downloadPath, fix.image.path)).toBe(true)
+                expect(await FileUtil.areEqual(downloadPath, fixture.image.path)).toBe(true)
             })
         })
 
@@ -56,7 +56,7 @@ describe('MoviesService', () => {
         describe('when required fields are missing', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .post('/movies')
                     .body({})
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
@@ -69,7 +69,7 @@ describe('MoviesService', () => {
         describe('when movie exists', () => {
             // 영화를 반환한다
             it('returns the movie', async () => {
-                await fix.httpClient.get(`/movies/${fix.createdMovie.id}`).ok(fix.createdMovie)
+                await fixture.httpClient.get(`/movies/${fixture.createdMovie.id}`).ok(fixture.createdMovie)
             })
         })
 
@@ -77,7 +77,7 @@ describe('MoviesService', () => {
         describe('when movie does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get(`/movies/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -101,14 +101,14 @@ describe('MoviesService', () => {
                     director: 'Steven Spielberg',
                     rating: 'R'
                 }
-                const expected = { ...fix.createdMovie, ...updateDto }
+                const expected = { ...fixture.createdMovie, ...updateDto }
 
-                await fix.httpClient
-                    .patch(`/movies/${fix.createdMovie.id}`)
+                await fixture.httpClient
+                    .patch(`/movies/${fixture.createdMovie.id}`)
                     .body(updateDto)
                     .ok(expected)
 
-                await fix.httpClient.get(`/movies/${fix.createdMovie.id}`).ok(expected)
+                await fixture.httpClient.get(`/movies/${fixture.createdMovie.id}`).ok(expected)
             })
         })
 
@@ -116,7 +116,7 @@ describe('MoviesService', () => {
         describe('when movie does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .patch(`/movies/${nullObjectId}`)
                     .body({})
                     .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
@@ -128,26 +128,26 @@ describe('MoviesService', () => {
         // 영화가 존재하는 경우
         describe('when movie exists', () => {
             beforeEach(async () => {
-                await fix.httpClient
-                    .delete(`/movies/${fix.createdMovie.id}`)
-                    .ok({ deletedMovies: [fix.createdMovie] })
+                await fixture.httpClient
+                    .delete(`/movies/${fixture.createdMovie.id}`)
+                    .ok({ deletedMovies: [fixture.createdMovie] })
             })
 
             // 영화를 삭제한다
             it('deletes the movie', async () => {
-                await fix.httpClient
-                    .get(`/movies/${fix.createdMovie.id}`)
+                await fixture.httpClient
+                    .get(`/movies/${fixture.createdMovie.id}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [fix.createdMovie.id]
+                        notFoundIds: [fixture.createdMovie.id]
                     })
             })
 
             // 영화와 관련된 파일을 삭제한다
             it("deletes the movie's files", async () => {
-                const fileUrl = fix.createdMovie.imageUrls[0]
+                const fileUrl = fixture.createdMovie.imageUrls[0]
 
-                await fix.httpClient
+                await fixture.httpClient
                     .get(fileUrl)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -160,7 +160,7 @@ describe('MoviesService', () => {
         describe('when movie does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .delete(`/movies/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -175,7 +175,7 @@ describe('MoviesService', () => {
 
         beforeEach(async () => {
             const createdMovies = await Promise.all([
-                createMovie(fix, {
+                createMovie(fixture, {
                     title: 'title-a1',
                     plot: 'plot-a1',
                     director: 'James Cameron',
@@ -183,7 +183,7 @@ describe('MoviesService', () => {
                     rating: MovieRating.NC17,
                     genres: [MovieGenre.Action, MovieGenre.Comedy]
                 }),
-                createMovie(fix, {
+                createMovie(fixture, {
                     title: 'title-a2',
                     plot: 'plot-a2',
                     director: 'Steven Spielberg',
@@ -191,7 +191,7 @@ describe('MoviesService', () => {
                     rating: MovieRating.NC17,
                     genres: [MovieGenre.Romance, MovieGenre.Drama]
                 }),
-                createMovie(fix, {
+                createMovie(fixture, {
                     title: 'title-b1',
                     plot: 'plot-b1',
                     director: 'James Cameron',
@@ -199,7 +199,7 @@ describe('MoviesService', () => {
                     rating: MovieRating.PG,
                     genres: [MovieGenre.Drama, MovieGenre.Comedy]
                 }),
-                createMovie(fix, {
+                createMovie(fixture, {
                     title: 'title-b2',
                     plot: 'plot-b2',
                     director: 'Steven Spielberg',
@@ -209,14 +209,14 @@ describe('MoviesService', () => {
                 })
             ])
 
-            movies = [...createdMovies, fix.createdMovie]
+            movies = [...createdMovies, fixture.createdMovie]
         })
 
         // 쿼리 파라미터가 없는 경우
         describe('when query parameters are missing', () => {
             // 기본 페이지네이션으로 영화를 반환한다
             it('returns movies with default pagination', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/movies')
                     .ok({
                         skip: 0,
@@ -231,7 +231,7 @@ describe('MoviesService', () => {
         describe('when query parameters are invalid', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/movies')
                     .query({ wrong: 'value' })
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
@@ -242,7 +242,7 @@ describe('MoviesService', () => {
         describe('when partial `title` is provided', () => {
             // 제목이 해당 부분 문자열을 포함하는 영화를 반환한다
             it('returns movies whose title contains the given substring', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/movies')
                     .query({ title: 'title-a' })
                     .ok(
@@ -257,7 +257,7 @@ describe('MoviesService', () => {
         describe('when `genre` is provided', () => {
             // 지정한 장르와 일치하는 영화를 반환한다
             it('returns movies matching the given genre', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/movies')
                     .query({ genre: MovieGenre.Drama })
                     .ok(
@@ -272,7 +272,7 @@ describe('MoviesService', () => {
         describe('when `releaseDate` is provided', () => {
             // 지정된 날짜에 개봉한 영화를 반환한다
             it('returns movies released on the given date', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/movies')
                     .query({ releaseDate: new Date('2000-01-02') })
                     .ok(
@@ -287,7 +287,7 @@ describe('MoviesService', () => {
         describe('when partial `plot` is provided', () => {
             // 줄거리에 해당 부분 문자열을 포함하는 영화를 반환한다
             it('returns movies whose plot contains the given substring', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/movies')
                     .query({ plot: 'plot-b' })
                     .ok(
@@ -302,7 +302,7 @@ describe('MoviesService', () => {
         describe('when partial `director` is provided', () => {
             // 감독 이름에 해당 부분 문자열이 포함된 영화를 반환한다
             it("returns movies whose director's name includes the substring", async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/movies')
                     .query({ director: 'James' })
                     .ok(
@@ -317,7 +317,7 @@ describe('MoviesService', () => {
         describe('when `rating` is provided', () => {
             // 지정한 등급과 일치하는 영화를 반환한다
             it('returns movies matching the given rating', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/movies')
                     .query({ rating: MovieRating.NC17 })
                     .ok(
@@ -336,7 +336,7 @@ describe('MoviesService', () => {
 //     // 영화를 생성한다
 //     it('creates a movie', async () => {
 //         await step('POST /movies/drafts', async () => {
-//             const { body } = await fix.httpClient.post('/movies/drafts').body({}).created()
+//             const { body } = await fixture.httpClient.post('/movies/drafts').body({}).created()
 
 //             expect(body).toEqual({ id: expect.any(String), expiresAt: expect.any(Date) })
 //             draftId = body.id
@@ -345,12 +345,12 @@ describe('MoviesService', () => {
 //         })
 
 //         await step('POST /movies/drafts/{draftId}/assets:presign', async () => {
-//             const { body } = await fix.httpClient
+//             const { body } = await fixture.httpClient
 //                 .post(`/movies/drafts/${draftId}/assets:presign`)
 //                 .body({
-//                     contentType: fix.image.mimeType,
-//                     size: fix.image.size,
-//                     checksum: fix.image.checksum.value
+//                     contentType: fixture.image.mimeType,
+//                     size: fixture.image.size,
+//                     checksum: fixture.image.checksum.value
 //                 })
 //                 .created()
 
@@ -379,13 +379,13 @@ describe('MoviesService', () => {
 //     describe('when `theaterIds` is provided', () => {
 //         // 지정한 theaterIds와 일치하는 상영시간 목록을 반환한다
 //         it('returns showtimes matching the given theaterIds', async () => {
-//             await fix.httpClient
+//             await fixture.httpClient
 //                 .post('/movie-creation/presigned-url')
 //                 .body({
-//                     contentType: fix.image.mimeType,
-//                     contentLength: fix.image.size,
-//                     checksum: fix.image.checksum,
-//                     filename: fix.image.originalName
+//                     contentType: fixture.image.mimeType,
+//                     contentLength: fixture.image.size,
+//                     checksum: fixture.image.checksum,
+//                     filename: fixture.image.originalName
 //                 })
 //                 .ok({
 //                     fileId: 'movies/mv_9a2f/posters/usn_01J8K2....jpg',

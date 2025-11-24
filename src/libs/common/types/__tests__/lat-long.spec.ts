@@ -2,15 +2,15 @@ import { LatLong } from 'common'
 import type { Fixture } from './lat-long.fixture'
 
 describe('LatLong', () => {
-    let fix: Fixture
+    let fixture: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./lat-long.fixture')
-        fix = await createFixture()
+        fixture = await createFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     describe('distanceInMeters', () => {
@@ -37,7 +37,7 @@ describe('LatLong', () => {
         describe('when the query is valid', () => {
             // 위경도를 반환한다
             it('returns the latitude and longitude', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/latLong')
                     .query({ location: '37.123,128.678' })
                     .ok({ latitude: 37.123, longitude: 128.678 })
@@ -48,7 +48,7 @@ describe('LatLong', () => {
         describe('when the latLong value is missing', () => {
             // BadRequestException을 던진다
             it('throws BadRequestException', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/latLong')
                     .badRequest({
                         code: 'ERR_LATLONG_REQUIRED',
@@ -61,7 +61,7 @@ describe('LatLong', () => {
         describe('when the latLong format is invalid', () => {
             // BadRequestException을 던진다
             it('throws BadRequestException', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/latLong')
                     .query({ location: '37.123' })
                     .badRequest({
@@ -75,7 +75,7 @@ describe('LatLong', () => {
         describe('when values are out of range', () => {
             // BadRequestException을 던진다
             it('throws BadRequestException', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/latLong')
                     .query({ location: '91,181' })
                     .badRequest({

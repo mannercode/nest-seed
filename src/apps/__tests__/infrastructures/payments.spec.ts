@@ -3,15 +3,15 @@ import { buildCreatePaymentDto, createPayment } from '../__helpers__'
 import type { Fixture } from './payments.fixture'
 
 describe('PaymentsService', () => {
-    let fix: Fixture
+    let fixture: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./payments.fixture')
-        fix = await createFixture()
+        fixture = await createFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     describe('createPayment', () => {
@@ -21,7 +21,7 @@ describe('PaymentsService', () => {
             it('creates and returns a payment', async () => {
                 const createDto = buildCreatePaymentDto()
 
-                const payment = await fix.paymentsService.createPayment(createDto)
+                const payment = await fixture.paymentsService.createPayment(createDto)
                 expect(payment).toEqual({
                     ...createDto,
                     id: expect.any(String),
@@ -38,12 +38,12 @@ describe('PaymentsService', () => {
         // 결제 정보가 존재하는 경우
         describe('when payments exist', () => {
             beforeEach(async () => {
-                createdPayment = await createPayment(fix)
+                createdPayment = await createPayment(fixture)
             })
 
             // 결제 정보를 반환한다.
             it('returns the payments', async () => {
-                const gotPayments = await fix.paymentsService.getPayments([createdPayment.id])
+                const gotPayments = await fixture.paymentsService.getPayments([createdPayment.id])
                 expect(gotPayments).toEqual([createdPayment])
             })
         })

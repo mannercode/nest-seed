@@ -4,15 +4,15 @@ import { buildCreateTheaterDto, createTheater, Errors } from '../__helpers__'
 import type { Fixture } from './theaters.fixture'
 
 describe('TheatersService', () => {
-    let fix: Fixture
+    let fixture: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./theaters.fixture')
-        fix = await createFixture()
+        fixture = await createFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     describe('POST /theaters', () => {
@@ -22,7 +22,7 @@ describe('TheatersService', () => {
             it('creates and returns a theater', async () => {
                 const createDto = buildCreateTheaterDto()
 
-                await fix.httpClient
+                await fixture.httpClient
                     .post('/theaters')
                     .body(createDto)
                     .created({ id: expect.any(String), ...createDto })
@@ -33,7 +33,7 @@ describe('TheatersService', () => {
         describe('when required fields are missing', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .post('/theaters')
                     .body({})
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
@@ -46,9 +46,9 @@ describe('TheatersService', () => {
         describe('when theater exists', () => {
             // 극장 정보를 반환한다
             it('returns the theater', async () => {
-                await fix.httpClient
-                    .get(`/theaters/${fix.createdTheater.id}`)
-                    .ok(fix.createdTheater)
+                await fixture.httpClient
+                    .get(`/theaters/${fixture.createdTheater.id}`)
+                    .ok(fixture.createdTheater)
             })
         })
 
@@ -56,7 +56,7 @@ describe('TheatersService', () => {
         describe('when theater does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get(`/theaters/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -76,14 +76,14 @@ describe('TheatersService', () => {
                     location: { latitude: 30.0, longitude: 120.0 },
                     seatmap: []
                 }
-                const expected = { ...fix.createdTheater, ...updateDto }
+                const expected = { ...fixture.createdTheater, ...updateDto }
 
-                await fix.httpClient
-                    .patch(`/theaters/${fix.createdTheater.id}`)
+                await fixture.httpClient
+                    .patch(`/theaters/${fixture.createdTheater.id}`)
                     .body(updateDto)
                     .ok(expected)
 
-                await fix.httpClient.get(`/theaters/${fix.createdTheater.id}`).ok(expected)
+                await fixture.httpClient.get(`/theaters/${fixture.createdTheater.id}`).ok(expected)
             })
         })
 
@@ -91,7 +91,7 @@ describe('TheatersService', () => {
         describe('when theater does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .patch(`/theaters/${nullObjectId}`)
                     .body({})
                     .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
@@ -104,13 +104,13 @@ describe('TheatersService', () => {
         describe('when theater exists', () => {
             // 극장을 삭제한다.
             it('deletes the theater', async () => {
-                await fix.httpClient.delete(`/theaters/${fix.createdTheater.id}`).ok()
+                await fixture.httpClient.delete(`/theaters/${fixture.createdTheater.id}`).ok()
 
-                await fix.httpClient
-                    .get(`/theaters/${fix.createdTheater.id}`)
+                await fixture.httpClient
+                    .get(`/theaters/${fixture.createdTheater.id}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [fix.createdTheater.id]
+                        notFoundIds: [fixture.createdTheater.id]
                     })
             })
         })
@@ -119,7 +119,7 @@ describe('TheatersService', () => {
         describe('when theater does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .delete(`/theaters/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -134,21 +134,21 @@ describe('TheatersService', () => {
 
         beforeEach(async () => {
             const createdTheaters = await Promise.all([
-                createTheater(fix, { name: 'Theater-a1' }),
-                createTheater(fix, { name: 'Theater-a2' }),
-                createTheater(fix, { name: 'Theater-b1' }),
-                createTheater(fix, { name: 'Theater-b2' }),
-                createTheater(fix, { name: 'Theater-c1' })
+                createTheater(fixture, { name: 'Theater-a1' }),
+                createTheater(fixture, { name: 'Theater-a2' }),
+                createTheater(fixture, { name: 'Theater-b1' }),
+                createTheater(fixture, { name: 'Theater-b2' }),
+                createTheater(fixture, { name: 'Theater-c1' })
             ])
 
-            theaters = [...createdTheaters, fix.createdTheater]
+            theaters = [...createdTheaters, fixture.createdTheater]
         })
 
         // 쿼리 파라미터가 없는 경우
         describe('when query parameters are missing', () => {
             // 기본 페이지네이션으로 극장을 반환한다
             it('returns theaters with default pagination', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/theaters')
                     .ok({
                         skip: 0,
@@ -163,7 +163,7 @@ describe('TheatersService', () => {
         describe('when query parameters are invalid', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/theaters')
                     .query({ wrong: 'value' })
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
@@ -174,7 +174,7 @@ describe('TheatersService', () => {
         describe('when partial `name` is provided', () => {
             // 이름에 해당 부분 문자열이 포함된 극장을 반환한다
             it('returns theaters whose name includes the substring', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/theaters')
                     .query({ name: 'Theater-a' })
                     .ok(

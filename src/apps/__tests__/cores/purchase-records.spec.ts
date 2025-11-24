@@ -3,15 +3,15 @@ import { buildCreatePurchaseRecordDto, Errors } from '../__helpers__'
 import { Fixture } from './purchase-records.fixture'
 
 describe('PurchaseRecordsService', () => {
-    let fix: Fixture
+    let fixture: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./purchase-records.fixture')
-        fix = await createFixture()
+        fixture = await createFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     describe('createPurchaseRecord', () => {
@@ -22,7 +22,7 @@ describe('PurchaseRecordsService', () => {
                 const createDto = buildCreatePurchaseRecordDto({})
 
                 const createdPurchaseRecord =
-                    await fix.purchaseRecordsService.createPurchaseRecord(createDto)
+                    await fixture.purchaseRecordsService.createPurchaseRecord(createDto)
 
                 expect(createdPurchaseRecord).toEqual({
                     id: expect.any(String),
@@ -39,9 +39,9 @@ describe('PurchaseRecordsService', () => {
         describe('when purchase exists', () => {
             // 구매 정보를 반환한다.
             it('returns the purchase', async () => {
-                await fix.httpClient
-                    .get(`/purchases/${fix.createdPurchaseRecord.id}`)
-                    .ok(fix.createdPurchaseRecord)
+                await fixture.httpClient
+                    .get(`/purchases/${fixture.createdPurchaseRecord.id}`)
+                    .ok(fixture.createdPurchaseRecord)
             })
         })
 
@@ -49,7 +49,7 @@ describe('PurchaseRecordsService', () => {
         describe('when purchase does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get(`/purchases/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,

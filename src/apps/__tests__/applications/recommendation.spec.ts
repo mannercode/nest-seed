@@ -2,22 +2,22 @@ import { MovieDto, MovieGenre } from 'apps/cores'
 import { createShowingMovies, createWatchedMovies, Fixture } from './recommendation.fixture'
 
 describe('RecommendationService', () => {
-    let fix: Fixture
+    let fixture: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./recommendation.fixture')
-        fix = await createFixture()
+        fixture = await createFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     describe('GET /movies/recommended', () => {
         let showingMovies: MovieDto[]
 
         beforeEach(async () => {
-            const { movies } = await createShowingMovies(fix, [
+            const { movies } = await createShowingMovies(fixture, [
                 {
                     title: 'Fantasy',
                     genres: [MovieGenre.Fantasy],
@@ -49,7 +49,7 @@ describe('RecommendationService', () => {
             let accessToken: string
 
             beforeEach(async () => {
-                const result = await createWatchedMovies(fix, [
+                const result = await createWatchedMovies(fixture, [
                     { title: 'Action1', genres: [MovieGenre.Action] },
                     { title: 'Action2', genres: [MovieGenre.Action] },
                     { title: 'Action3', genres: [MovieGenre.Action] },
@@ -63,7 +63,7 @@ describe('RecommendationService', () => {
 
             // 고객의 추천 목록을 반환한다
             it('returns recommendations for the customer', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/movies/recommended')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .ok([
@@ -80,7 +80,7 @@ describe('RecommendationService', () => {
         describe('when user is a guest', () => {
             // 손님의 추천 목록을 반환한다
             it('returns recommendations for guests', async () => {
-                await fix.httpClient.get('/movies/recommended').ok([
+                await fixture.httpClient.get('/movies/recommended').ok([
                     showingMovies[4], // 2900-05-01
                     showingMovies[3], // 2900-04-01
                     showingMovies[2], // 2900-03-01

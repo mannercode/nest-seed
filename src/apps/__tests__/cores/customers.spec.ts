@@ -5,15 +5,15 @@ import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
 import type { Fixture } from './customers.fixture'
 
 describe('CustomersService', () => {
-    let fix: Fixture
+    let fixture: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./customers.fixture')
-        fix = await createFixture()
+        fixture = await createFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     describe('POST /customers', () => {
@@ -23,7 +23,7 @@ describe('CustomersService', () => {
             it('creates and returns a customer', async () => {
                 const createDto = buildCreateCustomerDto()
 
-                await fix.httpClient
+                await fixture.httpClient
                     .post('/customers')
                     .body(createDto)
                     .created({ id: expect.any(String), ...omit(createDto, 'password') })
@@ -34,9 +34,9 @@ describe('CustomersService', () => {
         describe('when email already exists', () => {
             // 409 Conflict를 반환한다
             it('returns 409 Conflict', async () => {
-                const createDto = buildCreateCustomerDto({ email: fix.createdCustomer.email })
+                const createDto = buildCreateCustomerDto({ email: fixture.createdCustomer.email })
 
-                await fix.httpClient
+                await fixture.httpClient
                     .post('/customers')
                     .body(createDto)
                     .conflict({ ...Errors.Customer.EmailAlreadyExists, email: createDto.email })
@@ -47,7 +47,7 @@ describe('CustomersService', () => {
         describe('when required fields are missing', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .post('/customers')
                     .body({})
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
@@ -60,9 +60,9 @@ describe('CustomersService', () => {
         describe('when customer exists', () => {
             // 고객 정보를 반환한다
             it('returns the customer', async () => {
-                await fix.httpClient
-                    .get(`/customers/${fix.createdCustomer.id}`)
-                    .ok(fix.createdCustomer)
+                await fixture.httpClient
+                    .get(`/customers/${fixture.createdCustomer.id}`)
+                    .ok(fixture.createdCustomer)
             })
         })
 
@@ -70,7 +70,7 @@ describe('CustomersService', () => {
         describe('when customer does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get(`/customers/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -90,14 +90,14 @@ describe('CustomersService', () => {
                     email: 'new@mail.com',
                     birthDate: new Date('1900-12-31')
                 }
-                const expected = { ...fix.createdCustomer, ...updateDto }
+                const expected = { ...fixture.createdCustomer, ...updateDto }
 
-                await fix.httpClient
-                    .patch(`/customers/${fix.createdCustomer.id}`)
+                await fixture.httpClient
+                    .patch(`/customers/${fixture.createdCustomer.id}`)
                     .body(updateDto)
                     .ok(expected)
 
-                await fix.httpClient.get(`/customers/${fix.createdCustomer.id}`).ok(expected)
+                await fixture.httpClient.get(`/customers/${fixture.createdCustomer.id}`).ok(expected)
             })
         })
 
@@ -105,7 +105,7 @@ describe('CustomersService', () => {
         describe('when customer does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .patch(`/customers/${nullObjectId}`)
                     .body({})
                     .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
@@ -118,11 +118,11 @@ describe('CustomersService', () => {
         describe('when customer exists', () => {
             // 고객을 삭제한다
             it('deletes the customer', async () => {
-                await fix.httpClient
-                    .delete(`/customers/${fix.createdCustomer.id}`)
-                    .ok({ deletedCustomers: [fix.createdCustomer] })
+                await fixture.httpClient
+                    .delete(`/customers/${fixture.createdCustomer.id}`)
+                    .ok({ deletedCustomers: [fixture.createdCustomer] })
 
-                await fix.httpClient.get(`/customers/${fix.createdCustomer.id}`).notFound()
+                await fixture.httpClient.get(`/customers/${fixture.createdCustomer.id}`).notFound()
             })
         })
 
@@ -130,7 +130,7 @@ describe('CustomersService', () => {
         describe('when customer does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .delete(`/customers/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -145,21 +145,21 @@ describe('CustomersService', () => {
 
         beforeEach(async () => {
             const createdCustomers = await Promise.all([
-                createCustomer(fix, { name: 'customer-a1', email: 'user-a1@mail.com' }),
-                createCustomer(fix, { name: 'customer-a2', email: 'user-a2@mail.com' }),
-                createCustomer(fix, { name: 'customer-b1', email: 'user-b1@mail.com' }),
-                createCustomer(fix, { name: 'customer-b2', email: 'user-b2@mail.com' }),
-                createCustomer(fix, { name: 'customer-c1', email: 'user-c1@mail.com' })
+                createCustomer(fixture, { name: 'customer-a1', email: 'user-a1@mail.com' }),
+                createCustomer(fixture, { name: 'customer-a2', email: 'user-a2@mail.com' }),
+                createCustomer(fixture, { name: 'customer-b1', email: 'user-b1@mail.com' }),
+                createCustomer(fixture, { name: 'customer-b2', email: 'user-b2@mail.com' }),
+                createCustomer(fixture, { name: 'customer-c1', email: 'user-c1@mail.com' })
             ])
 
-            customers = [...createdCustomers, fix.createdCustomer]
+            customers = [...createdCustomers, fixture.createdCustomer]
         })
 
         // 쿼리 파라미터가 없는 경우
         describe('when query parameters are missing', () => {
             // 기본 페이지네이션으로 고객을 반환한다
             it('returns customers with default pagination', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/customers')
                     .ok({
                         skip: 0,
@@ -174,7 +174,7 @@ describe('CustomersService', () => {
         describe('when query parameters are invalid', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/customers')
                     .query({ wrong: 'value' })
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
@@ -185,7 +185,7 @@ describe('CustomersService', () => {
         describe('when partial `name` is provided', () => {
             // 이름이 해당 부분 문자열을 포함하는 고객을 반환한다
             it('returns customers whose name contains the given substring', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/customers')
                     .query({ name: 'customer-a' })
                     .ok(
@@ -200,7 +200,7 @@ describe('CustomersService', () => {
         describe('when partial `email` is provided', () => {
             // 이메일이 해당 부분 문자열을 포함하는 고객을 반환한다
             it('returns customers whose email contains the given substring', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/customers')
                     .query({ email: 'user-b' })
                     .ok(

@@ -2,15 +2,15 @@ import { withTestId } from 'testlib'
 import type { Fixture } from './exception-logger.filter.fixture'
 
 describe('ExceptionLoggerFilter', () => {
-    let fix: Fixture
+    let fixture: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./exception-logger.filter.fixture')
-        fix = await createFixture()
+        fixture = await createFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     describe('HTTP context', () => {
@@ -18,12 +18,12 @@ describe('ExceptionLoggerFilter', () => {
         describe('when an HttpException is thrown', () => {
             // Logger.warn으로 기록한다
             it('logs via Logger.warn', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get('/exception')
                     .notFound({ code: 'ERR_CODE', message: 'message' })
 
-                expect(fix.spyWarn).toHaveBeenCalledTimes(1)
-                expect(fix.spyWarn).toHaveBeenCalledWith('fail', {
+                expect(fixture.spyWarn).toHaveBeenCalledTimes(1)
+                expect(fixture.spyWarn).toHaveBeenCalledWith('fail', {
                     statusCode: 404,
                     contextType: 'http',
                     request: { method: 'GET', url: '/exception' },
@@ -37,10 +37,10 @@ describe('ExceptionLoggerFilter', () => {
         describe('when a generic Error is thrown', () => {
             // Logger.error로 기록한다
             it('logs via Logger.error', async () => {
-                await fix.httpClient.get('/error').internalServerError()
+                await fixture.httpClient.get('/error').internalServerError()
 
-                expect(fix.spyError).toHaveBeenCalledTimes(1)
-                expect(fix.spyError).toHaveBeenCalledWith('error', {
+                expect(fixture.spyError).toHaveBeenCalledTimes(1)
+                expect(fixture.spyError).toHaveBeenCalledWith('error', {
                     statusCode: 500,
                     contextType: 'http',
                     request: { method: 'GET', url: '/error' },
@@ -54,10 +54,10 @@ describe('ExceptionLoggerFilter', () => {
         describe('when a non-error is thrown', () => {
             // Logger.fatal로 기록한다
             it('logs via Logger.fatal', async () => {
-                await fix.httpClient.get('/fatal').internalServerError()
+                await fixture.httpClient.get('/fatal').internalServerError()
 
-                expect(fix.spyFatal).toHaveBeenCalledTimes(1)
-                expect(fix.spyFatal).toHaveBeenCalledWith('fatal', {
+                expect(fixture.spyFatal).toHaveBeenCalledTimes(1)
+                expect(fixture.spyFatal).toHaveBeenCalledWith('fatal', {
                     statusCode: 500,
                     contextType: 'http',
                     request: { method: 'GET', url: '/fatal' },
@@ -74,7 +74,7 @@ describe('ExceptionLoggerFilter', () => {
             // Logger.warn으로 기록한다
             it('logs via Logger.warn', async () => {
                 const subject = withTestId('exception')
-                await fix.rpcClient.error(
+                await fixture.rpcClient.error(
                     subject,
                     {},
                     expect.objectContaining({
@@ -83,8 +83,8 @@ describe('ExceptionLoggerFilter', () => {
                     })
                 )
 
-                expect(fix.spyWarn).toHaveBeenCalledTimes(1)
-                expect(fix.spyWarn).toHaveBeenCalledWith('fail', {
+                expect(fixture.spyWarn).toHaveBeenCalledTimes(1)
+                expect(fixture.spyWarn).toHaveBeenCalledWith('fail', {
                     contextType: 'rpc',
                     context: { args: [subject] },
                     data: {},
@@ -99,10 +99,10 @@ describe('ExceptionLoggerFilter', () => {
             // Logger.error로 기록한다
             it('logs via Logger.error', async () => {
                 const subject = withTestId('error')
-                await fix.rpcClient.error(subject, {}, Error('error message'))
+                await fixture.rpcClient.error(subject, {}, Error('error message'))
 
-                expect(fix.spyError).toHaveBeenCalledTimes(1)
-                expect(fix.spyError).toHaveBeenCalledWith('error', {
+                expect(fixture.spyError).toHaveBeenCalledTimes(1)
+                expect(fixture.spyError).toHaveBeenCalledWith('error', {
                     contextType: 'rpc',
                     context: { args: [subject] },
                     data: {},
@@ -117,10 +117,10 @@ describe('ExceptionLoggerFilter', () => {
             // Logger.fatal로 기록한다
             it('logs via Logger.fatal', async () => {
                 const subject = withTestId('fatal')
-                await fix.rpcClient.error(subject, {}, Error('fatal error message'))
+                await fixture.rpcClient.error(subject, {}, Error('fatal error message'))
 
-                expect(fix.spyFatal).toHaveBeenCalledTimes(1)
-                expect(fix.spyFatal).toHaveBeenCalledWith('fatal', {
+                expect(fixture.spyFatal).toHaveBeenCalledTimes(1)
+                expect(fixture.spyFatal).toHaveBeenCalledWith('fatal', {
                     contextType: 'rpc',
                     context: { args: [subject] },
                     data: {},
@@ -141,10 +141,10 @@ describe('ExceptionLoggerFilter', () => {
                 )
                 jest.spyOn(ExecutionContextHost.prototype, 'getType').mockReturnValue('unknown')
 
-                await fix.httpClient.get('/exception').notFound()
+                await fixture.httpClient.get('/exception').notFound()
 
-                expect(fix.spyError).toHaveBeenCalledTimes(1)
-                expect(fix.spyError).toHaveBeenCalledWith(
+                expect(fixture.spyError).toHaveBeenCalledTimes(1)
+                expect(fixture.spyError).toHaveBeenCalledWith(
                     'unknown context type',
                     expect.objectContaining({ contextType: 'unknown' })
                 )

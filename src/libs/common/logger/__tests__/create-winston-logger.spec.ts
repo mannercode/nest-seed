@@ -3,13 +3,13 @@ import { readFile } from 'fs/promises'
 import winston from 'winston'
 
 describe('createWinstonLogger', () => {
-    let winston: winston.Logger
+    let logger: winston.Logger
     let tempDir: string
 
     beforeEach(async () => {
         tempDir = await Path.createTempDirectory()
 
-        winston = createWinstonLogger({
+        logger = createWinstonLogger({
             directory: tempDir,
             daysToKeepLogs: '1d',
             fileLogLevel: 'verbose',
@@ -18,7 +18,7 @@ describe('createWinstonLogger', () => {
     })
 
     afterEach(async () => {
-        winston.close()
+        logger.close()
         await Path.delete(tempDir)
     })
 
@@ -31,7 +31,7 @@ describe('createWinstonLogger', () => {
     it('general', async () => {
         const message = 'test message'
 
-        winston.info(message)
+        logger.info(message)
         await sleep(200)
 
         const entry = await getLogEntry()
@@ -49,7 +49,7 @@ describe('createWinstonLogger', () => {
             stack: 'stack...'
         }
 
-        winston.info(message, [logDetails])
+        logger.info(message, [logDetails])
         await sleep(200)
 
         const entry = await getLogEntry()
@@ -72,7 +72,7 @@ describe('createWinstonLogger', () => {
             stack: 'stack...'
         }
 
-        winston.info(message, [logDetails])
+        logger.info(message, [logDetails])
         await sleep(200)
 
         const entry = await getLogEntry()

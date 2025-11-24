@@ -2,15 +2,15 @@ import { withTestId } from 'testlib'
 import type { Fixture } from './client-proxy.service.fixture'
 
 describe('ClientProxyService', () => {
-    let fix: Fixture
+    let fixture: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./client-proxy.service.fixture')
-        fix = await createFixture()
+        fixture = await createFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     describe('send', () => {
@@ -18,7 +18,7 @@ describe('ClientProxyService', () => {
         describe('when HttpController returns an Observable', () => {
             // Observable 응답을 전달한다
             it('responds with the Observable result', async () => {
-                await fix.httpClient.get('/observable').ok({ result: 'success' })
+                await fixture.httpClient.get('/observable').ok({ result: 'success' })
             })
         })
 
@@ -26,7 +26,7 @@ describe('ClientProxyService', () => {
         describe('when HttpController resolves the value', () => {
             // 값을 반환한다
             it('returns the Observable value', async () => {
-                await fix.httpClient.get('/value').ok({ result: 'success' })
+                await fixture.httpClient.get('/value').ok({ result: 'success' })
             })
         })
 
@@ -34,7 +34,7 @@ describe('ClientProxyService', () => {
         describe('when payload is null', () => {
             // null payload를 전송한다
             it('sends a null payload', async () => {
-                const response = await fix.rpcClient.getJson(withTestId('method'), null)
+                const response = await fixture.rpcClient.getJson(withTestId('method'), null)
                 expect(response).toEqual({ result: 'success' })
             })
         })
@@ -46,10 +46,10 @@ describe('ClientProxyService', () => {
             // 마이크로서비스로 이벤트를 전달한다
             it('sends the event to the microservice', async () => {
                 const promise = new Promise((resolve, reject) => {
-                    fix.httpClient.get('/handle-event').sse((value) => resolve(value), reject)
+                    fixture.httpClient.get('/handle-event').sse((value) => resolve(value), reject)
                 })
 
-                await fix.rpcClient.emit(withTestId('emitEvent'), { arg: 'value' })
+                await fixture.rpcClient.emit(withTestId('emitEvent'), { arg: 'value' })
 
                 await expect(promise).resolves.toEqual('{"arg":"value"}')
             })
@@ -59,7 +59,7 @@ describe('ClientProxyService', () => {
         describe('when payload is null', () => {
             // null payload를 전송한다
             it('sends a null payload', async () => {
-                await fix.rpcClient.emit(withTestId('emitEvent'), null)
+                await fixture.rpcClient.emit(withTestId('emitEvent'), null)
             })
         })
     })

@@ -1,15 +1,15 @@
 import type { Fixture } from './mongoose.transaction.fixture'
 
 describe('MongooseRepository.withTransaction', () => {
-    let fix: Fixture
+    let fixture: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./mongoose.transaction.fixture')
-        fix = await createFixture()
+        fixture = await createFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     describe('withTransaction', () => {
@@ -17,13 +17,13 @@ describe('MongooseRepository.withTransaction', () => {
         describe('when the transaction succeeds', () => {
             // 트랜잭션을 커밋한다
             it('commits the transaction', async () => {
-                const newDoc = await fix.repository.withTransaction(async (session) => {
-                    const doc = fix.repository.newDocument()
+                const newDoc = await fixture.repository.withTransaction(async (session) => {
+                    const doc = fixture.repository.newDocument()
                     doc.name = 'name'
                     return doc.save({ session })
                 })
 
-                const found = await fix.repository.findById(newDoc.id)
+                const found = await fixture.repository.findById(newDoc.id)
                 expect(found?.toJSON()).toEqual(newDoc.toJSON())
             })
         })
@@ -32,16 +32,16 @@ describe('MongooseRepository.withTransaction', () => {
         describe('when rollback is requested', () => {
             // 트랜잭션을 롤백한다
             it('rolls back the transaction', async () => {
-                const newDoc = fix.repository.newDocument()
+                const newDoc = fixture.repository.newDocument()
                 newDoc.name = 'name'
                 await newDoc.save()
 
-                await fix.repository.withTransaction(async (session, rollback) => {
-                    await fix.repository.deleteById(newDoc.id, session)
+                await fixture.repository.withTransaction(async (session, rollback) => {
+                    await fixture.repository.deleteById(newDoc.id, session)
                     rollback()
                 })
 
-                const found = await fix.repository.findById(newDoc.id)
+                const found = await fixture.repository.findById(newDoc.id)
                 expect(found?.toJSON()).toEqual(newDoc.toJSON())
             })
         })
@@ -50,8 +50,8 @@ describe('MongooseRepository.withTransaction', () => {
         describe('when an error occurs during the transaction', () => {
             // 변경 사항을 롤백한다
             it('rolls back changes', async () => {
-                const promise = fix.repository.withTransaction(async (session) => {
-                    const doc = fix.repository.newDocument()
+                const promise = fixture.repository.withTransaction(async (session) => {
+                    const doc = fixture.repository.newDocument()
                     doc.name = 'name'
                     await doc.save({ session })
 
@@ -60,31 +60,31 @@ describe('MongooseRepository.withTransaction', () => {
 
                 await expect(promise).rejects.toThrow()
 
-                const { total } = await fix.repository.findWithPagination({ pagination: {} })
+                const { total } = await fixture.repository.findWithPagination({ pagination: {} })
                 expect(total).toEqual(0)
             })
         })
     })
 
     it('dummy test for coverage', async () => {
-        jest.spyOn(fix.model, 'startSession').mockImplementation(() => {
+        jest.spyOn(fixture.model, 'startSession').mockImplementation(() => {
             throw new Error()
         })
 
-        const promise = fix.repository.withTransaction(async (_session) => {})
+        const promise = fixture.repository.withTransaction(async (_session) => {})
 
         await expect(promise).rejects.toThrow()
     })
 
     it('dummy test for coverage', async () => {
-        jest.spyOn(fix.model, 'startSession').mockResolvedValue({
+        jest.spyOn(fixture.model, 'startSession').mockResolvedValue({
             startTransaction: jest.fn().mockImplementation(() => {
                 throw new Error()
             }),
             inTransaction: jest.fn().mockReturnValue(false)
         } as any)
 
-        const promise = fix.repository.withTransaction(async (_session) => {})
+        const promise = fixture.repository.withTransaction(async (_session) => {})
 
         await expect(promise).rejects.toThrow()
     })

@@ -4,15 +4,15 @@ import { buildCreateWatchRecordDto, createWatchRecord } from '../__helpers__'
 import type { Fixture } from './watch-records.fixture'
 
 describe('WatchRecordsService', () => {
-    let fix: Fixture
+    let fixture: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./watch-records.fixture')
-        fix = await createFixture()
+        fixture = await createFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     describe('createWatchRecord', () => {
@@ -22,7 +22,7 @@ describe('WatchRecordsService', () => {
             it('creates and returns a watch record', async () => {
                 const createDto = buildCreateWatchRecordDto()
 
-                const watchRecord = await fix.watchRecordsService.createWatchRecord(createDto)
+                const watchRecord = await fixture.watchRecordsService.createWatchRecord(createDto)
 
                 expect(watchRecord).toEqual({ id: expect.any(String), ...createDto })
             })
@@ -35,10 +35,10 @@ describe('WatchRecordsService', () => {
 
         beforeEach(async () => {
             watchRecords = await Promise.all([
-                createWatchRecord(fix, { customerId }),
-                createWatchRecord(fix, { customerId }),
-                createWatchRecord(fix, { customerId }),
-                createWatchRecord(fix, { customerId })
+                createWatchRecord(fixture, { customerId }),
+                createWatchRecord(fixture, { customerId }),
+                createWatchRecord(fixture, { customerId }),
+                createWatchRecord(fixture, { customerId })
             ])
         })
 
@@ -46,7 +46,7 @@ describe('WatchRecordsService', () => {
         describe('when `customerId` is provided', () => {
             // 지정한 customerId의 관람 기록 페이지를 반환한다
             it('returns paginated records for the customerId', async () => {
-                const pagination = await fix.watchRecordsService.searchWatchRecordsPage({
+                const pagination = await fixture.watchRecordsService.searchWatchRecordsPage({
                     customerId
                 })
 

@@ -5,15 +5,15 @@ import { Errors, uploadStorageFiles } from '../__helpers__'
 import type { Fixture } from './storage-files.fixture'
 
 describe('StorageFilesService', () => {
-    let fix: Fixture
+    let fixture: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./storage-files.fixture')
-        fix = await createFixture()
+        fixture = await createFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     describe('POST /storage-files', () => {
@@ -23,9 +23,9 @@ describe('StorageFilesService', () => {
         describe('when payload is valid', () => {
             // 파일을 저장하고 반환한다
             it('stores and returns the files', async () => {
-                const files = [fix.localFiles.small, fix.localFiles.large]
+                const files = [fixture.localFiles.small, fixture.localFiles.large]
 
-                await fix.httpClient
+                await fixture.httpClient
                     .post('/storage-files')
                     .attachments([
                         { name: 'files', file: files[0].path },
@@ -59,7 +59,7 @@ describe('StorageFilesService', () => {
         describe('when no file is attached', () => {
             // 201 Created를 반환한다
             it('returns 201 Created', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .post('/storage-files')
                     .attachments([])
                     .fields(fields)
@@ -71,9 +71,9 @@ describe('StorageFilesService', () => {
         describe('when file size exceeds the limit', () => {
             // 413 Payload Too Large를 반환한다
             it('returns 413 Payload Too Large', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .post('/storage-files')
-                    .attachments([{ name: 'files', file: fix.localFiles.oversized.path }])
+                    .attachments([{ name: 'files', file: fixture.localFiles.oversized.path }])
                     .fields(fields)
                     .payloadTooLarge(expect.objectContaining(Errors.FileUpload.MaxSizeExceeded))
             })
@@ -83,12 +83,12 @@ describe('StorageFilesService', () => {
         describe('when file count exceeds the limit', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                const attachments = fix.overLimitFiles.map((file) => ({
+                const attachments = fixture.overLimitFiles.map((file) => ({
                     name: 'files',
                     file: file.path
                 }))
 
-                await fix.httpClient
+                await fixture.httpClient
                     .post('/storage-files')
                     .attachments(attachments)
                     .fields(fields)
@@ -100,9 +100,9 @@ describe('StorageFilesService', () => {
         describe('when file type is not allowed', () => {
             // 415 Unsupported Media Type를 반환한다
             it('returns 415 Unsupported Media Type', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .post('/storage-files')
-                    .attachments([{ name: 'files', file: fix.localFiles.notAllowed.path }])
+                    .attachments([{ name: 'files', file: fixture.localFiles.notAllowed.path }])
                     .fields(fields)
                     .unsupportedMediaType({
                         ...Errors.FileUpload.InvalidFileType,
@@ -115,7 +115,7 @@ describe('StorageFilesService', () => {
         describe('when required fields are missing', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .post('/storage-files')
                     .attachments([])
                     .fields([])
@@ -135,7 +135,7 @@ describe('StorageFilesService', () => {
 
         beforeEach(async () => {
             downloadPath = await Path.createTempDirectory()
-            const uploadedFiles = await uploadStorageFiles(fix, [fix.localFiles.large])
+            const uploadedFiles = await uploadStorageFiles(fixture, [fixture.localFiles.large])
             uploadedFile = uploadedFiles[0]
         })
 
@@ -149,7 +149,7 @@ describe('StorageFilesService', () => {
             it('downloads the file', async () => {
                 const downloadFile = Path.join(downloadPath, 'download.txt')
 
-                await fix.httpClient
+                await fixture.httpClient
                     .get(`/storage-files/${uploadedFile.id}`)
                     .download(downloadFile)
                     .ok()
@@ -163,7 +163,7 @@ describe('StorageFilesService', () => {
         describe('when file does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get(`/storage-files/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -179,13 +179,13 @@ describe('StorageFilesService', () => {
             let uploadedFile: StorageFileDto
 
             beforeEach(async () => {
-                const uploadedFiles = await uploadStorageFiles(fix, [fix.localFiles.large])
+                const uploadedFiles = await uploadStorageFiles(fixture, [fixture.localFiles.large])
                 uploadedFile = uploadedFiles[0]
             })
 
             // 파일을 삭제한다
             it('deletes the file', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .delete(`/storage-files/${uploadedFile.id}`)
                     .ok({
                         deletedStorageFiles: [
@@ -200,7 +200,7 @@ describe('StorageFilesService', () => {
                         ]
                     })
 
-                await fix.httpClient.get(`/storage-files/${uploadedFile.id}`).notFound()
+                await fixture.httpClient.get(`/storage-files/${uploadedFile.id}`).notFound()
             })
         })
 
@@ -208,7 +208,7 @@ describe('StorageFilesService', () => {
         describe('when file does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .delete(`/storage-files/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,

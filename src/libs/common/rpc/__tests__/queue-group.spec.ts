@@ -3,7 +3,7 @@ import { withTestId } from 'testlib'
 import type { Fixture } from './queue-group.fixture'
 
 describe('NATS Queue Group', () => {
-    let fix: Fixture
+    let fixture: Fixture
     let queueSpy: jest.SpyInstance
     let broadcastSpy: jest.SpyInstance
 
@@ -13,18 +13,18 @@ describe('NATS Queue Group', () => {
         queueSpy = jest.spyOn(MessageController.prototype, 'processQueueLogic')
         broadcastSpy = jest.spyOn(MessageController.prototype, 'processBroadcastLogic')
 
-        fix = await createFixture()
+        fixture = await createFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     // queue 그룹이 설정된 경우
     describe('when a queue group is set', () => {
         // 메시지가 한 인스턴스에만 전달된다
         it('delivers the message to one instance', async () => {
-            const result = await fix.rpcClient.getJson(withTestId('queue'), {})
+            const result = await fixture.rpcClient.getJson(withTestId('queue'), {})
 
             expect(result).toEqual({ result: 'success' })
             expect(queueSpy).toHaveBeenCalledTimes(1)
@@ -35,11 +35,11 @@ describe('NATS Queue Group', () => {
     describe('when no queue group is set', () => {
         // 메시지가 모든 인스턴스에 전달된다
         it('delivers the message to all instances', async () => {
-            const result = await fix.rpcClient.getJson(withTestId('broadcast'), {})
+            const result = await fixture.rpcClient.getJson(withTestId('broadcast'), {})
             await sleep(1000)
 
             expect(result).toEqual({ result: 'success' })
-            expect(broadcastSpy).toHaveBeenCalledTimes(fix.numberOfInstance)
+            expect(broadcastSpy).toHaveBeenCalledTimes(fixture.numberOfInstance)
         })
     })
 })
