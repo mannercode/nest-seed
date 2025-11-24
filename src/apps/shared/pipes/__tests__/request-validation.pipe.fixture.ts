@@ -47,7 +47,7 @@ export const createFixture = async () => {
         await testContext?.close()
     }
 
-    return { ...testContext, teardown, }
+    return { ...testContext, teardown }
 }
 
 export interface Fixture extends HttpTestContext {
