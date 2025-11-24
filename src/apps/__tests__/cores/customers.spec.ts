@@ -97,7 +97,9 @@ describe('CustomersService', () => {
                     .body(updateDto)
                     .ok(expected)
 
-                await fixture.httpClient.get(`/customers/${fixture.createdCustomer.id}`).ok(expected)
+                await fixture.httpClient
+                    .get(`/customers/${fixture.createdCustomer.id}`)
+                    .ok(expected)
             })
         })
 

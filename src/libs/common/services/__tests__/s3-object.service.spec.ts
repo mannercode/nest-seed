@@ -156,7 +156,9 @@ describe('S3ObjectService', () => {
 
             // 파일 데이터와 메타데이터를 반환한다
             it('returns the file data and metadata', async () => {
-                const { contentType, filename, data } = await fixture.s3Service.getObject(putResult.key)
+                const { contentType, filename, data } = await fixture.s3Service.getObject(
+                    putResult.key
+                )
 
                 expect(Buffer.compare(data, putResult.data)).toBe(0)
                 expect(contentType).toEqual(putResult.contentType)
@@ -207,7 +209,9 @@ describe('S3ObjectService', () => {
         const keys = ['a.txt', 'b/c.txt', 'b/d.txt']
 
         beforeEach(async () => {
-            await Promise.all(keys.map((key) => uploadObject(fixture.s3Service, key, 'upload body')))
+            await Promise.all(
+                keys.map((key) => uploadObject(fixture.s3Service, key, 'upload body'))
+            )
         })
 
         // 쿼리 파라미터가 없는 경우

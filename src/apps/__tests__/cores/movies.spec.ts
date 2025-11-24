@@ -69,7 +69,9 @@ describe('MoviesService', () => {
         describe('when movie exists', () => {
             // 영화를 반환한다
             it('returns the movie', async () => {
-                await fixture.httpClient.get(`/movies/${fixture.createdMovie.id}`).ok(fixture.createdMovie)
+                await fixture.httpClient
+                    .get(`/movies/${fixture.createdMovie.id}`)
+                    .ok(fixture.createdMovie)
             })
         })
 

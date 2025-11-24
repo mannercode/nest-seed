@@ -25,7 +25,10 @@ describe('PurchaseService', () => {
             beforeEach(async () => {
                 createDto = buildCreatePurchaseDto(fixture.customer, fixture.heldTickets)
 
-                const { body } = await fixture.httpClient.post('/purchases').body(createDto).created()
+                const { body } = await fixture.httpClient
+                    .post('/purchases')
+                    .body(createDto)
+                    .created()
 
                 createdPurchase = body
             })
@@ -59,7 +62,10 @@ describe('PurchaseService', () => {
 
             // 구매하지 않은 티켓 상태는 그대로 유지한다
             it('keeps unpurchased tickets unchanged', async () => {
-                const remainingTickets = await getTickets(fixture, pickIds(fixture.availableTickets))
+                const remainingTickets = await getTickets(
+                    fixture,
+                    pickIds(fixture.availableTickets)
+                )
 
                 expect(remainingTickets.map((ticket) => ticket.status)).toEqual(
                     Array(remainingTickets.length).fill(TicketStatus.Available)
