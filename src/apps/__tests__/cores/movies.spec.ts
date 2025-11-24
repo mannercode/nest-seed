@@ -1,6 +1,6 @@
 import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
 import { FileUtil, Path } from 'common'
-import { nullObjectId, objectToFields, step } from 'testlib'
+import { nullObjectId, objectToFields } from 'testlib'
 import { buildCreateMovieDto, createMovie, Errors } from '../__helpers__'
 import type { Fixture } from './movies.fixture'
 
@@ -14,76 +14,6 @@ describe('MoviesService', () => {
 
     afterEach(async () => {
         await fix?.teardown()
-    })
-
-    describe('/movies/drafts', () => {
-        let draftId: string
-
-        // 영화를 생성한다
-        it('creates a movie', async () => {
-            await step('POST /movies/drafts', async () => {
-                const { body } = await fix.httpClient.post('/movies/drafts').body({}).created()
-
-                expect(body).toEqual({ id: expect.any(String), expiresAt: expect.any(Date) })
-                draftId = body.id
-
-                console.log(body)
-            })
-
-            await step('POST /movies/drafts/{draftId}/assets:presign', async () => {
-                const { body } = await fix.httpClient
-                    .post(`/movies/drafts/${draftId}/assets:presign`)
-                    .body({
-                        contentType: fix.image.mimeType,
-                        size: fix.image.size,
-                        checksum: fix.image.checksum.value
-                    })
-                    .created()
-
-                expect(body).toEqual({
-                    // sessionId,
-                    // uploadUrl,
-                    // method,
-                    // headers,
-                    // key,
-                    // expiresAt,
-                    // maxSize
-                })
-
-                expect(body).toEqual({ draftId: expect.any(String), expiresAt: expect.any(Date) })
-                draftId = body.draftId
-            })
-            await step('POST /movies/drafts/{draftId}/assets:finalize', async () => {})
-            await step('POST /movies/drafts/{draftId}:finalize', async () => {})
-        })
-    })
-
-    describe.skip('POST /movie-creation/image-upload-url', () => {
-        beforeEach(async () => {})
-
-        // `theaterIds`가 제공된 경우
-        describe('when `theaterIds` is provided', () => {
-            // 지정한 theaterIds와 일치하는 상영시간 목록을 반환한다
-            it('returns showtimes matching the given theaterIds', async () => {
-                await fix.httpClient
-                    .post('/movie-creation/presigned-url')
-                    .body({
-                        contentType: fix.image.mimeType,
-                        contentLength: fix.image.size,
-                        checksum: fix.image.checksum,
-                        filename: fix.image.originalName
-                    })
-                    .ok({
-                        fileId: 'movies/mv_9a2f/posters/usn_01J8K2....jpg',
-                        upload: {
-                            method: 'PUT',
-                            url: 'https://bucket.s3...X-Amz-Signature=...',
-                            headers: { 'Content-Type': 'image/jpeg', 'Content-MD5': '...' },
-                            expiresAt: '2025-08-21T00:15:00Z'
-                        }
-                    })
-            })
-        })
     })
 
     describe('POST /movies', () => {
@@ -123,7 +53,7 @@ describe('MoviesService', () => {
         })
 
         // 필수 필드가 누락된 경우
-        describe('when the required fields are missing', () => {
+        describe('when required fields are missing', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient
@@ -137,7 +67,7 @@ describe('MoviesService', () => {
     describe('GET /movies/:id', () => {
         // 영화가 존재하는 경우
         describe('when the movie exists', () => {
-            // 영화 정보를 반환한다
+            // 영화를 반환한다
             it('returns the movie', async () => {
                 await fix.httpClient.get(`/movies/${fix.createdMovie.id}`).ok(fix.createdMovie)
             })
@@ -410,3 +340,73 @@ describe('MoviesService', () => {
         })
     })
 })
+
+// describe('/movies/drafts', () => {
+//     let draftId: string
+
+//     // 영화를 생성한다
+//     it('creates a movie', async () => {
+//         await step('POST /movies/drafts', async () => {
+//             const { body } = await fix.httpClient.post('/movies/drafts').body({}).created()
+
+//             expect(body).toEqual({ id: expect.any(String), expiresAt: expect.any(Date) })
+//             draftId = body.id
+
+//             console.log(body)
+//         })
+
+//         await step('POST /movies/drafts/{draftId}/assets:presign', async () => {
+//             const { body } = await fix.httpClient
+//                 .post(`/movies/drafts/${draftId}/assets:presign`)
+//                 .body({
+//                     contentType: fix.image.mimeType,
+//                     size: fix.image.size,
+//                     checksum: fix.image.checksum.value
+//                 })
+//                 .created()
+
+//             expect(body).toEqual({
+//                 // sessionId,
+//                 // uploadUrl,
+//                 // method,
+//                 // headers,
+//                 // key,
+//                 // expiresAt,
+//                 // maxSize
+//             })
+
+//             expect(body).toEqual({ draftId: expect.any(String), expiresAt: expect.any(Date) })
+//             draftId = body.draftId
+//         })
+//         await step('POST /movies/drafts/{draftId}/assets:finalize', async () => {})
+//         await step('POST /movies/drafts/{draftId}:finalize', async () => {})
+//     })
+// })
+
+// describe.skip('POST /movie-creation/image-upload-url', () => {
+//     beforeEach(async () => {})
+
+//     // `theaterIds`가 제공된 경우
+//     describe('when `theaterIds` is provided', () => {
+//         // 지정한 theaterIds와 일치하는 상영시간 목록을 반환한다
+//         it('returns showtimes matching the given theaterIds', async () => {
+//             await fix.httpClient
+//                 .post('/movie-creation/presigned-url')
+//                 .body({
+//                     contentType: fix.image.mimeType,
+//                     contentLength: fix.image.size,
+//                     checksum: fix.image.checksum,
+//                     filename: fix.image.originalName
+//                 })
+//                 .ok({
+//                     fileId: 'movies/mv_9a2f/posters/usn_01J8K2....jpg',
+//                     upload: {
+//                         method: 'PUT',
+//                         url: 'https://bucket.s3...X-Amz-Signature=...',
+//                         headers: { 'Content-Type': 'image/jpeg', 'Content-MD5': '...' },
+//                         expiresAt: '2025-08-21T00:15:00Z'
+//                     }
+//                 })
+//         })
+//     })
+// })
