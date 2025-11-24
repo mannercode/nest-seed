@@ -116,7 +116,9 @@ describe('HttpUtil', () => {
                 expect(HttpUtil.extractContentDisposition(badStar)).toBe('safe-fallback.txt')
 
                 const badStarNoQuoted = `attachment; filename*=UTF-8''%E0%A4%ZZ; filename=bare-fallback.txt`
-                expect(HttpUtil.extractContentDisposition(badStarNoQuoted)).toBe('bare-fallback.txt')
+                expect(HttpUtil.extractContentDisposition(badStarNoQuoted)).toBe(
+                    'bare-fallback.txt'
+                )
             })
         })
     })

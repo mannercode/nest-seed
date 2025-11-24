@@ -60,7 +60,10 @@ describe('DateTimeRange', () => {
             // DateTimeRange를 생성한다
             it('creates a DateTimeRange', () => {
                 const result = DateTimeRange.create({ start: new Date('2023-01-01'), days: 2 })
-                expect(result).toEqual({ start: new Date('2023-01-01'), end: new Date('2023-01-03') })
+                expect(result).toEqual({
+                    start: new Date('2023-01-01'),
+                    end: new Date('2023-01-03')
+                })
             })
         })
 
