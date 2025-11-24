@@ -2,7 +2,7 @@ import { Body, Controller, ParseArrayPipe, Post } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
 import { Type } from 'class-transformer'
 import { IsDate, IsNotEmpty, IsString } from 'class-validator'
-import { createHttpTestContext } from 'testlib'
+import { createHttpTestContext, HttpTestContext } from 'testlib'
 import { RequestValidationPipe } from '..'
 
 class SampleDto {
@@ -47,5 +47,9 @@ export const createFixture = async () => {
         await testContext?.close()
     }
 
-    return { testContext, teardown, client: testContext.httpClient }
+    return { ...testContext, teardown, }
+}
+
+export interface Fixture extends HttpTestContext {
+    teardown: () => Promise<void>
 }
