@@ -20,20 +20,26 @@ describe('NATS Queue Group', () => {
         await fix?.teardown()
     })
 
-    // queue 그룹을 설정하면 메시지가 한 인스턴스에만 전달된다
-    it('Should deliver the message to only one instance when the queue group is set', async () => {
-        const result = await fix.rpcClient.getJson(withTestId('queue'), {})
+    // queue 그룹이 설정된 경우
+    describe('when a queue group is set', () => {
+        // 메시지가 한 인스턴스에만 전달된다
+        it('delivers the message to one instance', async () => {
+            const result = await fix.rpcClient.getJson(withTestId('queue'), {})
 
-        expect(result).toEqual({ result: 'success' })
-        expect(queueSpy).toHaveBeenCalledTimes(1)
+            expect(result).toEqual({ result: 'success' })
+            expect(queueSpy).toHaveBeenCalledTimes(1)
+        })
     })
 
-    // queue 그룹을 설정하지 않으면 메시지가 전체 인스턴스에 전달된다
-    it('Should deliver the message to all instances if the queue group is not set', async () => {
-        const result = await fix.rpcClient.getJson(withTestId('broadcast'), {})
-        await sleep(1000)
+    // queue 그룹이 없는 경우
+    describe('when no queue group is set', () => {
+        // 메시지가 모든 인스턴스에 전달된다
+        it('delivers the message to all instances', async () => {
+            const result = await fix.rpcClient.getJson(withTestId('broadcast'), {})
+            await sleep(1000)
 
-        expect(result).toEqual({ result: 'success' })
-        expect(broadcastSpy).toHaveBeenCalledTimes(fix.numberOfInstance)
+            expect(result).toEqual({ result: 'success' })
+            expect(broadcastSpy).toHaveBeenCalledTimes(fix.numberOfInstance)
+        })
     })
 })

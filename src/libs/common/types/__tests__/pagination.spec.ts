@@ -14,38 +14,54 @@ describe('CommonQuery', () => {
         await fix?.teardown()
     })
 
-    // HttpController에서 PaginationDto을 처리해야 한다
-    it('Should handle PaginationDto in HttpController', async () => {
-        const skip = 2
-        const take = 3
-        await fix.httpClient
-            .get('/pagination')
-            .query({ skip, take, orderby: 'name:asc' })
-            .ok({ response: { orderby: { direction: 'asc', name: 'name' }, skip, take } })
+    describe('HTTP controller', () => {
+        // 요청이 유효한 경우
+        describe('when the request is valid', () => {
+            // PaginationDto를 처리한다
+            it('handles PaginationDto', async () => {
+                const skip = 2
+                const take = 3
+                await fix.httpClient
+                    .get('/pagination')
+                    .query({ skip, take, orderby: 'name:asc' })
+                    .ok({ response: { orderby: { direction: 'asc', name: 'name' }, skip, take } })
+            })
+        })
+
+        // orderby 형식이 잘못된 경우
+        describe('when `orderby` is malformed', () => {
+            // 400 Bad Request를 반환한다
+            it('returns 400 Bad Request', async () => {
+                await fix.httpClient
+                    .get('/pagination')
+                    .query({ orderby: 'wrong' })
+                    .badRequest(CommonErrors.Pagination.FormatInvalid)
+            })
+        })
+
+        // 정렬 방향이 잘못된 경우
+        describe('when sort direction is invalid', () => {
+            // 400 Bad Request를 반환한다
+            it('returns 400 Bad Request', async () => {
+                await fix.httpClient
+                    .get('/pagination')
+                    .query({ orderby: 'name:wrong' })
+                    .badRequest(CommonErrors.Pagination.DirectionInvalid)
+            })
+        })
     })
 
-    // RpcController에서 PaginationDto을 처리해야 한다
-    it('Should handle PaginationDto in RpcController', async () => {
-        const skip = 2
-        const take = 3
-        const input = { orderby: { direction: 'asc', name: 'name' }, skip, take }
+    describe('RPC controller', () => {
+        // 요청이 유효한 경우
+        describe('when the request is valid', () => {
+            // PaginationDto를 처리한다
+            it('handles PaginationDto', async () => {
+                const skip = 2
+                const take = 3
+                const input = { orderby: { direction: 'asc', name: 'name' }, skip, take }
 
-        await fix.rpcClient.expect(withTestId('getRpcPagination'), input, { response: input })
-    })
-
-    // orderby 형식이 잘못되었을 때 BadRequest를 반환해야 한다
-    it('Should return BadRequest when the orderby format is invalid', async () => {
-        await fix.httpClient
-            .get('/pagination')
-            .query({ orderby: 'wrong' })
-            .badRequest(CommonErrors.Pagination.FormatInvalid)
-    })
-
-    // 정렬 방향이 잘못되었을 때 BadRequest를 반환해야 한다
-    it('Should return BadRequest when the sort direction is invalid', async () => {
-        await fix.httpClient
-            .get('/pagination')
-            .query({ orderby: 'name:wrong' })
-            .badRequest(CommonErrors.Pagination.DirectionInvalid)
+                await fix.rpcClient.expect(withTestId('getRpcPagination'), input, { response: input })
+            })
+        })
     })
 })

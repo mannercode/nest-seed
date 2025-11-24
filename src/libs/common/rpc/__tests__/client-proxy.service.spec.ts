@@ -14,38 +14,53 @@ describe('ClientProxyService', () => {
     })
 
     describe('send', () => {
-        // HttpController는 Observable로 응답해야 한다
-        it('Should respond with an Observable in the HttpController', async () => {
-            await fix.httpClient.get('/observable').ok({ result: 'success' })
+        // HttpController에서 Observable을 반환하는 경우
+        describe('when HttpController returns an Observable', () => {
+            // Observable 응답을 전달한다
+            it('responds with the Observable result', async () => {
+                await fix.httpClient.get('/observable').ok({ result: 'success' })
+            })
         })
 
-        // HttpController는 Observable의 값을 반환해야 한다
-        it('Should return the value of the Observable in the HttpController', async () => {
-            await fix.httpClient.get('/value').ok({ result: 'success' })
+        // HttpController가 Observable의 값을 반환하는 경우
+        describe('when HttpController resolves the value', () => {
+            // 값을 반환한다
+            it('returns the Observable value', async () => {
+                await fix.httpClient.get('/value').ok({ result: 'success' })
+            })
         })
 
-        // null payload를 보내야 한다
-        it('Should send a null payload', async () => {
-            const response = await fix.rpcClient.getJson(withTestId('method'), null)
-            expect(response).toEqual({ result: 'success' })
+        // payload가 null인 경우
+        describe('when payload is null', () => {
+            // null payload를 전송한다
+            it('sends a null payload', async () => {
+                const response = await fix.rpcClient.getJson(withTestId('method'), null)
+                expect(response).toEqual({ result: 'success' })
+            })
         })
     })
 
     describe('emit', () => {
-        // Microservice에 이벤트를 전송해야 한다
-        it('Should send an event to the microservice', async () => {
-            const promise = new Promise((resolve, reject) => {
-                fix.httpClient.get('/handle-event').sse((value) => resolve(value), reject)
+        // 이벤트를 전송하는 경우
+        describe('when emitting an event', () => {
+            // 마이크로서비스로 이벤트를 전달한다
+            it('sends the event to the microservice', async () => {
+                const promise = new Promise((resolve, reject) => {
+                    fix.httpClient.get('/handle-event').sse((value) => resolve(value), reject)
+                })
+
+                await fix.rpcClient.emit(withTestId('emitEvent'), { arg: 'value' })
+
+                await expect(promise).resolves.toEqual('{"arg":"value"}')
             })
-
-            await fix.rpcClient.emit(withTestId('emitEvent'), { arg: 'value' })
-
-            await expect(promise).resolves.toEqual('{"arg":"value"}')
         })
 
-        // null payload를 보내야 한다
-        it('Should send a null payload', async () => {
-            await fix.rpcClient.emit(withTestId('emitEvent'), null)
+        // payload가 null인 경우
+        describe('when payload is null', () => {
+            // null payload를 전송한다
+            it('sends a null payload', async () => {
+                await fix.rpcClient.emit(withTestId('emitEvent'), null)
+            })
         })
     })
 })

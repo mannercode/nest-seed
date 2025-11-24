@@ -16,12 +16,15 @@ describe('createDummyFile', () => {
         await Path.delete(tempDir)
     })
 
-    // 지정된 크기의 파일을 생성해야 한다
-    it('Should create a file of the specified size', async () => {
-        const sizeInBytes = Byte.fromString('500KB')
-        await createDummyFile(testFilePath, sizeInBytes)
-        const stats = await fs.stat(testFilePath)
-        expect(stats.size).toBe(sizeInBytes)
+    // 크기가 지정된 경우
+    describe('when size is specified', () => {
+        // 해당 크기의 파일을 생성한다
+        it('creates a file of the given size', async () => {
+            const sizeInBytes = Byte.fromString('500KB')
+            await createDummyFile(testFilePath, sizeInBytes)
+            const stats = await fs.stat(testFilePath)
+            expect(stats.size).toBe(sizeInBytes)
+        })
     })
 })
 
@@ -31,17 +34,23 @@ describe('Env', () => {
             delete process.env.TEST_STRING
         })
 
-        // 환경변수가 존재하면 해당 값을 반환해야 한다
-        it('Should return the value if the environment variable exists', () => {
-            process.env.TEST_STRING = 'hello'
-            expect(Env.getString('TEST_STRING')).toBe('hello')
+        // 환경변수가 존재하는 경우
+        describe('when the env var exists', () => {
+            // 해당 값을 반환한다
+            it('returns the value', () => {
+                process.env.TEST_STRING = 'hello'
+                expect(Env.getString('TEST_STRING')).toBe('hello')
+            })
         })
 
-        // 환경변수가 없으면 에러를 던져야 한다
-        it('Should throw an error if the environment variable does not exist', () => {
-            expect(() => Env.getString('TEST_STRING')).toThrow(
-                'Environment variable TEST_STRING is not defined'
-            )
+        // 환경변수가 존재하지 않는 경우
+        describe('when the env var is missing', () => {
+            // 에러를 던진다
+            it('throws an error', () => {
+                expect(() => Env.getString('TEST_STRING')).toThrow(
+                    'Environment variable TEST_STRING is not defined'
+                )
+            })
         })
     })
 
@@ -50,25 +59,34 @@ describe('Env', () => {
             delete process.env.TEST_NUMBER
         })
 
-        // 숫자 문자열이 주어지면 숫자로 변환하여 반환해야 한다
-        it('Should convert and return the value if a numeric string is given', () => {
-            process.env.TEST_NUMBER = '123'
-            expect(Env.getNumber('TEST_NUMBER')).toBe(123)
+        // 숫자 문자열이 제공된 경우
+        describe('when the value is numeric', () => {
+            // 숫자로 변환하여 반환한다
+            it('returns the converted number', () => {
+                process.env.TEST_NUMBER = '123'
+                expect(Env.getNumber('TEST_NUMBER')).toBe(123)
+            })
         })
 
-        // 숫자 문자열이 아닌 경우 에러를 던져야 한다
-        it('Should throw an error if the value is not a numeric string', () => {
-            process.env.TEST_NUMBER = 'abc'
-            expect(() => Env.getNumber('TEST_NUMBER')).toThrow(
-                'Environment variable TEST_NUMBER must be a valid number'
-            )
+        // 숫자 문자열이 아닌 경우
+        describe('when the value is not numeric', () => {
+            // 에러를 던진다
+            it('throws an error', () => {
+                process.env.TEST_NUMBER = 'abc'
+                expect(() => Env.getNumber('TEST_NUMBER')).toThrow(
+                    'Environment variable TEST_NUMBER must be a valid number'
+                )
+            })
         })
 
-        // 환경변수가 없으면 에러를 던져야 한다
-        it('Should throw an error if the environment variable does not exist', () => {
-            expect(() => Env.getNumber('TEST_NUMBER')).toThrow(
-                'Environment variable TEST_NUMBER is not defined'
-            )
+        // 환경변수가 존재하지 않는 경우
+        describe('when the env var is missing', () => {
+            // 에러를 던진다
+            it('throws an error', () => {
+                expect(() => Env.getNumber('TEST_NUMBER')).toThrow(
+                    'Environment variable TEST_NUMBER is not defined'
+                )
+            })
         })
     })
 })

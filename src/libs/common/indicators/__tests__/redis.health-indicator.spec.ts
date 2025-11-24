@@ -12,38 +12,52 @@ describe('RedisHealthIndicator', () => {
         await fix?.teardown()
     })
 
-    // 반환값이 'PONG'이면 up 상태이다
-    it('Should be in the "up" state if the response is "PONG"', async () => {
-        const res = await fix.redisIndicator.isHealthy('key', fix.redis)
-        expect(res).toEqual({ key: { status: 'up' } })
-    })
-
-    // 반환값이 'PONG'이 아니면 down 상태이다
-    it('Should be in the "down" state if the response is not "PONG"', async () => {
-        jest.spyOn(fix.redis, 'ping').mockResolvedValueOnce('INVALID_RESPONSE')
-
-        const res = await fix.redisIndicator.isHealthy('key', fix.redis)
-        expect(res).toEqual({
-            key: {
-                status: 'down',
-                reason: 'Redis ping returned unexpected response: INVALID_RESPONSE'
-            }
+    describe('isHealthy', () => {
+        // ping 응답이 'PONG'인 경우
+        describe('when ping response is "PONG"', () => {
+            // up 상태를 반환한다
+            it('returns an up status', async () => {
+                const res = await fix.redisIndicator.isHealthy('key', fix.redis)
+                expect(res).toEqual({ key: { status: 'up' } })
+            })
         })
-    })
 
-    // 예외가 발생하면 down 상태이다
-    it('Should be in the "down" state if an exception occurs', async () => {
-        jest.spyOn(fix.redis, 'ping').mockRejectedValueOnce(new Error('error'))
+        // ping 응답이 'PONG'이 아닌 경우
+        describe('when ping response is not "PONG"', () => {
+            // down 상태와 사유를 반환한다
+            it('returns down status with a reason', async () => {
+                jest.spyOn(fix.redis, 'ping').mockResolvedValueOnce('INVALID_RESPONSE')
 
-        const res = await fix.redisIndicator.isHealthy('key', fix.redis)
-        expect(res).toEqual({ key: { status: 'down', reason: 'error' } })
-    })
+                const res = await fix.redisIndicator.isHealthy('key', fix.redis)
+                expect(res).toEqual({
+                    key: {
+                        status: 'down',
+                        reason: 'Redis ping returned unexpected response: INVALID_RESPONSE'
+                    }
+                })
+            })
+        })
 
-    // 예외 발생 시 message가 없으면 error를 그대로 반환해야 한다
-    it('Should return the raw error if it has no message', async () => {
-        jest.spyOn(fix.redis, 'ping').mockRejectedValueOnce('unknown error')
+        // 예외가 발생하는 경우
+        describe('when an exception occurs', () => {
+            // down 상태와 에러 메시지를 반환한다
+            it('returns down status with the error message', async () => {
+                jest.spyOn(fix.redis, 'ping').mockRejectedValueOnce(new Error('error'))
 
-        const res = await fix.redisIndicator.isHealthy('key', fix.redis)
-        expect(res).toEqual({ key: { status: 'down', reason: 'unknown error' } })
+                const res = await fix.redisIndicator.isHealthy('key', fix.redis)
+                expect(res).toEqual({ key: { status: 'down', reason: 'error' } })
+            })
+        })
+
+        // 예외 메시지가 없는 경우
+        describe('when the error has no message', () => {
+            // 원본 에러를 사유로 반환한다
+            it('returns the raw error as the reason', async () => {
+                jest.spyOn(fix.redis, 'ping').mockRejectedValueOnce('unknown error')
+
+                const res = await fix.redisIndicator.isHealthy('key', fix.redis)
+                expect(res).toEqual({ key: { status: 'down', reason: 'unknown error' } })
+            })
+        })
     })
 })

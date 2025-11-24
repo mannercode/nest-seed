@@ -20,7 +20,7 @@ describe('S3ObjectService', () => {
 
     describe('presignUploadUrl', () => {
         // payload가 유효한 경우
-        describe('when the payload is valid', () => {
+        describe('when payload is valid', () => {
             const key = 'key.txt'
             const uploadBody = Buffer.from('hello')
             const expiresInSec = 60
@@ -51,33 +51,41 @@ describe('S3ObjectService', () => {
                 expect(res.ok).toBe(true)
             })
 
-            it('contentType이 다르면 업로드 실패', async () => {
-                const res = await fetch(uploadUrl, {
-                    method: 'PUT',
-                    headers: [['content-type', 'image/png']],
-                    body: uploadBody
-                })
+            // contentType이 다른 경우
+            describe('when contentType mismatches', () => {
+                // 업로드가 실패한다
+                it('fails to upload', async () => {
+                    const res = await fetch(uploadUrl, {
+                        method: 'PUT',
+                        headers: [['content-type', 'image/png']],
+                        body: uploadBody
+                    })
 
-                expect(res.ok).toBe(false)
+                    expect(res.ok).toBe(false)
+                })
             })
 
-            it('contentLength이 다르면 업로드 실패', async () => {
-                const mismatchedBody = Buffer.from('mismatched length')
+            // contentLength가 다른 경우
+            describe('when contentLength mismatches', () => {
+                // 업로드가 실패한다
+                it('fails to upload', async () => {
+                    const mismatchedBody = Buffer.from('mismatched length')
 
-                const res = await fetch(uploadUrl, {
-                    method: 'PUT',
-                    headers: [['content-type', 'text/plain']],
-                    body: mismatchedBody
+                    const res = await fetch(uploadUrl, {
+                        method: 'PUT',
+                        headers: [['content-type', 'text/plain']],
+                        body: mismatchedBody
+                    })
+
+                    expect(res.ok).toBe(false)
                 })
-
-                expect(res.ok).toBe(false)
             })
         })
     })
 
     describe('presignDownloadUrl', () => {
         // 객체가 존재하는 경우
-        describe('when the object exists', () => {
+        describe('when object exists', () => {
             const key = 'foo/data.json'
             const body = 'upload body'
             const expiresInSec = 60
@@ -90,7 +98,7 @@ describe('S3ObjectService', () => {
             })
 
             // downloadUrl을 반환한다
-            it('returns an downloadUrl', async () => {
+            it('returns a downloadUrl', async () => {
                 expect(downloadUrl).toEqual(expect.any(String))
             })
 
@@ -107,7 +115,7 @@ describe('S3ObjectService', () => {
         })
 
         // 객체가 존재하지 않는 경우
-        describe('when the object does not exist', () => {
+        describe('when object does not exist', () => {
             // 다운로드 하면 404 Not Found를 반환한다
             it('returns 404 Not Found when downloading', async () => {
                 const downloadUrl = await fix.s3Service.presignDownloadUrl({
@@ -139,7 +147,7 @@ describe('S3ObjectService', () => {
 
     describe('getObject', () => {
         // 객체가 존재하는 경우
-        describe('when the object exists', () => {
+        describe('when object exists', () => {
             let putResult: PutObjectResult
 
             beforeEach(async () => {
@@ -157,7 +165,7 @@ describe('S3ObjectService', () => {
         })
 
         // 객체가 존재하지 않는 경우
-        describe('when the object does not exist', () => {
+        describe('when object does not exist', () => {
             // 존재하지 않으면 NoSuchKey 에러를 던진다
             it('rejects with NoSuchKey when the object does not exist', async () => {
                 const promise = fix.s3Service.getObject('not-exists')
@@ -168,7 +176,7 @@ describe('S3ObjectService', () => {
 
     describe('deleteObject', () => {
         // 객체가 존재하는 경우
-        describe('when the object exists', () => {
+        describe('when object exists', () => {
             const key = 'foo/data2.json'
 
             beforeEach(async () => {
@@ -184,7 +192,7 @@ describe('S3ObjectService', () => {
         })
 
         // 객체가 존재하지 않는 경우
-        describe('when the object does not exist', () => {
+        describe('when object does not exist', () => {
             // 204 No Content를 반환한다
             it('returns 204 No Content', async () => {
                 const key = 'not-exist-key'

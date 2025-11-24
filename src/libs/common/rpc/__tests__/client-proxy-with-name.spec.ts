@@ -12,8 +12,11 @@ describe('ClientProxyService with name', () => {
         await fix?.teardown()
     })
 
-    // ClientProxyService 생성할 때 name을 지정할 수 있어야 한다
-    it('Should be able to specify the name when creating the ClientProxyService', async () => {
-        await fix.httpClient.get('/value').ok({ result: 'success' })
+    // name을 지정하는 경우
+    describe('when a name is provided', () => {
+        // ClientProxyService를 생성하고 호출할 수 있다
+        it('creates and uses the named ClientProxyService', async () => {
+            await fix.httpClient.get('/value').ok({ result: 'success' })
+        })
     })
 })
