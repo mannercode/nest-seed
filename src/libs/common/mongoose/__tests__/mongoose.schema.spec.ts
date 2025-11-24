@@ -39,7 +39,7 @@ describe('Mongoose Schema Examples', () => {
         doc.optional = undefined
         await doc.save()
 
-        const found = await fixture.model.findOne({ _id: doc._id }).exec()
-        expect(found?.toJSON()).toEqual(doc.toJSON())
+        const foundDoc = await fixture.model.findOne({ _id: doc._id }).exec()
+        expect(foundDoc?.toJSON()).toEqual(doc.toJSON())
     })
 })

@@ -27,12 +27,12 @@ describe('Mongoose Delete', () => {
             it('records deletedAt with the deletion time', async () => {
                 await fixture.model.deleteOne({ _id: fixture.doc._id })
 
-                const found = await fixture.model
+                const foundDoc = await fixture.model
                     .findOne({ _id: { $eq: fixture.doc._id } })
                     .setOptions({ withDeleted: true })
                     .exec()
 
-                expect(found?.deletedAt).toEqual(expect.any(Date))
+                expect(foundDoc?.deletedAt).toEqual(expect.any(Date))
             })
         })
 
@@ -46,9 +46,9 @@ describe('Mongoose Delete', () => {
 
                 await fixture.model.deleteMany({ _id: { $in: [fixture.doc._id, doc2._id] } as any })
 
-                const found = await fixture.model.find({}).setOptions({ withDeleted: true })
-                expect(found[0]).toMatchObject({ deletedAt: expect.any(Date) })
-                expect(found[1]).toMatchObject({ deletedAt: expect.any(Date) })
+                const foundDocs = await fixture.model.find({}).setOptions({ withDeleted: true })
+                expect(foundDocs[0]).toMatchObject({ deletedAt: expect.any(Date) })
+                expect(foundDocs[1]).toMatchObject({ deletedAt: expect.any(Date) })
             })
         })
 

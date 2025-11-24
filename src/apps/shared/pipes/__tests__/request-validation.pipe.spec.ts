@@ -1,18 +1,18 @@
 import { HttpTestClient, nullDate } from 'testlib'
 
 describe('RequestValidationPipe', () => {
-    let teardown = () => {}
+    let teardownFn = () => {}
     let client: HttpTestClient
 
     beforeEach(async () => {
         const { createFixture } = await import('./request-validation.pipe.fixture')
         const fixture = await createFixture()
-        teardown = fixture.teardown
+        teardownFn = fixture.teardown
         client = fixture.client
     })
 
     afterEach(async () => {
-        await teardown()
+        await teardownFn()
     })
 
     describe('object', () => {

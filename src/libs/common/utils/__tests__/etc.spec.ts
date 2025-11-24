@@ -33,18 +33,18 @@ describe('sleep', () => {
 describe('generateUUID', () => {
     // UUID를 생성한다
     test('generates a UUID', () => {
-        const uuid = generateUUID()
+        const generatedUuid = generateUUID()
         const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 
-        expect(uuid).toMatch(regex)
+        expect(generatedUuid).toMatch(regex)
     })
 
     // 매번 다른 UUID를 생성한다
     test('generates a different UUID each time', () => {
-        const uuid1 = generateUUID()
-        const uuid2 = generateUUID()
+        const firstUuid = generateUUID()
+        const secondUuid = generateUUID()
 
-        expect(uuid1).not.toEqual(uuid2)
+        expect(firstUuid).not.toEqual(secondUuid)
     })
 })
 
@@ -90,37 +90,39 @@ describe('addQuotesToNumbers', () => {
 describe('jsonToObject', () => {
     // ISO 8601 형식의 날짜 문자열을 Date 객체로 변환한다
     test('converts ISO 8601 date strings to Date objects', () => {
-        const obj = jsonToObject({ date: '2023-06-18T12:12:34.567Z' })
+        const converted = jsonToObject({ date: '2023-06-18T12:12:34.567Z' })
 
-        expect(obj.date).toBeInstanceOf(Date)
-        expect((obj.date as any).toISOString()).toEqual('2023-06-18T12:12:34.567Z')
+        expect(converted.date).toBeInstanceOf(Date)
+        expect((converted.date as any).toISOString()).toEqual('2023-06-18T12:12:34.567Z')
     })
 
     // 중첩된 객체 내의 날짜 문자열을 재귀적으로 변환한다
     test('recursively converts date strings in nested objects', () => {
-        const obj = jsonToObject({
+        const converted = jsonToObject({
             level1: {
                 date: '2023-06-18T12:12:34.567Z',
                 level2: { date: ['2023-06-19T12:12:34.567Z'], date2: nullDate, null: null }
             }
         })
-        expect(obj.level1.date).toBeInstanceOf(Date)
-        expect((obj.level1.date as any).toISOString()).toEqual('2023-06-18T12:12:34.567Z')
-        expect(obj.level1.level2.date).toEqual([new Date('2023-06-19T12:12:34.567Z')])
+        expect(converted.level1.date).toBeInstanceOf(Date)
+        expect((converted.level1.date as any).toISOString()).toEqual(
+            '2023-06-18T12:12:34.567Z'
+        )
+        expect(converted.level1.level2.date).toEqual([new Date('2023-06-19T12:12:34.567Z')])
     })
 
     // 날짜 형식이 아닌 문자열은 그대로 둔다
     test('ignores strings that are not in date format', () => {
-        const obj = jsonToObject({ text: 'Hello, world!' })
-        expect(obj.text).toEqual('Hello, world!')
+        const converted = jsonToObject({ text: 'Hello, world!' })
+        expect(converted.text).toEqual('Hello, world!')
     })
 
     // 문자열이 아닌 타입은 변환하지 않는다
     test('does not convert non-string types', () => {
-        const obj = jsonToObject({ number: 123, boolean: true })
+        const converted = jsonToObject({ number: 123, boolean: true })
 
-        expect(obj.number).toEqual(123)
-        expect(obj.boolean).toBe(true)
+        expect(converted.number).toEqual(123)
+        expect(converted.boolean).toBe(true)
     })
 })
 

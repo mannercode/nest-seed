@@ -141,16 +141,16 @@ describe('Path', () => {
 
     // basename을 반환한다
     test('returns the basename', () => {
-        const path = 'dir/file.txt'
-        const basename = Path.basename(path)
+        const filePath = 'dir/file.txt'
+        const basename = Path.basename(filePath)
 
         expect(basename).toEqual('file.txt')
     })
 
     // dirname을 반환한다
     test('returns the dirname', () => {
-        const path = 'dir/file.txt'
-        const dirname = Path.dirname(path)
+        const filePath = 'dir/file.txt'
+        const dirname = Path.dirname(filePath)
 
         expect(dirname).toEqual('dir')
     })

@@ -18,44 +18,46 @@ describe('jest.expect examples', () => {
         expect(true).toBe(true)
         expect(true).toEqual(true)
 
-        const obj1 = { a: 1, b: 2 }
-        const obj2 = { a: 1, b: 2 }
-        expect(obj1).toEqual(obj2)
-        expect(obj1).not.toBe(obj2)
+        const firstObject = { a: 1, b: 2 }
+        const secondObject = { a: 1, b: 2 }
+        expect(firstObject).toEqual(secondObject)
+        expect(firstObject).not.toBe(secondObject)
 
-        const arr1 = [1, 2, 3]
-        const arr2 = [1, 2, 3]
-        expect(arr1).toEqual(arr2)
-        expect(arr1).not.toBe(arr2)
+        const firstArray = [1, 2, 3]
+        const secondArray = [1, 2, 3]
+        expect(firstArray).toEqual(secondArray)
+        expect(firstArray).not.toBe(secondArray)
     })
 
     // 객체 배열 비교
     test('compare array of objects', () => {
-        const array1 = [
+        const actualObjects = [
             { id: 1, name: 'A' },
             { id: 2, name: 'B' }
         ]
-        const array2 = [
+        const expectedObjects = [
             { id: 2, name: 'B' },
             { id: 1, name: 'A' }
         ]
 
-        expect(array1).toEqual(expect.arrayContaining(array2))
+        expect(actualObjects).toEqual(expect.arrayContaining(expectedObjects))
     })
 
     // 부분 객체 배열 비교
     test('compare partial array of objects', () => {
-        const array1 = [
+        const fullObjects = [
             { id: 1, name: 'A', extra: 'info' },
             { id: 2, name: 'B', extra: 'data' }
         ]
-        const array2 = [
+        const partialObjects = [
             { id: 2, name: 'B' },
             { id: 1, name: 'A' }
         ]
 
-        expect(array1).toEqual(
-            expect.arrayContaining(array2.map((obj) => expect.objectContaining(obj)))
+        expect(fullObjects).toEqual(
+            expect.arrayContaining(
+                partialObjects.map((partial) => expect.objectContaining(partial))
+            )
         )
     })
 })
