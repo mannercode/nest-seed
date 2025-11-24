@@ -18,7 +18,7 @@ describe('PurchaseService', () => {
 
     describe('POST /purchases', () => {
         // payload가 유효한 경우
-        describe('when the payload is valid', () => {
+        describe('when payload is valid', () => {
             let createDto: CreatePurchaseDto
             let createdPurchase: PurchaseRecordDto
 
@@ -41,15 +41,15 @@ describe('PurchaseService', () => {
                 })
             })
 
-            // 연관된 결제 기록을 생성한다
-            it('creates a corresponding payment record', async () => {
+            // 결제 기록을 생성한다
+            it('creates the payment record', async () => {
                 const payments = await getPayments(fix, [createdPurchase.paymentId])
 
                 expect(payments[0].amount).toEqual(createdPurchase.totalPrice)
             })
 
-            // 구매한 티켓의 상태를 `Sold`으로 변경한다
-            it('changes the status of purchased tickets to `Sold`', async () => {
+            // 구매한 티켓 상태를 `Sold`로 표시한다
+            it('marks purchased tickets as `Sold`', async () => {
                 const soldTickets = await getTickets(fix, pickIds(fix.heldTickets))
 
                 expect(soldTickets.map((ticket) => ticket.status)).toEqual(
@@ -57,8 +57,8 @@ describe('PurchaseService', () => {
                 )
             })
 
-            // 구매하지 않은 티켓의 상태는 그대로 유지한다
-            it('does not change the status of unpurchased tickets', async () => {
+            // 구매하지 않은 티켓 상태는 그대로 유지한다
+            it('keeps unpurchased tickets unchanged', async () => {
                 const remainingTickets = await getTickets(fix, pickIds(fix.availableTickets))
 
                 expect(remainingTickets.map((ticket) => ticket.status)).toEqual(
@@ -68,7 +68,7 @@ describe('PurchaseService', () => {
         })
 
         // 최대 구매 수량을 초과한 경우
-        describe('when the number of tickets exceeds the maximum', () => {
+        describe('when ticket count exceeds the maximum', () => {
             beforeEach(async () => {
                 const { Rules } = await import('shared')
                 Rules.Ticket.maxTicketsPerPurchase = fix.heldTickets.length - 1
@@ -89,7 +89,7 @@ describe('PurchaseService', () => {
         })
 
         // 구매 가능 시간이 지난 경우
-        describe('when the purchase window is closed', () => {
+        describe('when purchase window is closed', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 const createDto = buildCreatePurchaseDto(
@@ -126,7 +126,7 @@ describe('PurchaseService', () => {
         })
 
         // 구매 처리 중 내부 오류가 발생하는 경우
-        describe('when an internal error occurs during purchase', () => {
+        describe('when an internal error occurs', () => {
             let rollbackPurchaseSpy: jest.SpyInstance
 
             beforeEach(async () => {
@@ -144,7 +144,7 @@ describe('PurchaseService', () => {
             })
 
             // 500 Internal Server Error를 반환하고 구매를 롤백한다
-            it('returns 500 Internal Server Error and rolls back the purchase', async () => {
+            it('returns 500 and rolls back the purchase', async () => {
                 const createDto = buildCreatePurchaseDto(fix.customer, fix.heldTickets)
 
                 await fix.httpClient.post('/purchases').body(createDto).internalServerError()

@@ -18,7 +18,7 @@ describe('ShowtimesService', () => {
 
     describe('createShowtimes', () => {
         // payload가 유효한 경우
-        describe('when the payload is valid', () => {
+        describe('when payload is valid', () => {
             // 상영시간을 생성하고 결과를 반환한다
             it('creates showtimes and returns the result', async () => {
                 const createDtos = [buildCreateShowtimeDto({ transactionId: oid(0x1) })]
@@ -32,7 +32,7 @@ describe('ShowtimesService', () => {
 
     describe('getShowtimes', () => {
         // 상영시간이 존재하는 경우
-        describe('when the showtimes exist', () => {
+        describe('when showtimes exist', () => {
             let showtimes: ShowtimeDto[]
 
             beforeEach(async () => {
@@ -55,7 +55,7 @@ describe('ShowtimesService', () => {
         })
 
         // 상영시간이 존재하지 않는 경우
-        describe('when the showtimes do not exist', () => {
+        describe('when showtimes do not exist', () => {
             // 404 status를 던진다
             it('throws 404 status', async () => {
                 const promise = fix.showtimesService.getShowtimes([nullObjectId])
@@ -91,7 +91,7 @@ describe('ShowtimesService', () => {
         // `transactionIds`가 제공된 경우
         describe('when `transactionIds` are provided', () => {
             // 지정한 transactionIds와 일치하는 상영시간 목록을 반환한다.
-            it('returns the showtimes matching the given transactionIds', async () => {
+            it('returns showtimes for the transactionIds', async () => {
                 const showtimes = await fix.showtimesService.searchShowtimes({
                     transactionIds: [transactionId]
                 })
@@ -103,7 +103,7 @@ describe('ShowtimesService', () => {
         // `movieIds`가 제공된 경우
         describe('when `movieIds` are provided', () => {
             // 지정한 movieIds와 일치하는 상영시간 목록을 반환한다.
-            it('returns the showtimes matching the given movieIds', async () => {
+            it('returns showtimes for the movieIds', async () => {
                 const showtimes = await fix.showtimesService.searchShowtimes({
                     movieIds: [movieId]
                 })
@@ -115,7 +115,7 @@ describe('ShowtimesService', () => {
         // `theaterIds`가 제공된 경우
         describe('when `theaterIds` are provided', () => {
             // 지정한 theaterIds와 일치하는 상영시간 목록을 반환한다.
-            it('returns the showtimes matching the given theaterIds', async () => {
+            it('returns showtimes for the theaterIds', async () => {
                 const showtimes = await fix.showtimesService.searchShowtimes({
                     theaterIds: [theaterId]
                 })
@@ -127,7 +127,7 @@ describe('ShowtimesService', () => {
         // `startTimeRange`가 제공된 경우
         describe('when `startTimeRange` is provided', () => {
             // startTimeRange에 포함되는 상영시간 목록을 반환한다.
-            it('returns the showtimes within the given startTimeRange', async () => {
+            it('returns showtimes in the startTimeRange', async () => {
                 const startTimeRange = {
                     start: new Date('2020-01-01T00:00'),
                     end: new Date('2020-01-02T12:00')
@@ -142,9 +142,9 @@ describe('ShowtimesService', () => {
         })
 
         // 필터가 비어있는 경우
-        describe('when the filter is empty', () => {
+        describe('when filter is empty', () => {
             // 400 status를 던진다
-            it('throws 404 status', async () => {
+            it('throws 400 status', async () => {
                 const promise = fix.showtimesService.searchShowtimes({})
 
                 await expect(promise).rejects.toMatchObject({
@@ -172,7 +172,7 @@ describe('ShowtimesService', () => {
             })
 
             // startTimeRange에 포함되는 영화 ID 목록을 반환한다
-            it('returns the movie IDs within the given startTimeRange', async () => {
+            it('returns movie IDs in the startTimeRange', async () => {
                 const movieIds = await fix.showtimesService.searchMovieIds({
                     startTimeRange: { start: new Date() }
                 })
@@ -198,7 +198,7 @@ describe('ShowtimesService', () => {
             })
 
             // movieIds를 상영하는 극장의 ID 목록을 반환한다
-            it('returns the theater IDs for the given movieIds', async () => {
+            it('returns theater IDs for the movieIds', async () => {
                 const theaterIds = await fix.showtimesService.searchTheaterIds({
                     movieIds: [movieId]
                 })
@@ -225,7 +225,7 @@ describe('ShowtimesService', () => {
             })
 
             // theaterIds에서 상영하는 movieIds의 상영일 목록을 반환한다.
-            it('returns the showdates for the given movieIds and theaterIds', async () => {
+            it('returns showdates for the movieIds and theaterIds', async () => {
                 const showdates = await fix.showtimesService.searchShowdates({
                     movieIds: [movieId],
                     theaterIds: [theaterId]

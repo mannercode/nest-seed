@@ -18,7 +18,7 @@ describe('TicketsService', () => {
 
     describe('createTickets', () => {
         // payload가 유효한 경우
-        describe('when the payload is valid', () => {
+        describe('when payload is valid', () => {
             // 티켓을 생성하고 결과를 반환한다
             it('creates and returns tickets', async () => {
                 const createDtos = [buildCreateTicketDto({ transactionId: oid(0x1) })]
@@ -46,7 +46,7 @@ describe('TicketsService', () => {
         // `transactionIds`가 제공된 경우
         describe('when `transactionIds` are provided', () => {
             // 지정한 transactionIds와 일치하는 티켓 목록을 반환한다.
-            it('returns the tickets matching the given transactionIds', async () => {
+            it('returns tickets for the transactionIds', async () => {
                 const tickets = await fix.ticketsService.searchTickets({
                     transactionIds: [transactionId]
                 })
@@ -58,7 +58,7 @@ describe('TicketsService', () => {
         // `movieIds`가 제공된 경우
         describe('when `movieIds` are provided', () => {
             // 지정한 movieIds와 일치하는 티켓 목록을 반환한다.
-            it('returns the tickets matching the given movieIds', async () => {
+            it('returns tickets for the movieIds', async () => {
                 const tickets = await fix.ticketsService.searchTickets({ movieIds: [movieId] })
 
                 expect(tickets).toEqual([createdTickets[1]])
@@ -68,7 +68,7 @@ describe('TicketsService', () => {
         // `theaterIds`가 제공된 경우
         describe('when `theaterIds` are provided', () => {
             // 지정한 theaterIds와 일치하는 티켓 목록을 반환한다.
-            it('returns the tickets matching the given theaterIds', async () => {
+            it('returns tickets for the theaterIds', async () => {
                 const tickets = await fix.ticketsService.searchTickets({ theaterIds: [theaterId] })
 
                 expect(tickets).toEqual([createdTickets[2]])
@@ -78,7 +78,7 @@ describe('TicketsService', () => {
         // `showtimeIds`가 제공된 경우
         describe('when `showtimeIds` are provided', () => {
             // 지정한 showtimeIds와 일치하는 티켓 목록을 반환한다.
-            it('returns the tickets matching the given showtimeIds', async () => {
+            it('returns tickets for the showtimeIds', async () => {
                 const tickets = await fix.ticketsService.searchTickets({
                     showtimeIds: [showtimeId]
                 })
@@ -88,9 +88,9 @@ describe('TicketsService', () => {
         })
 
         // 필터가 비어있는 경우
-        describe('when the filter is empty', () => {
+        describe('when filter is empty', () => {
             // 400 status를 던진다
-            it('throws 404 status', async () => {
+            it('throws 400 status', async () => {
                 const promise = fix.ticketsService.searchTickets({})
 
                 await expect(promise).rejects.toMatchObject({
@@ -113,9 +113,9 @@ describe('TicketsService', () => {
         })
 
         // 티켓이 존재하는 경우
-        describe('when the tickets exist', () => {
+        describe('when tickets exist', () => {
             // 티켓의 상태를 변경하고 변경된 티켓을 반환한다
-            it('updates the tickets’ status and returns the updated tickets', async () => {
+            it('updates ticket status and returns the tickets', async () => {
                 const updatedTickets = await fix.ticketsService.updateTicketsStatus(
                     pickIds(createdTickets),
                     TicketStatus.Sold
@@ -149,7 +149,7 @@ describe('TicketsService', () => {
             })
 
             // 지정한 showtimeIds에 대한 판매 통계를 반환한다
-            it('returns the sales statistics for the given showtimeIds', async () => {
+            it('returns sales stats for the showtimeIds', async () => {
                 const ticketSales = await fix.ticketsService.aggregateTicketSales({
                     showtimeIds: [showtimeId]
                 })

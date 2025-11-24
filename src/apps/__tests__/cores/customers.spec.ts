@@ -18,7 +18,7 @@ describe('CustomersService', () => {
 
     describe('POST /customers', () => {
         // payload가 유효한 경우
-        describe('when the payload is valid', () => {
+        describe('when payload is valid', () => {
             // 고객을 생성하고 반환한다
             it('creates and returns a customer', async () => {
                 const createDto = buildCreateCustomerDto()
@@ -31,7 +31,7 @@ describe('CustomersService', () => {
         })
 
         // 이메일이 이미 존재하는 경우
-        describe('when the email already exists', () => {
+        describe('when email already exists', () => {
             // 409 Conflict를 반환한다
             it('returns 409 Conflict', async () => {
                 const createDto = buildCreateCustomerDto({ email: fix.createdCustomer.email })
@@ -57,7 +57,7 @@ describe('CustomersService', () => {
 
     describe('GET /customers/:id', () => {
         // 고객이 존재하는 경우
-        describe('when the customer exists', () => {
+        describe('when customer exists', () => {
             // 고객 정보를 반환한다
             it('returns the customer', async () => {
                 await fix.httpClient
@@ -67,7 +67,7 @@ describe('CustomersService', () => {
         })
 
         // 고객이 존재하지 않는 경우
-        describe('when the customer does not exist', () => {
+        describe('when customer does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
@@ -82,7 +82,7 @@ describe('CustomersService', () => {
 
     describe('PATCH /customers/:id', () => {
         // payload가 유효한 경우
-        describe('when the payload is valid', () => {
+        describe('when payload is valid', () => {
             // 고객 정보를 수정하고 반환한다
             it('updates and returns the customer', async () => {
                 const updateDto = {
@@ -102,7 +102,7 @@ describe('CustomersService', () => {
         })
 
         // payload가 비어있는 경우
-        describe('when the payload is empty', () => {
+        describe('when payload is empty', () => {
             // 원래 고객 정보를 반환한다
             it('returns the original customer', async () => {
                 await fix.httpClient
@@ -113,7 +113,7 @@ describe('CustomersService', () => {
         })
 
         // 고객이 존재하지 않는 경우
-        describe('when the customer does not exist', () => {
+        describe('when customer does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
@@ -126,7 +126,7 @@ describe('CustomersService', () => {
 
     describe('DELETE /customers/:id', () => {
         // 고객이 존재하는 경우
-        describe('when the customer exists', () => {
+        describe('when customer exists', () => {
             // 고객을 삭제한다
             it('deletes the customer', async () => {
                 await fix.httpClient
@@ -138,7 +138,7 @@ describe('CustomersService', () => {
         })
 
         // 고객이 존재하지 않는 경우
-        describe('when the customer does not exist', () => {
+        describe('when customer does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
@@ -193,7 +193,7 @@ describe('CustomersService', () => {
         })
 
         // `name` 부분 문자열이 제공된 경우
-        describe('when a partial `name` is provided', () => {
+        describe('when partial `name` is provided', () => {
             // 이름이 해당 부분 문자열을 포함하는 고객을 반환한다
             it('returns customers whose name contains the given substring', async () => {
                 await fix.httpClient
@@ -208,7 +208,7 @@ describe('CustomersService', () => {
         })
 
         // `email` 부분 문자열이 제공된 경우
-        describe('when a partial `email` is provided', () => {
+        describe('when partial `email` is provided', () => {
             // 이메일이 해당 부분 문자열을 포함하는 고객을 반환한다
             it('returns customers whose email contains the given substring', async () => {
                 await fix.httpClient

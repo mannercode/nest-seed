@@ -16,7 +16,7 @@ describe('PaymentsService', () => {
 
     describe('createPayment', () => {
         // payload가 유효한 경우
-        describe('when the payload is valid', () => {
+        describe('when payload is valid', () => {
             // 결제를 생성하고 반환한다
             it('creates and returns a payment', async () => {
                 const createDto = buildCreatePaymentDto()
@@ -36,7 +36,7 @@ describe('PaymentsService', () => {
         let createdPayment: PaymentDto
 
         // 결제 정보가 존재하는 경우
-        describe('when the payments exist', () => {
+        describe('when payments exist', () => {
             beforeEach(async () => {
                 createdPayment = await createPayment(fix)
             })

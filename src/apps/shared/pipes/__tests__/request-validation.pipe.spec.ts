@@ -17,19 +17,19 @@ describe('RequestValidationPipe', () => {
 
     describe('object', () => {
         // 페이로드가 유효하면 검증을 통과한다
-        it('passes validation when the payload is valid', async () => {
+        it('passes validation when payload is valid', async () => {
             await client.post('/').body({ sampleId: 'id', date: nullDate }).created()
         })
 
         // 잘못된/알 수 없는 필드가 포함되면 400 Bad Request를 반환한다
-        it('returns 400 Bad Request when the payload contains invalid or unknown fields', async () => {
+        it('returns 400 Bad Request for invalid or unknown fields', async () => {
             await client.post('/').body({ wrong: 'id' }).badRequest()
         })
     })
 
     describe('array', () => {
         // 배열이 유효하면 검증을 통과한다
-        it('passes validation when the array payload is valid', async () => {
+        it('passes validation when array payload is valid', async () => {
             await client
                 .post('/array')
                 .body([{ sampleId: 'id', date: nullDate }])
@@ -37,7 +37,7 @@ describe('RequestValidationPipe', () => {
         })
 
         // 배열 항목 중 하나라도 유효하지 않으면 400 Bad Request를 반환한다
-        it('returns 400 Bad Request when any array item is invalid', async () => {
+        it('returns 400 Bad Request when any item is invalid', async () => {
             await client
                 .post('/array')
                 .body([{ sampleId: 'id', date: 'wrong' }])
@@ -47,7 +47,7 @@ describe('RequestValidationPipe', () => {
 
     describe('nested array', () => {
         // 중첩 배열이 유효하면 검증을 통과한다
-        it('passes validation when the nested array payload is valid', async () => {
+        it('passes validation when nested array payload is valid', async () => {
             await client
                 .post('/nested')
                 .body({ samples: [{ sampleId: 'id', date: nullDate }] })
@@ -55,7 +55,7 @@ describe('RequestValidationPipe', () => {
         })
 
         // 중첩 배열 항목 중 하나라도 유효하지 않으면 400 Bad Request를 반환한다
-        it('returns 400 Bad Request when any nested array item is invalid', async () => {
+        it('returns 400 Bad Request when any nested item is invalid', async () => {
             await client
                 .post('/nested')
                 .body({ samples: [{ sampleId: 'id', date: 'wrong' }] })

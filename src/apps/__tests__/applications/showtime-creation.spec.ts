@@ -59,9 +59,9 @@ describe('ShowtimeCreationService', () => {
         })
 
         // `theaterIds`가 제공된 경우
-        describe('when `theaterIds` is provided', () => {
+        describe('when `theaterIds` are provided', () => {
             // 지정한 theaterIds와 일치하는 상영시간 목록을 반환한다
-            it('returns showtimes matching the given theaterIds', async () => {
+            it('returns showtimes for the theaterIds', async () => {
                 await fix.httpClient
                     .post('/showtime-creation/showtimes:search')
                     .body({ theaterIds: [fix.theater.id] })
@@ -72,7 +72,7 @@ describe('ShowtimeCreationService', () => {
 
     describe('POST /showtime-creation/showtimes', () => {
         // payload가 유효한 경우
-        describe('when the payload is valid', () => {
+        describe('when payload is valid', () => {
             let createDto: BulkCreateShowtimesDto
             let transactionId: string
             let result: unknown
@@ -118,9 +118,9 @@ describe('ShowtimeCreationService', () => {
         })
 
         // 영화가 존재하지 않는 경우
-        describe('when the movie does not exist', () => {
-            // 존재하지 않는 영화에 대해 에러를 반환한다
-            it('reports an error for the missing movie', async () => {
+        describe('when movie does not exist', () => {
+            // 존재하지 않는 영화 오류를 보고한다
+            it('reports the missing movie error', async () => {
                 const waitPromise = waitForCompletion(fix, 'error')
 
                 const createDto = buildBulkCreateShowtimesDto({
@@ -142,9 +142,9 @@ describe('ShowtimeCreationService', () => {
         })
 
         // 극장이 존재하지 않는 경우
-        describe('when any theater does not exist', () => {
-            // 존재하지 않는 극장에 대해 에러를 반환한다
-            it('reports an error for the missing theater', async () => {
+        describe('when a theater does not exist', () => {
+            // 존재하지 않는 극장 오류를 보고한다
+            it('reports the missing theater error', async () => {
                 const waitPromise = waitForCompletion(fix, 'error')
 
                 const createDto = buildBulkCreateShowtimesDto({

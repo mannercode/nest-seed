@@ -9,7 +9,7 @@ describe('CustomerAuthenticationService', () => {
 
     describe('hash', () => {
         // 비밀번호의 해시 값을 반환한다
-        it('returns the hashed password', async () => {
+        it('returns hashed password', async () => {
             const hashedPassword = await service.hash('password')
 
             expect(hashedPassword).not.toEqual('password')
@@ -32,14 +32,14 @@ describe('CustomerAuthenticationService', () => {
         })
 
         // 비밀번호가 일치하는 경우 true를 반환한다
-        it('returns true when the password matches', async () => {
+        it('returns true when password matches', async () => {
             const isMatch = await service.validate('password', hashedPassword)
 
             expect(isMatch).toBe(true)
         })
 
         // 비밀번호가 일치하지 않는 경우 false를 반환한다
-        it('returns false when the password does not match', async () => {
+        it('returns false when password does not match', async () => {
             const isMatch = await service.validate('wrongpassword', hashedPassword)
 
             expect(isMatch).toBe(false)

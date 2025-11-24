@@ -18,7 +18,7 @@ describe('MovieRecommender', () => {
         // 사용자의 관람 이력이 존재하지 않는 경우
         describe('when the watch history does not exist', () => {
             // 개봉일 순으로 정렬된 영화 목록을 반환한다
-            it('returns the movies sorted by releaseDate', () => {
+            it('returns movies sorted by releaseDate', () => {
                 const showingMovies = [
                     createDto('1', [MovieGenre.Action], new Date('2023-09-01')),
                     createDto('2', [MovieGenre.Drama], new Date('2023-10-01')),
@@ -34,7 +34,7 @@ describe('MovieRecommender', () => {
         // 사용자의 관람 이력이 존재하는 경우
         describe('when the watch history exists', () => {
             // 선호 장르 순으로 정렬된 영화 목록을 반환한다
-            it('returns the movies sorted by preferred genres', () => {
+            it('returns movies sorted by preferred genres', () => {
                 const showingMovies = [
                     createDto('1', [MovieGenre.Action], new Date('2023-09-01')),
                     createDto('2', [MovieGenre.Drama], new Date('2023-10-01')),
@@ -53,7 +53,7 @@ describe('MovieRecommender', () => {
             })
 
             // 이미 본 영화는 목록에서 제외하고 반환한다
-            it('returns the movies excluding already-watched ones', () => {
+            it('returns movies excluding already-watched ones', () => {
                 const showingMovies = [
                     createDto('1', [MovieGenre.Action], new Date('2023-09-01')),
                     createDto('2', [MovieGenre.Drama], new Date('2023-10-01')),

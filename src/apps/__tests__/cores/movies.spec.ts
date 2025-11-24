@@ -18,7 +18,7 @@ describe('MoviesService', () => {
 
     describe('POST /movies', () => {
         // payload가 유효한 경우
-        describe('when the payload is valid', () => {
+        describe('when payload is valid', () => {
             let createDto: CreateMovieDto
             let createdMovie: MovieDto
 
@@ -66,7 +66,7 @@ describe('MoviesService', () => {
 
     describe('GET /movies/:id', () => {
         // 영화가 존재하는 경우
-        describe('when the movie exists', () => {
+        describe('when movie exists', () => {
             // 영화를 반환한다
             it('returns the movie', async () => {
                 await fix.httpClient.get(`/movies/${fix.createdMovie.id}`).ok(fix.createdMovie)
@@ -74,7 +74,7 @@ describe('MoviesService', () => {
         })
 
         // 영화가 존재하지 않는 경우
-        describe('when the movie does not exist', () => {
+        describe('when movie does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
@@ -89,7 +89,7 @@ describe('MoviesService', () => {
 
     describe('PATCH /movies/:id', () => {
         // payload가 유효한 경우
-        describe('when the payload is valid', () => {
+        describe('when payload is valid', () => {
             // 영화 정보를 수정하고 반환한다
             it('updates and returns the movie', async () => {
                 const updateDto = {
@@ -113,7 +113,7 @@ describe('MoviesService', () => {
         })
 
         // payload가 비어있는 경우
-        describe('when the payload is empty', () => {
+        describe('when payload is empty', () => {
             // 원래 영화 정보를 반환한다
             it('returns the original movie', async () => {
                 await fix.httpClient
@@ -124,7 +124,7 @@ describe('MoviesService', () => {
         })
 
         // 영화가 존재하지 않는 경우
-        describe('when the movie does not exist', () => {
+        describe('when movie does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
@@ -137,7 +137,7 @@ describe('MoviesService', () => {
 
     describe('DELETE /movies/:id', () => {
         // 영화가 존재하는 경우
-        describe('when the movie exists', () => {
+        describe('when movie exists', () => {
             beforeEach(async () => {
                 await fix.httpClient
                     .delete(`/movies/${fix.createdMovie.id}`)
@@ -155,7 +155,7 @@ describe('MoviesService', () => {
             })
 
             // 영화와 관련된 파일을 삭제한다
-            it('deletes the movie’s files', async () => {
+            it("deletes the movie's files", async () => {
                 const fileUrl = fix.createdMovie.imageUrls[0]
 
                 await fix.httpClient
@@ -168,7 +168,7 @@ describe('MoviesService', () => {
         })
 
         // 영화가 존재하지 않는 경우
-        describe('when the movie does not exist', () => {
+        describe('when movie does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
@@ -250,7 +250,7 @@ describe('MoviesService', () => {
         })
 
         // `title` 부분 문자열이 제공된 경우
-        describe('when a partial `title` is provided', () => {
+        describe('when partial `title` is provided', () => {
             // 제목이 해당 부분 문자열을 포함하는 영화를 반환한다
             it('returns movies whose title contains the given substring', async () => {
                 await fix.httpClient
@@ -295,7 +295,7 @@ describe('MoviesService', () => {
         })
 
         // `plot` 부분 문자열이 제공된 경우
-        describe('when a partial `plot` is provided', () => {
+        describe('when partial `plot` is provided', () => {
             // 줄거리에 해당 부분 문자열을 포함하는 영화를 반환한다
             it('returns movies whose plot contains the given substring', async () => {
                 await fix.httpClient
@@ -310,9 +310,9 @@ describe('MoviesService', () => {
         })
 
         // `director` 부분 문자열이 제공된 경우
-        describe('when a partial `director` is provided', () => {
+        describe('when partial `director` is provided', () => {
             // 감독 이름에 해당 부분 문자열이 포함된 영화를 반환한다
-            it('returns movies whose director`s name contains the given substring', async () => {
+            it("returns movies whose director's name includes the substring", async () => {
                 await fix.httpClient
                     .get('/movies')
                     .query({ director: 'James' })
