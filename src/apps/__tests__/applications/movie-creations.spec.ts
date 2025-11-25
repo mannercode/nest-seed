@@ -1,6 +1,8 @@
+import { nullObjectId } from 'testlib'
+import { Errors } from '../__helpers__'
 import type { Fixture } from './movie-creations.fixture'
 
-describe.skip('MovieCreationsService', () => {
+describe('MovieCreationsService', () => {
     let fixture: Fixture
 
     beforeEach(async () => {
@@ -16,21 +18,36 @@ describe.skip('MovieCreationsService', () => {
         // 요청이 유효한 경우
         describe('when request is valid', () => {
             // movie-creation을 생성하고 반환한다
-            it('creates and returns a movie-creation', () => {})
+            it('creates and returns a movie-creation', async () => {
+                await fixture.httpClient
+                    .post('/movie-creations')
+                    .created({ id: expect.any(String) })
+            })
         })
     })
 
     describe('GET /movie-creations/:id', () => {
         // movie-creation이 존재하는 경우
-        describe('when the movie-creation exists', () => {
+        describe('when movie-creation exists', () => {
             // movie-creation을 반환한다
-            it('returns the movie-creation', () => {})
+            it('returns the movie-creation', async () => {
+                await fixture.httpClient
+                    .get(`/movie-creations/${fixture.createdMovieCreation.id}`)
+                    .ok(fixture.createdMovieCreation)
+            })
         })
 
         // movie-creation이 존재하지 않는 경우
-        describe('when the movie-creation does not exist', () => {
+        describe('when movie-creation does not exist', () => {
             // 404 Not Found를 반환한다
-            it('returns 404 Not Found', () => {})
+            it('returns 404 Not Found', async () => {
+                await fixture.httpClient
+                    .get(`/movie-creations/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
+            })
         })
     })
 
@@ -38,19 +55,38 @@ describe.skip('MovieCreationsService', () => {
         // payload가 유효한 경우
         describe('when payload is valid', () => {
             // movie-creation을 수정하고 반환한다
-            it('updates and returns the movie-creation', async () => {})
-        })
+            it('updates and returns the movie-creation', async () => {
+                const updateDto = {
+                    title: 'update title',
+                    genres: ['romance', 'thriller'],
+                    releaseDate: new Date('2000-01-01'),
+                    plot: 'new plot',
+                    durationInSeconds: 10 * 60,
+                    director: 'Steven Spielberg',
+                    rating: 'R'
+                }
+                const expected = { ...fixture.createdMovieCreation, ...updateDto }
 
-        // 페이로드가 유효하지 않은 경우
-        describe('when the payload is invalid', () => {
-            // 400 Bad Request를 반환한다
-            it('returns 400 Bad Request', () => {})
+                await fixture.httpClient
+                    .patch(`/movie-creations/${fixture.createdMovieCreation.id}`)
+                    .body(updateDto)
+                    .ok(expected)
+
+                await fixture.httpClient
+                    .get(`/movie-creations/${fixture.createdMovieCreation.id}`)
+                    .ok(expected)
+            })
         })
 
         // movie-creation이 존재하지 않는 경우
         describe('when movie-creation does not exist', () => {
             // 404 Not Found를 반환한다
-            it('returns 404 Not Found', () => {})
+            it('returns 404 Not Found', async () => {
+                await fixture.httpClient
+                    .patch(`/movie-creations/${nullObjectId}`)
+                    .body({})
+                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
+            })
         })
     })
 
@@ -114,7 +150,7 @@ describe.skip('MovieCreationsService', () => {
         })
     })
 
-    describe('DELETE /movie-creations/:id/images/:imageId', () => {
+    describe('DELETE /movie-creations/:creationId/images/:imageId', () => {
         // movie-creation과 image가 모두 존재하는 경우
         describe('when the movie-creation and image both exist', () => {
             // image를 삭제하고 204 No Content를 반환한다

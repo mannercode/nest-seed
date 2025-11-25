@@ -14,7 +14,7 @@ import {
 
 export interface Fixture extends TestFixture {
     image: FixtureFile
-    createdMovie: MovieDto
+    createdMovieCreation: MovieDto
     tempDir: string
 }
 
@@ -27,12 +27,12 @@ export const createFixture = async () => {
 
     const tempDir = await Path.createTempDirectory()
 
-    const createdMovie = await createMovie(fix)
+    const createdMovieCreation = await createMovie(fix)
 
     const teardown = async () => {
         await fix.teardown()
         await Path.delete(tempDir)
     }
 
-    return { ...fix, teardown, image: fixtureFiles.image, createdMovie, tempDir }
+    return { ...fix, teardown, image: fixtureFiles.image, createdMovieCreation, tempDir }
 }

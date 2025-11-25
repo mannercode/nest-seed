@@ -31,11 +31,13 @@ export const Messages = createMessagePatternMap(
             allShowtimesExist: null
         },
         Purchases: { createPurchaseRecord: null, getPurchases: null },
+        MovieDrafts: {
+            create: null,
+            update: null,
+            get: null,
+            delete: null
+        },
         Movies: {
-            createMovieDraft: null,
-            presignMovieAsset: null,
-            finalizeMovieAsset: null,
-            finalizeMovieDraft: null,
             createMovie: null,
             updateMovie: null,
             getMovies: null,
