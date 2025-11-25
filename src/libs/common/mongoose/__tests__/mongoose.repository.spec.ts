@@ -227,7 +227,7 @@ describe('MongooseRepository', () => {
         })
     })
 
-    describe('existByIds', () => {
+    describe('allExistByIds', () => {
         let samples: SampleDto[]
 
         beforeEach(async () => {
@@ -239,7 +239,7 @@ describe('MongooseRepository', () => {
         describe('when all ids exist', () => {
             // true를 반환한다
             it('returns true', async () => {
-                const exists = await fixture.repository.existByIds(pickIds(samples))
+                const exists = await fixture.repository.allExistByIds(pickIds(samples))
                 expect(exists).toBe(true)
             })
         })
@@ -248,7 +248,7 @@ describe('MongooseRepository', () => {
         describe('when any id does not exist', () => {
             // false를 반환한다
             it('returns false', async () => {
-                const exists = await fixture.repository.existByIds([nullObjectId])
+                const exists = await fixture.repository.allExistByIds([nullObjectId])
                 expect(exists).toBe(false)
             })
         })

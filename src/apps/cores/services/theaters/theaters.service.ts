@@ -38,8 +38,8 @@ export class TheatersService {
         return { ...pagination, items: this.toDtos(items) }
     }
 
-    async exists(theaterIds: string[]) {
-        return this.repository.existByIds(theaterIds)
+    async allExist(theaterIds: string[]) {
+        return this.repository.allExistByIds(theaterIds)
     }
 
     private toDto = (theater: TheaterDocument) =>

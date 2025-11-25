@@ -68,7 +68,7 @@ export class BookingService {
     }
 
     async getTickets(showtimeId: string) {
-        const showtimeExists = await this.showtimesService.exists([showtimeId])
+        const showtimeExists = await this.showtimesService.allExistByIds([showtimeId])
 
         if (!showtimeExists) {
             throw new NotFoundException({ ...BookingServiceErrors.ShowtimeNotFound, showtimeId })

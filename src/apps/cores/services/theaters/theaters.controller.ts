@@ -36,8 +36,8 @@ export class TheatersController {
         return this.service.searchPage(searchDto)
     }
 
-    @MessagePattern(Messages.Theaters.exists)
+    @MessagePattern(Messages.Theaters.allExist)
     exists(@Payload() theaterIds: string[]) {
-        return this.service.exists(theaterIds)
+        return this.service.allExist(theaterIds)
     }
 }

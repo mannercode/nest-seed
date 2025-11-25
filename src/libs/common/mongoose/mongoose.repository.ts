@@ -109,7 +109,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return docs
     }
 
-    async existByIds(ids: string[], session: SessionArg = undefined) {
+    async allExistByIds(ids: string[], session: SessionArg = undefined) {
         const count = await this.model.countDocuments({ _id: { $in: objectIds(ids) } } as any, {
             session
         })

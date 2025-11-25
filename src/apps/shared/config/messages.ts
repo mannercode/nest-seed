@@ -19,7 +19,7 @@ export const Messages = createMessagePatternMap(
             getMany: null,
             deleteMany: null,
             searchPage: null,
-            exists: null
+            allExist: null
         },
         Showtimes: {
             createMany: null,
@@ -28,7 +28,7 @@ export const Messages = createMessagePatternMap(
             searchMovieIds: null,
             searchTheaterIds: null,
             searchShowdates: null,
-            exists: null
+            allExist: null
         },
         Purchases: { create: null, getMany: null },
         MovieDrafts: { create: null, update: null, get: null, delete: null },
@@ -38,7 +38,7 @@ export const Messages = createMessagePatternMap(
             getMany: null,
             deleteMany: null,
             searchPage: null,
-            exists: null
+            allExist: null
         },
         Customers: {
             create: null,

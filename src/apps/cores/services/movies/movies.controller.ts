@@ -33,8 +33,8 @@ export class MoviesController {
         return this.service.searchPage(searchDto)
     }
 
-    @MessagePattern(Messages.Movies.exists)
+    @MessagePattern(Messages.Movies.allExist)
     exists(@Payload() movieIds: string[]) {
-        return this.service.exists(movieIds)
+        return this.service.allExist(movieIds)
     }
 }

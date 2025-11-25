@@ -56,8 +56,8 @@ export class MoviesService {
         return { ...pagination, items: this.toDtos(items) }
     }
 
-    async exists(movieIds: string[]): Promise<boolean> {
-        return this.moviesRepository.existByIds(movieIds)
+    async allExist(movieIds: string[]): Promise<boolean> {
+        return this.moviesRepository.allExistByIds(movieIds)
     }
 
     private toDto = (movie: MovieDocument) => {
