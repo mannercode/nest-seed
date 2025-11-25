@@ -54,7 +54,7 @@ describe('DateUtil', () => {
         })
     })
 
-    // TOOD faketimer 사용해서 테스트
+    // TODO faketimer 사용해서 테스트
     describe('now', () => {
         // 현재 날짜/시간을 반환한다
         test('returns now', () => {
