@@ -127,16 +127,16 @@ describe('MoviesService', () => {
     })
 
     describe('DELETE /movies/:id', () => {
-        // 영화가 존재하는 경우
-        describe('when movie exists', () => {
+        // 존재하는 영화를 삭제 요청하면
+        describe('when deleting an existing movie', () => {
             beforeEach(async () => {
                 await fixture.httpClient
                     .delete(`/movies/${fixture.createdMovie.id}`)
                     .ok({ deletedMovies: [fixture.createdMovie] })
             })
 
-            // 영화를 삭제한다
-            it('deletes the movie', async () => {
+            // 영화 문서를 더 이상 조회할 수 없다
+            it('cannot fetch the movie anymore', async () => {
                 await fixture.httpClient
                     .get(`/movies/${fixture.createdMovie.id}`)
                     .notFound({
@@ -145,7 +145,7 @@ describe('MoviesService', () => {
                     })
             })
 
-            // 영화와 관련된 파일을 삭제한다
+            // 영화와 관련된 파일도 삭제된다
             it("deletes the movie's files", async () => {
                 const fileUrl = fixture.createdMovie.imageUrls[0]
 
@@ -158,8 +158,8 @@ describe('MoviesService', () => {
             })
         })
 
-        // 영화가 존재하지 않는 경우
-        describe('when movie does not exist', () => {
+        // 존재하지 않는 영화를 삭제 요청하면
+        describe('when deleting a non-existent movie', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fixture.httpClient
