@@ -60,9 +60,7 @@ export class BookingService {
         })
 
         const showtimeIds = pickIds(showtimes)
-        const ticketSalesForShowtimes = await this.ticketsService.aggregateSales({
-            showtimeIds
-        })
+        const ticketSalesForShowtimes = await this.ticketsService.aggregateSales({ showtimeIds })
 
         const showtimesForBooking = generateShowtimesForBooking(showtimes, ticketSalesForShowtimes)
 

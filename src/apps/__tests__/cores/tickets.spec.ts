@@ -69,9 +69,7 @@ describe('TicketsService', () => {
         describe('when `theaterIds` are provided', () => {
             // 지정한 theaterIds와 일치하는 티켓 목록을 반환한다.
             it('returns tickets for the theaterIds', async () => {
-                const tickets = await fixture.ticketsService.search({
-                    theaterIds: [theaterId]
-                })
+                const tickets = await fixture.ticketsService.search({ theaterIds: [theaterId] })
 
                 expect(tickets).toEqual([createdTickets[2]])
             })
@@ -81,9 +79,7 @@ describe('TicketsService', () => {
         describe('when `showtimeIds` are provided', () => {
             // 지정한 showtimeIds와 일치하는 티켓 목록을 반환한다.
             it('returns tickets for the showtimeIds', async () => {
-                const tickets = await fixture.ticketsService.search({
-                    showtimeIds: [showtimeId]
-                })
+                const tickets = await fixture.ticketsService.search({ showtimeIds: [showtimeId] })
 
                 expect(tickets).toEqual([createdTickets[3]])
             })

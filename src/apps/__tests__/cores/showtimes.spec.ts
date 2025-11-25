@@ -104,9 +104,7 @@ describe('ShowtimesService', () => {
         describe('when `movieIds` are provided', () => {
             // 지정한 movieIds와 일치하는 상영시간 목록을 반환한다.
             it('returns showtimes for the movieIds', async () => {
-                const showtimes = await fixture.showtimesService.search({
-                    movieIds: [movieId]
-                })
+                const showtimes = await fixture.showtimesService.search({ movieIds: [movieId] })
 
                 expect(showtimes).toEqual([createdShowtimes[1]])
             })
@@ -116,9 +114,7 @@ describe('ShowtimesService', () => {
         describe('when `theaterIds` are provided', () => {
             // 지정한 theaterIds와 일치하는 상영시간 목록을 반환한다.
             it('returns showtimes for the theaterIds', async () => {
-                const showtimes = await fixture.showtimesService.search({
-                    theaterIds: [theaterId]
-                })
+                const showtimes = await fixture.showtimesService.search({ theaterIds: [theaterId] })
 
                 expect(showtimes).toEqual([createdShowtimes[2]])
             })

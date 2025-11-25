@@ -17,7 +17,10 @@ export class TicketsController {
     }
 
     @MessagePattern(Messages.Tickets.updateStatusMany)
-    updateStatusMany(@Payload('ticketIds') ticketIds: string[], @Payload('status') status: TicketStatus) {
+    updateStatusMany(
+        @Payload('ticketIds') ticketIds: string[],
+        @Payload('status') status: TicketStatus
+    ) {
         return this.service.updateStatusMany(ticketIds, status)
     }
 

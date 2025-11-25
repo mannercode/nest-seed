@@ -41,9 +41,7 @@ export class ShowtimeBulkCreatorService {
         )
 
         await this.showtimesService.createMany(createDtos)
-        const showtimes = await this.showtimesService.search({
-            transactionIds: [transactionId]
-        })
+        const showtimes = await this.showtimesService.search({ transactionIds: [transactionId] })
         return showtimes
     }
 

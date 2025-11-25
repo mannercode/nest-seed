@@ -46,9 +46,7 @@ describe('WatchRecordsService', () => {
         describe('when `customerId` is provided', () => {
             // 지정한 customerId의 관람 기록 페이지를 반환한다
             it('returns paginated records for the customerId', async () => {
-                const pagination = await fixture.watchRecordsService.searchPage({
-                    customerId
-                })
+                const pagination = await fixture.watchRecordsService.searchPage({ customerId })
 
                 expect(pagination).toEqual({
                     skip: 0,

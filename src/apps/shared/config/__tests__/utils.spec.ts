@@ -3,9 +3,7 @@ import { createMessagePatternMap } from '../utils'
 describe('createMessagePatternMap', () => {
     // 2단계 점(.) 구분 경로를 반환한다
     it('returns a 2-level dot-delimited path', () => {
-        const Messages = createMessagePatternMap({
-            Movies: { searchPage: null, create: null }
-        })
+        const Messages = createMessagePatternMap({ Movies: { searchPage: null, create: null } })
 
         expect(Messages.Movies.searchPage).toEqual('Movies.searchPage')
     })

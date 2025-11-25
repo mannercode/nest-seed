@@ -25,10 +25,7 @@ export class ShowtimeCreationService {
     }
 
     async searchShowtimes(theaterIds: string[]) {
-        return this.showtimesService.search({
-            theaterIds,
-            endTimeRange: { start: new Date() }
-        })
+        return this.showtimesService.search({ theaterIds, endTimeRange: { start: new Date() } })
     }
 
     async requestShowtimeCreation(createDto: BulkCreateShowtimesDto) {
