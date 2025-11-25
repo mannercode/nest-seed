@@ -14,18 +14,18 @@ export class ShowtimeCreationService {
     ) {}
 
     async searchMoviesPage(searchDto: PaginationDto) {
-        return this.moviesService.searchMoviesPage({
+        return this.moviesService.searchPage({
             ...searchDto,
             orderby: { name: 'releaseDate', direction: OrderDirection.Desc }
         })
     }
 
     async searchTheatersPage(searchDto: PaginationDto) {
-        return this.theatersService.searchTheatersPage(searchDto)
+        return this.theatersService.searchPage(searchDto)
     }
 
     async searchShowtimes(theaterIds: string[]) {
-        return this.showtimesService.searchShowtimes({
+        return this.showtimesService.search({
             theaterIds,
             endTimeRange: { start: new Date() }
         })

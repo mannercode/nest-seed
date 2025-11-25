@@ -8,14 +8,14 @@ import { WatchRecordsRepository } from './watch-records.repository'
 export class WatchRecordsService {
     constructor(private repository: WatchRecordsRepository) {}
 
-    async createWatchRecord(createDto: CreateWatchRecordDto) {
-        const watchRecord = await this.repository.createWatchRecord(createDto)
+    async create(createDto: CreateWatchRecordDto) {
+        const watchRecord = await this.repository.create(createDto)
 
         return this.toDto(watchRecord)
     }
 
-    async searchWatchRecordsPage(searchDto: SearchWatchRecordsPageDto) {
-        const { items, ...pagination } = await this.repository.searchWatchRecordsPage(searchDto)
+    async searchPage(searchDto: SearchWatchRecordsPageDto) {
+        const { items, ...pagination } = await this.repository.searchPage(searchDto)
 
         return { ...pagination, items: this.toDtos(items) }
     }

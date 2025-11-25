@@ -29,7 +29,7 @@ export class CustomersService {
         private authenticationService: CustomerAuthenticationService
     ) {}
 
-    async createCustomer(createDto: CreateCustomerDto) {
+    async create(createDto: CreateCustomerDto) {
         const emailExists = await this.repository.existsByEmail(createDto.email)
 
         if (emailExists) {
@@ -40,31 +40,31 @@ export class CustomersService {
         }
 
         const password = await this.authenticationService.hash(createDto.password)
-        const newCustomer = await this.repository.createCustomer({ ...createDto, password })
+        const newCustomer = await this.repository.create({ ...createDto, password })
 
         return this.toDto(newCustomer)
     }
 
-    async updateCustomer(customerId: string, updateDto: UpdateCustomerDto) {
+    async update(customerId: string, updateDto: UpdateCustomerDto) {
         const customer = await this.repository.update(customerId, updateDto)
 
         return this.toDto(customer)
     }
 
-    async getCustomers(customerIds: string[]) {
+    async getMany(customerIds: string[]) {
         const customers = await this.repository.getByIds(customerIds)
 
         return this.toDtos(customers)
     }
 
-    async deleteCustomers(customerIds: string[]) {
+    async deleteMany(customerIds: string[]) {
         const deletedCustomers = await this.repository.deleteByIds(customerIds)
 
         return { deletedCustomers: this.toDtos(deletedCustomers) }
     }
 
-    async searchCustomersPage(searchDto: SearchCustomersPageDto) {
-        const { items, ...pagination } = await this.repository.searchCustomersPage(searchDto)
+    async searchPage(searchDto: SearchCustomersPageDto) {
+        const { items, ...pagination } = await this.repository.searchPage(searchDto)
 
         return { ...pagination, items: this.toDtos(items) }
     }

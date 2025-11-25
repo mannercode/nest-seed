@@ -14,30 +14,27 @@ import {
 export class MoviesClient {
     constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
 
-    createMovie(
-        createMovieDto: CreateMovieDto,
-        createFileDtos: CreateStorageFileDto[]
-    ): Promise<MovieDto> {
-        return this.proxy.getJson(Messages.Movies.createMovie, { createMovieDto, createFileDtos })
+    create(createMovieDto: CreateMovieDto, createFileDtos: CreateStorageFileDto[]): Promise<MovieDto> {
+        return this.proxy.getJson(Messages.Movies.create, { createMovieDto, createFileDtos })
     }
 
-    updateMovie(movieId: string, updateDto: UpdateMovieDto): Promise<MovieDto> {
-        return this.proxy.getJson(Messages.Movies.updateMovie, { movieId, updateDto })
+    update(movieId: string, updateDto: UpdateMovieDto): Promise<MovieDto> {
+        return this.proxy.getJson(Messages.Movies.update, { movieId, updateDto })
     }
 
-    getMovies(movieIds: string[]): Promise<MovieDto[]> {
-        return this.proxy.getJson(Messages.Movies.getMovies, movieIds)
+    getMany(movieIds: string[]): Promise<MovieDto[]> {
+        return this.proxy.getJson(Messages.Movies.getMany, movieIds)
     }
 
-    deleteMovies(movieIds: string[]): Promise<DeleteMoviesResponse> {
-        return this.proxy.getJson(Messages.Movies.deleteMovies, movieIds)
+    deleteMany(movieIds: string[]): Promise<DeleteMoviesResponse> {
+        return this.proxy.getJson(Messages.Movies.deleteMany, movieIds)
     }
 
-    searchMoviesPage(searchDto: SearchMoviesPageDto): Promise<PaginationResult<MovieDto>> {
-        return this.proxy.getJson(Messages.Movies.searchMoviesPage, searchDto)
+    searchPage(searchDto: SearchMoviesPageDto): Promise<PaginationResult<MovieDto>> {
+        return this.proxy.getJson(Messages.Movies.searchPage, searchDto)
     }
 
-    moviesExist(movieIds: string[]): Promise<boolean> {
-        return this.proxy.getJson(Messages.Movies.moviesExist, movieIds)
+    exists(movieIds: string[]): Promise<boolean> {
+        return this.proxy.getJson(Messages.Movies.exists, movieIds)
     }
 }

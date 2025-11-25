@@ -2,7 +2,7 @@
 
 ```
 Showtime과 Ticket을 한 번에 생성하려는 시행착오가 있었다.
-ShowtimesService에서 createTickets를 호출했다.
+ShowtimesService에서 createMany를 호출했다.
 
 Showtime과 Ticket이 분리된 서비스라면 각자 알아서 행동하도록 해야 한다.
 event를 도입하고 각자의 할 일이나 오류 처리는 각자가 하도록 한다.
@@ -77,7 +77,7 @@ Frontend -> Backend: POST /showtimes
         "startTimes": [202012120900, 202012121100, 202012121300]
     }
     end note
-Backend -> Showtimes: createShowtimes(creationRequest)
+Backend -> Showtimes: createMany(creationRequest)
 Showtimes -> Showtimes: validateShowtimesCreationRequest(creationRequest)
 loop theater of creationRequest.theaters
     loop startTime of creationRequest.startTimes
@@ -87,9 +87,9 @@ loop theater of creationRequest.theaters
     end
 end
 
-Showtimes -> Tickets: createTickets(createdShowtimes)
+Showtimes -> Tickets: createMany(createdShowtimes)
 loop showtime of createdShowtimes
-    Tickets -> Theaters: getTheater(showtime.theaterId)
+    Tickets -> Theaters: getMany(showtime.theaterId)
     Tickets <-- Theaters: theater
     loop block of theater.seatmap.blocks
         loop row of block.rows

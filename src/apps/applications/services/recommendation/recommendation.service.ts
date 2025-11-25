@@ -19,17 +19,17 @@ export class RecommendationService {
             startTimeRange: { start: startTime }
         })
 
-        const showingMovies = await this.moviesService.getMovies(showingMovieIds)
+        const showingMovies = await this.moviesService.getMany(showingMovieIds)
         let watchedMovies: MovieDto[] = []
 
         if (customerId) {
-            const { items } = await this.watchRecordsService.searchWatchRecordsPage({
+            const { items } = await this.watchRecordsService.searchPage({
                 customerId,
                 take: 50,
                 orderby: { name: 'watchDate', direction: OrderDirection.Desc }
             })
             const movieIds = items.map((record) => record.movieId)
-            watchedMovies = await this.moviesService.getMovies(movieIds)
+            watchedMovies = await this.moviesService.getMany(movieIds)
         }
 
         const recommendedMovies = MovieRecommender.recommend(showingMovies, watchedMovies)

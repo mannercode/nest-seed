@@ -70,7 +70,7 @@ Admin -> Frontend: 극장 선택
     }
     end note
         Backend -> ShowtimeCreation: searchShowtimes(theaterIds)
-            ShowtimeCreation -> Showtimes: searchShowtimes(theaterIds, date.now)
+            ShowtimeCreation -> Showtimes: search(theaterIds, date.now)
             ShowtimeCreation <-- Showtimes: showtimes[]
         Backend <-- ShowtimeCreation: showtimes[]
     Frontend <-- Backend: showtimes[]
@@ -108,19 +108,19 @@ Backend <-- ShowtimeCreation: transactionId
             end
         end
 
-        ShowtimeCreation -> Showtimes: createShowtimes(showtimeCreateDtos, transactionId)
+        ShowtimeCreation -> Showtimes: createMany(showtimeCreateDtos, transactionId)
         ShowtimeCreation <-- Showtimes: showtimes
     deactivate ShowtimeCreation
 
     ShowtimeCreation -> ShowtimeCreation: createTickets(showtimes, transactionId)
     activate ShowtimeCreation #yellow
         loop showtime in showtimes
-            ShowtimeCreation -> Theaters: getTheater(showtime.theaterId)
+            ShowtimeCreation -> Theaters: getMany(showtime.theaterId)
             ShowtimeCreation <-- Theaters: theater
             loop seat in theater.seats
                 ShowtimeCreation -> ShowtimeCreation: createTicketCreateDto(seat, showtime.id)
             end
-            ShowtimeCreation -> Tickets: createTickets(ticketCreateDtos,transactionId)
+            ShowtimeCreation -> Tickets: createMany(ticketCreateDtos,transactionId)
             ShowtimeCreation <-- Tickets: tickets
         end
     deactivate ShowtimeCreation

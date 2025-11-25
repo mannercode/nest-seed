@@ -8,13 +8,13 @@ import { PaymentsRepository } from './payments.repository'
 export class PaymentsService {
     constructor(private repository: PaymentsRepository) {}
 
-    async createPayment(createDto: CreatePaymentDto) {
-        const payment = await this.repository.createPayment(createDto)
+    async create(createDto: CreatePaymentDto) {
+        const payment = await this.repository.create(createDto)
 
         return this.toDto(payment)
     }
 
-    async getPayments(paymentIds: string[]) {
+    async getMany(paymentIds: string[]) {
         const payments = await this.repository.getByIds(paymentIds)
 
         return this.toDtos(payments)

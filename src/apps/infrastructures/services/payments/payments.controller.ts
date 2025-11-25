@@ -8,13 +8,13 @@ import { PaymentsService } from './payments.service'
 export class PaymentsController {
     constructor(private service: PaymentsService) {}
 
-    @MessagePattern(Messages.Payments.createPayment)
-    createPayment(@Payload() createDto: CreatePaymentDto) {
-        return this.service.createPayment(createDto)
+    @MessagePattern(Messages.Payments.create)
+    create(@Payload() createDto: CreatePaymentDto) {
+        return this.service.create(createDto)
     }
 
-    @MessagePattern(Messages.Payments.getPayments)
-    getPayments(@Payload() paymentIds: string[]) {
-        return this.service.getPayments(paymentIds)
+    @MessagePattern(Messages.Payments.getMany)
+    getMany(@Payload() paymentIds: string[]) {
+        return this.service.getMany(paymentIds)
     }
 }

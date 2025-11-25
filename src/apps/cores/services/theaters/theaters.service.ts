@@ -8,37 +8,37 @@ import { TheatersRepository } from './theaters.repository'
 export class TheatersService {
     constructor(private repository: TheatersRepository) {}
 
-    async createTheater(createDto: CreateTheaterDto) {
-        const theater = await this.repository.createTheater(createDto)
+    async create(createDto: CreateTheaterDto) {
+        const theater = await this.repository.create(createDto)
 
         return this.toDto(theater)
     }
 
-    async updateTheater(theaterId: string, updateDto: UpdateTheaterDto) {
+    async update(theaterId: string, updateDto: UpdateTheaterDto) {
         const theater = await this.repository.update(theaterId, updateDto)
 
         return this.toDto(theater)
     }
 
-    async getTheaters(theaterIds: string[]) {
+    async getMany(theaterIds: string[]) {
         const theaters = await this.repository.getByIds(theaterIds)
 
         return this.toDtos(theaters)
     }
 
-    async deleteTheaters(theaterIds: string[]) {
+    async deleteMany(theaterIds: string[]) {
         const deletedTheaters = await this.repository.deleteByIds(theaterIds)
 
         return { deletedTheaters: this.toDtos(deletedTheaters) }
     }
 
-    async searchTheatersPage(searchDto: SearchTheatersPageDto) {
-        const { items, ...pagination } = await this.repository.searchTheatersPage(searchDto)
+    async searchPage(searchDto: SearchTheatersPageDto) {
+        const { items, ...pagination } = await this.repository.searchPage(searchDto)
 
         return { ...pagination, items: this.toDtos(items) }
     }
 
-    async theatersExist(theaterIds: string[]) {
+    async exists(theaterIds: string[]) {
         return this.repository.existByIds(theaterIds)
     }
 

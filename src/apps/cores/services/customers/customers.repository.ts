@@ -14,7 +14,7 @@ export class CustomersRepository extends MongooseRepository<Customer> {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createCustomer(createDto: CreateCustomerDto) {
+    async create(createDto: CreateCustomerDto) {
         const customer = this.newDocument()
         customer.name = createDto.name
         customer.email = createDto.email
@@ -24,7 +24,7 @@ export class CustomersRepository extends MongooseRepository<Customer> {
         return customer.save()
     }
 
-    async searchCustomersPage(searchDto: SearchCustomersPageDto) {
+    async searchPage(searchDto: SearchCustomersPageDto) {
         const { take, skip, orderby } = searchDto
 
         const pagination = await this.findWithPagination({

@@ -17,6 +17,6 @@ export const createTheater = async ({ module }: TestContext, override = {}) => {
 
     const createDto = buildCreateTheaterDto(override)
 
-    const theater = await theatersService.createTheater(createDto)
+    const theater = await theatersService.create(createDto)
     return theater
 }

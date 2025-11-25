@@ -140,7 +140,7 @@ describe('PurchaseService', () => {
                 const { TicketsService } = await import('apps/cores')
                 const ticketsService = fixture.module.get(TicketsService)
 
-                jest.spyOn(ticketsService, 'updateTicketsStatus').mockImplementationOnce(() => {
+                jest.spyOn(ticketsService, 'updateStatusMany').mockImplementationOnce(() => {
                     throw new Error('purchase error')
                 })
 

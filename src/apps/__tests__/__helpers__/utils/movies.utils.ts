@@ -26,6 +26,6 @@ export const createMovie = async ({ module }: TestContext, override = {}) => {
 
     const file = pick(fixtureFiles.image, ['originalName', 'mimeType', 'size', 'path'])
 
-    const movie = await moviesService.createMovie(createDto, [file])
+    const movie = await moviesService.create(createDto, [file])
     return movie
 }

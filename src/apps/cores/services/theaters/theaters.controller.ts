@@ -8,36 +8,36 @@ import { TheatersService } from './theaters.service'
 export class TheatersController {
     constructor(private service: TheatersService) {}
 
-    @MessagePattern(Messages.Theaters.createTheater)
-    createTheater(@Payload() createDto: CreateTheaterDto) {
-        return this.service.createTheater(createDto)
+    @MessagePattern(Messages.Theaters.create)
+    create(@Payload() createDto: CreateTheaterDto) {
+        return this.service.create(createDto)
     }
 
-    @MessagePattern(Messages.Theaters.updateTheater)
-    updateTheater(
+    @MessagePattern(Messages.Theaters.update)
+    update(
         @Payload('theaterId') theaterId: string,
         @Payload('updateDto') updateDto: UpdateTheaterDto
     ) {
-        return this.service.updateTheater(theaterId, updateDto)
+        return this.service.update(theaterId, updateDto)
     }
 
-    @MessagePattern(Messages.Theaters.getTheaters)
-    getTheaters(@Payload() theaterIds: string[]) {
-        return this.service.getTheaters(theaterIds)
+    @MessagePattern(Messages.Theaters.getMany)
+    getMany(@Payload() theaterIds: string[]) {
+        return this.service.getMany(theaterIds)
     }
 
-    @MessagePattern(Messages.Theaters.deleteTheaters)
-    deleteTheaters(@Payload() theaterIds: string[]) {
-        return this.service.deleteTheaters(theaterIds)
+    @MessagePattern(Messages.Theaters.deleteMany)
+    deleteMany(@Payload() theaterIds: string[]) {
+        return this.service.deleteMany(theaterIds)
     }
 
-    @MessagePattern(Messages.Theaters.searchTheatersPage)
-    searchTheatersPage(@Payload() searchDto: SearchTheatersPageDto) {
-        return this.service.searchTheatersPage(searchDto)
+    @MessagePattern(Messages.Theaters.searchPage)
+    searchPage(@Payload() searchDto: SearchTheatersPageDto) {
+        return this.service.searchPage(searchDto)
     }
 
-    @MessagePattern(Messages.Theaters.theatersExist)
-    theatersExist(@Payload() theaterIds: string[]) {
-        return this.service.theatersExist(theaterIds)
+    @MessagePattern(Messages.Theaters.exists)
+    exists(@Payload() theaterIds: string[]) {
+        return this.service.exists(theaterIds)
     }
 }

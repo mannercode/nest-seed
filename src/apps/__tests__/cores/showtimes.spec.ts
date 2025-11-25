@@ -16,21 +16,21 @@ describe('ShowtimesService', () => {
         await fixture?.teardown()
     })
 
-    describe('createShowtimes', () => {
+    describe('createMany', () => {
         // payload가 유효한 경우
         describe('when payload is valid', () => {
             // 상영시간을 생성하고 결과를 반환한다
             it('creates showtimes and returns the result', async () => {
                 const createDtos = [buildCreateShowtimeDto({ transactionId: oid(0x1) })]
 
-                const { success } = await fixture.showtimesService.createShowtimes(createDtos)
+                const { success } = await fixture.showtimesService.createMany(createDtos)
 
                 expect(success).toBe(true)
             })
         })
     })
 
-    describe('getShowtimes', () => {
+    describe('getMany', () => {
         // 상영시간이 존재하는 경우
         describe('when showtimes exist', () => {
             let showtimes: ShowtimeDto[]
@@ -48,7 +48,7 @@ describe('ShowtimesService', () => {
             it('returns the showtimes', async () => {
                 const showtimeIds = pickIds(showtimes)
 
-                const gotShowtimes = await fixture.showtimesService.getShowtimes(showtimeIds)
+                const gotShowtimes = await fixture.showtimesService.getMany(showtimeIds)
 
                 expect(gotShowtimes).toEqual(expect.arrayContaining(showtimes))
             })
@@ -58,7 +58,7 @@ describe('ShowtimesService', () => {
         describe('when showtimes do not exist', () => {
             // 404 status를 던진다
             it('throws 404 status', async () => {
-                const promise = fixture.showtimesService.getShowtimes([nullObjectId])
+                const promise = fixture.showtimesService.getMany([nullObjectId])
 
                 await expect(promise).rejects.toMatchObject({
                     status: 404,
@@ -68,7 +68,7 @@ describe('ShowtimesService', () => {
         })
     })
 
-    describe('searchShowtimes', () => {
+    describe('search', () => {
         const transactionId = oid(0x1)
         const movieId = oid(0x2)
         const theaterId = oid(0x3)
@@ -92,7 +92,7 @@ describe('ShowtimesService', () => {
         describe('when `transactionIds` are provided', () => {
             // 지정한 transactionIds와 일치하는 상영시간 목록을 반환한다.
             it('returns showtimes for the transactionIds', async () => {
-                const showtimes = await fixture.showtimesService.searchShowtimes({
+                const showtimes = await fixture.showtimesService.search({
                     transactionIds: [transactionId]
                 })
 
@@ -104,7 +104,7 @@ describe('ShowtimesService', () => {
         describe('when `movieIds` are provided', () => {
             // 지정한 movieIds와 일치하는 상영시간 목록을 반환한다.
             it('returns showtimes for the movieIds', async () => {
-                const showtimes = await fixture.showtimesService.searchShowtimes({
+                const showtimes = await fixture.showtimesService.search({
                     movieIds: [movieId]
                 })
 
@@ -116,7 +116,7 @@ describe('ShowtimesService', () => {
         describe('when `theaterIds` are provided', () => {
             // 지정한 theaterIds와 일치하는 상영시간 목록을 반환한다.
             it('returns showtimes for the theaterIds', async () => {
-                const showtimes = await fixture.showtimesService.searchShowtimes({
+                const showtimes = await fixture.showtimesService.search({
                     theaterIds: [theaterId]
                 })
 
@@ -133,7 +133,7 @@ describe('ShowtimesService', () => {
                     end: new Date('2020-01-02T12:00')
                 }
 
-                const showtimes = await fixture.showtimesService.searchShowtimes({ startTimeRange })
+                const showtimes = await fixture.showtimesService.search({ startTimeRange })
 
                 expect(showtimes).toEqual(
                     expect.arrayContaining([createdShowtimes[3], createdShowtimes[4]])
@@ -145,7 +145,7 @@ describe('ShowtimesService', () => {
         describe('when filter is empty', () => {
             // 400 status를 던진다
             it('throws 400 status', async () => {
-                const promise = fixture.showtimesService.searchShowtimes({})
+                const promise = fixture.showtimesService.search({})
 
                 await expect(promise).rejects.toMatchObject({
                     status: 400,

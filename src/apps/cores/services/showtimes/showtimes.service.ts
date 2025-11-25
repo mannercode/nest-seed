@@ -8,20 +8,20 @@ import { ShowtimesRepository } from './showtimes.repository'
 export class ShowtimesService {
     constructor(private repository: ShowtimesRepository) {}
 
-    async createShowtimes(createDtos: CreateShowtimeDto[]) {
-        await this.repository.createShowtimes(createDtos)
+    async createMany(createDtos: CreateShowtimeDto[]) {
+        await this.repository.createMany(createDtos)
 
         return { success: true, count: createDtos.length }
     }
 
-    async getShowtimes(showtimeIds: string[]) {
+    async getMany(showtimeIds: string[]) {
         const showtimes = await this.repository.getByIds(showtimeIds)
 
         return this.toDtos(showtimes)
     }
 
-    async searchShowtimes(searchDto: SearchShowtimesDto) {
-        const showtimes = await this.repository.searchShowtimes(searchDto)
+    async search(searchDto: SearchShowtimesDto) {
+        const showtimes = await this.repository.search(searchDto)
 
         return this.toDtos(showtimes)
     }
@@ -38,7 +38,7 @@ export class ShowtimesService {
         return this.repository.searchShowdates(searchDto)
     }
 
-    async allShowtimesExist(showtimeIds: string[]): Promise<boolean> {
+    async exists(showtimeIds: string[]): Promise<boolean> {
         return this.repository.existByIds(showtimeIds)
     }
 

@@ -276,12 +276,12 @@ The structure for handling multiple objects versus a single object differs signi
 
 ```ts
 // Recommended approach
-getTheaters(theaterIds: string[]) {}
-deleteTheaters(theaterIds: string[]) {}
+getMany(theaterIds: string[]) {}
+deleteMany(theaterIds: string[]) {}
 
 // Not recommended
-getTheater(theaterId: string) {}
-deleteTheater(theaterId: string) {}
+get(theaterId: string) {}
+delete(theaterId: string) {}
 ```
 
 However, REST APIs often involve requests for single objects. Therefore, implement them as follows, accepting a singular argument (e.g., from the path) and internally using the plural argument version:
@@ -290,13 +290,13 @@ However, REST APIs often involve requests for single objects. Therefore, impleme
 @Get(':theaterId')
 async getTheater(@Param('theaterId') theaterId: string) {
     // Internally calls the method designed for multiple IDs
-    return this.theatersService.getTheaters([theaterId])
+    return this.theatersService.getMany([theaterId])
 }
 
 @Delete(':theaterId')
 async deleteTheater(@Param('theaterId') theaterId: string) {
     // Internally calls the method designed for multiple IDs
-    return this.theatersService.deleteTheaters([theaterId])
+    return this.theatersService.deleteMany([theaterId])
 }
 ```
 

@@ -13,27 +13,27 @@ export class MoviesService {
         private storageFilesService: StorageFilesClient
     ) {}
 
-    async createMovie(createMovieDto: CreateMovieDto, createFileDtos: CreateStorageFileDto[]) {
+    async create(createMovieDto: CreateMovieDto, createFileDtos: CreateStorageFileDto[]) {
         const storageFiles = await this.storageFilesService.saveFiles(createFileDtos)
 
-        const movie = await this.moviesRepository.createMovie(createMovieDto, pickIds(storageFiles))
+        const movie = await this.moviesRepository.create(createMovieDto, pickIds(storageFiles))
 
         return this.toDto(movie)
     }
 
-    async updateMovie(movieId: string, updateDto: UpdateMovieDto) {
+    async update(movieId: string, updateDto: UpdateMovieDto) {
         const movie = await this.moviesRepository.update(movieId, updateDto)
 
         return this.toDto(movie)
     }
 
-    async getMovies(movieIds: string[]) {
+    async getMany(movieIds: string[]) {
         const movies = await this.moviesRepository.getByIds(movieIds)
 
         return this.toDtos(movies)
     }
 
-    async deleteMovies(movieIds: string[]) {
+    async deleteMany(movieIds: string[]) {
         const movies = await this.moviesRepository.withTransaction(async (session) => {
             const movies = await this.moviesRepository.getByIds(movieIds)
 
@@ -50,13 +50,13 @@ export class MoviesService {
         return { deletedMovies: this.toDtos(movies) }
     }
 
-    async searchMoviesPage(searchDto: SearchMoviesPageDto) {
-        const { items, ...pagination } = await this.moviesRepository.searchMoviesPage(searchDto)
+    async searchPage(searchDto: SearchMoviesPageDto) {
+        const { items, ...pagination } = await this.moviesRepository.searchPage(searchDto)
 
         return { ...pagination, items: this.toDtos(items) }
     }
 
-    async moviesExist(movieIds: string[]): Promise<boolean> {
+    async exists(movieIds: string[]): Promise<boolean> {
         return this.moviesRepository.existByIds(movieIds)
     }
 

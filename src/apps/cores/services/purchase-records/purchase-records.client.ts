@@ -7,11 +7,11 @@ import { CreatePurchaseRecordDto, PurchaseRecordDto } from './dtos'
 export class PurchaseRecordsClient {
     constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
 
-    createPurchaseRecord(createDto: CreatePurchaseRecordDto): Promise<PurchaseRecordDto> {
-        return this.proxy.getJson(Messages.Purchases.createPurchaseRecord, createDto)
+    create(createDto: CreatePurchaseRecordDto): Promise<PurchaseRecordDto> {
+        return this.proxy.getJson(Messages.Purchases.create, createDto)
     }
 
-    getPurchases(purchaseIds: string[]): Promise<PurchaseRecordDto[]> {
-        return this.proxy.getJson(Messages.Purchases.getPurchases, purchaseIds)
+    getMany(purchaseIds: string[]): Promise<PurchaseRecordDto[]> {
+        return this.proxy.getJson(Messages.Purchases.getMany, purchaseIds)
     }
 }

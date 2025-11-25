@@ -14,7 +14,7 @@ export class PaymentsRepository extends MongooseRepository<Payment> {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createPayment(createDto: CreatePaymentDto) {
+    async create(createDto: CreatePaymentDto) {
         const payment = this.newDocument()
         payment.customerId = objectId(createDto.customerId)
         payment.amount = createDto.amount

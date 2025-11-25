@@ -44,7 +44,7 @@ export class MoviesController {
     @UseFilters(new MulterExceptionFilter())
     @UseInterceptors(FilesInterceptor('files'))
     @Post()
-    async createMovie(
+    async create(
         @UploadedFiles() files: Express.Multer.File[],
         @Body() createMovieDto: CreateMovieDto
     ) {
@@ -55,27 +55,27 @@ export class MoviesController {
             path: file.path
         }))
 
-        return this.moviesService.createMovie(createMovieDto, createFileDtos)
+        return this.moviesService.create(createMovieDto, createFileDtos)
     }
 
     @Patch(':movieId')
-    async updateMovie(@Param('movieId') movieId: string, @Body() updateDto: UpdateMovieDto) {
-        return this.moviesService.updateMovie(movieId, updateDto)
+    async update(@Param('movieId') movieId: string, @Body() updateDto: UpdateMovieDto) {
+        return this.moviesService.update(movieId, updateDto)
     }
 
     @Get(':movieId')
-    async getMovie(@Param('movieId') movieId: string) {
-        const movies = await this.moviesService.getMovies([movieId])
+    async get(@Param('movieId') movieId: string) {
+        const movies = await this.moviesService.getMany([movieId])
         return movies[0]
     }
 
     @Delete(':movieId')
-    async deleteMovie(@Param('movieId') movieId: string) {
-        return this.moviesService.deleteMovies([movieId])
+    async delete(@Param('movieId') movieId: string) {
+        return this.moviesService.deleteMany([movieId])
     }
 
     @Get()
-    async searchMoviesPage(@Query() searchDto: SearchMoviesPageDto) {
-        return this.moviesService.searchMoviesPage(searchDto)
+    async searchPage(@Query() searchDto: SearchMoviesPageDto) {
+        return this.moviesService.searchPage(searchDto)
     }
 }

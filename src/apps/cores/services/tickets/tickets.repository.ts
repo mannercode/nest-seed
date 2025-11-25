@@ -19,7 +19,7 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createTickets(createDtos: CreateTicketDto[]) {
+    async createMany(createDtos: CreateTicketDto[]) {
         const tickets = createDtos.map((dto) => {
             const ticket = this.newDocument()
             ticket.transactionId = objectId(dto.transactionId)
@@ -35,7 +35,7 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         return this.saveMany(tickets)
     }
 
-    async updateTicketsStatus(ticketIds: string[], status: TicketStatus) {
+    async updateStatusMany(ticketIds: string[], status: TicketStatus) {
         const result = await this.model.updateMany(
             { _id: { $in: objectIds(ticketIds) } },
             { $set: { status } }
@@ -44,14 +44,14 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         return result
     }
 
-    async searchTickets(searchDto: SearchTicketsDto) {
+    async search(searchDto: SearchTicketsDto) {
         const query = this.buildQuery(searchDto)
 
         const tickets = await this.model.find(query).sort({ transactionId: 1 }).exec()
         return tickets
     }
 
-    async aggregateTicketSales(aggregateDto: AggregateTicketSalesDto) {
+    async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
         const query = this.buildQuery(aggregateDto)
 
         const showtimeTicketSalesArray = await this.model.aggregate([

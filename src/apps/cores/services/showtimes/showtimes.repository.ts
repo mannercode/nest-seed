@@ -14,7 +14,7 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createShowtimes(createDtos: CreateShowtimeDto[]) {
+    async createMany(createDtos: CreateShowtimeDto[]) {
         const showtimes = createDtos.map((dto) => {
             const doc = this.newDocument()
             doc.transactionId = objectId(dto.transactionId)
@@ -29,7 +29,7 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         await this.saveMany(showtimes)
     }
 
-    async searchShowtimes(searchDto: SearchShowtimesDto) {
+    async search(searchDto: SearchShowtimesDto) {
         const query = this.buildQuery(searchDto)
 
         const showtimes = await this.model.find(query).sort({ startTime: 1 }).exec()

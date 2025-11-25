@@ -30,7 +30,7 @@ export const createCustomer = async ({ module }: TestContext, override = {}) => 
 
     const createDto = buildCreateCustomerDto(override)
 
-    const customer = await customersService.createCustomer(createDto)
+    const customer = await customersService.create(createDto)
     return customer
 }
 

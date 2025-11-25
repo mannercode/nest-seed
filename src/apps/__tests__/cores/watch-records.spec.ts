@@ -15,21 +15,21 @@ describe('WatchRecordsService', () => {
         await fixture?.teardown()
     })
 
-    describe('createWatchRecord', () => {
+    describe('create', () => {
         // payload가 유효한 경우
         describe('when payload is valid', () => {
             // 관람 기록을 생성하고 반환한다
             it('creates and returns a watch record', async () => {
                 const createDto = buildCreateWatchRecordDto()
 
-                const watchRecord = await fixture.watchRecordsService.createWatchRecord(createDto)
+                const watchRecord = await fixture.watchRecordsService.create(createDto)
 
                 expect(watchRecord).toEqual({ id: expect.any(String), ...createDto })
             })
         })
     })
 
-    describe('searchWatchRecordsPage', () => {
+    describe('searchPage', () => {
         const customerId = oid(0xa1)
         let watchRecords: WatchRecordDto[]
 
@@ -46,7 +46,7 @@ describe('WatchRecordsService', () => {
         describe('when `customerId` is provided', () => {
             // 지정한 customerId의 관람 기록 페이지를 반환한다
             it('returns paginated records for the customerId', async () => {
-                const pagination = await fixture.watchRecordsService.searchWatchRecordsPage({
+                const pagination = await fixture.watchRecordsService.searchPage({
                     customerId
                 })
 

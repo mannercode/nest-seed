@@ -40,8 +40,8 @@ export class ShowtimeBulkCreatorService {
             }))
         )
 
-        await this.showtimesService.createShowtimes(createDtos)
-        const showtimes = await this.showtimesService.searchShowtimes({
+        await this.showtimesService.createMany(createDtos)
+        const showtimes = await this.showtimesService.search({
             transactionIds: [transactionId]
         })
         return showtimes
@@ -51,7 +51,7 @@ export class ShowtimeBulkCreatorService {
         let totalCount = 0
 
         const theaterIds = Array.from(new Set(showtimes.map((showtime) => showtime.theaterId)))
-        const theaters = await this.theatersService.getTheaters(theaterIds)
+        const theaters = await this.theatersService.getMany(theaterIds)
 
         const theatersById = new Map<string, TheaterDto>()
         theaters.forEach((theater) => theatersById.set(theater.id, theater))
@@ -71,7 +71,7 @@ export class ShowtimeBulkCreatorService {
                     transactionId
                 }))
 
-                const { count } = await this.ticketsService.createTickets(createTicketDtos)
+                const { count } = await this.ticketsService.createMany(createTicketDtos)
                 totalCount += count
             })
         )

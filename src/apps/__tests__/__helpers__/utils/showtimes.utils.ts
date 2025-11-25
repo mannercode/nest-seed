@@ -29,11 +29,11 @@ export const createShowtimes = async (
 
     const createDtos = overrides.map((override) => buildCreateShowtimeDto(override))
 
-    const { success } = await showtimesService.createShowtimes(createDtos)
+    const { success } = await showtimesService.createMany(createDtos)
     expect(success).toBe(true)
 
     const transactionIds = uniq(createDtos.map((dto) => dto.transactionId))
 
-    const showtimes = await showtimesService.searchShowtimes({ transactionIds })
+    const showtimes = await showtimesService.search({ transactionIds })
     return showtimes
 }

@@ -8,13 +8,13 @@ import { PurchaseRecordsService } from './purchase-records.service'
 export class PurchaseRecordsController {
     constructor(private service: PurchaseRecordsService) {}
 
-    @MessagePattern(Messages.Purchases.createPurchaseRecord)
-    createPurchaseRecord(@Payload() createDto: CreatePurchaseRecordDto) {
-        return this.service.createPurchaseRecord(createDto)
+    @MessagePattern(Messages.Purchases.create)
+    create(@Payload() createDto: CreatePurchaseRecordDto) {
+        return this.service.create(createDto)
     }
 
-    @MessagePattern(Messages.Purchases.getPurchases)
-    getPurchases(@Payload() purchaseIds: string[]) {
-        return this.service.getPurchases(purchaseIds)
+    @MessagePattern(Messages.Purchases.getMany)
+    getMany(@Payload() purchaseIds: string[]) {
+        return this.service.getMany(purchaseIds)
     }
 }

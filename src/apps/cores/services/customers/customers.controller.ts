@@ -14,32 +14,32 @@ import {
 export class CustomersController {
     constructor(private service: CustomersService) {}
 
-    @MessagePattern(Messages.Customers.createCustomer)
-    async createCustomer(@Payload() createDto: CreateCustomerDto) {
-        return this.service.createCustomer(createDto)
+    @MessagePattern(Messages.Customers.create)
+    async create(@Payload() createDto: CreateCustomerDto) {
+        return this.service.create(createDto)
     }
 
-    @MessagePattern(Messages.Customers.updateCustomer)
-    updateCustomer(
+    @MessagePattern(Messages.Customers.update)
+    update(
         @Payload('customerId') customerId: string,
         @Payload('updateDto') updateDto: UpdateCustomerDto
     ) {
-        return this.service.updateCustomer(customerId, updateDto)
+        return this.service.update(customerId, updateDto)
     }
 
-    @MessagePattern(Messages.Customers.getCustomers)
-    getCustomers(@Payload() customerIds: string[]) {
-        return this.service.getCustomers(customerIds)
+    @MessagePattern(Messages.Customers.getMany)
+    getMany(@Payload() customerIds: string[]) {
+        return this.service.getMany(customerIds)
     }
 
-    @MessagePattern(Messages.Customers.deleteCustomers)
-    deleteCustomers(@Payload() customerIds: string[]) {
-        return this.service.deleteCustomers(customerIds)
+    @MessagePattern(Messages.Customers.deleteMany)
+    deleteMany(@Payload() customerIds: string[]) {
+        return this.service.deleteMany(customerIds)
     }
 
-    @MessagePattern(Messages.Customers.searchCustomersPage)
-    searchCustomersPage(@Payload() searchDto: SearchCustomersPageDto) {
-        return this.service.searchCustomersPage(searchDto)
+    @MessagePattern(Messages.Customers.searchPage)
+    searchPage(@Payload() searchDto: SearchCustomersPageDto) {
+        return this.service.searchPage(searchDto)
     }
 
     @MessagePattern(Messages.Customers.generateAuthTokens)

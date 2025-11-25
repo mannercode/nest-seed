@@ -14,15 +14,14 @@ describe('PurchaseRecordsService', () => {
         await fixture?.teardown()
     })
 
-    describe('createPurchaseRecord', () => {
+    describe('create', () => {
         // payload가 유효한 경우
         describe('when payload is valid', () => {
             // 구매 기록을 생성하고 반환한다
             it('creates and returns a purchase record', async () => {
                 const createDto = buildCreatePurchaseRecordDto({})
 
-                const createdPurchaseRecord =
-                    await fixture.purchaseRecordsService.createPurchaseRecord(createDto)
+                const createdPurchaseRecord = await fixture.purchaseRecordsService.create(createDto)
 
                 expect(createdPurchaseRecord).toEqual({
                     id: expect.any(String),

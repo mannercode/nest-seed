@@ -33,7 +33,7 @@ export class BookingService {
 
     async searchTheaters({ movieId, latLong }: SearchTheatersForBookingDto) {
         const theaterIds = await this.showtimesService.searchTheaterIds({ movieIds: [movieId] })
-        const theaters = await this.theatersService.getTheaters(theaterIds)
+        const theaters = await this.theatersService.getMany(theaterIds)
         const showingTheaters = sortTheatersByDistance(theaters, latLong)
 
         return showingTheaters
@@ -53,14 +53,14 @@ export class BookingService {
         const endOfDay = new Date(showdate)
         endOfDay.setHours(23, 59, 59, 999)
 
-        const showtimes = await this.showtimesService.searchShowtimes({
+        const showtimes = await this.showtimesService.search({
             movieIds: [movieId],
             theaterIds: [theaterId],
             startTimeRange: { start: startOfDay, end: endOfDay }
         })
 
         const showtimeIds = pickIds(showtimes)
-        const ticketSalesForShowtimes = await this.ticketsService.aggregateTicketSales({
+        const ticketSalesForShowtimes = await this.ticketsService.aggregateSales({
             showtimeIds
         })
 
@@ -70,13 +70,13 @@ export class BookingService {
     }
 
     async getTickets(showtimeId: string) {
-        const showtimeExists = await this.showtimesService.allShowtimesExist([showtimeId])
+        const showtimeExists = await this.showtimesService.exists([showtimeId])
 
         if (!showtimeExists) {
             throw new NotFoundException({ ...BookingServiceErrors.ShowtimeNotFound, showtimeId })
         }
 
-        const tickets = await this.ticketsService.searchTickets({ showtimeIds: [showtimeId] })
+        const tickets = await this.ticketsService.search({ showtimeIds: [showtimeId] })
         return tickets
     }
 

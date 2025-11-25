@@ -53,10 +53,10 @@ export class TicketPurchasService {
 
     private async getShowtimes(ticketItems: PurchaseItemDto[]) {
         const ticketIds = ticketItems.map((item) => item.ticketId)
-        const tickets = await this.ticketsService.getTickets(ticketIds)
+        const tickets = await this.ticketsService.getMany(ticketIds)
         const showtimeIds = tickets.map((ticket) => ticket.showtimeId)
         const uniqueShowtimeIds = uniq(showtimeIds)
-        const showtimes = await this.showtimesService.getShowtimes(uniqueShowtimeIds)
+        const showtimes = await this.showtimesService.getMany(uniqueShowtimeIds)
 
         return showtimes
     }
@@ -118,7 +118,7 @@ export class TicketPurchasService {
         )
         const ticketIds = ticketItems.map((item) => item.ticketId)
 
-        await this.ticketsService.updateTicketsStatus(ticketIds, TicketStatus.Sold)
+        await this.ticketsService.updateStatusMany(ticketIds, TicketStatus.Sold)
 
         await this.events.emitTicketPurchased(createDto.customerId, ticketIds)
 
@@ -131,7 +131,7 @@ export class TicketPurchasService {
         )
         const ticketIds = ticketItems.map((item) => item.ticketId)
 
-        await this.ticketsService.updateTicketsStatus(ticketIds, TicketStatus.Available)
+        await this.ticketsService.updateStatusMany(ticketIds, TicketStatus.Available)
 
         await this.events.emitTicketPurchaseCanceled(createDto.customerId, ticketIds)
 

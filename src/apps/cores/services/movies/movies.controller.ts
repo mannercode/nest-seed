@@ -8,36 +8,33 @@ import { MoviesService } from './movies.service'
 export class MoviesController {
     constructor(private service: MoviesService) {}
 
-    @MessagePattern(Messages.Movies.createMovie)
-    createMovie(@Payload() { createMovieDto, createFileDtos }: CreateMovieAndFilesDto) {
-        return this.service.createMovie(createMovieDto, createFileDtos)
+    @MessagePattern(Messages.Movies.create)
+    create(@Payload() { createMovieDto, createFileDtos }: CreateMovieAndFilesDto) {
+        return this.service.create(createMovieDto, createFileDtos)
     }
 
-    @MessagePattern(Messages.Movies.updateMovie)
-    updateMovie(
-        @Payload('movieId') movieId: string,
-        @Payload('updateDto') updateDto: UpdateMovieDto
-    ) {
-        return this.service.updateMovie(movieId, updateDto)
+    @MessagePattern(Messages.Movies.update)
+    update(@Payload('movieId') movieId: string, @Payload('updateDto') updateDto: UpdateMovieDto) {
+        return this.service.update(movieId, updateDto)
     }
 
-    @MessagePattern(Messages.Movies.getMovies)
-    getMovies(@Payload() movieIds: string[]) {
-        return this.service.getMovies(movieIds)
+    @MessagePattern(Messages.Movies.getMany)
+    getMany(@Payload() movieIds: string[]) {
+        return this.service.getMany(movieIds)
     }
 
-    @MessagePattern(Messages.Movies.deleteMovies)
-    deleteMovies(@Payload() movieIds: string[]) {
-        return this.service.deleteMovies(movieIds)
+    @MessagePattern(Messages.Movies.deleteMany)
+    deleteMany(@Payload() movieIds: string[]) {
+        return this.service.deleteMany(movieIds)
     }
 
-    @MessagePattern(Messages.Movies.searchMoviesPage)
-    searchMoviesPage(@Payload() searchDto: SearchMoviesPageDto) {
-        return this.service.searchMoviesPage(searchDto)
+    @MessagePattern(Messages.Movies.searchPage)
+    searchPage(@Payload() searchDto: SearchMoviesPageDto) {
+        return this.service.searchPage(searchDto)
     }
 
-    @MessagePattern(Messages.Movies.moviesExist)
-    moviesExist(@Payload() movieIds: string[]) {
-        return this.service.moviesExist(movieIds)
+    @MessagePattern(Messages.Movies.exists)
+    exists(@Payload() movieIds: string[]) {
+        return this.service.exists(movieIds)
     }
 }

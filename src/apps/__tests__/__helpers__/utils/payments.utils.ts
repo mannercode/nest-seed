@@ -16,7 +16,7 @@ export const createPayment = async (
 
     const createDto = buildCreatePaymentDto(override)
 
-    const payment = await paymentsService.createPayment(createDto)
+    const payment = await paymentsService.create(createDto)
     return payment
 }
 
@@ -24,5 +24,5 @@ export const getPayments = async ({ module }: TestContext, paymentIds: string[])
     const { PaymentsClient } = await import('apps/infrastructures')
     const paymentsService = module.get(PaymentsClient)
 
-    return paymentsService.getPayments(paymentIds)
+    return paymentsService.getMany(paymentIds)
 }

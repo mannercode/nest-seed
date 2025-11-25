@@ -12,7 +12,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createMovie(createDto: CreateMovieDto, storageFileIds: string[]) {
+    async create(createDto: CreateMovieDto, storageFileIds: string[]) {
         // TODO 하나로 합체?
         const movie = this.newDocument()
         movie.title = createDto.title
@@ -27,7 +27,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         return movie.save()
     }
 
-    async searchMoviesPage(searchDto: SearchMoviesPageDto) {
+    async searchPage(searchDto: SearchMoviesPageDto) {
         const { take, skip, orderby } = searchDto
 
         const pagination = await this.findWithPagination({

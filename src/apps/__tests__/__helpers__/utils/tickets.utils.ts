@@ -25,12 +25,12 @@ export const createTickets = async (
 
     const createDtos = overrides.map((override) => buildCreateTicketDto(override))
 
-    const { success } = await ticketsService.createTickets(createDtos)
+    const { success } = await ticketsService.createMany(createDtos)
     expect(success).toBe(true)
 
     const transactionIds = uniq(createDtos.map((dto) => dto.transactionId))
 
-    const tickets = await ticketsService.searchTickets({ transactionIds })
+    const tickets = await ticketsService.search({ transactionIds })
     return tickets
 }
 
@@ -38,5 +38,5 @@ export const getTickets = async ({ module }: TestContext, ticketIds: string[]) =
     const { TicketsClient } = await import('apps/cores')
     const ticketsService = module.get(TicketsClient)
 
-    return ticketsService.getTickets(ticketIds)
+    return ticketsService.getMany(ticketIds)
 }

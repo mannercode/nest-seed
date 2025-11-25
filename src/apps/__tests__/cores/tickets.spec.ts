@@ -16,21 +16,21 @@ describe('TicketsService', () => {
         await fixture?.teardown()
     })
 
-    describe('createTickets', () => {
+    describe('createMany', () => {
         // payload가 유효한 경우
         describe('when payload is valid', () => {
             // 티켓을 생성하고 결과를 반환한다
             it('creates and returns tickets', async () => {
                 const createDtos = [buildCreateTicketDto({ transactionId: oid(0x1) })]
 
-                const { success } = await fixture.ticketsService.createTickets(createDtos)
+                const { success } = await fixture.ticketsService.createMany(createDtos)
 
                 expect(success).toBe(true)
             })
         })
     })
 
-    describe('searchTickets', () => {
+    describe('search', () => {
         const transactionId = oid(0x1)
         const movieId = oid(0x2)
         const theaterId = oid(0x3)
@@ -47,7 +47,7 @@ describe('TicketsService', () => {
         describe('when `transactionIds` are provided', () => {
             // 지정한 transactionIds와 일치하는 티켓 목록을 반환한다.
             it('returns tickets for the transactionIds', async () => {
-                const tickets = await fixture.ticketsService.searchTickets({
+                const tickets = await fixture.ticketsService.search({
                     transactionIds: [transactionId]
                 })
 
@@ -59,7 +59,7 @@ describe('TicketsService', () => {
         describe('when `movieIds` are provided', () => {
             // 지정한 movieIds와 일치하는 티켓 목록을 반환한다.
             it('returns tickets for the movieIds', async () => {
-                const tickets = await fixture.ticketsService.searchTickets({ movieIds: [movieId] })
+                const tickets = await fixture.ticketsService.search({ movieIds: [movieId] })
 
                 expect(tickets).toEqual([createdTickets[1]])
             })
@@ -69,7 +69,7 @@ describe('TicketsService', () => {
         describe('when `theaterIds` are provided', () => {
             // 지정한 theaterIds와 일치하는 티켓 목록을 반환한다.
             it('returns tickets for the theaterIds', async () => {
-                const tickets = await fixture.ticketsService.searchTickets({
+                const tickets = await fixture.ticketsService.search({
                     theaterIds: [theaterId]
                 })
 
@@ -81,7 +81,7 @@ describe('TicketsService', () => {
         describe('when `showtimeIds` are provided', () => {
             // 지정한 showtimeIds와 일치하는 티켓 목록을 반환한다.
             it('returns tickets for the showtimeIds', async () => {
-                const tickets = await fixture.ticketsService.searchTickets({
+                const tickets = await fixture.ticketsService.search({
                     showtimeIds: [showtimeId]
                 })
 
@@ -93,7 +93,7 @@ describe('TicketsService', () => {
         describe('when filter is empty', () => {
             // 400 status를 던진다
             it('throws 400 status', async () => {
-                const promise = fixture.ticketsService.searchTickets({})
+                const promise = fixture.ticketsService.search({})
 
                 await expect(promise).rejects.toMatchObject({
                     status: 400,
@@ -103,7 +103,7 @@ describe('TicketsService', () => {
         })
     })
 
-    describe('updateTicketsStatus', () => {
+    describe('updateStatusMany', () => {
         let createdTickets: TicketDto[]
 
         beforeEach(async () => {
@@ -118,7 +118,7 @@ describe('TicketsService', () => {
         describe('when tickets exist', () => {
             // 티켓의 상태를 변경하고 변경된 티켓을 반환한다
             it('updates ticket status and returns the tickets', async () => {
-                const updatedTickets = await fixture.ticketsService.updateTicketsStatus(
+                const updatedTickets = await fixture.ticketsService.updateStatusMany(
                     pickIds(createdTickets),
                     TicketStatus.Sold
                 )
@@ -130,7 +130,7 @@ describe('TicketsService', () => {
         })
     })
 
-    describe('aggregateTicketSales', () => {
+    describe('aggregateSales', () => {
         // `showtimeIds`가 제공된 경우
         describe('when `showtimeIds` are provided', () => {
             const showtimeId = oid(0x10)
@@ -144,7 +144,7 @@ describe('TicketsService', () => {
 
                 const soldTickets = createdTickets.slice(0, soldCount)
 
-                await fixture.ticketsService.updateTicketsStatus(
+                await fixture.ticketsService.updateStatusMany(
                     pickIds(soldTickets),
                     TicketStatus.Sold
                 )
@@ -152,7 +152,7 @@ describe('TicketsService', () => {
 
             // 지정한 showtimeIds에 대한 판매 통계를 반환한다
             it('returns sales stats for the showtimeIds', async () => {
-                const ticketSales = await fixture.ticketsService.aggregateTicketSales({
+                const ticketSales = await fixture.ticketsService.aggregateSales({
                     showtimeIds: [showtimeId]
                 })
 

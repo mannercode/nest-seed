@@ -14,7 +14,7 @@ export class TheatersRepository extends MongooseRepository<Theater> {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createTheater(createDto: CreateTheaterDto) {
+    async create(createDto: CreateTheaterDto) {
         const theater = this.newDocument()
         theater.name = createDto.name
         theater.location = createDto.location
@@ -23,7 +23,7 @@ export class TheatersRepository extends MongooseRepository<Theater> {
         return theater.save()
     }
 
-    async searchTheatersPage(searchDto: SearchTheatersPageDto) {
+    async searchPage(searchDto: SearchTheatersPageDto) {
         const { take, skip, orderby } = searchDto
 
         const pagination = await this.findWithPagination({

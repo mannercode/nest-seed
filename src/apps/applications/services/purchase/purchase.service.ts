@@ -13,12 +13,12 @@ export class PurchaseService {
     ) {}
 
     async processPurchase(createDto: CreatePurchaseDto) {
-        const payment = await this.paymentsService.createPayment({
+        const payment = await this.paymentsService.create({
             customerId: createDto.customerId,
             amount: createDto.totalPrice
         })
         await this.ticketProcessor.validatePurchase(createDto)
-        const purchase = await this.purchasesService.createPurchaseRecord({
+        const purchase = await this.purchasesService.create({
             ...createDto,
             paymentId: payment.id
         })

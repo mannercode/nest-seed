@@ -29,16 +29,13 @@ export class CustomersController {
 
     @Public()
     @Post()
-    async createCustomer(@Body() createDto: CreateCustomerDto) {
-        return this.customersService.createCustomer(createDto)
+    async create(@Body() createDto: CreateCustomerDto) {
+        return this.customersService.create(createDto)
     }
 
     @Patch(':customerId')
-    async updateCustomer(
-        @Param('customerId') customerId: string,
-        @Body() updateDto: UpdateCustomerDto
-    ) {
-        return this.customersService.updateCustomer(customerId, updateDto)
+    async update(@Param('customerId') customerId: string, @Body() updateDto: UpdateCustomerDto) {
+        return this.customersService.update(customerId, updateDto)
     }
 
     @Get('jwtGuard')
@@ -47,19 +44,19 @@ export class CustomersController {
     }
 
     @Get(':customerId')
-    async getCustomer(@Param('customerId') customerId: string) {
-        const customers = await this.customersService.getCustomers([customerId])
+    async get(@Param('customerId') customerId: string) {
+        const customers = await this.customersService.getMany([customerId])
         return customers[0]
     }
 
     @Delete(':customerId')
-    async deleteCustomer(@Param('customerId') customerId: string) {
-        return this.customersService.deleteCustomers([customerId])
+    async delete(@Param('customerId') customerId: string) {
+        return this.customersService.deleteMany([customerId])
     }
 
     @Get()
-    async searchCustomersPage(@Query() searchDto: SearchCustomersPageDto) {
-        return this.customersService.searchCustomersPage(searchDto)
+    async searchPage(@Query() searchDto: SearchCustomersPageDto) {
+        return this.customersService.searchPage(searchDto)
     }
 
     @UseGuards(CustomerLocalAuthGuard)

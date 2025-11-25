@@ -18,6 +18,6 @@ export const createWatchRecord = async ({ module }: TestContext, override = {}) 
 
     const createDto = buildCreateWatchRecordDto(override)
 
-    const watchRecord = await watchRecordsService.createWatchRecord(createDto)
+    const watchRecord = await watchRecordsService.create(createDto)
     return watchRecord
 }

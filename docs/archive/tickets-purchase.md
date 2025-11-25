@@ -68,7 +68,7 @@ Customer -> Frontend : 영화 예매 시스템에 접속
             end
             Showing -> Showtimes : getShowingMovieIds()
             Showing <-- Showtimes : showingMovieIds
-            Showing -> Movies : getMovies({movieIds: showingMovieIds})
+            Showing -> Movies : getMany({movieIds: showingMovieIds})
             Showing <-- Movies : movies
             Showing -> Customers : getWatchHistory(customerId)
             Showing <-- Customers : watchHistory
@@ -99,7 +99,7 @@ Customer -> Frontend : 영화 선택
         Backend -> Showing: searchTheaters({movieId, userLocation})
             Showing -> Showtimes: findShowingTheaterIds({movieId})
             Showing <-- Showtimes: theaterIds[]
-            Showing -> Theaters: getTheaters({theaterIds})
+            Showing -> Theaters: getMany({theaterIds})
             Showing <-- Theaters: theaters[]
             Showing -> Showing: sortTheatersByDistance({theaters, userLocation})
         Backend <-- Showing: showingTheaters[]
@@ -134,9 +134,9 @@ actor Customer
 Customer -> Frontend : 상영일 선택
     Frontend -> Backend : 상영 시간 목록 요청\nGET /showing/movies/{}/theaters/{}/showdates/{}/showtimes
         Backend -> Showing: getShowtimesWithSalesStatus({movieId, theaterId, showdate})
-            Showing -> Showtimes: searchShowtimes({movieId, theaterId, showdate})
+            Showing -> Showtimes: search({movieId, theaterId, showdate})
             Showing <-- Showtimes: showtimes[]
-            Showing -> Tickets: aggregateTicketSales({ showtimeIds })
+            Showing -> Tickets: aggregateSales({ showtimeIds })
             Showing <-- Tickets: salesStatuses[]
             note left
             ShowtimeSalesStatus = {
@@ -162,7 +162,7 @@ actor Customer
 Customer -> Frontend : 상영 시간 선택
     Frontend -> Backend : 상영 시간의 티켓 정보 요청\nGET /showing/showtimes/{}
         Backend -> Showing : getShowingSeatmap(showtimeId)
-            Showing -> Tickets : getTickets(showtimeId)
+            Showing -> Tickets : getMany(showtimeId)
             Showing <-- Tickets : tickets[]
             Showing -> Showing : tickets[]
         Backend <-- Showing: tickets[]
@@ -177,9 +177,9 @@ actor Customer
 
 Customer->>Frontend: 좌석 선택
     Frontend->>Backend: 티켓 구매\nPOST /payments
-        Backend->>Payment: createPayment(ticketIds[])
+        Backend->>Payment: create(ticketIds[])
             Payment->>Tickets: notifyTicketsPurchased(ticketIds[])
-                Tickets->>Tickets: updateTicketsStatus(ticketIds[], 'sold')
+                Tickets->>Tickets: updateStatusMany(ticketIds[], 'sold')
             Tickets-->>Payment: 티켓 구매 처리 완료
         Payment-->>Backend: 결제 완료 및 티켓 정보
     Backend-->>Frontend: 티켓 구매 결과(성공)
