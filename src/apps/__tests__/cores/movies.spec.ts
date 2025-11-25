@@ -33,6 +33,7 @@ describe('MoviesService', () => {
                 createdMovie = body
             })
 
+            // TODO fix
             // 영화를 생성하고 반환한다
             it('creates and returns a movie', async () => {
                 expect(createdMovie).toEqual({

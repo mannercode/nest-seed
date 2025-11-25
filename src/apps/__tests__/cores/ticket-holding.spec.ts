@@ -84,7 +84,7 @@ describe('TicketHoldingService', () => {
                         ticketIds: newTicketIds
                     })
                 })
-
+                // TODO fix
                 // true를 반환한다
                 it('returns true', async () => {
                     expect(isHeld).toBe(true)

@@ -95,6 +95,7 @@ describe('ShowtimeCreationService', () => {
                 result = await waitPromise
             })
 
+            // TODO fix
             // transactionId를 반환한다
             it('returns a transactionId', async () => {
                 expect(transactionId).toBeDefined()

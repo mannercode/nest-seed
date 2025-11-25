@@ -33,6 +33,7 @@ describe('PurchaseService', () => {
                 createdPurchase = body
             })
 
+            // TODO fix
             // 구매를 생성하고 반환한다
             it('creates and returns a purchase', async () => {
                 expect(createdPurchase).toEqual({

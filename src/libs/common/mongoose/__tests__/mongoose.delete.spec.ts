@@ -15,6 +15,7 @@ describe('Mongoose Delete', () => {
 
         // 생성 직후인 경우
         describe('when the document is newly created', () => {
+            // TODO fix
             // deletedAt이 null이다
             it('sets deletedAt to null', async () => {
                 expect(fixture.doc).toMatchObject({ deletedAt: null })
