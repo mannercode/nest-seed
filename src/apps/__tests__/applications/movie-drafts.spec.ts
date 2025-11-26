@@ -19,9 +19,7 @@ describe.skip('MovieDraftsService', () => {
         describe('when the request is valid', () => {
             // movie-draft을 생성하고 반환한다
             it('creates and returns a movie-draft', async () => {
-                await fixture.httpClient
-                    .post('/movie-drafts')
-                    .created({ id: expect.any(String) })
+                await fixture.httpClient.post('/movie-drafts').created({ id: expect.any(String) })
             })
         })
     })
