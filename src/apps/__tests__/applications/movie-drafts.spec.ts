@@ -1,12 +1,12 @@
 import { nullObjectId } from 'testlib'
 import { Errors } from '../__helpers__'
-import type { Fixture } from './movie-creations.fixture'
+import type { Fixture } from './movie-drafts.fixture'
 
-describe.skip('MovieCreationsService', () => {
+describe.skip('MovieDraftsService', () => {
     let fixture: Fixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./movie-creations.fixture')
+        const { createFixture } = await import('./movie-drafts.fixture')
         fixture = await createFixture()
     })
 
@@ -14,35 +14,35 @@ describe.skip('MovieCreationsService', () => {
         await fixture?.teardown()
     })
 
-    describe('POST /movie-creations', () => {
+    describe('POST /movie-drafts', () => {
         // 요청이 유효한 경우
         describe('when request is valid', () => {
-            // movie-creation을 생성하고 반환한다
-            it('creates and returns a movie-creation', async () => {
+            // movie-draft을 생성하고 반환한다
+            it('creates and returns a movie-draft', async () => {
                 await fixture.httpClient
-                    .post('/movie-creations')
+                    .post('/movie-drafts')
                     .created({ id: expect.any(String) })
             })
         })
     })
 
-    describe('GET /movie-creations/:id', () => {
-        // movie-creation이 존재하는 경우
-        describe('when movie-creation exists', () => {
-            // movie-creation을 반환한다
-            it('returns the movie-creation', async () => {
+    describe('GET /movie-drafts/:id', () => {
+        // movie-draft이 존재하는 경우
+        describe('when movie-draft exists', () => {
+            // movie-draft을 반환한다
+            it('returns the movie-draft', async () => {
                 await fixture.httpClient
-                    .get(`/movie-creations/${fixture.createdMovieCreation.id}`)
+                    .get(`/movie-drafts/${fixture.createdMovieCreation.id}`)
                     .ok(fixture.createdMovieCreation)
             })
         })
 
-        // movie-creation이 존재하지 않는 경우
-        describe('when movie-creation does not exist', () => {
+        // movie-draft이 존재하지 않는 경우
+        describe('when movie-draft does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fixture.httpClient
-                    .get(`/movie-creations/${nullObjectId}`)
+                    .get(`/movie-drafts/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
                         notFoundIds: [nullObjectId]
@@ -51,11 +51,11 @@ describe.skip('MovieCreationsService', () => {
         })
     })
 
-    describe('PATCH /movie-creations/:id', () => {
+    describe('PATCH /movie-drafts/:id', () => {
         // payload가 유효한 경우
         describe('when payload is valid', () => {
-            // movie-creation을 수정하고 반환한다
-            it('updates and returns the movie-creation', async () => {
+            // movie-draft을 수정하고 반환한다
+            it('updates and returns the movie-draft', async () => {
                 const updateDto = {
                     title: 'update title',
                     genres: ['romance', 'thriller'],
@@ -68,65 +68,65 @@ describe.skip('MovieCreationsService', () => {
                 const expected = { ...fixture.createdMovieCreation, ...updateDto }
 
                 await fixture.httpClient
-                    .patch(`/movie-creations/${fixture.createdMovieCreation.id}`)
+                    .patch(`/movie-drafts/${fixture.createdMovieCreation.id}`)
                     .body(updateDto)
                     .ok(expected)
 
                 await fixture.httpClient
-                    .get(`/movie-creations/${fixture.createdMovieCreation.id}`)
+                    .get(`/movie-drafts/${fixture.createdMovieCreation.id}`)
                     .ok(expected)
             })
         })
 
-        // movie-creation이 존재하지 않는 경우
-        describe('when movie-creation does not exist', () => {
+        // movie-draft이 존재하지 않는 경우
+        describe('when movie-draft does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fixture.httpClient
-                    .patch(`/movie-creations/${nullObjectId}`)
+                    .patch(`/movie-drafts/${nullObjectId}`)
                     .body({})
                     .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
             })
         })
     })
 
-    describe('POST /movie-creations/:id/complete', () => {
-        // movie-creation이 존재하고 유효한 경우
-        describe('when the movie-creation exists and is valid', () => {
-            // Movie를 생성하고 movie-creation을 삭제한 뒤 생성된 Movie를 반환한다
-            it('creates a Movie, removes the movie-creation, and returns the created Movie', () => {})
+    describe('POST /movie-drafts/:id/complete', () => {
+        // movie-draft이 존재하고 유효한 경우
+        describe('when the movie-draft exists and is valid', () => {
+            // Movie를 생성하고 movie-draft을 삭제한 뒤 생성된 Movie를 반환한다
+            it('creates a Movie, removes the movie-draft, and returns the created Movie', () => {})
         })
 
-        // movie-creation이 존재하지만 유효하지 않은 경우
-        describe('when the movie-creation exists but is invalid', () => {
+        // movie-draft이 존재하지만 유효하지 않은 경우
+        describe('when the movie-draft exists but is invalid', () => {
             // 422 Unprocessable Entity를 반환한다
             it('returns 422 Unprocessable Entity', () => {})
         })
 
-        // movie-creation이 존재하지 않는 경우 (이미 완료되었거나 삭제된 경우 포함)
-        describe('when the movie-creation does not exist', () => {
+        // movie-draft이 존재하지 않는 경우 (이미 완료되었거나 삭제된 경우 포함)
+        describe('when the movie-draft does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', () => {})
         })
     })
 
-    describe('DELETE /movie-creations/:id', () => {
-        // movie-creation이 존재하는 경우
-        describe('when the movie-creation exists', () => {
-            // movie-creation을 삭제하고 204 No Content를 반환한다
-            it('deletes the movie-creation and returns 204 No Content', () => {})
+    describe('DELETE /movie-drafts/:id', () => {
+        // movie-draft이 존재하는 경우
+        describe('when the movie-draft exists', () => {
+            // movie-draft을 삭제하고 204 No Content를 반환한다
+            it('deletes the movie-draft and returns 204 No Content', () => {})
         })
 
-        // movie-creation이 존재하지 않는 경우 (이미 완료되었거나 삭제된 경우 포함)
-        describe('when the movie-creation does not exist', () => {
+        // movie-draft이 존재하지 않는 경우 (이미 완료되었거나 삭제된 경우 포함)
+        describe('when the movie-draft does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', () => {})
         })
     })
 
-    describe('POST /movie-creations/:id/images', () => {
-        // movie-creation이 존재하고 페이로드가 유효한 경우
-        describe('when the movie-creation exists and the payload is valid', () => {
+    describe('POST /movie-drafts/:id/images', () => {
+        // movie-draft이 존재하고 페이로드가 유효한 경우
+        describe('when the movie-draft exists and the payload is valid', () => {
             // 이미지 슬롯을 생성하고 S3 업로드 URL을 반환한다
             it('creates an image slot and returns an S3 upload URL', () => {})
         })
@@ -143,36 +143,36 @@ describe.skip('MovieCreationsService', () => {
             it('returns 400 Bad Request', () => {})
         })
 
-        // movie-creation이 존재하지 않는 경우 (이미 완료되었거나 삭제된 경우 포함)
-        describe('when the movie-creation does not exist', () => {
+        // movie-draft이 존재하지 않는 경우 (이미 완료되었거나 삭제된 경우 포함)
+        describe('when the movie-draft does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', () => {})
         })
     })
 
-    describe('DELETE /movie-creations/:creationId/images/:imageId', () => {
-        // movie-creation과 image가 모두 존재하는 경우
-        describe('when the movie-creation and image both exist', () => {
+    describe('DELETE /movie-drafts/:creationId/images/:imageId', () => {
+        // movie-draft과 image가 모두 존재하는 경우
+        describe('when the movie-draft and image both exist', () => {
             // image를 삭제하고 204 No Content를 반환한다
             it('deletes the image and returns 204 No Content', () => {})
         })
 
-        // movie-creation에 image가 존재하지 않는 경우
-        describe('when the image does not exist in the movie-creation', () => {
+        // movie-draft에 image가 존재하지 않는 경우
+        describe('when the image does not exist in the movie-draft', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', () => {})
         })
 
-        // movie-creation이 존재하지 않는 경우 (이미 완료되었거나 삭제된 경우 포함)
-        describe('when the movie-creation does not exist', () => {
+        // movie-draft이 존재하지 않는 경우 (이미 완료되었거나 삭제된 경우 포함)
+        describe('when the movie-draft does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', () => {})
         })
     })
 
-    describe('POST /movie-creations/:id/images/:imageId/complete', () => {
-        // movie-creation과 image가 존재하고 S3 업로드가 성공한 경우
-        describe('when the movie-creation and image exist and the S3 upload succeeded', () => {
+    describe('POST /movie-drafts/:id/images/:imageId/complete', () => {
+        // movie-draft과 image가 존재하고 S3 업로드가 성공한 경우
+        describe('when the movie-draft and image exist and the S3 upload succeeded', () => {
             // image를 READY 상태로 표시하고 200 OK를 반환한다
             it('marks the image as READY and returns 200 OK', () => {})
         })
@@ -189,8 +189,8 @@ describe.skip('MovieCreationsService', () => {
             it('returns 404 Not Found', () => {})
         })
 
-        // movie-creation이 존재하지 않는 경우 (이미 완료되었거나 삭제된 경우 포함)
-        describe('when the movie-creation does not exist', () => {
+        // movie-draft이 존재하지 않는 경우 (이미 완료되었거나 삭제된 경우 포함)
+        describe('when the movie-draft does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', () => {})
         })
