@@ -24,6 +24,10 @@
         "host.docker.internal:127.0.0.1",
         "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     ],
+    "forwardPorts": [
+        5010,
+        5020
+    ],
     "remoteUser": "node",
     "remoteEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}"
@@ -33,13 +37,9 @@
         "ci": "npm ci"
     },
     "postStartCommand": {
-        "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log 2>&1 &'",
+        "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null",
         "reset-infra": "bash infra/local/reset-infra.sh"
     },
-    "forwardPorts": [
-        5010,
-        5020
-    ],
     "customizations": {
         "vscode": {
             "extensions": [
@@ -53,7 +53,6 @@
                 "mutantdino.resourcemonitor",
                 "mkhl.shfmt",
                 "github.vscode-pull-request-github",
-                "GitHub.copilot",
                 "openai.chatgpt"
             ],
             "settings": {
