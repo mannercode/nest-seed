@@ -29,7 +29,7 @@ describe('CommonQuery', () => {
         })
 
         // orderby 형식이 잘못된 경우
-        describe('when `orderby` is malformed', () => {
+        describe('when the `orderby` is malformed', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fixture.httpClient
@@ -40,7 +40,7 @@ describe('CommonQuery', () => {
         })
 
         // 정렬 방향이 잘못된 경우
-        describe('when sort direction is invalid', () => {
+        describe('when the sort direction is invalid', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fixture.httpClient

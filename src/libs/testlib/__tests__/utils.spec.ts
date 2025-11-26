@@ -17,7 +17,7 @@ describe('createDummyFile', () => {
     })
 
     // 크기가 지정된 경우
-    describe('when size is specified', () => {
+    describe('when the size is specified', () => {
         // 해당 크기의 파일을 생성한다
         it('creates a file of the given size', async () => {
             const sizeInBytes = Byte.fromString('500KB')

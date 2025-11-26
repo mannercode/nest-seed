@@ -20,7 +20,7 @@ describe('StorageFilesService', () => {
         const fields = [{ name: 'name', value: 'test' }]
 
         // payload가 유효한 경우
-        describe('when payload is valid', () => {
+        describe('when the payload is valid', () => {
             // 파일을 저장하고 반환한다
             it('stores and returns the files', async () => {
                 const files = [fixture.localFiles.small, fixture.localFiles.large]
@@ -68,7 +68,7 @@ describe('StorageFilesService', () => {
         })
 
         // 허용된 크기를 초과하는 경우
-        describe('when file size exceeds the limit', () => {
+        describe('when the file size exceeds the limit', () => {
             // 413 Payload Too Large를 반환한다
             it('returns 413 Payload Too Large', async () => {
                 await fixture.httpClient
@@ -80,7 +80,7 @@ describe('StorageFilesService', () => {
         })
 
         // 파일 개수가 제한을 초과하는 경우
-        describe('when file count exceeds the limit', () => {
+        describe('when the file count exceeds the limit', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 const attachments = fixture.overLimitFiles.map((file) => ({
@@ -97,7 +97,7 @@ describe('StorageFilesService', () => {
         })
 
         // 허용되지 않은 파일 형식인 경우
-        describe('when file type is not allowed', () => {
+        describe('when the file type is not allowed', () => {
             // 415 Unsupported Media Type를 반환한다
             it('returns 415 Unsupported Media Type', async () => {
                 await fixture.httpClient
@@ -112,7 +112,7 @@ describe('StorageFilesService', () => {
         })
 
         // 필수 필드가 누락된 경우
-        describe('when required fields are missing', () => {
+        describe('when the required fields are missing', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fixture.httpClient
@@ -144,7 +144,7 @@ describe('StorageFilesService', () => {
         })
 
         // 파일이 존재하는 경우
-        describe('when file exists', () => {
+        describe('when the file exists', () => {
             // 파일을 다운로드한다
             it('downloads the file', async () => {
                 const downloadFile = Path.join(downloadPath, 'download.txt')
@@ -160,7 +160,7 @@ describe('StorageFilesService', () => {
         })
 
         // 파일이 존재하지 않는 경우
-        describe('when file does not exist', () => {
+        describe('when the file does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fixture.httpClient
@@ -175,7 +175,7 @@ describe('StorageFilesService', () => {
 
     describe('DELETE /storage-files/:fileId', () => {
         // 파일이 존재하는 경우
-        describe('when file exists', () => {
+        describe('when the file exists', () => {
             let uploadedFile: StorageFileDto
 
             beforeEach(async () => {
@@ -205,7 +205,7 @@ describe('StorageFilesService', () => {
         })
 
         // 파일이 존재하지 않는 경우
-        describe('when file does not exist', () => {
+        describe('when the file does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fixture.httpClient

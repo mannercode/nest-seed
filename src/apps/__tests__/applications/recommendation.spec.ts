@@ -45,7 +45,7 @@ describe('RecommendationService', () => {
         })
 
         // 고객인 경우
-        describe('when user is a customer', () => {
+        describe('when the user is a customer', () => {
             let accessToken: string
 
             beforeEach(async () => {
@@ -77,7 +77,7 @@ describe('RecommendationService', () => {
         })
 
         // 손님인 경우
-        describe('when user is a guest', () => {
+        describe('when the user is a guest', () => {
             // 손님의 추천 목록을 반환한다
             it('returns recommendations for guests', async () => {
                 await fixture.httpClient.get('/movies/recommended').ok([

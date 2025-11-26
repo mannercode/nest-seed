@@ -54,7 +54,7 @@ describe('Mongoose Delete', () => {
         })
 
         // 삭제 후 aggregate를 수행하는 경우
-        describe('when aggregating after deletion', () => {
+        describe('when aggregating after a deletion', () => {
             // 삭제된 문서는 반환하지 않는다
             it('excludes deleted documents from aggregate', async () => {
                 await fixture.model.deleteOne({ _id: fixture.doc._id })

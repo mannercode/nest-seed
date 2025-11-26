@@ -23,7 +23,7 @@ describe('ShowtimeCreationService', () => {
 
     describe('GET /showtime-creation/movies', () => {
         // 쿼리 파라미터가 없는 경우
-        describe('when query parameters are missing', () => {
+        describe('when the query parameters are missing', () => {
             // 기본 페이지네이션으로 영화를 반환한다
             it('returns movies with default pagination', async () => {
                 await fixture.httpClient
@@ -35,7 +35,7 @@ describe('ShowtimeCreationService', () => {
 
     describe('GET /showtime-creation/theaters', () => {
         // 쿼리 파라미터가 없는 경우
-        describe('when query parameters are missing', () => {
+        describe('when the query parameters are missing', () => {
             // 기본 페이지네이션으로 극장을 반환한다
             it('returns theaters with default pagination', async () => {
                 await fixture.httpClient
@@ -59,7 +59,7 @@ describe('ShowtimeCreationService', () => {
         })
 
         // `theaterIds`가 제공된 경우
-        describe('when `theaterIds` are provided', () => {
+        describe('when the `theaterIds` are provided', () => {
             // 지정한 theaterIds와 일치하는 상영시간 목록을 반환한다
             it('returns showtimes for the theaterIds', async () => {
                 await fixture.httpClient
@@ -72,7 +72,7 @@ describe('ShowtimeCreationService', () => {
 
     describe('POST /showtime-creation/showtimes', () => {
         // payload가 유효한 경우
-        describe('when payload is valid', () => {
+        describe('when the payload is valid', () => {
             let createDto: BulkCreateShowtimesDto
             let transactionId: string
             let result: unknown
@@ -119,7 +119,7 @@ describe('ShowtimeCreationService', () => {
         })
 
         // 영화가 존재하지 않는 경우
-        describe('when movie does not exist', () => {
+        describe('when the movie does not exist', () => {
             // 존재하지 않는 영화 오류를 보고한다
             it('reports the missing movie error', async () => {
                 const waitPromise = waitForCompletion(fixture, 'error')
@@ -167,7 +167,7 @@ describe('ShowtimeCreationService', () => {
         })
 
         // 상영시간이 충돌하는 경우
-        describe('when showtimes conflict', () => {
+        describe('when the showtimes conflict', () => {
             let initialShowtimes: ShowtimeDto[]
 
             beforeEach(async () => {

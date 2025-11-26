@@ -14,7 +14,7 @@ describe('RedisHealthIndicator', () => {
 
     describe('isHealthy', () => {
         // ping 응답이 'PONG'인 경우
-        describe('when ping response is "PONG"', () => {
+        describe('when the ping response is "PONG"', () => {
             // up 상태를 반환한다
             it('returns an up status', async () => {
                 const healthStatus = await fixture.redisIndicator.isHealthy('key', fixture.redis)
@@ -23,7 +23,7 @@ describe('RedisHealthIndicator', () => {
         })
 
         // ping 응답이 'PONG'이 아닌 경우
-        describe('when ping response is not "PONG"', () => {
+        describe('when the ping response is not "PONG"', () => {
             // down 상태와 사유를 반환한다
             it('returns down status with a reason', async () => {
                 jest.spyOn(fixture.redis, 'ping').mockResolvedValueOnce('INVALID_RESPONSE')

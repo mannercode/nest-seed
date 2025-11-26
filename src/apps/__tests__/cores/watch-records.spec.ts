@@ -17,7 +17,7 @@ describe('WatchRecordsService', () => {
 
     describe('create', () => {
         // payload가 유효한 경우
-        describe('when payload is valid', () => {
+        describe('when the payload is valid', () => {
             // 관람 기록을 생성하고 반환한다
             it('creates and returns a watch record', async () => {
                 const createDto = buildCreateWatchRecordDto()
@@ -43,7 +43,7 @@ describe('WatchRecordsService', () => {
         })
 
         // `customerId`가 제공된 경우
-        describe('when `customerId` is provided', () => {
+        describe('when the `customerId` is provided', () => {
             // 지정한 customerId의 관람 기록 페이지를 반환한다
             it('returns paginated records for the customerId', async () => {
                 const pagination = await fixture.watchRecordsService.searchPage({ customerId })

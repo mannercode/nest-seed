@@ -14,7 +14,7 @@ describe('Mongoose Expires Examples', () => {
     })
 
     // Mongoose의 TTL(Expire) 기능이 제대로 동작하는지 검증
-    it('should remove document automatically after TTL expires', async () => {
+    it('removes the document automatically after the TTL expires', async () => {
         const doc = new fixture.model()
         doc.sn = 1234567
 

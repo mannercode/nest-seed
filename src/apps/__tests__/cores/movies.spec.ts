@@ -18,7 +18,7 @@ describe('MoviesService', () => {
 
     describe('POST /movies', () => {
         // payload가 유효한 경우
-        describe('when payload is valid', () => {
+        describe('when the payload is valid', () => {
             let createDto: CreateMovieDto
             let createdMovie: MovieDto
 
@@ -54,7 +54,7 @@ describe('MoviesService', () => {
         })
 
         // 필수 필드가 누락된 경우
-        describe('when required fields are missing', () => {
+        describe('when the required fields are missing', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fixture.httpClient
@@ -67,7 +67,7 @@ describe('MoviesService', () => {
 
     describe('GET /movies/:id', () => {
         // 영화가 존재하는 경우
-        describe('when movie exists', () => {
+        describe('when the movie exists', () => {
             // 영화를 반환한다
             it('returns the movie', async () => {
                 await fixture.httpClient
@@ -77,7 +77,7 @@ describe('MoviesService', () => {
         })
 
         // 영화가 존재하지 않는 경우
-        describe('when movie does not exist', () => {
+        describe('when the movie does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fixture.httpClient
@@ -92,7 +92,7 @@ describe('MoviesService', () => {
 
     describe('PATCH /movies/:id', () => {
         // payload가 유효한 경우
-        describe('when payload is valid', () => {
+        describe('when the payload is valid', () => {
             // 영화를 수정하고 반환한다
             it('updates and returns the movie', async () => {
                 const updateDto = {
@@ -116,7 +116,7 @@ describe('MoviesService', () => {
         })
 
         // 영화가 존재하지 않는 경우
-        describe('when movie does not exist', () => {
+        describe('when the movie does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fixture.httpClient
@@ -216,7 +216,7 @@ describe('MoviesService', () => {
         })
 
         // 쿼리 파라미터가 없는 경우
-        describe('when query parameters are missing', () => {
+        describe('when the query parameters are missing', () => {
             // 기본 페이지네이션으로 영화를 반환한다
             it('returns movies with default pagination', async () => {
                 await fixture.httpClient
@@ -231,7 +231,7 @@ describe('MoviesService', () => {
         })
 
         // 쿼리 파라미터가 유효하지 않은 경우
-        describe('when query parameters are invalid', () => {
+        describe('when the query parameters are invalid', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fixture.httpClient
@@ -242,7 +242,7 @@ describe('MoviesService', () => {
         })
 
         // `title` 부분 문자열이 제공된 경우
-        describe('when partial `title` is provided', () => {
+        describe('when a partial `title` is provided', () => {
             // 제목이 해당 부분 문자열을 포함하는 영화를 반환한다
             it('returns movies whose title contains the given substring', async () => {
                 await fixture.httpClient
@@ -257,7 +257,7 @@ describe('MoviesService', () => {
         })
 
         // `genre`가 제공된 경우
-        describe('when `genre` is provided', () => {
+        describe('when the `genre` is provided', () => {
             // 지정한 장르와 일치하는 영화를 반환한다
             it('returns movies matching the given genre', async () => {
                 await fixture.httpClient
@@ -272,7 +272,7 @@ describe('MoviesService', () => {
         })
 
         // `releaseDate`가 제공된 경우
-        describe('when `releaseDate` is provided', () => {
+        describe('when the `releaseDate` is provided', () => {
             // 지정된 날짜에 개봉한 영화를 반환한다
             it('returns movies released on the given date', async () => {
                 await fixture.httpClient
@@ -287,7 +287,7 @@ describe('MoviesService', () => {
         })
 
         // `plot` 부분 문자열이 제공된 경우
-        describe('when partial `plot` is provided', () => {
+        describe('when a partial `plot` is provided', () => {
             // 줄거리에 해당 부분 문자열을 포함하는 영화를 반환한다
             it('returns movies whose plot contains the given substring', async () => {
                 await fixture.httpClient
@@ -302,7 +302,7 @@ describe('MoviesService', () => {
         })
 
         // `director` 부분 문자열이 제공된 경우
-        describe('when partial `director` is provided', () => {
+        describe('when a partial `director` is provided', () => {
             // 감독 이름에 해당 부분 문자열이 포함된 영화를 반환한다
             it("returns movies whose director's name includes the substring", async () => {
                 await fixture.httpClient
@@ -317,7 +317,7 @@ describe('MoviesService', () => {
         })
 
         // `rating`이 제공된 경우
-        describe('when `rating` is provided', () => {
+        describe('when the `rating` is provided', () => {
             // 지정한 등급과 일치하는 영화를 반환한다
             it('returns movies matching the given rating', async () => {
                 await fixture.httpClient
@@ -379,7 +379,7 @@ describe('MoviesService', () => {
 //     beforeEach(async () => {})
 
 //     // `theaterIds`가 제공된 경우
-//     describe('when `theaterIds` is provided', () => {
+//     describe('when the `theaterIds` value is provided', () => {
 //         // 지정한 theaterIds와 일치하는 상영시간 목록을 반환한다
 //         it('returns showtimes matching the given theaterIds', async () => {
 //             await fixture.httpClient

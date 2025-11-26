@@ -5,7 +5,7 @@ import { DateTimeRange, PartialDateTimeRange } from 'common'
 describe('DateTimeRange', () => {
     describe('validation', () => {
         // 문자열 날짜가 유효한 경우
-        describe('when date strings are valid', () => {
+        describe('when the date strings are valid', () => {
             // Date 객체로 변환하고 검증을 통과한다
             it('converts strings to Dates and passes validation', () => {
                 const plainData = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z' }
@@ -41,7 +41,7 @@ describe('DateTimeRange', () => {
 
     describe('create', () => {
         // start와 end가 제공된 경우
-        describe('when start and end are provided', () => {
+        describe('when the start and end are provided', () => {
             // DateTimeRange를 생성한다
             it('creates a DateTimeRange', () => {
                 const result = DateTimeRange.create({
@@ -56,7 +56,7 @@ describe('DateTimeRange', () => {
         })
 
         // start와 days가 제공된 경우
-        describe('when start and days are provided', () => {
+        describe('when the start and days are provided', () => {
             // DateTimeRange를 생성한다
             it('creates a DateTimeRange', () => {
                 const result = DateTimeRange.create({ start: new Date('2023-01-01'), days: 2 })
@@ -68,7 +68,7 @@ describe('DateTimeRange', () => {
         })
 
         // start와 minutes가 제공된 경우
-        describe('when start and minutes are provided', () => {
+        describe('when the start and minutes are provided', () => {
             // DateTimeRange를 생성한다
             it('creates a DateTimeRange', () => {
                 const result = DateTimeRange.create({
@@ -92,7 +92,7 @@ describe('DateTimeRange', () => {
         })
 
         // start만 제공되고 기간이 없는 경우
-        describe('when only start is provided without duration', () => {
+        describe('when only the start is provided without a duration', () => {
             // 에러를 던진다
             it('throws an error', () => {
                 const throwException = () => DateTimeRange.create({ start: new Date() })
@@ -104,7 +104,7 @@ describe('DateTimeRange', () => {
 
 describe('PartialDateTimeRange', () => {
     // 문자열 날짜가 유효한 경우
-    describe('when date strings are valid', () => {
+    describe('when the date strings are valid', () => {
         // Date 객체로 변환하고 검증을 통과한다
         it('converts strings to Dates and passes validation', () => {
             const plainData = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z' }

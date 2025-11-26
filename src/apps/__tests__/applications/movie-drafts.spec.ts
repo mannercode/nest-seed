@@ -16,7 +16,7 @@ describe.skip('MovieDraftsService', () => {
 
     describe('POST /movie-drafts', () => {
         // 요청이 유효한 경우
-        describe('when request is valid', () => {
+        describe('when the request is valid', () => {
             // movie-draft을 생성하고 반환한다
             it('creates and returns a movie-draft', async () => {
                 await fixture.httpClient
@@ -28,7 +28,7 @@ describe.skip('MovieDraftsService', () => {
 
     describe('GET /movie-drafts/:id', () => {
         // movie-draft이 존재하는 경우
-        describe('when movie-draft exists', () => {
+        describe('when the movie-draft exists', () => {
             // movie-draft을 반환한다
             it('returns the movie-draft', async () => {
                 await fixture.httpClient
@@ -38,7 +38,7 @@ describe.skip('MovieDraftsService', () => {
         })
 
         // movie-draft이 존재하지 않는 경우
-        describe('when movie-draft does not exist', () => {
+        describe('when the movie-draft does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fixture.httpClient
@@ -53,7 +53,7 @@ describe.skip('MovieDraftsService', () => {
 
     describe('PATCH /movie-drafts/:id', () => {
         // payload가 유효한 경우
-        describe('when payload is valid', () => {
+        describe('when the payload is valid', () => {
             // movie-draft을 수정하고 반환한다
             it('updates and returns the movie-draft', async () => {
                 const updateDto = {
@@ -79,7 +79,7 @@ describe.skip('MovieDraftsService', () => {
         })
 
         // movie-draft이 존재하지 않는 경우
-        describe('when movie-draft does not exist', () => {
+        describe('when the movie-draft does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fixture.httpClient
@@ -138,7 +138,7 @@ describe.skip('MovieDraftsService', () => {
         })
 
         // contentType이 유효하지 않은 경우
-        describe('when the contentType is invalid', () => {
+        describe('when the `contentType` is invalid', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', () => {})
         })
@@ -178,7 +178,7 @@ describe.skip('MovieDraftsService', () => {
         })
 
         // S3 검증이 실패한 경우
-        describe('when S3 validation fails', () => {
+        describe('when the S3 validation fails', () => {
             // 422 Unprocessable Entity를 반환한다
             it('returns 422 Unprocessable Entity', () => {})
         })

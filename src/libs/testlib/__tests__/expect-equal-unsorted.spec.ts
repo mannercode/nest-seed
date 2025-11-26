@@ -2,7 +2,7 @@ import { expectEqualUnsorted } from 'testlib'
 
 describe('expectEqualUnsorted', () => {
     // 비교에 성공하는 경우
-    describe('when the comparison should succeed', () => {
+    describe('when the comparison succeeds', () => {
         // 순서가 다른 배열을 비교한다.
         it('compares unordered arrays of objects', () => {
             const actual = [
@@ -38,7 +38,7 @@ describe('expectEqualUnsorted', () => {
     })
 
     // 비교에 실패하여 예외를 던지는 경우
-    describe('when the comparison should fail', () => {
+    describe('when the comparison fails', () => {
         // 내용이 다른 배열에 대해 예외를 던진다.
         it('throws an error for arrays with different content', () => {
             const actual = [

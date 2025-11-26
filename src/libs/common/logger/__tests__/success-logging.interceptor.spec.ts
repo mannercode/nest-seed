@@ -18,7 +18,7 @@ describe('SuccessLoggingInterceptor', () => {
     })
 
     // 요청이 성공하는 경우
-    describe('when requests succeed', () => {
+    describe('when the requests succeed', () => {
         beforeEach(async () => {
             fixture = await createFixture([])
         })

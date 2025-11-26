@@ -160,7 +160,7 @@ describe('@MethodLog', () => {
         })
 
         // excludeArgs가 설정된 경우
-        describe('when excludeArgs hides parameters', () => {
+        describe('when `excludeArgs` hides the parameters', () => {
             // 제외된 인자를 기록하지 않는다
             it('omits excluded args', () => {
                 service.excludeArgs('1', '2')

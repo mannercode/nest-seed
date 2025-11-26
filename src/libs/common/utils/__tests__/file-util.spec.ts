@@ -49,7 +49,7 @@ describe('FileUtil', () => {
 
     describe('areEqual', () => {
         // 파일이 동일한 경우
-        describe('when files are identical', () => {
+        describe('when the files are identical', () => {
             // true를 반환한다
             it('returns true', async () => {
                 const identicalFilePath = Path.join(tempDir, 'identical.txt')
@@ -61,7 +61,7 @@ describe('FileUtil', () => {
         })
 
         // 파일이 다른 경우
-        describe('when files differ', () => {
+        describe('when the files differ', () => {
             // false를 반환한다
             it('returns false', async () => {
                 const differentFilePath = Path.join(tempDir, 'different.txt')

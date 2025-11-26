@@ -18,7 +18,7 @@ describe('PurchaseService', () => {
 
     describe('POST /purchases', () => {
         // payload가 유효한 경우
-        describe('when payload is valid', () => {
+        describe('when the payload is valid', () => {
             let createDto: CreatePurchaseDto
             let createdPurchase: PurchaseRecordDto
 
@@ -75,7 +75,7 @@ describe('PurchaseService', () => {
         })
 
         // 최대 구매 수량을 초과한 경우
-        describe('when ticket count exceeds the maximum', () => {
+        describe('when the ticket count exceeds the maximum', () => {
             beforeEach(async () => {
                 const { Rules } = await import('shared')
                 Rules.Ticket.maxTicketsPerPurchase = fixture.heldTickets.length - 1
@@ -96,7 +96,7 @@ describe('PurchaseService', () => {
         })
 
         // 구매 가능 시간이 지난 경우
-        describe('when purchase window is closed', () => {
+        describe('when the purchase window is closed', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 const createDto = buildCreatePurchaseDto(

@@ -20,7 +20,7 @@ describe('S3ObjectService', () => {
 
     describe('presignUploadUrl', () => {
         // payload가 유효한 경우
-        describe('when payload is valid', () => {
+        describe('when the payload is valid', () => {
             const key = 'key.txt'
             const uploadBody = Buffer.from('hello')
             const expiresInSec = 60
@@ -53,7 +53,7 @@ describe('S3ObjectService', () => {
             })
 
             // contentType이 다른 경우
-            describe('when contentType mismatches', () => {
+            describe('when the `contentType` mismatches', () => {
                 // 업로드가 실패한다
                 it('fails to upload', async () => {
                     const response = await fetch(uploadUrl, {
@@ -67,7 +67,7 @@ describe('S3ObjectService', () => {
             })
 
             // contentLength가 다른 경우
-            describe('when contentLength mismatches', () => {
+            describe('when the `contentLength` mismatches', () => {
                 // 업로드가 실패한다
                 it('fails to upload', async () => {
                     const mismatchedBody = Buffer.from('mismatched length')
@@ -86,7 +86,7 @@ describe('S3ObjectService', () => {
 
     describe('presignDownloadUrl', () => {
         // 객체가 존재하는 경우
-        describe('when object exists', () => {
+        describe('when the object exists', () => {
             const key = 'foo/data.json'
             const body = 'upload body'
             const expiresInSec = 60
@@ -116,7 +116,7 @@ describe('S3ObjectService', () => {
         })
 
         // 객체가 존재하지 않는 경우
-        describe('when object does not exist', () => {
+        describe('when the object does not exist', () => {
             // 다운로드 하면 404 Not Found를 반환한다
             it('returns 404 Not Found when downloading', async () => {
                 const downloadUrl = await fixture.s3Service.presignDownloadUrl({
@@ -148,7 +148,7 @@ describe('S3ObjectService', () => {
 
     describe('getObject', () => {
         // 객체가 존재하는 경우
-        describe('when object exists', () => {
+        describe('when the object exists', () => {
             let putResult: PutObjectResult
 
             beforeEach(async () => {
@@ -168,7 +168,7 @@ describe('S3ObjectService', () => {
         })
 
         // 객체가 존재하지 않는 경우
-        describe('when object does not exist', () => {
+        describe('when the object does not exist', () => {
             // 존재하지 않으면 NoSuchKey 에러를 던진다
             it('rejects with NoSuchKey when the object does not exist', async () => {
                 const promise = fixture.s3Service.getObject('not-exists')
@@ -179,7 +179,7 @@ describe('S3ObjectService', () => {
 
     describe('deleteObject', () => {
         // 객체가 존재하는 경우
-        describe('when object exists', () => {
+        describe('when the object exists', () => {
             const key = 'foo/data2.json'
 
             beforeEach(async () => {
@@ -195,7 +195,7 @@ describe('S3ObjectService', () => {
         })
 
         // 객체가 존재하지 않는 경우
-        describe('when object does not exist', () => {
+        describe('when the object does not exist', () => {
             // 204 No Content를 반환한다
             it('returns 204 No Content', async () => {
                 const key = 'not-exist-key'
@@ -216,7 +216,7 @@ describe('S3ObjectService', () => {
         })
 
         // 쿼리 파라미터가 없는 경우
-        describe('when query parameters are missing', () => {
+        describe('when the query parameters are missing', () => {
             // 모든 객체 목록을 반환한다
             it('lists all objects', async () => {
                 const { contents } = await fixture.s3Service.listObjects({})
@@ -226,7 +226,7 @@ describe('S3ObjectService', () => {
         })
 
         // `prefix`가 제공된 경우
-        describe('when `prefix` is provided', () => {
+        describe('when the `prefix` is provided', () => {
             // 지정된 prefix로 시작하는 키를 가진 객체들을 반환한다
             it('returns objects whose keys start with the given prefix', async () => {
                 const result = await fixture.s3Service.listObjects({ prefix: 'b/' })
@@ -245,7 +245,7 @@ describe('S3ObjectService', () => {
         })
 
         // `maxKeys`가 제공된 경우
-        describe('when `maxKeys` is provided', () => {
+        describe('when the `maxKeys` is provided', () => {
             // maxKeys 만큼 객체 목록을 반환한다
             it('returns at most `maxKeys` objects', async () => {
                 const maxKeys = 2
@@ -256,7 +256,7 @@ describe('S3ObjectService', () => {
         })
 
         // `nextToken`이 제공된 경우
-        describe('when `nextToken` is provided', () => {
+        describe('when the `nextToken` is provided', () => {
             const maxKeys = 2
             let nextToken: string
 
@@ -274,7 +274,7 @@ describe('S3ObjectService', () => {
         })
 
         // `delimiter`이 제공된 경우
-        describe('when `delimiter` is provided', () => {
+        describe('when the `delimiter` is provided', () => {
             // delimiter 경계에서 최상위 객체와 공통 접두사를 구분하여 반환한다
             it('returns top-level objects and common prefixes at the delimiter boundary', async () => {
                 const { contents, commonPrefixes } = await fixture.s3Service.listObjects({

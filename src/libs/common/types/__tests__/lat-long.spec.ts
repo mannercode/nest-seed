@@ -72,7 +72,7 @@ describe('LatLong', () => {
         })
 
         // 범위를 벗어난 경우
-        describe('when values are out of range', () => {
+        describe('when the values are out of range', () => {
             // BadRequestException을 던진다
             it('throws BadRequestException', async () => {
                 await fixture.httpClient

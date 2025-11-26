@@ -17,7 +17,7 @@ describe('BookingService', () => {
     })
 
     // 예약이 성공하는 경우
-    describe('when booking succeeds', () => {
+    describe('when the booking succeeds', () => {
         let movie: MovieDto
         let accessToken: string
 
@@ -123,7 +123,7 @@ describe('BookingService', () => {
 
     describe('GET /booking/showtimes/:id/tickets', () => {
         // 상영시간이 존재하지 않는 경우
-        describe('when showtime does not exist', () => {
+        describe('when the showtime does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fixture.httpClient

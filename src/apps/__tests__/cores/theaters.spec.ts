@@ -17,7 +17,7 @@ describe('TheatersService', () => {
 
     describe('POST /theaters', () => {
         // payload가 유효한 경우
-        describe('when payload is valid', () => {
+        describe('when the payload is valid', () => {
             // 극장을 생성하고 반환한다
             it('creates and returns a theater', async () => {
                 const createDto = buildCreateTheaterDto()
@@ -30,7 +30,7 @@ describe('TheatersService', () => {
         })
 
         // 필수 필드가 누락된 경우
-        describe('when required fields are missing', () => {
+        describe('when the required fields are missing', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fixture.httpClient
@@ -43,7 +43,7 @@ describe('TheatersService', () => {
 
     describe('GET /theaters/:id', () => {
         // 극장이 존재하는 경우
-        describe('when theater exists', () => {
+        describe('when the theater exists', () => {
             // 극장 정보를 반환한다
             it('returns the theater', async () => {
                 await fixture.httpClient
@@ -53,7 +53,7 @@ describe('TheatersService', () => {
         })
 
         // 극장이 존재하지 않는 경우
-        describe('when theater does not exist', () => {
+        describe('when the theater does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fixture.httpClient
@@ -68,7 +68,7 @@ describe('TheatersService', () => {
 
     describe('PATCH /theaters/:id', () => {
         // payload가 유효한 경우
-        describe('when payload is valid', () => {
+        describe('when the payload is valid', () => {
             // 극장 정보를 수정하고 반환한다
             it('updates and returns the theater', async () => {
                 const updateDto = {
@@ -88,7 +88,7 @@ describe('TheatersService', () => {
         })
 
         // 극장이 존재하지 않는 경우
-        describe('when theater does not exist', () => {
+        describe('when the theater does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fixture.httpClient
@@ -101,7 +101,7 @@ describe('TheatersService', () => {
 
     describe('DELETE /theaters/:id', () => {
         // 극장이 존재하는 경우
-        describe('when theater exists', () => {
+        describe('when the theater exists', () => {
             // 극장을 삭제한다.
             it('deletes the theater', async () => {
                 await fixture.httpClient.delete(`/theaters/${fixture.createdTheater.id}`).ok()
@@ -116,7 +116,7 @@ describe('TheatersService', () => {
         })
 
         // 극장이 존재하지 않는 경우
-        describe('when theater does not exist', () => {
+        describe('when the theater does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fixture.httpClient
@@ -145,7 +145,7 @@ describe('TheatersService', () => {
         })
 
         // 쿼리 파라미터가 없는 경우
-        describe('when query parameters are missing', () => {
+        describe('when the query parameters are missing', () => {
             // 기본 페이지네이션으로 극장을 반환한다
             it('returns theaters with default pagination', async () => {
                 await fixture.httpClient
@@ -160,7 +160,7 @@ describe('TheatersService', () => {
         })
 
         // 쿼리 파라미터가 유효하지 않은 경우
-        describe('when query parameters are invalid', () => {
+        describe('when the query parameters are invalid', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fixture.httpClient
@@ -171,7 +171,7 @@ describe('TheatersService', () => {
         })
 
         // `name` 부분 문자열이 제공된 경우
-        describe('when partial `name` is provided', () => {
+        describe('when a partial `name` is provided', () => {
             // 이름에 해당 부분 문자열이 포함된 극장을 반환한다
             it('returns theaters whose name includes the substring', async () => {
                 await fixture.httpClient

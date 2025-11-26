@@ -29,7 +29,7 @@ describe('MongooseRepository.withTransaction', () => {
         })
 
         // 롤백을 명시적으로 호출하는 경우
-        describe('when rollback is requested', () => {
+        describe('when a rollback is requested', () => {
             // 트랜잭션을 롤백한다
             it('rolls back the transaction', async () => {
                 const newDoc = fixture.repository.newDocument()

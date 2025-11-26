@@ -111,7 +111,7 @@ describe('HttpUtil', () => {
         })
 
         // filename* 디코딩이 실패한 경우
-        describe('when filename* decoding fails', () => {
+        describe('when the filename* decoding fails', () => {
             // quoted 또는 bare 값으로 폴백한다
             it('falls back to the quoted or bare value', () => {
                 const badStar = `attachment; filename*=UTF-8''%E0%A4%ZZ; filename="safe-fallback.txt"`

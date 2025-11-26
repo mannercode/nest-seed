@@ -16,7 +16,7 @@ describe('PurchaseRecordsService', () => {
 
     describe('create', () => {
         // payload가 유효한 경우
-        describe('when payload is valid', () => {
+        describe('when the payload is valid', () => {
             // 구매 기록을 생성하고 반환한다
             it('creates and returns a purchase record', async () => {
                 const createDto = buildCreatePurchaseRecordDto({})
@@ -35,7 +35,7 @@ describe('PurchaseRecordsService', () => {
 
     describe('GET /purchases/:purchaseId', () => {
         // 구매 정보가 존재하는 경우
-        describe('when purchase exists', () => {
+        describe('when the purchase exists', () => {
             // 구매 정보를 반환한다.
             it('returns the purchase', async () => {
                 await fixture.httpClient
@@ -45,7 +45,7 @@ describe('PurchaseRecordsService', () => {
         })
 
         // 구매 정보가 존재하지 않는 경우
-        describe('when purchase does not exist', () => {
+        describe('when the purchase does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fixture.httpClient

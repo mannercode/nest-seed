@@ -40,7 +40,7 @@ describe('MongooseRepository', () => {
         })
 
         // 필수 필드가 누락된 경우
-        describe('when required fields are missing', () => {
+        describe('when the required fields are missing', () => {
             // 예외를 던진다
             it('throws an error', async () => {
                 const doc = fixture.repository.newDocument()
@@ -133,7 +133,7 @@ describe('MongooseRepository', () => {
         })
 
         // 오름차순 정렬인 경우
-        describe('when sorting ascending', () => {
+        describe('when sorting in ascending order', () => {
             // 오름차순으로 정렬한다
             it('sorts in ascending order', async () => {
                 const { items } = await fixture.repository.findWithPagination({
@@ -149,7 +149,7 @@ describe('MongooseRepository', () => {
         })
 
         // 내림차순 정렬인 경우
-        describe('when sorting descending', () => {
+        describe('when sorting in descending order', () => {
             // 내림차순으로 정렬한다
             it('sorts in descending order', async () => {
                 const { items } = await fixture.repository.findWithPagination({
@@ -165,7 +165,7 @@ describe('MongooseRepository', () => {
         })
 
         // take가 0 이하인 경우
-        describe('when take is not positive', () => {
+        describe('when the take value is not positive', () => {
             // 예외를 던진다
             it('throws an error', async () => {
                 const promise = fixture.repository.findWithPagination({ pagination: { take: -1 } })
@@ -175,7 +175,7 @@ describe('MongooseRepository', () => {
         })
 
         // take가 제한을 초과한 경우
-        describe('when take exceeds the limit', () => {
+        describe('when the take value exceeds the limit', () => {
             // BadRequest를 던진다
             it('throws a BadRequest', async () => {
                 const take = maxTake + 1
@@ -187,7 +187,7 @@ describe('MongooseRepository', () => {
         })
 
         // take가 지정되지 않은 경우
-        describe('when take is not specified', () => {
+        describe('when the take value is not specified', () => {
             // 기본값을 사용한다
             it('uses the default take value', async () => {
                 const { take } = await fixture.repository.findWithPagination({
@@ -199,7 +199,7 @@ describe('MongooseRepository', () => {
         })
 
         // QueryHelper를 사용하는 경우
-        describe('when QueryHelper configures conditions', () => {
+        describe('when the QueryHelper configures conditions', () => {
             // 조건을 적용해 결과를 반환한다
             it('applies the configured conditions', async () => {
                 const { items } = await fixture.repository.findWithPagination({
@@ -303,7 +303,7 @@ describe('MongooseRepository', () => {
         })
 
         // 존재하지 않는 ID가 포함된 경우
-        describe('when ids include missing documents', () => {
+        describe('when the ids include missing documents', () => {
             // 존재하지 않는 ID는 무시한다
             it('ignores missing ids', async () => {
                 const docs = await fixture.repository.findByIds([nullObjectId])

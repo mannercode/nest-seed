@@ -25,7 +25,7 @@ describe('CacheService', () => {
         })
 
         // TTL을 지정하는 경우
-        describe('when TTL is provided', () => {
+        describe('when the TTL is provided', () => {
             // TTL 이후 만료된다
             it('expires after the TTL', async () => {
                 const ttl = 1000
@@ -42,7 +42,7 @@ describe('CacheService', () => {
         })
 
         // TTL이 0인 경우
-        describe('when TTL is 0', () => {
+        describe('when the TTL is 0', () => {
             // 만료되지 않는다
             it('does not expire', async () => {
                 const ttl = 0
@@ -59,7 +59,7 @@ describe('CacheService', () => {
         })
 
         // TTL이 0 미만인 경우
-        describe('when TTL is negative', () => {
+        describe('when the TTL is negative', () => {
             // 예외를 던진다
             it('throws an error', async () => {
                 const wrongTTL = -100
