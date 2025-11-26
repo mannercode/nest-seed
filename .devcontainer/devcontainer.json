@@ -28,7 +28,7 @@
     "remoteEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}"
     },
-    "onCreateCommand": {
+    "postCreateCommand": {
         "husky": "npx husky",
         "ci": "npm ci"
     },
