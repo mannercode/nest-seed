@@ -148,8 +148,6 @@ The configuration files used are:
 
 Currently, the system is organized into four separate projects—`gateway`, `applications`, `cores`, and `infrastructures`—based on a small team structure (3 to 4 people). If necessary, each service can be split into an independent project for further scalability.
 
-### 7.1 폴더 구성
-
 ```text
 src
 ├── apps                  # Various service applications
