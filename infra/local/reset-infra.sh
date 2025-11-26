@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 PROJECT_ROOT=$WORKSPACE_ROOT
-TEST_ENV_FILE="$PROJECT_ROOT/.env.test"
+TEST_ENV_FILE="$PROJECT_ROOT/.env"
 INFRA_ENV_FILE=".env.infra"
 
 docker_compose() (

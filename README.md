@@ -33,7 +33,7 @@ To run this project, you need the following host environment:
 
 To rename the project, edit the following files:
 
-- `.env.test`
+- `.env`
 - `package.json`
     - `name`
 - `src/apps/shared/config/etc.ts`

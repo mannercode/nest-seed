@@ -2,7 +2,7 @@ import dotenv from 'dotenv'
 import 'reflect-metadata'
 import { MongoClient } from 'mongodb'
 
-dotenv.config({ path: ['.env.test'], quiet: true })
+dotenv.config({ quiet: true })
 process.env.NODE_ENV = 'test'
 
 const copyEnvToTest = (keys: readonly string[]) =>

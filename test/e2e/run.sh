@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 . ./common.cfg
 
-. $PROJECT_ROOT/.env.test
+. $PROJECT_ROOT/.env
 HOST="http://host.docker.internal:${HTTP_PORT}"
 
 tests=(auth customers)
