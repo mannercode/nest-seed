@@ -1,3 +1,5 @@
+import type { StringValue } from 'ms'
+
 export class Time {
     /**
      * Converts a time format string into milliseconds.
@@ -54,7 +56,7 @@ export class Time {
      * @param {number} ms - The millisecond value to convert.
      * @returns {string} The time format string representing the given milliseconds.
      */
-    static fromMs(ms: number): string {
+    static fromMs(ms: number): StringValue {
         if (ms === 0) {
             return '0ms'
         }
@@ -78,6 +80,6 @@ export class Time {
         if (seconds > 0) result += `${seconds}s`
         if (milliseconds > 0) result += `${milliseconds}ms`
 
-        return (negative ? '-' : '') + result.trim()
+        return ((negative ? '-' : '') + result.trim()) as StringValue
     }
 }

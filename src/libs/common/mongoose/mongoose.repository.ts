@@ -1,6 +1,14 @@
 import { BadRequestException, NotFoundException, OnModuleInit } from '@nestjs/common'
 import { differenceWith, uniq } from 'lodash'
-import { ClientSession, HydratedDocument, Model, QueryWithHelpers } from 'mongoose'
+import {
+    ClientSession,
+    Document,
+    HydratedDocument,
+    Model,
+    ObjectId,
+    QueryWithHelpers,
+    Types
+} from 'mongoose'
 import { PaginationDto, PaginationResult } from '../types'
 import { Assert, Expect } from '../validator'
 import { MongooseErrors } from './errors'
@@ -35,9 +43,10 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     }
 
     async saveMany(docs: HydratedDocument<Doc>[], session: SessionArg = undefined) {
-        const { insertedCount, matchedCount, deletedCount } = await this.model.bulkSave(docs, {
-            session
-        })
+        const { insertedCount, matchedCount, deletedCount } = await this.model.bulkSave(
+            docs as Document[],
+            { session }
+        )
 
         Assert.equals(
             docs.length,
@@ -84,7 +93,11 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
 
         const docs = await this.findByIds(uniqueIds, session)
 
-        const notFoundIds = differenceWith(uniqueIds, docs, (id, doc) => id === doc.id)
+        const notFoundIds = differenceWith(
+            uniqueIds,
+            docs,
+            (id, doc) => id === (doc._id as ObjectId).toString()
+        )
 
         if (notFoundIds.length > 0) {
             throw new NotFoundException({

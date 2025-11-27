@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common'
 import { escapeRegExp, uniq } from 'lodash'
-import { FilterQuery, HydratedDocument, Types } from 'mongoose'
+import { QueryFilter, HydratedDocument, Types } from 'mongoose'
 import { Expect } from '../validator'
 import { MongooseErrors } from './errors'
 
@@ -66,7 +66,7 @@ export class QueryBuilder<T> {
         return this
     }
 
-    build({ allowEmpty }: QueryBuilderOptions): FilterQuery<T> {
+    build({ allowEmpty }: QueryBuilderOptions): QueryFilter<T> {
         if (!allowEmpty && Object.keys(this.query).length === 0) {
             throw new BadRequestException(MongooseErrors.FiltersRequired)
         }
@@ -91,7 +91,7 @@ export function mapDocToDto<
 >(doc: HydratedDocument<DOC>, DtoClass: new () => DTO, keys: K[]): DTO {
     type SchemaJson<T> = { [K in keyof T]: T[K] extends Types.ObjectId ? string : T[K] }
 
-    const json = doc.toJSON<SchemaJson<DOC>>()
+    const json = doc.toJSON() as SchemaJson<DOC>
     const dto = new DtoClass()
 
     for (const key of keys) {

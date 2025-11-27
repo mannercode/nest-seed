@@ -1,6 +1,6 @@
 import { Type } from '@nestjs/common'
 import { SchemaFactory } from '@nestjs/mongoose'
-import { CallbackWithoutResultAndOptionalError, ClientSession } from 'mongoose'
+import { CallbackWithoutResultAndOptionalError, ClientSession, Schema } from 'mongoose'
 
 /**
  * The difference between toObject and toJSON is that toJSON has flattenMaps set to true by default.
@@ -33,14 +33,13 @@ export function HardDelete() {
     }
 }
 
-function excludeDeletedMiddleware(next: CallbackWithoutResultAndOptionalError) {
+function excludeDeletedMiddleware() {
     if (!this.getOptions().withDeleted) {
         this.where({ deletedAt: null })
     }
-    next()
 }
 
-export function createMongooseSchema<T>(cls: Type<T>) {
+export function createMongooseSchema<T>(cls: Type<T>): Schema<T> {
     const schema = SchemaFactory.createForClass(cls)
 
     const isHardDelete = Reflect.getMetadata(HARD_DELETE_KEY, cls) || false
@@ -57,9 +56,8 @@ export function createMongooseSchema<T>(cls: Type<T>) {
         schema.pre('findOne', excludeDeletedMiddleware)
         schema.pre('findOneAndUpdate', excludeDeletedMiddleware)
         schema.pre('countDocuments', excludeDeletedMiddleware)
-        schema.pre('aggregate', function (next) {
+        schema.pre('aggregate', function () {
             this.pipeline().unshift({ $match: { deletedAt: null } })
-            next()
         })
         schema.statics.deleteOne = async function (
             conditions,

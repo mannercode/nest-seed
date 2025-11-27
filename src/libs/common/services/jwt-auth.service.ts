@@ -91,7 +91,7 @@ export class JwtAuthService {
     private async createToken(payload: object, secret: string, ttlMs: number) {
         const expiresIn = Time.fromMs(ttlMs)
 
-        const token = await this.jwtService.signAsync(
+        const token = await this.jwtService.signAsync<object>(
             { ...payload, jti: generateShortId() },
             { secret, expiresIn }
         )
