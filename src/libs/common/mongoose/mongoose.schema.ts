@@ -1,6 +1,6 @@
 import { Type } from '@nestjs/common'
 import { SchemaFactory } from '@nestjs/mongoose'
-import { CallbackWithoutResultAndOptionalError, ClientSession, Schema } from 'mongoose'
+import { ClientSession, Schema } from 'mongoose'
 
 /**
  * The difference between toObject and toJSON is that toJSON has flattenMaps set to true by default.

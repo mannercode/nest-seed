@@ -6,8 +6,7 @@ import {
     HydratedDocument,
     Model,
     ObjectId,
-    QueryWithHelpers,
-    Types
+    QueryWithHelpers
 } from 'mongoose'
 import { PaginationDto, PaginationResult } from '../types'
 import { Assert, Expect } from '../validator'

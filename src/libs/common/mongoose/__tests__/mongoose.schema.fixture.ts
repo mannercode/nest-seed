@@ -1,7 +1,7 @@
 import { getModelToken, MongooseModule, Schema as NestSchema, Prop } from '@nestjs/mongoose'
 import { createMongooseSchema, MongooseSchema } from 'common'
 import { Model, mongo, Schema, Types } from 'mongoose'
-import { createTestContext, getMongoTestConnection, withTestId } from 'testlib'
+import { createTestContext, getMongoTestConnection } from 'testlib'
 
 type RawSample = Partial<SchemaTypeSample> & { [key: string]: any }
 
