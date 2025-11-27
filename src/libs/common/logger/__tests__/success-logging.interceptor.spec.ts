@@ -7,9 +7,8 @@ describe('SuccessLoggingInterceptor', () => {
     let createFixture: (providers: Provider[]) => Promise<any>
 
     beforeEach(async () => {
-        const { createFixture: _createFixture } = await import(
-            './success-logging.interceptor.fixture'
-        )
+        const { createFixture: _createFixture } =
+            await import('./success-logging.interceptor.fixture')
         createFixture = _createFixture
     })
 
@@ -62,9 +61,8 @@ describe('SuccessLoggingInterceptor', () => {
         describe('when the ContextType is unknown', () => {
             // Logger.error로 기록한다
             it('logs via Logger.error', async () => {
-                const { ExecutionContextHost } = await import(
-                    '@nestjs/core/helpers/execution-context-host'
-                )
+                const { ExecutionContextHost } =
+                    await import('@nestjs/core/helpers/execution-context-host')
                 jest.spyOn(ExecutionContextHost.prototype, 'getType').mockReturnValue('unknown')
 
                 await fixture.httpClient.get('/exclude-path').ok()
