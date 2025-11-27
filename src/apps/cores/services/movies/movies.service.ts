@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { StorageFilesClient } from 'apps/infrastructures'
-import { mapDocToDto, pickIds } from 'common'
+import { mapDocToDto } from 'common'
 import { HttpRoutes } from 'shared'
 import { CreateMovieDto, MovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
 import { MovieDocument } from './models'
@@ -8,15 +8,24 @@ import { MoviesRepository } from './movies.repository'
 
 @Injectable()
 export class MoviesService {
+    private readonly ownerService = 'movies'
+
     constructor(
         private moviesRepository: MoviesRepository,
         private storageFilesService: StorageFilesClient
     ) {}
 
     async create(createMovieDto: CreateMovieDto) {
-        const storageFiles = await this.storageFilesService.saveFiles([])
+        const movie = await this.moviesRepository.create(createMovieDto)
 
-        const movie = await this.moviesRepository.create(createMovieDto, pickIds(storageFiles))
+        await Promise.all(
+            createMovieDto.imageFileIds.map((fileId) =>
+                this.storageFilesService.complete(fileId, {
+                    ownerService: this.ownerService,
+                    ownerEntityId: movie.id
+                })
+            )
+        )
 
         return this.toDto(movie)
     }
@@ -47,20 +56,23 @@ export class MoviesService {
             return movies
         })
 
-        return { deletedMovies: this.toDtos(movies) }
+        return { deletedMovies: await this.toDtos(movies, { presignDownloadUrl: false }) }
     }
 
     async searchPage(searchDto: SearchMoviesPageDto) {
         const { items, ...pagination } = await this.moviesRepository.searchPage(searchDto)
 
-        return { ...pagination, items: this.toDtos(items) }
+        return { ...pagination, items: await this.toDtos(items) }
     }
 
     async allExist(movieIds: string[]): Promise<boolean> {
         return this.moviesRepository.allExistByIds(movieIds)
     }
 
-    private toDto = (movie: MovieDocument) => {
+    private toDto = async (
+        movie: MovieDocument,
+        options: { presignDownloadUrl?: boolean } = {}
+    ) => {
         const dto = mapDocToDto(movie, MovieDto, [
             'id',
             'title',
@@ -71,9 +83,23 @@ export class MoviesService {
             'director',
             'rating'
         ])
-        dto.imageUrls = movie.imageIds.map((id) => `${HttpRoutes.StorageFiles}/${id.toString()}`)
+        dto.imageFileIds = movie.imageIds.map((id) => id.toString())
+
+        if (options.presignDownloadUrl === false) {
+            dto.imageUrls = dto.imageFileIds.map((id) => `${HttpRoutes.StorageFiles}/${id}`)
+        } else {
+            const downloadInfos = await Promise.all(
+                dto.imageFileIds.map((fileId) => this.storageFilesService.presignDownloadUrl(fileId))
+            )
+            dto.imageUrls = downloadInfos.map((info) => info.downloadUrl!)
+        }
+
+        dto.imageUrl = dto.imageUrls[0]
 
         return dto
     }
-    private toDtos = (movies: MovieDocument[]) => movies.map((movie) => this.toDto(movie))
+    private toDtos = async (
+        movies: MovieDocument[],
+        options: { presignDownloadUrl?: boolean } = {}
+    ) => Promise.all(movies.map((movie) => this.toDto(movie, options)))
 }

@@ -12,7 +12,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async create(createDto: CreateMovieDto, storageFileIds: string[]) {
+    async create(createDto: CreateMovieDto) {
         // TODO 하나로 합체?
         const movie = this.newDocument()
         movie.title = createDto.title
@@ -22,7 +22,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         movie.durationInSeconds = createDto.durationInSeconds
         movie.director = createDto.director
         movie.rating = createDto.rating
-        movie.imageIds = objectIds(storageFileIds)
+        movie.imageIds = objectIds(createDto.imageFileIds)
 
         return movie.save()
     }

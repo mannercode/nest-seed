@@ -6,12 +6,11 @@ import { Path } from 'common'
 import {
     createMovie,
     createTestFixture,
+    ensureS3Bucket,
     FixtureFile,
     fixtureFiles,
     TestFixture
 } from '../__helpers__'
-import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
-import { getS3TestConnection } from 'testlib'
 
 export interface Fixture extends TestFixture {
     image: FixtureFile
@@ -38,24 +37,4 @@ export const createFixture = async () => {
     }
 
     return { ...fix, teardown, image: fixtureFiles.image, createdMovie, tempDir }
-}
-
-const ensureS3Bucket = async () => {
-    const { endpoint, region, accessKeyId, secretAccessKey, forcePathStyle, bucket } =
-        getS3TestConnection()
-
-    const client = new S3Client({
-        endpoint,
-        region,
-        credentials: { accessKeyId, secretAccessKey },
-        forcePathStyle
-    })
-
-    try {
-        await client.send(new CreateBucketCommand({ Bucket: bucket }))
-    } catch (error: any) {
-        if (error?.name !== 'BucketAlreadyOwnedByYou' && error?.$metadata?.httpStatusCode !== 409) {
-            throw error
-        }
-    }
 }

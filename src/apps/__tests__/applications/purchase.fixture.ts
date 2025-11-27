@@ -22,7 +22,7 @@ import {
     TicketsModule
 } from 'apps/cores'
 import { PurchasesController } from 'apps/gateway'
-import { PaymentsModule, StorageFilesModule } from 'apps/infrastructures'
+import { PaymentsModule, StorageFilesClient, StorageFilesModule } from 'apps/infrastructures'
 import { DateUtil, pickIds } from 'common'
 import { Rules } from 'shared'
 import {
@@ -65,7 +65,8 @@ export const createFixture = async (): Promise<Fixture> => {
             TheatersClient,
             TicketsClient,
             TicketHoldingClient,
-            PurchaseClient
+            PurchaseClient,
+            StorageFilesClient
         ],
         controllers: [PurchasesController]
     })

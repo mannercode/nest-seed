@@ -1,7 +1,7 @@
 import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
 import { FileUtil, Path } from 'common'
-import { writeFile } from 'fs/promises'
-import { nullObjectId, objectToFields } from 'testlib'
+import { readFile, writeFile } from 'fs/promises'
+import { nullObjectId } from 'testlib'
 import { buildCreateMovieDto, createMovie, Errors } from '../__helpers__'
 import type { Fixture } from './movies.fixture'
 
@@ -22,13 +22,39 @@ describe('MoviesService', () => {
         describe('when the payload is valid', () => {
             let createDto: CreateMovieDto
             let createdMovie: MovieDto
+            let imageFileId: string
+
+            const uploadMovieImage = async () => {
+                const payload = {
+                    originalName: fixture.image.originalName,
+                    mimeType: fixture.image.mimeType,
+                    size: fixture.image.size,
+                    checksum: fixture.image.checksum.value
+                }
+
+                const { body } = await fixture.httpClient
+                    .post('/storage-files')
+                    .body(payload)
+                    .created()
+
+                const uploadRes = await fetch(body.uploadUrl, {
+                    method: body.method,
+                    headers: body.headers,
+                    body: await readFile(fixture.image.path)
+                })
+
+                expect(uploadRes.ok).toBe(true)
+
+                return body.storageFile.id
+            }
 
             beforeEach(async () => {
                 createDto = buildCreateMovieDto()
+                imageFileId = await uploadMovieImage()
+
                 const { body } = await fixture.httpClient
                     .post('/movies')
-                    .attachments([{ name: 'files', file: fixture.image.path }])
-                    .fields(objectToFields(createDto))
+                    .body({ ...createDto, imageFileIds: [imageFileId] })
                     .created()
 
                 createdMovie = body
@@ -39,8 +65,10 @@ describe('MoviesService', () => {
             it('creates and returns a movie', async () => {
                 expect(createdMovie).toEqual({
                     id: expect.any(String),
-                    imageUrls: expect.any(Array),
-                    ...createDto
+                    ...createDto,
+                    imageFileIds: [imageFileId],
+                    imageUrl: expect.any(String),
+                    imageUrls: [expect.any(String)]
                 })
             })
 
@@ -48,11 +76,17 @@ describe('MoviesService', () => {
             it('downloads the attached file', async () => {
                 const downloadPath = Path.join(fixture.tempDir, 'download.tmp')
 
-                const { body: downloadInfo } = await fixture.httpClient
-                    .get(createdMovie.imageUrls[0])
-                    .ok()
+                const { body: movie } = await fixture.httpClient
+                    .get(`/movies/${createdMovie.id}`)
+                    .ok(
+                        expect.objectContaining({
+                            id: createdMovie.id,
+                            imageFileIds: [imageFileId],
+                            imageUrl: expect.any(String)
+                        })
+                    )
 
-                const res = await fetch(downloadInfo.downloadUrl)
+                const res = await fetch(movie.imageUrl)
                 expect(res.ok).toBe(true)
 
                 const downloadedBuffer = Buffer.from(await res.arrayBuffer())
@@ -81,7 +115,21 @@ describe('MoviesService', () => {
             it('returns the movie', async () => {
                 await fixture.httpClient
                     .get(`/movies/${fixture.createdMovie.id}`)
-                    .ok(fixture.createdMovie)
+                    .ok(
+                        expect.objectContaining({
+                            id: fixture.createdMovie.id,
+                            title: fixture.createdMovie.title,
+                            genres: fixture.createdMovie.genres,
+                            releaseDate: fixture.createdMovie.releaseDate,
+                            plot: fixture.createdMovie.plot,
+                            durationInSeconds: fixture.createdMovie.durationInSeconds,
+                            director: fixture.createdMovie.director,
+                            rating: fixture.createdMovie.rating,
+                            imageFileIds: fixture.createdMovie.imageFileIds,
+                            imageUrl: expect.any(String),
+                            imageUrls: expect.any(Array)
+                        })
+                    )
             })
         })
 
@@ -113,7 +161,13 @@ describe('MoviesService', () => {
                     director: 'Steven Spielberg',
                     rating: 'R'
                 }
-                const expected = { ...fixture.createdMovie, ...updateDto }
+                const expected = expect.objectContaining({
+                    id: fixture.createdMovie.id,
+                    imageFileIds: fixture.createdMovie.imageFileIds,
+                    imageUrl: expect.any(String),
+                    imageUrls: expect.any(Array),
+                    ...updateDto
+                })
 
                 await fixture.httpClient
                     .patch(`/movies/${fixture.createdMovie.id}`)
@@ -139,10 +193,22 @@ describe('MoviesService', () => {
     describe('DELETE /movies/:id', () => {
         // 존재하는 영화를 삭제 요청하면
         describe('when deleting an existing movie', () => {
+            let deletedFileId: string
+
             beforeEach(async () => {
+                deletedFileId = fixture.createdMovie.imageFileIds[0]
+
                 await fixture.httpClient
                     .delete(`/movies/${fixture.createdMovie.id}`)
-                    .ok({ deletedMovies: [fixture.createdMovie] })
+                    .ok({
+                        deletedMovies: expect.arrayContaining([
+                            expect.objectContaining({
+                                id: fixture.createdMovie.id,
+                                title: fixture.createdMovie.title,
+                                imageFileIds: fixture.createdMovie.imageFileIds
+                            })
+                        ])
+                    })
             })
 
             // 영화 문서를 더 이상 조회할 수 없다
@@ -157,14 +223,7 @@ describe('MoviesService', () => {
 
             // 영화와 관련된 파일도 삭제된다
             it("deletes the movie's files", async () => {
-                const fileUrl = fixture.createdMovie.imageUrls[0]
-
-                await fixture.httpClient
-                    .get(fileUrl)
-                    .notFound({
-                        ...Errors.Mongoose.DocumentNotFound,
-                        notFoundId: expect.any(String)
-                    })
+                await fixture.httpClient.get(`/storage-files/${deletedFileId}`).notFound()
             })
         })
 
@@ -184,6 +243,20 @@ describe('MoviesService', () => {
 
     describe('GET /movies', () => {
         let movies: MovieDto[]
+        const expectMovie = (movie: MovieDto) =>
+            expect.objectContaining({
+                id: movie.id,
+                title: movie.title,
+                genres: movie.genres,
+                releaseDate: movie.releaseDate,
+                plot: movie.plot,
+                durationInSeconds: movie.durationInSeconds,
+                director: movie.director,
+                rating: movie.rating,
+                imageFileIds: movie.imageFileIds,
+                imageUrl: expect.any(String),
+                imageUrls: expect.any(Array)
+            })
 
         beforeEach(async () => {
             const createdMovies = await Promise.all([
@@ -234,7 +307,7 @@ describe('MoviesService', () => {
                         skip: 0,
                         take: expect.any(Number),
                         total: movies.length,
-                        items: expect.arrayContaining(movies)
+                        items: expect.arrayContaining(movies.map(expectMovie))
                     })
             })
         })
@@ -259,7 +332,7 @@ describe('MoviesService', () => {
                     .query({ title: 'title-a' })
                     .ok(
                         expect.objectContaining({
-                            items: expect.arrayContaining([movies[0], movies[1]])
+                            items: expect.arrayContaining([expectMovie(movies[0]), expectMovie(movies[1])])
                         })
                     )
             })
@@ -274,7 +347,7 @@ describe('MoviesService', () => {
                     .query({ genre: MovieGenre.Drama })
                     .ok(
                         expect.objectContaining({
-                            items: expect.arrayContaining([movies[1], movies[2]])
+                            items: expect.arrayContaining([expectMovie(movies[1]), expectMovie(movies[2])])
                         })
                     )
             })
@@ -289,7 +362,7 @@ describe('MoviesService', () => {
                     .query({ releaseDate: new Date('2000-01-02') })
                     .ok(
                         expect.objectContaining({
-                            items: expect.arrayContaining([movies[1], movies[2]])
+                            items: expect.arrayContaining([expectMovie(movies[1]), expectMovie(movies[2])])
                         })
                     )
             })
@@ -304,7 +377,7 @@ describe('MoviesService', () => {
                     .query({ plot: 'plot-b' })
                     .ok(
                         expect.objectContaining({
-                            items: expect.arrayContaining([movies[2], movies[3]])
+                            items: expect.arrayContaining([expectMovie(movies[2]), expectMovie(movies[3])])
                         })
                     )
             })
@@ -319,7 +392,7 @@ describe('MoviesService', () => {
                     .query({ director: 'James' })
                     .ok(
                         expect.objectContaining({
-                            items: expect.arrayContaining([movies[0], movies[2]])
+                            items: expect.arrayContaining([expectMovie(movies[0]), expectMovie(movies[2])])
                         })
                     )
             })
@@ -334,80 +407,10 @@ describe('MoviesService', () => {
                     .query({ rating: MovieRating.NC17 })
                     .ok(
                         expect.objectContaining({
-                            items: expect.arrayContaining([movies[0], movies[1]])
+                            items: expect.arrayContaining([expectMovie(movies[0]), expectMovie(movies[1])])
                         })
                     )
             })
         })
     })
 })
-
-// describe('/movies/drafts', () => {
-//     let draftId: string
-
-//     // 영화를 생성한다
-//     it('creates a movie', async () => {
-//         await step('POST /movies/drafts', async () => {
-//             const { body } = await fixture.httpClient.post('/movies/drafts').body({}).created()
-
-//             expect(body).toEqual({ id: expect.any(String), expiresAt: expect.any(Date) })
-//             draftId = body.id
-
-//             console.log(body)
-//         })
-
-//         await step('POST /movies/drafts/{draftId}/assets:presign', async () => {
-//             const { body } = await fixture.httpClient
-//                 .post(`/movies/drafts/${draftId}/assets:presign`)
-//                 .body({
-//                     contentType: fixture.image.mimeType,
-//                     size: fixture.image.size,
-//                     checksum: fixture.image.checksum.value
-//                 })
-//                 .created()
-
-//             expect(body).toEqual({
-//                 // sessionId,
-//                 // uploadUrl,
-//                 // method,
-//                 // headers,
-//                 // key,
-//                 // expiresAt,
-//                 // maxSize
-//             })
-
-//             expect(body).toEqual({ draftId: expect.any(String), expiresAt: expect.any(Date) })
-//             draftId = body.draftId
-//         })
-//         await step('POST /movies/drafts/{draftId}/assets:finalize', async () => {})
-//         await step('POST /movies/drafts/{draftId}:finalize', async () => {})
-//     })
-// })
-
-// describe.skip('POST /movie-creation/image-upload-url', () => {
-//     beforeEach(async () => {})
-
-//     // `theaterIds`가 제공된 경우
-//     describe('when the `theaterIds` value is provided', () => {
-//         // 지정한 theaterIds와 일치하는 상영시간 목록을 반환한다
-//         it('returns showtimes matching the given theaterIds', async () => {
-//             await fixture.httpClient
-//                 .post('/movie-creation/presigned-url')
-//                 .body({
-//                     contentType: fixture.image.mimeType,
-//                     contentLength: fixture.image.size,
-//                     checksum: fixture.image.checksum,
-//                     filename: fixture.image.originalName
-//                 })
-//                 .ok({
-//                     fileId: 'movies/mv_9a2f/posters/usn_01J8K2....jpg',
-//                     upload: {
-//                         method: 'PUT',
-//                         url: 'https://bucket.s3...X-Amz-Signature=...',
-//                         headers: { 'Content-Type': 'image/jpeg', 'Content-MD5': '...' },
-//                         expiresAt: '2025-08-21T00:15:00Z'
-//                     }
-//                 })
-//         })
-//     })
-// })

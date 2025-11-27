@@ -1,5 +1,14 @@
 import { Transform, Type } from 'class-transformer'
-import { IsArray, IsDate, IsEnum, IsInt, IsNotEmpty, IsString, MaxLength } from 'class-validator'
+import {
+    ArrayNotEmpty,
+    IsArray,
+    IsDate,
+    IsEnum,
+    IsInt,
+    IsNotEmpty,
+    IsString,
+    MaxLength
+} from 'class-validator'
 
 import { MovieGenre, MovieRating } from '../models'
 
@@ -34,4 +43,9 @@ export class CreateMovieDto {
 
     @IsEnum(MovieRating)
     rating: MovieRating
+
+    @IsArray()
+    @ArrayNotEmpty()
+    @IsString({ each: true })
+    imageFileIds: string[]
 }

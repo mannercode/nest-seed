@@ -16,7 +16,7 @@ import {
     TicketsModule
 } from 'apps/cores'
 import { BookingController, CustomerJwtStrategy } from 'apps/gateway'
-import { PaymentsModule, StorageFilesModule } from 'apps/infrastructures'
+import { PaymentsModule, StorageFilesClient, StorageFilesModule } from 'apps/infrastructures'
 import {
     createCustomerAndLogin,
     createMovie,
@@ -81,7 +81,8 @@ export const createFixture = async (): Promise<Fixture> => {
             ShowtimesClient,
             TheatersClient,
             TicketsClient,
-            BookingClient
+            BookingClient,
+            StorageFilesClient
         ],
         controllers: [BookingController]
     })

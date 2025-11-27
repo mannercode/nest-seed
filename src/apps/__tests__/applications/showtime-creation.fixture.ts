@@ -15,7 +15,7 @@ import {
     TicketsModule
 } from 'apps/cores'
 import { ShowtimeCreationController } from 'apps/gateway'
-import { StorageFilesModule } from 'apps/infrastructures'
+import { StorageFilesClient, StorageFilesModule } from 'apps/infrastructures'
 import { jsonToObject } from 'common'
 import { oid } from 'testlib'
 import { createMovie, createTestFixture, createTheater, TestFixture } from '../__helpers__'
@@ -70,7 +70,13 @@ export const createFixture = async (): Promise<Fixture> => {
             TicketsModule,
             ShowtimeCreationModule
         ],
-        providers: [MoviesClient, TheatersClient, ShowtimesClient, ShowtimeCreationClient],
+        providers: [
+            MoviesClient,
+            TheatersClient,
+            ShowtimesClient,
+            ShowtimeCreationClient,
+            StorageFilesClient
+        ],
         controllers: [ShowtimeCreationController]
     })
 
