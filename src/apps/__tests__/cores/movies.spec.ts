@@ -33,7 +33,7 @@ describe('MoviesService', () => {
                 }
 
                 const { body } = await fixture.httpClient
-                    .post('/storage-files')
+                    .post('/attachments')
                     .body(payload)
                     .created()
 
@@ -45,7 +45,7 @@ describe('MoviesService', () => {
 
                 expect(uploadRes.ok).toBe(true)
 
-                return body.storageFile.id
+                return body.attachment.id
             }
 
             beforeEach(async () => {
@@ -209,7 +209,7 @@ describe('MoviesService', () => {
 
             // 영화와 관련된 파일도 삭제된다
             it("deletes the movie's files", async () => {
-                await fixture.httpClient.get(`/storage-files/${deletedFileId}`).notFound()
+                await fixture.httpClient.get(`/attachments/${deletedFileId}`).notFound()
             })
         })
 

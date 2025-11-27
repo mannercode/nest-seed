@@ -2,47 +2,47 @@ import { Controller, ParseArrayPipe } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Messages } from 'shared'
 import {
-    CompleteStorageFileDto,
-    CreateStorageFileDto,
+    CompleteAttachmentDto,
+    CreateAttachmentDto,
     PresignDownloadUrlDto,
     PresignUploadUrlDto
 } from './dtos'
-import { StorageFilesService } from './storage-files.service'
+import { AttachmentsService } from './attachments.service'
 
 @Controller()
-export class StorageFilesController {
-    constructor(private service: StorageFilesService) {}
+export class AttachmentsController {
+    constructor(private service: AttachmentsService) {}
 
-    @MessagePattern(Messages.StorageFiles.saveFiles)
+    @MessagePattern(Messages.Attachments.saveFiles)
     saveFiles(
-        @Payload(new ParseArrayPipe({ items: CreateStorageFileDto }))
-        createDtos: CreateStorageFileDto[]
+        @Payload(new ParseArrayPipe({ items: CreateAttachmentDto }))
+        createDtos: CreateAttachmentDto[]
     ) {
         return this.service.saveFiles(createDtos)
     }
 
-    @MessagePattern(Messages.StorageFiles.getFiles)
+    @MessagePattern(Messages.Attachments.getFiles)
     getFiles(@Payload() fileIds: string[]) {
         return this.service.getFiles(fileIds)
     }
 
-    @MessagePattern(Messages.StorageFiles.deleteFiles)
+    @MessagePattern(Messages.Attachments.deleteFiles)
     deleteFiles(@Payload() fileIds: string[]) {
         return this.service.deleteFiles(fileIds)
     }
 
-    @MessagePattern(Messages.StorageFiles.presignUploadUrl)
+    @MessagePattern(Messages.Attachments.presignUploadUrl)
     presignUploadUrl(@Payload() dto: PresignUploadUrlDto) {
         return this.service.presignUploadUrl(dto)
     }
 
-    @MessagePattern(Messages.StorageFiles.presignDownloadUrl)
+    @MessagePattern(Messages.Attachments.presignDownloadUrl)
     presignDownloadUrl(@Payload() dto: PresignDownloadUrlDto) {
         return this.service.presignDownloadUrl(dto)
     }
 
-    @MessagePattern(Messages.StorageFiles.complete)
-    complete(@Payload() dto: CompleteStorageFileDto) {
+    @MessagePattern(Messages.Attachments.complete)
+    complete(@Payload() dto: CompleteAttachmentDto) {
         return this.service.complete(dto)
     }
 }

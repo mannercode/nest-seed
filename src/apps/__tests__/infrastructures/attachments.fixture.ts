@@ -1,6 +1,6 @@
 import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
-import { StorageFilesController } from 'apps/gateway'
-import { StorageFilesClient, StorageFilesModule } from 'apps/infrastructures'
+import { AttachmentsController } from 'apps/gateway'
+import { AttachmentsClient, AttachmentsModule } from 'apps/infrastructures'
 import { getS3TestConnection, getTestId } from 'testlib'
 import {
     createConfigServiceMock,
@@ -44,9 +44,9 @@ export const createFixture = async () => {
     })
 
     const fix = await createTestFixture({
-        imports: [StorageFilesModule],
-        providers: [StorageFilesClient],
-        controllers: [StorageFilesController],
+        imports: [AttachmentsModule],
+        providers: [AttachmentsClient],
+        controllers: [AttachmentsController],
         overrideProviders: [configMock]
     })
 
@@ -58,7 +58,7 @@ export const createFixture = async () => {
 const createS3Bucket = async () => {
     const { endpoint, accessKeyId, secretAccessKey, region, forcePathStyle } = getS3TestConnection()
 
-    const bucket = `storage-files-${getTestId()}`.toLowerCase()
+    const bucket = `attachments-${getTestId()}`.toLowerCase()
 
     const client = new S3Client({
         endpoint,

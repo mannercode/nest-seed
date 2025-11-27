@@ -6,9 +6,10 @@ import {
     ShowtimeCreationClient
 } from 'apps/applications'
 import { CustomersClient, MoviesClient, PurchaseRecordsClient, TheatersClient } from 'apps/cores'
-import { StorageFilesClient } from 'apps/infrastructures'
+import { AttachmentsClient } from 'apps/infrastructures'
 import { CommonModule } from 'shared'
 import {
+    AttachmentsController,
     BookingController,
     CustomerJwtStrategy,
     CustomerLocalStrategy,
@@ -16,7 +17,6 @@ import {
     MoviesController,
     PurchasesController,
     ShowtimeCreationController,
-    StorageFilesController,
     TheatersController
 } from './controllers'
 import { HealthModule } from './modules'
@@ -27,7 +27,7 @@ import { HealthModule } from './modules'
         CustomerLocalStrategy,
         CustomerJwtStrategy,
         CustomersClient,
-        StorageFilesClient,
+        AttachmentsClient,
         MoviesClient,
         TheatersClient,
         ShowtimeCreationClient,
@@ -38,7 +38,7 @@ import { HealthModule } from './modules'
     ],
     controllers: [
         CustomersController,
-        StorageFilesController,
+        AttachmentsController,
         MoviesController,
         TheatersController,
         ShowtimeCreationController,

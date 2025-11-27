@@ -2,7 +2,7 @@ import { createMessagePatternMap, getProjectId } from './utils'
 
 export const Messages = createMessagePatternMap(
     {
-        StorageFiles: {
+        Attachments: {
             saveFiles: null,
             getFiles: null,
             deleteFiles: null,

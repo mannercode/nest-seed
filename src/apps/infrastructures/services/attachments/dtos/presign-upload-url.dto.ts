@@ -1,5 +1,5 @@
 import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator'
-import { StorageFileDto } from './storage-file.dto'
+import { AttachmentDto } from './attachment.dto'
 
 export class PresignUploadUrlDto {
     @IsString()
@@ -25,10 +25,10 @@ export class PresignUploadUrlDto {
 }
 
 export type PresignUploadUrlResponse = {
-    key: string
+    attachmentId: string
     uploadUrl: string
     expiresAt: Date
     method: 'PUT'
     headers: Record<string, string>
-    storageFile: StorageFileDto
+    attachment: AttachmentDto
 }

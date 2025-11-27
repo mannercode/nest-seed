@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common'
-import { CreateStorageFileDto } from 'apps/infrastructures'
 import { ClientProxyService, InjectClientProxy, PaginationResult } from 'common'
 import { Messages } from 'shared'
 import {

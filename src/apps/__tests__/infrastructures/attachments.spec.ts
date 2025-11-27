@@ -1,14 +1,14 @@
-import { StorageFileDto } from 'apps/infrastructures'
+import { AttachmentDto } from 'apps/infrastructures'
 import { FileUtil, Path } from 'common'
 import { readFile, writeFile } from 'fs/promises'
 import { nullObjectId } from 'testlib'
-import type { Fixture } from './storage-files.fixture'
+import type { Fixture } from './attachments.fixture'
 
-describe('StorageFilesService', () => {
+describe('AttachmentsService', () => {
     let fixture: Fixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./storage-files.fixture')
+        const { createFixture } = await import('./attachments.fixture')
         fixture = await createFixture()
     })
 
@@ -26,10 +26,7 @@ describe('StorageFilesService', () => {
     const uploadViaPresign = async () => {
         const payload = buildPresignPayload()
 
-        const { body: presign } = await fixture.httpClient
-            .post('/storage-files')
-            .body(payload)
-            .created()
+        const { body: presign } = await fixture.httpClient.post('/attachments').body(payload).created()
 
         const uploadRes = await fetch(presign.uploadUrl, {
             method: presign.method,
@@ -41,21 +38,21 @@ describe('StorageFilesService', () => {
 
         const ownerInfo = { ownerService: 'movies', ownerEntityId: 'movie-1' }
         const { body: completed } = await fixture.httpClient
-            .post(`/storage-files/${presign.key}/complete`)
+            .post(`/attachments/${presign.attachmentId}/complete`)
             .body(ownerInfo)
             .ok()
 
         return { presign, completed, ownerInfo }
     }
 
-    describe('POST /storage-files', () => {
+    describe('POST /attachments', () => {
         it('returns an upload URL and stores the metadata', async () => {
             const payload = buildPresignPayload()
 
-            const { body } = await fixture.httpClient.post('/storage-files').body(payload).created()
+            const { body } = await fixture.httpClient.post('/attachments').body(payload).created()
 
             expect(body).toEqual({
-                key: expect.any(String),
+                attachmentId: expect.any(String),
                 uploadUrl: expect.any(String),
                 expiresAt: expect.any(Date),
                 method: 'PUT',
@@ -63,7 +60,7 @@ describe('StorageFilesService', () => {
                     'Content-Type': payload.mimeType,
                     'Content-Length': payload.size.toString()
                 }),
-                storageFile: {
+                attachment: {
                     id: expect.any(String),
                     originalName: payload.originalName,
                     mimeType: payload.mimeType,
@@ -75,14 +72,14 @@ describe('StorageFilesService', () => {
                 }
             })
 
-            expect(body.key).toEqual(body.storageFile.id)
+            expect(body.attachmentId).toEqual(body.attachment.id)
         })
     })
 
-    describe('GET /storage-files/:fileId', () => {
+    describe('GET /attachments/:attachmentId', () => {
         // 파일이 존재하는 경우
         describe('when the file exists', () => {
-            let uploadedFile: StorageFileDto
+            let uploadedFile: AttachmentDto
 
             beforeEach(async () => {
                 const { completed } = await uploadViaPresign()
@@ -91,7 +88,7 @@ describe('StorageFilesService', () => {
 
             it('returns a download URL and metadata', async () => {
                 const { body } = await fixture.httpClient
-                    .get(`/storage-files/${uploadedFile.id}`)
+                    .get(`/attachments/${uploadedFile.id}`)
                     .ok()
 
                 expect(body).toEqual({
@@ -122,15 +119,15 @@ describe('StorageFilesService', () => {
         // 파일이 존재하지 않는 경우
         describe('when the file does not exist', () => {
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient.get(`/storage-files/${nullObjectId}`).notFound()
+                await fixture.httpClient.get(`/attachments/${nullObjectId}`).notFound()
             })
         })
     })
 
-    describe('DELETE /storage-files/:fileId', () => {
+    describe('DELETE /attachments/:attachmentId', () => {
         // 파일이 존재하는 경우
         describe('when the file exists', () => {
-            let uploadedFile: StorageFileDto
+            let uploadedFile: AttachmentDto
 
             beforeEach(async () => {
                 const { completed } = await uploadViaPresign()
@@ -139,9 +136,9 @@ describe('StorageFilesService', () => {
 
             it('deletes the file metadata', async () => {
                 await fixture.httpClient
-                    .delete(`/storage-files/${uploadedFile.id}`)
+                    .delete(`/attachments/${uploadedFile.id}`)
                     .ok({
-                        deletedStorageFiles: [
+                        deletedAttachments: [
                             {
                                 id: expect.any(String),
                                 originalName: uploadedFile.originalName,
@@ -155,14 +152,14 @@ describe('StorageFilesService', () => {
                         ]
                     })
 
-                await fixture.httpClient.get(`/storage-files/${uploadedFile.id}`).notFound()
+                await fixture.httpClient.get(`/attachments/${uploadedFile.id}`).notFound()
             })
         })
 
         // 파일이 존재하지 않는 경우
         describe('when the file does not exist', () => {
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient.delete(`/storage-files/${nullObjectId}`).notFound()
+                await fixture.httpClient.delete(`/attachments/${nullObjectId}`).notFound()
             })
         })
     })

@@ -2,15 +2,15 @@ import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { S3ObjectModule } from 'common'
 import { AppConfigService, MongooseConfigModule } from 'shared'
-import { StorageFile, StorageFileSchema } from './models'
-import { StorageFilesController } from './storage-files.controller'
-import { StorageFilesRepository } from './storage-files.repository'
-import { StorageFilesService } from './storage-files.service'
+import { Attachment, AttachmentSchema } from './models'
+import { AttachmentsController } from './attachments.controller'
+import { AttachmentsRepository } from './attachments.repository'
+import { AttachmentsService } from './attachments.service'
 
 @Module({
     imports: [
         MongooseModule.forFeature(
-            [{ name: StorageFile.name, schema: StorageFileSchema }],
+            [{ name: Attachment.name, schema: AttachmentSchema }],
             MongooseConfigModule.connectionName
         ),
         S3ObjectModule.register({
@@ -18,7 +18,7 @@ import { StorageFilesService } from './storage-files.service'
             inject: [AppConfigService]
         })
     ],
-    providers: [StorageFilesService, StorageFilesRepository],
-    controllers: [StorageFilesController]
+    providers: [AttachmentsService, AttachmentsRepository],
+    controllers: [AttachmentsController]
 })
-export class StorageFilesModule {}
+export class AttachmentsModule {}

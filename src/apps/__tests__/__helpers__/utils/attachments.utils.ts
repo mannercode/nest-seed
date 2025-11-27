@@ -2,18 +2,18 @@ import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
 import { TestContext, getS3TestConnection } from 'testlib'
 import { FixtureFile } from '../fixture-files'
 
-export const getStorageFiles = async ({ module }: TestContext, fileIds: string[]) => {
-    const { StorageFilesClient } = await import('apps/infrastructures')
-    const storageFilesService = module.get(StorageFilesClient)
+export const getAttachments = async ({ module }: TestContext, fileIds: string[]) => {
+    const { AttachmentsClient } = await import('apps/infrastructures')
+    const attachmentsService = module.get(AttachmentsClient)
 
-    return storageFilesService.getFiles(fileIds)
+    return attachmentsService.getFiles(fileIds)
 }
 
-export const uploadStorageFiles = async ({ module }: TestContext, files: FixtureFile[]) => {
-    const { StorageFilesClient } = await import('apps/infrastructures')
-    const storageFilesService = module.get(StorageFilesClient)
+export const uploadAttachments = async ({ module }: TestContext, files: FixtureFile[]) => {
+    const { AttachmentsClient } = await import('apps/infrastructures')
+    const attachmentsService = module.get(AttachmentsClient)
 
-    const uploadedFiles = await storageFilesService.saveFiles(files)
+    const uploadedFiles = await attachmentsService.saveFiles(files)
     return uploadedFiles
 }
 

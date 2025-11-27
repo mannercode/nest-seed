@@ -1,9 +1,9 @@
 import { IsNotEmpty, IsString } from 'class-validator'
 
-export class CompleteStorageFileDto {
+export class CompleteAttachmentDto {
     @IsString()
     @IsNotEmpty()
-    storageFileId: string
+    attachmentId: string
 
     @IsString()
     @IsNotEmpty()

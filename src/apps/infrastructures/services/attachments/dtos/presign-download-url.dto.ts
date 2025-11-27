@@ -1,10 +1,10 @@
 import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator'
-import { StorageFileDto } from './storage-file.dto'
+import { AttachmentDto } from './attachment.dto'
 
 export class PresignDownloadUrlDto {
     @IsString()
     @IsNotEmpty()
-    storageFileId: string
+    attachmentId: string
 
     @IsInt()
     @IsOptional()
@@ -12,4 +12,4 @@ export class PresignDownloadUrlDto {
     expiresInSec?: number
 }
 
-export type PresignDownloadUrlResponse = StorageFileDto
+export type PresignDownloadUrlResponse = AttachmentDto

@@ -1,7 +1,7 @@
 import { RecommendationClient } from 'apps/applications'
 import { MovieDto, MoviesClient, MoviesModule } from 'apps/cores'
-import { MoviesController, StorageFilesController } from 'apps/gateway'
-import { StorageFilesClient, StorageFilesModule } from 'apps/infrastructures'
+import { AttachmentsController, MoviesController } from 'apps/gateway'
+import { AttachmentsClient, AttachmentsModule } from 'apps/infrastructures'
 import { Path } from 'common'
 import {
     createMovie,
@@ -22,9 +22,9 @@ export const createFixture = async () => {
     await ensureS3Bucket()
 
     const fix = await createTestFixture({
-        imports: [MoviesModule, StorageFilesModule],
-        providers: [MoviesClient, RecommendationClient, StorageFilesClient],
-        controllers: [MoviesController, StorageFilesController]
+        imports: [MoviesModule, AttachmentsModule],
+        providers: [MoviesClient, RecommendationClient, AttachmentsClient],
+        controllers: [MoviesController, AttachmentsController]
     })
 
     const tempDir = await Path.createTempDirectory()

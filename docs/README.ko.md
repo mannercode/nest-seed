@@ -173,7 +173,7 @@ src
 │   ├── infrastructures   # 외부 서비스 연동
 │   │   └── services
 │   │       ├── payments         # 결제 시스템 연동
-│   │       └── storage-files    # 파일 저장소 연동
+│   │       └── attachments      # 파일 저장소 연동
 │   └── shared            # 공통 코드
 │       ├── config
 │       ├── modules

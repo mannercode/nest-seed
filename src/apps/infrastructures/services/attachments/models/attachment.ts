@@ -4,7 +4,7 @@ import { HydratedDocument } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 
 @Schema(MongooseConfigModule.schemaOptions)
-export class StorageFile extends MongooseSchema {
+export class Attachment extends MongooseSchema {
     @Prop({ required: true })
     originalName: string
 
@@ -23,5 +23,5 @@ export class StorageFile extends MongooseSchema {
     @Prop({ type: String, default: null })
     ownerEntityId: string | null
 }
-export type StorageFileDocument = HydratedDocument<StorageFile>
-export const StorageFileSchema = createMongooseSchema(StorageFile)
+export type AttachmentDocument = HydratedDocument<Attachment>
+export const AttachmentSchema = createMongooseSchema(Attachment)

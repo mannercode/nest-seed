@@ -249,7 +249,7 @@ Customer <-- Frontend: 구매 완료
 
 커버리지는 100%여야 한다.
 
-Payments와 StorageFile은 외부 인프라를 사용하기 위한 서비스다. 이것은 infra 서비스다
+Payments와 Attachment는 외부 인프라를 사용하기 위한 서비스다. 이것은 infra 서비스다
 Purchase는 Core서비스다. 그런데 TicketPurchase서비스를 참조? 아니 이건 의존 역전으로 구현한다.
 
 core,app,infra로 나누려는 이유. 이렇게 안 하면 단순 트리 구조로만 생각할 것 같아서. 단일 책임 원칙에 소홀할까봐

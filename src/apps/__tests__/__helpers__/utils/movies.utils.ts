@@ -1,9 +1,9 @@
 import { MovieGenre, MovieRating } from 'apps/cores'
-import { StorageFilesClient } from 'apps/infrastructures'
+import { AttachmentsClient } from 'apps/infrastructures'
 import { readFile } from 'fs/promises'
 import { TestContext } from 'testlib'
 import { fixtureFiles } from '../fixture-files'
-import { ensureS3Bucket } from './storage-files.utils'
+import { ensureS3Bucket } from './attachments.utils'
 
 export const buildCreateMovieDto = (overrides = {}) => {
     const createDto = {
@@ -25,13 +25,13 @@ export const createMovie = async ({ module }: TestContext, override = {}) => {
     const { MoviesClient } = await import('apps/cores')
     const moviesService = module.get(MoviesClient)
 
-    const { StorageFilesClient } = await import('apps/infrastructures')
-    const storageFilesService = module.get(StorageFilesClient)
+    const { AttachmentsClient } = await import('apps/infrastructures')
+    const attachmentsService = module.get(AttachmentsClient)
 
     const createDto = buildCreateMovieDto(override)
 
     if (!('imageFileIds' in createDto) || !createDto.imageFileIds?.length) {
-        const imageFileId = await uploadMovieImage(storageFilesService)
+        const imageFileId = await uploadMovieImage(attachmentsService)
         createDto.imageFileIds = [imageFileId]
     }
 
@@ -41,10 +41,10 @@ export const createMovie = async ({ module }: TestContext, override = {}) => {
     return movie
 }
 
-const uploadMovieImage = async (storageFilesService: StorageFilesClient) => {
+const uploadMovieImage = async (attachmentsService: AttachmentsClient) => {
     await ensureS3Bucket()
 
-    const presign = await storageFilesService.presignUploadUrl({
+    const presign = await attachmentsService.presignUploadUrl({
         originalName: fixtureFiles.image.originalName,
         mimeType: fixtureFiles.image.mimeType,
         size: fixtureFiles.image.size,
@@ -58,8 +58,8 @@ const uploadMovieImage = async (storageFilesService: StorageFilesClient) => {
     })
 
     if (!uploadRes.ok) {
-        throw new Error(`Failed to upload storage file ${presign.storageFile.id}`)
+        throw new Error(`Failed to upload attachment ${presign.attachmentId}`)
     }
 
-    return presign.storageFile.id
+    return presign.attachmentId
 }

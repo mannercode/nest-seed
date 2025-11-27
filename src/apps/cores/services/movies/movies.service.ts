@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { StorageFilesClient } from 'apps/infrastructures'
+import { AttachmentsClient } from 'apps/infrastructures'
 import { mapDocToDto } from 'common'
 import { HttpRoutes } from 'shared'
 import { CreateMovieDto, MovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
@@ -12,7 +12,7 @@ export class MoviesService {
 
     constructor(
         private moviesRepository: MoviesRepository,
-        private storageFilesService: StorageFilesClient
+        private attachmentsService: AttachmentsClient
     ) {}
 
     async create(createMovieDto: CreateMovieDto) {
@@ -20,7 +20,7 @@ export class MoviesService {
 
         await Promise.all(
             createMovieDto.imageFileIds.map((fileId) =>
-                this.storageFilesService.complete(fileId, {
+                this.attachmentsService.complete(fileId, {
                     ownerService: this.ownerService,
                     ownerEntityId: movie.id
                 })
@@ -50,7 +50,7 @@ export class MoviesService {
                 await movie.deleteOne({ session })
 
                 const fileIds = movie.imageIds.map((id) => id.toString())
-                await this.storageFilesService.deleteFiles(fileIds)
+                await this.attachmentsService.deleteFiles(fileIds)
             }
 
             return movies
@@ -86,12 +86,10 @@ export class MoviesService {
         dto.imageFileIds = movie.imageIds.map((id) => id.toString())
 
         if (options.presignDownloadUrl === false) {
-            dto.imageUrls = dto.imageFileIds.map((id) => `${HttpRoutes.StorageFiles}/${id}`)
+            dto.imageUrls = dto.imageFileIds.map((id) => `${HttpRoutes.Attachments}/${id}`)
         } else {
             const downloadInfos = await Promise.all(
-                dto.imageFileIds.map((fileId) =>
-                    this.storageFilesService.presignDownloadUrl(fileId)
-                )
+                dto.imageFileIds.map((fileId) => this.attachmentsService.presignDownloadUrl(fileId))
             )
             dto.imageUrls = downloadInfos.map((info) => info.downloadUrl!)
         }
