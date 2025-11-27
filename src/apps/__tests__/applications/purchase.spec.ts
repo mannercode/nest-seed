@@ -4,6 +4,12 @@ import { pickIds } from 'common'
 import { Errors, getPayments, getTickets } from '../__helpers__'
 import { buildCreatePurchaseDto, Fixture } from './purchase.fixture'
 
+// TODO
+// 위의 코등 중에서 it('creates and returns a purchase', async () => { 을 보면 단순히 검증만 하고 있다.
+// 그럼에도 설명은 creates and returns a purchase 라고 했다.
+// 이것은 편의를 위해서 beforeEach에서 실행하고 검증만 하는 것인데 어떻게 개선해야 할까?
+// TODO fix 라고 표시한 건 다 고쳐야 한다
+
 describe('PurchaseService', () => {
     let fixture: Fixture
 
@@ -34,6 +40,8 @@ describe('PurchaseService', () => {
             })
 
             // TODO fix
+            // "구매를 생성한다"가 아니라 "올바른 응답 데이터를 반환한다"
+            // it('returns the valid purchase response structure', () => {
             // 구매를 생성하고 반환한다
             it('creates and returns a purchase', async () => {
                 expect(createdPurchase).toEqual({
@@ -45,6 +53,8 @@ describe('PurchaseService', () => {
                 })
             })
 
+            // "생성한다"가 아니라 "DB에 존재한다"
+            // it('has persisted the payment record', async () => {
             // 결제 기록을 생성한다
             it('creates the payment record', async () => {
                 const payments = await getPayments(fixture, [createdPurchase.paymentId])

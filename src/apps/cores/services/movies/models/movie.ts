@@ -28,19 +28,19 @@ export class Movie extends MongooseSchema {
     @Prop({ required: true })
     title: string
 
-    @Prop({ required: true, type: [String], enum: MovieGenre, default: [] })
+    @Prop({ required: true, type: [String], enum: MovieGenre })
     genres: MovieGenre[]
 
     @Prop({ required: true })
     releaseDate: Date
 
-    @Prop({ required: true, default: '' })
+    @Prop({ required: true })
     plot: string
 
     @Prop({ required: true })
     durationInSeconds: number
 
-    @Prop({ required: true, default: 'John Doe' })
+    @Prop({ required: true })
     director: string
 
     @Prop({ required: true, type: String, enum: MovieRating })
