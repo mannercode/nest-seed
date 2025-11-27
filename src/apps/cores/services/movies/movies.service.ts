@@ -89,7 +89,9 @@ export class MoviesService {
             dto.imageUrls = dto.imageFileIds.map((id) => `${HttpRoutes.StorageFiles}/${id}`)
         } else {
             const downloadInfos = await Promise.all(
-                dto.imageFileIds.map((fileId) => this.storageFilesService.presignDownloadUrl(fileId))
+                dto.imageFileIds.map((fileId) =>
+                    this.storageFilesService.presignDownloadUrl(fileId)
+                )
             )
             dto.imageUrls = downloadInfos.map((info) => info.downloadUrl!)
         }

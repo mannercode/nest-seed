@@ -332,7 +332,10 @@ describe('MoviesService', () => {
                     .query({ title: 'title-a' })
                     .ok(
                         expect.objectContaining({
-                            items: expect.arrayContaining([expectMovie(movies[0]), expectMovie(movies[1])])
+                            items: expect.arrayContaining([
+                                expectMovie(movies[0]),
+                                expectMovie(movies[1])
+                            ])
                         })
                     )
             })
@@ -347,7 +350,10 @@ describe('MoviesService', () => {
                     .query({ genre: MovieGenre.Drama })
                     .ok(
                         expect.objectContaining({
-                            items: expect.arrayContaining([expectMovie(movies[1]), expectMovie(movies[2])])
+                            items: expect.arrayContaining([
+                                expectMovie(movies[1]),
+                                expectMovie(movies[2])
+                            ])
                         })
                     )
             })
@@ -362,7 +368,10 @@ describe('MoviesService', () => {
                     .query({ releaseDate: new Date('2000-01-02') })
                     .ok(
                         expect.objectContaining({
-                            items: expect.arrayContaining([expectMovie(movies[1]), expectMovie(movies[2])])
+                            items: expect.arrayContaining([
+                                expectMovie(movies[1]),
+                                expectMovie(movies[2])
+                            ])
                         })
                     )
             })
@@ -377,7 +386,10 @@ describe('MoviesService', () => {
                     .query({ plot: 'plot-b' })
                     .ok(
                         expect.objectContaining({
-                            items: expect.arrayContaining([expectMovie(movies[2]), expectMovie(movies[3])])
+                            items: expect.arrayContaining([
+                                expectMovie(movies[2]),
+                                expectMovie(movies[3])
+                            ])
                         })
                     )
             })
@@ -392,7 +404,10 @@ describe('MoviesService', () => {
                     .query({ director: 'James' })
                     .ok(
                         expect.objectContaining({
-                            items: expect.arrayContaining([expectMovie(movies[0]), expectMovie(movies[2])])
+                            items: expect.arrayContaining([
+                                expectMovie(movies[0]),
+                                expectMovie(movies[2])
+                            ])
                         })
                     )
             })
@@ -407,7 +422,10 @@ describe('MoviesService', () => {
                     .query({ rating: MovieRating.NC17 })
                     .ok(
                         expect.objectContaining({
-                            items: expect.arrayContaining([expectMovie(movies[0]), expectMovie(movies[1])])
+                            items: expect.arrayContaining([
+                                expectMovie(movies[0]),
+                                expectMovie(movies[1])
+                            ])
                         })
                     )
             })
