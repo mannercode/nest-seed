@@ -29,10 +29,7 @@ export class AttachmentsController {
 
     @Post(':attachmentId/complete')
     @HttpCode(HttpStatus.OK)
-    complete(
-        @Param('attachmentId') attachmentId: string,
-        @Body() body: CompleteAttachmentBodyDto
-    ) {
+    complete(@Param('attachmentId') attachmentId: string, @Body() body: CompleteAttachmentBodyDto) {
         return this.attachmentsService.complete(attachmentId, body)
     }
 

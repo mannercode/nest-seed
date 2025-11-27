@@ -26,7 +26,10 @@ describe('AttachmentsService', () => {
     const uploadViaPresign = async () => {
         const payload = buildPresignPayload()
 
-        const { body: presign } = await fixture.httpClient.post('/attachments').body(payload).created()
+        const { body: presign } = await fixture.httpClient
+            .post('/attachments')
+            .body(payload)
+            .created()
 
         const uploadRes = await fetch(presign.uploadUrl, {
             method: presign.method,
