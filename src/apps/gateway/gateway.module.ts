@@ -19,10 +19,10 @@ import {
     StorageFilesController,
     TheatersController
 } from './controllers'
-import { HealthModule, MulterConfigModule } from './modules'
+import { HealthModule } from './modules'
 
 @Module({
-    imports: [CommonModule, HealthModule, MulterConfigModule],
+    imports: [CommonModule, HealthModule],
     providers: [
         CustomerLocalStrategy,
         CustomerJwtStrategy,

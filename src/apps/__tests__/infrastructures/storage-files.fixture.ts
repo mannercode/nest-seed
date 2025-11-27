@@ -1,14 +1,14 @@
 import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
-import { MulterConfigModule, StorageFilesController } from 'apps/gateway'
+import { StorageFilesController } from 'apps/gateway'
 import { StorageFilesClient, StorageFilesModule } from 'apps/infrastructures'
+import { getS3TestConnection, getTestId } from 'testlib'
 import {
     createConfigServiceMock,
+    createTestFixture,
     FixtureFile,
     fixtureFiles,
-    TestFixture,
-    createTestFixture
+    TestFixture
 } from '../__helpers__'
-import { getS3TestConnection, getTestId } from 'testlib'
 
 export interface Fixture extends TestFixture {
     overLimitFiles: FixtureFile[]
@@ -44,7 +44,7 @@ export const createFixture = async () => {
     })
 
     const fix = await createTestFixture({
-        imports: [MulterConfigModule, StorageFilesModule],
+        imports: [StorageFilesModule],
         providers: [StorageFilesClient],
         controllers: [StorageFilesController],
         overrideProviders: [configMock]

@@ -7,4 +7,6 @@ export class StorageFileDto {
     storedPath: string
     ownerService: string | null
     ownerEntityId: string | null
+    downloadUrl?: string
+    downloadUrlExpiresAt?: Date
 }

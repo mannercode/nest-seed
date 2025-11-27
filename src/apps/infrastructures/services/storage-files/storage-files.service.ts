@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { FileUtil, InjectS3Object, mapDocToDto, Path, S3ObjectService } from 'common'
+import { readFile } from 'fs/promises'
 import { HydratedDocument } from 'mongoose'
 import { AppConfigService } from 'shared'
 import {
@@ -45,6 +46,8 @@ export class StorageFilesService {
                 // The file systems of the source and storage location are different, so the move operation cannot be performed.
                 // 원본과 저장 위치의 파일 시스템이 달라서 move를 할 수 없다.
                 await Path.copy(createDto.path, this.getStoragePath(storageFile.id))
+
+                await this.uploadToS3(storageFile, this.getStoragePath(storageFile.id))
 
                 storageFiles.push(storageFile)
             }
@@ -96,12 +99,11 @@ export class StorageFilesService {
         const key = storageFile.id
         const downloadUrl = await this.s3Service.presignDownloadUrl({ key, expiresInSec })
 
-        return {
-            key,
-            downloadUrl,
-            expiresAt: this.getExpiresAt(expiresInSec),
-            storageFile: this.toDto(storageFile)
-        }
+        const dtoWithUrl = this.toDto(storageFile)
+        dtoWithUrl.downloadUrl = downloadUrl
+        dtoWithUrl.downloadUrlExpiresAt = this.getExpiresAt(expiresInSec)
+
+        return dtoWithUrl
     }
 
     async complete(dto: CompleteStorageFileDto) {
@@ -127,6 +129,29 @@ export class StorageFilesService {
     private getStoragePath(fileId: string) {
         const path = Path.join(this.config.fileUpload.directory, `${fileId}.file`)
         return path
+    }
+
+    private async uploadToS3(storageFile: StorageFileDocument, filePath: string) {
+        const uploadUrl = await this.s3Service.presignUploadUrl({
+            key: storageFile.id,
+            expiresInSec: DEFAULT_PRESIGN_EXPIRES_SEC,
+            contentType: storageFile.mimeType,
+            contentLength: storageFile.size
+        })
+
+        const data = await readFile(filePath)
+        const res = await fetch(uploadUrl, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': storageFile.mimeType,
+                'Content-Length': storageFile.size.toString()
+            },
+            body: data
+        })
+
+        if (!res.ok) {
+            throw new Error(`Failed to upload file ${storageFile.id} to S3`)
+        }
     }
 
     private getExpiresAt(expiresInSec: number) {

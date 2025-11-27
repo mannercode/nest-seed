@@ -14,11 +14,8 @@ import {
 export class MoviesClient {
     constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
 
-    create(
-        createMovieDto: CreateMovieDto,
-        createFileDtos: CreateStorageFileDto[]
-    ): Promise<MovieDto> {
-        return this.proxy.getJson(Messages.Movies.create, { createMovieDto, createFileDtos })
+    create(createMovieDto: CreateMovieDto): Promise<MovieDto> {
+        return this.proxy.getJson(Messages.Movies.create, createMovieDto)
     }
 
     update(movieId: string, updateDto: UpdateMovieDto): Promise<MovieDto> {

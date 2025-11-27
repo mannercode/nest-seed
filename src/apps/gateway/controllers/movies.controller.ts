@@ -8,15 +8,10 @@ import {
     Post,
     Query,
     Req,
-    UploadedFiles,
-    UseFilters,
-    UseGuards,
-    UseInterceptors
+    UseGuards
 } from '@nestjs/common'
-import { FilesInterceptor } from '@nestjs/platform-express'
 import { RecommendationClient } from 'apps/applications'
 import { CreateMovieDto, MoviesClient, SearchMoviesPageDto, UpdateMovieDto } from 'apps/cores'
-import { MulterExceptionFilter } from './filters'
 import { CustomerOptionalJwtAuthGuard } from './guards'
 import { CustomerAuthRequest } from './types'
 
@@ -41,21 +36,9 @@ export class MoviesController {
     //   "detail": "Create a movie by finalizing a draft.",
     //   "links": { "createDraft": "/v1/movies/drafts" }
     // }
-    @UseFilters(new MulterExceptionFilter())
-    @UseInterceptors(FilesInterceptor('files'))
     @Post()
-    async create(
-        @UploadedFiles() files: Express.Multer.File[],
-        @Body() createMovieDto: CreateMovieDto
-    ) {
-        const createFileDtos = files.map((file) => ({
-            originalName: file.originalname,
-            mimeType: file.mimetype,
-            size: file.size,
-            path: file.path
-        }))
-
-        return this.moviesService.create(createMovieDto, createFileDtos)
+    async create(@Body() createMovieDto: CreateMovieDto) {
+        return this.moviesService.create(createMovieDto)
     }
 
     @Patch(':movieId')

@@ -1,5 +1,6 @@
 import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
 import { FileUtil, Path } from 'common'
+import { writeFile } from 'fs/promises'
 import { nullObjectId, objectToFields } from 'testlib'
 import { buildCreateMovieDto, createMovie, Errors } from '../__helpers__'
 import type { Fixture } from './movies.fixture'
@@ -47,7 +48,15 @@ describe('MoviesService', () => {
             it('downloads the attached file', async () => {
                 const downloadPath = Path.join(fixture.tempDir, 'download.tmp')
 
-                await fixture.httpClient.get(createdMovie.imageUrls[0]).download(downloadPath).ok()
+                const { body: downloadInfo } = await fixture.httpClient
+                    .get(createdMovie.imageUrls[0])
+                    .ok()
+
+                const res = await fetch(downloadInfo.downloadUrl)
+                expect(res.ok).toBe(true)
+
+                const downloadedBuffer = Buffer.from(await res.arrayBuffer())
+                await writeFile(downloadPath, downloadedBuffer)
 
                 expect(await FileUtil.areEqual(downloadPath, fixture.image.path)).toBe(true)
             })
@@ -153,8 +162,8 @@ describe('MoviesService', () => {
                 await fixture.httpClient
                     .get(fileUrl)
                     .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [expect.any(String)]
+                        ...Errors.Mongoose.DocumentNotFound,
+                        notFoundId: expect.any(String)
                     })
             })
         })

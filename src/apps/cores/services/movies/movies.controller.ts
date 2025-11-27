@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Messages } from 'shared'
-import { CreateMovieAndFilesDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
+import { CreateMovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
 import { MoviesService } from './movies.service'
 
 @Controller()
@@ -9,8 +9,8 @@ export class MoviesController {
     constructor(private service: MoviesService) {}
 
     @MessagePattern(Messages.Movies.create)
-    create(@Payload() { createMovieDto, createFileDtos }: CreateMovieAndFilesDto) {
-        return this.service.create(createMovieDto, createFileDtos)
+    create(@Payload() createMovieDto: CreateMovieDto) {
+        return this.service.create(createMovieDto)
     }
 
     @MessagePattern(Messages.Movies.update)

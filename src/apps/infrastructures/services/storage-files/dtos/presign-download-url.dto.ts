@@ -12,9 +12,4 @@ export class PresignDownloadUrlDto {
     expiresInSec?: number
 }
 
-export type PresignDownloadUrlResponse = {
-    key: string
-    downloadUrl: string
-    expiresAt: Date
-    storageFile: StorageFileDto
-}
+export type PresignDownloadUrlResponse = StorageFileDto
