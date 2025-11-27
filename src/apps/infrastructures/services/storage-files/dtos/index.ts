@@ -1,3 +1,6 @@
 export * from './create-storage-file.dto'
+export * from './complete-storage-file.dto'
 export * from './delete-storage-files.response'
+export * from './presign-download-url.dto'
+export * from './presign-upload-url.dto'
 export * from './storage-file.dto'

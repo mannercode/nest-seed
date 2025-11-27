@@ -5,4 +5,6 @@ export class StorageFileDto {
     size: number
     checksum: string
     storedPath: string
+    ownerService: string | null
+    ownerEntityId: string | null
 }

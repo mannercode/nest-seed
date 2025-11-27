@@ -14,12 +14,7 @@ import { StorageFilesService } from './storage-files.service'
             MongooseConfigModule.connectionName
         ),
         S3ObjectModule.register({
-            useFactory: (config: AppConfigService) => {
-                const { endpoint, accessKeyId, secretAccessKey, region, bucket, forcePathStyle } =
-                    config.amazonS3
-
-                return { endpoint, accessKeyId, secretAccessKey, region, bucket, forcePathStyle }
-            },
+            useFactory: (config: AppConfigService) => config.amazonS3,
             inject: [AppConfigService]
         })
     ],

@@ -3,16 +3,19 @@ import {
     Controller,
     Delete,
     Get,
+    HttpCode,
+    HttpStatus,
     Param,
     Post,
+    Query,
     StreamableFile,
     UploadedFiles,
     UseFilters,
     UseInterceptors
 } from '@nestjs/common'
 import { FilesInterceptor } from '@nestjs/platform-express'
-import { StorageFilesClient } from 'apps/infrastructures'
-import { IsString } from 'class-validator'
+import { PresignUploadUrlDto, StorageFilesClient } from 'apps/infrastructures'
+import { IsNotEmpty, IsString } from 'class-validator'
 import { createReadStream } from 'fs'
 import { HttpRoutes } from 'shared'
 import { MulterExceptionFilter } from './filters'
@@ -22,9 +25,24 @@ class UploadFileDto {
     name?: string
 }
 
+class CompleteStorageFileBodyDto {
+    @IsString()
+    @IsNotEmpty()
+    ownerService: string
+
+    @IsString()
+    @IsNotEmpty()
+    ownerEntityId: string
+}
+
 @Controller(HttpRoutes.StorageFiles)
 export class StorageFilesController {
     constructor(private storageFilesService: StorageFilesClient) {}
+
+    @Post('presign-upload')
+    presignUpload(@Body() body: PresignUploadUrlDto) {
+        return this.storageFilesService.presignUploadUrl(body)
+    }
 
     @UseFilters(new MulterExceptionFilter())
     @UseInterceptors(FilesInterceptor('files'))
@@ -39,6 +57,14 @@ export class StorageFilesController {
 
         const storageFiles = await this.storageFilesService.saveFiles(createFileDtos)
         return { storageFiles }
+    }
+
+    @Get(':fileId/presign-download')
+    presignDownload(@Param('fileId') fileId: string, @Query('expiresInSec') expires?: string) {
+        const parsedExpiresInSec = expires ? parseInt(expires, 10) : undefined
+        const expiresInSec = Number.isNaN(parsedExpiresInSec) ? undefined : parsedExpiresInSec
+
+        return this.storageFilesService.presignDownloadUrl(fileId, expiresInSec)
     }
 
     @Get(':fileId')
@@ -56,6 +82,12 @@ export class StorageFilesController {
         })
 
         return stream
+    }
+
+    @Post(':fileId/complete')
+    @HttpCode(HttpStatus.OK)
+    complete(@Param('fileId') fileId: string, @Body() body: CompleteStorageFileBodyDto) {
+        return this.storageFilesService.complete(fileId, body)
     }
 
     @Delete(':fileId')

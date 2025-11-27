@@ -6,6 +6,11 @@ import { MongooseConfigModule } from 'shared'
 import { CreateStorageFileDto } from './dtos'
 import { StorageFile } from './models'
 
+export type StorageFileCreateInput = Pick<CreateStorageFileDto, 'originalName' | 'mimeType' | 'size'> & {
+    ownerService?: string | null
+    ownerEntityId?: string | null
+}
+
 @Injectable()
 export class StorageFilesRepository extends MongooseRepository<StorageFile> {
     constructor(
@@ -16,7 +21,7 @@ export class StorageFilesRepository extends MongooseRepository<StorageFile> {
     }
 
     async createStorageFile(
-        createDto: CreateStorageFileDto,
+        createDto: StorageFileCreateInput,
         checksum: string,
         session?: ClientSession
     ) {
@@ -25,6 +30,8 @@ export class StorageFilesRepository extends MongooseRepository<StorageFile> {
         storageFile.mimeType = createDto.mimeType
         storageFile.size = createDto.size
         storageFile.checksum = checksum
+        storageFile.ownerService = createDto.ownerService ?? null
+        storageFile.ownerEntityId = createDto.ownerEntityId ?? null
 
         return storageFile.save({ session })
     }

@@ -16,6 +16,12 @@ export class StorageFile extends MongooseSchema {
 
     @Prop({ required: true })
     checksum: string
+
+    @Prop({ type: String, default: null })
+    ownerService: string | null
+
+    @Prop({ type: String, default: null })
+    ownerEntityId: string | null
 }
 export type StorageFileDocument = HydratedDocument<StorageFile>
 export const StorageFileSchema = createMongooseSchema(StorageFile)

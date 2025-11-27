@@ -2,9 +2,19 @@ import { Injectable } from '@nestjs/common'
 import { FileUtil, InjectS3Object, mapDocToDto, Path, S3ObjectService } from 'common'
 import { HydratedDocument } from 'mongoose'
 import { AppConfigService } from 'shared'
-import { CreateStorageFileDto, StorageFileDto } from './dtos'
+import {
+    CompleteStorageFileDto,
+    CreateStorageFileDto,
+    PresignDownloadUrlDto,
+    PresignDownloadUrlResponse,
+    PresignUploadUrlDto,
+    PresignUploadUrlResponse,
+    StorageFileDto
+} from './dtos'
 import { StorageFile, StorageFileDocument } from './models'
 import { StorageFilesRepository } from './storage-files.repository'
+
+const DEFAULT_PRESIGN_EXPIRES_SEC = 60
 
 @Injectable()
 export class StorageFilesService {
@@ -50,6 +60,66 @@ export class StorageFilesService {
         return this.toDtos(files)
     }
 
+    async presignUploadUrl(dto: PresignUploadUrlDto): Promise<PresignUploadUrlResponse> {
+        const expiresInSec = dto.expiresInSec ?? DEFAULT_PRESIGN_EXPIRES_SEC
+
+        return this.repository.withTransaction(async (session) => {
+            const storageFile = await this.repository.createStorageFile(
+                {
+                    originalName: dto.originalName,
+                    mimeType: dto.mimeType,
+                    size: dto.size
+                },
+                dto.checksum,
+                session
+            )
+
+            const key = storageFile.id
+            const uploadUrl = await this.s3Service.presignUploadUrl({
+                key,
+                expiresInSec,
+                contentType: dto.mimeType,
+                contentLength: dto.size
+            })
+
+            return {
+                key,
+                uploadUrl,
+                expiresAt: this.getExpiresAt(expiresInSec),
+                method: 'PUT' as const,
+                headers: {
+                    'Content-Type': dto.mimeType,
+                    'Content-Length': dto.size.toString()
+                },
+                storageFile: this.toDto(storageFile)
+            }
+        })
+    }
+
+    async presignDownloadUrl(dto: PresignDownloadUrlDto): Promise<PresignDownloadUrlResponse> {
+        const expiresInSec = dto.expiresInSec ?? DEFAULT_PRESIGN_EXPIRES_SEC
+        const storageFile = await this.repository.getById(dto.storageFileId)
+
+        const key = storageFile.id
+        const downloadUrl = await this.s3Service.presignDownloadUrl({ key, expiresInSec })
+
+        return {
+            key,
+            downloadUrl,
+            expiresAt: this.getExpiresAt(expiresInSec),
+            storageFile: this.toDto(storageFile)
+        }
+    }
+
+    async complete(dto: CompleteStorageFileDto) {
+        const storageFile = await this.repository.update(dto.storageFileId, {
+            ownerService: dto.ownerService,
+            ownerEntityId: dto.ownerEntityId
+        })
+
+        return this.toDto(storageFile)
+    }
+
     async deleteFiles(fileIds: string[]) {
         const deletedFiles = await this.repository.deleteByIds(fileIds)
 
@@ -66,13 +136,19 @@ export class StorageFilesService {
         return path
     }
 
+    private getExpiresAt(expiresInSec: number) {
+        return new Date(Date.now() + expiresInSec * 1000)
+    }
+
     private toDto = (file: StorageFileDocument) => {
         const dto = mapDocToDto(file, StorageFileDto, [
             'id',
             'originalName',
             'mimeType',
             'size',
-            'checksum'
+            'checksum',
+            'ownerService',
+            'ownerEntityId'
         ])
         dto.storedPath = this.getStoragePath(file.id)
 
