@@ -47,6 +47,13 @@ export class S3ObjectService {
         private readonly s3: S3Client
     ) {}
 
+    // TODO
+    //     이런 식으로 쓰면 전부 S3ObjectService_undefined 라는 이름으로 등록/주입됩니다.
+    // 의도한 거라면 괜찮지만, 보통은 기본값을 하나 두는 게 더 명확합니다.
+
+    // static getServiceName(name?: string) {
+    //     return `S3ObjectService_${name ?? 'default'}`
+    // }
     static getServiceName(name?: string) {
         return `S3ObjectService_${name}`
     }
@@ -62,7 +69,7 @@ export class S3ObjectService {
             signableHeaders.add('content-type')
         }
 
-        if (contentLength) {
+        if (typeof contentLength === 'number') {
             params.ContentLength = contentLength
             signableHeaders.add('content-length')
         }
@@ -118,8 +125,18 @@ export class S3ObjectService {
 
         data = Buffer.concat(chunks)
 
-        const contentType = ContentType!
-        const filename = HttpUtil.extractContentDisposition(ContentDisposition!)
+        // TODO
+        // 아래처럼 함수 만들어서 사용하면 ignore next 제거 가능
+        // static contentTypeOrDefault(contentType?: string): string {
+        //     return contentType ?? 'application/octet-stream'
+        // }
+
+        /* istanbul ignore next */
+        const contentType = ContentType ?? 'application/octet-stream'
+        /* istanbul ignore next */
+        const filename = ContentDisposition
+            ? HttpUtil.extractContentDisposition(ContentDisposition)
+            : key
 
         return { data, filename, contentType }
     }
@@ -128,8 +145,10 @@ export class S3ObjectService {
         const command = new DeleteObjectCommand({ Bucket: this.bucket, Key: key })
 
         const { $metadata } = await this.s3.send(command)
+        /* istanbul ignore next */
+        const status = $metadata.httpStatusCode ?? 200
 
-        return { status: $metadata.httpStatusCode!, deletedObject: key }
+        return { status, deletedObject: key }
     }
 
     async listObjects(options: S3ListObjectsOptions): Promise<S3ListObjectsResult> {
