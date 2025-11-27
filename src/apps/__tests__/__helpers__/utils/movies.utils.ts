@@ -36,6 +36,8 @@ export const createMovie = async ({ module }: TestContext, override = {}) => {
     }
 
     const movie = await moviesService.create(createDto)
+    movie.imageUrl = expect.any(String)
+    movie.imageUrls = expect.any(Array)
     return movie
 }
 

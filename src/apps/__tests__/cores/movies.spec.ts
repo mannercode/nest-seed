@@ -115,21 +115,7 @@ describe('MoviesService', () => {
             it('returns the movie', async () => {
                 await fixture.httpClient
                     .get(`/movies/${fixture.createdMovie.id}`)
-                    .ok(
-                        expect.objectContaining({
-                            id: fixture.createdMovie.id,
-                            title: fixture.createdMovie.title,
-                            genres: fixture.createdMovie.genres,
-                            releaseDate: fixture.createdMovie.releaseDate,
-                            plot: fixture.createdMovie.plot,
-                            durationInSeconds: fixture.createdMovie.durationInSeconds,
-                            director: fixture.createdMovie.director,
-                            rating: fixture.createdMovie.rating,
-                            imageFileIds: fixture.createdMovie.imageFileIds,
-                            imageUrl: expect.any(String),
-                            imageUrls: expect.any(Array)
-                        })
-                    )
+                    .ok(fixture.createdMovie)
             })
         })
 
