@@ -45,9 +45,6 @@ export class StorageFilesClient {
         storageFileId: string,
         ownerInfo: Omit<CompleteStorageFileDto, 'storageFileId'>
     ): Promise<StorageFileDto> {
-        return this.proxy.getJson(Messages.StorageFiles.complete, {
-            storageFileId,
-            ...ownerInfo
-        })
+        return this.proxy.getJson(Messages.StorageFiles.complete, { storageFileId, ...ownerInfo })
     }
 }

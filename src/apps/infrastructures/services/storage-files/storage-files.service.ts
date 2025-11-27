@@ -65,11 +65,7 @@ export class StorageFilesService {
 
         return this.repository.withTransaction(async (session) => {
             const storageFile = await this.repository.createStorageFile(
-                {
-                    originalName: dto.originalName,
-                    mimeType: dto.mimeType,
-                    size: dto.size
-                },
+                { originalName: dto.originalName, mimeType: dto.mimeType, size: dto.size },
                 dto.checksum,
                 session
             )
@@ -87,10 +83,7 @@ export class StorageFilesService {
                 uploadUrl,
                 expiresAt: this.getExpiresAt(expiresInSec),
                 method: 'PUT' as const,
-                headers: {
-                    'Content-Type': dto.mimeType,
-                    'Content-Length': dto.size.toString()
-                },
+                headers: { 'Content-Type': dto.mimeType, 'Content-Length': dto.size.toString() },
                 storageFile: this.toDto(storageFile)
             }
         })

@@ -6,10 +6,10 @@ import { MongooseConfigModule } from 'shared'
 import { CreateStorageFileDto } from './dtos'
 import { StorageFile } from './models'
 
-export type StorageFileCreateInput = Pick<CreateStorageFileDto, 'originalName' | 'mimeType' | 'size'> & {
-    ownerService?: string | null
-    ownerEntityId?: string | null
-}
+export type StorageFileCreateInput = Pick<
+    CreateStorageFileDto,
+    'originalName' | 'mimeType' | 'size'
+> & { ownerService?: string | null; ownerEntityId?: string | null }
 
 @Injectable()
 export class StorageFilesRepository extends MongooseRepository<StorageFile> {

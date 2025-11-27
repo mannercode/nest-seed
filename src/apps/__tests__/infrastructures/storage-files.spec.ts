@@ -228,9 +228,9 @@ describe('StorageFilesService', () => {
                 const downloadedBuffer = Buffer.from(await downloadRes.arrayBuffer())
                 await writeFile(downloadedFile, downloadedBuffer)
 
-                expect(
-                    await FileUtil.areEqual(downloadedFile, fixture.localFiles.small.path)
-                ).toBe(true)
+                expect(await FileUtil.areEqual(downloadedFile, fixture.localFiles.small.path)).toBe(
+                    true
+                )
             } finally {
                 await Path.delete(tempDir)
             }
