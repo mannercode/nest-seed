@@ -37,7 +37,7 @@
         "ioredis": "^5.8.2",
         "joi": "^18.0.2",
         "lodash": "^4.17.21",
-        "mongoose": "^9.0.0",
+        "mongoose": "^8.20.1",
         "nats": "^2.29.3",
         "passport-jwt": "^4.0.1",
         "passport-local": "^1.0.0",
