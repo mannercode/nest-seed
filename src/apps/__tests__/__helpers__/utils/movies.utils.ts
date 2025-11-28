@@ -44,22 +44,22 @@ export const createMovie = async ({ module }: TestContext, override = {}) => {
 const uploadMovieImage = async (attachmentsService: AttachmentsClient) => {
     await ensureS3Bucket()
 
-    const presign = await attachmentsService.presignUploadUrl({
+    const uploadInfo = await attachmentsService.getUploadUrl({
         originalName: fixtureFiles.image.originalName,
         mimeType: fixtureFiles.image.mimeType,
         size: fixtureFiles.image.size,
         checksum: fixtureFiles.image.checksum.value
     })
 
-    const uploadRes = await fetch(presign.uploadUrl, {
-        method: presign.method,
-        headers: presign.headers,
+    const uploadRes = await fetch(uploadInfo.uploadUrl, {
+        method: uploadInfo.method,
+        headers: uploadInfo.headers,
         body: await readFile(fixtureFiles.image.path)
     })
 
     if (!uploadRes.ok) {
-        throw new Error(`Failed to upload attachment ${presign.attachmentId}`)
+        throw new Error(`Failed to upload attachment ${uploadInfo.attachmentId}`)
     }
 
-    return presign.attachmentId
+    return uploadInfo.attachmentId
 }

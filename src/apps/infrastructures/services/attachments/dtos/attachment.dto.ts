@@ -4,7 +4,6 @@ export class AttachmentDto {
     mimeType: string
     size: number
     checksum: string
-    storedPath: string
     ownerService: string | null
     ownerEntityId: string | null
     downloadUrl?: string

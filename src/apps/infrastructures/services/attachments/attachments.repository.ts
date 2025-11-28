@@ -3,13 +3,15 @@ import { InjectModel } from '@nestjs/mongoose'
 import { MongooseRepository } from 'common'
 import { ClientSession, Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import { CreateAttachmentDto } from './dtos'
 import { Attachment } from './models'
 
-export type AttachmentCreateInput = Pick<
-    CreateAttachmentDto,
-    'originalName' | 'mimeType' | 'size'
-> & { ownerService?: string | null; ownerEntityId?: string | null }
+export type AttachmentCreateInput = {
+    originalName: string
+    mimeType: string
+    size: number
+    ownerService?: string | null
+    ownerEntityId?: string | null
+}
 
 @Injectable()
 export class AttachmentsRepository extends MongooseRepository<Attachment> {

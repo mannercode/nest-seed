@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common'
-import { AttachmentsClient, PresignUploadUrlDto } from 'apps/infrastructures'
+import { AttachmentsClient, GetUploadUrlDto } from 'apps/infrastructures'
 import { IsNotEmpty, IsString } from 'class-validator'
 import { HttpRoutes } from 'shared'
 
@@ -18,13 +18,14 @@ export class AttachmentsController {
     constructor(private attachmentsService: AttachmentsClient) {}
 
     @Post()
-    presignUpload(@Body() body: PresignUploadUrlDto) {
-        return this.attachmentsService.presignUploadUrl(body)
+    getUploadUrl(@Body() body: GetUploadUrlDto) {
+        return this.attachmentsService.getUploadUrl(body)
     }
 
     @Get(':attachmentId')
     async getDownloadInfo(@Param('attachmentId') attachmentId: string) {
-        return this.attachmentsService.presignDownloadUrl(attachmentId)
+        const [attachment] = await this.attachmentsService.getMany([attachmentId])
+        return attachment
     }
 
     @Post(':attachmentId/complete')
@@ -35,6 +36,6 @@ export class AttachmentsController {
 
     @Delete(':attachmentId')
     async deleteFile(@Param('attachmentId') attachmentId: string) {
-        return this.attachmentsService.deleteFiles([attachmentId])
+        return this.attachmentsService.deleteMany([attachmentId])
     }
 }

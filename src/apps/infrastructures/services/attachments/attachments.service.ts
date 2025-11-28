@@ -1,18 +1,8 @@
 import { Injectable } from '@nestjs/common'
-import { FileUtil, InjectS3Object, mapDocToDto, Path, S3ObjectService } from 'common'
-import { readFile } from 'fs/promises'
-import { HydratedDocument } from 'mongoose'
+import { InjectS3Object, mapDocToDto, Path, S3ObjectService } from 'common'
 import { AppConfigService } from 'shared'
-import {
-    AttachmentDto,
-    CompleteAttachmentDto,
-    CreateAttachmentDto,
-    PresignDownloadUrlDto,
-    PresignDownloadUrlResponse,
-    PresignUploadUrlDto,
-    PresignUploadUrlResponse
-} from './dtos'
-import { Attachment, AttachmentDocument } from './models'
+import { AttachmentDto, CompleteAttachmentDto, GetUploadUrlDto, GetUploadUrlResponse } from './dtos'
+import { AttachmentDocument } from './models'
 import { AttachmentsRepository } from './attachments.repository'
 
 const DEFAULT_PRESIGN_EXPIRES_SEC = 60
@@ -25,45 +15,15 @@ export class AttachmentsService {
         @InjectS3Object() private s3Service: S3ObjectService
     ) {}
 
-    async saveFiles(createDtos: CreateAttachmentDto[]) {
-        const checksumByPath = new Map<string, string>()
-
-        for (const createDto of createDtos) {
-            const checksum = await FileUtil.getChecksum(createDto.path)
-            checksumByPath.set(createDto.path, checksum)
-        }
-
-        const attachments = await this.repository.withTransaction(async (session) => {
-            const docs: HydratedDocument<Attachment>[] = []
-
-            for (const createDto of createDtos) {
-                const attachment = await this.repository.createAttachment(
-                    createDto,
-                    checksumByPath.get(createDto.path)!,
-                    session
-                )
-
-                // The file systems of the source and storage location are different, so the move operation cannot be performed.
-                // 원본과 저장 위치의 파일 시스템이 달라서 move를 할 수 없다.
-                await Path.copy(createDto.path, this.getAttachmentPath(attachment.id))
-
-                await this.uploadToS3(attachment, this.getAttachmentPath(attachment.id))
-
-                docs.push(attachment)
-            }
-
-            return docs
-        })
-
-        return this.toDtos(attachments)
-    }
-
-    async getFiles(fileIds: string[]) {
+    async getMany(fileIds: string[]) {
         const files = await this.repository.getByIds(fileIds)
-        return this.toDtos(files)
+
+        return Promise.all(
+            files.map((file) => this.toDtoWithDownloadUrl(file, DEFAULT_PRESIGN_EXPIRES_SEC))
+        )
     }
 
-    async presignUploadUrl(dto: PresignUploadUrlDto): Promise<PresignUploadUrlResponse> {
+    async getUploadUrl(dto: GetUploadUrlDto): Promise<GetUploadUrlResponse> {
         const expiresInSec = dto.expiresInSec ?? DEFAULT_PRESIGN_EXPIRES_SEC
 
         return this.repository.withTransaction(async (session) => {
@@ -92,22 +52,6 @@ export class AttachmentsService {
         })
     }
 
-    async presignDownloadUrl(dto: PresignDownloadUrlDto): Promise<PresignDownloadUrlResponse> {
-        const expiresInSec = dto.expiresInSec ?? DEFAULT_PRESIGN_EXPIRES_SEC
-        const attachment = await this.repository.getById(dto.attachmentId)
-
-        const downloadUrl = await this.s3Service.presignDownloadUrl({
-            key: attachment.id,
-            expiresInSec
-        })
-
-        const dtoWithUrl = this.toDto(attachment)
-        dtoWithUrl.downloadUrl = downloadUrl
-        dtoWithUrl.downloadUrlExpiresAt = this.getExpiresAt(expiresInSec)
-
-        return dtoWithUrl
-    }
-
     async complete(dto: CompleteAttachmentDto) {
         const attachment = await this.repository.update(dto.attachmentId, {
             ownerService: dto.ownerService,
@@ -117,7 +61,7 @@ export class AttachmentsService {
         return this.toDto(attachment)
     }
 
-    async deleteFiles(fileIds: string[]) {
+    async deleteMany(fileIds: string[]) {
         const deletedFiles = await this.repository.deleteByIds(fileIds)
 
         for (const fileId of fileIds) {
@@ -131,29 +75,6 @@ export class AttachmentsService {
     private getAttachmentPath(fileId: string) {
         const path = Path.join(this.config.fileUpload.directory, `${fileId}.file`)
         return path
-    }
-
-    private async uploadToS3(attachment: AttachmentDocument, filePath: string) {
-        const uploadUrl = await this.s3Service.presignUploadUrl({
-            key: attachment.id,
-            expiresInSec: DEFAULT_PRESIGN_EXPIRES_SEC,
-            contentType: attachment.mimeType,
-            contentLength: attachment.size
-        })
-
-        const data = await readFile(filePath)
-        const res = await fetch(uploadUrl, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': attachment.mimeType,
-                'Content-Length': attachment.size.toString()
-            },
-            body: data
-        })
-
-        if (!res.ok) {
-            throw new Error(`Failed to upload file ${attachment.id} to S3`)
-        }
     }
 
     private getExpiresAt(expiresInSec: number) {
@@ -170,7 +91,15 @@ export class AttachmentsService {
             'ownerService',
             'ownerEntityId'
         ])
-        dto.storedPath = this.getAttachmentPath(file.id)
+
+        return dto
+    }
+    private async toDtoWithDownloadUrl(file: AttachmentDocument, expiresInSec: number) {
+        const dto = this.toDto(file)
+        const downloadUrl = await this.s3Service.presignDownloadUrl({ key: file.id, expiresInSec })
+
+        dto.downloadUrl = downloadUrl
+        dto.downloadUrlExpiresAt = this.getExpiresAt(expiresInSec)
 
         return dto
     }

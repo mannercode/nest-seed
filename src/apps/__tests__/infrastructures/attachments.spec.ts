@@ -16,24 +16,24 @@ describe('AttachmentsService', () => {
         await fixture?.teardown()
     })
 
-    const buildPresignPayload = () => ({
+    const buildUploadPayload = () => ({
         originalName: fixture.localFiles.small.originalName,
         mimeType: fixture.localFiles.small.mimeType,
         size: fixture.localFiles.small.size,
         checksum: fixture.localFiles.small.checksum.value
     })
 
-    const uploadViaPresign = async () => {
-        const payload = buildPresignPayload()
+    const uploadAttachment = async () => {
+        const payload = buildUploadPayload()
 
-        const { body: presign } = await fixture.httpClient
+        const { body: uploadInfo } = await fixture.httpClient
             .post('/attachments')
             .body(payload)
             .created()
 
-        const uploadRes = await fetch(presign.uploadUrl, {
-            method: presign.method,
-            headers: presign.headers,
+        const uploadRes = await fetch(uploadInfo.uploadUrl, {
+            method: uploadInfo.method,
+            headers: uploadInfo.headers,
             body: await readFile(fixture.localFiles.small.path)
         })
 
@@ -41,16 +41,16 @@ describe('AttachmentsService', () => {
 
         const ownerInfo = { ownerService: 'movies', ownerEntityId: 'movie-1' }
         const { body: completed } = await fixture.httpClient
-            .post(`/attachments/${presign.attachmentId}/complete`)
+            .post(`/attachments/${uploadInfo.attachmentId}/complete`)
             .body(ownerInfo)
             .ok()
 
-        return { presign, completed, ownerInfo }
+        return { uploadInfo, completed, ownerInfo }
     }
 
     describe('POST /attachments', () => {
         it('returns an upload URL and stores the metadata', async () => {
-            const payload = buildPresignPayload()
+            const payload = buildUploadPayload()
 
             const { body } = await fixture.httpClient.post('/attachments').body(payload).created()
 
@@ -69,7 +69,6 @@ describe('AttachmentsService', () => {
                     mimeType: payload.mimeType,
                     size: payload.size,
                     checksum: payload.checksum,
-                    storedPath: expect.any(String),
                     ownerService: null,
                     ownerEntityId: null
                 }
@@ -85,7 +84,7 @@ describe('AttachmentsService', () => {
             let uploadedFile: AttachmentDto
 
             beforeEach(async () => {
-                const { completed } = await uploadViaPresign()
+                const { completed } = await uploadAttachment()
                 uploadedFile = completed
             })
 
@@ -133,7 +132,7 @@ describe('AttachmentsService', () => {
             let uploadedFile: AttachmentDto
 
             beforeEach(async () => {
-                const { completed } = await uploadViaPresign()
+                const { completed } = await uploadAttachment()
                 uploadedFile = completed
             })
 
@@ -148,7 +147,6 @@ describe('AttachmentsService', () => {
                                 mimeType: uploadedFile.mimeType,
                                 size: uploadedFile.size,
                                 checksum: uploadedFile.checksum,
-                                storedPath: expect.any(String),
                                 ownerService: uploadedFile.ownerService,
                                 ownerEntityId: uploadedFile.ownerEntityId
                             }

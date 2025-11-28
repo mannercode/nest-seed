@@ -50,13 +50,13 @@ export class MoviesService {
                 await movie.deleteOne({ session })
 
                 const fileIds = movie.imageIds.map((id) => id.toString())
-                await this.attachmentsService.deleteFiles(fileIds)
+                await this.attachmentsService.deleteMany(fileIds)
             }
 
             return movies
         })
 
-        return { deletedMovies: await this.toDtos(movies, { presignDownloadUrl: false }) }
+        return { deletedMovies: await this.toDtos(movies, { includeDownloadUrl: false }) }
     }
 
     async searchPage(searchDto: SearchMoviesPageDto) {
@@ -71,7 +71,7 @@ export class MoviesService {
 
     private toDto = async (
         movie: MovieDocument,
-        options: { presignDownloadUrl?: boolean } = {}
+        options: { includeDownloadUrl?: boolean } = {}
     ) => {
         const dto = mapDocToDto(movie, MovieDto, [
             'id',
@@ -85,13 +85,17 @@ export class MoviesService {
         ])
         dto.imageFileIds = movie.imageIds.map((id) => id.toString())
 
-        if (options.presignDownloadUrl === false) {
-            dto.imageUrls = dto.imageFileIds.map((id) => `${HttpRoutes.Attachments}/${id}`)
-        } else {
-            const downloadInfos = await Promise.all(
-                dto.imageFileIds.map((fileId) => this.attachmentsService.presignDownloadUrl(fileId))
+        const includeDownloadUrl = options.includeDownloadUrl ?? true
+
+        if (includeDownloadUrl) {
+            const attachments = await this.attachmentsService.getMany(dto.imageFileIds)
+            const urlMap = new Map(attachments.map((attachment) => [attachment.id, attachment]))
+
+            dto.imageUrls = dto.imageFileIds.map(
+                (id) => urlMap.get(id)?.downloadUrl ?? `${HttpRoutes.Attachments}/${id}`
             )
-            dto.imageUrls = downloadInfos.map((info) => info.downloadUrl!)
+        } else {
+            dto.imageUrls = dto.imageFileIds.map((id) => `${HttpRoutes.Attachments}/${id}`)
         }
 
         dto.imageUrl = dto.imageUrls[0]
@@ -100,6 +104,6 @@ export class MoviesService {
     }
     private toDtos = async (
         movies: MovieDocument[],
-        options: { presignDownloadUrl?: boolean } = {}
+        options: { includeDownloadUrl?: boolean } = {}
     ) => Promise.all(movies.map((movie) => this.toDto(movie, options)))
 }

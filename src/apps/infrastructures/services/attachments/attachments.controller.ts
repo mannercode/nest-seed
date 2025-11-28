@@ -1,44 +1,26 @@
-import { Controller, ParseArrayPipe } from '@nestjs/common'
+import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Messages } from 'shared'
-import {
-    CompleteAttachmentDto,
-    CreateAttachmentDto,
-    PresignDownloadUrlDto,
-    PresignUploadUrlDto
-} from './dtos'
+import { CompleteAttachmentDto, GetUploadUrlDto } from './dtos'
 import { AttachmentsService } from './attachments.service'
 
 @Controller()
 export class AttachmentsController {
     constructor(private service: AttachmentsService) {}
 
-    @MessagePattern(Messages.Attachments.saveFiles)
-    saveFiles(
-        @Payload(new ParseArrayPipe({ items: CreateAttachmentDto }))
-        createDtos: CreateAttachmentDto[]
-    ) {
-        return this.service.saveFiles(createDtos)
+    @MessagePattern(Messages.Attachments.getMany)
+    getMany(@Payload() fileIds: string[]) {
+        return this.service.getMany(fileIds)
     }
 
-    @MessagePattern(Messages.Attachments.getFiles)
-    getFiles(@Payload() fileIds: string[]) {
-        return this.service.getFiles(fileIds)
+    @MessagePattern(Messages.Attachments.deleteMany)
+    deleteMany(@Payload() fileIds: string[]) {
+        return this.service.deleteMany(fileIds)
     }
 
-    @MessagePattern(Messages.Attachments.deleteFiles)
-    deleteFiles(@Payload() fileIds: string[]) {
-        return this.service.deleteFiles(fileIds)
-    }
-
-    @MessagePattern(Messages.Attachments.presignUploadUrl)
-    presignUploadUrl(@Payload() dto: PresignUploadUrlDto) {
-        return this.service.presignUploadUrl(dto)
-    }
-
-    @MessagePattern(Messages.Attachments.presignDownloadUrl)
-    presignDownloadUrl(@Payload() dto: PresignDownloadUrlDto) {
-        return this.service.presignDownloadUrl(dto)
+    @MessagePattern(Messages.Attachments.getUploadUrl)
+    getUploadUrl(@Payload() dto: GetUploadUrlDto) {
+        return this.service.getUploadUrl(dto)
     }
 
     @MessagePattern(Messages.Attachments.complete)

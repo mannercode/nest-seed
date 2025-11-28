@@ -1,7 +1,7 @@
 import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator'
 import { AttachmentDto } from './attachment.dto'
 
-export class PresignUploadUrlDto {
+export class GetUploadUrlDto {
     @IsString()
     @IsNotEmpty()
     originalName: string
@@ -24,7 +24,7 @@ export class PresignUploadUrlDto {
     expiresInSec?: number
 }
 
-export type PresignUploadUrlResponse = {
+export type GetUploadUrlResponse = {
     attachmentId: string
     uploadUrl: string
     expiresAt: Date
