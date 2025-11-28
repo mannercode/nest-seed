@@ -1,3 +1,4 @@
+import { HttpStatus } from '@nestjs/common'
 import { AttachmentDto } from 'apps/infrastructures'
 import { FileUtil, Path } from 'common'
 import { readFile, writeFile } from 'fs/promises'
@@ -40,10 +41,10 @@ describe('AttachmentsService', () => {
         expect(uploadRes.ok).toBe(true)
 
         const ownerInfo = { ownerService: 'movies', ownerEntityId: 'movie-1' }
-        const { body: completed } = await fixture.httpClient
-            .post(`/attachments/${uploadInfo.attachmentId}/complete`)
-            .body(ownerInfo)
-            .ok()
+        const completed = await fixture.attachmentsClient.complete(
+            uploadInfo.attachmentId,
+            ownerInfo
+        )
 
         return { uploadInfo, completed, ownerInfo }
     }
@@ -62,23 +63,12 @@ describe('AttachmentsService', () => {
                 headers: expect.objectContaining({
                     'Content-Type': payload.mimeType,
                     'Content-Length': payload.size.toString()
-                }),
-                attachment: {
-                    id: expect.any(String),
-                    originalName: payload.originalName,
-                    mimeType: payload.mimeType,
-                    size: payload.size,
-                    checksum: payload.checksum,
-                    ownerService: null,
-                    ownerEntityId: null
-                }
+                })
             })
-
-            expect(body.attachmentId).toEqual(body.attachment.id)
         })
     })
 
-    describe('GET /attachments/:attachmentId', () => {
+    describe('AttachmentsClient.getMany', () => {
         // 파일이 존재하는 경우
         describe('when the file exists', () => {
             let uploadedFile: AttachmentDto
@@ -89,11 +79,9 @@ describe('AttachmentsService', () => {
             })
 
             it('returns a download URL and metadata', async () => {
-                const { body } = await fixture.httpClient
-                    .get(`/attachments/${uploadedFile.id}`)
-                    .ok()
+                const [attachment] = await fixture.attachmentsClient.getMany([uploadedFile.id])
 
-                expect(body).toEqual({
+                expect(attachment).toEqual({
                     ...uploadedFile,
                     downloadUrl: expect.any(String),
                     downloadUrlExpiresAt: expect.any(Date)
@@ -103,7 +91,7 @@ describe('AttachmentsService', () => {
                 const downloadedFile = Path.join(tempDir, 'downloaded.tmp')
 
                 try {
-                    const downloadRes = await fetch(body.downloadUrl)
+                    const downloadRes = await fetch(attachment.downloadUrl!)
                     expect(downloadRes.ok).toBe(true)
 
                     const downloadedBuffer = Buffer.from(await downloadRes.arrayBuffer())
@@ -120,13 +108,15 @@ describe('AttachmentsService', () => {
 
         // 파일이 존재하지 않는 경우
         describe('when the file does not exist', () => {
-            it('returns 404 Not Found', async () => {
-                await fixture.httpClient.get(`/attachments/${nullObjectId}`).notFound()
+            it('throws 404 Not Found', async () => {
+                await expect(
+                    fixture.attachmentsClient.getMany([nullObjectId])
+                ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
             })
         })
     })
 
-    describe('DELETE /attachments/:attachmentId', () => {
+    describe('AttachmentsClient.deleteMany', () => {
         // 파일이 존재하는 경우
         describe('when the file exists', () => {
             let uploadedFile: AttachmentDto
@@ -137,30 +127,34 @@ describe('AttachmentsService', () => {
             })
 
             it('deletes the file metadata', async () => {
-                await fixture.httpClient
-                    .delete(`/attachments/${uploadedFile.id}`)
-                    .ok({
-                        deletedAttachments: [
-                            {
-                                id: expect.any(String),
-                                originalName: uploadedFile.originalName,
-                                mimeType: uploadedFile.mimeType,
-                                size: uploadedFile.size,
-                                checksum: uploadedFile.checksum,
-                                ownerService: uploadedFile.ownerService,
-                                ownerEntityId: uploadedFile.ownerEntityId
-                            }
-                        ]
-                    })
+                const response = await fixture.attachmentsClient.deleteMany([uploadedFile.id])
 
-                await fixture.httpClient.get(`/attachments/${uploadedFile.id}`).notFound()
+                expect(response).toEqual({
+                    deletedAttachments: [
+                        {
+                            id: expect.any(String),
+                            originalName: uploadedFile.originalName,
+                            mimeType: uploadedFile.mimeType,
+                            size: uploadedFile.size,
+                            checksum: uploadedFile.checksum,
+                            ownerService: uploadedFile.ownerService,
+                            ownerEntityId: uploadedFile.ownerEntityId
+                        }
+                    ]
+                })
+
+                await expect(
+                    fixture.attachmentsClient.getMany([uploadedFile.id])
+                ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
             })
         })
 
         // 파일이 존재하지 않는 경우
         describe('when the file does not exist', () => {
-            it('returns 404 Not Found', async () => {
-                await fixture.httpClient.delete(`/attachments/${nullObjectId}`).notFound()
+            it('throws 404 Not Found', async () => {
+                await expect(
+                    fixture.attachmentsClient.deleteMany([nullObjectId])
+                ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
             })
         })
     })

@@ -1,7 +1,6 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator'
-import { AttachmentDto } from './attachment.dto'
+import { IsInt, IsNotEmpty, IsString, Min } from 'class-validator'
 
-export class GetUploadUrlDto {
+export class CreateAttachmentDto {
     @IsString()
     @IsNotEmpty()
     originalName: string
@@ -17,18 +16,12 @@ export class GetUploadUrlDto {
     @IsString()
     @IsNotEmpty()
     checksum: string
-
-    @IsInt()
-    @IsOptional()
-    @Min(1)
-    expiresInSec?: number
 }
 
-export type GetUploadUrlResponse = {
+export type CreateAttachmentResponse = {
     attachmentId: string
     uploadUrl: string
     expiresAt: Date
     method: 'PUT'
     headers: Record<string, string>
-    attachment: AttachmentDto
 }

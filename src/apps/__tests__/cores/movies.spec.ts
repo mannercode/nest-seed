@@ -45,7 +45,7 @@ describe('MoviesService', () => {
 
                 expect(uploadRes.ok).toBe(true)
 
-                return body.attachment.id
+                return body.attachmentId
             }
 
             beforeEach(async () => {

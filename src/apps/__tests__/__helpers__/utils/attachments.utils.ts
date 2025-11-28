@@ -19,7 +19,7 @@ export const uploadAttachments = async ({ module }: TestContext, files: FixtureF
     const attachmentIds: string[] = []
 
     for (const file of files) {
-        const { attachmentId, uploadUrl, method, headers } = await attachmentsService.getUploadUrl({
+        const { attachmentId, uploadUrl, method, headers } = await attachmentsService.create({
             originalName: file.originalName,
             mimeType: file.mimeType,
             size: file.size,

@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { MongooseRepository } from 'common'
-import { ClientSession, Model } from 'mongoose'
+import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
+import { CreateAttachmentDto } from './dtos'
 import { Attachment } from './models'
 
 export type AttachmentCreateInput = {
@@ -22,19 +23,13 @@ export class AttachmentsRepository extends MongooseRepository<Attachment> {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createAttachment(
-        createDto: AttachmentCreateInput,
-        checksum: string,
-        session?: ClientSession
-    ) {
+    async createAttachment(createDto: CreateAttachmentDto) {
         const attachment = this.newDocument()
         attachment.originalName = createDto.originalName
         attachment.mimeType = createDto.mimeType
         attachment.size = createDto.size
-        attachment.checksum = checksum
-        attachment.ownerService = createDto.ownerService ?? null
-        attachment.ownerEntityId = createDto.ownerEntityId ?? null
+        attachment.checksum = createDto.checksum
 
-        return attachment.save({ session })
+        return attachment.save()
     }
 }

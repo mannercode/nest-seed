@@ -5,13 +5,17 @@ import {
     AttachmentDto,
     CompleteAttachmentDto,
     DeleteAttachmentsResponse,
-    GetUploadUrlDto,
-    GetUploadUrlResponse
+    CreateAttachmentDto,
+    CreateAttachmentResponse
 } from './dtos'
 
 @Injectable()
 export class AttachmentsClient {
     constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+
+    create(dto: CreateAttachmentDto): Promise<CreateAttachmentResponse> {
+        return this.proxy.getJson(Messages.Attachments.create, dto)
+    }
 
     getMany(fileIds: string[]): Promise<AttachmentDto[]> {
         return this.proxy.getJson(Messages.Attachments.getMany, fileIds)
@@ -19,10 +23,6 @@ export class AttachmentsClient {
 
     deleteMany(fileIds: string[]): Promise<DeleteAttachmentsResponse> {
         return this.proxy.getJson(Messages.Attachments.deleteMany, fileIds)
-    }
-
-    getUploadUrl(dto: GetUploadUrlDto): Promise<GetUploadUrlResponse> {
-        return this.proxy.getJson(Messages.Attachments.getUploadUrl, dto)
     }
 
     complete(

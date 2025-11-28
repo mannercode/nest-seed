@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Messages } from 'shared'
-import { CompleteAttachmentDto, GetUploadUrlDto } from './dtos'
+import { CompleteAttachmentDto, CreateAttachmentDto } from './dtos'
 import { AttachmentsService } from './attachments.service'
 
 @Controller()
@@ -18,9 +18,9 @@ export class AttachmentsController {
         return this.service.deleteMany(fileIds)
     }
 
-    @MessagePattern(Messages.Attachments.getUploadUrl)
-    getUploadUrl(@Payload() dto: GetUploadUrlDto) {
-        return this.service.getUploadUrl(dto)
+    @MessagePattern(Messages.Attachments.create)
+    create(@Payload() dto: CreateAttachmentDto) {
+        return this.service.create(dto)
     }
 
     @MessagePattern(Messages.Attachments.complete)

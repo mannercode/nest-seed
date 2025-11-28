@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { InjectS3Object, mapDocToDto, Path, S3ObjectService } from 'common'
 import { AppConfigService } from 'shared'
-import { AttachmentDto, CompleteAttachmentDto, GetUploadUrlDto, GetUploadUrlResponse } from './dtos'
+import {
+    AttachmentDto,
+    CompleteAttachmentDto,
+    CreateAttachmentDto,
+    CreateAttachmentResponse
+} from './dtos'
 import { AttachmentDocument } from './models'
 import { AttachmentsRepository } from './attachments.repository'
 
@@ -23,33 +28,26 @@ export class AttachmentsService {
         )
     }
 
-    async getUploadUrl(dto: GetUploadUrlDto): Promise<GetUploadUrlResponse> {
-        const expiresInSec = dto.expiresInSec ?? DEFAULT_PRESIGN_EXPIRES_SEC
+    async create(dto: CreateAttachmentDto): Promise<CreateAttachmentResponse> {
+        const attachment = await this.repository.createAttachment(dto)
+        const attachmentId = attachment.id
 
-        return this.repository.withTransaction(async (session) => {
-            const attachment = await this.repository.createAttachment(
-                { originalName: dto.originalName, mimeType: dto.mimeType, size: dto.size },
-                dto.checksum,
-                session
-            )
+        const expiresInSec = DEFAULT_PRESIGN_EXPIRES_SEC
 
-            const attachmentId = attachment.id
-            const uploadUrl = await this.s3Service.presignUploadUrl({
-                key: attachmentId,
-                expiresInSec,
-                contentType: dto.mimeType,
-                contentLength: dto.size
-            })
-
-            return {
-                attachmentId,
-                uploadUrl,
-                expiresAt: this.getExpiresAt(expiresInSec),
-                method: 'PUT' as const,
-                headers: { 'Content-Type': dto.mimeType, 'Content-Length': dto.size.toString() },
-                attachment: this.toDto(attachment)
-            }
+        const uploadUrl = await this.s3Service.presignUploadUrl({
+            key: attachmentId,
+            expiresInSec,
+            contentType: dto.mimeType,
+            contentLength: dto.size
         })
+
+        return {
+            attachmentId,
+            uploadUrl,
+            expiresAt: this.getExpiresAt(expiresInSec),
+            method: 'PUT' as const,
+            headers: { 'Content-Type': dto.mimeType, 'Content-Length': dto.size.toString() }
+        }
     }
 
     async complete(dto: CompleteAttachmentDto) {
@@ -61,21 +59,20 @@ export class AttachmentsService {
         return this.toDto(attachment)
     }
 
-    async deleteMany(fileIds: string[]) {
-        const deletedFiles = await this.repository.deleteByIds(fileIds)
+    async deleteMany(attachmentIds: string[]) {
+        const deletedFiles = await this.repository.deleteByIds(attachmentIds)
 
-        for (const fileId of fileIds) {
-            const targetPath = this.getAttachmentPath(fileId)
-            await Path.delete(targetPath)
+        for (const attachmentId of attachmentIds) {
+            await this.s3Service.deleteObject(attachmentId)
         }
 
         return { deletedAttachments: this.toDtos(deletedFiles) }
     }
 
-    private getAttachmentPath(fileId: string) {
-        const path = Path.join(this.config.fileUpload.directory, `${fileId}.file`)
-        return path
-    }
+    // private getAttachmentPath(fileId: string) {
+    //     const path = Path.join(this.config.fileUpload.directory, `${fileId}.file`)
+    //     return path
+    // }
 
     private getExpiresAt(expiresInSec: number) {
         return new Date(Date.now() + expiresInSec * 1000)

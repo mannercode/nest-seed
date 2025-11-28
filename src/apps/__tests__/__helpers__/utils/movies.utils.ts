@@ -44,7 +44,7 @@ export const createMovie = async ({ module }: TestContext, override = {}) => {
 const uploadMovieImage = async (attachmentsService: AttachmentsClient) => {
     await ensureS3Bucket()
 
-    const uploadInfo = await attachmentsService.getUploadUrl({
+    const uploadInfo = await attachmentsService.create({
         originalName: fixtureFiles.image.originalName,
         mimeType: fixtureFiles.image.mimeType,
         size: fixtureFiles.image.size,

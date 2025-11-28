@@ -18,6 +18,7 @@ export interface Fixture extends TestFixture {
         large: FixtureFile
         small: FixtureFile
     }
+    attachmentsClient: AttachmentsClient
 }
 
 export const createFixture = async () => {
@@ -49,10 +50,11 @@ export const createFixture = async () => {
         controllers: [AttachmentsController],
         overrideProviders: [configMock]
     })
+    const attachmentsClient = fix.module.get(AttachmentsClient)
 
     const overLimitFiles = Array(maxFilesPerUpload + 1).fill(localFiles.small)
 
-    return { ...fix, overLimitFiles, localFiles }
+    return { ...fix, overLimitFiles, localFiles, attachmentsClient }
 }
 
 const createS3Bucket = async () => {
