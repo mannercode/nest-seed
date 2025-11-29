@@ -15,9 +15,7 @@ describe('PaymentsService', () => {
     })
 
     describe('create', () => {
-        // payload가 유효한 경우
         describe('when the payload is valid', () => {
-            // 결제를 생성하고 반환한다
             it('creates and returns a payment', async () => {
                 const createDto = buildCreatePaymentDto()
 
@@ -35,13 +33,11 @@ describe('PaymentsService', () => {
     describe('getMany', () => {
         let createdPayment: PaymentDto
 
-        // 결제 정보가 존재하는 경우
         describe('when the payments exist', () => {
             beforeEach(async () => {
                 createdPayment = await createPayment(fixture)
             })
 
-            // 결제 정보를 반환한다.
             it('returns the payments', async () => {
                 const gotPayments = await fixture.paymentsService.getMany([createdPayment.id])
                 expect(gotPayments).toEqual([createdPayment])

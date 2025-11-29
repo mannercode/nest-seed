@@ -23,7 +23,6 @@ describe('PurchaseService', () => {
     })
 
     describe('POST /purchases', () => {
-        // payload가 유효한 경우
         describe('when the payload is valid', () => {
             let createDto: CreatePurchaseDto
             let createdPurchase: PurchaseRecordDto
@@ -62,7 +61,6 @@ describe('PurchaseService', () => {
                 expect(payments[0].amount).toEqual(createdPurchase.totalPrice)
             })
 
-            // 구매한 티켓 상태를 `Sold`로 표시한다
             it('marks purchased tickets as `Sold`', async () => {
                 const soldTickets = await getTickets(fixture, pickIds(fixture.heldTickets))
 
@@ -71,7 +69,6 @@ describe('PurchaseService', () => {
                 )
             })
 
-            // 구매하지 않은 티켓 상태는 그대로 유지한다
             it('keeps unpurchased tickets unchanged', async () => {
                 const remainingTickets = await getTickets(
                     fixture,
@@ -84,14 +81,12 @@ describe('PurchaseService', () => {
             })
         })
 
-        // 최대 구매 수량을 초과한 경우
         describe('when the ticket count exceeds the maximum', () => {
             beforeEach(async () => {
                 const { Rules } = await import('shared')
                 Rules.Ticket.maxTicketsPerPurchase = fixture.heldTickets.length - 1
             })
 
-            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 const createDto = buildCreatePurchaseDto(fixture.customer, fixture.heldTickets)
 
@@ -105,9 +100,7 @@ describe('PurchaseService', () => {
             })
         })
 
-        // 구매 가능 시간이 지난 경우
         describe('when the purchase window is closed', () => {
-            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 const createDto = buildCreatePurchaseDto(
                     fixture.customer,
@@ -126,9 +119,7 @@ describe('PurchaseService', () => {
             })
         })
 
-        // 선점되지 않은 티켓을 구매하는 경우
         describe('when purchasing unheld tickets', () => {
-            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 const createDto = buildCreatePurchaseDto(
                     fixture.customer,
@@ -142,7 +133,6 @@ describe('PurchaseService', () => {
             })
         })
 
-        // 구매 처리 중 내부 오류가 발생하는 경우
         describe('when an internal error occurs', () => {
             let rollbackPurchaseSpy: jest.SpyInstance
 
@@ -160,7 +150,6 @@ describe('PurchaseService', () => {
                 rollbackPurchaseSpy = jest.spyOn(ticketPurchaseService, 'rollbackPurchase')
             })
 
-            // 500 Internal Server Error를 반환하고 구매를 롤백한다
             it('returns 500 and rolls back the purchase', async () => {
                 const createDto = buildCreatePurchaseDto(fixture.customer, fixture.heldTickets)
 

@@ -1,10 +1,3 @@
-/**
- * If you use useFakeTimers(), Mongoose(MongoDB)-related code may not work properly.
- * It may also affect other modules, so it's recommended not to use it.
- *
- * useFakeTimers()를 사용하면 Mongoose(MongoDB) 관련 코드가 제대로 동작하지 않는다.
- * 다른 모듈에도 영향을 줄 가능성이 있기 때문에 사용하지 않는 것을 권장한다.
- */
 
 describe('jest.useFakeTimers examples', () => {
     beforeEach(async () => {

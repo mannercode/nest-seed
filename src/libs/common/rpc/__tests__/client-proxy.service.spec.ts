@@ -14,25 +14,19 @@ describe('ClientProxyService', () => {
     })
 
     describe('send', () => {
-        // HttpController에서 Observable을 반환하는 경우
         describe('when the HttpController returns an Observable', () => {
-            // Observable 응답을 전달한다
             it('responds with the Observable result', async () => {
                 await fixture.httpClient.get('/observable').ok({ result: 'success' })
             })
         })
 
-        // HttpController가 Observable의 값을 반환하는 경우
         describe('when the HttpController resolves the value', () => {
-            // 값을 반환한다
             it('returns the Observable value', async () => {
                 await fixture.httpClient.get('/value').ok({ result: 'success' })
             })
         })
 
-        // payload가 null인 경우
         describe('when the payload is null', () => {
-            // null payload를 전송한다
             it('sends a null payload', async () => {
                 const response = await fixture.rpcClient.getJson(withTestId('method'), null)
                 expect(response).toEqual({ result: 'success' })
@@ -41,9 +35,7 @@ describe('ClientProxyService', () => {
     })
 
     describe('emit', () => {
-        // 이벤트를 전송하는 경우
         describe('when emitting an event', () => {
-            // 마이크로서비스로 이벤트를 전달한다
             it('sends the event to the microservice', async () => {
                 const promise = new Promise((resolve, reject) => {
                     fixture.httpClient.get('/handle-event').sse((value) => resolve(value), reject)
@@ -55,9 +47,7 @@ describe('ClientProxyService', () => {
             })
         })
 
-        // payload가 null인 경우
         describe('when the payload is null', () => {
-            // null payload를 전송한다
             it('sends a null payload', async () => {
                 await fixture.rpcClient.emit(withTestId('emitEvent'), null)
             })

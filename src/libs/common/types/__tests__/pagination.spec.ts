@@ -15,9 +15,7 @@ describe('CommonQuery', () => {
     })
 
     describe('HTTP controller', () => {
-        // 요청이 유효한 경우
         describe('when the request is valid', () => {
-            // PaginationDto를 처리한다
             it('handles PaginationDto', async () => {
                 const skip = 2
                 const take = 3
@@ -28,9 +26,7 @@ describe('CommonQuery', () => {
             })
         })
 
-        // orderby 형식이 잘못된 경우
         describe('when the `orderby` is malformed', () => {
-            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fixture.httpClient
                     .get('/pagination')
@@ -39,9 +35,7 @@ describe('CommonQuery', () => {
             })
         })
 
-        // 정렬 방향이 잘못된 경우
         describe('when the sort direction is invalid', () => {
-            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fixture.httpClient
                     .get('/pagination')
@@ -52,9 +46,7 @@ describe('CommonQuery', () => {
     })
 
     describe('RPC controller', () => {
-        // 요청이 유효한 경우
         describe('when the request is valid', () => {
-            // PaginationDto를 처리한다
             it('handles PaginationDto', async () => {
                 const skip = 2
                 const take = 3

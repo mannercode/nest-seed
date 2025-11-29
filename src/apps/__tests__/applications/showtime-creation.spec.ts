@@ -22,9 +22,7 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('GET /showtime-creation/movies', () => {
-        // 쿼리 파라미터가 없는 경우
         describe('when the query parameters are missing', () => {
-            // 기본 페이지네이션으로 영화를 반환한다
             it('returns movies with default pagination', async () => {
                 await fixture.httpClient
                     .get('/showtime-creation/movies')
@@ -34,9 +32,7 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('GET /showtime-creation/theaters', () => {
-        // 쿼리 파라미터가 없는 경우
         describe('when the query parameters are missing', () => {
-            // 기본 페이지네이션으로 극장을 반환한다
             it('returns theaters with default pagination', async () => {
                 await fixture.httpClient
                     .get('/showtime-creation/theaters')
@@ -58,9 +54,7 @@ describe('ShowtimeCreationService', () => {
             showtimes = await createShowtimes(fixture, createDtos)
         })
 
-        // `theaterIds`가 제공된 경우
         describe('when the `theaterIds` are provided', () => {
-            // 지정한 theaterIds와 일치하는 상영시간 목록을 반환한다
             it('returns showtimes for the theaterIds', async () => {
                 await fixture.httpClient
                     .post('/showtime-creation/showtimes:search')
@@ -71,7 +65,6 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('POST /showtime-creation/showtimes', () => {
-        // payload가 유효한 경우
         describe('when the payload is valid', () => {
             let createDto: BulkCreateShowtimesDto
             let transactionId: string
@@ -96,12 +89,10 @@ describe('ShowtimeCreationService', () => {
             })
 
             // TODO fix
-            // transactionId를 반환한다
             it('returns a transactionId', async () => {
                 expect(transactionId).toBeDefined()
             })
 
-            // 상영시간 생성 성공 이벤트를 방출한다
             it('emits a showtime creation success event', async () => {
                 const { theaterIds, startTimes } = createDto
 
@@ -118,9 +109,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        // 영화가 존재하지 않는 경우
         describe('when the movie does not exist', () => {
-            // 존재하지 않는 영화 오류를 보고한다
             it('reports the missing movie error', async () => {
                 const waitPromise = waitForCompletion(fixture, 'error')
 
@@ -142,9 +131,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        // 극장이 존재하지 않는 경우
         describe('when a theater does not exist', () => {
-            // 존재하지 않는 극장 오류를 보고한다
             it('reports the missing theater error', async () => {
                 const waitPromise = waitForCompletion(fixture, 'error')
 
@@ -166,7 +153,6 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        // 상영시간이 충돌하는 경우
         describe('when the showtimes conflict', () => {
             let initialShowtimes: ShowtimeDto[]
 
@@ -185,7 +171,6 @@ describe('ShowtimeCreationService', () => {
                 initialShowtimes = await createShowtimes(fixture, createDtos)
             })
 
-            // 충돌하는 상영시간을 반환한다
             it('returns the conflicting showtimes', async () => {
                 const waitPromise = waitForCompletion(fixture, 'failed')
 

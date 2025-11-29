@@ -2,9 +2,7 @@ import { HttpUtil } from 'common'
 
 describe('HttpUtil', () => {
     describe('buildContentDisposition', () => {
-        // 파일명이 ASCII인 경우
         describe('when the filename is ASCII', () => {
-            // RFC5987 형식으로 반환한다
             it('returns RFC5987 content-disposition', () => {
                 const filename = 'hello_world-1.0.txt'
                 const contentDisposition = HttpUtil.buildContentDisposition(filename)
@@ -15,9 +13,7 @@ describe('HttpUtil', () => {
             })
         })
 
-        // 공백이나 특수문자가 포함된 경우
         describe('when the filename has spaces or special chars', () => {
-            // filename*에 +와 퍼센트 인코딩을 적용한다
             it('applies + and percent-encoding in filename*', () => {
                 const filename = `report (final)'v1*.txt`
                 const contentDisposition = HttpUtil.buildContentDisposition(filename)
@@ -28,9 +24,7 @@ describe('HttpUtil', () => {
             })
         })
 
-        // 한글/유니코드 파일명인 경우
         describe('when the filename is Korean or Unicode', () => {
-            // 원본을 filename*에 보존하고 ASCII 폴백은 "_"로 대체한다
             it('preserves filename* and replaces non-ASCII in fallback', () => {
                 const filename = '한글 파일명(최종).pdf'
                 const contentDisposition = HttpUtil.buildContentDisposition(filename)
@@ -41,9 +35,7 @@ describe('HttpUtil', () => {
             })
         })
 
-        // 금지문자가 포함된 경우
         describe('when the filename has forbidden characters', () => {
-            // ASCII 폴백에서 "-"로 치환한다
             it('replaces forbidden characters with "-" in fallback', () => {
                 const filename = 'bad:/\\?%*:|"<>name.txt'
                 const contentDisposition = HttpUtil.buildContentDisposition(filename)
@@ -54,9 +46,7 @@ describe('HttpUtil', () => {
             })
         })
 
-        // 공백이 있는 ASCII 파일명인 경우
         describe('when the ASCII filename contains spaces', () => {
-            // filename*에서 공백을 +로 표기한다
             it('uses + for spaces in filename*', () => {
                 const filename = 'my file name.txt'
                 const contentDisposition = HttpUtil.buildContentDisposition(filename)
@@ -67,9 +57,7 @@ describe('HttpUtil', () => {
             })
         })
 
-        // 파일명이 비어 있는 경우
         describe('when the filename is empty', () => {
-            // 폴백을 "file"로 설정한다
             it('defaults the fallback filename to "file"', () => {
                 const filename = ''
                 const contentDisposition = HttpUtil.buildContentDisposition(filename)
@@ -80,9 +68,7 @@ describe('HttpUtil', () => {
     })
 
     describe('extractContentDisposition', () => {
-        // filename*가 없는 경우
         describe('when only a quoted filename exists', () => {
-            // quoted 값을 추출한다
             it('extracts the quoted filename', () => {
                 const contentDisposition = `attachment; filename="ascii-name.txt"`
                 expect(HttpUtil.extractContentDisposition(contentDisposition)).toBe(
@@ -91,18 +77,14 @@ describe('HttpUtil', () => {
             })
         })
 
-        // bare filename만 있는 경우
         describe('when only a bare filename exists', () => {
-            // bare 값을 추출한다
             it('extracts the bare filename', () => {
                 const contentDisposition = `inline; filename=bare-name.csv`
                 expect(HttpUtil.extractContentDisposition(contentDisposition)).toBe('bare-name.csv')
             })
         })
 
-        // 헤더가 잘못되었거나 누락된 경우
         describe('when the header is invalid or missing', () => {
-            // "unknown"을 반환한다
             it('returns "unknown"', () => {
                 expect(HttpUtil.extractContentDisposition('')).toBe('unknown')
                 expect(HttpUtil.extractContentDisposition('attachment')).toBe('unknown')
@@ -110,9 +92,7 @@ describe('HttpUtil', () => {
             })
         })
 
-        // filename* 디코딩이 실패한 경우
         describe('when the filename* decoding fails', () => {
-            // quoted 또는 bare 값으로 폴백한다
             it('falls back to the quoted or bare value', () => {
                 const badStar = `attachment; filename*=UTF-8''%E0%A4%ZZ; filename="safe-fallback.txt"`
                 expect(HttpUtil.extractContentDisposition(badStar)).toBe('safe-fallback.txt')

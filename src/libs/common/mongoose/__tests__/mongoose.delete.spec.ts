@@ -13,7 +13,6 @@ describe('Mongoose Delete', () => {
             await fixture?.teardown()
         })
 
-        // 생성 직후인 경우
         describe('when the document is newly created', () => {
             // TODO fix
             // deletedAt이 null이다
@@ -22,9 +21,7 @@ describe('Mongoose Delete', () => {
             })
         })
 
-        // deleteOne을 호출하는 경우
         describe('when deleting with deleteOne', () => {
-            // deletedAt에 삭제 시간이 기록된다
             it('records deletedAt with the deletion time', async () => {
                 await fixture.model.deleteOne({ _id: fixture.doc._id })
 
@@ -37,9 +34,7 @@ describe('Mongoose Delete', () => {
             })
         })
 
-        // deleteMany를 호출하는 경우
         describe('when deleting with deleteMany', () => {
-            // deletedAt에 삭제 시간이 기록된다
             it('records deletedAt for each document', async () => {
                 const doc2 = new fixture.model()
                 doc2.name = 'name'
@@ -53,9 +48,7 @@ describe('Mongoose Delete', () => {
             })
         })
 
-        // 삭제 후 aggregate를 수행하는 경우
         describe('when aggregating after a deletion', () => {
-            // 삭제된 문서는 반환하지 않는다
             it('excludes deleted documents from aggregate', async () => {
                 await fixture.model.deleteOne({ _id: fixture.doc._id })
 
@@ -78,9 +71,7 @@ describe('Mongoose Delete', () => {
             await fixture?.teardown()
         })
 
-        // 삭제 시
         describe('when deleting a document', () => {
-            // 데이터를 완전히 삭제한다
             it('removes the document entirely', async () => {
                 expect(fixture.doc).not.toHaveProperty('deletedAt')
             })

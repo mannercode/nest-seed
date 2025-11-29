@@ -26,9 +26,7 @@ describe('MongooseRepository', () => {
     })
 
     describe('save', () => {
-        // 새 문서를 생성하는 경우
         describe('when creating a new document', () => {
-            // 성공적으로 생성한다
             it('creates the document', async () => {
                 const newDoc = fixture.repository.newDocument()
                 newDoc.name = 'document name'
@@ -39,9 +37,7 @@ describe('MongooseRepository', () => {
             })
         })
 
-        // 필수 필드가 누락된 경우
         describe('when the required fields are missing', () => {
-            // 예외를 던진다
             it('throws an error', async () => {
                 const doc = fixture.repository.newDocument()
                 const promise = doc.save()
@@ -51,9 +47,7 @@ describe('MongooseRepository', () => {
     })
 
     describe('update', () => {
-        // 문서를 업데이트하는 경우
         describe('when updating a document', () => {
-            // 성공적으로 업데이트한다
             it('updates the document', async () => {
                 const persistedDoc = fixture.repository.newDocument()
                 persistedDoc.name = 'new name'
@@ -69,9 +63,7 @@ describe('MongooseRepository', () => {
     })
 
     describe('saveMany', () => {
-        // 여러 문서를 생성하는 경우
         describe('when creating multiple documents', () => {
-            // 성공적으로 생성한다
             it('creates all documents', async () => {
                 const docs = [
                     { name: 'document-1' },
@@ -89,9 +81,7 @@ describe('MongooseRepository', () => {
             })
         })
 
-        // 필수 필드가 누락된 문서가 있는 경우
         describe('when any document is missing required fields', () => {
-            // 예외를 던진다
             it('throws an error', async () => {
                 const docs = [fixture.repository.newDocument(), fixture.repository.newDocument()]
 
@@ -112,9 +102,7 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
-        // 페이지네이션을 적용하는 경우
         describe('when paginating results', () => {
-            // skip/take에 맞게 결과를 반환한다
             it('returns items with correct pagination', async () => {
                 const skip = 10
                 const take = 5
@@ -132,9 +120,7 @@ describe('MongooseRepository', () => {
             })
         })
 
-        // 오름차순 정렬인 경우
         describe('when sorting in ascending order', () => {
-            // 오름차순으로 정렬한다
             it('sorts in ascending order', async () => {
                 const { items } = await fixture.repository.findWithPagination({
                     pagination: {
@@ -148,9 +134,7 @@ describe('MongooseRepository', () => {
             })
         })
 
-        // 내림차순 정렬인 경우
         describe('when sorting in descending order', () => {
-            // 내림차순으로 정렬한다
             it('sorts in descending order', async () => {
                 const { items } = await fixture.repository.findWithPagination({
                     pagination: {
@@ -164,9 +148,7 @@ describe('MongooseRepository', () => {
             })
         })
 
-        // take가 0 이하인 경우
         describe('when the take value is not positive', () => {
-            // 예외를 던진다
             it('throws an error', async () => {
                 const promise = fixture.repository.findWithPagination({ pagination: { take: -1 } })
 
@@ -174,9 +156,7 @@ describe('MongooseRepository', () => {
             })
         })
 
-        // take가 제한을 초과한 경우
         describe('when the take value exceeds the limit', () => {
-            // BadRequest를 던진다
             it('throws a BadRequest', async () => {
                 const take = maxTake + 1
 
@@ -186,9 +166,7 @@ describe('MongooseRepository', () => {
             })
         })
 
-        // take가 지정되지 않은 경우
         describe('when the take value is not specified', () => {
-            // 기본값을 사용한다
             it('uses the default take value', async () => {
                 const { take } = await fixture.repository.findWithPagination({
                     pagination: { orderby: { name: 'name', direction: OrderDirection.Desc } }
@@ -198,9 +176,7 @@ describe('MongooseRepository', () => {
             })
         })
 
-        // QueryHelper를 사용하는 경우
         describe('when the QueryHelper configures conditions', () => {
-            // 조건을 적용해 결과를 반환한다
             it('applies the configured conditions', async () => {
                 const { items } = await fixture.repository.findWithPagination({
                     configureQuery: (queryHelper) => {
@@ -235,18 +211,14 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
-        // 모든 ID가 존재하는 경우
         describe('when all ids exist', () => {
-            // true를 반환한다
             it('returns true', async () => {
                 const exists = await fixture.repository.allExistByIds(pickIds(samples))
                 expect(exists).toBe(true)
             })
         })
 
-        // 존재하지 않는 ID가 있는 경우
         describe('when any id does not exist', () => {
-            // false를 반환한다
             it('returns false', async () => {
                 const exists = await fixture.repository.allExistByIds([nullObjectId])
                 expect(exists).toBe(false)
@@ -262,9 +234,7 @@ describe('MongooseRepository', () => {
             sample = toDto(doc)
         })
 
-        // ID가 존재하는 경우
         describe('when the id exists', () => {
-            // 문서를 반환한다
             it('returns the document', async () => {
                 const doc = await fixture.repository.findById(sample.id)
 
@@ -272,9 +242,7 @@ describe('MongooseRepository', () => {
             })
         })
 
-        // ID가 존재하지 않는 경우
         describe('when the id does not exist', () => {
-            // null을 반환한다
             it('returns null', async () => {
                 const doc = await fixture.repository.findById(nullObjectId)
 
@@ -291,9 +259,7 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
-        // 모든 ID가 존재하는 경우
         describe('when the ids exist', () => {
-            // 문서들을 반환한다
             it('returns the documents', async () => {
                 const ids = pickIds(samples)
                 const docs = await fixture.repository.findByIds(ids)
@@ -302,9 +268,7 @@ describe('MongooseRepository', () => {
             })
         })
 
-        // 존재하지 않는 ID가 포함된 경우
         describe('when the ids include missing documents', () => {
-            // 존재하지 않는 ID는 무시한다
             it('ignores missing ids', async () => {
                 const docs = await fixture.repository.findByIds([nullObjectId])
                 expect(docs).toHaveLength(0)
@@ -320,9 +284,7 @@ describe('MongooseRepository', () => {
             sample = toDto(doc)
         })
 
-        // ID가 존재하는 경우
         describe('when the id exists', () => {
-            // 문서를 반환한다
             it('returns the document', async () => {
                 const doc = await fixture.repository.getById(sample.id)
 
@@ -330,9 +292,7 @@ describe('MongooseRepository', () => {
             })
         })
 
-        // ID가 존재하지 않는 경우
         describe('when the id does not exist', () => {
-            // 예외를 던진다
             it('throws NotFoundException', async () => {
                 const promise = fixture.repository.getById(nullObjectId)
 
@@ -349,9 +309,7 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
-        // 모든 ID가 존재하는 경우
         describe('when all ids exist', () => {
-            // 문서들을 반환한다
             it('returns the documents', async () => {
                 const ids = pickIds(samples)
                 const docs = await fixture.repository.getByIds(ids)
@@ -360,9 +318,7 @@ describe('MongooseRepository', () => {
             })
         })
 
-        // 존재하지 않는 ID가 있는 경우
         describe('when any id is missing', () => {
-            // 예외를 던진다
             it('throws NotFoundException', async () => {
                 const promise = fixture.repository.getByIds([nullObjectId])
 
@@ -379,9 +335,7 @@ describe('MongooseRepository', () => {
             sample = toDto(doc)
         })
 
-        // ID가 존재하는 경우
         describe('when the id exists', () => {
-            // 문서를 삭제한다
             it('deletes the document', async () => {
                 await fixture.repository.deleteById(sample.id)
                 const doc = await fixture.repository.findById(sample.id)
@@ -390,9 +344,7 @@ describe('MongooseRepository', () => {
             })
         })
 
-        // ID가 존재하지 않는 경우
         describe('when the id does not exist', () => {
-            // 예외를 던진다
             it('throws NotFoundException', async () => {
                 const promise = fixture.repository.deleteById(nullObjectId)
 
@@ -409,9 +361,7 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
-        // 모든 ID가 존재하는 경우
         describe('when all ids exist', () => {
-            // 문서를 삭제한다
             it('deletes the documents', async () => {
                 const samplesToDelete = samples.slice(5, 10)
                 const ids = pickIds(samplesToDelete)
@@ -424,9 +374,7 @@ describe('MongooseRepository', () => {
             })
         })
 
-        // 존재하지 않는 ID가 있는 경우
         describe('when any id is missing', () => {
-            // 예외를 던진다
             it('throws NotFoundException', async () => {
                 const promise = fixture.repository.deleteByIds([nullObjectId])
 

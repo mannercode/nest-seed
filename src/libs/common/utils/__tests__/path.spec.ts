@@ -14,7 +14,6 @@ describe('Path', () => {
         await Path.delete(tempDir)
     })
 
-    // 임시 디렉터리를 생성한다
     test('creates a temporary directory', async () => {
         const exists = await Path.exists(tempDir)
         expect(exists).toBe(true)
@@ -23,7 +22,6 @@ describe('Path', () => {
         expect(tempDir.startsWith(os.tmpdir())).toBe(true)
     })
 
-    // 지정된 경로가 존재하는지 비동기 방식으로 확인한다
     test('checks asynchronously whether the specified path exists', async () => {
         const filePath = Path.join(tempDir, 'file.txt')
         await fs.writeFile(filePath, 'hello world')
@@ -32,7 +30,6 @@ describe('Path', () => {
         expect(exists).toBe(true)
     })
 
-    // 존재하지 않는 경로인 경우 false를 반환한다
     test('returns false when the path does not exist', async () => {
         const nonExistentPath = Path.join(tempDir, 'nonexistent.txt')
 
@@ -40,7 +37,6 @@ describe('Path', () => {
         expect(exists).toBe(false)
     })
 
-    // 지정된 경로가 존재하는지 동기 방식으로 확인한다
     test('checks synchronously whether the specified path exists', async () => {
         const filePath = Path.join(tempDir, 'file.txt')
         await fs.writeFile(filePath, 'hello world')
@@ -49,13 +45,11 @@ describe('Path', () => {
         expect(exists).toBe(true)
     })
 
-    // 지정된 경로가 디렉터리인지 확인한다
     test('confirms whether the specified path is a directory', async () => {
         const exists = await Path.isDirectory(tempDir)
         expect(exists).toBe(true)
     })
 
-    // 디렉터리를 생성하고 삭제한다
     test('creates and deletes a directory', async () => {
         const dirPath = Path.join(tempDir, 'testdir')
 
@@ -68,7 +62,6 @@ describe('Path', () => {
         expect(existsAfterDelete).toBe(false)
     })
 
-    // 하위 디렉터리를 나열한다
     test('lists subdirectories', async () => {
         const subDir1 = Path.join(tempDir, 'subdir1')
         await Path.mkdir(subDir1)
@@ -83,7 +76,6 @@ describe('Path', () => {
         expect(subDirs).toEqual(['subdir1', 'subdir2'])
     })
 
-    // 파일을 복사한다
     test('copies a file', async () => {
         const srcFilePath = Path.join(tempDir, 'file.txt')
         await fs.writeFile(srcFilePath, 'hello world')
@@ -99,7 +91,6 @@ describe('Path', () => {
         expect(content).toEqual('hello world')
     })
 
-    // 디렉터리를 복사한다
     test('copies a directory', async () => {
         const srcDirPath = Path.join(tempDir, 'testdir')
         await Path.mkdir(srcDirPath)
@@ -123,7 +114,6 @@ describe('Path', () => {
         expect(content).toEqual('hello from the original dir')
     })
 
-    // 절대 경로를 반환한다
     test('returns an absolute path', async () => {
         const relativePath = `.${Path.sep()}file.txt`
         const absolutePath = await Path.getAbsolute(relativePath)
@@ -131,7 +121,6 @@ describe('Path', () => {
         expect(p.isAbsolute(absolutePath)).toBe(true)
     })
 
-    // 이미 절대 경로이면 그대로 반환한다
     test('returns the same path if it is already absolute', async () => {
         const absolutePath = p.join(os.tmpdir(), 'file.txt')
         const result = await Path.getAbsolute(absolutePath)
@@ -139,7 +128,6 @@ describe('Path', () => {
         expect(result).toEqual(absolutePath)
     })
 
-    // basename을 반환한다
     test('returns the basename', () => {
         const filePath = 'dir/file.txt'
         const basename = Path.basename(filePath)
@@ -147,7 +135,6 @@ describe('Path', () => {
         expect(basename).toEqual('file.txt')
     })
 
-    // dirname을 반환한다
     test('returns the dirname', () => {
         const filePath = 'dir/file.txt'
         const dirname = Path.dirname(filePath)
@@ -155,7 +142,6 @@ describe('Path', () => {
         expect(dirname).toEqual('dir')
     })
 
-    // 경로가 쓰기 가능하면 true를 반환한다
     test('returns true if the path is writable', async () => {
         jest.spyOn(fs, 'access').mockResolvedValueOnce(undefined)
 
@@ -165,7 +151,6 @@ describe('Path', () => {
         expect(fs.access).toHaveBeenCalledWith('/test/path', fs.constants.W_OK)
     })
 
-    // 경로가 쓰기 불가능하면 false를 반환한다
     test('returns false if the path is not writable', async () => {
         jest.spyOn(fs, 'access').mockRejectedValueOnce(new Error('Not writable'))
 
@@ -175,7 +160,6 @@ describe('Path', () => {
         expect(fs.access).toHaveBeenCalledWith('/test/path', fs.constants.W_OK)
     })
 
-    // 파일을 이동시킨다
     test('moves a file', async () => {
         const srcFilePath = Path.join(tempDir, 'file.txt')
         await fs.writeFile(srcFilePath, 'hello world')

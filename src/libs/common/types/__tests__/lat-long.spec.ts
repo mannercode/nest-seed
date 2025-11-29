@@ -14,9 +14,7 @@ describe('LatLong', () => {
     })
 
     describe('distanceInMeters', () => {
-        // 두 지점 간 거리를 계산하는 경우
         describe('when calculating distance between two coordinates', () => {
-            // 미터 단위 거리를 반환한다
             it('returns the distance in meters', () => {
                 const seoul: LatLong = { latitude: 37.5665, longitude: 126.978 }
                 const busan: LatLong = { latitude: 35.1796, longitude: 129.0756 }
@@ -33,9 +31,7 @@ describe('LatLong', () => {
     })
 
     describe('GET /latLong', () => {
-        // 유효한 쿼리인 경우
         describe('when the query is valid', () => {
-            // 위경도를 반환한다
             it('returns the latitude and longitude', async () => {
                 await fixture.httpClient
                     .get('/latLong')
@@ -44,9 +40,7 @@ describe('LatLong', () => {
             })
         })
 
-        // latLong 값이 없는 경우
         describe('when the latLong value is missing', () => {
-            // BadRequestException을 던진다
             it('throws BadRequestException', async () => {
                 await fixture.httpClient
                     .get('/latLong')
@@ -57,9 +51,7 @@ describe('LatLong', () => {
             })
         })
 
-        // 형식이 잘못된 경우
         describe('when the latLong format is invalid', () => {
-            // BadRequestException을 던진다
             it('throws BadRequestException', async () => {
                 await fixture.httpClient
                     .get('/latLong')
@@ -71,9 +63,7 @@ describe('LatLong', () => {
             })
         })
 
-        // 범위를 벗어난 경우
         describe('when the values are out of range', () => {
-            // BadRequestException을 던진다
             it('throws BadRequestException', async () => {
                 await fixture.httpClient
                     .get('/latLong')

@@ -14,9 +14,7 @@ describe('JwtAuthService', () => {
     })
 
     describe('generateAuthTokens', () => {
-        // payload가 유효한 경우
         describe('when the payload is valid', () => {
-            // 인증 토큰을 반환한다
             it('returns auth tokens', async () => {
                 const payload = { userId: 'userId', email: 'email' }
                 const tokens = await fixture.jwtService.generateAuthTokens(payload)
@@ -40,9 +38,7 @@ describe('JwtAuthService', () => {
             refreshToken = tokens.refreshToken
         })
 
-        // 유효한 refreshToken인 경우
         describe('when the refreshToken is valid', () => {
-            // 새로운 인증 토큰을 반환한다
             it('returns new auth tokens', async () => {
                 const tokens = await fixture.jwtService.refreshAuthTokens(refreshToken)
 
@@ -51,18 +47,14 @@ describe('JwtAuthService', () => {
             })
         })
 
-        // refreshToken이 잘못된 경우
         describe('when the refreshToken is invalid', () => {
-            // 예외를 던진다
             it('throws an error', async () => {
                 const promise = fixture.jwtService.refreshAuthTokens('invalid-token')
                 await expect(promise).rejects.toThrow('jwt malformed')
             })
         })
 
-        // refreshToken이 만료된 경우
         describe('when the refreshToken is expired', () => {
-            // 예외를 던진다
             it('throws an error', async () => {
                 await sleep(3500)
 
@@ -71,9 +63,7 @@ describe('JwtAuthService', () => {
             })
         })
 
-        // 저장된 refreshToken과 다른 경우
         describe('when the stored refreshToken differs', () => {
-            // 예외를 던진다
             it('throws an error', async () => {
                 jest.spyOn(fixture.redis, 'get').mockResolvedValueOnce('unknown token')
 

@@ -16,7 +16,6 @@ describe('BookingService', () => {
         await fixture?.teardown()
     })
 
-    // 예약이 성공하는 경우
     describe('when the booking succeeds', () => {
         let movie: MovieDto
         let accessToken: string
@@ -42,15 +41,13 @@ describe('BookingService', () => {
             accessToken = resources.accessToken
         })
 
-        // 예약 절차를 완료한다
         it('completes the booking process', async () => {
             let theater: TheaterDto
             let showdate: Date
             let showtime: ShowtimeDto
             let tickets: TicketDto[]
 
-            // 1. 상영 극장을 조회한다
-            await step('searches theaters showing the movie', async () => {
+            await step('1. searches theaters showing the movie', async () => {
                 const latLong = '31.9,131.9'
                 const { body: theaters } = await fixture.httpClient
                     .get(`/booking/movies/${movie.id}/theaters?latLong=${latLong}`)
@@ -67,8 +64,7 @@ describe('BookingService', () => {
                 theater = theaters[0]
             })
 
-            // 2. 상영일을 조회한다
-            await step('searches showdates', async () => {
+            await step('2. searches showdates', async () => {
                 const { body: showdates } = await fixture.httpClient
                     .get(`/booking/movies/${movie.id}/theaters/${theater.id}/showdates`)
                     .ok([new Date('2999-01-01'), new Date('2999-01-02'), new Date('2999-01-03')])
@@ -76,8 +72,7 @@ describe('BookingService', () => {
                 showdate = showdates[0]
             })
 
-            // 3. 상영시간을 조회한다
-            await step('searches showtimes', async () => {
+            await step('3. searches showtimes', async () => {
                 const yymmdd = DateUtil.toYMD(showdate)
                 const url = `/booking/movies/${movie.id}/theaters/${theater.id}/showdates/${yymmdd}/showtimes`
 
@@ -93,8 +88,7 @@ describe('BookingService', () => {
                 showtime = showtimes[0]
             })
 
-            // 4. 구매 가능 티켓 조회한다
-            await step('searches for available tickets', async () => {
+            await step('4. searches for available tickets', async () => {
                 const { body } = await fixture.httpClient
                     .get(`/booking/showtimes/${showtime.id}/tickets`)
                     .ok()
@@ -108,8 +102,7 @@ describe('BookingService', () => {
                 )
             })
 
-            // 5. 티켓을 선점한다
-            await step('holds the tickets', async () => {
+            await step('5. holds the tickets', async () => {
                 const ticketIds = pickIds(tickets.slice(0, 2))
 
                 await fixture.httpClient
@@ -122,9 +115,7 @@ describe('BookingService', () => {
     })
 
     describe('GET /booking/showtimes/:id/tickets', () => {
-        // 상영시간이 존재하지 않는 경우
         describe('when the showtime does not exist', () => {
-            // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fixture.httpClient
                     .get(`/booking/showtimes/${nullObjectId}/tickets`)

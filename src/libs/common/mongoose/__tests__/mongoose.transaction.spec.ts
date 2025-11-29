@@ -13,9 +13,7 @@ describe('MongooseRepository.withTransaction', () => {
     })
 
     describe('withTransaction', () => {
-        // 정상적으로 수행되는 경우
         describe('when the transaction succeeds', () => {
-            // 트랜잭션을 커밋한다
             it('commits the transaction', async () => {
                 const newDoc = await fixture.repository.withTransaction(async (session) => {
                     const doc = fixture.repository.newDocument()
@@ -28,9 +26,7 @@ describe('MongooseRepository.withTransaction', () => {
             })
         })
 
-        // 롤백을 명시적으로 호출하는 경우
         describe('when a rollback is requested', () => {
-            // 트랜잭션을 롤백한다
             it('rolls back the transaction', async () => {
                 const newDoc = fixture.repository.newDocument()
                 newDoc.name = 'name'
@@ -46,9 +42,7 @@ describe('MongooseRepository.withTransaction', () => {
             })
         })
 
-        // 실행 중 오류가 발생하는 경우
         describe('when an error occurs during the transaction', () => {
-            // 변경 사항을 롤백한다
             it('rolls back changes', async () => {
                 const promise = fixture.repository.withTransaction(async (session) => {
                     const doc = fixture.repository.newDocument()

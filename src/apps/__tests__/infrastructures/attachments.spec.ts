@@ -69,7 +69,6 @@ describe('AttachmentsService', () => {
     })
 
     describe('AttachmentsClient.getMany', () => {
-        // 파일이 존재하는 경우
         describe('when the file exists', () => {
             let uploadedFile: AttachmentDto
 
@@ -106,7 +105,6 @@ describe('AttachmentsService', () => {
             })
         })
 
-        // 파일이 존재하지 않는 경우
         describe('when the file does not exist', () => {
             it('throws 404 Not Found', async () => {
                 await expect(
@@ -117,7 +115,6 @@ describe('AttachmentsService', () => {
     })
 
     describe('AttachmentsClient.deleteMany', () => {
-        // 파일이 존재하는 경우
         describe('when the file exists', () => {
             let uploadedFile: AttachmentDto
 
@@ -149,7 +146,6 @@ describe('AttachmentsService', () => {
             })
         })
 
-        // 파일이 존재하지 않는 경우
         describe('when the file does not exist', () => {
             it('throws 404 Not Found', async () => {
                 await expect(

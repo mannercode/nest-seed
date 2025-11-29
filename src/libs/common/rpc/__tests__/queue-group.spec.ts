@@ -20,9 +20,7 @@ describe('NATS Queue Group', () => {
         await fixture?.teardown()
     })
 
-    // queue 그룹이 설정된 경우
     describe('when a queue group is set', () => {
-        // 메시지가 한 인스턴스에만 전달된다
         it('delivers the message to one instance', async () => {
             const result = await fixture.rpcClient.getJson(withTestId('queue'), {})
 
@@ -31,9 +29,7 @@ describe('NATS Queue Group', () => {
         })
     })
 
-    // queue 그룹이 없는 경우
     describe('when no queue group is set', () => {
-        // 메시지가 모든 인스턴스에 전달된다
         it('delivers the message to all instances', async () => {
             const result = await fixture.rpcClient.getJson(withTestId('broadcast'), {})
             await sleep(1000)

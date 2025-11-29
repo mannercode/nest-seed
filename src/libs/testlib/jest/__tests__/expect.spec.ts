@@ -29,7 +29,6 @@ describe('jest.expect examples', () => {
         expect(firstArray).not.toBe(secondArray)
     })
 
-    // 객체 배열 비교
     test('compare array of objects', () => {
         const actualObjects = [
             { id: 1, name: 'A' },
@@ -43,7 +42,6 @@ describe('jest.expect examples', () => {
         expect(actualObjects).toEqual(expect.arrayContaining(expectedObjects))
     })
 
-    // 부분 객체 배열 비교
     test('compare partial array of objects', () => {
         const fullObjects = [
             { id: 1, name: 'A', extra: 'info' },

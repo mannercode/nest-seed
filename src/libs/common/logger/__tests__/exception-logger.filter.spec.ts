@@ -14,9 +14,7 @@ describe('ExceptionLoggerFilter', () => {
     })
 
     describe('HTTP context', () => {
-        // HttpException을 던지는 경우
         describe('when an HttpException is thrown', () => {
-            // Logger.warn으로 기록한다
             it('logs via Logger.warn', async () => {
                 await fixture.httpClient
                     .get('/exception')
@@ -33,9 +31,7 @@ describe('ExceptionLoggerFilter', () => {
             })
         })
 
-        // Error를 던지는 경우
         describe('when a generic Error is thrown', () => {
-            // Logger.error로 기록한다
             it('logs via Logger.error', async () => {
                 await fixture.httpClient.get('/error').internalServerError()
 
@@ -50,9 +46,7 @@ describe('ExceptionLoggerFilter', () => {
             })
         })
 
-        // Error가 아닌 값을 던지는 경우
         describe('when a non-error is thrown', () => {
-            // Logger.fatal로 기록한다
             it('logs via Logger.fatal', async () => {
                 await fixture.httpClient.get('/fatal').internalServerError()
 
@@ -69,9 +63,7 @@ describe('ExceptionLoggerFilter', () => {
     })
 
     describe('RPC context', () => {
-        // HttpException을 던지는 경우
         describe('when an HttpException is thrown', () => {
-            // Logger.warn으로 기록한다
             it('logs via Logger.warn', async () => {
                 const subject = withTestId('exception')
                 await fixture.rpcClient.error(
@@ -94,9 +86,7 @@ describe('ExceptionLoggerFilter', () => {
             })
         })
 
-        // Error를 던지는 경우
         describe('when a generic Error is thrown', () => {
-            // Logger.error로 기록한다
             it('logs via Logger.error', async () => {
                 const subject = withTestId('error')
                 await fixture.rpcClient.error(subject, {}, Error('error message'))
@@ -112,9 +102,7 @@ describe('ExceptionLoggerFilter', () => {
             })
         })
 
-        // Error가 아닌 값을 던지는 경우
         describe('when a non-error is thrown', () => {
-            // Logger.fatal로 기록한다
             it('logs via Logger.fatal', async () => {
                 const subject = withTestId('fatal')
                 await fixture.rpcClient.error(subject, {}, Error('fatal error message'))
@@ -132,9 +120,7 @@ describe('ExceptionLoggerFilter', () => {
     })
 
     describe('unknown context', () => {
-        // ContextType이 알 수 없는 경우
         describe('when the ContextType is unknown', () => {
-            // Logger.error로 기록한다
             it('logs via Logger.error', async () => {
                 const { ExecutionContextHost } =
                     await import('@nestjs/core/helpers/execution-context-host')

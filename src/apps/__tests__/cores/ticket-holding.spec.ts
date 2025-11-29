@@ -20,9 +20,7 @@ describe('TicketHoldingService', () => {
         const customerA = oid(0x1001)
         const customerB = oid(0x1002)
 
-        // 선점되지 않은 티켓인 경우
         describe('when the tickets are not held', () => {
-            // true를 반환한다
             it('returns true', async () => {
                 const isHeld = await holdTickets(fixture, { customerId: customerA })
 
@@ -30,13 +28,11 @@ describe('TicketHoldingService', () => {
             })
         })
 
-        // 다른 고객이 선점한 티켓인 경우
         describe('when the tickets are held by another customer', () => {
             beforeEach(async () => {
                 await holdTickets(fixture, { customerId: customerA })
             })
 
-            // false를 반환한다
             it('returns false', async () => {
                 const isHeld = await holdTickets(fixture, { customerId: customerB })
 
@@ -44,7 +40,6 @@ describe('TicketHoldingService', () => {
             })
         })
 
-        // 고객이 선점한 티켓이 있는 경우
         describe('when the customer already holds tickets', () => {
             const showtimeId = oid(0x2001)
             const prevTicketIds = [oid(0x30), oid(0x31)]
@@ -62,7 +57,6 @@ describe('TicketHoldingService', () => {
                 })
             })
 
-            // 동일 티켓을 다시 선점하면 true를 반환한다
             it('returns true when re-holding the same tickets', async () => {
                 const isHeld = await holdTickets(fixture, {
                     showtimeId,
@@ -73,7 +67,6 @@ describe('TicketHoldingService', () => {
                 expect(isHeld).toBe(true)
             })
 
-            // 새로운 티켓을 선점하면
             describe('when the customer holds new tickets', () => {
                 let isHeld: boolean
 
@@ -84,13 +77,10 @@ describe('TicketHoldingService', () => {
                         ticketIds: newTicketIds
                     })
                 })
-                // TODO fix
-                // true를 반환한다
                 it('returns true', async () => {
                     expect(isHeld).toBe(true)
                 })
 
-                // 기존에 선점했던 티켓은 해제된다
                 it('releases the previously held tickets', async () => {
                     const heldTicketIds = await searchHeldTicketIds(fixture, showtimeId, customerA)
 
@@ -98,13 +88,11 @@ describe('TicketHoldingService', () => {
                 })
             })
 
-            // 선점 시간이 만료되면
             describe('when the hold duration has expired', () => {
                 beforeEach(async () => {
                     await sleep(holdDuration + 500)
                 })
 
-                // 다른 고객이 선점하면 true를 반환한다
                 it('returns true for another customer', async () => {
                     const isHeld = await holdTickets(fixture, {
                         showtimeId,
@@ -117,9 +105,7 @@ describe('TicketHoldingService', () => {
             })
         })
 
-        // 여러 고객이 동시에 선점을 요청하는 경우
         describe('when multiple customers attempt to hold concurrently', () => {
-            // 오직 한 고객만 성공한다
             it(
                 'returns success for only one customer',
                 async () => {
@@ -177,9 +163,7 @@ describe('TicketHoldingService', () => {
             await holdTickets(fixture, { showtimeId, customerId, ticketIds })
         })
 
-        // 선점한 티켓이 존재하는 경우
         describe('when the tickets are still held', () => {
-            // 티켓 ID를 반환한다
             it('returns the ticket IDs', async () => {
                 const heldTicketIds = await searchHeldTicketIds(fixture, showtimeId, customerId)
 
@@ -187,13 +171,11 @@ describe('TicketHoldingService', () => {
             })
         })
 
-        // 선점한 티켓이 만료된 경우
         describe('when the hold has expired', () => {
             beforeEach(async () => {
                 await sleep(holdDuration + 500)
             })
 
-            // 빈 배열을 반환한다.
             it('returns an empty array', async () => {
                 const heldTicketIds = await searchHeldTicketIds(fixture, showtimeId, customerId)
 
@@ -207,13 +189,11 @@ describe('TicketHoldingService', () => {
         const showtimeId = oid(0x2001)
         const ticketIds = [oid(0x3001), oid(0x3002)]
 
-        // 고객이 선점한 티켓이 있는 경우
         describe('when the customer holds tickets', () => {
             beforeEach(async () => {
                 await holdTickets(fixture, { showtimeId, customerId, ticketIds })
             })
 
-            // true를 반환한다
             it('returns true', async () => {
                 const isReleased = await releaseTickets(fixture, showtimeId, customerId)
 
@@ -221,9 +201,7 @@ describe('TicketHoldingService', () => {
             })
         })
 
-        // 고객이 선점한 티켓이 없는 경우
         describe('when the customer holds no tickets', () => {
-            // 선점한 티켓이 없어도 true를 반환한다
             it('returns true even when there are no tickets to release', async () => {
                 const isReleased = await releaseTickets(fixture, showtimeId, customerId)
 

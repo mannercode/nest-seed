@@ -13,9 +13,7 @@ describe('createTestContext', () => {
         await fixture?.teardown()
     })
 
-    // RPC 메시지를 전송할 때
     describe('when sending an RPC message', () => {
-        // 올바르게 응답한다.
         it('responds correctly', async () => {
             await fixture.rpcClient.expect(
                 withTestId('getRpcMessage'),
@@ -25,9 +23,7 @@ describe('createTestContext', () => {
         })
     })
 
-    // HTTP 메시지를 전송할 때
     describe('when sending an HTTP message', () => {
-        // 올바르게 응답한다.
         it('responds correctly', async () => {
             await fixture.httpClient.get('/message/value').ok({ received: 'value' })
         })

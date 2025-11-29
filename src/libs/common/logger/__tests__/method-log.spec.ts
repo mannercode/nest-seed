@@ -18,9 +18,7 @@ describe('@MethodLog', () => {
     })
 
     describe('logging successes', () => {
-        // 동기 메서드인 경우
         describe('when the method is synchronous', () => {
-            // 시작과 종료를 로깅한다
             it('logs begin and end', async () => {
                 service.syncMethod('value')
 
@@ -38,9 +36,7 @@ describe('@MethodLog', () => {
             })
         })
 
-        // 비동기 메서드인 경우
         describe('when the method is async', () => {
-            // 시작과 종료를 로깅한다
             it('logs begin and end', async () => {
                 await service.asyncMethod('value')
 
@@ -58,9 +54,7 @@ describe('@MethodLog', () => {
             })
         })
 
-        // Observable 메서드인 경우
         describe('when the method returns an Observable', () => {
-            // 시작과 종료를 로깅한다
             it('logs begin and end', async () => {
                 await lastValueFrom(service.observableMethod('value'))
 
@@ -80,9 +74,7 @@ describe('@MethodLog', () => {
     })
 
     describe('logging errors', () => {
-        // 동기 메서드에서 예외가 발생하는 경우
         describe('when a synchronous method throws', () => {
-            // 오류를 로깅한다
             it('logs the error', () => {
                 expect(() => service.throwSyncError('value')).toThrow('value')
 
@@ -99,9 +91,7 @@ describe('@MethodLog', () => {
             })
         })
 
-        // 비동기 메서드에서 예외가 발생하는 경우
         describe('when an async method throws', () => {
-            // 오류를 로깅한다
             it('logs the error', async () => {
                 await expect(service.throwAsyncError('value')).rejects.toThrow()
 
@@ -118,9 +108,7 @@ describe('@MethodLog', () => {
             })
         })
 
-        // Observable 메서드에서 예외가 발생하는 경우
         describe('when an Observable method throws', () => {
-            // 오류를 로깅한다
             it('logs the error', async () => {
                 await expect(lastValueFrom(service.throwObservableError('value'))).rejects.toThrow()
 
@@ -139,9 +127,7 @@ describe('@MethodLog', () => {
     })
 
     describe('logging options', () => {
-        // 로깅 레벨이 debug인 경우
         describe('when the level is debug', () => {
-            // debug로 기록한다
             it('logs with the debug level', () => {
                 service.debugLog()
 
@@ -159,9 +145,7 @@ describe('@MethodLog', () => {
             })
         })
 
-        // excludeArgs가 설정된 경우
         describe('when `excludeArgs` hides the parameters', () => {
-            // 제외된 인자를 기록하지 않는다
             it('omits excluded args', () => {
                 service.excludeArgs('1', '2')
 
@@ -179,9 +163,7 @@ describe('@MethodLog', () => {
             })
         })
 
-        // 중첩 데코레이터가 있는 경우
         describe('when used with other decorators', () => {
-            // 정상적으로 로깅한다
             it('still logs correctly', () => {
                 service.nestedDecorator()
 

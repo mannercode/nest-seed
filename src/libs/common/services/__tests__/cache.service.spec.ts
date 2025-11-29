@@ -14,9 +14,7 @@ describe('CacheService', () => {
     })
 
     describe('set', () => {
-        // 값을 설정하는 경우
         describe('when setting a value', () => {
-            // 캐시에 값을 저장한다
             it('stores the value', async () => {
                 await fixture.cacheService.set('key', 'value')
                 const cachedValue = await fixture.cacheService.get('key')
@@ -24,9 +22,7 @@ describe('CacheService', () => {
             })
         })
 
-        // TTL을 지정하는 경우
         describe('when the TTL is provided', () => {
-            // TTL 이후 만료된다
             it('expires after the TTL', async () => {
                 const ttl = 1000
                 await fixture.cacheService.set('key', 'value', ttl)
@@ -41,9 +37,7 @@ describe('CacheService', () => {
             })
         })
 
-        // TTL이 0인 경우
         describe('when the TTL is 0', () => {
-            // 만료되지 않는다
             it('does not expire', async () => {
                 const ttl = 0
                 await fixture.cacheService.set('key', 'value', ttl)
@@ -58,9 +52,7 @@ describe('CacheService', () => {
             })
         })
 
-        // TTL이 0 미만인 경우
         describe('when the TTL is negative', () => {
-            // 예외를 던진다
             it('throws an error', async () => {
                 const wrongTTL = -100
 
@@ -72,9 +64,7 @@ describe('CacheService', () => {
     })
 
     describe('delete', () => {
-        // 값이 존재하는 경우
         describe('when the key exists', () => {
-            // 캐시에서 값을 삭제한다
             it('deletes the cached value', async () => {
                 await fixture.cacheService.set('key', 'value')
 
@@ -90,9 +80,7 @@ describe('CacheService', () => {
     })
 
     describe('executeScript', () => {
-        // Lua 스크립트를 실행하는 경우
         describe('when running a Lua script', () => {
-            // 스크립트를 실행하고 결과를 반환한다
             it('runs the script and returns the result', async () => {
                 const script = `return redis.call('SET', KEYS[1], ARGV[2])`
                 const keys = ['key']

@@ -16,15 +16,12 @@ describe('SuccessLoggingInterceptor', () => {
         await fixture?.teardown()
     })
 
-    // 요청이 성공하는 경우
     describe('when the requests succeed', () => {
         beforeEach(async () => {
             fixture = await createFixture([])
         })
 
-        // HTTP 요청이 성공하는 경우
         describe('when an HTTP request succeeds', () => {
-            // Logger.verbose로 기록한다
             it('logs via Logger.verbose', async () => {
                 const body = { key: 'value' }
                 await fixture.httpClient.post('/success').body(body).created({ result: 'success' })
@@ -39,9 +36,7 @@ describe('SuccessLoggingInterceptor', () => {
             })
         })
 
-        // RPC 요청이 성공하는 경우
         describe('when an RPC request succeeds', () => {
-            // Logger.verbose로 기록한다
             it('logs via Logger.verbose', async () => {
                 const subject = withTestId('success')
                 const data = { key: 'value' }
@@ -57,9 +52,7 @@ describe('SuccessLoggingInterceptor', () => {
             })
         })
 
-        // ContextType이 알 수 없는 경우
         describe('when the ContextType is unknown', () => {
-            // Logger.error로 기록한다
             it('logs via Logger.error', async () => {
                 const { ExecutionContextHost } =
                     await import('@nestjs/core/helpers/execution-context-host')
@@ -86,7 +79,6 @@ describe('SuccessLoggingInterceptor', () => {
             ])
         })
 
-        // 지정된 HTTP 경로는 무시해야 한다
         it('ignores specified HTTP paths', async () => {
             await fixture.httpClient.get('/exclude-path').ok({ result: 'success' })
 
@@ -101,7 +93,6 @@ describe('SuccessLoggingInterceptor', () => {
             ])
         })
 
-        // 지정된 RPC 경로는 무시해야 한다
         it('ignores specified RPC paths', async () => {
             const subject = withTestId('exclude-path')
             const data = { key: 'value' }
