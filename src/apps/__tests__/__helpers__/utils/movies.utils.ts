@@ -51,7 +51,7 @@ const uploadMovieImage = async (assetsService: AssetsClient) => {
         checksum: fixtureFiles.image.checksum.value
     })
 
-    const uploadRes = await fetch(uploadInfo.uploadUrl, {
+    const uploadRes = await fetch(uploadInfo.upload.url, {
         method: uploadInfo.method,
         headers: uploadInfo.headers,
         body: await readFile(fixtureFiles.image.path)

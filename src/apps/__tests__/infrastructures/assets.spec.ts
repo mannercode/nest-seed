@@ -29,7 +29,7 @@ describe('AssetsService', () => {
 
         const uploadInfo = await fixture.assetsClient.create(payload)
 
-        const uploadRes = await fetch(uploadInfo.uploadUrl, {
+        const uploadRes = await fetch(uploadInfo.upload.url, {
             method: uploadInfo.method,
             headers: uploadInfo.headers,
             body: await readFile(fixture.localFiles.small.path)
@@ -51,8 +51,7 @@ describe('AssetsService', () => {
 
             expect(body).toEqual({
                 assetId: expect.any(String),
-                uploadUrl: expect.any(String),
-                expiresAt: expect.any(Date),
+                upload: { url: expect.any(String), expiresAt: expect.any(Date) },
                 method: 'PUT',
                 headers: expect.objectContaining({
                     'Content-Type': payload.mimeType,
@@ -76,15 +75,14 @@ describe('AssetsService', () => {
 
                 expect(asset).toEqual({
                     ...uploadedAsset,
-                    downloadUrl: expect.any(String),
-                    downloadUrlExpiresAt: expect.any(Date)
+                    download: { url: expect.any(String), expiresAt: expect.any(Date) }
                 })
 
                 const tempDir = await Path.createTempDirectory()
                 const downloadedFile = Path.join(tempDir, 'downloaded.tmp')
 
                 try {
-                    const downloadRes = await fetch(asset.downloadUrl!)
+                    const downloadRes = await fetch(asset.download!.url)
                     expect(downloadRes.ok).toBe(true)
 
                     const downloadedBuffer = Buffer.from(await downloadRes.arrayBuffer())
@@ -128,8 +126,8 @@ describe('AssetsService', () => {
                             mimeType: uploadedAsset.mimeType,
                             size: uploadedAsset.size,
                             checksum: uploadedAsset.checksum,
-                            ownerService: uploadedAsset.ownerService,
-                            ownerEntityId: uploadedAsset.ownerEntityId
+                            owner: uploadedAsset.owner,
+                            download: null
                         }
                     ]
                 })

@@ -89,7 +89,7 @@ export class MoviesService {
             const urlMap = new Map(assets.map((asset) => [asset.id, asset]))
 
             dto.imageUrls = dto.imageAssetIds.map(
-                (id) => urlMap.get(id)?.downloadUrl ?? `/assets/${id}`
+                (id) => urlMap.get(id)?.download?.url ?? `/assets/${id}`
             )
         } else {
             dto.imageUrls = dto.imageAssetIds.map((id) => `/assets/${id}`)

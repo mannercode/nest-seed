@@ -4,8 +4,6 @@ export class AssetDto {
     mimeType: string
     size: number
     checksum: string
-    ownerService: string | null
-    ownerEntityId: string | null
-    downloadUrl?: string
-    downloadUrlExpiresAt?: Date
+    owner: { service: string; entityId: string } | null
+    download: { url: string; expiresAt: Date } | null
 }

@@ -20,8 +20,7 @@ export class CreateAssetDto {
 
 export type CreateAssetResponse = {
     assetId: string
-    uploadUrl: string
-    expiresAt: Date
+    upload: { url: string; expiresAt: Date }
     method: 'PUT'
     headers: Record<string, string>
 }

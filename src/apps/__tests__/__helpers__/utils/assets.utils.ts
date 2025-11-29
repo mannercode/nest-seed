@@ -19,14 +19,14 @@ export const uploadAssets = async ({ module }: TestContext, files: FixtureFile[]
     const assetIds: string[] = []
 
     for (const file of files) {
-        const { assetId, uploadUrl, method, headers } = await assetsService.create({
+        const { assetId, upload, method, headers } = await assetsService.create({
             originalName: file.originalName,
             mimeType: file.mimeType,
             size: file.size,
             checksum: file.checksum.value
         })
 
-        const uploadRes = await fetch(uploadUrl, {
+        const uploadRes = await fetch(upload.url, {
             method,
             headers,
             body: await readFile(file.path)
