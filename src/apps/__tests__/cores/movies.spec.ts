@@ -5,23 +5,23 @@ import { nullObjectId } from 'testlib'
 import { buildCreateMovieDto, createMovie, Errors } from '../__helpers__'
 import type { Fixture } from './movies.fixture'
 
-    // const configMock = createConfigServiceMock({
-    //     FILE_UPLOAD_MAX_FILE_SIZE_BYTES: localFiles.oversized.size,
-    //     FILE_UPLOAD_MAX_FILES_PER_UPLOAD: maxFilesPerUpload,
-    //     FILE_UPLOAD_ALLOWED_FILE_TYPES: 'text/plain',
-    //     S3_ENDPOINT: s3.endpoint,
-    //     S3_REGION: s3.region,
-    //     S3_BUCKET: s3.bucket,
-    //     S3_ACCESS_KEY_ID: s3.accessKeyId,
-    //     S3_SECRET_ACCESS_KEY: s3.secretAccessKey,
-    //     S3_FORCE_PATH_STYLE: s3.forcePathStyle
-    // })
+// const configMock = createConfigServiceMock({
+//     FILE_UPLOAD_MAX_FILE_SIZE_BYTES: localFiles.oversized.size,
+//     FILE_UPLOAD_MAX_FILES_PER_UPLOAD: maxFilesPerUpload,
+//     FILE_UPLOAD_ALLOWED_FILE_TYPES: 'text/plain',
+//     S3_ENDPOINT: s3.endpoint,
+//     S3_REGION: s3.region,
+//     S3_BUCKET: s3.bucket,
+//     S3_ACCESS_KEY_ID: s3.accessKeyId,
+//     S3_SECRET_ACCESS_KEY: s3.secretAccessKey,
+//     S3_FORCE_PATH_STYLE: s3.forcePathStyle
+// })
 
-    // const fix = await createTestFixture({
-    //     imports: [AssetsModule],
-    //     providers: [AssetsClient],
-    //     overrideProviders: [configMock]
-    // })
+// const fix = await createTestFixture({
+//     imports: [AssetsModule],
+//     providers: [AssetsClient],
+//     overrideProviders: [configMock]
+// })
 
 describe('MoviesService', () => {
     let fixture: Fixture
