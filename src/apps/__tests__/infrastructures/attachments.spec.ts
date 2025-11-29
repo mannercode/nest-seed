@@ -49,11 +49,11 @@ describe('AttachmentsService', () => {
         return { uploadInfo, completed, ownerInfo }
     }
 
-    describe('POST /attachments', () => {
+    describe('create', () => {
         it('returns an upload URL and stores the metadata', async () => {
             const payload = buildUploadPayload()
 
-            const { body } = await fixture.httpClient.post('/attachments').body(payload).created()
+            const body = await fixture.attachmentsClient.create(payload)
 
             expect(body).toEqual({
                 attachmentId: expect.any(String),
@@ -68,7 +68,7 @@ describe('AttachmentsService', () => {
         })
     })
 
-    describe('AttachmentsClient.getMany', () => {
+    describe('getMany', () => {
         describe('when the file exists', () => {
             let uploadedFile: AttachmentDto
 
@@ -114,7 +114,7 @@ describe('AttachmentsService', () => {
         })
     })
 
-    describe('AttachmentsClient.deleteMany', () => {
+    describe('deleteMany', () => {
         describe('when the file exists', () => {
             let uploadedFile: AttachmentDto
 

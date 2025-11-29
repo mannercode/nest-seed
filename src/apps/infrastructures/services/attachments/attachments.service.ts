@@ -64,11 +64,6 @@ export class AttachmentsService {
         return { deletedAttachments: this.toDtos(deletedFiles) }
     }
 
-    // private getAttachmentPath(fileId: string) {
-    //     const path = Path.join(this.config.fileUpload.directory, `${fileId}.file`)
-    //     return path
-    // }
-
     private getExpiresAt(expiresInSec: number) {
         return new Date(Date.now() + expiresInSec * 1000)
     }
