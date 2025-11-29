@@ -31,7 +31,7 @@ describe('MoviesService', () => {
                     checksum: fixture.image.checksum.value
                 }
 
-                const { body } = await fixture.httpClient.post('/assets').body(payload).created()
+                const body = await fixture.assetsClient.create(payload)
 
                 const uploadRes = await fetch(body.uploadUrl, {
                     method: body.method,

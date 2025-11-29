@@ -9,7 +9,6 @@ import { CustomersClient, MoviesClient, PurchaseRecordsClient, TheatersClient } 
 import { AssetsClient } from 'apps/infrastructures'
 import { CommonModule } from 'shared'
 import {
-    AssetsController,
     BookingController,
     CustomerJwtStrategy,
     CustomerLocalStrategy,
@@ -38,7 +37,6 @@ import { HealthModule } from './modules'
     ],
     controllers: [
         CustomersController,
-        AssetsController,
         MoviesController,
         TheatersController,
         ShowtimeCreationController,

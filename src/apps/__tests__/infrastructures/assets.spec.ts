@@ -27,10 +27,7 @@ describe('AssetsService', () => {
     const uploadAsset = async () => {
         const payload = buildUploadPayload()
 
-        const { body: uploadInfo } = await fixture.httpClient
-            .post('/assets')
-            .body(payload)
-            .created()
+        const uploadInfo = await fixture.assetsClient.create(payload)
 
         const uploadRes = await fetch(uploadInfo.uploadUrl, {
             method: uploadInfo.method,

@@ -1,5 +1,4 @@
 import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
-import { AssetsController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { getS3TestConnection, getTestId } from 'testlib'
 import {
@@ -47,9 +46,9 @@ export const createFixture = async () => {
     const fix = await createTestFixture({
         imports: [AssetsModule],
         providers: [AssetsClient],
-        controllers: [AssetsController],
         overrideProviders: [configMock]
     })
+
     const assetsClient = fix.module.get(AssetsClient)
 
     const overLimitFiles = Array(maxFilesPerUpload + 1).fill(localFiles.small)
