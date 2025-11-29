@@ -1,8 +1,7 @@
 import { Body, Controller, Post } from '@nestjs/common'
 import { AttachmentsClient, CreateAttachmentDto } from 'apps/infrastructures'
-import { HttpRoutes } from 'shared'
 
-@Controller(HttpRoutes.Attachments)
+@Controller('attachments')
 export class AttachmentsController {
     constructor(private attachmentsService: AttachmentsClient) {}
 

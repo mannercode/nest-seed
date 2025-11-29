@@ -1,15 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { AttachmentsClient } from 'apps/infrastructures'
 import { mapDocToDto } from 'common'
-import { HttpRoutes } from 'shared'
 import { CreateMovieDto, MovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
 import { MovieDocument } from './models'
 import { MoviesRepository } from './movies.repository'
 
 @Injectable()
 export class MoviesService {
-    private readonly ownerService = 'movies'
-
     constructor(
         private moviesRepository: MoviesRepository,
         private attachmentsService: AttachmentsClient
@@ -21,7 +18,7 @@ export class MoviesService {
         await Promise.all(
             createMovieDto.imageFileIds.map((fileId) =>
                 this.attachmentsService.complete(fileId, {
-                    ownerService: this.ownerService,
+                    ownerService: 'movies',
                     ownerEntityId: movie.id
                 })
             )
@@ -92,10 +89,10 @@ export class MoviesService {
             const urlMap = new Map(attachments.map((attachment) => [attachment.id, attachment]))
 
             dto.imageUrls = dto.imageFileIds.map(
-                (id) => urlMap.get(id)?.downloadUrl ?? `${HttpRoutes.Attachments}/${id}`
+                (id) => urlMap.get(id)?.downloadUrl ?? `/attachments/${id}`
             )
         } else {
-            dto.imageUrls = dto.imageFileIds.map((id) => `${HttpRoutes.Attachments}/${id}`)
+            dto.imageUrls = dto.imageFileIds.map((id) => `/attachments/${id}`)
         }
 
         dto.imageUrl = dto.imageUrls[0]

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
-import { InjectS3Object, mapDocToDto, Path, S3ObjectService } from 'common'
-import { AppConfigService } from 'shared'
+import { InjectS3Object, mapDocToDto, S3ObjectService } from 'common'
+import { AttachmentsRepository } from './attachments.repository'
 import {
     AttachmentDto,
     CompleteAttachmentDto,
@@ -8,7 +8,6 @@ import {
     CreateAttachmentResponse
 } from './dtos'
 import { AttachmentDocument } from './models'
-import { AttachmentsRepository } from './attachments.repository'
 
 const DEFAULT_PRESIGN_EXPIRES_SEC = 60
 
@@ -16,17 +15,8 @@ const DEFAULT_PRESIGN_EXPIRES_SEC = 60
 export class AttachmentsService {
     constructor(
         private repository: AttachmentsRepository,
-        private config: AppConfigService,
         @InjectS3Object() private s3Service: S3ObjectService
     ) {}
-
-    async getMany(fileIds: string[]) {
-        const files = await this.repository.getByIds(fileIds)
-
-        return Promise.all(
-            files.map((file) => this.toDtoWithDownloadUrl(file, DEFAULT_PRESIGN_EXPIRES_SEC))
-        )
-    }
 
     async create(dto: CreateAttachmentDto): Promise<CreateAttachmentResponse> {
         const attachment = await this.repository.createAttachment(dto)
@@ -50,13 +40,18 @@ export class AttachmentsService {
         }
     }
 
-    async complete(dto: CompleteAttachmentDto) {
-        const attachment = await this.repository.update(dto.attachmentId, {
-            ownerService: dto.ownerService,
-            ownerEntityId: dto.ownerEntityId
-        })
+    async complete(attachmentId: string, completeDto: CompleteAttachmentDto) {
+        const attachment = await this.repository.update(attachmentId, completeDto)
 
         return this.toDto(attachment)
+    }
+
+    async getMany(fileIds: string[]) {
+        const files = await this.repository.getByIds(fileIds)
+
+        return Promise.all(
+            files.map((file) => this.toDtoWithDownloadUrl(file, DEFAULT_PRESIGN_EXPIRES_SEC))
+        )
     }
 
     async deleteMany(attachmentIds: string[]) {

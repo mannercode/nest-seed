@@ -17,18 +17,15 @@ export class AttachmentsClient {
         return this.proxy.getJson(Messages.Attachments.create, dto)
     }
 
-    getMany(fileIds: string[]): Promise<AttachmentDto[]> {
-        return this.proxy.getJson(Messages.Attachments.getMany, fileIds)
+    complete(attachmentId: string, completeDto: CompleteAttachmentDto): Promise<AttachmentDto> {
+        return this.proxy.getJson(Messages.Attachments.complete, { attachmentId, completeDto })
     }
 
-    deleteMany(fileIds: string[]): Promise<DeleteAttachmentsResponse> {
-        return this.proxy.getJson(Messages.Attachments.deleteMany, fileIds)
+    getMany(attachmentIds: string[]): Promise<AttachmentDto[]> {
+        return this.proxy.getJson(Messages.Attachments.getMany, attachmentIds)
     }
 
-    complete(
-        attachmentId: string,
-        ownerInfo: Omit<CompleteAttachmentDto, 'attachmentId'>
-    ): Promise<AttachmentDto> {
-        return this.proxy.getJson(Messages.Attachments.complete, { attachmentId, ...ownerInfo })
+    deleteMany(attachmentIds: string[]): Promise<DeleteAttachmentsResponse> {
+        return this.proxy.getJson(Messages.Attachments.deleteMany, attachmentIds)
     }
 }
