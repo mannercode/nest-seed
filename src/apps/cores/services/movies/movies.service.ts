@@ -7,7 +7,10 @@ import { MoviesRepository } from './movies.repository'
 
 @Injectable()
 export class MoviesService {
-    constructor(private moviesRepository: MoviesRepository, private assetsService: AssetsClient) {}
+    constructor(
+        private moviesRepository: MoviesRepository,
+        private assetsService: AssetsClient
+    ) {}
 
     async create(createMovieDto: CreateMovieDto) {
         const movie = await this.moviesRepository.create(createMovieDto)

@@ -104,9 +104,9 @@ describe('AssetsService', () => {
 
         describe('when the asset does not exist', () => {
             it('throws 404 Not Found', async () => {
-                await expect(
-                    fixture.assetsClient.getMany([nullObjectId])
-                ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
+                await expect(fixture.assetsClient.getMany([nullObjectId])).rejects.toMatchObject({
+                    status: HttpStatus.NOT_FOUND
+                })
             })
         })
     })
@@ -145,9 +145,9 @@ describe('AssetsService', () => {
 
         describe('when the asset does not exist', () => {
             it('throws 404 Not Found', async () => {
-                await expect(
-                    fixture.assetsClient.deleteMany([nullObjectId])
-                ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
+                await expect(fixture.assetsClient.deleteMany([nullObjectId])).rejects.toMatchObject(
+                    { status: HttpStatus.NOT_FOUND }
+                )
             })
         })
     })

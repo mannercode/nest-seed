@@ -78,10 +78,7 @@ export class AssetsService {
     }
     private async toDtoWithDownloadUrl(asset: AssetDocument, expiresInSec: number) {
         const dto = this.toDto(asset)
-        const downloadUrl = await this.s3Service.presignDownloadUrl({
-            key: asset.id,
-            expiresInSec
-        })
+        const downloadUrl = await this.s3Service.presignDownloadUrl({ key: asset.id, expiresInSec })
 
         dto.downloadUrl = downloadUrl
         dto.downloadUrlExpiresAt = this.getExpiresAt(expiresInSec)
