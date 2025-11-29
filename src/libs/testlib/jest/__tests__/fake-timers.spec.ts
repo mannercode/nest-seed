@@ -1,4 +1,3 @@
-
 describe('jest.useFakeTimers examples', () => {
     beforeEach(async () => {
         jest.useFakeTimers()
