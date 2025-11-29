@@ -25,7 +25,7 @@ describe('RecommendationService', () => {
                 durationInSeconds: movie.durationInSeconds,
                 director: movie.director,
                 rating: movie.rating,
-                imageFileIds: movie.imageFileIds,
+                imageAssetIds: movie.imageAssetIds,
                 imageUrl: expect.any(String),
                 imageUrls: expect.any(Array)
             })

@@ -15,7 +15,7 @@ import {
     TicketsModule
 } from 'apps/cores'
 import { ShowtimeCreationController } from 'apps/gateway'
-import { AttachmentsClient, AttachmentsModule } from 'apps/infrastructures'
+import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { jsonToObject } from 'common'
 import { oid } from 'testlib'
 import { createMovie, createTestFixture, createTheater, TestFixture } from '../__helpers__'
@@ -64,7 +64,7 @@ export const createFixture = async (): Promise<Fixture> => {
     const fix = await createTestFixture({
         imports: [
             MoviesModule,
-            AttachmentsModule,
+            AssetsModule,
             TheatersModule,
             ShowtimesModule,
             TicketsModule,
@@ -75,7 +75,7 @@ export const createFixture = async (): Promise<Fixture> => {
             TheatersClient,
             ShowtimesClient,
             ShowtimeCreationClient,
-            AttachmentsClient
+            AssetsClient
         ],
         controllers: [ShowtimeCreationController]
     })

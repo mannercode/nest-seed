@@ -1,6 +1,6 @@
 import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
-import { AttachmentsController } from 'apps/gateway'
-import { AttachmentsClient, AttachmentsModule } from 'apps/infrastructures'
+import { AssetsController } from 'apps/gateway'
+import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { getS3TestConnection, getTestId } from 'testlib'
 import {
     createConfigServiceMock,
@@ -18,7 +18,7 @@ export interface Fixture extends TestFixture {
         large: FixtureFile
         small: FixtureFile
     }
-    attachmentsClient: AttachmentsClient
+    assetsClient: AssetsClient
 }
 
 export const createFixture = async () => {
@@ -45,22 +45,22 @@ export const createFixture = async () => {
     })
 
     const fix = await createTestFixture({
-        imports: [AttachmentsModule],
-        providers: [AttachmentsClient],
-        controllers: [AttachmentsController],
+        imports: [AssetsModule],
+        providers: [AssetsClient],
+        controllers: [AssetsController],
         overrideProviders: [configMock]
     })
-    const attachmentsClient = fix.module.get(AttachmentsClient)
+    const assetsClient = fix.module.get(AssetsClient)
 
     const overLimitFiles = Array(maxFilesPerUpload + 1).fill(localFiles.small)
 
-    return { ...fix, overLimitFiles, localFiles, attachmentsClient }
+    return { ...fix, overLimitFiles, localFiles, assetsClient }
 }
 
 const createS3Bucket = async () => {
     const { endpoint, accessKeyId, secretAccessKey, region, forcePathStyle } = getS3TestConnection()
 
-    const bucket = `attachments-${getTestId()}`.toLowerCase()
+    const bucket = `assets-${getTestId()}`.toLowerCase()
 
     const client = new S3Client({
         endpoint,

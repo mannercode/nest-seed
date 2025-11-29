@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsString } from 'class-validator'
 
-export class CompleteAttachmentDto {
+export class CompleteAssetDto {
     @IsString()
     @IsNotEmpty()
     ownerService: string

@@ -1,0 +1,35 @@
+import { Injectable } from '@nestjs/common'
+import { InjectModel } from '@nestjs/mongoose'
+import { MongooseRepository } from 'common'
+import { Model } from 'mongoose'
+import { MongooseConfigModule } from 'shared'
+import { CreateAssetDto } from './dtos'
+import { Asset } from './models'
+
+export type AssetCreateInput = {
+    originalName: string
+    mimeType: string
+    size: number
+    ownerService?: string | null
+    ownerEntityId?: string | null
+}
+
+@Injectable()
+export class AssetsRepository extends MongooseRepository<Asset> {
+    constructor(
+        @InjectModel(Asset.name, MongooseConfigModule.connectionName)
+        model: Model<Asset>
+    ) {
+        super(model, MongooseConfigModule.maxTake)
+    }
+
+    async createAsset(createDto: CreateAssetDto) {
+        const asset = this.newDocument()
+        asset.originalName = createDto.originalName
+        asset.mimeType = createDto.mimeType
+        asset.size = createDto.size
+        asset.checksum = createDto.checksum
+
+        return asset.save()
+    }
+}

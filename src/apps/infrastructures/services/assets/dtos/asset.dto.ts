@@ -1,4 +1,4 @@
-export class AttachmentDto {
+export class AssetDto {
     id: string
     originalName: string
     mimeType: string

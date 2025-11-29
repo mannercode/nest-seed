@@ -1,15 +1,15 @@
 import { HttpStatus } from '@nestjs/common'
-import { AttachmentDto } from 'apps/infrastructures'
+import { AssetDto } from 'apps/infrastructures'
 import { FileUtil, Path } from 'common'
 import { readFile, writeFile } from 'fs/promises'
 import { nullObjectId } from 'testlib'
-import type { Fixture } from './attachments.fixture'
+import type { Fixture } from './assets.fixture'
 
-describe('AttachmentsService', () => {
+describe('AssetsService', () => {
     let fixture: Fixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./attachments.fixture')
+        const { createFixture } = await import('./assets.fixture')
         fixture = await createFixture()
     })
 
@@ -24,11 +24,11 @@ describe('AttachmentsService', () => {
         checksum: fixture.localFiles.small.checksum.value
     })
 
-    const uploadAttachment = async () => {
+    const uploadAsset = async () => {
         const payload = buildUploadPayload()
 
         const { body: uploadInfo } = await fixture.httpClient
-            .post('/attachments')
+            .post('/assets')
             .body(payload)
             .created()
 
@@ -41,10 +41,7 @@ describe('AttachmentsService', () => {
         expect(uploadRes.ok).toBe(true)
 
         const ownerInfo = { ownerService: 'movies', ownerEntityId: 'movie-1' }
-        const completed = await fixture.attachmentsClient.complete(
-            uploadInfo.attachmentId,
-            ownerInfo
-        )
+        const completed = await fixture.assetsClient.complete(uploadInfo.assetId, ownerInfo)
 
         return { uploadInfo, completed, ownerInfo }
     }
@@ -53,10 +50,10 @@ describe('AttachmentsService', () => {
         it('returns an upload URL and stores the metadata', async () => {
             const payload = buildUploadPayload()
 
-            const body = await fixture.attachmentsClient.create(payload)
+            const body = await fixture.assetsClient.create(payload)
 
             expect(body).toEqual({
-                attachmentId: expect.any(String),
+                assetId: expect.any(String),
                 uploadUrl: expect.any(String),
                 expiresAt: expect.any(Date),
                 method: 'PUT',
@@ -69,19 +66,19 @@ describe('AttachmentsService', () => {
     })
 
     describe('getMany', () => {
-        describe('when the file exists', () => {
-            let uploadedFile: AttachmentDto
+        describe('when the asset exists', () => {
+            let uploadedAsset: AssetDto
 
             beforeEach(async () => {
-                const { completed } = await uploadAttachment()
-                uploadedFile = completed
+                const { completed } = await uploadAsset()
+                uploadedAsset = completed
             })
 
             it('returns a download URL and metadata', async () => {
-                const [attachment] = await fixture.attachmentsClient.getMany([uploadedFile.id])
+                const [asset] = await fixture.assetsClient.getMany([uploadedAsset.id])
 
-                expect(attachment).toEqual({
-                    ...uploadedFile,
+                expect(asset).toEqual({
+                    ...uploadedAsset,
                     downloadUrl: expect.any(String),
                     downloadUrlExpiresAt: expect.any(Date)
                 })
@@ -90,7 +87,7 @@ describe('AttachmentsService', () => {
                 const downloadedFile = Path.join(tempDir, 'downloaded.tmp')
 
                 try {
-                    const downloadRes = await fetch(attachment.downloadUrl!)
+                    const downloadRes = await fetch(asset.downloadUrl!)
                     expect(downloadRes.ok).toBe(true)
 
                     const downloadedBuffer = Buffer.from(await downloadRes.arrayBuffer())
@@ -105,51 +102,51 @@ describe('AttachmentsService', () => {
             })
         })
 
-        describe('when the file does not exist', () => {
+        describe('when the asset does not exist', () => {
             it('throws 404 Not Found', async () => {
                 await expect(
-                    fixture.attachmentsClient.getMany([nullObjectId])
+                    fixture.assetsClient.getMany([nullObjectId])
                 ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
             })
         })
     })
 
     describe('deleteMany', () => {
-        describe('when the file exists', () => {
-            let uploadedFile: AttachmentDto
+        describe('when the asset exists', () => {
+            let uploadedAsset: AssetDto
 
             beforeEach(async () => {
-                const { completed } = await uploadAttachment()
-                uploadedFile = completed
+                const { completed } = await uploadAsset()
+                uploadedAsset = completed
             })
 
-            it('deletes the file metadata', async () => {
-                const response = await fixture.attachmentsClient.deleteMany([uploadedFile.id])
+            it('deletes the asset metadata', async () => {
+                const response = await fixture.assetsClient.deleteMany([uploadedAsset.id])
 
                 expect(response).toEqual({
-                    deletedAttachments: [
+                    deletedAssets: [
                         {
                             id: expect.any(String),
-                            originalName: uploadedFile.originalName,
-                            mimeType: uploadedFile.mimeType,
-                            size: uploadedFile.size,
-                            checksum: uploadedFile.checksum,
-                            ownerService: uploadedFile.ownerService,
-                            ownerEntityId: uploadedFile.ownerEntityId
+                            originalName: uploadedAsset.originalName,
+                            mimeType: uploadedAsset.mimeType,
+                            size: uploadedAsset.size,
+                            checksum: uploadedAsset.checksum,
+                            ownerService: uploadedAsset.ownerService,
+                            ownerEntityId: uploadedAsset.ownerEntityId
                         }
                     ]
                 })
 
                 await expect(
-                    fixture.attachmentsClient.getMany([uploadedFile.id])
+                    fixture.assetsClient.getMany([uploadedAsset.id])
                 ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
             })
         })
 
-        describe('when the file does not exist', () => {
+        describe('when the asset does not exist', () => {
             it('throws 404 Not Found', async () => {
                 await expect(
-                    fixture.attachmentsClient.deleteMany([nullObjectId])
+                    fixture.assetsClient.deleteMany([nullObjectId])
                 ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
             })
         })

@@ -2,15 +2,15 @@ import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { S3ObjectModule } from 'common'
 import { AppConfigService, MongooseConfigModule } from 'shared'
-import { Attachment, AttachmentSchema } from './models'
-import { AttachmentsController } from './attachments.controller'
-import { AttachmentsRepository } from './attachments.repository'
-import { AttachmentsService } from './attachments.service'
+import { Asset, AssetSchema } from './models'
+import { AssetsController } from './assets.controller'
+import { AssetsRepository } from './assets.repository'
+import { AssetsService } from './assets.service'
 
 @Module({
     imports: [
         MongooseModule.forFeature(
-            [{ name: Attachment.name, schema: AttachmentSchema }],
+            [{ name: Asset.name, schema: AssetSchema }],
             MongooseConfigModule.connectionName
         ),
         S3ObjectModule.register({
@@ -18,7 +18,7 @@ import { AttachmentsService } from './attachments.service'
             inject: [AppConfigService]
         })
     ],
-    providers: [AttachmentsService, AttachmentsRepository],
-    controllers: [AttachmentsController]
+    providers: [AssetsService, AssetsRepository],
+    controllers: [AssetsController]
 })
-export class AttachmentsModule {}
+export class AssetsModule {}

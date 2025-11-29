@@ -1,2 +1,2 @@
 export * from './payments'
-export * from './attachments'
+export * from './assets'

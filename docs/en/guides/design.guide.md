@@ -25,7 +25,7 @@ package "Core Services" {
 
 package "Infrastructure Services" {
   [payments]
-  ["attachments"]
+  ["assets"]
 }
 
 [MoviesController] --> [movies]
@@ -40,7 +40,7 @@ package "Infrastructure Services" {
 ["purchase-process"] --> [purchases]
 ["purchase-process"] --> [tickets]
 
-[movies] --> ["attachments"]
+[movies] --> ["assets"]
 [purchases] --> [payments]
 [tickets] --> [payments]
 

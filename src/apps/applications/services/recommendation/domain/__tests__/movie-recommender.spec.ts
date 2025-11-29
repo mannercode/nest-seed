@@ -12,7 +12,7 @@ describe('MovieRecommender', () => {
             durationInSeconds: 0,
             director: '.',
             rating: MovieRating.PG,
-            imageFileIds: [],
+            imageAssetIds: [],
             imageUrls: []
         })
 

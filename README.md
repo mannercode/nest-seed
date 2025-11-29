@@ -173,7 +173,7 @@ src
 │   ├── infrastructures   # External service integrations
 │   │   └── services
 │   │       ├── payments         # Payment system integration
-│   │       └── attachments      # File storage integration
+│   │       └── assets           # File storage integration
 │   └── shared            # Shared code
 │       ├── config
 │       ├── modules

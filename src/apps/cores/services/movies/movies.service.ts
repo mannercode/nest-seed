@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { AttachmentsClient } from 'apps/infrastructures'
+import { AssetsClient } from 'apps/infrastructures'
 import { mapDocToDto } from 'common'
 import { CreateMovieDto, MovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
 import { MovieDocument } from './models'
@@ -7,17 +7,14 @@ import { MoviesRepository } from './movies.repository'
 
 @Injectable()
 export class MoviesService {
-    constructor(
-        private moviesRepository: MoviesRepository,
-        private attachmentsService: AttachmentsClient
-    ) {}
+    constructor(private moviesRepository: MoviesRepository, private assetsService: AssetsClient) {}
 
     async create(createMovieDto: CreateMovieDto) {
         const movie = await this.moviesRepository.create(createMovieDto)
 
         await Promise.all(
-            createMovieDto.imageFileIds.map((fileId) =>
-                this.attachmentsService.complete(fileId, {
+            createMovieDto.imageAssetIds.map((assetId) =>
+                this.assetsService.complete(assetId, {
                     ownerService: 'movies',
                     ownerEntityId: movie.id
                 })
@@ -46,8 +43,8 @@ export class MoviesService {
             for (const movie of movies) {
                 await movie.deleteOne({ session })
 
-                const fileIds = movie.imageIds.map((id) => id.toString())
-                await this.attachmentsService.deleteMany(fileIds)
+                const assetIds = movie.imageIds.map((id) => id.toString())
+                await this.assetsService.deleteMany(assetIds)
             }
 
             return movies
@@ -80,19 +77,19 @@ export class MoviesService {
             'director',
             'rating'
         ])
-        dto.imageFileIds = movie.imageIds.map((id) => id.toString())
+        dto.imageAssetIds = movie.imageIds.map((id) => id.toString())
 
         const includeDownloadUrl = options.includeDownloadUrl ?? true
 
         if (includeDownloadUrl) {
-            const attachments = await this.attachmentsService.getMany(dto.imageFileIds)
-            const urlMap = new Map(attachments.map((attachment) => [attachment.id, attachment]))
+            const assets = await this.assetsService.getMany(dto.imageAssetIds)
+            const urlMap = new Map(assets.map((asset) => [asset.id, asset]))
 
-            dto.imageUrls = dto.imageFileIds.map(
-                (id) => urlMap.get(id)?.downloadUrl ?? `/attachments/${id}`
+            dto.imageUrls = dto.imageAssetIds.map(
+                (id) => urlMap.get(id)?.downloadUrl ?? `/assets/${id}`
             )
         } else {
-            dto.imageUrls = dto.imageFileIds.map((id) => `/attachments/${id}`)
+            dto.imageUrls = dto.imageAssetIds.map((id) => `/assets/${id}`)
         }
 
         dto.imageUrl = dto.imageUrls[0]

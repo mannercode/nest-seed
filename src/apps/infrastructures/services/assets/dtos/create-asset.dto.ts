@@ -1,6 +1,6 @@
 import { IsInt, IsNotEmpty, IsString, Min } from 'class-validator'
 
-export class CreateAttachmentDto {
+export class CreateAssetDto {
     @IsString()
     @IsNotEmpty()
     originalName: string
@@ -18,8 +18,8 @@ export class CreateAttachmentDto {
     checksum: string
 }
 
-export type CreateAttachmentResponse = {
-    attachmentId: string
+export type CreateAssetResponse = {
+    assetId: string
     uploadUrl: string
     expiresAt: Date
     method: 'PUT'

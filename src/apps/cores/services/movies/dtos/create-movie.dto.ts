@@ -47,5 +47,5 @@ export class CreateMovieDto {
     @IsArray()
     @ArrayNotEmpty()
     @IsString({ each: true })
-    imageFileIds: string[]
+    imageAssetIds: string[]
 }

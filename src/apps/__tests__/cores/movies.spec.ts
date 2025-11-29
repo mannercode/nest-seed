@@ -21,7 +21,7 @@ describe('MoviesService', () => {
         describe('when the payload is valid', () => {
             let createDto: CreateMovieDto
             let createdMovie: MovieDto
-            let imageFileId: string
+            let imageAssetId: string
 
             const uploadMovieImage = async () => {
                 const payload = {
@@ -32,7 +32,7 @@ describe('MoviesService', () => {
                 }
 
                 const { body } = await fixture.httpClient
-                    .post('/attachments')
+                    .post('/assets')
                     .body(payload)
                     .created()
 
@@ -44,16 +44,16 @@ describe('MoviesService', () => {
 
                 expect(uploadRes.ok).toBe(true)
 
-                return body.attachmentId
+                return body.assetId
             }
 
             beforeEach(async () => {
                 createDto = buildCreateMovieDto()
-                imageFileId = await uploadMovieImage()
+                imageAssetId = await uploadMovieImage()
 
                 const { body } = await fixture.httpClient
                     .post('/movies')
-                    .body({ ...createDto, imageFileIds: [imageFileId] })
+                    .body({ ...createDto, imageAssetIds: [imageAssetId] })
                     .created()
 
                 createdMovie = body
@@ -65,13 +65,13 @@ describe('MoviesService', () => {
                 expect(createdMovie).toEqual({
                     id: expect.any(String),
                     ...createDto,
-                    imageFileIds: [imageFileId],
+                    imageAssetIds: [imageAssetId],
                     imageUrl: expect.any(String),
                     imageUrls: [expect.any(String)]
                 })
             })
 
-            it('downloads the attached file', async () => {
+            it('downloads the uploaded asset', async () => {
                 const downloadPath = Path.join(fixture.tempDir, 'download.tmp')
 
                 const { body: movie } = await fixture.httpClient
@@ -79,7 +79,7 @@ describe('MoviesService', () => {
                     .ok(
                         expect.objectContaining({
                             id: createdMovie.id,
-                            imageFileIds: [imageFileId],
+                            imageAssetIds: [imageAssetId],
                             imageUrl: expect.any(String)
                         })
                     )
@@ -139,7 +139,7 @@ describe('MoviesService', () => {
                 }
                 const expected = expect.objectContaining({
                     id: fixture.createdMovie.id,
-                    imageFileIds: fixture.createdMovie.imageFileIds,
+                    imageAssetIds: fixture.createdMovie.imageAssetIds,
                     imageUrl: expect.any(String),
                     imageUrls: expect.any(Array),
                     ...updateDto
@@ -166,10 +166,10 @@ describe('MoviesService', () => {
 
     describe('DELETE /movies/:id', () => {
         describe('when deleting an existing movie', () => {
-            let deletedFileId: string
+            let deletedAssetId: string
 
             beforeEach(async () => {
-                deletedFileId = fixture.createdMovie.imageFileIds[0]
+                deletedAssetId = fixture.createdMovie.imageAssetIds[0]
 
                 await fixture.httpClient
                     .delete(`/movies/${fixture.createdMovie.id}`)
@@ -178,7 +178,7 @@ describe('MoviesService', () => {
                             expect.objectContaining({
                                 id: fixture.createdMovie.id,
                                 title: fixture.createdMovie.title,
-                                imageFileIds: fixture.createdMovie.imageFileIds
+                                imageAssetIds: fixture.createdMovie.imageAssetIds
                             })
                         ])
                     })
@@ -193,8 +193,8 @@ describe('MoviesService', () => {
                     })
             })
 
-            it("deletes the movie's files", async () => {
-                await fixture.httpClient.get(`/attachments/${deletedFileId}`).notFound()
+            it("deletes the movie's assets", async () => {
+                await fixture.httpClient.get(`/assets/${deletedAssetId}`).notFound()
             })
         })
 
@@ -222,7 +222,7 @@ describe('MoviesService', () => {
                 durationInSeconds: movie.durationInSeconds,
                 director: movie.director,
                 rating: movie.rating,
-                imageFileIds: movie.imageFileIds,
+                imageAssetIds: movie.imageAssetIds,
                 imageUrl: expect.any(String),
                 imageUrls: expect.any(Array)
             })

@@ -11,7 +11,7 @@ import {
     WatchRecordsModule
 } from 'apps/cores'
 import { CustomerJwtStrategy, MoviesController } from 'apps/gateway'
-import { AttachmentsClient, AttachmentsModule } from 'apps/infrastructures'
+import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import {
     createCustomerAndLogin,
     createMovie,
@@ -54,7 +54,7 @@ export const createFixture = async (): Promise<Fixture> => {
     const fix = await createTestFixture({
         imports: [
             MoviesModule,
-            AttachmentsModule,
+            AssetsModule,
             CustomersModule,
             ShowtimesModule,
             WatchRecordsModule,
@@ -67,7 +67,7 @@ export const createFixture = async (): Promise<Fixture> => {
             ShowtimesClient,
             RecommendationClient,
             WatchRecordsClient,
-            AttachmentsClient
+            AssetsClient
         ],
         controllers: [MoviesController]
     })

@@ -1,9 +1,9 @@
 import { MovieGenre, MovieRating } from 'apps/cores'
-import { AttachmentsClient } from 'apps/infrastructures'
+import { AssetsClient } from 'apps/infrastructures'
 import { readFile } from 'fs/promises'
 import { TestContext } from 'testlib'
 import { fixtureFiles } from '../fixture-files'
-import { ensureS3Bucket } from './attachments.utils'
+import { ensureS3Bucket } from './assets.utils'
 
 export const buildCreateMovieDto = (overrides = {}) => {
     const createDto = {
@@ -14,7 +14,7 @@ export const buildCreateMovieDto = (overrides = {}) => {
         durationInSeconds: 90 * 60,
         director: 'Quentin Tarantino',
         rating: MovieRating.PG,
-        imageFileIds: [] as string[],
+        imageAssetIds: [] as string[],
         ...overrides
     }
 
@@ -25,14 +25,14 @@ export const createMovie = async ({ module }: TestContext, override = {}) => {
     const { MoviesClient } = await import('apps/cores')
     const moviesService = module.get(MoviesClient)
 
-    const { AttachmentsClient } = await import('apps/infrastructures')
-    const attachmentsService = module.get(AttachmentsClient)
+    const { AssetsClient } = await import('apps/infrastructures')
+    const assetsService = module.get(AssetsClient)
 
     const createDto = buildCreateMovieDto(override)
 
-    if (!('imageFileIds' in createDto) || !createDto.imageFileIds?.length) {
-        const imageFileId = await uploadMovieImage(attachmentsService)
-        createDto.imageFileIds = [imageFileId]
+    if (!('imageAssetIds' in createDto) || !createDto.imageAssetIds?.length) {
+        const imageAssetId = await uploadMovieImage(assetsService)
+        createDto.imageAssetIds = [imageAssetId]
     }
 
     const movie = await moviesService.create(createDto)
@@ -41,10 +41,10 @@ export const createMovie = async ({ module }: TestContext, override = {}) => {
     return movie
 }
 
-const uploadMovieImage = async (attachmentsService: AttachmentsClient) => {
+const uploadMovieImage = async (assetsService: AssetsClient) => {
     await ensureS3Bucket()
 
-    const uploadInfo = await attachmentsService.create({
+    const uploadInfo = await assetsService.create({
         originalName: fixtureFiles.image.originalName,
         mimeType: fixtureFiles.image.mimeType,
         size: fixtureFiles.image.size,
@@ -58,8 +58,8 @@ const uploadMovieImage = async (attachmentsService: AttachmentsClient) => {
     })
 
     if (!uploadRes.ok) {
-        throw new Error(`Failed to upload attachment ${uploadInfo.attachmentId}`)
+        throw new Error(`Failed to upload asset ${uploadInfo.assetId}`)
     }
 
-    return uploadInfo.attachmentId
+    return uploadInfo.assetId
 }

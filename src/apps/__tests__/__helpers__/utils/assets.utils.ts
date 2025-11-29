@@ -3,23 +3,23 @@ import { readFile } from 'fs/promises'
 import { TestContext, getS3TestConnection } from 'testlib'
 import { FixtureFile } from '../fixture-files'
 
-export const getAttachments = async ({ module }: TestContext, fileIds: string[]) => {
-    const { AttachmentsClient } = await import('apps/infrastructures')
-    const attachmentsService = module.get(AttachmentsClient)
+export const getAssets = async ({ module }: TestContext, assetIds: string[]) => {
+    const { AssetsClient } = await import('apps/infrastructures')
+    const assetsService = module.get(AssetsClient)
 
-    return attachmentsService.getMany(fileIds)
+    return assetsService.getMany(assetIds)
 }
 
-export const uploadAttachments = async ({ module }: TestContext, files: FixtureFile[]) => {
-    const { AttachmentsClient } = await import('apps/infrastructures')
-    const attachmentsService = module.get(AttachmentsClient)
+export const uploadAssets = async ({ module }: TestContext, files: FixtureFile[]) => {
+    const { AssetsClient } = await import('apps/infrastructures')
+    const assetsService = module.get(AssetsClient)
 
     await ensureS3Bucket()
 
-    const attachmentIds: string[] = []
+    const assetIds: string[] = []
 
     for (const file of files) {
-        const { attachmentId, uploadUrl, method, headers } = await attachmentsService.create({
+        const { assetId, uploadUrl, method, headers } = await assetsService.create({
             originalName: file.originalName,
             mimeType: file.mimeType,
             size: file.size,
@@ -33,13 +33,13 @@ export const uploadAttachments = async ({ module }: TestContext, files: FixtureF
         })
 
         if (!uploadRes.ok) {
-            throw new Error(`Failed to upload attachment ${attachmentId}`)
+            throw new Error(`Failed to upload asset ${assetId}`)
         }
 
-        attachmentIds.push(attachmentId)
+        assetIds.push(assetId)
     }
 
-    return attachmentsService.getMany(attachmentIds)
+    return assetsService.getMany(assetIds)
 }
 
 export const ensureS3Bucket = async () => {
