@@ -48,35 +48,37 @@ export class LatLong {
     }
 }
 
-export const LatLongQuery = createParamDecorator(async (name: string, context: ExecutionContext) => {
-    const request = context.switchToHttp().getRequest()
-    const value = request.query[name]
+export const LatLongQuery = createParamDecorator(
+    async (name: string, context: ExecutionContext) => {
+        const request = context.switchToHttp().getRequest()
+        const value = request.query[name]
 
-    if (!value) {
-        throw new BadRequestException(LatLongErrors.Required)
-    }
+        if (!value) {
+            throw new BadRequestException(LatLongErrors.Required)
+        }
 
-    const [latStr, longStr] = value.split(',')
+        const [latStr, longStr] = value.split(',')
 
-    if (!latStr || !longStr) {
-        throw new BadRequestException(LatLongErrors.FormatInvalid)
-    }
+        if (!latStr || !longStr) {
+            throw new BadRequestException(LatLongErrors.FormatInvalid)
+        }
 
-    const latLong = plainToClass(LatLong, {
-        latitude: parseFloat(latStr),
-        longitude: parseFloat(longStr)
-    })
-
-    const errors = await validate(latLong)
-    if (errors.length > 0) {
-        throw new BadRequestException({
-            ...LatLongErrors.ValidationFailed,
-            details: errors.map((error) => ({
-                field: error.property,
-                constraints: error.constraints
-            }))
+        const latLong = plainToClass(LatLong, {
+            latitude: parseFloat(latStr),
+            longitude: parseFloat(longStr)
         })
-    }
 
-    return latLong
-})
+        const errors = await validate(latLong)
+        if (errors.length > 0) {
+            throw new BadRequestException({
+                ...LatLongErrors.ValidationFailed,
+                details: errors.map((error) => ({
+                    field: error.property,
+                    constraints: error.constraints
+                }))
+            })
+        }
+
+        return latLong
+    }
+)

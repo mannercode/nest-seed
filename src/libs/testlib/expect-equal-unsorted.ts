@@ -6,10 +6,13 @@ function stringifyWithSortedKeys(record: Record<string, any>): string {
         if (value && typeof value === 'object' && !Array.isArray(value)) {
             return Object.keys(value)
                 .sort()
-                .reduce((sortedRecord, currentKey) => {
-                    sortedRecord[currentKey] = value[currentKey]
-                    return sortedRecord
-                }, {} as Record<string, any>)
+                .reduce(
+                    (sortedRecord, currentKey) => {
+                        sortedRecord[currentKey] = value[currentKey]
+                        return sortedRecord
+                    },
+                    {} as Record<string, any>
+                )
         }
         return value
     })
