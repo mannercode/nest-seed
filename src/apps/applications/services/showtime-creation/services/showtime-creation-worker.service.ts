@@ -1,7 +1,7 @@
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
 import { Injectable } from '@nestjs/common'
 import { Job, Queue } from 'bullmq'
-import { jsonToObject, MethodLog, newObjectId } from 'common'
+import { jsonToObject, newObjectId } from 'common'
 import { BulkCreateShowtimesDto } from '../dtos'
 import { ShowtimeCreationEvents } from '../showtime-creation.events'
 import { ShowtimeBulkCreatorService } from './showtime-bulk-creator.service'
@@ -64,7 +64,6 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
         }
     }
 
-    @MethodLog()
     private async processJobData({ transactionId, createDto }: ShowtimeCreationJobData) {
         await this.events.emitStatusChanged({
             status: ShowtimeCreationStatus.Processing,
