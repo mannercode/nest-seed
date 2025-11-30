@@ -8,7 +8,7 @@
         "debug": "nest start ${TARGET_APP} --watch",
         "test": "bash scripts/run-test.sh",
         "test:e2e": "bash test/e2e/run.sh",
-        "lint": "prettier --write 'src/**/*.ts' && eslint src"
+        "lint": "eslint src/"
     },
     "lint-staged": {
         "*.{js,ts,jsx,tsx,json,md,yml}": "prettier --write"
