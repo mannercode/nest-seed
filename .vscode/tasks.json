@@ -1,21 +1,17 @@
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Test",
-            "detail": "Run the selected test suites",
+            "label": "Test Unit",
+            "detail": "Run unit tests for the selected suite",
             "type": "shell",
             "command": "bash scripts/run-test.sh ${input:tests} 1"
         },
         {
-            "label": "CLI",
-            "detail": "Run the CLI tool",
+            "label": "Test E2E",
+            "detail": "Build Docker and run E2E tests",
             "type": "shell",
-            "command": "bash scripts/run-cli.sh",
-            "runOptions": { "instanceLimit": 99 },
-            "presentation": { "focus": true }
+            "command": "bash test/e2e/run.sh"
         },
         {
             "label": "Workspace Cleanup",
@@ -29,7 +25,7 @@
             "id": "tests",
             "type": "pickString",
             "options": ["all", "apps", "common"],
-            "description": "Select a test suite to run."
+            "description": "Select a unit test suite to run."
         }
     ]
 }
