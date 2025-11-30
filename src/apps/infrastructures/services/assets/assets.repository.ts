@@ -6,14 +6,6 @@ import { MongooseConfigModule } from 'shared'
 import { CreateAssetDto } from './dtos'
 import { Asset } from './models'
 
-export type AssetCreateInput = {
-    originalName: string
-    mimeType: string
-    size: number
-    ownerService?: string | null
-    ownerEntityId?: string | null
-}
-
 @Injectable()
 export class AssetsRepository extends MongooseRepository<Asset> {
     constructor(

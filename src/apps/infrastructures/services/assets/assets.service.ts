@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { InjectS3Object, mapDocToDto, S3ObjectService } from 'common'
+import { DateUtil, hexToBase64, InjectS3Object, mapDocToDto, S3ObjectService } from 'common'
 import { Rules } from 'shared'
 import { AssetsRepository } from './assets.repository'
 import { AssetDto, CompleteAssetDto, CreateAssetDto, CreateAssetResponse } from './dtos'
@@ -15,18 +15,18 @@ export class AssetsService {
     async create(createDto: CreateAssetDto): Promise<CreateAssetResponse> {
         const asset = await this.repository.createAsset(createDto)
 
+        const { mimeType, size } = createDto
         const expiresInSec = Rules.Asset.uploadExpiresInSec
 
         const url = await this.s3Service.presignUploadUrl({
             key: asset.id,
             expiresInSec,
-            contentType: createDto.mimeType,
-            contentLength: createDto.size
+            contentType: mimeType,
+            contentLength: size
         })
 
-        const expiresAt = this.getExpiresAt(expiresInSec)
-
-        const checksumBase64 = Buffer.from(createDto.checksum.hex, 'hex').toString('base64')
+        const expiresAt = DateUtil.add({ seconds: expiresInSec })
+        const { algorithm, hex } = createDto.checksum
 
         return {
             assetId: asset.id,
@@ -35,9 +35,9 @@ export class AssetsService {
                 url,
                 expiresAt,
                 headers: {
-                    'Content-Type': createDto.mimeType,
-                    'Content-Length': createDto.size.toString(),
-                    [`x-amz-checksum-${createDto.checksum.algorithm}`]: checksumBase64
+                    'Content-Type': mimeType,
+                    'Content-Length': size.toString(),
+                    [`x-amz-checksum-${algorithm}`]: hexToBase64(hex)
                 }
             }
         }
@@ -47,30 +47,25 @@ export class AssetsService {
         const asset = await this.repository.update(assetId, completeDto)
 
         const dto = this.toDto(asset)
-        await this.updateDownloadInfo(dto)
 
-        return dto
+        return this.withDownloadInfo(dto)
     }
 
     async getMany(assetIds: string[]) {
         const assets = await this.repository.getByIds(assetIds)
 
         const dtos = this.toDtos(assets)
-        await Promise.all(dtos.map((dto) => this.updateDownloadInfo(dto)))
 
-        return dtos
+        return Promise.all(dtos.map((dto) => this.withDownloadInfo(dto)))
     }
 
     async deleteMany(assetIds: string[]) {
         const deletedAssets = await this.repository.deleteByIds(assetIds)
 
+        // TODO 실패 처리
         await Promise.all(deletedAssets.map((asset) => this.s3Service.deleteObject(asset.id)))
 
         return { deletedAssets: this.toDtos(deletedAssets) }
-    }
-
-    private getExpiresAt(expiresInSec: number) {
-        return new Date(Date.now() + expiresInSec * 1000)
     }
 
     private toDto = (asset: AssetDocument): AssetDto => {
@@ -94,13 +89,11 @@ export class AssetsService {
     }
     private toDtos = (assets: AssetDocument[]) => assets.map((asset) => this.toDto(asset))
 
-    private updateDownloadInfo = async (assetDto: AssetDto) => {
+    private async withDownloadInfo(assetDto: AssetDto): Promise<AssetDto> {
         const expiresInSec = Rules.Asset.downloadExpiresInSec
-
         const url = await this.s3Service.presignDownloadUrl({ key: assetDto.id, expiresInSec })
-        const expiresAt = this.getExpiresAt(expiresInSec)
-        assetDto.download = { url, expiresAt }
+        const expiresAt = DateUtil.add({ seconds: expiresInSec })
 
-        return assetDto
+        return { ...assetDto, download: { url, expiresAt } }
     }
 }
