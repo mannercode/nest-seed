@@ -46,7 +46,10 @@ jobs:
             - uses: actions/checkout@v4
 
             - name: Install Tools
-              run: apt-get update && apt-get install -y curl jq iproute2
+              run: apt-get update && apt-get install -y curl jq iproute2 sudo
+
+            - name: Setup sudo
+              run: echo "node ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/node && chmod 0440 /etc/sudoers.d/node
 
             - name: Install Docker
               run: |
