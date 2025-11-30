@@ -93,12 +93,12 @@ services:
     #         - nats-exporter1
     #         - nats-exporter2
     #         - nats-exporter3
-    grafana:
-        image: grafana/grafana:latest
-        container_name: grafana
-        ports: ['3300:3000']
-        environment:
-            - GF_SECURITY_ADMIN_USER=admin
-            - GF_SECURITY_ADMIN_PASSWORD=admin
-        depends_on:
-            - prometheus
+    # grafana:
+    #     image: grafana/grafana:latest
+    #     container_name: grafana
+    #     ports: ['3300:3000']
+    #     environment:
+    #         - GF_SECURITY_ADMIN_USER=admin
+    #         - GF_SECURITY_ADMIN_PASSWORD=admin
+    #     depends_on:
+    #         - prometheus
