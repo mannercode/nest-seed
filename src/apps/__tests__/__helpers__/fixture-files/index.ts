@@ -5,8 +5,7 @@ export interface FixtureFile {
     originalName: string
     size: number
     mimeType: string
-    // checksum generated with: sha256sum <file>
-    checksum: { algo: 'sha256'; value: string }
+    checksum: { algo: 'sha256'; hex: string }
 }
 
 export const fixtureFiles = {
@@ -17,7 +16,7 @@ export const fixtureFiles = {
         mimeType: 'image/png',
         checksum: {
             algo: 'sha256',
-            value: '7799755dd19ae7381eac445de55e71311d17d266cca19bc92f59624c7d6da360'
+            hex: '7799755dd19ae7381eac445de55e71311d17d266cca19bc92f59624c7d6da360'
         }
     },
     json: {
@@ -27,7 +26,7 @@ export const fixtureFiles = {
         mimeType: 'application/json',
         checksum: {
             algo: 'sha256',
-            value: 'c8ab6f8b3a6f67807d5e9af2fa8a1bf0329433cfa5b31de1d5bbcc6ae174ff1d'
+            hex: 'c8ab6f8b3a6f67807d5e9af2fa8a1bf0329433cfa5b31de1d5bbcc6ae174ff1d'
         }
     },
     small: {
@@ -37,7 +36,7 @@ export const fixtureFiles = {
         mimeType: 'text/plain',
         checksum: {
             algo: 'sha256',
-            value: 'd2cd628dbf4fab334e13d4c7961d71bb19a982bcc931caae32cffcbf19da0cbf'
+            hex: 'd2cd628dbf4fab334e13d4c7961d71bb19a982bcc931caae32cffcbf19da0cbf'
         }
     },
     large: {
@@ -47,7 +46,7 @@ export const fixtureFiles = {
         mimeType: 'text/plain',
         checksum: {
             algo: 'sha256',
-            value: '9af485989bf647bc8ed7abd7690a7a1c3b6b9e1fdf0535e09bdb0ab52551d3f2'
+            hex: '9af485989bf647bc8ed7abd7690a7a1c3b6b9e1fdf0535e09bdb0ab52551d3f2'
         }
     },
     oversized: {
@@ -57,7 +56,7 @@ export const fixtureFiles = {
         mimeType: 'text/plain',
         checksum: {
             algo: 'sha256',
-            value: '7f4a285193573e707fcb6398222c00f044745cd2930e41d28d30da87d6ca183f'
+            hex: '7f4a285193573e707fcb6398222c00f044745cd2930e41d28d30da87d6ca183f'
         }
     }
 } as const

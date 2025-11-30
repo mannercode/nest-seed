@@ -1,4 +1,6 @@
-import { IsInt, IsNotEmpty, IsString, Min } from 'class-validator'
+import { Type } from 'class-transformer'
+import { IsInt, IsNotEmpty, IsString, Min, ValidateNested } from 'class-validator'
+import { Checksum } from 'common'
 
 export class CreateAssetDto {
     @IsString()
@@ -13,14 +15,21 @@ export class CreateAssetDto {
     @Min(1)
     size: number
 
-    @IsString()
+
+    @ValidateNested()
+    @Type(() => Checksum)
     @IsNotEmpty()
-    checksum: string
+    checksum: Checksum
 }
 
-export type CreateAssetResponse = {
-    assetId: string
-    upload: { url: string; expiresAt: Date }
+export class UploadRequest {
     method: 'PUT'
     headers: Record<string, string>
+    url: string
+    expiresAt: Date
+}
+
+export class CreateAssetResponse {
+    assetId: string
+    uploadRequest: UploadRequest
 }

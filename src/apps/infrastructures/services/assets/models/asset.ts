@@ -1,5 +1,5 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, createMongooseSchema } from 'common'
+import { Checksum, MongooseSchema, createMongooseSchema } from 'common'
 import { HydratedDocument } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 
@@ -14,8 +14,8 @@ export class Asset extends MongooseSchema {
     @Prop({ required: true })
     size: number
 
-    @Prop({ required: true })
-    checksum: string
+    @Prop({ required: true, type: Object })
+    checksum: Checksum
 
     @Prop({ type: String, default: null })
     ownerService: string | null

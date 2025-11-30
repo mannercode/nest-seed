@@ -4,6 +4,7 @@ import { FileUtil, Path } from 'common'
 import { readFile, writeFile } from 'fs/promises'
 import { nullObjectId } from 'testlib'
 import type { Fixture } from './assets.fixture'
+import { pick } from 'lodash'
 
 describe('AssetsService', () => {
     let fixture: Fixture
@@ -17,45 +18,47 @@ describe('AssetsService', () => {
         await fixture?.teardown()
     })
 
-    const buildUploadPayload = () => ({
-        originalName: fixture.localFiles.small.originalName,
-        mimeType: fixture.localFiles.small.mimeType,
-        size: fixture.localFiles.small.size,
-        checksum: fixture.localFiles.small.checksum.value
-    })
-
     const uploadAsset = async () => {
-        const payload = buildUploadPayload()
+        const createDto = pick(fixture.file, ['originalName', 'mimeType', 'size', 'checksum'])
 
-        const uploadInfo = await fixture.assetsClient.create(payload)
+        const { assetId, uploadRequest } = await fixture.assetsClient.create(createDto)
+        const { url, method, headers } = uploadRequest
+        const body = await readFile(fixture.file.path)
 
-        const uploadRes = await fetch(uploadInfo.upload.url, {
-            method: uploadInfo.method,
-            headers: uploadInfo.headers,
-            body: await readFile(fixture.localFiles.small.path)
-        })
+        const uploadRes = await fetch(url, { method, headers, body })
 
         expect(uploadRes.ok).toBe(true)
 
-        const ownerInfo = { ownerService: 'movies', ownerEntityId: 'movie-1' }
-        const completed = await fixture.assetsClient.complete(uploadInfo.assetId, ownerInfo)
+        const owner = { ownerService: 'service-name', ownerEntityId: 'entity-id' }
+        const completed = await fixture.assetsClient.complete(assetId, owner)
 
-        return { uploadInfo, completed, ownerInfo }
+        return completed
     }
 
     describe('create', () => {
-        it('returns an upload URL and stores the metadata', async () => {
-            const payload = buildUploadPayload()
+        describe('when the DTO is valid', () => {
+            it('returns an upload request', async () => {
+                const createDto = pick(fixture.file, [
+                    'originalName',
+                    'mimeType',
+                    'size',
+                    'checksum'
+                ])
 
-            const body = await fixture.assetsClient.create(payload)
+                const response = await fixture.assetsClient.create(createDto)
 
-            expect(body).toEqual({
-                assetId: expect.any(String),
-                upload: { url: expect.any(String), expiresAt: expect.any(Date) },
-                method: 'PUT',
-                headers: expect.objectContaining({
-                    'Content-Type': payload.mimeType,
-                    'Content-Length': payload.size.toString()
+                expect(response).toEqual({
+                    assetId: expect.any(String),
+                    uploadRequest: {
+                        url: expect.any(String),
+                        expiresAt: expect.any(Date),
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': createDto.mimeType,
+                            'Content-Length': createDto.size.toString(),
+                            'x-amz-checksum-sha256': expect.any(String)
+                        }
+                    }
                 })
             })
         })
@@ -66,8 +69,7 @@ describe('AssetsService', () => {
             let uploadedAsset: AssetDto
 
             beforeEach(async () => {
-                const { completed } = await uploadAsset()
-                uploadedAsset = completed
+                uploadedAsset = await uploadAsset()
             })
 
             it('returns a download URL and metadata', async () => {
@@ -88,9 +90,7 @@ describe('AssetsService', () => {
                     const downloadedBuffer = Buffer.from(await downloadRes.arrayBuffer())
                     await writeFile(downloadedFile, downloadedBuffer)
 
-                    expect(
-                        await FileUtil.areEqual(downloadedFile, fixture.localFiles.small.path)
-                    ).toBe(true)
+                    expect(await FileUtil.areEqual(downloadedFile, fixture.file.path)).toBe(true)
                 } finally {
                     await Path.delete(tempDir)
                 }
@@ -111,8 +111,7 @@ describe('AssetsService', () => {
             let uploadedAsset: AssetDto
 
             beforeEach(async () => {
-                const { completed } = await uploadAsset()
-                uploadedAsset = completed
+                uploadedAsset = await uploadAsset()
             })
 
             it('deletes the asset metadata', async () => {

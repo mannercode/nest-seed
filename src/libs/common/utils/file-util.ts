@@ -1,16 +1,18 @@
 import { createHash, Hash } from 'crypto'
-import { stat } from 'fs/promises'
 import { createReadStream } from 'fs'
+import { stat } from 'fs/promises'
 import { pipeline } from 'stream/promises'
+import { Checksum, ChecksumAlgorithm } from '../types'
 
 export class FileUtil {
     static async getChecksum(
         filePath: string,
-        algorithm: 'md5' | 'sha1' | 'sha256' | 'sha512' = 'sha256'
-    ): Promise<string> {
+        algorithm: ChecksumAlgorithm = 'sha256'
+    ): Promise<Checksum> {
         const hash: Hash = createHash(algorithm)
         await pipeline(createReadStream(filePath), hash)
-        return hash.digest('hex')
+
+        return { algo: algorithm, hex: hash.digest('hex') }
     }
 
     static async getSize(filePath: string): Promise<number> {

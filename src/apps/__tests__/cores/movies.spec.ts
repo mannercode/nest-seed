@@ -46,14 +46,14 @@ describe('MoviesService', () => {
                     originalName: fixture.image.originalName,
                     mimeType: fixture.image.mimeType,
                     size: fixture.image.size,
-                    checksum: fixture.image.checksum.value
+                    checksum: fixture.image.checksum
                 }
 
                 const body = await fixture.assetsClient.create(payload)
 
-                const uploadRes = await fetch(body.upload.url, {
-                    method: body.method,
-                    headers: body.headers,
+                const uploadRes = await fetch(body.uploadRequest.url, {
+                    method: body.uploadRequest.method,
+                    headers: body.uploadRequest.headers,
                     body: await readFile(fixture.image.path)
                 })
 

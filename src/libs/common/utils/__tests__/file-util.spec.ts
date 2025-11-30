@@ -17,10 +17,10 @@ describe('FileUtil', () => {
     })
 
     describe('getChecksum', () => {
-        describe('when the algorithm is md5', () => {
-            it('returns the MD5 checksum', async () => {
-                const checksum = await FileUtil.getChecksum(originalFilePath, 'md5')
-                expect(checksum).toBe('65a8e27d8879283831b664bd8b7f0ad4')
+        describe('when the algorithm is sha1', () => {
+            it('returns the SHA1 checksum', async () => {
+                const checksum = await FileUtil.getChecksum(originalFilePath, 'sha1')
+                expect(checksum).toBe('0a0a9f2a6772942557ab5355d76af442f8f65e01')
             })
         })
 

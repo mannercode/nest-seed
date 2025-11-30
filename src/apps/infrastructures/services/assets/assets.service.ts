@@ -12,24 +12,34 @@ export class AssetsService {
         @InjectS3Object() private s3Service: S3ObjectService
     ) {}
 
-    async create(dto: CreateAssetDto): Promise<CreateAssetResponse> {
-        const asset = await this.repository.createAsset(dto)
+    async create(createDto: CreateAssetDto): Promise<CreateAssetResponse> {
+        const asset = await this.repository.createAsset(createDto)
 
         const expiresInSec = Rules.Asset.uploadExpiresInSec
 
         const url = await this.s3Service.presignUploadUrl({
             key: asset.id,
             expiresInSec,
-            contentType: dto.mimeType,
-            contentLength: dto.size
+            contentType: createDto.mimeType,
+            contentLength: createDto.size
         })
+
         const expiresAt = this.getExpiresAt(expiresInSec)
+
+        const checksumBase64 = Buffer.from(createDto.checksum.hex, 'hex').toString('base64')
 
         return {
             assetId: asset.id,
-            upload: { url, expiresAt },
-            method: 'PUT' as const,
-            headers: { 'Content-Type': dto.mimeType, 'Content-Length': dto.size.toString() }
+            uploadRequest: {
+                method: 'PUT' as const,
+                url,
+                expiresAt,
+                headers: {
+                    'Content-Type': createDto.mimeType,
+                    'Content-Length': createDto.size.toString(),
+                    [`x-amz-checksum-${createDto.checksum.algo}`]: checksumBase64
+                }
+            }
         }
     }
 
