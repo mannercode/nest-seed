@@ -2,6 +2,7 @@
 name: CI
 
 on:
+    workflow_dispatch:
     # Runs when a pull request targeting the main branch is created or updated
     pull_request:
         branches: ['main']
@@ -9,8 +10,33 @@ on:
     push:
         branches: ['main']
 
+permissions:
+    contents: read
+
 jobs:
-    test-coverage:
+    unit-tests:
+        runs-on: ubuntu-24.04-arm
+        container: node:24-bookworm
+        env:
+            WORKSPACE_ROOT: ${{ github.workspace }}
+            TERM: xterm # This is required to enable use of the `clear` command in bash
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install Tools
+              run: apt-get update && apt-get install -y curl jq
+
+            - name: Install deps
+              run: npm ci
+
+            - name: Lint
+              run: npm run lint
+
+            - name: Run unit tests
+              run: npm test
+
+    e2e-tests:
+        needs: unit-tests
         runs-on: ubuntu-24.04-arm
         container: node:24-bookworm
         env:
@@ -40,14 +66,5 @@ jobs:
                   GW_IP=$(ip route | awk '/default/ {print $3}')
                   echo "$GW_IP host.docker.internal" | tee -a /etc/hosts
 
-            - name: Install deps
-              run: npm ci
-
-            - name: Lint
-              run: npm run lint
-
-            - name: Run Test Suites
-              run: bash scripts/run-test.sh all 1
-
-            - name: Run E2E Tests
-              run: bash test/e2e/run.sh
+            - name: Run e2e tests
+              run: npm run test:e2e

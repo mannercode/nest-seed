@@ -6,14 +6,15 @@
         "start": "node _output/dist/${TARGET_APP}/index.js",
         "build": "nest build ${TARGET_APP} -b webpack",
         "debug": "nest start ${TARGET_APP} --watch",
-        "test": "bash scripts/run-test.sh",
+        "test": "bash scripts/run-test.sh all 1",
         "test:e2e": "bash test/e2e/run.sh",
-        "lint": "prettier --write src/ && eslint src/"
+        "prettier": "prettier -w 'src/**/*.{js,jsx,ts,tsx}'",
+        "lint": "prettier -c 'src/**/*.{js,jsx,ts,tsx}' && eslint src/ --max-warnings=0"
     },
     "lint-staged": {
         "*.{js,jsx,ts,tsx}": [
-            "eslint",
-            "prettier --write"
+            "prettier --write",
+            "eslint"
         ],
         "*.{json,md,yml,yaml}": [
             "prettier --write"
