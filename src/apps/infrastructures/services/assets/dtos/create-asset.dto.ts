@@ -15,7 +15,6 @@ export class CreateAssetDto {
     @Min(1)
     size: number
 
-
     @ValidateNested()
     @Type(() => Checksum)
     @IsNotEmpty()
