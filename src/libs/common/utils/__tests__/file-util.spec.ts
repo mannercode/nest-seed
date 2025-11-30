@@ -21,7 +21,7 @@ describe('FileUtil', () => {
             it('returns the SHA1 checksum', async () => {
                 const checksum = await FileUtil.getChecksum(originalFilePath, 'sha1')
                 expect(checksum).toEqual({
-                    algo: 'sha1',
+                    algorithm: 'sha1',
                     hex: '0a0a9f2a6772942557ab5355d76af442f8f65e01'
                 })
             })
@@ -31,7 +31,7 @@ describe('FileUtil', () => {
             it('returns the SHA256 checksum', async () => {
                 const checksum = await FileUtil.getChecksum(originalFilePath)
                 expect(checksum).toEqual({
-                    algo: 'sha256',
+                    algorithm: 'sha256',
                     hex: 'dffd6021bb2bd5b0af676290809ec3a53191dd81c7f70a4b28688a362182986f'
                 })
             })

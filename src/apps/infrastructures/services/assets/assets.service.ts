@@ -37,7 +37,7 @@ export class AssetsService {
                 headers: {
                     'Content-Type': createDto.mimeType,
                     'Content-Length': createDto.size.toString(),
-                    [`x-amz-checksum-${createDto.checksum.algo}`]: checksumBase64
+                    [`x-amz-checksum-${createDto.checksum.algorithm}`]: checksumBase64
                 }
             }
         }

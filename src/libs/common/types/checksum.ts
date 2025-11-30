@@ -7,7 +7,7 @@ export class Checksum {
     @IsString()
     @IsNotEmpty()
     @IsIn(CHECKSUM_ALGORITHMS)
-    algo: ChecksumAlgorithm
+    algorithm: ChecksumAlgorithm
 
     @IsString()
     @IsNotEmpty()

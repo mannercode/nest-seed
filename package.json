@@ -10,7 +10,9 @@
         "test:e2e": "bash test/e2e/run.sh",
         "lint": "prettier --write 'src/**/*.ts' && eslint src"
     },
-    "comments": [],
+    "lint-staged": {
+        "*.{js,ts,jsx,tsx,json,md,yml}": "prettier --write"
+    },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.940.0",
         "@aws-sdk/s3-request-presigner": "^3.940.0",
