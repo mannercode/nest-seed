@@ -8,7 +8,9 @@ import { Movie } from './models'
 
 @Injectable()
 export class MoviesRepository extends MongooseRepository<Movie> {
-    constructor(@InjectModel(Movie.name, MongooseConfigModule.connectionName) model: Model<Movie>) {
+    constructor(
+        @InjectModel(Movie.name, MongooseConfigModule.connectionName) readonly model: Model<Movie>
+    ) {
         super(model, MongooseConfigModule.maxTake)
     }
 

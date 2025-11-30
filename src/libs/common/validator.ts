@@ -6,7 +6,7 @@ import { isEqual } from 'lodash'
 type FailureHandler = (message: string) => void
 
 class Validator {
-    constructor(private handler: FailureHandler) {}
+    constructor(private readonly handler: FailureHandler) {}
 
     equalLength(a: any[] | undefined, b: any[] | undefined, message: string) {
         if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {

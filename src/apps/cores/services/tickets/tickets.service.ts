@@ -12,7 +12,7 @@ import { TicketsRepository } from './tickets.repository'
 
 @Injectable()
 export class TicketsService {
-    constructor(private repository: TicketsRepository) {}
+    constructor(private readonly repository: TicketsRepository) {}
 
     async createMany(createDtos: CreateTicketDto[]) {
         await this.repository.createMany(createDtos)

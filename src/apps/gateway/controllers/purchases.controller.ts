@@ -5,8 +5,8 @@ import { PurchaseRecordsClient } from 'apps/cores'
 @Controller('purchases')
 export class PurchasesController {
     constructor(
-        private purchasesService: PurchaseRecordsClient,
-        private purchaseProcessService: PurchaseClient
+        private readonly purchasesService: PurchaseRecordsClient,
+        private readonly purchaseProcessService: PurchaseClient
     ) {}
 
     @Post()

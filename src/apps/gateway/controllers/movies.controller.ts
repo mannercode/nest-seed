@@ -18,8 +18,8 @@ import { CustomerAuthRequest } from './types'
 @Controller('movies')
 export class MoviesController {
     constructor(
-        private moviesService: MoviesClient,
-        private recommendationService: RecommendationClient
+        private readonly moviesService: MoviesClient,
+        private readonly recommendationService: RecommendationClient
     ) {}
 
     @UseGuards(CustomerOptionalJwtAuthGuard)

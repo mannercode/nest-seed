@@ -10,7 +10,7 @@ import { WatchRecord } from './models'
 export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
     constructor(
         @InjectModel(WatchRecord.name, MongooseConfigModule.connectionName)
-        model: Model<WatchRecord>
+        readonly model: Model<WatchRecord>
     ) {
         super(model, MongooseConfigModule.maxTake)
     }

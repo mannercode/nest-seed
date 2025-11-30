@@ -6,7 +6,7 @@ import { TheatersRepository } from './theaters.repository'
 
 @Injectable()
 export class TheatersService {
-    constructor(private repository: TheatersRepository) {}
+    constructor(private readonly repository: TheatersRepository) {}
 
     async create(createDto: CreateTheaterDto) {
         const theater = await this.repository.create(createDto)

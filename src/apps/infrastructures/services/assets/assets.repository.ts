@@ -18,7 +18,7 @@ export type AssetCreateInput = {
 export class AssetsRepository extends MongooseRepository<Asset> {
     constructor(
         @InjectModel(Asset.name, MongooseConfigModule.connectionName)
-        model: Model<Asset>
+        readonly model: Model<Asset>
     ) {
         super(model, MongooseConfigModule.maxTake)
     }

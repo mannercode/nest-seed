@@ -8,11 +8,11 @@ import { MongooseConfigModule, RedisConfigModule } from 'shared'
 @Injectable()
 class HealthService {
     constructor(
-        private health: HealthCheckService,
-        private mongoose: MongooseHealthIndicator,
-        private redis: RedisHealthIndicator,
-        @Inject(MongooseConfigModule.moduleName) private mongoConn: mongoose.Connection,
-        @Inject(RedisConfigModule.moduleName) private redisConn: Redis
+        private readonly health: HealthCheckService,
+        private readonly mongoose: MongooseHealthIndicator,
+        private readonly redis: RedisHealthIndicator,
+        @Inject(MongooseConfigModule.moduleName) private readonly mongoConn: mongoose.Connection,
+        @Inject(RedisConfigModule.moduleName) private readonly redisConn: Redis
     ) {}
 
     check() {
@@ -27,7 +27,7 @@ class HealthService {
 
 @Controller()
 class HealthController {
-    constructor(private service: HealthService) {}
+    constructor(private readonly service: HealthService) {}
 
     @Get('health')
     health() {

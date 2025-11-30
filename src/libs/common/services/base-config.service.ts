@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config'
 
 export abstract class BaseConfigService {
-    constructor(private configService: ConfigService) {}
+    constructor(private readonly configService: ConfigService) {}
 
     getString(key: string): string {
         const value = this.configService.get<string>(key)

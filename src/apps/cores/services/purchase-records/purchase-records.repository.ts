@@ -10,7 +10,7 @@ import { PurchaseRecord } from './models'
 export class PurchasesRecordRepository extends MongooseRepository<PurchaseRecord> {
     constructor(
         @InjectModel(PurchaseRecord.name, MongooseConfigModule.connectionName)
-        model: Model<PurchaseRecord>
+        readonly model: Model<PurchaseRecord>
     ) {
         super(model, MongooseConfigModule.maxTake)
     }

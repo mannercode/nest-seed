@@ -5,7 +5,7 @@ import { Strategy } from 'passport-local'
 
 @Injectable()
 export class CustomerLocalStrategy extends PassportStrategy(Strategy, 'customer-local') {
-    constructor(private customersService: CustomersClient) {
+    constructor(private readonly customersService: CustomersClient) {
         super({ usernameField: 'email', passwordField: 'password' })
     }
 

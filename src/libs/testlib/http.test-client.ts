@@ -13,7 +13,7 @@ export class HttpTestClient {
     private agent: superagent.Request
     private serverUrl: string
 
-    constructor(port: number) {
+    constructor(readonly port: number) {
         this.serverUrl = `http://localhost:${port}`
     }
 

@@ -9,7 +9,8 @@ import { Theater } from './models'
 @Injectable()
 export class TheatersRepository extends MongooseRepository<Theater> {
     constructor(
-        @InjectModel(Theater.name, MongooseConfigModule.connectionName) model: Model<Theater>
+        @InjectModel(Theater.name, MongooseConfigModule.connectionName)
+        readonly model: Model<Theater>
     ) {
         super(model, MongooseConfigModule.maxTake)
     }

@@ -5,7 +5,7 @@ import { createTestingModule, getRedisTestConnection, withTestId } from 'testlib
 
 @Injectable()
 class TestInjectCacheService {
-    constructor(@InjectCache() _: CacheService) {}
+    constructor(@InjectCache() readonly _: CacheService) {}
 }
 
 export interface Fixture {

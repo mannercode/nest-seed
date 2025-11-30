@@ -3,7 +3,7 @@ import winston from 'winston'
 
 @Injectable()
 export class AppLoggerService implements LoggerService {
-    constructor(private logger: winston.Logger) {}
+    constructor(private readonly logger: winston.Logger) {}
 
     onModuleDestroy() {
         this.logger.close()

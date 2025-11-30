@@ -6,7 +6,7 @@ import { ShowtimesRepository } from './showtimes.repository'
 
 @Injectable()
 export class ShowtimesService {
-    constructor(private repository: ShowtimesRepository) {}
+    constructor(private readonly repository: ShowtimesRepository) {}
 
     async createMany(createDtos: CreateShowtimeDto[]) {
         await this.repository.createMany(createDtos)

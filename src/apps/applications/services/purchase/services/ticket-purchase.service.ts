@@ -32,10 +32,10 @@ export const TicketPurchaseErrors = {
 @Injectable()
 export class TicketPurchasService {
     constructor(
-        private ticketsService: TicketsClient,
-        private showtimesService: ShowtimesClient,
-        private ticketHoldingService: TicketHoldingClient,
-        private events: PurchaseEvents
+        private readonly ticketsService: TicketsClient,
+        private readonly showtimesService: ShowtimesClient,
+        private readonly ticketHoldingService: TicketHoldingClient,
+        private readonly events: PurchaseEvents
     ) {}
 
     async validatePurchase(createDto: CreatePurchaseDto) {

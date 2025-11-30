@@ -7,7 +7,7 @@ import { TicketsService } from './tickets.service'
 
 @Controller()
 export class TicketsController {
-    constructor(private service: TicketsService) {}
+    constructor(private readonly service: TicketsService) {}
 
     @MessagePattern(Messages.Tickets.createMany)
     createMany(

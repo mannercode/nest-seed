@@ -11,7 +11,7 @@ import {
 
 @Injectable()
 export class TheatersClient {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     create(createDto: CreateTheaterDto): Promise<TheaterDto> {
         return this.proxy.getJson(Messages.Theaters.create, createDto)

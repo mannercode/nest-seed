@@ -14,7 +14,7 @@ import { Ticket, TicketStatus } from './models'
 @Injectable()
 export class TicketsRepository extends MongooseRepository<Ticket> {
     constructor(
-        @InjectModel(Ticket.name, MongooseConfigModule.connectionName) model: Model<Ticket>
+        @InjectModel(Ticket.name, MongooseConfigModule.connectionName) readonly model: Model<Ticket>
     ) {
         super(model, MongooseConfigModule.maxTake)
     }

@@ -3,7 +3,7 @@ import { HealthCheckService, HealthIndicatorFunction, TerminusModule } from '@ne
 
 @Injectable()
 class HealthService {
-    constructor(private health: HealthCheckService) {}
+    constructor(private readonly health: HealthCheckService) {}
 
     check() {
         const checks: HealthIndicatorFunction[] = []
@@ -14,7 +14,7 @@ class HealthService {
 
 @Controller('health')
 class HealthController {
-    constructor(private service: HealthService) {}
+    constructor(private readonly service: HealthService) {}
 
     @Get()
     health() {

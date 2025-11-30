@@ -11,7 +11,7 @@ import {
 
 @Injectable()
 export class AssetsClient {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     create(dto: CreateAssetDto): Promise<CreateAssetResponse> {
         return this.proxy.getJson(Messages.Assets.create, dto)

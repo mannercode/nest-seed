@@ -25,10 +25,10 @@ export const BookingServiceErrors = {
 @Injectable()
 export class BookingService {
     constructor(
-        private showtimesService: ShowtimesClient,
-        private theatersService: TheatersClient,
-        private ticketHoldingService: TicketHoldingClient,
-        private ticketsService: TicketsClient
+        private readonly showtimesService: ShowtimesClient,
+        private readonly theatersService: TheatersClient,
+        private readonly ticketHoldingService: TicketHoldingClient,
+        private readonly ticketsService: TicketsClient
     ) {}
 
     async searchTheaters({ movieId, latLong }: SearchTheatersForBookingDto) {

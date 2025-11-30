@@ -13,7 +13,7 @@ import { TicketStatus } from './models'
 
 @Injectable()
 export class TicketsClient {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     createMany(createDtos: CreateTicketDto[]): Promise<CreateTicketsResult> {
         return this.proxy.getJson(Messages.Tickets.createMany, createDtos)

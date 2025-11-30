@@ -8,7 +8,7 @@ import {
 
 @Controller('theaters')
 export class TheatersController {
-    constructor(private theatersService: TheatersClient) {}
+    constructor(private readonly theatersService: TheatersClient) {}
 
     @Post()
     async create(@Body() createDto: CreateTheaterDto) {

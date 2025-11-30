@@ -16,7 +16,7 @@ import { CustomerAuthRequest } from './types'
 
 @Controller('booking')
 export class BookingController {
-    constructor(private bookingService: BookingClient) {}
+    constructor(private readonly bookingService: BookingClient) {}
 
     @Get('movies/:movieId/theaters')
     async searchTheaters(

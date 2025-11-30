@@ -6,7 +6,7 @@ import { BulkCreateShowtimesDto, RequestShowtimeCreationResponse } from './dtos'
 
 @Injectable()
 export class ShowtimeCreationClient {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     searchMoviesPage(searchDto: PaginationDto): Promise<PaginationResult<MovieDto>> {
         return this.proxy.getJson(Messages.ShowtimeCreation.searchMoviesPage, searchDto)

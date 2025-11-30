@@ -7,9 +7,9 @@ import { RedisConfigModule } from 'shared'
 @Injectable()
 class HealthService {
     constructor(
-        private health: HealthCheckService,
-        private redis: RedisHealthIndicator,
-        @Inject(RedisConfigModule.moduleName) private redisConn: Redis
+        private readonly health: HealthCheckService,
+        private readonly redis: RedisHealthIndicator,
+        @Inject(RedisConfigModule.moduleName) private readonly redisConn: Redis
     ) {}
 
     check() {
@@ -21,7 +21,7 @@ class HealthService {
 
 @Controller()
 class HealthController {
-    constructor(private service: HealthService) {}
+    constructor(private readonly service: HealthService) {}
 
     @Get('health')
     health() {

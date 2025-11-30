@@ -6,7 +6,7 @@ import { AssetsService } from './assets.service'
 
 @Controller()
 export class AssetsController {
-    constructor(private service: AssetsService) {}
+    constructor(private readonly service: AssetsService) {}
 
     @MessagePattern(Messages.Assets.create)
     create(@Payload() dto: CreateAssetDto) {

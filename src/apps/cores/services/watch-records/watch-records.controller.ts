@@ -6,7 +6,7 @@ import { WatchRecordsService } from './watch-records.service'
 
 @Controller()
 export class WatchRecordsController {
-    constructor(private service: WatchRecordsService) {}
+    constructor(private readonly service: WatchRecordsService) {}
 
     @MessagePattern(Messages.WatchRecords.create)
     create(@Payload() createDto: CreateWatchRecordDto) {

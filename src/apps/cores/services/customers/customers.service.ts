@@ -25,8 +25,8 @@ import { CustomerAuthenticationService } from './services'
 @Injectable()
 export class CustomersService {
     constructor(
-        private repository: CustomersRepository,
-        private authenticationService: CustomerAuthenticationService
+        private readonly repository: CustomersRepository,
+        private readonly authenticationService: CustomerAuthenticationService
     ) {}
 
     async create(createDto: CreateCustomerDto) {

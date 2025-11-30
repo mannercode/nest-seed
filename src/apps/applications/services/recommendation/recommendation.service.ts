@@ -7,9 +7,9 @@ import { Rules } from 'shared'
 @Injectable()
 export class RecommendationService {
     constructor(
-        private showtimesService: ShowtimesClient,
-        private moviesService: MoviesClient,
-        private watchRecordsService: WatchRecordsClient
+        private readonly showtimesService: ShowtimesClient,
+        private readonly moviesService: MoviesClient,
+        private readonly watchRecordsService: WatchRecordsClient
     ) {}
 
     async searchRecommendedMovies(customerId: string | null) {

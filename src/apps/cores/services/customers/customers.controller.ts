@@ -12,7 +12,7 @@ import {
 
 @Controller()
 export class CustomersController {
-    constructor(private service: CustomersService) {}
+    constructor(private readonly service: CustomersService) {}
 
     @MessagePattern(Messages.Customers.create)
     async create(@Payload() createDto: CreateCustomerDto) {

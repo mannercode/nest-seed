@@ -7,8 +7,8 @@ import { CustomerAuthPayload, CustomerCredentials } from '../dtos'
 @Injectable()
 export class CustomerAuthenticationService {
     constructor(
-        private repository: CustomersRepository,
-        @InjectJwtAuth() private jwtAuthService: JwtAuthService
+        private readonly repository: CustomersRepository,
+        @InjectJwtAuth() private readonly jwtAuthService: JwtAuthService
     ) {}
 
     async generateAuthTokens(payload: CustomerAuthPayload) {

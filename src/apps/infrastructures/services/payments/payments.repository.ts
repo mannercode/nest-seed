@@ -9,7 +9,8 @@ import { Payment } from './models'
 @Injectable()
 export class PaymentsRepository extends MongooseRepository<Payment> {
     constructor(
-        @InjectModel(Payment.name, MongooseConfigModule.connectionName) model: Model<Payment>
+        @InjectModel(Payment.name, MongooseConfigModule.connectionName)
+        readonly model: Model<Payment>
     ) {
         super(model, MongooseConfigModule.maxTake)
     }

@@ -6,9 +6,9 @@ import { MongooseConfigModule } from 'shared'
 @Injectable()
 class HealthService {
     constructor(
-        private health: HealthCheckService,
-        private mongoose: MongooseHealthIndicator,
-        @Inject(MongooseConfigModule.moduleName) private mongoConn: mongoose.Connection
+        private readonly health: HealthCheckService,
+        private readonly mongoose: MongooseHealthIndicator,
+        @Inject(MongooseConfigModule.moduleName) private readonly mongoConn: mongoose.Connection
     ) {}
 
     check() {
@@ -22,7 +22,7 @@ class HealthService {
 
 @Controller()
 class HealthController {
-    constructor(private service: HealthService) {}
+    constructor(private readonly service: HealthService) {}
 
     @Get('health')
     health() {

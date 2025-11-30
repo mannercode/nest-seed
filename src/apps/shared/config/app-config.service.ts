@@ -5,7 +5,7 @@ import Joi from 'joi'
 
 @Injectable()
 export class AppConfigService extends BaseConfigService {
-    static configSchema = Joi.object({
+    static schema = Joi.object({
         NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
 
         LOG_DIRECTORY: Joi.string().required(),

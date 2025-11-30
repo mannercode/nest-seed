@@ -8,8 +8,8 @@ import { MoviesRepository } from './movies.repository'
 @Injectable()
 export class MoviesService {
     constructor(
-        private moviesRepository: MoviesRepository,
-        private assetsService: AssetsClient
+        private readonly moviesRepository: MoviesRepository,
+        private readonly assetsService: AssetsClient
     ) {}
 
     async create(createMovieDto: CreateMovieDto) {

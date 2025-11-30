@@ -6,7 +6,7 @@ import { PaymentsRepository } from './payments.repository'
 
 @Injectable()
 export class PaymentsService {
-    constructor(private repository: PaymentsRepository) {}
+    constructor(private readonly repository: PaymentsRepository) {}
 
     async create(createDto: CreatePaymentDto) {
         const payment = await this.repository.create(createDto)

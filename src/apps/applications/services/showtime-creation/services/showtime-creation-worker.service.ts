@@ -12,10 +12,10 @@ import { ShowtimeCreationJobData, ShowtimeCreationStatus } from './types'
 @Processor('showtime-creation')
 export class ShowtimeCreationWorkerService extends WorkerHost {
     constructor(
-        private validatorService: ShowtimeBulkValidatorService,
-        private creatorService: ShowtimeBulkCreatorService,
-        private events: ShowtimeCreationEvents,
-        @InjectQueue('showtime-creation') private queue: Queue
+        private readonly validatorService: ShowtimeBulkValidatorService,
+        private readonly creatorService: ShowtimeBulkCreatorService,
+        private readonly events: ShowtimeCreationEvents,
+        @InjectQueue('showtime-creation') private readonly queue: Queue
     ) {
         super()
     }

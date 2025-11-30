@@ -6,7 +6,7 @@ import { AppConfigService } from 'shared'
 
 @Injectable()
 export class CustomerJwtStrategy extends PassportStrategy(Strategy, 'customer-jwt') {
-    constructor(config: AppConfigService) {
+    constructor(readonly config: AppConfigService) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,

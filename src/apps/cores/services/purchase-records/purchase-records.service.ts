@@ -6,7 +6,7 @@ import { PurchasesRecordRepository } from './purchase-records.repository'
 
 @Injectable()
 export class PurchaseRecordsService {
-    constructor(private repository: PurchasesRecordRepository) {}
+    constructor(private readonly repository: PurchasesRecordRepository) {}
 
     async create(createDto: CreatePurchaseRecordDto) {
         const purchase = await this.repository.create(createDto)

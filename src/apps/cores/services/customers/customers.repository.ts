@@ -9,7 +9,8 @@ import { Customer } from './models'
 @Injectable()
 export class CustomersRepository extends MongooseRepository<Customer> {
     constructor(
-        @InjectModel(Customer.name, MongooseConfigModule.connectionName) model: Model<Customer>
+        @InjectModel(Customer.name, MongooseConfigModule.connectionName)
+        readonly model: Model<Customer>
     ) {
         super(model, MongooseConfigModule.maxTake)
     }

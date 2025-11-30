@@ -9,7 +9,7 @@ import { IS_PUBLIC_KEY } from './public.decorator'
 
 @Injectable()
 export class CustomerJwtAuthGuard extends AuthGuard('customer-jwt') {
-    constructor(private reflector: Reflector) {
+    constructor(private readonly reflector: Reflector) {
         super()
     }
 

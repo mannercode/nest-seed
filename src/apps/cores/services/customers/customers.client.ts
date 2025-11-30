@@ -13,7 +13,7 @@ import {
 
 @Injectable()
 export class CustomersClient {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     async create(createDto: CreateCustomerDto): Promise<CustomerDto> {
         return this.proxy.getJson<CustomerDto>(Messages.Customers.create, createDto)

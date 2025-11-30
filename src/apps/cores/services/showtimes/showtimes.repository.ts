@@ -9,7 +9,8 @@ import { Showtime } from './models'
 @Injectable()
 export class ShowtimesRepository extends MongooseRepository<Showtime> {
     constructor(
-        @InjectModel(Showtime.name, MongooseConfigModule.connectionName) model: Model<Showtime>
+        @InjectModel(Showtime.name, MongooseConfigModule.connectionName)
+        readonly model: Model<Showtime>
     ) {
         super(model, MongooseConfigModule.maxTake)
     }

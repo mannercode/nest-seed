@@ -6,7 +6,7 @@ import { TheatersService } from './theaters.service'
 
 @Controller()
 export class TheatersController {
-    constructor(private service: TheatersService) {}
+    constructor(private readonly service: TheatersService) {}
 
     @MessagePattern(Messages.Theaters.create)
     create(@Payload() createDto: CreateTheaterDto) {

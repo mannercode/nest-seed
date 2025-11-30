@@ -6,7 +6,7 @@ import { WatchRecordsRepository } from './watch-records.repository'
 
 @Injectable()
 export class WatchRecordsService {
-    constructor(private repository: WatchRecordsRepository) {}
+    constructor(private readonly repository: WatchRecordsRepository) {}
 
     async create(createDto: CreateWatchRecordDto) {
         const watchRecord = await this.repository.create(createDto)

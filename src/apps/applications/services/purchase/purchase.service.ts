@@ -7,9 +7,9 @@ import { TicketPurchasService } from './services'
 @Injectable()
 export class PurchaseService {
     constructor(
-        private purchasesService: PurchaseRecordsClient,
-        private paymentsService: PaymentsClient,
-        private ticketProcessor: TicketPurchasService
+        private readonly purchasesService: PurchaseRecordsClient,
+        private readonly paymentsService: PaymentsClient,
+        private readonly ticketProcessor: TicketPurchasService
     ) {}
 
     async processPurchase(createDto: CreatePurchaseDto) {

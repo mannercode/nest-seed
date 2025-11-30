@@ -17,8 +17,8 @@ type SessionArg = ClientSession | undefined
 
 export abstract class MongooseRepository<Doc> implements OnModuleInit {
     constructor(
-        protected model: Model<Doc>,
-        protected maxTake: number
+        protected readonly model: Model<Doc>,
+        protected readonly maxTake: number
     ) {}
 
     async onModuleInit() {

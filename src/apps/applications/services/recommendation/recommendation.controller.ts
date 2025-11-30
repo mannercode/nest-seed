@@ -5,7 +5,7 @@ import { RecommendationService } from './recommendation.service'
 
 @Controller()
 export class RecommendationController {
-    constructor(private service: RecommendationService) {}
+    constructor(private readonly service: RecommendationService) {}
 
     @MessagePattern(Messages.Recommendation.searchRecommendedMovies)
     searchRecommendedMovies(@Payload() customerId: string | null) {

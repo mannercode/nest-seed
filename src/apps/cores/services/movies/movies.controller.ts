@@ -6,7 +6,7 @@ import { MoviesService } from './movies.service'
 
 @Controller()
 export class MoviesController {
-    constructor(private service: MoviesService) {}
+    constructor(private readonly service: MoviesService) {}
 
     @MessagePattern(Messages.Movies.create)
     create(@Payload() createMovieDto: CreateMovieDto) {

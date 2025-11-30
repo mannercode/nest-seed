@@ -25,7 +25,7 @@ import { CustomerAuthRequest } from './types'
 @UseGuards(CustomerJwtAuthGuard)
 @Controller('customers')
 export class CustomersController {
-    constructor(private customersService: CustomersClient) {}
+    constructor(private readonly customersService: CustomersClient) {}
 
     @Public()
     @Post()

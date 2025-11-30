@@ -7,7 +7,7 @@ import { CreateShowtimesResult } from './types'
 
 @Controller()
 export class ShowtimesController {
-    constructor(private service: ShowtimesService) {}
+    constructor(private readonly service: ShowtimesService) {}
 
     @MessagePattern(Messages.Showtimes.createMany)
     createMany(

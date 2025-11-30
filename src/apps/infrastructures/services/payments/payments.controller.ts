@@ -6,7 +6,7 @@ import { PaymentsService } from './payments.service'
 
 @Controller()
 export class PaymentsController {
-    constructor(private service: PaymentsService) {}
+    constructor(private readonly service: PaymentsService) {}
 
     @MessagePattern(Messages.Payments.create)
     create(@Payload() createDto: CreatePaymentDto) {

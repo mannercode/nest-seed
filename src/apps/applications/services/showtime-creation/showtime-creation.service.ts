@@ -7,10 +7,10 @@ import { ShowtimeCreationWorkerService } from './services'
 @Injectable()
 export class ShowtimeCreationService {
     constructor(
-        private theatersService: TheatersClient,
-        private moviesService: MoviesClient,
-        private showtimesService: ShowtimesClient,
-        private workerService: ShowtimeCreationWorkerService
+        private readonly theatersService: TheatersClient,
+        private readonly moviesService: MoviesClient,
+        private readonly showtimesService: ShowtimesClient,
+        private readonly workerService: ShowtimeCreationWorkerService
     ) {}
 
     async searchMoviesPage(searchDto: PaginationDto) {

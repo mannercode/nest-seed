@@ -14,9 +14,9 @@ import { BulkCreateShowtimesDto } from '../dtos'
 @Injectable()
 export class ShowtimeBulkCreatorService {
     constructor(
-        private theatersService: TheatersClient,
-        private showtimesService: ShowtimesClient,
-        private ticketsService: TicketsClient
+        private readonly theatersService: TheatersClient,
+        private readonly showtimesService: ShowtimesClient,
+        private readonly ticketsService: TicketsClient
     ) {}
 
     async create(createDto: BulkCreateShowtimesDto, transactionId: string) {

@@ -8,8 +8,8 @@ import { AssetDocument } from './models'
 @Injectable()
 export class AssetsService {
     constructor(
-        private repository: AssetsRepository,
-        @InjectS3Object() private s3Service: S3ObjectService
+        private readonly repository: AssetsRepository,
+        @InjectS3Object() private readonly s3Service: S3ObjectService
     ) {}
 
     async create(createDto: CreateAssetDto): Promise<CreateAssetResponse> {

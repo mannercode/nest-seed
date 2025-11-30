@@ -5,7 +5,7 @@ import { CreatePurchaseRecordDto, PurchaseRecordDto } from './dtos'
 
 @Injectable()
 export class PurchaseRecordsClient {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     create(createDto: CreatePurchaseRecordDto): Promise<PurchaseRecordDto> {
         return this.proxy.getJson(Messages.Purchases.create, createDto)

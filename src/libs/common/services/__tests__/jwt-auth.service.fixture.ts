@@ -6,7 +6,7 @@ import { createTestingModule, getRedisTestConnection, withTestId } from 'testlib
 
 @Injectable()
 class TestInjectJwtAuthService {
-    constructor(@InjectJwtAuth() _: JwtAuthService) {}
+    constructor(@InjectJwtAuth() readonly _: JwtAuthService) {}
 }
 
 export interface Fixture {

@@ -5,7 +5,7 @@ import { CreateWatchRecordDto, SearchWatchRecordsPageDto, WatchRecordDto } from 
 
 @Injectable()
 export class WatchRecordsClient {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     create(createDto: CreateWatchRecordDto): Promise<WatchRecordDto> {
         return this.proxy.getJson(Messages.WatchRecords.create, createDto)

@@ -5,7 +5,7 @@ import { createTestingModule, getS3TestConnection } from 'testlib'
 
 @Injectable()
 class TestInjectS3ObjectService {
-    constructor(@InjectS3Object() _: S3ObjectService) {}
+    constructor(@InjectS3Object() readonly _: S3ObjectService) {}
 }
 
 export interface Fixture {

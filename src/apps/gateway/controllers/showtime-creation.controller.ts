@@ -20,7 +20,7 @@ import { Events } from 'shared'
 export class ShowtimeCreationController implements OnModuleDestroy {
     private eventStream = new Subject<MessageEvent>()
 
-    constructor(private showtimeCreationService: ShowtimeCreationClient) {}
+    constructor(private readonly showtimeCreationService: ShowtimeCreationClient) {}
 
     onModuleDestroy() {
         this.eventStream.complete()

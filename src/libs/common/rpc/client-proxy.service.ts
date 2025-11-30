@@ -33,7 +33,7 @@ async function getProxyValue<T>(observer: Observable<T>): Promise<T> {
 
 @Injectable()
 export class ClientProxyService implements OnModuleDestroy {
-    constructor(private proxy: ClientProxy) {}
+    constructor(private readonly proxy: ClientProxy) {}
 
     static getServiceName(name?: string) {
         return `ClientProxyService_${name}`

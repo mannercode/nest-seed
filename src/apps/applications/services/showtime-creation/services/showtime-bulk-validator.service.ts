@@ -35,9 +35,9 @@ const iterateTimeslots = (
 @Injectable()
 export class ShowtimeBulkValidatorService {
     constructor(
-        private theatersService: TheatersClient,
-        private moviesService: MoviesClient,
-        private showtimesService: ShowtimesClient
+        private readonly theatersService: TheatersClient,
+        private readonly moviesService: MoviesClient,
+        private readonly showtimesService: ShowtimesClient
     ) {}
 
     async validate(createDto: BulkCreateShowtimesDto) {

@@ -12,7 +12,7 @@ import {
 
 @Controller()
 class SendTestController {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     @MessagePattern(withTestId('method'))
     method() {

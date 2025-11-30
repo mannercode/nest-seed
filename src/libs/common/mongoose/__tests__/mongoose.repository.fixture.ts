@@ -27,7 +27,7 @@ export const maxTakeValue = 50
 
 @Injectable()
 class SamplesRepository extends MongooseRepository<Sample> {
-    constructor(@InjectModel(Sample.name) model: Model<Sample>) {
+    constructor(@InjectModel(Sample.name) readonly model: Model<Sample>) {
         super(model, maxTakeValue)
     }
 }

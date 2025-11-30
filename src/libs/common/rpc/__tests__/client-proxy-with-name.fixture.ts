@@ -5,7 +5,7 @@ import { createHttpTestContext, getNatsTestConnection, HttpTestClient, withTestI
 
 @Controller()
 class TestController {
-    constructor(@InjectClientProxy('clientName') private client: ClientProxyService) {}
+    constructor(@InjectClientProxy('clientName') private readonly client: ClientProxyService) {}
 
     @MessagePattern(withTestId('method'))
     method() {

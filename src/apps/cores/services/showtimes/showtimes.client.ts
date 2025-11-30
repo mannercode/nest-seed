@@ -6,7 +6,7 @@ import { CreateShowtimesResult } from './types'
 
 @Injectable()
 export class ShowtimesClient {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     createMany(createDtos: CreateShowtimeDto[]): Promise<CreateShowtimesResult> {
         return this.proxy.getJson(Messages.Showtimes.createMany, createDtos)
