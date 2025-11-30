@@ -13,6 +13,8 @@ jobs:
     ci:
         runs-on: ubuntu-24.04-arm
         container: node:24-bookworm
+        containerMode:
+            type: 'dind'
         env:
             WORKSPACE_ROOT: ${{ github.workspace }}
             TERM: xterm # This is required to enable use of the `clear` command in bash

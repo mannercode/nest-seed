@@ -79,26 +79,26 @@ services:
         depends_on: { nats3: { condition: service_healthy } }
 
     # --- Prometheus ---
-    # prometheus:
-    #     image: prom/prometheus:latest
-    #     container_name: prometheus
-    #     command:
-    #         - --config.file=/etc/prometheus/prometheus.yml
-    #         - --storage.tsdb.retention.time=15d
-    #         - --web.enable-lifecycle
-    #     ports: ['9090:9090']
-    #     volumes:
-    #         - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    #     depends_on:
-    #         - nats-exporter1
-    #         - nats-exporter2
-    #         - nats-exporter3
-    # grafana:
-    #     image: grafana/grafana:latest
-    #     container_name: grafana
-    #     ports: ['3300:3000']
-    #     environment:
-    #         - GF_SECURITY_ADMIN_USER=admin
-    #         - GF_SECURITY_ADMIN_PASSWORD=admin
-    #     depends_on:
-    #         - prometheus
+    prometheus:
+        image: prom/prometheus:latest
+        container_name: prometheus
+        command:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.retention.time=15d
+            - --web.enable-lifecycle
+        ports: ['9090:9090']
+        volumes:
+            - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+        depends_on:
+            - nats-exporter1
+            - nats-exporter2
+            - nats-exporter3
+    grafana:
+        image: grafana/grafana:latest
+        container_name: grafana
+        ports: ['3300:3000']
+        environment:
+            - GF_SECURITY_ADMIN_USER=admin
+            - GF_SECURITY_ADMIN_PASSWORD=admin
+        depends_on:
+            - prometheus
