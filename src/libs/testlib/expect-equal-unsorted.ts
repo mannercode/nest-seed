@@ -1,18 +1,15 @@
 import { memoize } from 'lodash'
 import { omit } from 'lodash'
 
-function stringifyWithSortedKeys(obj: Record<string, any>): string {
-    return JSON.stringify(obj, (key, value) => {
+function stringifyWithSortedKeys(record: Record<string, any>): string {
+    return JSON.stringify(record, (key, value) => {
         if (value && typeof value === 'object' && !Array.isArray(value)) {
             return Object.keys(value)
                 .sort()
-                .reduce(
-                    (result, key) => {
-                        result[key] = value[key]
-                        return result
-                    },
-                    {} as Record<string, any>
-                )
+                .reduce((sortedRecord, currentKey) => {
+                    sortedRecord[currentKey] = value[currentKey]
+                    return sortedRecord
+                }, {} as Record<string, any>)
         }
         return value
     })
@@ -37,8 +34,8 @@ function isAnything(value: any): boolean {
     )
 }
 
-function getAnythingKeys(obj: Record<string, any>): string[] {
-    return Object.entries(obj)
+function getAnythingKeys(record: Record<string, any>): string[] {
+    return Object.entries(record)
         .filter(([_, value]) => isAnything(value))
         .map(([key]) => key)
 }

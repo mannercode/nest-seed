@@ -3,8 +3,8 @@ import { CustomerJwtAuthGuard } from './customer-jwt-auth.guard'
 
 @Injectable()
 export class CustomerOptionalJwtAuthGuard extends CustomerJwtAuthGuard {
-    handleRequest(err: any, user: any, _info: any, _context: any) {
-        if (err || !user) {
+    handleRequest(error: any, user: any, _info: any, _context: any) {
+        if (error || !user) {
             return { customerId: null, email: null }
         }
 

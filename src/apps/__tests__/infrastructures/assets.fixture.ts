@@ -7,9 +7,9 @@ export interface Fixture extends TestFixture {
 }
 
 export const createFixture = async () => {
-    const fix = await createTestFixture({ imports: [AssetsModule], providers: [AssetsClient] })
+    const testFixture = await createTestFixture({ imports: [AssetsModule], providers: [AssetsClient] })
 
-    const assetsClient = fix.module.get(AssetsClient)
+    const assetsClient = testFixture.module.get(AssetsClient)
 
-    return { ...fix, assetsClient, file: fixtureFiles.small }
+    return { ...testFixture, assetsClient, file: fixtureFiles.small }
 }

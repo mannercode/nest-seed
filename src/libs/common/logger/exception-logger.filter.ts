@@ -27,74 +27,78 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
         const contextType = host.getType()
 
         if (contextType === 'http') {
-            const http = host.switchToHttp()
-            const { method, url, body } = http.getRequest<Request>()
+            const httpContext = host.switchToHttp()
+            const { method, url, body } = httpContext.getRequest<Request>()
 
-            const common = { contextType, request: { method, url, body } }
+            const httpLogBase = { contextType, request: { method, url, body } }
 
             if (exception instanceof HttpException) {
-                const log = {
-                    ...common,
+                const errorLog = {
+                    ...httpLogBase,
                     statusCode: exception.getStatus(),
                     response: exception.getResponse(),
                     stack: exception.stack
                 } as HttpErrorLog
 
-                Logger.warn('fail', log)
+                Logger.warn('fail', errorLog)
             } else if (exception instanceof Error) {
-                const log = {
-                    ...common,
+                const errorLog = {
+                    ...httpLogBase,
                     statusCode: 500,
                     response: { message: exception.message },
                     stack: exception.stack
                 } as HttpErrorLog
 
-                Logger.error('error', log)
+                Logger.error('error', errorLog)
             } else {
-                const log = {
-                    ...common,
+                const errorLog = {
+                    ...httpLogBase,
                     statusCode: 500,
                     response: { message: exception },
                     stack: 'undefined'
                 } as HttpErrorLog
 
-                Logger.fatal('fatal', log)
+                Logger.fatal('fatal', errorLog)
             }
 
             super.catch(exception, host)
         } else if (contextType === 'rpc') {
-            const ctx = host.switchToRpc()
+            const rpcContext = host.switchToRpc()
 
-            const common = { contextType, context: ctx.getContext(), data: ctx.getData() }
+            const rpcLogBase = {
+                contextType,
+                context: rpcContext.getContext(),
+                data: rpcContext.getData()
+            }
 
             if (exception instanceof HttpException) {
-                const log = {
-                    ...common,
+                const errorLog = {
+                    ...rpcLogBase,
                     response: exception.getResponse(),
                     stack: exception.stack
                 } as RpcErrorLog
 
-                Logger.warn('fail', log)
+                Logger.warn('fail', errorLog)
 
                 return throwError(() => exception)
             } else if (exception instanceof Error) {
-                const log = {
-                    ...common,
+                const errorLog = {
+                    ...rpcLogBase,
                     response: { message: exception.message },
                     stack: exception.stack
                 } as RpcErrorLog
 
-                Logger.error('error', log)
+                Logger.error('error', errorLog)
 
                 return throwError(() => new RpcException(exception))
             } else {
-                const log = {
-                    ...common,
+                const errorLog = {
+                    ...rpcLogBase,
                     response: { message: exception },
                     stack: 'undefined'
                 } as RpcErrorLog
 
-                Logger.fatal('fatal', log)
+                Logger.fatal('fatal', errorLog)
 
                 return throwError(() => new RpcException(exception))
             }

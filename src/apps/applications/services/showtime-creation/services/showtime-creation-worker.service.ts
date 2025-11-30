@@ -38,23 +38,23 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
     async requestShowtimeCreation(createDto: BulkCreateShowtimesDto) {
         const transactionId = newObjectId()
 
-        const data = { createDto, transactionId } as ShowtimeCreationJobData
+        const jobData = { createDto, transactionId } as ShowtimeCreationJobData
 
         await this.events.emitStatusChanged({
             status: ShowtimeCreationStatus.Waiting,
             transactionId
         })
 
-        await this.queue.add('showtime-creation.create', data)
+        await this.queue.add('showtime-creation.create', jobData)
 
         return transactionId
     }
 
     async process(job: Job<ShowtimeCreationJobData>) {
         try {
-            const data = jsonToObject(job.data)
+            const jobData = jsonToObject(job.data)
 
-            await this.processJobData(data)
+            await this.processJobData(jobData)
         } catch (error) {
             await this.events.emitStatusChanged({
                 status: ShowtimeCreationStatus.Error,
@@ -74,12 +74,12 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
         const { isValid, conflictingShowtimes } = await this.validatorService.validate(createDto)
 
         if (isValid) {
-            const result = await this.creatorService.create(createDto, transactionId)
+            const creationResult = await this.creatorService.create(createDto, transactionId)
 
             await this.events.emitStatusChanged({
                 status: ShowtimeCreationStatus.Succeeded,
                 transactionId,
-                ...result
+                ...creationResult
             })
         } else {
             await this.events.emitStatusChanged({

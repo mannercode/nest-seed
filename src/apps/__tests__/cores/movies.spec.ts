@@ -51,13 +51,13 @@ describe('MoviesService', () => {
 
                 const body = await fixture.assetsClient.create(payload)
 
-                const uploadRes = await fetch(body.uploadRequest.url, {
+                const uploadResponse = await fetch(body.uploadRequest.url, {
                     method: body.uploadRequest.method,
                     headers: body.uploadRequest.headers,
                     body: await readFile(fixture.image.path)
                 })
 
-                expect(uploadRes.ok).toBe(true)
+                expect(uploadResponse.ok).toBe(true)
 
                 return body.assetId
             }
@@ -99,10 +99,10 @@ describe('MoviesService', () => {
                         })
                     )
 
-                const res = await fetch(movie.imageUrl)
-                expect(res.ok).toBe(true)
+                const downloadResponse = await fetch(movie.imageUrl)
+                expect(downloadResponse.ok).toBe(true)
 
-                const downloadedBuffer = Buffer.from(await res.arrayBuffer())
+                const downloadedBuffer = Buffer.from(await downloadResponse.arrayBuffer())
                 await writeFile(downloadPath, downloadedBuffer)
 
                 expect(await FileUtil.areEqual(downloadPath, fixture.image.path)).toBe(true)

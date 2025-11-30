@@ -17,12 +17,12 @@ export function generateUUID(): string {
  */
 export function generateShortId(length: number = 15): string {
     const characters = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
-    let result = ''
-    const charactersLength = characters.length
-    for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength))
+    let shortId = ''
+    const characterCount = characters.length
+    for (let index = 0; index < length; index++) {
+        shortId += characters.charAt(Math.floor(Math.random() * characterCount))
     }
-    return result
+    return shortId
 }
 
 /**
@@ -52,12 +52,12 @@ export function comment(..._args: any[]): void {}
  * Converts a number to a zero-padded string of a specified length.
  * 숫자를 지정된 길이만큼 0으로 채워 문자열로 반환합니다.
  *
- * @param {number} num - The number to convert.
+ * @param {number} value - The number to convert.
  * @param {number} length - The desired length of the result string.
  * @returns {string} A zero-padded string representation of the number.
  */
-export function padNumber(num: number, length: number): string {
-    const paddedNumber = num.toString().padStart(length, '0')
+export function padNumber(value: number, length: number): string {
+    const paddedNumber = value.toString().padStart(length, '0')
     return paddedNumber
 }
 
@@ -65,40 +65,43 @@ export function padNumber(num: number, length: number): string {
  * Recursively traverses a JSON-like object or value and converts ISO 8601 date strings to Date objects.
  * JSON 형태의 객체를 재귀적으로 순회하며 ISO 8601 형식의 날짜 문자열을 Date 객체로 변환
  *
- * @param {any} obj - The object or value to convert.
+ * @param {any} input - The object or value to convert.
  * @returns {any} The converted object (date strings become Date objects).
  */
-export const jsonToObject = (obj: any): any => {
-    if (typeof obj === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(obj)) {
-        return new Date(obj)
+export const jsonToObject = (input: any): any => {
+    if (
+        typeof input === 'string' &&
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(input)
+    ) {
+        return new Date(input)
     }
 
-    if (obj === null || typeof obj !== 'object') {
-        return obj
+    if (input === null || typeof input !== 'object') {
+        return input
     }
 
-    if (Array.isArray(obj)) {
-        return obj.map((item) => jsonToObject(item))
+    if (Array.isArray(input)) {
+        return input.map((item) => jsonToObject(item))
     }
 
-    const result: Record<string, any> = {}
+    const convertedObject: Record<string, any> = {}
 
-    for (const key in obj) {
-        const value = obj[key]
+    for (const key in input) {
+        const nestedValue = input[key]
 
         if (
-            typeof value === 'string' &&
-            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)
+            typeof nestedValue === 'string' &&
+            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(nestedValue)
         ) {
-            result[key] = new Date(value)
-        } else if (typeof value === 'object') {
-            result[key] = jsonToObject(value)
+            convertedObject[key] = new Date(nestedValue)
+        } else if (typeof nestedValue === 'object') {
+            convertedObject[key] = jsonToObject(nestedValue)
         } else {
-            result[key] = value
+            convertedObject[key] = nestedValue
         }
     }
 
-    return result
+    return convertedObject
 }
 
 /**

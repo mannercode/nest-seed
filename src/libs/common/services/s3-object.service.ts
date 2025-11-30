@@ -115,7 +115,7 @@ export class S3ObjectService {
             new GetObjectCommand({ Bucket: this.bucket, Key: key })
         )
 
-        let data = Buffer.from([])
+        let objectData = Buffer.from([])
 
         const chunks: Buffer[] = []
 
@@ -123,7 +123,7 @@ export class S3ObjectService {
             chunks.push(chunk)
         }
 
-        data = Buffer.concat(chunks)
+        objectData = Buffer.concat(chunks)
 
         // TODO
         // 아래처럼 함수 만들어서 사용하면 ignore next 제거 가능
@@ -138,7 +138,7 @@ export class S3ObjectService {
             ? HttpUtil.extractContentDisposition(ContentDisposition)
             : key
 
-        return { data, filename, contentType }
+        return { data: objectData, filename, contentType }
     }
 
     async deleteObject(key: string): Promise<S3DeleteObjectResult> {

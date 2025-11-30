@@ -14,12 +14,12 @@ export class CustomerJwtAuthGuard extends AuthGuard('customer-jwt') {
     }
 
     canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
-        const isIgnore = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+        const isPublicRoute = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
             context.getHandler(),
             context.getClass()
         ])
 
-        if (isIgnore) {
+        if (isPublicRoute) {
             return true
         }
 
@@ -37,8 +37,8 @@ export class CustomerJwtAuthGuard extends AuthGuard('customer-jwt') {
         return super.canActivate(context)
     }
 
-    handleRequest(err: any, user: any, _info: any, _context: any) {
-        if (err || !user) {
+    handleRequest(error: any, user: any, _info: any, _context: any) {
+        if (error || !user) {
             throw new UnauthorizedException(AuthErrors.Unauthorized)
         }
         return user

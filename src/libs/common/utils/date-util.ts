@@ -86,11 +86,11 @@ export class DateUtil {
         minutes?: number
         seconds?: number
     }): Date {
-        const ms =
+        const totalMilliseconds =
             days * 86_400_000 + // 24 * 60 * 60 * 1000
             hours * 3_600_000 + // 60 * 60 * 1000
             minutes * 60_000 + // 60 * 1000
             seconds * 1_000 // 1000
-        return new Date(base.getTime() + ms)
+        return new Date(base.getTime() + totalMilliseconds)
     }
 }

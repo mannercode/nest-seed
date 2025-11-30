@@ -19,16 +19,21 @@ export class FileUtil {
         return (await stat(filePath)).size
     }
 
-    static async areEqual(filePath1: string, filePath2: string): Promise<boolean> {
-        const [size1, size2] = await Promise.all([this.getSize(filePath1), this.getSize(filePath2)])
-
-        if (size1 !== size2) return false
-
-        const [hash1, hash2] = await Promise.all([
-            this.getChecksum(filePath1),
-            this.getChecksum(filePath2)
+    static async areEqual(firstFilePath: string, secondFilePath: string): Promise<boolean> {
+        const [firstSize, secondSize] = await Promise.all([
+            this.getSize(firstFilePath),
+            this.getSize(secondFilePath)
         ])
 
-        return hash1 === hash2
+        if (firstSize !== secondSize) return false
+
+        const [firstChecksum, secondChecksum] = await Promise.all([
+            this.getChecksum(firstFilePath),
+            this.getChecksum(secondFilePath)
+        ])
+
+        return (
+            firstChecksum.algo === secondChecksum.algo && firstChecksum.hex === secondChecksum.hex
+        )
     }
 }

@@ -64,9 +64,9 @@ const createTempBucket = async () => {
 export const uploadObject = async (s3Service: S3ObjectService, key: string, body: string) => {
     const uploadUrl = await s3Service.presignUploadUrl({ key, expiresInSec: 60 })
 
-    const res = await fetch(uploadUrl, { method: 'PUT', body: Buffer.from(body) })
+    const uploadResponse = await fetch(uploadUrl, { method: 'PUT', body: Buffer.from(body) })
 
-    expect(res.ok).toBe(true)
+    expect(uploadResponse.ok).toBe(true)
 }
 
 export const testBuffer = Buffer.alloc(

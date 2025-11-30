@@ -4,8 +4,8 @@ import { AuthErrors } from './errors'
 
 @Injectable()
 export class CustomerLocalAuthGuard extends AuthGuard('customer-local') {
-    handleRequest(err: any, user: any) {
-        if (err || !user) {
+    handleRequest(error: any, user: any) {
+        if (error || !user) {
             throw new UnauthorizedException(AuthErrors.Unauthorized)
         }
 

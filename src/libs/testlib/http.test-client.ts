@@ -85,21 +85,21 @@ export class HttpTestClient {
         // Remove the default 200MB limit
         this.agent.maxResponseSize(Byte.fromString('1TB'))
 
-        this.agent.buffer().parse((res, callback) => {
-            res.on('data', (chunk: any) => {
+        this.agent.buffer().parse((response, callback) => {
+            response.on('data', (chunk: any) => {
                 writeStream.write(chunk)
             })
-            res.on('end', () => {
-                writeStream.close((err) => {
+            response.on('end', () => {
+                writeStream.close((closeError) => {
                     if (!writeStream.closed) console.error('writeStream not closed')
-                    if (err) console.error('error', err)
+                    if (closeError) console.error('error', closeError)
 
                     callback(null, '')
                 })
             })
-            res.on('error', (err: any) => {
-                console.error('response error', err)
-                writeStream.destroy(err)
+            response.on('error', (responseError: any) => {
+                console.error('response error', responseError)
+                writeStream.destroy(responseError)
             })
         })
 
@@ -110,18 +110,18 @@ export class HttpTestClient {
         this.agent
             .set('Accept', 'text/event-stream')
             .buffer(true)
-            .parse((res, _) => {
-                res.on('data', (chunk: any) => {
-                    const data = chunk.toString()
+            .parse((response, _unused) => {
+                response.on('data', (chunk: any) => {
+                    const chunkText = chunk.toString()
 
-                    const lines = data.trim().split('\n')
+                    const lines = chunkText.trim().split('\n')
 
                     if (1 < lines.length) {
                         /**
                          * id: 1
                          * data: {"transactionId":"6712d234a78adbff65ae552d","status":"processing"}
                          */
-                        const message = this.parseEventMessage(data)
+                        const message = this.parseEventMessage(chunkText)
 
                         if (message.event !== 'error' && message.data) {
                             messageHandler(message.data)
@@ -132,15 +132,15 @@ export class HttpTestClient {
                         /**
                          * {"message":"Cannot GET /showtime-creation/events2","error":"Not Found","statusCode":404}
                          */
-                        errorHandler(data)
+                        errorHandler(chunkText)
                     }
                 })
-                res.on('end', (error) => {
-                    if (error) errorHandler(error)
+                response.on('end', (streamError) => {
+                    if (streamError) errorHandler(streamError)
                 })
             })
-            .end((err) => {
-                if (err) errorHandler(err)
+            .end((requestError) => {
+                if (requestError) errorHandler(requestError)
             })
 
         return this
@@ -152,46 +152,46 @@ export class HttpTestClient {
 
     private parseEventMessage(input: string): EventMessage {
         const lines = input.split('\n')
-        const result: Partial<EventMessage> = {}
+        const parsedMessage: Partial<EventMessage> = {}
 
         lines.forEach((line) => {
             const [key, value] = line.split(': ')
             if (key && value) {
                 switch (key) {
                     case 'event':
-                        result.event = value
+                        parsedMessage.event = value
                         break
                     case 'id':
-                        result.id = parseInt(value, 10)
+                        parsedMessage.id = parseInt(value, 10)
                         break
                     case 'data':
-                        result.data = value
+                        parsedMessage.data = value
                         break
                 }
             }
         })
 
-        return result as EventMessage
+        return parsedMessage as EventMessage
     }
 
     async send(status: number, expected?: any): Promise<superagent.Response> {
         // Without ok(() => true), status codes 400 and above will throw an exception.
         // ok(() => true)를 하지 않으면 400 이상 상태 코드는 예외를 던진다.
-        const res = await this.agent.ok(() => true)
+        const response = await this.agent.ok(() => true)
 
-        if (res.status !== status) {
-            console.log(JSON.stringify(res.body))
+        if (response.status !== status) {
+            console.log(JSON.stringify(response.body))
         }
 
-        expect(res.status).toEqual(status)
+        expect(response.status).toEqual(status)
 
-        res.body = jsonToObject(res.body)
+        response.body = jsonToObject(response.body)
 
         if (expected) {
-            expect(res.body).toEqual(expected)
+            expect(response.body).toEqual(expected)
         }
 
-        return res
+        return response
     }
 
     created = (expected?: any) => this.send(HttpStatus.CREATED, expected)
