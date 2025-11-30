@@ -6,7 +6,7 @@
         "start": "node _output/dist/${TARGET_APP}/index.js",
         "build": "nest build ${TARGET_APP} -b webpack",
         "debug": "nest start ${TARGET_APP} --watch",
-        "test": "bash scripts/run-test.sh all 1",
+        "test": "jest --no-cache --coverage",
         "test:e2e": "bash test/e2e/run.sh",
         "prettier": "prettier -w 'src/**/*.{js,jsx,ts,tsx}'",
         "lint": "prettier -c 'src/**/*.{js,jsx,ts,tsx}' && eslint src/ --max-warnings=0"
