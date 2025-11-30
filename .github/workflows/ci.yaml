@@ -1,5 +1,5 @@
 # https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
-name: Test and Coverage
+name: CI
 
 on:
     # Runs when a pull request targeting the main branch is created or updated
@@ -43,11 +43,8 @@ jobs:
             - name: Install deps
               run: npm ci
 
-            - name: Prettier
-              run: npx prettier --check 'src/**/*.ts'
-
-            - name: ESLint
-              run: npx eslint src --max-warnings=0
+            - name: Lint
+              run: npm run lint
 
             - name: Run Test Suites
               run: bash scripts/run-test.sh all 1

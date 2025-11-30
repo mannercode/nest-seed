@@ -22,11 +22,11 @@ export const fixtureFiles = {
     json: {
         path: p.join(__dirname, 'file.json'),
         originalName: 'file.json',
-        size: 29,
+        size: 30,
         mimeType: 'application/json',
         checksum: {
             algorithm: 'sha256',
-            hex: 'c8ab6f8b3a6f67807d5e9af2fa8a1bf0329433cfa5b31de1d5bbcc6ae174ff1d'
+            hex: '13f0ca9463471c54e8cd5c5aae4fb8d8343c7e8c89f104dcf1360a1d67a9ecb4'
         }
     },
     small: {

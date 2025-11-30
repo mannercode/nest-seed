@@ -14,18 +14,8 @@
             "detail": "Run the CLI tool",
             "type": "shell",
             "command": "bash scripts/run-cli.sh",
-            "runOptions": {
-                "instanceLimit": 99
-            },
-            "presentation": {
-                "focus": true,
-            }
-        },
-        {
-            "label": "Lint",
-            "detail": "Run ESLint and Prettier",
-            "type": "shell",
-            "command": "npm run lint"
+            "runOptions": { "instanceLimit": 99 },
+            "presentation": { "focus": true }
         },
         {
             "label": "Workspace Cleanup",
@@ -38,11 +28,7 @@
         {
             "id": "tests",
             "type": "pickString",
-            "options": [
-                "all",
-                "apps",
-                "common"
-            ],
+            "options": ["all", "apps", "common"],
             "description": "Select a test suite to run."
         }
     ]

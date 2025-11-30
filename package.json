@@ -8,10 +8,16 @@
         "debug": "nest start ${TARGET_APP} --watch",
         "test": "bash scripts/run-test.sh",
         "test:e2e": "bash test/e2e/run.sh",
-        "lint": "eslint src/"
+        "lint": "prettier --write src/ && eslint src/"
     },
     "lint-staged": {
-        "*.{js,ts,jsx,tsx,json,md,yml}": "prettier --write"
+        "*.{js,jsx,ts,tsx}": [
+            "eslint",
+            "prettier --write"
+        ],
+        "*.{json,md,yml,yaml}": [
+            "prettier --write"
+        ]
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.940.0",
