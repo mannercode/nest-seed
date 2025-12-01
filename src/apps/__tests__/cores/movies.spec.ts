@@ -87,8 +87,6 @@ describe('MoviesService', () => {
             })
 
             it('downloads the uploaded asset', async () => {
-                const downloadPath = Path.join(fixture.tempDir, 'download.tmp')
-
                 const { body: movie } = await fixture.httpClient
                     .get(`/movies/${createdMovie.id}`)
                     .ok(
@@ -103,6 +101,7 @@ describe('MoviesService', () => {
                 expect(downloadResponse.ok).toBe(true)
 
                 const downloadedBuffer = Buffer.from(await downloadResponse.arrayBuffer())
+                const downloadPath = Path.join(fixture.tempDir, 'download.tmp')
                 await writeFile(downloadPath, downloadedBuffer)
 
                 expect(await FileUtil.areEqual(downloadPath, fixture.image.path)).toBe(true)

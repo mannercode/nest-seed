@@ -1,3 +1,4 @@
+import { Checksum } from 'common'
 import p from 'path'
 
 export interface FixtureFile {
@@ -5,7 +6,7 @@ export interface FixtureFile {
     originalName: string
     size: number
     mimeType: string
-    checksum: { algorithm: 'sha256'; hex: string }
+    checksum: Checksum
 }
 
 export const fixtureFiles = {
