@@ -1,3 +1,11 @@
+export type DateAddOptions = {
+    base?: Date
+    days?: number
+    hours?: number
+    minutes?: number
+    seconds?: number
+}
+
 export class DateUtil {
     /**
      * Returns the earliest date from an array of Date objects.
@@ -79,13 +87,7 @@ export class DateUtil {
         hours = 0,
         minutes = 0,
         seconds = 0
-    }: {
-        base?: Date
-        days?: number
-        hours?: number
-        minutes?: number
-        seconds?: number
-    }): Date {
+    }: DateAddOptions): Date {
         const totalMilliseconds =
             days * 24 * 60 * 60 * 1000 +
             hours * 60 * 60 * 1000 +
