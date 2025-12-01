@@ -14,7 +14,7 @@ import { AssetsService } from './assets.service'
             MongooseConfigModule.connectionName
         ),
         S3ObjectModule.register({
-            useFactory: (config: AppConfigService) => config.amazonS3,
+            useFactory: (config: AppConfigService) => config.s3,
             inject: [AppConfigService]
         })
     ],

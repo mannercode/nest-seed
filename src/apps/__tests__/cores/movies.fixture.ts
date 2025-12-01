@@ -6,7 +6,6 @@ import { Path } from 'common'
 import {
     createMovie,
     createTestFixture,
-    ensureS3Bucket,
     FixtureFile,
     fixtureFiles,
     TestFixture
@@ -20,8 +19,6 @@ export type MoviesFixture = TestFixture & {
 }
 
 export async function createMoviesFixture() {
-    await ensureS3Bucket()
-
     const fix = await createTestFixture({
         imports: [MoviesModule, AssetsModule],
         providers: [MoviesClient, RecommendationClient, AssetsClient],

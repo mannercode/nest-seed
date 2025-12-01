@@ -1,6 +1,6 @@
 import { sleep } from 'common'
 import { intersection, sortBy } from 'lodash'
-import { oid } from 'testlib'
+import { oid, toAny } from 'testlib'
 import { holdTickets, releaseTickets, searchHeldTicketIds } from '../__helpers__'
 import type { TicketHoldingFixture } from './ticket-holding.fixture'
 
@@ -48,7 +48,7 @@ describe('TicketHoldingService', () => {
 
             beforeEach(async () => {
                 const { Rules } = await import('shared')
-                Rules.Ticket.holdDurationInMs = holdDuration
+                toAny(Rules).Ticket.holdDurationInMs = holdDuration
 
                 await holdTickets(fixture, {
                     showtimeId,
@@ -158,7 +158,7 @@ describe('TicketHoldingService', () => {
 
         beforeEach(async () => {
             const { Rules } = await import('shared')
-            Rules.Ticket.holdDurationInMs = holdDuration
+            toAny(Rules).Ticket.holdDurationInMs = holdDuration
 
             await holdTickets(fixture, { showtimeId, customerId, ticketIds })
         })

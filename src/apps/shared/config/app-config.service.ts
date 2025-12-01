@@ -142,7 +142,7 @@ export class AppConfigService extends BaseConfigService {
         }
     }
 
-    get amazonS3() {
+    get s3() {
         return {
             endpoint: this.getString('S3_ENDPOINT'),
             region: this.getString('S3_REGION'),

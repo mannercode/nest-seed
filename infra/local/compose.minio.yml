@@ -6,11 +6,9 @@ services:
         deploy: { resources: { limits: { memory: 512m } } }
         ports: ['9000:9000', '9001:9001']
         environment:
-            {
-                MINIO_ROOT_USER: $S3_ACCESS_KEY_ID,
-                MINIO_ROOT_PASSWORD: $S3_SECRET_ACCESS_KEY,
-                MINIO_BROWSER_REDIRECT_URL: $S3_ENDPOINT
-            }
+            MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID}
+            MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY}
+            MINIO_BROWSER_REDIRECT_URL: ${S3_ENDPOINT}
         command: 'server /data --console-address :9001'
         healthcheck:
             test: 'curl -fsS http://localhost:9000/minio/health/ready'
@@ -18,9 +16,18 @@ services:
     minio-setup:
         container_name: minio-setup
         image: amazon/aws-cli:latest
-        depends_on: { minio: { condition: service_healthy } }
-        # TODO 미완성이다. 다시 봐라
-        # command:  '--endpoint-url $S3_ENDPOINT s3 mb s3://$S3_BUCKET'
-        command: 'help'
+        depends_on:
+            minio:
+                condition: service_healthy
+        entrypoint: /bin/sh
+        command: >
+            -c "
+            aws --endpoint-url http://minio:9000 s3 mb s3://${S3_BUCKET} ||
+            aws --endpoint-url http://minio:9000 s3 ls s3://${S3_BUCKET}
+            "
         environment:
-            { AWS_ACCESS_KEY_ID: $S3_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY: $S3_SECRET_ACCESS_KEY }
+            AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+            AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+            AWS_DEFAULT_REGION: us-east-1
+            AWS_EC2_METADATA_DISABLED: 'true'
+            S3_BUCKET: ${S3_BUCKET}

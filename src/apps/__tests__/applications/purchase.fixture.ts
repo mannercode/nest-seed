@@ -35,6 +35,7 @@ import {
     createTestFixture,
     TestFixture
 } from '../__helpers__'
+import { toAny } from 'testlib'
 
 export type PurchaseFixture = TestFixture & {
     customer: CustomerDto
@@ -118,7 +119,7 @@ async function createAvailableAndHeldTickets(
     })
 
     const holdCount = 4
-    Rules.Ticket.maxTicketsPerPurchase = holdCount
+    toAny(Rules).Ticket.maxTicketsPerPurchase = holdCount
 
     const heldTickets = createdTickets.slice(0, holdCount)
     const availableTickets = createdTickets.slice(holdCount)

@@ -120,3 +120,7 @@ export class Env {
 export function step(_name: string, fn: () => Promise<void> | void) {
     return fn()
 }
+
+export function toAny<T>(value: T): any {
+    return value as any
+}

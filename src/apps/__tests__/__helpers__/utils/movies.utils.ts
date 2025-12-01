@@ -3,7 +3,6 @@ import { AssetsClient } from 'apps/infrastructures'
 import { readFile } from 'fs/promises'
 import { TestContext } from 'testlib'
 import { fixtureFiles } from '../fixture-files'
-import { ensureS3Bucket } from './assets.utils'
 
 export function buildCreateMovieDto(overrides = {}) {
     const createDto = {
@@ -42,8 +41,6 @@ export async function createMovie({ module }: TestContext, override = {}) {
 }
 
 async function uploadMovieImage(assetsService: AssetsClient) {
-    await ensureS3Bucket()
-
     const uploadInfo = await assetsService.create({
         originalName: fixtureFiles.image.originalName,
         mimeType: fixtureFiles.image.mimeType,

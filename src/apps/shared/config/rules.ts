@@ -32,4 +32,4 @@ export const Rules = {
         draftExpiresInMinutes: 60
     },
     Asset: { uploadExpiresInSec: 60 * 60, downloadExpiresInSec: 60 * 60 }
-}
+} as const

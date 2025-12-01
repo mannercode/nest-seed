@@ -1,41 +1,20 @@
 {
     "name": "${containerWorkspaceFolderBasename}",
-    "hostRequirements": {
-        "cpus": 4,
-        "memory": "16gb",
-        "storage": "32gb"
-    },
-    "build": {
-        "dockerfile": "Dockerfile",
-        "context": "."
-    },
-    "features": {
-        "ghcr.io/devcontainers/features/docker-in-docker:2": {
-            "moby": false
-        }
-    },
+    "hostRequirements": { "cpus": 4, "memory": "16gb", "storage": "32gb" },
+    "build": { "dockerfile": "Dockerfile", "context": "." },
+    "features": { "ghcr.io/devcontainers/features/docker-in-docker:2": { "moby": false } },
     "initializeCommand": "mkdir -p ${env:HOME}/.codex",
-    "mounts": [
-        "source=${env:HOME}/.codex,target=/home/node/.codex,type=bind"
-    ],
+    "mounts": ["source=${env:HOME}/.codex,target=/home/node/.codex,type=bind"],
     "privileged": true,
     "runArgs": [
         "--add-host",
         "host.docker.internal:127.0.0.1",
         "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     ],
-    "forwardPorts": [
-        5010,
-        5020
-    ],
+    "forwardPorts": [5010, 5020],
     "remoteUser": "node",
-    "remoteEnv": {
-        "WORKSPACE_ROOT": "${containerWorkspaceFolder}"
-    },
-    "postCreateCommand": {
-        "husky": "npx husky",
-        "ci": "npm ci"
-    },
+    "remoteEnv": { "WORKSPACE_ROOT": "${containerWorkspaceFolder}" },
+    "postCreateCommand": { "husky": "npx husky", "ci": "npm ci" },
     "postStartCommand": {
         "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null",
         "reset-infra": "bash infra/local/reset-infra.sh"
@@ -49,7 +28,7 @@
                 "ms-azuretools.vscode-docker",
                 "ms-azuretools.vscode-containers",
                 "jebbs.plantuml",
-                "esbenp.prettier-vscode",
+                "prettier.prettier-vscode",
                 "mutantdino.resourcemonitor",
                 "mkhl.shfmt",
                 "github.vscode-pull-request-github",
@@ -63,17 +42,9 @@
                     "package-lock.json": true,
                     "**/_output/**": true
                 },
-                "search.exclude": {
-                    "**/node_modules/**": true,
-                    "**/_output/**": true
-                },
-                "files.exclude": {
-                    "**/node_modules/**": true,
-                    "package-lock.json": true
-                },
-                "files.associations": {
-                    "*.cfg": "shellscript"
-                },
+                "search.exclude": { "**/node_modules/**": true, "**/_output/**": true },
+                "files.exclude": { "**/node_modules/**": true, "package-lock.json": true },
+                "files.associations": { "*.cfg": "shellscript" },
                 "remote.autoForwardPorts": false,
                 "remote.downloadExtensionsLocally": true,
                 "prettier.enableDebugLogs": true,
@@ -85,44 +56,23 @@
                 "javascript.validate.enable": false,
                 "javascript.updateImportsOnFileMove.enabled": "never",
                 "typescript.updateImportsOnFileMove.enabled": "never",
-                "editor.defaultFormatter": "esbenp.prettier-vscode",
-                "[dockerfile]": {
-                    "editor.defaultFormatter": "ms-azuretools.vscode-containers"
-                },
-                "[json]": {
-                    "editor.defaultFormatter": "vscode.json-language-features"
-                },
-                "[jsonc]": {
-                    "editor.defaultFormatter": "vscode.json-language-features"
-                },
-                "[html]": {
-                    "editor.defaultFormatter": "vscode.html-language-features"
-                },
-                "[dotenv]": {
-                    "editor.defaultFormatter": "mkhl.shfmt"
-                },
-                "[shellscript]": {
-                    "editor.defaultFormatter": "mkhl.shfmt"
-                },
-                "[ignore]": {
-                    "editor.defaultFormatter": "mkhl.shfmt"
-                },
-                "[properties]": {
-                    "editor.defaultFormatter": "mkhl.shfmt"
-                },
-                "[markdown]": {
-                    "editor.defaultFormatter": "esbenp.prettier-vscode"
-                },
+                "editor.defaultFormatter": "prettier.prettier-vscode",
+                "[dockerfile]": { "editor.defaultFormatter": "ms-azuretools.vscode-containers" },
+                "[json]": { "editor.defaultFormatter": "vscode.json-language-features" },
+                "[jsonc]": { "editor.defaultFormatter": "vscode.json-language-features" },
+                "[html]": { "editor.defaultFormatter": "vscode.html-language-features" },
+                "[dotenv]": { "editor.defaultFormatter": "mkhl.shfmt" },
+                "[shellscript]": { "editor.defaultFormatter": "mkhl.shfmt" },
+                "[ignore]": { "editor.defaultFormatter": "mkhl.shfmt" },
+                "[properties]": { "editor.defaultFormatter": "mkhl.shfmt" },
+                "[markdown]": { "editor.defaultFormatter": "prettier.prettier-vscode" },
                 "plantuml.server": "http://localhost:5020/",
                 "plantuml.render": "PlantUMLServer",
                 "githubPullRequests.pullBranch": "never",
                 "githubPullRequests.createOnPublishBranch": "never",
                 "githubPullRequests.fileListLayout": "flat",
                 "githubIssues.queries": [
-                    {
-                        "label": "My Issues",
-                        "query": "default"
-                    },
+                    { "label": "My Issues", "query": "default" },
                     {
                         "label": "Created Issues",
                         "query": "author:${user} state:open repo:${owner}/${repository} sort:created-desc"

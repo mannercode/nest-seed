@@ -1,6 +1,5 @@
-import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
 import { readFile } from 'fs/promises'
-import { TestContext, getS3TestConnection } from 'testlib'
+import { TestContext } from 'testlib'
 import { FixtureFile } from '../fixture-files'
 
 export async function getAssets({ module }: TestContext, assetIds: string[]) {
@@ -13,8 +12,6 @@ export async function getAssets({ module }: TestContext, assetIds: string[]) {
 export async function uploadAssets({ module }: TestContext, files: FixtureFile[]) {
     const { AssetsClient } = await import('apps/infrastructures')
     const assetsService = module.get(AssetsClient)
-
-    await ensureS3Bucket()
 
     const assetIds: string[] = []
 
@@ -40,24 +37,4 @@ export async function uploadAssets({ module }: TestContext, files: FixtureFile[]
     }
 
     return assetsService.getMany(assetIds)
-}
-
-export async function ensureS3Bucket() {
-    const { endpoint, region, accessKeyId, secretAccessKey, forcePathStyle, bucket } =
-        getS3TestConnection()
-
-    const client = new S3Client({
-        endpoint,
-        region,
-        credentials: { accessKeyId, secretAccessKey },
-        forcePathStyle
-    })
-
-    try {
-        await client.send(new CreateBucketCommand({ Bucket: bucket }))
-    } catch (error: any) {
-        if (error?.name !== 'BucketAlreadyOwnedByYou' && error?.$metadata?.httpStatusCode !== 409) {
-            throw error
-        }
-    }
 }
