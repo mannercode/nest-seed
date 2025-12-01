@@ -68,7 +68,7 @@ export class AssetsService {
         return { deletedAssets: this.toDtos(deletedAssets) }
     }
 
-    private toDto = (asset: AssetDocument): AssetDto => {
+    private toDto(asset: AssetDocument): AssetDto {
         const dto = mapDocToDto(asset, AssetDto, [
             'id',
             'originalName',
@@ -87,7 +87,10 @@ export class AssetsService {
 
         return dto
     }
-    private toDtos = (assets: AssetDocument[]) => assets.map((asset) => this.toDto(asset))
+
+    private toDtos(assets: AssetDocument[]) {
+        return assets.map((asset) => this.toDto(asset))
+    }
 
     private async withDownloadInfo(assetDto: AssetDto): Promise<AssetDto> {
         const expiresInSec = Rules.Asset.downloadExpiresInSec

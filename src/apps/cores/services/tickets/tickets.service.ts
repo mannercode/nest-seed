@@ -51,8 +51,8 @@ export class TicketsService {
         return this.toDtos(tickets)
     }
 
-    private toDto = (ticket: TicketDocument) =>
-        mapDocToDto(ticket, TicketDto, [
+    private toDto(ticket: TicketDocument) {
+        return mapDocToDto(ticket, TicketDto, [
             'id',
             'showtimeId',
             'theaterId',
@@ -60,6 +60,9 @@ export class TicketsService {
             'status',
             'seat'
         ])
+    }
 
-    private toDtos = (tickets: TicketDocument[]) => tickets.map((ticket) => this.toDto(ticket))
+    private toDtos(tickets: TicketDocument[]) {
+        return tickets.map((ticket) => this.toDto(ticket))
+    }
 }

@@ -39,9 +39,11 @@ export class Seatmap {
     @Type(() => SeatBlock)
     blocks: SeatBlock[]
 
-    static getAllSeats = (seatmap: Seatmap) => Array.from(this.seatsIterator(seatmap))
+    static getAllSeats(seatmap: Seatmap) {
+        return Array.from(this.seatsIterator(seatmap))
+    }
 
-    static getSeatCount = (seatmap: Seatmap) => {
+    static getSeatCount(seatmap: Seatmap) {
         let seatCount = 0
 
         for (const block of seatmap.blocks) {

@@ -42,8 +42,11 @@ export class TheatersService {
         return this.repository.allExistByIds(theaterIds)
     }
 
-    private toDto = (theater: TheaterDocument) =>
-        mapDocToDto(theater, TheaterDto, ['id', 'name', 'location', 'seatmap'])
+    private toDto(theater: TheaterDocument) {
+        return mapDocToDto(theater, TheaterDto, ['id', 'name', 'location', 'seatmap'])
+    }
 
-    private toDtos = (theaters: TheaterDocument[]) => theaters.map((theater) => this.toDto(theater))
+    private toDtos(theaters: TheaterDocument[]) {
+        return theaters.map((theater) => this.toDto(theater))
+    }
 }
