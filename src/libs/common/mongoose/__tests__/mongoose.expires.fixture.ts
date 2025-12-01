@@ -12,9 +12,9 @@ export class ExpireSample extends MongooseSchema {
     expiresAt: Date
 }
 
-export type Fixture = { teardown: () => Promise<void>; model: Model<ExpireSample> }
+export type MongooseExpiresFixture = { teardown: () => Promise<void>; model: Model<ExpireSample> }
 
-export async function createFixture() {
+export async function createMongooseExpiresFixture() {
     const schema = createMongooseSchema(ExpireSample)
 
     const { uri, dbName } = getMongoTestConnection()

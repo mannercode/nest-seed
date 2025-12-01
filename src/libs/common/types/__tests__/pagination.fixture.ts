@@ -31,13 +31,13 @@ class SamplesController {
     }
 }
 
-export type Fixture = {
+export type PaginationFixture = {
     teardown: () => Promise<void>
     httpClient: HttpTestClient
     rpcClient: RpcTestClient
 }
 
-export async function createFixture() {
+export async function createPaginationFixture() {
     const { servers } = await getNatsTestConnection()
     const brokerOpts = { transport: Transport.NATS, options: { servers } } as NatsOptions
 

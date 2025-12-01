@@ -5,14 +5,14 @@ import { TestContext } from 'testlib'
 import { readFile } from 'fs/promises'
 import { Path } from 'common'
 
-export type Fixture = TestFixture & {
+export type AssetsFixture = TestFixture & {
     file: FixtureFile
     assetsClient: AssetsClient
     createDto: CreateAssetDto
     tempDir: string
 }
 
-export async function createFixture() {
+export async function createAssetsFixture() {
     const testFixture = await createTestFixture({
         imports: [AssetsModule],
         providers: [AssetsClient]

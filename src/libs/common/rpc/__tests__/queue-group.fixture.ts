@@ -29,13 +29,13 @@ export class MessageController {
     processBroadcastLogic() {}
 }
 
-export type Fixture = {
+export type QueueGroupFixture = {
     teardown: () => Promise<void>
     rpcClient: RpcTestClient
     numberOfInstance: number
 }
 
-export async function createFixture() {
+export async function createQueueGroupFixture() {
     const { servers } = getNatsTestConnection()
     const brokerOptions = {
         transport: Transport.NATS,

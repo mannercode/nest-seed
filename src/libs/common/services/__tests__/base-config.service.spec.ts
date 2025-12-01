@@ -1,11 +1,11 @@
-import type { Fixture } from './base-config.service.fixture'
+import type { BaseConfigServiceFixture } from './base-config.service.fixture'
 
 describe('BaseConfigService', () => {
-    let fixture: Fixture
+    let fixture: BaseConfigServiceFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./base-config.service.fixture')
-        fixture = await createFixture()
+        const { createBaseConfigServiceFixture } = await import('./base-config.service.fixture')
+        fixture = await createBaseConfigServiceFixture()
     })
 
     afterEach(async () => {

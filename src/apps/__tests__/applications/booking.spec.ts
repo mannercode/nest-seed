@@ -2,14 +2,14 @@ import { MovieDto, ShowtimeDto, TheaterDto, TicketDto, TicketStatus } from 'apps
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, step } from 'testlib'
 import { Errors } from '../__helpers__'
-import { createAllResources, type Fixture } from './booking.fixture'
+import { createAllResources, type BookingFixture } from './booking.fixture'
 
 describe('BookingService', () => {
-    let fixture: Fixture
+    let fixture: BookingFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./booking.fixture')
-        fixture = await createFixture()
+        const { createBookingFixture } = await import('./booking.fixture')
+        fixture = await createBookingFixture()
     })
 
     afterEach(async () => {

@@ -43,7 +43,7 @@ class TestController {
     }
 }
 
-export type Fixture = {
+export type ExceptionLoggerFilterFixture = {
     teardown: () => Promise<void>
     httpClient: HttpTestClient
     rpcClient: RpcTestClient
@@ -52,7 +52,7 @@ export type Fixture = {
     spyFatal: jest.SpyInstance
 }
 
-export async function createFixture() {
+export async function createExceptionLoggerFilterFixture() {
     const { servers } = getNatsTestConnection()
     const brokerOptions = { transport: Transport.NATS, options: { servers } } as NatsOptions
 

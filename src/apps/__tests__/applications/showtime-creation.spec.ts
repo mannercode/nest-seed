@@ -5,16 +5,16 @@ import { nullObjectId } from 'testlib'
 import { createShowtimes } from '../__helpers__'
 import {
     buildBulkCreateShowtimesDto,
-    Fixture,
+    ShowtimeCreationFixture,
     waitForCompletion
 } from './showtime-creation.fixture'
 
 describe('ShowtimeCreationService', () => {
-    let fixture: Fixture
+    let fixture: ShowtimeCreationFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./showtime-creation.fixture')
-        fixture = await createFixture()
+        const { createShowtimeCreationFixture } = await import('./showtime-creation.fixture')
+        fixture = await createShowtimeCreationFixture()
     })
 
     afterEach(async () => {

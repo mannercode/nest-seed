@@ -2,7 +2,7 @@ import { CreatePurchaseDto } from 'apps/applications'
 import { PurchaseRecordDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { Errors, getPayments, getTickets } from '../__helpers__'
-import { buildCreatePurchaseDto, Fixture } from './purchase.fixture'
+import { buildCreatePurchaseDto, type PurchaseFixture } from './purchase.fixture'
 
 // TODO
 // 위의 코등 중에서 it('creates and returns a purchase', async () => { 을 보면 단순히 검증만 하고 있다.
@@ -11,11 +11,11 @@ import { buildCreatePurchaseDto, Fixture } from './purchase.fixture'
 // TODO fix 라고 표시한 건 다 고쳐야 한다
 
 describe('PurchaseService', () => {
-    let fixture: Fixture
+    let fixture: PurchaseFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./purchase.fixture')
-        fixture = await createFixture()
+        const { createPurchaseFixture } = await import('./purchase.fixture')
+        fixture = await createPurchaseFixture()
     })
 
     afterEach(async () => {

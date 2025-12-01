@@ -63,14 +63,14 @@ export function toDtos(items: SampleDocument[]) {
     return items.map((item) => toDto(item))
 }
 
-export type Fixture = {
+export type MongooseRepositoryFixture = {
     teardown: () => Promise<void>
     repository: SamplesRepository
     BadRequestException: typeof BadRequestException
     NotFoundException: typeof NotFoundException
 }
 
-export async function createFixture() {
+export async function createMongooseRepositoryFixture() {
     const { uri, dbName } = getMongoTestConnection()
 
     const testContext = await createTestContext({

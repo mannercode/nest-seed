@@ -8,9 +8,9 @@ class TestInjectS3ObjectService {
     constructor(@InjectS3Object() readonly _: S3ObjectService) {}
 }
 
-export type Fixture = { teardown: () => Promise<void>; s3Service: S3ObjectService }
+export type S3ObjectServiceFixture = { teardown: () => Promise<void>; s3Service: S3ObjectService }
 
-export async function createFixture() {
+export async function createS3ObjectServiceFixture() {
     const { endpoint, region, accessKeyId, secretAccessKey, forcePathStyle } = getS3TestConnection()
 
     const bucket = await createTempBucket()

@@ -4,13 +4,13 @@ import { RedisHealthIndicator } from 'common'
 import Redis from 'ioredis'
 import { createTestingModule, getRedisTestConnection } from 'testlib'
 
-export type Fixture = {
+export type RedisHealthIndicatorFixture = {
     teardown: () => Promise<void>
     redisIndicator: RedisHealthIndicator
     redis: Redis
 }
 
-export async function createFixture() {
+export async function createRedisHealthIndicatorFixture() {
     const { nodes, password } = getRedisTestConnection()
 
     const module = await createTestingModule({

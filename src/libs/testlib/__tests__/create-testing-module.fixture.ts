@@ -8,9 +8,9 @@ export class SampleService {
     }
 }
 
-export type Fixture = { teardown: () => Promise<void>; sampleService: SampleService }
+export type TestingModuleFixture = { teardown: () => Promise<void>; sampleService: SampleService }
 
-export async function createFixture(): Promise<Fixture> {
+export async function createTestingModuleFixture(): Promise<TestingModuleFixture> {
     const module = await createTestingModule({
         providers: [SampleService],
         overrideProviders: [

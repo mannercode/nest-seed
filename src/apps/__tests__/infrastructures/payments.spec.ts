@@ -1,13 +1,13 @@
 import { PaymentDto } from 'apps/infrastructures'
 import { buildCreatePaymentDto, createPayment } from '../__helpers__'
-import type { Fixture } from './payments.fixture'
+import type { PaymentsFixture } from './payments.fixture'
 
 describe('PaymentsService', () => {
-    let fixture: Fixture
+    let fixture: PaymentsFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./payments.fixture')
-        fixture = await createFixture()
+        const { createPaymentsFixture } = await import('./payments.fixture')
+        fixture = await createPaymentsFixture()
     })
 
     afterEach(async () => {

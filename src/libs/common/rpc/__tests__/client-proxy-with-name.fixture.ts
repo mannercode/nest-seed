@@ -18,9 +18,12 @@ class TestController {
     }
 }
 
-export type Fixture = { teardown: () => Promise<void>; httpClient: HttpTestClient }
+export type ClientProxyWithNameFixture = {
+    teardown: () => Promise<void>
+    httpClient: HttpTestClient
+}
 
-export async function createFixture() {
+export async function createClientProxyWithNameFixture() {
     const { servers } = getNatsTestConnection()
     const brokerOptions = { transport: Transport.NATS, options: { servers } } as NatsOptions
 

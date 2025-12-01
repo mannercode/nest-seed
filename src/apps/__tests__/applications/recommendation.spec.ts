@@ -1,12 +1,16 @@
 import { MovieDto, MovieGenre } from 'apps/cores'
-import { createShowingMovies, createWatchedMovies, Fixture } from './recommendation.fixture'
+import {
+    createShowingMovies,
+    createWatchedMovies,
+    type RecommendationFixture
+} from './recommendation.fixture'
 
 describe('RecommendationService', () => {
-    let fixture: Fixture
+    let fixture: RecommendationFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./recommendation.fixture')
-        fixture = await createFixture()
+        const { createRecommendationFixture } = await import('./recommendation.fixture')
+        fixture = await createRecommendationFixture()
     })
 
     afterEach(async () => {

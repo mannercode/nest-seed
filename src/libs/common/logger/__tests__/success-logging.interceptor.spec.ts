@@ -1,15 +1,17 @@
 import { Provider } from '@nestjs/common'
 import { withTestId } from 'testlib'
-import type { Fixture } from './success-logging.interceptor.fixture'
+import type { SuccessLoggingInterceptorFixture } from './success-logging.interceptor.fixture'
 
 describe('SuccessLoggingInterceptor', () => {
-    let fixture: Fixture
-    let createFixture: (providers: Provider[]) => Promise<any>
+    let fixture: SuccessLoggingInterceptorFixture
+    let createInterceptorFixture: (
+        providers: Provider[]
+    ) => Promise<SuccessLoggingInterceptorFixture>
 
     beforeEach(async () => {
-        const { createFixture: _createFixture } =
+        const { createSuccessLoggingInterceptorFixture } =
             await import('./success-logging.interceptor.fixture')
-        createFixture = _createFixture
+        createInterceptorFixture = createSuccessLoggingInterceptorFixture
     })
 
     afterEach(async () => {
@@ -18,7 +20,7 @@ describe('SuccessLoggingInterceptor', () => {
 
     describe('when the requests succeed', () => {
         beforeEach(async () => {
-            fixture = await createFixture([])
+            fixture = await createInterceptorFixture([])
         })
 
         describe('when an HTTP request succeeds', () => {
@@ -74,7 +76,7 @@ describe('SuccessLoggingInterceptor', () => {
 
     describe('LOGGING_EXCLUDE_HTTP_PATHS', () => {
         beforeEach(async () => {
-            fixture = await createFixture([
+            fixture = await createInterceptorFixture([
                 { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/exclude-path'] }
             ])
         })
@@ -88,7 +90,7 @@ describe('SuccessLoggingInterceptor', () => {
 
     describe('LOGGING_EXCLUDE_RPC_PATHS', () => {
         beforeEach(async () => {
-            fixture = await createFixture([
+            fixture = await createInterceptorFixture([
                 { provide: 'LOGGING_EXCLUDE_RPC_PATHS', useValue: [withTestId('exclude-path')] }
             ])
         })

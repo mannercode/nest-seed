@@ -1,12 +1,12 @@
 import { withTestId } from 'testlib'
-import type { Fixture } from './create-test-context.fixture'
+import type { TestContextFixture } from './create-test-context.fixture'
 
 describe('createTestContext', () => {
-    let fixture: Fixture
+    let fixture: TestContextFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./create-test-context.fixture')
-        fixture = await createFixture()
+        const { createTestContextFixture } = await import('./create-test-context.fixture')
+        fixture = await createTestContextFixture()
     })
 
     afterEach(async () => {

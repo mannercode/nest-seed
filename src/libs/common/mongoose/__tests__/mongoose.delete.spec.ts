@@ -1,12 +1,16 @@
-import { Fixture, HardDeleteSample, SoftDeleteSample } from './mongoose.delete.fixture'
+import {
+    HardDeleteSample,
+    MongooseDeleteFixture,
+    SoftDeleteSample
+} from './mongoose.delete.fixture'
 
 describe('Mongoose Delete', () => {
     describe('Soft Delete', () => {
-        let fixture: Fixture<SoftDeleteSample>
+        let fixture: MongooseDeleteFixture<SoftDeleteSample>
 
         beforeEach(async () => {
-            const { createFixture } = await import('./mongoose.delete.fixture')
-            fixture = await createFixture(SoftDeleteSample)
+            const { createMongooseDeleteFixture } = await import('./mongoose.delete.fixture')
+            fixture = await createMongooseDeleteFixture(SoftDeleteSample)
         })
 
         afterEach(async () => {
@@ -60,11 +64,11 @@ describe('Mongoose Delete', () => {
     })
 
     describe('Hard Delete', () => {
-        let fixture: Fixture<HardDeleteSample>
+        let fixture: MongooseDeleteFixture<HardDeleteSample>
 
         beforeEach(async () => {
-            const { createFixture } = await import('./mongoose.delete.fixture')
-            fixture = await createFixture(HardDeleteSample)
+            const { createMongooseDeleteFixture } = await import('./mongoose.delete.fixture')
+            fixture = await createMongooseDeleteFixture(HardDeleteSample)
         })
 
         afterEach(async () => {

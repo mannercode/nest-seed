@@ -78,9 +78,12 @@ export class SchemaTypeSample extends MongooseSchema {
     optional?: boolean
 }
 
-export type Fixture = { teardown: () => Promise<void>; model: Model<SchemaTypeSample> }
+export type MongooseSchemaFixture = {
+    teardown: () => Promise<void>
+    model: Model<SchemaTypeSample>
+}
 
-export async function createFixture() {
+export async function createMongooseSchemaFixture() {
     const schema = createMongooseSchema(SchemaTypeSample)
 
     const { uri, dbName } = getMongoTestConnection()

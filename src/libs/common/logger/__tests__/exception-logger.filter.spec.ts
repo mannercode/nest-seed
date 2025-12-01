@@ -1,12 +1,13 @@
 import { withTestId } from 'testlib'
-import type { Fixture } from './exception-logger.filter.fixture'
+import type { ExceptionLoggerFilterFixture } from './exception-logger.filter.fixture'
 
 describe('ExceptionLoggerFilter', () => {
-    let fixture: Fixture
+    let fixture: ExceptionLoggerFilterFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./exception-logger.filter.fixture')
-        fixture = await createFixture()
+        const { createExceptionLoggerFilterFixture } =
+            await import('./exception-logger.filter.fixture')
+        fixture = await createExceptionLoggerFilterFixture()
     })
 
     afterEach(async () => {

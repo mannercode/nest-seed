@@ -48,9 +48,9 @@ export async function createShowingMovies(ctx: TestFixture, dtos: Partial<MovieD
     return { movies, showtimes }
 }
 
-export type Fixture = TestFixture
+export type RecommendationFixture = TestFixture
 
-export async function createFixture(): Promise<Fixture> {
+export async function createRecommendationFixture(): Promise<RecommendationFixture> {
     const fix = await createTestFixture({
         imports: [
             MoviesModule,

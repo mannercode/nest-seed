@@ -35,7 +35,7 @@ class SamplesController {
     }
 }
 
-export async function createFixture() {
+export async function createRequestValidationPipeFixture() {
     const testContext = await createHttpTestContext({
         metadata: {
             controllers: [SamplesController],
@@ -50,4 +50,4 @@ export async function createFixture() {
     return { ...testContext, teardown }
 }
 
-export type Fixture = HttpTestContext & { teardown: () => Promise<void> }
+export type RequestValidationPipeFixture = HttpTestContext & { teardown: () => Promise<void> }

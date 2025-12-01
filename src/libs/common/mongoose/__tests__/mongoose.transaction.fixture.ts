@@ -19,13 +19,13 @@ class SamplesRepository extends MongooseRepository<Sample> {
     }
 }
 
-export type Fixture = {
+export type MongooseTransactionFixture = {
     teardown: () => Promise<void>
     repository: SamplesRepository
     model: Model<Sample>
 }
 
-export async function createFixture() {
+export async function createMongooseTransactionFixture() {
     const { uri, dbName } = getMongoTestConnection()
 
     const testContext = await createTestContext({

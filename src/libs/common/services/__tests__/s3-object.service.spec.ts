@@ -3,15 +3,15 @@ import {
     PutObjectResult,
     testBuffer,
     uploadObject,
-    type Fixture
+    type S3ObjectServiceFixture
 } from './s3-object.service.fixture'
 
 describe('S3ObjectService', () => {
-    let fixture: Fixture
+    let fixture: S3ObjectServiceFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./s3-object.service.fixture')
-        fixture = await createFixture()
+        const { createS3ObjectServiceFixture } = await import('./s3-object.service.fixture')
+        fixture = await createS3ObjectServiceFixture()
     })
 
     afterEach(async () => {

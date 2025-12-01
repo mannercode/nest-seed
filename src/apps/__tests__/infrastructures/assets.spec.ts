@@ -3,14 +3,14 @@ import { AssetDto } from 'apps/infrastructures'
 import { FileUtil, Path } from 'common'
 import { writeFile } from 'fs/promises'
 import { nullObjectId } from 'testlib'
-import { uploadAndCompleteAsset, type Fixture } from './assets.fixture'
+import { uploadAndCompleteAsset, type AssetsFixture } from './assets.fixture'
 
 describe('AssetsService', () => {
-    let fixture: Fixture
+    let fixture: AssetsFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./assets.fixture')
-        fixture = await createFixture()
+        const { createAssetsFixture } = await import('./assets.fixture')
+        fixture = await createAssetsFixture()
     })
 
     afterEach(async () => {

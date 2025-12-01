@@ -55,9 +55,9 @@ export function waitForCompletion(fix: TestFixture, status: string) {
     })
 }
 
-export type Fixture = TestFixture & { movie: MovieDto; theater: TheaterDto }
+export type ShowtimeCreationFixture = TestFixture & { movie: MovieDto; theater: TheaterDto }
 
-export async function createFixture(): Promise<Fixture> {
+export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationFixture> {
     const fix = await createTestFixture({
         imports: [
             MoviesModule,

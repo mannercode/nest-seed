@@ -3,7 +3,7 @@ import { expectEqualUnsorted, nullObjectId } from 'testlib'
 import {
     createSample,
     createSamples,
-    Fixture,
+    MongooseRepositoryFixture,
     SampleDto,
     sortByName,
     sortByNameDescending,
@@ -12,12 +12,13 @@ import {
 } from './mongoose.repository.fixture'
 
 describe('MongooseRepository', () => {
-    let fixture: Fixture
+    let fixture: MongooseRepositoryFixture
     let maxTake = 0
 
     beforeEach(async () => {
-        const { createFixture, maxTakeValue } = await import('./mongoose.repository.fixture')
-        fixture = await createFixture()
+        const { createMongooseRepositoryFixture, maxTakeValue } =
+            await import('./mongoose.repository.fixture')
+        fixture = await createMongooseRepositoryFixture()
         maxTake = maxTakeValue
     })
 

@@ -57,9 +57,9 @@ export async function createAllResources(
     return { customer, accessToken, refreshToken, movie, theaters, showtimes, tickets }
 }
 
-export type Fixture = TestFixture
+export type BookingFixture = TestFixture
 
-export async function createFixture(): Promise<Fixture> {
+export async function createBookingFixture(): Promise<BookingFixture> {
     const fix = await createTestFixture({
         imports: [
             MoviesModule,

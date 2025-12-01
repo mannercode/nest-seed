@@ -2,14 +2,14 @@ import { sleep } from 'common'
 import { intersection, sortBy } from 'lodash'
 import { oid } from 'testlib'
 import { holdTickets, releaseTickets, searchHeldTicketIds } from '../__helpers__'
-import type { Fixture } from './ticket-holding.fixture'
+import type { TicketHoldingFixture } from './ticket-holding.fixture'
 
 describe('TicketHoldingService', () => {
-    let fixture: Fixture
+    let fixture: TicketHoldingFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./ticket-holding.fixture')
-        fixture = await createFixture()
+        const { createTicketHoldingFixture } = await import('./ticket-holding.fixture')
+        fixture = await createTicketHoldingFixture()
     })
 
     afterEach(async () => {

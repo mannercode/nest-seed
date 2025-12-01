@@ -2,14 +2,14 @@ import { ShowtimeDto } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, oid } from 'testlib'
 import { buildCreateShowtimeDto, createShowtimes } from '../__helpers__'
-import type { Fixture } from './showtimes.fixture'
+import type { ShowtimesFixture } from './showtimes.fixture'
 
 describe('ShowtimesService', () => {
-    let fixture: Fixture
+    let fixture: ShowtimesFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./showtimes.fixture')
-        fixture = await createFixture()
+        const { createShowtimesFixture } = await import('./showtimes.fixture')
+        fixture = await createShowtimesFixture()
     })
 
     afterEach(async () => {

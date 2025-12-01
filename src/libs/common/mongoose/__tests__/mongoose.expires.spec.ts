@@ -1,12 +1,12 @@
 import { sleep } from '../../utils'
-import type { Fixture } from './mongoose.expires.fixture'
+import type { MongooseExpiresFixture } from './mongoose.expires.fixture'
 
 describe('Mongoose Expires Examples', () => {
-    let fixture: Fixture
+    let fixture: MongooseExpiresFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./mongoose.expires.fixture')
-        fixture = await createFixture()
+        const { createMongooseExpiresFixture } = await import('./mongoose.expires.fixture')
+        fixture = await createMongooseExpiresFixture()
     })
 
     afterEach(async () => {

@@ -1,13 +1,13 @@
 import { nullObjectId } from 'testlib'
 import { buildCreatePurchaseRecordDto, Errors } from '../__helpers__'
-import { Fixture } from './purchase-records.fixture'
+import type { PurchaseRecordsFixture } from './purchase-records.fixture'
 
 describe('PurchaseRecordsService', () => {
-    let fixture: Fixture
+    let fixture: PurchaseRecordsFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./purchase-records.fixture')
-        fixture = await createFixture()
+        const { createPurchaseRecordsFixture } = await import('./purchase-records.fixture')
+        fixture = await createPurchaseRecordsFixture()
     })
 
     afterEach(async () => {

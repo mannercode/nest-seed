@@ -55,13 +55,13 @@ class EmitTestController {
     }
 }
 
-export type Fixture = {
+export type ClientProxyServiceFixture = {
     teardown: () => Promise<void>
     rpcClient: RpcTestClient
     httpClient: HttpTestClient
 }
 
-export async function createFixture() {
+export async function createClientProxyServiceFixture() {
     const { servers } = getNatsTestConnection()
     const brokerOptions = { transport: Transport.NATS, options: { servers } } as NatsOptions
 

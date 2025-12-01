@@ -1,12 +1,12 @@
 import { Types } from 'mongoose'
-import type { Fixture } from './mongoose.schema.fixture'
+import type { MongooseSchemaFixture } from './mongoose.schema.fixture'
 
 describe('Mongoose Schema Examples', () => {
-    let fixture: Fixture
+    let fixture: MongooseSchemaFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./mongoose.schema.fixture')
-        fixture = await createFixture()
+        const { createMongooseSchemaFixture } = await import('./mongoose.schema.fixture')
+        fixture = await createMongooseSchemaFixture()
     })
 
     afterEach(async () => {

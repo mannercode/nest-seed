@@ -1,12 +1,12 @@
 import { withTestId } from 'testlib'
-import type { Fixture } from './client-proxy.service.fixture'
+import type { ClientProxyServiceFixture } from './client-proxy.service.fixture'
 
 describe('ClientProxyService', () => {
-    let fixture: Fixture
+    let fixture: ClientProxyServiceFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./client-proxy.service.fixture')
-        fixture = await createFixture()
+        const { createClientProxyServiceFixture } = await import('./client-proxy.service.fixture')
+        fixture = await createClientProxyServiceFixture()
     })
 
     afterEach(async () => {

@@ -1,9 +1,9 @@
 import { WatchRecordsClient, WatchRecordsModule } from 'apps/cores'
 import { TestFixture, createTestFixture } from '../__helpers__'
 
-export type Fixture = TestFixture & { watchRecordsService: WatchRecordsClient }
+export type WatchRecordsFixture = TestFixture & { watchRecordsService: WatchRecordsClient }
 
-export async function createFixture() {
+export async function createWatchRecordsFixture() {
     const fix = await createTestFixture({
         imports: [WatchRecordsModule],
         providers: [WatchRecordsClient]

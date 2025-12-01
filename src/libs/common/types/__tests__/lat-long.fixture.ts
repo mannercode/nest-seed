@@ -10,9 +10,9 @@ class TestController {
     }
 }
 
-export type Fixture = { teardown: () => Promise<void>; httpClient: HttpTestClient }
+export type LatLongFixture = { teardown: () => Promise<void>; httpClient: HttpTestClient }
 
-export async function createFixture() {
+export async function createLatLongFixture() {
     const { httpClient, ...testContext } = await createHttpTestContext({
         metadata: { controllers: [TestController] }
     })

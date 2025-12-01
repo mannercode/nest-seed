@@ -1,19 +1,19 @@
 import { sleep } from 'common'
 import { withTestId } from 'testlib'
-import type { Fixture } from './queue-group.fixture'
+import type { QueueGroupFixture } from './queue-group.fixture'
 
 describe('NATS Queue Group', () => {
-    let fixture: Fixture
+    let fixture: QueueGroupFixture
     let queueSpy: jest.SpyInstance
     let broadcastSpy: jest.SpyInstance
 
     beforeEach(async () => {
-        const { createFixture, MessageController } = await import('./queue-group.fixture')
+        const { createQueueGroupFixture, MessageController } = await import('./queue-group.fixture')
 
         queueSpy = jest.spyOn(MessageController.prototype, 'processQueueLogic')
         broadcastSpy = jest.spyOn(MessageController.prototype, 'processBroadcastLogic')
 
-        fixture = await createFixture()
+        fixture = await createQueueGroupFixture()
     })
 
     afterEach(async () => {

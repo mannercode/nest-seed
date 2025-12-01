@@ -1,11 +1,11 @@
-import type { Fixture } from './create-testing-module.fixture'
+import type { TestingModuleFixture } from './create-testing-module.fixture'
 
 describe('createTestingModule', () => {
-    let fixture: Fixture
+    let fixture: TestingModuleFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./create-testing-module.fixture')
-        fixture = await createFixture()
+        const { createTestingModuleFixture } = await import('./create-testing-module.fixture')
+        fixture = await createTestingModuleFixture()
     })
 
     afterEach(async () => {

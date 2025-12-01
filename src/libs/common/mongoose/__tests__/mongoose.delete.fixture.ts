@@ -17,13 +17,13 @@ export class SoftDeleteSample extends MongooseSchema {
     name: string
 }
 
-export type Fixture<T> = {
+export type MongooseDeleteFixture<T> = {
     teardown: () => Promise<void>
     model: Model<T>
     doc: HydratedDocument<T>
 }
 
-export async function createFixture<T>(cls: Type<T>) {
+export async function createMongooseDeleteFixture<T>(cls: Type<T>) {
     const schema = createMongooseSchema(cls)
 
     const { uri, dbName } = getMongoTestConnection()

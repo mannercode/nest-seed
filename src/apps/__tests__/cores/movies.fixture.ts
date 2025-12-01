@@ -12,14 +12,14 @@ import {
     TestFixture
 } from '../__helpers__'
 
-export type Fixture = TestFixture & {
+export type MoviesFixture = TestFixture & {
     image: FixtureFile
     createdMovie: MovieDto
     tempDir: string
     assetsClient: AssetsClient
 }
 
-export async function createFixture() {
+export async function createMoviesFixture() {
     await ensureS3Bucket()
 
     const fix = await createTestFixture({

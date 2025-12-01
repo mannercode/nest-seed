@@ -2,14 +2,14 @@ import { CustomerDto } from 'apps/cores'
 import { omit } from 'lodash'
 import { nullObjectId } from 'testlib'
 import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
-import type { Fixture } from './customers.fixture'
+import type { CustomersFixture } from './customers.fixture'
 
 describe('CustomersService', () => {
-    let fixture: Fixture
+    let fixture: CustomersFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./customers.fixture')
-        fixture = await createFixture()
+        const { createCustomersFixture } = await import('./customers.fixture')
+        fixture = await createCustomersFixture()
     })
 
     afterEach(async () => {

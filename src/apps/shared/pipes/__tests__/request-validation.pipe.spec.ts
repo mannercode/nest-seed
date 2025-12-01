@@ -1,12 +1,13 @@
 import { nullDate } from 'testlib'
-import type { Fixture } from './request-validation.pipe.fixture'
+import type { RequestValidationPipeFixture } from './request-validation.pipe.fixture'
 
 describe('RequestValidationPipe', () => {
-    let fixture: Fixture
+    let fixture: RequestValidationPipeFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./request-validation.pipe.fixture')
-        fixture = await createFixture()
+        const { createRequestValidationPipeFixture } =
+            await import('./request-validation.pipe.fixture')
+        fixture = await createRequestValidationPipeFixture()
     })
 
     afterEach(async () => {

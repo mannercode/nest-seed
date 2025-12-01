@@ -1,12 +1,12 @@
 import { sleep } from 'common'
-import type { Fixture } from './cache.service.fixture'
+import type { CacheServiceFixture } from './cache.service.fixture'
 
 describe('CacheService', () => {
-    let fixture: Fixture
+    let fixture: CacheServiceFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./cache.service.fixture')
-        fixture = await createFixture()
+        const { createCacheServiceFixture } = await import('./cache.service.fixture')
+        fixture = await createCacheServiceFixture()
     })
 
     afterEach(async () => {

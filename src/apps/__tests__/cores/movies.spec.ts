@@ -3,7 +3,7 @@ import { FileUtil, Path } from 'common'
 import { readFile, writeFile } from 'fs/promises'
 import { nullObjectId } from 'testlib'
 import { buildCreateMovieDto, createMovie, Errors } from '../__helpers__'
-import type { Fixture } from './movies.fixture'
+import type { MoviesFixture } from './movies.fixture'
 
 // const configMock = createConfigServiceMock({
 //     FILE_UPLOAD_MAX_FILE_SIZE_BYTES: localFiles.oversized.size,
@@ -24,11 +24,11 @@ import type { Fixture } from './movies.fixture'
 // })
 
 describe('MoviesService', () => {
-    let fixture: Fixture
+    let fixture: MoviesFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./movies.fixture')
-        fixture = await createFixture()
+        const { createMoviesFixture } = await import('./movies.fixture')
+        fixture = await createMoviesFixture()
     })
 
     afterEach(async () => {

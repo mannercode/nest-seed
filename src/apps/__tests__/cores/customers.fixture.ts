@@ -2,9 +2,9 @@ import { CustomerDto, CustomersClient, CustomersModule } from 'apps/cores'
 import { CustomerJwtAuthGuard, CustomersController } from 'apps/gateway'
 import { createCustomer, TestFixture, createTestFixture } from '../__helpers__'
 
-export type Fixture = TestFixture & { createdCustomer: CustomerDto }
+export type CustomersFixture = TestFixture & { createdCustomer: CustomerDto }
 
-export async function createFixture() {
+export async function createCustomersFixture() {
     const fix = await createTestFixture({
         imports: [CustomersModule],
         providers: [CustomersClient],

@@ -27,13 +27,13 @@ class SampleController {
     }
 }
 
-export type Fixture = {
+export type TestContextFixture = {
     teardown: () => Promise<void>
     rpcClient: RpcTestClient
     httpClient: HttpTestClient
 }
 
-export async function createFixture(): Promise<Fixture> {
+export async function createTestContextFixture(): Promise<TestContextFixture> {
     const { servers } = await getNatsTestConnection()
     const brokerOpts = { transport: Transport.NATS, options: { servers } } as NatsOptions
 

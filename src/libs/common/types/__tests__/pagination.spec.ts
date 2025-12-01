@@ -1,13 +1,13 @@
 import { CommonErrors } from 'common'
 import { withTestId } from 'testlib'
-import { type Fixture } from './pagination.fixture'
+import { type PaginationFixture } from './pagination.fixture'
 
 describe('CommonQuery', () => {
-    let fixture: Fixture
+    let fixture: PaginationFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./pagination.fixture')
-        fixture = await createFixture()
+        const { createPaginationFixture } = await import('./pagination.fixture')
+        fixture = await createPaginationFixture()
     })
 
     afterEach(async () => {

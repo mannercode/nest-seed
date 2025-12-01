@@ -1,12 +1,12 @@
 import { LatLong } from 'common'
-import type { Fixture } from './lat-long.fixture'
+import type { LatLongFixture } from './lat-long.fixture'
 
 describe('LatLong', () => {
-    let fixture: Fixture
+    let fixture: LatLongFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./lat-long.fixture')
-        fixture = await createFixture()
+        const { createLatLongFixture } = await import('./lat-long.fixture')
+        fixture = await createLatLongFixture()
     })
 
     afterEach(async () => {

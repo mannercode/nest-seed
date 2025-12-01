@@ -9,9 +9,13 @@ class TestInjectJwtAuthService {
     constructor(@InjectJwtAuth() readonly _: JwtAuthService) {}
 }
 
-export type Fixture = { teardown: () => Promise<void>; jwtService: JwtAuthService; redis: Redis }
+export type JwtAuthServiceFixture = {
+    teardown: () => Promise<void>
+    jwtService: JwtAuthService
+    redis: Redis
+}
 
-export async function createFixture() {
+export async function createJwtAuthServiceFixture() {
     const { nodes, password } = getRedisTestConnection()
 
     const module = await createTestingModule({

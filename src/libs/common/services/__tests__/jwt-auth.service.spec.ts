@@ -1,12 +1,12 @@
 import { sleep } from 'common'
-import type { Fixture } from './jwt-auth.service.fixture'
+import type { JwtAuthServiceFixture } from './jwt-auth.service.fixture'
 
 describe('JwtAuthService', () => {
-    let fixture: Fixture
+    let fixture: JwtAuthServiceFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./jwt-auth.service.fixture')
-        fixture = await createFixture()
+        const { createJwtAuthServiceFixture } = await import('./jwt-auth.service.fixture')
+        fixture = await createJwtAuthServiceFixture()
     })
 
     afterEach(async () => {
