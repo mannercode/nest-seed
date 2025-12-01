@@ -4,9 +4,15 @@ import { FilterQuery, HydratedDocument, Types } from 'mongoose'
 import { Expect } from '../validator'
 import { MongooseErrors } from './errors'
 
-export const newObjectId = () => new Types.ObjectId().toString()
-export const objectId = (id: string) => new Types.ObjectId(id)
-export const objectIds = (ids: string[]) => ids.map((id) => objectId(id))
+export function newObjectId() {
+    return new Types.ObjectId().toString()
+}
+export function objectId(id: string) {
+    return new Types.ObjectId(id)
+}
+export function objectIds(ids: string[]) {
+    return ids.map((id) => objectId(id))
+}
 
 export interface QueryBuilderOptions {
     allowEmpty?: boolean

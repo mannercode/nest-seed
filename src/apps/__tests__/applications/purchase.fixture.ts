@@ -43,7 +43,7 @@ export interface Fixture extends TestFixture {
     closedTickets: TicketDto[]
 }
 
-export const createFixture = async (): Promise<Fixture> => {
+export async function createFixture(): Promise<Fixture> {
     const fix = await createTestFixture({
         imports: [
             MoviesModule,
@@ -89,23 +89,23 @@ export const createFixture = async (): Promise<Fixture> => {
     return { ...fix, customer, heldTickets, availableTickets, closedTickets: closedSaleTickets }
 }
 
-export const buildCreatePurchaseDto = (
+export function buildCreatePurchaseDto(
     customer: CustomerDto,
     tickets: TicketDto[],
     overrides = {}
-) => {
+) {
     const purchaseItems = tickets.map(({ id }) => ({ type: PurchaseItemType.Ticket, ticketId: id }))
 
     const createDto = { customerId: customer.id, totalPrice: 1, purchaseItems, ...overrides }
     return createDto
 }
 
-const createAvailableAndHeldTickets = async (
+async function createAvailableAndHeldTickets(
     fix: TestFixture,
     movie: MovieDto,
     theater: TheaterDto,
     customer: CustomerDto
-) => {
+) {
     const beforeCloseTime = DateUtil.add({
         minutes: Rules.Ticket.purchaseWindowCloseOffsetMinutes + 1
     })
@@ -132,7 +132,7 @@ const createAvailableAndHeldTickets = async (
     return { availableTickets, heldTickets }
 }
 
-const createClosedTickets = async (fix: TestFixture, movie: MovieDto, theater: TheaterDto) => {
+async function createClosedTickets(fix: TestFixture, movie: MovieDto, theater: TheaterDto) {
     const afterCloseTime = DateUtil.add({
         minutes: Rules.Ticket.purchaseWindowCloseOffsetMinutes - 1
     })
@@ -147,7 +147,7 @@ const createClosedTickets = async (fix: TestFixture, movie: MovieDto, theater: T
     return closedSaleTickets
 }
 
-const createAllTickets = async ({
+async function createAllTickets({
     fix,
     movie,
     theater,
@@ -157,7 +157,7 @@ const createAllTickets = async ({
     movie: MovieDto
     theater: TheaterDto
     startTime: Date
-}) => {
+}) {
     const showtimes = await createShowtimes(fix, [
         { movieId: movie.id, theaterId: theater.id, startTime }
     ])

@@ -8,7 +8,7 @@ export interface Fixture extends TestFixture {
     authTokens: JwtAuthTokens
 }
 
-export const createFixture = async () => {
+export async function createFixture() {
     const fix = await createTestFixture({
         imports: [CustomersModule],
         providers: [CustomersClient, CustomerLocalStrategy, CustomerJwtStrategy],

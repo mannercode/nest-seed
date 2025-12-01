@@ -3,14 +3,14 @@ import { readFile } from 'fs/promises'
 import { TestContext, getS3TestConnection } from 'testlib'
 import { FixtureFile } from '../fixture-files'
 
-export const getAssets = async ({ module }: TestContext, assetIds: string[]) => {
+export async function getAssets({ module }: TestContext, assetIds: string[]) {
     const { AssetsClient } = await import('apps/infrastructures')
     const assetsService = module.get(AssetsClient)
 
     return assetsService.getMany(assetIds)
 }
 
-export const uploadAssets = async ({ module }: TestContext, files: FixtureFile[]) => {
+export async function uploadAssets({ module }: TestContext, files: FixtureFile[]) {
     const { AssetsClient } = await import('apps/infrastructures')
     const assetsService = module.get(AssetsClient)
 
@@ -42,7 +42,7 @@ export const uploadAssets = async ({ module }: TestContext, files: FixtureFile[]
     return assetsService.getMany(assetIds)
 }
 
-export const ensureS3Bucket = async () => {
+export async function ensureS3Bucket() {
     const { endpoint, region, accessKeyId, secretAccessKey, forcePathStyle, bucket } =
         getS3TestConnection()
 

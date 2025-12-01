@@ -27,14 +27,16 @@ export async function createFixture() {
             }),
             JwtAuthModule.register({
                 prefix: withTestId('jwt-auth'),
-                useFactory: () => ({
-                    auth: {
-                        accessSecret: 'accessSecret',
-                        refreshSecret: 'refreshSecret',
-                        accessTokenTtlMs: 3000,
-                        refreshTokenTtlMs: 3000
+                useFactory() {
+                    return {
+                        auth: {
+                            accessSecret: 'accessSecret',
+                            refreshSecret: 'refreshSecret',
+                            accessTokenTtlMs: 3000,
+                            refreshTokenTtlMs: 3000
+                        }
                     }
-                })
+                }
             })
         ],
         providers: [TestInjectJwtAuthService]
@@ -43,7 +45,7 @@ export async function createFixture() {
     const jwtService = module.get(JwtAuthService.getServiceName())
     const redis = module.get(getRedisConnectionToken())
 
-    const teardown = async () => {
+    async function teardown() {
         await module.close()
         await redis.quit()
     }

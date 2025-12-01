@@ -17,13 +17,15 @@ export interface TestFixture extends HttpTestContext {
     teardown: () => Promise<void>
 }
 
-export const createTestFixture = async (metadata: ModuleMetadataEx) => {
+export async function createTestFixture(metadata: ModuleMetadataEx) {
     metadata.imports?.push(
         CommonModule,
         MongooseConfigModule,
         RedisConfigModule,
         BullModule.forRootAsync('queue', {
-            useFactory: (redis: Redis) => ({ prefix: `{queue:${getTestId()}}`, connection: redis }),
+            useFactory(redis: Redis) {
+                return { prefix: `{queue:${getTestId()}}`, connection: redis }
+            },
             inject: [RedisConfigModule.moduleName]
         })
     )
@@ -47,7 +49,7 @@ export const createTestFixture = async (metadata: ModuleMetadataEx) => {
         }
     })
 
-    const teardown = async () => {
+    async function teardown() {
         await context.close()
 
         const redis = context.module.get(RedisConfigModule.moduleName)
@@ -57,7 +59,7 @@ export const createTestFixture = async (metadata: ModuleMetadataEx) => {
     return { ...context, teardown }
 }
 
-export const createConfigServiceMock = (mockValues: Record<string, any>) => {
+export function createConfigServiceMock(mockValues: Record<string, any>) {
     const realConfigService = new ConfigService()
 
     return {

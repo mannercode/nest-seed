@@ -35,7 +35,7 @@ class SamplesController {
     }
 }
 
-export const createFixture = async () => {
+export async function createFixture() {
     const testContext = await createHttpTestContext({
         metadata: {
             controllers: [SamplesController],
@@ -43,7 +43,7 @@ export const createFixture = async () => {
         }
     })
 
-    const teardown = async () => {
+    async function teardown() {
         await testContext?.close()
     }
 

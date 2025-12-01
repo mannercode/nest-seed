@@ -21,14 +21,16 @@ export async function createFixture() {
     const module = await createTestingModule({
         imports: [
             S3ObjectModule.register({
-                useFactory: () => ({
-                    endpoint,
-                    accessKeyId,
-                    secretAccessKey,
-                    region,
-                    bucket,
-                    forcePathStyle
-                })
+                useFactory() {
+                    return {
+                        endpoint,
+                        accessKeyId,
+                        secretAccessKey,
+                        region,
+                        bucket,
+                        forcePathStyle
+                    }
+                }
             })
         ],
         providers: [TestInjectS3ObjectService]
@@ -36,14 +38,14 @@ export async function createFixture() {
 
     const s3Service = module.get(S3ObjectService.getServiceName())
 
-    const teardown = async () => {
+    async function teardown() {
         await module.close()
     }
 
     return { teardown, s3Service }
 }
 
-const createTempBucket = async () => {
+async function createTempBucket() {
     const { endpoint, region, accessKeyId, secretAccessKey, forcePathStyle } = getS3TestConnection()
 
     const client = new S3Client({
@@ -61,7 +63,7 @@ const createTempBucket = async () => {
     return bucket
 }
 
-export const uploadObject = async (s3Service: S3ObjectService, key: string, body: string) => {
+export async function uploadObject(s3Service: S3ObjectService, key: string, body: string) {
     const uploadUrl = await s3Service.presignUploadUrl({ key, expiresInSec: 60 })
 
     const uploadResponse = await fetch(uploadUrl, { method: 'PUT', body: Buffer.from(body) })
@@ -75,7 +77,7 @@ export const testBuffer = Buffer.alloc(
 )
 
 export type PutObjectResult = { key: string } & S3Object
-export const putObject = async (storageService: S3ObjectService, data: Buffer) => {
+export async function putObject(storageService: S3ObjectService, data: Buffer) {
     const filename = 'file.txt'
     const contentType = 'text/plain'
     const { key } = await storageService.putObject({ data, filename, contentType })

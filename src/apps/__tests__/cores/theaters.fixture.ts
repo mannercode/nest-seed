@@ -6,7 +6,7 @@ export interface Fixture extends TestFixture {
     createdTheater: TheaterDto
 }
 
-export const createFixture = async () => {
+export async function createFixture() {
     const fix = await createTestFixture({
         imports: [TheatersModule],
         providers: [TheatersClient],

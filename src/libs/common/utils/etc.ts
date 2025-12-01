@@ -68,7 +68,7 @@ export function padNumber(value: number, length: number): string {
  * @param {any} input - The object or value to convert.
  * @returns {any} The converted object (date strings become Date objects).
  */
-export const jsonToObject = (input: any): any => {
+export function jsonToObject(input: any): any {
     if (typeof input === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(input)) {
         return new Date(input)
     }

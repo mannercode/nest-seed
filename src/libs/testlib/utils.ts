@@ -2,7 +2,9 @@ import fs from 'fs/promises'
 import net from 'net'
 
 export const nullObjectId = '000000000000000000000000'
-export const oid = (value: number) => value.toString(16).padStart(24, '0')
+export function oid(value: number) {
+    return value.toString(16).padStart(24, '0')
+}
 export const nullDate = new Date(0)
 
 export async function createDummyFile(filePath: string, sizeInBytes: number) {
@@ -54,7 +56,7 @@ export function getAvailablePort(): Promise<number> {
  * @param createDto The object to transform
  * @returns {Array<{ name: string, value: string }>} The transformed array of fields
  */
-export const objectToFields = (createDto: any) => {
+export function objectToFields(createDto: any) {
     const fields = Object.entries(createDto).map(([key, value]) => {
         let processedValue
 
@@ -76,7 +78,7 @@ export const objectToFields = (createDto: any) => {
     return fields
 }
 
-export const getTestId = () => {
+export function getTestId() {
     const testId = process.env.TEST_ID
 
     if (testId === undefined) {
@@ -115,4 +117,6 @@ export class Env {
     }
 }
 
-export const step = (_name: string, fn: () => Promise<void> | void) => fn()
+export function step(_name: string, fn: () => Promise<void> | void) {
+    return fn()
+}

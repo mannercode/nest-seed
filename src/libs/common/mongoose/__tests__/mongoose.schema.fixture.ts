@@ -91,7 +91,11 @@ export async function createFixture() {
     const testContext = await createTestContext({
         metadata: {
             imports: [
-                MongooseModule.forRootAsync({ useFactory: () => ({ uri, dbName }) }),
+                MongooseModule.forRootAsync({
+                    useFactory() {
+                        return { uri, dbName }
+                    }
+                }),
                 MongooseModule.forFeature([{ name: 'schema', schema }])
             ]
         }
@@ -99,7 +103,7 @@ export async function createFixture() {
 
     const model = testContext.module.get<Model<SchemaTypeSample>>(getModelToken('schema'))
 
-    const teardown = async () => {
+    async function teardown() {
         await testContext?.close()
     }
 

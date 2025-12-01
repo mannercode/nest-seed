@@ -6,7 +6,7 @@ export interface Fixture extends TestFixture {
     createdCustomer: CustomerDto
 }
 
-export const createFixture = async () => {
+export async function createFixture() {
     const fix = await createTestFixture({
         imports: [CustomersModule],
         providers: [CustomersClient],

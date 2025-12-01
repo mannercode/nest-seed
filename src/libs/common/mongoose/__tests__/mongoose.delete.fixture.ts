@@ -31,7 +31,11 @@ export async function createFixture<T>(cls: Type<T>) {
     const testContext = await createTestContext({
         metadata: {
             imports: [
-                MongooseModule.forRootAsync({ useFactory: () => ({ uri, dbName }) }),
+                MongooseModule.forRootAsync({
+                    useFactory() {
+                        return { uri, dbName }
+                    }
+                }),
                 MongooseModule.forFeature([{ name: 'schema', schema }])
             ]
         }
@@ -45,7 +49,7 @@ export async function createFixture<T>(cls: Type<T>) {
     doc.name = 'name'
     await doc.save()
 
-    const teardown = async () => {
+    async function teardown() {
         await testContext?.close()
     }
 

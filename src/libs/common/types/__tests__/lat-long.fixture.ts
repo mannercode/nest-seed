@@ -20,7 +20,7 @@ export async function createFixture() {
         metadata: { controllers: [TestController] }
     })
 
-    const teardown = async () => {
+    async function teardown() {
         await testContext?.close()
     }
 

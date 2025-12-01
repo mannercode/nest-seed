@@ -22,7 +22,7 @@ describe('createWinstonLogger', () => {
         await Path.delete(tempDir)
     })
 
-    const getLogEntry = async () => {
+    async function getLogEntry() {
         const content = await readFile(Path.join(tempDir, 'current.log'), 'utf-8')
         const entry = JSON.parse(content)
         return entry

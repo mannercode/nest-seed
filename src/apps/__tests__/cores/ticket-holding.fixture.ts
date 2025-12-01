@@ -3,7 +3,7 @@ import { TestFixture, createTestFixture } from '../__helpers__'
 
 export type Fixture = TestFixture
 
-export const createFixture = async () => {
+export async function createFixture() {
     const fix = await createTestFixture({
         imports: [TicketHoldingModule],
         providers: [TicketHoldingClient]

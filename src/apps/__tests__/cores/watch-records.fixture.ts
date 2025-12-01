@@ -5,7 +5,7 @@ export interface Fixture extends TestFixture {
     watchRecordsService: WatchRecordsClient
 }
 
-export const createFixture = async () => {
+export async function createFixture() {
     const fix = await createTestFixture({
         imports: [WatchRecordsModule],
         providers: [WatchRecordsClient]

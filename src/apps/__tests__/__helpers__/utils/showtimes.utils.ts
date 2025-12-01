@@ -3,7 +3,7 @@ import { DateUtil, newObjectId } from 'common'
 import { uniq } from 'lodash'
 import { oid, TestContext } from 'testlib'
 
-export const buildCreateShowtimeDto = (overrides: Partial<CreateShowtimeDto> = {}) => {
+export function buildCreateShowtimeDto(overrides: Partial<CreateShowtimeDto> = {}) {
     const createDto = {
         transactionId: newObjectId(),
         movieId: oid(0x0),
@@ -20,10 +20,10 @@ export const buildCreateShowtimeDto = (overrides: Partial<CreateShowtimeDto> = {
     return createDto
 }
 
-export const createShowtimes = async (
+export async function createShowtimes(
     { module }: TestContext,
     overrides: Partial<CreateShowtimeDto>[]
-) => {
+) {
     const { ShowtimesClient } = await import('apps/cores')
     const showtimesService = module.get(ShowtimesClient)
 

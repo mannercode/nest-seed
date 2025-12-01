@@ -8,7 +8,7 @@ export interface Fixture extends TestFixture {
     createdPurchaseRecord: PurchaseRecordDto
 }
 
-export const createFixture = async (): Promise<Fixture> => {
+export async function createFixture(): Promise<Fixture> {
     const fix = await createTestFixture({
         imports: [PurchaseRecordsModule],
         providers: [PurchaseRecordsClient, PurchaseClient],

@@ -19,7 +19,7 @@ export interface Fixture extends TestFixture {
     assetsClient: AssetsClient
 }
 
-export const createFixture = async () => {
+export async function createFixture() {
     await ensureS3Bucket()
 
     const fix = await createTestFixture({
@@ -34,7 +34,7 @@ export const createFixture = async () => {
 
     const createdMovie = await createMovie(fix)
 
-    const teardown = async () => {
+    async function teardown() {
         await fix.teardown()
         await Path.delete(tempDir)
     }

@@ -73,7 +73,7 @@ export async function createFixture() {
     const spyFatal = jest.spyOn(Logger, 'fatal')
     const rpcClient = RpcTestClient.create(brokerOptions)
 
-    const teardown = async () => {
+    async function teardown() {
         await rpcClient.close()
         await testContext.close()
     }

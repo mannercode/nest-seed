@@ -3,7 +3,7 @@ import { newObjectId } from 'common'
 import { uniq } from 'lodash'
 import { oid, TestContext } from 'testlib'
 
-export const buildCreateTicketDto = (overrides = {}) => {
+export function buildCreateTicketDto(overrides = {}) {
     const createDto = {
         transactionId: newObjectId(),
         movieId: oid(0x0),
@@ -16,10 +16,10 @@ export const buildCreateTicketDto = (overrides = {}) => {
     return createDto
 }
 
-export const createTickets = async (
+export async function createTickets(
     { module }: TestContext,
     overrides: Partial<CreateTicketDto>[]
-) => {
+) {
     const { TicketsClient } = await import('apps/cores')
     const ticketsService = module.get(TicketsClient)
 
@@ -34,7 +34,7 @@ export const createTickets = async (
     return tickets
 }
 
-export const getTickets = async ({ module }: TestContext, ticketIds: string[]) => {
+export async function getTickets({ module }: TestContext, ticketIds: string[]) {
     const { TicketsClient } = await import('apps/cores')
     const ticketsService = module.get(TicketsClient)
 

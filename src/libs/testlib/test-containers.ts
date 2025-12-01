@@ -23,7 +23,7 @@ export interface NatsConnectionContext {
     servers: string[]
 }
 
-export const getNatsTestConnection = (): NatsConnectionContext => {
+export function getNatsTestConnection(): NatsConnectionContext {
     const servers = [
         `nats://${Env.getString('TEST_NATS_HOST1')}:${Env.getNumber('TEST_NATS_PORT1')}`,
         `nats://${Env.getString('TEST_NATS_HOST2')}:${Env.getNumber('TEST_NATS_PORT2')}`,
@@ -38,7 +38,7 @@ export interface MongoConnectionContext {
     dbName: string
 }
 
-export const getMongoTestConnection = (): MongoConnectionContext => {
+export function getMongoTestConnection(): MongoConnectionContext {
     const replicaSet = Env.getString('TEST_MONGO_REPLICA_SET')
     const username = Env.getString('TEST_MONGO_USERNAME')
     const password = Env.getString('TEST_MONGO_PASSWORD')
@@ -63,7 +63,7 @@ export interface S3ConnectionContext {
     forcePathStyle: boolean
 }
 
-export const getS3TestConnection = (): S3ConnectionContext => {
+export function getS3TestConnection(): S3ConnectionContext {
     const endpoint = Env.getString('TEST_S3_ENDPOINT')
     const region = Env.getString('TEST_S3_REGION')
     const accessKeyId = Env.getString('TEST_S3_ACCESS_KEY_ID')

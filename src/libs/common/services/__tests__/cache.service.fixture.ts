@@ -30,7 +30,7 @@ export async function createFixture() {
     const cacheService = module.get(CacheService.getServiceName())
     const redis = module.get(getRedisConnectionToken('name'))
 
-    const teardown = async () => {
+    async function teardown() {
         await module.close()
         await redis.quit()
     }

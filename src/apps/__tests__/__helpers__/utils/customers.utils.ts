@@ -2,7 +2,7 @@ import { CustomerDto } from 'apps/cores'
 import { TestContext } from 'testlib'
 import { TestFixture } from '../setup-http-test-context'
 
-export const buildCreateCustomerDto = (overrides = {}) => {
+export function buildCreateCustomerDto(overrides = {}) {
     const createDto = {
         name: 'name',
         email: 'name@mail.com',
@@ -14,7 +14,7 @@ export const buildCreateCustomerDto = (overrides = {}) => {
     return createDto
 }
 
-export const createCustomerAndLogin = async (ctx: TestFixture) => {
+export async function createCustomerAndLogin(ctx: TestFixture) {
     const email = 'user@mail.com'
     const password = 'password'
     const customer = await createCustomer(ctx, { email, password })
@@ -24,7 +24,7 @@ export const createCustomerAndLogin = async (ctx: TestFixture) => {
     return { customer, accessToken, refreshToken }
 }
 
-export const createCustomer = async ({ module }: TestContext, override = {}) => {
+export async function createCustomer({ module }: TestContext, override = {}) {
     const { CustomersClient } = await import('apps/cores')
     const customersService = module.get(CustomersClient)
 
@@ -34,7 +34,7 @@ export const createCustomer = async ({ module }: TestContext, override = {}) => 
     return customer
 }
 
-export const generateAuthTokens = async ({ module }: TestContext, customer: CustomerDto) => {
+export async function generateAuthTokens({ module }: TestContext, customer: CustomerDto) {
     const { CustomersClient } = await import('apps/cores')
     const customersService = module.get(CustomersClient)
 

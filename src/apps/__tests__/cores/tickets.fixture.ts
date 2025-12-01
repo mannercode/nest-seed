@@ -5,7 +5,7 @@ export interface Fixture extends TestFixture {
     ticketsService: TicketsClient
 }
 
-export const createFixture = async () => {
+export async function createFixture() {
     const fix = await createTestFixture({ imports: [TicketsModule], providers: [TicketsClient] })
 
     const ticketsService = fix.module.get(TicketsClient)

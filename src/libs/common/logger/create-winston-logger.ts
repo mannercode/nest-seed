@@ -4,7 +4,7 @@ import DailyRotateFile from 'winston-daily-rotate-file'
 import { HttpErrorLog, HttpSuccessLog, RpcErrorLog, RpcSuccessLog } from './types'
 
 /* istanbul ignore next */
-const colorizeHttpMethod = (method: string) => {
+function colorizeHttpMethod(method: string) {
     const METHOD = (method ?? 'METHOD').toUpperCase()
 
     switch (METHOD) {
@@ -24,7 +24,7 @@ const colorizeHttpMethod = (method: string) => {
 }
 
 /* istanbul ignore next */
-const colorizeLogLevel = (level: string) => {
+function colorizeLogLevel(level: string) {
     const LEVEL = (level ?? 'LEVEL').toUpperCase()
 
     switch (LEVEL) {
@@ -40,12 +40,12 @@ const colorizeLogLevel = (level: string) => {
 }
 
 /* istanbul ignore next */
-const formatHttpLogMessage = (
+function formatHttpLogMessage(
     message: string,
     level: string,
     timestamp: string,
     logDetails: HttpErrorLog | HttpSuccessLog
-) => {
+) {
     const statusCode = chalk.magenta(logDetails.statusCode)
     const { request } = logDetails
     const method = colorizeHttpMethod(request.method)
@@ -56,24 +56,24 @@ const formatHttpLogMessage = (
 }
 
 /* istanbul ignore next */
-const formatRpcLogMessage = (
+function formatRpcLogMessage(
     message: string,
     level: string,
     timestamp: string,
     logDetails: RpcErrorLog | RpcSuccessLog
-) => {
+) {
     const coloredContext = chalk.magenta(JSON.stringify(logDetails.context))
     const coloredData = chalk.blueBright(JSON.stringify(logDetails.data))
 
     return `${timestamp} ${level} RPC ${message} ${coloredContext} ${coloredData}`
 }
 
-const formatGenericLogMessage = (
+function formatGenericLogMessage(
     message: string,
     level: string,
     timestamp: string,
     logDetails: unknown
-) => {
+) {
     const coloredEtc = chalk.blueBright(JSON.stringify(logDetails))
 
     return `${timestamp} ${level} ${message} ${coloredEtc}`

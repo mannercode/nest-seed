@@ -67,7 +67,13 @@ export async function createFixture() {
 
     const { httpClient, ...testContext } = await createHttpTestContext({
         metadata: {
-            imports: [ClientProxyModule.registerAsync({ useFactory: () => brokerOptions })],
+            imports: [
+                ClientProxyModule.registerAsync({
+                    useFactory() {
+                        return brokerOptions
+                    }
+                })
+            ],
             controllers: [SendTestController, EmitTestController]
         },
         configureApp: async (app) => {
@@ -78,7 +84,7 @@ export async function createFixture() {
 
     const rpcClient = RpcTestClient.create(brokerOptions)
 
-    const teardown = async () => {
+    async function teardown() {
         await rpcClient.close()
         await testContext.close()
     }

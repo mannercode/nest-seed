@@ -1,4 +1,8 @@
 let counter = 0
 
-export const incrementCounter = () => ++counter
-export const getCounter = () => counter
+export function incrementCounter() {
+    return ++counter
+}
+export function getCounter() {
+    return counter
+}

@@ -5,7 +5,7 @@ import { TestContext } from 'testlib'
 import { fixtureFiles } from '../fixture-files'
 import { ensureS3Bucket } from './assets.utils'
 
-export const buildCreateMovieDto = (overrides = {}) => {
+export function buildCreateMovieDto(overrides = {}) {
     const createDto = {
         title: `MovieTitle`,
         genres: [MovieGenre.Action],
@@ -21,7 +21,7 @@ export const buildCreateMovieDto = (overrides = {}) => {
     return createDto
 }
 
-export const createMovie = async ({ module }: TestContext, override = {}) => {
+export async function createMovie({ module }: TestContext, override = {}) {
     const { MoviesClient } = await import('apps/cores')
     const moviesService = module.get(MoviesClient)
 
@@ -41,7 +41,7 @@ export const createMovie = async ({ module }: TestContext, override = {}) => {
     return movie
 }
 
-const uploadMovieImage = async (assetsService: AssetsClient) => {
+async function uploadMovieImage(assetsService: AssetsClient) {
     await ensureS3Bucket()
 
     const uploadInfo = await assetsService.create({

@@ -32,29 +32,36 @@ class SamplesRepository extends MongooseRepository<Sample> {
     }
 }
 
-export const sortByName = (documents: SampleDto[]) =>
-    documents.sort((a, b) => a.name.localeCompare(b.name))
+export function sortByName(documents: SampleDto[]) {
+    return documents.sort((a, b) => a.name.localeCompare(b.name))
+}
 
-export const sortByNameDescending = (documents: SampleDto[]) =>
-    documents.sort((a, b) => b.name.localeCompare(a.name))
+export function sortByNameDescending(documents: SampleDto[]) {
+    return documents.sort((a, b) => b.name.localeCompare(a.name))
+}
 
-export const createSample = (repository: SamplesRepository) => {
+export function createSample(repository: SamplesRepository) {
     const doc = repository.newDocument()
     doc.name = 'Sample-Name'
     return doc.save()
 }
 
-export const createSamples = async (repository: SamplesRepository) =>
-    Promise.all(
-        Array.from({ length: 20 }, async (_, index) => {
+export async function createSamples(repository: SamplesRepository) {
+    return Promise.all(
+        Array.from({ length: 20 }, async (_unused, index) => {
             const doc = repository.newDocument()
             doc.name = `Sample-${padNumber(index, 3)}`
             return doc.save()
         })
     )
+}
 
-export const toDto = (item: SampleDocument) => mapDocToDto(item, SampleDto, ['id', 'name'])
-export const toDtos = (items: SampleDocument[]) => items.map((item) => toDto(item))
+export function toDto(item: SampleDocument) {
+    return mapDocToDto(item, SampleDto, ['id', 'name'])
+}
+export function toDtos(items: SampleDocument[]) {
+    return items.map((item) => toDto(item))
+}
 
 export interface Fixture {
     teardown: () => Promise<void>
@@ -69,7 +76,11 @@ export async function createFixture() {
     const testContext = await createTestContext({
         metadata: {
             imports: [
-                MongooseModule.forRootAsync({ useFactory: () => ({ uri, dbName }) }),
+                MongooseModule.forRootAsync({
+                    useFactory() {
+                        return { uri, dbName }
+                    }
+                }),
                 MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])
             ],
             providers: [SamplesRepository]
@@ -78,7 +89,7 @@ export async function createFixture() {
 
     const repository = testContext.module.get(SamplesRepository)
 
-    const teardown = async () => {
+    async function teardown() {
         await testContext?.close()
     }
 

@@ -31,7 +31,11 @@ export async function createFixture() {
     const testContext = await createTestContext({
         metadata: {
             imports: [
-                MongooseModule.forRootAsync({ useFactory: () => ({ uri, dbName }) }),
+                MongooseModule.forRootAsync({
+                    useFactory() {
+                        return { uri, dbName }
+                    }
+                }),
                 MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])
             ],
             providers: [SamplesRepository]
@@ -40,7 +44,7 @@ export async function createFixture() {
 
     const repository = testContext.module.get(SamplesRepository)
     const model = testContext.module.get(getModelToken(Sample.name))
-    const teardown = async () => {
+    async function teardown() {
         await testContext?.close()
     }
 

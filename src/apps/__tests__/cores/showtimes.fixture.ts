@@ -5,7 +5,7 @@ export interface Fixture extends TestFixture {
     showtimesService: ShowtimesClient
 }
 
-export const createFixture = async () => {
+export async function createFixture() {
     const fix = await createTestFixture({
         imports: [ShowtimesModule],
         providers: [ShowtimesClient]

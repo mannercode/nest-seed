@@ -41,7 +41,7 @@ describe('MoviesService', () => {
             let createdMovie: MovieDto
             let imageAssetId: string
 
-            const uploadMovieImage = async () => {
+            async function uploadMovieImage() {
                 const payload = {
                     originalName: fixture.image.originalName,
                     mimeType: fixture.image.mimeType,

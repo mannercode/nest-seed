@@ -21,7 +21,7 @@ import {
     TestFixture
 } from '../__helpers__'
 
-export const createWatchedMovies = async (ctx: TestFixture, dtos: Partial<MovieDto>[]) => {
+export async function createWatchedMovies(ctx: TestFixture, dtos: Partial<MovieDto>[]) {
     const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
 
     const { customer, accessToken } = await createCustomerAndLogin(ctx)
@@ -35,7 +35,7 @@ export const createWatchedMovies = async (ctx: TestFixture, dtos: Partial<MovieD
     return { customer, accessToken, movies, watchRecords }
 }
 
-export const createShowingMovies = async (ctx: TestFixture, dtos: Partial<MovieDto>[]) => {
+export async function createShowingMovies(ctx: TestFixture, dtos: Partial<MovieDto>[]) {
     const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
 
     const createShowtimesDtos = movies.map((movie) => ({
@@ -50,7 +50,7 @@ export const createShowingMovies = async (ctx: TestFixture, dtos: Partial<MovieD
 
 export type Fixture = TestFixture
 
-export const createFixture = async (): Promise<Fixture> => {
+export async function createFixture(): Promise<Fixture> {
     const fix = await createTestFixture({
         imports: [
             MoviesModule,

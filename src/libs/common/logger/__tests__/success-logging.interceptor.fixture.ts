@@ -65,7 +65,7 @@ export async function createFixture(providers: Provider[]) {
 
     const rpcClient = RpcTestClient.create(brokerOptions)
 
-    const teardown = async () => {
+    async function teardown() {
         await rpcClient.close()
         await testContext.close()
     }

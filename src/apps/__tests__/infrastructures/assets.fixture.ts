@@ -12,7 +12,7 @@ export interface Fixture extends TestFixture {
     tempDir: string
 }
 
-export const createFixture = async () => {
+export async function createFixture() {
     const testFixture = await createTestFixture({
         imports: [AssetsModule],
         providers: [AssetsClient]
@@ -24,7 +24,7 @@ export const createFixture = async () => {
 
     const tempDir = await Path.createTempDirectory()
 
-    const teardown = async () => {
+    async function teardown() {
         await testFixture.teardown()
         await Path.delete(tempDir)
     }
@@ -32,10 +32,10 @@ export const createFixture = async () => {
     return { ...testFixture, teardown, assetsClient, file, createDto, tempDir }
 }
 
-export const uploadAndCompleteAsset = async (
+export async function uploadAndCompleteAsset(
     { module }: TestContext,
     file: FixtureFile = fixtureFiles.small
-) => {
+) {
     const { AssetsClient } = await import('apps/infrastructures')
     const assetsClient = module.get(AssetsClient)
 

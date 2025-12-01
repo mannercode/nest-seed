@@ -27,11 +27,11 @@ import {
     TestFixture
 } from '../__helpers__'
 
-export const createAllResources = async (
+export async function createAllResources(
     ctx: TestFixture,
     locations: TheaterLocation[],
     startTimes: Date[]
-) => {
+) {
     const { customer, accessToken, refreshToken } = await createCustomerAndLogin(ctx)
 
     const movie = await createMovie(ctx)
@@ -59,7 +59,7 @@ export const createAllResources = async (
 
 export type Fixture = TestFixture
 
-export const createFixture = async (): Promise<Fixture> => {
+export async function createFixture(): Promise<Fixture> {
     const fix = await createTestFixture({
         imports: [
             MoviesModule,

@@ -32,7 +32,9 @@ export async function createFixture() {
             imports: [
                 ClientProxyModule.registerAsync({
                     name: 'clientName',
-                    useFactory: () => brokerOptions
+                    useFactory() {
+                        return brokerOptions
+                    }
                 })
             ],
             controllers: [TestController]
@@ -43,7 +45,7 @@ export async function createFixture() {
         }
     })
 
-    const teardown = async () => {
+    async function teardown() {
         await testContext.close()
     }
 

@@ -47,11 +47,12 @@ export async function createFixture() {
             providers: [
                 {
                     provide: APP_PIPE,
-                    useFactory: () =>
-                        new ValidationPipe({
+                    useFactory() {
+                        return new ValidationPipe({
                             transform: true,
                             transformOptions: { enableImplicitConversion: true }
                         })
+                    }
                 }
             ]
         },
@@ -63,7 +64,7 @@ export async function createFixture() {
 
     const rpcClient = RpcTestClient.create(brokerOpts)
 
-    const teardown = async () => {
+    async function teardown() {
         await rpcClient.close()
         await testContext.close()
     }

@@ -1,16 +1,16 @@
 import { CreatePaymentDto } from 'apps/infrastructures'
 import { oid, TestContext } from 'testlib'
 
-export const buildCreatePaymentDto = (overrides = {}) => {
+export function buildCreatePaymentDto(overrides = {}) {
     const createDto = { customerId: oid(0x0), amount: 1, ...overrides }
 
     return createDto
 }
 
-export const createPayment = async (
+export async function createPayment(
     { module }: TestContext,
     override: Partial<CreatePaymentDto> = {}
-) => {
+) {
     const { PaymentsClient } = await import('apps/infrastructures')
     const paymentsService = module.get(PaymentsClient)
 
@@ -20,7 +20,7 @@ export const createPayment = async (
     return payment
 }
 
-export const getPayments = async ({ module }: TestContext, paymentIds: string[]) => {
+export async function getPayments({ module }: TestContext, paymentIds: string[]) {
     const { PaymentsClient } = await import('apps/infrastructures')
     const paymentsService = module.get(PaymentsClient)
 

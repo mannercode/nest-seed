@@ -53,7 +53,7 @@ export async function createTestContext({
 
     await app.init()
 
-    const close = async () => {
+    async function close() {
         await app.close()
     }
 
