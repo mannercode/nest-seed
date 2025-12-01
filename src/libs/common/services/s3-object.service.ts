@@ -200,7 +200,7 @@ type S3ObjectFactoryOptions = {
     forcePathStyle: boolean
 }
 
-export interface S3ObjectModuleOptions {
+export type S3ObjectModuleOptions = {
     name?: string
     useFactory: (...args: any[]) => Promise<S3ObjectFactoryOptions> | S3ObjectFactoryOptions
     inject?: any[]

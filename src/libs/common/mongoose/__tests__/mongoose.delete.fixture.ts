@@ -17,7 +17,7 @@ export class SoftDeleteSample extends MongooseSchema {
     name: string
 }
 
-export interface Fixture<T> {
+export type Fixture<T> = {
     teardown: () => Promise<void>
     model: Model<T>
     doc: HydratedDocument<T>

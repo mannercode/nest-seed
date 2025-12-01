@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, ModuleMetadata, Type } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 
-export interface ModuleMetadataEx extends ModuleMetadata {
+export type ModuleMetadataEx = ModuleMetadata & {
     ignoreGuards?: Type<CanActivate>[]
     ignoreProviders?: Type<any>[]
     overrideProviders?: { original: Type<any>; replacement: any }[]

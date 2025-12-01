@@ -27,7 +27,7 @@ class SampleController {
     }
 }
 
-export interface Fixture {
+export type Fixture = {
     teardown: () => Promise<void>
     rpcClient: RpcTestClient
     httpClient: HttpTestClient

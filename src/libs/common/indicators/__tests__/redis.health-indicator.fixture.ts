@@ -4,7 +4,7 @@ import { RedisHealthIndicator } from 'common'
 import Redis from 'ioredis'
 import { createTestingModule, getRedisTestConnection } from 'testlib'
 
-export interface Fixture {
+export type Fixture = {
     teardown: () => Promise<void>
     redisIndicator: RedisHealthIndicator
     redis: Redis

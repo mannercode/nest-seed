@@ -55,10 +55,7 @@ export function waitForCompletion(fix: TestFixture, status: string) {
     })
 }
 
-export interface Fixture extends TestFixture {
-    movie: MovieDto
-    theater: TheaterDto
-}
+export type Fixture = TestFixture & { movie: MovieDto; theater: TheaterDto }
 
 export async function createFixture(): Promise<Fixture> {
     const fix = await createTestFixture({

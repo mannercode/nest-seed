@@ -1,9 +1,6 @@
 import { Env } from './utils'
 
-export interface RedisConnectionContext {
-    nodes: { host: string; port: number }[]
-    password: string
-}
+export type RedisConnectionContext = { nodes: { host: string; port: number }[]; password: string }
 
 export function getRedisTestConnection(): RedisConnectionContext {
     const password = Env.getString('TEST_REDIS_PASSWORD')
@@ -19,9 +16,7 @@ export function getRedisTestConnection(): RedisConnectionContext {
     return { password, nodes }
 }
 
-export interface NatsConnectionContext {
-    servers: string[]
-}
+export type NatsConnectionContext = { servers: string[] }
 
 export function getNatsTestConnection(): NatsConnectionContext {
     const servers = [
@@ -33,10 +28,7 @@ export function getNatsTestConnection(): NatsConnectionContext {
     return { servers }
 }
 
-export interface MongoConnectionContext {
-    uri: string
-    dbName: string
-}
+export type MongoConnectionContext = { uri: string; dbName: string }
 
 export function getMongoTestConnection(): MongoConnectionContext {
     const replicaSet = Env.getString('TEST_MONGO_REPLICA_SET')
@@ -54,7 +46,7 @@ export function getMongoTestConnection(): MongoConnectionContext {
     return { uri, dbName }
 }
 
-export interface S3ConnectionContext {
+export type S3ConnectionContext = {
     endpoint: string
     region: string
     accessKeyId: string

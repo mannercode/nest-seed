@@ -3,7 +3,7 @@ import { CustomerJwtStrategy, CustomerLocalStrategy, CustomersController } from 
 import { JwtAuthTokens } from 'common'
 import { createCustomer, generateAuthTokens, TestFixture, createTestFixture } from '../__helpers__'
 
-export interface Fixture extends TestFixture {
+export type Fixture = TestFixture & {
     credentials: { email: string; password: string }
     authTokens: JwtAuthTokens
 }

@@ -17,10 +17,7 @@ export class AppConfigService extends BaseConfigService {
     }
 }
 
-export interface Fixture {
-    teardown: () => Promise<void>
-    appConfigService: AppConfigService
-}
+export type Fixture = { teardown: () => Promise<void>; appConfigService: AppConfigService }
 
 export async function createFixture() {
     process.env['TEST_STRING_KEY'] = 'value'

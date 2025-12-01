@@ -14,9 +14,7 @@ export function objectIds(ids: string[]) {
     return ids.map((id) => objectId(id))
 }
 
-export interface QueryBuilderOptions {
-    allowEmpty?: boolean
-}
+export type QueryBuilderOptions = { allowEmpty?: boolean }
 
 export class QueryBuilder<T> {
     private query: any = {}

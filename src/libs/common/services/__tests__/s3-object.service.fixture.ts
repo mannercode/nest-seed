@@ -8,10 +8,7 @@ class TestInjectS3ObjectService {
     constructor(@InjectS3Object() readonly _: S3ObjectService) {}
 }
 
-export interface Fixture {
-    teardown: () => Promise<void>
-    s3Service: S3ObjectService
-}
+export type Fixture = { teardown: () => Promise<void>; s3Service: S3ObjectService }
 
 export async function createFixture() {
     const { endpoint, region, accessKeyId, secretAccessKey, forcePathStyle } = getS3TestConnection()

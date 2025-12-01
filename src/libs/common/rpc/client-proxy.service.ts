@@ -65,7 +65,7 @@ export function InjectClientProxy(name?: string): ParameterDecorator {
     return Inject(ClientProxyService.getServiceName(name))
 }
 
-export interface ClientProxyModuleOptions {
+export type ClientProxyModuleOptions = {
     name?: string
     useFactory?: (...args: any[]) => Promise<ClientProvider> | ClientProvider
     inject?: any[]

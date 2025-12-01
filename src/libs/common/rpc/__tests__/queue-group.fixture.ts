@@ -29,7 +29,7 @@ export class MessageController {
     processBroadcastLogic() {}
 }
 
-export interface Fixture {
+export type Fixture = {
     teardown: () => Promise<void>
     rpcClient: RpcTestClient
     numberOfInstance: number

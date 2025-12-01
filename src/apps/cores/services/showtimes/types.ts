@@ -1,4 +1,1 @@
-export interface CreateShowtimesResult {
-    success: boolean
-    count: number
-}
+export type CreateShowtimesResult = { success: boolean; count: number }

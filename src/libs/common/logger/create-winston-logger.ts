@@ -99,7 +99,7 @@ const consoleLogFormat = winston.format.combine(
     })
 )
 
-export interface LoggerConfiguration {
+export type LoggerConfiguration = {
     directory: string
     daysToKeepLogs: string
     fileLogLevel: string

@@ -50,6 +50,4 @@ export async function createFixture() {
     return { ...testContext, teardown }
 }
 
-export interface Fixture extends HttpTestContext {
-    teardown: () => Promise<void>
-}
+export type Fixture = HttpTestContext & { teardown: () => Promise<void> }

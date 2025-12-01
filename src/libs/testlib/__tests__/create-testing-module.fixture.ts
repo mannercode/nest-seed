@@ -8,10 +8,7 @@ export class SampleService {
     }
 }
 
-export interface Fixture {
-    teardown: () => Promise<void>
-    sampleService: SampleService
-}
+export type Fixture = { teardown: () => Promise<void>; sampleService: SampleService }
 
 export async function createFixture(): Promise<Fixture> {
     const module = await createTestingModule({

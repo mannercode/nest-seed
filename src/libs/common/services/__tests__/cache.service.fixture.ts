@@ -8,10 +8,7 @@ class TestInjectCacheService {
     constructor(@InjectCache() readonly _: CacheService) {}
 }
 
-export interface Fixture {
-    teardown: () => Promise<void>
-    cacheService: CacheService
-}
+export type Fixture = { teardown: () => Promise<void>; cacheService: CacheService }
 
 export async function createFixture() {
     const { nodes, password } = getRedisTestConnection()

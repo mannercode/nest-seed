@@ -19,7 +19,7 @@ class SamplesRepository extends MongooseRepository<Sample> {
     }
 }
 
-export interface Fixture {
+export type Fixture = {
     teardown: () => Promise<void>
     repository: SamplesRepository
     model: Model<Sample>

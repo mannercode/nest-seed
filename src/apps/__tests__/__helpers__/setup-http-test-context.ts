@@ -13,9 +13,7 @@ import {
     ModuleMetadataEx
 } from 'testlib'
 
-export interface TestFixture extends HttpTestContext {
-    teardown: () => Promise<void>
-}
+export type TestFixture = HttpTestContext & { teardown: () => Promise<void> }
 
 export async function createTestFixture(metadata: ModuleMetadataEx) {
     metadata.imports?.push(

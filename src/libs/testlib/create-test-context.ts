@@ -21,17 +21,15 @@ async function listenOnAvailablePort(server: Server): Promise<number> {
     }
 }
 
-export interface TestContext {
+export type TestContext = {
     module: TestingModule
     app: INestApplication<Server>
     close: () => Promise<void>
 }
 
-export interface HttpTestContext extends TestContext {
-    httpClient: HttpTestClient
-}
+export type HttpTestContext = TestContext & { httpClient: HttpTestClient }
 
-export interface TestContextOptions {
+export type TestContextOptions = {
     metadata: ModuleMetadataEx
     brokers?: string[]
     configureApp?: (app: INestApplication<Server>, brokers: string[] | undefined) => Promise<void>

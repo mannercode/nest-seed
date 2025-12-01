@@ -69,11 +69,7 @@ describe('objectIds', () => {
 })
 
 describe('QueryBuilder', () => {
-    interface TestModel {
-        _id: Types.ObjectId
-        name: string
-        createdAt: Date
-    }
+    type TestModel = { _id: Types.ObjectId; name: string; createdAt: Date }
 
     let builder: QueryBuilder<TestModel>
 

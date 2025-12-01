@@ -3,7 +3,7 @@ import { PurchaseRecordDto, PurchaseRecordsClient, PurchaseRecordsModule } from 
 import { PurchasesController } from 'apps/gateway'
 import { createPurchaseRecord, TestFixture, createTestFixture } from '../__helpers__'
 
-export interface Fixture extends TestFixture {
+export type Fixture = TestFixture & {
     purchaseRecordsService: PurchaseRecordsClient
     createdPurchaseRecord: PurchaseRecordDto
 }

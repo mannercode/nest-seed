@@ -1,7 +1,7 @@
 import { Checksum } from 'common'
 import p from 'path'
 
-export interface FixtureFile {
+export type FixtureFile = {
     path: string
     originalName: string
     size: number

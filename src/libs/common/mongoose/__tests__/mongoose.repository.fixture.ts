@@ -63,7 +63,7 @@ export function toDtos(items: SampleDocument[]) {
     return items.map((item) => toDto(item))
 }
 
-export interface Fixture {
+export type Fixture = {
     teardown: () => Promise<void>
     repository: SamplesRepository
     BadRequestException: typeof BadRequestException

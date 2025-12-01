@@ -36,7 +36,7 @@ import {
     TestFixture
 } from '../__helpers__'
 
-export interface Fixture extends TestFixture {
+export type Fixture = TestFixture & {
     customer: CustomerDto
     heldTickets: TicketDto[]
     availableTickets: TicketDto[]

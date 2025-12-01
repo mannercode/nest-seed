@@ -5,7 +5,7 @@ import { TestContext } from 'testlib'
 import { readFile } from 'fs/promises'
 import { Path } from 'common'
 
-export interface Fixture extends TestFixture {
+export type Fixture = TestFixture & {
     file: FixtureFile
     assetsClient: AssetsClient
     createDto: CreateAssetDto

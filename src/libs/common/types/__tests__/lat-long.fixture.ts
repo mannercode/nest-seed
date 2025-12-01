@@ -10,10 +10,7 @@ class TestController {
     }
 }
 
-export interface Fixture {
-    teardown: () => Promise<void>
-    httpClient: HttpTestClient
-}
+export type Fixture = { teardown: () => Promise<void>; httpClient: HttpTestClient }
 
 export async function createFixture() {
     const { httpClient, ...testContext } = await createHttpTestContext({

@@ -3,11 +3,7 @@ import { Byte, jsonToObject } from 'common'
 import { createWriteStream } from 'fs'
 import superagent from 'superagent'
 
-interface EventMessage {
-    event: string
-    id: number
-    data: string
-}
+type EventMessage = { event: string; id: number; data: string }
 
 export class HttpTestClient {
     private agent: superagent.Request

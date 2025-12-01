@@ -1,9 +1,7 @@
 import { ShowtimesClient, ShowtimesModule } from 'apps/cores'
 import { TestFixture, createTestFixture } from '../__helpers__'
 
-export interface Fixture extends TestFixture {
-    showtimesService: ShowtimesClient
-}
+export type Fixture = TestFixture & { showtimesService: ShowtimesClient }
 
 export async function createFixture() {
     const fix = await createTestFixture({

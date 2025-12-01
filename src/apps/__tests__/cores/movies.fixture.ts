@@ -12,7 +12,7 @@ import {
     TestFixture
 } from '../__helpers__'
 
-export interface Fixture extends TestFixture {
+export type Fixture = TestFixture & {
     image: FixtureFile
     createdMovie: MovieDto
     tempDir: string

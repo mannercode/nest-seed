@@ -20,7 +20,7 @@ export class JwtAuthTokens {
     refreshToken: string
 }
 
-export interface AuthConfig {
+export type AuthConfig = {
     accessSecret: string
     refreshSecret: string
     accessTokenTtlMs: number
@@ -119,7 +119,7 @@ export function InjectJwtAuth(name?: string): ParameterDecorator {
 
 type JwtAuthFactoryOptions = { auth: AuthConfig }
 
-export interface JwtAuthModuleOptions {
+export type JwtAuthModuleOptions = {
     name?: string
     redisName?: string
     prefix: string
