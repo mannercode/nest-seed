@@ -4,9 +4,7 @@ export async function sleep(timeoutInMs: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, timeoutInMs))
 }
 
-export function generateUUID(): string {
-    return randomUUID()
-}
+export const generateUUID = () => randomUUID()
 
 /**
  * Generates a short unique identifier (ID) with the specified length.

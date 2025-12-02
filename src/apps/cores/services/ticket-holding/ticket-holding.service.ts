@@ -3,12 +3,9 @@ import { CacheService, InjectCache } from 'common'
 import { Rules } from 'shared'
 import { HoldTicketsDto } from './dtos'
 
-function getCustomerKey(showtimeId: string, customerId: string) {
-    return `Customer:{${showtimeId}}:${customerId}`
-}
-function getTicketKey(showtimeId: string, ticketId: string) {
-    return `Ticket:{${showtimeId}}:${ticketId}`
-}
+const getCustomerKey = (showtimeId: string, customerId: string) =>
+    `Customer:{${showtimeId}}:${customerId}`
+const getTicketKey = (showtimeId: string, ticketId: string) => `Ticket:{${showtimeId}}:${ticketId}`
 
 @Injectable()
 export class TicketHoldingService {

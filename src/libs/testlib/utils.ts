@@ -1,11 +1,13 @@
 import fs from 'fs/promises'
 import net from 'net'
 
-export const nullObjectId = '000000000000000000000000'
-export function oid(value: number) {
-    return value.toString(16).padStart(24, '0')
-}
 export const nullDate = new Date(0)
+export const nullObjectId = '000000000000000000000000'
+export const oid = (value: number) => value.toString(16).padStart(24, '0')
+export const withTestId = (prefix: string) => `${prefix}-${getTestId()}`
+export const step = (_name: string, fn: () => Promise<void> | void) => fn()
+export const toAny = <T>(value: T) => value as any
+export const getTestId = () => Env.getString('TEST_ID')
 
 export async function createDummyFile(filePath: string, sizeInBytes: number) {
     const file = await fs.open(filePath, 'w')
@@ -32,8 +34,8 @@ export async function createDummyFile(filePath: string, sizeInBytes: number) {
     return filePath
 }
 
-export function getAvailablePort(): Promise<number> {
-    return new Promise((resolve, reject) => {
+export const getAvailablePort = () =>
+    new Promise<number>((resolve, reject) => {
         const server = net.createServer()
         server.unref()
         server.on('error', reject)
@@ -44,53 +46,6 @@ export function getAvailablePort(): Promise<number> {
             })
         })
     })
-}
-
-/**
- * The objectToFields function converts an object into an array of fields.
- * Each key-value pair is mapped to { name: key, value: processedValue }.
- *
- * objectToFields 함수는 객체를 필드 배열로 변환합니다.
- * 각 객체의 키-값 쌍을 { name: key, value: processedValue } 형태로 매핑합니다.
- *
- * @param createDto The object to transform
- * @returns {Array<{ name: string, value: string }>} The transformed array of fields
- */
-export function objectToFields(createDto: any) {
-    const fields = Object.entries(createDto).map(([key, value]) => {
-        let processedValue
-
-        if (typeof value === 'string') {
-            processedValue = value
-        } else if (value instanceof Date) {
-            processedValue = value.toISOString()
-        } else if (Array.isArray(value)) {
-            processedValue = JSON.stringify(value)
-        } else if (value === null || value === undefined) {
-            processedValue = ''
-        } else {
-            processedValue = JSON.stringify(value)
-        }
-
-        return { name: key, value: processedValue }
-    })
-
-    return fields
-}
-
-export function getTestId() {
-    const testId = process.env.TEST_ID
-
-    if (testId === undefined) {
-        throw new Error('TEST_ID is not defined')
-    }
-
-    return testId
-}
-
-export function withTestId(prefix: string) {
-    return `${prefix}-${getTestId()}`
-}
 
 export class Env {
     static getString(key: string): string {
@@ -115,12 +70,4 @@ export class Env {
         }
         return parsed
     }
-}
-
-export function step(_name: string, fn: () => Promise<void> | void) {
-    return fn()
-}
-
-export function toAny<T>(value: T): any {
-    return value as any
 }
