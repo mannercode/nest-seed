@@ -1,7 +1,7 @@
 import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
 import { Injectable } from '@nestjs/common'
 import { generateShortId, InjectS3Object, S3Object, S3ObjectModule, S3ObjectService } from 'common'
-import { createTestingModule, getS3TestConnection } from 'testlib'
+import { createTestingModule } from 'testlib'
 
 @Injectable()
 class TestInjectS3ObjectService {
@@ -11,9 +11,13 @@ class TestInjectS3ObjectService {
 export type S3ObjectServiceFixture = { teardown: () => Promise<void>; s3Service: S3ObjectService }
 
 export async function createS3ObjectServiceFixture() {
-    const { endpoint, region, accessKeyId, secretAccessKey, forcePathStyle } = getS3TestConnection()
+    const endpoint = process.env.MINIO_ENDPOINT!
+    const accessKeyId = process.env.MINIO_ACCESS_KEY!
+    const secretAccessKey = process.env.MINIO_SECRET_KEY!
+    const region = 'us-east-1'
+    const forcePathStyle = true
 
-    const bucket = await createTempBucket()
+    const bucket = await createTempBucket(endpoint, accessKeyId, secretAccessKey, region)
 
     const module = await createTestingModule({
         imports: [
@@ -24,8 +28,8 @@ export async function createS3ObjectServiceFixture() {
                         accessKeyId,
                         secretAccessKey,
                         region,
-                        bucket,
-                        forcePathStyle
+                        forcePathStyle,
+                        bucket
                     }
                 }
             })
@@ -42,14 +46,17 @@ export async function createS3ObjectServiceFixture() {
     return { teardown, s3Service }
 }
 
-async function createTempBucket() {
-    const { endpoint, region, accessKeyId, secretAccessKey, forcePathStyle } = getS3TestConnection()
-
+async function createTempBucket(
+    endpoint: string,
+    accessKeyId: string,
+    secretAccessKey: string,
+    region: string
+) {
     const client = new S3Client({
         endpoint,
         region,
         credentials: { accessKeyId, secretAccessKey },
-        forcePathStyle
+        forcePathStyle: true
     })
 
     const bucket = generateShortId().toLowerCase()

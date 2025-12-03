@@ -1,12 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
-import {
-    createTestContext,
-    getNatsTestConnection,
-    RpcTestClient,
-    TestContextOptions,
-    withTestId
-} from 'testlib'
+import { createTestContext, RpcTestClient, TestContextOptions, withTestId } from 'testlib'
 
 @Controller()
 export class MessageController {
@@ -36,10 +30,9 @@ export type QueueGroupFixture = {
 }
 
 export async function createQueueGroupFixture() {
-    const { servers } = getNatsTestConnection()
     const brokerOptions = {
         transport: Transport.NATS,
-        options: { servers, queue: 'queue-group' }
+        options: { ...JSON.parse(process.env.NATS_OPTIONS!), queue: 'queue-group' }
     } as NatsOptions
 
     const options: TestContextOptions = {

@@ -3,7 +3,8 @@ import { AssetDto } from 'apps/infrastructures'
 import { FileUtil, Path } from 'common'
 import { writeFile } from 'fs/promises'
 import { nullObjectId } from 'testlib'
-import { uploadAndCompleteAsset, type AssetsFixture } from './assets.fixture'
+import { fixtureFiles, uploadAndCompleteAsset } from '../__helpers__'
+import type { AssetsFixture } from './assets.fixture'
 
 describe('AssetsService', () => {
     let fixture: AssetsFixture
@@ -44,7 +45,7 @@ describe('AssetsService', () => {
             let uploadedAsset: AssetDto
 
             beforeEach(async () => {
-                uploadedAsset = await uploadAndCompleteAsset(fixture)
+                uploadedAsset = await uploadAndCompleteAsset(fixture, fixtureFiles.small)
             })
 
             it('returns a download URL and metadata', async () => {
@@ -81,7 +82,7 @@ describe('AssetsService', () => {
             let uploadedAsset: AssetDto
 
             beforeEach(async () => {
-                uploadedAsset = await uploadAndCompleteAsset(fixture)
+                uploadedAsset = await uploadAndCompleteAsset(fixture, fixtureFiles.small)
             })
 
             it('deletes the asset metadata', async () => {

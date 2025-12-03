@@ -2,13 +2,7 @@ import { Controller, Get, Post, Provider } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
 import { SuccessLoggingInterceptor } from 'common'
-import {
-    createHttpTestContext,
-    getNatsTestConnection,
-    HttpTestClient,
-    RpcTestClient,
-    withTestId
-} from 'testlib'
+import { createHttpTestContext, HttpTestClient, RpcTestClient, withTestId } from 'testlib'
 
 @Controller()
 class TestController {
@@ -42,8 +36,10 @@ export type SuccessLoggingInterceptorFixture = {
 }
 
 export async function createSuccessLoggingInterceptorFixture(providers: Provider[]) {
-    const { servers } = getNatsTestConnection()
-    const brokerOptions = { transport: Transport.NATS, options: { servers } } as NatsOptions
+    const brokerOptions = {
+        transport: Transport.NATS,
+        options: JSON.parse(process.env.NATS_OPTIONS!)
+    } as NatsOptions
 
     const { httpClient, ...testContext } = await createHttpTestContext({
         metadata: {

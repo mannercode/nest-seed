@@ -2,6 +2,8 @@ import type { Config } from 'jest'
 import { createJsWithTsPreset } from 'ts-jest'
 
 export default {
+    globalSetup: '<rootDir>/jest.global-setup.ts',
+    globalTeardown: '<rootDir>/jest.global-teardown.ts',
     setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
     moduleFileExtensions: ['js', 'json', 'ts'],
     testRegex: '(__tests__/.*\\.spec\\.(ts|js))$',

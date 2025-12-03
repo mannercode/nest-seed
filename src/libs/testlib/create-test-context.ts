@@ -43,7 +43,9 @@ export async function createTestContext({
     const module = await createTestingModule(metadata)
     const app = module.createNestApplication()
 
-    if (configureApp) await configureApp(app, brokers)
+    if (configureApp) {
+        await configureApp(app, brokers)
+    }
 
     // Code specific to VSCode
     const isDebuggingEnabled = process.env.VSCODE_INSPECTOR_OPTIONS !== undefined

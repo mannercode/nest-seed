@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { getModelToken, InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { createMongooseSchema, MongooseRepository, MongooseSchema } from 'common'
 import { Model } from 'mongoose'
-import { createTestContext, getMongoTestConnection } from 'testlib'
+import { createTestContext, getTestId } from 'testlib'
 
 @Schema()
 class Sample extends MongooseSchema {
@@ -26,7 +26,8 @@ export type MongooseTransactionFixture = {
 }
 
 export async function createMongooseTransactionFixture() {
-    const { uri, dbName } = getMongoTestConnection()
+    const uri = process.env.COMMONLIB_MONGO_URI
+    const dbName = `mongo-${getTestId()}`
 
     const testContext = await createTestContext({
         metadata: {

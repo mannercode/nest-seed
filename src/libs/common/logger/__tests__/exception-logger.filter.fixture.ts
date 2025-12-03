@@ -2,13 +2,7 @@ import { Controller, Get, NotFoundException } from '@nestjs/common'
 import { APP_FILTER } from '@nestjs/core'
 import { MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
 import { ExceptionLoggerFilter } from 'common'
-import {
-    createHttpTestContext,
-    getNatsTestConnection,
-    HttpTestClient,
-    RpcTestClient,
-    withTestId
-} from 'testlib'
+import { createHttpTestContext, HttpTestClient, RpcTestClient, withTestId } from 'testlib'
 
 @Controller()
 class TestController {
@@ -53,8 +47,10 @@ export type ExceptionLoggerFilterFixture = {
 }
 
 export async function createExceptionLoggerFilterFixture() {
-    const { servers } = getNatsTestConnection()
-    const brokerOptions = { transport: Transport.NATS, options: { servers } } as NatsOptions
+    const brokerOptions = {
+        transport: Transport.NATS,
+        options: JSON.parse(process.env.NATS_OPTIONS!)
+    } as NatsOptions
 
     const { httpClient, ...testContext } = await createHttpTestContext({
         metadata: {

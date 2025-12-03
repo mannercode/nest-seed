@@ -1,8 +1,6 @@
 import { AssetsClient, AssetsModule, CreateAssetDto } from 'apps/infrastructures'
 import { Path } from 'common'
-import { readFile } from 'fs/promises'
 import { pick } from 'lodash'
-import { TestContext } from 'testlib'
 import { createTestFixture, FixtureFile, fixtureFiles, TestFixture } from '../__helpers__'
 
 export type AssetsFixture = TestFixture & {
@@ -32,24 +30,4 @@ export async function createAssetsFixture() {
     return { ...testFixture, teardown, assetsClient, file, createDto, tempDir }
 }
 
-export async function uploadAndCompleteAsset(
-    { module }: TestContext,
-    file: FixtureFile = fixtureFiles.small
-) {
-    const { AssetsClient } = await import('apps/infrastructures')
-    const assetsClient = module.get(AssetsClient)
-
-    const createDto = pick(file, ['originalName', 'mimeType', 'size', 'checksum'])
-
-    const { assetId, uploadRequest } = await assetsClient.create(createDto)
-    const { url, method, headers } = uploadRequest
-    const body = await readFile(file.path)
-
-    const uploadRes = await fetch(url, { method, headers, body })
-    expect(uploadRes.ok).toBe(true)
-
-    const owner = { ownerService: 'service-name', ownerEntityId: 'entity-id' }
-    const completedAsset = await assetsClient.complete(assetId, owner)
-
-    return completedAsset
-}
+//  fixtureFiles.small

@@ -1,7 +1,7 @@
 import { getModelToken, MongooseModule, Schema as NestSchema, Prop } from '@nestjs/mongoose'
 import { createMongooseSchema, MongooseSchema } from 'common'
 import { Model, mongo, Schema, Types } from 'mongoose'
-import { createTestContext, getMongoTestConnection } from 'testlib'
+import { createTestContext, getTestId } from 'testlib'
 
 type RawSample = Partial<SchemaTypeSample> & { [key: string]: any }
 
@@ -86,7 +86,8 @@ export type MongooseSchemaFixture = {
 export async function createMongooseSchemaFixture() {
     const schema = createMongooseSchema(SchemaTypeSample)
 
-    const { uri, dbName } = getMongoTestConnection()
+    const uri = process.env.COMMONLIB_MONGO_URI
+    const dbName = `mongo-${getTestId()}`
 
     const testContext = await createTestContext({
         metadata: {
