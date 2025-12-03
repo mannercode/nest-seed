@@ -39,7 +39,7 @@ services:
         container_name: infrastructures
 
     apps-setup:
-        image: busybox
+        image: docker:cli
         container_name: apps-setup
         depends_on:
             gateway: { condition: service_healthy }
