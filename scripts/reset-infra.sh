@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")"
-
-PROJECT_ROOT=$WORKSPACE_ROOT
+. "./common.cfg"
 
 OPTIONS=(
+	-f "infras/compose.yml"
 	--env-file "$PROJECT_ROOT/.env"
 	--env-file "$PROJECT_ROOT/.env.infra"
 )

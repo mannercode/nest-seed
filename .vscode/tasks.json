@@ -5,7 +5,7 @@
             "label": "Run Tests",
             "detail": "Run the selected test suite",
             "type": "shell",
-            "command": "bash scripts/run-test.sh ${input:suites}"
+            "command": "bash scripts/run-tests.sh ${input:suites}"
         }
     ],
     "inputs": [

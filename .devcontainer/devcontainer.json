@@ -20,7 +20,7 @@
     "postCreateCommand": { "husky": "npx husky", "ci": "npm ci" },
     "postStartCommand": {
         "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null",
-        "reset-infra": "bash infra/local/reset-infra.sh"
+        "reset-infra": "bash scripts/reset-infra.sh"
     },
     "customizations": {
         "vscode": {
@@ -61,9 +61,9 @@
                 "typescript.updateImportsOnFileMove.enabled": "never",
                 "editor.defaultFormatter": "prettier.prettier-vscode",
                 "[dockerfile]": { "editor.defaultFormatter": "ms-azuretools.vscode-containers" },
-                "[json]": { "editor.defaultFormatter": "vscode.json-language-features" },
-                "[jsonc]": { "editor.defaultFormatter": "vscode.json-language-features" },
-                "[html]": { "editor.defaultFormatter": "vscode.html-language-features" },
+                "[json]": { "editor.defaultFormatter": "prettier.prettier-vscode" },
+                "[jsonc]": { "editor.defaultFormatter": "prettier.prettier-vscode" },
+                "[html]": { "editor.defaultFormatter": "prettier.prettier-vscode" },
                 "[dotenv]": { "editor.defaultFormatter": "mkhl.shfmt" },
                 "[shellscript]": { "editor.defaultFormatter": "mkhl.shfmt" },
                 "[ignore]": { "editor.defaultFormatter": "mkhl.shfmt" },

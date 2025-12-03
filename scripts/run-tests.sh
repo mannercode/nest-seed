@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
-. "$(dirname "$0")/common.cfg"
+cd "$(dirname "$0")"
+. "./common.cfg"
 
 TEST_SUITES=("all" "apps" "common" "e2e")
 
@@ -33,7 +34,7 @@ elif [ "$TEST_SUITE" == "apps" ]; then
 elif [ "$TEST_SUITE" == "all" ]; then
 	jest_command "src"
 elif [ "$TEST_SUITE" == "e2e" ]; then
-	COMMAND=(bash "$PROJECT_ROOT/test/e2e/run.sh")
+	COMMAND=(npm run test:e2e)
 else
 	echo "Unknown test suite: $TEST_SUITE" >&2
 	exit 1

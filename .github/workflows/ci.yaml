@@ -44,7 +44,7 @@ jobs:
                   echo "$GW_IP host.docker.internal" | tee -a /etc/hosts
 
             - name: Run infrastructures
-              run: bash infra/local/reset-infra.sh
+              run: bash scripts/reset-infra.sh
 
             - name: Install deps
               run: npm ci
