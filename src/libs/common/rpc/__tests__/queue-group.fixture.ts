@@ -32,7 +32,7 @@ export type QueueGroupFixture = {
 export async function createQueueGroupFixture() {
     const brokerOptions = {
         transport: Transport.NATS,
-        options: { ...JSON.parse(process.env.NATS_OPTIONS!), queue: 'queue-group' }
+        options: { ...JSON.parse(process.env.COMMONLIB_NATS_OPTIONS!), queue: 'queue-group' }
     } as NatsOptions
 
     const options: TestContextOptions = {

@@ -26,7 +26,7 @@ export type ClientProxyWithNameFixture = {
 export async function createClientProxyWithNameFixture() {
     const brokerOptions = {
         transport: Transport.NATS,
-        options: JSON.parse(process.env.NATS_OPTIONS!)
+        options: JSON.parse(process.env.COMMONLIB_NATS_OPTIONS!)
     } as NatsOptions
 
     const { httpClient, ...testContext } = await createHttpTestContext({

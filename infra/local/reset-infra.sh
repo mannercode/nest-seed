@@ -4,7 +4,7 @@ cd "$(dirname "$0")"
 
 PROJECT_ROOT=$WORKSPACE_ROOT
 TEST_ENV_FILE="$PROJECT_ROOT/.env"
-INFRA_ENV_FILE=".env.infra"
+INFRA_ENV_FILE="$PROJECT_ROOT/.env.infra"
 
 docker_compose() (
 	docker compose --compatibility \

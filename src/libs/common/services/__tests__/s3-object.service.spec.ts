@@ -35,6 +35,7 @@ describe('S3ObjectService', () => {
             })
 
             // TODO fix
+
             // uploadUrl을 반환한다
             it('returns an uploadUrl', async () => {
                 expect(uploadUrl).toEqual(expect.any(String))

@@ -11,9 +11,9 @@ class TestInjectS3ObjectService {
 export type S3ObjectServiceFixture = { teardown: () => Promise<void>; s3Service: S3ObjectService }
 
 export async function createS3ObjectServiceFixture() {
-    const endpoint = process.env.MINIO_ENDPOINT!
-    const accessKeyId = process.env.MINIO_ACCESS_KEY!
-    const secretAccessKey = process.env.MINIO_SECRET_KEY!
+    const endpoint = process.env.COMMONLIB_MINIO_ENDPOINT!
+    const accessKeyId = process.env.COMMONLIB_MINIO_ACCESS_KEY!
+    const secretAccessKey = process.env.COMMONLIB_MINIO_SECRET_KEY!
     const region = 'us-east-1'
     const forcePathStyle = true
 

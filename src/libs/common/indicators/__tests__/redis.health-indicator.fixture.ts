@@ -12,7 +12,7 @@ export type RedisHealthIndicatorFixture = {
 
 export async function createRedisHealthIndicatorFixture() {
     const module = await createTestingModule({
-        imports: [RedisModule.forRoot({ type: 'single', url: process.env.REDIS_URL })],
+        imports: [RedisModule.forRoot({ type: 'single', url: process.env.COMMONLIB_REDIS_URL })],
         providers: [RedisHealthIndicator, HealthIndicatorService]
     })
 

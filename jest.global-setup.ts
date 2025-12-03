@@ -1,59 +1,78 @@
 import { NatsContainer } from '@testcontainers/nats'
+import dotenv from 'dotenv'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
-import { GenericContainer, StartedTestContainer } from 'testcontainers'
+import { GenericContainer } from 'testcontainers'
 
-type TestInfra = {
-    mongod: MongoMemoryReplSet
-    redis: StartedTestContainer
-    nats: StartedTestContainer
-    minio: StartedTestContainer
+function getEnv(key: string) {
+    const value = process.env[key]
+
+    if (!value) throw new Error(`Environment variable ${key} is not defined`)
+
+    return value
 }
 
-export default async function globalSetup() {
-    const nats = await new NatsContainer('nats:2').start()
-    process.env.NATS_OPTIONS = JSON.stringify(nats.getConnectionOptions())
+async function setupNats() {
+    return new NatsContainer(getEnv('NATS_IMAGE')).start()
+}
 
-    const mongod = await MongoMemoryReplSet.create({
+async function setupRedis() {
+    return new GenericContainer(getEnv('REDIS_IMAGE')).withExposedPorts(6379).start()
+}
+
+async function setupMongo() {
+    const version = getEnv('MONGO_IMAGE').split(':')[1]
+
+    return MongoMemoryReplSet.create({
+        binary: { version },
         instanceOpts: [
             {
                 /**
-                 * MongoDB configuration for testing the Mongoose `expires` option.
-                 * The default TTL monitor interval is 60 seconds, which is too long
-                 * for tests using values like `expires: '500ms'`.
-                 * We start a replica set with `ttlMonitorSleepSecs=1` so TTL expiration
-                 * is processed quickly during tests.
-                 *
-                 * TTL(expire) 옵션 테스트용 MongoDB 설정.
-                 * 기본 TTL 모니터 주기는 60초라,
-                 * `expires: '500ms'` 같은 스키마 옵션이 바로 적용되지 않는다.
-                 * 테스트를 빠르게 돌리기 위해 TTL 모니터 주기를 1초로 줄어든 레플리카셋을 띄운다.
+                 * MongoDB for TTL(expire) tests – ttlMonitorSleepSecs=1 for fast TTL expiry.
+                 * TTL(expire) 테스트용 MongoDB – TTL 모니터 주기를 1초로 줄여 빠르게 만료 확인.
                  *
                  * @NestSchema()
                  * export class ExpireSample extends MongooseSchema {
-                 *   @Prop({ expires: '500ms', default: Date.now })
-                 *   expiresAt: Date
+                 *     @Prop({ expires: '500ms'})
+                 *     expiresAt: Date
                  * }
                  */
                 args: ['--setParameter', 'ttlMonitorSleepSecs=1']
             }
         ]
     })
+}
 
-    const redis = await new GenericContainer('redis:7').withExposedPorts(6379).start()
-    process.env.REDIS_URL = `redis://localhost:${redis.getMappedPort(6379)}`
+async function setupMinio() {
+    const MINIO_ROOT_USER = 'user'
+    const MINIO_ROOT_PASSWORD = 'password'
 
-    process.env.MINIO_ACCESS_KEY = 'access'
-    process.env.MINIO_SECRET_KEY = 'secret'
-
-    const minio = await new GenericContainer('minio/minio')
-        .withEnvironment({
-            MINIO_ACCESS_KEY: process.env.MINIO_ACCESS_KEY,
-            MINIO_SECRET_KEY: process.env.MINIO_SECRET_KEY
-        })
+    const minio = new GenericContainer(getEnv('MINIO_IMAGE'))
+        .withEnvironment({ MINIO_ROOT_USER, MINIO_ROOT_PASSWORD })
         .withCommand(['server', '/data'])
         .withExposedPorts(9000)
         .start()
 
-    process.env.MINIO_ENDPOINT = `http://localhost:${minio.getMappedPort(9000)}`
-    ;(globalThis as any).__TEST_INFRA__ = { mongod, redis, nats, minio } as TestInfra
+    process.env.COMMONLIB_MINIO_ACCESS_KEY = MINIO_ROOT_USER
+    process.env.COMMONLIB_MINIO_SECRET_KEY = MINIO_ROOT_PASSWORD
+
+    return minio
+}
+
+export default async function globalSetup() {
+    dotenv.config({ path: ['.env.infra'], quiet: true })
+    process.env.NODE_ENV = 'test'
+
+    const [nats, mongo, redis, minio] = await Promise.all([
+        setupNats(),
+        setupMongo(),
+        setupRedis(),
+        setupMinio()
+    ])
+
+    ;(globalThis as any).__TEST_INFRA__ = { mongo, redis, nats, minio }
+
+    process.env.COMMONLIB_NATS_OPTIONS = JSON.stringify(nats.getConnectionOptions())
+    process.env.COMMONLIB_MONGO_URI = mongo.getUri()
+    process.env.COMMONLIB_REDIS_URL = `redis://localhost:${redis.getMappedPort(6379)}`
+    process.env.COMMONLIB_MINIO_ENDPOINT = `http://localhost:${minio.getMappedPort(9000)}`
 }

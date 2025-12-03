@@ -18,7 +18,7 @@ export type JwtAuthServiceFixture = {
 export async function createJwtAuthServiceFixture() {
     const module = await createTestingModule({
         imports: [
-            RedisModule.forRoot({ type: 'single', url: process.env.REDIS_URL }),
+            RedisModule.forRoot({ type: 'single', url: process.env.COMMONLIB_REDIS_URL }),
             JwtAuthModule.register({
                 prefix: withTestId('jwt-auth'),
                 useFactory() {

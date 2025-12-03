@@ -2,8 +2,7 @@ import dotenv from 'dotenv'
 import 'reflect-metadata'
 import { MongoClient } from 'mongodb'
 
-dotenv.config({ path: ['.env'], quiet: true })
-process.env.NODE_ENV = 'test'
+dotenv.config({ quiet: true })
 
 const generateTestId = () => {
     const characters = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'

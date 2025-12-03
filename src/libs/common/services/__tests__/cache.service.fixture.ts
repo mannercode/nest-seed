@@ -13,7 +13,7 @@ export type CacheServiceFixture = { teardown: () => Promise<void>; cacheService:
 export async function createCacheServiceFixture() {
     const module = await createTestingModule({
         imports: [
-            RedisModule.forRoot({ type: 'single', url: process.env.REDIS_URL }, 'name'),
+            RedisModule.forRoot({ type: 'single', url: process.env.COMMONLIB_REDIS_URL }, 'name'),
             CacheModule.register({ prefix: withTestId('cache'), redisName: 'name' })
         ],
         providers: [TestInjectCacheService]
