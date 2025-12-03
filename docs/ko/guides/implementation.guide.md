@@ -159,9 +159,9 @@ CommonTest --> TestLibClass : import
 
 ## 5. 테스트에서 dynamic import
 
-여러 테스트에서 같은 NATS 서버를 공유하기 때문에, 각 테스트마다 고유한 subject를 생성하기 위해 process.env.TEST_ID를 사용합니다.
+여러 테스트에서 같은 NATS 서버를 공유하기 때문에, 각 테스트마다 고유한 subject를 생성하기 위해 process.env.COMMONLIB_ID를 사용합니다.
 
-문제는 Jest의 모듈 캐시 때문에 @MessagePattern 데코레이터가 모듈 로딩 시점에 한 번만 평가됩니다. 따라서 최상위에서 이미 import된 모듈은 새로운 process.env.TEST_ID 값을 인식하지 못합니다.
+문제는 Jest의 모듈 캐시 때문에 @MessagePattern 데코레이터가 모듈 로딩 시점에 한 번만 평가됩니다. 따라서 최상위에서 이미 import된 모듈은 새로운 process.env.COMMONLIB_ID 값을 인식하지 못합니다.
 
 이 문제를 해결하기 위해서, Jest 설정에서 resetModules: true를 적용하여 각 테스트마다 모듈 캐시를 초기화합니다.
 
@@ -250,6 +250,7 @@ export async function getProviders(coresContext: TestContext) {
 ### 7.2 현재 방식
 
 <!-- TODO 7. 항목은 정리 다시 -->
+
 각 모듈에서 필요한 모듈만 생성해서 테스트 한다.
 
 전체 모듈을 생성하는 예전 방식은 테스트 완료에 89s가 걸렸다. 현재 방식은 83s가 걸렸다. 실제 프로젝트에서는 훨씬 큰 차이가 발생할 것이다.
