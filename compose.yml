@@ -11,7 +11,6 @@ x-app-base: &app-base
             timeout: 3s,
             test: 'curl -fsS http://localhost:$HTTP_PORT/health'
         }
-    volumes: [./_output/logs/gateway:/app/_output/logs, ./_output/uploads:/app/_output/uploads]
 
 services:
     gateway:

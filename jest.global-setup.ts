@@ -71,6 +71,7 @@ export default async function globalSetup() {
 
     ;(globalThis as any).__TEST_INFRA__ = { mongo, redis, nats, minio }
 
+    // TODO 이거 받아오는 공통 로직 필요?
     process.env.COMMONLIB_NATS_OPTIONS = JSON.stringify(nats.getConnectionOptions())
     process.env.COMMONLIB_MONGO_URI = mongo.getUri()
     process.env.COMMONLIB_REDIS_URL = `redis://localhost:${redis.getMappedPort(6379)}`

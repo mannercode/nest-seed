@@ -47,7 +47,6 @@ export class AppConfigService extends BaseConfigService {
         AUTH_REFRESH_SECRET: Joi.string().required(),
         AUTH_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
 
-        FILE_UPLOAD_DIRECTORY: Joi.string().required(),
         FILE_UPLOAD_MAX_FILE_SIZE_BYTES: Joi.number().required(),
         FILE_UPLOAD_MAX_FILES_PER_UPLOAD: Joi.number().required(),
         FILE_UPLOAD_ALLOWED_FILE_TYPES: Joi.string().required(),
@@ -135,7 +134,6 @@ export class AppConfigService extends BaseConfigService {
 
     get fileUpload() {
         return {
-            directory: this.getString('FILE_UPLOAD_DIRECTORY'),
             maxFileSizeBytes: this.getNumber('FILE_UPLOAD_MAX_FILE_SIZE_BYTES'),
             maxFilesPerUpload: this.getNumber('FILE_UPLOAD_MAX_FILES_PER_UPLOAD'),
             allowedMimeTypes: this.getString('FILE_UPLOAD_ALLOWED_FILE_TYPES').split(',')

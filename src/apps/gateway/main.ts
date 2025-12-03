@@ -8,7 +8,7 @@ export async function bootstrap() {
 
     await configureApp({
         app,
-        directories: [config.fileUpload.directory, config.log.directory],
+        directories: [config.log.directory],
         natOptions: { servers: config.nats.servers, queue: 'apps/gateway' },
         http: config.http
     })
