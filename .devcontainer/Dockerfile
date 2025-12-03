@@ -13,8 +13,3 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN wget https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar -O /opt/plantuml.jar
 RUN npm i -g npm-check-updates husky
-
-# TODO logstash 붙이면 제거해라
-RUN apt-get update && apt-get install -y sudo \
-    && echo "node ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/node \
-    && chmod 0440 /etc/sudoers.d/node

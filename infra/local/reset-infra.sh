@@ -3,25 +3,16 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 PROJECT_ROOT=$WORKSPACE_ROOT
-TEST_ENV_FILE="$PROJECT_ROOT/.env"
-INFRA_ENV_FILE="$PROJECT_ROOT/.env.infra"
 
 docker_compose() (
 	docker compose --compatibility \
 		-f ./compose.yml \
-		--env-file $TEST_ENV_FILE \
-		--env-file $INFRA_ENV_FILE \
+		--env-file "$PROJECT_ROOT/.env" \
+		--env-file "$PROJECT_ROOT/.env.infra" \
 		$@
 )
 
 docker_compose down --volumes --timeout 0
-
-# TODO logstash 붙이면 삭제해라
-. $TEST_ENV_FILE
-sudo rm -rf $WORKSPACE_ROOT/_output
-mkdir -p $WORKSPACE_ROOT/$LOG_DIRECTORY
-mkdir -p $WORKSPACE_ROOT/$FILE_UPLOAD_DIRECTORY
-
 docker_compose up -d
 
 SETUP_CONTAINERS=(mongo-key-generator mongo-setup redis-setup nats-setup minio-setup)

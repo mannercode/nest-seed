@@ -12,12 +12,6 @@
             "detail": "Build Docker and run E2E tests",
             "type": "shell",
             "command": "bash test/e2e/run.sh"
-        },
-        {
-            "label": "Workspace Cleanup",
-            "detail": "Reset the development environment and remove all data",
-            "type": "shell",
-            "command": "bash scripts/workspace-cleanup.sh"
         }
     ],
     "inputs": [
