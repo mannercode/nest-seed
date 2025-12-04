@@ -1,6 +1,5 @@
 import { MongoDBContainer } from '@testcontainers/mongodb'
 import { NatsContainer } from '@testcontainers/nats'
-import dotenv from 'dotenv'
 import { GenericContainer } from 'testcontainers'
 import { getEnv, setEnv } from './jest.utils'
 
@@ -36,9 +35,6 @@ async function setupMinio() {
 }
 
 export default async function globalSetup() {
-    dotenv.config({ path: ['.env.infra'], quiet: true })
-    setEnv('NODE_ENV', 'test')
-
     const [nats, mongo, redis, minio] = await Promise.all([
         setupNats(),
         setupMongo(),

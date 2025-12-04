@@ -1,7 +1,7 @@
 import { getModelToken, MongooseModule, Schema as NestSchema, Prop } from '@nestjs/mongoose'
 import { createMongooseSchema, MongooseSchema } from 'common'
 import { Model } from 'mongoose'
-import { createTestContext, getMongoTestConnection, getTestId } from 'testlib'
+import { createTestContext, getMongoTestConnection } from 'testlib'
 
 @NestSchema()
 export class ExpireSample extends MongooseSchema {

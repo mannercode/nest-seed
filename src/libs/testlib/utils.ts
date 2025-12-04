@@ -5,10 +5,9 @@ import net from 'net'
 export const nullDate = new Date(0)
 export const nullObjectId = '000000000000000000000000'
 export const oid = (value: number) => value.toString(16).padStart(24, '0')
-export const withTestId = (prefix: string) => `${prefix}-${getTestId()}`
+export const withTestId = (prefix: string) => `${prefix}-${Env.getString('TEST_ID')}`
 export const step = (_name: string, fn: () => Promise<void> | void) => fn()
 export const toAny = <T>(value: T) => value as any
-export const getTestId = () => Env.getString('TEST_ID')
 export const isDebuggingEnabled = process.execArgv.some((arg) => arg.startsWith('--inspect'))
 
 export async function createDummyFile(filePath: string, sizeInBytes: number) {
