@@ -1,6 +1,6 @@
+import { MongoDBContainer } from '@testcontainers/mongodb'
 import { NatsContainer } from '@testcontainers/nats'
 import dotenv from 'dotenv'
-import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import { GenericContainer } from 'testcontainers'
 
 function getEnv(key: string) {
@@ -20,26 +20,7 @@ async function setupRedis() {
 }
 
 async function setupMongo() {
-    const version = getEnv('MONGO_IMAGE').split(':')[1]
-
-    return MongoMemoryReplSet.create({
-        binary: { version },
-        instanceOpts: [
-            {
-                /**
-                 * MongoDB for TTL(expire) tests – ttlMonitorSleepSecs=1 for fast TTL expiry.
-                 * TTL(expire) 테스트용 MongoDB – TTL 모니터 주기를 1초로 줄여 빠르게 만료 확인.
-                 *
-                 * @NestSchema()
-                 * export class ExpireSample extends MongooseSchema {
-                 *     @Prop({ expires: '500ms'})
-                 *     expiresAt: Date
-                 * }
-                 */
-                args: ['--setParameter', 'ttlMonitorSleepSecs=1']
-            }
-        ]
-    })
+    return await new MongoDBContainer(getEnv('MONGO_IMAGE')).start()
 }
 
 async function setupMinio() {
@@ -72,7 +53,9 @@ export default async function globalSetup() {
     ;(globalThis as any).__TEST_INFRA__ = { mongo, redis, nats, minio }
 
     process.env.TESTLIB_NATS_OPTIONS = JSON.stringify(nats.getConnectionOptions())
-    process.env.TESTLIB_MONGO_URI = mongo.getUri()
+    // MongoServerSelectionError: getaddrinfo ENOTFOUND 28f6974a84e2 같은 에러를 방지하기 위해 directConnection 사용
+    // Use directConnection to prevent MongoServerSelectionError: getaddrinfo ENOTFOUND on container hostnames
+    process.env.TESTLIB_MONGO_URI = `${mongo.getConnectionString()}?directConnection=true`
     process.env.TESTLIB_REDIS_URL = `redis://localhost:${redis.getMappedPort(6379)}`
     process.env.TESTLIB_S3_ENDPOINT = `http://localhost:${minio.getMappedPort(9000)}`
 }

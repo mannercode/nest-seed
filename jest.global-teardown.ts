@@ -1,8 +1,7 @@
-import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import type { StartedTestContainer } from 'testcontainers'
 
 type TestInfra = {
-    mongo: MongoMemoryReplSet
+    mongo: StartedTestContainer
     redis: StartedTestContainer
     nats: StartedTestContainer
     minio: StartedTestContainer

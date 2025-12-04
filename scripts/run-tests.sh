@@ -20,6 +20,9 @@ fi
 for ((i = 1; i <= TEST_RUNS; i++)); do
 	echo "[Run $i/$TEST_RUNS]"
 
+	# npx jest /workspaces/nest-msa/src/libs/common/mongoose/__tests__/mongoose.repository.spec.ts \
+	# 	-c '/workspaces/nest-msa/jest.config.ts' -t 'MongooseRepository'
+
 	npx jest --no-cache --coverage \
 		--config "$PROJECT_ROOT/jest.config.ts" \
 		--roots "<rootDir>/$TEST_SUITE" \

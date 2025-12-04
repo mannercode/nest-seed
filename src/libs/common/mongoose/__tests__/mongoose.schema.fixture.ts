@@ -86,17 +86,10 @@ export type MongooseSchemaFixture = {
 export async function createMongooseSchemaFixture() {
     const schema = createMongooseSchema(SchemaTypeSample)
 
-    const uri = getMongoTestConnection()
-    const dbName = `mongo-${getTestId()}`
-
     const testContext = await createTestContext({
         metadata: {
             imports: [
-                MongooseModule.forRootAsync({
-                    useFactory() {
-                        return { uri, dbName }
-                    }
-                }),
+                MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
                 MongooseModule.forFeature([{ name: 'schema', schema }])
             ]
         }

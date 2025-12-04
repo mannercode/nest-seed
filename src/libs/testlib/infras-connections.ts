@@ -9,7 +9,10 @@ export const getNatsTestConnection = () => {
 }
 
 export const getMongoTestConnection = () => {
-    return Env.getString('TESTLIB_MONGO_URI')
+    return {
+        uri: Env.getString('TESTLIB_MONGO_URI'),
+        dbName: Env.getString('TESTLIB_MONGO_DATABASE')
+    }
 }
 
 export const getS3TestConnection = () => {
