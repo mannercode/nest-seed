@@ -2,8 +2,7 @@ import type { Config } from 'jest'
 import { createJsWithTsPreset } from 'ts-jest'
 
 export default {
-    globalSetup: '<rootDir>/jest.global-setup.ts',
-    globalTeardown: '<rootDir>/jest.global-teardown.ts',
+    globalSetup: '<rootDir>/jest.global.ts',
     setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
     moduleFileExtensions: ['js', 'json', 'ts'],
     testRegex: '(__tests__/.*\\.spec\\.(ts|js))$',
@@ -20,7 +19,7 @@ export default {
         '^apps/(.*)$': '<rootDir>/src/apps/$1'
     },
     collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
-    // coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },
+    coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },
     coverageReporters: ['lcov', 'text'],
     coveragePathIgnorePatterns: [
         '__tests__',

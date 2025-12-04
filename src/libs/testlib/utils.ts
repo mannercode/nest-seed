@@ -1,3 +1,4 @@
+import { Env } from 'common'
 import fs from 'fs/promises'
 import net from 'net'
 
@@ -8,6 +9,7 @@ export const withTestId = (prefix: string) => `${prefix}-${getTestId()}`
 export const step = (_name: string, fn: () => Promise<void> | void) => fn()
 export const toAny = <T>(value: T) => value as any
 export const getTestId = () => Env.getString('TEST_ID')
+export const isDebuggingEnabled = process.execArgv.some((arg) => arg.startsWith('--inspect'))
 
 export async function createDummyFile(filePath: string, sizeInBytes: number) {
     const file = await fs.open(filePath, 'w')
@@ -34,8 +36,8 @@ export async function createDummyFile(filePath: string, sizeInBytes: number) {
     return filePath
 }
 
-export const getAvailablePort = () =>
-    new Promise<number>((resolve, reject) => {
+export async function getAvailablePort() {
+    return new Promise<number>((resolve, reject) => {
         const server = net.createServer()
         server.unref()
         server.on('error', reject)
@@ -46,28 +48,4 @@ export const getAvailablePort = () =>
             })
         })
     })
-
-export class Env {
-    static getString(key: string): string {
-        const value = process.env[key]
-        if (!value) {
-            throw new Error(`Environment variable ${key} is not defined`)
-        }
-        return value
-    }
-
-    static getBoolean(key: string): boolean {
-        const value = this.getString(key)
-
-        return value.toLowerCase() === 'true'
-    }
-
-    static getNumber(key: string): number {
-        const value = this.getString(key)
-        const parsed = parseInt(value, 10)
-        if (isNaN(parsed)) {
-            throw new Error(`Environment variable ${key} must be a valid number`)
-        }
-        return parsed
-    }
 }

@@ -3,7 +3,7 @@ import { TestingModule } from '@nestjs/testing'
 import { Server } from 'http'
 import { ModuleMetadataEx, createTestingModule } from './create-testing-module'
 import { HttpTestClient } from './http.test-client'
-import { getAvailablePort } from './utils'
+import { getAvailablePort, isDebuggingEnabled } from './utils'
 
 async function listenOnAvailablePort(server: Server): Promise<number> {
     const maxAttempts = 3
@@ -47,8 +47,6 @@ export async function createTestContext({
         await configureApp(app, brokers)
     }
 
-    // Code specific to VSCode
-    const isDebuggingEnabled = process.env.VSCODE_INSPECTOR_OPTIONS !== undefined
     app.useLogger(isDebuggingEnabled ? console : false)
 
     await app.init()

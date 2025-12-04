@@ -1,6 +1,7 @@
 export * from './byte'
 export * from './date.util'
 export * from './encoding.util'
+export * from './env'
 export * from './etc'
 export * from './file.util'
 export * from './http.util'

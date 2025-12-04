@@ -135,5 +135,3 @@ services:
                 RI_REDIS_PASSWORD1: $REDIS_PASSWORD
             }
         ports: ['5540:5540']
-        healthcheck:
-            test: 'curl -fsS http://localhost:5540/'

@@ -1,35 +1,27 @@
 import dotenv from 'dotenv'
-import 'reflect-metadata'
 import { MongoClient } from 'mongodb'
+import 'reflect-metadata'
+import { generateTestId, getEnv, setEnv } from './jest.utils'
 
 dotenv.config({ quiet: true })
-
-const generateTestId = () => {
-    const characters = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
-
-    return Array.from(
-        { length: 10 },
-        () => characters[Math.floor(Math.random() * characters.length)]
-    ).join('')
-}
 
 let appsMongoClient: MongoClient
 let testlibMongoClient: MongoClient
 
 beforeAll(async () => {
-    const replicaSet = process.env.MONGO_REPLICA_SET
-    const username = process.env.MONGO_USERNAME
-    const password = process.env.MONGO_PASSWORD
+    const replicaSet = getEnv('MONGO_REPLICA_SET')
+    const username = getEnv('MONGO_USERNAME')
+    const password = getEnv('MONGO_PASSWORD')
     const nodes = [
-        `${process.env.MONGO_HOST1}:${process.env.MONGO_PORT1}`,
-        `${process.env.MONGO_HOST2}:${process.env.MONGO_PORT2}`,
-        `${process.env.MONGO_HOST3}:${process.env.MONGO_PORT3}`
+        `${getEnv('MONGO_HOST1')}:${getEnv('MONGO_PORT1')}`,
+        `${getEnv('MONGO_HOST2')}:${getEnv('MONGO_PORT2')}`,
+        `${getEnv('MONGO_HOST3')}:${getEnv('MONGO_PORT3')}`
     ].join(',')
 
     appsMongoClient = new MongoClient(
         `mongodb://${username}:${password}@${nodes}/?replicaSet=${replicaSet}`
     )
-    testlibMongoClient = new MongoClient(process.env.TESTLIB_MONGO_URI!)
+    testlibMongoClient = new MongoClient(getEnv('TESTLIB_MONGO_URI'))
 
     await appsMongoClient.connect()
     await testlibMongoClient.connect()
@@ -47,13 +39,13 @@ afterAll(async () => {
 beforeEach(async () => {
     const testId = generateTestId()
 
-    process.env.TEST_ID = testId
-    process.env.PROJECT_ID = `project-${testId}`
-    process.env.MONGO_DATABASE = `mongo-${testId}`
-    process.env.TESTLIB_MONGO_DATABASE = `mongo-${testId}`
+    setEnv('TEST_ID', testId)
+    setEnv('PROJECT_ID', `project-${testId}`)
+    setEnv('MONGO_DATABASE', `mongo-${testId}`)
+    setEnv('TESTLIB_MONGO_DATABASE', `mongo-${testId}`)
 })
 
 afterEach(async () => {
-    await appsMongoClient.db(process.env.MONGO_DATABASE).dropDatabase()
-    await testlibMongoClient.db(process.env.TESTLIB_MONGO_DATABASE).dropDatabase()
+    await appsMongoClient.db(getEnv('MONGO_DATABASE')).dropDatabase()
+    await testlibMongoClient.db(getEnv('TESTLIB_MONGO_DATABASE')).dropDatabase()
 })

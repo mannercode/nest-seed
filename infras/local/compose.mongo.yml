@@ -94,8 +94,6 @@ services:
                 ME_CONFIG_MONGODB_URL: 'mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@mongo1:27017,mongo2:27017,mongo3:27017/?authSource=admin&replicaSet=$MONGO_REPLICA_SET'
             }
         ports: ['8081:8081']
-        healthcheck:
-            test: 'curl -fsS http://localhost:8081/'
 
 volumes:
     mongodb_key: {}

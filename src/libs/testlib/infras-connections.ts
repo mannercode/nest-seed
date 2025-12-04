@@ -1,4 +1,4 @@
-import { Env } from './utils'
+import { Env } from 'common'
 
 export function getRedisTestConnection() {
     return Env.getString('TESTLIB_REDIS_URL')
