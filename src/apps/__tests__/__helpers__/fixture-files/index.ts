@@ -21,8 +21,8 @@ export const fixtureFiles = {
         }
     },
     json: {
-        path: p.join(__dirname, 'file.json'),
-        originalName: 'file.json',
+        path: p.join(__dirname, 'json.file'),
+        originalName: 'json.file',
         size: 30,
         mimeType: 'application/json',
         checksum: {

@@ -1,7 +1,7 @@
 import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
 import { Injectable } from '@nestjs/common'
 import { generateShortId, InjectS3Object, S3Object, S3ObjectModule, S3ObjectService } from 'common'
-import { createTestingModule } from 'testlib'
+import { createTestingModule, getS3TestConnection } from 'testlib'
 
 @Injectable()
 class TestInjectS3ObjectService {
@@ -11,9 +11,7 @@ class TestInjectS3ObjectService {
 export type S3ObjectServiceFixture = { teardown: () => Promise<void>; s3Service: S3ObjectService }
 
 export async function createS3ObjectServiceFixture() {
-    const endpoint = process.env.COMMONLIB_MINIO_ENDPOINT!
-    const accessKeyId = process.env.COMMONLIB_MINIO_ACCESS_KEY!
-    const secretAccessKey = process.env.COMMONLIB_MINIO_SECRET_KEY!
+    const { endpoint, accessKeyId, secretAccessKey } = getS3TestConnection()
     const region = 'us-east-1'
     const forcePathStyle = true
 

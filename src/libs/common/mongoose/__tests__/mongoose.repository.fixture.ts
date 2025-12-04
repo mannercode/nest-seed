@@ -8,7 +8,7 @@ import {
     padNumber
 } from 'common'
 import { HydratedDocument, Model } from 'mongoose'
-import { createTestContext, getTestId } from 'testlib'
+import { createTestContext, getMongoTestConnection, getTestId } from 'testlib'
 
 @Schema({ toJSON: { virtuals: true } })
 class Sample extends MongooseSchema {
@@ -71,7 +71,7 @@ export type MongooseRepositoryFixture = {
 }
 
 export async function createMongooseRepositoryFixture() {
-    const uri = process.env.COMMONLIB_MONGO_URI
+    const uri = getMongoTestConnection()
     const dbName = `mongo-${getTestId()}`
 
     const testContext = await createTestContext({

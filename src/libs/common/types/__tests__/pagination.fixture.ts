@@ -7,7 +7,13 @@ import {
     Payload,
     Transport
 } from '@nestjs/microservices'
-import { createHttpTestContext, HttpTestClient, RpcTestClient, withTestId } from 'testlib'
+import {
+    createHttpTestContext,
+    getNatsTestConnection,
+    HttpTestClient,
+    RpcTestClient,
+    withTestId
+} from 'testlib'
 import { PaginationDto } from '..'
 
 export const maxTakeValue = 50
@@ -34,7 +40,7 @@ export type PaginationFixture = {
 export async function createPaginationFixture() {
     const brokerOpts = {
         transport: Transport.NATS,
-        options: JSON.parse(process.env.COMMONLIB_NATS_OPTIONS!)
+        options: getNatsTestConnection()
     } as NatsOptions
 
     const { httpClient, ...testContext } = await createHttpTestContext({

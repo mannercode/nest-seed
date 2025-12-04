@@ -1,7 +1,7 @@
 import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
 import { Injectable } from '@nestjs/common'
 import { CacheModule, CacheService, InjectCache } from 'common'
-import { createTestingModule, withTestId } from 'testlib'
+import { createTestingModule, getRedisTestConnection, withTestId } from 'testlib'
 
 @Injectable()
 class TestInjectCacheService {
@@ -13,7 +13,7 @@ export type CacheServiceFixture = { teardown: () => Promise<void>; cacheService:
 export async function createCacheServiceFixture() {
     const module = await createTestingModule({
         imports: [
-            RedisModule.forRoot({ type: 'single', url: process.env.COMMONLIB_REDIS_URL }, 'name'),
+            RedisModule.forRoot({ type: 'single', url: getRedisTestConnection() }, 'name'),
             CacheModule.register({ prefix: withTestId('cache'), redisName: 'name' })
         ],
         providers: [TestInjectCacheService]

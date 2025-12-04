@@ -2,7 +2,13 @@ import { Controller, Get, MessageEvent, Sse } from '@nestjs/common'
 import { EventPattern, MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
 import { ClientProxyModule, ClientProxyService, InjectClientProxy } from 'common'
 import { Observable, ReplaySubject } from 'rxjs'
-import { createHttpTestContext, HttpTestClient, RpcTestClient, withTestId } from 'testlib'
+import {
+    createHttpTestContext,
+    getNatsTestConnection,
+    HttpTestClient,
+    RpcTestClient,
+    withTestId
+} from 'testlib'
 
 @Controller()
 class SendTestController {
@@ -58,7 +64,7 @@ export type ClientProxyServiceFixture = {
 export async function createClientProxyServiceFixture() {
     const brokerOptions = {
         transport: Transport.NATS,
-        options: JSON.parse(process.env.COMMONLIB_NATS_OPTIONS!)
+        options: getNatsTestConnection()
     } as NatsOptions
 
     const { httpClient, ...testContext } = await createHttpTestContext({

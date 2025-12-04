@@ -1,0 +1,21 @@
+import { Env } from './utils'
+
+export function getRedisTestConnection() {
+    return Env.getString('TESTLIB_REDIS_URL')
+}
+
+export const getNatsTestConnection = () => {
+    return JSON.parse(Env.getString('TESTLIB_NATS_OPTIONS'))
+}
+
+export const getMongoTestConnection = () => {
+    return Env.getString('TESTLIB_MONGO_URI')
+}
+
+export const getS3TestConnection = () => {
+    const endpoint = Env.getString('TESTLIB_S3_ENDPOINT')
+    const accessKeyId = Env.getString('TESTLIB_S3_ACCESS_KEY')
+    const secretAccessKey = Env.getString('TESTLIB_S3_SECRET_KEY')
+
+    return { endpoint, accessKeyId, secretAccessKey }
+}

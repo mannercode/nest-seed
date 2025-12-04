@@ -113,9 +113,9 @@ services:
                 redis-cli -a $REDIS_PASSWORD --cluster create $$REDIS_NODES --cluster-replicas 1
             '
 
-    redis-console:
+    redis-gui:
         extends: { file: ./compose.common.yml, service: common-options }
-        container_name: redis-console
+        container_name: redis-gui
         image: redis/redisinsight:latest
         restart: always
         environment:

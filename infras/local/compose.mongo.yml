@@ -82,9 +82,9 @@ services:
                     })
                     "
             '
-    mongo-console:
+    mongo-gui:
         extends: { file: ./compose.common.yml, service: common-options }
-        container_name: mongo-console
+        container_name: mongo-gui
         image: mongo-express:latest
         restart: always
         depends_on: { mongo-setup: { condition: service_completed_successfully } }

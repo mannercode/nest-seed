@@ -6,7 +6,13 @@ import {
     Payload,
     Transport
 } from '@nestjs/microservices'
-import { createHttpTestContext, HttpTestClient, RpcTestClient, withTestId } from 'testlib'
+import {
+    createHttpTestContext,
+    getNatsTestConnection,
+    HttpTestClient,
+    RpcTestClient,
+    withTestId
+} from 'testlib'
 
 @Controller()
 class SampleController {
@@ -30,7 +36,7 @@ export type TestContextFixture = {
 export async function createTestContextFixture(): Promise<TestContextFixture> {
     const brokerOpts = {
         transport: Transport.NATS,
-        options: JSON.parse(process.env.COMMONLIB_NATS_OPTIONS!)
+        options: getNatsTestConnection()
     } as NatsOptions
 
     const { httpClient, ...testContext } = await createHttpTestContext({

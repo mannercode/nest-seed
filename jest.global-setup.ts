@@ -52,8 +52,8 @@ async function setupMinio() {
         .withExposedPorts(9000)
         .start()
 
-    process.env.COMMONLIB_MINIO_ACCESS_KEY = MINIO_ROOT_USER
-    process.env.COMMONLIB_MINIO_SECRET_KEY = MINIO_ROOT_PASSWORD
+    process.env.TESTLIB_S3_ACCESS_KEY = MINIO_ROOT_USER
+    process.env.TESTLIB_S3_SECRET_KEY = MINIO_ROOT_PASSWORD
 
     return minio
 }
@@ -71,9 +71,8 @@ export default async function globalSetup() {
 
     ;(globalThis as any).__TEST_INFRA__ = { mongo, redis, nats, minio }
 
-    // TODO 이거 받아오는 공통 로직 필요?
-    process.env.COMMONLIB_NATS_OPTIONS = JSON.stringify(nats.getConnectionOptions())
-    process.env.COMMONLIB_MONGO_URI = mongo.getUri()
-    process.env.COMMONLIB_REDIS_URL = `redis://localhost:${redis.getMappedPort(6379)}`
-    process.env.COMMONLIB_MINIO_ENDPOINT = `http://localhost:${minio.getMappedPort(9000)}`
+    process.env.TESTLIB_NATS_OPTIONS = JSON.stringify(nats.getConnectionOptions())
+    process.env.TESTLIB_MONGO_URI = mongo.getUri()
+    process.env.TESTLIB_REDIS_URL = `redis://localhost:${redis.getMappedPort(6379)}`
+    process.env.TESTLIB_S3_ENDPOINT = `http://localhost:${minio.getMappedPort(9000)}`
 }

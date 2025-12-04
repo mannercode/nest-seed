@@ -2,7 +2,7 @@ import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
 import { Injectable } from '@nestjs/common'
 import { InjectJwtAuth, JwtAuthModule, JwtAuthService } from 'common'
 import Redis from 'ioredis'
-import { createTestingModule, withTestId } from 'testlib'
+import { createTestingModule, getRedisTestConnection, withTestId } from 'testlib'
 
 @Injectable()
 class TestInjectJwtAuthService {
@@ -18,7 +18,7 @@ export type JwtAuthServiceFixture = {
 export async function createJwtAuthServiceFixture() {
     const module = await createTestingModule({
         imports: [
-            RedisModule.forRoot({ type: 'single', url: process.env.COMMONLIB_REDIS_URL }),
+            RedisModule.forRoot({ type: 'single', url: getRedisTestConnection() }),
             JwtAuthModule.register({
                 prefix: withTestId('jwt-auth'),
                 useFactory() {

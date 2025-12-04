@@ -1,9 +1,8 @@
 #!/bin/bash
 set -euo pipefail
-cd "$(dirname "$0")"
-. "./common.cfg"
+. "$(dirname "$0")/common.cfg"
 
-TEST_SUITES=("all" "apps" "common" "e2e")
+TEST_SUITES=("src" "src/apps" "src/libs/common")
 
 if [ $# -ge 1 ]; then
 	TEST_SUITE="$1"
@@ -18,31 +17,13 @@ else
 	TEST_RUNS=${TEST_RUNS:-1}
 fi
 
-jest_command() {
-	local dir="$1"
-	COMMAND=(
-		npx jest --no-cache --coverage --config "$PROJECT_ROOT/jest.config.ts"
-		--roots "<rootDir>/$dir"
-		--collectCoverageFrom "$dir/**/*.ts"
-	)
-}
-
-if [ "$TEST_SUITE" == "common" ]; then
-	jest_command "src/libs/common"
-elif [ "$TEST_SUITE" == "apps" ]; then
-	jest_command "src/apps"
-elif [ "$TEST_SUITE" == "all" ]; then
-	jest_command "src"
-elif [ "$TEST_SUITE" == "e2e" ]; then
-	COMMAND=(npm run test:e2e)
-else
-	echo "Unknown test suite: $TEST_SUITE" >&2
-	exit 1
-fi
-
 for ((i = 1; i <= TEST_RUNS; i++)); do
 	echo "[Run $i/$TEST_RUNS]"
-	"${COMMAND[@]}"
+
+	npx jest --no-cache --coverage \
+		--config "$PROJECT_ROOT/jest.config.ts" \
+		--roots "<rootDir>/$TEST_SUITE" \
+		--collectCoverageFrom "$TEST_SUITE/**/*.ts"
 done
 
 echo "Done. $TEST_RUNS run(s) finished."

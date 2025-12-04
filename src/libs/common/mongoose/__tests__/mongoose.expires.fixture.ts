@@ -1,7 +1,7 @@
 import { getModelToken, MongooseModule, Schema as NestSchema, Prop } from '@nestjs/mongoose'
 import { createMongooseSchema, MongooseSchema } from 'common'
 import { Model } from 'mongoose'
-import { createTestContext, getTestId } from 'testlib'
+import { createTestContext, getMongoTestConnection, getTestId } from 'testlib'
 
 @NestSchema()
 export class ExpireSample extends MongooseSchema {
@@ -17,7 +17,7 @@ export type MongooseExpiresFixture = { teardown: () => Promise<void>; model: Mod
 export async function createMongooseExpiresFixture() {
     const schema = createMongooseSchema(ExpireSample)
 
-    const uri = process.env.COMMONLIB_MONGO_URI
+    const uri = getMongoTestConnection()
     const dbName = `mongo-${getTestId()}`
 
     const testContext = await createTestContext({

@@ -5,14 +5,14 @@
             "label": "Run Tests",
             "detail": "Run the selected test suite",
             "type": "shell",
-            "command": "bash scripts/run-tests.sh ${input:suites}"
+            "command": "npm run test:${input:suites}"
         }
     ],
     "inputs": [
         {
             "id": "suites",
             "type": "pickString",
-            "options": ["all", "apps", "common", "e2e"],
+            "options": ["src", "apps", "common", "e2e"],
             "description": "Select a test suite."
         }
     ]

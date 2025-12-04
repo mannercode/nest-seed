@@ -16,3 +16,5 @@ for test in "${tests[@]}"; do
 done
 
 print_result
+
+npm run apps:down

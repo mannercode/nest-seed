@@ -142,9 +142,9 @@ CommonTest --> TestLibClass : import
 
 ## 5. Dynamic Import in Tests
 
-Since the same NATS server is shared across multiple tests, `process.env.COMMONLIB_ID` is used to generate a unique subject for each test.
+Since the same NATS server is shared across multiple tests, `process.env.TESTLIB_ID` is used to generate a unique subject for each test.
 
-The problem is that due to Jest's module caching, the `@MessagePattern` decorator is evaluated only once when the module is loaded. Therefore, modules already imported at the top level do not recognize the new `process.env.COMMONLIB_ID` value.
+The problem is that due to Jest's module caching, the `@MessagePattern` decorator is evaluated only once when the module is loaded. Therefore, modules already imported at the top level do not recognize the new `process.env.TESTLIB_ID` value.
 
 To solve this, `resetModules: true` is applied in the Jest configuration to reset the module cache for each test.
 

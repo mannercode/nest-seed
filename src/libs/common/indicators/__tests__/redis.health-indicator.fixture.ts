@@ -2,7 +2,7 @@ import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
 import { HealthIndicatorService } from '@nestjs/terminus'
 import { RedisHealthIndicator } from 'common'
 import Redis from 'ioredis'
-import { createTestingModule } from 'testlib'
+import { createTestingModule, getRedisTestConnection } from 'testlib'
 
 export type RedisHealthIndicatorFixture = {
     teardown: () => Promise<void>
@@ -12,7 +12,7 @@ export type RedisHealthIndicatorFixture = {
 
 export async function createRedisHealthIndicatorFixture() {
     const module = await createTestingModule({
-        imports: [RedisModule.forRoot({ type: 'single', url: process.env.COMMONLIB_REDIS_URL })],
+        imports: [RedisModule.forRoot({ type: 'single', url: getRedisTestConnection() })],
         providers: [RedisHealthIndicator, HealthIndicatorService]
     })
 
