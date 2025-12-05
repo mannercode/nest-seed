@@ -2,18 +2,25 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Run Tests",
-            "detail": "Run the selected test suite",
+            "label": "Run Unit Tests",
+            "detail": "jest unit tests",
             "type": "shell",
-            "command": "npm run test:${input:suites}"
+            "options": { "env": { "TEST_ROOT": "${input:suites}" } },
+            "command": "npm test"
+        },
+        {
+            "label": "Run E2E Tests",
+            "detail": "full e2e test suite",
+            "type": "shell",
+            "command": "npm run test:e2e"
         }
     ],
     "inputs": [
         {
             "id": "suites",
             "type": "pickString",
-            "options": ["src", "apps", "common", "e2e"],
-            "description": "Select a test suite."
+            "options": ["src", "src/apps", "src/libs/common"],
+            "description": "Select the source root to run unit tests against."
         }
     ]
 }
