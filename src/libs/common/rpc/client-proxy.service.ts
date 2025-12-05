@@ -81,17 +81,7 @@ export class ClientProxyModule {
 
         const provider = {
             provide: ClientProxyService.getServiceName(name),
-            useFactory: async (proxy: ClientProxy) => {
-                /**
-                 * Prevents the following exception from occurring on rare occasions.
-                 * 매우드물게 아래 예외가 발생하는 것을 방지한다.
-                 *
-                 * Empty response. There are no subscribers listening to that message
-                 */
-                await proxy.connect()
-
-                return new ClientProxyService(proxy)
-            },
+            useFactory: (proxy: ClientProxy) => new ClientProxyService(proxy),
             inject: [clientName]
         }
 

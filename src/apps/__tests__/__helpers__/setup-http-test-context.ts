@@ -45,6 +45,9 @@ export async function createTestFixture(metadata: ModuleMetadataEx) {
             )
 
             await app.startAllMicroservices()
+            // This prevents the following error:
+            // Empty response. There are no subscribers listening to that message
+            await app.init()
         }
     })
 
