@@ -4,16 +4,16 @@ import { Messages } from 'shared'
 import {
     AssetDto,
     CompleteAssetDto,
-    DeleteAssetsResponse,
     CreateAssetDto,
-    CreateAssetResponse
+    DeleteAssetsResponse,
+    UploadRequest
 } from './dtos'
 
 @Injectable()
 export class AssetsClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
-    create(dto: CreateAssetDto): Promise<CreateAssetResponse> {
+    create(dto: CreateAssetDto): Promise<UploadRequest> {
         return this.proxy.getJson(Messages.Assets.create, dto)
     }
 

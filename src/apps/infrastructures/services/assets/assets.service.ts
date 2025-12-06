@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common'
-import { DateUtil, hexToBase64, InjectS3Object, mapDocToDto, S3ObjectService } from 'common'
+import { DateUtil, InjectS3Object, mapDocToDto, S3ObjectService } from 'common'
 import { Rules } from 'shared'
 import { AssetsRepository } from './assets.repository'
-import { AssetDto, CompleteAssetDto, CreateAssetDto, CreateAssetResponse } from './dtos'
+import { AssetDto, CompleteAssetDto, CreateAssetDto, UploadRequest } from './dtos'
 import { AssetDocument } from './models'
 
 @Injectable()
@@ -12,7 +12,7 @@ export class AssetsService {
         @InjectS3Object() private readonly s3Service: S3ObjectService
     ) {}
 
-    async create(createDto: CreateAssetDto): Promise<CreateAssetResponse> {
+    async create(createDto: CreateAssetDto): Promise<UploadRequest> {
         const asset = await this.repository.createAsset(createDto)
 
         const { mimeType, size } = createDto
@@ -26,19 +26,17 @@ export class AssetsService {
         })
 
         const expiresAt = DateUtil.add({ seconds: expiresInSec })
-        const { algorithm, hex } = createDto.checksum
+        const { algorithm, base64 } = createDto.checksum
 
         return {
             assetId: asset.id,
-            uploadRequest: {
-                method: 'PUT' as const,
-                url,
-                expiresAt,
-                headers: {
-                    'Content-Type': mimeType,
-                    'Content-Length': size.toString(),
-                    [`x-amz-checksum-${algorithm}`]: hexToBase64(hex)
-                }
+            method: 'PUT' as const,
+            url,
+            expiresAt,
+            headers: {
+                'Content-Type': mimeType,
+                'Content-Length': size.toString(),
+                [`x-amz-checksum-${algorithm}`]: base64
             }
         }
     }

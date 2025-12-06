@@ -1,10 +1,18 @@
 import { HttpStatus } from '@nestjs/common'
 import { AssetDto } from 'apps/infrastructures'
-import { FileUtil, Path } from 'common'
+import { FileUtil, Path, sleep } from 'common'
 import { writeFile } from 'fs/promises'
-import { nullObjectId } from 'testlib'
+import { Rules } from 'shared'
+import { nullObjectId, toAny } from 'testlib'
 import { fixtureFiles, uploadAndCompleteAsset } from '../__helpers__'
-import type { AssetsFixture } from './assets.fixture'
+import {
+    BufferUtil,
+    buildCreateAssetDto,
+    downloadAsset,
+    uploadAsset,
+    uploadFile,
+    type AssetsFixture
+} from './assets.fixture'
 
 describe('AssetsService', () => {
     let fixture: AssetsFixture
@@ -21,21 +29,97 @@ describe('AssetsService', () => {
     describe('create', () => {
         describe('when the DTO is valid', () => {
             it('returns an upload request', async () => {
-                const response = await fixture.assetsClient.create(fixture.createDto)
+                const createDto = buildCreateAssetDto(fixture.file)
+                const uploadRequest = await fixture.assetsClient.create(createDto)
 
-                expect(response).toEqual({
+                expect(uploadRequest).toEqual({
                     assetId: expect.any(String),
-                    uploadRequest: {
-                        url: expect.any(String),
-                        expiresAt: expect.any(Date),
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': fixture.createDto.mimeType,
-                            'Content-Length': fixture.createDto.size.toString(),
-                            'x-amz-checksum-sha256': expect.any(String)
-                        }
+                    url: expect.any(String),
+                    expiresAt: expect.any(Date),
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': createDto.mimeType,
+                        'Content-Length': createDto.size.toString(),
+                        'x-amz-checksum-sha256': fixture.file.checksum.base64
                     }
                 })
+            })
+
+            it('uploads the file successfully', async () => {
+                const createDto = buildCreateAssetDto(fixture.file)
+                const uploadRequest = await fixture.assetsClient.create(createDto)
+
+                const uploadRes = await uploadAsset(fixture.file.path, uploadRequest)
+                expect(uploadRes.ok).toBe(true)
+            })
+        })
+
+        describe('when upload expired', () => {
+            beforeEach(async () => {
+                const { Rules } = await import('shared')
+                toAny(Rules).Asset.uploadExpiresInSec = 1
+            })
+
+            it('???', async () => {
+                const createDto = buildCreateAssetDto(fixture.file)
+                const uploadRequest = await fixture.assetsClient.create(createDto)
+                await sleep(1500)
+
+                const uploadRes = await uploadAsset(fixture.file.path, uploadRequest)
+                expect(uploadRes.ok).toBe(false)
+            })
+        })
+    })
+
+    describe('complete', () => {
+        describe('when upload completed', () => {
+            let assetId: string
+
+            beforeEach(async () => {
+                assetId = await uploadFile(fixture, fixture.file)
+            })
+
+            it('returns owner and download info', async () => {
+                const completeDto = { ownerService: 'service', ownerEntityId: 'entity-id' }
+
+                const assetDto = await fixture.assetsClient.complete(assetId, completeDto)
+
+                expect(assetDto).toEqual(
+                    expect.objectContaining({
+                        owner: { service: 'service', entityId: 'entity-id' },
+                        download: { url: expect.any(String), expiresAt: expect.any(Date) }
+                    })
+                )
+            })
+
+            it('downloads the asset with matching checksum', async () => {
+                const completeDto = { ownerService: 'service', ownerEntityId: 'entity-id' }
+
+                const assetDto = await fixture.assetsClient.complete(assetId, completeDto)
+
+                const buffer = await downloadAsset(assetDto)
+                const checksum = BufferUtil.getChecksum(buffer)
+
+                expect(fixture.file.checksum).toEqual(checksum)
+            })
+        })
+
+        describe('when upload expired', () => {
+            beforeEach(async () => {
+                const { Rules } = await import('shared')
+                toAny(Rules).Asset.uploadExpiresInSec = 1
+            })
+
+            it('throws exception', async () => {
+                const assetId = await uploadFile(fixture, fixture.file)
+
+                await sleep(1500)
+
+                const completeDto = { ownerService: 'service', ownerEntityId: 'entity-id' }
+
+                const asset = await fixture.assetsClient.complete(assetId, completeDto)
+                console.log(asset)
+                // expect(uploadRes.ok).toBe(false)
             })
         })
     })

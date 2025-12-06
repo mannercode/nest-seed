@@ -12,7 +12,7 @@ export class FileUtil {
         const hash: Hash = createHash(algorithm)
         await pipeline(createReadStream(filePath), hash)
 
-        return { algorithm, hex: hash.digest('hex') }
+        return { algorithm, base64: hash.digest('base64') }
     }
 
     static async getSize(filePath: string): Promise<number> {
@@ -34,7 +34,7 @@ export class FileUtil {
 
         return (
             firstChecksum.algorithm === secondChecksum.algorithm &&
-            firstChecksum.hex === secondChecksum.hex
+            firstChecksum.base64 === secondChecksum.base64
         )
     }
 }

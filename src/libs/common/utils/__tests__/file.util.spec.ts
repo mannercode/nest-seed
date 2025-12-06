@@ -22,7 +22,7 @@ describe('FileUtil', () => {
                 const checksum = await FileUtil.getChecksum(originalFilePath, 'sha1')
                 expect(checksum).toEqual({
                     algorithm: 'sha1',
-                    hex: '0a0a9f2a6772942557ab5355d76af442f8f65e01'
+                    base64: 'CgqfKmdylCVXq1NV12r0Qvj2XgE='
                 })
             })
         })
@@ -32,7 +32,7 @@ describe('FileUtil', () => {
                 const checksum = await FileUtil.getChecksum(originalFilePath)
                 expect(checksum).toEqual({
                     algorithm: 'sha256',
-                    hex: 'dffd6021bb2bd5b0af676290809ec3a53191dd81c7f70a4b28688a362182986f'
+                    base64: '3/1gIbsr1bCvZ2KQgJ7DpTGR3YHH9wpLKGiKNiGCmG8='
                 })
             })
         })

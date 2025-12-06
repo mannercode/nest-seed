@@ -22,13 +22,9 @@ export class CreateAssetDto {
 }
 
 export class UploadRequest {
+    assetId: string
     method: 'PUT'
     headers: Record<string, string>
     url: string
     expiresAt: Date
-}
-
-export class CreateAssetResponse {
-    assetId: string
-    uploadRequest: UploadRequest
 }

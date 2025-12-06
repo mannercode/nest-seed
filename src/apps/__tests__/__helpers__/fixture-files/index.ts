@@ -9,55 +9,41 @@ export type FixtureFile = {
     checksum: Checksum
 }
 
+// openssl dgst -sha256 -binary image.file | base64
 export const fixtureFiles = {
     image: {
-        path: p.join(__dirname, 'image.png'),
+        path: p.join(__dirname, 'image.file'),
         originalName: 'image.png',
         size: 170550,
         mimeType: 'image/png',
-        checksum: {
-            algorithm: 'sha256',
-            hex: '7799755dd19ae7381eac445de55e71311d17d266cca19bc92f59624c7d6da360'
-        }
+        checksum: { algorithm: 'sha256', base64: 'd5l1XdGa5zgerERd5V5xMR0X0mbMoZvJL1liTH1to2A=' }
     },
     json: {
         path: p.join(__dirname, 'json.file'),
-        originalName: 'json.file',
+        originalName: 'file.json',
         size: 30,
         mimeType: 'application/json',
-        checksum: {
-            algorithm: 'sha256',
-            hex: '13f0ca9463471c54e8cd5c5aae4fb8d8343c7e8c89f104dcf1360a1d67a9ecb4'
-        }
+        checksum: { algorithm: 'sha256', base64: 'E/DKlGNHHFTozVxark+42DQ8foyJ8QTc8TYKHWep7LQ=' }
     },
     small: {
-        path: p.join(__dirname, 'small.txt'),
+        path: p.join(__dirname, 'small.file'),
         originalName: 'small.txt',
         size: 1024,
         mimeType: 'text/plain',
-        checksum: {
-            algorithm: 'sha256',
-            hex: 'd2cd628dbf4fab334e13d4c7961d71bb19a982bcc931caae32cffcbf19da0cbf'
-        }
+        checksum: { algorithm: 'sha256', base64: '0s1ijb9PqzNOE9THlh1xuxmpgrzJMcquMs/8vxnaDL8=' }
     },
     large: {
-        path: p.join(__dirname, 'large.txt'),
+        path: p.join(__dirname, 'large.file'),
         originalName: 'large.txt',
         size: 4999999,
         mimeType: 'text/plain',
-        checksum: {
-            algorithm: 'sha256',
-            hex: '9af485989bf647bc8ed7abd7690a7a1c3b6b9e1fdf0535e09bdb0ab52551d3f2'
-        }
+        checksum: { algorithm: 'sha256', base64: 'mvSFmJv2R7yO16vXaQp6HDtrnh/fBTXgm9sKtSVR0/I=' }
     },
     oversized: {
-        path: p.join(__dirname, 'oversized.txt'),
+        path: p.join(__dirname, 'oversized.file'),
         originalName: 'oversized.txt',
         size: 5000000,
         mimeType: 'text/plain',
-        checksum: {
-            algorithm: 'sha256',
-            hex: '7f4a285193573e707fcb6398222c00f044745cd2930e41d28d30da87d6ca183f'
-        }
+        checksum: { algorithm: 'sha256', base64: 'f0ooUZNXPnB/y2OYIiwA8ER0XNKTDkHSjTDah9bKGD8=' }
     }
 } as const

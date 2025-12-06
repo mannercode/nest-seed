@@ -3,6 +3,7 @@ import { AssetsClient } from 'apps/infrastructures'
 import { readFile } from 'fs/promises'
 import { TestContext } from 'testlib'
 import { fixtureFiles } from '../fixture-files'
+import { createReadStream } from 'fs'
 
 export function buildCreateMovieDto(overrides = {}) {
     const createDto = {
@@ -41,22 +42,20 @@ export async function createMovie({ module }: TestContext, override = {}) {
 }
 
 async function uploadMovieImage(assetsService: AssetsClient) {
-    const uploadInfo = await assetsService.create({
+    const { assetId, url, method, headers } = await assetsService.create({
         originalName: fixtureFiles.image.originalName,
         mimeType: fixtureFiles.image.mimeType,
         size: fixtureFiles.image.size,
         checksum: fixtureFiles.image.checksum
     })
 
-    const uploadRes = await fetch(uploadInfo.uploadRequest.url, {
-        method: uploadInfo.uploadRequest.method,
-        headers: uploadInfo.uploadRequest.headers,
-        body: await readFile(fixtureFiles.image.path)
-    })
+    const stream = createReadStream(fixtureFiles.image.path)
 
-    if (!uploadRes.ok) {
-        throw new Error(`Failed to upload asset ${uploadInfo.assetId}`)
+    const uploadResponse = await fetch(url, { method, headers, body: stream, duplex: 'half' })
+
+    if (!uploadResponse.ok) {
+        throw new Error(`Failed to upload asset ${assetId}`)
     }
 
-    return uploadInfo.assetId
+    return assetId
 }

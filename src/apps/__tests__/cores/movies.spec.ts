@@ -1,6 +1,7 @@
 import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
 import { FileUtil, Path } from 'common'
-import { readFile, writeFile } from 'fs/promises'
+import { createReadStream } from 'fs'
+import { writeFile } from 'fs/promises'
 import { nullObjectId } from 'testlib'
 import { buildCreateMovieDto, createMovie, Errors } from '../__helpers__'
 import type { MoviesFixture } from './movies.fixture'
@@ -49,17 +50,19 @@ describe('MoviesService', () => {
                     checksum: fixture.image.checksum
                 }
 
-                const body = await fixture.assetsClient.create(payload)
+                const { assetId, url, method, headers } = await fixture.assetsClient.create(payload)
+                const stream = createReadStream(fixture.image.path)
 
-                const uploadResponse = await fetch(body.uploadRequest.url, {
-                    method: body.uploadRequest.method,
-                    headers: body.uploadRequest.headers,
-                    body: await readFile(fixture.image.path)
+                const uploadResponse = await fetch(url, {
+                    method,
+                    headers,
+                    body: stream,
+                    duplex: 'half'
                 })
 
                 expect(uploadResponse.ok).toBe(true)
 
-                return body.assetId
+                return assetId
             }
 
             beforeEach(async () => {

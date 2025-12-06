@@ -11,5 +11,5 @@ export class Checksum {
 
     @IsString()
     @IsNotEmpty()
-    hex: string
+    base64: string
 }
