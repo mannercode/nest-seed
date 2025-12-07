@@ -2,6 +2,15 @@
     "name": "nest-msa",
     "version": "0.0.1",
     "private": true,
+    "comments": {
+        "scripts": {
+            "apps:*": "application containers for this project (API servers, web apps, etc.)",
+            "infra:*": "shared infrastructure stack (databases, queues, etc.) for local development"
+        },
+        "dependencies": {
+            "mongoose": "Pinned to 8.x; upgrading to 9.x requires changes in @nestjs/mongoose integration"
+        }
+    },
     "scripts": {
         "start": "node _output/dist/${TARGET_APP}/index.js",
         "build": "nest build ${TARGET_APP} -b webpack",
@@ -11,23 +20,13 @@
         "format": "prettier -w 'src/**/*.{js,jsx,ts,tsx}'",
         "lint": "prettier -c 'src/**/*.{js,jsx,ts,tsx}' && eslint src/ --max-warnings=0",
         "apps:down": "docker compose down --volumes --remove-orphans --timeout 0",
-        "apps:up": "docker compose up -d --build",
+        "apps:up": "  docker compose up -d --build",
         "apps:wait": "docker wait apps-setup && docker rm apps-setup",
         "apps:reset": "npm run apps:down && npm run apps:up && npm run apps:wait",
-        "infras": "docker compose --project-directory infras/local --env-file .env --env-file .env.infra",
-        "infras:down": "npm run infras -- down --volumes --remove-orphans --timeout 0",
-        "infras:up": "npm run infras -- up -d --build",
-        "infras:wait": "docker wait infras-setup && docker rm infras-setup",
-        "infras:reset": "npm run infras:down && npm run infras:up && npm run infras:wait"
-    },
-    "lint-staged": {
-        "*.{js,jsx,ts,tsx}": [
-            "prettier --write",
-            "eslint"
-        ],
-        "*.{json,md,yml,yaml}": [
-            "prettier --write"
-        ]
+        "infra:down": "docker compose --project-directory infra/local --env-file .env --env-file .env.infra down --volumes --remove-orphans --timeout 0",
+        "infra:up": "  docker compose --project-directory infra/local --env-file .env --env-file .env.infra up -d --build",
+        "infra:wait": "docker wait infra-setup && docker rm infra-setup",
+        "infra:reset": "npm run infra:down && npm run infra:up && npm run infra:wait"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.940.0",
@@ -44,6 +43,7 @@
         "@nestjs/mongoose": "^11.0.3",
         "@nestjs/passport": "^11.0.5",
         "@nestjs/platform-express": "^11.1.9",
+        "@nestjs/schedule": "^6.0.1",
         "@nestjs/terminus": "^11.0.0",
         "bcrypt": "^6.0.0",
         "bullmq": "^5.65.0",

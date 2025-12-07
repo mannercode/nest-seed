@@ -5,9 +5,9 @@ include:
     - ./compose.redis.yml
 
 services:
-    infras-setup:
+    infra-setup:
         image: docker:cli
-        container_name: infras-setup
+        container_name: infra-setup
         depends_on:
             mongo-key-generator: { condition: service_completed_successfully }
             mongo-setup: { condition: service_completed_successfully }

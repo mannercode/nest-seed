@@ -11,7 +11,7 @@
 - Host resources: >=4 cores, ideally 16GB RAM; if low, run tests in-band or lower worker counts (see README §1).
 - Node 24.x; copy/adjust `.env` (host defaults to `host.docker.internal`) and `.env.infra` if your host IP differs.
 - Install deps: `npm ci`.
-- Start local infra (Mongo replica set, Redis, NATS, MinIO): `npm run infras:reset` (uses `infras/local/compose.yml` and `.env*`).
+- Start local infra (Mongo replica set, Redis, NATS, MinIO): `npm run infra:reset` (uses `infra/local/compose.yml` and `.env*`).
 - Run all apps with Docker: `npm run apps:reset`; stop with `npm run apps:down`. For live debug: `TARGET_APP=gateway npm run debug`. Production build/start: `TARGET_APP=gateway npm run build && npm run start`.
 
 ## Testing

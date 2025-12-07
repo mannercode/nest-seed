@@ -47,7 +47,7 @@ jobs:
               run: npm run lint
 
             - name: Run infrastructures
-              run: npm run infras:reset
+              run: npm run infra:reset
 
             - name: Run unit tests
               run: npm test

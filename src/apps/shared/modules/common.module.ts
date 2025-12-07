@@ -11,6 +11,7 @@ import {
 } from 'common'
 import { AppConfigService, getProjectId } from '../config'
 import { RequestValidationPipe } from '../pipes/request-validation.pipe'
+import { ScheduleModule } from '@nestjs/schedule'
 
 @Global()
 @Module({
@@ -29,7 +30,8 @@ import { RequestValidationPipe } from '../pipes/request-validation.pipe'
                 }
             },
             inject: [AppConfigService]
-        })
+        }),
+        ScheduleModule.forRoot()
     ],
     providers: [
         AppConfigService,

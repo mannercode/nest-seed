@@ -1,7 +1,11 @@
-import type { Config } from 'jest'
-import { createJsWithTsPreset } from 'ts-jest'
+const { createJsWithTsPreset } = require('ts-jest')
 
-export default {
+/** @type {import('jest').Config} */
+const tsJestPreset = createJsWithTsPreset({ tsconfig: 'tsconfig.json' })
+
+/** @type {import('jest').Config} */
+module.exports = {
+    ...tsJestPreset,
     globalSetup: '<rootDir>/jest.global.ts',
     setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
     moduleFileExtensions: ['js', 'json', 'ts'],
@@ -36,6 +40,5 @@ export default {
     testTimeout: 60 * 1000,
     // for ECM modules:
     // https://github.com/kulshekhar/ts-jest/tree/main/examples/js-with-ts
-    ...createJsWithTsPreset({ tsconfig: 'tsconfig.json' }),
     transformIgnorePatterns: ['!node_modules/(?!chalk)']
-} satisfies Config
+}
