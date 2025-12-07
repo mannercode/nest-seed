@@ -1,9 +1,8 @@
 import { MovieGenre, MovieRating } from 'apps/cores'
 import { AssetsClient } from 'apps/infrastructures'
-import { readFile } from 'fs/promises'
+import { createReadStream } from 'fs'
 import { TestContext } from 'testlib'
 import { fixtureFiles } from '../fixture-files'
-import { createReadStream } from 'fs'
 
 export function buildCreateMovieDto(overrides = {}) {
     const createDto = {

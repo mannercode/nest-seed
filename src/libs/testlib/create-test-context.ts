@@ -14,8 +14,7 @@ export type ModuleMetadataEx = ModuleMetadata & {
     ignoreGuards?: Type<CanActivate>[]
     ignoreProviders?: Type<any>[]
     overrideProviders?: { original: Type<any>; replacement: any }[]
-    brokers?: string[]
-    configureApp?: (app: INestApplication<Server>, brokers: string[] | undefined) => Promise<void>
+    configureApp?: (app: INestApplication<Server>) => Promise<void>
 }
 
 export type TestContext = {
@@ -29,7 +28,6 @@ export async function createTestContext({
     ignoreProviders,
     overrideProviders,
     configureApp,
-    brokers,
     ...metadata
 }: ModuleMetadataEx): Promise<TestContext> {
     const builder = Test.createTestingModule(metadata)
@@ -51,14 +49,14 @@ export async function createTestContext({
     const app = module.createNestApplication()
 
     if (configureApp) {
-        await configureApp(app, brokers)
+        await configureApp(app)
     }
 
     app.useLogger(isDebuggingEnabled ? console : false)
 
     await app.init()
 
-    async function close() {
+    const close = async () => {
         await app.close()
     }
 
