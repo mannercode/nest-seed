@@ -59,10 +59,8 @@ export async function createExceptionLoggerFilterFixture() {
     } as NatsOptions
 
     const { httpClient, ...testContext } = await createHttpTestContext({
-        metadata: {
-            controllers: [TestController],
-            providers: [{ provide: APP_FILTER, useClass: ExceptionLoggerFilter }]
-        },
+        controllers: [TestController],
+        providers: [{ provide: APP_FILTER, useClass: ExceptionLoggerFilter }],
         configureApp: async (app) => {
             app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
             await app.startAllMicroservices()

@@ -28,4 +28,8 @@ export class AssetsClient {
     deleteMany(assetIds: string[]): Promise<DeleteAssetsResponse> {
         return this.proxy.getJson(Messages.Assets.deleteMany, assetIds)
     }
+
+    cleanupExpiredUncompleted(): Promise<DeleteAssetsResponse> {
+        return this.proxy.getJson(Messages.Assets.cleanupExpiredUncompleted, null)
+    }
 }

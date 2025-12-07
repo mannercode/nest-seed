@@ -14,7 +14,7 @@ export type LatLongFixture = { teardown: () => Promise<void>; httpClient: HttpTe
 
 export async function createLatLongFixture() {
     const { httpClient, ...testContext } = await createHttpTestContext({
-        metadata: { controllers: [TestController] }
+        controllers: [TestController]
     })
 
     async function teardown() {

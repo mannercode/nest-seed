@@ -13,6 +13,13 @@ describe('createTestContext', () => {
         await fixture?.teardown()
     })
 
+    describe('when a service is mocked via overrideProviders', () => {
+        it('uses the mocked service', async () => {
+            const message = fixture.sampleService.getMessage()
+            expect(message).toEqual({ message: 'This is Mock' })
+        })
+    })
+
     describe('when sending an RPC message', () => {
         it('responds correctly', async () => {
             await fixture.rpcClient.expect(

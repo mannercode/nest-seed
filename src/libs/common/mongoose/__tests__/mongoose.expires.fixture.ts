@@ -18,12 +18,10 @@ export async function createMongooseExpiresFixture() {
     const schema = createMongooseSchema(ExpireSample)
 
     const testContext = await createTestContext({
-        metadata: {
-            imports: [
-                MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
-                MongooseModule.forFeature([{ name: 'schema', schema }])
-            ]
-        }
+        imports: [
+            MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
+            MongooseModule.forFeature([{ name: 'schema', schema }])
+        ]
     })
 
     const model = testContext.module.get<Model<ExpireSample>>(getModelToken('schema'))

@@ -1,7 +1,7 @@
 import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
 import { Injectable } from '@nestjs/common'
 import { generateShortId, InjectS3Object, S3Object, S3ObjectModule, S3ObjectService } from 'common'
-import { createTestingModule, getS3TestConnection } from 'testlib'
+import { createTestContext, getS3TestConnection } from 'testlib'
 
 @Injectable()
 class TestInjectS3ObjectService {
@@ -17,7 +17,7 @@ export async function createS3ObjectServiceFixture() {
 
     const bucket = await createTempBucket(endpoint, accessKeyId, secretAccessKey, region)
 
-    const module = await createTestingModule({
+    const { module, close } = await createTestContext({
         imports: [
             S3ObjectModule.register({
                 useFactory() {
@@ -38,7 +38,7 @@ export async function createS3ObjectServiceFixture() {
     const s3Service = module.get(S3ObjectService.getServiceName())
 
     async function teardown() {
-        await module.close()
+        await close()
     }
 
     return { teardown, s3Service }

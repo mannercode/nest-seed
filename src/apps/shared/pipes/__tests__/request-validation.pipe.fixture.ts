@@ -37,10 +37,8 @@ class SamplesController {
 
 export async function createRequestValidationPipeFixture() {
     const testContext = await createHttpTestContext({
-        metadata: {
-            controllers: [SamplesController],
-            providers: [{ provide: APP_PIPE, useClass: RequestValidationPipe }]
-        }
+        controllers: [SamplesController],
+        providers: [{ provide: APP_PIPE, useClass: RequestValidationPipe }]
     })
 
     async function teardown() {

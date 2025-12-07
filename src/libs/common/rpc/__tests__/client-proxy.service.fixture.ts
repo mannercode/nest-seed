@@ -68,16 +68,14 @@ export async function createClientProxyServiceFixture() {
     } as NatsOptions
 
     const { httpClient, ...testContext } = await createHttpTestContext({
-        metadata: {
-            imports: [
-                ClientProxyModule.registerAsync({
-                    useFactory() {
-                        return brokerOptions
-                    }
-                })
-            ],
-            controllers: [SendTestController, EmitTestController]
-        },
+        imports: [
+            ClientProxyModule.registerAsync({
+                useFactory() {
+                    return brokerOptions
+                }
+            })
+        ],
+        controllers: [SendTestController, EmitTestController],
         configureApp: async (app) => {
             app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
             await app.startAllMicroservices()

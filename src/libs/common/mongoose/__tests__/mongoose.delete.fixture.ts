@@ -27,12 +27,10 @@ export async function createMongooseDeleteFixture<T>(cls: Type<T>) {
     const schema = createMongooseSchema(cls)
 
     const testContext = await createTestContext({
-        metadata: {
-            imports: [
-                MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
-                MongooseModule.forFeature([{ name: 'schema', schema }])
-            ]
-        }
+        imports: [
+            MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
+            MongooseModule.forFeature([{ name: 'schema', schema }])
+        ]
     })
 
     const model = testContext.module.get<Model<HardDeleteSample | SoftDeleteSample>>(

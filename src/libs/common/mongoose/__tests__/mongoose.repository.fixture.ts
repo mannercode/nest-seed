@@ -72,13 +72,11 @@ export type MongooseRepositoryFixture = {
 
 export async function createMongooseRepositoryFixture() {
     const testContext = await createTestContext({
-        metadata: {
-            imports: [
-                MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
-                MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])
-            ],
-            providers: [SamplesRepository]
-        }
+        imports: [
+            MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
+            MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])
+        ],
+        providers: [SamplesRepository]
     })
 
     const repository = testContext.module.get(SamplesRepository)

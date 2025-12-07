@@ -48,13 +48,11 @@ export async function createSuccessLoggingInterceptorFixture(providers: Provider
     } as NatsOptions
 
     const { httpClient, ...testContext } = await createHttpTestContext({
-        metadata: {
-            controllers: [TestController],
-            providers: [
-                { provide: APP_INTERCEPTOR, useClass: SuccessLoggingInterceptor },
-                ...providers
-            ]
-        },
+        controllers: [TestController],
+        providers: [
+            { provide: APP_INTERCEPTOR, useClass: SuccessLoggingInterceptor },
+            ...providers
+        ],
         configureApp: async (app) => {
             app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
             await app.startAllMicroservices()

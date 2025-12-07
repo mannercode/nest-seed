@@ -44,20 +44,18 @@ export async function createPaginationFixture() {
     } as NatsOptions
 
     const { httpClient, ...testContext } = await createHttpTestContext({
-        metadata: {
-            controllers: [SamplesController],
-            providers: [
-                {
-                    provide: APP_PIPE,
-                    useFactory() {
-                        return new ValidationPipe({
-                            transform: true,
-                            transformOptions: { enableImplicitConversion: true }
-                        })
-                    }
+        controllers: [SamplesController],
+        providers: [
+            {
+                provide: APP_PIPE,
+                useFactory() {
+                    return new ValidationPipe({
+                        transform: true,
+                        transformOptions: { enableImplicitConversion: true }
+                    })
                 }
-            ]
-        },
+            }
+        ],
         configureApp: async (app) => {
             app.connectMicroservice<MicroserviceOptions>(brokerOpts, { inheritAppConfig: true })
             await app.startAllMicroservices()

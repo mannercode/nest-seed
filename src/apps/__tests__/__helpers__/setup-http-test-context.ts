@@ -29,7 +29,6 @@ export async function createTestFixture(metadata: ModuleMetadataEx) {
     )
 
     const context = await createHttpTestContext({
-        metadata,
         configureApp: async (app) => {
             const config = app.get(AppConfigService)
 
@@ -48,7 +47,8 @@ export async function createTestFixture(metadata: ModuleMetadataEx) {
             // This prevents the following error:
             // Empty response. There are no subscribers listening to that message
             await app.init()
-        }
+        },
+        ...metadata
     })
 
     async function teardown() {

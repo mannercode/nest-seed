@@ -1,12 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
-import {
-    createTestContext,
-    getNatsTestConnection,
-    RpcTestClient,
-    TestContextOptions,
-    withTestId
-} from 'testlib'
+import { createTestContext, getNatsTestConnection, RpcTestClient, withTestId } from 'testlib'
 
 @Controller()
 export class MessageController {
@@ -41,18 +35,18 @@ export async function createQueueGroupFixture() {
         options: { ...getNatsTestConnection(), queue: 'queue-group' }
     } as NatsOptions
 
-    const options: TestContextOptions = {
-        metadata: { controllers: [MessageController] },
-        configureApp: async (app) => {
-            app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
-            await app.startAllMicroservices()
-        }
-    }
-
     const numberOfInstance = 10
 
     const testContexts = await Promise.all(
-        Array.from({ length: numberOfInstance }, async () => createTestContext(options))
+        Array.from({ length: numberOfInstance }, async () =>
+            createTestContext({
+                controllers: [MessageController],
+                configureApp: async (app) => {
+                    app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
+                    await app.startAllMicroservices()
+                }
+            })
+        )
     )
 
     const rpcClient = RpcTestClient.create(brokerOptions)

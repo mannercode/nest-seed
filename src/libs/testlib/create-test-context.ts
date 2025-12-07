@@ -1,24 +1,21 @@
-import { INestApplication } from '@nestjs/common'
-import { TestingModule } from '@nestjs/testing'
+import {
+    CanActivate,
+    ExecutionContext,
+    INestApplication,
+    Injectable,
+    ModuleMetadata,
+    Type
+} from '@nestjs/common'
+import { Test, TestingModule } from '@nestjs/testing'
 import { Server } from 'http'
-import { ModuleMetadataEx, createTestingModule } from './create-testing-module'
-import { HttpTestClient } from './http.test-client'
-import { getAvailablePort, isDebuggingEnabled } from './utils'
+import { isDebuggingEnabled } from './utils'
 
-async function listenOnAvailablePort(server: Server): Promise<number> {
-    const maxAttempts = 3
-    let attemptCount = 0
-
-    while (true) {
-        try {
-            const port = await getAvailablePort()
-            await server.listen(port)
-            return port
-        } catch (error) {
-            attemptCount++
-            if (attemptCount >= maxAttempts) throw error
-        }
-    }
+export type ModuleMetadataEx = ModuleMetadata & {
+    ignoreGuards?: Type<CanActivate>[]
+    ignoreProviders?: Type<any>[]
+    overrideProviders?: { original: Type<any>; replacement: any }[]
+    brokers?: string[]
+    configureApp?: (app: INestApplication<Server>, brokers: string[] | undefined) => Promise<void>
 }
 
 export type TestContext = {
@@ -27,20 +24,30 @@ export type TestContext = {
     close: () => Promise<void>
 }
 
-export type HttpTestContext = TestContext & { httpClient: HttpTestClient }
-
-export type TestContextOptions = {
-    metadata: ModuleMetadataEx
-    brokers?: string[]
-    configureApp?: (app: INestApplication<Server>, brokers: string[] | undefined) => Promise<void>
-}
-
 export async function createTestContext({
-    metadata,
+    ignoreGuards,
+    ignoreProviders,
+    overrideProviders,
+    configureApp,
     brokers,
-    configureApp
-}: TestContextOptions): Promise<TestContext> {
-    const module = await createTestingModule(metadata)
+    ...metadata
+}: ModuleMetadataEx): Promise<TestContext> {
+    const builder = Test.createTestingModule(metadata)
+
+    ignoreGuards?.forEach((guard) => {
+        builder.overrideGuard(guard).useClass(NullGuard)
+    })
+
+    ignoreProviders?.forEach((provider) => {
+        builder.overrideProvider(provider).useClass(NullProvider)
+    })
+
+    overrideProviders?.forEach(({ original, replacement }) => {
+        builder.overrideProvider(original).useValue(replacement)
+    })
+
+    const module = await builder.compile()
+
     const app = module.createNestApplication()
 
     if (configureApp) {
@@ -58,12 +65,11 @@ export async function createTestContext({
     return { module, app, close }
 }
 
-export async function createHttpTestContext(options: TestContextOptions): Promise<HttpTestContext> {
-    const testContext = await createTestContext(options)
-
-    const httpServer = testContext.app.getHttpServer()
-    const httpPort = await listenOnAvailablePort(httpServer)
-    const httpClient = new HttpTestClient(httpPort)
-
-    return { ...testContext, httpClient }
+class NullGuard implements CanActivate {
+    canActivate(_context: ExecutionContext): boolean {
+        return true
+    }
 }
+
+@Injectable()
+class NullProvider {}
