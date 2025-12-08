@@ -52,7 +52,7 @@ describe('Env', () => {
         })
     })
 
-    describe('getNumber', () => {
+    describe('getBoolean', () => {
         beforeEach(() => {
             delete process.env.TEST_BOOLEAN
         })

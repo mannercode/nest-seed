@@ -1,9 +1,9 @@
 import { CreatePurchaseDto } from 'apps/applications'
 import { PurchaseRecordDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
+import { toAny } from 'testlib'
 import { Errors, getPayments, getTickets } from '../__helpers__'
 import { buildCreatePurchaseDto, type PurchaseFixture } from './purchase.fixture'
-import { toAny } from 'testlib'
 
 // TODO
 // 위의 코등 중에서 it('creates and returns a purchase', async () => { 을 보면 단순히 검증만 하고 있다.

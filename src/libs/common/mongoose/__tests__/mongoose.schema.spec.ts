@@ -13,7 +13,7 @@ describe('Mongoose Schema Examples', () => {
         await fixture?.teardown()
     })
 
-    it('Validate storing and retrieving all default Mongoose data types', async () => {
+    it('stores and retrieves all default Mongoose data types', async () => {
         const doc = new fixture.model()
         doc.sn = 1234567
         doc.name = 'Statue of Liberty'
