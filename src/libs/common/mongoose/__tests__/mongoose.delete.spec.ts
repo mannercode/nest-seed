@@ -25,41 +25,35 @@ describe('Mongoose Delete', () => {
             })
         })
 
-        describe('when deleting with deleteOne', () => {
-            it('records deletedAt with the deletion time', async () => {
-                await fixture.model.deleteOne({ _id: fixture.doc._id })
+        it('records deletedAt for deleteOne calls', async () => {
+            await fixture.model.deleteOne({ _id: fixture.doc._id })
 
-                const foundDoc = await fixture.model
-                    .findOne({ _id: { $eq: fixture.doc._id } })
-                    .setOptions({ withDeleted: true })
-                    .exec()
+            const foundDoc = await fixture.model
+                .findOne({ _id: { $eq: fixture.doc._id } })
+                .setOptions({ withDeleted: true })
+                .exec()
 
-                expect(foundDoc?.deletedAt).toEqual(expect.any(Date))
-            })
+            expect(foundDoc?.deletedAt).toEqual(expect.any(Date))
         })
 
-        describe('when deleting with deleteMany', () => {
-            it('records deletedAt for each document', async () => {
-                const doc2 = new fixture.model()
-                doc2.name = 'name'
-                await doc2.save()
+        it('records deletedAt for each document on deleteMany', async () => {
+            const doc2 = new fixture.model()
+            doc2.name = 'name'
+            await doc2.save()
 
-                await fixture.model.deleteMany({ _id: { $in: [fixture.doc._id, doc2._id] } as any })
+            await fixture.model.deleteMany({ _id: { $in: [fixture.doc._id, doc2._id] } as any })
 
-                const foundDocs = await fixture.model.find({}).setOptions({ withDeleted: true })
-                expect(foundDocs[0]).toMatchObject({ deletedAt: expect.any(Date) })
-                expect(foundDocs[1]).toMatchObject({ deletedAt: expect.any(Date) })
-            })
+            const foundDocs = await fixture.model.find({}).setOptions({ withDeleted: true })
+            expect(foundDocs[0]).toMatchObject({ deletedAt: expect.any(Date) })
+            expect(foundDocs[1]).toMatchObject({ deletedAt: expect.any(Date) })
         })
 
-        describe('when aggregating after a deletion', () => {
-            it('excludes deleted documents from aggregate', async () => {
-                await fixture.model.deleteOne({ _id: fixture.doc._id })
+        it('excludes deleted documents from aggregates', async () => {
+            await fixture.model.deleteOne({ _id: fixture.doc._id })
 
-                const got = await fixture.model.aggregate([{ $match: { name: 'name' } }])
+            const got = await fixture.model.aggregate([{ $match: { name: 'name' } }])
 
-                expect(got).toHaveLength(0)
-            })
+            expect(got).toHaveLength(0)
         })
     })
 
@@ -75,10 +69,8 @@ describe('Mongoose Delete', () => {
             await fixture?.teardown()
         })
 
-        describe('when deleting a document', () => {
-            it('removes the document entirely', async () => {
-                expect(fixture.doc).not.toHaveProperty('deletedAt')
-            })
+        it('removes the document entirely', async () => {
+            expect(fixture.doc).not.toHaveProperty('deletedAt')
         })
     })
 })

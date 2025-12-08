@@ -14,19 +14,17 @@ describe('LatLong', () => {
     })
 
     describe('distanceInMeters', () => {
-        describe('when calculating distance between two coordinates', () => {
-            it('returns the distance in meters', () => {
-                const seoul: LatLong = { latitude: 37.5665, longitude: 126.978 }
-                const busan: LatLong = { latitude: 35.1796, longitude: 129.0756 }
+        it('calculates the distance between two coordinates', () => {
+            const seoul: LatLong = { latitude: 37.5665, longitude: 126.978 }
+            const busan: LatLong = { latitude: 35.1796, longitude: 129.0756 }
 
-                const actualDistance = LatLong.distanceInMeters(seoul, busan)
+            const actualDistance = LatLong.distanceInMeters(seoul, busan)
 
-                const expectedDistance = 325000
-                const tolerance = 0.05 * expectedDistance // 5% 오차 범위
+            const expectedDistance = 325000
+            const tolerance = 0.05 * expectedDistance // 5% 오차 범위
 
-                expect(actualDistance).toBeGreaterThan(expectedDistance - tolerance)
-                expect(actualDistance).toBeLessThan(expectedDistance + tolerance)
-            })
+            expect(actualDistance).toBeGreaterThan(expectedDistance - tolerance)
+            expect(actualDistance).toBeLessThan(expectedDistance + tolerance)
         })
     })
 

@@ -14,12 +14,10 @@ describe('CacheService', () => {
     })
 
     describe('set', () => {
-        describe('when setting a value', () => {
-            it('stores the value', async () => {
-                await fixture.cacheService.set('key', 'value')
-                const cachedValue = await fixture.cacheService.get('key')
-                expect(cachedValue).toEqual('value')
-            })
+        it('stores the value', async () => {
+            await fixture.cacheService.set('key', 'value')
+            const cachedValue = await fixture.cacheService.get('key')
+            expect(cachedValue).toEqual('value')
         })
 
         describe('when the TTL is provided', () => {
@@ -80,18 +78,16 @@ describe('CacheService', () => {
     })
 
     describe('executeScript', () => {
-        describe('when running a Lua script', () => {
-            it('runs the script and returns the result', async () => {
-                const script = `return redis.call('SET', KEYS[1], ARGV[2])`
-                const keys = ['key']
-                const args = ['value']
+        it('runs the script and returns the result', async () => {
+            const script = `return redis.call('SET', KEYS[1], ARGV[2])`
+            const keys = ['key']
+            const args = ['value']
 
-                const result = await fixture.cacheService.executeScript(script, keys, args)
-                expect(result).toBe('OK')
+            const result = await fixture.cacheService.executeScript(script, keys, args)
+            expect(result).toBe('OK')
 
-                const storedValue = await fixture.cacheService.get('key')
-                expect(storedValue).toBe('value')
-            })
+            const storedValue = await fixture.cacheService.get('key')
+            expect(storedValue).toBe('value')
         })
     })
 })

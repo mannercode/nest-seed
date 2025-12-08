@@ -234,13 +234,11 @@ describe('mapDocToDto', () => {
     const sampleSchema = createMongooseSchema(Sample)
     const SampleModel = model<Sample>('SampleForTest', sampleSchema)
 
-    describe('when mapping a document to a DTO', () => {
-        it('returns the DTO', () => {
-            const doc = new SampleModel({ name: 'name', optional: undefined })
+    it('maps a document to a DTO', () => {
+        const doc = new SampleModel({ name: 'name', optional: undefined })
 
-            const dto = mapDocToDto(doc, SampleDto, ['id', 'name', 'optional'])
+        const dto = mapDocToDto(doc, SampleDto, ['id', 'name', 'optional'])
 
-            expect(dto).toEqual({ id: expect.any(String), name: 'name', optional: undefined })
-        })
+        expect(dto).toEqual({ id: expect.any(String), name: 'name', optional: undefined })
     })
 })

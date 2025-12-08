@@ -48,18 +48,16 @@ describe('MongooseRepository', () => {
     })
 
     describe('update', () => {
-        describe('when updating a document', () => {
-            it('updates the document', async () => {
-                const persistedDoc = fixture.repository.newDocument()
-                persistedDoc.name = 'new name'
-                await persistedDoc.save()
+        it('updates the document', async () => {
+            const persistedDoc = fixture.repository.newDocument()
+            persistedDoc.name = 'new name'
+            await persistedDoc.save()
 
-                await fixture.repository.update(persistedDoc.id, { name: 'updated name' })
+            await fixture.repository.update(persistedDoc.id, { name: 'updated name' })
 
-                const updatedDoc = await fixture.repository.findById(persistedDoc.id)
+            const updatedDoc = await fixture.repository.findById(persistedDoc.id)
 
-                expect(updatedDoc?.name).toEqual('updated name')
-            })
+            expect(updatedDoc?.name).toEqual('updated name')
         })
     })
 

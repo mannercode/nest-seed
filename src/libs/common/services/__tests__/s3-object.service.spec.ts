@@ -108,7 +108,7 @@ describe('S3ObjectService', () => {
         })
 
         describe('when the object does not exist', () => {
-            it('returns 404 Not Found when downloading', async () => {
+            it('returns 404 Not Found for download requests', async () => {
                 const downloadUrl = await fixture.s3Service.presignDownloadUrl({
                     key: 'not-exists',
                     expiresInSec: 60

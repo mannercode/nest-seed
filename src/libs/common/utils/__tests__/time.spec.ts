@@ -24,17 +24,15 @@ describe('Time', () => {
     })
 
     describe('fromMs', () => {
-        describe('when converting milliseconds to a string', () => {
-            it('returns the formatted time string', () => {
-                expect(Time.fromMs(30 * 60 * 1000)).toEqual('30m')
-                expect(Time.fromMs(45 * 1000)).toEqual('45s')
-                expect(Time.fromMs(24 * 60 * 60 * 1000)).toEqual('1d')
-                expect(Time.fromMs(2 * 60 * 60 * 1000)).toEqual('2h')
-                expect(Time.fromMs((24 + 2) * 60 * 60 * 1000)).toEqual('1d2h')
-                expect(Time.fromMs(500)).toEqual('500ms')
-                expect(Time.fromMs(0)).toEqual('0ms')
-                expect(Time.fromMs(-30 * 1000)).toEqual('-30s')
-            })
+        it('converts milliseconds to a string', () => {
+            expect(Time.fromMs(30 * 60 * 1000)).toEqual('30m')
+            expect(Time.fromMs(45 * 1000)).toEqual('45s')
+            expect(Time.fromMs(24 * 60 * 60 * 1000)).toEqual('1d')
+            expect(Time.fromMs(2 * 60 * 60 * 1000)).toEqual('2h')
+            expect(Time.fromMs((24 + 2) * 60 * 60 * 1000)).toEqual('1d2h')
+            expect(Time.fromMs(500)).toEqual('500ms')
+            expect(Time.fromMs(0)).toEqual('0ms')
+            expect(Time.fromMs(-30 * 1000)).toEqual('-30s')
         })
     })
 })

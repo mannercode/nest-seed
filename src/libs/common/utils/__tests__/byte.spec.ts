@@ -39,18 +39,16 @@ describe('Byte', () => {
     })
 
     describe('toString', () => {
-        describe('when converting byte values to a string', () => {
-            it('returns a human-readable string', () => {
-                expect(Byte.toString(0)).toEqual('0B')
-                expect(Byte.toString(1024)).toEqual('1KB')
-                expect(Byte.toString(1536)).toEqual('1KB512B')
-                expect(Byte.toString(1024 * 1024)).toEqual('1MB')
-                expect(Byte.toString(1024 * 1024 * 1.5)).toEqual('1MB512KB')
-                expect(Byte.toString(-1024)).toEqual('-1KB')
-                expect(
-                    Byte.toString(1 * 1024 * 1024 * 1024 + 256 * 1024 * 1024 + 128 * 1024)
-                ).toEqual('1GB256MB128KB')
-            })
+        it('converts byte values to a string', () => {
+            expect(Byte.toString(0)).toEqual('0B')
+            expect(Byte.toString(1024)).toEqual('1KB')
+            expect(Byte.toString(1536)).toEqual('1KB512B')
+            expect(Byte.toString(1024 * 1024)).toEqual('1MB')
+            expect(Byte.toString(1024 * 1024 * 1.5)).toEqual('1MB512KB')
+            expect(Byte.toString(-1024)).toEqual('-1KB')
+            expect(Byte.toString(1 * 1024 * 1024 * 1024 + 256 * 1024 * 1024 + 128 * 1024)).toEqual(
+                '1GB256MB128KB'
+            )
         })
     })
 })

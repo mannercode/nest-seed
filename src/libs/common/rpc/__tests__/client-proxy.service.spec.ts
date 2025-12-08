@@ -35,16 +35,14 @@ describe('ClientProxyService', () => {
     })
 
     describe('emit', () => {
-        describe('when emitting an event', () => {
-            it('sends the event to the microservice', async () => {
-                const promise = new Promise((resolve, reject) => {
-                    fixture.httpClient.get('/handle-event').sse((value) => resolve(value), reject)
-                })
-
-                await fixture.rpcClient.emit(withTestId('emitEvent'), { arg: 'value' })
-
-                await expect(promise).resolves.toEqual('{"arg":"value"}')
+        it('sends the event to the microservice', async () => {
+            const promise = new Promise((resolve, reject) => {
+                fixture.httpClient.get('/handle-event').sse((value) => resolve(value), reject)
             })
+
+            await fixture.rpcClient.emit(withTestId('emitEvent'), { arg: 'value' })
+
+            await expect(promise).resolves.toEqual('{"arg":"value"}')
         })
 
         describe('when the payload is null', () => {

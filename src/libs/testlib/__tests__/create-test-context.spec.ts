@@ -20,19 +20,15 @@ describe('createTestContext', () => {
         })
     })
 
-    describe('when sending an RPC message', () => {
-        it('responds correctly', async () => {
-            await fixture.rpcClient.expect(
-                withTestId('getRpcMessage'),
-                { arg: 'value' },
-                { id: 'value' }
-            )
-        })
+    it('responds correctly to an RPC message', async () => {
+        await fixture.rpcClient.expect(
+            withTestId('getRpcMessage'),
+            { arg: 'value' },
+            { id: 'value' }
+        )
     })
 
-    describe('when sending an HTTP message', () => {
-        it('responds correctly', async () => {
-            await fixture.httpClient.get('/message/value').ok({ received: 'value' })
-        })
+    it('responds correctly to an HTTP message', async () => {
+        await fixture.httpClient.get('/message/value').ok({ received: 'value' })
     })
 })
