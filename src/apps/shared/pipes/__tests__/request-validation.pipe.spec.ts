@@ -15,7 +15,7 @@ describe('RequestValidationPipe', () => {
     })
 
     describe('object', () => {
-        it('passes validation when payload is valid', async () => {
+        it('passes validation for a valid payload', async () => {
             await fixture.httpClient.post('/').body({ sampleId: 'id', date: nullDate }).created()
         })
 
@@ -25,14 +25,14 @@ describe('RequestValidationPipe', () => {
     })
 
     describe('array', () => {
-        it('passes validation when array payload is valid', async () => {
+        it('passes validation for a valid array payload', async () => {
             await fixture.httpClient
                 .post('/array')
                 .body([{ sampleId: 'id', date: nullDate }])
                 .created()
         })
 
-        it('returns 400 Bad Request when any item is invalid', async () => {
+        it('returns 400 Bad Request if any item is invalid', async () => {
             await fixture.httpClient
                 .post('/array')
                 .body([{ sampleId: 'id', date: 'wrong' }])
@@ -41,14 +41,14 @@ describe('RequestValidationPipe', () => {
     })
 
     describe('nested array', () => {
-        it('passes validation when nested array payload is valid', async () => {
+        it('passes validation for a valid nested array payload', async () => {
             await fixture.httpClient
                 .post('/nested')
                 .body({ samples: [{ sampleId: 'id', date: nullDate }] })
                 .created()
         })
 
-        it('returns 400 Bad Request when any nested item is invalid', async () => {
+        it('returns 400 Bad Request if any nested item is invalid', async () => {
             await fixture.httpClient
                 .post('/nested')
                 .body({ samples: [{ sampleId: 'id', date: 'wrong' }] })

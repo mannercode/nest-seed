@@ -29,13 +29,13 @@ describe('CustomerAuthenticationService', () => {
             hashedPassword = await service.hash('password')
         })
 
-        it('returns true when password matches', async () => {
+        it('returns true for a matching password', async () => {
             const isMatch = await service.validate('password', hashedPassword)
 
             expect(isMatch).toBe(true)
         })
 
-        it('returns false when password does not match', async () => {
+        it('returns false for a non-matching password', async () => {
             const isMatch = await service.validate('wrongpassword', hashedPassword)
 
             expect(isMatch).toBe(false)

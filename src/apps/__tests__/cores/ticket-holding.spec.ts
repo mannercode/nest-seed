@@ -57,7 +57,7 @@ describe('TicketHoldingService', () => {
                 })
             })
 
-            it('returns true when re-holding the same tickets', async () => {
+            it('returns true for re-holding the same tickets', async () => {
                 const isHeld = await holdTickets(fixture, {
                     showtimeId,
                     customerId: customerA,
@@ -202,7 +202,7 @@ describe('TicketHoldingService', () => {
         })
 
         describe('when the customer holds no tickets', () => {
-            it('returns true even when there are no tickets to release', async () => {
+            it('returns true with no tickets to release', async () => {
                 const isReleased = await releaseTickets(fixture, showtimeId, customerId)
 
                 expect(isReleased).toBe(true)
