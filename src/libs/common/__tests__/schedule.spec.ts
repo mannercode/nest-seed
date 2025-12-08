@@ -19,8 +19,7 @@ describe('ScheduleModule', () => {
 
         await sleep(2500)
 
-        const { count } = fixture.sampleJobService
-        expect(count === 1 || count === 2).toBe(true)
+        expect([1, 2]).toContain(fixture.sampleJobService.count)
     })
 
     it('updates the cron schedule at runtime and runs every second', async () => {
@@ -35,7 +34,6 @@ describe('ScheduleModule', () => {
 
         await sleep(1500)
 
-        const { count } = fixture.sampleJobService
-        expect(count === 1 || count === 2).toBe(true)
+        expect([1, 2]).toContain(fixture.sampleJobService.count)
     })
 })
