@@ -1,30 +1,17 @@
 import { INestApplication } from '@nestjs/common'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
-import { AppLoggerService, Path } from 'common'
+import { AppLoggerService } from 'common'
 import compression from 'compression'
 import express from 'express'
-import { exit } from 'process'
 
-export async function configureApp({
-    app,
-    directories,
-    natOptions,
-    http
-}: {
+type ConfigureAppOptions = {
     app: INestApplication<any>
-    directories: string[]
     natOptions: { servers: string[]; queue: string }
     http: { port: number; requestPayloadLimit: string }
-}) {
-    for (const directory of directories) {
-        if (!(await Path.isWritable(directory))) {
-            console.error(`Error: Directory is not writable: '${directory}'`)
-            exit(1)
-        }
-    }
+}
 
+export async function configureApp({ app, natOptions, http }: ConfigureAppOptions) {
     app.use(compression())
-
     app.use(express.json({ limit: http.requestPayloadLimit }))
 
     app.connectMicroservice<MicroserviceOptions>(

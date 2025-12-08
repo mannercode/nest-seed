@@ -7,11 +7,13 @@ import {
     ClientProxyModule,
     createWinstonLogger,
     ExceptionLoggerFilter,
+    Path,
     SuccessLoggingInterceptor
 } from 'common'
 import { AppConfigService, getProjectId } from '../config'
 import { RequestValidationPipe } from '../pipes/request-validation.pipe'
 import { ScheduleModule } from '@nestjs/schedule'
+import { exit } from 'process'
 
 @Global()
 @Module({
@@ -40,9 +42,14 @@ import { ScheduleModule } from '@nestjs/schedule'
         { provide: APP_INTERCEPTOR, useClass: SuccessLoggingInterceptor },
         {
             provide: AppLoggerService,
-            useFactory: (config: AppConfigService) => {
-                const loggerInstance = createWinstonLogger(config.log)
-                return new AppLoggerService(loggerInstance)
+            useFactory: async ({ log }: AppConfigService) => {
+                if (!(await Path.isWritable(log.directory))) {
+                    console.error(`Error: Directory is not writable: '${log.directory}'`)
+                    exit(1)
+                }
+
+                const logger = createWinstonLogger(log)
+                return new AppLoggerService(logger)
             },
             inject: [AppConfigService]
         }
