@@ -1,63 +1,45 @@
-import { Injectable, Logger } from '@nestjs/common'
-import { Cron, CronExpression, ScheduleModule, SchedulerRegistry } from '@nestjs/schedule'
-import { CronTime } from 'cron'
+import { Injectable } from '@nestjs/common'
+import { Cron, ScheduleModule, SchedulerRegistry } from '@nestjs/schedule'
 import { createTestContext } from 'testlib'
 
 @Injectable()
 export class SampleJobService {
-    private readonly logger = new Logger(SampleJobService.name)
-    executionCount = 0
+    private _count = 0
 
-    static readonly JOB_NAME = 'sample-job'
-
-    @Cron(CronExpression.EVERY_MINUTE, { name: SampleJobService.JOB_NAME })
+    @Cron('*/2 * * * * *', { name: 'job' })
     handleCron() {
-        this.executionCount += 1
-        this.logger.debug('Sample cron executed')
+        this._count += 1
+        console.log('handleCron()', this._count)
     }
 
-    resetExecutionCount() {
-        this.executionCount = 0
+    reset() {
+        this._count = 0
     }
-}
 
-@Injectable()
-export class CronControlService {
-    private readonly logger = new Logger(CronControlService.name)
-
-    constructor(private readonly schedulerRegistry: SchedulerRegistry) {}
-
-    updateSampleJobExpression(cronExpr: string) {
-        const job = this.schedulerRegistry.getCronJob(SampleJobService.JOB_NAME)
-
-        this.logger.log(`Updating cron [${SampleJobService.JOB_NAME}] to "${cronExpr}"`)
-
-        job.setTime(new CronTime(cronExpr))
-        job.start()
+    get count() {
+        return this._count
     }
 }
 
 export type ScheduleModuleFixture = {
     teardown: () => Promise<void>
-    schedulerRegistry: SchedulerRegistry
+    scheduler: SchedulerRegistry
     sampleJobService: SampleJobService
-    cronControlService: CronControlService
 }
 
 export async function createScheduleModuleFixture(): Promise<ScheduleModuleFixture> {
-    const testContext = await createTestContext({
+    const { module, close } = await createTestContext({
         imports: [ScheduleModule.forRoot()],
-        providers: [SampleJobService, CronControlService],
-        exports: [SampleJobService, CronControlService]
+        providers: [SampleJobService],
+        exports: [SampleJobService]
     })
 
-    const schedulerRegistry = testContext.module.get(SchedulerRegistry)
-    const sampleJobService = testContext.module.get(SampleJobService)
-    const cronControlService = testContext.module.get(CronControlService)
+    const scheduler = module.get(SchedulerRegistry)
+    const sampleJobService = module.get(SampleJobService)
 
     async function teardown() {
-        await testContext.close()
+        await close()
     }
 
-    return { teardown, schedulerRegistry, sampleJobService, cronControlService }
+    return { teardown, scheduler, sampleJobService }
 }
