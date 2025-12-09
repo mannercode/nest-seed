@@ -1,3 +1,4 @@
+import { CronExpression } from '@nestjs/schedule'
 import { Time } from 'common'
 
 /**
@@ -31,5 +32,9 @@ export const Rules = {
         // 영화 드래프트가 자동으로 만료되는 시간
         draftExpiresInMinutes: 60
     },
-    Asset: { uploadExpiresInSec: 60 * 60, downloadExpiresInSec: 60 * 60 }
+    Asset: {
+        uploadExpiresInSec: 60 * 60,
+        downloadExpiresInSec: 60 * 60,
+        expiredUploadCleanupCron: CronExpression.EVERY_10_MINUTES
+    }
 } as const

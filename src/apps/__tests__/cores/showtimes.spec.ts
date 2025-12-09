@@ -19,7 +19,7 @@ describe('ShowtimesService', () => {
     describe('createMany', () => {
         describe('when the payload is valid', () => {
             it('creates showtimes and returns the result', async () => {
-                const createDtos = [buildCreateShowtimeDto({ transactionId: oid(0x1) })]
+                const createDtos = [buildCreateShowtimeDto({ sagaId: oid(0x1) })]
 
                 const { success } = await fixture.showtimesService.createMany(createDtos)
 
@@ -63,14 +63,14 @@ describe('ShowtimesService', () => {
     })
 
     describe('search', () => {
-        const transactionId = oid(0x1)
+        const sagaId = oid(0x1)
         const movieId = oid(0x2)
         const theaterId = oid(0x3)
         let createdShowtimes: ShowtimeDto[]
 
         beforeEach(async () => {
             const createDtos = [
-                { transactionId },
+                { sagaId },
                 { movieId },
                 { theaterId },
                 { startTime: new Date('2020-01-01T12:00') },
@@ -82,11 +82,9 @@ describe('ShowtimesService', () => {
             createdShowtimes = await createShowtimes(fixture, createDtos)
         })
 
-        describe('when the `transactionIds` are provided', () => {
-            it('returns showtimes for the transactionIds', async () => {
-                const showtimes = await fixture.showtimesService.search({
-                    transactionIds: [transactionId]
-                })
+        describe('when the `sagaIds` are provided', () => {
+            it('returns showtimes for the sagaIds', async () => {
+                const showtimes = await fixture.showtimesService.search({ sagaIds: [sagaId] })
 
                 expect(showtimes).toEqual([createdShowtimes[0]])
             })

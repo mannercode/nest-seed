@@ -4,7 +4,7 @@ import { IsDate, IsNotEmpty, IsString } from 'class-validator'
 export class CreateShowtimeDto {
     @IsString()
     @IsNotEmpty()
-    transactionId: string
+    sagaId: string
 
     @IsString()
     @IsNotEmpty()

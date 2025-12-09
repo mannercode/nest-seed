@@ -2,7 +2,7 @@ import { BulkCreateShowtimesDto } from '../dtos'
 
 export class ShowtimeCreationJobData {
     createDto: BulkCreateShowtimesDto
-    transactionId: string
+    sagaId: string
 }
 
 export enum ShowtimeCreationStatus {

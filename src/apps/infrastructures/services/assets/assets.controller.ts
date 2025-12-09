@@ -30,9 +30,4 @@ export class AssetsController {
     deleteMany(@Payload() assetIds: string[]) {
         return this.service.deleteMany(assetIds)
     }
-
-    @MessagePattern(Messages.Assets.cleanupExpiredUncompleted)
-    cleanupExpiredUncompleted() {
-        return this.service.cleanupExpiredUncompleted()
-    }
 }

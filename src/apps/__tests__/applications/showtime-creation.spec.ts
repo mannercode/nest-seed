@@ -67,7 +67,7 @@ describe('ShowtimeCreationService', () => {
     describe('POST /showtime-creation/showtimes', () => {
         describe('when the payload is valid', () => {
             let createDto: BulkCreateShowtimesDto
-            let transactionId: string
+            let sagaId: string
             let result: unknown
 
             beforeEach(async () => {
@@ -84,13 +84,13 @@ describe('ShowtimeCreationService', () => {
                     .body(createDto)
                     .accepted()
 
-                transactionId = body.transactionId
+                sagaId = body.sagaId
                 result = await waitPromise
             })
 
             // TODO fix
-            it('returns a transactionId', async () => {
-                expect(transactionId).toBeDefined()
+            it('returns a sagaId', async () => {
+                expect(sagaId).toBeDefined()
             })
 
             it('emits a showtime creation success event', async () => {
@@ -101,7 +101,7 @@ describe('ShowtimeCreationService', () => {
                 const createdTicketCount = createdShowtimeCount * seatCount
 
                 expect(result).toEqual({
-                    transactionId,
+                    sagaId,
                     status: 'succeeded',
                     createdShowtimeCount,
                     createdTicketCount
@@ -124,7 +124,7 @@ describe('ShowtimeCreationService', () => {
                     .accepted()
 
                 await expect(waitPromise).resolves.toEqual({
-                    transactionId: body.transactionId,
+                    sagaId: body.sagaId,
                     status: 'error',
                     message: 'The requested movie could not be found.'
                 })
@@ -146,7 +146,7 @@ describe('ShowtimeCreationService', () => {
                     .accepted()
 
                 await expect(waitPromise).resolves.toEqual({
-                    transactionId: body.transactionId,
+                    sagaId: body.sagaId,
                     status: 'error',
                     message: 'One or more requested theaters could not be found.'
                 })
@@ -188,7 +188,7 @@ describe('ShowtimeCreationService', () => {
                 await fixture.httpClient
                     .post('/showtime-creation/showtimes')
                     .body(createDto)
-                    .accepted({ transactionId: expect.any(String) })
+                    .accepted({ sagaId: expect.any(String) })
 
                 const conflictingShowtimes = [
                     initialShowtimes[0],
@@ -197,7 +197,7 @@ describe('ShowtimeCreationService', () => {
                 ]
 
                 await expect(waitPromise).resolves.toEqual({
-                    transactionId: expect.any(String),
+                    sagaId: expect.any(String),
                     status: 'failed',
                     conflictingShowtimes
                 })

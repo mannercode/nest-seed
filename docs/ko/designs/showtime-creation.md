@@ -8,12 +8,12 @@
 
 **선행 조건**:
 
--   관리자는 시스템에 로그인해야 합니다.
--   영화와 극장은 시스템에 등록되어 있어야 합니다.
+- 관리자는 시스템에 로그인해야 합니다.
+- 영화와 극장은 시스템에 등록되어 있어야 합니다.
 
 **트리거**:
 
--   관리자가 영화 상영시간 생성 페이지를 방문합니다.
+- 관리자가 영화 상영시간 생성 페이지를 방문합니다.
 
 **기본 흐름**:
 
@@ -28,14 +28,14 @@
 
 **대안 흐름**:
 
--   만약 상영시간이 기존의 상영시간과 겹친다면
+- 만약 상영시간이 기존의 상영시간과 겹친다면
     1. 시스템은 상영시간 등록에 실패했다는 메시지와 함께 어떤 상영시간이 겹쳤는지 정보를 보여줍니다.
     1. 기본 흐름 5단계로 돌아갑니다.
 
 **후행 조건**:
 
--   선택한 극장에서 선택한 영화의 상영시간이 성공적으로 등록되어야 합니다.
--   상영시간에 해당하는 티켓이 생성되어야 한다.
+- 선택한 극장에서 선택한 영화의 상영시간이 성공적으로 등록되어야 합니다.
+- 상영시간에 해당하는 티켓이 생성되어야 한다.
 
 ## 2. 상영시간 생성 시퀀스 다이어그램
 
@@ -87,20 +87,20 @@ Admin <-- Frontend: 상영시간 등록성공 화면
 @enduml
 ```
 
--   검증과 생성에 오랜시간이 걸리기 때문에 위의 동기 요청(Synchronous Request)은 UX에 부정적이다. 그래서 클라이언트가 생성 요청을 하면 transactionId를 리턴하고 후에 SSE로 처리 결과 이벤트를 발생시킨다.
--   ShowtimeCreationService는 애플리케이션 서비스이고 다른 서비스에 영향을 주지 않는다. 설계를 최소화 하고 많은 부분은 구현 단계에서 정한다. 예를 들어 중간에 실패했을 때 롤백 전략 같은 것들.
+- 검증과 생성에 오랜시간이 걸리기 때문에 위의 동기 요청(Synchronous Request)은 UX에 부정적이다. 그래서 클라이언트가 생성 요청을 하면 sagaId를 리턴하고 후에 SSE로 처리 결과 이벤트를 발생시킨다.
+- ShowtimeCreationService는 애플리케이션 서비스이고 다른 서비스에 영향을 주지 않는다. 설계를 최소화 하고 많은 부분은 구현 단계에서 정한다. 예를 들어 중간에 실패했을 때 롤백 전략 같은 것들.
 
 ```plantuml
 @startuml
 Backend -> ShowtimeCreation: createShowtimeBatch(request)
         ShowtimeCreation -> ShowtimeCreation: enqueueTask(request)
-        ShowtimeCreation --> ShowtimeCreation: transactionId
-Backend <-- ShowtimeCreation: transactionId
+        ShowtimeCreation --> ShowtimeCreation: sagaId
+Backend <-- ShowtimeCreation: sagaId
 
-[o-> ShowtimeCreation: queue에서 task(transactionId, request) 전달
+[o-> ShowtimeCreation: queue에서 task(sagaId, request) 전달
     ShowtimeCreation -> ShowtimeCreation: validateShowtimeCreationRequest(request)
 
-    ShowtimeCreation -> ShowtimeCreation: createShowtimes(request, transactionId)
+    ShowtimeCreation -> ShowtimeCreation: createShowtimes(request, sagaId)
     activate ShowtimeCreation #yellow
         loop theater in request.theaters
             loop startTime in request.startTimes
@@ -108,11 +108,11 @@ Backend <-- ShowtimeCreation: transactionId
             end
         end
 
-        ShowtimeCreation -> Showtimes: createMany(showtimeCreateDtos, transactionId)
+        ShowtimeCreation -> Showtimes: createMany(showtimeCreateDtos, sagaId)
         ShowtimeCreation <-- Showtimes: showtimes
     deactivate ShowtimeCreation
 
-    ShowtimeCreation -> ShowtimeCreation: createTickets(showtimes, transactionId)
+    ShowtimeCreation -> ShowtimeCreation: createTickets(showtimes, sagaId)
     activate ShowtimeCreation #yellow
         loop showtime in showtimes
             ShowtimeCreation -> Theaters: getMany(showtime.theaterId)
@@ -120,7 +120,7 @@ Backend <-- ShowtimeCreation: transactionId
             loop seat in theater.seats
                 ShowtimeCreation -> ShowtimeCreation: createTicketCreateDto(seat, showtime.id)
             end
-            ShowtimeCreation -> Tickets: createMany(ticketCreateDtos,transactionId)
+            ShowtimeCreation -> Tickets: createMany(ticketCreateDtos,sagaId)
             ShowtimeCreation <-- Tickets: tickets
         end
     deactivate ShowtimeCreation
@@ -137,7 +137,7 @@ CreateShowtimeBatchDto {
 }
 
 CreateShowtimeBatchResult{
-    "transactionId": "batchid#1",
+    "sagaId": "batchid#1",
     "result": "complete",
     "createdShowtimes": 100,
     "createdTickets": 500

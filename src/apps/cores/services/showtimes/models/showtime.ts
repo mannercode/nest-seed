@@ -7,7 +7,7 @@ import { MongooseConfigModule } from 'shared'
 @Schema(MongooseConfigModule.schemaOptions)
 export class Showtime extends MongooseSchema {
     @Prop({ required: true })
-    transactionId: Types.ObjectId
+    sagaId: Types.ObjectId
 
     @Prop({ required: true })
     theaterId: Types.ObjectId

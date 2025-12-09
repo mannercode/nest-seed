@@ -1,15 +1,9 @@
 import { GoneException, Injectable } from '@nestjs/common'
-import { Cron, CronExpression } from '@nestjs/schedule'
+import { Cron } from '@nestjs/schedule'
 import { DateUtil, InjectS3Object, mapDocToDto, S3ObjectService } from 'common'
 import { Rules } from 'shared'
 import { AssetsRepository } from './assets.repository'
-import {
-    AssetDto,
-    CompleteAssetDto,
-    CreateAssetDto,
-    DeleteAssetsResponse,
-    UploadRequest
-} from './dtos'
+import { AssetDto, CompleteAssetDto, CreateAssetDto, UploadRequest } from './dtos'
 import { AssetDocument } from './models'
 
 export const AssetErrors = {
@@ -90,7 +84,8 @@ export class AssetsService {
         return { deletedAssets: this.toDtos(deletedAssets) }
     }
 
-    async cleanupExpiredUncompleted(): Promise<DeleteAssetsResponse> {
+    @Cron(Rules.Asset.expiredUploadCleanupCron)
+    async cleanupExpiredUploadsJob() {
         const expireBefore = this.getExpirationThreshold()
         const expiredAssets = await this.repository.findExpiredUncompleted(expireBefore)
 
@@ -100,11 +95,6 @@ export class AssetsService {
 
         const expiredAssetIds = expiredAssets.map((asset) => asset.id)
         return this.deleteMany(expiredAssetIds)
-    }
-
-    @Cron(CronExpression.EVERY_5_MINUTES)
-    async cleanupExpiredUncompletedJob() {
-        await this.cleanupExpiredUncompleted()
     }
 
     private toDto(asset: AssetDocument): AssetDto {

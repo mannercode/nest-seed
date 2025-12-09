@@ -41,7 +41,7 @@ class Showtime {
     endTime: Date
     theaterId: ObjectId
     movieId: ObjectId
-    transactionId:ObjectId
+    sagaId:ObjectId
 }
 
 class Ticket {

@@ -19,20 +19,20 @@ export class ShowtimeBulkCreatorService {
         private readonly ticketsService: TicketsClient
     ) {}
 
-    async create(createDto: BulkCreateShowtimesDto, transactionId: string) {
-        const createdShowtimes = await this.bulkCreateShowtimes(createDto, transactionId)
+    async create(createDto: BulkCreateShowtimesDto, sagaId: string) {
+        const createdShowtimes = await this.bulkCreateShowtimes(createDto, sagaId)
 
-        const createdTicketCount = await this.bulkCreateTickets(createdShowtimes, transactionId)
+        const createdTicketCount = await this.bulkCreateTickets(createdShowtimes, sagaId)
 
         return { createdShowtimeCount: createdShowtimes.length, createdTicketCount }
     }
 
-    private async bulkCreateShowtimes(createDto: BulkCreateShowtimesDto, transactionId: string) {
+    private async bulkCreateShowtimes(createDto: BulkCreateShowtimesDto, sagaId: string) {
         const { movieId, theaterIds, durationInMinutes, startTimes } = createDto
 
         const createDtos = theaterIds.flatMap((theaterId) =>
             startTimes.map((startTime) => ({
-                transactionId,
+                sagaId,
                 movieId,
                 theaterId,
                 startTime,
@@ -41,11 +41,11 @@ export class ShowtimeBulkCreatorService {
         )
 
         await this.showtimesService.createMany(createDtos)
-        const showtimes = await this.showtimesService.search({ transactionIds: [transactionId] })
+        const showtimes = await this.showtimesService.search({ sagaIds: [sagaId] })
         return showtimes
     }
 
-    private async bulkCreateTickets(showtimes: ShowtimeDto[], transactionId: string) {
+    private async bulkCreateTickets(showtimes: ShowtimeDto[], sagaId: string) {
         let totalCount = 0
 
         const theaterIds = Array.from(new Set(showtimes.map((showtime) => showtime.theaterId)))
@@ -66,7 +66,7 @@ export class ShowtimeBulkCreatorService {
                     movieId: showtime.movieId,
                     status: TicketStatus.Available,
                     seat,
-                    transactionId
+                    sagaId
                 }))
 
                 const { count } = await this.ticketsService.createMany(createTicketDtos)

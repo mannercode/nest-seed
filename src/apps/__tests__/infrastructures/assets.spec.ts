@@ -224,7 +224,7 @@ describe('AssetsService', () => {
 
                 await sleep(1500)
 
-                const response = await fixture.assetsClient.cleanupExpiredUncompleted()
+                const response = await fixture.assetsClient.cleanupExpiredUploadsJob()
 
                 expect(response.deletedAssets).toEqual([
                     expect.objectContaining({

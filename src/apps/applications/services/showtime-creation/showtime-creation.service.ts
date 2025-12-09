@@ -29,8 +29,8 @@ export class ShowtimeCreationService {
     }
 
     async requestShowtimeCreation(createDto: BulkCreateShowtimesDto) {
-        const transactionId = await this.workerService.requestShowtimeCreation(createDto)
+        const sagaId = await this.workerService.requestShowtimeCreation(createDto)
 
-        return { transactionId } as RequestShowtimeCreationResponse
+        return { sagaId } as RequestShowtimeCreationResponse
     }
 }

@@ -18,7 +18,7 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
     async createMany(createDtos: CreateShowtimeDto[]) {
         const showtimes = createDtos.map((dto) => {
             const doc = this.newDocument()
-            doc.transactionId = objectId(dto.transactionId)
+            doc.sagaId = objectId(dto.sagaId)
             doc.movieId = objectId(dto.movieId)
             doc.theaterId = objectId(dto.theaterId)
             doc.startTime = dto.startTime
@@ -65,10 +65,10 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
     }
 
     private buildQuery(searchDto: SearchShowtimesDto, options: QueryBuilderOptions = {}) {
-        const { transactionIds, movieIds, theaterIds, startTimeRange, endTimeRange } = searchDto
+        const { sagaIds, movieIds, theaterIds, startTimeRange, endTimeRange } = searchDto
 
         const builder = new QueryBuilder<Showtime>()
-        builder.addIn('transactionId', transactionIds)
+        builder.addIn('sagaId', sagaIds)
         builder.addIn('movieId', movieIds)
         builder.addIn('theaterId', theaterIds)
         builder.addRange('startTime', startTimeRange)

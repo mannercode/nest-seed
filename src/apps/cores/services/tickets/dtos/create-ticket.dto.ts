@@ -6,7 +6,7 @@ import { TicketStatus } from '../models'
 export class CreateTicketDto {
     @IsString()
     @IsNotEmpty()
-    transactionId: string
+    sagaId: string
 
     @IsString()
     @IsNotEmpty()

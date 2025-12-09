@@ -27,7 +27,7 @@ export class Ticket extends MongooseSchema {
     seat: Seat
 
     @Prop({ required: true })
-    transactionId: Types.ObjectId
+    sagaId: Types.ObjectId
 }
 export type TicketDocument = HydratedDocument<Ticket>
 export const TicketSchema = createMongooseSchema(Ticket)

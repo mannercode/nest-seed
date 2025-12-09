@@ -2,13 +2,7 @@ import { createMessagePatternMap, getProjectId } from './utils'
 
 export const Messages = createMessagePatternMap(
     {
-        Assets: {
-            getMany: null,
-            deleteMany: null,
-            create: null,
-            complete: null,
-            cleanupExpiredUncompleted: null
-        },
+        Assets: { getMany: null, deleteMany: null, create: null, complete: null },
         Payments: { create: null, getMany: null },
         WatchRecords: { create: null, searchPage: null },
         Tickets: {

@@ -115,7 +115,7 @@ export class HttpTestClient {
                     if (1 < lines.length) {
                         /**
                          * id: 1
-                         * data: {"transactionId":"6712d234a78adbff65ae552d","status":"processing"}
+                         * data: {"sagaId":"6712d234a78adbff65ae552d","status":"processing"}
                          */
                         const message = this.parseEventMessage(chunkText)
 

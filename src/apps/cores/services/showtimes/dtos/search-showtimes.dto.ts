@@ -3,7 +3,7 @@ import { PartialDateTimeRange } from 'common'
 
 export class SearchShowtimesDto {
     @IsOptional()
-    transactionIds?: string[]
+    sagaIds?: string[]
 
     @IsOptional()
     movieIds?: string[]

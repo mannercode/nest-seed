@@ -2,7 +2,7 @@ import { IsOptional } from 'class-validator'
 
 export class SearchTicketsDto {
     @IsOptional()
-    transactionIds?: string[]
+    sagaIds?: string[]
 
     @IsOptional()
     movieIds?: string[]

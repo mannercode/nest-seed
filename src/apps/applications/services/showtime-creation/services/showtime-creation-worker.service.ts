@@ -36,18 +36,15 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
     }
 
     async requestShowtimeCreation(createDto: BulkCreateShowtimesDto) {
-        const transactionId = newObjectId()
+        const sagaId = newObjectId()
 
-        const jobData = { createDto, transactionId } as ShowtimeCreationJobData
+        const jobData = { createDto, sagaId } as ShowtimeCreationJobData
 
-        await this.events.emitStatusChanged({
-            status: ShowtimeCreationStatus.Waiting,
-            transactionId
-        })
+        await this.events.emitStatusChanged({ status: ShowtimeCreationStatus.Waiting, sagaId })
 
         await this.queue.add('showtime-creation.create', jobData)
 
-        return transactionId
+        return sagaId
     }
 
     async process(job: Job<ShowtimeCreationJobData>) {
@@ -58,32 +55,29 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
         } catch (error) {
             await this.events.emitStatusChanged({
                 status: ShowtimeCreationStatus.Error,
-                transactionId: job.data.transactionId,
+                sagaId: job.data.sagaId,
                 message: error.message
             })
         }
     }
 
-    private async processJobData({ transactionId, createDto }: ShowtimeCreationJobData) {
-        await this.events.emitStatusChanged({
-            status: ShowtimeCreationStatus.Processing,
-            transactionId
-        })
+    private async processJobData({ sagaId, createDto }: ShowtimeCreationJobData) {
+        await this.events.emitStatusChanged({ status: ShowtimeCreationStatus.Processing, sagaId })
 
         const { isValid, conflictingShowtimes } = await this.validatorService.validate(createDto)
 
         if (isValid) {
-            const creationResult = await this.creatorService.create(createDto, transactionId)
+            const creationResult = await this.creatorService.create(createDto, sagaId)
 
             await this.events.emitStatusChanged({
                 status: ShowtimeCreationStatus.Succeeded,
-                transactionId,
+                sagaId,
                 ...creationResult
             })
         } else {
             await this.events.emitStatusChanged({
                 status: ShowtimeCreationStatus.Failed,
-                transactionId,
+                sagaId,
                 conflictingShowtimes
             })
         }
