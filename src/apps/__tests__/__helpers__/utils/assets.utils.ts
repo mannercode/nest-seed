@@ -1,23 +1,43 @@
+import { AssetDto, CreateAssetDto, UploadRequest } from 'apps/infrastructures'
 import { createReadStream } from 'fs'
-import { pick } from 'lodash'
 import { TestContext } from 'testlib'
 import { FixtureFile } from '../fixture-files'
 
-export async function uploadAndCompleteAsset({ module }: TestContext, file: FixtureFile) {
+export function buildCreateAssetDto(file: FixtureFile, overrides = {}) {
+    const { originalName, mimeType, size, checksum } = file
+
+    return { originalName, mimeType, size, checksum, ...overrides } as CreateAssetDto
+}
+
+export async function uploadAsset(filepath: string, { url, method, headers }: UploadRequest) {
+    const stream = createReadStream(filepath)
+
+    const response = await fetch(url, { method, headers, body: stream, duplex: 'half' })
+    return response
+}
+
+export async function uploadFile({ module }: TestContext, file: FixtureFile) {
     const { AssetsClient } = await import('apps/infrastructures')
     const assetsClient = module.get(AssetsClient)
 
-    const createDto = pick(file, ['originalName', 'mimeType', 'size', 'checksum'])
-
+    const createDto = buildCreateAssetDto(file)
     const uploadRequest = await assetsClient.create(createDto)
-    const { url, method, headers } = uploadRequest
 
-    const stream = createReadStream(file.path)
-    const uploadRes = await fetch(url, { method, headers, body: stream, duplex: 'half' })
+    const uploadRes = await uploadAsset(file.path, uploadRequest)
     expect(uploadRes.ok).toBe(true)
 
-    const owner = { ownerService: 'service-name', ownerEntityId: 'entity-id' }
-    const completedAsset = await assetsClient.complete(uploadRequest.assetId, owner)
+    return uploadRequest.assetId
+}
 
-    return completedAsset
+export async function downloadAsset({ download }: AssetDto) {
+    if (null === download) throw new Error('download must have value')
+
+    const res = await fetch(download.url)
+
+    if (!res.ok) {
+        throw new Error(`Failed to download asset: ${res.status} ${res.statusText}`)
+    }
+
+    const arrayBuffer = await res.arrayBuffer()
+    return Buffer.from(arrayBuffer)
 }

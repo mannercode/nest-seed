@@ -9,7 +9,6 @@ export class SampleJobService {
     @Cron('*/2 * * * * *', { name: 'job' })
     handleCron() {
         this._count += 1
-        console.log('handleCron()', this._count)
     }
 
     reset() {

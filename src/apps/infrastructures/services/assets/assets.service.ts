@@ -84,7 +84,7 @@ export class AssetsService {
         return { deletedAssets: this.toDtos(deletedAssets) }
     }
 
-    @Cron(Rules.Asset.expiredUploadCleanupCron)
+    @Cron(Rules.Asset.expiredUploadCleanupCron, { name: 'assets.cleanupExpiredUploads' })
     async cleanupExpiredUploadsJob() {
         const expireBefore = this.getExpirationThreshold()
         const expiredAssets = await this.repository.findExpiredUncompleted(expireBefore)
@@ -94,6 +94,7 @@ export class AssetsService {
         }
 
         const expiredAssetIds = expiredAssets.map((asset) => asset.id)
+
         return this.deleteMany(expiredAssetIds)
     }
 

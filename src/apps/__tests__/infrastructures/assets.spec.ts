@@ -1,17 +1,16 @@
 import { HttpStatus } from '@nestjs/common'
-import { AssetDto } from 'apps/infrastructures'
-import { FileUtil, Path, sleep } from 'common'
+import { CronExpression } from '@nestjs/schedule'
+import { Checksum, FileUtil, Path, sleep } from 'common'
 import { writeFile } from 'fs/promises'
 import { nullObjectId, toAny } from 'testlib'
-import { fixtureFiles, uploadAndCompleteAsset } from '../__helpers__'
 import {
-    BufferUtil,
     buildCreateAssetDto,
     downloadAsset,
+    fixtureFiles,
     uploadAsset,
-    uploadFile,
-    type AssetsFixture
-} from './assets.fixture'
+    uploadFile
+} from '../__helpers__'
+import { type AssetsFixture } from './assets.fixture'
 
 describe('AssetsService', () => {
     let fixture: AssetsFixture
@@ -56,20 +55,15 @@ describe('AssetsService', () => {
         describe('when upload expired', () => {
             it('rejects uploads after the URL expires', async () => {
                 const { Rules } = await import('shared')
-                const originalUploadExpiresInSec = Rules.Asset.uploadExpiresInSec
                 toAny(Rules).Asset.uploadExpiresInSec = 1
 
-                try {
-                    const createDto = buildCreateAssetDto(fixture.file)
-                    const uploadRequest = await fixture.assetsClient.create(createDto)
+                const createDto = buildCreateAssetDto(fixture.file)
+                const uploadRequest = await fixture.assetsClient.create(createDto)
 
-                    await sleep(1500)
+                await sleep(1500)
 
-                    const uploadRes = await uploadAsset(fixture.file.path, uploadRequest)
-                    expect(uploadRes.ok).toBe(false)
-                } finally {
-                    toAny(Rules).Asset.uploadExpiresInSec = originalUploadExpiresInSec
-                }
+                const uploadRes = await uploadAsset(fixture.file.path, uploadRequest)
+                expect(uploadRes.ok).toBe(false)
             })
         })
     })
@@ -101,7 +95,7 @@ describe('AssetsService', () => {
                 const assetDto = await fixture.assetsClient.complete(assetId, completeDto)
 
                 const buffer = await downloadAsset(assetDto)
-                const checksum = BufferUtil.getChecksum(buffer)
+                const checksum = Checksum.fromBuffer(buffer)
 
                 expect(fixture.file.checksum).toEqual(checksum)
             })
@@ -110,45 +104,42 @@ describe('AssetsService', () => {
         describe('when upload expired', () => {
             it('deletes expired assets instead of completing them', async () => {
                 const { Rules } = await import('shared')
-                const originalUploadExpiresInSec = Rules.Asset.uploadExpiresInSec
                 toAny(Rules).Asset.uploadExpiresInSec = 1
 
-                try {
-                    const assetId = await uploadFile(fixture, fixture.file)
+                const assetId = await uploadFile(fixture, fixture.file)
 
-                    await sleep(1500)
+                await sleep(1500)
 
-                    const completeDto = { ownerService: 'service', ownerEntityId: 'entity-id' }
+                const completeDto = { ownerService: 'service', ownerEntityId: 'entity-id' }
 
-                    await expect(
-                        fixture.assetsClient.complete(assetId, completeDto)
-                    ).rejects.toMatchObject({ status: HttpStatus.GONE })
+                await expect(
+                    fixture.assetsClient.complete(assetId, completeDto)
+                ).rejects.toMatchObject({ status: HttpStatus.GONE })
 
-                    await expect(fixture.assetsClient.getMany([assetId])).rejects.toMatchObject({
-                        status: HttpStatus.NOT_FOUND
-                    })
-                } finally {
-                    toAny(Rules).Asset.uploadExpiresInSec = originalUploadExpiresInSec
-                }
+                await expect(fixture.assetsClient.getMany([assetId])).rejects.toMatchObject({
+                    status: HttpStatus.NOT_FOUND
+                })
             })
         })
     })
 
     describe('getMany', () => {
         describe('when the asset exists', () => {
-            let uploadedAsset: AssetDto
+            let assetId: string
 
             beforeEach(async () => {
-                uploadedAsset = await uploadAndCompleteAsset(fixture, fixtureFiles.small)
+                assetId = await uploadFile(fixture, fixtureFiles.small)
             })
 
             it('returns a download URL and metadata', async () => {
-                const [asset] = await fixture.assetsClient.getMany([uploadedAsset.id])
+                const [asset] = await fixture.assetsClient.getMany([assetId])
 
-                expect(asset).toEqual({
-                    ...uploadedAsset,
-                    download: { url: expect.any(String), expiresAt: expect.any(Date) }
-                })
+                expect(asset).toEqual(
+                    expect.objectContaining({
+                        id: assetId,
+                        download: { url: expect.any(String), expiresAt: expect.any(Date) }
+                    })
+                )
 
                 const downloadedFile = Path.join(fixture.tempDir, 'downloaded.tmp')
 
@@ -173,32 +164,33 @@ describe('AssetsService', () => {
 
     describe('deleteMany', () => {
         describe('when the asset exists', () => {
-            let uploadedAsset: AssetDto
+            let assetId: string
 
             beforeEach(async () => {
-                uploadedAsset = await uploadAndCompleteAsset(fixture, fixtureFiles.small)
+                assetId = await uploadFile(fixture, fixtureFiles.small)
             })
 
             it('deletes the asset metadata', async () => {
-                const response = await fixture.assetsClient.deleteMany([uploadedAsset.id])
+                const response = await fixture.assetsClient.deleteMany([assetId])
+
+                const { originalName, mimeType, size, checksum } = fixtureFiles.small
 
                 expect(response).toEqual({
                     deletedAssets: [
-                        {
-                            id: expect.any(String),
-                            originalName: uploadedAsset.originalName,
-                            mimeType: uploadedAsset.mimeType,
-                            size: uploadedAsset.size,
-                            checksum: uploadedAsset.checksum,
-                            owner: uploadedAsset.owner,
+                        expect.objectContaining({
+                            id: assetId,
+                            originalName,
+                            mimeType,
+                            size,
+                            checksum,
                             download: null
-                        }
+                        })
                     ]
                 })
 
-                await expect(
-                    fixture.assetsClient.getMany([uploadedAsset.id])
-                ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
+                await expect(fixture.assetsClient.getMany([assetId])).rejects.toMatchObject({
+                    status: HttpStatus.NOT_FOUND
+                })
             })
         })
 
@@ -211,35 +203,27 @@ describe('AssetsService', () => {
         })
     })
 
-    describe('cleanupExpiredUncompleted', () => {
+    describe('cleanupExpiredUploadsJob', () => {
         it('removes expired uploads that were never completed', async () => {
             const { Rules } = await import('shared')
-            const originalUploadExpiresInSec = Rules.Asset.uploadExpiresInSec
             toAny(Rules).Asset.uploadExpiresInSec = 1
 
-            try {
-                const createDto = buildCreateAssetDto(fixture.file)
-                const uploadRequest = await fixture.assetsClient.create(createDto)
-                await uploadAsset(fixture.file.path, uploadRequest)
+            const { CronTime } = await import('cron')
 
-                await sleep(1500)
+            const job = fixture.scheduler.getCronJob('assets.cleanupExpiredUploads')
+            await job.stop()
 
-                const response = await fixture.assetsClient.cleanupExpiredUploadsJob()
+            const createDto = buildCreateAssetDto(fixture.file)
+            const { assetId } = await fixture.assetsClient.create(createDto)
 
-                expect(response.deletedAssets).toEqual([
-                    expect.objectContaining({
-                        id: uploadRequest.assetId,
-                        owner: null,
-                        download: null
-                    })
-                ])
+            job.setTime(new CronTime(CronExpression.EVERY_SECOND))
+            job.start()
 
-                await expect(
-                    fixture.assetsClient.getMany([uploadRequest.assetId])
-                ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
-            } finally {
-                toAny(Rules).Asset.uploadExpiresInSec = originalUploadExpiresInSec
-            }
+            await sleep(2000)
+
+            await expect(fixture.assetsClient.getMany([assetId])).rejects.toMatchObject({
+                status: HttpStatus.NOT_FOUND
+            })
         })
     })
 })

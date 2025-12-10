@@ -132,13 +132,13 @@ export class AppConfigService extends BaseConfigService {
         }
     }
 
-    get fileUpload() {
-        return {
-            maxFileSizeBytes: this.getNumber('FILE_UPLOAD_MAX_FILE_SIZE_BYTES'),
-            maxFilesPerUpload: this.getNumber('FILE_UPLOAD_MAX_FILES_PER_UPLOAD'),
-            allowedMimeTypes: this.getString('FILE_UPLOAD_ALLOWED_FILE_TYPES').split(',')
-        }
-    }
+    // get fileUpload() {
+    //     return {
+    //         maxFileSizeBytes: this.getNumber('FILE_UPLOAD_MAX_FILE_SIZE_BYTES'),
+    //         maxFilesPerUpload: this.getNumber('FILE_UPLOAD_MAX_FILES_PER_UPLOAD'),
+    //         allowedMimeTypes: this.getString('FILE_UPLOAD_ALLOWED_FILE_TYPES').split(',')
+    //     }
+    // }
 
     get s3() {
         return {

@@ -1,4 +1,5 @@
 export * from './byte'
+export * from './checksum'
 export * from './date.util'
 export * from './encoding.util'
 export * from './env'

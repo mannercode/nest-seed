@@ -1,20 +1,7 @@
-import { createHash, Hash } from 'crypto'
-import { createReadStream } from 'fs'
 import { stat } from 'fs/promises'
-import { pipeline } from 'stream/promises'
-import { Checksum, ChecksumAlgorithm } from '../types'
+import { Checksum } from './checksum'
 
 export class FileUtil {
-    static async getChecksum(
-        filePath: string,
-        algorithm: ChecksumAlgorithm = 'sha256'
-    ): Promise<Checksum> {
-        const hash: Hash = createHash(algorithm)
-        await pipeline(createReadStream(filePath), hash)
-
-        return { algorithm, base64: hash.digest('base64') }
-    }
-
     static async getSize(filePath: string): Promise<number> {
         return (await stat(filePath)).size
     }
@@ -28,8 +15,8 @@ export class FileUtil {
         if (firstSize !== secondSize) return false
 
         const [firstChecksum, secondChecksum] = await Promise.all([
-            this.getChecksum(firstFilePath),
-            this.getChecksum(secondFilePath)
+            Checksum.fromFile(firstFilePath),
+            Checksum.fromFile(secondFilePath)
         ])
 
         return (
