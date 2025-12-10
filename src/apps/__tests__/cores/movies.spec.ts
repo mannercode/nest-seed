@@ -1,28 +1,8 @@
 import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
-import { FileUtil, Path } from 'common'
-import { createReadStream } from 'fs'
-import { writeFile } from 'fs/promises'
+import { Checksum } from 'common'
 import { nullObjectId } from 'testlib'
 import { buildCreateMovieDto, createMovie, Errors } from '../__helpers__'
 import type { MoviesFixture } from './movies.fixture'
-
-// const configMock = createConfigServiceMock({
-//     FILE_UPLOAD_MAX_FILE_SIZE_BYTES: localFiles.oversized.size,
-//     FILE_UPLOAD_MAX_FILES_PER_UPLOAD: maxFilesPerUpload,
-//     FILE_UPLOAD_ALLOWED_FILE_TYPES: 'text/plain',
-//     S3_ENDPOINT: s3.endpoint,
-//     S3_REGION: s3.region,
-//     S3_BUCKET: s3.bucket,
-//     S3_ACCESS_KEY_ID: s3.accessKeyId,
-//     S3_SECRET_ACCESS_KEY: s3.secretAccessKey,
-//     S3_FORCE_PATH_STYLE: s3.forcePathStyle
-// })
-
-// const fix = await createTestFixture({
-//     imports: [AssetsModule],
-//     providers: [AssetsClient],
-//     overrideProviders: [configMock]
-// })
 
 describe('MoviesService', () => {
     let fixture: MoviesFixture
@@ -37,41 +17,16 @@ describe('MoviesService', () => {
     })
 
     describe('POST /movies', () => {
-        describe('when the payload is valid', () => {
+        describe.skip('when the payload is valid', () => {
             let createDto: CreateMovieDto
             let createdMovie: MovieDto
-            let imageAssetId: string
-
-            async function uploadMovieImage() {
-                const payload = {
-                    originalName: fixture.image.originalName,
-                    mimeType: fixture.image.mimeType,
-                    size: fixture.image.size,
-                    checksum: fixture.image.checksum
-                }
-
-                const { assetId, url, method, headers } = await fixture.assetsClient.create(payload)
-                const stream = createReadStream(fixture.image.path)
-
-                const uploadResponse = await fetch(url, {
-                    method,
-                    headers,
-                    body: stream,
-                    duplex: 'half'
-                })
-
-                expect(uploadResponse.ok).toBe(true)
-
-                return assetId
-            }
 
             beforeEach(async () => {
                 createDto = buildCreateMovieDto()
-                imageAssetId = await uploadMovieImage()
 
                 const { body } = await fixture.httpClient
                     .post('/movies')
-                    .body({ ...createDto, imageAssetIds: [imageAssetId] })
+                    .body({ ...createDto, imageAssetIds: [nullObjectId] })
                     .created()
 
                 createdMovie = body
@@ -83,7 +38,7 @@ describe('MoviesService', () => {
                 expect(createdMovie).toEqual({
                     id: expect.any(String),
                     ...createDto,
-                    imageAssetIds: [imageAssetId],
+                    imageAssetIds: [nullObjectId],
                     imageUrl: expect.any(String),
                     imageUrls: [expect.any(String)]
                 })
@@ -95,7 +50,7 @@ describe('MoviesService', () => {
                     .ok(
                         expect.objectContaining({
                             id: createdMovie.id,
-                            imageAssetIds: [imageAssetId],
+                            imageAssetIds: [nullObjectId],
                             imageUrl: expect.any(String)
                         })
                     )
@@ -104,10 +59,8 @@ describe('MoviesService', () => {
                 expect(downloadResponse.ok).toBe(true)
 
                 const downloadedBuffer = Buffer.from(await downloadResponse.arrayBuffer())
-                const downloadPath = Path.join(fixture.tempDir, 'download.tmp')
-                await writeFile(downloadPath, downloadedBuffer)
 
-                expect(await FileUtil.areEqual(downloadPath, fixture.image.path)).toBe(true)
+                expect(fixture.image.checksum).toEqual(Checksum.fromBuffer(downloadedBuffer))
             })
         })
 

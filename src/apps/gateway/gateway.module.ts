@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import {
     BookingClient,
+    MovieDraftsClient,
     PurchaseClient,
     RecommendationClient,
     ShowtimeCreationClient
@@ -10,6 +11,7 @@ import { AssetsClient } from 'apps/infrastructures'
 import { CommonModule } from 'shared'
 import {
     BookingController,
+    MovieDraftsController,
     CustomerJwtStrategy,
     CustomerLocalStrategy,
     CustomersController,
@@ -33,7 +35,8 @@ import { HealthModule } from './modules'
         BookingClient,
         PurchaseRecordsClient,
         RecommendationClient,
-        PurchaseClient
+        PurchaseClient,
+        MovieDraftsClient
     ],
     controllers: [
         CustomersController,
@@ -41,7 +44,8 @@ import { HealthModule } from './modules'
         TheatersController,
         ShowtimeCreationController,
         BookingController,
-        PurchasesController
+        PurchasesController,
+        MovieDraftsController
     ]
 })
 export class GatewayModule {}

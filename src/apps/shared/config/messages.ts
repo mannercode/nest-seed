@@ -31,7 +31,15 @@ export const Messages = createMessagePatternMap(
             allExist: null
         },
         Purchases: { create: null, getMany: null },
-        MovieDrafts: { create: null, update: null, get: null, delete: null },
+        MovieDrafts: {
+            create: null,
+            update: null,
+            get: null,
+            delete: null,
+            createImage: null,
+            completeImage: null,
+            complete: null
+        },
         Movies: {
             create: null,
             update: null,

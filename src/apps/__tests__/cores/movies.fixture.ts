@@ -2,7 +2,6 @@ import { RecommendationClient } from 'apps/applications'
 import { MovieDto, MoviesClient, MoviesModule } from 'apps/cores'
 import { MoviesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
-import { Path } from 'common'
 import {
     createMovie,
     createTestFixture,
@@ -12,10 +11,9 @@ import {
 } from '../__helpers__'
 
 export type MoviesFixture = TestFixture & {
-    image: FixtureFile
     createdMovie: MovieDto
-    tempDir: string
     assetsClient: AssetsClient
+    image: FixtureFile
 }
 
 export async function createMoviesFixture() {
@@ -26,15 +24,7 @@ export async function createMoviesFixture() {
     })
 
     const assetsClient = fix.module.get(AssetsClient)
-
-    const tempDir = await Path.createTempDirectory()
-
     const createdMovie = await createMovie(fix)
 
-    async function teardown() {
-        await fix.teardown()
-        await Path.delete(tempDir)
-    }
-
-    return { ...fix, teardown, image: fixtureFiles.image, createdMovie, tempDir, assetsClient }
+    return { ...fix, image: fixtureFiles.image, createdMovie, assetsClient }
 }
