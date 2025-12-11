@@ -43,11 +43,6 @@ import { exit } from 'process'
         {
             provide: AppLoggerService,
             useFactory: async ({ log }: AppConfigService) => {
-                if (!(await Path.isWritable(log.directory))) {
-                    console.error(`Error: Directory is not writable: '${log.directory}'`)
-                    exit(1)
-                }
-
                 const logger = createWinstonLogger(log)
                 return new AppLoggerService(logger)
             },
