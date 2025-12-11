@@ -1,5 +1,6 @@
 import { MongoDBContainer } from '@testcontainers/mongodb'
 import { NatsContainer } from '@testcontainers/nats'
+import fs from 'fs'
 import { GenericContainer } from 'testcontainers'
 import { getEnv, setEnv } from './jest.utils'
 
@@ -30,6 +31,9 @@ async function setupMinio() {
 }
 
 export default async function globalSetup() {
+    const dirPath = getEnv('LOG_DIRECTORY')
+    fs.mkdirSync(dirPath, { recursive: true })
+
     const [nats, mongo, redis, minio] = await Promise.all([
         setupNats(),
         setupMongo(),
