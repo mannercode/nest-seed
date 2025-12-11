@@ -30,14 +30,14 @@ export class MovieDraftsService {
 
     async get(draftId: string): Promise<MovieDraftDto> {
         const draft = await this.repository.getById(draftId)
-        this.ensureNotExpired(draft)
+        await this.ensureNotExpired(draft)
 
         return this.toDto(draft)
     }
 
     async update(draftId: string, updateDto: UpdateMovieDraftDto): Promise<MovieDraftDto> {
         const draft = await this.repository.getById(draftId)
-        this.ensureNotExpired(draft)
+        await this.ensureNotExpired(draft)
 
         const updateValues = Object.fromEntries(
             Object.entries(updateDto).filter(([, value]) => value !== undefined)
@@ -51,7 +51,7 @@ export class MovieDraftsService {
 
     async delete(draftId: string) {
         const draft = await this.repository.getById(draftId)
-        this.ensureNotExpired(draft)
+        await this.ensureNotExpired(draft)
 
         await draft.deleteOne()
         return true
@@ -62,7 +62,7 @@ export class MovieDraftsService {
         createDto: CreateAssetDto
     ): Promise<DraftImageUploadResponse> {
         const draft = await this.repository.getById(draftId)
-        this.ensureNotExpired(draft)
+        await this.ensureNotExpired(draft)
 
         if (!createDto.mimeType.startsWith('image/')) {
             throw new BadRequestException({
@@ -83,7 +83,7 @@ export class MovieDraftsService {
 
     async completeImage(draftId: string, imageId: string): Promise<DraftImageDto> {
         const draft = await this.repository.getById(draftId)
-        this.ensureNotExpired(draft)
+        await this.ensureNotExpired(draft)
 
         const image = draft.images.find((img) => img.assetId === imageId)
         if (!image) {
@@ -104,7 +104,7 @@ export class MovieDraftsService {
 
     async completeDraft(draftId: string) {
         const draft = await this.repository.getById(draftId)
-        this.ensureNotExpired(draft)
+        await this.ensureNotExpired(draft)
 
         const readyImageAssetIds = draft.images
             .filter((image) => image.status === MovieDraftImageStatus.Ready)
@@ -148,9 +148,10 @@ export class MovieDraftsService {
         }
     }
 
-    private ensureNotExpired(draft: MovieDraftDocument) {
+    private async ensureNotExpired(draft: MovieDraftDocument) {
         if (draft.expiresAt.getTime() <= DateUtil.now().getTime()) {
-            draft.deleteOne().catch(() => null)
+            await draft.deleteOne()
+
             throw new NotFoundException({
                 ...MovieDraftErrors.Expired,
                 draftId: draft.id,
