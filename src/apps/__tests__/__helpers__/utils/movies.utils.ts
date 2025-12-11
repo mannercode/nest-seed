@@ -10,7 +10,7 @@ export function buildCreateMovieDto(overrides = {}) {
         durationInSeconds: 90 * 60,
         director: 'Quentin Tarantino',
         rating: MovieRating.PG,
-        imageAssetIds: [] as string[],
+        assetIds: [] as string[],
         ...overrides
     }
 

@@ -52,7 +52,7 @@ describe('MovieDraftsService', () => {
                 .post(`/movie-drafts/${draft.id}/images/${upload.imageId}/complete`)
                 .ok(expect.objectContaining({ id: upload.imageId, status: 'READY' }))
 
-            const { imageAssetIds: _ignored, ...updateDto } = buildCreateMovieDto({
+            const { assetIds: _ignored, ...updateDto } = buildCreateMovieDto({
                 title: 'draft title',
                 plot: 'draft plot'
             })
@@ -109,7 +109,7 @@ describe('MovieDraftsService', () => {
                 .get(`/movie-drafts/${draft.id}`)
                 .ok(expect.objectContaining({ id: draft.id, expiresAt: expect.any(Date) }))
 
-            const { imageAssetIds: _ignored, ...updateDto } = buildCreateMovieDto({
+            const { assetIds: _ignored, ...updateDto } = buildCreateMovieDto({
                 title: 'updated title',
                 plot: 'updated plot'
             })

@@ -16,7 +16,7 @@ export class MoviesService {
         const movie = await this.moviesRepository.create(createMovieDto)
 
         await Promise.all(
-            createMovieDto.imageAssetIds.map((assetId) =>
+            createMovieDto.assetIds.map((assetId) =>
                 this.assetsService.complete(assetId, {
                     ownerService: 'movies',
                     ownerEntityId: movie.id
@@ -46,12 +46,14 @@ export class MoviesService {
             for (const movie of movies) {
                 await movie.deleteOne({ session })
 
-                const assetIds = movie.imageIds.map((id) => id.toString())
+                const assetIds = movie.assetIds.map((id) => id.toString())
                 await this.assetsService.deleteMany(assetIds)
             }
 
             return movies
         })
+
+        movies.map((movie) => (movie.assetIds = []))
 
         return { deletedMovies: await this.toDtos(movies) }
     }
@@ -66,7 +68,7 @@ export class MoviesService {
         return this.moviesRepository.allExistByIds(movieIds)
     }
 
-    private toDto = async (movie: MovieDocument) => {
+    private async toDto(movie: MovieDocument) {
         const dto = mapDocToDto(movie, MovieDto, [
             'id',
             'title',
@@ -78,12 +80,13 @@ export class MoviesService {
             'rating'
         ])
 
-        const assetIds = movie.imageIds.map((id) => id.toString())
+        const assetIds = movie.assetIds.map((id) => id.toString())
         const assets = await this.assetsService.getMany(assetIds)
 
         dto.imageUrls = assets.map((asset) => asset.download!.url)
         return dto
     }
+
     private toDtos = async (movies: MovieDocument[]) =>
         Promise.all(movies.map((movie) => this.toDto(movie)))
 }

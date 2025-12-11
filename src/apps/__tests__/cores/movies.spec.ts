@@ -31,7 +31,7 @@ describe('MoviesService', () => {
             // TODO fix
             // 영화를 생성하고 반환한다
             it('creates and returns a movie', async () => {
-                const { imageAssetIds: _, ...movieDto } = createDto
+                const { assetIds: _, ...movieDto } = createDto
 
                 expect(createdMovie).toEqual({ ...movieDto, id: expect.any(String), imageUrls: [] })
             })
@@ -122,7 +122,7 @@ describe('MoviesService', () => {
             let deletedAssetId: string
 
             beforeEach(async () => {
-                deletedAssetId = fixture.imageAssetId
+                deletedAssetId = fixture.asset.id
 
                 await fixture.httpClient
                     .delete(`/movies/${fixture.createdMovie.id}`)
@@ -134,6 +134,8 @@ describe('MoviesService', () => {
                             })
                         ])
                     })
+
+                console.log('beforeEach')
             })
 
             it('cannot fetch the movie anymore', async () => {

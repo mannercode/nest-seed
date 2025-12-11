@@ -18,6 +18,6 @@ export class MovieDraftDto {
     durationInSeconds?: number
     director?: string
     rating?: MovieRating
-    imageAssetIds: string[]
+    assetIds: string[]
     images: MovieDraftImageDto[]
 }

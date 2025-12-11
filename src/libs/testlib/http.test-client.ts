@@ -7,11 +7,8 @@ type EventMessage = { event: string; id: number; data: string }
 
 export class HttpTestClient {
     private agent: superagent.Request
-    private serverUrl: string
 
-    constructor(readonly port: number) {
-        this.serverUrl = `http://localhost:${port}`
-    }
+    constructor(readonly serverUrl: string) {}
 
     post(url: string): this {
         this.agent = superagent.post(`${this.serverUrl}${url}`)

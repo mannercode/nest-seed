@@ -121,7 +121,7 @@ export class MovieDraftsService {
             durationInSeconds: draft.durationInSeconds!,
             director: draft.director!,
             rating: draft.rating!,
-            imageAssetIds: readyImageAssetIds
+            assetIds: readyImageAssetIds
         })
 
         await draft.deleteOne()
@@ -144,7 +144,7 @@ export class MovieDraftsService {
             durationInSeconds: draft.durationInSeconds,
             director: draft.director,
             rating: draft.rating,
-            imageAssetIds: readyImageAssetIds,
+            assetIds: readyImageAssetIds,
             images: draft.images.map((image) => ({ id: image.assetId, status: image.status }))
         }
     }
@@ -160,7 +160,7 @@ export class MovieDraftsService {
         }
     }
 
-    private ensureComplete(draft: MovieDraftDocument, imageAssetIds: string[]) {
+    private ensureComplete(draft: MovieDraftDocument, assetIds: string[]) {
         const missingFields: string[] = []
 
         if (!draft.title) missingFields.push('title')
@@ -170,7 +170,7 @@ export class MovieDraftsService {
         if (!draft.durationInSeconds) missingFields.push('durationInSeconds')
         if (!draft.director) missingFields.push('director')
         if (!draft.rating) missingFields.push('rating')
-        if (!imageAssetIds.length) missingFields.push('imageAssetIds')
+        if (!assetIds.length) missingFields.push('assetIds')
 
         if (missingFields.length > 0) {
             throw new UnprocessableEntityException({

@@ -28,7 +28,7 @@ class Movie {
     durationInSeconds: number
     director: string
     rating: string
-    imageIds: ObjectId[]
+    assetIds: ObjectId[]
     imageUrls: string[]
 }
 
@@ -98,7 +98,7 @@ Showtime "1" --> "*" Ticket
 Movie "1" --> "*" Showtime
 Theater "1" --> "*" Showtime
 Ticket "*" --> "1" Customer
-Movie "*" --> "*" Asset : imageIds
+Movie "*" --> "*" Asset : assetIds
 MovieDraft "*" --> "*" Asset : images.assetId
 MovieDraft "*" --> "*" DraftImage
 note right

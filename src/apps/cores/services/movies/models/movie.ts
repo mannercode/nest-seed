@@ -47,7 +47,7 @@ export class Movie extends MongooseSchema {
     rating: MovieRating
 
     @Prop({ required: true })
-    imageIds: Types.ObjectId[]
+    assetIds: Types.ObjectId[]
 }
 export type MovieDocument = HydratedDocument<Movie>
 export const MovieSchema = createMongooseSchema(Movie)

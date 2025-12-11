@@ -1,21 +1,21 @@
 import { RecommendationClient } from 'apps/applications'
 import { MovieDto, MoviesClient, MoviesModule } from 'apps/cores'
 import { MoviesController } from 'apps/gateway'
-import { AssetsClient, AssetsModule } from 'apps/infrastructures'
+import { AssetDto, AssetsClient, AssetsModule } from 'apps/infrastructures'
 import {
     createMovie,
     createTestFixture,
     FixtureFile,
     fixtureFiles,
     TestFixture,
-    uploadFile
+    uploadComplete
 } from '../__helpers__'
 
 export type MoviesFixture = TestFixture & {
     createdMovie: MovieDto
     assetsClient: AssetsClient
     image: FixtureFile
-    imageAssetId: string
+    asset: AssetDto
 }
 
 export async function createMoviesFixture() {
@@ -26,11 +26,11 @@ export async function createMoviesFixture() {
     })
 
     const image = fixtureFiles.image
-    const imageAssetId = await uploadFile(fix, image)
-    const imageAssetIds = [imageAssetId]
+    const asset = await uploadComplete(fix, image)
+    const assetIds = [asset.id]
 
     const assetsClient = fix.module.get(AssetsClient)
-    const createdMovie = await createMovie(fix, { imageAssetIds })
+    const createdMovie = await createMovie(fix, { assetIds })
 
-    return { ...fix, image: fixtureFiles.image, createdMovie, assetsClient, imageAssetId }
+    return { ...fix, image: fixtureFiles.image, createdMovie, assetsClient, asset }
 }

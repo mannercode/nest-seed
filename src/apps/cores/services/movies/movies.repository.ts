@@ -24,7 +24,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         movie.durationInSeconds = createDto.durationInSeconds
         movie.director = createDto.director
         movie.rating = createDto.rating
-        movie.imageIds = objectIds(createDto.imageAssetIds)
+        movie.assetIds = objectIds(createDto.assetIds)
 
         return movie.save()
     }
