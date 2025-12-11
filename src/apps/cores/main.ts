@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core'
-import { AppConfigService, configureApp } from 'shared'
+import { configureApp } from 'shared'
 import { CoresModule } from './cores.module'
 
 export async function bootstrap() {

@@ -2,18 +2,16 @@ import { Global, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import { Transport } from '@nestjs/microservices'
+import { ScheduleModule } from '@nestjs/schedule'
 import {
     AppLoggerService,
     ClientProxyModule,
     createWinstonLogger,
     ExceptionLoggerFilter,
-    Path,
     SuccessLoggingInterceptor
 } from 'common'
 import { AppConfigService, getProjectId } from '../config'
 import { RequestValidationPipe } from '../pipes/request-validation.pipe'
-import { ScheduleModule } from '@nestjs/schedule'
-import { exit } from 'process'
 
 @Global()
 @Module({
