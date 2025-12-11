@@ -53,7 +53,7 @@ export class MoviesService {
             return movies
         })
 
-        return { deletedMovies: await this.toDtos(movies, { includeDownloadUrl: false }) }
+        return { deletedMovies: await this.toDtos(movies) }
     }
 
     async searchPage(searchDto: SearchMoviesPageDto) {
@@ -66,10 +66,7 @@ export class MoviesService {
         return this.moviesRepository.allExistByIds(movieIds)
     }
 
-    private toDto = async (
-        movie: MovieDocument,
-        options: { includeDownloadUrl?: boolean } = {}
-    ) => {
+    private toDto = async (movie: MovieDocument) => {
         const dto = mapDocToDto(movie, MovieDto, [
             'id',
             'title',
@@ -80,27 +77,13 @@ export class MoviesService {
             'director',
             'rating'
         ])
-        dto.imageAssetIds = movie.imageIds.map((id) => id.toString())
 
-        const includeDownloadUrl = options.includeDownloadUrl ?? true
+        const assetIds = movie.imageIds.map((id) => id.toString())
+        const assets = await this.assetsService.getMany(assetIds)
 
-        if (includeDownloadUrl) {
-            const assets = await this.assetsService.getMany(dto.imageAssetIds)
-            const urlMap = new Map(assets.map((asset) => [asset.id, asset]))
-
-            dto.imageUrls = dto.imageAssetIds.map(
-                (id) => urlMap.get(id)?.download?.url ?? `/assets/${id}`
-            )
-        } else {
-            dto.imageUrls = dto.imageAssetIds.map((id) => `/assets/${id}`)
-        }
-
-        dto.imageUrl = dto.imageUrls[0]
-
+        dto.imageUrls = assets.map((asset) => asset.download!.url)
         return dto
     }
-    private toDtos = async (
-        movies: MovieDocument[],
-        options: { includeDownloadUrl?: boolean } = {}
-    ) => Promise.all(movies.map((movie) => this.toDto(movie, options)))
+    private toDtos = async (movies: MovieDocument[]) =>
+        Promise.all(movies.map((movie) => this.toDto(movie)))
 }

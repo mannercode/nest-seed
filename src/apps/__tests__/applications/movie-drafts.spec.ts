@@ -70,8 +70,6 @@ describe('MovieDraftsService', () => {
                 expect.objectContaining({
                     id: expect.any(String),
                     ...updateDto,
-                    imageAssetIds: [upload.imageId],
-                    imageUrl: expect.any(String),
                     imageUrls: [expect.any(String)]
                 })
             )
@@ -80,7 +78,7 @@ describe('MovieDraftsService', () => {
                 .get(`/movie-drafts/${draft.id}`)
                 .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: draft.id })
 
-            const downloadResponse = await fetch(createdMovie.imageUrl)
+            const downloadResponse = await fetch(createdMovie.imageUrls[0])
             expect(downloadResponse.ok).toBe(true)
 
             const downloadedBuffer = Buffer.from(await downloadResponse.arrayBuffer())

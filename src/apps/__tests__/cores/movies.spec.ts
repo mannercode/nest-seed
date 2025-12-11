@@ -17,17 +17,13 @@ describe('MoviesService', () => {
     })
 
     describe('POST /movies', () => {
-        describe.skip('when the payload is valid', () => {
+        describe('when the payload is valid', () => {
             let createDto: CreateMovieDto
             let createdMovie: MovieDto
 
             beforeEach(async () => {
                 createDto = buildCreateMovieDto()
-
-                const { body } = await fixture.httpClient
-                    .post('/movies')
-                    .body({ ...createDto, imageAssetIds: [nullObjectId] })
-                    .created()
+                const { body } = await fixture.httpClient.post('/movies').body(createDto).created()
 
                 createdMovie = body
             })
@@ -35,32 +31,9 @@ describe('MoviesService', () => {
             // TODO fix
             // 영화를 생성하고 반환한다
             it('creates and returns a movie', async () => {
-                expect(createdMovie).toEqual({
-                    id: expect.any(String),
-                    ...createDto,
-                    imageAssetIds: [nullObjectId],
-                    imageUrl: expect.any(String),
-                    imageUrls: [expect.any(String)]
-                })
-            })
+                const { imageAssetIds: _, ...movieDto } = createDto
 
-            it('downloads the uploaded asset', async () => {
-                const { body: movie } = await fixture.httpClient
-                    .get(`/movies/${createdMovie.id}`)
-                    .ok(
-                        expect.objectContaining({
-                            id: createdMovie.id,
-                            imageAssetIds: [nullObjectId],
-                            imageUrl: expect.any(String)
-                        })
-                    )
-
-                const downloadResponse = await fetch(movie.imageUrl)
-                expect(downloadResponse.ok).toBe(true)
-
-                const downloadedBuffer = Buffer.from(await downloadResponse.arrayBuffer())
-
-                expect(fixture.image.checksum).toEqual(Checksum.fromBuffer(downloadedBuffer))
+                expect(createdMovie).toEqual({ ...movieDto, id: expect.any(String), imageUrls: [] })
             })
         })
 
@@ -80,6 +53,18 @@ describe('MoviesService', () => {
                 await fixture.httpClient
                     .get(`/movies/${fixture.createdMovie.id}`)
                     .ok(fixture.createdMovie)
+            })
+
+            it('downloads the uploaded asset', async () => {
+                const { body: movieDto } = await fixture.httpClient
+                    .get(`/movies/${fixture.createdMovie.id}`)
+                    .ok()
+
+                const downloadResponse = await fetch(movieDto.imageUrls[0])
+                expect(downloadResponse.ok).toBe(true)
+
+                const downloadedBuffer = Buffer.from(await downloadResponse.arrayBuffer())
+                expect(fixture.image.checksum).toEqual(Checksum.fromBuffer(downloadedBuffer))
             })
         })
 
@@ -109,8 +94,6 @@ describe('MoviesService', () => {
                 }
                 const expected = expect.objectContaining({
                     id: fixture.createdMovie.id,
-                    imageAssetIds: fixture.createdMovie.imageAssetIds,
-                    imageUrl: expect.any(String),
                     imageUrls: expect.any(Array),
                     ...updateDto
                 })
@@ -139,7 +122,7 @@ describe('MoviesService', () => {
             let deletedAssetId: string
 
             beforeEach(async () => {
-                deletedAssetId = fixture.createdMovie.imageAssetIds[0]
+                deletedAssetId = fixture.imageAssetId
 
                 await fixture.httpClient
                     .delete(`/movies/${fixture.createdMovie.id}`)
@@ -147,8 +130,7 @@ describe('MoviesService', () => {
                         deletedMovies: expect.arrayContaining([
                             expect.objectContaining({
                                 id: fixture.createdMovie.id,
-                                title: fixture.createdMovie.title,
-                                imageAssetIds: fixture.createdMovie.imageAssetIds
+                                title: fixture.createdMovie.title
                             })
                         ])
                     })
@@ -192,8 +174,6 @@ describe('MoviesService', () => {
                 durationInSeconds: movie.durationInSeconds,
                 director: movie.director,
                 rating: movie.rating,
-                imageAssetIds: movie.imageAssetIds,
-                imageUrl: expect.any(String),
                 imageUrls: expect.any(Array)
             })
 

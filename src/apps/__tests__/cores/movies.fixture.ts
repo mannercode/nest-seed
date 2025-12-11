@@ -7,13 +7,15 @@ import {
     createTestFixture,
     FixtureFile,
     fixtureFiles,
-    TestFixture
+    TestFixture,
+    uploadFile
 } from '../__helpers__'
 
 export type MoviesFixture = TestFixture & {
     createdMovie: MovieDto
     assetsClient: AssetsClient
     image: FixtureFile
+    imageAssetId: string
 }
 
 export async function createMoviesFixture() {
@@ -23,8 +25,12 @@ export async function createMoviesFixture() {
         controllers: [MoviesController]
     })
 
-    const assetsClient = fix.module.get(AssetsClient)
-    const createdMovie = await createMovie(fix)
+    const image = fixtureFiles.image
+    const imageAssetId = await uploadFile(fix, image)
+    const imageAssetIds = [imageAssetId]
 
-    return { ...fix, image: fixtureFiles.image, createdMovie, assetsClient }
+    const assetsClient = fix.module.get(AssetsClient)
+    const createdMovie = await createMovie(fix, { imageAssetIds })
+
+    return { ...fix, image: fixtureFiles.image, createdMovie, assetsClient, imageAssetId }
 }
