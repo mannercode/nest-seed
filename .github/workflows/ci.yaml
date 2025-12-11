@@ -49,6 +49,9 @@ jobs:
             - name: Run infrastructures
               run: npm run infra:reset
 
+            - name: Create output folder
+              run: mkdir -p ./_output/logs
+
             - name: Run unit tests
               run: npm test
 
