@@ -7,35 +7,35 @@ import { TicketsService } from './tickets.service'
 
 @Controller()
 export class TicketsController {
-    constructor(private service: TicketsService) {}
+    constructor(private readonly service: TicketsService) {}
 
-    @MessagePattern(Messages.Tickets.createTickets)
-    createTickets(
+    @MessagePattern(Messages.Tickets.createMany)
+    createMany(
         @Payload(new ParseArrayPipe({ items: CreateTicketDto })) createDtos: CreateTicketDto[]
     ) {
-        return this.service.createTickets(createDtos)
+        return this.service.createMany(createDtos)
     }
 
-    @MessagePattern(Messages.Tickets.updateTicketsStatus)
-    updateTicketsStatus(
+    @MessagePattern(Messages.Tickets.updateStatusMany)
+    updateStatusMany(
         @Payload('ticketIds') ticketIds: string[],
         @Payload('status') status: TicketStatus
     ) {
-        return this.service.updateTicketsStatus(ticketIds, status)
+        return this.service.updateStatusMany(ticketIds, status)
     }
 
-    @MessagePattern(Messages.Tickets.searchTickets)
-    searchTickets(@Payload() searchDto: SearchTicketsDto) {
-        return this.service.searchTickets(searchDto)
+    @MessagePattern(Messages.Tickets.search)
+    search(@Payload() searchDto: SearchTicketsDto) {
+        return this.service.search(searchDto)
     }
 
-    @MessagePattern(Messages.Tickets.aggregateTicketSales)
-    aggregateTicketSales(@Payload() aggregateDto: AggregateTicketSalesDto) {
-        return this.service.aggregateTicketSales(aggregateDto)
+    @MessagePattern(Messages.Tickets.aggregateSales)
+    aggregateSales(@Payload() aggregateDto: AggregateTicketSalesDto) {
+        return this.service.aggregateSales(aggregateDto)
     }
 
-    @MessagePattern(Messages.Tickets.getTickets)
-    getTickets(@Payload() ticketIds: string[]) {
-        return this.service.getTickets(ticketIds)
+    @MessagePattern(Messages.Tickets.getMany)
+    getMany(@Payload() ticketIds: string[]) {
+        return this.service.getMany(ticketIds)
     }
 }

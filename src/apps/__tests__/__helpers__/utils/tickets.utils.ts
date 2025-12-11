@@ -3,9 +3,9 @@ import { newObjectId } from 'common'
 import { uniq } from 'lodash'
 import { oid, TestContext } from 'testlib'
 
-export const buildCreateTicketDto = (overrides = {}) => {
+export function buildCreateTicketDto(overrides = {}) {
     const createDto = {
-        transactionId: newObjectId(),
+        sagaId: newObjectId(),
         movieId: oid(0x0),
         theaterId: oid(0x0),
         showtimeId: oid(0x0),
@@ -16,27 +16,27 @@ export const buildCreateTicketDto = (overrides = {}) => {
     return createDto
 }
 
-export const createTickets = async (
+export async function createTickets(
     { module }: TestContext,
     overrides: Partial<CreateTicketDto>[]
-) => {
+) {
     const { TicketsClient } = await import('apps/cores')
     const ticketsService = module.get(TicketsClient)
 
     const createDtos = overrides.map((override) => buildCreateTicketDto(override))
 
-    const { success } = await ticketsService.createTickets(createDtos)
+    const { success } = await ticketsService.createMany(createDtos)
     expect(success).toBe(true)
 
-    const transactionIds = uniq(createDtos.map((dto) => dto.transactionId))
+    const sagaIds = uniq(createDtos.map((dto) => dto.sagaId))
 
-    const tickets = await ticketsService.searchTickets({ transactionIds })
+    const tickets = await ticketsService.search({ sagaIds })
     return tickets
 }
 
-export const getTickets = async ({ module }: TestContext, ticketIds: string[]) => {
+export async function getTickets({ module }: TestContext, ticketIds: string[]) {
     const { TicketsClient } = await import('apps/cores')
     const ticketsService = module.get(TicketsClient)
 
-    return ticketsService.getTickets(ticketIds)
+    return ticketsService.getMany(ticketIds)
 }

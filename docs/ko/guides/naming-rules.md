@@ -33,10 +33,10 @@ searchSeeds(dto: SeedSearchDto): Promise<Seed[]>    // 조건 검색, 없으면 
 
 이 프로젝트는 단일 엔티티 존재 함수는 사용하지 않는다. 따라서 아래처럼 두 개의 존재 함수만 사용한다.
 
-| 형태                      | 동작                      |
-| ------------------------- | ------------------------- |
-| **`moviesExist(ids)`**    | 모든 ID가 존재해야 `true` |
-| **`anyMovieExists(ids)`** | 하나라도 존재하면 `true`  |
+| 형태                   | 동작                      |
+| ---------------------- | ------------------------- |
+| **`exists(ids)`**      | 모든 ID가 존재해야 `true` |
+| **`existsAny(ids)`**   | 하나라도 존재하면 `true`  |
 
 ### 그 외, 공통 접두사/패턴
 
@@ -91,3 +91,95 @@ validator -> validator: verifyShowtimes(showtimes)
 worker <-- validator: true
 @enduml
 ```
+
+## 6. 날짜/시간
+
+- xxxDate
+    - 의미: 달력상의 날짜(YYYY-MM-DD)
+    - 장점: 직관적, 도메인 표현에 자연스러움
+    - 예시: 영화 개봉일 = releaseDate
+- xxxAt
+    - 의미: 특정 시점(timestamp, 시·분·초 포함)
+    - 장점: createdAt, updatedAt 등과 일관성
+    - 예시: DB에 저장되는 개봉 시각 = releasedAt
+
+```ts
+// 개봉일은 시간을 포함하지 않음
+releaseDate: Date
+
+// 만료 시점은 시간을 포함함
+expiresAt: Date
+```
+
+## 7. type vs interface
+
+> interface를 사용해서 데이터를 정의할 수 있지만 가능하면 type을 사용한다. interface는 클래스가 상속해야 하는 경우에 사용한다.
+
+- 외부가 이 타입을 **보강**할 여지가 있다 → **`interface`**
+- 타입 연산(유니온/매핑/조건부 등)으로 **조합/변형**한다 → **`type`**
+- 그 외 단순 구조 정의는 둘 다 가능하나, **예상치 못한 확장을 막고 싶으면 `type`** 선택
+
+### 1) 앱 내부에서 고정된 데이터 구조
+
+```ts
+export type S3Object = { data: Buffer; filename: string; contentType: string }
+```
+
+### 2) 패키지 퍼블릭 타입(소비자 확장 허용)
+
+```ts
+export interface S3Object {
+    data: Buffer
+    filename: string
+    contentType: string
+}
+
+// 소비자 측 확장(선언 병합 / 모듈 보강)
+declare module 'your-lib' {
+    interface S3Object {
+        metadata?: Record<string, string>
+    }
+}
+```
+
+### 3) 복합 타입이 필요할 때(`type`이 편함)
+
+```ts
+type Base = { data: Buffer; filename: string; contentType: string }
+type WithTTL = Base & { ttl?: number }
+type WithTag = Base & { tag?: string }
+
+export type S3Object = WithTTL | WithTag
+```
+
+## 8. process/task/job
+
+- Process = “어떤 일을 끝낼 때까지의 전체 흐름”
+- Task = “그 흐름 안의 한 단계/작은 일”
+- Job = “서버가 나중에 따로 돌리는 일감(큐/스케줄러에 올리는 것)”
+
+| 이름        | 보통 의미                              | 스콥/기간           | 예시                                     |
+| ----------- | -------------------------------------- | ------------------- | ---------------------------------------- |
+| **Process** | 비즈니스 플로우, 여러 단계의 흐름      | 길고, 단계 여러 개  | “영화 등록 프로세스”, “예매 프로세스”    |
+| **Task**    | 작은 일 하나, 프로세스의 구성 단위     | 짧고, 비교적 원자적 | “포스터 이미지 업로드”, “상영 시간 검증” |
+| **Job**     | 백그라운드 작업, 큐에 넣고 돌리는 일감 | 비동기·배치 느낌    | “야간에 정산 잡 실행”, “메일 발송 잡”    |
+
+## 9. complete vs finish
+
+### 1) complete
+
+“필요한 걸 다 채워서 완성한다”에 초점
+
+요건이 충족되었다는 느낌
+
+상태 이름으로도 자연스럽다: status: "COMPLETED"
+
+비즈니스/워크플로우 용어로 많이 씀
+
+### 2) finish
+
+그냥 “끝낸다”에 초점
+
+잘 끝났든, 중간에 때려쳤든, 어쨌든 종료했다는 느낌
+
+“끝마치다/마무리하다”라서, 성공/실패가 섞여 있을 수 있음

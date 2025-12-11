@@ -31,30 +31,31 @@ class SamplesController {
     }
 }
 
-export interface Fixture {
+export type PaginationFixture = {
     teardown: () => Promise<void>
     httpClient: HttpTestClient
     rpcClient: RpcTestClient
 }
 
-export async function createFixture() {
-    const { servers } = await getNatsTestConnection()
-    const brokerOpts = { transport: Transport.NATS, options: { servers } } as NatsOptions
+export async function createPaginationFixture() {
+    const brokerOpts = {
+        transport: Transport.NATS,
+        options: getNatsTestConnection()
+    } as NatsOptions
 
     const { httpClient, ...testContext } = await createHttpTestContext({
-        metadata: {
-            controllers: [SamplesController],
-            providers: [
-                {
-                    provide: APP_PIPE,
-                    useFactory: () =>
-                        new ValidationPipe({
-                            transform: true,
-                            transformOptions: { enableImplicitConversion: true }
-                        })
+        controllers: [SamplesController],
+        providers: [
+            {
+                provide: APP_PIPE,
+                useFactory() {
+                    return new ValidationPipe({
+                        transform: true,
+                        transformOptions: { enableImplicitConversion: true }
+                    })
                 }
-            ]
-        },
+            }
+        ],
         configureApp: async (app) => {
             app.connectMicroservice<MicroserviceOptions>(brokerOpts, { inheritAppConfig: true })
             await app.startAllMicroservices()
@@ -63,7 +64,7 @@ export async function createFixture() {
 
     const rpcClient = RpcTestClient.create(brokerOpts)
 
-    const teardown = async () => {
+    async function teardown() {
         await rpcClient.close()
         await testContext.close()
     }

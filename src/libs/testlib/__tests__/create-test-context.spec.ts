@@ -1,35 +1,34 @@
 import { withTestId } from 'testlib'
-import type { Fixture } from './create-test-context.fixture'
+import type { TestContextFixture } from './create-test-context.fixture'
 
 describe('createTestContext', () => {
-    let fix: Fixture
+    let fixture: TestContextFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./create-test-context.fixture')
-        fix = await createFixture()
+        const { createTestContextFixture } = await import('./create-test-context.fixture')
+        fixture = await createTestContextFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
-    // RPC 메시지를 전송할 때
-    describe('when sending an RPC message', () => {
-        // 올바르게 응답한다.
-        it('responds correctly', async () => {
-            await fix.rpcClient.expect(
-                withTestId('getRpcMessage'),
-                { arg: 'value' },
-                { id: 'value' }
-            )
+    describe('when a service is mocked via overrideProviders', () => {
+        it('uses the mocked service', async () => {
+            const message = fixture.sampleService.getMessage()
+            expect(message).toEqual({ message: 'This is Mock' })
         })
     })
 
-    // HTTP 메시지를 전송할 때
-    describe('when sending an HTTP message', () => {
-        // 올바르게 응답한다.
-        it('responds correctly', async () => {
-            await fix.httpClient.get('/message/value').ok({ received: 'value' })
-        })
+    it('responds correctly to an RPC message', async () => {
+        await fixture.rpcClient.expect(
+            withTestId('getRpcMessage'),
+            { arg: 'value' },
+            { id: 'value' }
+        )
+    })
+
+    it('responds correctly to an HTTP message', async () => {
+        await fixture.httpClient.get('/message/value').ok({ received: 'value' })
     })
 })

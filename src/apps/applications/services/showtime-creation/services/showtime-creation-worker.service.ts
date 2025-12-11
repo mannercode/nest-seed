@@ -1,7 +1,7 @@
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
 import { Injectable } from '@nestjs/common'
 import { Job, Queue } from 'bullmq'
-import { jsonToObject, MethodLog, newObjectId } from 'common'
+import { jsonToObject, newObjectId } from 'common'
 import { BulkCreateShowtimesDto } from '../dtos'
 import { ShowtimeCreationEvents } from '../showtime-creation.events'
 import { ShowtimeBulkCreatorService } from './showtime-bulk-creator.service'
@@ -12,10 +12,10 @@ import { ShowtimeCreationJobData, ShowtimeCreationStatus } from './types'
 @Processor('showtime-creation')
 export class ShowtimeCreationWorkerService extends WorkerHost {
     constructor(
-        private validatorService: ShowtimeBulkValidatorService,
-        private creatorService: ShowtimeBulkCreatorService,
-        private events: ShowtimeCreationEvents,
-        @InjectQueue('showtime-creation') private queue: Queue
+        private readonly validatorService: ShowtimeBulkValidatorService,
+        private readonly creatorService: ShowtimeBulkCreatorService,
+        private readonly events: ShowtimeCreationEvents,
+        @InjectQueue('showtime-creation') private readonly queue: Queue
     ) {
         super()
     }
@@ -36,49 +36,48 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
     }
 
     async requestShowtimeCreation(createDto: BulkCreateShowtimesDto) {
-        const transactionId = newObjectId()
+        const sagaId = newObjectId()
 
-        const data = { createDto, transactionId } as ShowtimeCreationJobData
+        const jobData = { createDto, sagaId } as ShowtimeCreationJobData
 
-        this.events.emitStatusChanged({ status: ShowtimeCreationStatus.Waiting, transactionId })
+        await this.events.emitStatusChanged({ status: ShowtimeCreationStatus.Waiting, sagaId })
 
-        await this.queue.add('showtime-creation.create', data)
+        await this.queue.add('showtime-creation.create', jobData)
 
-        return transactionId
+        return sagaId
     }
 
     async process(job: Job<ShowtimeCreationJobData>) {
         try {
-            const data = jsonToObject(job.data)
+            const jobData = jsonToObject(job.data)
 
-            await this.processJobData(data)
+            await this.processJobData(jobData)
         } catch (error) {
-            this.events.emitStatusChanged({
+            await this.events.emitStatusChanged({
                 status: ShowtimeCreationStatus.Error,
-                transactionId: job.data.transactionId,
+                sagaId: job.data.sagaId,
                 message: error.message
             })
         }
     }
 
-    @MethodLog()
-    private async processJobData({ transactionId, createDto }: ShowtimeCreationJobData) {
-        this.events.emitStatusChanged({ status: ShowtimeCreationStatus.Processing, transactionId })
+    private async processJobData({ sagaId, createDto }: ShowtimeCreationJobData) {
+        await this.events.emitStatusChanged({ status: ShowtimeCreationStatus.Processing, sagaId })
 
         const { isValid, conflictingShowtimes } = await this.validatorService.validate(createDto)
 
         if (isValid) {
-            const result = await this.creatorService.create(createDto, transactionId)
+            const creationResult = await this.creatorService.create(createDto, sagaId)
 
-            this.events.emitStatusChanged({
+            await this.events.emitStatusChanged({
                 status: ShowtimeCreationStatus.Succeeded,
-                transactionId,
-                ...result
+                sagaId,
+                ...creationResult
             })
         } else {
-            this.events.emitStatusChanged({
+            await this.events.emitStatusChanged({
                 status: ShowtimeCreationStatus.Failed,
-                transactionId,
+                sagaId,
                 conflictingShowtimes
             })
         }

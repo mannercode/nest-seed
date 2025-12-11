@@ -25,14 +25,14 @@ export class LatLong {
     @Max(180)
     longitude: number
 
-    static distanceInMeters(latlong1: LatLong, latlong2: LatLong) {
+    static distanceInMeters(pointA: LatLong, pointB: LatLong) {
         const toRad = (degree: number) => degree * (Math.PI / 180)
-        const R = 6371000 // earth radius in meters
+        const earthRadiusInMeters = 6_371_000 // earth radius in meters
 
-        const lat1 = toRad(latlong1.latitude)
-        const lon1 = toRad(latlong1.longitude)
-        const lat2 = toRad(latlong2.latitude)
-        const lon2 = toRad(latlong2.longitude)
+        const lat1 = toRad(pointA.latitude)
+        const lon1 = toRad(pointA.longitude)
+        const lat2 = toRad(pointB.latitude)
+        const lon2 = toRad(pointB.longitude)
 
         const dLat = lat2 - lat1
         const dLon = lon2 - lon1
@@ -42,41 +42,43 @@ export class LatLong {
             Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
 
         const centralAngle = 2 * Math.atan2(Math.sqrt(haversinValue), Math.sqrt(1 - haversinValue))
-        const distanceInMeters = R * centralAngle
+        const distanceInMeters = earthRadiusInMeters * centralAngle
 
         return distanceInMeters
     }
 }
 
-export const LatLongQuery = createParamDecorator(async (name: string, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest()
-    const value = request.query[name]
+export const LatLongQuery = createParamDecorator(
+    async (name: string, context: ExecutionContext) => {
+        const request = context.switchToHttp().getRequest()
+        const value = request.query[name]
 
-    if (!value) {
-        throw new BadRequestException(LatLongErrors.Required)
-    }
+        if (!value) {
+            throw new BadRequestException(LatLongErrors.Required)
+        }
 
-    const [latStr, longStr] = value.split(',')
+        const [latStr, longStr] = value.split(',')
 
-    if (!latStr || !longStr) {
-        throw new BadRequestException(LatLongErrors.FormatInvalid)
-    }
+        if (!latStr || !longStr) {
+            throw new BadRequestException(LatLongErrors.FormatInvalid)
+        }
 
-    const latLong = plainToClass(LatLong, {
-        latitude: parseFloat(latStr),
-        longitude: parseFloat(longStr)
-    })
-
-    const errors = await validate(latLong)
-    if (errors.length > 0) {
-        throw new BadRequestException({
-            ...LatLongErrors.ValidationFailed,
-            details: errors.map((error) => ({
-                field: error.property,
-                constraints: error.constraints
-            }))
+        const latLong = plainToClass(LatLong, {
+            latitude: parseFloat(latStr),
+            longitude: parseFloat(longStr)
         })
-    }
 
-    return latLong
-})
+        const errors = await validate(latLong)
+        if (errors.length > 0) {
+            throw new BadRequestException({
+                ...LatLongErrors.ValidationFailed,
+                details: errors.map((error) => ({
+                    field: error.property,
+                    constraints: error.constraints
+                }))
+            })
+        }
+
+        return latLong
+    }
+)

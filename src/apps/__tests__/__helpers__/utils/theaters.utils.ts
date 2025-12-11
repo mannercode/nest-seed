@@ -1,6 +1,6 @@
 import { TestContext } from 'testlib'
 
-export const buildCreateTheaterDto = (overrides = {}) => {
+export function buildCreateTheaterDto(overrides = {}) {
     const createDto = {
         name: `theater name`,
         location: { latitude: 0, longitude: 0 },
@@ -11,12 +11,12 @@ export const buildCreateTheaterDto = (overrides = {}) => {
     return createDto
 }
 
-export const createTheater = async ({ module }: TestContext, override = {}) => {
+export async function createTheater({ module }: TestContext, override = {}) {
     const { TheatersClient } = await import('apps/cores')
     const theatersService = module.get(TheatersClient)
 
     const createDto = buildCreateTheaterDto(override)
 
-    const theater = await theatersService.createTheater(createDto)
+    const theater = await theatersService.create(createDto)
     return theater
 }

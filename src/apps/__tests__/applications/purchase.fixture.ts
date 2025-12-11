@@ -22,7 +22,7 @@ import {
     TicketsModule
 } from 'apps/cores'
 import { PurchasesController } from 'apps/gateway'
-import { PaymentsModule, StorageFilesModule } from 'apps/infrastructures'
+import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
 import { DateUtil, pickIds } from 'common'
 import { Rules } from 'shared'
 import {
@@ -35,19 +35,20 @@ import {
     createTestFixture,
     TestFixture
 } from '../__helpers__'
+import { toAny } from 'testlib'
 
-export interface Fixture extends TestFixture {
+export type PurchaseFixture = TestFixture & {
     customer: CustomerDto
     heldTickets: TicketDto[]
     availableTickets: TicketDto[]
     closedTickets: TicketDto[]
 }
 
-export const createFixture = async (): Promise<Fixture> => {
+export async function createPurchaseFixture(): Promise<PurchaseFixture> {
     const fix = await createTestFixture({
         imports: [
             MoviesModule,
-            StorageFilesModule,
+            AssetsModule,
             TheatersModule,
             TicketsModule,
             PurchaseRecordsModule,
@@ -65,7 +66,8 @@ export const createFixture = async (): Promise<Fixture> => {
             TheatersClient,
             TicketsClient,
             TicketHoldingClient,
-            PurchaseClient
+            PurchaseClient,
+            AssetsClient
         ],
         controllers: [PurchasesController]
     })
@@ -88,23 +90,23 @@ export const createFixture = async (): Promise<Fixture> => {
     return { ...fix, customer, heldTickets, availableTickets, closedTickets: closedSaleTickets }
 }
 
-export const buildCreatePurchaseDto = (
+export function buildCreatePurchaseDto(
     customer: CustomerDto,
     tickets: TicketDto[],
     overrides = {}
-) => {
+) {
     const purchaseItems = tickets.map(({ id }) => ({ type: PurchaseItemType.Ticket, ticketId: id }))
 
     const createDto = { customerId: customer.id, totalPrice: 1, purchaseItems, ...overrides }
     return createDto
 }
 
-const createAvailableAndHeldTickets = async (
+async function createAvailableAndHeldTickets(
     fix: TestFixture,
     movie: MovieDto,
     theater: TheaterDto,
     customer: CustomerDto
-) => {
+) {
     const beforeCloseTime = DateUtil.add({
         minutes: Rules.Ticket.purchaseWindowCloseOffsetMinutes + 1
     })
@@ -117,7 +119,7 @@ const createAvailableAndHeldTickets = async (
     })
 
     const holdCount = 4
-    Rules.Ticket.maxTicketsPerPurchase = holdCount
+    toAny(Rules).Ticket.maxTicketsPerPurchase = holdCount
 
     const heldTickets = createdTickets.slice(0, holdCount)
     const availableTickets = createdTickets.slice(holdCount)
@@ -131,7 +133,7 @@ const createAvailableAndHeldTickets = async (
     return { availableTickets, heldTickets }
 }
 
-const createClosedTickets = async (fix: TestFixture, movie: MovieDto, theater: TheaterDto) => {
+async function createClosedTickets(fix: TestFixture, movie: MovieDto, theater: TheaterDto) {
     const afterCloseTime = DateUtil.add({
         minutes: Rules.Ticket.purchaseWindowCloseOffsetMinutes - 1
     })
@@ -146,7 +148,7 @@ const createClosedTickets = async (fix: TestFixture, movie: MovieDto, theater: T
     return closedSaleTickets
 }
 
-const createAllTickets = async ({
+async function createAllTickets({
     fix,
     movie,
     theater,
@@ -156,7 +158,7 @@ const createAllTickets = async ({
     movie: MovieDto
     theater: TheaterDto
     startTime: Date
-}) => {
+}) {
     const showtimes = await createShowtimes(fix, [
         { movieId: movie.id, theaterId: theater.id, startTime }
     ])

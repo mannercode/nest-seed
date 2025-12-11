@@ -1,1 +1,1 @@
-export * from './showtime.model'
+export * from './showtime'

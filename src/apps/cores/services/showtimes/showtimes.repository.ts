@@ -9,15 +9,16 @@ import { Showtime } from './models'
 @Injectable()
 export class ShowtimesRepository extends MongooseRepository<Showtime> {
     constructor(
-        @InjectModel(Showtime.name, MongooseConfigModule.connectionName) model: Model<Showtime>
+        @InjectModel(Showtime.name, MongooseConfigModule.connectionName)
+        readonly model: Model<Showtime>
     ) {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createShowtimes(createDtos: CreateShowtimeDto[]) {
+    async createMany(createDtos: CreateShowtimeDto[]) {
         const showtimes = createDtos.map((dto) => {
             const doc = this.newDocument()
-            doc.transactionId = objectId(dto.transactionId)
+            doc.sagaId = objectId(dto.sagaId)
             doc.movieId = objectId(dto.movieId)
             doc.theaterId = objectId(dto.theaterId)
             doc.startTime = dto.startTime
@@ -29,7 +30,7 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         await this.saveMany(showtimes)
     }
 
-    async searchShowtimes(searchDto: SearchShowtimesDto) {
+    async search(searchDto: SearchShowtimesDto) {
         const query = this.buildQuery(searchDto)
 
         const showtimes = await this.model.find(query).sort({ startTime: 1 }).exec()
@@ -64,10 +65,10 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
     }
 
     private buildQuery(searchDto: SearchShowtimesDto, options: QueryBuilderOptions = {}) {
-        const { transactionIds, movieIds, theaterIds, startTimeRange, endTimeRange } = searchDto
+        const { sagaIds, movieIds, theaterIds, startTimeRange, endTimeRange } = searchDto
 
         const builder = new QueryBuilder<Showtime>()
-        builder.addIn('transactionId', transactionIds)
+        builder.addIn('sagaId', sagaIds)
         builder.addIn('movieId', movieIds)
         builder.addIn('theaterId', theaterIds)
         builder.addRange('startTime', startTimeRange)

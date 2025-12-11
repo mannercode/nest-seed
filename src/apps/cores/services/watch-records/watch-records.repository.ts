@@ -10,12 +10,12 @@ import { WatchRecord } from './models'
 export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
     constructor(
         @InjectModel(WatchRecord.name, MongooseConfigModule.connectionName)
-        model: Model<WatchRecord>
+        readonly model: Model<WatchRecord>
     ) {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createWatchRecord(createDto: CreateWatchRecordDto) {
+    async create(createDto: CreateWatchRecordDto) {
         const watchRecord = this.newDocument()
         watchRecord.customerId = objectId(createDto.customerId)
         watchRecord.movieId = objectId(createDto.movieId)
@@ -25,7 +25,7 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
         return watchRecord.save()
     }
 
-    async searchWatchRecordsPage(searchDto: SearchWatchRecordsPageDto) {
+    async searchPage(searchDto: SearchWatchRecordsPageDto) {
         const { take, skip, orderby } = searchDto
 
         const pagination = await this.findWithPagination({

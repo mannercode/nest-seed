@@ -58,7 +58,7 @@ export class Path {
     }
 
     static async subdirs(src: string): Promise<string[]> {
-        const res: string[] = []
+        const directories: string[] = []
 
         const items = await fs.readdir(src)
 
@@ -66,11 +66,11 @@ export class Path {
             const itemPath = this.join(src, item)
 
             if (await this.isDirectory(itemPath)) {
-                res.push(item)
+                directories.push(item)
             }
         }
 
-        return res
+        return directories
     }
 
     static async copy(src: string, dest: string): Promise<void> {
@@ -87,7 +87,7 @@ export class Path {
     }
 
     static async createTempDirectory(): Promise<string> {
-        return await fs.mkdtemp(`${tmpdir()}${this.sep()}`)
+        return fs.mkdtemp(`${tmpdir()}${this.sep()}`)
     }
 
     static sep() {

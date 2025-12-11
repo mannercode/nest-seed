@@ -2,22 +2,21 @@ import { MovieDto, ShowtimeDto, TheaterDto, TicketDto, TicketStatus } from 'apps
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, step } from 'testlib'
 import { Errors } from '../__helpers__'
-import { createAllResources, type Fixture } from './booking.fixture'
+import { createAllResources, type BookingFixture } from './booking.fixture'
 
 describe('BookingService', () => {
-    let fix: Fixture
+    let fixture: BookingFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./booking.fixture')
-        fix = await createFixture()
+        const { createBookingFixture } = await import('./booking.fixture')
+        fixture = await createBookingFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
-    // 성공적인 예약 흐름인 경우
-    describe('when the booking is successful', () => {
+    describe('when the booking succeeds', () => {
         let movie: MovieDto
         let accessToken: string
 
@@ -37,22 +36,20 @@ describe('BookingService', () => {
         ]
 
         beforeEach(async () => {
-            const resources = await createAllResources(fix, locations, startTimes)
+            const resources = await createAllResources(fixture, locations, startTimes)
             movie = resources.movie
             accessToken = resources.accessToken
         })
 
-        // 예약 절차를 완료한다
         it('completes the booking process', async () => {
             let theater: TheaterDto
             let showdate: Date
             let showtime: ShowtimeDto
             let tickets: TicketDto[]
 
-            // 1. 상영 극장을 조회한다
-            await step('searches theaters showing the movie', async () => {
+            await step('1. searches theaters showing the movie', async () => {
                 const latLong = '31.9,131.9'
-                const { body: theaters } = await fix.httpClient
+                const { body: theaters } = await fixture.httpClient
                     .get(`/booking/movies/${movie.id}/theaters?latLong=${latLong}`)
                     .ok(
                         [
@@ -67,21 +64,19 @@ describe('BookingService', () => {
                 theater = theaters[0]
             })
 
-            // 2. 상영일을 조회한다
-            await step('searches showdates', async () => {
-                const { body: showdates } = await fix.httpClient
+            await step('2. searches showdates', async () => {
+                const { body: showdates } = await fixture.httpClient
                     .get(`/booking/movies/${movie.id}/theaters/${theater.id}/showdates`)
                     .ok([new Date('2999-01-01'), new Date('2999-01-02'), new Date('2999-01-03')])
 
                 showdate = showdates[0]
             })
 
-            // 3. 상영시간을 조회한다
-            await step('searches showtimes', async () => {
+            await step('3. searches showtimes', async () => {
                 const yymmdd = DateUtil.toYMD(showdate)
                 const url = `/booking/movies/${movie.id}/theaters/${theater.id}/showdates/${yymmdd}/showtimes`
 
-                const { body: showtimes } = await fix.httpClient.get(url).ok(
+                const { body: showtimes } = await fixture.httpClient.get(url).ok(
                     expect.arrayContaining(
                         [
                             { movieId: movie.id, theaterId: theater.id, startTime: startTimes[0] },
@@ -93,9 +88,8 @@ describe('BookingService', () => {
                 showtime = showtimes[0]
             })
 
-            // 4. 구매 가능 티켓 조회한다
-            await step('searches for available tickets', async () => {
-                const { body } = await fix.httpClient
+            await step('4. searches for available tickets', async () => {
+                const { body } = await fixture.httpClient
                     .get(`/booking/showtimes/${showtime.id}/tickets`)
                     .ok()
 
@@ -108,11 +102,10 @@ describe('BookingService', () => {
                 )
             })
 
-            // 5. 티켓을 선점한다
-            await step('holds the tickets', async () => {
+            await step('5. holds the tickets', async () => {
                 const ticketIds = pickIds(tickets.slice(0, 2))
 
-                await fix.httpClient
+                await fixture.httpClient
                     .post(`/booking/showtimes/${showtime.id}/tickets/hold`)
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body({ ticketIds })
@@ -122,11 +115,9 @@ describe('BookingService', () => {
     })
 
     describe('GET /booking/showtimes/:id/tickets', () => {
-        // 상영시간이 존재하지 않는 경우
         describe('when the showtime does not exist', () => {
-            // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get(`/booking/showtimes/${nullObjectId}/tickets`)
                     .notFound({ ...Errors.Booking.ShowtimeNotFound, showtimeId: nullObjectId })
             })

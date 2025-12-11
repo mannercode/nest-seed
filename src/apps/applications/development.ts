@@ -1,7 +1,7 @@
 import dotenv from 'dotenv'
-dotenv.config({ path: ['.env.test'] })
+dotenv.config()
 process.env.NODE_ENV = 'development'
 process.env.HTTP_PORT = '4000'
 
 import { bootstrap } from './main'
-bootstrap()
+void bootstrap()

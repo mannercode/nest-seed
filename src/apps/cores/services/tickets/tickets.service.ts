@@ -12,16 +12,16 @@ import { TicketsRepository } from './tickets.repository'
 
 @Injectable()
 export class TicketsService {
-    constructor(private repository: TicketsRepository) {}
+    constructor(private readonly repository: TicketsRepository) {}
 
-    async createTickets(createDtos: CreateTicketDto[]) {
-        await this.repository.createTickets(createDtos)
+    async createMany(createDtos: CreateTicketDto[]) {
+        await this.repository.createMany(createDtos)
 
         return { success: true, count: createDtos.length } as CreateTicketsResult
     }
 
-    async updateTicketsStatus(ticketIds: string[], status: TicketStatus) {
-        const result = await this.repository.updateTicketsStatus(ticketIds, status)
+    async updateStatusMany(ticketIds: string[], status: TicketStatus) {
+        const result = await this.repository.updateStatusMany(ticketIds, status)
 
         Assert.equals(
             result.matchedCount,
@@ -34,25 +34,25 @@ export class TicketsService {
         return this.toDtos(tickets)
     }
 
-    async searchTickets(searchDto: SearchTicketsDto) {
-        const tickets = await this.repository.searchTickets(searchDto)
+    async search(searchDto: SearchTicketsDto) {
+        const tickets = await this.repository.search(searchDto)
 
         return this.toDtos(tickets)
     }
 
-    async aggregateTicketSales(aggregateDto: AggregateTicketSalesDto) {
-        const statuses = await this.repository.aggregateTicketSales(aggregateDto)
+    async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
+        const statuses = await this.repository.aggregateSales(aggregateDto)
         return statuses
     }
 
-    async getTickets(ticketIds: string[]) {
+    async getMany(ticketIds: string[]) {
         const tickets = await this.repository.getByIds(ticketIds)
 
         return this.toDtos(tickets)
     }
 
-    private toDto = (ticket: TicketDocument) =>
-        mapDocToDto(ticket, TicketDto, [
+    private toDto(ticket: TicketDocument) {
+        return mapDocToDto(ticket, TicketDto, [
             'id',
             'showtimeId',
             'theaterId',
@@ -60,6 +60,9 @@ export class TicketsService {
             'status',
             'seat'
         ])
+    }
 
-    private toDtos = (tickets: TicketDocument[]) => tickets.map((ticket) => this.toDto(ticket))
+    private toDtos(tickets: TicketDocument[]) {
+        return tickets.map((ticket) => this.toDto(ticket))
+    }
 }

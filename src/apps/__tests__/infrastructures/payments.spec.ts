@@ -1,27 +1,25 @@
 import { PaymentDto } from 'apps/infrastructures'
 import { buildCreatePaymentDto, createPayment } from '../__helpers__'
-import type { Fixture } from './payments.fixture'
+import type { PaymentsFixture } from './payments.fixture'
 
 describe('PaymentsService', () => {
-    let fix: Fixture
+    let fixture: PaymentsFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./payments.fixture')
-        fix = await createFixture()
+        const { createPaymentsFixture } = await import('./payments.fixture')
+        fixture = await createPaymentsFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
-    describe('createPayment', () => {
-        // payload가 유효한 경우
+    describe('create', () => {
         describe('when the payload is valid', () => {
-            // 결제를 생성하고 반환한다
             it('creates and returns a payment', async () => {
                 const createDto = buildCreatePaymentDto()
 
-                const payment = await fix.paymentsService.createPayment(createDto)
+                const payment = await fixture.paymentsService.create(createDto)
                 expect(payment).toEqual({
                     ...createDto,
                     id: expect.any(String),
@@ -32,18 +30,16 @@ describe('PaymentsService', () => {
         })
     })
 
-    describe('getPayments', () => {
+    describe('getMany', () => {
         let createdPayment: PaymentDto
 
-        // 결제 정보가 존재하는 경우
         describe('when the payments exist', () => {
             beforeEach(async () => {
-                createdPayment = await createPayment(fix)
+                createdPayment = await createPayment(fixture)
             })
 
-            // 결제 정보를 반환한다.
             it('returns the payments', async () => {
-                const gotPayments = await fix.paymentsService.getPayments([createdPayment.id])
+                const gotPayments = await fixture.paymentsService.getMany([createdPayment.id])
                 expect(gotPayments).toEqual([createdPayment])
             })
         })

@@ -24,23 +24,23 @@ import { Assert } from 'common'
  * This result is used in a format such as '@MessagePattern(Messages.Booking.searchTheaters)'.
  */
 export function createMessagePatternMap<T extends Record<string, any>>(
-    obj: T,
+    patternTree: T,
     parentPath: string = ''
 ): Paths<T> {
-    const result: any = {}
+    const patternMap: Record<string, any> = {}
 
-    for (const key in obj) {
+    for (const key in patternTree) {
         const currentPath = parentPath ? `${parentPath}.${key}` : key
-        const value = obj[key]
+        const node = patternTree[key]
 
-        if (typeof value === 'object' && value !== null) {
-            result[key] = createMessagePatternMap(value, currentPath)
+        if (typeof node === 'object' && node !== null) {
+            patternMap[key] = createMessagePatternMap(node, currentPath)
         } else {
-            result[key] = currentPath
+            patternMap[key] = currentPath
         }
     }
 
-    return result as Paths<T>
+    return patternMap as Paths<T>
 }
 
 type Paths<T, ParentPath extends string = ''> = {
@@ -49,7 +49,7 @@ type Paths<T, ParentPath extends string = ''> = {
         : `${ParentPath}${K & string}`
 }
 
-export const getProjectId = () => {
+export function getProjectId() {
     Assert.defined(process.env.PROJECT_ID, 'PROJECT_ID must be defined.')
 
     return process.env.PROJECT_ID

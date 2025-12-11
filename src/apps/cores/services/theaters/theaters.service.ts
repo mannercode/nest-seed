@@ -6,41 +6,47 @@ import { TheatersRepository } from './theaters.repository'
 
 @Injectable()
 export class TheatersService {
-    constructor(private repository: TheatersRepository) {}
+    constructor(private readonly repository: TheatersRepository) {}
 
-    async createTheater(createDto: CreateTheaterDto) {
-        const theater = await this.repository.createTheater(createDto)
+    async create(createDto: CreateTheaterDto) {
+        const theater = await this.repository.create(createDto)
+
         return this.toDto(theater)
     }
 
-    async updateTheater(theaterId: string, updateDto: UpdateTheaterDto) {
-        const theater = await this.repository.updateTheater(theaterId, updateDto)
+    async update(theaterId: string, updateDto: UpdateTheaterDto) {
+        const theater = await this.repository.update(theaterId, updateDto)
+
         return this.toDto(theater)
     }
 
-    async getTheaters(theaterIds: string[]) {
+    async getMany(theaterIds: string[]) {
         const theaters = await this.repository.getByIds(theaterIds)
+
         return this.toDtos(theaters)
     }
 
-    async deleteTheaters(theaterIds: string[]) {
+    async deleteMany(theaterIds: string[]) {
         const deletedTheaters = await this.repository.deleteByIds(theaterIds)
 
         return { deletedTheaters: this.toDtos(deletedTheaters) }
     }
 
-    async searchTheatersPage(searchDto: SearchTheatersPageDto) {
-        const { items, ...pagination } = await this.repository.searchTheatersPage(searchDto)
+    async searchPage(searchDto: SearchTheatersPageDto) {
+        const { items, ...pagination } = await this.repository.searchPage(searchDto)
 
         return { ...pagination, items: this.toDtos(items) }
     }
 
-    async theatersExist(theaterIds: string[]) {
-        return this.repository.existByIds(theaterIds)
+    async allExist(theaterIds: string[]) {
+        return this.repository.allExistByIds(theaterIds)
     }
 
-    private toDto = (theater: TheaterDocument) =>
-        mapDocToDto(theater, TheaterDto, ['id', 'name', 'location', 'seatmap'])
+    private toDto(theater: TheaterDocument) {
+        return mapDocToDto(theater, TheaterDto, ['id', 'name', 'location', 'seatmap'])
+    }
 
-    private toDtos = (theaters: TheaterDocument[]) => theaters.map((theater) => this.toDto(theater))
+    private toDtos(theaters: TheaterDocument[]) {
+        return theaters.map((theater) => this.toDto(theater))
+    }
 }

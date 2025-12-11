@@ -6,22 +6,22 @@ import { ShowtimesRepository } from './showtimes.repository'
 
 @Injectable()
 export class ShowtimesService {
-    constructor(private repository: ShowtimesRepository) {}
+    constructor(private readonly repository: ShowtimesRepository) {}
 
-    async createShowtimes(createDtos: CreateShowtimeDto[]) {
-        await this.repository.createShowtimes(createDtos)
+    async createMany(createDtos: CreateShowtimeDto[]) {
+        await this.repository.createMany(createDtos)
 
         return { success: true, count: createDtos.length }
     }
 
-    async getShowtimes(showtimeIds: string[]) {
+    async getMany(showtimeIds: string[]) {
         const showtimes = await this.repository.getByIds(showtimeIds)
 
         return this.toDtos(showtimes)
     }
 
-    async searchShowtimes(searchDto: SearchShowtimesDto) {
-        const showtimes = await this.repository.searchShowtimes(searchDto)
+    async search(searchDto: SearchShowtimesDto) {
+        const showtimes = await this.repository.search(searchDto)
 
         return this.toDtos(showtimes)
     }
@@ -38,13 +38,21 @@ export class ShowtimesService {
         return this.repository.searchShowdates(searchDto)
     }
 
-    async allShowtimesExist(showtimeIds: string[]): Promise<boolean> {
-        return this.repository.existByIds(showtimeIds)
+    async allExist(showtimeIds: string[]): Promise<boolean> {
+        return this.repository.allExistByIds(showtimeIds)
     }
 
-    private toDto = (showtime: ShowtimeDocument) =>
-        mapDocToDto(showtime, ShowtimeDto, ['id', 'theaterId', 'movieId', 'startTime', 'endTime'])
+    private toDto(showtime: ShowtimeDocument) {
+        return mapDocToDto(showtime, ShowtimeDto, [
+            'id',
+            'theaterId',
+            'movieId',
+            'startTime',
+            'endTime'
+        ])
+    }
 
-    private toDtos = (showtimes: ShowtimeDocument[]) =>
-        showtimes.map((showtime) => this.toDto(showtime))
+    private toDtos(showtimes: ShowtimeDocument[]) {
+        return showtimes.map((showtime) => this.toDto(showtime))
+    }
 }

@@ -1,12 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
-import {
-    createTestContext,
-    getNatsTestConnection,
-    RpcTestClient,
-    TestContextOptions,
-    withTestId
-} from 'testlib'
+import { createTestContext, getNatsTestConnection, RpcTestClient, withTestId } from 'testlib'
 
 @Controller()
 export class MessageController {
@@ -29,36 +23,35 @@ export class MessageController {
     processBroadcastLogic() {}
 }
 
-export interface Fixture {
+export type QueueGroupFixture = {
     teardown: () => Promise<void>
     rpcClient: RpcTestClient
     numberOfInstance: number
 }
 
-export async function createFixture() {
-    const { servers } = getNatsTestConnection()
+export async function createQueueGroupFixture() {
     const brokerOptions = {
         transport: Transport.NATS,
-        options: { servers, queue: 'queue-group' }
+        options: { ...getNatsTestConnection(), queue: 'queue-group' }
     } as NatsOptions
-
-    const options: TestContextOptions = {
-        metadata: { controllers: [MessageController] },
-        configureApp: async (app) => {
-            app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
-            await app.startAllMicroservices()
-        }
-    }
 
     const numberOfInstance = 10
 
     const testContexts = await Promise.all(
-        Array.from({ length: numberOfInstance }, async () => createTestContext(options))
+        Array.from({ length: numberOfInstance }, async () =>
+            createTestContext({
+                controllers: [MessageController],
+                configureApp: async (app) => {
+                    app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
+                    await app.startAllMicroservices()
+                }
+            })
+        )
     )
 
     const rpcClient = RpcTestClient.create(brokerOptions)
 
-    const teardown = async () => {
+    async function teardown() {
         await rpcClient.close()
         await Promise.all(testContexts.map(async (context) => context.close()))
     }

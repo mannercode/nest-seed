@@ -1,0 +1,19 @@
+include:
+    - ./compose.mongo.yml
+    - ./compose.minio.yml
+    - ./compose.nats.yml
+    - ./compose.redis.yml
+
+services:
+    infra-setup:
+        image: docker:cli
+        container_name: infra-setup
+        depends_on:
+            mongo-key-generator: { condition: service_completed_successfully }
+            mongo-setup: { condition: service_completed_successfully }
+            redis-setup: { condition: service_completed_successfully }
+            nats-setup: { condition: service_completed_successfully }
+            minio-setup: { condition: service_completed_successfully }
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+        command: 'rm mongo-key-generator mongo-setup redis-setup nats-setup minio-setup'

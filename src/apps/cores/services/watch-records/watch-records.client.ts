@@ -5,15 +5,13 @@ import { CreateWatchRecordDto, SearchWatchRecordsPageDto, WatchRecordDto } from 
 
 @Injectable()
 export class WatchRecordsClient {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
-    createWatchRecord(createDto: CreateWatchRecordDto): Promise<WatchRecordDto> {
-        return this.proxy.getJson(Messages.WatchRecords.createWatchRecord, createDto)
+    create(createDto: CreateWatchRecordDto): Promise<WatchRecordDto> {
+        return this.proxy.getJson(Messages.WatchRecords.create, createDto)
     }
 
-    searchWatchRecordsPage(
-        searchDto: SearchWatchRecordsPageDto
-    ): Promise<PaginationResult<WatchRecordDto>> {
-        return this.proxy.getJson(Messages.WatchRecords.searchWatchRecordsPage, searchDto)
+    searchPage(searchDto: SearchWatchRecordsPageDto): Promise<PaginationResult<WatchRecordDto>> {
+        return this.proxy.getJson(Messages.WatchRecords.searchPage, searchDto)
     }
 }

@@ -1,8 +1,7 @@
-import { MovieGenre, MovieRating } from 'apps/cores'
+import { MovieDto, MovieGenre, MovieRating } from 'apps/cores'
 import { TestContext } from 'testlib'
-import { fixtureFiles } from '../fixture-files'
 
-export const buildCreateMovieDto = (overrides = {}) => {
+export function buildCreateMovieDto(overrides = {}) {
     const createDto = {
         title: `MovieTitle`,
         genres: [MovieGenre.Action],
@@ -11,18 +10,19 @@ export const buildCreateMovieDto = (overrides = {}) => {
         durationInSeconds: 90 * 60,
         director: 'Quentin Tarantino',
         rating: MovieRating.PG,
+        assetIds: [] as string[],
         ...overrides
     }
 
     return createDto
 }
 
-export const createMovie = async ({ module }: TestContext, override = {}) => {
+export async function createMovie(testContext: TestContext, override = {}): Promise<MovieDto> {
     const { MoviesClient } = await import('apps/cores')
-    const moviesService = module.get(MoviesClient)
+    const moviesService = testContext.module.get(MoviesClient)
 
     const createDto = buildCreateMovieDto(override)
 
-    const movie = await moviesService.createMovie(createDto, [fixtureFiles.image])
+    const movie = await moviesService.create(createDto)
     return movie
 }

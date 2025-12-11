@@ -12,7 +12,7 @@ import {
 
 @Controller()
 class SendTestController {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     @MessagePattern(withTestId('method'))
     method() {
@@ -55,21 +55,27 @@ class EmitTestController {
     }
 }
 
-export interface Fixture {
+export type ClientProxyServiceFixture = {
     teardown: () => Promise<void>
     rpcClient: RpcTestClient
     httpClient: HttpTestClient
 }
 
-export async function createFixture() {
-    const { servers } = getNatsTestConnection()
-    const brokerOptions = { transport: Transport.NATS, options: { servers } } as NatsOptions
+export async function createClientProxyServiceFixture() {
+    const brokerOptions = {
+        transport: Transport.NATS,
+        options: getNatsTestConnection()
+    } as NatsOptions
 
     const { httpClient, ...testContext } = await createHttpTestContext({
-        metadata: {
-            imports: [ClientProxyModule.registerAsync({ useFactory: () => brokerOptions })],
-            controllers: [SendTestController, EmitTestController]
-        },
+        imports: [
+            ClientProxyModule.registerAsync({
+                useFactory() {
+                    return brokerOptions
+                }
+            })
+        ],
+        controllers: [SendTestController, EmitTestController],
         configureApp: async (app) => {
             app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
             await app.startAllMicroservices()
@@ -78,7 +84,7 @@ export async function createFixture() {
 
     const rpcClient = RpcTestClient.create(brokerOptions)
 
-    const teardown = async () => {
+    async function teardown() {
         await rpcClient.close()
         await testContext.close()
     }

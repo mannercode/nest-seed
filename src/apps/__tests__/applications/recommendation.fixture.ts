@@ -11,7 +11,7 @@ import {
     WatchRecordsModule
 } from 'apps/cores'
 import { CustomerJwtStrategy, MoviesController } from 'apps/gateway'
-import { StorageFilesModule } from 'apps/infrastructures'
+import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import {
     createCustomerAndLogin,
     createMovie,
@@ -21,7 +21,7 @@ import {
     TestFixture
 } from '../__helpers__'
 
-export const createWatchedMovies = async (ctx: TestFixture, dtos: Partial<MovieDto>[]) => {
+export async function createWatchedMovies(ctx: TestFixture, dtos: Partial<MovieDto>[]) {
     const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
 
     const { customer, accessToken } = await createCustomerAndLogin(ctx)
@@ -35,7 +35,7 @@ export const createWatchedMovies = async (ctx: TestFixture, dtos: Partial<MovieD
     return { customer, accessToken, movies, watchRecords }
 }
 
-export const createShowingMovies = async (ctx: TestFixture, dtos: Partial<MovieDto>[]) => {
+export async function createShowingMovies(ctx: TestFixture, dtos: Partial<MovieDto>[]) {
     const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
 
     const createShowtimesDtos = movies.map((movie) => ({
@@ -48,13 +48,13 @@ export const createShowingMovies = async (ctx: TestFixture, dtos: Partial<MovieD
     return { movies, showtimes }
 }
 
-export type Fixture = TestFixture
+export type RecommendationFixture = TestFixture
 
-export const createFixture = async (): Promise<Fixture> => {
+export async function createRecommendationFixture(): Promise<RecommendationFixture> {
     const fix = await createTestFixture({
         imports: [
             MoviesModule,
-            StorageFilesModule,
+            AssetsModule,
             CustomersModule,
             ShowtimesModule,
             WatchRecordsModule,
@@ -66,7 +66,8 @@ export const createFixture = async (): Promise<Fixture> => {
             MoviesClient,
             ShowtimesClient,
             RecommendationClient,
-            WatchRecordsClient
+            WatchRecordsClient,
+            AssetsClient
         ],
         controllers: [MoviesController]
     })

@@ -4,7 +4,7 @@ import { Events } from 'shared'
 
 @Injectable()
 export class PurchaseEvents {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     emitTicketPurchased(customerId: string, ticketIds: string[]) {
         return this.proxy.emit(Events.Purchase.TicketPurchased, { customerId, ticketIds })

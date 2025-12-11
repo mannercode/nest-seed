@@ -1,46 +1,26 @@
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Test",
-            "detail": "Run the selected test suites",
+            "label": "Run Unit Tests",
+            "detail": "jest unit tests",
             "type": "shell",
-            "command": "bash scripts/run-test.sh ${input:tests} 1"
+            "options": { "env": { "TEST_ROOT": "${input:suites}" } },
+            "command": "npm test"
         },
         {
-            "label": "CLI",
-            "detail": "Run the CLI tool",
+            "label": "Run E2E Tests",
+            "detail": "full e2e test suite",
             "type": "shell",
-            "command": "bash scripts/run-cli.sh",
-            "runOptions": {
-                "instanceLimit": 99
-            }
-        },
-        {
-            "label": "Lint",
-            "detail": "Run ESLint and Prettier",
-            "type": "shell",
-            "command": "npm run lint"
-        },
-        {
-            "label": "Workspace Cleanup",
-            "detail": "Reset the development environment and remove all data",
-            "type": "shell",
-            "command": "bash scripts/workspace-cleanup.sh"
+            "command": "npm run test:e2e"
         }
     ],
     "inputs": [
         {
-            "id": "tests",
+            "id": "suites",
             "type": "pickString",
-            "options": [
-                "all",
-                "apps",
-                "common"
-            ],
-            "description": "Select a test suite to run."
+            "options": ["src", "src/apps", "src/libs/common"],
+            "description": "Select the source root to run unit tests against."
         }
     ]
 }

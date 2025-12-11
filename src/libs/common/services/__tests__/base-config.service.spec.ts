@@ -1,37 +1,74 @@
-import type { Fixture } from './base-config.service.fixture'
+import type { BaseConfigServiceFixture } from './base-config.service.fixture'
 
 describe('BaseConfigService', () => {
-    let fix: Fixture
+    let fixture: BaseConfigServiceFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./base-config.service.fixture')
-        fix = await createFixture()
+        const { createBaseConfigServiceFixture } = await import('./base-config.service.fixture')
+        fixture = await createBaseConfigServiceFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
-    // key에 해당하는 문자열을 반환해야 한다
-    it('Should return a string for the specified key', () => {
-        const result = fix.appConfigService.getTestString()
-        expect(result).toBe('value')
+    describe('getString', () => {
+        describe('when the key exists', () => {
+            it('returns the string value', () => {
+                const result = fixture.appConfigService.getString('TEST_STRING_KEY')
+                expect(result).toBe('value')
+            })
+        })
+
+        describe('when the key does not exist', () => {
+            it('exits the process', () => {
+                const mockExit = jest.spyOn(process, 'exit').mockImplementation()
+                jest.spyOn(console, 'error').mockImplementation()
+
+                fixture.appConfigService.getString('not-exists-key')
+
+                expect(mockExit).toHaveBeenCalledWith(1)
+            })
+        })
     })
 
-    // key에 해당하는 숫자를 반환해야 한다
-    it('Should return a number for the specified key', () => {
-        const result = fix.appConfigService.getTestNumber()
-        expect(result).toBe(123)
+    describe('getNumber', () => {
+        describe('when the key exists', () => {
+            it('returns the number value', () => {
+                const result = fixture.appConfigService.getNumber('TEST_NUMBER_KEY')
+                expect(result).toBe(123)
+            })
+        })
+
+        describe('when the key does not exist', () => {
+            it('exits the process', () => {
+                const mockExit = jest.spyOn(process, 'exit').mockImplementation()
+                jest.spyOn(console, 'error').mockImplementation()
+
+                fixture.appConfigService.getNumber('not-exists-key')
+
+                expect(mockExit).toHaveBeenCalledWith(1)
+            })
+        })
     })
 
-    // 존재하지 않는 key를 요청하면 프로세스를 종료해야 한다
-    it('Should exit the process if the requested key does not exist', () => {
-        const mockExit = jest.spyOn(process, 'exit').mockImplementation()
-        const consoleError = jest.spyOn(console, 'error').mockImplementation()
+    describe('getBoolean', () => {
+        describe('when the key exists', () => {
+            it('returns the boolean value', () => {
+                const result = fixture.appConfigService.getBoolean('TEST_BOOLEAN_KEY')
+                expect(result).toBe(true)
+            })
+        })
 
-        fix.appConfigService.throwError()
+        describe('when the key does not exist', () => {
+            it('exits the process', () => {
+                const mockExit = jest.spyOn(process, 'exit').mockImplementation()
+                jest.spyOn(console, 'error').mockImplementation()
 
-        expect(consoleError).toHaveBeenCalledWith("Key 'TEST_NOT_EXIST_KEY' is not defined")
-        expect(mockExit).toHaveBeenCalledWith(1)
+                fixture.appConfigService.getBoolean('not-exists-key')
+
+                expect(mockExit).toHaveBeenCalledWith(1)
+            })
+        })
     })
 })

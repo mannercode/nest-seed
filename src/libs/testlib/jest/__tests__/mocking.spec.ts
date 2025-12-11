@@ -16,11 +16,6 @@ jest.mock('./mocking.fixture', () => {
     return { HelloClass: jest.fn(), getGreeting: jest.fn() }
 })
 
-/**
- * jest.mock
- *   Automatically mocks the entire module, removing dependencies and allowing focus on the code under test.
- *   모듈 전체를 대상으로 자동 목(mock) 처리하여 의존성 제거 및 테스트 대상 코드에 집중할 수 있게 해줍니다.
- */
 describe('jest.mock examples', () => {
     test('Module mocking', () => {
         ;(Logger.verbose as jest.Mock).mockReturnValue('Mocked verbose')

@@ -1,17 +1,12 @@
 import { NestFactory } from '@nestjs/core'
-import { AppConfigService, configureApp } from 'shared'
+import { configureApp } from 'shared'
 import { InfrastructuresModule } from './infrastructures.module'
 
 export async function bootstrap() {
     const app = await NestFactory.create(InfrastructuresModule)
-    const config = app.get(AppConfigService)
+    const natOptions = { queue: 'apps/infrastructures' }
 
-    await configureApp({
-        app,
-        directories: [config.fileUpload.directory, config.log.directory],
-        natOptions: { servers: config.nats.servers, queue: 'apps/infrastructures' },
-        http: config.http
-    })
+    await configureApp({ app, natOptions })
 
     console.log(`Infrastructures is running on: ${await app.getUrl()}`)
 }

@@ -5,7 +5,7 @@ import Joi from 'joi'
 
 @Injectable()
 export class AppConfigService extends BaseConfigService {
-    static configSchema = Joi.object({
+    static schema = Joi.object({
         NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
 
         LOG_DIRECTORY: Joi.string().required(),
@@ -27,7 +27,7 @@ export class AppConfigService extends BaseConfigService {
         REDIS_HOST6: Joi.string().required(),
         REDIS_PORT6: Joi.number().required(),
 
-        MONGO_REPLICA: Joi.string().required(),
+        MONGO_REPLICA_SET: Joi.string().required(),
         MONGO_USERNAME: Joi.string().required(),
         MONGO_PASSWORD: Joi.string().required(),
         MONGO_DATABASE: Joi.string().required(),
@@ -47,7 +47,6 @@ export class AppConfigService extends BaseConfigService {
         AUTH_REFRESH_SECRET: Joi.string().required(),
         AUTH_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
 
-        FILE_UPLOAD_DIRECTORY: Joi.string().required(),
         FILE_UPLOAD_MAX_FILE_SIZE_BYTES: Joi.number().required(),
         FILE_UPLOAD_MAX_FILES_PER_UPLOAD: Joi.number().required(),
         FILE_UPLOAD_ALLOWED_FILE_TYPES: Joi.string().required(),
@@ -57,7 +56,14 @@ export class AppConfigService extends BaseConfigService {
         NATS_HOST2: Joi.string().required(),
         NATS_PORT2: Joi.number().required(),
         NATS_HOST3: Joi.string().required(),
-        NATS_PORT3: Joi.number().required()
+        NATS_PORT3: Joi.number().required(),
+
+        S3_ENDPOINT: Joi.string().required(),
+        S3_REGION: Joi.string().required(),
+        S3_BUCKET: Joi.string().required(),
+        S3_ACCESS_KEY_ID: Joi.string().required(),
+        S3_SECRET_ACCESS_KEY: Joi.string().required(),
+        S3_FORCE_PATH_STYLE: Joi.boolean().required()
     })
 
     constructor(configService: ConfigService) {
@@ -102,7 +108,7 @@ export class AppConfigService extends BaseConfigService {
             host1: `${this.getString('MONGO_HOST1')}:${this.getNumber('MONGO_PORT1')}`,
             host2: `${this.getString('MONGO_HOST2')}:${this.getNumber('MONGO_PORT2')}`,
             host3: `${this.getString('MONGO_HOST3')}:${this.getNumber('MONGO_PORT3')}`,
-            replica: this.getString('MONGO_REPLICA'),
+            replicaSet: this.getString('MONGO_REPLICA_SET'),
             user: this.getString('MONGO_USERNAME'),
             password: this.getString('MONGO_PASSWORD'),
             database: this.getString('MONGO_DATABASE')
@@ -126,12 +132,22 @@ export class AppConfigService extends BaseConfigService {
         }
     }
 
-    get fileUpload() {
+    // get fileUpload() {
+    //     return {
+    //         maxFileSizeBytes: this.getNumber('FILE_UPLOAD_MAX_FILE_SIZE_BYTES'),
+    //         maxFilesPerUpload: this.getNumber('FILE_UPLOAD_MAX_FILES_PER_UPLOAD'),
+    //         allowedMimeTypes: this.getString('FILE_UPLOAD_ALLOWED_FILE_TYPES').split(',')
+    //     }
+    // }
+
+    get s3() {
         return {
-            directory: this.getString('FILE_UPLOAD_DIRECTORY'),
-            maxFileSizeBytes: this.getNumber('FILE_UPLOAD_MAX_FILE_SIZE_BYTES'),
-            maxFilesPerUpload: this.getNumber('FILE_UPLOAD_MAX_FILES_PER_UPLOAD'),
-            allowedMimeTypes: this.getString('FILE_UPLOAD_ALLOWED_FILE_TYPES').split(',')
+            endpoint: this.getString('S3_ENDPOINT'),
+            region: this.getString('S3_REGION'),
+            bucket: this.getString('S3_BUCKET'),
+            accessKeyId: this.getString('S3_ACCESS_KEY_ID'),
+            secretAccessKey: this.getString('S3_SECRET_ACCESS_KEY'),
+            forcePathStyle: this.getBoolean('S3_FORCE_PATH_STYLE')
         }
     }
 }

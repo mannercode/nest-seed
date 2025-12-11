@@ -10,12 +10,12 @@ import { PurchaseRecord } from './models'
 export class PurchasesRecordRepository extends MongooseRepository<PurchaseRecord> {
     constructor(
         @InjectModel(PurchaseRecord.name, MongooseConfigModule.connectionName)
-        model: Model<PurchaseRecord>
+        readonly model: Model<PurchaseRecord>
     ) {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createPurchaseRecord(createDto: CreatePurchaseRecordDto & { paymentId: string }) {
+    async create(createDto: CreatePurchaseRecordDto & { paymentId: string }) {
         const purchase = this.newDocument()
         purchase.customerId = objectId(createDto.customerId)
         purchase.paymentId = objectId(createDto.paymentId)

@@ -3,9 +3,9 @@ import { DateUtil, newObjectId } from 'common'
 import { uniq } from 'lodash'
 import { oid, TestContext } from 'testlib'
 
-export const buildCreateShowtimeDto = (overrides: Partial<CreateShowtimeDto> = {}) => {
+export function buildCreateShowtimeDto(overrides: Partial<CreateShowtimeDto> = {}) {
     const createDto = {
-        transactionId: newObjectId(),
+        sagaId: newObjectId(),
         movieId: oid(0x0),
         theaterId: oid(0x0),
         startTime: new Date(0),
@@ -20,20 +20,20 @@ export const buildCreateShowtimeDto = (overrides: Partial<CreateShowtimeDto> = {
     return createDto
 }
 
-export const createShowtimes = async (
+export async function createShowtimes(
     { module }: TestContext,
     overrides: Partial<CreateShowtimeDto>[]
-) => {
+) {
     const { ShowtimesClient } = await import('apps/cores')
     const showtimesService = module.get(ShowtimesClient)
 
     const createDtos = overrides.map((override) => buildCreateShowtimeDto(override))
 
-    const { success } = await showtimesService.createShowtimes(createDtos)
+    const { success } = await showtimesService.createMany(createDtos)
     expect(success).toBe(true)
 
-    const transactionIds = uniq(createDtos.map((dto) => dto.transactionId))
+    const sagaIds = uniq(createDtos.map((dto) => dto.sagaId))
 
-    const showtimes = await showtimesService.searchShowtimes({ transactionIds })
+    const showtimes = await showtimesService.search({ sagaIds })
     return showtimes
 }

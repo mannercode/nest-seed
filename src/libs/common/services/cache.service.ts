@@ -54,11 +54,7 @@ export function InjectCache(name?: string): ParameterDecorator {
     return Inject(CacheService.getServiceName(name))
 }
 
-export interface CacheModuleOptions {
-    name?: string
-    redisName?: string
-    prefix: string
-}
+export type CacheModuleOptions = { name?: string; redisName?: string; prefix: string }
 
 @Module({})
 export class CacheModule {

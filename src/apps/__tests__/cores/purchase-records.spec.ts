@@ -1,28 +1,25 @@
 import { nullObjectId } from 'testlib'
 import { buildCreatePurchaseRecordDto, Errors } from '../__helpers__'
-import { Fixture } from './purchase-records.fixture'
+import type { PurchaseRecordsFixture } from './purchase-records.fixture'
 
 describe('PurchaseRecordsService', () => {
-    let fix: Fixture
+    let fixture: PurchaseRecordsFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./purchase-records.fixture')
-        fix = await createFixture()
+        const { createPurchaseRecordsFixture } = await import('./purchase-records.fixture')
+        fixture = await createPurchaseRecordsFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
-    describe('createPurchaseRecord', () => {
-        // payload가 유효한 경우
+    describe('create', () => {
         describe('when the payload is valid', () => {
-            // 구매 기록을 생성하고 반환한다
             it('creates and returns a purchase record', async () => {
                 const createDto = buildCreatePurchaseRecordDto({})
 
-                const createdPurchaseRecord =
-                    await fix.purchaseRecordsService.createPurchaseRecord(createDto)
+                const createdPurchaseRecord = await fixture.purchaseRecordsService.create(createDto)
 
                 expect(createdPurchaseRecord).toEqual({
                     id: expect.any(String),
@@ -35,21 +32,17 @@ describe('PurchaseRecordsService', () => {
     })
 
     describe('GET /purchases/:purchaseId', () => {
-        // 구매 정보가 존재하는 경우
         describe('when the purchase exists', () => {
-            // 구매 정보를 반환한다.
             it('returns the purchase', async () => {
-                await fix.httpClient
-                    .get(`/purchases/${fix.createdPurchaseRecord.id}`)
-                    .ok(fix.createdPurchaseRecord)
+                await fixture.httpClient
+                    .get(`/purchases/${fixture.createdPurchaseRecord.id}`)
+                    .ok(fixture.createdPurchaseRecord)
             })
         })
 
-        // 구매 정보가 존재하지 않는 경우
         describe('when the purchase does not exist', () => {
-            // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fix.httpClient
+                await fixture.httpClient
                     .get(`/purchases/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,

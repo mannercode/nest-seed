@@ -15,12 +15,12 @@ import {
     TicketsModule
 } from 'apps/cores'
 import { ShowtimeCreationController } from 'apps/gateway'
-import { StorageFilesModule } from 'apps/infrastructures'
+import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { jsonToObject } from 'common'
 import { oid } from 'testlib'
 import { createMovie, createTestFixture, createTheater, TestFixture } from '../__helpers__'
 
-export const buildBulkCreateShowtimesDto = (overrides: Partial<BulkCreateShowtimesDto> = {}) => {
+export function buildBulkCreateShowtimesDto(overrides: Partial<BulkCreateShowtimesDto> = {}) {
     const createDto = {
         movieId: oid(0x0),
         theaterIds: [oid(0x0)],
@@ -32,7 +32,7 @@ export const buildBulkCreateShowtimesDto = (overrides: Partial<BulkCreateShowtim
     return createDto
 }
 
-export const waitForCompletion = (fix: TestFixture, status: string) => {
+export function waitForCompletion(fix: TestFixture, status: string) {
     return new Promise((resolve, reject) => {
         fix.httpClient.get('/showtime-creation/event-stream').sse((data) => {
             try {
@@ -55,22 +55,25 @@ export const waitForCompletion = (fix: TestFixture, status: string) => {
     })
 }
 
-export interface Fixture extends TestFixture {
-    movie: MovieDto
-    theater: TheaterDto
-}
+export type ShowtimeCreationFixture = TestFixture & { movie: MovieDto; theater: TheaterDto }
 
-export const createFixture = async (): Promise<Fixture> => {
+export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationFixture> {
     const fix = await createTestFixture({
         imports: [
             MoviesModule,
-            StorageFilesModule,
+            AssetsModule,
             TheatersModule,
             ShowtimesModule,
             TicketsModule,
             ShowtimeCreationModule
         ],
-        providers: [MoviesClient, TheatersClient, ShowtimesClient, ShowtimeCreationClient],
+        providers: [
+            MoviesClient,
+            TheatersClient,
+            ShowtimesClient,
+            ShowtimeCreationClient,
+            AssetsClient
+        ],
         controllers: [ShowtimeCreationController]
     })
 

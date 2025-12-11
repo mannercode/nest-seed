@@ -39,30 +39,32 @@ export class Seatmap {
     @Type(() => SeatBlock)
     blocks: SeatBlock[]
 
-    static getAllSeats = (seatmap: Seatmap) => Array.from(this.seatsIterator(seatmap))
+    static getAllSeats(seatmap: Seatmap) {
+        return Array.from(this.seatsIterator(seatmap))
+    }
 
-    static getSeatCount = (seatmap: Seatmap) => {
-        let count = 0
+    static getSeatCount(seatmap: Seatmap) {
+        let seatCount = 0
 
         for (const block of seatmap.blocks) {
             for (const row of block.rows) {
-                for (let i = 0; i < row.seats.length; i++) {
-                    if (row.seats[i] !== 'X') {
-                        count = count + 1
+                for (let seatIndex = 0; seatIndex < row.seats.length; seatIndex++) {
+                    if (row.seats[seatIndex] !== 'X') {
+                        seatCount = seatCount + 1
                     }
                 }
             }
         }
 
-        return count
+        return seatCount
     }
 
     static *seatsIterator(seatmap: Seatmap): IterableIterator<Seat> {
         for (const block of seatmap.blocks) {
             for (const row of block.rows) {
-                for (let i = 0; i < row.seats.length; i++) {
-                    if (row.seats[i] !== 'X') {
-                        yield { block: block.name, row: row.name, seatNumber: i + 1 }
+                for (let seatIndex = 0; seatIndex < row.seats.length; seatIndex++) {
+                    if (row.seats[seatIndex] !== 'X') {
+                        yield { block: block.name, row: row.name, seatNumber: seatIndex + 1 }
                     }
                 }
             }

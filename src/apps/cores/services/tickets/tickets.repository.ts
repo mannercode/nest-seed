@@ -14,15 +14,15 @@ import { Ticket, TicketStatus } from './models'
 @Injectable()
 export class TicketsRepository extends MongooseRepository<Ticket> {
     constructor(
-        @InjectModel(Ticket.name, MongooseConfigModule.connectionName) model: Model<Ticket>
+        @InjectModel(Ticket.name, MongooseConfigModule.connectionName) readonly model: Model<Ticket>
     ) {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createTickets(createDtos: CreateTicketDto[]) {
+    async createMany(createDtos: CreateTicketDto[]) {
         const tickets = createDtos.map((dto) => {
             const ticket = this.newDocument()
-            ticket.transactionId = objectId(dto.transactionId)
+            ticket.sagaId = objectId(dto.sagaId)
             ticket.movieId = objectId(dto.movieId)
             ticket.theaterId = objectId(dto.theaterId)
             ticket.showtimeId = objectId(dto.showtimeId)
@@ -35,7 +35,7 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         return this.saveMany(tickets)
     }
 
-    async updateTicketsStatus(ticketIds: string[], status: TicketStatus) {
+    async updateStatusMany(ticketIds: string[], status: TicketStatus) {
         const result = await this.model.updateMany(
             { _id: { $in: objectIds(ticketIds) } },
             { $set: { status } }
@@ -44,14 +44,14 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         return result
     }
 
-    async searchTickets(searchDto: SearchTicketsDto) {
+    async search(searchDto: SearchTicketsDto) {
         const query = this.buildQuery(searchDto)
 
-        const tickets = await this.model.find(query).sort({ transactionId: 1 }).exec()
+        const tickets = await this.model.find(query).sort({ sagaId: 1 }).exec()
         return tickets
     }
 
-    async aggregateTicketSales(aggregateDto: AggregateTicketSalesDto) {
+    async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
         const query = this.buildQuery(aggregateDto)
 
         const showtimeTicketSalesArray = await this.model.aggregate([
@@ -78,10 +78,10 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
     }
 
     private buildQuery(searchDto: SearchTicketsDto, options: QueryBuilderOptions = {}) {
-        const { transactionIds, movieIds, theaterIds, showtimeIds } = searchDto
+        const { sagaIds, movieIds, theaterIds, showtimeIds } = searchDto
 
         const builder = new QueryBuilder<Ticket>()
-        builder.addIn('transactionId', transactionIds)
+        builder.addIn('sagaId', sagaIds)
         builder.addIn('movieId', movieIds)
         builder.addIn('theaterId', theaterIds)
         builder.addIn('showtimeId', showtimeIds)

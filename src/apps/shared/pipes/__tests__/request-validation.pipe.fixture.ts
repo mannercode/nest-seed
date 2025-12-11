@@ -2,7 +2,7 @@ import { Body, Controller, ParseArrayPipe, Post } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
 import { Type } from 'class-transformer'
 import { IsDate, IsNotEmpty, IsString } from 'class-validator'
-import { createHttpTestContext } from 'testlib'
+import { createHttpTestContext, HttpTestContext } from 'testlib'
 import { RequestValidationPipe } from '..'
 
 class SampleDto {
@@ -35,17 +35,17 @@ class SamplesController {
     }
 }
 
-export const createFixture = async () => {
+export async function createRequestValidationPipeFixture() {
     const testContext = await createHttpTestContext({
-        metadata: {
-            controllers: [SamplesController],
-            providers: [{ provide: APP_PIPE, useClass: RequestValidationPipe }]
-        }
+        controllers: [SamplesController],
+        providers: [{ provide: APP_PIPE, useClass: RequestValidationPipe }]
     })
 
-    const teardown = async () => {
+    async function teardown() {
         await testContext?.close()
     }
 
-    return { testContext, teardown, client: testContext.httpClient }
+    return { ...testContext, teardown }
 }
+
+export type RequestValidationPipeFixture = HttpTestContext & { teardown: () => Promise<void> }

@@ -1,21 +1,20 @@
 import { Types } from 'mongoose'
-import type { Fixture } from './mongoose.schema.fixture'
+import type { MongooseSchemaFixture } from './mongoose.schema.fixture'
 
 describe('Mongoose Schema Examples', () => {
-    let fix: Fixture
+    let fixture: MongooseSchemaFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./mongoose.schema.fixture')
-        fix = await createFixture()
+        const { createMongooseSchemaFixture } = await import('./mongoose.schema.fixture')
+        fixture = await createMongooseSchemaFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
-    // Mongoose의 모든 기본 데이터 타입 저장 및 조회 검증
-    it('Validate storing and retrieving all default Mongoose data types', async () => {
-        const doc = new fix.model()
+    it('stores and retrieves all default Mongoose data types', async () => {
+        const doc = new fixture.model()
         doc.sn = 1234567
         doc.name = 'Statue of Liberty'
         doc.binary = Buffer.alloc(0)
@@ -39,7 +38,7 @@ describe('Mongoose Schema Examples', () => {
         doc.optional = undefined
         await doc.save()
 
-        const found = await fix.model.findOne({ _id: doc._id }).exec()
-        expect(found?.toJSON()).toEqual(doc.toJSON())
+        const foundDoc = await fixture.model.findOne({ _id: doc._id }).exec()
+        expect(foundDoc?.toJSON()).toEqual(doc.toJSON())
     })
 })

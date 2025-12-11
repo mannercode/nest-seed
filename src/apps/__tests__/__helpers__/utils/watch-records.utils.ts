@@ -1,6 +1,6 @@
 import { nullDate, oid, TestContext } from 'testlib'
 
-export const buildCreateWatchRecordDto = (overrides = {}) => {
+export function buildCreateWatchRecordDto(overrides = {}) {
     const createDto = {
         customerId: oid(0x0),
         movieId: oid(0x0),
@@ -12,12 +12,12 @@ export const buildCreateWatchRecordDto = (overrides = {}) => {
     return createDto
 }
 
-export const createWatchRecord = async ({ module }: TestContext, override = {}) => {
+export async function createWatchRecord({ module }: TestContext, override = {}) {
     const { WatchRecordsClient } = await import('apps/cores')
     const watchRecordsService = module.get(WatchRecordsClient)
 
     const createDto = buildCreateWatchRecordDto(override)
 
-    const watchRecord = await watchRecordsService.createWatchRecord(createDto)
+    const watchRecord = await watchRecordsService.create(createDto)
     return watchRecord
 }

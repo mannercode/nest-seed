@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { StorageFilesClient } from 'apps/infrastructures'
+import { AssetsClient } from 'apps/infrastructures'
 import { MongooseConfigModule } from 'shared'
 import { Movie, MovieSchema } from './models'
 import { MoviesController } from './movies.controller'
@@ -14,7 +14,7 @@ import { MoviesService } from './movies.service'
             MongooseConfigModule.connectionName
         )
     ],
-    providers: [MoviesService, MoviesRepository, StorageFilesClient],
+    providers: [MoviesService, MoviesRepository, AssetsClient],
     controllers: [MoviesController]
 })
 export class MoviesModule {}

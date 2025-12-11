@@ -36,46 +36,49 @@ export class SuccessLoggingInterceptor implements NestInterceptor {
     }
 
     async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
-        const now = Date.now()
+        const startTimestamp = Date.now()
 
         const contextType = context.getType()
 
         return next.handle().pipe(
             tap({
                 complete: () => {
-                    const duration = `${Date.now() - now}ms`
+                    const elapsedMs = Date.now() - startTimestamp
 
                     if (contextType === 'http') {
-                        const http = context.switchToHttp()
-                        const response = http.getResponse<Response>()
-                        const { method, url, body } = http.getRequest<Request>()
+                        const httpContext = context.switchToHttp()
+                        const response = httpContext.getResponse<Response>()
+                        const { method, url, body } = httpContext.getRequest<Request>()
 
                         if (this.shouldHttpLog(url)) {
-                            const log = {
+                            const successLog = {
                                 contextType,
                                 statusCode: response.statusCode,
                                 request: { method, url, body },
-                                duration
+                                duration: `${elapsedMs}ms`
                             } as HttpSuccessLog
 
-                            Logger.verbose('success', log)
+                            Logger.verbose('success', successLog)
                         }
                     } else if (contextType === 'rpc') {
-                        const rpc = context.switchToRpc()
-                        const rpcContext = rpc.getContext()
+                        const rpcContext = context.switchToRpc()
+                        const rpcCallContext = rpcContext.getContext()
 
-                        if (this.shouldRpcLog(rpcContext.args)) {
-                            const log = {
+                        if (this.shouldRpcLog(rpcCallContext.args)) {
+                            const successLog = {
                                 contextType,
-                                context: rpcContext,
-                                data: rpc.getData(),
-                                duration
+                                context: rpcCallContext,
+                                data: rpcContext.getData(),
+                                duration: `${elapsedMs}ms`
                             } as RpcSuccessLog
 
-                            Logger.verbose('success', log)
+                            Logger.verbose('success', successLog)
                         }
                     } else {
-                        Logger.error('unknown context type', { contextType, duration })
+                        Logger.error('unknown context type', {
+                            contextType,
+                            duration: `${elapsedMs}ms`
+                        })
                     }
                 }
             })

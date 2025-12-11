@@ -1,38 +1,36 @@
 import { RecommendationClient } from 'apps/applications'
 import { MovieDto, MoviesClient, MoviesModule } from 'apps/cores'
-import { MoviesController, StorageFilesController } from 'apps/gateway'
-import { MulterConfigModule } from 'apps/gateway/modules'
-import { StorageFilesClient, StorageFilesModule } from 'apps/infrastructures'
+import { MoviesController } from 'apps/gateway'
+import { AssetDto, AssetsClient, AssetsModule } from 'apps/infrastructures'
 import {
     createMovie,
+    createTestFixture,
     FixtureFile,
     fixtureFiles,
     TestFixture,
-    createTestFixture
+    uploadComplete
 } from '../__helpers__'
-import { Path } from 'common'
 
-export interface Fixture extends TestFixture {
-    image: FixtureFile
+export type MoviesFixture = TestFixture & {
     createdMovie: MovieDto
-    tempDir: string
+    assetsClient: AssetsClient
+    image: FixtureFile
+    asset: AssetDto
 }
 
-export const createFixture = async () => {
+export async function createMoviesFixture() {
     const fix = await createTestFixture({
-        imports: [MulterConfigModule, MoviesModule, StorageFilesModule],
-        providers: [MoviesClient, RecommendationClient, StorageFilesClient],
-        controllers: [MoviesController, StorageFilesController]
+        imports: [MoviesModule, AssetsModule],
+        providers: [MoviesClient, RecommendationClient, AssetsClient],
+        controllers: [MoviesController]
     })
 
-    const tempDir = await Path.createTempDirectory()
+    const image = fixtureFiles.image
+    const asset = await uploadComplete(fix, image)
+    const assetIds = [asset.id]
 
-    const createdMovie = await createMovie(fix)
+    const assetsClient = fix.module.get(AssetsClient)
+    const createdMovie = await createMovie(fix, { assetIds })
 
-    const teardown = async () => {
-        await fix.teardown()
-        await Path.delete(tempDir)
-    }
-
-    return { ...fix, teardown, image: fixtureFiles.image, createdMovie, tempDir }
+    return { ...fix, image: fixtureFiles.image, createdMovie, assetsClient, asset }
 }

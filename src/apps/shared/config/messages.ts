@@ -2,49 +2,58 @@ import { createMessagePatternMap, getProjectId } from './utils'
 
 export const Messages = createMessagePatternMap(
     {
-        StorageFiles: { saveFiles: null, getFiles: null, deleteFiles: null },
-        Payments: { createPayment: null, getPayments: null },
-        WatchRecords: { createWatchRecord: null, searchWatchRecordsPage: null },
+        Assets: { getMany: null, deleteMany: null, create: null, complete: null },
+        Payments: { create: null, getMany: null },
+        WatchRecords: { create: null, searchPage: null },
         Tickets: {
-            createTickets: null,
-            updateTicketsStatus: null,
-            searchTickets: null,
-            aggregateTicketSales: null,
-            getTickets: null
+            createMany: null,
+            updateStatusMany: null,
+            search: null,
+            aggregateSales: null,
+            getMany: null
         },
         TicketHolding: { holdTickets: null, searchHeldTicketIds: null, releaseTickets: null },
         Theaters: {
-            createTheater: null,
-            updateTheater: null,
-            getTheaters: null,
-            deleteTheaters: null,
-            searchTheatersPage: null,
-            theatersExist: null
+            create: null,
+            update: null,
+            getMany: null,
+            deleteMany: null,
+            searchPage: null,
+            allExist: null
         },
         Showtimes: {
-            createShowtimes: null,
-            getShowtimes: null,
-            searchShowtimes: null,
+            createMany: null,
+            getMany: null,
+            search: null,
             searchMovieIds: null,
             searchTheaterIds: null,
             searchShowdates: null,
-            allShowtimesExist: null
+            allExist: null
         },
-        Purchases: { createPurchaseRecord: null, getPurchases: null },
+        Purchases: { create: null, getMany: null },
+        MovieDrafts: {
+            create: null,
+            update: null,
+            get: null,
+            delete: null,
+            createImage: null,
+            completeImage: null,
+            complete: null
+        },
         Movies: {
-            createMovie: null,
-            updateMovie: null,
-            getMovies: null,
-            deleteMovies: null,
-            searchMoviesPage: null,
-            moviesExist: null
+            create: null,
+            update: null,
+            getMany: null,
+            deleteMany: null,
+            searchPage: null,
+            allExist: null
         },
         Customers: {
-            createCustomer: null,
-            updateCustomer: null,
-            getCustomers: null,
-            deleteCustomers: null,
-            searchCustomersPage: null,
+            create: null,
+            update: null,
+            getMany: null,
+            deleteMany: null,
+            searchPage: null,
             generateAuthTokens: null,
             refreshAuthTokens: null,
             findCustomerByCredentials: null

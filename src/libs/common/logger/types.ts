@@ -1,4 +1,4 @@
-export interface HttpErrorLog {
+export type HttpErrorLog = {
     contextType: 'http'
     statusCode: number
     request: { method: string; url: string; body: any }
@@ -6,14 +6,14 @@ export interface HttpErrorLog {
     stack?: string
 }
 
-export interface HttpSuccessLog {
+export type HttpSuccessLog = {
     contextType: 'http'
     statusCode: number
     request: { method: string; url: string; body: any }
     duration: string
 }
 
-export interface RpcErrorLog {
+export type RpcErrorLog = {
     contextType: 'rpc'
     context: any
     data: any
@@ -21,9 +21,4 @@ export interface RpcErrorLog {
     stack?: string
 }
 
-export interface RpcSuccessLog {
-    contextType: 'rpc'
-    context: any
-    data: any
-    duration: string
-}
+export type RpcSuccessLog = { contextType: 'rpc'; context: any; data: any; duration: string }

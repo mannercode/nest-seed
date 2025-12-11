@@ -16,7 +16,7 @@ import {
     TicketsModule
 } from 'apps/cores'
 import { BookingController, CustomerJwtStrategy } from 'apps/gateway'
-import { PaymentsModule, StorageFilesModule } from 'apps/infrastructures'
+import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
 import {
     createCustomerAndLogin,
     createMovie,
@@ -27,11 +27,11 @@ import {
     TestFixture
 } from '../__helpers__'
 
-export const createAllResources = async (
+export async function createAllResources(
     ctx: TestFixture,
     locations: TheaterLocation[],
     startTimes: Date[]
-) => {
+) {
     const { customer, accessToken, refreshToken } = await createCustomerAndLogin(ctx)
 
     const movie = await createMovie(ctx)
@@ -57,13 +57,13 @@ export const createAllResources = async (
     return { customer, accessToken, refreshToken, movie, theaters, showtimes, tickets }
 }
 
-export type Fixture = TestFixture
+export type BookingFixture = TestFixture
 
-export const createFixture = async (): Promise<Fixture> => {
+export async function createBookingFixture(): Promise<BookingFixture> {
     const fix = await createTestFixture({
         imports: [
             MoviesModule,
-            StorageFilesModule,
+            AssetsModule,
             TheatersModule,
             TicketsModule,
             PurchaseRecordsModule,
@@ -81,7 +81,8 @@ export const createFixture = async (): Promise<Fixture> => {
             ShowtimesClient,
             TheatersClient,
             TicketsClient,
-            BookingClient
+            BookingClient,
+            AssetsClient
         ],
         controllers: [BookingController]
     })

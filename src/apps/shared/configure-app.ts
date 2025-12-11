@@ -4,31 +4,25 @@ import { AppLoggerService, Path } from 'common'
 import compression from 'compression'
 import express from 'express'
 import { exit } from 'process'
+import { AppConfigService } from './config/app-config.service'
 
-export async function configureApp({
-    app,
-    directories,
-    natOptions,
-    http
-}: {
-    app: INestApplication<any>
-    directories: string[]
-    natOptions: { servers: string[]; queue: string }
-    http: { port: number; requestPayloadLimit: string }
-}) {
-    for (const directory of directories) {
-        if (!(await Path.isWritable(directory))) {
-            console.error(`Error: Directory is not writable: '${directory}'`)
-            exit(1)
-        }
+type ConfigureAppOptions = { app: INestApplication<any>; natOptions: { queue: string } }
+
+export async function configureApp({ app, natOptions }: ConfigureAppOptions) {
+    const { http, nats, log } = app.get(AppConfigService)
+
+    await Path.mkdir(log.directory)
+
+    if (!(await Path.isWritable(log.directory))) {
+        console.error(`Error: Directory is not writable: '${log.directory}'`)
+        exit(1)
     }
 
     app.use(compression())
-
     app.use(express.json({ limit: http.requestPayloadLimit }))
 
     app.connectMicroservice<MicroserviceOptions>(
-        { transport: Transport.NATS, options: natOptions },
+        { transport: Transport.NATS, options: { servers: nats.servers, ...natOptions } },
         { inheritAppConfig: true }
     )
 

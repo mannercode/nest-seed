@@ -6,29 +6,31 @@ import { WatchRecordsRepository } from './watch-records.repository'
 
 @Injectable()
 export class WatchRecordsService {
-    constructor(private repository: WatchRecordsRepository) {}
+    constructor(private readonly repository: WatchRecordsRepository) {}
 
-    async createWatchRecord(createDto: CreateWatchRecordDto) {
-        const watchRecord = await this.repository.createWatchRecord(createDto)
+    async create(createDto: CreateWatchRecordDto) {
+        const watchRecord = await this.repository.create(createDto)
 
         return this.toDto(watchRecord)
     }
 
-    async searchWatchRecordsPage(searchDto: SearchWatchRecordsPageDto) {
-        const { items, ...pagination } = await this.repository.searchWatchRecordsPage(searchDto)
+    async searchPage(searchDto: SearchWatchRecordsPageDto) {
+        const { items, ...pagination } = await this.repository.searchPage(searchDto)
 
         return { ...pagination, items: this.toDtos(items) }
     }
 
-    private toDto = (watchRecord: WatchRecordDocument) =>
-        mapDocToDto(watchRecord, WatchRecordDto, [
+    private toDto(watchRecord: WatchRecordDocument) {
+        return mapDocToDto(watchRecord, WatchRecordDto, [
             'id',
             'customerId',
             'movieId',
             'purchaseId',
             'watchDate'
         ])
+    }
 
-    private toDtos = (watchRecords: WatchRecordDocument[]) =>
-        watchRecords.map((watchRecord) => this.toDto(watchRecord))
+    private toDtos(watchRecords: WatchRecordDocument[]) {
+        return watchRecords.map((watchRecord) => this.toDto(watchRecord))
+    }
 }

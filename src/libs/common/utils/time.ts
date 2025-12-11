@@ -1,3 +1,5 @@
+import type { StringValue } from 'ms'
+
 export class Time {
     /**
      * Converts a time format string into milliseconds.
@@ -8,12 +10,12 @@ export class Time {
      * 입력 문자열은 숫자와 단위(ms, s, m, h, d)를 조합한 형식이어야 하며,
      * 여러 단위를 공백없이 또는 공백으로 구분하여 사용할 수 있습니다.
      *
-     * @param {string} str - The time format string to convert (e.g., "1d 2h", "30m", "500ms").
+     * @param {string} timeExpression - The time format string to convert (e.g., "1d 2h", "30m", "500ms").
      * @returns {number} The millisecond value of the given time string.
      * @throws {Exception} Throws an exception if the string format is invalid.
      */
-    static toMs(str: string): number {
-        const timeUnits: { [key: string]: number } = {
+    static toMs(timeExpression: string): number {
+        const timeUnitMap: { [key: string]: number } = {
             ms: 1,
             s: 1000,
             m: 60 * 1000,
@@ -24,22 +26,22 @@ export class Time {
         // Valid time format regex
         const validFormatRegex = /^(-?\d+(\.\d+)?)(ms|s|m|h|d)(\s*(-?\d+(\.\d+)?)(ms|s|m|h|d))*$/
 
-        if (!validFormatRegex.test(str)) {
-            throw new Error(`Invalid time format(${str})`)
+        if (!validFormatRegex.test(timeExpression)) {
+            throw new Error(`Invalid time format(${timeExpression})`)
         }
 
-        const regex = /(-?\d+(\.\d+)?)(ms|s|m|h|d)/g
-        let totalMillis = 0
+        const timeTokenRegex = /(-?\d+(\.\d+)?)(ms|s|m|h|d)/g
+        let totalMilliseconds = 0
 
-        let match
-        while ((match = regex.exec(str)) !== null) {
-            const amount = parseFloat(match[1])
-            const unit = match[3]
+        let tokenMatch
+        while ((tokenMatch = timeTokenRegex.exec(timeExpression)) !== null) {
+            const timeValue = parseFloat(tokenMatch[1])
+            const timeUnit = tokenMatch[3]
 
-            totalMillis += amount * timeUnits[unit]
+            totalMilliseconds += timeValue * timeUnitMap[timeUnit]
         }
 
-        return totalMillis
+        return totalMilliseconds
     }
 
     /**
@@ -51,33 +53,33 @@ export class Time {
      * 반환되는 문자열은 d(일), h(시간), m(분), s(초), ms(밀리초) 단위로 구성되며,
      * 음수의 경우 "-" 기호가 접두사로 붙습니다.
      *
-     * @param {number} ms - The millisecond value to convert.
+     * @param {number} milliseconds - The millisecond value to convert.
      * @returns {string} The time format string representing the given milliseconds.
      */
-    static fromMs(ms: number): string {
-        if (ms === 0) {
+    static fromMs(milliseconds: number): StringValue {
+        if (milliseconds === 0) {
             return '0ms'
         }
 
-        const negative = ms < 0
-        ms = Math.abs(ms)
+        const isNegative = milliseconds < 0
+        let remainingMs = Math.abs(milliseconds)
 
-        const days = Math.floor(ms / (24 * 60 * 60 * 1000))
-        ms %= 24 * 60 * 60 * 1000
-        const hours = Math.floor(ms / (60 * 60 * 1000))
-        ms %= 60 * 60 * 1000
-        const minutes = Math.floor(ms / (60 * 1000))
-        ms %= 60 * 1000
-        const seconds = Math.floor(ms / 1000)
-        const milliseconds = ms % 1000
+        const days = Math.floor(remainingMs / (24 * 60 * 60 * 1000))
+        remainingMs %= 24 * 60 * 60 * 1000
+        const hours = Math.floor(remainingMs / (60 * 60 * 1000))
+        remainingMs %= 60 * 60 * 1000
+        const minutes = Math.floor(remainingMs / (60 * 1000))
+        remainingMs %= 60 * 1000
+        const seconds = Math.floor(remainingMs / 1000)
+        const millisecondsRemainder = remainingMs % 1000
 
         let result = ''
         if (days > 0) result += `${days}d`
         if (hours > 0) result += `${hours}h`
         if (minutes > 0) result += `${minutes}m`
         if (seconds > 0) result += `${seconds}s`
-        if (milliseconds > 0) result += `${milliseconds}ms`
+        if (millisecondsRemainder > 0) result += `${millisecondsRemainder}ms`
 
-        return (negative ? '-' : '') + result.trim()
+        return ((isNegative ? '-' : '') + result.trim()) as StringValue
     }
 }

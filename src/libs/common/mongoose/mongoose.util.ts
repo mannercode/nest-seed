@@ -8,9 +8,7 @@ export const newObjectId = () => new Types.ObjectId().toString()
 export const objectId = (id: string) => new Types.ObjectId(id)
 export const objectIds = (ids: string[]) => ids.map((id) => objectId(id))
 
-export interface QueryBuilderOptions {
-    allowEmpty?: boolean
-}
+export type QueryBuilderOptions = { allowEmpty?: boolean }
 
 export class QueryBuilder<T> {
     private query: any = {}
@@ -91,7 +89,7 @@ export function mapDocToDto<
 >(doc: HydratedDocument<DOC>, DtoClass: new () => DTO, keys: K[]): DTO {
     type SchemaJson<T> = { [K in keyof T]: T[K] extends Types.ObjectId ? string : T[K] }
 
-    const json = doc.toJSON<SchemaJson<DOC>>()
+    const json = doc.toJSON() as SchemaJson<DOC>
     const dto = new DtoClass()
 
     for (const key of keys) {

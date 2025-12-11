@@ -4,7 +4,7 @@ import { Events } from 'shared'
 
 @Injectable()
 export class ShowtimeCreationEvents {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     emitStatusChanged(payload: any) {
         return this.proxy.emit(Events.ShowtimeCreation.statusChanged, payload)

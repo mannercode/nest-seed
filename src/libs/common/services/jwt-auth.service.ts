@@ -20,7 +20,7 @@ export class JwtAuthTokens {
     refreshToken: string
 }
 
-export interface AuthConfig {
+export type AuthConfig = {
     accessSecret: string
     refreshSecret: string
     accessTokenTtlMs: number
@@ -91,7 +91,7 @@ export class JwtAuthService {
     private async createToken(payload: object, secret: string, ttlMs: number) {
         const expiresIn = Time.fromMs(ttlMs)
 
-        const token = await this.jwtService.signAsync(
+        const token = await this.jwtService.signAsync<object>(
             { ...payload, jti: generateShortId() },
             { secret, expiresIn }
         )
@@ -117,13 +117,13 @@ export function InjectJwtAuth(name?: string): ParameterDecorator {
     return Inject(JwtAuthService.getServiceName(name))
 }
 
-type JwtAuthFactory = { auth: AuthConfig }
+type JwtAuthFactoryOptions = { auth: AuthConfig }
 
-export interface JwtAuthModuleOptions {
+export type JwtAuthModuleOptions = {
     name?: string
     redisName?: string
     prefix: string
-    useFactory: (...args: any[]) => Promise<JwtAuthFactory> | JwtAuthFactory
+    useFactory: (...args: any[]) => Promise<JwtAuthFactoryOptions> | JwtAuthFactoryOptions
     inject?: any[]
 }
 

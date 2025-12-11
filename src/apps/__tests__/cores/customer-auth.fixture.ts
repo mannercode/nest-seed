@@ -3,12 +3,12 @@ import { CustomerJwtStrategy, CustomerLocalStrategy, CustomersController } from 
 import { JwtAuthTokens } from 'common'
 import { createCustomer, generateAuthTokens, TestFixture, createTestFixture } from '../__helpers__'
 
-export interface Fixture extends TestFixture {
+export type CustomerAuthFixture = TestFixture & {
     credentials: { email: string; password: string }
     authTokens: JwtAuthTokens
 }
 
-export const createFixture = async () => {
+export async function createCustomerAuthFixture() {
     const fix = await createTestFixture({
         imports: [CustomersModule],
         providers: [CustomersClient, CustomerLocalStrategy, CustomerJwtStrategy],

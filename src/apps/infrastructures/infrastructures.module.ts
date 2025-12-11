@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common'
 import { CommonModule, MongooseConfigModule } from 'shared'
 import { HealthModule } from './modules'
-import { PaymentsModule, StorageFilesModule } from './services'
+import { AssetsModule, PaymentsModule } from './services'
 
 @Module({
-    imports: [CommonModule, MongooseConfigModule, HealthModule, PaymentsModule, StorageFilesModule]
+    imports: [CommonModule, MongooseConfigModule, HealthModule, PaymentsModule, AssetsModule]
 })
 export class InfrastructuresModule {}

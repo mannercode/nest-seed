@@ -43,7 +43,7 @@ class TestController {
     }
 }
 
-export interface Fixture {
+export type ExceptionLoggerFilterFixture = {
     teardown: () => Promise<void>
     httpClient: HttpTestClient
     rpcClient: RpcTestClient
@@ -52,15 +52,15 @@ export interface Fixture {
     spyFatal: jest.SpyInstance
 }
 
-export async function createFixture() {
-    const { servers } = getNatsTestConnection()
-    const brokerOptions = { transport: Transport.NATS, options: { servers } } as NatsOptions
+export async function createExceptionLoggerFilterFixture() {
+    const brokerOptions = {
+        transport: Transport.NATS,
+        options: getNatsTestConnection()
+    } as NatsOptions
 
     const { httpClient, ...testContext } = await createHttpTestContext({
-        metadata: {
-            controllers: [TestController],
-            providers: [{ provide: APP_FILTER, useClass: ExceptionLoggerFilter }]
-        },
+        controllers: [TestController],
+        providers: [{ provide: APP_FILTER, useClass: ExceptionLoggerFilter }],
         configureApp: async (app) => {
             app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
             await app.startAllMicroservices()
@@ -73,7 +73,7 @@ export async function createFixture() {
     const spyFatal = jest.spyOn(Logger, 'fatal')
     const rpcClient = RpcTestClient.create(brokerOptions)
 
-    const teardown = async () => {
+    async function teardown() {
         await rpcClient.close()
         await testContext.close()
     }

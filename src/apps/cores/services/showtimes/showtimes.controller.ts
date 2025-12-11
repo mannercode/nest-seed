@@ -7,23 +7,23 @@ import { CreateShowtimesResult } from './types'
 
 @Controller()
 export class ShowtimesController {
-    constructor(private service: ShowtimesService) {}
+    constructor(private readonly service: ShowtimesService) {}
 
-    @MessagePattern(Messages.Showtimes.createShowtimes)
-    createShowtimes(
+    @MessagePattern(Messages.Showtimes.createMany)
+    createMany(
         @Payload(new ParseArrayPipe({ items: CreateShowtimeDto })) createDtos: CreateShowtimeDto[]
     ): Promise<CreateShowtimesResult> {
-        return this.service.createShowtimes(createDtos)
+        return this.service.createMany(createDtos)
     }
 
-    @MessagePattern(Messages.Showtimes.getShowtimes)
-    getShowtimes(@Payload() showtimeIds: string[]) {
-        return this.service.getShowtimes(showtimeIds)
+    @MessagePattern(Messages.Showtimes.getMany)
+    getMany(@Payload() showtimeIds: string[]) {
+        return this.service.getMany(showtimeIds)
     }
 
-    @MessagePattern(Messages.Showtimes.searchShowtimes)
-    searchShowtimes(@Payload() searchDto: SearchShowtimesDto) {
-        return this.service.searchShowtimes(searchDto)
+    @MessagePattern(Messages.Showtimes.search)
+    search(@Payload() searchDto: SearchShowtimesDto) {
+        return this.service.search(searchDto)
     }
 
     @MessagePattern(Messages.Showtimes.searchMovieIds)
@@ -41,8 +41,8 @@ export class ShowtimesController {
         return this.service.searchShowdates(searchDto)
     }
 
-    @MessagePattern(Messages.Showtimes.allShowtimesExist)
-    allShowtimesExist(@Payload() showtimeIds: string[]) {
-        return this.service.allShowtimesExist(showtimeIds)
+    @MessagePattern(Messages.Showtimes.allExist)
+    exists(@Payload() showtimeIds: string[]) {
+        return this.service.allExist(showtimeIds)
     }
 }

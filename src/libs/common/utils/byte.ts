@@ -8,12 +8,12 @@ export class Byte {
      * 입력 문자열은 부호, 숫자, 단위(B, KB, MB, GB, TB)를 포함해야 하며,
      * 여러 크기 단위를 공백으로 구분하여 표현할 수 있습니다.
      *
-     * @param {string} str - The size format string to convert (e.g., "10MB", "2GB", "-500KB").
+     * @param {string} sizeExpression - The size format string to convert (e.g., "10MB", "2GB", "-500KB").
      * @returns {number} The total byte value corresponding to the string.
      * @throws {Exception} Throws an exception if the string format is invalid.
      */
-    static fromString(str: string): number {
-        const sizeUnits: { [key: string]: number } = {
+    static fromString(sizeExpression: string): number {
+        const sizeUnitMap: { [key: string]: number } = {
             B: 1,
             KB: 1024,
             MB: 1024 * 1024,
@@ -24,19 +24,19 @@ export class Byte {
         const validFormatRegex =
             /^(-?\d+(\.\d+)?)(B|KB|MB|GB|TB)(\s+(-?\d+(\.\d+)?)(B|KB|MB|GB|TB))*$/i
 
-        if (!validFormatRegex.test(str)) {
-            throw new Error(`Invalid size format(${str})`)
+        if (!validFormatRegex.test(sizeExpression)) {
+            throw new Error(`Invalid size format(${sizeExpression})`)
         }
 
-        const regex = /(-?\d+(\.\d+)?)(B|KB|MB|GB|TB)/gi
+        const sizeTokenRegex = /(-?\d+(\.\d+)?)(B|KB|MB|GB|TB)/gi
         let totalBytes = 0
 
-        let match
-        while ((match = regex.exec(str)) !== null) {
-            const amount = parseFloat(match[1])
-            const unit = match[3].toUpperCase()
+        let sizeTokenMatch
+        while ((sizeTokenMatch = sizeTokenRegex.exec(sizeExpression)) !== null) {
+            const amount = parseFloat(sizeTokenMatch[1])
+            const sizeUnit = sizeTokenMatch[3].toUpperCase()
 
-            totalBytes += amount * sizeUnits[unit]
+            totalBytes += amount * sizeUnitMap[sizeUnit]
         }
 
         return totalBytes
@@ -67,12 +67,12 @@ export class Byte {
 
         let result = ''
 
-        for (let i = 0; i < units.length; i++) {
-            const unitValue = sizes[i]
+        for (let unitIndex = 0; unitIndex < units.length; unitIndex++) {
+            const unitValue = sizes[unitIndex]
             if (bytes >= unitValue) {
                 const unitAmount = Math.floor(bytes / unitValue)
                 bytes %= unitValue
-                result += `${unitAmount}${units[i]}`
+                result += `${unitAmount}${units[unitIndex]}`
             }
         }
 

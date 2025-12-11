@@ -1,103 +1,106 @@
 import { Provider } from '@nestjs/common'
 import { withTestId } from 'testlib'
-import type { Fixture } from './success-logging.interceptor.fixture'
+import type { SuccessLoggingInterceptorFixture } from './success-logging.interceptor.fixture'
 
 describe('SuccessLoggingInterceptor', () => {
-    let fix: Fixture
-    let createFixture: (providers: Provider[]) => Promise<any>
+    let fixture: SuccessLoggingInterceptorFixture
+    let createInterceptorFixture: (
+        providers: Provider[]
+    ) => Promise<SuccessLoggingInterceptorFixture>
 
     beforeEach(async () => {
-        const { createFixture: _createFixture } = await import(
-            './success-logging.interceptor.fixture'
-        )
-        createFixture = _createFixture
+        const { createSuccessLoggingInterceptorFixture } =
+            await import('./success-logging.interceptor.fixture')
+        createInterceptorFixture = createSuccessLoggingInterceptorFixture
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
-    // 요청 성공 시
-    describe('When requests succeed', () => {
+    describe('when the requests succeed', () => {
         beforeEach(async () => {
-            fix = await createFixture([])
+            fixture = await createInterceptorFixture([])
         })
 
-        // HTTP 요청이 성공하면 Logger.verbose()로 기록해야 한다
-        it('Should log successful HTTP requests via Logger.verbose', async () => {
-            const body = { key: 'value' }
-            await fix.httpClient.post('/success').body(body).created({ result: 'success' })
+        describe('when an HTTP request succeeds', () => {
+            it('logs via Logger.verbose', async () => {
+                const body = { key: 'value' }
+                await fixture.httpClient.post('/success').body(body).created({ result: 'success' })
 
-            expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
-            expect(fix.spyVerbose).toHaveBeenCalledWith('success', {
-                statusCode: 201,
-                contextType: 'http',
-                request: { method: 'POST', url: '/success', body },
-                duration: expect.any(String)
+                expect(fixture.spyVerbose).toHaveBeenCalledTimes(1)
+                expect(fixture.spyVerbose).toHaveBeenCalledWith('success', {
+                    statusCode: 201,
+                    contextType: 'http',
+                    request: { method: 'POST', url: '/success', body },
+                    duration: expect.any(String)
+                })
             })
         })
 
-        // RPC 요청이 성공하면 Logger.verbose()로 기록해야 한다
-        it('Should log successful RPC requests via Logger.verbose', async () => {
-            const subject = withTestId('success')
-            const data = { key: 'value' }
-            await fix.rpcClient.expect(subject, data, { result: 'success' })
+        describe('when an RPC request succeeds', () => {
+            it('logs via Logger.verbose', async () => {
+                const subject = withTestId('success')
+                const data = { key: 'value' }
+                await fixture.rpcClient.expect(subject, data, { result: 'success' })
 
-            expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
-            expect(fix.spyVerbose).toHaveBeenCalledWith('success', {
-                contextType: 'rpc',
-                context: { args: [subject] },
-                data,
-                duration: expect.any(String)
+                expect(fixture.spyVerbose).toHaveBeenCalledTimes(1)
+                expect(fixture.spyVerbose).toHaveBeenCalledWith('success', {
+                    contextType: 'rpc',
+                    context: { args: [subject] },
+                    data,
+                    duration: expect.any(String)
+                })
             })
         })
 
-        // 알 수 없는 ContextType이면 Logger.error()로 기록해야 한다
-        it('Should log an error via Logger.error() if the ContextType is unknown', async () => {
-            const { ExecutionContextHost } = await import(
-                '@nestjs/core/helpers/execution-context-host'
-            )
-            jest.spyOn(ExecutionContextHost.prototype, 'getType').mockReturnValue('unknown')
+        describe('when the ContextType is unknown', () => {
+            it('logs via Logger.error', async () => {
+                const { ExecutionContextHost } =
+                    await import('@nestjs/core/helpers/execution-context-host')
+                jest.spyOn(ExecutionContextHost.prototype, 'getType').mockReturnValue('unknown')
 
-            await fix.httpClient.get('/exclude-path').ok()
+                await fixture.httpClient.get('/exclude-path').ok()
 
-            expect(fix.spyError).toHaveBeenCalledTimes(1)
-            expect(fix.spyError).toHaveBeenCalledWith(
-                'unknown context type',
-                expect.objectContaining({ contextType: 'unknown', duration: expect.any(String) })
-            )
+                expect(fixture.spyError).toHaveBeenCalledTimes(1)
+                expect(fixture.spyError).toHaveBeenCalledWith(
+                    'unknown context type',
+                    expect.objectContaining({
+                        contextType: 'unknown',
+                        duration: expect.any(String)
+                    })
+                )
+            })
         })
     })
 
     describe('LOGGING_EXCLUDE_HTTP_PATHS', () => {
         beforeEach(async () => {
-            fix = await createFixture([
+            fixture = await createInterceptorFixture([
                 { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/exclude-path'] }
             ])
         })
 
-        // 지정된 HTTP 경로는 무시해야 한다
-        it('Should ignore specified HTTP paths', async () => {
-            await fix.httpClient.get('/exclude-path').ok({ result: 'success' })
+        it('ignores specified HTTP paths', async () => {
+            await fixture.httpClient.get('/exclude-path').ok({ result: 'success' })
 
-            expect(fix.spyVerbose).toHaveBeenCalledTimes(0)
+            expect(fixture.spyVerbose).toHaveBeenCalledTimes(0)
         })
     })
 
     describe('LOGGING_EXCLUDE_RPC_PATHS', () => {
         beforeEach(async () => {
-            fix = await createFixture([
+            fixture = await createInterceptorFixture([
                 { provide: 'LOGGING_EXCLUDE_RPC_PATHS', useValue: [withTestId('exclude-path')] }
             ])
         })
 
-        // 지정된 RPC 경로는 무시해야 한다
-        it('Should ignore specified RPC paths', async () => {
+        it('ignores specified RPC paths', async () => {
             const subject = withTestId('exclude-path')
             const data = { key: 'value' }
-            await fix.rpcClient.expect(subject, data, { result: 'success' })
+            await fixture.rpcClient.expect(subject, data, { result: 'success' })
 
-            expect(fix.spyVerbose).toHaveBeenCalledTimes(0)
+            expect(fixture.spyVerbose).toHaveBeenCalledTimes(0)
         })
     })
 })

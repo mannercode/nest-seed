@@ -25,7 +25,7 @@ package "Core Services" {
 
 package "Infrastructure Services" {
   [payments]
-  ["storage-files"]
+  ["assets"]
 }
 
 [MoviesController] --> [movies]
@@ -40,7 +40,7 @@ package "Infrastructure Services" {
 ["purchase-process"] --> [purchases]
 ["purchase-process"] --> [tickets]
 
-[movies] --> ["storage-files"]
+[movies] --> ["assets"]
 [purchases] --> [payments]
 [tickets] --> [payments]
 
@@ -276,12 +276,12 @@ id만 전달하면 되는 간단한 조회·삭제 API는 기본적으로 **복�
 
 ```ts
 // 권장하는 형태
-getTheaters(theaterIds: string[]) {}
-deleteTheaters(theaterIds: string[]) {}
+getMany(theaterIds: string[]) {}
+deleteMany(theaterIds: string[]) {}
 
 // 권장하지 않음
-getTheater(theaterId: string) {}
-deleteTheater(theaterId: string) {}
+get(theaterId: string) {}
+delete(theaterId: string) {}
 ```
 
 다만, REST API는 단일 객체를 요청하는 경우가 많습니다. 따라서 아래와 같이 단수 인자를 받아서 내부적으로 복수 인자를 사용하는 식으로 구현합니다.
@@ -289,12 +289,12 @@ deleteTheater(theaterId: string) {}
 ```ts
 @Get(':theaterId')
 async getTheater(@Param('theaterId') theaterId: string) {
-    return this.theatersService.getTheaters([theaterId])
+    return this.theatersService.getMany([theaterId])
 }
 
 @Delete(':theaterId')
 async deleteTheater(@Param('theaterId') theaterId: string) {
-    return this.theatersService.deleteTheaters([theaterId])
+    return this.theatersService.deleteMany([theaterId])
 }
 ```
 

@@ -6,22 +6,22 @@ import { PurchasesRecordRepository } from './purchase-records.repository'
 
 @Injectable()
 export class PurchaseRecordsService {
-    constructor(private repository: PurchasesRecordRepository) {}
+    constructor(private readonly repository: PurchasesRecordRepository) {}
 
-    async createPurchaseRecord(createDto: CreatePurchaseRecordDto) {
-        const purchase = await this.repository.createPurchaseRecord(createDto)
+    async create(createDto: CreatePurchaseRecordDto) {
+        const purchase = await this.repository.create(createDto)
 
         return this.toDto(purchase)
     }
 
-    async getPurchases(purchaseIds: string[]) {
+    async getMany(purchaseIds: string[]) {
         const purchases = await this.repository.getByIds(purchaseIds)
 
         return this.toDtos(purchases)
     }
 
-    private toDto = (purchase: PurchaseRecordDocument) =>
-        mapDocToDto(purchase, PurchaseRecordDto, [
+    private toDto(purchase: PurchaseRecordDocument) {
+        return mapDocToDto(purchase, PurchaseRecordDto, [
             'id',
             'customerId',
             'paymentId',
@@ -30,7 +30,9 @@ export class PurchaseRecordsService {
             'createdAt',
             'updatedAt'
         ])
+    }
 
-    private toDtos = (purchases: PurchaseRecordDocument[]) =>
-        purchases.map((purchase) => this.toDto(purchase))
+    private toDtos(purchases: PurchaseRecordDocument[]) {
+        return purchases.map((purchase) => this.toDto(purchase))
+    }
 }

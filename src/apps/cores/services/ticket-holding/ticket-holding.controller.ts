@@ -6,7 +6,7 @@ import { HoldTicketsDto } from './dtos'
 
 @Controller()
 export class TicketHoldingController {
-    constructor(private service: TicketHoldingService) {}
+    constructor(private readonly service: TicketHoldingService) {}
 
     @MessagePattern(Messages.TicketHolding.holdTickets)
     holdTickets(@Payload() holdDto: HoldTicketsDto) {

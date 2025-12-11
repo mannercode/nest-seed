@@ -1,35 +1,47 @@
 import { CreatePurchaseDto } from 'apps/applications'
 import { PurchaseRecordDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
+import { toAny } from 'testlib'
 import { Errors, getPayments, getTickets } from '../__helpers__'
-import { buildCreatePurchaseDto, Fixture } from './purchase.fixture'
+import { buildCreatePurchaseDto, type PurchaseFixture } from './purchase.fixture'
+
+// TODO
+// 위의 코등 중에서 it('creates and returns a purchase', async () => { 을 보면 단순히 검증만 하고 있다.
+// 그럼에도 설명은 creates and returns a purchase 라고 했다.
+// 이것은 편의를 위해서 beforeEach에서 실행하고 검증만 하는 것인데 어떻게 개선해야 할까?
+// TODO fix 라고 표시한 건 다 고쳐야 한다
 
 describe('PurchaseService', () => {
-    let fix: Fixture
+    let fixture: PurchaseFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./purchase.fixture')
-        fix = await createFixture()
+        const { createPurchaseFixture } = await import('./purchase.fixture')
+        fixture = await createPurchaseFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
     describe('POST /purchases', () => {
-        // payload가 유효한 경우
         describe('when the payload is valid', () => {
             let createDto: CreatePurchaseDto
             let createdPurchase: PurchaseRecordDto
 
             beforeEach(async () => {
-                createDto = buildCreatePurchaseDto(fix.customer, fix.heldTickets)
+                createDto = buildCreatePurchaseDto(fixture.customer, fixture.heldTickets)
 
-                const { body } = await fix.httpClient.post('/purchases').body(createDto).created()
+                const { body } = await fixture.httpClient
+                    .post('/purchases')
+                    .body(createDto)
+                    .created()
 
                 createdPurchase = body
             })
 
+            // TODO fix
+            // "구매를 생성한다"가 아니라 "올바른 응답 데이터를 반환한다"
+            // it('returns the valid purchase response structure', () => {
             // 구매를 생성하고 반환한다
             it('creates and returns a purchase', async () => {
                 expect(createdPurchase).toEqual({
@@ -41,25 +53,28 @@ describe('PurchaseService', () => {
                 })
             })
 
-            // 연관된 결제 기록을 생성한다
-            it('creates a corresponding payment record', async () => {
-                const payments = await getPayments(fix, [createdPurchase.paymentId])
+            // "생성한다"가 아니라 "DB에 존재한다"
+            // it('has persisted the payment record', async () => {
+            // 결제 기록을 생성한다
+            it('creates the payment record', async () => {
+                const payments = await getPayments(fixture, [createdPurchase.paymentId])
 
                 expect(payments[0].amount).toEqual(createdPurchase.totalPrice)
             })
 
-            // 구매한 티켓의 상태를 `Sold`으로 변경한다
-            it('changes the status of purchased tickets to `Sold`', async () => {
-                const soldTickets = await getTickets(fix, pickIds(fix.heldTickets))
+            it('marks purchased tickets as `Sold`', async () => {
+                const soldTickets = await getTickets(fixture, pickIds(fixture.heldTickets))
 
                 expect(soldTickets.map((ticket) => ticket.status)).toEqual(
                     Array(soldTickets.length).fill(TicketStatus.Sold)
                 )
             })
 
-            // 구매하지 않은 티켓의 상태는 그대로 유지한다
-            it('does not change the status of unpurchased tickets', async () => {
-                const remainingTickets = await getTickets(fix, pickIds(fix.availableTickets))
+            it('keeps unpurchased tickets unchanged', async () => {
+                const remainingTickets = await getTickets(
+                    fixture,
+                    pickIds(fixture.availableTickets)
+                )
 
                 expect(remainingTickets.map((ticket) => ticket.status)).toEqual(
                     Array(remainingTickets.length).fill(TicketStatus.Available)
@@ -67,18 +82,16 @@ describe('PurchaseService', () => {
             })
         })
 
-        // 최대 구매 수량을 초과한 경우
-        describe('when the number of tickets exceeds the maximum', () => {
+        describe('when the ticket count exceeds the maximum', () => {
             beforeEach(async () => {
                 const { Rules } = await import('shared')
-                Rules.Ticket.maxTicketsPerPurchase = fix.heldTickets.length - 1
+                toAny(Rules).Ticket.maxTicketsPerPurchase = fixture.heldTickets.length - 1
             })
 
-            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                const createDto = buildCreatePurchaseDto(fix.customer, fix.heldTickets)
+                const createDto = buildCreatePurchaseDto(fixture.customer, fixture.heldTickets)
 
-                await fix.httpClient
+                await fixture.httpClient
                     .post('/purchases')
                     .body(createDto)
                     .badRequest({
@@ -88,16 +101,14 @@ describe('PurchaseService', () => {
             })
         })
 
-        // 구매 가능 시간이 지난 경우
         describe('when the purchase window is closed', () => {
-            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 const createDto = buildCreatePurchaseDto(
-                    fix.customer,
-                    fix.closedTickets.slice(0, 2)
+                    fixture.customer,
+                    fixture.closedTickets.slice(0, 2)
                 )
 
-                await fix.httpClient
+                await fixture.httpClient
                     .post('/purchases')
                     .body(createDto)
                     .badRequest({
@@ -109,45 +120,41 @@ describe('PurchaseService', () => {
             })
         })
 
-        // 선점되지 않은 티켓을 구매하는 경우
         describe('when purchasing unheld tickets', () => {
-            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 const createDto = buildCreatePurchaseDto(
-                    fix.customer,
-                    fix.availableTickets.slice(2)
+                    fixture.customer,
+                    fixture.availableTickets.slice(2)
                 )
 
-                await fix.httpClient
+                await fixture.httpClient
                     .post('/purchases')
                     .body(createDto)
                     .badRequest(Errors.TicketPurchase.TicketNotHeld)
             })
         })
 
-        // 구매 처리 중 내부 오류가 발생하는 경우
-        describe('when an internal error occurs during purchase', () => {
+        describe('when an internal error occurs', () => {
             let rollbackPurchaseSpy: jest.SpyInstance
 
             beforeEach(async () => {
                 const { TicketsService } = await import('apps/cores')
-                const ticketsService = fix.module.get(TicketsService)
+                const ticketsService = fixture.module.get(TicketsService)
 
-                jest.spyOn(ticketsService, 'updateTicketsStatus').mockImplementationOnce(() => {
+                jest.spyOn(ticketsService, 'updateStatusMany').mockImplementationOnce(() => {
                     throw new Error('purchase error')
                 })
 
                 const { TicketPurchasService } = await import('apps/applications')
-                const ticketPurchaseService = fix.module.get(TicketPurchasService)
+                const ticketPurchaseService = fixture.module.get(TicketPurchasService)
 
                 rollbackPurchaseSpy = jest.spyOn(ticketPurchaseService, 'rollbackPurchase')
             })
 
-            // 500 Internal Server Error를 반환하고 구매를 롤백한다
-            it('returns 500 Internal Server Error and rolls back the purchase', async () => {
-                const createDto = buildCreatePurchaseDto(fix.customer, fix.heldTickets)
+            it('returns 500 and rolls back the purchase', async () => {
+                const createDto = buildCreatePurchaseDto(fixture.customer, fixture.heldTickets)
 
-                await fix.httpClient.post('/purchases').body(createDto).internalServerError()
+                await fixture.httpClient.post('/purchases').body(createDto).internalServerError()
 
                 expect(rollbackPurchaseSpy).toHaveBeenCalledTimes(1)
             })

@@ -6,7 +6,7 @@ import { PurchaseService } from './purchase.service'
 
 @Controller()
 export class PurchaseController {
-    constructor(private service: PurchaseService) {}
+    constructor(private readonly service: PurchaseService) {}
 
     @MessagePattern(Messages.Purchase.processPurchase)
     processPurchase(@Payload() createDto: CreatePurchaseDto) {

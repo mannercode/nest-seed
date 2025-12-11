@@ -2,49 +2,45 @@ import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
 import { Injectable } from '@nestjs/common'
 import { InjectJwtAuth, JwtAuthModule, JwtAuthService } from 'common'
 import Redis from 'ioredis'
-import { createTestingModule, getRedisTestConnection, withTestId } from 'testlib'
+import { createTestContext, getRedisTestConnection, withTestId } from 'testlib'
 
 @Injectable()
-class TestJwtAuthService {
-    constructor(@InjectJwtAuth() _service: JwtAuthService) {}
+class TestInjectJwtAuthService {
+    constructor(@InjectJwtAuth() readonly _: JwtAuthService) {}
 }
 
-export interface Fixture {
+export type JwtAuthServiceFixture = {
     teardown: () => Promise<void>
     jwtService: JwtAuthService
     redis: Redis
 }
 
-export async function createFixture() {
-    const { nodes, password } = getRedisTestConnection()
-
-    const module = await createTestingModule({
+export async function createJwtAuthServiceFixture() {
+    const { module, close } = await createTestContext({
         imports: [
-            RedisModule.forRoot({
-                type: 'cluster',
-                nodes,
-                options: { redisOptions: { password } }
-            }),
+            RedisModule.forRoot({ type: 'single', url: getRedisTestConnection() }),
             JwtAuthModule.register({
                 prefix: withTestId('jwt-auth'),
-                useFactory: () => ({
-                    auth: {
-                        accessSecret: 'accessSecret',
-                        refreshSecret: 'refreshSecret',
-                        accessTokenTtlMs: 3000,
-                        refreshTokenTtlMs: 3000
+                useFactory() {
+                    return {
+                        auth: {
+                            accessSecret: 'accessSecret',
+                            refreshSecret: 'refreshSecret',
+                            accessTokenTtlMs: 3000,
+                            refreshTokenTtlMs: 3000
+                        }
                     }
-                })
+                }
             })
         ],
-        providers: [TestJwtAuthService]
+        providers: [TestInjectJwtAuthService]
     })
 
     const jwtService = module.get(JwtAuthService.getServiceName())
     const redis = module.get(getRedisConnectionToken())
 
-    const teardown = async () => {
-        await module.close()
+    async function teardown() {
+        await close()
         await redis.quit()
     }
 

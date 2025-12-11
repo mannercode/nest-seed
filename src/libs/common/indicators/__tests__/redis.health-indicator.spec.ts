@@ -1,49 +1,56 @@
-import type { Fixture } from './redis.health-indicator.fixture'
+import type { RedisHealthIndicatorFixture } from './redis.health-indicator.fixture'
 
 describe('RedisHealthIndicator', () => {
-    let fix: Fixture
+    let fixture: RedisHealthIndicatorFixture
 
     beforeEach(async () => {
-        const { createFixture } = await import('./redis.health-indicator.fixture')
-        fix = await createFixture()
+        const { createRedisHealthIndicatorFixture } =
+            await import('./redis.health-indicator.fixture')
+        fixture = await createRedisHealthIndicatorFixture()
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fixture?.teardown()
     })
 
-    // 반환값이 'PONG'이면 up 상태이다
-    it('Should be in the "up" state if the response is "PONG"', async () => {
-        const res = await fix.redisIndicator.isHealthy('key', fix.redis)
-        expect(res).toEqual({ key: { status: 'up' } })
-    })
-
-    // 반환값이 'PONG'이 아니면 down 상태이다
-    it('Should be in the "down" state if the response is not "PONG"', async () => {
-        jest.spyOn(fix.redis, 'ping').mockResolvedValueOnce('INVALID_RESPONSE')
-
-        const res = await fix.redisIndicator.isHealthy('key', fix.redis)
-        expect(res).toEqual({
-            key: {
-                status: 'down',
-                reason: 'Redis ping returned unexpected response: INVALID_RESPONSE'
-            }
+    describe('isHealthy', () => {
+        describe('when the ping response is "PONG"', () => {
+            it('returns an up status', async () => {
+                const healthStatus = await fixture.redisIndicator.isHealthy('key', fixture.redis)
+                expect(healthStatus).toEqual({ key: { status: 'up' } })
+            })
         })
-    })
 
-    // 예외가 발생하면 down 상태이다
-    it('Should be in the "down" state if an exception occurs', async () => {
-        jest.spyOn(fix.redis, 'ping').mockRejectedValueOnce(new Error('error'))
+        describe('when the ping response is not "PONG"', () => {
+            it('returns down status with a reason', async () => {
+                jest.spyOn(fixture.redis, 'ping').mockResolvedValueOnce('INVALID_RESPONSE')
 
-        const res = await fix.redisIndicator.isHealthy('key', fix.redis)
-        expect(res).toEqual({ key: { status: 'down', reason: 'error' } })
-    })
+                const healthStatus = await fixture.redisIndicator.isHealthy('key', fixture.redis)
+                expect(healthStatus).toEqual({
+                    key: {
+                        status: 'down',
+                        reason: 'Redis ping returned unexpected response: INVALID_RESPONSE'
+                    }
+                })
+            })
+        })
 
-    // 예외 발생 시 message가 없으면 error를 그대로 반환해야 한다
-    it('Should return the raw error if it has no message', async () => {
-        jest.spyOn(fix.redis, 'ping').mockRejectedValueOnce('unknown error')
+        describe('when an exception occurs', () => {
+            it('returns down status with the error message', async () => {
+                jest.spyOn(fixture.redis, 'ping').mockRejectedValueOnce(new Error('error'))
 
-        const res = await fix.redisIndicator.isHealthy('key', fix.redis)
-        expect(res).toEqual({ key: { status: 'down', reason: 'unknown error' } })
+                const healthStatus = await fixture.redisIndicator.isHealthy('key', fixture.redis)
+                expect(healthStatus).toEqual({ key: { status: 'down', reason: 'error' } })
+            })
+        })
+
+        describe('when the error has no message', () => {
+            it('returns the raw error as the reason', async () => {
+                jest.spyOn(fixture.redis, 'ping').mockRejectedValueOnce('unknown error')
+
+                const healthStatus = await fixture.redisIndicator.isHealthy('key', fixture.redis)
+                expect(healthStatus).toEqual({ key: { status: 'down', reason: 'unknown error' } })
+            })
+        })
     })
 })

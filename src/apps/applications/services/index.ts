@@ -1,4 +1,5 @@
 export * from './booking'
+export * from './movie-drafts'
 export * from './purchase'
 export * from './recommendation'
 export * from './showtime-creation'

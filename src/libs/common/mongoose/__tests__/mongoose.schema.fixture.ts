@@ -1,7 +1,7 @@
 import { getModelToken, MongooseModule, Schema as NestSchema, Prop } from '@nestjs/mongoose'
 import { createMongooseSchema, MongooseSchema } from 'common'
 import { Model, mongo, Schema, Types } from 'mongoose'
-import { createTestContext, getMongoTestConnection, withTestId } from 'testlib'
+import { createTestContext, getMongoTestConnection } from 'testlib'
 
 type RawSample = Partial<SchemaTypeSample> & { [key: string]: any }
 
@@ -78,30 +78,24 @@ export class SchemaTypeSample extends MongooseSchema {
     optional?: boolean
 }
 
-export interface Fixture {
+export type MongooseSchemaFixture = {
     teardown: () => Promise<void>
     model: Model<SchemaTypeSample>
 }
 
-export async function createFixture() {
+export async function createMongooseSchemaFixture() {
     const schema = createMongooseSchema(SchemaTypeSample)
 
-    const { uri } = getMongoTestConnection()
-
     const testContext = await createTestContext({
-        metadata: {
-            imports: [
-                MongooseModule.forRootAsync({
-                    useFactory: () => ({ uri, dbName: withTestId('mongoose-schema') })
-                }),
-                MongooseModule.forFeature([{ name: 'schema', schema }])
-            ]
-        }
+        imports: [
+            MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
+            MongooseModule.forFeature([{ name: 'schema', schema }])
+        ]
     })
 
     const model = testContext.module.get<Model<SchemaTypeSample>>(getModelToken('schema'))
 
-    const teardown = async () => {
+    async function teardown() {
         await testContext?.close()
     }
 

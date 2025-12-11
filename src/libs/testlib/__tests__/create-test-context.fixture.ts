@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common'
+import { Controller, Get, Injectable, Param } from '@nestjs/common'
 import {
     MessagePattern,
     MicroserviceOptions,
@@ -27,18 +27,35 @@ class SampleController {
     }
 }
 
-export interface Fixture {
+@Injectable()
+export class SampleService {
+    getMessage() {
+        return 'This method should not be called'
+    }
+}
+
+export type TestContextFixture = {
     teardown: () => Promise<void>
     rpcClient: RpcTestClient
     httpClient: HttpTestClient
+    sampleService: SampleService
 }
 
-export async function createFixture(): Promise<Fixture> {
-    const { servers } = await getNatsTestConnection()
-    const brokerOpts = { transport: Transport.NATS, options: { servers } } as NatsOptions
+export async function createTestContextFixture(): Promise<TestContextFixture> {
+    const brokerOpts = {
+        transport: Transport.NATS,
+        options: getNatsTestConnection()
+    } as NatsOptions
 
     const { httpClient, ...testContext } = await createHttpTestContext({
-        metadata: { controllers: [SampleController] },
+        controllers: [SampleController],
+        providers: [SampleService],
+        overrideProviders: [
+            {
+                original: SampleService,
+                replacement: { getMessage: jest.fn().mockReturnValue({ message: 'This is Mock' }) }
+            }
+        ],
         configureApp: async (app) => {
             app.connectMicroservice<MicroserviceOptions>(brokerOpts, { inheritAppConfig: true })
             await app.startAllMicroservices()
@@ -46,11 +63,12 @@ export async function createFixture(): Promise<Fixture> {
     })
 
     const rpcClient = RpcTestClient.create(brokerOpts)
+    const sampleService = testContext.module.get(SampleService)
 
-    const teardown = async () => {
+    async function teardown() {
         await rpcClient.close()
         await testContext.close()
     }
 
-    return { teardown, rpcClient, httpClient }
+    return { teardown, rpcClient, httpClient, sampleService }
 }

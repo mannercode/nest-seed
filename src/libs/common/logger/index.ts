@@ -1,5 +1,4 @@
 export * from './app-logger.service'
 export * from './create-winston-logger'
 export * from './exception-logger.filter'
-export * from './method-log'
 export * from './success-logging.interceptor'

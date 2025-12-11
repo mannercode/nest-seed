@@ -9,12 +9,13 @@ import { Payment } from './models'
 @Injectable()
 export class PaymentsRepository extends MongooseRepository<Payment> {
     constructor(
-        @InjectModel(Payment.name, MongooseConfigModule.connectionName) model: Model<Payment>
+        @InjectModel(Payment.name, MongooseConfigModule.connectionName)
+        readonly model: Model<Payment>
     ) {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createPayment(createDto: CreatePaymentDto) {
+    async create(createDto: CreatePaymentDto) {
         const payment = this.newDocument()
         payment.customerId = objectId(createDto.customerId)
         payment.amount = createDto.amount

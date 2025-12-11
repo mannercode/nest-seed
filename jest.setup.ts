@@ -1,52 +1,44 @@
-import dotenv from 'dotenv'
+import { MongoClient } from 'mongodb'
 import 'reflect-metadata'
-dotenv.config({ path: ['.env.test'], quiet: true })
-process.env.NODE_ENV = 'test'
+import { generateTestId, getEnv, setEnv } from './jest.utils'
 
-const generateTestId = () => {
-    const characters = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
+let appsMongoClient: MongoClient
+let testlibMongoClient: MongoClient
 
-    return Array.from(
-        { length: 10 },
-        () => characters[Math.floor(Math.random() * characters.length)]
-    ).join('')
-}
+beforeAll(async () => {
+    const nodes = [
+        `${getEnv('MONGO_HOST1')}:${getEnv('MONGO_PORT1')}`,
+        `${getEnv('MONGO_HOST2')}:${getEnv('MONGO_PORT2')}`,
+        `${getEnv('MONGO_HOST3')}:${getEnv('MONGO_PORT3')}`
+    ].join(',')
 
-global.beforeEach(async () => {
-    const testId = generateTestId()
+    appsMongoClient = new MongoClient(
+        `mongodb://${getEnv('MONGO_USERNAME')}:${getEnv('MONGO_PASSWORD')}@${nodes}/?replicaSet=${getEnv('MONGO_REPLICA_SET')}`
+    )
+    await appsMongoClient.connect()
 
-    process.env.TEST_ID = testId
-    process.env.PROJECT_ID = `project-${testId}`
-    process.env.MONGO_DATABASE = `mongodb-${testId}`
+    testlibMongoClient = new MongoClient(getEnv('TESTLIB_MONGO_URI'))
+    await testlibMongoClient.connect()
+    // TTL 인덱스 expires 동작을 빠르게 테스트하기 위해 TTL 모니터 주기를 1초로 설정
+    // Set TTL monitor interval to 1s to speed up TTL index `expires` tests
+    await testlibMongoClient.db('admin').command({ setParameter: 1, ttlMonitorSleepSecs: 1 })
 })
 
-process.env.TEST_REDIS_PASSWORD = process.env.REDIS_PASSWORD
-process.env.TEST_REDIS_HOST1 = process.env.REDIS_HOST1
-process.env.TEST_REDIS_PORT1 = process.env.REDIS_PORT1
-process.env.TEST_REDIS_HOST2 = process.env.REDIS_HOST2
-process.env.TEST_REDIS_PORT2 = process.env.REDIS_PORT2
-process.env.TEST_REDIS_HOST3 = process.env.REDIS_HOST3
-process.env.TEST_REDIS_PORT3 = process.env.REDIS_PORT3
-process.env.TEST_REDIS_HOST4 = process.env.REDIS_HOST4
-process.env.TEST_REDIS_PORT4 = process.env.REDIS_PORT4
-process.env.TEST_REDIS_HOST5 = process.env.REDIS_HOST5
-process.env.TEST_REDIS_PORT5 = process.env.REDIS_PORT5
-process.env.TEST_REDIS_HOST6 = process.env.REDIS_HOST6
-process.env.TEST_REDIS_PORT6 = process.env.REDIS_PORT6
+afterAll(async () => {
+    await appsMongoClient.close()
+    await testlibMongoClient.close()
+})
 
-process.env.TEST_MONGO_REPLICA = process.env.MONGO_REPLICA
-process.env.TEST_MONGO_USERNAME = process.env.MONGO_USERNAME
-process.env.TEST_MONGO_PASSWORD = process.env.MONGO_PASSWORD
-process.env.TEST_MONGO_HOST1 = process.env.MONGO_HOST1
-process.env.TEST_MONGO_PORT1 = process.env.MONGO_PORT1
-process.env.TEST_MONGO_HOST2 = process.env.MONGO_HOST2
-process.env.TEST_MONGO_PORT2 = process.env.MONGO_PORT2
-process.env.TEST_MONGO_HOST3 = process.env.MONGO_HOST3
-process.env.TEST_MONGO_PORT3 = process.env.MONGO_PORT3
+beforeEach(async () => {
+    const testId = generateTestId()
 
-process.env.TEST_NATS_HOST1 = process.env.NATS_HOST1
-process.env.TEST_NATS_PORT1 = process.env.NATS_PORT1
-process.env.TEST_NATS_HOST2 = process.env.NATS_HOST2
-process.env.TEST_NATS_PORT2 = process.env.NATS_PORT2
-process.env.TEST_NATS_HOST3 = process.env.NATS_HOST3
-process.env.TEST_NATS_PORT3 = process.env.NATS_PORT3
+    setEnv('TEST_ID', testId)
+    setEnv('PROJECT_ID', `project-${testId}`)
+    setEnv('MONGO_DATABASE', `mongo-${testId}`)
+    setEnv('TESTLIB_MONGO_DATABASE', `mongo-${testId}`)
+})
+
+afterEach(async () => {
+    await appsMongoClient.db(getEnv('MONGO_DATABASE')).dropDatabase()
+    await testlibMongoClient.db(getEnv('TESTLIB_MONGO_DATABASE')).dropDatabase()
+})

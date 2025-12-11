@@ -5,7 +5,7 @@ import { HoldTicketsDto } from './dtos'
 
 @Injectable()
 export class TicketHoldingClient {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     holdTickets(holdDto: HoldTicketsDto): Promise<boolean> {
         return this.proxy.getJson(Messages.TicketHolding.holdTickets, holdDto)

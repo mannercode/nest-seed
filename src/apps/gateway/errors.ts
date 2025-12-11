@@ -1,7 +1,3 @@
-import { MulterExceptionFilterErrors, AuthErrors } from './controllers'
-import { MulterConfigServiceErrors } from './modules'
+import { AuthErrors } from './controllers'
 
-export const GatewayErrors = {
-    FileUpload: { ...MulterExceptionFilterErrors, ...MulterConfigServiceErrors },
-    Auth: AuthErrors
-}
+export const GatewayErrors = { Auth: AuthErrors }

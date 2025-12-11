@@ -1,6 +1,13 @@
 import { BadRequestException, NotFoundException, OnModuleInit } from '@nestjs/common'
 import { differenceWith, uniq } from 'lodash'
-import { ClientSession, HydratedDocument, Model, QueryWithHelpers } from 'mongoose'
+import {
+    ClientSession,
+    Document,
+    HydratedDocument,
+    Model,
+    ObjectId,
+    QueryWithHelpers
+} from 'mongoose'
 import { PaginationDto, PaginationResult } from '../types'
 import { Assert, Expect } from '../validator'
 import { MongooseErrors } from './errors'
@@ -10,8 +17,8 @@ type SessionArg = ClientSession | undefined
 
 export abstract class MongooseRepository<Doc> implements OnModuleInit {
     constructor(
-        protected model: Model<Doc>,
-        protected maxTake: number
+        protected readonly model: Model<Doc>,
+        protected readonly maxTake: number
     ) {}
 
     async onModuleInit() {
@@ -35,9 +42,10 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     }
 
     async saveMany(docs: HydratedDocument<Doc>[], session: SessionArg = undefined) {
-        const { insertedCount, matchedCount, deletedCount } = await this.model.bulkSave(docs, {
-            session
-        })
+        const { insertedCount, matchedCount, deletedCount } = await this.model.bulkSave(
+            docs as Document[],
+            { session }
+        )
 
         Assert.equals(
             docs.length,
@@ -48,8 +56,19 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return true
     }
 
+    async update(id: string, values: Record<string, any>, session: SessionArg = undefined) {
+        const doc = await this.getById(id, session)
+        doc.set(values)
+
+        await doc.save({ session })
+
+        return doc
+    }
+
     async findById(id: string, session: SessionArg = undefined) {
-        return this.model.findById(objectId(id), null, { session })
+        const doc = await this.model.findById(objectId(id), null, { session })
+
+        return doc as HydratedDocument<Doc>
     }
 
     async findByIds(ids: string[], session: SessionArg = undefined) {
@@ -73,7 +92,11 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
 
         const docs = await this.findByIds(uniqueIds, session)
 
-        const notFoundIds = differenceWith(uniqueIds, docs, (id, doc) => id === doc.id)
+        const notFoundIds = differenceWith(
+            uniqueIds,
+            docs,
+            (id, doc) => id === (doc._id as ObjectId).toString()
+        )
 
         if (notFoundIds.length > 0) {
             throw new NotFoundException({
@@ -98,7 +121,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return docs
     }
 
-    async existByIds(ids: string[], session: SessionArg = undefined) {
+    async allExistByIds(ids: string[], session: SessionArg = undefined) {
         const count = await this.model.countDocuments({ _id: { $in: objectIds(ids) } } as any, {
             session
         })

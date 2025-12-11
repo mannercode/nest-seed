@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import { Transport } from '@nestjs/microservices'
+import { ScheduleModule } from '@nestjs/schedule'
 import {
     AppLoggerService,
     ClientProxyModule,
@@ -18,7 +19,7 @@ import { RequestValidationPipe } from '../pipes/request-validation.pipe'
         ConfigModule.forRoot({
             cache: true,
             ignoreEnvFile: true,
-            validationSchema: AppConfigService.configSchema,
+            validationSchema: AppConfigService.schema,
             validationOptions: { abortEarly: false }
         }),
         ClientProxyModule.registerAsync({
@@ -29,7 +30,8 @@ import { RequestValidationPipe } from '../pipes/request-validation.pipe'
                 }
             },
             inject: [AppConfigService]
-        })
+        }),
+        ScheduleModule.forRoot()
     ],
     providers: [
         AppConfigService,
@@ -38,9 +40,9 @@ import { RequestValidationPipe } from '../pipes/request-validation.pipe'
         { provide: APP_INTERCEPTOR, useClass: SuccessLoggingInterceptor },
         {
             provide: AppLoggerService,
-            useFactory: (config: AppConfigService) => {
-                const loggerInstance = createWinstonLogger(config.log)
-                return new AppLoggerService(loggerInstance)
+            useFactory: async ({ log }: AppConfigService) => {
+                const logger = createWinstonLogger(log)
+                return new AppLoggerService(logger)
             },
             inject: [AppConfigService]
         }

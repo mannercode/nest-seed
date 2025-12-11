@@ -3,12 +3,12 @@ import { PurchaseRecordDto, PurchaseRecordsClient, PurchaseRecordsModule } from 
 import { PurchasesController } from 'apps/gateway'
 import { createPurchaseRecord, TestFixture, createTestFixture } from '../__helpers__'
 
-export interface Fixture extends TestFixture {
+export type PurchaseRecordsFixture = TestFixture & {
     purchaseRecordsService: PurchaseRecordsClient
     createdPurchaseRecord: PurchaseRecordDto
 }
 
-export const createFixture = async (): Promise<Fixture> => {
+export async function createPurchaseRecordsFixture(): Promise<PurchaseRecordsFixture> {
     const fix = await createTestFixture({
         imports: [PurchaseRecordsModule],
         providers: [PurchaseRecordsClient, PurchaseClient],

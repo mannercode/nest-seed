@@ -8,7 +8,7 @@ import {
     padNumber
 } from 'common'
 import { HydratedDocument, Model } from 'mongoose'
-import { createTestContext, getMongoTestConnection, withTestId } from 'testlib'
+import { createTestContext, getMongoTestConnection } from 'testlib'
 
 @Schema({ toJSON: { virtuals: true } })
 class Sample extends MongooseSchema {
@@ -27,60 +27,61 @@ export const maxTakeValue = 50
 
 @Injectable()
 class SamplesRepository extends MongooseRepository<Sample> {
-    constructor(@InjectModel(Sample.name) model: Model<Sample>) {
+    constructor(@InjectModel(Sample.name) readonly model: Model<Sample>) {
         super(model, maxTakeValue)
     }
 }
 
-export const sortByName = (documents: SampleDto[]) =>
-    documents.sort((a, b) => a.name.localeCompare(b.name))
+export function sortByName(documents: SampleDto[]) {
+    return documents.sort((a, b) => a.name.localeCompare(b.name))
+}
 
-export const sortByNameDescending = (documents: SampleDto[]) =>
-    documents.sort((a, b) => b.name.localeCompare(a.name))
+export function sortByNameDescending(documents: SampleDto[]) {
+    return documents.sort((a, b) => b.name.localeCompare(a.name))
+}
 
-export const createSample = (repository: SamplesRepository) => {
+export function createSample(repository: SamplesRepository) {
     const doc = repository.newDocument()
     doc.name = 'Sample-Name'
     return doc.save()
 }
 
-export const createSamples = async (repository: SamplesRepository) =>
-    Promise.all(
-        Array.from({ length: 20 }, async (_, index) => {
+export async function createSamples(repository: SamplesRepository) {
+    return Promise.all(
+        Array.from({ length: 20 }, async (_unused, index) => {
             const doc = repository.newDocument()
             doc.name = `Sample-${padNumber(index, 3)}`
             return doc.save()
         })
     )
+}
 
-export const toDto = (item: SampleDocument) => mapDocToDto(item, SampleDto, ['id', 'name'])
-export const toDtos = (items: SampleDocument[]) => items.map((item) => toDto(item))
+export function toDto(item: SampleDocument) {
+    return mapDocToDto(item, SampleDto, ['id', 'name'])
+}
+export function toDtos(items: SampleDocument[]) {
+    return items.map((item) => toDto(item))
+}
 
-export interface Fixture {
+export type MongooseRepositoryFixture = {
     teardown: () => Promise<void>
     repository: SamplesRepository
     BadRequestException: typeof BadRequestException
     NotFoundException: typeof NotFoundException
 }
 
-export async function createFixture() {
-    const { uri } = getMongoTestConnection()
-
+export async function createMongooseRepositoryFixture() {
     const testContext = await createTestContext({
-        metadata: {
-            imports: [
-                MongooseModule.forRootAsync({
-                    useFactory: () => ({ uri, dbName: withTestId('mongoose-repository') })
-                }),
-                MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])
-            ],
-            providers: [SamplesRepository]
-        }
+        imports: [
+            MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
+            MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])
+        ],
+        providers: [SamplesRepository]
     })
 
     const repository = testContext.module.get(SamplesRepository)
 
-    const teardown = async () => {
+    async function teardown() {
         await testContext?.close()
     }
 

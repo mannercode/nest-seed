@@ -1,37 +1,29 @@
 import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
 import { Injectable } from '@nestjs/common'
 import { CacheModule, CacheService, InjectCache } from 'common'
-import { createTestingModule, getRedisTestConnection, withTestId } from 'testlib'
+import { createTestContext, getRedisTestConnection, withTestId } from 'testlib'
 
 @Injectable()
-class TestCacheService {
-    constructor(@InjectCache() _service: CacheService) {}
+class TestInjectCacheService {
+    constructor(@InjectCache() readonly _: CacheService) {}
 }
 
-export interface Fixture {
-    teardown: () => Promise<void>
-    cacheService: CacheService
-}
+export type CacheServiceFixture = { teardown: () => Promise<void>; cacheService: CacheService }
 
-export async function createFixture() {
-    const { nodes, password } = getRedisTestConnection()
-
-    const module = await createTestingModule({
+export async function createCacheServiceFixture() {
+    const { module, close } = await createTestContext({
         imports: [
-            RedisModule.forRoot(
-                { type: 'cluster', nodes, options: { redisOptions: { password } } },
-                'name'
-            ),
+            RedisModule.forRoot({ type: 'single', url: getRedisTestConnection() }, 'name'),
             CacheModule.register({ prefix: withTestId('cache'), redisName: 'name' })
         ],
-        providers: [TestCacheService]
+        providers: [TestInjectCacheService]
     })
 
     const cacheService = module.get(CacheService.getServiceName())
     const redis = module.get(getRedisConnectionToken('name'))
 
-    const teardown = async () => {
-        await module.close()
+    async function teardown() {
+        await close()
         await redis.quit()
     }
 

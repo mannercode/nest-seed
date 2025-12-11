@@ -7,7 +7,7 @@ import { ShowtimeCreationService } from './showtime-creation.service'
 
 @Controller()
 export class ShowtimeCreationController {
-    constructor(private service: ShowtimeCreationService) {}
+    constructor(private readonly service: ShowtimeCreationService) {}
 
     @MessagePattern(Messages.ShowtimeCreation.searchMoviesPage)
     searchMoviesPage(@Payload() searchDto: PaginationDto) {

@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common'
-import { CreateStorageFileDto } from 'apps/infrastructures'
 import { ClientProxyService, InjectClientProxy, PaginationResult } from 'common'
 import { Messages } from 'shared'
 import {
@@ -12,32 +11,29 @@ import {
 
 @Injectable()
 export class MoviesClient {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
-    createMovie(
-        createMovieDto: CreateMovieDto,
-        createFileDtos: CreateStorageFileDto[]
-    ): Promise<MovieDto> {
-        return this.proxy.getJson(Messages.Movies.createMovie, { createMovieDto, createFileDtos })
+    create(createMovieDto: CreateMovieDto): Promise<MovieDto> {
+        return this.proxy.getJson(Messages.Movies.create, createMovieDto)
     }
 
-    updateMovie(movieId: string, updateDto: UpdateMovieDto): Promise<MovieDto> {
-        return this.proxy.getJson(Messages.Movies.updateMovie, { movieId, updateDto })
+    update(movieId: string, updateDto: UpdateMovieDto): Promise<MovieDto> {
+        return this.proxy.getJson(Messages.Movies.update, { movieId, updateDto })
     }
 
-    getMovies(movieIds: string[]): Promise<MovieDto[]> {
-        return this.proxy.getJson(Messages.Movies.getMovies, movieIds)
+    getMany(movieIds: string[]): Promise<MovieDto[]> {
+        return this.proxy.getJson(Messages.Movies.getMany, movieIds)
     }
 
-    deleteMovies(movieIds: string[]): Promise<DeleteMoviesResponse> {
-        return this.proxy.getJson(Messages.Movies.deleteMovies, movieIds)
+    deleteMany(movieIds: string[]): Promise<DeleteMoviesResponse> {
+        return this.proxy.getJson(Messages.Movies.deleteMany, movieIds)
     }
 
-    searchMoviesPage(searchDto: SearchMoviesPageDto): Promise<PaginationResult<MovieDto>> {
-        return this.proxy.getJson(Messages.Movies.searchMoviesPage, searchDto)
+    searchPage(searchDto: SearchMoviesPageDto): Promise<PaginationResult<MovieDto>> {
+        return this.proxy.getJson(Messages.Movies.searchPage, searchDto)
     }
 
-    moviesExist(movieIds: string[]): Promise<boolean> {
-        return this.proxy.getJson(Messages.Movies.moviesExist, movieIds)
+    allExistByIds(movieIds: string[]): Promise<boolean> {
+        return this.proxy.getJson(Messages.Movies.allExist, movieIds)
     }
 }

@@ -5,8 +5,8 @@ import { PurchaseRecordsClient } from 'apps/cores'
 @Controller('purchases')
 export class PurchasesController {
     constructor(
-        private purchasesService: PurchaseRecordsClient,
-        private purchaseProcessService: PurchaseClient
+        private readonly purchasesService: PurchaseRecordsClient,
+        private readonly purchaseProcessService: PurchaseClient
     ) {}
 
     @Post()
@@ -16,7 +16,7 @@ export class PurchasesController {
 
     @Get(':purchaseId')
     async getPurchase(@Param('purchaseId') purchaseId: string) {
-        const purchases = await this.purchasesService.getPurchases([purchaseId])
+        const purchases = await this.purchasesService.getMany([purchaseId])
         return purchases[0]
     }
 }

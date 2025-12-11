@@ -1,211 +1,154 @@
-English | [한국어](docs/README.ko.md)
-
 # NEST-MSA
 
-This project is a Nest(NestJS)-based example that follows the Microservices Architecture (MSA), featuring the following characteristics:
+Nest(NestJS) 기반의 MSA(Microservices Architecture) 예제 프로젝트로 주요 특징은 다음과 같습니다:
 
-- **Docker-based Development Environment**: Provides a consistent development environment using containers.
-- **Database Integration**: Includes pre-configured settings for MongoDB and Redis.
-- **Test Coverage**: Offers unit and integration test code based on Jest.
-- **High-performance Test Execution**: Improves test speed by leveraging Jest’s parallel execution feature.
-- **Layered Architecture**: Adopts a 3-Layer architecture separating concerns.
-- **MSA Support**: Supports a microservice architecture based on the NATS message broker.
-- **E2E Test Automation**: Builds an end-to-end test environment using Bash scripts.
-- **Design Documents Included**: Contains architecture diagrams created with PlantUML.
+- Docker 기반 개발/테스트 환경: Dev Container와 Docker Compose를 함께 사용합니다.
+- 데이터 및 메시징 통합: MongoDB(Replica Set), Redis, NATS, MinIO를 기본 포함합니다.
+- 테스트 자동화: Jest로 단위/통합 테스트 및 커버리지 수집, Bash 기반 E2E 스위트 제공.
+- 테스트 성능 도구: 병렬 실행 설정과 반복 실행 스크립트(`tests/repeat/run.sh`) 제공.
+- 계층화 아키텍처: 관심사를 분리한 3계층 구조를 적용했습니다.
+- MSA 지원: NATS 메시지 브로커 기반의 마이크로서비스 아키텍처를 지원합니다.
+- 설계 문서 제공: PlantUML로 작성된 아키텍처 다이어그램을 제공합니다.
 
-> This project is based on the `Microservices Architecture`. If you need a `Monolithic Architecture`, please refer to the [nest-mono](https://github.com/mannercode/nest-mono) project.
+## 1. 시스템 요구 사항
 
-## 1. System Requirements
+이 프로젝트를 실행하려면 다음과 같은 호스트 환경이 필요합니다:
 
-To run this project, you need the following host environment:
-
-- **CPU**: 4 cores or more
-- **Memory**: 16GB or more recommended
-    - If you have less than 16GB, it’s recommended to run Jest with the `--runInBand` option.
-    - If you have many CPU cores, configure `jest.config.ts` so that `maxWorkers` is `(RAM / 4)`. (e.g., 8GB RAM → 2 workers)
-- **Docker**
-- **VSCode and Extensions**
+- **CPU**: 4코어 이상
+- **메모리**: 16GB 이상 권장
+    - 16GB 미만이면 `npm test -- --runInBand` 또는 `jest.config.ts`의 `maxWorkers`, `testTimeout` 값을 낮춰 실행하세요.
+- **Docker 및 Docker Compose v2**
+- **Node.js 24.x** (Dev Container에서 자동 제공)
+- **VS Code 및 확장 프로그램**
     - Dev Containers (ms-vscode-remote.remote-containers)
 
-> Using Windows may lead to compatibility issues. It’s recommended to run Ubuntu via VMware and use VSCode within that environment.
+> Windows 환경은 호환성 이슈가 발생할 수 있으므로, VMware로 Ubuntu를 실행한 후 그 안에서 VSCode를 사용하는 방식을 권장합니다.
 
-## 2. Changing the Project Name
+## 2. 환경 파일 및 프로젝트 이름
 
-To rename the project, edit the following files:
-
-- `.env.test`
-- `package.json`
-    - `name`
-- `src/apps/shared/config/etc.ts`
-    - `ProjectName`
-
-## 3. Setting up the Development Environment
-
-### 3.1 Development Environment Setup
-
-1. Configure [Git credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials) on your host.
-2. In VSCode, run the **“Reopen in Container”** command to automatically set up the environment.
-
-### 3.2 Environment Initialization
-
-1. In VSCode, go to **View → Command Palette** → run **Dev Containers: Rebuild Container**.
-
-### 3.3 Configuring the Development Infrastructure
-
-To modify development infrastructure settings, edit the following:
-
-- `.env.infra`
+- `.env`: 애플리케이션/테스트 공용 설정(프로젝트 ID, 포트, Mongo/Redis/NATS/MinIO 접속 정보, 로그 설정 등). 기본값은 `host.docker.internal`을 바라보도록 되어 있으므로 다른 네트워크라면 호스트 IP를 맞춰 주세요.
+- `.env.infra`: 로컬 인프라와 Jest Testcontainers에서 사용할 이미지 태그를 정의합니다.
     ```env
-    MONGO_IMAGE=mongo:8.0
-    REDIS_IMAGE=redis:7.4
-    NATS_IMAGE=nats:2.10-alpine
-    APP_IMAGE=node:22-alpine
+    MONGO_IMAGE=mongo:8.2.2
+    REDIS_IMAGE=redis:8.0-alpine
+    NATS_IMAGE=nats:2.11-alpine
+    MINIO_IMAGE=minio/minio:latest
     ```
-- `.devcontainer/Dockerfile`
-    ```dockerfile
-    FROM node:22-bookworm
+- 프로젝트 이름 변경
+    - `.env`의 `PROJECT_ID`
+    - `package.json`의 `name`
+
+## 3. 빠른 시작
+
+1. 의존성 설치
+    ```sh
+    npm ci
     ```
-- `.github/workflows/test-coverage.yaml`
-    ```yaml
-    jobs:
-        test-coverage:
-            runs-on: ubuntu-24.04-arm
-            container: node:22-bookworm
-    ```
-
-### 3.4 Configuring the Test Infrastructure
-
-The test environment uses Docker-based MongoDB, Redis, and NATS, closely mirroring the production environment. Advantages include:
-
-- **Production Environment Similarity**: Detect potential production issues early.
-- **Simplicity**: Easily configure the test environment without extra libraries.
-
-> Repetitive testing can occasionally fail due to MongoDB’s increasing memory usage. Hence, the script is set to re-initialize infrastructure before running the entire test suite.
->
-> Refer to `scripts/run-test.sh` for more details.
-
-## 4. Integration Tests and Debugging
-
-Integration tests efficiently support MSA and TDD-based development by minimizing mocks and testing actual service combinations.
-
-### 4.1 Running Integration Tests
-
-1. Install the Jest Runner extension in VSCode. You will see Run | Debug buttons at the top of each test file.
-    - **Run**: Executes tests (no log output)
-    - **Debug**: Attaches a debugger before test execution (logs can be viewed)
-    - If the buttons are not visible, enable Code Lens in your VSCode settings.
-
-    <img src="./docs/images/jest-run-debug-button.png" alt="Jest Button" width="344"/>
-
-2. Run `npm test` in the CLI:
+2. 로컬 인프라 실행 (MongoDB Replica Set, Redis, NATS, MinIO)
 
     ```sh
-    npm test
-
-    > nest-msa@0.0.1 test
-    > bash scripts/run-test.sh
-
-    Select Test Suites
-    > all
-      apps
-      common
-    Enter number of runs (default 1):
+    npm run infra:reset
     ```
 
-### 4.2 What to Do If Tests Fail
+    - `infra/local/compose.yml`을 사용하며 `.env`와 `.env.infra`를 함께 읽습니다.
 
-Tests may fail depending on RAM or CPU cores. If the cause is unclear, try adjusting:
+3. 유닛/통합 테스트 실행
 
-```ts
-// jest.config.ts
-testTimeout: 60 * 1000
-maxWorkers: 1
-```
+    ```sh
+    npm test                    # 전체
+    TEST_ROOT=src/apps npm test  # 특정 경로만
+    tests/repeat/run.sh src 3    # 선택한 스위트를 n회 반복
+    ```
 
-> In a 32GB/8-core environment, a test that completes in under 5 seconds in a single run could exceed `testTimeout` when run in parallel.
+    - Docker가 실행 중이어야 하며 `.env.infra`의 이미지 태그로 Testcontainers가 기동됩니다.
 
-## 5. Running and Debugging Services
+4. E2E 테스트 실행
 
-Due to the microservice nature of this project, it’s typically more efficient to validate each service using integration tests rather than running them individually. However, if you need to run a specific service for debugging, refer to:
+    ```sh
+    npm run test:e2e
+    ```
 
-- `/.vscode/launch.json`
+    - 각 스위트마다 `npm run infra:reset`과 `npm run apps:reset`으로 인프라/애플리케이션을 초기화합니다.
+    - 기본 호출 대상은 `http://host.docker.internal:${HTTP_PORT}`(기본 3000) 입니다.
 
-## 6. Build and E2E Testing
+5. 종료
+    ```sh
+    npm run apps:down
+    npm run infra:down
+    ```
 
-Use the following command to perform a complete build and end-to-end test:
+## 4. 서비스 실행 및 디버깅
 
-```sh
-npm run test:e2e
-```
+- Docker Compose로 전체 애플리케이션 빌드/실행: `npm run apps:up` 또는 `npm run apps:reset` (`compose.yml` 사용).
+- 단일 서비스 디버깅(핫 리로드): `TARGET_APP=gateway npm run debug` (`TARGET_APP`은 `gateway`, `applications`, `cores`, `infrastructures` 중 선택).
+- 빌드 후 실행: `TARGET_APP=gateway npm run build` → `TARGET_APP=gateway npm run start`.
+- VS Code `Debug App` 구성에서 위 `TARGET_APP`을 선택해 바로 디버깅할 수 있습니다.
 
-The configuration files used are:
+## 5. 개발 환경(Dev Container)
 
-- `./Dockerfile`
-- `./docker-compose.yml`
-- `./scripts/run-apps.sh`
+1. 호스트에서 [Git credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials)를 설정합니다.
+2. VSCode에서 "Reopen in Container" 명령을 실행합니다.
+3. Dev Container는 `.devcontainer/Dockerfile`(베이스 `node:24-bookworm`)을 사용하며, `postCreateCommand`/`postStartCommand`로 `npm ci` 및 `npm run infra:reset`을 자동 실행합니다.
 
-## 7. Project Structure
-
-Currently, the system is organized into four separate projects—`gateway`, `applications`, `cores`, and `infrastructures`—based on a small team structure (3 to 4 people). If necessary, each service can be split into an independent project for further scalability.
-
-### 7.1 폴더 구성
+## 6. 프로젝트 구조
 
 ```text
 src
-├── apps                  # Various service applications
-│   ├── __tests__         # Integration tests
+├── apps
+│   ├── __tests__             # 통합 테스트
 │   ├── applications
 │   │   └── services
-│   │       ├── booking             # Ticket reservation
-│   │       ├── purchase-process    # Payment process
-│   │       ├── recommendation      # Recommendation service
-│   │       └── showtime-creation   # Creating showtimes
+│   │       ├── booking              # 티켓 예매
+│   │       ├── purchase             # 결제 처리
+│   │       ├── recommendation       # 추천 서비스
+│   │       └── showtime-creation    # 상영시간 생성
 │   ├── cores
 │   │   └── services
-│   │       ├── customers         # Customer auth/management (Mock-based tests, hidden passwords, split service)
-│   │       ├── movies            # Movie management (includes file uploads)
-│   │       ├── purchases         # Purchase management
-│   │       ├── showtimes         # Showtime management (various queries)
-│   │       ├── theaters          # Theater management (index on ‘name’)
-│   │       ├── ticket-holding    # Ticket holding management
-│   │       ├── tickets           # Ticket management (array validation, etc.)
-│   │       └── watch-records     # Viewing history management
-│   ├── gateway           # REST API entry point
-│   │   └── controllers
-│   ├── infrastructures   # External service integrations
+│   │       ├── customers            # 고객 인증/관리
+│   │       ├── movies               # 영화 관리 (파일 업로드 포함)
+│   │       ├── purchase-records     # 구매 기록 관리
+│   │       ├── showtimes            # 상영 시간 관리
+│   │       ├── theaters             # 극장 관리
+│   │       ├── ticket-holding       # 티켓 선점 관리
+│   │       ├── tickets              # 티켓 관리 (배열 유효성 검증 포함)
+│   │       └── watch-records        # 관람 기록 관리
+│   ├── gateway
+│   │   └── controllers              # REST API 진입점
+│   ├── infrastructures
 │   │   └── services
-│   │       ├── payments         # Payment system integration
-│   │       └── storage-files    # File storage integration
-│   └── shared            # Shared code
+│   │       ├── assets               # 파일 저장소 연동
+│   │       └── payments             # 결제 시스템 연동
+│   └── shared                       # 공통 코드
 │       ├── config
 │       ├── modules
 │       └── pipes
-└── libs                  # General-purpose common libraries
+└── libs
     ├── common
     └── testlib
 ```
 
-## 8. Design Documents
+## 7. 설계 문서
 
-Design documents are written with PlantUML and located under ./docs/designs.
-• VSCode Extension: `PlantUML(jebbs.plantuml)`
-• Place the cursor between `@startuml` and `@enduml` to preview
-• If necessary, adjust security settings by clicking `…` → `Change Preview Security Settings`
+설계 문서는 `PlantUML`을 사용해 작성되었으며, `docs/ko/designs` 경로에 있습니다.
 
-Example:
+- VSCode 확장: `PlantUML (jebbs.plantuml)` 설치 필요
+- 미리보기 시 커서가 `@startuml`과 `@enduml` 사이에 있어야 합니다
+- 보안 설정이 필요한 경우: 우측 상단 `...` → `미리보기 보안 설정 변경`
 
-<img src="./docs/images/design-sample.png" alt="Document written in PlantUML" width="1061"/>
+예시:
 
-## 9. Additional Documentation
+<img src="./docs/images/design-sample.png" alt="PlantUML로 작성한 문서" width="1061"/>
 
-For more details on the implementation and design, see the documents below.
+## 8. 추가 문서
 
-- Guides
-    - [Essence-Based Interpretation](https://mannercode.com/2024/05/04/ebi-en.html)
-    - [Design Guide](docs/en/guides/design.guide.md)
-    - [Implementation Guide](docs/en/guides/implementation.guide.md)
-- Designs
-    - [Use Cases](docs/en/designs/use-cases.md)
-    - [Entities](docs/en/designs/entities.md)
-    - [Showtime Creation](docs/en/designs/showtime-creation.md)
-    - [Tickets Purchase](docs/en/designs/tickets-purchase.md)
+이 프로젝트의 구현 및 설계에 대한 자세한 사항은 아래 문서를 참고하세요:
+
+- 가이드 문서
+    - [본질 기반 해석](https://mannercode.com/2024/05/04/ebi.html)
+    - [설계 가이드](./docs/ko/guides/design.guide.md)
+    - [구현 가이드](./docs/ko/guides/implementation.guide.md)
+- 설계 문서
+    - [유스케이스](./docs/ko/designs/use-cases.md)
+    - [엔티티](./docs/ko/designs/entities.md)
+    - [상영시간 생성](./docs/ko/designs/showtime-creation.md)
+    - [티켓 구매](./docs/ko/designs/tickets-purchase.md)

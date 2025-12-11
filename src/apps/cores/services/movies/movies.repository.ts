@@ -3,16 +3,19 @@ import { InjectModel } from '@nestjs/mongoose'
 import { MongooseRepository, objectIds, QueryBuilder, QueryBuilderOptions } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import { CreateMovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
+import { CreateMovieDto, SearchMoviesPageDto } from './dtos'
 import { Movie } from './models'
 
 @Injectable()
 export class MoviesRepository extends MongooseRepository<Movie> {
-    constructor(@InjectModel(Movie.name, MongooseConfigModule.connectionName) model: Model<Movie>) {
+    constructor(
+        @InjectModel(Movie.name, MongooseConfigModule.connectionName) readonly model: Model<Movie>
+    ) {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createMovie(createDto: CreateMovieDto, storageFileIds: string[]) {
+    async create(createDto: CreateMovieDto) {
+        // TODO 하나로 합체?
         const movie = this.newDocument()
         movie.title = createDto.title
         movie.genres = createDto.genres
@@ -21,26 +24,12 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         movie.durationInSeconds = createDto.durationInSeconds
         movie.director = createDto.director
         movie.rating = createDto.rating
-        movie.imageIds = objectIds(storageFileIds)
+        movie.assetIds = objectIds(createDto.assetIds)
 
         return movie.save()
     }
 
-    async updateMovie(movieId: string, updateDto: UpdateMovieDto) {
-        const movie = await this.getById(movieId)
-
-        if (updateDto.title) movie.title = updateDto.title
-        if (updateDto.genres) movie.genres = updateDto.genres
-        if (updateDto.releaseDate) movie.releaseDate = updateDto.releaseDate
-        if (updateDto.plot) movie.plot = updateDto.plot
-        if (updateDto.durationInSeconds) movie.durationInSeconds = updateDto.durationInSeconds
-        if (updateDto.director) movie.director = updateDto.director
-        if (updateDto.rating) movie.rating = updateDto.rating
-
-        return movie.save()
-    }
-
-    async searchMoviesPage(searchDto: SearchMoviesPageDto) {
+    async searchPage(searchDto: SearchMoviesPageDto) {
         const { take, skip, orderby } = searchDto
 
         const pagination = await this.findWithPagination({

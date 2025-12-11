@@ -9,7 +9,7 @@ const getTicketKey = (showtimeId: string, ticketId: string) => `Ticket:{${showti
 
 @Injectable()
 export class TicketHoldingService {
-    constructor(@InjectCache('ticket-holding') private cacheService: CacheService) {}
+    constructor(@InjectCache('ticket-holding') private readonly cacheService: CacheService) {}
 
     async holdTickets({ customerId, showtimeId, ticketIds }: HoldTicketsDto) {
         const ticketKeys = ticketIds.map((ticketId) => getTicketKey(showtimeId, ticketId))

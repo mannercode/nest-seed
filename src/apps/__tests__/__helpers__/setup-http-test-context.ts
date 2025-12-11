@@ -4,50 +4,54 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 import compression from 'compression'
 import express from 'express'
 import Redis from 'ioredis'
-import { AppConfigService, CommonModule, MongooseConfigModule, RedisConfigModule } from 'shared'
 import {
-    createHttpTestContext,
-    getNatsTestConnection,
-    getTestId,
-    HttpTestContext,
-    ModuleMetadataEx
-} from 'testlib'
+    AppConfigService,
+    CommonModule,
+    getProjectId,
+    MongooseConfigModule,
+    RedisConfigModule
+} from 'shared'
+import { createHttpTestContext, HttpTestContext, ModuleMetadataEx } from 'testlib'
 
-export interface TestFixture extends HttpTestContext {
-    teardown: () => Promise<void>
-}
+export type TestFixture = HttpTestContext & { teardown: () => Promise<void> }
 
-export const createTestFixture = async (metadata: ModuleMetadataEx) => {
+export async function createTestFixture(metadata: ModuleMetadataEx) {
     metadata.imports?.push(
         CommonModule,
         MongooseConfigModule,
         RedisConfigModule,
         BullModule.forRootAsync('queue', {
-            useFactory: (redis: Redis) => ({ prefix: `{queue:${getTestId()}}`, connection: redis }),
+            useFactory(redis: Redis) {
+                return { prefix: `{queue:${getProjectId()}}`, connection: redis }
+            },
             inject: [RedisConfigModule.moduleName]
         })
     )
 
     const context = await createHttpTestContext({
-        metadata,
         configureApp: async (app) => {
             const config = app.get(AppConfigService)
 
             app.use(compression())
             app.use(express.json({ limit: config.http.requestPayloadLimit }))
 
-            const { servers } = await getNatsTestConnection()
-
             app.connectMicroservice<MicroserviceOptions>(
-                { transport: Transport.NATS, options: { servers, queue: getTestId() } },
+                {
+                    transport: Transport.NATS,
+                    options: { servers: config.nats.servers, queue: getProjectId() }
+                },
                 { inheritAppConfig: true }
             )
 
             await app.startAllMicroservices()
-        }
+            // This prevents the following error:
+            // Empty response. There are no subscribers listening to that message
+            await app.init()
+        },
+        ...metadata
     })
 
-    const teardown = async () => {
+    async function teardown() {
         await context.close()
 
         const redis = context.module.get(RedisConfigModule.moduleName)
@@ -57,7 +61,7 @@ export const createTestFixture = async (metadata: ModuleMetadataEx) => {
     return { ...context, teardown }
 }
 
-export const createConfigServiceMock = (mockValues: Record<string, any>) => {
+export function createConfigServiceMock(mockValues: Record<string, any>) {
     const realConfigService = new ConfigService()
 
     return {

@@ -1,49 +1,51 @@
 import { Module } from '@nestjs/common'
 import {
     BookingClient,
+    MovieDraftsClient,
     PurchaseClient,
     RecommendationClient,
     ShowtimeCreationClient
 } from 'apps/applications'
 import { CustomersClient, MoviesClient, PurchaseRecordsClient, TheatersClient } from 'apps/cores'
-import { StorageFilesClient } from 'apps/infrastructures'
+import { AssetsClient } from 'apps/infrastructures'
 import { CommonModule } from 'shared'
 import {
     BookingController,
+    MovieDraftsController,
     CustomerJwtStrategy,
     CustomerLocalStrategy,
     CustomersController,
     MoviesController,
     PurchasesController,
     ShowtimeCreationController,
-    StorageFilesController,
     TheatersController
 } from './controllers'
-import { HealthModule, MulterConfigModule } from './modules'
+import { HealthModule } from './modules'
 
 @Module({
-    imports: [CommonModule, HealthModule, MulterConfigModule],
+    imports: [CommonModule, HealthModule],
     providers: [
         CustomerLocalStrategy,
         CustomerJwtStrategy,
         CustomersClient,
-        StorageFilesClient,
+        AssetsClient,
         MoviesClient,
         TheatersClient,
         ShowtimeCreationClient,
         BookingClient,
         PurchaseRecordsClient,
         RecommendationClient,
-        PurchaseClient
+        PurchaseClient,
+        MovieDraftsClient
     ],
     controllers: [
         CustomersController,
-        StorageFilesController,
         MoviesController,
         TheatersController,
         ShowtimeCreationController,
         BookingController,
-        PurchasesController
+        PurchasesController,
+        MovieDraftsController
     ]
 })
 export class GatewayModule {}

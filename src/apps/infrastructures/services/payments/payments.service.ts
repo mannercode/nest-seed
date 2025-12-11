@@ -6,22 +6,31 @@ import { PaymentsRepository } from './payments.repository'
 
 @Injectable()
 export class PaymentsService {
-    constructor(private repository: PaymentsRepository) {}
+    constructor(private readonly repository: PaymentsRepository) {}
 
-    async createPayment(createDto: CreatePaymentDto) {
-        const payment = await this.repository.createPayment(createDto)
+    async create(createDto: CreatePaymentDto) {
+        const payment = await this.repository.create(createDto)
 
         return this.toDto(payment)
     }
 
-    async getPayments(paymentIds: string[]) {
+    async getMany(paymentIds: string[]) {
         const payments = await this.repository.getByIds(paymentIds)
 
         return this.toDtos(payments)
     }
 
-    private toDto = (payment: PaymentDocument) =>
-        mapDocToDto(payment, PaymentDto, ['id', 'customerId', 'amount', 'createdAt', 'updatedAt'])
+    private toDto(payment: PaymentDocument) {
+        return mapDocToDto(payment, PaymentDto, [
+            'id',
+            'customerId',
+            'amount',
+            'createdAt',
+            'updatedAt'
+        ])
+    }
 
-    private toDtos = (payments: PaymentDocument[]) => payments.map((payment) => this.toDto(payment))
+    private toDtos(payments: PaymentDocument[]) {
+        return payments.map((payment) => this.toDto(payment))
+    }
 }

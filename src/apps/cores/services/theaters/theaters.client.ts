@@ -11,29 +11,29 @@ import {
 
 @Injectable()
 export class TheatersClient {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
-    createTheater(createDto: CreateTheaterDto): Promise<TheaterDto> {
-        return this.proxy.getJson(Messages.Theaters.createTheater, createDto)
+    create(createDto: CreateTheaterDto): Promise<TheaterDto> {
+        return this.proxy.getJson(Messages.Theaters.create, createDto)
     }
 
-    updateTheater(theaterId: string, updateDto: UpdateTheaterDto): Promise<TheaterDto> {
-        return this.proxy.getJson(Messages.Theaters.updateTheater, { theaterId, updateDto })
+    update(theaterId: string, updateDto: UpdateTheaterDto): Promise<TheaterDto> {
+        return this.proxy.getJson(Messages.Theaters.update, { theaterId, updateDto })
     }
 
-    getTheaters(theaterIds: string[]): Promise<TheaterDto[]> {
-        return this.proxy.getJson(Messages.Theaters.getTheaters, theaterIds)
+    getMany(theaterIds: string[]): Promise<TheaterDto[]> {
+        return this.proxy.getJson(Messages.Theaters.getMany, theaterIds)
     }
 
-    deleteTheaters(theaterIds: string[]): Promise<DeleteTheatersResponse> {
-        return this.proxy.getJson(Messages.Theaters.deleteTheaters, theaterIds)
+    deleteMany(theaterIds: string[]): Promise<DeleteTheatersResponse> {
+        return this.proxy.getJson(Messages.Theaters.deleteMany, theaterIds)
     }
 
-    searchTheatersPage(searchDto: SearchTheatersPageDto): Promise<PaginationResult<TheaterDto>> {
-        return this.proxy.getJson(Messages.Theaters.searchTheatersPage, searchDto)
+    searchPage(searchDto: SearchTheatersPageDto): Promise<PaginationResult<TheaterDto>> {
+        return this.proxy.getJson(Messages.Theaters.searchPage, searchDto)
     }
 
-    theatersExist(theaterIds: string[]): Promise<boolean> {
-        return this.proxy.getJson(Messages.Theaters.theatersExist, theaterIds)
+    allExistByIds(theaterIds: string[]): Promise<boolean> {
+        return this.proxy.getJson(Messages.Theaters.allExist, theaterIds)
     }
 }

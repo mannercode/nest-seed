@@ -3,18 +3,19 @@ import { InjectModel } from '@nestjs/mongoose'
 import { MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import { CreateCustomerDto, SearchCustomersPageDto, UpdateCustomerDto } from './dtos'
+import { CreateCustomerDto, SearchCustomersPageDto } from './dtos'
 import { Customer } from './models'
 
 @Injectable()
 export class CustomersRepository extends MongooseRepository<Customer> {
     constructor(
-        @InjectModel(Customer.name, MongooseConfigModule.connectionName) model: Model<Customer>
+        @InjectModel(Customer.name, MongooseConfigModule.connectionName)
+        readonly model: Model<Customer>
     ) {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createCustomer(createDto: CreateCustomerDto) {
+    async create(createDto: CreateCustomerDto) {
         const customer = this.newDocument()
         customer.name = createDto.name
         customer.email = createDto.email
@@ -24,17 +25,7 @@ export class CustomersRepository extends MongooseRepository<Customer> {
         return customer.save()
     }
 
-    async updateCustomer(customerId: string, updateDto: UpdateCustomerDto) {
-        const customer = await this.getById(customerId)
-
-        if (updateDto.name) customer.name = updateDto.name
-        if (updateDto.email) customer.email = updateDto.email
-        if (updateDto.birthDate) customer.birthDate = updateDto.birthDate
-
-        return customer.save()
-    }
-
-    async searchCustomersPage(searchDto: SearchCustomersPageDto) {
+    async searchPage(searchDto: SearchCustomersPageDto) {
         const { take, skip, orderby } = searchDto
 
         const pagination = await this.findWithPagination({

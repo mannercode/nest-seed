@@ -112,7 +112,7 @@ Customer -> Frontend: 영화 선택
         Backend -> Booking: searchTheaters({movieId, latLong})
             Booking -> Showtimes: findShowingTheaterIds({movieId})
             Booking <-- Showtimes: theaterIds[]
-            Booking -> Theaters: getTheaters({theaterIds})
+            Booking -> Theaters: getMany({theaterIds})
             Booking <-- Theaters: theaters[]
             Booking -> Booking: sortTheatersByDistance({theaters, latLong})
         Backend <-- Booking: showingTheaters[]
@@ -134,9 +134,9 @@ Customer <-- Frontend: 상영일 목록 제공
 Customer -> Frontend: 상영일 선택
     Frontend -> Backend: 상영 시간 목록 요청\nGET /booking/movies/{movieId}/\ntheaters/{theaterId}/showdates/{}/showtimes
         Backend -> Booking: searchShowtimes({movieId, theaterId, showdate})
-            Booking -> Showtimes: searchShowtimes({movieId, theaterId, showdate})
+            Booking -> Showtimes: search({movieId, theaterId, showdate})
             Booking <-- Showtimes: showtimes[]
-            Booking -> Tickets: aggregateTicketSales({ showtimeIds })
+            Booking -> Tickets: aggregateSales({ showtimeIds })
             Booking <-- Tickets: salesStatuses[]
             note left
             ShowtimeSalesStatus = {
@@ -154,7 +154,7 @@ Customer <-- Frontend: 상영 시간 목록 제공
 Customer -> Frontend: 상영 시간 선택
     Frontend -> Backend: 티켓 목록 요청\nGET /booking/showtimes/{}/tickets
         Backend -> Booking: getTickets(showtimeId)
-            Booking -> Tickets: searchTickets({showtimeId})
+            Booking -> Tickets: search({showtimeId})
             Booking <-- Tickets: tickets[]
         Backend <-- Booking: tickets[]
     Frontend <-- Backend: tickets[]
@@ -194,7 +194,7 @@ Customer -> Frontend: 결제 정보 입력
         }
     end note
         Backend -> Purchases: processPurchase(body)
-            Purchases -> Purchases: createPurchaseRecord(body)
+            Purchases -> Purchases: create(body)
             Purchases <-- Purchases: purchaseId
             Purchases ->> TicketPurchases: validatePurchaseRequest(purchaseId, items)
             activate TicketPurchases
@@ -212,12 +212,12 @@ Customer -> Frontend: 결제 정보 입력
             Purchases -> Purchases: updateItemStatus(purchaseId, {items:[0]}, 'validated')
             Purchases -> Purchases: isPurchaseValidated(purchaseId)
             Purchases <-- Purchases: true
-            Purchases -> Payments: createPayment(totalPrice, customer)
+            Purchases -> Payments: create(totalPrice, customer)
             Purchases <-- Payments: 결제 성공
             Purchases <-- Purchases: 구매 완료
             Purchases ->> TicketPurchases: completePurchase(purchaseId, items)
             activate TicketPurchases
-                TicketPurchases -> Tickets: updateTicketsStatus(ticketIds[], 'sold')
+                TicketPurchases -> Tickets: updateStatusMany(ticketIds[], 'sold')
                 TicketPurchases <-- Tickets: 완료
                 TicketPurchases ->o]: ticketPurchasedEvent(customer, ticketIds[])
                 note left
@@ -243,13 +243,13 @@ Customer <-- Frontend: 구매 완료
 @enduml
 ```
 
-현재 단계에서 Ticket 이외의 다른 품목을 고려한 Purchase 설계는 과도하다. 너무 일찍 일반화 함수를 정의하면 나중에 요구사항이 변경될 때 기존에 정의한 규칙이 제대로 대응하지 못하고 `createPurchaseRecord2`함수를 만들어야 하는 상황이 될 수 있다. 여기서는 설명을 위해 범용적인 설계를 한 것이다. 실제 프로젝트라면 테스트 케이스를 작성하고 바로 구현을 시작했을 것이다.
+현재 단계에서 Ticket 이외의 다른 품목을 고려한 Purchase 설계는 과도하다. 너무 일찍 일반화 함수를 정의하면 나중에 요구사항이 변경될 때 기존에 정의한 규칙이 제대로 대응하지 못하고 `create2` 함수를 만들어야 하는 상황이 될 수 있다. 여기서는 설명을 위해 범용적인 설계를 한 것이다. 실제 프로젝트라면 테스트 케이스를 작성하고 바로 구현을 시작했을 것이다.
 
 구현 순서는 어떻게 할까? 뿌리에 가까운 서비스부터 한다. 그럼 이것은 down-up이 아닌가? 레이어 아래부터 한다면 모를까 서비스를 코어부터 구현한다고 down-up으로 보긴 어렵다. 설계가 없다면 앱 서비스부터 구현했을 것이다. 그러나 설계가 있다면 코어부터 구현하는 것이 효율적이다.
 
 커버리지는 100%여야 한다.
 
-Payments와 StorageFile은 외부 인프라를 사용하기 위한 서비스다. 이것은 infra 서비스다
+Payments와 Asset은 외부 인프라를 사용하기 위한 서비스다. 이것은 infra 서비스다
 Purchase는 Core서비스다. 그런데 TicketPurchase서비스를 참조? 아니 이건 의존 역전으로 구현한다.
 
 core,app,infra로 나누려는 이유. 이렇게 안 하면 단순 트리 구조로만 생각할 것 같아서. 단일 책임 원칙에 소홀할까봐
@@ -282,14 +282,14 @@ Customer -> Frontend: 결제 정보 입력
                 return ok
             deactivate TicketProcessor
 
-            Purchase -> Purchases: createPurchaseRecord(body)
-            Purchases -> Payments: createPayment(totalPrice, customer)
+            Purchase -> Purchases: create(body)
+            Purchases -> Payments: create(totalPrice, customer)
             Purchases <-- Payments: 결제 성공
             Purchase <-- Purchases: purchaseId
 
             Purchase -> TicketProcessor: completePurchase(purchaseId, items)
             activate TicketProcessor
-                TicketProcessor -> Tickets: updateTicketsStatus(ticketIds[], 'sold')
+                TicketProcessor -> Tickets: updateStatusMany(ticketIds[], 'sold')
                 TicketProcessor <-- Tickets: 완료
                 TicketProcessor ->o]: ticketPurchasedEvent(customer, ticketIds[])
                 note left: WatchRecordsService에서 필요하다

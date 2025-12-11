@@ -1,4 +1,4 @@
-import { ClientProxy, ClientProxyFactory, NatsOptions } from '@nestjs/microservices'
+import { ClientProxyFactory, NatsOptions } from '@nestjs/microservices'
 import { ClientProxyService } from 'common'
 
 export class RpcTestClient extends ClientProxyService {
@@ -6,10 +6,6 @@ export class RpcTestClient extends ClientProxyService {
         const proxy = ClientProxyFactory.create(option)
 
         return new RpcTestClient(proxy)
-    }
-
-    constructor(proxy: ClientProxy) {
-        super(proxy)
     }
 
     async close() {

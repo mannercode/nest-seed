@@ -6,18 +6,18 @@ import { CreateShowtimesResult } from './types'
 
 @Injectable()
 export class ShowtimesClient {
-    constructor(@InjectClientProxy() private proxy: ClientProxyService) {}
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
-    createShowtimes(createDtos: CreateShowtimeDto[]): Promise<CreateShowtimesResult> {
-        return this.proxy.getJson(Messages.Showtimes.createShowtimes, createDtos)
+    createMany(createDtos: CreateShowtimeDto[]): Promise<CreateShowtimesResult> {
+        return this.proxy.getJson(Messages.Showtimes.createMany, createDtos)
     }
 
-    getShowtimes(showtimeIds: string[]): Promise<ShowtimeDto[]> {
-        return this.proxy.getJson(Messages.Showtimes.getShowtimes, showtimeIds)
+    getMany(showtimeIds: string[]): Promise<ShowtimeDto[]> {
+        return this.proxy.getJson(Messages.Showtimes.getMany, showtimeIds)
     }
 
-    searchShowtimes(searchDto: SearchShowtimesDto): Promise<ShowtimeDto[]> {
-        return this.proxy.getJson(Messages.Showtimes.searchShowtimes, searchDto)
+    search(searchDto: SearchShowtimesDto): Promise<ShowtimeDto[]> {
+        return this.proxy.getJson(Messages.Showtimes.search, searchDto)
     }
 
     searchMovieIds(searchDto: SearchShowtimesDto): Promise<string[]> {
@@ -32,7 +32,7 @@ export class ShowtimesClient {
         return this.proxy.getJson(Messages.Showtimes.searchShowdates, searchDto)
     }
 
-    allShowtimesExist(showtimeIds: string[]): Promise<boolean> {
-        return this.proxy.getJson(Messages.Showtimes.allShowtimesExist, showtimeIds)
+    allExistByIds(showtimeIds: string[]): Promise<boolean> {
+        return this.proxy.getJson(Messages.Showtimes.allExist, showtimeIds)
     }
 }

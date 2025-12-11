@@ -5,7 +5,7 @@ import { createHttpTestContext, getNatsTestConnection, HttpTestClient, withTestI
 
 @Controller()
 class TestController {
-    constructor(@InjectClientProxy('clientName') private client: ClientProxyService) {}
+    constructor(@InjectClientProxy('clientName') private readonly client: ClientProxyService) {}
 
     @MessagePattern(withTestId('method'))
     method() {
@@ -18,32 +18,34 @@ class TestController {
     }
 }
 
-export interface Fixture {
+export type ClientProxyWithNameFixture = {
     teardown: () => Promise<void>
     httpClient: HttpTestClient
 }
 
-export async function createFixture() {
-    const { servers } = getNatsTestConnection()
-    const brokerOptions = { transport: Transport.NATS, options: { servers } } as NatsOptions
+export async function createClientProxyWithNameFixture() {
+    const brokerOptions = {
+        transport: Transport.NATS,
+        options: getNatsTestConnection()
+    } as NatsOptions
 
     const { httpClient, ...testContext } = await createHttpTestContext({
-        metadata: {
-            imports: [
-                ClientProxyModule.registerAsync({
-                    name: 'clientName',
-                    useFactory: () => brokerOptions
-                })
-            ],
-            controllers: [TestController]
-        },
+        imports: [
+            ClientProxyModule.registerAsync({
+                name: 'clientName',
+                useFactory() {
+                    return brokerOptions
+                }
+            })
+        ],
+        controllers: [TestController],
         configureApp: async (app) => {
             app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
             await app.startAllMicroservices()
         }
     })
 
-    const teardown = async () => {
+    async function teardown() {
         await testContext.close()
     }
 

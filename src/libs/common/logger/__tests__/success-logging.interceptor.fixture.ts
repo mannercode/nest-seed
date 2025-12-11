@@ -33,7 +33,7 @@ class TestController {
     }
 }
 
-export interface Fixture {
+export type SuccessLoggingInterceptorFixture = {
     teardown: () => Promise<void>
     httpClient: HttpTestClient
     rpcClient: RpcTestClient
@@ -41,18 +41,18 @@ export interface Fixture {
     spyError: jest.SpyInstance
 }
 
-export async function createFixture(providers: Provider[]) {
-    const { servers } = getNatsTestConnection()
-    const brokerOptions = { transport: Transport.NATS, options: { servers } } as NatsOptions
+export async function createSuccessLoggingInterceptorFixture(providers: Provider[]) {
+    const brokerOptions = {
+        transport: Transport.NATS,
+        options: getNatsTestConnection()
+    } as NatsOptions
 
     const { httpClient, ...testContext } = await createHttpTestContext({
-        metadata: {
-            controllers: [TestController],
-            providers: [
-                { provide: APP_INTERCEPTOR, useClass: SuccessLoggingInterceptor },
-                ...providers
-            ]
-        },
+        controllers: [TestController],
+        providers: [
+            { provide: APP_INTERCEPTOR, useClass: SuccessLoggingInterceptor },
+            ...providers
+        ],
         configureApp: async (app) => {
             app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
             await app.startAllMicroservices()
@@ -65,7 +65,7 @@ export async function createFixture(providers: Provider[]) {
 
     const rpcClient = RpcTestClient.create(brokerOptions)
 
-    const teardown = async () => {
+    async function teardown() {
         await rpcClient.close()
         await testContext.close()
     }

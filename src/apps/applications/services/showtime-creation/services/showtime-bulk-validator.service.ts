@@ -35,9 +35,9 @@ const iterateTimeslots = (
 @Injectable()
 export class ShowtimeBulkValidatorService {
     constructor(
-        private theatersService: TheatersClient,
-        private moviesService: MoviesClient,
-        private showtimesService: ShowtimesClient
+        private readonly theatersService: TheatersClient,
+        private readonly moviesService: MoviesClient,
+        private readonly showtimesService: ShowtimesClient
     ) {}
 
     async validate(createDto: BulkCreateShowtimesDto) {
@@ -89,7 +89,7 @@ export class ShowtimeBulkValidatorService {
         const timeslotsByTheater = new Map<string, TimeslotMap>()
 
         for (const theaterId of theaterIds) {
-            const fetchedShowtimes = await this.showtimesService.searchShowtimes({
+            const fetchedShowtimes = await this.showtimesService.search({
                 theaterIds: [theaterId],
                 startTimeRange: { start: startDate, end: endDate }
             })
@@ -111,7 +111,7 @@ export class ShowtimeBulkValidatorService {
     }
 
     private async verifyMovieExists(movieId: string) {
-        const movieExists = await this.moviesService.moviesExist([movieId])
+        const movieExists = await this.moviesService.allExistByIds([movieId])
 
         if (!movieExists) {
             throw new NotFoundException({
@@ -122,7 +122,7 @@ export class ShowtimeBulkValidatorService {
     }
 
     private async verifyTheatersExist(theaterIds: string[]) {
-        const theatersExist = await this.theatersService.theatersExist(theaterIds)
+        const theatersExist = await this.theatersService.allExistByIds(theaterIds)
 
         if (!theatersExist) {
             throw new NotFoundException({

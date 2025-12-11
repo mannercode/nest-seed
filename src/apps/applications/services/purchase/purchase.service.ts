@@ -7,21 +7,18 @@ import { TicketPurchasService } from './services'
 @Injectable()
 export class PurchaseService {
     constructor(
-        private purchasesService: PurchaseRecordsClient,
-        private paymentsService: PaymentsClient,
-        private ticketProcessor: TicketPurchasService
+        private readonly purchasesService: PurchaseRecordsClient,
+        private readonly paymentsService: PaymentsClient,
+        private readonly ticketProcessor: TicketPurchasService
     ) {}
 
     async processPurchase(createDto: CreatePurchaseDto) {
-        const payment = await this.paymentsService.createPayment({
+        const payment = await this.paymentsService.create({
             customerId: createDto.customerId,
             amount: createDto.totalPrice
         })
         await this.ticketProcessor.validatePurchase(createDto)
-        const purchase = await this.purchasesService.createPurchaseRecord({
-            ...createDto,
-            paymentId: payment.id
-        })
+        const purchase = await this.purchasesService.create({ ...createDto, paymentId: payment.id })
         try {
             await this.ticketProcessor.completePurchase(createDto)
             return purchase
