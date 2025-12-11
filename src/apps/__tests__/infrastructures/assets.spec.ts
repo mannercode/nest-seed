@@ -77,7 +77,7 @@ describe('AssetsService', () => {
             })
 
             it('returns owner and download info', async () => {
-                const completeDto = { ownerService: 'service', ownerEntityId: 'entity-id' }
+                const completeDto = { owner: { service: 'service', entityId: 'entity-id' } }
 
                 const assetDto = await fixture.assetsClient.complete(assetId, completeDto)
 
@@ -90,7 +90,7 @@ describe('AssetsService', () => {
             })
 
             it('downloads the asset with matching checksum', async () => {
-                const completeDto = { ownerService: 'service', ownerEntityId: 'entity-id' }
+                const completeDto = { owner: { service: 'service', entityId: 'entity-id' } }
 
                 const assetDto = await fixture.assetsClient.complete(assetId, completeDto)
 
@@ -110,7 +110,7 @@ describe('AssetsService', () => {
 
                 await sleep(1500)
 
-                const completeDto = { ownerService: 'service', ownerEntityId: 'entity-id' }
+                const completeDto = { owner: { service: 'service', entityId: 'entity-id' } }
 
                 await expect(
                     fixture.assetsClient.complete(assetId, completeDto)

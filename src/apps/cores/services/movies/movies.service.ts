@@ -12,14 +12,13 @@ export class MoviesService {
         private readonly assetsService: AssetsClient
     ) {}
 
-    async create(createMovieDto: CreateMovieDto) {
-        const movie = await this.moviesRepository.create(createMovieDto)
+    async create(createDto: CreateMovieDto) {
+        const movie = await this.moviesRepository.create(createDto)
 
         await Promise.all(
-            createMovieDto.assetIds.map((assetId) =>
+            createDto.assetIds.map((assetId) =>
                 this.assetsService.complete(assetId, {
-                    ownerService: 'movies',
-                    ownerEntityId: movie.id
+                    owner: { service: 'movies', entityId: movie.id }
                 })
             )
         )
@@ -87,6 +86,7 @@ export class MoviesService {
         return dto
     }
 
-    private toDtos = async (movies: MovieDocument[]) =>
-        Promise.all(movies.map((movie) => this.toDto(movie)))
+    private async toDtos(movies: MovieDocument[]) {
+        return Promise.all(movies.map((movie) => this.toDto(movie)))
+    }
 }

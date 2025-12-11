@@ -91,8 +91,7 @@ export class MovieDraftsService {
         }
 
         await this.assetsService.complete(imageId, {
-            ownerService: 'movie-drafts',
-            ownerEntityId: draftId
+            owner: { service: 'movie-drafts', entityId: draftId }
         })
 
         await this.repository.addOrUpdateImage(draftId, {

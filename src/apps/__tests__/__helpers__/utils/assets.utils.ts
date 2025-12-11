@@ -35,7 +35,7 @@ export async function uploadComplete(testContext: TestContext, file: FixtureFile
     const { AssetsClient } = await import('apps/infrastructures')
     const assetsClient = testContext.module.get(AssetsClient)
 
-    return assetsClient.complete(assetId, { ownerService: 'service', ownerEntityId: 'entityId' })
+    return assetsClient.complete(assetId, { owner: { service: 'service', entityId: 'entityId' } })
 }
 
 export async function downloadAsset({ download }: AssetDto) {

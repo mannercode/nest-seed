@@ -1,11 +1,10 @@
-import { IsNotEmpty, IsString } from 'class-validator'
+import { Type } from 'class-transformer'
+import { IsDefined, ValidateNested } from 'class-validator'
+import { AssetOwnerDto } from './asset.dto'
 
 export class CompleteAssetDto {
-    @IsString()
-    @IsNotEmpty()
-    ownerService: string
-
-    @IsString()
-    @IsNotEmpty()
-    ownerEntityId: string
+    @IsDefined()
+    @ValidateNested()
+    @Type(() => AssetOwnerDto)
+    owner: AssetOwnerDto
 }

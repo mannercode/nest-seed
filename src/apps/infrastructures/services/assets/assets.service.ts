@@ -49,7 +49,7 @@ export class AssetsService {
         }
     }
 
-    async complete(assetId: string, completeDto: CompleteAssetDto) {
+    async complete(assetId: string, { owner }: CompleteAssetDto) {
         const asset = await this.repository.getById(assetId)
         const expiresAt = this.getUploadExpiresAt(asset.createdAt)
 
@@ -59,11 +59,11 @@ export class AssetsService {
             throw new GoneException({ ...AssetErrors.UploadExpired, assetId, expiresAt })
         }
 
-        asset.set(completeDto)
+        asset.ownerService = owner.service
+        asset.ownerEntityId = owner.entityId
         await asset.save()
 
         const dto = this.toDto(asset)
-
         return this.withDownloadInfo(dto)
     }
 
@@ -71,14 +71,12 @@ export class AssetsService {
         const assets = await this.repository.getByIds(assetIds)
 
         const dtos = this.toDtos(assets)
-
         return Promise.all(dtos.map((dto) => this.withDownloadInfo(dto)))
     }
 
     async deleteMany(assetIds: string[]) {
         const deletedAssets = await this.repository.deleteByIds(assetIds)
 
-        // TODO 실패 처리
         await Promise.all(deletedAssets.map((asset) => this.s3Service.deleteObject(asset.id)))
 
         return { deletedAssets: this.toDtos(deletedAssets) }
@@ -95,7 +93,7 @@ export class AssetsService {
 
         const expiredAssetIds = expiredAssets.map((asset) => asset.id)
 
-        return this.deleteMany(expiredAssetIds)
+        await this.deleteMany(expiredAssetIds)
     }
 
     private toDto(asset: AssetDocument): AssetDto {
