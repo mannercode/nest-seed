@@ -37,6 +37,12 @@ describe('MoviesService', () => {
             })
         })
 
+        it('creates and returns a movie', async () => {
+            const createDto = buildCreateMovieDto({ genres: [] })
+
+            await fixture.httpClient.post('/movies').body(createDto).created()
+        })
+
         describe('when the required fields are missing', () => {
             it('returns 400 Bad Request', async () => {
                 await fixture.httpClient
@@ -134,8 +140,6 @@ describe('MoviesService', () => {
                             })
                         ])
                     })
-
-                console.log('beforeEach')
             })
 
             it('cannot fetch the movie anymore', async () => {

@@ -9,7 +9,7 @@ import {
     Patch,
     Post
 } from '@nestjs/common'
-import { CreateMovieDraftDto, MovieDraftsClient, UpdateMovieDraftDto } from 'apps/applications'
+import { MovieDraftsClient, UpdateMovieDraftDto } from 'apps/applications'
 import { CreateAssetDto } from 'apps/infrastructures'
 
 @Controller('movie-drafts')
@@ -17,8 +17,8 @@ export class MovieDraftsController {
     constructor(private readonly service: MovieDraftsClient) {}
 
     @Post()
-    create(@Body() createDto: CreateMovieDraftDto) {
-        return this.service.create(createDto)
+    create() {
+        return this.service.create()
     }
 
     @Get(':draftId')

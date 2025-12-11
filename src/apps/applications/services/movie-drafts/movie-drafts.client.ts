@@ -2,20 +2,14 @@ import { Injectable } from '@nestjs/common'
 import { ClientProxyService, InjectClientProxy } from 'common'
 import { Messages } from 'shared'
 import { CreateAssetDto } from 'apps/infrastructures'
-import {
-    CreateMovieDraftDto,
-    DraftImageDto,
-    DraftImageUploadResponse,
-    MovieDraftDto,
-    UpdateMovieDraftDto
-} from './dtos'
+import { DraftImageDto, DraftImageUploadResponse, MovieDraftDto, UpdateMovieDraftDto } from './dtos'
 
 @Injectable()
 export class MovieDraftsClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
-    create(createDto?: CreateMovieDraftDto): Promise<MovieDraftDto> {
-        return this.proxy.getJson(Messages.MovieDrafts.create, createDto ?? {})
+    create(): Promise<MovieDraftDto> {
+        return this.proxy.getJson(Messages.MovieDrafts.create)
     }
 
     get(draftId: string): Promise<MovieDraftDto> {

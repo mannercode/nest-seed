@@ -43,7 +43,7 @@ export class ClientProxyService implements OnModuleDestroy {
         await this.proxy.close()
     }
 
-    getJson<T>(cmd: string, payload: any): Promise<T> {
+    getJson<T>(cmd: string, payload?: any): Promise<T> {
         const observable = this.send<T>(cmd, payload)
         return getProxyValue(observable)
     }

@@ -2,7 +2,7 @@ import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { CreateAssetDto } from 'apps/infrastructures'
 import { Messages } from 'shared'
-import { CreateMovieDraftDto, UpdateMovieDraftDto } from './dtos'
+import { UpdateMovieDraftDto } from './dtos'
 import { MovieDraftsService } from './movie-drafts.service'
 
 @Controller()
@@ -10,8 +10,8 @@ export class MovieDraftsController {
     constructor(private readonly service: MovieDraftsService) {}
 
     @MessagePattern(Messages.MovieDrafts.create)
-    create(@Payload() createDto: CreateMovieDraftDto) {
-        return this.service.create(createDto)
+    create() {
+        return this.service.create()
     }
 
     @MessagePattern(Messages.MovieDrafts.get)

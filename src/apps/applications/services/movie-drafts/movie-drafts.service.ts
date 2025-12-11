@@ -8,10 +8,10 @@ import { MoviesClient } from 'apps/cores'
 import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
 import { DateUtil } from 'common'
 import { Rules } from 'shared'
-import { CreateMovieDraftDto, DraftImageDto, DraftImageUploadResponse, MovieDraftDto } from './dtos'
+import { DraftImageDto, DraftImageUploadResponse, MovieDraftDto, UpdateMovieDraftDto } from './dtos'
 import { MovieDraftErrors } from './errors'
-import { MovieDraftsRepository } from './movie-drafts.repository'
 import { MovieDraftDocument, MovieDraftImageStatus } from './models/movie-draft'
+import { MovieDraftsRepository } from './movie-drafts.repository'
 
 @Injectable()
 export class MovieDraftsService {
@@ -21,10 +21,10 @@ export class MovieDraftsService {
         private readonly assetsService: AssetsClient
     ) {}
 
-    async create(createDto: CreateMovieDraftDto): Promise<MovieDraftDto> {
+    async create(): Promise<MovieDraftDto> {
         const expiresAt = DateUtil.add({ minutes: Rules.Movie.draftExpiresInMinutes })
 
-        const draft = await this.repository.createDraft({ ...createDto, expiresAt })
+        const draft = await this.repository.createDraft({ expiresAt })
         return this.toDto(draft)
     }
 
@@ -35,7 +35,7 @@ export class MovieDraftsService {
         return this.toDto(draft)
     }
 
-    async update(draftId: string, updateDto: CreateMovieDraftDto): Promise<MovieDraftDto> {
+    async update(draftId: string, updateDto: UpdateMovieDraftDto): Promise<MovieDraftDto> {
         const draft = await this.repository.getById(draftId)
         this.ensureNotExpired(draft)
 

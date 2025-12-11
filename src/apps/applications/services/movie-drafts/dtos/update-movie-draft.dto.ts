@@ -1,5 +1,6 @@
-import { CreateMovieDraftDto } from './create-movie-draft.dto'
+import { OmitType, PartialType } from '@nestjs/mapped-types'
+import { CreateMovieDto } from 'apps/cores'
 
-// For now, create and update share the same optional fields.
-// 현재로서는 생성과 수정에서 동일한 필드를 사용한다.
-export class UpdateMovieDraftDto extends CreateMovieDraftDto {}
+export class UpdateMovieDraftDto extends PartialType(
+    OmitType(CreateMovieDto, ['assetIds'] as const)
+) {}

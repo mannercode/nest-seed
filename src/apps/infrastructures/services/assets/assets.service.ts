@@ -76,13 +76,11 @@ export class AssetsService {
     }
 
     async deleteMany(assetIds: string[]) {
-        console.log('assetIds 1', assetIds)
         const deletedAssets = await this.repository.deleteByIds(assetIds)
 
         // TODO 실패 처리
         await Promise.all(deletedAssets.map((asset) => this.s3Service.deleteObject(asset.id)))
 
-        console.log('assetIds 2', assetIds)
         return { deletedAssets: this.toDtos(deletedAssets) }
     }
 
