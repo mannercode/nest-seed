@@ -1,7 +1,7 @@
 import { TicketDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { oid } from 'testlib'
-import { buildCreateTicketDto, createTickets } from '../__helpers__'
+import { buildCreateTicketDto, createTickets, Errors } from '../__helpers__'
 import type { TicketsFixture } from './tickets.fixture'
 
 describe('TicketsService', () => {
@@ -33,19 +33,23 @@ describe('TicketsService', () => {
         const movieId = oid(0x2)
         const theaterId = oid(0x3)
         const showtimeId = oid(0x4)
-        let createdTickets: TicketDto[]
+        let ticketForSaga: TicketDto
+        let ticketForMovie: TicketDto
+        let ticketForTheater: TicketDto
+        let ticketForShowtime: TicketDto
 
         beforeEach(async () => {
-            const createDtos = [{ sagaId }, { movieId }, { theaterId }, { showtimeId }]
-
-            createdTickets = await createTickets(fixture, createDtos)
+            ;[ticketForSaga] = await createTickets(fixture, [{ sagaId }])
+            ;[ticketForMovie] = await createTickets(fixture, [{ movieId }])
+            ;[ticketForTheater] = await createTickets(fixture, [{ theaterId }])
+            ;[ticketForShowtime] = await createTickets(fixture, [{ showtimeId }])
         })
 
         describe('when the `sagaIds` are provided', () => {
             it('returns tickets for the sagaIds', async () => {
                 const tickets = await fixture.ticketsService.search({ sagaIds: [sagaId] })
 
-                expect(tickets).toEqual([createdTickets[0]])
+                expect(tickets).toEqual([ticketForSaga])
             })
         })
 
@@ -53,7 +57,7 @@ describe('TicketsService', () => {
             it('returns tickets for the movieIds', async () => {
                 const tickets = await fixture.ticketsService.search({ movieIds: [movieId] })
 
-                expect(tickets).toEqual([createdTickets[1]])
+                expect(tickets).toEqual([ticketForMovie])
             })
         })
 
@@ -61,7 +65,7 @@ describe('TicketsService', () => {
             it('returns tickets for the theaterIds', async () => {
                 const tickets = await fixture.ticketsService.search({ theaterIds: [theaterId] })
 
-                expect(tickets).toEqual([createdTickets[2]])
+                expect(tickets).toEqual([ticketForTheater])
             })
         })
 
@@ -69,7 +73,7 @@ describe('TicketsService', () => {
             it('returns tickets for the showtimeIds', async () => {
                 const tickets = await fixture.ticketsService.search({ showtimeIds: [showtimeId] })
 
-                expect(tickets).toEqual([createdTickets[3]])
+                expect(tickets).toEqual([ticketForShowtime])
             })
         })
 
@@ -79,7 +83,7 @@ describe('TicketsService', () => {
 
                 await expect(promise).rejects.toMatchObject({
                     status: 400,
-                    message: 'At least one filter condition must be provided'
+                    message: Errors.Mongoose.FiltersRequired.message
                 })
             })
         })

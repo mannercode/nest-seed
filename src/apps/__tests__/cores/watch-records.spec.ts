@@ -17,12 +17,12 @@ describe('WatchRecordsService', () => {
 
     describe('create', () => {
         describe('when the payload is valid', () => {
-            it('creates and returns a watch record', async () => {
-                const createDto = buildCreateWatchRecordDto()
+            const payload = buildCreateWatchRecordDto()
 
-                const watchRecord = await fixture.watchRecordsService.create(createDto)
+            it('returns the created watch record', async () => {
+                const watchRecord = await fixture.watchRecordsService.create(payload)
 
-                expect(watchRecord).toEqual({ id: expect.any(String), ...createDto })
+                expect(watchRecord).toEqual({ ...payload, id: expect.any(String) })
             })
         })
     })
@@ -40,16 +40,18 @@ describe('WatchRecordsService', () => {
             ])
         })
 
+        const buildExpectedPage = (watchRecords: WatchRecordDto[]) => ({
+            skip: 0,
+            take: expect.any(Number),
+            total: watchRecords.length,
+            items: expect.arrayContaining(watchRecords)
+        })
+
         describe('when the `customerId` is provided', () => {
             it('returns paginated records for the customerId', async () => {
                 const pagination = await fixture.watchRecordsService.searchPage({ customerId })
 
-                expect(pagination).toEqual({
-                    skip: 0,
-                    take: expect.any(Number),
-                    total: watchRecords.length,
-                    items: expect.arrayContaining(watchRecords)
-                })
+                expect(pagination).toEqual(buildExpectedPage(watchRecords))
             })
         })
     })

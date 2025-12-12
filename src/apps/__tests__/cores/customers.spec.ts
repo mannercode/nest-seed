@@ -1,5 +1,4 @@
 import { CustomerDto } from 'apps/cores'
-import { omit } from 'lodash'
 import { nullObjectId } from 'testlib'
 import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
 import type { CustomersFixture } from './customers.fixture'
@@ -18,32 +17,42 @@ describe('CustomersService', () => {
 
     describe('POST /customers', () => {
         describe('when the payload is valid', () => {
-            it('creates and returns a customer', async () => {
-                const createDto = buildCreateCustomerDto()
+            const payload = buildCreateCustomerDto()
+
+            it('returns 201 with the created customer', async () => {
+                const { password: _, ...expectedCustomer } = payload
 
                 await fixture.httpClient
                     .post('/customers')
-                    .body(createDto)
-                    .created({ id: expect.any(String), ...omit(createDto, 'password') })
+                    .body(payload)
+                    .created({ ...expectedCustomer, id: expect.any(String) })
             })
         })
 
         describe('when the email already exists', () => {
+            let customer: CustomerDto
+
+            beforeEach(async () => {
+                customer = await createCustomer(fixture, { email: 'user@mail.com' })
+            })
+
             it('returns 409 Conflict', async () => {
-                const createDto = buildCreateCustomerDto({ email: fixture.createdCustomer.email })
+                const payload = buildCreateCustomerDto({ email: customer.email })
 
                 await fixture.httpClient
                     .post('/customers')
-                    .body(createDto)
-                    .conflict({ ...Errors.Customer.EmailAlreadyExists, email: createDto.email })
+                    .body(payload)
+                    .conflict({ ...Errors.Customer.EmailAlreadyExists, email: payload.email })
             })
         })
 
         describe('when the required fields are missing', () => {
+            const invalidPayload = {}
+
             it('returns 400 Bad Request', async () => {
                 await fixture.httpClient
                     .post('/customers')
-                    .body({})
+                    .body(invalidPayload)
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
             })
         })
@@ -51,10 +60,14 @@ describe('CustomersService', () => {
 
     describe('GET /customers/:id', () => {
         describe('when the customer exists', () => {
-            it('returns the customer', async () => {
-                await fixture.httpClient
-                    .get(`/customers/${fixture.createdCustomer.id}`)
-                    .ok(fixture.createdCustomer)
+            let customer: CustomerDto
+
+            beforeEach(async () => {
+                customer = await createCustomer(fixture)
+            })
+
+            it('returns 200 with the customer', async () => {
+                await fixture.httpClient.get(`/customers/${customer.id}`).ok(customer)
             })
         })
 
@@ -72,22 +85,27 @@ describe('CustomersService', () => {
 
     describe('PATCH /customers/:id', () => {
         describe('when the payload is valid', () => {
-            it('updates and returns the customer', async () => {
-                const updateDto = {
+            let customer: CustomerDto
+            let updateDto: any
+
+            beforeEach(async () => {
+                customer = await createCustomer(fixture)
+                updateDto = {
                     name: 'update-name',
                     email: 'new@mail.com',
                     birthDate: new Date('1900-12-31')
                 }
-                const expected = { ...fixture.createdCustomer, ...updateDto }
+            })
+
+            it('returns 200 with the updated customer', async () => {
+                const expected = { ...customer, ...updateDto }
 
                 await fixture.httpClient
-                    .patch(`/customers/${fixture.createdCustomer.id}`)
+                    .patch(`/customers/${customer.id}`)
                     .body(updateDto)
                     .ok(expected)
 
-                await fixture.httpClient
-                    .get(`/customers/${fixture.createdCustomer.id}`)
-                    .ok(expected)
+                await fixture.httpClient.get(`/customers/${customer.id}`).ok(expected)
             })
         })
 
@@ -103,12 +121,23 @@ describe('CustomersService', () => {
 
     describe('DELETE /customers/:id', () => {
         describe('when the customer exists', () => {
-            it('deletes the customer', async () => {
-                await fixture.httpClient
-                    .delete(`/customers/${fixture.createdCustomer.id}`)
-                    .ok({ deletedCustomers: [fixture.createdCustomer] })
+            let customer: CustomerDto
 
-                await fixture.httpClient.get(`/customers/${fixture.createdCustomer.id}`).notFound()
+            beforeEach(async () => {
+                customer = await createCustomer(fixture)
+            })
+
+            it('returns 200 with the deleted customer', async () => {
+                await fixture.httpClient
+                    .delete(`/customers/${customer.id}`)
+                    .ok({ deletedCustomers: [customer] })
+
+                await fixture.httpClient
+                    .get(`/customers/${customer.id}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [customer.id]
+                    })
             })
         })
 
@@ -125,30 +154,45 @@ describe('CustomersService', () => {
     })
 
     describe('GET /customers', () => {
-        let customers: CustomerDto[]
+        let customerA1: CustomerDto
+        let customerA2: CustomerDto
+        let customerB1: CustomerDto
+        let customerB2: CustomerDto
 
         beforeEach(async () => {
-            const createdCustomers = await Promise.all([
+            ;[customerA1, customerA2, customerB1, customerB2] = await Promise.all([
                 createCustomer(fixture, { name: 'customer-a1', email: 'user-a1@mail.com' }),
                 createCustomer(fixture, { name: 'customer-a2', email: 'user-a2@mail.com' }),
                 createCustomer(fixture, { name: 'customer-b1', email: 'user-b1@mail.com' }),
-                createCustomer(fixture, { name: 'customer-b2', email: 'user-b2@mail.com' }),
-                createCustomer(fixture, { name: 'customer-c1', email: 'user-c1@mail.com' })
+                createCustomer(fixture, { name: 'customer-b2', email: 'user-b2@mail.com' })
             ])
-
-            customers = [...createdCustomers, fixture.createdCustomer]
         })
 
-        describe('when the query parameters are missing', () => {
-            it('returns customers with default pagination', async () => {
-                await fixture.httpClient
-                    .get('/customers')
-                    .ok({
-                        skip: 0,
-                        take: expect.any(Number),
-                        total: customers.length,
-                        items: expect.arrayContaining(customers)
-                    })
+        const buildExpectedPage = (customers: CustomerDto[]) => ({
+            skip: 0,
+            take: expect.any(Number),
+            total: customers.length,
+            items: expect.arrayContaining(customers)
+        })
+
+        describe('when no query parameters are provided', () => {
+            it('returns 200 with the default page of customers', async () => {
+                const expected = buildExpectedPage([customerA1, customerA2, customerB1, customerB2])
+
+                await fixture.httpClient.get('/customers').ok(expected)
+            })
+        })
+
+        describe('when query parameters are provided', () => {
+            const queryAndExpect = (query: any, customers: CustomerDto[]) =>
+                fixture.httpClient.get('/customers').query(query).ok(buildExpectedPage(customers))
+
+            it('returns customers filtered by a partial name match', async () => {
+                await queryAndExpect({ name: 'customer-a' }, [customerA1, customerA2])
+            })
+
+            it('returns customers filtered by a partial email match', async () => {
+                await queryAndExpect({ email: 'user-b' }, [customerB1, customerB2])
             })
         })
 
@@ -158,32 +202,6 @@ describe('CustomersService', () => {
                     .get('/customers')
                     .query({ wrong: 'value' })
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
-            })
-        })
-
-        describe('when a partial `name` is provided', () => {
-            it('returns customers whose name contains the given substring', async () => {
-                await fixture.httpClient
-                    .get('/customers')
-                    .query({ name: 'customer-a' })
-                    .ok(
-                        expect.objectContaining({
-                            items: expect.arrayContaining([customers[0], customers[1]])
-                        })
-                    )
-            })
-        })
-
-        describe('when a partial `email` is provided', () => {
-            it('returns customers whose email contains the given substring', async () => {
-                await fixture.httpClient
-                    .get('/customers')
-                    .query({ email: 'user-b' })
-                    .ok(
-                        expect.objectContaining({
-                            items: expect.arrayContaining([customers[2], customers[3]])
-                        })
-                    )
             })
         })
     })

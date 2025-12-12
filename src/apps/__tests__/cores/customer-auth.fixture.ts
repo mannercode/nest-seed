@@ -1,12 +1,8 @@
 import { CustomersClient, CustomersModule } from 'apps/cores'
 import { CustomerJwtStrategy, CustomerLocalStrategy, CustomersController } from 'apps/gateway'
-import { JwtAuthTokens } from 'common'
-import { createCustomer, generateAuthTokens, TestFixture, createTestFixture } from '../__helpers__'
+import { createTestFixture, TestFixture } from '../__helpers__'
 
-export type CustomerAuthFixture = TestFixture & {
-    credentials: { email: string; password: string }
-    authTokens: JwtAuthTokens
-}
+export type CustomerAuthFixture = TestFixture & {}
 
 export async function createCustomerAuthFixture() {
     const fix = await createTestFixture({
@@ -15,9 +11,5 @@ export async function createCustomerAuthFixture() {
         controllers: [CustomersController]
     })
 
-    const credentials = { email: 'user@mail.com', password: 'password' }
-    const customer = await createCustomer(fix, credentials)
-    const authTokens = await generateAuthTokens(fix, customer)
-
-    return { ...fix, credentials, authTokens }
+    return fix
 }

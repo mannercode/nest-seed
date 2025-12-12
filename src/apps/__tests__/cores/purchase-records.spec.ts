@@ -1,5 +1,6 @@
+import { PurchaseRecordDto } from 'apps/cores'
 import { nullObjectId } from 'testlib'
-import { buildCreatePurchaseRecordDto, Errors } from '../__helpers__'
+import { buildCreatePurchaseRecordDto, createPurchaseRecord, Errors } from '../__helpers__'
 import type { PurchaseRecordsFixture } from './purchase-records.fixture'
 
 describe('PurchaseRecordsService', () => {
@@ -16,16 +17,15 @@ describe('PurchaseRecordsService', () => {
 
     describe('create', () => {
         describe('when the payload is valid', () => {
-            it('creates and returns a purchase record', async () => {
-                const createDto = buildCreatePurchaseRecordDto({})
+            const payload = buildCreatePurchaseRecordDto()
 
-                const createdPurchaseRecord = await fixture.purchaseRecordsService.create(createDto)
-
+            it('returns the created purchase record', async () => {
+                const createdPurchaseRecord = await fixture.purchaseRecordsService.create(payload)
                 expect(createdPurchaseRecord).toEqual({
                     id: expect.any(String),
                     createdAt: expect.any(Date),
                     updatedAt: expect.any(Date),
-                    ...createDto
+                    ...payload
                 })
             })
         })
@@ -33,10 +33,14 @@ describe('PurchaseRecordsService', () => {
 
     describe('GET /purchases/:purchaseId', () => {
         describe('when the purchase exists', () => {
-            it('returns the purchase', async () => {
-                await fixture.httpClient
-                    .get(`/purchases/${fixture.createdPurchaseRecord.id}`)
-                    .ok(fixture.createdPurchaseRecord)
+            let purchase: PurchaseRecordDto
+
+            beforeEach(async () => {
+                purchase = await createPurchaseRecord(fixture)
+            })
+
+            it('returns 200 with the purchase', async () => {
+                await fixture.httpClient.get(`/purchases/${purchase.id}`).ok(purchase)
             })
         })
 

@@ -1,7 +1,7 @@
 import { ShowtimeDto } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, oid } from 'testlib'
-import { buildCreateShowtimeDto, createShowtimes } from '../__helpers__'
+import { buildCreateShowtimeDto, createShowtimes, Errors } from '../__helpers__'
 import type { ShowtimesFixture } from './showtimes.fixture'
 
 describe('ShowtimesService', () => {
@@ -56,7 +56,7 @@ describe('ShowtimesService', () => {
 
                 await expect(promise).rejects.toMatchObject({
                     status: 404,
-                    message: 'One or more documents not found'
+                    message: Errors.Mongoose.MultipleDocumentsNotFound.message
                 })
             })
         })
@@ -66,27 +66,32 @@ describe('ShowtimesService', () => {
         const sagaId = oid(0x1)
         const movieId = oid(0x2)
         const theaterId = oid(0x3)
-        let createdShowtimes: ShowtimeDto[]
+        let showtimeForSaga: ShowtimeDto
+        let showtimeForMovie: ShowtimeDto
+        let showtimeForTheater: ShowtimeDto
+        let showtimeAtStartTime1: ShowtimeDto
+        let showtimeAtStartTime2: ShowtimeDto
 
         beforeEach(async () => {
-            const createDtos = [
-                { sagaId },
-                { movieId },
-                { theaterId },
+            ;[showtimeForSaga] = await createShowtimes(fixture, [{ sagaId }])
+            ;[showtimeForMovie] = await createShowtimes(fixture, [{ movieId }])
+            ;[showtimeForTheater] = await createShowtimes(fixture, [{ theaterId }])
+            ;[showtimeAtStartTime1, showtimeAtStartTime2] = await createShowtimes(fixture, [
                 { startTime: new Date('2020-01-01T12:00') },
-                { startTime: new Date('2020-01-01T14:00') },
+                { startTime: new Date('2020-01-01T14:00') }
+            ])
+
+            await createShowtimes(fixture, [
                 { startTime: new Date('2020-01-02T14:00') },
                 { startTime: new Date('2020-01-03T12:00') }
-            ]
-
-            createdShowtimes = await createShowtimes(fixture, createDtos)
+            ])
         })
 
         describe('when the `sagaIds` are provided', () => {
             it('returns showtimes for the sagaIds', async () => {
                 const showtimes = await fixture.showtimesService.search({ sagaIds: [sagaId] })
 
-                expect(showtimes).toEqual([createdShowtimes[0]])
+                expect(showtimes).toEqual([showtimeForSaga])
             })
         })
 
@@ -94,7 +99,7 @@ describe('ShowtimesService', () => {
             it('returns showtimes for the movieIds', async () => {
                 const showtimes = await fixture.showtimesService.search({ movieIds: [movieId] })
 
-                expect(showtimes).toEqual([createdShowtimes[1]])
+                expect(showtimes).toEqual([showtimeForMovie])
             })
         })
 
@@ -102,7 +107,7 @@ describe('ShowtimesService', () => {
             it('returns showtimes for the theaterIds', async () => {
                 const showtimes = await fixture.showtimesService.search({ theaterIds: [theaterId] })
 
-                expect(showtimes).toEqual([createdShowtimes[2]])
+                expect(showtimes).toEqual([showtimeForTheater])
             })
         })
 
@@ -116,7 +121,7 @@ describe('ShowtimesService', () => {
                 const showtimes = await fixture.showtimesService.search({ startTimeRange })
 
                 expect(showtimes).toEqual(
-                    expect.arrayContaining([createdShowtimes[3], createdShowtimes[4]])
+                    expect.arrayContaining([showtimeAtStartTime1, showtimeAtStartTime2])
                 )
             })
         })
@@ -127,7 +132,7 @@ describe('ShowtimesService', () => {
 
                 await expect(promise).rejects.toMatchObject({
                     status: 400,
-                    message: 'At least one filter condition must be provided'
+                    message: Errors.Mongoose.FiltersRequired.message
                 })
             })
         })
