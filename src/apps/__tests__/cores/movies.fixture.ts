@@ -31,6 +31,7 @@ export async function createMoviesFixture() {
 
     const assetsClient = fix.module.get(AssetsClient)
     const createdMovie = await createMovie(fix, { assetIds })
+    createdMovie.imageUrls = expect.any(Array)
 
     return { ...fix, image: fixtureFiles.image, createdMovie, assetsClient, asset }
 }
