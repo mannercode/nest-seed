@@ -9,7 +9,8 @@ export type MoviesFixture = TestFixture & {}
 export async function createMoviesFixture() {
     const fix = await createTestFixture({
         imports: [MoviesModule, AssetsModule],
-        providers: [MoviesClient, RecommendationClient, AssetsClient],
+        providers: [MoviesClient, AssetsClient],
+        ignoreProviders: [RecommendationClient],
         controllers: [MoviesController]
     })
 
