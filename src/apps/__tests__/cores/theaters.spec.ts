@@ -17,21 +17,23 @@ describe('TheatersService', () => {
 
     describe('POST /theaters', () => {
         describe('when the payload is valid', () => {
-            it('creates and returns a theater', async () => {
-                const createDto = buildCreateTheaterDto()
+            const payload = buildCreateTheaterDto()
 
+            it('returns 201 with the created theater', async () => {
                 await fixture.httpClient
                     .post('/theaters')
-                    .body(createDto)
-                    .created({ id: expect.any(String), ...createDto })
+                    .body(payload)
+                    .created({ ...payload, id: expect.any(String) })
             })
         })
 
         describe('when the required fields are missing', () => {
+            const invalidPayload = {}
+
             it('returns 400 Bad Request', async () => {
                 await fixture.httpClient
                     .post('/theaters')
-                    .body({})
+                    .body(invalidPayload)
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
             })
         })
@@ -39,10 +41,14 @@ describe('TheatersService', () => {
 
     describe('GET /theaters/:id', () => {
         describe('when the theater exists', () => {
-            it('returns the theater', async () => {
-                await fixture.httpClient
-                    .get(`/theaters/${fixture.createdTheater.id}`)
-                    .ok(fixture.createdTheater)
+            let theater: TheaterDto
+
+            beforeEach(async () => {
+                theater = await createTheater(fixture)
+            })
+
+            it('returns 200 with the theater', async () => {
+                await fixture.httpClient.get(`/theaters/${theater.id}`).ok(theater)
             })
         })
 
@@ -60,20 +66,23 @@ describe('TheatersService', () => {
 
     describe('PATCH /theaters/:id', () => {
         describe('when the payload is valid', () => {
-            it('updates and returns the theater', async () => {
-                const updateDto = {
+            let theater: TheaterDto
+            let payload: any
+
+            beforeEach(async () => {
+                theater = await createTheater(fixture, { name: 'original-name' })
+                payload = {
                     name: 'update-name',
                     location: { latitude: 30.0, longitude: 120.0 },
-                    seatmap: []
+                    seatmap: { blocks: [] }
                 }
-                const expected = { ...fixture.createdTheater, ...updateDto }
+            })
 
-                await fixture.httpClient
-                    .patch(`/theaters/${fixture.createdTheater.id}`)
-                    .body(updateDto)
-                    .ok(expected)
+            it('returns 200 with the updated theater', async () => {
+                const expected = { ...theater, ...payload }
 
-                await fixture.httpClient.get(`/theaters/${fixture.createdTheater.id}`).ok(expected)
+                await fixture.httpClient.patch(`/theaters/${theater.id}`).body(payload).ok(expected)
+                await fixture.httpClient.get(`/theaters/${theater.id}`).ok(expected)
             })
         })
 
@@ -89,14 +98,22 @@ describe('TheatersService', () => {
 
     describe('DELETE /theaters/:id', () => {
         describe('when the theater exists', () => {
-            it('deletes the theater', async () => {
-                await fixture.httpClient.delete(`/theaters/${fixture.createdTheater.id}`).ok()
+            let theater: TheaterDto
+
+            beforeEach(async () => {
+                theater = await createTheater(fixture)
+            })
+
+            it('returns 200 with the deleted theater', async () => {
+                await fixture.httpClient
+                    .delete(`/theaters/${theater.id}`)
+                    .ok({ deletedTheaters: [theater] })
 
                 await fixture.httpClient
-                    .get(`/theaters/${fixture.createdTheater.id}`)
+                    .get(`/theaters/${theater.id}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [fixture.createdTheater.id]
+                        notFoundIds: [theater.id]
                     })
             })
         })
@@ -114,30 +131,41 @@ describe('TheatersService', () => {
     })
 
     describe('GET /theaters', () => {
-        let theaters: TheaterDto[]
+        let theaterA1: TheaterDto
+        let theaterA2: TheaterDto
+        let theaterB1: TheaterDto
+        let theaterB2: TheaterDto
 
         beforeEach(async () => {
-            const createdTheaters = await Promise.all([
-                createTheater(fixture, { name: 'Theater-a1' }),
-                createTheater(fixture, { name: 'Theater-a2' }),
-                createTheater(fixture, { name: 'Theater-b1' }),
-                createTheater(fixture, { name: 'Theater-b2' }),
-                createTheater(fixture, { name: 'Theater-c1' })
+            ;[theaterA1, theaterA2, theaterB1, theaterB2] = await Promise.all([
+                createTheater(fixture, { name: 'theater-a1' }),
+                createTheater(fixture, { name: 'theater-a2' }),
+                createTheater(fixture, { name: 'theater-b1' }),
+                createTheater(fixture, { name: 'theater-b2' })
             ])
-
-            theaters = [...createdTheaters, fixture.createdTheater]
         })
 
-        describe('when the query parameters are missing', () => {
-            it('returns theaters with default pagination', async () => {
-                await fixture.httpClient
-                    .get('/theaters')
-                    .ok({
-                        skip: 0,
-                        take: expect.any(Number),
-                        total: theaters.length,
-                        items: expect.arrayContaining(theaters)
-                    })
+        const buildExpectedPage = (theaters: TheaterDto[]) => ({
+            skip: 0,
+            take: expect.any(Number),
+            total: theaters.length,
+            items: expect.arrayContaining(theaters)
+        })
+
+        describe('when no query parameters are provided', () => {
+            it('returns 200 with the default page of theaters', async () => {
+                const expected = buildExpectedPage([theaterA1, theaterA2, theaterB1, theaterB2])
+
+                await fixture.httpClient.get('/theaters').ok(expected)
+            })
+        })
+
+        describe('when query parameters are provided', () => {
+            const queryAndExpect = (query: any, theaters: TheaterDto[]) =>
+                fixture.httpClient.get('/theaters').query(query).ok(buildExpectedPage(theaters))
+
+            it('returns theaters filtered by a partial name match', async () => {
+                await queryAndExpect({ name: 'theater-a' }, [theaterA1, theaterA2])
             })
         })
 
@@ -147,19 +175,6 @@ describe('TheatersService', () => {
                     .get('/theaters')
                     .query({ wrong: 'value' })
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
-            })
-        })
-
-        describe('when a partial `name` is provided', () => {
-            it('returns theaters whose name includes the substring', async () => {
-                await fixture.httpClient
-                    .get('/theaters')
-                    .query({ name: 'Theater-a' })
-                    .ok(
-                        expect.objectContaining({
-                            items: expect.arrayContaining([theaters[0], theaters[1]])
-                        })
-                    )
             })
         })
     })

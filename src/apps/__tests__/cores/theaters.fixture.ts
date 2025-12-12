@@ -1,8 +1,8 @@
-import { TheaterDto, TheatersClient, TheatersModule } from 'apps/cores'
+import { TheatersClient, TheatersModule } from 'apps/cores'
 import { TheatersController } from 'apps/gateway'
-import { createTheater, TestFixture, createTestFixture } from '../__helpers__'
+import { createTestFixture, TestFixture } from '../__helpers__'
 
-export type TheatersFixture = TestFixture & { createdTheater: TheaterDto }
+export type TheatersFixture = TestFixture & {}
 
 export async function createTheatersFixture() {
     const fix = await createTestFixture({
@@ -11,7 +11,5 @@ export async function createTheatersFixture() {
         controllers: [TheatersController]
     })
 
-    const createdTheater = await createTheater(fix)
-
-    return { ...fix, createdTheater }
+    return fix
 }

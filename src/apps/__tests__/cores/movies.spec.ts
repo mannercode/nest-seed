@@ -10,6 +10,7 @@ import {
     uploadComplete
 } from '../__helpers__'
 import type { MoviesFixture } from './movies.fixture'
+import { omit } from 'lodash'
 
 describe('MoviesService', () => {
     let fixture: MoviesFixture
@@ -28,15 +29,13 @@ describe('MoviesService', () => {
             const payload = buildCreateMovieDto()
 
             it('returns 201 with the created movie', async () => {
-                const { assetIds: _, ...expectedMovie } = payload
-
                 await fixture.httpClient
                     .post('/movies')
                     .body(payload)
                     .created({
-                        ...expectedMovie,
+                        ...omit(payload, ['assetIds']),
                         id: expect.any(String),
-                        imageUrls: expect.any(Array)
+                        imageUrls: []
                     })
             })
         })
@@ -52,18 +51,17 @@ describe('MoviesService', () => {
 
             it('returns imageUrls for the uploaded asset', async () => {
                 const { body } = await fixture.httpClient.post('/movies').body(payload).created()
-                const movie: MovieDto = body
+                const movie = body as MovieDto
 
                 const response = await fetch(movie.imageUrls[0])
                 expect(response.ok).toBe(true)
 
                 const buffer = Buffer.from(await response.bytes())
-                const checksum = Checksum.fromBuffer(buffer)
-                expect(asset.checksum).toEqual(checksum)
+                expect(asset.checksum).toEqual(Checksum.fromBuffer(buffer))
             })
         })
 
-        describe('when required fields are missing', () => {
+        describe('when the required fields are missing', () => {
             const invalidPayload = {}
 
             it('returns 400 Bad Request', async () => {
@@ -139,19 +137,16 @@ describe('MoviesService', () => {
     describe('DELETE /movies/:id', () => {
         describe('when the movie exists', () => {
             let movie: MovieDto
-            let asset: AssetDto
 
             beforeEach(async () => {
-                asset = await uploadComplete(fixture, fixtureFiles.image)
+                const asset = await uploadComplete(fixture, fixtureFiles.image)
                 movie = await createMovie(fixture, { assetIds: [asset.id] })
             })
 
-            it('returns 200 with the deleted movie and empty imageUrls', async () => {
-                const expectedDeletedMovie = { ...movie, imageUrls: [] }
-
+            it('returns 200 with the deleted movie', async () => {
                 await fixture.httpClient
                     .delete(`/movies/${movie.id}`)
-                    .ok({ deletedMovies: [expectedDeletedMovie] })
+                    .ok({ deletedMovies: [{ ...movie, imageUrls: [] }] })
 
                 await fixture.httpClient
                     .get(`/movies/${movie.id}`)
@@ -161,8 +156,11 @@ describe('MoviesService', () => {
                     })
             })
 
-            it('returns 404 when fetching the deleted asset', async () => {
-                await fixture.httpClient.get(`/assets/${asset.id}`).notFound()
+            it('makes the movie image URL inaccessible after deletion', async () => {
+                await fixture.httpClient.delete(`/movies/${movie.id}`).ok()
+
+                const response = await fetch(movie.imageUrls[0])
+                expect(response.ok).toBe(false)
             })
         })
 
