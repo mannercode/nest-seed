@@ -28,7 +28,7 @@ describe('MoviesService', () => {
             const payload = buildCreateMovieDto()
 
             it('returns 201 with the created movie', async () => {
-                const { assetIds: _assetIds, ...expectedMovie } = payload
+                const { assetIds: _, ...expectedMovie } = payload
 
                 await fixture.httpClient
                     .post('/movies')
@@ -103,18 +103,19 @@ describe('MoviesService', () => {
     describe('PATCH /movies/:id', () => {
         describe('when the payload is valid', () => {
             let movie: MovieDto
-            const payload = {
-                title: 'update title',
-                genres: ['romance', 'thriller'],
-                releaseDate: new Date('2000-01-01'),
-                plot: 'new plot',
-                durationInSeconds: 10 * 60,
-                director: 'Steven Spielberg',
-                rating: 'R'
-            }
+            let payload: any
 
             beforeEach(async () => {
                 movie = await createMovie(fixture)
+                payload = {
+                    title: 'update title',
+                    genres: ['romance', 'thriller'],
+                    releaseDate: new Date('2000-01-01'),
+                    plot: 'new plot',
+                    durationInSeconds: 10 * 60,
+                    director: 'Steven Spielberg',
+                    rating: 'R'
+                }
             })
 
             it('returns 200 with the updated movie', async () => {
@@ -146,11 +147,11 @@ describe('MoviesService', () => {
             })
 
             it('returns 200 with the deleted movie and empty imageUrls', async () => {
-                movie.imageUrls = []
+                const expectedDeletedMovie = { ...movie, imageUrls: [] }
 
                 await fixture.httpClient
                     .delete(`/movies/${movie.id}`)
-                    .ok({ deletedMovies: [movie] })
+                    .ok({ deletedMovies: [expectedDeletedMovie] })
 
                 await fixture.httpClient
                     .get(`/movies/${movie.id}`)
@@ -220,7 +221,7 @@ describe('MoviesService', () => {
             ])
         })
 
-        const expectedPage = (movies: MovieDto[]) => ({
+        const buildExpectedPage = (movies: MovieDto[]) => ({
             skip: 0,
             take: expect.any(Number),
             total: movies.length,
@@ -229,38 +230,38 @@ describe('MoviesService', () => {
 
         describe('when no query parameters are provided', () => {
             it('returns 200 with the default page of movies', async () => {
-                const movies = [movieA1, movieA2, movieB1, movieB2]
+                const expected = buildExpectedPage([movieA1, movieA2, movieB1, movieB2])
 
-                await fixture.httpClient.get('/movies').ok(expectedPage(movies))
+                await fixture.httpClient.get('/movies').ok(expected)
             })
         })
 
         describe('when query parameters are provided', () => {
-            const getAndExpect = (query: any, movies: MovieDto[]) =>
-                fixture.httpClient.get('/movies').query(query).ok(expectedPage(movies))
+            const queryAndExpect = (query: any, movies: MovieDto[]) =>
+                fixture.httpClient.get('/movies').query(query).ok(buildExpectedPage(movies))
 
             it('returns movies filtered by a partial title match', async () => {
-                await getAndExpect({ title: 'title-a' }, [movieA1, movieA2])
+                await queryAndExpect({ title: 'title-a' }, [movieA1, movieA2])
             })
 
             it('returns movies filtered by genre', async () => {
-                await getAndExpect({ genre: MovieGenre.Drama }, [movieA2, movieB1])
+                await queryAndExpect({ genre: MovieGenre.Drama }, [movieA2, movieB1])
             })
 
             it('returns movies filtered by release date', async () => {
-                await getAndExpect({ releaseDate: new Date('2000-01-02') }, [movieA2, movieB1])
+                await queryAndExpect({ releaseDate: new Date('2000-01-02') }, [movieA2, movieB1])
             })
 
             it('returns movies filtered by a partial plot match', async () => {
-                await getAndExpect({ plot: 'plot-b' }, [movieB1, movieB2])
+                await queryAndExpect({ plot: 'plot-b' }, [movieB1, movieB2])
             })
 
             it('returns movies filtered by a partial director name match', async () => {
-                await getAndExpect({ director: 'James' }, [movieA1, movieB1])
+                await queryAndExpect({ director: 'James' }, [movieA1, movieB1])
             })
 
             it('returns movies filtered by rating', async () => {
-                await getAndExpect({ rating: MovieRating.NC17 }, [movieA1, movieA2])
+                await queryAndExpect({ rating: MovieRating.NC17 }, [movieA1, movieA2])
             })
         })
 
