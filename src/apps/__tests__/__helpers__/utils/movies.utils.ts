@@ -1,4 +1,4 @@
-import { MovieDto, MovieGenre, MovieRating } from 'apps/cores'
+import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
 import { TestContext } from 'testlib'
 
 export function buildCreateMovieDto(overrides = {}) {
@@ -14,7 +14,7 @@ export function buildCreateMovieDto(overrides = {}) {
         ...overrides
     }
 
-    return createDto
+    return createDto as CreateMovieDto
 }
 
 export async function createMovie(testContext: TestContext, override = {}): Promise<MovieDto> {
