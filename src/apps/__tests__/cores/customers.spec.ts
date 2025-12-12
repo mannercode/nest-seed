@@ -1,4 +1,5 @@
-import { CustomerDto } from 'apps/cores'
+import { CreateCustomerDto, CustomerDto, SearchCustomersPageDto } from 'apps/cores'
+import { omit } from 'lodash'
 import { nullObjectId } from 'testlib'
 import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
 import type { CustomersFixture } from './customers.fixture'
@@ -17,27 +18,25 @@ describe('CustomersService', () => {
 
     describe('POST /customers', () => {
         describe('when the payload is valid', () => {
-            const payload = buildCreateCustomerDto()
+            const payload: CreateCustomerDto = buildCreateCustomerDto()
 
             it('returns 201 with the created customer', async () => {
-                const { password: _, ...expectedCustomer } = payload
-
                 await fixture.httpClient
                     .post('/customers')
                     .body(payload)
-                    .created({ ...expectedCustomer, id: expect.any(String) })
+                    .created({ ...omit(payload, ['password']), id: expect.any(String) })
             })
         })
 
         describe('when the email already exists', () => {
-            let customer: CustomerDto
+            const email = 'user@mail.com'
 
             beforeEach(async () => {
-                customer = await createCustomer(fixture, { email: 'user@mail.com' })
+                await createCustomer(fixture, { email })
             })
 
             it('returns 409 Conflict', async () => {
-                const payload = buildCreateCustomerDto({ email: customer.email })
+                const payload = buildCreateCustomerDto({ email })
 
                 await fixture.httpClient
                     .post('/customers')
@@ -86,11 +85,11 @@ describe('CustomersService', () => {
     describe('PATCH /customers/:id', () => {
         describe('when the payload is valid', () => {
             let customer: CustomerDto
-            let updateDto: any
+            let payload: any
 
             beforeEach(async () => {
                 customer = await createCustomer(fixture)
-                updateDto = {
+                payload = {
                     name: 'update-name',
                     email: 'new@mail.com',
                     birthDate: new Date('1900-12-31')
@@ -98,11 +97,11 @@ describe('CustomersService', () => {
             })
 
             it('returns 200 with the updated customer', async () => {
-                const expected = { ...customer, ...updateDto }
+                const expected = { ...customer, ...payload }
 
                 await fixture.httpClient
                     .patch(`/customers/${customer.id}`)
-                    .body(updateDto)
+                    .body(payload)
                     .ok(expected)
 
                 await fixture.httpClient.get(`/customers/${customer.id}`).ok(expected)
@@ -184,7 +183,7 @@ describe('CustomersService', () => {
         })
 
         describe('when query parameters are provided', () => {
-            const queryAndExpect = (query: any, customers: CustomerDto[]) =>
+            const queryAndExpect = (query: SearchCustomersPageDto, customers: CustomerDto[]) =>
                 fixture.httpClient.get('/customers').query(query).ok(buildExpectedPage(customers))
 
             it('returns customers filtered by a partial name match', async () => {

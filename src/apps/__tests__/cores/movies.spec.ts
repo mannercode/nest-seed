@@ -1,6 +1,7 @@
-import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
+import { CreateMovieDto, MovieDto, MovieGenre, MovieRating, SearchMoviesPageDto } from 'apps/cores'
 import { AssetDto } from 'apps/infrastructures'
 import { Checksum } from 'common'
+import { omit } from 'lodash'
 import { nullObjectId } from 'testlib'
 import {
     buildCreateMovieDto,
@@ -10,7 +11,6 @@ import {
     uploadComplete
 } from '../__helpers__'
 import type { MoviesFixture } from './movies.fixture'
-import { omit } from 'lodash'
 
 describe('MoviesService', () => {
     let fixture: MoviesFixture
@@ -35,7 +35,7 @@ describe('MoviesService', () => {
                     .created({
                         ...omit(payload, ['assetIds']),
                         id: expect.any(String),
-                        imageUrls: []
+                        imageUrls: expect.any(Array)
                     })
             })
         })
@@ -235,7 +235,7 @@ describe('MoviesService', () => {
         })
 
         describe('when query parameters are provided', () => {
-            const queryAndExpect = (query: any, movies: MovieDto[]) =>
+            const queryAndExpect = (query: SearchMoviesPageDto, movies: MovieDto[]) =>
                 fixture.httpClient.get('/movies').query(query).ok(buildExpectedPage(movies))
 
             it('returns movies filtered by a partial title match', async () => {

@@ -1,4 +1,4 @@
-import { TheaterDto } from 'apps/cores'
+import { SearchTheatersPageDto, TheaterDto } from 'apps/cores'
 import { nullObjectId } from 'testlib'
 import { buildCreateTheaterDto, createTheater, Errors } from '../__helpers__'
 import type { TheatersFixture } from './theaters.fixture'
@@ -161,7 +161,7 @@ describe('TheatersService', () => {
         })
 
         describe('when query parameters are provided', () => {
-            const queryAndExpect = (query: any, theaters: TheaterDto[]) =>
+            const queryAndExpect = (query: SearchTheatersPageDto, theaters: TheaterDto[]) =>
                 fixture.httpClient.get('/theaters').query(query).ok(buildExpectedPage(theaters))
 
             it('returns theaters filtered by a partial name match', async () => {
