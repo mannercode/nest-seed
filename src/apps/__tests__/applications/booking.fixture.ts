@@ -19,7 +19,7 @@ import { BookingController, CustomerJwtStrategy } from 'apps/gateway'
 import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
 import { TestContext } from 'testlib'
 import {
-    createCustomerAndLogin,
+    createAndLoginCustomer,
     createMovie,
     createShowtimes,
     createAppTestContext,
@@ -33,7 +33,7 @@ export async function createAllResources(
     locations: TheaterLocation[],
     startTimes: Date[]
 ) {
-    const { customer, accessToken, refreshToken } = await createCustomerAndLogin(ctx)
+    const { customer, accessToken, refreshToken } = await createAndLoginCustomer(ctx)
 
     const movie = await createMovie(ctx)
 

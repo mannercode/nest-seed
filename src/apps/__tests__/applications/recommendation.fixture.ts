@@ -14,7 +14,7 @@ import { CustomerJwtStrategy, MoviesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { TestContext } from 'testlib'
 import {
-    createCustomerAndLogin,
+    createAndLoginCustomer,
     createMovie,
     createShowtimes,
     createAppTestContext,
@@ -25,7 +25,7 @@ import {
 export async function createWatchedMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
     const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
 
-    const { customer, accessToken } = await createCustomerAndLogin(ctx)
+    const { customer, accessToken } = await createAndLoginCustomer(ctx)
 
     const watchRecords = await Promise.all(
         movies.map((movie) =>
