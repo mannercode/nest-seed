@@ -3,15 +3,15 @@ import { buildCreatePaymentDto, createPayment } from '../__helpers__'
 import type { PaymentsFixture } from './payments.fixture'
 
 describe('PaymentsService', () => {
-    let fixture: PaymentsFixture
+    let fix: PaymentsFixture
 
     beforeEach(async () => {
         const { createPaymentsFixture } = await import('./payments.fixture')
-        fixture = await createPaymentsFixture()
+        fix = await createPaymentsFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     describe('create', () => {
@@ -19,7 +19,7 @@ describe('PaymentsService', () => {
             it('creates and returns a payment', async () => {
                 const createDto = buildCreatePaymentDto()
 
-                const payment = await fixture.paymentsService.create(createDto)
+                const payment = await fix.paymentsService.create(createDto)
                 expect(payment).toEqual({
                     ...createDto,
                     id: expect.any(String),
@@ -35,11 +35,11 @@ describe('PaymentsService', () => {
 
         describe('when the payments exist', () => {
             beforeEach(async () => {
-                createdPayment = await createPayment(fixture)
+                createdPayment = await createPayment(fix)
             })
 
             it('returns the payments', async () => {
-                const gotPayments = await fixture.paymentsService.getMany([createdPayment.id])
+                const gotPayments = await fix.paymentsService.getMany([createdPayment.id])
                 expect(gotPayments).toEqual([createdPayment])
             })
         })

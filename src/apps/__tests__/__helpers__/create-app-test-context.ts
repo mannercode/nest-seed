@@ -15,7 +15,7 @@ import { createHttpTestContext, HttpTestContext, ModuleMetadataEx } from 'testli
 
 export type TestFixture = HttpTestContext & { teardown: () => Promise<void> }
 
-export async function createTestFixture(metadata: ModuleMetadataEx) {
+export async function createAppTestContext(metadata: ModuleMetadataEx) {
     metadata.imports?.push(
         CommonModule,
         MongooseConfigModule,
@@ -60,6 +60,24 @@ export async function createTestFixture(metadata: ModuleMetadataEx) {
 
     return { ...context, teardown }
 }
+
+// const configMock = createConfigServiceMock({
+//     FILE_UPLOAD_MAX_FILE_SIZE_BYTES: localFiles.oversized.size,
+//     FILE_UPLOAD_MAX_FILES_PER_UPLOAD: maxFilesPerUpload,
+//     FILE_UPLOAD_ALLOWED_FILE_TYPES: 'text/plain',
+//     S3_ENDPOINT: s3.endpoint,
+//     S3_REGION: s3.region,
+//     S3_BUCKET: s3.bucket,
+//     S3_ACCESS_KEY_ID: s3.accessKeyId,
+//     S3_SECRET_ACCESS_KEY: s3.secretAccessKey,
+//     S3_FORCE_PATH_STYLE: s3.forcePathStyle
+// })
+
+// const fix = await createAppTestContext({
+//     imports: [AssetsModule],
+//     providers: [AssetsClient],
+//     overrideProviders: [configMock]
+// })
 
 export function createConfigServiceMock(mockValues: Record<string, any>) {
     const realConfigService = new ConfigService()

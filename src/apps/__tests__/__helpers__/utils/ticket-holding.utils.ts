@@ -1,9 +1,9 @@
 import { HoldTicketsDto } from 'apps/cores'
 import { oid, TestContext } from 'testlib'
 
-export async function holdTickets({ module }: TestContext, holdDto?: Partial<HoldTicketsDto>) {
+export async function holdTickets(ctx: TestContext, holdDto?: Partial<HoldTicketsDto>) {
     const { TicketHoldingClient } = await import('apps/cores')
-    const ticketHoldingService = module.get(TicketHoldingClient)
+    const ticketHoldingService = ctx.module.get(TicketHoldingClient)
 
     return ticketHoldingService.holdTickets({
         customerId: oid(0x0),
@@ -13,24 +13,20 @@ export async function holdTickets({ module }: TestContext, holdDto?: Partial<Hol
     })
 }
 
-export async function releaseTickets(
-    { module }: TestContext,
-    showtimeId: string,
-    customerId: string
-) {
+export async function releaseTickets(ctx: TestContext, showtimeId: string, customerId: string) {
     const { TicketHoldingClient } = await import('apps/cores')
-    const ticketHoldingService = module.get(TicketHoldingClient)
+    const ticketHoldingService = ctx.module.get(TicketHoldingClient)
 
     return ticketHoldingService.releaseTickets(showtimeId, customerId)
 }
 
 export async function searchHeldTicketIds(
-    { module }: TestContext,
+    ctx: TestContext,
     showtimeId: string,
     customerId: string
 ) {
     const { TicketHoldingClient } = await import('apps/cores')
-    const ticketHoldingService = module.get(TicketHoldingClient)
+    const ticketHoldingService = ctx.module.get(TicketHoldingClient)
 
     return ticketHoldingService.searchHeldTicketIds(showtimeId, customerId)
 }

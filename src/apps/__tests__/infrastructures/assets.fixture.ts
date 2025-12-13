@@ -1,7 +1,7 @@
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { Path } from 'common'
-import { createTestFixture, FixtureFile, fixtureFiles, TestFixture } from '../__helpers__'
+import { createAppTestContext, FixtureFile, fixtureFiles, TestFixture } from '../__helpers__'
 
 export type AssetsFixture = TestFixture & {
     assetsClient: AssetsClient
@@ -11,7 +11,7 @@ export type AssetsFixture = TestFixture & {
 }
 
 export async function createAssetsFixture() {
-    const testFixture = await createTestFixture({
+    const testFixture = await createAppTestContext({
         imports: [AssetsModule],
         providers: [AssetsClient]
     })

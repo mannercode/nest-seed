@@ -13,9 +13,9 @@ export function buildCreateCustomerDto(overrides = {}) {
     return createDto as CreateCustomerDto
 }
 
-export async function createCustomer({ module }: TestContext, override = {}) {
+export async function createCustomer(ctx: TestContext, override = {}) {
     const { CustomersClient } = await import('apps/cores')
-    const customersService = module.get(CustomersClient)
+    const customersService = ctx.module.get(CustomersClient)
 
     const createDto = buildCreateCustomerDto(override)
 

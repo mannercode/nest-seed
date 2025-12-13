@@ -2,15 +2,15 @@ import { LatLong } from 'common'
 import type { LatLongFixture } from './lat-long.fixture'
 
 describe('LatLong', () => {
-    let fixture: LatLongFixture
+    let fix: LatLongFixture
 
     beforeEach(async () => {
         const { createLatLongFixture } = await import('./lat-long.fixture')
-        fixture = await createLatLongFixture()
+        fix = await createLatLongFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     describe('distanceInMeters', () => {
@@ -31,7 +31,7 @@ describe('LatLong', () => {
     describe('GET /latLong', () => {
         describe('when the query is valid', () => {
             it('returns the latitude and longitude', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .get('/latLong')
                     .query({ location: '37.123,128.678' })
                     .ok({ latitude: 37.123, longitude: 128.678 })
@@ -40,7 +40,7 @@ describe('LatLong', () => {
 
         describe('when the latLong value is missing', () => {
             it('throws BadRequestException', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .get('/latLong')
                     .badRequest({
                         code: 'ERR_LATLONG_REQUIRED',
@@ -51,7 +51,7 @@ describe('LatLong', () => {
 
         describe('when the latLong format is invalid', () => {
             it('throws BadRequestException', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .get('/latLong')
                     .query({ location: '37.123' })
                     .badRequest({
@@ -63,7 +63,7 @@ describe('LatLong', () => {
 
         describe('when the values are out of range', () => {
             it('throws BadRequestException', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .get('/latLong')
                     .query({ location: '91,181' })
                     .badRequest({

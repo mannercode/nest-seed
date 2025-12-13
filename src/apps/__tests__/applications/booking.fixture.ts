@@ -17,18 +17,19 @@ import {
 } from 'apps/cores'
 import { BookingController, CustomerJwtStrategy } from 'apps/gateway'
 import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
+import { TestContext } from 'testlib'
 import {
     createCustomerAndLogin,
     createMovie,
     createShowtimes,
-    createTestFixture,
+    createAppTestContext,
     createTheater,
     createTickets,
     TestFixture
 } from '../__helpers__'
 
 export async function createAllResources(
-    ctx: TestFixture,
+    ctx: TestContext,
     locations: TheaterLocation[],
     startTimes: Date[]
 ) {
@@ -37,22 +38,28 @@ export async function createAllResources(
     const movie = await createMovie(ctx)
 
     const seatmap = { blocks: [{ name: 'A', rows: [{ name: '1', seats: 'OOOOOOOO' }] }] }
-
     const theaters = await Promise.all(
         locations.map((location) => createTheater(ctx, { seatmap, location }))
     )
 
-    const createShowtimeDtos = startTimes.flatMap((startTime) =>
-        theaters.map((theater) => ({ movieId: movie.id, theaterId: theater.id, startTime }))
+    const showtimes = await createShowtimes(
+        ctx,
+        theaters.flatMap((theater) =>
+            startTimes.map((startTime) => ({ movieId: movie.id, theaterId: theater.id, startTime }))
+        )
     )
 
-    const showtimes = await createShowtimes(ctx, createShowtimeDtos)
-
-    const createTicketDtos = showtimes.flatMap(({ movieId, theaterId, id: showtimeId }) =>
-        Seatmap.getAllSeats(seatmap).map((seat) => ({ movieId, theaterId, showtimeId, seat }))
+    const tickets = await createTickets(
+        ctx,
+        showtimes.flatMap(({ id, movieId, theaterId }) =>
+            Seatmap.getAllSeats(seatmap).map((seat) => ({
+                showtimeId: id,
+                movieId,
+                theaterId,
+                seat
+            }))
+        )
     )
-
-    const tickets = await createTickets(ctx, createTicketDtos)
 
     return { customer, accessToken, refreshToken, movie, theaters, showtimes, tickets }
 }
@@ -60,7 +67,7 @@ export async function createAllResources(
 export type BookingFixture = TestFixture
 
 export async function createBookingFixture(): Promise<BookingFixture> {
-    const fix = await createTestFixture({
+    const fix = await createAppTestContext({
         imports: [
             MoviesModule,
             AssetsModule,

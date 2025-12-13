@@ -12,15 +12,15 @@ import { buildCreatePurchaseDto, type PurchaseFixture } from './purchase.fixture
 // TODO fix 라고 표시한 건 다 고쳐야 한다
 
 describe('PurchaseService', () => {
-    let fixture: PurchaseFixture
+    let fix: PurchaseFixture
 
     beforeEach(async () => {
         const { createPurchaseFixture } = await import('./purchase.fixture')
-        fixture = await createPurchaseFixture()
+        fix = await createPurchaseFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     describe('POST /purchases', () => {
@@ -29,12 +29,9 @@ describe('PurchaseService', () => {
             let createdPurchase: PurchaseRecordDto
 
             beforeEach(async () => {
-                createDto = buildCreatePurchaseDto(fixture.customer, fixture.heldTickets)
+                createDto = buildCreatePurchaseDto(fix.customer, fix.heldTickets)
 
-                const { body } = await fixture.httpClient
-                    .post('/purchases')
-                    .body(createDto)
-                    .created()
+                const { body } = await fix.httpClient.post('/purchases').body(createDto).created()
 
                 createdPurchase = body
             })
@@ -57,13 +54,13 @@ describe('PurchaseService', () => {
             // it('has persisted the payment record', async () => {
             // 결제 기록을 생성한다
             it('creates the payment record', async () => {
-                const payments = await getPayments(fixture, [createdPurchase.paymentId])
+                const payments = await getPayments(fix, [createdPurchase.paymentId])
 
                 expect(payments[0].amount).toEqual(createdPurchase.totalPrice)
             })
 
             it('marks purchased tickets as `Sold`', async () => {
-                const soldTickets = await getTickets(fixture, pickIds(fixture.heldTickets))
+                const soldTickets = await getTickets(fix, pickIds(fix.heldTickets))
 
                 expect(soldTickets.map((ticket) => ticket.status)).toEqual(
                     Array(soldTickets.length).fill(TicketStatus.Sold)
@@ -71,10 +68,7 @@ describe('PurchaseService', () => {
             })
 
             it('keeps unpurchased tickets unchanged', async () => {
-                const remainingTickets = await getTickets(
-                    fixture,
-                    pickIds(fixture.availableTickets)
-                )
+                const remainingTickets = await getTickets(fix, pickIds(fix.availableTickets))
 
                 expect(remainingTickets.map((ticket) => ticket.status)).toEqual(
                     Array(remainingTickets.length).fill(TicketStatus.Available)
@@ -85,13 +79,13 @@ describe('PurchaseService', () => {
         describe('when the ticket count exceeds the maximum', () => {
             beforeEach(async () => {
                 const { Rules } = await import('shared')
-                toAny(Rules).Ticket.maxTicketsPerPurchase = fixture.heldTickets.length - 1
+                toAny(Rules).Ticket.maxTicketsPerPurchase = fix.heldTickets.length - 1
             })
 
             it('returns 400 Bad Request', async () => {
-                const createDto = buildCreatePurchaseDto(fixture.customer, fixture.heldTickets)
+                const createDto = buildCreatePurchaseDto(fix.customer, fix.heldTickets)
 
-                await fixture.httpClient
+                await fix.httpClient
                     .post('/purchases')
                     .body(createDto)
                     .badRequest({
@@ -104,11 +98,11 @@ describe('PurchaseService', () => {
         describe('when the purchase window is closed', () => {
             it('returns 400 Bad Request', async () => {
                 const createDto = buildCreatePurchaseDto(
-                    fixture.customer,
-                    fixture.closedTickets.slice(0, 2)
+                    fix.customer,
+                    fix.closedTickets.slice(0, 2)
                 )
 
-                await fixture.httpClient
+                await fix.httpClient
                     .post('/purchases')
                     .body(createDto)
                     .badRequest({
@@ -123,11 +117,11 @@ describe('PurchaseService', () => {
         describe('when purchasing unheld tickets', () => {
             it('returns 400 Bad Request', async () => {
                 const createDto = buildCreatePurchaseDto(
-                    fixture.customer,
-                    fixture.availableTickets.slice(2)
+                    fix.customer,
+                    fix.availableTickets.slice(2)
                 )
 
-                await fixture.httpClient
+                await fix.httpClient
                     .post('/purchases')
                     .body(createDto)
                     .badRequest(Errors.TicketPurchase.TicketNotHeld)
@@ -139,22 +133,22 @@ describe('PurchaseService', () => {
 
             beforeEach(async () => {
                 const { TicketsService } = await import('apps/cores')
-                const ticketsService = fixture.module.get(TicketsService)
+                const ticketsService = fix.module.get(TicketsService)
 
                 jest.spyOn(ticketsService, 'updateStatusMany').mockImplementationOnce(() => {
                     throw new Error('purchase error')
                 })
 
                 const { TicketPurchasService } = await import('apps/applications')
-                const ticketPurchaseService = fixture.module.get(TicketPurchasService)
+                const ticketPurchaseService = fix.module.get(TicketPurchasService)
 
                 rollbackPurchaseSpy = jest.spyOn(ticketPurchaseService, 'rollbackPurchase')
             })
 
             it('returns 500 and rolls back the purchase', async () => {
-                const createDto = buildCreatePurchaseDto(fixture.customer, fixture.heldTickets)
+                const createDto = buildCreatePurchaseDto(fix.customer, fix.heldTickets)
 
-                await fixture.httpClient.post('/purchases').body(createDto).internalServerError()
+                await fix.httpClient.post('/purchases').body(createDto).internalServerError()
 
                 expect(rollbackPurchaseSpy).toHaveBeenCalledTimes(1)
             })

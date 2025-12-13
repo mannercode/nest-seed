@@ -16,9 +16,9 @@ export async function uploadAsset(filepath: string, { url, method, headers }: Up
     return response
 }
 
-export async function uploadFile(testContext: TestContext, file: FixtureFile) {
+export async function uploadFile(ctx: TestContext, file: FixtureFile) {
     const { AssetsClient } = await import('apps/infrastructures')
-    const assetsClient = testContext.module.get(AssetsClient)
+    const assetsClient = ctx.module.get(AssetsClient)
 
     const createDto = buildCreateAssetDto(file)
     const uploadRequest = await assetsClient.create(createDto)
@@ -29,11 +29,11 @@ export async function uploadFile(testContext: TestContext, file: FixtureFile) {
     return uploadRequest.assetId
 }
 
-export async function uploadComplete(testContext: TestContext, file: FixtureFile) {
-    const assetId = await uploadFile(testContext, file)
+export async function uploadComplete(ctx: TestContext, file: FixtureFile) {
+    const assetId = await uploadFile(ctx, file)
 
     const { AssetsClient } = await import('apps/infrastructures')
-    const assetsClient = testContext.module.get(AssetsClient)
+    const assetsClient = ctx.module.get(AssetsClient)
 
     return assetsClient.complete(assetId, { owner: { service: 'service', entityId: 'entityId' } })
 }

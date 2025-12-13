@@ -5,15 +5,15 @@ import { buildCreateTicketDto, createTickets, Errors } from '../__helpers__'
 import type { TicketsFixture } from './tickets.fixture'
 
 describe('TicketsService', () => {
-    let fixture: TicketsFixture
+    let fix: TicketsFixture
 
     beforeEach(async () => {
         const { createTicketsFixture } = await import('./tickets.fixture')
-        fixture = await createTicketsFixture()
+        fix = await createTicketsFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     describe('createMany', () => {
@@ -21,7 +21,7 @@ describe('TicketsService', () => {
             it('creates and returns tickets', async () => {
                 const createDtos = [buildCreateTicketDto({ sagaId: oid(0x1) })]
 
-                const { success } = await fixture.ticketsService.createMany(createDtos)
+                const { success } = await fix.ticketsService.createMany(createDtos)
 
                 expect(success).toBe(true)
             })
@@ -39,15 +39,15 @@ describe('TicketsService', () => {
         let ticketForShowtime: TicketDto
 
         beforeEach(async () => {
-            ;[ticketForSaga] = await createTickets(fixture, [{ sagaId }])
-            ;[ticketForMovie] = await createTickets(fixture, [{ movieId }])
-            ;[ticketForTheater] = await createTickets(fixture, [{ theaterId }])
-            ;[ticketForShowtime] = await createTickets(fixture, [{ showtimeId }])
+            ;[ticketForSaga] = await createTickets(fix, [{ sagaId }])
+            ;[ticketForMovie] = await createTickets(fix, [{ movieId }])
+            ;[ticketForTheater] = await createTickets(fix, [{ theaterId }])
+            ;[ticketForShowtime] = await createTickets(fix, [{ showtimeId }])
         })
 
         describe('when the `sagaIds` are provided', () => {
             it('returns tickets for the sagaIds', async () => {
-                const tickets = await fixture.ticketsService.search({ sagaIds: [sagaId] })
+                const tickets = await fix.ticketsService.search({ sagaIds: [sagaId] })
 
                 expect(tickets).toEqual([ticketForSaga])
             })
@@ -55,7 +55,7 @@ describe('TicketsService', () => {
 
         describe('when the `movieIds` are provided', () => {
             it('returns tickets for the movieIds', async () => {
-                const tickets = await fixture.ticketsService.search({ movieIds: [movieId] })
+                const tickets = await fix.ticketsService.search({ movieIds: [movieId] })
 
                 expect(tickets).toEqual([ticketForMovie])
             })
@@ -63,7 +63,7 @@ describe('TicketsService', () => {
 
         describe('when the `theaterIds` are provided', () => {
             it('returns tickets for the theaterIds', async () => {
-                const tickets = await fixture.ticketsService.search({ theaterIds: [theaterId] })
+                const tickets = await fix.ticketsService.search({ theaterIds: [theaterId] })
 
                 expect(tickets).toEqual([ticketForTheater])
             })
@@ -71,7 +71,7 @@ describe('TicketsService', () => {
 
         describe('when the `showtimeIds` are provided', () => {
             it('returns tickets for the showtimeIds', async () => {
-                const tickets = await fixture.ticketsService.search({ showtimeIds: [showtimeId] })
+                const tickets = await fix.ticketsService.search({ showtimeIds: [showtimeId] })
 
                 expect(tickets).toEqual([ticketForShowtime])
             })
@@ -79,7 +79,7 @@ describe('TicketsService', () => {
 
         describe('when the filter is empty', () => {
             it('throws 400 status', async () => {
-                const promise = fixture.ticketsService.search({})
+                const promise = fix.ticketsService.search({})
 
                 await expect(promise).rejects.toMatchObject({
                     status: 400,
@@ -93,7 +93,7 @@ describe('TicketsService', () => {
         let createdTickets: TicketDto[]
 
         beforeEach(async () => {
-            createdTickets = await createTickets(fixture, [
+            createdTickets = await createTickets(fix, [
                 { status: TicketStatus.Available },
                 { status: TicketStatus.Available },
                 { status: TicketStatus.Available }
@@ -102,7 +102,7 @@ describe('TicketsService', () => {
 
         describe('when the tickets exist', () => {
             it('updates ticket status and returns the tickets', async () => {
-                const updatedTickets = await fixture.ticketsService.updateStatusMany(
+                const updatedTickets = await fix.ticketsService.updateStatusMany(
                     pickIds(createdTickets),
                     TicketStatus.Sold
                 )
@@ -123,18 +123,15 @@ describe('TicketsService', () => {
             beforeEach(async () => {
                 const createDtos = Array.from({ length: totalCount }, () => ({ showtimeId }))
 
-                const createdTickets = await createTickets(fixture, createDtos)
+                const createdTickets = await createTickets(fix, createDtos)
 
                 const soldTickets = createdTickets.slice(0, soldCount)
 
-                await fixture.ticketsService.updateStatusMany(
-                    pickIds(soldTickets),
-                    TicketStatus.Sold
-                )
+                await fix.ticketsService.updateStatusMany(pickIds(soldTickets), TicketStatus.Sold)
             })
 
             it('returns sales stats for the showtimeIds', async () => {
-                const ticketSales = await fixture.ticketsService.aggregateSales({
+                const ticketSales = await fix.ticketsService.aggregateSales({
                     showtimeIds: [showtimeId]
                 })
 

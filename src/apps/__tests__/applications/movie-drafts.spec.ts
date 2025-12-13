@@ -7,26 +7,26 @@ import { buildCreateMovieDto, Errors } from '../__helpers__'
 import { MovieDraftsFixture } from './movie-drafts.fixture'
 
 describe('MovieDraftsService', () => {
-    let fixture: MovieDraftsFixture
+    let fix: MovieDraftsFixture
 
     beforeEach(async () => {
         const { createMovieDraftsFixture } = await import('./movie-drafts.fixture')
-        fixture = await createMovieDraftsFixture()
+        fix = await createMovieDraftsFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     async function requestImageUpload(draftId: string) {
         const payload = {
-            originalName: fixture.image.originalName,
-            mimeType: fixture.image.mimeType,
-            size: fixture.image.size,
-            checksum: fixture.image.checksum
+            originalName: fix.image.originalName,
+            mimeType: fix.image.mimeType,
+            size: fix.image.size,
+            checksum: fix.image.checksum
         }
 
-        const { body: upload } = await fixture.httpClient
+        const { body: upload } = await fix.httpClient
             .post(`/movie-drafts/${draftId}/images`)
             .body(payload)
             .created()
@@ -34,7 +34,7 @@ describe('MovieDraftsService', () => {
         const uploadResponse = await fetch(upload.upload.url, {
             method: upload.upload.method,
             headers: upload.upload.headers,
-            body: createReadStream(fixture.image.path),
+            body: createReadStream(fix.image.path),
             duplex: 'half'
         })
 
@@ -44,11 +44,11 @@ describe('MovieDraftsService', () => {
 
     describe('when uploading an image via presign and completing the draft', () => {
         it('creates a movie with the uploaded image', async () => {
-            const { body: draft } = await fixture.httpClient.post('/movie-drafts').created()
+            const { body: draft } = await fix.httpClient.post('/movie-drafts').created()
 
             const upload = await requestImageUpload(draft.id)
 
-            await fixture.httpClient
+            await fix.httpClient
                 .post(`/movie-drafts/${draft.id}/images/${upload.imageId}/complete`)
                 .ok(expect.objectContaining({ id: upload.imageId, status: 'READY' }))
 
@@ -57,12 +57,12 @@ describe('MovieDraftsService', () => {
                 plot: 'draft plot'
             })
 
-            await fixture.httpClient
+            await fix.httpClient
                 .patch(`/movie-drafts/${draft.id}`)
                 .body(updateDto)
                 .ok(expect.objectContaining({ id: draft.id, ...updateDto }))
 
-            const { body: createdMovie } = await fixture.httpClient
+            const { body: createdMovie } = await fix.httpClient
                 .post(`/movie-drafts/${draft.id}/complete`)
                 .created()
 
@@ -74,7 +74,7 @@ describe('MovieDraftsService', () => {
                 })
             )
 
-            await fixture.httpClient
+            await fix.httpClient
                 .get(`/movie-drafts/${draft.id}`)
                 .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: draft.id })
 
@@ -82,18 +82,18 @@ describe('MovieDraftsService', () => {
             expect(downloadResponse.ok).toBe(true)
 
             const downloadedBuffer = Buffer.from(await downloadResponse.arrayBuffer())
-            const downloadPath = Path.join(fixture.tempDir, 'draft-download.tmp')
+            const downloadPath = Path.join(fix.tempDir, 'draft-download.tmp')
             await writeFile(downloadPath, downloadedBuffer)
 
-            expect(await FileUtil.areEqual(downloadPath, fixture.image.path)).toBe(true)
+            expect(await FileUtil.areEqual(downloadPath, fix.image.path)).toBe(true)
         })
     })
 
     describe('when completing an incomplete draft', () => {
         it('returns 422 Unprocessable Entity', async () => {
-            const { body: draft } = await fixture.httpClient.post('/movie-drafts').created()
+            const { body: draft } = await fix.httpClient.post('/movie-drafts').created()
 
-            await fixture.httpClient
+            await fix.httpClient
                 .post(`/movie-drafts/${draft.id}/complete`)
                 .send(
                     HttpStatus.UNPROCESSABLE_ENTITY,
@@ -104,8 +104,8 @@ describe('MovieDraftsService', () => {
 
     describe('when updating and deleting a draft', () => {
         it('updates fields and deletes the draft', async () => {
-            const { body: draft } = await fixture.httpClient.post('/movie-drafts').created()
-            await fixture.httpClient
+            const { body: draft } = await fix.httpClient.post('/movie-drafts').created()
+            await fix.httpClient
                 .get(`/movie-drafts/${draft.id}`)
                 .ok(expect.objectContaining({ id: draft.id, expiresAt: expect.any(Date) }))
 
@@ -114,16 +114,16 @@ describe('MovieDraftsService', () => {
                 plot: 'updated plot'
             })
 
-            const { body: updated } = await fixture.httpClient
+            const { body: updated } = await fix.httpClient
                 .patch(`/movie-drafts/${draft.id}`)
                 .body(updateDto)
                 .ok()
 
             expect(updated).toEqual(expect.objectContaining({ id: draft.id, ...updateDto }))
 
-            await fixture.httpClient.delete(`/movie-drafts/${draft.id}`).send(HttpStatus.NO_CONTENT)
+            await fix.httpClient.delete(`/movie-drafts/${draft.id}`).send(HttpStatus.NO_CONTENT)
 
-            await fixture.httpClient
+            await fix.httpClient
                 .get(`/movie-drafts/${draft.id}`)
                 .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: draft.id })
         })
@@ -131,15 +131,15 @@ describe('MovieDraftsService', () => {
 
     describe('when requesting image upload', () => {
         it('rejects unsupported mime types', async () => {
-            const { body: draft } = await fixture.httpClient.post('/movie-drafts').created()
+            const { body: draft } = await fix.httpClient.post('/movie-drafts').created()
 
-            await fixture.httpClient
+            await fix.httpClient
                 .post(`/movie-drafts/${draft.id}/images`)
                 .body({
-                    originalName: fixture.image.originalName,
+                    originalName: fix.image.originalName,
                     mimeType: 'text/plain',
-                    size: fixture.image.size,
-                    checksum: fixture.image.checksum
+                    size: fix.image.size,
+                    checksum: fix.image.checksum
                 })
                 .badRequest(
                     expect.objectContaining({
@@ -150,9 +150,9 @@ describe('MovieDraftsService', () => {
         })
 
         it('returns 404 when completing a non-existent image', async () => {
-            const { body: draft } = await fixture.httpClient.post('/movie-drafts').created()
+            const { body: draft } = await fix.httpClient.post('/movie-drafts').created()
 
-            await fixture.httpClient
+            await fix.httpClient
                 .post(`/movie-drafts/${draft.id}/images/${nullObjectId}/complete`)
                 .notFound(
                     expect.objectContaining({
@@ -166,9 +166,9 @@ describe('MovieDraftsService', () => {
     describe('when the draft is expired', () => {
         it('deletes and returns 404 on access', async () => {
             const expiresAt = DateUtil.add({ minutes: -5 })
-            const draft = await fixture.movieDraftsRepository.createDraft({ expiresAt })
+            const draft = await fix.movieDraftsRepository.createDraft({ expiresAt })
 
-            await fixture.httpClient
+            await fix.httpClient
                 .get(`/movie-drafts/${draft.id}`)
                 .notFound(expect.objectContaining(Errors.MovieDrafts.Expired))
         })

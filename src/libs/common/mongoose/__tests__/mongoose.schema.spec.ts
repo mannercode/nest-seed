@@ -2,19 +2,19 @@ import { Types } from 'mongoose'
 import type { MongooseSchemaFixture } from './mongoose.schema.fixture'
 
 describe('Mongoose Schema Examples', () => {
-    let fixture: MongooseSchemaFixture
+    let fix: MongooseSchemaFixture
 
     beforeEach(async () => {
         const { createMongooseSchemaFixture } = await import('./mongoose.schema.fixture')
-        fixture = await createMongooseSchemaFixture()
+        fix = await createMongooseSchemaFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     it('stores and retrieves all default Mongoose data types', async () => {
-        const doc = new fixture.model()
+        const doc = new fix.model()
         doc.sn = 1234567
         doc.name = 'Statue of Liberty'
         doc.binary = Buffer.alloc(0)
@@ -38,7 +38,7 @@ describe('Mongoose Schema Examples', () => {
         doc.optional = undefined
         await doc.save()
 
-        const foundDoc = await fixture.model.findOne({ _id: doc._id }).exec()
+        const foundDoc = await fix.model.findOne({ _id: doc._id }).exec()
         expect(foundDoc?.toJSON()).toEqual(doc.toJSON())
     })
 })

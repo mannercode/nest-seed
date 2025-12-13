@@ -13,15 +13,15 @@ import {
 import type { MoviesFixture } from './movies.fixture'
 
 describe('MoviesService', () => {
-    let fixture: MoviesFixture
+    let fix: MoviesFixture
 
     beforeEach(async () => {
         const { createMoviesFixture } = await import('./movies.fixture')
-        fixture = await createMoviesFixture()
+        fix = await createMoviesFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     describe('POST /movies', () => {
@@ -29,7 +29,7 @@ describe('MoviesService', () => {
             const payload = buildCreateMovieDto()
 
             it('returns 201 with the created movie', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .post('/movies')
                     .body(payload)
                     .created({
@@ -45,12 +45,12 @@ describe('MoviesService', () => {
             let asset: AssetDto
 
             beforeEach(async () => {
-                asset = await uploadComplete(fixture, fixtureFiles.image)
+                asset = await uploadComplete(fix, fixtureFiles.image)
                 payload = buildCreateMovieDto({ assetIds: [asset.id] })
             })
 
             it('returns imageUrls for the uploaded asset', async () => {
-                const { body } = await fixture.httpClient.post('/movies').body(payload).created()
+                const { body } = await fix.httpClient.post('/movies').body(payload).created()
                 const movie = body as MovieDto
 
                 const response = await fetch(movie.imageUrls[0])
@@ -65,7 +65,7 @@ describe('MoviesService', () => {
             const invalidPayload = {}
 
             it('returns 400 Bad Request', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .post('/movies')
                     .body(invalidPayload)
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
@@ -78,17 +78,17 @@ describe('MoviesService', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
-                movie = await createMovie(fixture)
+                movie = await createMovie(fix)
             })
 
             it('returns 200 with the movie', async () => {
-                await fixture.httpClient.get(`/movies/${movie.id}`).ok(movie)
+                await fix.httpClient.get(`/movies/${movie.id}`).ok(movie)
             })
         })
 
         describe('when the movie does not exist', () => {
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .get(`/movies/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -104,7 +104,7 @@ describe('MoviesService', () => {
             let payload: any
 
             beforeEach(async () => {
-                movie = await createMovie(fixture)
+                movie = await createMovie(fix)
                 payload = {
                     title: 'update title',
                     genres: ['romance', 'thriller'],
@@ -119,14 +119,14 @@ describe('MoviesService', () => {
             it('returns 200 with the updated movie', async () => {
                 const expected = { ...movie, ...payload }
 
-                await fixture.httpClient.patch(`/movies/${movie.id}`).body(payload).ok(expected)
-                await fixture.httpClient.get(`/movies/${movie.id}`).ok(expected)
+                await fix.httpClient.patch(`/movies/${movie.id}`).body(payload).ok(expected)
+                await fix.httpClient.get(`/movies/${movie.id}`).ok(expected)
             })
         })
 
         describe('when the movie does not exist', () => {
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .patch(`/movies/${nullObjectId}`)
                     .body({})
                     .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
@@ -139,16 +139,16 @@ describe('MoviesService', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
-                const asset = await uploadComplete(fixture, fixtureFiles.image)
-                movie = await createMovie(fixture, { assetIds: [asset.id] })
+                const asset = await uploadComplete(fix, fixtureFiles.image)
+                movie = await createMovie(fix, { assetIds: [asset.id] })
             })
 
             it('returns 200 with the deleted movie', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .delete(`/movies/${movie.id}`)
                     .ok({ deletedMovies: [{ ...movie, imageUrls: [] }] })
 
-                await fixture.httpClient
+                await fix.httpClient
                     .get(`/movies/${movie.id}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -157,7 +157,7 @@ describe('MoviesService', () => {
             })
 
             it('makes the movie image URL inaccessible after deletion', async () => {
-                await fixture.httpClient.delete(`/movies/${movie.id}`).ok()
+                await fix.httpClient.delete(`/movies/${movie.id}`).ok()
 
                 const response = await fetch(movie.imageUrls[0])
                 expect(response.ok).toBe(false)
@@ -166,7 +166,7 @@ describe('MoviesService', () => {
 
         describe('when the movie does not exist', () => {
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .delete(`/movies/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -184,7 +184,7 @@ describe('MoviesService', () => {
 
         beforeEach(async () => {
             ;[movieA1, movieA2, movieB1, movieB2] = await Promise.all([
-                createMovie(fixture, {
+                createMovie(fix, {
                     title: 'title-a1',
                     plot: 'plot-a1',
                     director: 'James Cameron',
@@ -192,7 +192,7 @@ describe('MoviesService', () => {
                     rating: MovieRating.NC17,
                     genres: [MovieGenre.Action, MovieGenre.Comedy]
                 }),
-                createMovie(fixture, {
+                createMovie(fix, {
                     title: 'title-a2',
                     plot: 'plot-a2',
                     director: 'Steven Spielberg',
@@ -200,7 +200,7 @@ describe('MoviesService', () => {
                     rating: MovieRating.NC17,
                     genres: [MovieGenre.Romance, MovieGenre.Drama]
                 }),
-                createMovie(fixture, {
+                createMovie(fix, {
                     title: 'title-b1',
                     plot: 'plot-b1',
                     director: 'James Cameron',
@@ -208,7 +208,7 @@ describe('MoviesService', () => {
                     rating: MovieRating.PG,
                     genres: [MovieGenre.Drama, MovieGenre.Comedy]
                 }),
-                createMovie(fixture, {
+                createMovie(fix, {
                     title: 'title-b2',
                     plot: 'plot-b2',
                     director: 'Steven Spielberg',
@@ -230,13 +230,13 @@ describe('MoviesService', () => {
             it('returns 200 with the default page of movies', async () => {
                 const expected = buildExpectedPage([movieA1, movieA2, movieB1, movieB2])
 
-                await fixture.httpClient.get('/movies').ok(expected)
+                await fix.httpClient.get('/movies').ok(expected)
             })
         })
 
         describe('when query parameters are provided', () => {
             const queryAndExpect = (query: SearchMoviesPageDto, movies: MovieDto[]) =>
-                fixture.httpClient.get('/movies').query(query).ok(buildExpectedPage(movies))
+                fix.httpClient.get('/movies').query(query).ok(buildExpectedPage(movies))
 
             it('returns movies filtered by a partial title match', async () => {
                 await queryAndExpect({ title: 'title-a' }, [movieA1, movieA2])
@@ -265,7 +265,7 @@ describe('MoviesService', () => {
 
         describe('when query parameters are invalid', () => {
             it('returns 400 Bad Request', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .get('/movies')
                     .query({ wrong: 'value' })
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })

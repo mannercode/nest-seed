@@ -3,15 +3,15 @@ import { Errors } from '../__helpers__'
 import type { Fixture } from './movie-drafts.fixture'
 
 describe.skip('MovieDraftsService', () => {
-    let fixture: Fixture
+    let fix: Fixture
 
     beforeEach(async () => {
         const { createFixture } = await import('./movie-drafts.fixture')
-        fixture = await createFixture()
+        fix = await createFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     describe('POST /movie-drafts', () => {
@@ -19,7 +19,7 @@ describe.skip('MovieDraftsService', () => {
         describe('when the request is valid', () => {
             // movie-draft을 생성하고 반환한다
             it('creates and returns a movie-draft', async () => {
-                await fixture.httpClient.post('/movie-drafts').created({ id: expect.any(String) })
+                await fix.httpClient.post('/movie-drafts').created({ id: expect.any(String) })
             })
         })
     })
@@ -29,9 +29,9 @@ describe.skip('MovieDraftsService', () => {
         describe('when the movie-draft exists', () => {
             // movie-draft을 반환한다
             it('returns the movie-draft', async () => {
-                await fixture.httpClient
-                    .get(`/movie-drafts/${fixture.createdMovieCreation.id}`)
-                    .ok(fixture.createdMovieCreation)
+                await fix.httpClient
+                    .get(`/movie-drafts/${fix.createdMovieCreation.id}`)
+                    .ok(fix.createdMovieCreation)
             })
         })
 
@@ -39,7 +39,7 @@ describe.skip('MovieDraftsService', () => {
         describe('when the movie-draft does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .get(`/movie-drafts/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -63,15 +63,15 @@ describe.skip('MovieDraftsService', () => {
                     director: 'Steven Spielberg',
                     rating: 'R'
                 }
-                const expected = { ...fixture.createdMovieCreation, ...updateDto }
+                const expected = { ...fix.createdMovieCreation, ...updateDto }
 
-                await fixture.httpClient
-                    .patch(`/movie-drafts/${fixture.createdMovieCreation.id}`)
+                await fix.httpClient
+                    .patch(`/movie-drafts/${fix.createdMovieCreation.id}`)
                     .body(updateDto)
                     .ok(expected)
 
-                await fixture.httpClient
-                    .get(`/movie-drafts/${fixture.createdMovieCreation.id}`)
+                await fix.httpClient
+                    .get(`/movie-drafts/${fix.createdMovieCreation.id}`)
                     .ok(expected)
             })
         })
@@ -80,7 +80,7 @@ describe.skip('MovieDraftsService', () => {
         describe('when the movie-draft does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .patch(`/movie-drafts/${nullObjectId}`)
                     .body({})
                     .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })

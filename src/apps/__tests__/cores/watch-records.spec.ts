@@ -4,15 +4,15 @@ import { buildCreateWatchRecordDto, createWatchRecord } from '../__helpers__'
 import type { WatchRecordsFixture } from './watch-records.fixture'
 
 describe('WatchRecordsService', () => {
-    let fixture: WatchRecordsFixture
+    let fix: WatchRecordsFixture
 
     beforeEach(async () => {
         const { createWatchRecordsFixture } = await import('./watch-records.fixture')
-        fixture = await createWatchRecordsFixture()
+        fix = await createWatchRecordsFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     describe('create', () => {
@@ -20,7 +20,7 @@ describe('WatchRecordsService', () => {
             const payload = buildCreateWatchRecordDto()
 
             it('returns the created watch record', async () => {
-                const watchRecord = await fixture.watchRecordsService.create(payload)
+                const watchRecord = await fix.watchRecordsService.create(payload)
 
                 expect(watchRecord).toEqual({ ...payload, id: expect.any(String) })
             })
@@ -33,10 +33,10 @@ describe('WatchRecordsService', () => {
 
         beforeEach(async () => {
             watchRecords = await Promise.all([
-                createWatchRecord(fixture, { customerId }),
-                createWatchRecord(fixture, { customerId }),
-                createWatchRecord(fixture, { customerId }),
-                createWatchRecord(fixture, { customerId })
+                createWatchRecord(fix, { customerId }),
+                createWatchRecord(fix, { customerId }),
+                createWatchRecord(fix, { customerId }),
+                createWatchRecord(fix, { customerId })
             ])
         })
 
@@ -49,7 +49,7 @@ describe('WatchRecordsService', () => {
 
         describe('when the `customerId` is provided', () => {
             it('returns paginated records for the customerId', async () => {
-                const pagination = await fixture.watchRecordsService.searchPage({ customerId })
+                const pagination = await fix.watchRecordsService.searchPage({ customerId })
 
                 expect(pagination).toEqual(buildExpectedPage(watchRecords))
             })

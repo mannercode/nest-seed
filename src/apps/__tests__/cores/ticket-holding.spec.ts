@@ -5,15 +5,15 @@ import { holdTickets, releaseTickets, searchHeldTicketIds } from '../__helpers__
 import type { TicketHoldingFixture } from './ticket-holding.fixture'
 
 describe('TicketHoldingService', () => {
-    let fixture: TicketHoldingFixture
+    let fix: TicketHoldingFixture
 
     beforeEach(async () => {
         const { createTicketHoldingFixture } = await import('./ticket-holding.fixture')
-        fixture = await createTicketHoldingFixture()
+        fix = await createTicketHoldingFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     describe('holdTickets', () => {
@@ -22,7 +22,7 @@ describe('TicketHoldingService', () => {
 
         describe('when the tickets are not held', () => {
             it('returns true', async () => {
-                const isHeld = await holdTickets(fixture, { customerId: customerA })
+                const isHeld = await holdTickets(fix, { customerId: customerA })
 
                 expect(isHeld).toBe(true)
             })
@@ -30,11 +30,11 @@ describe('TicketHoldingService', () => {
 
         describe('when the tickets are held by another customer', () => {
             beforeEach(async () => {
-                await holdTickets(fixture, { customerId: customerA })
+                await holdTickets(fix, { customerId: customerA })
             })
 
             it('returns false', async () => {
-                const isHeld = await holdTickets(fixture, { customerId: customerB })
+                const isHeld = await holdTickets(fix, { customerId: customerB })
 
                 expect(isHeld).toBe(false)
             })
@@ -50,7 +50,7 @@ describe('TicketHoldingService', () => {
                 const { Rules } = await import('shared')
                 toAny(Rules).Ticket.holdDurationInMs = holdDuration
 
-                await holdTickets(fixture, {
+                await holdTickets(fix, {
                     showtimeId,
                     customerId: customerA,
                     ticketIds: prevTicketIds
@@ -58,7 +58,7 @@ describe('TicketHoldingService', () => {
             })
 
             it('returns true for re-holding the same tickets', async () => {
-                const isHeld = await holdTickets(fixture, {
+                const isHeld = await holdTickets(fix, {
                     showtimeId,
                     customerId: customerA,
                     ticketIds: prevTicketIds
@@ -71,7 +71,7 @@ describe('TicketHoldingService', () => {
                 let isHeld: boolean
 
                 beforeEach(async () => {
-                    isHeld = await holdTickets(fixture, {
+                    isHeld = await holdTickets(fix, {
                         showtimeId,
                         customerId: customerA,
                         ticketIds: newTicketIds
@@ -82,7 +82,7 @@ describe('TicketHoldingService', () => {
                 })
 
                 it('releases the previously held tickets', async () => {
-                    const heldTicketIds = await searchHeldTicketIds(fixture, showtimeId, customerA)
+                    const heldTicketIds = await searchHeldTicketIds(fix, showtimeId, customerA)
 
                     expect(intersection(heldTicketIds, prevTicketIds)).toHaveLength(0)
                 })
@@ -94,7 +94,7 @@ describe('TicketHoldingService', () => {
                 })
 
                 it('returns true for another customer', async () => {
-                    const isHeld = await holdTickets(fixture, {
+                    const isHeld = await holdTickets(fix, {
                         showtimeId,
                         customerId: customerB,
                         ticketIds: prevTicketIds
@@ -118,7 +118,7 @@ describe('TicketHoldingService', () => {
 
                             const holdResults = await Promise.all(
                                 customerIds.map((customerId) =>
-                                    holdTickets(fixture, { customerId, showtimeId, ticketIds })
+                                    holdTickets(fix, { customerId, showtimeId, ticketIds })
                                 )
                             )
 
@@ -126,7 +126,7 @@ describe('TicketHoldingService', () => {
 
                             const allHeldTicketIds = await Promise.all(
                                 customerIds.map((customerId) =>
-                                    searchHeldTicketIds(fixture, showtimeId, customerId)
+                                    searchHeldTicketIds(fix, showtimeId, customerId)
                                 )
                             )
 
@@ -160,12 +160,12 @@ describe('TicketHoldingService', () => {
             const { Rules } = await import('shared')
             toAny(Rules).Ticket.holdDurationInMs = holdDuration
 
-            await holdTickets(fixture, { showtimeId, customerId, ticketIds })
+            await holdTickets(fix, { showtimeId, customerId, ticketIds })
         })
 
         describe('when the tickets are still held', () => {
             it('returns the ticket IDs', async () => {
-                const heldTicketIds = await searchHeldTicketIds(fixture, showtimeId, customerId)
+                const heldTicketIds = await searchHeldTicketIds(fix, showtimeId, customerId)
 
                 expect(heldTicketIds).toEqual(ticketIds)
             })
@@ -177,7 +177,7 @@ describe('TicketHoldingService', () => {
             })
 
             it('returns an empty array', async () => {
-                const heldTicketIds = await searchHeldTicketIds(fixture, showtimeId, customerId)
+                const heldTicketIds = await searchHeldTicketIds(fix, showtimeId, customerId)
 
                 expect(heldTicketIds).toHaveLength(0)
             })
@@ -191,11 +191,11 @@ describe('TicketHoldingService', () => {
 
         describe('when the customer holds tickets', () => {
             beforeEach(async () => {
-                await holdTickets(fixture, { showtimeId, customerId, ticketIds })
+                await holdTickets(fix, { showtimeId, customerId, ticketIds })
             })
 
             it('returns true', async () => {
-                const isReleased = await releaseTickets(fixture, showtimeId, customerId)
+                const isReleased = await releaseTickets(fix, showtimeId, customerId)
 
                 expect(isReleased).toBe(true)
             })
@@ -203,7 +203,7 @@ describe('TicketHoldingService', () => {
 
         describe('when the customer holds no tickets', () => {
             it('returns true with no tickets to release', async () => {
-                const isReleased = await releaseTickets(fixture, showtimeId, customerId)
+                const isReleased = await releaseTickets(fix, showtimeId, customerId)
 
                 expect(isReleased).toBe(true)
             })

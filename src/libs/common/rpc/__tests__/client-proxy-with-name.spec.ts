@@ -1,21 +1,21 @@
 import type { ClientProxyWithNameFixture } from './client-proxy-with-name.fixture'
 
 describe('ClientProxyService with name', () => {
-    let fixture: ClientProxyWithNameFixture
+    let fix: ClientProxyWithNameFixture
 
     beforeEach(async () => {
         const { createClientProxyWithNameFixture } =
             await import('./client-proxy-with-name.fixture')
-        fixture = await createClientProxyWithNameFixture()
+        fix = await createClientProxyWithNameFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     describe('when a name is provided', () => {
         it('creates and uses the named ClientProxyService', async () => {
-            await fixture.httpClient.get('/value').ok({ result: 'success' })
+            await fix.httpClient.get('/value').ok({ result: 'success' })
         })
     })
 })

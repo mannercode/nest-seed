@@ -5,15 +5,15 @@ import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
 import type { CustomersFixture } from './customers.fixture'
 
 describe('CustomersService', () => {
-    let fixture: CustomersFixture
+    let fix: CustomersFixture
 
     beforeEach(async () => {
         const { createCustomersFixture } = await import('./customers.fixture')
-        fixture = await createCustomersFixture()
+        fix = await createCustomersFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     describe('POST /customers', () => {
@@ -21,7 +21,7 @@ describe('CustomersService', () => {
             const payload: CreateCustomerDto = buildCreateCustomerDto()
 
             it('returns 201 with the created customer', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .post('/customers')
                     .body(payload)
                     .created({ ...omit(payload, ['password']), id: expect.any(String) })
@@ -32,13 +32,13 @@ describe('CustomersService', () => {
             const email = 'user@mail.com'
 
             beforeEach(async () => {
-                await createCustomer(fixture, { email })
+                await createCustomer(fix, { email })
             })
 
             it('returns 409 Conflict', async () => {
                 const payload = buildCreateCustomerDto({ email })
 
-                await fixture.httpClient
+                await fix.httpClient
                     .post('/customers')
                     .body(payload)
                     .conflict({ ...Errors.Customer.EmailAlreadyExists, email: payload.email })
@@ -49,7 +49,7 @@ describe('CustomersService', () => {
             const invalidPayload = {}
 
             it('returns 400 Bad Request', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .post('/customers')
                     .body(invalidPayload)
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
@@ -62,17 +62,17 @@ describe('CustomersService', () => {
             let customer: CustomerDto
 
             beforeEach(async () => {
-                customer = await createCustomer(fixture)
+                customer = await createCustomer(fix)
             })
 
             it('returns 200 with the customer', async () => {
-                await fixture.httpClient.get(`/customers/${customer.id}`).ok(customer)
+                await fix.httpClient.get(`/customers/${customer.id}`).ok(customer)
             })
         })
 
         describe('when the customer does not exist', () => {
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .get(`/customers/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -88,7 +88,7 @@ describe('CustomersService', () => {
             let payload: any
 
             beforeEach(async () => {
-                customer = await createCustomer(fixture)
+                customer = await createCustomer(fix)
                 payload = {
                     name: 'update-name',
                     email: 'new@mail.com',
@@ -99,18 +99,15 @@ describe('CustomersService', () => {
             it('returns 200 with the updated customer', async () => {
                 const expected = { ...customer, ...payload }
 
-                await fixture.httpClient
-                    .patch(`/customers/${customer.id}`)
-                    .body(payload)
-                    .ok(expected)
+                await fix.httpClient.patch(`/customers/${customer.id}`).body(payload).ok(expected)
 
-                await fixture.httpClient.get(`/customers/${customer.id}`).ok(expected)
+                await fix.httpClient.get(`/customers/${customer.id}`).ok(expected)
             })
         })
 
         describe('when the customer does not exist', () => {
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .patch(`/customers/${nullObjectId}`)
                     .body({})
                     .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
@@ -123,15 +120,15 @@ describe('CustomersService', () => {
             let customer: CustomerDto
 
             beforeEach(async () => {
-                customer = await createCustomer(fixture)
+                customer = await createCustomer(fix)
             })
 
             it('returns 200 with the deleted customer', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .delete(`/customers/${customer.id}`)
                     .ok({ deletedCustomers: [customer] })
 
-                await fixture.httpClient
+                await fix.httpClient
                     .get(`/customers/${customer.id}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -142,7 +139,7 @@ describe('CustomersService', () => {
 
         describe('when the customer does not exist', () => {
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .delete(`/customers/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -160,10 +157,10 @@ describe('CustomersService', () => {
 
         beforeEach(async () => {
             ;[customerA1, customerA2, customerB1, customerB2] = await Promise.all([
-                createCustomer(fixture, { name: 'customer-a1', email: 'user-a1@mail.com' }),
-                createCustomer(fixture, { name: 'customer-a2', email: 'user-a2@mail.com' }),
-                createCustomer(fixture, { name: 'customer-b1', email: 'user-b1@mail.com' }),
-                createCustomer(fixture, { name: 'customer-b2', email: 'user-b2@mail.com' })
+                createCustomer(fix, { name: 'customer-a1', email: 'user-a1@mail.com' }),
+                createCustomer(fix, { name: 'customer-a2', email: 'user-a2@mail.com' }),
+                createCustomer(fix, { name: 'customer-b1', email: 'user-b1@mail.com' }),
+                createCustomer(fix, { name: 'customer-b2', email: 'user-b2@mail.com' })
             ])
         })
 
@@ -178,13 +175,13 @@ describe('CustomersService', () => {
             it('returns 200 with the default page of customers', async () => {
                 const expected = buildExpectedPage([customerA1, customerA2, customerB1, customerB2])
 
-                await fixture.httpClient.get('/customers').ok(expected)
+                await fix.httpClient.get('/customers').ok(expected)
             })
         })
 
         describe('when query parameters are provided', () => {
             const queryAndExpect = (query: SearchCustomersPageDto, customers: CustomerDto[]) =>
-                fixture.httpClient.get('/customers').query(query).ok(buildExpectedPage(customers))
+                fix.httpClient.get('/customers').query(query).ok(buildExpectedPage(customers))
 
             it('returns customers filtered by a partial name match', async () => {
                 await queryAndExpect({ name: 'customer-a' }, [customerA1, customerA2])
@@ -197,7 +194,7 @@ describe('CustomersService', () => {
 
         describe('when the query parameters are invalid', () => {
             it('returns 400 Bad Request', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .get('/customers')
                     .query({ wrong: 'value' })
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })

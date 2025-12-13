@@ -5,16 +5,16 @@ import { nullObjectId, step } from 'testlib'
 import type { Fixture } from './movie-drafts.fixture'
 
 describe.skip('MovieCreationsService', () => {
-    let fixture: Fixture
+    let fix: Fixture
 
     const createMovieDraft = async (payload: Record<string, any> = {}) => {
-        const { body } = await fixture.httpClient.post('/movie-creations').body(payload).created()
+        const { body } = await fix.httpClient.post('/movie-creations').body(payload).created()
 
         return body
     }
 
     const updateDraft = async (movieCreationId: string, updateDto: Record<string, any>) => {
-        const { body } = await fixture.httpClient
+        const { body } = await fix.httpClient
             .patch(`/movie-creations/${movieCreationId}`)
             .body(updateDto)
             .ok(expect.objectContaining({ id: movieCreationId }))
@@ -28,14 +28,14 @@ describe.skip('MovieCreationsService', () => {
     ) => {
         const payload = {
             type: 'poster',
-            contentType: fixture.image.mimeType,
-            contentLength: fixture.image.size,
-            checksum: fixture.image.checksum,
-            filename: fixture.image.originalName,
+            contentType: fix.image.mimeType,
+            contentLength: fix.image.size,
+            checksum: fix.image.checksum,
+            filename: fix.image.originalName,
             ...overrides
         }
 
-        const { body } = await fixture.httpClient
+        const { body } = await fix.httpClient
             .post(`/movie-creations/${movieCreationId}/images`)
             .body(payload)
             .created()
@@ -52,8 +52,8 @@ describe.skip('MovieCreationsService', () => {
         if (!url) throw new Error('upload url is missing')
 
         const method = upload.method ?? 'PUT'
-        const headers = upload.headers ?? { 'Content-Type': fixture.image.mimeType }
-        const buffer = await fs.readFile(fixture.image.path)
+        const headers = upload.headers ?? { 'Content-Type': fix.image.mimeType }
+        const buffer = await fs.readFile(fix.image.path)
 
         const res = await fetch(url, { method, headers, body: buffer })
 
@@ -62,11 +62,11 @@ describe.skip('MovieCreationsService', () => {
 
     beforeEach(async () => {
         const { createFixture } = await import('./movie-drafts.fixture')
-        fixture = await createFixture()
+        fix = await createFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     describe('POST /movie-creations', () => {
@@ -90,7 +90,7 @@ describe.skip('MovieCreationsService', () => {
             it('returns the movie-creation', async () => {
                 const movieCreation = await createMovieDraft()
 
-                await fixture.httpClient
+                await fix.httpClient
                     .get(`/movie-creations/${movieCreation.id}`)
                     .ok(expect.objectContaining({ id: movieCreation.id }))
             })
@@ -100,7 +100,7 @@ describe.skip('MovieCreationsService', () => {
         describe('when the movie-creation does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient.get(`/movie-creations/${nullObjectId}`).notFound()
+                await fix.httpClient.get(`/movie-creations/${nullObjectId}`).notFound()
             })
         })
     })
@@ -116,7 +116,7 @@ describe.skip('MovieCreationsService', () => {
                     plot: 'updated plot'
                 })
 
-                const { body } = await fixture.httpClient
+                const { body } = await fix.httpClient
                     .patch(`/movie-creations/${movieCreation.id}`)
                     .body(updateDto)
                     .ok()
@@ -125,7 +125,7 @@ describe.skip('MovieCreationsService', () => {
                     expect.objectContaining({ id: movieCreation.id, ...updateDto })
                 )
 
-                await fixture.httpClient
+                await fix.httpClient
                     .get(`/movie-creations/${movieCreation.id}`)
                     .ok(expect.objectContaining({ id: movieCreation.id, ...updateDto }))
             })
@@ -137,7 +137,7 @@ describe.skip('MovieCreationsService', () => {
             it('returns 400 Bad Request', async () => {
                 const movieCreation = await createMovieDraft()
 
-                await fixture.httpClient
+                await fix.httpClient
                     .patch(`/movie-creations/${movieCreation.id}`)
                     .body({ durationInSeconds: 'invalid' })
                     .badRequest()
@@ -148,10 +148,7 @@ describe.skip('MovieCreationsService', () => {
         describe('when movie-creation does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
-                    .patch(`/movie-creations/${nullObjectId}`)
-                    .body({})
-                    .notFound()
+                await fix.httpClient.patch(`/movie-creations/${nullObjectId}`).body({}).notFound()
             })
         })
     })
@@ -178,12 +175,12 @@ describe.skip('MovieCreationsService', () => {
                 })
 
                 await step('marks the image as ready', async () => {
-                    await fixture.httpClient
+                    await fix.httpClient
                         .post(`/movie-creations/${movieCreation.id}/images/${imageId}/complete`)
                         .ok(expect.objectContaining({ id: imageId, status: 'READY' }))
                 })
 
-                const { body: createdMovie } = await fixture.httpClient
+                const { body: createdMovie } = await fix.httpClient
                     .post(`/movie-creations/${movieCreation.id}/complete`)
                     .created()
 
@@ -195,8 +192,8 @@ describe.skip('MovieCreationsService', () => {
                     })
                 )
 
-                await fixture.httpClient.get(`/movie-creations/${movieCreation.id}`).notFound()
-                await fixture.httpClient.get(`/movies/${createdMovie.id}`).ok(createdMovie)
+                await fix.httpClient.get(`/movie-creations/${movieCreation.id}`).notFound()
+                await fix.httpClient.get(`/movies/${createdMovie.id}`).ok(createdMovie)
             })
         })
 
@@ -206,7 +203,7 @@ describe.skip('MovieCreationsService', () => {
             it('returns 422 Unprocessable Entity', async () => {
                 const movieCreation = await createMovieDraft()
 
-                await fixture.httpClient
+                await fix.httpClient
                     .post(`/movie-creations/${movieCreation.id}/complete`)
                     .send(HttpStatus.UNPROCESSABLE_ENTITY)
             })
@@ -216,9 +213,7 @@ describe.skip('MovieCreationsService', () => {
         describe('when the movie-creation does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
-                    .post(`/movie-creations/${nullObjectId}/complete`)
-                    .notFound()
+                await fix.httpClient.post(`/movie-creations/${nullObjectId}/complete`).notFound()
             })
         })
     })
@@ -230,11 +225,11 @@ describe.skip('MovieCreationsService', () => {
             it('deletes the movie-creation and returns 204 No Content', async () => {
                 const movieCreation = await createMovieDraft()
 
-                await fixture.httpClient
+                await fix.httpClient
                     .delete(`/movie-creations/${movieCreation.id}`)
                     .send(HttpStatus.NO_CONTENT)
 
-                await fixture.httpClient.get(`/movie-creations/${movieCreation.id}`).notFound()
+                await fix.httpClient.get(`/movie-creations/${movieCreation.id}`).notFound()
             })
         })
 
@@ -242,7 +237,7 @@ describe.skip('MovieCreationsService', () => {
         describe('when the movie-creation does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient.delete(`/movie-creations/${nullObjectId}`).notFound()
+                await fix.httpClient.delete(`/movie-creations/${nullObjectId}`).notFound()
             })
         })
     })
@@ -273,14 +268,14 @@ describe.skip('MovieCreationsService', () => {
             it('returns 400 Bad Request', async () => {
                 const movieCreation = await createMovieDraft()
 
-                await fixture.httpClient
+                await fix.httpClient
                     .post(`/movie-creations/${movieCreation.id}/images`)
                     .body({
                         type: 'unsupported',
-                        contentType: fixture.image.mimeType,
-                        contentLength: fixture.image.size,
-                        checksum: fixture.image.checksum,
-                        filename: fixture.image.originalName
+                        contentType: fix.image.mimeType,
+                        contentLength: fix.image.size,
+                        checksum: fix.image.checksum,
+                        filename: fix.image.originalName
                     })
                     .badRequest()
             })
@@ -292,14 +287,14 @@ describe.skip('MovieCreationsService', () => {
             it('returns 400 Bad Request', async () => {
                 const movieCreation = await createMovieDraft()
 
-                await fixture.httpClient
+                await fix.httpClient
                     .post(`/movie-creations/${movieCreation.id}/images`)
                     .body({
                         type: 'poster',
                         contentType: 'application/json',
-                        contentLength: fixture.image.size,
-                        checksum: fixture.image.checksum,
-                        filename: fixture.image.originalName
+                        contentLength: fix.image.size,
+                        checksum: fix.image.checksum,
+                        filename: fix.image.originalName
                     })
                     .badRequest()
             })
@@ -309,14 +304,14 @@ describe.skip('MovieCreationsService', () => {
         describe('when the movie-creation does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .post(`/movie-creations/${nullObjectId}/images`)
                     .body({
                         type: 'poster',
-                        contentType: fixture.image.mimeType,
-                        contentLength: fixture.image.size,
-                        checksum: fixture.image.checksum,
-                        filename: fixture.image.originalName
+                        contentType: fix.image.mimeType,
+                        contentLength: fix.image.size,
+                        checksum: fix.image.checksum,
+                        filename: fix.image.originalName
                     })
                     .notFound()
             })
@@ -332,11 +327,11 @@ describe.skip('MovieCreationsService', () => {
                 const image = await requestImageUpload(movieCreation.id)
                 const imageId = getImageId(image)
 
-                await fixture.httpClient
+                await fix.httpClient
                     .delete(`/movie-creations/${movieCreation.id}/images/${imageId}`)
                     .send(HttpStatus.NO_CONTENT)
 
-                await fixture.httpClient
+                await fix.httpClient
                     .post(`/movie-creations/${movieCreation.id}/images/${imageId}/complete`)
                     .notFound()
             })
@@ -348,7 +343,7 @@ describe.skip('MovieCreationsService', () => {
             it('returns 404 Not Found', async () => {
                 const movieCreation = await createMovieDraft()
 
-                await fixture.httpClient
+                await fix.httpClient
                     .delete(`/movie-creations/${movieCreation.id}/images/${nullObjectId}`)
                     .notFound()
             })
@@ -358,7 +353,7 @@ describe.skip('MovieCreationsService', () => {
         describe('when the movie-creation does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .delete(`/movie-creations/${nullObjectId}/images/${nullObjectId}`)
                     .notFound()
             })
@@ -377,7 +372,7 @@ describe.skip('MovieCreationsService', () => {
 
                 await uploadViaPresignedUrl(uploadInfo)
 
-                await fixture.httpClient
+                await fix.httpClient
                     .post(`/movie-creations/${movieCreation.id}/images/${imageId}/complete`)
                     .ok(expect.objectContaining({ id: imageId, status: 'READY' }))
             })
@@ -391,7 +386,7 @@ describe.skip('MovieCreationsService', () => {
                 const image = await requestImageUpload(movieCreation.id)
                 const imageId = getImageId(image)
 
-                await fixture.httpClient
+                await fix.httpClient
                     .post(`/movie-creations/${movieCreation.id}/images/${imageId}/complete`)
                     .send(HttpStatus.UNPROCESSABLE_ENTITY)
             })
@@ -403,7 +398,7 @@ describe.skip('MovieCreationsService', () => {
             it('returns 404 Not Found', async () => {
                 const movieCreation = await createMovieDraft()
 
-                await fixture.httpClient
+                await fix.httpClient
                     .post(`/movie-creations/${movieCreation.id}/images/${nullObjectId}/complete`)
                     .notFound()
             })
@@ -413,7 +408,7 @@ describe.skip('MovieCreationsService', () => {
         describe('when the movie-creation does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .post(`/movie-creations/${nullObjectId}/images/${nullObjectId}/complete`)
                     .notFound()
             })

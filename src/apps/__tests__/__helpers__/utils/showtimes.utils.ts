@@ -20,12 +20,9 @@ export function buildCreateShowtimeDto(overrides: Partial<CreateShowtimeDto> = {
     return createDto
 }
 
-export async function createShowtimes(
-    { module }: TestContext,
-    overrides: Partial<CreateShowtimeDto>[]
-) {
+export async function createShowtimes(ctx: TestContext, overrides: Partial<CreateShowtimeDto>[]) {
     const { ShowtimesClient } = await import('apps/cores')
-    const showtimesService = module.get(ShowtimesClient)
+    const showtimesService = ctx.module.get(ShowtimesClient)
 
     const createDtos = overrides.map((override) => buildCreateShowtimeDto(override))
 

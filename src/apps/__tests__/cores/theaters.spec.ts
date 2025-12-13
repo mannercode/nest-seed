@@ -4,15 +4,15 @@ import { buildCreateTheaterDto, createTheater, Errors } from '../__helpers__'
 import type { TheatersFixture } from './theaters.fixture'
 
 describe('TheatersService', () => {
-    let fixture: TheatersFixture
+    let fix: TheatersFixture
 
     beforeEach(async () => {
         const { createTheatersFixture } = await import('./theaters.fixture')
-        fixture = await createTheatersFixture()
+        fix = await createTheatersFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     describe('POST /theaters', () => {
@@ -20,7 +20,7 @@ describe('TheatersService', () => {
             const payload = buildCreateTheaterDto()
 
             it('returns 201 with the created theater', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .post('/theaters')
                     .body(payload)
                     .created({ ...payload, id: expect.any(String) })
@@ -31,7 +31,7 @@ describe('TheatersService', () => {
             const invalidPayload = {}
 
             it('returns 400 Bad Request', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .post('/theaters')
                     .body(invalidPayload)
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
@@ -44,17 +44,17 @@ describe('TheatersService', () => {
             let theater: TheaterDto
 
             beforeEach(async () => {
-                theater = await createTheater(fixture)
+                theater = await createTheater(fix)
             })
 
             it('returns 200 with the theater', async () => {
-                await fixture.httpClient.get(`/theaters/${theater.id}`).ok(theater)
+                await fix.httpClient.get(`/theaters/${theater.id}`).ok(theater)
             })
         })
 
         describe('when the theater does not exist', () => {
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .get(`/theaters/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -70,7 +70,7 @@ describe('TheatersService', () => {
             let payload: any
 
             beforeEach(async () => {
-                theater = await createTheater(fixture, { name: 'original-name' })
+                theater = await createTheater(fix, { name: 'original-name' })
                 payload = {
                     name: 'update-name',
                     location: { latitude: 30.0, longitude: 120.0 },
@@ -81,14 +81,14 @@ describe('TheatersService', () => {
             it('returns 200 with the updated theater', async () => {
                 const expected = { ...theater, ...payload }
 
-                await fixture.httpClient.patch(`/theaters/${theater.id}`).body(payload).ok(expected)
-                await fixture.httpClient.get(`/theaters/${theater.id}`).ok(expected)
+                await fix.httpClient.patch(`/theaters/${theater.id}`).body(payload).ok(expected)
+                await fix.httpClient.get(`/theaters/${theater.id}`).ok(expected)
             })
         })
 
         describe('when the theater does not exist', () => {
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .patch(`/theaters/${nullObjectId}`)
                     .body({})
                     .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
@@ -101,15 +101,15 @@ describe('TheatersService', () => {
             let theater: TheaterDto
 
             beforeEach(async () => {
-                theater = await createTheater(fixture)
+                theater = await createTheater(fix)
             })
 
             it('returns 200 with the deleted theater', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .delete(`/theaters/${theater.id}`)
                     .ok({ deletedTheaters: [theater] })
 
-                await fixture.httpClient
+                await fix.httpClient
                     .get(`/theaters/${theater.id}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -120,7 +120,7 @@ describe('TheatersService', () => {
 
         describe('when the theater does not exist', () => {
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .delete(`/theaters/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -138,10 +138,10 @@ describe('TheatersService', () => {
 
         beforeEach(async () => {
             ;[theaterA1, theaterA2, theaterB1, theaterB2] = await Promise.all([
-                createTheater(fixture, { name: 'theater-a1' }),
-                createTheater(fixture, { name: 'theater-a2' }),
-                createTheater(fixture, { name: 'theater-b1' }),
-                createTheater(fixture, { name: 'theater-b2' })
+                createTheater(fix, { name: 'theater-a1' }),
+                createTheater(fix, { name: 'theater-a2' }),
+                createTheater(fix, { name: 'theater-b1' }),
+                createTheater(fix, { name: 'theater-b2' })
             ])
         })
 
@@ -156,13 +156,13 @@ describe('TheatersService', () => {
             it('returns 200 with the default page of theaters', async () => {
                 const expected = buildExpectedPage([theaterA1, theaterA2, theaterB1, theaterB2])
 
-                await fixture.httpClient.get('/theaters').ok(expected)
+                await fix.httpClient.get('/theaters').ok(expected)
             })
         })
 
         describe('when query parameters are provided', () => {
             const queryAndExpect = (query: SearchTheatersPageDto, theaters: TheaterDto[]) =>
-                fixture.httpClient.get('/theaters').query(query).ok(buildExpectedPage(theaters))
+                fix.httpClient.get('/theaters').query(query).ok(buildExpectedPage(theaters))
 
             it('returns theaters filtered by a partial name match', async () => {
                 await queryAndExpect({ name: 'theater-a' }, [theaterA1, theaterA2])
@@ -171,7 +171,7 @@ describe('TheatersService', () => {
 
         describe('when the query parameters are invalid', () => {
             it('returns 400 Bad Request', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .get('/theaters')
                     .query({ wrong: 'value' })
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })

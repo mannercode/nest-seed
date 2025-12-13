@@ -18,7 +18,12 @@ import { ShowtimeCreationController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { jsonToObject } from 'common'
 import { oid } from 'testlib'
-import { createMovie, createTestFixture, createTheater, TestFixture } from '../__helpers__'
+import {
+    createMovie,
+    createAppTestContext,
+    createTheater,
+    TestFixture as TestContext
+} from '../__helpers__'
 
 export function buildBulkCreateShowtimesDto(overrides: Partial<BulkCreateShowtimesDto> = {}) {
     const createDto = {
@@ -32,14 +37,14 @@ export function buildBulkCreateShowtimesDto(overrides: Partial<BulkCreateShowtim
     return createDto
 }
 
-export function waitForCompletion(fix: TestFixture, status: string) {
+export function waitForCompletion(ctx: TestContext, status: string) {
     return new Promise((resolve, reject) => {
-        fix.httpClient.get('/showtime-creation/event-stream').sse((data) => {
+        ctx.httpClient.get('/showtime-creation/event-stream').sse((data) => {
             try {
                 const result = jsonToObject(JSON.parse(data))
 
                 if (['succeeded', 'failed', 'error'].includes(result.status)) {
-                    fix.httpClient.abort()
+                    ctx.httpClient.abort()
 
                     if (status === result.status) {
                         resolve(result)
@@ -48,17 +53,17 @@ export function waitForCompletion(fix: TestFixture, status: string) {
                     }
                 }
             } catch (error) {
-                fix.httpClient.abort()
+                ctx.httpClient.abort()
                 reject(error)
             }
         }, reject)
     })
 }
 
-export type ShowtimeCreationFixture = TestFixture & { movie: MovieDto; theater: TheaterDto }
+export type ShowtimeCreationFixture = TestContext & { movie: MovieDto; theater: TheaterDto }
 
 export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationFixture> {
-    const fix = await createTestFixture({
+    const fix = await createAppTestContext({
         imports: [
             MoviesModule,
             AssetsModule,

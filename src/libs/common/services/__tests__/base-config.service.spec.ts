@@ -1,21 +1,21 @@
 import type { BaseConfigServiceFixture } from './base-config.service.fixture'
 
 describe('BaseConfigService', () => {
-    let fixture: BaseConfigServiceFixture
+    let fix: BaseConfigServiceFixture
 
     beforeEach(async () => {
         const { createBaseConfigServiceFixture } = await import('./base-config.service.fixture')
-        fixture = await createBaseConfigServiceFixture()
+        fix = await createBaseConfigServiceFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     describe('getString', () => {
         describe('when the key exists', () => {
             it('returns the string value', () => {
-                const result = fixture.appConfigService.getString('TEST_STRING_KEY')
+                const result = fix.appConfigService.getString('TEST_STRING_KEY')
                 expect(result).toBe('value')
             })
         })
@@ -25,7 +25,7 @@ describe('BaseConfigService', () => {
                 const mockExit = jest.spyOn(process, 'exit').mockImplementation()
                 jest.spyOn(console, 'error').mockImplementation()
 
-                fixture.appConfigService.getString('not-exists-key')
+                fix.appConfigService.getString('not-exists-key')
 
                 expect(mockExit).toHaveBeenCalledWith(1)
             })
@@ -35,7 +35,7 @@ describe('BaseConfigService', () => {
     describe('getNumber', () => {
         describe('when the key exists', () => {
             it('returns the number value', () => {
-                const result = fixture.appConfigService.getNumber('TEST_NUMBER_KEY')
+                const result = fix.appConfigService.getNumber('TEST_NUMBER_KEY')
                 expect(result).toBe(123)
             })
         })
@@ -45,7 +45,7 @@ describe('BaseConfigService', () => {
                 const mockExit = jest.spyOn(process, 'exit').mockImplementation()
                 jest.spyOn(console, 'error').mockImplementation()
 
-                fixture.appConfigService.getNumber('not-exists-key')
+                fix.appConfigService.getNumber('not-exists-key')
 
                 expect(mockExit).toHaveBeenCalledWith(1)
             })
@@ -55,7 +55,7 @@ describe('BaseConfigService', () => {
     describe('getBoolean', () => {
         describe('when the key exists', () => {
             it('returns the boolean value', () => {
-                const result = fixture.appConfigService.getBoolean('TEST_BOOLEAN_KEY')
+                const result = fix.appConfigService.getBoolean('TEST_BOOLEAN_KEY')
                 expect(result).toBe(true)
             })
         })
@@ -65,7 +65,7 @@ describe('BaseConfigService', () => {
                 const mockExit = jest.spyOn(process, 'exit').mockImplementation()
                 jest.spyOn(console, 'error').mockImplementation()
 
-                fixture.appConfigService.getBoolean('not-exists-key')
+                fix.appConfigService.getBoolean('not-exists-key')
 
                 expect(mockExit).toHaveBeenCalledWith(1)
             })

@@ -3,7 +3,7 @@ import { withTestId } from 'testlib'
 import type { QueueGroupFixture } from './queue-group.fixture'
 
 describe('NATS Queue Group', () => {
-    let fixture: QueueGroupFixture
+    let fix: QueueGroupFixture
     let queueSpy: jest.SpyInstance
     let broadcastSpy: jest.SpyInstance
 
@@ -13,16 +13,16 @@ describe('NATS Queue Group', () => {
         queueSpy = jest.spyOn(MessageController.prototype, 'processQueueLogic')
         broadcastSpy = jest.spyOn(MessageController.prototype, 'processBroadcastLogic')
 
-        fixture = await createQueueGroupFixture()
+        fix = await createQueueGroupFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     describe('when a queue group is set', () => {
         it('delivers the message to one instance', async () => {
-            const result = await fixture.rpcClient.getJson(withTestId('queue'), {})
+            const result = await fix.rpcClient.getJson(withTestId('queue'), {})
 
             expect(result).toEqual({ result: 'success' })
             expect(queueSpy).toHaveBeenCalledTimes(1)
@@ -31,11 +31,11 @@ describe('NATS Queue Group', () => {
 
     describe('when no queue group is set', () => {
         it('delivers the message to all instances', async () => {
-            const result = await fixture.rpcClient.getJson(withTestId('broadcast'), {})
+            const result = await fix.rpcClient.getJson(withTestId('broadcast'), {})
             await sleep(1000)
 
             expect(result).toEqual({ result: 'success' })
-            expect(broadcastSpy).toHaveBeenCalledTimes(fixture.numberOfInstance)
+            expect(broadcastSpy).toHaveBeenCalledTimes(fix.numberOfInstance)
         })
     })
 })

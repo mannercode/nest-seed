@@ -1,11 +1,11 @@
 import { CustomersClient, CustomersModule } from 'apps/cores'
 import { CustomerJwtStrategy, CustomerLocalStrategy, CustomersController } from 'apps/gateway'
-import { createCustomer, createTestFixture, TestFixture } from '../__helpers__'
+import { createCustomer, createAppTestContext, TestFixture } from '../__helpers__'
 
 export type CustomerAuthFixture = TestFixture & { credentials: { email: string; password: string } }
 
 export async function createCustomerAuthFixture() {
-    const fix = await createTestFixture({
+    const fix = await createAppTestContext({
         imports: [CustomersModule],
         providers: [CustomersClient, CustomerLocalStrategy, CustomerJwtStrategy],
         controllers: [CustomersController]

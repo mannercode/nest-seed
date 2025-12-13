@@ -12,16 +12,17 @@ import {
 } from 'apps/cores'
 import { CustomerJwtStrategy, MoviesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
+import { TestContext } from 'testlib'
 import {
     createCustomerAndLogin,
     createMovie,
     createShowtimes,
-    createTestFixture,
+    createAppTestContext,
     createWatchRecord,
     TestFixture
 } from '../__helpers__'
 
-export async function createWatchedMovies(ctx: TestFixture, dtos: Partial<MovieDto>[]) {
+export async function createWatchedMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
     const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
 
     const { customer, accessToken } = await createCustomerAndLogin(ctx)
@@ -35,7 +36,7 @@ export async function createWatchedMovies(ctx: TestFixture, dtos: Partial<MovieD
     return { customer, accessToken, movies, watchRecords }
 }
 
-export async function createShowingMovies(ctx: TestFixture, dtos: Partial<MovieDto>[]) {
+export async function createShowingMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
     const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
 
     const createShowtimesDtos = movies.map((movie) => ({
@@ -51,7 +52,7 @@ export async function createShowingMovies(ctx: TestFixture, dtos: Partial<MovieD
 export type RecommendationFixture = TestFixture
 
 export async function createRecommendationFixture(): Promise<RecommendationFixture> {
-    const fix = await createTestFixture({
+    const fix = await createAppTestContext({
         imports: [
             MoviesModule,
             AssetsModule,

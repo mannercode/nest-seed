@@ -22,12 +22,12 @@ async function listenOnAvailablePort(server: Server): Promise<number> {
 export type HttpTestContext = TestContext & { httpClient: HttpTestClient }
 
 export async function createHttpTestContext(metadata: ModuleMetadataEx): Promise<HttpTestContext> {
-    const testContext = await createTestContext(metadata)
+    const ctx = await createTestContext(metadata)
 
-    const httpServer = testContext.app.getHttpServer()
+    const httpServer = ctx.app.getHttpServer()
     const port = await listenOnAvailablePort(httpServer)
 
     const httpClient = new HttpTestClient(`http://localhost:${port}`)
 
-    return { ...testContext, httpClient }
+    return { httpClient, ...ctx }
 }

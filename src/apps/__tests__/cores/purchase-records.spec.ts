@@ -4,15 +4,15 @@ import { buildCreatePurchaseRecordDto, createPurchaseRecord, Errors } from '../_
 import type { PurchaseRecordsFixture } from './purchase-records.fixture'
 
 describe('PurchaseRecordsService', () => {
-    let fixture: PurchaseRecordsFixture
+    let fix: PurchaseRecordsFixture
 
     beforeEach(async () => {
         const { createPurchaseRecordsFixture } = await import('./purchase-records.fixture')
-        fixture = await createPurchaseRecordsFixture()
+        fix = await createPurchaseRecordsFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     describe('create', () => {
@@ -20,7 +20,7 @@ describe('PurchaseRecordsService', () => {
             const payload = buildCreatePurchaseRecordDto()
 
             it('returns the created purchase record', async () => {
-                const createdPurchaseRecord = await fixture.purchaseRecordsService.create(payload)
+                const createdPurchaseRecord = await fix.purchaseRecordsService.create(payload)
                 expect(createdPurchaseRecord).toEqual({
                     id: expect.any(String),
                     createdAt: expect.any(Date),
@@ -36,17 +36,17 @@ describe('PurchaseRecordsService', () => {
             let purchase: PurchaseRecordDto
 
             beforeEach(async () => {
-                purchase = await createPurchaseRecord(fixture)
+                purchase = await createPurchaseRecord(fix)
             })
 
             it('returns 200 with the purchase', async () => {
-                await fixture.httpClient.get(`/purchases/${purchase.id}`).ok(purchase)
+                await fix.httpClient.get(`/purchases/${purchase.id}`).ok(purchase)
             })
         })
 
         describe('when the purchase does not exist', () => {
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .get(`/purchases/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,

@@ -6,15 +6,15 @@ import {
 } from './recommendation.fixture'
 
 describe('RecommendationService', () => {
-    let fixture: RecommendationFixture
+    let fix: RecommendationFixture
 
     beforeEach(async () => {
         const { createRecommendationFixture } = await import('./recommendation.fixture')
-        fixture = await createRecommendationFixture()
+        fix = await createRecommendationFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix?.teardown()
     })
 
     describe('GET /movies/recommended', () => {
@@ -33,7 +33,7 @@ describe('RecommendationService', () => {
             })
 
         beforeEach(async () => {
-            const { movies } = await createShowingMovies(fixture, [
+            const { movies } = await createShowingMovies(fix, [
                 {
                     title: 'Fantasy',
                     genres: [MovieGenre.Fantasy],
@@ -64,7 +64,7 @@ describe('RecommendationService', () => {
             let accessToken: string
 
             beforeEach(async () => {
-                const result = await createWatchedMovies(fixture, [
+                const result = await createWatchedMovies(fix, [
                     { title: 'Action1', genres: [MovieGenre.Action] },
                     { title: 'Action2', genres: [MovieGenre.Action] },
                     { title: 'Action3', genres: [MovieGenre.Action] },
@@ -77,7 +77,7 @@ describe('RecommendationService', () => {
             })
 
             it('returns recommendations for the customer', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .get('/movies/recommended')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .ok([
@@ -92,7 +92,7 @@ describe('RecommendationService', () => {
 
         describe('when the user is a guest', () => {
             it('returns recommendations for guests', async () => {
-                await fixture.httpClient.get('/movies/recommended').ok([
+                await fix.httpClient.get('/movies/recommended').ok([
                     expectMovie(showingMovies[4]), // 2900-05-01
                     expectMovie(showingMovies[3]), // 2900-04-01
                     expectMovie(showingMovies[2]), // 2900-03-01
