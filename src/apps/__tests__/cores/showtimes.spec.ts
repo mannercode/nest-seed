@@ -17,45 +17,37 @@ describe('ShowtimesService', () => {
     })
 
     describe('createMany', () => {
-        describe('when the payload is valid', () => {
-            it('returns { success: true }', async () => {
-                const createDtos = [buildCreateShowtimeDto({ sagaId: oid(0x1) })]
+        it('returns { success: true }', async () => {
+            const createDtos = [buildCreateShowtimeDto({ sagaId: oid(0x1) })]
 
-                const { success } = await fix.showtimesService.createMany(createDtos)
+            const { success } = await fix.showtimesService.createMany(createDtos)
 
-                expect(success).toBe(true)
-            })
+            expect(success).toBe(true)
         })
     })
 
     describe('getMany', () => {
-        describe('when all showtimeIds exist', () => {
-            let showtimes: ShowtimeDto[]
+        let showtimes: ShowtimeDto[]
 
-            beforeEach(async () => {
-                showtimes = await createShowtimes(fix, [
-                    { startTime: new Date('2000-01-01T12:00') },
-                    { startTime: new Date('2000-01-01T14:00') }
-                ])
-            })
-
-            it('returns showtimes for the showtimeIds', async () => {
-                const showtimeIds = pickIds(showtimes)
-
-                const fetchedShowtimes = await fix.showtimesService.getMany(showtimeIds)
-
-                expect(fetchedShowtimes).toEqual(expect.arrayContaining(showtimes))
-            })
+        beforeEach(async () => {
+            showtimes = await createShowtimes(fix, [
+                { startTime: new Date('2000-01-01T12:00') },
+                { startTime: new Date('2000-01-01T14:00') }
+            ])
         })
 
-        describe('when any showtimeId is not found', () => {
-            it('throws 404 Not Found', async () => {
-                const promise = fix.showtimesService.getMany([nullObjectId])
+        it('returns showtimes for the showtimeIds', async () => {
+            const fetchedShowtimes = await fix.showtimesService.getMany(pickIds(showtimes))
 
-                await expect(promise).rejects.toMatchObject({
-                    status: 404,
-                    message: Errors.Mongoose.MultipleDocumentsNotFound.message
-                })
+            expect(fetchedShowtimes).toEqual(expect.arrayContaining(showtimes))
+        })
+
+        it('throws 404 Not Found for an unknown showtimeId', async () => {
+            const promise = fix.showtimesService.getMany([nullObjectId])
+
+            await expect(promise).rejects.toMatchObject({
+                status: 404,
+                message: Errors.Mongoose.MultipleDocumentsNotFound.message
             })
         })
     })
@@ -106,7 +98,7 @@ describe('ShowtimesService', () => {
             expect(showtimes).toEqual([showtimeForTheater])
         })
 
-        it('returns showtimes whose startTime is within the startTimeRange', async () => {
+        it('returns showtimes filtered by startTimeRange', async () => {
             const showtimes = await fix.showtimesService.search({
                 startTimeRange: {
                     start: new Date('2020-01-01T00:00'),
@@ -114,83 +106,76 @@ describe('ShowtimesService', () => {
                 }
             })
 
+            expect(showtimes).toHaveLength(2)
             expect(showtimes).toEqual(expect.arrayContaining([showtimeInRangeA, showtimeInRangeB]))
         })
 
-        describe('when the filter is empty', () => {
-            it('throws 400 Bad Request', async () => {
-                const promise = fix.showtimesService.search({})
+        it('throws 400 Bad Request for an empty filter', async () => {
+            const promise = fix.showtimesService.search({})
 
-                await expect(promise).rejects.toMatchObject({
-                    status: 400,
-                    message: Errors.Mongoose.FiltersRequired.message
-                })
+            await expect(promise).rejects.toMatchObject({
+                status: 400,
+                message: Errors.Mongoose.FiltersRequired.message
             })
         })
     })
 
     describe('searchMovieIds', () => {
-        describe('when the `startTimeRange` is provided', () => {
-            beforeEach(async () => {
-                await createShowtimes(fix, [
-                    { movieId: oid(0x1), startTime: DateUtil.add({ minutes: -90 }) },
-                    { movieId: oid(0x2), startTime: DateUtil.add({ minutes: 0 }) },
-                    { movieId: oid(0x3), startTime: DateUtil.add({ minutes: 1 }) },
-                    { movieId: oid(0x4), startTime: DateUtil.add({ minutes: 120 }) }
-                ])
+        beforeEach(async () => {
+            await createShowtimes(fix, [
+                { movieId: oid(0x1), startTime: DateUtil.add({ minutes: -90 }) },
+                { movieId: oid(0x2), startTime: DateUtil.add({ minutes: 0 }) },
+                { movieId: oid(0x3), startTime: DateUtil.add({ minutes: 1 }) },
+                { movieId: oid(0x4), startTime: DateUtil.add({ minutes: 120 }) }
+            ])
+        })
+
+        it('returns movieIds filtered by startTimeRange', async () => {
+            const movieIds = await fix.showtimesService.searchMovieIds({
+                startTimeRange: { start: new Date() }
             })
 
-            it('returns movieIds in the startTimeRange', async () => {
-                const movieIds = await fix.showtimesService.searchMovieIds({
-                    startTimeRange: { start: new Date() }
-                })
-
-                expect(movieIds).toEqual([oid(0x3), oid(0x4)])
-            })
+            expect(movieIds).toEqual([oid(0x3), oid(0x4)])
         })
     })
 
     describe('searchTheaterIds', () => {
-        describe('when the `movieIds` are provided', () => {
-            beforeEach(async () => {
-                await createShowtimes(fix, [
-                    { movieId: oid(0xaa), theaterId: oid(0xb1) },
-                    { movieId: oid(0xaa), theaterId: oid(0xb2) },
-                    { movieId: oid(0x00), theaterId: oid(0xb3) }
-                ])
+        beforeEach(async () => {
+            await createShowtimes(fix, [
+                { movieId: oid(0xaa), theaterId: oid(0xb1) },
+                { movieId: oid(0xaa), theaterId: oid(0xb2) },
+                { movieId: oid(0x00), theaterId: oid(0xb3) }
+            ])
+        })
+
+        it('returns theaterIds filtered by movieIds', async () => {
+            const theaterIds = await fix.showtimesService.searchTheaterIds({
+                movieIds: [oid(0xaa)]
             })
 
-            it('returns theaterIds for the movieIds', async () => {
-                const theaterIds = await fix.showtimesService.searchTheaterIds({
-                    movieIds: [oid(0xaa)]
-                })
-
-                expect(theaterIds).toEqual([oid(0xb1), oid(0xb2)])
-            })
+            expect(theaterIds).toEqual([oid(0xb1), oid(0xb2)])
         })
     })
 
     describe('searchShowdates', () => {
-        describe('when the `movieIds` and `theaterIds` are provided', () => {
-            beforeEach(async () => {
-                await createShowtimes(fix, [
-                    { movieId: oid(0xa1), theaterId: oid(0xb1), startTime: new Date('2000-01-01') },
-                    { movieId: oid(0xa1), theaterId: oid(0xb1), startTime: new Date('2000-01-02') },
-                    { movieId: oid(0xa1), theaterId: oid(0x00), startTime: new Date('2000-01-03') }
-                ])
+        beforeEach(async () => {
+            await createShowtimes(fix, [
+                { movieId: oid(0xa1), theaterId: oid(0xb1), startTime: new Date('2000-01-01') },
+                { movieId: oid(0xa1), theaterId: oid(0xb1), startTime: new Date('2000-01-02') },
+                { movieId: oid(0xa1), theaterId: oid(0x00), startTime: new Date('2000-01-03') }
+            ])
+        })
+
+        it('returns showdates filtered by movieIds and theaterIds', async () => {
+            const showdates = await fix.showtimesService.searchShowdates({
+                movieIds: [oid(0xa1)],
+                theaterIds: [oid(0xb1)]
             })
 
-            it('returns showdates for the movieIds and theaterIds', async () => {
-                const showdates = await fix.showtimesService.searchShowdates({
-                    movieIds: [oid(0xa1)],
-                    theaterIds: [oid(0xb1)]
-                })
-
-                expect(showdates.map((d) => d.getTime())).toEqual([
-                    new Date('2000-01-01').getTime(),
-                    new Date('2000-01-02').getTime()
-                ])
-            })
+            expect(showdates.map((d) => d.getTime())).toEqual([
+                new Date('2000-01-01').getTime(),
+                new Date('2000-01-02').getTime()
+            ])
         })
     })
 })
