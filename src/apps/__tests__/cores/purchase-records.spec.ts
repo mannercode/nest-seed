@@ -19,8 +19,9 @@ describe('PurchaseRecordsService', () => {
         describe('when the payload is valid', () => {
             const payload = buildCreatePurchaseRecordDto()
 
-            it('returns the created purchase record', async () => {
+            it('creates and returns the purchase record', async () => {
                 const createdPurchaseRecord = await fix.purchaseRecordsService.create(payload)
+
                 expect(createdPurchaseRecord).toEqual({
                     id: expect.any(String),
                     createdAt: expect.any(Date),
@@ -32,19 +33,19 @@ describe('PurchaseRecordsService', () => {
     })
 
     describe('GET /purchases/:purchaseId', () => {
-        describe('when the purchase exists', () => {
+        describe('when the purchase record exists', () => {
             let purchase: PurchaseRecordDto
 
             beforeEach(async () => {
                 purchase = await createPurchaseRecord(fix)
             })
 
-            it('returns 200 with the purchase', async () => {
+            it('returns 200 with the purchase record', async () => {
                 await fix.httpClient.get(`/purchases/${purchase.id}`).ok(purchase)
             })
         })
 
-        describe('when the purchase does not exist', () => {
+        describe('when the purchase record does not exist', () => {
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .get(`/purchases/${nullObjectId}`)
