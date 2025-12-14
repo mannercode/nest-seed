@@ -27,38 +27,40 @@ describe('AssetsService', () => {
     })
 
     describe('create', () => {
-        it('returns an upload request', async () => {
-            const createDto = buildCreateAssetDto(fix.file)
-            const uploadRequest = await fix.assetsClient.create(createDto)
+        describe('when the DTO is valid', () => {
+            it('returns an upload request', async () => {
+                const createDto = buildCreateAssetDto(fix.file)
+                const uploadRequest = await fix.assetsClient.create(createDto)
 
-            expect(uploadRequest).toEqual({
-                assetId: expect.any(String),
-                url: expect.any(String),
-                expiresAt: expect.any(Date),
-                method: 'PUT',
-                headers: {
-                    'Content-Type': createDto.mimeType,
-                    'Content-Length': createDto.size.toString(),
-                    'x-amz-checksum-sha256': fix.file.checksum.base64
-                }
+                expect(uploadRequest).toEqual({
+                    assetId: expect.any(String),
+                    url: expect.any(String),
+                    expiresAt: expect.any(Date),
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': createDto.mimeType,
+                        'Content-Length': createDto.size.toString(),
+                        'x-amz-checksum-sha256': fix.file.checksum.base64
+                    }
+                })
+            })
+
+            it('uploads the file using the upload request', async () => {
+                const createDto = buildCreateAssetDto(fix.file)
+                const uploadRequest = await fix.assetsClient.create(createDto)
+
+                const uploadRes = await uploadAsset(fix.file.path, uploadRequest)
+                expect(uploadRes.ok).toBe(true)
             })
         })
 
-        it('upload request로 파일을 업로드 한다', async () => {
-            const createDto = buildCreateAssetDto(fix.file)
-            const uploadRequest = await fix.assetsClient.create(createDto)
-
-            const uploadRes = await uploadAsset(fix.file.path, uploadRequest)
-            expect(uploadRes.ok).toBe(true)
-        })
-
-        describe('업로드 시간이 만료되는 경우', () => {
+        describe('when the upload URL has expired', () => {
             beforeEach(async () => {
                 const { Rules } = await import('shared')
                 toAny(Rules).Asset.uploadExpiresInSec = 1
             })
 
-            it('업로드는 실패한다', async () => {
+            it('rejects uploads after the URL expires', async () => {
                 const createDto = buildCreateAssetDto(fix.file)
                 const uploadRequest = await fix.assetsClient.create(createDto)
 
@@ -71,7 +73,7 @@ describe('AssetsService', () => {
     })
 
     describe('complete', () => {
-        describe('when upload completed', () => {
+        describe('when the upload is completed', () => {
             let assetId: string
 
             beforeEach(async () => {
@@ -91,7 +93,7 @@ describe('AssetsService', () => {
                 )
             })
 
-            it('download info로 파일을 다운로드 한다', async () => {
+            it('downloads the asset with matching checksum', async () => {
                 const completeDto = buildCompleteAssetDto()
                 const asset = await fix.assetsClient.complete(assetId, completeDto)
 
@@ -102,7 +104,7 @@ describe('AssetsService', () => {
             })
         })
 
-        describe('when the upload is expired', () => {
+        describe('when the upload has expired', () => {
             let assetId: string
 
             beforeEach(async () => {
@@ -119,6 +121,17 @@ describe('AssetsService', () => {
                 await expect(fix.assetsClient.complete(assetId, completeDto)).rejects.toMatchObject(
                     { status: HttpStatus.GONE }
                 )
+            })
+
+            it('persists the deletion', async () => {
+                const completeDto = buildCompleteAssetDto()
+                await expect(fix.assetsClient.complete(assetId, completeDto)).rejects.toMatchObject(
+                    { status: HttpStatus.GONE }
+                )
+
+                await expect(fix.assetsClient.getMany([assetId])).rejects.toMatchObject({
+                    status: HttpStatus.NOT_FOUND
+                })
             })
         })
     })
@@ -148,7 +161,7 @@ describe('AssetsService', () => {
                 )
             })
 
-            it('asset의 download info로 파일을 다운로드 한다', async () => {
+            it('downloads the asset with matching checksum', async () => {
                 const [fetchedAsset] = await fix.assetsClient.getMany([assets[0].id])
 
                 const buffer = await downloadAsset(fetchedAsset)
@@ -194,7 +207,7 @@ describe('AssetsService', () => {
                 })
             })
 
-            it('makes the asset download URL inaccessible after deletion', async () => {
+            it('makes the download URL inaccessible after deletion', async () => {
                 await fix.assetsClient.deleteMany([assets[0].id])
 
                 const response = await fetch(assets[0].download!.url)
@@ -210,24 +223,28 @@ describe('AssetsService', () => {
     })
 
     describe('cleanupExpiredUploadsJob', () => {
-        it('removes expired uploads that were never completed', async () => {
-            const { Rules } = await import('shared')
-            toAny(Rules).Asset.uploadExpiresInSec = 1
+        describe('when uploads have expired', () => {
+            beforeEach(async () => {
+                const { Rules } = await import('shared')
+                toAny(Rules).Asset.uploadExpiresInSec = 1
 
-            const job = fix.scheduler.getCronJob('assets.cleanupExpiredUploads')
-            await job.stop()
+                const job = fix.scheduler.getCronJob('assets.cleanupExpiredUploads')
+                await job.stop()
 
-            const createDto = buildCreateAssetDto(fix.file)
-            const { assetId } = await fix.assetsClient.create(createDto)
+                const { CronTime } = await import('cron')
+                job.setTime(new CronTime(CronExpression.EVERY_SECOND))
+                job.start()
+            })
 
-            const { CronTime } = await import('cron')
-            job.setTime(new CronTime(CronExpression.EVERY_SECOND))
-            job.start()
+            it('removes the asset', async () => {
+                const createDto = buildCreateAssetDto(fix.file)
+                const { assetId } = await fix.assetsClient.create(createDto)
 
-            await sleep(2000)
+                await sleep(2000)
 
-            await expect(fix.assetsClient.getMany([assetId])).rejects.toMatchObject({
-                status: HttpStatus.NOT_FOUND
+                await expect(fix.assetsClient.getMany([assetId])).rejects.toMatchObject({
+                    status: HttpStatus.NOT_FOUND
+                })
             })
         })
     })

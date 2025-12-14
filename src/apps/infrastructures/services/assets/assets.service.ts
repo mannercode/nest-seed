@@ -96,30 +96,6 @@ export class AssetsService {
         await this.deleteMany(expiredAssetIds)
     }
 
-    private toDto(asset: AssetDocument): AssetDto {
-        const dto = mapDocToDto(asset, AssetDto, [
-            'id',
-            'originalName',
-            'mimeType',
-            'size',
-            'checksum'
-        ])
-
-        dto.download = null
-        dto.owner = null
-
-        /* istanbul ignore else */
-        if (asset.ownerService && asset.ownerEntityId) {
-            dto.owner = { service: asset.ownerService, entityId: asset.ownerEntityId }
-        }
-
-        return dto
-    }
-
-    private toDtos(assets: AssetDocument[]) {
-        return assets.map((asset) => this.toDto(asset))
-    }
-
     private async withDownloadInfo(assetDto: AssetDto): Promise<AssetDto> {
         const expiresInSec = Rules.Asset.downloadExpiresInSec
         const url = await this.s3Service.presignDownloadUrl({ key: assetDto.id, expiresInSec })
@@ -143,5 +119,29 @@ export class AssetsService {
 
     private getExpirationThreshold() {
         return DateUtil.add({ base: DateUtil.now(), seconds: -Rules.Asset.uploadExpiresInSec })
+    }
+
+    private toDto(asset: AssetDocument): AssetDto {
+        const dto = mapDocToDto(asset, AssetDto, [
+            'id',
+            'originalName',
+            'mimeType',
+            'size',
+            'checksum'
+        ])
+
+        dto.download = null
+        dto.owner = null
+
+        /* istanbul ignore else */
+        if (asset.ownerService && asset.ownerEntityId) {
+            dto.owner = { service: asset.ownerService, entityId: asset.ownerEntityId }
+        }
+
+        return dto
+    }
+
+    private toDtos(assets: AssetDocument[]) {
+        return assets.map((asset) => this.toDto(asset))
     }
 }
