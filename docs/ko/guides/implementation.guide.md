@@ -4,48 +4,44 @@
 
 ## 1. Jest 테스트 명명 가이드
 
-1. **맥락은 `when …` 패턴 사용**
-    - `describe('when the X is Y', …)` 형태로 **어떤 조건일 때**를 명확히 기술합니다.
+1. `when ...`은 맥락(조건), `it(...)`는 행위/결과(action)
+    - `describe('when ...')`: **조건/맥락**
+    - `it('...')`: **행위/결과**를 **동사로 시작**해 작성
 
-1. **행위는 동사구(동사 + 목적어)**
-    - `it('logs in')`, `it('returns 401 Unauthorized')` 처럼 **동사로 시작해** 무엇을 하는지 바로 알 수 있게 작성합니다.
+2. `when`은 필요할 때만 사용
+    - 아래 조건이면 `when`을 제거하고 **it 제목에 조건을 포함**
+        - `describe('when ...')` 아래 `it`가 **1개뿐**
+        - 로컬 `beforeEach` 등 **공유 셋업이 없음**
+    - 반대로 아래면 `when/action` 구조를 유지
+        - 로컬 `beforeEach`가 있음
+        - 여러 `it`가 같은 셋업을 공유
 
-1. **실패 케이스는 이유까지 서술**
-    - 오류 테스트는 **대상·상태·결과**를 모두 포함해
-      _왜 실패하는지_ 명확하게 기술합니다.
-    - 예시:
-      `it('returns 401 Unauthorized for incorrect password')`
+3. 성공 케이스(200/201)는 상태코드를 제목에 쓰지 않는다
+    - 상태코드 대신 결과를 서술
+        - 예: `returns the created ...`, `returns the updated ...`, `returns the default page ...`
+
+4. 실패 케이스는 “상태코드 + 이유”를 제목에 포함
+    - 예:
+        - `returns 404 Not Found for a non-existent ...`
+        - `returns 401 Unauthorized for ...`
+        - `returns 400 Bad Request for ...`
+
+5. PATCH/DELETE는 “응답 검증”과 “영속성 검증”을 분리
+    - 응답 검증: `returns the updated/deleted ...`
+    - 영속성 검증: `persists the update/deletion`
+        - PATCH: 후속 GET으로 값이 유지됨을 확인
+        - DELETE: 후속 GET에서 NotFound(또는 조회 실패)로 삭제됨을 확인
+
+6. 예외를 기대하는 서비스 메서드 테스트는 `returns` 대신 `throws` 사용
+    - 예: `throws 400 ...`, `throws 404 ...`
 
 > Jest는 `context`를 지원하지 않는다. 그렇다고 해서 `describe`를 `context`의 alias로 사용하면 안 된다.
 >
 > `Jest Runner` 같은 Jest 도구에서 `context`를 인식하지 못한다.
 
 ```ts
-// 사용자 인증
-describe('User Authentication', () => {
-    // 자격 증명이 유효한 경우
-    describe('when the credentials are valid', () => {
-        // 로그인한다
-        it('logs in', async () => {
-            /* 테스트 로직 */
-        })
-    })
-
-    // 자격 증명이 유효하지 않은 경우
-    describe('when the credentials are invalid', () => {
-        // 비밀번호가 틀린 경우 401 Unauthorized를 반환한다
-        it('returns 401 Unauthorized for incorrect password', async () => {
-            /* 테스트 로직 */
-        })
-    })
-
-    // 리프레시 토큰이 유효하지 않은 경우
-    describe('when the refresh token is invalid', () => {
-        // 401 Unauthorized를 반환한다
-        it('returns 401 Unauthorized', async () => {
-            /* 테스트 로직 */
-        })
-    })
+describe('', () => {
+    // TODO 예시 작성
 })
 ```
 
