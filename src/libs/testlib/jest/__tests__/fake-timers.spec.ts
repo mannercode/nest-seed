@@ -7,7 +7,7 @@ describe('jest.useFakeTimers examples', () => {
         jest.useRealTimers()
     })
 
-    test('advanceTimersByTime', () => {
+    it('advanceTimersByTime', () => {
         const mockCallback = jest.fn()
 
         setTimeout(() => mockCallback('Real value'), 1000)
@@ -17,7 +17,7 @@ describe('jest.useFakeTimers examples', () => {
         expect(mockCallback).toHaveBeenCalledWith('Real value')
     })
 
-    test('setSystemTime', () => {
+    it('setSystemTime', () => {
         const mockDate = new Date('1999-02-31T14:30')
 
         jest.setSystemTime(mockDate)

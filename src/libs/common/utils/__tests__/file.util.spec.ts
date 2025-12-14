@@ -17,7 +17,7 @@ describe('FileUtil', () => {
     })
 
     describe('getSize', () => {
-        test('returns the file size', async () => {
+        it('returns the file size', async () => {
             const size = await FileUtil.getSize(originalFilePath)
 
             expect(size).toBe(fileContent.length)
