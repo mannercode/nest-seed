@@ -1,3 +1,4 @@
+import { HttpStatus } from '@nestjs/common'
 import { PaymentDto } from 'apps/infrastructures'
 import { pickIds } from 'common'
 import { nullObjectId } from 'testlib'
@@ -54,7 +55,7 @@ describe('PaymentsService', () => {
             const promise = fix.paymentsService.getMany([nullObjectId])
 
             await expect(promise).rejects.toMatchObject({
-                status: 404,
+                status: HttpStatus.NOT_FOUND,
                 message: Errors.Mongoose.MultipleDocumentsNotFound.message
             })
         })

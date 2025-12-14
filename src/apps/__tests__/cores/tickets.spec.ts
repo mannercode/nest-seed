@@ -1,3 +1,4 @@
+import { HttpStatus } from '@nestjs/common'
 import { TicketDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { oid } from 'testlib'
@@ -76,7 +77,7 @@ describe('TicketsService', () => {
             const promise = fix.ticketsService.search({})
 
             await expect(promise).rejects.toMatchObject({
-                status: 400,
+                status: HttpStatus.BAD_REQUEST,
                 message: Errors.Mongoose.FiltersRequired.message
             })
         })

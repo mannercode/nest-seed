@@ -1,4 +1,4 @@
-import { AssetDto, CreateAssetDto, UploadRequest } from 'apps/infrastructures'
+import { AssetDto, CompleteAssetDto, CreateAssetDto, UploadRequest } from 'apps/infrastructures'
 import { createReadStream } from 'fs'
 import { TestContext } from 'testlib'
 import { FixtureFile } from '../fixture-files'
@@ -7,6 +7,12 @@ export function buildCreateAssetDto(file: FixtureFile, overrides = {}) {
     const { originalName, mimeType, size, checksum } = file
 
     return { originalName, mimeType, size, checksum, ...overrides } as CreateAssetDto
+}
+
+export function buildCompleteAssetDto(overrides = {}) {
+    return {
+        owner: { service: 'service', entityId: 'entity-id', ...overrides }
+    } as CompleteAssetDto
 }
 
 export async function uploadAsset(filepath: string, { url, method, headers }: UploadRequest) {
@@ -35,7 +41,7 @@ export async function uploadComplete(ctx: TestContext, file: FixtureFile) {
     const { AssetsClient } = await import('apps/infrastructures')
     const assetsClient = ctx.module.get(AssetsClient)
 
-    return assetsClient.complete(assetId, { owner: { service: 'service', entityId: 'entityId' } })
+    return assetsClient.complete(assetId, buildCompleteAssetDto())
 }
 
 export async function downloadAsset({ download }: AssetDto) {

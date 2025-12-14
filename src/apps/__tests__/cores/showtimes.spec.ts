@@ -1,3 +1,4 @@
+import { HttpStatus } from '@nestjs/common'
 import { ShowtimeDto } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, oid } from 'testlib'
@@ -48,7 +49,7 @@ describe('ShowtimesService', () => {
             const promise = fix.showtimesService.getMany([nullObjectId])
 
             await expect(promise).rejects.toMatchObject({
-                status: 404,
+                status: HttpStatus.NOT_FOUND,
                 message: Errors.Mongoose.MultipleDocumentsNotFound.message
             })
         })
@@ -120,7 +121,7 @@ describe('ShowtimesService', () => {
             const promise = fix.showtimesService.search({})
 
             await expect(promise).rejects.toMatchObject({
-                status: 400,
+                status: HttpStatus.BAD_REQUEST,
                 message: Errors.Mongoose.FiltersRequired.message
             })
         })

@@ -1,5 +1,6 @@
 import { withTestId } from 'testlib'
 import type { ExceptionLoggerFilterFixture } from './exception-logger.filter.fixture'
+import { HttpStatus } from '@nestjs/common'
 
 describe('ExceptionLoggerFilter', () => {
     let fix: ExceptionLoggerFilterFixture
@@ -72,7 +73,7 @@ describe('ExceptionLoggerFilter', () => {
                     {},
                     expect.objectContaining({
                         response: { code: 'ERR_CODE', message: 'message' },
-                        status: 404
+                        status: HttpStatus.NOT_FOUND
                     })
                 )
 

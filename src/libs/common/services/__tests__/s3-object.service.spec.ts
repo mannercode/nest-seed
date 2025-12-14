@@ -1,3 +1,4 @@
+import { HttpStatus } from '@nestjs/common'
 import {
     putObject,
     PutObjectResult,
@@ -170,7 +171,7 @@ describe('S3ObjectService', () => {
             it('deletes the object and returns 204 No Content', async () => {
                 const result = await fix.s3Service.deleteObject(key)
 
-                expect(result).toEqual({ status: 204, deletedObject: key })
+                expect(result).toEqual({ status: HttpStatus.NO_CONTENT, deletedObject: key })
             })
         })
 
@@ -179,7 +180,7 @@ describe('S3ObjectService', () => {
                 const key = 'not-exist-key'
                 const result = await fix.s3Service.deleteObject(key)
 
-                expect(result).toEqual({ status: 204, deletedObject: key })
+                expect(result).toEqual({ status: HttpStatus.NO_CONTENT, deletedObject: key })
             })
         })
     })
