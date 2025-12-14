@@ -15,7 +15,7 @@ describe('CustomersService', () => {
     })
 
     describe('POST /customers/login', () => {
-        it('returns accessToken and refreshToken for valid credentials', async () => {
+        it('returns auth tokens for valid credentials', async () => {
             await fix.httpClient
                 .post('/customers/login')
                 .body(fix.credentials)
@@ -38,14 +38,14 @@ describe('CustomersService', () => {
     })
 
     describe('POST /customers/refresh', () => {
-        describe('when the refreshToken is valid', () => {
+        describe('when the refresh token is valid', () => {
             let authTokens: JwtAuthTokens
 
             beforeEach(async () => {
                 authTokens = await loginCustomer(fix, fix.credentials)
             })
 
-            it('returns new accessToken and refreshToken', async () => {
+            it('returns new auth tokens', async () => {
                 const { accessToken, refreshToken } = authTokens
 
                 const { body } = await fix.httpClient
@@ -58,7 +58,7 @@ describe('CustomersService', () => {
             })
         })
 
-        it('returns 401 Unauthorized for invalid refreshToken', async () => {
+        it('returns 401 Unauthorized for invalid refresh token', async () => {
             await fix.httpClient
                 .post('/customers/refresh')
                 .body({ refreshToken: 'invalid-token' })
