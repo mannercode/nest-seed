@@ -20,12 +20,10 @@ describe('TicketHoldingService', () => {
         const customerA = oid(0x1001)
         const customerB = oid(0x1002)
 
-        describe('when the tickets are not held', () => {
-            it('returns true', async () => {
-                const isHeld = await holdTickets(fix, { customerId: customerA })
+        it('returns true when the tickets are not held', async () => {
+            const isHeld = await holdTickets(fix, { customerId: customerA })
 
-                expect(isHeld).toBe(true)
-            })
+            expect(isHeld).toBe(true)
         })
 
         describe('when the tickets are held by another customer', () => {
@@ -77,6 +75,7 @@ describe('TicketHoldingService', () => {
                         ticketIds: newTicketIds
                     })
                 })
+
                 it('returns true', async () => {
                     expect(isHeld).toBe(true)
                 })
@@ -105,49 +104,47 @@ describe('TicketHoldingService', () => {
             })
         })
 
-        describe('when multiple customers attempt to hold concurrently', () => {
-            it(
-                'returns success for only one customer',
-                async () => {
-                    const ticketIds = Array.from({ length: 5 }, (_, i) => oid(0x2000 + i))
-                    const customerIds = Array.from({ length: 10 }, (_, i) => oid(0x3000 + i))
+        it(
+            'returns true for only one customer when multiple customers attempt to hold concurrently',
+            async () => {
+                const ticketIds = Array.from({ length: 5 }, (_, i) => oid(0x2000 + i))
+                const customerIds = Array.from({ length: 10 }, (_, i) => oid(0x3000 + i))
 
-                    const batchResults = await Promise.all(
-                        Array.from({ length: 100 }, async (_, index) => {
-                            const showtimeId = oid(0x1000 + index)
+                const batchResults = await Promise.all(
+                    Array.from({ length: 100 }, async (_, index) => {
+                        const showtimeId = oid(0x1000 + index)
 
-                            const holdResults = await Promise.all(
-                                customerIds.map((customerId) =>
-                                    holdTickets(fix, { customerId, showtimeId, ticketIds })
-                                )
+                        const holdResults = await Promise.all(
+                            customerIds.map((customerId) =>
+                                holdTickets(fix, { customerId, showtimeId, ticketIds })
                             )
+                        )
 
-                            const successfulCount = holdResults.filter(Boolean).length
+                        const successfulCount = holdResults.filter(Boolean).length
 
-                            const allHeldTicketIds = await Promise.all(
-                                customerIds.map((customerId) =>
-                                    searchHeldTicketIds(fix, showtimeId, customerId)
-                                )
+                        const allHeldTicketIds = await Promise.all(
+                            customerIds.map((customerId) =>
+                                searchHeldTicketIds(fix, showtimeId, customerId)
                             )
+                        )
 
-                            return { successfulCount, heldTicketIds: allHeldTicketIds.flat() }
-                        })
-                    )
-
-                    const actual = batchResults.map(({ successfulCount, heldTicketIds }) => ({
-                        successfulCount,
-                        heldTicketIds: sortBy(heldTicketIds)
-                    }))
-                    const expected = Array(batchResults.length).fill({
-                        successfulCount: 1,
-                        heldTicketIds: ticketIds
+                        return { successfulCount, heldTicketIds: allHeldTicketIds.flat() }
                     })
+                )
 
-                    expect(actual).toEqual(expected)
-                },
-                60 * 1000
-            )
-        })
+                const actual = batchResults.map(({ successfulCount, heldTicketIds }) => ({
+                    successfulCount,
+                    heldTicketIds: sortBy(heldTicketIds)
+                }))
+                const expected = Array(batchResults.length).fill({
+                    successfulCount: 1,
+                    heldTicketIds: ticketIds
+                })
+
+                expect(actual).toEqual(expected)
+            },
+            60 * 1000
+        )
     })
 
     describe('searchHeldTicketIds', () => {
@@ -163,15 +160,13 @@ describe('TicketHoldingService', () => {
             await holdTickets(fix, { showtimeId, customerId, ticketIds })
         })
 
-        describe('when the tickets are still held', () => {
-            it('returns the ticket IDs', async () => {
-                const heldTicketIds = await searchHeldTicketIds(fix, showtimeId, customerId)
+        it('returns the ticketIds when the tickets are still held', async () => {
+            const heldTicketIds = await searchHeldTicketIds(fix, showtimeId, customerId)
 
-                expect(heldTicketIds).toEqual(ticketIds)
-            })
+            expect(heldTicketIds).toEqual(ticketIds)
         })
 
-        describe('when the hold has expired', () => {
+        describe('when the hold duration has expired', () => {
             beforeEach(async () => {
                 await sleep(holdDuration + 500)
             })
@@ -201,12 +196,10 @@ describe('TicketHoldingService', () => {
             })
         })
 
-        describe('when the customer holds no tickets', () => {
-            it('returns true with no tickets to release', async () => {
-                const isReleased = await releaseTickets(fix, showtimeId, customerId)
+        it('returns true when the customer holds no tickets', async () => {
+            const isReleased = await releaseTickets(fix, showtimeId, customerId)
 
-                expect(isReleased).toBe(true)
-            })
+            expect(isReleased).toBe(true)
         })
     })
 })
