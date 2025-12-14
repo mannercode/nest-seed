@@ -1,4 +1,4 @@
-import { WatchRecordDto } from 'apps/cores'
+import { SearchWatchRecordsPageDto, WatchRecordDto } from 'apps/cores'
 import { oid } from 'testlib'
 import { buildCreateWatchRecordDto, createWatchRecord } from '../__helpers__'
 import type { WatchRecordsFixture } from './watch-records.fixture'
@@ -16,14 +16,11 @@ describe('WatchRecordsService', () => {
     })
 
     describe('create', () => {
-        describe('when the payload is valid', () => {
+        it('returns the created watch record', async () => {
             const payload = buildCreateWatchRecordDto()
+            const watchRecord = await fix.watchRecordsService.create(payload)
 
-            it('returns the created watch record', async () => {
-                const watchRecord = await fix.watchRecordsService.create(payload)
-
-                expect(watchRecord).toEqual({ ...payload, id: expect.any(String) })
-            })
+            expect(watchRecord).toEqual({ ...payload, id: expect.any(String) })
         })
     })
 
@@ -35,8 +32,8 @@ describe('WatchRecordsService', () => {
             watchRecords = await Promise.all([
                 createWatchRecord(fix, { customerId }),
                 createWatchRecord(fix, { customerId }),
-                createWatchRecord(fix, { customerId }),
-                createWatchRecord(fix, { customerId })
+                createWatchRecord(fix, {}),
+                createWatchRecord(fix, {})
             ])
         })
 
@@ -47,11 +44,17 @@ describe('WatchRecordsService', () => {
             items: expect.arrayContaining(watchRecords)
         })
 
-        describe('when the `customerId` is provided', () => {
-            it('returns paginated records for the customerId', async () => {
-                const pagination = await fix.watchRecordsService.searchPage({ customerId })
+        describe('when the filter is provided', () => {
+            const queryAndExpect = async (
+                query: SearchWatchRecordsPageDto,
+                watchRecords: WatchRecordDto[]
+            ) => {
+                const page = await fix.watchRecordsService.searchPage(query)
+                expect(page).toEqual(buildExpectedPage(watchRecords))
+            }
 
-                expect(pagination).toEqual(buildExpectedPage(watchRecords))
+            it('returns records filtered by customerId', async () => {
+                await queryAndExpect({ customerId }, [watchRecords[0], watchRecords[1]])
             })
         })
     })
