@@ -1,5 +1,7 @@
 import { PaymentDto } from 'apps/infrastructures'
-import { buildCreatePaymentDto, createPayment } from '../__helpers__'
+import { pickIds } from 'common'
+import { nullObjectId } from 'testlib'
+import { buildCreatePaymentDto, createPayment, Errors } from '../__helpers__'
 import type { PaymentsFixture } from './payments.fixture'
 
 describe('PaymentsService', () => {
@@ -15,32 +17,45 @@ describe('PaymentsService', () => {
     })
 
     describe('create', () => {
-        describe('when the payload is valid', () => {
-            it('creates and returns a payment', async () => {
-                const createDto = buildCreatePaymentDto()
+        it('returns the created payment', async () => {
+            const createDto = buildCreatePaymentDto()
 
-                const payment = await fix.paymentsService.create(createDto)
-                expect(payment).toEqual({
-                    ...createDto,
-                    id: expect.any(String),
-                    createdAt: expect.any(Date),
-                    updatedAt: expect.any(Date)
-                })
+            const payment = await fix.paymentsService.create(createDto)
+
+            expect(payment).toEqual({
+                ...createDto,
+                id: expect.any(String),
+                createdAt: expect.any(Date),
+                updatedAt: expect.any(Date)
             })
         })
     })
 
     describe('getMany', () => {
-        let createdPayment: PaymentDto
-
         describe('when the payments exist', () => {
+            let payments: PaymentDto[]
+
             beforeEach(async () => {
-                createdPayment = await createPayment(fix)
+                payments = await Promise.all([
+                    createPayment(fix),
+                    createPayment(fix),
+                    createPayment(fix)
+                ])
             })
 
-            it('returns the payments', async () => {
-                const gotPayments = await fix.paymentsService.getMany([createdPayment.id])
-                expect(gotPayments).toEqual([createdPayment])
+            it('returns payments for the paymentIds', async () => {
+                const fetchedPayments = await fix.paymentsService.getMany(pickIds(payments))
+
+                expect(fetchedPayments).toEqual(expect.arrayContaining(payments))
+            })
+        })
+
+        it('throws 404 Not Found for a non-existent paymentId', async () => {
+            const promise = fix.paymentsService.getMany([nullObjectId])
+
+            await expect(promise).rejects.toMatchObject({
+                status: 404,
+                message: Errors.Mongoose.MultipleDocumentsNotFound.message
             })
         })
     })
