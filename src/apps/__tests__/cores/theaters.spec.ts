@@ -16,26 +16,20 @@ describe('TheatersService', () => {
     })
 
     describe('POST /theaters', () => {
-        describe('when the payload is valid', () => {
+        it('returns the created theater', async () => {
             const payload = buildCreateTheaterDto()
 
-            it('returns 201 with the created theater', async () => {
-                await fix.httpClient
-                    .post('/theaters')
-                    .body(payload)
-                    .created({ ...payload, id: expect.any(String) })
-            })
+            await fix.httpClient
+                .post('/theaters')
+                .body(payload)
+                .created({ ...payload, id: expect.any(String) })
         })
 
-        describe('when the required fields are missing', () => {
-            const invalidPayload = {}
-
-            it('returns 400 Bad Request', async () => {
-                await fix.httpClient
-                    .post('/theaters')
-                    .body(invalidPayload)
-                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
-            })
+        it('returns 400 Bad Request for missing required fields', async () => {
+            await fix.httpClient
+                .post('/theaters')
+                .body({})
+                .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
         })
     })
 
@@ -47,52 +41,55 @@ describe('TheatersService', () => {
                 theater = await createTheater(fix)
             })
 
-            it('returns 200 with the theater', async () => {
+            it('returns the theater', async () => {
                 await fix.httpClient.get(`/theaters/${theater.id}`).ok(theater)
             })
         })
 
-        describe('when the theater does not exist', () => {
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .get(`/theaters/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
-            })
+        it('returns 404 Not Found for a non-existent theater', async () => {
+            await fix.httpClient
+                .get(`/theaters/${nullObjectId}`)
+                .notFound({
+                    ...Errors.Mongoose.MultipleDocumentsNotFound,
+                    notFoundIds: [nullObjectId]
+                })
         })
     })
 
     describe('PATCH /theaters/:id', () => {
-        describe('when the payload is valid', () => {
+        describe('when the theater exists', () => {
             let theater: TheaterDto
-            let payload: any
 
             beforeEach(async () => {
                 theater = await createTheater(fix, { name: 'original-name' })
-                payload = {
+            })
+
+            it('returns the updated theater', async () => {
+                const payload = {
                     name: 'update-name',
                     location: { latitude: 30.0, longitude: 120.0 },
                     seatmap: { blocks: [] }
                 }
+
+                await fix.httpClient
+                    .patch(`/theaters/${theater.id}`)
+                    .body(payload)
+                    .ok({ ...theater, ...payload })
             })
 
-            it('returns 200 with the updated theater', async () => {
-                const expected = { ...theater, ...payload }
+            it('persists the update', async () => {
+                const payload = { name: 'update-name' }
+                await fix.httpClient.patch(`/theaters/${theater.id}`).body(payload).ok()
 
-                await fix.httpClient.patch(`/theaters/${theater.id}`).body(payload).ok(expected)
-                await fix.httpClient.get(`/theaters/${theater.id}`).ok(expected)
+                await fix.httpClient.get(`/theaters/${theater.id}`).ok({ ...theater, ...payload })
             })
         })
 
-        describe('when the theater does not exist', () => {
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .patch(`/theaters/${nullObjectId}`)
-                    .body({})
-                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
-            })
+        it('returns 404 Not Found for a non-existent theater', async () => {
+            await fix.httpClient
+                .patch(`/theaters/${nullObjectId}`)
+                .body({})
+                .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
         })
     })
 
@@ -104,10 +101,14 @@ describe('TheatersService', () => {
                 theater = await createTheater(fix)
             })
 
-            it('returns 200 with the deleted theater', async () => {
+            it('returns the deleted theater', async () => {
                 await fix.httpClient
                     .delete(`/theaters/${theater.id}`)
                     .ok({ deletedTheaters: [theater] })
+            })
+
+            it('persists the deletion', async () => {
+                await fix.httpClient.delete(`/theaters/${theater.id}`).ok()
 
                 await fix.httpClient
                     .get(`/theaters/${theater.id}`)
@@ -118,15 +119,13 @@ describe('TheatersService', () => {
             })
         })
 
-        describe('when the theater does not exist', () => {
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .delete(`/theaters/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
-            })
+        it('returns 404 Not Found for a non-existent theater', async () => {
+            await fix.httpClient
+                .delete(`/theaters/${nullObjectId}`)
+                .notFound({
+                    ...Errors.Mongoose.MultipleDocumentsNotFound,
+                    notFoundIds: [nullObjectId]
+                })
         })
     })
 
@@ -152,12 +151,10 @@ describe('TheatersService', () => {
             items: expect.arrayContaining(theaters)
         })
 
-        describe('when no query parameters are provided', () => {
-            it('returns 200 with the default page of theaters', async () => {
-                const expected = buildExpectedPage([theaterA1, theaterA2, theaterB1, theaterB2])
+        it('returns the default page when no query is provided', async () => {
+            const expected = buildExpectedPage([theaterA1, theaterA2, theaterB1, theaterB2])
 
-                await fix.httpClient.get('/theaters').ok(expected)
-            })
+            await fix.httpClient.get('/theaters').ok(expected)
         })
 
         describe('when query parameters are provided', () => {
@@ -169,13 +166,11 @@ describe('TheatersService', () => {
             })
         })
 
-        describe('when the query parameters are invalid', () => {
-            it('returns 400 Bad Request', async () => {
-                await fix.httpClient
-                    .get('/theaters')
-                    .query({ wrong: 'value' })
-                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
-            })
+        it('returns 400 Bad Request for invalid query parameters', async () => {
+            await fix.httpClient
+                .get('/theaters')
+                .query({ wrong: 'value' })
+                .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
         })
     })
 })

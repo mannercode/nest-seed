@@ -95,7 +95,7 @@ describe('MoviesService', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
-                movie = await createMovie(fix)
+                movie = await createMovie(fix, { title: 'original-title' })
             })
 
             it('returns the updated movie', async () => {
@@ -227,6 +227,7 @@ describe('MoviesService', () => {
 
         it('returns the default page when no query is provided', async () => {
             const expected = buildExpectedPage([movieA1, movieA2, movieB1, movieB2])
+
             await fix.httpClient.get('/movies').ok(expected)
         })
 
