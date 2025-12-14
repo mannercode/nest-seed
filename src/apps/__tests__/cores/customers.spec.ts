@@ -1,4 +1,4 @@
-import { CreateCustomerDto, CustomerDto, SearchCustomersPageDto } from 'apps/cores'
+import { CustomerDto, SearchCustomersPageDto } from 'apps/cores'
 import { omit } from 'lodash'
 import { nullObjectId } from 'testlib'
 import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
@@ -17,15 +17,13 @@ describe('CustomersService', () => {
     })
 
     describe('POST /customers', () => {
-        describe('when the payload is valid', () => {
-            const payload: CreateCustomerDto = buildCreateCustomerDto()
+        it('returns the created customer', async () => {
+            const payload = buildCreateCustomerDto()
 
-            it('returns 201 with the created customer', async () => {
-                await fix.httpClient
-                    .post('/customers')
-                    .body(payload)
-                    .created({ ...omit(payload, ['password']), id: expect.any(String) })
-            })
+            await fix.httpClient
+                .post('/customers')
+                .body(payload)
+                .created({ ...omit(payload, ['password']), id: expect.any(String) })
         })
 
         describe('when the email already exists', () => {
@@ -45,15 +43,11 @@ describe('CustomersService', () => {
             })
         })
 
-        describe('when the required fields are missing', () => {
-            const invalidPayload = {}
-
-            it('returns 400 Bad Request', async () => {
-                await fix.httpClient
-                    .post('/customers')
-                    .body(invalidPayload)
-                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
-            })
+        it('returns 400 Bad Request for missing required fields', async () => {
+            await fix.httpClient
+                .post('/customers')
+                .body({})
+                .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
         })
     })
 
@@ -65,53 +59,57 @@ describe('CustomersService', () => {
                 customer = await createCustomer(fix)
             })
 
-            it('returns 200 with the customer', async () => {
+            it('returns the customer', async () => {
                 await fix.httpClient.get(`/customers/${customer.id}`).ok(customer)
             })
         })
 
-        describe('when the customer does not exist', () => {
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .get(`/customers/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
-            })
+        it('returns 404 Not Found for a non-existent customer', async () => {
+            await fix.httpClient
+                .get(`/customers/${nullObjectId}`)
+                .notFound({
+                    ...Errors.Mongoose.MultipleDocumentsNotFound,
+                    notFoundIds: [nullObjectId]
+                })
         })
     })
 
     describe('PATCH /customers/:id', () => {
-        describe('when the payload is valid', () => {
+        describe('when the customer exists', () => {
             let customer: CustomerDto
-            let payload: any
 
             beforeEach(async () => {
-                customer = await createCustomer(fix)
-                payload = {
+                customer = await createCustomer(fix, { name: 'original-name' })
+            })
+
+            it('returns the updated customer', async () => {
+                const payload = {
                     name: 'update-name',
                     email: 'new@mail.com',
                     birthDate: new Date('1900-12-31')
                 }
+
+                await fix.httpClient
+                    .patch(`/customers/${customer.id}`)
+                    .body(payload)
+                    .ok({ ...customer, ...payload })
             })
 
-            it('returns 200 with the updated customer', async () => {
-                const expected = { ...customer, ...payload }
+            it('persists the update', async () => {
+                const payload = { name: 'update-name' }
+                await fix.httpClient.patch(`/customers/${customer.id}`).body(payload).ok()
 
-                await fix.httpClient.patch(`/customers/${customer.id}`).body(payload).ok(expected)
-
-                await fix.httpClient.get(`/customers/${customer.id}`).ok(expected)
+                await fix.httpClient
+                    .get(`/customers/${customer.id}`)
+                    .ok({ ...customer, ...payload })
             })
         })
 
-        describe('when the customer does not exist', () => {
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .patch(`/customers/${nullObjectId}`)
-                    .body({})
-                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
-            })
+        it('returns 404 Not Found for a non-existent customer', async () => {
+            await fix.httpClient
+                .patch(`/customers/${nullObjectId}`)
+                .body({})
+                .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
         })
     })
 
@@ -123,10 +121,14 @@ describe('CustomersService', () => {
                 customer = await createCustomer(fix)
             })
 
-            it('returns 200 with the deleted customer', async () => {
+            it('returns the deleted customer', async () => {
                 await fix.httpClient
                     .delete(`/customers/${customer.id}`)
                     .ok({ deletedCustomers: [customer] })
+            })
+
+            it('persists the deletion', async () => {
+                await fix.httpClient.delete(`/customers/${customer.id}`).ok()
 
                 await fix.httpClient
                     .get(`/customers/${customer.id}`)
@@ -137,15 +139,13 @@ describe('CustomersService', () => {
             })
         })
 
-        describe('when the customer does not exist', () => {
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .delete(`/customers/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
-            })
+        it('returns 404 Not Found for a non-existent customer', async () => {
+            await fix.httpClient
+                .delete(`/customers/${nullObjectId}`)
+                .notFound({
+                    ...Errors.Mongoose.MultipleDocumentsNotFound,
+                    notFoundIds: [nullObjectId]
+                })
         })
     })
 
@@ -171,12 +171,10 @@ describe('CustomersService', () => {
             items: expect.arrayContaining(customers)
         })
 
-        describe('when no query parameters are provided', () => {
-            it('returns 200 with the default page of customers', async () => {
-                const expected = buildExpectedPage([customerA1, customerA2, customerB1, customerB2])
+        it('returns the default page of customers when no query is provided', async () => {
+            const expected = buildExpectedPage([customerA1, customerA2, customerB1, customerB2])
 
-                await fix.httpClient.get('/customers').ok(expected)
-            })
+            await fix.httpClient.get('/customers').ok(expected)
         })
 
         describe('when query parameters are provided', () => {
@@ -192,13 +190,11 @@ describe('CustomersService', () => {
             })
         })
 
-        describe('when the query parameters are invalid', () => {
-            it('returns 400 Bad Request', async () => {
-                await fix.httpClient
-                    .get('/customers')
-                    .query({ wrong: 'value' })
-                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
-            })
+        it('returns 400 Bad Request for invalid query parameters', async () => {
+            await fix.httpClient
+                .get('/customers')
+                .query({ wrong: 'value' })
+                .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
         })
     })
 })
