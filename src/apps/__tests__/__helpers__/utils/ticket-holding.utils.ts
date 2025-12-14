@@ -16,21 +16,3 @@ export async function holdTickets(ctx: TestContext, holdDto?: Partial<HoldTicket
 
     return ticketHoldingService.holdTickets(buildHoldTicketsDto(holdDto))
 }
-
-export async function releaseTickets(ctx: TestContext, showtimeId: string, customerId: string) {
-    const { TicketHoldingClient } = await import('apps/cores')
-    const ticketHoldingService = ctx.module.get(TicketHoldingClient)
-
-    return ticketHoldingService.releaseTickets(showtimeId, customerId)
-}
-
-export async function searchHeldTicketIds(
-    ctx: TestContext,
-    showtimeId: string,
-    customerId: string
-) {
-    const { TicketHoldingClient } = await import('apps/cores')
-    const ticketHoldingService = ctx.module.get(TicketHoldingClient)
-
-    return ticketHoldingService.searchHeldTicketIds(showtimeId, customerId)
-}
