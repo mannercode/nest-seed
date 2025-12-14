@@ -13,9 +13,7 @@ describe('ClientProxyService with name', () => {
         await fix?.teardown()
     })
 
-    describe('when a name is provided', () => {
-        it('creates and uses the named ClientProxyService', async () => {
-            await fix.httpClient.get('/value').ok({ result: 'success' })
-        })
+    it('creates and uses the named ClientProxyService', async () => {
+        await fix.httpClient.get('/value').ok({ result: 'success' })
     })
 })

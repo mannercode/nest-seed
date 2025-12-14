@@ -25,19 +25,17 @@ describe('MoviesService', () => {
     })
 
     describe('POST /movies', () => {
-        describe('when the payload is valid', () => {
+        it('returns 201 with the created movie', async () => {
             const payload = buildCreateMovieDto()
 
-            it('returns 201 with the created movie', async () => {
-                await fix.httpClient
-                    .post('/movies')
-                    .body(payload)
-                    .created({
-                        ...omit(payload, ['assetIds']),
-                        id: expect.any(String),
-                        imageUrls: expect.any(Array)
-                    })
-            })
+            await fix.httpClient
+                .post('/movies')
+                .body(payload)
+                .created({
+                    ...omit(payload, ['assetIds']),
+                    id: expect.any(String),
+                    imageUrls: expect.any(Array)
+                })
         })
 
         describe('when the payload includes assetIds', () => {
@@ -61,15 +59,11 @@ describe('MoviesService', () => {
             })
         })
 
-        describe('when the required fields are missing', () => {
-            const invalidPayload = {}
-
-            it('returns 400 Bad Request', async () => {
-                await fix.httpClient
-                    .post('/movies')
-                    .body(invalidPayload)
-                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
-            })
+        it('returns 400 Bad Request for missing required fields', async () => {
+            await fix.httpClient
+                .post('/movies')
+                .body({})
+                .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
         })
     })
 
@@ -86,26 +80,26 @@ describe('MoviesService', () => {
             })
         })
 
-        describe('when the movie does not exist', () => {
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .get(`/movies/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
-            })
+        it('returns 404 Not Found for a non-existent movie', async () => {
+            await fix.httpClient
+                .get(`/movies/${nullObjectId}`)
+                .notFound({
+                    ...Errors.Mongoose.MultipleDocumentsNotFound,
+                    notFoundIds: [nullObjectId]
+                })
         })
     })
 
     describe('PATCH /movies/:id', () => {
-        describe('when the payload is valid', () => {
+        describe('when the movie exists', () => {
             let movie: MovieDto
-            let payload: any
 
             beforeEach(async () => {
                 movie = await createMovie(fix)
-                payload = {
+            })
+
+            it('returns 200 with the updated movie', async () => {
+                const payload = {
                     title: 'update title',
                     genres: ['romance', 'thriller'],
                     releaseDate: new Date('2000-01-01'),
@@ -114,23 +108,26 @@ describe('MoviesService', () => {
                     director: 'Steven Spielberg',
                     rating: 'R'
                 }
+
+                await fix.httpClient
+                    .patch(`/movies/${movie.id}`)
+                    .body(payload)
+                    .ok({ ...movie, ...payload })
             })
 
-            it('returns 200 with the updated movie', async () => {
-                const expected = { ...movie, ...payload }
+            it('persists the update', async () => {
+                const payload = { title: 'update title' }
+                await fix.httpClient.patch(`/movies/${movie.id}`).body(payload).ok()
 
-                await fix.httpClient.patch(`/movies/${movie.id}`).body(payload).ok(expected)
-                await fix.httpClient.get(`/movies/${movie.id}`).ok(expected)
+                await fix.httpClient.get(`/movies/${movie.id}`).ok({ ...movie, ...payload })
             })
         })
 
-        describe('when the movie does not exist', () => {
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .patch(`/movies/${nullObjectId}`)
-                    .body({})
-                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
-            })
+        it('returns 404 Not Found for a non-existent movie', async () => {
+            await fix.httpClient
+                .patch(`/movies/${nullObjectId}`)
+                .body({})
+                .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
         })
     })
 
@@ -164,15 +161,13 @@ describe('MoviesService', () => {
             })
         })
 
-        describe('when the movie does not exist', () => {
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .delete(`/movies/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
-            })
+        it('returns 404 Not Found for a non-existent movie', async () => {
+            await fix.httpClient
+                .delete(`/movies/${nullObjectId}`)
+                .notFound({
+                    ...Errors.Mongoose.MultipleDocumentsNotFound,
+                    notFoundIds: [nullObjectId]
+                })
         })
     })
 
@@ -226,12 +221,10 @@ describe('MoviesService', () => {
             items: expect.arrayContaining(movies)
         })
 
-        describe('when no query parameters are provided', () => {
-            it('returns 200 with the default page of movies', async () => {
-                const expected = buildExpectedPage([movieA1, movieA2, movieB1, movieB2])
+        it('returns 200 with the default page of movies when no query parameters are provided', async () => {
+            const expected = buildExpectedPage([movieA1, movieA2, movieB1, movieB2])
 
-                await fix.httpClient.get('/movies').ok(expected)
-            })
+            await fix.httpClient.get('/movies').ok(expected)
         })
 
         describe('when query parameters are provided', () => {
@@ -263,13 +256,11 @@ describe('MoviesService', () => {
             })
         })
 
-        describe('when query parameters are invalid', () => {
-            it('returns 400 Bad Request', async () => {
-                await fix.httpClient
-                    .get('/movies')
-                    .query({ wrong: 'value' })
-                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
-            })
+        it('returns 400 Bad Request for invalid query parameters', async () => {
+            await fix.httpClient
+                .get('/movies')
+                .query({ wrong: 'value' })
+                .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
         })
     })
 })
