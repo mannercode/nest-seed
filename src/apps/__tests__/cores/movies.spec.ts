@@ -25,7 +25,7 @@ describe('MoviesService', () => {
     })
 
     describe('POST /movies', () => {
-        it('returns 201 with the created movie', async () => {
+        it('returns the created movie', async () => {
             const payload = buildCreateMovieDto()
 
             await fix.httpClient
@@ -75,7 +75,7 @@ describe('MoviesService', () => {
                 movie = await createMovie(fix)
             })
 
-            it('returns 200 with the movie', async () => {
+            it('returns the movie', async () => {
                 await fix.httpClient.get(`/movies/${movie.id}`).ok(movie)
             })
         })
@@ -98,7 +98,7 @@ describe('MoviesService', () => {
                 movie = await createMovie(fix)
             })
 
-            it('returns 200 with the updated movie', async () => {
+            it('returns the updated movie', async () => {
                 const payload = {
                     title: 'update title',
                     genres: ['romance', 'thriller'],
@@ -140,10 +140,14 @@ describe('MoviesService', () => {
                 movie = await createMovie(fix, { assetIds: [asset.id] })
             })
 
-            it('returns 200 with the deleted movie', async () => {
+            it('returns the deleted movie', async () => {
                 await fix.httpClient
                     .delete(`/movies/${movie.id}`)
                     .ok({ deletedMovies: [{ ...movie, imageUrls: [] }] })
+            })
+
+            it('persists the deletion', async () => {
+                await fix.httpClient.delete(`/movies/${movie.id}`).ok()
 
                 await fix.httpClient
                     .get(`/movies/${movie.id}`)
@@ -221,9 +225,8 @@ describe('MoviesService', () => {
             items: expect.arrayContaining(movies)
         })
 
-        it('returns 200 with the default page of movies when no query parameters are provided', async () => {
+        it('returns the default page when no query is provided', async () => {
             const expected = buildExpectedPage([movieA1, movieA2, movieB1, movieB2])
-
             await fix.httpClient.get('/movies').ok(expected)
         })
 
