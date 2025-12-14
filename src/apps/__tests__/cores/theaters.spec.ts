@@ -157,7 +157,7 @@ describe('TheatersService', () => {
             await fix.httpClient.get('/theaters').ok(expected)
         })
 
-        describe('when query parameters are provided', () => {
+        describe('when the filter is provided', () => {
             const queryAndExpect = (query: SearchTheatersPageDto, theaters: TheaterDto[]) =>
                 fix.httpClient.get('/theaters').query(query).ok(buildExpectedPage(theaters))
 

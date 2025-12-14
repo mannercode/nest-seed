@@ -177,7 +177,7 @@ describe('CustomersService', () => {
             await fix.httpClient.get('/customers').ok(expected)
         })
 
-        describe('when query parameters are provided', () => {
+        describe('when the filter is provided', () => {
             const queryAndExpect = (query: SearchCustomersPageDto, customers: CustomerDto[]) =>
                 fix.httpClient.get('/customers').query(query).ok(buildExpectedPage(customers))
 
