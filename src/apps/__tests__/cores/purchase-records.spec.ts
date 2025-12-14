@@ -16,18 +16,15 @@ describe('PurchaseRecordsService', () => {
     })
 
     describe('create', () => {
-        describe('when the payload is valid', () => {
+        it('returns the created purchase record', async () => {
             const payload = buildCreatePurchaseRecordDto()
+            const createdPurchaseRecord = await fix.purchaseRecordsService.create(payload)
 
-            it('creates and returns the purchase record', async () => {
-                const createdPurchaseRecord = await fix.purchaseRecordsService.create(payload)
-
-                expect(createdPurchaseRecord).toEqual({
-                    id: expect.any(String),
-                    createdAt: expect.any(Date),
-                    updatedAt: expect.any(Date),
-                    ...payload
-                })
+            expect(createdPurchaseRecord).toEqual({
+                id: expect.any(String),
+                createdAt: expect.any(Date),
+                updatedAt: expect.any(Date),
+                ...payload
             })
         })
     })
@@ -40,20 +37,18 @@ describe('PurchaseRecordsService', () => {
                 purchase = await createPurchaseRecord(fix)
             })
 
-            it('returns 200 with the purchase record', async () => {
+            it('returns the purchase record', async () => {
                 await fix.httpClient.get(`/purchases/${purchase.id}`).ok(purchase)
             })
         })
 
-        describe('when the purchase record does not exist', () => {
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .get(`/purchases/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
-            })
+        it('returns 404 Not Found for a non-existent purchase record', async () => {
+            await fix.httpClient
+                .get(`/purchases/${nullObjectId}`)
+                .notFound({
+                    ...Errors.Mongoose.MultipleDocumentsNotFound,
+                    notFoundIds: [nullObjectId]
+                })
         })
     })
 })
