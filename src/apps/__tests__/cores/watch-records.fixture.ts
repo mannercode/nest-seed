@@ -1,15 +1,15 @@
 import { WatchRecordsClient, WatchRecordsModule } from 'apps/cores'
-import { TestFixture, createAppTestContext } from '../__helpers__'
+import { AppTestContext, createAppTestContext } from '../__helpers__'
 
-export type WatchRecordsFixture = TestFixture & { watchRecordsService: WatchRecordsClient }
+export type WatchRecordsFixture = AppTestContext & { watchRecordsService: WatchRecordsClient }
 
 export async function createWatchRecordsFixture() {
-    const fix = await createAppTestContext({
+    const ctx = await createAppTestContext({
         imports: [WatchRecordsModule],
         providers: [WatchRecordsClient]
     })
 
-    const watchRecordsService = fix.module.get(WatchRecordsClient)
+    const watchRecordsService = ctx.module.get(WatchRecordsClient)
 
-    return { ...fix, watchRecordsService }
+    return { ...ctx, watchRecordsService }
 }

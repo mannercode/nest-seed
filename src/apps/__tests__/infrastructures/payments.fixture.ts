@@ -1,15 +1,15 @@
 import { PaymentsClient, PaymentsModule } from 'apps/infrastructures'
-import { createAppTestContext, TestFixture } from '../__helpers__'
+import { createAppTestContext, AppTestContext } from '../__helpers__'
 
-export type PaymentsFixture = TestFixture & { paymentsService: PaymentsClient }
+export type PaymentsFixture = AppTestContext & { paymentsService: PaymentsClient }
 
 export async function createPaymentsFixture() {
-    const fix = await createAppTestContext({
+    const ctx = await createAppTestContext({
         imports: [PaymentsModule],
         providers: [PaymentsClient]
     })
 
-    const paymentsService = fix.module.get(PaymentsClient)
+    const paymentsService = ctx.module.get(PaymentsClient)
 
-    return { ...fix, paymentsService }
+    return { ...ctx, paymentsService }
 }

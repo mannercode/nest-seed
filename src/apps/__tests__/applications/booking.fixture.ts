@@ -25,7 +25,7 @@ import {
     createAppTestContext,
     createTheater,
     createTickets,
-    TestFixture
+    AppTestContext
 } from '../__helpers__'
 
 export async function createAllResources(
@@ -64,10 +64,10 @@ export async function createAllResources(
     return { customer, accessToken, refreshToken, movie, theaters, showtimes, tickets }
 }
 
-export type BookingFixture = TestFixture
+export type BookingFixture = AppTestContext
 
 export async function createBookingFixture(): Promise<BookingFixture> {
-    const fix = await createAppTestContext({
+    const ctx = await createAppTestContext({
         imports: [
             MoviesModule,
             AssetsModule,
@@ -94,5 +94,5 @@ export async function createBookingFixture(): Promise<BookingFixture> {
         controllers: [BookingController]
     })
 
-    return { ...fix }
+    return { ...ctx }
 }

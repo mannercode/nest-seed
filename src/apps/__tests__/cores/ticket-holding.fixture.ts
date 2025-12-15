@@ -1,7 +1,7 @@
 import { TicketHoldingClient, TicketHoldingModule } from 'apps/cores'
-import { TestFixture, createAppTestContext } from '../__helpers__'
+import { AppTestContext, createAppTestContext } from '../__helpers__'
 
-export type TicketHoldingFixture = TestFixture & { ticketHoldingService: TicketHoldingClient }
+export type TicketHoldingFixture = AppTestContext & { ticketHoldingService: TicketHoldingClient }
 
 export async function createTicketHoldingFixture() {
     const ctx = await createAppTestContext({

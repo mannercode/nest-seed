@@ -22,7 +22,7 @@ import {
     createMovie,
     createAppTestContext,
     createTheater,
-    TestFixture as TestContext
+    AppTestContext as TestContext
 } from '../__helpers__'
 
 export function buildBulkCreateShowtimesDto(overrides: Partial<BulkCreateShowtimesDto> = {}) {
@@ -63,7 +63,7 @@ export function waitForCompletion(ctx: TestContext, status: string) {
 export type ShowtimeCreationFixture = TestContext & { movie: MovieDto; theater: TheaterDto }
 
 export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationFixture> {
-    const fix = await createAppTestContext({
+    const ctx = await createAppTestContext({
         imports: [
             MoviesModule,
             AssetsModule,
@@ -82,8 +82,8 @@ export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationF
         controllers: [ShowtimeCreationController]
     })
 
-    const movie = await createMovie(fix)
-    const theater = await createTheater(fix)
+    const movie = await createMovie(ctx)
+    const theater = await createTheater(ctx)
 
-    return { ...fix, movie, theater }
+    return { ...ctx, movie, theater }
 }

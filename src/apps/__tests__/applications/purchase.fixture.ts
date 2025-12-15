@@ -34,10 +34,10 @@ import {
     createTheater,
     createTickets,
     holdTickets,
-    TestFixture
+    AppTestContext
 } from '../__helpers__'
 
-export type PurchaseFixture = TestFixture & {
+export type PurchaseFixture = AppTestContext & {
     customer: CustomerDto
     heldTickets: TicketDto[]
     availableTickets: TicketDto[]
@@ -45,7 +45,7 @@ export type PurchaseFixture = TestFixture & {
 }
 
 export async function createPurchaseFixture(): Promise<PurchaseFixture> {
-    const fix = await createAppTestContext({
+    const ctx = await createAppTestContext({
         imports: [
             MoviesModule,
             AssetsModule,
@@ -73,21 +73,21 @@ export async function createPurchaseFixture(): Promise<PurchaseFixture> {
     })
 
     const [customer, movie, theater] = await Promise.all([
-        createCustomer(fix),
-        createMovie(fix),
-        createTheater(fix)
+        createCustomer(ctx),
+        createMovie(ctx),
+        createTheater(ctx)
     ])
 
     const { availableTickets, heldTickets } = await createAvailableAndHeldTickets(
-        fix,
+        ctx,
         movie,
         theater,
         customer
     )
 
-    const closedSaleTickets = await createClosedTickets(fix, movie, theater)
+    const closedSaleTickets = await createClosedTickets(ctx, movie, theater)
 
-    return { ...fix, customer, heldTickets, availableTickets, closedTickets: closedSaleTickets }
+    return { ...ctx, customer, heldTickets, availableTickets, closedTickets: closedSaleTickets }
 }
 
 export function buildCreatePurchaseDto(

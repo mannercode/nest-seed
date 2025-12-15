@@ -19,7 +19,7 @@ import {
     createShowtimes,
     createAppTestContext,
     createWatchRecord,
-    TestFixture
+    AppTestContext
 } from '../__helpers__'
 
 export async function createWatchedMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
@@ -49,10 +49,10 @@ export async function createShowingMovies(ctx: TestContext, dtos: Partial<MovieD
     return { movies, showtimes }
 }
 
-export type RecommendationFixture = TestFixture
+export type RecommendationFixture = AppTestContext
 
 export async function createRecommendationFixture(): Promise<RecommendationFixture> {
-    const fix = await createAppTestContext({
+    const ctx = await createAppTestContext({
         imports: [
             MoviesModule,
             AssetsModule,
@@ -73,5 +73,5 @@ export async function createRecommendationFixture(): Promise<RecommendationFixtu
         controllers: [MoviesController]
     })
 
-    return { ...fix }
+    return { ...ctx }
 }

@@ -1,30 +1,27 @@
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { CronJob } from 'cron'
-import { createAppTestContext, FixtureFile, fixtureFiles, TestFixture } from '../__helpers__'
+import { createAppTestContext, FixtureFile, fixtureFiles, AppTestContext } from '../__helpers__'
 
-export type AssetsFixture = TestFixture & {
+export type AssetsFixture = AppTestContext & {
     assetsClient: AssetsClient
     file: FixtureFile
     cleanupExpiredUploadsJob: CronJob
 }
 
 export async function createAssetsFixture() {
-    const testFixture = await createAppTestContext({
-        imports: [AssetsModule],
-        providers: [AssetsClient]
-    })
+    const ctx = await createAppTestContext({ imports: [AssetsModule], providers: [AssetsClient] })
 
-    const assetsClient = testFixture.module.get(AssetsClient)
-    const scheduler = testFixture.module.get(SchedulerRegistry)
+    const assetsClient = ctx.module.get(AssetsClient)
+    const scheduler = ctx.module.get(SchedulerRegistry)
     const cleanupExpiredUploadsJob = scheduler.getCronJob('assets.cleanupExpiredUploads')
     await cleanupExpiredUploadsJob.stop()
 
     const file = fixtureFiles.small
 
     async function teardown() {
-        await testFixture.teardown()
+        await ctx.teardown()
     }
 
-    return { ...testFixture, teardown, assetsClient, file, cleanupExpiredUploadsJob }
+    return { ...ctx, teardown, assetsClient, file, cleanupExpiredUploadsJob }
 }

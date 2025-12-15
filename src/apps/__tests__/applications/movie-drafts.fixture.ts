@@ -8,9 +8,9 @@ import { MoviesClient, MoviesModule } from 'apps/cores'
 import { MovieDraftsController, MoviesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { Path } from 'common'
-import { createAppTestContext, FixtureFile, fixtureFiles, TestFixture } from '../__helpers__'
+import { createAppTestContext, FixtureFile, fixtureFiles, AppTestContext } from '../__helpers__'
 
-export type MovieDraftsFixture = TestFixture & {
+export type MovieDraftsFixture = AppTestContext & {
     image: FixtureFile
     tempDir: string
     assetsClient: AssetsClient
@@ -18,23 +18,23 @@ export type MovieDraftsFixture = TestFixture & {
 }
 
 export async function createMovieDraftsFixture() {
-    const fix = await createAppTestContext({
+    const ctx = await createAppTestContext({
         imports: [MoviesModule, AssetsModule, MovieDraftsModule],
         providers: [MoviesClient, RecommendationClient, MovieDraftsClient, AssetsClient],
         controllers: [MoviesController, MovieDraftsController]
     })
 
-    const assetsClient = fix.module.get(AssetsClient)
-    const movieDraftsRepository = fix.module.get(MovieDraftsRepository)
+    const assetsClient = ctx.module.get(AssetsClient)
+    const movieDraftsRepository = ctx.module.get(MovieDraftsRepository)
     const tempDir = await Path.createTempDirectory()
 
     async function teardown() {
-        await fix.teardown()
+        await ctx.teardown()
         await Path.delete(tempDir)
     }
 
     return {
-        ...fix,
+        ...ctx,
         teardown,
         image: fixtureFiles.image,
         tempDir,

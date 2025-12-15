@@ -13,7 +13,7 @@ import {
 } from 'shared'
 import { createHttpTestContext, HttpTestContext, ModuleMetadataEx } from 'testlib'
 
-export type TestFixture = HttpTestContext & { teardown: () => Promise<void> }
+export type AppTestContext = HttpTestContext & { teardown: () => Promise<void> }
 
 export async function createAppTestContext(metadata: ModuleMetadataEx) {
     metadata.imports?.push(
@@ -28,7 +28,7 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
         })
     )
 
-    const context = await createHttpTestContext({
+    const ctx = await createHttpTestContext({
         configureApp: async (app) => {
             const config = app.get(AppConfigService)
 
@@ -52,13 +52,13 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
     })
 
     async function teardown() {
-        await context.close()
+        await ctx.close()
 
-        const redis = context.module.get(RedisConfigModule.moduleName)
+        const redis = ctx.module.get(RedisConfigModule.moduleName)
         await redis.quit()
     }
 
-    return { ...context, teardown }
+    return { ...ctx, teardown }
 }
 
 // const configMock = createConfigServiceMock({
@@ -73,7 +73,7 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
 //     S3_FORCE_PATH_STYLE: s3.forcePathStyle
 // })
 
-// const fix = await createAppTestContext({
+// const ctx = await createAppTestContext({
 //     imports: [AssetsModule],
 //     providers: [AssetsClient],
 //     overrideProviders: [configMock]
