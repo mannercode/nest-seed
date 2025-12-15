@@ -111,7 +111,10 @@ describe('AssetsService', () => {
                 const { Rules } = await import('shared')
                 toAny(Rules).Asset.uploadExpiresInSec = 1
 
-                assetId = await uploadFile(fix, fix.file)
+                const createDto = buildCreateAssetDto(fix.file)
+                const uploadRequest = await fix.assetsClient.create(createDto)
+
+                assetId = uploadRequest.assetId
 
                 await sleep(1500)
             })
