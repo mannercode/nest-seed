@@ -17,7 +17,7 @@ jest.mock('./mocking.fixture', () => {
 })
 
 describe('jest.mock examples', () => {
-    it('module mocking', () => {
+    it('mocks a module', () => {
         ;(Logger.verbose as jest.Mock).mockReturnValue('Mocked verbose')
         const value = Logger.verbose('arg1', 'arg2')
 
@@ -25,7 +25,7 @@ describe('jest.mock examples', () => {
         expect(value).toEqual('Mocked verbose')
     })
 
-    it('class mocking', () => {
+    it('mocks a class', () => {
         ;(HelloClass as jest.Mock).mockImplementation(() => ({
             getHello: jest.fn().mockReturnValue('Mocked getHello')
         }))
@@ -36,7 +36,7 @@ describe('jest.mock examples', () => {
         expect(instance.getHello).toHaveBeenCalledTimes(1)
     })
 
-    it('function mocking', () => {
+    it('mocks a function', () => {
         ;(getGreeting as jest.Mock).mockReturnValue('Mocked getGreeting')
 
         expect(getGreeting()).toEqual('Mocked getGreeting')

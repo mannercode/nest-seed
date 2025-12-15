@@ -2,24 +2,20 @@ import { Time } from 'common'
 
 describe('Time', () => {
     describe('toMs', () => {
-        describe('when the format is valid', () => {
-            it('converts the time string to milliseconds', () => {
-                expect(Time.toMs('30m')).toEqual(30 * 60 * 1000)
-                expect(Time.toMs('45s')).toEqual(45 * 1000)
-                expect(Time.toMs('1d')).toEqual(24 * 60 * 60 * 1000)
-                expect(Time.toMs('2h')).toEqual(2 * 60 * 60 * 1000)
-                expect(Time.toMs('1d 2h')).toEqual((24 + 2) * 60 * 60 * 1000)
-                expect(Time.toMs('1d2h')).toEqual((24 + 2) * 60 * 60 * 1000)
-                expect(Time.toMs('-30s')).toEqual(-30 * 1000)
-                expect(Time.toMs('0.5s')).toEqual(0.5 * 1000)
-                expect(Time.toMs('500ms')).toEqual(500)
-            })
+        it('converts a valid time string to milliseconds', () => {
+            expect(Time.toMs('30m')).toEqual(30 * 60 * 1000)
+            expect(Time.toMs('45s')).toEqual(45 * 1000)
+            expect(Time.toMs('1d')).toEqual(24 * 60 * 60 * 1000)
+            expect(Time.toMs('2h')).toEqual(2 * 60 * 60 * 1000)
+            expect(Time.toMs('1d 2h')).toEqual((24 + 2) * 60 * 60 * 1000)
+            expect(Time.toMs('1d2h')).toEqual((24 + 2) * 60 * 60 * 1000)
+            expect(Time.toMs('-30s')).toEqual(-30 * 1000)
+            expect(Time.toMs('0.5s')).toEqual(0.5 * 1000)
+            expect(Time.toMs('500ms')).toEqual(500)
         })
 
-        describe('when the format is invalid', () => {
-            it('throws an error', () => {
-                expect(() => Time.toMs('2z')).toThrow(Error)
-            })
+        it('throws for an invalid format', () => {
+            expect(() => Time.toMs('2z')).toThrow(Error)
         })
     })
 

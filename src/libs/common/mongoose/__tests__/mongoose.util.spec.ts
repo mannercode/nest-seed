@@ -17,54 +17,44 @@ it('newObjectId', async () => {
 })
 
 describe('objectId', () => {
-    describe('when the string is valid', () => {
-        it('converts to an ObjectId', () => {
-            const idString = '507f1f77bcf86cd799439011'
-            const result = objectId(idString)
+    it('converts a valid string to an ObjectId', () => {
+        const idString = '507f1f77bcf86cd799439011'
+        const result = objectId(idString)
 
-            expect(result).toBeInstanceOf(Types.ObjectId)
-            expect(result.toString()).toBe(idString)
-        })
+        expect(result).toBeInstanceOf(Types.ObjectId)
+        expect(result.toString()).toBe(idString)
     })
 
-    describe('when the string is invalid', () => {
-        it('throws an error', () => {
-            const invalidId = 'invalid-id'
+    it('throws for an invalid string', () => {
+        const invalidId = 'invalid-id'
 
-            expect(() => objectId(invalidId)).toThrow(
-                'input must be a 24 character hex string, 12 byte Uint8Array, or an integer'
-            )
-        })
+        expect(() => objectId(invalidId)).toThrow(
+            'input must be a 24 character hex string, 12 byte Uint8Array, or an integer'
+        )
     })
 })
 
 describe('objectIds', () => {
-    describe('when all ids are valid', () => {
-        it('returns ObjectIds', () => {
-            const idStrings = ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012']
-            const result = objectIds(idStrings)
+    it('converts valid strings to ObjectIds', () => {
+        const idStrings = ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012']
+        const result = objectIds(idStrings)
 
-            expect(result.map((id) => id.toString())).toEqual(idStrings)
-            expect(result).toEqual([expect.any(Types.ObjectId), expect.any(Types.ObjectId)])
-        })
+        expect(result.map((id) => id.toString())).toEqual(idStrings)
+        expect(result).toEqual([expect.any(Types.ObjectId), expect.any(Types.ObjectId)])
     })
 
-    describe('when the ids are empty', () => {
-        it('returns an empty array', () => {
-            const result = objectIds([])
+    it('returns an empty array for empty ids', () => {
+        const result = objectIds([])
 
-            expect(result).toEqual([])
-        })
+        expect(result).toEqual([])
     })
 
-    describe('when any id is invalid', () => {
-        it('throws an error', () => {
-            const idStrings = ['507f1f77bcf86cd799439011', 'invalid-id']
+    it('throws for an invalid id', () => {
+        const idStrings = ['507f1f77bcf86cd799439011', 'invalid-id']
 
-            expect(() => objectIds(idStrings)).toThrow(
-                'input must be a 24 character hex string, 12 byte Uint8Array, or an integer'
-            )
-        })
+        expect(() => objectIds(idStrings)).toThrow(
+            'input must be a 24 character hex string, 12 byte Uint8Array, or an integer'
+        )
     })
 })
 
@@ -78,139 +68,105 @@ describe('QueryBuilder', () => {
     })
 
     describe('addEqual', () => {
-        describe('when the value is provided', () => {
-            it('adds the condition', () => {
-                builder.addEqual('name', 'test')
-                expect(builder.build({})).toEqual({ name: 'test' })
-            })
+        it('adds the condition for a provided value', () => {
+            builder.addEqual('name', 'test')
+            expect(builder.build({})).toEqual({ name: 'test' })
         })
 
-        describe('when the value is undefined or null', () => {
-            it('does not add the condition', () => {
-                builder.addEqual('name', undefined)
-                builder.addEqual('name', null)
-                expect(builder.build({ allowEmpty: true })).toEqual({})
-            })
+        it('does not add the condition for undefined or null values', () => {
+            builder.addEqual('name', undefined)
+            builder.addEqual('name', null)
+            expect(builder.build({ allowEmpty: true })).toEqual({})
         })
     })
 
     describe('addId', () => {
-        describe('when the id is provided', () => {
-            it('adds the ObjectId condition', () => {
-                const id = new Types.ObjectId().toString()
-                builder.addId('_id', id)
-                expect(builder.build({})).toEqual({ _id: objectId(id) })
-            })
+        it('adds the ObjectId condition for a provided id', () => {
+            const id = new Types.ObjectId().toString()
+            builder.addId('_id', id)
+            expect(builder.build({})).toEqual({ _id: objectId(id) })
         })
 
-        describe('when the id is undefined', () => {
-            it('does not add the condition', () => {
-                builder.addId('_id', undefined)
-                expect(builder.build({ allowEmpty: true })).toEqual({})
-            })
+        it('does not add the condition for an undefined id', () => {
+            builder.addId('_id', undefined)
+            expect(builder.build({ allowEmpty: true })).toEqual({})
         })
     })
 
     describe('addIn', () => {
-        describe('when the ids are provided', () => {
-            it('adds an $in condition', () => {
-                const ids = [new Types.ObjectId().toString(), new Types.ObjectId().toString()]
-                builder.addIn('_id', ids)
-                expect(builder.build({})).toEqual({ _id: { $in: objectIds(ids) } })
-            })
+        it('adds an $in condition for provided ids', () => {
+            const ids = [new Types.ObjectId().toString(), new Types.ObjectId().toString()]
+            builder.addIn('_id', ids)
+            expect(builder.build({})).toEqual({ _id: { $in: objectIds(ids) } })
         })
 
-        describe('when the ids contain duplicates', () => {
-            it('removes duplicates', () => {
-                jest.spyOn(Logger, 'error').mockImplementation(() => {})
+        it('removes duplicates for ids containing duplicates', () => {
+            jest.spyOn(Logger, 'error').mockImplementation(() => {})
 
-                const id = new Types.ObjectId().toString()
-                const ids = [id, new Types.ObjectId().toString(), id]
+            const id = new Types.ObjectId().toString()
+            const ids = [id, new Types.ObjectId().toString(), id]
 
-                builder.addIn('_id', ids)
-                expect(builder.build({})).toEqual({ _id: { $in: objectIds([id, ids[1]]) } })
-            })
+            builder.addIn('_id', ids)
+            expect(builder.build({})).toEqual({ _id: { $in: objectIds([id, ids[1]]) } })
         })
 
-        describe('when the ids are empty or undefined', () => {
-            it('does not add the condition', () => {
-                builder.addIn('_id', [])
-                builder.addIn('_id', undefined)
-                expect(builder.build({ allowEmpty: true })).toEqual({})
-            })
+        it('does not add the condition for empty or undefined ids', () => {
+            builder.addIn('_id', [])
+            builder.addIn('_id', undefined)
+            expect(builder.build({ allowEmpty: true })).toEqual({})
         })
     })
 
     describe('addRegex', () => {
-        describe('when the value is provided', () => {
-            it('adds a regex condition', () => {
-                builder.addRegex('name', 'test')
-                expect(builder.build({})).toEqual({ name: new RegExp('test', 'i') })
-            })
+        it('adds a regex condition for a provided value', () => {
+            builder.addRegex('name', 'test')
+            expect(builder.build({})).toEqual({ name: new RegExp('test', 'i') })
         })
 
-        describe('when the value is undefined', () => {
-            it('does not add the condition', () => {
-                builder.addRegex('name', undefined)
-                expect(builder.build({ allowEmpty: true })).toEqual({})
-            })
+        it('does not add the condition for an undefined value', () => {
+            builder.addRegex('name', undefined)
+            expect(builder.build({ allowEmpty: true })).toEqual({})
         })
     })
 
     describe('addRange', () => {
-        describe('when the start and end are provided', () => {
-            it('adds $gte and $lte conditions', () => {
-                const range = { start: new Date('2023-01-01'), end: new Date('2023-12-31') }
-                builder.addRange('createdAt', range)
-                expect(builder.build({})).toEqual({
-                    createdAt: { $gte: range.start, $lte: range.end }
-                })
-            })
+        it('adds $gte and $lte conditions for start and end', () => {
+            const range = { start: new Date('2023-01-01'), end: new Date('2023-12-31') }
+            builder.addRange('createdAt', range)
+            expect(builder.build({})).toEqual({ createdAt: { $gte: range.start, $lte: range.end } })
         })
 
-        describe('when only the start is provided', () => {
-            it('adds only $gte', () => {
-                const range = { start: new Date('2023-01-01') }
-                builder.addRange('createdAt', range)
-                expect(builder.build({})).toEqual({ createdAt: { $gte: range.start } })
-            })
+        it('adds only $gte when only start is provided', () => {
+            const range = { start: new Date('2023-01-01') }
+            builder.addRange('createdAt', range)
+            expect(builder.build({})).toEqual({ createdAt: { $gte: range.start } })
         })
 
-        describe('when only the end is provided', () => {
-            it('adds only $lte', () => {
-                const range = { end: new Date('2023-12-31') }
-                builder.addRange('createdAt', range)
-                expect(builder.build({})).toEqual({ createdAt: { $lte: range.end } })
-            })
+        it('adds only $lte when only end is provided', () => {
+            const range = { end: new Date('2023-12-31') }
+            builder.addRange('createdAt', range)
+            expect(builder.build({})).toEqual({ createdAt: { $lte: range.end } })
         })
 
-        describe('when the range is undefined or empty', () => {
-            it('does not add the condition', () => {
-                builder.addRange('createdAt', undefined)
-                builder.addRange('createdAt', {})
-                expect(builder.build({ allowEmpty: true })).toEqual({})
-            })
+        it('does not add the condition for an undefined or empty range', () => {
+            builder.addRange('createdAt', undefined)
+            builder.addRange('createdAt', {})
+            expect(builder.build({ allowEmpty: true })).toEqual({})
         })
     })
 
     describe('build', () => {
-        describe('when the conditions exist', () => {
-            it('returns the query object', () => {
-                builder.addEqual('name', 'test')
-                expect(builder.build({})).toEqual({ name: 'test' })
-            })
+        it('returns the query object when conditions exist', () => {
+            builder.addEqual('name', 'test')
+            expect(builder.build({})).toEqual({ name: 'test' })
         })
 
-        describe('when no conditions exist', () => {
-            it('throws BadRequestException', () => {
-                expect(() => builder.build({})).toThrow(BadRequestException)
-            })
+        it('throws BadRequestException when no conditions exist', () => {
+            expect(() => builder.build({})).toThrow(BadRequestException)
         })
 
-        describe('when the `allowEmpty` flag is true', () => {
-            it('allows an empty query', () => {
-                expect(builder.build({ allowEmpty: true })).toEqual({})
-            })
+        it('allows an empty query when `allowEmpty` is true', () => {
+            expect(builder.build({ allowEmpty: true })).toEqual({})
         })
     })
 })

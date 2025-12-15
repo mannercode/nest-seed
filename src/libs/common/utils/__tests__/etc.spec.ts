@@ -164,18 +164,14 @@ describe('pickIds', () => {
 })
 
 describe('validateEmail', () => {
-    describe('when the email is valid', () => {
-        it('returns true', () => {
-            expect(validateEmail('test@example.com')).toBe(true)
-            expect(validateEmail('user.name@domain.co')).toBe(true)
-        })
+    it('returns true for a valid email', () => {
+        expect(validateEmail('test@example.com')).toBe(true)
+        expect(validateEmail('user.name@domain.co')).toBe(true)
     })
 
-    describe('when the email is invalid', () => {
-        it('returns false', () => {
-            expect(validateEmail('plainaddress')).toBe(false)
-            expect(validateEmail('user@domain')).toBe(false)
-        })
+    it('returns false for an invalid email', () => {
+        expect(validateEmail('plainaddress')).toBe(false)
+        expect(validateEmail('user@domain')).toBe(false)
     })
 })
 
@@ -196,7 +192,7 @@ describe('padNumber', () => {
     })
 })
 
-describe('dummy test for coverage', () => {
+it('executes no-op helpers for coverage', () => {
     notUsed()
     comment()
 })

@@ -29,58 +29,50 @@ describe('LatLong', () => {
     })
 
     describe('GET /latLong', () => {
-        describe('when the query is valid', () => {
-            it('returns the latitude and longitude', async () => {
-                await fix.httpClient
-                    .get('/latLong')
-                    .query({ location: '37.123,128.678' })
-                    .ok({ latitude: 37.123, longitude: 128.678 })
-            })
+        it('returns the latitude and longitude for a valid query', async () => {
+            await fix.httpClient
+                .get('/latLong')
+                .query({ location: '37.123,128.678' })
+                .ok({ latitude: 37.123, longitude: 128.678 })
         })
 
-        describe('when the latLong value is missing', () => {
-            it('throws BadRequestException', async () => {
-                await fix.httpClient
-                    .get('/latLong')
-                    .badRequest({
-                        code: 'ERR_LATLONG_REQUIRED',
-                        message: 'The latLong query parameter is required'
-                    })
-            })
+        it('returns 400 Bad Request for a missing location query parameter', async () => {
+            await fix.httpClient
+                .get('/latLong')
+                .badRequest({
+                    code: 'ERR_LATLONG_REQUIRED',
+                    message: 'The latLong query parameter is required'
+                })
         })
 
-        describe('when the latLong format is invalid', () => {
-            it('throws BadRequestException', async () => {
-                await fix.httpClient
-                    .get('/latLong')
-                    .query({ location: '37.123' })
-                    .badRequest({
-                        code: 'ERR_LATLONG_FORMAT_INVALID',
-                        message: 'LatLong should be in the format "latitude,longitude"'
-                    })
-            })
+        it('returns 400 Bad Request for an invalid latLong format', async () => {
+            await fix.httpClient
+                .get('/latLong')
+                .query({ location: '37.123' })
+                .badRequest({
+                    code: 'ERR_LATLONG_FORMAT_INVALID',
+                    message: 'LatLong should be in the format "latitude,longitude"'
+                })
         })
 
-        describe('when the values are out of range', () => {
-            it('throws BadRequestException', async () => {
-                await fix.httpClient
-                    .get('/latLong')
-                    .query({ location: '91,181' })
-                    .badRequest({
-                        code: 'ERR_LATLONG_VALIDATION_FAILED',
-                        details: [
-                            {
-                                constraints: { max: 'latitude must not be greater than 90' },
-                                field: 'latitude'
-                            },
-                            {
-                                constraints: { max: 'longitude must not be greater than 180' },
-                                field: 'longitude'
-                            }
-                        ],
-                        message: 'LatLong validation failed'
-                    })
-            })
+        it('returns 400 Bad Request for out-of-range values', async () => {
+            await fix.httpClient
+                .get('/latLong')
+                .query({ location: '91,181' })
+                .badRequest({
+                    code: 'ERR_LATLONG_VALIDATION_FAILED',
+                    details: [
+                        {
+                            constraints: { max: 'latitude must not be greater than 90' },
+                            field: 'latitude'
+                        },
+                        {
+                            constraints: { max: 'longitude must not be greater than 180' },
+                            field: 'longitude'
+                        }
+                    ],
+                    message: 'LatLong validation failed'
+                })
         })
     })
 })

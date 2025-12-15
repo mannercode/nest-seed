@@ -13,11 +13,9 @@ describe('createTestContext', () => {
         await fix?.teardown()
     })
 
-    describe('when a service is mocked via overrideProviders', () => {
-        it('uses the mocked service', async () => {
-            const message = fix.sampleService.getMessage()
-            expect(message).toEqual({ message: 'This is Mock' })
-        })
+    it('uses the mocked service when the provider is overridden', async () => {
+        const message = fix.sampleService.getMessage()
+        expect(message).toEqual({ message: 'This is Mock' })
     })
 
     it('responds correctly to an RPC message', async () => {

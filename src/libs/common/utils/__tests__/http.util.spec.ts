@@ -2,106 +2,82 @@ import { HttpUtil } from 'common'
 
 describe('HttpUtil', () => {
     describe('buildContentDisposition', () => {
-        describe('when the filename is ASCII', () => {
-            it('returns RFC5987 content-disposition', () => {
-                const filename = 'hello_world-1.0.txt'
-                const contentDisposition = HttpUtil.buildContentDisposition(filename)
+        it('returns RFC5987 content-disposition for an ASCII filename', () => {
+            const filename = 'hello_world-1.0.txt'
+            const contentDisposition = HttpUtil.buildContentDisposition(filename)
 
-                expect(contentDisposition).toEqual(
-                    `attachment; filename="hello_world-1.0.txt"; filename*=UTF-8''hello_world-1.0.txt`
-                )
-            })
+            expect(contentDisposition).toEqual(
+                `attachment; filename="hello_world-1.0.txt"; filename*=UTF-8''hello_world-1.0.txt`
+            )
         })
 
-        describe('when the filename has spaces or special chars', () => {
-            it('applies + and percent-encoding in filename*', () => {
-                const filename = `report (final)'v1*.txt`
-                const contentDisposition = HttpUtil.buildContentDisposition(filename)
+        it('applies + and percent-encoding in filename* for spaces or special chars', () => {
+            const filename = `report (final)'v1*.txt`
+            const contentDisposition = HttpUtil.buildContentDisposition(filename)
 
-                expect(contentDisposition).toEqual(
-                    `attachment; filename="report (final)'v1-.txt"; filename*=UTF-8''report+%28final%29%27v1%2A.txt`
-                )
-            })
+            expect(contentDisposition).toEqual(
+                `attachment; filename="report (final)'v1-.txt"; filename*=UTF-8''report+%28final%29%27v1%2A.txt`
+            )
         })
 
-        describe('when the filename is Korean or Unicode', () => {
-            it('preserves filename* and replaces non-ASCII in fallback', () => {
-                const filename = '한글 파일명(최종).pdf'
-                const contentDisposition = HttpUtil.buildContentDisposition(filename)
+        it('preserves filename* and replaces non-ASCII in fallback for a Unicode filename', () => {
+            const filename = '한글 파일명(최종).pdf'
+            const contentDisposition = HttpUtil.buildContentDisposition(filename)
 
-                expect(contentDisposition).toEqual(
-                    `attachment; filename="__ ___(__).pdf"; filename*=UTF-8''%ED%95%9C%EA%B8%80+%ED%8C%8C%EC%9D%BC%EB%AA%85%28%EC%B5%9C%EC%A2%85%29.pdf`
-                )
-            })
+            expect(contentDisposition).toEqual(
+                `attachment; filename="__ ___(__).pdf"; filename*=UTF-8''%ED%95%9C%EA%B8%80+%ED%8C%8C%EC%9D%BC%EB%AA%85%28%EC%B5%9C%EC%A2%85%29.pdf`
+            )
         })
 
-        describe('when the filename has forbidden characters', () => {
-            it('replaces forbidden characters with "-" in fallback', () => {
-                const filename = 'bad:/\\?%*:|"<>name.txt'
-                const contentDisposition = HttpUtil.buildContentDisposition(filename)
+        it('replaces forbidden characters with "-" in fallback for a filename with forbidden characters', () => {
+            const filename = 'bad:/\\?%*:|"<>name.txt'
+            const contentDisposition = HttpUtil.buildContentDisposition(filename)
 
-                expect(contentDisposition).toEqual(
-                    `attachment; filename="bad-----------name.txt"; filename*=UTF-8''bad%3A%2F%5C%3F%25%2A%3A%7C%22%3C%3Ename.txt`
-                )
-            })
+            expect(contentDisposition).toEqual(
+                `attachment; filename="bad-----------name.txt"; filename*=UTF-8''bad%3A%2F%5C%3F%25%2A%3A%7C%22%3C%3Ename.txt`
+            )
         })
 
-        describe('when the ASCII filename contains spaces', () => {
-            it('uses + for spaces in filename*', () => {
-                const filename = 'my file name.txt'
-                const contentDisposition = HttpUtil.buildContentDisposition(filename)
+        it('uses + for spaces in filename* for an ASCII filename with spaces', () => {
+            const filename = 'my file name.txt'
+            const contentDisposition = HttpUtil.buildContentDisposition(filename)
 
-                expect(contentDisposition).toEqual(
-                    `attachment; filename="my file name.txt"; filename*=UTF-8''my+file+name.txt`
-                )
-            })
+            expect(contentDisposition).toEqual(
+                `attachment; filename="my file name.txt"; filename*=UTF-8''my+file+name.txt`
+            )
         })
 
-        describe('when the filename is empty', () => {
-            it('defaults the fallback filename to "file"', () => {
-                const filename = ''
-                const contentDisposition = HttpUtil.buildContentDisposition(filename)
+        it('defaults the fallback filename to "file" for an empty filename', () => {
+            const filename = ''
+            const contentDisposition = HttpUtil.buildContentDisposition(filename)
 
-                expect(contentDisposition).toEqual(`attachment; filename="file"; filename*=UTF-8''`)
-            })
+            expect(contentDisposition).toEqual(`attachment; filename="file"; filename*=UTF-8''`)
         })
     })
 
     describe('extractContentDisposition', () => {
-        describe('when only a quoted filename exists', () => {
-            it('extracts the quoted filename', () => {
-                const contentDisposition = `attachment; filename="ascii-name.txt"`
-                expect(HttpUtil.extractContentDisposition(contentDisposition)).toBe(
-                    'ascii-name.txt'
-                )
-            })
+        it('extracts the quoted filename when only a quoted filename exists', () => {
+            const contentDisposition = `attachment; filename="ascii-name.txt"`
+            expect(HttpUtil.extractContentDisposition(contentDisposition)).toBe('ascii-name.txt')
         })
 
-        describe('when only a bare filename exists', () => {
-            it('extracts the bare filename', () => {
-                const contentDisposition = `inline; filename=bare-name.csv`
-                expect(HttpUtil.extractContentDisposition(contentDisposition)).toBe('bare-name.csv')
-            })
+        it('extracts the bare filename when only a bare filename exists', () => {
+            const contentDisposition = `inline; filename=bare-name.csv`
+            expect(HttpUtil.extractContentDisposition(contentDisposition)).toBe('bare-name.csv')
         })
 
-        describe('when the header is invalid or missing', () => {
-            it('returns "unknown"', () => {
-                expect(HttpUtil.extractContentDisposition('')).toBe('unknown')
-                expect(HttpUtil.extractContentDisposition('attachment')).toBe('unknown')
-                expect(HttpUtil.extractContentDisposition('inline; foo=bar')).toBe('unknown')
-            })
+        it('returns "unknown" for an invalid or missing header', () => {
+            expect(HttpUtil.extractContentDisposition('')).toBe('unknown')
+            expect(HttpUtil.extractContentDisposition('attachment')).toBe('unknown')
+            expect(HttpUtil.extractContentDisposition('inline; foo=bar')).toBe('unknown')
         })
 
-        describe('when the filename* decoding fails', () => {
-            it('falls back to the quoted or bare value', () => {
-                const badStar = `attachment; filename*=UTF-8''%E0%A4%ZZ; filename="safe-fallback.txt"`
-                expect(HttpUtil.extractContentDisposition(badStar)).toBe('safe-fallback.txt')
+        it('falls back to the quoted or bare value when filename* decoding fails', () => {
+            const badStar = `attachment; filename*=UTF-8''%E0%A4%ZZ; filename="safe-fallback.txt"`
+            expect(HttpUtil.extractContentDisposition(badStar)).toBe('safe-fallback.txt')
 
-                const badStarNoQuoted = `attachment; filename*=UTF-8''%E0%A4%ZZ; filename=bare-fallback.txt`
-                expect(HttpUtil.extractContentDisposition(badStarNoQuoted)).toBe(
-                    'bare-fallback.txt'
-                )
-            })
+            const badStarNoQuoted = `attachment; filename*=UTF-8''%E0%A4%ZZ; filename=bare-fallback.txt`
+            expect(HttpUtil.extractContentDisposition(badStarNoQuoted)).toBe('bare-fallback.txt')
         })
     })
 })

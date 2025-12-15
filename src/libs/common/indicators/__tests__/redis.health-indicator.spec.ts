@@ -14,43 +14,35 @@ describe('RedisHealthIndicator', () => {
     })
 
     describe('isHealthy', () => {
-        describe('when the ping response is "PONG"', () => {
-            it('returns an up status', async () => {
-                const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
-                expect(healthStatus).toEqual({ key: { status: 'up' } })
+        it('returns an up status when the ping response is "PONG"', async () => {
+            const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
+            expect(healthStatus).toEqual({ key: { status: 'up' } })
+        })
+
+        it('returns down status with a reason when the ping response is not "PONG"', async () => {
+            jest.spyOn(fix.redis, 'ping').mockResolvedValueOnce('INVALID_RESPONSE')
+
+            const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
+            expect(healthStatus).toEqual({
+                key: {
+                    status: 'down',
+                    reason: 'Redis ping returned unexpected response: INVALID_RESPONSE'
+                }
             })
         })
 
-        describe('when the ping response is not "PONG"', () => {
-            it('returns down status with a reason', async () => {
-                jest.spyOn(fix.redis, 'ping').mockResolvedValueOnce('INVALID_RESPONSE')
+        it('returns down status with the error message when an exception occurs', async () => {
+            jest.spyOn(fix.redis, 'ping').mockRejectedValueOnce(new Error('error'))
 
-                const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
-                expect(healthStatus).toEqual({
-                    key: {
-                        status: 'down',
-                        reason: 'Redis ping returned unexpected response: INVALID_RESPONSE'
-                    }
-                })
-            })
+            const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
+            expect(healthStatus).toEqual({ key: { status: 'down', reason: 'error' } })
         })
 
-        describe('when an exception occurs', () => {
-            it('returns down status with the error message', async () => {
-                jest.spyOn(fix.redis, 'ping').mockRejectedValueOnce(new Error('error'))
+        it('returns the raw error as the reason when the error has no message', async () => {
+            jest.spyOn(fix.redis, 'ping').mockRejectedValueOnce('unknown error')
 
-                const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
-                expect(healthStatus).toEqual({ key: { status: 'down', reason: 'error' } })
-            })
-        })
-
-        describe('when the error has no message', () => {
-            it('returns the raw error as the reason', async () => {
-                jest.spyOn(fix.redis, 'ping').mockRejectedValueOnce('unknown error')
-
-                const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
-                expect(healthStatus).toEqual({ key: { status: 'down', reason: 'unknown error' } })
-            })
+            const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
+            expect(healthStatus).toEqual({ key: { status: 'down', reason: 'unknown error' } })
         })
     })
 })

@@ -17,12 +17,10 @@ describe('Mongoose Delete', () => {
             await fix?.teardown()
         })
 
-        describe('when the document is newly created', () => {
-            // TODO fix
-            // deletedAt이 null이다
-            it('sets deletedAt to null', async () => {
-                expect(fix.doc).toMatchObject({ deletedAt: null })
-            })
+        // TODO fix
+        // deletedAt이 null이다
+        it('sets deletedAt to null for a new document', async () => {
+            expect(fix.doc).toMatchObject({ deletedAt: null })
         })
 
         it('records deletedAt for deleteOne calls', async () => {

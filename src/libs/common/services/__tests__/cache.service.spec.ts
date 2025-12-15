@@ -20,60 +20,52 @@ describe('CacheService', () => {
             expect(cachedValue).toEqual('value')
         })
 
-        describe('when the TTL is provided', () => {
-            it('expires after the TTL', async () => {
-                const ttl = 1000
-                await fix.cacheService.set('key', 'value', ttl)
+        it('expires after the TTL when a TTL is provided', async () => {
+            const ttl = 1000
+            await fix.cacheService.set('key', 'value', ttl)
 
-                const beforeExpiration = await fix.cacheService.get('key')
-                expect(beforeExpiration).toEqual('value')
+            const beforeExpiration = await fix.cacheService.get('key')
+            expect(beforeExpiration).toEqual('value')
 
-                await sleep(ttl * 1.1)
+            await sleep(ttl * 1.1)
 
-                const afterExpiration = await fix.cacheService.get('key')
-                expect(afterExpiration).toBeNull()
-            })
+            const afterExpiration = await fix.cacheService.get('key')
+            expect(afterExpiration).toBeNull()
         })
 
-        describe('when the TTL is 0', () => {
-            it('does not expire', async () => {
-                const ttl = 0
-                await fix.cacheService.set('key', 'value', ttl)
+        it('does not expire when the TTL is 0', async () => {
+            const ttl = 0
+            await fix.cacheService.set('key', 'value', ttl)
 
-                const beforeExpiration = await fix.cacheService.get('key')
-                expect(beforeExpiration).toEqual('value')
+            const beforeExpiration = await fix.cacheService.get('key')
+            expect(beforeExpiration).toEqual('value')
 
-                await sleep(1000)
+            await sleep(1000)
 
-                const afterExpiration = await fix.cacheService.get('key')
-                expect(afterExpiration).toEqual('value')
-            })
+            const afterExpiration = await fix.cacheService.get('key')
+            expect(afterExpiration).toEqual('value')
         })
 
-        describe('when the TTL is negative', () => {
-            it('throws an error', async () => {
-                const wrongTTL = -100
+        it('throws for a negative TTL', async () => {
+            const wrongTTL = -100
 
-                await expect(fix.cacheService.set('key', 'value', wrongTTL)).rejects.toThrow(
-                    'TTL must be a non-negative integer (0 for no expiration)'
-                )
-            })
+            await expect(fix.cacheService.set('key', 'value', wrongTTL)).rejects.toThrow(
+                'TTL must be a non-negative integer (0 for no expiration)'
+            )
         })
     })
 
     describe('delete', () => {
-        describe('when the key exists', () => {
-            it('deletes the cached value', async () => {
-                await fix.cacheService.set('key', 'value')
+        it('deletes the cached value for an existing key', async () => {
+            await fix.cacheService.set('key', 'value')
 
-                const beforeDelete = await fix.cacheService.get('key')
-                expect(beforeDelete).toEqual('value')
+            const beforeDelete = await fix.cacheService.get('key')
+            expect(beforeDelete).toEqual('value')
 
-                await fix.cacheService.delete('key')
+            await fix.cacheService.delete('key')
 
-                const afterDelete = await fix.cacheService.get('key')
-                expect(afterDelete).toBeNull()
-            })
+            const afterDelete = await fix.cacheService.get('key')
+            expect(afterDelete).toBeNull()
         })
     })
 

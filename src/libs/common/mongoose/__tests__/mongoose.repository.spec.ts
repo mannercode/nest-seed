@@ -27,23 +27,19 @@ describe('MongooseRepository', () => {
     })
 
     describe('save', () => {
-        describe('when creating a new document', () => {
-            it('creates the document', async () => {
-                const newDoc = fix.repository.newDocument()
-                newDoc.name = 'document name'
-                await newDoc.save()
+        it('creates the document', async () => {
+            const newDoc = fix.repository.newDocument()
+            newDoc.name = 'document name'
+            await newDoc.save()
 
-                const foundDoc = await fix.repository.findById(newDoc.id)
-                expect(toDto(foundDoc!)).toEqual(toDto(newDoc))
-            })
+            const foundDoc = await fix.repository.findById(newDoc.id)
+            expect(toDto(foundDoc!)).toEqual(toDto(newDoc))
         })
 
-        describe('when the required fields are missing', () => {
-            it('throws an error', async () => {
-                const doc = fix.repository.newDocument()
-                const promise = doc.save()
-                await expect(promise).rejects.toThrow()
-            })
+        it('throws for missing required fields', async () => {
+            const doc = fix.repository.newDocument()
+            const promise = doc.save()
+            await expect(promise).rejects.toThrow()
         })
     })
 
@@ -62,32 +58,28 @@ describe('MongooseRepository', () => {
     })
 
     describe('saveMany', () => {
-        describe('when creating multiple documents', () => {
-            it('creates all documents', async () => {
-                const docs = [
-                    { name: 'document-1' },
-                    { name: 'document-2' },
-                    { name: 'document-2' }
-                ].map((data) => {
-                    const doc = fix.repository.newDocument()
-                    doc.name = data.name
-                    return doc
-                })
-
-                const saveSucceeded = await fix.repository.saveMany(docs)
-
-                expect(saveSucceeded).toBe(true)
+        it('creates all documents', async () => {
+            const docs = [
+                { name: 'document-1' },
+                { name: 'document-2' },
+                { name: 'document-2' }
+            ].map((data) => {
+                const doc = fix.repository.newDocument()
+                doc.name = data.name
+                return doc
             })
+
+            const saveSucceeded = await fix.repository.saveMany(docs)
+
+            expect(saveSucceeded).toBe(true)
         })
 
-        describe('when any document is missing required fields', () => {
-            it('throws an error', async () => {
-                const docs = [fix.repository.newDocument(), fix.repository.newDocument()]
+        it('throws for missing required fields', async () => {
+            const docs = [fix.repository.newDocument(), fix.repository.newDocument()]
 
-                const promise = fix.repository.saveMany(docs)
+            const promise = fix.repository.saveMany(docs)
 
-                await expect(promise).rejects.toThrow()
-            })
+            await expect(promise).rejects.toThrow()
         })
     })
 
@@ -101,104 +93,86 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
-        describe('when paginating results', () => {
-            it('returns items with correct pagination', async () => {
-                const skip = 10
-                const take = 5
-                const { items, ...pagination } = await fix.repository.findWithPagination({
-                    pagination: {
-                        skip,
-                        take,
-                        orderby: { name: 'name', direction: OrderDirection.Asc }
-                    }
-                })
-
-                sortByName(samples)
-                expect(samples.slice(skip, skip + take)).toEqual(toDtos(items))
-                expect(pagination).toEqual({ total: samples.length, skip, take })
+        it('returns items with correct pagination', async () => {
+            const skip = 10
+            const take = 5
+            const { items, ...pagination } = await fix.repository.findWithPagination({
+                pagination: { skip, take, orderby: { name: 'name', direction: OrderDirection.Asc } }
             })
+
+            sortByName(samples)
+            expect(samples.slice(skip, skip + take)).toEqual(toDtos(items))
+            expect(pagination).toEqual({ total: samples.length, skip, take })
         })
 
-        describe('when sorting in ascending order', () => {
-            it('sorts in ascending order', async () => {
-                const { items } = await fix.repository.findWithPagination({
-                    pagination: {
-                        take: samples.length,
-                        orderby: { name: 'name', direction: OrderDirection.Asc }
-                    }
-                })
-
-                sortByName(samples)
-                expect(toDtos(items)).toEqual(samples)
+        it('sorts in ascending order', async () => {
+            const { items } = await fix.repository.findWithPagination({
+                pagination: {
+                    take: samples.length,
+                    orderby: { name: 'name', direction: OrderDirection.Asc }
+                }
             })
+
+            sortByName(samples)
+            expect(toDtos(items)).toEqual(samples)
         })
 
-        describe('when sorting in descending order', () => {
-            it('sorts in descending order', async () => {
-                const { items } = await fix.repository.findWithPagination({
-                    pagination: {
-                        take: samples.length,
-                        orderby: { name: 'name', direction: OrderDirection.Desc }
-                    }
-                })
-
-                sortByNameDescending(samples)
-                expect(toDtos(items)).toEqual(samples)
+        it('sorts in descending order', async () => {
+            const { items } = await fix.repository.findWithPagination({
+                pagination: {
+                    take: samples.length,
+                    orderby: { name: 'name', direction: OrderDirection.Desc }
+                }
             })
+
+            sortByNameDescending(samples)
+            expect(toDtos(items)).toEqual(samples)
         })
 
-        describe('when the take value is not positive', () => {
-            it('throws an error', async () => {
-                const promise = fix.repository.findWithPagination({ pagination: { take: -1 } })
+        it('throws for a non-positive take value', async () => {
+            const promise = fix.repository.findWithPagination({ pagination: { take: -1 } })
 
-                await expect(promise).rejects.toThrow(fix.BadRequestException)
-            })
+            await expect(promise).rejects.toThrow(fix.BadRequestException)
         })
 
-        describe('when the take value exceeds the limit', () => {
-            it('throws BadRequestException', async () => {
-                const take = maxTake + 1
+        it('throws BadRequestException for take above the limit', async () => {
+            const take = maxTake + 1
 
-                const promise = fix.repository.findWithPagination({ pagination: { take } })
+            const promise = fix.repository.findWithPagination({ pagination: { take } })
 
-                await expect(promise).rejects.toThrow(fix.BadRequestException)
-            })
+            await expect(promise).rejects.toThrow(fix.BadRequestException)
         })
 
-        describe('when the take value is not specified', () => {
-            it('uses the default take value', async () => {
-                const { take } = await fix.repository.findWithPagination({
-                    pagination: { orderby: { name: 'name', direction: OrderDirection.Desc } }
-                })
-
-                expect(take).toEqual(maxTake)
+        it('uses the default take value when take is not specified', async () => {
+            const { take } = await fix.repository.findWithPagination({
+                pagination: { orderby: { name: 'name', direction: OrderDirection.Desc } }
             })
+
+            expect(take).toEqual(maxTake)
         })
 
-        describe('when the QueryHelper configures conditions', () => {
-            it('applies the configured conditions', async () => {
-                const { items } = await fix.repository.findWithPagination({
-                    configureQuery: (queryHelper) => {
-                        queryHelper.setQuery({ name: /Sample-00/i })
-                    },
-                    pagination: { take: 10 }
-                })
-
-                const sorted = sortByName(toDtos(items))
-
-                expect(pickItems(sorted, 'name')).toEqual([
-                    'Sample-000',
-                    'Sample-001',
-                    'Sample-002',
-                    'Sample-003',
-                    'Sample-004',
-                    'Sample-005',
-                    'Sample-006',
-                    'Sample-007',
-                    'Sample-008',
-                    'Sample-009'
-                ])
+        it('applies configured conditions', async () => {
+            const { items } = await fix.repository.findWithPagination({
+                configureQuery: (queryHelper) => {
+                    queryHelper.setQuery({ name: /Sample-00/i })
+                },
+                pagination: { take: 10 }
             })
+
+            const sorted = sortByName(toDtos(items))
+
+            expect(pickItems(sorted, 'name')).toEqual([
+                'Sample-000',
+                'Sample-001',
+                'Sample-002',
+                'Sample-003',
+                'Sample-004',
+                'Sample-005',
+                'Sample-006',
+                'Sample-007',
+                'Sample-008',
+                'Sample-009'
+            ])
         })
     })
 
@@ -210,18 +184,14 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
-        describe('when all ids exist', () => {
-            it('returns true', async () => {
-                const exists = await fix.repository.allExistByIds(pickIds(samples))
-                expect(exists).toBe(true)
-            })
+        it('returns true when all ids exist', async () => {
+            const exists = await fix.repository.allExistByIds(pickIds(samples))
+            expect(exists).toBe(true)
         })
 
-        describe('when any id does not exist', () => {
-            it('returns false', async () => {
-                const exists = await fix.repository.allExistByIds([nullObjectId])
-                expect(exists).toBe(false)
-            })
+        it('returns false when any id is missing', async () => {
+            const exists = await fix.repository.allExistByIds([nullObjectId])
+            expect(exists).toBe(false)
         })
     })
 
@@ -233,20 +203,16 @@ describe('MongooseRepository', () => {
             sample = toDto(doc)
         })
 
-        describe('when the id exists', () => {
-            it('returns the document', async () => {
-                const doc = await fix.repository.findById(sample.id)
+        it('returns the document for an existing id', async () => {
+            const doc = await fix.repository.findById(sample.id)
 
-                expect(toDto(doc!)).toEqual(sample)
-            })
+            expect(toDto(doc!)).toEqual(sample)
         })
 
-        describe('when the id does not exist', () => {
-            it('returns null', async () => {
-                const doc = await fix.repository.findById(nullObjectId)
+        it('returns null for a missing id', async () => {
+            const doc = await fix.repository.findById(nullObjectId)
 
-                expect(doc).toBeNull()
-            })
+            expect(doc).toBeNull()
         })
     })
 
@@ -258,20 +224,16 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
-        describe('when the ids exist', () => {
-            it('returns the documents', async () => {
-                const ids = pickIds(samples)
-                const docs = await fix.repository.findByIds(ids)
+        it('returns the documents for existing ids', async () => {
+            const ids = pickIds(samples)
+            const docs = await fix.repository.findByIds(ids)
 
-                expectEqualUnsorted(toDtos(docs), samples)
-            })
+            expectEqualUnsorted(toDtos(docs), samples)
         })
 
-        describe('when the ids include missing documents', () => {
-            it('ignores missing ids', async () => {
-                const docs = await fix.repository.findByIds([nullObjectId])
-                expect(docs).toHaveLength(0)
-            })
+        it('ignores missing ids', async () => {
+            const docs = await fix.repository.findByIds([nullObjectId])
+            expect(docs).toHaveLength(0)
         })
     })
 
@@ -283,20 +245,16 @@ describe('MongooseRepository', () => {
             sample = toDto(doc)
         })
 
-        describe('when the id exists', () => {
-            it('returns the document', async () => {
-                const doc = await fix.repository.getById(sample.id)
+        it('returns the document for an existing id', async () => {
+            const doc = await fix.repository.getById(sample.id)
 
-                expect(toDto(doc)).toEqual(sample)
-            })
+            expect(toDto(doc)).toEqual(sample)
         })
 
-        describe('when the id does not exist', () => {
-            it('throws NotFoundException', async () => {
-                const promise = fix.repository.getById(nullObjectId)
+        it('throws NotFoundException for a missing id', async () => {
+            const promise = fix.repository.getById(nullObjectId)
 
-                await expect(promise).rejects.toThrow(fix.NotFoundException)
-            })
+            await expect(promise).rejects.toThrow(fix.NotFoundException)
         })
     })
 
@@ -308,21 +266,17 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
-        describe('when all ids exist', () => {
-            it('returns the documents', async () => {
-                const ids = pickIds(samples)
-                const docs = await fix.repository.getByIds(ids)
+        it('returns the documents when all ids exist', async () => {
+            const ids = pickIds(samples)
+            const docs = await fix.repository.getByIds(ids)
 
-                expectEqualUnsorted(toDtos(docs), samples)
-            })
+            expectEqualUnsorted(toDtos(docs), samples)
         })
 
-        describe('when any id is missing', () => {
-            it('throws NotFoundException', async () => {
-                const promise = fix.repository.getByIds([nullObjectId])
+        it('throws NotFoundException when any id is missing', async () => {
+            const promise = fix.repository.getByIds([nullObjectId])
 
-                await expect(promise).rejects.toThrow(fix.NotFoundException)
-            })
+            await expect(promise).rejects.toThrow(fix.NotFoundException)
         })
     })
 
@@ -334,21 +288,17 @@ describe('MongooseRepository', () => {
             sample = toDto(doc)
         })
 
-        describe('when the id exists', () => {
-            it('deletes the document', async () => {
-                await fix.repository.deleteById(sample.id)
-                const doc = await fix.repository.findById(sample.id)
+        it('deletes the document for an existing id', async () => {
+            await fix.repository.deleteById(sample.id)
+            const doc = await fix.repository.findById(sample.id)
 
-                expect(doc).toBeNull()
-            })
+            expect(doc).toBeNull()
         })
 
-        describe('when the id does not exist', () => {
-            it('throws NotFoundException', async () => {
-                const promise = fix.repository.deleteById(nullObjectId)
+        it('throws NotFoundException for a missing id', async () => {
+            const promise = fix.repository.deleteById(nullObjectId)
 
-                await expect(promise).rejects.toThrow(fix.NotFoundException)
-            })
+            await expect(promise).rejects.toThrow(fix.NotFoundException)
         })
     })
 
@@ -360,30 +310,26 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
-        describe('when all ids exist', () => {
-            it('deletes the documents', async () => {
-                const samplesToDelete = samples.slice(5, 10)
-                const ids = pickIds(samplesToDelete)
+        it('deletes the documents when all ids exist', async () => {
+            const samplesToDelete = samples.slice(5, 10)
+            const ids = pickIds(samplesToDelete)
 
-                const deletedDocs = await fix.repository.deleteByIds(ids)
-                expect(toDtos(deletedDocs)).toEqual(samplesToDelete)
+            const deletedDocs = await fix.repository.deleteByIds(ids)
+            expect(toDtos(deletedDocs)).toEqual(samplesToDelete)
 
-                const docs = await fix.repository.findByIds(ids)
-                expect(docs).toHaveLength(0)
-            })
+            const docs = await fix.repository.findByIds(ids)
+            expect(docs).toHaveLength(0)
         })
 
-        describe('when any id is missing', () => {
-            it('throws NotFoundException', async () => {
-                const promise = fix.repository.deleteByIds([nullObjectId])
+        it('throws NotFoundException when any id is missing', async () => {
+            const promise = fix.repository.deleteByIds([nullObjectId])
 
-                const error = await promise.catch((e) => e)
+            const error = await promise.catch((e) => e)
 
-                expect(error).toBeInstanceOf(fix.NotFoundException)
-                expect(error.response).toEqual({
-                    ...MongooseErrors.MultipleDocumentsNotFound,
-                    notFoundIds: [nullObjectId]
-                })
+            expect(error).toBeInstanceOf(fix.NotFoundException)
+            expect(error.response).toEqual({
+                ...MongooseErrors.MultipleDocumentsNotFound,
+                notFoundIds: [nullObjectId]
             })
         })
     })

@@ -1,5 +1,5 @@
 describe('jest.expect examples', () => {
-    it('toBe vs toEqual', () => {
+    it('compares values with toBe vs toEqual', () => {
         /**
          * toEqual
          *   For objects or arrays, each property or element is compared recursively.
@@ -29,7 +29,7 @@ describe('jest.expect examples', () => {
         expect(firstArray).not.toBe(secondArray)
     })
 
-    it('compare array of objects', () => {
+    it('compares an array of objects', () => {
         const actualObjects = [
             { id: 1, name: 'A' },
             { id: 2, name: 'B' }
@@ -42,7 +42,7 @@ describe('jest.expect examples', () => {
         expect(actualObjects).toEqual(expect.arrayContaining(expectedObjects))
     })
 
-    it('compare partial array of objects', () => {
+    it('compares a partial array of objects', () => {
         const fullObjects = [
             { id: 1, name: 'A', extra: 'info' },
             { id: 2, name: 'B', extra: 'data' }

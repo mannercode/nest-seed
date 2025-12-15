@@ -52,30 +52,26 @@ describe('S3ObjectService', () => {
                 expect(response.ok).toBe(true)
             })
 
-            describe('when the `contentType` mismatches', () => {
-                it('fails to upload', async () => {
-                    const response = await fetch(uploadUrl, {
-                        method: 'PUT',
-                        headers: [['content-type', 'image/png']],
-                        body: uploadBody
-                    })
-
-                    expect(response.ok).toBe(false)
+            it('fails to upload when the `contentType` mismatches', async () => {
+                const response = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    headers: [['content-type', 'image/png']],
+                    body: uploadBody
                 })
+
+                expect(response.ok).toBe(false)
             })
 
-            describe('when the `contentLength` mismatches', () => {
-                it('fails to upload', async () => {
-                    const mismatchedBody = Buffer.from('mismatched length')
+            it('fails to upload when the `contentLength` mismatches', async () => {
+                const mismatchedBody = Buffer.from('mismatched length')
 
-                    const response = await fetch(uploadUrl, {
-                        method: 'PUT',
-                        headers: [['content-type', 'text/plain']],
-                        body: mismatchedBody
-                    })
-
-                    expect(response.ok).toBe(false)
+                const response = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    headers: [['content-type', 'text/plain']],
+                    body: mismatchedBody
                 })
+
+                expect(response.ok).toBe(false)
             })
         })
     })
@@ -108,30 +104,26 @@ describe('S3ObjectService', () => {
             })
         })
 
-        describe('when the object does not exist', () => {
-            it('returns 404 Not Found for download requests', async () => {
-                const downloadUrl = await fix.s3Service.presignDownloadUrl({
-                    key: 'not-exists',
-                    expiresInSec: 60
-                })
-
-                const response = await fetch(downloadUrl)
-                expect(response.status).toBe(404)
+        it('returns 404 Not Found for download requests when the object does not exist', async () => {
+            const downloadUrl = await fix.s3Service.presignDownloadUrl({
+                key: 'not-exists',
+                expiresInSec: 60
             })
+
+            const response = await fetch(downloadUrl)
+            expect(response.status).toBe(404)
         })
     })
 
     describe('putObject', () => {
-        describe('when the payload is valid', () => {
-            it('returns a fileId', async () => {
-                const { key } = await fix.s3Service.putObject({
-                    data: testBuffer,
-                    filename: 'file.txt',
-                    contentType: 'text/plain'
-                })
-
-                expect(key).toEqual(expect.any(String))
+        it('returns a key for a valid payload', async () => {
+            const { key } = await fix.s3Service.putObject({
+                data: testBuffer,
+                filename: 'file.txt',
+                contentType: 'text/plain'
             })
+
+            expect(key).toEqual(expect.any(String))
         })
     })
 
@@ -152,11 +144,9 @@ describe('S3ObjectService', () => {
             })
         })
 
-        describe('when the object does not exist', () => {
-            it('rejects with NoSuchKey when the object does not exist', async () => {
-                const promise = fix.s3Service.getObject('not-exists')
-                await expect(promise).rejects.toHaveProperty('name', 'NoSuchKey')
-            })
+        it('throws NoSuchKey for a non-existent object', async () => {
+            const promise = fix.s3Service.getObject('not-exists')
+            await expect(promise).rejects.toHaveProperty('name', 'NoSuchKey')
         })
     })
 
@@ -175,13 +165,11 @@ describe('S3ObjectService', () => {
             })
         })
 
-        describe('when the object does not exist', () => {
-            it('returns a no-content status even if the object does not exist', async () => {
-                const key = 'not-exist-key'
-                const result = await fix.s3Service.deleteObject(key)
+        it('returns a no-content status and the key even when the object does not exist', async () => {
+            const key = 'not-exist-key'
+            const result = await fix.s3Service.deleteObject(key)
 
-                expect(result).toEqual({ status: HttpStatus.NO_CONTENT, deletedObject: key })
-            })
+            expect(result).toEqual({ status: HttpStatus.NO_CONTENT, deletedObject: key })
         })
     })
 
@@ -192,12 +180,10 @@ describe('S3ObjectService', () => {
             await Promise.all(keys.map((key) => uploadObject(fix.s3Service, key, 'upload body')))
         })
 
-        describe('when the query parameters are missing', () => {
-            it('lists all objects', async () => {
-                const { contents } = await fix.s3Service.listObjects({})
+        it('lists all objects when query parameters are missing', async () => {
+            const { contents } = await fix.s3Service.listObjects({})
 
-                expect(contents).toHaveLength(keys.length)
-            })
+            expect(contents).toHaveLength(keys.length)
         })
 
         describe('when the `prefix` is provided', () => {
@@ -216,13 +202,11 @@ describe('S3ObjectService', () => {
             })
         })
 
-        describe('when the `maxKeys` is provided', () => {
-            it('returns at most `maxKeys` objects', async () => {
-                const maxKeys = 2
-                const { contents } = await fix.s3Service.listObjects({ maxKeys })
+        it('returns at most `maxKeys` objects when `maxKeys` is provided', async () => {
+            const maxKeys = 2
+            const { contents } = await fix.s3Service.listObjects({ maxKeys })
 
-                expect(contents).toHaveLength(maxKeys)
-            })
+            expect(contents).toHaveLength(maxKeys)
         })
 
         describe('when the `nextToken` is provided', () => {
