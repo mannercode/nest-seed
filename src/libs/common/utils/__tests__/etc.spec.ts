@@ -180,7 +180,7 @@ describe('validateEmail', () => {
 })
 
 describe('padNumber', () => {
-    test("returns '005' when padding 5 to length 3", () => {
+    it("returns '005' when padding 5 to length 3", () => {
         const result = padNumber(5, 3)
         expect(result).toEqual('005')
     })
