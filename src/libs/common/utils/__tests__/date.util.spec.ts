@@ -48,10 +48,18 @@ describe('DateUtil', () => {
         })
     })
 
-    // TODO faketimer 사용해서 테스트
     describe('now', () => {
+        beforeEach(() => {
+            jest.useFakeTimers()
+            jest.setSystemTime(new Date('2000-12-31T23:59:59.999Z'))
+        })
+
+        afterEach(() => {
+            jest.useRealTimers()
+        })
+
         it('returns the current date', () => {
-            expect(DateUtil.now()).toBeDefined()
+            expect(DateUtil.now()).toEqual(new Date('2000-12-31T23:59:59.999Z'))
         })
     })
 
