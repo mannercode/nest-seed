@@ -37,7 +37,7 @@ export async function createS3ObjectServiceFixture() {
 
     const s3Service = module.get(S3ObjectService.getServiceName())
 
-    async function teardown() {
+    const teardown = async () => {
         await close()
     }
 

@@ -22,7 +22,7 @@ export async function createCacheServiceFixture() {
     const cacheService = module.get(CacheService.getServiceName())
     const redis = module.get(getRedisConnectionToken('name'))
 
-    async function teardown() {
+    const teardown = async () => {
         await close()
         await redis.quit()
     }

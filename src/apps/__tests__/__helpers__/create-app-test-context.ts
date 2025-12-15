@@ -51,7 +51,7 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
         ...metadata
     })
 
-    async function teardown() {
+    const teardown = async () => {
         await ctx.close()
 
         const redis = ctx.module.get(RedisConfigModule.moduleName)

@@ -36,7 +36,7 @@ export async function createScheduleModuleFixture(): Promise<ScheduleModuleFixtu
     const scheduler = module.get(SchedulerRegistry)
     const sampleJobService = module.get(SampleJobService)
 
-    async function teardown() {
+    const teardown = async () => {
         await close()
     }
 

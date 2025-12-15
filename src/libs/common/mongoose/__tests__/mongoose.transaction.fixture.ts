@@ -36,7 +36,7 @@ export async function createMongooseTransactionFixture() {
 
     const repository = module.get(SamplesRepository)
     const model = module.get(getModelToken(Sample.name))
-    async function teardown() {
+    const teardown = async () => {
         await close()
     }
 

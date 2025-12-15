@@ -31,7 +31,7 @@ export async function createMongooseDeleteFixture<T>(cls: Type<T>) {
 
     const model = module.get<Model<HardDeleteSample | SoftDeleteSample>>(getModelToken('schema'))
 
-    async function teardown() {
+    const teardown = async () => {
         await close()
     }
 

@@ -39,7 +39,7 @@ export async function createJwtAuthServiceFixture() {
     const jwtService = module.get(JwtAuthService.getServiceName())
     const redis = module.get(getRedisConnectionToken())
 
-    async function teardown() {
+    const teardown = async () => {
         await close()
         await redis.quit()
     }

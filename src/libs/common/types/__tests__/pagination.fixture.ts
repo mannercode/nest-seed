@@ -64,7 +64,7 @@ export async function createPaginationFixture() {
 
     const rpcClient = RpcTestClient.create(brokerOpts)
 
-    async function teardown() {
+    const teardown = async () => {
         await rpcClient.close()
         await ctx.close()
     }

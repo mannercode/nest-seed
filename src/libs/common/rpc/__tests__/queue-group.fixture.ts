@@ -51,7 +51,7 @@ export async function createQueueGroupFixture() {
 
     const rpcClient = RpcTestClient.create(brokerOptions)
 
-    async function teardown() {
+    const teardown = async () => {
         await rpcClient.close()
         await Promise.all(ctxs.map(async (ctx) => ctx.close()))
     }

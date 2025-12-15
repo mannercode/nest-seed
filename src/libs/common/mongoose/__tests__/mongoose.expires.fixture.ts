@@ -27,7 +27,7 @@ export async function createMongooseExpiresFixture() {
     const model = module.get<Model<ExpireSample>>(getModelToken('schema'))
     await model.syncIndexes()
 
-    async function teardown() {
+    const teardown = async () => {
         await close()
     }
 

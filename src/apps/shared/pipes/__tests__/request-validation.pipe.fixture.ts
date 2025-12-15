@@ -41,7 +41,7 @@ export async function createRequestValidationPipeFixture() {
         providers: [{ provide: APP_PIPE, useClass: RequestValidationPipe }]
     })
 
-    async function teardown() {
+    const teardown = async () => {
         await ctx?.close()
     }
 

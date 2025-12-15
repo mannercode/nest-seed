@@ -65,7 +65,7 @@ export async function createTestContextFixture(): Promise<TestContextFixture> {
     const rpcClient = RpcTestClient.create(brokerOpts)
     const sampleService = ctx.module.get(SampleService)
 
-    async function teardown() {
+    const teardown = async () => {
         await rpcClient.close()
         await ctx.close()
     }

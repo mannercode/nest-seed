@@ -19,7 +19,7 @@ export async function createAssetsFixture() {
 
     const file = fixtureFiles.small
 
-    async function teardown() {
+    const teardown = async () => {
         await ctx.teardown()
     }
 

@@ -81,7 +81,7 @@ export async function createMongooseRepositoryFixture() {
 
     const repository = module.get(SamplesRepository)
 
-    async function teardown() {
+    const teardown = async () => {
         await close()
     }
 

@@ -28,7 +28,7 @@ export async function createMovieDraftsFixture() {
     const movieDraftsRepository = ctx.module.get(MovieDraftsRepository)
     const tempDir = await Path.createTempDirectory()
 
-    async function teardown() {
+    const teardown = async () => {
         await ctx.teardown()
         await Path.delete(tempDir)
     }

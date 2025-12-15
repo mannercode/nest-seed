@@ -19,7 +19,7 @@ export async function createRedisHealthIndicatorFixture() {
     const redisIndicator = module.get(RedisHealthIndicator)
     const redis = module.get(getRedisConnectionToken())
 
-    async function teardown() {
+    const teardown = async () => {
         await close()
         await redis.quit()
     }

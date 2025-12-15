@@ -65,7 +65,7 @@ export async function createSuccessLoggingInterceptorFixture(providers: Provider
 
     const rpcClient = RpcTestClient.create(brokerOptions)
 
-    async function teardown() {
+    const teardown = async () => {
         await rpcClient.close()
         await ctx.close()
     }

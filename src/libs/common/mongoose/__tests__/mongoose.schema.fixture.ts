@@ -95,7 +95,7 @@ export async function createMongooseSchemaFixture() {
 
     const model = module.get<Model<SchemaTypeSample>>(getModelToken('schema'))
 
-    async function teardown() {
+    const teardown = async () => {
         await close()
     }
 

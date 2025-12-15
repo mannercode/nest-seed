@@ -34,7 +34,7 @@ export async function createBaseConfigServiceFixture() {
 
     const appConfigService = module.get(AppConfigService)
 
-    async function teardown() {
+    const teardown = async () => {
         await close()
     }
 

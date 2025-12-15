@@ -45,7 +45,7 @@ export async function createClientProxyWithNameFixture() {
         }
     })
 
-    async function teardown() {
+    const teardown = async () => {
         await ctx.close()
     }
 
