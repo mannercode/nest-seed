@@ -18,7 +18,7 @@ describe('TicketHoldingService', () => {
 
     describe('holdTickets', () => {
         it('returns true when the ticketIds are not held', async () => {
-            const holdDto = buildHoldTicketsDto({ customerId: oid(0x01) })
+            const holdDto = buildHoldTicketsDto()
 
             const isHeld = await fix.ticketHoldingService.holdTickets(holdDto)
 
