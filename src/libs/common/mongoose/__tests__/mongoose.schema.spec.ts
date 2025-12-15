@@ -1,7 +1,7 @@
 import { Types } from 'mongoose'
 import type { MongooseSchemaFixture } from './mongoose.schema.fixture'
 
-describe('Mongoose Schema Examples', () => {
+describe('Mongoose schema types', () => {
     let fix: MongooseSchemaFixture
 
     beforeEach(async () => {

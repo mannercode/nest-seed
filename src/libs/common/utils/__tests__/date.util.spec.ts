@@ -30,19 +30,19 @@ describe('DateUtil', () => {
         })
     })
 
-    describe('earliest/latest', () => {
+    describe('earliest and latest', () => {
         const dates = [
             new Date('2022-01-01T12:00:00Z'),
             new Date('2022-01-03T15:30:00Z'),
             new Date('2022-01-02T09:20:00Z')
         ]
 
-        it('finds the earliest date from an array', () => {
+        it('returns the earliest date in an array', () => {
             const date = DateUtil.earliest(dates)
             expect(date).toEqual(new Date('2022-01-01T12:00:00Z'))
         })
 
-        it('finds the latest date from an array', () => {
+        it('returns the latest date in an array', () => {
             const date = DateUtil.latest(dates)
             expect(date).toEqual(new Date('2022-01-03T15:30:00Z'))
         })
@@ -50,7 +50,7 @@ describe('DateUtil', () => {
 
     // TODO faketimer 사용해서 테스트
     describe('now', () => {
-        it('returns now', () => {
+        it('returns the current date', () => {
             expect(DateUtil.now()).toBeDefined()
         })
     })

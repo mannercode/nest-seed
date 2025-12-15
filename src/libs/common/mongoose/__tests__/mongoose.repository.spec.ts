@@ -156,7 +156,7 @@ describe('MongooseRepository', () => {
         })
 
         describe('when the take value exceeds the limit', () => {
-            it('throws a BadRequest', async () => {
+            it('throws BadRequestException', async () => {
                 const take = maxTake + 1
 
                 const promise = fix.repository.findWithPagination({ pagination: { take } })

@@ -1,9 +1,9 @@
 import { getCounter, incrementCounter } from './reset-options.fixture'
 
-describe('Verify Jest reset options', () => {
-    describe('resetModules: true', () => {
-        describe('with static import', () => {
-            it('increments counter in the first test', () => {
+describe('Jest reset options', () => {
+    describe('when resetModules is enabled', () => {
+        describe('when importing statically', () => {
+            it('increments the counter', () => {
                 expect(getCounter()).toBe(0)
                 incrementCounter()
                 expect(getCounter()).toBe(1)
@@ -14,15 +14,15 @@ describe('Verify Jest reset options', () => {
             })
         })
 
-        describe('with dynamic import', () => {
-            it('increments counter within the same test', async () => {
+        describe('when importing dynamically', () => {
+            it('increments the counter', async () => {
                 const { getCounter, incrementCounter } = await import('./reset-options.fixture')
                 expect(getCounter()).toBe(0)
                 incrementCounter()
                 expect(getCounter()).toBe(1)
             })
 
-            it('starts with fresh counter (0) in subsequent test because cache is cleared', async () => {
+            it('starts with a fresh counter in the next test', async () => {
                 const { getCounter } = await import('./reset-options.fixture')
 
                 expect(getCounter()).toBe(0)
@@ -32,24 +32,24 @@ describe('Verify Jest reset options', () => {
 
     const sharedMock = jest.fn()
 
-    describe('resetMocks: true', () => {
-        it('records calls in the first test', () => {
+    describe('when resetMocks is enabled', () => {
+        it('records mock calls', () => {
             sharedMock('first')
             expect(sharedMock).toHaveBeenCalledTimes(1)
         })
 
-        it('resets mock call counts before the next test', () => {
+        it('resets mock call counts between tests', () => {
             expect(sharedMock).toHaveBeenCalledTimes(0)
         })
     })
 
-    describe('restoreMocks: true', () => {
-        it('overrides Date.now in the first test', () => {
+    describe('when restoreMocks is enabled', () => {
+        it('overrides Date.now', () => {
             jest.spyOn(Date, 'now').mockReturnValue(42)
             expect(Date.now()).toBe(42)
         })
 
-        it('restores original Date.now between tests', () => {
+        it('restores Date.now between tests', () => {
             expect(Date.now()).not.toBe(42)
         })
     })

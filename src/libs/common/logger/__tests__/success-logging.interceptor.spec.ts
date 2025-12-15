@@ -74,7 +74,7 @@ describe('SuccessLoggingInterceptor', () => {
         })
     })
 
-    describe('LOGGING_EXCLUDE_HTTP_PATHS', () => {
+    describe('when LOGGING_EXCLUDE_HTTP_PATHS includes the request path', () => {
         beforeEach(async () => {
             fix = await createInterceptorFixture([
                 { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/exclude-path'] }
@@ -88,7 +88,7 @@ describe('SuccessLoggingInterceptor', () => {
         })
     })
 
-    describe('LOGGING_EXCLUDE_RPC_PATHS', () => {
+    describe('when LOGGING_EXCLUDE_RPC_PATHS includes the subject', () => {
         beforeEach(async () => {
             fix = await createInterceptorFixture([
                 { provide: 'LOGGING_EXCLUDE_RPC_PATHS', useValue: [withTestId('exclude-path')] }

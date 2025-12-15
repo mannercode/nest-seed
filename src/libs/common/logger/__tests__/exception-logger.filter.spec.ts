@@ -121,21 +121,19 @@ describe('ExceptionLoggerFilter', () => {
         })
     })
 
-    describe('unknown context', () => {
-        describe('when the ContextType is unknown', () => {
-            it('logs via Logger.error', async () => {
-                const { ExecutionContextHost } =
-                    await import('@nestjs/core/helpers/execution-context-host')
-                jest.spyOn(ExecutionContextHost.prototype, 'getType').mockReturnValue('unknown')
+    describe('when the ContextType is unknown', () => {
+        it('logs via Logger.error', async () => {
+            const { ExecutionContextHost } =
+                await import('@nestjs/core/helpers/execution-context-host')
+            jest.spyOn(ExecutionContextHost.prototype, 'getType').mockReturnValue('unknown')
 
-                await fix.httpClient.get('/exception').notFound()
+            await fix.httpClient.get('/exception').notFound()
 
-                expect(fix.spyError).toHaveBeenCalledTimes(1)
-                expect(fix.spyError).toHaveBeenCalledWith(
-                    'unknown context type',
-                    expect.objectContaining({ contextType: 'unknown' })
-                )
-            })
+            expect(fix.spyError).toHaveBeenCalledTimes(1)
+            expect(fix.spyError).toHaveBeenCalledWith(
+                'unknown context type',
+                expect.objectContaining({ contextType: 'unknown' })
+            )
         })
     })
 })
