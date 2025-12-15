@@ -67,7 +67,7 @@ export async function createClientProxyServiceFixture() {
         options: getNatsTestConnection()
     } as NatsOptions
 
-    const { httpClient, ...testContext } = await createHttpTestContext({
+    const { httpClient, ...ctx } = await createHttpTestContext({
         imports: [
             ClientProxyModule.registerAsync({
                 useFactory() {
@@ -86,7 +86,7 @@ export async function createClientProxyServiceFixture() {
 
     async function teardown() {
         await rpcClient.close()
-        await testContext.close()
+        await ctx.close()
     }
 
     return { teardown, httpClient, rpcClient }

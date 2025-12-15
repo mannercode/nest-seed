@@ -17,18 +17,18 @@ export type MongooseExpiresFixture = { teardown: () => Promise<void>; model: Mod
 export async function createMongooseExpiresFixture() {
     const schema = createMongooseSchema(ExpireSample)
 
-    const testContext = await createTestContext({
+    const { module, close } = await createTestContext({
         imports: [
             MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
             MongooseModule.forFeature([{ name: 'schema', schema }])
         ]
     })
 
-    const model = testContext.module.get<Model<ExpireSample>>(getModelToken('schema'))
+    const model = module.get<Model<ExpireSample>>(getModelToken('schema'))
     await model.syncIndexes()
 
     async function teardown() {
-        await testContext?.close()
+        await close()
     }
 
     return { teardown, model }

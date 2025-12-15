@@ -26,23 +26,21 @@ export type MongooseDeleteFixture<T> = {
 export async function createMongooseDeleteFixture<T>(cls: Type<T>) {
     const schema = createMongooseSchema(cls)
 
-    const testContext = await createTestContext({
+    const { module, close } = await createTestContext({
         imports: [
             MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
             MongooseModule.forFeature([{ name: 'schema', schema }])
         ]
     })
 
-    const model = testContext.module.get<Model<HardDeleteSample | SoftDeleteSample>>(
-        getModelToken('schema')
-    )
+    const model = module.get<Model<HardDeleteSample | SoftDeleteSample>>(getModelToken('schema'))
 
     const doc = new model()
     doc.name = 'name'
     await doc.save()
 
     async function teardown() {
-        await testContext?.close()
+        await close()
     }
 
     return { teardown, model, doc }

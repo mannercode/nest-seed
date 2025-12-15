@@ -29,7 +29,7 @@ export async function createClientProxyWithNameFixture() {
         options: getNatsTestConnection()
     } as NatsOptions
 
-    const { httpClient, ...testContext } = await createHttpTestContext({
+    const { httpClient, ...ctx } = await createHttpTestContext({
         imports: [
             ClientProxyModule.registerAsync({
                 name: 'clientName',
@@ -46,7 +46,7 @@ export async function createClientProxyWithNameFixture() {
     })
 
     async function teardown() {
-        await testContext.close()
+        await ctx.close()
     }
 
     return { teardown, httpClient }

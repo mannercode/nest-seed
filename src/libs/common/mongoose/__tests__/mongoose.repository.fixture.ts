@@ -71,7 +71,7 @@ export type MongooseRepositoryFixture = {
 }
 
 export async function createMongooseRepositoryFixture() {
-    const testContext = await createTestContext({
+    const { module, close } = await createTestContext({
         imports: [
             MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
             MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])
@@ -79,10 +79,10 @@ export async function createMongooseRepositoryFixture() {
         providers: [SamplesRepository]
     })
 
-    const repository = testContext.module.get(SamplesRepository)
+    const repository = module.get(SamplesRepository)
 
     async function teardown() {
-        await testContext?.close()
+        await close()
     }
 
     return { teardown, repository, BadRequestException, NotFoundException }

@@ -58,7 +58,7 @@ export async function createExceptionLoggerFilterFixture() {
         options: getNatsTestConnection()
     } as NatsOptions
 
-    const { httpClient, ...testContext } = await createHttpTestContext({
+    const { httpClient, ...ctx } = await createHttpTestContext({
         controllers: [TestController],
         providers: [{ provide: APP_FILTER, useClass: ExceptionLoggerFilter }],
         configureApp: async (app) => {
@@ -75,7 +75,7 @@ export async function createExceptionLoggerFilterFixture() {
 
     async function teardown() {
         await rpcClient.close()
-        await testContext.close()
+        await ctx.close()
     }
 
     return { teardown, httpClient, rpcClient, spyWarn, spyError, spyFatal }
