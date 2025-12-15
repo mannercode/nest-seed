@@ -20,26 +20,28 @@ describe('S3ObjectService', () => {
     })
 
     describe('presignUploadUrl', () => {
-        describe('when the payload is valid', () => {
-            const key = 'key.txt'
-            const uploadBody = Buffer.from('hello')
-            const expiresInSec = 60
+        it('returns an uploadUrl', async () => {
+            const uploadUrl = await fix.s3Service.presignUploadUrl({
+                key: 'key.txt',
+                expiresInSec: 60,
+                contentType: 'text/plain',
+                contentLength: 10
+            })
+
+            expect(uploadUrl).toEqual(expect.any(String))
+        })
+
+        describe('when the uploadUrl returns', () => {
             let uploadUrl: string
+            const uploadBody = Buffer.from('hello')
 
             beforeEach(async () => {
                 uploadUrl = await fix.s3Service.presignUploadUrl({
-                    key,
-                    expiresInSec,
+                    key: 'key.txt',
+                    expiresInSec: 60,
                     contentType: 'text/plain',
                     contentLength: uploadBody.byteLength
                 })
-            })
-
-            // TODO fix
-
-            // uploadUrl을 반환한다
-            it('returns an uploadUrl', async () => {
-                expect(uploadUrl).toEqual(expect.any(String))
             })
 
             it('allows uploading via the uploadUrl', async () => {
@@ -80,20 +82,25 @@ describe('S3ObjectService', () => {
         describe('when the object exists', () => {
             const key = 'foo/data.json'
             const body = 'upload body'
-            const expiresInSec = 60
-            let downloadUrl: string
 
             beforeEach(async () => {
                 await uploadObject(fix.s3Service, key, body)
-
-                downloadUrl = await fix.s3Service.presignDownloadUrl({ key, expiresInSec })
             })
 
             it('returns a downloadUrl', async () => {
+                const downloadUrl = await fix.s3Service.presignDownloadUrl({
+                    key,
+                    expiresInSec: 60
+                })
                 expect(downloadUrl).toEqual(expect.any(String))
             })
 
             it('allows downloading via the downloadUrl', async () => {
+                const downloadUrl = await fix.s3Service.presignDownloadUrl({
+                    key,
+                    expiresInSec: 60
+                })
+
                 const response = await fetch(downloadUrl)
                 expect(response.ok).toBe(true)
 
