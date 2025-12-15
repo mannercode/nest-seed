@@ -17,7 +17,7 @@ describe('PurchaseService', () => {
     })
 
     describe('POST /purchases', () => {
-        describe('선점한 티켓이 존재하는 경우', () => {
+        describe('when the customer holds tickets', () => {
             let heldTickets: TicketDto[]
 
             beforeEach(async () => {
@@ -88,8 +88,8 @@ describe('PurchaseService', () => {
             describe('when the purchase window is closed', () => {
                 beforeEach(async () => {
                     const { Rules } = await import('shared')
-                    toAny(Rules).Ticket.purchaseWindowCloseOffsetMinutes =
-                        Rules.Ticket.purchaseWindowCloseOffsetMinutes + 2
+                    toAny(Rules).Ticket.purchaseCutoffMinutes =
+                        Rules.Ticket.purchaseCutoffMinutes + 2
                 })
 
                 it('returns 400 Bad Request', async () => {
@@ -100,7 +100,7 @@ describe('PurchaseService', () => {
                         .body(createDto)
                         .badRequest({
                             ...Errors.TicketPurchase.WindowClosed,
-                            purchaseWindowCloseOffsetMinutes: expect.any(Number),
+                            purchaseCutoffMinutes: expect.any(Number),
                             purchaseWindowCloseTime: expect.any(String),
                             startTime: expect.any(String)
                         })
@@ -124,7 +124,7 @@ describe('PurchaseService', () => {
                     rollbackPurchaseSpy = jest.spyOn(ticketPurchaseService, 'rollbackPurchase')
                 })
 
-                it('returns 500 and rolls back the purchase', async () => {
+                it('rolls back the purchase', async () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
                     await fix.httpClient.post('/purchases').body(createDto).internalServerError()
@@ -134,7 +134,7 @@ describe('PurchaseService', () => {
             })
         })
 
-        describe('when unheld tickets', () => {
+        describe('when the tickets are not held', () => {
             let tickets: TicketDto[]
 
             beforeEach(async () => {

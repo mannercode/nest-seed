@@ -12,7 +12,7 @@ export const Rules = {
     Ticket: {
         // Minutes before showtime when the purchase window closes
         // 티켓 구매 가능 시간 (상영 시작 전 몇 분까지 구매 가능한지)
-        purchaseWindowCloseOffsetMinutes: 30,
+        purchaseCutoffMinutes: 30,
 
         // Maximum number of tickets that can be purchased at once
         // 한 번에 구매할 수 있는 최대 티켓 수

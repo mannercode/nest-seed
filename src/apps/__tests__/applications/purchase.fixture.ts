@@ -98,7 +98,7 @@ export async function holdTickets(ctx: TestContext, tickets: TicketDto[]) {
 export async function createShowtimeAndTickets(ctx: TestContext) {
     const { Rules } = await import('shared')
 
-    const startTime = DateUtil.add({ minutes: Rules.Ticket.purchaseWindowCloseOffsetMinutes + 1 })
+    const startTime = DateUtil.add({ minutes: Rules.Ticket.purchaseCutoffMinutes + 1 })
 
     const [showtime] = await createShowtimes(ctx, [{ startTime }])
 
