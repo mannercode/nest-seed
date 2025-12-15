@@ -119,18 +119,16 @@ describe('AssetsService', () => {
                 await sleep(1500)
             })
 
-            it('throws 410 Gone for an expired upload', async () => {
+            it('throws 404 Not Found for an expired upload', async () => {
                 const completeDto = buildCompleteAssetDto()
                 await expect(fix.assetsClient.complete(assetId, completeDto)).rejects.toMatchObject(
-                    { status: HttpStatus.GONE }
+                    { status: HttpStatus.NOT_FOUND }
                 )
             })
 
             it('persists the deletion', async () => {
                 const completeDto = buildCompleteAssetDto()
-                await expect(fix.assetsClient.complete(assetId, completeDto)).rejects.toMatchObject(
-                    { status: HttpStatus.GONE }
-                )
+                await expect(fix.assetsClient.complete(assetId, completeDto)).rejects.toThrow()
 
                 await expect(fix.assetsClient.getMany([assetId])).rejects.toMatchObject({
                     status: HttpStatus.NOT_FOUND
@@ -231,12 +229,9 @@ describe('AssetsService', () => {
                 const { Rules } = await import('shared')
                 toAny(Rules).Asset.uploadExpiresInSec = 1
 
-                const job = fix.scheduler.getCronJob('assets.cleanupExpiredUploads')
-                await job.stop()
-
                 const { CronTime } = await import('cron')
-                job.setTime(new CronTime(CronExpression.EVERY_SECOND))
-                job.start()
+                fix.cleanupExpiredUploadsJob.setTime(new CronTime(CronExpression.EVERY_SECOND))
+                fix.cleanupExpiredUploadsJob.start()
             })
 
             it('removes the asset', async () => {

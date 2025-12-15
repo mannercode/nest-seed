@@ -1,4 +1,4 @@
-import { GoneException, Injectable } from '@nestjs/common'
+import { GoneException, Injectable, NotFoundException } from '@nestjs/common'
 import { Cron } from '@nestjs/schedule'
 import { DateUtil, InjectS3Object, mapDocToDto, S3ObjectService } from 'common'
 import { Rules } from 'shared'
@@ -56,7 +56,7 @@ export class AssetsService {
         if (this.isUploadExpired(expiresAt)) {
             await this.deleteAsset(asset)
 
-            throw new GoneException({ ...AssetErrors.UploadExpired, assetId, expiresAt })
+            throw new NotFoundException({ ...AssetErrors.UploadExpired, assetId, expiresAt })
         }
 
         asset.ownerService = owner.service
