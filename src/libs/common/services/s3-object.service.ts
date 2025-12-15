@@ -47,14 +47,7 @@ export class S3ObjectService {
         private readonly s3: S3Client
     ) {}
 
-    // TODO
-    //     이런 식으로 쓰면 전부 S3ObjectService_undefined 라는 이름으로 등록/주입됩니다.
-    // 의도한 거라면 괜찮지만, 보통은 기본값을 하나 두는 게 더 명확합니다.
-
-    // static getServiceName(name?: string) {
-    //     return `S3ObjectService_${name ?? 'default'}`
-    // }
-    static getServiceName(name?: string) {
+    static getName(name: string = 'default') {
         return `S3ObjectService_${name}`
     }
 
@@ -125,12 +118,6 @@ export class S3ObjectService {
 
         objectData = Buffer.concat(chunks)
 
-        // TODO
-        // 아래처럼 함수 만들어서 사용하면 ignore next 제거 가능
-        // static contentTypeOrDefault(contentType?: string): string {
-        //     return contentType ?? 'application/octet-stream'
-        // }
-
         /* istanbul ignore next */
         const contentType = ContentType ?? 'application/octet-stream'
         /* istanbul ignore next */
@@ -188,7 +175,7 @@ export class S3ObjectService {
 }
 
 export function InjectS3Object(name?: string): ParameterDecorator {
-    return Inject(S3ObjectService.getServiceName(name))
+    return Inject(S3ObjectService.getName(name))
 }
 
 type S3ObjectFactoryOptions = {
@@ -212,7 +199,7 @@ export class S3ObjectModule {
         const { name, useFactory, inject } = options
 
         const provider = {
-            provide: S3ObjectService.getServiceName(name),
+            provide: S3ObjectService.getName(name),
             useFactory: async (...args: any[]) => {
                 const { endpoint, accessKeyId, secretAccessKey, region, bucket, forcePathStyle } =
                     await useFactory(...args)

@@ -35,7 +35,7 @@ export async function createS3ObjectServiceFixture() {
         providers: [TestInjectS3ObjectService]
     })
 
-    const s3Service = module.get(S3ObjectService.getServiceName())
+    const s3Service = module.get(S3ObjectService.getName())
 
     const teardown = async () => {
         await close()

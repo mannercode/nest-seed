@@ -9,7 +9,7 @@ export class CacheService {
         private readonly prefix: string
     ) {}
 
-    static getServiceName(name?: string) {
+    static getName(name: string = 'default') {
         return `CacheService_${name}`
     }
 
@@ -51,7 +51,7 @@ export class CacheService {
 }
 
 export function InjectCache(name?: string): ParameterDecorator {
-    return Inject(CacheService.getServiceName(name))
+    return Inject(CacheService.getName(name))
 }
 
 export type CacheModuleOptions = { name?: string; redisName?: string; prefix: string }
@@ -62,7 +62,7 @@ export class CacheModule {
         const { name, redisName, prefix } = options
 
         const provider = {
-            provide: CacheService.getServiceName(name),
+            provide: CacheService.getName(name),
             useFactory: async (redis: Redis) => {
                 return new CacheService(redis, prefix + ':' + name)
             },
