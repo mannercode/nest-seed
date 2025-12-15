@@ -2,7 +2,7 @@ import { CreateMovieDto, MovieDto, MovieGenre, MovieRating, SearchMoviesPageDto 
 import { AssetDto } from 'apps/infrastructures'
 import { Checksum } from 'common'
 import { omit } from 'lodash'
-import { nullObjectId, oid } from 'testlib'
+import { nullObjectId } from 'testlib'
 import {
     buildCreateMovieDto,
     createMovie,
