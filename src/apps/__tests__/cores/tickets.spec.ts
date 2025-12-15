@@ -101,9 +101,7 @@ describe('TicketsService', () => {
                     TicketStatus.Sold
                 )
 
-                expect(updatedTickets.map((ticket) => ticket.status)).toEqual(
-                    Array(updatedTickets.length).fill(TicketStatus.Sold)
-                )
+                expect(updatedTickets.every((t) => t.status === TicketStatus.Sold)).toBe(true)
             })
         })
     })

@@ -1,4 +1,3 @@
-import { CreatePurchaseDto } from 'apps/applications'
 import { PurchaseRecordDto, TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { toAny } from 'testlib'
@@ -18,55 +17,47 @@ describe('PurchaseService', () => {
     })
 
     describe('POST /purchases', () => {
-        describe('when the payload is valid', () => {
-            let createDto: CreatePurchaseDto
-            let createdPurchase: PurchaseRecordDto
+        it('returns the created purchase', async () => {
+            const createDto = buildCreatePurchaseDto(fix.customer, fix.heldTickets)
+
+            await fix.httpClient
+                .post('/purchases')
+                .body(createDto)
+                .created({
+                    ...createDto,
+                    id: expect.any(String),
+                    createdAt: expect.any(Date),
+                    updatedAt: expect.any(Date),
+                    paymentId: expect.any(String)
+                })
+        })
+
+        describe('when the purchase is created', () => {
+            let purchase: PurchaseRecordDto
 
             beforeEach(async () => {
-                createDto = buildCreatePurchaseDto(fix.customer, fix.heldTickets)
-
-                const { body } = await fix.httpClient.post('/purchases').body(createDto).created()
-
-                createdPurchase = body
-            })
-
-            it('returns the created purchase', async () => {
                 const createDto = buildCreatePurchaseDto(fix.customer, fix.heldTickets)
-
-                await fix.httpClient
-                    .post('/purchases')
-                    .body(createDto)
-                    .created({
-                        id: expect.any(String),
-                        createdAt: expect.any(Date),
-                        updatedAt: expect.any(Date),
-                        paymentId: expect.any(String),
-                        ...createDto
-                    })
+                const { body } = await fix.httpClient.post('/purchases').body(createDto).created()
+                purchase = body
             })
 
-            // "생성한다"가 아니라 "DB에 존재한다"
-            // it('has persisted the payment record', async () => {
-            // 결제 기록을 생성한다
             it('creates the payment record', async () => {
-                const payments = await getPayments(fix, [createdPurchase.paymentId])
+                const payments = await getPayments(fix, [purchase.paymentId])
 
-                expect(payments[0].amount).toEqual(createdPurchase.totalPrice)
+                expect(payments[0].amount).toEqual(purchase.totalPrice)
             })
 
             it('marks purchased tickets as `Sold`', async () => {
                 const soldTickets = await getTickets(fix, pickIds(fix.heldTickets))
 
-                expect(soldTickets.map((ticket) => ticket.status)).toEqual(
-                    Array(soldTickets.length).fill(TicketStatus.Sold)
-                )
+                expect(soldTickets.every((t) => t.status === TicketStatus.Sold)).toBe(true)
             })
 
             it('keeps unpurchased tickets unchanged', async () => {
                 const remainingTickets = await getTickets(fix, pickIds(fix.availableTickets))
 
-                expect(remainingTickets.map((ticket) => ticket.status)).toEqual(
-                    Array(remainingTickets.length).fill(TicketStatus.Available)
+                expect(remainingTickets.every((t) => t.status === TicketStatus.Available)).toBe(
+                    true
                 )
             })
         })

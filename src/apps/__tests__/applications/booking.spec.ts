@@ -95,11 +95,7 @@ describe('BookingService', () => {
 
                 tickets = body
 
-                expect(tickets).toEqual(
-                    Array(tickets.length).fill(
-                        expect.objectContaining({ status: TicketStatus.Available })
-                    )
-                )
+                expect(tickets.every((t) => t.status === TicketStatus.Available)).toBe(true)
             })
 
             await step('5. holds the tickets', async () => {

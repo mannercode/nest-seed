@@ -110,7 +110,7 @@ describe('TicketHoldingService', () => {
                     })
                 )
 
-                expect(successfulCounts).toEqual(Array(successfulCounts.length).fill(1))
+                expect(successfulCounts.every((t) => t === 1)).toBe(true)
             },
             60 * 1000
         )
