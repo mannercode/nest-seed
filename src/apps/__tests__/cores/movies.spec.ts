@@ -109,12 +109,10 @@ describe('MoviesService', () => {
                     assetIds: []
                 }
 
-                const a = await fix.httpClient
+                await fix.httpClient
                     .patch(`/movies/${movie.id}`)
                     .body(updateDto)
                     .ok({ ...movie, ...omit(updateDto, ['assetIds']) })
-
-                console.log(a.body)
             })
 
             it('persists the update', async () => {
