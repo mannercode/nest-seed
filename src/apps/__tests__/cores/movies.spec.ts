@@ -26,29 +26,29 @@ describe('MoviesService', () => {
 
     describe('POST /movies', () => {
         it('returns the created movie', async () => {
-            const payload = buildCreateMovieDto()
+            const createDto = buildCreateMovieDto()
 
             await fix.httpClient
                 .post('/movies')
-                .body(payload)
+                .body(createDto)
                 .created({
-                    ...omit(payload, ['assetIds']),
+                    ...omit(createDto, ['assetIds']),
                     id: expect.any(String),
                     imageUrls: expect.any(Array)
                 })
         })
 
         describe('when the payload includes assetIds', () => {
-            let payload: CreateMovieDto
+            let createDto: CreateMovieDto
             let asset: AssetDto
 
             beforeEach(async () => {
                 asset = await uploadComplete(fix, fixtureFiles.image)
-                payload = buildCreateMovieDto({ assetIds: [asset.id] })
+                createDto = buildCreateMovieDto({ assetIds: [asset.id] })
             })
 
             it('returns imageUrls for the uploaded asset', async () => {
-                const { body } = await fix.httpClient.post('/movies').body(payload).created()
+                const { body } = await fix.httpClient.post('/movies').body(createDto).created()
                 const movie = body as MovieDto
 
                 const response = await fetch(movie.imageUrls[0])
@@ -99,7 +99,7 @@ describe('MoviesService', () => {
             })
 
             it('returns the updated movie', async () => {
-                const payload = {
+                const updateDto = {
                     title: 'update title',
                     genres: ['romance', 'thriller'],
                     releaseDate: new Date('2000-01-01'),
@@ -111,15 +111,15 @@ describe('MoviesService', () => {
 
                 await fix.httpClient
                     .patch(`/movies/${movie.id}`)
-                    .body(payload)
-                    .ok({ ...movie, ...payload })
+                    .body(updateDto)
+                    .ok({ ...movie, ...updateDto })
             })
 
             it('persists the update', async () => {
-                const payload = { title: 'update title' }
-                await fix.httpClient.patch(`/movies/${movie.id}`).body(payload).ok()
+                const updateDto = { title: 'update title' }
+                await fix.httpClient.patch(`/movies/${movie.id}`).body(updateDto).ok()
 
-                await fix.httpClient.get(`/movies/${movie.id}`).ok({ ...movie, ...payload })
+                await fix.httpClient.get(`/movies/${movie.id}`).ok({ ...movie, ...updateDto })
             })
         })
 

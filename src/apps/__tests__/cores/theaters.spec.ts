@@ -17,12 +17,12 @@ describe('TheatersService', () => {
 
     describe('POST /theaters', () => {
         it('returns the created theater', async () => {
-            const payload = buildCreateTheaterDto()
+            const createDto = buildCreateTheaterDto()
 
             await fix.httpClient
                 .post('/theaters')
-                .body(payload)
-                .created({ ...payload, id: expect.any(String) })
+                .body(createDto)
+                .created({ ...createDto, id: expect.any(String) })
         })
 
         it('returns 400 Bad Request for missing required fields', async () => {
@@ -65,7 +65,7 @@ describe('TheatersService', () => {
             })
 
             it('returns the updated theater', async () => {
-                const payload = {
+                const updateDto = {
                     name: 'update-name',
                     location: { latitude: 30.0, longitude: 120.0 },
                     seatmap: { blocks: [] }
@@ -73,15 +73,15 @@ describe('TheatersService', () => {
 
                 await fix.httpClient
                     .patch(`/theaters/${theater.id}`)
-                    .body(payload)
-                    .ok({ ...theater, ...payload })
+                    .body(updateDto)
+                    .ok({ ...theater, ...updateDto })
             })
 
             it('persists the update', async () => {
-                const payload = { name: 'update-name' }
-                await fix.httpClient.patch(`/theaters/${theater.id}`).body(payload).ok()
+                const updateDto = { name: 'update-name' }
+                await fix.httpClient.patch(`/theaters/${theater.id}`).body(updateDto).ok()
 
-                await fix.httpClient.get(`/theaters/${theater.id}`).ok({ ...theater, ...payload })
+                await fix.httpClient.get(`/theaters/${theater.id}`).ok({ ...theater, ...updateDto })
             })
         })
 

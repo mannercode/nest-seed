@@ -19,7 +19,7 @@ describe('MovieDraftsService', () => {
     })
 
     async function requestImageUpload(draftId: string) {
-        const payload = {
+        const createDto = {
             originalName: fix.image.originalName,
             mimeType: fix.image.mimeType,
             size: fix.image.size,
@@ -28,7 +28,7 @@ describe('MovieDraftsService', () => {
 
         const { body: upload } = await fix.httpClient
             .post(`/movie-drafts/${draftId}/images`)
-            .body(payload)
+            .body(createDto)
             .created()
 
         const uploadResponse = await fetch(upload.upload.url, {

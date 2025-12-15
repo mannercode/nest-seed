@@ -17,10 +17,10 @@ describe('WatchRecordsService', () => {
 
     describe('create', () => {
         it('returns the created watch record', async () => {
-            const payload = buildCreateWatchRecordDto()
-            const watchRecord = await fix.watchRecordsService.create(payload)
+            const createDto = buildCreateWatchRecordDto()
+            const watchRecord = await fix.watchRecordsService.create(createDto)
 
-            expect(watchRecord).toEqual({ ...payload, id: expect.any(String) })
+            expect(watchRecord).toEqual({ ...createDto, id: expect.any(String) })
         })
     })
 

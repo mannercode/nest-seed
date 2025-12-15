@@ -17,14 +17,14 @@ describe('PurchaseRecordsService', () => {
 
     describe('create', () => {
         it('returns the created purchase record', async () => {
-            const payload = buildCreatePurchaseRecordDto()
-            const createdPurchaseRecord = await fix.purchaseRecordsService.create(payload)
+            const createDto = buildCreatePurchaseRecordDto()
+            const createdPurchaseRecord = await fix.purchaseRecordsService.create(createDto)
 
             expect(createdPurchaseRecord).toEqual({
                 id: expect.any(String),
                 createdAt: expect.any(Date),
                 updatedAt: expect.any(Date),
-                ...payload
+                ...createDto
             })
         })
     })

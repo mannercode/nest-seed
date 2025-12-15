@@ -18,12 +18,12 @@ describe('CustomersService', () => {
 
     describe('POST /customers', () => {
         it('returns the created customer', async () => {
-            const payload = buildCreateCustomerDto()
+            const createDto = buildCreateCustomerDto()
 
             await fix.httpClient
                 .post('/customers')
-                .body(payload)
-                .created({ ...omit(payload, ['password']), id: expect.any(String) })
+                .body(createDto)
+                .created({ ...omit(createDto, ['password']), id: expect.any(String) })
         })
 
         describe('when the email already exists', () => {
@@ -34,12 +34,12 @@ describe('CustomersService', () => {
             })
 
             it('returns 409 Conflict', async () => {
-                const payload = buildCreateCustomerDto({ email })
+                const createDto = buildCreateCustomerDto({ email })
 
                 await fix.httpClient
                     .post('/customers')
-                    .body(payload)
-                    .conflict({ ...Errors.Customer.EmailAlreadyExists, email: payload.email })
+                    .body(createDto)
+                    .conflict({ ...Errors.Customer.EmailAlreadyExists, email: createDto.email })
             })
         })
 
@@ -83,7 +83,7 @@ describe('CustomersService', () => {
             })
 
             it('returns the updated customer', async () => {
-                const payload = {
+                const updateDto = {
                     name: 'update-name',
                     email: 'new@mail.com',
                     birthDate: new Date('1900-12-31')
@@ -91,17 +91,17 @@ describe('CustomersService', () => {
 
                 await fix.httpClient
                     .patch(`/customers/${customer.id}`)
-                    .body(payload)
-                    .ok({ ...customer, ...payload })
+                    .body(updateDto)
+                    .ok({ ...customer, ...updateDto })
             })
 
             it('persists the update', async () => {
-                const payload = { name: 'update-name' }
-                await fix.httpClient.patch(`/customers/${customer.id}`).body(payload).ok()
+                const updateDto = { name: 'update-name' }
+                await fix.httpClient.patch(`/customers/${customer.id}`).body(updateDto).ok()
 
                 await fix.httpClient
                     .get(`/customers/${customer.id}`)
-                    .ok({ ...customer, ...payload })
+                    .ok({ ...customer, ...updateDto })
             })
         })
 
