@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose'
 import { MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import { CreateCustomerDto, SearchCustomersPageDto } from './dtos'
+import { CreateCustomerDto, SearchCustomersPageDto, UpdateCustomerDto } from './dtos'
 import { Customer } from './models'
 
 @Injectable()
@@ -21,6 +21,16 @@ export class CustomersRepository extends MongooseRepository<Customer> {
         customer.email = createDto.email
         customer.birthDate = createDto.birthDate
         customer.password = createDto.password
+
+        return customer.save()
+    }
+
+    async update(customerId: string, updateDto: UpdateCustomerDto) {
+        const customer = await this.getById(customerId)
+
+        if (updateDto.name) customer.name = updateDto.name
+        if (updateDto.email) customer.email = updateDto.email
+        if (updateDto.birthDate) customer.birthDate = updateDto.birthDate
 
         return customer.save()
     }

@@ -43,20 +43,6 @@ describe('MongooseRepository', () => {
         })
     })
 
-    describe('update', () => {
-        it('updates the document', async () => {
-            const persistedDoc = fix.repository.newDocument()
-            persistedDoc.name = 'new name'
-            await persistedDoc.save()
-
-            await fix.repository.update(persistedDoc.id, { name: 'updated name' })
-
-            const updatedDoc = await fix.repository.findById(persistedDoc.id)
-
-            expect(updatedDoc?.name).toEqual('updated name')
-        })
-    })
-
     describe('saveMany', () => {
         it('creates all documents', async () => {
             const docs = [

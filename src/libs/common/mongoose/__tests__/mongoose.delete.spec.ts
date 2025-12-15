@@ -1,3 +1,4 @@
+import { HydratedDocument } from 'mongoose'
 import {
     HardDeleteSample,
     MongooseDeleteFixture,
@@ -6,69 +7,77 @@ import {
 
 describe('Mongoose Delete', () => {
     describe('Soft Delete', () => {
-        let fix: MongooseDeleteFixture<SoftDeleteSample>
+        let fixture: MongooseDeleteFixture<SoftDeleteSample>
+        let createdDoc: HydratedDocument<SoftDeleteSample>
 
         beforeEach(async () => {
             const { createMongooseDeleteFixture } = await import('./mongoose.delete.fixture')
-            fix = await createMongooseDeleteFixture(SoftDeleteSample)
+            fixture = await createMongooseDeleteFixture(SoftDeleteSample)
+
+            createdDoc = new fixture.model()
+            createdDoc.name = 'name'
+            await createdDoc.save()
         })
 
         afterEach(async () => {
-            await fix?.teardown()
+            await fixture?.teardown()
         })
 
-        // TODO fix
-        // deletedAt이 null이다
         it('sets deletedAt to null for a new document', async () => {
-            expect(fix.doc).toMatchObject({ deletedAt: null })
+            expect(createdDoc).toMatchObject({ deletedAt: null })
         })
 
         it('records deletedAt for deleteOne calls', async () => {
-            await fix.model.deleteOne({ _id: fix.doc._id })
+            await fixture.model.deleteOne({ _id: createdDoc._id })
 
-            const foundDoc = await fix.model
-                .findOne({ _id: { $eq: fix.doc._id } })
+            const deletedDoc = await fixture.model
+                .findOne({ _id: { $eq: createdDoc._id } })
                 .setOptions({ withDeleted: true })
                 .exec()
 
-            expect(foundDoc?.deletedAt).toEqual(expect.any(Date))
+            expect(deletedDoc?.deletedAt).toEqual(expect.any(Date))
         })
 
         it('records deletedAt for each document on deleteMany', async () => {
-            const doc2 = new fix.model()
-            doc2.name = 'name'
-            await doc2.save()
+            const secondDoc = new fixture.model()
+            secondDoc.name = 'name'
+            await secondDoc.save()
 
-            await fix.model.deleteMany({ _id: { $in: [fix.doc._id, doc2._id] } as any })
+            await fixture.model.deleteMany({ _id: { $in: [createdDoc._id, secondDoc._id] } as any })
 
-            const foundDocs = await fix.model.find({}).setOptions({ withDeleted: true })
-            expect(foundDocs[0]).toMatchObject({ deletedAt: expect.any(Date) })
-            expect(foundDocs[1]).toMatchObject({ deletedAt: expect.any(Date) })
+            const deletedDocs = await fixture.model.find({}).setOptions({ withDeleted: true })
+            expect(deletedDocs[0]).toMatchObject({ deletedAt: expect.any(Date) })
+            expect(deletedDocs[1]).toMatchObject({ deletedAt: expect.any(Date) })
         })
 
         it('excludes deleted documents from aggregates', async () => {
-            await fix.model.deleteOne({ _id: fix.doc._id })
+            await fixture.model.deleteOne({ _id: createdDoc._id })
 
-            const got = await fix.model.aggregate([{ $match: { name: 'name' } }])
+            const aggregateResult = await fixture.model.aggregate([{ $match: { name: 'name' } }])
 
-            expect(got).toHaveLength(0)
+            expect(aggregateResult).toHaveLength(0)
         })
     })
 
     describe('Hard Delete', () => {
-        let fix: MongooseDeleteFixture<HardDeleteSample>
+        let fixture: MongooseDeleteFixture<HardDeleteSample>
+        let createdDoc: HydratedDocument<HardDeleteSample>
 
         beforeEach(async () => {
             const { createMongooseDeleteFixture } = await import('./mongoose.delete.fixture')
-            fix = await createMongooseDeleteFixture(HardDeleteSample)
+            fixture = await createMongooseDeleteFixture(HardDeleteSample)
+
+            createdDoc = new fixture.model()
+            createdDoc.name = 'name'
+            await createdDoc.save()
         })
 
         afterEach(async () => {
-            await fix?.teardown()
+            await fixture?.teardown()
         })
 
-        it('removes the document entirely', async () => {
-            expect(fix.doc).not.toHaveProperty('deletedAt')
+        it('does not have deletedAt for a new document', async () => {
+            expect(createdDoc).not.toHaveProperty('deletedAt')
         })
     })
 })

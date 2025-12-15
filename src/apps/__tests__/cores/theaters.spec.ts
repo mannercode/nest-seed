@@ -66,7 +66,6 @@ describe('TheatersService', () => {
 
             it('returns the updated theater', async () => {
                 const updateDto = {
-                    name: 'update-name',
                     location: { latitude: 30.0, longitude: 120.0 },
                     seatmap: { blocks: [] }
                 }

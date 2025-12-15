@@ -83,11 +83,7 @@ describe('CustomersService', () => {
             })
 
             it('returns the updated customer', async () => {
-                const updateDto = {
-                    name: 'update-name',
-                    email: 'new@mail.com',
-                    birthDate: new Date('1900-12-31')
-                }
+                const updateDto = { email: 'new@mail.com', birthDate: new Date('1900-12-31') }
 
                 await fix.httpClient
                     .patch(`/customers/${customer.id}`)

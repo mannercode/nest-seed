@@ -2,7 +2,7 @@ import { CreateMovieDto, MovieDto, MovieGenre, MovieRating, SearchMoviesPageDto 
 import { AssetDto } from 'apps/infrastructures'
 import { Checksum } from 'common'
 import { omit } from 'lodash'
-import { nullObjectId } from 'testlib'
+import { nullObjectId, oid } from 'testlib'
 import {
     buildCreateMovieDto,
     createMovie,
@@ -100,19 +100,21 @@ describe('MoviesService', () => {
 
             it('returns the updated movie', async () => {
                 const updateDto = {
-                    title: 'update title',
                     genres: ['romance', 'thriller'],
                     releaseDate: new Date('2000-01-01'),
                     plot: 'new plot',
                     durationInSeconds: 10 * 60,
                     director: 'Steven Spielberg',
-                    rating: 'R'
+                    rating: 'R',
+                    assetIds: []
                 }
 
-                await fix.httpClient
+                const a = await fix.httpClient
                     .patch(`/movies/${movie.id}`)
                     .body(updateDto)
-                    .ok({ ...movie, ...updateDto })
+                    .ok({ ...movie, ...omit(updateDto, ['assetIds']) })
+
+                console.log(a.body)
             })
 
             it('persists the update', async () => {

@@ -56,15 +56,6 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return true
     }
 
-    async update(id: string, values: Record<string, any>, session: SessionArg = undefined) {
-        const doc = await this.getById(id, session)
-        doc.set(values)
-
-        await doc.save({ session })
-
-        return doc
-    }
-
     async findById(id: string, session: SessionArg = undefined) {
         const doc = await this.model.findById(objectId(id), null, { session })
 

@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose'
 import { MongooseRepository, objectIds, QueryBuilder, QueryBuilderOptions } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import { CreateMovieDto, SearchMoviesPageDto } from './dtos'
+import { CreateMovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
 import { Movie } from './models'
 
 @Injectable()
@@ -15,7 +15,6 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     }
 
     async create(createDto: CreateMovieDto) {
-        // TODO 하나로 합체?
         const movie = this.newDocument()
         movie.title = createDto.title
         movie.genres = createDto.genres
@@ -25,6 +24,21 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         movie.director = createDto.director
         movie.rating = createDto.rating
         movie.assetIds = objectIds(createDto.assetIds)
+
+        return movie.save()
+    }
+
+    async update(movieId: string, updateDto: UpdateMovieDto) {
+        const movie = await this.getById(movieId)
+
+        if (updateDto.title) movie.title = updateDto.title
+        if (updateDto.genres) movie.genres = updateDto.genres
+        if (updateDto.releaseDate) movie.releaseDate = updateDto.releaseDate
+        if (updateDto.plot) movie.plot = updateDto.plot
+        if (updateDto.durationInSeconds) movie.durationInSeconds = updateDto.durationInSeconds
+        if (updateDto.director) movie.director = updateDto.director
+        if (updateDto.rating) movie.rating = updateDto.rating
+        if (updateDto.assetIds) movie.assetIds = objectIds(updateDto.assetIds)
 
         return movie.save()
     }
