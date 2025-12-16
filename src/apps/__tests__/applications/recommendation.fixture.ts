@@ -21,35 +21,9 @@ import {
     createWatchRecord,
     AppTestContext
 } from '../__helpers__'
+import { DateUtil } from 'common'
 
-export async function createWatchedMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
-    const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
-
-    const { customer, accessToken } = await createAndLoginCustomer(ctx)
-
-    const watchRecords = await Promise.all(
-        movies.map((movie) =>
-            createWatchRecord(ctx, { customerId: customer.id, movieId: movie.id })
-        )
-    )
-
-    return { customer, accessToken, movies, watchRecords }
-}
-
-export async function createShowingMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
-    const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
-
-    const createShowtimesDtos = movies.map((movie) => ({
-        movieId: movie.id,
-        startTime: new Date('2999-01-01')
-    }))
-
-    const showtimes = await createShowtimes(ctx, createShowtimesDtos)
-
-    return { movies, showtimes }
-}
-
-export type RecommendationFixture = AppTestContext
+export type RecommendationFixture = AppTestContext & {}
 
 export async function createRecommendationFixture(): Promise<RecommendationFixture> {
     const ctx = await createAppTestContext({
@@ -74,4 +48,31 @@ export async function createRecommendationFixture(): Promise<RecommendationFixtu
     })
 
     return { ...ctx }
+}
+
+export async function createWatchedMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
+    const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
+
+    const { customer, accessToken } = await createAndLoginCustomer(ctx)
+
+    const watchRecords = await Promise.all(
+        movies.map((movie) =>
+            createWatchRecord(ctx, { customerId: customer.id, movieId: movie.id })
+        )
+    )
+
+    return { customer, accessToken, movies, watchRecords }
+}
+
+export async function createShowingMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
+    const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
+
+    const createShowtimesDtos = movies.map((movie) => ({
+        movieId: movie.id,
+        startTime: DateUtil.add({ days: 1 })
+    }))
+
+    await createShowtimes(ctx, createShowtimesDtos)
+
+    return movies
 }

@@ -18,86 +18,61 @@ describe('RecommendationService', () => {
     })
 
     describe('GET /movies/recommended', () => {
-        let showingMovies: MovieDto[]
-        const expectMovie = (movie: MovieDto) =>
-            expect.objectContaining({
-                id: movie.id,
-                title: movie.title,
-                genres: movie.genres,
-                releaseDate: movie.releaseDate,
-                plot: movie.plot,
-                durationInSeconds: movie.durationInSeconds,
-                director: movie.director,
-                rating: movie.rating,
-                imageUrls: expect.any(Array)
-            })
-
-        beforeEach(async () => {
-            const { movies } = await createShowingMovies(fix, [
-                {
-                    title: 'Fantasy',
-                    genres: [MovieGenre.Fantasy],
-                    releaseDate: new Date('2900-01-01')
-                },
-                {
-                    title: 'Comedy1',
-                    genres: [MovieGenre.Comedy],
-                    releaseDate: new Date('2900-02-01')
-                },
-                {
-                    title: 'Comedy2',
-                    genres: [MovieGenre.Comedy],
-                    releaseDate: new Date('2900-03-01')
-                },
-                {
-                    title: 'Action',
-                    genres: [MovieGenre.Action],
-                    releaseDate: new Date('2900-04-01')
-                },
-                { title: 'Drama', genres: [MovieGenre.Drama], releaseDate: new Date('2900-05-01') }
-            ])
-
-            showingMovies = movies
-        })
-
-        describe('when the user is a customer', () => {
-            let accessToken: string
+        describe('상영 중인 영화가 존재하는 경우', () => {
+            let fantasyMovie: MovieDto
+            let comedy1Movie: MovieDto
+            let comedy2Movie: MovieDto
+            let actionMovie: MovieDto
+            let dramaMovie: MovieDto
 
             beforeEach(async () => {
-                const result = await createWatchedMovies(fix, [
-                    { title: 'Action1', genres: [MovieGenre.Action] },
-                    { title: 'Action2', genres: [MovieGenre.Action] },
-                    { title: 'Action3', genres: [MovieGenre.Action] },
-                    { title: 'Comedy1', genres: [MovieGenre.Comedy] },
-                    { title: 'Comedy2', genres: [MovieGenre.Comedy] },
-                    { title: 'Drama1', genres: [MovieGenre.Drama] }
-                ])
-
-                accessToken = result.accessToken
-            })
-
-            it('returns recommendations for the customer', async () => {
-                await fix.httpClient
-                    .get('/movies/recommended')
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .ok([
-                        expectMovie(showingMovies[3]), // Action
-                        expectMovie(showingMovies[2]), // Comedy2, 2900-03-01
-                        expectMovie(showingMovies[1]), // Comedy1, 2900-02-01
-                        expectMovie(showingMovies[4]), // Drama
-                        expectMovie(showingMovies[0]) // Fantasy
+                ;[fantasyMovie, comedy1Movie, comedy2Movie, actionMovie, dramaMovie] =
+                    await createShowingMovies(fix, [
+                        { genres: [MovieGenre.Fantasy], releaseDate: new Date('2900-01-01') },
+                        { genres: [MovieGenre.Comedy], releaseDate: new Date('2900-02-01') },
+                        { genres: [MovieGenre.Comedy], releaseDate: new Date('2900-03-01') },
+                        { genres: [MovieGenre.Action], releaseDate: new Date('2900-04-01') },
+                        { genres: [MovieGenre.Drama], releaseDate: new Date('2900-05-01') }
                     ])
             })
-        })
 
-        describe('when the user is a guest', () => {
+            describe('고객이 시청한 영화가 존재하는 경우', () => {
+                let accessToken: string
+
+                beforeEach(async () => {
+                    const result = await createWatchedMovies(fix, [
+                        { genres: [MovieGenre.Action] },
+                        { genres: [MovieGenre.Action] },
+                        { genres: [MovieGenre.Action] },
+                        { genres: [MovieGenre.Comedy] },
+                        { genres: [MovieGenre.Comedy] },
+                        { genres: [MovieGenre.Drama] }
+                    ])
+
+                    accessToken = result.accessToken
+                })
+
+                it('returns recommendations for the customer', async () => {
+                    await fix.httpClient
+                        .get('/movies/recommended')
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                        .ok([
+                            actionMovie,
+                            comedy2Movie, // 2900-03-01
+                            comedy1Movie, // 2900-02-01
+                            dramaMovie,
+                            fantasyMovie
+                        ])
+                })
+            })
+
             it('returns recommendations for guests', async () => {
                 await fix.httpClient.get('/movies/recommended').ok([
-                    expectMovie(showingMovies[4]), // 2900-05-01
-                    expectMovie(showingMovies[3]), // 2900-04-01
-                    expectMovie(showingMovies[2]), // 2900-03-01
-                    expectMovie(showingMovies[1]), // 2900-02-01
-                    expectMovie(showingMovies[0]) // 2900-01-01
+                    dramaMovie, // 2900-05-01
+                    actionMovie, // 2900-04-01
+                    comedy2Movie, // 2900-03-01
+                    comedy1Movie, // 2900-02-01
+                    fantasyMovie // 2900-01-01
                 ])
             })
         })
