@@ -60,7 +60,7 @@ export class BookingController {
         @Body('ticketIds') ticketIds: string[],
         @Req() req: CustomerAuthRequest
     ) {
-        const customerId = req.user.customerId
+        const customerId = req.user.customerId!
         return this.bookingService.holdTickets({ customerId, showtimeId, ticketIds })
     }
 }

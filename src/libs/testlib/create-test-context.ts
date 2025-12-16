@@ -52,9 +52,9 @@ export async function createTestContext({
         await configureApp(app)
     }
 
-    app.useLogger(isDebuggingEnabled ? console : false)
-
     await app.init()
+    // TODO 테스트 시 로그 자세히
+    app.useLogger(isDebuggingEnabled ? console : false)
 
     const close = async () => {
         await app.close()

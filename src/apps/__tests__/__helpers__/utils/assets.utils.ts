@@ -20,10 +20,8 @@ export function buildCompleteAssetDto(overrides = {}) {
     } as CompleteAssetDto
 }
 
-export async function uploadAsset(
-    filepath: string,
-    { url, method, headers }: AssetPresignedUploadDto
-) {
+export async function uploadAsset(filepath: string, uploadDto: AssetPresignedUploadDto) {
+    const { url, method, headers } = uploadDto
     const stream = createReadStream(filepath)
 
     const response = await fetch(url, { method, headers, body: stream, duplex: 'half' })

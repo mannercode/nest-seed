@@ -7,14 +7,13 @@ import {
     ShowtimeCreationClient
 } from 'apps/applications'
 import { CustomersClient, MoviesClient, PurchaseRecordsClient, TheatersClient } from 'apps/cores'
-import { AssetsClient } from 'apps/infrastructures'
 import { CommonModule } from 'shared'
 import {
     BookingController,
-    MovieDraftsController,
     CustomerJwtStrategy,
     CustomerLocalStrategy,
     CustomersController,
+    MovieDraftsController,
     MoviesController,
     PurchasesController,
     ShowtimeCreationController,
@@ -28,7 +27,6 @@ import { HealthModule } from './modules'
         CustomerLocalStrategy,
         CustomerJwtStrategy,
         CustomersClient,
-        AssetsClient,
         MoviesClient,
         TheatersClient,
         ShowtimeCreationClient,

@@ -25,7 +25,8 @@ export class MoviesController {
     @UseGuards(CustomerOptionalJwtAuthGuard)
     @Get('recommended')
     async searchRecommendedMovies(@Req() req: CustomerAuthRequest) {
-        const customerId = req.user.customerId
+        const { customerId } = req.user ?? {}
+
         return this.recommendationService.searchRecommendedMovies(customerId)
     }
 
@@ -37,8 +38,8 @@ export class MoviesController {
     //   "links": { "createDraft": "/v1/movies/drafts" }
     // }
     @Post()
-    async create(@Body() createMovieDto: CreateMovieDto) {
-        return this.moviesService.create(createMovieDto)
+    async create(@Body() createDto: CreateMovieDto) {
+        return this.moviesService.create(createDto)
     }
 
     @Patch(':movieId')

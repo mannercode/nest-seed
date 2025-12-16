@@ -5,7 +5,7 @@ import { CustomerJwtAuthGuard } from './customer-jwt-auth.guard'
 export class CustomerOptionalJwtAuthGuard extends CustomerJwtAuthGuard {
     handleRequest(error: any, user: any, _info: any, _context: any) {
         if (error || !user) {
-            return { customerId: null, email: null }
+            return null
         }
 
         return user
