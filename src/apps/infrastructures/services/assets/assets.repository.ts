@@ -15,7 +15,7 @@ export class AssetsRepository extends MongooseRepository<Asset> {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createAsset(createDto: CreateAssetDto) {
+    async create(createDto: CreateAssetDto) {
         const asset = this.newDocument()
         asset.originalName = createDto.originalName
         asset.mimeType = createDto.mimeType

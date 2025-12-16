@@ -20,11 +20,3 @@ export class CreateAssetDto {
     @IsNotEmpty()
     checksum: Checksum
 }
-
-export class UploadRequest {
-    assetId: string
-    method: 'PUT'
-    headers: Record<string, string>
-    url: string
-    expiresAt: Date
-}

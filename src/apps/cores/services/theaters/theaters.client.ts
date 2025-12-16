@@ -33,7 +33,7 @@ export class TheatersClient {
         return this.proxy.getJson(Messages.Theaters.searchPage, searchDto)
     }
 
-    allExistByIds(theaterIds: string[]): Promise<boolean> {
+    allExist(theaterIds: string[]): Promise<boolean> {
         return this.proxy.getJson(Messages.Theaters.allExist, theaterIds)
     }
 }

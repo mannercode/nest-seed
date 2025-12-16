@@ -111,7 +111,7 @@ export class ShowtimeBulkValidatorService {
     }
 
     private async verifyMovieExists(movieId: string) {
-        const movieExists = await this.moviesService.allExistByIds([movieId])
+        const movieExists = await this.moviesService.allExist([movieId])
 
         if (!movieExists) {
             throw new NotFoundException({
@@ -122,7 +122,7 @@ export class ShowtimeBulkValidatorService {
     }
 
     private async verifyTheatersExist(theaterIds: string[]) {
-        const theatersExist = await this.theatersService.allExistByIds(theaterIds)
+        const theatersExist = await this.theatersService.allExist(theaterIds)
 
         if (!theatersExist) {
             throw new NotFoundException({

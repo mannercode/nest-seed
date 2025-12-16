@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common'
 import { mapDocToDto } from 'common'
 import { CreatePurchaseRecordDto, PurchaseRecordDto } from './dtos'
 import { PurchaseRecordDocument } from './models'
-import { PurchasesRecordRepository } from './purchase-records.repository'
+import { PurchaseRecordsRepository } from './purchase-records.repository'
 
 @Injectable()
 export class PurchaseRecordsService {
-    constructor(private readonly repository: PurchasesRecordRepository) {}
+    constructor(private readonly repository: PurchaseRecordsRepository) {}
 
     async create(createDto: CreatePurchaseRecordDto) {
         const purchase = await this.repository.create(createDto)

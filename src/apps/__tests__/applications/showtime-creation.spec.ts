@@ -22,22 +22,18 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('GET /showtime-creation/movies', () => {
-        describe('when the query parameters are missing', () => {
-            it('returns movies with default pagination', async () => {
-                await fix.httpClient
-                    .get('/showtime-creation/movies')
-                    .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.movie] })
-            })
+        it('returns movies for showtime creation', async () => {
+            await fix.httpClient
+                .get('/showtime-creation/movies')
+                .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.movie] })
         })
     })
 
     describe('GET /showtime-creation/theaters', () => {
-        describe('when the query parameters are missing', () => {
-            it('returns theaters with default pagination', async () => {
-                await fix.httpClient
-                    .get('/showtime-creation/theaters')
-                    .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.theater] })
-            })
+        it('returns theaters for showtime creation', async () => {
+            await fix.httpClient
+                .get('/showtime-creation/theaters')
+                .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.theater] })
         })
     })
 
@@ -45,22 +41,21 @@ describe('ShowtimeCreationService', () => {
         let showtimes: ShowtimeDto[]
 
         beforeEach(async () => {
-            const createDtos = [
-                new Date('2100-01-01T09:00'),
-                new Date('2100-01-01T11:00'),
-                new Date('2100-01-01T13:00')
-            ].map((startTime) => ({ theaterId: fix.theater.id, startTime }))
-
-            showtimes = await createShowtimes(fix, createDtos)
+            showtimes = await createShowtimes(
+                fix,
+                [
+                    new Date('2100-01-01T09:00'),
+                    new Date('2100-01-01T11:00'),
+                    new Date('2100-01-01T13:00')
+                ].map((startTime) => ({ theaterId: fix.theater.id, startTime }))
+            )
         })
 
-        describe('when the `theaterIds` are provided', () => {
-            it('returns showtimes for the theaterIds', async () => {
-                await fix.httpClient
-                    .post('/showtime-creation/showtimes:search')
-                    .body({ theaterIds: [fix.theater.id] })
-                    .ok(expect.arrayContaining(showtimes))
-            })
+        it('returns showtimes for the theaterIds', async () => {
+            await fix.httpClient
+                .post('/showtime-creation/showtimes:search')
+                .body({ theaterIds: [fix.theater.id] })
+                .ok(expect.arrayContaining(showtimes))
         })
     })
 

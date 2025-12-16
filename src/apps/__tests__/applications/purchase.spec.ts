@@ -118,8 +118,8 @@ describe('PurchaseService', () => {
                         throw new Error('purchase error')
                     })
 
-                    const { TicketPurchasService } = await import('apps/applications')
-                    const ticketPurchaseService = fix.module.get(TicketPurchasService)
+                    const { TicketPurchaseService } = await import('apps/applications')
+                    const ticketPurchaseService = fix.module.get(TicketPurchaseService)
 
                     rollbackPurchaseSpy = jest.spyOn(ticketPurchaseService, 'rollbackPurchase')
                 })

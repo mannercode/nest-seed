@@ -1,6 +1,6 @@
 import { ShowtimeDto, TheaterDto, TicketSalesForShowtimeDto } from 'apps/cores'
 import { LatLong } from 'common'
-import { ShowtimeForBooking } from './dtos'
+import { ShowtimeForBookingDto } from './dtos'
 
 export function sortTheatersByDistance(theaters: TheaterDto[], latLong: LatLong) {
     return theaters.sort(
@@ -24,5 +24,5 @@ export function generateShowtimesForBooking(
         return { ...showtime, ticketSales: { total, sold, available } }
     })
 
-    return showtimesForBooking as ShowtimeForBooking[]
+    return showtimesForBooking as ShowtimeForBookingDto[]
 }

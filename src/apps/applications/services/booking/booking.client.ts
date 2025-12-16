@@ -6,7 +6,7 @@ import {
     SearchShowdatesForBookingDto,
     SearchTheatersForBookingDto,
     SearchShowtimesForBookingDto,
-    ShowtimeForBooking
+    ShowtimeForBookingDto
 } from './dtos'
 
 @Injectable()
@@ -21,7 +21,7 @@ export class BookingClient {
         return this.proxy.getJson(Messages.Booking.searchShowdates, dto)
     }
 
-    searchShowtimes(dto: SearchShowtimesForBookingDto): Promise<ShowtimeForBooking[]> {
+    searchShowtimes(dto: SearchShowtimesForBookingDto): Promise<ShowtimeForBookingDto[]> {
         return this.proxy.getJson(Messages.Booking.searchShowtimes, dto)
     }
 

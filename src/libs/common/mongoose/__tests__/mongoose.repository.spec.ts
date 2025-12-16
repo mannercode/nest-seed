@@ -162,7 +162,7 @@ describe('MongooseRepository', () => {
         })
     })
 
-    describe('allExistByIds', () => {
+    describe('allExist', () => {
         let samples: SampleDto[]
 
         beforeEach(async () => {
@@ -171,12 +171,12 @@ describe('MongooseRepository', () => {
         })
 
         it('returns true when all ids exist', async () => {
-            const exists = await fix.repository.allExistByIds(pickIds(samples))
+            const exists = await fix.repository.allExist(pickIds(samples))
             expect(exists).toBe(true)
         })
 
         it('returns false when any id is missing', async () => {
-            const exists = await fix.repository.allExistByIds([nullObjectId])
+            const exists = await fix.repository.allExist([nullObjectId])
             expect(exists).toBe(false)
         })
     })

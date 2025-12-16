@@ -4,7 +4,7 @@ import { Messages } from 'shared'
 import {
     CreateCustomerDto,
     CustomerAuthPayload,
-    CustomerCredentials,
+    CustomerCredentialsDto,
     CustomerDto,
     DeleteCustomersResponse,
     SearchCustomersPageDto,
@@ -43,7 +43,7 @@ export class CustomersClient {
         return this.proxy.getJson(Messages.Customers.refreshAuthTokens, refreshToken)
     }
 
-    findCustomerByCredentials(credentials: CustomerCredentials): Promise<CustomerDto | null> {
+    findCustomerByCredentials(credentials: CustomerCredentialsDto): Promise<CustomerDto | null> {
         return this.proxy.getJson(Messages.Customers.findCustomerByCredentials, credentials)
     }
 }

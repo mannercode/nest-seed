@@ -1,4 +1,9 @@
-import { AssetDto, CompleteAssetDto, CreateAssetDto, UploadRequest } from 'apps/infrastructures'
+import {
+    AssetDto,
+    CompleteAssetDto,
+    CreateAssetDto,
+    AssetPresignedUploadDto
+} from 'apps/infrastructures'
 import { createReadStream } from 'fs'
 import { TestContext } from 'testlib'
 import { FixtureFile } from '../fixture-files'
@@ -15,7 +20,10 @@ export function buildCompleteAssetDto(overrides = {}) {
     } as CompleteAssetDto
 }
 
-export async function uploadAsset(filepath: string, { url, method, headers }: UploadRequest) {
+export async function uploadAsset(
+    filepath: string,
+    { url, method, headers }: AssetPresignedUploadDto
+) {
     const stream = createReadStream(filepath)
 
     const response = await fetch(url, { method, headers, body: stream, duplex: 'half' })

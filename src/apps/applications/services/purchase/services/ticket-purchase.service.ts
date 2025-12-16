@@ -30,7 +30,7 @@ export const TicketPurchaseErrors = {
 }
 
 @Injectable()
-export class TicketPurchasService {
+export class TicketPurchaseService {
     constructor(
         private readonly ticketsService: TicketsClient,
         private readonly showtimesService: ShowtimesClient,

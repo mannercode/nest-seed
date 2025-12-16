@@ -3,7 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { MongooseConfigModule } from 'shared'
 import { PurchaseRecord, PurchaseRecordSchema } from './models'
 import { PurchaseRecordsController } from './purchase-records.controller'
-import { PurchasesRecordRepository } from './purchase-records.repository'
+import { PurchaseRecordsRepository } from './purchase-records.repository'
 import { PurchaseRecordsService } from './purchase-records.service'
 
 @Module({
@@ -13,7 +13,7 @@ import { PurchaseRecordsService } from './purchase-records.service'
             MongooseConfigModule.connectionName
         )
     ],
-    providers: [PurchaseRecordsService, PurchasesRecordRepository],
+    providers: [PurchaseRecordsService, PurchaseRecordsRepository],
     controllers: [PurchaseRecordsController]
 })
 export class PurchaseRecordsModule {}

@@ -1,9 +1,9 @@
-import { UploadRequest } from 'apps/infrastructures'
+import { AssetPresignedUploadDto } from 'apps/infrastructures'
 import { DraftImageStatus } from './movie-draft.dto'
 
 export class DraftImageUploadResponse {
     imageId: string
-    upload: UploadRequest
+    upload: AssetPresignedUploadDto
 }
 
 export class DraftImageDto {

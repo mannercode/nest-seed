@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { compare, hash } from 'bcrypt'
 import { InjectJwtAuth, JwtAuthService } from 'common'
 import { CustomersRepository } from '../customers.repository'
-import { CustomerAuthPayload, CustomerCredentials } from '../dtos'
+import { CustomerAuthPayload, CustomerCredentialsDto } from '../dtos'
 
 @Injectable()
 export class CustomerAuthenticationService {
@@ -19,7 +19,7 @@ export class CustomerAuthenticationService {
         return this.jwtAuthService.refreshAuthTokens(refreshToken)
     }
 
-    async findCustomerByCredentials({ email, password }: CustomerCredentials) {
+    async findCustomerByCredentials({ email, password }: CustomerCredentialsDto) {
         const customer = await this.repository.findByEmailWithPassword(email)
 
         if (customer) {

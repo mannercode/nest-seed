@@ -39,7 +39,7 @@ export class TheatersService {
     }
 
     async allExist(theaterIds: string[]) {
-        return this.repository.allExistByIds(theaterIds)
+        return this.repository.allExist(theaterIds)
     }
 
     private toDto(theater: TheaterDocument) {

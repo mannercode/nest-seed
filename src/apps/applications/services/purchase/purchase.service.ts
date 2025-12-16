@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common'
 import { PurchaseRecordsClient } from 'apps/cores'
 import { PaymentsClient } from 'apps/infrastructures'
 import { CreatePurchaseDto } from './dtos'
-import { TicketPurchasService } from './services'
+import { TicketPurchaseService } from './services'
 
 @Injectable()
 export class PurchaseService {
     constructor(
         private readonly purchasesService: PurchaseRecordsClient,
         private readonly paymentsService: PaymentsClient,
-        private readonly ticketProcessor: TicketPurchasService
+        private readonly ticketProcessor: TicketPurchaseService
     ) {}
 
     async processPurchase(createDto: CreatePurchaseDto) {

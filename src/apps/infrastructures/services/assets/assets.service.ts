@@ -3,10 +3,10 @@ import { Cron } from '@nestjs/schedule'
 import { DateUtil, InjectS3Object, mapDocToDto, S3ObjectService } from 'common'
 import { Rules } from 'shared'
 import { AssetsRepository } from './assets.repository'
-import { AssetDto, CompleteAssetDto, CreateAssetDto, UploadRequest } from './dtos'
+import { AssetDto, AssetPresignedUploadDto, CompleteAssetDto, CreateAssetDto } from './dtos'
 import { AssetDocument } from './models'
 
-export const AssetErrors = {
+export const AssetServiceErrors = {
     UploadExpired: {
         code: 'ERR_ASSET_UPLOAD_EXPIRED',
         message: 'The upload request for this asset has expired.'
@@ -20,8 +20,8 @@ export class AssetsService {
         @InjectS3Object() private readonly s3Service: S3ObjectService
     ) {}
 
-    async create(createDto: CreateAssetDto): Promise<UploadRequest> {
-        const asset = await this.repository.createAsset(createDto)
+    async create(createDto: CreateAssetDto): Promise<AssetPresignedUploadDto> {
+        const asset = await this.repository.create(createDto)
 
         const { mimeType, size } = createDto
         const expiresInSec = Rules.Asset.uploadExpiresInSec
@@ -56,7 +56,7 @@ export class AssetsService {
         if (this.isUploadExpired(expiresAt)) {
             await this.deleteAsset(asset)
 
-            throw new NotFoundException({ ...AssetErrors.UploadExpired, assetId, expiresAt })
+            throw new NotFoundException({ ...AssetServiceErrors.UploadExpired, assetId, expiresAt })
         }
 
         asset.ownerService = owner.service
@@ -83,7 +83,7 @@ export class AssetsService {
     }
 
     @Cron(Rules.Asset.expiredUploadCleanupCron, { name: 'assets.cleanupExpiredUploads' })
-    async cleanupExpiredUploadsJob() {
+    async cleanupExpiredUploads() {
         const expireBefore = this.getExpirationThreshold()
         const expiredAssets = await this.repository.findExpiredUncompleted(expireBefore)
 

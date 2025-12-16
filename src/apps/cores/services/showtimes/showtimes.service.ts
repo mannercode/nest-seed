@@ -39,7 +39,7 @@ export class ShowtimesService {
     }
 
     async allExist(showtimeIds: string[]): Promise<boolean> {
-        return this.repository.allExistByIds(showtimeIds)
+        return this.repository.allExist(showtimeIds)
     }
 
     private toDto(showtime: ShowtimeDocument) {

@@ -1,5 +1,5 @@
 import { ShowtimeDto, TicketSalesDto } from 'apps/cores'
 
-export class ShowtimeForBooking extends ShowtimeDto {
+export class ShowtimeForBookingDto extends ShowtimeDto {
     ticketSales: TicketSalesDto
 }

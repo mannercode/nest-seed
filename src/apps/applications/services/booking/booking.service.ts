@@ -12,7 +12,7 @@ import {
     SearchShowdatesForBookingDto,
     SearchTheatersForBookingDto,
     SearchShowtimesForBookingDto,
-    ShowtimeForBooking
+    ShowtimeForBookingDto
 } from './dtos'
 
 export const BookingServiceErrors = {
@@ -64,11 +64,11 @@ export class BookingService {
 
         const showtimesForBooking = generateShowtimesForBooking(showtimes, ticketSalesForShowtimes)
 
-        return showtimesForBooking as ShowtimeForBooking[]
+        return showtimesForBooking as ShowtimeForBookingDto[]
     }
 
     async getTickets(showtimeId: string) {
-        const showtimeExists = await this.showtimesService.allExistByIds([showtimeId])
+        const showtimeExists = await this.showtimesService.allExist([showtimeId])
 
         if (!showtimeExists) {
             throw new NotFoundException({ ...BookingServiceErrors.ShowtimeNotFound, showtimeId })

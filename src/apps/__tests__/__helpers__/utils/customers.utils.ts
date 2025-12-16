@@ -1,4 +1,4 @@
-import { CreateCustomerDto, CustomerCredentials } from 'apps/cores'
+import { CreateCustomerDto, CustomerCredentialsDto } from 'apps/cores'
 import { TestContext } from 'testlib'
 
 export function buildCreateCustomerDto(overrides = {}) {
@@ -23,7 +23,7 @@ export async function createCustomer(ctx: TestContext, override = {}) {
     return customer
 }
 
-export async function loginCustomer(ctx: TestContext, credentials: CustomerCredentials) {
+export async function loginCustomer(ctx: TestContext, credentials: CustomerCredentialsDto) {
     const { CustomersClient } = await import('apps/cores')
     const customersService = ctx.module.get(CustomersClient)
 
