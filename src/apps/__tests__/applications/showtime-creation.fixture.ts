@@ -1,8 +1,4 @@
-import {
-    BulkCreateShowtimesDto,
-    ShowtimeCreationClient,
-    ShowtimeCreationModule
-} from 'apps/applications'
+import { ShowtimeCreationClient, ShowtimeCreationModule } from 'apps/applications'
 import {
     MovieDto,
     MoviesClient,
@@ -12,20 +8,25 @@ import {
     TheaterDto,
     TheatersClient,
     TheatersModule,
+    TicketsClient,
     TicketsModule
 } from 'apps/cores'
 import { ShowtimeCreationController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { jsonToObject } from 'common'
-import { oid } from 'testlib'
 import {
-    createMovie,
     createAppTestContext,
+    createMovie,
     createTheater,
     AppTestContext as TestContext
 } from '../__helpers__'
 
-export type ShowtimeCreationFixture = TestContext & { movie: MovieDto; theater: TheaterDto }
+export type ShowtimeCreationFixture = TestContext & {
+    movie: MovieDto
+    theater: TheaterDto
+    showtimesClient: ShowtimesClient
+    ticketsClient: TicketsClient
+}
 
 export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationFixture> {
     const ctx = await createAppTestContext({
@@ -41,32 +42,24 @@ export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationF
             MoviesClient,
             TheatersClient,
             ShowtimesClient,
+            TicketsClient,
             ShowtimeCreationClient,
             AssetsClient
         ],
         controllers: [ShowtimeCreationController]
     })
 
+    const showtimesClient = ctx.module.get(ShowtimesClient)
+    const ticketsClient = ctx.module.get(TicketsClient)
+
     const movie = await createMovie(ctx)
     const theater = await createTheater(ctx)
 
-    return { ...ctx, movie, theater }
-}
-
-export function buildBulkCreateShowtimesDto(overrides: Partial<BulkCreateShowtimesDto> = {}) {
-    const createDto = {
-        movieId: oid(0x0),
-        theaterIds: [oid(0x0)],
-        startTimes: [new Date(0)],
-        durationInMinutes: 1,
-        ...overrides
-    }
-
-    return createDto
+    return { ...ctx, movie, theater, showtimesClient, ticketsClient }
 }
 
 export function waitForCompletion(ctx: TestContext, status: string) {
-    return new Promise((resolve, reject) => {
+    return new Promise<any>((resolve, reject) => {
         ctx.httpClient.get('/showtime-creation/event-stream').sse((data) => {
             try {
                 const result = jsonToObject(JSON.parse(data))

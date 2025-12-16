@@ -1,13 +1,9 @@
-import { BulkCreateShowtimesDto } from 'apps/applications'
-import { Seatmap, ShowtimeDto } from 'apps/cores'
+import { ShowtimeDto } from 'apps/cores'
 import { DateUtil } from 'common'
+import request from 'superagent'
 import { nullObjectId } from 'testlib'
 import { createShowtimes } from '../__helpers__'
-import {
-    buildBulkCreateShowtimesDto,
-    ShowtimeCreationFixture,
-    waitForCompletion
-} from './showtime-creation.fixture'
+import { ShowtimeCreationFixture, waitForCompletion } from './showtime-creation.fixture'
 
 describe('ShowtimeCreationService', () => {
     let fix: ShowtimeCreationFixture
@@ -38,152 +34,173 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('POST /showtime-creation/showtimes:search', () => {
-        let showtimes: ShowtimeDto[]
+        describe('극장에 등록된 상영시간이 존재하는 경우', () => {
+            let showtimes: ShowtimeDto[]
 
-        beforeEach(async () => {
-            showtimes = await createShowtimes(
-                fix,
-                [
-                    new Date('2100-01-01T09:00'),
-                    new Date('2100-01-01T11:00'),
-                    new Date('2100-01-01T13:00')
-                ].map((startTime) => ({ theaterId: fix.theater.id, startTime }))
-            )
-        })
+            beforeEach(async () => {
+                showtimes = await createShowtimes(
+                    fix,
+                    [
+                        new Date('2100-01-01T09:00'),
+                        new Date('2100-01-01T11:00'),
+                        new Date('2100-01-01T13:00')
+                    ].map((startTime) => ({ theaterId: fix.theater.id, startTime }))
+                )
+            })
 
-        it('returns showtimes for the theaterIds', async () => {
-            await fix.httpClient
-                .post('/showtime-creation/showtimes:search')
-                .body({ theaterIds: [fix.theater.id] })
-                .ok(expect.arrayContaining(showtimes))
+            it('returns showtimes for the theaterIds', async () => {
+                await fix.httpClient
+                    .post('/showtime-creation/showtimes:search')
+                    .body({ theaterIds: [fix.theater.id] })
+                    .ok(expect.arrayContaining(showtimes))
+            })
         })
     })
 
     describe('POST /showtime-creation/showtimes', () => {
-        describe('when the payload is valid', () => {
-            let createDto: BulkCreateShowtimesDto
-            let sagaId: string
-            let result: unknown
-
-            beforeEach(async () => {
-                const waitPromise = waitForCompletion(fix, 'succeeded')
-
-                createDto = buildBulkCreateShowtimesDto({
+        it('returns a sagaId', async () => {
+            await fix.httpClient
+                .post('/showtime-creation/showtimes')
+                .body({
                     movieId: fix.movie.id,
                     theaterIds: [fix.theater.id],
-                    startTimes: [new Date('2100-01-01T09:00'), new Date('2100-01-01T11:00')]
+                    startTimes: [new Date('2100-01-01T09:00')],
+                    durationInMinutes: 1
                 })
+                .accepted({ sagaId: expect.any(String) })
+        })
 
-                const { body } = await fix.httpClient
+        describe('상영시간 생성을 요청한 경우', () => {
+            let requestPromise: Promise<request.Response>
+
+            beforeEach(async () => {
+                requestPromise = fix.httpClient
                     .post('/showtime-creation/showtimes')
-                    .body(createDto)
+                    .body({
+                        movieId: fix.movie.id,
+                        theaterIds: [fix.theater.id],
+                        startTimes: [new Date('2100-01-01T09:00')],
+                        durationInMinutes: 1
+                    })
                     .accepted()
-
-                sagaId = body.sagaId
-                result = await waitPromise
             })
 
-            // TODO fix
-            it('returns a sagaId', async () => {
-                expect(sagaId).toBeDefined()
-            })
+            it('처리 과정을 모니터링 한다', async () => {
+                const promise = new Promise((resolve, reject) => {
+                    fix.httpClient.get('/showtime-creation/event-stream').sse((data) => {
+                        const result = JSON.parse(data)
 
-            it('emits a showtime creation success event', async () => {
-                const { theaterIds, startTimes } = createDto
+                        if (['succeeded', 'failed', 'error'].includes(result.status)) {
+                            fix.httpClient.abort()
 
-                const createdShowtimeCount = theaterIds.length * startTimes.length
-                const seatCount = Seatmap.getSeatCount(fix.theater.seatmap)
-                const createdTicketCount = createdShowtimeCount * seatCount
-
-                expect(result).toEqual({
-                    sagaId,
-                    status: 'succeeded',
-                    createdShowtimeCount,
-                    createdTicketCount
+                            if ('succeeded' === result.status) {
+                                resolve(result)
+                            } else {
+                                reject(result)
+                            }
+                        }
+                    }, reject)
                 })
+
+                const { body } = await requestPromise
+
+                await expect(promise).resolves.toEqual(
+                    expect.objectContaining({ sagaId: body.sagaId, status: 'succeeded' })
+                )
+            })
+
+            it('상영시간을 생성한다', async () => {
+                const { body } = await requestPromise
+                const { createdShowtimeCount } = await waitForCompletion(fix, 'succeeded')
+
+                const showtimes = await fix.showtimesClient.search({ sagaIds: [body.sagaId] })
+                expect(showtimes).toHaveLength(createdShowtimeCount)
+            })
+
+            it('티켓을 생성한다', async () => {
+                const { body } = await requestPromise
+                const { createdTicketCount } = await waitForCompletion(fix, 'succeeded')
+
+                const tickets = await fix.ticketsClient.search({ sagaIds: [body.sagaId] })
+                expect(tickets).toHaveLength(createdTicketCount)
             })
         })
 
-        describe('when the movie does not exist', () => {
-            it('reports the missing movie error', async () => {
-                const waitPromise = waitForCompletion(fix, 'error')
+        it('reports the missing movie error', async () => {
+            const waitPromise = waitForCompletion(fix, 'error')
 
-                const createDto = buildBulkCreateShowtimesDto({
+            const { body } = await fix.httpClient
+                .post('/showtime-creation/showtimes')
+                .body({
                     movieId: nullObjectId,
-                    theaterIds: [fix.theater.id]
+                    theaterIds: [fix.theater.id],
+                    startTimes: [new Date(0)],
+                    durationInMinutes: 1
                 })
+                .accepted()
 
-                const { body } = await fix.httpClient
-                    .post('/showtime-creation/showtimes')
-                    .body(createDto)
-                    .accepted()
-
-                await expect(waitPromise).resolves.toEqual({
-                    sagaId: body.sagaId,
-                    status: 'error',
-                    message: 'The requested movie could not be found.'
-                })
+            await expect(waitPromise).resolves.toEqual({
+                sagaId: body.sagaId,
+                status: 'error',
+                message: 'The requested movie could not be found.'
             })
         })
 
-        describe('when a theater does not exist', () => {
-            it('reports the missing theater error', async () => {
-                const waitPromise = waitForCompletion(fix, 'error')
+        it('reports the missing theater error', async () => {
+            const waitPromise = waitForCompletion(fix, 'error')
 
-                const createDto = buildBulkCreateShowtimesDto({
+            const { body } = await fix.httpClient
+                .post('/showtime-creation/showtimes')
+                .body({
                     movieId: fix.movie.id,
-                    theaterIds: [nullObjectId]
+                    theaterIds: [nullObjectId],
+                    startTimes: [new Date(0)],
+                    durationInMinutes: 1
                 })
+                .accepted()
 
-                const { body } = await fix.httpClient
-                    .post('/showtime-creation/showtimes')
-                    .body(createDto)
-                    .accepted()
-
-                await expect(waitPromise).resolves.toEqual({
-                    sagaId: body.sagaId,
-                    status: 'error',
-                    message: 'One or more requested theaters could not be found.'
-                })
+            await expect(waitPromise).resolves.toEqual({
+                sagaId: body.sagaId,
+                status: 'error',
+                message: 'One or more requested theaters could not be found.'
             })
         })
 
-        describe('when the showtimes conflict', () => {
+        describe('상영시간이 존재하는 경우', () => {
             let initialShowtimes: ShowtimeDto[]
 
             beforeEach(async () => {
-                const createDtos = [
-                    new Date('2013-01-31T12:00'),
-                    new Date('2013-01-31T14:00'),
-                    new Date('2013-01-31T16:30'),
-                    new Date('2013-01-31T18:30')
-                ].map((startTime) => ({
-                    theaterId: fix.theater.id,
-                    startTime,
-                    endTime: DateUtil.add({ base: startTime, minutes: 90 })
-                }))
-
-                initialShowtimes = await createShowtimes(fix, createDtos)
+                initialShowtimes = await createShowtimes(
+                    fix,
+                    [
+                        new Date('2013-01-31T12:00'),
+                        new Date('2013-01-31T14:00'),
+                        new Date('2013-01-31T16:30'),
+                        new Date('2013-01-31T18:30')
+                    ].map((startTime) => ({
+                        theaterId: fix.theater.id,
+                        startTime,
+                        endTime: DateUtil.add({ base: startTime, minutes: 90 })
+                    }))
+                )
             })
 
             it('returns the conflicting showtimes', async () => {
                 const waitPromise = waitForCompletion(fix, 'failed')
 
-                const createDto = buildBulkCreateShowtimesDto({
-                    movieId: fix.movie.id,
-                    theaterIds: [fix.theater.id],
-                    startTimes: [
-                        new Date('2013-01-31T12:00'),
-                        new Date('2013-01-31T16:00'),
-                        new Date('2013-01-31T20:00')
-                    ],
-                    durationInMinutes: 30
-                })
-
                 await fix.httpClient
                     .post('/showtime-creation/showtimes')
-                    .body(createDto)
-                    .accepted({ sagaId: expect.any(String) })
+                    .body({
+                        movieId: fix.movie.id,
+                        theaterIds: [fix.theater.id],
+                        startTimes: [
+                            new Date('2013-01-31T12:00'),
+                            new Date('2013-01-31T16:00'),
+                            new Date('2013-01-31T20:00')
+                        ],
+                        durationInMinutes: 30
+                    })
+                    .accepted()
 
                 const conflictingShowtimes = [
                     initialShowtimes[0],
