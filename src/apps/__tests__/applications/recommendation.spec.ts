@@ -18,7 +18,7 @@ describe('RecommendationService', () => {
     })
 
     describe('GET /movies/recommended', () => {
-        describe('상영 중인 영화가 존재하는 경우', () => {
+        describe('when showing movies exist', () => {
             let fantasyMovie: MovieDto
             let comedy1Movie: MovieDto
             let comedy2Movie: MovieDto
@@ -36,7 +36,7 @@ describe('RecommendationService', () => {
                     ])
             })
 
-            describe('고객이 시청한 영화가 존재하는 경우', () => {
+            describe('when the customer has watched movies', () => {
                 let accessToken: string
 
                 beforeEach(async () => {
@@ -52,7 +52,7 @@ describe('RecommendationService', () => {
                     accessToken = result.accessToken
                 })
 
-                it('returns recommendations for the customer', async () => {
+                it('returns recommendations based on watch history', async () => {
                     await fix.httpClient
                         .get('/movies/recommended')
                         .headers({ Authorization: `Bearer ${accessToken}` })
@@ -66,7 +66,7 @@ describe('RecommendationService', () => {
                 })
             })
 
-            it('returns recommendations for guests', async () => {
+            it('returns default recommendations for a guest', async () => {
                 await fix.httpClient.get('/movies/recommended').ok([
                     dramaMovie, // 2900-05-01
                     actionMovie, // 2900-04-01
