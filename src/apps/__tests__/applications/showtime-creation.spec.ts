@@ -18,7 +18,7 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('GET /showtime-creation/movies', () => {
-        it('returns movies for showtime creation', async () => {
+        it('returns movies with default pagination', async () => {
             await fix.httpClient
                 .get('/showtime-creation/movies')
                 .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.movie] })
@@ -26,7 +26,7 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('GET /showtime-creation/theaters', () => {
-        it('returns theaters for showtime creation', async () => {
+        it('returns theaters with default pagination', async () => {
             await fix.httpClient
                 .get('/showtime-creation/theaters')
                 .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.theater] })
@@ -34,7 +34,7 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('POST /showtime-creation/showtimes:search', () => {
-        describe('극장에 등록된 상영시간이 존재하는 경우', () => {
+        describe('when showtimes exist for the theater', () => {
             let showtimes: ShowtimeDto[]
 
             beforeEach(async () => {
@@ -70,7 +70,7 @@ describe('ShowtimeCreationService', () => {
                 .accepted({ sagaId: expect.any(String) })
         })
 
-        describe('상영시간 생성을 요청한 경우', () => {
+        describe('when showtime creation is requested', () => {
             let requestPromise: Promise<request.Response>
 
             beforeEach(async () => {
@@ -85,7 +85,7 @@ describe('ShowtimeCreationService', () => {
                     .accepted()
             })
 
-            it('처리 과정을 모니터링 한다', async () => {
+            it('streams saga status updates', async () => {
                 const promise = new Promise((resolve, reject) => {
                     fix.httpClient.get('/showtime-creation/event-stream').sse((data) => {
                         const result = JSON.parse(data)
@@ -109,7 +109,7 @@ describe('ShowtimeCreationService', () => {
                 )
             })
 
-            it('상영시간을 생성한다', async () => {
+            it('creates showtimes', async () => {
                 const { body } = await requestPromise
                 const { createdShowtimeCount } = await waitForCompletion(fix, 'succeeded')
 
@@ -117,7 +117,7 @@ describe('ShowtimeCreationService', () => {
                 expect(showtimes).toHaveLength(createdShowtimeCount)
             })
 
-            it('티켓을 생성한다', async () => {
+            it('creates tickets', async () => {
                 const { body } = await requestPromise
                 const { createdTicketCount } = await waitForCompletion(fix, 'succeeded')
 
@@ -126,7 +126,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('reports the missing movie error', async () => {
+        it('reports an error for a missing movie', async () => {
             const waitPromise = waitForCompletion(fix, 'error')
 
             const { body } = await fix.httpClient
@@ -146,7 +146,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('reports the missing theater error', async () => {
+        it('reports an error for a missing theater', async () => {
             const waitPromise = waitForCompletion(fix, 'error')
 
             const { body } = await fix.httpClient
@@ -166,7 +166,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        describe('상영시간이 존재하는 경우', () => {
+        describe('when showtimes conflict', () => {
             let initialShowtimes: ShowtimeDto[]
 
             beforeEach(async () => {
