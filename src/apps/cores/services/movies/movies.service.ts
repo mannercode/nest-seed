@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
-import { AssetsClient } from 'apps/infrastructures'
-import { mapDocToDto } from 'common'
+import { AssetDto, AssetsClient } from 'apps/infrastructures'
+import { mapDocToDto, objectIds } from 'common'
 import { CreateMovieDto, MovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
 import { MovieDocument } from './models'
 import { MoviesRepository } from './movies.repository'
@@ -14,14 +14,6 @@ export class MoviesService {
 
     async create(createDto: CreateMovieDto) {
         const movie = await this.moviesRepository.create(createDto)
-
-        await Promise.all(
-            createDto.assetIds.map((assetId) =>
-                this.assetsService.complete(assetId, {
-                    owner: { service: 'movies', entityId: movie.id }
-                })
-            )
-        )
 
         return this.toDto(movie)
     }
@@ -39,20 +31,19 @@ export class MoviesService {
     }
 
     async deleteMany(movieIds: string[]) {
-        const movies = await this.moviesRepository.withTransaction(async (session) => {
-            const movies = await this.moviesRepository.getByIds(movieIds)
+        const movies = await this.moviesRepository.getByIds(movieIds)
 
-            for (const movie of movies) {
-                await movie.deleteOne({ session })
+        const assetIds = [
+            ...new Set(movies.flatMap((movie) => movie.assetIds.map((id) => id.toString())))
+        ]
 
-                const assetIds = movie.assetIds.map((id) => id.toString())
-                await this.assetsService.deleteMany(assetIds)
-            }
+        await this.assetsService.deleteMany(assetIds)
 
-            return movies
+        await this.moviesRepository.model.deleteMany({ _id: { $in: objectIds(movieIds) } as any })
+
+        movies.forEach((movie) => {
+            movie.assetIds = []
         })
-
-        movies.map((movie) => (movie.assetIds = []))
 
         return { deletedMovies: await this.toDtos(movies) }
     }
@@ -67,7 +58,7 @@ export class MoviesService {
         return this.moviesRepository.allExist(movieIds)
     }
 
-    private async toDto(movie: MovieDocument) {
+    private toDtoBase(movie: MovieDocument): MovieDto {
         const dto = mapDocToDto(movie, MovieDto, [
             'id',
             'title',
@@ -79,14 +70,54 @@ export class MoviesService {
             'rating'
         ])
 
-        const assetIds = movie.assetIds.map((id) => id.toString())
-        const assets = await this.assetsService.getMany(assetIds)
-
-        dto.imageUrls = assets.map((asset) => asset.download!.url)
+        dto.imageUrls = []
         return dto
     }
 
-    private async toDtos(movies: MovieDocument[]) {
-        return Promise.all(movies.map((movie) => this.toDto(movie)))
+    private buildAssetUrlById(assets: AssetDto[]): Map<string, string> {
+        const assetUrlById = new Map<string, string>()
+
+        assets.forEach((asset) => {
+            assetUrlById.set(asset.id, asset.download!.url)
+        })
+
+        return assetUrlById
+    }
+
+    private async toDto(movie: MovieDocument): Promise<MovieDto> {
+        const dto = this.toDtoBase(movie)
+
+        const assetIds = movie.assetIds.map((id) => id.toString())
+        if (assetIds.length === 0) {
+            return dto
+        }
+
+        const resolvedAssets = await this.assetsService.getMany(assetIds)
+        const assetUrlById = this.buildAssetUrlById(resolvedAssets)
+
+        dto.imageUrls = assetIds.map((assetId) => assetUrlById.get(assetId)!)
+        return dto
+    }
+
+    private async toDtos(movies: MovieDocument[]): Promise<MovieDto[]> {
+        const dtos = movies.map((movie) => this.toDtoBase(movie))
+
+        const assetIds = [
+            ...new Set(movies.flatMap((movie) => movie.assetIds.map((id) => id.toString())))
+        ]
+
+        if (assetIds.length === 0) {
+            return dtos
+        }
+
+        const assets = await this.assetsService.getMany(assetIds)
+        const assetUrlById = this.buildAssetUrlById(assets)
+
+        movies.forEach((movie, index) => {
+            const movieAssetIds = movie.assetIds.map((id) => id.toString())
+            dtos[index].imageUrls = movieAssetIds.map((assetId) => assetUrlById.get(assetId)!)
+        })
+
+        return dtos
     }
 }

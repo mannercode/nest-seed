@@ -7,6 +7,7 @@ export class CreateCustomerDto {
     name: string
 
     @IsEmail()
+    @IsNotEmpty()
     email: string
 
     @IsDate()
@@ -14,5 +15,6 @@ export class CreateCustomerDto {
     birthDate: Date
 
     @IsString()
+    @IsNotEmpty()
     password: string
 }

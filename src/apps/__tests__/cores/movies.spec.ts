@@ -1,5 +1,4 @@
 import { CreateMovieDto, MovieDto, MovieGenre, MovieRating, SearchMoviesPageDto } from 'apps/cores'
-import { AssetDto } from 'apps/infrastructures'
 import { Checksum } from 'common'
 import { omit } from 'lodash'
 import { nullObjectId } from 'testlib'
@@ -40,10 +39,9 @@ describe('MoviesService', () => {
 
         describe('when the payload includes assetIds', () => {
             let createDto: CreateMovieDto
-            let asset: AssetDto
 
             beforeEach(async () => {
-                asset = await uploadComplete(fix, fixtureFiles.image)
+                const asset = await uploadComplete(fix, fixtureFiles.image)
                 createDto = buildCreateMovieDto({ assetIds: [asset.id] })
             })
 
@@ -55,7 +53,7 @@ describe('MoviesService', () => {
                 expect(response.ok).toBe(true)
 
                 const buffer = Buffer.from(await response.bytes())
-                expect(asset.checksum).toEqual(Checksum.fromBuffer(buffer))
+                expect(fixtureFiles.image.checksum).toEqual(Checksum.fromBuffer(buffer))
             })
         })
 
@@ -182,6 +180,8 @@ describe('MoviesService', () => {
         let movieB2: MovieDto
 
         beforeEach(async () => {
+            const asset = await uploadComplete(fix, fixtureFiles.image)
+
             ;[movieA1, movieA2, movieB1, movieB2] = await Promise.all([
                 createMovie(fix, {
                     title: 'title-a1',
@@ -189,7 +189,8 @@ describe('MoviesService', () => {
                     director: 'James Cameron',
                     releaseDate: new Date('2000-01-01'),
                     rating: MovieRating.NC17,
-                    genres: [MovieGenre.Action, MovieGenre.Comedy]
+                    genres: [MovieGenre.Action, MovieGenre.Comedy],
+                    assetIds: [asset.id]
                 }),
                 createMovie(fix, {
                     title: 'title-a2',
@@ -218,12 +219,15 @@ describe('MoviesService', () => {
             ])
         })
 
-        const buildExpectedPage = (movies: MovieDto[]) => ({
-            skip: 0,
-            take: expect.any(Number),
-            total: movies.length,
-            items: expect.arrayContaining(movies)
-        })
+        const buildExpectedPage = (movies: MovieDto[]) => {
+            movies.forEach((movie) => (movie.imageUrls = expect.any(Array)))
+            return {
+                skip: 0,
+                take: expect.any(Number),
+                total: movies.length,
+                items: expect.arrayContaining(movies)
+            }
+        }
 
         it('returns the default page when no query is provided', async () => {
             const expected = buildExpectedPage([movieA1, movieA2, movieB1, movieB2])

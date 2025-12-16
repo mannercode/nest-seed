@@ -7,7 +7,8 @@ import {
     newObjectId,
     objectId,
     objectIds,
-    QueryBuilder
+    QueryBuilder,
+    assignIfDefined
 } from 'common'
 import { model, Types } from 'mongoose'
 
@@ -196,5 +197,43 @@ describe('mapDocToDto', () => {
         const dto = mapDocToDto(doc, SampleDto, ['id', 'name', 'optional'])
 
         expect(dto).toEqual({ id: expect.any(String), name: 'name', optional: undefined })
+    })
+})
+
+describe('assignIfDefined', () => {
+    it('assigns target[key] when source[key] is defined', () => {
+        const target = { name: 'old' }
+        const source = { name: 'new' as string | undefined }
+
+        assignIfDefined(target, source, 'name')
+
+        expect(target.name).toBe('new')
+    })
+
+    it('does not change target when source[key] is undefined', () => {
+        const target = { name: 'old' }
+        const source = { name: undefined as string | undefined }
+
+        assignIfDefined(target, source, 'name')
+
+        expect(target.name).toBe('old')
+    })
+
+    it('assigns transformed value when transform is provided', () => {
+        const target = { id: 'old' }
+        const source = { id: '123' as string | undefined }
+
+        assignIfDefined(target, source, 'id', (v) => `obj:${v}`)
+
+        expect(target.id).toBe('obj:123')
+    })
+
+    it('treats null as defined (only undefined is skipped)', () => {
+        const target = { email: 'old' as string | null }
+        const source = { email: null as string | null | undefined }
+
+        assignIfDefined(target, source, 'email')
+
+        expect(target.email).toBeNull()
     })
 })
