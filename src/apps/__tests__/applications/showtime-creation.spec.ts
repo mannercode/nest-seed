@@ -1,6 +1,6 @@
 import { ShowtimeDto } from 'apps/cores'
 import { DateUtil } from 'common'
-import request from 'superagent'
+import type { Response } from 'superagent'
 import { nullObjectId } from 'testlib'
 import { createShowtimes } from '../__helpers__'
 import { ShowtimeCreationFixture, waitForCompletion } from './showtime-creation.fixture'
@@ -71,10 +71,10 @@ describe('ShowtimeCreationService', () => {
         })
 
         describe('when showtime creation is requested', () => {
-            let requestPromise: Promise<request.Response>
+            let createPromise: Promise<Response>
 
             beforeEach(async () => {
-                requestPromise = fix.httpClient
+                createPromise = fix.httpClient
                     .post('/showtime-creation/showtimes')
                     .body({
                         movieId: fix.movie.id,
@@ -86,48 +86,50 @@ describe('ShowtimeCreationService', () => {
             })
 
             it('streams saga status updates', async () => {
-                const promise = new Promise((resolve, reject) => {
+                const eventPromise = new Promise((resolve, reject) => {
                     fix.httpClient.get('/showtime-creation/event-stream').sse((data) => {
-                        const result = JSON.parse(data)
+                        const statusUpdate = JSON.parse(data)
 
-                        if (['succeeded', 'failed', 'error'].includes(result.status)) {
+                        if (['succeeded', 'failed', 'error'].includes(statusUpdate.status)) {
                             fix.httpClient.abort()
 
-                            if ('succeeded' === result.status) {
-                                resolve(result)
+                            if ('succeeded' === statusUpdate.status) {
+                                resolve(statusUpdate)
                             } else {
-                                reject(result)
+                                reject(statusUpdate)
                             }
                         }
                     }, reject)
                 })
 
-                const { body } = await requestPromise
+                const { body } = await createPromise
 
-                await expect(promise).resolves.toEqual(
+                await expect(eventPromise).resolves.toEqual(
                     expect.objectContaining({ sagaId: body.sagaId, status: 'succeeded' })
                 )
             })
 
             it('creates showtimes', async () => {
-                const { body } = await requestPromise
+                const { body } = await createPromise
                 const { createdShowtimeCount } = await waitForCompletion(fix, 'succeeded')
 
-                const showtimes = await fix.showtimesClient.search({ sagaIds: [body.sagaId] })
-                expect(showtimes).toHaveLength(createdShowtimeCount)
+                const createdShowtimes = await fix.showtimesClient.search({
+                    sagaIds: [body.sagaId]
+                })
+                expect(createdShowtimes).toHaveLength(createdShowtimeCount)
             })
 
             it('creates tickets', async () => {
-                const { body } = await requestPromise
+                const { body } = await createPromise
                 const { createdTicketCount } = await waitForCompletion(fix, 'succeeded')
 
-                const tickets = await fix.ticketsClient.search({ sagaIds: [body.sagaId] })
-                expect(tickets).toHaveLength(createdTicketCount)
+                const createdTickets = await fix.ticketsClient.search({ sagaIds: [body.sagaId] })
+                expect(createdTickets).toHaveLength(createdTicketCount)
             })
         })
 
         it('reports an error for a missing movie', async () => {
-            const waitPromise = waitForCompletion(fix, 'error')
+            const completionPromise = waitForCompletion(fix, 'error')
 
             const { body } = await fix.httpClient
                 .post('/showtime-creation/showtimes')
@@ -139,7 +141,7 @@ describe('ShowtimeCreationService', () => {
                 })
                 .accepted()
 
-            await expect(waitPromise).resolves.toEqual({
+            await expect(completionPromise).resolves.toEqual({
                 sagaId: body.sagaId,
                 status: 'error',
                 message: 'The requested movie could not be found.'
@@ -147,7 +149,7 @@ describe('ShowtimeCreationService', () => {
         })
 
         it('reports an error for a missing theater', async () => {
-            const waitPromise = waitForCompletion(fix, 'error')
+            const completionPromise = waitForCompletion(fix, 'error')
 
             const { body } = await fix.httpClient
                 .post('/showtime-creation/showtimes')
@@ -159,7 +161,7 @@ describe('ShowtimeCreationService', () => {
                 })
                 .accepted()
 
-            await expect(waitPromise).resolves.toEqual({
+            await expect(completionPromise).resolves.toEqual({
                 sagaId: body.sagaId,
                 status: 'error',
                 message: 'One or more requested theaters could not be found.'
@@ -186,7 +188,7 @@ describe('ShowtimeCreationService', () => {
             })
 
             it('returns the conflicting showtimes', async () => {
-                const waitPromise = waitForCompletion(fix, 'failed')
+                const completionPromise = waitForCompletion(fix, 'failed')
 
                 await fix.httpClient
                     .post('/showtime-creation/showtimes')
@@ -208,7 +210,7 @@ describe('ShowtimeCreationService', () => {
                     initialShowtimes[3]
                 ]
 
-                await expect(waitPromise).resolves.toEqual({
+                await expect(completionPromise).resolves.toEqual({
                     sagaId: expect.any(String),
                     status: 'failed',
                     conflictingShowtimes
