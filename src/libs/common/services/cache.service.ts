@@ -60,11 +60,12 @@ export type CacheModuleOptions = { name?: string; redisName?: string; prefix: st
 export class CacheModule {
     static register(options: CacheModuleOptions): DynamicModule {
         const { name, redisName, prefix } = options
+        const resolvedName = name ?? 'default'
 
         const provider = {
             provide: CacheService.getName(name),
             useFactory: async (redis: Redis) => {
-                return new CacheService(redis, prefix + ':' + name)
+                return new CacheService(redis, `${prefix}:${resolvedName}`)
             },
             inject: [getRedisConnectionToken(redisName)]
         }

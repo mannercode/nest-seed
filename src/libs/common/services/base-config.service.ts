@@ -6,7 +6,7 @@ export abstract class BaseConfigService {
     getString(key: string): string {
         const value = this.configService.get<string>(key)
 
-        if (!value) {
+        if (value === undefined || value === null || value.length === 0) {
             console.error(`Key '${key}' is not defined`)
             process.exit(1)
         }
@@ -17,7 +17,7 @@ export abstract class BaseConfigService {
     getNumber(key: string): number {
         const value = this.configService.get<number>(key)
 
-        if (!value) {
+        if (value === undefined || value === null) {
             console.error(`Key '${key}' is not defined`)
             process.exit(1)
         }
@@ -27,7 +27,7 @@ export abstract class BaseConfigService {
     getBoolean(key: string): boolean {
         const value = this.configService.get<boolean>(key)
 
-        if (!value) {
+        if (value === undefined || value === null) {
             console.error(`Key '${key}' is not defined`)
             process.exit(1)
         }

@@ -34,6 +34,11 @@ describe('BaseConfigService', () => {
             expect(result).toBe(123)
         })
 
+        it('returns 0 for an existing key with the value 0', () => {
+            const result = fix.appConfigService.getNumber('TEST_NUMBER_ZERO_KEY')
+            expect(result).toBe(0)
+        })
+
         it('exits the process for a missing key', () => {
             const mockExit = jest.spyOn(process, 'exit').mockImplementation()
             jest.spyOn(console, 'error').mockImplementation()
@@ -48,6 +53,11 @@ describe('BaseConfigService', () => {
         it('returns the boolean value for an existing key', () => {
             const result = fix.appConfigService.getBoolean('TEST_BOOLEAN_KEY')
             expect(result).toBe(true)
+        })
+
+        it('returns false for an existing key with the value false', () => {
+            const result = fix.appConfigService.getBoolean('TEST_BOOLEAN_FALSE_KEY')
+            expect(result).toBe(false)
         })
 
         it('exits the process for a missing key', () => {

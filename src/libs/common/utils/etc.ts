@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto'
+import { randomBytes, randomUUID } from 'crypto'
 
 export async function sleep(timeoutInMs: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, timeoutInMs))
@@ -10,16 +10,29 @@ export const generateUUID = () => randomUUID()
  * Generates a short unique identifier (ID) with the specified length.
  * 지정된 길이의 짧은 고유 식별자(ID)를 생성합니다.
  *
- * @param {number} [length=10] - The length of the ID to generate (default: 15).
+ * @param {number} [length=15] - The length of the ID to generate (default: 15).
  * @returns {string} The generated short ID string.
  */
 export function generateShortId(length: number = 15): string {
-    const characters = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
-    let shortId = ''
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
     const characterCount = characters.length
-    for (let index = 0; index < length; index++) {
-        shortId += characters.charAt(Math.floor(Math.random() * characterCount))
+    const maxByte = 256 - (256 % characterCount)
+
+    let shortId = ''
+    while (shortId.length < length) {
+        const bytes = randomBytes(length)
+
+        for (const byte of bytes) {
+            if (byte < maxByte) {
+                shortId += characters[byte % characterCount]
+
+                if (shortId.length === length) {
+                    break
+                }
+            }
+        }
     }
+
     return shortId
 }
 

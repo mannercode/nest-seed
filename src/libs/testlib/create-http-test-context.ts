@@ -8,8 +8,15 @@ export async function createHttpTestContext(metadata: ModuleMetadataEx): Promise
     const ctx = await createTestContext(metadata)
 
     const httpServer = ctx.app.getHttpServer()
-    await httpServer.listen(0)
-    const { port } = httpServer.address() as AddressInfo
+    await new Promise<void>((resolve, reject) => {
+        httpServer.once('error', reject)
+        httpServer.listen(0, resolve)
+    })
+    const address = httpServer.address()
+    if (!address || typeof address === 'string') {
+        throw new Error('Failed to bind HTTP server to a port')
+    }
+    const { port } = address as AddressInfo
 
     const httpClient = new HttpTestClient(`http://localhost:${port}`)
     return { httpClient, ...ctx }

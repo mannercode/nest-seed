@@ -131,13 +131,14 @@ export type JwtAuthModuleOptions = {
 export class JwtAuthModule {
     static register(options: JwtAuthModuleOptions): DynamicModule {
         const { name, redisName, prefix, useFactory, inject } = options
+        const resolvedName = name ?? 'default'
 
         const cacheProvider = {
             provide: JwtAuthService.getName(name),
             useFactory: async (jwtService: JwtService, redis: Redis, ...args: any[]) => {
                 const { auth } = await useFactory(...args)
 
-                return new JwtAuthService(jwtService, auth, redis, prefix + ':' + name)
+                return new JwtAuthService(jwtService, auth, redis, `${prefix}:${resolvedName}`)
             },
             inject: [JwtService, getRedisConnectionToken(redisName), ...(inject ?? [])]
         }

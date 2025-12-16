@@ -7,7 +7,9 @@ import { createTestContext } from 'testlib'
 const configSchema = Joi.object({
     TEST_STRING_KEY: Joi.string().required(),
     TEST_NUMBER_KEY: Joi.number().required(),
-    TEST_BOOLEAN_KEY: Joi.boolean().required()
+    TEST_NUMBER_ZERO_KEY: Joi.number().required(),
+    TEST_BOOLEAN_KEY: Joi.boolean().required(),
+    TEST_BOOLEAN_FALSE_KEY: Joi.boolean().required()
 })
 
 @Injectable()
@@ -25,7 +27,9 @@ export type BaseConfigServiceFixture = {
 export async function createBaseConfigServiceFixture() {
     process.env['TEST_STRING_KEY'] = 'value'
     process.env['TEST_NUMBER_KEY'] = '123'
+    process.env['TEST_NUMBER_ZERO_KEY'] = '0'
     process.env['TEST_BOOLEAN_KEY'] = 'true'
+    process.env['TEST_BOOLEAN_FALSE_KEY'] = 'false'
 
     const { module, close } = await createTestContext({
         imports: [ConfigModule.forRoot({ validationSchema: configSchema })],

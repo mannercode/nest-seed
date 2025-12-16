@@ -45,11 +45,19 @@ export class PaginationDto {
      */
     @IsOptional()
     @Transform(({ value }) => {
-        if (value.direction && value.name) {
+        if (value === undefined || value === null) {
             return value
         }
 
-        const parts = value.split(':')
+        if (typeof value === 'object') {
+            return value
+        }
+
+        if (typeof value !== 'string') {
+            throw new BadRequestException(PaginationErrors.FormatInvalid)
+        }
+
+        const parts = value.split(':').map((part) => part.trim())
 
         if (parts.length !== 2) {
             throw new BadRequestException(PaginationErrors.FormatInvalid)
@@ -57,11 +65,16 @@ export class PaginationDto {
 
         const [name, direction] = parts
 
-        if (!Object.values(OrderDirection).includes(direction)) {
+        if (!name || !direction) {
+            throw new BadRequestException(PaginationErrors.FormatInvalid)
+        }
+
+        const parsedDirection = direction as OrderDirection
+        if (!Object.values(OrderDirection).includes(parsedDirection)) {
             throw new BadRequestException(PaginationErrors.DirectionInvalid)
         }
 
-        return { name, direction }
+        return { name, direction: parsedDirection }
     })
     orderby?: OrderBy
 }
