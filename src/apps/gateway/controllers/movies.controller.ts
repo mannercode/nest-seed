@@ -30,7 +30,7 @@ export class MoviesController {
         return this.recommendationService.searchRecommendedMovies(customerId)
     }
 
-    // •	POST /v1/movies는 405 Method Not Allowed로 응답하고,
+    // POST /v1/movies는 405 Method Not Allowed로 응답하고,
     // {
     //   "type": "https://docs.example.com/problems/use-draft",
     //   "title": "Draft required",
