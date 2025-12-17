@@ -122,26 +122,28 @@ export class AssetsService {
     }
 
     private toDto(asset: AssetDocument): AssetDto {
-        const dto = mapDocToDto(asset, AssetDto, [
-            'id',
-            'originalName',
-            'mimeType',
-            'size',
-            'checksum'
-        ])
-
-        dto.download = null
-        dto.owner = null
-
-        /* istanbul ignore else */
-        if (asset.ownerService && asset.ownerEntityId) {
-            dto.owner = { service: asset.ownerService, entityId: asset.ownerEntityId }
-        }
-
-        return dto
+        return this.toDtos([asset])[0]
     }
 
     private toDtos(assets: AssetDocument[]) {
-        return assets.map((asset) => this.toDto(asset))
+        return assets.map((asset) => {
+            const dto = mapDocToDto(asset, AssetDto, [
+                'id',
+                'originalName',
+                'mimeType',
+                'size',
+                'checksum'
+            ])
+
+            dto.download = null
+            dto.owner = null
+
+            /* istanbul ignore else */
+            if (asset.ownerService && asset.ownerEntityId) {
+                dto.owner = { service: asset.ownerService, entityId: asset.ownerEntityId }
+            }
+
+            return dto
+        })
     }
 }

@@ -1,5 +1,5 @@
 import type { ShowtimeDto, TheaterDto, TicketSalesForShowtimeDto } from 'apps/cores'
-import { Assert, LatLong } from 'common'
+import { LatLong } from 'common'
 import type { ShowtimeForBookingDto } from './dtos'
 import { omit } from 'lodash'
 

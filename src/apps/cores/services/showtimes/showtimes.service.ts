@@ -42,17 +42,15 @@ export class ShowtimesService {
         return this.repository.allExist(showtimeIds)
     }
 
-    private toDto(showtime: ShowtimeDocument) {
-        return mapDocToDto(showtime, ShowtimeDto, [
-            'id',
-            'theaterId',
-            'movieId',
-            'startTime',
-            'endTime'
-        ])
-    }
-
     private toDtos(showtimes: ShowtimeDocument[]) {
-        return showtimes.map((showtime) => this.toDto(showtime))
+        return showtimes.map((showtime) =>
+            mapDocToDto(showtime, ShowtimeDto, [
+                'id',
+                'theaterId',
+                'movieId',
+                'startTime',
+                'endTime'
+            ])
+        )
     }
 }

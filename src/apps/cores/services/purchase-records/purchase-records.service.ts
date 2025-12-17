@@ -21,18 +21,20 @@ export class PurchaseRecordsService {
     }
 
     private toDto(purchase: PurchaseRecordDocument) {
-        return mapDocToDto(purchase, PurchaseRecordDto, [
-            'id',
-            'customerId',
-            'paymentId',
-            'totalPrice',
-            'purchaseItems',
-            'createdAt',
-            'updatedAt'
-        ])
+        return this.toDtos([purchase])[0]
     }
 
     private toDtos(purchases: PurchaseRecordDocument[]) {
-        return purchases.map((purchase) => this.toDto(purchase))
+        return purchases.map((purchase) =>
+            mapDocToDto(purchase, PurchaseRecordDto, [
+                'id',
+                'customerId',
+                'paymentId',
+                'totalPrice',
+                'purchaseItems',
+                'createdAt',
+                'updatedAt'
+            ])
+        )
     }
 }

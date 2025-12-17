@@ -84,10 +84,12 @@ export class CustomersService {
     }
 
     private toDto(customer: CustomerDocument) {
-        return mapDocToDto(customer, CustomerDto, ['id', 'name', 'email', 'birthDate'])
+        return this.toDtos([customer])[0]
     }
 
     private toDtos(customers: CustomerDocument[]) {
-        return customers.map((customer) => this.toDto(customer))
+        return customers.map((customer) =>
+            mapDocToDto(customer, CustomerDto, ['id', 'name', 'email', 'birthDate'])
+        )
     }
 }
