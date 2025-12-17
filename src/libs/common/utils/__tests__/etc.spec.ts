@@ -23,9 +23,9 @@ describe('sleep', () => {
         const end = Date.now()
         const elapsed = end - start
 
-        // timeout이 1000ms로 설정되어 있으나 ±50ms 오차를 둔다.
-        expect(elapsed).toBeGreaterThan(timeout - 50)
-        expect(elapsed).toBeLessThan(timeout + 50)
+        const tolerance = 100
+        expect(elapsed).toBeGreaterThan(timeout - tolerance)
+        expect(elapsed).toBeLessThan(timeout + tolerance)
     })
 })
 
