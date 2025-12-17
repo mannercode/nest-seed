@@ -1,5 +1,6 @@
 import { Env } from 'common'
 import fs from 'fs/promises'
+import inspector from 'node:inspector'
 
 export const nullDate = new Date(0)
 export const nullObjectId = '000000000000000000000000'
@@ -7,7 +8,10 @@ export const oid = (value: number) => value.toString(16).padStart(24, '0')
 export const withTestId = (prefix: string) => `${prefix}-${Env.getString('TEST_ID')}`
 export const step = (_name: string, fn: () => Promise<void> | void) => fn()
 export const toAny = <T>(value: T) => value as any
-export const isDebuggingEnabled = process.execArgv.some((arg) => arg.startsWith('--inspect'))
+
+export function isDebuggingEnabled(): boolean {
+    return inspector.url() !== undefined
+}
 
 export async function createDummyFile(filePath: string, sizeInBytes: number) {
     const file = await fs.open(filePath, 'w')

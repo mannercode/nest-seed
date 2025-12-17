@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Server } from 'http'
-import { isDebuggingEnabled } from './utils'
 
 export type ModuleMetadataEx = ModuleMetadata & {
     ignoreGuards?: Type<CanActivate>[]
@@ -53,8 +52,6 @@ export async function createTestContext({
     }
 
     await app.init()
-    // TODO 테스트 시 로그 자세히
-    app.useLogger(isDebuggingEnabled ? console : false)
 
     const close = async () => {
         await app.close()

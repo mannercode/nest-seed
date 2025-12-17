@@ -2,6 +2,7 @@ import { BullModule } from '@nestjs/bullmq'
 import { ConfigService } from '@nestjs/config'
 import type { MicroserviceOptions } from '@nestjs/microservices'
 import { Transport } from '@nestjs/microservices'
+import { AppLoggerService } from 'common'
 import compression from 'compression'
 import express from 'express'
 import type Redis from 'ioredis'
@@ -13,7 +14,7 @@ import {
     RedisConfigModule
 } from 'shared'
 import type { HttpTestContext, ModuleMetadataEx } from 'testlib'
-import { createHttpTestContext } from 'testlib'
+import { createHttpTestContext, isDebuggingEnabled } from 'testlib'
 
 export type AppTestContext = HttpTestContext & { teardown: () => Promise<void> }
 
@@ -32,18 +33,23 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
 
     const ctx = await createHttpTestContext({
         configureApp: async (app) => {
-            const config = app.get(AppConfigService)
+            const { http, nats } = app.get(AppConfigService)
 
             app.use(compression())
-            app.use(express.json({ limit: config.http.requestPayloadLimit }))
+            app.use(express.json({ limit: http.requestPayloadLimit }))
 
             app.connectMicroservice<MicroserviceOptions>(
                 {
                     transport: Transport.NATS,
-                    options: { servers: config.nats.servers, queue: getProjectId() }
+                    options: { servers: nats.servers, queue: getProjectId() }
                 },
                 { inheritAppConfig: true }
             )
+
+            if (isDebuggingEnabled()) {
+                const logger = app.get(AppLoggerService)
+                app.useLogger(logger)
+            }
 
             await app.startAllMicroservices()
 
@@ -65,6 +71,19 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
     return { ...ctx, teardown }
 }
 
+export function createConfigServiceMock(mockValues: Record<string, any>) {
+    const realConfigService = new ConfigService()
+
+    return {
+        original: ConfigService,
+        replacement: {
+            get: jest.fn((key: string) =>
+                key in mockValues ? mockValues[key] : realConfigService.get(key)
+            )
+        }
+    }
+}
+
 // const configMock = createConfigServiceMock({
 //     FILE_UPLOAD_MAX_FILE_SIZE_BYTES: localFiles.oversized.size,
 //     FILE_UPLOAD_MAX_FILES_PER_UPLOAD: maxFilesPerUpload,
@@ -82,16 +101,3 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
 //     providers: [AssetsClient],
 //     overrideProviders: [configMock]
 // })
-
-export function createConfigServiceMock(mockValues: Record<string, any>) {
-    const realConfigService = new ConfigService()
-
-    return {
-        original: ConfigService,
-        replacement: {
-            get: jest.fn((key: string) =>
-                key in mockValues ? mockValues[key] : realConfigService.get(key)
-            )
-        }
-    }
-}
