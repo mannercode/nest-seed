@@ -1,6 +1,5 @@
 import { Env } from 'common'
 import fs from 'fs/promises'
-import net from 'net'
 
 export const nullDate = new Date(0)
 export const nullObjectId = '000000000000000000000000'
@@ -33,18 +32,4 @@ export async function createDummyFile(filePath: string, sizeInBytes: number) {
     }
 
     return filePath
-}
-
-export async function getAvailablePort() {
-    return new Promise<number>((resolve, reject) => {
-        const server = net.createServer()
-        server.unref()
-        server.on('error', reject)
-        server.listen(0, () => {
-            const { port } = server.address() as net.AddressInfo
-            server.close(() => {
-                resolve(port)
-            })
-        })
-    })
 }
