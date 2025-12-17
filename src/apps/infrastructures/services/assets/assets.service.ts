@@ -138,7 +138,6 @@ export class AssetsService {
             dto.download = null
             dto.owner = null
 
-            /* istanbul ignore else */
             if (asset.ownerService && asset.ownerEntityId) {
                 dto.owner = { service: asset.ownerService, entityId: asset.ownerEntityId }
             }
