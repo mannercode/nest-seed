@@ -5,20 +5,14 @@ describe('DateUtil', () => {
         describe('when the string is in YYYYMMDDHHmm format', () => {
             it('converts it to a Date', () => {
                 const date = DateUtil.fromYMD('199901020930')
-                expect(date.getFullYear()).toEqual(1999)
-                expect(date.getMonth()).toEqual(0) // 1월은 0이다.
-                expect(date.getDate()).toEqual(2)
-                expect(date.getHours()).toEqual(9)
-                expect(date.getMinutes()).toEqual(30)
+                expect(date).toEqual(new Date(1999, 0, 2, 9, 30))
             })
         })
 
         describe('when the string is in YYYYMMDD format', () => {
             it('converts it to a Date', () => {
                 const date = DateUtil.fromYMD('19990102')
-                expect(date.getFullYear()).toEqual(1999)
-                expect(date.getMonth()).toEqual(0) // 1월은 0이다.
-                expect(date.getDate()).toEqual(2)
+                expect(date).toEqual(new Date(1999, 0, 2))
             })
         })
 
@@ -55,17 +49,14 @@ describe('DateUtil', () => {
     })
 
     describe('now', () => {
-        beforeEach(() => {
-            jest.useFakeTimers()
-            jest.setSystemTime(new Date('2000-12-31T23:59:59.999Z'))
-        })
-
-        afterEach(() => {
-            jest.useRealTimers()
-        })
-
         it('returns the current date', () => {
-            expect(DateUtil.now()).toEqual(new Date('2000-12-31T23:59:59.999Z'))
+            const before = Date.now()
+
+            const now = DateUtil.now().getTime()
+
+            const after = Date.now()
+
+            expect(now >= before && now <= after).toBe(true)
         })
     })
 
@@ -79,9 +70,13 @@ describe('DateUtil', () => {
 
         describe('when base is not provided', () => {
             it('uses now', () => {
-                const now = DateUtil.add({})
+                const before = Date.now()
 
-                expect(now).toBeDefined()
+                const date = DateUtil.add({})
+
+                const after = Date.now()
+
+                expect(date.getTime() >= before && date.getTime() <= after).toBe(true)
             })
         })
     })
