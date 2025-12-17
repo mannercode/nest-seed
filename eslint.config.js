@@ -1,4 +1,3 @@
-// eslint.config.js (Flat Config)
 const path = require('path')
 const js = require('@eslint/js')
 const typescriptEslintPlugin = require('@typescript-eslint/eslint-plugin')
@@ -21,7 +20,6 @@ const testGlobals = {
 }
 
 module.exports = [
-    { ignores: ['dist/**', 'node_modules/**'] },
     {
         files: ['src/**/*.ts'],
         linterOptions: { reportUnusedDisableDirectives: true },
@@ -89,7 +87,12 @@ module.exports = [
         }
     },
     {
-        files: ['**/*.spec.ts', '**/*.test.ts', '**/__tests__/**/*.ts', 'src/libs/testlib/**/*.ts'],
+        files: [
+            'src/**/*.spec.ts',
+            'src/**/*.test.ts',
+            'src/**/__tests__/**/*.ts',
+            'src/libs/testlib/**/*.ts'
+        ],
         languageOptions: { globals: { ...baseGlobals, ...testGlobals } },
         plugins: { ...(jestPlugin ? { jest: jestPlugin } : {}) },
         rules: {
