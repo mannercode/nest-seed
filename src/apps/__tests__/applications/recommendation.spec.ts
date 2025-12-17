@@ -66,14 +66,16 @@ describe('RecommendationService', () => {
                 })
             })
 
-            it('returns default recommendations for a guest', async () => {
-                await fix.httpClient.get('/movies/recommended').ok([
-                    dramaMovie, // 2900-05-01
-                    actionMovie, // 2900-04-01
-                    comedy2Movie, // 2900-03-01
-                    comedy1Movie, // 2900-02-01
-                    fantasyMovie // 2900-01-01
-                ])
+            describe('when the customer is a guest', () => {
+                it('returns default recommendations', async () => {
+                    await fix.httpClient.get('/movies/recommended').ok([
+                        dramaMovie, // 2900-05-01
+                        actionMovie, // 2900-04-01
+                        comedy2Movie, // 2900-03-01
+                        comedy1Movie, // 2900-02-01
+                        fantasyMovie // 2900-01-01
+                    ])
+                })
             })
         })
     })

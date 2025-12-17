@@ -149,17 +149,19 @@ describe('MovieDraftsService', () => {
                 )
         })
 
-        it('returns 404 when completing a non-existent image', async () => {
-            const { body: draft } = await fix.httpClient.post('/movie-drafts').created()
+        describe('when completing a non-existent image', () => {
+            it('returns 404 Not Found', async () => {
+                const { body: draft } = await fix.httpClient.post('/movie-drafts').created()
 
-            await fix.httpClient
-                .post(`/movie-drafts/${draft.id}/images/${nullObjectId}/complete`)
-                .notFound(
-                    expect.objectContaining({
-                        ...Errors.MovieDrafts.ImageNotFound,
-                        imageId: nullObjectId
-                    })
-                )
+                await fix.httpClient
+                    .post(`/movie-drafts/${draft.id}/images/${nullObjectId}/complete`)
+                    .notFound(
+                        expect.objectContaining({
+                            ...Errors.MovieDrafts.ImageNotFound,
+                            imageId: nullObjectId
+                        })
+                    )
+            })
         })
     })
 

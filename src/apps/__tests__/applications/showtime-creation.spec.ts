@@ -18,18 +18,22 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('GET /showtime-creation/movies', () => {
-        it('returns movies with default pagination', async () => {
-            await fix.httpClient
-                .get('/showtime-creation/movies')
-                .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.movie] })
+        describe('when the pagination query is not provided', () => {
+            it('returns movies with default pagination', async () => {
+                await fix.httpClient
+                    .get('/showtime-creation/movies')
+                    .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.movie] })
+            })
         })
     })
 
     describe('GET /showtime-creation/theaters', () => {
-        it('returns theaters with default pagination', async () => {
-            await fix.httpClient
-                .get('/showtime-creation/theaters')
-                .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.theater] })
+        describe('when the pagination query is not provided', () => {
+            it('returns theaters with default pagination', async () => {
+                await fix.httpClient
+                    .get('/showtime-creation/theaters')
+                    .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.theater] })
+            })
         })
     })
 
@@ -58,18 +62,6 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('POST /showtime-creation/showtimes', () => {
-        it('returns a sagaId', async () => {
-            await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .body({
-                    movieId: fix.movie.id,
-                    theaterIds: [fix.theater.id],
-                    startTimes: [new Date('2100-01-01T09:00')],
-                    durationInMinutes: 1
-                })
-                .accepted({ sagaId: expect.any(String) })
-        })
-
         describe('when showtime creation is requested', () => {
             let createPromise: Promise<Response>
 
@@ -83,6 +75,11 @@ describe('ShowtimeCreationService', () => {
                         durationInMinutes: 1
                     })
                     .accepted()
+            })
+
+            it('returns a sagaId', async () => {
+                const { body } = await createPromise
+                expect(body).toEqual(expect.objectContaining({ sagaId: expect.any(String) }))
             })
 
             it('streams saga status updates', async () => {
@@ -128,43 +125,47 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('reports an error for a missing movie', async () => {
-            const completionPromise = waitForCompletion(fix, 'error')
+        describe('when the movie does not exist', () => {
+            it('reports an error', async () => {
+                const completionPromise = waitForCompletion(fix, 'error')
 
-            const { body } = await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .body({
-                    movieId: nullObjectId,
-                    theaterIds: [fix.theater.id],
-                    startTimes: [new Date(0)],
-                    durationInMinutes: 1
+                const { body } = await fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .body({
+                        movieId: nullObjectId,
+                        theaterIds: [fix.theater.id],
+                        startTimes: [new Date(0)],
+                        durationInMinutes: 1
+                    })
+                    .accepted()
+
+                await expect(completionPromise).resolves.toEqual({
+                    sagaId: body.sagaId,
+                    status: 'error',
+                    message: 'The requested movie could not be found.'
                 })
-                .accepted()
-
-            await expect(completionPromise).resolves.toEqual({
-                sagaId: body.sagaId,
-                status: 'error',
-                message: 'The requested movie could not be found.'
             })
         })
 
-        it('reports an error for a missing theater', async () => {
-            const completionPromise = waitForCompletion(fix, 'error')
+        describe('when the theater does not exist', () => {
+            it('reports an error', async () => {
+                const completionPromise = waitForCompletion(fix, 'error')
 
-            const { body } = await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .body({
-                    movieId: fix.movie.id,
-                    theaterIds: [nullObjectId],
-                    startTimes: [new Date(0)],
-                    durationInMinutes: 1
+                const { body } = await fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .body({
+                        movieId: fix.movie.id,
+                        theaterIds: [nullObjectId],
+                        startTimes: [new Date(0)],
+                        durationInMinutes: 1
+                    })
+                    .accepted()
+
+                await expect(completionPromise).resolves.toEqual({
+                    sagaId: body.sagaId,
+                    status: 'error',
+                    message: 'One or more requested theaters could not be found.'
                 })
-                .accepted()
-
-            await expect(completionPromise).resolves.toEqual({
-                sagaId: body.sagaId,
-                status: 'error',
-                message: 'One or more requested theaters could not be found.'
             })
         })
 
