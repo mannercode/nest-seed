@@ -13,67 +13,77 @@ describe('MongooseRepository.withTransaction', () => {
     })
 
     describe('withTransaction', () => {
-        it('commits the transaction', async () => {
-            const newDoc = await fix.repository.withTransaction(async (session) => {
-                const doc = fix.repository.newDocument()
-                doc.name = 'name'
-                return doc.save({ session })
-            })
+        describe('when the transaction succeeds', () => {
+            it('commits the transaction', async () => {
+                const newDoc = await fix.repository.withTransaction(async (session) => {
+                    const doc = fix.repository.newDocument()
+                    doc.name = 'name'
+                    return doc.save({ session })
+                })
 
-            const found = await fix.repository.findById(newDoc.id)
-            expect(found?.toJSON()).toEqual(newDoc.toJSON())
+                const found = await fix.repository.findById(newDoc.id)
+                expect(found?.toJSON()).toEqual(newDoc.toJSON())
+            })
         })
 
-        it('rolls back the transaction when rollback is requested', async () => {
-            const newDoc = fix.repository.newDocument()
-            newDoc.name = 'name'
-            await newDoc.save()
+        describe('when rollback is requested', () => {
+            it('rolls back the transaction', async () => {
+                const newDoc = fix.repository.newDocument()
+                newDoc.name = 'name'
+                await newDoc.save()
 
-            await fix.repository.withTransaction(async (session, rollback) => {
-                await fix.repository.deleteById(newDoc.id, session)
-                rollback()
+                await fix.repository.withTransaction(async (session, rollback) => {
+                    await fix.repository.deleteById(newDoc.id, session)
+                    rollback()
+                })
+
+                const found = await fix.repository.findById(newDoc.id)
+                expect(found?.toJSON()).toEqual(newDoc.toJSON())
             })
-
-            const found = await fix.repository.findById(newDoc.id)
-            expect(found?.toJSON()).toEqual(newDoc.toJSON())
         })
 
-        it('rolls back changes when an error occurs during the transaction', async () => {
-            const promise = fix.repository.withTransaction(async (session) => {
-                const doc = fix.repository.newDocument()
-                doc.name = 'name'
-                await doc.save({ session })
+        describe('when an error occurs during the transaction', () => {
+            it('rolls back changes', async () => {
+                const promise = fix.repository.withTransaction(async (session) => {
+                    const doc = fix.repository.newDocument()
+                    doc.name = 'name'
+                    await doc.save({ session })
 
-                throw new Error('An error occurred during the transaction.')
+                    throw new Error('An error occurred during the transaction.')
+                })
+
+                await expect(promise).rejects.toThrow()
+
+                const { total } = await fix.repository.findWithPagination({ pagination: {} })
+                expect(total).toEqual(0)
             })
+        })
+    })
+
+    describe('when startSession throws', () => {
+        it('throws', async () => {
+            jest.spyOn(fix.model, 'startSession').mockImplementation(() => {
+                throw new Error()
+            })
+
+            const promise = fix.repository.withTransaction(async (_session) => {})
 
             await expect(promise).rejects.toThrow()
-
-            const { total } = await fix.repository.findWithPagination({ pagination: {} })
-            expect(total).toEqual(0)
         })
     })
 
-    it('throws when startSession throws', async () => {
-        jest.spyOn(fix.model, 'startSession').mockImplementation(() => {
-            throw new Error()
+    describe('when startTransaction throws', () => {
+        it('throws', async () => {
+            jest.spyOn(fix.model, 'startSession').mockResolvedValue({
+                startTransaction: jest.fn().mockImplementation(() => {
+                    throw new Error()
+                }),
+                inTransaction: jest.fn().mockReturnValue(false)
+            } as any)
+
+            const promise = fix.repository.withTransaction(async (_session) => {})
+
+            await expect(promise).rejects.toThrow()
         })
-
-        const promise = fix.repository.withTransaction(async (_session) => {})
-
-        await expect(promise).rejects.toThrow()
-    })
-
-    it('throws when startTransaction throws', async () => {
-        jest.spyOn(fix.model, 'startSession').mockResolvedValue({
-            startTransaction: jest.fn().mockImplementation(() => {
-                throw new Error()
-            }),
-            inTransaction: jest.fn().mockReturnValue(false)
-        } as any)
-
-        const promise = fix.repository.withTransaction(async (_session) => {})
-
-        await expect(promise).rejects.toThrow()
     })
 })

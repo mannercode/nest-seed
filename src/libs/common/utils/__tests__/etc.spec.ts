@@ -120,28 +120,36 @@ describe('pickItems', () => {
         { id: '3', name: 'Bob', age: 40 }
     ]
 
-    it('extracts a single key from an array of objects', () => {
-        const result = pickItems(items, 'name')
-        expect(result).toEqual(['John', 'Jane', 'Bob'])
+    describe('when selecting a single key', () => {
+        it('extracts the values', () => {
+            const result = pickItems(items, 'name')
+            expect(result).toEqual(['John', 'Jane', 'Bob'])
+        })
     })
 
-    it('extracts multiple keys from an array of objects', () => {
-        const result = pickItems(items, ['id', 'name'])
-        expect(result).toEqual([
-            { id: '1', name: 'John' },
-            { id: '2', name: 'Jane' },
-            { id: '3', name: 'Bob' }
-        ])
+    describe('when selecting multiple keys', () => {
+        it('extracts the values', () => {
+            const result = pickItems(items, ['id', 'name'])
+            expect(result).toEqual([
+                { id: '1', name: 'John' },
+                { id: '2', name: 'Jane' },
+                { id: '3', name: 'Bob' }
+            ])
+        })
     })
 
-    it('returns an empty array if the input array is empty', () => {
-        const result = pickItems([], 'name')
-        expect(result).toEqual([])
+    describe('when the input array is empty', () => {
+        it('returns an empty array', () => {
+            const result = pickItems([], 'name')
+            expect(result).toEqual([])
+        })
     })
 
-    it('returns undefined for non-existent keys', () => {
-        const result = pickItems(items, 'address' as any)
-        expect(result).toEqual([undefined, undefined, undefined])
+    describe('when the key does not exist', () => {
+        it('returns undefined items', () => {
+            const result = pickItems(items, 'address' as any)
+            expect(result).toEqual([undefined, undefined, undefined])
+        })
     })
 })
 
@@ -152,47 +160,63 @@ describe('pickIds', () => {
         { id: '3', name: 'Bob' }
     ]
 
-    it('extracts the id value from an array of objects', () => {
-        const result = pickIds(items)
-        expect(result).toEqual(['1', '2', '3'])
+    describe('when the input array contains items', () => {
+        it('extracts the id values', () => {
+            const result = pickIds(items)
+            expect(result).toEqual(['1', '2', '3'])
+        })
     })
 
-    it('returns an empty array if the input array is empty', () => {
-        const result = pickIds([])
-        expect(result).toEqual([])
+    describe('when the input array is empty', () => {
+        it('returns an empty array', () => {
+            const result = pickIds([])
+            expect(result).toEqual([])
+        })
     })
 })
 
 describe('validateEmail', () => {
-    it('returns true for a valid email', () => {
-        expect(validateEmail('test@example.com')).toBe(true)
-        expect(validateEmail('user.name@domain.co')).toBe(true)
+    describe('when the email is valid', () => {
+        it('returns true', () => {
+            expect(validateEmail('test@example.com')).toBe(true)
+            expect(validateEmail('user.name@domain.co')).toBe(true)
+        })
     })
 
-    it('returns false for an invalid email', () => {
-        expect(validateEmail('plainaddress')).toBe(false)
-        expect(validateEmail('user@domain')).toBe(false)
+    describe('when the email is invalid', () => {
+        it('returns false', () => {
+            expect(validateEmail('plainaddress')).toBe(false)
+            expect(validateEmail('user@domain')).toBe(false)
+        })
     })
 })
 
 describe('padNumber', () => {
-    it("returns '005' when padding 5 to length 3", () => {
-        const result = padNumber(5, 3)
-        expect(result).toEqual('005')
+    describe('when padding 5 to length 3', () => {
+        it("returns '005'", () => {
+            const result = padNumber(5, 3)
+            expect(result).toEqual('005')
+        })
     })
 
-    it('pads negative numbers while keeping the sign', () => {
-        const result = padNumber(-5, 3)
-        expect(result).toEqual('0-5')
+    describe('when the number is negative', () => {
+        it('pads while keeping the sign', () => {
+            const result = padNumber(-5, 3)
+            expect(result).toEqual('0-5')
+        })
     })
 
-    it('returns the string representation if number length is sufficient', () => {
-        expect(padNumber(123, 3)).toEqual('123')
-        expect(padNumber(1234, 3)).toEqual('1234')
+    describe('when the number length is sufficient', () => {
+        it('returns the string representation', () => {
+            expect(padNumber(123, 3)).toEqual('123')
+            expect(padNumber(1234, 3)).toEqual('1234')
+        })
     })
 })
 
-it('executes no-op helpers for coverage', () => {
-    notUsed()
-    comment()
+describe('coverage', () => {
+    it('executes no-op helpers', () => {
+        notUsed()
+        comment()
+    })
 })

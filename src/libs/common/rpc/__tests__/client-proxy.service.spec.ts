@@ -14,17 +14,23 @@ describe('ClientProxyService', () => {
     })
 
     describe('send', () => {
-        it('responds with the Observable result when the HttpController returns an Observable', async () => {
-            await fix.httpClient.get('/observable').ok({ result: 'success' })
+        describe('when the HttpController returns an Observable', () => {
+            it('responds with the Observable result', async () => {
+                await fix.httpClient.get('/observable').ok({ result: 'success' })
+            })
         })
 
-        it('returns the Observable value when the HttpController resolves the value', async () => {
-            await fix.httpClient.get('/value').ok({ result: 'success' })
+        describe('when the HttpController resolves a value', () => {
+            it('returns the Observable value', async () => {
+                await fix.httpClient.get('/value').ok({ result: 'success' })
+            })
         })
 
-        it('sends a null payload', async () => {
-            const response = await fix.rpcClient.getJson(withTestId('method'), null)
-            expect(response).toEqual({ result: 'success' })
+        describe('when the payload is null', () => {
+            it('sends a null payload', async () => {
+                const response = await fix.rpcClient.getJson(withTestId('method'), null)
+                expect(response).toEqual({ result: 'success' })
+            })
         })
     })
 
@@ -39,8 +45,10 @@ describe('ClientProxyService', () => {
             await expect(promise).resolves.toEqual('{"arg":"value"}')
         })
 
-        it('sends a null payload', async () => {
-            await fix.rpcClient.emit(withTestId('emitEvent'), null)
+        describe('when the payload is null', () => {
+            it('sends a null payload', async () => {
+                await fix.rpcClient.emit(withTestId('emitEvent'), null)
+            })
         })
     })
 })

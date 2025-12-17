@@ -13,17 +13,19 @@ describe('Mongoose TTL expiration', () => {
         await fix?.teardown()
     })
 
-    it('removes the document automatically after the TTL expires', async () => {
-        const doc = new fix.model()
-        doc.sn = 1234567
+    describe('when the TTL expires', () => {
+        it('removes the document automatically', async () => {
+            const doc = new fix.model()
+            doc.sn = 1234567
 
-        await doc.save()
+            await doc.save()
 
-        const initialDoc = await fix.model.findOne({ _id: doc._id }).exec()
-        expect(initialDoc?.sn).toEqual(doc.sn)
+            const initialDoc = await fix.model.findOne({ _id: doc._id }).exec()
+            expect(initialDoc?.sn).toEqual(doc.sn)
 
-        await sleep(2000)
-        const expiredDoc = await fix.model.findOne({ _id: doc._id }).exec()
-        expect(expiredDoc).toBeNull()
+            await sleep(2000)
+            const expiredDoc = await fix.model.findOne({ _id: doc._id }).exec()
+            expect(expiredDoc).toBeNull()
+        })
     })
 })

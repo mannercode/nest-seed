@@ -2,24 +2,30 @@ import { DateUtil } from 'common'
 
 describe('DateUtil', () => {
     describe('fromYMD', () => {
-        it('converts a YYYYMMDDHHmm format string to a Date', () => {
-            const date = DateUtil.fromYMD('199901020930')
-            expect(date.getFullYear()).toEqual(1999)
-            expect(date.getMonth()).toEqual(0) // 1월은 0이다.
-            expect(date.getDate()).toEqual(2)
-            expect(date.getHours()).toEqual(9)
-            expect(date.getMinutes()).toEqual(30)
+        describe('when the string is in YYYYMMDDHHmm format', () => {
+            it('converts it to a Date', () => {
+                const date = DateUtil.fromYMD('199901020930')
+                expect(date.getFullYear()).toEqual(1999)
+                expect(date.getMonth()).toEqual(0) // 1월은 0이다.
+                expect(date.getDate()).toEqual(2)
+                expect(date.getHours()).toEqual(9)
+                expect(date.getMinutes()).toEqual(30)
+            })
         })
 
-        it('converts a YYYYMMDD format string to a Date', () => {
-            const date = DateUtil.fromYMD('19990102')
-            expect(date.getFullYear()).toEqual(1999)
-            expect(date.getMonth()).toEqual(0) // 1월은 0이다.
-            expect(date.getDate()).toEqual(2)
+        describe('when the string is in YYYYMMDD format', () => {
+            it('converts it to a Date', () => {
+                const date = DateUtil.fromYMD('19990102')
+                expect(date.getFullYear()).toEqual(1999)
+                expect(date.getMonth()).toEqual(0) // 1월은 0이다.
+                expect(date.getDate()).toEqual(2)
+            })
         })
 
-        it('throws an error for invalid format input', () => {
-            expect(() => DateUtil.fromYMD('')).toThrow()
+        describe('when the format is invalid', () => {
+            it('throws', () => {
+                expect(() => DateUtil.fromYMD('')).toThrow()
+            })
         })
     })
 
@@ -71,10 +77,12 @@ describe('DateUtil', () => {
             expect(updatedDate).toEqual(new Date('2020-01-06T05:05:05Z'))
         })
 
-        it('uses now when no base is provided', () => {
-            const now = DateUtil.add({})
+        describe('when base is not provided', () => {
+            it('uses now', () => {
+                const now = DateUtil.add({})
 
-            expect(now).toBeDefined()
+                expect(now).toBeDefined()
+            })
         })
     })
 })

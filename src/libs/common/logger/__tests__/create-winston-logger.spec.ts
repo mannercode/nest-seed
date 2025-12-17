@@ -28,7 +28,7 @@ describe('createWinstonLogger', () => {
         return entry
     }
 
-    it('general', async () => {
+    it('writes a general log entry', async () => {
         const message = 'test message'
 
         logger.info(message)
@@ -39,7 +39,7 @@ describe('createWinstonLogger', () => {
         expect(entry).toEqual({ level: 'info', message, timestamp: expect.any(String) })
     })
 
-    it('http', async () => {
+    it('writes an HTTP log entry', async () => {
         const message = 'test message'
         const logDetails = {
             contextType: 'http',
@@ -62,7 +62,7 @@ describe('createWinstonLogger', () => {
         })
     })
 
-    it('rpc', async () => {
+    it('writes an RPC log entry', async () => {
         const message = 'test message'
         const logDetails = {
             contextType: 'rpc',

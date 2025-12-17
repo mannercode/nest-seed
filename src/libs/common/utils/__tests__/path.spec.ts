@@ -30,11 +30,13 @@ describe('Path', () => {
         expect(exists).toBe(true)
     })
 
-    it('returns false when the path does not exist', async () => {
-        const nonExistentPath = Path.join(tempDir, 'nonexistent.txt')
+    describe('when the path does not exist', () => {
+        it('returns false', async () => {
+            const nonExistentPath = Path.join(tempDir, 'nonexistent.txt')
 
-        const exists = await Path.exists(nonExistentPath)
-        expect(exists).toBe(false)
+            const exists = await Path.exists(nonExistentPath)
+            expect(exists).toBe(false)
+        })
     })
 
     it('checks synchronously whether the specified path exists', async () => {
@@ -121,11 +123,13 @@ describe('Path', () => {
         expect(p.isAbsolute(absolutePath)).toBe(true)
     })
 
-    it('returns the same path if it is already absolute', async () => {
-        const absolutePath = p.join(os.tmpdir(), 'file.txt')
-        const result = await Path.getAbsolute(absolutePath)
+    describe('when the path is already absolute', () => {
+        it('returns the same path', async () => {
+            const absolutePath = p.join(os.tmpdir(), 'file.txt')
+            const result = await Path.getAbsolute(absolutePath)
 
-        expect(result).toEqual(absolutePath)
+            expect(result).toEqual(absolutePath)
+        })
     })
 
     it('returns the basename', () => {
@@ -142,22 +146,26 @@ describe('Path', () => {
         expect(dirname).toEqual('dir')
     })
 
-    it('returns true if the path is writable', async () => {
-        jest.spyOn(fs, 'access').mockResolvedValueOnce(undefined)
+    describe('when the path is writable', () => {
+        it('returns true', async () => {
+            jest.spyOn(fs, 'access').mockResolvedValueOnce(undefined)
 
-        const result = await Path.isWritable('/test/path')
+            const result = await Path.isWritable('/test/path')
 
-        expect(result).toBe(true)
-        expect(fs.access).toHaveBeenCalledWith('/test/path', fs.constants.W_OK)
+            expect(result).toBe(true)
+            expect(fs.access).toHaveBeenCalledWith('/test/path', fs.constants.W_OK)
+        })
     })
 
-    it('returns false if the path is not writable', async () => {
-        jest.spyOn(fs, 'access').mockRejectedValueOnce(new Error('Not writable'))
+    describe('when the path is not writable', () => {
+        it('returns false', async () => {
+            jest.spyOn(fs, 'access').mockRejectedValueOnce(new Error('Not writable'))
 
-        const result = await Path.isWritable('/test/path')
+            const result = await Path.isWritable('/test/path')
 
-        expect(result).toBe(false)
-        expect(fs.access).toHaveBeenCalledWith('/test/path', fs.constants.W_OK)
+            expect(result).toBe(false)
+            expect(fs.access).toHaveBeenCalledWith('/test/path', fs.constants.W_OK)
+        })
     })
 
     it('moves a file', async () => {

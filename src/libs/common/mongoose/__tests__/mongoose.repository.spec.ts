@@ -129,12 +129,14 @@ describe('MongooseRepository', () => {
             await expect(promise).rejects.toThrow(fix.BadRequestException)
         })
 
-        it('uses the default take value when take is not specified', async () => {
-            const { take } = await fix.repository.findWithPagination({
-                pagination: { orderby: { name: 'name', direction: OrderDirection.Desc } }
-            })
+        describe('when take is not provided', () => {
+            it('uses the default take value', async () => {
+                const { take } = await fix.repository.findWithPagination({
+                    pagination: { orderby: { name: 'name', direction: OrderDirection.Desc } }
+                })
 
-            expect(take).toEqual(maxTake)
+                expect(take).toEqual(maxTake)
+            })
         })
 
         it('applies configured conditions', async () => {
@@ -170,14 +172,18 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
-        it('returns true when all ids exist', async () => {
-            const exists = await fix.repository.allExist(pickIds(samples))
-            expect(exists).toBe(true)
+        describe('when all ids exist', () => {
+            it('returns true', async () => {
+                const exists = await fix.repository.allExist(pickIds(samples))
+                expect(exists).toBe(true)
+            })
         })
 
-        it('returns false when any id is missing', async () => {
-            const exists = await fix.repository.allExist([nullObjectId])
-            expect(exists).toBe(false)
+        describe('when any id is missing', () => {
+            it('returns false', async () => {
+                const exists = await fix.repository.allExist([nullObjectId])
+                expect(exists).toBe(false)
+            })
         })
     })
 
@@ -252,17 +258,21 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
-        it('returns the documents when all ids exist', async () => {
-            const ids = pickIds(samples)
-            const docs = await fix.repository.getByIds(ids)
+        describe('when all ids exist', () => {
+            it('returns the documents', async () => {
+                const ids = pickIds(samples)
+                const docs = await fix.repository.getByIds(ids)
 
-            expectEqualUnsorted(toDtos(docs), samples)
+                expectEqualUnsorted(toDtos(docs), samples)
+            })
         })
 
-        it('throws NotFoundException when any id is missing', async () => {
-            const promise = fix.repository.getByIds([nullObjectId])
+        describe('when any id is missing', () => {
+            it('throws NotFoundException', async () => {
+                const promise = fix.repository.getByIds([nullObjectId])
 
-            await expect(promise).rejects.toThrow(fix.NotFoundException)
+                await expect(promise).rejects.toThrow(fix.NotFoundException)
+            })
         })
     })
 
@@ -296,26 +306,30 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
-        it('deletes the documents when all ids exist', async () => {
-            const samplesToDelete = samples.slice(5, 10)
-            const ids = pickIds(samplesToDelete)
+        describe('when all ids exist', () => {
+            it('deletes the documents', async () => {
+                const samplesToDelete = samples.slice(5, 10)
+                const ids = pickIds(samplesToDelete)
 
-            const deletedDocs = await fix.repository.deleteByIds(ids)
-            expect(toDtos(deletedDocs)).toEqual(samplesToDelete)
+                const deletedDocs = await fix.repository.deleteByIds(ids)
+                expect(toDtos(deletedDocs)).toEqual(samplesToDelete)
 
-            const docs = await fix.repository.findByIds(ids)
-            expect(docs).toHaveLength(0)
+                const docs = await fix.repository.findByIds(ids)
+                expect(docs).toHaveLength(0)
+            })
         })
 
-        it('throws NotFoundException when any id is missing', async () => {
-            const promise = fix.repository.deleteByIds([nullObjectId])
+        describe('when any id is missing', () => {
+            it('throws NotFoundException', async () => {
+                const promise = fix.repository.deleteByIds([nullObjectId])
 
-            const error = await promise.catch((e) => e)
+                const error = await promise.catch((e) => e)
 
-            expect(error).toBeInstanceOf(fix.NotFoundException)
-            expect(error.response).toEqual({
-                ...MongooseErrors.MultipleDocumentsNotFound,
-                notFoundIds: [nullObjectId]
+                expect(error).toBeInstanceOf(fix.NotFoundException)
+                expect(error.response).toEqual({
+                    ...MongooseErrors.MultipleDocumentsNotFound,
+                    notFoundIds: [nullObjectId]
+                })
             })
         })
     })
