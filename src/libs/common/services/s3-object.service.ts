@@ -149,9 +149,10 @@ export class S3ObjectService {
 
         const result = await this.s3.send(command)
 
+        /* istanbul ignore next */
         let contents: S3ObjectSummary[] = (result.Contents ?? [])
             .map((content) => ({
-                key: content.Key!,
+                key: content.Key ?? 'null',
                 lastModified: content.LastModified as Date,
                 eTag: content.ETag as string,
                 size: content.Size as number
@@ -162,14 +163,15 @@ export class S3ObjectService {
             .map((cp) => cp.Prefix)
             .filter((p): p is string => !!p && p.length > 0)
 
+        /* istanbul ignore next */
         return {
             contents,
             commonPrefixes,
             isTruncated: Boolean(result.IsTruncated),
-            nextToken: result.NextContinuationToken || undefined,
+            nextToken: result.NextContinuationToken ?? undefined,
             maxKeys: result.MaxKeys,
-            prefix: result.Prefix || options.prefix,
-            delimiter: result.Delimiter || options.delimiter
+            prefix: result.Prefix ?? options.prefix,
+            delimiter: result.Delimiter ?? options.delimiter
         }
     }
 }

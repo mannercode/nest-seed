@@ -1,5 +1,5 @@
 import { HttpStatus } from '@nestjs/common'
-import { ShowtimeDto } from 'apps/cores'
+import type { ShowtimeDto } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, oid } from 'testlib'
 import { buildCreateShowtimeDto, createShowtimes, Errors } from '../__helpers__'
@@ -14,7 +14,7 @@ describe('ShowtimesService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('createMany', () => {

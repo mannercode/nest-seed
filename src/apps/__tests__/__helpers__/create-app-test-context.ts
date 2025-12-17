@@ -1,9 +1,10 @@
 import { BullModule } from '@nestjs/bullmq'
 import { ConfigService } from '@nestjs/config'
-import { MicroserviceOptions, Transport } from '@nestjs/microservices'
+import type { MicroserviceOptions } from '@nestjs/microservices'
+import { Transport } from '@nestjs/microservices'
 import compression from 'compression'
 import express from 'express'
-import Redis from 'ioredis'
+import type Redis from 'ioredis'
 import {
     AppConfigService,
     CommonModule,
@@ -11,7 +12,8 @@ import {
     MongooseConfigModule,
     RedisConfigModule
 } from 'shared'
-import { createHttpTestContext, HttpTestContext, ModuleMetadataEx } from 'testlib'
+import type { HttpTestContext, ModuleMetadataEx } from 'testlib'
+import { createHttpTestContext } from 'testlib'
 
 export type AppTestContext = HttpTestContext & { teardown: () => Promise<void> }
 

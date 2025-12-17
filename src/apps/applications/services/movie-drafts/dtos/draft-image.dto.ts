@@ -1,5 +1,5 @@
-import { AssetPresignedUploadDto } from 'apps/infrastructures'
-import { DraftImageStatus } from './movie-draft.dto'
+import type { AssetPresignedUploadDto } from 'apps/infrastructures'
+import type { DraftImageStatus } from './movie-draft.dto'
 
 export class DraftImageUploadResponse {
     imageId: string

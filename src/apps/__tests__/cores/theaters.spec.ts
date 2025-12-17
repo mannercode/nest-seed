@@ -1,4 +1,4 @@
-import { SearchTheatersPageDto, TheaterDto } from 'apps/cores'
+import type { SearchTheatersPageDto, TheaterDto } from 'apps/cores'
 import { nullObjectId } from 'testlib'
 import { buildCreateTheaterDto, createTheater, Errors } from '../__helpers__'
 import type { TheatersFixture } from './theaters.fixture'
@@ -12,7 +12,7 @@ describe('TheatersService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('POST /theaters', () => {

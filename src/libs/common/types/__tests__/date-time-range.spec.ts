@@ -25,7 +25,7 @@ describe('DateTimeRange', () => {
                 const instance = plainToInstance(DateTimeRange, plainData)
 
                 expect(instance.start).toBeInstanceOf(Date)
-                expect(isNaN(instance.start!.getTime())).toBe(true)
+                expect(isNaN(instance.start.getTime())).toBe(true)
 
                 const errors = validateSync(instance)
                 expect(errors.length).toBeGreaterThan(0)

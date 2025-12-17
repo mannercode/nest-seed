@@ -1,5 +1,6 @@
-import { CreatePaymentDto } from 'apps/infrastructures'
-import { oid, TestContext } from 'testlib'
+import type { CreatePaymentDto } from 'apps/infrastructures'
+import type { TestContext } from 'testlib'
+import { oid } from 'testlib'
 
 export function buildCreatePaymentDto(overrides = {}) {
     const createDto = { customerId: oid(0x0), amount: 1, ...overrides }

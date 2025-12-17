@@ -10,7 +10,7 @@ describe('Mongoose schema types', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     it('stores and retrieves all default Mongoose data types', async () => {

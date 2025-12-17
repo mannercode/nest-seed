@@ -1,4 +1,5 @@
-import { MovieDto, MovieGenre, MovieRating } from 'apps/cores'
+import type { MovieDto } from 'apps/cores'
+import { MovieGenre, MovieRating } from 'apps/cores'
 import { MovieRecommender } from '..'
 
 describe('MovieRecommender', () => {

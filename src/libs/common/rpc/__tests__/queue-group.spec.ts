@@ -17,7 +17,7 @@ describe('NATS Queue Group', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('when a queue group is set', () => {

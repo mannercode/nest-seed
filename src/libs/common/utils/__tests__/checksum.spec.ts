@@ -49,7 +49,7 @@ describe('Checksum', () => {
 
         describe('when the algorithm is sha1', () => {
             it('returns the SHA1 checksum', async () => {
-                const checksum = await Checksum.fromBuffer(buffer, 'sha1')
+                const checksum = Checksum.fromBuffer(buffer, 'sha1')
 
                 expect(checksum).toEqual({
                     algorithm: 'sha1',
@@ -60,7 +60,7 @@ describe('Checksum', () => {
 
         describe('when the algorithm is not provided', () => {
             it('returns the SHA256 checksum', async () => {
-                const checksum = await Checksum.fromBuffer(buffer)
+                const checksum = Checksum.fromBuffer(buffer)
 
                 expect(checksum).toEqual({
                     algorithm: 'sha256',

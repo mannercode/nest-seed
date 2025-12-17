@@ -1,5 +1,6 @@
 import { PaymentsClient, PaymentsModule } from 'apps/infrastructures'
-import { createAppTestContext, AppTestContext } from '../__helpers__'
+import type { AppTestContext } from '../__helpers__'
+import { createAppTestContext } from '../__helpers__'
 
 export type PaymentsFixture = AppTestContext & { paymentsService: PaymentsClient }
 

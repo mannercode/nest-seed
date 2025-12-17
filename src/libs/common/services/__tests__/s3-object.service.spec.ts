@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common'
+import type { PutObjectResult } from './s3-object.service.fixture'
 import {
     putObject,
-    PutObjectResult,
     testBuffer,
     uploadObject,
     type S3ObjectServiceFixture
@@ -16,7 +16,7 @@ describe('S3ObjectService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('presignUploadUrl', () => {
@@ -232,11 +232,11 @@ describe('S3ObjectService', () => {
 
         describe('when the `nextToken` is provided', () => {
             const maxKeys = 2
-            let nextToken: string
+            let nextToken: string | undefined
 
             beforeEach(async () => {
                 const result = await fix.s3Service.listObjects({ maxKeys })
-                nextToken = result.nextToken!
+                nextToken = result.nextToken
             })
 
             it('returns the next page of objects', async () => {

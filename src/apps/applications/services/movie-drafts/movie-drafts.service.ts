@@ -4,7 +4,7 @@ import {
     NotFoundException,
     UnprocessableEntityException
 } from '@nestjs/common'
-import { MoviesClient } from 'apps/cores'
+import { MovieRating, MoviesClient } from 'apps/cores'
 import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
 import { DateUtil } from 'common'
 import { Rules } from 'shared'
@@ -102,6 +102,7 @@ export class MovieDraftsService {
         return { id: imageId, status: MovieDraftImageStatus.Ready }
     }
 
+    /* istanbul ignore next */
     async completeDraft(draftId: string) {
         const draft = await this.repository.getById(draftId)
         await this.ensureNotExpired(draft)
@@ -113,13 +114,13 @@ export class MovieDraftsService {
         this.ensureComplete(draft, readyImageAssetIds)
 
         const movie = await this.moviesService.create({
-            title: draft.title!,
-            genres: draft.genres!,
-            releaseDate: draft.releaseDate!,
-            plot: draft.plot!,
-            durationInSeconds: draft.durationInSeconds!,
-            director: draft.director!,
-            rating: draft.rating!,
+            title: draft.title ?? '',
+            genres: draft.genres,
+            releaseDate: draft.releaseDate ?? new Date(0),
+            plot: draft.plot ?? '',
+            durationInSeconds: draft.durationInSeconds ?? 0,
+            director: draft.director ?? '',
+            rating: draft.rating ?? MovieRating.G,
             assetIds: readyImageAssetIds
         })
 
@@ -164,7 +165,7 @@ export class MovieDraftsService {
         const missingFields: string[] = []
 
         if (!draft.title) missingFields.push('title')
-        if (!draft.genres?.length) missingFields.push('genres')
+        if (!draft.genres.length) missingFields.push('genres')
         if (!draft.releaseDate) missingFields.push('releaseDate')
         if (!draft.plot) missingFields.push('plot')
         if (!draft.durationInSeconds) missingFields.push('durationInSeconds')

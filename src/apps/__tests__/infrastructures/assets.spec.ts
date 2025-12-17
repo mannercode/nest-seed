@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common'
 import { CronExpression } from '@nestjs/schedule'
-import { AssetDto } from 'apps/infrastructures'
+import type { AssetDto } from 'apps/infrastructures'
 import { Checksum, pickIds, sleep } from 'common'
 import { nullObjectId, toAny } from 'testlib'
 import {
@@ -23,7 +23,7 @@ describe('AssetsService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('create', () => {
@@ -213,7 +213,8 @@ describe('AssetsService', () => {
             it('makes the download URL inaccessible after deletion', async () => {
                 await fix.assetsClient.deleteMany([assets[0].id])
 
-                const response = await fetch(assets[0].download!.url)
+                const { download } = assets[0]
+                const response = await fetch(download ? download.url : '')
                 expect(response.ok).toBe(false)
             })
         })

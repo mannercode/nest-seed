@@ -24,6 +24,7 @@ class TestController {
 
     @Get('fatal')
     getHttpFatalError() {
+        // eslint-disable-next-line @typescript-eslint/only-throw-error
         throw 'fatal error message'
     }
 
@@ -39,6 +40,7 @@ class TestController {
 
     @MessagePattern(withTestId('fatal'))
     getRpcFatalError() {
+        // eslint-disable-next-line @typescript-eslint/only-throw-error
         throw 'fatal error message'
     }
 }

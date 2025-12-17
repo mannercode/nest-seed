@@ -1,4 +1,4 @@
-import { CustomerDto, SearchCustomersPageDto } from 'apps/cores'
+import type { CustomerDto, SearchCustomersPageDto } from 'apps/cores'
 import { omit } from 'lodash'
 import { nullObjectId } from 'testlib'
 import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
@@ -13,7 +13,7 @@ describe('CustomersService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('POST /customers', () => {

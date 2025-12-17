@@ -13,7 +13,7 @@ import {
 import { RecommendationClient } from 'apps/applications'
 import { CreateMovieDto, MoviesClient, SearchMoviesPageDto, UpdateMovieDto } from 'apps/cores'
 import { CustomerOptionalJwtAuthGuard } from './guards'
-import { CustomerAuthRequest } from './types'
+import { CustomerOptionalAuthRequest } from './types'
 
 @Controller('movies')
 export class MoviesController {
@@ -24,8 +24,8 @@ export class MoviesController {
 
     @UseGuards(CustomerOptionalJwtAuthGuard)
     @Get('recommended')
-    async searchRecommendedMovies(@Req() req: CustomerAuthRequest) {
-        const { customerId } = req.user ?? {}
+    async searchRecommendedMovies(@Req() req: CustomerOptionalAuthRequest) {
+        const { customerId } = req.user ?? { customerId: null }
 
         return this.recommendationService.searchRecommendedMovies(customerId)
     }

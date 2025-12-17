@@ -1,6 +1,6 @@
 import { createWinstonLogger, Path, sleep } from 'common'
 import { readFile } from 'fs/promises'
-import winston from 'winston'
+import type winston from 'winston'
 
 describe('createWinstonLogger', () => {
     let logger: winston.Logger

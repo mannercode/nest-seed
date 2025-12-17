@@ -1,4 +1,4 @@
-import { JwtAuthTokens } from 'common'
+import type { JwtAuthTokens } from 'common'
 import { Errors, loginCustomer } from '../__helpers__'
 import type { CustomerAuthFixture } from './customer-auth.fixture'
 
@@ -11,7 +11,7 @@ describe('CustomersService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('POST /customers/login', () => {

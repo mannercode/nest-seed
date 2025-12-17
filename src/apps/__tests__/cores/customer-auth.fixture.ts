@@ -1,6 +1,7 @@
 import { CustomersClient, CustomersModule } from 'apps/cores'
 import { CustomerJwtStrategy, CustomerLocalStrategy, CustomersController } from 'apps/gateway'
-import { createCustomer, createAppTestContext, AppTestContext } from '../__helpers__'
+import type { AppTestContext } from '../__helpers__'
+import { createCustomer, createAppTestContext } from '../__helpers__'
 
 export type CustomerAuthFixture = AppTestContext & {
     credentials: { email: string; password: string }

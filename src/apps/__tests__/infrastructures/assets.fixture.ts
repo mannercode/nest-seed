@@ -1,7 +1,8 @@
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
-import { CronJob } from 'cron'
-import { createAppTestContext, FixtureFile, fixtureFiles, AppTestContext } from '../__helpers__'
+import type { CronJob } from 'cron'
+import type { FixtureFile, AppTestContext } from '../__helpers__'
+import { createAppTestContext, fixtureFiles } from '../__helpers__'
 
 export type AssetsFixture = AppTestContext & {
     assetsClient: AssetsClient

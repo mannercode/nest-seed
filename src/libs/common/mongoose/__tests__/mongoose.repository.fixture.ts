@@ -56,7 +56,9 @@ export async function createSamples(repository: SamplesRepository) {
     )
 }
 
-export function toDto(item: SampleDocument) {
+export function toDto(item: SampleDocument | null) {
+    if (item === null) return { id: '0', name: 'name' }
+
     return mapDocToDto(item, SampleDto, ['id', 'name'])
 }
 export function toDtos(items: SampleDocument[]) {

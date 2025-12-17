@@ -10,7 +10,7 @@ describe('ClientProxyService with name', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     it('creates and uses the named ClientProxyService', async () => {

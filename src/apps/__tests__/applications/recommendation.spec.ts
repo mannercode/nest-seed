@@ -1,4 +1,5 @@
-import { MovieDto, MovieGenre } from 'apps/cores'
+import type { MovieDto } from 'apps/cores'
+import { MovieGenre } from 'apps/cores'
 import {
     createShowingMovies,
     createWatchedMovies,
@@ -14,7 +15,7 @@ describe('RecommendationService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('GET /movies/recommended', () => {

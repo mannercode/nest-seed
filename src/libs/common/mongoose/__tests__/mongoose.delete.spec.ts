@@ -1,26 +1,23 @@
-import { HydratedDocument } from 'mongoose'
-import {
-    HardDeleteSample,
-    MongooseDeleteFixture,
-    SoftDeleteSample
-} from './mongoose.delete.fixture'
+import type { HydratedDocument } from 'mongoose'
+import type { MongooseDeleteFixture } from './mongoose.delete.fixture'
+import { HardDeleteSample, SoftDeleteSample } from './mongoose.delete.fixture'
 
 describe('Mongoose Delete', () => {
     describe('Soft Delete', () => {
-        let fixture: MongooseDeleteFixture<SoftDeleteSample>
+        let fix: MongooseDeleteFixture<SoftDeleteSample>
         let createdDoc: HydratedDocument<SoftDeleteSample>
 
         beforeEach(async () => {
             const { createMongooseDeleteFixture } = await import('./mongoose.delete.fixture')
-            fixture = await createMongooseDeleteFixture(SoftDeleteSample)
+            fix = await createMongooseDeleteFixture(SoftDeleteSample)
 
-            createdDoc = new fixture.model()
+            createdDoc = new fix.model()
             createdDoc.name = 'name'
             await createdDoc.save()
         })
 
         afterEach(async () => {
-            await fixture?.teardown()
+            await fix.teardown()
         })
 
         describe('when creating a new document', () => {
@@ -31,9 +28,9 @@ describe('Mongoose Delete', () => {
 
         describe('when calling deleteOne', () => {
             it('records deletedAt', async () => {
-                await fixture.model.deleteOne({ _id: createdDoc._id })
+                await fix.model.deleteOne({ _id: createdDoc._id })
 
-                const deletedDoc = await fixture.model
+                const deletedDoc = await fix.model
                     .findOne({ _id: { $eq: createdDoc._id } })
                     .setOptions({ withDeleted: true })
                     .exec()
@@ -44,15 +41,13 @@ describe('Mongoose Delete', () => {
 
         describe('when calling deleteMany', () => {
             it('records deletedAt for each document', async () => {
-                const secondDoc = new fixture.model()
+                const secondDoc = new fix.model()
                 secondDoc.name = 'name'
                 await secondDoc.save()
 
-                await fixture.model.deleteMany({
-                    _id: { $in: [createdDoc._id, secondDoc._id] } as any
-                })
+                await fix.model.deleteMany({ _id: { $in: [createdDoc._id, secondDoc._id] } as any })
 
-                const deletedDocs = await fixture.model.find({}).setOptions({ withDeleted: true })
+                const deletedDocs = await fix.model.find({}).setOptions({ withDeleted: true })
                 expect(deletedDocs[0]).toMatchObject({ deletedAt: expect.any(Date) })
                 expect(deletedDocs[1]).toMatchObject({ deletedAt: expect.any(Date) })
             })
@@ -60,11 +55,9 @@ describe('Mongoose Delete', () => {
 
         describe('when aggregating', () => {
             it('excludes deleted documents', async () => {
-                await fixture.model.deleteOne({ _id: createdDoc._id })
+                await fix.model.deleteOne({ _id: createdDoc._id })
 
-                const aggregateResult = await fixture.model.aggregate([
-                    { $match: { name: 'name' } }
-                ])
+                const aggregateResult = await fix.model.aggregate([{ $match: { name: 'name' } }])
 
                 expect(aggregateResult).toHaveLength(0)
             })
@@ -72,20 +65,20 @@ describe('Mongoose Delete', () => {
     })
 
     describe('Hard Delete', () => {
-        let fixture: MongooseDeleteFixture<HardDeleteSample>
+        let fix: MongooseDeleteFixture<HardDeleteSample>
         let createdDoc: HydratedDocument<HardDeleteSample>
 
         beforeEach(async () => {
             const { createMongooseDeleteFixture } = await import('./mongoose.delete.fixture')
-            fixture = await createMongooseDeleteFixture(HardDeleteSample)
+            fix = await createMongooseDeleteFixture(HardDeleteSample)
 
-            createdDoc = new fixture.model()
+            createdDoc = new fix.model()
             createdDoc.name = 'name'
             await createdDoc.save()
         })
 
         afterEach(async () => {
-            await fixture?.teardown()
+            await fix.teardown()
         })
 
         describe('when creating a new document', () => {

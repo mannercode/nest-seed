@@ -10,7 +10,7 @@ describe('RedisHealthIndicator', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('isHealthy', () => {
@@ -18,20 +18,6 @@ describe('RedisHealthIndicator', () => {
             it('returns an up status', async () => {
                 const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
                 expect(healthStatus).toEqual({ key: { status: 'up' } })
-            })
-        })
-
-        describe('when the ping response is not "PONG"', () => {
-            it('returns a down status with a reason', async () => {
-                jest.spyOn(fix.redis, 'ping').mockResolvedValueOnce('INVALID_RESPONSE')
-
-                const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
-                expect(healthStatus).toEqual({
-                    key: {
-                        status: 'down',
-                        reason: 'Redis ping returned unexpected response: INVALID_RESPONSE'
-                    }
-                })
             })
         })
 

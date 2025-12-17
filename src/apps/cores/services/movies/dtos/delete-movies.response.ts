@@ -1,4 +1,4 @@
-import { MovieDto } from './movie.dto'
+import type { MovieDto } from './movie.dto'
 
 export class DeleteMoviesResponse {
     deletedMovies: MovieDto[]

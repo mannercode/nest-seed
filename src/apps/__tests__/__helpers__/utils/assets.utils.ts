@@ -1,12 +1,12 @@
-import {
+import type {
     AssetDto,
     CompleteAssetDto,
     CreateAssetDto,
     AssetPresignedUploadDto
 } from 'apps/infrastructures'
 import { createReadStream } from 'fs'
-import { TestContext } from 'testlib'
-import { FixtureFile } from '../fixture-files'
+import type { TestContext } from 'testlib'
+import type { FixtureFile } from '../fixture-files'
 
 export function buildCreateAssetDto(file: FixtureFile, overrides = {}) {
     const { originalName, mimeType, size, checksum } = file

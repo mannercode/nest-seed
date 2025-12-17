@@ -1,4 +1,4 @@
-import { Provider } from '@nestjs/common'
+import type { Provider } from '@nestjs/common'
 import { withTestId } from 'testlib'
 import type { SuccessLoggingInterceptorFixture } from './success-logging.interceptor.fixture'
 
@@ -15,7 +15,7 @@ describe('SuccessLoggingInterceptor', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('when the requests succeed', () => {

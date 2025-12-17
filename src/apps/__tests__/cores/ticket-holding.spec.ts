@@ -1,4 +1,4 @@
-import { HoldTicketsDto } from 'apps/cores'
+import type { HoldTicketsDto } from 'apps/cores'
 import { sleep } from 'common'
 import { oid, toAny } from 'testlib'
 import { buildHoldTicketsDto } from '../__helpers__'
@@ -13,7 +13,7 @@ describe('TicketHoldingService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('holdTickets', () => {

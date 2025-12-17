@@ -1,4 +1,6 @@
-import { CreatePurchaseDto, PurchaseClient, PurchaseModule } from 'apps/applications'
+import type { CreatePurchaseDto } from 'apps/applications'
+import { PurchaseClient, PurchaseModule } from 'apps/applications'
+import type { TicketDto } from 'apps/cores'
 import {
     CustomersClient,
     CustomersModule,
@@ -11,7 +13,6 @@ import {
     ShowtimesModule,
     TheatersClient,
     TheatersModule,
-    TicketDto,
     TicketHoldingClient,
     TicketHoldingModule,
     TicketsClient,
@@ -20,9 +21,10 @@ import {
 import { PurchasesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
 import { DateUtil, pickIds } from 'common'
-import { oid, TestContext, toAny } from 'testlib'
+import type { TestContext } from 'testlib'
+import { oid, toAny } from 'testlib'
+import type { AppTestContext } from '../__helpers__'
 import {
-    AppTestContext,
     buildHoldTicketsDto,
     createAppTestContext,
     createShowtimes,

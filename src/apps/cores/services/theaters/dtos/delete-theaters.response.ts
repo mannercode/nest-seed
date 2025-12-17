@@ -1,4 +1,4 @@
-import { TheaterDto } from './theater.dto'
+import type { TheaterDto } from './theater.dto'
 
 export class DeleteTheatersResponse {
     deletedTheaters: TheaterDto[]

@@ -1,6 +1,6 @@
-import { Type } from '@nestjs/common'
+import type { Type } from '@nestjs/common'
 import { SchemaFactory } from '@nestjs/mongoose'
-import { ClientSession, Schema } from 'mongoose'
+import type { ClientSession, Schema } from 'mongoose'
 
 /**
  * The difference between toObject and toJSON is that toJSON has flattenMaps set to true by default.
@@ -42,7 +42,7 @@ function excludeDeletedMiddleware() {
 export function createMongooseSchema<T>(cls: Type<T>): Schema<T> {
     const schema = SchemaFactory.createForClass(cls)
 
-    const isHardDelete = Reflect.getMetadata(HARD_DELETE_KEY, cls) || false
+    const isHardDelete = Reflect.getMetadata(HARD_DELETE_KEY, cls) ?? false
 
     // The softDelete feature has not been tested under various conditions and is therefore incomplete.
     // softDelete는 다양한 상황을 테스트하지 않았다. 불완전한 기능이다.

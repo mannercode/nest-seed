@@ -42,7 +42,7 @@ export async function createRequestValidationPipeFixture() {
     })
 
     const teardown = async () => {
-        await ctx?.close()
+        await ctx.close()
     }
 
     return { ...ctx, teardown }

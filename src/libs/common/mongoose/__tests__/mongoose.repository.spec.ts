@@ -1,10 +1,9 @@
 import { MongooseErrors, OrderDirection, pickIds, pickItems } from 'common'
 import { expectEqualUnsorted, nullObjectId } from 'testlib'
+import type { MongooseRepositoryFixture, SampleDto } from './mongoose.repository.fixture'
 import {
     createSample,
     createSamples,
-    MongooseRepositoryFixture,
-    SampleDto,
     sortByName,
     sortByNameDescending,
     toDto,
@@ -23,7 +22,7 @@ describe('MongooseRepository', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('save', () => {
@@ -33,7 +32,7 @@ describe('MongooseRepository', () => {
             await newDoc.save()
 
             const foundDoc = await fix.repository.findById(newDoc.id)
-            expect(toDto(foundDoc!)).toEqual(toDto(newDoc))
+            expect(toDto(foundDoc)).toEqual(toDto(newDoc))
         })
 
         it('throws for missing required fields', async () => {
@@ -141,7 +140,7 @@ describe('MongooseRepository', () => {
 
         it('applies configured conditions', async () => {
             const { items } = await fix.repository.findWithPagination({
-                configureQuery: (queryHelper) => {
+                configureQuery: async (queryHelper) => {
                     queryHelper.setQuery({ name: /Sample-00/i })
                 },
                 pagination: { take: 10 }
@@ -198,7 +197,7 @@ describe('MongooseRepository', () => {
         it('returns the document for an existing id', async () => {
             const doc = await fix.repository.findById(sample.id)
 
-            expect(toDto(doc!)).toEqual(sample)
+            expect(toDto(doc)).toEqual(sample)
         })
 
         it('returns null for a missing id', async () => {

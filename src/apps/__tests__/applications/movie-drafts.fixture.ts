@@ -8,7 +8,8 @@ import { MoviesClient, MoviesModule } from 'apps/cores'
 import { MovieDraftsController, MoviesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { Path } from 'common'
-import { createAppTestContext, FixtureFile, fixtureFiles, AppTestContext } from '../__helpers__'
+import type { FixtureFile, AppTestContext } from '../__helpers__'
+import { createAppTestContext, fixtureFiles } from '../__helpers__'
 
 export type MovieDraftsFixture = AppTestContext & {
     image: FixtureFile

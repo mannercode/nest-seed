@@ -1,10 +1,10 @@
 import chalk from 'chalk'
 import winston from 'winston'
 import DailyRotateFile from 'winston-daily-rotate-file'
-import { HttpErrorLog, HttpSuccessLog, RpcErrorLog, RpcSuccessLog } from './types'
+import type { HttpErrorLog, HttpSuccessLog, RpcErrorLog, RpcSuccessLog } from './types'
 
 /* istanbul ignore next */
-function colorizeHttpMethod(method: string) {
+function colorizeHttpMethod(method: string | undefined) {
     const METHOD = (method ?? 'METHOD').toUpperCase()
 
     switch (METHOD) {
@@ -24,7 +24,7 @@ function colorizeHttpMethod(method: string) {
 }
 
 /* istanbul ignore next */
-function colorizeLogLevel(level: string) {
+function colorizeLogLevel(level: string | undefined) {
     const LEVEL = (level ?? 'LEVEL').toUpperCase()
 
     switch (LEVEL) {

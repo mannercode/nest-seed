@@ -10,7 +10,7 @@ describe('ClientProxyService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('send', () => {

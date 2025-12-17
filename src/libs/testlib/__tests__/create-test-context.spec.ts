@@ -10,7 +10,7 @@ describe('createTestContext', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     it('uses the mocked service when the provider is overridden', async () => {

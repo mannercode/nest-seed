@@ -1,5 +1,5 @@
 import { HttpStatus } from '@nestjs/common'
-import { PaymentDto } from 'apps/infrastructures'
+import type { PaymentDto } from 'apps/infrastructures'
 import { pickIds } from 'common'
 import { nullObjectId } from 'testlib'
 import { buildCreatePaymentDto, createPayment, Errors } from '../__helpers__'
@@ -14,7 +14,7 @@ describe('PaymentsService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('create', () => {

@@ -10,7 +10,7 @@ describe('LatLong', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('distanceInMeters', () => {

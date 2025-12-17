@@ -1,5 +1,5 @@
-import { Seat } from '../../theaters'
-import { TicketStatus } from '../models'
+import type { Seat } from '../../theaters'
+import type { TicketStatus } from '../models'
 
 export class TicketDto {
     id: string

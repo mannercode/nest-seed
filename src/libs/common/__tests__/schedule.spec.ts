@@ -1,6 +1,6 @@
 import { CronExpression } from '@nestjs/schedule'
 import { sleep } from '../utils'
-import { ScheduleModuleFixture } from './schedule.fixture'
+import type { ScheduleModuleFixture } from './schedule.fixture'
 
 describe('ScheduleModule', () => {
     let fix: ScheduleModuleFixture
@@ -11,7 +11,7 @@ describe('ScheduleModule', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('when using the default schedule', () => {

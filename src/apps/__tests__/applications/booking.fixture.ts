@@ -1,4 +1,5 @@
 import { BookingClient, BookingModule, PurchaseModule } from 'apps/applications'
+import type { TheaterLocation } from 'apps/cores'
 import {
     CustomersClient,
     CustomersModule,
@@ -8,7 +9,6 @@ import {
     Seatmap,
     ShowtimesClient,
     ShowtimesModule,
-    TheaterLocation,
     TheatersClient,
     TheatersModule,
     TicketHoldingModule,
@@ -17,15 +17,15 @@ import {
 } from 'apps/cores'
 import { BookingController, CustomerJwtStrategy } from 'apps/gateway'
 import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
-import { TestContext } from 'testlib'
+import type { TestContext } from 'testlib'
+import type { AppTestContext } from '../__helpers__'
 import {
     createAndLoginCustomer,
     createMovie,
     createShowtimes,
     createAppTestContext,
     createTheater,
-    createTickets,
-    AppTestContext
+    createTickets
 } from '../__helpers__'
 
 export async function createAllResources(

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { MoviesClient, ShowtimeDto, ShowtimesClient, TheatersClient } from 'apps/cores'
-import { Assert, DateTimeRange, DateUtil, Time } from 'common'
+import { DateTimeRange, DateUtil, Time } from 'common'
 import { Rules } from 'shared'
 import { BulkCreateShowtimesDto } from '../dtos'
 
@@ -57,9 +57,12 @@ export class ShowtimeBulkValidatorService {
         const conflictingShowtimes: ShowtimeDto[] = []
 
         for (const theaterId of theaterIds) {
-            const timeslots = timeslotsByTheater.get(theaterId)!
+            const timeslots = timeslotsByTheater.get(theaterId)
 
-            Assert.defined(timeslots, `Timeslots must be defined for theater ID: ${theaterId}`)
+            /* istanbul ignore next */
+            if (timeslots === undefined) {
+                throw new Error(`Timeslots must be defined for theater ID: ${theaterId}`)
+            }
 
             for (const start of startTimes) {
                 const timeRange = DateTimeRange.create({ start, minutes: durationInMinutes })

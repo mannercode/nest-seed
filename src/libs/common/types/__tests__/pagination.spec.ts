@@ -14,7 +14,7 @@ describe('PaginationDto', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('HTTP controller', () => {

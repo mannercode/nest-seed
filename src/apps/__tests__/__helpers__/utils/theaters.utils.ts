@@ -1,4 +1,4 @@
-import { TestContext } from 'testlib'
+import type { TestContext } from 'testlib'
 
 export function buildCreateTheaterDto(overrides = {}) {
     const createDto = {

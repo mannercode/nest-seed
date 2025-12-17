@@ -1,5 +1,6 @@
 import { TicketsClient, TicketsModule } from 'apps/cores'
-import { AppTestContext, createAppTestContext } from '../__helpers__'
+import type { AppTestContext } from '../__helpers__'
+import { createAppTestContext } from '../__helpers__'
 
 export type TicketsFixture = AppTestContext & { ticketsService: TicketsClient }
 

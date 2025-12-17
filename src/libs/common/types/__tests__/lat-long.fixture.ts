@@ -16,7 +16,7 @@ export async function createLatLongFixture() {
     const { httpClient, ...ctx } = await createHttpTestContext({ controllers: [TestController] })
 
     const teardown = async () => {
-        await ctx?.close()
+        await ctx.close()
     }
 
     return { teardown, httpClient }

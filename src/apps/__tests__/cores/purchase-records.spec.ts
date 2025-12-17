@@ -1,4 +1,4 @@
-import { PurchaseRecordDto } from 'apps/cores'
+import type { PurchaseRecordDto } from 'apps/cores'
 import { nullObjectId } from 'testlib'
 import { buildCreatePurchaseRecordDto, createPurchaseRecord, Errors } from '../__helpers__'
 import type { PurchaseRecordsFixture } from './purchase-records.fixture'
@@ -12,7 +12,7 @@ describe('PurchaseRecordsService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('create', () => {

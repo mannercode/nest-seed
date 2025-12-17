@@ -9,7 +9,7 @@ describe('MongooseRepository.withTransaction', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('withTransaction', () => {

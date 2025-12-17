@@ -8,7 +8,7 @@ import {
     TicketsClient,
     TicketStatus
 } from 'apps/cores'
-import { Assert, DateUtil } from 'common'
+import { DateUtil } from 'common'
 import { BulkCreateShowtimesDto } from '../dtos'
 
 @Injectable()
@@ -56,9 +56,12 @@ export class ShowtimeBulkCreatorService {
 
         await Promise.all(
             showtimes.map(async (showtime) => {
-                const theater = theatersById.get(showtime.theaterId)!
+                const theater = theatersById.get(showtime.theaterId)
 
-                Assert.defined(theater, 'The theater must exist.')
+                /* istanbul ignore next */
+                if (theater === undefined) {
+                    throw new Error('The theater must exist.')
+                }
 
                 const createTicketDtos = Seatmap.getAllSeats(theater.seatmap).map((seat) => ({
                     showtimeId: showtime.id,

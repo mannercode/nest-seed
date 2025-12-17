@@ -1,4 +1,5 @@
-import { CreateMovieDto, MovieDto, MovieGenre, MovieRating, SearchMoviesPageDto } from 'apps/cores'
+import type { CreateMovieDto, MovieDto, SearchMoviesPageDto } from 'apps/cores'
+import { MovieGenre, MovieRating } from 'apps/cores'
 import { Checksum } from 'common'
 import { omit } from 'lodash'
 import { nullObjectId } from 'testlib'
@@ -20,7 +21,7 @@ describe('MoviesService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('POST /movies', () => {

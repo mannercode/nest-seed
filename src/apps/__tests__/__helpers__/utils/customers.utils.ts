@@ -1,5 +1,5 @@
-import { CreateCustomerDto, CustomerCredentialsDto } from 'apps/cores'
-import { TestContext } from 'testlib'
+import type { CreateCustomerDto, CustomerCredentialsDto } from 'apps/cores'
+import type { TestContext } from 'testlib'
 
 export function buildCreateCustomerDto(overrides = {}) {
     const createDto = {
@@ -30,7 +30,7 @@ export async function loginCustomer(ctx: TestContext, credentials: CustomerCrede
     const customer = await customersService.findCustomerByCredentials(credentials)
 
     const { accessToken, refreshToken } = await customersService.generateAuthTokens({
-        customerId: customer!.id,
+        customerId: customer ? customer.id : '',
         email: credentials.email
     })
 

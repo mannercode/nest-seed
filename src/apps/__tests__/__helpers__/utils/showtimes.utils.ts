@@ -1,7 +1,8 @@
-import { CreateShowtimeDto } from 'apps/cores'
+import type { CreateShowtimeDto } from 'apps/cores'
 import { DateUtil, newObjectId } from 'common'
 import { uniq } from 'lodash'
-import { oid, TestContext } from 'testlib'
+import type { TestContext } from 'testlib'
+import { oid } from 'testlib'
 
 export function buildCreateShowtimeDto(overrides: Partial<CreateShowtimeDto> = {}) {
     const createDto = {

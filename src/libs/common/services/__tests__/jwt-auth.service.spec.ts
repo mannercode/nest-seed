@@ -10,7 +10,7 @@ describe('JwtAuthService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('generateAuthTokens', () => {
@@ -42,8 +42,8 @@ describe('JwtAuthService', () => {
             it('returns new auth tokens', async () => {
                 const tokens = await fix.jwtService.refreshAuthTokens(refreshToken)
 
-                expect(tokens!.accessToken).not.toEqual(accessToken)
-                expect(tokens!.refreshToken).not.toEqual(refreshToken)
+                expect(tokens.accessToken).not.toEqual(accessToken)
+                expect(tokens.refreshToken).not.toEqual(refreshToken)
             })
         })
 

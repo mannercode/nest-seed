@@ -1,7 +1,9 @@
-import { CreateTicketDto, TicketStatus } from 'apps/cores'
+import type { CreateTicketDto } from 'apps/cores'
+import { TicketStatus } from 'apps/cores'
 import { newObjectId } from 'common'
 import { uniq } from 'lodash'
-import { oid, TestContext } from 'testlib'
+import type { TestContext } from 'testlib'
+import { oid } from 'testlib'
 
 export function buildCreateTicketDto(overrides = {}) {
     const createDto = {

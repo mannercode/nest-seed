@@ -1,9 +1,10 @@
-import { ShowtimeDto } from 'apps/cores'
+import type { ShowtimeDto } from 'apps/cores'
 import { DateUtil } from 'common'
 import type { Response } from 'superagent'
 import { nullObjectId } from 'testlib'
 import { createShowtimes } from '../__helpers__'
-import { ShowtimeCreationFixture, waitForCompletion } from './showtime-creation.fixture'
+import type { ShowtimeCreationFixture } from './showtime-creation.fixture'
+import { waitForCompletion } from './showtime-creation.fixture'
 
 describe('ShowtimeCreationService', () => {
     let fix: ShowtimeCreationFixture
@@ -14,7 +15,7 @@ describe('ShowtimeCreationService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('GET /showtime-creation/movies', () => {

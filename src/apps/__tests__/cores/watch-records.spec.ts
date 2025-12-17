@@ -1,4 +1,4 @@
-import { SearchWatchRecordsPageDto, WatchRecordDto } from 'apps/cores'
+import type { SearchWatchRecordsPageDto, WatchRecordDto } from 'apps/cores'
 import { oid } from 'testlib'
 import { buildCreateWatchRecordDto, createWatchRecord } from '../__helpers__'
 import type { WatchRecordsFixture } from './watch-records.fixture'
@@ -12,7 +12,7 @@ describe('WatchRecordsService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('create', () => {

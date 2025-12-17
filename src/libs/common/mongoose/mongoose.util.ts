@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common'
 import { escapeRegExp, uniq } from 'lodash'
-import { FilterQuery, HydratedDocument, Types } from 'mongoose'
+import type { FilterQuery, HydratedDocument } from 'mongoose'
+import { Types } from 'mongoose'
 import { Expect } from '../validator'
 import { MongooseErrors } from './errors'
 

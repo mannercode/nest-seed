@@ -10,7 +10,7 @@ describe('Mongoose TTL expiration', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('when the TTL expires', () => {

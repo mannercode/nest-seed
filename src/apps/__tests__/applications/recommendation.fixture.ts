@@ -1,8 +1,8 @@
 import { RecommendationClient, RecommendationModule } from 'apps/applications'
+import type { MovieDto } from 'apps/cores'
 import {
     CustomersClient,
     CustomersModule,
-    MovieDto,
     MoviesClient,
     MoviesModule,
     ShowtimesClient,
@@ -12,14 +12,14 @@ import {
 } from 'apps/cores'
 import { CustomerJwtStrategy, MoviesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
-import { TestContext } from 'testlib'
+import type { TestContext } from 'testlib'
+import type { AppTestContext } from '../__helpers__'
 import {
     createAndLoginCustomer,
     createMovie,
     createShowtimes,
     createAppTestContext,
-    createWatchRecord,
-    AppTestContext
+    createWatchRecord
 } from '../__helpers__'
 import { DateUtil } from 'common'
 

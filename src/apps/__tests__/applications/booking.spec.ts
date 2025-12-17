@@ -1,4 +1,5 @@
-import { MovieDto, ShowtimeDto, TheaterDto, TicketDto, TicketStatus } from 'apps/cores'
+import type { MovieDto, ShowtimeDto, TheaterDto, TicketDto } from 'apps/cores'
+import { TicketStatus } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, step } from 'testlib'
 import { Errors } from '../__helpers__'
@@ -13,7 +14,7 @@ describe('BookingService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('when the booking succeeds', () => {

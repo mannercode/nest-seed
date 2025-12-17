@@ -1,5 +1,6 @@
 import { HttpStatus } from '@nestjs/common'
-import { TicketDto, TicketStatus } from 'apps/cores'
+import type { TicketDto } from 'apps/cores'
+import { TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { oid } from 'testlib'
 import { buildCreateTicketDto, createTickets, Errors } from '../__helpers__'
@@ -14,7 +15,7 @@ describe('TicketsService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     describe('createMany', () => {

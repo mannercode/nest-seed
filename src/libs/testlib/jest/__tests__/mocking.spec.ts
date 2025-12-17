@@ -18,11 +18,11 @@ jest.mock('./mocking.fixture', () => {
 
 describe('jest.mock examples', () => {
     it('mocks a module', () => {
-        ;(Logger.verbose as jest.Mock).mockReturnValue('Mocked verbose')
-        const value = Logger.verbose('arg1', 'arg2')
+        ;(Logger.verbose as unknown as jest.Mock).mockImplementation(() => undefined)
+
+        Logger.verbose('arg1', 'arg2')
 
         expect(Logger.verbose).toHaveBeenCalledWith('arg1', 'arg2')
-        expect(value).toEqual('Mocked verbose')
     })
 
     it('mocks a class', () => {

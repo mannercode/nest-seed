@@ -4,7 +4,7 @@ import { createReadStream } from 'fs'
 import { writeFile } from 'fs/promises'
 import { nullObjectId } from 'testlib'
 import { buildCreateMovieDto, Errors } from '../__helpers__'
-import { MovieDraftsFixture } from './movie-drafts.fixture'
+import type { MovieDraftsFixture } from './movie-drafts.fixture'
 
 describe('MovieDraftsService', () => {
     let fix: MovieDraftsFixture
@@ -15,7 +15,7 @@ describe('MovieDraftsService', () => {
     })
 
     afterEach(async () => {
-        await fix?.teardown()
+        await fix.teardown()
     })
 
     async function requestImageUpload(draftId: string) {

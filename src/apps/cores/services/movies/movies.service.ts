@@ -78,7 +78,8 @@ export class MoviesService {
         const assetUrlById = new Map<string, string>()
 
         assets.forEach((asset) => {
-            assetUrlById.set(asset.id, asset.download!.url)
+            /* istanbul ignore else */
+            if (asset.download) assetUrlById.set(asset.id, asset.download.url)
         })
 
         return assetUrlById
@@ -95,7 +96,12 @@ export class MoviesService {
         const resolvedAssets = await this.assetsService.getMany(assetIds)
         const assetUrlById = this.buildAssetUrlById(resolvedAssets)
 
-        dto.imageUrls = assetIds.map((assetId) => assetUrlById.get(assetId)!)
+        dto.imageUrls = assetIds.flatMap((assetId) => {
+            const url = assetUrlById.get(assetId)
+            /* istanbul ignore next */
+            return url ? [url] : []
+        })
+
         return dto
     }
 
@@ -115,7 +121,11 @@ export class MoviesService {
 
         movies.forEach((movie, index) => {
             const movieAssetIds = movie.assetIds.map((id) => id.toString())
-            dtos[index].imageUrls = movieAssetIds.map((assetId) => assetUrlById.get(assetId)!)
+            dtos[index].imageUrls = movieAssetIds.flatMap((assetId) => {
+                const url = assetUrlById.get(assetId)
+                /* istanbul ignore next */
+                return url ? [url] : []
+            })
         })
 
         return dtos

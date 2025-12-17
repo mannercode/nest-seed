@@ -1,5 +1,6 @@
 import { PurchaseItemType } from 'apps/cores'
-import { oid, TestContext } from 'testlib'
+import type { TestContext } from 'testlib'
+import { oid } from 'testlib'
 
 export function buildCreatePurchaseRecordDto(overrides = {}) {
     const createDto = {

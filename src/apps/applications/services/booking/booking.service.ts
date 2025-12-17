@@ -10,9 +10,8 @@ import { pickIds } from 'common'
 import { generateShowtimesForBooking, sortTheatersByDistance } from './booking.utils'
 import {
     SearchShowdatesForBookingDto,
-    SearchTheatersForBookingDto,
     SearchShowtimesForBookingDto,
-    ShowtimeForBookingDto
+    SearchTheatersForBookingDto
 } from './dtos'
 
 export const BookingServiceErrors = {
@@ -64,7 +63,7 @@ export class BookingService {
 
         const showtimesForBooking = generateShowtimesForBooking(showtimes, ticketSalesForShowtimes)
 
-        return showtimesForBooking as ShowtimeForBookingDto[]
+        return showtimesForBooking
     }
 
     async getTickets(showtimeId: string) {

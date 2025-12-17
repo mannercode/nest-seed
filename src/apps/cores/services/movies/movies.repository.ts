@@ -53,7 +53,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         const { take, skip, orderby } = searchDto
 
         const pagination = await this.findWithPagination({
-            configureQuery: (queryHelper) => {
+            configureQuery: async (queryHelper) => {
                 const query = this.buildQuery(searchDto, { allowEmpty: true })
 
                 queryHelper.setQuery(query)

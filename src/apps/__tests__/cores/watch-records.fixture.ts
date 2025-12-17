@@ -1,5 +1,6 @@
 import { WatchRecordsClient, WatchRecordsModule } from 'apps/cores'
-import { AppTestContext, createAppTestContext } from '../__helpers__'
+import type { AppTestContext } from '../__helpers__'
+import { createAppTestContext } from '../__helpers__'
 
 export type WatchRecordsFixture = AppTestContext & { watchRecordsService: WatchRecordsClient }
 
