@@ -39,6 +39,9 @@
 6.  예외를 기대하는 서비스 메서드 테스트는 `returns` 대신 `throws` 사용
     - 예: `throws 400 ...`, `throws 404 ...`
 
+7.  조건을 생략하는 테스트는 `not provided`라고 표현
+    - 예: `when the pagination query is not provided`
+
 > Jest는 `context`를 지원하지 않는다. 그렇다고 해서 `describe`를 `context`의 alias로 사용하면 안 된다.
 >
 > `Jest Runner` 같은 Jest 도구에서 `context`를 인식하지 못한다.
