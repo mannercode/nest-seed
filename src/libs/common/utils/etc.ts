@@ -53,7 +53,7 @@ export function generateShortId(length: number = 15): string {
   * @returns {string} A JSON string where numeric values are quoted.
   */
 export function addQuotesToNumbers(text: string): string {
-    return text.replace(/:(\s*)(\d+)(\s*[,\}])/g, ':"$2"$3')
+    return text.replace(/:(\s*)(\d+)(\s*[,}])/g, ':"$2"$3')
 }
 
 export function notUsed(..._args: any[]): void {}
