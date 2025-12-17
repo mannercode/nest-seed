@@ -15,25 +15,31 @@ describe('CustomersService', () => {
     })
 
     describe('POST /customers/login', () => {
-        it('returns auth tokens for valid credentials', async () => {
-            await fix.httpClient
-                .post('/customers/login')
-                .body(fix.credentials)
-                .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
+        describe('when the credentials are valid', () => {
+            it('returns auth tokens', async () => {
+                await fix.httpClient
+                    .post('/customers/login')
+                    .body(fix.credentials)
+                    .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
+            })
         })
 
-        it('returns 401 Unauthorized for incorrect password', async () => {
-            await fix.httpClient
-                .post('/customers/login')
-                .body({ ...fix.credentials, password: 'wrong password' })
-                .unauthorized(Errors.Auth.Unauthorized)
+        describe('when the password is incorrect', () => {
+            it('returns 401 Unauthorized', async () => {
+                await fix.httpClient
+                    .post('/customers/login')
+                    .body({ ...fix.credentials, password: 'wrong password' })
+                    .unauthorized(Errors.Auth.Unauthorized)
+            })
         })
 
-        it('returns 401 Unauthorized for unregistered email', async () => {
-            await fix.httpClient
-                .post('/customers/login')
-                .body({ ...fix.credentials, email: 'unknown@mail.com' })
-                .unauthorized(Errors.Auth.Unauthorized)
+        describe('when the email is not registered', () => {
+            it('returns 401 Unauthorized', async () => {
+                await fix.httpClient
+                    .post('/customers/login')
+                    .body({ ...fix.credentials, email: 'unknown@mail.com' })
+                    .unauthorized(Errors.Auth.Unauthorized)
+            })
         })
     })
 
@@ -58,14 +64,16 @@ describe('CustomersService', () => {
             })
         })
 
-        it('returns 401 Unauthorized for invalid refresh token', async () => {
-            await fix.httpClient
-                .post('/customers/refresh')
-                .body({ refreshToken: 'invalid-token' })
-                .unauthorized({
-                    ...Errors.JwtAuth.RefreshTokenVerificationFailed,
-                    message: 'jwt malformed'
-                })
+        describe('when the refresh token is invalid', () => {
+            it('returns 401 Unauthorized', async () => {
+                await fix.httpClient
+                    .post('/customers/refresh')
+                    .body({ refreshToken: 'invalid-token' })
+                    .unauthorized({
+                        ...Errors.JwtAuth.RefreshTokenVerificationFailed,
+                        message: 'jwt malformed'
+                    })
+            })
         })
     })
 
@@ -86,11 +94,13 @@ describe('CustomersService', () => {
             })
         })
 
-        it('returns 401 Unauthorized for invalid access token', async () => {
-            await fix.httpClient
-                .get('/customers/jwt-guard')
-                .headers({ Authorization: 'Bearer Invalid-Token' })
-                .unauthorized(Errors.Auth.Unauthorized)
+        describe('when the access token is invalid', () => {
+            it('returns 401 Unauthorized', async () => {
+                await fix.httpClient
+                    .get('/customers/jwt-guard')
+                    .headers({ Authorization: 'Bearer Invalid-Token' })
+                    .unauthorized(Errors.Auth.Unauthorized)
+            })
         })
     })
 })

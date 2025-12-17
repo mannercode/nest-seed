@@ -51,12 +51,14 @@ describe('PaymentsService', () => {
             })
         })
 
-        it('throws 404 Not Found for a non-existent paymentId', async () => {
-            const promise = fix.paymentsService.getMany([nullObjectId])
+        describe('when the paymentIds include a non-existent paymentId', () => {
+            it('throws 404 Not Found', async () => {
+                const promise = fix.paymentsService.getMany([nullObjectId])
 
-            await expect(promise).rejects.toMatchObject({
-                status: HttpStatus.NOT_FOUND,
-                message: Errors.Mongoose.MultipleDocumentsNotFound.message
+                await expect(promise).rejects.toMatchObject({
+                    status: HttpStatus.NOT_FOUND,
+                    message: Errors.Mongoose.MultipleDocumentsNotFound.message
+                })
             })
         })
     })

@@ -17,12 +17,14 @@ describe('TicketHoldingService', () => {
     })
 
     describe('holdTickets', () => {
-        it('returns true when the ticketIds are not held', async () => {
-            const holdDto = buildHoldTicketsDto()
+        describe('when the ticketIds are not held', () => {
+            it('returns true', async () => {
+                const holdDto = buildHoldTicketsDto()
 
-            const isHeld = await fix.ticketHoldingService.holdTickets(holdDto)
+                const isHeld = await fix.ticketHoldingService.holdTickets(holdDto)
 
-            expect(isHeld).toBe(true)
+                expect(isHeld).toBe(true)
+            })
         })
 
         describe('when the customer already holds tickets', () => {
@@ -86,34 +88,36 @@ describe('TicketHoldingService', () => {
             })
         })
 
-        it(
-            'returns true for exactly one customer per showtimeId when multiple customers attempt to hold concurrently',
-            async () => {
-                const ticketIds = Array.from({ length: 5 }, (_, i) => oid(0x2000 + i))
-                const customerIds = Array.from({ length: 10 }, (_, i) => oid(0x3000 + i))
-                const showtimeIds = Array.from({ length: 100 }, (_, i) => oid(0x1000 + i))
+        describe('when multiple customers attempt to hold concurrently', () => {
+            it(
+                'returns true for exactly one customer per showtimeId',
+                async () => {
+                    const ticketIds = Array.from({ length: 5 }, (_, i) => oid(0x2000 + i))
+                    const customerIds = Array.from({ length: 10 }, (_, i) => oid(0x3000 + i))
+                    const showtimeIds = Array.from({ length: 100 }, (_, i) => oid(0x1000 + i))
 
-                const successfulCounts = await Promise.all(
-                    showtimeIds.map(async (showtimeId) => {
-                        const holdResults = await Promise.all(
-                            customerIds.map((customerId) =>
-                                fix.ticketHoldingService.holdTickets({
-                                    customerId,
-                                    showtimeId,
-                                    ticketIds
-                                })
+                    const successfulCounts = await Promise.all(
+                        showtimeIds.map(async (showtimeId) => {
+                            const holdResults = await Promise.all(
+                                customerIds.map((customerId) =>
+                                    fix.ticketHoldingService.holdTickets({
+                                        customerId,
+                                        showtimeId,
+                                        ticketIds
+                                    })
+                                )
                             )
-                        )
 
-                        const successfulCount = holdResults.filter(Boolean).length
-                        return successfulCount
-                    })
-                )
+                            const successfulCount = holdResults.filter(Boolean).length
+                            return successfulCount
+                        })
+                    )
 
-                expect(successfulCounts.every((t) => t === 1)).toBe(true)
-            },
-            60 * 1000
-        )
+                    expect(successfulCounts.every((t) => t === 1)).toBe(true)
+                },
+                60 * 1000
+            )
+        })
     })
 
     describe('searchHeldTicketIds', () => {
@@ -178,10 +182,15 @@ describe('TicketHoldingService', () => {
             })
         })
 
-        it('returns true when the customer holds no tickets', async () => {
-            const isReleased = await fix.ticketHoldingService.releaseTickets(oid(0xa0), oid(0xc1))
+        describe('when the customer holds no tickets', () => {
+            it('returns true', async () => {
+                const isReleased = await fix.ticketHoldingService.releaseTickets(
+                    oid(0xa0),
+                    oid(0xc1)
+                )
 
-            expect(isReleased).toBe(true)
+                expect(isReleased).toBe(true)
+            })
         })
     })
 })

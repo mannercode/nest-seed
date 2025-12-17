@@ -119,7 +119,7 @@ describe('AssetsService', () => {
                 await sleep(1500)
             })
 
-            it('throws 404 Not Found for an expired upload', async () => {
+            it('throws 404 Not Found', async () => {
                 const completeDto = buildCompleteAssetDto()
                 await expect(fix.assetsClient.complete(assetId, completeDto)).rejects.toMatchObject(
                     { status: HttpStatus.NOT_FOUND }
@@ -172,9 +172,11 @@ describe('AssetsService', () => {
             })
         })
 
-        it('throws 404 Not Found for a non-existent asset', async () => {
-            await expect(fix.assetsClient.getMany([nullObjectId])).rejects.toMatchObject({
-                status: HttpStatus.NOT_FOUND
+        describe('when the assetIds include a non-existent assetId', () => {
+            it('throws 404 Not Found', async () => {
+                await expect(fix.assetsClient.getMany([nullObjectId])).rejects.toMatchObject({
+                    status: HttpStatus.NOT_FOUND
+                })
             })
         })
     })
@@ -216,9 +218,11 @@ describe('AssetsService', () => {
             })
         })
 
-        it('throws 404 Not Found for a non-existent asset', async () => {
-            await expect(fix.assetsClient.deleteMany([nullObjectId])).rejects.toMatchObject({
-                status: HttpStatus.NOT_FOUND
+        describe('when the assetIds include a non-existent assetId', () => {
+            it('throws 404 Not Found', async () => {
+                await expect(fix.assetsClient.deleteMany([nullObjectId])).rejects.toMatchObject({
+                    status: HttpStatus.NOT_FOUND
+                })
             })
         })
     })

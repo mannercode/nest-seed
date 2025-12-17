@@ -25,11 +25,13 @@ describe('TheatersService', () => {
                 .created({ ...createDto, id: expect.any(String) })
         })
 
-        it('returns 400 Bad Request for missing required fields', async () => {
-            await fix.httpClient
-                .post('/theaters')
-                .body({})
-                .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+        describe('when required fields are missing', () => {
+            it('returns 400 Bad Request', async () => {
+                await fix.httpClient
+                    .post('/theaters')
+                    .body({})
+                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+            })
         })
     })
 
@@ -46,13 +48,15 @@ describe('TheatersService', () => {
             })
         })
 
-        it('returns 404 Not Found for a non-existent theater', async () => {
-            await fix.httpClient
-                .get(`/theaters/${nullObjectId}`)
-                .notFound({
-                    ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [nullObjectId]
-                })
+        describe('when the theater does not exist', () => {
+            it('returns 404 Not Found', async () => {
+                await fix.httpClient
+                    .get(`/theaters/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
+            })
         })
     })
 
@@ -84,11 +88,13 @@ describe('TheatersService', () => {
             })
         })
 
-        it('returns 404 Not Found for a non-existent theater', async () => {
-            await fix.httpClient
-                .patch(`/theaters/${nullObjectId}`)
-                .body({})
-                .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
+        describe('when the theater does not exist', () => {
+            it('returns 404 Not Found', async () => {
+                await fix.httpClient
+                    .patch(`/theaters/${nullObjectId}`)
+                    .body({})
+                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
+            })
         })
     })
 
@@ -118,13 +124,15 @@ describe('TheatersService', () => {
             })
         })
 
-        it('returns 404 Not Found for a non-existent theater', async () => {
-            await fix.httpClient
-                .delete(`/theaters/${nullObjectId}`)
-                .notFound({
-                    ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [nullObjectId]
-                })
+        describe('when the theater does not exist', () => {
+            it('returns 404 Not Found', async () => {
+                await fix.httpClient
+                    .delete(`/theaters/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
+            })
         })
     })
 
@@ -150,10 +158,12 @@ describe('TheatersService', () => {
             items: expect.arrayContaining(theaters)
         })
 
-        it('returns the default page when no query is provided', async () => {
-            const expected = buildExpectedPage([theaterA1, theaterA2, theaterB1, theaterB2])
+        describe('when the query is not provided', () => {
+            it('returns the default page', async () => {
+                const expected = buildExpectedPage([theaterA1, theaterA2, theaterB1, theaterB2])
 
-            await fix.httpClient.get('/theaters').ok(expected)
+                await fix.httpClient.get('/theaters').ok(expected)
+            })
         })
 
         describe('when the filter is provided', () => {
@@ -165,11 +175,13 @@ describe('TheatersService', () => {
             })
         })
 
-        it('returns 400 Bad Request for invalid query parameters', async () => {
-            await fix.httpClient
-                .get('/theaters')
-                .query({ wrong: 'value' })
-                .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+        describe('when the query parameters are invalid', () => {
+            it('returns 400 Bad Request', async () => {
+                await fix.httpClient
+                    .get('/theaters')
+                    .query({ wrong: 'value' })
+                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+            })
         })
     })
 })

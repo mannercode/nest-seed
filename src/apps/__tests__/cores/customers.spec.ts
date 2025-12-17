@@ -43,11 +43,13 @@ describe('CustomersService', () => {
             })
         })
 
-        it('returns 400 Bad Request for missing required fields', async () => {
-            await fix.httpClient
-                .post('/customers')
-                .body({})
-                .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+        describe('when required fields are missing', () => {
+            it('returns 400 Bad Request', async () => {
+                await fix.httpClient
+                    .post('/customers')
+                    .body({})
+                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+            })
         })
     })
 
@@ -64,13 +66,15 @@ describe('CustomersService', () => {
             })
         })
 
-        it('returns 404 Not Found for a non-existent customer', async () => {
-            await fix.httpClient
-                .get(`/customers/${nullObjectId}`)
-                .notFound({
-                    ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [nullObjectId]
-                })
+        describe('when the customer does not exist', () => {
+            it('returns 404 Not Found', async () => {
+                await fix.httpClient
+                    .get(`/customers/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
+            })
         })
     })
 
@@ -101,11 +105,13 @@ describe('CustomersService', () => {
             })
         })
 
-        it('returns 404 Not Found for a non-existent customer', async () => {
-            await fix.httpClient
-                .patch(`/customers/${nullObjectId}`)
-                .body({})
-                .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
+        describe('when the customer does not exist', () => {
+            it('returns 404 Not Found', async () => {
+                await fix.httpClient
+                    .patch(`/customers/${nullObjectId}`)
+                    .body({})
+                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
+            })
         })
     })
 
@@ -135,13 +141,15 @@ describe('CustomersService', () => {
             })
         })
 
-        it('returns 404 Not Found for a non-existent customer', async () => {
-            await fix.httpClient
-                .delete(`/customers/${nullObjectId}`)
-                .notFound({
-                    ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [nullObjectId]
-                })
+        describe('when the customer does not exist', () => {
+            it('returns 404 Not Found', async () => {
+                await fix.httpClient
+                    .delete(`/customers/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
+            })
         })
     })
 
@@ -167,10 +175,12 @@ describe('CustomersService', () => {
             items: expect.arrayContaining(customers)
         })
 
-        it('returns the default page of customers when no query is provided', async () => {
-            const expected = buildExpectedPage([customerA1, customerA2, customerB1, customerB2])
+        describe('when the query is not provided', () => {
+            it('returns the default page of customers', async () => {
+                const expected = buildExpectedPage([customerA1, customerA2, customerB1, customerB2])
 
-            await fix.httpClient.get('/customers').ok(expected)
+                await fix.httpClient.get('/customers').ok(expected)
+            })
         })
 
         describe('when the filter is provided', () => {
@@ -186,11 +196,13 @@ describe('CustomersService', () => {
             })
         })
 
-        it('returns 400 Bad Request for invalid query parameters', async () => {
-            await fix.httpClient
-                .get('/customers')
-                .query({ wrong: 'value' })
-                .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+        describe('when the query parameters are invalid', () => {
+            it('returns 400 Bad Request', async () => {
+                await fix.httpClient
+                    .get('/customers')
+                    .query({ wrong: 'value' })
+                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+            })
         })
     })
 })

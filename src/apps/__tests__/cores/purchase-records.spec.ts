@@ -42,13 +42,15 @@ describe('PurchaseRecordsService', () => {
             })
         })
 
-        it('returns 404 Not Found for a non-existent purchase record', async () => {
-            await fix.httpClient
-                .get(`/purchases/${nullObjectId}`)
-                .notFound({
-                    ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [nullObjectId]
-                })
+        describe('when the purchase record does not exist', () => {
+            it('returns 404 Not Found', async () => {
+                await fix.httpClient
+                    .get(`/purchases/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
+            })
         })
     })
 })

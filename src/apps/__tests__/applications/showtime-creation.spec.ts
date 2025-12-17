@@ -18,8 +18,8 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('GET /showtime-creation/movies', () => {
-        describe('when the pagination query is not provided', () => {
-            it('returns movies with default pagination', async () => {
+        describe('when the query is not provided', () => {
+            it('returns the default page of movies', async () => {
                 await fix.httpClient
                     .get('/showtime-creation/movies')
                     .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.movie] })
@@ -28,8 +28,8 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('GET /showtime-creation/theaters', () => {
-        describe('when the pagination query is not provided', () => {
-            it('returns theaters with default pagination', async () => {
+        describe('when the query is not provided', () => {
+            it('returns the default page of theaters', async () => {
                 await fix.httpClient
                     .get('/showtime-creation/theaters')
                     .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.theater] })

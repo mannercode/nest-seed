@@ -73,12 +73,14 @@ describe('TicketsService', () => {
             })
         })
 
-        it('throws 400 Bad Request for an empty filter', async () => {
-            const promise = fix.ticketsService.search({})
+        describe('when the filter is empty', () => {
+            it('throws 400 Bad Request', async () => {
+                const promise = fix.ticketsService.search({})
 
-            await expect(promise).rejects.toMatchObject({
-                status: HttpStatus.BAD_REQUEST,
-                message: Errors.Mongoose.FiltersRequired.message
+                await expect(promise).rejects.toMatchObject({
+                    status: HttpStatus.BAD_REQUEST,
+                    message: Errors.Mongoose.FiltersRequired.message
+                })
             })
         })
     })

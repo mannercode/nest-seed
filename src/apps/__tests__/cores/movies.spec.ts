@@ -57,11 +57,13 @@ describe('MoviesService', () => {
             })
         })
 
-        it('returns 400 Bad Request for missing required fields', async () => {
-            await fix.httpClient
-                .post('/movies')
-                .body({})
-                .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+        describe('when required fields are missing', () => {
+            it('returns 400 Bad Request', async () => {
+                await fix.httpClient
+                    .post('/movies')
+                    .body({})
+                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+            })
         })
     })
 
@@ -78,13 +80,15 @@ describe('MoviesService', () => {
             })
         })
 
-        it('returns 404 Not Found for a non-existent movie', async () => {
-            await fix.httpClient
-                .get(`/movies/${nullObjectId}`)
-                .notFound({
-                    ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [nullObjectId]
-                })
+        describe('when the movie does not exist', () => {
+            it('returns 404 Not Found', async () => {
+                await fix.httpClient
+                    .get(`/movies/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
+            })
         })
     })
 
@@ -121,11 +125,13 @@ describe('MoviesService', () => {
             })
         })
 
-        it('returns 404 Not Found for a non-existent movie', async () => {
-            await fix.httpClient
-                .patch(`/movies/${nullObjectId}`)
-                .body({})
-                .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
+        describe('when the movie does not exist', () => {
+            it('returns 404 Not Found', async () => {
+                await fix.httpClient
+                    .patch(`/movies/${nullObjectId}`)
+                    .body({})
+                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
+            })
         })
     })
 
@@ -163,13 +169,15 @@ describe('MoviesService', () => {
             })
         })
 
-        it('returns 404 Not Found for a non-existent movie', async () => {
-            await fix.httpClient
-                .delete(`/movies/${nullObjectId}`)
-                .notFound({
-                    ...Errors.Mongoose.MultipleDocumentsNotFound,
-                    notFoundIds: [nullObjectId]
-                })
+        describe('when the movie does not exist', () => {
+            it('returns 404 Not Found', async () => {
+                await fix.httpClient
+                    .delete(`/movies/${nullObjectId}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [nullObjectId]
+                    })
+            })
         })
     })
 
@@ -229,10 +237,12 @@ describe('MoviesService', () => {
             }
         }
 
-        it('returns the default page when no query is provided', async () => {
-            const expected = buildExpectedPage([movieA1, movieA2, movieB1, movieB2])
+        describe('when the query is not provided', () => {
+            it('returns the default page', async () => {
+                const expected = buildExpectedPage([movieA1, movieA2, movieB1, movieB2])
 
-            await fix.httpClient.get('/movies').ok(expected)
+                await fix.httpClient.get('/movies').ok(expected)
+            })
         })
 
         describe('when the filter is provided', () => {
@@ -264,11 +274,13 @@ describe('MoviesService', () => {
             })
         })
 
-        it('returns 400 Bad Request for invalid query parameters', async () => {
-            await fix.httpClient
-                .get('/movies')
-                .query({ wrong: 'value' })
-                .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+        describe('when the query parameters are invalid', () => {
+            it('returns 400 Bad Request', async () => {
+                await fix.httpClient
+                    .get('/movies')
+                    .query({ wrong: 'value' })
+                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+            })
         })
     })
 })

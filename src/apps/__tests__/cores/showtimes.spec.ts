@@ -45,12 +45,14 @@ describe('ShowtimesService', () => {
             })
         })
 
-        it('throws 404 Not Found for a non-existent showtimeId', async () => {
-            const promise = fix.showtimesService.getMany([nullObjectId])
+        describe('when the showtimeIds include a non-existent showtimeId', () => {
+            it('throws 404 Not Found', async () => {
+                const promise = fix.showtimesService.getMany([nullObjectId])
 
-            await expect(promise).rejects.toMatchObject({
-                status: HttpStatus.NOT_FOUND,
-                message: Errors.Mongoose.MultipleDocumentsNotFound.message
+                await expect(promise).rejects.toMatchObject({
+                    status: HttpStatus.NOT_FOUND,
+                    message: Errors.Mongoose.MultipleDocumentsNotFound.message
+                })
             })
         })
     })
@@ -117,12 +119,14 @@ describe('ShowtimesService', () => {
             })
         })
 
-        it('throws 400 Bad Request for an empty filter', async () => {
-            const promise = fix.showtimesService.search({})
+        describe('when the filter is empty', () => {
+            it('throws 400 Bad Request', async () => {
+                const promise = fix.showtimesService.search({})
 
-            await expect(promise).rejects.toMatchObject({
-                status: HttpStatus.BAD_REQUEST,
-                message: Errors.Mongoose.FiltersRequired.message
+                await expect(promise).rejects.toMatchObject({
+                    status: HttpStatus.BAD_REQUEST,
+                    message: Errors.Mongoose.FiltersRequired.message
+                })
             })
         })
     })
