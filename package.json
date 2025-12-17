@@ -18,7 +18,7 @@
         "test": "jest --no-cache --coverage --roots \"<rootDir>/${TEST_ROOT:-src}\" --collectCoverageFrom \"${TEST_ROOT:-src}/**/*.ts\"",
         "test:e2e": "bash tests/e2e/run.sh",
         "format": "prettier -w 'src/**/*.{js,jsx,ts,tsx}'",
-        "lint": "prettier -c 'src/**/*.{js,jsx,ts,tsx}' && eslint src/ --max-warnings=0",
+        "lint": "eslint src/ --max-warnings=0",
         "apps:down": "docker compose down --volumes --remove-orphans --timeout 0",
         "apps:up": "  docker compose up -d --build",
         "apps:wait": "docker wait apps-setup && docker rm apps-setup",

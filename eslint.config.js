@@ -7,6 +7,7 @@ const prettierConfig = require('eslint-config-prettier')
 module.exports = [
     {
         files: ['src/**/*.ts'],
+        linterOptions: { reportUnusedDisableDirectives: true },
         languageOptions: {
             parser: typescriptParser,
             parserOptions: {
@@ -39,9 +40,11 @@ module.exports = [
                     caughtErrorsIgnorePattern: '^_'
                 }
             ],
+            'prettier/prettier': 'error',
             '@typescript-eslint/no-floating-promises': 'error',
+            '@typescript-eslint/no-misused-promises': 'error',
             '@typescript-eslint/return-await': ['error', 'in-try-catch'],
-            'no-return-await': 'error',
+            'no-return-await': 'off',
             'require-await': 'off'
         }
     }
