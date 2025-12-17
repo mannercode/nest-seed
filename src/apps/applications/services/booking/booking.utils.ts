@@ -1,6 +1,7 @@
 import type { ShowtimeDto, TheaterDto, TicketSalesForShowtimeDto } from 'apps/cores'
-import { LatLong } from 'common'
+import { Assert, LatLong } from 'common'
 import type { ShowtimeForBookingDto } from './dtos'
+import { omit } from 'lodash'
 
 export function sortTheatersByDistance(theaters: TheaterDto[], latLong: LatLong) {
     return theaters.sort(
@@ -19,10 +20,9 @@ export function generateShowtimesForBooking(
     )
 
     const showtimesForBooking = showtimes.map((showtime) => {
-        /* istanbul ignore next */
-        const { total, sold, available } = ticketSalesByShowtime.get(showtime.id) ?? {}
+        const ticketSales = ticketSalesByShowtime.get(showtime.id)
 
-        return { ...showtime, ticketSales: { total, sold, available } }
+        return { ...showtime, ticketSales: omit(ticketSales, ['showtimeId']) }
     })
 
     return showtimesForBooking as ShowtimeForBookingDto[]

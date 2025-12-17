@@ -8,6 +8,7 @@ import {
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
+import { orDefault } from 'common'
 import { Readable } from 'stream'
 import { newObjectId } from '../mongoose'
 import { HttpUtil } from '../utils'
@@ -118,12 +119,11 @@ export class S3ObjectService {
 
         objectData = Buffer.concat(chunks)
 
-        /* istanbul ignore next */
-        const contentType = ContentType ?? 'application/octet-stream'
-        /* istanbul ignore next */
-        const filename = ContentDisposition
-            ? HttpUtil.extractContentDisposition(ContentDisposition)
-            : key
+        const contentType = orDefault(ContentType, 'application/octet-stream')
+
+        const filename = HttpUtil.extractContentDisposition(
+            orDefault(ContentDisposition, `filename=${key}`)
+        )
 
         return { data: objectData, filename, contentType }
     }
@@ -132,8 +132,7 @@ export class S3ObjectService {
         const command = new DeleteObjectCommand({ Bucket: this.bucket, Key: key })
 
         const { $metadata } = await this.s3.send(command)
-        /* istanbul ignore next */
-        const status = $metadata.httpStatusCode ?? 200
+        const status = orDefault($metadata.httpStatusCode, 200)
 
         return { status, deletedObject: key }
     }
@@ -149,10 +148,9 @@ export class S3ObjectService {
 
         const result = await this.s3.send(command)
 
-        /* istanbul ignore next */
-        let contents: S3ObjectSummary[] = (result.Contents ?? [])
+        let contents: S3ObjectSummary[] = orDefault(result.Contents, [])
             .map((content) => ({
-                key: content.Key ?? 'null',
+                key: orDefault(content.Key, 'null'),
                 lastModified: content.LastModified as Date,
                 eTag: content.ETag as string,
                 size: content.Size as number
@@ -163,15 +161,14 @@ export class S3ObjectService {
             .map((cp) => cp.Prefix)
             .filter((p): p is string => !!p && p.length > 0)
 
-        /* istanbul ignore next */
         return {
             contents,
             commonPrefixes,
             isTruncated: Boolean(result.IsTruncated),
-            nextToken: result.NextContinuationToken ?? undefined,
+            nextToken: orDefault(result.NextContinuationToken, undefined),
             maxKeys: result.MaxKeys,
-            prefix: result.Prefix ?? options.prefix,
-            delimiter: result.Delimiter ?? options.delimiter
+            prefix: orDefault(result.Prefix, options.prefix),
+            delimiter: orDefault(result.Delimiter, options.delimiter)
         }
     }
 }

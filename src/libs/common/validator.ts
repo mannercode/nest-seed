@@ -1,68 +1,42 @@
 /* istanbul ignore file */
-
-import { Logger } from '@nestjs/common'
 import { isEqual } from 'lodash'
+import { Logger } from '@nestjs/common'
 
-type FailureHandler = (message: string) => void
+export function orDefault<T>(value: T | null | undefined, defaultValue: T): T {
+    return value ?? defaultValue
+}
 
-class Validator {
-    constructor(private readonly handler: FailureHandler) {}
-
-    equalLength(a: any[] | undefined, b: any[] | undefined, message: string) {
+export class Assert {
+    static equalLength(a: any[] | undefined, b: any[] | undefined, message: string) {
         if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
-            this.handler(
+            throw new Error(
                 `${message} first: ${a ? a.length : undefined}, second: ${b ? b.length : undefined}`
             )
         }
     }
 
-    equals<T>(a: T, b: T, message: string) {
+    static equals<T>(a: T, b: T, message: string) {
         if (!isEqual(a, b)) {
-            this.handler(`${JSON.stringify(a)} !== ${JSON.stringify(b)}, ${message}`)
+            throw new Error(`${JSON.stringify(a)} !== ${JSON.stringify(b)}, ${message}`)
         }
     }
 
-    defined(value: any, message: string) {
-        if (!value) {
-            this.handler(message)
-        }
-    }
-
-    undefined(value: any, message: string) {
-        if (value !== undefined) {
-            this.handler(message)
-        }
-    }
-
-    notDefined(value: any, message: string) {
-        if (value) {
-            this.handler(message)
-        }
-    }
-
-    truthy(value: any, message: string) {
-        if (!value) {
-            this.handler(message)
-        }
-    }
-
-    falsy(value: any, message: string) {
-        if (value) {
-            this.handler(message)
-        }
-    }
-
-    unique(value: any, message: string) {
-        if (1 < value.length) {
-            this.handler(message)
+    static defined<T>(
+        value: T | null | undefined,
+        message = 'Value must exist.'
+    ): asserts value is NonNullable<T> {
+        if (value == null) {
+            throw new Error(message)
         }
     }
 }
 
-export const Assert = new Validator((message) => {
-    throw new Error(message)
-})
-
-export const Expect = new Validator((message) => {
-    Logger.error(message)
-})
+export class Expect {
+    static equalLength(a: any[] | undefined, b: any[] | undefined, message: string) {
+        if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
+            Logger.error(
+                `${message} first: ${a ? a.length : undefined}, second: ${b ? b.length : undefined}`
+            )
+        }
+    }
+}

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { AssetDto, AssetsClient } from 'apps/infrastructures'
-import { mapDocToDto, objectIds } from 'common'
+import { Assert, mapDocToDto, objectIds } from 'common'
 import { CreateMovieDto, MovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
 import { MovieDocument } from './models'
 import { MoviesRepository } from './movies.repository'
@@ -78,8 +78,9 @@ export class MoviesService {
         const assetUrlById = new Map<string, string>()
 
         assets.forEach((asset) => {
-            /* istanbul ignore else */
-            if (asset.download) assetUrlById.set(asset.id, asset.download.url)
+            Assert.defined(asset.download)
+
+            assetUrlById.set(asset.id, asset.download.url)
         })
 
         return assetUrlById
@@ -98,13 +99,13 @@ export class MoviesService {
 
         dto.imageUrls = assetIds.flatMap((assetId) => {
             const url = assetUrlById.get(assetId)
-            /* istanbul ignore next */
-            return url ? [url] : []
+            Assert.defined(url)
+            return [url]
         })
 
         return dto
     }
-
+    // TODO toDtos를 기본으로 하고 toDto는 toDtos에서 하나만
     private async toDtos(movies: MovieDocument[]): Promise<MovieDto[]> {
         const dtos = movies.map((movie) => this.toDtoBase(movie))
 
@@ -123,8 +124,8 @@ export class MoviesService {
             const movieAssetIds = movie.assetIds.map((id) => id.toString())
             dtos[index].imageUrls = movieAssetIds.flatMap((assetId) => {
                 const url = assetUrlById.get(assetId)
-                /* istanbul ignore next */
-                return url ? [url] : []
+                Assert.defined(url)
+                return [url]
             })
         })
 
