@@ -52,11 +52,6 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
             }
 
             await app.startAllMicroservices()
-
-            // TODO 간혹 오류
-            // This prevents the following error:
-            // Empty response. There are no subscribers listening to that message
-            // await app.init()
         },
         ...metadata
     })
