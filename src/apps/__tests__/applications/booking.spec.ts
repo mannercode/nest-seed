@@ -17,7 +17,7 @@ describe('BookingService', () => {
         await fix.teardown()
     })
 
-    describe('when the booking succeeds', () => {
+    describe('when a customer goes through the booking flow', () => {
         let movie: MovieDto
         let accessToken: string
 
@@ -42,13 +42,13 @@ describe('BookingService', () => {
             accessToken = resources.accessToken
         })
 
-        it('completes the booking process', async () => {
+        it('holds selected tickets', async () => {
             let theater: TheaterDto
             let showdate: Date
             let showtime: ShowtimeDto
             let tickets: TicketDto[]
 
-            await step('1. searches theaters showing the movie', async () => {
+            await step('1. lists theaters for the movie by distance', async () => {
                 const latLong = '31.9,131.9'
                 const { body: theaters } = await fix.httpClient
                     .get(`/booking/movies/${movie.id}/theaters?latLong=${latLong}`)
@@ -65,7 +65,7 @@ describe('BookingService', () => {
                 theater = theaters[0]
             })
 
-            await step('2. searches showdates', async () => {
+            await step('2. lists show dates for the theater', async () => {
                 const { body: showdates } = await fix.httpClient
                     .get(`/booking/movies/${movie.id}/theaters/${theater.id}/showdates`)
                     .ok([new Date('2999-01-01'), new Date('2999-01-02'), new Date('2999-01-03')])
@@ -73,7 +73,7 @@ describe('BookingService', () => {
                 showdate = showdates[0]
             })
 
-            await step('3. searches showtimes', async () => {
+            await step('3. lists showtimes for the selected show date', async () => {
                 const yymmdd = DateUtil.toYMD(showdate)
                 const url = `/booking/movies/${movie.id}/theaters/${theater.id}/showdates/${yymmdd}/showtimes`
 
@@ -89,7 +89,7 @@ describe('BookingService', () => {
                 showtime = showtimes[0]
             })
 
-            await step('4. searches for available tickets', async () => {
+            await step('4. lists available tickets for the showtime', async () => {
                 const { body } = await fix.httpClient
                     .get(`/booking/showtimes/${showtime.id}/tickets`)
                     .ok()
@@ -99,7 +99,7 @@ describe('BookingService', () => {
                 expect(tickets.every((t) => t.status === TicketStatus.Available)).toBe(true)
             })
 
-            await step('5. holds the tickets', async () => {
+            await step('5. holds selected tickets', async () => {
                 const ticketIds = pickIds(tickets.slice(0, 2))
 
                 await fix.httpClient
