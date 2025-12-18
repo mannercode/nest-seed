@@ -21,16 +21,18 @@ export class WatchRecordsService {
     }
 
     private toDto(watchRecord: WatchRecordDocument) {
-        return mapDocToDto(watchRecord, WatchRecordDto, [
-            'id',
-            'customerId',
-            'movieId',
-            'purchaseId',
-            'watchDate'
-        ])
+        return this.toDtos([watchRecord])[0]
     }
 
     private toDtos(watchRecords: WatchRecordDocument[]) {
-        return watchRecords.map((watchRecord) => this.toDto(watchRecord))
+        return watchRecords.map((watchRecord) =>
+            mapDocToDto(watchRecord, WatchRecordDto, [
+                'id',
+                'customerId',
+                'movieId',
+                'purchaseId',
+                'watchDate'
+            ])
+        )
     }
 }

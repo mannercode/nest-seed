@@ -13,8 +13,8 @@ else
 
 	TEST_SUITE=$(prompt_selection "${TEST_SUITES[@]}")
 
-	read -p "Enter number of runs (default 1): " TEST_RUNS
-	TEST_RUNS=${TEST_RUNS:-1}
+	read -p "Enter number of runs (default 500): " TEST_RUNS
+	TEST_RUNS=${TEST_RUNS:-500}
 fi
 
 export TEST_ROOT=${TEST_SUITE}

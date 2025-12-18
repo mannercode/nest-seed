@@ -1,5 +1,5 @@
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
-import { Injectable } from '@nestjs/common'
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { Job, Queue } from 'bullmq'
 import { jsonToObject, newObjectId } from 'common'
 import { BulkCreateShowtimesDto } from '../dtos'
@@ -10,7 +10,10 @@ import { ShowtimeCreationJobData, ShowtimeCreationStatus } from './types'
 
 @Injectable()
 @Processor('showtime-creation')
-export class ShowtimeCreationWorkerService extends WorkerHost {
+export class ShowtimeCreationWorkerService
+    extends WorkerHost
+    implements OnModuleInit, OnModuleDestroy
+{
     constructor(
         private readonly validatorService: ShowtimeBulkValidatorService,
         private readonly creatorService: ShowtimeBulkCreatorService,
@@ -33,6 +36,10 @@ export class ShowtimeCreationWorkerService extends WorkerHost {
          * 이를 해결하기 위해 waitUntilReady로 Redis가 온라인 될 때까지 대기한다.
          */
         await this.worker.waitUntilReady()
+    }
+
+    async onModuleDestroy() {
+        await this.worker.close()
     }
 
     async requestShowtimeCreation(createDto: BulkCreateShowtimesDto) {

@@ -1,7 +1,7 @@
 import { Type } from '@nestjs/common'
 import { getModelToken, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { createMongooseSchema, HardDelete, MongooseSchema } from 'common'
-import { HydratedDocument, Model } from 'mongoose'
+import { Model } from 'mongoose'
 import { createTestContext, getMongoTestConnection } from 'testlib'
 
 @HardDelete()
@@ -17,33 +17,23 @@ export class SoftDeleteSample extends MongooseSchema {
     name: string
 }
 
-export type MongooseDeleteFixture<T> = {
-    teardown: () => Promise<void>
-    model: Model<T>
-    doc: HydratedDocument<T>
-}
+export type MongooseDeleteFixture<T> = { teardown: () => Promise<void>; model: Model<T> }
 
 export async function createMongooseDeleteFixture<T>(cls: Type<T>) {
     const schema = createMongooseSchema(cls)
 
-    const testContext = await createTestContext({
+    const { module, close } = await createTestContext({
         imports: [
             MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
             MongooseModule.forFeature([{ name: 'schema', schema }])
         ]
     })
 
-    const model = testContext.module.get<Model<HardDeleteSample | SoftDeleteSample>>(
-        getModelToken('schema')
-    )
+    const model = module.get<Model<HardDeleteSample | SoftDeleteSample>>(getModelToken('schema'))
 
-    const doc = new model()
-    doc.name = 'name'
-    await doc.save()
-
-    async function teardown() {
-        await testContext?.close()
+    const teardown = async () => {
+        await close()
     }
 
-    return { teardown, model, doc }
+    return { teardown, model }
 }

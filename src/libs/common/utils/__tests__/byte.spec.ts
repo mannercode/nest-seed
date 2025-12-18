@@ -3,7 +3,7 @@ import { Byte } from 'common'
 describe('Byte', () => {
     describe('fromString', () => {
         describe('when the size string is valid', () => {
-            it('converts to bytes', () => {
+            it('converts it to bytes', () => {
                 expect(Byte.fromString('1024B')).toEqual(1024)
                 expect(Byte.fromString('1KB')).toEqual(1024)
                 expect(Byte.fromString('1MB')).toEqual(1024 * 1024)
@@ -18,8 +18,8 @@ describe('Byte', () => {
             })
         })
 
-        describe('when the unit string is lowercase', () => {
-            it('converts lowercase units to bytes', () => {
+        describe('when units are lowercase', () => {
+            it('converts it to bytes', () => {
                 expect(Byte.fromString('1024b')).toEqual(1024)
                 expect(Byte.fromString('1kb')).toEqual(1024)
                 expect(Byte.fromString('1mb')).toEqual(1024 * 1024)
@@ -29,7 +29,7 @@ describe('Byte', () => {
         })
 
         describe('when the format is invalid', () => {
-            it('throws an error', () => {
+            it('throws', () => {
                 expect(() => Byte.fromString('invalid')).toThrow()
                 expect(() => Byte.fromString('123')).toThrow()
                 expect(() => Byte.fromString('123XB')).toThrow()
@@ -39,16 +39,18 @@ describe('Byte', () => {
     })
 
     describe('toString', () => {
-        it('converts byte values to a string', () => {
-            expect(Byte.toString(0)).toEqual('0B')
-            expect(Byte.toString(1024)).toEqual('1KB')
-            expect(Byte.toString(1536)).toEqual('1KB512B')
-            expect(Byte.toString(1024 * 1024)).toEqual('1MB')
-            expect(Byte.toString(1024 * 1024 * 1.5)).toEqual('1MB512KB')
-            expect(Byte.toString(-1024)).toEqual('-1KB')
-            expect(Byte.toString(1 * 1024 * 1024 * 1024 + 256 * 1024 * 1024 + 128 * 1024)).toEqual(
-                '1GB256MB128KB'
-            )
+        describe('when byte values are provided', () => {
+            it('converts them to a string', () => {
+                expect(Byte.toString(0)).toEqual('0B')
+                expect(Byte.toString(1024)).toEqual('1KB')
+                expect(Byte.toString(1536)).toEqual('1KB512B')
+                expect(Byte.toString(1024 * 1024)).toEqual('1MB')
+                expect(Byte.toString(1024 * 1024 * 1.5)).toEqual('1MB512KB')
+                expect(Byte.toString(-1024)).toEqual('-1KB')
+                expect(
+                    Byte.toString(1 * 1024 * 1024 * 1024 + 256 * 1024 * 1024 + 128 * 1024)
+                ).toEqual('1GB256MB128KB')
+            })
         })
     })
 })

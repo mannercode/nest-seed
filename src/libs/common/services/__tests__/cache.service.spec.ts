@@ -2,35 +2,37 @@ import { sleep } from 'common'
 import type { CacheServiceFixture } from './cache.service.fixture'
 
 describe('CacheService', () => {
-    let fixture: CacheServiceFixture
+    let fix: CacheServiceFixture
 
     beforeEach(async () => {
         const { createCacheServiceFixture } = await import('./cache.service.fixture')
-        fixture = await createCacheServiceFixture()
+        fix = await createCacheServiceFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix.teardown()
     })
 
     describe('set', () => {
-        it('stores the value', async () => {
-            await fixture.cacheService.set('key', 'value')
-            const cachedValue = await fixture.cacheService.get('key')
-            expect(cachedValue).toEqual('value')
+        describe('when the TTL is not provided', () => {
+            it('stores the value', async () => {
+                await fix.cacheService.set('key', 'value')
+                const cachedValue = await fix.cacheService.get('key')
+                expect(cachedValue).toEqual('value')
+            })
         })
 
-        describe('when the TTL is provided', () => {
+        describe('when a TTL is provided', () => {
             it('expires after the TTL', async () => {
                 const ttl = 1000
-                await fixture.cacheService.set('key', 'value', ttl)
+                await fix.cacheService.set('key', 'value', ttl)
 
-                const beforeExpiration = await fixture.cacheService.get('key')
+                const beforeExpiration = await fix.cacheService.get('key')
                 expect(beforeExpiration).toEqual('value')
 
                 await sleep(ttl * 1.1)
 
-                const afterExpiration = await fixture.cacheService.get('key')
+                const afterExpiration = await fix.cacheService.get('key')
                 expect(afterExpiration).toBeNull()
             })
         })
@@ -38,23 +40,23 @@ describe('CacheService', () => {
         describe('when the TTL is 0', () => {
             it('does not expire', async () => {
                 const ttl = 0
-                await fixture.cacheService.set('key', 'value', ttl)
+                await fix.cacheService.set('key', 'value', ttl)
 
-                const beforeExpiration = await fixture.cacheService.get('key')
+                const beforeExpiration = await fix.cacheService.get('key')
                 expect(beforeExpiration).toEqual('value')
 
                 await sleep(1000)
 
-                const afterExpiration = await fixture.cacheService.get('key')
+                const afterExpiration = await fix.cacheService.get('key')
                 expect(afterExpiration).toEqual('value')
             })
         })
 
         describe('when the TTL is negative', () => {
-            it('throws an error', async () => {
+            it('throws', async () => {
                 const wrongTTL = -100
 
-                await expect(fixture.cacheService.set('key', 'value', wrongTTL)).rejects.toThrow(
+                await expect(fix.cacheService.set('key', 'value', wrongTTL)).rejects.toThrow(
                     'TTL must be a non-negative integer (0 for no expiration)'
                 )
             })
@@ -64,14 +66,14 @@ describe('CacheService', () => {
     describe('delete', () => {
         describe('when the key exists', () => {
             it('deletes the cached value', async () => {
-                await fixture.cacheService.set('key', 'value')
+                await fix.cacheService.set('key', 'value')
 
-                const beforeDelete = await fixture.cacheService.get('key')
+                const beforeDelete = await fix.cacheService.get('key')
                 expect(beforeDelete).toEqual('value')
 
-                await fixture.cacheService.delete('key')
+                await fix.cacheService.delete('key')
 
-                const afterDelete = await fixture.cacheService.get('key')
+                const afterDelete = await fix.cacheService.get('key')
                 expect(afterDelete).toBeNull()
             })
         })
@@ -83,10 +85,10 @@ describe('CacheService', () => {
             const keys = ['key']
             const args = ['value']
 
-            const result = await fixture.cacheService.executeScript(script, keys, args)
+            const result = await fix.cacheService.executeScript(script, keys, args)
             expect(result).toBe('OK')
 
-            const storedValue = await fixture.cacheService.get('key')
+            const storedValue = await fix.cacheService.get('key')
             expect(storedValue).toBe('value')
         })
     })

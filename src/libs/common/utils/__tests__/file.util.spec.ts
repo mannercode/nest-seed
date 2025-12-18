@@ -17,7 +17,7 @@ describe('FileUtil', () => {
     })
 
     describe('getSize', () => {
-        test('returns the file size', async () => {
+        it('returns the file size', async () => {
             const size = await FileUtil.getSize(originalFilePath)
 
             expect(size).toBe(fileContent.length)
@@ -35,7 +35,7 @@ describe('FileUtil', () => {
             })
         })
 
-        describe('when the files differ', () => {
+        describe('when the files are different', () => {
             it('returns false', async () => {
                 const differentFilePath = Path.join(tempDir, 'different.txt')
                 await fs.writeFile(differentFilePath, 'This is different')

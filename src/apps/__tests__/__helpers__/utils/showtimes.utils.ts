@@ -1,7 +1,8 @@
-import { CreateShowtimeDto } from 'apps/cores'
+import type { CreateShowtimeDto } from 'apps/cores'
 import { DateUtil, newObjectId } from 'common'
 import { uniq } from 'lodash'
-import { oid, TestContext } from 'testlib'
+import type { TestContext } from 'testlib'
+import { oid } from 'testlib'
 
 export function buildCreateShowtimeDto(overrides: Partial<CreateShowtimeDto> = {}) {
     const createDto = {
@@ -20,12 +21,9 @@ export function buildCreateShowtimeDto(overrides: Partial<CreateShowtimeDto> = {
     return createDto
 }
 
-export async function createShowtimes(
-    { module }: TestContext,
-    overrides: Partial<CreateShowtimeDto>[]
-) {
+export async function createShowtimes(ctx: TestContext, overrides: Partial<CreateShowtimeDto>[]) {
     const { ShowtimesClient } = await import('apps/cores')
-    const showtimesService = module.get(ShowtimesClient)
+    const showtimesService = ctx.module.get(ShowtimesClient)
 
     const createDtos = overrides.map((override) => buildCreateShowtimeDto(override))
 

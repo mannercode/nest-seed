@@ -38,7 +38,7 @@ export class CustomersController {
         return this.customersService.update(customerId, updateDto)
     }
 
-    @Get('jwtGuard')
+    @Get('jwt-guard')
     async testJwtGuard() {
         return { message: 'accessToken is valid' }
     }

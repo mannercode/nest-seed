@@ -1,4 +1,3 @@
-import { memoize } from 'lodash'
 import { omit } from 'lodash'
 
 function stringifyWithSortedKeys(record: Record<string, any>): string {
@@ -18,28 +17,38 @@ function stringifyWithSortedKeys(record: Record<string, any>): string {
     })
 }
 
-const memoizedStringify = memoize(stringifyWithSortedKeys)
-
-function sortDtos<T extends Record<string, any>>(dtos: T[], excludeKeys: (keyof T)[] = []): T[] {
-    return [...dtos].sort((a, b) => {
-        const aFiltered = omit(a, excludeKeys)
-        const bFiltered = omit(b, excludeKeys)
-        return memoizedStringify(aFiltered).localeCompare(memoizedStringify(bFiltered))
-    })
+function sortDtos<T extends Record<string, any>>(dtos: T[], excludeKeys: string[] = []): T[] {
+    return dtos
+        .map((dto) => ({ dto, sortKey: stringifyWithSortedKeys(omit(dto, excludeKeys)) }))
+        .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+        .map(({ dto }) => dto)
 }
 
-function isAnything(value: any): boolean {
+function isAsymmetricMatcher(
+    value: unknown
+): value is { asymmetricMatch: (other: unknown) => boolean } {
     return (
-        value &&
+        value !== null &&
         typeof value === 'object' &&
         'asymmetricMatch' in value &&
-        value.asymmetricMatch(expect.anything())
+        typeof (value as any).asymmetricMatch === 'function'
     )
 }
 
-function getAnythingKeys(record: Record<string, any>): string[] {
+function containsAsymmetricMatcher(value: unknown): boolean {
+    if (isAsymmetricMatcher(value)) return true
+    if (value === null || typeof value !== 'object') return false
+
+    if (Array.isArray(value)) {
+        return value.some(containsAsymmetricMatcher)
+    }
+
+    return Object.values(value).some(containsAsymmetricMatcher)
+}
+
+function getAsymmetricMatcherKeys(record: Record<string, any>): string[] {
     return Object.entries(record)
-        .filter(([_, value]) => isAnything(value))
+        .filter(([_, value]) => containsAsymmetricMatcher(value))
         .map(([key]) => key)
 }
 
@@ -57,11 +66,11 @@ export function expectEqualUnsorted(actual: any[] | undefined, expected: any[] |
         throw new Error('actual or expected undefined')
     }
 
-    const anythingKeys = new Set([
-        ...actual.flatMap(getAnythingKeys),
-        ...expected.flatMap(getAnythingKeys)
+    const matcherKeys = new Set([
+        ...actual.flatMap(getAsymmetricMatcherKeys),
+        ...expected.flatMap(getAsymmetricMatcherKeys)
     ])
-    const excludeKeys = [...anythingKeys]
+    const excludeKeys = [...matcherKeys]
 
     const sortedActual = sortDtos(actual, excludeKeys)
     const sortedExpected = sortDtos(expected, excludeKeys)

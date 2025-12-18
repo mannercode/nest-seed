@@ -1,12 +1,12 @@
-import { GoneException, Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { Cron } from '@nestjs/schedule'
 import { DateUtil, InjectS3Object, mapDocToDto, S3ObjectService } from 'common'
 import { Rules } from 'shared'
 import { AssetsRepository } from './assets.repository'
-import { AssetDto, CompleteAssetDto, CreateAssetDto, UploadRequest } from './dtos'
+import { AssetDto, AssetPresignedUploadDto, CompleteAssetDto, CreateAssetDto } from './dtos'
 import { AssetDocument } from './models'
 
-export const AssetErrors = {
+export const AssetServiceErrors = {
     UploadExpired: {
         code: 'ERR_ASSET_UPLOAD_EXPIRED',
         message: 'The upload request for this asset has expired.'
@@ -20,8 +20,8 @@ export class AssetsService {
         @InjectS3Object() private readonly s3Service: S3ObjectService
     ) {}
 
-    async create(createDto: CreateAssetDto): Promise<UploadRequest> {
-        const asset = await this.repository.createAsset(createDto)
+    async create(createDto: CreateAssetDto): Promise<AssetPresignedUploadDto> {
+        const asset = await this.repository.create(createDto)
 
         const { mimeType, size } = createDto
         const expiresInSec = Rules.Asset.uploadExpiresInSec
@@ -56,7 +56,7 @@ export class AssetsService {
         if (this.isUploadExpired(expiresAt)) {
             await this.deleteAsset(asset)
 
-            throw new GoneException({ ...AssetErrors.UploadExpired, assetId, expiresAt })
+            throw new NotFoundException({ ...AssetServiceErrors.UploadExpired, assetId, expiresAt })
         }
 
         asset.ownerService = owner.service
@@ -83,7 +83,7 @@ export class AssetsService {
     }
 
     @Cron(Rules.Asset.expiredUploadCleanupCron, { name: 'assets.cleanupExpiredUploads' })
-    async cleanupExpiredUploadsJob() {
+    async cleanupExpiredUploads() {
         const expireBefore = this.getExpirationThreshold()
         const expiredAssets = await this.repository.findExpiredUncompleted(expireBefore)
 
@@ -94,30 +94,6 @@ export class AssetsService {
         const expiredAssetIds = expiredAssets.map((asset) => asset.id)
 
         await this.deleteMany(expiredAssetIds)
-    }
-
-    private toDto(asset: AssetDocument): AssetDto {
-        const dto = mapDocToDto(asset, AssetDto, [
-            'id',
-            'originalName',
-            'mimeType',
-            'size',
-            'checksum'
-        ])
-
-        dto.download = null
-        dto.owner = null
-
-        /* istanbul ignore else */
-        if (asset.ownerService && asset.ownerEntityId) {
-            dto.owner = { service: asset.ownerService, entityId: asset.ownerEntityId }
-        }
-
-        return dto
-    }
-
-    private toDtos(assets: AssetDocument[]) {
-        return assets.map((asset) => this.toDto(asset))
     }
 
     private async withDownloadInfo(assetDto: AssetDto): Promise<AssetDto> {
@@ -143,5 +119,30 @@ export class AssetsService {
 
     private getExpirationThreshold() {
         return DateUtil.add({ base: DateUtil.now(), seconds: -Rules.Asset.uploadExpiresInSec })
+    }
+
+    private toDto(asset: AssetDocument): AssetDto {
+        return this.toDtos([asset])[0]
+    }
+
+    private toDtos(assets: AssetDocument[]) {
+        return assets.map((asset) => {
+            const dto = mapDocToDto(asset, AssetDto, [
+                'id',
+                'originalName',
+                'mimeType',
+                'size',
+                'checksum'
+            ])
+
+            dto.download = null
+            dto.owner = null
+
+            if (asset.ownerService && asset.ownerEntityId) {
+                dto.owner = { service: asset.ownerService, entityId: asset.ownerEntityId }
+            }
+
+            return dto
+        })
     }
 }

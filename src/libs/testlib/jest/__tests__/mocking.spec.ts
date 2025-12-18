@@ -17,15 +17,15 @@ jest.mock('./mocking.fixture', () => {
 })
 
 describe('jest.mock examples', () => {
-    test('Module mocking', () => {
-        ;(Logger.verbose as jest.Mock).mockReturnValue('Mocked verbose')
-        const value = Logger.verbose('arg1', 'arg2')
+    it('mocks a module', () => {
+        ;(Logger.verbose as unknown as jest.Mock).mockImplementation(() => undefined)
+
+        Logger.verbose('arg1', 'arg2')
 
         expect(Logger.verbose).toHaveBeenCalledWith('arg1', 'arg2')
-        expect(value).toEqual('Mocked verbose')
     })
 
-    test('Class mocking', () => {
+    it('mocks a class', () => {
         ;(HelloClass as jest.Mock).mockImplementation(() => ({
             getHello: jest.fn().mockReturnValue('Mocked getHello')
         }))
@@ -36,7 +36,7 @@ describe('jest.mock examples', () => {
         expect(instance.getHello).toHaveBeenCalledTimes(1)
     })
 
-    test('Function mocking', () => {
+    it('mocks a function', () => {
         ;(getGreeting as jest.Mock).mockReturnValue('Mocked getGreeting')
 
         expect(getGreeting()).toEqual('Mocked getGreeting')

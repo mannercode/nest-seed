@@ -7,7 +7,7 @@ import { CreatePurchaseRecordDto } from './dtos'
 import { PurchaseRecord } from './models'
 
 @Injectable()
-export class PurchasesRecordRepository extends MongooseRepository<PurchaseRecord> {
+export class PurchaseRecordsRepository extends MongooseRepository<PurchaseRecord> {
     constructor(
         @InjectModel(PurchaseRecord.name, MongooseConfigModule.connectionName)
         readonly model: Model<PurchaseRecord>
@@ -15,7 +15,7 @@ export class PurchasesRecordRepository extends MongooseRepository<PurchaseRecord
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async create(createDto: CreatePurchaseRecordDto & { paymentId: string }) {
+    async create(createDto: CreatePurchaseRecordDto) {
         const purchase = this.newDocument()
         purchase.customerId = objectId(createDto.customerId)
         purchase.paymentId = objectId(createDto.paymentId)

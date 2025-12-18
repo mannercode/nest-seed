@@ -1,31 +1,28 @@
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
-import { Path } from 'common'
-import { createTestFixture, FixtureFile, fixtureFiles, TestFixture } from '../__helpers__'
+import type { CronJob } from 'cron'
+import type { FixtureFile, AppTestContext } from '../__helpers__'
+import { createAppTestContext, fixtureFiles } from '../__helpers__'
 
-export type AssetsFixture = TestFixture & {
+export type AssetsFixture = AppTestContext & {
     assetsClient: AssetsClient
     file: FixtureFile
-    tempDir: string
-    scheduler: SchedulerRegistry
+    cleanupExpiredUploadsJob: CronJob
 }
 
 export async function createAssetsFixture() {
-    const testFixture = await createTestFixture({
-        imports: [AssetsModule],
-        providers: [AssetsClient]
-    })
+    const ctx = await createAppTestContext({ imports: [AssetsModule], providers: [AssetsClient] })
 
-    const assetsClient = testFixture.module.get(AssetsClient)
-    const scheduler = testFixture.module.get(SchedulerRegistry)
+    const assetsClient = ctx.module.get(AssetsClient)
+    const scheduler = ctx.module.get(SchedulerRegistry)
+    const cleanupExpiredUploadsJob = scheduler.getCronJob('assets.cleanupExpiredUploads')
+    await cleanupExpiredUploadsJob.stop()
+
     const file = fixtureFiles.small
 
-    const tempDir = await Path.createTempDirectory()
-
-    async function teardown() {
-        await testFixture.teardown()
-        await Path.delete(tempDir)
+    const teardown = async () => {
+        await ctx.teardown()
     }
 
-    return { ...testFixture, teardown, assetsClient, file, tempDir, scheduler }
+    return { ...ctx, teardown, assetsClient, file, cleanupExpiredUploadsJob }
 }

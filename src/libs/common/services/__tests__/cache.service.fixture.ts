@@ -19,10 +19,10 @@ export async function createCacheServiceFixture() {
         providers: [TestInjectCacheService]
     })
 
-    const cacheService = module.get(CacheService.getServiceName())
+    const cacheService = module.get(CacheService.getName())
     const redis = module.get(getRedisConnectionToken('name'))
 
-    async function teardown() {
+    const teardown = async () => {
         await close()
         await redis.quit()
     }

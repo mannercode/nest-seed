@@ -4,48 +4,63 @@
 
 ## 1. Jest 테스트 명명 가이드
 
-1. **맥락은 `when …` 패턴 사용**
-    - `describe('when the X is Y', …)` 형태로 **어떤 조건일 때**를 명확히 기술합니다.
+<!-- // TODO  정리 필요-->
 
-1. **행위는 동사구(동사 + 목적어)**
-    - `it('logs in')`, `it('returns 401 Unauthorized')` 처럼 **동사로 시작해** 무엇을 하는지 바로 알 수 있게 작성합니다.
+1. 기본 구조는 when/action: 조건/맥락은 describe('when ...'), 행위/결과는 it('...')로 분리
+2. it 제목에 조건을 섞지 않음(예: ... when ..., ... for ..., ... if ...) → 조건 문구는 모두 상위 describe('when ...')로 이동
+3. 조건(쿼리/옵션/값) 생략은 not provided로 표기(예: when the pagination query is not provided)
+4. it는 동사로 시작하는 “행위/결과” 문장으로 작성(의미 없는 it('info'), it('general') 같은 제목은 구체적으로 변경)
+5. 성공 케이스는 상태코드 없이 결과로 서술(returns the created ..., creates ..., logs ... 등)
+6. 실패 케이스는 it에 상태코드/예외만 남김(returns 400 Bad Request, throws 404 Not Found), 실패 사유는 when ...로 올림
+7. 서비스 메서드에서 예외를 기대하는 테스트는 returns 대신 throws 사용
+8. PATCH/DELETE류는 “응답 검증”과 “영속성 검증”을 서로 다른 it로 분리
+9. 최상위 단독 it는 의미 있는 describe 트리 아래로 넣어 테스트 스코프/대상을 명확히 함
 
-1. **실패 케이스는 이유까지 서술**
-    - 오류 테스트는 **대상·상태·결과**를 모두 포함해
-      _왜 실패하는지_ 명확하게 기술합니다.
-    - 예시:
-      `it('returns 401 Unauthorized for incorrect password')`
+10. `when ...`은 맥락(조건), `it(...)`는 행위/결과(action)
+    - `describe('when ...')`: **조건/맥락**
+    - `it('...')`: **행위/결과**를 **동사로 시작**해 작성
+
+11. `when/action` 구조가 기본이지만 예외적으로 다양한 검증을 하나의 테스트 케이스에서 수행하는 경우에는 `when`을 생략할 수 있다.
+
+    ```ts
+    it('converts lowercase units to bytes', () => {
+        expect(Byte.fromString('1024b')).toEqual(1024)
+        expect(Byte.fromString('1kb')).toEqual(1024)
+        expect(Byte.fromString('1mb')).toEqual(1024 * 1024)
+        expect(Byte.fromString('1gb')).toEqual(1024 * 1024 * 1024)
+        expect(Byte.fromString('1tb')).toEqual(1024 * 1024 * 1024 * 1024)
+    })
+    ```
+
+12. 성공 케이스(200/201)는 상태코드를 제목에 쓰지 않는다
+    - 상태코드 대신 결과를 서술
+        - 예: `returns the created ...`, `returns the updated ...`, `returns the default page ...`
+
+13. 실패 케이스는 “상태코드”만 명시
+    - 예:
+        - `returns 404 Not Found`
+        - `returns 401 Unauthorized`
+        - `returns 400 Bad Request`
+
+14. PATCH/DELETE는 “응답 검증”과 “영속성 검증”을 분리
+    - 응답 검증: `returns the updated/deleted ...`
+    - 영속성 검증: `persists the update/deletion`
+        - PATCH: 후속 GET으로 값이 유지됨을 확인
+        - DELETE: 후속 GET에서 NotFound(또는 조회 실패)로 삭제됨을 확인
+
+15. 예외를 기대하는 서비스 메서드 테스트는 `returns` 대신 `throws` 사용
+    - 예: `throws 400 ...`, `throws 404 ...`
+
+16. 조건을 생략하는 테스트는 `not provided`라고 표현
+    - 예: `when the pagination query is not provided`
 
 > Jest는 `context`를 지원하지 않는다. 그렇다고 해서 `describe`를 `context`의 alias로 사용하면 안 된다.
 >
 > `Jest Runner` 같은 Jest 도구에서 `context`를 인식하지 못한다.
 
 ```ts
-// 사용자 인증
-describe('User Authentication', () => {
-    // 자격 증명이 유효한 경우
-    describe('when the credentials are valid', () => {
-        // 로그인한다
-        it('logs in', async () => {
-            /* 테스트 로직 */
-        })
-    })
-
-    // 자격 증명이 유효하지 않은 경우
-    describe('when the credentials are invalid', () => {
-        // 비밀번호가 틀린 경우 401 Unauthorized를 반환한다
-        it('returns 401 Unauthorized for incorrect password', async () => {
-            /* 테스트 로직 */
-        })
-    })
-
-    // 리프레시 토큰이 유효하지 않은 경우
-    describe('when the refresh token is invalid', () => {
-        // 401 Unauthorized를 반환한다
-        it('returns 401 Unauthorized', async () => {
-            /* 테스트 로직 */
-        })
-    })
+describe('', () => {
+    // TODO 예시 작성
 })
 ```
 
@@ -219,11 +234,11 @@ describe('Customers', () => {
     }
 ```
 
-## 7. 테스트 코드를 .spec.ts와 .fixture.ts로 분리
+## 7. 테스트 코드를 .spec.ts와 .fix.ts로 분리
 
 ### 7.1 예전 방식
 
-.spec.ts에 Fixture 설정 코드를 모두 넣으면, 실제 테스트 로직이 무엇을 검증하는지 파악하기가 어렵습니다. 따라서 테스트 로직은 .spec.ts에 집중하고, 테스트에 필요한 리소스나 설정은 .fixture.ts에 둡니다.
+.spec.ts에 Fixture 설정 코드를 모두 넣으면, 실제 테스트 로직이 무엇을 검증하는지 파악하기가 어렵습니다. 따라서 테스트 로직은 .spec.ts에 집중하고, 테스트에 필요한 리소스나 설정은 .fix.ts에 둡니다.
 
 예: `src/apps/__tests__/utils` 폴더에 공통 코드가 모여 있고, 그중 `clients.ts`에서 `module.get()`으로 필요한 `Service 인스턴스`를 미리 가져옵니다. 이렇게 하면 테스트가 간결해지며, 중복 코드를 줄일 수 있습니다.
 

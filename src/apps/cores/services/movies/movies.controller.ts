@@ -34,7 +34,7 @@ export class MoviesController {
     }
 
     @MessagePattern(Messages.Movies.allExist)
-    exists(@Payload() movieIds: string[]) {
+    allExist(@Payload() movieIds: string[]) {
         return this.service.allExist(movieIds)
     }
 }

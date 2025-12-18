@@ -1,5 +1,5 @@
-import { MovieGenre, MovieRating } from 'apps/cores'
-import { MovieDraftImageStatus } from '../models/movie-draft'
+import type { MovieGenre, MovieRating } from 'apps/cores'
+import type { MovieDraftImageStatus } from '../models/movie-draft'
 
 export type DraftImageStatus = (typeof MovieDraftImageStatus)[keyof typeof MovieDraftImageStatus]
 

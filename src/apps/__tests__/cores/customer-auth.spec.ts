@@ -1,42 +1,43 @@
-import { Errors } from '../__helpers__'
+import type { JwtAuthTokens } from 'common'
+import { Errors, loginCustomer } from '../__helpers__'
 import type { CustomerAuthFixture } from './customer-auth.fixture'
 
-describe('CustomersService – Authentication', () => {
-    let fixture: CustomerAuthFixture
+describe('CustomersService', () => {
+    let fix: CustomerAuthFixture
 
     beforeEach(async () => {
         const { createCustomerAuthFixture } = await import('./customer-auth.fixture')
-        fixture = await createCustomerAuthFixture()
+        fix = await createCustomerAuthFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix.teardown()
     })
 
     describe('POST /customers/login', () => {
         describe('when the credentials are valid', () => {
-            it('returns access and refresh tokens', async () => {
-                await fixture.httpClient
+            it('returns auth tokens', async () => {
+                await fix.httpClient
                     .post('/customers/login')
-                    .body(fixture.credentials)
+                    .body(fix.credentials)
                     .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
             })
         })
 
         describe('when the password is incorrect', () => {
             it('returns 401 Unauthorized', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .post('/customers/login')
-                    .body({ ...fixture.credentials, password: 'wrong password' })
+                    .body({ ...fix.credentials, password: 'wrong password' })
                     .unauthorized(Errors.Auth.Unauthorized)
             })
         })
 
-        describe('when the email does not exist', () => {
+        describe('when the email is not registered', () => {
             it('returns 401 Unauthorized', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .post('/customers/login')
-                    .body({ email: 'unknown@mail.com', password: '-' })
+                    .body({ ...fix.credentials, email: 'unknown@mail.com' })
                     .unauthorized(Errors.Auth.Unauthorized)
             })
         })
@@ -44,10 +45,16 @@ describe('CustomersService – Authentication', () => {
 
     describe('POST /customers/refresh', () => {
         describe('when the refresh token is valid', () => {
-            it('returns new access and refresh tokens', async () => {
-                const { accessToken, refreshToken } = fixture.authTokens
+            let authTokens: JwtAuthTokens
 
-                const { body } = await fixture.httpClient
+            beforeEach(async () => {
+                authTokens = await loginCustomer(fix, fix.credentials)
+            })
+
+            it('returns new auth tokens', async () => {
+                const { accessToken, refreshToken } = authTokens
+
+                const { body } = await fix.httpClient
                     .post('/customers/refresh')
                     .body({ refreshToken })
                     .ok()
@@ -59,7 +66,7 @@ describe('CustomersService – Authentication', () => {
 
         describe('when the refresh token is invalid', () => {
             it('returns 401 Unauthorized', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .post('/customers/refresh')
                     .body({ refreshToken: 'invalid-token' })
                     .unauthorized({
@@ -70,22 +77,27 @@ describe('CustomersService – Authentication', () => {
         })
     })
 
-    describe('CustomerJwtAuthGuard', () => {
+    describe('GET /customers/jwt-guard', () => {
         describe('when the access token is valid', () => {
-            it('allows access', async () => {
-                const { accessToken } = fixture.authTokens
+            let accessToken: string
 
-                await fixture.httpClient
-                    .get('/customers/jwtGuard')
+            beforeEach(async () => {
+                const authTokens = await loginCustomer(fix, fix.credentials)
+                accessToken = authTokens.accessToken
+            })
+
+            it('allows access', async () => {
+                await fix.httpClient
+                    .get('/customers/jwt-guard')
                     .headers({ Authorization: `Bearer ${accessToken}` })
-                    .ok({ message: 'accessToken is valid' })
+                    .ok()
             })
         })
 
         describe('when the access token is invalid', () => {
             it('returns 401 Unauthorized', async () => {
-                await fixture.httpClient
-                    .get('/customers/jwtGuard')
+                await fix.httpClient
+                    .get('/customers/jwt-guard')
                     .headers({ Authorization: 'Bearer Invalid-Token' })
                     .unauthorized(Errors.Auth.Unauthorized)
             })

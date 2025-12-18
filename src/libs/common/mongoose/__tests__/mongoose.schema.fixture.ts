@@ -86,17 +86,17 @@ export type MongooseSchemaFixture = {
 export async function createMongooseSchemaFixture() {
     const schema = createMongooseSchema(SchemaTypeSample)
 
-    const testContext = await createTestContext({
+    const { module, close } = await createTestContext({
         imports: [
             MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
             MongooseModule.forFeature([{ name: 'schema', schema }])
         ]
     })
 
-    const model = testContext.module.get<Model<SchemaTypeSample>>(getModelToken('schema'))
+    const model = module.get<Model<SchemaTypeSample>>(getModelToken('schema'))
 
-    async function teardown() {
-        await testContext?.close()
+    const teardown = async () => {
+        await close()
     }
 
     return { teardown, model }

@@ -1,4 +1,4 @@
-import { MovieDto } from 'apps/cores'
+import type { MovieDto } from 'apps/cores'
 
 export class MovieRecommender {
     static recommend(showingMovies: MovieDto[], watchedMovies: MovieDto[]) {

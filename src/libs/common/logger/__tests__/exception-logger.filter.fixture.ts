@@ -24,6 +24,7 @@ class TestController {
 
     @Get('fatal')
     getHttpFatalError() {
+        // eslint-disable-next-line @typescript-eslint/only-throw-error
         throw 'fatal error message'
     }
 
@@ -39,6 +40,7 @@ class TestController {
 
     @MessagePattern(withTestId('fatal'))
     getRpcFatalError() {
+        // eslint-disable-next-line @typescript-eslint/only-throw-error
         throw 'fatal error message'
     }
 }
@@ -58,7 +60,7 @@ export async function createExceptionLoggerFilterFixture() {
         options: getNatsTestConnection()
     } as NatsOptions
 
-    const { httpClient, ...testContext } = await createHttpTestContext({
+    const { httpClient, ...ctx } = await createHttpTestContext({
         controllers: [TestController],
         providers: [{ provide: APP_FILTER, useClass: ExceptionLoggerFilter }],
         configureApp: async (app) => {
@@ -73,9 +75,9 @@ export async function createExceptionLoggerFilterFixture() {
     const spyFatal = jest.spyOn(Logger, 'fatal')
     const rpcClient = RpcTestClient.create(brokerOptions)
 
-    async function teardown() {
+    const teardown = async () => {
         await rpcClient.close()
-        await testContext.close()
+        await ctx.close()
     }
 
     return { teardown, httpClient, rpcClient, spyWarn, spyError, spyFatal }

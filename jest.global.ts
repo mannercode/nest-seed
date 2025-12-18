@@ -5,15 +5,19 @@ import { GenericContainer } from 'testcontainers'
 import { getEnv, setEnv } from './jest.utils'
 
 async function setupNats() {
-    return new NatsContainer(getEnv('NATS_IMAGE')).withReuse().start()
+    return new NatsContainer(getEnv('NATS_IMAGE')).withName('testlib-nats').withReuse().start()
 }
 
 async function setupRedis() {
-    return new GenericContainer(getEnv('REDIS_IMAGE')).withExposedPorts(6379).withReuse().start()
+    return new GenericContainer(getEnv('REDIS_IMAGE'))
+        .withName('testlib-redis')
+        .withExposedPorts(6379)
+        .withReuse()
+        .start()
 }
 
 async function setupMongo() {
-    return new MongoDBContainer(getEnv('MONGO_IMAGE')).withReuse().start()
+    return new MongoDBContainer(getEnv('MONGO_IMAGE')).withName('testlib-mongo').withReuse().start()
 }
 
 async function setupMinio() {
@@ -26,6 +30,7 @@ async function setupMinio() {
         .withEnvironment({ MINIO_ROOT_USER, MINIO_ROOT_PASSWORD })
         .withCommand(['server', '/data'])
         .withExposedPorts(9000)
+        .withName('testlib-minio')
         .withReuse()
         .start()
 }

@@ -24,7 +24,7 @@ describe('HttpUtil', () => {
             })
         })
 
-        describe('when the filename is Korean or Unicode', () => {
+        describe('when the filename is Unicode', () => {
             it('preserves filename* and replaces non-ASCII in fallback', () => {
                 const filename = '한글 파일명(최종).pdf'
                 const contentDisposition = HttpUtil.buildContentDisposition(filename)
@@ -46,7 +46,7 @@ describe('HttpUtil', () => {
             })
         })
 
-        describe('when the ASCII filename contains spaces', () => {
+        describe('when the filename is ASCII with spaces', () => {
             it('uses + for spaces in filename*', () => {
                 const filename = 'my file name.txt'
                 const contentDisposition = HttpUtil.buildContentDisposition(filename)
@@ -84,7 +84,7 @@ describe('HttpUtil', () => {
             })
         })
 
-        describe('when the header is invalid or missing', () => {
+        describe('when the header is invalid or not provided', () => {
             it('returns "unknown"', () => {
                 expect(HttpUtil.extractContentDisposition('')).toBe('unknown')
                 expect(HttpUtil.extractContentDisposition('attachment')).toBe('unknown')
@@ -92,7 +92,7 @@ describe('HttpUtil', () => {
             })
         })
 
-        describe('when the filename* decoding fails', () => {
+        describe('when filename* decoding fails', () => {
             it('falls back to the quoted or bare value', () => {
                 const badStar = `attachment; filename*=UTF-8''%E0%A4%ZZ; filename="safe-fallback.txt"`
                 expect(HttpUtil.extractContentDisposition(badStar)).toBe('safe-fallback.txt')

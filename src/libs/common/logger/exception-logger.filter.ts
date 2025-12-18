@@ -4,6 +4,7 @@ import { RpcException } from '@nestjs/microservices'
 import { Request } from 'express'
 import { throwError } from 'rxjs'
 import { HttpErrorLog, RpcErrorLog } from './types'
+import { orDefault } from '../validator'
 
 /**
  * Only one global filter can be registered at a time.
@@ -37,7 +38,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
                     ...httpLogBase,
                     statusCode: exception.getStatus(),
                     response: exception.getResponse(),
-                    stack: exception.stack
+                    stack: orDefault(exception.stack, '').split('\n')
                 } as HttpErrorLog
 
                 Logger.warn('fail', errorLog)
@@ -46,7 +47,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
                     ...httpLogBase,
                     statusCode: 500,
                     response: { message: exception.message },
-                    stack: exception.stack
+                    stack: orDefault(exception.stack, '').split('\n')
                 } as HttpErrorLog
 
                 Logger.error('error', errorLog)
@@ -55,7 +56,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
                     ...httpLogBase,
                     statusCode: 500,
                     response: { message: exception },
-                    stack: 'undefined'
+                    stack: []
                 } as HttpErrorLog
 
                 Logger.fatal('fatal', errorLog)
@@ -75,7 +76,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
                 const errorLog = {
                     ...rpcLogBase,
                     response: exception.getResponse(),
-                    stack: exception.stack
+                    stack: orDefault(exception.stack, '').split('\n')
                 } as RpcErrorLog
 
                 Logger.warn('fail', errorLog)
@@ -85,7 +86,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
                 const errorLog = {
                     ...rpcLogBase,
                     response: { message: exception.message },
-                    stack: exception.stack
+                    stack: orDefault(exception.stack, '').split('\n')
                 } as RpcErrorLog
 
                 Logger.error('error', errorLog)
@@ -95,7 +96,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
                 const errorLog = {
                     ...rpcLogBase,
                     response: { message: exception },
-                    stack: 'undefined'
+                    stack: []
                 } as RpcErrorLog
 
                 Logger.fatal('fatal', errorLog)

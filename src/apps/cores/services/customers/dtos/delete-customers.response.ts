@@ -1,4 +1,4 @@
-import { CustomerDto } from './customer.dto'
+import type { CustomerDto } from './customer.dto'
 
 export class DeleteCustomersResponse {
     deletedCustomers: CustomerDto[]

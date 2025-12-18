@@ -1,39 +1,43 @@
 import { CronExpression } from '@nestjs/schedule'
 import { sleep } from '../utils'
-import { ScheduleModuleFixture } from './schedule.fixture'
+import type { ScheduleModuleFixture } from './schedule.fixture'
 
 describe('ScheduleModule', () => {
-    let fixture: ScheduleModuleFixture
+    let fix: ScheduleModuleFixture
 
     beforeEach(async () => {
         const { createScheduleModuleFixture } = await import('./schedule.fixture')
-        fixture = await createScheduleModuleFixture()
+        fix = await createScheduleModuleFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix.teardown()
     })
 
-    it('runs the sample job every two seconds with the default schedule', async () => {
-        fixture.sampleJobService.reset()
+    describe('when using the default schedule', () => {
+        it('runs the sample job every two seconds', async () => {
+            fix.sampleJobService.reset()
 
-        await sleep(2500)
+            await sleep(2500)
 
-        expect([1, 2]).toContain(fixture.sampleJobService.count)
+            expect([1, 2]).toContain(fix.sampleJobService.count)
+        })
     })
 
-    it('updates the cron schedule at runtime and runs every second', async () => {
-        const { CronTime } = await import('cron')
-        const job = fixture.scheduler.getCronJob('job')
-        await job.stop()
+    describe('when updating the cron schedule at runtime', () => {
+        it('runs the sample job every second', async () => {
+            const { CronTime } = await import('cron')
+            const job = fix.scheduler.getCronJob('job')
+            await job.stop()
 
-        job.setTime(new CronTime(CronExpression.EVERY_SECOND))
-        job.start()
+            job.setTime(new CronTime(CronExpression.EVERY_SECOND))
+            job.start()
 
-        fixture.sampleJobService.reset()
+            fix.sampleJobService.reset()
 
-        await sleep(1500)
+            await sleep(1500)
 
-        expect([1, 2]).toContain(fixture.sampleJobService.count)
+            expect([1, 2]).toContain(fix.sampleJobService.count)
+        })
     })
 })

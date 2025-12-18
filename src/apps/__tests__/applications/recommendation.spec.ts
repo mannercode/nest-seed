@@ -1,4 +1,5 @@
-import { MovieDto, MovieGenre } from 'apps/cores'
+import type { MovieDto } from 'apps/cores'
+import { MovieGenre } from 'apps/cores'
 import {
     createShowingMovies,
     createWatchedMovies,
@@ -6,99 +7,76 @@ import {
 } from './recommendation.fixture'
 
 describe('RecommendationService', () => {
-    let fixture: RecommendationFixture
+    let fix: RecommendationFixture
 
     beforeEach(async () => {
         const { createRecommendationFixture } = await import('./recommendation.fixture')
-        fixture = await createRecommendationFixture()
+        fix = await createRecommendationFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix.teardown()
     })
 
     describe('GET /movies/recommended', () => {
-        let showingMovies: MovieDto[]
-        const expectMovie = (movie: MovieDto) =>
-            expect.objectContaining({
-                id: movie.id,
-                title: movie.title,
-                genres: movie.genres,
-                releaseDate: movie.releaseDate,
-                plot: movie.plot,
-                durationInSeconds: movie.durationInSeconds,
-                director: movie.director,
-                rating: movie.rating,
-                imageUrls: expect.any(Array)
-            })
-
-        beforeEach(async () => {
-            const { movies } = await createShowingMovies(fixture, [
-                {
-                    title: 'Fantasy',
-                    genres: [MovieGenre.Fantasy],
-                    releaseDate: new Date('2900-01-01')
-                },
-                {
-                    title: 'Comedy1',
-                    genres: [MovieGenre.Comedy],
-                    releaseDate: new Date('2900-02-01')
-                },
-                {
-                    title: 'Comedy2',
-                    genres: [MovieGenre.Comedy],
-                    releaseDate: new Date('2900-03-01')
-                },
-                {
-                    title: 'Action',
-                    genres: [MovieGenre.Action],
-                    releaseDate: new Date('2900-04-01')
-                },
-                { title: 'Drama', genres: [MovieGenre.Drama], releaseDate: new Date('2900-05-01') }
-            ])
-
-            showingMovies = movies
-        })
-
-        describe('when the user is a customer', () => {
-            let accessToken: string
+        describe('when showing movies exist', () => {
+            let fantasyMovie: MovieDto
+            let comedy1Movie: MovieDto
+            let comedy2Movie: MovieDto
+            let actionMovie: MovieDto
+            let dramaMovie: MovieDto
 
             beforeEach(async () => {
-                const result = await createWatchedMovies(fixture, [
-                    { title: 'Action1', genres: [MovieGenre.Action] },
-                    { title: 'Action2', genres: [MovieGenre.Action] },
-                    { title: 'Action3', genres: [MovieGenre.Action] },
-                    { title: 'Comedy1', genres: [MovieGenre.Comedy] },
-                    { title: 'Comedy2', genres: [MovieGenre.Comedy] },
-                    { title: 'Drama1', genres: [MovieGenre.Drama] }
-                ])
-
-                accessToken = result.accessToken
-            })
-
-            it('returns recommendations for the customer', async () => {
-                await fixture.httpClient
-                    .get('/movies/recommended')
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .ok([
-                        expectMovie(showingMovies[3]), // Action
-                        expectMovie(showingMovies[2]), // Comedy2, 2900-03-01
-                        expectMovie(showingMovies[1]), // Comedy1, 2900-02-01
-                        expectMovie(showingMovies[4]), // Drama
-                        expectMovie(showingMovies[0]) // Fantasy
+                ;[fantasyMovie, comedy1Movie, comedy2Movie, actionMovie, dramaMovie] =
+                    await createShowingMovies(fix, [
+                        { genres: [MovieGenre.Fantasy], releaseDate: new Date('2900-01-01') },
+                        { genres: [MovieGenre.Comedy], releaseDate: new Date('2900-02-01') },
+                        { genres: [MovieGenre.Comedy], releaseDate: new Date('2900-03-01') },
+                        { genres: [MovieGenre.Action], releaseDate: new Date('2900-04-01') },
+                        { genres: [MovieGenre.Drama], releaseDate: new Date('2900-05-01') }
                     ])
             })
-        })
 
-        describe('when the user is a guest', () => {
-            it('returns recommendations for guests', async () => {
-                await fixture.httpClient.get('/movies/recommended').ok([
-                    expectMovie(showingMovies[4]), // 2900-05-01
-                    expectMovie(showingMovies[3]), // 2900-04-01
-                    expectMovie(showingMovies[2]), // 2900-03-01
-                    expectMovie(showingMovies[1]), // 2900-02-01
-                    expectMovie(showingMovies[0]) // 2900-01-01
-                ])
+            describe('when the customer has watched movies', () => {
+                let accessToken: string
+
+                beforeEach(async () => {
+                    const result = await createWatchedMovies(fix, [
+                        { genres: [MovieGenre.Action] },
+                        { genres: [MovieGenre.Action] },
+                        { genres: [MovieGenre.Action] },
+                        { genres: [MovieGenre.Comedy] },
+                        { genres: [MovieGenre.Comedy] },
+                        { genres: [MovieGenre.Drama] }
+                    ])
+
+                    accessToken = result.accessToken
+                })
+
+                it('returns recommendations based on watch history', async () => {
+                    await fix.httpClient
+                        .get('/movies/recommended')
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                        .ok([
+                            actionMovie,
+                            comedy2Movie, // 2900-03-01
+                            comedy1Movie, // 2900-02-01
+                            dramaMovie,
+                            fantasyMovie
+                        ])
+                })
+            })
+
+            describe('when the customer is a guest', () => {
+                it('returns default recommendations', async () => {
+                    await fix.httpClient.get('/movies/recommended').ok([
+                        dramaMovie, // 2900-05-01
+                        actionMovie, // 2900-04-01
+                        comedy2Movie, // 2900-03-01
+                        comedy1Movie, // 2900-02-01
+                        fantasyMovie // 2900-01-01
+                    ])
+                })
             })
         })
     })

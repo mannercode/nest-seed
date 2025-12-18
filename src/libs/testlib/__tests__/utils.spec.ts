@@ -16,12 +16,10 @@ describe('createDummyFile', () => {
         await Path.delete(tempDir)
     })
 
-    describe('when the size is specified', () => {
-        it('creates a file of the given size', async () => {
-            const sizeInBytes = Byte.fromString('500KB')
-            await createDummyFile(testFilePath, sizeInBytes)
-            const stats = await fs.stat(testFilePath)
-            expect(stats.size).toBe(sizeInBytes)
-        })
+    it('creates a file of the given size', async () => {
+        const sizeInBytes = Byte.fromString('500KB')
+        await createDummyFile(testFilePath, sizeInBytes)
+        const stats = await fs.stat(testFilePath)
+        expect(stats.size).toBe(sizeInBytes)
     })
 })

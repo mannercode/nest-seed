@@ -1,6 +1,6 @@
 import { base64ToHex, hexToBase64 } from 'common'
 
-describe('Encoding Utils', () => {
+describe('hexToBase64 and base64ToHex', () => {
     it('converts hex to base64', () => {
         expect(hexToBase64('68656c6c6f')).toBe('aGVsbG8=')
     })

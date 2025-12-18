@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
+import { assignIfDefined, MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import { CreateCustomerDto, SearchCustomersPageDto } from './dtos'
+import { CreateCustomerDto, SearchCustomersPageDto, UpdateCustomerDto } from './dtos'
 import { Customer } from './models'
 
 @Injectable()
@@ -25,11 +25,21 @@ export class CustomersRepository extends MongooseRepository<Customer> {
         return customer.save()
     }
 
+    async update(customerId: string, updateDto: UpdateCustomerDto) {
+        const customer = await this.getById(customerId)
+
+        assignIfDefined(customer, updateDto, 'name')
+        assignIfDefined(customer, updateDto, 'email')
+        assignIfDefined(customer, updateDto, 'birthDate')
+
+        return customer.save()
+    }
+
     async searchPage(searchDto: SearchCustomersPageDto) {
         const { take, skip, orderby } = searchDto
 
         const pagination = await this.findWithPagination({
-            configureQuery: (queryHelper) => {
+            configureQuery: async (queryHelper) => {
                 const query = this.buildQuery(searchDto, { allowEmpty: true })
 
                 queryHelper.setQuery(query)

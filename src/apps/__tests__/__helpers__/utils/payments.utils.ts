@@ -1,5 +1,6 @@
-import { CreatePaymentDto } from 'apps/infrastructures'
-import { oid, TestContext } from 'testlib'
+import type { CreatePaymentDto } from 'apps/infrastructures'
+import type { TestContext } from 'testlib'
+import { oid } from 'testlib'
 
 export function buildCreatePaymentDto(overrides = {}) {
     const createDto = { customerId: oid(0x0), amount: 1, ...overrides }
@@ -7,12 +8,9 @@ export function buildCreatePaymentDto(overrides = {}) {
     return createDto
 }
 
-export async function createPayment(
-    { module }: TestContext,
-    override: Partial<CreatePaymentDto> = {}
-) {
+export async function createPayment(ctx: TestContext, override: Partial<CreatePaymentDto> = {}) {
     const { PaymentsClient } = await import('apps/infrastructures')
-    const paymentsService = module.get(PaymentsClient)
+    const paymentsService = ctx.module.get(PaymentsClient)
 
     const createDto = buildCreatePaymentDto(override)
 
@@ -20,9 +18,9 @@ export async function createPayment(
     return payment
 }
 
-export async function getPayments({ module }: TestContext, paymentIds: string[]) {
+export async function getPayments(ctx: TestContext, paymentIds: string[]) {
     const { PaymentsClient } = await import('apps/infrastructures')
-    const paymentsService = module.get(PaymentsClient)
+    const paymentsService = ctx.module.get(PaymentsClient)
 
     return paymentsService.getMany(paymentIds)
 }

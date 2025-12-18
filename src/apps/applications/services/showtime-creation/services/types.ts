@@ -1,4 +1,4 @@
-import { BulkCreateShowtimesDto } from '../dtos'
+import type { BulkCreateShowtimesDto } from '../dtos'
 
 export class ShowtimeCreationJobData {
     createDto: BulkCreateShowtimesDto

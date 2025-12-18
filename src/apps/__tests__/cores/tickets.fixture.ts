@@ -1,12 +1,13 @@
 import { TicketsClient, TicketsModule } from 'apps/cores'
-import { TestFixture, createTestFixture } from '../__helpers__'
+import type { AppTestContext } from '../__helpers__'
+import { createAppTestContext } from '../__helpers__'
 
-export type TicketsFixture = TestFixture & { ticketsService: TicketsClient }
+export type TicketsFixture = AppTestContext & { ticketsService: TicketsClient }
 
 export async function createTicketsFixture() {
-    const fix = await createTestFixture({ imports: [TicketsModule], providers: [TicketsClient] })
+    const ctx = await createAppTestContext({ imports: [TicketsModule], providers: [TicketsClient] })
 
-    const ticketsService = fix.module.get(TicketsClient)
+    const ticketsService = ctx.module.get(TicketsClient)
 
-    return { ...fix, ticketsService }
+    return { ...ctx, ticketsService }
 }

@@ -7,7 +7,7 @@ import {
     CreateCustomerDto,
     SearchCustomersPageDto,
     UpdateCustomerDto,
-    CustomerCredentials
+    CustomerCredentialsDto
 } from './dtos'
 
 @Controller()
@@ -53,7 +53,7 @@ export class CustomersController {
     }
 
     @MessagePattern(Messages.Customers.findCustomerByCredentials)
-    findCustomerByCredentials(@Payload() credentials: CustomerCredentials) {
+    findCustomerByCredentials(@Payload() credentials: CustomerCredentialsDto) {
         return this.service.findCustomerByCredentials(credentials)
     }
 }

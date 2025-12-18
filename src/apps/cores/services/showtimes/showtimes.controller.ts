@@ -1,9 +1,8 @@
 import { Controller, ParseArrayPipe } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Messages } from 'shared'
-import { CreateShowtimeDto, SearchShowtimesDto } from './dtos'
+import { CreateShowtimeDto, CreateShowtimesResult, SearchShowtimesDto } from './dtos'
 import { ShowtimesService } from './showtimes.service'
-import { CreateShowtimesResult } from './types'
 
 @Controller()
 export class ShowtimesController {
@@ -37,12 +36,12 @@ export class ShowtimesController {
     }
 
     @MessagePattern(Messages.Showtimes.searchShowdates)
-    searchShowdates(searchDto: SearchShowtimesDto) {
+    searchShowdates(@Payload() searchDto: SearchShowtimesDto) {
         return this.service.searchShowdates(searchDto)
     }
 
     @MessagePattern(Messages.Showtimes.allExist)
-    exists(@Payload() showtimeIds: string[]) {
+    allExist(@Payload() showtimeIds: string[]) {
         return this.service.allExist(showtimeIds)
     }
 }

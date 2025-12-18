@@ -4,7 +4,7 @@ import { CustomersRepository } from './customers.repository'
 import {
     CreateCustomerDto,
     CustomerAuthPayload,
-    CustomerCredentials,
+    CustomerCredentialsDto,
     CustomerDto,
     SearchCustomersPageDto,
     UpdateCustomerDto
@@ -77,17 +77,19 @@ export class CustomersService {
         return this.authenticationService.refreshAuthTokens(refreshToken)
     }
 
-    async findCustomerByCredentials(credentials: CustomerCredentials) {
+    async findCustomerByCredentials(credentials: CustomerCredentialsDto) {
         const customer = await this.authenticationService.findCustomerByCredentials(credentials)
 
         return customer ? this.toDto(customer) : null
     }
 
     private toDto(customer: CustomerDocument) {
-        return mapDocToDto(customer, CustomerDto, ['id', 'name', 'email', 'birthDate'])
+        return this.toDtos([customer])[0]
     }
 
     private toDtos(customers: CustomerDocument[]) {
-        return customers.map((customer) => this.toDto(customer))
+        return customers.map((customer) =>
+            mapDocToDto(customer, CustomerDto, ['id', 'name', 'email', 'birthDate'])
+        )
     }
 }

@@ -1,6 +1,5 @@
-import { CustomerDto } from 'apps/cores'
-import { TestContext } from 'testlib'
-import { TestFixture } from '../setup-http-test-context'
+import type { CreateCustomerDto, CustomerCredentialsDto } from 'apps/cores'
+import type { TestContext } from 'testlib'
 
 export function buildCreateCustomerDto(overrides = {}) {
     const createDto = {
@@ -11,22 +10,12 @@ export function buildCreateCustomerDto(overrides = {}) {
         ...overrides
     }
 
-    return createDto
+    return createDto as CreateCustomerDto
 }
 
-export async function createCustomerAndLogin(ctx: TestFixture) {
-    const email = 'user@mail.com'
-    const password = 'password'
-    const customer = await createCustomer(ctx, { email, password })
-
-    const { accessToken, refreshToken } = await generateAuthTokens(ctx, customer)
-
-    return { customer, accessToken, refreshToken }
-}
-
-export async function createCustomer({ module }: TestContext, override = {}) {
+export async function createCustomer(ctx: TestContext, override = {}) {
     const { CustomersClient } = await import('apps/cores')
-    const customersService = module.get(CustomersClient)
+    const customersService = ctx.module.get(CustomersClient)
 
     const createDto = buildCreateCustomerDto(override)
 
@@ -34,9 +23,26 @@ export async function createCustomer({ module }: TestContext, override = {}) {
     return customer
 }
 
-export async function generateAuthTokens({ module }: TestContext, customer: CustomerDto) {
+export async function loginCustomer(ctx: TestContext, credentials: CustomerCredentialsDto) {
     const { CustomersClient } = await import('apps/cores')
-    const customersService = module.get(CustomersClient)
+    const customersService = ctx.module.get(CustomersClient)
 
-    return customersService.generateAuthTokens({ customerId: customer.id, email: customer.email })
+    const customer = await customersService.findCustomerByCredentials(credentials)
+
+    const { accessToken, refreshToken } = await customersService.generateAuthTokens({
+        customerId: customer ? customer.id : '',
+        email: credentials.email
+    })
+
+    return { customer, accessToken, refreshToken }
+}
+
+export async function createAndLoginCustomer(ctx: TestContext) {
+    const credentials = { email: 'user@mail.com', password: 'password' }
+
+    const customer = await createCustomer(ctx, credentials)
+
+    const { accessToken, refreshToken } = await loginCustomer(ctx, credentials)
+
+    return { customer, accessToken, refreshToken }
 }

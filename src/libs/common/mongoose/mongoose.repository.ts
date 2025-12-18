@@ -1,6 +1,7 @@
-import { BadRequestException, NotFoundException, OnModuleInit } from '@nestjs/common'
+import type { OnModuleInit } from '@nestjs/common'
+import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { differenceWith, uniq } from 'lodash'
-import {
+import type {
     ClientSession,
     Document,
     HydratedDocument,
@@ -8,7 +9,7 @@ import {
     ObjectId,
     QueryWithHelpers
 } from 'mongoose'
-import { PaginationDto, PaginationResult } from '../types'
+import type { PaginationDto, PaginationResult } from '../types'
 import { Assert, Expect } from '../validator'
 import { MongooseErrors } from './errors'
 import { objectId, objectIds } from './mongoose.util'
@@ -56,19 +57,10 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return true
     }
 
-    async update(id: string, values: Record<string, any>, session: SessionArg = undefined) {
-        const doc = await this.getById(id, session)
-        doc.set(values)
-
-        await doc.save({ session })
-
-        return doc
-    }
-
     async findById(id: string, session: SessionArg = undefined) {
         const doc = await this.model.findById(objectId(id), null, { session })
 
-        return doc as HydratedDocument<Doc>
+        return doc as HydratedDocument<Doc> | null
     }
 
     async findByIds(ids: string[], session: SessionArg = undefined) {
@@ -121,7 +113,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return docs
     }
 
-    async allExistByIds(ids: string[], session: SessionArg = undefined) {
+    async allExist(ids: string[], session: SessionArg = undefined) {
         const count = await this.model.countDocuments({ _id: { $in: objectIds(ids) } } as any, {
             session
         })
@@ -129,7 +121,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     }
 
     async findWithPagination(args: {
-        configureQuery?: (queryHelper: QueryWithHelpers<Array<Doc>, Doc>) => void
+        configureQuery?: (queryHelper: QueryWithHelpers<Array<Doc>, Doc>) => Promise<void>
         pagination: PaginationDto
         session?: SessionArg
     }) {
@@ -170,8 +162,10 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     async withTransaction<T>(
         callback: (session: ClientSession, rollback: () => void) => Promise<T>
     ) {
-        let rollbackRequested = false
-        const rollback = () => (rollbackRequested = true)
+        const state = { rollbackRequested: false }
+        const rollback = () => {
+            state.rollbackRequested = true
+        }
 
         let session: ClientSession | undefined
 
@@ -180,7 +174,6 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
             session.startTransaction()
 
             const result = await callback(session, rollback)
-
             return result
         } catch (error) {
             rollback()
@@ -188,13 +181,12 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         } finally {
             if (session) {
                 if (session.inTransaction()) {
-                    if (rollbackRequested) {
+                    if (state.rollbackRequested) {
                         await session.abortTransaction()
                     } else {
                         await session.commitTransaction()
                     }
                 }
-
                 await session.endSession()
             }
         }

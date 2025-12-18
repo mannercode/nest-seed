@@ -47,7 +47,7 @@ export async function createTestContextFixture(): Promise<TestContextFixture> {
         options: getNatsTestConnection()
     } as NatsOptions
 
-    const { httpClient, ...testContext } = await createHttpTestContext({
+    const { httpClient, ...ctx } = await createHttpTestContext({
         controllers: [SampleController],
         providers: [SampleService],
         overrideProviders: [
@@ -63,11 +63,11 @@ export async function createTestContextFixture(): Promise<TestContextFixture> {
     })
 
     const rpcClient = RpcTestClient.create(brokerOpts)
-    const sampleService = testContext.module.get(SampleService)
+    const sampleService = ctx.module.get(SampleService)
 
-    async function teardown() {
+    const teardown = async () => {
         await rpcClient.close()
-        await testContext.close()
+        await ctx.close()
     }
 
     return { teardown, rpcClient, httpClient, sampleService }

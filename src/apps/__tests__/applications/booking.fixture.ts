@@ -1,4 +1,5 @@
 import { BookingClient, BookingModule, PurchaseModule } from 'apps/applications'
+import type { TheaterLocation } from 'apps/cores'
 import {
     CustomersClient,
     CustomersModule,
@@ -8,7 +9,6 @@ import {
     Seatmap,
     ShowtimesClient,
     ShowtimesModule,
-    TheaterLocation,
     TheatersClient,
     TheatersModule,
     TicketHoldingModule,
@@ -17,50 +17,57 @@ import {
 } from 'apps/cores'
 import { BookingController, CustomerJwtStrategy } from 'apps/gateway'
 import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
+import type { TestContext } from 'testlib'
+import type { AppTestContext } from '../__helpers__'
 import {
-    createCustomerAndLogin,
+    createAndLoginCustomer,
     createMovie,
     createShowtimes,
-    createTestFixture,
+    createAppTestContext,
     createTheater,
-    createTickets,
-    TestFixture
+    createTickets
 } from '../__helpers__'
 
 export async function createAllResources(
-    ctx: TestFixture,
+    ctx: TestContext,
     locations: TheaterLocation[],
     startTimes: Date[]
 ) {
-    const { customer, accessToken, refreshToken } = await createCustomerAndLogin(ctx)
+    const { customer, accessToken, refreshToken } = await createAndLoginCustomer(ctx)
 
     const movie = await createMovie(ctx)
 
     const seatmap = { blocks: [{ name: 'A', rows: [{ name: '1', seats: 'OOOOOOOO' }] }] }
-
     const theaters = await Promise.all(
         locations.map((location) => createTheater(ctx, { seatmap, location }))
     )
 
-    const createShowtimeDtos = startTimes.flatMap((startTime) =>
-        theaters.map((theater) => ({ movieId: movie.id, theaterId: theater.id, startTime }))
+    const showtimes = await createShowtimes(
+        ctx,
+        theaters.flatMap((theater) =>
+            startTimes.map((startTime) => ({ movieId: movie.id, theaterId: theater.id, startTime }))
+        )
     )
 
-    const showtimes = await createShowtimes(ctx, createShowtimeDtos)
-
-    const createTicketDtos = showtimes.flatMap(({ movieId, theaterId, id: showtimeId }) =>
-        Seatmap.getAllSeats(seatmap).map((seat) => ({ movieId, theaterId, showtimeId, seat }))
+    const tickets = await createTickets(
+        ctx,
+        showtimes.flatMap(({ id, movieId, theaterId }) =>
+            Seatmap.getAllSeats(seatmap).map((seat) => ({
+                showtimeId: id,
+                movieId,
+                theaterId,
+                seat
+            }))
+        )
     )
-
-    const tickets = await createTickets(ctx, createTicketDtos)
 
     return { customer, accessToken, refreshToken, movie, theaters, showtimes, tickets }
 }
 
-export type BookingFixture = TestFixture
+export type BookingFixture = AppTestContext
 
 export async function createBookingFixture(): Promise<BookingFixture> {
-    const fix = await createTestFixture({
+    const ctx = await createAppTestContext({
         imports: [
             MoviesModule,
             AssetsModule,
@@ -87,5 +94,5 @@ export async function createBookingFixture(): Promise<BookingFixture> {
         controllers: [BookingController]
     })
 
-    return { ...fix }
+    return { ...ctx }
 }

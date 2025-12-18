@@ -36,10 +36,10 @@ export async function createJwtAuthServiceFixture() {
         providers: [TestInjectJwtAuthService]
     })
 
-    const jwtService = module.get(JwtAuthService.getServiceName())
+    const jwtService = module.get(JwtAuthService.getName())
     const redis = module.get(getRedisConnectionToken())
 
-    async function teardown() {
+    const teardown = async () => {
         await close()
         await redis.quit()
     }

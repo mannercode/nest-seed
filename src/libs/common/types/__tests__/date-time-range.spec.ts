@@ -25,7 +25,7 @@ describe('DateTimeRange', () => {
                 const instance = plainToInstance(DateTimeRange, plainData)
 
                 expect(instance.start).toBeInstanceOf(Date)
-                expect(isNaN(instance.start!.getTime())).toBe(true)
+                expect(isNaN(instance.start.getTime())).toBe(true)
 
                 const errors = validateSync(instance)
                 expect(errors.length).toBeGreaterThan(0)
@@ -36,7 +36,7 @@ describe('DateTimeRange', () => {
     })
 
     describe('create', () => {
-        describe('when the start and end are provided', () => {
+        describe('when start and end are provided', () => {
             it('creates a DateTimeRange', () => {
                 const result = DateTimeRange.create({
                     start: new Date('2023-01-01'),
@@ -49,7 +49,7 @@ describe('DateTimeRange', () => {
             })
         })
 
-        describe('when the start and days are provided', () => {
+        describe('when start and days are provided', () => {
             it('creates a DateTimeRange', () => {
                 const result = DateTimeRange.create({ start: new Date('2023-01-01'), days: 2 })
                 expect(result).toEqual({
@@ -59,7 +59,7 @@ describe('DateTimeRange', () => {
             })
         })
 
-        describe('when the start and minutes are provided', () => {
+        describe('when start and minutes are provided', () => {
             it('creates a DateTimeRange', () => {
                 const result = DateTimeRange.create({
                     start: new Date('2023-01-01T12:00'),
@@ -72,15 +72,15 @@ describe('DateTimeRange', () => {
             })
         })
 
-        describe('when neither start nor end is provided', () => {
-            it('throws an error', () => {
+        describe('when start and end are not provided', () => {
+            it('throws', () => {
                 const throwException = () => DateTimeRange.create({})
                 expect(throwException).toThrow('Invalid options provided.')
             })
         })
 
-        describe('when only the start is provided without a duration', () => {
-            it('throws an error', () => {
+        describe('when only start is provided', () => {
+            it('throws', () => {
                 const throwException = () => DateTimeRange.create({ start: new Date() })
                 expect(throwException).toThrow('Invalid options provided.')
             })

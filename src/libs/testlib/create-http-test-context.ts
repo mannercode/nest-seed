@@ -1,33 +1,14 @@
-import { Server } from 'http'
+import type { ModuleMetadataEx, TestContext } from './create-test-context'
+import { createTestContext } from './create-test-context'
 import { HttpTestClient } from './http.test-client'
-import { getAvailablePort } from './utils'
-import { createTestContext, TestContext, ModuleMetadataEx } from './create-test-context'
-
-async function listenOnAvailablePort(server: Server): Promise<number> {
-    const maxAttempts = 3
-    let attemptCount = 0
-
-    while (true) {
-        try {
-            const port = await getAvailablePort()
-            await server.listen(port)
-            return port
-        } catch (error) {
-            attemptCount++
-            if (attemptCount >= maxAttempts) throw error
-        }
-    }
-}
 
 export type HttpTestContext = TestContext & { httpClient: HttpTestClient }
 
 export async function createHttpTestContext(metadata: ModuleMetadataEx): Promise<HttpTestContext> {
-    const testContext = await createTestContext(metadata)
+    const ctx = await createTestContext(metadata)
 
-    const httpServer = testContext.app.getHttpServer()
-    const port = await listenOnAvailablePort(httpServer)
+    await ctx.app.listen(0, '127.0.0.1')
 
-    const httpClient = new HttpTestClient(`http://localhost:${port}`)
-
-    return { ...testContext, httpClient }
+    const httpClient = new HttpTestClient(await ctx.app.getUrl())
+    return { httpClient, ...ctx }
 }

@@ -1,46 +1,64 @@
-import { PaymentDto } from 'apps/infrastructures'
-import { buildCreatePaymentDto, createPayment } from '../__helpers__'
+import { HttpStatus } from '@nestjs/common'
+import type { PaymentDto } from 'apps/infrastructures'
+import { pickIds } from 'common'
+import { nullObjectId } from 'testlib'
+import { buildCreatePaymentDto, createPayment, Errors } from '../__helpers__'
 import type { PaymentsFixture } from './payments.fixture'
 
 describe('PaymentsService', () => {
-    let fixture: PaymentsFixture
+    let fix: PaymentsFixture
 
     beforeEach(async () => {
         const { createPaymentsFixture } = await import('./payments.fixture')
-        fixture = await createPaymentsFixture()
+        fix = await createPaymentsFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix.teardown()
     })
 
     describe('create', () => {
-        describe('when the payload is valid', () => {
-            it('creates and returns a payment', async () => {
-                const createDto = buildCreatePaymentDto()
+        it('returns the created payment', async () => {
+            const createDto = buildCreatePaymentDto()
 
-                const payment = await fixture.paymentsService.create(createDto)
-                expect(payment).toEqual({
-                    ...createDto,
-                    id: expect.any(String),
-                    createdAt: expect.any(Date),
-                    updatedAt: expect.any(Date)
-                })
+            const payment = await fix.paymentsService.create(createDto)
+
+            expect(payment).toEqual({
+                ...createDto,
+                id: expect.any(String),
+                createdAt: expect.any(Date),
+                updatedAt: expect.any(Date)
             })
         })
     })
 
     describe('getMany', () => {
-        let createdPayment: PaymentDto
-
         describe('when the payments exist', () => {
+            let payments: PaymentDto[]
+
             beforeEach(async () => {
-                createdPayment = await createPayment(fixture)
+                payments = await Promise.all([
+                    createPayment(fix),
+                    createPayment(fix),
+                    createPayment(fix)
+                ])
             })
 
-            it('returns the payments', async () => {
-                const gotPayments = await fixture.paymentsService.getMany([createdPayment.id])
-                expect(gotPayments).toEqual([createdPayment])
+            it('returns payments for the paymentIds', async () => {
+                const fetchedPayments = await fix.paymentsService.getMany(pickIds(payments))
+
+                expect(fetchedPayments).toEqual(expect.arrayContaining(payments))
+            })
+        })
+
+        describe('when the paymentIds include a non-existent paymentId', () => {
+            it('throws 404 Not Found', async () => {
+                const promise = fix.paymentsService.getMany([nullObjectId])
+
+                await expect(promise).rejects.toMatchObject({
+                    status: HttpStatus.NOT_FOUND,
+                    message: Errors.Mongoose.MultipleDocumentsNotFound.message
+                })
             })
         })
     })

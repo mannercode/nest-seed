@@ -56,7 +56,9 @@ export async function createSamples(repository: SamplesRepository) {
     )
 }
 
-export function toDto(item: SampleDocument) {
+export function toDto(item: SampleDocument | null) {
+    if (item === null) return { id: '0', name: 'name' }
+
     return mapDocToDto(item, SampleDto, ['id', 'name'])
 }
 export function toDtos(items: SampleDocument[]) {
@@ -71,7 +73,7 @@ export type MongooseRepositoryFixture = {
 }
 
 export async function createMongooseRepositoryFixture() {
-    const testContext = await createTestContext({
+    const { module, close } = await createTestContext({
         imports: [
             MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
             MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])
@@ -79,10 +81,10 @@ export async function createMongooseRepositoryFixture() {
         providers: [SamplesRepository]
     })
 
-    const repository = testContext.module.get(SamplesRepository)
+    const repository = module.get(SamplesRepository)
 
-    async function teardown() {
-        await testContext?.close()
+    const teardown = async () => {
+        await close()
     }
 
     return { teardown, repository, BadRequestException, NotFoundException }

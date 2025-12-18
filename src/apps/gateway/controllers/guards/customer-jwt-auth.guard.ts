@@ -45,7 +45,8 @@ export class CustomerJwtAuthGuard extends AuthGuard('customer-jwt') {
     }
 
     private isUsingGuard(target: any, guardType: any): boolean {
-        const guards = this.reflector.get<any[]>(GUARDS_METADATA, target) || []
+        const guards = this.reflector.get<any[] | null>(GUARDS_METADATA, target) ?? []
+
         return guards.some((guard) => guard === guardType)
     }
 }

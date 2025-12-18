@@ -1,129 +1,146 @@
-import { BulkCreateShowtimesDto } from 'apps/applications'
-import { Seatmap, ShowtimeDto } from 'apps/cores'
+import type { ShowtimeDto } from 'apps/cores'
 import { DateUtil } from 'common'
+import type { Response } from 'superagent'
 import { nullObjectId } from 'testlib'
 import { createShowtimes } from '../__helpers__'
-import {
-    buildBulkCreateShowtimesDto,
-    ShowtimeCreationFixture,
-    waitForCompletion
-} from './showtime-creation.fixture'
+import type { ShowtimeCreationFixture } from './showtime-creation.fixture'
+import { waitForCompletion } from './showtime-creation.fixture'
 
 describe('ShowtimeCreationService', () => {
-    let fixture: ShowtimeCreationFixture
+    let fix: ShowtimeCreationFixture
 
     beforeEach(async () => {
         const { createShowtimeCreationFixture } = await import('./showtime-creation.fixture')
-        fixture = await createShowtimeCreationFixture()
+        fix = await createShowtimeCreationFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix.teardown()
     })
 
     describe('GET /showtime-creation/movies', () => {
-        describe('when the query parameters are missing', () => {
-            it('returns movies with default pagination', async () => {
-                await fixture.httpClient
+        describe('when the query is not provided', () => {
+            it('returns the default page of movies', async () => {
+                await fix.httpClient
                     .get('/showtime-creation/movies')
-                    .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fixture.movie] })
+                    .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.movie] })
             })
         })
     })
 
     describe('GET /showtime-creation/theaters', () => {
-        describe('when the query parameters are missing', () => {
-            it('returns theaters with default pagination', async () => {
-                await fixture.httpClient
+        describe('when the query is not provided', () => {
+            it('returns the default page of theaters', async () => {
+                await fix.httpClient
                     .get('/showtime-creation/theaters')
-                    .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fixture.theater] })
+                    .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.theater] })
             })
         })
     })
 
     describe('POST /showtime-creation/showtimes:search', () => {
-        let showtimes: ShowtimeDto[]
+        describe('when showtimes exist for the theater', () => {
+            let showtimes: ShowtimeDto[]
 
-        beforeEach(async () => {
-            const createDtos = [
-                new Date('2100-01-01T09:00'),
-                new Date('2100-01-01T11:00'),
-                new Date('2100-01-01T13:00')
-            ].map((startTime) => ({ theaterId: fixture.theater.id, startTime }))
+            beforeEach(async () => {
+                showtimes = await createShowtimes(
+                    fix,
+                    [
+                        new Date('2100-01-01T09:00'),
+                        new Date('2100-01-01T11:00'),
+                        new Date('2100-01-01T13:00')
+                    ].map((startTime) => ({ theaterId: fix.theater.id, startTime }))
+                )
+            })
 
-            showtimes = await createShowtimes(fixture, createDtos)
-        })
-
-        describe('when the `theaterIds` are provided', () => {
             it('returns showtimes for the theaterIds', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .post('/showtime-creation/showtimes:search')
-                    .body({ theaterIds: [fixture.theater.id] })
+                    .body({ theaterIds: [fix.theater.id] })
                     .ok(expect.arrayContaining(showtimes))
             })
         })
     })
 
     describe('POST /showtime-creation/showtimes', () => {
-        describe('when the payload is valid', () => {
-            let createDto: BulkCreateShowtimesDto
-            let sagaId: string
-            let result: unknown
+        describe('when showtime creation is requested', () => {
+            let createPromise: Promise<Response>
 
             beforeEach(async () => {
-                const waitPromise = waitForCompletion(fixture, 'succeeded')
-
-                createDto = buildBulkCreateShowtimesDto({
-                    movieId: fixture.movie.id,
-                    theaterIds: [fixture.theater.id],
-                    startTimes: [new Date('2100-01-01T09:00'), new Date('2100-01-01T11:00')]
-                })
-
-                const { body } = await fixture.httpClient
+                createPromise = fix.httpClient
                     .post('/showtime-creation/showtimes')
-                    .body(createDto)
+                    .body({
+                        movieId: fix.movie.id,
+                        theaterIds: [fix.theater.id],
+                        startTimes: [new Date('2100-01-01T09:00')],
+                        durationInMinutes: 1
+                    })
                     .accepted()
-
-                sagaId = body.sagaId
-                result = await waitPromise
             })
 
-            // TODO fix
             it('returns a sagaId', async () => {
-                expect(sagaId).toBeDefined()
+                const { body } = await createPromise
+                expect(body).toEqual(expect.objectContaining({ sagaId: expect.any(String) }))
             })
 
-            it('emits a showtime creation success event', async () => {
-                const { theaterIds, startTimes } = createDto
+            it('streams saga status updates', async () => {
+                const eventPromise = new Promise((resolve, reject) => {
+                    fix.httpClient.get('/showtime-creation/event-stream').sse((data) => {
+                        const statusUpdate = JSON.parse(data)
 
-                const createdShowtimeCount = theaterIds.length * startTimes.length
-                const seatCount = Seatmap.getSeatCount(fixture.theater.seatmap)
-                const createdTicketCount = createdShowtimeCount * seatCount
+                        if (['succeeded', 'failed', 'error'].includes(statusUpdate.status)) {
+                            fix.httpClient.abort()
 
-                expect(result).toEqual({
-                    sagaId,
-                    status: 'succeeded',
-                    createdShowtimeCount,
-                    createdTicketCount
+                            if ('succeeded' === statusUpdate.status) {
+                                resolve(statusUpdate)
+                            } else {
+                                reject(statusUpdate)
+                            }
+                        }
+                    }, reject)
                 })
+
+                const { body } = await createPromise
+
+                await expect(eventPromise).resolves.toEqual(
+                    expect.objectContaining({ sagaId: body.sagaId, status: 'succeeded' })
+                )
+            })
+
+            it('creates showtimes', async () => {
+                const { body } = await createPromise
+                const { createdShowtimeCount } = await waitForCompletion(fix, 'succeeded')
+
+                const createdShowtimes = await fix.showtimesClient.search({
+                    sagaIds: [body.sagaId]
+                })
+                expect(createdShowtimes).toHaveLength(createdShowtimeCount)
+            })
+
+            it('creates tickets', async () => {
+                const { body } = await createPromise
+                const { createdTicketCount } = await waitForCompletion(fix, 'succeeded')
+
+                const createdTickets = await fix.ticketsClient.search({ sagaIds: [body.sagaId] })
+                expect(createdTickets).toHaveLength(createdTicketCount)
             })
         })
 
         describe('when the movie does not exist', () => {
-            it('reports the missing movie error', async () => {
-                const waitPromise = waitForCompletion(fixture, 'error')
+            it('reports an error', async () => {
+                const completionPromise = waitForCompletion(fix, 'error')
 
-                const createDto = buildBulkCreateShowtimesDto({
-                    movieId: nullObjectId,
-                    theaterIds: [fixture.theater.id]
-                })
-
-                const { body } = await fixture.httpClient
+                const { body } = await fix.httpClient
                     .post('/showtime-creation/showtimes')
-                    .body(createDto)
+                    .body({
+                        movieId: nullObjectId,
+                        theaterIds: [fix.theater.id],
+                        startTimes: [new Date(0)],
+                        durationInMinutes: 1
+                    })
                     .accepted()
 
-                await expect(waitPromise).resolves.toEqual({
+                await expect(completionPromise).resolves.toEqual({
                     sagaId: body.sagaId,
                     status: 'error',
                     message: 'The requested movie could not be found.'
@@ -131,21 +148,21 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        describe('when a theater does not exist', () => {
-            it('reports the missing theater error', async () => {
-                const waitPromise = waitForCompletion(fixture, 'error')
+        describe('when the theater does not exist', () => {
+            it('reports an error', async () => {
+                const completionPromise = waitForCompletion(fix, 'error')
 
-                const createDto = buildBulkCreateShowtimesDto({
-                    movieId: fixture.movie.id,
-                    theaterIds: [nullObjectId]
-                })
-
-                const { body } = await fixture.httpClient
+                const { body } = await fix.httpClient
                     .post('/showtime-creation/showtimes')
-                    .body(createDto)
+                    .body({
+                        movieId: fix.movie.id,
+                        theaterIds: [nullObjectId],
+                        startTimes: [new Date(0)],
+                        durationInMinutes: 1
+                    })
                     .accepted()
 
-                await expect(waitPromise).resolves.toEqual({
+                await expect(completionPromise).resolves.toEqual({
                     sagaId: body.sagaId,
                     status: 'error',
                     message: 'One or more requested theaters could not be found.'
@@ -153,42 +170,41 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        describe('when the showtimes conflict', () => {
+        describe('when showtimes conflict', () => {
             let initialShowtimes: ShowtimeDto[]
 
             beforeEach(async () => {
-                const createDtos = [
-                    new Date('2013-01-31T12:00'),
-                    new Date('2013-01-31T14:00'),
-                    new Date('2013-01-31T16:30'),
-                    new Date('2013-01-31T18:30')
-                ].map((startTime) => ({
-                    theaterId: fixture.theater.id,
-                    startTime,
-                    endTime: DateUtil.add({ base: startTime, minutes: 90 })
-                }))
-
-                initialShowtimes = await createShowtimes(fixture, createDtos)
+                initialShowtimes = await createShowtimes(
+                    fix,
+                    [
+                        new Date('2013-01-31T12:00'),
+                        new Date('2013-01-31T14:00'),
+                        new Date('2013-01-31T16:30'),
+                        new Date('2013-01-31T18:30')
+                    ].map((startTime) => ({
+                        theaterId: fix.theater.id,
+                        startTime,
+                        endTime: DateUtil.add({ base: startTime, minutes: 90 })
+                    }))
+                )
             })
 
             it('returns the conflicting showtimes', async () => {
-                const waitPromise = waitForCompletion(fixture, 'failed')
+                const completionPromise = waitForCompletion(fix, 'failed')
 
-                const createDto = buildBulkCreateShowtimesDto({
-                    movieId: fixture.movie.id,
-                    theaterIds: [fixture.theater.id],
-                    startTimes: [
-                        new Date('2013-01-31T12:00'),
-                        new Date('2013-01-31T16:00'),
-                        new Date('2013-01-31T20:00')
-                    ],
-                    durationInMinutes: 30
-                })
-
-                await fixture.httpClient
+                await fix.httpClient
                     .post('/showtime-creation/showtimes')
-                    .body(createDto)
-                    .accepted({ sagaId: expect.any(String) })
+                    .body({
+                        movieId: fix.movie.id,
+                        theaterIds: [fix.theater.id],
+                        startTimes: [
+                            new Date('2013-01-31T12:00'),
+                            new Date('2013-01-31T16:00'),
+                            new Date('2013-01-31T20:00')
+                        ],
+                        durationInMinutes: 30
+                    })
+                    .accepted()
 
                 const conflictingShowtimes = [
                     initialShowtimes[0],
@@ -196,7 +212,7 @@ describe('ShowtimeCreationService', () => {
                     initialShowtimes[3]
                 ]
 
-                await expect(waitPromise).resolves.toEqual({
+                await expect(completionPromise).resolves.toEqual({
                     sagaId: expect.any(String),
                     status: 'failed',
                     conflictingShowtimes

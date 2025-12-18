@@ -1,30 +1,29 @@
-import { ShowtimeDto } from 'apps/cores'
+import { HttpStatus } from '@nestjs/common'
+import type { ShowtimeDto } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, oid } from 'testlib'
-import { buildCreateShowtimeDto, createShowtimes } from '../__helpers__'
+import { buildCreateShowtimeDto, createShowtimes, Errors } from '../__helpers__'
 import type { ShowtimesFixture } from './showtimes.fixture'
 
 describe('ShowtimesService', () => {
-    let fixture: ShowtimesFixture
+    let fix: ShowtimesFixture
 
     beforeEach(async () => {
         const { createShowtimesFixture } = await import('./showtimes.fixture')
-        fixture = await createShowtimesFixture()
+        fix = await createShowtimesFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix.teardown()
     })
 
     describe('createMany', () => {
-        describe('when the payload is valid', () => {
-            it('creates showtimes and returns the result', async () => {
-                const createDtos = [buildCreateShowtimeDto({ sagaId: oid(0x1) })]
+        it('creates showtimes', async () => {
+            const createDtos = [buildCreateShowtimeDto({ sagaId: oid(0x1) })]
 
-                const { success } = await fixture.showtimesService.createMany(createDtos)
+            const { success } = await fix.showtimesService.createMany(createDtos)
 
-                expect(success).toBe(true)
-            })
+            expect(success).toBe(true)
         })
     })
 
@@ -33,181 +32,161 @@ describe('ShowtimesService', () => {
             let showtimes: ShowtimeDto[]
 
             beforeEach(async () => {
-                const createDtos = [
+                showtimes = await createShowtimes(fix, [
                     { startTime: new Date('2000-01-01T12:00') },
                     { startTime: new Date('2000-01-01T14:00') }
-                ]
-
-                showtimes = await createShowtimes(fixture, createDtos)
+                ])
             })
 
-            it('returns the showtimes', async () => {
-                const showtimeIds = pickIds(showtimes)
+            it('returns showtimes for the showtimeIds', async () => {
+                const fetchedShowtimes = await fix.showtimesService.getMany(pickIds(showtimes))
 
-                const gotShowtimes = await fixture.showtimesService.getMany(showtimeIds)
-
-                expect(gotShowtimes).toEqual(expect.arrayContaining(showtimes))
+                expect(fetchedShowtimes).toEqual(expect.arrayContaining(showtimes))
             })
         })
 
-        describe('when the showtimes do not exist', () => {
-            it('throws 404 status', async () => {
-                const promise = fixture.showtimesService.getMany([nullObjectId])
+        describe('when the showtimeIds include a non-existent showtimeId', () => {
+            it('throws 404 Not Found', async () => {
+                const promise = fix.showtimesService.getMany([nullObjectId])
 
                 await expect(promise).rejects.toMatchObject({
-                    status: 404,
-                    message: 'One or more documents not found'
+                    status: HttpStatus.NOT_FOUND,
+                    message: Errors.Mongoose.MultipleDocumentsNotFound.message
                 })
             })
         })
     })
 
     describe('search', () => {
-        const sagaId = oid(0x1)
-        const movieId = oid(0x2)
-        const theaterId = oid(0x3)
-        let createdShowtimes: ShowtimeDto[]
+        describe('when the filter is provided', () => {
+            const sagaId = oid(0x1)
+            const movieId = oid(0x2)
+            const theaterId = oid(0x3)
+            let showtimeForSaga: ShowtimeDto
+            let showtimeForMovie: ShowtimeDto
+            let showtimeForTheater: ShowtimeDto
+            let showtimeInRangeA: ShowtimeDto
+            let showtimeInRangeB: ShowtimeDto
 
-        beforeEach(async () => {
-            const createDtos = [
-                { sagaId },
-                { movieId },
-                { theaterId },
-                { startTime: new Date('2020-01-01T12:00') },
-                { startTime: new Date('2020-01-01T14:00') },
-                { startTime: new Date('2020-01-02T14:00') },
-                { startTime: new Date('2020-01-03T12:00') }
-            ]
-
-            createdShowtimes = await createShowtimes(fixture, createDtos)
-        })
-
-        describe('when the `sagaIds` are provided', () => {
-            it('returns showtimes for the sagaIds', async () => {
-                const showtimes = await fixture.showtimesService.search({ sagaIds: [sagaId] })
-
-                expect(showtimes).toEqual([createdShowtimes[0]])
+            beforeEach(async () => {
+                ;[
+                    showtimeForSaga,
+                    showtimeForMovie,
+                    showtimeForTheater,
+                    showtimeInRangeA,
+                    showtimeInRangeB
+                ] = await createShowtimes(fix, [
+                    { sagaId },
+                    { movieId },
+                    { theaterId },
+                    { startTime: new Date('2020-01-01T12:00') },
+                    { startTime: new Date('2020-01-01T14:00') },
+                    { startTime: new Date('2020-01-02T14:00') },
+                    { startTime: new Date('2020-01-03T12:00') }
+                ])
             })
-        })
 
-        describe('when the `movieIds` are provided', () => {
-            it('returns showtimes for the movieIds', async () => {
-                const showtimes = await fixture.showtimesService.search({ movieIds: [movieId] })
+            it('returns showtimes filtered by sagaIds', async () => {
+                const showtimes = await fix.showtimesService.search({ sagaIds: [sagaId] })
 
-                expect(showtimes).toEqual([createdShowtimes[1]])
+                expect(showtimes).toEqual([showtimeForSaga])
             })
-        })
 
-        describe('when the `theaterIds` are provided', () => {
-            it('returns showtimes for the theaterIds', async () => {
-                const showtimes = await fixture.showtimesService.search({ theaterIds: [theaterId] })
+            it('returns showtimes filtered by movieIds', async () => {
+                const showtimes = await fix.showtimesService.search({ movieIds: [movieId] })
 
-                expect(showtimes).toEqual([createdShowtimes[2]])
+                expect(showtimes).toEqual([showtimeForMovie])
             })
-        })
 
-        describe('when the `startTimeRange` is provided', () => {
-            it('returns showtimes in the startTimeRange', async () => {
-                const startTimeRange = {
-                    start: new Date('2020-01-01T00:00'),
-                    end: new Date('2020-01-02T12:00')
-                }
+            it('returns showtimes filtered by theaterIds', async () => {
+                const showtimes = await fix.showtimesService.search({ theaterIds: [theaterId] })
 
-                const showtimes = await fixture.showtimesService.search({ startTimeRange })
+                expect(showtimes).toEqual([showtimeForTheater])
+            })
 
+            it('returns showtimes filtered by startTimeRange', async () => {
+                const showtimes = await fix.showtimesService.search({
+                    startTimeRange: {
+                        start: new Date('2020-01-01T00:00'),
+                        end: new Date('2020-01-02T12:00')
+                    }
+                })
+
+                expect(showtimes).toHaveLength(2)
                 expect(showtimes).toEqual(
-                    expect.arrayContaining([createdShowtimes[3], createdShowtimes[4]])
+                    expect.arrayContaining([showtimeInRangeA, showtimeInRangeB])
                 )
             })
         })
 
         describe('when the filter is empty', () => {
-            it('throws 400 status', async () => {
-                const promise = fixture.showtimesService.search({})
+            it('throws 400 Bad Request', async () => {
+                const promise = fix.showtimesService.search({})
 
                 await expect(promise).rejects.toMatchObject({
-                    status: 400,
-                    message: 'At least one filter condition must be provided'
+                    status: HttpStatus.BAD_REQUEST,
+                    message: Errors.Mongoose.FiltersRequired.message
                 })
             })
         })
     })
 
     describe('searchMovieIds', () => {
-        describe('when the `startTimeRange` is provided', () => {
-            beforeEach(async () => {
-                const now = (minutes: number) => DateUtil.add({ minutes })
+        beforeEach(async () => {
+            await createShowtimes(fix, [
+                { movieId: oid(0x1), startTime: DateUtil.add({ minutes: -90 }) },
+                { movieId: oid(0x2), startTime: DateUtil.add({ minutes: 0 }) },
+                { movieId: oid(0x3), startTime: DateUtil.add({ minutes: 1 }) },
+                { movieId: oid(0x4), startTime: DateUtil.add({ minutes: 120 }) }
+            ])
+        })
 
-                const createDtos = [
-                    { movieId: oid(0x1), startTime: now(-90) },
-                    { movieId: oid(0x2), startTime: now(0) },
-                    { movieId: oid(0x3), startTime: now(1) },
-                    { movieId: oid(0x4), startTime: now(120) }
-                ]
-
-                await createShowtimes(fixture, createDtos)
+        it('returns movieIds filtered by startTimeRange', async () => {
+            const movieIds = await fix.showtimesService.searchMovieIds({
+                startTimeRange: { start: new Date() }
             })
 
-            it('returns movie IDs in the startTimeRange', async () => {
-                const movieIds = await fixture.showtimesService.searchMovieIds({
-                    startTimeRange: { start: new Date() }
-                })
-
-                expect(movieIds).toEqual([oid(0x3), oid(0x4)])
-            })
+            expect(movieIds).toEqual([oid(0x3), oid(0x4)])
         })
     })
 
     describe('searchTheaterIds', () => {
-        const movieId = oid(0x10)
+        beforeEach(async () => {
+            await createShowtimes(fix, [
+                { movieId: oid(0xaa), theaterId: oid(0xb1) },
+                { movieId: oid(0xaa), theaterId: oid(0xb2) },
+                { movieId: oid(0x00), theaterId: oid(0xb3) }
+            ])
+        })
 
-        describe('when the `movieIds` are provided', () => {
-            beforeEach(async () => {
-                const createDtos = [
-                    { movieId, theaterId: oid(0x1) },
-                    { movieId, theaterId: oid(0x2) },
-                    { movieId: oid(0x0), theaterId: oid(0x3) }
-                ]
-
-                await createShowtimes(fixture, createDtos)
+        it('returns theaterIds filtered by movieIds', async () => {
+            const theaterIds = await fix.showtimesService.searchTheaterIds({
+                movieIds: [oid(0xaa)]
             })
 
-            it('returns theater IDs for the movieIds', async () => {
-                const theaterIds = await fixture.showtimesService.searchTheaterIds({
-                    movieIds: [movieId]
-                })
-
-                expect(theaterIds).toEqual([oid(0x1), oid(0x2)])
-            })
+            expect(theaterIds).toEqual([oid(0xb1), oid(0xb2)])
         })
     })
 
     describe('searchShowdates', () => {
-        const movieId = oid(0x1)
-        const theaterId = oid(0x2)
+        beforeEach(async () => {
+            await createShowtimes(fix, [
+                { movieId: oid(0xa1), theaterId: oid(0xb1), startTime: new Date('2000-01-01') },
+                { movieId: oid(0xa1), theaterId: oid(0xb1), startTime: new Date('2000-01-02') },
+                { movieId: oid(0xa1), theaterId: oid(0x00), startTime: new Date('2000-01-03') }
+            ])
+        })
 
-        describe('when the `movieIds` and `theaterIds` are provided', () => {
-            beforeEach(async () => {
-                const createDtos = [
-                    { movieId, theaterId, startTime: new Date('2000-01-01') },
-                    { movieId, theaterId, startTime: new Date('2000-01-02') },
-                    { movieId, theaterId: oid(0x0), startTime: new Date('2000-01-03') }
-                ]
-
-                await createShowtimes(fixture, createDtos)
+        it('returns showdates filtered by movieIds and theaterIds', async () => {
+            const showdates = await fix.showtimesService.searchShowdates({
+                movieIds: [oid(0xa1)],
+                theaterIds: [oid(0xb1)]
             })
 
-            it('returns showdates for the movieIds and theaterIds', async () => {
-                const showdates = await fixture.showtimesService.searchShowdates({
-                    movieIds: [movieId],
-                    theaterIds: [theaterId]
-                })
-
-                expect(showdates.map((d) => d.getTime())).toEqual([
-                    new Date('2000-01-01').getTime(),
-                    new Date('2000-01-02').getTime()
-                ])
-            })
+            expect(showdates.map((d) => d.getTime())).toEqual([
+                new Date('2000-01-01').getTime(),
+                new Date('2000-01-02').getTime()
+            ])
         })
     })
 })

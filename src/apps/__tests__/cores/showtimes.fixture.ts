@@ -1,15 +1,16 @@
 import { ShowtimesClient, ShowtimesModule } from 'apps/cores'
-import { TestFixture, createTestFixture } from '../__helpers__'
+import type { AppTestContext } from '../__helpers__'
+import { createAppTestContext } from '../__helpers__'
 
-export type ShowtimesFixture = TestFixture & { showtimesService: ShowtimesClient }
+export type ShowtimesFixture = AppTestContext & { showtimesService: ShowtimesClient }
 
 export async function createShowtimesFixture() {
-    const fix = await createTestFixture({
+    const ctx = await createAppTestContext({
         imports: [ShowtimesModule],
         providers: [ShowtimesClient]
     })
 
-    const showtimesService = fix.module.get(ShowtimesClient)
+    const showtimesService = ctx.module.get(ShowtimesClient)
 
-    return { ...fix, showtimesService }
+    return { ...ctx, showtimesService }
 }

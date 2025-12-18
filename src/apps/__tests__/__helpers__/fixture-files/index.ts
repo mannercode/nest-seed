@@ -1,4 +1,4 @@
-import { Checksum } from 'common'
+import type { Checksum } from 'common'
 import p from 'path'
 
 export type FixtureFile = {

@@ -36,7 +36,7 @@ export class JwtAuthService {
         public readonly prefix: string
     ) {}
 
-    static getServiceName(name?: string) {
+    static getName(name: string = 'default') {
         return `JwtAuthService_${name}`
     }
 
@@ -114,7 +114,7 @@ export class JwtAuthService {
 }
 
 export function InjectJwtAuth(name?: string): ParameterDecorator {
-    return Inject(JwtAuthService.getServiceName(name))
+    return Inject(JwtAuthService.getName(name))
 }
 
 type JwtAuthFactoryOptions = { auth: AuthConfig }
@@ -131,13 +131,14 @@ export type JwtAuthModuleOptions = {
 export class JwtAuthModule {
     static register(options: JwtAuthModuleOptions): DynamicModule {
         const { name, redisName, prefix, useFactory, inject } = options
+        const resolvedName = name ?? 'default'
 
         const cacheProvider = {
-            provide: JwtAuthService.getServiceName(name),
+            provide: JwtAuthService.getName(name),
             useFactory: async (jwtService: JwtService, redis: Redis, ...args: any[]) => {
                 const { auth } = await useFactory(...args)
 
-                return new JwtAuthService(jwtService, auth, redis, prefix + ':' + name)
+                return new JwtAuthService(jwtService, auth, redis, `${prefix}:${resolvedName}`)
             },
             inject: [JwtService, getRedisConnectionToken(redisName), ...(inject ?? [])]
         }

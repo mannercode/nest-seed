@@ -20,7 +20,10 @@ export class Checksum {
         const hash: Hash = createHash(algorithm)
         hash.update(buffer)
 
-        return { algorithm, base64: hash.digest('base64') }
+        const checksum = new Checksum()
+        checksum.algorithm = algorithm
+        checksum.base64 = hash.digest('base64')
+        return checksum
     }
 
     static async fromFile(
@@ -30,6 +33,9 @@ export class Checksum {
         const hash: Hash = createHash(algorithm)
         await pipeline(createReadStream(filePath), hash)
 
-        return { algorithm, base64: hash.digest('base64') }
+        const checksum = new Checksum()
+        checksum.algorithm = algorithm
+        checksum.base64 = hash.digest('base64')
+        return checksum
     }
 }

@@ -1,7 +1,9 @@
-import { CreateTicketDto, TicketStatus } from 'apps/cores'
+import type { CreateTicketDto } from 'apps/cores'
+import { TicketStatus } from 'apps/cores'
 import { newObjectId } from 'common'
 import { uniq } from 'lodash'
-import { oid, TestContext } from 'testlib'
+import type { TestContext } from 'testlib'
+import { oid } from 'testlib'
 
 export function buildCreateTicketDto(overrides = {}) {
     const createDto = {
@@ -16,12 +18,9 @@ export function buildCreateTicketDto(overrides = {}) {
     return createDto
 }
 
-export async function createTickets(
-    { module }: TestContext,
-    overrides: Partial<CreateTicketDto>[]
-) {
+export async function createTickets(ctx: TestContext, overrides: Partial<CreateTicketDto>[]) {
     const { TicketsClient } = await import('apps/cores')
-    const ticketsService = module.get(TicketsClient)
+    const ticketsService = ctx.module.get(TicketsClient)
 
     const createDtos = overrides.map((override) => buildCreateTicketDto(override))
 
@@ -34,9 +33,9 @@ export async function createTickets(
     return tickets
 }
 
-export async function getTickets({ module }: TestContext, ticketIds: string[]) {
+export async function getTickets(ctx: TestContext, ticketIds: string[]) {
     const { TicketsClient } = await import('apps/cores')
-    const ticketsService = module.get(TicketsClient)
+    const ticketsService = ctx.module.get(TicketsClient)
 
     return ticketsService.getMany(ticketIds)
 }

@@ -37,7 +37,7 @@ export async function createQueueGroupFixture() {
 
     const numberOfInstance = 10
 
-    const testContexts = await Promise.all(
+    const ctxs = await Promise.all(
         Array.from({ length: numberOfInstance }, async () =>
             createTestContext({
                 controllers: [MessageController],
@@ -51,9 +51,9 @@ export async function createQueueGroupFixture() {
 
     const rpcClient = RpcTestClient.create(brokerOptions)
 
-    async function teardown() {
+    const teardown = async () => {
         await rpcClient.close()
-        await Promise.all(testContexts.map(async (context) => context.close()))
+        await Promise.all(ctxs.map(async (ctx) => ctx.close()))
     }
 
     return { teardown, rpcClient, numberOfInstance }

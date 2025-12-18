@@ -1,51 +1,66 @@
-import { CreateMovieDto, MovieDto, MovieGenre, MovieRating } from 'apps/cores'
+import type { CreateMovieDto, MovieDto, SearchMoviesPageDto } from 'apps/cores'
+import { MovieGenre, MovieRating } from 'apps/cores'
 import { Checksum } from 'common'
+import { omit } from 'lodash'
 import { nullObjectId } from 'testlib'
-import { buildCreateMovieDto, createMovie, Errors } from '../__helpers__'
+import {
+    buildCreateMovieDto,
+    createMovie,
+    Errors,
+    fixtureFiles,
+    uploadComplete
+} from '../__helpers__'
 import type { MoviesFixture } from './movies.fixture'
 
 describe('MoviesService', () => {
-    let fixture: MoviesFixture
+    let fix: MoviesFixture
 
     beforeEach(async () => {
         const { createMoviesFixture } = await import('./movies.fixture')
-        fixture = await createMoviesFixture()
+        fix = await createMoviesFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix.teardown()
     })
 
     describe('POST /movies', () => {
-        describe('when the payload is valid', () => {
+        it('returns the created movie', async () => {
+            const createDto = buildCreateMovieDto()
+
+            await fix.httpClient
+                .post('/movies')
+                .body(createDto)
+                .created({
+                    ...omit(createDto, ['assetIds']),
+                    id: expect.any(String),
+                    imageUrls: expect.any(Array)
+                })
+        })
+
+        describe('when the payload includes assetIds', () => {
             let createDto: CreateMovieDto
-            let createdMovie: MovieDto
 
             beforeEach(async () => {
-                createDto = buildCreateMovieDto()
-                const { body } = await fixture.httpClient.post('/movies').body(createDto).created()
-
-                createdMovie = body
+                const asset = await uploadComplete(fix, fixtureFiles.image)
+                createDto = buildCreateMovieDto({ assetIds: [asset.id] })
             })
 
-            // TODO fix
-            // 영화를 생성하고 반환한다
-            it('creates and returns a movie', async () => {
-                const { assetIds: _, ...movieDto } = createDto
+            it('returns imageUrls for the uploaded asset', async () => {
+                const { body } = await fix.httpClient.post('/movies').body(createDto).created()
+                const movie = body as MovieDto
 
-                expect(createdMovie).toEqual({ ...movieDto, id: expect.any(String), imageUrls: [] })
+                const response = await fetch(movie.imageUrls[0])
+                expect(response.ok).toBe(true)
+
+                const buffer = Buffer.from(await response.bytes())
+                expect(fixtureFiles.image.checksum).toEqual(Checksum.fromBuffer(buffer))
             })
         })
 
-        it('creates and returns a movie', async () => {
-            const createDto = buildCreateMovieDto({ genres: [] })
-
-            await fixture.httpClient.post('/movies').body(createDto).created()
-        })
-
-        describe('when the required fields are missing', () => {
+        describe('when required fields are missing', () => {
             it('returns 400 Bad Request', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .post('/movies')
                     .body({})
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
@@ -55,28 +70,20 @@ describe('MoviesService', () => {
 
     describe('GET /movies/:id', () => {
         describe('when the movie exists', () => {
-            it('returns the movie', async () => {
-                await fixture.httpClient
-                    .get(`/movies/${fixture.createdMovie.id}`)
-                    .ok(fixture.createdMovie)
+            let movie: MovieDto
+
+            beforeEach(async () => {
+                movie = await createMovie(fix)
             })
 
-            it('downloads the uploaded asset', async () => {
-                const { body: movieDto } = await fixture.httpClient
-                    .get(`/movies/${fixture.createdMovie.id}`)
-                    .ok()
-
-                const downloadResponse = await fetch(movieDto.imageUrls[0])
-                expect(downloadResponse.ok).toBe(true)
-
-                const downloadedBuffer = Buffer.from(await downloadResponse.arrayBuffer())
-                expect(fixture.image.checksum).toEqual(Checksum.fromBuffer(downloadedBuffer))
+            it('returns the movie', async () => {
+                await fix.httpClient.get(`/movies/${movie.id}`).ok(movie)
             })
         })
 
         describe('when the movie does not exist', () => {
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .get(`/movies/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -87,35 +94,41 @@ describe('MoviesService', () => {
     })
 
     describe('PATCH /movies/:id', () => {
-        describe('when the payload is valid', () => {
-            it('updates and returns the movie', async () => {
+        describe('when the movie exists', () => {
+            let movie: MovieDto
+
+            beforeEach(async () => {
+                movie = await createMovie(fix, { title: 'original-title' })
+            })
+
+            it('returns the updated movie', async () => {
                 const updateDto = {
-                    title: 'update title',
                     genres: ['romance', 'thriller'],
                     releaseDate: new Date('2000-01-01'),
                     plot: 'new plot',
                     durationInSeconds: 10 * 60,
                     director: 'Steven Spielberg',
-                    rating: 'R'
+                    rating: 'R',
+                    assetIds: []
                 }
-                const expected = expect.objectContaining({
-                    id: fixture.createdMovie.id,
-                    imageUrls: expect.any(Array),
-                    ...updateDto
-                })
 
-                await fixture.httpClient
-                    .patch(`/movies/${fixture.createdMovie.id}`)
+                await fix.httpClient
+                    .patch(`/movies/${movie.id}`)
                     .body(updateDto)
-                    .ok(expected)
+                    .ok({ ...movie, ...omit(updateDto, ['assetIds']) })
+            })
 
-                await fixture.httpClient.get(`/movies/${fixture.createdMovie.id}`).ok(expected)
+            it('persists the update', async () => {
+                const updateDto = { title: 'update title' }
+                await fix.httpClient.patch(`/movies/${movie.id}`).body(updateDto).ok()
+
+                await fix.httpClient.get(`/movies/${movie.id}`).ok({ ...movie, ...updateDto })
             })
         })
 
         describe('when the movie does not exist', () => {
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .patch(`/movies/${nullObjectId}`)
                     .body({})
                     .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
@@ -124,41 +137,42 @@ describe('MoviesService', () => {
     })
 
     describe('DELETE /movies/:id', () => {
-        describe('when deleting an existing movie', () => {
-            let deletedAssetId: string
+        describe('when the movie exists', () => {
+            let movie: MovieDto
 
             beforeEach(async () => {
-                deletedAssetId = fixture.asset.id
-
-                await fixture.httpClient
-                    .delete(`/movies/${fixture.createdMovie.id}`)
-                    .ok({
-                        deletedMovies: expect.arrayContaining([
-                            expect.objectContaining({
-                                id: fixture.createdMovie.id,
-                                title: fixture.createdMovie.title
-                            })
-                        ])
-                    })
+                const asset = await uploadComplete(fix, fixtureFiles.image)
+                movie = await createMovie(fix, { assetIds: [asset.id] })
             })
 
-            it('cannot fetch the movie anymore', async () => {
-                await fixture.httpClient
-                    .get(`/movies/${fixture.createdMovie.id}`)
+            it('returns the deleted movie', async () => {
+                await fix.httpClient
+                    .delete(`/movies/${movie.id}`)
+                    .ok({ deletedMovies: [{ ...movie, imageUrls: [] }] })
+            })
+
+            it('persists the deletion', async () => {
+                await fix.httpClient.delete(`/movies/${movie.id}`).ok()
+
+                await fix.httpClient
+                    .get(`/movies/${movie.id}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [fixture.createdMovie.id]
+                        notFoundIds: [movie.id]
                     })
             })
 
-            it("deletes the movie's assets", async () => {
-                await fixture.httpClient.get(`/assets/${deletedAssetId}`).notFound()
+            it('makes the movie image URL inaccessible after deletion', async () => {
+                await fix.httpClient.delete(`/movies/${movie.id}`).ok()
+
+                const response = await fetch(movie.imageUrls[0])
+                expect(response.ok).toBe(false)
             })
         })
 
-        describe('when deleting a non-existent movie', () => {
+        describe('when the movie does not exist', () => {
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .delete(`/movies/${nullObjectId}`)
                     .notFound({
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
@@ -169,31 +183,25 @@ describe('MoviesService', () => {
     })
 
     describe('GET /movies', () => {
-        let movies: MovieDto[]
-        const expectMovie = (movie: MovieDto) =>
-            expect.objectContaining({
-                id: movie.id,
-                title: movie.title,
-                genres: movie.genres,
-                releaseDate: movie.releaseDate,
-                plot: movie.plot,
-                durationInSeconds: movie.durationInSeconds,
-                director: movie.director,
-                rating: movie.rating,
-                imageUrls: expect.any(Array)
-            })
+        let movieA1: MovieDto
+        let movieA2: MovieDto
+        let movieB1: MovieDto
+        let movieB2: MovieDto
 
         beforeEach(async () => {
-            const createdMovies = await Promise.all([
-                createMovie(fixture, {
+            const asset = await uploadComplete(fix, fixtureFiles.image)
+
+            ;[movieA1, movieA2, movieB1, movieB2] = await Promise.all([
+                createMovie(fix, {
                     title: 'title-a1',
                     plot: 'plot-a1',
                     director: 'James Cameron',
                     releaseDate: new Date('2000-01-01'),
                     rating: MovieRating.NC17,
-                    genres: [MovieGenre.Action, MovieGenre.Comedy]
+                    genres: [MovieGenre.Action, MovieGenre.Comedy],
+                    assetIds: [asset.id]
                 }),
-                createMovie(fixture, {
+                createMovie(fix, {
                     title: 'title-a2',
                     plot: 'plot-a2',
                     director: 'Steven Spielberg',
@@ -201,7 +209,7 @@ describe('MoviesService', () => {
                     rating: MovieRating.NC17,
                     genres: [MovieGenre.Romance, MovieGenre.Drama]
                 }),
-                createMovie(fixture, {
+                createMovie(fix, {
                     title: 'title-b1',
                     plot: 'plot-b1',
                     director: 'James Cameron',
@@ -209,7 +217,7 @@ describe('MoviesService', () => {
                     rating: MovieRating.PG,
                     genres: [MovieGenre.Drama, MovieGenre.Comedy]
                 }),
-                createMovie(fixture, {
+                createMovie(fix, {
                     title: 'title-b2',
                     plot: 'plot-b2',
                     director: 'Steven Spielberg',
@@ -218,125 +226,61 @@ describe('MoviesService', () => {
                     genres: [MovieGenre.Thriller, MovieGenre.Western]
                 })
             ])
-
-            movies = [...createdMovies, fixture.createdMovie]
         })
 
-        describe('when the query parameters are missing', () => {
-            it('returns movies with default pagination', async () => {
-                await fixture.httpClient
-                    .get('/movies')
-                    .ok({
-                        skip: 0,
-                        take: expect.any(Number),
-                        total: movies.length,
-                        items: expect.arrayContaining(movies.map(expectMovie))
-                    })
+        const buildExpectedPage = (movies: MovieDto[]) => {
+            movies.forEach((movie) => (movie.imageUrls = expect.any(Array)))
+            return {
+                skip: 0,
+                take: expect.any(Number),
+                total: movies.length,
+                items: expect.arrayContaining(movies)
+            }
+        }
+
+        describe('when the query is not provided', () => {
+            it('returns the default page', async () => {
+                const expected = buildExpectedPage([movieA1, movieA2, movieB1, movieB2])
+
+                await fix.httpClient.get('/movies').ok(expected)
+            })
+        })
+
+        describe('when the filter is provided', () => {
+            const queryAndExpect = (query: SearchMoviesPageDto, movies: MovieDto[]) =>
+                fix.httpClient.get('/movies').query(query).ok(buildExpectedPage(movies))
+
+            it('returns movies filtered by a partial title match', async () => {
+                await queryAndExpect({ title: 'title-a' }, [movieA1, movieA2])
+            })
+
+            it('returns movies filtered by genre', async () => {
+                await queryAndExpect({ genre: MovieGenre.Drama }, [movieA2, movieB1])
+            })
+
+            it('returns movies filtered by release date', async () => {
+                await queryAndExpect({ releaseDate: new Date('2000-01-02') }, [movieA2, movieB1])
+            })
+
+            it('returns movies filtered by a partial plot match', async () => {
+                await queryAndExpect({ plot: 'plot-b' }, [movieB1, movieB2])
+            })
+
+            it('returns movies filtered by a partial director name match', async () => {
+                await queryAndExpect({ director: 'James' }, [movieA1, movieB1])
+            })
+
+            it('returns movies filtered by rating', async () => {
+                await queryAndExpect({ rating: MovieRating.NC17 }, [movieA1, movieA2])
             })
         })
 
         describe('when the query parameters are invalid', () => {
             it('returns 400 Bad Request', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .get('/movies')
                     .query({ wrong: 'value' })
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
-            })
-        })
-
-        describe('when a partial `title` is provided', () => {
-            it('returns movies whose title contains the given substring', async () => {
-                await fixture.httpClient
-                    .get('/movies')
-                    .query({ title: 'title-a' })
-                    .ok(
-                        expect.objectContaining({
-                            items: expect.arrayContaining([
-                                expectMovie(movies[0]),
-                                expectMovie(movies[1])
-                            ])
-                        })
-                    )
-            })
-        })
-
-        describe('when the `genre` is provided', () => {
-            it('returns movies matching the given genre', async () => {
-                await fixture.httpClient
-                    .get('/movies')
-                    .query({ genre: MovieGenre.Drama })
-                    .ok(
-                        expect.objectContaining({
-                            items: expect.arrayContaining([
-                                expectMovie(movies[1]),
-                                expectMovie(movies[2])
-                            ])
-                        })
-                    )
-            })
-        })
-
-        describe('when the `releaseDate` is provided', () => {
-            it('returns movies released on the given date', async () => {
-                await fixture.httpClient
-                    .get('/movies')
-                    .query({ releaseDate: new Date('2000-01-02') })
-                    .ok(
-                        expect.objectContaining({
-                            items: expect.arrayContaining([
-                                expectMovie(movies[1]),
-                                expectMovie(movies[2])
-                            ])
-                        })
-                    )
-            })
-        })
-
-        describe('when a partial `plot` is provided', () => {
-            it('returns movies whose plot contains the given substring', async () => {
-                await fixture.httpClient
-                    .get('/movies')
-                    .query({ plot: 'plot-b' })
-                    .ok(
-                        expect.objectContaining({
-                            items: expect.arrayContaining([
-                                expectMovie(movies[2]),
-                                expectMovie(movies[3])
-                            ])
-                        })
-                    )
-            })
-        })
-
-        describe('when a partial `director` is provided', () => {
-            it("returns movies whose director's name includes the substring", async () => {
-                await fixture.httpClient
-                    .get('/movies')
-                    .query({ director: 'James' })
-                    .ok(
-                        expect.objectContaining({
-                            items: expect.arrayContaining([
-                                expectMovie(movies[0]),
-                                expectMovie(movies[2])
-                            ])
-                        })
-                    )
-            })
-        })
-
-        describe('when the `rating` is provided', () => {
-            it('returns movies matching the given rating', async () => {
-                await fixture.httpClient
-                    .get('/movies')
-                    .query({ rating: MovieRating.NC17 })
-                    .ok(
-                        expect.objectContaining({
-                            items: expect.arrayContaining([
-                                expectMovie(movies[0]),
-                                expectMovie(movies[1])
-                            ])
-                        })
-                    )
             })
         })
     })

@@ -8,6 +8,7 @@ import {
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
+import { orDefault } from 'common'
 import { Readable } from 'stream'
 import { newObjectId } from '../mongoose'
 import { HttpUtil } from '../utils'
@@ -47,14 +48,7 @@ export class S3ObjectService {
         private readonly s3: S3Client
     ) {}
 
-    // TODO
-    //     이런 식으로 쓰면 전부 S3ObjectService_undefined 라는 이름으로 등록/주입됩니다.
-    // 의도한 거라면 괜찮지만, 보통은 기본값을 하나 두는 게 더 명확합니다.
-
-    // static getServiceName(name?: string) {
-    //     return `S3ObjectService_${name ?? 'default'}`
-    // }
-    static getServiceName(name?: string) {
+    static getName(name: string = 'default') {
         return `S3ObjectService_${name}`
     }
 
@@ -125,18 +119,11 @@ export class S3ObjectService {
 
         objectData = Buffer.concat(chunks)
 
-        // TODO
-        // 아래처럼 함수 만들어서 사용하면 ignore next 제거 가능
-        // static contentTypeOrDefault(contentType?: string): string {
-        //     return contentType ?? 'application/octet-stream'
-        // }
+        const contentType = orDefault(ContentType, 'application/octet-stream')
 
-        /* istanbul ignore next */
-        const contentType = ContentType ?? 'application/octet-stream'
-        /* istanbul ignore next */
-        const filename = ContentDisposition
-            ? HttpUtil.extractContentDisposition(ContentDisposition)
-            : key
+        const filename = HttpUtil.extractContentDisposition(
+            orDefault(ContentDisposition, `filename=${key}`)
+        )
 
         return { data: objectData, filename, contentType }
     }
@@ -145,8 +132,7 @@ export class S3ObjectService {
         const command = new DeleteObjectCommand({ Bucket: this.bucket, Key: key })
 
         const { $metadata } = await this.s3.send(command)
-        /* istanbul ignore next */
-        const status = $metadata.httpStatusCode ?? 200
+        const status = orDefault($metadata.httpStatusCode, 200)
 
         return { status, deletedObject: key }
     }
@@ -162,9 +148,9 @@ export class S3ObjectService {
 
         const result = await this.s3.send(command)
 
-        let contents: S3ObjectSummary[] = (result.Contents ?? [])
+        let contents: S3ObjectSummary[] = orDefault(result.Contents, [])
             .map((content) => ({
-                key: content.Key!,
+                key: orDefault(content.Key, 'null'),
                 lastModified: content.LastModified as Date,
                 eTag: content.ETag as string,
                 size: content.Size as number
@@ -179,16 +165,16 @@ export class S3ObjectService {
             contents,
             commonPrefixes,
             isTruncated: Boolean(result.IsTruncated),
-            nextToken: result.NextContinuationToken || undefined,
+            nextToken: orDefault(result.NextContinuationToken, undefined),
             maxKeys: result.MaxKeys,
-            prefix: result.Prefix || options.prefix,
-            delimiter: result.Delimiter || options.delimiter
+            prefix: orDefault(result.Prefix, options.prefix),
+            delimiter: orDefault(result.Delimiter, options.delimiter)
         }
     }
 }
 
 export function InjectS3Object(name?: string): ParameterDecorator {
-    return Inject(S3ObjectService.getServiceName(name))
+    return Inject(S3ObjectService.getName(name))
 }
 
 type S3ObjectFactoryOptions = {
@@ -212,7 +198,7 @@ export class S3ObjectModule {
         const { name, useFactory, inject } = options
 
         const provider = {
-            provide: S3ObjectService.getServiceName(name),
+            provide: S3ObjectService.getName(name),
             useFactory: async (...args: any[]) => {
                 const { endpoint, accessKeyId, secretAccessKey, region, bucket, forcePathStyle } =
                     await useFactory(...args)

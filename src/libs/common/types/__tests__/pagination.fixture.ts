@@ -43,7 +43,7 @@ export async function createPaginationFixture() {
         options: getNatsTestConnection()
     } as NatsOptions
 
-    const { httpClient, ...testContext } = await createHttpTestContext({
+    const { httpClient, ...ctx } = await createHttpTestContext({
         controllers: [SamplesController],
         providers: [
             {
@@ -64,9 +64,9 @@ export async function createPaginationFixture() {
 
     const rpcClient = RpcTestClient.create(brokerOpts)
 
-    async function teardown() {
+    const teardown = async () => {
         await rpcClient.close()
-        await testContext.close()
+        await ctx.close()
     }
 
     return { teardown, httpClient, rpcClient }

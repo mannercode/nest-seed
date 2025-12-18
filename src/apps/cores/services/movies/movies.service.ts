@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { AssetsClient } from 'apps/infrastructures'
-import { mapDocToDto } from 'common'
+import { Assert, mapDocToDto, objectIds } from 'common'
 import { CreateMovieDto, MovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
 import { MovieDocument } from './models'
 import { MoviesRepository } from './movies.repository'
@@ -14,14 +14,6 @@ export class MoviesService {
 
     async create(createDto: CreateMovieDto) {
         const movie = await this.moviesRepository.create(createDto)
-
-        await Promise.all(
-            createDto.assetIds.map((assetId) =>
-                this.assetsService.complete(assetId, {
-                    owner: { service: 'movies', entityId: movie.id }
-                })
-            )
-        )
 
         return this.toDto(movie)
     }
@@ -39,20 +31,19 @@ export class MoviesService {
     }
 
     async deleteMany(movieIds: string[]) {
-        const movies = await this.moviesRepository.withTransaction(async (session) => {
-            const movies = await this.moviesRepository.getByIds(movieIds)
+        const movies = await this.moviesRepository.getByIds(movieIds)
 
-            for (const movie of movies) {
-                await movie.deleteOne({ session })
+        const assetIds = [
+            ...new Set(movies.flatMap((movie) => movie.assetIds.map((id) => id.toString())))
+        ]
 
-                const assetIds = movie.assetIds.map((id) => id.toString())
-                await this.assetsService.deleteMany(assetIds)
-            }
+        await this.assetsService.deleteMany(assetIds)
 
-            return movies
+        await this.moviesRepository.model.deleteMany({ _id: { $in: objectIds(movieIds) } as any })
+
+        movies.forEach((movie) => {
+            movie.assetIds = []
         })
-
-        movies.map((movie) => (movie.assetIds = []))
 
         return { deletedMovies: await this.toDtos(movies) }
     }
@@ -64,29 +55,58 @@ export class MoviesService {
     }
 
     async allExist(movieIds: string[]): Promise<boolean> {
-        return this.moviesRepository.allExistByIds(movieIds)
+        return this.moviesRepository.allExist(movieIds)
     }
 
-    private async toDto(movie: MovieDocument) {
-        const dto = mapDocToDto(movie, MovieDto, [
-            'id',
-            'title',
-            'genres',
-            'releaseDate',
-            'plot',
-            'durationInSeconds',
-            'director',
-            'rating'
-        ])
+    private async toDto(movie: MovieDocument): Promise<MovieDto> {
+        return (await this.toDtos([movie]))[0]
+    }
 
-        const assetIds = movie.assetIds.map((id) => id.toString())
+    private async toDtos(movies: MovieDocument[]): Promise<MovieDto[]> {
+        const dtos = movies.map((movie) => {
+            const dto = mapDocToDto(movie, MovieDto, [
+                'id',
+                'title',
+                'genres',
+                'releaseDate',
+                'plot',
+                'durationInSeconds',
+                'director',
+                'rating'
+            ])
+            dto.imageUrls = []
+
+            return dto
+        })
+
+        const assetIds = [
+            ...new Set(movies.flatMap((movie) => movie.assetIds.map((id) => id.toString())))
+        ]
+
+        if (assetIds.length === 0) {
+            return dtos
+        }
+
         const assets = await this.assetsService.getMany(assetIds)
 
-        dto.imageUrls = assets.map((asset) => asset.download!.url)
-        return dto
-    }
+        const assetUrlById = new Map<string, string>()
 
-    private async toDtos(movies: MovieDocument[]) {
-        return Promise.all(movies.map((movie) => this.toDto(movie)))
+        assets.forEach((asset) => {
+            Assert.defined(asset.download)
+
+            assetUrlById.set(asset.id, asset.download.url)
+        })
+
+        movies.forEach((movie, index) => {
+            const movieAssetIds = movie.assetIds.map((id) => id.toString())
+
+            dtos[index].imageUrls = movieAssetIds.flatMap((assetId) => {
+                const url = assetUrlById.get(assetId)
+                Assert.defined(url)
+                return [url]
+            })
+        })
+
+        return dtos
     }
 }

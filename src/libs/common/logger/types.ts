@@ -3,7 +3,7 @@ export type HttpErrorLog = {
     statusCode: number
     request: { method: string; url: string; body: any }
     response: object | string
-    stack?: string
+    stack: string[]
 }
 
 export type HttpSuccessLog = {
@@ -18,7 +18,7 @@ export type RpcErrorLog = {
     context: any
     data: any
     response: object | string
-    stack?: string
+    stack: string[]
 }
 
 export type RpcSuccessLog = { contextType: 'rpc'; context: any; data: any; duration: string }

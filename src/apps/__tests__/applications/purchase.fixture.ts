@@ -1,21 +1,18 @@
+import type { CreatePurchaseDto } from 'apps/applications'
 import { PurchaseClient, PurchaseModule } from 'apps/applications'
+import type { TicketDto } from 'apps/cores'
 import {
-    CustomerDto,
     CustomersClient,
     CustomersModule,
-    MovieDto,
     MoviesClient,
     MoviesModule,
     PurchaseItemType,
     PurchaseRecordsClient,
     PurchaseRecordsModule,
-    Seatmap,
     ShowtimesClient,
     ShowtimesModule,
-    TheaterDto,
     TheatersClient,
     TheatersModule,
-    TicketDto,
     TicketHoldingClient,
     TicketHoldingModule,
     TicketsClient,
@@ -24,28 +21,20 @@ import {
 import { PurchasesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
 import { DateUtil, pickIds } from 'common'
-import { Rules } from 'shared'
+import type { TestContext } from 'testlib'
+import { oid, toAny } from 'testlib'
+import type { AppTestContext } from '../__helpers__'
 import {
-    createCustomer,
-    createMovie,
+    buildHoldTicketsDto,
+    createAppTestContext,
     createShowtimes,
-    createTheater,
-    createTickets,
-    holdTickets,
-    createTestFixture,
-    TestFixture
+    createTickets
 } from '../__helpers__'
-import { toAny } from 'testlib'
 
-export type PurchaseFixture = TestFixture & {
-    customer: CustomerDto
-    heldTickets: TicketDto[]
-    availableTickets: TicketDto[]
-    closedTickets: TicketDto[]
-}
+export type PurchaseFixture = AppTestContext & {}
 
 export async function createPurchaseFixture(): Promise<PurchaseFixture> {
-    const fix = await createTestFixture({
+    const ctx = await createAppTestContext({
         imports: [
             MoviesModule,
             AssetsModule,
@@ -72,105 +61,50 @@ export async function createPurchaseFixture(): Promise<PurchaseFixture> {
         controllers: [PurchasesController]
     })
 
-    const [customer, movie, theater] = await Promise.all([
-        createCustomer(fix),
-        createMovie(fix),
-        createTheater(fix)
-    ])
-
-    const { availableTickets, heldTickets } = await createAvailableAndHeldTickets(
-        fix,
-        movie,
-        theater,
-        customer
-    )
-
-    const closedSaleTickets = await createClosedTickets(fix, movie, theater)
-
-    return { ...fix, customer, heldTickets, availableTickets, closedTickets: closedSaleTickets }
+    return { ...ctx }
 }
 
+const customerId = oid(0x01)
+
 export function buildCreatePurchaseDto(
-    customer: CustomerDto,
     tickets: TicketDto[],
-    overrides = {}
+    overrides: Partial<CreatePurchaseDto> = {}
 ) {
     const purchaseItems = tickets.map(({ id }) => ({ type: PurchaseItemType.Ticket, ticketId: id }))
 
-    const createDto = { customerId: customer.id, totalPrice: 1, purchaseItems, ...overrides }
+    const createDto = { customerId, totalPrice: 1, purchaseItems, ...overrides }
     return createDto
 }
 
-async function createAvailableAndHeldTickets(
-    fix: TestFixture,
-    movie: MovieDto,
-    theater: TheaterDto,
-    customer: CustomerDto
-) {
-    const beforeCloseTime = DateUtil.add({
-        minutes: Rules.Ticket.purchaseWindowCloseOffsetMinutes + 1
-    })
+export async function holdTickets(ctx: TestContext, tickets: TicketDto[]) {
+    const { TicketHoldingClient } = await import('apps/cores')
+    const ticketHoldingService = ctx.module.get(TicketHoldingClient)
 
-    const createdTickets = await createAllTickets({
-        fix,
-        movie,
-        theater,
-        startTime: beforeCloseTime
-    })
+    const heldTicketCount = 4
+    const { Rules } = await import('shared')
+    toAny(Rules).Ticket.maxTicketsPerPurchase = heldTicketCount
 
-    const holdCount = 4
-    toAny(Rules).Ticket.maxTicketsPerPurchase = holdCount
+    const heldTickets = tickets.slice(0, heldTicketCount)
 
-    const heldTickets = createdTickets.slice(0, holdCount)
-    const availableTickets = createdTickets.slice(holdCount)
+    await ticketHoldingService.holdTickets(
+        buildHoldTicketsDto({
+            customerId,
+            showtimeId: tickets[0].showtimeId,
+            ticketIds: pickIds(tickets)
+        })
+    )
 
-    await holdTickets(fix, {
-        customerId: customer.id,
-        showtimeId: heldTickets[0].showtimeId,
-        ticketIds: pickIds(heldTickets)
-    })
-
-    return { availableTickets, heldTickets }
+    return heldTickets
 }
 
-async function createClosedTickets(fix: TestFixture, movie: MovieDto, theater: TheaterDto) {
-    const afterCloseTime = DateUtil.add({
-        minutes: Rules.Ticket.purchaseWindowCloseOffsetMinutes - 1
-    })
+export async function createShowtimeAndTickets(ctx: TestContext) {
+    const { Rules } = await import('shared')
 
-    const closedSaleTickets = await createAllTickets({
-        fix,
-        movie,
-        theater,
-        startTime: afterCloseTime
-    })
+    const startTime = DateUtil.add({ minutes: Rules.Ticket.purchaseCutoffMinutes + 1 })
 
-    return closedSaleTickets
-}
+    const [showtime] = await createShowtimes(ctx, [{ startTime }])
 
-async function createAllTickets({
-    fix,
-    movie,
-    theater,
-    startTime
-}: {
-    fix: TestFixture
-    movie: MovieDto
-    theater: TheaterDto
-    startTime: Date
-}) {
-    const showtimes = await createShowtimes(fix, [
-        { movieId: movie.id, theaterId: theater.id, startTime }
-    ])
+    const createTicketDtos = Array.from({ length: 10 }, () => ({ showtimeId: showtime.id }))
 
-    const showtime = showtimes[0]
-
-    const createTicketDtos = Seatmap.getAllSeats(theater.seatmap).map((seat) => ({
-        movieId: showtime.movieId,
-        theaterId: showtime.theaterId,
-        showtimeId: showtime.id,
-        seat
-    }))
-
-    return createTickets(fix, createTicketDtos)
+    return createTickets(ctx, createTicketDtos)
 }

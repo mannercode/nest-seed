@@ -1,9 +1,9 @@
-import { Provider } from '@nestjs/common'
+import type { Provider } from '@nestjs/common'
 import { withTestId } from 'testlib'
 import type { SuccessLoggingInterceptorFixture } from './success-logging.interceptor.fixture'
 
 describe('SuccessLoggingInterceptor', () => {
-    let fixture: SuccessLoggingInterceptorFixture
+    let fix: SuccessLoggingInterceptorFixture
     let createInterceptorFixture: (
         providers: Provider[]
     ) => Promise<SuccessLoggingInterceptorFixture>
@@ -15,21 +15,21 @@ describe('SuccessLoggingInterceptor', () => {
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix.teardown()
     })
 
     describe('when the requests succeed', () => {
         beforeEach(async () => {
-            fixture = await createInterceptorFixture([])
+            fix = await createInterceptorFixture([])
         })
 
-        describe('when an HTTP request succeeds', () => {
+        describe('when the request is HTTP', () => {
             it('logs via Logger.verbose', async () => {
                 const body = { key: 'value' }
-                await fixture.httpClient.post('/success').body(body).created({ result: 'success' })
+                await fix.httpClient.post('/success').body(body).created({ result: 'success' })
 
-                expect(fixture.spyVerbose).toHaveBeenCalledTimes(1)
-                expect(fixture.spyVerbose).toHaveBeenCalledWith('success', {
+                expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
+                expect(fix.spyVerbose).toHaveBeenCalledWith('success', {
                     statusCode: 201,
                     contextType: 'http',
                     request: { method: 'POST', url: '/success', body },
@@ -38,14 +38,14 @@ describe('SuccessLoggingInterceptor', () => {
             })
         })
 
-        describe('when an RPC request succeeds', () => {
+        describe('when the request is RPC', () => {
             it('logs via Logger.verbose', async () => {
                 const subject = withTestId('success')
                 const data = { key: 'value' }
-                await fixture.rpcClient.expect(subject, data, { result: 'success' })
+                await fix.rpcClient.expect(subject, data, { result: 'success' })
 
-                expect(fixture.spyVerbose).toHaveBeenCalledTimes(1)
-                expect(fixture.spyVerbose).toHaveBeenCalledWith('success', {
+                expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
+                expect(fix.spyVerbose).toHaveBeenCalledWith('success', {
                     contextType: 'rpc',
                     context: { args: [subject] },
                     data,
@@ -60,10 +60,10 @@ describe('SuccessLoggingInterceptor', () => {
                     await import('@nestjs/core/helpers/execution-context-host')
                 jest.spyOn(ExecutionContextHost.prototype, 'getType').mockReturnValue('unknown')
 
-                await fixture.httpClient.get('/exclude-path').ok()
+                await fix.httpClient.get('/exclude-path').ok()
 
-                expect(fixture.spyError).toHaveBeenCalledTimes(1)
-                expect(fixture.spyError).toHaveBeenCalledWith(
+                expect(fix.spyError).toHaveBeenCalledTimes(1)
+                expect(fix.spyError).toHaveBeenCalledWith(
                     'unknown context type',
                     expect.objectContaining({
                         contextType: 'unknown',
@@ -74,23 +74,23 @@ describe('SuccessLoggingInterceptor', () => {
         })
     })
 
-    describe('LOGGING_EXCLUDE_HTTP_PATHS', () => {
+    describe('when LOGGING_EXCLUDE_HTTP_PATHS includes the request path', () => {
         beforeEach(async () => {
-            fixture = await createInterceptorFixture([
+            fix = await createInterceptorFixture([
                 { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/exclude-path'] }
             ])
         })
 
         it('ignores specified HTTP paths', async () => {
-            await fixture.httpClient.get('/exclude-path').ok({ result: 'success' })
+            await fix.httpClient.get('/exclude-path').ok({ result: 'success' })
 
-            expect(fixture.spyVerbose).toHaveBeenCalledTimes(0)
+            expect(fix.spyVerbose).toHaveBeenCalledTimes(0)
         })
     })
 
-    describe('LOGGING_EXCLUDE_RPC_PATHS', () => {
+    describe('when LOGGING_EXCLUDE_RPC_PATHS includes the subject', () => {
         beforeEach(async () => {
-            fixture = await createInterceptorFixture([
+            fix = await createInterceptorFixture([
                 { provide: 'LOGGING_EXCLUDE_RPC_PATHS', useValue: [withTestId('exclude-path')] }
             ])
         })
@@ -98,9 +98,9 @@ describe('SuccessLoggingInterceptor', () => {
         it('ignores specified RPC paths', async () => {
             const subject = withTestId('exclude-path')
             const data = { key: 'value' }
-            await fixture.rpcClient.expect(subject, data, { result: 'success' })
+            await fix.rpcClient.expect(subject, data, { result: 'success' })
 
-            expect(fixture.spyVerbose).toHaveBeenCalledTimes(0)
+            expect(fix.spyVerbose).toHaveBeenCalledTimes(0)
         })
     })
 })

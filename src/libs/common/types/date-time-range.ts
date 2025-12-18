@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer'
-import { IsDate } from 'class-validator'
+import { IsDate, IsOptional } from 'class-validator'
 import { DateUtil } from '../utils'
 
 type DateTimeRangeOptions = { start?: Date; end?: Date; minutes?: number; days?: number }
@@ -27,10 +27,12 @@ export class DateTimeRange {
 }
 
 export class PartialDateTimeRange {
+    @IsOptional()
     @IsDate()
     @Type(() => Date)
     start?: Date
 
+    @IsOptional()
     @IsDate()
     @Type(() => Date)
     end?: Date

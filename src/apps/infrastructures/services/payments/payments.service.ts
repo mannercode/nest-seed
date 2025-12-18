@@ -21,16 +21,18 @@ export class PaymentsService {
     }
 
     private toDto(payment: PaymentDocument) {
-        return mapDocToDto(payment, PaymentDto, [
-            'id',
-            'customerId',
-            'amount',
-            'createdAt',
-            'updatedAt'
-        ])
+        return this.toDtos([payment])[0]
     }
 
     private toDtos(payments: PaymentDocument[]) {
-        return payments.map((payment) => this.toDto(payment))
+        return payments.map((payment) =>
+            mapDocToDto(payment, PaymentDto, [
+                'id',
+                'customerId',
+                'amount',
+                'createdAt',
+                'updatedAt'
+            ])
+        )
     }
 }

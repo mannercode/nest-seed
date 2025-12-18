@@ -56,7 +56,7 @@ export class ShowtimeBulkCreatorService {
 
         await Promise.all(
             showtimes.map(async (showtime) => {
-                const theater = theatersById.get(showtime.theaterId)!
+                const theater = theatersById.get(showtime.theaterId)
 
                 Assert.defined(theater, 'The theater must exist.')
 

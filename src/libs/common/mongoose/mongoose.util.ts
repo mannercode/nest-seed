@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common'
 import { escapeRegExp, uniq } from 'lodash'
-import { FilterQuery, HydratedDocument, Types } from 'mongoose'
+import type { FilterQuery, HydratedDocument } from 'mongoose'
+import { Types } from 'mongoose'
 import { Expect } from '../validator'
 import { MongooseErrors } from './errors'
 
@@ -97,4 +98,17 @@ export function mapDocToDto<
     }
 
     return dto
+}
+
+type Transform<T> = (value: T) => any
+
+export function assignIfDefined<
+    Target extends Record<string, any>,
+    Source extends Record<string, any>,
+    K extends keyof Source & keyof Target
+>(target: Target, source: Source, key: K, transform?: Transform<NonNullable<Source[K]>>): void {
+    const value = source[key]
+    if (value === undefined) return
+
+    target[key] = transform ? transform(value as NonNullable<Source[K]>) : value
 }

@@ -1,13 +1,9 @@
 {
     "compilerOptions": {
         "target": "ESNext",
-        "lib": [
-            "ESNext"
-        ],
+        "lib": ["ESNext"],
         "strict": false,
-        "types": [
-            "jest"
-        ],
+        "types": ["jest"],
         "allowJs": true,
         "module": "commonjs",
         "declaration": true,
@@ -29,21 +25,11 @@
         "baseUrl": ".",
         "outDir": "./_output/build",
         "paths": {
-            "common": [
-                "src/libs/common/index"
-            ],
-            "testlib": [
-                "src/libs/testlib/index"
-            ],
-            "shared": [
-                "src/apps/shared/index"
-            ],
-            "apps/*": [
-                "src/apps/*"
-            ]
+            "common": ["src/libs/common/index"],
+            "testlib": ["src/libs/testlib/index"],
+            "shared": ["src/apps/shared/index"],
+            "apps/*": ["src/apps/*"]
         }
     },
-    "include": [
-        "src/**/*"
-    ]
+    "include": ["src/**/*"]
 }

@@ -1,23 +1,20 @@
 import { PurchaseClient } from 'apps/applications'
-import { PurchaseRecordDto, PurchaseRecordsClient, PurchaseRecordsModule } from 'apps/cores'
+import { PurchaseRecordsClient, PurchaseRecordsModule } from 'apps/cores'
 import { PurchasesController } from 'apps/gateway'
-import { createPurchaseRecord, TestFixture, createTestFixture } from '../__helpers__'
+import type { AppTestContext } from '../__helpers__'
+import { createAppTestContext } from '../__helpers__'
 
-export type PurchaseRecordsFixture = TestFixture & {
+export type PurchaseRecordsFixture = AppTestContext & {
     purchaseRecordsService: PurchaseRecordsClient
-    createdPurchaseRecord: PurchaseRecordDto
 }
 
 export async function createPurchaseRecordsFixture(): Promise<PurchaseRecordsFixture> {
-    const fix = await createTestFixture({
+    const ctx = await createAppTestContext({
         imports: [PurchaseRecordsModule],
         providers: [PurchaseRecordsClient, PurchaseClient],
         controllers: [PurchasesController]
     })
 
-    const purchaseRecordsService = fix.module.get(PurchaseRecordsClient)
-
-    const createdPurchaseRecord = await createPurchaseRecord(fix)
-
-    return { ...fix, purchaseRecordsService, createdPurchaseRecord }
+    const purchaseRecordsService = ctx.module.get(PurchaseRecordsClient)
+    return { ...ctx, purchaseRecordsService }
 }

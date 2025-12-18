@@ -4,7 +4,7 @@ import { Messages } from 'shared'
 import {
     CreateCustomerDto,
     CustomerAuthPayload,
-    CustomerCredentials,
+    CustomerCredentialsDto,
     CustomerDto,
     DeleteCustomersResponse,
     SearchCustomersPageDto,
@@ -15,8 +15,8 @@ import {
 export class CustomersClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
-    async create(createDto: CreateCustomerDto): Promise<CustomerDto> {
-        return this.proxy.getJson<CustomerDto>(Messages.Customers.create, createDto)
+    create(createDto: CreateCustomerDto): Promise<CustomerDto> {
+        return this.proxy.getJson(Messages.Customers.create, createDto)
     }
 
     update(customerId: string, updateDto: UpdateCustomerDto): Promise<CustomerDto> {
@@ -43,7 +43,7 @@ export class CustomersClient {
         return this.proxy.getJson(Messages.Customers.refreshAuthTokens, refreshToken)
     }
 
-    findCustomerByCredentials(credentials: CustomerCredentials): Promise<CustomerDto | null> {
+    findCustomerByCredentials(credentials: CustomerCredentialsDto): Promise<CustomerDto | null> {
         return this.proxy.getJson(Messages.Customers.findCustomerByCredentials, credentials)
     }
 }

@@ -1,19 +1,20 @@
-import { MovieDto, ShowtimeDto, TheaterDto, TicketDto, TicketStatus } from 'apps/cores'
+import type { MovieDto, ShowtimeDto, TheaterDto, TicketDto } from 'apps/cores'
+import { TicketStatus } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, step } from 'testlib'
 import { Errors } from '../__helpers__'
 import { createAllResources, type BookingFixture } from './booking.fixture'
 
 describe('BookingService', () => {
-    let fixture: BookingFixture
+    let fix: BookingFixture
 
     beforeEach(async () => {
         const { createBookingFixture } = await import('./booking.fixture')
-        fixture = await createBookingFixture()
+        fix = await createBookingFixture()
     })
 
     afterEach(async () => {
-        await fixture?.teardown()
+        await fix.teardown()
     })
 
     describe('when the booking succeeds', () => {
@@ -36,7 +37,7 @@ describe('BookingService', () => {
         ]
 
         beforeEach(async () => {
-            const resources = await createAllResources(fixture, locations, startTimes)
+            const resources = await createAllResources(fix, locations, startTimes)
             movie = resources.movie
             accessToken = resources.accessToken
         })
@@ -49,7 +50,7 @@ describe('BookingService', () => {
 
             await step('1. searches theaters showing the movie', async () => {
                 const latLong = '31.9,131.9'
-                const { body: theaters } = await fixture.httpClient
+                const { body: theaters } = await fix.httpClient
                     .get(`/booking/movies/${movie.id}/theaters?latLong=${latLong}`)
                     .ok(
                         [
@@ -65,7 +66,7 @@ describe('BookingService', () => {
             })
 
             await step('2. searches showdates', async () => {
-                const { body: showdates } = await fixture.httpClient
+                const { body: showdates } = await fix.httpClient
                     .get(`/booking/movies/${movie.id}/theaters/${theater.id}/showdates`)
                     .ok([new Date('2999-01-01'), new Date('2999-01-02'), new Date('2999-01-03')])
 
@@ -76,7 +77,7 @@ describe('BookingService', () => {
                 const yymmdd = DateUtil.toYMD(showdate)
                 const url = `/booking/movies/${movie.id}/theaters/${theater.id}/showdates/${yymmdd}/showtimes`
 
-                const { body: showtimes } = await fixture.httpClient.get(url).ok(
+                const { body: showtimes } = await fix.httpClient.get(url).ok(
                     expect.arrayContaining(
                         [
                             { movieId: movie.id, theaterId: theater.id, startTime: startTimes[0] },
@@ -89,23 +90,19 @@ describe('BookingService', () => {
             })
 
             await step('4. searches for available tickets', async () => {
-                const { body } = await fixture.httpClient
+                const { body } = await fix.httpClient
                     .get(`/booking/showtimes/${showtime.id}/tickets`)
                     .ok()
 
                 tickets = body
 
-                expect(tickets).toEqual(
-                    Array(tickets.length).fill(
-                        expect.objectContaining({ status: TicketStatus.Available })
-                    )
-                )
+                expect(tickets.every((t) => t.status === TicketStatus.Available)).toBe(true)
             })
 
             await step('5. holds the tickets', async () => {
                 const ticketIds = pickIds(tickets.slice(0, 2))
 
-                await fixture.httpClient
+                await fix.httpClient
                     .post(`/booking/showtimes/${showtime.id}/tickets/hold`)
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body({ ticketIds })
@@ -117,7 +114,7 @@ describe('BookingService', () => {
     describe('GET /booking/showtimes/:id/tickets', () => {
         describe('when the showtime does not exist', () => {
             it('returns 404 Not Found', async () => {
-                await fixture.httpClient
+                await fix.httpClient
                     .get(`/booking/showtimes/${nullObjectId}/tickets`)
                     .notFound({ ...Errors.Booking.ShowtimeNotFound, showtimeId: nullObjectId })
             })

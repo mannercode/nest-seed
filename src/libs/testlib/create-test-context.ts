@@ -30,14 +30,14 @@ export async function createTestContext({
     configureApp,
     ...metadata
 }: ModuleMetadataEx): Promise<TestContext> {
+    ignoreProviders?.forEach((provider) => {
+        metadata.providers?.push({ provide: provider, useClass: NullProvider })
+    })
+
     const builder = Test.createTestingModule(metadata)
 
     ignoreGuards?.forEach((guard) => {
         builder.overrideGuard(guard).useClass(NullGuard)
-    })
-
-    ignoreProviders?.forEach((provider) => {
-        builder.overrideProvider(provider).useClass(NullProvider)
     })
 
     overrideProviders?.forEach(({ original, replacement }) => {
@@ -48,11 +48,11 @@ export async function createTestContext({
 
     const app = module.createNestApplication()
 
+    app.useLogger(isDebuggingEnabled() ? console : false)
+
     if (configureApp) {
         await configureApp(app)
     }
-
-    app.useLogger(isDebuggingEnabled ? console : false)
 
     await app.init()
 

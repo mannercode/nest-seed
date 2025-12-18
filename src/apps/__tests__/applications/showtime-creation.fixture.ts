@@ -1,64 +1,30 @@
+import { ShowtimeCreationClient, ShowtimeCreationModule } from 'apps/applications'
+import type { MovieDto, TheaterDto } from 'apps/cores'
 import {
-    BulkCreateShowtimesDto,
-    ShowtimeCreationClient,
-    ShowtimeCreationModule
-} from 'apps/applications'
-import {
-    MovieDto,
     MoviesClient,
     MoviesModule,
     ShowtimesClient,
     ShowtimesModule,
-    TheaterDto,
     TheatersClient,
     TheatersModule,
+    TicketsClient,
     TicketsModule
 } from 'apps/cores'
 import { ShowtimeCreationController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { jsonToObject } from 'common'
-import { oid } from 'testlib'
-import { createMovie, createTestFixture, createTheater, TestFixture } from '../__helpers__'
+import type { AppTestContext as TestContext } from '../__helpers__'
+import { createAppTestContext, createMovie, createTheater } from '../__helpers__'
 
-export function buildBulkCreateShowtimesDto(overrides: Partial<BulkCreateShowtimesDto> = {}) {
-    const createDto = {
-        movieId: oid(0x0),
-        theaterIds: [oid(0x0)],
-        startTimes: [new Date(0)],
-        durationInMinutes: 1,
-        ...overrides
-    }
-
-    return createDto
+export type ShowtimeCreationFixture = TestContext & {
+    movie: MovieDto
+    theater: TheaterDto
+    showtimesClient: ShowtimesClient
+    ticketsClient: TicketsClient
 }
-
-export function waitForCompletion(fix: TestFixture, status: string) {
-    return new Promise((resolve, reject) => {
-        fix.httpClient.get('/showtime-creation/event-stream').sse((data) => {
-            try {
-                const result = jsonToObject(JSON.parse(data))
-
-                if (['succeeded', 'failed', 'error'].includes(result.status)) {
-                    fix.httpClient.abort()
-
-                    if (status === result.status) {
-                        resolve(result)
-                    } else {
-                        reject(result)
-                    }
-                }
-            } catch (error) {
-                fix.httpClient.abort()
-                reject(error)
-            }
-        }, reject)
-    })
-}
-
-export type ShowtimeCreationFixture = TestFixture & { movie: MovieDto; theater: TheaterDto }
 
 export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationFixture> {
-    const fix = await createTestFixture({
+    const ctx = await createAppTestContext({
         imports: [
             MoviesModule,
             AssetsModule,
@@ -71,14 +37,41 @@ export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationF
             MoviesClient,
             TheatersClient,
             ShowtimesClient,
+            TicketsClient,
             ShowtimeCreationClient,
             AssetsClient
         ],
         controllers: [ShowtimeCreationController]
     })
 
-    const movie = await createMovie(fix)
-    const theater = await createTheater(fix)
+    const showtimesClient = ctx.module.get(ShowtimesClient)
+    const ticketsClient = ctx.module.get(TicketsClient)
 
-    return { ...fix, movie, theater }
+    const movie = await createMovie(ctx)
+    const theater = await createTheater(ctx)
+
+    return { ...ctx, movie, theater, showtimesClient, ticketsClient }
+}
+
+export function waitForCompletion(ctx: TestContext, status: string) {
+    return new Promise<any>((resolve, reject) => {
+        ctx.httpClient.get('/showtime-creation/event-stream').sse((data) => {
+            try {
+                const result = jsonToObject(JSON.parse(data))
+
+                if (['succeeded', 'failed', 'error'].includes(result.status)) {
+                    ctx.httpClient.abort()
+
+                    if (status === result.status) {
+                        resolve(result)
+                    } else {
+                        reject(result)
+                    }
+                }
+            } catch (error) {
+                ctx.httpClient.abort()
+                reject(error)
+            }
+        }, reject)
+    })
 }

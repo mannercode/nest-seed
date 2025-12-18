@@ -37,7 +37,7 @@ export class TheatersController {
     }
 
     @MessagePattern(Messages.Theaters.allExist)
-    exists(@Payload() theaterIds: string[]) {
+    allExist(@Payload() theaterIds: string[]) {
         return this.service.allExist(theaterIds)
     }
 }

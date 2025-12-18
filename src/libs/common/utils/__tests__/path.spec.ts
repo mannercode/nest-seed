@@ -14,7 +14,7 @@ describe('Path', () => {
         await Path.delete(tempDir)
     })
 
-    test('creates a temporary directory', async () => {
+    it('creates a temporary directory', async () => {
         const exists = await Path.exists(tempDir)
         expect(exists).toBe(true)
 
@@ -22,7 +22,7 @@ describe('Path', () => {
         expect(tempDir.startsWith(os.tmpdir())).toBe(true)
     })
 
-    test('checks asynchronously whether the specified path exists', async () => {
+    it('checks asynchronously whether the specified path exists', async () => {
         const filePath = Path.join(tempDir, 'file.txt')
         await fs.writeFile(filePath, 'hello world')
 
@@ -30,14 +30,16 @@ describe('Path', () => {
         expect(exists).toBe(true)
     })
 
-    test('returns false when the path does not exist', async () => {
-        const nonExistentPath = Path.join(tempDir, 'nonexistent.txt')
+    describe('when the path does not exist', () => {
+        it('returns false', async () => {
+            const nonExistentPath = Path.join(tempDir, 'nonexistent.txt')
 
-        const exists = await Path.exists(nonExistentPath)
-        expect(exists).toBe(false)
+            const exists = await Path.exists(nonExistentPath)
+            expect(exists).toBe(false)
+        })
     })
 
-    test('checks synchronously whether the specified path exists', async () => {
+    it('checks synchronously whether the specified path exists', async () => {
         const filePath = Path.join(tempDir, 'file.txt')
         await fs.writeFile(filePath, 'hello world')
 
@@ -45,12 +47,12 @@ describe('Path', () => {
         expect(exists).toBe(true)
     })
 
-    test('confirms whether the specified path is a directory', async () => {
+    it('confirms whether the specified path is a directory', async () => {
         const exists = await Path.isDirectory(tempDir)
         expect(exists).toBe(true)
     })
 
-    test('creates and deletes a directory', async () => {
+    it('creates and deletes a directory', async () => {
         const dirPath = Path.join(tempDir, 'testdir')
 
         await Path.mkdir(dirPath)
@@ -62,7 +64,7 @@ describe('Path', () => {
         expect(existsAfterDelete).toBe(false)
     })
 
-    test('lists subdirectories', async () => {
+    it('lists subdirectories', async () => {
         const subDir1 = Path.join(tempDir, 'subdir1')
         await Path.mkdir(subDir1)
 
@@ -76,7 +78,7 @@ describe('Path', () => {
         expect(subDirs).toEqual(['subdir1', 'subdir2'])
     })
 
-    test('copies a file', async () => {
+    it('copies a file', async () => {
         const srcFilePath = Path.join(tempDir, 'file.txt')
         await fs.writeFile(srcFilePath, 'hello world')
 
@@ -91,7 +93,7 @@ describe('Path', () => {
         expect(content).toEqual('hello world')
     })
 
-    test('copies a directory', async () => {
+    it('copies a directory', async () => {
         const srcDirPath = Path.join(tempDir, 'testdir')
         await Path.mkdir(srcDirPath)
 
@@ -114,53 +116,59 @@ describe('Path', () => {
         expect(content).toEqual('hello from the original dir')
     })
 
-    test('returns an absolute path', async () => {
+    it('returns an absolute path', async () => {
         const relativePath = `.${Path.sep()}file.txt`
         const absolutePath = await Path.getAbsolute(relativePath)
 
         expect(p.isAbsolute(absolutePath)).toBe(true)
     })
 
-    test('returns the same path if it is already absolute', async () => {
-        const absolutePath = p.join(os.tmpdir(), 'file.txt')
-        const result = await Path.getAbsolute(absolutePath)
+    describe('when the path is already absolute', () => {
+        it('returns the same path', async () => {
+            const absolutePath = p.join(os.tmpdir(), 'file.txt')
+            const result = await Path.getAbsolute(absolutePath)
 
-        expect(result).toEqual(absolutePath)
+            expect(result).toEqual(absolutePath)
+        })
     })
 
-    test('returns the basename', () => {
+    it('returns the basename', () => {
         const filePath = 'dir/file.txt'
         const basename = Path.basename(filePath)
 
         expect(basename).toEqual('file.txt')
     })
 
-    test('returns the dirname', () => {
+    it('returns the dirname', () => {
         const filePath = 'dir/file.txt'
         const dirname = Path.dirname(filePath)
 
         expect(dirname).toEqual('dir')
     })
 
-    test('returns true if the path is writable', async () => {
-        jest.spyOn(fs, 'access').mockResolvedValueOnce(undefined)
+    describe('when the path is writable', () => {
+        it('returns true', async () => {
+            jest.spyOn(fs, 'access').mockResolvedValueOnce(undefined)
 
-        const result = await Path.isWritable('/test/path')
+            const result = await Path.isWritable('/test/path')
 
-        expect(result).toBe(true)
-        expect(fs.access).toHaveBeenCalledWith('/test/path', fs.constants.W_OK)
+            expect(result).toBe(true)
+            expect(fs.access).toHaveBeenCalledWith('/test/path', fs.constants.W_OK)
+        })
     })
 
-    test('returns false if the path is not writable', async () => {
-        jest.spyOn(fs, 'access').mockRejectedValueOnce(new Error('Not writable'))
+    describe('when the path is not writable', () => {
+        it('returns false', async () => {
+            jest.spyOn(fs, 'access').mockRejectedValueOnce(new Error('Not writable'))
 
-        const result = await Path.isWritable('/test/path')
+            const result = await Path.isWritable('/test/path')
 
-        expect(result).toBe(false)
-        expect(fs.access).toHaveBeenCalledWith('/test/path', fs.constants.W_OK)
+            expect(result).toBe(false)
+            expect(fs.access).toHaveBeenCalledWith('/test/path', fs.constants.W_OK)
+        })
     })
 
-    test('moves a file', async () => {
+    it('moves a file', async () => {
         const srcFilePath = Path.join(tempDir, 'file.txt')
         await fs.writeFile(srcFilePath, 'hello world')
 

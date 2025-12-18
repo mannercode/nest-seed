@@ -47,7 +47,7 @@ export async function createSuccessLoggingInterceptorFixture(providers: Provider
         options: getNatsTestConnection()
     } as NatsOptions
 
-    const { httpClient, ...testContext } = await createHttpTestContext({
+    const { httpClient, ...ctx } = await createHttpTestContext({
         controllers: [TestController],
         providers: [
             { provide: APP_INTERCEPTOR, useClass: SuccessLoggingInterceptor },
@@ -65,9 +65,9 @@ export async function createSuccessLoggingInterceptorFixture(providers: Provider
 
     const rpcClient = RpcTestClient.create(brokerOptions)
 
-    async function teardown() {
+    const teardown = async () => {
         await rpcClient.close()
-        await testContext.close()
+        await ctx.close()
     }
 
     return { teardown, httpClient, rpcClient, spyVerbose, spyError }

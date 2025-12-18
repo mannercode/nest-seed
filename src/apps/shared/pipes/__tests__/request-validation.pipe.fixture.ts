@@ -36,16 +36,16 @@ class SamplesController {
 }
 
 export async function createRequestValidationPipeFixture() {
-    const testContext = await createHttpTestContext({
+    const ctx = await createHttpTestContext({
         controllers: [SamplesController],
         providers: [{ provide: APP_PIPE, useClass: RequestValidationPipe }]
     })
 
-    async function teardown() {
-        await testContext?.close()
+    const teardown = async () => {
+        await ctx.close()
     }
 
-    return { ...testContext, teardown }
+    return { ...ctx, teardown }
 }
 
 export type RequestValidationPipeFixture = HttpTestContext & { teardown: () => Promise<void> }

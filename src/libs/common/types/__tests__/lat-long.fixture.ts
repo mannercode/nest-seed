@@ -13,12 +13,10 @@ class TestController {
 export type LatLongFixture = { teardown: () => Promise<void>; httpClient: HttpTestClient }
 
 export async function createLatLongFixture() {
-    const { httpClient, ...testContext } = await createHttpTestContext({
-        controllers: [TestController]
-    })
+    const { httpClient, ...ctx } = await createHttpTestContext({ controllers: [TestController] })
 
-    async function teardown() {
-        await testContext?.close()
+    const teardown = async () => {
+        await ctx.close()
     }
 
     return { teardown, httpClient }

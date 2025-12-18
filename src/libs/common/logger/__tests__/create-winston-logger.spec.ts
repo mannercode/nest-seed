@@ -1,6 +1,7 @@
 import { createWinstonLogger, Path, sleep } from 'common'
 import { readFile } from 'fs/promises'
-import winston from 'winston'
+import { isDebuggingEnabled } from 'testlib'
+import type winston from 'winston'
 
 describe('createWinstonLogger', () => {
     let logger: winston.Logger
@@ -13,7 +14,7 @@ describe('createWinstonLogger', () => {
             directory: tempDir,
             daysToKeepLogs: '1d',
             fileLogLevel: 'verbose',
-            consoleLogLevel: 'verbose'
+            consoleLogLevel: isDebuggingEnabled() ? 'verbose' : 'silent'
         })
     })
 
@@ -28,7 +29,7 @@ describe('createWinstonLogger', () => {
         return entry
     }
 
-    it('general', async () => {
+    it('writes a general log entry', async () => {
         const message = 'test message'
 
         logger.info(message)
@@ -39,7 +40,7 @@ describe('createWinstonLogger', () => {
         expect(entry).toEqual({ level: 'info', message, timestamp: expect.any(String) })
     })
 
-    it('http', async () => {
+    it('writes an HTTP log entry', async () => {
         const message = 'test message'
         const logDetails = {
             contextType: 'http',
@@ -62,7 +63,7 @@ describe('createWinstonLogger', () => {
         })
     })
 
-    it('rpc', async () => {
+    it('writes an RPC log entry', async () => {
         const message = 'test message'
         const logDetails = {
             contextType: 'rpc',

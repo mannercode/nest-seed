@@ -13,7 +13,7 @@ import {
 import { RecommendationClient } from 'apps/applications'
 import { CreateMovieDto, MoviesClient, SearchMoviesPageDto, UpdateMovieDto } from 'apps/cores'
 import { CustomerOptionalJwtAuthGuard } from './guards'
-import { CustomerAuthRequest } from './types'
+import { CustomerOptionalAuthRequest } from './types'
 
 @Controller('movies')
 export class MoviesController {
@@ -24,12 +24,13 @@ export class MoviesController {
 
     @UseGuards(CustomerOptionalJwtAuthGuard)
     @Get('recommended')
-    async searchRecommendedMovies(@Req() req: CustomerAuthRequest) {
-        const customerId = req.user.customerId
+    async searchRecommendedMovies(@Req() req: CustomerOptionalAuthRequest) {
+        const { customerId } = req.user ?? { customerId: null }
+
         return this.recommendationService.searchRecommendedMovies(customerId)
     }
 
-    // •	POST /v1/movies는 405 Method Not Allowed로 응답하고,
+    // POST /v1/movies는 405 Method Not Allowed로 응답하고,
     // {
     //   "type": "https://docs.example.com/problems/use-draft",
     //   "title": "Draft required",
@@ -37,8 +38,8 @@ export class MoviesController {
     //   "links": { "createDraft": "/v1/movies/drafts" }
     // }
     @Post()
-    async create(@Body() createMovieDto: CreateMovieDto) {
-        return this.moviesService.create(createMovieDto)
+    async create(@Body() createDto: CreateMovieDto) {
+        return this.moviesService.create(createDto)
     }
 
     @Patch(':movieId')
