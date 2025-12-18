@@ -4,8 +4,6 @@
 
 ## 1. Jest 테스트 명명 가이드
 
-<!-- // TODO  정리 필요-->
-
 1. 기본 구조는 when/action: 조건/맥락은 describe('when ...'), 행위/결과는 it('...')로 분리
 2. it 제목에 조건을 섞지 않음(예: ... when ..., ... for ..., ... if ...) → 조건 문구는 모두 상위 describe('when ...')로 이동
 3. 조건(쿼리/옵션/값) 생략은 not provided로 표기(예: when the pagination query is not provided)
@@ -15,12 +13,7 @@
 7. 서비스 메서드에서 예외를 기대하는 테스트는 returns 대신 throws 사용
 8. PATCH/DELETE류는 “응답 검증”과 “영속성 검증”을 서로 다른 it로 분리
 9. 최상위 단독 it는 의미 있는 describe 트리 아래로 넣어 테스트 스코프/대상을 명확히 함
-
-10. `when ...`은 맥락(조건), `it(...)`는 행위/결과(action)
-    - `describe('when ...')`: **조건/맥락**
-    - `it('...')`: **행위/결과**를 **동사로 시작**해 작성
-
-11. `when/action` 구조가 기본이지만 예외적으로 다양한 검증을 하나의 테스트 케이스에서 수행하는 경우에는 `when`을 생략할 수 있다.
+10. `when/action` 구조가 기본이지만 예외적으로 다양한 검증을 하나의 테스트 케이스에서 수행하는 경우에는 `when`을 생략할 수 있다.
 
     ```ts
     it('converts lowercase units to bytes', () => {
@@ -31,28 +24,6 @@
         expect(Byte.fromString('1tb')).toEqual(1024 * 1024 * 1024 * 1024)
     })
     ```
-
-12. 성공 케이스(200/201)는 상태코드를 제목에 쓰지 않는다
-    - 상태코드 대신 결과를 서술
-        - 예: `returns the created ...`, `returns the updated ...`, `returns the default page ...`
-
-13. 실패 케이스는 “상태코드”만 명시
-    - 예:
-        - `returns 404 Not Found`
-        - `returns 401 Unauthorized`
-        - `returns 400 Bad Request`
-
-14. PATCH/DELETE는 “응답 검증”과 “영속성 검증”을 분리
-    - 응답 검증: `returns the updated/deleted ...`
-    - 영속성 검증: `persists the update/deletion`
-        - PATCH: 후속 GET으로 값이 유지됨을 확인
-        - DELETE: 후속 GET에서 NotFound(또는 조회 실패)로 삭제됨을 확인
-
-15. 예외를 기대하는 서비스 메서드 테스트는 `returns` 대신 `throws` 사용
-    - 예: `throws 400 ...`, `throws 404 ...`
-
-16. 조건을 생략하는 테스트는 `not provided`라고 표현
-    - 예: `when the pagination query is not provided`
 
 > Jest는 `context`를 지원하지 않는다. 그렇다고 해서 `describe`를 `context`의 alias로 사용하면 안 된다.
 >
