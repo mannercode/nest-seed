@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Server } from 'http'
+import { isDebuggingEnabled } from './utils'
 
 export type ModuleMetadataEx = ModuleMetadata & {
     ignoreGuards?: Type<CanActivate>[]
@@ -46,6 +47,8 @@ export async function createTestContext({
     const module = await builder.compile()
 
     const app = module.createNestApplication()
+
+    app.useLogger(isDebuggingEnabled() ? console : false)
 
     if (configureApp) {
         await configureApp(app)

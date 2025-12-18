@@ -1,5 +1,6 @@
 import { createWinstonLogger, Path, sleep } from 'common'
 import { readFile } from 'fs/promises'
+import { isDebuggingEnabled } from 'testlib'
 import type winston from 'winston'
 
 describe('createWinstonLogger', () => {
@@ -13,7 +14,7 @@ describe('createWinstonLogger', () => {
             directory: tempDir,
             daysToKeepLogs: '1d',
             fileLogLevel: 'verbose',
-            consoleLogLevel: 'verbose'
+            consoleLogLevel: isDebuggingEnabled() ? 'verbose' : 'silent'
         })
     })
 

@@ -1,6 +1,6 @@
+import { HttpStatus } from '@nestjs/common'
 import { withTestId } from 'testlib'
 import type { ExceptionLoggerFilterFixture } from './exception-logger.filter.fixture'
-import { HttpStatus } from '@nestjs/common'
 
 describe('ExceptionLoggerFilter', () => {
     let fix: ExceptionLoggerFilterFixture
@@ -28,7 +28,7 @@ describe('ExceptionLoggerFilter', () => {
                     contextType: 'http',
                     request: { method: 'GET', url: '/exception' },
                     response: { code: 'ERR_CODE', message: 'message' },
-                    stack: expect.any(String)
+                    stack: expect.any(Array)
                 })
             })
         })
@@ -43,7 +43,7 @@ describe('ExceptionLoggerFilter', () => {
                     contextType: 'http',
                     request: { method: 'GET', url: '/error' },
                     response: { message: 'error message' },
-                    stack: expect.any(String)
+                    stack: expect.any(Array)
                 })
             })
         })
@@ -58,7 +58,7 @@ describe('ExceptionLoggerFilter', () => {
                     contextType: 'http',
                     request: { method: 'GET', url: '/fatal' },
                     response: { message: 'fatal error message' },
-                    stack: expect.any(String)
+                    stack: expect.any(Array)
                 })
             })
         })
@@ -83,7 +83,7 @@ describe('ExceptionLoggerFilter', () => {
                     context: { args: [subject] },
                     data: {},
                     response: { code: 'ERR_CODE', message: 'message' },
-                    stack: expect.any(String)
+                    stack: expect.any(Array)
                 })
             })
         })
@@ -99,7 +99,7 @@ describe('ExceptionLoggerFilter', () => {
                     context: { args: [subject] },
                     data: {},
                     response: { message: 'error message' },
-                    stack: expect.any(String)
+                    stack: expect.any(Array)
                 })
             })
         })
@@ -115,7 +115,7 @@ describe('ExceptionLoggerFilter', () => {
                     context: { args: [subject] },
                     data: {},
                     response: { message: 'fatal error message' },
-                    stack: expect.any(String)
+                    stack: expect.any(Array)
                 })
             })
         })

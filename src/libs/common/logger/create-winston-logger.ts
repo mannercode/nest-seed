@@ -1,9 +1,9 @@
+/* istanbul ignore file */
 import chalk from 'chalk'
 import winston from 'winston'
 import DailyRotateFile from 'winston-daily-rotate-file'
 import type { HttpErrorLog, HttpSuccessLog, RpcErrorLog, RpcSuccessLog } from './types'
 
-/* istanbul ignore next */
 function colorizeHttpMethod(method: string | undefined) {
     const METHOD = (method ?? 'METHOD').toUpperCase()
 
@@ -23,7 +23,6 @@ function colorizeHttpMethod(method: string | undefined) {
     }
 }
 
-/* istanbul ignore next */
 function colorizeLogLevel(level: string | undefined) {
     const LEVEL = (level ?? 'LEVEL').toUpperCase()
 
@@ -39,7 +38,6 @@ function colorizeLogLevel(level: string | undefined) {
     }
 }
 
-/* istanbul ignore next */
 function formatHttpLogMessage(
     message: string,
     level: string,
@@ -50,20 +48,19 @@ function formatHttpLogMessage(
     const { request } = logDetails
     const method = colorizeHttpMethod(request.method)
     const url = chalk.green(request.url)
-    const body = chalk.blueBright(JSON.stringify(request.body ?? {}))
+    const body = chalk.blueBright(JSON.stringify(request.body ?? {}, null, 2))
 
     return `${timestamp} ${level} HTTP ${message} ${statusCode} ${method} ${url} ${body} `
 }
 
-/* istanbul ignore next */
 function formatRpcLogMessage(
     message: string,
     level: string,
     timestamp: string,
     logDetails: RpcErrorLog | RpcSuccessLog
 ) {
-    const coloredContext = chalk.magenta(JSON.stringify(logDetails.context))
-    const coloredData = chalk.blueBright(JSON.stringify(logDetails.data))
+    const coloredContext = chalk.magenta(JSON.stringify(logDetails.context, null, 2))
+    const coloredData = chalk.blueBright(JSON.stringify(logDetails.data, null, 2))
 
     return `${timestamp} ${level} RPC ${message} ${coloredContext} ${coloredData}`
 }
@@ -74,7 +71,7 @@ function formatGenericLogMessage(
     timestamp: string,
     logDetails: unknown
 ) {
-    const coloredEtc = chalk.blueBright(JSON.stringify(logDetails))
+    const coloredEtc = chalk.blueBright(JSON.stringify(logDetails, null, 2))
 
     return `${timestamp} ${level} ${message} ${coloredEtc}`
 }
@@ -131,14 +128,16 @@ export function createWinstonLogger(config: LoggerConfiguration) {
         })
     )
 
-    transports.push(
-        new winston.transports.Console({
-            format: consoleLogFormat,
-            level: consoleLogLevel,
-            handleExceptions: true,
-            handleRejections: true
-        })
-    )
+    if (consoleLogLevel && consoleLogLevel !== 'silent') {
+        transports.push(
+            new winston.transports.Console({
+                format: consoleLogFormat,
+                level: consoleLogLevel,
+                handleExceptions: true,
+                handleRejections: true
+            })
+        )
+    }
 
     const logger = winston.createLogger({ format: winston.format.json(), transports })
     return logger
