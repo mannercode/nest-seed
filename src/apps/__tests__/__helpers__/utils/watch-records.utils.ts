@@ -15,10 +15,10 @@ export function buildCreateWatchRecordDto(overrides = {}) {
 
 export async function createWatchRecord(ctx: TestContext, override = {}) {
     const { WatchRecordsClient } = await import('apps/cores')
-    const watchRecordsService = ctx.module.get(WatchRecordsClient)
+    const watchRecordsClient = ctx.module.get(WatchRecordsClient)
 
     const createDto = buildCreateWatchRecordDto(override)
 
-    const watchRecord = await watchRecordsService.create(createDto)
+    const watchRecord = await watchRecordsClient.create(createDto)
     return watchRecord
 }

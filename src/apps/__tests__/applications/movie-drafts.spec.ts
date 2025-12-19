@@ -152,10 +152,10 @@ describe('MovieDraftsService', () => {
 
     describe('POST /movie-drafts/:id/complete', () => {
         describe('when the movie-draft exists and is valid', () => {
-            let movieDraft: MovieDraftDto
+            let _movieDraft: MovieDraftDto
 
             beforeEach(async () => {
-                movieDraft = await createMovieDraft(fix)
+                _movieDraft = await createMovieDraft(fix)
             })
 
             it('creates a Movie, removes the movie-draft, and returns the created Movie', () => {})

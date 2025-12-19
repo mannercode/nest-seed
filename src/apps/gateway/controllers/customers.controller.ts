@@ -25,17 +25,17 @@ import { CustomerAuthRequest } from './types'
 @UseGuards(CustomerJwtAuthGuard)
 @Controller('customers')
 export class CustomersController {
-    constructor(private readonly customersService: CustomersClient) {}
+    constructor(private readonly customersClient: CustomersClient) {}
 
     @Public()
     @Post()
     async create(@Body() createDto: CreateCustomerDto) {
-        return this.customersService.create(createDto)
+        return this.customersClient.create(createDto)
     }
 
     @Patch(':customerId')
     async update(@Param('customerId') customerId: string, @Body() updateDto: UpdateCustomerDto) {
-        return this.customersService.update(customerId, updateDto)
+        return this.customersClient.update(customerId, updateDto)
     }
 
     @Get('jwt-guard')
@@ -45,18 +45,18 @@ export class CustomersController {
 
     @Get(':customerId')
     async get(@Param('customerId') customerId: string) {
-        const customers = await this.customersService.getMany([customerId])
+        const customers = await this.customersClient.getMany([customerId])
         return customers[0]
     }
 
     @Delete(':customerId')
     async delete(@Param('customerId') customerId: string) {
-        return this.customersService.deleteMany([customerId])
+        return this.customersClient.deleteMany([customerId])
     }
 
     @Get()
     async searchPage(@Query() searchDto: SearchCustomersPageDto) {
-        return this.customersService.searchPage(searchDto)
+        return this.customersClient.searchPage(searchDto)
     }
 
     @UseGuards(CustomerLocalAuthGuard)
@@ -65,13 +65,13 @@ export class CustomersController {
     async login(@Req() req: CustomerAuthRequest) {
         Assert.defined(req.user, 'req.user must be returned in LocalStrategy.validate')
 
-        return this.customersService.generateAuthTokens(req.user)
+        return this.customersClient.generateAuthTokens(req.user)
     }
 
     @Public()
     @HttpCode(HttpStatus.OK)
     @Post('refresh')
     async refreshToken(@Body('refreshToken') refreshToken: string) {
-        return this.customersService.refreshAuthTokens(refreshToken)
+        return this.customersClient.refreshAuthTokens(refreshToken)
     }
 }

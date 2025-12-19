@@ -7,25 +7,25 @@ import { ShowtimeCreationWorkerService } from './services'
 @Injectable()
 export class ShowtimeCreationService {
     constructor(
-        private readonly theatersService: TheatersClient,
-        private readonly moviesService: MoviesClient,
-        private readonly showtimesService: ShowtimesClient,
+        private readonly theatersClient: TheatersClient,
+        private readonly moviesClient: MoviesClient,
+        private readonly showtimesClient: ShowtimesClient,
         private readonly workerService: ShowtimeCreationWorkerService
     ) {}
 
     async searchMoviesPage(searchDto: PaginationDto) {
-        return this.moviesService.searchPage({
+        return this.moviesClient.searchPage({
             ...searchDto,
             orderby: { name: 'releaseDate', direction: OrderDirection.Desc }
         })
     }
 
     async searchTheatersPage(searchDto: PaginationDto) {
-        return this.theatersService.searchPage(searchDto)
+        return this.theatersClient.searchPage(searchDto)
     }
 
     async searchShowtimes(theaterIds: string[]) {
-        return this.showtimesService.search({ theaterIds, endTimeRange: { start: new Date() } })
+        return this.showtimesClient.search({ theaterIds, endTimeRange: { start: new Date() } })
     }
 
     async requestShowtimeCreation(createDto: BulkCreateShowtimesDto) {

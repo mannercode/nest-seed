@@ -24,9 +24,9 @@ export async function createMovieDraftsFixture() {
 // TODO client인데 service라고 한 코드 다 고쳐라
 export async function createMovieDraft(ctx: TestContext): Promise<MovieDraftDto> {
     const { MovieDraftsClient } = await import('apps/applications')
-    const movieDraftsService = ctx.module.get(MovieDraftsClient)
+    const movieDraftsClient = ctx.module.get(MovieDraftsClient)
 
     // 이미지 포함 업데이트까지 다
-    const movieDraft = await movieDraftsService.create()
+    const movieDraft = await movieDraftsClient.create()
     return movieDraft
 }

@@ -32,9 +32,9 @@ export const TicketPurchaseErrors = {
 @Injectable()
 export class TicketPurchaseService {
     constructor(
-        private readonly ticketsService: TicketsClient,
-        private readonly showtimesService: ShowtimesClient,
-        private readonly ticketHoldingService: TicketHoldingClient,
+        private readonly ticketsClient: TicketsClient,
+        private readonly showtimesClient: ShowtimesClient,
+        private readonly ticketHoldingClient: TicketHoldingClient,
         private readonly events: PurchaseEvents
     ) {}
 
@@ -53,10 +53,10 @@ export class TicketPurchaseService {
 
     private async getShowtimes(ticketItems: PurchaseItemDto[]) {
         const ticketIds = ticketItems.map((item) => item.ticketId)
-        const tickets = await this.ticketsService.getMany(ticketIds)
+        const tickets = await this.ticketsClient.getMany(ticketIds)
         const showtimeIds = tickets.map((ticket) => ticket.showtimeId)
         const uniqueShowtimeIds = uniq(showtimeIds)
-        const showtimes = await this.showtimesService.getMany(uniqueShowtimeIds)
+        const showtimes = await this.showtimesClient.getMany(uniqueShowtimeIds)
 
         return showtimes
     }
@@ -96,7 +96,7 @@ export class TicketPurchaseService {
         const heldTicketIds: string[] = []
 
         for (const showtime of showtimes) {
-            const ticketIds = await this.ticketHoldingService.searchHeldTicketIds(
+            const ticketIds = await this.ticketHoldingClient.searchHeldTicketIds(
                 showtime.id,
                 customerId
             )
@@ -118,7 +118,7 @@ export class TicketPurchaseService {
         )
         const ticketIds = ticketItems.map((item) => item.ticketId)
 
-        await this.ticketsService.updateStatusMany(ticketIds, TicketStatus.Sold)
+        await this.ticketsClient.updateStatusMany(ticketIds, TicketStatus.Sold)
 
         await this.events.emitTicketPurchased(createDto.customerId, ticketIds)
 
@@ -131,7 +131,7 @@ export class TicketPurchaseService {
         )
         const ticketIds = ticketItems.map((item) => item.ticketId)
 
-        await this.ticketsService.updateStatusMany(ticketIds, TicketStatus.Available)
+        await this.ticketsClient.updateStatusMany(ticketIds, TicketStatus.Available)
 
         await this.events.emitTicketPurchaseCanceled(createDto.customerId, ticketIds)
 

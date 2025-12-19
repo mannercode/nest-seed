@@ -10,17 +10,17 @@ export function buildCreatePaymentDto(overrides = {}) {
 
 export async function createPayment(ctx: TestContext, override: Partial<CreatePaymentDto> = {}) {
     const { PaymentsClient } = await import('apps/infrastructures')
-    const paymentsService = ctx.module.get(PaymentsClient)
+    const paymentsClient = ctx.module.get(PaymentsClient)
 
     const createDto = buildCreatePaymentDto(override)
 
-    const payment = await paymentsService.create(createDto)
+    const payment = await paymentsClient.create(createDto)
     return payment
 }
 
 export async function getPayments(ctx: TestContext, paymentIds: string[]) {
     const { PaymentsClient } = await import('apps/infrastructures')
-    const paymentsService = ctx.module.get(PaymentsClient)
+    const paymentsClient = ctx.module.get(PaymentsClient)
 
-    return paymentsService.getMany(paymentIds)
+    return paymentsClient.getMany(paymentIds)
 }

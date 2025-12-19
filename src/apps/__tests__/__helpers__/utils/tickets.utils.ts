@@ -20,22 +20,22 @@ export function buildCreateTicketDto(overrides = {}) {
 
 export async function createTickets(ctx: TestContext, overrides: Partial<CreateTicketDto>[]) {
     const { TicketsClient } = await import('apps/cores')
-    const ticketsService = ctx.module.get(TicketsClient)
+    const ticketsClient = ctx.module.get(TicketsClient)
 
     const createDtos = overrides.map((override) => buildCreateTicketDto(override))
 
-    const { success } = await ticketsService.createMany(createDtos)
+    const { success } = await ticketsClient.createMany(createDtos)
     expect(success).toBe(true)
 
     const sagaIds = uniq(createDtos.map((dto) => dto.sagaId))
 
-    const tickets = await ticketsService.search({ sagaIds })
+    const tickets = await ticketsClient.search({ sagaIds })
     return tickets
 }
 
 export async function getTickets(ctx: TestContext, ticketIds: string[]) {
     const { TicketsClient } = await import('apps/cores')
-    const ticketsService = ctx.module.get(TicketsClient)
+    const ticketsClient = ctx.module.get(TicketsClient)
 
-    return ticketsService.getMany(ticketIds)
+    return ticketsClient.getMany(ticketIds)
 }

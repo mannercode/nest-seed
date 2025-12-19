@@ -21,7 +21,7 @@ describe('TicketHoldingService', () => {
             it('returns true', async () => {
                 const holdDto = buildHoldTicketsDto()
 
-                const isHeld = await fix.ticketHoldingService.holdTickets(holdDto)
+                const isHeld = await fix.ticketHoldingClient.holdTickets(holdDto)
 
                 expect(isHeld).toBe(true)
             })
@@ -33,19 +33,19 @@ describe('TicketHoldingService', () => {
 
             beforeEach(async () => {
                 const holdDto = buildHoldTicketsDto({ ticketIds, customerId })
-                await fix.ticketHoldingService.holdTickets(holdDto)
+                await fix.ticketHoldingClient.holdTickets(holdDto)
             })
 
             it('returns true for re-holding the same ticketIds', async () => {
                 const holdDto = buildHoldTicketsDto({ ticketIds, customerId })
-                const isHeld = await fix.ticketHoldingService.holdTickets(holdDto)
+                const isHeld = await fix.ticketHoldingClient.holdTickets(holdDto)
 
                 expect(isHeld).toBe(true)
             })
 
             it('returns false for another customer', async () => {
                 const holdDto = buildHoldTicketsDto({ ticketIds, customerId: oid(0xc2) })
-                const isHeld = await fix.ticketHoldingService.holdTickets(holdDto)
+                const isHeld = await fix.ticketHoldingClient.holdTickets(holdDto)
 
                 expect(isHeld).toBe(false)
             })
@@ -56,13 +56,13 @@ describe('TicketHoldingService', () => {
                         ticketIds: [oid(0xb0), oid(0xb1)],
                         customerId
                     })
-                    await fix.ticketHoldingService.holdTickets(holdDto)
+                    await fix.ticketHoldingClient.holdTickets(holdDto)
                 })
 
                 it('releases the previously held ticketIds', async () => {
                     const holdDto = buildHoldTicketsDto({ ticketIds, customerId: oid(0xc2) })
 
-                    const isHeld = await fix.ticketHoldingService.holdTickets(holdDto)
+                    const isHeld = await fix.ticketHoldingClient.holdTickets(holdDto)
 
                     expect(isHeld).toBe(true)
                 })
@@ -75,14 +75,14 @@ describe('TicketHoldingService', () => {
                 toAny(Rules).Ticket.holdDurationInMs = 1000
 
                 const holdDto = buildHoldTicketsDto({ customerId: oid(0xc1) })
-                await fix.ticketHoldingService.holdTickets(holdDto)
+                await fix.ticketHoldingClient.holdTickets(holdDto)
 
                 await sleep(1000 + 500)
             })
 
             it('returns true for another customer', async () => {
                 const holdDto = buildHoldTicketsDto({ customerId: oid(0xc2) })
-                const isHeld = await fix.ticketHoldingService.holdTickets(holdDto)
+                const isHeld = await fix.ticketHoldingClient.holdTickets(holdDto)
 
                 expect(isHeld).toBe(true)
             })
@@ -100,7 +100,7 @@ describe('TicketHoldingService', () => {
                         showtimeIds.map(async (showtimeId) => {
                             const holdResults = await Promise.all(
                                 customerIds.map((customerId) =>
-                                    fix.ticketHoldingService.holdTickets({
+                                    fix.ticketHoldingClient.holdTickets({
                                         customerId,
                                         showtimeId,
                                         ticketIds
@@ -126,11 +126,11 @@ describe('TicketHoldingService', () => {
 
             beforeEach(async () => {
                 holdDto = buildHoldTicketsDto()
-                await fix.ticketHoldingService.holdTickets(holdDto)
+                await fix.ticketHoldingClient.holdTickets(holdDto)
             })
 
             it('returns the held ticketIds', async () => {
-                const heldTicketIds = await fix.ticketHoldingService.searchHeldTicketIds(
+                const heldTicketIds = await fix.ticketHoldingClient.searchHeldTicketIds(
                     holdDto.showtimeId,
                     holdDto.customerId
                 )
@@ -147,13 +147,13 @@ describe('TicketHoldingService', () => {
                 toAny(Rules).Ticket.holdDurationInMs = 1000
 
                 holdDto = buildHoldTicketsDto()
-                await fix.ticketHoldingService.holdTickets(holdDto)
+                await fix.ticketHoldingClient.holdTickets(holdDto)
 
                 await sleep(1000 + 500)
             })
 
             it('returns an empty array', async () => {
-                const heldTicketIds = await fix.ticketHoldingService.searchHeldTicketIds(
+                const heldTicketIds = await fix.ticketHoldingClient.searchHeldTicketIds(
                     holdDto.showtimeId,
                     holdDto.customerId
                 )
@@ -169,11 +169,11 @@ describe('TicketHoldingService', () => {
 
             beforeEach(async () => {
                 holdDto = buildHoldTicketsDto()
-                await fix.ticketHoldingService.holdTickets(holdDto)
+                await fix.ticketHoldingClient.holdTickets(holdDto)
             })
 
             it('returns true for releasing held tickets', async () => {
-                const isReleased = await fix.ticketHoldingService.releaseTickets(
+                const isReleased = await fix.ticketHoldingClient.releaseTickets(
                     holdDto.showtimeId,
                     holdDto.customerId
                 )
@@ -184,7 +184,7 @@ describe('TicketHoldingService', () => {
 
         describe('when the customer holds no tickets', () => {
             it('returns true', async () => {
-                const isReleased = await fix.ticketHoldingService.releaseTickets(
+                const isReleased = await fix.ticketHoldingClient.releaseTickets(
                     oid(0xa0),
                     oid(0xc1)
                 )

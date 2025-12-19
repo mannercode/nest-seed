@@ -13,10 +13,10 @@ export function buildCreateTheaterDto(overrides = {}) {
 
 export async function createTheater(ctx: TestContext, override = {}) {
     const { TheatersClient } = await import('apps/cores')
-    const theatersService = ctx.module.get(TheatersClient)
+    const theatersClient = ctx.module.get(TheatersClient)
 
     const createDto = buildCreateTheaterDto(override)
 
-    const theater = await theatersService.create(createDto)
+    const theater = await theatersClient.create(createDto)
     return theater
 }

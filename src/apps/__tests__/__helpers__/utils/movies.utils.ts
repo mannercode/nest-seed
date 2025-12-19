@@ -20,10 +20,10 @@ export function buildCreateMovieDto(overrides = {}) {
 
 export async function createMovie(ctx: TestContext, override = {}): Promise<MovieDto> {
     const { MoviesClient } = await import('apps/cores')
-    const moviesService = ctx.module.get(MoviesClient)
+    const moviesClient = ctx.module.get(MoviesClient)
 
     const createDto = buildCreateMovieDto(override)
 
-    const movie = await moviesService.create(createDto)
+    const movie = await moviesClient.create(createDto)
     return movie
 }

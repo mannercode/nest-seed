@@ -8,31 +8,31 @@ import {
 
 @Controller('theaters')
 export class TheatersController {
-    constructor(private readonly theatersService: TheatersClient) {}
+    constructor(private readonly theatersClient: TheatersClient) {}
 
     @Post()
     async create(@Body() createDto: CreateTheaterDto) {
-        return this.theatersService.create(createDto)
+        return this.theatersClient.create(createDto)
     }
 
     @Patch(':theaterId')
     async update(@Param('theaterId') theaterId: string, @Body() updateDto: UpdateTheaterDto) {
-        return this.theatersService.update(theaterId, updateDto)
+        return this.theatersClient.update(theaterId, updateDto)
     }
 
     @Get(':theaterId')
     async get(@Param('theaterId') theaterId: string) {
-        const theaters = await this.theatersService.getMany([theaterId])
+        const theaters = await this.theatersClient.getMany([theaterId])
         return theaters[0]
     }
 
     @Delete(':theaterId')
     async delete(@Param('theaterId') theaterId: string) {
-        return this.theatersService.deleteMany([theaterId])
+        return this.theatersClient.deleteMany([theaterId])
     }
 
     @Get()
     async searchPage(@Query() searchDto: SearchTheatersPageDto) {
-        return this.theatersService.searchPage(searchDto)
+        return this.theatersClient.searchPage(searchDto)
     }
 }

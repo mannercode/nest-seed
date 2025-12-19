@@ -23,15 +23,15 @@ export function buildCreateShowtimeDto(overrides: Partial<CreateShowtimeDto> = {
 
 export async function createShowtimes(ctx: TestContext, overrides: Partial<CreateShowtimeDto>[]) {
     const { ShowtimesClient } = await import('apps/cores')
-    const showtimesService = ctx.module.get(ShowtimesClient)
+    const showtimesClient = ctx.module.get(ShowtimesClient)
 
     const createDtos = overrides.map((override) => buildCreateShowtimeDto(override))
 
-    const { success } = await showtimesService.createMany(createDtos)
+    const { success } = await showtimesClient.createMany(createDtos)
     expect(success).toBe(true)
 
     const sagaIds = uniq(createDtos.map((dto) => dto.sagaId))
 
-    const showtimes = await showtimesService.search({ sagaIds })
+    const showtimes = await showtimesClient.search({ sagaIds })
     return showtimes
 }

@@ -18,7 +18,7 @@ describe('WatchRecordsService', () => {
     describe('create', () => {
         it('returns the created watch record', async () => {
             const createDto = buildCreateWatchRecordDto()
-            const watchRecord = await fix.watchRecordsService.create(createDto)
+            const watchRecord = await fix.watchRecordsClient.create(createDto)
 
             expect(watchRecord).toEqual({ ...createDto, id: expect.any(String) })
         })
@@ -49,7 +49,7 @@ describe('WatchRecordsService', () => {
                 query: SearchWatchRecordsPageDto,
                 watchRecords: WatchRecordDto[]
             ) => {
-                const page = await fix.watchRecordsService.searchPage(query)
+                const page = await fix.watchRecordsClient.searchPage(query)
                 expect(page).toEqual(buildExpectedPage(watchRecords))
             }
 

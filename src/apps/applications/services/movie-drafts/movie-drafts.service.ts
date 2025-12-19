@@ -15,8 +15,8 @@ import { MovieDraftsRepository } from './movie-drafts.repository'
 export class MovieDraftsService {
     constructor(
         private readonly repository: MovieDraftsRepository,
-        private readonly moviesService: MoviesClient,
-        private readonly assetsService: AssetsClient
+        private readonly moviesClient: MoviesClient,
+        private readonly assetsClient: AssetsClient
     ) {}
 
     async create(): Promise<MovieDraftDto> {
@@ -67,7 +67,7 @@ export class MovieDraftsService {
             })
         }
 
-        const upload = await this.assetsService.create(createDto)
+        const upload = await this.assetsClient.create(createDto)
 
         await this.repository.addOrUpdateImage(draftId, {
             assetId: upload.assetId,
@@ -85,7 +85,7 @@ export class MovieDraftsService {
             throw new NotFoundException({ ...MovieDraftErrors.ImageNotFound, imageId })
         }
 
-        await this.assetsService.complete(imageId, {
+        await this.assetsClient.complete(imageId, {
             owner: { service: 'movie-drafts', entityId: draftId }
         })
 
@@ -106,7 +106,7 @@ export class MovieDraftsService {
 
         this.ensureComplete(draft, readyImageAssetIds)
 
-        const movie = await this.moviesService.create({
+        const movie = await this.moviesClient.create({
             title: draft.title ?? '',
             genres: draft.genres,
             releaseDate: draft.releaseDate ?? new Date(0),

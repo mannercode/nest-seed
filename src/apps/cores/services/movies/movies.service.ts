@@ -8,38 +8,38 @@ import { MoviesRepository } from './movies.repository'
 @Injectable()
 export class MoviesService {
     constructor(
-        private readonly moviesRepository: MoviesRepository,
-        private readonly assetsService: AssetsClient
+        private readonly repository: MoviesRepository,
+        private readonly assetsClient: AssetsClient
     ) {}
 
     async create(createDto: CreateMovieDto) {
-        const movie = await this.moviesRepository.create(createDto)
+        const movie = await this.repository.create(createDto)
 
         return this.toDto(movie)
     }
 
     async update(movieId: string, updateDto: UpdateMovieDto) {
-        const movie = await this.moviesRepository.update(movieId, updateDto)
+        const movie = await this.repository.update(movieId, updateDto)
 
         return this.toDto(movie)
     }
 
     async getMany(movieIds: string[]) {
-        const movies = await this.moviesRepository.getByIds(movieIds)
+        const movies = await this.repository.getByIds(movieIds)
 
         return this.toDtos(movies)
     }
 
     async deleteMany(movieIds: string[]) {
-        const movies = await this.moviesRepository.getByIds(movieIds)
+        const movies = await this.repository.getByIds(movieIds)
 
         const assetIds = [
             ...new Set(movies.flatMap((movie) => movie.assetIds.map((id) => id.toString())))
         ]
 
-        await this.assetsService.deleteMany(assetIds)
+        await this.assetsClient.deleteMany(assetIds)
 
-        await this.moviesRepository.model.deleteMany({ _id: { $in: objectIds(movieIds) } as any })
+        await this.repository.model.deleteMany({ _id: { $in: objectIds(movieIds) } as any })
 
         movies.forEach((movie) => {
             movie.assetIds = []
@@ -49,13 +49,13 @@ export class MoviesService {
     }
 
     async searchPage(searchDto: SearchMoviesPageDto) {
-        const { items, ...pagination } = await this.moviesRepository.searchPage(searchDto)
+        const { items, ...pagination } = await this.repository.searchPage(searchDto)
 
         return { ...pagination, items: await this.toDtos(items) }
     }
 
     async allExist(movieIds: string[]): Promise<boolean> {
-        return this.moviesRepository.allExist(movieIds)
+        return this.repository.allExist(movieIds)
     }
 
     private async toDto(movie: MovieDocument): Promise<MovieDto> {
@@ -87,7 +87,7 @@ export class MoviesService {
             return dtos
         }
 
-        const assets = await this.assetsService.getMany(assetIds)
+        const assets = await this.assetsClient.getMany(assetIds)
 
         const assetUrlById = new Map<string, string>()
 

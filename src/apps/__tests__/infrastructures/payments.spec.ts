@@ -21,7 +21,7 @@ describe('PaymentsService', () => {
         it('returns the created payment', async () => {
             const createDto = buildCreatePaymentDto()
 
-            const payment = await fix.paymentsService.create(createDto)
+            const payment = await fix.paymentsClient.create(createDto)
 
             expect(payment).toEqual({
                 ...createDto,
@@ -45,7 +45,7 @@ describe('PaymentsService', () => {
             })
 
             it('returns payments for the paymentIds', async () => {
-                const fetchedPayments = await fix.paymentsService.getMany(pickIds(payments))
+                const fetchedPayments = await fix.paymentsClient.getMany(pickIds(payments))
 
                 expect(fetchedPayments).toEqual(expect.arrayContaining(payments))
             })
@@ -53,7 +53,7 @@ describe('PaymentsService', () => {
 
         describe('when the paymentIds include a non-existent paymentId', () => {
             it('throws 404 Not Found', async () => {
-                const promise = fix.paymentsService.getMany([nullObjectId])
+                const promise = fix.paymentsClient.getMany([nullObjectId])
 
                 await expect(promise).rejects.toMatchObject({
                     status: HttpStatus.NOT_FOUND,

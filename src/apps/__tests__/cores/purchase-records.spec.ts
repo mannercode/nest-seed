@@ -18,7 +18,7 @@ describe('PurchaseRecordsService', () => {
     describe('create', () => {
         it('returns the created purchase record', async () => {
             const createDto = buildCreatePurchaseRecordDto()
-            const createdPurchaseRecord = await fix.purchaseRecordsService.create(createDto)
+            const createdPurchaseRecord = await fix.purchaseRecordsClient.create(createDto)
 
             expect(createdPurchaseRecord).toEqual({
                 id: expect.any(String),

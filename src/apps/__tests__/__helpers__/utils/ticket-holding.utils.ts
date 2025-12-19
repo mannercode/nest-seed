@@ -13,7 +13,7 @@ export function buildHoldTicketsDto(holdDto?: Partial<HoldTicketsDto>) {
 
 export async function holdTickets(ctx: TestContext, holdDto?: Partial<HoldTicketsDto>) {
     const { TicketHoldingClient } = await import('apps/cores')
-    const ticketHoldingService = ctx.module.get(TicketHoldingClient)
+    const ticketHoldingClient = ctx.module.get(TicketHoldingClient)
 
-    return ticketHoldingService.holdTickets(buildHoldTicketsDto(holdDto))
+    return ticketHoldingClient.holdTickets(buildHoldTicketsDto(holdDto))
 }

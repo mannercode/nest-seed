@@ -5,7 +5,7 @@ import type { AppTestContext } from '../__helpers__'
 import { createAppTestContext } from '../__helpers__'
 
 export type PurchaseRecordsFixture = AppTestContext & {
-    purchaseRecordsService: PurchaseRecordsClient
+    purchaseRecordsClient: PurchaseRecordsClient
 }
 
 export async function createPurchaseRecordsFixture(): Promise<PurchaseRecordsFixture> {
@@ -15,6 +15,6 @@ export async function createPurchaseRecordsFixture(): Promise<PurchaseRecordsFix
         controllers: [PurchasesController]
     })
 
-    const purchaseRecordsService = ctx.module.get(PurchaseRecordsClient)
-    return { ...ctx, purchaseRecordsService }
+    const purchaseRecordsClient = ctx.module.get(PurchaseRecordsClient)
+    return { ...ctx, purchaseRecordsClient }
 }
