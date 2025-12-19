@@ -40,10 +40,7 @@ describe('MovieDraftsService', () => {
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .get(`/movie-drafts/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
+                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
             })
         })
     })
