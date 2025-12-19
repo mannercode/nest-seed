@@ -13,9 +13,6 @@ export type MovieDraftImage = {
 
 @Schema(MongooseConfigModule.schemaOptions)
 export class MovieDraft extends MongooseSchema {
-    @Prop({ required: true })
-    expiresAt: Date
-
     @Prop()
     title?: string
 

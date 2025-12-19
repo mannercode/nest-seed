@@ -6,8 +6,6 @@ import {
 } from '@nestjs/common'
 import { MovieRating, MoviesClient } from 'apps/cores'
 import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
-import { DateUtil } from 'common'
-import { Rules } from 'shared'
 import { DraftImageDto, DraftImageUploadResponse, MovieDraftDto, UpdateMovieDraftDto } from './dtos'
 import { MovieDraftErrors } from './errors'
 import { MovieDraftDocument, MovieDraftImageStatus } from './models/movie-draft'
@@ -22,22 +20,24 @@ export class MovieDraftsService {
     ) {}
 
     async create(): Promise<MovieDraftDto> {
-        const expiresAt = DateUtil.add({ minutes: Rules.Movie.draftExpiresInMinutes })
-
-        const draft = await this.repository.createDraft({ expiresAt })
+        const draft = await this.repository.createDraft()
         return this.toDto(draft)
     }
 
+    // async getMany(movieIds: string[]) {
+    //     const draft = await this.repository.getByIds(movieIds)
+
+    //     return this.toDtos(draft)
+    // }
+
     async get(draftId: string): Promise<MovieDraftDto> {
         const draft = await this.repository.getById(draftId)
-        await this.ensureNotExpired(draft)
 
         return this.toDto(draft)
     }
 
     async update(draftId: string, updateDto: UpdateMovieDraftDto): Promise<MovieDraftDto> {
         const draft = await this.repository.getById(draftId)
-        await this.ensureNotExpired(draft)
 
         const updateValues = Object.fromEntries(
             Object.entries(updateDto).filter(([, value]) => value !== undefined)
@@ -51,7 +51,6 @@ export class MovieDraftsService {
 
     async delete(draftId: string) {
         const draft = await this.repository.getById(draftId)
-        await this.ensureNotExpired(draft)
 
         await draft.deleteOne()
         return true
@@ -61,9 +60,6 @@ export class MovieDraftsService {
         draftId: string,
         createDto: CreateAssetDto
     ): Promise<DraftImageUploadResponse> {
-        const draft = await this.repository.getById(draftId)
-        await this.ensureNotExpired(draft)
-
         if (!createDto.mimeType.startsWith('image/')) {
             throw new BadRequestException({
                 ...MovieDraftErrors.UnsupportedImageType,
@@ -83,7 +79,6 @@ export class MovieDraftsService {
 
     async completeImage(draftId: string, imageId: string): Promise<DraftImageDto> {
         const draft = await this.repository.getById(draftId)
-        await this.ensureNotExpired(draft)
 
         const image = draft.images.find((img) => img.assetId === imageId)
         if (!image) {
@@ -102,10 +97,8 @@ export class MovieDraftsService {
         return { id: imageId, status: MovieDraftImageStatus.Ready }
     }
 
-    /* istanbul ignore next */
     async completeDraft(draftId: string) {
         const draft = await this.repository.getById(draftId)
-        await this.ensureNotExpired(draft)
 
         const readyImageAssetIds = draft.images
             .filter((image) => image.status === MovieDraftImageStatus.Ready)
@@ -136,7 +129,6 @@ export class MovieDraftsService {
 
         return {
             id: draft.id,
-            expiresAt: draft.expiresAt,
             title: draft.title,
             genres: draft.genres,
             releaseDate: draft.releaseDate,
@@ -144,20 +136,7 @@ export class MovieDraftsService {
             durationInSeconds: draft.durationInSeconds,
             director: draft.director,
             rating: draft.rating,
-            assetIds: readyImageAssetIds,
-            images: draft.images.map((image) => ({ id: image.assetId, status: image.status }))
-        }
-    }
-
-    private async ensureNotExpired(draft: MovieDraftDocument) {
-        if (draft.expiresAt.getTime() <= DateUtil.now().getTime()) {
-            await draft.deleteOne()
-
-            throw new NotFoundException({
-                ...MovieDraftErrors.Expired,
-                draftId: draft.id,
-                expiredAt: draft.expiresAt
-            })
+            assetIds: readyImageAssetIds
         }
     }
 

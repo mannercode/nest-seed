@@ -4,16 +4,18 @@
 
 ## 1. Jest 테스트 명명 가이드
 
-1. 기본 구조는 when/action: 조건/맥락은 describe('when ...'), 행위/결과는 it('...')로 분리
-2. it 제목에 조건을 섞지 않음(예: ... when ..., ... for ..., ... if ...) → 조건 문구는 모두 상위 describe('when ...')로 이동
-3. 조건(쿼리/옵션/값) 생략은 not provided로 표기(예: when the pagination query is not provided)
-4. it는 동사로 시작하는 “행위/결과” 문장으로 작성(의미 없는 it('info'), it('general') 같은 제목은 구체적으로 변경)
-5. 성공 케이스는 상태코드 없이 결과로 서술(returns the created ..., creates ..., logs ... 등)
-6. 실패 케이스는 it에 상태코드/예외만 남김(returns 400 Bad Request, throws 404 Not Found), 실패 사유는 when ...로 올림
-7. 서비스 메서드에서 예외를 기대하는 테스트는 returns 대신 throws 사용
-8. PATCH/DELETE류는 “응답 검증”과 “영속성 검증”을 서로 다른 it로 분리
-9. 최상위 단독 it는 의미 있는 describe 트리 아래로 넣어 테스트 스코프/대상을 명확히 함
-10. `when/action` 구조가 기본이지만 예외적으로 다양한 검증을 하나의 테스트 케이스에서 수행하는 경우에는 `when`을 생략할 수 있다.
+1.  기본 구조는 when/action: 조건/맥락은 describe('when ...'), 행위/결과는 it('...')로 분리
+2.  it 제목에 조건을 섞지 않음(예: ... when ..., ... for ..., ... if ...) → 조건 문구는 모두 상위 describe('when ...')로 이동
+3.  조건(쿼리/옵션/값) 생략은 not provided로 표기(예: when the pagination query is not provided)
+4.  it는 동사로 시작하는 “행위/결과” 문장으로 작성(의미 없는 it('info'), it('general') 같은 제목은 구체적으로 변경)
+5.  성공 케이스는 상태코드 없이 결과로 서술(returns the created ..., creates ..., logs ... 등)
+6.  실패 케이스는 it에 상태코드/예외만 남김(returns 400 Bad Request, throws 404 Not Found), 실패 사유는 when ...로 올림
+7.  성공 케이스는 when을 생략할 수 있다.
+    - 'when the payload is valid'
+8.  서비스 메서드에서 예외를 기대하는 테스트는 returns 대신 throws 사용
+9.  PATCH/DELETE류는 “응답 검증”과 “영속성 검증”을 서로 다른 it로 분리
+10. 최상위 단독 it는 의미 있는 describe 트리 아래로 넣어 테스트 스코프/대상을 명확히 함
+11. `when/action` 구조가 기본이지만 예외적으로 다양한 검증을 하나의 테스트 케이스에서 수행하는 경우에는 `when`을 생략할 수 있다.
 
     ```ts
     it('converts lowercase units to bytes', () => {
