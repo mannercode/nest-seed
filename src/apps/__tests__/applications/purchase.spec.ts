@@ -12,10 +12,7 @@ describe('PurchaseService', () => {
         const { createPurchaseFixture } = await import('./purchase.fixture')
         fix = await createPurchaseFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('POST /purchases', () => {
         describe('when the customer holds tickets', () => {

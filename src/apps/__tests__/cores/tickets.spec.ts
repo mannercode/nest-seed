@@ -13,10 +13,7 @@ describe('TicketsService', () => {
         const { createTicketsFixture } = await import('./tickets.fixture')
         fix = await createTicketsFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('createMany', () => {
         it('creates tickets', async () => {

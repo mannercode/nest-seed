@@ -15,10 +15,7 @@ describe('NATS Queue Group', () => {
 
         fix = await createQueueGroupFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('when a queue group is set', () => {
         it('delivers the message to one instance', async () => {

@@ -10,10 +10,7 @@ describe('TheatersService', () => {
         const { createTheatersFixture } = await import('./theaters.fixture')
         fix = await createTheatersFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('POST /theaters', () => {
         it('returns the created theater', async () => {

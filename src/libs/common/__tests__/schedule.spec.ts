@@ -9,10 +9,7 @@ describe('ScheduleModule', () => {
         const { createScheduleModuleFixture } = await import('./schedule.fixture')
         fix = await createScheduleModuleFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('when using the default schedule', () => {
         it('runs the sample job every two seconds', async () => {

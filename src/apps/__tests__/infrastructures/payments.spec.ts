@@ -12,10 +12,7 @@ describe('PaymentsService', () => {
         const { createPaymentsFixture } = await import('./payments.fixture')
         fix = await createPaymentsFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('create', () => {
         it('returns the created payment', async () => {

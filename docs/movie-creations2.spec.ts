@@ -64,10 +64,7 @@ describe.skip('MovieCreationsService', () => {
         const { createFixture } = await import('./movie-drafts.fixture')
         fix = await createFixture()
     })
-
-    afterEach(async () => {
-        await fix?.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('POST /movie-creations', () => {
         // 요청이 유효한 경우

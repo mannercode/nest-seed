@@ -10,10 +10,7 @@ describe('WatchRecordsService', () => {
         const { createWatchRecordsFixture } = await import('./watch-records.fixture')
         fix = await createWatchRecordsFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('create', () => {
         it('returns the created watch record', async () => {

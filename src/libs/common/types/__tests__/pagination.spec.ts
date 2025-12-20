@@ -12,10 +12,7 @@ describe('PaginationDto', () => {
         const { createPaginationFixture } = await import('./pagination.fixture')
         fix = await createPaginationFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('HTTP controller', () => {
         describe('when the request is valid', () => {

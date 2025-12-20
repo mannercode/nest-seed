@@ -10,10 +10,7 @@ describe('MovieDraftsService', () => {
         const { createMovieDraftsFixture } = await import('./movie-drafts.fixture')
         fix = await createMovieDraftsFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('POST /movie-drafts', () => {
         it('returns the created movie-draft', async () => {

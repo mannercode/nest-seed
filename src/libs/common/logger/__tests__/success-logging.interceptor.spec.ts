@@ -10,10 +10,7 @@ describe('SuccessLoggingInterceptor', () => {
                 await import('./success-logging.interceptor.fixture')
             fix = await createSuccessLoggingInterceptorFixture([])
         })
-
-        afterEach(async () => {
-            await fix.teardown()
-        })
+        afterEach(() => fix.teardown())
 
         describe('when the request is HTTP', () => {
             it('logs via Logger.verbose', async () => {
@@ -76,10 +73,7 @@ describe('SuccessLoggingInterceptor', () => {
                 { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/exclude-path'] }
             ])
         })
-
-        afterEach(async () => {
-            await fix.teardown()
-        })
+        afterEach(() => fix.teardown())
 
         it('ignores specified HTTP paths', async () => {
             await fix.httpClient.get('/exclude-path').ok({ result: 'success' })
@@ -96,10 +90,7 @@ describe('SuccessLoggingInterceptor', () => {
                 { provide: 'LOGGING_EXCLUDE_RPC_PATHS', useValue: [withTestId('exclude-path')] }
             ])
         })
-
-        afterEach(async () => {
-            await fix.teardown()
-        })
+        afterEach(() => fix.teardown())
 
         it('ignores specified RPC paths', async () => {
             const subject = withTestId('exclude-path')

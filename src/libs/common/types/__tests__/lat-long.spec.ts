@@ -8,10 +8,7 @@ describe('LatLong', () => {
         const { createLatLongFixture } = await import('./lat-long.fixture')
         fix = await createLatLongFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('distanceInMeters', () => {
         describe('when two coordinates are provided', () => {

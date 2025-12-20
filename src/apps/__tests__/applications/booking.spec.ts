@@ -12,10 +12,7 @@ describe('BookingService', () => {
         const { createBookingFixture } = await import('./booking.fixture')
         fix = await createBookingFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('when a customer goes through the booking flow', () => {
         let movie: MovieDto

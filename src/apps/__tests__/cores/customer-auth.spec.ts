@@ -13,10 +13,7 @@ describe('CustomersService', () => {
 
         await createCustomer(fix, credentials)
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('POST /customers/login', () => {
         describe('when the credentials are valid', () => {

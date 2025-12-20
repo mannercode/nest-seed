@@ -15,10 +15,7 @@ describe('Mongoose Delete', () => {
             createdDoc.name = 'name'
             await createdDoc.save()
         })
-
-        afterEach(async () => {
-            await fix.teardown()
-        })
+        afterEach(() => fix.teardown())
 
         describe('when creating a new document', () => {
             it('sets deletedAt to null', async () => {
@@ -76,10 +73,7 @@ describe('Mongoose Delete', () => {
             createdDoc.name = 'name'
             await createdDoc.save()
         })
-
-        afterEach(async () => {
-            await fix.teardown()
-        })
+        afterEach(() => fix.teardown())
 
         describe('when creating a new document', () => {
             it('does not have deletedAt', async () => {

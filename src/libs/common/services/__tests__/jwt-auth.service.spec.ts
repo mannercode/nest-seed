@@ -8,10 +8,7 @@ describe('JwtAuthService', () => {
         const { createJwtAuthServiceFixture } = await import('./jwt-auth.service.fixture')
         fix = await createJwtAuthServiceFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('generateAuthTokens', () => {
         describe('when the payload is valid', () => {

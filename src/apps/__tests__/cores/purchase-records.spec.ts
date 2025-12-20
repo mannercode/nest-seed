@@ -10,10 +10,7 @@ describe('PurchaseRecordsService', () => {
         const { createPurchaseRecordsFixture } = await import('./purchase-records.fixture')
         fix = await createPurchaseRecordsFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('create', () => {
         it('returns the created purchase record', async () => {

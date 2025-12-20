@@ -22,10 +22,7 @@ describe('AssetsService', () => {
         const { createAssetsFixture } = await import('./assets.fixture')
         fix = await createAssetsFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('create', () => {
         describe('when the DTO is valid', () => {

@@ -14,10 +14,7 @@ describe('S3ObjectService', () => {
         const { createS3ObjectServiceFixture } = await import('./s3-object.service.fixture')
         fix = await createS3ObjectServiceFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('presignUploadUrl', () => {
         it('returns an uploadUrl', async () => {

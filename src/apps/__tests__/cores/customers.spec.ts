@@ -11,10 +11,7 @@ describe('CustomersService', () => {
         const { createCustomersFixture } = await import('./customers.fixture')
         fix = await createCustomersFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('POST /customers', () => {
         it('returns the created customer', async () => {

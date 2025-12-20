@@ -8,10 +8,7 @@ describe('ClientProxyService with name', () => {
             await import('./client-proxy-with-name.fixture')
         fix = await createClientProxyWithNameFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     it('creates and uses the named ClientProxyService', async () => {
         await fix.httpClient.get('/value').ok({ result: 'success' })

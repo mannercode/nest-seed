@@ -19,10 +19,7 @@ describe('MoviesService', () => {
         const { createMoviesFixture } = await import('./movies.fixture')
         fix = await createMoviesFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('POST /movies', () => {
         it('returns the created movie', async () => {

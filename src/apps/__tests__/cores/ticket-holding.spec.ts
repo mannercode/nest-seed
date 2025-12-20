@@ -11,10 +11,7 @@ describe('TicketHoldingService', () => {
         const { createTicketHoldingFixture } = await import('./ticket-holding.fixture')
         fix = await createTicketHoldingFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('holdTickets', () => {
         describe('when the ticketIds are not held', () => {

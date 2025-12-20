@@ -7,10 +7,7 @@ describe('MongooseRepository.withTransaction', () => {
         const { createMongooseTransactionFixture } = await import('./mongoose.transaction.fixture')
         fix = await createMongooseTransactionFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('withTransaction', () => {
         describe('when the transaction succeeds', () => {

@@ -8,10 +8,7 @@ describe('RedisHealthIndicator', () => {
             await import('./redis.health-indicator.fixture')
         fix = await createRedisHealthIndicatorFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('isHealthy', () => {
         describe('when the ping response is "PONG"', () => {

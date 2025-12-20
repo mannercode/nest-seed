@@ -8,10 +8,7 @@ describe('CacheService', () => {
         const { createCacheServiceFixture } = await import('./cache.service.fixture')
         fix = await createCacheServiceFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('set', () => {
         describe('when the TTL is not provided', () => {

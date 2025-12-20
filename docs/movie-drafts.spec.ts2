@@ -13,10 +13,7 @@ describe('MovieDraftsService', () => {
         const { createMovieDraftsFixture } = await import('./movie-drafts.fixture')
         fix = await createMovieDraftsFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     async function requestImageUpload(draftId: string) {
         const createDto = {

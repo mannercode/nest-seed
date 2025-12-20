@@ -12,10 +12,7 @@ describe('ShowtimesService', () => {
         const { createShowtimesFixture } = await import('./showtimes.fixture')
         fix = await createShowtimesFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('createMany', () => {
         it('creates showtimes', async () => {

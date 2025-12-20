@@ -13,10 +13,7 @@ describe('RecommendationService', () => {
         const { createRecommendationFixture } = await import('./recommendation.fixture')
         fix = await createRecommendationFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('GET /movies/recommended', () => {
         describe('when showing movies exist', () => {

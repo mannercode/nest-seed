@@ -18,10 +18,7 @@ describe('MongooseRepository', () => {
         const { createMongooseRepositoryFixture } = await import('./mongoose.repository.fixture')
         fix = await createMongooseRepositoryFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('save', () => {
         it('creates the document', async () => {

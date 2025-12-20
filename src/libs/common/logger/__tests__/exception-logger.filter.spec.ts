@@ -10,10 +10,7 @@ describe('ExceptionLoggerFilter', () => {
             await import('./exception-logger.filter.fixture')
         fix = await createExceptionLoggerFilterFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('HTTP context', () => {
         describe('when an HttpException is thrown', () => {

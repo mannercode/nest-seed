@@ -18,10 +18,7 @@ describe('ShowtimeCreationService', () => {
         movie = await createMovie(fix)
         theater = await createTheater(fix)
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('GET /showtime-creation/movies', () => {
         describe('when the query is not provided', () => {

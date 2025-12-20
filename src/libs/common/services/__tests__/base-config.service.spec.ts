@@ -13,10 +13,7 @@ describe('BaseConfigService', () => {
         const { createBaseConfigServiceFixture } = await import('./base-config.service.fixture')
         fix = await createBaseConfigServiceFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('getString', () => {
         describe('when the key exists', () => {

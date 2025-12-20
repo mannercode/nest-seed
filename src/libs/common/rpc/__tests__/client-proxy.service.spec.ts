@@ -8,10 +8,7 @@ describe('ClientProxyService', () => {
         const { createClientProxyServiceFixture } = await import('./client-proxy.service.fixture')
         fix = await createClientProxyServiceFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('send', () => {
         describe('when the HttpController returns an Observable', () => {

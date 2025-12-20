@@ -8,10 +8,7 @@ describe('Mongoose TTL expiration', () => {
         const { createMongooseExpiresFixture } = await import('./mongoose.expires.fixture')
         fix = await createMongooseExpiresFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('when the TTL expires', () => {
         it('removes the document automatically', async () => {

@@ -21,7 +21,6 @@ export async function createMovieDraftsFixture() {
 }
 
 // TODO eslint sort 추가
-// TODO client인데 service라고 한 코드 다 고쳐라
 export async function createMovieDraft(ctx: TestContext): Promise<MovieDraftDto> {
     const { MovieDraftsClient } = await import('apps/applications')
     const movieDraftsClient = ctx.module.get(MovieDraftsClient)
