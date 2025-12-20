@@ -20,8 +20,13 @@ describe('CacheService', () => {
         })
 
         describe('when a TTL is provided', () => {
+            let ttl: number
+
+            beforeEach(() => {
+                ttl = 1000
+            })
+
             it('expires after the TTL', async () => {
-                const ttl = 1000
                 await fix.cacheService.set('key', 'value', ttl)
 
                 const beforeExpiration = await fix.cacheService.get('key')
@@ -35,8 +40,13 @@ describe('CacheService', () => {
         })
 
         describe('when the TTL is 0', () => {
+            let ttl: number
+
+            beforeEach(() => {
+                ttl = 0
+            })
+
             it('does not expire', async () => {
-                const ttl = 0
                 await fix.cacheService.set('key', 'value', ttl)
 
                 const beforeExpiration = await fix.cacheService.get('key')
@@ -50,9 +60,13 @@ describe('CacheService', () => {
         })
 
         describe('when the TTL is negative', () => {
-            it('throws', async () => {
-                const wrongTTL = -100
+            let wrongTTL: number
 
+            beforeEach(() => {
+                wrongTTL = -100
+            })
+
+            it('throws', async () => {
                 await expect(fix.cacheService.set('key', 'value', wrongTTL)).rejects.toThrow(
                     'TTL must be a non-negative integer (0 for no expiration)'
                 )

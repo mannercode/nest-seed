@@ -26,20 +26,28 @@ describe('FileUtil', () => {
 
     describe('areEqual', () => {
         describe('when the files are identical', () => {
-            it('returns true', async () => {
-                const identicalFilePath = Path.join(tempDir, 'identical.txt')
-                await fs.writeFile(identicalFilePath, fileContent)
+            let identicalFilePath: string
 
+            beforeEach(async () => {
+                identicalFilePath = Path.join(tempDir, 'identical.txt')
+                await fs.writeFile(identicalFilePath, fileContent)
+            })
+
+            it('returns true', async () => {
                 const areEqual = await FileUtil.areEqual(originalFilePath, identicalFilePath)
                 expect(areEqual).toBe(true)
             })
         })
 
         describe('when the files are different', () => {
-            it('returns false', async () => {
-                const differentFilePath = Path.join(tempDir, 'different.txt')
-                await fs.writeFile(differentFilePath, 'This is different')
+            let differentFilePath: string
 
+            beforeEach(async () => {
+                differentFilePath = Path.join(tempDir, 'different.txt')
+                await fs.writeFile(differentFilePath, 'This is different')
+            })
+
+            it('returns false', async () => {
                 const areEqual = await FileUtil.areEqual(originalFilePath, differentFilePath)
                 expect(areEqual).toBe(false)
             })

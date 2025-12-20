@@ -37,11 +37,15 @@ describe('Mongoose Delete', () => {
         })
 
         describe('when calling deleteMany', () => {
-            it('records deletedAt for each document', async () => {
-                const secondDoc = new fix.model()
+            let secondDoc: HydratedDocument<SoftDeleteSample>
+
+            beforeEach(async () => {
+                secondDoc = new fix.model()
                 secondDoc.name = 'name'
                 await secondDoc.save()
+            })
 
+            it('records deletedAt for each document', async () => {
                 await fix.model.deleteMany({ _id: { $in: [createdDoc._id, secondDoc._id] } as any })
 
                 const deletedDocs = await fix.model.find({}).setOptions({ withDeleted: true })
@@ -51,9 +55,11 @@ describe('Mongoose Delete', () => {
         })
 
         describe('when aggregating', () => {
-            it('excludes deleted documents', async () => {
+            beforeEach(async () => {
                 await fix.model.deleteOne({ _id: createdDoc._id })
+            })
 
+            it('excludes deleted documents', async () => {
                 const aggregateResult = await fix.model.aggregate([{ $match: { name: 'name' } }])
 
                 expect(aggregateResult).toHaveLength(0)

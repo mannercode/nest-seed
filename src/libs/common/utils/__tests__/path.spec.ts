@@ -31,9 +31,13 @@ describe('Path', () => {
     })
 
     describe('when the path does not exist', () => {
-        it('returns false', async () => {
-            const nonExistentPath = Path.join(tempDir, 'nonexistent.txt')
+        let nonExistentPath: string
 
+        beforeEach(() => {
+            nonExistentPath = Path.join(tempDir, 'nonexistent.txt')
+        })
+
+        it('returns false', async () => {
             const exists = await Path.exists(nonExistentPath)
             expect(exists).toBe(false)
         })
@@ -124,8 +128,13 @@ describe('Path', () => {
     })
 
     describe('when the path is already absolute', () => {
+        let absolutePath: string
+
+        beforeEach(() => {
+            absolutePath = p.join(os.tmpdir(), 'file.txt')
+        })
+
         it('returns the same path', async () => {
-            const absolutePath = p.join(os.tmpdir(), 'file.txt')
             const result = await Path.getAbsolute(absolutePath)
 
             expect(result).toEqual(absolutePath)
@@ -147,9 +156,11 @@ describe('Path', () => {
     })
 
     describe('when the path is writable', () => {
-        it('returns true', async () => {
+        beforeEach(() => {
             jest.spyOn(fs, 'access').mockResolvedValueOnce(undefined)
+        })
 
+        it('returns true', async () => {
             const result = await Path.isWritable('/test/path')
 
             expect(result).toBe(true)
@@ -158,9 +169,11 @@ describe('Path', () => {
     })
 
     describe('when the path is not writable', () => {
-        it('returns false', async () => {
+        beforeEach(() => {
             jest.spyOn(fs, 'access').mockRejectedValueOnce(new Error('Not writable'))
+        })
 
+        it('returns false', async () => {
             const result = await Path.isWritable('/test/path')
 
             expect(result).toBe(false)

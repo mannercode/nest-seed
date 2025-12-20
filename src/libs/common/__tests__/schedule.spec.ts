@@ -12,9 +12,11 @@ describe('ScheduleModule', () => {
     afterEach(() => fix.teardown())
 
     describe('when using the default schedule', () => {
-        it('runs the sample job every two seconds', async () => {
+        beforeEach(() => {
             fix.sampleJobService.reset()
+        })
 
+        it('runs the sample job every two seconds', async () => {
             await sleep(2500)
 
             expect([1, 2]).toContain(fix.sampleJobService.count)
@@ -22,7 +24,7 @@ describe('ScheduleModule', () => {
     })
 
     describe('when updating the cron schedule at runtime', () => {
-        it('runs the sample job every second', async () => {
+        beforeEach(async () => {
             const { CronTime } = await import('cron')
             const job = fix.scheduler.getCronJob('job')
             await job.stop()
@@ -31,7 +33,9 @@ describe('ScheduleModule', () => {
             job.start()
 
             fix.sampleJobService.reset()
+        })
 
+        it('runs the sample job every second', async () => {
             await sleep(1500)
 
             expect([1, 2]).toContain(fix.sampleJobService.count)

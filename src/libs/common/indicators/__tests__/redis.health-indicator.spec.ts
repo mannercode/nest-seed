@@ -19,18 +19,22 @@ describe('RedisHealthIndicator', () => {
         })
 
         describe('when an Error is thrown', () => {
-            it('returns a down status with the error message', async () => {
+            beforeEach(() => {
                 jest.spyOn(fix.redis, 'ping').mockRejectedValueOnce(new Error('error'))
+            })
 
+            it('returns a down status with the error message', async () => {
                 const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
                 expect(healthStatus).toEqual({ key: { status: 'down', reason: 'error' } })
             })
         })
 
         describe('when a non-Error is thrown', () => {
-            it('returns the raw error as the reason', async () => {
+            beforeEach(() => {
                 jest.spyOn(fix.redis, 'ping').mockRejectedValueOnce('unknown error')
+            })
 
+            it('returns the raw error as the reason', async () => {
                 const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
                 expect(healthStatus).toEqual({ key: { status: 'down', reason: 'unknown error' } })
             })

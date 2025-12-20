@@ -7,8 +7,11 @@ describe('Env', () => {
         })
 
         describe('when the env var is provided', () => {
-            it('returns the value', () => {
+            beforeEach(() => {
                 process.env.TEST_STRING = 'hello'
+            })
+
+            it('returns the value', () => {
                 expect(Env.getString('TEST_STRING')).toBe('hello')
             })
         })
@@ -28,15 +31,21 @@ describe('Env', () => {
         })
 
         describe('when the env var is numeric', () => {
-            it('returns the number', () => {
+            beforeEach(() => {
                 process.env.TEST_NUMBER = '123'
+            })
+
+            it('returns the number', () => {
                 expect(Env.getNumber('TEST_NUMBER')).toBe(123)
             })
         })
 
         describe('when the env var is not numeric', () => {
-            it('throws', () => {
+            beforeEach(() => {
                 process.env.TEST_NUMBER = 'abc'
+            })
+
+            it('throws', () => {
                 expect(() => Env.getNumber('TEST_NUMBER')).toThrow(
                     'Environment variable TEST_NUMBER must be a valid number'
                 )
@@ -58,8 +67,11 @@ describe('Env', () => {
         })
 
         describe('when the env var is true', () => {
-            it('returns true', () => {
+            beforeEach(() => {
                 process.env.TEST_BOOLEAN = 'true'
+            })
+
+            it('returns true', () => {
                 expect(Env.getBoolean('TEST_BOOLEAN')).toBe(true)
             })
         })
