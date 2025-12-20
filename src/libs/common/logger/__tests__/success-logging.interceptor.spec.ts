@@ -1,26 +1,18 @@
-import type { Provider } from '@nestjs/common'
 import { withTestId } from 'testlib'
 import type { SuccessLoggingInterceptorFixture } from './success-logging.interceptor.fixture'
 
 describe('SuccessLoggingInterceptor', () => {
     let fix: SuccessLoggingInterceptorFixture
-    let createInterceptorFixture: (
-        providers: Provider[]
-    ) => Promise<SuccessLoggingInterceptorFixture>
-
-    beforeEach(async () => {
-        const { createSuccessLoggingInterceptorFixture } =
-            await import('./success-logging.interceptor.fixture')
-        createInterceptorFixture = createSuccessLoggingInterceptorFixture
-    })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
 
     describe('when the requests succeed', () => {
         beforeEach(async () => {
-            fix = await createInterceptorFixture([])
+            const { createSuccessLoggingInterceptorFixture } =
+                await import('./success-logging.interceptor.fixture')
+            fix = await createSuccessLoggingInterceptorFixture([])
+        })
+
+        afterEach(async () => {
+            await fix.teardown()
         })
 
         describe('when the request is HTTP', () => {
@@ -55,11 +47,13 @@ describe('SuccessLoggingInterceptor', () => {
         })
 
         describe('when the ContextType is unknown', () => {
-            it('logs via Logger.error', async () => {
+            beforeEach(async () => {
                 const { ExecutionContextHost } =
                     await import('@nestjs/core/helpers/execution-context-host')
                 jest.spyOn(ExecutionContextHost.prototype, 'getType').mockReturnValue('unknown')
+            })
 
+            it('logs via Logger.error', async () => {
                 await fix.httpClient.get('/exclude-path').ok()
 
                 expect(fix.spyError).toHaveBeenCalledTimes(1)
@@ -76,9 +70,15 @@ describe('SuccessLoggingInterceptor', () => {
 
     describe('when LOGGING_EXCLUDE_HTTP_PATHS includes the request path', () => {
         beforeEach(async () => {
-            fix = await createInterceptorFixture([
+            const { createSuccessLoggingInterceptorFixture } =
+                await import('./success-logging.interceptor.fixture')
+            fix = await createSuccessLoggingInterceptorFixture([
                 { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/exclude-path'] }
             ])
+        })
+
+        afterEach(async () => {
+            await fix.teardown()
         })
 
         it('ignores specified HTTP paths', async () => {
@@ -90,9 +90,15 @@ describe('SuccessLoggingInterceptor', () => {
 
     describe('when LOGGING_EXCLUDE_RPC_PATHS includes the subject', () => {
         beforeEach(async () => {
-            fix = await createInterceptorFixture([
+            const { createSuccessLoggingInterceptorFixture } =
+                await import('./success-logging.interceptor.fixture')
+            fix = await createSuccessLoggingInterceptorFixture([
                 { provide: 'LOGGING_EXCLUDE_RPC_PATHS', useValue: [withTestId('exclude-path')] }
             ])
+        })
+
+        afterEach(async () => {
+            await fix.teardown()
         })
 
         it('ignores specified RPC paths', async () => {

@@ -4,6 +4,7 @@ import type { MongooseRepositoryFixture, SampleDto } from './mongoose.repository
 import {
     createSample,
     createSamples,
+    maxTakeValue,
     sortByName,
     sortByNameDescending,
     toDto,
@@ -12,13 +13,10 @@ import {
 
 describe('MongooseRepository', () => {
     let fix: MongooseRepositoryFixture
-    let maxTake = 0
 
     beforeEach(async () => {
-        const { createMongooseRepositoryFixture, maxTakeValue } =
-            await import('./mongoose.repository.fixture')
+        const { createMongooseRepositoryFixture } = await import('./mongoose.repository.fixture')
         fix = await createMongooseRepositoryFixture()
-        maxTake = maxTakeValue
     })
 
     afterEach(async () => {
@@ -72,8 +70,6 @@ describe('MongooseRepository', () => {
         let samples: SampleDto[]
 
         beforeEach(async () => {
-            const { createSamples } = await import('./mongoose.repository.fixture')
-
             const docs = await createSamples(fix.repository)
             samples = toDtos(docs)
         })
@@ -121,7 +117,7 @@ describe('MongooseRepository', () => {
         })
 
         it('throws BadRequestException for take above the limit', async () => {
-            const take = maxTake + 1
+            const take = maxTakeValue + 1
 
             const promise = fix.repository.findWithPagination({ pagination: { take } })
 
@@ -134,7 +130,7 @@ describe('MongooseRepository', () => {
                     pagination: { orderby: { name: 'name', direction: OrderDirection.Desc } }
                 })
 
-                expect(take).toEqual(maxTake)
+                expect(take).toEqual(maxTakeValue)
             })
         })
 
