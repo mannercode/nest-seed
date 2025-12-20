@@ -3,7 +3,6 @@
     "hostRequirements": { "cpus": 4, "memory": "16gb", "storage": "32gb" },
     "build": { "dockerfile": "Dockerfile", "context": "." },
     "features": { "ghcr.io/devcontainers/features/docker-in-docker:2": { "moby": false } },
-    "initializeCommand": "mkdir -p ${env:HOME}/.codex",
     "mounts": ["source=${env:HOME}/.codex,target=/home/node/.codex,type=bind"],
     "privileged": true,
     "runArgs": [
