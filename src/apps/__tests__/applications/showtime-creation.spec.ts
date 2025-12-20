@@ -1,17 +1,22 @@
-import type { ShowtimeDto } from 'apps/cores'
+import type { MovieDto, ShowtimeDto, TheaterDto } from 'apps/cores'
 import { DateUtil } from 'common'
 import type { Response } from 'superagent'
 import { nullObjectId } from 'testlib'
-import { createShowtimes } from '../__helpers__'
+import { createMovie, createShowtimes, createTheater } from '../__helpers__'
 import type { ShowtimeCreationFixture } from './showtime-creation.fixture'
 import { waitForCompletion } from './showtime-creation.fixture'
 
 describe('ShowtimeCreationService', () => {
     let fix: ShowtimeCreationFixture
+    let movie: MovieDto
+    let theater: TheaterDto
 
     beforeEach(async () => {
         const { createShowtimeCreationFixture } = await import('./showtime-creation.fixture')
         fix = await createShowtimeCreationFixture()
+
+        movie = await createMovie(fix)
+        theater = await createTheater(fix)
     })
 
     afterEach(async () => {
@@ -23,7 +28,7 @@ describe('ShowtimeCreationService', () => {
             it('returns the default page of movies', async () => {
                 await fix.httpClient
                     .get('/showtime-creation/movies')
-                    .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.movie] })
+                    .ok({ skip: 0, take: expect.any(Number), total: 1, items: [movie] })
             })
         })
     })
@@ -33,7 +38,7 @@ describe('ShowtimeCreationService', () => {
             it('returns the default page of theaters', async () => {
                 await fix.httpClient
                     .get('/showtime-creation/theaters')
-                    .ok({ skip: 0, take: expect.any(Number), total: 1, items: [fix.theater] })
+                    .ok({ skip: 0, take: expect.any(Number), total: 1, items: [theater] })
             })
         })
     })
@@ -49,14 +54,14 @@ describe('ShowtimeCreationService', () => {
                         new Date('2100-01-01T09:00'),
                         new Date('2100-01-01T11:00'),
                         new Date('2100-01-01T13:00')
-                    ].map((startTime) => ({ theaterId: fix.theater.id, startTime }))
+                    ].map((startTime) => ({ theaterId: theater.id, startTime }))
                 )
             })
 
             it('returns showtimes for the theaterIds', async () => {
                 await fix.httpClient
                     .post('/showtime-creation/showtimes:search')
-                    .body({ theaterIds: [fix.theater.id] })
+                    .body({ theaterIds: [theater.id] })
                     .ok(expect.arrayContaining(showtimes))
             })
         })
@@ -70,8 +75,8 @@ describe('ShowtimeCreationService', () => {
                 createPromise = fix.httpClient
                     .post('/showtime-creation/showtimes')
                     .body({
-                        movieId: fix.movie.id,
-                        theaterIds: [fix.theater.id],
+                        movieId: movie.id,
+                        theaterIds: [theater.id],
                         startTimes: [new Date('2100-01-01T09:00')],
                         durationInMinutes: 1
                     })
@@ -134,7 +139,7 @@ describe('ShowtimeCreationService', () => {
                     .post('/showtime-creation/showtimes')
                     .body({
                         movieId: nullObjectId,
-                        theaterIds: [fix.theater.id],
+                        theaterIds: [theater.id],
                         startTimes: [new Date(0)],
                         durationInMinutes: 1
                     })
@@ -155,7 +160,7 @@ describe('ShowtimeCreationService', () => {
                 const { body } = await fix.httpClient
                     .post('/showtime-creation/showtimes')
                     .body({
-                        movieId: fix.movie.id,
+                        movieId: movie.id,
                         theaterIds: [nullObjectId],
                         startTimes: [new Date(0)],
                         durationInMinutes: 1
@@ -182,7 +187,7 @@ describe('ShowtimeCreationService', () => {
                         new Date('2013-01-31T16:30'),
                         new Date('2013-01-31T18:30')
                     ].map((startTime) => ({
-                        theaterId: fix.theater.id,
+                        theaterId: theater.id,
                         startTime,
                         endTime: DateUtil.add({ base: startTime, minutes: 90 })
                     }))
@@ -195,8 +200,8 @@ describe('ShowtimeCreationService', () => {
                 await fix.httpClient
                     .post('/showtime-creation/showtimes')
                     .body({
-                        movieId: fix.movie.id,
-                        theaterIds: [fix.theater.id],
+                        movieId: movie.id,
+                        theaterIds: [theater.id],
                         startTimes: [
                             new Date('2013-01-31T12:00'),
                             new Date('2013-01-31T16:00'),

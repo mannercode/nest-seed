@@ -1,5 +1,4 @@
 import { ShowtimeCreationClient, ShowtimeCreationModule } from 'apps/applications'
-import type { MovieDto, TheaterDto } from 'apps/cores'
 import {
     MoviesClient,
     MoviesModule,
@@ -14,11 +13,9 @@ import { ShowtimeCreationController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { jsonToObject } from 'common'
 import type { AppTestContext as TestContext } from '../__helpers__'
-import { createAppTestContext, createMovie, createTheater } from '../__helpers__'
+import { createAppTestContext } from '../__helpers__'
 
 export type ShowtimeCreationFixture = TestContext & {
-    movie: MovieDto
-    theater: TheaterDto
     showtimesClient: ShowtimesClient
     ticketsClient: TicketsClient
 }
@@ -47,10 +44,7 @@ export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationF
     const showtimesClient = ctx.module.get(ShowtimesClient)
     const ticketsClient = ctx.module.get(TicketsClient)
 
-    const movie = await createMovie(ctx)
-    const theater = await createTheater(ctx)
-
-    return { ...ctx, movie, theater, showtimesClient, ticketsClient }
+    return { ...ctx, showtimesClient, ticketsClient }
 }
 
 export function waitForCompletion(ctx: TestContext, status: string) {

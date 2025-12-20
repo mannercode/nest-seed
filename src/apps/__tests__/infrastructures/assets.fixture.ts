@@ -1,12 +1,11 @@
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import type { CronJob } from 'cron'
-import type { FixtureFile, AppTestContext } from '../__helpers__'
-import { createAppTestContext, fixtureFiles } from '../__helpers__'
+import type { AppTestContext } from '../__helpers__'
+import { createAppTestContext } from '../__helpers__'
 
 export type AssetsFixture = AppTestContext & {
     assetsClient: AssetsClient
-    file: FixtureFile
     cleanupExpiredUploadsJob: CronJob
 }
 
@@ -18,11 +17,5 @@ export async function createAssetsFixture() {
     const cleanupExpiredUploadsJob = scheduler.getCronJob('assets.cleanupExpiredUploads')
     await cleanupExpiredUploadsJob.stop()
 
-    const file = fixtureFiles.small
-
-    const teardown = async () => {
-        await ctx.teardown()
-    }
-
-    return { ...ctx, teardown, assetsClient, file, cleanupExpiredUploadsJob }
+    return { ...ctx, assetsClient, cleanupExpiredUploadsJob }
 }

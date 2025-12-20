@@ -4,6 +4,12 @@ describe('BaseConfigService', () => {
     let fix: BaseConfigServiceFixture
 
     beforeEach(async () => {
+        process.env['TEST_STRING_KEY'] = 'value'
+        process.env['TEST_NUMBER_KEY'] = '123'
+        process.env['TEST_NUMBER_ZERO_KEY'] = '0'
+        process.env['TEST_BOOLEAN_KEY'] = 'true'
+        process.env['TEST_BOOLEAN_FALSE_KEY'] = 'false'
+
         const { createBaseConfigServiceFixture } = await import('./base-config.service.fixture')
         fix = await createBaseConfigServiceFixture()
     })

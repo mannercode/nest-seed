@@ -16,6 +16,7 @@ import { type AssetsFixture } from './assets.fixture'
 
 describe('AssetsService', () => {
     let fix: AssetsFixture
+    const file = fixtureFiles.small
 
     beforeEach(async () => {
         const { createAssetsFixture } = await import('./assets.fixture')
@@ -29,7 +30,7 @@ describe('AssetsService', () => {
     describe('create', () => {
         describe('when the DTO is valid', () => {
             it('returns an upload request', async () => {
-                const createDto = buildCreateAssetDto(fix.file)
+                const createDto = buildCreateAssetDto(file)
                 const uploadRequest = await fix.assetsClient.create(createDto)
 
                 expect(uploadRequest).toEqual({
@@ -40,16 +41,16 @@ describe('AssetsService', () => {
                     headers: {
                         'Content-Type': createDto.mimeType,
                         'Content-Length': createDto.size.toString(),
-                        'x-amz-checksum-sha256': fix.file.checksum.base64
+                        'x-amz-checksum-sha256': file.checksum.base64
                     }
                 })
             })
 
             it('uploads the file using the upload request', async () => {
-                const createDto = buildCreateAssetDto(fix.file)
+                const createDto = buildCreateAssetDto(file)
                 const uploadRequest = await fix.assetsClient.create(createDto)
 
-                const uploadRes = await uploadAsset(fix.file.path, uploadRequest)
+                const uploadRes = await uploadAsset(file.path, uploadRequest)
                 expect(uploadRes.ok).toBe(true)
             })
         })
@@ -61,12 +62,12 @@ describe('AssetsService', () => {
             })
 
             it('rejects uploads after the URL expires', async () => {
-                const createDto = buildCreateAssetDto(fix.file)
+                const createDto = buildCreateAssetDto(file)
                 const uploadRequest = await fix.assetsClient.create(createDto)
 
                 await sleep(1500)
 
-                const uploadRes = await uploadAsset(fix.file.path, uploadRequest)
+                const uploadRes = await uploadAsset(file.path, uploadRequest)
                 expect(uploadRes.ok).toBe(false)
             })
         })
@@ -77,7 +78,7 @@ describe('AssetsService', () => {
             let assetId: string
 
             beforeEach(async () => {
-                assetId = await uploadFile(fix, fix.file)
+                assetId = await uploadFile(fix, file)
             })
 
             it('returns the asset with download info', async () => {
@@ -100,7 +101,7 @@ describe('AssetsService', () => {
                 const buffer = await downloadAsset(asset)
 
                 const checksum = Checksum.fromBuffer(buffer)
-                expect(fix.file.checksum).toEqual(checksum)
+                expect(file.checksum).toEqual(checksum)
             })
         })
 
@@ -111,7 +112,7 @@ describe('AssetsService', () => {
                 const { Rules } = await import('shared')
                 toAny(Rules).Asset.uploadExpiresInSec = 1
 
-                const createDto = buildCreateAssetDto(fix.file)
+                const createDto = buildCreateAssetDto(file)
                 const uploadRequest = await fix.assetsClient.create(createDto)
 
                 assetId = uploadRequest.assetId
@@ -168,7 +169,7 @@ describe('AssetsService', () => {
                 const buffer = await downloadAsset(fetchedAsset)
 
                 const checksum = Checksum.fromBuffer(buffer)
-                expect(fix.file.checksum).toEqual(checksum)
+                expect(file.checksum).toEqual(checksum)
             })
         })
 
@@ -240,7 +241,7 @@ describe('AssetsService', () => {
             })
 
             it('removes the asset', async () => {
-                const createDto = buildCreateAssetDto(fix.file)
+                const createDto = buildCreateAssetDto(file)
                 const { assetId } = await fix.assetsClient.create(createDto)
 
                 await sleep(2000)

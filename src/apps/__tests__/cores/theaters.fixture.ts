@@ -12,5 +12,5 @@ export async function createTheatersFixture() {
         controllers: [TheatersController]
     })
 
-    return ctx
+    return { ...ctx }
 }
