@@ -59,6 +59,8 @@ module.exports = [
                     alphabetize: { order: 'asc', caseInsensitive: true }
                 }
             ],
+            'import/newline-after-import': ['warn', { count: 1 }],
+            'import/no-extraneous-dependencies': ['warn', { devDependencies: false }],
             'prettier/prettier': 'warn',
             '@typescript-eslint/interface-name-prefix': 'off',
             '@typescript-eslint/explicit-function-return-type': 'off',
@@ -108,15 +110,141 @@ module.exports = [
         }
     },
     {
+        files: ['src/apps/gateway/**/*.ts'],
+        rules: {
+            'no-restricted-imports': [
+                'warn',
+                {
+                    patterns: [
+                        {
+                            group: ['apps/gateway', 'apps/gateway/**'],
+                            message:
+                                'Use relative imports within gateway to avoid ancestor barrel cycles.'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        files: ['src/apps/applications/**/*.ts'],
+        rules: {
+            'no-restricted-imports': [
+                'warn',
+                {
+                    patterns: [
+                        {
+                            group: ['apps/applications', 'apps/applications/**'],
+                            message:
+                                'Use relative imports within applications to avoid ancestor barrel cycles.'
+                        },
+                        {
+                            group: ['apps/gateway', 'apps/gateway/**'],
+                            message: 'Layering rule: applications must not depend on gateway.'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        files: ['src/apps/cores/**/*.ts'],
+        rules: {
+            'no-restricted-imports': [
+                'warn',
+                {
+                    patterns: [
+                        {
+                            group: ['apps/cores', 'apps/cores/**'],
+                            message:
+                                'Use relative imports within cores to avoid ancestor barrel cycles.'
+                        },
+                        {
+                            group: [
+                                'apps/gateway',
+                                'apps/gateway/**',
+                                'apps/applications',
+                                'apps/applications/**'
+                            ],
+                            message:
+                                'Layering rule: cores must not depend on gateway or applications.'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        files: ['src/apps/infrastructures/**/*.ts'],
+        rules: {
+            'no-restricted-imports': [
+                'warn',
+                {
+                    patterns: [
+                        {
+                            group: ['apps/infrastructures', 'apps/infrastructures/**'],
+                            message:
+                                'Use relative imports within infrastructures to avoid ancestor barrel cycles.'
+                        },
+                        {
+                            group: [
+                                'apps/gateway',
+                                'apps/gateway/**',
+                                'apps/applications',
+                                'apps/applications/**',
+                                'apps/cores',
+                                'apps/cores/**'
+                            ],
+                            message:
+                                'Layering rule: infrastructures must not depend on gateway, applications, or cores.'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        files: ['src/apps/shared/**/*.ts'],
+        rules: {
+            'no-restricted-imports': [
+                'warn',
+                {
+                    patterns: [
+                        {
+                            group: ['shared', 'shared/**'],
+                            message:
+                                'Use relative imports within shared to avoid ancestor barrel cycles.'
+                        },
+                        {
+                            group: [
+                                'apps/gateway',
+                                'apps/gateway/**',
+                                'apps/applications',
+                                'apps/applications/**',
+                                'apps/cores',
+                                'apps/cores/**',
+                                'apps/infrastructures',
+                                'apps/infrastructures/**'
+                            ],
+                            message: 'shared must not depend on app layers.'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
         files: [
             'src/**/*.spec.ts',
             'src/**/*.test.ts',
             'src/**/__tests__/**/*.ts',
-            'src/libs/testlib/**/*.ts'
+            'src/libs/testlib/**/*.ts',
+            'src/apps/**/development.ts'
         ],
         languageOptions: { globals: { ...baseGlobals, ...testGlobals } },
         plugins: { jest: jestPlugin },
         rules: {
+            'import/no-extraneous-dependencies': ['warn', { devDependencies: true }],
             'jest/no-focused-tests': 'warn',
             'jest/no-disabled-tests': 'warn',
             'jest/valid-expect': 'warn',
