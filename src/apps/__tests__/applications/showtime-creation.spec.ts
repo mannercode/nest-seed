@@ -1,10 +1,10 @@
-import type { MovieDto, ShowtimeDto, TheaterDto } from 'apps/cores'
 import { DateUtil } from 'common'
-import type { Response } from 'superagent'
 import { nullObjectId } from 'testlib'
 import { createMovie, createShowtimes, createTheater } from '../__helpers__'
-import type { ShowtimeCreationFixture } from './showtime-creation.fixture'
 import { waitForCompletion } from './showtime-creation.fixture'
+import type { ShowtimeCreationFixture } from './showtime-creation.fixture'
+import type { MovieDto, ShowtimeDto, TheaterDto } from 'apps/cores'
+import type { Response } from 'superagent'
 
 describe('ShowtimeCreationService', () => {
     let fix: ShowtimeCreationFixture

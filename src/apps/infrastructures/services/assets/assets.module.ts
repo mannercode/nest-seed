@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { S3ObjectModule } from 'common'
 import { AppConfigService, MongooseConfigModule } from 'shared'
-import { Asset, AssetSchema } from './models'
 import { AssetsController } from './assets.controller'
 import { AssetsRepository } from './assets.repository'
 import { AssetsService } from './assets.service'
+import { Asset, AssetSchema } from './models'
 
 @Module({
     imports: [

@@ -1,7 +1,7 @@
-import { Path } from 'common'
 import fs from 'fs/promises'
 import os from 'os'
 import p from 'path'
+import { Path } from 'common'
 
 describe('Path', () => {
     let tempDir: string

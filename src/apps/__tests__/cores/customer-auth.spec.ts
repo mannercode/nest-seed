@@ -1,7 +1,7 @@
 import { createCustomer } from '../__helpers__'
-import type { JwtAuthTokens } from 'common'
 import { Errors, loginCustomer } from '../__helpers__'
 import type { CustomerAuthFixture } from './customer-auth.fixture'
+import type { JwtAuthTokens } from 'common'
 
 describe('CustomersService', () => {
     let fix: CustomerAuthFixture

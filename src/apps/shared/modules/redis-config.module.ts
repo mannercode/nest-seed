@@ -1,5 +1,5 @@
-import { getRedisConnectionToken, RedisModule, RedisModuleOptions } from '@nestjs-modules/ioredis'
 import { Module } from '@nestjs/common'
+import { getRedisConnectionToken, RedisModule, RedisModuleOptions } from '@nestjs-modules/ioredis'
 import { AppConfigService } from '../config'
 
 @Module({

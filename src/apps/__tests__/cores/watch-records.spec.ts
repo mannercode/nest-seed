@@ -1,7 +1,7 @@
-import type { SearchWatchRecordsPageDto, WatchRecordDto } from 'apps/cores'
 import { oid } from 'testlib'
 import { buildCreateWatchRecordDto, createWatchRecord } from '../__helpers__'
 import type { WatchRecordsFixture } from './watch-records.fixture'
+import type { SearchWatchRecordsPageDto, WatchRecordDto } from 'apps/cores'
 
 describe('WatchRecordsService', () => {
     let fix: WatchRecordsFixture

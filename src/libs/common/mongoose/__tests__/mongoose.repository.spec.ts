@@ -1,6 +1,5 @@
 import { MongooseErrors, OrderDirection, pickIds, pickItems } from 'common'
 import { expectEqualUnsorted, nullObjectId } from 'testlib'
-import type { MongooseRepositoryFixture, SampleDto } from './mongoose.repository.fixture'
 import {
     createSample,
     createSamples,
@@ -10,6 +9,7 @@ import {
     toDto,
     toDtos
 } from './mongoose.repository.fixture'
+import type { MongooseRepositoryFixture, SampleDto } from './mongoose.repository.fixture'
 
 describe('MongooseRepository', () => {
     let fix: MongooseRepositoryFixture

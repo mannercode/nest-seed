@@ -1,5 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
+import { HoldTicketsDto } from 'apps/cores'
 import { Messages } from 'shared'
 import { BookingService } from './booking.service'
 import {
@@ -7,7 +8,6 @@ import {
     SearchShowdatesForBookingDto,
     SearchShowtimesForBookingDto
 } from './dtos'
-import { HoldTicketsDto } from 'apps/cores'
 
 @Controller()
 export class BookingController {

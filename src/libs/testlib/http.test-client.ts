@@ -1,6 +1,6 @@
+import { createWriteStream } from 'fs'
 import { HttpStatus } from '@nestjs/common'
 import { Byte, jsonToObject } from 'common'
-import { createWriteStream } from 'fs'
 import superagent from 'superagent'
 
 type EventMessage = { event: string; id: number; data: string }

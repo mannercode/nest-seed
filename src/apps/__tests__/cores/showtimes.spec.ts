@@ -1,9 +1,9 @@
 import { HttpStatus } from '@nestjs/common'
-import type { ShowtimeDto } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, oid } from 'testlib'
 import { buildCreateShowtimeDto, createShowtimes, Errors } from '../__helpers__'
 import type { ShowtimesFixture } from './showtimes.fixture'
+import type { ShowtimeDto } from 'apps/cores'
 
 describe('ShowtimesService', () => {
     let fix: ShowtimesFixture

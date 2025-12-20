@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Messages } from 'shared'
-import { TicketHoldingService } from './ticket-holding.service'
 import { HoldTicketsDto } from './dtos'
+import { TicketHoldingService } from './ticket-holding.service'
 
 @Controller()
 export class TicketHoldingController {

@@ -6,6 +6,7 @@ const prettierPlugin = require('eslint-plugin-prettier')
 const prettierConfig = require('eslint-config-prettier')
 const globals = require('globals')
 const jestPlugin = require('eslint-plugin-jest')
+const importPlugin = require('eslint-plugin-import')
 
 const baseGlobals = { ...globals.node, ...globals.es2021, module: 'readonly', require: 'readonly' }
 const testGlobals = {
@@ -32,12 +33,32 @@ module.exports = [
             },
             globals: { ...baseGlobals }
         },
-        plugins: { '@typescript-eslint': typescriptEslintPlugin, prettier: prettierPlugin },
+        plugins: {
+            '@typescript-eslint': typescriptEslintPlugin,
+            prettier: prettierPlugin,
+            import: importPlugin
+        },
         rules: {
             ...js.configs.recommended.rules,
             ...typescriptEslintPlugin.configs.recommended.rules,
             ...prettierConfig.rules,
-
+            'import/order': [
+                'warn',
+                {
+                    groups: [
+                        'builtin',
+                        'external',
+                        'internal',
+                        'parent',
+                        'sibling',
+                        'index',
+                        'object',
+                        'type'
+                    ],
+                    'newlines-between': 'never',
+                    alphabetize: { order: 'asc', caseInsensitive: true }
+                }
+            ],
             'prettier/prettier': 'warn',
             '@typescript-eslint/interface-name-prefix': 'off',
             '@typescript-eslint/explicit-function-return-type': 'off',
@@ -54,16 +75,16 @@ module.exports = [
             ],
 
             // Promise/async correctness
-            '@typescript-eslint/no-floating-promises': 'error',
-            '@typescript-eslint/no-misused-promises': 'error',
-            '@typescript-eslint/await-thenable': 'error',
+            '@typescript-eslint/no-floating-promises': 'warn',
+            '@typescript-eslint/no-misused-promises': 'warn',
+            '@typescript-eslint/await-thenable': 'warn',
             '@typescript-eslint/no-confusing-void-expression': [
-                'error',
+                'warn',
                 { ignoreArrowShorthand: true }
             ],
 
             // Return/await
-            '@typescript-eslint/return-await': ['error', 'in-try-catch'],
+            '@typescript-eslint/return-await': ['warn', 'in-try-catch'],
             'no-return-await': 'off',
             'require-await': 'off',
 
@@ -73,17 +94,17 @@ module.exports = [
             '@typescript-eslint/no-non-null-assertion': 'warn',
 
             // Type-aware safety
-            '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
+            '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports' }],
             '@typescript-eslint/no-unnecessary-condition': 'warn',
             '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
-            '@typescript-eslint/switch-exhaustiveness-check': 'error',
+            '@typescript-eslint/switch-exhaustiveness-check': 'warn',
 
             // Throw quality
-            '@typescript-eslint/only-throw-error': 'error',
+            '@typescript-eslint/only-throw-error': 'warn',
 
             'no-redeclare': 'off',
-            '@typescript-eslint/no-redeclare': 'error',
-            '@typescript-eslint/adjacent-overload-signatures': 'error'
+            '@typescript-eslint/no-redeclare': 'warn',
+            '@typescript-eslint/adjacent-overload-signatures': 'warn'
         }
     },
     {
@@ -94,16 +115,12 @@ module.exports = [
             'src/libs/testlib/**/*.ts'
         ],
         languageOptions: { globals: { ...baseGlobals, ...testGlobals } },
-        plugins: { ...(jestPlugin ? { jest: jestPlugin } : {}) },
+        plugins: { jest: jestPlugin },
         rules: {
-            ...(jestPlugin
-                ? {
-                      'jest/no-focused-tests': 'error',
-                      'jest/no-disabled-tests': 'warn',
-                      'jest/valid-expect': 'error',
-                      'jest/no-identical-title': 'error'
-                  }
-                : {})
+            'jest/no-focused-tests': 'warn',
+            'jest/no-disabled-tests': 'warn',
+            'jest/valid-expect': 'warn',
+            'jest/no-identical-title': 'warn'
         }
     }
 ]

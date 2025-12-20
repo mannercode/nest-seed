@@ -1,9 +1,9 @@
 import { HttpStatus } from '@nestjs/common'
-import type { PaymentDto } from 'apps/infrastructures'
 import { pickIds } from 'common'
 import { nullObjectId } from 'testlib'
 import { buildCreatePaymentDto, createPayment, Errors } from '../__helpers__'
 import type { PaymentsFixture } from './payments.fixture'
+import type { PaymentDto } from 'apps/infrastructures'
 
 describe('PaymentsService', () => {
     let fix: PaymentsFixture

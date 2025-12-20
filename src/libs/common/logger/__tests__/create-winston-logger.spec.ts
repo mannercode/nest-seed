@@ -1,5 +1,5 @@
-import { createWinstonLogger, Path, sleep } from 'common'
 import { readFile } from 'fs/promises'
+import { createWinstonLogger, Path, sleep } from 'common'
 import { isDebuggingEnabled } from 'testlib'
 import type winston from 'winston'
 

@@ -1,9 +1,9 @@
-import type { MovieDto, ShowtimeDto, TheaterDto, TicketDto } from 'apps/cores'
 import { TicketStatus } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, step } from 'testlib'
 import { Errors } from '../__helpers__'
 import { createAllResources, type BookingFixture } from './booking.fixture'
+import type { MovieDto, ShowtimeDto, TheaterDto, TicketDto } from 'apps/cores'
 
 describe('BookingService', () => {
     let fix: BookingFixture

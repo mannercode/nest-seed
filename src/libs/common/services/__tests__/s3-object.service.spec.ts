@@ -1,11 +1,11 @@
 import { HttpStatus } from '@nestjs/common'
-import type { PutObjectResult } from './s3-object.service.fixture'
 import {
     putObject,
     testBuffer,
     uploadObject,
     type S3ObjectServiceFixture
 } from './s3-object.service.fixture'
+import type { PutObjectResult } from './s3-object.service.fixture'
 
 describe('S3ObjectService', () => {
     let fix: S3ObjectServiceFixture

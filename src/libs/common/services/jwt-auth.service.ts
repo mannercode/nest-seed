@@ -1,6 +1,6 @@
-import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import { DynamicModule, Inject, Injectable, Module, UnauthorizedException } from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
+import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import Redis from 'ioredis'
 import { generateShortId, notUsed, Time } from '../utils'
 

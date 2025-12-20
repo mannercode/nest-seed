@@ -1,8 +1,8 @@
-import type { HoldTicketsDto } from 'apps/cores'
 import { sleep } from 'common'
 import { oid, toAny } from 'testlib'
 import { buildHoldTicketsDto } from '../__helpers__'
 import type { TicketHoldingFixture } from './ticket-holding.fixture'
+import type { HoldTicketsDto } from 'apps/cores'
 
 describe('TicketHoldingService', () => {
     let fix: TicketHoldingFixture

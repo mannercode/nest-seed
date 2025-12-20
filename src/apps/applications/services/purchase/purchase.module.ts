@@ -6,11 +6,11 @@ import {
     TicketsClient
 } from 'apps/cores'
 import { PaymentsClient } from 'apps/infrastructures'
-import { TicketPurchaseService } from './services'
 import { PurchaseClient } from './purchase.client'
 import { PurchaseController } from './purchase.controller'
 import { PurchaseEvents } from './purchase.events'
 import { PurchaseService } from './purchase.service'
+import { TicketPurchaseService } from './services'
 
 @Module({
     providers: [

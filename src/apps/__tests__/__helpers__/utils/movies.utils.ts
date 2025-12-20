@@ -1,5 +1,5 @@
-import type { CreateMovieDto, MovieDto } from 'apps/cores'
 import { MovieGenre, MovieRating } from 'apps/cores'
+import type { CreateMovieDto, MovieDto } from 'apps/cores'
 import type { TestContext } from 'testlib'
 
 export function buildCreateMovieDto(overrides = {}) {

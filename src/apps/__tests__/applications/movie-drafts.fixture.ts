@@ -1,11 +1,11 @@
-import type { MovieDraftDto } from 'apps/applications'
 import { MovieDraftsClient, MovieDraftsModule, RecommendationClient } from 'apps/applications'
 import { MoviesClient, MoviesModule } from 'apps/cores'
 import { MovieDraftsController, MoviesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
-import type { TestContext } from 'testlib'
-import type { AppTestContext } from '../__helpers__'
 import { createAppTestContext } from '../__helpers__'
+import type { AppTestContext } from '../__helpers__'
+import type { MovieDraftDto } from 'apps/applications'
+import type { TestContext } from 'testlib'
 
 export type MovieDraftsFixture = AppTestContext & {}
 

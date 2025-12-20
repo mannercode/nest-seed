@@ -1,5 +1,5 @@
-import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
+import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import Redis from 'ioredis'
 
 @Injectable()

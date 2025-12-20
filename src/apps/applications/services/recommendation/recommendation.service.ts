@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common'
-import { DateUtil, OrderDirection } from 'common'
 import { MovieDto, MoviesClient, ShowtimesClient, WatchRecordsClient } from 'apps/cores'
-import { MovieRecommender } from './domain'
+import { DateUtil, OrderDirection } from 'common'
 import { Rules } from 'shared'
+import { MovieRecommender } from './domain'
 
 @Injectable()
 export class RecommendationService {

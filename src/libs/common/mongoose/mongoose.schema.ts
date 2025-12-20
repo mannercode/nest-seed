@@ -1,5 +1,5 @@
-import type { Type } from '@nestjs/common'
 import { SchemaFactory } from '@nestjs/mongoose'
+import type { Type } from '@nestjs/common'
 import type { ClientSession, Schema } from 'mongoose'
 
 /**

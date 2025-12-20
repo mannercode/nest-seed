@@ -1,7 +1,7 @@
-import type { PurchaseRecordDto } from 'apps/cores'
 import { nullObjectId } from 'testlib'
 import { buildCreatePurchaseRecordDto, createPurchaseRecord, Errors } from '../__helpers__'
 import type { PurchaseRecordsFixture } from './purchase-records.fixture'
+import type { PurchaseRecordDto } from 'apps/cores'
 
 describe('PurchaseRecordsService', () => {
     let fix: PurchaseRecordsFixture

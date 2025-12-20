@@ -1,6 +1,5 @@
 import { HttpStatus } from '@nestjs/common'
 import { CronExpression } from '@nestjs/schedule'
-import type { AssetDto } from 'apps/infrastructures'
 import { Checksum, pickIds, sleep } from 'common'
 import { nullObjectId, toAny } from 'testlib'
 import {
@@ -13,6 +12,7 @@ import {
     uploadFile
 } from '../__helpers__'
 import { type AssetsFixture } from './assets.fixture'
+import type { AssetDto } from 'apps/infrastructures'
 
 describe('AssetsService', () => {
     let fix: AssetsFixture
