@@ -22,20 +22,12 @@
         expect(Byte.fromString('1024b')).toEqual(1024)
         expect(Byte.fromString('1kb')).toEqual(1024)
         expect(Byte.fromString('1mb')).toEqual(1024 * 1024)
-        expect(Byte.fromString('1gb')).toEqual(1024 * 1024 * 1024)
-        expect(Byte.fromString('1tb')).toEqual(1024 * 1024 * 1024 * 1024)
     })
     ```
 
 > Jest는 `context`를 지원하지 않는다. 그렇다고 해서 `describe`를 `context`의 alias로 사용하면 안 된다.
 >
 > `Jest Runner` 같은 Jest 도구에서 `context`를 인식하지 못한다.
-
-```ts
-describe('', () => {
-    // TODO 예시 작성
-})
-```
 
 ## 2. TypeORM과 도메인의 Entity 관계
 
