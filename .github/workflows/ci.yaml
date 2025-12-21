@@ -22,6 +22,11 @@ jobs:
             - name: TEST
               run: env
 
+            - name: TEST2
+              run: |
+                  docker run --rm -v /:/host node:24-bookworm ls /host
+                  docker run --rm -v /:/host node:24-bookworm tree -L 3 /host
+
             - name: Install Tools
               run: apt-get update && apt-get install -y curl jq iproute2
 
