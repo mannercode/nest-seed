@@ -128,6 +128,19 @@ module.exports = [
         }
     },
     {
+        files: ['src/**/*.spec.ts', 'src/**/*.test.ts'],
+        ignores: ['src/**/__tests__/**'],
+        rules: {
+            'no-restricted-syntax': [
+                'error',
+                {
+                    selector: 'Program',
+                    message: 'Test files must live under __tests__.'
+                }
+            ]
+        }
+    },
+    {
         files: ['src/apps/gateway/**/*.ts'],
         rules: {
             'no-restricted-imports': [
