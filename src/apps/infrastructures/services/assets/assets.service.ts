@@ -87,13 +87,11 @@ export class AssetsService {
         const expireBefore = this.getExpirationThreshold()
         const expiredAssets = await this.repository.findExpiredUncompleted(expireBefore)
 
-        if (expiredAssets.length === 0) {
-            return { deletedAssets: [] }
+        if (0 < expiredAssets.length) {
+            const expiredAssetIds = expiredAssets.map((asset) => asset.id)
+
+            await this.deleteMany(expiredAssetIds)
         }
-
-        const expiredAssetIds = expiredAssets.map((asset) => asset.id)
-
-        await this.deleteMany(expiredAssetIds)
     }
 
     private async withDownloadInfo(assetDto: AssetDto): Promise<AssetDto> {

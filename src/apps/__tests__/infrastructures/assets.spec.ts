@@ -1,5 +1,4 @@
 import { HttpStatus } from '@nestjs/common'
-import { CronExpression } from '@nestjs/schedule'
 import { Checksum, pickIds, sleep } from 'common'
 import { nullObjectId, toAny } from 'testlib'
 import {
@@ -228,20 +227,21 @@ describe('AssetsService', () => {
 
     describe('cleanupExpiredUploadsJob', () => {
         describe('when uploads have expired', () => {
+            let fireOnTick: () => Promise<void>
+
             beforeEach(async () => {
                 const { Rules } = await import('shared')
                 toAny(Rules).Asset.uploadExpiresInSec = 1
-
-                const { CronTime } = await import('cron')
-                fix.cleanupExpiredUploadsJob.setTime(new CronTime(CronExpression.EVERY_SECOND))
-                fix.cleanupExpiredUploadsJob.start()
+                const cronjob = fix.scheduler.getCronJob('assets.cleanupExpiredUploads')
+                fireOnTick = cronjob.fireOnTick
             })
 
             it('removes the asset', async () => {
                 const createDto = buildCreateAssetDto(file)
                 const { assetId } = await fix.assetsClient.create(createDto)
 
-                await sleep(2000)
+                await sleep(1500)
+                await fireOnTick()
 
                 await expect(fix.assetsClient.getMany([assetId])).rejects.toMatchObject({
                     status: HttpStatus.NOT_FOUND

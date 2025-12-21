@@ -60,7 +60,7 @@ module.exports = [
                 }
             ],
             'import/newline-after-import': ['warn', { count: 1 }],
-            'import/no-extraneous-dependencies': ['warn', { devDependencies: false }],
+            // 'import/no-extraneous-dependencies': ['warn', { devDependencies: false }],
             'prettier/prettier': 'warn',
             '@typescript-eslint/interface-name-prefix': 'off',
             '@typescript-eslint/explicit-function-return-type': 'off',
@@ -107,6 +107,24 @@ module.exports = [
             'no-redeclare': 'off',
             '@typescript-eslint/no-redeclare': 'warn',
             '@typescript-eslint/adjacent-overload-signatures': 'warn'
+        }
+    },
+    {
+        files: [
+            'src/**/*.spec.ts',
+            'src/**/*.test.ts',
+            'src/**/__tests__/**/*.ts',
+            'src/libs/testlib/**/*.ts',
+            'src/apps/**/development.ts'
+        ],
+        languageOptions: { globals: { ...baseGlobals, ...testGlobals } },
+        plugins: { jest: jestPlugin },
+        rules: {
+            'import/no-extraneous-dependencies': ['warn', { devDependencies: true }],
+            'jest/no-focused-tests': 'warn',
+            'jest/no-disabled-tests': 'warn',
+            'jest/valid-expect': 'warn',
+            'jest/no-identical-title': 'warn'
         }
     },
     {
@@ -231,24 +249,6 @@ module.exports = [
                     ]
                 }
             ]
-        }
-    },
-    {
-        files: [
-            'src/**/*.spec.ts',
-            'src/**/*.test.ts',
-            'src/**/__tests__/**/*.ts',
-            'src/libs/testlib/**/*.ts',
-            'src/apps/**/development.ts'
-        ],
-        languageOptions: { globals: { ...baseGlobals, ...testGlobals } },
-        plugins: { jest: jestPlugin },
-        rules: {
-            'import/no-extraneous-dependencies': ['warn', { devDependencies: true }],
-            'jest/no-focused-tests': 'warn',
-            'jest/no-disabled-tests': 'warn',
-            'jest/valid-expect': 'warn',
-            'jest/no-identical-title': 'warn'
         }
     }
 ]
