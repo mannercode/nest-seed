@@ -42,7 +42,7 @@ jobs:
             - name: TEST2
               run: |
                   docker run --rm -v /:/host node:24-bookworm ls /host
-                  docker run --rm -v /:/host node:24-bookworm tree -L 3 /host
+                  docker ps -a
 
             - name: Setup Network
               run: |
