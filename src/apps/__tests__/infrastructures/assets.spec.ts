@@ -1,20 +1,21 @@
 import { HttpStatus } from '@nestjs/common'
-import type { AssetDto } from 'apps/infrastructures'
 import { Checksum, pickIds, sleep } from 'common'
 import { nullObjectId, toAny } from 'testlib'
 import {
     buildCompleteAssetDto,
     buildCreateAssetDto,
     downloadAsset,
+    fixtureFiles,
     uploadAsset,
     uploadComplete,
     uploadFile
 } from '../__helpers__'
 import { type AssetsFixture } from './assets.fixture'
+import type { AssetDto } from 'apps/infrastructures'
 
 describe('AssetsService', () => {
     let fix: AssetsFixture
-    const file = file
+    const file = fixtureFiles.small
 
     beforeEach(async () => {
         const { createAssetsFixture } = await import('./assets.fixture')
