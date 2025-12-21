@@ -9,19 +9,12 @@
             "type": "node",
             "request": "launch",
             "runtimeExecutable": "npm",
-            "runtimeArgs": [
-                "run",
-                "debug",
-            ],
+            "runtimeArgs": ["run", "debug"],
             "autoAttachChildProcesses": true,
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
-            "env": {
-                "TARGET_APP": "${input:apps}",
-            },
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
+            "env": { "TARGET_APP": "${input:apps}" },
+            "skipFiles": ["<node_internals>/**"],
             "restart": true
         }
     ],
@@ -29,12 +22,7 @@
         {
             "id": "apps",
             "type": "pickString",
-            "options": [
-                "gateway",
-                "applications",
-                "cores",
-                "infrastructures"
-            ],
+            "options": ["gateway", "applications", "cores", "infrastructures"],
             "description": "Select a app to debug"
         }
     ]

@@ -133,10 +133,7 @@ module.exports = [
         rules: {
             'no-restricted-syntax': [
                 'error',
-                {
-                    selector: 'Program',
-                    message: 'Test files must live under __tests__.'
-                }
+                { selector: 'Program', message: 'Test files must live under __tests__.' }
             ]
         }
     },
