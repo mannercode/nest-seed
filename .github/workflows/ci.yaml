@@ -14,10 +14,13 @@ jobs:
         runs-on: ubuntu-24.04-arm
         container: node:24-bookworm
         env:
-            WORKSPACE_ROOT: ${{ github.workspace }}
+            HOST_PATH: ${{ github.workspace }}
             TERM: xterm # This is required to enable use of the `clear` command in bash
         steps:
             - uses: actions/checkout@v4
+
+            - name: TEST
+              run: env
 
             - name: Install Tools
               run: apt-get update && apt-get install -y curl jq iproute2
