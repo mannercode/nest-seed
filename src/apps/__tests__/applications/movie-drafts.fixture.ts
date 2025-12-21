@@ -20,7 +20,6 @@ export async function createMovieDraftsFixture() {
     return { ...ctx }
 }
 
-// TODO eslint sort 추가
 export async function createMovieDraft(ctx: TestContext): Promise<MovieDraftDto> {
     const { MovieDraftsClient } = await import('apps/applications')
     const movieDraftsClient = ctx.module.get(MovieDraftsClient)

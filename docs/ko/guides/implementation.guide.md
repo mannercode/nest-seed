@@ -207,43 +207,7 @@ describe('Customers', () => {
     }
 ```
 
-## 7. 테스트 코드를 .spec.ts와 .fix.ts로 분리
-
-### 7.1 예전 방식
-
-.spec.ts에 Fixture 설정 코드를 모두 넣으면, 실제 테스트 로직이 무엇을 검증하는지 파악하기가 어렵습니다. 따라서 테스트 로직은 .spec.ts에 집중하고, 테스트에 필요한 리소스나 설정은 .fix.ts에 둡니다.
-
-예: `src/apps/__tests__/utils` 폴더에 공통 코드가 모여 있고, 그중 `clients.ts`에서 `module.get()`으로 필요한 `Service 인스턴스`를 미리 가져옵니다. 이렇게 하면 테스트가 간결해지며, 중복 코드를 줄일 수 있습니다.
-
-만약 새로운 서비스를 추가하고 테스트를 작성한다면, `clients.ts`와 `create-all-test-contexts.ts` 등을 변경해야 합니다.
-
-```ts
-import { CustomersClient, MoviesClient } from 'apps/cores'
-import { HttpTestContext, TestContext } from 'testlib'
-
-export class AllProviders {
-    customersClient: CustomersClient
-    moviesClient: MoviesClient
-}
-
-export async function getProviders(coresContext: TestContext) {
-    const { module: coresModule } = coresContext
-    const customersClient = coresModule.get(CustomersClient)
-    const moviesClient = coresModule.get(MoviesClient)
-
-    return { customersClient, moviesClient }
-}
-```
-
-### 7.2 현재 방식
-
-<!-- TODO 7. 항목은 정리 다시 -->
-
-각 모듈에서 필요한 모듈만 생성해서 테스트 한다.
-
-전체 모듈을 생성하는 예전 방식은 테스트 완료에 89s가 걸렸다. 현재 방식은 83s가 걸렸다. 실제 프로젝트에서는 훨씬 큰 차이가 발생할 것이다.
-
-## 8. 주석
+## 7. 주석
 
 ```ts
 // 한 줄은 이렇게 한다.
@@ -257,7 +221,7 @@ export async function getProviders(coresContext: TestContext) {
 */
 ```
 
-## 9. ESM modules
+## 8. ESM modules
 
 NestJS는 CommonJS 모듈 시스템을 사용하지만, Node.js >= 22에서는 CommonJS와 ESM을 동시에 지원하므로 호환성 문제가 발생하지 않습니다.
 
