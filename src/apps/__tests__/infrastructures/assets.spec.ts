@@ -1,21 +1,20 @@
 import { HttpStatus } from '@nestjs/common'
+import type { AssetDto } from 'apps/infrastructures'
 import { Checksum, pickIds, sleep } from 'common'
 import { nullObjectId, toAny } from 'testlib'
 import {
     buildCompleteAssetDto,
     buildCreateAssetDto,
     downloadAsset,
-    fixtureFiles,
     uploadAsset,
     uploadComplete,
     uploadFile
 } from '../__helpers__'
 import { type AssetsFixture } from './assets.fixture'
-import type { AssetDto } from 'apps/infrastructures'
 
 describe('AssetsService', () => {
     let fix: AssetsFixture
-    const file = fixtureFiles.small
+    const file = file
 
     beforeEach(async () => {
         const { createAssetsFixture } = await import('./assets.fixture')
@@ -140,9 +139,9 @@ describe('AssetsService', () => {
 
             beforeEach(async () => {
                 assets = await Promise.all([
-                    uploadComplete(fix, fixtureFiles.small),
-                    uploadComplete(fix, fixtureFiles.small),
-                    uploadComplete(fix, fixtureFiles.small)
+                    uploadComplete(fix, file),
+                    uploadComplete(fix, file),
+                    uploadComplete(fix, file)
                 ])
             })
 
@@ -184,9 +183,9 @@ describe('AssetsService', () => {
 
             beforeEach(async () => {
                 assets = await Promise.all([
-                    uploadComplete(fix, fixtureFiles.small),
-                    uploadComplete(fix, fixtureFiles.small),
-                    uploadComplete(fix, fixtureFiles.small)
+                    uploadComplete(fix, file),
+                    uploadComplete(fix, file),
+                    uploadComplete(fix, file)
                 ])
             })
 
@@ -226,25 +225,37 @@ describe('AssetsService', () => {
     })
 
     describe('cleanupExpiredUploadsJob', () => {
-        describe('when uploads have expired', () => {
+        describe('when an uploaded asset exists', () => {
             let fireOnTick: () => Promise<void>
+            let assetId: string
 
             beforeEach(async () => {
                 const { Rules } = await import('shared')
                 toAny(Rules).Asset.uploadExpiresInSec = 1
+
                 const cronjob = fix.scheduler.getCronJob('assets.cleanupExpiredUploads')
                 fireOnTick = cronjob.fireOnTick
+
+                const createDto = buildCreateAssetDto(file)
+                const uploadDto = await fix.assetsClient.create(createDto)
+                assetId = uploadDto.assetId
             })
 
-            it('removes the asset', async () => {
-                const createDto = buildCreateAssetDto(file)
-                const { assetId } = await fix.assetsClient.create(createDto)
+            describe('when the upload has not expired', () => {
+                it('keeps the asset', async () => {
+                    await fireOnTick()
+                    await expect(fix.assetsClient.getMany([assetId])).resolves.toHaveLength(1)
+                })
+            })
 
-                await sleep(1500)
-                await fireOnTick()
+            describe('when the upload has expired', () => {
+                it('removes the asset', async () => {
+                    await sleep(1500)
+                    await fireOnTick()
 
-                await expect(fix.assetsClient.getMany([assetId])).rejects.toMatchObject({
-                    status: HttpStatus.NOT_FOUND
+                    await expect(fix.assetsClient.getMany([assetId])).rejects.toMatchObject({
+                        status: HttpStatus.NOT_FOUND
+                    })
                 })
             })
         })
