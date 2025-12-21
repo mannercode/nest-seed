@@ -245,6 +245,7 @@ describe('AssetsService', () => {
             describe('when the upload has not expired', () => {
                 it('keeps the asset', async () => {
                     await fireOnTick()
+
                     await expect(fix.assetsClient.getMany([assetId])).resolves.toHaveLength(1)
                 })
             })
