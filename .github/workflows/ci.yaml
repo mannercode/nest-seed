@@ -19,14 +19,6 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            - name: TEST
-              run: env
-
-            - name: TEST2
-              run: |
-                  docker run --rm -v /:/host node:24-bookworm ls /host
-                  docker run --rm -v /:/host node:24-bookworm tree -L 3 /host
-
             - name: Install Tools
               run: apt-get update && apt-get install -y curl jq iproute2
 
@@ -42,6 +34,14 @@ jobs:
                     tee /etc/apt/sources.list.d/docker.list > /dev/null
                   apt-get update
                   apt-get install -y docker-ce-cli
+
+            - name: TEST
+              run: env
+
+            - name: TEST2
+              run: |
+                  docker run --rm -v /:/host node:24-bookworm ls /host
+                  docker run --rm -v /:/host node:24-bookworm tree -L 3 /host
 
             - name: Setup Network
               run: |
