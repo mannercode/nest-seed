@@ -42,7 +42,8 @@ jobs:
             - name: TEST2
               run: |
                   docker run --rm -v /:/host node:24-bookworm ls /host
-                  docker ps -a
+                  docker inspect ${HOSTNAME}
+                  exit 1
 
             - name: Setup Network
               run: |
