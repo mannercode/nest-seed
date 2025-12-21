@@ -15,7 +15,8 @@
         },
         "dependencies": {
             "mongoose": "Pinned to 8.x; upgrading to 9.x requires changes in @nestjs/mongoose integration"
-        }
+        },
+        "package-update": "ncu -x  @types/node -x mongoose -u"
     },
     "scripts": {
         "start": "node _output/dist/${TARGET_APP}/index.js",
