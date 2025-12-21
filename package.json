@@ -4,6 +4,12 @@
     "private": true,
     "comments": {
         "scripts": {
+            "TARGET_APP": [
+                "applications",
+                "cores",
+                "gateway",
+                "infrastructures"
+            ],
             "apps:*": "application containers for this project (API servers, web apps, etc.)",
             "infra:*": "shared infrastructure stack (databases, queues, etc.) for local development"
         },

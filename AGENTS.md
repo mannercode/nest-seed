@@ -16,7 +16,7 @@
 
 ## Testing
 
-- Unit/integration: `npm test` (uses Testcontainers for Mongo/Redis/NATS/MinIO; Docker must be running). Scope with `TEST_ROOT=src/apps npm test`; repeat helper `tests/repeat/run.sh src 3`. Coverage goes to `_output/coverage`.
+- Unit/integration: `npm test` (uses Testcontainers for Mongo/Redis/NATS/MinIO; Docker must be running). Scope with `TEST_ROOT=src/apps npm test`; repeat with `for i in {1..3}; do TEST_ROOT=src/apps npm test; done`. Coverage goes to `_output/coverage`.
 - E2E: `WORKSPACE_ROOT=$(pwd) npm run test:e2e` (requires `curl`/`jq`). Scripts reset infra/apps per suite and hit `http://host.docker.internal:${HTTP_PORT}`; apps are torn down at the end.
 
 ## Code style
