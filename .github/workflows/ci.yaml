@@ -39,6 +39,13 @@ jobs:
                   apt-get update
                   apt-get install -y docker-ce-cli
 
+            - name: Resolve host workspace path
+              shell: bash
+              run: |
+                  HOST_PATH=$(docker inspect "$HOSTNAME" --format '{{range .Mounts}}{{if eq .Destination "'"$GITHUB_WORKSPACE"'"}}{{.Source}}{{end}}{{end}}')
+                  echo "HOST_PATH=$HOST_PATH" >> "$GITHUB_ENV"
+                  echo "HOST_PATH=$HOST_PATH"
+
             - name: TEST2
               run: |
                   docker run --rm -v /:/host node:24-bookworm ls /host
