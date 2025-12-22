@@ -44,10 +44,10 @@ jobs:
             - name: TEST
               run: env
 
-            - name: TEST2
-              run: |
-                  docker inspect ${HOSTNAME}
-                  exit 1
+            # - name: TEST2
+            #   run: |
+            #       docker inspect ${HOSTNAME}
+            #       exit 1
 
             - name: Setup Network
               run: |
