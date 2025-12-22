@@ -227,3 +227,44 @@ NestJS는 CommonJS 모듈 시스템을 사용하지만, Node.js >= 22에서는 C
 ```
 
 이와 관련된 설정은 [ts-jest 예제](https://github.com/kulshekhar/ts-jest/tree/main/examples/js-with-ts)를 참고하세요.
+
+## 9. Commit message 규칙 (Conventional Commits)
+
+이 저장소는 `commitlint`의 `@commitlint/config-conventional` 규칙을 사용합니다.
+커밋 메시지는 아래 형식을 따라야 하며, 규칙을 위반하면 커밋/PR 체크가 실패합니다.
+
+### 기본 형식
+
+- 최소 형식: `type: subject`
+- scope 포함: `type(scope): subject`
+
+예)
+
+- `feat: add user login`
+- `fix: handle null pointer in auth`
+- `refactor(api): simplify user service`
+
+### type 목록
+
+- `feat`: 기능 추가
+- `fix`: 버그 수정
+- `docs`: 문서 변경
+- `style`: 코드 의미 변화 없는 포맷 변경(공백/세미콜론 등)
+- `refactor`: 리팩터링
+- `perf`: 성능 개선
+- `test`: 테스트 추가/수정
+- `build`: 빌드/의존성 관련
+- `ci`: CI 설정/스크립트 변경
+- `chore`: 기타 잡무(설정, 스크립트, 정리 등)
+- `revert`: 되돌리기
+
+### subject 작성 규칙
+
+- 비어 있으면 안 됨
+- 변경 내용을 짧고 명확하게 작성
+
+예)
+
+- `docs: update README`
+- `chore: bump dependencies`
+- `ci: run tests on pull request`

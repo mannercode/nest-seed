@@ -7,6 +7,7 @@ const prettierConfig = require('eslint-config-prettier')
 const globals = require('globals')
 const jestPlugin = require('eslint-plugin-jest')
 const importPlugin = require('eslint-plugin-import')
+const unusedImportsPlugin = require('eslint-plugin-unused-imports')
 
 const baseGlobals = { ...globals.node, ...globals.es2021, module: 'readonly', require: 'readonly' }
 const testGlobals = {
@@ -36,7 +37,8 @@ module.exports = [
         plugins: {
             '@typescript-eslint': typescriptEslintPlugin,
             prettier: prettierPlugin,
-            import: importPlugin
+            import: importPlugin,
+            'unused-imports': unusedImportsPlugin
         },
         rules: {
             ...js.configs.recommended.rules,
@@ -67,7 +69,9 @@ module.exports = [
             '@typescript-eslint/explicit-module-boundary-types': 'off',
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/no-empty-function': 'off',
-            '@typescript-eslint/no-unused-vars': [
+            '@typescript-eslint/no-unused-vars': 'off',
+            'unused-imports/no-unused-imports': 'warn',
+            'unused-imports/no-unused-vars': [
                 'warn',
                 {
                     argsIgnorePattern: '^_',
