@@ -40,7 +40,7 @@ jobs:
               run: |
                   prefix="$(dirname "$(dirname "$GITHUB_WORKSPACE")")"
                   HOST_WS="$(docker inspect "$HOSTNAME" --format '{{range .Mounts}}{{if eq .Destination "'"$prefix"'"}}{{.Source}}{{end}}{{end}}')"
-                  echo "HOST_PATH=$HOST_PATH" >> "$GITHUB_ENV"
+                  echo "HOST_PATH=$HOST_WS" >> "$GITHUB_ENV"
             - name: TEST
               run: env
 
