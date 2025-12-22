@@ -25,7 +25,7 @@
         "test": "jest --no-cache --coverage --roots \"<rootDir>/${TEST_ROOT:-src}\" --collectCoverageFrom \"${TEST_ROOT:-src}/**/*.ts\"",
         "test:e2e": "bash tests/e2e/run.sh",
         "format": "eslint src/ --fix",
-        "lint": "eslint src/ --max-warnings=0",
+        "lint": "tsc -p tsconfig.json --noEmit & eslint src/ --max-warnings=0",
         "apps:down": "docker compose down --volumes --remove-orphans --timeout 0",
         "apps:up": "  docker compose up -d --build",
         "apps:wait": "docker wait apps-setup && docker rm apps-setup",
@@ -74,6 +74,8 @@
         "winston-daily-rotate-file": "^5.0.0"
     },
     "devDependencies": {
+        "@commitlint/cli": "^19.7.1",
+        "@commitlint/config-conventional": "^19.7.1",
         "@nestjs/cli": "^11.0.14",
         "@nestjs/schematics": "^11.0.9",
         "@nestjs/testing": "^11.1.9",
@@ -97,6 +99,7 @@
         "eslint-plugin-import": "^2.32.0",
         "eslint-plugin-jest": "^29.5.0",
         "eslint-plugin-prettier": "^5.5.4",
+        "eslint-plugin-unused-imports": "^4.2.0",
         "globals": "^16.5.0",
         "husky": "^9.1.7",
         "jest": "^30.2.0",
