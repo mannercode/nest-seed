@@ -17,10 +17,10 @@ jobs:
             docker:
                 image: docker:27-dind
                 options: --privileged
-                ports:
-                    - 2375:2375
-                env:
-                    DOCKER_TLS_CERTDIR: ''
+                # ports:
+                #     - 2375:2375
+                # env:
+                #     DOCKER_TLS_CERTDIR: ''
         env:
             WORKSPACE_ROOT: ${{ github.workspace }}
             TERM: xterm # This is required to enable use of the `clear` command in bash
@@ -56,8 +56,6 @@ jobs:
 
             - name: Run infrastructures
               run: |
-                  export DOCKER_HOST=tcp://docker:2375
-                  export DOCKER_TLS_CERTDIR=""
                   npm run infra:reset
 
             - name: Run unit tests
@@ -65,6 +63,4 @@ jobs:
 
             - name: Run e2e tests
               run: |
-                  export DOCKER_HOST=tcp://docker:2375
-                  export DOCKER_TLS_CERTDIR=""
                   npm run test:e2e
