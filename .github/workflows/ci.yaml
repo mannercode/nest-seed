@@ -18,8 +18,6 @@ jobs:
                 image: docker:27-dind
                 options: --privileged
         env:
-            DOCKER_HOST: tcp://docker:2375
-            DOCKER_TLS_CERTDIR: ''
             WORKSPACE_ROOT: ${{ github.workspace }}
             TERM: xterm # This is required to enable use of the `clear` command in bash
         steps:
@@ -53,10 +51,16 @@ jobs:
               run: npm run lint
 
             - name: Run infrastructures
-              run: npm run infra:reset
+              run: |
+                  export DOCKER_HOST=tcp://docker:2375
+                  export DOCKER_TLS_CERTDIR=""
+                  npm run infra:reset
 
             - name: Run unit tests
               run: npm test
 
             - name: Run e2e tests
-              run: npm run test:e2e
+              run: |
+                  export DOCKER_HOST=tcp://docker:2375
+                  export DOCKER_TLS_CERTDIR=""
+                  npm run test:e2e
