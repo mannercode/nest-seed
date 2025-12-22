@@ -76,7 +76,7 @@ services:
             http://nats3:8222
         depends_on: { nats3: { condition: service_healthy } }
 
-    prometheus:
+    nats-prometheus:
         image: prom/prometheus:latest
         container_name: nats-prometheus
         command:
@@ -91,7 +91,7 @@ services:
             - nats-exporter2
             - nats-exporter3
 
-    grafana:
+    nats-grafana:
         image: grafana/grafana:latest
         container_name: nats-grafana
         ports: ['3300:3000']
