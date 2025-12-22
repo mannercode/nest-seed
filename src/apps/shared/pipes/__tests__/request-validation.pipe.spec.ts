@@ -9,10 +9,7 @@ describe('RequestValidationPipe', () => {
             await import('./request-validation.pipe.fixture')
         fix = await createRequestValidationPipeFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('object', () => {
         describe('when the payload is valid', () => {

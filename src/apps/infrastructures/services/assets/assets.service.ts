@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { Cron } from '@nestjs/schedule'
-import { DateUtil, InjectS3Object, mapDocToDto, S3ObjectService } from 'common'
+import { DateUtil, InjectS3Object, mapDocToDto, pickIds, S3ObjectService } from 'common'
 import { Rules } from 'shared'
 import { AssetsRepository } from './assets.repository'
 import { AssetDto, AssetPresignedUploadDto, CompleteAssetDto, CreateAssetDto } from './dtos'
@@ -87,13 +87,9 @@ export class AssetsService {
         const expireBefore = this.getExpirationThreshold()
         const expiredAssets = await this.repository.findExpiredUncompleted(expireBefore)
 
-        if (expiredAssets.length === 0) {
-            return { deletedAssets: [] }
+        if (0 < expiredAssets.length) {
+            await this.deleteMany(pickIds(expiredAssets))
         }
-
-        const expiredAssetIds = expiredAssets.map((asset) => asset.id)
-
-        await this.deleteMany(expiredAssetIds)
     }
 
     private async withDownloadInfo(assetDto: AssetDto): Promise<AssetDto> {

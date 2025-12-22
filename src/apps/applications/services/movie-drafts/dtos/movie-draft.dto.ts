@@ -1,5 +1,5 @@
-import type { MovieGenre, MovieRating } from 'apps/cores'
 import type { MovieDraftImageStatus } from '../models/movie-draft'
+import type { MovieGenre, MovieRating } from 'apps/cores'
 
 export type DraftImageStatus = (typeof MovieDraftImageStatus)[keyof typeof MovieDraftImageStatus]
 
@@ -10,7 +10,6 @@ export class MovieDraftImageDto {
 
 export class MovieDraftDto {
     id: string
-    expiresAt: Date
     title?: string
     genres?: MovieGenre[]
     releaseDate?: Date
@@ -19,5 +18,4 @@ export class MovieDraftDto {
     director?: string
     rating?: MovieRating
     assetIds: string[]
-    images: MovieDraftImageDto[]
 }

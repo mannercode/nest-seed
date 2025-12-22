@@ -7,10 +7,7 @@ describe('MongooseRepository.withTransaction', () => {
         const { createMongooseTransactionFixture } = await import('./mongoose.transaction.fixture')
         fix = await createMongooseTransactionFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('withTransaction', () => {
         describe('when the transaction succeeds', () => {
@@ -27,11 +24,15 @@ describe('MongooseRepository.withTransaction', () => {
         })
 
         describe('when rollback is requested', () => {
-            it('rolls back the transaction', async () => {
-                const newDoc = fix.repository.newDocument()
+            let newDoc: any
+
+            beforeEach(async () => {
+                newDoc = fix.repository.newDocument()
                 newDoc.name = 'name'
                 await newDoc.save()
+            })
 
+            it('rolls back the transaction', async () => {
                 await fix.repository.withTransaction(async (session, rollback) => {
                     await fix.repository.deleteById(newDoc.id, session)
                     rollback()
@@ -61,11 +62,13 @@ describe('MongooseRepository.withTransaction', () => {
     })
 
     describe('when startSession throws', () => {
-        it('throws', async () => {
+        beforeEach(() => {
             jest.spyOn(fix.model, 'startSession').mockImplementation(() => {
                 throw new Error()
             })
+        })
 
+        it('throws', async () => {
             const promise = fix.repository.withTransaction(async (_session) => {})
 
             await expect(promise).rejects.toThrow()
@@ -73,14 +76,16 @@ describe('MongooseRepository.withTransaction', () => {
     })
 
     describe('when startTransaction throws', () => {
-        it('throws', async () => {
+        beforeEach(() => {
             jest.spyOn(fix.model, 'startSession').mockResolvedValue({
                 startTransaction: jest.fn().mockImplementation(() => {
                     throw new Error()
                 }),
                 inTransaction: jest.fn().mockReturnValue(false)
             } as any)
+        })
 
+        it('throws', async () => {
             const promise = fix.repository.withTransaction(async (_session) => {})
 
             await expect(promise).rejects.toThrow()

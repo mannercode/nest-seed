@@ -1,7 +1,7 @@
-import type { PurchaseRecordDto } from 'apps/cores'
 import { nullObjectId } from 'testlib'
 import { buildCreatePurchaseRecordDto, createPurchaseRecord, Errors } from '../__helpers__'
 import type { PurchaseRecordsFixture } from './purchase-records.fixture'
+import type { PurchaseRecordDto } from 'apps/cores'
 
 describe('PurchaseRecordsService', () => {
     let fix: PurchaseRecordsFixture
@@ -10,15 +10,12 @@ describe('PurchaseRecordsService', () => {
         const { createPurchaseRecordsFixture } = await import('./purchase-records.fixture')
         fix = await createPurchaseRecordsFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('create', () => {
         it('returns the created purchase record', async () => {
             const createDto = buildCreatePurchaseRecordDto()
-            const createdPurchaseRecord = await fix.purchaseRecordsService.create(createDto)
+            const createdPurchaseRecord = await fix.purchaseRecordsClient.create(createDto)
 
             expect(createdPurchaseRecord).toEqual({
                 id: expect.any(String),

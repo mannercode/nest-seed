@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
+import { CreateAssetDto } from 'apps/infrastructures'
 import { ClientProxyService, InjectClientProxy } from 'common'
 import { Messages } from 'shared'
-import { CreateAssetDto } from 'apps/infrastructures'
 import { DraftImageDto, DraftImageUploadResponse, MovieDraftDto, UpdateMovieDraftDto } from './dtos'
 
 @Injectable()

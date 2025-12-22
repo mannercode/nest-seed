@@ -5,12 +5,12 @@ import { Strategy } from 'passport-local'
 
 @Injectable()
 export class CustomerLocalStrategy extends PassportStrategy(Strategy, 'customer-local') {
-    constructor(private readonly customersService: CustomersClient) {
+    constructor(private readonly customersClient: CustomersClient) {
         super({ usernameField: 'email', passwordField: 'password' })
     }
 
     async validate(email: string, password: string): Promise<CustomerAuthPayload | null> {
-        const customer = await this.customersService.findCustomerByCredentials({ email, password })
+        const customer = await this.customersClient.findCustomerByCredentials({ email, password })
 
         return customer ? { customerId: customer.id, email } : null
     }

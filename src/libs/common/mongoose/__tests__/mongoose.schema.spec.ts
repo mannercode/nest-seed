@@ -8,10 +8,7 @@ describe('Mongoose schema types', () => {
         const { createMongooseSchemaFixture } = await import('./mongoose.schema.fixture')
         fix = await createMongooseSchemaFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     it('stores and retrieves all default Mongoose data types', async () => {
         const doc = new fix.model()

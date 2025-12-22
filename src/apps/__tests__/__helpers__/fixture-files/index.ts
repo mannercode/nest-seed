@@ -1,5 +1,5 @@
-import type { Checksum } from 'common'
 import p from 'path'
+import type { Checksum } from 'common'
 
 export type FixtureFile = {
     path: string

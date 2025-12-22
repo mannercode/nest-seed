@@ -118,14 +118,18 @@ describe('QueryBuilder', () => {
         })
 
         describe('when ids contain duplicates', () => {
-            it('removes duplicates', () => {
-                jest.spyOn(Logger, 'error').mockImplementation(() => {})
+            let ids: string[]
+
+            beforeEach(() => {
+                jest.spyOn(Logger, 'warn').mockImplementation(() => {})
 
                 const id = new Types.ObjectId().toString()
-                const ids = [id, new Types.ObjectId().toString(), id]
+                ids = [id, new Types.ObjectId().toString(), id]
+            })
 
+            it('removes duplicates', () => {
                 builder.addIn('_id', ids)
-                expect(builder.build({})).toEqual({ _id: { $in: objectIds([id, ids[1]]) } })
+                expect(builder.build({})).toEqual({ _id: { $in: objectIds([ids[0], ids[1]]) } })
             })
         })
 

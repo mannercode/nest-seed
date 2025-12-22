@@ -1,10 +1,10 @@
-import type { MovieDto } from 'apps/cores'
 import { MovieGenre } from 'apps/cores'
 import {
     createShowingMovies,
     createWatchedMovies,
     type RecommendationFixture
 } from './recommendation.fixture'
+import type { MovieDto } from 'apps/cores'
 
 describe('RecommendationService', () => {
     let fix: RecommendationFixture
@@ -13,10 +13,7 @@ describe('RecommendationService', () => {
         const { createRecommendationFixture } = await import('./recommendation.fixture')
         fix = await createRecommendationFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('GET /movies/recommended', () => {
         describe('when showing movies exist', () => {

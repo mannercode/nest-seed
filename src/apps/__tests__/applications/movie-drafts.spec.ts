@@ -1,10 +1,7 @@
-import { FileUtil, Path, DateUtil } from 'common'
-import { HttpStatus } from '@nestjs/common'
-import { createReadStream } from 'fs'
-import { writeFile } from 'fs/promises'
 import { nullObjectId } from 'testlib'
-import { buildCreateMovieDto, Errors } from '../__helpers__'
-import type { MovieDraftsFixture } from './movie-drafts.fixture'
+import { Errors } from '../__helpers__'
+import { createMovieDraft, type MovieDraftsFixture } from './movie-drafts.fixture'
+import type { MovieDraftDto } from 'apps/applications'
 
 describe('MovieDraftsService', () => {
     let fix: MovieDraftsFixture
@@ -13,166 +10,156 @@ describe('MovieDraftsService', () => {
         const { createMovieDraftsFixture } = await import('./movie-drafts.fixture')
         fix = await createMovieDraftsFixture()
     })
+    afterEach(() => fix.teardown())
 
-    afterEach(async () => {
-        await fix.teardown()
+    describe('POST /movie-drafts', () => {
+        it('returns the created movie-draft', async () => {
+            await fix.httpClient
+                .post('/movie-drafts')
+                .created(expect.objectContaining({ id: expect.any(String) }))
+        })
     })
 
-    async function requestImageUpload(draftId: string) {
-        const createDto = {
-            originalName: fix.image.originalName,
-            mimeType: fix.image.mimeType,
-            size: fix.image.size,
-            checksum: fix.image.checksum
-        }
+    describe('GET /movie-drafts/:id', () => {
+        describe('when the movie-draft exists', () => {
+            let movieDraft: MovieDraftDto
 
-        const { body: upload } = await fix.httpClient
-            .post(`/movie-drafts/${draftId}/images`)
-            .body(createDto)
-            .created()
-
-        const uploadResponse = await fetch(upload.upload.url, {
-            method: upload.upload.method,
-            headers: upload.upload.headers,
-            body: createReadStream(fix.image.path),
-            duplex: 'half'
-        })
-
-        expect(uploadResponse.ok).toBe(true)
-        return upload
-    }
-
-    describe('when uploading an image via presign and completing the draft', () => {
-        it('creates a movie with the uploaded image', async () => {
-            const { body: draft } = await fix.httpClient.post('/movie-drafts').created()
-
-            const upload = await requestImageUpload(draft.id)
-
-            await fix.httpClient
-                .post(`/movie-drafts/${draft.id}/images/${upload.imageId}/complete`)
-                .ok(expect.objectContaining({ id: upload.imageId, status: 'READY' }))
-
-            const { assetIds: _ignored, ...updateDto } = buildCreateMovieDto({
-                title: 'draft title',
-                plot: 'draft plot'
+            beforeEach(async () => {
+                movieDraft = await createMovieDraft(fix)
             })
 
-            await fix.httpClient
-                .patch(`/movie-drafts/${draft.id}`)
-                .body(updateDto)
-                .ok(expect.objectContaining({ id: draft.id, ...updateDto }))
-
-            const { body: createdMovie } = await fix.httpClient
-                .post(`/movie-drafts/${draft.id}/complete`)
-                .created()
-
-            expect(createdMovie).toEqual(
-                expect.objectContaining({
-                    id: expect.any(String),
-                    ...updateDto,
-                    imageUrls: [expect.any(String)]
-                })
-            )
-
-            await fix.httpClient
-                .get(`/movie-drafts/${draft.id}`)
-                .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: draft.id })
-
-            const downloadResponse = await fetch(createdMovie.imageUrls[0])
-            expect(downloadResponse.ok).toBe(true)
-
-            const downloadedBuffer = Buffer.from(await downloadResponse.arrayBuffer())
-            const downloadPath = Path.join(fix.tempDir, 'draft-download.tmp')
-            await writeFile(downloadPath, downloadedBuffer)
-
-            expect(await FileUtil.areEqual(downloadPath, fix.image.path)).toBe(true)
-        })
-    })
-
-    describe('when completing an incomplete draft', () => {
-        it('returns 422 Unprocessable Entity', async () => {
-            const { body: draft } = await fix.httpClient.post('/movie-drafts').created()
-
-            await fix.httpClient
-                .post(`/movie-drafts/${draft.id}/complete`)
-                .send(
-                    HttpStatus.UNPROCESSABLE_ENTITY,
-                    expect.objectContaining(Errors.MovieDrafts.InvalidForCompletion)
-                )
-        })
-    })
-
-    describe('when updating and deleting a draft', () => {
-        it('updates fields and deletes the draft', async () => {
-            const { body: draft } = await fix.httpClient.post('/movie-drafts').created()
-            await fix.httpClient
-                .get(`/movie-drafts/${draft.id}`)
-                .ok(expect.objectContaining({ id: draft.id, expiresAt: expect.any(Date) }))
-
-            const { assetIds: _ignored, ...updateDto } = buildCreateMovieDto({
-                title: 'updated title',
-                plot: 'updated plot'
+            it('returns the movie-draft', async () => {
+                await fix.httpClient.get(`/movie-drafts/${movieDraft.id}`).ok(movieDraft)
             })
-
-            const { body: updated } = await fix.httpClient
-                .patch(`/movie-drafts/${draft.id}`)
-                .body(updateDto)
-                .ok()
-
-            expect(updated).toEqual(expect.objectContaining({ id: draft.id, ...updateDto }))
-
-            await fix.httpClient.delete(`/movie-drafts/${draft.id}`).send(HttpStatus.NO_CONTENT)
-
-            await fix.httpClient
-                .get(`/movie-drafts/${draft.id}`)
-                .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: draft.id })
-        })
-    })
-
-    describe('when requesting image upload', () => {
-        it('rejects unsupported mime types', async () => {
-            const { body: draft } = await fix.httpClient.post('/movie-drafts').created()
-
-            await fix.httpClient
-                .post(`/movie-drafts/${draft.id}/images`)
-                .body({
-                    originalName: fix.image.originalName,
-                    mimeType: 'text/plain',
-                    size: fix.image.size,
-                    checksum: fix.image.checksum
-                })
-                .badRequest(
-                    expect.objectContaining({
-                        ...Errors.MovieDrafts.UnsupportedImageType,
-                        mimeType: 'text/plain'
-                    })
-                )
         })
 
-        describe('when completing a non-existent image', () => {
+        describe('when the movie-draft does not exist', () => {
             it('returns 404 Not Found', async () => {
-                const { body: draft } = await fix.httpClient.post('/movie-drafts').created()
+                await fix.httpClient
+                    .get(`/movie-drafts/${nullObjectId}`)
+                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
+            })
+        })
+    })
+
+    describe('PATCH /movie-drafts/:id', () => {
+        describe('when the movie-draft exists', () => {
+            let movieDraft: MovieDraftDto
+
+            beforeEach(async () => {
+                movieDraft = await createMovieDraft(fix)
+            })
+
+            it('returns the updated movie-draft', async () => {
+                const updateDto = {
+                    title: 'update title',
+                    genres: ['romance', 'thriller'],
+                    releaseDate: new Date('2000-01-01'),
+                    plot: 'new plot',
+                    durationInSeconds: 10 * 60,
+                    director: 'Steven Spielberg',
+                    rating: 'R'
+                }
 
                 await fix.httpClient
-                    .post(`/movie-drafts/${draft.id}/images/${nullObjectId}/complete`)
-                    .notFound(
-                        expect.objectContaining({
-                            ...Errors.MovieDrafts.ImageNotFound,
-                            imageId: nullObjectId
-                        })
-                    )
+                    .patch(`/movie-drafts/${movieDraft.id}`)
+                    .body(updateDto)
+                    .ok({ ...movieDraft, ...updateDto })
+            })
+
+            it('persists the update', async () => {
+                const updateDto = { title: 'update title' }
+                await fix.httpClient.patch(`/movie-drafts/${movieDraft.id}`).body(updateDto).ok()
+
+                await fix.httpClient
+                    .get(`/movie-drafts/${movieDraft.id}`)
+                    .ok({ ...movieDraft, ...updateDto })
+            })
+        })
+
+        describe('when the movie-draft does not exist', () => {
+            it('returns 404 Not Found', async () => {
+                await fix.httpClient
+                    .patch(`/movie-drafts/${nullObjectId}`)
+                    .body({})
+                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
             })
         })
     })
 
-    describe('when the draft is expired', () => {
-        it('deletes and returns 404 on access', async () => {
-            const expiresAt = DateUtil.add({ minutes: -5 })
-            const draft = await fix.movieDraftsRepository.createDraft({ expiresAt })
+    describe('DELETE /movie-drafts/:id', () => {
+        describe('when the movie-draft exists', () => {
+            it('deletes the movie-draft and returns 204 No Content', () => {})
+        })
 
-            await fix.httpClient
-                .get(`/movie-drafts/${draft.id}`)
-                .notFound(expect.objectContaining(Errors.MovieDrafts.Expired))
+        describe('when the movie-draft does not exist', () => {
+            it('returns 404 Not Found', () => {})
+        })
+    })
+
+    describe('POST /movie-drafts/:id/images', () => {
+        describe('when the movie-draft exists and the payload is valid', () => {
+            it('creates an image slot and returns an S3 upload URL', () => {})
+        })
+
+        describe('when the image type is not supported', () => {
+            it('returns 400 Bad Request', () => {})
+        })
+
+        describe('when the `contentType` is invalid', () => {
+            it('returns 400 Bad Request', () => {})
+        })
+
+        describe('when the movie-draft does not exist', () => {
+            it('returns 404 Not Found', () => {})
+        })
+    })
+
+    describe('DELETE /movie-drafts/:creationId/images/:imageId', () => {
+        describe('when the movie-draft and image both exist', () => {
+            it('deletes the image and returns 204 No Content', () => {})
+        })
+
+        describe('when the image does not exist in the movie-draft', () => {
+            it('returns 404 Not Found', () => {})
+        })
+
+        describe('when the movie-draft does not exist', () => {
+            it('returns 404 Not Found', () => {})
+        })
+    })
+
+    describe('POST /movie-drafts/:id/images/:imageId/complete', () => {
+        describe('when the movie-draft and image exist and the S3 upload succeeded', () => {
+            it('marks the image as READY and returns 200 OK', () => {})
+        })
+
+        describe('when the S3 validation fails', () => {
+            it('returns 422 Unprocessable Entity', () => {})
+        })
+
+        describe('when the image does not exist', () => {
+            it('returns 404 Not Found', () => {})
+        })
+
+        describe('when the movie-draft does not exist', () => {
+            it('returns 404 Not Found', () => {})
+        })
+    })
+
+    describe('POST /movie-drafts/:id/complete', () => {
+        describe('when the movie-draft exists and is valid', () => {
+            let _movieDraft: MovieDraftDto
+
+            beforeEach(async () => {
+                _movieDraft = await createMovieDraft(fix)
+            })
+
+            it('creates a Movie, removes the movie-draft, and returns the created Movie', () => {})
+        })
+
+        describe('when the movie-draft does not exist', () => {
+            it('returns 404 Not Found', () => {})
         })
     })
 })

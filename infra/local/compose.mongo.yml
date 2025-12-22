@@ -6,14 +6,10 @@ x-mongo-base: &mongo-base
         { MONGO_INITDB_ROOT_USERNAME: $MONGO_USERNAME, MONGO_INITDB_ROOT_PASSWORD: $MONGO_PASSWORD }
     # Prevents "Too many open files" errors
     ulimits: { nofile: { soft: 65536, hard: 65536 } }
-    # For tests:
-    # ttlMonitorSleepSecs=1
-    # wiredTigerCacheSizeGB 0.25
     command: >
         mongod --replSet $MONGO_REPLICA_SET
         --keyFile /etc/mongodb/mongodb.key
         --bind_ip_all
-        --setParameter ttlMonitorSleepSecs=1
         --wiredTigerCacheSizeGB 0.25
     volumes: ['mongodb_key:/etc/mongodb']
     depends_on: ['mongo-key-generator']

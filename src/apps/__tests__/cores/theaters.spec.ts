@@ -1,7 +1,7 @@
-import type { SearchTheatersPageDto, TheaterDto } from 'apps/cores'
 import { nullObjectId } from 'testlib'
 import { buildCreateTheaterDto, createTheater, Errors } from '../__helpers__'
 import type { TheatersFixture } from './theaters.fixture'
+import type { SearchTheatersPageDto, TheaterDto } from 'apps/cores'
 
 describe('TheatersService', () => {
     let fix: TheatersFixture
@@ -10,10 +10,7 @@ describe('TheatersService', () => {
         const { createTheatersFixture } = await import('./theaters.fixture')
         fix = await createTheatersFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('POST /theaters', () => {
         it('returns the created theater', async () => {

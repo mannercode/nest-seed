@@ -1,11 +1,11 @@
 import { HttpStatus } from '@nestjs/common'
-import type { PutObjectResult } from './s3-object.service.fixture'
 import {
     putObject,
     testBuffer,
     uploadObject,
     type S3ObjectServiceFixture
 } from './s3-object.service.fixture'
+import type { PutObjectResult } from './s3-object.service.fixture'
 
 describe('S3ObjectService', () => {
     let fix: S3ObjectServiceFixture
@@ -14,10 +14,7 @@ describe('S3ObjectService', () => {
         const { createS3ObjectServiceFixture } = await import('./s3-object.service.fixture')
         fix = await createS3ObjectServiceFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('presignUploadUrl', () => {
         it('returns an uploadUrl', async () => {

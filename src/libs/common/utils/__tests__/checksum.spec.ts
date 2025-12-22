@@ -1,5 +1,5 @@
-import { Checksum, Path } from 'common'
 import fs from 'fs/promises'
+import { Checksum, Path } from 'common'
 
 describe('Checksum', () => {
     describe('fromFile', () => {

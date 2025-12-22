@@ -1,29 +1,24 @@
 import { MongooseErrors, OrderDirection, pickIds, pickItems } from 'common'
 import { expectEqualUnsorted, nullObjectId } from 'testlib'
-import type { MongooseRepositoryFixture, SampleDto } from './mongoose.repository.fixture'
 import {
     createSample,
     createSamples,
+    maxTakeValue,
     sortByName,
     sortByNameDescending,
     toDto,
     toDtos
 } from './mongoose.repository.fixture'
+import type { MongooseRepositoryFixture, SampleDto } from './mongoose.repository.fixture'
 
 describe('MongooseRepository', () => {
     let fix: MongooseRepositoryFixture
-    let maxTake = 0
 
     beforeEach(async () => {
-        const { createMongooseRepositoryFixture, maxTakeValue } =
-            await import('./mongoose.repository.fixture')
+        const { createMongooseRepositoryFixture } = await import('./mongoose.repository.fixture')
         fix = await createMongooseRepositoryFixture()
-        maxTake = maxTakeValue
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('save', () => {
         it('creates the document', async () => {
@@ -72,8 +67,6 @@ describe('MongooseRepository', () => {
         let samples: SampleDto[]
 
         beforeEach(async () => {
-            const { createSamples } = await import('./mongoose.repository.fixture')
-
             const docs = await createSamples(fix.repository)
             samples = toDtos(docs)
         })
@@ -121,7 +114,7 @@ describe('MongooseRepository', () => {
         })
 
         it('throws BadRequestException for take above the limit', async () => {
-            const take = maxTake + 1
+            const take = maxTakeValue + 1
 
             const promise = fix.repository.findWithPagination({ pagination: { take } })
 
@@ -134,7 +127,7 @@ describe('MongooseRepository', () => {
                     pagination: { orderby: { name: 'name', direction: OrderDirection.Desc } }
                 })
 
-                expect(take).toEqual(maxTake)
+                expect(take).toEqual(maxTakeValue)
             })
         })
 

@@ -1,6 +1,4 @@
-import type { CreatePurchaseDto } from 'apps/applications'
 import { PurchaseClient, PurchaseModule } from 'apps/applications'
-import type { TicketDto } from 'apps/cores'
 import {
     CustomersClient,
     CustomersModule,
@@ -21,15 +19,17 @@ import {
 import { PurchasesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
 import { DateUtil, pickIds } from 'common'
-import type { TestContext } from 'testlib'
 import { oid, toAny } from 'testlib'
-import type { AppTestContext } from '../__helpers__'
 import {
     buildHoldTicketsDto,
     createAppTestContext,
     createShowtimes,
     createTickets
 } from '../__helpers__'
+import type { AppTestContext } from '../__helpers__'
+import type { CreatePurchaseDto } from 'apps/applications'
+import type { TicketDto } from 'apps/cores'
+import type { TestContext } from 'testlib'
 
 export type PurchaseFixture = AppTestContext & {}
 
@@ -78,7 +78,7 @@ export function buildCreatePurchaseDto(
 
 export async function holdTickets(ctx: TestContext, tickets: TicketDto[]) {
     const { TicketHoldingClient } = await import('apps/cores')
-    const ticketHoldingService = ctx.module.get(TicketHoldingClient)
+    const ticketHoldingClient = ctx.module.get(TicketHoldingClient)
 
     const heldTicketCount = 4
     const { Rules } = await import('shared')
@@ -86,7 +86,7 @@ export async function holdTickets(ctx: TestContext, tickets: TicketDto[]) {
 
     const heldTickets = tickets.slice(0, heldTicketCount)
 
-    await ticketHoldingService.holdTickets(
+    await ticketHoldingClient.holdTickets(
         buildHoldTicketsDto({
             customerId,
             showtimeId: tickets[0].showtimeId,

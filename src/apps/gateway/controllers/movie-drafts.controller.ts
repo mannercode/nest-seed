@@ -14,42 +14,42 @@ import { CreateAssetDto } from 'apps/infrastructures'
 
 @Controller('movie-drafts')
 export class MovieDraftsController {
-    constructor(private readonly service: MovieDraftsClient) {}
+    constructor(private readonly movieDraftsClient: MovieDraftsClient) {}
 
     @Post()
     create() {
-        return this.service.create()
+        return this.movieDraftsClient.create()
     }
 
     @Get(':draftId')
     get(@Param('draftId') draftId: string) {
-        return this.service.get(draftId)
+        return this.movieDraftsClient.get(draftId)
     }
 
     @Patch(':draftId')
     update(@Param('draftId') draftId: string, @Body() updateDto: UpdateMovieDraftDto) {
-        return this.service.update(draftId, updateDto)
+        return this.movieDraftsClient.update(draftId, updateDto)
     }
 
     @HttpCode(HttpStatus.NO_CONTENT)
     @Delete(':draftId')
     async delete(@Param('draftId') draftId: string) {
-        await this.service.delete(draftId)
+        await this.movieDraftsClient.delete(draftId)
     }
 
     @Post(':draftId/complete')
     complete(@Param('draftId') draftId: string) {
-        return this.service.completeDraft(draftId)
+        return this.movieDraftsClient.completeDraft(draftId)
     }
 
     @Post(':draftId/images')
     requestImageUpload(@Param('draftId') draftId: string, @Body() createDto: CreateAssetDto) {
-        return this.service.requestImageUpload(draftId, createDto)
+        return this.movieDraftsClient.requestImageUpload(draftId, createDto)
     }
 
     @HttpCode(HttpStatus.OK)
     @Post(':draftId/images/:imageId/complete')
     completeImage(@Param('draftId') draftId: string, @Param('imageId') imageId: string) {
-        return this.service.completeImage(draftId, imageId)
+        return this.movieDraftsClient.completeImage(draftId, imageId)
     }
 }

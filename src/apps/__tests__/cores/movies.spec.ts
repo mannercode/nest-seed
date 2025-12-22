@@ -1,4 +1,3 @@
-import type { CreateMovieDto, MovieDto, SearchMoviesPageDto } from 'apps/cores'
 import { MovieGenre, MovieRating } from 'apps/cores'
 import { Checksum } from 'common'
 import { omit } from 'lodash'
@@ -11,6 +10,7 @@ import {
     uploadComplete
 } from '../__helpers__'
 import type { MoviesFixture } from './movies.fixture'
+import type { CreateMovieDto, MovieDto, SearchMoviesPageDto } from 'apps/cores'
 
 describe('MoviesService', () => {
     let fix: MoviesFixture
@@ -19,10 +19,7 @@ describe('MoviesService', () => {
         const { createMoviesFixture } = await import('./movies.fixture')
         fix = await createMoviesFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('POST /movies', () => {
         it('returns the created movie', async () => {

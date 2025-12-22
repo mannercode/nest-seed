@@ -2,8 +2,8 @@ import { RecommendationClient } from 'apps/applications'
 import { MoviesClient, MoviesModule } from 'apps/cores'
 import { MoviesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
-import type { AppTestContext } from '../__helpers__'
 import { createAppTestContext } from '../__helpers__'
+import type { AppTestContext } from '../__helpers__'
 
 export type MoviesFixture = AppTestContext & {}
 

@@ -1,8 +1,8 @@
-import type { CustomerDto, SearchCustomersPageDto } from 'apps/cores'
 import { omit } from 'lodash'
 import { nullObjectId } from 'testlib'
 import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
 import type { CustomersFixture } from './customers.fixture'
+import type { CustomerDto, SearchCustomersPageDto } from 'apps/cores'
 
 describe('CustomersService', () => {
     let fix: CustomersFixture
@@ -11,10 +11,7 @@ describe('CustomersService', () => {
         const { createCustomersFixture } = await import('./customers.fixture')
         fix = await createCustomersFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('POST /customers', () => {
         it('returns the created customer', async () => {

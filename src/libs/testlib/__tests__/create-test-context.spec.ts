@@ -8,10 +8,7 @@ describe('createTestContext', () => {
         const { createTestContextFixture } = await import('./create-test-context.fixture')
         fix = await createTestContextFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     it('uses the mocked service when the provider is overridden', async () => {
         const message = fix.sampleService.getMessage()

@@ -14,18 +14,8 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createDraft(values: Partial<MovieDraft>) {
+    async createDraft() {
         const draft = this.newDocument()
-        draft.expiresAt = values.expiresAt as Date
-        draft.title = values.title
-        draft.genres = values.genres ?? []
-        draft.releaseDate = values.releaseDate
-        draft.plot = values.plot
-        draft.durationInSeconds = values.durationInSeconds
-        draft.director = values.director
-        draft.rating = values.rating
-        draft.images = values.images ?? []
-
         return draft.save()
     }
 

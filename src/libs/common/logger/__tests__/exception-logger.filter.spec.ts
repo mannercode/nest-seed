@@ -10,10 +10,7 @@ describe('ExceptionLoggerFilter', () => {
             await import('./exception-logger.filter.fixture')
         fix = await createExceptionLoggerFilterFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('HTTP context', () => {
         describe('when an HttpException is thrown', () => {
@@ -122,11 +119,13 @@ describe('ExceptionLoggerFilter', () => {
     })
 
     describe('when the ContextType is unknown', () => {
-        it('logs via Logger.error', async () => {
+        beforeEach(async () => {
             const { ExecutionContextHost } =
                 await import('@nestjs/core/helpers/execution-context-host')
             jest.spyOn(ExecutionContextHost.prototype, 'getType').mockReturnValue('unknown')
+        })
 
+        it('logs via Logger.error', async () => {
             await fix.httpClient.get('/exception').notFound()
 
             expect(fix.spyError).toHaveBeenCalledTimes(1)

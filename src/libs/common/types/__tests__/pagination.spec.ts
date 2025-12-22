@@ -12,20 +12,26 @@ describe('PaginationDto', () => {
         const { createPaginationFixture } = await import('./pagination.fixture')
         fix = await createPaginationFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('HTTP controller', () => {
         describe('when the request is valid', () => {
+            let skip: number
+            let take: number
+            let query: Record<string, any>
+            let expectedResponse: Record<string, any>
+
+            beforeEach(() => {
+                skip = 2
+                take = 3
+                query = { skip, take, orderby: 'name:asc' }
+                expectedResponse = {
+                    response: { orderby: { direction: 'asc', name: 'name' }, skip, take }
+                }
+            })
+
             it('handles PaginationDto', async () => {
-                const skip = 2
-                const take = 3
-                await fix.httpClient
-                    .get('/pagination')
-                    .query({ skip, take, orderby: 'name:asc' })
-                    .ok({ response: { orderby: { direction: 'asc', name: 'name' }, skip, take } })
+                await fix.httpClient.get('/pagination').query(query).ok(expectedResponse)
             })
         })
 
@@ -50,11 +56,15 @@ describe('PaginationDto', () => {
 
     describe('RPC controller', () => {
         describe('when the request is valid', () => {
-            it('handles PaginationDto', async () => {
+            let input: Record<string, any>
+
+            beforeEach(() => {
                 const skip = 2
                 const take = 3
-                const input = { orderby: { direction: 'asc', name: 'name' }, skip, take }
+                input = { orderby: { direction: 'asc', name: 'name' }, skip, take }
+            })
 
+            it('handles PaginationDto', async () => {
                 await fix.rpcClient.expect(withTestId('getRpcPagination'), input, {
                     response: input
                 })

@@ -14,9 +14,9 @@ import { BulkCreateShowtimesDto } from '../dtos'
 @Injectable()
 export class ShowtimeBulkCreatorService {
     constructor(
-        private readonly theatersService: TheatersClient,
-        private readonly showtimesService: ShowtimesClient,
-        private readonly ticketsService: TicketsClient
+        private readonly theatersClient: TheatersClient,
+        private readonly showtimesClient: ShowtimesClient,
+        private readonly ticketsClient: TicketsClient
     ) {}
 
     async create(createDto: BulkCreateShowtimesDto, sagaId: string) {
@@ -40,8 +40,8 @@ export class ShowtimeBulkCreatorService {
             }))
         )
 
-        await this.showtimesService.createMany(createDtos)
-        const showtimes = await this.showtimesService.search({ sagaIds: [sagaId] })
+        await this.showtimesClient.createMany(createDtos)
+        const showtimes = await this.showtimesClient.search({ sagaIds: [sagaId] })
         return showtimes
     }
 
@@ -49,7 +49,7 @@ export class ShowtimeBulkCreatorService {
         let totalCount = 0
 
         const theaterIds = Array.from(new Set(showtimes.map((showtime) => showtime.theaterId)))
-        const theaters = await this.theatersService.getMany(theaterIds)
+        const theaters = await this.theatersClient.getMany(theaterIds)
 
         const theatersById = new Map<string, TheaterDto>()
         theaters.forEach((theater) => theatersById.set(theater.id, theater))
@@ -69,7 +69,7 @@ export class ShowtimeBulkCreatorService {
                     sagaId
                 }))
 
-                const { count } = await this.ticketsService.createMany(createTicketDtos)
+                const { count } = await this.ticketsClient.createMany(createTicketDtos)
                 totalCount += count
             })
         )

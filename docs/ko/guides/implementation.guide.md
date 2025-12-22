@@ -4,22 +4,17 @@
 
 ## 1. Jest 테스트 명명 가이드
 
-<!-- // TODO  정리 필요-->
-
-1. 기본 구조는 when/action: 조건/맥락은 describe('when ...'), 행위/결과는 it('...')로 분리
-2. it 제목에 조건을 섞지 않음(예: ... when ..., ... for ..., ... if ...) → 조건 문구는 모두 상위 describe('when ...')로 이동
-3. 조건(쿼리/옵션/값) 생략은 not provided로 표기(예: when the pagination query is not provided)
-4. it는 동사로 시작하는 “행위/결과” 문장으로 작성(의미 없는 it('info'), it('general') 같은 제목은 구체적으로 변경)
-5. 성공 케이스는 상태코드 없이 결과로 서술(returns the created ..., creates ..., logs ... 등)
-6. 실패 케이스는 it에 상태코드/예외만 남김(returns 400 Bad Request, throws 404 Not Found), 실패 사유는 when ...로 올림
-7. 서비스 메서드에서 예외를 기대하는 테스트는 returns 대신 throws 사용
-8. PATCH/DELETE류는 “응답 검증”과 “영속성 검증”을 서로 다른 it로 분리
-9. 최상위 단독 it는 의미 있는 describe 트리 아래로 넣어 테스트 스코프/대상을 명확히 함
-
-10. `when ...`은 맥락(조건), `it(...)`는 행위/결과(action)
-    - `describe('when ...')`: **조건/맥락**
-    - `it('...')`: **행위/결과**를 **동사로 시작**해 작성
-
+1.  기본 구조는 when/action: 조건/맥락은 describe('when ...'), 행위/결과는 it('...')로 분리
+2.  it 제목에 조건을 섞지 않음(예: ... when ..., ... for ..., ... if ...) → 조건 문구는 모두 상위 describe('when ...')로 이동
+3.  조건(쿼리/옵션/값) 생략은 not provided로 표기(예: when the pagination query is not provided)
+4.  it는 동사로 시작하는 “행위/결과” 문장으로 작성(의미 없는 it('info'), it('general') 같은 제목은 구체적으로 변경)
+5.  성공 케이스는 상태코드 없이 결과로 서술(returns the created ..., creates ..., logs ... 등)
+6.  실패 케이스는 it에 상태코드/예외만 남김(returns 400 Bad Request, throws 404 Not Found), 실패 사유는 when ...로 올림
+7.  성공 케이스는 when을 생략할 수 있다.
+    - 'when the payload is valid'
+8.  서비스 메서드에서 예외를 기대하는 테스트는 returns 대신 throws 사용
+9.  PATCH/DELETE류는 “응답 검증”과 “영속성 검증”을 서로 다른 it로 분리
+10. 최상위 단독 it는 의미 있는 describe 트리 아래로 넣어 테스트 스코프/대상을 명확히 함
 11. `when/action` 구조가 기본이지만 예외적으로 다양한 검증을 하나의 테스트 케이스에서 수행하는 경우에는 `when`을 생략할 수 있다.
 
     ```ts
@@ -27,42 +22,12 @@
         expect(Byte.fromString('1024b')).toEqual(1024)
         expect(Byte.fromString('1kb')).toEqual(1024)
         expect(Byte.fromString('1mb')).toEqual(1024 * 1024)
-        expect(Byte.fromString('1gb')).toEqual(1024 * 1024 * 1024)
-        expect(Byte.fromString('1tb')).toEqual(1024 * 1024 * 1024 * 1024)
     })
     ```
-
-12. 성공 케이스(200/201)는 상태코드를 제목에 쓰지 않는다
-    - 상태코드 대신 결과를 서술
-        - 예: `returns the created ...`, `returns the updated ...`, `returns the default page ...`
-
-13. 실패 케이스는 “상태코드”만 명시
-    - 예:
-        - `returns 404 Not Found`
-        - `returns 401 Unauthorized`
-        - `returns 400 Bad Request`
-
-14. PATCH/DELETE는 “응답 검증”과 “영속성 검증”을 분리
-    - 응답 검증: `returns the updated/deleted ...`
-    - 영속성 검증: `persists the update/deletion`
-        - PATCH: 후속 GET으로 값이 유지됨을 확인
-        - DELETE: 후속 GET에서 NotFound(또는 조회 실패)로 삭제됨을 확인
-
-15. 예외를 기대하는 서비스 메서드 테스트는 `returns` 대신 `throws` 사용
-    - 예: `throws 400 ...`, `throws 404 ...`
-
-16. 조건을 생략하는 테스트는 `not provided`라고 표현
-    - 예: `when the pagination query is not provided`
 
 > Jest는 `context`를 지원하지 않는다. 그렇다고 해서 `describe`를 `context`의 alias로 사용하면 안 된다.
 >
 > `Jest Runner` 같은 Jest 도구에서 `context`를 인식하지 못한다.
-
-```ts
-describe('', () => {
-    // TODO 예시 작성
-})
-```
 
 ## 2. TypeORM과 도메인의 Entity 관계
 
@@ -234,43 +199,7 @@ describe('Customers', () => {
     }
 ```
 
-## 7. 테스트 코드를 .spec.ts와 .fix.ts로 분리
-
-### 7.1 예전 방식
-
-.spec.ts에 Fixture 설정 코드를 모두 넣으면, 실제 테스트 로직이 무엇을 검증하는지 파악하기가 어렵습니다. 따라서 테스트 로직은 .spec.ts에 집중하고, 테스트에 필요한 리소스나 설정은 .fix.ts에 둡니다.
-
-예: `src/apps/__tests__/utils` 폴더에 공통 코드가 모여 있고, 그중 `clients.ts`에서 `module.get()`으로 필요한 `Service 인스턴스`를 미리 가져옵니다. 이렇게 하면 테스트가 간결해지며, 중복 코드를 줄일 수 있습니다.
-
-만약 새로운 서비스를 추가하고 테스트를 작성한다면, `clients.ts`와 `create-all-test-contexts.ts` 등을 변경해야 합니다.
-
-```ts
-import { CustomersClient, MoviesClient } from 'apps/cores'
-import { HttpTestContext, TestContext } from 'testlib'
-
-export class AllProviders {
-    customersClient: CustomersClient
-    moviesClient: MoviesClient
-}
-
-export async function getProviders(coresContext: TestContext) {
-    const { module: coresModule } = coresContext
-    const customersClient = coresModule.get(CustomersClient)
-    const moviesClient = coresModule.get(MoviesClient)
-
-    return { customersClient, moviesClient }
-}
-```
-
-### 7.2 현재 방식
-
-<!-- TODO 7. 항목은 정리 다시 -->
-
-각 모듈에서 필요한 모듈만 생성해서 테스트 한다.
-
-전체 모듈을 생성하는 예전 방식은 테스트 완료에 89s가 걸렸다. 현재 방식은 83s가 걸렸다. 실제 프로젝트에서는 훨씬 큰 차이가 발생할 것이다.
-
-## 8. 주석
+## 7. 주석
 
 ```ts
 // 한 줄은 이렇게 한다.
@@ -284,7 +213,7 @@ export async function getProviders(coresContext: TestContext) {
 */
 ```
 
-## 9. ESM modules
+## 8. ESM modules
 
 NestJS는 CommonJS 모듈 시스템을 사용하지만, Node.js >= 22에서는 CommonJS와 ESM을 동시에 지원하므로 호환성 문제가 발생하지 않습니다.
 
@@ -298,3 +227,44 @@ NestJS는 CommonJS 모듈 시스템을 사용하지만, Node.js >= 22에서는 C
 ```
 
 이와 관련된 설정은 [ts-jest 예제](https://github.com/kulshekhar/ts-jest/tree/main/examples/js-with-ts)를 참고하세요.
+
+## 9. Commit message 규칙 (Conventional Commits)
+
+이 저장소는 `commitlint`의 `@commitlint/config-conventional` 규칙을 사용합니다.
+커밋 메시지는 아래 형식을 따라야 하며, 규칙을 위반하면 커밋/PR 체크가 실패합니다.
+
+### 기본 형식
+
+- 최소 형식: `type: subject`
+- scope 포함: `type(scope): subject`
+
+예)
+
+- `feat: add user login`
+- `fix: handle null pointer in auth`
+- `refactor(api): simplify user service`
+
+### type 목록
+
+- `feat`: 기능 추가
+- `fix`: 버그 수정
+- `docs`: 문서 변경
+- `style`: 코드 의미 변화 없는 포맷 변경(공백/세미콜론 등)
+- `refactor`: 리팩터링
+- `perf`: 성능 개선
+- `test`: 테스트 추가/수정
+- `build`: 빌드/의존성 관련
+- `ci`: CI 설정/스크립트 변경
+- `chore`: 기타 잡무(설정, 스크립트, 정리 등)
+- `revert`: 되돌리기
+
+### subject 작성 규칙
+
+- 비어 있으면 안 됨
+- 변경 내용을 짧고 명확하게 작성
+
+예)
+
+- `docs: update README`
+- `chore: bump dependencies`
+- `ci: run tests on pull request`

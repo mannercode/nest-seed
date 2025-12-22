@@ -1,10 +1,10 @@
 import { HttpStatus } from '@nestjs/common'
-import type { TicketDto } from 'apps/cores'
 import { TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { oid } from 'testlib'
 import { buildCreateTicketDto, createTickets, Errors } from '../__helpers__'
 import type { TicketsFixture } from './tickets.fixture'
+import type { TicketDto } from 'apps/cores'
 
 describe('TicketsService', () => {
     let fix: TicketsFixture
@@ -13,16 +13,13 @@ describe('TicketsService', () => {
         const { createTicketsFixture } = await import('./tickets.fixture')
         fix = await createTicketsFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('createMany', () => {
         it('creates tickets', async () => {
             const createDtos = [buildCreateTicketDto({ sagaId: oid(0x1) })]
 
-            const { success } = await fix.ticketsService.createMany(createDtos)
+            const { success } = await fix.ticketsClient.createMany(createDtos)
 
             expect(success).toBe(true)
         })
@@ -50,25 +47,25 @@ describe('TicketsService', () => {
             })
 
             it('returns tickets filtered by sagaIds', async () => {
-                const tickets = await fix.ticketsService.search({ sagaIds: [sagaId] })
+                const tickets = await fix.ticketsClient.search({ sagaIds: [sagaId] })
 
                 expect(tickets).toEqual([ticketForSaga])
             })
 
             it('returns tickets filtered by movieIds', async () => {
-                const tickets = await fix.ticketsService.search({ movieIds: [movieId] })
+                const tickets = await fix.ticketsClient.search({ movieIds: [movieId] })
 
                 expect(tickets).toEqual([ticketForMovie])
             })
 
             it('returns tickets filtered by theaterIds', async () => {
-                const tickets = await fix.ticketsService.search({ theaterIds: [theaterId] })
+                const tickets = await fix.ticketsClient.search({ theaterIds: [theaterId] })
 
                 expect(tickets).toEqual([ticketForTheater])
             })
 
             it('returns tickets filtered by showtimeIds', async () => {
-                const tickets = await fix.ticketsService.search({ showtimeIds: [showtimeId] })
+                const tickets = await fix.ticketsClient.search({ showtimeIds: [showtimeId] })
 
                 expect(tickets).toEqual([ticketForShowtime])
             })
@@ -76,7 +73,7 @@ describe('TicketsService', () => {
 
         describe('when the filter is empty', () => {
             it('throws 400 Bad Request', async () => {
-                const promise = fix.ticketsService.search({})
+                const promise = fix.ticketsClient.search({})
 
                 await expect(promise).rejects.toMatchObject({
                     status: HttpStatus.BAD_REQUEST,
@@ -99,7 +96,7 @@ describe('TicketsService', () => {
             })
 
             it('returns the updated tickets', async () => {
-                const updatedTickets = await fix.ticketsService.updateStatusMany(
+                const updatedTickets = await fix.ticketsClient.updateStatusMany(
                     pickIds(tickets),
                     TicketStatus.Sold
                 )
@@ -120,11 +117,11 @@ describe('TicketsService', () => {
                 const createdTickets = await createTickets(fix, createDtos)
 
                 const soldTickets = createdTickets.slice(0, soldCount)
-                await fix.ticketsService.updateStatusMany(pickIds(soldTickets), TicketStatus.Sold)
+                await fix.ticketsClient.updateStatusMany(pickIds(soldTickets), TicketStatus.Sold)
             })
 
             it('returns sales stats for the showtimeIds', async () => {
-                const ticketSales = await fix.ticketsService.aggregateSales({
+                const ticketSales = await fix.ticketsClient.aggregateSales({
                     showtimeIds: [showtimeId]
                 })
 

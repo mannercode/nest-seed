@@ -1,6 +1,6 @@
 /* istanbul ignore file */
-import { isEqual } from 'lodash'
 import { Logger } from '@nestjs/common'
+import { isEqual } from 'lodash'
 
 export function orDefault<T>(value: T | null | undefined, defaultValue: T): T {
     return value ?? defaultValue
@@ -34,7 +34,7 @@ export class Assert {
 export class Expect {
     static equalLength(a: any[] | undefined, b: any[] | undefined, message: string) {
         if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
-            Logger.error(
+            Logger.warn(
                 `${message} first: ${a ? a.length : undefined}, second: ${b ? b.length : undefined}`
             )
         }

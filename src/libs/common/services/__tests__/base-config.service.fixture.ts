@@ -25,12 +25,6 @@ export type BaseConfigServiceFixture = {
 }
 
 export async function createBaseConfigServiceFixture() {
-    process.env['TEST_STRING_KEY'] = 'value'
-    process.env['TEST_NUMBER_KEY'] = '123'
-    process.env['TEST_NUMBER_ZERO_KEY'] = '0'
-    process.env['TEST_BOOLEAN_KEY'] = 'true'
-    process.env['TEST_BOOLEAN_FALSE_KEY'] = 'false'
-
     const { module, close } = await createTestContext({
         imports: [ConfigModule.forRoot({ validationSchema: configSchema })],
         providers: [AppConfigService]

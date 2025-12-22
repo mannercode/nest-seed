@@ -1,8 +1,8 @@
-import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
 import { HealthIndicatorService } from '@nestjs/terminus'
+import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
 import { RedisHealthIndicator } from 'common'
-import type Redis from 'ioredis'
 import { createTestContext, getRedisTestConnection } from 'testlib'
+import type Redis from 'ioredis'
 
 export type RedisHealthIndicatorFixture = {
     teardown: () => Promise<void>

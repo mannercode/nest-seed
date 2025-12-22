@@ -1,7 +1,7 @@
-import { IsIn, IsNotEmpty, IsString } from 'class-validator'
 import { createHash, Hash } from 'crypto'
 import { createReadStream } from 'fs'
 import { pipeline } from 'stream/promises'
+import { IsIn, IsNotEmpty, IsString } from 'class-validator'
 
 const CHECKSUM_ALGORITHMS = ['sha1', 'sha256'] as const
 export type ChecksumAlgorithm = (typeof CHECKSUM_ALGORITHMS)[number]

@@ -4,13 +4,16 @@ describe('BaseConfigService', () => {
     let fix: BaseConfigServiceFixture
 
     beforeEach(async () => {
+        process.env['TEST_STRING_KEY'] = 'value'
+        process.env['TEST_NUMBER_KEY'] = '123'
+        process.env['TEST_NUMBER_ZERO_KEY'] = '0'
+        process.env['TEST_BOOLEAN_KEY'] = 'true'
+        process.env['TEST_BOOLEAN_FALSE_KEY'] = 'false'
+
         const { createBaseConfigServiceFixture } = await import('./base-config.service.fixture')
         fix = await createBaseConfigServiceFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('getString', () => {
         describe('when the key exists', () => {
@@ -21,10 +24,14 @@ describe('BaseConfigService', () => {
         })
 
         describe('when the key does not exist', () => {
-            it('exits the process', () => {
-                const mockExit = jest.spyOn(process, 'exit').mockImplementation()
-                jest.spyOn(console, 'error').mockImplementation()
+            let mockExit: jest.SpyInstance
 
+            beforeEach(() => {
+                mockExit = jest.spyOn(process, 'exit').mockImplementation()
+                jest.spyOn(console, 'error').mockImplementation()
+            })
+
+            it('exits the process', () => {
                 fix.appConfigService.getString('not-exists-key')
 
                 expect(mockExit).toHaveBeenCalledWith(1)
@@ -48,10 +55,14 @@ describe('BaseConfigService', () => {
         })
 
         describe('when the key does not exist', () => {
-            it('exits the process', () => {
-                const mockExit = jest.spyOn(process, 'exit').mockImplementation()
-                jest.spyOn(console, 'error').mockImplementation()
+            let mockExit: jest.SpyInstance
 
+            beforeEach(() => {
+                mockExit = jest.spyOn(process, 'exit').mockImplementation()
+                jest.spyOn(console, 'error').mockImplementation()
+            })
+
+            it('exits the process', () => {
                 fix.appConfigService.getNumber('not-exists-key')
 
                 expect(mockExit).toHaveBeenCalledWith(1)
@@ -75,10 +86,14 @@ describe('BaseConfigService', () => {
         })
 
         describe('when the key does not exist', () => {
-            it('exits the process', () => {
-                const mockExit = jest.spyOn(process, 'exit').mockImplementation()
-                jest.spyOn(console, 'error').mockImplementation()
+            let mockExit: jest.SpyInstance
 
+            beforeEach(() => {
+                mockExit = jest.spyOn(process, 'exit').mockImplementation()
+                jest.spyOn(console, 'error').mockImplementation()
+            })
+
+            it('exits the process', () => {
                 fix.appConfigService.getBoolean('not-exists-key')
 
                 expect(mockExit).toHaveBeenCalledWith(1)

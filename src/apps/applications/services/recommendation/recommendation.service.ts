@@ -1,35 +1,35 @@
 import { Injectable } from '@nestjs/common'
-import { DateUtil, OrderDirection } from 'common'
 import { MovieDto, MoviesClient, ShowtimesClient, WatchRecordsClient } from 'apps/cores'
-import { MovieRecommender } from './domain'
+import { DateUtil, OrderDirection } from 'common'
 import { Rules } from 'shared'
+import { MovieRecommender } from './domain'
 
 @Injectable()
 export class RecommendationService {
     constructor(
-        private readonly showtimesService: ShowtimesClient,
-        private readonly moviesService: MoviesClient,
-        private readonly watchRecordsService: WatchRecordsClient
+        private readonly showtimesClient: ShowtimesClient,
+        private readonly moviesClient: MoviesClient,
+        private readonly watchRecordsClient: WatchRecordsClient
     ) {}
 
     async searchRecommendedMovies(customerId: string | null) {
         const startTime = DateUtil.add({ minutes: Rules.Ticket.purchaseCutoffMinutes })
 
-        const showingMovieIds = await this.showtimesService.searchMovieIds({
+        const showingMovieIds = await this.showtimesClient.searchMovieIds({
             startTimeRange: { start: startTime }
         })
 
-        const showingMovies = await this.moviesService.getMany(showingMovieIds)
+        const showingMovies = await this.moviesClient.getMany(showingMovieIds)
         let watchedMovies: MovieDto[] = []
 
         if (customerId) {
-            const { items } = await this.watchRecordsService.searchPage({
+            const { items } = await this.watchRecordsClient.searchPage({
                 customerId,
                 take: 50,
                 orderby: { name: 'watchDate', direction: OrderDirection.Desc }
             })
             const movieIds = items.map((record) => record.movieId)
-            watchedMovies = await this.moviesService.getMany(movieIds)
+            watchedMovies = await this.moviesClient.getMany(movieIds)
         }
 
         const recommendedMovies = MovieRecommender.recommend(showingMovies, watchedMovies)

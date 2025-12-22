@@ -1,5 +1,5 @@
-import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
 import { Injectable } from '@nestjs/common'
+import { getRedisConnectionToken, RedisModule } from '@nestjs-modules/ioredis'
 import { CacheModule, CacheService, InjectCache } from 'common'
 import { createTestContext, getRedisTestConnection, withTestId } from 'testlib'
 

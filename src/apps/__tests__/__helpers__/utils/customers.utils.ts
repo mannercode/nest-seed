@@ -15,21 +15,21 @@ export function buildCreateCustomerDto(overrides = {}) {
 
 export async function createCustomer(ctx: TestContext, override = {}) {
     const { CustomersClient } = await import('apps/cores')
-    const customersService = ctx.module.get(CustomersClient)
+    const customersClient = ctx.module.get(CustomersClient)
 
     const createDto = buildCreateCustomerDto(override)
 
-    const customer = await customersService.create(createDto)
+    const customer = await customersClient.create(createDto)
     return customer
 }
 
 export async function loginCustomer(ctx: TestContext, credentials: CustomerCredentialsDto) {
     const { CustomersClient } = await import('apps/cores')
-    const customersService = ctx.module.get(CustomersClient)
+    const customersClient = ctx.module.get(CustomersClient)
 
-    const customer = await customersService.findCustomerByCredentials(credentials)
+    const customer = await customersClient.findCustomerByCredentials(credentials)
 
-    const { accessToken, refreshToken } = await customersService.generateAuthTokens({
+    const { accessToken, refreshToken } = await customersClient.generateAuthTokens({
         customerId: customer ? customer.id : '',
         email: credentials.email
     })

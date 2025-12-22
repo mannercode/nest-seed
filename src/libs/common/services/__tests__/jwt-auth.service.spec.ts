@@ -8,10 +8,7 @@ describe('JwtAuthService', () => {
         const { createJwtAuthServiceFixture } = await import('./jwt-auth.service.fixture')
         fix = await createJwtAuthServiceFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('generateAuthTokens', () => {
         describe('when the payload is valid', () => {
@@ -64,9 +61,11 @@ describe('JwtAuthService', () => {
         })
 
         describe('when the stored refresh token does not match', () => {
-            it('throws', async () => {
+            beforeEach(() => {
                 jest.spyOn(fix.redis, 'get').mockResolvedValueOnce('unknown token')
+            })
 
+            it('throws', async () => {
                 const promise = fix.jwtService.refreshAuthTokens(refreshToken)
                 await expect(promise).rejects.toThrow('The provided refresh token is invalid')
             })

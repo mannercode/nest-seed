@@ -1,6 +1,6 @@
-import { Byte, Path } from 'common'
 import fs from 'fs/promises'
 import path from 'path'
+import { Byte, Path } from 'common'
 import { createDummyFile } from 'testlib'
 
 describe('createDummyFile', () => {

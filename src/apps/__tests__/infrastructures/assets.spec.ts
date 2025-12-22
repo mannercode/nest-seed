@@ -1,6 +1,4 @@
 import { HttpStatus } from '@nestjs/common'
-import { CronExpression } from '@nestjs/schedule'
-import type { AssetDto } from 'apps/infrastructures'
 import { Checksum, pickIds, sleep } from 'common'
 import { nullObjectId, toAny } from 'testlib'
 import {
@@ -13,23 +11,22 @@ import {
     uploadFile
 } from '../__helpers__'
 import { type AssetsFixture } from './assets.fixture'
+import type { AssetDto } from 'apps/infrastructures'
 
 describe('AssetsService', () => {
     let fix: AssetsFixture
+    const file = fixtureFiles.small
 
     beforeEach(async () => {
         const { createAssetsFixture } = await import('./assets.fixture')
         fix = await createAssetsFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('create', () => {
         describe('when the DTO is valid', () => {
             it('returns an upload request', async () => {
-                const createDto = buildCreateAssetDto(fix.file)
+                const createDto = buildCreateAssetDto(file)
                 const uploadRequest = await fix.assetsClient.create(createDto)
 
                 expect(uploadRequest).toEqual({
@@ -40,16 +37,16 @@ describe('AssetsService', () => {
                     headers: {
                         'Content-Type': createDto.mimeType,
                         'Content-Length': createDto.size.toString(),
-                        'x-amz-checksum-sha256': fix.file.checksum.base64
+                        'x-amz-checksum-sha256': file.checksum.base64
                     }
                 })
             })
 
             it('uploads the file using the upload request', async () => {
-                const createDto = buildCreateAssetDto(fix.file)
+                const createDto = buildCreateAssetDto(file)
                 const uploadRequest = await fix.assetsClient.create(createDto)
 
-                const uploadRes = await uploadAsset(fix.file.path, uploadRequest)
+                const uploadRes = await uploadAsset(file.path, uploadRequest)
                 expect(uploadRes.ok).toBe(true)
             })
         })
@@ -61,12 +58,12 @@ describe('AssetsService', () => {
             })
 
             it('rejects uploads after the URL expires', async () => {
-                const createDto = buildCreateAssetDto(fix.file)
+                const createDto = buildCreateAssetDto(file)
                 const uploadRequest = await fix.assetsClient.create(createDto)
 
                 await sleep(1500)
 
-                const uploadRes = await uploadAsset(fix.file.path, uploadRequest)
+                const uploadRes = await uploadAsset(file.path, uploadRequest)
                 expect(uploadRes.ok).toBe(false)
             })
         })
@@ -77,7 +74,7 @@ describe('AssetsService', () => {
             let assetId: string
 
             beforeEach(async () => {
-                assetId = await uploadFile(fix, fix.file)
+                assetId = await uploadFile(fix, file)
             })
 
             it('returns the asset with download info', async () => {
@@ -100,7 +97,7 @@ describe('AssetsService', () => {
                 const buffer = await downloadAsset(asset)
 
                 const checksum = Checksum.fromBuffer(buffer)
-                expect(fix.file.checksum).toEqual(checksum)
+                expect(file.checksum).toEqual(checksum)
             })
         })
 
@@ -111,7 +108,7 @@ describe('AssetsService', () => {
                 const { Rules } = await import('shared')
                 toAny(Rules).Asset.uploadExpiresInSec = 1
 
-                const createDto = buildCreateAssetDto(fix.file)
+                const createDto = buildCreateAssetDto(file)
                 const uploadRequest = await fix.assetsClient.create(createDto)
 
                 assetId = uploadRequest.assetId
@@ -143,9 +140,9 @@ describe('AssetsService', () => {
 
             beforeEach(async () => {
                 assets = await Promise.all([
-                    uploadComplete(fix, fixtureFiles.small),
-                    uploadComplete(fix, fixtureFiles.small),
-                    uploadComplete(fix, fixtureFiles.small)
+                    uploadComplete(fix, file),
+                    uploadComplete(fix, file),
+                    uploadComplete(fix, file)
                 ])
             })
 
@@ -168,7 +165,7 @@ describe('AssetsService', () => {
                 const buffer = await downloadAsset(fetchedAsset)
 
                 const checksum = Checksum.fromBuffer(buffer)
-                expect(fix.file.checksum).toEqual(checksum)
+                expect(file.checksum).toEqual(checksum)
             })
         })
 
@@ -187,9 +184,9 @@ describe('AssetsService', () => {
 
             beforeEach(async () => {
                 assets = await Promise.all([
-                    uploadComplete(fix, fixtureFiles.small),
-                    uploadComplete(fix, fixtureFiles.small),
-                    uploadComplete(fix, fixtureFiles.small)
+                    uploadComplete(fix, file),
+                    uploadComplete(fix, file),
+                    uploadComplete(fix, file)
                 ])
             })
 
@@ -229,24 +226,38 @@ describe('AssetsService', () => {
     })
 
     describe('cleanupExpiredUploadsJob', () => {
-        describe('when uploads have expired', () => {
+        describe('when an uploaded asset exists', () => {
+            let fireOnTick: () => Promise<void>
+            let assetId: string
+
             beforeEach(async () => {
                 const { Rules } = await import('shared')
                 toAny(Rules).Asset.uploadExpiresInSec = 1
 
-                const { CronTime } = await import('cron')
-                fix.cleanupExpiredUploadsJob.setTime(new CronTime(CronExpression.EVERY_SECOND))
-                fix.cleanupExpiredUploadsJob.start()
+                const cronjob = fix.scheduler.getCronJob('assets.cleanupExpiredUploads')
+                fireOnTick = cronjob.fireOnTick
+
+                const createDto = buildCreateAssetDto(file)
+                const uploadDto = await fix.assetsClient.create(createDto)
+                assetId = uploadDto.assetId
             })
 
-            it('removes the asset', async () => {
-                const createDto = buildCreateAssetDto(fix.file)
-                const { assetId } = await fix.assetsClient.create(createDto)
+            describe('when the upload has not expired', () => {
+                it('keeps the asset', async () => {
+                    await fireOnTick()
 
-                await sleep(2000)
+                    await expect(fix.assetsClient.getMany([assetId])).resolves.toHaveLength(1)
+                })
+            })
 
-                await expect(fix.assetsClient.getMany([assetId])).rejects.toMatchObject({
-                    status: HttpStatus.NOT_FOUND
+            describe('when the upload has expired', () => {
+                it('removes the asset', async () => {
+                    await sleep(1500)
+                    await fireOnTick()
+
+                    await expect(fix.assetsClient.getMany([assetId])).rejects.toMatchObject({
+                        status: HttpStatus.NOT_FOUND
+                    })
                 })
             })
         })

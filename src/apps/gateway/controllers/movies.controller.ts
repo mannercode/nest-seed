@@ -18,8 +18,8 @@ import { CustomerOptionalAuthRequest } from './types'
 @Controller('movies')
 export class MoviesController {
     constructor(
-        private readonly moviesService: MoviesClient,
-        private readonly recommendationService: RecommendationClient
+        private readonly moviesClient: MoviesClient,
+        private readonly recommendationClient: RecommendationClient
     ) {}
 
     @UseGuards(CustomerOptionalJwtAuthGuard)
@@ -27,7 +27,7 @@ export class MoviesController {
     async searchRecommendedMovies(@Req() req: CustomerOptionalAuthRequest) {
         const { customerId } = req.user ?? { customerId: null }
 
-        return this.recommendationService.searchRecommendedMovies(customerId)
+        return this.recommendationClient.searchRecommendedMovies(customerId)
     }
 
     // POST /v1/movies는 405 Method Not Allowed로 응답하고,
@@ -39,27 +39,27 @@ export class MoviesController {
     // }
     @Post()
     async create(@Body() createDto: CreateMovieDto) {
-        return this.moviesService.create(createDto)
+        return this.moviesClient.create(createDto)
     }
 
     @Patch(':movieId')
     async update(@Param('movieId') movieId: string, @Body() updateDto: UpdateMovieDto) {
-        return this.moviesService.update(movieId, updateDto)
+        return this.moviesClient.update(movieId, updateDto)
     }
 
     @Get(':movieId')
     async get(@Param('movieId') movieId: string) {
-        const movies = await this.moviesService.getMany([movieId])
+        const movies = await this.moviesClient.getMany([movieId])
         return movies[0]
     }
 
     @Delete(':movieId')
     async delete(@Param('movieId') movieId: string) {
-        return this.moviesService.deleteMany([movieId])
+        return this.moviesClient.deleteMany([movieId])
     }
 
     @Get()
     async searchPage(@Query() searchDto: SearchMoviesPageDto) {
-        return this.moviesService.searchPage(searchDto)
+        return this.moviesClient.searchPage(searchDto)
     }
 }

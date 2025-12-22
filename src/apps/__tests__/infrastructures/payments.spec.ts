@@ -1,9 +1,9 @@
 import { HttpStatus } from '@nestjs/common'
-import type { PaymentDto } from 'apps/infrastructures'
 import { pickIds } from 'common'
 import { nullObjectId } from 'testlib'
 import { buildCreatePaymentDto, createPayment, Errors } from '../__helpers__'
 import type { PaymentsFixture } from './payments.fixture'
+import type { PaymentDto } from 'apps/infrastructures'
 
 describe('PaymentsService', () => {
     let fix: PaymentsFixture
@@ -12,16 +12,13 @@ describe('PaymentsService', () => {
         const { createPaymentsFixture } = await import('./payments.fixture')
         fix = await createPaymentsFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('create', () => {
         it('returns the created payment', async () => {
             const createDto = buildCreatePaymentDto()
 
-            const payment = await fix.paymentsService.create(createDto)
+            const payment = await fix.paymentsClient.create(createDto)
 
             expect(payment).toEqual({
                 ...createDto,
@@ -45,7 +42,7 @@ describe('PaymentsService', () => {
             })
 
             it('returns payments for the paymentIds', async () => {
-                const fetchedPayments = await fix.paymentsService.getMany(pickIds(payments))
+                const fetchedPayments = await fix.paymentsClient.getMany(pickIds(payments))
 
                 expect(fetchedPayments).toEqual(expect.arrayContaining(payments))
             })
@@ -53,7 +50,7 @@ describe('PaymentsService', () => {
 
         describe('when the paymentIds include a non-existent paymentId', () => {
             it('throws 404 Not Found', async () => {
-                const promise = fix.paymentsService.getMany([nullObjectId])
+                const promise = fix.paymentsClient.getMany([nullObjectId])
 
                 await expect(promise).rejects.toMatchObject({
                     status: HttpStatus.NOT_FOUND,

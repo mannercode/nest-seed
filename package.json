@@ -4,12 +4,19 @@
     "private": true,
     "comments": {
         "scripts": {
+            "TARGET_APP": [
+                "applications",
+                "cores",
+                "gateway",
+                "infrastructures"
+            ],
             "apps:*": "application containers for this project (API servers, web apps, etc.)",
             "infra:*": "shared infrastructure stack (databases, queues, etc.) for local development"
         },
         "dependencies": {
             "mongoose": "Pinned to 8.x; upgrading to 9.x requires changes in @nestjs/mongoose integration"
-        }
+        },
+        "package-update": "ncu -x  @types/node -x mongoose -u"
     },
     "scripts": {
         "start": "node _output/dist/${TARGET_APP}/index.js",
@@ -17,8 +24,8 @@
         "debug": "nest start ${TARGET_APP} --watch",
         "test": "jest --no-cache --coverage --roots \"<rootDir>/${TEST_ROOT:-src}\" --collectCoverageFrom \"${TEST_ROOT:-src}/**/*.ts\"",
         "test:e2e": "bash tests/e2e/run.sh",
-        "format": "prettier -w 'src/**/*.{js,jsx,ts,tsx}'",
-        "lint": "eslint src/ --max-warnings=0",
+        "format": "eslint src/ --fix",
+        "lint": "tsc -p tsconfig.json --noEmit & eslint src/ --max-warnings=0",
         "apps:down": "docker compose down --volumes --remove-orphans --timeout 0",
         "apps:up": "  docker compose up -d --build",
         "apps:wait": "docker wait apps-setup && docker rm apps-setup",
@@ -29,8 +36,8 @@
         "infra:reset": "npm run infra:down && npm run infra:up && npm run infra:wait"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.948.0",
-        "@aws-sdk/s3-request-presigner": "^3.948.0",
+        "@aws-sdk/client-s3": "^3.956.0",
+        "@aws-sdk/s3-request-presigner": "^3.956.0",
         "@nestjs-modules/ioredis": "^2.0.2",
         "@nestjs/bullmq": "^11.0.4",
         "@nestjs/common": "^11.1.9",
@@ -46,7 +53,7 @@
         "@nestjs/schedule": "^6.1.0",
         "@nestjs/terminus": "^11.0.0",
         "bcrypt": "^6.0.0",
-        "bullmq": "^5.65.1",
+        "bullmq": "^5.66.2",
         "chalk": "5.6.2",
         "class-transformer": "^0.5.1",
         "class-validator": "^0.14.3",
@@ -66,6 +73,8 @@
         "winston-daily-rotate-file": "^5.0.0"
     },
     "devDependencies": {
+        "@commitlint/cli": "^19.7.1",
+        "@commitlint/config-conventional": "^19.7.1",
         "@nestjs/cli": "^11.0.14",
         "@nestjs/schematics": "^11.0.9",
         "@nestjs/testing": "^11.1.9",
@@ -81,13 +90,15 @@
         "@types/passport-jwt": "^4.0.1",
         "@types/passport-local": "^1.0.38",
         "@types/superagent": "^8.1.9",
-        "@typescript-eslint/eslint-plugin": "^8.49.0",
-        "@typescript-eslint/parser": "^8.49.0",
+        "@typescript-eslint/eslint-plugin": "^8.50.0",
+        "@typescript-eslint/parser": "^8.50.0",
         "dotenv": "^17.2.3",
-        "eslint": "^9.39.1",
+        "eslint": "^9.39.2",
         "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-import": "^2.32.0",
         "eslint-plugin-jest": "^29.5.0",
         "eslint-plugin-prettier": "^5.5.4",
+        "eslint-plugin-unused-imports": "^4.2.0",
         "globals": "^16.5.0",
         "husky": "^9.1.7",
         "jest": "^30.2.0",

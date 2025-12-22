@@ -20,7 +20,7 @@ import { Events } from 'shared'
 export class ShowtimeCreationController implements OnModuleDestroy {
     private eventStream = new Subject<MessageEvent>()
 
-    constructor(private readonly showtimeCreationService: ShowtimeCreationClient) {}
+    constructor(private readonly showtimeCreationClient: ShowtimeCreationClient) {}
 
     onModuleDestroy() {
         this.eventStream.complete()
@@ -28,24 +28,24 @@ export class ShowtimeCreationController implements OnModuleDestroy {
 
     @Get('theaters')
     async searchTheatersPage(@Query() searchDto: PaginationDto) {
-        return this.showtimeCreationService.searchTheatersPage(searchDto)
+        return this.showtimeCreationClient.searchTheatersPage(searchDto)
     }
 
     @Get('movies')
     async searchMoviesPage(@Query() searchDto: PaginationDto) {
-        return this.showtimeCreationService.searchMoviesPage(searchDto)
+        return this.showtimeCreationClient.searchMoviesPage(searchDto)
     }
 
     @HttpCode(HttpStatus.OK)
     @Post('showtimes\\:search')
     async searchShowtimesByTheaterIds(@Body('theaterIds') theaterIds: string[]) {
-        return this.showtimeCreationService.searchShowtimes(theaterIds)
+        return this.showtimeCreationClient.searchShowtimes(theaterIds)
     }
 
     @HttpCode(HttpStatus.ACCEPTED)
     @Post('showtimes')
     async requestShowtimeCreation(@Body() createDto: BulkCreateShowtimesDto) {
-        return this.showtimeCreationService.requestShowtimeCreation(createDto)
+        return this.showtimeCreationClient.requestShowtimeCreation(createDto)
     }
 
     @Sse('event-stream')

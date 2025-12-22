@@ -1,6 +1,6 @@
-import type { HydratedDocument } from 'mongoose'
-import type { MongooseDeleteFixture } from './mongoose.delete.fixture'
 import { HardDeleteSample, SoftDeleteSample } from './mongoose.delete.fixture'
+import type { MongooseDeleteFixture } from './mongoose.delete.fixture'
+import type { HydratedDocument } from 'mongoose'
 
 describe('Mongoose Delete', () => {
     describe('Soft Delete', () => {
@@ -15,10 +15,7 @@ describe('Mongoose Delete', () => {
             createdDoc.name = 'name'
             await createdDoc.save()
         })
-
-        afterEach(async () => {
-            await fix.teardown()
-        })
+        afterEach(() => fix.teardown())
 
         describe('when creating a new document', () => {
             it('sets deletedAt to null', async () => {
@@ -40,11 +37,15 @@ describe('Mongoose Delete', () => {
         })
 
         describe('when calling deleteMany', () => {
-            it('records deletedAt for each document', async () => {
-                const secondDoc = new fix.model()
+            let secondDoc: HydratedDocument<SoftDeleteSample>
+
+            beforeEach(async () => {
+                secondDoc = new fix.model()
                 secondDoc.name = 'name'
                 await secondDoc.save()
+            })
 
+            it('records deletedAt for each document', async () => {
                 await fix.model.deleteMany({ _id: { $in: [createdDoc._id, secondDoc._id] } as any })
 
                 const deletedDocs = await fix.model.find({}).setOptions({ withDeleted: true })
@@ -54,9 +55,11 @@ describe('Mongoose Delete', () => {
         })
 
         describe('when aggregating', () => {
-            it('excludes deleted documents', async () => {
+            beforeEach(async () => {
                 await fix.model.deleteOne({ _id: createdDoc._id })
+            })
 
+            it('excludes deleted documents', async () => {
                 const aggregateResult = await fix.model.aggregate([{ $match: { name: 'name' } }])
 
                 expect(aggregateResult).toHaveLength(0)
@@ -76,10 +79,7 @@ describe('Mongoose Delete', () => {
             createdDoc.name = 'name'
             await createdDoc.save()
         })
-
-        afterEach(async () => {
-            await fix.teardown()
-        })
+        afterEach(() => fix.teardown())
 
         describe('when creating a new document', () => {
             it('does not have deletedAt', async () => {

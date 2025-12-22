@@ -16,14 +16,14 @@ import { CustomerAuthRequest } from './types'
 
 @Controller('booking')
 export class BookingController {
-    constructor(private readonly bookingService: BookingClient) {}
+    constructor(private readonly bookingClient: BookingClient) {}
 
     @Get('movies/:movieId/theaters')
     async searchTheaters(
         @Param('movieId') movieId: string,
         @LatLongQuery('latLong') latLong: LatLong
     ) {
-        return this.bookingService.searchTheaters({ movieId, latLong })
+        return this.bookingClient.searchTheaters({ movieId, latLong })
     }
 
     @Get('movies/:movieId/theaters/:theaterId/showdates')
@@ -31,7 +31,7 @@ export class BookingController {
         @Param('movieId') movieId: string,
         @Param('theaterId') theaterId: string
     ) {
-        return this.bookingService.searchShowdates({ movieId, theaterId })
+        return this.bookingClient.searchShowdates({ movieId, theaterId })
     }
 
     @Get('movies/:movieId/theaters/:theaterId/showdates/:showdate/showtimes')
@@ -40,7 +40,7 @@ export class BookingController {
         @Param('theaterId') theaterId: string,
         @Param('showdate') showdate: string
     ) {
-        return this.bookingService.searchShowtimes({
+        return this.bookingClient.searchShowtimes({
             movieId,
             theaterId,
             showdate: DateUtil.fromYMD(showdate)
@@ -49,7 +49,7 @@ export class BookingController {
 
     @Get('showtimes/:showtimeId/tickets')
     async getTicketsForShowtime(@Param('showtimeId') showtimeId: string) {
-        return this.bookingService.getTickets(showtimeId)
+        return this.bookingClient.getTickets(showtimeId)
     }
 
     @UseGuards(CustomerJwtAuthGuard)
@@ -61,6 +61,6 @@ export class BookingController {
         @Req() req: CustomerAuthRequest
     ) {
         const customerId = req.user.customerId
-        return this.bookingService.holdTickets({ customerId, showtimeId, ticketIds })
+        return this.bookingClient.holdTickets({ customerId, showtimeId, ticketIds })
     }
 }

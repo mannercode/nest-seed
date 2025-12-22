@@ -8,17 +8,19 @@ describe('LatLong', () => {
         const { createLatLongFixture } = await import('./lat-long.fixture')
         fix = await createLatLongFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('distanceInMeters', () => {
         describe('when two coordinates are provided', () => {
-            it('calculates the distance between them', () => {
-                const seoul: LatLong = { latitude: 37.5665, longitude: 126.978 }
-                const busan: LatLong = { latitude: 35.1796, longitude: 129.0756 }
+            let seoul: LatLong
+            let busan: LatLong
 
+            beforeEach(() => {
+                seoul = { latitude: 37.5665, longitude: 126.978 }
+                busan = { latitude: 35.1796, longitude: 129.0756 }
+            })
+
+            it('calculates the distance between them', () => {
                 const actualDistance = LatLong.distanceInMeters(seoul, busan)
 
                 const expectedDistance = 325000

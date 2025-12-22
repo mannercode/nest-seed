@@ -1,7 +1,7 @@
-import type { SearchWatchRecordsPageDto, WatchRecordDto } from 'apps/cores'
 import { oid } from 'testlib'
 import { buildCreateWatchRecordDto, createWatchRecord } from '../__helpers__'
 import type { WatchRecordsFixture } from './watch-records.fixture'
+import type { SearchWatchRecordsPageDto, WatchRecordDto } from 'apps/cores'
 
 describe('WatchRecordsService', () => {
     let fix: WatchRecordsFixture
@@ -10,15 +10,12 @@ describe('WatchRecordsService', () => {
         const { createWatchRecordsFixture } = await import('./watch-records.fixture')
         fix = await createWatchRecordsFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('create', () => {
         it('returns the created watch record', async () => {
             const createDto = buildCreateWatchRecordDto()
-            const watchRecord = await fix.watchRecordsService.create(createDto)
+            const watchRecord = await fix.watchRecordsClient.create(createDto)
 
             expect(watchRecord).toEqual({ ...createDto, id: expect.any(String) })
         })
@@ -49,7 +46,7 @@ describe('WatchRecordsService', () => {
                 query: SearchWatchRecordsPageDto,
                 watchRecords: WatchRecordDto[]
             ) => {
-                const page = await fix.watchRecordsService.searchPage(query)
+                const page = await fix.watchRecordsClient.searchPage(query)
                 expect(page).toEqual(buildExpectedPage(watchRecords))
             }
 

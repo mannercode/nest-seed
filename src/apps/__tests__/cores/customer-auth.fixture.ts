@@ -1,11 +1,9 @@
 import { CustomersClient, CustomersModule } from 'apps/cores'
 import { CustomerJwtStrategy, CustomerLocalStrategy, CustomersController } from 'apps/gateway'
+import { createAppTestContext } from '../__helpers__'
 import type { AppTestContext } from '../__helpers__'
-import { createCustomer, createAppTestContext } from '../__helpers__'
 
-export type CustomerAuthFixture = AppTestContext & {
-    credentials: { email: string; password: string }
-}
+export type CustomerAuthFixture = AppTestContext & {}
 
 export async function createCustomerAuthFixture() {
     const ctx = await createAppTestContext({
@@ -14,8 +12,5 @@ export async function createCustomerAuthFixture() {
         controllers: [CustomersController]
     })
 
-    const credentials = { email: 'user@mail.com', password: 'password' }
-    await createCustomer(ctx, credentials)
-
-    return { ...ctx, credentials }
+    return { ...ctx }
 }

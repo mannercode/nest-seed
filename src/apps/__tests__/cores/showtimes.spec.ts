@@ -1,9 +1,9 @@
 import { HttpStatus } from '@nestjs/common'
-import type { ShowtimeDto } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, oid } from 'testlib'
 import { buildCreateShowtimeDto, createShowtimes, Errors } from '../__helpers__'
 import type { ShowtimesFixture } from './showtimes.fixture'
+import type { ShowtimeDto } from 'apps/cores'
 
 describe('ShowtimesService', () => {
     let fix: ShowtimesFixture
@@ -12,16 +12,13 @@ describe('ShowtimesService', () => {
         const { createShowtimesFixture } = await import('./showtimes.fixture')
         fix = await createShowtimesFixture()
     })
-
-    afterEach(async () => {
-        await fix.teardown()
-    })
+    afterEach(() => fix.teardown())
 
     describe('createMany', () => {
         it('creates showtimes', async () => {
             const createDtos = [buildCreateShowtimeDto({ sagaId: oid(0x1) })]
 
-            const { success } = await fix.showtimesService.createMany(createDtos)
+            const { success } = await fix.showtimesClient.createMany(createDtos)
 
             expect(success).toBe(true)
         })
@@ -39,7 +36,7 @@ describe('ShowtimesService', () => {
             })
 
             it('returns showtimes for the showtimeIds', async () => {
-                const fetchedShowtimes = await fix.showtimesService.getMany(pickIds(showtimes))
+                const fetchedShowtimes = await fix.showtimesClient.getMany(pickIds(showtimes))
 
                 expect(fetchedShowtimes).toEqual(expect.arrayContaining(showtimes))
             })
@@ -47,7 +44,7 @@ describe('ShowtimesService', () => {
 
         describe('when the showtimeIds include a non-existent showtimeId', () => {
             it('throws 404 Not Found', async () => {
-                const promise = fix.showtimesService.getMany([nullObjectId])
+                const promise = fix.showtimesClient.getMany([nullObjectId])
 
                 await expect(promise).rejects.toMatchObject({
                     status: HttpStatus.NOT_FOUND,
@@ -87,25 +84,25 @@ describe('ShowtimesService', () => {
             })
 
             it('returns showtimes filtered by sagaIds', async () => {
-                const showtimes = await fix.showtimesService.search({ sagaIds: [sagaId] })
+                const showtimes = await fix.showtimesClient.search({ sagaIds: [sagaId] })
 
                 expect(showtimes).toEqual([showtimeForSaga])
             })
 
             it('returns showtimes filtered by movieIds', async () => {
-                const showtimes = await fix.showtimesService.search({ movieIds: [movieId] })
+                const showtimes = await fix.showtimesClient.search({ movieIds: [movieId] })
 
                 expect(showtimes).toEqual([showtimeForMovie])
             })
 
             it('returns showtimes filtered by theaterIds', async () => {
-                const showtimes = await fix.showtimesService.search({ theaterIds: [theaterId] })
+                const showtimes = await fix.showtimesClient.search({ theaterIds: [theaterId] })
 
                 expect(showtimes).toEqual([showtimeForTheater])
             })
 
             it('returns showtimes filtered by startTimeRange', async () => {
-                const showtimes = await fix.showtimesService.search({
+                const showtimes = await fix.showtimesClient.search({
                     startTimeRange: {
                         start: new Date('2020-01-01T00:00'),
                         end: new Date('2020-01-02T12:00')
@@ -121,7 +118,7 @@ describe('ShowtimesService', () => {
 
         describe('when the filter is empty', () => {
             it('throws 400 Bad Request', async () => {
-                const promise = fix.showtimesService.search({})
+                const promise = fix.showtimesClient.search({})
 
                 await expect(promise).rejects.toMatchObject({
                     status: HttpStatus.BAD_REQUEST,
@@ -142,7 +139,7 @@ describe('ShowtimesService', () => {
         })
 
         it('returns movieIds filtered by startTimeRange', async () => {
-            const movieIds = await fix.showtimesService.searchMovieIds({
+            const movieIds = await fix.showtimesClient.searchMovieIds({
                 startTimeRange: { start: new Date() }
             })
 
@@ -160,9 +157,7 @@ describe('ShowtimesService', () => {
         })
 
         it('returns theaterIds filtered by movieIds', async () => {
-            const theaterIds = await fix.showtimesService.searchTheaterIds({
-                movieIds: [oid(0xaa)]
-            })
+            const theaterIds = await fix.showtimesClient.searchTheaterIds({ movieIds: [oid(0xaa)] })
 
             expect(theaterIds).toEqual([oid(0xb1), oid(0xb2)])
         })
@@ -178,7 +173,7 @@ describe('ShowtimesService', () => {
         })
 
         it('returns showdates filtered by movieIds and theaterIds', async () => {
-            const showdates = await fix.showtimesService.searchShowdates({
+            const showdates = await fix.showtimesClient.searchShowdates({
                 movieIds: [oid(0xa1)],
                 theaterIds: [oid(0xb1)]
             })

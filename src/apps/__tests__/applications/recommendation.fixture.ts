@@ -1,5 +1,4 @@
 import { RecommendationClient, RecommendationModule } from 'apps/applications'
-import type { MovieDto } from 'apps/cores'
 import {
     CustomersClient,
     CustomersModule,
@@ -12,8 +11,7 @@ import {
 } from 'apps/cores'
 import { CustomerJwtStrategy, MoviesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
-import type { TestContext } from 'testlib'
-import type { AppTestContext } from '../__helpers__'
+import { DateUtil } from 'common'
 import {
     createAndLoginCustomer,
     createMovie,
@@ -21,7 +19,9 @@ import {
     createAppTestContext,
     createWatchRecord
 } from '../__helpers__'
-import { DateUtil } from 'common'
+import type { AppTestContext } from '../__helpers__'
+import type { MovieDto } from 'apps/cores'
+import type { TestContext } from 'testlib'
 
 export type RecommendationFixture = AppTestContext & {}
 

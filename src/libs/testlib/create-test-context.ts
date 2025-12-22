@@ -1,3 +1,4 @@
+import { Server } from 'http'
 import {
     CanActivate,
     ExecutionContext,
@@ -7,7 +8,6 @@ import {
     Type
 } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { Server } from 'http'
 import { isDebuggingEnabled } from './utils'
 
 export type ModuleMetadataEx = ModuleMetadata & {
