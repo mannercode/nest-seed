@@ -13,7 +13,13 @@ jobs:
     ci:
         runs-on: ubuntu-24.04-arm
         container: node:24-bookworm
+        services:
+            docker:
+                image: docker:27-dind
+                options: --privileged
         env:
+            DOCKER_HOST: tcp://docker:2375
+            DOCKER_TLS_CERTDIR: ''
             WORKSPACE_ROOT: ${{ github.workspace }}
             TERM: xterm # This is required to enable use of the `clear` command in bash
         steps:
@@ -34,21 +40,6 @@ jobs:
                     tee /etc/apt/sources.list.d/docker.list > /dev/null
                   apt-get update
                   apt-get install -y docker-ce-cli
-
-            - name: Resolve host workspace path
-              shell: bash
-              run: |
-                  prefix="$(dirname "$(dirname "$GITHUB_WORKSPACE")")"
-                  HOST_WS="$(docker inspect "$HOSTNAME" --format '{{range .Mounts}}{{if eq .Destination "'"$prefix"'"}}{{.Source}}{{end}}{{end}}')"
-                  echo "$prefix $HOST_WS"
-                  echo "HOST_PATH=$HOST_WS" >> "$GITHUB_ENV"
-            - name: TEST
-              run: env
-
-            # - name: TEST2
-            #   run: |
-            #       docker inspect ${HOSTNAME}
-            #       exit 1
 
             - name: Setup Network
               run: |

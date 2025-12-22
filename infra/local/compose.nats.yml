@@ -85,7 +85,7 @@ services:
             - --web.enable-lifecycle
         ports: ['9090:9090']
         volumes:
-            - $HOST_PATH/infra/local/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+            - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
         depends_on:
             - nats-exporter1
             - nats-exporter2
@@ -99,4 +99,4 @@ services:
             - GF_SECURITY_ADMIN_USER=admin
             - GF_SECURITY_ADMIN_PASSWORD=admin
         depends_on:
-            - prometheus
+            - nats-prometheus
