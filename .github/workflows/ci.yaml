@@ -38,9 +38,10 @@ jobs:
             - name: Resolve host workspace path
               shell: bash
               run: |
-                  HOST_PATH=$(docker inspect "$HOSTNAME" --format '{{range .Mounts}}{{if eq .Destination "'"$GITHUB_WORKSPACE"'"}}{{.Source}}{{end}}{{end}}')
-                  echo "HOST_PATH=$HOST_PATH" >> "$GITHUB_ENV"
-                  echo "HOST_PATH=$HOST_PATH"
+                  echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+                  echo "HOSTNAME=$HOSTNAME"
+                  HOST_WS=$(docker inspect "${HOSTNAME}" --format '{{range .Mounts}}{{if eq .Destination "'"${GITHUB_WORKSPACE}"'"}}{{.Source}}{{end}}{{end}}')
+                  echo "$HOST_WS"
 
             - name: TEST
               run: env
