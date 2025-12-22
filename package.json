@@ -30,9 +30,8 @@
         "apps:up": "  docker compose up -d --build",
         "apps:wait": "docker wait apps-setup && docker rm apps-setup",
         "apps:reset": "npm run apps:down && npm run apps:up && npm run apps:wait",
-        "infra:down": "docker compose --project-directory infra/local --env-file .env --env-file .env.infra --profile gui down --volumes --remove-orphans --timeout 0",
+        "infra:down": "docker compose --project-directory infra/local --env-file .env --env-file .env.infra down --volumes --remove-orphans --timeout 0",
         "infra:up": "  docker compose --project-directory infra/local --env-file .env --env-file .env.infra up -d --build",
-        "infra:gui": " docker compose --project-directory infra/local --env-file .env --env-file .env.infra --profile gui up -d --build",
         "infra:wait": "docker wait infra-setup && docker rm infra-setup",
         "infra:reset": "npm run infra:down && npm run infra:up && npm run infra:wait"
     },

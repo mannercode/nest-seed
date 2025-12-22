@@ -12,4 +12,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -fsSL https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar -o /opt/plantuml.jar
-RUN npm i -g npm-check-updates husky
+RUN npm i -g npm-check-updates husky commitlint

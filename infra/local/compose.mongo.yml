@@ -79,7 +79,6 @@ services:
                     "
             '
     mongo-gui:
-        profiles: ['gui']
         extends: { file: ./compose.common.yml, service: common-options }
         container_name: mongo-gui
         image: mongo-express:latest

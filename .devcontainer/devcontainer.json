@@ -13,7 +13,7 @@
     "forwardPorts": [5010, 5020],
     "remoteUser": "node",
     "containerEnv": { "WORKSPACE_ROOT": "${containerWorkspaceFolder}" },
-    "postCreateCommand": { "husky": "npx husky", "ci": "npm ci" },
+    "postCreateCommand": { "husky": "husky", "ci": "npm ci" },
     "postStartCommand": {
         "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null",
         "reset-infra": "npm run infra:reset"
