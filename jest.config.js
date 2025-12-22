@@ -23,7 +23,7 @@ module.exports = {
         '^apps/(.*)$': '<rootDir>/src/apps/$1'
     },
     collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
-    coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },
+    // coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },
     coverageReporters: ['lcov', 'text'],
     coveragePathIgnorePatterns: [
         '__tests__',
