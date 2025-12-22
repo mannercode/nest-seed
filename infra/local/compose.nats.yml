@@ -89,7 +89,7 @@ services:
             - --web.enable-lifecycle
         ports: ['9090:9090']
         volumes:
-            - $HOST_PATH/infra/local/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+            - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
         depends_on:
             - nats-exporter1
             - nats-exporter2
