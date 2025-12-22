@@ -52,9 +52,6 @@ services:
             wait $$SUB_PID
             cat /tmp/sub.log
             '
-    # TODO prome+grafana 설정해라. 미완성이다.
-    # github action에서 ./prometheus.yml 때문에 안 된다.
-    # --- NATS Exporters (각 노드 1개씩) ---
     nats-exporter1:
         container_name: nats-exporter1
         image: natsio/prometheus-nats-exporter:latest
@@ -79,10 +76,9 @@ services:
             http://nats3:8222
         depends_on: { nats3: { condition: service_healthy } }
 
-    # --- Prometheus ---
     prometheus:
         image: prom/prometheus:latest
-        container_name: prometheus
+        container_name: nats-prometheus
         command:
             - --config.file=/etc/prometheus/prometheus.yml
             - --storage.tsdb.retention.time=15d
@@ -97,7 +93,7 @@ services:
 
     grafana:
         image: grafana/grafana:latest
-        container_name: grafana
+        container_name: nats-grafana
         ports: ['3300:3000']
         environment:
             - GF_SECURITY_ADMIN_USER=admin
