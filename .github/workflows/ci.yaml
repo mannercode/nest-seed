@@ -17,6 +17,10 @@ jobs:
             docker:
                 image: docker:27-dind
                 options: --privileged
+                ports:
+                    - 2375:2375
+                env:
+                    DOCKER_TLS_CERTDIR: ''
         env:
             WORKSPACE_ROOT: ${{ github.workspace }}
             TERM: xterm # This is required to enable use of the `clear` command in bash
