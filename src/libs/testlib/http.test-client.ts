@@ -189,6 +189,7 @@ export class HttpTestClient {
 
     created = (expected?: any) => this.send(HttpStatus.CREATED, expected)
     ok = (expected?: any) => this.send(HttpStatus.OK, expected)
+    noContent = (expected?: any) => this.send(HttpStatus.NO_CONTENT, expected)
     accepted = (expected?: any) => this.send(HttpStatus.ACCEPTED, expected)
     badRequest = (expected?: any) => this.send(HttpStatus.BAD_REQUEST, expected)
     unauthorized = (expected?: any) => this.send(HttpStatus.UNAUTHORIZED, expected)

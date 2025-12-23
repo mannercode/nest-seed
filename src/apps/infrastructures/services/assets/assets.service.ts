@@ -75,11 +75,10 @@ export class AssetsService {
     }
 
     async deleteMany(assetIds: string[]) {
-        const deletedAssets = await this.repository.deleteByIds(assetIds)
+        await this.repository.deleteByIds(assetIds)
 
-        await Promise.all(deletedAssets.map((asset) => this.s3Service.deleteObject(asset.id)))
-
-        return { deletedAssets: this.toDtos(deletedAssets) }
+        await Promise.all(assetIds.map((assetId) => this.s3Service.deleteObject(assetId)))
+        return {}
     }
 
     @Cron(Rules.Asset.expiredUploadCleanupCron, { name: 'assets.cleanupExpiredUploads' })

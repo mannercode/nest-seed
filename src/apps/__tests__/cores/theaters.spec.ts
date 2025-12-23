@@ -103,14 +103,12 @@ describe('TheatersService', () => {
                 theater = await createTheater(fix)
             })
 
-            it('returns the deleted theater', async () => {
-                await fix.httpClient
-                    .delete(`/theaters/${theater.id}`)
-                    .ok({ deletedTheaters: [theater] })
+            it('returns 204 No Content', async () => {
+                await fix.httpClient.delete(`/theaters/${theater.id}`).noContent()
             })
 
             it('persists the deletion', async () => {
-                await fix.httpClient.delete(`/theaters/${theater.id}`).ok()
+                await fix.httpClient.delete(`/theaters/${theater.id}`).noContent()
 
                 await fix.httpClient
                     .get(`/theaters/${theater.id}`)
@@ -122,13 +120,8 @@ describe('TheatersService', () => {
         })
 
         describe('when the theater does not exist', () => {
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .delete(`/theaters/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
+            it('returns 204 No Content', async () => {
+                await fix.httpClient.delete(`/theaters/${nullObjectId}`).noContent()
             })
         })
     })

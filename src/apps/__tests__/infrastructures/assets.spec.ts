@@ -190,13 +190,9 @@ describe('AssetsService', () => {
                 ])
             })
 
-            it('returns deleted assets', async () => {
+            it('returns an empty response', async () => {
                 const response = await fix.assetsClient.deleteMany(pickIds(assets))
-
-                const deletedAssets = expect.arrayContaining(
-                    assets.map((asset) => ({ ...asset, download: null }))
-                )
-                expect(response).toEqual({ deletedAssets })
+                expect(response).toEqual({})
             })
 
             it('persists the deletion', async () => {
@@ -217,10 +213,9 @@ describe('AssetsService', () => {
         })
 
         describe('when the assetIds include a non-existent assetId', () => {
-            it('throws 404 Not Found', async () => {
-                await expect(fix.assetsClient.deleteMany([nullObjectId])).rejects.toMatchObject({
-                    status: HttpStatus.NOT_FOUND
-                })
+            it('returns an empty response', async () => {
+                const response = await fix.assetsClient.deleteMany([nullObjectId])
+                expect(response).toEqual({})
             })
         })
     })

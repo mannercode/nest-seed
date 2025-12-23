@@ -49,9 +49,10 @@ export class CustomersController {
         return customers[0]
     }
 
+    @HttpCode(HttpStatus.NO_CONTENT)
     @Delete(':customerId')
     async delete(@Param('customerId') customerId: string) {
-        return this.customersClient.deleteMany([customerId])
+        await this.customersClient.deleteMany([customerId])
     }
 
     @Get()

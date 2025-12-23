@@ -106,11 +106,12 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     }
 
     async deleteByIds(ids: string[], session: SessionArg = undefined) {
-        const docs = await this.getByIds(ids, session)
+        const { deletedCount } = await this.model.deleteMany(
+            { _id: { $in: objectIds(ids) } as any },
+            { session }
+        )
 
-        await this.model.deleteMany({ _id: { $in: objectIds(ids) } as any }, { session })
-
-        return docs
+        return { deletedCount }
     }
 
     async allExist(ids: string[], session: SessionArg = undefined) {

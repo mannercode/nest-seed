@@ -27,9 +27,8 @@ export class TheatersService {
     }
 
     async deleteMany(theaterIds: string[]) {
-        const deletedTheaters = await this.repository.deleteByIds(theaterIds)
-
-        return { deletedTheaters: this.toDtos(deletedTheaters) }
+        await this.repository.deleteByIds(theaterIds)
+        return {}
     }
 
     async searchPage(searchDto: SearchTheatersPageDto) {

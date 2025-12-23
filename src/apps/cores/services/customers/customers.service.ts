@@ -58,9 +58,8 @@ export class CustomersService {
     }
 
     async deleteMany(customerIds: string[]) {
-        const deletedCustomers = await this.repository.deleteByIds(customerIds)
-
-        return { deletedCustomers: this.toDtos(deletedCustomers) }
+        await this.repository.deleteByIds(customerIds)
+        return {}
     }
 
     async searchPage(searchDto: SearchCustomersPageDto) {

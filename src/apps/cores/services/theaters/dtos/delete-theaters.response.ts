@@ -1,5 +1,0 @@
-import type { TheaterDto } from './theater.dto'
-
-export class DeleteTheatersResponse {
-    deletedTheaters: TheaterDto[]
-}

@@ -120,14 +120,12 @@ describe('CustomersService', () => {
                 customer = await createCustomer(fix)
             })
 
-            it('returns the deleted customer', async () => {
-                await fix.httpClient
-                    .delete(`/customers/${customer.id}`)
-                    .ok({ deletedCustomers: [customer] })
+            it('returns 204 No Content', async () => {
+                await fix.httpClient.delete(`/customers/${customer.id}`).noContent()
             })
 
             it('persists the deletion', async () => {
-                await fix.httpClient.delete(`/customers/${customer.id}`).ok()
+                await fix.httpClient.delete(`/customers/${customer.id}`).noContent()
 
                 await fix.httpClient
                     .get(`/customers/${customer.id}`)
@@ -139,13 +137,8 @@ describe('CustomersService', () => {
         })
 
         describe('when the customer does not exist', () => {
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .delete(`/customers/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
+            it('returns 204 No Content', async () => {
+                await fix.httpClient.delete(`/customers/${nullObjectId}`).noContent()
             })
         })
     })
