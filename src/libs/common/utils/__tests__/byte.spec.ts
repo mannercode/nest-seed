@@ -30,7 +30,7 @@ describe('Byte', () => {
 
         describe('when the format is invalid', () => {
             it.each(['invalid', '123', '123XB', '1KB -'])('throws Error', (input) => {
-                expect(Byte.fromString(input)).toThrow()
+                expect(() => Byte.fromString(input)).toThrow()
             })
         })
     })
