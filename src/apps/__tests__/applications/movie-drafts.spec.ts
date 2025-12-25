@@ -1,46 +1,20 @@
 import { HttpStatus } from '@nestjs/common'
 import { Checksum } from 'common'
 import { nullObjectId } from 'testlib'
-import {
-    buildCreateAssetDto,
-    buildCreateMovieDto,
-    Errors,
-    fixtureFiles,
-    uploadAsset
-} from '../__helpers__'
-import { createMovieDraft, type MovieDraftsFixture } from './movie-drafts.fixture'
+import { buildCreateAssetDto, buildCreateMovieDto, Errors, fixtureFiles } from '../__helpers__'
+import { createMovieDraft, uploadDraftImage } from './movie-drafts.fixture'
+import type { MovieDraftsFixture } from './movie-drafts.fixture'
 import type { MovieDraftDto } from 'apps/applications'
 
 describe('MovieDraftsService', () => {
     let fix: MovieDraftsFixture
+    const imageFile = fixtureFiles.image
 
     beforeEach(async () => {
         const { createMovieDraftsFixture } = await import('./movie-drafts.fixture')
         fix = await createMovieDraftsFixture()
     })
     afterEach(() => fix.teardown())
-
-    const imageFile = fixtureFiles.image
-
-    const requestImageUpload = async (draftId: string) => {
-        const createDto = buildCreateAssetDto(imageFile)
-
-        const { body } = await fix.httpClient
-            .post(`/movie-drafts/${draftId}/images`)
-            .body(createDto)
-            .created()
-
-        return body
-    }
-
-    const uploadDraftImage = async (draftId: string) => {
-        const upload = await requestImageUpload(draftId)
-        const uploadResponse = await uploadAsset(imageFile.path, upload.upload)
-
-        expect(uploadResponse.ok).toBe(true)
-
-        return upload
-    }
 
     describe('POST /movie-drafts', () => {
         it('returns the created movie-draft', async () => {
@@ -193,7 +167,7 @@ describe('MovieDraftsService', () => {
 
             beforeEach(async () => {
                 movieDraft = await createMovieDraft(fix)
-                upload = await uploadDraftImage(movieDraft.id)
+                upload = await uploadDraftImage(fix, movieDraft.id)
             })
 
             it('marks the image as READY and returns 200 OK', async () => {
@@ -216,7 +190,13 @@ describe('MovieDraftsService', () => {
         describe('when the S3 validation fails', () => {
             it('returns 422 Unprocessable Entity', async () => {
                 const movieDraft = await createMovieDraft(fix)
-                const upload = await requestImageUpload(movieDraft.id)
+                const createDto = buildCreateAssetDto(imageFile)
+
+                const { body } = await fix.httpClient
+                    .post(`/movie-drafts/${movieDraft.id}/images`)
+                    .body(createDto)
+                    .created()
+                const upload = body
 
                 await fix.httpClient
                     .post(`/movie-drafts/${movieDraft.id}/images/${upload.imageId}/complete`)
@@ -246,7 +226,7 @@ describe('MovieDraftsService', () => {
 
             beforeEach(async () => {
                 movieDraft = await createMovieDraft(fix)
-                const upload = await uploadDraftImage(movieDraft.id)
+                const upload = await uploadDraftImage(fix, movieDraft.id)
 
                 await fix.httpClient
                     .post(`/movie-drafts/${movieDraft.id}/images/${upload.imageId}/complete`)
@@ -325,7 +305,7 @@ describe('MovieDraftsService', () => {
             })
 
             it('creates a Movie, removes the movie-draft, and returns the created Movie', async () => {
-                const upload = await uploadDraftImage(movieDraft.id)
+                const upload = await uploadDraftImage(fix, movieDraft.id)
 
                 await fix.httpClient
                     .post(`/movie-drafts/${movieDraft.id}/images/${upload.imageId}/complete`)
