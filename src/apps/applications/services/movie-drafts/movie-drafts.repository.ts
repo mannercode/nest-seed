@@ -33,3 +33,15 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
         return draft
     }
 }
+
+// export class PostsService {
+//   constructor(@InjectModel(Post.name) private readonly postModel: Model<PostDocument>) {}
+
+//   async addComment(postId: string, author: string, text: string) {
+//     return this.postModel.findByIdAndUpdate(
+//       postId,
+//       { $push: { comments: { author, text } } },
+//       { new: true },
+//     );
+//   }
+// }

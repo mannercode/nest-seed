@@ -24,12 +24,6 @@ export class MovieDraftsService {
         return this.toDto(draft)
     }
 
-    // async getMany(movieIds: string[]) {
-    //     const draft = await this.repository.getByIds(movieIds)
-
-    //     return this.toDtos(draft)
-    // }
-
     async get(draftId: string): Promise<MovieDraftDto> {
         const draft = await this.repository.getById(draftId)
 

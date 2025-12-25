@@ -24,7 +24,6 @@ export async function createMovieDraft(ctx: TestContext): Promise<MovieDraftDto>
     const { MovieDraftsClient } = await import('apps/applications')
     const movieDraftsClient = ctx.module.get(MovieDraftsClient)
 
-    // 이미지 포함 업데이트까지 다
     const movieDraft = await movieDraftsClient.create()
     return movieDraft
 }

@@ -87,16 +87,6 @@ describe('MovieDraftsService', () => {
         })
     })
 
-    describe('DELETE /movie-drafts/:id', () => {
-        describe('when the movie-draft exists', () => {
-            it('deletes the movie-draft and returns 204 No Content', () => {})
-        })
-
-        describe('when the movie-draft does not exist', () => {
-            it('returns 404 Not Found', () => {})
-        })
-    })
-
     describe('POST /movie-drafts/:id/images', () => {
         describe('when the movie-draft exists and the payload is valid', () => {
             it('creates an image slot and returns an S3 upload URL', () => {})
@@ -115,35 +105,87 @@ describe('MovieDraftsService', () => {
         })
     })
 
-    describe('DELETE /movie-drafts/:creationId/images/:imageId', () => {
-        describe('when the movie-draft and image both exist', () => {
-            it('deletes the image and returns 204 No Content', () => {})
-        })
-
-        describe('when the image does not exist in the movie-draft', () => {
-            it('returns 404 Not Found', () => {})
-        })
-
-        describe('when the movie-draft does not exist', () => {
-            it('returns 404 Not Found', () => {})
-        })
-    })
-
-    describe('POST /movie-drafts/:id/images/:imageId/complete', () => {
+    describe('POST /movie-drafts/:draftId/images/:imageId/complete', () => {
         describe('when the movie-draft and image exist and the S3 upload succeeded', () => {
             it('marks the image as READY and returns 200 OK', () => {})
+            it('movie-draft에 이미지를 포함한다', () => {})
         })
 
         describe('when the S3 validation fails', () => {
             it('returns 422 Unprocessable Entity', () => {})
         })
 
-        describe('when the image does not exist', () => {
+        describe('when the movie-draft or image does not exist', () => {
             it('returns 404 Not Found', () => {})
         })
+    })
 
-        describe('when the movie-draft does not exist', () => {
-            it('returns 404 Not Found', () => {})
+    describe('DELETE /movie-drafts/:draftId/images/:imageId', () => {
+        describe('when the movie-draft and image exist', () => {
+            let movie: MovieDraftDto
+
+            beforeEach(async () => {
+                movie = await createMovieDraft(fix)
+            })
+
+            it('returns 204 No Content', async () => {
+                await fix.httpClient.delete(`/movie-drafts/${movie.id}`).noContent()
+            })
+
+            it('persists the deletion', async () => {
+                await fix.httpClient.delete(`/movie-drafts/${movie.id}`).noContent()
+
+                await fix.httpClient
+                    .get(`/movie-drafts/${movie.id}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [movie.id]
+                    })
+            })
+
+            it('invalidates image URL', async () => {
+                await fix.httpClient.delete(`/movie-drafts/${movie.id}`).noContent()
+
+                const response = await fetch(movie.assetIds[0])
+                expect(response.status).toBe(404)
+            })
+        })
+
+        describe('when the movie-draft or image does not exist', () => {
+            it('returns 204 No Content', async () => {
+                await fix.httpClient.delete(`/movie-drafts/${nullObjectId}`).noContent()
+            })
+        })
+    })
+
+    describe('DELETE /movie-drafts/:id', () => {
+        describe('when the movie-draft exists', () => {
+            let movie: MovieDraftDto
+
+            beforeEach(async () => {
+                movie = await createMovieDraft(fix)
+            })
+
+            it('returns 204 No Content', async () => {
+                await fix.httpClient.delete(`/movie-drafts/${movie.id}`).noContent()
+            })
+
+            it('persists the deletion', async () => {
+                await fix.httpClient.delete(`/movie-drafts/${movie.id}`).noContent()
+
+                await fix.httpClient
+                    .get(`/movie-drafts/${movie.id}`)
+                    .notFound({
+                        ...Errors.Mongoose.MultipleDocumentsNotFound,
+                        notFoundIds: [movie.id]
+                    })
+            })
+        })
+
+        describe('when the movie does not exist', () => {
+            it('returns 204 No Content', async () => {
+                await fix.httpClient.delete(`/movie-drafts/${nullObjectId}`).noContent()
+            })
         })
     })
 
