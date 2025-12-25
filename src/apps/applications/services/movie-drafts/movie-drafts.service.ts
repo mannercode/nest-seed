@@ -44,7 +44,17 @@ export class MovieDraftsService {
     }
 
     async delete(draftId: string) {
-        const draft = await this.repository.getById(draftId)
+        const draft = await this.repository.findById(draftId)
+
+        if (!draft) {
+            return true
+        }
+
+        const assetIds = [...new Set(draft.images.map((image) => image.assetId))]
+
+        if (assetIds.length > 0) {
+            await this.assetsClient.deleteMany(assetIds)
+        }
 
         await draft.deleteOne()
         return true
@@ -78,6 +88,8 @@ export class MovieDraftsService {
         if (!image) {
             throw new NotFoundException({ ...MovieDraftErrors.ImageNotFound, imageId })
         }
+
+        await this.ensureImageUploaded(imageId)
 
         await this.assetsClient.complete(imageId, {
             owner: { service: 'movie-drafts', entityId: draftId }
@@ -114,6 +126,28 @@ export class MovieDraftsService {
         await draft.deleteOne()
 
         return movie
+    }
+
+    private async ensureImageUploaded(imageId: string) {
+        const [asset] = await this.assetsClient.getMany([imageId])
+
+        if (!asset.download) {
+            throw new UnprocessableEntityException({
+                ...MovieDraftErrors.ImageUploadInvalid,
+                imageId
+            })
+        }
+
+        const response = await fetch(asset.download.url)
+
+        if (!response.ok) {
+            throw new UnprocessableEntityException({
+                ...MovieDraftErrors.ImageUploadInvalid,
+                imageId
+            })
+        }
+
+        await response.arrayBuffer()
     }
 
     private toDto(draft: MovieDraftDocument): MovieDraftDto {

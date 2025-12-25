@@ -7,7 +7,7 @@ import type { AppTestContext } from '../__helpers__'
 import type { MovieDraftDto } from 'apps/applications'
 import type { TestContext } from 'testlib'
 
-export type MovieDraftsFixture = AppTestContext & {}
+export type MovieDraftsFixture = AppTestContext & { assetsClient: AssetsClient }
 
 export async function createMovieDraftsFixture() {
     const ctx = await createAppTestContext({
@@ -17,7 +17,9 @@ export async function createMovieDraftsFixture() {
         ignoreProviders: [RecommendationClient]
     })
 
-    return { ...ctx }
+    const assetsClient = ctx.module.get(AssetsClient)
+
+    return { ...ctx, assetsClient }
 }
 
 export async function createMovieDraft(ctx: TestContext): Promise<MovieDraftDto> {
