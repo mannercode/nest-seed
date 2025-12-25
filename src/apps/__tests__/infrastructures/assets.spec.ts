@@ -203,12 +203,12 @@ describe('AssetsService', () => {
                 })
             })
 
-            it('makes the download URL inaccessible after deletion', async () => {
+            it('invalidates image URL', async () => {
                 await fix.assetsClient.deleteMany([assets[0].id])
 
                 const { download } = assets[0]
                 const response = await fetch(download ? download.url : '')
-                expect(response.ok).toBe(false)
+                expect(response.status).toBe(404)
             })
         })
 

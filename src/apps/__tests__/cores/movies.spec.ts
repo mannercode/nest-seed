@@ -157,11 +157,11 @@ describe('MoviesService', () => {
                     })
             })
 
-            it('makes the movie image URL inaccessible after deletion', async () => {
+            it('invalidates image URL', async () => {
                 await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
 
                 const response = await fetch(movie.imageUrls[0])
-                expect(response.ok).toBe(false)
+                expect(response.status).toBe(404)
             })
         })
 
