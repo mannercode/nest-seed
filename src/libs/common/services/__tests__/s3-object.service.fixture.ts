@@ -1,6 +1,6 @@
 import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
 import { Injectable } from '@nestjs/common'
-import { generateShortId, InjectS3Object, S3Object, S3ObjectModule, S3ObjectService } from 'common'
+import { generateShortId, InjectS3Object, S3ObjectModule, S3ObjectService } from 'common'
 import { createTestContext, getS3TestConnection } from 'testlib'
 
 @Injectable()
@@ -77,12 +77,3 @@ export const testBuffer = Buffer.alloc(
     10 * 1024 * 1024,
     'ABCDEFGHIJKLMNOPQRSTUVWXYZ가나다라마바사아자차카타파하~!@#$%^&*()_+'
 )
-
-export type PutObjectResult = { key: string } & S3Object
-export async function putObject(storageService: S3ObjectService, data: Buffer) {
-    const filename = 'file.txt'
-    const contentType = 'text/plain'
-    const { key } = await storageService.putObject({ data, filename, contentType })
-
-    return { key, data, filename, contentType }
-}

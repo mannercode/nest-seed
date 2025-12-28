@@ -2,6 +2,7 @@ import { Readable } from 'stream'
 import {
     DeleteObjectCommand,
     GetObjectCommand,
+    HeadObjectCommand,
     ListObjectsV2Command,
     PutObjectCommand,
     PutObjectCommandInput,
@@ -16,6 +17,11 @@ import { HttpUtil } from '../utils'
 export type PresignedUrl = { url: string; key: string; expiresAt: Date }
 export type S3PresignOptions = { key: string; expiresInSec: number }
 export type S3PresignUploadOptions = S3PresignOptions & {
+    contentType?: string
+    contentLength?: number
+}
+export type S3UploadCompletionOptions = {
+    key: string
     contentType?: string
     contentLength?: number
 }
@@ -85,6 +91,38 @@ export class S3ObjectService {
 
         const downloadUrl = await getSignedUrl(this.s3, command, { expiresIn: expiresInSec })
         return downloadUrl
+    }
+
+    async isUploadCompleted(opts: S3UploadCompletionOptions): Promise<boolean> {
+        const { key, contentLength, contentType } = opts
+
+        try {
+            const { ContentLength, ContentType } = await this.s3.send(
+                new HeadObjectCommand({ Bucket: this.bucket, Key: key })
+            )
+
+            if (typeof contentLength === 'number' && ContentLength !== contentLength) {
+                return false
+            }
+
+            if (typeof contentType === 'string' && ContentType !== contentType) {
+                return false
+            }
+
+            return true
+        } catch (error) {
+            const err = error as { name?: string; $metadata?: { httpStatusCode?: number } }
+
+            if (
+                err.name === 'NotFound' ||
+                err.name === 'NoSuchKey' ||
+                err.$metadata?.httpStatusCode === 404
+            ) {
+                return false
+            }
+
+            throw error
+        }
     }
 
     async putObject(object: S3Object): Promise<{ key: string }> {
