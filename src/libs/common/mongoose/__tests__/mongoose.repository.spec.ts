@@ -1,4 +1,4 @@
-import { OrderDirection, pickIds, pickItems } from 'common'
+import { OrderDirection, pickIds } from 'common'
 import { expectEqualUnsorted, nullObjectId } from 'testlib'
 import {
     createSample,
@@ -139,9 +139,9 @@ describe('MongooseRepository', () => {
                 pagination: { take: 10 }
             })
 
-            const sorted = sortByName(toDtos(items))
+            const names = sortByName(toDtos(items)).map(({ name }) => name)
 
-            expect(pickItems(sorted, 'name')).toEqual([
+            expect(names).toEqual([
                 'Sample-000',
                 'Sample-001',
                 'Sample-002',

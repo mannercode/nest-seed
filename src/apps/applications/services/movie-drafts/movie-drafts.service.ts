@@ -4,9 +4,8 @@ import {
     NotFoundException,
     UnprocessableEntityException
 } from '@nestjs/common'
-import { MovieRating, MoviesClient } from 'apps/cores'
+import { MoviesClient } from 'apps/cores'
 import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
-import { MongooseErrors } from 'common'
 import { DraftImageDto, DraftImageUploadResponse, MovieDraftDto, UpdateMovieDraftDto } from './dtos'
 import { MovieDraftErrors } from './errors'
 import { MovieDraftDocument, MovieDraftImageStatus } from './models/movie-draft'
@@ -82,27 +81,16 @@ export class MovieDraftsService {
         return { imageId: upload.assetId, upload }
     }
 
-    async getImage(draftId: string, imageId: string): Promise<DraftImageDto> {
-        const draft = await this.repository.getById(draftId)
-
-        const image = draft.images.find((img) => img.assetId === imageId)
-        if (!image) {
-            throw new NotFoundException({ ...MongooseErrors.DocumentNotFound, notFoundId: imageId })
-        }
-
-        return { id: image.assetId, status: image.status }
-    }
-
     async deleteImage(draftId: string, imageId: string) {
         const draft = await this.repository.findById(draftId)
 
         if (!draft) {
-            return true
+            return true // TODO
         }
 
         const hasImage = draft.images.some((image) => image.assetId === imageId)
         if (!hasImage) {
-            return true
+            return true // TODO
         }
 
         draft.images = draft.images.filter((image) => image.assetId !== imageId)
@@ -120,7 +108,14 @@ export class MovieDraftsService {
             throw new NotFoundException({ ...MovieDraftErrors.ImageNotFound, imageId })
         }
 
-        await this.ensureImageUploaded(imageId)
+        const isUploaded = await this.assetsClient.isUploadCompleted(imageId)
+
+        if (!isUploaded) {
+            throw new UnprocessableEntityException({
+                ...MovieDraftErrors.ImageUploadInvalid,
+                imageId
+            })
+        }
 
         await this.assetsClient.complete(imageId, {
             owner: { service: 'movie-drafts', entityId: draftId }
@@ -137,48 +132,54 @@ export class MovieDraftsService {
     async completeDraft(draftId: string) {
         const draft = await this.repository.getById(draftId)
 
-        const readyImageAssetIds = draft.images
-            .filter((image) => image.status === MovieDraftImageStatus.Ready)
-            .map((image) => image.assetId)
+        const { title, genres, releaseDate, plot, durationInSeconds, director, rating, images } =
+            draft
 
-        this.ensureComplete(draft, readyImageAssetIds)
+        if (
+            title &&
+            genres.length &&
+            releaseDate &&
+            plot &&
+            durationInSeconds &&
+            director &&
+            rating &&
+            images.length
+        ) {
+            const readyImageAssetIds = images
+                .filter((image) => image.status === MovieDraftImageStatus.Ready)
+                .map((image) => image.assetId)
 
-        const movie = await this.moviesClient.create({
-            title: draft.title ?? '',
-            genres: draft.genres,
-            releaseDate: draft.releaseDate ?? new Date(0),
-            plot: draft.plot ?? '',
-            durationInSeconds: draft.durationInSeconds ?? 0,
-            director: draft.director ?? '',
-            rating: draft.rating ?? MovieRating.G,
-            assetIds: readyImageAssetIds
+            const movie = await this.moviesClient.create({
+                title,
+                genres,
+                releaseDate,
+                plot,
+                durationInSeconds,
+                director,
+                rating,
+                assetIds: readyImageAssetIds
+            })
+
+            await draft.deleteOne()
+
+            return movie
+        }
+
+        const missingFields: string[] = []
+
+        if (!title) missingFields.push('title')
+        if (!genres.length) missingFields.push('genres')
+        if (!releaseDate) missingFields.push('releaseDate')
+        if (!plot) missingFields.push('plot')
+        if (!durationInSeconds) missingFields.push('durationInSeconds')
+        if (!director) missingFields.push('director')
+        if (!rating) missingFields.push('rating')
+        if (!images.length) missingFields.push('assetIds')
+
+        throw new UnprocessableEntityException({
+            ...MovieDraftErrors.InvalidForCompletion,
+            missingFields
         })
-
-        await draft.deleteOne()
-
-        return movie
-    }
-
-    private async ensureImageUploaded(imageId: string) {
-        const [asset] = await this.assetsClient.getMany([imageId])
-        // TODO 여기
-        if (!asset.download) {
-            throw new UnprocessableEntityException({
-                ...MovieDraftErrors.ImageUploadInvalid,
-                imageId
-            })
-        }
-
-        const response = await fetch(asset.download.url)
-
-        if (!response.ok) {
-            throw new UnprocessableEntityException({
-                ...MovieDraftErrors.ImageUploadInvalid,
-                imageId
-            })
-        }
-
-        await response.arrayBuffer()
     }
 
     private toDto(draft: MovieDraftDocument): MovieDraftDto {
@@ -196,27 +197,6 @@ export class MovieDraftsService {
             director: draft.director,
             rating: draft.rating,
             assetIds: readyImageAssetIds
-        }
-    }
-
-    private ensureComplete(draft: MovieDraftDocument, assetIds: string[]) {
-        const missingFields: string[] = []
-
-        if (!draft.title) missingFields.push('title')
-        if (!draft.genres.length) missingFields.push('genres')
-        if (!draft.releaseDate) missingFields.push('releaseDate')
-        if (!draft.plot) missingFields.push('plot')
-        if (!draft.durationInSeconds) missingFields.push('durationInSeconds')
-        if (!draft.director) missingFields.push('director')
-        if (!draft.rating) missingFields.push('rating')
-        if (!assetIds.length) missingFields.push('assetIds')
-
-        // TODO 여기
-        if (missingFields.length > 0) {
-            throw new UnprocessableEntityException({
-                ...MovieDraftErrors.InvalidForCompletion,
-                missingFields
-            })
         }
     }
 }

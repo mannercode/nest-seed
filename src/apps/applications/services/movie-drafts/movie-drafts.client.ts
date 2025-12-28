@@ -28,19 +28,15 @@ export class MovieDraftsClient {
         draftId: string,
         createDto: CreateAssetDto
     ): Promise<DraftImageUploadResponse> {
-        return this.proxy.getJson(Messages.MovieDrafts.createImage, { draftId, createDto })
-    }
-
-    getImage(draftId: string, imageId: string): Promise<DraftImageDto> {
-        return this.proxy.getJson(Messages.MovieDrafts.getImage, { draftId, imageId })
+        return this.proxy.getJson(Messages.MovieDrafts.Images.create, { draftId, createDto })
     }
 
     deleteImage(draftId: string, imageId: string): Promise<boolean> {
-        return this.proxy.getJson(Messages.MovieDrafts.deleteImage, { draftId, imageId })
+        return this.proxy.getJson(Messages.MovieDrafts.Images.delete, { draftId, imageId })
     }
 
     completeImage(draftId: string, imageId: string): Promise<DraftImageDto> {
-        return this.proxy.getJson(Messages.MovieDrafts.completeImage, { draftId, imageId })
+        return this.proxy.getJson(Messages.MovieDrafts.Images.complete, { draftId, imageId })
     }
 
     completeDraft(draftId: string) {

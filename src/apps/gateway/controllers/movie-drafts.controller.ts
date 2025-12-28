@@ -47,11 +47,6 @@ export class MovieDraftsController {
         return this.movieDraftsClient.requestImageUpload(draftId, createDto)
     }
 
-    @Get(':draftId/images/:imageId')
-    getImage(@Param('draftId') draftId: string, @Param('imageId') imageId: string) {
-        return this.movieDraftsClient.getImage(draftId, imageId)
-    }
-
     @HttpCode(HttpStatus.NO_CONTENT)
     @Delete(':draftId/images/:imageId')
     async deleteImage(@Param('draftId') draftId: string, @Param('imageId') imageId: string) {

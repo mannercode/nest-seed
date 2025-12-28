@@ -13,6 +13,11 @@ export class AssetsController {
         return this.service.create(dto)
     }
 
+    @MessagePattern(Messages.Assets.isUploadCompleted)
+    isUploadCompleted(@Payload('assetId') assetId: string) {
+        return this.service.isUploadCompleted(assetId)
+    }
+
     @MessagePattern(Messages.Assets.complete)
     complete(
         @Payload('assetId') assetId: string,

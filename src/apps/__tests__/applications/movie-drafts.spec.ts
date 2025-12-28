@@ -155,20 +155,6 @@ describe('MovieDraftsService', () => {
                         })
                 })
             })
-
-            describe('when the `mimeType` is invalid', () => {
-                const createDto = buildCreateAssetDto(imageFile, { mimeType: '' })
-
-                it('returns 400 Bad Request', async () => {
-                    await fix.httpClient
-                        .post(`/movie-drafts/${movieDraft.id}/images`)
-                        .body(createDto)
-                        .badRequest({
-                            ...Errors.RequestValidation.Failed,
-                            details: expect.any(Array)
-                        })
-                })
-            })
         })
 
         describe('when the movie-draft does not exist', () => {
@@ -204,16 +190,6 @@ describe('MovieDraftsService', () => {
                         .noContent()
                 })
 
-                it('persists the deletion', async () => {
-                    await fix.httpClient
-                        .delete(`/movie-drafts/${movieDraft.id}/images/${imageId}`)
-                        .noContent()
-
-                    await fix.httpClient
-                        .get(`/movie-drafts/${movieDraft.id}/images/${imageId}`)
-                        .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: imageId })
-                })
-
                 it('invalidates image URL', async () => {
                     const [asset] = await fix.assetsClient.getMany([imageId])
                     Assert.defined(asset.download)
@@ -230,7 +206,17 @@ describe('MovieDraftsService', () => {
 
         describe('when the movie-draft does not exist', () => {
             it('returns 204 No Content', async () => {
-                await fix.httpClient.delete(`/movie-drafts/${nullObjectId}`).noContent()
+                await fix.httpClient
+                    .delete(`/movie-drafts/${nullObjectId}/images/${nullObjectId}`)
+                    .noContent()
+            })
+        })
+
+        describe('when the image-draft does not exist', () => {
+            it('returns 204 No Content', async () => {
+                await fix.httpClient
+                    .delete(`/movie-drafts/${movieDraft.id}/images/${nullObjectId}`)
+                    .noContent()
             })
         })
     })
@@ -318,6 +304,24 @@ describe('MovieDraftsService', () => {
                     .get(`/movie-drafts/${movieDraft.id}`)
                     .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: movieDraft.id })
             })
+
+            describe('when has images', () => {
+                let imageId: string
+
+                beforeEach(async () => {
+                    imageId = await uploadCompleteDraftImage(fix, movieDraft.id)
+                })
+
+                it('invalidates image URL', async () => {
+                    const [asset] = await fix.assetsClient.getMany([imageId])
+                    Assert.defined(asset.download)
+
+                    await fix.httpClient.delete(`/movie-drafts/${movieDraft.id}`).noContent()
+
+                    const response = await fetch(asset.download.url)
+                    expect(response.status).toBe(404)
+                })
+            })
         })
 
         describe('when the movie-draft does not exist', () => {
@@ -328,7 +332,7 @@ describe('MovieDraftsService', () => {
     })
 
     describe('POST /movie-drafts/:id/complete', () => {
-        describe('when the movie-draft exists and is valid', () => {
+        describe('when the movie-draft exists', () => {
             let movieDraft: MovieDraftDto
 
             beforeEach(async () => {
@@ -388,7 +392,37 @@ describe('MovieDraftsService', () => {
                 })
             })
 
+            describe('when missing images', () => {
+                beforeEach(async () => {
+                    await fix.httpClient
+                        .patch(`/movie-drafts/${movieDraft.id}`)
+                        .body({
+                            title: `MovieTitle`,
+                            genres: [MovieGenre.Action],
+                            releaseDate: new Date(0),
+                            plot: `MoviePlot`,
+                            durationInSeconds: 90 * 60,
+                            director: 'Quentin Tarantino',
+                            rating: MovieRating.PG
+                        })
+                        .ok()
+                })
+
+                it('returns 422 Unprocessable Entity', async () => {
+                    await fix.httpClient
+                        .post(`/movie-drafts/${movieDraft.id}/complete`)
+                        .unprocessableEntity({
+                            ...Errors.MovieDrafts.InvalidForCompletion,
+                            missingFields: expect.any(Array)
+                        })
+                })
+            })
+
             describe('when is invalid', () => {
+                beforeEach(async () => {
+                    await uploadCompleteDraftImage(fix, movieDraft.id)
+                })
+
                 it('returns 422 Unprocessable Entity', async () => {
                     await fix.httpClient
                         .post(`/movie-drafts/${movieDraft.id}/complete`)

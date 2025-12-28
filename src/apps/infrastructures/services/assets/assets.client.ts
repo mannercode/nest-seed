@@ -11,6 +11,10 @@ export class AssetsClient {
         return this.proxy.getJson(Messages.Assets.create, dto)
     }
 
+    isUploadCompleted(assetId: string): Promise<boolean> {
+        return this.proxy.getJson(Messages.Assets.isUploadCompleted, { assetId })
+    }
+
     complete(assetId: string, completeDto: CompleteAssetDto): Promise<AssetDto> {
         return this.proxy.getJson(Messages.Assets.complete, { assetId, completeDto })
     }

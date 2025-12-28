@@ -4,6 +4,7 @@ import { nullObjectId, toAny } from 'testlib'
 import {
     buildCompleteAssetDto,
     buildCreateAssetDto,
+    createAsset,
     downloadAsset,
     fixtureFiles,
     uploadAsset,
@@ -65,6 +66,35 @@ describe('AssetsService', () => {
 
                 const uploadRes = await uploadAsset(file.path, uploadRequest)
                 expect(uploadRes.ok).toBe(false)
+            })
+        })
+    })
+
+    describe('isUploadCompleted', () => {
+        describe('when the upload is completed', () => {
+            let assetId: string
+
+            beforeEach(async () => {
+                assetId = await uploadFile(fix, file)
+            })
+
+            it('returns true', async () => {
+                const isCompleted = await fix.assetsClient.isUploadCompleted(assetId)
+                expect(isCompleted).toBe(true)
+            })
+        })
+
+        describe('when the upload is not completed', () => {
+            let assetId: string
+
+            beforeEach(async () => {
+                const uploadInfo = await createAsset(fix, file)
+                assetId = uploadInfo.assetId
+            })
+
+            it('returns false', async () => {
+                const isCompleted = await fix.assetsClient.isUploadCompleted(assetId)
+                expect(isCompleted).toBe(false)
             })
         })
     })
