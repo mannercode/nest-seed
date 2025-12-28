@@ -52,8 +52,14 @@ jobs:
             - name: Run unit tests
               run: npm test
 
-            - name: Remove containers
-              run: docker rm -f $(docker ps -aq --filter "name=^/testlib-")
+            # - name: Remove containers
+            # run: docker rm -f $(docker ps -aq --filter "name=^/testlib-")
 
             - name: Run e2e tests
+              run: npm run test:e2e
+            - name: Run e2e tests1
+              run: npm run test:e2e
+            - name: Run e2e tests2
+              run: npm run test:e2e
+            - name: Run e2e tests3
               run: npm run test:e2e
