@@ -92,7 +92,7 @@ describe('MovieDraftsService', () => {
     })
 
     describe('POST /movie-drafts/:id/images', () => {
-        describe('when the movie-draft exists and the payload is valid', () => {
+        describe('when the movie-draft exists', () => {
             it('creates an image slot and returns an S3 upload URL', async () => {
                 const movieDraft = await createMovieDraft(fix)
                 const createDto = buildCreateAssetDto(imageFile)
@@ -118,6 +118,17 @@ describe('MovieDraftsService', () => {
                 })
 
                 expect(body.imageId).toBe(body.upload.assetId)
+            })
+        })
+
+        describe('when the movie-draft does not exist', () => {
+            it('returns 404 Not Found', async () => {
+                const createDto = buildCreateAssetDto(imageFile)
+
+                await fix.httpClient
+                    .post(`/movie-drafts/${nullObjectId}/images`)
+                    .body(createDto)
+                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
             })
         })
 
@@ -147,43 +158,37 @@ describe('MovieDraftsService', () => {
                     .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
             })
         })
-
-        describe('when the movie-draft does not exist', () => {
-            it('returns 404 Not Found', async () => {
-                const createDto = buildCreateAssetDto(imageFile)
-
-                await fix.httpClient
-                    .post(`/movie-drafts/${nullObjectId}/images`)
-                    .body(createDto)
-                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
-            })
-        })
     })
 
     describe('POST /movie-drafts/:draftId/images/:imageId/complete', () => {
-        describe('when the movie-draft and image exist and the S3 upload succeeded', () => {
-            let movieDraft: MovieDraftDto
-            let upload: { imageId: string; upload: { url: string; method: string; headers: any } }
+        describe('when the movie-draft and image exist', () => {
+            describe('when S3 upload succeeded', () => {
+                let movieDraft: MovieDraftDto
+                let upload: {
+                    imageId: string
+                    upload: { url: string; method: string; headers: any }
+                }
 
-            beforeEach(async () => {
-                movieDraft = await createMovieDraft(fix)
-                upload = await uploadDraftImage(fix, movieDraft.id)
-            })
+                beforeEach(async () => {
+                    movieDraft = await createMovieDraft(fix)
+                    upload = await uploadDraftImage(fix, movieDraft.id)
+                })
 
-            it('marks the image as READY and returns 200 OK', async () => {
-                await fix.httpClient
-                    .post(`/movie-drafts/${movieDraft.id}/images/${upload.imageId}/complete`)
-                    .ok({ id: upload.imageId, status: 'ready' })
-            })
+                it('marks the image as READY and returns 200 OK', async () => {
+                    await fix.httpClient
+                        .post(`/movie-drafts/${movieDraft.id}/images/${upload.imageId}/complete`)
+                        .ok({ id: upload.imageId, status: 'ready' })
+                })
 
-            it('movie-draft에 이미지를 포함한다', async () => {
-                await fix.httpClient
-                    .post(`/movie-drafts/${movieDraft.id}/images/${upload.imageId}/complete`)
-                    .ok()
+                it('movie-draft에 이미지를 포함한다', async () => {
+                    await fix.httpClient
+                        .post(`/movie-drafts/${movieDraft.id}/images/${upload.imageId}/complete`)
+                        .ok()
 
-                await fix.httpClient
-                    .get(`/movie-drafts/${movieDraft.id}`)
-                    .ok(expect.objectContaining({ assetIds: [upload.imageId] }))
+                    await fix.httpClient
+                        .get(`/movie-drafts/${movieDraft.id}`)
+                        .ok(expect.objectContaining({ assetIds: [upload.imageId] }))
+                })
             })
         })
 

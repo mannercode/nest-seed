@@ -130,7 +130,7 @@ export class MovieDraftsService {
 
     private async ensureImageUploaded(imageId: string) {
         const [asset] = await this.assetsClient.getMany([imageId])
-
+        // TODO 여기
         if (!asset.download) {
             throw new UnprocessableEntityException({
                 ...MovieDraftErrors.ImageUploadInvalid,
@@ -180,6 +180,7 @@ export class MovieDraftsService {
         if (!draft.rating) missingFields.push('rating')
         if (!assetIds.length) missingFields.push('assetIds')
 
+        // TODO 여기
         if (missingFields.length > 0) {
             throw new UnprocessableEntityException({
                 ...MovieDraftErrors.InvalidForCompletion,
