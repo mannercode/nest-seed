@@ -2,10 +2,8 @@
 name: CI
 
 on:
-    # Runs when a pull request targeting the main branch is created or updated
     pull_request:
         branches: ['main']
-    # Runs when a pull request is merged into the main branch
     push:
         branches: ['main']
 
@@ -17,6 +15,14 @@ jobs:
             WORKSPACE_ROOT: ${{ github.workspace }}
             TERM: xterm # This is required to enable use of the `clear` command in bash
         steps:
+            - name: Show runner specs
+              run: |
+                  uname -a || true
+                  lscpu || true
+                  free -h || true
+                  df -h || true
+                  cat /etc/os-release || true
+
             - uses: actions/checkout@v4
 
             - name: Install Tools
