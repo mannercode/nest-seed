@@ -13,6 +13,7 @@
             "apps:*": "application containers for this project (API servers, web apps, etc.)",
             "infra:*": "shared infrastructure stack (databases, queues, etc.) for local development"
         },
+        "package-update": "ncu -x  @types/node -x mongoose -u && npm install",
         "dependencies": {
             "mongoose": "Pinned to 8.x; upgrading to 9.x requires changes in @nestjs/mongoose integration"
         }
@@ -32,8 +33,7 @@
         "infra:down": "docker compose --project-directory infra/local --env-file .env --env-file .env.infra down --volumes --remove-orphans --timeout 0",
         "infra:up": "  docker compose --project-directory infra/local --env-file .env --env-file .env.infra up -d --build",
         "infra:wait": "docker wait infra-setup && docker rm infra-setup",
-        "infra:reset": "npm run infra:down && npm run infra:up && npm run infra:wait",
-        "package-update": "ncu -x  @types/node -x mongoose -u && npm install"
+        "infra:reset": "npm run infra:down && npm run infra:up && npm run infra:wait"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.958.0",
