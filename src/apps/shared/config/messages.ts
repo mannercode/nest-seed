@@ -37,6 +37,8 @@ export const Messages = createMessagePatternMap(
             get: null,
             delete: null,
             createImage: null,
+            getImage: null,
+            deleteImage: null,
             completeImage: null,
             complete: null
         },

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common'
 import { MovieRating, MoviesClient } from 'apps/cores'
 import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
+import { MongooseErrors } from 'common'
 import { DraftImageDto, DraftImageUploadResponse, MovieDraftDto, UpdateMovieDraftDto } from './dtos'
 import { MovieDraftErrors } from './errors'
 import { MovieDraftDocument, MovieDraftImageStatus } from './models/movie-draft'
@@ -79,6 +80,36 @@ export class MovieDraftsService {
         })
 
         return { imageId: upload.assetId, upload }
+    }
+
+    async getImage(draftId: string, imageId: string): Promise<DraftImageDto> {
+        const draft = await this.repository.getById(draftId)
+
+        const image = draft.images.find((img) => img.assetId === imageId)
+        if (!image) {
+            throw new NotFoundException({ ...MongooseErrors.DocumentNotFound, notFoundId: imageId })
+        }
+
+        return { id: image.assetId, status: image.status }
+    }
+
+    async deleteImage(draftId: string, imageId: string) {
+        const draft = await this.repository.findById(draftId)
+
+        if (!draft) {
+            return true
+        }
+
+        const hasImage = draft.images.some((image) => image.assetId === imageId)
+        if (!hasImage) {
+            return true
+        }
+
+        draft.images = draft.images.filter((image) => image.assetId !== imageId)
+        await draft.save()
+
+        await this.assetsClient.deleteMany([imageId])
+        return true
     }
 
     async completeImage(draftId: string, imageId: string): Promise<DraftImageDto> {

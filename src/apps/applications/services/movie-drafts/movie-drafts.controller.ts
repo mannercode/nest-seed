@@ -40,6 +40,16 @@ export class MovieDraftsController {
         return this.service.requestImageUpload(draftId, createDto)
     }
 
+    @MessagePattern(Messages.MovieDrafts.getImage)
+    getImage(@Payload('draftId') draftId: string, @Payload('imageId') imageId: string) {
+        return this.service.getImage(draftId, imageId)
+    }
+
+    @MessagePattern(Messages.MovieDrafts.deleteImage)
+    deleteImage(@Payload('draftId') draftId: string, @Payload('imageId') imageId: string) {
+        return this.service.deleteImage(draftId, imageId)
+    }
+
     @MessagePattern(Messages.MovieDrafts.completeImage)
     completeImage(@Payload('draftId') draftId: string, @Payload('imageId') imageId: string) {
         return this.service.completeImage(draftId, imageId)

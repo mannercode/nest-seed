@@ -31,6 +31,14 @@ export class MovieDraftsClient {
         return this.proxy.getJson(Messages.MovieDrafts.createImage, { draftId, createDto })
     }
 
+    getImage(draftId: string, imageId: string): Promise<DraftImageDto> {
+        return this.proxy.getJson(Messages.MovieDrafts.getImage, { draftId, imageId })
+    }
+
+    deleteImage(draftId: string, imageId: string): Promise<boolean> {
+        return this.proxy.getJson(Messages.MovieDrafts.deleteImage, { draftId, imageId })
+    }
+
     completeImage(draftId: string, imageId: string): Promise<DraftImageDto> {
         return this.proxy.getJson(Messages.MovieDrafts.completeImage, { draftId, imageId })
     }
