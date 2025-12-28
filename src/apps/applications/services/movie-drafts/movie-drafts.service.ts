@@ -4,7 +4,7 @@ import {
     NotFoundException,
     UnprocessableEntityException
 } from '@nestjs/common'
-import { MovieRating, MoviesClient } from 'apps/cores'
+import { MoviesClient } from 'apps/cores'
 import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
 import { DraftImageDto, DraftImageUploadResponse, MovieDraftDto, UpdateMovieDraftDto } from './dtos'
 import { MovieDraftErrors } from './errors'
@@ -23,12 +23,6 @@ export class MovieDraftsService {
         const draft = await this.repository.createDraft()
         return this.toDto(draft)
     }
-
-    // async getMany(movieIds: string[]) {
-    //     const draft = await this.repository.getByIds(movieIds)
-
-    //     return this.toDtos(draft)
-    // }
 
     async get(draftId: string): Promise<MovieDraftDto> {
         const draft = await this.repository.getById(draftId)
@@ -50,7 +44,17 @@ export class MovieDraftsService {
     }
 
     async delete(draftId: string) {
-        const draft = await this.repository.getById(draftId)
+        const draft = await this.repository.findById(draftId)
+
+        if (!draft) {
+            return true
+        }
+
+        const assetIds = [...new Set(draft.images.map((image) => image.assetId))]
+
+        if (assetIds.length > 0) {
+            await this.assetsClient.deleteMany(assetIds)
+        }
 
         await draft.deleteOne()
         return true
@@ -77,12 +81,40 @@ export class MovieDraftsService {
         return { imageId: upload.assetId, upload }
     }
 
+    async deleteImage(draftId: string, imageId: string) {
+        const draft = await this.repository.findById(draftId)
+
+        if (!draft) {
+            return true // TODO
+        }
+
+        const hasImage = draft.images.some((image) => image.assetId === imageId)
+        if (!hasImage) {
+            return true // TODO
+        }
+
+        draft.images = draft.images.filter((image) => image.assetId !== imageId)
+        await draft.save()
+
+        await this.assetsClient.deleteMany([imageId])
+        return true
+    }
+
     async completeImage(draftId: string, imageId: string): Promise<DraftImageDto> {
         const draft = await this.repository.getById(draftId)
 
         const image = draft.images.find((img) => img.assetId === imageId)
         if (!image) {
             throw new NotFoundException({ ...MovieDraftErrors.ImageNotFound, imageId })
+        }
+
+        const isUploaded = await this.assetsClient.isUploadCompleted(imageId)
+
+        if (!isUploaded) {
+            throw new UnprocessableEntityException({
+                ...MovieDraftErrors.ImageUploadInvalid,
+                imageId
+            })
         }
 
         await this.assetsClient.complete(imageId, {
@@ -100,26 +132,54 @@ export class MovieDraftsService {
     async completeDraft(draftId: string) {
         const draft = await this.repository.getById(draftId)
 
-        const readyImageAssetIds = draft.images
-            .filter((image) => image.status === MovieDraftImageStatus.Ready)
-            .map((image) => image.assetId)
+        const { title, genres, releaseDate, plot, durationInSeconds, director, rating, images } =
+            draft
 
-        this.ensureComplete(draft, readyImageAssetIds)
+        if (
+            title &&
+            genres.length &&
+            releaseDate &&
+            plot &&
+            durationInSeconds &&
+            director &&
+            rating &&
+            images.length
+        ) {
+            const readyImageAssetIds = images
+                .filter((image) => image.status === MovieDraftImageStatus.Ready)
+                .map((image) => image.assetId)
 
-        const movie = await this.moviesClient.create({
-            title: draft.title ?? '',
-            genres: draft.genres,
-            releaseDate: draft.releaseDate ?? new Date(0),
-            plot: draft.plot ?? '',
-            durationInSeconds: draft.durationInSeconds ?? 0,
-            director: draft.director ?? '',
-            rating: draft.rating ?? MovieRating.G,
-            assetIds: readyImageAssetIds
+            const movie = await this.moviesClient.create({
+                title,
+                genres,
+                releaseDate,
+                plot,
+                durationInSeconds,
+                director,
+                rating,
+                assetIds: readyImageAssetIds
+            })
+
+            await draft.deleteOne()
+
+            return movie
+        }
+
+        const missingFields: string[] = []
+
+        if (!title) missingFields.push('title')
+        if (!genres.length) missingFields.push('genres')
+        if (!releaseDate) missingFields.push('releaseDate')
+        if (!plot) missingFields.push('plot')
+        if (!durationInSeconds) missingFields.push('durationInSeconds')
+        if (!director) missingFields.push('director')
+        if (!rating) missingFields.push('rating')
+        if (!images.length) missingFields.push('assetIds')
+
+        throw new UnprocessableEntityException({
+            ...MovieDraftErrors.InvalidForCompletion,
+            missingFields
         })
-
-        await draft.deleteOne()
-
-        return movie
     }
 
     private toDto(draft: MovieDraftDocument): MovieDraftDto {
@@ -137,26 +197,6 @@ export class MovieDraftsService {
             director: draft.director,
             rating: draft.rating,
             assetIds: readyImageAssetIds
-        }
-    }
-
-    private ensureComplete(draft: MovieDraftDocument, assetIds: string[]) {
-        const missingFields: string[] = []
-
-        if (!draft.title) missingFields.push('title')
-        if (!draft.genres.length) missingFields.push('genres')
-        if (!draft.releaseDate) missingFields.push('releaseDate')
-        if (!draft.plot) missingFields.push('plot')
-        if (!draft.durationInSeconds) missingFields.push('durationInSeconds')
-        if (!draft.director) missingFields.push('director')
-        if (!draft.rating) missingFields.push('rating')
-        if (!assetIds.length) missingFields.push('assetIds')
-
-        if (missingFields.length > 0) {
-            throw new UnprocessableEntityException({
-                ...MovieDraftErrors.InvalidForCompletion,
-                missingFields
-            })
         }
     }
 }

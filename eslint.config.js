@@ -62,7 +62,7 @@ module.exports = [
                 }
             ],
             'import/newline-after-import': ['warn', { count: 1 }],
-            // 'import/no-extraneous-dependencies': ['warn', { devDependencies: false }],
+            'import/no-extraneous-dependencies': ['warn', { devDependencies: false }],
             'prettier/prettier': 'warn',
             '@typescript-eslint/interface-name-prefix': 'off',
             '@typescript-eslint/explicit-function-return-type': 'off',

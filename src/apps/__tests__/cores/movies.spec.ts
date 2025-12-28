@@ -142,14 +142,12 @@ describe('MoviesService', () => {
                 movie = await createMovie(fix, { assetIds: [asset.id] })
             })
 
-            it('returns the deleted movie', async () => {
-                await fix.httpClient
-                    .delete(`/movies/${movie.id}`)
-                    .ok({ deletedMovies: [{ ...movie, imageUrls: [] }] })
+            it('returns 204 No Content', async () => {
+                await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
             })
 
             it('persists the deletion', async () => {
-                await fix.httpClient.delete(`/movies/${movie.id}`).ok()
+                await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
 
                 await fix.httpClient
                     .get(`/movies/${movie.id}`)
@@ -159,22 +157,17 @@ describe('MoviesService', () => {
                     })
             })
 
-            it('makes the movie image URL inaccessible after deletion', async () => {
-                await fix.httpClient.delete(`/movies/${movie.id}`).ok()
+            it('invalidates image URL', async () => {
+                await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
 
                 const response = await fetch(movie.imageUrls[0])
-                expect(response.ok).toBe(false)
+                expect(response.status).toBe(404)
             })
         })
 
         describe('when the movie does not exist', () => {
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .delete(`/movies/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
+            it('returns 204 No Content', async () => {
+                await fix.httpClient.delete(`/movies/${nullObjectId}`).noContent()
             })
         })
     })

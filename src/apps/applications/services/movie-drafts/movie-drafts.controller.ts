@@ -32,7 +32,7 @@ export class MovieDraftsController {
         return this.service.delete(draftId)
     }
 
-    @MessagePattern(Messages.MovieDrafts.createImage)
+    @MessagePattern(Messages.MovieDrafts.Images.create)
     requestImageUpload(
         @Payload('draftId') draftId: string,
         @Payload('createDto') createDto: CreateAssetDto
@@ -40,7 +40,12 @@ export class MovieDraftsController {
         return this.service.requestImageUpload(draftId, createDto)
     }
 
-    @MessagePattern(Messages.MovieDrafts.completeImage)
+    @MessagePattern(Messages.MovieDrafts.Images.delete)
+    deleteImage(@Payload('draftId') draftId: string, @Payload('imageId') imageId: string) {
+        return this.service.deleteImage(draftId, imageId)
+    }
+
+    @MessagePattern(Messages.MovieDrafts.Images.complete)
     completeImage(@Payload('draftId') draftId: string, @Payload('imageId') imageId: string) {
         return this.service.completeImage(draftId, imageId)
     }

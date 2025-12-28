@@ -4,6 +4,7 @@ import { nullObjectId, toAny } from 'testlib'
 import {
     buildCompleteAssetDto,
     buildCreateAssetDto,
+    createAsset,
     downloadAsset,
     fixtureFiles,
     uploadAsset,
@@ -65,6 +66,35 @@ describe('AssetsService', () => {
 
                 const uploadRes = await uploadAsset(file.path, uploadRequest)
                 expect(uploadRes.ok).toBe(false)
+            })
+        })
+    })
+
+    describe('isUploadCompleted', () => {
+        describe('when the upload is completed', () => {
+            let assetId: string
+
+            beforeEach(async () => {
+                assetId = await uploadFile(fix, file)
+            })
+
+            it('returns true', async () => {
+                const isCompleted = await fix.assetsClient.isUploadCompleted(assetId)
+                expect(isCompleted).toBe(true)
+            })
+        })
+
+        describe('when the upload is not completed', () => {
+            let assetId: string
+
+            beforeEach(async () => {
+                const uploadInfo = await createAsset(fix, file)
+                assetId = uploadInfo.assetId
+            })
+
+            it('returns false', async () => {
+                const isCompleted = await fix.assetsClient.isUploadCompleted(assetId)
+                expect(isCompleted).toBe(false)
             })
         })
     })
@@ -190,13 +220,9 @@ describe('AssetsService', () => {
                 ])
             })
 
-            it('returns deleted assets', async () => {
+            it('returns an empty response', async () => {
                 const response = await fix.assetsClient.deleteMany(pickIds(assets))
-
-                const deletedAssets = expect.arrayContaining(
-                    assets.map((asset) => ({ ...asset, download: null }))
-                )
-                expect(response).toEqual({ deletedAssets })
+                expect(response).toEqual({})
             })
 
             it('persists the deletion', async () => {
@@ -207,20 +233,19 @@ describe('AssetsService', () => {
                 })
             })
 
-            it('makes the download URL inaccessible after deletion', async () => {
+            it('invalidates image URL', async () => {
                 await fix.assetsClient.deleteMany([assets[0].id])
 
                 const { download } = assets[0]
                 const response = await fetch(download ? download.url : '')
-                expect(response.ok).toBe(false)
+                expect(response.status).toBe(404)
             })
         })
 
         describe('when the assetIds include a non-existent assetId', () => {
-            it('throws 404 Not Found', async () => {
-                await expect(fix.assetsClient.deleteMany([nullObjectId])).rejects.toMatchObject({
-                    status: HttpStatus.NOT_FOUND
-                })
+            it('returns an empty response', async () => {
+                const response = await fix.assetsClient.deleteMany([nullObjectId])
+                expect(response).toEqual({})
             })
         })
     })

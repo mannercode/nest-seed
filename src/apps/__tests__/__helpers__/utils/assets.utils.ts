@@ -1,5 +1,6 @@
 import { createReadStream } from 'fs'
-import type { FixtureFile } from '../fixture-files'
+import { pick } from 'lodash'
+import { fixtureFiles, type FixtureFile } from '../fixture-files'
 import type {
     AssetDto,
     CompleteAssetDto,
@@ -8,16 +9,16 @@ import type {
 } from 'apps/infrastructures'
 import type { TestContext } from 'testlib'
 
-export function buildCreateAssetDto(file: FixtureFile, overrides = {}) {
-    const { originalName, mimeType, size, checksum } = file
-
-    return { originalName, mimeType, size, checksum, ...overrides } as CreateAssetDto
+export function buildCreateAssetDto(file: FixtureFile = fixtureFiles.image): CreateAssetDto {
+    return pick(file, ['originalName', 'mimeType', 'size', 'checksum'])
 }
 
-export function buildCompleteAssetDto(overrides = {}) {
-    return {
-        owner: { service: 'service', entityId: 'entity-id', ...overrides }
-    } as CompleteAssetDto
+export async function createAsset(ctx: TestContext, file: FixtureFile = fixtureFiles.image) {
+    const { AssetsClient } = await import('apps/infrastructures')
+    const assetsClient = ctx.module.get(AssetsClient)
+
+    const createDto = buildCreateAssetDto(file)
+    return assetsClient.create(createDto)
 }
 
 export async function uploadAsset(filepath: string, uploadDto: AssetPresignedUploadDto) {
@@ -29,16 +30,17 @@ export async function uploadAsset(filepath: string, uploadDto: AssetPresignedUpl
 }
 
 export async function uploadFile(ctx: TestContext, file: FixtureFile) {
-    const { AssetsClient } = await import('apps/infrastructures')
-    const assetsClient = ctx.module.get(AssetsClient)
-
-    const createDto = buildCreateAssetDto(file)
-    const uploadRequest = await assetsClient.create(createDto)
-
+    const uploadRequest = await createAsset(ctx, file)
     const uploadRes = await uploadAsset(file.path, uploadRequest)
     expect(uploadRes.ok).toBe(true)
 
     return uploadRequest.assetId
+}
+
+export function buildCompleteAssetDto(overrides = {}) {
+    return {
+        owner: { service: 'service', entityId: 'entity-id', ...overrides }
+    } as CompleteAssetDto
 }
 
 export async function uploadComplete(ctx: TestContext, file: FixtureFile) {

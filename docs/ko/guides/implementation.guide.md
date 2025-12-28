@@ -2,6 +2,74 @@
 
 구현 과정에서 적용한 규칙을 정리했습니다.
 
+## 1. Jest 테스트 명명 가이드
+
+이 가이드는 테스트 리포트(Output)가 자연스러운 하나의 문장처럼 읽히도록 하여, 코드의 의도를 명확히 전달하는 것을 목표로 합니다. (BDD 스타일)
+
+### 1-1. 기본 구조 (Structure)
+
+1.  **계층 분리 원칙**
+    - **상황/조건(Context):** `describe('when ...')`로 작성합니다.
+    - **행위/결과(Behavior):** `it('...')`로 작성합니다.
+    - **최상위 레벨:** 단독 `it`를 금지하며, 반드시 의미 있는 `describe` 트리 내부에 위치시켜 테스트 대상을 명확히 합니다.
+
+2.  **조건의 위치**
+    - `it` 제목에는 조건을 섞지 않습니다. (예: `... when`, `... if`, `... for` 금지)
+    - 모든 조건 문구는 상위 `describe`로 이동시킵니다.
+    - _(Bad)_ `it('returns 400 if name is missing')`
+    - _(Good)_ `describe('when name is missing')` > `it('returns 400 Bad Request')`
+
+3.  **기본(Happy Path) 케이스**
+    - 정상적인 상황(기본 성공 케이스)에서는 `when` 절을 생략합니다.
+    - `when the payload is valid`와 같은 당연한 조건은 불필요한 Depth를 유발하므로 작성하지 않습니다.
+
+### 1-2. 명명 규칙 (Naming)
+
+4.  **문장 구성**
+    - `it`는 주어(테스트 대상)가 생략된 **동사로 시작하는 문장**으로 작성합니다.
+    - 의미 없는 단어(`info`, `general`, `success`) 대신 구체적인 행위나 결과를 묘사합니다.
+
+5.  **성공 케이스 (Success)**
+    - 상태 코드보다는 **결과물(Return Value)이나 상태 변화**를 서술합니다.
+    - 예: `returns the created user`, `creates a new record`, `logs the event`
+
+6.  **실패 케이스 (Failure)**
+    - `describe`(`when`)에 실패 원인을 명시하고, `it`에는 **상태 코드나 예외 타입**만 남깁니다.
+    - 예: `describe('when the pagination query is not provided')` > `it('returns 400 Bad Request')`
+
+7.  **조건 생략 표기**
+    - 필수 값이나 조건이 누락된 경우 **`not provided`**로 통일하여 표기합니다.
+    - 예: `when the token is not provided`
+
+8.  **예외 발생 (Exceptions)**
+    - 서비스/함수 레벨 단위 테스트에서 예외 발생을 기대할 때는 `returns` 대신 **`throws`**를 사용합니다.
+
+### 1-3. 특수 케이스 및 패턴 (Specific Patterns)
+
+9.  **상태 변경(Mutation) 검증 분리**
+    - `PATCH`, `DELETE` 등 상태를 변경하는 API 테스트 시, **"응답 검증"**과 **"영속성(DB) 검증"**은 서로 다른 `it`로 분리하여 테스트의 목적을 뚜렷하게 합니다.
+    - _Note: 통합 테스트 환경의 성능 이슈가 있을 경우, 팀 합의하에 예외적으로 병합할 수 있습니다._
+
+10. **다중 데이터 검증 (Data Driven Test)**
+    - 단순 입력값 변환이나 계산 로직 검증 시, `when`을 생략하고 `expect`를 나열하는 대신 **`test.each`** 문법을 사용하여 각 케이스를 독립적으로 리포팅합니다.
+
+    ```ts
+    // (Bad) 하나의 테스트가 실패하면 나머지 결과를 알 수 없음
+    it('converts units to bytes', () => {
+        expect(Byte.fromString('1kb')).toEqual(1024)
+        expect(Byte.fromString('1mb')).toEqual(1024 * 1024)
+    })
+
+    // (Good) 모든 케이스가 독립적으로 실행 및 리포팅됨
+    it.each([
+        ['1024b', 1024],
+        ['1kb', 1024],
+        ['1mb', 1024 * 1024]
+    ])('converts %s to %i', (input, expected) => {
+        expect(Byte.fromString(input)).toEqual(expected)
+    })
+    ```
+
 ## 1. Jest 테스트 명명 가이드
 
 1.  기본 구조는 when/action: 조건/맥락은 describe('when ...'), 행위/결과는 it('...')로 분리
@@ -10,8 +78,7 @@
 4.  it는 동사로 시작하는 “행위/결과” 문장으로 작성(의미 없는 it('info'), it('general') 같은 제목은 구체적으로 변경)
 5.  성공 케이스는 상태코드 없이 결과로 서술(returns the created ..., creates ..., logs ... 등)
 6.  실패 케이스는 it에 상태코드/예외만 남김(returns 400 Bad Request, throws 404 Not Found), 실패 사유는 when ...로 올림
-7.  성공 케이스는 when을 생략할 수 있다.
-    - 'when the payload is valid'
+7.  정상/기본 성공 케이스는 when을 생략한다. ('when the payload is valid'처럼 정상 조건은 쓰지 않음)
 8.  서비스 메서드에서 예외를 기대하는 테스트는 returns 대신 throws 사용
 9.  PATCH/DELETE류는 “응답 검증”과 “영속성 검증”을 서로 다른 it로 분리
 10. 최상위 단독 it는 의미 있는 describe 트리 아래로 넣어 테스트 스코프/대상을 명확히 함

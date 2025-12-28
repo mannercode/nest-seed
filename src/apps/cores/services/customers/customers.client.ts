@@ -6,7 +6,6 @@ import {
     CustomerAuthPayload,
     CustomerCredentialsDto,
     CustomerDto,
-    DeleteCustomersResponse,
     SearchCustomersPageDto,
     UpdateCustomerDto
 } from './dtos'
@@ -27,7 +26,7 @@ export class CustomersClient {
         return this.proxy.getJson(Messages.Customers.getMany, customerIds)
     }
 
-    deleteMany(customerIds: string[]): Promise<DeleteCustomersResponse> {
+    deleteMany(customerIds: string[]): Promise<Record<string, never>> {
         return this.proxy.getJson(Messages.Customers.deleteMany, customerIds)
     }
 

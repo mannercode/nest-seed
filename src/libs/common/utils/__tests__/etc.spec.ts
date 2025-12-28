@@ -7,7 +7,6 @@ import {
     notUsed,
     padNumber,
     pickIds,
-    pickItems,
     sleep,
     validateEmail
 } from 'common'
@@ -110,46 +109,6 @@ describe('jsonToObject', () => {
 
         expect(converted.number).toEqual(123)
         expect(converted.boolean).toBe(true)
-    })
-})
-
-describe('pickItems', () => {
-    const items = [
-        { id: '1', name: 'John', age: 30 },
-        { id: '2', name: 'Jane', age: 25 },
-        { id: '3', name: 'Bob', age: 40 }
-    ]
-
-    describe('when selecting a single key', () => {
-        it('extracts the values', () => {
-            const result = pickItems(items, 'name')
-            expect(result).toEqual(['John', 'Jane', 'Bob'])
-        })
-    })
-
-    describe('when selecting multiple keys', () => {
-        it('extracts the values', () => {
-            const result = pickItems(items, ['id', 'name'])
-            expect(result).toEqual([
-                { id: '1', name: 'John' },
-                { id: '2', name: 'Jane' },
-                { id: '3', name: 'Bob' }
-            ])
-        })
-    })
-
-    describe('when the input array is empty', () => {
-        it('returns an empty array', () => {
-            const result = pickItems([], 'name')
-            expect(result).toEqual([])
-        })
-    })
-
-    describe('when the key does not exist', () => {
-        it('returns undefined items', () => {
-            const result = pickItems(items, 'address' as any)
-            expect(result).toEqual([undefined, undefined, undefined])
-        })
     })
 })
 

@@ -8,7 +8,7 @@ import {
     TicketsClient,
     TicketStatus
 } from 'apps/cores'
-import { DateUtil, pickItems } from 'common'
+import { DateUtil } from 'common'
 import { uniq } from 'lodash'
 import { Rules } from 'shared'
 import { CreatePurchaseDto } from '../dtos'
@@ -91,7 +91,7 @@ export class TicketPurchaseService {
     private async validateHeldTickets(
         customerId: string,
         showtimes: ShowtimeDto[],
-        ticketItems: PurchaseItemDto[]
+        purchaseItems: PurchaseItemDto[]
     ) {
         const heldTicketIds: string[] = []
 
@@ -103,9 +103,7 @@ export class TicketPurchaseService {
             heldTicketIds.push(...ticketIds)
         }
 
-        const purchaseTicketIds = pickItems(ticketItems, 'ticketId')
-
-        const isAllExist = purchaseTicketIds.every((ticketId) => heldTicketIds.includes(ticketId))
+        const isAllExist = purchaseItems.every((ticket) => heldTicketIds.includes(ticket.ticketId))
 
         if (!isAllExist) {
             throw new BadRequestException(TicketPurchaseErrors.TicketNotHeld)

@@ -113,33 +113,6 @@ export function jsonToObject(input: any): any {
 }
 
 /**
- * Extracts the value(s) of a specified key or set of keys from an array of objects.
- * 객체 배열에서 지정된 키 또는 키 배열에 해당하는 값을 추출합니다.
- *
- * @template T, K
- * @param {T[]} items - The array of objects.
- * @param {K | K[]} keyOrKeys - The key or array of keys to extract.
- * @returns {T[K][] | Pick<T, K>[]} An array of extracted values.
- */
-export function pickItems<T, K extends keyof T>(items: T[], key: K): T[K][]
-export function pickItems<T, K extends keyof T>(items: T[], keys: K[]): Pick<T, K>[]
-export function pickItems<T, K extends keyof T>(items: T[], keyOrKeys: K | K[]): any {
-    if (Array.isArray(keyOrKeys)) {
-        return items.map((item) =>
-            keyOrKeys.reduce(
-                (picked, key) => {
-                    picked[key] = item[key]
-                    return picked
-                },
-                {} as Pick<T, K>
-            )
-        )
-    } else {
-        return items.map((item) => item[keyOrKeys])
-    }
-}
-
-/**
  * Extracts the 'id' property from each object in an array.
  * 객체 배열에서 각 객체의 'id' 프로퍼티를 추출
  *

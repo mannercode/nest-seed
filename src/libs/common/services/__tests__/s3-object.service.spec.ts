@@ -1,11 +1,6 @@
 import { HttpStatus } from '@nestjs/common'
-import {
-    putObject,
-    testBuffer,
-    uploadObject,
-    type S3ObjectServiceFixture
-} from './s3-object.service.fixture'
-import type { PutObjectResult } from './s3-object.service.fixture'
+import { toAny } from 'testlib'
+import { testBuffer, uploadObject, type S3ObjectServiceFixture } from './s3-object.service.fixture'
 
 describe('S3ObjectService', () => {
     let fix: S3ObjectServiceFixture
@@ -121,6 +116,74 @@ describe('S3ObjectService', () => {
         })
     })
 
+    describe('isUploadCompleted', () => {
+        describe('when the object exists', () => {
+            const s3Object = { data: testBuffer, filename: 'file.txt', contentType: 'text/plain' }
+            let key: string
+
+            beforeEach(async () => {
+                const result = await fix.s3Service.putObject(s3Object)
+                key = result.key
+            })
+
+            it('returns true', async () => {
+                const isCompleted = await fix.s3Service.isUploadCompleted({ key })
+
+                expect(isCompleted).toBe(true)
+            })
+
+            it('returns true for matching content details', async () => {
+                const isCompleted = await fix.s3Service.isUploadCompleted({
+                    key,
+                    contentLength: s3Object.data.byteLength,
+                    contentType: s3Object.contentType
+                })
+
+                expect(isCompleted).toBe(true)
+            })
+
+            it('returns false for mismatched content length', async () => {
+                const isCompleted = await fix.s3Service.isUploadCompleted({
+                    key,
+                    contentLength: s3Object.data.byteLength + 1
+                })
+
+                expect(isCompleted).toBe(false)
+            })
+
+            it('returns false for mismatched content type', async () => {
+                const isCompleted = await fix.s3Service.isUploadCompleted({
+                    key,
+                    contentType: 'image/png'
+                })
+
+                expect(isCompleted).toBe(false)
+            })
+        })
+
+        describe('when the object does not exist', () => {
+            it('returns false', async () => {
+                const isCompleted = await fix.s3Service.isUploadCompleted({ key: 'not-exists' })
+
+                expect(isCompleted).toBe(false)
+            })
+        })
+
+        describe('when the request fails unexpectedly', () => {
+            beforeEach(async () => {
+                jest.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(
+                    new Error('unexpected')
+                )
+            })
+
+            it('throws the error', async () => {
+                const promise = fix.s3Service.isUploadCompleted({ key: 'key' })
+
+                await expect(promise).rejects.toThrow('unexpected')
+            })
+        })
+    })
+
     describe('putObject', () => {
         describe('when the payload is valid', () => {
             it('returns a key', async () => {
@@ -137,18 +200,20 @@ describe('S3ObjectService', () => {
 
     describe('getObject', () => {
         describe('when the object exists', () => {
-            let putResult: PutObjectResult
+            const s3Object = { data: testBuffer, filename: 'file.txt', contentType: 'text/plain' }
+            let key: string
 
             beforeEach(async () => {
-                putResult = await putObject(fix.s3Service, testBuffer)
+                const result = await fix.s3Service.putObject(s3Object)
+                key = result.key
             })
 
             it('returns the file data and metadata', async () => {
-                const { contentType, filename, data } = await fix.s3Service.getObject(putResult.key)
+                const { contentType, filename, data } = await fix.s3Service.getObject(key)
 
-                expect(Buffer.compare(data, putResult.data)).toBe(0)
-                expect(contentType).toEqual(putResult.contentType)
-                expect(filename).toEqual(putResult.filename)
+                expect(Buffer.compare(data, s3Object.data)).toBe(0)
+                expect(contentType).toEqual(s3Object.contentType)
+                expect(filename).toEqual(s3Object.filename)
             })
         })
 

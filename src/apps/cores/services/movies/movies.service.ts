@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { AssetsClient } from 'apps/infrastructures'
-import { Assert, mapDocToDto, objectIds } from 'common'
+import { Assert, mapDocToDto } from 'common'
 import { CreateMovieDto, MovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
 import { MovieDocument } from './models'
 import { MoviesRepository } from './movies.repository'
@@ -31,21 +31,18 @@ export class MoviesService {
     }
 
     async deleteMany(movieIds: string[]) {
-        const movies = await this.repository.getByIds(movieIds)
+        const movies = await this.repository.findByIds(movieIds)
 
         const assetIds = [
             ...new Set(movies.flatMap((movie) => movie.assetIds.map((id) => id.toString())))
         ]
 
-        await this.assetsClient.deleteMany(assetIds)
+        if (assetIds.length > 0) {
+            await this.assetsClient.deleteMany(assetIds)
+        }
 
-        await this.repository.model.deleteMany({ _id: { $in: objectIds(movieIds) } as any })
-
-        movies.forEach((movie) => {
-            movie.assetIds = []
-        })
-
-        return { deletedMovies: await this.toDtos(movies) }
+        await this.repository.deleteByIds(movieIds)
+        return {}
     }
 
     async searchPage(searchDto: SearchMoviesPageDto) {

@@ -15,5 +15,5 @@ TEST "Update User" \
     -d '{ "name": "new name", "email": "new@mail.com", "birthDate": "2000-01-01" }'
 
 TEST "Delete User with Specific ID" \
-    200 DELETE /customers/$USER_ID \
+    204 DELETE /customers/$USER_ID \
     -H "Authorization: Bearer $ACCESS_TOKEN"

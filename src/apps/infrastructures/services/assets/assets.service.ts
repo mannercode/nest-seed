@@ -67,6 +67,16 @@ export class AssetsService {
         return this.withDownloadInfo(dto)
     }
 
+    async isUploadCompleted(assetId: string): Promise<boolean> {
+        const { id, mimeType, size } = await this.repository.getById(assetId)
+
+        return this.s3Service.isUploadCompleted({
+            key: id,
+            contentType: mimeType,
+            contentLength: size
+        })
+    }
+
     async getMany(assetIds: string[]) {
         const assets = await this.repository.getByIds(assetIds)
 
@@ -75,11 +85,10 @@ export class AssetsService {
     }
 
     async deleteMany(assetIds: string[]) {
-        const deletedAssets = await this.repository.deleteByIds(assetIds)
+        await this.repository.deleteByIds(assetIds)
 
-        await Promise.all(deletedAssets.map((asset) => this.s3Service.deleteObject(asset.id)))
-
-        return { deletedAssets: this.toDtos(deletedAssets) }
+        await Promise.all(assetIds.map((assetId) => this.s3Service.deleteObject(assetId)))
+        return {}
     }
 
     @Cron(Rules.Asset.expiredUploadCleanupCron, { name: 'assets.cleanupExpiredUploads' })

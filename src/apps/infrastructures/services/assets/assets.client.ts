@@ -1,13 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { ClientProxyService, InjectClientProxy } from 'common'
 import { Messages } from 'shared'
-import {
-    AssetDto,
-    CompleteAssetDto,
-    CreateAssetDto,
-    DeleteAssetsResponse,
-    AssetPresignedUploadDto
-} from './dtos'
+import { AssetDto, CompleteAssetDto, CreateAssetDto, AssetPresignedUploadDto } from './dtos'
 
 @Injectable()
 export class AssetsClient {
@@ -15,6 +9,10 @@ export class AssetsClient {
 
     create(dto: CreateAssetDto): Promise<AssetPresignedUploadDto> {
         return this.proxy.getJson(Messages.Assets.create, dto)
+    }
+
+    isUploadCompleted(assetId: string): Promise<boolean> {
+        return this.proxy.getJson(Messages.Assets.isUploadCompleted, { assetId })
     }
 
     complete(assetId: string, completeDto: CompleteAssetDto): Promise<AssetDto> {
@@ -25,7 +23,7 @@ export class AssetsClient {
         return this.proxy.getJson(Messages.Assets.getMany, assetIds)
     }
 
-    deleteMany(assetIds: string[]): Promise<DeleteAssetsResponse> {
+    deleteMany(assetIds: string[]): Promise<Record<string, never>> {
         return this.proxy.getJson(Messages.Assets.deleteMany, assetIds)
     }
 }

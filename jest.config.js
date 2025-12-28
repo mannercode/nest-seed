@@ -1,4 +1,5 @@
-const { createJsWithTsPreset } = require('ts-jest')
+const { createJsWithTsPreset, pathsToModuleNameMapper } = require('ts-jest')
+const { compilerOptions } = require('./tsconfig.json')
 
 /** @type {import('jest').Config} */
 const tsJestPreset = createJsWithTsPreset({ tsconfig: 'tsconfig.json' })
@@ -16,14 +17,12 @@ module.exports = {
     restoreMocks: true, // Restore original implementations after each test
     rootDir: '.',
     roots: ['<rootDir>/src'],
-    moduleNameMapper: {
-        '^common$': '<rootDir>/src/libs/common/index',
-        '^testlib$': '<rootDir>/src/libs/testlib/index',
-        '^shared$': '<rootDir>/src/apps/shared/index',
-        '^apps/(.*)$': '<rootDir>/src/apps/$1'
-    },
+    moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {
+        prefix: '<rootDir>/'
+    }),
+    modulePaths: [compilerOptions.baseUrl],
     collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
-    // coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },
+    coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },
     coverageReporters: ['lcov', 'text'],
     coveragePathIgnorePatterns: [
         '__tests__',

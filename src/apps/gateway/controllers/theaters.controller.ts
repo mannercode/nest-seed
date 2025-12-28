@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common'
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Param,
+    Patch,
+    Post,
+    Query
+} from '@nestjs/common'
 import {
     CreateTheaterDto,
     SearchTheatersPageDto,
@@ -26,9 +37,10 @@ export class TheatersController {
         return theaters[0]
     }
 
+    @HttpCode(HttpStatus.NO_CONTENT)
     @Delete(':theaterId')
     async delete(@Param('theaterId') theaterId: string) {
-        return this.theatersClient.deleteMany([theaterId])
+        await this.theatersClient.deleteMany([theaterId])
     }
 
     @Get()

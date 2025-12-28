@@ -1,4 +1,4 @@
-import { MongooseErrors, OrderDirection, pickIds, pickItems } from 'common'
+import { OrderDirection, pickIds } from 'common'
 import { expectEqualUnsorted, nullObjectId } from 'testlib'
 import {
     createSample,
@@ -139,9 +139,9 @@ describe('MongooseRepository', () => {
                 pagination: { take: 10 }
             })
 
-            const sorted = sortByName(toDtos(items))
+            const names = sortByName(toDtos(items)).map(({ name }) => name)
 
-            expect(pickItems(sorted, 'name')).toEqual([
+            expect(names).toEqual([
                 'Sample-000',
                 'Sample-001',
                 'Sample-002',
@@ -300,11 +300,9 @@ describe('MongooseRepository', () => {
 
         describe('when all ids exist', () => {
             it('deletes the documents', async () => {
-                const samplesToDelete = samples.slice(5, 10)
-                const ids = pickIds(samplesToDelete)
-
-                const deletedDocs = await fix.repository.deleteByIds(ids)
-                expect(toDtos(deletedDocs)).toEqual(samplesToDelete)
+                const ids = pickIds(samples.slice(5, 10))
+                const result = await fix.repository.deleteByIds(ids)
+                expect(result).toEqual({ deletedCount: ids.length })
 
                 const docs = await fix.repository.findByIds(ids)
                 expect(docs).toHaveLength(0)
@@ -312,16 +310,9 @@ describe('MongooseRepository', () => {
         })
 
         describe('when any id is missing', () => {
-            it('throws NotFoundException', async () => {
+            it('ignores missing ids', async () => {
                 const promise = fix.repository.deleteByIds([nullObjectId])
-
-                const error = await promise.catch((e) => e)
-
-                expect(error).toBeInstanceOf(fix.NotFoundException)
-                expect(error.response).toEqual({
-                    ...MongooseErrors.MultipleDocumentsNotFound,
-                    notFoundIds: [nullObjectId]
-                })
+                await expect(promise).resolves.toEqual({ deletedCount: 0 })
             })
         })
     })

@@ -3,6 +3,8 @@ import {
     Controller,
     Delete,
     Get,
+    HttpCode,
+    HttpStatus,
     Param,
     Patch,
     Post,
@@ -53,9 +55,10 @@ export class MoviesController {
         return movies[0]
     }
 
+    @HttpCode(HttpStatus.NO_CONTENT)
     @Delete(':movieId')
     async delete(@Param('movieId') movieId: string) {
-        return this.moviesClient.deleteMany([movieId])
+        await this.moviesClient.deleteMany([movieId])
     }
 
     @Get()

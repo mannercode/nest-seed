@@ -47,6 +47,12 @@ export class MovieDraftsController {
         return this.movieDraftsClient.requestImageUpload(draftId, createDto)
     }
 
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Delete(':draftId/images/:imageId')
+    async deleteImage(@Param('draftId') draftId: string, @Param('imageId') imageId: string) {
+        await this.movieDraftsClient.deleteImage(draftId, imageId)
+    }
+
     @HttpCode(HttpStatus.OK)
     @Post(':draftId/images/:imageId/complete')
     completeImage(@Param('draftId') draftId: string, @Param('imageId') imageId: string) {
