@@ -199,4 +199,5 @@ export class HttpTestClient {
     unsupportedMediaType = (expected?: any) =>
         this.send(HttpStatus.UNSUPPORTED_MEDIA_TYPE, expected)
     internalServerError = (expected?: any) => this.send(HttpStatus.INTERNAL_SERVER_ERROR, expected)
+    unprocessableEntity = (expected?: any) => this.send(HttpStatus.UNPROCESSABLE_ENTITY, expected)
 }

@@ -8,8 +8,7 @@ import {
     fixtureFiles,
     uploadAsset
 } from '../__helpers__'
-import type { AppTestContext } from '../__helpers__'
-import type { MovieDraftDto } from 'apps/applications'
+import type { AppTestContext, FixtureFile } from '../__helpers__'
 import type { TestContext } from 'testlib'
 
 export type MovieDraftsFixture = AppTestContext & { assetsClient: AssetsClient }
@@ -27,7 +26,7 @@ export async function createMovieDraftsFixture() {
     return { ...ctx, assetsClient }
 }
 
-export async function createMovieDraft(ctx: TestContext): Promise<MovieDraftDto> {
+export async function createMovieDraft(ctx: TestContext) {
     const { MovieDraftsClient } = await import('apps/applications')
     const movieDraftsClient = ctx.module.get(MovieDraftsClient)
 
@@ -35,16 +34,33 @@ export async function createMovieDraft(ctx: TestContext): Promise<MovieDraftDto>
     return movieDraft
 }
 
-export const uploadDraftImage = async (ctx: TestContext, draftId: string) => {
+export async function createMovieImageDraft(ctx: TestContext, draftId: string, file: FixtureFile) {
     const { MovieDraftsClient } = await import('apps/applications')
     const movieDraftsClient = ctx.module.get(MovieDraftsClient)
 
-    const imageFile = fixtureFiles.image
-    const createDto = buildCreateAssetDto(imageFile)
+    const createDto = buildCreateAssetDto(file)
     const upload = await movieDraftsClient.requestImageUpload(draftId, createDto)
+
+    return upload
+}
+
+export async function uploadDraftImage(ctx: TestContext, draftId: string) {
+    const imageFile = fixtureFiles.image
+
+    const upload = await createMovieImageDraft(ctx, draftId, imageFile)
     const uploadResponse = await uploadAsset(imageFile.path, upload.upload)
 
     expect(uploadResponse.ok).toBe(true)
 
     return upload
+}
+
+export async function uploadCompleteDraftImage(ctx: TestContext, draftId: string) {
+    const { MovieDraftsClient } = await import('apps/applications')
+    const movieDraftsClient = ctx.module.get(MovieDraftsClient)
+
+    const { imageId } = await uploadDraftImage(ctx, draftId)
+
+    await movieDraftsClient.completeImage(draftId, imageId)
+    return imageId
 }

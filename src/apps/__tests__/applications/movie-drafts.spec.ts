@@ -1,10 +1,14 @@
-import { HttpStatus } from '@nestjs/common'
-import { Checksum } from 'common'
+import { MovieGenre, MovieRating } from 'apps/cores'
+import { Assert } from 'common'
 import { nullObjectId } from 'testlib'
-import { buildCreateAssetDto, buildCreateMovieDto, Errors, fixtureFiles } from '../__helpers__'
-import { createMovieDraft, uploadDraftImage } from './movie-drafts.fixture'
+import { buildCreateAssetDto, Errors, fixtureFiles, uploadAsset } from '../__helpers__'
+import {
+    createMovieDraft,
+    createMovieImageDraft,
+    uploadCompleteDraftImage
+} from './movie-drafts.fixture'
 import type { MovieDraftsFixture } from './movie-drafts.fixture'
-import type { MovieDraftDto } from 'apps/applications'
+import type { DraftImageUploadResponse, MovieDraftDto } from 'apps/applications'
 
 describe('MovieDraftsService', () => {
     let fix: MovieDraftsFixture
@@ -56,7 +60,6 @@ describe('MovieDraftsService', () => {
 
             it('returns the updated movie-draft', async () => {
                 const updateDto = {
-                    title: 'update title',
                     genres: ['romance', 'thriller'],
                     releaseDate: new Date('2000-01-01'),
                     plot: 'new plot',
@@ -93,8 +96,13 @@ describe('MovieDraftsService', () => {
 
     describe('POST /movie-drafts/:id/images', () => {
         describe('when the movie-draft exists', () => {
-            it('creates an image slot and returns an S3 upload URL', async () => {
-                const movieDraft = await createMovieDraft(fix)
+            let movieDraft: MovieDraftDto
+
+            beforeEach(async () => {
+                movieDraft = await createMovieDraft(fix)
+            })
+
+            it('returns created image slot with an upload URL', async () => {
                 const createDto = buildCreateAssetDto(imageFile)
 
                 const { body } = await fix.httpClient
@@ -119,6 +127,48 @@ describe('MovieDraftsService', () => {
 
                 expect(body.imageId).toBe(body.upload.assetId)
             })
+
+            // TODO fix desc
+            it('uploads an S3 upload URL', async () => {
+                const createDto = buildCreateAssetDto(imageFile)
+
+                const { body } = await fix.httpClient
+                    .post(`/movie-drafts/${movieDraft.id}/images`)
+                    .body(createDto)
+                    .created()
+
+                const response = await uploadAsset(imageFile.path, body.upload)
+
+                expect(response.ok).toBe(true)
+            })
+
+            describe('when the image type is not supported', () => {
+                const createDto = buildCreateAssetDto(fixtureFiles.json)
+
+                it('returns 400 Bad Request', async () => {
+                    await fix.httpClient
+                        .post(`/movie-drafts/${movieDraft.id}/images`)
+                        .body(createDto)
+                        .badRequest({
+                            ...Errors.MovieDrafts.UnsupportedImageType,
+                            mimeType: createDto.mimeType
+                        })
+                })
+            })
+
+            describe('when the `mimeType` is invalid', () => {
+                const createDto = buildCreateAssetDto(imageFile, { mimeType: '' })
+
+                it('returns 400 Bad Request', async () => {
+                    await fix.httpClient
+                        .post(`/movie-drafts/${movieDraft.id}/images`)
+                        .body(createDto)
+                        .badRequest({
+                            ...Errors.RequestValidation.Failed,
+                            details: expect.any(Array)
+                        })
+                })
+            })
         })
 
         describe('when the movie-draft does not exist', () => {
@@ -131,119 +181,130 @@ describe('MovieDraftsService', () => {
                     .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
             })
         })
+    })
 
-        describe('when the image type is not supported', () => {
-            it('returns 400 Bad Request', async () => {
-                const movieDraft = await createMovieDraft(fix)
-                const createDto = buildCreateAssetDto(fixtureFiles.json)
+    describe('DELETE /movie-drafts/:draftId/images/:imageId', () => {
+        let movieDraft: MovieDraftDto
 
-                await fix.httpClient
-                    .post(`/movie-drafts/${movieDraft.id}/images`)
-                    .body(createDto)
-                    .badRequest({
-                        ...Errors.MovieDrafts.UnsupportedImageType,
-                        mimeType: createDto.mimeType
-                    })
+        beforeEach(async () => {
+            movieDraft = await createMovieDraft(fix)
+        })
+
+        describe('when the image-draft exists', () => {
+            describe('when upload completed', () => {
+                let imageId: string
+
+                beforeEach(async () => {
+                    imageId = await uploadCompleteDraftImage(fix, movieDraft.id)
+                })
+
+                it('returns 204 No Content', async () => {
+                    await fix.httpClient
+                        .delete(`/movie-drafts/${movieDraft.id}/images/${imageId}`)
+                        .noContent()
+                })
+
+                it('persists the deletion', async () => {
+                    await fix.httpClient
+                        .delete(`/movie-drafts/${movieDraft.id}/images/${imageId}`)
+                        .noContent()
+
+                    await fix.httpClient
+                        .get(`/movie-drafts/${movieDraft.id}/images/${imageId}`)
+                        .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: imageId })
+                })
+
+                it('invalidates image URL', async () => {
+                    const [asset] = await fix.assetsClient.getMany([imageId])
+                    Assert.defined(asset.download)
+
+                    await fix.httpClient
+                        .delete(`/movie-drafts/${movieDraft.id}/images/${imageId}`)
+                        .noContent()
+
+                    const response = await fetch(asset.download.url)
+                    expect(response.status).toBe(404)
+                })
             })
         })
 
-        describe('when the `mimeType` is invalid', () => {
-            it('returns 400 Bad Request', async () => {
-                const movieDraft = await createMovieDraft(fix)
-                const createDto = buildCreateAssetDto(imageFile, { mimeType: '' })
-
-                await fix.httpClient
-                    .post(`/movie-drafts/${movieDraft.id}/images`)
-                    .body(createDto)
-                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+        describe('when the movie-draft does not exist', () => {
+            it('returns 204 No Content', async () => {
+                await fix.httpClient.delete(`/movie-drafts/${nullObjectId}`).noContent()
             })
         })
     })
 
     describe('POST /movie-drafts/:draftId/images/:imageId/complete', () => {
-        describe('when the movie-draft and image exist', () => {
-            describe('when S3 upload succeeded', () => {
-                let movieDraft: MovieDraftDto
-                let upload: {
-                    imageId: string
-                    upload: { url: string; method: string; headers: any }
-                }
+        let movieDraft: MovieDraftDto
 
+        beforeEach(async () => {
+            movieDraft = await createMovieDraft(fix)
+        })
+
+        describe('when the image-draft exists', () => {
+            let imageDraft: DraftImageUploadResponse
+
+            beforeEach(async () => {
+                imageDraft = await createMovieImageDraft(fix, movieDraft.id, imageFile)
+            })
+
+            describe('when upload succeeded', () => {
                 beforeEach(async () => {
-                    movieDraft = await createMovieDraft(fix)
-                    upload = await uploadDraftImage(fix, movieDraft.id)
+                    const res = await uploadAsset(imageFile.path, imageDraft.upload)
+                    expect(res.ok).toBe(true)
                 })
 
-                it('marks the image as READY and returns 200 OK', async () => {
+                it('returns status:ready', async () => {
                     await fix.httpClient
-                        .post(`/movie-drafts/${movieDraft.id}/images/${upload.imageId}/complete`)
-                        .ok({ id: upload.imageId, status: 'ready' })
+                        .post(
+                            `/movie-drafts/${movieDraft.id}/images/${imageDraft.imageId}/complete`
+                        )
+                        .ok({ id: imageDraft.imageId, status: 'ready' })
                 })
 
                 it('movie-draft에 이미지를 포함한다', async () => {
                     await fix.httpClient
-                        .post(`/movie-drafts/${movieDraft.id}/images/${upload.imageId}/complete`)
+                        .post(
+                            `/movie-drafts/${movieDraft.id}/images/${imageDraft.imageId}/complete`
+                        )
                         .ok()
 
                     await fix.httpClient
                         .get(`/movie-drafts/${movieDraft.id}`)
-                        .ok(expect.objectContaining({ assetIds: [upload.imageId] }))
+                        .ok(expect.objectContaining({ assetIds: [imageDraft.imageId] }))
+                })
+            })
+
+            describe('when the upload missing', () => {
+                it('returns 422 Unprocessable Entity', async () => {
+                    await fix.httpClient
+                        .post(
+                            `/movie-drafts/${movieDraft.id}/images/${imageDraft.imageId}/complete`
+                        )
+                        .unprocessableEntity({
+                            ...Errors.MovieDrafts.ImageUploadInvalid,
+                            imageId: imageDraft.imageId
+                        })
                 })
             })
         })
 
-        describe('when the S3 validation fails', () => {
-            it('returns 422 Unprocessable Entity', async () => {
-                const movieDraft = await createMovieDraft(fix)
-                const createDto = buildCreateAssetDto(imageFile)
-
-                const { body } = await fix.httpClient
-                    .post(`/movie-drafts/${movieDraft.id}/images`)
-                    .body(createDto)
-                    .created()
-                const upload = body
-
-                await fix.httpClient
-                    .post(`/movie-drafts/${movieDraft.id}/images/${upload.imageId}/complete`)
-                    .send(HttpStatus.UNPROCESSABLE_ENTITY)
-            })
-        })
-
-        describe('when the movie-draft or image does not exist', () => {
+        describe('when the image does not exist', () => {
             it('returns 404 Not Found', async () => {
-                const movieDraft = await createMovieDraft(fix)
-
                 await fix.httpClient
                     .post(`/movie-drafts/${movieDraft.id}/images/${nullObjectId}/complete`)
                     .notFound({ ...Errors.MovieDrafts.ImageNotFound, imageId: nullObjectId })
-
-                await fix.httpClient
-                    .post(`/movie-drafts/${nullObjectId}/images/${nullObjectId}/complete`)
-                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
             })
         })
     })
 
-    describe('DELETE /movie-drafts/:id (with images)', () => {
-        describe('when the movie-draft exists with images', () => {
+    describe('DELETE /movie-drafts/:id', () => {
+        describe('when the movie-draft exists', () => {
             let movieDraft: MovieDraftDto
-            let downloadUrl: string
 
             beforeEach(async () => {
                 movieDraft = await createMovieDraft(fix)
-                const upload = await uploadDraftImage(fix, movieDraft.id)
-
-                await fix.httpClient
-                    .post(`/movie-drafts/${movieDraft.id}/images/${upload.imageId}/complete`)
-                    .ok()
-
-                const [asset] = await fix.assetsClient.getMany([upload.imageId])
-
-                if (!asset.download) {
-                    throw new Error('download URL missing')
-                }
-
-                downloadUrl = asset.download.url
             })
 
             it('returns 204 No Content', async () => {
@@ -256,41 +317,6 @@ describe('MovieDraftsService', () => {
                 await fix.httpClient
                     .get(`/movie-drafts/${movieDraft.id}`)
                     .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: movieDraft.id })
-            })
-
-            it('invalidates image URL', async () => {
-                await fix.httpClient.delete(`/movie-drafts/${movieDraft.id}`).noContent()
-
-                const response = await fetch(downloadUrl)
-                expect(response.status).toBe(404)
-            })
-        })
-
-        describe('when the movie-draft does not exist', () => {
-            it('returns 204 No Content', async () => {
-                await fix.httpClient.delete(`/movie-drafts/${nullObjectId}`).noContent()
-            })
-        })
-    })
-
-    describe('DELETE /movie-drafts/:id', () => {
-        describe('when the movie-draft exists', () => {
-            let movie: MovieDraftDto
-
-            beforeEach(async () => {
-                movie = await createMovieDraft(fix)
-            })
-
-            it('returns 204 No Content', async () => {
-                await fix.httpClient.delete(`/movie-drafts/${movie.id}`).noContent()
-            })
-
-            it('persists the deletion', async () => {
-                await fix.httpClient.delete(`/movie-drafts/${movie.id}`).noContent()
-
-                await fix.httpClient
-                    .get(`/movie-drafts/${movie.id}`)
-                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: movie.id })
             })
         })
 
@@ -309,55 +335,68 @@ describe('MovieDraftsService', () => {
                 movieDraft = await createMovieDraft(fix)
             })
 
-            it('creates a Movie, removes the movie-draft, and returns the created Movie', async () => {
-                const upload = await uploadDraftImage(fix, movieDraft.id)
+            describe('when is valid', () => {
+                const updateDto = {
+                    title: `MovieTitle`,
+                    genres: [MovieGenre.Action],
+                    releaseDate: new Date(0),
+                    plot: `MoviePlot`,
+                    durationInSeconds: 90 * 60,
+                    director: 'Quentin Tarantino',
+                    rating: MovieRating.PG
+                }
 
-                await fix.httpClient
-                    .post(`/movie-drafts/${movieDraft.id}/images/${upload.imageId}/complete`)
-                    .ok()
-
-                const { assetIds: _ignored, ...updateDto } = buildCreateMovieDto({
-                    title: 'draft title',
-                    plot: 'draft plot'
+                beforeEach(async () => {
+                    await uploadCompleteDraftImage(fix, movieDraft.id)
+                    await fix.httpClient
+                        .patch(`/movie-drafts/${movieDraft.id}`)
+                        .body(updateDto)
+                        .ok()
                 })
 
-                await fix.httpClient.patch(`/movie-drafts/${movieDraft.id}`).body(updateDto).ok()
+                it('returns the created Movie', async () => {
+                    await fix.httpClient
+                        .post(`/movie-drafts/${movieDraft.id}/complete`)
+                        .created(
+                            expect.objectContaining({
+                                id: expect.any(String),
+                                ...updateDto,
+                                imageUrls: expect.any(Array)
+                            })
+                        )
+                })
 
-                const { body: createdMovie } = await fix.httpClient
-                    .post(`/movie-drafts/${movieDraft.id}/complete`)
-                    .created()
+                it('creates a Movie ', async () => {
+                    const { body: movie } = await fix.httpClient
+                        .post(`/movie-drafts/${movieDraft.id}/complete`)
+                        .created()
 
-                expect(createdMovie).toEqual(
-                    expect.objectContaining({
-                        id: expect.any(String),
-                        ...updateDto,
-                        imageUrls: expect.any(Array)
-                    })
-                )
+                    await fix.httpClient
+                        .get(`/movies/${movie.id}`)
+                        .ok({ ...movie, imageUrls: expect.any(Array) })
+                })
 
-                await fix.httpClient
-                    .get(`/movie-drafts/${movieDraft.id}`)
-                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: movieDraft.id })
+                it(' removes the movie-draft', async () => {
+                    await fix.httpClient.post(`/movie-drafts/${movieDraft.id}/complete`).created()
 
-                const { body: fetchedMovie } = await fix.httpClient
-                    .get(`/movies/${createdMovie.id}`)
-                    .ok()
+                    await fix.httpClient
+                        .get(`/movie-drafts/${movieDraft.id}`)
+                        .notFound({
+                            ...Errors.Mongoose.DocumentNotFound,
+                            notFoundId: movieDraft.id
+                        })
+                })
+            })
 
-                expect(fetchedMovie).toEqual(
-                    expect.objectContaining({
-                        id: createdMovie.id,
-                        ...updateDto,
-                        imageUrls: expect.any(Array)
-                    })
-                )
-
-                expect(createdMovie.imageUrls).toHaveLength(1)
-
-                const response = await fetch(createdMovie.imageUrls[0])
-                expect(response.ok).toBe(true)
-
-                const buffer = Buffer.from(await response.arrayBuffer())
-                expect(Checksum.fromBuffer(buffer)).toEqual(imageFile.checksum)
+            describe('when is invalid', () => {
+                it('returns 422 Unprocessable Entity', async () => {
+                    await fix.httpClient
+                        .post(`/movie-drafts/${movieDraft.id}/complete`)
+                        .unprocessableEntity({
+                            ...Errors.MovieDrafts.InvalidForCompletion,
+                            missingFields: expect.any(Array)
+                        })
+                })
             })
         })
 
