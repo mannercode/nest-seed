@@ -52,6 +52,10 @@ jobs:
                   for i in $(seq 1 100); do
                     echo "[Run $i/100]"
                     npm run infra:down
+                    docker ps -a --filter "publish=27019" --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"
+                    docker ps -a --filter "publish=27018" --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"
+                    docker ps -a --filter "publish=27017" --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"
+
                     docker run --rm --network host --pid host alpine:3.20 sh -lc '
                       apk add --no-cache iproute2 lsof >/dev/null 2>&1 || true
                       echo "== ss =="; ss -ltnp "sport = :27017" || true
