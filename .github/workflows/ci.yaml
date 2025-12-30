@@ -46,32 +46,14 @@ jobs:
                   GW_IP=$(ip route | awk '/default/ {print $3}')
                   echo "$GW_IP host.docker.internal" | tee -a /etc/hosts
 
-            - name: Run e2e tests (x100)
-              run: |
-                  set -e
-                  for i in $(seq 1 100); do
-                    echo "[Run $i/100]"
-                    npm run infra:down
-                    docker ps -a --filter "publish=27019" --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"
-                    docker ps -a --filter "publish=27018" --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"
-                    docker ps -a --filter "publish=27017" --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"
-
-                    docker run --rm --network host --pid host alpine:3.20 sh -lc '
-                      apk add --no-cache iproute2 lsof >/dev/null 2>&1 || true
-                      echo "== ss =="; ss -ltnp "sport = :27017" || true
-                      echo "== lsof =="; lsof -nP -iTCP:27017 -sTCP:LISTEN || true
-                      echo "== docker-proxy =="; ps aux | grep -E "docker-proxy|27017" | grep -v grep || true
-                      echo "== ss =="; ss -ltnp "sport = :27018" || true
-                      echo "== lsof =="; lsof -nP -iTCP:27018 -sTCP:LISTEN || true
-                      echo "== docker-proxy =="; ps aux | grep -E "docker-proxy|27018" | grep -v grep || true
-                      echo "== ss =="; ss -ltnp "sport = :27019" || true
-                      echo "== lsof =="; lsof -nP -iTCP:27019 -sTCP:LISTEN || true
-                      echo "== docker-proxy =="; ps aux | grep -E "docker-proxy|27019" | grep -v grep || true
-                    '
-                    npm run infra:up
-                    npm run infra:wait
-                  done
-                  echo "Done. 100 run(s) finished."
+            # - name: Run e2e tests (x100)
+            #   run: |
+            #       set -e
+            #       for i in $(seq 1 100); do
+            #         echo "[Run $i/100]"
+            #         npm run infra:reset
+            #       done
+            #       echo "Done. 100 run(s) finished."
 
             - name: Install Dependencies
               run: npm ci
@@ -94,11 +76,9 @@ jobs:
               run: |
                   set +e
                   docker ps -a || true
-                  npm run infra:reset
-                  docker ps -a || true
 
-                  # for id in $(docker ps -aq); do
-                  #   echo ""
-                  #   echo "========================= $id ========================="
-                  #   docker logs --timestamps --tail 300 "$id" || true
-                  # done
+                  for id in $(docker ps -aq); do
+                    echo ""
+                    echo "========================= $id ========================="
+                    docker logs --timestamps --tail 300 "$id" || true
+                  done
