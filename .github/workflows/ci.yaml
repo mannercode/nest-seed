@@ -89,14 +89,9 @@ jobs:
               continue-on-error: true
               run: |
                   set +e
-                  docker run --rm --network host --pid host alpine:3.20 sh -lc '
-                    apk add --no-cache iproute2 lsof >/dev/null 2>&1 || true
-                    echo "== ss =="; ss -ltnp "sport = :27019" || true
-                    echo "== lsof =="; lsof -nP -iTCP:27019 -sTCP:LISTEN || true
-                    echo "== docker-proxy =="; ps aux | grep -E "docker-proxy|27019" | grep -v grep || true
-                  '
                   docker ps -a || true
-                  docker images || true
+                  npm run infra:reset
+                  docker ps -a || true
 
                   # for id in $(docker ps -aq); do
                   #   echo ""
