@@ -58,7 +58,16 @@ jobs:
             - name: Run unit tests
               run: npm test
 
+            - name: Run e2e tests
+              run: npm run test:e2e
+
+            - name: Run e2e tests2
+              run: npm run test:e2e
             - name: Run e2e tests3
+              run: npm run test:e2e
+            - name: Run e2e tests4
+              run: npm run test:e2e
+            - name: Run e2e tests5
               run: npm run test:e2e
 
             - name: Dump Docker logs on failure
