@@ -1,6 +1,5 @@
-import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
 import { Injectable } from '@nestjs/common'
-import { generateShortId, InjectS3Object, S3ObjectModule, S3ObjectService } from 'common'
+import { InjectS3Object, S3ObjectModule, S3ObjectService } from 'common'
 import { createTestContext, getS3TestConnection } from 'testlib'
 
 @Injectable()
@@ -11,11 +10,8 @@ class TestInjectS3ObjectService {
 export type S3ObjectServiceFixture = { teardown: () => Promise<void>; s3Service: S3ObjectService }
 
 export async function createS3ObjectServiceFixture() {
-    const { endpoint, accessKeyId, secretAccessKey } = getS3TestConnection()
-    const region = 'us-east-1'
-    const forcePathStyle = true
-
-    const bucket = await createTempBucket(endpoint, accessKeyId, secretAccessKey, region)
+    const { endpoint, accessKeyId, secretAccessKey, region, forcePathStyle, bucket } =
+        getS3TestConnection()
 
     const { module, close } = await createTestContext({
         imports: [
@@ -44,33 +40,11 @@ export async function createS3ObjectServiceFixture() {
     return { teardown, s3Service }
 }
 
-async function createTempBucket(
-    endpoint: string,
-    accessKeyId: string,
-    secretAccessKey: string,
-    region: string
-) {
-    const client = new S3Client({
-        endpoint,
-        region,
-        credentials: { accessKeyId, secretAccessKey },
-        forcePathStyle: true
-    })
-
-    const bucket = generateShortId().toLowerCase()
-    const command = new CreateBucketCommand({ Bucket: bucket })
-    const { $metadata } = await client.send(command)
-    expect($metadata.httpStatusCode).toBe(200)
-
-    return bucket
-}
-
 export async function uploadObject(s3Service: S3ObjectService, key: string, body: string) {
     const uploadUrl = await s3Service.presignUploadUrl({ key, expiresInSec: 60 })
 
-    const uploadResponse = await fetch(uploadUrl, { method: 'PUT', body: Buffer.from(body) })
-
-    expect(uploadResponse.ok).toBe(true)
+    const response = await fetch(uploadUrl, { method: 'PUT', body: Buffer.from(body) })
+    expect(response.ok).toBe(true)
 }
 
 export const testBuffer = Buffer.alloc(
