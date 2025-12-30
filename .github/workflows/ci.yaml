@@ -14,7 +14,6 @@ jobs:
         env:
             WORKSPACE_ROOT: ${{ github.workspace }}
             TERM: xterm # This is required to enable use of the `clear` command in bash
-            TESTCONTAINERS_RYUK_DISABLED: 'true'
         steps:
             - name: Show runner specs
               run: |
