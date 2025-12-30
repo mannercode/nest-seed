@@ -14,11 +14,11 @@ export function buildCreateAssetDto(file: FixtureFile = fixtureFiles.image): Cre
 }
 
 export async function createAsset(ctx: TestContext, file: FixtureFile = fixtureFiles.image) {
-    const { AssetsClient } = await import('apps/infrastructures')
-    const assetsClient = ctx.module.get(AssetsClient)
+    const { AssetsService } = await import('apps/infrastructures')
+    const assetsService = ctx.module.get(AssetsService)
 
     const createDto = buildCreateAssetDto(file)
-    return assetsClient.create(createDto)
+    return assetsService.create(createDto)
 }
 
 export async function uploadAsset(filepath: string, uploadDto: AssetPresignedUploadDto) {
@@ -46,10 +46,10 @@ export function buildCompleteAssetDto(overrides = {}) {
 export async function uploadComplete(ctx: TestContext, file: FixtureFile) {
     const assetId = await uploadFile(ctx, file)
 
-    const { AssetsClient } = await import('apps/infrastructures')
-    const assetsClient = ctx.module.get(AssetsClient)
+    const { AssetsService } = await import('apps/infrastructures')
+    const assetsService = ctx.module.get(AssetsService)
 
-    return assetsClient.complete(assetId, buildCompleteAssetDto())
+    return assetsService.complete(assetId, buildCompleteAssetDto())
 }
 
 export async function downloadAsset({ download }: AssetDto) {
