@@ -11,10 +11,8 @@
                 "infrastructures"
             ],
             "apps:*": "application containers for this project (API servers, web apps, etc.)",
-            "infra:*": "shared infrastructure stack (databases, queues, etc.) for local development"
-        },
-        "dependencies": {
-            "mongoose": "Pinned to 8.x; upgrading to 9.x requires changes in @nestjs/mongoose integration"
+            "infra:*": "shared infrastructure stack (databases, queues, etc.) for local development",
+            "package-update": "Pinned to 8.x; upgrading to 9.x requires changes in @nestjs/mongoose integration"
         }
     },
     "scripts": {
