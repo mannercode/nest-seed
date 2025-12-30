@@ -10,20 +10,20 @@
             "command": "npm test"
         },
         {
-            "label": "Repeat Tests",
-            "detail": "repeat npm test with TEST_ROOT",
-            "type": "shell",
-            "command": "bash",
-            "args": [
-                "-lc",
-                "set -e; export TEST_ROOT=${input:TestRoots}; for ((i=1; i<=${input:RepeatCount}; i++)); do echo \"[Run $i/${input:RepeatCount}]\"; npm test; done; echo \"Done. ${input:RepeatCount} run(s) finished.\""
-            ]
-        },
-        {
             "label": "Run E2E Tests",
             "detail": "npm run test:e2e",
             "type": "shell",
             "command": "npm run test:e2e"
+        },
+        {
+            "label": "Repeat Tests",
+            "detail": "repeat selected test command",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "set -e; for ((i=1; i<=${input:RepeatCount}; i++)); do echo \"[Run $i/${input:RepeatCount}]\"; ${input:TestCommand}; done; echo \"Done. ${input:RepeatCount} run(s) finished.\""
+            ]
         }
     ],
     "inputs": [
@@ -38,6 +38,12 @@
             "type": "promptString",
             "default": "100",
             "description": "How many times to repeat npm test."
+        },
+        {
+            "id": "TestCommand",
+            "type": "pickString",
+            "options": ["npm test", "npm run test:e2e"],
+            "description": "Select the test command to repeat."
         }
     ]
 }
