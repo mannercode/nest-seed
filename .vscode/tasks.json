@@ -3,7 +3,7 @@
     "tasks": [
         {
             "label": "Run Tests",
-            "detail": "run npm test with TEST_ROOT",
+            "detail": "npm test",
             "group": { "kind": "test", "isDefault": true },
             "type": "shell",
             "options": { "env": { "TEST_ROOT": "${input:TestRoots}" } },
