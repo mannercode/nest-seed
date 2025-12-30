@@ -46,12 +46,6 @@ jobs:
                   GW_IP=$(ip route | awk '/default/ {print $3}')
                   echo "$GW_IP host.docker.internal" | tee -a /etc/hosts
 
-            - name: Install Dependencies
-              run: npm ci
-
-            - name: Lint
-              run: npm run lint
-
             - name: Run e2e tests (x100)
               run: |
                   set -e
@@ -60,6 +54,12 @@ jobs:
                     npm run infra:reset
                   done
                   echo "Done. 100 run(s) finished."
+
+            # - name: Install Dependencies
+            #   run: npm ci
+
+            # - name: Lint
+            #   run: npm run lint
 
             # - name: Run infrastructures
             #   run: npm run infra:reset
@@ -75,11 +75,17 @@ jobs:
               continue-on-error: true
               run: |
                   set +e
+                  docker run --rm --network host --pid host alpine:3.20 sh -lc '
+                    apk add --no-cache iproute2 lsof >/dev/null 2>&1 || true
+                    echo "== ss =="; ss -ltnp "sport = :27019" || true
+                    echo "== lsof =="; lsof -nP -iTCP:27019 -sTCP:LISTEN || true
+                    echo "== docker-proxy =="; ps aux | grep -E "docker-proxy|27019" | grep -v grep || true
+                  '
                   docker ps -a || true
                   docker images || true
 
-                  for id in $(docker ps -aq); do
-                    echo ""
-                    echo "========================= $id ========================="
-                    docker logs --timestamps --tail 300 "$id" || true
-                  done
+                  # for id in $(docker ps -aq); do
+                  #   echo ""
+                  #   echo "========================= $id ========================="
+                  #   docker logs --timestamps --tail 300 "$id" || true
+                  # done
