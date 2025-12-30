@@ -46,14 +46,14 @@ jobs:
                   GW_IP=$(ip route | awk '/default/ {print $3}')
                   echo "$GW_IP host.docker.internal" | tee -a /etc/hosts
 
-            # - name: Run e2e tests (x100)
-            #   run: |
-            #       set -e
-            #       for i in $(seq 1 100); do
-            #         echo "[Run $i/100]"
-            #         npm run infra:reset
-            #       done
-            #       echo "Done. 100 run(s) finished."
+            - name: Run e2e tests (x100)
+              run: |
+                  set -e
+                  for i in $(seq 1 100); do
+                    echo "[Run $i/100]"
+                    npm run infra:gui
+                  done
+                  echo "Done. 100 run(s) finished."
 
             - name: Install Dependencies
               run: npm ci
