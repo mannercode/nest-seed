@@ -51,7 +51,21 @@ jobs:
                   set -e
                   for i in $(seq 1 100); do
                     echo "[Run $i/100]"
-                    npm run infra:reset
+                    npm run infra:down
+                    docker run --rm --network host --pid host alpine:3.20 sh -lc '
+                      apk add --no-cache iproute2 lsof >/dev/null 2>&1 || true
+                      echo "== ss =="; ss -ltnp "sport = :27017" || true
+                      echo "== lsof =="; lsof -nP -iTCP:27017 -sTCP:LISTEN || true
+                      echo "== docker-proxy =="; ps aux | grep -E "docker-proxy|27017" | grep -v grep || true
+                      echo "== ss =="; ss -ltnp "sport = :27018" || true
+                      echo "== lsof =="; lsof -nP -iTCP:27018 -sTCP:LISTEN || true
+                      echo "== docker-proxy =="; ps aux | grep -E "docker-proxy|27018" | grep -v grep || true
+                      echo "== ss =="; ss -ltnp "sport = :27019" || true
+                      echo "== lsof =="; lsof -nP -iTCP:27019 -sTCP:LISTEN || true
+                      echo "== docker-proxy =="; ps aux | grep -E "docker-proxy|27019" | grep -v grep || true
+                    '
+                    npm run infra:up
+                    npm run infra:wait
                   done
                   echo "Done. 100 run(s) finished."
 
