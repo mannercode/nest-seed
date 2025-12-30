@@ -7,13 +7,12 @@ import {
     HttpStatus,
     Param,
     Patch,
-    Post,
     Query,
     Req,
     UseGuards
 } from '@nestjs/common'
 import { RecommendationClient } from 'apps/applications'
-import { CreateMovieDto, MoviesClient, SearchMoviesPageDto, UpdateMovieDto } from 'apps/cores'
+import { MoviesClient, SearchMoviesPageDto, UpdateMovieDto } from 'apps/cores'
 import { CustomerOptionalJwtAuthGuard } from './guards'
 import { CustomerOptionalAuthRequest } from './types'
 
@@ -30,18 +29,6 @@ export class MoviesController {
         const { customerId } = req.user ?? { customerId: null }
 
         return this.recommendationClient.searchRecommendedMovies(customerId)
-    }
-
-    // POST /v1/movies는 405 Method Not Allowed로 응답하고,
-    // {
-    //   "type": "https://docs.example.com/problems/use-draft",
-    //   "title": "Draft required",
-    //   "detail": "Create a movie by finalizing a draft.",
-    //   "links": { "createDraft": "/v1/movies/drafts" }
-    // }
-    @Post()
-    async create(@Body() createDto: CreateMovieDto) {
-        return this.moviesClient.create(createDto)
     }
 
     @Patch(':movieId')
