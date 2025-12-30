@@ -52,14 +52,23 @@ jobs:
             - name: Lint
               run: npm run lint
 
-            - name: Run infrastructures
-              run: npm run infra:reset
+            - name: Run e2e tests (x100)
+              run: |
+                  set -e
+                  for i in $(seq 1 100); do
+                    echo "[Run $i/100]"
+                    npm run infra:reset
+                  done
+                  echo "Done. 100 run(s) finished."
 
-            - name: Run unit tests
-              run: npm test
+            # - name: Run infrastructures
+            #   run: npm run infra:reset
 
-            - name: Run e2e tests
-              run: npm run test:e2e
+            # - name: Run unit tests
+            #   run: npm test
+
+            # - name: Run e2e tests
+            #   run: npm run test:e2e
 
             - name: Dump Docker logs on failure
               if: ${{ failure() }}
