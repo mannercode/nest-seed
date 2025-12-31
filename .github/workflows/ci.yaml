@@ -29,3 +29,8 @@ jobs:
                       npm run infra:reset
                       npm test
                       npm run test:e2e
+
+                      for ((i = 1; i <= ${input:RepeatCount}; i++)); do
+                          echo \"[Run $i/${input:RepeatCount}]\"
+                          npm test
+                      done
