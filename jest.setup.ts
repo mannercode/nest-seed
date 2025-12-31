@@ -1,4 +1,4 @@
-import { CreateBucketCommand, DeleteBucketCommand, S3Client } from '@aws-sdk/client-s3'
+import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
 import { MongoClient } from 'mongodb'
 import 'reflect-metadata'
 import { generateTestId, getEnv, setEnv } from './jest.utils'

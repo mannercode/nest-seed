@@ -147,15 +147,13 @@ export class S3ObjectService {
             new GetObjectCommand({ Bucket: this.bucket, Key: key })
         )
 
-        let objectData = Buffer.from([])
-
         const chunks: Buffer[] = []
 
         for await (const chunk of Body as Readable) {
             chunks.push(chunk)
         }
 
-        objectData = Buffer.concat(chunks)
+        const objectData = Buffer.concat(chunks)
 
         const contentType = orDefault(ContentType, 'application/octet-stream')
 
