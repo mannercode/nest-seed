@@ -5,17 +5,20 @@
     "comments": {
         "scripts": {
             "TARGET_APP": [
-                "applications",
-                "cores",
-                "gateway",
-                "infrastructures"
+                "TARGET_APP must match a Nest project key defined in nest-cli.json.",
+                "Example: TARGET_APP=gateway npm run build"
             ],
-            "apps:*": "application containers for this project (API servers, web apps, etc.)",
-            "infra:*": "shared infrastructure stack (databases, queues, etc.) for local development",
-            "infra:reset": "infra:down 직후 infra:up을 하면 간헐적으로 '포트 사용 중' 오류가 발생한다. 이 문제를 방지하려고 docker system prune -f 을 중간에 실행한다.",
+            "apps:*": "App stack scripts for this repo (root-level docker compose).",
+            "infra:*": [
+                "Local shared infrastructure scripts",
+                "docker compose under infra/local using '.env' and '.env.infra'."
+            ],
+            "infra:reset": "",
             "package-update": [
-                "@nestjs/mongoose가 mongoose 9.x를 지원하지 않는다.",
-                "nodejs:25는 lts가 아니기 때문에 업데이트 하지 않는다"
+                "Project policy: do not upgrade mongoose automatically",
+                "(currently pinned/excluded due to NestJS Mongoose compatibility constraints in this repo).",
+                "Project policy: do not upgrade Node to non-LTS releases",
+                "(e.g., Node 25). Keep using an LTS line."
             ]
         }
     },
@@ -34,7 +37,7 @@
         "infra:down": "docker compose --project-directory infra/local --env-file .env --env-file .env.infra down -v -t 0 --remove-orphans",
         "infra:up": "  docker compose --project-directory infra/local --env-file .env --env-file .env.infra up -d --build",
         "infra:wait": "docker wait infra-setup && docker rm infra-setup",
-        "infra:reset": "npm run infra:down && docker ps -a && npm run infra:up && npm run infra:wait",
+        "infra:reset": "npm run infra:down && docker system prune -f && npm run infra:up && npm run infra:wait",
         "infra:gui": " COMPOSE_PROFILES=gui npm run infra:reset",
         "package-update": "ncu -x  @types/node -x mongoose -u && npm install"
     },
