@@ -21,25 +21,26 @@ export async function createMovieDraftsFixture() {
         ignoreProviders: [RecommendationClient]
     })
 
+    // TODO 이거 없애야 한다.
     const assetsClient = ctx.module.get(AssetsClient)
 
     return { ...ctx, assetsClient }
 }
 
 export async function createMovieDraft(ctx: TestContext) {
-    const { MovieDraftsClient } = await import('apps/applications')
-    const movieDraftsClient = ctx.module.get(MovieDraftsClient)
+    const { MovieDraftsService } = await import('apps/applications')
+    const movieDraftsService = ctx.module.get(MovieDraftsService)
 
-    const movieDraft = await movieDraftsClient.create()
+    const movieDraft = await movieDraftsService.create()
     return movieDraft
 }
 
 export async function createMovieImageDraft(ctx: TestContext, draftId: string, file: FixtureFile) {
-    const { MovieDraftsClient } = await import('apps/applications')
-    const movieDraftsClient = ctx.module.get(MovieDraftsClient)
+    const { MovieDraftsService } = await import('apps/applications')
+    const movieDraftsService = ctx.module.get(MovieDraftsService)
 
     const createDto = buildCreateAssetDto(file)
-    const upload = await movieDraftsClient.requestImageUpload(draftId, createDto)
+    const upload = await movieDraftsService.requestImageUpload(draftId, createDto)
 
     return upload
 }
@@ -56,11 +57,11 @@ export async function uploadDraftImage(ctx: TestContext, draftId: string) {
 }
 
 export async function uploadCompleteDraftImage(ctx: TestContext, draftId: string) {
-    const { MovieDraftsClient } = await import('apps/applications')
-    const movieDraftsClient = ctx.module.get(MovieDraftsClient)
+    const { MovieDraftsService } = await import('apps/applications')
+    const movieDraftsService = ctx.module.get(MovieDraftsService)
 
     const { imageId } = await uploadDraftImage(ctx, draftId)
 
-    await movieDraftsClient.completeImage(draftId, imageId)
+    await movieDraftsService.completeImage(draftId, imageId)
     return imageId
 }

@@ -61,8 +61,8 @@ export class AppConfigService extends BaseConfigService {
         S3_ENDPOINT: Joi.string().required(),
         S3_REGION: Joi.string().required(),
         S3_BUCKET: Joi.string().required(),
-        S3_ACCESS_KEY_ID: Joi.string().required(),
-        S3_SECRET_ACCESS_KEY: Joi.string().required(),
+        S3_ACCESS_KEY: Joi.string().required(),
+        S3_SECRET_KEY: Joi.string().required(),
         S3_FORCE_PATH_STYLE: Joi.boolean().required()
     })
 
@@ -145,8 +145,8 @@ export class AppConfigService extends BaseConfigService {
             endpoint: this.getString('S3_ENDPOINT'),
             region: this.getString('S3_REGION'),
             bucket: this.getString('S3_BUCKET'),
-            accessKeyId: this.getString('S3_ACCESS_KEY_ID'),
-            secretAccessKey: this.getString('S3_SECRET_ACCESS_KEY'),
+            accessKeyId: this.getString('S3_ACCESS_KEY'),
+            secretAccessKey: this.getString('S3_SECRET_KEY'),
             forcePathStyle: this.getBoolean('S3_FORCE_PATH_STYLE')
         }
     }

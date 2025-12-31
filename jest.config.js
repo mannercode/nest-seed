@@ -17,9 +17,7 @@ module.exports = {
     restoreMocks: true, // Restore original implementations after each test
     rootDir: '.',
     roots: ['<rootDir>/src'],
-    moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {
-        prefix: '<rootDir>/'
-    }),
+    moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
     modulePaths: [compilerOptions.baseUrl],
     collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
     coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },

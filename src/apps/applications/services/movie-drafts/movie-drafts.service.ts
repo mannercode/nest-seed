@@ -85,12 +85,12 @@ export class MovieDraftsService {
         const draft = await this.repository.findById(draftId)
 
         if (!draft) {
-            return true // TODO
+            return true
         }
 
         const hasImage = draft.images.some((image) => image.assetId === imageId)
         if (!hasImage) {
-            return true // TODO
+            return true
         }
 
         draft.images = draft.images.filter((image) => image.assetId !== imageId)

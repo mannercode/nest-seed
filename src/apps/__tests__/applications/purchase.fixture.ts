@@ -77,8 +77,8 @@ export function buildCreatePurchaseDto(
 }
 
 export async function holdTickets(ctx: TestContext, tickets: TicketDto[]) {
-    const { TicketHoldingClient } = await import('apps/cores')
-    const ticketHoldingClient = ctx.module.get(TicketHoldingClient)
+    const { TicketHoldingService } = await import('apps/cores')
+    const ticketHoldingService = ctx.module.get(TicketHoldingService)
 
     const heldTicketCount = 4
     const { Rules } = await import('shared')
@@ -86,7 +86,7 @@ export async function holdTickets(ctx: TestContext, tickets: TicketDto[]) {
 
     const heldTickets = tickets.slice(0, heldTicketCount)
 
-    await ticketHoldingClient.holdTickets(
+    await ticketHoldingService.holdTickets(
         buildHoldTicketsDto({
             customerId,
             showtimeId: tickets[0].showtimeId,

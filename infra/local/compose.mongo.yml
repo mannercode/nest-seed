@@ -79,10 +79,10 @@ services:
                     "
             '
     mongo-gui:
+        profiles: ['gui']
         extends: { file: ./compose.common.yml, service: common-options }
         container_name: mongo-gui
         image: mongo-express:latest
-        restart: always
         depends_on: { mongo-setup: { condition: service_completed_successfully } }
         environment:
             {

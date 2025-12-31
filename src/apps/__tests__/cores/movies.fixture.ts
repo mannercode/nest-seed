@@ -5,7 +5,7 @@ import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { createAppTestContext } from '../__helpers__'
 import type { AppTestContext } from '../__helpers__'
 
-export type MoviesFixture = AppTestContext & {}
+export type MoviesFixture = AppTestContext & { moviesClient: MoviesClient }
 
 export async function createMoviesFixture() {
     const ctx = await createAppTestContext({
@@ -15,5 +15,7 @@ export async function createMoviesFixture() {
         controllers: [MoviesController]
     })
 
-    return ctx
+    const moviesClient = ctx.module.get(MoviesClient)
+
+    return { ...ctx, moviesClient }
 }

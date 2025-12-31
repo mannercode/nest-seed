@@ -114,10 +114,10 @@ services:
             '
 
     redis-gui:
+        profiles: ['gui']
         extends: { file: ./compose.common.yml, service: common-options }
         container_name: redis-gui
         image: redis/redisinsight:latest
-        restart: always
         environment:
             {
                 RI_DATABASE_MANAGEMENT: true,

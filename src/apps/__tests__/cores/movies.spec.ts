@@ -1,3 +1,4 @@
+import { HttpStatus } from '@nestjs/common'
 import { MovieGenre, MovieRating } from 'apps/cores'
 import { Checksum } from 'common'
 import { omit } from 'lodash'
@@ -21,18 +22,16 @@ describe('MoviesService', () => {
     })
     afterEach(() => fix.teardown())
 
-    describe('POST /movies', () => {
+    describe('create', () => {
         it('returns the created movie', async () => {
             const createDto = buildCreateMovieDto()
+            const movie = await fix.moviesClient.create(createDto)
 
-            await fix.httpClient
-                .post('/movies')
-                .body(createDto)
-                .created({
-                    ...omit(createDto, ['assetIds']),
-                    id: expect.any(String),
-                    imageUrls: expect.any(Array)
-                })
+            expect(movie).toEqual({
+                ...omit(createDto, ['assetIds']),
+                id: expect.any(String),
+                imageUrls: expect.any(Array)
+            })
         })
 
         describe('when the payload includes assetIds', () => {
@@ -44,8 +43,7 @@ describe('MoviesService', () => {
             })
 
             it('returns imageUrls for the uploaded asset', async () => {
-                const { body } = await fix.httpClient.post('/movies').body(createDto).created()
-                const movie = body as MovieDto
+                const movie = await fix.moviesClient.create(createDto)
 
                 const response = await fetch(movie.imageUrls[0])
                 expect(response.ok).toBe(true)
@@ -57,10 +55,12 @@ describe('MoviesService', () => {
 
         describe('when required fields are missing', () => {
             it('returns 400 Bad Request', async () => {
-                await fix.httpClient
-                    .post('/movies')
-                    .body({})
-                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+                const promise = fix.moviesClient.create({} as any)
+
+                await expect(promise).rejects.toMatchObject({
+                    status: HttpStatus.BAD_REQUEST,
+                    message: Errors.RequestValidation.Failed.message
+                })
             })
         })
     })

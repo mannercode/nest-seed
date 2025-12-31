@@ -46,11 +46,9 @@ export default async function globalSetup() {
         setupMinio()
     ])
 
-    ;(globalThis as any).__TEST_INFRA__ = { mongo, redis, nats, minio }
-
     setEnv('TESTLIB_NATS_OPTIONS', JSON.stringify(nats.getConnectionOptions()))
     // Use directConnection to prevent MongoServerSelectionError: getaddrinfo ENOTFOUND on container hostnames
-    // MongoServerSelectionError: getaddrinfo ENOTFOUND 28f6974a84e2 같은 에러를 방지하기 위해 directConnection 사용
+    // MongoServerSelectionError: getaddrinfo ENOTFOUND 같은 에러를 방지하기 위해 directConnection 사용
     setEnv('TESTLIB_MONGO_URI', `${mongo.getConnectionString()}?directConnection=true`)
     setEnv('TESTLIB_REDIS_URL', `redis://${redis.getHost()}:${redis.getMappedPort(6379)}`)
     setEnv('TESTLIB_S3_ENDPOINT', `http://${minio.getHost()}:${minio.getMappedPort(9000)}`)
