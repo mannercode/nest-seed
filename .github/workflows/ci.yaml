@@ -30,14 +30,6 @@ jobs:
             TERM: xterm
 
         steps:
-            - name: Show runner specs
-              run: |
-                  uname -a || true
-                  lscpu || true
-                  free -h || true
-                  df -h || true
-                  cat /etc/os-release || true
-
             - uses: actions/checkout@v4
 
             - name: Install Tools
