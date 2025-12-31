@@ -12,7 +12,7 @@ jobs:
         runs-on: ubuntu-24.04-arm
         container:
             image: node:24-bookworm
-            options: --add-host=host.docker.internal:host-gateway
+            options: --add-host=host.docker.internal:127.0.0.1
         services:
             docker:
                 image: docker:27-dind
