@@ -16,6 +16,8 @@ jobs:
                 image: docker:27-dind
                 options: >-
                     --privileged
+                    --add-host
+                    host.docker.internal:127.0.0.1
                 env:
                     DOCKER_TLS_CERTDIR: '' # TLS 끄고 2375 사용
 
@@ -59,9 +61,9 @@ jobs:
             #     docker info
             #     exit 1
 
-            - name: Setup Network
-              run: |
-                  echo "127.0.0.1 host.docker.internal" | tee -a /etc/hosts
+            # - name: Setup Network
+            #   run: |
+            #       echo "127.0.0.1 host.docker.internal" | tee -a /etc/hosts
 
             # - name: Run e2e tests (x100)
             #   run: |
