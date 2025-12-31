@@ -29,69 +29,69 @@ jobs:
             WORKSPACE_ROOT: ${{ github.workspace }}
             TERM: xterm
 
-            steps:
-                - name: Show runner specs
-                  run: |
-                      uname -a || true
-                      lscpu || true
-                      free -h || true
-                      df -h || true
-                      cat /etc/os-release || true
+        steps:
+            - name: Show runner specs
+              run: |
+                  uname -a || true
+                  lscpu || true
+                  free -h || true
+                  df -h || true
+                  cat /etc/os-release || true
 
-                - uses: actions/checkout@v4
+            - uses: actions/checkout@v4
 
-                - name: Install Tools
-                  run: apt-get update && apt-get install -y curl jq iproute2
+            - name: Install Tools
+              run: apt-get update && apt-get install -y curl jq iproute2
 
-                - name: Install Docker
-                  run: |
-                      apt-get install -y ca-certificates curl gnupg
-                      install -m 0755 -d /etc/apt/keyrings
-                      curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-                      chmod a+r /etc/apt/keyrings/docker.gpg
-                      echo \
-                        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
-                        $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-                        tee /etc/apt/sources.list.d/docker.list > /dev/null
-                      apt-get update
-                      apt-get install -y docker-ce-cli
+            - name: Install Docker
+              run: |
+                  apt-get install -y ca-certificates curl gnupg
+                  install -m 0755 -d /etc/apt/keyrings
+                  curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+                  chmod a+r /etc/apt/keyrings/docker.gpg
+                  echo \
+                    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+                    $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+                    tee /etc/apt/sources.list.d/docker.list > /dev/null
+                  apt-get update
+                  apt-get install -y docker-ce-cli
 
-                - name: Setup Network
-                  run: |
-                      echo "127.0.0.1 host.docker.internal" | tee -a /etc/hosts
+            - name: Setup Network
+              run: |
+                  echo "127.0.0.1 host.docker.internal" | tee -a /etc/hosts
 
-                - name: Run e2e tests (x100)
-                  run: |
-                      set -e
-                      for i in $(seq 1 100); do
-                        echo "[Run $i/100]"
-                        npm run infra:gui
-                      done
-                      echo "Done. 100 run(s) finished."
+            - name: Run e2e tests (x100)
+              run: |
+                  set -e
+                  for i in $(seq 1 100); do
+                    echo "[Run $i/100]"
+                    npm run infra:gui
+                  done
+                  echo "Done. 100 run(s) finished."
 
-                - name: Install Dependencies
-                  run: npm ci
+            - name: Install Dependencies
+              run: npm ci
 
-                - name: Lint
-                  run: npm run lint
+            - name: Lint
+              run: npm run lint
 
-                - name: Run infrastructures
-                  run: npm run infra:reset
+            - name: Run infrastructures
+              run: npm run infra:reset
 
-                - name: Run unit tests
-                  run: npm test
+            - name: Run unit tests
+              run: npm test
 
-                - name: Run e2e tests
-                  run: npm run test:e2e
+            - name: Run e2e tests
+              run: npm run test:e2e
 
-                - name: Dump Docker logs on failure
-                  if: ${{ failure() }}
-                  continue-on-error: true
-                  run: |
-                      docker ps -a || true
+            - name: Dump Docker logs on failure
+              if: ${{ failure() }}
+              continue-on-error: true
+              run: |
+                  docker ps -a || true
 
-                      for id in $(docker ps -aq); do
-                        echo ""
-                        echo "========================= $id ========================="
-                        docker logs --timestamps --tail 300 "$id" || true
-                      done
+                  for id in $(docker ps -aq); do
+                    echo ""
+                    echo "========================= $id ========================="
+                    docker logs --timestamps --tail 300 "$id" || true
+                  done
