@@ -30,7 +30,7 @@ jobs:
                       npm test
                       npm run test:e2e
 
-                      for ((i = 1; i <= ${input:RepeatCount}; i++)); do
-                          echo \"[Run $i/${input:RepeatCount}]\"
+                      for ((i = 1; i <= 100; i++)); do
+                          echo "[Run $i/100]"
                           npm test
                       done
