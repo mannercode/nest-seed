@@ -16,12 +16,8 @@ jobs:
                 image: docker:27-dind
                 options: >-
                     --privileged
-                    --health-cmd "docker info"
-                    --health-interval 5s
-                    --health-timeout 3s
-                    --health-retries 20
-                env:
-                    DOCKER_TLS_CERTDIR: '' # TLS 끄고 2375 사용
+                # env:
+                #     DOCKER_TLS_CERTDIR: '' # TLS 끄고 2375 사용
 
         env:
             DOCKER_HOST: tcp://docker:2375
@@ -47,6 +43,21 @@ jobs:
                     tee /etc/apt/sources.list.d/docker.list > /dev/null
                   apt-get update
                   apt-get install -y docker-ce-cli
+
+            - name: Wait for DinD
+              env:
+                  DOCKER_HOST: tcp://docker:2375
+              run: |
+                  for i in $(seq 1 60); do
+                    if docker info >/dev/null 2>&1; then
+                      echo "DinD ready"
+                      exit 0
+                    fi
+                    echo "Waiting DinD... ($i/60)"
+                    sleep 1
+                  done
+                  docker info
+                  exit 1
 
             - name: Setup Network
               run: |
