@@ -45,8 +45,8 @@ jobs:
                   apt-get install -y docker-ce-cli
 
             - name: Wait for DinD
-              env:
-                  DOCKER_HOST: tcp://docker:2375
+              # env:
+              #     DOCKER_HOST: tcp://docker:2375
               run: |
                   for i in $(seq 1 60); do
                     if docker info >/dev/null 2>&1; then
