@@ -68,6 +68,7 @@ jobs:
                   set -e
                   for i in $(seq 1 100); do
                     echo "[Run $i/100]"
+                    docker ps -a
                     npm run infra:gui
                   done
                   echo "Done. 100 run(s) finished."
