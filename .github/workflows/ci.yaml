@@ -14,6 +14,9 @@ jobs:
         env:
             WORKSPACE_ROOT: ${{ github.workspace }}
             TERM: xterm # This is required to enable use of the `clear` command in bash
+            # (옵션) 포트 체크 간격/최대대기(초)
+            INTERVAL_SECONDS: 1
+            MAX_WAIT_SECONDS: 300
         steps:
             - name: Show runner specs
               run: |
@@ -46,11 +49,56 @@ jobs:
                   GW_IP=$(ip route | awk '/default/ {print $3}')
                   echo "$GW_IP host.docker.internal" | tee -a /etc/hosts
 
+            - name: Install netcat (for port checks)
+              run: |
+                  apt-get update
+                  apt-get install -y netcat-openbsd
+
             - name: Run e2e tests (x100)
               run: |
                   set -e
+
+                  wait_ports_free() {
+                    local host="${1:-host.docker.internal}"; shift
+                    local ports=("$@")
+                    local interval="${INTERVAL_SECONDS:-1}"
+                    local max_wait="${MAX_WAIT_SECONDS:-60}"  # 0이면 무한대기
+                    local start
+                    start="$(date +%s)"
+
+                    while :; do
+                      local busy=()
+
+                      for p in "${ports[@]}"; do
+                        # 연결되면(OPEN) => 누군가 LISTEN 중이라고 보고 busy 처리
+                        if nc -z -w1 "$host" "$p" >/dev/null 2>&1; then
+                          busy+=("$p")
+                        fi
+                      done
+
+                      if [ "${#busy[@]}" -eq 0 ]; then
+                        echo "OK: ports are free => ${ports[*]}"
+                        return 0
+                      fi
+
+                      echo "WAIT: ports busy => ${busy[*]} (sleep ${interval}s)"
+                      sleep "$interval"
+
+                      if [ "$max_wait" -gt 0 ]; then
+                        local now elapsed
+                        now="$(date +%s)"
+                        elapsed=$((now - start))
+                        if [ "$elapsed" -ge "$max_wait" ]; then
+                          echo "TIMEOUT: still busy => ${busy[*]} (waited ${elapsed}s)"
+                          return 1
+                        fi
+                      fi
+                    done
+                  }
+
                   for i in $(seq 1 100); do
                     echo "[Run $i/100]"
+                    wait_ports_free host.docker.internal 27017 27018 27019
                     npm run infra:gui
                   done
                   echo "Done. 100 run(s) finished."
