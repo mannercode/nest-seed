@@ -81,11 +81,8 @@ services:
 
     prometheus:
         profiles: ['gui']
-        build:
-            context: .
-            dockerfile: prometheus.Dockerfile
-        image: nats-prometheus:latest
-        container_name: nats-prometheus
+        image: prom/prometheus:latest
+        container_name: prometheus
         command:
             - --config.file=/etc/prometheus/prometheus.yml
             - --storage.tsdb.retention.time=15d
