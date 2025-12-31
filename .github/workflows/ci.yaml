@@ -13,26 +13,23 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            # devcontainer.json에 mounts로 ${env:HOME}/.codex 를 bind 하므로
-            # 러너에 디렉터리를 만들어두는 게 안전합니다.
-            - name: Prepare host mount
-              run: mkdir -p "$HOME/.codex"
+            # - name: Prepare host mount
+            #   run: mkdir -p "$HOME/.codex"
 
             - name: Run CI inside Dev Container
               uses: devcontainers/ci@v0.3
               with:
-                  # configFile: .devcontainer/devcontainer.json
+                  configFile: .devcontainer/devcontainer.json
                   push: never
                   runCmd: |
                       set -eux
 
-                      docker ps -a
-                      set -e
-                      for i in $(seq 1 100); do
-                          echo "[Run $i/100]"
-                          docker ps -a
-                          npm run infra:gui
-                      done
+                      # docker ps -a
+
+                      # for i in $(seq 1 100); do
+                      #     echo "[Run $i/100]"
+                      #     npm run infra:gui
+                      # done
 
                       npm ci
                       npm run lint
