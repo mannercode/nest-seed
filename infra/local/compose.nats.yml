@@ -91,6 +91,8 @@ services:
             - --storage.tsdb.retention.time=15d
             - --web.enable-lifecycle
         ports: ['9090:9090']
+        volumes:
+            - ./nats-prometheus.yml:/etc/prometheus/prometheus.yml:ro
         depends_on:
             - nats-exporter1
             - nats-exporter2
