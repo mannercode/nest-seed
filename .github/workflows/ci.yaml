@@ -8,13 +8,13 @@ on:
         branches: ['main']
 
 jobs:
-    test:
+    ci:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
 
-            # - name: Prepare host mount
-            #   run: mkdir -p "$HOME/.codex"
+            - name: Prepare host mount
+              run: mkdir -p "$HOME/.codex"
 
             - name: Run CI inside Dev Container
               uses: devcontainers/ci@v0.3
@@ -23,13 +23,6 @@ jobs:
                   push: never
                   runCmd: |
                       set -eux
-
-                      # docker ps -a
-
-                      # for i in $(seq 1 100); do
-                      #     echo "[Run $i/100]"
-                      #     npm run infra:gui
-                      # done
 
                       npm ci
                       npm run lint
