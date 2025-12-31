@@ -270,15 +270,20 @@ describe('AssetsService', () => {
             describe('when the upload has not expired', () => {
                 it('keeps the asset', async () => {
                     await fireOnTick()
+                    await sleep(500)
 
                     await expect(fix.assetsClient.getMany([assetId])).resolves.toHaveLength(1)
                 })
             })
 
             describe('when the upload has expired', () => {
-                it('removes the asset', async () => {
+                beforeEach(async () => {
                     await sleep(1500)
+                })
+
+                it('removes the asset', async () => {
                     await fireOnTick()
+                    await sleep(500)
 
                     await expect(fix.assetsClient.getMany([assetId])).rejects.toMatchObject({
                         status: HttpStatus.NOT_FOUND
