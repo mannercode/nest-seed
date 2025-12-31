@@ -31,13 +31,10 @@ jobs:
         services:
             docker:
                 image: docker:27-dind
-                options: >-
-                    --privileged
-                env:
-                    DOCKER_TLS_CERTDIR: '' # TLS 끄고 2375 사용
-
+                options: --privileged
         env:
-            # DOCKER_HOST: tcp://docker:2375
+            DOCKER_HOST: tcp://docker:2375
+            DOCKER_TLS_CERTDIR: ''
             DOCKER_BUILDKIT: 1
             WORKSPACE_ROOT: ${{ github.workspace }}
             TERM: xterm
