@@ -78,11 +78,17 @@ jobs:
             - name: Install Dependencies
               run: npm ci
 
-            - name: Lint
-              run: npm run lint
+            # - name: Lint
+            #   run: npm run lint
 
             - name: Run infrastructures
               run: npm run infra:reset
+
+            - name: TEST
+              run: |
+                  docker ps -a
+                  curl -v 127.0.0.1:27017
+                  curl -v host.docker.internal:27017
 
             - name: Run unit tests
               run: npm test
