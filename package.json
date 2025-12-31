@@ -30,7 +30,7 @@
         "infra:down": "docker compose --project-directory infra/local --env-file .env --env-file .env.infra down -v --remove-orphans",
         "infra:up": "  docker compose --project-directory infra/local --env-file .env --env-file .env.infra up -d --build",
         "infra:wait": "docker wait infra-setup && docker rm infra-setup",
-        "infra:reset": "npm run infra:down && npm run infra:up && npm run infra:wait",
+        "infra:reset": "npm run infra:down && docker ps -a && npm run infra:up && npm run infra:wait",
         "infra:gui": " COMPOSE_PROFILES=gui npm run infra:reset",
         "package-update": "ncu -x  @types/node -x mongoose -u && npm install"
     },

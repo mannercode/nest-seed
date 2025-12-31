@@ -74,7 +74,6 @@ jobs:
               if: ${{ failure() }}
               continue-on-error: true
               run: |
-                  set +e
                   docker ps -a || true
 
                   for id in $(docker ps -aq); do
