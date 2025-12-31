@@ -24,103 +24,18 @@ jobs:
                   # configFile: .devcontainer/devcontainer.json
                   push: never
                   runCmd: |
-                      set -eu
+                      set -eux
 
-                      # docker-in-docker feature 사용 시 dockerd 준비 대기(필요한 경우)
-                      i=0
-                      until docker info >/dev/null 2>&1; do
-                        i=$((i+1))
-                        if [ "$i" -ge 60 ]; then
-                          echo "Docker daemon not ready"
-                          exit 1
-                        fi
-                        sleep 1
-                      done
                       docker ps -a
+                      set -e
+                      for i in $(seq 1 100); do
+                          echo "[Run $i/100]"
+                          docker ps -a
+                          npm run infra:gui
+                      done
+
                       npm ci
+                      npm run lint
                       npm run infra:reset
-
-                      # 실제 CI 작업
                       npm test
-
-              # ci:
-              #     runs-on: ubuntu-24.04-arm
-              #     container:
-              #         image: node:24-bookworm
-              #         options: --add-host=host.docker.internal:127.0.0.1
-              #     services:
-              #         docker:
-              #             image: docker:27-dind
-              #             options: --privileged
-              #     env:
-              #         DOCKER_HOST: tcp://docker:2375
-              #         DOCKER_TLS_CERTDIR: ''
-              #         DOCKER_BUILDKIT: 1
-              #         WORKSPACE_ROOT: ${{ github.workspace }}
-              #         TERM: xterm
-
-              #     steps:
-              #         - uses: actions/checkout@v4
-
-              #         - name: Install Tools
-              #           run: apt-get update && apt-get install -y curl jq iproute2
-
-              #         - name: Install Docker
-              #           run: |
-              #               apt-get install -y ca-certificates curl gnupg
-              #               install -m 0755 -d /etc/apt/keyrings
-              #               curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-              #               chmod a+r /etc/apt/keyrings/docker.gpg
-              #               echo \
-              #                 "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
-              #                 $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-              #                 tee /etc/apt/sources.list.d/docker.list > /dev/null
-              #               apt-get update
-              #               apt-get install -y docker-ce-cli
-
-              #         - name: Install Dependencies
-              #           run: npm ci
-
-              #         # - name: Lint
-              #         #   run: npm run lint
-
-              #         - name: Run infrastructures
-              #           run: npm run infra:reset
-
-              #         - name: TEST
-              #           run: |
-              #               docker ps -a
-              #               curl -v 127.0.0.1:27017
-              #               curl -v host.docker.internal:27017
-
-              #         - name: Run unit tests
-              #           run: npm test
-
-              #         - name: Run e2e tests
-              #           run: npm run test:e2e
-
-              #         - name: Dump Docker logs on failure
-              #           if: ${{ failure() }}
-              #           continue-on-error: true
-              #           run: |
-              #               docker ps -a || true
-
-              #               for id in $(docker ps -aq); do
-              #                 echo ""
-              #                 echo "========================= $id ========================="
-              #                 docker logs --timestamps --tail 300 "$id" || true
-              #               done
-
-              #         # - name: Setup Network
-              #         #   run: |
-              #         #       echo "127.0.0.1 host.docker.internal" | tee -a /etc/hosts
-
-              #         # - name: Run e2e tests (x100)
-              #         #   run: |
-              #         #       set -e
-              #         #       for i in $(seq 1 100); do
-              #         #         echo "[Run $i/100]"
-              #         #         docker ps -a
-              #         #         npm run infra:gui
-              #         #       done
-              #         #       echo "Done. 100 run(s) finished."
+                      npm run test:e2e
