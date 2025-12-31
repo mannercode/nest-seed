@@ -29,3 +29,8 @@ jobs:
                       npm run infra:reset
                       npm test
                       npm run test:e2e
+
+                      for i in $(seq 1 100); do
+                          echo "[Run $i/100]"
+                          npm run infra:gui
+                      done
