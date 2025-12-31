@@ -113,25 +113,25 @@ services:
                 redis-cli -a $REDIS_PASSWORD --cluster create $$REDIS_NODES --cluster-replicas 1
             '
 
-    # redis-gui:
-    #     profiles: ['gui']
-    #     extends: { file: ./compose.common.yml, service: common-options }
-    #     container_name: redis-gui
-    #     image: redis/redisinsight:latest
-    #     environment:
-    #         {
-    #             RI_DATABASE_MANAGEMENT: true,
+    redis-gui:
+        profiles: ['gui']
+        extends: { file: ./compose.common.yml, service: common-options }
+        container_name: redis-gui
+        image: redis/redisinsight:latest
+        environment:
+            {
+                RI_DATABASE_MANAGEMENT: true,
 
-    #             RI_REDIS_HOST0: $REDIS_HOST1,
-    #             RI_REDIS_PORT0: $REDIS_PORT1,
-    #             RI_REDIS_ALIAS0: redis1,
-    #             RI_REDIS_USERNAME0: default,
-    #             RI_REDIS_PASSWORD0: $REDIS_PASSWORD,
+                RI_REDIS_HOST0: $REDIS_HOST1,
+                RI_REDIS_PORT0: $REDIS_PORT1,
+                RI_REDIS_ALIAS0: redis1,
+                RI_REDIS_USERNAME0: default,
+                RI_REDIS_PASSWORD0: $REDIS_PASSWORD,
 
-    #             RI_REDIS_HOST1: $REDIS_HOST2,
-    #             RI_REDIS_PORT1: $REDIS_PORT2,
-    #             RI_REDIS_ALIAS1: redis2,
-    #             RI_REDIS_USERNAME1: default,
-    #             RI_REDIS_PASSWORD1: $REDIS_PASSWORD
-    #         }
-    #     ports: ['5540:5540']
+                RI_REDIS_HOST1: $REDIS_HOST2,
+                RI_REDIS_PORT1: $REDIS_PORT2,
+                RI_REDIS_ALIAS1: redis2,
+                RI_REDIS_USERNAME1: default,
+                RI_REDIS_PASSWORD1: $REDIS_PASSWORD
+            }
+        ports: ['5540:5540']
