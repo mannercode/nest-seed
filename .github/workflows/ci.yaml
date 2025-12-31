@@ -52,8 +52,6 @@ jobs:
               if: ${{ failure() }}
               continue-on-error: true
               run: |
-                  ss -lntp '( sport >= :27017 and sport <= :27019 )'
-                  lsof -nP -iTCP:27017-27019 -sTCP:LISTEN
                   docker ps -a || true
 
                   for id in $(docker ps -aq); do
