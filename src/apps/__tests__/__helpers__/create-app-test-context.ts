@@ -39,21 +39,30 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
             app.use(compression())
             app.use(express.json({ limit: http.requestPayloadLimit }))
 
-            app.connectMicroservice<MicroserviceOptions>(
-                {
-                    transport: Transport.NATS,
-                    options: { servers: nats.servers, queue: getProjectId() }
-                },
-                { inheritAppConfig: true }
-            )
-
             if (isDebuggingEnabled()) {
                 const logger = app.get(AppLoggerService)
                 app.useLogger(logger)
             }
 
+            app.connectMicroservice<MicroserviceOptions>(
+                {
+                    transport: Transport.NATS,
+                    options: {
+                        servers: nats.servers,
+                        queue: getProjectId(),
+                        // TODO
+                        // 연결/재연결 안정화 (옵션들은 Nest NatsOptions에 존재)
+                        waitOnFirstConnect: true
+                        // reconnect: true,
+                        // maxReconnectAttempts: -1,
+                        // reconnectTimeWait: 1000,
+                        // reconnectJitter: 100
+                    }
+                },
+                { inheritAppConfig: true }
+            )
+
             await app.startAllMicroservices()
-            await app.init()
         },
         ...metadata
     })
