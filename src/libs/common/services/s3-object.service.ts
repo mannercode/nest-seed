@@ -13,7 +13,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { DynamicModule, Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
 import { newObjectId } from '../mongoose'
 import { HttpUtil } from '../utils'
-import { orDefault } from '../validator'
+import { Or } from '../validator'
 
 export type S3PresignUrlOptions = { key: string; expiresInSec: number }
 export type S3PresignUploadOptions = S3PresignUrlOptions & {
@@ -48,7 +48,7 @@ export class S3ObjectService implements OnModuleDestroy {
     ) {}
 
     static getName(name?: string) {
-        return `S3ObjectService_${orDefault(name, 'default')}`
+        return `S3ObjectService_${Or(name, 'default')}`
     }
 
     onModuleDestroy() {
@@ -152,10 +152,10 @@ export class S3ObjectService implements OnModuleDestroy {
 
         const objectData = Buffer.concat(chunks)
 
-        const contentType = orDefault(ContentType, 'application/octet-stream')
+        const contentType = Or(ContentType, 'application/octet-stream')
 
         const filename = HttpUtil.extractContentDisposition(
-            orDefault(ContentDisposition, `filename=${key}`)
+            Or(ContentDisposition, `filename=${key}`)
         )
 
         return { data: objectData, filename, contentType }
@@ -165,7 +165,7 @@ export class S3ObjectService implements OnModuleDestroy {
         const command = new DeleteObjectCommand({ Bucket: this.bucket, Key: key })
 
         const { $metadata } = await this.s3.send(command)
-        const status = orDefault($metadata.httpStatusCode, 200)
+        const status = Or($metadata.httpStatusCode, 200)
 
         return { status, key }
     }
@@ -181,16 +181,16 @@ export class S3ObjectService implements OnModuleDestroy {
 
         const result = await this.s3.send(command)
 
-        let contents: S3ObjectSummary[] = orDefault(result.Contents, [])
+        let contents: S3ObjectSummary[] = Or(result.Contents, [])
             .map((content) => ({
-                key: orDefault(content.Key, 'null'),
+                key: Or(content.Key, 'null'),
                 lastModified: content.LastModified as Date,
                 eTag: content.ETag as string,
                 size: content.Size as number
             }))
             .filter((o) => o.key)
 
-        const commonPrefixes: string[] = orDefault(result.CommonPrefixes, [])
+        const commonPrefixes: string[] = Or(result.CommonPrefixes, [])
             .map((cp) => cp.Prefix)
             .filter((p): p is string => !!p && p.length > 0)
 
@@ -198,10 +198,10 @@ export class S3ObjectService implements OnModuleDestroy {
             contents,
             commonPrefixes,
             isTruncated: Boolean(result.IsTruncated),
-            nextToken: orDefault(result.NextContinuationToken, undefined),
+            nextToken: Or(result.NextContinuationToken, undefined),
             maxKeys: result.MaxKeys,
-            prefix: orDefault(result.Prefix, options.prefix),
-            delimiter: orDefault(result.Delimiter, options.delimiter)
+            prefix: Or(result.Prefix, options.prefix),
+            delimiter: Or(result.Delimiter, options.delimiter)
         }
     }
 }

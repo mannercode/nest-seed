@@ -104,13 +104,7 @@ export function createConfigServiceMock(mockValues: Record<string, any>) {
 
 // const configMock = createConfigServiceMock({
 //     S3_ENDPOINT: s3.endpoint,
-//     S3_REGION: s3.region,
-//     S3_BUCKET: s3.bucket,
-//     S3_ACCESS_KEY: s3.accessKeyId,
-//     S3_SECRET_KEY: s3.secretAccessKey,
-//     S3_FORCE_PATH_STYLE: s3.forcePathStyle
 // })
-
 // const ctx = await createAppTestContext({
 //     imports: [AssetsModule],
 //     providers: [AssetsClient],

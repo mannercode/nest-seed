@@ -3,7 +3,7 @@ import { JwtModule, JwtService } from '@nestjs/jwt'
 import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import Redis from 'ioredis'
 import { generateShortId, notUsed, Time } from '../utils'
-import { orDefault } from '../validator'
+import { Or } from '../validator'
 
 export const JwtAuthServiceErrors = {
     RefreshTokenInvalid: {
@@ -38,7 +38,7 @@ export class JwtAuthService {
     ) {}
 
     static getName(name?: string) {
-        return `JwtAuthService_${orDefault(name, 'default')}`
+        return `JwtAuthService_${Or(name, 'default')}`
     }
 
     private getKey(key: string) {
@@ -142,10 +142,10 @@ export class JwtAuthModule {
                     jwtService,
                     auth,
                     redis,
-                    `${prefix}:${orDefault(name, 'default')}`
+                    `${prefix}:${Or(name, 'default')}`
                 )
             },
-            inject: [JwtService, getRedisConnectionToken(redisName), ...orDefault(inject, [])]
+            inject: [JwtService, getRedisConnectionToken(redisName), ...Or(inject, [])]
         }
 
         return {

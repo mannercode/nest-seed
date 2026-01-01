@@ -1,6 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { differenceWith, uniq } from 'lodash'
-import { Assert, Expect, orDefault } from '../validator'
+import { Assert, Expect, Or } from '../validator'
 import { MongooseErrors } from './errors'
 import { objectId, objectIds } from './mongoose.util'
 import type { PaginationDto, PaginationResult } from '../types'
@@ -128,8 +128,8 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     }) {
         const { configureQuery, pagination, session } = args
 
-        let take = orDefault(pagination.take, this.maxTake)
-        let skip = orDefault(pagination.skip, 0)
+        let take = Or(pagination.take, this.maxTake)
+        let skip = Or(pagination.skip, 0)
 
         if (take <= 0) {
             throw new BadRequestException({ ...MongooseErrors.TakeInvalid, take })

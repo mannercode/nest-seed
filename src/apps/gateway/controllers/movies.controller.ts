@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common'
 import { RecommendationClient } from 'apps/applications'
 import { MoviesClient, SearchMoviesPageDto, UpdateMovieDto } from 'apps/cores'
-import { orDefault } from 'common'
+import { Or } from 'common'
 import { CustomerOptionalJwtAuthGuard } from './guards'
 import { CustomerOptionalAuthRequest } from './types'
 
@@ -27,7 +27,7 @@ export class MoviesController {
     @UseGuards(CustomerOptionalJwtAuthGuard)
     @Get('recommended')
     async searchRecommendedMovies(@Req() req: CustomerOptionalAuthRequest) {
-        const customerId = orDefault(req.user?.customerId, null)
+        const customerId = Or(req.user?.customerId, null)
 
         return this.recommendationClient.searchRecommendedMovies(customerId)
     }

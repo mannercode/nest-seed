@@ -2,7 +2,7 @@
 import { Logger } from '@nestjs/common'
 import { isEqual } from 'lodash'
 
-export function orDefault<T>(value: T | null | undefined, defaultValue: T): T {
+export function Or<T>(value: T | null | undefined, defaultValue: T): T {
     return value ?? defaultValue
 }
 

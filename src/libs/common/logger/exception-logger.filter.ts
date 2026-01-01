@@ -3,7 +3,7 @@ import { BaseExceptionFilter } from '@nestjs/core'
 import { RpcException } from '@nestjs/microservices'
 import { Request } from 'express'
 import { throwError } from 'rxjs'
-import { orDefault } from '../validator'
+import { Or } from '../validator'
 import { HttpErrorLog, RpcErrorLog } from './types'
 
 /**
@@ -38,7 +38,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
                     ...httpLogBase,
                     statusCode: exception.getStatus(),
                     response: exception.getResponse(),
-                    stack: orDefault(exception.stack, '').split('\n')
+                    stack: Or(exception.stack, '').split('\n')
                 } as HttpErrorLog
 
                 Logger.warn('fail', errorLog)
@@ -47,7 +47,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
                     ...httpLogBase,
                     statusCode: 500,
                     response: { message: exception.message },
-                    stack: orDefault(exception.stack, '').split('\n')
+                    stack: Or(exception.stack, '').split('\n')
                 } as HttpErrorLog
 
                 Logger.error('error', errorLog)
@@ -76,7 +76,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
                 const errorLog = {
                     ...rpcLogBase,
                     response: exception.getResponse(),
-                    stack: orDefault(exception.stack, '').split('\n')
+                    stack: Or(exception.stack, '').split('\n')
                 } as RpcErrorLog
 
                 Logger.warn('fail', errorLog)
@@ -86,7 +86,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
                 const errorLog = {
                     ...rpcLogBase,
                     response: { message: exception.message },
-                    stack: orDefault(exception.stack, '').split('\n')
+                    stack: Or(exception.stack, '').split('\n')
                 } as RpcErrorLog
 
                 Logger.error('error', errorLog)
