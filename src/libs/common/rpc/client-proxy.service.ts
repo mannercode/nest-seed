@@ -8,7 +8,7 @@ import {
     OnModuleDestroy
 } from '@nestjs/common'
 import { ClientProvider, ClientProxy, ClientsModule } from '@nestjs/microservices'
-import { catchError, lastValueFrom, Observable } from 'rxjs'
+import { catchError, lastValueFrom, Observable, throwError } from 'rxjs'
 import { jsonToObject } from '../utils'
 import { orDefault } from '../validator'
 
@@ -19,10 +19,10 @@ async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
                 const { status, response, options, message } = error
 
                 if (status && response) {
-                    throw new HttpException(response, status, options)
-                } else {
-                    throw new Error(message)
+                    return throwError(() => new HttpException(response, status, options))
                 }
+
+                return throwError(() => new Error(orDefault(message, 'Unknown error')))
             })
         )
     )
