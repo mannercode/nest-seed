@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { AssetsClient } from 'apps/infrastructures'
-import { Assert, mapDocToDto } from 'common'
+import { Expect, mapDocToDto } from 'common'
 import { CreateMovieDto, MovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
 import { MovieDocument } from './models'
 import { MoviesRepository } from './movies.repository'
@@ -89,7 +89,7 @@ export class MoviesService {
         const assetUrlById = new Map<string, string>()
 
         assets.forEach((asset) => {
-            Assert.defined(asset.download)
+            Expect.defined(asset.download)
 
             assetUrlById.set(asset.id, asset.download.url)
         })
@@ -99,7 +99,7 @@ export class MoviesService {
 
             dtos[index].imageUrls = movieAssetIds.flatMap((assetId) => {
                 const url = assetUrlById.get(assetId)
-                Assert.defined(url)
+                Expect.defined(url)
                 return [url]
             })
         })

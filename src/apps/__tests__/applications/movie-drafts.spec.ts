@@ -1,5 +1,5 @@
 import { MovieGenre, MovieRating } from 'apps/cores'
-import { Assert } from 'common'
+import { Expect } from 'common'
 import { nullObjectId } from 'testlib'
 import { buildCreateAssetDto, Errors, fixtureFiles, uploadAsset } from '../__helpers__'
 import {
@@ -192,7 +192,7 @@ describe('MovieDraftsService', () => {
 
                 it('invalidates image URL', async () => {
                     const [asset] = await fix.assetsClient.getMany([imageId])
-                    Assert.defined(asset.download)
+                    Expect.defined(asset.download)
 
                     await fix.httpClient
                         .delete(`/movie-drafts/${movieDraft.id}/images/${imageId}`)
@@ -314,7 +314,7 @@ describe('MovieDraftsService', () => {
 
                 it('invalidates image URL', async () => {
                     const [asset] = await fix.assetsClient.getMany([imageId])
-                    Assert.defined(asset.download)
+                    Expect.defined(asset.download)
 
                     await fix.httpClient.delete(`/movie-drafts/${movieDraft.id}`).noContent()
 
