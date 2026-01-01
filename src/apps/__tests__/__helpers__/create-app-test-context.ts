@@ -53,9 +53,12 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
             }
 
             await app.startAllMicroservices()
+            await app.init()
         },
         ...metadata
     })
+
+    await stopAllCronJobs(ctx)
 
     const teardown = async () => {
         await ctx.close()
@@ -63,8 +66,6 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
         const redis = ctx.module.get(RedisConfigModule.moduleName)
         await redis.quit()
     }
-
-    await stopAllCronJobs(ctx)
 
     return { ...ctx, teardown }
 }
