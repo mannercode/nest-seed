@@ -22,25 +22,23 @@ jobs:
                   configFile: .devcontainer/devcontainer.json
                   push: never
                   runCmd: |
-                      set -eux
+                      set -Eeuxo pipefail
+                      dump_compose_logs () {
+                          docker ps -a || true
+
+                          for id in $(docker ps -aq); do
+                            echo ""
+                            echo "========================= $id ========================="
+                            docker logs --timestamps --tail 300 "$id" || true
+                          done
+                      }
+                      trap 'rc=$?; if [ $rc -ne 0 ]; then dump_compose_logs; fi; exit $rc' EXIT
 
                       npm ci
                       npm run lint
                       npm run infra:reset
                       npm test
                       npm run test:e2e
-
-            - name: Dump Docker logs on failure
-              if: ${{ failure() }}
-              continue-on-error: true
-              run: |
-                  docker ps -a || true
-
-                  for id in $(docker ps -aq); do
-                    echo ""
-                    echo "========================= $id ========================="
-                    docker logs --timestamps --tail 300 "$id" || true
-                  done
 
     repeat-e2e:
         runs-on: ubuntu-24.04-arm
@@ -53,24 +51,24 @@ jobs:
               with:
                   push: never
                   runCmd: |
-                      set -eux
+                      set -Eeuxo pipefail
+                      dump_compose_logs () {
+                          docker ps -a || true
+
+                          for id in $(docker ps -aq); do
+                            echo ""
+                            echo "========================= $id ========================="
+                            docker logs --timestamps --tail 300 "$id" || true
+                          done
+                      }
+                      trap 'rc=$?; if [ $rc -ne 0 ]; then dump_compose_logs; fi; exit $rc' EXIT
+
                       npm ci
 
                       for ((i = 1; i <= 100; i++)); do
                           echo "[Run $i/100]"
                           npm run test:e2e
                       done
-            - name: Dump Docker logs on failure
-              if: ${{ failure() }}
-              continue-on-error: true
-              run: |
-                  docker ps -a || true
-
-                  for id in $(docker ps -aq); do
-                    echo ""
-                    echo "========================= $id ========================="
-                    docker logs --timestamps --tail 300 "$id" || true
-                  done
 
     repeat-unit:
         runs-on: ubuntu-24.04-arm
@@ -83,21 +81,21 @@ jobs:
               with:
                   push: never
                   runCmd: |
-                      set -eux
+                      set -Eeuxo pipefail
+                      dump_compose_logs () {
+                          docker ps -a || true
+
+                          for id in $(docker ps -aq); do
+                            echo ""
+                            echo "========================= $id ========================="
+                            docker logs --timestamps --tail 300 "$id" || true
+                          done
+                      }
+                      trap 'rc=$?; if [ $rc -ne 0 ]; then dump_compose_logs; fi; exit $rc' EXIT
+
                       npm ci
 
                       for ((i = 1; i <= 100; i++)); do
                           echo "[Run $i/100]"
                           npm test
                       done
-            - name: Dump Docker logs on failure
-              if: ${{ failure() }}
-              continue-on-error: true
-              run: |
-                  docker ps -a || true
-
-                  for id in $(docker ps -aq); do
-                    echo ""
-                    echo "========================= $id ========================="
-                    docker logs --timestamps --tail 300 "$id" || true
-                  done
