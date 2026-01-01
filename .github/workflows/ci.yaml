@@ -30,6 +30,18 @@ jobs:
                       npm test
                       npm run test:e2e
 
+            - name: Dump Docker logs on failure
+              if: ${{ failure() }}
+              continue-on-error: true
+              run: |
+                  docker ps -a || true
+
+                  for id in $(docker ps -aq); do
+                    echo ""
+                    echo "========================= $id ========================="
+                    docker logs --timestamps --tail 300 "$id" || true
+                  done
+
     repeat-e2e:
         runs-on: ubuntu-24.04-arm
         steps:
@@ -78,3 +90,14 @@ jobs:
                           echo "[Run $i/100]"
                           npm test
                       done
+            - name: Dump Docker logs on failure
+              if: ${{ failure() }}
+              continue-on-error: true
+              run: |
+                  docker ps -a || true
+
+                  for id in $(docker ps -aq); do
+                    echo ""
+                    echo "========================= $id ========================="
+                    docker logs --timestamps --tail 300 "$id" || true
+                  done
