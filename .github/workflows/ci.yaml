@@ -62,7 +62,7 @@ jobs:
                           done
                       }
                       trap 'rc=$?; if [ $rc -ne 0 ]; then dump_compose_logs; fi; exit $rc' EXIT
-
+                      ls /adsfasdfds
                       npm ci
 
                       for ((i = 1; i <= 100; i++)); do
@@ -92,7 +92,7 @@ jobs:
                           done
                       }
                       trap 'rc=$?; if [ $rc -ne 0 ]; then dump_compose_logs; fi; exit $rc' EXIT
-
+                      ls /adsfasdfds
                       npm ci
 
                       for ((i = 1; i <= 100; i++)); do
