@@ -1,4 +1,3 @@
-import { Readable } from 'node:stream'
 import {
     DeleteObjectCommand,
     GetObjectCommand,
@@ -70,42 +69,6 @@ function normalizeContentType(v?: string): string | undefined {
     return v.split(';', 1)[0].trim().toLowerCase()
 }
 
-async function bodyToBuffer(body: unknown): Promise<Buffer> {
-    if (!body) return Buffer.alloc(0)
-
-    if (Buffer.isBuffer(body)) return body
-    if (body instanceof Uint8Array) return Buffer.from(body)
-    if (body instanceof ArrayBuffer) return Buffer.from(new Uint8Array(body))
-
-    // Blob (node18+)
-    if (typeof (body as any)?.arrayBuffer === 'function') {
-        const ab = await (body as any).arrayBuffer()
-        return Buffer.from(new Uint8Array(ab))
-    }
-
-    // WebStream -> Readable (node18+)
-    // TODO coverage
-    if (typeof (Readable as any).fromWeb === 'function' && (body as any)?.getReader) {
-        const readable = (Readable as any).fromWeb(body as any) as Readable
-        const chunks: Buffer[] = []
-        for await (const chunk of readable) {
-            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
-        }
-        return Buffer.concat(chunks)
-    }
-
-    // Node Readable
-    if (body instanceof Readable) {
-        const chunks: Buffer[] = []
-        for await (const chunk of body) {
-            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
-        }
-        return Buffer.concat(chunks)
-    }
-    // TODO coverage
-    throw new Error('Unsupported S3 Body type')
-}
-
 @Injectable()
 export class S3ObjectService implements OnModuleDestroy {
     constructor(
@@ -141,7 +104,6 @@ export class S3ObjectService implements OnModuleDestroy {
         if (contentType) Fields['Content-Type'] = contentType
         if (contentDisposition) Fields['Content-Disposition'] = contentDisposition
         if (metadata) {
-            // TODO coverage
             for (const [k, v] of Object.entries(metadata)) {
                 Fields[`x-amz-meta-${k}`] = v
             }
@@ -151,7 +113,6 @@ export class S3ObjectService implements OnModuleDestroy {
         if (contentType) Conditions.push(['eq', '$Content-Type', contentType])
         if (contentDisposition) Conditions.push(['eq', '$Content-Disposition', contentDisposition])
         if (metadata) {
-            // TODO coverage
             for (const [k, v] of Object.entries(metadata)) {
                 Conditions.push(['eq', `$x-amz-meta-${k}`, v])
             }
@@ -182,9 +143,10 @@ export class S3ObjectService implements OnModuleDestroy {
         const { key, expiresInSec, filename, responseContentType, responseContentDisposition } =
             opts
 
-        const disposition =
-            responseContentDisposition ??
-            (filename ? HttpUtil.buildContentDisposition(filename) : undefined)
+        const disposition = Or(
+            responseContentDisposition,
+            filename ? HttpUtil.buildContentDisposition(filename) : undefined
+        )
 
         const command = new GetObjectCommand({
             Bucket: this.bucket,
@@ -219,10 +181,6 @@ export class S3ObjectService implements OnModuleDestroy {
         }
     }
 
-    /**
-     * 서버가 직접 업로드(내부 업로드용)
-     * - presign과 별개로 필요하면 유지
-     */
     async putObject(object: S3ObjectData): Promise<{ key: string }> {
         const key = newObjectId()
         const disposition = HttpUtil.buildContentDisposition(object.filename)
@@ -238,51 +196,6 @@ export class S3ObjectService implements OnModuleDestroy {
         )
 
         return { key }
-    }
-
-    /**
-     * 스트리밍 조회(권장)
-     * - HTTP 응답으로 바로 흘려보내는 경우 메모리 절약 가능
-     */
-    async getObjectStream(
-        key: string
-    ): Promise<{
-        body: Readable
-        contentType: string
-        filename: string
-        contentDisposition?: string
-    }> {
-        const { Body, ContentType, ContentDisposition } = await this.s3.send(
-            new GetObjectCommand({ Bucket: this.bucket, Key: key })
-        )
-
-        let body: Readable
-        if (Body instanceof Readable) {
-            body = Body // TODO coverage
-        } else if (typeof (Readable as any).fromWeb === 'function' && (Body as any)?.getReader) {
-            // TODO coverage
-            body = (Readable as any).fromWeb(Body as any) as Readable
-        } else {
-            // fallback: Buffer로 변환 후 Readable 생성
-            const buf = await bodyToBuffer(Body)
-            body = Readable.from(buf)
-        }
-
-        const contentType = Or(ContentType, 'application/octet-stream')
-        const filename = HttpUtil.extractContentDisposition(
-            Or(ContentDisposition, `filename=${key}`)
-        )
-
-        return { body, contentType, filename, contentDisposition: ContentDisposition }
-    }
-
-    /**
-     * Buffer로 전체 로드(비권장: 대용량 파일에서 메모리 사용 증가)
-     */
-    async getObject(key: string): Promise<S3ObjectData> {
-        const { body, contentType, filename } = await this.getObjectStream(key)
-        const data = await bodyToBuffer(body)
-        return { data, filename, contentType }
     }
 
     async deleteObject(key: string): Promise<S3DeleteObjectResult> {
@@ -321,10 +234,10 @@ export class S3ObjectService implements OnModuleDestroy {
             contents,
             commonPrefixes,
             isTruncated: Boolean(result.IsTruncated),
-            nextToken: result.NextContinuationToken ?? undefined,
-            maxKeys: result.MaxKeys ?? options.maxKeys,
-            prefix: result.Prefix ?? options.prefix,
-            delimiter: result.Delimiter ?? options.delimiter
+            nextToken: Or(result.NextContinuationToken, undefined),
+            maxKeys: Or(result.MaxKeys, options.maxKeys),
+            prefix: Or(result.Prefix, options.prefix),
+            delimiter: Or(result.Delimiter, options.delimiter)
         }
     }
 }
