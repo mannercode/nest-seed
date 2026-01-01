@@ -2,6 +2,24 @@ import { HttpStatus } from '@nestjs/common'
 import { toAny } from 'testlib'
 import { testBuffer, uploadObject, type S3ObjectServiceFixture } from './s3-object.service.fixture'
 
+function buildPresignedPostForm(
+    fields: Record<string, string>,
+    body: Buffer,
+    contentType?: string,
+    filename = 'file.txt'
+) {
+    const form = new FormData()
+
+    Object.entries(fields).forEach(([key, value]) => {
+        form.append(key, value)
+    })
+
+    const blob = new Blob([body], { type: contentType ?? 'application/octet-stream' })
+    form.append('file', blob, filename)
+
+    return form
+}
+
 describe('S3ObjectService', () => {
     let fix: S3ObjectServiceFixture
 
@@ -12,58 +30,60 @@ describe('S3ObjectService', () => {
     afterEach(() => fix.teardown())
 
     describe('presignUploadUrl', () => {
-        it('returns an uploadUrl', async () => {
-            const uploadUrl = await fix.s3Service.presignUploadUrl({
+        it('returns a presigned post', async () => {
+            const presigned = await fix.s3Service.presignUploadUrl({
                 key: 'key.txt',
-                expiresInSec: 60,
-                contentType: 'text/plain',
-                contentLength: 10
+                expiresInSec: 60
             })
 
-            expect(uploadUrl).toEqual(expect.any(String))
+            expect(presigned).toEqual({ url: expect.any(String), fields: expect.any(Object) })
         })
 
-        describe('when an uploadUrl is returned', () => {
-            let uploadUrl: string
+        describe('when a presigned post is returned', () => {
+            let presigned: { url: string; fields: Record<string, string> }
             const uploadBody = Buffer.from('hello')
 
             beforeEach(async () => {
-                uploadUrl = await fix.s3Service.presignUploadUrl({
+                presigned = await fix.s3Service.presignUploadUrl({
                     key: 'key.txt',
                     expiresInSec: 60,
                     contentType: 'text/plain',
-                    contentLength: uploadBody.byteLength
+                    minContentLength: uploadBody.byteLength,
+                    maxContentLength: uploadBody.byteLength
                 })
             })
 
-            it('allows uploading via the uploadUrl', async () => {
-                const response = await fetch(uploadUrl, {
-                    method: 'PUT',
-                    headers: [['content-type', 'text/plain']],
-                    body: uploadBody
-                })
+            it('allows uploading via the presigned post', async () => {
+                const form = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
+
+                const response = await fetch(presigned.url, { method: 'POST', body: form })
 
                 expect(response.ok).toBe(true)
             })
 
             it('fails for mismatched `contentType`', async () => {
-                const response = await fetch(uploadUrl, {
-                    method: 'PUT',
-                    headers: [['content-type', 'image/png']],
-                    body: uploadBody
-                })
+                const form = buildPresignedPostForm(
+                    { ...presigned.fields, 'Content-Type': 'image/png' },
+                    uploadBody,
+                    'image/png'
+                )
+
+                const response = await fetch(presigned.url, { method: 'POST', body: form })
 
                 expect(response.ok).toBe(false)
             })
 
             it('fails for mismatched `contentLength`', async () => {
-                const mismatchedBody = Buffer.from('mismatched length')
-
-                const response = await fetch(uploadUrl, {
-                    method: 'PUT',
-                    headers: [['content-type', 'text/plain']],
-                    body: mismatchedBody
+                const { url, fields } = await fix.s3Service.presignUploadUrl({
+                    key: 'key.txt',
+                    expiresInSec: 60,
+                    contentType: 'text/plain',
+                    maxContentLength: uploadBody.byteLength - 1
                 })
+
+                const form = buildPresignedPostForm(fields, uploadBody, 'text/plain')
+
+                const response = await fetch(url, { method: 'POST', body: form })
 
                 expect(response.ok).toBe(false)
             })

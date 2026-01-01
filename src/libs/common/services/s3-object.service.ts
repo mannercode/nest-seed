@@ -17,12 +17,9 @@ import { Or } from '../validator'
 
 export type S3PresignUrlOptions = { key: string; expiresInSec: number }
 
-/** presigned POST 정책 기반 업로드 옵션 */
 export type S3PresignPostUploadOptions = S3PresignUrlOptions & {
     contentType?: string
-    /** 최소 바이트(포함) */
     minContentLength?: number
-    /** 최대 바이트(포함) */
     maxContentLength?: number
     /** Content-Disposition(예: attachment; filename="a.txt") */
     contentDisposition?: string
@@ -31,19 +28,15 @@ export type S3PresignPostUploadOptions = S3PresignUrlOptions & {
 }
 
 export type S3PresignPostUploadResult = PresignedPost
-
 export type S3UploadCompleteOptions = { key: string; contentType?: string; contentLength?: number }
-
 export type S3ObjectData = { data: Buffer; filename: string; contentType: string }
 export type S3DeleteObjectResult = { status: number; key: string }
-
 export type S3ListObjectsOptions = {
     prefix?: string
     nextToken?: string
     maxKeys?: number
     delimiter?: string
 }
-
 export type S3ObjectSummary = { key: string; lastModified?: Date; eTag?: string; size?: number }
 
 export type S3ListObjectsResult = {
@@ -91,6 +84,7 @@ async function bodyToBuffer(body: unknown): Promise<Buffer> {
     }
 
     // WebStream -> Readable (node18+)
+    // TODO coverage
     if (typeof (Readable as any).fromWeb === 'function' && (body as any)?.getReader) {
         const readable = (Readable as any).fromWeb(body as any) as Readable
         const chunks: Buffer[] = []
@@ -108,7 +102,7 @@ async function bodyToBuffer(body: unknown): Promise<Buffer> {
         }
         return Buffer.concat(chunks)
     }
-
+    // TODO coverage
     throw new Error('Unsupported S3 Body type')
 }
 
@@ -147,6 +141,7 @@ export class S3ObjectService implements OnModuleDestroy {
         if (contentType) Fields['Content-Type'] = contentType
         if (contentDisposition) Fields['Content-Disposition'] = contentDisposition
         if (metadata) {
+            // TODO coverage
             for (const [k, v] of Object.entries(metadata)) {
                 Fields[`x-amz-meta-${k}`] = v
             }
@@ -156,6 +151,7 @@ export class S3ObjectService implements OnModuleDestroy {
         if (contentType) Conditions.push(['eq', '$Content-Type', contentType])
         if (contentDisposition) Conditions.push(['eq', '$Content-Disposition', contentDisposition])
         if (metadata) {
+            // TODO coverage
             for (const [k, v] of Object.entries(metadata)) {
                 Conditions.push(['eq', `$x-amz-meta-${k}`, v])
             }
@@ -262,8 +258,9 @@ export class S3ObjectService implements OnModuleDestroy {
 
         let body: Readable
         if (Body instanceof Readable) {
-            body = Body
+            body = Body // TODO coverage
         } else if (typeof (Readable as any).fromWeb === 'function' && (Body as any)?.getReader) {
+            // TODO coverage
             body = (Readable as any).fromWeb(Body as any) as Readable
         } else {
             // fallback: Buffer로 변환 후 Readable 생성
@@ -336,10 +333,6 @@ export function InjectS3Object(name?: string): ParameterDecorator {
     return Inject(S3ObjectService.getName(name))
 }
 
-/**
- * AWS S3는 기본적으로 false. MinIO 사용 시 path-style 주소를 위해 true가 필요할 수 있음
- * Default is false for AWS S3. May need true for MinIO to use path-style addressing
- */
 export interface S3ClientFactoryConfig extends S3ClientConfig {
     bucket: string
 }
@@ -360,10 +353,6 @@ export class S3ObjectModule {
             provide: S3ObjectService.getName(name),
             useFactory: async (...args: any[]) => {
                 const { bucket, ...s3config } = await useFactory(...args)
-
-                if (!bucket || typeof bucket !== 'string' || bucket.trim().length === 0) {
-                    throw new Error('S3ObjectModule: "bucket" is required in factory config.')
-                }
 
                 const client = new S3Client(s3config)
                 return new S3ObjectService(bucket, client)

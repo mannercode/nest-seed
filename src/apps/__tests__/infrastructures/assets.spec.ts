@@ -34,13 +34,16 @@ describe('AssetsService', () => {
                     assetId: expect.any(String),
                     url: expect.any(String),
                     expiresAt: expect.any(Date),
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': createDto.mimeType,
-                        'Content-Length': createDto.size.toString(),
-                        'x-amz-checksum-sha256': file.checksum.base64
-                    }
+                    method: 'POST',
+                    fields: expect.any(Object)
                 })
+
+                expect(uploadRequest.fields).toEqual(
+                    expect.objectContaining({
+                        'Content-Type': createDto.mimeType,
+                        key: uploadRequest.assetId
+                    })
+                )
             })
 
             it('uploads the file using the upload request', async () => {
@@ -283,6 +286,7 @@ describe('AssetsService', () => {
 
                 it('removes the asset', async () => {
                     await fireOnTick()
+                    // TODO 500으로 해도 간헐적으로 에러 발생.
                     await sleep(500)
 
                     await expect(fix.assetsClient.getMany([assetId])).rejects.toMatchObject({

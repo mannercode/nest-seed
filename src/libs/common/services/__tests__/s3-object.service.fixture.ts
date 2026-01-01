@@ -27,9 +27,17 @@ export async function createS3ObjectServiceFixture() {
 }
 
 export async function uploadObject(s3Service: S3ObjectService, key: string, body: string) {
-    const uploadUrl = await s3Service.presignUploadUrl({ key, expiresInSec: 60 })
+    const { url, fields } = await s3Service.presignUploadUrl({ key, expiresInSec: 60 })
+    const form = new FormData()
 
-    const response = await fetch(uploadUrl, { method: 'PUT', body: Buffer.from(body) })
+    Object.entries(fields).forEach(([fieldKey, value]) => {
+        form.append(fieldKey, value)
+    })
+
+    const blob = new Blob([Buffer.from(body)], { type: 'application/octet-stream' })
+    form.append('file', blob, 'file')
+
+    const response = await fetch(url, { method: 'POST', body: form })
     expect(response.ok).toBe(true)
 }
 

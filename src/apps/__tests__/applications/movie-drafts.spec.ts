@@ -116,16 +116,13 @@ describe('MovieDraftsService', () => {
                         assetId: expect.any(String),
                         url: expect.any(String),
                         expiresAt: expect.any(Date),
-                        method: 'PUT',
-                        headers: expect.objectContaining({
-                            'Content-Type': createDto.mimeType,
-                            'Content-Length': createDto.size.toString(),
-                            'x-amz-checksum-sha256': createDto.checksum.base64
-                        })
+                        method: 'POST',
+                        fields: expect.objectContaining({ 'Content-Type': createDto.mimeType })
                     })
                 })
 
                 expect(body.imageId).toBe(body.upload.assetId)
+                expect(body.upload.fields.key).toBe(body.upload.assetId)
             })
 
             // TODO fix desc
