@@ -333,6 +333,7 @@ describe('S3ObjectService', () => {
 
                 expect(listedKeys).toEqual(expect.arrayContaining(['b/c.txt', 'b/d.txt']))
                 expect(listedKeys).not.toEqual(expect.arrayContaining(['a.txt']))
+
                 expect(commonPrefixes ?? []).toHaveLength(0)
             })
         })
