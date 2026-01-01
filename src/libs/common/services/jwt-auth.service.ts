@@ -3,6 +3,7 @@ import { JwtModule, JwtService } from '@nestjs/jwt'
 import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import Redis from 'ioredis'
 import { generateShortId, notUsed, Time } from '../utils'
+import { orDefault } from '../validator'
 
 export const JwtAuthServiceErrors = {
     RefreshTokenInvalid: {
@@ -36,8 +37,8 @@ export class JwtAuthService {
         public readonly prefix: string
     ) {}
 
-    static getName(name: string = 'default') {
-        return `JwtAuthService_${name}`
+    static getName(name?: string) {
+        return `JwtAuthService_${orDefault(name, 'default')}`
     }
 
     private getKey(key: string) {
@@ -131,16 +132,20 @@ export type JwtAuthModuleOptions = {
 export class JwtAuthModule {
     static register(options: JwtAuthModuleOptions): DynamicModule {
         const { name, redisName, prefix, useFactory, inject } = options
-        const resolvedName = name ?? 'default'
 
         const cacheProvider = {
             provide: JwtAuthService.getName(name),
             useFactory: async (jwtService: JwtService, redis: Redis, ...args: any[]) => {
                 const { auth } = await useFactory(...args)
 
-                return new JwtAuthService(jwtService, auth, redis, `${prefix}:${resolvedName}`)
+                return new JwtAuthService(
+                    jwtService,
+                    auth,
+                    redis,
+                    `${prefix}:${orDefault(name, 'default')}`
+                )
             },
-            inject: [JwtService, getRedisConnectionToken(redisName), ...(inject ?? [])]
+            inject: [JwtService, getRedisConnectionToken(redisName), ...orDefault(inject, [])]
         }
 
         return {

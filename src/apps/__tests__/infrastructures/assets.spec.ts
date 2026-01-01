@@ -70,7 +70,7 @@ describe('AssetsService', () => {
         })
     })
 
-    describe('isUploadCompleted', () => {
+    describe('isUploadComplete', () => {
         describe('when the upload is completed', () => {
             let assetId: string
 
@@ -79,7 +79,7 @@ describe('AssetsService', () => {
             })
 
             it('returns true', async () => {
-                const isCompleted = await fix.assetsClient.isUploadCompleted(assetId)
+                const isCompleted = await fix.assetsClient.isUploadComplete(assetId)
                 expect(isCompleted).toBe(true)
             })
         })
@@ -93,7 +93,7 @@ describe('AssetsService', () => {
             })
 
             it('returns false', async () => {
-                const isCompleted = await fix.assetsClient.isUploadCompleted(assetId)
+                const isCompleted = await fix.assetsClient.isUploadComplete(assetId)
                 expect(isCompleted).toBe(false)
             })
         })

@@ -93,9 +93,6 @@ export function createConfigServiceMock(mockValues: Record<string, any>) {
 }
 
 // const configMock = createConfigServiceMock({
-//     FILE_UPLOAD_MAX_FILE_SIZE_BYTES: localFiles.oversized.size,
-//     FILE_UPLOAD_MAX_FILES_PER_UPLOAD: maxFilesPerUpload,
-//     FILE_UPLOAD_ALLOWED_FILE_TYPES: 'text/plain',
 //     S3_ENDPOINT: s3.endpoint,
 //     S3_REGION: s3.region,
 //     S3_BUCKET: s3.bucket,

@@ -116,7 +116,7 @@ describe('S3ObjectService', () => {
         })
     })
 
-    describe('isUploadCompleted', () => {
+    describe('isUploadComplete', () => {
         describe('when the object exists', () => {
             const s3Object = { data: testBuffer, filename: 'file.txt', contentType: 'text/plain' }
             let key: string
@@ -127,13 +127,13 @@ describe('S3ObjectService', () => {
             })
 
             it('returns true', async () => {
-                const isCompleted = await fix.s3Service.isUploadCompleted({ key })
+                const isCompleted = await fix.s3Service.isUploadComplete({ key })
 
                 expect(isCompleted).toBe(true)
             })
 
             it('returns true for matching content details', async () => {
-                const isCompleted = await fix.s3Service.isUploadCompleted({
+                const isCompleted = await fix.s3Service.isUploadComplete({
                     key,
                     contentLength: s3Object.data.byteLength,
                     contentType: s3Object.contentType
@@ -143,7 +143,7 @@ describe('S3ObjectService', () => {
             })
 
             it('returns false for mismatched content length', async () => {
-                const isCompleted = await fix.s3Service.isUploadCompleted({
+                const isCompleted = await fix.s3Service.isUploadComplete({
                     key,
                     contentLength: s3Object.data.byteLength + 1
                 })
@@ -152,7 +152,7 @@ describe('S3ObjectService', () => {
             })
 
             it('returns false for mismatched content type', async () => {
-                const isCompleted = await fix.s3Service.isUploadCompleted({
+                const isCompleted = await fix.s3Service.isUploadComplete({
                     key,
                     contentType: 'image/png'
                 })
@@ -163,7 +163,7 @@ describe('S3ObjectService', () => {
 
         describe('when the object does not exist', () => {
             it('returns false', async () => {
-                const isCompleted = await fix.s3Service.isUploadCompleted({ key: 'not-exists' })
+                const isCompleted = await fix.s3Service.isUploadComplete({ key: 'not-exists' })
 
                 expect(isCompleted).toBe(false)
             })
@@ -177,7 +177,7 @@ describe('S3ObjectService', () => {
             })
 
             it('throws the error', async () => {
-                const promise = fix.s3Service.isUploadCompleted({ key: 'key' })
+                const promise = fix.s3Service.isUploadComplete({ key: 'key' })
 
                 await expect(promise).rejects.toThrow('unexpected')
             })
@@ -236,7 +236,7 @@ describe('S3ObjectService', () => {
             it('returns a no-content status and the deleted key', async () => {
                 const result = await fix.s3Service.deleteObject(key)
 
-                expect(result).toEqual({ status: HttpStatus.NO_CONTENT, deletedObject: key })
+                expect(result).toEqual({ status: HttpStatus.NO_CONTENT, key })
             })
         })
 
@@ -245,7 +245,7 @@ describe('S3ObjectService', () => {
                 const key = 'not-exist-key'
                 const result = await fix.s3Service.deleteObject(key)
 
-                expect(result).toEqual({ status: HttpStatus.NO_CONTENT, deletedObject: key })
+                expect(result).toEqual({ status: HttpStatus.NO_CONTENT, key })
             })
         })
     })
@@ -333,7 +333,6 @@ describe('S3ObjectService', () => {
 
                 expect(listedKeys).toEqual(expect.arrayContaining(['b/c.txt', 'b/d.txt']))
                 expect(listedKeys).not.toEqual(expect.arrayContaining(['a.txt']))
-
                 expect(commonPrefixes ?? []).toHaveLength(0)
             })
         })

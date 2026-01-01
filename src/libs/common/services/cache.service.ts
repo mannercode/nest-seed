@@ -1,6 +1,7 @@
 import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
 import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import Redis from 'ioredis'
+import { orDefault } from '../validator'
 
 @Injectable()
 export class CacheService {
@@ -9,8 +10,8 @@ export class CacheService {
         private readonly prefix: string
     ) {}
 
-    static getName(name: string = 'default') {
-        return `CacheService_${name}`
+    static getName(name?: string) {
+        return `CacheService_${orDefault(name, 'default')}`
     }
 
     private getKey(key: string) {
@@ -60,12 +61,11 @@ export type CacheModuleOptions = { name?: string; redisName?: string; prefix: st
 export class CacheModule {
     static register(options: CacheModuleOptions): DynamicModule {
         const { name, redisName, prefix } = options
-        const resolvedName = name ?? 'default'
 
         const provider = {
             provide: CacheService.getName(name),
             useFactory: async (redis: Redis) => {
-                return new CacheService(redis, `${prefix}:${resolvedName}`)
+                return new CacheService(redis, `${prefix}:${orDefault(name, 'default')}`)
             },
             inject: [getRedisConnectionToken(redisName)]
         }

@@ -67,10 +67,10 @@ export class AssetsService {
         return this.withDownloadInfo(dto)
     }
 
-    async isUploadCompleted(assetId: string): Promise<boolean> {
+    async isUploadComplete(assetId: string): Promise<boolean> {
         const { id, mimeType, size } = await this.repository.getById(assetId)
 
-        return this.s3Service.isUploadCompleted({
+        return this.s3Service.isUploadComplete({
             key: id,
             contentType: mimeType,
             contentLength: size

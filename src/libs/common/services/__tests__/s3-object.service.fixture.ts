@@ -10,24 +10,10 @@ class TestInjectS3ObjectService {
 export type S3ObjectServiceFixture = { teardown: () => Promise<void>; s3Service: S3ObjectService }
 
 export async function createS3ObjectServiceFixture() {
-    const { endpoint, accessKeyId, secretAccessKey, region, forcePathStyle, bucket } =
-        getS3TestConnection()
+    const config = getS3TestConnection()
 
     const { module, close } = await createTestContext({
-        imports: [
-            S3ObjectModule.register({
-                useFactory() {
-                    return {
-                        endpoint,
-                        accessKeyId,
-                        secretAccessKey,
-                        region,
-                        forcePathStyle,
-                        bucket
-                    }
-                }
-            })
-        ],
+        imports: [S3ObjectModule.register({ useFactory: () => config })],
         providers: [TestInjectS3ObjectService]
     })
 

@@ -6,30 +6,23 @@ import {
     ListObjectsV2Command,
     PutObjectCommand,
     PutObjectCommandInput,
-    S3Client
+    S3Client,
+    S3ClientConfig
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
-import { orDefault } from 'common'
+import { DynamicModule, Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
 import { newObjectId } from '../mongoose'
 import { HttpUtil } from '../utils'
+import { orDefault } from '../validator'
 
-export type PresignedUrl = { url: string; key: string; expiresAt: Date }
-export type S3PresignOptions = { key: string; expiresInSec: number }
-export type S3PresignUploadOptions = S3PresignOptions & {
+export type S3PresignUrlOptions = { key: string; expiresInSec: number }
+export type S3PresignUploadOptions = S3PresignUrlOptions & {
     contentType?: string
     contentLength?: number
 }
-export type S3UploadCompletionOptions = {
-    key: string
-    contentType?: string
-    contentLength?: number
-}
-
-export type S3Object = { data: Buffer; filename: string; contentType: string }
-
-export type S3DeleteObjectResult = { status: number; deletedObject: string }
-
+export type S3UploadCompleteOptions = { key: string; contentType?: string; contentLength?: number }
+export type S3ObjectData = { data: Buffer; filename: string; contentType: string }
+export type S3DeleteObjectResult = { status: number; key: string }
 export type S3ListObjectsOptions = {
     prefix?: string
     nextToken?: string
@@ -48,14 +41,18 @@ export type S3ListObjectsResult = {
 }
 
 @Injectable()
-export class S3ObjectService {
+export class S3ObjectService implements OnModuleDestroy {
     constructor(
         private readonly bucket: string,
         private readonly s3: S3Client
     ) {}
 
-    static getName(name: string = 'default') {
-        return `S3ObjectService_${name}`
+    static getName(name?: string) {
+        return `S3ObjectService_${orDefault(name, 'default')}`
+    }
+
+    onModuleDestroy() {
+        this.s3.destroy()
     }
 
     async presignUploadUrl(opts: S3PresignUploadOptions): Promise<string> {
@@ -84,7 +81,7 @@ export class S3ObjectService {
         return uploadUrl
     }
 
-    async presignDownloadUrl(opts: S3PresignOptions): Promise<string> {
+    async presignDownloadUrl(opts: S3PresignUrlOptions): Promise<string> {
         const { key, expiresInSec } = opts
 
         const command = new GetObjectCommand({ Bucket: this.bucket, Key: key })
@@ -93,7 +90,7 @@ export class S3ObjectService {
         return downloadUrl
     }
 
-    async isUploadCompleted(opts: S3UploadCompletionOptions): Promise<boolean> {
+    async isUploadComplete(opts: S3UploadCompleteOptions): Promise<boolean> {
         const { key, contentLength, contentType } = opts
 
         try {
@@ -125,7 +122,7 @@ export class S3ObjectService {
         }
     }
 
-    async putObject(object: S3Object): Promise<{ key: string }> {
+    async putObject(object: S3ObjectData): Promise<{ key: string }> {
         const key = newObjectId()
         const disposition = HttpUtil.buildContentDisposition(object.filename)
 
@@ -142,7 +139,7 @@ export class S3ObjectService {
         return { key }
     }
 
-    async getObject(key: string): Promise<S3Object> {
+    async getObject(key: string): Promise<S3ObjectData> {
         const { Body, ContentType, ContentDisposition } = await this.s3.send(
             new GetObjectCommand({ Bucket: this.bucket, Key: key })
         )
@@ -170,7 +167,7 @@ export class S3ObjectService {
         const { $metadata } = await this.s3.send(command)
         const status = orDefault($metadata.httpStatusCode, 200)
 
-        return { status, deletedObject: key }
+        return { status, key }
     }
 
     async listObjects(options: S3ListObjectsOptions): Promise<S3ListObjectsResult> {
@@ -193,7 +190,7 @@ export class S3ObjectService {
             }))
             .filter((o) => o.key)
 
-        const commonPrefixes: string[] = (result.CommonPrefixes ?? [])
+        const commonPrefixes: string[] = orDefault(result.CommonPrefixes, [])
             .map((cp) => cp.Prefix)
             .filter((p): p is string => !!p && p.length > 0)
 
@@ -213,18 +210,17 @@ export function InjectS3Object(name?: string): ParameterDecorator {
     return Inject(S3ObjectService.getName(name))
 }
 
-type S3ObjectFactoryOptions = {
-    endpoint: string
-    accessKeyId: string
-    secretAccessKey: string
-    region: string
+/**
+ * AWS S3는 기본적으로 false. MinIO 사용 시 path-style 주소를 위해 true가 필요할 수 있음
+ * Default is false for AWS S3. May need true for MinIO to use path-style addressing
+ */
+export interface S3ClientFactoryConfig extends S3ClientConfig {
     bucket: string
-    forcePathStyle: boolean
 }
 
 export type S3ObjectModuleOptions = {
     name?: string
-    useFactory: (...args: any[]) => Promise<S3ObjectFactoryOptions> | S3ObjectFactoryOptions
+    useFactory: (...args: any[]) => Promise<S3ClientFactoryConfig> | S3ClientFactoryConfig
     inject?: any[]
 }
 
@@ -236,15 +232,9 @@ export class S3ObjectModule {
         const provider = {
             provide: S3ObjectService.getName(name),
             useFactory: async (...args: any[]) => {
-                const { endpoint, accessKeyId, secretAccessKey, region, bucket, forcePathStyle } =
-                    await useFactory(...args)
+                const { bucket, ...s3config } = await useFactory(...args)
 
-                const client = new S3Client({
-                    endpoint,
-                    region,
-                    credentials: { accessKeyId, secretAccessKey },
-                    forcePathStyle
-                })
+                const client = new S3Client(s3config)
 
                 return new S3ObjectService(bucket, client)
             },
