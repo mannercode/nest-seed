@@ -54,12 +54,9 @@ jobs:
                       set -Eeuxo pipefail
                       dump_compose_logs () {
                           docker ps -a || true
-                          docker stats -a --no-stream
-
-                          for id in $(docker ps -aq); do
-                            echo "========================= ${id} ========================="
-                            docker logs --timestamps --tail 300 "${id}" || true
-                          done
+                          docker logs mongo1
+                          docker logs mongo2
+                          docker logs mongo3
                       }
                       trap 'rc=$?; if [ ${rc} -ne 0 ]; then dump_compose_logs; fi; exit ${rc}' EXIT
 
