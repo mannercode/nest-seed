@@ -36,7 +36,6 @@ async function setupMongo() {
             '--bind_ip_all',
             '--wiredTigerCacheSizeGB',
             '0.25'
-            // "--keyFile", "/etc/mongodb/mongodb.key", // 필요하면 추가
         ])
         .start()
 }
