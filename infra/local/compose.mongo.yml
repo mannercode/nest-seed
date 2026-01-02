@@ -12,6 +12,9 @@ x-mongo-base: &mongo-base
         --keyFile /etc/mongodb/mongodb.key
         --bind_ip_all
         --wiredTigerCacheSizeGB 0.25
+    init: true
+    stop_signal: SIGTERM
+    stop_grace_period: 60s
     volumes: ['mongodb_key:/etc/mongodb']
     depends_on: ['mongo-key-generator']
 
