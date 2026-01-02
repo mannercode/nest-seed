@@ -1,6 +1,9 @@
 # https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
 name: CI
 
+# On GitHub, ARM is 15% faster than x86.
+# GitHub에서 ARM이 x86 보다 15% 빠르다.
+
 on:
     pull_request:
         branches: ['main']
@@ -104,28 +107,3 @@ jobs:
                               docker stats -a --no-stream
                           npm test
                       done
-
-    repeat-x86:
-        runs-on: ubuntu-24.04
-        steps:
-            - uses: actions/checkout@v4
-            - name: Prepare host mount
-              run: mkdir -p "$HOME/.codex"
-            - name: Run CI inside Dev Container
-              uses: devcontainers/ci@v0.3
-              with:
-                  push: never
-                  runCmd: |
-                      npm test
-    repeat-arm:
-        runs-on: ubuntu-24.04-arm
-        steps:
-            - uses: actions/checkout@v4
-            - name: Prepare host mount
-              run: mkdir -p "$HOME/.codex"
-            - name: Run CI inside Dev Container
-              uses: devcontainers/ci@v0.3
-              with:
-                  push: never
-                  runCmd: |
-                      npm test
