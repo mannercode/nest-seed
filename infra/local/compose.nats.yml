@@ -1,6 +1,6 @@
 x-nats-base: &nats-base
     extends: { file: ./compose.common.yml, service: common-options }
-    image: $NATS_IMAGE
+    image: ${NATS_IMAGE}
     deploy: { resources: { limits: { memory: 256m } } }
     shm_size: '8m'
     healthcheck:
@@ -11,25 +11,25 @@ services:
         <<: *nats-base
         container_name: nats1
         command: >
-            --cluster_name $NATS_CLUSTER --cluster nats://0.0.0.0:6222 --http_port 8222
-        ports: ['$NATS_PORT1:4222']
+            --cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222
+        ports: ['${NATS_PORT1}:4222']
 
     nats2:
         <<: *nats-base
         container_name: nats2
         command: >
-            --cluster_name $NATS_CLUSTER --cluster nats://0.0.0.0:6222 --http_port 8222
+            --cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222
             --routes=nats://nats1:6222
-        ports: ['$NATS_PORT2:4222']
+        ports: ['${NATS_PORT2}:4222']
         depends_on: ['nats1']
 
     nats3:
         <<: *nats-base
         container_name: nats3
         command: >
-            --cluster_name $NATS_CLUSTER --cluster nats://0.0.0.0:6222 --http_port 8222
+            --cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222
             --routes=nats://nats1:6222
-        ports: ['$NATS_PORT3:4222']
+        ports: ['${NATS_PORT3}:4222']
         depends_on: ['nats1']
 
     nats-setup:
@@ -50,7 +50,7 @@ services:
             sleep 0.3
             nats pub -s nats://nats2:4222 hello first
             nats pub -s nats://nats3:4222 hello second
-            wait $$SUB_PID
+            wait $${SUB_PID}
             cat /tmp/sub.log
             '
     nats-exporter1:

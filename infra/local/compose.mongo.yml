@@ -7,8 +7,9 @@ x-mongo-base: &mongo-base
         { MONGO_INITDB_ROOT_USERNAME: $MONGO_USERNAME, MONGO_INITDB_ROOT_PASSWORD: $MONGO_PASSWORD }
     # Prevents "Too many open files" errors
     ulimits: { nofile: { soft: 65536, hard: 65536 } }
+
     command: >
-        mongod --replSet $MONGO_REPLICA_SET
+        --replSet ${MONGO_REPLICA_SET}
         --keyFile /etc/mongodb/mongodb.key
         --bind_ip_all
         --wiredTigerCacheSizeGB 0.25
@@ -67,6 +68,9 @@ services:
             }
         command: |
             sh -eucx '
+
+
+
             mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1/?authSource=admin" \
                 --eval "
                     rs.initiate({
@@ -79,6 +83,7 @@ services:
                     })
                     "
             '
+
     mongo-gui:
         profiles: ['gui']
         extends: { file: ./compose.common.yml, service: common-options }
