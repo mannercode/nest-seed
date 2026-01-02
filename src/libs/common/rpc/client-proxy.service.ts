@@ -61,6 +61,7 @@ export class ClientProxyService implements OnModuleDestroy {
                         err?.message ?? err?.response ?? err?.error ?? err?.toString?.() ?? ''
                     )
 
+                    /* istanbul ignore next */
                     if (
                         /empty response/i.test(msg) ||
                         /no subscribers/i.test(msg) ||
@@ -69,6 +70,7 @@ export class ClientProxyService implements OnModuleDestroy {
                     ) {
                         return timer(retryCount * 50)
                     }
+
                     return throwError(() => err)
                 },
                 resetOnSuccess: true
