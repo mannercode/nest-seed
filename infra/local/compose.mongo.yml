@@ -11,10 +11,8 @@ x-mongo-base: &mongo-base
         --replSet ${MONGO_REPLICA_SET}
         --keyFile /etc/mongodb/mongodb.key
         --bind_ip_all
+        --port 17017
         --wiredTigerCacheSizeGB 0.25
-    init: true
-    stop_signal: SIGTERM
-    stop_grace_period: 60s
     volumes: ['mongodb_key:/etc/mongodb']
     depends_on: ['mongo-key-generator']
 
@@ -34,7 +32,7 @@ services:
     mongo1:
         <<: *mongo-base
         container_name: mongo1
-        ports: ['$MONGO_PORT1:27017']
+        ports: ['$MONGO_PORT1:17017']
         healthcheck:
             test: >
                 mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1/?authSource=admin"
@@ -43,7 +41,7 @@ services:
     mongo2:
         <<: *mongo-base
         container_name: mongo2
-        ports: ['$MONGO_PORT2:27017']
+        ports: ['$MONGO_PORT2:17017']
         healthcheck:
             test: >
                 mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST2:$MONGO_PORT2/?authSource=admin"
@@ -52,7 +50,7 @@ services:
     mongo3:
         <<: *mongo-base
         container_name: mongo3
-        ports: ['$MONGO_PORT3:27017']
+        ports: ['$MONGO_PORT3:17017']
         healthcheck:
             test: >
                 mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST3:$MONGO_PORT3/?authSource=admin"
@@ -92,7 +90,7 @@ services:
         environment:
             {
                 ME_CONFIG_BASICAUTH: 'false',
-                ME_CONFIG_MONGODB_URL: 'mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@mongo1:27017,mongo2:27017,mongo3:27017/?authSource=admin&replicaSet=$MONGO_REPLICA_SET'
+                ME_CONFIG_MONGODB_URL: 'mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@mongo1:17017,mongo2:17017,mongo3:17017/?authSource=admin&replicaSet=$MONGO_REPLICA_SET'
             }
         ports: ['8081:8081']
 
