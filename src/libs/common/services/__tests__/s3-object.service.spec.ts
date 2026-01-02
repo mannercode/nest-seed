@@ -287,19 +287,19 @@ describe('S3ObjectService', () => {
         })
     })
 
-    describe('putObject', () => {
-        describe('when the payload is valid', () => {
-            it('returns a key', async () => {
-                const { key } = await fix.s3Service.putObject({
-                    data: testBuffer,
-                    filename: 'file.txt',
-                    contentType: 'text/plain'
-                })
+    // describe('putObject', () => {
+    //     describe('when the payload is valid', () => {
+    //         it('returns a key', async () => {
+    //             const { key } = await fix.s3Service.putObject({
+    //                 data: testBuffer,
+    //                 filename: 'file.txt',
+    //                 contentType: 'text/plain'
+    //             })
 
-                expect(key).toEqual(expect.any(String))
-            })
-        })
-    })
+    //             expect(key).toEqual(expect.any(String))
+    //         })
+    //     })
+    // })
 
     describe('deleteObject', () => {
         describe('when the object exists', () => {

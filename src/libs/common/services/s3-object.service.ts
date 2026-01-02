@@ -15,17 +15,14 @@ import { HttpUtil } from '../utils'
 import { Or } from '../validator'
 
 export type S3PresignUrlOptions = { key: string; expiresInSec: number }
-
 export type S3PresignPostUploadOptions = S3PresignUrlOptions & {
     contentType?: string
     minContentLength?: number
     maxContentLength?: number
-    /** Content-Disposition(예: attachment; filename="a.txt") */
+    // attachment; filename="a.txt"
     contentDisposition?: string
-    /** 추가 고정 메타데이터(정책에 포함) */
     metadata?: Record<string, string>
 }
-
 export type S3PresignPostUploadResult = PresignedPost
 export type S3UploadCompleteOptions = { key: string; contentType?: string; contentLength?: number }
 export type S3ObjectData = { data: Buffer; filename: string; contentType: string }
@@ -37,7 +34,6 @@ export type S3ListObjectsOptions = {
     delimiter?: string
 }
 export type S3ObjectSummary = { key: string; lastModified?: Date; eTag?: string; size?: number }
-
 export type S3ListObjectsResult = {
     contents: S3ObjectSummary[]
     commonPrefixes?: string[]
@@ -55,13 +51,6 @@ export type S3PresignDownloadOptions = S3PresignUrlOptions & {
     responseContentType?: string
     /** Content-Disposition 직접 지정 */
     responseContentDisposition?: string
-}
-
-function isS3NotFoundError(error: unknown): boolean {
-    const err = error as { name?: string; $metadata?: { httpStatusCode?: number } }
-    return (
-        err.name === 'NotFound' || err.name === 'NoSuchKey' || err.$metadata?.httpStatusCode === 404
-    )
 }
 
 function normalizeContentType(v?: string): string | undefined {
@@ -84,11 +73,6 @@ export class S3ObjectService implements OnModuleDestroy {
         this.s3.destroy()
     }
 
-    /**
-     * presigned POST 업로드 정책(크기 제한 포함 가능)
-     * - 브라우저 직접 업로드에 권장
-     * - content-length-range 정책으로 크기 제한을 강제할 수 있음
-     */
     async presignUploadUrl(opts: S3PresignPostUploadOptions): Promise<S3PresignPostUploadResult> {
         const {
             key,
@@ -101,19 +85,21 @@ export class S3ObjectService implements OnModuleDestroy {
         } = opts
 
         const Fields: Record<string, string> = {}
-        if (contentType) Fields['Content-Type'] = contentType
-        if (contentDisposition) Fields['Content-Disposition'] = contentDisposition
+        const Conditions: any[] = []
+
+        if (contentType) {
+            Fields['Content-Type'] = contentType
+            Conditions.push(['eq', '$Content-Type', contentType])
+        }
+
+        if (contentDisposition) {
+            Fields['Content-Disposition'] = contentDisposition
+            Conditions.push(['eq', '$Content-Disposition', contentDisposition])
+        }
+
         if (metadata) {
             for (const [k, v] of Object.entries(metadata)) {
                 Fields[`x-amz-meta-${k}`] = v
-            }
-        }
-
-        const Conditions: any[] = []
-        if (contentType) Conditions.push(['eq', '$Content-Type', contentType])
-        if (contentDisposition) Conditions.push(['eq', '$Content-Disposition', contentDisposition])
-        if (metadata) {
-            for (const [k, v] of Object.entries(metadata)) {
                 Conditions.push(['eq', `$x-amz-meta-${k}`, v])
             }
         }
@@ -122,7 +108,7 @@ export class S3ObjectService implements OnModuleDestroy {
             Conditions.push([
                 'content-length-range',
                 Or(minContentLength, 0),
-                Or(maxContentLength, 5 * 1024 * 1024 * 1024) // 기본 5GiB
+                Or(maxContentLength, 1024 * 1024 * 1024 * 1024)
             ])
         }
 
@@ -135,10 +121,6 @@ export class S3ObjectService implements OnModuleDestroy {
         })
     }
 
-    /**
-     * presigned GET 다운로드 URL
-     * - filename/Content-Type 오버라이드 지원(브라우저 다운로드 UX 개선)
-     */
     async presignDownloadUrl(opts: S3PresignDownloadOptions): Promise<string> {
         const { key, expiresInSec, filename, responseContentType, responseContentDisposition } =
             opts
@@ -171,12 +153,20 @@ export class S3ObjectService implements OnModuleDestroy {
             // Content-Type은 파라미터(예: charset) 차이가 날 수 있어 base-type으로 비교
             const expected = normalizeContentType(contentType)
             const actual = normalizeContentType(ContentType)
+
             if (expected && actual && expected !== actual) return false
             if (expected && !actual) return false
 
             return true
         } catch (error) {
-            if (isS3NotFoundError(error)) return false
+            if (
+                error.name === 'NotFound' ||
+                error.name === 'NoSuchKey' ||
+                error.$metadata?.httpStatusCode === 404
+            ) {
+                return false
+            }
+
             throw error
         }
     }

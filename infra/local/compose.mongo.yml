@@ -2,6 +2,7 @@ x-mongo-base: &mongo-base
     extends: { file: ./compose.common.yml, service: common-options }
     image: $MONGO_IMAGE
     deploy: { resources: { limits: { memory: 1g } } }
+    shm_size: '8m'
     environment:
         { MONGO_INITDB_ROOT_USERNAME: $MONGO_USERNAME, MONGO_INITDB_ROOT_PASSWORD: $MONGO_PASSWORD }
     # Prevents "Too many open files" errors

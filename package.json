@@ -27,8 +27,8 @@
         "apps:up": "  docker compose up -d --build",
         "apps:wait": "docker wait apps-setup && docker rm apps-setup",
         "apps:reset": "npm run apps:down && npm run apps:up && npm run apps:wait",
-        "infra:down": "docker compose --project-directory infra/local --env-file .env --env-file .env.infra down -v -t 0 --remove-orphans",
-        "infra:up": "  docker compose --project-directory infra/local --env-file .env --env-file .env.infra up -d",
+        "infra:down": "COMPOSE_PROFILES=gui docker compose --project-directory infra/local --env-file .env --env-file .env.infra down -v -t 0 --remove-orphans",
+        "infra:up": "                       docker compose --project-directory infra/local --env-file .env --env-file .env.infra up -d",
         "infra:wait": "docker wait infra-setup && docker rm infra-setup",
         "infra:reset": "npm run infra:down && npm run infra:up && npm run infra:wait",
         "infra:gui": " COMPOSE_PROFILES=gui npm run infra:reset"

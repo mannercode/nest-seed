@@ -2,6 +2,7 @@ x-nats-base: &nats-base
     extends: { file: ./compose.common.yml, service: common-options }
     image: $NATS_IMAGE
     deploy: { resources: { limits: { memory: 256m } } }
+    shm_size: '8m'
     healthcheck:
         test: 'wget -qO- http://localhost:8222/varz || exit 1'
 

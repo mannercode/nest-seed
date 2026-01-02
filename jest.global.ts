@@ -5,19 +5,40 @@ import { GenericContainer } from 'testcontainers'
 import { getEnv, setEnv } from './jest.utils'
 
 async function setupNats() {
-    return new NatsContainer(getEnv('NATS_IMAGE')).withName('testlib-nats').withReuse().start()
+    return new NatsContainer(getEnv('NATS_IMAGE'))
+        .withName('testlib-nats')
+        .withResourcesQuota({ memory: 0.25 })
+        .withSharedMemorySize(8 * 1024 * 1024)
+        .withReuse()
+        .start()
 }
 
 async function setupRedis() {
     return new GenericContainer(getEnv('REDIS_IMAGE'))
         .withName('testlib-redis')
+        .withResourcesQuota({ memory: 0.125 })
+        .withSharedMemorySize(8 * 1024 * 1024)
         .withExposedPorts(6379)
         .withReuse()
         .start()
 }
 
 async function setupMongo() {
-    return new MongoDBContainer(getEnv('MONGO_IMAGE')).withName('testlib-mongo').withReuse().start()
+    return new MongoDBContainer(getEnv('MONGO_IMAGE'))
+        .withName('testlib-mongo')
+        .withResourcesQuota({ memory: 1 }) // 1GB
+        .withSharedMemorySize(8 * 1024 * 1024)
+        .withReuse()
+        .withCommand([
+            'mongod',
+            '--replSet',
+            'rs0',
+            '--bind_ip_all',
+            '--wiredTigerCacheSizeGB',
+            '0.25'
+            // "--keyFile", "/etc/mongodb/mongodb.key", // 필요하면 추가
+        ])
+        .start()
 }
 
 async function setupMinio() {
@@ -27,10 +48,12 @@ async function setupMinio() {
     setEnv('TESTLIB_S3_SECRET_KEY', MINIO_ROOT_PASSWORD)
 
     return new GenericContainer(getEnv('MINIO_IMAGE'))
+        .withName('testlib-minio')
+        .withResourcesQuota({ memory: 0.5 })
+        .withSharedMemorySize(8 * 1024 * 1024)
         .withEnvironment({ MINIO_ROOT_USER, MINIO_ROOT_PASSWORD })
         .withCommand(['server', '/data'])
         .withExposedPorts(9000)
-        .withName('testlib-minio')
         .withReuse()
         .start()
 }
