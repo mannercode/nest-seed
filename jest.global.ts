@@ -30,7 +30,6 @@ async function setupMongo() {
         .withSharedMemorySize(8 * 1024 * 1024)
         .withReuse()
         .withCommand([
-            'mongod',
             '--replSet',
             'rs0',
             '--bind_ip_all',
