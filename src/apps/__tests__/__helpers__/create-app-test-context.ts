@@ -49,10 +49,10 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
                     transport: Transport.NATS,
                     options: {
                         servers: nats.servers,
-                        queue: getProjectId(),
+                        queue: getProjectId()
                         // TODO
                         // 연결/재연결 안정화 (옵션들은 Nest NatsOptions에 존재)
-                        waitOnFirstConnect: true
+                        // waitOnFirstConnect: true
                         // reconnect: true,
                         // maxReconnectAttempts: -1,
                         // reconnectTimeWait: 1000,
