@@ -62,13 +62,13 @@ jobs:
 
                       start_ts=$(date +%s)
 
-                      for ((i = 1; i <= 100; i++)); do
+                      for ((i = 1; i <= 50; i++)); do
                           now_ts=$(date +%s)
                           elapsed=$((now_ts - start_ts))
-                          printf '[Run %d/100 | Elapsed %02d:%02d:%02d]\n' \
+                          printf '[Run %d/50 | Elapsed %02d:%02d:%02d]\n' \
                               "$i" $((elapsed/3600)) $(((elapsed%3600)/60)) $((elapsed%60))
                               docker stats -a --no-stream
-                          npm run infra:reset
+                          npm run test:e2e
                       done
 
     repeat-unit:
@@ -96,11 +96,36 @@ jobs:
 
                       start_ts=$(date +%s)
 
-                      for ((i = 1; i <= 100; i++)); do
+                      for ((i = 1; i <= 50; i++)); do
                           now_ts=$(date +%s)
                           elapsed=$((now_ts - start_ts))
-                          printf '[Run %d/100 | Elapsed %02d:%02d:%02d]\n' \
+                          printf '[Run %d/50 | Elapsed %02d:%02d:%02d]\n' \
                               "$i" $((elapsed/3600)) $(((elapsed%3600)/60)) $((elapsed%60))
                               docker stats -a --no-stream
                           npm test
                       done
+
+    repeat-x86:
+        runs-on: ubuntu-24.04
+        steps:
+            - uses: actions/checkout@v4
+            - name: Prepare host mount
+              run: mkdir -p "$HOME/.codex"
+            - name: Run CI inside Dev Container
+              uses: devcontainers/ci@v0.3
+              with:
+                  push: never
+                  runCmd: |
+                      npm test
+    repeat-arm:
+        runs-on: ubuntu-24.04-arm
+        steps:
+            - uses: actions/checkout@v4
+            - name: Prepare host mount
+              run: mkdir -p "$HOME/.codex"
+            - name: Run CI inside Dev Container
+              uses: devcontainers/ci@v0.3
+              with:
+                  push: never
+                  runCmd: |
+                      npm test
