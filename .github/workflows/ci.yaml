@@ -51,6 +51,7 @@ jobs:
                       set -Eeuxo pipefail
                       dump_compose_logs () {
                           docker ps -a || true
+                          docker stats -a --no-stream
 
                           for id in $(docker ps -aq); do
                             echo "========================= $id ========================="
@@ -66,7 +67,8 @@ jobs:
                           elapsed=$((now_ts - start_ts))
                           printf '[Run %d/100 | Elapsed %02d:%02d:%02d]\n' \
                               "$i" $((elapsed/3600)) $(((elapsed%3600)/60)) $((elapsed%60))
-                          npm run test:e2e
+                              docker stats -a --no-stream
+                          npm run infra:reset
                       done
 
     repeat-unit:
@@ -83,6 +85,7 @@ jobs:
                       set -Eeuxo pipefail
                       dump_compose_logs () {
                           docker ps -a || true
+                          docker stats -a --no-stream
 
                           for id in $(docker ps -aq); do
                             echo "========================= $id ========================="
@@ -98,5 +101,6 @@ jobs:
                           elapsed=$((now_ts - start_ts))
                           printf '[Run %d/100 | Elapsed %02d:%02d:%02d]\n' \
                               "$i" $((elapsed/3600)) $(((elapsed%3600)/60)) $((elapsed%60))
+                              docker stats -a --no-stream
                           npm test
                       done
