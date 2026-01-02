@@ -7,6 +7,7 @@ x-mongo-base: &mongo-base
         { MONGO_INITDB_ROOT_USERNAME: $MONGO_USERNAME, MONGO_INITDB_ROOT_PASSWORD: $MONGO_PASSWORD }
     # Prevents "Too many open files" errors
     ulimits: { nofile: { soft: 65536, hard: 65536 } }
+    # TODO add comment
     command: >
         --replSet ${MONGO_REPLICA_SET}
         --keyFile /etc/mongodb/mongodb.key

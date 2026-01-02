@@ -62,7 +62,7 @@ jobs:
 
                       start_ts=$(date +%s)
 
-                      for ((i = 1; i <= 50; i++)); do
+                      for ((i = 1; i <= 200; i++)); do
                           now_ts=$(date +%s)
                           elapsed=$((now_ts - start_ts))
                           printf '[Run %d/50 | Elapsed %02d:%02d:%02d]\n' \
