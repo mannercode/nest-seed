@@ -67,10 +67,7 @@ services:
             }
         command: |
             sh -eucx '
-
-
-
-            mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1/?authSource=admin" \
+              mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1/?authSource=admin" \
                 --eval "
                     rs.initiate({
                     _id: \"$MONGO_REPLICA_SET\",
