@@ -1,5 +1,5 @@
 import { sleep } from 'common'
-import { oid, toAny, withTestId } from 'testlib'
+import { oid, toAny } from 'testlib'
 import { buildHoldTicketsDto } from '../__helpers__'
 import type { TicketHoldingFixture } from './ticket-holding.fixture'
 import type { HoldTicketsDto } from 'apps/cores'
@@ -10,7 +10,6 @@ describe('TicketHoldingService', () => {
     beforeEach(async () => {
         const { createTicketHoldingFixture } = await import('./ticket-holding.fixture')
         fix = await createTicketHoldingFixture()
-        console.log(`(${withTestId('Client')}) -----------------------------`)
     })
     afterEach(() => fix.teardown())
 

@@ -8,6 +8,7 @@ export class TicketHoldingClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     holdTickets(holdDto: HoldTicketsDto): Promise<boolean> {
+        // TODO json??
         return this.proxy.getJson(Messages.TicketHolding.holdTickets, holdDto)
     }
 

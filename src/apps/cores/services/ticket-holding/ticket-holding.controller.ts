@@ -1,20 +1,12 @@
-import { Controller, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { getProjectId, Messages } from 'shared'
+import { Messages } from 'shared'
 import { HoldTicketsDto } from './dtos'
 import { TicketHoldingService } from './ticket-holding.service'
 
 @Controller()
-export class TicketHoldingController implements OnModuleInit, OnModuleDestroy {
+export class TicketHoldingController {
     constructor(private readonly service: TicketHoldingService) {}
-
-    async onModuleInit() {
-        console.log(`Init ---${getProjectId()}) -----------------------------`)
-    }
-
-    async onModuleDestroy() {
-        console.log(`Destroy ---${getProjectId()}) -----------------------------`)
-    }
 
     @MessagePattern(Messages.TicketHolding.holdTickets)
     holdTickets(@Payload() holdDto: HoldTicketsDto) {
