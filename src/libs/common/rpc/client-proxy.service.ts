@@ -52,6 +52,7 @@ export class ClientProxyService implements OnModuleDestroy {
     send<T>(cmd: string, payload: any): Observable<T> {
         const source$ = this.proxy.send<T>(cmd, Or(payload, ''))
 
+        // TODO add comment
         return source$.pipe(
             retry({
                 count: 9,
