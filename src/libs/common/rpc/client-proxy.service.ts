@@ -8,7 +8,7 @@ import {
     OnModuleDestroy
 } from '@nestjs/common'
 import { ClientProvider, ClientProxy, ClientsModule } from '@nestjs/microservices'
-import { catchError, lastValueFrom, Observable, throwError } from 'rxjs'
+import { catchError, lastValueFrom, Observable, retry, throwError, timer } from 'rxjs'
 import { jsonToObject } from '../utils'
 import { Or } from '../validator'
 
@@ -50,14 +50,33 @@ export class ClientProxyService implements OnModuleDestroy {
     }
 
     send<T>(cmd: string, payload: any): Observable<T> {
-        // send does not allow a null payload
-        // send는 null payload를 허용하지 않음
-        return this.proxy.send(cmd, Or(payload, ''))
+        const source$ = this.proxy.send<T>(cmd, Or(payload, ''))
+
+        return source$.pipe(
+            retry({
+                count: 9,
+                delay: (err, retryCount) => {
+                    /* istanbul ignore next */
+                    const msg = String(
+                        err?.message ?? err?.response ?? err?.error ?? err?.toString?.() ?? ''
+                    )
+
+                    if (
+                        /empty response/i.test(msg) ||
+                        /no subscribers/i.test(msg) ||
+                        /no responders/i.test(msg) ||
+                        /no response from/i.test(msg)
+                    ) {
+                        return timer(retryCount * 50)
+                    }
+                    return throwError(() => err)
+                },
+                resetOnSuccess: true
+            })
+        )
     }
 
     emit(event: string, payload: any): Promise<void> {
-        // emit does not allow a null payload
-        // emit는 null payload를 허용하지 않음
         return waitProxyValue(this.proxy.emit<void>(event, Or(payload, '')))
     }
 }
