@@ -53,10 +53,14 @@ export class ClientProxyService implements OnModuleDestroy {
         const source$ = this.proxy.send<T>(cmd, Or(payload, ''))
 
         /**
-         * In a NATS cluster, right after creating a queue subscription, it may not have propagated to other nodes yet.
-         * Messages sent via another server can fail with "No responders / no subscribers".
-         * NATS 클러스터에서 큐(구독) 생성 직후엔 다른 노드에 전파되기 전이라
-         * 다른 서버로 보낸 메시지가 "구독자 없음(No responders)"으로 실패할 수 있음.
+         * Prevents the following error:
+         * "Empty response. There are no subscribers listening to that message".
+         *
+         * In a NATS cluster, queue (subscription) creation may not be complete on all nodes yet.
+         * If a message is published to a node that does not have the queue (subscription), the publish can fail.
+         *
+         * NATS 클러스터에서 모든 노드에 큐(구독) 생성이 아직 완료되지 않았을 수 있습니다.
+         * 이때 큐(구독)가 없는 노드로 메시지를 발행(publish)하면 실패할 수 있습니다.
          */
         return source$.pipe(
             retry({
