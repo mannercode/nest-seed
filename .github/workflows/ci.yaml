@@ -25,51 +25,11 @@ jobs:
                   configFile: .devcontainer/devcontainer.json
                   push: never
                   runCmd: |
-                      set -Eeuxo pipefail
-                      dump_compose_logs () {
-                          docker ps -a || true
-
-                          for id in $(docker ps -aq); do
-                              echo "========================= ${id} ========================="
-                              docker logs --timestamps --tail 300 "${id}" || true
-                          done
-                      }
-                      trap 'rc=$?; if [ ${rc} -ne 0 ]; then dump_compose_logs; fi; exit ${rc}' EXIT
+                      set -Eeuo pipefail
 
                       npm run lint
                       npm test
                       npm run test:e2e
-
-    repeat-e2e:
-        runs-on: ubuntu-24.04-arm
-        steps:
-            - uses: actions/checkout@v4
-            - name: Prepare host mount
-              run: mkdir -p "${HOME}/.codex"
-            - name: Run CI inside Dev Container
-              uses: devcontainers/ci@v0.3
-              with:
-                  push: never
-                  runCmd: |
-                      set -Eeuxo pipefail
-                      dump_compose_logs () {
-                          docker ps -a || true
-                          docker logs mongo1
-                          docker logs mongo2
-                          docker logs mongo3
-                      }
-                      trap 'rc=$?; if [ ${rc} -ne 0 ]; then dump_compose_logs; fi; exit ${rc}' EXIT
-
-                      start_ts=$(date +%s)
-
-                      for ((i = 1; i <= 200; i++)); do
-                          now_ts=$(date +%s)
-                          elapsed=$((now_ts - start_ts))
-                          printf '[Run %d/50 | Elapsed %02d:%02d:%02d]\n' \
-                              "${i}" $((elapsed/3600)) $(((elapsed%3600)/60)) $((elapsed%60))
-                              docker stats -a --no-stream
-                          npm run test:e2e
-                      done
 
     repeat-unit:
         runs-on: ubuntu-24.04-arm
@@ -82,25 +42,42 @@ jobs:
               with:
                   push: never
                   runCmd: |
-                      set -Eeuxo pipefail
+                      set -Eeuo pipefail
+                      start_ts=$(date +%s)
+
+                      for ((i = 1; i <= 50; i++)); do
+                          elapsed=$(($(date +%s) - start_ts))
+                          printf '[Run %d/50 | Elapsed %02d:%02d:%02d]\n' "${i}" $((elapsed/3600)) $(((elapsed%3600)/60)) $((elapsed%60))
+                          npm test
+                      done
+
+    repeat-e2e:
+        runs-on: ubuntu-24.04-arm
+        steps:
+            - uses: actions/checkout@v4
+            - name: Prepare host mount
+              run: mkdir -p "${HOME}/.codex"
+            - name: Run CI inside Dev Container
+              uses: devcontainers/ci@v0.3
+              with:
+                  push: never
+                  runCmd: |
+                      set -Eeuo pipefail
                       dump_compose_logs () {
                           docker ps -a || true
                           docker stats -a --no-stream
 
                           for id in $(docker ps -aq); do
-                            echo "========================= ${id} ========================="
-                            docker logs --timestamps --tail 300 "${id}" || true
+                              echo "========================= ${id} ========================="
+                              docker logs "${id}" || true
                           done
                       }
                       trap 'rc=$?; if [ ${rc} -ne 0 ]; then dump_compose_logs; fi; exit ${rc}' EXIT
 
                       start_ts=$(date +%s)
 
-                      for ((i = 1; i <= 50; i++)); do
-                          now_ts=$(date +%s)
-                          elapsed=$((now_ts - start_ts))
-                          printf '[Run %d/50 | Elapsed %02d:%02d:%02d]\n' \
-                              "${i}" $((elapsed/3600)) $(((elapsed%3600)/60)) $((elapsed%60))
-                              docker stats -a --no-stream
-                          npm test
+                      for ((i = 1; i <= 200; i++)); do
+                          elapsed=$(($(date +%s) - start_ts))
+                          printf '[Run %d/200 | Elapsed %02d:%02d:%02d]\n' "${i}" $((elapsed/3600)) $(((elapsed%3600)/60)) $((elapsed%60))
+                          npm run test:e2e
                       done
