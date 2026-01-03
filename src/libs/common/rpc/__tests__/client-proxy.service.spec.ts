@@ -25,7 +25,7 @@ describe('ClientProxyService', () => {
 
         describe('when the payload is null', () => {
             it('sends a null payload', async () => {
-                const response = await fix.rpcClient.getJson(withTestId('method'), null)
+                const response = await fix.rpcClient.request(withTestId('method'), null)
                 expect(response).toEqual({ result: 'success' })
             })
         })

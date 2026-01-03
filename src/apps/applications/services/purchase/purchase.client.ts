@@ -9,6 +9,6 @@ export class PurchaseClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     processPurchase(createDto: CreatePurchaseDto): Promise<PurchaseRecordDto> {
-        return this.proxy.getJson(Messages.Purchase.processPurchase, createDto)
+        return this.proxy.request(Messages.Purchase.processPurchase, createDto)
     }
 }

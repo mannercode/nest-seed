@@ -8,18 +8,17 @@ export class TicketHoldingClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     holdTickets(holdDto: HoldTicketsDto): Promise<boolean> {
-        // TODO json??
-        return this.proxy.getJson(Messages.TicketHolding.holdTickets, holdDto)
+        return this.proxy.request(Messages.TicketHolding.holdTickets, holdDto)
     }
 
     searchHeldTicketIds(showtimeId: string, customerId: string): Promise<string[]> {
-        return this.proxy.getJson(Messages.TicketHolding.searchHeldTicketIds, {
+        return this.proxy.request(Messages.TicketHolding.searchHeldTicketIds, {
             showtimeId,
             customerId
         })
     }
 
     releaseTickets(showtimeId: string, customerId: string): Promise<boolean> {
-        return this.proxy.getJson(Messages.TicketHolding.releaseTickets, { showtimeId, customerId })
+        return this.proxy.request(Messages.TicketHolding.releaseTickets, { showtimeId, customerId })
     }
 }

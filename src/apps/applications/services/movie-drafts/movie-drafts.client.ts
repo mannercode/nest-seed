@@ -9,37 +9,37 @@ export class MovieDraftsClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     create(): Promise<MovieDraftDto> {
-        return this.proxy.getJson(Messages.MovieDrafts.create)
+        return this.proxy.request(Messages.MovieDrafts.create)
     }
 
     get(draftId: string): Promise<MovieDraftDto> {
-        return this.proxy.getJson(Messages.MovieDrafts.get, draftId)
+        return this.proxy.request(Messages.MovieDrafts.get, draftId)
     }
 
     update(draftId: string, updateDto: UpdateMovieDraftDto): Promise<MovieDraftDto> {
-        return this.proxy.getJson(Messages.MovieDrafts.update, { draftId, updateDto })
+        return this.proxy.request(Messages.MovieDrafts.update, { draftId, updateDto })
     }
 
     delete(draftId: string): Promise<boolean> {
-        return this.proxy.getJson(Messages.MovieDrafts.delete, draftId)
+        return this.proxy.request(Messages.MovieDrafts.delete, draftId)
     }
 
     requestImageUpload(
         draftId: string,
         createDto: CreateAssetDto
     ): Promise<DraftImageUploadResponse> {
-        return this.proxy.getJson(Messages.MovieDrafts.Images.create, { draftId, createDto })
+        return this.proxy.request(Messages.MovieDrafts.Images.create, { draftId, createDto })
     }
 
     deleteImage(draftId: string, imageId: string): Promise<boolean> {
-        return this.proxy.getJson(Messages.MovieDrafts.Images.delete, { draftId, imageId })
+        return this.proxy.request(Messages.MovieDrafts.Images.delete, { draftId, imageId })
     }
 
     completeImage(draftId: string, imageId: string): Promise<DraftImageDto> {
-        return this.proxy.getJson(Messages.MovieDrafts.Images.complete, { draftId, imageId })
+        return this.proxy.request(Messages.MovieDrafts.Images.complete, { draftId, imageId })
     }
 
     completeDraft(draftId: string) {
-        return this.proxy.getJson(Messages.MovieDrafts.complete, draftId)
+        return this.proxy.request(Messages.MovieDrafts.complete, draftId)
     }
 }

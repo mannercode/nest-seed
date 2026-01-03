@@ -8,10 +8,10 @@ export class PaymentsClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     create(createDto: CreatePaymentDto): Promise<PaymentDto> {
-        return this.proxy.getJson(Messages.Payments.create, createDto)
+        return this.proxy.request(Messages.Payments.create, createDto)
     }
 
     getMany(paymentIds: string[]): Promise<PaymentDto[]> {
-        return this.proxy.getJson(Messages.Payments.getMany, paymentIds)
+        return this.proxy.request(Messages.Payments.getMany, paymentIds)
     }
 }

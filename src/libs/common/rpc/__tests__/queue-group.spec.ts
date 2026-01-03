@@ -19,7 +19,7 @@ describe('NATS Queue Group', () => {
 
     describe('when a queue group is set', () => {
         it('delivers the message to one instance', async () => {
-            const result = await fix.rpcClient.getJson(withTestId('queue'), {})
+            const result = await fix.rpcClient.request(withTestId('queue'), {})
 
             expect(result).toEqual({ result: 'success' })
             expect(queueSpy).toHaveBeenCalledTimes(1)
@@ -28,7 +28,7 @@ describe('NATS Queue Group', () => {
 
     describe('when no queue group is set', () => {
         it('delivers the message to all instances', async () => {
-            const result = await fix.rpcClient.getJson(withTestId('broadcast'), {})
+            const result = await fix.rpcClient.request(withTestId('broadcast'), {})
             await sleep(1000)
 
             expect(result).toEqual({ result: 'success' })
