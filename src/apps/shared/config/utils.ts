@@ -1,4 +1,4 @@
-import { Assert } from 'common'
+import { Expect } from 'common'
 
 /**
  * 'createMessagePatternMap' is a function that converts the input object to a string.
@@ -50,7 +50,7 @@ type Paths<T, ParentPath extends string = ''> = {
 }
 
 export function getProjectId() {
-    Assert.defined(process.env.PROJECT_ID, 'PROJECT_ID must be defined.')
+    Expect.defined(process.env.PROJECT_ID, 'PROJECT_ID must be defined.')
 
     return process.env.PROJECT_ID
 }

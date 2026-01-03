@@ -47,10 +47,6 @@ export class AppConfigService extends BaseConfigService {
         AUTH_REFRESH_SECRET: Joi.string().required(),
         AUTH_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
 
-        FILE_UPLOAD_MAX_FILE_SIZE_BYTES: Joi.number().required(),
-        FILE_UPLOAD_MAX_FILES_PER_UPLOAD: Joi.number().required(),
-        FILE_UPLOAD_ALLOWED_FILE_TYPES: Joi.string().required(),
-
         NATS_HOST1: Joi.string().required(),
         NATS_PORT1: Joi.number().required(),
         NATS_HOST2: Joi.string().required(),
@@ -132,21 +128,15 @@ export class AppConfigService extends BaseConfigService {
         }
     }
 
-    // get fileUpload() {
-    //     return {
-    //         maxFileSizeBytes: this.getNumber('FILE_UPLOAD_MAX_FILE_SIZE_BYTES'),
-    //         maxFilesPerUpload: this.getNumber('FILE_UPLOAD_MAX_FILES_PER_UPLOAD'),
-    //         allowedMimeTypes: this.getString('FILE_UPLOAD_ALLOWED_FILE_TYPES').split(',')
-    //     }
-    // }
-
     get s3() {
         return {
             endpoint: this.getString('S3_ENDPOINT'),
             region: this.getString('S3_REGION'),
             bucket: this.getString('S3_BUCKET'),
-            accessKeyId: this.getString('S3_ACCESS_KEY'),
-            secretAccessKey: this.getString('S3_SECRET_KEY'),
+            credentials: {
+                accessKeyId: this.getString('S3_ACCESS_KEY'),
+                secretAccessKey: this.getString('S3_SECRET_KEY')
+            },
             forcePathStyle: this.getBoolean('S3_FORCE_PATH_STYLE')
         }
     }

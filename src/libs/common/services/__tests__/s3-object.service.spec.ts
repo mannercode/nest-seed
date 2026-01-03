@@ -1,6 +1,25 @@
 import { HttpStatus } from '@nestjs/common'
 import { toAny } from 'testlib'
+import { HttpUtil } from '../../utils/http.util'
 import { testBuffer, uploadObject, type S3ObjectServiceFixture } from './s3-object.service.fixture'
+
+function buildPresignedPostForm(
+    fields: Record<string, string>,
+    body: Buffer,
+    contentType?: string,
+    filename = 'file.txt'
+) {
+    const form = new FormData()
+
+    Object.entries(fields).forEach(([key, value]) => {
+        form.append(key, value)
+    })
+
+    const blob = new Blob([body], { type: contentType ?? 'application/octet-stream' })
+    form.append('file', blob, filename)
+
+    return form
+}
 
 describe('S3ObjectService', () => {
     let fix: S3ObjectServiceFixture
@@ -12,58 +31,112 @@ describe('S3ObjectService', () => {
     afterEach(() => fix.teardown())
 
     describe('presignUploadUrl', () => {
-        it('returns an uploadUrl', async () => {
-            const uploadUrl = await fix.s3Service.presignUploadUrl({
+        it('returns a presigned post', async () => {
+            const presigned = await fix.s3Service.presignUploadUrl({
                 key: 'key.txt',
-                expiresInSec: 60,
-                contentType: 'text/plain',
-                contentLength: 10
+                expiresInSec: 60
             })
 
-            expect(uploadUrl).toEqual(expect.any(String))
+            expect(presigned).toEqual({ url: expect.any(String), fields: expect.any(Object) })
         })
 
-        describe('when an uploadUrl is returned', () => {
-            let uploadUrl: string
+        it('supports content disposition fields', async () => {
+            const contentDisposition = 'attachment; filename="sample.txt"'
+            const presigned = await fix.s3Service.presignUploadUrl({
+                key: 'content-disposition.txt',
+                expiresInSec: 60,
+                contentType: 'text/plain',
+                contentDisposition
+            })
+
+            expect(presigned.fields).toEqual(
+                expect.objectContaining({ 'Content-Disposition': contentDisposition })
+            )
+
+            const uploadBody = Buffer.from('hello')
+            const okForm = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
+            const okResponse = await fetch(presigned.url, { method: 'POST', body: okForm })
+            expect(okResponse.ok).toBe(true)
+
+            const badForm = buildPresignedPostForm(
+                { ...presigned.fields, 'Content-Disposition': 'inline; filename="other.txt"' },
+                uploadBody,
+                'text/plain'
+            )
+            const badResponse = await fetch(presigned.url, { method: 'POST', body: badForm })
+            expect(badResponse.ok).toBe(false)
+        })
+
+        it('supports metadata fields', async () => {
+            const presigned = await fix.s3Service.presignUploadUrl({
+                key: 'meta.txt',
+                expiresInSec: 60,
+                metadata: { checksum: 'abc123' }
+            })
+
+            expect(presigned.fields).toEqual(
+                expect.objectContaining({ 'x-amz-meta-checksum': 'abc123' })
+            )
+
+            const uploadBody = Buffer.from('hello')
+            const okForm = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
+            const okResponse = await fetch(presigned.url, { method: 'POST', body: okForm })
+            expect(okResponse.ok).toBe(true)
+
+            const badForm = buildPresignedPostForm(
+                { ...presigned.fields, 'x-amz-meta-checksum': 'mismatch' },
+                uploadBody,
+                'text/plain'
+            )
+            const badResponse = await fetch(presigned.url, { method: 'POST', body: badForm })
+            expect(badResponse.ok).toBe(false)
+        })
+
+        describe('when a presigned post is returned', () => {
+            let presigned: { url: string; fields: Record<string, string> }
             const uploadBody = Buffer.from('hello')
 
             beforeEach(async () => {
-                uploadUrl = await fix.s3Service.presignUploadUrl({
+                presigned = await fix.s3Service.presignUploadUrl({
                     key: 'key.txt',
                     expiresInSec: 60,
                     contentType: 'text/plain',
-                    contentLength: uploadBody.byteLength
+                    minContentLength: uploadBody.byteLength,
+                    maxContentLength: uploadBody.byteLength
                 })
             })
 
-            it('allows uploading via the uploadUrl', async () => {
-                const response = await fetch(uploadUrl, {
-                    method: 'PUT',
-                    headers: [['content-type', 'text/plain']],
-                    body: uploadBody
-                })
+            it('allows uploading via the presigned post', async () => {
+                const form = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
+
+                const response = await fetch(presigned.url, { method: 'POST', body: form })
 
                 expect(response.ok).toBe(true)
             })
 
             it('fails for mismatched `contentType`', async () => {
-                const response = await fetch(uploadUrl, {
-                    method: 'PUT',
-                    headers: [['content-type', 'image/png']],
-                    body: uploadBody
-                })
+                const form = buildPresignedPostForm(
+                    { ...presigned.fields, 'Content-Type': 'image/png' },
+                    uploadBody,
+                    'image/png'
+                )
+
+                const response = await fetch(presigned.url, { method: 'POST', body: form })
 
                 expect(response.ok).toBe(false)
             })
 
             it('fails for mismatched `contentLength`', async () => {
-                const mismatchedBody = Buffer.from('mismatched length')
-
-                const response = await fetch(uploadUrl, {
-                    method: 'PUT',
-                    headers: [['content-type', 'text/plain']],
-                    body: mismatchedBody
+                const { url, fields } = await fix.s3Service.presignUploadUrl({
+                    key: 'key.txt',
+                    expiresInSec: 60,
+                    contentType: 'text/plain',
+                    maxContentLength: uploadBody.byteLength - 1
                 })
+
+                const form = buildPresignedPostForm(fields, uploadBody, 'text/plain')
+
+                const response = await fetch(url, { method: 'POST', body: form })
 
                 expect(response.ok).toBe(false)
             })
@@ -101,6 +174,21 @@ describe('S3ObjectService', () => {
 
                 expect(buffer.toString('utf8')).toBe(body)
             })
+
+            it('overrides content disposition when filename is provided', async () => {
+                const filename = 'report.txt'
+                const downloadUrl = await fix.s3Service.presignDownloadUrl({
+                    key,
+                    expiresInSec: 60,
+                    filename
+                })
+
+                const response = await fetch(downloadUrl)
+                expect(response.ok).toBe(true)
+
+                const contentDisposition = response.headers.get('content-disposition')
+                expect(contentDisposition).toBe(HttpUtil.buildContentDisposition(filename))
+            })
         })
 
         describe('when the object does not exist', () => {
@@ -116,7 +204,7 @@ describe('S3ObjectService', () => {
         })
     })
 
-    describe('isUploadCompleted', () => {
+    describe('isUploadComplete', () => {
         describe('when the object exists', () => {
             const s3Object = { data: testBuffer, filename: 'file.txt', contentType: 'text/plain' }
             let key: string
@@ -127,13 +215,13 @@ describe('S3ObjectService', () => {
             })
 
             it('returns true', async () => {
-                const isCompleted = await fix.s3Service.isUploadCompleted({ key })
+                const isCompleted = await fix.s3Service.isUploadComplete({ key })
 
                 expect(isCompleted).toBe(true)
             })
 
             it('returns true for matching content details', async () => {
-                const isCompleted = await fix.s3Service.isUploadCompleted({
+                const isCompleted = await fix.s3Service.isUploadComplete({
                     key,
                     contentLength: s3Object.data.byteLength,
                     contentType: s3Object.contentType
@@ -143,7 +231,7 @@ describe('S3ObjectService', () => {
             })
 
             it('returns false for mismatched content length', async () => {
-                const isCompleted = await fix.s3Service.isUploadCompleted({
+                const isCompleted = await fix.s3Service.isUploadComplete({
                     key,
                     contentLength: s3Object.data.byteLength + 1
                 })
@@ -152,7 +240,7 @@ describe('S3ObjectService', () => {
             })
 
             it('returns false for mismatched content type', async () => {
-                const isCompleted = await fix.s3Service.isUploadCompleted({
+                const isCompleted = await fix.s3Service.isUploadComplete({
                     key,
                     contentType: 'image/png'
                 })
@@ -163,7 +251,22 @@ describe('S3ObjectService', () => {
 
         describe('when the object does not exist', () => {
             it('returns false', async () => {
-                const isCompleted = await fix.s3Service.isUploadCompleted({ key: 'not-exists' })
+                const isCompleted = await fix.s3Service.isUploadComplete({ key: 'not-exists' })
+
+                expect(isCompleted).toBe(false)
+            })
+        })
+
+        describe('when content type is expected but missing', () => {
+            it('returns false', async () => {
+                jest.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
+                    ContentLength: 1
+                })
+
+                const isCompleted = await fix.s3Service.isUploadComplete({
+                    key: 'key',
+                    contentType: 'text/plain'
+                })
 
                 expect(isCompleted).toBe(false)
             })
@@ -177,53 +280,26 @@ describe('S3ObjectService', () => {
             })
 
             it('throws the error', async () => {
-                const promise = fix.s3Service.isUploadCompleted({ key: 'key' })
+                const promise = fix.s3Service.isUploadComplete({ key: 'key' })
 
                 await expect(promise).rejects.toThrow('unexpected')
             })
         })
     })
 
-    describe('putObject', () => {
-        describe('when the payload is valid', () => {
-            it('returns a key', async () => {
-                const { key } = await fix.s3Service.putObject({
-                    data: testBuffer,
-                    filename: 'file.txt',
-                    contentType: 'text/plain'
-                })
+    // describe('putObject', () => {
+    //     describe('when the payload is valid', () => {
+    //         it('returns a key', async () => {
+    //             const { key } = await fix.s3Service.putObject({
+    //                 data: testBuffer,
+    //                 filename: 'file.txt',
+    //                 contentType: 'text/plain'
+    //             })
 
-                expect(key).toEqual(expect.any(String))
-            })
-        })
-    })
-
-    describe('getObject', () => {
-        describe('when the object exists', () => {
-            const s3Object = { data: testBuffer, filename: 'file.txt', contentType: 'text/plain' }
-            let key: string
-
-            beforeEach(async () => {
-                const result = await fix.s3Service.putObject(s3Object)
-                key = result.key
-            })
-
-            it('returns the file data and metadata', async () => {
-                const { contentType, filename, data } = await fix.s3Service.getObject(key)
-
-                expect(Buffer.compare(data, s3Object.data)).toBe(0)
-                expect(contentType).toEqual(s3Object.contentType)
-                expect(filename).toEqual(s3Object.filename)
-            })
-        })
-
-        describe('when the object does not exist', () => {
-            it('throws NoSuchKey', async () => {
-                const promise = fix.s3Service.getObject('not-exists')
-                await expect(promise).rejects.toHaveProperty('name', 'NoSuchKey')
-            })
-        })
-    })
+    //             expect(key).toEqual(expect.any(String))
+    //         })
+    //     })
+    // })
 
     describe('deleteObject', () => {
         describe('when the object exists', () => {
@@ -236,7 +312,7 @@ describe('S3ObjectService', () => {
             it('returns a no-content status and the deleted key', async () => {
                 const result = await fix.s3Service.deleteObject(key)
 
-                expect(result).toEqual({ status: HttpStatus.NO_CONTENT, deletedObject: key })
+                expect(result).toEqual({ status: HttpStatus.NO_CONTENT, key })
             })
         })
 
@@ -245,7 +321,7 @@ describe('S3ObjectService', () => {
                 const key = 'not-exist-key'
                 const result = await fix.s3Service.deleteObject(key)
 
-                expect(result).toEqual({ status: HttpStatus.NO_CONTENT, deletedObject: key })
+                expect(result).toEqual({ status: HttpStatus.NO_CONTENT, key })
             })
         })
     })

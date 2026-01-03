@@ -7,7 +7,7 @@ export const Messages = createMessagePatternMap(
             deleteMany: null,
             create: null,
             complete: null,
-            isUploadCompleted: null
+            isUploadComplete: null
         },
         Payments: { create: null, getMany: null },
         WatchRecords: { create: null, searchPage: null },

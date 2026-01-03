@@ -1,6 +1,5 @@
 # https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
 name: CI
-
 on:
     pull_request:
         branches: ['main']
@@ -9,12 +8,13 @@ on:
 
 jobs:
     ci:
+        # On GitHub, ARM is 15% faster than x86.
         runs-on: ubuntu-24.04-arm
         steps:
             - uses: actions/checkout@v4
 
             - name: Prepare host mount
-              run: mkdir -p "$HOME/.codex"
+              run: mkdir -p "${HOME}/.codex"
 
             - name: Run CI inside Dev Container
               uses: devcontainers/ci@v0.3
@@ -22,10 +22,8 @@ jobs:
                   configFile: .devcontainer/devcontainer.json
                   push: never
                   runCmd: |
-                      set -eux
+                      set -Eeuo pipefail
 
-                      npm ci
                       npm run lint
-                      npm run infra:reset
                       npm test
                       npm run test:e2e

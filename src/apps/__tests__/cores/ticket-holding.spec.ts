@@ -33,6 +33,8 @@ describe('TicketHoldingService', () => {
                 await fix.ticketHoldingClient.holdTickets(holdDto)
             })
 
+            // TODO
+            // Empty response. There are no subscribers listening to that message ("project-7Uxduwz2uS.message.TicketHolding.holdTickets")
             it('returns true for re-holding the same ticketIds', async () => {
                 const holdDto = buildHoldTicketsDto({ ticketIds, customerId })
                 const isHeld = await fix.ticketHoldingClient.holdTickets(holdDto)

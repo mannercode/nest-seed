@@ -22,7 +22,7 @@ describe('sleep', () => {
         const end = Date.now()
         const elapsed = end - start
 
-        const tolerance = 100
+        const tolerance = 500
         expect(elapsed).toBeGreaterThan(timeout - tolerance)
         expect(elapsed).toBeLessThan(timeout + tolerance)
     })

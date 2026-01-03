@@ -1,4 +1,5 @@
-import { createReadStream } from 'fs'
+import { readFile } from 'fs/promises'
+import { basename } from 'path'
 import { pick } from 'lodash'
 import { fixtureFiles, type FixtureFile } from '../fixture-files'
 import type {
@@ -22,10 +23,19 @@ export async function createAsset(ctx: TestContext, file: FixtureFile = fixtureF
 }
 
 export async function uploadAsset(filepath: string, uploadDto: AssetPresignedUploadDto) {
-    const { url, method, headers } = uploadDto
-    const stream = createReadStream(filepath)
+    const { url, method, fields } = uploadDto
+    const buffer = await readFile(filepath)
+    const form = new FormData()
 
-    const response = await fetch(url, { method, headers, body: stream, duplex: 'half' })
+    Object.entries(fields).forEach(([fieldKey, value]) => {
+        form.append(fieldKey, value)
+    })
+
+    const contentType = fields['Content-Type'] ?? 'application/octet-stream'
+    const file = new Blob([buffer], { type: contentType })
+    form.append('file', file, basename(filepath))
+
+    const response = await fetch(url, { method, body: form })
     return response
 }
 

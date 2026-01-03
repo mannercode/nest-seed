@@ -39,23 +39,35 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
             app.use(compression())
             app.use(express.json({ limit: http.requestPayloadLimit }))
 
-            app.connectMicroservice<MicroserviceOptions>(
-                {
-                    transport: Transport.NATS,
-                    options: { servers: nats.servers, queue: getProjectId() }
-                },
-                { inheritAppConfig: true }
-            )
-
             if (isDebuggingEnabled()) {
                 const logger = app.get(AppLoggerService)
                 app.useLogger(logger)
             }
 
+            app.connectMicroservice<MicroserviceOptions>(
+                {
+                    transport: Transport.NATS,
+                    options: {
+                        servers: nats.servers,
+                        queue: getProjectId()
+                        // TODO
+                        // 연결/재연결 안정화 (옵션들은 Nest NatsOptions에 존재)
+                        // waitOnFirstConnect: true
+                        // reconnect: true,
+                        // maxReconnectAttempts: -1,
+                        // reconnectTimeWait: 1000,
+                        // reconnectJitter: 100
+                    }
+                },
+                { inheritAppConfig: true }
+            )
+
             await app.startAllMicroservices()
         },
         ...metadata
     })
+
+    await stopAllCronJobs(ctx)
 
     const teardown = async () => {
         await ctx.close()
@@ -63,8 +75,6 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
         const redis = ctx.module.get(RedisConfigModule.moduleName)
         await redis.quit()
     }
-
-    await stopAllCronJobs(ctx)
 
     return { ...ctx, teardown }
 }
@@ -93,17 +103,8 @@ export function createConfigServiceMock(mockValues: Record<string, any>) {
 }
 
 // const configMock = createConfigServiceMock({
-//     FILE_UPLOAD_MAX_FILE_SIZE_BYTES: localFiles.oversized.size,
-//     FILE_UPLOAD_MAX_FILES_PER_UPLOAD: maxFilesPerUpload,
-//     FILE_UPLOAD_ALLOWED_FILE_TYPES: 'text/plain',
 //     S3_ENDPOINT: s3.endpoint,
-//     S3_REGION: s3.region,
-//     S3_BUCKET: s3.bucket,
-//     S3_ACCESS_KEY: s3.accessKeyId,
-//     S3_SECRET_KEY: s3.secretAccessKey,
-//     S3_FORCE_PATH_STYLE: s3.forcePathStyle
 // })
-
 // const ctx = await createAppTestContext({
 //     imports: [AssetsModule],
 //     providers: [AssetsClient],

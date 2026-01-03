@@ -4,6 +4,7 @@ x-redis-base: &redis-base
     healthcheck:
         test: 'redis-cli -a $REDIS_PASSWORD ping'
     deploy: { resources: { limits: { memory: 128m } } }
+    shm_size: '8m'
     command: |
         sh -euc '
           redis-server --port 6379 \

@@ -1,4 +1,5 @@
 import { SchemaFactory } from '@nestjs/mongoose'
+import { Or } from '../validator'
 import type { Type } from '@nestjs/common'
 import type { ClientSession, Schema } from 'mongoose'
 
@@ -42,8 +43,7 @@ function excludeDeletedMiddleware() {
 export function createMongooseSchema<T>(cls: Type<T>): Schema<T> {
     const schema = SchemaFactory.createForClass(cls)
 
-    const isHardDelete = Reflect.getMetadata(HARD_DELETE_KEY, cls) ?? false
-
+    const isHardDelete = Or(Reflect.getMetadata(HARD_DELETE_KEY, cls), false)
     // The softDelete feature has not been tested under various conditions and is therefore incomplete.
     // softDelete는 다양한 상황을 테스트하지 않았다. 불완전한 기능이다.
     if (isHardDelete === false) {

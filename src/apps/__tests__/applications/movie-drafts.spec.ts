@@ -1,5 +1,5 @@
 import { MovieGenre, MovieRating } from 'apps/cores'
-import { Assert } from 'common'
+import { Expect } from 'common'
 import { nullObjectId } from 'testlib'
 import { buildCreateAssetDto, Errors, fixtureFiles, uploadAsset } from '../__helpers__'
 import {
@@ -116,16 +116,13 @@ describe('MovieDraftsService', () => {
                         assetId: expect.any(String),
                         url: expect.any(String),
                         expiresAt: expect.any(Date),
-                        method: 'PUT',
-                        headers: expect.objectContaining({
-                            'Content-Type': createDto.mimeType,
-                            'Content-Length': createDto.size.toString(),
-                            'x-amz-checksum-sha256': createDto.checksum.base64
-                        })
+                        method: 'POST',
+                        fields: expect.objectContaining({ 'Content-Type': createDto.mimeType })
                     })
                 })
 
                 expect(body.imageId).toBe(body.upload.assetId)
+                expect(body.upload.fields.key).toBe(body.upload.assetId)
             })
 
             // TODO fix desc
@@ -192,7 +189,7 @@ describe('MovieDraftsService', () => {
 
                 it('invalidates image URL', async () => {
                     const [asset] = await fix.assetsClient.getMany([imageId])
-                    Assert.defined(asset.download)
+                    Expect.defined(asset.download)
 
                     await fix.httpClient
                         .delete(`/movie-drafts/${movieDraft.id}/images/${imageId}`)
@@ -314,7 +311,7 @@ describe('MovieDraftsService', () => {
 
                 it('invalidates image URL', async () => {
                     const [asset] = await fix.assetsClient.getMany([imageId])
-                    Assert.defined(asset.download)
+                    Expect.defined(asset.download)
 
                     await fix.httpClient.delete(`/movie-drafts/${movieDraft.id}`).noContent()
 

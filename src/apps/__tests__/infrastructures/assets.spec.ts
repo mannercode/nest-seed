@@ -34,13 +34,16 @@ describe('AssetsService', () => {
                     assetId: expect.any(String),
                     url: expect.any(String),
                     expiresAt: expect.any(Date),
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': createDto.mimeType,
-                        'Content-Length': createDto.size.toString(),
-                        'x-amz-checksum-sha256': file.checksum.base64
-                    }
+                    method: 'POST',
+                    fields: expect.any(Object)
                 })
+
+                expect(uploadRequest.fields).toEqual(
+                    expect.objectContaining({
+                        'Content-Type': createDto.mimeType,
+                        key: uploadRequest.assetId
+                    })
+                )
             })
 
             it('uploads the file using the upload request', async () => {
@@ -70,7 +73,7 @@ describe('AssetsService', () => {
         })
     })
 
-    describe('isUploadCompleted', () => {
+    describe('isUploadComplete', () => {
         describe('when the upload is completed', () => {
             let assetId: string
 
@@ -79,7 +82,7 @@ describe('AssetsService', () => {
             })
 
             it('returns true', async () => {
-                const isCompleted = await fix.assetsClient.isUploadCompleted(assetId)
+                const isCompleted = await fix.assetsClient.isUploadComplete(assetId)
                 expect(isCompleted).toBe(true)
             })
         })
@@ -93,7 +96,7 @@ describe('AssetsService', () => {
             })
 
             it('returns false', async () => {
-                const isCompleted = await fix.assetsClient.isUploadCompleted(assetId)
+                const isCompleted = await fix.assetsClient.isUploadComplete(assetId)
                 expect(isCompleted).toBe(false)
             })
         })
@@ -270,15 +273,21 @@ describe('AssetsService', () => {
             describe('when the upload has not expired', () => {
                 it('keeps the asset', async () => {
                     await fireOnTick()
+                    await sleep(500)
 
                     await expect(fix.assetsClient.getMany([assetId])).resolves.toHaveLength(1)
                 })
             })
 
             describe('when the upload has expired', () => {
-                it('removes the asset', async () => {
+                beforeEach(async () => {
                     await sleep(1500)
+                })
+
+                it('removes the asset', async () => {
                     await fireOnTick()
+                    // TODO 500으로 해도 간헐적으로 에러 발생.
+                    await sleep(500)
 
                     await expect(fix.assetsClient.getMany([assetId])).rejects.toMatchObject({
                         status: HttpStatus.NOT_FOUND

@@ -20,8 +20,8 @@ fi
 export TEST_ROOT=${TEST_ROOT}
 
 for ((i = 1; i <= TEST_RUNS; i++)); do
-	echo "[Run $i/$TEST_RUNS]"
+	echo "[Run ${i}/${TEST_RUNS}]"
 	npm test
 done
 
-echo "Done. $TEST_RUNS run(s) finished."
+echo "Done. ${TEST_RUNS} run(s) finished."

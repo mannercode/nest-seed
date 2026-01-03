@@ -108,7 +108,7 @@ export class MovieDraftsService {
             throw new NotFoundException({ ...MovieDraftErrors.ImageNotFound, imageId })
         }
 
-        const isUploaded = await this.assetsClient.isUploadCompleted(imageId)
+        const isUploaded = await this.assetsClient.isUploadComplete(imageId)
 
         if (!isUploaded) {
             throw new UnprocessableEntityException({

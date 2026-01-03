@@ -26,26 +26,22 @@ export class AssetsService {
         const { mimeType, size } = createDto
         const expiresInSec = Rules.Asset.uploadExpiresInSec
 
-        const url = await this.s3Service.presignUploadUrl({
+        const presigned = await this.s3Service.presignUploadUrl({
             key: asset.id,
             expiresInSec,
             contentType: mimeType,
-            contentLength: size
+            minContentLength: size,
+            maxContentLength: size
         })
 
         const expiresAt = this.getUploadExpiresAt(asset.createdAt)
-        const { algorithm, base64 } = createDto.checksum
 
         return {
             assetId: asset.id,
-            method: 'PUT' as const,
-            url,
-            expiresAt,
-            headers: {
-                'Content-Type': mimeType,
-                'Content-Length': size.toString(),
-                [`x-amz-checksum-${algorithm}`]: base64
-            }
+            method: 'POST' as const,
+            url: presigned.url,
+            fields: presigned.fields,
+            expiresAt
         }
     }
 
@@ -67,10 +63,10 @@ export class AssetsService {
         return this.withDownloadInfo(dto)
     }
 
-    async isUploadCompleted(assetId: string): Promise<boolean> {
+    async isUploadComplete(assetId: string): Promise<boolean> {
         const { id, mimeType, size } = await this.repository.getById(assetId)
 
-        return this.s3Service.isUploadCompleted({
+        return this.s3Service.isUploadComplete({
             key: id,
             contentType: mimeType,
             contentLength: size

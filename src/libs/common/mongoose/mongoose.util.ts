@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common'
 import { escapeRegExp, uniq } from 'lodash'
 import { Types } from 'mongoose'
-import { Expect } from '../validator'
+import { Verify } from '../validator'
 import { MongooseErrors } from './errors'
 import type { FilterQuery, HydratedDocument } from 'mongoose'
 
@@ -32,7 +32,7 @@ export class QueryBuilder<T> {
         if (ids && ids.length > 0) {
             const uniqueIds = uniq(ids)
 
-            Expect.equalLength(
+            Verify.equalLength(
                 uniqueIds,
                 ids,
                 `Duplicate ${String(field)} detected and removed: ${ids}`

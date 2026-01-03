@@ -22,7 +22,7 @@
             "command": "bash",
             "args": [
                 "-lc",
-                "set -e; for ((i=1; i<=${input:RepeatCount}; i++)); do echo \"[Run $i/${input:RepeatCount}]\"; ${input:TestCommand}; done; echo \"Done. ${input:RepeatCount} run(s) finished.\""
+                "set -e; for ((i=1; i<=${input:RepeatCount}; i++)); do echo \"[Run ${i}/${input:RepeatCount}]\"; ${input:TestCommand}; done; echo \"Done. ${input:RepeatCount} run(s) finished.\""
             ]
         }
     ],

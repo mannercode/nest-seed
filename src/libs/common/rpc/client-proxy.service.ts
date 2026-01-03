@@ -8,8 +8,9 @@ import {
     OnModuleDestroy
 } from '@nestjs/common'
 import { ClientProvider, ClientProxy, ClientsModule } from '@nestjs/microservices'
-import { catchError, lastValueFrom, Observable } from 'rxjs'
+import { catchError, lastValueFrom, Observable, retry, throwError, timer } from 'rxjs'
 import { jsonToObject } from '../utils'
+import { Or } from '../validator'
 
 async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
     return lastValueFrom(
@@ -18,10 +19,10 @@ async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
                 const { status, response, options, message } = error
 
                 if (status && response) {
-                    throw new HttpException(response, status, options)
-                } else {
-                    throw new Error(message)
+                    return throwError(() => new HttpException(response, status, options))
                 }
+
+                return throwError(() => new Error(Or(message, 'Unknown error')))
             })
         )
     )
@@ -35,8 +36,8 @@ async function getProxyValue<T>(observer: Observable<T>): Promise<T> {
 export class ClientProxyService implements OnModuleDestroy {
     constructor(private readonly proxy: ClientProxy) {}
 
-    static getName(name: string = 'default') {
-        return `ClientProxyService_${name}`
+    static getName(name?: string) {
+        return `ClientProxyService_${Or(name, 'default')}`
     }
 
     async onModuleDestroy() {
@@ -49,15 +50,40 @@ export class ClientProxyService implements OnModuleDestroy {
     }
 
     send<T>(cmd: string, payload: any): Observable<T> {
-        // send does not allow a null payload
-        // send는 null payload를 허용하지 않음
-        return this.proxy.send(cmd, payload ?? '')
+        const source$ = this.proxy.send<T>(cmd, Or(payload, ''))
+
+        /**
+         * In a NATS cluster, right after creating a queue subscription, it may not have propagated to other nodes yet.
+         * Messages sent via another server can fail with "No responders / no subscribers".
+         * NATS 클러스터에서 큐(구독) 생성 직후엔 다른 노드에 전파되기 전이라
+         * 다른 서버로 보낸 메시지가 "구독자 없음(No responders)"으로 실패할 수 있음.
+         */
+        return source$.pipe(
+            retry({
+                count: 9,
+                delay: (err, retryCount) => {
+                    /* istanbul ignore next */
+                    const msg = String(err?.message ?? err?.response ?? err?.toString?.() ?? '')
+
+                    /* istanbul ignore next */
+                    if (
+                        /empty response/i.test(msg) ||
+                        /no subscribers/i.test(msg) ||
+                        /no responders/i.test(msg) ||
+                        /no response from/i.test(msg)
+                    ) {
+                        return timer(retryCount * 50)
+                    }
+
+                    return throwError(() => err)
+                },
+                resetOnSuccess: true
+            })
+        )
     }
 
     emit(event: string, payload: any): Promise<void> {
-        // emit does not allow a null payload
-        // emit는 null payload를 허용하지 않음
-        return waitProxyValue(this.proxy.emit<void>(event, payload ?? ''))
+        return waitProxyValue(this.proxy.emit<void>(event, Or(payload, '')))
     }
 }
 
@@ -77,7 +103,7 @@ export class ClientProxyModule {
     static registerAsync(options: ClientProxyModuleOptions): DynamicModule {
         const { name, useFactory, inject } = options
 
-        const clientName = name ?? 'DefaultClientProxy'
+        const clientName = Or(name, 'DefaultClientProxy')
 
         const provider = {
             provide: ClientProxyService.getName(name),

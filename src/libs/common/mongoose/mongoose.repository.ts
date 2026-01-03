@@ -1,6 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { differenceWith, uniq } from 'lodash'
-import { Assert, Expect } from '../validator'
+import { Expect, Verify, Or } from '../validator'
 import { MongooseErrors } from './errors'
 import { objectId, objectIds } from './mongoose.util'
 import type { PaginationDto, PaginationResult } from '../types'
@@ -48,7 +48,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
             { session }
         )
 
-        Assert.equals(
+        Expect.equals(
             docs.length,
             insertedCount + matchedCount + deletedCount,
             `The number of inserted documents should match the requested count`
@@ -80,7 +80,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     async getByIds(ids: string[], session: SessionArg = undefined) {
         const uniqueIds = uniq(ids)
 
-        Expect.equalLength(uniqueIds, ids, `Duplicate IDs detected and removed:${ids}`)
+        Verify.equalLength(uniqueIds, ids, `Duplicate IDs detected and removed:${ids}`)
 
         const docs = await this.findByIds(uniqueIds, session)
 
@@ -128,8 +128,8 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     }) {
         const { configureQuery, pagination, session } = args
 
-        let take = pagination.take ?? this.maxTake
-        let skip = pagination.skip ?? 0
+        let take = Or(pagination.take, this.maxTake)
+        let skip = Or(pagination.skip, 0)
 
         if (take <= 0) {
             throw new BadRequestException({ ...MongooseErrors.TakeInvalid, take })

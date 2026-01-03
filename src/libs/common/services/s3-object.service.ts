@@ -1,42 +1,39 @@
-import { Readable } from 'stream'
 import {
     DeleteObjectCommand,
     GetObjectCommand,
     HeadObjectCommand,
     ListObjectsV2Command,
     PutObjectCommand,
-    PutObjectCommandInput,
-    S3Client
+    S3Client,
+    S3ClientConfig
 } from '@aws-sdk/client-s3'
+import { createPresignedPost, PresignedPost } from '@aws-sdk/s3-presigned-post'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
-import { orDefault } from 'common'
+import { DynamicModule, Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
 import { newObjectId } from '../mongoose'
 import { HttpUtil } from '../utils'
+import { Or } from '../validator'
 
-export type PresignedUrl = { url: string; key: string; expiresAt: Date }
-export type S3PresignOptions = { key: string; expiresInSec: number }
-export type S3PresignUploadOptions = S3PresignOptions & {
+export type S3PresignUrlOptions = { key: string; expiresInSec: number }
+export type S3PresignPostUploadOptions = S3PresignUrlOptions & {
     contentType?: string
-    contentLength?: number
+    minContentLength?: number
+    maxContentLength?: number
+    // attachment; filename="a.txt"
+    contentDisposition?: string
+    metadata?: Record<string, string>
 }
-export type S3UploadCompletionOptions = {
-    key: string
-    contentType?: string
-    contentLength?: number
-}
-
-export type S3Object = { data: Buffer; filename: string; contentType: string }
-
-export type S3DeleteObjectResult = { status: number; deletedObject: string }
-
+export type S3PresignPostUploadResult = PresignedPost
+export type S3UploadCompleteOptions = { key: string; contentType?: string; contentLength?: number }
+export type S3ObjectData = { data: Buffer; filename: string; contentType: string }
+export type S3DeleteObjectResult = { status: number; key: string }
 export type S3ListObjectsOptions = {
     prefix?: string
     nextToken?: string
     maxKeys?: number
     delimiter?: string
 }
-export type S3ObjectSummary = { key: string; lastModified: Date; eTag: string; size: number }
+export type S3ObjectSummary = { key: string; lastModified?: Date; eTag?: string; size?: number }
 export type S3ListObjectsResult = {
     contents: S3ObjectSummary[]
     commonPrefixes?: string[]
@@ -47,53 +44,103 @@ export type S3ListObjectsResult = {
     delimiter?: string
 }
 
+export type S3PresignDownloadOptions = S3PresignUrlOptions & {
+    /** 다운로드 파일명 강제 */
+    filename?: string
+    /** 다운로드 시 Content-Type 오버라이드 */
+    responseContentType?: string
+    /** Content-Disposition 직접 지정 */
+    responseContentDisposition?: string
+}
+
+function normalizeContentType(v?: string): string | undefined {
+    if (!v) return undefined
+    return v.split(';', 1)[0].trim().toLowerCase()
+}
+
 @Injectable()
-export class S3ObjectService {
+export class S3ObjectService implements OnModuleDestroy {
     constructor(
         private readonly bucket: string,
         private readonly s3: S3Client
     ) {}
 
-    static getName(name: string = 'default') {
-        return `S3ObjectService_${name}`
+    static getName(name?: string) {
+        return `S3ObjectService_${Or(name, 'default')}`
     }
 
-    async presignUploadUrl(opts: S3PresignUploadOptions): Promise<string> {
-        const { key, expiresInSec, contentType, contentLength } = opts
+    onModuleDestroy() {
+        this.s3.destroy()
+    }
 
-        const signableHeaders = new Set<string>()
-        const params: PutObjectCommandInput = { Bucket: this.bucket, Key: key }
+    async presignUploadUrl(opts: S3PresignPostUploadOptions): Promise<S3PresignPostUploadResult> {
+        const {
+            key,
+            expiresInSec,
+            contentType,
+            minContentLength,
+            maxContentLength,
+            contentDisposition,
+            metadata
+        } = opts
+
+        const Fields: Record<string, string> = {}
+        const Conditions: any[] = []
 
         if (contentType) {
-            params.ContentType = contentType
-            signableHeaders.add('content-type')
+            Fields['Content-Type'] = contentType
+            Conditions.push(['eq', '$Content-Type', contentType])
         }
 
-        if (typeof contentLength === 'number') {
-            params.ContentLength = contentLength
-            signableHeaders.add('content-length')
+        if (contentDisposition) {
+            Fields['Content-Disposition'] = contentDisposition
+            Conditions.push(['eq', '$Content-Disposition', contentDisposition])
         }
 
-        const command = new PutObjectCommand(params)
+        if (metadata) {
+            for (const [k, v] of Object.entries(metadata)) {
+                Fields[`x-amz-meta-${k}`] = v
+                Conditions.push(['eq', `$x-amz-meta-${k}`, v])
+            }
+        }
 
-        const uploadUrl = await getSignedUrl(this.s3, command, {
-            expiresIn: expiresInSec,
-            signableHeaders
+        if (typeof minContentLength === 'number' || typeof maxContentLength === 'number') {
+            Conditions.push([
+                'content-length-range',
+                Or(minContentLength, 0),
+                Or(maxContentLength, 1024 * 1024 * 1024 * 1024)
+            ])
+        }
+
+        return createPresignedPost(this.s3, {
+            Bucket: this.bucket,
+            Key: key,
+            Expires: expiresInSec,
+            Fields,
+            Conditions
+        })
+    }
+
+    async presignDownloadUrl(opts: S3PresignDownloadOptions): Promise<string> {
+        const { key, expiresInSec, filename, responseContentType, responseContentDisposition } =
+            opts
+
+        const disposition = Or(
+            responseContentDisposition,
+            filename ? HttpUtil.buildContentDisposition(filename) : undefined
+        )
+
+        const command = new GetObjectCommand({
+            Bucket: this.bucket,
+            Key: key,
+            ResponseContentType: responseContentType,
+            ResponseContentDisposition: disposition
         })
 
-        return uploadUrl
+        return getSignedUrl(this.s3, command, { expiresIn: expiresInSec })
     }
 
-    async presignDownloadUrl(opts: S3PresignOptions): Promise<string> {
-        const { key, expiresInSec } = opts
-
-        const command = new GetObjectCommand({ Bucket: this.bucket, Key: key })
-
-        const downloadUrl = await getSignedUrl(this.s3, command, { expiresIn: expiresInSec })
-        return downloadUrl
-    }
-
-    async isUploadCompleted(opts: S3UploadCompletionOptions): Promise<boolean> {
+    async isUploadComplete(opts: S3UploadCompleteOptions): Promise<boolean> {
         const { key, contentLength, contentType } = opts
 
         try {
@@ -101,22 +148,21 @@ export class S3ObjectService {
                 new HeadObjectCommand({ Bucket: this.bucket, Key: key })
             )
 
-            if (typeof contentLength === 'number' && ContentLength !== contentLength) {
-                return false
-            }
+            if (typeof contentLength === 'number' && ContentLength !== contentLength) return false
 
-            if (typeof contentType === 'string' && ContentType !== contentType) {
-                return false
-            }
+            // Content-Type은 파라미터(예: charset) 차이가 날 수 있어 base-type으로 비교
+            const expected = normalizeContentType(contentType)
+            const actual = normalizeContentType(ContentType)
+
+            if (expected && actual && expected !== actual) return false
+            if (expected && !actual) return false
 
             return true
         } catch (error) {
-            const err = error as { name?: string; $metadata?: { httpStatusCode?: number } }
-
             if (
-                err.name === 'NotFound' ||
-                err.name === 'NoSuchKey' ||
-                err.$metadata?.httpStatusCode === 404
+                error.name === 'NotFound' ||
+                error.name === 'NoSuchKey' ||
+                error.$metadata?.httpStatusCode === 404
             ) {
                 return false
             }
@@ -125,7 +171,7 @@ export class S3ObjectService {
         }
     }
 
-    async putObject(object: S3Object): Promise<{ key: string }> {
+    async putObject(object: S3ObjectData): Promise<{ key: string }> {
         const key = newObjectId()
         const disposition = HttpUtil.buildContentDisposition(object.filename)
 
@@ -142,69 +188,46 @@ export class S3ObjectService {
         return { key }
     }
 
-    async getObject(key: string): Promise<S3Object> {
-        const { Body, ContentType, ContentDisposition } = await this.s3.send(
-            new GetObjectCommand({ Bucket: this.bucket, Key: key })
-        )
-
-        const chunks: Buffer[] = []
-
-        for await (const chunk of Body as Readable) {
-            chunks.push(chunk)
-        }
-
-        const objectData = Buffer.concat(chunks)
-
-        const contentType = orDefault(ContentType, 'application/octet-stream')
-
-        const filename = HttpUtil.extractContentDisposition(
-            orDefault(ContentDisposition, `filename=${key}`)
-        )
-
-        return { data: objectData, filename, contentType }
-    }
-
     async deleteObject(key: string): Promise<S3DeleteObjectResult> {
-        const command = new DeleteObjectCommand({ Bucket: this.bucket, Key: key })
+        const { $metadata } = await this.s3.send(
+            new DeleteObjectCommand({ Bucket: this.bucket, Key: key })
+        )
 
-        const { $metadata } = await this.s3.send(command)
-        const status = orDefault($metadata.httpStatusCode, 200)
-
-        return { status, deletedObject: key }
+        return { status: Or($metadata.httpStatusCode, 200), key }
     }
 
     async listObjects(options: S3ListObjectsOptions): Promise<S3ListObjectsResult> {
-        const command = new ListObjectsV2Command({
-            Bucket: this.bucket,
-            Prefix: options.prefix,
-            ContinuationToken: options.nextToken,
-            MaxKeys: options.maxKeys,
-            Delimiter: options.delimiter
-        })
+        const result = await this.s3.send(
+            new ListObjectsV2Command({
+                Bucket: this.bucket,
+                Prefix: options.prefix,
+                ContinuationToken: options.nextToken,
+                MaxKeys: options.maxKeys,
+                Delimiter: options.delimiter
+            })
+        )
 
-        const result = await this.s3.send(command)
-
-        let contents: S3ObjectSummary[] = orDefault(result.Contents, [])
+        const contents: S3ObjectSummary[] = Or(result.Contents, [])
             .map((content) => ({
-                key: orDefault(content.Key, 'null'),
+                key: Or(content.Key, 'null'),
                 lastModified: content.LastModified as Date,
-                eTag: content.ETag as string,
-                size: content.Size as number
+                eTag: content.ETag?.replace(/^"+|"+$/g, ''),
+                size: content.Size
             }))
             .filter((o) => o.key)
 
-        const commonPrefixes: string[] = (result.CommonPrefixes ?? [])
+        const commonPrefixes: string[] = Or(result.CommonPrefixes, [])
             .map((cp) => cp.Prefix)
-            .filter((p): p is string => !!p && p.length > 0)
+            .filter((p): p is string => typeof p === 'string' && p.length > 0)
 
         return {
             contents,
             commonPrefixes,
             isTruncated: Boolean(result.IsTruncated),
-            nextToken: orDefault(result.NextContinuationToken, undefined),
-            maxKeys: result.MaxKeys,
-            prefix: orDefault(result.Prefix, options.prefix),
-            delimiter: orDefault(result.Delimiter, options.delimiter)
+            nextToken: Or(result.NextContinuationToken, undefined),
+            maxKeys: Or(result.MaxKeys, options.maxKeys),
+            prefix: Or(result.Prefix, options.prefix),
+            delimiter: Or(result.Delimiter, options.delimiter)
         }
     }
 }
@@ -213,39 +236,28 @@ export function InjectS3Object(name?: string): ParameterDecorator {
     return Inject(S3ObjectService.getName(name))
 }
 
-type S3ObjectFactoryOptions = {
-    endpoint: string
-    accessKeyId: string
-    secretAccessKey: string
-    region: string
+export interface S3ClientFactoryConfig extends S3ClientConfig {
     bucket: string
-    forcePathStyle: boolean
 }
 
 export type S3ObjectModuleOptions = {
     name?: string
-    useFactory: (...args: any[]) => Promise<S3ObjectFactoryOptions> | S3ObjectFactoryOptions
+    useFactory: (...args: any[]) => Promise<S3ClientFactoryConfig> | S3ClientFactoryConfig
     inject?: any[]
 }
 
 @Module({})
 export class S3ObjectModule {
     static register(options: S3ObjectModuleOptions): DynamicModule {
-        const { name, useFactory, inject } = options
+        const { name, useFactory } = options
+        const inject = options.inject ?? []
 
         const provider = {
             provide: S3ObjectService.getName(name),
             useFactory: async (...args: any[]) => {
-                const { endpoint, accessKeyId, secretAccessKey, region, bucket, forcePathStyle } =
-                    await useFactory(...args)
+                const { bucket, ...s3config } = await useFactory(...args)
 
-                const client = new S3Client({
-                    endpoint,
-                    region,
-                    credentials: { accessKeyId, secretAccessKey },
-                    forcePathStyle
-                })
-
+                const client = new S3Client(s3config)
                 return new S3ObjectService(bucket, client)
             },
             inject
