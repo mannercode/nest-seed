@@ -7,12 +7,23 @@ x-mongo-base: &mongo-base
         { MONGO_INITDB_ROOT_USERNAME: $MONGO_USERNAME, MONGO_INITDB_ROOT_PASSWORD: $MONGO_PASSWORD }
     # Prevents "Too many open files" errors
     ulimits: { nofile: { soft: 65536, hard: 65536 } }
-    # TODO add comment
+    # Why switch to port 27016
+    # - If MONGO_INITDB_* is set or /docker-entrypoint-initdb.d scripts exist, the official mongo image entrypoint
+    #   starts a temporary mongod on 127.0.0.1:27017 to run init tasks (admin/root user, etc.).
+    # - After init, it shuts down the temporary mongod and starts the service mongod.
+    # - During this handover, "Address already in use" may occur on 27017, so the service mongod uses 27016.
+    #
+    # 27016 포트로 변경하는 이유
+    # - MONGO_INITDB_* 또는 /docker-entrypoint-initdb.d 스크립트가 있으면 엔트리포인트가 127.0.0.1:27017로
+    #   초기화용 임시 mongod를 실행해 admin/root 사용자 생성 등 초기화를 수행한다.
+    # - 초기화가 끝나면 임시 mongod를 종료하고 서비스용 mongod를 다시 실행한다.
+    # - 이 전환 과정에서 27017 포트 충돌로 "Address already in use"가 간헐적으로 발생할 수 있어,
+    #   서비스용 mongod 포트를 27016으로 변경한다.
     command: >
         --replSet ${MONGO_REPLICA_SET}
         --keyFile /etc/mongodb/mongodb.key
         --bind_ip_all
-        --port 17017
+        --port 27016
         --wiredTigerCacheSizeGB 0.25
     volumes: ['mongodb_key:/etc/mongodb']
     depends_on: ['mongo-key-generator']
@@ -33,7 +44,7 @@ services:
     mongo1:
         <<: *mongo-base
         container_name: mongo1
-        ports: ['$MONGO_PORT1:17017']
+        ports: ['$MONGO_PORT1:27016']
         healthcheck:
             test: >
                 mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1/?authSource=admin"
@@ -42,7 +53,7 @@ services:
     mongo2:
         <<: *mongo-base
         container_name: mongo2
-        ports: ['$MONGO_PORT2:17017']
+        ports: ['$MONGO_PORT2:27016']
         healthcheck:
             test: >
                 mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST2:$MONGO_PORT2/?authSource=admin"
@@ -51,7 +62,7 @@ services:
     mongo3:
         <<: *mongo-base
         container_name: mongo3
-        ports: ['$MONGO_PORT3:17017']
+        ports: ['$MONGO_PORT3:27016']
         healthcheck:
             test: >
                 mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST3:$MONGO_PORT3/?authSource=admin"
@@ -91,7 +102,7 @@ services:
         environment:
             {
                 ME_CONFIG_BASICAUTH: 'false',
-                ME_CONFIG_MONGODB_URL: 'mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@mongo1:17017,mongo2:17017,mongo3:17017/?authSource=admin&replicaSet=$MONGO_REPLICA_SET'
+                ME_CONFIG_MONGODB_URL: 'mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@mongo1:27016,mongo2:27016,mongo3:27016/?authSource=admin&replicaSet=$MONGO_REPLICA_SET'
             }
         ports: ['8081:8081']
 

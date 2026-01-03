@@ -34,7 +34,7 @@ async function setupMongo() {
             'rs0',
             '--bind_ip_all',
             '--port',
-            '17017',
+            '27016',
             '--wiredTigerCacheSizeGB',
             '0.25'
         ])
