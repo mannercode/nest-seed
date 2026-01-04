@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { assignIfDefined, MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
+import { assignDefined, MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto } from './dtos'
@@ -27,9 +27,9 @@ export class TheatersRepository extends MongooseRepository<Theater> {
     async update(theaterId: string, updateDto: UpdateTheaterDto) {
         const theater = await this.getById(theaterId)
 
-        assignIfDefined(theater, updateDto, 'name')
-        assignIfDefined(theater, updateDto, 'location')
-        assignIfDefined(theater, updateDto, 'seatmap')
+        assignDefined(theater, updateDto, 'name')
+        assignDefined(theater, updateDto, 'location')
+        assignDefined(theater, updateDto, 'seatmap')
 
         return theater.save()
     }

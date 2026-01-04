@@ -102,7 +102,7 @@ export function mapDocToDto<
 
 type Transform<T> = (value: T) => any
 
-export function assignIfDefined<
+export function assignDefined<
     Target extends Record<string, any>,
     Source extends Record<string, any>,
     K extends keyof Source & keyof Target

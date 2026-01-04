@@ -271,24 +271,26 @@ describe('AssetsService', () => {
             })
 
             describe('when the upload has not expired', () => {
-                it('keeps the asset', async () => {
+                beforeEach(async () => {
                     await fireOnTick()
-                    await sleep(500)
+                    await sleep(1000)
+                })
 
+                it('keeps the asset', async () => {
                     await expect(fix.assetsClient.getMany([assetId])).resolves.toHaveLength(1)
                 })
             })
 
             describe('when the upload has expired', () => {
                 beforeEach(async () => {
-                    await sleep(1500)
+                    const { Rules } = await import('shared')
+                    await sleep(Rules.Asset.uploadExpiresInSec * 1000 + 500)
+
+                    await fireOnTick()
+                    await sleep(1000)
                 })
 
                 it('removes the asset', async () => {
-                    await fireOnTick()
-                    // TODO 500으로 해도 간헐적으로 에러 발생.
-                    await sleep(500)
-
                     await expect(fix.assetsClient.getMany([assetId])).rejects.toMatchObject({
                         status: HttpStatus.NOT_FOUND
                     })

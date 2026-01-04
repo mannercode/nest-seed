@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import {
-    assignIfDefined,
+    assignDefined,
     MongooseRepository,
     objectIds,
     QueryBuilder,
@@ -37,14 +37,14 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     async update(movieId: string, updateDto: UpdateMovieDto) {
         const movie = await this.getById(movieId)
 
-        assignIfDefined(movie, updateDto, 'title')
-        assignIfDefined(movie, updateDto, 'genres')
-        assignIfDefined(movie, updateDto, 'releaseDate')
-        assignIfDefined(movie, updateDto, 'plot')
-        assignIfDefined(movie, updateDto, 'durationInSeconds')
-        assignIfDefined(movie, updateDto, 'director')
-        assignIfDefined(movie, updateDto, 'rating')
-        assignIfDefined(movie, updateDto, 'assetIds', (value) => objectIds(value))
+        assignDefined(movie, updateDto, 'title')
+        assignDefined(movie, updateDto, 'genres')
+        assignDefined(movie, updateDto, 'releaseDate')
+        assignDefined(movie, updateDto, 'plot')
+        assignDefined(movie, updateDto, 'durationInSeconds')
+        assignDefined(movie, updateDto, 'director')
+        assignDefined(movie, updateDto, 'rating')
+        assignDefined(movie, updateDto, 'assetIds', (value) => objectIds(value))
 
         return movie.save()
     }

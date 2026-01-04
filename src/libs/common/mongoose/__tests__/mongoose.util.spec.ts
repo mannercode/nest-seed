@@ -8,7 +8,7 @@ import {
     objectId,
     objectIds,
     QueryBuilder,
-    assignIfDefined
+    assignDefined
 } from 'common'
 import { model, Types } from 'mongoose'
 
@@ -244,13 +244,13 @@ describe('mapDocToDto', () => {
     })
 })
 
-describe('assignIfDefined', () => {
+describe('assignDefined', () => {
     describe('when source[key] is defined', () => {
         it('assigns target[key]', () => {
             const target = { name: 'old' }
             const source = { name: 'new' as string | undefined }
 
-            assignIfDefined(target, source, 'name')
+            assignDefined(target, source, 'name')
 
             expect(target.name).toBe('new')
         })
@@ -261,7 +261,7 @@ describe('assignIfDefined', () => {
             const target = { name: 'old' }
             const source = { name: undefined as string | undefined }
 
-            assignIfDefined(target, source, 'name')
+            assignDefined(target, source, 'name')
 
             expect(target.name).toBe('old')
         })
@@ -272,7 +272,7 @@ describe('assignIfDefined', () => {
             const target = { id: 'old' }
             const source = { id: '123' as string | undefined }
 
-            assignIfDefined(target, source, 'id', (v) => `obj:${v}`)
+            assignDefined(target, source, 'id', (v) => `obj:${v}`)
 
             expect(target.id).toBe('obj:123')
         })
@@ -283,7 +283,7 @@ describe('assignIfDefined', () => {
             const target = { email: 'old' as string | null }
             const source = { email: null as string | null | undefined }
 
-            assignIfDefined(target, source, 'email')
+            assignDefined(target, source, 'email')
 
             expect(target.email).toBeNull()
         })
