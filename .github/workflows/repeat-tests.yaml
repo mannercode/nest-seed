@@ -2,6 +2,8 @@
 name: Tests
 
 on:
+    schedule:
+        - cron: '0 */6 * * *'
     workflow_dispatch:
         inputs:
             run_repeat_unit:
@@ -15,7 +17,7 @@ on:
 
 jobs:
     repeat-unit:
-        if: ${{ inputs.run_repeat_unit }}
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_repeat_unit) || github.event_name == 'schedule' }}
         # On GitHub, ARM is 15% faster than x86.
         runs-on: ubuntu-24.04-arm
         steps:
@@ -37,7 +39,7 @@ jobs:
                       done
 
     repeat-e2e:
-        if: ${{ inputs.run_repeat_e2e }}
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_repeat_e2e) || github.event_name == 'schedule' }}
         # On GitHub, ARM is 15% faster than x86.
         runs-on: ubuntu-24.04-arm
         steps:

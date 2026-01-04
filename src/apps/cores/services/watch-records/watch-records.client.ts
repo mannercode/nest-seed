@@ -8,10 +8,10 @@ export class WatchRecordsClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     create(createDto: CreateWatchRecordDto): Promise<WatchRecordDto> {
-        return this.proxy.getJson(Messages.WatchRecords.create, createDto)
+        return this.proxy.request(Messages.WatchRecords.create, createDto)
     }
 
     searchPage(searchDto: SearchWatchRecordsPageDto): Promise<PaginationResult<WatchRecordDto>> {
-        return this.proxy.getJson(Messages.WatchRecords.searchPage, searchDto)
+        return this.proxy.request(Messages.WatchRecords.searchPage, searchDto)
     }
 }

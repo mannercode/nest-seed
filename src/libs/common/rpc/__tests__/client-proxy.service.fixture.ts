@@ -26,7 +26,7 @@ class SendTestController {
 
     @Get('value')
     getValue() {
-        return this.proxy.getJson(withTestId('method'), {})
+        return this.proxy.request(withTestId('method'), {})
     }
 }
 

@@ -8,22 +8,22 @@ export class AssetsClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     create(dto: CreateAssetDto): Promise<AssetPresignedUploadDto> {
-        return this.proxy.getJson(Messages.Assets.create, dto)
+        return this.proxy.request(Messages.Assets.create, dto)
     }
 
     isUploadComplete(assetId: string): Promise<boolean> {
-        return this.proxy.getJson(Messages.Assets.isUploadComplete, { assetId })
+        return this.proxy.request(Messages.Assets.isUploadComplete, { assetId })
     }
 
     complete(assetId: string, completeDto: CompleteAssetDto): Promise<AssetDto> {
-        return this.proxy.getJson(Messages.Assets.complete, { assetId, completeDto })
+        return this.proxy.request(Messages.Assets.complete, { assetId, completeDto })
     }
 
     getMany(assetIds: string[]): Promise<AssetDto[]> {
-        return this.proxy.getJson(Messages.Assets.getMany, assetIds)
+        return this.proxy.request(Messages.Assets.getMany, assetIds)
     }
 
     deleteMany(assetIds: string[]): Promise<Record<string, never>> {
-        return this.proxy.getJson(Messages.Assets.deleteMany, assetIds)
+        return this.proxy.request(Messages.Assets.deleteMany, assetIds)
     }
 }

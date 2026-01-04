@@ -9,20 +9,20 @@ export class ShowtimeCreationClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     searchMoviesPage(searchDto: PaginationDto): Promise<PaginationResult<MovieDto>> {
-        return this.proxy.getJson(Messages.ShowtimeCreation.searchMoviesPage, searchDto)
+        return this.proxy.request(Messages.ShowtimeCreation.searchMoviesPage, searchDto)
     }
 
     searchTheatersPage(searchDto: PaginationDto): Promise<PaginationResult<TheaterDto>> {
-        return this.proxy.getJson(Messages.ShowtimeCreation.searchTheatersPage, searchDto)
+        return this.proxy.request(Messages.ShowtimeCreation.searchTheatersPage, searchDto)
     }
 
     searchShowtimes(theaterIds: string[]): Promise<ShowtimeDto[]> {
-        return this.proxy.getJson(Messages.ShowtimeCreation.searchShowtimes, theaterIds)
+        return this.proxy.request(Messages.ShowtimeCreation.searchShowtimes, theaterIds)
     }
 
     requestShowtimeCreation(
         createDto: BulkCreateShowtimesDto
     ): Promise<RequestShowtimeCreationResponse> {
-        return this.proxy.getJson(Messages.ShowtimeCreation.requestShowtimeCreation, createDto)
+        return this.proxy.request(Messages.ShowtimeCreation.requestShowtimeCreation, createDto)
     }
 }

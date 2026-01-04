@@ -8,6 +8,6 @@ export class RecommendationClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     searchRecommendedMovies(customerId: string | null): Promise<MovieDto[]> {
-        return this.proxy.getJson(Messages.Recommendation.searchRecommendedMovies, customerId)
+        return this.proxy.request(Messages.Recommendation.searchRecommendedMovies, customerId)
     }
 }

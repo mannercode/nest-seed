@@ -14,7 +14,7 @@ export class RpcTestClient extends ClientProxyService {
     }
 
     async expect<T>(cmd: string, payload: any, expected: any): Promise<T> {
-        const value = await super.getJson<T>(cmd, payload)
+        const value = await super.request<T>(cmd, payload)
 
         if (expected) {
             expect(value).toEqual(expected)
@@ -24,7 +24,7 @@ export class RpcTestClient extends ClientProxyService {
     }
 
     async error(cmd: string, payload: any, expected: any) {
-        const promise = super.getJson(cmd, payload)
+        const promise = super.request(cmd, payload)
         const error = await promise.catch((e) => e)
 
         expect(error).toEqual(expected)
