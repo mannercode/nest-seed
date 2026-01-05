@@ -153,8 +153,7 @@ describe('MoviesService', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
-                const asset = await uploadComplete(fix, fixtureFiles.image)
-                movie = await createMovie(fix, { assetIds: [asset.id] })
+                movie = await createMovie(fix)
             })
 
             // 204 No Content를 반환한다
@@ -172,6 +171,21 @@ describe('MoviesService', () => {
                         ...Errors.Mongoose.MultipleDocumentsNotFound,
                         notFoundIds: [movie.id]
                     })
+            })
+        })
+
+        // 영화가 이미지를 포함할 때
+        describe('when the movie has images', () => {
+            let movie: MovieDto
+
+            beforeEach(async () => {
+                const asset = await uploadComplete(fix, fixtureFiles.image)
+                movie = await createMovie(fix, { assetIds: [asset.id] })
+            })
+
+            // 204 No Content를 반환한다
+            it('returns 204 No Content', async () => {
+                await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
             })
 
             // 이미지 URL을 무효화한다

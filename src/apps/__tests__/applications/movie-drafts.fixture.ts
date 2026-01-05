@@ -46,10 +46,10 @@ export async function createMovieImageDraft(ctx: TestContext, draftId: string, f
 }
 
 export async function uploadDraftImage(ctx: TestContext, draftId: string) {
-    const imageFile = fixtureFiles.image
+    const { image } = fixtureFiles
 
-    const upload = await createMovieImageDraft(ctx, draftId, imageFile)
-    const uploadResponse = await uploadAsset(imageFile.path, upload.upload)
+    const upload = await createMovieImageDraft(ctx, draftId, image)
+    const uploadResponse = await uploadAsset(image.path, upload)
 
     expect(uploadResponse.ok).toBe(true)
 
@@ -60,7 +60,7 @@ export async function uploadCompleteDraftImage(ctx: TestContext, draftId: string
     const { MovieDraftsService } = await import('apps/applications')
     const movieDraftsService = ctx.module.get(MovieDraftsService)
 
-    const { imageId } = await uploadDraftImage(ctx, draftId)
+    const { assetId: imageId } = await uploadDraftImage(ctx, draftId)
 
     await movieDraftsService.completeImage(draftId, imageId)
     return imageId

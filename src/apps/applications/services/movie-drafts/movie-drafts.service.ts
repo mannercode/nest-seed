@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common'
 import { MoviesClient } from 'apps/cores'
 import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
-import { DraftImageDto, DraftImageUploadResponse, MovieDraftDto, UpdateMovieDraftDto } from './dtos'
+import { MovieDraftDto, MovieDraftImageDto, UpdateMovieDraftDto } from './dtos'
 import { MovieDraftErrors } from './errors'
-import { MovieDraftDocument, MovieDraftImageStatus } from './models/movie-draft'
+import { MovieAssetDraftStatus, MovieDraftDocument } from './models'
 import { MovieDraftsRepository } from './movie-drafts.repository'
 
 @Injectable()
@@ -26,44 +26,31 @@ export class MovieDraftsService {
 
     async get(draftId: string): Promise<MovieDraftDto> {
         const draft = await this.repository.getById(draftId)
-
         return this.toDto(draft)
     }
 
-    async update(draftId: string, updateDto: UpdateMovieDraftDto): Promise<MovieDraftDto> {
-        const draft = await this.repository.getById(draftId)
-
-        const updateValues = Object.fromEntries(
-            Object.entries(updateDto).filter(([, value]) => value !== undefined)
-        )
-
-        draft.set(updateValues)
-        await draft.save()
-
+    async update(draftId: string, updateDto: UpdateMovieDraftDto) {
+        const draft = await this.repository.update(draftId, updateDto)
         return this.toDto(draft)
     }
 
     async delete(draftId: string) {
         const draft = await this.repository.findById(draftId)
 
-        if (!draft) {
-            return true
+        if (draft) {
+            const assetIdSet = new Set(draft.assets.map((image) => image.assetId))
+
+            if (0 < assetIdSet.size) {
+                await this.assetsClient.deleteMany([...assetIdSet])
+            }
+
+            await this.repository.deleteById(draftId)
         }
 
-        const assetIds = [...new Set(draft.images.map((image) => image.assetId))]
-
-        if (assetIds.length > 0) {
-            await this.assetsClient.deleteMany(assetIds)
-        }
-
-        await draft.deleteOne()
-        return true
+        return {}
     }
 
-    async requestImageUpload(
-        draftId: string,
-        createDto: CreateAssetDto
-    ): Promise<DraftImageUploadResponse> {
+    async requestImageUpload(draftId: string, createDto: CreateAssetDto) {
         if (!createDto.mimeType.startsWith('image/')) {
             throw new BadRequestException({
                 ...MovieDraftErrors.UnsupportedImageType,
@@ -75,10 +62,10 @@ export class MovieDraftsService {
 
         await this.repository.addOrUpdateImage(draftId, {
             assetId: upload.assetId,
-            status: MovieDraftImageStatus.Pending
+            status: MovieAssetDraftStatus.Pending
         })
 
-        return { imageId: upload.assetId, upload }
+        return upload
     }
 
     async deleteImage(draftId: string, imageId: string) {
@@ -88,22 +75,22 @@ export class MovieDraftsService {
             return true
         }
 
-        const hasImage = draft.images.some((image) => image.assetId === imageId)
+        const hasImage = draft.assets.some((image) => image.assetId === imageId)
         if (!hasImage) {
             return true
         }
 
-        draft.images = draft.images.filter((image) => image.assetId !== imageId)
+        draft.assets = draft.assets.filter((image) => image.assetId !== imageId)
         await draft.save()
 
         await this.assetsClient.deleteMany([imageId])
         return true
     }
 
-    async completeImage(draftId: string, imageId: string): Promise<DraftImageDto> {
+    async completeImage(draftId: string, imageId: string): Promise<MovieDraftImageDto> {
         const draft = await this.repository.getById(draftId)
 
-        const image = draft.images.find((img) => img.assetId === imageId)
+        const image = draft.assets.find((img) => img.assetId === imageId)
         if (!image) {
             throw new NotFoundException({ ...MovieDraftErrors.ImageNotFound, imageId })
         }
@@ -113,7 +100,7 @@ export class MovieDraftsService {
         if (!isUploaded) {
             throw new UnprocessableEntityException({
                 ...MovieDraftErrors.ImageUploadInvalid,
-                imageId
+                assetId: imageId
             })
         }
 
@@ -123,17 +110,25 @@ export class MovieDraftsService {
 
         await this.repository.addOrUpdateImage(draftId, {
             assetId: imageId,
-            status: MovieDraftImageStatus.Ready
+            status: MovieAssetDraftStatus.Ready
         })
 
-        return { id: imageId, status: MovieDraftImageStatus.Ready }
+        return { id: imageId, status: MovieAssetDraftStatus.Ready }
     }
 
     async completeDraft(draftId: string) {
         const draft = await this.repository.getById(draftId)
 
-        const { title, genres, releaseDate, plot, durationInSeconds, director, rating, images } =
-            draft
+        const {
+            title,
+            genres,
+            releaseDate,
+            plot,
+            durationInSeconds,
+            director,
+            rating,
+            assets: images
+        } = draft
 
         if (
             title &&
@@ -146,7 +141,7 @@ export class MovieDraftsService {
             images.length
         ) {
             const readyImageAssetIds = images
-                .filter((image) => image.status === MovieDraftImageStatus.Ready)
+                .filter((image) => image.status === MovieAssetDraftStatus.Ready)
                 .map((image) => image.assetId)
 
             const movie = await this.moviesClient.create({
@@ -183,8 +178,8 @@ export class MovieDraftsService {
     }
 
     private toDto(draft: MovieDraftDocument): MovieDraftDto {
-        const readyImageAssetIds = draft.images
-            .filter((image) => image.status === MovieDraftImageStatus.Ready)
+        const readyImageAssetIds = draft.assets
+            .filter((image) => image.status === MovieAssetDraftStatus.Ready)
             .map((image) => image.assetId)
 
         return {

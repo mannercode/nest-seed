@@ -8,7 +8,8 @@ import {
     uploadCompleteDraftImage
 } from './movie-drafts.fixture'
 import type { MovieDraftsFixture } from './movie-drafts.fixture'
-import type { DraftImageUploadResponse, MovieDraftDto } from 'apps/applications'
+import type { MovieDraftDto } from 'apps/applications'
+import type { AssetPresignedUploadDto } from 'apps/infrastructures'
 
 describe('MovieDraftsService', () => {
     let fix: MovieDraftsFixture
@@ -121,31 +122,27 @@ describe('MovieDraftsService', () => {
                     .body(createDto)
                     .created()
 
-                expect(body).toEqual({
-                    imageId: expect.any(String),
-                    upload: expect.objectContaining({
+                expect(body).toEqual(
+                    expect.objectContaining({
                         assetId: expect.any(String),
                         url: expect.any(String),
                         expiresAt: expect.any(Date),
                         method: 'POST',
                         fields: expect.objectContaining({ 'Content-Type': createDto.mimeType })
                     })
-                })
-
-                expect(body.imageId).toBe(body.upload.assetId)
-                expect(body.upload.fields.key).toBe(body.upload.assetId)
+                )
             })
 
             // 업로드 URL로 이미지를 업로드한다
             it('uploads the image via the upload URL', async () => {
                 const createDto = buildCreateAssetDto(fix.image)
 
-                const { body } = await fix.httpClient
+                const { body: upload } = await fix.httpClient
                     .post(`/movie-drafts/${movieDraft.id}/images`)
                     .body(createDto)
                     .created()
 
-                const response = await uploadAsset(fix.image.path, body.upload)
+                const response = await uploadAsset(fix.image.path, upload)
 
                 expect(response.ok).toBe(true)
             })
@@ -250,39 +247,35 @@ describe('MovieDraftsService', () => {
 
         // 이미지 초안이 존재할 때
         describe('when the image-draft exists', () => {
-            let imageDraft: DraftImageUploadResponse
+            let upload: AssetPresignedUploadDto
 
             beforeEach(async () => {
-                imageDraft = await createMovieImageDraft(fix, movieDraft.id, fix.image)
+                upload = await createMovieImageDraft(fix, movieDraft.id, fix.image)
             })
 
             // 업로드가 성공한 경우
             describe('when upload succeeded', () => {
                 beforeEach(async () => {
-                    const res = await uploadAsset(fix.image.path, imageDraft.upload)
+                    const res = await uploadAsset(fix.image.path, upload)
                     expect(res.ok).toBe(true)
                 })
 
                 // 상태 ready를 반환한다
                 it('returns status: ready', async () => {
                     await fix.httpClient
-                        .post(
-                            `/movie-drafts/${movieDraft.id}/images/${imageDraft.imageId}/complete`
-                        )
-                        .ok({ id: imageDraft.imageId, status: 'ready' })
+                        .post(`/movie-drafts/${movieDraft.id}/images/${upload.assetId}/complete`)
+                        .ok({ id: upload.assetId, status: 'ready' })
                 })
 
                 // 영화 초안에 이미지를 포함한다
                 it('includes the image in the movie-draft', async () => {
                     await fix.httpClient
-                        .post(
-                            `/movie-drafts/${movieDraft.id}/images/${imageDraft.imageId}/complete`
-                        )
+                        .post(`/movie-drafts/${movieDraft.id}/images/${upload.assetId}/complete`)
                         .ok()
 
                     await fix.httpClient
                         .get(`/movie-drafts/${movieDraft.id}`)
-                        .ok(expect.objectContaining({ assetIds: [imageDraft.imageId] }))
+                        .ok(expect.objectContaining({ assetIds: [upload.assetId] }))
                 })
             })
 
@@ -291,12 +284,10 @@ describe('MovieDraftsService', () => {
                 // 422 Unprocessable Entity를 반환한다
                 it('returns 422 Unprocessable Entity', async () => {
                     await fix.httpClient
-                        .post(
-                            `/movie-drafts/${movieDraft.id}/images/${imageDraft.imageId}/complete`
-                        )
+                        .post(`/movie-drafts/${movieDraft.id}/images/${upload.assetId}/complete`)
                         .unprocessableEntity({
                             ...Errors.MovieDrafts.ImageUploadInvalid,
-                            imageId: imageDraft.imageId
+                            assetId: upload.assetId
                         })
                 })
             })

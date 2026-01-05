@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { AssetsClient } from 'apps/infrastructures'
-import { Expect, mapDocToDto } from 'common'
+import { Expect, mapDocToDto, pickIds } from 'common'
 import { CreateMovieDto, MovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
 import { MovieDocument } from './models'
 import { MoviesRepository } from './movies.repository'
@@ -14,34 +14,34 @@ export class MoviesService {
 
     async create(createDto: CreateMovieDto) {
         const movie = await this.repository.create(createDto)
-
-        return this.toDto(movie)
-    }
-
-    async update(movieId: string, updateDto: UpdateMovieDto) {
-        const movie = await this.repository.update(movieId, updateDto)
-
         return this.toDto(movie)
     }
 
     async getMany(movieIds: string[]) {
         const movies = await this.repository.getByIds(movieIds)
-
         return this.toDtos(movies)
+    }
+
+    async update(movieId: string, updateDto: UpdateMovieDto) {
+        const movie = await this.repository.update(movieId, updateDto)
+        return this.toDto(movie)
     }
 
     async deleteMany(movieIds: string[]) {
         const movies = await this.repository.findByIds(movieIds)
 
-        const assetIds = [
-            ...new Set(movies.flatMap((movie) => movie.assetIds.map((id) => id.toString())))
-        ]
+        if (0 < movies.length) {
+            const assetIdSet = new Set(
+                movies.flatMap((movie) => movie.assetIds.map((id) => id.toString()))
+            )
 
-        if (assetIds.length > 0) {
-            await this.assetsClient.deleteMany(assetIds)
+            if (0 < assetIdSet.size) {
+                await this.assetsClient.deleteMany([...assetIdSet])
+            }
+
+            await this.repository.deleteByIds(pickIds(movies))
         }
 
-        await this.repository.deleteByIds(movieIds)
         return {}
     }
 
@@ -76,33 +76,30 @@ export class MoviesService {
             return dto
         })
 
-        const assetIds = [
-            ...new Set(movies.flatMap((movie) => movie.assetIds.map((id) => id.toString())))
-        ]
+        const assetIdSet = new Set(
+            movies.flatMap((movie) => movie.assetIds.map((id) => id.toString()))
+        )
 
-        if (assetIds.length === 0) {
-            return dtos
-        }
+        if (0 < assetIdSet.size) {
+            const assets = await this.assetsClient.getMany([...assetIdSet])
 
-        const assets = await this.assetsClient.getMany(assetIds)
+            const assetUrlById = new Map<string, string>()
 
-        const assetUrlById = new Map<string, string>()
-
-        assets.forEach((asset) => {
-            Expect.defined(asset.download)
-
-            assetUrlById.set(asset.id, asset.download.url)
-        })
-
-        movies.forEach((movie, index) => {
-            const movieAssetIds = movie.assetIds.map((id) => id.toString())
-
-            dtos[index].imageUrls = movieAssetIds.flatMap((assetId) => {
-                const url = assetUrlById.get(assetId)
-                Expect.defined(url)
-                return [url]
+            assets.forEach((asset) => {
+                Expect.defined(asset.download)
+                assetUrlById.set(asset.id, asset.download.url)
             })
-        })
+
+            movies.forEach((movie, index) => {
+                const movieAssetIds = movie.assetIds.map((id) => id.toString())
+
+                dtos[index].imageUrls = movieAssetIds.flatMap((assetId) => {
+                    const url = assetUrlById.get(assetId)
+                    Expect.defined(url)
+                    return [url]
+                })
+            })
+        }
 
         return dtos
     }

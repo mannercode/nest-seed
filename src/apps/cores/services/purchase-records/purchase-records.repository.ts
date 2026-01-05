@@ -25,8 +25,6 @@ export class PurchaseRecordsRepository extends MongooseRepository<PurchaseRecord
             ticketId: objectId(item.ticketId)
         }))
 
-        await purchase.save()
-
-        return purchase
+        return purchase.save()
     }
 }
