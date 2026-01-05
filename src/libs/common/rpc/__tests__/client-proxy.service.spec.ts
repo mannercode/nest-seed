@@ -21,18 +21,24 @@ describe('ClientProxyService', () => {
 
         // HttpController가 값을 resolve할 때
         describe('when the HttpController resolves a value', () => {
-            // Observable 값을 반환한다
-            it('returns the Observable value', async () => {
-                await fix.httpClient.get('/value').ok({ result: 'success' })
+            // resolve된 값으로 응답한다
+            it('returns the resolved value', async () => {
+                await fix.httpClient.get('/promise').ok({ result: 'success' })
             })
         })
 
-        // 페이로드가 null일 때
-        describe('when the payload is null', () => {
-            // null 페이로드를 전송한다
-            it('sends a null payload', async () => {
-                const response = await fix.rpcClient.request(withTestId('method'), null)
-                expect(response).toEqual({ result: 'success' })
+        // null 페이로드로도 응답한다
+        it('responds when payload is null', async () => {
+            const response = await fix.rpcClient.request(withTestId('method'), null)
+            expect(response).toEqual({ result: 'success' })
+        })
+
+        // 메시지 큐가 존재하지 않을 때
+        describe('when the queue does not exist', () => {
+            // 응답이 비어 있으면 예외를 던진다
+            it('throws for empty response', async () => {
+                const promise = fix.rpcClient.request('unknown.queue', null)
+                await expect(promise).rejects.toThrow(/empty response/i)
             })
         })
     })
@@ -49,11 +55,12 @@ describe('ClientProxyService', () => {
             await expect(promise).resolves.toEqual('{"arg":"value"}')
         })
 
-        // 페이로드가 null일 때
-        describe('when the payload is null', () => {
-            // null 페이로드를 전송한다
-            it('sends a null payload', async () => {
-                await fix.rpcClient.emit(withTestId('emitEvent'), null)
+        // 페이로드가 null인 때
+        describe('when payload is null', () => {
+            // 예외가 발생하지 않는다
+            it('does not throw when payload is null', async () => {
+                const promise = fix.rpcClient.emit(withTestId('emitEvent'), null)
+                await expect(promise).resolves.toBeUndefined()
             })
         })
     })

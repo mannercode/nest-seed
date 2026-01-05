@@ -69,8 +69,6 @@ export class ClientProxyService implements OnModuleDestroy {
                     /* istanbul ignore next */
                     const msg = String(err?.message ?? err?.response ?? err?.toString?.() ?? '')
 
-                    // TODO 테스트 추가
-                    /* istanbul ignore next */
                     if (
                         /empty response/i.test(msg) ||
                         /no subscribers/i.test(msg) ||
