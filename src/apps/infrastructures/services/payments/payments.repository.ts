@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseRepository, objectId } from 'common'
+import { MongooseRepository } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { CreatePaymentDto } from './dtos'
@@ -17,7 +17,7 @@ export class PaymentsRepository extends MongooseRepository<Payment> {
 
     async create(createDto: CreatePaymentDto) {
         const payment = this.newDocument()
-        payment.customerId = objectId(createDto.customerId)
+        payment.customerId = createDto.customerId
         payment.amount = createDto.amount
 
         return payment.save()

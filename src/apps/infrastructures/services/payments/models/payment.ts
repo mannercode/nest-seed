@@ -1,12 +1,12 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { HydratedDocument, Types } from 'mongoose'
+import { HydratedDocument } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 
 @Schema(MongooseConfigModule.schemaOptions)
 export class Payment extends MongooseSchema {
     @Prop({ required: true })
-    customerId: Types.ObjectId
+    customerId: string
 
     @Prop({ required: true })
     amount: number

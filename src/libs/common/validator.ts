@@ -6,6 +6,14 @@ export function Or<T>(value: T | null | undefined, defaultValue: T): T {
     return value ?? defaultValue
 }
 
+export function ensure<T>(value: T | null | undefined, message = 'Value must exist.'): T {
+    if (value == null) {
+        throw new Error(message)
+    }
+
+    return value
+}
+
 export class Expect {
     static equalLength(a: any[] | undefined, b: any[] | undefined, message: string) {
         if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {

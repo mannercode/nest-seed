@@ -37,7 +37,7 @@ export class QueryBuilder<T> {
                 ids,
                 `Duplicate ${String(field)} detected and removed: ${ids}`
             )
-            this.query[field] = { $in: objectIds(uniqueIds) }
+            this.query[field] = { $in: uniqueIds }
         }
         return this
     }

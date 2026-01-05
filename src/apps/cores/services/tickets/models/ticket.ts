@@ -1,6 +1,6 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { HydratedDocument, Types } from 'mongoose'
+import { HydratedDocument } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { Seat } from '../../theaters'
 
@@ -12,13 +12,13 @@ export enum TicketStatus {
 @Schema(MongooseConfigModule.schemaOptions)
 export class Ticket extends MongooseSchema {
     @Prop({ required: true })
-    showtimeId: Types.ObjectId
+    showtimeId: string
 
     @Prop({ required: true })
-    theaterId: Types.ObjectId
+    theaterId: string
 
     @Prop({ required: true })
-    movieId: Types.ObjectId
+    movieId: string
 
     @Prop({ type: String, enum: TicketStatus, required: true })
     status: TicketStatus
@@ -27,7 +27,7 @@ export class Ticket extends MongooseSchema {
     seat: Seat
 
     @Prop({ required: true })
-    sagaId: Types.ObjectId
+    sagaId: string
 }
 export type TicketDocument = HydratedDocument<Ticket>
 export const TicketSchema = createMongooseSchema(Ticket)

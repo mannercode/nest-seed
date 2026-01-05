@@ -1,12 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import {
-    assignDefined,
-    MongooseRepository,
-    objectIds,
-    QueryBuilder,
-    QueryBuilderOptions
-} from 'common'
+import { assignDefined, MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { CreateMovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
@@ -29,7 +23,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         movie.durationInSeconds = createDto.durationInSeconds
         movie.director = createDto.director
         movie.rating = createDto.rating
-        movie.assetIds = objectIds(createDto.assetIds)
+        movie.assetIds = createDto.assetIds
 
         return movie.save()
     }
@@ -44,7 +38,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         assignDefined(movie, updateDto, 'durationInSeconds')
         assignDefined(movie, updateDto, 'director')
         assignDefined(movie, updateDto, 'rating')
-        assignDefined(movie, updateDto, 'assetIds', (value) => objectIds(value))
+        assignDefined(movie, updateDto, 'assetIds')
 
         return movie.save()
     }

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common'
 import { MoviesClient } from 'apps/cores'
 import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
+import { uniq } from 'lodash'
 import { MovieDraftDto, MovieDraftImageDto, UpdateMovieDraftDto } from './dtos'
 import { MovieDraftErrors } from './errors'
 import { MovieAssetDraftStatus, MovieDraftDocument } from './models'
@@ -38,10 +39,10 @@ export class MovieDraftsService {
         const draft = await this.repository.findById(draftId)
 
         if (draft) {
-            const assetIdSet = new Set(draft.assets.map((image) => image.assetId))
+            const assetIds = uniq(draft.assets.map((image) => image.assetId))
 
-            if (0 < assetIdSet.size) {
-                await this.assetsClient.deleteMany([...assetIdSet])
+            if (0 < assetIds.length) {
+                await this.assetsClient.deleteMany(assetIds)
             }
 
             await this.repository.deleteById(draftId)

@@ -74,7 +74,7 @@ describe('objectIds', () => {
 })
 
 describe('QueryBuilder', () => {
-    type TestModel = { _id: Types.ObjectId; name: string; createdAt: Date }
+    type TestModel = { _id: Types.ObjectId; entityId: string; name: string; createdAt: Date }
 
     let builder: QueryBuilder<TestModel>
 
@@ -127,29 +127,27 @@ describe('QueryBuilder', () => {
     describe('addIn', () => {
         // ids가 제공될 때
         describe('when ids are provided', () => {
+            const ids = ['123', '456']
+
             // $in 조건을 추가한다
             it('adds an $in condition', () => {
-                const ids = [new Types.ObjectId().toString(), new Types.ObjectId().toString()]
-                builder.addIn('_id', ids)
-                expect(builder.build({})).toEqual({ _id: { $in: objectIds(ids) } })
+                builder.addIn('entityId', ids)
+                expect(builder.build({})).toEqual({ entityId: { $in: ids } })
             })
         })
 
         // ids에 중복이 있을 때
         describe('when ids contain duplicates', () => {
-            let ids: string[]
+            const ids = ['123', '123']
 
             beforeEach(() => {
                 jest.spyOn(Logger, 'warn').mockImplementation(() => {})
-
-                const id = new Types.ObjectId().toString()
-                ids = [id, new Types.ObjectId().toString(), id]
             })
 
             // 중복을 제거한다
             it('removes duplicates', () => {
-                builder.addIn('_id', ids)
-                expect(builder.build({})).toEqual({ _id: { $in: objectIds([ids[0], ids[1]]) } })
+                builder.addIn('entityId', ids)
+                expect(builder.build({})).toEqual({ entityId: { $in: ['123'] } })
             })
         })
 
@@ -157,8 +155,8 @@ describe('QueryBuilder', () => {
         describe('when ids are empty or not provided', () => {
             // 조건을 추가하지 않는다
             it('does not add the condition', () => {
-                builder.addIn('_id', [])
-                builder.addIn('_id', undefined)
+                builder.addIn('entityId', [])
+                builder.addIn('entityId', undefined)
                 expect(builder.build({ allowEmpty: true })).toEqual({})
             })
         })

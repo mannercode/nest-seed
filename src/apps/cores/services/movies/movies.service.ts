@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { AssetsClient } from 'apps/infrastructures'
-import { Expect, mapDocToDto, pickIds } from 'common'
+import { ensure, mapDocToDto, pickIds } from 'common'
+import { uniq } from 'lodash'
 import { CreateMovieDto, MovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
 import { MovieDocument } from './models'
 import { MoviesRepository } from './movies.repository'
@@ -31,12 +32,10 @@ export class MoviesService {
         const movies = await this.repository.findByIds(movieIds)
 
         if (0 < movies.length) {
-            const assetIdSet = new Set(
-                movies.flatMap((movie) => movie.assetIds.map((id) => id.toString()))
-            )
+            const assetIds = uniq(movies.flatMap((movie) => movie.assetIds))
 
-            if (0 < assetIdSet.size) {
-                await this.assetsClient.deleteMany([...assetIdSet])
+            if (0 < assetIds.length) {
+                await this.assetsClient.deleteMany(assetIds)
             }
 
             await this.repository.deleteByIds(pickIds(movies))
@@ -76,28 +75,21 @@ export class MoviesService {
             return dto
         })
 
-        const assetIdSet = new Set(
-            movies.flatMap((movie) => movie.assetIds.map((id) => id.toString()))
-        )
+        const assetIds = uniq(movies.flatMap((movie) => movie.assetIds))
 
-        if (0 < assetIdSet.size) {
-            const assets = await this.assetsClient.getMany([...assetIdSet])
+        if (0 < assetIds.length) {
+            const assets = await this.assetsClient.getMany(assetIds)
 
             const assetUrlById = new Map<string, string>()
 
             assets.forEach((asset) => {
-                Expect.defined(asset.download)
-                assetUrlById.set(asset.id, asset.download.url)
+                assetUrlById.set(asset.id, ensure(asset.download).url)
             })
 
             movies.forEach((movie, index) => {
-                const movieAssetIds = movie.assetIds.map((id) => id.toString())
-
-                dtos[index].imageUrls = movieAssetIds.flatMap((assetId) => {
-                    const url = assetUrlById.get(assetId)
-                    Expect.defined(url)
-                    return [url]
-                })
+                dtos[index].imageUrls = movie.assetIds.map((assetId) =>
+                    ensure(assetUrlById.get(assetId))
+                )
             })
         }
 

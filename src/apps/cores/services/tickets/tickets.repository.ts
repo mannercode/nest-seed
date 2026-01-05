@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseRepository, objectId, objectIds, QueryBuilder, QueryBuilderOptions } from 'common'
+import { MongooseRepository, objectIds, QueryBuilder, QueryBuilderOptions } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import {
@@ -22,10 +22,10 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
     async createMany(createDtos: CreateTicketDto[]) {
         const tickets = createDtos.map((dto) => {
             const ticket = this.newDocument()
-            ticket.sagaId = objectId(dto.sagaId)
-            ticket.movieId = objectId(dto.movieId)
-            ticket.theaterId = objectId(dto.theaterId)
-            ticket.showtimeId = objectId(dto.showtimeId)
+            ticket.sagaId = dto.sagaId
+            ticket.movieId = dto.movieId
+            ticket.theaterId = dto.theaterId
+            ticket.showtimeId = dto.showtimeId
             ticket.status = dto.status
             ticket.seat = dto.seat
 
