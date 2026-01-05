@@ -11,7 +11,7 @@ import {
 import type { AppTestContext, FixtureFile } from '../__helpers__'
 import type { TestContext } from 'testlib'
 
-export type MovieDraftsFixture = AppTestContext & { assetsClient: AssetsClient }
+export type MovieDraftsFixture = AppTestContext & { assetsClient: AssetsClient; image: FixtureFile }
 
 export async function createMovieDraftsFixture() {
     const ctx = await createAppTestContext({
@@ -24,7 +24,7 @@ export async function createMovieDraftsFixture() {
     // TODO 이거 없애야 한다.
     const assetsClient = ctx.module.get(AssetsClient)
 
-    return { ...ctx, assetsClient }
+    return { ...ctx, assetsClient, image: fixtureFiles.image }
 }
 
 export async function createMovieDraft(ctx: TestContext) {

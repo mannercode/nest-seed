@@ -12,7 +12,6 @@ import type { DraftImageUploadResponse, MovieDraftDto } from 'apps/applications'
 
 describe('MovieDraftsService', () => {
     let fix: MovieDraftsFixture
-    const imageFile = fixtureFiles.image
 
     beforeEach(async () => {
         const { createMovieDraftsFixture } = await import('./movie-drafts.fixture')
@@ -115,7 +114,7 @@ describe('MovieDraftsService', () => {
 
             // 업로드 URL이 포함된 이미지 슬롯을 반환한다
             it('returns a created image slot with an upload URL', async () => {
-                const createDto = buildCreateAssetDto(imageFile)
+                const createDto = buildCreateAssetDto(fix.image)
 
                 const { body } = await fix.httpClient
                     .post(`/movie-drafts/${movieDraft.id}/images`)
@@ -139,14 +138,14 @@ describe('MovieDraftsService', () => {
 
             // 업로드 URL로 이미지를 업로드한다
             it('uploads the image via the upload URL', async () => {
-                const createDto = buildCreateAssetDto(imageFile)
+                const createDto = buildCreateAssetDto(fix.image)
 
                 const { body } = await fix.httpClient
                     .post(`/movie-drafts/${movieDraft.id}/images`)
                     .body(createDto)
                     .created()
 
-                const response = await uploadAsset(imageFile.path, body.upload)
+                const response = await uploadAsset(fix.image.path, body.upload)
 
                 expect(response.ok).toBe(true)
             })
@@ -172,7 +171,7 @@ describe('MovieDraftsService', () => {
         describe('when the movie-draft does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
-                const createDto = buildCreateAssetDto(imageFile)
+                const createDto = buildCreateAssetDto(fix.image)
 
                 await fix.httpClient
                     .post(`/movie-drafts/${nullObjectId}/images`)
@@ -254,13 +253,13 @@ describe('MovieDraftsService', () => {
             let imageDraft: DraftImageUploadResponse
 
             beforeEach(async () => {
-                imageDraft = await createMovieImageDraft(fix, movieDraft.id, imageFile)
+                imageDraft = await createMovieImageDraft(fix, movieDraft.id, fix.image)
             })
 
             // 업로드가 성공한 경우
             describe('when upload succeeded', () => {
                 beforeEach(async () => {
-                    const res = await uploadAsset(imageFile.path, imageDraft.upload)
+                    const res = await uploadAsset(fix.image.path, imageDraft.upload)
                     expect(res.ok).toBe(true)
                 })
 
