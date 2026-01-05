@@ -10,6 +10,7 @@ describe('Mongoose schema types', () => {
     })
     afterEach(() => fix.teardown())
 
+    // 기본 Mongoose 데이터 타입을 모두 저장하고 조회한다
     it('stores and retrieves all default Mongoose data types', async () => {
         const doc = new fix.model()
         doc.sn = 1234567

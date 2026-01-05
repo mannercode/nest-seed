@@ -29,6 +29,7 @@ describe('createWinstonLogger', () => {
         return entry
     }
 
+    // 일반 로그 항목을 기록한다
     it('writes a general log entry', async () => {
         const message = 'test message'
 
@@ -40,6 +41,7 @@ describe('createWinstonLogger', () => {
         expect(entry).toEqual({ level: 'info', message, timestamp: expect.any(String) })
     })
 
+    // HTTP 로그 항목을 기록한다
     it('writes an HTTP log entry', async () => {
         const message = 'test message'
         const logDetails = {
@@ -63,6 +65,7 @@ describe('createWinstonLogger', () => {
         })
     })
 
+    // RPC 로그 항목을 기록한다
     it('writes an RPC log entry', async () => {
         const message = 'test message'
         const logDetails = {

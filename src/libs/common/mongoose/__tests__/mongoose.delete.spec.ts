@@ -17,13 +17,17 @@ describe('Mongoose Delete', () => {
         })
         afterEach(() => fix.teardown())
 
+        // 새 문서를 생성할 때
         describe('when creating a new document', () => {
+            // deletedAt을 null로 설정한다
             it('sets deletedAt to null', async () => {
                 expect(createdDoc).toMatchObject({ deletedAt: null })
             })
         })
 
+        // deleteOne을 호출할 때
         describe('when calling deleteOne', () => {
+            // deletedAt을 기록한다
             it('records deletedAt', async () => {
                 await fix.model.deleteOne({ _id: createdDoc._id })
 
@@ -36,6 +40,7 @@ describe('Mongoose Delete', () => {
             })
         })
 
+        // deleteMany를 호출할 때
         describe('when calling deleteMany', () => {
             let secondDoc: HydratedDocument<SoftDeleteSample>
 
@@ -45,6 +50,7 @@ describe('Mongoose Delete', () => {
                 await secondDoc.save()
             })
 
+            // 각 문서에 deletedAt을 기록한다
             it('records deletedAt for each document', async () => {
                 await fix.model.deleteMany({ _id: { $in: [createdDoc._id, secondDoc._id] } as any })
 
@@ -54,11 +60,13 @@ describe('Mongoose Delete', () => {
             })
         })
 
+        // 집계할 때
         describe('when aggregating', () => {
             beforeEach(async () => {
                 await fix.model.deleteOne({ _id: createdDoc._id })
             })
 
+            // 삭제된 문서를 제외한다
             it('excludes deleted documents', async () => {
                 const aggregateResult = await fix.model.aggregate([{ $match: { name: 'name' } }])
 
@@ -81,7 +89,9 @@ describe('Mongoose Delete', () => {
         })
         afterEach(() => fix.teardown())
 
+        // 새 문서를 생성할 때
         describe('when creating a new document', () => {
+            // deletedAt이 존재하지 않는다
             it('does not have deletedAt', async () => {
                 expect(createdDoc).not.toHaveProperty('deletedAt')
             })

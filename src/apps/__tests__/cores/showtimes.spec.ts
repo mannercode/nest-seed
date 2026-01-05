@@ -15,6 +15,7 @@ describe('ShowtimesService', () => {
     afterEach(() => fix.teardown())
 
     describe('createMany', () => {
+        // 상영 시간을 생성한다
         it('creates showtimes', async () => {
             const createDtos = [buildCreateShowtimeDto({ sagaId: oid(0x1) })]
 
@@ -25,6 +26,7 @@ describe('ShowtimesService', () => {
     })
 
     describe('getMany', () => {
+        // 상영 시간이 존재할 때
         describe('when the showtimes exist', () => {
             let showtimes: ShowtimeDto[]
 
@@ -35,6 +37,7 @@ describe('ShowtimesService', () => {
                 ])
             })
 
+            // showtimeIds에 대한 상영 시간을 반환한다
             it('returns showtimes for the showtimeIds', async () => {
                 const fetchedShowtimes = await fix.showtimesClient.getMany(pickIds(showtimes))
 
@@ -42,7 +45,9 @@ describe('ShowtimesService', () => {
             })
         })
 
+        // showtimeIds에 존재하지 않는 showtimeId가 포함될 때
         describe('when the showtimeIds include a non-existent showtimeId', () => {
+            // 404 Not Found를 던진다
             it('throws 404 Not Found', async () => {
                 const promise = fix.showtimesClient.getMany([nullObjectId])
 
@@ -55,6 +60,7 @@ describe('ShowtimesService', () => {
     })
 
     describe('search', () => {
+        // 필터가 제공될 때
         describe('when the filter is provided', () => {
             const sagaId = oid(0x1)
             const movieId = oid(0x2)
@@ -83,24 +89,28 @@ describe('ShowtimesService', () => {
                 ])
             })
 
+            // sagaIds로 필터링된 상영 시간을 반환한다
             it('returns showtimes filtered by sagaIds', async () => {
                 const showtimes = await fix.showtimesClient.search({ sagaIds: [sagaId] })
 
                 expect(showtimes).toEqual([showtimeForSaga])
             })
 
+            // movieIds로 필터링된 상영 시간을 반환한다
             it('returns showtimes filtered by movieIds', async () => {
                 const showtimes = await fix.showtimesClient.search({ movieIds: [movieId] })
 
                 expect(showtimes).toEqual([showtimeForMovie])
             })
 
+            // theaterIds로 필터링된 상영 시간을 반환한다
             it('returns showtimes filtered by theaterIds', async () => {
                 const showtimes = await fix.showtimesClient.search({ theaterIds: [theaterId] })
 
                 expect(showtimes).toEqual([showtimeForTheater])
             })
 
+            // startTimeRange로 필터링된 상영 시간을 반환한다
             it('returns showtimes filtered by startTimeRange', async () => {
                 const showtimes = await fix.showtimesClient.search({
                     startTimeRange: {
@@ -116,7 +126,9 @@ describe('ShowtimesService', () => {
             })
         })
 
+        // 필터가 비어 있을 때
         describe('when the filter is empty', () => {
+            // 400 Bad Request를 던진다
             it('throws 400 Bad Request', async () => {
                 const promise = fix.showtimesClient.search({})
 
@@ -138,6 +150,7 @@ describe('ShowtimesService', () => {
             ])
         })
 
+        // startTimeRange로 필터링된 movieIds를 반환한다
         it('returns movieIds filtered by startTimeRange', async () => {
             const movieIds = await fix.showtimesClient.searchMovieIds({
                 startTimeRange: { start: new Date() }
@@ -156,6 +169,7 @@ describe('ShowtimesService', () => {
             ])
         })
 
+        // movieIds로 필터링된 theaterIds를 반환한다
         it('returns theaterIds filtered by movieIds', async () => {
             const theaterIds = await fix.showtimesClient.searchTheaterIds({ movieIds: [oid(0xaa)] })
 
@@ -172,6 +186,7 @@ describe('ShowtimesService', () => {
             ])
         })
 
+        // movieIds와 theaterIds로 필터링된 상영 날짜를 반환한다
         it('returns showdates filtered by movieIds and theaterIds', async () => {
             const showdates = await fix.showtimesClient.searchShowdates({
                 movieIds: [oid(0xa1)],

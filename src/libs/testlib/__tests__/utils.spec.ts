@@ -16,6 +16,7 @@ describe('createDummyFile', () => {
         await Path.delete(tempDir)
     })
 
+    // 지정한 크기의 파일을 생성한다
     it('creates a file of the given size', async () => {
         const sizeInBytes = Byte.fromString('500KB')
         await createDummyFile(testFilePath, sizeInBytes)

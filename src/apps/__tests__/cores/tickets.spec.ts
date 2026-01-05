@@ -16,6 +16,7 @@ describe('TicketsService', () => {
     afterEach(() => fix.teardown())
 
     describe('createMany', () => {
+        // 티켓을 생성한다
         it('creates tickets', async () => {
             const createDtos = [buildCreateTicketDto({ sagaId: oid(0x1) })]
 
@@ -26,6 +27,7 @@ describe('TicketsService', () => {
     })
 
     describe('search', () => {
+        // 필터가 제공될 때
         describe('when the filter is provided', () => {
             const sagaId = oid(0x1)
             const movieId = oid(0x2)
@@ -46,24 +48,28 @@ describe('TicketsService', () => {
                     ])
             })
 
+            // sagaIds로 필터링된 티켓을 반환한다
             it('returns tickets filtered by sagaIds', async () => {
                 const tickets = await fix.ticketsClient.search({ sagaIds: [sagaId] })
 
                 expect(tickets).toEqual([ticketForSaga])
             })
 
+            // movieIds로 필터링된 티켓을 반환한다
             it('returns tickets filtered by movieIds', async () => {
                 const tickets = await fix.ticketsClient.search({ movieIds: [movieId] })
 
                 expect(tickets).toEqual([ticketForMovie])
             })
 
+            // theaterIds로 필터링된 티켓을 반환한다
             it('returns tickets filtered by theaterIds', async () => {
                 const tickets = await fix.ticketsClient.search({ theaterIds: [theaterId] })
 
                 expect(tickets).toEqual([ticketForTheater])
             })
 
+            // showtimeIds로 필터링된 티켓을 반환한다
             it('returns tickets filtered by showtimeIds', async () => {
                 const tickets = await fix.ticketsClient.search({ showtimeIds: [showtimeId] })
 
@@ -71,7 +77,9 @@ describe('TicketsService', () => {
             })
         })
 
+        // 필터가 비어 있을 때
         describe('when the filter is empty', () => {
+            // 400 Bad Request를 던진다
             it('throws 400 Bad Request', async () => {
                 const promise = fix.ticketsClient.search({})
 
@@ -84,6 +92,7 @@ describe('TicketsService', () => {
     })
 
     describe('updateStatusMany', () => {
+        // 티켓이 존재할 때
         describe('when the tickets exist', () => {
             let tickets: TicketDto[]
 
@@ -95,6 +104,7 @@ describe('TicketsService', () => {
                 ])
             })
 
+            // 수정된 티켓을 반환한다
             it('returns the updated tickets', async () => {
                 const updatedTickets = await fix.ticketsClient.updateStatusMany(
                     pickIds(tickets),
@@ -107,6 +117,7 @@ describe('TicketsService', () => {
     })
 
     describe('aggregateSales', () => {
+        // showtimeIds가 제공될 때
         describe('when the showtimeIds are provided', () => {
             const showtimeId = oid(0x10)
             const totalCount = 50
@@ -120,6 +131,7 @@ describe('TicketsService', () => {
                 await fix.ticketsClient.updateStatusMany(pickIds(soldTickets), TicketStatus.Sold)
             })
 
+            // showtimeIds에 대한 판매 통계를 반환한다
             it('returns sales stats for the showtimeIds', async () => {
                 const ticketSales = await fix.ticketsClient.aggregateSales({
                     showtimeIds: [showtimeId]

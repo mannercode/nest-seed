@@ -2,6 +2,7 @@ import { Time } from 'common'
 
 describe('Time', () => {
     describe('toMs', () => {
+        // 유효한 시간 문자열을 밀리초로 변환한다
         it('converts a valid time string to milliseconds', () => {
             expect(Time.toMs('30m')).toEqual(30 * 60 * 1000)
             expect(Time.toMs('45s')).toEqual(45 * 1000)
@@ -14,12 +15,14 @@ describe('Time', () => {
             expect(Time.toMs('500ms')).toEqual(500)
         })
 
+        // 유효하지 않은 형식이면 예외를 던진다
         it('throws for an invalid format', () => {
             expect(() => Time.toMs('2z')).toThrow(Error)
         })
     })
 
     describe('fromMs', () => {
+        // 밀리초를 문자열로 변환한다
         it('converts milliseconds to a string', () => {
             expect(Time.fromMs(30 * 60 * 1000)).toEqual('30m')
             expect(Time.fromMs(45 * 1000)).toEqual('45s')

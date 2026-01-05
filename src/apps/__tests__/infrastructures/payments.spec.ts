@@ -15,6 +15,7 @@ describe('PaymentsService', () => {
     afterEach(() => fix.teardown())
 
     describe('create', () => {
+        // 생성된 결제를 반환한다
         it('returns the created payment', async () => {
             const createDto = buildCreatePaymentDto()
 
@@ -30,6 +31,7 @@ describe('PaymentsService', () => {
     })
 
     describe('getMany', () => {
+        // 결제가 존재할 때
         describe('when the payments exist', () => {
             let payments: PaymentDto[]
 
@@ -41,6 +43,7 @@ describe('PaymentsService', () => {
                 ])
             })
 
+            // paymentIds에 대한 결제를 반환한다
             it('returns payments for the paymentIds', async () => {
                 const fetchedPayments = await fix.paymentsClient.getMany(pickIds(payments))
 
@@ -48,7 +51,9 @@ describe('PaymentsService', () => {
             })
         })
 
+        // paymentIds에 존재하지 않는 paymentId가 포함될 때
         describe('when the paymentIds include a non-existent paymentId', () => {
+            // 404 Not Found를 던진다
             it('throws 404 Not Found', async () => {
                 const promise = fix.paymentsClient.getMany([nullObjectId])
 

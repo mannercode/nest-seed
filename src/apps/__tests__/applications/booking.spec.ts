@@ -14,6 +14,7 @@ describe('BookingService', () => {
     })
     afterEach(() => fix.teardown())
 
+    // 고객이 예매 흐름을 진행할 때
     describe('when a customer goes through the booking flow', () => {
         let movie: MovieDto
         let accessToken: string
@@ -39,6 +40,7 @@ describe('BookingService', () => {
             accessToken = resources.accessToken
         })
 
+        // 선택한 티켓을 보유한다
         it('holds selected tickets', async () => {
             let theater: TheaterDto
             let showdate: Date
@@ -109,7 +111,9 @@ describe('BookingService', () => {
     })
 
     describe('GET /booking/showtimes/:id/tickets', () => {
+        // 상영 시간이 존재하지 않을 때
         describe('when the showtime does not exist', () => {
+            // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .get(`/booking/showtimes/${nullObjectId}/tickets`)

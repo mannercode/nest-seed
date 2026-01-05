@@ -16,7 +16,9 @@ describe('CustomersService', () => {
     afterEach(() => fix.teardown())
 
     describe('POST /customers/login', () => {
+        // 자격 증명이 유효할 때
         describe('when the credentials are valid', () => {
+            // 인증 토큰을 반환한다
             it('returns auth tokens', async () => {
                 await fix.httpClient
                     .post('/customers/login')
@@ -25,7 +27,9 @@ describe('CustomersService', () => {
             })
         })
 
+        // 비밀번호가 올바르지 않을 때
         describe('when the password is incorrect', () => {
+            // 401 Unauthorized를 반환한다
             it('returns 401 Unauthorized', async () => {
                 await fix.httpClient
                     .post('/customers/login')
@@ -34,7 +38,9 @@ describe('CustomersService', () => {
             })
         })
 
+        // 이메일이 등록되지 않았을 때
         describe('when the email is not registered', () => {
+            // 401 Unauthorized를 반환한다
             it('returns 401 Unauthorized', async () => {
                 await fix.httpClient
                     .post('/customers/login')
@@ -45,6 +51,7 @@ describe('CustomersService', () => {
     })
 
     describe('POST /customers/refresh', () => {
+        // 리프레시 토큰이 유효할 때
         describe('when the refresh token is valid', () => {
             let authTokens: JwtAuthTokens
 
@@ -52,6 +59,7 @@ describe('CustomersService', () => {
                 authTokens = await loginCustomer(fix, credentials)
             })
 
+            // 새 인증 토큰을 반환한다
             it('returns new auth tokens', async () => {
                 const { accessToken, refreshToken } = authTokens
 
@@ -65,7 +73,9 @@ describe('CustomersService', () => {
             })
         })
 
+        // 리프레시 토큰이 유효하지 않을 때
         describe('when the refresh token is invalid', () => {
+            // 401 Unauthorized를 반환한다
             it('returns 401 Unauthorized', async () => {
                 await fix.httpClient
                     .post('/customers/refresh')
@@ -79,6 +89,7 @@ describe('CustomersService', () => {
     })
 
     describe('GET /customers/jwt-guard', () => {
+        // 액세스 토큰이 유효할 때
         describe('when the access token is valid', () => {
             let accessToken: string
 
@@ -87,6 +98,7 @@ describe('CustomersService', () => {
                 accessToken = authTokens.accessToken
             })
 
+            // 접근을 허용한다
             it('allows access', async () => {
                 await fix.httpClient
                     .get('/customers/jwt-guard')
@@ -95,7 +107,9 @@ describe('CustomersService', () => {
             })
         })
 
+        // 액세스 토큰이 유효하지 않을 때
         describe('when the access token is invalid', () => {
+            // 401 Unauthorized를 반환한다
             it('returns 401 Unauthorized', async () => {
                 await fix.httpClient
                     .get('/customers/jwt-guard')

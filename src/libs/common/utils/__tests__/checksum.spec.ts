@@ -17,7 +17,9 @@ describe('Checksum', () => {
             await Path.delete(tempDir)
         })
 
+        // 알고리즘이 sha1일 때
         describe('when the algorithm is sha1', () => {
+            // SHA1 체크섬을 반환한다
             it('returns the SHA1 checksum', async () => {
                 const checksum = await Checksum.fromFile(filePath, 'sha1')
 
@@ -28,7 +30,9 @@ describe('Checksum', () => {
             })
         })
 
+        // 알고리즘이 제공되지 않을 때
         describe('when the algorithm is not provided', () => {
+            // SHA256 체크섬을 반환한다
             it('returns the SHA256 checksum', async () => {
                 const checksum = await Checksum.fromFile(filePath)
 
@@ -47,7 +51,9 @@ describe('Checksum', () => {
             buffer = Buffer.from('Hello, World!')
         })
 
+        // 알고리즘이 sha1일 때
         describe('when the algorithm is sha1', () => {
+            // SHA1 체크섬을 반환한다
             it('returns the SHA1 checksum', async () => {
                 const checksum = Checksum.fromBuffer(buffer, 'sha1')
 
@@ -58,7 +64,9 @@ describe('Checksum', () => {
             })
         })
 
+        // 알고리즘이 제공되지 않을 때
         describe('when the algorithm is not provided', () => {
+            // SHA256 체크섬을 반환한다
             it('returns the SHA256 checksum', async () => {
                 const checksum = Checksum.fromBuffer(buffer)
 

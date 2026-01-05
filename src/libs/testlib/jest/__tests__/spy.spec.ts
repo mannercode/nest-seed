@@ -10,12 +10,14 @@ import * as Module from './spy.fixture'
  *   함수 호출과 동작을 세밀하게 제어할 수 있습니다.
  */
 describe('jest.spyOn', () => {
+    // 모듈 함수에 spy를 건다
     it('spies on a module function', () => {
         const mockFunc = jest.spyOn(Module, 'getGreeting')
         expect(Module.getGreeting()).toEqual('Greeting')
         expect(mockFunc).toHaveBeenCalled()
     })
 
+    // 모듈 함수를 목킹한다
     it('mocks a module function', () => {
         expect(Module.getGreeting()).toEqual('Greeting')
 
@@ -25,6 +27,7 @@ describe('jest.spyOn', () => {
         expect(mockFunc).toHaveBeenCalled()
     })
 
+    // 클래스 인스턴스 메서드를 목킹한다
     it('mocks a class instance method', () => {
         const localObj = new Module.HelloClass()
         const mockFunc = jest.spyOn(localObj, 'getHello').mockReturnValue('Mocked Value')
@@ -33,6 +36,7 @@ describe('jest.spyOn', () => {
         expect(mockFunc).toHaveBeenCalled()
     })
 
+    // 클래스 getter를 목킹한다
     it('mocks a class getter', () => {
         const localObj = new Module.HelloClass()
         const mockFunc = jest.spyOn(localObj, 'value', 'get').mockReturnValue(1000)
@@ -41,6 +45,7 @@ describe('jest.spyOn', () => {
         expect(mockFunc).toHaveBeenCalled()
     })
 
+    // 동적으로 import한 인스턴스 메서드에 spy를 건다
     it('spies on a dynamically imported instance method', async () => {
         const { Logger } = await import('@nestjs/common')
 
@@ -54,6 +59,7 @@ describe('jest.spyOn', () => {
         })
     })
 
+    // 동적으로 import한 정적 메서드에 spy를 건다
     it('spies on a dynamically imported static method', async () => {
         const { Logger } = await import('@nestjs/common')
 

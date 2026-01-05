@@ -11,7 +11,9 @@ describe('CacheService', () => {
     afterEach(() => fix.teardown())
 
     describe('set', () => {
+        // TTL이 제공되지 않을 때
         describe('when the TTL is not provided', () => {
+            // 값을 저장한다
             it('stores the value', async () => {
                 await fix.cacheService.set('key', 'value')
                 const cachedValue = await fix.cacheService.get('key')
@@ -19,6 +21,7 @@ describe('CacheService', () => {
             })
         })
 
+        // TTL이 제공될 때
         describe('when a TTL is provided', () => {
             let ttl: number
 
@@ -26,6 +29,7 @@ describe('CacheService', () => {
                 ttl = 1000
             })
 
+            // TTL 이후에 만료된다
             it('expires after the TTL', async () => {
                 await fix.cacheService.set('key', 'value', ttl)
 
@@ -39,6 +43,7 @@ describe('CacheService', () => {
             })
         })
 
+        // TTL이 0일 때
         describe('when the TTL is 0', () => {
             let ttl: number
 
@@ -46,6 +51,7 @@ describe('CacheService', () => {
                 ttl = 0
             })
 
+            // 만료되지 않는다
             it('does not expire', async () => {
                 await fix.cacheService.set('key', 'value', ttl)
 
@@ -59,6 +65,7 @@ describe('CacheService', () => {
             })
         })
 
+        // TTL이 음수일 때
         describe('when the TTL is negative', () => {
             let wrongTTL: number
 
@@ -66,6 +73,7 @@ describe('CacheService', () => {
                 wrongTTL = -100
             })
 
+            // 예외를 던진다
             it('throws', async () => {
                 await expect(fix.cacheService.set('key', 'value', wrongTTL)).rejects.toThrow(
                     'TTL must be a non-negative integer (0 for no expiration)'
@@ -75,7 +83,9 @@ describe('CacheService', () => {
     })
 
     describe('delete', () => {
+        // 키가 존재할 때
         describe('when the key exists', () => {
+            // 캐시된 값을 삭제한다
             it('deletes the cached value', async () => {
                 await fix.cacheService.set('key', 'value')
 
@@ -91,6 +101,7 @@ describe('CacheService', () => {
     })
 
     describe('executeScript', () => {
+        // 스크립트를 실행하고 결과를 반환한다
         it('runs the script and returns the result', async () => {
             const script = `return redis.call('SET', KEYS[1], ARGV[2])`
             const keys = ['key']

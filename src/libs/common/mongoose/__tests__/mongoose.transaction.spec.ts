@@ -10,7 +10,9 @@ describe('MongooseRepository.withTransaction', () => {
     afterEach(() => fix.teardown())
 
     describe('withTransaction', () => {
+        // 트랜잭션이 성공할 때
         describe('when the transaction succeeds', () => {
+            // 트랜잭션을 커밋한다
             it('commits the transaction', async () => {
                 const newDoc = await fix.repository.withTransaction(async (session) => {
                     const doc = fix.repository.newDocument()
@@ -23,6 +25,7 @@ describe('MongooseRepository.withTransaction', () => {
             })
         })
 
+        // 롤백이 요청될 때
         describe('when rollback is requested', () => {
             let newDoc: any
 
@@ -32,6 +35,7 @@ describe('MongooseRepository.withTransaction', () => {
                 await newDoc.save()
             })
 
+            // 트랜잭션을 롤백한다
             it('rolls back the transaction', async () => {
                 await fix.repository.withTransaction(async (session, rollback) => {
                     await fix.repository.deleteById(newDoc.id, session)
@@ -43,7 +47,9 @@ describe('MongooseRepository.withTransaction', () => {
             })
         })
 
+        // 트랜잭션 중 오류가 발생할 때
         describe('when an error occurs during the transaction', () => {
+            // 변경 사항을 롤백한다
             it('rolls back changes', async () => {
                 const promise = fix.repository.withTransaction(async (session) => {
                     const doc = fix.repository.newDocument()
@@ -61,6 +67,7 @@ describe('MongooseRepository.withTransaction', () => {
         })
     })
 
+    // startSession이 예외를 던질 때
     describe('when startSession throws', () => {
         beforeEach(() => {
             jest.spyOn(fix.model, 'startSession').mockImplementation(() => {
@@ -68,6 +75,7 @@ describe('MongooseRepository.withTransaction', () => {
             })
         })
 
+        // 예외를 던진다
         it('throws', async () => {
             const promise = fix.repository.withTransaction(async (_session) => {})
 
@@ -75,6 +83,7 @@ describe('MongooseRepository.withTransaction', () => {
         })
     })
 
+    // startTransaction이 예외를 던질 때
     describe('when startTransaction throws', () => {
         beforeEach(() => {
             jest.spyOn(fix.model, 'startSession').mockResolvedValue({
@@ -85,6 +94,7 @@ describe('MongooseRepository.withTransaction', () => {
             } as any)
         })
 
+        // 예외를 던진다
         it('throws', async () => {
             const promise = fix.repository.withTransaction(async (_session) => {})
 

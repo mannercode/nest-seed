@@ -14,7 +14,9 @@ describe('TicketHoldingService', () => {
     afterEach(() => fix.teardown())
 
     describe('holdTickets', () => {
+        // ticketIds가 보유되지 않았을 때
         describe('when the ticketIds are not held', () => {
+            // true를 반환한다
             it('returns true', async () => {
                 const holdDto = buildHoldTicketsDto()
 
@@ -24,6 +26,7 @@ describe('TicketHoldingService', () => {
             })
         })
 
+        // 고객이 이미 티켓을 보유하고 있을 때
         describe('when the customer already holds tickets', () => {
             const ticketIds = [oid(0xa0), oid(0xa1)]
             const customerId = oid(0xc1)
@@ -33,6 +36,7 @@ describe('TicketHoldingService', () => {
                 await fix.ticketHoldingClient.holdTickets(holdDto)
             })
 
+            // 동일한 ticketIds를 다시 보유할 때 true를 반환한다
             it('returns true for re-holding the same ticketIds', async () => {
                 const holdDto = buildHoldTicketsDto({ ticketIds, customerId })
                 const isHeld = await fix.ticketHoldingClient.holdTickets(holdDto)
@@ -40,6 +44,7 @@ describe('TicketHoldingService', () => {
                 expect(isHeld).toBe(true)
             })
 
+            // 다른 고객에 대해 false를 반환한다
             it('returns false for another customer', async () => {
                 const holdDto = buildHoldTicketsDto({ ticketIds, customerId: oid(0xc2) })
                 const isHeld = await fix.ticketHoldingClient.holdTickets(holdDto)
@@ -47,6 +52,7 @@ describe('TicketHoldingService', () => {
                 expect(isHeld).toBe(false)
             })
 
+            // 고객이 다른 ticketIds를 보유할 때
             describe('when the customer holds different ticketIds', () => {
                 beforeEach(async () => {
                     const holdDto = buildHoldTicketsDto({
@@ -56,6 +62,7 @@ describe('TicketHoldingService', () => {
                     await fix.ticketHoldingClient.holdTickets(holdDto)
                 })
 
+                // 이전에 보유한 ticketIds를 해제한다
                 it('releases the previously held ticketIds', async () => {
                     const holdDto = buildHoldTicketsDto({ ticketIds, customerId: oid(0xc2) })
 
@@ -66,6 +73,7 @@ describe('TicketHoldingService', () => {
             })
         })
 
+        // 보유 시간이 만료되었을 때
         describe('when the hold duration has expired', () => {
             beforeEach(async () => {
                 const { Rules } = await import('shared')
@@ -77,6 +85,7 @@ describe('TicketHoldingService', () => {
                 await sleep(1000 + 500)
             })
 
+            // 다른 고객에 대해 true를 반환한다
             it('returns true for another customer', async () => {
                 const holdDto = buildHoldTicketsDto({ customerId: oid(0xc2) })
                 const isHeld = await fix.ticketHoldingClient.holdTickets(holdDto)
@@ -85,7 +94,9 @@ describe('TicketHoldingService', () => {
             })
         })
 
+        // 여러 고객이 동시에 보유를 시도할 때
         describe('when multiple customers attempt to hold concurrently', () => {
+            // showtimeId당 정확히 한 명의 고객에 대해 true를 반환한다
             it(
                 'returns true for exactly one customer per showtimeId',
                 async () => {
@@ -118,6 +129,7 @@ describe('TicketHoldingService', () => {
     })
 
     describe('searchHeldTicketIds', () => {
+        // 티켓이 여전히 보유 중일 때
         describe('when the tickets are still held', () => {
             let holdDto: HoldTicketsDto
 
@@ -126,6 +138,7 @@ describe('TicketHoldingService', () => {
                 await fix.ticketHoldingClient.holdTickets(holdDto)
             })
 
+            // 보유 중인 ticketIds를 반환한다
             it('returns the held ticketIds', async () => {
                 const heldTicketIds = await fix.ticketHoldingClient.searchHeldTicketIds(
                     holdDto.showtimeId,
@@ -136,6 +149,7 @@ describe('TicketHoldingService', () => {
             })
         })
 
+        // 보유 시간이 만료되었을 때
         describe('when the hold duration has expired', () => {
             let holdDto: HoldTicketsDto
 
@@ -149,6 +163,7 @@ describe('TicketHoldingService', () => {
                 await sleep(1000 + 500)
             })
 
+            // 빈 배열을 반환한다
             it('returns an empty array', async () => {
                 const heldTicketIds = await fix.ticketHoldingClient.searchHeldTicketIds(
                     holdDto.showtimeId,
@@ -161,6 +176,7 @@ describe('TicketHoldingService', () => {
     })
 
     describe('releaseTickets', () => {
+        // 고객이 티켓을 보유하고 있을 때
         describe('when the customer holds tickets', () => {
             let holdDto: HoldTicketsDto
 
@@ -169,6 +185,7 @@ describe('TicketHoldingService', () => {
                 await fix.ticketHoldingClient.holdTickets(holdDto)
             })
 
+            // 보유된 티켓을 해제하면 true를 반환한다
             it('returns true for releasing held tickets', async () => {
                 const isReleased = await fix.ticketHoldingClient.releaseTickets(
                     holdDto.showtimeId,
@@ -179,7 +196,9 @@ describe('TicketHoldingService', () => {
             })
         })
 
+        // 고객이 보유한 티켓이 없을 때
         describe('when the customer holds no tickets', () => {
+            // true를 반환한다
             it('returns true', async () => {
                 const isReleased = await fix.ticketHoldingClient.releaseTickets(
                     oid(0xa0),

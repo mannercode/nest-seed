@@ -15,6 +15,7 @@ describe('PaginationDto', () => {
     afterEach(() => fix.teardown())
 
     describe('HTTP controller', () => {
+        // 요청이 유효할 때
         describe('when the request is valid', () => {
             let skip: number
             let take: number
@@ -30,12 +31,15 @@ describe('PaginationDto', () => {
                 }
             })
 
+            // PaginationDto를 처리한다
             it('handles PaginationDto', async () => {
                 await fix.httpClient.get('/pagination').query(query).ok(expectedResponse)
             })
         })
 
+        // `orderby`가 올바르지 않을 때
         describe('when `orderby` is malformed', () => {
+            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient
                     .get('/pagination')
@@ -44,7 +48,9 @@ describe('PaginationDto', () => {
             })
         })
 
+        // 정렬 방향이 유효하지 않을 때
         describe('when the sort direction is invalid', () => {
+            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient
                     .get('/pagination')
@@ -55,6 +61,7 @@ describe('PaginationDto', () => {
     })
 
     describe('RPC controller', () => {
+        // 요청이 유효할 때
         describe('when the request is valid', () => {
             let input: Record<string, any>
 
@@ -64,6 +71,7 @@ describe('PaginationDto', () => {
                 input = { orderby: { direction: 'asc', name: 'name' }, skip, take }
             })
 
+            // PaginationDto를 처리한다
             it('handles PaginationDto', async () => {
                 await fix.rpcClient.expect(withTestId('getRpcPagination'), input, {
                     response: input
@@ -72,7 +80,9 @@ describe('PaginationDto', () => {
         })
     })
 
+    // orderby가 제공되지 않을 때
     describe('when orderby is not provided', () => {
+        // 값을 그대로 유지한다
         it('keeps the value as-is', () => {
             const dto = plainToInstance(PaginationDto, { orderby: null })
 
@@ -80,7 +90,9 @@ describe('PaginationDto', () => {
         })
     })
 
+    // orderby가 문자열이 아닐 때
     describe('when orderby is not a string', () => {
+        // BadRequestException을 던진다
         it('throws BadRequestException', () => {
             try {
                 plainToInstance(PaginationDto, { orderby: 123 as any })
@@ -94,7 +106,9 @@ describe('PaginationDto', () => {
         })
     })
 
+    // orderby의 name 또는 direction이 비어 있을 때
     describe('when orderby has an empty name or direction', () => {
+        // BadRequestException을 던진다
         it('throws BadRequestException', () => {
             try {
                 plainToInstance(PaginationDto, { orderby: 'name:' })
