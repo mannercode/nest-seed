@@ -124,6 +124,7 @@ describe('MovieDraftsService', () => {
 
                 expect(body).toEqual(
                     expect.objectContaining({
+                        // imageId: expect.any(String),
                         assetId: expect.any(String),
                         url: expect.any(String),
                         expiresAt: expect.any(Date),

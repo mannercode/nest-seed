@@ -80,8 +80,9 @@ services:
             }
         command: |
             sh -eucx '
-              mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1/?authSource=admin" \
-                --eval "
+                url="mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1/?authSource=admin"
+
+                mongosh $$url --eval "
                     rs.initiate({
                     _id: \"$MONGO_REPLICA_SET\",
                     members: [
@@ -91,6 +92,16 @@ services:
                         ]
                     })
                     "
+
+                i=0
+                until mongosh $$url --eval "rs.status().ok" | grep -q "1"; do
+                    i=$$((i+1))
+                    if [ $$i -ge 60 ]; then
+                        echo "MongoDB replica set did not become PRIMARY in time" >&2
+                        exit 1
+                    fi
+                    sleep 1
+                done
             '
 
     mongo-gui:

@@ -40,7 +40,7 @@ export async function createMovieImageDraft(ctx: TestContext, draftId: string, f
     const movieDraftsService = ctx.module.get(MovieDraftsService)
 
     const createDto = buildCreateAssetDto(file)
-    const upload = await movieDraftsService.requestImageUpload(draftId, createDto)
+    const upload = await movieDraftsService.createImageDraft(draftId, createDto)
 
     return upload
 }

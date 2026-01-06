@@ -33,11 +33,11 @@ export class MovieDraftsController {
     }
 
     @MessagePattern(Messages.MovieDrafts.Images.create)
-    requestImageUpload(
+    createImageDraft(
         @Payload('draftId') draftId: string,
         @Payload('createDto') createDto: CreateAssetDto
     ) {
-        return this.service.requestImageUpload(draftId, createDto)
+        return this.service.createImageDraft(draftId, createDto)
     }
 
     @MessagePattern(Messages.MovieDrafts.Images.delete)

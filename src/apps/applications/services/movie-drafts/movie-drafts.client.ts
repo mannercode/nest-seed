@@ -24,10 +24,7 @@ export class MovieDraftsClient {
         return this.proxy.request(Messages.MovieDrafts.delete, draftId)
     }
 
-    requestImageUpload(
-        draftId: string,
-        createDto: CreateAssetDto
-    ): Promise<AssetPresignedUploadDto> {
+    createImageDraft(draftId: string, createDto: CreateAssetDto): Promise<AssetPresignedUploadDto> {
         return this.proxy.request(Messages.MovieDrafts.Images.create, { draftId, createDto })
     }
 

@@ -1,6 +1,5 @@
 # https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
 name: Tests
-
 on:
     schedule:
         - cron: '0 */6 * * *'
@@ -14,7 +13,6 @@ on:
                 description: 'Run repeat-e2e job'
                 type: boolean
                 default: false
-
 jobs:
     repeat-unit:
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_repeat_unit) || github.event_name == 'schedule' }}
@@ -29,7 +27,19 @@ jobs:
               with:
                   push: never
                   runCmd: |
-                      set -Eeuo pipefail
+                      set -Eeuxo pipefail
+                      set -Eeuxo pipefail
+                      dump_compose_logs () {
+                          docker ps -a || true
+                          docker stats -a --no-stream
+
+                          for id in $(docker ps -aq); do
+                              echo "========================= ${id} ========================="
+                              docker logs "${id}" || true
+                          done
+                      }
+                      trap 'rc=$?; if [ ${rc} -ne 0 ]; then dump_compose_logs; fi; exit ${rc}' EXIT
+
                       start_ts=$(date +%s)
 
                       for ((i = 1; i <= 50; i++)); do
@@ -51,7 +61,7 @@ jobs:
               with:
                   push: never
                   runCmd: |
-                      set -Eeuo pipefail
+                      set -Eeuxo pipefail
                       dump_compose_logs () {
                           docker ps -a || true
                           docker stats -a --no-stream

@@ -51,7 +51,7 @@ export class MovieDraftsService {
         return {}
     }
 
-    async requestImageUpload(draftId: string, createDto: CreateAssetDto) {
+    async createImageDraft(movieDraftId: string, createDto: CreateAssetDto) {
         if (!createDto.mimeType.startsWith('image/')) {
             throw new BadRequestException({
                 ...MovieDraftErrors.UnsupportedImageType,
@@ -61,7 +61,7 @@ export class MovieDraftsService {
 
         const upload = await this.assetsClient.create(createDto)
 
-        await this.repository.addOrUpdateImage(draftId, {
+        await this.repository.addOrUpdateImage(movieDraftId, {
             assetId: upload.assetId,
             status: MovieAssetDraftStatus.Pending
         })
