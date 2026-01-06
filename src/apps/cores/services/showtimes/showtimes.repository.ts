@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseRepository, objectId, QueryBuilder, QueryBuilderOptions } from 'common'
+import { MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { CreateShowtimeDto, SearchShowtimesDto } from './dtos'
@@ -18,9 +18,9 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
     async createMany(createDtos: CreateShowtimeDto[]) {
         const showtimes = createDtos.map((dto) => {
             const doc = this.newDocument()
-            doc.sagaId = objectId(dto.sagaId)
-            doc.movieId = objectId(dto.movieId)
-            doc.theaterId = objectId(dto.theaterId)
+            doc.sagaId = dto.sagaId
+            doc.movieId = dto.movieId
+            doc.theaterId = dto.theaterId
             doc.startTime = dto.startTime
             doc.endTime = dto.endTime
 

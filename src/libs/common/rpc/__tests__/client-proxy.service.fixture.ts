@@ -24,8 +24,8 @@ class SendTestController {
         return this.proxy.send(withTestId('method'), {})
     }
 
-    @Get('value')
-    getValue() {
+    @Get('promise')
+    getPromise() {
         return this.proxy.request(withTestId('method'), {})
     }
 }
@@ -62,19 +62,13 @@ export type ClientProxyServiceFixture = {
 }
 
 export async function createClientProxyServiceFixture() {
-    const brokerOptions = {
+    const brokerOptions: NatsOptions = {
         transport: Transport.NATS,
         options: getNatsTestConnection()
-    } as NatsOptions
+    }
 
     const { httpClient, ...ctx } = await createHttpTestContext({
-        imports: [
-            ClientProxyModule.registerAsync({
-                useFactory() {
-                    return brokerOptions
-                }
-            })
-        ],
+        imports: [ClientProxyModule.registerAsync({ useFactory: () => brokerOptions })],
         controllers: [SendTestController, EmitTestController],
         configureApp: async (app) => {
             app.connectMicroservice(brokerOptions, { inheritAppConfig: true })

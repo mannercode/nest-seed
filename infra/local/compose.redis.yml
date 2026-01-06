@@ -136,3 +136,6 @@ services:
                 RI_REDIS_PASSWORD1: $REDIS_PASSWORD
             }
         ports: ['5540:5540']
+
+# - name: Enable memory overcommit for Redis
+#   run: sudo sysctl -w vm.overcommit_memory=1

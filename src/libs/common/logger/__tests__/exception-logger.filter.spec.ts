@@ -13,7 +13,9 @@ describe('ExceptionLoggerFilter', () => {
     afterEach(() => fix.teardown())
 
     describe('HTTP context', () => {
+        // HttpException이 발생할 때
         describe('when an HttpException is thrown', () => {
+            // Logger.warn으로 로그를 남긴다
             it('logs via Logger.warn', async () => {
                 await fix.httpClient
                     .get('/exception')
@@ -30,7 +32,9 @@ describe('ExceptionLoggerFilter', () => {
             })
         })
 
+        // 일반 Error가 발생할 때
         describe('when a generic Error is thrown', () => {
+            // Logger.error로 로그를 남긴다
             it('logs via Logger.error', async () => {
                 await fix.httpClient.get('/error').internalServerError()
 
@@ -45,7 +49,9 @@ describe('ExceptionLoggerFilter', () => {
             })
         })
 
+        // 치명적 오류가 발생할 때
         describe('when a fatal error is thrown', () => {
+            // Logger.fatal로 로그를 남긴다
             it('logs via Logger.fatal', async () => {
                 await fix.httpClient.get('/fatal').internalServerError()
 
@@ -62,7 +68,9 @@ describe('ExceptionLoggerFilter', () => {
     })
 
     describe('RPC context', () => {
+        // HttpException이 발생할 때
         describe('when an HttpException is thrown', () => {
+            // Logger.warn으로 로그를 남긴다
             it('logs via Logger.warn', async () => {
                 const subject = withTestId('exception')
                 await fix.rpcClient.error(
@@ -85,7 +93,9 @@ describe('ExceptionLoggerFilter', () => {
             })
         })
 
+        // 일반 Error가 발생할 때
         describe('when a generic Error is thrown', () => {
+            // Logger.error로 로그를 남긴다
             it('logs via Logger.error', async () => {
                 const subject = withTestId('error')
                 await fix.rpcClient.error(subject, {}, Error('error message'))
@@ -101,7 +111,9 @@ describe('ExceptionLoggerFilter', () => {
             })
         })
 
+        // 치명적 오류가 발생할 때
         describe('when a fatal error is thrown', () => {
+            // Logger.fatal로 로그를 남긴다
             it('logs via Logger.fatal', async () => {
                 const subject = withTestId('fatal')
                 await fix.rpcClient.error(subject, {}, Error('fatal error message'))
@@ -118,6 +130,7 @@ describe('ExceptionLoggerFilter', () => {
         })
     })
 
+    // ContextType이 알 수 없을 때
     describe('when the ContextType is unknown', () => {
         beforeEach(async () => {
             const { ExecutionContextHost } =
@@ -125,6 +138,7 @@ describe('ExceptionLoggerFilter', () => {
             jest.spyOn(ExecutionContextHost.prototype, 'getType').mockReturnValue('unknown')
         })
 
+        // Logger.error로 로그를 남긴다
         it('logs via Logger.error', async () => {
             await fix.httpClient.get('/exception').notFound()
 

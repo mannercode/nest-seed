@@ -13,6 +13,7 @@ describe('TheatersService', () => {
     afterEach(() => fix.teardown())
 
     describe('POST /theaters', () => {
+        // 생성된 극장을 반환한다
         it('returns the created theater', async () => {
             const createDto = buildCreateTheaterDto()
 
@@ -22,7 +23,9 @@ describe('TheatersService', () => {
                 .created({ ...createDto, id: expect.any(String) })
         })
 
+        // 필수 필드가 누락된 경우
         describe('when required fields are missing', () => {
+            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient
                     .post('/theaters')
@@ -33,6 +36,7 @@ describe('TheatersService', () => {
     })
 
     describe('GET /theaters/:id', () => {
+        // 극장이 존재할 때
         describe('when the theater exists', () => {
             let theater: TheaterDto
 
@@ -40,12 +44,15 @@ describe('TheatersService', () => {
                 theater = await createTheater(fix)
             })
 
+            // 극장을 반환한다
             it('returns the theater', async () => {
                 await fix.httpClient.get(`/theaters/${theater.id}`).ok(theater)
             })
         })
 
+        // 극장이 존재하지 않을 때
         describe('when the theater does not exist', () => {
+            // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .get(`/theaters/${nullObjectId}`)
@@ -58,6 +65,7 @@ describe('TheatersService', () => {
     })
 
     describe('PATCH /theaters/:id', () => {
+        // 극장이 존재할 때
         describe('when the theater exists', () => {
             let theater: TheaterDto
 
@@ -65,6 +73,7 @@ describe('TheatersService', () => {
                 theater = await createTheater(fix, { name: 'original-name' })
             })
 
+            // 수정된 극장을 반환한다
             it('returns the updated theater', async () => {
                 const updateDto = {
                     location: { latitude: 30.0, longitude: 120.0 },
@@ -77,6 +86,7 @@ describe('TheatersService', () => {
                     .ok({ ...theater, ...updateDto })
             })
 
+            // 수정 내용이 저장된다
             it('persists the update', async () => {
                 const updateDto = { name: 'update-name' }
                 await fix.httpClient.patch(`/theaters/${theater.id}`).body(updateDto).ok()
@@ -85,7 +95,9 @@ describe('TheatersService', () => {
             })
         })
 
+        // 극장이 존재하지 않을 때
         describe('when the theater does not exist', () => {
+            // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .patch(`/theaters/${nullObjectId}`)
@@ -96,6 +108,7 @@ describe('TheatersService', () => {
     })
 
     describe('DELETE /theaters/:id', () => {
+        // 극장이 존재할 때
         describe('when the theater exists', () => {
             let theater: TheaterDto
 
@@ -103,10 +116,12 @@ describe('TheatersService', () => {
                 theater = await createTheater(fix)
             })
 
+            // 204 No Content를 반환한다
             it('returns 204 No Content', async () => {
                 await fix.httpClient.delete(`/theaters/${theater.id}`).noContent()
             })
 
+            // 삭제가 저장된다
             it('persists the deletion', async () => {
                 await fix.httpClient.delete(`/theaters/${theater.id}`).noContent()
 
@@ -119,7 +134,9 @@ describe('TheatersService', () => {
             })
         })
 
+        // 극장이 존재하지 않을 때
         describe('when the theater does not exist', () => {
+            // 204 No Content를 반환한다
             it('returns 204 No Content', async () => {
                 await fix.httpClient.delete(`/theaters/${nullObjectId}`).noContent()
             })
@@ -148,7 +165,9 @@ describe('TheatersService', () => {
             items: expect.arrayContaining(theaters)
         })
 
+        // 쿼리가 제공되지 않을 때
         describe('when the query is not provided', () => {
+            // 기본 페이지를 반환한다
             it('returns the default page', async () => {
                 const expected = buildExpectedPage([theaterA1, theaterA2, theaterB1, theaterB2])
 
@@ -156,16 +175,20 @@ describe('TheatersService', () => {
             })
         })
 
+        // 필터가 제공될 때
         describe('when the filter is provided', () => {
             const queryAndExpect = (query: SearchTheatersPageDto, theaters: TheaterDto[]) =>
                 fix.httpClient.get('/theaters').query(query).ok(buildExpectedPage(theaters))
 
+            // 부분 이름 일치로 필터링된 극장을 반환한다
             it('returns theaters filtered by a partial name match', async () => {
                 await queryAndExpect({ name: 'theater-a' }, [theaterA1, theaterA2])
             })
         })
 
+        // 쿼리 파라미터가 유효하지 않을 때
         describe('when the query parameters are invalid', () => {
+            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient
                     .get('/theaters')

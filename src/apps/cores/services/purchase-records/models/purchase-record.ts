@@ -1,7 +1,7 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { HydratedDocument, Types } from 'mongoose'
+import { HydratedDocument } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 
 export enum PurchaseItemType {
@@ -15,16 +15,16 @@ export class PurchaseItem {
 
     @IsString()
     @IsNotEmpty()
-    ticketId: Types.ObjectId
+    ticketId: string
 }
 
 @Schema(MongooseConfigModule.schemaOptions)
 export class PurchaseRecord extends MongooseSchema {
     @Prop({ required: true })
-    customerId: Types.ObjectId
+    customerId: string
 
     @Prop({ default: null })
-    paymentId: Types.ObjectId
+    paymentId: string
 
     @Prop({ required: true })
     totalPrice: number

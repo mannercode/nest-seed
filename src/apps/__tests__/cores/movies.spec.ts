@@ -23,6 +23,7 @@ describe('MoviesService', () => {
     afterEach(() => fix.teardown())
 
     describe('create', () => {
+        // 생성된 영화를 반환한다
         it('returns the created movie', async () => {
             const createDto = buildCreateMovieDto()
             const movie = await fix.moviesClient.create(createDto)
@@ -34,6 +35,7 @@ describe('MoviesService', () => {
             })
         })
 
+        // 요청 본문에 assetIds가 포함될 때
         describe('when the payload includes assetIds', () => {
             let createDto: CreateMovieDto
 
@@ -42,6 +44,7 @@ describe('MoviesService', () => {
                 createDto = buildCreateMovieDto({ assetIds: [asset.id] })
             })
 
+            // 업로드된 에셋에 대한 imageUrls를 반환한다
             it('returns imageUrls for the uploaded asset', async () => {
                 const movie = await fix.moviesClient.create(createDto)
 
@@ -53,7 +56,9 @@ describe('MoviesService', () => {
             })
         })
 
+        // 필수 필드가 누락된 경우
         describe('when required fields are missing', () => {
+            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 const promise = fix.moviesClient.create({} as any)
 
@@ -66,6 +71,7 @@ describe('MoviesService', () => {
     })
 
     describe('GET /movies/:id', () => {
+        // 영화가 존재할 때
         describe('when the movie exists', () => {
             let movie: MovieDto
 
@@ -73,12 +79,15 @@ describe('MoviesService', () => {
                 movie = await createMovie(fix)
             })
 
+            // 영화를 반환한다
             it('returns the movie', async () => {
                 await fix.httpClient.get(`/movies/${movie.id}`).ok(movie)
             })
         })
 
+        // 영화가 존재하지 않을 때
         describe('when the movie does not exist', () => {
+            // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .get(`/movies/${nullObjectId}`)
@@ -91,6 +100,7 @@ describe('MoviesService', () => {
     })
 
     describe('PATCH /movies/:id', () => {
+        // 영화가 존재할 때
         describe('when the movie exists', () => {
             let movie: MovieDto
 
@@ -98,6 +108,7 @@ describe('MoviesService', () => {
                 movie = await createMovie(fix, { title: 'original-title' })
             })
 
+            // 수정된 영화를 반환한다
             it('returns the updated movie', async () => {
                 const updateDto = {
                     genres: ['romance', 'thriller'],
@@ -115,6 +126,7 @@ describe('MoviesService', () => {
                     .ok({ ...movie, ...omit(updateDto, ['assetIds']) })
             })
 
+            // 수정 내용이 저장된다
             it('persists the update', async () => {
                 const updateDto = { title: 'update title' }
                 await fix.httpClient.patch(`/movies/${movie.id}`).body(updateDto).ok()
@@ -123,7 +135,9 @@ describe('MoviesService', () => {
             })
         })
 
+        // 영화가 존재하지 않을 때
         describe('when the movie does not exist', () => {
+            // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .patch(`/movies/${nullObjectId}`)
@@ -134,18 +148,20 @@ describe('MoviesService', () => {
     })
 
     describe('DELETE /movies/:id', () => {
+        // 영화가 존재할 때
         describe('when the movie exists', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
-                const asset = await uploadComplete(fix, fixtureFiles.image)
-                movie = await createMovie(fix, { assetIds: [asset.id] })
+                movie = await createMovie(fix)
             })
 
+            // 204 No Content를 반환한다
             it('returns 204 No Content', async () => {
                 await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
             })
 
+            // 삭제가 저장된다
             it('persists the deletion', async () => {
                 await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
 
@@ -156,7 +172,23 @@ describe('MoviesService', () => {
                         notFoundIds: [movie.id]
                     })
             })
+        })
 
+        // 영화가 이미지를 포함할 때
+        describe('when the movie has images', () => {
+            let movie: MovieDto
+
+            beforeEach(async () => {
+                const asset = await uploadComplete(fix, fixtureFiles.image)
+                movie = await createMovie(fix, { assetIds: [asset.id] })
+            })
+
+            // 204 No Content를 반환한다
+            it('returns 204 No Content', async () => {
+                await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
+            })
+
+            // 이미지 URL을 무효화한다
             it('invalidates image URL', async () => {
                 await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
 
@@ -165,7 +197,9 @@ describe('MoviesService', () => {
             })
         })
 
+        // 영화가 존재하지 않을 때
         describe('when the movie does not exist', () => {
+            // 204 No Content를 반환한다
             it('returns 204 No Content', async () => {
                 await fix.httpClient.delete(`/movies/${nullObjectId}`).noContent()
             })
@@ -228,7 +262,9 @@ describe('MoviesService', () => {
             }
         }
 
+        // 쿼리가 제공되지 않을 때
         describe('when the query is not provided', () => {
+            // 기본 페이지를 반환한다
             it('returns the default page', async () => {
                 const expected = buildExpectedPage([movieA1, movieA2, movieB1, movieB2])
 
@@ -236,36 +272,45 @@ describe('MoviesService', () => {
             })
         })
 
+        // 필터가 제공될 때
         describe('when the filter is provided', () => {
             const queryAndExpect = (query: SearchMoviesPageDto, movies: MovieDto[]) =>
                 fix.httpClient.get('/movies').query(query).ok(buildExpectedPage(movies))
 
+            // 부분 제목 일치로 필터링된 영화를 반환한다
             it('returns movies filtered by a partial title match', async () => {
                 await queryAndExpect({ title: 'title-a' }, [movieA1, movieA2])
             })
 
+            // 장르로 필터링된 영화를 반환한다
             it('returns movies filtered by genre', async () => {
                 await queryAndExpect({ genre: MovieGenre.Drama }, [movieA2, movieB1])
             })
 
+            // 개봉일로 필터링된 영화를 반환한다
             it('returns movies filtered by release date', async () => {
                 await queryAndExpect({ releaseDate: new Date('2000-01-02') }, [movieA2, movieB1])
             })
 
+            // 부분 줄거리 일치로 필터링된 영화를 반환한다
             it('returns movies filtered by a partial plot match', async () => {
                 await queryAndExpect({ plot: 'plot-b' }, [movieB1, movieB2])
             })
 
+            // 부분 감독 이름 일치로 필터링된 영화를 반환한다
             it('returns movies filtered by a partial director name match', async () => {
                 await queryAndExpect({ director: 'James' }, [movieA1, movieB1])
             })
 
+            // 등급으로 필터링된 영화를 반환한다
             it('returns movies filtered by rating', async () => {
                 await queryAndExpect({ rating: MovieRating.NC17 }, [movieA1, movieA2])
             })
         })
 
+        // 쿼리 파라미터가 유효하지 않을 때
         describe('when the query parameters are invalid', () => {
+            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient
                     .get('/movies')

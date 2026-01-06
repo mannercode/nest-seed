@@ -21,6 +21,7 @@ describe('MongooseRepository', () => {
     afterEach(() => fix.teardown())
 
     describe('save', () => {
+        // 문서를 생성한다
         it('creates the document', async () => {
             const newDoc = fix.repository.newDocument()
             newDoc.name = 'document name'
@@ -30,6 +31,7 @@ describe('MongooseRepository', () => {
             expect(toDto(foundDoc)).toEqual(toDto(newDoc))
         })
 
+        // 필수 필드가 없으면 예외를 던진다
         it('throws for missing required fields', async () => {
             const doc = fix.repository.newDocument()
             const promise = doc.save()
@@ -38,6 +40,7 @@ describe('MongooseRepository', () => {
     })
 
     describe('saveMany', () => {
+        // 모든 문서를 생성한다
         it('creates all documents', async () => {
             const docs = [
                 { name: 'document-1' },
@@ -54,6 +57,7 @@ describe('MongooseRepository', () => {
             expect(saveSucceeded).toBe(true)
         })
 
+        // 필수 필드가 없으면 예외를 던진다
         it('throws for missing required fields', async () => {
             const docs = [fix.repository.newDocument(), fix.repository.newDocument()]
 
@@ -71,6 +75,7 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
+        // 올바른 페이지네이션으로 항목을 반환한다
         it('returns items with correct pagination', async () => {
             const skip = 10
             const take = 5
@@ -83,6 +88,7 @@ describe('MongooseRepository', () => {
             expect(pagination).toEqual({ total: samples.length, skip, take })
         })
 
+        // 오름차순으로 정렬한다
         it('sorts in ascending order', async () => {
             const { items } = await fix.repository.findWithPagination({
                 pagination: {
@@ -95,6 +101,7 @@ describe('MongooseRepository', () => {
             expect(toDtos(items)).toEqual(samples)
         })
 
+        // 내림차순으로 정렬한다
         it('sorts in descending order', async () => {
             const { items } = await fix.repository.findWithPagination({
                 pagination: {
@@ -107,12 +114,14 @@ describe('MongooseRepository', () => {
             expect(toDtos(items)).toEqual(samples)
         })
 
+        // take 값이 0 이하이면 예외를 던진다
         it('throws for a non-positive take value', async () => {
             const promise = fix.repository.findWithPagination({ pagination: { take: -1 } })
 
             await expect(promise).rejects.toThrow(fix.BadRequestException)
         })
 
+        // limit을 초과한 take에 대해 BadRequestException을 던진다
         it('throws BadRequestException for take above the limit', async () => {
             const take = maxTakeValue + 1
 
@@ -121,7 +130,9 @@ describe('MongooseRepository', () => {
             await expect(promise).rejects.toThrow(fix.BadRequestException)
         })
 
+        // take가 제공되지 않을 때
         describe('when take is not provided', () => {
+            // 기본 take 값을 사용한다
             it('uses the default take value', async () => {
                 const { take } = await fix.repository.findWithPagination({
                     pagination: { orderby: { name: 'name', direction: OrderDirection.Desc } }
@@ -131,6 +142,7 @@ describe('MongooseRepository', () => {
             })
         })
 
+        // 설정된 조건을 적용한다
         it('applies configured conditions', async () => {
             const { items } = await fix.repository.findWithPagination({
                 configureQuery: async (queryHelper) => {
@@ -164,14 +176,18 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
+        // 모든 id가 존재할 때
         describe('when all ids exist', () => {
+            // true를 반환한다
             it('returns true', async () => {
                 const exists = await fix.repository.allExist(pickIds(samples))
                 expect(exists).toBe(true)
             })
         })
 
+        // id 중 하나라도 없을 때
         describe('when any id is missing', () => {
+            // false를 반환한다
             it('returns false', async () => {
                 const exists = await fix.repository.allExist([nullObjectId])
                 expect(exists).toBe(false)
@@ -187,12 +203,14 @@ describe('MongooseRepository', () => {
             sample = toDto(doc)
         })
 
+        // 존재하는 id의 문서를 반환한다
         it('returns the document for an existing id', async () => {
             const doc = await fix.repository.findById(sample.id)
 
             expect(toDto(doc)).toEqual(sample)
         })
 
+        // 없는 id에 대해 null을 반환한다
         it('returns null for a missing id', async () => {
             const doc = await fix.repository.findById(nullObjectId)
 
@@ -208,6 +226,7 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
+        // 존재하는 id의 문서를 반환한다
         it('returns the documents for existing ids', async () => {
             const ids = pickIds(samples)
             const docs = await fix.repository.findByIds(ids)
@@ -215,6 +234,7 @@ describe('MongooseRepository', () => {
             expectEqualUnsorted(toDtos(docs), samples)
         })
 
+        // 없는 id는 무시한다
         it('ignores missing ids', async () => {
             const docs = await fix.repository.findByIds([nullObjectId])
             expect(docs).toHaveLength(0)
@@ -229,12 +249,14 @@ describe('MongooseRepository', () => {
             sample = toDto(doc)
         })
 
+        // 존재하는 id의 문서를 반환한다
         it('returns the document for an existing id', async () => {
             const doc = await fix.repository.getById(sample.id)
 
             expect(toDto(doc)).toEqual(sample)
         })
 
+        // 없는 id에 대해 NotFoundException을 던진다
         it('throws NotFoundException for a missing id', async () => {
             const promise = fix.repository.getById(nullObjectId)
 
@@ -250,7 +272,9 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
+        // 모든 id가 존재할 때
         describe('when all ids exist', () => {
+            // 문서를 반환한다
             it('returns the documents', async () => {
                 const ids = pickIds(samples)
                 const docs = await fix.repository.getByIds(ids)
@@ -259,7 +283,9 @@ describe('MongooseRepository', () => {
             })
         })
 
+        // id 중 하나라도 없을 때
         describe('when any id is missing', () => {
+            // NotFoundException을 던진다
             it('throws NotFoundException', async () => {
                 const promise = fix.repository.getByIds([nullObjectId])
 
@@ -276,6 +302,7 @@ describe('MongooseRepository', () => {
             sample = toDto(doc)
         })
 
+        // 존재하는 id의 문서를 삭제한다
         it('deletes the document for an existing id', async () => {
             await fix.repository.deleteById(sample.id)
             const doc = await fix.repository.findById(sample.id)
@@ -283,6 +310,7 @@ describe('MongooseRepository', () => {
             expect(doc).toBeNull()
         })
 
+        // 없는 id에 대해 NotFoundException을 던진다
         it('throws NotFoundException for a missing id', async () => {
             const promise = fix.repository.deleteById(nullObjectId)
 
@@ -298,7 +326,9 @@ describe('MongooseRepository', () => {
             samples = toDtos(docs)
         })
 
+        // 모든 id가 존재할 때
         describe('when all ids exist', () => {
+            // 문서를 삭제한다
             it('deletes the documents', async () => {
                 const ids = pickIds(samples.slice(5, 10))
                 const result = await fix.repository.deleteByIds(ids)
@@ -309,7 +339,9 @@ describe('MongooseRepository', () => {
             })
         })
 
+        // id 중 하나라도 없을 때
         describe('when any id is missing', () => {
+            // 없는 id는 무시한다
             it('ignores missing ids', async () => {
                 const promise = fix.repository.deleteByIds([nullObjectId])
                 await expect(promise).resolves.toEqual({ deletedCount: 0 })

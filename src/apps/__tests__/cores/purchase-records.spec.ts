@@ -13,6 +13,7 @@ describe('PurchaseRecordsService', () => {
     afterEach(() => fix.teardown())
 
     describe('create', () => {
+        // 생성된 구매 기록을 반환한다
         it('returns the created purchase record', async () => {
             const createDto = buildCreatePurchaseRecordDto()
             const createdPurchaseRecord = await fix.purchaseRecordsClient.create(createDto)
@@ -27,6 +28,7 @@ describe('PurchaseRecordsService', () => {
     })
 
     describe('GET /purchases/:purchaseId', () => {
+        // 구매 기록이 존재할 때
         describe('when the purchase record exists', () => {
             let purchase: PurchaseRecordDto
 
@@ -34,12 +36,15 @@ describe('PurchaseRecordsService', () => {
                 purchase = await createPurchaseRecord(fix)
             })
 
+            // 구매 기록을 반환한다
             it('returns the purchase record', async () => {
                 await fix.httpClient.get(`/purchases/${purchase.id}`).ok(purchase)
             })
         })
 
+        // 구매 기록이 존재하지 않을 때
         describe('when the purchase record does not exist', () => {
+            // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .get(`/purchases/${nullObjectId}`)

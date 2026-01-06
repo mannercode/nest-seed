@@ -1,18 +1,18 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { HydratedDocument, Types } from 'mongoose'
+import { HydratedDocument } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 
 @Schema(MongooseConfigModule.schemaOptions)
 export class WatchRecord extends MongooseSchema {
     @Prop({ required: true })
-    customerId: Types.ObjectId
+    customerId: string
 
     @Prop({ required: true })
-    movieId: Types.ObjectId
+    movieId: string
 
     @Prop({ required: true })
-    purchaseId: Types.ObjectId
+    purchaseId: string
 
     @Prop({ required: true })
     watchDate: Date

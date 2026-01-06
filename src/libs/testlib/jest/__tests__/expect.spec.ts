@@ -1,4 +1,5 @@
 describe('jest.expect examples', () => {
+    // toBe와 toEqual로 값을 비교한다
     it('compares values with toBe vs toEqual', () => {
         /**
          * toEqual
@@ -29,6 +30,7 @@ describe('jest.expect examples', () => {
         expect(firstArray).not.toBe(secondArray)
     })
 
+    // 객체 배열을 비교한다
     it('compares an array of objects', () => {
         const actualObjects = [
             { id: 1, name: 'A' },
@@ -42,6 +44,7 @@ describe('jest.expect examples', () => {
         expect(actualObjects).toEqual(expect.arrayContaining(expectedObjects))
     })
 
+    // 객체 배열의 부분을 비교한다
     it('compares a partial array of objects', () => {
         const fullObjects = [
             { id: 1, name: 'A', extra: 'info' },

@@ -1,12 +1,4 @@
-import type { MovieDraftImageStatus } from '../models/movie-draft'
 import type { MovieGenre, MovieRating } from 'apps/cores'
-
-export type DraftImageStatus = (typeof MovieDraftImageStatus)[keyof typeof MovieDraftImageStatus]
-
-export class MovieDraftImageDto {
-    id: string
-    status: DraftImageStatus
-}
 
 export class MovieDraftDto {
     id: string

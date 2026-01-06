@@ -1,6 +1,6 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { HydratedDocument, Types } from 'mongoose'
+import { HydratedDocument } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 
 export enum MovieGenre {
@@ -46,8 +46,8 @@ export class Movie extends MongooseSchema {
     @Prop({ required: true, type: String, enum: MovieRating })
     rating: MovieRating
 
-    @Prop({ required: true })
-    assetIds: Types.ObjectId[]
+    @Prop({ required: true, type: [String] })
+    assetIds: string[]
 }
 export type MovieDocument = HydratedDocument<Movie>
 export const MovieSchema = createMongooseSchema(Movie)

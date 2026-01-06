@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common'
-import { CreateAssetDto } from 'apps/infrastructures'
+import { AssetPresignedUploadDto, CreateAssetDto } from 'apps/infrastructures'
 import { ClientProxyService, InjectClientProxy } from 'common'
 import { Messages } from 'shared'
-import { DraftImageDto, DraftImageUploadResponse, MovieDraftDto, UpdateMovieDraftDto } from './dtos'
+import { MovieDraftDto, MovieDraftImageDto, UpdateMovieDraftDto } from './dtos'
 
 @Injectable()
 export class MovieDraftsClient {
@@ -24,10 +24,7 @@ export class MovieDraftsClient {
         return this.proxy.request(Messages.MovieDrafts.delete, draftId)
     }
 
-    requestImageUpload(
-        draftId: string,
-        createDto: CreateAssetDto
-    ): Promise<DraftImageUploadResponse> {
+    createImageDraft(draftId: string, createDto: CreateAssetDto): Promise<AssetPresignedUploadDto> {
         return this.proxy.request(Messages.MovieDrafts.Images.create, { draftId, createDto })
     }
 
@@ -35,7 +32,7 @@ export class MovieDraftsClient {
         return this.proxy.request(Messages.MovieDrafts.Images.delete, { draftId, imageId })
     }
 
-    completeImage(draftId: string, imageId: string): Promise<DraftImageDto> {
+    completeImage(draftId: string, imageId: string): Promise<MovieDraftImageDto> {
         return this.proxy.request(Messages.MovieDrafts.Images.complete, { draftId, imageId })
     }
 

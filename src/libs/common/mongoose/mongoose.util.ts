@@ -37,7 +37,7 @@ export class QueryBuilder<T> {
                 ids,
                 `Duplicate ${String(field)} detected and removed: ${ids}`
             )
-            this.query[field] = { $in: objectIds(uniqueIds) }
+            this.query[field] = { $in: uniqueIds }
         }
         return this
     }
@@ -102,7 +102,7 @@ export function mapDocToDto<
 
 type Transform<T> = (value: T) => any
 
-export function assignIfDefined<
+export function assignDefined<
     Target extends Record<string, any>,
     Source extends Record<string, any>,
     K extends keyof Source & keyof Target

@@ -14,6 +14,7 @@ describe('CustomersService', () => {
     afterEach(() => fix.teardown())
 
     describe('POST /customers', () => {
+        // 생성된 고객을 반환한다
         it('returns the created customer', async () => {
             const createDto = buildCreateCustomerDto()
 
@@ -23,6 +24,7 @@ describe('CustomersService', () => {
                 .created({ ...omit(createDto, ['password']), id: expect.any(String) })
         })
 
+        // 이메일이 이미 존재할 때
         describe('when the email already exists', () => {
             const email = 'user@mail.com'
 
@@ -30,6 +32,7 @@ describe('CustomersService', () => {
                 await createCustomer(fix, { email })
             })
 
+            // 409 Conflict를 반환한다
             it('returns 409 Conflict', async () => {
                 const createDto = buildCreateCustomerDto({ email })
 
@@ -40,7 +43,9 @@ describe('CustomersService', () => {
             })
         })
 
+        // 필수 필드가 누락된 경우
         describe('when required fields are missing', () => {
+            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient
                     .post('/customers')
@@ -51,6 +56,7 @@ describe('CustomersService', () => {
     })
 
     describe('GET /customers/:id', () => {
+        // 고객이 존재할 때
         describe('when the customer exists', () => {
             let customer: CustomerDto
 
@@ -58,12 +64,15 @@ describe('CustomersService', () => {
                 customer = await createCustomer(fix)
             })
 
+            // 고객을 반환한다
             it('returns the customer', async () => {
                 await fix.httpClient.get(`/customers/${customer.id}`).ok(customer)
             })
         })
 
+        // 고객이 존재하지 않을 때
         describe('when the customer does not exist', () => {
+            // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .get(`/customers/${nullObjectId}`)
@@ -76,6 +85,7 @@ describe('CustomersService', () => {
     })
 
     describe('PATCH /customers/:id', () => {
+        // 고객이 존재할 때
         describe('when the customer exists', () => {
             let customer: CustomerDto
 
@@ -83,6 +93,7 @@ describe('CustomersService', () => {
                 customer = await createCustomer(fix, { name: 'original-name' })
             })
 
+            // 수정된 고객을 반환한다
             it('returns the updated customer', async () => {
                 const updateDto = { email: 'new@mail.com', birthDate: new Date('1900-12-31') }
 
@@ -92,6 +103,7 @@ describe('CustomersService', () => {
                     .ok({ ...customer, ...updateDto })
             })
 
+            // 수정 내용이 저장된다
             it('persists the update', async () => {
                 const updateDto = { name: 'update-name' }
                 await fix.httpClient.patch(`/customers/${customer.id}`).body(updateDto).ok()
@@ -102,7 +114,9 @@ describe('CustomersService', () => {
             })
         })
 
+        // 고객이 존재하지 않을 때
         describe('when the customer does not exist', () => {
+            // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .patch(`/customers/${nullObjectId}`)
@@ -113,6 +127,7 @@ describe('CustomersService', () => {
     })
 
     describe('DELETE /customers/:id', () => {
+        // 고객이 존재할 때
         describe('when the customer exists', () => {
             let customer: CustomerDto
 
@@ -120,10 +135,12 @@ describe('CustomersService', () => {
                 customer = await createCustomer(fix)
             })
 
+            // 204 No Content를 반환한다
             it('returns 204 No Content', async () => {
                 await fix.httpClient.delete(`/customers/${customer.id}`).noContent()
             })
 
+            // 삭제가 저장된다
             it('persists the deletion', async () => {
                 await fix.httpClient.delete(`/customers/${customer.id}`).noContent()
 
@@ -136,7 +153,9 @@ describe('CustomersService', () => {
             })
         })
 
+        // 고객이 존재하지 않을 때
         describe('when the customer does not exist', () => {
+            // 204 No Content를 반환한다
             it('returns 204 No Content', async () => {
                 await fix.httpClient.delete(`/customers/${nullObjectId}`).noContent()
             })
@@ -165,7 +184,9 @@ describe('CustomersService', () => {
             items: expect.arrayContaining(customers)
         })
 
+        // 쿼리가 제공되지 않을 때
         describe('when the query is not provided', () => {
+            // 기본 고객 페이지를 반환한다
             it('returns the default page of customers', async () => {
                 const expected = buildExpectedPage([customerA1, customerA2, customerB1, customerB2])
 
@@ -173,20 +194,25 @@ describe('CustomersService', () => {
             })
         })
 
+        // 필터가 제공될 때
         describe('when the filter is provided', () => {
             const queryAndExpect = (query: SearchCustomersPageDto, customers: CustomerDto[]) =>
                 fix.httpClient.get('/customers').query(query).ok(buildExpectedPage(customers))
 
+            // 부분 이름 일치로 필터링된 고객을 반환한다
             it('returns customers filtered by a partial name match', async () => {
                 await queryAndExpect({ name: 'customer-a' }, [customerA1, customerA2])
             })
 
+            // 부분 이메일 일치로 필터링된 고객을 반환한다
             it('returns customers filtered by a partial email match', async () => {
                 await queryAndExpect({ email: 'user-b' }, [customerB1, customerB2])
             })
         })
 
+        // 쿼리 파라미터가 유효하지 않을 때
         describe('when the query parameters are invalid', () => {
+            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient
                     .get('/customers')

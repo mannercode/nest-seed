@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseRepository, objectId, QueryBuilder, QueryBuilderOptions } from 'common'
+import { MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos'
@@ -17,9 +17,9 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
 
     async create(createDto: CreateWatchRecordDto) {
         const watchRecord = this.newDocument()
-        watchRecord.customerId = objectId(createDto.customerId)
-        watchRecord.movieId = objectId(createDto.movieId)
-        watchRecord.purchaseId = objectId(createDto.purchaseId)
+        watchRecord.customerId = createDto.customerId
+        watchRecord.movieId = createDto.movieId
+        watchRecord.purchaseId = createDto.purchaseId
         watchRecord.watchDate = createDto.watchDate
 
         return watchRecord.save()
@@ -44,7 +44,7 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
         const { customerId } = searchDto
 
         const builder = new QueryBuilder<WatchRecord>()
-        builder.addId('customerId', customerId)
+        builder.addEqual('customerId', customerId)
 
         const query = builder.build(options)
         return query

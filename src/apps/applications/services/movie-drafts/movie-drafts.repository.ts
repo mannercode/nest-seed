@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseRepository } from 'common'
+import { assignDefined, MongooseRepository } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import { MovieDraft, MovieDraftDocument, MovieDraftImage } from './models/movie-draft'
+import { UpdateMovieDraftDto } from './dtos'
+import { MovieAssetDraft, MovieDraft, MovieDraftDocument } from './models'
 
 @Injectable()
 export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
@@ -19,17 +20,30 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
         return draft.save()
     }
 
-    async addOrUpdateImage(draftId: string, image: MovieDraftImage): Promise<MovieDraftDocument> {
+    async update(draftId: string, updateDto: UpdateMovieDraftDto) {
         const draft = await this.getById(draftId)
-        const existing = draft.images.find((img) => img.assetId === image.assetId)
+
+        assignDefined(draft, updateDto, 'title')
+        assignDefined(draft, updateDto, 'genres')
+        assignDefined(draft, updateDto, 'releaseDate')
+        assignDefined(draft, updateDto, 'plot')
+        assignDefined(draft, updateDto, 'durationInSeconds')
+        assignDefined(draft, updateDto, 'director')
+        assignDefined(draft, updateDto, 'rating')
+
+        return draft.save()
+    }
+
+    async addOrUpdateImage(draftId: string, image: MovieAssetDraft): Promise<MovieDraftDocument> {
+        const draft = await this.getById(draftId)
+        const existing = draft.assets.find((img) => img.assetId === image.assetId)
 
         if (existing) {
             existing.status = image.status
         } else {
-            draft.images.push(image)
+            draft.assets.push(image)
         }
 
-        await draft.save()
-        return draft
+        return draft.save()
     }
 }

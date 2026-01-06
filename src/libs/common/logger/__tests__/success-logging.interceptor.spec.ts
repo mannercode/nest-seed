@@ -4,6 +4,7 @@ import type { SuccessLoggingInterceptorFixture } from './success-logging.interce
 describe('SuccessLoggingInterceptor', () => {
     let fix: SuccessLoggingInterceptorFixture
 
+    // 요청이 성공할 때
     describe('when the requests succeed', () => {
         beforeEach(async () => {
             const { createSuccessLoggingInterceptorFixture } =
@@ -12,7 +13,9 @@ describe('SuccessLoggingInterceptor', () => {
         })
         afterEach(() => fix.teardown())
 
+        // 요청이 HTTP일 때
         describe('when the request is HTTP', () => {
+            // Logger.verbose로 로그를 남긴다
             it('logs via Logger.verbose', async () => {
                 const body = { key: 'value' }
                 await fix.httpClient.post('/success').body(body).created({ result: 'success' })
@@ -27,7 +30,9 @@ describe('SuccessLoggingInterceptor', () => {
             })
         })
 
+        // 요청이 RPC일 때
         describe('when the request is RPC', () => {
+            // Logger.verbose로 로그를 남긴다
             it('logs via Logger.verbose', async () => {
                 const subject = withTestId('success')
                 const data = { key: 'value' }
@@ -43,6 +48,7 @@ describe('SuccessLoggingInterceptor', () => {
             })
         })
 
+        // ContextType이 알 수 없을 때
         describe('when the ContextType is unknown', () => {
             beforeEach(async () => {
                 const { ExecutionContextHost } =
@@ -50,6 +56,7 @@ describe('SuccessLoggingInterceptor', () => {
                 jest.spyOn(ExecutionContextHost.prototype, 'getType').mockReturnValue('unknown')
             })
 
+            // Logger.error로 로그를 남긴다
             it('logs via Logger.error', async () => {
                 await fix.httpClient.get('/exclude-path').ok()
 
@@ -65,6 +72,7 @@ describe('SuccessLoggingInterceptor', () => {
         })
     })
 
+    // LOGGING_EXCLUDE_HTTP_PATHS에 요청 경로가 포함될 때
     describe('when LOGGING_EXCLUDE_HTTP_PATHS includes the request path', () => {
         beforeEach(async () => {
             const { createSuccessLoggingInterceptorFixture } =
@@ -75,6 +83,7 @@ describe('SuccessLoggingInterceptor', () => {
         })
         afterEach(() => fix.teardown())
 
+        // 지정된 HTTP 경로를 무시한다
         it('ignores specified HTTP paths', async () => {
             await fix.httpClient.get('/exclude-path').ok({ result: 'success' })
 
@@ -82,6 +91,7 @@ describe('SuccessLoggingInterceptor', () => {
         })
     })
 
+    // LOGGING_EXCLUDE_RPC_PATHS에 subject가 포함될 때
     describe('when LOGGING_EXCLUDE_RPC_PATHS includes the subject', () => {
         beforeEach(async () => {
             const { createSuccessLoggingInterceptorFixture } =
@@ -92,6 +102,7 @@ describe('SuccessLoggingInterceptor', () => {
         })
         afterEach(() => fix.teardown())
 
+        // 지정된 RPC 경로를 무시한다
         it('ignores specified RPC paths', async () => {
             const subject = withTestId('exclude-path')
             const data = { key: 'value' }

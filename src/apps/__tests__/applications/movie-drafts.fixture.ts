@@ -11,7 +11,7 @@ import {
 import type { AppTestContext, FixtureFile } from '../__helpers__'
 import type { TestContext } from 'testlib'
 
-export type MovieDraftsFixture = AppTestContext & { assetsClient: AssetsClient }
+export type MovieDraftsFixture = AppTestContext & { assetsClient: AssetsClient; image: FixtureFile }
 
 export async function createMovieDraftsFixture() {
     const ctx = await createAppTestContext({
@@ -24,7 +24,7 @@ export async function createMovieDraftsFixture() {
     // TODO 이거 없애야 한다.
     const assetsClient = ctx.module.get(AssetsClient)
 
-    return { ...ctx, assetsClient }
+    return { ...ctx, assetsClient, image: fixtureFiles.image }
 }
 
 export async function createMovieDraft(ctx: TestContext) {
@@ -40,16 +40,16 @@ export async function createMovieImageDraft(ctx: TestContext, draftId: string, f
     const movieDraftsService = ctx.module.get(MovieDraftsService)
 
     const createDto = buildCreateAssetDto(file)
-    const upload = await movieDraftsService.requestImageUpload(draftId, createDto)
+    const upload = await movieDraftsService.createImageDraft(draftId, createDto)
 
     return upload
 }
 
 export async function uploadDraftImage(ctx: TestContext, draftId: string) {
-    const imageFile = fixtureFiles.image
+    const { image } = fixtureFiles
 
-    const upload = await createMovieImageDraft(ctx, draftId, imageFile)
-    const uploadResponse = await uploadAsset(imageFile.path, upload.upload)
+    const upload = await createMovieImageDraft(ctx, draftId, image)
+    const uploadResponse = await uploadAsset(image.path, upload)
 
     expect(uploadResponse.ok).toBe(true)
 
@@ -60,7 +60,7 @@ export async function uploadCompleteDraftImage(ctx: TestContext, draftId: string
     const { MovieDraftsService } = await import('apps/applications')
     const movieDraftsService = ctx.module.get(MovieDraftsService)
 
-    const { imageId } = await uploadDraftImage(ctx, draftId)
+    const { assetId: imageId } = await uploadDraftImage(ctx, draftId)
 
     await movieDraftsService.completeImage(draftId, imageId)
     return imageId

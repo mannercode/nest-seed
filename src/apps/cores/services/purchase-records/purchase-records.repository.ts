@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseRepository, objectId } from 'common'
+import { MongooseRepository } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { CreatePurchaseRecordDto } from './dtos'
@@ -17,16 +17,11 @@ export class PurchaseRecordsRepository extends MongooseRepository<PurchaseRecord
 
     async create(createDto: CreatePurchaseRecordDto) {
         const purchase = this.newDocument()
-        purchase.customerId = objectId(createDto.customerId)
-        purchase.paymentId = objectId(createDto.paymentId)
+        purchase.customerId = createDto.customerId
+        purchase.paymentId = createDto.paymentId
         purchase.totalPrice = createDto.totalPrice
-        purchase.purchaseItems = createDto.purchaseItems.map((item) => ({
-            ...item,
-            ticketId: objectId(item.ticketId)
-        }))
+        purchase.purchaseItems = createDto.purchaseItems.map((item) => ({ ...item }))
 
-        await purchase.save()
-
-        return purchase
+        return purchase.save()
     }
 }

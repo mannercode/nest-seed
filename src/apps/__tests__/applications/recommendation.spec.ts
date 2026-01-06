@@ -16,6 +16,7 @@ describe('RecommendationService', () => {
     afterEach(() => fix.teardown())
 
     describe('GET /movies/recommended', () => {
+        // 상영 중인 영화가 존재할 때
         describe('when showing movies exist', () => {
             let fantasyMovie: MovieDto
             let comedy1Movie: MovieDto
@@ -34,6 +35,7 @@ describe('RecommendationService', () => {
                     ])
             })
 
+            // 고객이 시청한 영화가 있을 때
             describe('when the customer has watched movies', () => {
                 let accessToken: string
 
@@ -50,6 +52,7 @@ describe('RecommendationService', () => {
                     accessToken = result.accessToken
                 })
 
+                // 시청 기록을 기반으로 추천을 반환한다
                 it('returns recommendations based on watch history', async () => {
                     await fix.httpClient
                         .get('/movies/recommended')
@@ -64,7 +67,9 @@ describe('RecommendationService', () => {
                 })
             })
 
+            // 고객이 게스트일 때
             describe('when the customer is a guest', () => {
+                // 기본 추천을 반환한다
                 it('returns default recommendations', async () => {
                     await fix.httpClient.get('/movies/recommended').ok([
                         dramaMovie, // 2900-05-01

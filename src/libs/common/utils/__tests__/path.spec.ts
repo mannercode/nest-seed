@@ -14,6 +14,7 @@ describe('Path', () => {
         await Path.delete(tempDir)
     })
 
+    // 임시 디렉터리를 생성한다
     it('creates a temporary directory', async () => {
         const exists = await Path.exists(tempDir)
         expect(exists).toBe(true)
@@ -22,6 +23,7 @@ describe('Path', () => {
         expect(tempDir.startsWith(os.tmpdir())).toBe(true)
     })
 
+    // 지정한 경로가 존재하는지 비동기로 확인한다
     it('checks asynchronously whether the specified path exists', async () => {
         const filePath = Path.join(tempDir, 'file.txt')
         await fs.writeFile(filePath, 'hello world')
@@ -30,6 +32,7 @@ describe('Path', () => {
         expect(exists).toBe(true)
     })
 
+    // 경로가 존재하지 않을 때
     describe('when the path does not exist', () => {
         let nonExistentPath: string
 
@@ -37,12 +40,14 @@ describe('Path', () => {
             nonExistentPath = Path.join(tempDir, 'nonexistent.txt')
         })
 
+        // false를 반환한다
         it('returns false', async () => {
             const exists = await Path.exists(nonExistentPath)
             expect(exists).toBe(false)
         })
     })
 
+    // 지정한 경로가 존재하는지 동기로 확인한다
     it('checks synchronously whether the specified path exists', async () => {
         const filePath = Path.join(tempDir, 'file.txt')
         await fs.writeFile(filePath, 'hello world')
@@ -51,11 +56,13 @@ describe('Path', () => {
         expect(exists).toBe(true)
     })
 
+    // 지정한 경로가 디렉터리인지 확인한다
     it('confirms whether the specified path is a directory', async () => {
         const exists = await Path.isDirectory(tempDir)
         expect(exists).toBe(true)
     })
 
+    // 디렉터리를 생성하고 삭제한다
     it('creates and deletes a directory', async () => {
         const dirPath = Path.join(tempDir, 'testdir')
 
@@ -68,6 +75,7 @@ describe('Path', () => {
         expect(existsAfterDelete).toBe(false)
     })
 
+    // 하위 디렉터리를 나열한다
     it('lists subdirectories', async () => {
         const subDir1 = Path.join(tempDir, 'subdir1')
         await Path.mkdir(subDir1)
@@ -82,6 +90,7 @@ describe('Path', () => {
         expect(subDirs).toEqual(['subdir1', 'subdir2'])
     })
 
+    // 파일을 복사한다
     it('copies a file', async () => {
         const srcFilePath = Path.join(tempDir, 'file.txt')
         await fs.writeFile(srcFilePath, 'hello world')
@@ -97,6 +106,7 @@ describe('Path', () => {
         expect(content).toEqual('hello world')
     })
 
+    // 디렉터리를 복사한다
     it('copies a directory', async () => {
         const srcDirPath = Path.join(tempDir, 'testdir')
         await Path.mkdir(srcDirPath)
@@ -120,6 +130,7 @@ describe('Path', () => {
         expect(content).toEqual('hello from the original dir')
     })
 
+    // 절대 경로를 반환한다
     it('returns an absolute path', async () => {
         const relativePath = `.${Path.sep()}file.txt`
         const absolutePath = await Path.getAbsolute(relativePath)
@@ -127,6 +138,7 @@ describe('Path', () => {
         expect(p.isAbsolute(absolutePath)).toBe(true)
     })
 
+    // 경로가 이미 절대 경로일 때
     describe('when the path is already absolute', () => {
         let absolutePath: string
 
@@ -134,6 +146,7 @@ describe('Path', () => {
             absolutePath = p.join(os.tmpdir(), 'file.txt')
         })
 
+        // 같은 경로를 반환한다
         it('returns the same path', async () => {
             const result = await Path.getAbsolute(absolutePath)
 
@@ -141,6 +154,7 @@ describe('Path', () => {
         })
     })
 
+    // basename을 반환한다
     it('returns the basename', () => {
         const filePath = 'dir/file.txt'
         const basename = Path.basename(filePath)
@@ -148,6 +162,7 @@ describe('Path', () => {
         expect(basename).toEqual('file.txt')
     })
 
+    // dirname을 반환한다
     it('returns the dirname', () => {
         const filePath = 'dir/file.txt'
         const dirname = Path.dirname(filePath)
@@ -155,11 +170,13 @@ describe('Path', () => {
         expect(dirname).toEqual('dir')
     })
 
+    // 경로가 쓰기 가능할 때
     describe('when the path is writable', () => {
         beforeEach(() => {
             jest.spyOn(fs, 'access').mockResolvedValueOnce(undefined)
         })
 
+        // true를 반환한다
         it('returns true', async () => {
             const result = await Path.isWritable('/test/path')
 
@@ -168,11 +185,13 @@ describe('Path', () => {
         })
     })
 
+    // 경로가 쓰기 불가능할 때
     describe('when the path is not writable', () => {
         beforeEach(() => {
             jest.spyOn(fs, 'access').mockRejectedValueOnce(new Error('Not writable'))
         })
 
+        // false를 반환한다
         it('returns false', async () => {
             const result = await Path.isWritable('/test/path')
 
@@ -181,6 +200,7 @@ describe('Path', () => {
         })
     })
 
+    // 파일을 이동한다
     it('moves a file', async () => {
         const srcFilePath = Path.join(tempDir, 'file.txt')
         await fs.writeFile(srcFilePath, 'hello world')

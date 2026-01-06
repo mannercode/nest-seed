@@ -16,7 +16,9 @@ describe('MovieRecommender', () => {
             imageUrls: []
         })
 
+        // 시청 기록이 없을 때
         describe('when the watch history does not exist', () => {
+            // releaseDate 기준으로 정렬된 영화를 반환한다
             it('returns movies sorted by releaseDate', () => {
                 const showingMovies = [
                     createDto('1', [MovieGenre.Action], new Date('2023-09-01')),
@@ -30,7 +32,9 @@ describe('MovieRecommender', () => {
             })
         })
 
+        // 시청 기록이 있을 때
         describe('when the watch history exists', () => {
+            // 선호 장르 기준으로 정렬된 영화를 반환한다
             it('returns movies sorted by preferred genres', () => {
                 const showingMovies = [
                     createDto('1', [MovieGenre.Action], new Date('2023-09-01')),
@@ -49,6 +53,7 @@ describe('MovieRecommender', () => {
                 expect(recommendedMovies.map((movie) => movie.id)).toEqual(['1', '2', '3'])
             })
 
+            // 이미 시청한 영화를 제외한 영화를 반환한다
             it('returns movies excluding already-watched ones', () => {
                 const showingMovies = [
                     createDto('1', [MovieGenre.Action], new Date('2023-09-01')),

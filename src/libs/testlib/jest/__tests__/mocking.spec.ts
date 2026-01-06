@@ -17,6 +17,7 @@ jest.mock('./mocking.fixture', () => {
 })
 
 describe('jest.mock examples', () => {
+    // 모듈을 목킹한다
     it('mocks a module', () => {
         ;(Logger.verbose as unknown as jest.Mock).mockImplementation(() => undefined)
 
@@ -25,6 +26,7 @@ describe('jest.mock examples', () => {
         expect(Logger.verbose).toHaveBeenCalledWith('arg1', 'arg2')
     })
 
+    // 클래스를 목킹한다
     it('mocks a class', () => {
         ;(HelloClass as jest.Mock).mockImplementation(() => ({
             getHello: jest.fn().mockReturnValue('Mocked getHello')
@@ -36,6 +38,7 @@ describe('jest.mock examples', () => {
         expect(instance.getHello).toHaveBeenCalledTimes(1)
     })
 
+    // 함수를 목킹한다
     it('mocks a function', () => {
         ;(getGreeting as jest.Mock).mockReturnValue('Mocked getGreeting')
 

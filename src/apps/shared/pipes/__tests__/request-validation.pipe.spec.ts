@@ -12,13 +12,17 @@ describe('RequestValidationPipe', () => {
     afterEach(() => fix.teardown())
 
     describe('object', () => {
+        // 페이로드가 유효할 때
         describe('when the payload is valid', () => {
+            // 검증을 통과한다
             it('passes validation', async () => {
                 await fix.httpClient.post('/').body({ sampleId: 'id', date: nullDate }).created()
             })
         })
 
+        // 페이로드에 유효하지 않거나 알 수 없는 필드가 포함될 때
         describe('when the payload includes invalid or unknown fields', () => {
+            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient.post('/').body({ wrong: 'id' }).badRequest()
             })
@@ -26,7 +30,9 @@ describe('RequestValidationPipe', () => {
     })
 
     describe('array', () => {
+        // 페이로드가 유효한 배열일 때
         describe('when the payload is a valid array', () => {
+            // 검증을 통과한다
             it('passes validation', async () => {
                 await fix.httpClient
                     .post('/array')
@@ -35,7 +41,9 @@ describe('RequestValidationPipe', () => {
             })
         })
 
+        // 항목 중 하나라도 유효하지 않을 때
         describe('when any item is invalid', () => {
+            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient
                     .post('/array')
@@ -46,7 +54,9 @@ describe('RequestValidationPipe', () => {
     })
 
     describe('nested array', () => {
+        // 페이로드가 유효한 중첩 배열일 때
         describe('when the payload is a valid nested array', () => {
+            // 검증을 통과한다
             it('passes validation', async () => {
                 await fix.httpClient
                     .post('/nested')
@@ -55,7 +65,9 @@ describe('RequestValidationPipe', () => {
             })
         })
 
+        // 중첩 항목 중 하나라도 유효하지 않을 때
         describe('when any nested item is invalid', () => {
+            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient
                     .post('/nested')

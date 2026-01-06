@@ -2,6 +2,7 @@ import { Byte } from 'common'
 
 describe('Byte', () => {
     describe('fromString', () => {
+        // %s를 바이트로 변환한다
         it.each([
             ['1024B', 1024],
             ['1KB', 1024],
@@ -16,7 +17,9 @@ describe('Byte', () => {
             expect(Byte.fromString(input)).toEqual(expected)
         })
 
+        // 단위가 소문자일 때
         describe('when units are lowercase', () => {
+            // %s를 바이트로 변환한다
             it.each([
                 ['1024b', 1024],
                 ['1kb', 1024],
@@ -28,7 +31,9 @@ describe('Byte', () => {
             })
         })
 
+        // 형식이 유효하지 않을 때
         describe('when the format is invalid', () => {
+            // Error를 던진다
             it.each(['invalid', '123', '123XB', '1KB -'])('throws Error', (input) => {
                 expect(() => Byte.fromString(input)).toThrow()
             })
@@ -36,6 +41,7 @@ describe('Byte', () => {
     })
 
     describe('toString', () => {
+        // %s를 문자열로 변환한다
         it.each([
             [0, '0B'],
             [1024, '1KB'],

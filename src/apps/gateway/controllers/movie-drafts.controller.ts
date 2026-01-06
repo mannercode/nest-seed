@@ -43,8 +43,8 @@ export class MovieDraftsController {
     }
 
     @Post(':draftId/images')
-    requestImageUpload(@Param('draftId') draftId: string, @Body() createDto: CreateAssetDto) {
-        return this.movieDraftsClient.requestImageUpload(draftId, createDto)
+    createImageDraft(@Param('draftId') draftId: string, @Body() createDto: CreateAssetDto) {
+        return this.movieDraftsClient.createImageDraft(draftId, createDto)
     }
 
     @HttpCode(HttpStatus.NO_CONTENT)

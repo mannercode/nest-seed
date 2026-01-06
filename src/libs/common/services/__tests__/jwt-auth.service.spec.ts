@@ -11,7 +11,9 @@ describe('JwtAuthService', () => {
     afterEach(() => fix.teardown())
 
     describe('generateAuthTokens', () => {
+        // 페이로드가 유효할 때
         describe('when the payload is valid', () => {
+            // 인증 토큰을 반환한다
             it('returns auth tokens', async () => {
                 const payload = { userId: 'userId', email: 'email' }
                 const tokens = await fix.jwtService.generateAuthTokens(payload)
@@ -35,7 +37,9 @@ describe('JwtAuthService', () => {
             refreshToken = tokens.refreshToken
         })
 
+        // 리프레시 토큰이 유효할 때
         describe('when the refresh token is valid', () => {
+            // 새 인증 토큰을 반환한다
             it('returns new auth tokens', async () => {
                 const tokens = await fix.jwtService.refreshAuthTokens(refreshToken)
 
@@ -44,14 +48,18 @@ describe('JwtAuthService', () => {
             })
         })
 
+        // 리프레시 토큰이 유효하지 않을 때
         describe('when the refresh token is invalid', () => {
+            // jwt malformed을 던진다
             it('throws jwt malformed', async () => {
                 const promise = fix.jwtService.refreshAuthTokens('invalid-token')
                 await expect(promise).rejects.toThrow('jwt malformed')
             })
         })
 
+        // 리프레시 토큰이 만료되었을 때
         describe('when the refresh token is expired', () => {
+            // jwt expired를 던진다
             it('throws jwt expired', async () => {
                 await sleep(3500)
 
@@ -60,11 +68,13 @@ describe('JwtAuthService', () => {
             })
         })
 
+        // 저장된 리프레시 토큰이 일치하지 않을 때
         describe('when the stored refresh token does not match', () => {
             beforeEach(() => {
                 jest.spyOn(fix.redis, 'get').mockResolvedValueOnce('unknown token')
             })
 
+            // 예외를 던진다
             it('throws', async () => {
                 const promise = fix.jwtService.refreshAuthTokens(refreshToken)
                 await expect(promise).rejects.toThrow('The provided refresh token is invalid')

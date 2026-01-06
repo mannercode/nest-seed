@@ -1,23 +1,9 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
+import { Prop, Schema } from '@nestjs/mongoose'
 import { MovieGenre, MovieRating } from 'apps/cores'
 import { MongooseSchema, createMongooseSchema } from 'common'
 import { HydratedDocument } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-
-export enum MovieDraftImageStatus {
-    Pending = 'pending',
-    Ready = 'ready'
-}
-
-@Schema({ _id: false })
-export class MovieDraftImage {
-    @Prop({ required: true })
-    assetId: string
-
-    @Prop({ required: true, type: String, enum: MovieDraftImageStatus })
-    status: MovieDraftImageStatus
-}
-export const MovieDraftImageSchema = SchemaFactory.createForClass(MovieDraftImage)
+import { MovieAssetDraft, MovieAssetDraftSchema } from './movie-asset-draft'
 
 @Schema(MongooseConfigModule.schemaOptions)
 export class MovieDraft extends MongooseSchema {
@@ -42,8 +28,8 @@ export class MovieDraft extends MongooseSchema {
     @Prop({ type: String, enum: MovieRating })
     rating?: MovieRating
 
-    @Prop({ type: [MovieDraftImageSchema], default: [] })
-    images: MovieDraftImage[]
+    @Prop({ type: [MovieAssetDraftSchema], default: [] })
+    assets: MovieAssetDraft[]
 }
 
 export type MovieDraftDocument = HydratedDocument<MovieDraft>

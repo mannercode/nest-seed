@@ -1,11 +1,13 @@
 describe('error handling', () => {
     describe('async functions', () => {
+        // 값으로 resolve된다
         it('resolves with a value', async () => {
             const returnValue = async () => 'ok'
 
             await expect(returnValue()).resolves.toEqual('ok')
         })
 
+        // 오류로 reject된다
         it('rejects with an error', async () => {
             const throwException = async () => {
                 throw new Error('error')
@@ -14,6 +16,7 @@ describe('error handling', () => {
             await expect(throwException()).rejects.toThrow('error')
         })
 
+        // reject된 오류를 잡는다
         it('catches a rejected error', async () => {
             const throwException = async () => {
                 throw new Error('error')
@@ -28,12 +31,14 @@ describe('error handling', () => {
     })
 
     describe('sync functions', () => {
+        // 예외를 던지지 않는다
         it('does not throw', () => {
             const returnValue = () => 'ok'
 
             expect(returnValue).not.toThrow()
         })
 
+        // 오류를 던진다
         it('throws an error', () => {
             const throwException = () => {
                 throw new Error('error')
@@ -42,6 +47,7 @@ describe('error handling', () => {
             expect(throwException).toThrow('error')
         })
 
+        // 던져진 오류를 잡는다
         it('catches a thrown error', () => {
             const throwException = () => {
                 throw new Error('error')

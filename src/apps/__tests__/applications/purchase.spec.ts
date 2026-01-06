@@ -15,6 +15,7 @@ describe('PurchaseService', () => {
     afterEach(() => fix.teardown())
 
     describe('POST /purchases', () => {
+        // 고객이 티켓을 보유하고 있을 때
         describe('when the customer holds tickets', () => {
             let heldTickets: TicketDto[]
 
@@ -24,6 +25,7 @@ describe('PurchaseService', () => {
                 heldTickets = await holdTickets(fix, tickets)
             })
 
+            // 생성된 구매를 반환한다
             it('returns the created purchase', async () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
 
@@ -39,6 +41,7 @@ describe('PurchaseService', () => {
                     })
             })
 
+            // 구매가 생성되었을 때
             describe('when the purchase is created', () => {
                 let purchase: PurchaseRecordDto
 
@@ -51,12 +54,14 @@ describe('PurchaseService', () => {
                     purchase = body
                 })
 
+                // 결제 기록을 생성한다
                 it('creates the payment record', async () => {
                     const payments = await getPayments(fix, [purchase.paymentId])
 
                     expect(payments[0].amount).toEqual(purchase.totalPrice)
                 })
 
+                // 구매된 티켓을 `Sold`로 표시한다
                 it('marks purchased tickets as `Sold`', async () => {
                     const soldTickets = await getTickets(fix, pickIds(heldTickets))
 
@@ -64,12 +69,14 @@ describe('PurchaseService', () => {
                 })
             })
 
+            // 티켓 수가 최대치를 초과할 때
             describe('when the ticket count exceeds the maximum', () => {
                 beforeEach(async () => {
                     const { Rules } = await import('shared')
                     toAny(Rules).Ticket.maxTicketsPerPurchase = heldTickets.length - 1
                 })
 
+                // 400 Bad Request를 반환한다
                 it('returns 400 Bad Request', async () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
@@ -83,6 +90,7 @@ describe('PurchaseService', () => {
                 })
             })
 
+            // 구매 가능 시간이 종료되었을 때
             describe('when the purchase window is closed', () => {
                 beforeEach(async () => {
                     const { Rules } = await import('shared')
@@ -90,6 +98,7 @@ describe('PurchaseService', () => {
                         Rules.Ticket.purchaseCutoffMinutes + 2
                 })
 
+                // 400 Bad Request를 반환한다
                 it('returns 400 Bad Request', async () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
@@ -105,6 +114,7 @@ describe('PurchaseService', () => {
                 })
             })
 
+            // 내부 오류가 발생할 때
             describe('when an internal error occurs', () => {
                 let rollbackPurchaseSpy: jest.SpyInstance
 
@@ -122,6 +132,7 @@ describe('PurchaseService', () => {
                     rollbackPurchaseSpy = jest.spyOn(ticketPurchaseService, 'rollbackPurchase')
                 })
 
+                // 구매를 롤백한다
                 it('rolls back the purchase', async () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
@@ -132,6 +143,7 @@ describe('PurchaseService', () => {
             })
         })
 
+        // 티켓이 보유되지 않았을 때
         describe('when the tickets are not held', () => {
             let tickets: TicketDto[]
 
@@ -140,6 +152,7 @@ describe('PurchaseService', () => {
                 tickets = await createShowtimeAndTickets(fix)
             })
 
+            // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 const createDto = buildCreatePurchaseDto(tickets.slice(0, 1))
 
