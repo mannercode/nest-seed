@@ -2,41 +2,41 @@ import { Injectable } from '@nestjs/common'
 import { AssetPresignedUploadDto, CreateAssetDto } from 'apps/infrastructures'
 import { ClientProxyService, InjectClientProxy } from 'common'
 import { Messages } from 'shared'
-import { MovieDraftDto, MovieDraftImageDto, UpdateMovieDraftDto } from './dtos'
+import { MovieDraftAssetDto, MovieDraftDto, UpdateMovieDraftDto } from './dtos'
 
 @Injectable()
 export class MovieDraftsClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
-    create(): Promise<MovieDraftDto> {
+    createMovieDraft(): Promise<MovieDraftDto> {
         return this.proxy.request(Messages.MovieDrafts.create)
     }
 
-    get(draftId: string): Promise<MovieDraftDto> {
-        return this.proxy.request(Messages.MovieDrafts.get, draftId)
+    getMovieDraft(movieId: string): Promise<MovieDraftDto> {
+        return this.proxy.request(Messages.MovieDrafts.get, movieId)
     }
 
-    update(draftId: string, updateDto: UpdateMovieDraftDto): Promise<MovieDraftDto> {
-        return this.proxy.request(Messages.MovieDrafts.update, { draftId, updateDto })
+    updateMovieDraft(movieId: string, updateDto: UpdateMovieDraftDto): Promise<MovieDraftDto> {
+        return this.proxy.request(Messages.MovieDrafts.update, { movieId, updateDto })
     }
 
-    delete(draftId: string): Promise<boolean> {
-        return this.proxy.request(Messages.MovieDrafts.delete, draftId)
+    deleteMovieDraft(movieId: string): Promise<boolean> {
+        return this.proxy.request(Messages.MovieDrafts.delete, movieId)
     }
 
-    createImageDraft(draftId: string, createDto: CreateAssetDto): Promise<AssetPresignedUploadDto> {
-        return this.proxy.request(Messages.MovieDrafts.Images.create, { draftId, createDto })
+    completeMovieDraft(movieId: string) {
+        return this.proxy.request(Messages.MovieDrafts.complete, movieId)
     }
 
-    deleteImage(draftId: string, imageId: string): Promise<boolean> {
-        return this.proxy.request(Messages.MovieDrafts.Images.delete, { draftId, imageId })
+    createAssetDraft(movieId: string, createDto: CreateAssetDto): Promise<AssetPresignedUploadDto> {
+        return this.proxy.request(Messages.MovieDrafts.Assets.create, { movieId, createDto })
     }
 
-    completeImage(draftId: string, imageId: string): Promise<MovieDraftImageDto> {
-        return this.proxy.request(Messages.MovieDrafts.Images.complete, { draftId, imageId })
+    deleteAssetDraft(movieId: string, assetId: string): Promise<boolean> {
+        return this.proxy.request(Messages.MovieDrafts.Assets.delete, { movieId, assetId })
     }
 
-    completeDraft(draftId: string) {
-        return this.proxy.request(Messages.MovieDrafts.complete, draftId)
+    completeAssetDraft(movieId: string, assetId: string): Promise<MovieDraftAssetDto> {
+        return this.proxy.request(Messages.MovieDrafts.Assets.complete, { movieId, assetId })
     }
 }

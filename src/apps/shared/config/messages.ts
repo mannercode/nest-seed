@@ -43,7 +43,7 @@ export const Messages = createMessagePatternMap(
             get: null,
             delete: null,
             complete: null,
-            Images: { create: null, delete: null, complete: null }
+            Assets: { create: null, delete: null, complete: null }
         },
         Movies: {
             create: null,

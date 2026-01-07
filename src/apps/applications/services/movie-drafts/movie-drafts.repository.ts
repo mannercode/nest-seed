@@ -15,13 +15,13 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createDraft() {
+    async createMovieDraft() {
         const draft = this.newDocument()
         return draft.save()
     }
 
-    async update(draftId: string, updateDto: UpdateMovieDraftDto) {
-        const draft = await this.getById(draftId)
+    async update(movieId: string, updateDto: UpdateMovieDraftDto) {
+        const draft = await this.getById(movieId)
 
         assignDefined(draft, updateDto, 'title')
         assignDefined(draft, updateDto, 'genres')
@@ -34,14 +34,14 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
         return draft.save()
     }
 
-    async addOrUpdateImage(draftId: string, image: MovieAssetDraft): Promise<MovieDraftDocument> {
-        const draft = await this.getById(draftId)
-        const existing = draft.assets.find((img) => img.assetId === image.assetId)
+    async addOrUpdateAsset(movieId: string, asset: MovieAssetDraft): Promise<MovieDraftDocument> {
+        const draft = await this.getById(movieId)
+        const existing = draft.assets.find((img) => img.assetId === asset.assetId)
 
         if (existing) {
-            existing.status = image.status
+            existing.status = asset.status
         } else {
-            draft.assets.push(image)
+            draft.assets.push(asset)
         }
 
         return draft.save()

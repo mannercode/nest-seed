@@ -10,48 +10,48 @@ export class MovieDraftsController {
     constructor(private readonly service: MovieDraftsService) {}
 
     @MessagePattern(Messages.MovieDrafts.create)
-    create() {
-        return this.service.create()
+    createMovieDraft() {
+        return this.service.createMovieDraft()
     }
 
     @MessagePattern(Messages.MovieDrafts.get)
-    get(@Payload() draftId: string) {
-        return this.service.get(draftId)
+    getMovieDraft(@Payload() movieId: string) {
+        return this.service.getMovieDraft(movieId)
     }
 
     @MessagePattern(Messages.MovieDrafts.update)
-    update(
-        @Payload('draftId') draftId: string,
+    updateMovieDraft(
+        @Payload('movieId') movieId: string,
         @Payload('updateDto') updateDto: UpdateMovieDraftDto
     ) {
-        return this.service.update(draftId, updateDto)
+        return this.service.updateMovieDraft(movieId, updateDto)
     }
 
     @MessagePattern(Messages.MovieDrafts.delete)
-    delete(@Payload() draftId: string) {
-        return this.service.delete(draftId)
-    }
-
-    @MessagePattern(Messages.MovieDrafts.Images.create)
-    createImageDraft(
-        @Payload('draftId') draftId: string,
-        @Payload('createDto') createDto: CreateAssetDto
-    ) {
-        return this.service.createImageDraft(draftId, createDto)
-    }
-
-    @MessagePattern(Messages.MovieDrafts.Images.delete)
-    deleteImage(@Payload('draftId') draftId: string, @Payload('imageId') imageId: string) {
-        return this.service.deleteImage(draftId, imageId)
-    }
-
-    @MessagePattern(Messages.MovieDrafts.Images.complete)
-    completeImage(@Payload('draftId') draftId: string, @Payload('imageId') imageId: string) {
-        return this.service.completeImage(draftId, imageId)
+    deleteMovieDraft(@Payload() movieId: string) {
+        return this.service.deleteMovieDraft(movieId)
     }
 
     @MessagePattern(Messages.MovieDrafts.complete)
-    completeDraft(@Payload() draftId: string) {
-        return this.service.completeDraft(draftId)
+    completeMovieDraft(@Payload() movieId: string) {
+        return this.service.completeMovieDraft(movieId)
+    }
+
+    @MessagePattern(Messages.MovieDrafts.Assets.create)
+    createAssetDraft(
+        @Payload('movieId') movieId: string,
+        @Payload('createDto') createDto: CreateAssetDto
+    ) {
+        return this.service.createAssetDraft(movieId, createDto)
+    }
+
+    @MessagePattern(Messages.MovieDrafts.Assets.delete)
+    deleteAssetDraft(@Payload('movieId') movieId: string, @Payload('assetId') assetId: string) {
+        return this.service.deleteAssetDraft(movieId, assetId)
+    }
+
+    @MessagePattern(Messages.MovieDrafts.Assets.complete)
+    completeAssetDraft(@Payload('movieId') movieId: string, @Payload('assetId') assetId: string) {
+        return this.service.completeAssetDraft(movieId, assetId)
     }
 }
