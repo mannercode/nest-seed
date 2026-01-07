@@ -21,41 +21,41 @@ export class MovieDraftsController {
         return this.movieDraftsClient.createMovieDraft()
     }
 
-    @Get(':movieId')
-    get(@Param('movieId') movieId: string) {
-        return this.movieDraftsClient.getMovieDraft(movieId)
+    @Get(':draftId')
+    get(@Param('draftId') draftId: string) {
+        return this.movieDraftsClient.getMovieDraft(draftId)
     }
 
-    @Patch(':movieId')
-    update(@Param('movieId') movieId: string, @Body() updateDto: UpdateMovieDraftDto) {
-        return this.movieDraftsClient.updateMovieDraft(movieId, updateDto)
-    }
-
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @Delete(':movieId')
-    async delete(@Param('movieId') movieId: string) {
-        await this.movieDraftsClient.deleteMovieDraft(movieId)
-    }
-
-    @Post(':movieId/complete')
-    complete(@Param('movieId') movieId: string) {
-        return this.movieDraftsClient.completeMovieDraft(movieId)
-    }
-
-    @Post(':movieId/assets')
-    createAssetDraft(@Param('movieId') movieId: string, @Body() createDto: CreateAssetDto) {
-        return this.movieDraftsClient.createAssetDraft(movieId, createDto)
+    @Patch(':draftId')
+    update(@Param('draftId') draftId: string, @Body() updateDto: UpdateMovieDraftDto) {
+        return this.movieDraftsClient.updateMovieDraft(draftId, updateDto)
     }
 
     @HttpCode(HttpStatus.NO_CONTENT)
-    @Delete(':movieId/assets/:assetId')
-    async deleteAsset(@Param('movieId') movieId: string, @Param('assetId') assetId: string) {
-        await this.movieDraftsClient.deleteAssetDraft(movieId, assetId)
+    @Delete(':draftId')
+    async delete(@Param('draftId') draftId: string) {
+        await this.movieDraftsClient.deleteMovieDraft(draftId)
+    }
+
+    @Post(':draftId/complete')
+    complete(@Param('draftId') draftId: string) {
+        return this.movieDraftsClient.completeMovieDraft(draftId)
+    }
+
+    @Post(':draftId/assets')
+    createAsset(@Param('draftId') draftId: string, @Body() createDto: CreateAssetDto) {
+        return this.movieDraftsClient.createAsset(draftId, createDto)
+    }
+
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Delete(':draftId/assets/:assetId')
+    async deleteAsset(@Param('draftId') draftId: string, @Param('assetId') assetId: string) {
+        await this.movieDraftsClient.deleteAsset(draftId, assetId)
     }
 
     @HttpCode(HttpStatus.OK)
-    @Post(':movieId/assets/:assetId/complete')
-    completeAsset(@Param('movieId') movieId: string, @Param('assetId') assetId: string) {
-        return this.movieDraftsClient.completeAssetDraft(movieId, assetId)
+    @Post(':draftId/assets/:assetId/complete')
+    completeAsset(@Param('draftId') draftId: string, @Param('assetId') assetId: string) {
+        return this.movieDraftsClient.completeAsset(draftId, assetId)
     }
 }

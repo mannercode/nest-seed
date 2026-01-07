@@ -1,6 +1,6 @@
-import type { MovieAssetDraftStatus } from '../models'
+import type { MovieDraftAssetStatus } from '../models'
 
 export class MovieDraftAssetDto {
     id: string
-    status: MovieAssetDraftStatus
+    status: MovieDraftAssetStatus
 }

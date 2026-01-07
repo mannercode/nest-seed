@@ -1,10 +1,10 @@
 export const MovieDraftErrors = {
     AssetNotFound: {
-        code: 'ERR_MOVIE_DRAFT_IMAGE_NOT_FOUND',
+        code: 'ERR_MOVIE_DRAFT_ASSET_NOT_FOUND',
         message: 'The asset does not exist in this movie draft.'
     },
     AssetUploadInvalid: {
-        code: 'ERR_MOVIE_DRAFT_IMAGE_UPLOAD_INVALID',
+        code: 'ERR_MOVIE_DRAFT_ASSET_UPLOAD_INVALID',
         message: 'The asset upload could not be validated.'
     },
     InvalidForCompletion: {
@@ -12,7 +12,7 @@ export const MovieDraftErrors = {
         message: 'The movie draft is incomplete.'
     },
     UnsupportedAssetType: {
-        code: 'ERR_MOVIE_DRAFT_IMAGE_TYPE_NOT_ALLOWED',
+        code: 'ERR_MOVIE_DRAFT_ASSET_TYPE_NOT_ALLOWED',
         message: 'Only image uploads are supported.'
     }
 }

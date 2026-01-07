@@ -15,43 +15,43 @@ export class MovieDraftsController {
     }
 
     @MessagePattern(Messages.MovieDrafts.get)
-    getMovieDraft(@Payload() movieId: string) {
-        return this.service.getMovieDraft(movieId)
+    getMovieDraft(@Payload() draftId: string) {
+        return this.service.getMovieDraft(draftId)
     }
 
     @MessagePattern(Messages.MovieDrafts.update)
     updateMovieDraft(
-        @Payload('movieId') movieId: string,
+        @Payload('draftId') draftId: string,
         @Payload('updateDto') updateDto: UpdateMovieDraftDto
     ) {
-        return this.service.updateMovieDraft(movieId, updateDto)
+        return this.service.updateMovieDraft(draftId, updateDto)
     }
 
     @MessagePattern(Messages.MovieDrafts.delete)
-    deleteMovieDraft(@Payload() movieId: string) {
-        return this.service.deleteMovieDraft(movieId)
+    deleteMovieDraft(@Payload() draftId: string) {
+        return this.service.deleteMovieDraft(draftId)
     }
 
     @MessagePattern(Messages.MovieDrafts.complete)
-    completeMovieDraft(@Payload() movieId: string) {
-        return this.service.completeMovieDraft(movieId)
+    completeMovieDraft(@Payload() draftId: string) {
+        return this.service.completeMovieDraft(draftId)
     }
 
     @MessagePattern(Messages.MovieDrafts.Assets.create)
-    createAssetDraft(
-        @Payload('movieId') movieId: string,
+    createAsset(
+        @Payload('draftId') draftId: string,
         @Payload('createDto') createDto: CreateAssetDto
     ) {
-        return this.service.createAssetDraft(movieId, createDto)
+        return this.service.createAsset(draftId, createDto)
     }
 
     @MessagePattern(Messages.MovieDrafts.Assets.delete)
-    deleteAssetDraft(@Payload('movieId') movieId: string, @Payload('assetId') assetId: string) {
-        return this.service.deleteAssetDraft(movieId, assetId)
+    deleteAsset(@Payload('draftId') draftId: string, @Payload('assetId') assetId: string) {
+        return this.service.deleteAsset(draftId, assetId)
     }
 
     @MessagePattern(Messages.MovieDrafts.Assets.complete)
-    completeAssetDraft(@Payload('movieId') movieId: string, @Payload('assetId') assetId: string) {
-        return this.service.completeAssetDraft(movieId, assetId)
+    completeAsset(@Payload('draftId') draftId: string, @Payload('assetId') assetId: string) {
+        return this.service.completeAsset(draftId, assetId)
     }
 }

@@ -4,7 +4,7 @@ import { assignDefined, MongooseRepository } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { UpdateMovieDraftDto } from './dtos'
-import { MovieAssetDraft, MovieDraft, MovieDraftDocument } from './models'
+import { MovieDraftAsset, MovieDraft, MovieDraftDocument } from './models'
 
 @Injectable()
 export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
@@ -20,8 +20,8 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
         return draft.save()
     }
 
-    async update(movieId: string, updateDto: UpdateMovieDraftDto) {
-        const draft = await this.getById(movieId)
+    async update(draftId: string, updateDto: UpdateMovieDraftDto) {
+        const draft = await this.getById(draftId)
 
         assignDefined(draft, updateDto, 'title')
         assignDefined(draft, updateDto, 'genres')
@@ -34,9 +34,9 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
         return draft.save()
     }
 
-    async addOrUpdateAsset(movieId: string, asset: MovieAssetDraft): Promise<MovieDraftDocument> {
-        const draft = await this.getById(movieId)
-        const existing = draft.assets.find((img) => img.assetId === asset.assetId)
+    async addOrUpdateAsset(draftId: string, asset: MovieDraftAsset): Promise<MovieDraftDocument> {
+        const draft = await this.getById(draftId)
+        const existing = draft.assets.find((draftAsset) => draftAsset.assetId === asset.assetId)
 
         if (existing) {
             existing.status = asset.status

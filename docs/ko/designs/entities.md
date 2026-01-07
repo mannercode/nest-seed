@@ -86,10 +86,10 @@ class MovieDraft {
     durationInSeconds?: number
     director?: string
     rating?: string
-    images: DraftImage[]
+    assets: DraftAsset[]
 }
 
-class DraftImage {
+class DraftAsset {
     assetId: string
     status: PENDING|READY
 }
@@ -99,8 +99,8 @@ Movie "1" --> "*" Showtime
 Theater "1" --> "*" Showtime
 Ticket "*" --> "1" Customer
 Movie "*" --> "*" Asset : assetIds
-MovieDraft "*" --> "*" Asset : images.assetId
-MovieDraft "*" --> "*" DraftImage
+MovieDraft "*" --> "*" Asset : assets.assetId
+MovieDraft "*" --> "*" DraftAsset
 note right
 상영/티켓 생성에는 sagaId가 공유되어 batch 생성 결과를 추적할 수 있다.
 티켓 선점 상태는 TicketHolding 서비스의 캐시에 저장되며 Ticket.status에는 반영되지 않는다.

@@ -35,20 +35,20 @@ export async function createMovieDraft(ctx: TestContext) {
     return movieDraft
 }
 
-export async function createMovieAssetDraft(ctx: TestContext, movieId: string, file: FixtureFile) {
+export async function createMovieAsset(ctx: TestContext, draftId: string, file: FixtureFile) {
     const { MovieDraftsService } = await import('apps/applications')
     const movieDraftsService = ctx.module.get(MovieDraftsService)
 
     const createDto = buildCreateAssetDto(file)
-    const upload = await movieDraftsService.createAssetDraft(movieId, createDto)
+    const upload = await movieDraftsService.createAsset(draftId, createDto)
 
     return upload
 }
 
-export async function uploadDraftAsset(ctx: TestContext, movieId: string) {
+export async function uploadDraftAsset(ctx: TestContext, draftId: string) {
     const { image } = fixtureFiles
 
-    const upload = await createMovieAssetDraft(ctx, movieId, image)
+    const upload = await createMovieAsset(ctx, draftId, image)
     const uploadResponse = await uploadAsset(image.path, upload)
 
     expect(uploadResponse.ok).toBe(true)
@@ -56,12 +56,12 @@ export async function uploadDraftAsset(ctx: TestContext, movieId: string) {
     return upload
 }
 
-export async function uploadCompleteDraftAsset(ctx: TestContext, movieId: string) {
+export async function uploadCompleteDraftAsset(ctx: TestContext, draftId: string) {
     const { MovieDraftsService } = await import('apps/applications')
     const movieDraftsService = ctx.module.get(MovieDraftsService)
 
-    const { assetId: assetId } = await uploadDraftAsset(ctx, movieId)
+    const { assetId: assetId } = await uploadDraftAsset(ctx, draftId)
 
-    await movieDraftsService.completeAssetDraft(movieId, assetId)
+    await movieDraftsService.completeAsset(draftId, assetId)
     return assetId
 }
