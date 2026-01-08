@@ -33,15 +33,12 @@ export class MoviesService {
 
         if (0 < movies.length) {
             const assetIds = uniq(movies.flatMap((movie) => movie.assetIds))
-            await this.repository.deleteByIds(pickIds(movies))
 
             if (0 < assetIds.length) {
-                try {
-                    await this.assetsClient.deleteMany(assetIds)
-                } catch (error) {
-                    // Ignore cleanup failures to avoid restoring deleted movies.
-                }
+                await this.assetsClient.deleteMany(assetIds)
             }
+
+            await this.repository.deleteByIds(pickIds(movies))
         }
 
         return {}

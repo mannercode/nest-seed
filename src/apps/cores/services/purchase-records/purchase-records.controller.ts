@@ -17,9 +17,4 @@ export class PurchaseRecordsController {
     getMany(@Payload() purchaseIds: string[]) {
         return this.service.getMany(purchaseIds)
     }
-
-    @MessagePattern(Messages.Purchases.deleteMany)
-    deleteMany(@Payload() purchaseIds: string[]) {
-        return this.service.deleteMany(purchaseIds)
-    }
 }

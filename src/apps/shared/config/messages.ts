@@ -9,15 +9,14 @@ export const Messages = createMessagePatternMap(
             complete: null,
             isUploadComplete: null
         },
-        Payments: { create: null, getMany: null, deleteMany: null },
+        Payments: { create: null, getMany: null },
         WatchRecords: { create: null, searchPage: null },
         Tickets: {
             createMany: null,
             updateStatusMany: null,
             search: null,
             aggregateSales: null,
-            getMany: null,
-            deleteBySagaIds: null
+            getMany: null
         },
         TicketHolding: { holdTickets: null, searchHeldTicketIds: null, releaseTickets: null },
         Theaters: {
@@ -35,10 +34,9 @@ export const Messages = createMessagePatternMap(
             searchMovieIds: null,
             searchTheaterIds: null,
             searchShowdates: null,
-            allExist: null,
-            deleteBySagaIds: null
+            allExist: null
         },
-        Purchases: { create: null, getMany: null, deleteMany: null },
+        Purchases: { create: null, getMany: null },
         MovieDrafts: {
             create: null,
             update: null,

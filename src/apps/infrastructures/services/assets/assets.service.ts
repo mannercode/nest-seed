@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { Cron } from '@nestjs/schedule'
 import { DateUtil, InjectS3Object, mapDocToDto, pickIds, S3ObjectService } from 'common'
 import { Rules } from 'shared'
@@ -10,10 +10,6 @@ export const AssetServiceErrors = {
     UploadExpired: {
         code: 'ERR_ASSET_UPLOAD_EXPIRED',
         message: 'The upload request for this asset has expired.'
-    },
-    DeleteFailed: {
-        code: 'ERR_ASSET_DELETE_FAILED',
-        message: 'One or more assets could not be deleted.'
     }
 }
 
@@ -29,27 +25,23 @@ export class AssetsService {
 
         const { mimeType, size } = createDto
         const expiresInSec = Rules.Asset.uploadExpiresInSec
-        try {
-            const presigned = await this.s3Service.presignUploadUrl({
-                key: asset.id,
-                expiresInSec,
-                contentType: mimeType,
-                minContentLength: size,
-                maxContentLength: size
-            })
 
-            const expiresAt = this.getUploadExpiresAt(asset.createdAt)
+        const presigned = await this.s3Service.presignUploadUrl({
+            key: asset.id,
+            expiresInSec,
+            contentType: mimeType,
+            minContentLength: size,
+            maxContentLength: size
+        })
 
-            return {
-                assetId: asset.id,
-                method: 'POST' as const,
-                url: presigned.url,
-                fields: presigned.fields,
-                expiresAt
-            }
-        } catch (error) {
-            await Promise.allSettled([this.deleteAsset(asset)])
-            throw error
+        const expiresAt = this.getUploadExpiresAt(asset.createdAt)
+
+        return {
+            assetId: asset.id,
+            method: 'POST' as const,
+            url: presigned.url,
+            fields: presigned.fields,
+            expiresAt
         }
     }
 
@@ -89,38 +81,9 @@ export class AssetsService {
     }
 
     async deleteMany(assetIds: string[]) {
-        const uniqueAssetIds = Array.from(new Set(assetIds))
+        await this.repository.deleteByIds(assetIds)
 
-        if (!uniqueAssetIds.length) {
-            return {}
-        }
-
-        const results = await Promise.allSettled(
-            uniqueAssetIds.map((assetId) => this.s3Service.deleteObject(assetId))
-        )
-
-        const deletedAssetIds: string[] = []
-        const failedAssetIds: string[] = []
-
-        results.forEach((result, index) => {
-            if (result.status === 'fulfilled') {
-                deletedAssetIds.push(uniqueAssetIds[index])
-            } else {
-                failedAssetIds.push(uniqueAssetIds[index])
-            }
-        })
-
-        if (deletedAssetIds.length) {
-            await this.repository.deleteByIds(deletedAssetIds)
-        }
-
-        if (failedAssetIds.length) {
-            throw new InternalServerErrorException({
-                ...AssetServiceErrors.DeleteFailed,
-                assetIds: failedAssetIds
-            })
-        }
-
+        await Promise.all(assetIds.map((assetId) => this.s3Service.deleteObject(assetId)))
         return {}
     }
 

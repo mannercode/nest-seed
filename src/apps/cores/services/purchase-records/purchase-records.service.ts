@@ -20,11 +20,6 @@ export class PurchaseRecordsService {
         return this.toDtos(purchases)
     }
 
-    async deleteMany(purchaseIds: string[]) {
-        await this.repository.deleteByIds(purchaseIds)
-        return {}
-    }
-
     private toDto(purchase: PurchaseRecordDocument) {
         return this.toDtos([purchase])[0]
     }

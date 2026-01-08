@@ -44,9 +44,4 @@ export class ShowtimesController {
     allExist(@Payload() showtimeIds: string[]) {
         return this.service.allExist(showtimeIds)
     }
-
-    @MessagePattern(Messages.Showtimes.deleteBySagaIds)
-    deleteBySagaIds(@Payload() sagaIds: string[]) {
-        return this.service.deleteBySagaIds(sagaIds)
-    }
 }

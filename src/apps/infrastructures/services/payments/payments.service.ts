@@ -20,11 +20,6 @@ export class PaymentsService {
         return this.toDtos(payments)
     }
 
-    async deleteMany(paymentIds: string[]) {
-        await this.repository.deleteByIds(paymentIds)
-        return {}
-    }
-
     private toDto(payment: PaymentDocument) {
         return this.toDtos([payment])[0]
     }

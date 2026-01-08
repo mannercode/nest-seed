@@ -38,9 +38,4 @@ export class TicketsController {
     getMany(@Payload() ticketIds: string[]) {
         return this.service.getMany(ticketIds)
     }
-
-    @MessagePattern(Messages.Tickets.deleteBySagaIds)
-    deleteBySagaIds(@Payload() sagaIds: string[]) {
-        return this.service.deleteBySagaIds(sagaIds)
-    }
 }

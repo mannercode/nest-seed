@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { MongooseRepository, objectIds, QueryBuilder, QueryBuilderOptions } from 'common'
-import { uniq } from 'lodash'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import {
@@ -76,20 +75,6 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         ])
 
         return showtimeTicketSalesArray as TicketSalesForShowtimeDto[]
-    }
-
-    async deleteBySagaIds(sagaIds: string[]) {
-        if (!sagaIds.length) {
-            return { deletedCount: 0 }
-        }
-
-        const uniqueSagaIds = uniq(sagaIds)
-        const query = new QueryBuilder<Ticket>()
-            .addIn('sagaId', uniqueSagaIds)
-            .build({ allowEmpty: true })
-
-        const result = await this.model.deleteMany(query)
-        return { deletedCount: result.deletedCount }
     }
 
     private buildQuery(searchDto: SearchTicketsDto, options: QueryBuilderOptions = {}) {

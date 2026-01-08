@@ -14,8 +14,4 @@ export class PurchaseRecordsClient {
     getMany(purchaseIds: string[]): Promise<PurchaseRecordDto[]> {
         return this.proxy.request(Messages.Purchases.getMany, purchaseIds)
     }
-
-    deleteMany(purchaseIds: string[]): Promise<Record<string, never>> {
-        return this.proxy.request(Messages.Purchases.deleteMany, purchaseIds)
-    }
 }
