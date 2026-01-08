@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
+import { uniq } from 'lodash'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { CreateShowtimeDto, SearchShowtimesDto } from './dtos'
@@ -62,6 +63,20 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         ])
 
         return showdates.map((item) => new Date(item._id))
+    }
+
+    async deleteBySagaIds(sagaIds: string[]) {
+        if (!sagaIds.length) {
+            return { deletedCount: 0 }
+        }
+
+        const uniqueSagaIds = uniq(sagaIds)
+        const query = new QueryBuilder<Showtime>()
+            .addIn('sagaId', uniqueSagaIds)
+            .build({ allowEmpty: true })
+
+        const result = await this.model.deleteMany(query)
+        return { deletedCount: result.deletedCount }
     }
 
     private buildQuery(searchDto: SearchShowtimesDto, options: QueryBuilderOptions = {}) {

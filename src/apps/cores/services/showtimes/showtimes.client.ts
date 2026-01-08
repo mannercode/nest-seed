@@ -34,4 +34,8 @@ export class ShowtimesClient {
     allExist(showtimeIds: string[]): Promise<boolean> {
         return this.proxy.request(Messages.Showtimes.allExist, showtimeIds)
     }
+
+    deleteBySagaIds(sagaIds: string[]): Promise<Record<string, never>> {
+        return this.proxy.request(Messages.Showtimes.deleteBySagaIds, sagaIds)
+    }
 }

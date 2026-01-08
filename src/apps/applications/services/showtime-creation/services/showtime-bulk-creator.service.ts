@@ -27,6 +27,14 @@ export class ShowtimeBulkCreatorService {
         return { createdShowtimeCount: createdShowtimes.length, createdTicketCount }
     }
 
+    async rollback(sagaId: string) {
+        await Promise.allSettled([
+            this.ticketsClient.deleteBySagaIds([sagaId]),
+            this.showtimesClient.deleteBySagaIds([sagaId])
+        ])
+        return true
+    }
+
     private async bulkCreateShowtimes(createDto: BulkCreateShowtimesDto, sagaId: string) {
         const { movieId, theaterIds, durationInMinutes, startTimes } = createDto
 

@@ -26,6 +26,29 @@ describe('TicketsService', () => {
         })
     })
 
+    describe('deleteBySagaIds', () => {
+        // sagaIds가 제공될 때
+        describe('when the sagaIds are provided', () => {
+            const sagaA = oid(0x21)
+            const sagaB = oid(0x22)
+
+            beforeEach(async () => {
+                await createTickets(fix, [{ sagaId: sagaA }, { sagaId: sagaB }])
+            })
+
+            // sagaIds에 해당하는 티켓을 삭제한다
+            it('deletes tickets for the sagaIds', async () => {
+                await fix.ticketsClient.deleteBySagaIds([sagaA])
+
+                const deletedTickets = await fix.ticketsClient.search({ sagaIds: [sagaA] })
+                const remainingTickets = await fix.ticketsClient.search({ sagaIds: [sagaB] })
+
+                expect(deletedTickets).toHaveLength(0)
+                expect(remainingTickets).toHaveLength(1)
+            })
+        })
+    })
+
     describe('search', () => {
         // 필터가 제공될 때
         describe('when the filter is provided', () => {

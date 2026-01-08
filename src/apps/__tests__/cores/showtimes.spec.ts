@@ -25,6 +25,29 @@ describe('ShowtimesService', () => {
         })
     })
 
+    describe('deleteBySagaIds', () => {
+        // sagaIds가 제공될 때
+        describe('when the sagaIds are provided', () => {
+            const sagaA = oid(0x11)
+            const sagaB = oid(0x12)
+
+            beforeEach(async () => {
+                await createShowtimes(fix, [{ sagaId: sagaA }, { sagaId: sagaB }])
+            })
+
+            // sagaIds에 해당하는 상영 시간을 삭제한다
+            it('deletes showtimes for the sagaIds', async () => {
+                await fix.showtimesClient.deleteBySagaIds([sagaA])
+
+                const deletedShowtimes = await fix.showtimesClient.search({ sagaIds: [sagaA] })
+                const remainingShowtimes = await fix.showtimesClient.search({ sagaIds: [sagaB] })
+
+                expect(deletedShowtimes).toHaveLength(0)
+                expect(remainingShowtimes).toHaveLength(1)
+            })
+        })
+    })
+
     describe('getMany', () => {
         // 상영 시간이 존재할 때
         describe('when the showtimes exist', () => {

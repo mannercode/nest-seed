@@ -139,6 +139,47 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
+        // 티켓 생성이 실패할 때
+        describe('when ticket creation fails', () => {
+            beforeEach(async () => {
+                const { TicketsService } = await import('apps/cores')
+                const ticketsService = fix.module.get(TicketsService)
+
+                jest.spyOn(ticketsService, 'createMany').mockImplementationOnce(() => {
+                    throw new Error('ticket create failed')
+                })
+            })
+
+            // 생성된 상영 시간과 티켓을 롤백한다
+            it('rolls back created showtimes and tickets', async () => {
+                const completionPromise = waitForCompletion(fix, 'error')
+
+                const { body } = await fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .body({
+                        movieId: movie.id,
+                        theaterIds: [theater.id],
+                        startTimes: [new Date('2100-01-01T09:00')],
+                        durationInMinutes: 1
+                    })
+                    .accepted()
+
+                await expect(completionPromise).resolves.toEqual(
+                    expect.objectContaining({
+                        sagaId: body.sagaId,
+                        status: 'error',
+                        message: 'ticket create failed'
+                    })
+                )
+
+                const showtimes = await fix.showtimesClient.search({ sagaIds: [body.sagaId] })
+                const tickets = await fix.ticketsClient.search({ sagaIds: [body.sagaId] })
+
+                expect(showtimes).toHaveLength(0)
+                expect(tickets).toHaveLength(0)
+            })
+        })
+
         // 영화가 존재하지 않을 때
         describe('when the movie does not exist', () => {
             // 오류를 보고한다

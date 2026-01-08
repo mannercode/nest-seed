@@ -41,12 +41,15 @@ export class MovieDraftsService {
 
         if (draft) {
             const assetIds = uniq(draft.assets.map((asset) => asset.assetId))
+            await this.repository.deleteById(draftId)
 
             if (0 < assetIds.length) {
-                await this.assetsClient.deleteMany(assetIds)
+                try {
+                    await this.assetsClient.deleteMany(assetIds)
+                } catch (error) {
+                    // Ignore cleanup failures to avoid restoring deleted drafts.
+                }
             }
-
-            await this.repository.deleteById(draftId)
         }
 
         return {}
@@ -79,7 +82,12 @@ export class MovieDraftsService {
                 assetIds: readyAssetIds
             })
 
-            await draft.deleteOne()
+            try {
+                await draft.deleteOne()
+            } catch (error) {
+                await Promise.allSettled([this.moviesClient.deleteMany([movie.id])])
+                throw error
+            }
 
             return movie
         }
@@ -111,10 +119,15 @@ export class MovieDraftsService {
 
         const upload = await this.assetsClient.create(createDto)
 
-        await this.repository.addOrUpdateAsset(draftId, {
-            assetId: upload.assetId,
-            status: MovieDraftAssetStatus.Pending
-        })
+        try {
+            await this.repository.addOrUpdateAsset(draftId, {
+                assetId: upload.assetId,
+                status: MovieDraftAssetStatus.Pending
+            })
+        } catch (error) {
+            await Promise.allSettled([this.assetsClient.deleteMany([upload.assetId])])
+            throw error
+        }
 
         return upload
     }
@@ -126,15 +139,20 @@ export class MovieDraftsService {
             return {}
         }
 
-        const hasAsset = draft.assets.some((asset) => asset.assetId === assetId)
-        if (!hasAsset) {
+        const draftAsset = draft.assets.find((asset) => asset.assetId === assetId)
+        if (!draftAsset) {
             return {}
         }
 
         draft.assets = draft.assets.filter((asset) => asset.assetId !== assetId)
         await draft.save()
 
-        await this.assetsClient.deleteMany([assetId])
+        try {
+            await this.assetsClient.deleteMany([assetId])
+        } catch (error) {
+            await Promise.allSettled([this.repository.addOrUpdateAsset(draftId, draftAsset)])
+            throw error
+        }
         return {}
     }
 
@@ -159,10 +177,15 @@ export class MovieDraftsService {
             owner: { service: 'movie-drafts', entityId: draftId }
         })
 
-        await this.repository.addOrUpdateAsset(draftId, {
-            assetId,
-            status: MovieDraftAssetStatus.Ready
-        })
+        try {
+            await this.repository.addOrUpdateAsset(draftId, {
+                assetId,
+                status: MovieDraftAssetStatus.Ready
+            })
+        } catch (error) {
+            await Promise.allSettled([this.assetsClient.deleteMany([assetId])])
+            throw error
+        }
 
         return { id: assetId, status: MovieDraftAssetStatus.Ready }
     }

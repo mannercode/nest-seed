@@ -42,6 +42,11 @@ export class ShowtimesService {
         return this.repository.allExist(showtimeIds)
     }
 
+    async deleteBySagaIds(sagaIds: string[]) {
+        await this.repository.deleteBySagaIds(sagaIds)
+        return {}
+    }
+
     private toDtos(showtimes: ShowtimeDocument[]) {
         return showtimes.map((showtime) =>
             mapDocToDto(showtime, ShowtimeDto, [

@@ -47,7 +47,7 @@ export class ShowtimeCreationWorkerService
 
         const jobData = { createDto, sagaId } as ShowtimeCreationJobData
 
-        await this.events.emitStatusChanged({ status: ShowtimeCreationStatus.Waiting, sagaId })
+        await this.safeEmitStatus({ status: ShowtimeCreationStatus.Waiting, sagaId })
 
         await this.queue.add('showtime-creation.create', jobData)
 
@@ -60,7 +60,8 @@ export class ShowtimeCreationWorkerService
 
             await this.processJobData(jobData)
         } catch (error) {
-            await this.events.emitStatusChanged({
+            await this.creatorService.rollback(job.data.sagaId)
+            await this.safeEmitStatus({
                 status: ShowtimeCreationStatus.Error,
                 sagaId: job.data.sagaId,
                 message: error.message
@@ -69,24 +70,32 @@ export class ShowtimeCreationWorkerService
     }
 
     private async processJobData({ sagaId, createDto }: ShowtimeCreationJobData) {
-        await this.events.emitStatusChanged({ status: ShowtimeCreationStatus.Processing, sagaId })
+        await this.safeEmitStatus({ status: ShowtimeCreationStatus.Processing, sagaId })
 
         const { isValid, conflictingShowtimes } = await this.validatorService.validate(createDto)
 
         if (isValid) {
             const creationResult = await this.creatorService.create(createDto, sagaId)
 
-            await this.events.emitStatusChanged({
+            await this.safeEmitStatus({
                 status: ShowtimeCreationStatus.Succeeded,
                 sagaId,
                 ...creationResult
             })
         } else {
-            await this.events.emitStatusChanged({
+            await this.safeEmitStatus({
                 status: ShowtimeCreationStatus.Failed,
                 sagaId,
                 conflictingShowtimes
             })
+        }
+    }
+
+    private async safeEmitStatus(payload: any) {
+        try {
+            await this.events.emitStatusChanged(payload)
+        } catch (error) {
+            // Ignore event failures to avoid blocking the saga workflow.
         }
     }
 }

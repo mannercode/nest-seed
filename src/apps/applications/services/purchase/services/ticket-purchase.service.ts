@@ -29,6 +29,8 @@ export const TicketPurchaseErrors = {
     }
 }
 
+export type PurchaseContext = { ticketIds: string[]; showtimeIds: string[] }
+
 @Injectable()
 export class TicketPurchaseService {
     constructor(
@@ -38,17 +40,17 @@ export class TicketPurchaseService {
         private readonly events: PurchaseEvents
     ) {}
 
-    async validatePurchase(createDto: CreatePurchaseDto) {
+    async validatePurchase(createDto: CreatePurchaseDto): Promise<PurchaseContext> {
         const ticketItems = createDto.purchaseItems.filter(
             (item) => item.type === PurchaseItemType.Ticket
         )
-        const showtimes = await this.getShowtimes(ticketItems)
+        const { showtimes, showtimeIds, ticketIds } = await this.getShowtimes(ticketItems)
 
         this.validateTicketCount(ticketItems)
         this.validatePurchaseTime(showtimes)
-        await this.validateHeldTickets(createDto.customerId, showtimes, ticketItems)
+        await this.validateHeldTickets(createDto.customerId, showtimeIds, ticketItems)
 
-        return true
+        return { showtimeIds, ticketIds }
     }
 
     private async getShowtimes(ticketItems: PurchaseItemDto[]) {
@@ -58,7 +60,7 @@ export class TicketPurchaseService {
         const uniqueShowtimeIds = uniq(showtimeIds)
         const showtimes = await this.showtimesClient.getMany(uniqueShowtimeIds)
 
-        return showtimes
+        return { showtimes, showtimeIds: uniqueShowtimeIds, ticketIds }
     }
 
     private validateTicketCount(ticketItems: PurchaseItemDto[]) {
@@ -90,14 +92,14 @@ export class TicketPurchaseService {
 
     private async validateHeldTickets(
         customerId: string,
-        showtimes: ShowtimeDto[],
+        showtimeIds: string[],
         purchaseItems: PurchaseItemDto[]
     ) {
         const heldTicketIds: string[] = []
 
-        for (const showtime of showtimes) {
+        for (const showtimeId of showtimeIds) {
             const ticketIds = await this.ticketHoldingClient.searchHeldTicketIds(
-                showtime.id,
+                showtimeId,
                 customerId
             )
             heldTicketIds.push(...ticketIds)
@@ -110,29 +112,30 @@ export class TicketPurchaseService {
         }
     }
 
-    async completePurchase(createDto: CreatePurchaseDto) {
-        const ticketItems = createDto.purchaseItems.filter(
-            (item) => item.type === PurchaseItemType.Ticket
-        )
-        const ticketIds = ticketItems.map((item) => item.ticketId)
-
+    async completePurchase(ticketIds: string[]) {
         await this.ticketsClient.updateStatusMany(ticketIds, TicketStatus.Sold)
-
-        await this.events.emitTicketPurchased(createDto.customerId, ticketIds)
-
         return true
     }
 
-    async rollbackPurchase(createDto: CreatePurchaseDto) {
-        const ticketItems = createDto.purchaseItems.filter(
-            (item) => item.type === PurchaseItemType.Ticket
-        )
-        const ticketIds = ticketItems.map((item) => item.ticketId)
-
+    async rollbackPurchase(ticketIds: string[]) {
         await this.ticketsClient.updateStatusMany(ticketIds, TicketStatus.Available)
-
-        await this.events.emitTicketPurchaseCanceled(createDto.customerId, ticketIds)
-
         return true
+    }
+
+    async releaseHolds(showtimeIds: string[], customerId: string) {
+        await Promise.allSettled(
+            showtimeIds.map((showtimeId) =>
+                this.ticketHoldingClient.releaseTickets(showtimeId, customerId)
+            )
+        )
+        return true
+    }
+
+    async emitTicketPurchased(customerId: string, ticketIds: string[]) {
+        return this.events.emitTicketPurchased(customerId, ticketIds)
+    }
+
+    async emitTicketPurchaseCanceled(customerId: string, ticketIds: string[]) {
+        return this.events.emitTicketPurchaseCanceled(customerId, ticketIds)
     }
 }

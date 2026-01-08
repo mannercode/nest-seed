@@ -17,4 +17,9 @@ export class PaymentsController {
     getMany(@Payload() paymentIds: string[]) {
         return this.service.getMany(paymentIds)
     }
+
+    @MessagePattern(Messages.Payments.deleteMany)
+    deleteMany(@Payload() paymentIds: string[]) {
+        return this.service.deleteMany(paymentIds)
+    }
 }
