@@ -26,6 +26,15 @@ describe('ShowtimesService', () => {
     })
 
     describe('deleteBySagaIds', () => {
+        // sagaIds가 비어 있을 때
+        describe('when the sagaIds are empty', () => {
+            // 빈 응답을 반환한다
+            it('returns an empty response', async () => {
+                const response = await fix.showtimesClient.deleteBySagaIds([])
+                expect(response).toEqual({})
+            })
+        })
+
         // sagaIds가 제공될 때
         describe('when the sagaIds are provided', () => {
             const sagaA = oid(0x11)

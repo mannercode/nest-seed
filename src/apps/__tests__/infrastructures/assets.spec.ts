@@ -76,6 +76,45 @@ describe('AssetsService', () => {
                 expect(uploadRes.ok).toBe(false)
             })
         })
+
+        // 업로드 URL 생성이 실패할 때
+        describe('when presign upload fails', () => {
+            // 생성된 에셋을 삭제한다
+            it('deletes the created asset', async () => {
+                const { AssetsService } = await import('apps/infrastructures')
+                const { AssetsRepository } =
+                    await import('apps/infrastructures/services/assets/assets.repository')
+                const { S3ObjectService } = await import('common')
+
+                const assetsService = fix.module.get(AssetsService)
+                const assetsRepository = fix.module.get(AssetsRepository)
+                const s3Service = fix.module.get(S3ObjectService.getName())
+
+                const originalCreate = assetsRepository.create.bind(assetsRepository)
+                const createSpy = jest.spyOn(assetsRepository, 'create')
+
+                let createdAssetId = ''
+                createSpy.mockImplementationOnce(async (dto) => {
+                    const asset = await originalCreate(dto)
+                    createdAssetId = asset.id
+                    return asset
+                })
+
+                jest.spyOn(s3Service, 'presignUploadUrl').mockRejectedValueOnce(
+                    new Error('presign failed')
+                )
+
+                const deleteSpy = jest
+                    .spyOn(s3Service, 'deleteObject')
+                    .mockResolvedValue({ status: 204, key: 'deleted' })
+
+                const createDto = buildCreateAssetDto(file)
+
+                await expect(assetsService.create(createDto)).rejects.toThrow('presign failed')
+                expect(deleteSpy).toHaveBeenCalledTimes(1)
+                expect(createdAssetId).not.toEqual('')
+            })
+        })
     })
 
     describe('isUploadComplete', () => {
@@ -232,6 +271,18 @@ describe('AssetsService', () => {
     })
 
     describe('deleteMany', () => {
+        // assetIds가 비어 있을 때
+        describe('when the assetIds are empty', () => {
+            // 빈 응답을 반환한다
+            it('returns an empty response', async () => {
+                const { AssetsService } = await import('apps/infrastructures')
+                const assetsService = fix.module.get(AssetsService)
+
+                const response = await assetsService.deleteMany([])
+                expect(response).toEqual({})
+            })
+        })
+
         // 에셋이 존재할 때
         describe('when the assets exist', () => {
             let assets: AssetDto[]
@@ -275,6 +326,26 @@ describe('AssetsService', () => {
             it('returns an empty response', async () => {
                 const response = await fix.assetsClient.deleteMany([nullObjectId])
                 expect(response).toEqual({})
+            })
+        })
+
+        // 삭제가 실패할 때
+        describe('when deletion fails', () => {
+            // 500 Internal Server Error를 던진다
+            it('throws 500 Internal Server Error', async () => {
+                const { AssetsService } = await import('apps/infrastructures')
+                const { S3ObjectService } = await import('common')
+
+                const assetsService = fix.module.get(AssetsService)
+                const s3Service = fix.module.get(S3ObjectService.getName())
+
+                jest.spyOn(s3Service, 'deleteObject').mockRejectedValue(new Error('delete failed'))
+
+                try {
+                    await assetsService.deleteMany([nullObjectId, nullObjectId])
+                } catch (error) {
+                    expect(error.getStatus()).toBe(HttpStatus.INTERNAL_SERVER_ERROR)
+                }
             })
         })
     })

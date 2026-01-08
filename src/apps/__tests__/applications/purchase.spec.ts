@@ -128,6 +128,52 @@ describe('PurchaseService', () => {
                 })
             })
 
+            // 결제 생성이 실패할 때
+            describe('when payment creation fails', () => {
+                let rollbackPurchaseSpy: jest.SpyInstance
+                let releaseHoldsSpy: jest.SpyInstance
+                let emitCanceledSpy: jest.SpyInstance
+
+                beforeEach(async () => {
+                    const { TicketPurchaseService, PurchaseService } =
+                        await import('apps/applications')
+                    const ticketPurchaseService = fix.module.get(TicketPurchaseService)
+                    const purchaseService = fix.module.get(PurchaseService)
+
+                    jest.spyOn(ticketPurchaseService, 'validatePurchase').mockResolvedValue({
+                        ticketIds: [],
+                        showtimeIds: []
+                    })
+
+                    rollbackPurchaseSpy = jest.spyOn(ticketPurchaseService, 'rollbackPurchase')
+                    releaseHoldsSpy = jest.spyOn(ticketPurchaseService, 'releaseHolds')
+                    emitCanceledSpy = jest.spyOn(
+                        ticketPurchaseService,
+                        'emitTicketPurchaseCanceled'
+                    )
+
+                    const { PaymentsClient } = await import('apps/infrastructures')
+                    const paymentsClient = fix.module.get(PaymentsClient)
+
+                    jest.spyOn(paymentsClient, 'create').mockRejectedValue(
+                        new Error('payment error')
+                    )
+
+                    const createDto = buildCreatePurchaseDto(heldTickets)
+
+                    await expect(purchaseService.processPurchase(createDto)).rejects.toThrow(
+                        'payment error'
+                    )
+                })
+
+                // 보상이 실행되지 않는다
+                it('does not run compensations without ids', () => {
+                    expect(rollbackPurchaseSpy).not.toHaveBeenCalled()
+                    expect(releaseHoldsSpy).not.toHaveBeenCalled()
+                    expect(emitCanceledSpy).not.toHaveBeenCalled()
+                })
+            })
+
             // 내부 오류가 발생할 때
             describe('when an internal error occurs', () => {
                 let rollbackPurchaseSpy: jest.SpyInstance
