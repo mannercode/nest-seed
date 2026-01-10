@@ -36,7 +36,7 @@ describe('NATS Queue Group', () => {
             await sleep(1000)
 
             expect(result).toEqual({ result: 'success' })
-            expect(broadcastSpy).toHaveBeenCalledTimes(fix.numberOfInstance)
+            expect(broadcastSpy).toHaveBeenCalledTimes(fix.instanceCount)
         })
     })
 })

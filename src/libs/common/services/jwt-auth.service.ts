@@ -2,8 +2,9 @@ import { DynamicModule, Inject, Injectable, Module, UnauthorizedException } from
 import { JwtModule, JwtService } from '@nestjs/jwt'
 import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import Redis from 'ioredis'
-import { generateShortId, notUsed, Time } from '../utils'
-import { Or } from '../validator'
+import { omit } from 'lodash'
+import { defaultTo } from 'lodash'
+import { generateShortId, Time } from '../utils'
 
 export const JwtAuthServiceErrors = {
     RefreshTokenInvalid: {
@@ -38,7 +39,7 @@ export class JwtAuthService {
     ) {}
 
     static getName(name?: string) {
-        return `JwtAuthService_${Or(name, 'default')}`
+        return `JwtAuthService_${defaultTo(name, 'default')}`
     }
 
     private getKey(key: string) {
@@ -76,10 +77,9 @@ export class JwtAuthService {
     private async getAuthTokenPayload(token: string) {
         try {
             const secret = this.config.refreshSecret
-            const { exp, iat, jti, ...payload } = await this.jwtService.verifyAsync(token, {
-                secret
-            })
-            notUsed(exp, iat, jti)
+            const decoded = await this.jwtService.verifyAsync(token, { secret })
+            const payload = omit(decoded, ['exp', 'iat', 'jti'])
+
             return payload
         } catch (error) {
             throw new UnauthorizedException({
@@ -142,10 +142,10 @@ export class JwtAuthModule {
                     jwtService,
                     auth,
                     redis,
-                    `${prefix}:${Or(name, 'default')}`
+                    `${prefix}:${defaultTo(name, 'default')}`
                 )
             },
-            inject: [JwtService, getRedisConnectionToken(redisName), ...Or(inject, [])]
+            inject: [JwtService, getRedisConnectionToken(redisName), ...defaultTo(inject, [])]
         }
 
         return {

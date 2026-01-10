@@ -37,27 +37,38 @@ export function generateShortId(length: number = 15): string {
 }
 
 /**
-  * Wraps numeric (integer) values in a JSON string with quotes to preserve precision.
-  * If there are 64-bit integers in JSON, they are handled as number in object transformation,
-  * so quoting them helps to maintain exact values if a BigInt conversion is needed later.
-  *
-  * JSON 문자열 내의 숫자(정수)를 큰 정밀도를 유지하기 위해 문자열로 감싸 반환합니다.
-  * JSON에 64비트 정수가 있으면 object 변환 과정에서 number 타입으로 처리되므로 정확한 값을 얻을 수 없다.
-  * 따라서 숫자 값을 따옴표로 감싸 문자열로 처리한 후 BigInt 변환을 직접 해야 한다.
+ * Wraps 64-bit integers in a JSON string with quotes to preserve precision.
+ * Only values within the signed 64-bit range and outside JS safe integer range are quoted.
+ *
+ * JSON 문자열 내 64비트 정수를 큰 정밀도를 유지하기 위해 문자열로 감싸 반환합니다.
+ * JS safe integer 범위를 벗어나는 값만 문자열로 처리합니다.
 
   * @example
-  * addQuotesToNumbers('{"id":1234}') -> '{"id":"1234"}'
-  * addQuotesToNumbers('[{"id":1234}]') -> '[{"id":"1234"}]'
-  *
-  * @param {string} text - The JSON string to process.
-  * @returns {string} A JSON string where numeric values are quoted.
+ * quoteJsonIntegers('{"id":9223372036854775807}') -> '{"id":"9223372036854775807"}'
+ *
+ * @param {string} text - The JSON string to process.
+ * @returns {string} A JSON string where numeric values are quoted.
   */
-export function addQuotesToNumbers(text: string): string {
-    return text.replace(/:(\s*)(\d+)(\s*[,}])/g, ':"$2"$3')
-}
+export function quoteJsonIntegers(text: string): string {
+    const maxInt64 = 9223372036854775807n
+    const minInt64 = -9223372036854775808n
+    const maxSafe = BigInt(Number.MAX_SAFE_INTEGER)
+    const minSafe = -maxSafe
 
-export function notUsed(..._args: any[]): void {}
-export function comment(..._args: any[]): void {}
+    return text.replace(/:(\s*)(-?\d+)(\s*[,}])/g, (match, space, raw, tail) => {
+        const value = BigInt(raw)
+
+        if (value < minInt64 || value > maxInt64) {
+            return match
+        }
+
+        if (minSafe <= value && value <= maxSafe) {
+            return match
+        }
+
+        return `:${space}"${raw}"${tail}`
+    })
+}
 
 /**
  * Converts a number to a zero-padded string of a specified length.
@@ -79,7 +90,7 @@ export function padNumber(value: number, length: number): string {
  * @param {any} input - The object or value to convert.
  * @returns {any} The converted object (date strings become Date objects).
  */
-export function jsonToObject(input: any): any {
+export function reviveIsoDates(input: any): any {
     if (typeof input === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(input)) {
         return new Date(input)
     }
@@ -89,7 +100,7 @@ export function jsonToObject(input: any): any {
     }
 
     if (Array.isArray(input)) {
-        return input.map((item) => jsonToObject(item))
+        return input.map((item) => reviveIsoDates(item))
     }
 
     const convertedObject: Record<string, any> = {}
@@ -103,7 +114,7 @@ export function jsonToObject(input: any): any {
         ) {
             convertedObject[key] = new Date(nestedValue)
         } else if (typeof nestedValue === 'object') {
-            convertedObject[key] = jsonToObject(nestedValue)
+            convertedObject[key] = reviveIsoDates(nestedValue)
         } else {
             convertedObject[key] = nestedValue
         }

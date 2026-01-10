@@ -36,6 +36,7 @@ export class MovieDraftsService {
         return this.toDto(draft)
     }
 
+    // TODO refactor
     async deleteMovieDraft(draftId: string): Promise<Record<string, never>> {
         const draft = await this.repository.findById(draftId)
 

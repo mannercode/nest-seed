@@ -34,4 +34,8 @@ export class TicketsClient {
     getMany(ticketIds: string[]): Promise<TicketDto[]> {
         return this.proxy.request(Messages.Tickets.getMany, ticketIds)
     }
+
+    deleteBySagaIds(sagaIds: string[]): Promise<Record<string, never>> {
+        return this.proxy.request(Messages.Tickets.deleteBySagaIds, sagaIds)
+    }
 }

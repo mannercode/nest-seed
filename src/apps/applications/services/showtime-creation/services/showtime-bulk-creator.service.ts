@@ -27,6 +27,31 @@ export class ShowtimeBulkCreatorService {
         return { createdShowtimeCount: createdShowtimes.length, createdTicketCount }
     }
 
+    async compensate(sagaId: string) {
+        const errors: string[] = []
+
+        try {
+            await this.ticketsClient.deleteBySagaIds([sagaId])
+        } catch (error) {
+            errors.push(`tickets: ${this.getErrorMessage(error)}`)
+        }
+
+        // Delete showtimes only after tickets cleanup to avoid orphaned tickets.
+        if (0 === errors.length) {
+            try {
+                await this.showtimesClient.deleteBySagaIds([sagaId])
+            } catch (error) {
+                errors.push(`showtimes: ${this.getErrorMessage(error)}`)
+            }
+        }
+
+        if (0 < errors.length) {
+            throw new Error(`Compensation failed (${errors.join(', ')})`)
+        }
+
+        return true
+    }
+
     private async bulkCreateShowtimes(createDto: BulkCreateShowtimesDto, sagaId: string) {
         const { movieId, theaterIds, durationInMinutes, startTimes } = createDto
 
@@ -75,5 +100,13 @@ export class ShowtimeBulkCreatorService {
         )
 
         return totalCount
+    }
+
+    private getErrorMessage(error: unknown) {
+        if (error instanceof Error) {
+            return error.message
+        }
+
+        return String(error)
     }
 }

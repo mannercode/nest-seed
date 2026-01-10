@@ -14,6 +14,7 @@ export const Messages = createMessagePatternMap(
         Tickets: {
             createMany: null,
             updateStatusMany: null,
+            deleteBySagaIds: null,
             search: null,
             aggregateSales: null,
             getMany: null
@@ -30,6 +31,7 @@ export const Messages = createMessagePatternMap(
         Showtimes: {
             createMany: null,
             getMany: null,
+            deleteBySagaIds: null,
             search: null,
             searchMovieIds: null,
             searchTheaterIds: null,

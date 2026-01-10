@@ -1,7 +1,7 @@
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { Job, Queue } from 'bullmq'
-import { jsonToObject, newObjectId } from 'common'
+import { reviveIsoDates, newObjectIdString } from 'common'
 import { BulkCreateShowtimesDto } from '../dtos'
 import { ShowtimeCreationEvents } from '../showtime-creation.events'
 import { ShowtimeBulkCreatorService } from './showtime-bulk-creator.service'
@@ -43,7 +43,7 @@ export class ShowtimeCreationWorkerService
     }
 
     async requestShowtimeCreation(createDto: BulkCreateShowtimesDto) {
-        const sagaId = newObjectId()
+        const sagaId = newObjectIdString()
 
         const jobData = { createDto, sagaId } as ShowtimeCreationJobData
 
@@ -56,7 +56,7 @@ export class ShowtimeCreationWorkerService
 
     async process(job: Job<ShowtimeCreationJobData>) {
         try {
-            const jobData = jsonToObject(job.data)
+            const jobData = reviveIsoDates(job.data)
 
             await this.processJobData(jobData)
         } catch (error) {
@@ -74,13 +74,23 @@ export class ShowtimeCreationWorkerService
         const { isValid, conflictingShowtimes } = await this.validatorService.validate(createDto)
 
         if (isValid) {
-            const creationResult = await this.creatorService.create(createDto, sagaId)
+            try {
+                const creationResult = await this.creatorService.create(createDto, sagaId)
 
-            await this.events.emitStatusChanged({
-                status: ShowtimeCreationStatus.Succeeded,
-                sagaId,
-                ...creationResult
-            })
+                await this.events.emitStatusChanged({
+                    status: ShowtimeCreationStatus.Succeeded,
+                    sagaId,
+                    ...creationResult
+                })
+            } catch (error) {
+                const compensationError = await this.compensateCreationFailure(sagaId, error)
+
+                if (compensationError) {
+                    throw compensationError
+                }
+
+                throw error
+            }
         } else {
             await this.events.emitStatusChanged({
                 status: ShowtimeCreationStatus.Failed,
@@ -88,5 +98,33 @@ export class ShowtimeCreationWorkerService
                 conflictingShowtimes
             })
         }
+    }
+
+    private async compensateCreationFailure(sagaId: string, error: unknown) {
+        await this.events.emitStatusChanged({ status: ShowtimeCreationStatus.Compensating, sagaId })
+
+        try {
+            await this.creatorService.compensate(sagaId)
+            return null
+        } catch (compensationError) {
+            const compensationMessage = this.getErrorMessage(compensationError)
+            const errorMessage = this.getErrorMessage(error)
+
+            await this.events.emitStatusChanged({
+                status: ShowtimeCreationStatus.CompensationFailed,
+                sagaId,
+                message: compensationMessage
+            })
+
+            return new Error(`${errorMessage} (compensation failed: ${compensationMessage})`)
+        }
+    }
+
+    private getErrorMessage(error: unknown) {
+        if (error instanceof Error) {
+            return error.message
+        }
+
+        return String(error)
     }
 }

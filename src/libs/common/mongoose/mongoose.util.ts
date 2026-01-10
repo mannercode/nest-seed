@@ -5,7 +5,7 @@ import { Verify } from '../validator'
 import { MongooseErrors } from './errors'
 import type { FilterQuery, HydratedDocument } from 'mongoose'
 
-export const newObjectId = () => new Types.ObjectId().toString()
+export const newObjectIdString = () => new Types.ObjectId().toString()
 export const objectId = (id: string) => new Types.ObjectId(id)
 export const objectIds = (ids: string[]) => ids.map((id) => objectId(id))
 

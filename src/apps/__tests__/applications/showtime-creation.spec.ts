@@ -1,10 +1,31 @@
-import { DateUtil } from 'common'
+import { DateUtil, reviveIsoDates } from 'common'
 import { nullObjectId } from 'testlib'
 import { createMovie, createShowtimes, createTheater } from '../__helpers__'
 import { waitForCompletion } from './showtime-creation.fixture'
 import type { ShowtimeCreationFixture } from './showtime-creation.fixture'
 import type { MovieDto, ShowtimeDto, TheaterDto } from 'apps/cores'
 import type { Response } from 'superagent'
+
+function waitForTerminalStatus(ctx: ShowtimeCreationFixture) {
+    const statuses: string[] = []
+
+    return new Promise<{ result: any; statuses: string[] }>((resolve, reject) => {
+        ctx.httpClient.get('/showtime-creation/event-stream').sse((data) => {
+            try {
+                const result = reviveIsoDates(JSON.parse(data))
+                statuses.push(result.status)
+
+                if (['succeeded', 'failed', 'error'].includes(result.status)) {
+                    ctx.httpClient.abort()
+                    resolve({ result, statuses })
+                }
+            } catch (error) {
+                ctx.httpClient.abort()
+                reject(error)
+            }
+        }, reject)
+    })
+}
 
 describe('ShowtimeCreationService', () => {
     let fix: ShowtimeCreationFixture
@@ -136,6 +157,51 @@ describe('ShowtimeCreationService', () => {
 
                 const createdTickets = await fix.ticketsClient.search({ sagaIds: [body.sagaId] })
                 expect(createdTickets).toHaveLength(createdTicketCount)
+            })
+        })
+
+        // 티켓 생성이 실패할 때
+        describe('when ticket creation fails', () => {
+            const ticketErrorMessage = 'Ticket creation failed.'
+
+            let createPromise: Promise<Response>
+            let completionPromise: Promise<{ result: any; statuses: string[] }>
+
+            beforeEach(async () => {
+                jest.spyOn(fix.ticketsClient, 'createMany').mockRejectedValue(
+                    new Error(ticketErrorMessage)
+                )
+
+                completionPromise = waitForTerminalStatus(fix)
+
+                createPromise = fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .body({
+                        movieId: movie.id,
+                        theaterIds: [theater.id],
+                        startTimes: [new Date('2100-01-01T09:00')],
+                        durationInMinutes: 1
+                    })
+                    .accepted()
+            })
+
+            // 생성된 상영 시간을 보상 처리한다
+            it('compensates created showtimes', async () => {
+                const { body } = await createPromise
+                const { result, statuses } = await completionPromise
+
+                expect(result).toEqual(
+                    expect.objectContaining({
+                        sagaId: body.sagaId,
+                        status: 'error',
+                        message: ticketErrorMessage
+                    })
+                )
+
+                expect(statuses).toEqual(expect.arrayContaining(['compensating']))
+
+                const showtimes = await fix.showtimesClient.search({ sagaIds: [body.sagaId] })
+                expect(showtimes).toHaveLength(0)
             })
         })
 

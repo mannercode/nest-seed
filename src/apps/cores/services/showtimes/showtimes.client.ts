@@ -31,6 +31,10 @@ export class ShowtimesClient {
         return this.proxy.request(Messages.Showtimes.searchShowdates, searchDto)
     }
 
+    deleteBySagaIds(sagaIds: string[]): Promise<Record<string, never>> {
+        return this.proxy.request(Messages.Showtimes.deleteBySagaIds, sagaIds)
+    }
+
     allExist(showtimeIds: string[]): Promise<boolean> {
         return this.proxy.request(Messages.Showtimes.allExist, showtimeIds)
     }

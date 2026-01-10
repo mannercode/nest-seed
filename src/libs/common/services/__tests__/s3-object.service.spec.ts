@@ -30,10 +30,10 @@ describe('S3ObjectService', () => {
     })
     afterEach(() => fix.teardown())
 
-    describe('presignUploadUrl', () => {
+    describe('presignUploadPost', () => {
         // 프리사인드 POST를 반환한다
         it('returns a presigned post', async () => {
-            const presigned = await fix.s3Service.presignUploadUrl({
+            const presigned = await fix.s3Service.presignUploadPost({
                 key: 'key.txt',
                 expiresInSec: 60
             })
@@ -44,7 +44,7 @@ describe('S3ObjectService', () => {
         // Content-Disposition 필드를 지원한다
         it('supports content disposition fields', async () => {
             const contentDisposition = 'attachment; filename="sample.txt"'
-            const presigned = await fix.s3Service.presignUploadUrl({
+            const presigned = await fix.s3Service.presignUploadPost({
                 key: 'content-disposition.txt',
                 expiresInSec: 60,
                 contentType: 'text/plain',
@@ -71,7 +71,7 @@ describe('S3ObjectService', () => {
 
         // 메타데이터 필드를 지원한다
         it('supports metadata fields', async () => {
-            const presigned = await fix.s3Service.presignUploadUrl({
+            const presigned = await fix.s3Service.presignUploadPost({
                 key: 'meta.txt',
                 expiresInSec: 60,
                 metadata: { checksum: 'abc123' }
@@ -101,7 +101,7 @@ describe('S3ObjectService', () => {
             const uploadBody = Buffer.from('hello')
 
             beforeEach(async () => {
-                presigned = await fix.s3Service.presignUploadUrl({
+                presigned = await fix.s3Service.presignUploadPost({
                     key: 'key.txt',
                     expiresInSec: 60,
                     contentType: 'text/plain',
@@ -134,7 +134,7 @@ describe('S3ObjectService', () => {
 
             // `contentLength`가 일치하지 않으면 실패한다
             it('fails for mismatched `contentLength`', async () => {
-                const { url, fields } = await fix.s3Service.presignUploadUrl({
+                const { url, fields } = await fix.s3Service.presignUploadPost({
                     key: 'key.txt',
                     expiresInSec: 60,
                     contentType: 'text/plain',

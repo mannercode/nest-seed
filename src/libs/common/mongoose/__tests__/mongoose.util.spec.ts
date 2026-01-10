@@ -4,7 +4,7 @@ import {
     createMongooseSchema,
     mapDocToDto,
     MongooseSchema,
-    newObjectId,
+    newObjectIdString,
     objectId,
     objectIds,
     QueryBuilder,
@@ -12,8 +12,8 @@ import {
 } from 'common'
 import { model, Types } from 'mongoose'
 
-it('newObjectId', async () => {
-    const objectIdValue = newObjectId()
+it('newObjectIdString', async () => {
+    const objectIdValue = newObjectIdString()
     expect(Types.ObjectId.isValid(objectIdValue)).toBe(true)
 })
 

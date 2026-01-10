@@ -2,8 +2,8 @@ import { ArgumentsHost, Catch, HttpException, Logger } from '@nestjs/common'
 import { BaseExceptionFilter } from '@nestjs/core'
 import { RpcException } from '@nestjs/microservices'
 import { Request } from 'express'
+import { defaultTo } from 'lodash'
 import { throwError } from 'rxjs'
-import { Or } from '../validator'
 import { HttpErrorLog, RpcErrorLog } from './types'
 
 /**
@@ -38,7 +38,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
                     ...httpLogBase,
                     statusCode: exception.getStatus(),
                     response: exception.getResponse(),
-                    stack: Or(exception.stack, '').split('\n')
+                    stack: defaultTo(exception.stack, '').split('\n')
                 } as HttpErrorLog
 
                 Logger.warn('fail', errorLog)
@@ -47,7 +47,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
                     ...httpLogBase,
                     statusCode: 500,
                     response: { message: exception.message },
-                    stack: Or(exception.stack, '').split('\n')
+                    stack: defaultTo(exception.stack, '').split('\n')
                 } as HttpErrorLog
 
                 Logger.error('error', errorLog)
@@ -76,7 +76,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
                 const errorLog = {
                     ...rpcLogBase,
                     response: exception.getResponse(),
-                    stack: Or(exception.stack, '').split('\n')
+                    stack: defaultTo(exception.stack, '').split('\n')
                 } as RpcErrorLog
 
                 Logger.warn('fail', errorLog)
@@ -86,7 +86,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
                 const errorLog = {
                     ...rpcLogBase,
                     response: { message: exception.message },
-                    stack: Or(exception.stack, '').split('\n')
+                    stack: defaultTo(exception.stack, '').split('\n')
                 } as RpcErrorLog
 
                 Logger.error('error', errorLog)

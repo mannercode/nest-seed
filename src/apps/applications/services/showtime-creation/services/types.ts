@@ -8,6 +8,8 @@ export class ShowtimeCreationJobData {
 export enum ShowtimeCreationStatus {
     Waiting = 'waiting',
     Processing = 'processing',
+    Compensating = 'compensating',
+    CompensationFailed = 'compensation_failed',
     Succeeded = 'succeeded',
     Failed = 'failed',
     Error = 'error'

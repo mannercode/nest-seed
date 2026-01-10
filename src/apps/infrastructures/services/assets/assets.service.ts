@@ -26,7 +26,7 @@ export class AssetsService {
         const { mimeType, size } = createDto
         const expiresInSec = Rules.Asset.uploadExpiresInSec
 
-        const presigned = await this.s3Service.presignUploadUrl({
+        const presigned = await this.s3Service.presignUploadPost({
             key: asset.id,
             expiresInSec,
             contentType: mimeType,

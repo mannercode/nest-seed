@@ -8,9 +8,9 @@ import {
     OnModuleDestroy
 } from '@nestjs/common'
 import { ClientProvider, ClientProxy, ClientsModule } from '@nestjs/microservices'
+import { defaultTo } from 'lodash'
 import { catchError, lastValueFrom, Observable, retry, throwError, timer } from 'rxjs'
-import { jsonToObject } from '../utils'
-import { Or } from '../validator'
+import { reviveIsoDates } from '../utils'
 
 async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
     return lastValueFrom(
@@ -22,14 +22,14 @@ async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
                     return throwError(() => new HttpException(response, status, options))
                 }
 
-                return throwError(() => new Error(Or(message, 'Unknown error')))
+                return throwError(() => new Error(defaultTo(message, 'Unknown error')))
             })
         )
     )
 }
 
 async function getProxyValue<T>(observer: Observable<T>): Promise<T> {
-    return jsonToObject(await waitProxyValue(observer))
+    return reviveIsoDates(await waitProxyValue(observer))
 }
 
 @Injectable()
@@ -37,7 +37,7 @@ export class ClientProxyService implements OnModuleDestroy {
     constructor(private readonly proxy: ClientProxy) {}
 
     static getName(name?: string) {
-        return `ClientProxyService_${Or(name, 'default')}`
+        return `ClientProxyService_${defaultTo(name, 'default')}`
     }
 
     async onModuleDestroy() {
@@ -50,7 +50,7 @@ export class ClientProxyService implements OnModuleDestroy {
     }
 
     send<T>(cmd: string, payload: any): Observable<T> {
-        const source$ = this.proxy.send<T>(cmd, Or(payload, ''))
+        const source$ = this.proxy.send<T>(cmd, defaultTo(payload, ''))
 
         /**
          * Prevents the following error:
@@ -86,7 +86,7 @@ export class ClientProxyService implements OnModuleDestroy {
     }
 
     emit(event: string, payload: any): Promise<void> {
-        return waitProxyValue(this.proxy.emit<void>(event, Or(payload, '')))
+        return waitProxyValue(this.proxy.emit<void>(event, defaultTo(payload, '')))
     }
 }
 
@@ -106,7 +106,7 @@ export class ClientProxyModule {
     static registerAsync(options: ClientProxyModuleOptions): DynamicModule {
         const { name, useFactory, inject } = options
 
-        const clientName = Or(name, 'DefaultClientProxy')
+        const clientName = defaultTo(name, 'DefaultClientProxy')
 
         const provider = {
             provide: ClientProxyService.getName(name),

@@ -2,7 +2,7 @@ import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/com
 import { GUARDS_METADATA } from '@nestjs/common/constants'
 import { Reflector } from '@nestjs/core'
 import { AuthGuard } from '@nestjs/passport'
-import { Or } from 'common'
+import { defaultTo } from 'lodash'
 import { Observable } from 'rxjs'
 import { CustomerLocalAuthGuard } from './customer-local-auth.guard'
 import { AuthErrors } from './errors'
@@ -48,6 +48,6 @@ export class CustomerJwtAuthGuard extends AuthGuard('customer-jwt') {
     private isUsingGuard(target: any, guardType: any): boolean {
         const guards = this.reflector.get<any[] | null>(GUARDS_METADATA, target)
 
-        return Or(guards, []).some((guard) => guard === guardType)
+        return defaultTo(guards, []).some((guard) => guard === guardType)
     }
 }
