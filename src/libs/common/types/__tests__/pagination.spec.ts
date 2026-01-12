@@ -73,7 +73,7 @@ describe('PaginationDto', () => {
 
             // PaginationDto를 처리한다
             it('handles PaginationDto', async () => {
-                await fix.rpcClient.expect(withTestId('getRpcPagination'), input, {
+                await fix.rpcClient.expectRequest(withTestId('getRpcPagination'), input, {
                     response: input
                 })
             })
