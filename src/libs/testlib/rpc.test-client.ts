@@ -13,7 +13,7 @@ export class RpcTestClient extends ClientProxyService {
         await this.onModuleDestroy()
     }
 
-    async expect<T>(cmd: string, payload: any, expected: any): Promise<T> {
+    async expectRequest<T>(cmd: string, payload: any, expected: any): Promise<T> {
         const value = await super.request<T>(cmd, payload)
 
         if (expected) {
