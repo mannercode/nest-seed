@@ -1,7 +1,7 @@
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { Job, Queue } from 'bullmq'
-import { jsonToObject, newObjectId } from 'common'
+import { newObjectIdString, reviveIsoDates } from 'common'
 import { BulkCreateShowtimesDto } from '../dtos'
 import { ShowtimeCreationEvents } from '../showtime-creation.events'
 import { ShowtimeBulkCreatorService } from './showtime-bulk-creator.service'
@@ -43,7 +43,7 @@ export class ShowtimeCreationWorkerService
     }
 
     async requestShowtimeCreation(createDto: BulkCreateShowtimesDto) {
-        const sagaId = newObjectId()
+        const sagaId = newObjectIdString()
 
         const jobData = { createDto, sagaId } as ShowtimeCreationJobData
 
@@ -56,7 +56,7 @@ export class ShowtimeCreationWorkerService
 
     async process(job: Job<ShowtimeCreationJobData>) {
         try {
-            const jobData = jsonToObject(job.data)
+            const jobData = reviveIsoDates(job.data)
 
             await this.processJobData(jobData)
         } catch (error) {

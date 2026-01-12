@@ -1,5 +1,5 @@
 import { TicketStatus } from 'apps/cores'
-import { newObjectId } from 'common'
+import { newObjectIdString } from 'common'
 import { uniq } from 'lodash'
 import { oid } from 'testlib'
 import type { CreateTicketDto } from 'apps/cores'
@@ -7,7 +7,7 @@ import type { TestContext } from 'testlib'
 
 export function buildCreateTicketDto(overrides = {}) {
     const createDto = {
-        sagaId: newObjectId(),
+        sagaId: newObjectIdString(),
         movieId: oid(0x0),
         theaterId: oid(0x0),
         showtimeId: oid(0x0),

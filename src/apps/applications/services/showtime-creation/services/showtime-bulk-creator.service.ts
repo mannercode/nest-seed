@@ -9,6 +9,7 @@ import {
     TicketStatus
 } from 'apps/cores'
 import { Expect, DateUtil } from 'common'
+import { uniq } from 'lodash'
 import { BulkCreateShowtimesDto } from '../dtos'
 
 @Injectable()
@@ -48,7 +49,7 @@ export class ShowtimeBulkCreatorService {
     private async bulkCreateTickets(showtimes: ShowtimeDto[], sagaId: string) {
         let totalCount = 0
 
-        const theaterIds = Array.from(new Set(showtimes.map((showtime) => showtime.theaterId)))
+        const theaterIds = uniq(showtimes.map((showtime) => showtime.theaterId))
         const theaters = await this.theatersClient.getMany(theaterIds)
 
         const theatersById = new Map<string, TheaterDto>()

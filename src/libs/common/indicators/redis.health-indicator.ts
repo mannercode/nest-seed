@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { HealthIndicatorService } from '@nestjs/terminus'
 import Redis from 'ioredis'
-import { Or } from '../validator'
+import { defaultTo } from 'lodash'
 
 @Injectable()
 export class RedisHealthIndicator {
@@ -15,7 +15,7 @@ export class RedisHealthIndicator {
 
             return indicator.up()
         } catch (error) {
-            const reason = Or(error.message, error)
+            const reason = defaultTo(error.message, error)
             return indicator.down({ reason })
         }
     }

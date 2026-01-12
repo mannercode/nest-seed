@@ -1,6 +1,6 @@
 import { createWriteStream } from 'fs'
 import { HttpStatus } from '@nestjs/common'
-import { Byte, jsonToObject } from 'common'
+import { Byte, reviveIsoDates } from 'common'
 import superagent from 'superagent'
 
 type EventMessage = { event: string; id: number; data: string }
@@ -178,7 +178,7 @@ export class HttpTestClient {
 
         expect(response.status).toEqual(status)
 
-        response.body = jsonToObject(response.body)
+        response.body = reviveIsoDates(response.body)
 
         if (expected) {
             expect(response.body).toEqual(expected)

@@ -2,10 +2,6 @@
 import { Logger } from '@nestjs/common'
 import { isEqual } from 'lodash'
 
-export function Or<T>(value: T | null | undefined, defaultValue: T): T {
-    return value ?? defaultValue
-}
-
 export function ensure<T>(value: T | null | undefined, message = 'Value must exist.'): T {
     if (value == null) {
         throw new Error(message)

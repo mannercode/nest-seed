@@ -4,7 +4,7 @@ import { MongooseRepository } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { CreateAssetDto } from './dtos'
-import { Asset, AssetDocument } from './models'
+import { Asset } from './models'
 
 @Injectable()
 export class AssetsRepository extends MongooseRepository<Asset> {
@@ -22,14 +22,24 @@ export class AssetsRepository extends MongooseRepository<Asset> {
         asset.size = createDto.size
         asset.checksum = createDto.checksum
 
-        return asset.save()
+        await asset.save()
+
+        return asset.toJSON()
     }
 
-    async findExpiredUncompleted(expireBefore: Date): Promise<AssetDocument[]> {
-        return this.model.find({
-            ownerService: null,
-            ownerEntityId: null,
-            createdAt: { $lte: expireBefore }
-        })
+    async findExpiredUncompleted(expireBefore: Date): Promise<Asset[]> {
+        return this.model
+            .find({ ownerService: null, ownerEntityId: null, createdAt: { $lte: expireBefore } })
+            .lean({ virtuals: true })
+    }
+
+    async assignOwner(assetId: string, owner: { service: string; entityId: string }) {
+        const asset = await this.getDocumentById(assetId)
+        asset.ownerService = owner.service
+        asset.ownerEntityId = owner.entityId
+
+        await asset.save()
+
+        return asset.toJSON()
     }
 }

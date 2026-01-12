@@ -22,7 +22,9 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
         watchRecord.purchaseId = createDto.purchaseId
         watchRecord.watchDate = createDto.watchDate
 
-        return watchRecord.save()
+        await watchRecord.save()
+
+        return watchRecord.toJSON()
     }
 
     async searchPage(searchDto: SearchWatchRecordsPageDto) {

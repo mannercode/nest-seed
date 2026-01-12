@@ -1,12 +1,12 @@
 /* istanbul ignore file */
 import chalk from 'chalk'
+import { defaultTo } from 'lodash'
 import winston from 'winston'
 import DailyRotateFile from 'winston-daily-rotate-file'
-import { Or } from '../validator'
 import type { HttpErrorLog, HttpSuccessLog, RpcErrorLog, RpcSuccessLog } from './types'
 
 function colorizeHttpMethod(method: string | undefined) {
-    const METHOD = Or(method, 'METHOD').toUpperCase()
+    const METHOD = defaultTo(method, 'METHOD').toUpperCase()
 
     switch (METHOD) {
         case 'GET':
@@ -25,7 +25,7 @@ function colorizeHttpMethod(method: string | undefined) {
 }
 
 function colorizeLogLevel(level: string | undefined) {
-    const LEVEL = Or(level, 'LEVEL').toUpperCase()
+    const LEVEL = defaultTo(level, 'LEVEL').toUpperCase()
 
     switch (LEVEL) {
         case 'ERROR':
@@ -49,7 +49,7 @@ function formatHttpLogMessage(
     const { request } = logDetails
     const method = colorizeHttpMethod(request.method)
     const url = chalk.green(request.url)
-    const nativeBody = Or(request.body, {})
+    const nativeBody = defaultTo(request.body, {})
     const body = chalk.blueBright(JSON.stringify(nativeBody, null, 2))
 
     return `${timestamp} ${level} HTTP ${message} ${statusCode} ${method} ${url} ${body} `

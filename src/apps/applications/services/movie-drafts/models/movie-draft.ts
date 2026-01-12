@@ -3,7 +3,7 @@ import { MovieGenre, MovieRating } from 'apps/cores'
 import { MongooseSchema, createMongooseSchema } from 'common'
 import { HydratedDocument } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import { MovieAssetDraft, MovieAssetDraftSchema } from './movie-asset-draft'
+import { MovieDraftAsset, MovieDraftAssetSchema } from './movie-draft-asset'
 
 @Schema(MongooseConfigModule.schemaOptions)
 export class MovieDraft extends MongooseSchema {
@@ -28,8 +28,8 @@ export class MovieDraft extends MongooseSchema {
     @Prop({ type: String, enum: MovieRating })
     rating?: MovieRating
 
-    @Prop({ type: [MovieAssetDraftSchema], default: [] })
-    assets: MovieAssetDraft[]
+    @Prop({ type: [MovieDraftAssetSchema], default: [] })
+    assets: MovieDraftAsset[]
 }
 
 export type MovieDraftDocument = HydratedDocument<MovieDraft>

@@ -27,7 +27,7 @@ export async function createS3ObjectServiceFixture() {
 }
 
 export async function uploadObject(s3Service: S3ObjectService, key: string, body: string) {
-    const { url, fields } = await s3Service.presignUploadUrl({ key, expiresInSec: 60 })
+    const { url, fields } = await s3Service.presignUploadPost({ key, expiresInSec: 60 })
     const form = new FormData()
 
     Object.entries(fields).forEach(([fieldKey, value]) => {

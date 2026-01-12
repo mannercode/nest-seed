@@ -1,4 +1,4 @@
-import { DateUtil, newObjectId } from 'common'
+import { DateUtil, newObjectIdString } from 'common'
 import { uniq } from 'lodash'
 import { oid } from 'testlib'
 import type { CreateShowtimeDto } from 'apps/cores'
@@ -6,7 +6,7 @@ import type { TestContext } from 'testlib'
 
 export function buildCreateShowtimeDto(overrides: Partial<CreateShowtimeDto> = {}) {
     const createDto = {
-        sagaId: newObjectId(),
+        sagaId: newObjectIdString(),
         movieId: oid(0x0),
         theaterId: oid(0x0),
         startTime: new Date(0),

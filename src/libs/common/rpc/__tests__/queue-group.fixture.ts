@@ -26,7 +26,7 @@ export class MessageController {
 export type QueueGroupFixture = {
     teardown: () => Promise<void>
     rpcClient: RpcTestClient
-    numberOfInstance: number
+    instanceCount: number
 }
 
 export async function createQueueGroupFixture() {
@@ -35,10 +35,10 @@ export async function createQueueGroupFixture() {
         options: { ...getNatsTestConnection(), queue: 'queue-group' }
     } as NatsOptions
 
-    const numberOfInstance = 10
+    const instanceCount = 10
 
     const ctxs = await Promise.all(
-        Array.from({ length: numberOfInstance }, async () =>
+        Array.from({ length: instanceCount }, async () =>
             createTestContext({
                 controllers: [MessageController],
                 configureApp: async (app) => {
@@ -56,5 +56,5 @@ export async function createQueueGroupFixture() {
         await Promise.all(ctxs.map(async (ctx) => ctx.close()))
     }
 
-    return { teardown, rpcClient, numberOfInstance }
+    return { teardown, rpcClient, instanceCount }
 }

@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 . ${PROJECT_ROOT}/.env
 HOST="http://host.docker.internal:${HTTP_PORT}"
 
-tests=(auth customers)
+tests=(auth customers movie-drafts movies theaters showtime-creation booking purchases)
 
 for test in "${tests[@]}"; do
     reset_all

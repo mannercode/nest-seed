@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { differenceWith, uniq } from 'lodash'
-import { Expect, Verify, Or } from '../validator'
+import { defaultTo } from 'lodash'
+import { Expect, Verify } from '../validator'
 import { MongooseErrors } from './errors'
 import { objectId, objectIds } from './mongoose.util'
 import type { PaginationDto, PaginationResult } from '../types'
@@ -15,6 +16,8 @@ import type {
 } from 'mongoose'
 
 type SessionArg = ClientSession | undefined
+
+const defaultLeanOptions = { virtuals: true }
 
 export abstract class MongooseRepository<Doc> implements OnModuleInit {
     constructor(
@@ -58,17 +61,39 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     }
 
     async findById(id: string, session: SessionArg = undefined) {
+        const doc = await this.model
+            .findById(objectId(id), null, { session })
+            .lean(defaultLeanOptions)
+
+        return doc as Doc | null
+    }
+
+    async findByIds(ids: string[], session: SessionArg = undefined): Promise<Doc[]> {
+        const docs = await this.model
+            .find({ _id: { $in: objectIds(ids) } as any }, null, { session })
+            .lean(defaultLeanOptions)
+
+        return docs as Doc[]
+    }
+
+    protected async findDocumentById(id: string, session: SessionArg = undefined) {
         const doc = await this.model.findById(objectId(id), null, { session })
 
         return doc as HydratedDocument<Doc> | null
     }
 
-    async findByIds(ids: string[], session: SessionArg = undefined) {
-        return this.model.find({ _id: { $in: objectIds(ids) } as any }, null, { session })
-    }
-
     async getById(id: string, session: SessionArg = undefined) {
         const doc = await this.findById(id, session)
+
+        if (!doc) {
+            throw new NotFoundException({ ...MongooseErrors.DocumentNotFound, notFoundId: id })
+        }
+
+        return doc
+    }
+
+    protected async getDocumentById(id: string, session: SessionArg = undefined) {
+        const doc = await this.findDocumentById(id, session)
 
         if (!doc) {
             throw new NotFoundException({ ...MongooseErrors.DocumentNotFound, notFoundId: id })
@@ -87,7 +112,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         const notFoundIds = differenceWith(
             uniqueIds,
             docs,
-            (id, doc) => id === (doc._id as ObjectId).toString()
+            (id, doc) => id === (doc as { _id: ObjectId })._id.toString()
         )
 
         if (notFoundIds.length > 0) {
@@ -101,7 +126,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     }
 
     async deleteById(id: string, session: SessionArg = undefined) {
-        const doc = await this.getById(id, session)
+        const doc = await this.getDocumentById(id, session)
         await doc.deleteOne({ session })
     }
 
@@ -128,8 +153,8 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     }) {
         const { configureQuery, pagination, session } = args
 
-        let take = Or(pagination.take, this.maxTake)
-        let skip = Or(pagination.skip, 0)
+        let take = defaultTo(pagination.take, this.maxTake)
+        let skip = defaultTo(pagination.skip, 0)
 
         if (take <= 0) {
             throw new BadRequestException({ ...MongooseErrors.TakeInvalid, take })
@@ -154,10 +179,12 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
             await configureQuery(queryHelper)
         }
 
+        queryHelper.lean(defaultLeanOptions)
+
         const items = await queryHelper.exec()
         const total = await this.model.countDocuments(queryHelper.getQuery()).exec()
 
-        return { skip, take, total, items } as PaginationResult<HydratedDocument<Doc>>
+        return { skip, take, total, items } as PaginationResult<Doc>
     }
 
     async withTransaction<T>(

@@ -25,11 +25,13 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         movie.rating = createDto.rating
         movie.assetIds = createDto.assetIds
 
-        return movie.save()
+        await movie.save()
+
+        return movie.toJSON()
     }
 
     async update(movieId: string, updateDto: UpdateMovieDto) {
-        const movie = await this.getById(movieId)
+        const movie = await this.getDocumentById(movieId)
 
         assignDefined(movie, updateDto, 'title')
         assignDefined(movie, updateDto, 'genres')
@@ -40,7 +42,9 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         assignDefined(movie, updateDto, 'rating')
         assignDefined(movie, updateDto, 'assetIds')
 
-        return movie.save()
+        await movie.save()
+
+        return movie.toJSON()
     }
 
     async searchPage(searchDto: SearchMoviesPageDto) {

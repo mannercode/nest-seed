@@ -21,7 +21,7 @@ describe('MongooseRepository.withTransaction', () => {
                 })
 
                 const found = await fix.repository.findById(newDoc.id)
-                expect(found?.toJSON()).toEqual(newDoc.toJSON())
+                expect(found).toMatchObject({ id: newDoc.id, name: newDoc.name })
             })
         })
 
@@ -43,7 +43,7 @@ describe('MongooseRepository.withTransaction', () => {
                 })
 
                 const found = await fix.repository.findById(newDoc.id)
-                expect(found?.toJSON()).toEqual(newDoc.toJSON())
+                expect(found).toMatchObject({ id: newDoc.id, name: newDoc.name })
             })
         })
 

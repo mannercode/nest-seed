@@ -4,7 +4,7 @@ import { DateUtil, InjectS3Object, mapDocToDto, pickIds, S3ObjectService } from 
 import { Rules } from 'shared'
 import { AssetsRepository } from './assets.repository'
 import { AssetDto, AssetPresignedUploadDto, CompleteAssetDto, CreateAssetDto } from './dtos'
-import { AssetDocument } from './models'
+import { Asset } from './models'
 
 export const AssetServiceErrors = {
     UploadExpired: {
@@ -26,7 +26,7 @@ export class AssetsService {
         const { mimeType, size } = createDto
         const expiresInSec = Rules.Asset.uploadExpiresInSec
 
-        const presigned = await this.s3Service.presignUploadUrl({
+        const presigned = await this.s3Service.presignUploadPost({
             key: asset.id,
             expiresInSec,
             contentType: mimeType,
@@ -50,16 +50,15 @@ export class AssetsService {
         const expiresAt = this.getUploadExpiresAt(asset.createdAt)
 
         if (this.isUploadExpired(expiresAt)) {
-            await this.deleteAsset(asset)
+            await this.repository.deleteById(assetId)
+            await this.s3Service.deleteObject(assetId)
 
             throw new NotFoundException({ ...AssetServiceErrors.UploadExpired, assetId, expiresAt })
         }
 
-        asset.ownerService = owner.service
-        asset.ownerEntityId = owner.entityId
-        await asset.save()
+        const updatedAsset = await this.repository.assignOwner(assetId, owner)
 
-        const dto = this.toDto(asset)
+        const dto = this.toDto(updatedAsset)
         return this.withDownloadInfo(dto)
     }
 
@@ -113,20 +112,15 @@ export class AssetsService {
         return expiresAt.getTime() <= DateUtil.now().getTime()
     }
 
-    private async deleteAsset(asset: AssetDocument) {
-        await asset.deleteOne()
-        await this.s3Service.deleteObject(asset.id)
-    }
-
     private getExpirationThreshold() {
         return DateUtil.add({ base: DateUtil.now(), seconds: -Rules.Asset.uploadExpiresInSec })
     }
 
-    private toDto(asset: AssetDocument): AssetDto {
+    private toDto(asset: Asset): AssetDto {
         return this.toDtos([asset])[0]
     }
 
-    private toDtos(assets: AssetDocument[]) {
+    private toDtos(assets: Asset[]) {
         return assets.map((asset) => {
             const dto = mapDocToDto(asset, AssetDto, [
                 'id',

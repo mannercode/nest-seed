@@ -33,7 +33,11 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
     async search(searchDto: SearchShowtimesDto) {
         const query = this.buildQuery(searchDto)
 
-        const showtimes = await this.model.find(query).sort({ startTime: 1 }).exec()
+        const showtimes = await this.model
+            .find(query)
+            .sort({ startTime: 1 })
+            .lean({ virtuals: true })
+            .exec()
         return showtimes
     }
 

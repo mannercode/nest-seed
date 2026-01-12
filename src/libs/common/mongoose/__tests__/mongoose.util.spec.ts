@@ -4,7 +4,7 @@ import {
     createMongooseSchema,
     mapDocToDto,
     MongooseSchema,
-    newObjectId,
+    newObjectIdString,
     objectId,
     objectIds,
     QueryBuilder,
@@ -12,8 +12,8 @@ import {
 } from 'common'
 import { model, Types } from 'mongoose'
 
-it('newObjectId', async () => {
-    const objectIdValue = newObjectId()
+it('newObjectIdString', async () => {
+    const objectIdValue = newObjectIdString()
     expect(Types.ObjectId.isValid(objectIdValue)).toBe(true)
 })
 
@@ -273,9 +273,9 @@ describe('mapDocToDto', () => {
     const sampleSchema = createMongooseSchema(Sample)
     const SampleModel = model<Sample>('SampleForTest', sampleSchema)
 
-    // 문서를 DTO로 매핑한다
-    it('maps a document to a DTO', () => {
-        const doc = new SampleModel({ name: 'name', optional: undefined })
+    // lean 객체를 DTO로 매핑한다
+    it('maps a lean object to a DTO', () => {
+        const doc = new SampleModel({ name: 'name', optional: undefined }).toJSON()
 
         const dto = mapDocToDto(doc, SampleDto, ['id', 'name', 'optional'])
 

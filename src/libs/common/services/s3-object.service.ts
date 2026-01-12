@@ -10,9 +10,9 @@ import {
 import { createPresignedPost, PresignedPost } from '@aws-sdk/s3-presigned-post'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { DynamicModule, Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
-import { newObjectId } from '../mongoose'
+import { defaultTo } from 'lodash'
+import { newObjectIdString } from '../mongoose'
 import { HttpUtil } from '../utils'
-import { Or } from '../validator'
 
 export type S3PresignUrlOptions = { key: string; expiresInSec: number }
 export type S3PresignPostUploadOptions = S3PresignUrlOptions & {
@@ -66,14 +66,14 @@ export class S3ObjectService implements OnModuleDestroy {
     ) {}
 
     static getName(name?: string) {
-        return `S3ObjectService_${Or(name, 'default')}`
+        return `S3ObjectService_${defaultTo(name, 'default')}`
     }
 
     onModuleDestroy() {
         this.s3.destroy()
     }
 
-    async presignUploadUrl(opts: S3PresignPostUploadOptions): Promise<S3PresignPostUploadResult> {
+    async presignUploadPost(opts: S3PresignPostUploadOptions): Promise<S3PresignPostUploadResult> {
         const {
             key,
             expiresInSec,
@@ -107,8 +107,8 @@ export class S3ObjectService implements OnModuleDestroy {
         if (typeof minContentLength === 'number' || typeof maxContentLength === 'number') {
             Conditions.push([
                 'content-length-range',
-                Or(minContentLength, 0),
-                Or(maxContentLength, 1024 * 1024 * 1024 * 1024)
+                defaultTo(minContentLength, 0),
+                defaultTo(maxContentLength, 1024 * 1024 * 1024 * 1024)
             ])
         }
 
@@ -125,7 +125,7 @@ export class S3ObjectService implements OnModuleDestroy {
         const { key, expiresInSec, filename, responseContentType, responseContentDisposition } =
             opts
 
-        const disposition = Or(
+        const disposition = defaultTo(
             responseContentDisposition,
             filename ? HttpUtil.buildContentDisposition(filename) : undefined
         )
@@ -172,7 +172,7 @@ export class S3ObjectService implements OnModuleDestroy {
     }
 
     async putObject(object: S3ObjectData): Promise<{ key: string }> {
-        const key = newObjectId()
+        const key = newObjectIdString()
         const disposition = HttpUtil.buildContentDisposition(object.filename)
 
         await this.s3.send(
@@ -193,7 +193,7 @@ export class S3ObjectService implements OnModuleDestroy {
             new DeleteObjectCommand({ Bucket: this.bucket, Key: key })
         )
 
-        return { status: Or($metadata.httpStatusCode, 200), key }
+        return { status: defaultTo($metadata.httpStatusCode, 200), key }
     }
 
     async listObjects(options: S3ListObjectsOptions): Promise<S3ListObjectsResult> {
@@ -207,16 +207,16 @@ export class S3ObjectService implements OnModuleDestroy {
             })
         )
 
-        const contents: S3ObjectSummary[] = Or(result.Contents, [])
+        const contents: S3ObjectSummary[] = defaultTo(result.Contents, [])
             .map((content) => ({
-                key: Or(content.Key, 'null'),
+                key: defaultTo(content.Key, 'null'),
                 lastModified: content.LastModified as Date,
                 eTag: content.ETag?.replace(/^"+|"+$/g, ''),
                 size: content.Size
             }))
             .filter((o) => o.key)
 
-        const commonPrefixes: string[] = Or(result.CommonPrefixes, [])
+        const commonPrefixes: string[] = defaultTo(result.CommonPrefixes, [])
             .map((cp) => cp.Prefix)
             .filter((p): p is string => typeof p === 'string' && p.length > 0)
 
@@ -224,10 +224,10 @@ export class S3ObjectService implements OnModuleDestroy {
             contents,
             commonPrefixes,
             isTruncated: Boolean(result.IsTruncated),
-            nextToken: Or(result.NextContinuationToken, undefined),
-            maxKeys: Or(result.MaxKeys, options.maxKeys),
-            prefix: Or(result.Prefix, options.prefix),
-            delimiter: Or(result.Delimiter, options.delimiter)
+            nextToken: defaultTo(result.NextContinuationToken, undefined),
+            maxKeys: defaultTo(result.MaxKeys, options.maxKeys),
+            prefix: defaultTo(result.Prefix, options.prefix),
+            delimiter: defaultTo(result.Delimiter, options.delimiter)
         }
     }
 }

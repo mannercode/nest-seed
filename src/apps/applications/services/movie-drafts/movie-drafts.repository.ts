@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { assignDefined, MongooseRepository } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { UpdateMovieDraftDto } from './dtos'
-import { MovieAssetDraft, MovieDraft, MovieDraftDocument } from './models'
+import { MovieDraftErrors } from './errors'
+import { MovieDraftAsset, MovieDraft, MovieDraftAssetStatus } from './models'
 
 @Injectable()
 export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
@@ -15,13 +16,15 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createDraft() {
+    async create() {
         const draft = this.newDocument()
-        return draft.save()
+        await draft.save()
+
+        return draft.toJSON()
     }
 
     async update(draftId: string, updateDto: UpdateMovieDraftDto) {
-        const draft = await this.getById(draftId)
+        const draft = await this.getDocumentById(draftId)
 
         assignDefined(draft, updateDto, 'title')
         assignDefined(draft, updateDto, 'genres')
@@ -31,19 +34,46 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
         assignDefined(draft, updateDto, 'director')
         assignDefined(draft, updateDto, 'rating')
 
-        return draft.save()
+        await draft.save()
+
+        return draft.toJSON()
     }
 
-    async addOrUpdateImage(draftId: string, image: MovieAssetDraft): Promise<MovieDraftDocument> {
-        const draft = await this.getById(draftId)
-        const existing = draft.assets.find((img) => img.assetId === image.assetId)
+    async addAsset(draftId: string, asset: MovieDraftAsset) {
+        const draft = await this.getDocumentById(draftId)
+        draft.assets.push(asset)
 
-        if (existing) {
-            existing.status = image.status
-        } else {
-            draft.assets.push(image)
+        await draft.save()
+    }
+
+    async updateAsset(
+        draftId: string,
+        assetId: string,
+        status: MovieDraftAssetStatus
+    ): Promise<void> {
+        const draft = await this.getDocumentById(draftId)
+        const asset = draft.assets.find((draftAsset) => draftAsset.assetId === assetId)
+
+        if (!asset) {
+            throw new NotFoundException({ ...MovieDraftErrors.AssetNotFound, assetId })
         }
 
-        return draft.save()
+        asset.status = status
+        await draft.save()
+    }
+
+    async removeAsset(draftId: string, assetId: string): Promise<boolean> {
+        const draft = await this.getDocumentById(draftId)
+
+        const nextAssets = draft.assets.filter((asset) => asset.assetId !== assetId)
+
+        if (nextAssets.length === draft.assets.length) {
+            return false
+        }
+
+        draft.assets = nextAssets
+        await draft.save()
+
+        return true
     }
 }

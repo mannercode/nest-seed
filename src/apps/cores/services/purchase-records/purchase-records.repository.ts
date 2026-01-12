@@ -22,6 +22,8 @@ export class PurchaseRecordsRepository extends MongooseRepository<PurchaseRecord
         purchase.totalPrice = createDto.totalPrice
         purchase.purchaseItems = createDto.purchaseItems.map((item) => ({ ...item }))
 
-        return purchase.save()
+        await purchase.save()
+
+        return purchase.toJSON()
     }
 }

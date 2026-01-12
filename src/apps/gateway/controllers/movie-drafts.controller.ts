@@ -18,44 +18,44 @@ export class MovieDraftsController {
 
     @Post()
     create() {
-        return this.movieDraftsClient.create()
+        return this.movieDraftsClient.createMovieDraft()
     }
 
     @Get(':draftId')
     get(@Param('draftId') draftId: string) {
-        return this.movieDraftsClient.get(draftId)
+        return this.movieDraftsClient.getMovieDraft(draftId)
     }
 
     @Patch(':draftId')
     update(@Param('draftId') draftId: string, @Body() updateDto: UpdateMovieDraftDto) {
-        return this.movieDraftsClient.update(draftId, updateDto)
+        return this.movieDraftsClient.updateMovieDraft(draftId, updateDto)
     }
 
     @HttpCode(HttpStatus.NO_CONTENT)
     @Delete(':draftId')
     async delete(@Param('draftId') draftId: string) {
-        await this.movieDraftsClient.delete(draftId)
+        await this.movieDraftsClient.deleteMovieDraft(draftId)
     }
 
     @Post(':draftId/complete')
     complete(@Param('draftId') draftId: string) {
-        return this.movieDraftsClient.completeDraft(draftId)
+        return this.movieDraftsClient.completeMovieDraft(draftId)
     }
 
-    @Post(':draftId/images')
-    createImageDraft(@Param('draftId') draftId: string, @Body() createDto: CreateAssetDto) {
-        return this.movieDraftsClient.createImageDraft(draftId, createDto)
+    @Post(':draftId/assets')
+    createAsset(@Param('draftId') draftId: string, @Body() createDto: CreateAssetDto) {
+        return this.movieDraftsClient.createAsset(draftId, createDto)
     }
 
     @HttpCode(HttpStatus.NO_CONTENT)
-    @Delete(':draftId/images/:imageId')
-    async deleteImage(@Param('draftId') draftId: string, @Param('imageId') imageId: string) {
-        await this.movieDraftsClient.deleteImage(draftId, imageId)
+    @Delete(':draftId/assets/:assetId')
+    async deleteAsset(@Param('draftId') draftId: string, @Param('assetId') assetId: string) {
+        await this.movieDraftsClient.deleteAsset(draftId, assetId)
     }
 
     @HttpCode(HttpStatus.OK)
-    @Post(':draftId/images/:imageId/complete')
-    completeImage(@Param('draftId') draftId: string, @Param('imageId') imageId: string) {
-        return this.movieDraftsClient.completeImage(draftId, imageId)
+    @Post(':draftId/assets/:assetId/complete')
+    completeAsset(@Param('draftId') draftId: string, @Param('assetId') assetId: string) {
+        return this.movieDraftsClient.completeAsset(draftId, assetId)
     }
 }

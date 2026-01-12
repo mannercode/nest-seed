@@ -1,13 +1,11 @@
 import { LatLong } from 'common'
-import { omit } from 'lodash'
+import { omit, sortBy } from 'lodash'
 import type { ShowtimeForBookingDto } from './dtos'
 import type { ShowtimeDto, TheaterDto, TicketSalesForShowtimeDto } from 'apps/cores'
 
 export function sortTheatersByDistance(theaters: TheaterDto[], latLong: LatLong) {
-    return theaters.sort(
-        (a, b) =>
-            Math.abs(LatLong.distanceInMeters(a.location, latLong)) -
-            Math.abs(LatLong.distanceInMeters(b.location, latLong))
+    return sortBy(theaters, (theater) =>
+        Math.abs(LatLong.distanceInMeters(theater.location, latLong))
     )
 }
 

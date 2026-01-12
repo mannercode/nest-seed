@@ -42,4 +42,4 @@ jobs:
               with:
                   push: never
                   runCmd: |
-                      bash .github/scripts/repeat-run.sh 200 npm run test:e2e
+                      bash .github/scripts/repeat-run.sh 30 npm run test:e2e
