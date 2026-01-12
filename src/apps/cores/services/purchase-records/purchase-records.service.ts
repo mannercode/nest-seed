@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { mapDocToDto } from 'common'
 import { CreatePurchaseRecordDto, PurchaseRecordDto } from './dtos'
-import { PurchaseRecordDocument } from './models'
+import { PurchaseRecord } from './models'
 import { PurchaseRecordsRepository } from './purchase-records.repository'
 
 @Injectable()
@@ -20,11 +20,11 @@ export class PurchaseRecordsService {
         return this.toDtos(purchases)
     }
 
-    private toDto(purchase: PurchaseRecordDocument) {
+    private toDto(purchase: PurchaseRecord) {
         return this.toDtos([purchase])[0]
     }
 
-    private toDtos(purchases: PurchaseRecordDocument[]) {
+    private toDtos(purchases: PurchaseRecord[]) {
         return purchases.map((purchase) =>
             mapDocToDto(purchase, PurchaseRecordDto, [
                 'id',

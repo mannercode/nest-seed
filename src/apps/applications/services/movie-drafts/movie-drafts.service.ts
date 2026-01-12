@@ -5,7 +5,7 @@ import { mapDocToDto } from 'common'
 import { map } from 'lodash'
 import { MovieDraftDto, MovieDraftAssetDto, UpdateMovieDraftDto } from './dtos'
 import { MovieDraftErrors } from './errors'
-import { MovieDraftAssetStatus, MovieDraftDocument } from './models'
+import { MovieDraft, MovieDraftAssetStatus } from './models'
 import { MovieDraftsRepository } from './movie-drafts.repository'
 import type { MovieDto } from 'apps/cores'
 
@@ -140,7 +140,7 @@ export class MovieDraftsService {
         return { id: assetId, status: MovieDraftAssetStatus.Ready }
     }
 
-    private toDto(draft: MovieDraftDocument): MovieDraftDto {
+    private toDto(draft: MovieDraft): MovieDraftDto {
         const readyAssetIds = this.getReadyAssetIds(draft)
 
         const dto = mapDocToDto(draft, MovieDraftDto, [
@@ -158,7 +158,7 @@ export class MovieDraftsService {
         return dto
     }
 
-    private getReadyAssetIds(draft: MovieDraftDocument): string[] {
+    private getReadyAssetIds(draft: MovieDraft): string[] {
         return draft.assets
             .filter((asset) => asset.status === MovieDraftAssetStatus.Ready)
             .map((asset) => asset.assetId)

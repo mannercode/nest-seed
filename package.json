@@ -62,6 +62,7 @@
         "joi": "^18.0.2",
         "lodash": "^4.17.21",
         "mongoose": "^8.21.0",
+        "mongoose-lean-virtuals": "^2.1.0",
         "nats": "^2.29.3",
         "passport-jwt": "^4.0.1",
         "passport-local": "^1.0.0",

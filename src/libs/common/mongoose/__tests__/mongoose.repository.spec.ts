@@ -252,7 +252,6 @@ describe('MongooseRepository', () => {
         // 존재하는 id의 문서를 반환한다
         it('returns the document for an existing id', async () => {
             const doc = await fix.repository.getById(sample.id)
-
             expect(toDto(doc)).toEqual(sample)
         })
 

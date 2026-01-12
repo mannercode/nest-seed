@@ -7,7 +7,7 @@ import {
     SearchTicketsDto,
     TicketDto
 } from './dtos'
-import { TicketDocument, TicketStatus } from './models'
+import { Ticket, TicketStatus } from './models'
 import { TicketsRepository } from './tickets.repository'
 
 @Injectable()
@@ -51,7 +51,7 @@ export class TicketsService {
         return this.toDtos(tickets)
     }
 
-    private toDtos(tickets: TicketDocument[]) {
+    private toDtos(tickets: Ticket[]) {
         return tickets.map((ticket) =>
             mapDocToDto(ticket, TicketDto, [
                 'id',

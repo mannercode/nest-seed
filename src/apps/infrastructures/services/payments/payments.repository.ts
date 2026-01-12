@@ -20,6 +20,8 @@ export class PaymentsRepository extends MongooseRepository<Payment> {
         payment.customerId = createDto.customerId
         payment.amount = createDto.amount
 
-        return payment.save()
+        await payment.save()
+
+        return payment.toJSON()
     }
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { mapDocToDto } from 'common'
 import { CreateShowtimeDto, SearchShowtimesDto, ShowtimeDto } from './dtos'
-import { ShowtimeDocument } from './models'
+import { Showtime } from './models'
 import { ShowtimesRepository } from './showtimes.repository'
 
 @Injectable()
@@ -42,7 +42,7 @@ export class ShowtimesService {
         return this.repository.allExist(showtimeIds)
     }
 
-    private toDtos(showtimes: ShowtimeDocument[]) {
+    private toDtos(showtimes: Showtime[]) {
         return showtimes.map((showtime) =>
             mapDocToDto(showtime, ShowtimeDto, [
                 'id',

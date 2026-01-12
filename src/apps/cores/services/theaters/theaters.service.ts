@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { mapDocToDto } from 'common'
 import { CreateTheaterDto, SearchTheatersPageDto, TheaterDto, UpdateTheaterDto } from './dtos'
-import { TheaterDocument } from './models'
+import { Theater } from './models'
 import { TheatersRepository } from './theaters.repository'
 
 @Injectable()
@@ -23,7 +23,8 @@ export class TheatersService {
     async getMany(theaterIds: string[]) {
         const theaters = await this.repository.getByIds(theaterIds)
 
-        return this.toDtos(theaters)
+        const res = this.toDtos(theaters)
+        return res
     }
 
     async deleteMany(theaterIds: string[]) {
@@ -41,11 +42,11 @@ export class TheatersService {
         return this.repository.allExist(theaterIds)
     }
 
-    private toDto(theater: TheaterDocument) {
+    private toDto(theater: Theater) {
         return this.toDtos([theater])[0]
     }
 
-    private toDtos(theaters: TheaterDocument[]) {
+    private toDtos(theaters: Theater[]) {
         return theaters.map((theater) =>
             mapDocToDto(theater, TheaterDto, ['id', 'name', 'location', 'seatmap'])
         )

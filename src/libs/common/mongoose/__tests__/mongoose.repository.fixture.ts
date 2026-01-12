@@ -7,7 +7,7 @@ import {
     MongooseSchema,
     padNumber
 } from 'common'
-import { HydratedDocument, Model } from 'mongoose'
+import { Model } from 'mongoose'
 import { createTestContext, getMongoTestConnection } from 'testlib'
 
 @Schema({ toJSON: { virtuals: true } })
@@ -15,7 +15,6 @@ class Sample extends MongooseSchema {
     @Prop({ required: true })
     name: string
 }
-type SampleDocument = HydratedDocument<Sample>
 const SampleSchema = createMongooseSchema(Sample)
 
 export class SampleDto {
@@ -40,10 +39,12 @@ export function sortByNameDescending(documents: SampleDto[]) {
     return documents.sort((a, b) => b.name.localeCompare(a.name))
 }
 
-export function createSample(repository: SamplesRepository) {
+export async function createSample(repository: SamplesRepository) {
     const doc = repository.newDocument()
     doc.name = 'Sample-Name'
-    return doc.save()
+    await doc.save()
+
+    return doc.toJSON()
 }
 
 export async function createSamples(repository: SamplesRepository) {
@@ -51,17 +52,19 @@ export async function createSamples(repository: SamplesRepository) {
         Array.from({ length: 20 }, async (_unused, index) => {
             const doc = repository.newDocument()
             doc.name = `Sample-${padNumber(index, 3)}`
-            return doc.save()
+            await doc.save()
+
+            return doc.toJSON()
         })
     )
 }
 
-export function toDto(item: SampleDocument | null) {
+export function toDto(item: Sample | null) {
     if (item === null) return { id: '0', name: 'name' }
 
     return mapDocToDto(item, SampleDto, ['id', 'name'])
 }
-export function toDtos(items: SampleDocument[]) {
+export function toDtos(items: Sample[]) {
     return items.map((item) => toDto(item))
 }
 

@@ -22,17 +22,21 @@ export class CustomersRepository extends MongooseRepository<Customer> {
         customer.birthDate = createDto.birthDate
         customer.password = createDto.password
 
-        return customer.save()
+        await customer.save()
+
+        return customer.toJSON()
     }
 
     async update(customerId: string, updateDto: UpdateCustomerDto) {
-        const customer = await this.getById(customerId)
+        const customer = await this.getDocumentById(customerId)
 
         assignDefined(customer, updateDto, 'name')
         assignDefined(customer, updateDto, 'email')
         assignDefined(customer, updateDto, 'birthDate')
 
-        return customer.save()
+        await customer.save()
+
+        return customer.toJSON()
     }
 
     async searchPage(searchDto: SearchCustomersPageDto) {
@@ -62,6 +66,7 @@ export class CustomersRepository extends MongooseRepository<Customer> {
         const customer = await this.model
             .findOne({ email: { $eq: email } })
             .select('+password')
+            .lean({ virtuals: true })
             .exec()
 
         return customer

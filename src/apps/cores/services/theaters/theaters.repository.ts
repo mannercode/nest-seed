@@ -20,18 +20,19 @@ export class TheatersRepository extends MongooseRepository<Theater> {
         theater.name = createDto.name
         theater.location = createDto.location
         theater.seatmap = createDto.seatmap
+        await theater.save()
 
-        return theater.save()
+        return theater.toJSON()
     }
 
     async update(theaterId: string, updateDto: UpdateTheaterDto) {
-        const theater = await this.getById(theaterId)
-
+        const theater = await this.getDocumentById(theaterId)
         assignDefined(theater, updateDto, 'name')
         assignDefined(theater, updateDto, 'location')
         assignDefined(theater, updateDto, 'seatmap')
+        await theater.save()
 
-        return theater.save()
+        return theater.toJSON()
     }
 
     async searchPage(searchDto: SearchTheatersPageDto) {

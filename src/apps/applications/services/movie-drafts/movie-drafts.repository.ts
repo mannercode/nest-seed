@@ -5,7 +5,7 @@ import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { UpdateMovieDraftDto } from './dtos'
 import { MovieDraftErrors } from './errors'
-import { MovieDraftAsset, MovieDraft, MovieDraftAssetStatus, MovieDraftDocument } from './models'
+import { MovieDraftAsset, MovieDraft, MovieDraftAssetStatus } from './models'
 
 @Injectable()
 export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
@@ -18,11 +18,13 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
 
     async create() {
         const draft = this.newDocument()
-        return draft.save()
+        await draft.save()
+
+        return draft.toJSON()
     }
 
     async update(draftId: string, updateDto: UpdateMovieDraftDto) {
-        const draft = await this.getById(draftId)
+        const draft = await this.getDocumentById(draftId)
 
         assignDefined(draft, updateDto, 'title')
         assignDefined(draft, updateDto, 'genres')
@@ -32,11 +34,13 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
         assignDefined(draft, updateDto, 'director')
         assignDefined(draft, updateDto, 'rating')
 
-        return draft.save()
+        await draft.save()
+
+        return draft.toJSON()
     }
 
     async addAsset(draftId: string, asset: MovieDraftAsset) {
-        const draft = await this.getById(draftId)
+        const draft = await this.getDocumentById(draftId)
         draft.assets.push(asset)
 
         await draft.save()
@@ -46,8 +50,8 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
         draftId: string,
         assetId: string,
         status: MovieDraftAssetStatus
-    ): Promise<MovieDraftDocument> {
-        const draft = await this.getById(draftId)
+    ): Promise<void> {
+        const draft = await this.getDocumentById(draftId)
         const asset = draft.assets.find((draftAsset) => draftAsset.assetId === assetId)
 
         if (!asset) {
@@ -55,11 +59,11 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
         }
 
         asset.status = status
-        return draft.save()
+        await draft.save()
     }
 
     async removeAsset(draftId: string, assetId: string): Promise<boolean> {
-        const draft = await this.getById(draftId)
+        const draft = await this.getDocumentById(draftId)
 
         const nextAssets = draft.assets.filter((asset) => asset.assetId !== assetId)
 

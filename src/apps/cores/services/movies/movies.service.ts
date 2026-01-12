@@ -3,7 +3,7 @@ import { AssetsClient } from 'apps/infrastructures'
 import { ensure, mapDocToDto, pickIds } from 'common'
 import { uniq } from 'lodash'
 import { CreateMovieDto, MovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
-import { MovieDocument } from './models'
+import { Movie } from './models'
 import { MoviesRepository } from './movies.repository'
 
 @Injectable()
@@ -54,11 +54,11 @@ export class MoviesService {
         return this.repository.allExist(movieIds)
     }
 
-    private async toDto(movie: MovieDocument): Promise<MovieDto> {
+    private async toDto(movie: Movie): Promise<MovieDto> {
         return (await this.toDtos([movie]))[0]
     }
 
-    private async toDtos(movies: MovieDocument[]): Promise<MovieDto[]> {
+    private async toDtos(movies: Movie[]): Promise<MovieDto[]> {
         const dtos = movies.map((movie) => {
             const dto = mapDocToDto(movie, MovieDto, [
                 'id',

@@ -10,7 +10,7 @@ import {
     UpdateCustomerDto
 } from './dtos'
 import { CustomerErrors } from './errors'
-import { CustomerDocument } from './models'
+import { Customer } from './models'
 import { CustomerAuthenticationService } from './services'
 
 /**
@@ -82,11 +82,11 @@ export class CustomersService {
         return customer ? this.toDto(customer) : null
     }
 
-    private toDto(customer: CustomerDocument) {
+    private toDto(customer: Customer) {
         return this.toDtos([customer])[0]
     }
 
-    private toDtos(customers: CustomerDocument[]) {
+    private toDtos(customers: Customer[]) {
         return customers.map((customer) =>
             mapDocToDto(customer, CustomerDto, ['id', 'name', 'email', 'birthDate'])
         )

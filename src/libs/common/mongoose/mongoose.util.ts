@@ -3,7 +3,7 @@ import { escapeRegExp, uniq } from 'lodash'
 import { Types } from 'mongoose'
 import { Verify } from '../validator'
 import { MongooseErrors } from './errors'
-import type { FilterQuery, HydratedDocument } from 'mongoose'
+import type { FilterQuery } from 'mongoose'
 
 export const newObjectIdString = () => new Types.ObjectId().toString()
 export const objectId = (id: string) => new Types.ObjectId(id)
@@ -74,27 +74,17 @@ export class QueryBuilder<T> {
     }
 }
 
-/**
- * Converts a Mongoose document to a DTO.
- * Mongoose 문서를 Dto로 변환한다
- *
- * @param doc       The Mongoose Document to convert
- * @param DtoClass  The DTO class to instantiate (new () => DTO)
- * @param keys      The list of keys to include in the DTO
- * @returns         A new DTO instance
- */
-export function mapDocToDto<
-    DOC extends object,
-    DTO extends object,
-    K extends keyof DOC & keyof DTO
->(doc: HydratedDocument<DOC>, DtoClass: new () => DTO, keys: K[]): DTO {
-    type SchemaJson<T> = { [K in keyof T]: T[K] extends Types.ObjectId ? string : T[K] }
-
-    const json = doc.toJSON() as SchemaJson<DOC>
+export function mapDocToDto<DOC extends object, DTO extends object, K extends keyof DTO>(
+    doc: DOC,
+    DtoClass: new () => DTO,
+    keys: K[]
+): DTO {
     const dto = new DtoClass()
+    const record = doc as Record<string, unknown>
 
     for (const key of keys) {
-        dto[key] = json[key] as DTO[K]
+        const value = record[key as string]
+        dto[key] = value as DTO[K]
     }
 
     return dto

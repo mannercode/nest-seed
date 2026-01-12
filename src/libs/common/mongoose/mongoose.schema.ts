@@ -1,5 +1,6 @@
 import { SchemaFactory } from '@nestjs/mongoose'
 import { defaultTo } from 'lodash'
+import mongooseLeanVirtuals from 'mongoose-lean-virtuals'
 import type { Type } from '@nestjs/common'
 import type { ClientSession, Schema } from 'mongoose'
 
@@ -42,6 +43,7 @@ function excludeDeletedMiddleware() {
 
 export function createMongooseSchema<T>(cls: Type<T>): Schema<T> {
     const schema = SchemaFactory.createForClass(cls)
+    schema.plugin(mongooseLeanVirtuals)
 
     const isHardDelete = defaultTo(Reflect.getMetadata(HARD_DELETE_KEY, cls), false)
     // The softDelete feature has not been tested under various conditions and is therefore incomplete.
