@@ -38,11 +38,6 @@ export class ShowtimesService {
         return this.repository.searchShowdates(searchDto)
     }
 
-    async deleteBySagaIds(sagaIds: string[]) {
-        await this.repository.deleteBySagaIds(sagaIds)
-        return {}
-    }
-
     async allExist(showtimeIds: string[]): Promise<boolean> {
         return this.repository.allExist(showtimeIds)
     }

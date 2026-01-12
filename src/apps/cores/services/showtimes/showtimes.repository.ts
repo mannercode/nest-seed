@@ -64,11 +64,6 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         return showdates.map((item) => new Date(item._id))
     }
 
-    async deleteBySagaIds(sagaIds: string[]) {
-        const { deletedCount } = await this.model.deleteMany({ sagaId: { $in: sagaIds } })
-        return { deletedCount }
-    }
-
     private buildQuery(searchDto: SearchShowtimesDto, options: QueryBuilderOptions = {}) {
         const { sagaIds, movieIds, theaterIds, startTimeRange, endTimeRange } = searchDto
 

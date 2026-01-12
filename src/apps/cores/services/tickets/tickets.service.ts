@@ -51,11 +51,6 @@ export class TicketsService {
         return this.toDtos(tickets)
     }
 
-    async deleteBySagaIds(sagaIds: string[]) {
-        await this.repository.deleteBySagaIds(sagaIds)
-        return {}
-    }
-
     private toDtos(tickets: TicketDocument[]) {
         return tickets.map((ticket) =>
             mapDocToDto(ticket, TicketDto, [

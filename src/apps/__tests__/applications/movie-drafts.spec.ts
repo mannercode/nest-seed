@@ -1,7 +1,7 @@
 import { MovieGenre, MovieRating } from 'apps/cores'
 import { Expect } from 'common'
 import { nullObjectId } from 'testlib'
-import { buildCreateAssetDto, Errors, fixtureFiles, uploadAsset } from '../__helpers__'
+import { buildCreateAssetDto, Errors, fixtureFiles, uploadAsset, uploadFile } from '../__helpers__'
 import {
     createMovieAsset,
     createMovieDraft,
@@ -179,7 +179,7 @@ describe('MovieDraftsService', () => {
     })
 
     describe('DELETE /movie-drafts/:draftId/assets/:assetId', () => {
-        // 에셋이 존재할 때
+        // 영화 초안이 존재할 때
         describe('when the asset exists', () => {
             let movieDraft: MovieDraftDto
 
@@ -214,26 +214,26 @@ describe('MovieDraftsService', () => {
                     const response = await fetch(asset.download.url)
                     expect(response.status).toBe(404)
                 })
+            })
 
-                // 에셋이 존재하지 않을 때
-                describe('when the asset does not exist', () => {
-                    // 204 No Content를 반환한다
-                    it('returns 204 No Content', async () => {
-                        await fix.httpClient
-                            .delete(`/movie-drafts/${movieDraft.id}/assets/${nullObjectId}`)
-                            .noContent()
-                    })
+            // 에셋이 존재하지 않을 때
+            describe('when the asset does not exist', () => {
+                // 204 No Content를 반환한다
+                it('returns 204 No Content', async () => {
+                    await fix.httpClient
+                        .delete(`/movie-drafts/${movieDraft.id}/assets/${nullObjectId}`)
+                        .noContent()
                 })
             })
         })
 
         // 영화 초안이 존재하지 않을 때
         describe('when the movie-draft does not exist', () => {
-            // 204 No Content를 반환한다
-            it('returns 204 No Content', async () => {
+            // 404 Not Found를 반환한다
+            it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .delete(`/movie-drafts/${nullObjectId}/assets/${nullObjectId}`)
-                    .noContent()
+                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
             })
         })
     })
@@ -295,11 +295,17 @@ describe('MovieDraftsService', () => {
 
         // 에셋이 존재하지 않을 때
         describe('when the asset does not exist', () => {
+            let assetId: string
+
+            beforeEach(async () => {
+                assetId = await uploadFile(fix, fix.asset)
+            })
+
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
-                    .post(`/movie-drafts/${movieDraft.id}/assets/${nullObjectId}/complete`)
-                    .notFound({ ...Errors.MovieDrafts.AssetNotFound, assetId: nullObjectId })
+                    .post(`/movie-drafts/${movieDraft.id}/assets/${assetId}/complete`)
+                    .notFound({ ...Errors.MovieDrafts.AssetNotFound, assetId })
             })
         })
     })

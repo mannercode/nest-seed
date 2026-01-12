@@ -77,11 +77,6 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         return showtimeTicketSalesArray as TicketSalesForShowtimeDto[]
     }
 
-    async deleteBySagaIds(sagaIds: string[]) {
-        const { deletedCount } = await this.model.deleteMany({ sagaId: { $in: sagaIds } })
-        return { deletedCount }
-    }
-
     private buildQuery(searchDto: SearchTicketsDto, options: QueryBuilderOptions = {}) {
         const { sagaIds, movieIds, theaterIds, showtimeIds } = searchDto
 

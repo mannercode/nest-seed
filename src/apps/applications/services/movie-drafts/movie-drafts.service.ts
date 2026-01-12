@@ -1,11 +1,7 @@
-import {
-    BadRequestException,
-    Injectable,
-    NotFoundException,
-    UnprocessableEntityException
-} from '@nestjs/common'
+import { BadRequestException, Injectable, UnprocessableEntityException } from '@nestjs/common'
 import { MoviesClient } from 'apps/cores'
 import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
+import { mapDocToDto } from 'common'
 import { map } from 'lodash'
 import { MovieDraftDto, MovieDraftAssetDto, UpdateMovieDraftDto } from './dtos'
 import { MovieDraftErrors } from './errors'
@@ -120,24 +116,12 @@ export class MovieDraftsService {
     }
 
     async deleteAsset(draftId: string, assetId: string): Promise<Record<string, never>> {
-        const removed = await this.repository.removeAsset(draftId, assetId)
-
-        if (!removed) {
-            return {}
-        }
-
+        await this.repository.removeAsset(draftId, assetId)
         await this.assetsClient.deleteMany([assetId])
         return {}
     }
 
     async completeAsset(draftId: string, assetId: string): Promise<MovieDraftAssetDto> {
-        const draft = await this.repository.getById(draftId)
-
-        const draftAsset = draft.assets.find((asset) => asset.assetId === assetId)
-        if (!draftAsset) {
-            throw new NotFoundException({ ...MovieDraftErrors.AssetNotFound, assetId })
-        }
-
         const isUploaded = await this.assetsClient.isUploadComplete(assetId)
 
         if (!isUploaded) {
@@ -151,7 +135,7 @@ export class MovieDraftsService {
             owner: { service: 'movie-drafts', entityId: draftId }
         })
 
-        await this.repository.updateAsset(draft, assetId, MovieDraftAssetStatus.Ready)
+        await this.repository.updateAsset(draftId, assetId, MovieDraftAssetStatus.Ready)
 
         return { id: assetId, status: MovieDraftAssetStatus.Ready }
     }
@@ -159,17 +143,19 @@ export class MovieDraftsService {
     private toDto(draft: MovieDraftDocument): MovieDraftDto {
         const readyAssetIds = this.getReadyAssetIds(draft)
 
-        return {
-            id: draft.id,
-            title: draft.title,
-            genres: draft.genres,
-            releaseDate: draft.releaseDate,
-            plot: draft.plot,
-            durationInSeconds: draft.durationInSeconds,
-            director: draft.director,
-            rating: draft.rating,
-            assetIds: readyAssetIds
-        }
+        const dto = mapDocToDto(draft, MovieDraftDto, [
+            'id',
+            'title',
+            'genres',
+            'releaseDate',
+            'plot',
+            'durationInSeconds',
+            'director',
+            'rating'
+        ])
+        dto.assetIds = readyAssetIds
+
+        return dto
     }
 
     private getReadyAssetIds(draft: MovieDraftDocument): string[] {
