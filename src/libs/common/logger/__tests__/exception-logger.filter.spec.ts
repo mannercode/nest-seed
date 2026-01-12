@@ -73,7 +73,7 @@ describe('ExceptionLoggerFilter', () => {
             // Logger.warn으로 로그를 남긴다
             it('logs via Logger.warn', async () => {
                 const subject = withTestId('exception')
-                await fix.rpcClient.error(
+                await fix.rpcClient.expectError(
                     subject,
                     {},
                     expect.objectContaining({
@@ -98,7 +98,7 @@ describe('ExceptionLoggerFilter', () => {
             // Logger.error로 로그를 남긴다
             it('logs via Logger.error', async () => {
                 const subject = withTestId('error')
-                await fix.rpcClient.error(subject, {}, Error('error message'))
+                await fix.rpcClient.expectError(subject, {}, Error('error message'))
 
                 expect(fix.spyError).toHaveBeenCalledTimes(1)
                 expect(fix.spyError).toHaveBeenCalledWith('error', {
@@ -116,7 +116,7 @@ describe('ExceptionLoggerFilter', () => {
             // Logger.fatal로 로그를 남긴다
             it('logs via Logger.fatal', async () => {
                 const subject = withTestId('fatal')
-                await fix.rpcClient.error(subject, {}, Error('fatal error message'))
+                await fix.rpcClient.expectError(subject, {}, Error('fatal error message'))
 
                 expect(fix.spyFatal).toHaveBeenCalledTimes(1)
                 expect(fix.spyFatal).toHaveBeenCalledWith('fatal', {

@@ -36,7 +36,7 @@ describe('SuccessLoggingInterceptor', () => {
             it('logs via Logger.verbose', async () => {
                 const subject = withTestId('success')
                 const data = { key: 'value' }
-                await fix.rpcClient.expect(subject, data, { result: 'success' })
+                await fix.rpcClient.expectRequest(subject, data, { result: 'success' })
 
                 expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
                 expect(fix.spyVerbose).toHaveBeenCalledWith('success', {
@@ -106,7 +106,7 @@ describe('SuccessLoggingInterceptor', () => {
         it('ignores specified RPC paths', async () => {
             const subject = withTestId('exclude-path')
             const data = { key: 'value' }
-            await fix.rpcClient.expect(subject, data, { result: 'success' })
+            await fix.rpcClient.expectRequest(subject, data, { result: 'success' })
 
             expect(fix.spyVerbose).toHaveBeenCalledTimes(0)
         })

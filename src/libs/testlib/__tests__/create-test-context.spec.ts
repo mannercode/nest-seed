@@ -18,7 +18,11 @@ describe('createTestContext', () => {
 
     // RPC 메시지에 올바르게 응답한다
     it('responds correctly to an RPC message', async () => {
-        await fix.rpcClient.expect(withTestId('getRpcMessage'), { arg: 'value' }, { id: 'value' })
+        await fix.rpcClient.expectRequest(
+            withTestId('getRpcMessage'),
+            { arg: 'value' },
+            { id: 'value' }
+        )
     })
 
     // HTTP 메시지에 올바르게 응답한다

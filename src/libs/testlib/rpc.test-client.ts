@@ -3,8 +3,8 @@ import { ClientProxyService } from 'common'
 import type { NatsOptions } from '@nestjs/microservices'
 
 export class RpcTestClient extends ClientProxyService {
-    static create(option: NatsOptions) {
-        const proxy = ClientProxyFactory.create(option)
+    static create(options: NatsOptions) {
+        const proxy = ClientProxyFactory.create(options)
 
         return new RpcTestClient(proxy)
     }
@@ -13,7 +13,7 @@ export class RpcTestClient extends ClientProxyService {
         await this.onModuleDestroy()
     }
 
-    async expect<T>(cmd: string, payload: any, expected: any): Promise<T> {
+    async expectRequest<T>(cmd: string, payload: any, expected: any): Promise<T> {
         const value = await super.request<T>(cmd, payload)
 
         if (expected) {
@@ -23,7 +23,7 @@ export class RpcTestClient extends ClientProxyService {
         return value
     }
 
-    async error(cmd: string, payload: any, expected: any) {
+    async expectError(cmd: string, payload: any, expected: any) {
         const promise = super.request(cmd, payload)
         const error = await promise.catch((e) => e)
 
