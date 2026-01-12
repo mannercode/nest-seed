@@ -24,9 +24,11 @@ export class RpcTestClient extends ClientProxyService {
     }
 
     async error(cmd: string, payload: any, expected: any) {
-        const promise = super.request(cmd, payload)
-        const error = await promise.catch((e) => e)
-
-        expect(error).toEqual(expected)
+        try {
+            await super.request(cmd, payload)
+            fail('Expected request to throw an error, but it succeeded.')
+        } catch (err) {
+            expect(err).toEqual(expected)
+        }
     }
 }
