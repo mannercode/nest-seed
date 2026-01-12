@@ -55,6 +55,21 @@ describe('DateUtil', () => {
             const date = DateUtil.latest(dates)
             expect(date).toEqual(new Date('2022-01-03T15:30:00Z'))
         })
+
+        // 배열이 비어있을 때
+        describe('when the array is empty', () => {
+            // earliest는 Invalid Date를 반환한다
+            it('returns an invalid date for earliest', () => {
+                const date = DateUtil.earliest([])
+                expect(Number.isNaN(date.getTime())).toBe(true)
+            })
+
+            // latest는 Invalid Date를 반환한다
+            it('returns an invalid date for latest', () => {
+                const date = DateUtil.latest([])
+                expect(Number.isNaN(date.getTime())).toBe(true)
+            })
+        })
     })
 
     describe('now', () => {

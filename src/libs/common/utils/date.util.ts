@@ -1,3 +1,5 @@
+import { maxBy, minBy } from 'lodash'
+
 export type DateAddOptions = {
     base?: Date
     days?: number
@@ -15,8 +17,8 @@ export class DateUtil {
      * @returns {Date} The earliest date in the array.
      */
     static earliest(dates: Date[]): Date {
-        const minTimestamp = Math.min(...dates.map((date) => date.getTime()))
-        return new Date(minTimestamp)
+        const minDate = minBy(dates, (date) => date.getTime())
+        return minDate ? new Date(minDate.getTime()) : new Date(NaN)
     }
 
     /**
@@ -27,8 +29,8 @@ export class DateUtil {
      * @returns {Date} The latest date in the array.
      */
     static latest(dates: Date[]): Date {
-        const maxTimestamp = Math.max(...dates.map((date) => date.getTime()))
-        return new Date(maxTimestamp)
+        const maxDate = maxBy(dates, (date) => date.getTime())
+        return maxDate ? new Date(maxDate.getTime()) : new Date(NaN)
     }
 
     /**

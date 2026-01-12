@@ -1,27 +1,17 @@
-import { omit } from 'lodash'
+import { fromPairs, keys, omit, pickBy, sortBy, toPairs } from 'lodash'
 
 function stringifyWithSortedKeys(record: Record<string, any>): string {
     return JSON.stringify(record, (key, value) => {
         if (value && typeof value === 'object' && !Array.isArray(value)) {
-            return Object.keys(value)
-                .sort()
-                .reduce(
-                    (sortedRecord, currentKey) => {
-                        sortedRecord[currentKey] = value[currentKey]
-                        return sortedRecord
-                    },
-                    {} as Record<string, any>
-                )
+            const sortedPairs = sortBy(toPairs(value), ([entryKey]) => entryKey)
+            return fromPairs(sortedPairs)
         }
         return value
     })
 }
 
 function sortDtos<T extends Record<string, any>>(dtos: T[], excludeKeys: string[] = []): T[] {
-    return dtos
-        .map((dto) => ({ dto, sortKey: stringifyWithSortedKeys(omit(dto, excludeKeys)) }))
-        .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
-        .map(({ dto }) => dto)
+    return sortBy(dtos, (dto) => stringifyWithSortedKeys(omit(dto, excludeKeys)))
 }
 
 function isAsymmetricMatcher(
@@ -47,9 +37,7 @@ function containsAsymmetricMatcher(value: unknown): boolean {
 }
 
 function getAsymmetricMatcherKeys(record: Record<string, any>): string[] {
-    return Object.entries(record)
-        .filter(([_, value]) => containsAsymmetricMatcher(value))
-        .map(([key]) => key)
+    return keys(pickBy(record, (value) => containsAsymmetricMatcher(value)))
 }
 
 /**
