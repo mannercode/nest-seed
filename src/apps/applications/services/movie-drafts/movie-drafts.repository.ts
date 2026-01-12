@@ -4,7 +4,7 @@ import { assignDefined, MongooseRepository } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { UpdateMovieDraftDto } from './dtos'
-import { MovieDraftAsset, MovieDraft, MovieDraftDocument } from './models'
+import { MovieDraftAsset, MovieDraft, MovieDraftAssetStatus, MovieDraftDocument } from './models'
 
 @Injectable()
 export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
@@ -15,7 +15,7 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async createMovieDraft() {
+    async create() {
         const draft = this.newDocument()
         return draft.save()
     }
@@ -34,16 +34,48 @@ export class MovieDraftsRepository extends MongooseRepository<MovieDraft> {
         return draft.save()
     }
 
-    async addOrUpdateAsset(draftId: string, asset: MovieDraftAsset): Promise<MovieDraftDocument> {
+    async addAsset(draftId: string, asset: MovieDraftAsset): Promise<MovieDraftDocument> {
         const draft = await this.getById(draftId)
         const existing = draft.assets.find((draftAsset) => draftAsset.assetId === asset.assetId)
 
-        if (existing) {
-            existing.status = asset.status
-        } else {
+        if (!existing) {
             draft.assets.push(asset)
+            return draft.save()
         }
 
+        return draft
+    }
+
+    async updateAsset(
+        draft: MovieDraftDocument,
+        assetId: string,
+        status: MovieDraftAssetStatus
+    ): Promise<MovieDraftDocument> {
+        const existing = draft.assets.find((draftAsset) => draftAsset.assetId === assetId)
+
+        if (!existing) {
+            return draft
+        }
+
+        existing.status = status
         return draft.save()
+    }
+
+    async removeAsset(draftId: string, assetId: string): Promise<boolean> {
+        const draft = await this.findById(draftId)
+
+        if (!draft) {
+            return false
+        }
+
+        const nextAssets = draft.assets.filter((asset) => asset.assetId !== assetId)
+        if (nextAssets.length === draft.assets.length) {
+            return false
+        }
+
+        draft.assets = nextAssets
+        await draft.save()
+
+        return true
     }
 }

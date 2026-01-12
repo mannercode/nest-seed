@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common'
 import { MoviesClient } from 'apps/cores'
 import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
-import { uniq } from 'lodash'
+import { map } from 'lodash'
 import { MovieDraftDto, MovieDraftAssetDto, UpdateMovieDraftDto } from './dtos'
 import { MovieDraftErrors } from './errors'
 import { MovieDraftAssetStatus, MovieDraftDocument } from './models'
@@ -22,7 +22,7 @@ export class MovieDraftsService {
     ) {}
 
     async createMovieDraft(): Promise<MovieDraftDto> {
-        const draft = await this.repository.createMovieDraft()
+        const draft = await this.repository.create()
         return this.toDto(draft)
     }
 
@@ -36,12 +36,11 @@ export class MovieDraftsService {
         return this.toDto(draft)
     }
 
-    // TODO refactor
     async deleteMovieDraft(draftId: string): Promise<Record<string, never>> {
         const draft = await this.repository.findById(draftId)
 
         if (draft) {
-            const assetIds = uniq(draft.assets.map((asset) => asset.assetId))
+            const assetIds = map(draft.assets, 'assetId')
 
             if (0 < assetIds.length) {
                 await this.assetsClient.deleteMany(assetIds)
@@ -80,7 +79,7 @@ export class MovieDraftsService {
                 assetIds: readyAssetIds
             })
 
-            await draft.deleteOne()
+            await this.repository.deleteById(draftId)
 
             return movie
         }
@@ -112,7 +111,7 @@ export class MovieDraftsService {
 
         const upload = await this.assetsClient.create(createDto)
 
-        await this.repository.addOrUpdateAsset(draftId, {
+        await this.repository.addAsset(draftId, {
             assetId: upload.assetId,
             status: MovieDraftAssetStatus.Pending
         })
@@ -121,19 +120,11 @@ export class MovieDraftsService {
     }
 
     async deleteAsset(draftId: string, assetId: string): Promise<Record<string, never>> {
-        const draft = await this.repository.findById(draftId)
+        const removed = await this.repository.removeAsset(draftId, assetId)
 
-        if (!draft) {
+        if (!removed) {
             return {}
         }
-
-        const hasAsset = draft.assets.some((asset) => asset.assetId === assetId)
-        if (!hasAsset) {
-            return {}
-        }
-
-        draft.assets = draft.assets.filter((asset) => asset.assetId !== assetId)
-        await draft.save()
 
         await this.assetsClient.deleteMany([assetId])
         return {}
@@ -160,10 +151,7 @@ export class MovieDraftsService {
             owner: { service: 'movie-drafts', entityId: draftId }
         })
 
-        await this.repository.addOrUpdateAsset(draftId, {
-            assetId,
-            status: MovieDraftAssetStatus.Ready
-        })
+        await this.repository.updateAsset(draft, assetId, MovieDraftAssetStatus.Ready)
 
         return { id: assetId, status: MovieDraftAssetStatus.Ready }
     }
