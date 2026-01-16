@@ -1,0 +1,40 @@
+import { Controller } from '@nestjs/common'
+import { MessagePattern, Payload } from '@nestjs/microservices'
+import { Messages } from 'shared'
+import { CreateMovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
+import { MoviesService } from './movies.service'
+
+@Controller()
+export class MoviesController {
+    constructor(private readonly service: MoviesService) {}
+
+    @MessagePattern(Messages.Movies.create)
+    create(@Payload() createMovieDto: CreateMovieDto) {
+        return this.service.create(createMovieDto)
+    }
+
+    @MessagePattern(Messages.Movies.update)
+    update(@Payload('movieId') movieId: string, @Payload('updateDto') updateDto: UpdateMovieDto) {
+        return this.service.update(movieId, updateDto)
+    }
+
+    @MessagePattern(Messages.Movies.getMany)
+    getMany(@Payload() movieIds: string[]) {
+        return this.service.getMany(movieIds)
+    }
+
+    @MessagePattern(Messages.Movies.deleteMany)
+    deleteMany(@Payload() movieIds: string[]) {
+        return this.service.deleteMany(movieIds)
+    }
+
+    @MessagePattern(Messages.Movies.searchPage)
+    searchPage(@Payload() searchDto: SearchMoviesPageDto) {
+        return this.service.searchPage(searchDto)
+    }
+
+    @MessagePattern(Messages.Movies.allExist)
+    allExist(@Payload() movieIds: string[]) {
+        return this.service.allExist(movieIds)
+    }
+}
