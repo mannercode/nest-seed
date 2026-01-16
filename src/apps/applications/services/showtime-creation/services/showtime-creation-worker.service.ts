@@ -42,7 +42,7 @@ export class ShowtimeCreationWorkerService
         await this.worker.close()
     }
 
-    async requestShowtimeCreation(createDto: BulkCreateShowtimesDto) {
+    async enqueueShowtimeCreationJob(createDto: BulkCreateShowtimesDto) {
         const sagaId = newObjectIdString()
 
         const jobData = { createDto, sagaId } as ShowtimeCreationJobData

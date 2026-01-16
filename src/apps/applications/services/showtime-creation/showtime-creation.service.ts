@@ -29,7 +29,7 @@ export class ShowtimeCreationService {
     }
 
     async requestShowtimeCreation(createDto: BulkCreateShowtimesDto) {
-        const sagaId = await this.workerService.requestShowtimeCreation(createDto)
+        const sagaId = await this.workerService.enqueueShowtimeCreationJob(createDto)
 
         return { sagaId } as RequestShowtimeCreationResponse
     }
