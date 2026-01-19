@@ -11,6 +11,8 @@ import type { MovieDraftsFixture } from './movie-drafts.fixture'
 import type { MovieDraftDto } from 'apps/applications'
 import type { AssetPresignedUploadDto } from 'apps/infrastructures'
 
+// TODO Movie 속성에 None을 추가하고 기본값으로 해라.
+// MovieDrafts 삭제 Movies로 통합
 describe('MovieDraftsService', () => {
     let fix: MovieDraftsFixture
 
