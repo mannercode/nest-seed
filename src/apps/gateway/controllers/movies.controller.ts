@@ -7,12 +7,13 @@ import {
     HttpStatus,
     Param,
     Patch,
+    Post,
     Query,
     Req,
     UseGuards
 } from '@nestjs/common'
 import { RecommendationClient } from 'apps/applications'
-import { MoviesClient, SearchMoviesPageDto, UpdateMovieDto } from 'apps/cores'
+import { MoviesClient, SearchMoviesPageDto, UpsertMovieDto } from 'apps/cores'
 import { defaultTo } from 'lodash'
 import { CustomerOptionalJwtAuthGuard } from './guards'
 import { CustomerOptionalAuthRequest } from './types'
@@ -24,6 +25,16 @@ export class MoviesController {
         private readonly recommendationClient: RecommendationClient
     ) {}
 
+    @Post()
+    async create(@Body() updateDto: UpsertMovieDto) {
+        return this.moviesClient.create(updateDto)
+    }
+
+    @Post(':movieId/publish')
+    publish(@Param('movieId') movieId: string) {
+        return this.moviesClient.publish(movieId)
+    }
+
     @UseGuards(CustomerOptionalJwtAuthGuard)
     @Get('recommended')
     async searchRecommendedMovies(@Req() req: CustomerOptionalAuthRequest) {
@@ -33,7 +44,7 @@ export class MoviesController {
     }
 
     @Patch(':movieId')
-    async update(@Param('movieId') movieId: string, @Body() updateDto: UpdateMovieDto) {
+    async update(@Param('movieId') movieId: string, @Body() updateDto: UpsertMovieDto) {
         return this.moviesClient.update(movieId, updateDto)
     }
 

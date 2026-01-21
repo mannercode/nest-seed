@@ -1,4 +1,3 @@
-import { HttpStatus } from '@nestjs/common'
 import { MovieGenre, MovieRating } from 'apps/cores'
 import { Checksum } from 'common'
 import { omit } from 'lodash'
@@ -11,7 +10,7 @@ import {
     uploadComplete
 } from '../__helpers__'
 import type { MoviesFixture } from './movies.fixture'
-import type { CreateMovieDto, MovieDto, SearchMoviesPageDto } from 'apps/cores'
+import type { MovieDto, SearchMoviesPageDto } from 'apps/cores'
 
 describe('MoviesService', () => {
     let fix: MoviesFixture
@@ -22,50 +21,37 @@ describe('MoviesService', () => {
     })
     afterEach(() => fix.teardown())
 
-    describe('create', () => {
+    describe('POST /movies', () => {
         // 생성된 영화를 반환한다
         it('returns the created movie', async () => {
             const createDto = buildCreateMovieDto()
-            const movie = await fix.moviesClient.create(createDto)
 
-            expect(movie).toEqual({
-                ...omit(createDto, ['assetIds']),
-                id: expect.any(String),
-                imageUrls: expect.any(Array)
-            })
-        })
-
-        // 요청 본문에 assetIds가 포함될 때
-        describe('when the payload includes assetIds', () => {
-            let createDto: CreateMovieDto
-
-            beforeEach(async () => {
-                const asset = await uploadComplete(fix, fixtureFiles.image)
-                createDto = buildCreateMovieDto({ assetIds: [asset.id] })
-            })
-
-            // 업로드된 에셋에 대한 imageUrls를 반환한다
-            it('returns imageUrls for the uploaded asset', async () => {
-                const movie = await fix.moviesClient.create(createDto)
-
-                const response = await fetch(movie.imageUrls[0])
-                expect(response.ok).toBe(true)
-
-                const buffer = Buffer.from(await response.bytes())
-                expect(fixtureFiles.image.checksum).toEqual(Checksum.fromBuffer(buffer))
-            })
-        })
-
-        // 필수 필드가 누락된 경우
-        describe('when required fields are missing', () => {
-            // 400 Bad Request를 반환한다
-            it('returns 400 Bad Request', async () => {
-                const promise = fix.moviesClient.create({} as any)
-
-                await expect(promise).rejects.toMatchObject({
-                    status: HttpStatus.BAD_REQUEST,
-                    message: Errors.RequestValidation.Failed.message
+            await fix.httpClient
+                .post('/movies')
+                .body(createDto)
+                .created({
+                    ...omit(createDto, ['assetIds']),
+                    id: expect.any(String),
+                    imageUrls: expect.any(Array)
                 })
+        })
+
+        // 필드가 누락된 경우
+        describe('when required fields are missing', () => {
+            // 기본값으로 생성된 영화를 반환한다.
+            it('?? returns the created movie with default value', async () => {
+                const createDto = {} as any
+
+                await fix.httpClient
+                    .post('/movies')
+                    .body(createDto)
+                    .created(
+                        expect.objectContaining({
+                            id: expect.any(String),
+                            genres: [],
+                            rating: 'None'
+                        })
+                    )
             })
         })
     })
@@ -82,6 +68,25 @@ describe('MoviesService', () => {
             // 영화를 반환한다
             it('returns the movie', async () => {
                 await fix.httpClient.get(`/movies/${movie.id}`).ok(movie)
+            })
+        })
+
+        // 영화가 이미지를 포함할 때
+        describe('when the movie has images', () => {
+            let movie: MovieDto
+
+            beforeEach(async () => {
+                const asset = await uploadComplete(fix, fixtureFiles.image)
+                movie = await createMovie(fix, { assetIds: [asset.id] })
+            })
+
+            // 업로드된 에셋에 대한 imageUrls를 반환한다
+            it('returns imageUrls for the uploaded asset', async () => {
+                const response = await fetch(movie.imageUrls[0])
+                expect(response.ok).toBe(true)
+
+                const buffer = Buffer.from(await response.bytes())
+                expect(fixtureFiles.image.checksum).toEqual(Checksum.fromBuffer(buffer))
             })
         })
 

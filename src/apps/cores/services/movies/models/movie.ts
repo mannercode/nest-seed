@@ -16,6 +16,7 @@ export enum MovieGenre {
 }
 
 export enum MovieRating {
+    None = 'None',
     G = 'G',
     PG = 'PG',
     PG13 = 'PG13',

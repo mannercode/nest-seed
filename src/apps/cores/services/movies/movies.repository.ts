@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { assignDefined, MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
-import { Model } from 'mongoose'
+import { HydratedDocument, Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import { CreateMovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
+import { UpsertMovieDto, SearchMoviesPageDto } from './dtos'
 import { Movie } from './models'
 
 @Injectable()
@@ -14,37 +14,33 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async create(createDto: CreateMovieDto) {
+    async create(upsertDto: UpsertMovieDto) {
         const movie = this.newDocument()
-        movie.title = createDto.title
-        movie.genres = createDto.genres
-        movie.releaseDate = createDto.releaseDate
-        movie.plot = createDto.plot
-        movie.durationInSeconds = createDto.durationInSeconds
-        movie.director = createDto.director
-        movie.rating = createDto.rating
-        movie.assetIds = createDto.assetIds
 
-        await movie.save()
+        await this.applyUpsertDto(movie, upsertDto)
 
         return movie.toJSON()
     }
 
-    async update(movieId: string, updateDto: UpdateMovieDto) {
+    async update(movieId: string, upsertDto: UpsertMovieDto) {
         const movie = await this.getDocumentById(movieId)
 
-        assignDefined(movie, updateDto, 'title')
-        assignDefined(movie, updateDto, 'genres')
-        assignDefined(movie, updateDto, 'releaseDate')
-        assignDefined(movie, updateDto, 'plot')
-        assignDefined(movie, updateDto, 'durationInSeconds')
-        assignDefined(movie, updateDto, 'director')
-        assignDefined(movie, updateDto, 'rating')
-        assignDefined(movie, updateDto, 'assetIds')
-
-        await movie.save()
+        await this.applyUpsertDto(movie, upsertDto)
 
         return movie.toJSON()
+    }
+
+    private async applyUpsertDto(movie: HydratedDocument<Movie>, dto: UpsertMovieDto) {
+        assignDefined(movie, dto, 'title')
+        assignDefined(movie, dto, 'genres')
+        assignDefined(movie, dto, 'releaseDate')
+        assignDefined(movie, dto, 'plot')
+        assignDefined(movie, dto, 'durationInSeconds')
+        assignDefined(movie, dto, 'director')
+        assignDefined(movie, dto, 'rating')
+        assignDefined(movie, dto, 'assetIds')
+
+        await movie.save()
     }
 
     async searchPage(searchDto: SearchMoviesPageDto) {

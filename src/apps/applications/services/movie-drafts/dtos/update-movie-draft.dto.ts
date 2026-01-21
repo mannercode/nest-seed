@@ -1,6 +1,4 @@
-import { OmitType, PartialType } from '@nestjs/mapped-types'
-import { CreateMovieDto } from 'apps/cores'
+import { PartialType } from '@nestjs/mapped-types'
+import { UpsertMovieDto } from 'apps/cores'
 
-export class UpdateMovieDraftDto extends PartialType(
-    OmitType(CreateMovieDto, ['assetIds'] as const)
-) {}
+export class UpdateMovieDraftDto extends PartialType(UpsertMovieDto) {}

@@ -49,6 +49,7 @@ export const Messages = createMessagePatternMap(
         },
         Movies: {
             create: null,
+            publish: null,
             update: null,
             getMany: null,
             deleteMany: null,

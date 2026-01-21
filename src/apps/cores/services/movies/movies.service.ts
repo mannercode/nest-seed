@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common'
 import { AssetsClient } from 'apps/infrastructures'
 import { ensure, mapDocToDto, pickIds } from 'common'
 import { uniq } from 'lodash'
-import { CreateMovieDto, MovieDto, SearchMoviesPageDto, UpdateMovieDto } from './dtos'
-import { Movie } from './models'
+import { MovieDto, SearchMoviesPageDto, UpsertMovieDto } from './dtos'
+import { Movie, MovieRating } from './models'
 import { MoviesRepository } from './movies.repository'
 
 @Injectable()
@@ -13,19 +13,34 @@ export class MoviesService {
         private readonly assetsClient: AssetsClient
     ) {}
 
-    async create(createDto: CreateMovieDto) {
+    async create(createDto: UpsertMovieDto) {
+        createDto.title ??= '.'
+        createDto.genres ??= []
+        createDto.releaseDate ??= new Date('1900-01-01')
+        createDto.plot ??= '.'
+        createDto.durationInSeconds ??= 0
+        createDto.director ??= '.'
+        createDto.rating ??= MovieRating.None
+        createDto.assetIds ??= []
+
         const movie = await this.repository.create(createDto)
+
+        return this.toDto(movie)
+    }
+
+    async publish(movieId: string) {
+        const movie = await this.repository.publish(movieId)
+        return this.toDto(movie)
+    }
+
+    async update(movieId: string, updateDto: UpsertMovieDto) {
+        const movie = await this.repository.update(movieId, updateDto)
         return this.toDto(movie)
     }
 
     async getMany(movieIds: string[]) {
         const movies = await this.repository.getByIds(movieIds)
         return this.toDtos(movies)
-    }
-
-    async update(movieId: string, updateDto: UpdateMovieDto) {
-        const movie = await this.repository.update(movieId, updateDto)
-        return this.toDto(movie)
     }
 
     async deleteMany(movieIds: string[]) {

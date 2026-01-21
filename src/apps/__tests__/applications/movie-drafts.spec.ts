@@ -11,8 +11,6 @@ import type { MovieDraftsFixture } from './movie-drafts.fixture'
 import type { MovieDraftDto } from 'apps/applications'
 import type { AssetPresignedUploadDto } from 'apps/infrastructures'
 
-// TODO Movie 속성에 None을 추가하고 기본값으로 해라.
-// MovieDrafts 삭제 Movies로 통합
 describe('MovieDraftsService', () => {
     let fix: MovieDraftsFixture
 
@@ -21,90 +19,6 @@ describe('MovieDraftsService', () => {
         fix = await createMovieDraftsFixture()
     })
     afterEach(() => fix.teardown())
-
-    describe('POST /movie-drafts', () => {
-        // 생성된 영화 초안을 반환한다
-        it('returns the created movie-draft', async () => {
-            await fix.httpClient
-                .post('/movie-drafts')
-                .created(expect.objectContaining({ id: expect.any(String) }))
-        })
-    })
-
-    describe('GET /movie-drafts/:draftId', () => {
-        // 영화 초안이 존재할 때
-        describe('when the movie-draft exists', () => {
-            let movieDraft: MovieDraftDto
-
-            beforeEach(async () => {
-                movieDraft = await createMovieDraft(fix)
-            })
-
-            // 영화 초안을 반환한다
-            it('returns the movie-draft', async () => {
-                await fix.httpClient.get(`/movie-drafts/${movieDraft.id}`).ok(movieDraft)
-            })
-        })
-
-        // 영화 초안이 존재하지 않을 때
-        describe('when the movie-draft does not exist', () => {
-            // 404 Not Found를 반환한다
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .get(`/movie-drafts/${nullObjectId}`)
-                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
-            })
-        })
-    })
-
-    describe('PATCH /movie-drafts/:draftId', () => {
-        // 영화 초안이 존재할 때
-        describe('when the movie-draft exists', () => {
-            let movieDraft: MovieDraftDto
-
-            beforeEach(async () => {
-                movieDraft = await createMovieDraft(fix)
-            })
-
-            // 수정된 영화 초안을 반환한다
-            it('returns the updated movie-draft', async () => {
-                const updateDto = {
-                    genres: ['romance', 'thriller'],
-                    releaseDate: new Date('2000-01-01'),
-                    plot: 'new plot',
-                    durationInSeconds: 10 * 60,
-                    director: 'Steven Spielberg',
-                    rating: 'R'
-                }
-
-                await fix.httpClient
-                    .patch(`/movie-drafts/${movieDraft.id}`)
-                    .body(updateDto)
-                    .ok({ ...movieDraft, ...updateDto })
-            })
-
-            // 수정 내용이 저장된다
-            it('persists the update', async () => {
-                const updateDto = { title: 'update title' }
-                await fix.httpClient.patch(`/movie-drafts/${movieDraft.id}`).body(updateDto).ok()
-
-                await fix.httpClient
-                    .get(`/movie-drafts/${movieDraft.id}`)
-                    .ok({ ...movieDraft, ...updateDto })
-            })
-        })
-
-        // 영화 초안이 존재하지 않을 때
-        describe('when the movie-draft does not exist', () => {
-            // 404 Not Found를 반환한다
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .patch(`/movie-drafts/${nullObjectId}`)
-                    .body({})
-                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
-            })
-        })
-    })
 
     describe('POST /movie-drafts/:draftId/assets', () => {
         // 영화 초안이 존재할 때
@@ -308,59 +222,6 @@ describe('MovieDraftsService', () => {
                 await fix.httpClient
                     .post(`/movie-drafts/${movieDraft.id}/assets/${assetId}/complete`)
                     .notFound({ ...Errors.MovieDrafts.AssetNotFound, assetId })
-            })
-        })
-    })
-
-    describe('DELETE /movie-drafts/:draftId', () => {
-        // 영화 초안이 존재할 때
-        describe('when the movie-draft exists', () => {
-            let movieDraft: MovieDraftDto
-
-            beforeEach(async () => {
-                movieDraft = await createMovieDraft(fix)
-            })
-
-            // 204 No Content를 반환한다
-            it('returns 204 No Content', async () => {
-                await fix.httpClient.delete(`/movie-drafts/${movieDraft.id}`).noContent()
-            })
-
-            // 삭제가 저장된다
-            it('persists the deletion', async () => {
-                await fix.httpClient.delete(`/movie-drafts/${movieDraft.id}`).noContent()
-
-                await fix.httpClient
-                    .get(`/movie-drafts/${movieDraft.id}`)
-                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: movieDraft.id })
-            })
-
-            // 에셋이 있는 경우
-            describe('when it has assets', () => {
-                let assetId: string
-
-                beforeEach(async () => {
-                    assetId = await uploadCompleteDraftAsset(fix, movieDraft.id)
-                })
-
-                // 에셋 URL을 무효화한다
-                it('invalidates asset URL', async () => {
-                    const [asset] = await fix.assetsClient.getMany([assetId])
-                    Expect.defined(asset.download)
-
-                    await fix.httpClient.delete(`/movie-drafts/${movieDraft.id}`).noContent()
-
-                    const response = await fetch(asset.download.url)
-                    expect(response.status).toBe(404)
-                })
-            })
-        })
-
-        // 영화 초안이 존재하지 않을 때
-        describe('when the movie-draft does not exist', () => {
-            // 204 No Content를 반환한다
-            it('returns 204 No Content', async () => {
-                await fix.httpClient.delete(`/movie-drafts/${nullObjectId}`).noContent()
             })
         })
     })
