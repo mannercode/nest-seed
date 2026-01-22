@@ -39,19 +39,21 @@ describe('MoviesService', () => {
         // 필드가 누락된 경우
         describe('when required fields are missing', () => {
             // 기본값으로 생성된 영화를 반환한다.
-            it('?? returns the created movie with default value', async () => {
-                const createDto = {} as any
-
+            it('returns the created movie with defaults', async () => {
                 await fix.httpClient
                     .post('/movies')
-                    .body(createDto)
-                    .created(
-                        expect.objectContaining({
-                            id: expect.any(String),
-                            genres: [],
-                            rating: 'None'
-                        })
-                    )
+                    .body({})
+                    .created({
+                        id: expect.any(String),
+                        title: '',
+                        plot: '',
+                        director: '',
+                        genres: null,
+                        releaseDate: null,
+                        durationInSeconds: 0,
+                        rating: '',
+                        imageUrls: []
+                    })
             })
         })
     })

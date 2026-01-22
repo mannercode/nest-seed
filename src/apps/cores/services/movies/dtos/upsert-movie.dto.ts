@@ -1,5 +1,14 @@
 import { Type } from 'class-transformer'
-import { IsArray, IsDate, IsEnum, IsInt, IsOptional, IsString, MaxLength } from 'class-validator'
+import {
+    IsArray,
+    IsDate,
+    IsEnum,
+    IsInt,
+    IsNotIn,
+    IsOptional,
+    IsString,
+    MaxLength
+} from 'class-validator'
 import { MovieGenre, MovieRating } from '../models'
 
 export class UpsertMovieDto {
@@ -31,6 +40,7 @@ export class UpsertMovieDto {
     director?: string
 
     @IsEnum(MovieRating)
+    @IsNotIn([MovieRating.None])
     @IsOptional()
     rating?: MovieRating
 

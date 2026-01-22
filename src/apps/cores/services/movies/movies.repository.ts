@@ -30,6 +30,16 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         return movie.toJSON()
     }
 
+    async publish(movieId: string) {
+        const movie = await this.getDocumentById(movieId)
+
+        movie.isPublished = true
+
+        await movie.save()
+
+        return movie.toJSON()
+    }
+
     private async applyUpsertDto(movie: HydratedDocument<Movie>, dto: UpsertMovieDto) {
         assignDefined(movie, dto, 'title')
         assignDefined(movie, dto, 'genres')
@@ -62,6 +72,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         const { title, genre, releaseDate, plot, director, rating } = searchDto
 
         const builder = new QueryBuilder<Movie>()
+        builder.addEqual('isPublished', true)
         builder.addRegex('title', title)
         builder.addEqual('genres', genre)
         builder.addEqual('releaseDate', releaseDate)
