@@ -1,6 +1,7 @@
 import { MovieGenre, MovieRating } from 'apps/cores'
 import { Checksum } from 'common'
 import { omit } from 'lodash'
+import { Rules } from 'shared'
 import { nullObjectId } from 'testlib'
 import {
     buildCreateMovieDto,
@@ -32,7 +33,7 @@ describe('MoviesService', () => {
                 .created({
                     ...omit(createDto, ['assetIds']),
                     id: expect.any(String),
-                    imageUrls: expect.any(Array)
+                    imageUrls: []
                 })
         })
 
@@ -45,14 +46,9 @@ describe('MoviesService', () => {
                     .body({})
                     .created({
                         id: expect.any(String),
-                        title: '',
-                        plot: '',
-                        director: '',
-                        genres: null,
-                        releaseDate: null,
-                        durationInSeconds: 0,
-                        rating: '',
-                        imageUrls: []
+                        imageUrls: [],
+                        genres: [],
+                        ...Rules.Movie.defaults
                     })
             })
         })

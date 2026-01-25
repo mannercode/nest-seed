@@ -1,5 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
+import { CreateAssetDto } from 'apps/infrastructures'
 import { Messages } from 'shared'
 import { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
 import { MoviesService } from './movies.service'
@@ -41,5 +42,23 @@ export class MoviesController {
     @MessagePattern(Messages.Movies.allExist)
     allExist(@Payload() movieIds: string[]) {
         return this.service.allExist(movieIds)
+    }
+
+    @MessagePattern(Messages.Movies.Assets.create)
+    createAsset(
+        @Payload('movieId') movieId: string,
+        @Payload('createDto') createDto: CreateAssetDto
+    ) {
+        return this.service.createAsset(movieId, createDto)
+    }
+
+    @MessagePattern(Messages.Movies.Assets.delete)
+    deleteAsset(@Payload('movieId') movieId: string, @Payload('assetId') assetId: string) {
+        return this.service.deleteAsset(movieId, assetId)
+    }
+
+    @MessagePattern(Messages.Movies.Assets.complete)
+    completeAsset(@Payload('movieId') movieId: string, @Payload('assetId') assetId: string) {
+        return this.service.completeAsset(movieId, assetId)
     }
 }

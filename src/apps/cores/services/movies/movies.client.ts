@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common'
+import { AssetPresignedUploadDto, CreateAssetDto } from 'apps/infrastructures'
 import { ClientProxyService, InjectClientProxy, PaginationResult } from 'common'
 import { Messages } from 'shared'
 import { UpsertMovieDto, MovieDto, SearchMoviesPageDto } from './dtos'
@@ -33,5 +34,17 @@ export class MoviesClient {
 
     allExist(movieIds: string[]): Promise<boolean> {
         return this.proxy.request(Messages.Movies.allExist, movieIds)
+    }
+
+    createAsset(movieId: string, createDto: CreateAssetDto): Promise<AssetPresignedUploadDto> {
+        return this.proxy.request(Messages.Movies.Assets.create, { movieId, createDto })
+    }
+
+    deleteAsset(movieId: string, assetId: string): Promise<Record<string, never>> {
+        return this.proxy.request(Messages.Movies.Assets.delete, { movieId, assetId })
+    }
+
+    completeAsset(movieId: string, assetId: string): Promise<Record<string, never>> {
+        return this.proxy.request(Messages.Movies.Assets.complete, { movieId, assetId })
     }
 }

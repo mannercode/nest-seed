@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose'
 import { assignDefined, MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
 import { HydratedDocument, Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import { UpsertMovieDto, SearchMoviesPageDto } from './dtos'
+import { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
 import { Movie } from './models'
 
 @Injectable()
@@ -50,6 +50,12 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         assignDefined(movie, dto, 'rating')
         assignDefined(movie, dto, 'assetIds')
 
+        await movie.save()
+    }
+
+    async addAsset(movieId: string, assetId: string) {
+        const movie = await this.getDocumentById(movieId)
+        movie.assetIds.push(assetId)
         await movie.save()
     }
 

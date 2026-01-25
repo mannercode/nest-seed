@@ -31,5 +31,15 @@ export const Rules = {
         uploadExpiresInSec: 60 * 60,
         downloadExpiresInSec: 60 * 60,
         expiredUploadCleanupCron: CronExpression.EVERY_10_MINUTES
+    },
+    Movie: {
+        defaults: {
+            title: '',
+            plot: '',
+            director: '',
+            releaseDate: new Date('0000-01-01'),
+            durationInSeconds: -1,
+            rating: 'Unrated'
+        }
     }
 } as const

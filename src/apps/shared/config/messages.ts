@@ -54,7 +54,8 @@ export const Messages = createMessagePatternMap(
             getMany: null,
             deleteMany: null,
             searchPage: null,
-            allExist: null
+            allExist: null,
+            Assets: { create: null, delete: null, complete: null }
         },
         Customers: {
             create: null,
