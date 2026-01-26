@@ -147,67 +147,91 @@ describe('MoviesService', () => {
     })
 
     describe('POST /movies/:movieId/assets/:assetId/complete', () => {
-        let movie: MovieDto
-
-        beforeEach(async () => {
-            movie = await createMovie(fix)
-        })
-
-        // 에셋이 존재할 때
+        // 영화가 존재할 때
         describe('when the asset exists', () => {
-            let upload: AssetPresignedUploadDto
+            let movie: MovieDto
 
             beforeEach(async () => {
-                upload = await createMovieAsset(fix, movie.id, fix.asset)
+                movie = await createMovie(fix)
             })
 
-            // 업로드가 성공한 경우
-            describe('when upload succeeded', () => {
+            // 에셋이 존재할 때
+            describe('when the asset exists', () => {
+                let upload: AssetPresignedUploadDto
+
                 beforeEach(async () => {
-                    const res = await uploadAsset(fix.asset.path, upload)
-                    expect(res.ok).toBe(true)
+                    upload = await createMovieAsset(fix, movie.id, fix.asset)
                 })
 
-                // 상태 ready를 반환한다
-                it('returns status: ready', async () => {
-                    await fix.httpClient
-                        .post(`/movies/${movie.id}/assets/${upload.assetId}/complete`)
-                        .ok({})
+                // 업로드가 성공한 경우
+                describe('when upload succeeded', () => {
+                    beforeEach(async () => {
+                        const res = await uploadAsset(fix.asset.path, upload)
+                        expect(res.ok).toBe(true)
+                    })
+
+                    // 상태 ready를 반환한다
+                    it('returns status: ready', async () => {
+                        await fix.httpClient
+                            .post(`/movies/${movie.id}/assets/${upload.assetId}/complete`)
+                            .ok({})
+                    })
+
+                    // 영화 초안에 에셋을 포함한다
+                    it('includes the asset in the movie', async () => {
+                        await fix.httpClient
+                            .post(`/movies/${movie.id}/assets/${upload.assetId}/complete`)
+                            .ok()
+
+                        await fix.httpClient
+                            .get(`/movies/${movie.id}`)
+                            .ok(expect.objectContaining({ imageUrls: [expect.any(String)] }))
+                    })
+
+                    // 이미 완료된 경우
+                    it('returns 200 OK when already completed', async () => {
+                        await fix.httpClient
+                            .post(`/movies/${movie.id}/assets/${upload.assetId}/complete`)
+                            .ok({})
+
+                        await fix.httpClient
+                            .post(`/movies/${movie.id}/assets/${upload.assetId}/complete`)
+                            .ok({})
+                    })
                 })
 
-                // 영화 초안에 에셋을 포함한다
-                it('includes the asset in the movie', async () => {
-                    await fix.httpClient
-                        .post(`/movies/${movie.id}/assets/${upload.assetId}/complete`)
-                        .ok()
-
-                    await fix.httpClient
-                        .get(`/movies/${movie.id}`)
-                        .ok(expect.objectContaining({ imageUrls: [expect.any(String)] }))
+                // 업로드가 누락된 경우
+                describe('when the upload is missing', () => {
+                    // 422 Unprocessable Entity를 반환한다
+                    it('returns 422 Unprocessable Entity', async () => {
+                        await fix.httpClient
+                            .post(`/movies/${movie.id}/assets/${upload.assetId}/complete`)
+                            .unprocessableEntity({
+                                ...Errors.Movies.AssetUploadInvalid,
+                                assetId: upload.assetId
+                            })
+                    })
                 })
             })
 
-            // 업로드가 누락된 경우
-            describe('when the upload is missing', () => {
-                // 422 Unprocessable Entity를 반환한다
-                it('returns 422 Unprocessable Entity', async () => {
+            // 에셋이 존재하지 않을 때
+            describe('when the asset does not exist', () => {
+                // 404 Not Found를 반환한다
+                it('returns 404 Not Found', async () => {
                     await fix.httpClient
-                        .post(`/movies/${movie.id}/assets/${upload.assetId}/complete`)
-                        .unprocessableEntity({
-                            ...Errors.Movies.AssetUploadInvalid,
-                            assetId: upload.assetId
-                        })
+                        .post(`/movies/${movie.id}/assets/${nullObjectId}/complete`)
+                        .notFound({ ...Errors.Movies.AssetNotFound, notFoundAssetId: nullObjectId })
                 })
             })
         })
 
-        // 에셋이 존재하지 않을 때
-        describe('when the asset does not exist', () => {
+        // 영화가 존재하지 않을 때
+        describe('when the movie does not exist', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
-                    .post(`/movies/${movie.id}/assets/${nullObjectId}/complete`)
-                    .notFound({ ...Errors.Movies.AssetNotFound, notFoundAssetId: nullObjectId })
+                    .post(`/movies/${nullObjectId}/assets/${nullObjectId}/complete`)
+                    .notFound({ ...Errors.Movies.NotFound, notFoundMovieId: nullObjectId })
             })
         })
     })
@@ -222,7 +246,7 @@ describe('MoviesService', () => {
             })
 
             // 유효한 상태인 경우
-            describe('when it is valid', () => {
+            describe('when required fields are ready', () => {
                 const updateDto = {
                     title: `MovieTitle`,
                     genres: [MovieGenre.Action],
@@ -261,76 +285,10 @@ describe('MoviesService', () => {
                         .get(`/movies/${createdMovie.id}`)
                         .ok({ ...createdMovie, imageUrls: expect.any(Array) })
                 })
-
-                // 영화 초안을 삭제한다
-                it('removes the movie', async () => {
-                    await fix.httpClient.post(`/movies/${movie.id}/publish`).created()
-
-                    await fix.httpClient
-                        .get(`/movies/${movie.id}`)
-                        .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: movie.id })
-                })
             })
 
-            // 에셋이 누락된 경우
-            describe('when assets are missing', () => {
-                beforeEach(async () => {
-                    await fix.httpClient
-                        .patch(`/movies/${movie.id}`)
-                        .body({
-                            title: `MovieTitle`,
-                            genres: [MovieGenre.Action],
-                            releaseDate: new Date(0),
-                            plot: `MoviePlot`,
-                            durationInSeconds: 90 * 60,
-                            director: 'Quentin Tarantino',
-                            rating: MovieRating.PG
-                        })
-                        .ok()
-                })
-
-                // 422 Unprocessable Entity를 반환한다
-                it('returns 422 Unprocessable Entity', async () => {
-                    await fix.httpClient
-                        .post(`/movies/${movie.id}/publish`)
-                        .unprocessableEntity({
-                            ...Errors.Movies.InvalidForCompletion,
-                            missingFields: expect.any(Array)
-                        })
-                })
-            })
-
-            // 에셋이 업로드되지 않은 경우
-            describe('when assets are pending', () => {
-                beforeEach(async () => {
-                    await createMovieAsset(fix, movie.id, fix.asset)
-                    await fix.httpClient
-                        .patch(`/movies/${movie.id}`)
-                        .body({
-                            title: `MovieTitle`,
-                            genres: [MovieGenre.Action],
-                            releaseDate: new Date(0),
-                            plot: `MoviePlot`,
-                            durationInSeconds: 90 * 60,
-                            director: 'Quentin Tarantino',
-                            rating: MovieRating.PG
-                        })
-                        .ok()
-                })
-
-                // 422 Unprocessable Entity를 반환한다
-                it('returns 422 Unprocessable Entity', async () => {
-                    await fix.httpClient
-                        .post(`/movies/${movie.id}/publish`)
-                        .unprocessableEntity({
-                            ...Errors.Movies.InvalidForCompletion,
-                            missingFields: expect.arrayContaining(['assetIds'])
-                        })
-                })
-            })
-
-            // 유효하지 않은 상태인 경우
-            describe('when it is invalid', () => {
+            // 필수 필드가 누락된 경우
+            describe('when required fields are missing', () => {
                 beforeEach(async () => {
                     await uploadCompleteMovieAsset(fix, movie.id)
                 })

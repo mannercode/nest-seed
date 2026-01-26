@@ -23,6 +23,16 @@ export class MoviePendingAssetsRepository extends MongooseRepository<MoviePendin
         return asset.toJSON()
     }
 
+    async hasAsset(movieId: string, assetId: string): Promise<boolean> {
+        const builder = new QueryBuilder<MoviePendingAsset>()
+        builder.addEqual('movieId', movieId)
+        builder.addEqual('assetId', assetId)
+        const query = builder.build({})
+
+        const count = await this.model.countDocuments(query)
+        return 0 < count
+    }
+
     async removeAsset(movieId: string, assetId: string): Promise<boolean> {
         const builder = new QueryBuilder<MoviePendingAsset>()
         builder.addEqual('movieId', movieId)

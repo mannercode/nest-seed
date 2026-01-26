@@ -7,6 +7,7 @@ import {
 import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
 import { ensure, mapDocToDto, pickIds } from 'common'
 import { uniq } from 'lodash'
+import { Rules } from 'shared'
 import { MovieDto, SearchMoviesPageDto, UpsertMovieDto } from './dtos'
 import { MovieErrors } from './errors'
 import { Movie } from './models'
@@ -64,7 +65,30 @@ export class MoviesService {
     }
 
     async publish(movieId: string) {
-        const movie = await this.moviesRepository.publish(movieId)
+        const movie = await this.moviesRepository.getById(movieId)
+
+        const { title, genres, releaseDate, plot, durationInSeconds, director, rating } = movie
+        const defaults = Rules.Movie.defaults
+
+        const missingFields: string[] = []
+        if (title === defaults.title) missingFields.push('title')
+        if (releaseDate.getTime() === defaults.releaseDate.getTime())
+            missingFields.push('releaseDate')
+        if (plot === defaults.plot) missingFields.push('plot')
+        if (durationInSeconds === defaults.durationInSeconds)
+            missingFields.push('durationInSeconds')
+        if (director === defaults.director) missingFields.push('director')
+        if (rating === defaults.rating) missingFields.push('rating')
+        if (genres.length === 0) missingFields.push('genres')
+
+        if (0 < missingFields.length) {
+            throw new UnprocessableEntityException({
+                ...MovieErrors.InvalidForCompletion,
+                missingFields
+            })
+        }
+
+        await this.moviesRepository.publish(movieId)
         return this.toDto(movie)
     }
 
@@ -98,8 +122,21 @@ export class MoviesService {
     }
 
     async completeAsset(movieId: string, assetId: string): Promise<Record<string, never>> {
-        if (!(await this.moviesRepository.allExist([movieId]))) {
+        const movie = await this.moviesRepository.findById(movieId)
+
+        if (!movie) {
             throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
+        }
+
+        if (movie.assetIds.includes(assetId)) {
+            await this.assetsRepository.removeAsset(movieId, assetId)
+            return {}
+        }
+
+        const hasPendingAsset = await this.assetsRepository.hasAsset(movieId, assetId)
+
+        if (!hasPendingAsset) {
+            throw new NotFoundException({ ...MovieErrors.AssetNotFound, notFoundAssetId: assetId })
         }
 
         const isUploaded = await this.assetsClient.isUploadComplete(assetId)

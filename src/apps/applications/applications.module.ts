@@ -5,7 +5,6 @@ import { CommonModule, getProjectId, RedisConfigModule } from 'shared'
 import { HealthModule } from './modules'
 import {
     BookingModule,
-    MovieDraftsModule,
     PurchaseModule,
     RecommendationModule,
     ShowtimeCreationModule
@@ -26,8 +25,7 @@ import {
         ShowtimeCreationModule,
         RecommendationModule,
         BookingModule,
-        PurchaseModule,
-        MovieDraftsModule
+        PurchaseModule
     ]
 })
 export class ApplicationsModule {}

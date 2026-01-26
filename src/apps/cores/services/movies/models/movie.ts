@@ -1,6 +1,5 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { HydratedDocument } from 'mongoose'
 import { MongooseConfigModule, Rules } from 'shared'
 
 export enum MovieGenre {
@@ -87,6 +86,4 @@ export class Movie extends MongooseSchema {
     @Prop({ required: true, default: false })
     isPublished: boolean
 }
-// TODO 삭제
-export type MovieDocument = HydratedDocument<Movie>
 export const MovieSchema = createMongooseSchema(Movie)
