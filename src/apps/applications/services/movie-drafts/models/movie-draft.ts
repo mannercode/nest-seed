@@ -1,7 +1,6 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MovieGenre, MovieRating } from 'apps/cores'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { HydratedDocument } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { MovieDraftAsset, MovieDraftAssetSchema } from './movie-draft-asset'
 
@@ -31,6 +30,4 @@ export class MovieDraft extends MongooseSchema {
     @Prop({ type: [MovieDraftAssetSchema], default: [] })
     assets: MovieDraftAsset[]
 }
-
-export type MovieDraftDocument = HydratedDocument<MovieDraft>
 export const MovieDraftSchema = createMongooseSchema(MovieDraft)

@@ -1,6 +1,5 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { HydratedDocument } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { Seat } from '../../theaters'
 
@@ -29,5 +28,4 @@ export class Ticket extends MongooseSchema {
     @Prop({ required: true })
     sagaId: string
 }
-export type TicketDocument = HydratedDocument<Ticket>
 export const TicketSchema = createMongooseSchema(Ticket)

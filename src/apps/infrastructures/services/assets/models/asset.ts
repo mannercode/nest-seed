@@ -1,6 +1,5 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { Checksum, MongooseSchema, createMongooseSchema } from 'common'
-import { HydratedDocument } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 
 @Schema(MongooseConfigModule.schemaOptions)
@@ -23,5 +22,4 @@ export class Asset extends MongooseSchema {
     @Prop({ type: String, default: null })
     ownerEntityId: string | null
 }
-export type AssetDocument = HydratedDocument<Asset>
 export const AssetSchema = createMongooseSchema(Asset)

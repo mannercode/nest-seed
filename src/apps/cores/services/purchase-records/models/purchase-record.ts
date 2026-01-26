@@ -1,7 +1,6 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { HydratedDocument } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 
 export enum PurchaseItemType {
@@ -32,5 +31,4 @@ export class PurchaseRecord extends MongooseSchema {
     @Prop({ type: [Object], required: true })
     purchaseItems: PurchaseItem[]
 }
-export type PurchaseRecordDocument = HydratedDocument<PurchaseRecord>
 export const PurchaseRecordSchema = createMongooseSchema(PurchaseRecord)
