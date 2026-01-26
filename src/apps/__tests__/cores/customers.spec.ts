@@ -39,7 +39,7 @@ describe('CustomersService', () => {
                 await fix.httpClient
                     .post('/customers')
                     .body(createDto)
-                    .conflict({ ...Errors.Customer.EmailAlreadyExists, email: createDto.email })
+                    .conflict({ ...Errors.Customers.EmailAlreadyExists, email: createDto.email })
             })
         })
 

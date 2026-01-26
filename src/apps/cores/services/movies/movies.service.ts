@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, UnprocessableEntityException } from '@nestjs/common'
+import {
+    BadRequestException,
+    Injectable,
+    NotFoundException,
+    UnprocessableEntityException
+} from '@nestjs/common'
 import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
 import { ensure, mapDocToDto, pickIds } from 'common'
 import { uniq } from 'lodash'
@@ -64,6 +69,10 @@ export class MoviesService {
     }
 
     async createAsset(movieId: string, createDto: CreateAssetDto) {
+        if (!(await this.moviesRepository.allExist([movieId]))) {
+            throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
+        }
+
         if (!createDto.mimeType.startsWith('image/')) {
             throw new BadRequestException({
                 ...MovieErrors.UnsupportedAssetType,
@@ -79,12 +88,20 @@ export class MoviesService {
     }
 
     async deleteAsset(movieId: string, assetId: string): Promise<Record<string, never>> {
+        if (!(await this.moviesRepository.allExist([movieId]))) {
+            throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
+        }
+
         await this.assetsRepository.removeAsset(movieId, assetId)
         await this.assetsClient.deleteMany([assetId])
         return {}
     }
 
     async completeAsset(movieId: string, assetId: string): Promise<Record<string, never>> {
+        if (!(await this.moviesRepository.allExist([movieId]))) {
+            throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
+        }
+
         const isUploaded = await this.assetsClient.isUploadComplete(assetId)
 
         if (!isUploaded) {

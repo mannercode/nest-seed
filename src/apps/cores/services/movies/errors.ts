@@ -1,4 +1,5 @@
 export const MovieErrors = {
+    NotFound: { code: 'ERR_MOVIE_NOT_FOUND', message: 'The movie does not exist.' },
     AssetNotFound: {
         code: 'ERR_MOVIE_ASSET_NOT_FOUND',
         message: 'The asset does not exist in this movie.'

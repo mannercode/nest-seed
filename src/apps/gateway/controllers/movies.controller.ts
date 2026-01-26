@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common'
 import { RecommendationClient } from 'apps/applications'
 import { MoviesClient, SearchMoviesPageDto, UpsertMovieDto } from 'apps/cores'
+import { CreateAssetDto } from 'apps/infrastructures'
 import { defaultTo } from 'lodash'
 import { CustomerOptionalJwtAuthGuard } from './guards'
 import { CustomerOptionalAuthRequest } from './types'
@@ -28,11 +29,6 @@ export class MoviesController {
     @Post()
     async create(@Body() updateDto: UpsertMovieDto) {
         return this.moviesClient.create(updateDto)
-    }
-
-    @Post(':movieId/publish')
-    publish(@Param('movieId') movieId: string) {
-        return this.moviesClient.publish(movieId)
     }
 
     @UseGuards(CustomerOptionalJwtAuthGuard)
@@ -63,5 +59,27 @@ export class MoviesController {
     @Get()
     async searchPage(@Query() searchDto: SearchMoviesPageDto) {
         return this.moviesClient.searchPage(searchDto)
+    }
+
+    @Post(':movieId/publish')
+    publish(@Param('movieId') movieId: string) {
+        return this.moviesClient.publish(movieId)
+    }
+
+    @Post(':movieId/assets')
+    createAsset(@Param('movieId') movieId: string, @Body() createDto: CreateAssetDto) {
+        return this.moviesClient.createAsset(movieId, createDto)
+    }
+
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Delete(':movieId/assets/:assetId')
+    async deleteAsset(@Param('movieId') movieId: string, @Param('assetId') assetId: string) {
+        await this.moviesClient.deleteAsset(movieId, assetId)
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post(':movieId/assets/:assetId/complete')
+    completeAsset(@Param('movieId') movieId: string, @Param('assetId') assetId: string) {
+        return this.moviesClient.completeAsset(movieId, assetId)
     }
 }
