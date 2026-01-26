@@ -1,5 +1,5 @@
-import { HardDeleteSample, SoftDeleteSample } from './mongoose.delete.fixture'
-import type { MongooseDeleteFixture } from './mongoose.delete.fixture'
+import { HardDeleteSample, SoftDeleteSample } from './mongoose-delete.fixture'
+import type { MongooseDeleteFixture } from './mongoose-delete.fixture'
 import type { HydratedDocument } from 'mongoose'
 
 describe('Mongoose Delete', () => {
@@ -8,7 +8,7 @@ describe('Mongoose Delete', () => {
         let createdDoc: HydratedDocument<SoftDeleteSample>
 
         beforeEach(async () => {
-            const { createMongooseDeleteFixture } = await import('./mongoose.delete.fixture')
+            const { createMongooseDeleteFixture } = await import('./mongoose-delete.fixture')
             fix = await createMongooseDeleteFixture(SoftDeleteSample)
 
             createdDoc = new fix.model()
@@ -80,7 +80,7 @@ describe('Mongoose Delete', () => {
         let createdDoc: HydratedDocument<HardDeleteSample>
 
         beforeEach(async () => {
-            const { createMongooseDeleteFixture } = await import('./mongoose.delete.fixture')
+            const { createMongooseDeleteFixture } = await import('./mongoose-delete.fixture')
             fix = await createMongooseDeleteFixture(HardDeleteSample)
 
             createdDoc = new fix.model()

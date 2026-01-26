@@ -1,11 +1,11 @@
 import { sleep } from '../../utils'
-import type { MongooseExpiresFixture } from './mongoose.expires.fixture'
+import type { MongooseExpiresFixture } from './mongoose-expires.fixture'
 
 describe('Mongoose TTL expiration', () => {
     let fix: MongooseExpiresFixture
 
     beforeEach(async () => {
-        const { createMongooseExpiresFixture } = await import('./mongoose.expires.fixture')
+        const { createMongooseExpiresFixture } = await import('./mongoose-expires.fixture')
         fix = await createMongooseExpiresFixture()
     })
     afterEach(() => fix.teardown())

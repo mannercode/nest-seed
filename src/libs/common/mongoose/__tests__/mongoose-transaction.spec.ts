@@ -1,10 +1,10 @@
-import type { MongooseTransactionFixture } from './mongoose.transaction.fixture'
+import type { MongooseTransactionFixture } from './mongoose-transaction.fixture'
 
-describe('MongooseRepository.withTransaction', () => {
+describe('Mongoose Transaction', () => {
     let fix: MongooseTransactionFixture
 
     beforeEach(async () => {
-        const { createMongooseTransactionFixture } = await import('./mongoose.transaction.fixture')
+        const { createMongooseTransactionFixture } = await import('./mongoose-transaction.fixture')
         fix = await createMongooseTransactionFixture()
     })
     afterEach(() => fix.teardown())

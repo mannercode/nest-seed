@@ -1,18 +1,17 @@
-import { MovieGenre, MovieRating } from 'apps/cores'
 import { Expect } from 'common'
 import { nullObjectId } from 'testlib'
 import { buildCreateAssetDto, Errors, fixtureFiles, uploadAsset } from '../__helpers__'
-import { createMovie, createMovieAsset, uploadCompleteMovieAsset } from './movies.creation.fixture'
-import type { MoviesFixture } from './movies.creation.fixture'
+import { createMovie, createMovieAsset, uploadCompleteMovieAsset } from './movies-assets.fixture'
+import type { MoviesAssetsFixture } from './movies-assets.fixture'
 import type { MovieDto } from 'apps/cores'
 import type { AssetPresignedUploadDto } from 'apps/infrastructures'
 
-describe('MoviesService', () => {
-    let fix: MoviesFixture
+describe('MoviesAssets', () => {
+    let fix: MoviesAssetsFixture
 
     beforeEach(async () => {
-        const { createMoviesFixture } = await import('./movies.creation.fixture')
-        fix = await createMoviesFixture()
+        const { createMoviesAssetsFixture } = await import('./movies-assets.fixture')
+        fix = await createMoviesAssetsFixture()
     })
     afterEach(() => fix.teardown())
 
@@ -92,7 +91,7 @@ describe('MoviesService', () => {
 
     describe('DELETE /movies/:movieId/assets/:assetId', () => {
         // 영화가 존재할 때
-        describe('when the asset exists', () => {
+        describe('when the movie exists', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
@@ -148,7 +147,7 @@ describe('MoviesService', () => {
 
     describe('POST /movies/:movieId/assets/:assetId/complete', () => {
         // 영화가 존재할 때
-        describe('when the asset exists', () => {
+        describe('when the movie exists', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
@@ -170,14 +169,14 @@ describe('MoviesService', () => {
                         expect(res.ok).toBe(true)
                     })
 
-                    // 상태 ready를 반환한다
-                    it('returns status: ready', async () => {
+                    // 200 OK를 반환한다
+                    it('returns 200 OK', async () => {
                         await fix.httpClient
                             .post(`/movies/${movie.id}/assets/${upload.assetId}/complete`)
                             .ok({})
                     })
 
-                    // 영화 초안에 에셋을 포함한다
+                    // 영화에 에셋을 포함한다
                     it('includes the asset in the movie', async () => {
                         await fix.httpClient
                             .post(`/movies/${movie.id}/assets/${upload.assetId}/complete`)
@@ -232,86 +231,6 @@ describe('MoviesService', () => {
                 await fix.httpClient
                     .post(`/movies/${nullObjectId}/assets/${nullObjectId}/complete`)
                     .notFound({ ...Errors.Movies.NotFound, notFoundMovieId: nullObjectId })
-            })
-        })
-    })
-
-    describe('POST /movies/:movieId/publish', () => {
-        // 영화가 존재할 때
-        describe('when the movie exists', () => {
-            let movie: MovieDto
-
-            beforeEach(async () => {
-                movie = await createMovie(fix)
-            })
-
-            // 유효한 상태인 경우
-            describe('when required fields are ready', () => {
-                const updateDto = {
-                    title: `MovieTitle`,
-                    genres: [MovieGenre.Action],
-                    releaseDate: new Date(0),
-                    plot: `MoviePlot`,
-                    durationInSeconds: 90 * 60,
-                    director: 'Quentin Tarantino',
-                    rating: MovieRating.PG
-                }
-
-                beforeEach(async () => {
-                    await uploadCompleteMovieAsset(fix, movie.id)
-                    await fix.httpClient.patch(`/movies/${movie.id}`).body(updateDto).ok()
-                })
-
-                // 생성된 영화를 반환한다
-                it('returns the created movie', async () => {
-                    await fix.httpClient
-                        .post(`/movies/${movie.id}/publish`)
-                        .created(
-                            expect.objectContaining({
-                                id: expect.any(String),
-                                ...updateDto,
-                                imageUrls: expect.any(Array)
-                            })
-                        )
-                })
-
-                // 영화를 생성한다
-                it('creates a movie', async () => {
-                    const { body: createdMovie } = await fix.httpClient
-                        .post(`/movies/${movie.id}/publish`)
-                        .created()
-
-                    await fix.httpClient
-                        .get(`/movies/${createdMovie.id}`)
-                        .ok({ ...createdMovie, imageUrls: expect.any(Array) })
-                })
-            })
-
-            // 필수 필드가 누락된 경우
-            describe('when required fields are missing', () => {
-                beforeEach(async () => {
-                    await uploadCompleteMovieAsset(fix, movie.id)
-                })
-
-                // 422 Unprocessable Entity를 반환한다
-                it('returns 422 Unprocessable Entity', async () => {
-                    await fix.httpClient
-                        .post(`/movies/${movie.id}/publish`)
-                        .unprocessableEntity({
-                            ...Errors.Movies.InvalidForCompletion,
-                            missingFields: expect.any(Array)
-                        })
-                })
-            })
-        })
-
-        // 영화가 존재하지 않을 때
-        describe('when the movie does not exist', () => {
-            // 404 Not Found를 반환한다
-            it('returns 404 Not Found', async () => {
-                await fix.httpClient
-                    .post(`/movies/${nullObjectId}/publish`)
-                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
             })
         })
     })

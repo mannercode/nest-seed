@@ -61,6 +61,7 @@ export class MoviesController {
         return this.moviesClient.searchPage(searchDto)
     }
 
+    @HttpCode(HttpStatus.OK)
     @Post(':movieId/publish')
     publish(@Param('movieId') movieId: string) {
         return this.moviesClient.publish(movieId)

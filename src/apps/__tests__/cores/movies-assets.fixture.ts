@@ -11,17 +11,19 @@ import {
 import type { AppTestContext, FixtureFile } from '../__helpers__'
 import type { TestContext } from 'testlib'
 
-export type MoviesFixture = AppTestContext & { assetsClient: AssetsClient; asset: FixtureFile }
+export type MoviesAssetsFixture = AppTestContext & {
+    assetsClient: AssetsClient
+    asset: FixtureFile
+}
 
-export async function createMoviesFixture() {
+export async function createMoviesAssetsFixture() {
     const ctx = await createAppTestContext({
-        imports: [MoviesModule, AssetsModule, MoviesModule],
-        providers: [MoviesClient, MoviesClient, AssetsClient],
-        controllers: [MoviesController, MoviesController],
+        imports: [MoviesModule, AssetsModule],
+        providers: [MoviesClient, AssetsClient],
+        controllers: [MoviesController],
         ignoreProviders: [RecommendationClient]
     })
 
-    // TODO 이거 없애야 한다.
     const assetsClient = ctx.module.get(AssetsClient)
 
     return { ...ctx, assetsClient, asset: fixtureFiles.image }
@@ -35,20 +37,20 @@ export async function createMovie(ctx: TestContext) {
     return movie
 }
 
-export async function createMovieAsset(ctx: TestContext, draftId: string, file: FixtureFile) {
+export async function createMovieAsset(ctx: TestContext, movieId: string, file: FixtureFile) {
     const { MoviesService } = await import('apps/cores')
     const moviesService = ctx.module.get(MoviesService)
 
     const createDto = buildCreateAssetDto(file)
-    const upload = await moviesService.createAsset(draftId, createDto)
+    const upload = await moviesService.createAsset(movieId, createDto)
 
     return upload
 }
 
-export async function uploadMovieAsset(ctx: TestContext, draftId: string) {
+export async function uploadMovieAsset(ctx: TestContext, movieId: string) {
     const { image } = fixtureFiles
 
-    const upload = await createMovieAsset(ctx, draftId, image)
+    const upload = await createMovieAsset(ctx, movieId, image)
     const uploadResponse = await uploadAsset(image.path, upload)
 
     expect(uploadResponse.ok).toBe(true)
@@ -56,12 +58,12 @@ export async function uploadMovieAsset(ctx: TestContext, draftId: string) {
     return upload
 }
 
-export async function uploadCompleteMovieAsset(ctx: TestContext, draftId: string) {
+export async function uploadCompleteMovieAsset(ctx: TestContext, movieId: string) {
     const { MoviesService } = await import('apps/cores')
     const moviesService = ctx.module.get(MoviesService)
 
-    const { assetId } = await uploadMovieAsset(ctx, draftId)
+    const { assetId } = await uploadMovieAsset(ctx, movieId)
 
-    await moviesService.completeAsset(draftId, assetId)
+    await moviesService.completeAsset(movieId, assetId)
     return assetId
 }
