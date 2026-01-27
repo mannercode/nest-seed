@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common'
+import { buildCreateShowtimeDto, createShowtimes, Errors } from 'apps/__tests__/__helpers__'
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, oid } from 'testlib'
-import { buildCreateShowtimeDto, createShowtimes, Errors } from '../__helpers__'
 import type { ShowtimesFixture } from './showtimes.fixture'
 import type { ShowtimeDto } from 'apps/cores'
 

@@ -1,6 +1,6 @@
+import { buildCreateAssetDto, Errors, fixtureFiles, uploadAsset } from 'apps/__tests__/__helpers__'
 import { Expect } from 'common'
 import { nullObjectId } from 'testlib'
-import { buildCreateAssetDto, Errors, fixtureFiles, uploadAsset } from '../__helpers__'
 import { createMovie, createMovieAsset, uploadCompleteMovieAsset } from './movies-assets.fixture'
 import type { MoviesAssetsFixture } from './movies-assets.fixture'
 import type { MovieDto } from 'apps/cores'

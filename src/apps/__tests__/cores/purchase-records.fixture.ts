@@ -1,8 +1,8 @@
+import { createAppTestContext } from 'apps/__tests__/__helpers__'
 import { PurchaseClient } from 'apps/applications'
 import { PurchaseRecordsClient, PurchaseRecordsModule } from 'apps/cores'
 import { PurchasesController } from 'apps/gateway'
-import { createAppTestContext } from '../__helpers__'
-import type { AppTestContext } from '../__helpers__'
+import type { AppTestContext } from 'apps/__tests__/__helpers__'
 
 export type PurchaseRecordsFixture = AppTestContext & {
     purchaseRecordsClient: PurchaseRecordsClient

@@ -1,6 +1,6 @@
+import { buildCreateCustomerDto, createCustomer, Errors } from 'apps/__tests__/__helpers__'
 import { omit } from 'lodash'
 import { nullObjectId } from 'testlib'
-import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
 import type { CustomersFixture } from './customers.fixture'
 import type { CustomerDto, SearchCustomersPageDto } from 'apps/cores'
 

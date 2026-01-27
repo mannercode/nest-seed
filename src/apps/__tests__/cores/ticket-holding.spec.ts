@@ -1,6 +1,6 @@
+import { buildHoldTicketsDto } from 'apps/__tests__/__helpers__'
 import { sleep } from 'common'
 import { oid, toAny } from 'testlib'
-import { buildHoldTicketsDto } from '../__helpers__'
 import type { TicketHoldingFixture } from './ticket-holding.fixture'
 import type { HoldTicketsDto } from 'apps/cores'
 

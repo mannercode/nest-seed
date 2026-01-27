@@ -1,14 +1,14 @@
-import { RecommendationClient } from 'apps/applications'
-import { MoviesClient, MoviesModule } from 'apps/cores'
-import { MoviesController } from 'apps/gateway'
-import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import {
     buildCreateAssetDto,
     createAppTestContext,
     fixtureFiles,
     uploadAsset
-} from '../__helpers__'
-import type { AppTestContext, FixtureFile } from '../__helpers__'
+} from 'apps/__tests__/__helpers__'
+import { RecommendationClient } from 'apps/applications'
+import { MoviesClient, MoviesModule } from 'apps/cores'
+import { MoviesController } from 'apps/gateway'
+import { AssetsClient, AssetsModule } from 'apps/infrastructures'
+import type { AppTestContext, FixtureFile } from 'apps/__tests__/__helpers__'
 import type { TestContext } from 'testlib'
 
 export type MoviesAssetsFixture = AppTestContext & {

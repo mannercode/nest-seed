@@ -1,3 +1,11 @@
+import {
+    createAndLoginCustomer,
+    createAppTestContext,
+    createMovie,
+    createShowtimes,
+    createTheater,
+    createTickets
+} from 'apps/__tests__/__helpers__'
 import { BookingClient, BookingModule, PurchaseModule } from 'apps/applications'
 import {
     CustomersClient,
@@ -16,15 +24,7 @@ import {
 } from 'apps/cores'
 import { BookingController, CustomerJwtStrategy } from 'apps/gateway'
 import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
-import {
-    createAndLoginCustomer,
-    createAppTestContext,
-    createMovie,
-    createShowtimes,
-    createTheater,
-    createTickets
-} from '../__helpers__'
-import type { AppTestContext } from '../__helpers__'
+import type { AppTestContext } from 'apps/__tests__/__helpers__'
 import type { TheaterLocation } from 'apps/cores'
 import type { TestContext } from 'testlib'
 

@@ -1,15 +1,15 @@
-import { MovieGenre, MovieRating } from 'apps/cores'
-import { Checksum } from 'common'
-import { omit } from 'lodash'
-import { Rules } from 'shared'
-import { nullObjectId } from 'testlib'
 import {
     buildCreateMovieDto,
     createMovie,
     Errors,
     fixtureFiles,
     uploadComplete
-} from '../__helpers__'
+} from 'apps/__tests__/__helpers__'
+import { MovieGenre, MovieRating } from 'apps/cores'
+import { Checksum } from 'common'
+import { omit } from 'lodash'
+import { Rules } from 'shared'
+import { nullObjectId } from 'testlib'
 import { type MoviesFixture } from './movies.fixture'
 import type { MovieDto, SearchMoviesPageDto } from 'apps/cores'
 

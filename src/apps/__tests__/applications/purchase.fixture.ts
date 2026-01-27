@@ -1,3 +1,9 @@
+import {
+    buildHoldTicketsDto,
+    createAppTestContext,
+    createShowtimes,
+    createTickets
+} from 'apps/__tests__/__helpers__'
 import { PurchaseClient, PurchaseModule } from 'apps/applications'
 import {
     CustomersClient,
@@ -20,13 +26,7 @@ import { PurchasesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
 import { DateUtil, pickIds } from 'common'
 import { oid, toAny } from 'testlib'
-import {
-    buildHoldTicketsDto,
-    createAppTestContext,
-    createShowtimes,
-    createTickets
-} from '../__helpers__'
-import type { AppTestContext } from '../__helpers__'
+import type { AppTestContext } from 'apps/__tests__/__helpers__'
 import type { CreatePurchaseDto } from 'apps/applications'
 import type { TicketDto } from 'apps/cores'
 import type { TestContext } from 'testlib'

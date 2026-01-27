@@ -1,6 +1,6 @@
+import { Errors } from 'apps/__tests__/__helpers__'
 import { MovieGenre, MovieRating } from 'apps/cores'
 import { nullObjectId } from 'testlib'
-import { Errors } from '../__helpers__'
 import { createUnpublishedMovie, type MoviesPublishFixture } from './movies-publish.fixture'
 import type { MovieDto } from 'apps/cores'
 

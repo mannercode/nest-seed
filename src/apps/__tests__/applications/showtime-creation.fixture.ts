@@ -1,3 +1,4 @@
+import { createAppTestContext } from 'apps/__tests__/__helpers__'
 import { ShowtimeCreationClient, ShowtimeCreationModule } from 'apps/applications'
 import {
     MoviesClient,
@@ -12,8 +13,7 @@ import {
 import { ShowtimeCreationController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { reviveIsoDates } from 'common'
-import { createAppTestContext } from '../__helpers__'
-import type { AppTestContext as TestContext } from '../__helpers__'
+import type { AppTestContext as TestContext } from 'apps/__tests__/__helpers__'
 
 export type ShowtimeCreationFixture = TestContext & {
     showtimesClient: ShowtimesClient
