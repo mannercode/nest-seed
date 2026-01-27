@@ -51,8 +51,8 @@ describe('MoviesPublish', () => {
                         )
                 })
 
-                // 영화를 공개한다
-                it('publishes the movie', async () => {
+                // 공개 후 영화를 검색한다
+                it('finds the movie after publishing', async () => {
                     const { body: publishedMovie } = await fix.httpClient
                         .post(`/movies/${movie.id}/publish`)
                         .ok()
@@ -62,7 +62,7 @@ describe('MoviesPublish', () => {
                 })
 
                 // 공개 전에는 검색되지 않는다
-                it('does not list the movie before publishing', async () => {
+                it('does not find the movie before publishing', async () => {
                     const moviePage = await fix.moviesClient.searchPage({ title: `MovieTitle` })
                     expect(moviePage.items).toHaveLength(0)
                 })
