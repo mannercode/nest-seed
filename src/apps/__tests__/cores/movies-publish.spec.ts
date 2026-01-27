@@ -1,8 +1,7 @@
 import { MovieGenre, MovieRating } from 'apps/cores'
 import { nullObjectId } from 'testlib'
 import { Errors } from '../__helpers__'
-import { createMovie, uploadCompleteMovieAsset } from './movies-publish.fixture'
-import type { MoviesPublishFixture } from './movies-publish.fixture'
+import { createUnpublishedMovie, type MoviesPublishFixture } from './movies-publish.fixture'
 import type { MovieDto } from 'apps/cores'
 
 describe('MoviesPublish', () => {
@@ -20,10 +19,10 @@ describe('MoviesPublish', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
-                movie = await createMovie(fix)
+                movie = await createUnpublishedMovie(fix)
             })
 
-            // 유효한 상태인 경우
+            // 필수 필드가 준비된 때
             describe('when required fields are ready', () => {
                 const updateDto = {
                     title: `MovieTitle`,
@@ -36,7 +35,6 @@ describe('MoviesPublish', () => {
                 }
 
                 beforeEach(async () => {
-                    await uploadCompleteMovieAsset(fix, movie.id)
                     await fix.httpClient.patch(`/movies/${movie.id}`).body(updateDto).ok()
                 })
 
@@ -59,18 +57,19 @@ describe('MoviesPublish', () => {
                         .post(`/movies/${movie.id}/publish`)
                         .ok()
 
-                    await fix.httpClient
-                        .get(`/movies/${publishedMovie.id}`)
-                        .ok({ ...publishedMovie, imageUrls: expect.any(Array) })
+                    const moviePage = await fix.moviesClient.searchPage({ title: `MovieTitle` })
+                    expect(moviePage.items[0]).toEqual(publishedMovie)
+                })
+
+                // 영화를 공개한다
+                it('publishes the movie?', async () => {
+                    const moviePage = await fix.moviesClient.searchPage({ title: `MovieTitle` })
+                    expect(moviePage.items).toHaveLength(0)
                 })
             })
 
             // 필수 필드가 누락된 경우
             describe('when required fields are missing', () => {
-                beforeEach(async () => {
-                    await uploadCompleteMovieAsset(fix, movie.id)
-                })
-
                 // 422 Unprocessable Entity를 반환한다
                 it('returns 422 Unprocessable Entity', async () => {
                     await fix.httpClient

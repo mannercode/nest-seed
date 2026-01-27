@@ -10,7 +10,7 @@ import {
     fixtureFiles,
     uploadComplete
 } from '../__helpers__'
-import { createUnpublishedMovie, type MoviesFixture } from './movies.fixture'
+import { type MoviesFixture } from './movies.fixture'
 import type { MovieDto, SearchMoviesPageDto } from 'apps/cores'
 
 describe('MoviesService', () => {
@@ -251,8 +251,7 @@ describe('MoviesService', () => {
                     releaseDate: new Date('2000-01-03'),
                     rating: MovieRating.R,
                     genres: [MovieGenre.Thriller, MovieGenre.Western]
-                }),
-                createUnpublishedMovie(fix, { title: 'unpublished' })
+                })
             ])
         })
 
@@ -284,11 +283,6 @@ describe('MoviesService', () => {
             // 부분 제목 일치로 필터링된 영화를 반환한다
             it('returns movies filtered by a partial title match', async () => {
                 await queryAndExpect({ title: 'title-a' }, [movieA1, movieA2])
-            })
-
-            // 발행 안 된 영화는 반환하지 않는다
-            it('발행 안 된 영화는 반환하지 않는다', async () => {
-                await queryAndExpect({ title: 'unpublished' }, [])
             })
 
             // 장르로 필터링된 영화를 반환한다
