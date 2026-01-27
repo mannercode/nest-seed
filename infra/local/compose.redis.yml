@@ -2,7 +2,7 @@ x-redis-base: &redis-base
     extends: { file: ./compose.common.yml, service: common-options }
     image: $REDIS_IMAGE
     healthcheck:
-        test: 'redis-cli -a $REDIS_PASSWORD ping'
+        test: 'redis-cli ping'
     deploy: { resources: { limits: { memory: 128m } } }
     shm_size: '8m'
     command: |
@@ -14,9 +14,7 @@ x-redis-base: &redis-base
           --cluster-announce-port $$ANNOUNCE_PORT \
           --cluster-announce-bus-port $$ANNOUNCE_BUS_PORT \
           --protected-mode no \
-          --appendonly yes \
-          --requirepass $REDIS_PASSWORD \
-          --masterauth $REDIS_PASSWORD
+          --appendonly yes
         '
 
 services:
@@ -111,7 +109,7 @@ services:
                 "
 
             echo "yes" |
-                redis-cli -a $REDIS_PASSWORD --cluster create $$REDIS_NODES --cluster-replicas 1
+                redis-cli --cluster create $$REDIS_NODES --cluster-replicas 1
             '
 
     redis-gui:
@@ -126,14 +124,10 @@ services:
                 RI_REDIS_HOST0: $REDIS_HOST1,
                 RI_REDIS_PORT0: $REDIS_PORT1,
                 RI_REDIS_ALIAS0: redis1,
-                RI_REDIS_USERNAME0: default,
-                RI_REDIS_PASSWORD0: $REDIS_PASSWORD,
 
                 RI_REDIS_HOST1: $REDIS_HOST2,
                 RI_REDIS_PORT1: $REDIS_PORT2,
-                RI_REDIS_ALIAS1: redis2,
-                RI_REDIS_USERNAME1: default,
-                RI_REDIS_PASSWORD1: $REDIS_PASSWORD
+                RI_REDIS_ALIAS1: redis2
             }
         ports: ['5540:5540']
 

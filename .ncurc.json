@@ -1,1 +1,1 @@
-{ "target": "latest", "reject": ["@types/node", "bullmq", "ioredis"] }
+{ "target": "latest", "reject": ["@types/node"] }
