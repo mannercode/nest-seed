@@ -24,8 +24,8 @@ describe('MoviesAssets', () => {
                 movie = await createMovie(fix)
             })
 
-            // 업로드 URL이 포함된 에셋 슬롯을 반환한다
-            it('returns a created asset slot with an upload URL', async () => {
+            // 업로드 URL이 포함된 에셋 업로드 정보를 반환한다
+            it('returns a created asset upload with an upload URL', async () => {
                 const createDto = buildCreateAssetDto(fix.asset)
 
                 const { body } = await fix.httpClient
@@ -199,8 +199,8 @@ describe('MoviesAssets', () => {
                     })
                 })
 
-                // 업로드가 누락된 때
-                describe('when the upload is missing', () => {
+                // 업로드가 완료되지 않은 때
+                describe('when the upload is not completed', () => {
                     // 422 Unprocessable Entity를 반환한다
                     it('returns 422 Unprocessable Entity', async () => {
                         await fix.httpClient
