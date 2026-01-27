@@ -277,7 +277,7 @@ describe('S3ObjectService', () => {
             })
         })
 
-        // 컨텐츠 타입이 기대되지만 누락된 경우
+        // 컨텐츠 타입이 기대되지만 누락된 때
         describe('when content type is expected but missing', () => {
             // false를 반환한다
             it('returns false', async () => {

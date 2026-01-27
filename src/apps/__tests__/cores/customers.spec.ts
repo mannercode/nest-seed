@@ -1,6 +1,6 @@
+import { buildCreateCustomerDto, createCustomer, Errors } from 'apps/__tests__/__helpers__'
 import { omit } from 'lodash'
 import { nullObjectId } from 'testlib'
-import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
 import type { CustomersFixture } from './customers.fixture'
 import type { CustomerDto, SearchCustomersPageDto } from 'apps/cores'
 
@@ -39,11 +39,11 @@ describe('CustomersService', () => {
                 await fix.httpClient
                     .post('/customers')
                     .body(createDto)
-                    .conflict({ ...Errors.Customer.EmailAlreadyExists, email: createDto.email })
+                    .conflict({ ...Errors.Customers.EmailAlreadyExists, email: createDto.email })
             })
         })
 
-        // 필수 필드가 누락된 경우
+        // 필수 필드가 누락된 때
         describe('when required fields are missing', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {

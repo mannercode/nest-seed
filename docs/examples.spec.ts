@@ -15,7 +15,7 @@ describe('SampleService', () => {
         // 기본적으로 fixture는 정상이라고 가정한다.
         it('returns the created movie-draft', async () => {
             await fix.httpClient
-                .post('/movie-drafts')
+                .post('/movies')
                 .created(expect.objectContaining({ id: expect.any(String) }))
         })
     })

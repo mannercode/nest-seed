@@ -1,3 +1,5 @@
+import { get } from 'lodash'
+
 describe('error handling', () => {
     describe('async functions', () => {
         // 값으로 resolve된다
@@ -55,9 +57,11 @@ describe('error handling', () => {
 
             try {
                 throwException()
-            } catch (error) {
+            } catch (error: unknown) {
+                const message = get(error, 'message', String(error))
+
                 expect(error).toBeInstanceOf(Error)
-                expect(error.message).toBe('error')
+                expect(message).toBe('error')
             }
         })
     })

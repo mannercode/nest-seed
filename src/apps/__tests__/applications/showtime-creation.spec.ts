@@ -1,6 +1,6 @@
+import { createMovie, createShowtimes, createTheater } from 'apps/__tests__/__helpers__'
 import { DateUtil } from 'common'
 import { nullObjectId } from 'testlib'
-import { createMovie, createShowtimes, createTheater } from '../__helpers__'
 import { waitForCompletion } from './showtime-creation.fixture'
 import type { ShowtimeCreationFixture } from './showtime-creation.fixture'
 import type { MovieDto, ShowtimeDto, TheaterDto } from 'apps/cores'

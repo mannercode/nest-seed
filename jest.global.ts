@@ -4,6 +4,8 @@ import fs from 'fs'
 import { GenericContainer } from 'testcontainers'
 import { getEnv, setEnv } from './jest.utils'
 
+// process.env.DEBUG="ioredis:*"
+
 async function setupNats() {
     return new NatsContainer(getEnv('NATS_IMAGE'))
         .withName('testlib-nats')

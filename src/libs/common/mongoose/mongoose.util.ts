@@ -3,7 +3,7 @@ import { escapeRegExp, uniq } from 'lodash'
 import { Types } from 'mongoose'
 import { Verify } from '../validator'
 import { MongooseErrors } from './errors'
-import type { FilterQuery } from 'mongoose'
+import type { QueryFilter } from 'mongoose'
 
 export const newObjectIdString = () => new Types.ObjectId().toString()
 export const objectId = (id: string) => new Types.ObjectId(id)
@@ -65,7 +65,7 @@ export class QueryBuilder<T> {
         return this
     }
 
-    build({ allowEmpty }: QueryBuilderOptions): FilterQuery<T> {
+    build({ allowEmpty }: QueryBuilderOptions): QueryFilter<T> {
         if (!allowEmpty && Object.keys(this.query).length === 0) {
             throw new BadRequestException(MongooseErrors.FiltersRequired)
         }

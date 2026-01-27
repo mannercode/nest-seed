@@ -1,5 +1,5 @@
-import { createCustomer } from '../__helpers__'
-import { Errors, loginCustomer } from '../__helpers__'
+import { createCustomer } from 'apps/__tests__/__helpers__'
+import { Errors, loginCustomer } from 'apps/__tests__/__helpers__'
 import type { CustomerAuthFixture } from './customer-auth.fixture'
 import type { JwtAuthTokens } from 'common'
 

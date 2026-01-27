@@ -1,6 +1,5 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseSchema, createMongooseSchema } from 'common'
-import { HydratedDocument } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { Seatmap } from './seatmap'
 import { TheaterLocation } from './theater-location'
@@ -23,7 +22,6 @@ export class Theater extends MongooseSchema {
     @Prop({ type: Object, required: true, _id: false })
     seatmap: Seatmap
 }
-export type TheaterDocument = HydratedDocument<Theater>
 export const TheaterSchema = createMongooseSchema(Theater)
 
 // Creates a text index on the 'name' field to enable searching by theater name.

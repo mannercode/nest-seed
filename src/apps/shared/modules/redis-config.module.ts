@@ -7,12 +7,8 @@ import { AppConfigService } from '../config'
         RedisModule.forRootAsync(
             {
                 useFactory: (config: AppConfigService) => {
-                    const { nodes, password } = config.redis
-                    const redisOptions: RedisModuleOptions = {
-                        type: 'cluster',
-                        nodes,
-                        options: { redisOptions: { password } }
-                    }
+                    const { nodes } = config.redis
+                    const redisOptions: RedisModuleOptions = { type: 'cluster', nodes }
                     return redisOptions
                 },
                 inject: [AppConfigService]

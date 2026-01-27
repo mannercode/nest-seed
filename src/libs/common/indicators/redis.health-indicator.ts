@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { HealthIndicatorService } from '@nestjs/terminus'
 import Redis from 'ioredis'
-import { defaultTo } from 'lodash'
+import { defaultTo, get } from 'lodash'
 
 @Injectable()
 export class RedisHealthIndicator {
@@ -14,8 +14,10 @@ export class RedisHealthIndicator {
             await redis.ping()
 
             return indicator.up()
-        } catch (error) {
-            const reason = defaultTo(error.message, error)
+        } catch (error: unknown) {
+            const message = get(error, 'message', String(error))
+
+            const reason = defaultTo(message, error)
             return indicator.down({ reason })
         }
     }

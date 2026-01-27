@@ -1,6 +1,4 @@
 import { HttpStatus } from '@nestjs/common'
-import { Checksum, pickIds, sleep } from 'common'
-import { nullObjectId, toAny } from 'testlib'
 import {
     buildCompleteAssetDto,
     buildCreateAssetDto,
@@ -10,7 +8,9 @@ import {
     uploadAsset,
     uploadComplete,
     uploadFile
-} from '../__helpers__'
+} from 'apps/__tests__/__helpers__'
+import { Checksum, pickIds, sleep } from 'common'
+import { nullObjectId, toAny } from 'testlib'
 import { type AssetsFixture } from './assets.fixture'
 import type { AssetDto } from 'apps/infrastructures'
 

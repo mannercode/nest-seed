@@ -49,11 +49,13 @@ export const Messages = createMessagePatternMap(
         },
         Movies: {
             create: null,
+            publish: null,
             update: null,
             getMany: null,
             deleteMany: null,
             searchPage: null,
-            allExist: null
+            allExist: null,
+            Assets: { create: null, delete: null, complete: null }
         },
         Customers: {
             create: null,

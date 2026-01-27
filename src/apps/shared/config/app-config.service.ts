@@ -13,7 +13,6 @@ export class AppConfigService extends BaseConfigService {
         LOG_FILE_LEVEL: Joi.string().required(),
         LOG_CONSOLE_LEVEL: Joi.string().required(),
 
-        REDIS_PASSWORD: Joi.string().optional(),
         REDIS_HOST1: Joi.string().required(),
         REDIS_PORT1: Joi.number().required(),
         REDIS_HOST2: Joi.string().required(),
@@ -76,7 +75,6 @@ export class AppConfigService extends BaseConfigService {
     }
 
     get redis() {
-        const password = this.getString('REDIS_PASSWORD')
         const nodes = [
             { host: this.getString('REDIS_HOST1'), port: this.getNumber('REDIS_PORT1') },
             { host: this.getString('REDIS_HOST2'), port: this.getNumber('REDIS_PORT2') },
@@ -86,7 +84,7 @@ export class AppConfigService extends BaseConfigService {
             { host: this.getString('REDIS_HOST6'), port: this.getNumber('REDIS_PORT6') }
         ]
 
-        return { password, nodes }
+        return { nodes }
     }
 
     get nats() {

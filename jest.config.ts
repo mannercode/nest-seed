@@ -1,11 +1,10 @@
-const { createJsWithTsPreset, pathsToModuleNameMapper } = require('ts-jest')
-const { compilerOptions } = require('./tsconfig.json')
+import { createJsWithTsPreset, pathsToModuleNameMapper } from 'ts-jest'
+import tsconfig from './tsconfig.json' with { type: 'json' }
 
-/** @type {import('jest').Config} */
 const tsJestPreset = createJsWithTsPreset({ tsconfig: 'tsconfig.json' })
+const { compilerOptions } = tsconfig
 
-/** @type {import('jest').Config} */
-module.exports = {
+export default {
     ...tsJestPreset,
     globalSetup: '<rootDir>/jest.global.ts',
     setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
