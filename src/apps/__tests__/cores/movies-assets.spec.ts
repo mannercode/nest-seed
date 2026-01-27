@@ -98,7 +98,7 @@ describe('MoviesAssets', () => {
                 movie = await createMovie(fix)
             })
 
-            // 업로드가 완료된 경우
+            // 업로드가 완료된 때
             describe('when upload is completed', () => {
                 let assetId: string
 
@@ -162,7 +162,7 @@ describe('MoviesAssets', () => {
                     upload = await createMovieAsset(fix, movie.id, fix.asset)
                 })
 
-                // 업로드가 성공한 경우
+                // 업로드가 성공한 때
                 describe('when upload succeeded', () => {
                     beforeEach(async () => {
                         const res = await uploadAsset(fix.asset.path, upload)
@@ -187,7 +187,7 @@ describe('MoviesAssets', () => {
                             .ok(expect.objectContaining({ imageUrls: [expect.any(String)] }))
                     })
 
-                    // 이미 완료된 경우
+                    // 이미 완료된 때
                     it('returns 200 OK when already completed', async () => {
                         await fix.httpClient
                             .post(`/movies/${movie.id}/assets/${upload.assetId}/complete`)
@@ -199,7 +199,7 @@ describe('MoviesAssets', () => {
                     })
                 })
 
-                // 업로드가 누락된 경우
+                // 업로드가 누락된 때
                 describe('when the upload is missing', () => {
                     // 422 Unprocessable Entity를 반환한다
                     it('returns 422 Unprocessable Entity', async () => {

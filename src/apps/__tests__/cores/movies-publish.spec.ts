@@ -14,8 +14,8 @@ describe('MoviesPublish', () => {
     afterEach(() => fix.teardown())
 
     describe('POST /movies/:movieId/publish', () => {
-        // 영화가 존재할 때
-        describe('when the movie exists', () => {
+        // 미발행 영화가 존재할 때
+        describe('when an unpublished movie exists', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
@@ -61,14 +61,14 @@ describe('MoviesPublish', () => {
                     expect(moviePage.items[0]).toEqual(publishedMovie)
                 })
 
-                // 영화를 공개한다
-                it('publishes the movie?', async () => {
+                // 공개 전에는 검색되지 않는다
+                it('does not list the movie before publishing', async () => {
                     const moviePage = await fix.moviesClient.searchPage({ title: `MovieTitle` })
                     expect(moviePage.items).toHaveLength(0)
                 })
             })
 
-            // 필수 필드가 누락된 경우
+            // 필수 필드가 누락된 때
             describe('when required fields are missing', () => {
                 // 422 Unprocessable Entity를 반환한다
                 it('returns 422 Unprocessable Entity', async () => {

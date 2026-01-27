@@ -23,7 +23,7 @@ describe('TheatersService', () => {
                 .created({ ...createDto, id: expect.any(String) })
         })
 
-        // 필수 필드가 누락된 경우
+        // 필수 필드가 누락된 때
         describe('when required fields are missing', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
