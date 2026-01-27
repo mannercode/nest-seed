@@ -2,6 +2,7 @@ import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { Job, Queue } from 'bullmq'
 import { newObjectIdString, reviveIsoDates } from 'common'
+import { get } from 'lodash'
 import { BulkCreateShowtimesDto } from '../dtos'
 import { ShowtimeCreationEvents } from '../showtime-creation.events'
 import { ShowtimeBulkCreatorService } from './showtime-bulk-creator.service'
@@ -59,11 +60,13 @@ export class ShowtimeCreationWorkerService
             const jobData = reviveIsoDates(job.data)
 
             await this.processJobData(jobData)
-        } catch (error) {
+        } catch (error: unknown) {
+            const message = get(error, 'message', String(error))
+
             await this.events.emitStatusChanged({
                 status: ShowtimeCreationStatus.Error,
                 sagaId: job.data.sagaId,
-                message: error.message
+                message
             })
         }
     }

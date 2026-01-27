@@ -2,7 +2,7 @@ import { DynamicModule, Inject, Injectable, Module, UnauthorizedException } from
 import { JwtModule, JwtService } from '@nestjs/jwt'
 import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import Redis from 'ioredis'
-import { omit } from 'lodash'
+import { get, omit } from 'lodash'
 import { defaultTo } from 'lodash'
 import { generateShortId, Time } from '../utils'
 
@@ -81,10 +81,12 @@ export class JwtAuthService {
             const payload = omit(decoded, ['exp', 'iat', 'jti'])
 
             return payload
-        } catch (error) {
+        } catch (error: unknown) {
+            const message = get(error, 'message', String(error))
+
             throw new UnauthorizedException({
                 ...JwtAuthServiceErrors.RefreshTokenVerificationFailed,
-                message: error.message
+                message
             })
         }
     }

@@ -1,27 +1,26 @@
 {
     "compilerOptions": {
+        "module": "commonjs",
+        "moduleResolution": "node",
         "target": "ESNext",
         "lib": ["ESNext"],
-        "strict": false,
-        "types": ["jest"],
-        "allowJs": true,
-        "module": "commonjs",
-        "declaration": true,
-        "removeComments": true,
-        "emitDecoratorMetadata": true,
+        "types": ["node", "jest"],
+
+        "strict": true,
+        "strictPropertyInitialization": false,
+
         "experimentalDecorators": true,
-        "allowSyntheticDefaultImports": true,
+        "emitDecoratorMetadata": true,
+
         "incremental": true,
-        "skipLibCheck": true,
-        "strictNullChecks": true,
-        "noImplicitAny": true,
-        "strictBindCallApply": true,
+        "sourceMap": true,
+
         "forceConsistentCasingInFileNames": true,
         "noFallthroughCasesInSwitch": true,
+
         "resolveJsonModule": true,
         "esModuleInterop": true,
-        "isolatedModules": false,
-        "sourceMap": true,
+
         "baseUrl": ".",
         "outDir": "./_output/build",
         "paths": {

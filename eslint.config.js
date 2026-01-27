@@ -115,8 +115,6 @@ module.exports = [
     },
     {
         files: [
-            'src/**/*.spec.ts',
-            'src/**/*.test.ts',
             'src/**/__tests__/**/*.ts',
             'src/libs/testlib/**/*.ts',
             'src/apps/**/development.ts'

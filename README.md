@@ -120,7 +120,6 @@ src
 │   ├── applications
 │   │   ├── services              # 유스케이스
 │   │   │   ├── booking
-│   │   │   ├── movie-drafts
 │   │   │   ├── purchase
 │   │   │   ├── recommendation
 │   │   │   └── showtime-creation

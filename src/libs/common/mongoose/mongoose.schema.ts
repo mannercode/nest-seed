@@ -2,7 +2,7 @@ import { SchemaFactory } from '@nestjs/mongoose'
 import { defaultTo } from 'lodash'
 import mongooseLeanVirtuals from 'mongoose-lean-virtuals'
 import type { Type } from '@nestjs/common'
-import type { ClientSession, Schema } from 'mongoose'
+import type { ClientSession, Query, Schema } from 'mongoose'
 
 /**
  * The difference between toObject and toJSON is that toJSON has flattenMaps set to true by default.
@@ -35,7 +35,7 @@ export function HardDelete() {
     }
 }
 
-function excludeDeletedMiddleware() {
+function excludeDeletedMiddleware(this: Query<any, any>) {
     if (!this.getOptions().withDeleted) {
         this.where({ deletedAt: null })
     }

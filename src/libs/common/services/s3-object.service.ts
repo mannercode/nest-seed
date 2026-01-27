@@ -5,12 +5,13 @@ import {
     ListObjectsV2Command,
     PutObjectCommand,
     S3Client,
-    S3ClientConfig
+    S3ClientConfig,
+    S3ServiceException
 } from '@aws-sdk/client-s3'
 import { createPresignedPost, PresignedPost } from '@aws-sdk/s3-presigned-post'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { DynamicModule, Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
-import { defaultTo } from 'lodash'
+import { defaultTo, some } from 'lodash'
 import { newObjectIdString } from '../mongoose'
 import { HttpUtil } from '../utils'
 
@@ -53,9 +54,13 @@ export type S3PresignDownloadOptions = S3PresignUrlOptions & {
     responseContentDisposition?: string
 }
 
-function normalizeContentType(v?: string): string | undefined {
-    if (!v) return undefined
-    return v.split(';', 1)[0].trim().toLowerCase()
+/**
+ * Compare Content-Type by base MIME type only (ignore params like `; charset=utf-8`).
+ * Content-Type은 파라미터를 무시하고 base-type만 비교.
+ * e.g. "application/json" === "application/json; charset=utf-8"
+ */
+function normalizeContentType(v?: string) {
+    return v?.split(';', 1)[0].trim().toLowerCase()
 }
 
 @Injectable()
@@ -150,7 +155,6 @@ export class S3ObjectService implements OnModuleDestroy {
 
             if (typeof contentLength === 'number' && ContentLength !== contentLength) return false
 
-            // Content-Type은 파라미터(예: charset) 차이가 날 수 있어 base-type으로 비교
             const expected = normalizeContentType(contentType)
             const actual = normalizeContentType(ContentType)
 
@@ -160,9 +164,12 @@ export class S3ObjectService implements OnModuleDestroy {
             return true
         } catch (error) {
             if (
-                error.name === 'NotFound' ||
-                error.name === 'NoSuchKey' ||
-                error.$metadata?.httpStatusCode === 404
+                error instanceof S3ServiceException &&
+                some([
+                    error.name === 'NotFound',
+                    error.name === 'NoSuchKey',
+                    error.$metadata.httpStatusCode === 404
+                ])
             ) {
                 return false
             }
