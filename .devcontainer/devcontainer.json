@@ -42,7 +42,7 @@
                     "**/_output/**": true
                 },
                 "search.exclude": { "**/node_modules/**": true, "**/_output/**": true },
-                "files.exclude": { "**/node_modules/**": true, "package-lock.json": true },
+                "files.exclude": { "**/node_modules/**": true },
                 "files.associations": { "*.cfg": "shellscript" },
                 "remote.autoForwardPorts": false,
                 "remote.downloadExtensionsLocally": true,
