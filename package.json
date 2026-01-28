@@ -33,6 +33,11 @@
         "infra:reset": "npm run infra:down && npm run infra:up && npm run infra:wait",
         "infra:gui": " COMPOSE_PROFILES=gui npm run infra:reset"
     },
+    "overrides": {
+        "@nestjs/config": {
+            "lodash": "4.17.23"
+        }
+    },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.975.0",
         "@aws-sdk/s3-presigned-post": "^3.975.0",
@@ -52,7 +57,7 @@
         "@nestjs/schedule": "^6.1.0",
         "@nestjs/terminus": "^11.0.0",
         "bcrypt": "^6.0.0",
-        "bullmq": "^5.67.1",
+        "bullmq": "^5.67.2",
         "chalk": "5.6.2",
         "class-transformer": "^0.5.1",
         "class-validator": "^0.14.3",
