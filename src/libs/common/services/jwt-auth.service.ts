@@ -1,9 +1,8 @@
 import { DynamicModule, Inject, Injectable, Module, UnauthorizedException } from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
-import { getRedisConnectionToken } from '@nestjs-modules/ioredis'
 import Redis from 'ioredis'
-import { get, omit } from 'lodash'
-import { defaultTo } from 'lodash'
+import { defaultTo, get, omit } from 'lodash'
+import { getRedisConnectionToken } from '../redis'
 import { generateShortId, Time } from '../utils'
 
 export const JwtAuthServiceErrors = {
