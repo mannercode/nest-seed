@@ -3,21 +3,22 @@
     "hostRequirements": { "cpus": 4, "memory": "16gb", "storage": "32gb" },
     "build": { "dockerfile": "Dockerfile", "context": "." },
     "features": { "ghcr.io/devcontainers/features/docker-in-docker:2": {} },
-    "mounts": ["source=${env:HOME}/.codex,target=/home/node/.codex,type=bind"],
     "privileged": true,
     "runArgs": [
         "--add-host",
         "host.docker.internal:127.0.0.1",
         "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     ],
-    "forwardPorts": [5010, 5020],
     "remoteUser": "node",
-    "containerEnv": { "WORKSPACE_ROOT": "${containerWorkspaceFolder}" },
+    "mounts": ["source=${localEnv:HOME}/.codex,target=/home/node/.codex,type=bind"],
+    "initializeCommand": { "prepare-mounts": "mkdir -p ${localEnv:HOME}/.codex" },
     "postCreateCommand": { "husky": "husky", "ci": "npm ci" },
     "postStartCommand": {
         "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null",
         "reset-infra": "npm run infra:reset"
     },
+    "forwardPorts": [5010, 5020],
+    "containerEnv": { "WORKSPACE_ROOT": "${containerWorkspaceFolder}" },
     "customizations": {
         "vscode": {
             "extensions": [

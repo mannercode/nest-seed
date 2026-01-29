@@ -39,10 +39,9 @@
         }
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.975.0",
-        "@aws-sdk/s3-presigned-post": "^3.975.0",
-        "@aws-sdk/s3-request-presigner": "^3.975.0",
-        "@nestjs-modules/ioredis": "^2.0.2",
+        "@aws-sdk/client-s3": "^3.978.0",
+        "@aws-sdk/s3-presigned-post": "^3.978.0",
+        "@aws-sdk/s3-request-presigner": "^3.978.0",
         "@nestjs/bullmq": "^11.0.4",
         "@nestjs/common": "^11.1.12",
         "@nestjs/config": "^4.0.2",
