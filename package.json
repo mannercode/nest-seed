@@ -90,7 +90,7 @@
         "@types/jest": "^30.0.0",
         "@types/lodash": "^4.17.23",
         "@types/multer": "^2.0.0",
-        "@types/node": "^24.10.9",
+        "@types/node": "^24",
         "@types/passport-jwt": "^4.0.1",
         "@types/passport-local": "^1.0.38",
         "@types/superagent": "^8.1.9",
