@@ -4,16 +4,12 @@ export function getRedisTestConnection() {
     return Env.getString('TESTLIB_REDIS_URL')
 }
 
-export const getNatsTestConnection = () => {
-    return JSON.parse(Env.getString('TESTLIB_NATS_OPTIONS'))
-}
+export const getNatsTestConnection = () => JSON.parse(Env.getString('TESTLIB_NATS_OPTIONS'))
 
-export const getMongoTestConnection = () => {
-    return {
-        uri: Env.getString('TESTLIB_MONGO_URI'),
-        dbName: Env.getString('TESTLIB_MONGO_DATABASE')
-    }
-}
+export const getMongoTestConnection = () => ({
+    uri: Env.getString('TESTLIB_MONGO_URI'),
+    dbName: Env.getString('TESTLIB_MONGO_DATABASE')
+})
 
 export const getS3TestConnection = () => {
     const endpoint = Env.getString('TESTLIB_S3_ENDPOINT')

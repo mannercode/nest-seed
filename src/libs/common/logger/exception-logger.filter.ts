@@ -63,6 +63,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
             }
 
             super.catch(exception, host)
+            return undefined
         } else if (contextType === 'rpc') {
             const rpcContext = host.switchToRpc()
 
@@ -107,6 +108,7 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
             Logger.error('unknown context type', { contextType, ...exception })
 
             super.catch(exception, host)
+            return undefined
         }
     }
 }

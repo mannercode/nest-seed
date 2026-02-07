@@ -1,7 +1,7 @@
 import { fromPairs, keys, omit, pickBy, sortBy, toPairs } from 'lodash'
 
 function stringifyWithSortedKeys(record: Record<string, any>): string {
-    return JSON.stringify(record, (key, value) => {
+    return JSON.stringify(record, (_key, value) => {
         if (value && typeof value === 'object' && !Array.isArray(value)) {
             const sortedPairs = sortBy(toPairs(value), ([entryKey]) => entryKey)
             return fromPairs(sortedPairs)

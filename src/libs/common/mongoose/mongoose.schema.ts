@@ -58,24 +58,26 @@ export function createMongooseSchema<T>(cls: Type<T>): Schema<T> {
         schema.pre('findOne', excludeDeletedMiddleware)
         schema.pre('findOneAndUpdate', excludeDeletedMiddleware)
         schema.pre('countDocuments', excludeDeletedMiddleware)
-        schema.pre('aggregate', function () {
+        schema.pre('aggregate', function addDeletedAtFilter() {
             this.pipeline().unshift({ $match: { deletedAt: null } })
         })
-        schema.statics.deleteOne = async function (
+        schema.statics.deleteOne = async function softDeleteOne(
             conditions,
             options?: { session?: ClientSession }
         ) {
             const ret = await this.updateOne(conditions, { deletedAt: new Date() }, options).exec()
             return { deletedCount: ret.modifiedCount }
         }
-        schema.statics.deleteMany = async function (
+        schema.statics.deleteMany = async function softDeleteMany(
             conditions,
             options?: { session?: ClientSession }
         ) {
             const ret = await this.updateMany(conditions, { deletedAt: new Date() }, options).exec()
             return { deletedCount: ret.modifiedCount }
         }
-        schema.methods.deleteOne = async function (options?: { session?: ClientSession }) {
+        schema.methods.deleteOne = async function softDeleteOneInstance(options?: {
+            session?: ClientSession
+        }) {
             this.deletedAt = new Date()
             return this.save(options)
         }

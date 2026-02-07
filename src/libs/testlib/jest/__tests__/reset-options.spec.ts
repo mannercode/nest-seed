@@ -22,17 +22,18 @@ describe('Jest reset options', () => {
         describe('when importing dynamically', () => {
             // 카운터를 증가시킨다
             it('increments the counter', async () => {
-                const { getCounter, incrementCounter } = await import('./reset-options.fixture')
-                expect(getCounter()).toBe(0)
-                incrementCounter()
-                expect(getCounter()).toBe(1)
+                const { getCounter: getCounterDynamic, incrementCounter: incrementCounterDynamic } =
+                    await import('./reset-options.fixture')
+                expect(getCounterDynamic()).toBe(0)
+                incrementCounterDynamic()
+                expect(getCounterDynamic()).toBe(1)
             })
 
             // 다음 테스트에서 새 카운터로 시작한다
             it('starts with a fresh counter in the next test', async () => {
-                const { getCounter } = await import('./reset-options.fixture')
+                const { getCounter: getCounterDynamic } = await import('./reset-options.fixture')
 
-                expect(getCounter()).toBe(0)
+                expect(getCounterDynamic()).toBe(0)
             })
         })
     })

@@ -64,9 +64,8 @@ export class CacheModule {
 
         const provider = {
             provide: CacheService.getName(name),
-            useFactory: async (redis: Redis) => {
-                return new CacheService(redis, `${prefix}:${defaultTo(name, 'default')}`)
-            },
+            useFactory: async (redis: Redis) =>
+                new CacheService(redis, `${prefix}:${defaultTo(name, 'default')}`),
             inject: [getRedisConnectionToken(redisName)]
         }
 

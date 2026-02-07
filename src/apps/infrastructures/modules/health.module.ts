@@ -7,13 +7,13 @@ import { MongooseConfigModule } from 'shared'
 class HealthService {
     constructor(
         private readonly health: HealthCheckService,
-        private readonly mongoose: MongooseHealthIndicator,
+        private readonly mongooseHealth: MongooseHealthIndicator,
         @Inject(MongooseConfigModule.moduleName) private readonly mongoConn: mongoose.Connection
     ) {}
 
     check() {
         const checks = [
-            async () => this.mongoose.pingCheck('mongodb', { connection: this.mongoConn })
+            async () => this.mongooseHealth.pingCheck('mongodb', { connection: this.mongoConn })
         ]
 
         return this.health.check(checks)

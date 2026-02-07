@@ -118,7 +118,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         if (notFoundIds.length > 0) {
             throw new NotFoundException({
                 ...MongooseErrors.MultipleDocumentsNotFound,
-                notFoundIds: notFoundIds
+                notFoundIds
             })
         }
 

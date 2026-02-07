@@ -160,6 +160,8 @@ export class HttpTestClient {
                     case 'data':
                         parsedMessage.data = value
                         break
+                    default:
+                        break
                 }
             }
         })

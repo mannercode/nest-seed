@@ -69,9 +69,10 @@ export class ShowtimeBulkValidatorService {
 
                     if (showtime) {
                         conflictingShowtimes.push(showtime)
-
                         return false
                     }
+
+                    return true
                 })
             }
         }

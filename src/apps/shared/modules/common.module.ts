@@ -23,12 +23,10 @@ import { RequestValidationPipe } from '../pipes/request-validation.pipe'
             validationOptions: { abortEarly: false }
         }),
         ClientProxyModule.registerAsync({
-            useFactory: (config: AppConfigService) => {
-                return {
-                    transport: Transport.NATS,
-                    options: { servers: config.nats.servers, queue: getProjectId() }
-                }
-            },
+            useFactory: (config: AppConfigService) => ({
+                transport: Transport.NATS,
+                options: { servers: config.nats.servers, queue: getProjectId() }
+            }),
             inject: [AppConfigService]
         }),
         ScheduleModule.forRoot()

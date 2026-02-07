@@ -35,21 +35,21 @@ describe('WatchRecordsService', () => {
             ])
         })
 
-        const buildExpectedPage = (watchRecords: WatchRecordDto[]) => ({
+        const buildExpectedPage = (expectedRecords: WatchRecordDto[]) => ({
             skip: 0,
             take: expect.any(Number),
-            total: watchRecords.length,
-            items: expect.arrayContaining(watchRecords)
+            total: expectedRecords.length,
+            items: expect.arrayContaining(expectedRecords)
         })
 
         // 필터가 제공될 때
         describe('when the filter is provided', () => {
             const queryAndExpect = async (
                 query: SearchWatchRecordsPageDto,
-                watchRecords: WatchRecordDto[]
+                expectedRecords: WatchRecordDto[]
             ) => {
                 const page = await fix.watchRecordsClient.searchPage(query)
-                expect(page).toEqual(buildExpectedPage(watchRecords))
+                expect(page).toEqual(buildExpectedPage(expectedRecords))
             }
 
             // customerId로 필터링된 기록을 반환한다

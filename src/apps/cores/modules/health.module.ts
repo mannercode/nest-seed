@@ -9,7 +9,7 @@ import { MongooseConfigModule, RedisConfigModule } from 'shared'
 class HealthService {
     constructor(
         private readonly health: HealthCheckService,
-        private readonly mongoose: MongooseHealthIndicator,
+        private readonly mongooseHealth: MongooseHealthIndicator,
         private readonly redis: RedisHealthIndicator,
         @Inject(MongooseConfigModule.moduleName) private readonly mongoConn: mongoose.Connection,
         @Inject(RedisConfigModule.moduleName) private readonly redisConn: Redis
@@ -17,7 +17,7 @@ class HealthService {
 
     check() {
         const checks = [
-            async () => this.mongoose.pingCheck('mongodb', { connection: this.mongoConn }),
+            async () => this.mongooseHealth.pingCheck('mongodb', { connection: this.mongoConn }),
             async () => this.redis.isHealthy('redis', this.redisConn)
         ]
 

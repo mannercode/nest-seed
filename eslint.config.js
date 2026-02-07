@@ -44,6 +44,16 @@ module.exports = [
             ...js.configs.recommended.rules,
             ...typescriptEslintPlugin.configs.recommended.rules,
             ...prettierConfig.rules,
+            'func-names': 'warn',
+            'no-bitwise': 'error',
+            'object-shorthand': 'warn',
+            'no-useless-rename': 'warn',
+            'default-case-last': 'error',
+            'consistent-return': 'error',
+            'no-constant-condition': 'warn',
+            'default-case': ['error', { commentPattern: '^no default$' }],
+            'lines-around-directive': ['error', { before: 'always', after: 'always' }],
+            'arrow-body-style': ['error', 'as-needed', { requireReturnForObjectLiteral: false }],
             'import/order': [
                 'warn',
                 {
@@ -64,22 +74,25 @@ module.exports = [
             'import/newline-after-import': ['warn', { count: 1 }],
             'import/no-extraneous-dependencies': ['warn', { devDependencies: false }],
             'prettier/prettier': 'warn',
+            'no-undef': 'off',
+            'no-shadow': 'off',
+            '@typescript-eslint/no-shadow': 'error',
             '@typescript-eslint/interface-name-prefix': 'off',
             '@typescript-eslint/explicit-function-return-type': 'off',
             '@typescript-eslint/explicit-module-boundary-types': 'off',
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/no-empty-function': 'off',
-            '@typescript-eslint/no-unused-vars': 'off',
-            'unused-imports/no-unused-imports': 'warn',
-            'unused-imports/no-unused-vars': [
+            '@typescript-eslint/no-empty-object-type': 'off',
+            '@typescript-eslint/no-unused-vars': [
                 'warn',
                 {
+                    args: 'all',
                     argsIgnorePattern: '^_',
                     varsIgnorePattern: '^_',
                     caughtErrorsIgnorePattern: '^_'
                 }
             ],
-
+            'unused-imports/no-unused-imports': 'warn',
             // Promise/async correctness
             '@typescript-eslint/no-floating-promises': 'warn',
             '@typescript-eslint/no-misused-promises': 'warn',

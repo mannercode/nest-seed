@@ -46,7 +46,7 @@ export class Movie extends MongooseSchema {
     @Prop({
         default: defaults.durationInSeconds,
         validate: {
-            validator: function (this: Movie, value: number) {
+            validator(this: Movie, value: number) {
                 return !this.isPublished || value > 0
             },
             message: 'Published movies must have a duration of at least 1 second'
@@ -58,7 +58,7 @@ export class Movie extends MongooseSchema {
         enum: MovieRating,
         default: defaults.rating,
         validate: {
-            validator: function (this: Movie, value: MovieRating) {
+            validator(this: Movie, value: MovieRating) {
                 return !this.isPublished || value !== defaults.rating
             },
             message: 'Published movies cannot be unrated'
@@ -72,7 +72,7 @@ export class Movie extends MongooseSchema {
         enum: MovieGenre,
         default: [],
         validate: {
-            validator: function (this: Movie, value: MovieGenre[]) {
+            validator(this: Movie, value: MovieGenre[]) {
                 return !this.isPublished || value.length > 0
             },
             message: 'Published movies must have at least one genre'
