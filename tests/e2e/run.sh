@@ -3,24 +3,39 @@ set -euo pipefail
 cd "$(dirname "$0")"
 . ./common.cfg
 
-. "${PROJECT_ROOT}/.env"
-HOST="http://host.docker.internal:${HTTP_PORT}"
+if [ -z "${WORKSPACE_ROOT}" ]; then
+	echo "WORKSPACE_ROOT is not set. Exiting."
+	exit 1
+fi
+
+. "${WORKSPACE_ROOT}/.env"
+HOST="http://localhost:${HTTP_PORT}"
 
 # 현재 디렉터리 및 하위 디렉터리의 모든 *.spec 파일을 수집(정렬해서 고정된 실행 순서)
 mapfile -d '' -t specs < <(find . -type f -name '*.spec' -print0 | sort -z)
 
-if ((${#specs[@]} == 0)); then
-  echo "No .spec files found under $(pwd)" >&2
-  exit 1
-fi
+ERROR_LOG=""
 
 for spec in "${specs[@]}"; do
-  reset_all
-  create_user_and_login
+	echo "🚀 Starting infra..."
+	npm run infra:reset
+	npm run apps:reset
 
-  . "$spec"
+	if ! CURL_OUTPUT=$(curl -sS "${HOST}" 2>&1); then
+		echo "ERROR ${CURL_OUTPUT}"
+		exit 2
+	fi
+
+	. "$spec"
 done
 
-print_result
-
 npm run apps:down
+
+if [[ -z "${ERROR_LOG}" ]]; then
+	echo "Test Successful"
+else
+	echo "List of Failed Tests:"
+	echo ""
+	echo -e "${ERROR_LOG}"
+	exit 3
+fi

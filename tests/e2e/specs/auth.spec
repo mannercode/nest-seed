@@ -1,13 +1,23 @@
 #!/bin/bash
 
-TEST "Request Access Token Refresh" \
-    200 POST /customers/refresh \
-    -H 'Content-Type: application/json' \
-    -d '{ "refreshToken": "'${REFRESH_TOKEN}'" }'
+create_customer
 
-ACCESS_TOKEN=$(echo ${BODY} | jq -r '.accessToken')
-REFRESH_TOKEN=$(echo ${BODY} | jq -r '.refreshToken')
+TEST "Login Customer" \
+	200 POST /customers/login \
+	-H 'Content-Type: application/json' \
+	-d '{ "email": "'${EMAIL}'", "password": "'${PASSWORD}'" }'
 
-TEST "Test Access Token" \
-    200 GET /customers \
-    -H "Authorization: Bearer ${ACCESS_TOKEN}"
+access_token=$(echo "${BODY}" | jq -r '.accessToken')
+refresh_token=$(echo "${BODY}" | jq -r '.refreshToken')
+
+TEST "Refresh Access Token" \
+	200 POST /customers/refresh \
+	-H 'Content-Type: application/json' \
+	-d '{ "refreshToken": "'${refresh_token}'" }'
+
+access_token=$(echo ${BODY} | jq -r '.accessToken')
+refresh_token=$(echo ${BODY} | jq -r '.refreshToken')
+
+TEST "Use Access Token" \
+	200 GET /customers \
+	-H "Authorization: Bearer ${access_token}"
