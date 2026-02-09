@@ -4,10 +4,9 @@ cd "$(dirname "$0")"
 . ./.env
 
 CURL() {
-	TITLE=$1
-	METHOD=$2
-	ENDPOINT=$3
-	shift 3
+	METHOD=$1
+	ENDPOINT=$2
+	shift 2
 
 	if response=$(curl -s -w "%{http_code}" -X "${METHOD}" "${SERVER_URL}${ENDPOINT}" "$@"); then
 		STATUS="${response:${#response}-3}"
@@ -25,17 +24,19 @@ TEST() {
 	ENDPOINT=$4
 	shift 4
 
-	CURL "${TITLE}" "${METHOD}" "${ENDPOINT}" "$@"
+	CURL "${METHOD}" "${ENDPOINT}" "$@"
+
+	message="${TITLE}\n\e[1;35m${METHOD}\e[0m \e[1;36m${SERVER_URL}${ENDPOINT}\e[0m\n$@"
 
 	if [[ "${STATUS}" -ne "${EXPECTED_STATUS}" ]]; then
-		message="\e[1;31m${STATUS}\e[0m \e[1;35m${METHOD}\e[0m \e[1;36m${SERVER_URL}${ENDPOINT}\e[0m"
-
-		ERROR_LOG="${ERROR_LOG}${TITLE}\n${message}\n\n"
+		ERROR_LOG="${ERROR_LOG}${message}\n\n"
+		responseStatus="\e[1;31m${STATUS}\e[0m(\e[1;32mexpected:${EXPECTED_STATUS}\e[0m)"
 	else
-		message="\e[1;32m${STATUS}\e[0m \e[1;35m${METHOD}\e[0m \e[1;36m${SERVER_URL}${ENDPOINT}\e[0m"
+		responseStatus="\e[1;32m${STATUS}\e[0m"
 	fi
 
 	echo -e "${message}" >&2
+	echo -e "↩\n${responseStatus}" >&2
 	echo "${BODY}" | jq '.' >&2
 	echo "" >&2
 }
@@ -45,14 +46,13 @@ SETUP() {
 	ENDPOINT=$2
 	shift 2
 
-	CURL "Setup failed" "${METHOD}" "${ENDPOINT}" "$@"
+	CURL "${METHOD}" "${ENDPOINT}" "$@"
 
 	if [[ "${STATUS}" -ge 400 ]]; then
-		message="\e[1;31mSetup failed: ${STATUS}\e[0m \e[1;35m${METHOD}\e[0m \e[1;36m${SERVER_URL}${ENDPOINT}\e[0m"
-		echo -e "$@\n\n" >&2
+		message="\e[1;31mSetup failed:\e[0m\n\e[1;35m${METHOD}\e[0m \e[1;36m${SERVER_URL}${ENDPOINT}\e[0m\n$@"
 		echo -e "${message}" >&2
+		echo -e "↩\n\e[1;31m${STATUS}\e[0m" >&2
 		echo "${BODY}" | jq '.' >&2
-		echo -e "\n" >&2
 		exit 2
 	fi
 }

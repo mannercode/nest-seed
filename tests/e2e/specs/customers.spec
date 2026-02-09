@@ -45,7 +45,12 @@ TEST "Update Customer" \
 	200 PATCH /customers/${CUSTOMER_ID} \
 	-H "Authorization: Bearer ${CUSTOMER_ACCESS_TOKEN}" \
 	-H "Content-Type: application/json" \
-	-d '{ "name": "new name", "birthDate": "2000-01-01" }'
+	-d '{ "name": "new name","email":"a@a.c", "birthDate": "2000-01-01" }'
+
+SETUP PATCH /customers/${CUSTOMER_ID} \
+	-H "Authorization: Bearer ${CUSTOMER_ACCESS_TOKEN}" \
+	-H "Content-Type: application/json" \
+	-d '{ "name": "new name","email":"a@a.c", "birthDate": "2000-01-01" }'
 
 
 TEST "Delete Customer with Specific ID" \
