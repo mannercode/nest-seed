@@ -1,0 +1,31 @@
+#!/bin/bash
+. ./_utils.sh
+
+CUSTOMER_NAME="customer name"
+CUSTOMER_BIRTHDATE="1990-01-01T00:00:00.000Z"
+CUSTOMER_PASSWORD="testpassword"
+CUSTOMER_EMAIL="customer@example.com"
+
+create_customer() {
+	CUSTOMER_EMAIL=$(random_email)
+
+	SETUP POST /customers \
+		-H 'Content-Type: application/json' \
+		-d '{
+				"name": "'${CUSTOMER_NAME}'",
+                "birthDate": "'${CUSTOMER_BIRTHDATE}'",
+				"email": "'${CUSTOMER_EMAIL}'",
+                "password": "'${CUSTOMER_PASSWORD}'"
+            }'
+
+	CUSTOMER_ID=$(echo "${BODY}" | jq -r '.id')
+}
+
+login_customer() {
+	SETUP POST /customers/login \
+		-H 'Content-Type: application/json' \
+		-d '{ "email": "'${CUSTOMER_EMAIL}'", "password": "'${CUSTOMER_PASSWORD}'" }'
+
+	CUSTOMER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
+	CUSTOMER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
+}

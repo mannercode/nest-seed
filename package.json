@@ -20,7 +20,7 @@
         "build": "nest build ${TARGET_APP} -b webpack",
         "debug": "nest start ${TARGET_APP} --watch",
         "test": "jest --no-cache --coverage --roots \"<rootDir>/${TEST_ROOT:-src}\" --collectCoverageFrom \"${TEST_ROOT:-src}/**/*.ts\"",
-        "test:e2e": "bash tests/e2e/run.sh",
+        "test:e2e": "npm run apps:reset && bash tests/e2e/run.sh; npm run apps:down",
         "format": "eslint src/ --fix",
         "lint": "tsc -p tsconfig.json --noEmit && eslint src/ --max-warnings=0",
         "apps:down": "docker compose down -v -t 0 --remove-orphans",

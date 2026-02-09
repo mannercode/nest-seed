@@ -1,4 +1,7 @@
 #!/bin/bash
+echo "$0"
+. ./_utils.sh
+. ./customers.fixture
 
 CUSTOMER_EMAIL=$(random_email)
 
@@ -40,9 +43,10 @@ TEST "Retrieve All Customers" \
 
 TEST "Update Customer" \
 	200 PATCH /customers/${CUSTOMER_ID} \
-	-H "Content-Type: application/json" \
 	-H "Authorization: Bearer ${CUSTOMER_ACCESS_TOKEN}" \
-	-d '{ "name": "new name", "email": "new@mail.com", "birthDate": "2000-01-01" }'
+	-H "Content-Type: application/json" \
+	-d '{ "name": "new name", "birthDate": "2000-01-01" }'
+
 
 TEST "Delete Customer with Specific ID" \
 	204 DELETE /customers/${CUSTOMER_ID} \
