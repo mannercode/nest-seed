@@ -3,6 +3,26 @@ set -euo pipefail
 cd "$(dirname "$0")"
 . ./.env
 
+LOG_FILE="./$(date '+%Y%m%d_%H%M%S').log"
+exec 4>&1
+exec 3>"${LOG_FILE}"
+exec 1>&3 2>&3
+
+TOTAL_TESTS=0
+PASSED_TESTS=0
+FAILED_TESTS=0
+
+FINALIZE() {
+	# message="\e[1;31mSetup failed:\e[0m\n\e[1;35m${METHOD}\e[0m \e[1;36m${SERVER_URL}${ENDPOINT}\e[0m\n$@"
+	{
+		echo ""
+		echo "log: ${LOG_FILE}"
+		echo "executed: ${TOTAL_TESTS}, success: ${PASSED_TESTS}, failed: ${FAILED_TESTS}"
+	} >&4
+}
+trap FINALIZE EXIT
+
+
 CURL() {
 	METHOD=$1
 	ENDPOINT=$2
@@ -26,19 +46,23 @@ TEST() {
 
 	CURL "${METHOD}" "${ENDPOINT}" "$@"
 
-	message="${TITLE}\n\e[1;35m${METHOD}\e[0m \e[1;36m${SERVER_URL}${ENDPOINT}\e[0m\n$@"
+	message="${TITLE}\n${METHOD} ${SERVER_URL}${ENDPOINT}\n$@"
+
+	TOTAL_TESTS=$((TOTAL_TESTS + 1))
 
 	if [[ "${STATUS}" -ne "${EXPECTED_STATUS}" ]]; then
-		ERROR_LOG="${ERROR_LOG}${message}\n\n"
-		responseStatus="\e[1;31m${STATUS}\e[0m(\e[1;32mexpected:${EXPECTED_STATUS}\e[0m)"
+		FAILED_TESTS=$((FAILED_TESTS + 1))
+		responseStatus="${STATUS}(expected:${EXPECTED_STATUS})"
 	else
-		responseStatus="\e[1;32m${STATUS}\e[0m"
+		PASSED_TESTS=$((PASSED_TESTS + 1))
+		responseStatus="${STATUS}"
 	fi
 
-	echo -e "${message}" >&2
-	echo -e "↩ ${responseStatus}" >&2
+	echo "${message}" >&2
+	echo "↩ ${responseStatus}" >&2
 	echo "${BODY}" | jq '.' >&2
 	echo "" >&2
+	true
 }
 
 SETUP() {
@@ -49,15 +73,13 @@ SETUP() {
 	CURL "${METHOD}" "${ENDPOINT}" "$@"
 
 	if [[ "${STATUS}" -ge 400 ]]; then
-		message="\e[1;31mSetup failed:\e[0m\n\e[1;35m${METHOD}\e[0m \e[1;36m${SERVER_URL}${ENDPOINT}\e[0m\n$@"
-		echo -e "${message}" >&2
-		echo -e "↩ \e[1;31m${STATUS}\e[0m" >&2
+		message="Setup failed:\n${METHOD} ${SERVER_URL}${ENDPOINT}\n$@"
+		echo "${message}" >&2
+		echo "↩ ${STATUS}" >&2
 		echo "${BODY}" | jq '.' >&2
 		exit 2
 	fi
 }
-
-ERROR_LOG=""
 
 # collect all spec files
 mapfile -d '' -t specs < <(find . -type f -name '*.spec' -print0 | sort -z)
@@ -71,10 +93,10 @@ for spec in "${specs[@]}"; do
 	popd >/dev/null
 done
 
-if [[ -z "${ERROR_LOG}" ]]; then
-	echo -e "\e[1;32mTest Successful\e[0m\n"
-else
-	echo -e "\e[1;31mList of Failed Tests:\e[0m\n"
-	echo -e "${ERROR_LOG}"
-	exit 3
+if [[ "${FAILED_TESTS}" -eq 0 ]]; then
+	echo "Test Successful"
+	exit 0
 fi
+
+echo "Test Failed"
+exit 3
