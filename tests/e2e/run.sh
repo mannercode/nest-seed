@@ -30,11 +30,20 @@ PRINT_COMMAND() {
 
 	local -a command
 	local rendered_command
+	local part
 	command=(curl -sS -X "${method}" "${SERVER_URL}${endpoint}" "$@")
-	printf -v rendered_command '%q ' "${command[@]}"
-	echo "${rendered_command% }"
-}
 
+	rendered_command=''
+	for part in "${command[@]}"; do
+		if [[ -z "${rendered_command}" ]]; then
+			rendered_command="${part}"
+		else
+			rendered_command+=" ${part}"
+		fi
+	done
+
+	echo "${rendered_command}"
+}
 
 CURL() {
 	METHOD=$1
@@ -90,11 +99,10 @@ SETUP() {
 		echo "# Setup failed" >&2
 		PRINT_COMMAND "${METHOD}" "${ENDPOINT}" "$@" >&2
 
-		responseMarker="__E2E_SETUP_RESPONSE__"
-		echo ": <<'${responseMarker}'" >&2
-		echo "↩ ${STATUS}" >&2
+		echo "echo '↩ ${STATUS}" >&2
 		echo "${BODY}" | jq '.' >&2 || echo "${BODY}" >&2
-		echo "${responseMarker}" >&2
+		echo "'" >&2
+		echo "" >&2
 		exit 2
 	fi
 }
