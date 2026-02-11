@@ -28,21 +28,21 @@ PRINT_COMMAND() {
 	local endpoint=$2
 	shift 2
 
-	local -a command
-	local rendered_command
-	local part
-	command=(curl -sS -X "${method}" "${SERVER_URL}${endpoint}" "$@")
+	local -a command=(curl -sS -X "${method}" "${SERVER_URL}${endpoint}" "$@")
+	local arg
 
-	rendered_command=''
-	for part in "${command[@]}"; do
-		if [[ -z "${rendered_command}" ]]; then
-			rendered_command="${part}"
+	for arg in "${command[@]}"; do
+		arg="${arg//$'\n'/ }"
+		arg="${arg//$'\t'/ }"
+
+		if [[ "${arg}" =~ [[:space:]] ]]; then
+			printf "'%s' " "${arg//\'/\'\\\'\'}"
 		else
-			rendered_command+=" ${part}"
+			printf '%s ' "${arg}"
 		fi
 	done
 
-	echo "${rendered_command}"
+	echo
 }
 
 CURL() {
@@ -54,7 +54,6 @@ CURL() {
 		STATUS="${response:${#response}-3}"
 		BODY="${response:0:${#response}-3}"
 	else
-		echo "error = $?, response = $response"
 		exit 1
 	fi
 }
@@ -81,10 +80,10 @@ TEST() {
 		responseStatus="${STATUS}"
 	fi
 
-	echo "echo '↩ ${responseStatus}" >&2
-	echo "${BODY}" | jq '.' >&2 || echo "${BODY}" >&2
-	echo "'" >&2
-	echo "" >&2
+	echo "RES='${responseStatus}"
+	echo "${BODY}" | jq '.' || echo "${BODY}"
+	echo "'"
+	echo ""
 	true
 }
 
@@ -99,7 +98,7 @@ SETUP() {
 		echo "# Setup failed" >&2
 		PRINT_COMMAND "${METHOD}" "${ENDPOINT}" "$@" >&2
 
-		echo "echo '↩ ${STATUS}" >&2
+		echo "RES='${STATUS}" >&2
 		echo "${BODY}" | jq '.' >&2 || echo "${BODY}" >&2
 		echo "'" >&2
 		echo "" >&2
