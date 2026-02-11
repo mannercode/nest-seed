@@ -9,15 +9,19 @@ exec 4>&1
 exec 3>"${LOG_FILE}"
 exec 1>&3 2>&3
 
-TOTAL_TESTS=0
 PASSED_TESTS=0
 FAILED_TESTS=0
 
+C_RESET=$'\033[0m'
+C_GREEN=$'\033[32m'
+C_RED=$'\033[31m'
+C_CYAN=$'\033[36m'
+
 FINALIZE() {
-	# message="\e[1;31mSetup failed:\e[0m\n\e[1;35m${METHOD}\e[0m \e[1;36m${SERVER_URL}${ENDPOINT}\e[0m\n$@"
 	{
-		echo "log: ${LOG_FILE}"
-		echo "executed: ${TOTAL_TESTS}, success: ${PASSED_TESTS}, failed: ${FAILED_TESTS}"
+		echo ""
+		echo "${C_CYAN}log:${C_RESET} ${LOG_FILE}"
+		echo "Success: ${C_GREEN}${PASSED_TESTS}${C_RESET}, Failed: ${C_RED}${FAILED_TESTS}${C_RESET}"
 	} >&4
 }
 trap FINALIZE EXIT
@@ -69,19 +73,17 @@ TEST() {
 
 	CURL "${METHOD}" "${ENDPOINT}" "$@"
 
-	TOTAL_TESTS=$((TOTAL_TESTS + 1))
-
 	if [[ "${STATUS}" -ne "${EXPECTED_STATUS}" ]]; then
 		FAILED_TESTS=$((FAILED_TESTS + 1))
-		resultMark="FAIL"
 		responseStatus="${STATUS}(expected:${EXPECTED_STATUS})"
+
+		echo "${C_RED}[FAIL]${C_RESET} ${TITLE}" >&4
 	else
 		PASSED_TESTS=$((PASSED_TESTS + 1))
-		resultMark="PASS"
 		responseStatus="${STATUS}"
-	fi
 
-	echo "[${resultMark}] ${TITLE}" >&4
+		echo "${C_GREEN}[PASS]${C_RESET} ${TITLE}" >&4
+	fi
 
 	echo "RES='${responseStatus}"
 	echo "${BODY}" | jq '.' || echo "${BODY}"
