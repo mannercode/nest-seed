@@ -3,7 +3,8 @@ set -euo pipefail
 cd "$(dirname "$0")"
 . ./.env
 
-LOG_FILE="./$(date '+%Y%m%d_%H%M%S').log"
+mkdir -p logs
+LOG_FILE="./logs/$(date '+%Y%m%d_%H%M%S').log"
 exec 4>&1
 exec 3>"${LOG_FILE}"
 exec 1>&3 2>&3
@@ -28,7 +29,7 @@ CURL() {
 	ENDPOINT=$2
 	shift 2
 
-	if response=$(curl -s -w "%{http_code}" -X "${METHOD}" "${SERVER_URL}${ENDPOINT}" "$@"); then
+	if response=$(curl -sS -w "%{http_code}" -X "${METHOD}" "${SERVER_URL}${ENDPOINT}" "$@"); then
 		STATUS="${response:${#response}-3}"
 		BODY="${response:0:${#response}-3}"
 	else
@@ -44,9 +45,10 @@ TEST() {
 	ENDPOINT=$4
 	shift 4
 
-	CURL "${METHOD}" "${ENDPOINT}" "$@"
+	message="# ${TITLE}\ncurl -sS -X ${METHOD} ${SERVER_URL}${ENDPOINT} $@"
+	echo -e "${message}" >&2
 
-	message="${TITLE}\n${METHOD} ${SERVER_URL}${ENDPOINT}\n$@"
+	CURL "${METHOD}" "${ENDPOINT}" "$@"
 
 	TOTAL_TESTS=$((TOTAL_TESTS + 1))
 
@@ -58,9 +60,9 @@ TEST() {
 		responseStatus="${STATUS}"
 	fi
 
-	echo -e "${message}" >&2
-	echo "↩ ${responseStatus}" >&2
-	echo "${BODY}" | jq '.' >&2
+	echo "echo '↩ ${responseStatus}" >&2
+	echo "${BODY}" | jq '.' >&2 || echo "${BODY}" >&2
+	echo "'" >&2
 	echo "" >&2
 	true
 }
@@ -73,10 +75,14 @@ SETUP() {
 	CURL "${METHOD}" "${ENDPOINT}" "$@"
 
 	if [[ "${STATUS}" -ge 400 ]]; then
-		message="Setup failed:\n${METHOD} ${SERVER_URL}${ENDPOINT}\n$@"
+		message="# Setup failed\ncurl -sS -X ${METHOD} ${SERVER_URL}${ENDPOINT} $@"
 		echo -e "${message}" >&2
+
+		responseMarker="__E2E_SETUP_RESPONSE__"
+		echo ": <<'${responseMarker}'" >&2
 		echo "↩ ${STATUS}" >&2
-		echo "${BODY}" | jq '.' >&2
+		echo "${BODY}" | jq '.' >&2 || echo "${BODY}" >&2
+		echo "${responseMarker}" >&2
 		exit 2
 	fi
 }
@@ -94,9 +100,9 @@ for spec in "${specs[@]}"; do
 done
 
 if [[ "${FAILED_TESTS}" -eq 0 ]]; then
-	echo "Test Successful"
+	echo "# Test Successful"
 	exit 0
 fi
 
-echo "Test Failed"
+echo "# Test Failed"
 exit 3
