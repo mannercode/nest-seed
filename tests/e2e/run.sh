@@ -23,6 +23,18 @@ FINALIZE() {
 }
 trap FINALIZE EXIT
 
+PRINT_COMMAND() {
+	local method=$1
+	local endpoint=$2
+	shift 2
+
+	local -a command
+	local rendered_command
+	command=(curl -sS -X "${method}" "${SERVER_URL}${endpoint}" "$@")
+	printf -v rendered_command '%q ' "${command[@]}"
+	echo "${rendered_command% }"
+}
+
 
 CURL() {
 	METHOD=$1
@@ -45,8 +57,8 @@ TEST() {
 	ENDPOINT=$4
 	shift 4
 
-	message="# ${TITLE}\ncurl -sS -X ${METHOD} ${SERVER_URL}${ENDPOINT} $@"
-	echo -e "${message}" >&2
+	echo "# ${TITLE}" >&2
+	PRINT_COMMAND "${METHOD}" "${ENDPOINT}" "$@" >&2
 
 	CURL "${METHOD}" "${ENDPOINT}" "$@"
 
@@ -75,8 +87,8 @@ SETUP() {
 	CURL "${METHOD}" "${ENDPOINT}" "$@"
 
 	if [[ "${STATUS}" -ge 400 ]]; then
-		message="# Setup failed\ncurl -sS -X ${METHOD} ${SERVER_URL}${ENDPOINT} $@"
-		echo -e "${message}" >&2
+		echo "# Setup failed" >&2
+		PRINT_COMMAND "${METHOD}" "${ENDPOINT}" "$@" >&2
 
 		responseMarker="__E2E_SETUP_RESPONSE__"
 		echo ": <<'${responseMarker}'" >&2
