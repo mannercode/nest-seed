@@ -1,5 +1,4 @@
 #!/bin/bash
-echo "$0"
 . ./_utils.sh
 . ./customers.fixture
 

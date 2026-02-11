@@ -58,7 +58,7 @@ TEST() {
 		responseStatus="${STATUS}"
 	fi
 
-	echo "${message}" >&2
+	echo -e "${message}" >&2
 	echo "↩ ${responseStatus}" >&2
 	echo "${BODY}" | jq '.' >&2
 	echo "" >&2
@@ -74,7 +74,7 @@ SETUP() {
 
 	if [[ "${STATUS}" -ge 400 ]]; then
 		message="Setup failed:\n${METHOD} ${SERVER_URL}${ENDPOINT}\n$@"
-		echo "${message}" >&2
+		echo -e "${message}" >&2
 		echo "↩ ${STATUS}" >&2
 		echo "${BODY}" | jq '.' >&2
 		exit 2
