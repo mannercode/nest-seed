@@ -16,7 +16,6 @@ FAILED_TESTS=0
 FINALIZE() {
 	# message="\e[1;31mSetup failed:\e[0m\n\e[1;35m${METHOD}\e[0m \e[1;36m${SERVER_URL}${ENDPOINT}\e[0m\n$@"
 	{
-		echo ""
 		echo "log: ${LOG_FILE}"
 		echo "executed: ${TOTAL_TESTS}, success: ${PASSED_TESTS}, failed: ${FAILED_TESTS}"
 	} >&4
@@ -74,11 +73,15 @@ TEST() {
 
 	if [[ "${STATUS}" -ne "${EXPECTED_STATUS}" ]]; then
 		FAILED_TESTS=$((FAILED_TESTS + 1))
+		resultMark="FAIL"
 		responseStatus="${STATUS}(expected:${EXPECTED_STATUS})"
 	else
 		PASSED_TESTS=$((PASSED_TESTS + 1))
+		resultMark="PASS"
 		responseStatus="${STATUS}"
 	fi
+
+	echo "[${resultMark}] ${TITLE}" >&4
 
 	echo "RES='${responseStatus}"
 	echo "${BODY}" | jq '.' || echo "${BODY}"
