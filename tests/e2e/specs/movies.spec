@@ -1,0 +1,66 @@
+#!/bin/bash
+. ./_common.fixture
+
+TEST "Create a movie" \
+	201 POST /movies \
+	-H 'Content-Type: application/json' \
+	-d '{
+			"title": "movie title",
+			"genres": ["action", "drama"],
+			"releaseDate": "2024-01-01T00:00:00.000Z",
+			"plot": "movie plot for e2e flow",
+			"durationInSeconds": 7200,
+			"director": "e2e director",
+			"rating": "PG",
+			"assetIds": []
+		}'
+
+MOVIE_ID=$(echo "${BODY}" | jq -r '.id')
+
+TEST "Search recommended movies" \
+	200 GET /movies/recommended
+
+TEST "Update movie by ID" \
+	200 PATCH /movies/${MOVIE_ID} \
+	-H 'Content-Type: application/json' \
+	-d '{
+			"plot": "updated movie plot",
+			"director": "updated e2e director"
+		}'
+
+TEST "Publish movie by ID" \
+	200 POST /movies/${MOVIE_ID}/publish
+
+TEST "Retrieve movie by ID" \
+	200 GET /movies/${MOVIE_ID}
+
+TEST "Retrieve movies page" \
+	200 GET /movies?take=2
+
+TEST "Create a movie asset" \
+	201 POST /movies/${MOVIE_ID}/assets \
+	-H 'Content-Type: application/json' \
+	-d '{
+			"originalName": "'${MOVIE_ASSET_ORIGINAL_NAME}'",
+			"mimeType": "image/png",
+			"size": '${MOVIE_ASSET_SIZE}',
+			"checksum": {
+				"algorithm": "sha256",
+				"base64": "'${MOVIE_ASSET_SHA256_BASE64}'"
+			}
+		}'
+
+ASSET_ID=$(echo "${BODY}" | jq -r '.assetId')
+upload_presigned_post "${MOVIE_ASSET_FIXTURE_PATH}" "${BODY}"
+
+TEST "Complete movie asset after upload" \
+	200 POST /movies/${MOVIE_ID}/assets/${ASSET_ID}/complete
+
+TEST "Retrieve movie with uploaded asset" \
+	200 GET /movies/${MOVIE_ID}
+
+TEST "Delete movie asset" \
+	204 DELETE /movies/${MOVIE_ID}/assets/${ASSET_ID}
+
+TEST "Delete movie by ID" \
+	204 DELETE /movies/${MOVIE_ID}

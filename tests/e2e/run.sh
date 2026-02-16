@@ -26,12 +26,25 @@ FINALIZE() {
 }
 trap FINALIZE EXIT
 
+RESOLVE_URL() {
+	local endpoint=$1
+
+	if [[ "${endpoint}" =~ ^https?:// ]]; then
+		printf '%s\n' "${endpoint}"
+	else
+		printf '%s%s\n' "${SERVER_URL}" "${endpoint}"
+	fi
+}
+
 PRINT_COMMAND() {
 	local method=$1
 	local endpoint=$2
 	shift 2
 
-	local -a command=(curl -sSX "${method}" "${SERVER_URL}${endpoint}" "$@")
+	local url
+	url=$(RESOLVE_URL "${endpoint}")
+
+	local -a command=(curl -sSX "${method}" "${url}" "$@")
 	local arg
 
 	for arg in "${command[@]}"; do
@@ -53,7 +66,10 @@ CURL() {
 	ENDPOINT=$2
 	shift 2
 
-	if response=$(curl -sSX "${METHOD}" -w "%{http_code}" "${SERVER_URL}${ENDPOINT}" "$@"); then
+	local url
+	url=$(RESOLVE_URL "${ENDPOINT}")
+
+	if response=$(curl -sSX "${METHOD}" -w "%{http_code}" "${url}" "$@"); then
 		STATUS="${response:${#response}-3}"
 		BODY="${response:0:${#response}-3}"
 	else
