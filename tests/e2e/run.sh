@@ -31,7 +31,7 @@ PRINT_COMMAND() {
 	local endpoint=$2
 	shift 2
 
-	local -a command=(curl -sS -X "${method}" "${SERVER_URL}${endpoint}" "$@")
+	local -a command=(curl -sSX "${method}" "${SERVER_URL}${endpoint}" "$@")
 	local arg
 
 	for arg in "${command[@]}"; do
@@ -53,7 +53,7 @@ CURL() {
 	ENDPOINT=$2
 	shift 2
 
-	if response=$(curl -sS -w "%{http_code}" -X "${METHOD}" "${SERVER_URL}${ENDPOINT}" "$@"); then
+	if response=$(curl -sSX "${METHOD}" -w "%{http_code}" "${SERVER_URL}${ENDPOINT}" "$@"); then
 		STATUS="${response:${#response}-3}"
 		BODY="${response:0:${#response}-3}"
 	else
