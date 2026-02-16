@@ -2,6 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 . ./.env
+. ./utils.cfg
 
 mkdir -p logs
 LOG_FILE="./logs/$(date '+%Y%m%d_%H%M%S').log"
@@ -127,8 +128,49 @@ SETUP() {
 	fi
 }
 
-# collect all spec files
-mapfile -d '' -t specs < <(find . -type f -name '*.spec' -print0 | sort -z)
+# collect all spec files and route candidates
+mapfile -d '' -t all_specs < <(find ./specs -type f -name '*.spec' -print0 | sort -z)
+
+ROUTES=()
+for spec in "${all_specs[@]}"; do
+	route="/${spec#./specs/}"
+	route="${route%.spec}"
+	ROUTES+=("${route}")
+done
+
+SELECTED_ROUTE=''
+if [[ $# -ge 1 ]]; then
+	SELECTED_ROUTE=$1
+elif [[ -t 0 && -t 1 ]]; then
+	echo "" >&4
+	echo "Select e2e path:" >&4
+	SELECTED_ROUTE=$(prompt_selection / "${ROUTES[@]}" 2>&4)
+else
+	SELECTED_ROUTE=/
+fi
+
+specs=()
+if [[ "${SELECTED_ROUTE}" == "/" ]]; then
+	specs=("${all_specs[@]}")
+else
+	for spec in "${all_specs[@]}"; do
+		route="/${spec#./specs/}"
+		route="${route%.spec}"
+
+		if [[ "${route}" == "${SELECTED_ROUTE}" ]]; then
+			specs=("${spec}")
+			break
+		fi
+	done
+
+	if [[ "${#specs[@]}" -eq 0 ]]; then
+		echo "Invalid path selector: ${SELECTED_ROUTE}" >&4
+		echo "Available: / ${ROUTES[*]}" >&4
+		echo "Invalid path selector: ${SELECTED_ROUTE}" >&2
+		echo "Available: / ${ROUTES[*]}" >&2
+		exit 2
+	fi
+fi
 
 for spec in "${specs[@]}"; do
 	spec_dir=$(dirname "$spec")
