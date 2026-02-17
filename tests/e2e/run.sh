@@ -12,28 +12,24 @@ ON_ERROR() {
 	local exit_code=$1
 	local line_no=$2
 	local command=$3
-	CONSOLE_LINE "${C_RED}[ERROR]${C_RESET} line ${line_no}: ${command} (exit ${exit_code})"
+
+	echo -e "${C_RED}[ERROR]${C_RESET} line ${line_no}: ${command} (exit ${exit_code})"
+	exit "${exit_code}"
 }
 trap 'ON_ERROR "$?" "${LINENO}" "${BASH_COMMAND}"' ERR
 
-mkdir -p logs
-LOG_FILE="./logs/$(date '+%Y%m%d_%H%M%S').log"
-exec 4>&1
-exec 3>"${LOG_FILE}"
-exec 1>&3
-exec 2> >(tee -a "${LOG_FILE}" >&4)
+log_dir="$(pwd)/logs/$(date '+%Y%m%d_%H%M%S')"
+mkdir -p "${log_dir}"
 
-CONSOLE_LINE() {
-	printf '%b\n' "$*" >&4
-}
+LOG_FILE=''
 
 LOG_LINE() {
-	printf '%s\n' "$*"
+	echo "$*" >>"${LOG_FILE}"
 }
 
 LOG_JSON() {
 	local payload=$1
-	printf '%s\n' "${payload}" | jq '.' 2>/dev/null || printf '%s\n' "${payload}"
+	echo "${payload}" | jq '.' >>"${LOG_FILE}" 2>/dev/null || echo "${payload}" >>"${LOG_FILE}"
 }
 
 LOG_COMMAND() {
@@ -43,20 +39,20 @@ LOG_COMMAND() {
 
 	local -a command=(curl -sSX "${method}" "${url}" "$@")
 	local arg
-	local command_line=''
+	local line=''
 
 	for arg in "${command[@]}"; do
 		arg="${arg//$'\n'/ }"
 		arg="${arg//$'\t'/ }"
 
 		if [[ "${arg}" =~ [[:space:]] ]]; then
-			command_line+="'${arg//\'/\'\\\'\'}' "
+			line+="'${arg//\'/\'\\\'\'}' "
 		else
-			command_line+="${arg} "
+			line+="${arg} "
 		fi
 	done
 
-	LOG_LINE "${command_line}"
+	LOG_LINE "${line}"
 }
 
 CURL() {
@@ -64,7 +60,6 @@ CURL() {
 	local url=$2
 	shift 2
 
-	local response
 	if response=$(curl -sSX "${method}" -w "%{http_code}" "${url}" "$@"); then
 		STATUS="${response:${#response}-3}"
 		BODY="${response:0:${#response}-3}"
@@ -79,7 +74,6 @@ TEST() {
 	local method=$3
 	local endpoint=$4
 	shift 4
-	local response_status
 
 	LOG_LINE "# ${title}"
 	LOG_COMMAND "${method}" "${SERVER_URL}${endpoint}" "$@"
@@ -88,17 +82,16 @@ TEST() {
 
 	if [[ "${STATUS}" -ne "${expected_status}" ]]; then
 		FAILED_TESTS=$((FAILED_TESTS + 1))
-		response_status="${STATUS}(expected:${expected_status})"
+		LOG_LINE "RES='${STATUS}(expected:${expected_status})"
 
-		CONSOLE_LINE "${C_RED}[FAIL]${C_RESET} ${title}"
+		echo -e "${C_RED}[FAIL]${C_RESET} ${title}"
 	else
 		PASSED_TESTS=$((PASSED_TESTS + 1))
-		response_status="${STATUS}"
+		LOG_LINE "RES='${STATUS}"
 
-		CONSOLE_LINE "${C_GREEN}[PASS]${C_RESET} ${title}"
+		echo -e "${C_GREEN}[PASS]${C_RESET} ${title}"
 	fi
 
-	LOG_LINE "RES='${response_status}"
 	LOG_JSON "${BODY}"
 	LOG_LINE "'"
 	LOG_LINE ""
@@ -136,19 +129,26 @@ fi
 for spec in "${specs[@]}"; do
 	spec_dir=$(dirname "$spec")
 	spec_file=$(basename "$spec")
+	spec_rel_path=${spec#./specs/}
+	if [[ "${spec_rel_path}" == "${spec}" ]]; then
+		spec_rel_path=$(basename "${spec}")
+	fi
+	LOG_FILE="${log_dir}/${spec_rel_path}.log"
+	mkdir -p "$(dirname "${LOG_FILE}")"
+	: >"${LOG_FILE}"
 
-	pushd "$spec_dir" >/dev/null
-	. "./$spec_file"
+	pushd "${spec_dir}" >/dev/null
+	. "./${spec_file}"
 	popd >/dev/null
 done
 
-CONSOLE_LINE ""
-CONSOLE_LINE "${C_CYAN}log:${C_RESET} ${LOG_FILE}"
-CONSOLE_LINE "Passed: ${C_GREEN}${PASSED_TESTS}${C_RESET}, Failed: ${C_RED}${FAILED_TESTS}${C_RESET}"
+echo ""
+echo -e "${C_CYAN}logs:${C_RESET} ${log_dir}"
+echo -e "Passed: ${C_GREEN}${PASSED_TESTS}${C_RESET}, Failed: ${C_RED}${FAILED_TESTS}${C_RESET}"
 
 if [[ "${FAILED_TESTS}" -gt 0 ]]; then
-	CONSOLE_LINE "# Test Failed"
+	echo -e "# Test Failed"
 	exit 3
 fi
 
-CONSOLE_LINE "# Test Passed"
+echo -e "# Test Passed"

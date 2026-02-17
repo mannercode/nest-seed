@@ -117,11 +117,11 @@ wait_for_showtime() {
 		sleep 1
 	done
 
-	LOGFILE_LINE "# Setup failed: showtime creation did not finish in ${attempts} seconds"
-	LOGFILE_LINE "RES='setup-timeout'"
-	LOGFILE_JSON "${BODY}"
-	LOGFILE_LINE "'"
-	LOGFILE_LINE ""
+	LOG_LINE "# Setup failed: showtime creation did not finish in ${attempts} seconds"
+	LOG_LINE "RES='setup-timeout'"
+	LOG_JSON "${BODY}"
+	LOG_LINE "'"
+	LOG_LINE ""
 	exit 2
 }
 
@@ -144,11 +144,11 @@ wait_for_tickets() {
 		sleep 1
 	done
 
-	LOGFILE_LINE "# Setup failed: tickets were not created in ${attempts} seconds"
-	LOGFILE_LINE "RES='setup-timeout'"
-	LOGFILE_JSON "${BODY}"
-	LOGFILE_LINE "'"
-	LOGFILE_LINE ""
+	LOG_LINE "# Setup failed: tickets were not created in ${attempts} seconds"
+	LOG_LINE "RES='setup-timeout'"
+	LOG_JSON "${BODY}"
+	LOG_LINE "'"
+	LOG_LINE ""
 	exit 2
 }
 
