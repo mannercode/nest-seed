@@ -4,6 +4,7 @@ cd "$(dirname "$0")"
 . ./.env
 
 C_RESET='\033[0m'
+C_BOLD='\033[1m'
 C_GREEN='\033[32m'
 C_RED='\033[31m'
 C_CYAN='\033[36m'
@@ -68,12 +69,12 @@ TEST() {
 		FAILED_TESTS=$((FAILED_TESTS + 1))
 		LOG_LINE "RES='${STATUS}(expected:${expected_status})"
 
-		echo -e "${C_RED}[FAIL]${C_RESET} ${title}"
+		echo -e "${C_BOLD}${C_RED}[FAIL]${C_RESET} ${title}"
 	else
 		PASSED_TESTS=$((PASSED_TESTS + 1))
 		LOG_LINE "RES='${STATUS}"
 
-		echo -e "${C_GREEN}[PASS]${C_RESET} ${title}"
+		echo -e "${C_BOLD}${C_GREEN}[PASS]${C_RESET} ${title}"
 	fi
 
 	LOG_JSON "${BODY}"
@@ -124,15 +125,13 @@ main() {
 	done
 
 	echo ""
-	echo -e "${C_CYAN}logs:${C_RESET} ${log_dir}"
-	echo -e "Passed: ${C_GREEN}${PASSED_TESTS}${C_RESET}, Failed: ${C_RED}${FAILED_TESTS}${C_RESET}"
+	echo -e "${C_BOLD}logs${C_RESET}   : ${C_CYAN}${log_dir}${C_RESET}"
+	echo -e "${C_BOLD}passed${C_RESET} : ${C_GREEN}${PASSED_TESTS}${C_RESET}"
+	echo -e "${C_BOLD}failed${C_RESET} : ${C_RED}${FAILED_TESTS}${C_RESET}"
 
 	if [[ "${FAILED_TESTS}" -gt 0 ]]; then
-		echo -e "# Test Failed"
 		exit 3
 	fi
-
-	echo -e "# Test Passed"
 }
 
 ON_ERROR() {
