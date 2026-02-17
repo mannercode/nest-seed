@@ -49,6 +49,8 @@ export class LatLong {
 }
 
 function isStrictNumberString(value: string) {
+    if (value.length > 20) return false
+
     return /^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(value)
 }
 
