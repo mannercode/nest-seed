@@ -101,6 +101,16 @@ describe('LatLong', () => {
                         message: 'LatLong should be in the format "latitude,longitude"'
                     })
             })
+
+            it('returns 400 Bad Request when a coordinate exceeds 20 digits', async () => {
+                await fix.httpClient
+                    .get('/latLong')
+                    .query({ location: '123456789012345678901,127' })
+                    .badRequest({
+                        code: 'ERR_LATLONG_FORMAT_INVALID',
+                        message: 'LatLong should be in the format "latitude,longitude"'
+                    })
+            })
         })
 
         // 쿼리가 범위를 벗어날 때
