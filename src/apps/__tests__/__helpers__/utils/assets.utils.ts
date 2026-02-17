@@ -22,9 +22,9 @@ export async function createAsset(ctx: TestContext, file: TestAsset = testAssets
     return assetsService.create(createDto)
 }
 
-export async function uploadAsset(filepath: string, uploadDto: AssetPresignedUploadDto) {
+export async function uploadAsset(filePath: string, uploadDto: AssetPresignedUploadDto) {
     const { url, method, fields } = uploadDto
-    const buffer = await readFile(filepath)
+    const buffer = await readFile(filePath)
     const form = new FormData()
 
     Object.entries(fields).forEach(([fieldKey, value]) => {
@@ -33,7 +33,7 @@ export async function uploadAsset(filepath: string, uploadDto: AssetPresignedUpl
 
     const contentType = fields['Content-Type'] ?? 'application/octet-stream'
     const file = new Blob([buffer], { type: contentType })
-    form.append('file', file, basename(filepath))
+    form.append('file', file, basename(filePath))
 
     const response = await fetch(url, { method, body: form })
     return response

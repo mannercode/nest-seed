@@ -76,10 +76,10 @@ export class QueryBuilder<T> {
 
 export function mapDocToDto<DOC extends object, DTO extends object, K extends keyof DTO>(
     doc: DOC,
-    DtoClass: new () => DTO,
+    dtoClass: new () => DTO,
     keys: K[]
 ): DTO {
-    const dto = new DtoClass()
+    const dto = new dtoClass()
     const record = doc as Record<string, unknown>
 
     for (const key of keys) {

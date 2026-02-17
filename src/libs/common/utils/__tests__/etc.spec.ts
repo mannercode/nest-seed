@@ -1,7 +1,7 @@
 import {
     quoteJsonIntegers,
     generateShortId,
-    generateUUID,
+    generateUuid,
     reviveIsoDates,
     padNumber,
     pickIds,
@@ -27,10 +27,10 @@ describe('sleep', () => {
     })
 })
 
-describe('generateUUID', () => {
+describe('generateUuid', () => {
     // UUID를 생성한다
     it('generates a UUID', () => {
-        const generatedUuid = generateUUID()
+        const generatedUuid = generateUuid()
         const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 
         expect(generatedUuid).toMatch(regex)
@@ -38,8 +38,8 @@ describe('generateUUID', () => {
 
     // 매번 다른 UUID를 생성한다
     it('generates a different UUID each time', () => {
-        const firstUuid = generateUUID()
-        const secondUuid = generateUUID()
+        const firstUuid = generateUuid()
+        const secondUuid = generateUuid()
 
         expect(firstUuid).not.toEqual(secondUuid)
     })

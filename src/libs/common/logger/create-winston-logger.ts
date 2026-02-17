@@ -6,36 +6,36 @@ import DailyRotateFile from 'winston-daily-rotate-file'
 import type { HttpErrorLog, HttpSuccessLog, RpcErrorLog, RpcSuccessLog } from './types'
 
 function colorizeHttpMethod(method: string | undefined) {
-    const METHOD = defaultTo(method, 'METHOD').toUpperCase()
+    const normalizedMethod = defaultTo(method, 'METHOD').toUpperCase()
 
-    switch (METHOD) {
+    switch (normalizedMethod) {
         case 'GET':
-            return styleText('cyan', METHOD)
+            return styleText('cyan', normalizedMethod)
         case 'POST':
-            return styleText('yellow', METHOD)
+            return styleText('yellow', normalizedMethod)
         case 'PUT':
-            return styleText('blue', METHOD)
+            return styleText('blue', normalizedMethod)
         case 'PATCH':
-            return styleText('blueBright', METHOD)
+            return styleText('blueBright', normalizedMethod)
         case 'DELETE':
-            return styleText('red', METHOD)
+            return styleText('red', normalizedMethod)
         default:
-            return styleText('magenta', METHOD)
+            return styleText('magenta', normalizedMethod)
     }
 }
 
 function colorizeLogLevel(level: string | undefined) {
-    const LEVEL = defaultTo(level, 'LEVEL').toUpperCase()
+    const normalizedLevel = defaultTo(level, 'LEVEL').toUpperCase()
 
-    switch (LEVEL) {
+    switch (normalizedLevel) {
         case 'ERROR':
-            return styleText('red', LEVEL)
+            return styleText('red', normalizedLevel)
         case 'WARN':
-            return styleText('yellow', LEVEL)
+            return styleText('yellow', normalizedLevel)
         case 'INFO':
-            return styleText('cyan', LEVEL)
+            return styleText('cyan', normalizedLevel)
         default:
-            return styleText('gray', LEVEL)
+            return styleText('gray', normalizedLevel)
     }
 }
 

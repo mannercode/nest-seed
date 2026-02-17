@@ -89,28 +89,28 @@ export class S3ObjectService implements OnModuleDestroy {
             metadata
         } = opts
 
-        const Fields: Record<string, string> = {}
-        const Conditions: any[] = []
+        const fields: Record<string, string> = {}
+        const conditions: any[] = []
 
         if (contentType) {
-            Fields['Content-Type'] = contentType
-            Conditions.push(['eq', '$Content-Type', contentType])
+            fields['Content-Type'] = contentType
+            conditions.push(['eq', '$Content-Type', contentType])
         }
 
         if (contentDisposition) {
-            Fields['Content-Disposition'] = contentDisposition
-            Conditions.push(['eq', '$Content-Disposition', contentDisposition])
+            fields['Content-Disposition'] = contentDisposition
+            conditions.push(['eq', '$Content-Disposition', contentDisposition])
         }
 
         if (metadata) {
             for (const [k, v] of Object.entries(metadata)) {
-                Fields[`x-amz-meta-${k}`] = v
-                Conditions.push(['eq', `$x-amz-meta-${k}`, v])
+                fields[`x-amz-meta-${k}`] = v
+                conditions.push(['eq', `$x-amz-meta-${k}`, v])
             }
         }
 
         if (typeof minContentLength === 'number' || typeof maxContentLength === 'number') {
-            Conditions.push([
+            conditions.push([
                 'content-length-range',
                 defaultTo(minContentLength, 0),
                 defaultTo(maxContentLength, 1024 * 1024 * 1024 * 1024)
@@ -121,8 +121,8 @@ export class S3ObjectService implements OnModuleDestroy {
             Bucket: this.bucket,
             Key: key,
             Expires: expiresInSec,
-            Fields,
-            Conditions
+            Fields: fields,
+            Conditions: conditions
         })
     }
 
