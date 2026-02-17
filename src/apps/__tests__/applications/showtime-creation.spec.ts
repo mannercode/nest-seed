@@ -44,7 +44,7 @@ describe('ShowtimeCreationService', () => {
         })
     })
 
-    describe('POST /showtime-creation/showtimes:search', () => {
+    describe('POST /showtime-creation/showtimes/search', () => {
         // 극장에 대한 상영 시간이 존재할 때
         describe('when showtimes exist for the theater', () => {
             let showtimes: ShowtimeDto[]
@@ -63,7 +63,7 @@ describe('ShowtimeCreationService', () => {
             // theaterIds에 대한 상영 시간을 반환한다
             it('returns showtimes for the theaterIds', async () => {
                 await fix.httpClient
-                    .post('/showtime-creation/showtimes:search')
+                    .post('/showtime-creation/showtimes/search')
                     .body({ theaterIds: [theater.id] })
                     .ok(expect.arrayContaining(showtimes))
             })

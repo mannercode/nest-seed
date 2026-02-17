@@ -98,7 +98,7 @@ wait_for_showtime() {
 	local showtimeId
 
 	for ((attempt = 1; attempt <= attempts; attempt++)); do
-		SETUP POST '/showtime-creation/showtimes:search' \
+		SETUP POST /showtime-creation/showtimes/search \
 			-H 'Content-Type: application/json' \
 			-d '{ "theaterIds": ["'${THEATER_ID}'"] }'
 

@@ -35,12 +35,12 @@ TEST "Validate customer JWT guard" \
 	200 GET /customers/jwt-guard \
 	-H "Authorization: Bearer ${CUSTOMER_ACCESS_TOKEN}"
 
-TEST "Retrieve customer by ID" \
-	200 GET /customers/${CUSTOMER_ID} \
+TEST "Retrieve customers page" \
+	200 GET /customers \
 	-H "Authorization: Bearer ${CUSTOMER_ACCESS_TOKEN}"
 
-TEST "Retrieve customers page" \
-	200 GET /customers?take=2 \
+TEST "Retrieve customer by ID" \
+	200 GET /customers/${CUSTOMER_ID} \
 	-H "Authorization: Bearer ${CUSTOMER_ACCESS_TOKEN}"
 
 TEST "Update customer by ID" \

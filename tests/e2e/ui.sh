@@ -1,7 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")"
-. ./.env
 
 C_RESET='\033[0m'
 C_BOLD='\033[1m'
@@ -39,28 +38,25 @@ prompt_selection() {
 	printf '%s\n' "${options[${current}]}"
 }
 
-main() {
-	mapfile -d '' -t all_specs < <(find ./specs -type f -name '*.spec' -print0 | sort -z)
+mapfile -d '' -t all_specs < <(find ./specs -type f -name '*.spec' -print0 | sort -z)
 
-	local ROUTES=()
-	for spec in "${all_specs[@]}"; do
-		route="/${spec#./specs/}"
-		route="${route%.spec}"
-		ROUTES+=("${route}")
-	done
+ROUTES=()
+for spec in "${all_specs[@]}"; do
+	route="/${spec#./specs/}"
+	route="${route%.spec}"
+	ROUTES+=("${route}")
+done
 
-	printf '\n%b%s%b\n' "${C_BOLD}${C_BRIGHT_CYAN}" "Select e2e path:" "${C_RESET}"
-	SELECTED_ROUTE=$(prompt_selection "all" "${ROUTES[@]}")
+printf '\n%b%s%b\n' "${C_BOLD}${C_BRIGHT_CYAN}" "Select e2e path:" "${C_RESET}"
+SELECTED_ROUTE=$(prompt_selection "all" "${ROUTES[@]}")
 
-	npm run infra:reset
-	npm run apps:reset
+npm run infra:reset
+npm run apps:reset
 
-	if [[ "${SELECTED_ROUTE}" == "all" ]]; then
-		bash ./run.sh
-	else
-		bash ./run.sh "./specs/${SELECTED_ROUTE#/}.spec"
-	fi
-}
+if [[ "${SELECTED_ROUTE}" == "all" ]]; then
+	bash ./run.sh
+else
+	bash ./run.sh "./specs/${SELECTED_ROUTE#/}.spec"
+fi
 
-trap 'npm run apps:down' EXIT
-main
+npm run apps:down

@@ -17,8 +17,8 @@ TEST "Create a movie" \
 
 MOVIE_ID=$(echo "${BODY}" | jq -r '.id')
 
-TEST "Search recommended movies" \
-	200 GET /movies/recommended
+TEST "Retrieve movies page" \
+	200 GET /movies
 
 TEST "Update movie by ID" \
 	200 PATCH /movies/${MOVIE_ID} \
@@ -30,12 +30,6 @@ TEST "Update movie by ID" \
 
 TEST "Publish movie by ID" \
 	200 POST /movies/${MOVIE_ID}/publish
-
-TEST "Retrieve movie by ID" \
-	200 GET /movies/${MOVIE_ID}
-
-TEST "Retrieve movies page" \
-	200 GET /movies?take=2
 
 TEST "Create a movie asset" \
 	201 POST /movies/${MOVIE_ID}/assets \
@@ -59,7 +53,7 @@ LOG_LINE ""
 TEST "Complete movie asset after upload" \
 	200 POST /movies/${MOVIE_ID}/assets/${ASSET_ID}/complete
 
-TEST "Retrieve movie with uploaded asset" \
+TEST "Retrieve movie by ID" \
 	200 GET /movies/${MOVIE_ID}
 
 TEST "Delete movie asset" \
@@ -67,3 +61,6 @@ TEST "Delete movie asset" \
 
 TEST "Delete movie by ID" \
 	204 DELETE /movies/${MOVIE_ID}
+
+TEST "Search recommended movies" \
+	200 GET /movies/recommended
