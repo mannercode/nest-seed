@@ -71,6 +71,36 @@ describe('LatLong', () => {
                         message: 'LatLong should be in the format "latitude,longitude"'
                     })
             })
+
+            it('returns 400 Bad Request when location is passed multiple times', async () => {
+                await fix.httpClient
+                    .get('/latLong')
+                    .query({ location: ['37.123,128.678', '38.123,129.678'] })
+                    .badRequest({
+                        code: 'ERR_LATLONG_FORMAT_INVALID',
+                        message: 'LatLong should be in the format "latitude,longitude"'
+                    })
+            })
+
+            it('returns 400 Bad Request when extra coordinates are passed', async () => {
+                await fix.httpClient
+                    .get('/latLong')
+                    .query({ location: '37.123,128.678,999' })
+                    .badRequest({
+                        code: 'ERR_LATLONG_FORMAT_INVALID',
+                        message: 'LatLong should be in the format "latitude,longitude"'
+                    })
+            })
+
+            it('returns 400 Bad Request when non-numeric values are passed', async () => {
+                await fix.httpClient
+                    .get('/latLong')
+                    .query({ location: '37abc,127xyz' })
+                    .badRequest({
+                        code: 'ERR_LATLONG_FORMAT_INVALID',
+                        message: 'LatLong should be in the format "latitude,longitude"'
+                    })
+            })
         })
 
         // 쿼리가 범위를 벗어날 때

@@ -56,8 +56,6 @@ export function waitForCompletion(ctx: TestContext, status: string) {
                 if (['succeeded', 'failed', 'error'].includes(result.status)) {
                     ctx.httpClient.abort()
 
-                    console.log(result)
-
                     if (status === result.status) {
                         resolve(result)
                     } else {

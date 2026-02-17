@@ -48,6 +48,29 @@ export class LatLong {
     }
 }
 
+function isStrictNumberString(value: string) {
+    return /^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(value)
+}
+
+function parseLatLongQuery(value: unknown): { latitude: number; longitude: number } | null {
+    if (typeof value !== 'string') {
+        return null
+    }
+
+    const [latitudeRaw, longitudeRaw, ...rest] = value.split(',')
+    if (!latitudeRaw || !longitudeRaw || rest.length > 0) {
+        return null
+    }
+
+    const latitudeText = latitudeRaw.trim()
+    const longitudeText = longitudeRaw.trim()
+    if (!isStrictNumberString(latitudeText) || !isStrictNumberString(longitudeText)) {
+        return null
+    }
+
+    return { latitude: Number(latitudeText), longitude: Number(longitudeText) }
+}
+
 export const LatLongQuery = createParamDecorator(
     async (name: string, context: ExecutionContext) => {
         const request = context.switchToHttp().getRequest()
@@ -57,16 +80,12 @@ export const LatLongQuery = createParamDecorator(
             throw new BadRequestException(LatLongErrors.Required)
         }
 
-        const [latStr, longStr] = value.split(',')
-
-        if (!latStr || !longStr) {
+        const parsedValue = parseLatLongQuery(value)
+        if (!parsedValue) {
             throw new BadRequestException(LatLongErrors.FormatInvalid)
         }
 
-        const latLong = plainToInstance(LatLong, {
-            latitude: parseFloat(latStr),
-            longitude: parseFloat(longStr)
-        })
+        const latLong = plainToInstance(LatLong, parsedValue)
 
         const errors = await validate(latLong)
         if (errors.length > 0) {
