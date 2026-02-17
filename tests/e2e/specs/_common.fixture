@@ -103,10 +103,10 @@ wait_for_showtime() {
 			-d '{ "theaterIds": ["'${THEATER_ID}'"] }'
 
 		showtimeId=$(
-			echo "${BODY}" \
-				| jq -r --arg movieId "${MOVIE_ID}" --arg theaterId "${THEATER_ID}" \
-				'.[] | select(.movieId == $movieId and .theaterId == $theaterId) | .id' \
-				| head -n 1
+			echo "${BODY}" |
+				jq -r --arg movieId "${MOVIE_ID}" --arg theaterId "${THEATER_ID}" \
+					'.[] | select(.movieId == $movieId and .theaterId == $theaterId) | .id' |
+				head -n 1
 		)
 
 		if [[ -n "${showtimeId}" && "${showtimeId}" != "null" ]]; then
@@ -117,11 +117,11 @@ wait_for_showtime() {
 		sleep 1
 	done
 
-	echo "# Setup failed: showtime creation did not finish in ${attempts} seconds" >&2
-	echo "RES='setup-timeout'" >&2
-	echo "${BODY}" | jq '.' >&2 || echo "${BODY}" >&2
-	echo "'" >&2
-	echo "" >&2
+	LOGFILE_LINE "# Setup failed: showtime creation did not finish in ${attempts} seconds"
+	LOGFILE_LINE "RES='setup-timeout'"
+	LOGFILE_JSON "${BODY}"
+	LOGFILE_LINE "'"
+	LOGFILE_LINE ""
 	exit 2
 }
 
@@ -144,11 +144,11 @@ wait_for_tickets() {
 		sleep 1
 	done
 
-	echo "# Setup failed: tickets were not created in ${attempts} seconds" >&2
-	echo "RES='setup-timeout'" >&2
-	echo "${BODY}" | jq '.' >&2 || echo "${BODY}" >&2
-	echo "'" >&2
-	echo "" >&2
+	LOGFILE_LINE "# Setup failed: tickets were not created in ${attempts} seconds"
+	LOGFILE_LINE "RES='setup-timeout'"
+	LOGFILE_JSON "${BODY}"
+	LOGFILE_LINE "'"
+	LOGFILE_LINE ""
 	exit 2
 }
 
@@ -162,18 +162,24 @@ setup_showtime_resources() {
 
 upload_presigned_post() {
 	local filePath=$1
-	local uploadResponseBody=$2
-	local uploadUrl uploadMethod uploadContentType
+	local uploadInfo=$2
+	local URL=$(printf '%s' "${uploadInfo}" | jq -r '.url')
+	local METHOD=$(printf '%s' "${uploadInfo}" | jq -r '.method')
 
-	uploadUrl=$(printf '%s' "${uploadResponseBody}" | jq -r '.url')
-	uploadMethod=$(printf '%s' "${uploadResponseBody}" | jq -r '.method')
-	uploadContentType=$(printf '%s' "${uploadResponseBody}" | jq -r '.fields["Content-Type"]')
-
-	local -a uploadFormArgs=()
+	local -a formArgs=()
 	while IFS=$'\t' read -r key value; do
-		uploadFormArgs+=( --form-string "${key}=${value}" )
-	done < <(printf '%s' "${uploadResponseBody}" | jq -r '.fields | to_entries[] | [.key, .value] | @tsv')
-	uploadFormArgs+=( -F "file=@${filePath};type=${uploadContentType}" )
+		formArgs+=(--form-string "${key}=${value}")
+	done < <(printf '%s' "${uploadInfo}" | jq -r '.fields | to_entries[] | [.key, .value] | @tsv')
+	formArgs+=(-F "file=@${filePath}")
 
-	SETUP "${uploadMethod}" "${uploadUrl}" "${uploadFormArgs[@]}"
+	LOG_COMMAND "${METHOD}" "${URL}" "${formArgs[@]}"
+	CURL "${METHOD}" "${URL}" "${formArgs[@]}"
+
+	if [[ "${STATUS}" -ge 300 ]]; then
+		LOG_LINE "# Upload failed"
+		LOG_LINE "RES='${STATUS}"
+		LOG_JSON "${BODY}"
+		LOG_LINE "'"
+		exit 2
+	fi
 }

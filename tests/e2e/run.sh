@@ -1,82 +1,79 @@
 #!/bin/bash
-set -euo pipefail
+set -Eeuo pipefail
 cd "$(dirname "$0")"
 . ./.env
-. ./utils.cfg
+
+C_RESET='\033[0m'
+C_GREEN='\033[32m'
+C_RED='\033[31m'
+C_CYAN='\033[36m'
+
+ON_ERROR() {
+	local exit_code=$1
+	local line_no=$2
+	local command=$3
+	CONSOLE_LINE "${C_RED}[ERROR]${C_RESET} line ${line_no}: ${command} (exit ${exit_code})"
+}
+trap 'ON_ERROR "$?" "${LINENO}" "${BASH_COMMAND}"' ERR
 
 mkdir -p logs
 LOG_FILE="./logs/$(date '+%Y%m%d_%H%M%S').log"
 exec 4>&1
 exec 3>"${LOG_FILE}"
-exec 1>&3 2>&3
+exec 1>&3
+exec 2> >(tee -a "${LOG_FILE}" >&4)
 
-PASSED_TESTS=0
-FAILED_TESTS=0
-
-C_RESET=$'\033[0m'
-C_GREEN=$'\033[32m'
-C_RED=$'\033[31m'
-C_CYAN=$'\033[36m'
-
-FINALIZE() {
-	{
-		echo ""
-		echo "${C_CYAN}log:${C_RESET} ${LOG_FILE}"
-		echo "Success: ${C_GREEN}${PASSED_TESTS}${C_RESET}, Failed: ${C_RED}${FAILED_TESTS}${C_RESET}"
-	} >&4
-}
-trap FINALIZE EXIT
-
-RESOLVE_URL() {
-	local endpoint=$1
-
-	if [[ "${endpoint}" =~ ^https?:// ]]; then
-		printf '%s\n' "${endpoint}"
-	else
-		printf '%s%s\n' "${SERVER_URL}" "${endpoint}"
-	fi
+CONSOLE_LINE() {
+	printf '%b\n' "$*" >&4
 }
 
-PRINT_COMMAND() {
-	local method=$1
-	local endpoint=$2
+LOG_LINE() {
+	printf '%s\n' "$*"
+}
+
+LOG_JSON() {
+	local payload=$1
+	printf '%s\n' "${payload}" | jq '.' 2>/dev/null || printf '%s\n' "${payload}"
+}
+
+LOG_COMMAND() {
+	local METHOD=$1
+	local URL=$2
 	shift 2
 
-	local url
-	url=$(RESOLVE_URL "${endpoint}")
-
-	local -a command=(curl -sSX "${method}" "${url}" "$@")
+	local -a command=(curl -sSX "${METHOD}" "${URL}" "$@")
 	local arg
+	local commandLine=''
 
 	for arg in "${command[@]}"; do
 		arg="${arg//$'\n'/ }"
 		arg="${arg//$'\t'/ }"
 
 		if [[ "${arg}" =~ [[:space:]] ]]; then
-			printf "'%s' " "${arg//\'/\'\\\'\'}"
+			commandLine+="'${arg//\'/\'\\\'\'}' "
 		else
-			printf '%s ' "${arg}"
+			commandLine+="${arg} "
 		fi
 	done
 
-	echo
+	LOG_LINE "${commandLine}"
 }
 
 CURL() {
 	METHOD=$1
-	ENDPOINT=$2
+	URL=$2
 	shift 2
 
-	local url
-	url=$(RESOLVE_URL "${ENDPOINT}")
-
-	if response=$(curl -sSX "${METHOD}" -w "%{http_code}" "${url}" "$@"); then
+	if response=$(curl -sSX "${METHOD}" -w "%{http_code}" "${URL}" "$@"); then
 		STATUS="${response:${#response}-3}"
 		BODY="${response:0:${#response}-3}"
 	else
 		exit 1
 	fi
 }
+
+PASSED_TESTS=0
+FAILED_TESTS=0
 
 TEST() {
 	TITLE=$1
@@ -85,27 +82,27 @@ TEST() {
 	ENDPOINT=$4
 	shift 4
 
-	echo "# ${TITLE}" >&2
-	PRINT_COMMAND "${METHOD}" "${ENDPOINT}" "$@" >&2
+	LOG_LINE "# ${TITLE}"
+	LOG_COMMAND "${METHOD}" "${SERVER_URL}${ENDPOINT}" "$@"
 
-	CURL "${METHOD}" "${ENDPOINT}" "$@"
+	CURL "${METHOD}" "${SERVER_URL}${ENDPOINT}" "$@"
 
 	if [[ "${STATUS}" -ne "${EXPECTED_STATUS}" ]]; then
 		FAILED_TESTS=$((FAILED_TESTS + 1))
 		responseStatus="${STATUS}(expected:${EXPECTED_STATUS})"
 
-		echo "${C_RED}[FAIL]${C_RESET} ${TITLE}" >&4
+		CONSOLE_LINE "${C_RED}[FAIL]${C_RESET} ${TITLE}"
 	else
 		PASSED_TESTS=$((PASSED_TESTS + 1))
 		responseStatus="${STATUS}"
 
-		echo "${C_GREEN}[PASS]${C_RESET} ${TITLE}" >&4
+		CONSOLE_LINE "${C_GREEN}[PASS]${C_RESET} ${TITLE}"
 	fi
 
-	echo "RES='${responseStatus}"
-	echo "${BODY}" | jq '.' || echo "${BODY}"
-	echo "'"
-	echo ""
+	LOG_LINE "RES='${responseStatus}"
+	LOG_JSON "${BODY}"
+	LOG_LINE "'"
+	LOG_LINE ""
 	true
 }
 
@@ -114,62 +111,24 @@ SETUP() {
 	ENDPOINT=$2
 	shift 2
 
-	CURL "${METHOD}" "${ENDPOINT}" "$@"
+	CURL "${METHOD}" "${SERVER_URL}${ENDPOINT}" "$@"
 
 	if [[ "${STATUS}" -ge 400 ]]; then
-		echo "# Setup failed" >&2
-		PRINT_COMMAND "${METHOD}" "${ENDPOINT}" "$@" >&2
-
-		echo "RES='${STATUS}" >&2
-		echo "${BODY}" | jq '.' >&2 || echo "${BODY}" >&2
-		echo "'" >&2
-		echo "" >&2
+		LOG_LINE "# Setup failed"
+		LOG_COMMAND "${METHOD}" "${SERVER_URL}${ENDPOINT}" "$@"
+		LOG_LINE "RES='${STATUS}"
+		LOG_JSON "${BODY}"
+		LOG_LINE "'"
+		LOG_LINE ""
 		exit 2
 	fi
 }
 
-# collect all spec files and route candidates
-mapfile -d '' -t all_specs < <(find ./specs -type f -name '*.spec' -print0 | sort -z)
-
-ROUTES=()
-for spec in "${all_specs[@]}"; do
-	route="/${spec#./specs/}"
-	route="${route%.spec}"
-	ROUTES+=("${route}")
-done
-
-SELECTED_ROUTE=''
-if [[ $# -ge 1 ]]; then
-	SELECTED_ROUTE=$1
-elif [[ -t 0 && -t 1 ]]; then
-	echo "" >&4
-	echo "Select e2e path:" >&4
-	SELECTED_ROUTE=$(prompt_selection / "${ROUTES[@]}" 2>&4)
-else
-	SELECTED_ROUTE=/
-fi
-
 specs=()
-if [[ "${SELECTED_ROUTE}" == "/" ]]; then
-	specs=("${all_specs[@]}")
+if [[ "$#" -eq 0 ]]; then
+	mapfile -d '' -t specs < <(find ./specs -type f -name '*.spec' -print0 | sort -z)
 else
-	for spec in "${all_specs[@]}"; do
-		route="/${spec#./specs/}"
-		route="${route%.spec}"
-
-		if [[ "${route}" == "${SELECTED_ROUTE}" ]]; then
-			specs=("${spec}")
-			break
-		fi
-	done
-
-	if [[ "${#specs[@]}" -eq 0 ]]; then
-		echo "Invalid path selector: ${SELECTED_ROUTE}" >&4
-		echo "Available: / ${ROUTES[*]}" >&4
-		echo "Invalid path selector: ${SELECTED_ROUTE}" >&2
-		echo "Available: / ${ROUTES[*]}" >&2
-		exit 2
-	fi
+	specs=("$@")
 fi
 
 for spec in "${specs[@]}"; do
@@ -181,10 +140,13 @@ for spec in "${specs[@]}"; do
 	popd >/dev/null
 done
 
-if [[ "${FAILED_TESTS}" -eq 0 ]]; then
-	echo "# Test Successful"
-	exit 0
+CONSOLE_LINE ""
+CONSOLE_LINE "${C_CYAN}log:${C_RESET} ${LOG_FILE}"
+CONSOLE_LINE "Passed: ${C_GREEN}${PASSED_TESTS}${C_RESET}, Failed: ${C_RED}${FAILED_TESTS}${C_RESET}"
+
+if [[ "${FAILED_TESTS}" -gt 0 ]]; then
+	CONSOLE_LINE "# Test Failed"
+	exit 3
 fi
 
-echo "# Test Failed"
-exit 3
+CONSOLE_LINE "# Test Passed"

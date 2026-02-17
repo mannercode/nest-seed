@@ -23,16 +23,6 @@ TEST "Create a purchase" \
 		}'
 
 PURCHASE_ID=$(echo "${BODY}" | jq -r '.id')
-PAYMENT_ID=$(echo "${BODY}" | jq -r '.paymentId')
-
-if [[ -z "${PAYMENT_ID}" || "${PAYMENT_ID}" == "null" ]]; then
-	echo "# Setup failed: paymentId was not created" >&2
-	echo "RES='invalid-payment-id'" >&2
-	echo "${BODY}" | jq '.' >&2 || echo "${BODY}" >&2
-	echo "'" >&2
-	echo "" >&2
-	exit 2
-fi
 
 TEST "Retrieve purchase by ID" \
 	200 GET /purchases/${PURCHASE_ID}

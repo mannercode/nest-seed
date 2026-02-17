@@ -51,7 +51,10 @@ TEST "Create a movie asset" \
 		}'
 
 ASSET_ID=$(echo "${BODY}" | jq -r '.assetId')
+
+LOG_LINE "# Presigned post upload"
 upload_presigned_post "${MOVIE_ASSET_FIXTURE_PATH}" "${BODY}"
+LOG_LINE ""
 
 TEST "Complete movie asset after upload" \
 	200 POST /movies/${MOVIE_ID}/assets/${ASSET_ID}/complete
