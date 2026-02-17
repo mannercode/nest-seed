@@ -1,6 +1,6 @@
 /* istanbul ignore file */
-import chalk from 'chalk'
 import { defaultTo } from 'lodash'
+import { styleText } from 'node:util'
 import winston from 'winston'
 import DailyRotateFile from 'winston-daily-rotate-file'
 import type { HttpErrorLog, HttpSuccessLog, RpcErrorLog, RpcSuccessLog } from './types'
@@ -10,17 +10,17 @@ function colorizeHttpMethod(method: string | undefined) {
 
     switch (METHOD) {
         case 'GET':
-            return chalk.cyan(METHOD)
+            return styleText('cyan', METHOD)
         case 'POST':
-            return chalk.yellow(METHOD)
+            return styleText('yellow', METHOD)
         case 'PUT':
-            return chalk.blue(METHOD)
+            return styleText('blue', METHOD)
         case 'PATCH':
-            return chalk.blueBright(METHOD)
+            return styleText('blueBright', METHOD)
         case 'DELETE':
-            return chalk.red(METHOD)
+            return styleText('red', METHOD)
         default:
-            return chalk.magenta(METHOD)
+            return styleText('magenta', METHOD)
     }
 }
 
@@ -29,13 +29,13 @@ function colorizeLogLevel(level: string | undefined) {
 
     switch (LEVEL) {
         case 'ERROR':
-            return chalk.red(LEVEL)
+            return styleText('red', LEVEL)
         case 'WARN':
-            return chalk.yellow(LEVEL)
+            return styleText('yellow', LEVEL)
         case 'INFO':
-            return chalk.cyan(LEVEL)
+            return styleText('cyan', LEVEL)
         default:
-            return chalk.gray(LEVEL)
+            return styleText('gray', LEVEL)
     }
 }
 
@@ -45,12 +45,12 @@ function formatHttpLogMessage(
     timestamp: string,
     logDetails: HttpErrorLog | HttpSuccessLog
 ) {
-    const statusCode = chalk.magenta(logDetails.statusCode)
+    const statusCode = styleText('magenta', `${logDetails.statusCode}`)
     const { request } = logDetails
     const method = colorizeHttpMethod(request.method)
-    const url = chalk.green(request.url)
+    const url = styleText('green', request.url)
     const nativeBody = defaultTo(request.body, {})
-    const body = chalk.blueBright(JSON.stringify(nativeBody, null, 2))
+    const body = styleText('blueBright', JSON.stringify(nativeBody, null, 2))
 
     return `${timestamp} ${level} HTTP ${message} ${statusCode} ${method} ${url} ${body} `
 }
@@ -61,8 +61,8 @@ function formatRpcLogMessage(
     timestamp: string,
     logDetails: RpcErrorLog | RpcSuccessLog
 ) {
-    const coloredContext = chalk.magenta(JSON.stringify(logDetails.context, null, 2))
-    const coloredData = chalk.blueBright(JSON.stringify(logDetails.data, null, 2))
+    const coloredContext = styleText('magenta', JSON.stringify(logDetails.context, null, 2))
+    const coloredData = styleText('blueBright', JSON.stringify(logDetails.data, null, 2))
 
     return `${timestamp} ${level} RPC ${message} ${coloredContext} ${coloredData}`
 }
@@ -73,7 +73,7 @@ function formatGenericLogMessage(
     timestamp: string,
     logDetails: unknown
 ) {
-    const coloredEtc = chalk.blueBright(JSON.stringify(logDetails, null, 2))
+    const coloredEtc = styleText('blueBright', JSON.stringify(logDetails, null, 2))
 
     return `${timestamp} ${level} ${message} ${coloredEtc}`
 }
@@ -83,9 +83,9 @@ const consoleLogFormat = winston.format.combine(
     winston.format.printf((info) => {
         const { message, level, timestamp, ...rest } = info
 
-        const coloredMessage = chalk.white(message)
+        const coloredMessage = styleText('white', String(message))
         const coloredLevel = colorizeLogLevel(level)
-        const coloredTimestamp = chalk.gray(timestamp)
+        const coloredTimestamp = styleText('gray', String(timestamp))
         const logDetails = rest[0] as any
 
         if (logDetails?.contextType === 'http') {
