@@ -26,11 +26,10 @@ jobs:
         runs-on: ubuntu-24.04-arm
         steps:
             - uses: actions/checkout@v4
-            - name: Prepare host mount
-              run: mkdir -p "${HOME}/.codex"
             - name: Run CI inside Dev Container
               uses: devcontainers/ci@v0.3
               with:
+                  configFile: .devcontainer/devcontainer.json
                   push: never
                   runCmd: |
                       bash .github/scripts/repeat-run.sh 50 npm test
@@ -40,11 +39,10 @@ jobs:
         runs-on: ubuntu-24.04-arm
         steps:
             - uses: actions/checkout@v4
-            - name: Prepare host mount
-              run: mkdir -p "${HOME}/.codex"
             - name: Run CI inside Dev Container
               uses: devcontainers/ci@v0.3
               with:
+                  configFile: .devcontainer/devcontainer.json
                   push: never
                   runCmd: |
                       bash .github/scripts/repeat-run.sh 30 npm run test:e2e
