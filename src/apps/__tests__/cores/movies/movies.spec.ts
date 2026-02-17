@@ -2,7 +2,7 @@ import {
     buildCreateMovieDto,
     createMovie,
     Errors,
-    fixtureFiles,
+    testAssets,
     uploadComplete
 } from 'apps/__tests__/__helpers__'
 import { MovieGenre, MovieRating } from 'apps/cores'
@@ -74,7 +74,7 @@ describe('MoviesService', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
-                const asset = await uploadComplete(fix, fixtureFiles.image)
+                const asset = await uploadComplete(fix, testAssets.image)
                 movie = await createMovie(fix, { assetIds: [asset.id] })
             })
 
@@ -84,7 +84,7 @@ describe('MoviesService', () => {
                 expect(response.ok).toBe(true)
 
                 const buffer = Buffer.from(await response.bytes())
-                expect(fixtureFiles.image.checksum).toEqual(Checksum.fromBuffer(buffer))
+                expect(testAssets.image.checksum).toEqual(Checksum.fromBuffer(buffer))
             })
         })
 
@@ -182,7 +182,7 @@ describe('MoviesService', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
-                const asset = await uploadComplete(fix, fixtureFiles.image)
+                const asset = await uploadComplete(fix, testAssets.image)
                 movie = await createMovie(fix, { assetIds: [asset.id] })
             })
 
@@ -216,7 +216,7 @@ describe('MoviesService', () => {
         let movieB2: MovieDto
 
         beforeEach(async () => {
-            const asset = await uploadComplete(fix, fixtureFiles.image)
+            const asset = await uploadComplete(fix, testAssets.image)
 
             ;[movieA1, movieA2, movieB1, movieB2] = await Promise.all([
                 createMovie(fix, {

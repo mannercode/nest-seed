@@ -4,7 +4,7 @@ import {
     buildCreateAssetDto,
     createAsset,
     downloadAsset,
-    fixtureFiles,
+    testAssets,
     uploadAsset,
     uploadComplete,
     uploadFile
@@ -16,7 +16,7 @@ import type { AssetDto } from 'apps/infrastructures'
 
 describe('AssetsService', () => {
     let fix: AssetsFixture
-    const file = fixtureFiles.small
+    const file = testAssets.small
 
     beforeEach(async () => {
         const { createAssetsFixture } = await import('./assets.fixture')

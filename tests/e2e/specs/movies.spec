@@ -35,19 +35,19 @@ TEST "Create a movie asset" \
 	201 POST /movies/${MOVIE_ID}/assets \
 	-H 'Content-Type: application/json' \
 	-d '{
-			"originalName": "'${FIXTURE_IMAGE_ORIGINAL_NAME}'",
+			"originalName": "'${ASSET_IMAGE_ORIGINAL_NAME}'",
 			"mimeType": "image/png",
-			"size": '${FIXTURE_IMAGE_SIZE}',
+			"size": '${ASSET_IMAGE_SIZE}',
 			"checksum": {
 				"algorithm": "sha256",
-				"base64": "'${FIXTURE_IMAGE_SHA256_BASE64}'"
+				"base64": "'${ASSET_IMAGE_SHA256_BASE64}'"
 			}
 		}'
 
 ASSET_ID=$(echo "${BODY}" | jq -r '.assetId')
 
 LOG_LINE "# Presigned post upload"
-upload_presigned_post "${FIXTURE_IMAGE_PATH}" "${BODY}"
+upload_presigned_post "${ASSET_IMAGE_PATH}" "${BODY}"
 LOG_LINE ""
 
 TEST "Complete movie asset after upload" \

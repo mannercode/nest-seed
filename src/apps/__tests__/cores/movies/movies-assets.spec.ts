@@ -1,4 +1,4 @@
-import { buildCreateAssetDto, Errors, fixtureFiles, uploadAsset } from 'apps/__tests__/__helpers__'
+import { buildCreateAssetDto, Errors, testAssets, uploadAsset } from 'apps/__tests__/__helpers__'
 import { Expect } from 'common'
 import { nullObjectId } from 'testlib'
 import { createMovie, createMovieAsset, uploadCompleteMovieAsset } from './movies-assets.fixture'
@@ -60,7 +60,7 @@ describe('MoviesAssets', () => {
 
             // 에셋 타입이 지원되지 않을 때
             describe('when the asset type is not supported', () => {
-                const createDto = buildCreateAssetDto(fixtureFiles.json)
+                const createDto = buildCreateAssetDto(testAssets.json)
 
                 // 400 Bad Request를 반환한다
                 it('returns 400 Bad Request', async () => {

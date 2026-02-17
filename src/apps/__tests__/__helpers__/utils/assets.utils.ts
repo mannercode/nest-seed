@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises'
 import { basename } from 'path'
 import { pick } from 'lodash'
-import { fixtureFiles, type FixtureFile } from '../fixture-files'
+import { testAssets, type TestAsset } from '../assets'
 import type {
     AssetDto,
     CompleteAssetDto,
@@ -10,11 +10,11 @@ import type {
 } from 'apps/infrastructures'
 import type { TestContext } from 'testlib'
 
-export function buildCreateAssetDto(file: FixtureFile = fixtureFiles.image): CreateAssetDto {
+export function buildCreateAssetDto(file: TestAsset = testAssets.image): CreateAssetDto {
     return pick(file, ['originalName', 'mimeType', 'size', 'checksum'])
 }
 
-export async function createAsset(ctx: TestContext, file: FixtureFile = fixtureFiles.image) {
+export async function createAsset(ctx: TestContext, file: TestAsset = testAssets.image) {
     const { AssetsService } = await import('apps/infrastructures')
     const assetsService = ctx.module.get(AssetsService)
 
@@ -39,7 +39,7 @@ export async function uploadAsset(filepath: string, uploadDto: AssetPresignedUpl
     return response
 }
 
-export async function uploadFile(ctx: TestContext, file: FixtureFile) {
+export async function uploadFile(ctx: TestContext, file: TestAsset) {
     const uploadRequest = await createAsset(ctx, file)
     const uploadRes = await uploadAsset(file.path, uploadRequest)
     expect(uploadRes.ok).toBe(true)
@@ -53,7 +53,7 @@ export function buildCompleteAssetDto(overrides = {}) {
     } as CompleteAssetDto
 }
 
-export async function uploadComplete(ctx: TestContext, file: FixtureFile) {
+export async function uploadComplete(ctx: TestContext, file: TestAsset) {
     const assetId = await uploadFile(ctx, file)
 
     const { AssetsService } = await import('apps/infrastructures')
