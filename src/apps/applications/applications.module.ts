@@ -9,6 +9,7 @@ import {
     RecommendationModule,
     ShowtimeCreationModule
 } from './services'
+import type { QueueOptions } from 'bullmq'
 
 @Module({
     imports: [
@@ -18,7 +19,7 @@ import {
         BullModule.forRootAsync('queue', {
             useFactory: (redis: Redis) => ({
                 prefix: `{queue:${getProjectId()}}`,
-                connection: redis
+                connection: redis as unknown as QueueOptions['connection']
             }),
             inject: [RedisConfigModule.moduleName]
         }),

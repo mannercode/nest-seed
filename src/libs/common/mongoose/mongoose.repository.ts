@@ -6,14 +6,7 @@ import { MongooseErrors } from './errors'
 import { objectId, objectIds } from './mongoose.util'
 import type { PaginationDto, PaginationResult } from '../types'
 import type { OnModuleInit } from '@nestjs/common'
-import type {
-    ClientSession,
-    Document,
-    HydratedDocument,
-    Model,
-    ObjectId,
-    QueryWithHelpers
-} from 'mongoose'
+import type { ClientSession, HydratedDocument, Model, ObjectId, QueryWithHelpers } from 'mongoose'
 
 type SessionArg = ClientSession | undefined
 
@@ -46,8 +39,9 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     }
 
     async saveMany(docs: HydratedDocument<Doc>[], session: SessionArg = undefined) {
+        const bulkSaveDocuments = docs as unknown as Parameters<Model<Doc>['bulkSave']>[0]
         const { insertedCount, matchedCount, deletedCount } = await this.model.bulkSave(
-            docs as Document[],
+            bulkSaveDocuments,
             { session }
         )
 

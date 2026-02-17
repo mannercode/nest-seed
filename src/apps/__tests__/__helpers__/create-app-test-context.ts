@@ -14,6 +14,7 @@ import {
 } from 'shared'
 import { createHttpTestContext, isDebuggingEnabled } from 'testlib'
 import type { MicroserviceOptions } from '@nestjs/microservices'
+import type { QueueOptions } from 'bullmq'
 import type Redis from 'ioredis'
 import type { HttpTestContext, ModuleMetadataEx } from 'testlib'
 
@@ -26,7 +27,10 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
         RedisConfigModule,
         BullModule.forRootAsync('queue', {
             useFactory(redis: Redis) {
-                return { prefix: `{queue:${getProjectId()}}`, connection: redis }
+                return {
+                    prefix: `{queue:${getProjectId()}}`,
+                    connection: redis as unknown as QueueOptions['connection']
+                }
             },
             inject: [RedisConfigModule.moduleName]
         })
