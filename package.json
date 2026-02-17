@@ -33,11 +33,6 @@
         "infra:reset": "npm run infra:down && npm run infra:up && npm run infra:wait",
         "infra:gui": " COMPOSE_PROFILES=gui npm run infra:reset"
     },
-    "overrides": {
-        "@nestjs/config": {
-            "lodash": "4.17.23"
-        }
-    },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.991.0",
         "@aws-sdk/s3-presigned-post": "^3.991.0",
