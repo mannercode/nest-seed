@@ -8,21 +8,6 @@ C_GREEN='\033[32m'
 C_RED='\033[31m'
 C_CYAN='\033[36m'
 
-ON_ERROR() {
-	local exit_code=$1
-	local line_no=$2
-	local command=$3
-
-	echo -e "${C_RED}[ERROR]${C_RESET} line ${line_no}: ${command} (exit ${exit_code})"
-	exit "${exit_code}"
-}
-trap 'ON_ERROR "$?" "${LINENO}" "${BASH_COMMAND}"' ERR
-
-log_dir="$(pwd)/logs/$(date '+%Y%m%d_%H%M%S')"
-mkdir -p "${log_dir}"
-
-LOG_FILE=''
-
 LOG_LINE() {
 	echo "$*" >>"${LOG_FILE}"
 }
@@ -38,7 +23,6 @@ LOG_COMMAND() {
 	shift 2
 
 	local -a command=(curl -sSX "${method}" "${url}" "$@")
-	local arg
 	local line=''
 
 	for arg in "${command[@]}"; do
@@ -116,39 +100,53 @@ SETUP() {
 	fi
 }
 
+main() {
+	log_dir="$(pwd)/logs/$(date '+%Y%m%d_%H%M%S')"
+	mkdir -p "${log_dir}"
+
+	specs=()
+	if [[ "$#" -eq 0 ]]; then
+		mapfile -d '' -t specs < <(find ./specs -type f -name '*.spec' -print0 | sort -z)
+	else
+		specs=("$@")
+	fi
+
+	for spec_path in "${specs[@]}"; do
+		local spec_dir=$(dirname "${spec_path}")
+		local spec_file=$(basename "${spec_path}")
+		LOG_FILE="${log_dir}/${spec_path#./specs/}.log"
+		mkdir -p "$(dirname "${LOG_FILE}")"
+		: >"${LOG_FILE}"
+
+		pushd "${spec_dir}" >/dev/null
+		. "./${spec_file}"
+		popd >/dev/null
+	done
+
+	echo ""
+	echo -e "${C_CYAN}logs:${C_RESET} ${log_dir}"
+	echo -e "Passed: ${C_GREEN}${PASSED_TESTS}${C_RESET}, Failed: ${C_RED}${FAILED_TESTS}${C_RESET}"
+
+	if [[ "${FAILED_TESTS}" -gt 0 ]]; then
+		echo -e "# Test Failed"
+		exit 3
+	fi
+
+	echo -e "# Test Passed"
+}
+
+ON_ERROR() {
+	local exit_code=$1
+	local line_no=$2
+	local command=$3
+
+	echo -e "${C_RED}[ERROR]${C_RESET} line ${line_no}: ${command} (exit ${exit_code})"
+	exit "${exit_code}"
+}
+trap 'ON_ERROR "$?" "${LINENO}" "${BASH_COMMAND}"' ERR
+
 PASSED_TESTS=0
 FAILED_TESTS=0
+LOG_FILE=''
 
-specs=()
-if [[ "$#" -eq 0 ]]; then
-	mapfile -d '' -t specs < <(find ./specs -type f -name '*.spec' -print0 | sort -z)
-else
-	specs=("$@")
-fi
-
-for spec in "${specs[@]}"; do
-	spec_dir=$(dirname "$spec")
-	spec_file=$(basename "$spec")
-	spec_rel_path=${spec#./specs/}
-	if [[ "${spec_rel_path}" == "${spec}" ]]; then
-		spec_rel_path=$(basename "${spec}")
-	fi
-	LOG_FILE="${log_dir}/${spec_rel_path}.log"
-	mkdir -p "$(dirname "${LOG_FILE}")"
-	: >"${LOG_FILE}"
-
-	pushd "${spec_dir}" >/dev/null
-	. "./${spec_file}"
-	popd >/dev/null
-done
-
-echo ""
-echo -e "${C_CYAN}logs:${C_RESET} ${log_dir}"
-echo -e "Passed: ${C_GREEN}${PASSED_TESTS}${C_RESET}, Failed: ${C_RED}${FAILED_TESTS}${C_RESET}"
-
-if [[ "${FAILED_TESTS}" -gt 0 ]]; then
-	echo -e "# Test Failed"
-	exit 3
-fi
-
-echo -e "# Test Passed"
+main
