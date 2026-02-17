@@ -1,6 +1,6 @@
-import dotenv from 'dotenv'
+process.loadEnvFile('.env')
+process.loadEnvFile('.env.infra')
 
-dotenv.config({ path: ['.env', '.env.infra'], quiet: true })
 setEnv('NODE_ENV', 'test')
 
 export function getEnv(key: string) {
