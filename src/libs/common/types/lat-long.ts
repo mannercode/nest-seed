@@ -1,5 +1,5 @@
 import { BadRequestException, createParamDecorator, ExecutionContext } from '@nestjs/common'
-import { plainToClass } from 'class-transformer'
+import { plainToInstance } from 'class-transformer'
 import { IsNumber, Max, Min, validate } from 'class-validator'
 
 export const LatLongErrors = {
@@ -63,7 +63,7 @@ export const LatLongQuery = createParamDecorator(
             throw new BadRequestException(LatLongErrors.FormatInvalid)
         }
 
-        const latLong = plainToClass(LatLong, {
+        const latLong = plainToInstance(LatLong, {
             latitude: parseFloat(latStr),
             longitude: parseFloat(longStr)
         })
