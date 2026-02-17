@@ -37,34 +37,35 @@ LOG_JSON() {
 }
 
 LOG_COMMAND() {
-	local METHOD=$1
-	local URL=$2
+	local method=$1
+	local url=$2
 	shift 2
 
-	local -a command=(curl -sSX "${METHOD}" "${URL}" "$@")
+	local -a command=(curl -sSX "${method}" "${url}" "$@")
 	local arg
-	local commandLine=''
+	local command_line=''
 
 	for arg in "${command[@]}"; do
 		arg="${arg//$'\n'/ }"
 		arg="${arg//$'\t'/ }"
 
 		if [[ "${arg}" =~ [[:space:]] ]]; then
-			commandLine+="'${arg//\'/\'\\\'\'}' "
+			command_line+="'${arg//\'/\'\\\'\'}' "
 		else
-			commandLine+="${arg} "
+			command_line+="${arg} "
 		fi
 	done
 
-	LOG_LINE "${commandLine}"
+	LOG_LINE "${command_line}"
 }
 
 CURL() {
-	METHOD=$1
-	URL=$2
+	local method=$1
+	local url=$2
 	shift 2
 
-	if response=$(curl -sSX "${METHOD}" -w "%{http_code}" "${URL}" "$@"); then
+	local response
+	if response=$(curl -sSX "${method}" -w "%{http_code}" "${url}" "$@"); then
 		STATUS="${response:${#response}-3}"
 		BODY="${response:0:${#response}-3}"
 	else
@@ -72,34 +73,32 @@ CURL() {
 	fi
 }
 
-PASSED_TESTS=0
-FAILED_TESTS=0
-
 TEST() {
-	TITLE=$1
-	EXPECTED_STATUS=$2
-	METHOD=$3
-	ENDPOINT=$4
+	local title=$1
+	local expected_status=$2
+	local method=$3
+	local endpoint=$4
 	shift 4
+	local response_status
 
-	LOG_LINE "# ${TITLE}"
-	LOG_COMMAND "${METHOD}" "${SERVER_URL}${ENDPOINT}" "$@"
+	LOG_LINE "# ${title}"
+	LOG_COMMAND "${method}" "${SERVER_URL}${endpoint}" "$@"
 
-	CURL "${METHOD}" "${SERVER_URL}${ENDPOINT}" "$@"
+	CURL "${method}" "${SERVER_URL}${endpoint}" "$@"
 
-	if [[ "${STATUS}" -ne "${EXPECTED_STATUS}" ]]; then
+	if [[ "${STATUS}" -ne "${expected_status}" ]]; then
 		FAILED_TESTS=$((FAILED_TESTS + 1))
-		responseStatus="${STATUS}(expected:${EXPECTED_STATUS})"
+		response_status="${STATUS}(expected:${expected_status})"
 
-		CONSOLE_LINE "${C_RED}[FAIL]${C_RESET} ${TITLE}"
+		CONSOLE_LINE "${C_RED}[FAIL]${C_RESET} ${title}"
 	else
 		PASSED_TESTS=$((PASSED_TESTS + 1))
-		responseStatus="${STATUS}"
+		response_status="${STATUS}"
 
-		CONSOLE_LINE "${C_GREEN}[PASS]${C_RESET} ${TITLE}"
+		CONSOLE_LINE "${C_GREEN}[PASS]${C_RESET} ${title}"
 	fi
 
-	LOG_LINE "RES='${responseStatus}"
+	LOG_LINE "RES='${response_status}"
 	LOG_JSON "${BODY}"
 	LOG_LINE "'"
 	LOG_LINE ""
@@ -107,15 +106,15 @@ TEST() {
 }
 
 SETUP() {
-	METHOD=$1
-	ENDPOINT=$2
+	local method=$1
+	local endpoint=$2
 	shift 2
 
-	CURL "${METHOD}" "${SERVER_URL}${ENDPOINT}" "$@"
+	CURL "${method}" "${SERVER_URL}${endpoint}" "$@"
 
 	if [[ "${STATUS}" -ge 400 ]]; then
 		LOG_LINE "# Setup failed"
-		LOG_COMMAND "${METHOD}" "${SERVER_URL}${ENDPOINT}" "$@"
+		LOG_COMMAND "${method}" "${SERVER_URL}${endpoint}" "$@"
 		LOG_LINE "RES='${STATUS}"
 		LOG_JSON "${BODY}"
 		LOG_LINE "'"
@@ -123,6 +122,9 @@ SETUP() {
 		exit 2
 	fi
 }
+
+PASSED_TESTS=0
+FAILED_TESTS=0
 
 specs=()
 if [[ "$#" -eq 0 ]]; then
