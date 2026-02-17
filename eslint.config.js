@@ -1,13 +1,31 @@
 const path = require('path')
+const { builtinModules } = require('module')
 const js = require('@eslint/js')
 const typescriptEslintPlugin = require('@typescript-eslint/eslint-plugin')
 const typescriptParser = require('@typescript-eslint/parser')
+const allowedDependenciesPlugin = require('eslint-plugin-allowed-dependencies').default
+const perfectionistPlugin = require('eslint-plugin-perfectionist')
 const prettierPlugin = require('eslint-plugin-prettier')
 const prettierConfig = require('eslint-config-prettier')
 const globals = require('globals')
 const jestPlugin = require('eslint-plugin-jest')
-const importPlugin = require('eslint-plugin-import')
 const unusedImportsPlugin = require('eslint-plugin-unused-imports')
+
+const escapeForRegex = value => value.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&')
+const nodeBuiltinModulePattern = `^(?:node:)?(?:${[...new Set(
+    builtinModules.map(moduleName => moduleName.replace(/^node:/, '').split('/')[0])
+)]
+    .sort()
+    .map(escapeForRegex)
+    .join('|')})(?:/.*)?$`
+const internalAliasPattern = '^(?:apps(?:/.*)?|common|shared|testlib)$'
+const dependencyIgnorePatterns = ['^\\.', nodeBuiltinModulePattern, internalAliasPattern]
+const sourceDependencyOptions = {
+    packageDir: __dirname,
+    development: false,
+    ignore: dependencyIgnorePatterns
+}
+const testDependencyOptions = { ...sourceDependencyOptions, development: true }
 
 const baseGlobals = { ...globals.node, ...globals.es2021, module: 'readonly', require: 'readonly' }
 const testGlobals = {
@@ -36,8 +54,9 @@ module.exports = [
         },
         plugins: {
             '@typescript-eslint': typescriptEslintPlugin,
+            allowed: allowedDependenciesPlugin,
+            perfectionist: perfectionistPlugin,
             prettier: prettierPlugin,
-            import: importPlugin,
             'unused-imports': unusedImportsPlugin
         },
         rules: {
@@ -54,25 +73,47 @@ module.exports = [
             'default-case': ['error', { commentPattern: '^no default$' }],
             'lines-around-directive': ['error', { before: 'always', after: 'always' }],
             'arrow-body-style': ['error', 'as-needed', { requireReturnForObjectLiteral: false }],
-            'import/order': [
+            'perfectionist/sort-imports': [
                 'warn',
                 {
-                    groups: [
-                        'builtin',
-                        'external',
-                        'internal',
-                        'parent',
-                        'sibling',
-                        'index',
-                        'object',
-                        'type'
+                    type: 'unsorted',
+                    order: 'asc',
+                    ignoreCase: true,
+                    newlinesBetween: 0,
+                    internalPattern: [
+                        '^apps(?:/.*)?$',
+                        '^common$',
+                        '^shared$',
+                        '^testlib$'
                     ],
-                    'newlines-between': 'never',
-                    alphabetize: { order: 'asc', caseInsensitive: true }
+                    groups: [
+                        [
+                            'value-builtin',
+                            'value-external',
+                            'value-internal',
+                            'value-parent',
+                            'value-sibling',
+                            'value-index',
+                            'ts-equals-import'
+                        ],
+                        [
+                            'type-builtin',
+                            'type-external',
+                            'type-internal',
+                            'type-parent',
+                            'type-sibling',
+                            'type-index'
+                        ],
+                        'unknown'
+                    ]
                 }
             ],
-            'import/newline-after-import': ['warn', { count: 1 }],
-            'import/no-extraneous-dependencies': ['warn', { devDependencies: false }],
+            'padding-line-between-statements': [
+                'warn',
+                { blankLine: 'always', prev: 'import', next: '*' },
+                { blankLine: 'any', prev: 'import', next: 'import' }
+            ],
+            'allowed/dependencies': ['warn', sourceDependencyOptions],
             'prettier/prettier': 'warn',
             'no-undef': 'off',
             'no-shadow': 'off',
@@ -135,7 +176,7 @@ module.exports = [
         languageOptions: { globals: { ...baseGlobals, ...testGlobals } },
         plugins: { jest: jestPlugin },
         rules: {
-            'import/no-extraneous-dependencies': ['warn', { devDependencies: true }],
+            'allowed/dependencies': ['warn', testDependencyOptions],
             'jest/no-focused-tests': 'warn',
             'jest/no-disabled-tests': 'warn',
             'jest/valid-expect': 'warn',
