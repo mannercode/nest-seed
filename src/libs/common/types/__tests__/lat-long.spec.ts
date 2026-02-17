@@ -1,4 +1,4 @@
-import { LatLong } from 'common'
+import { LatLong, LatLongErrors } from 'common'
 import type { LatLongFixture } from './lat-long.fixture'
 
 describe('LatLong', () => {
@@ -50,12 +50,7 @@ describe('LatLong', () => {
         describe('when the query is not provided', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                await fix.httpClient
-                    .get('/latLong')
-                    .badRequest({
-                        code: 'ERR_LATLONG_REQUIRED',
-                        message: 'The latLong query parameter is required'
-                    })
+                await fix.httpClient.get('/latLong').badRequest(LatLongErrors.Required)
             })
         })
 
@@ -66,50 +61,35 @@ describe('LatLong', () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: '37.123' })
-                    .badRequest({
-                        code: 'ERR_LATLONG_FORMAT_INVALID',
-                        message: 'LatLong should be in the format "latitude,longitude"'
-                    })
+                    .badRequest(LatLongErrors.InvalidFormat)
             })
 
             it('returns 400 Bad Request when location is passed multiple times', async () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: ['37.123,128.678', '38.123,129.678'] })
-                    .badRequest({
-                        code: 'ERR_LATLONG_FORMAT_INVALID',
-                        message: 'LatLong should be in the format "latitude,longitude"'
-                    })
+                    .badRequest(LatLongErrors.InvalidFormat)
             })
 
             it('returns 400 Bad Request when extra coordinates are passed', async () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: '37.123,128.678,999' })
-                    .badRequest({
-                        code: 'ERR_LATLONG_FORMAT_INVALID',
-                        message: 'LatLong should be in the format "latitude,longitude"'
-                    })
+                    .badRequest(LatLongErrors.InvalidFormat)
             })
 
             it('returns 400 Bad Request when non-numeric values are passed', async () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: '37abc,127xyz' })
-                    .badRequest({
-                        code: 'ERR_LATLONG_FORMAT_INVALID',
-                        message: 'LatLong should be in the format "latitude,longitude"'
-                    })
+                    .badRequest(LatLongErrors.InvalidFormat)
             })
 
             it('returns 400 Bad Request when a coordinate exceeds 20 digits', async () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: '123456789012345678901,127' })
-                    .badRequest({
-                        code: 'ERR_LATLONG_FORMAT_INVALID',
-                        message: 'LatLong should be in the format "latitude,longitude"'
-                    })
+                    .badRequest(LatLongErrors.InvalidFormat)
             })
         })
 
@@ -120,20 +100,7 @@ describe('LatLong', () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: '91,181' })
-                    .badRequest({
-                        code: 'ERR_LATLONG_VALIDATION_FAILED',
-                        details: [
-                            {
-                                constraints: { max: 'latitude must not be greater than 90' },
-                                field: 'latitude'
-                            },
-                            {
-                                constraints: { max: 'longitude must not be greater than 180' },
-                                field: 'longitude'
-                            }
-                        ],
-                        message: 'LatLong validation failed'
-                    })
+                    .badRequest({ ...LatLongErrors.OutOfRange, details: expect.any(Array) })
             })
         })
     })

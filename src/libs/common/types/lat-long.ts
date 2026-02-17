@@ -5,7 +5,7 @@ import { IsNumber, Max, Min, validate } from 'class-validator'
 const EARTH_RADIUS_METERS = 6_371_000
 const MAX_COORDINATE_LENGTH = 20
 
-export const LatLongError = {
+export const LatLongErrors = {
     Required: { code: 'ERR_LATLONG_REQUIRED', message: 'The latLong query parameter is required' },
     InvalidFormat: {
         code: 'ERR_LATLONG_INVALID_FORMAT',
@@ -76,13 +76,13 @@ export const LatLongQuery = createParamDecorator(
         const raw = request.query[paramName]
 
         if (!raw) {
-            throw new BadRequestException(LatLongError.Required)
+            throw new BadRequestException(LatLongErrors.Required)
         }
 
         const parsed = parseCoordinatePair(raw)
 
         if (!parsed) {
-            throw new BadRequestException(LatLongError.InvalidFormat)
+            throw new BadRequestException(LatLongErrors.InvalidFormat)
         }
 
         const latLong = plainToInstance(LatLong, parsed)
@@ -90,7 +90,7 @@ export const LatLongQuery = createParamDecorator(
 
         if (errors.length > 0) {
             throw new BadRequestException({
-                ...LatLongError.OutOfRange,
+                ...LatLongErrors.OutOfRange,
                 details: errors.map((e) => ({ field: e.property, constraints: e.constraints }))
             })
         }

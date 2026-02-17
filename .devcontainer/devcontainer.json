@@ -18,7 +18,6 @@
         "reset-infra": "npm run infra:reset"
     },
     "forwardPorts": [5010, 5020],
-    "containerEnv": { "WORKSPACE_ROOT": "${containerWorkspaceFolder}" },
     "customizations": {
         "vscode": {
             "extensions": [
