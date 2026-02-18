@@ -20,6 +20,14 @@ import {
 import { HealthModule } from './modules'
 
 @Module({
+    controllers: [
+        CustomersController,
+        MoviesController,
+        TheatersController,
+        ShowtimeCreationController,
+        BookingController,
+        PurchasesController
+    ],
     imports: [CommonModule, HealthModule],
     providers: [
         CustomerLocalStrategy,
@@ -32,14 +40,6 @@ import { HealthModule } from './modules'
         PurchaseRecordsClient,
         RecommendationClient,
         PurchaseClient
-    ],
-    controllers: [
-        CustomersController,
-        MoviesController,
-        TheatersController,
-        ShowtimeCreationController,
-        BookingController,
-        PurchasesController
     ]
 })
 export class GatewayModule {}

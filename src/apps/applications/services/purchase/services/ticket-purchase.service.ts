@@ -1,13 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import {
     PurchaseItemDto,
-    PurchaseItemType,
     ShowtimeDto,
     ShowtimesClient,
     TicketHoldingClient,
-    TicketsClient,
-    TicketStatus
+    TicketsClient
 } from 'apps/cores'
+import { PurchaseItemType, TicketStatus } from 'apps/cores'
 import { DateUtil } from 'common'
 import { uniq } from 'lodash'
 import { Rules } from 'shared'
@@ -16,16 +15,16 @@ import { PurchaseEvents } from '../purchase.events'
 
 export const TicketPurchaseErrors = {
     MaxTicketsExceeded: {
-        code: 'ERR_PURCHASE_MAX_TICKETS_EXCEEDED',
+        code: 'ERR_TICKET_PURCHASE_LIMIT_EXCEEDED',
         message: 'You have exceeded the maximum number of tickets allowed for purchase.'
+    },
+    TicketNotHeld: {
+        code: 'ERR_TICKET_PURCHASE_NOT_HELD',
+        message: 'Only held tickets can be purchased.'
     },
     WindowClosed: {
         code: 'ERR_TICKET_PURCHASE_WINDOW_CLOSED',
         message: 'Ticket purchase is closed for this showtime.'
-    },
-    TicketNotHeld: {
-        code: 'ERR_PURCHASE_TICKET_NOT_HELD',
-        message: 'Only held tickets can be purchased.'
     }
 }
 
@@ -38,21 +37,41 @@ export class TicketPurchaseService {
         private readonly events: PurchaseEvents
     ) {}
 
-    async validatePurchase(createDto: CreatePurchaseDto) {
+    async completePurchase(createDto: CreatePurchaseDto): Promise<void> {
         const ticketItems = createDto.purchaseItems.filter(
-            (item) => item.type === PurchaseItemType.Ticket
+            (item) => item.type === PurchaseItemType.Tickets
+        )
+        const ticketIds = ticketItems.map((item) => item.itemId)
+
+        await this.ticketsClient.updateStatusMany(ticketIds, TicketStatus.Sold)
+
+        await this.events.emitTicketPurchased(createDto.customerId, ticketIds)
+    }
+
+    async rollbackPurchase(createDto: CreatePurchaseDto): Promise<void> {
+        const ticketItems = createDto.purchaseItems.filter(
+            (item) => item.type === PurchaseItemType.Tickets
+        )
+        const ticketIds = ticketItems.map((item) => item.itemId)
+
+        await this.ticketsClient.updateStatusMany(ticketIds, TicketStatus.Available)
+
+        await this.events.emitTicketPurchaseCanceled(createDto.customerId, ticketIds)
+    }
+
+    async validatePurchase(createDto: CreatePurchaseDto): Promise<void> {
+        const ticketItems = createDto.purchaseItems.filter(
+            (item) => item.type === PurchaseItemType.Tickets
         )
         const showtimes = await this.getShowtimes(ticketItems)
 
         this.validateTicketCount(ticketItems)
         this.validatePurchaseTime(showtimes)
         await this.validateHeldTickets(createDto.customerId, showtimes, ticketItems)
-
-        return true
     }
 
     private async getShowtimes(ticketItems: PurchaseItemDto[]) {
-        const ticketIds = ticketItems.map((item) => item.ticketId)
+        const ticketIds = ticketItems.map((item) => item.itemId)
         const tickets = await this.ticketsClient.getMany(ticketIds)
         const showtimeIds = tickets.map((ticket) => ticket.showtimeId)
         const uniqueShowtimeIds = uniq(showtimeIds)
@@ -61,37 +80,10 @@ export class TicketPurchaseService {
         return showtimes
     }
 
-    private validateTicketCount(ticketItems: PurchaseItemDto[]) {
-        if (Rules.Ticket.maxTicketsPerPurchase < ticketItems.length) {
-            throw new BadRequestException({
-                ...TicketPurchaseErrors.MaxTicketsExceeded,
-                maxCount: Rules.Ticket.maxTicketsPerPurchase
-            })
-        }
-    }
-
-    private validatePurchaseTime(showtimes: ShowtimeDto[]) {
-        for (const { startTime } of showtimes) {
-            const purchaseWindowCloseTime = DateUtil.add({
-                minutes: -Rules.Ticket.purchaseCutoffMinutes,
-                base: startTime
-            })
-
-            if (purchaseWindowCloseTime.getTime() < DateUtil.now().getTime()) {
-                throw new BadRequestException({
-                    ...TicketPurchaseErrors.WindowClosed,
-                    purchaseCutoffMinutes: Rules.Ticket.purchaseCutoffMinutes,
-                    startTime: startTime.toString(),
-                    purchaseWindowCloseTime: purchaseWindowCloseTime.toString()
-                })
-            }
-        }
-    }
-
     private async validateHeldTickets(
         customerId: string,
         showtimes: ShowtimeDto[],
-        purchaseItems: PurchaseItemDto[]
+        ticketItems: PurchaseItemDto[]
     ) {
         const heldTicketIds: string[] = []
 
@@ -103,36 +95,39 @@ export class TicketPurchaseService {
             heldTicketIds.push(...ticketIds)
         }
 
-        const isAllExist = purchaseItems.every((ticket) => heldTicketIds.includes(ticket.ticketId))
+        const areAllTicketsHeld = ticketItems.every((ticketItem) =>
+            heldTicketIds.includes(ticketItem.itemId)
+        )
 
-        if (!isAllExist) {
+        if (!areAllTicketsHeld) {
             throw new BadRequestException(TicketPurchaseErrors.TicketNotHeld)
         }
     }
 
-    async completePurchase(createDto: CreatePurchaseDto) {
-        const ticketItems = createDto.purchaseItems.filter(
-            (item) => item.type === PurchaseItemType.Ticket
-        )
-        const ticketIds = ticketItems.map((item) => item.ticketId)
+    private validatePurchaseTime(showtimes: ShowtimeDto[]) {
+        for (const { startTime } of showtimes) {
+            const purchaseWindowCloseTime = DateUtil.add({
+                base: startTime,
+                minutes: -Rules.Ticket.purchaseCutoffMinutes
+            })
 
-        await this.ticketsClient.updateStatusMany(ticketIds, TicketStatus.Sold)
-
-        await this.events.emitTicketPurchased(createDto.customerId, ticketIds)
-
-        return true
+            if (purchaseWindowCloseTime.getTime() < DateUtil.now().getTime()) {
+                throw new BadRequestException({
+                    ...TicketPurchaseErrors.WindowClosed,
+                    purchaseCutoffMinutes: Rules.Ticket.purchaseCutoffMinutes,
+                    purchaseWindowCloseTime: purchaseWindowCloseTime.toString(),
+                    startTime: startTime.toString()
+                })
+            }
+        }
     }
 
-    async rollbackPurchase(createDto: CreatePurchaseDto) {
-        const ticketItems = createDto.purchaseItems.filter(
-            (item) => item.type === PurchaseItemType.Ticket
-        )
-        const ticketIds = ticketItems.map((item) => item.ticketId)
-
-        await this.ticketsClient.updateStatusMany(ticketIds, TicketStatus.Available)
-
-        await this.events.emitTicketPurchaseCanceled(createDto.customerId, ticketIds)
-
-        return true
+    private validateTicketCount(ticketItems: PurchaseItemDto[]) {
+        if (Rules.Ticket.maxTicketsPerPurchase < ticketItems.length) {
+            throw new BadRequestException({
+                ...TicketPurchaseErrors.MaxTicketsExceeded,
+                maxCount: Rules.Ticket.maxTicketsPerPurchase
+            })
+        }
     }
 }

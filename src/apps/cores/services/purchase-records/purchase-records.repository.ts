@@ -16,14 +16,14 @@ export class PurchaseRecordsRepository extends MongooseRepository<PurchaseRecord
     }
 
     async create(createDto: CreatePurchaseRecordDto) {
-        const purchase = this.newDocument()
-        purchase.customerId = createDto.customerId
-        purchase.paymentId = createDto.paymentId
-        purchase.totalPrice = createDto.totalPrice
-        purchase.purchaseItems = createDto.purchaseItems.map((item) => ({ ...item }))
+        const purchaseRecord = this.newDocument()
+        purchaseRecord.customerId = createDto.customerId
+        purchaseRecord.paymentId = createDto.paymentId
+        purchaseRecord.totalPrice = createDto.totalPrice
+        purchaseRecord.purchaseItems = createDto.purchaseItems.map((item) => ({ ...item }))
 
-        await purchase.save()
+        await purchaseRecord.save()
 
-        return purchase.toJSON()
+        return purchaseRecord.toJSON()
     }
 }

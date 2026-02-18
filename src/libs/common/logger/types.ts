@@ -1,24 +1,24 @@
 export type HttpErrorLog = {
     contextType: 'http'
-    statusCode: number
-    request: { method: string; url: string; body: any }
+    request: { body: any; method: string; url: string }
     response: object | string
     stack: string[]
+    statusCode: number
 }
 
 export type HttpSuccessLog = {
     contextType: 'http'
-    statusCode: number
-    request: { method: string; url: string; body: any }
     duration: string
+    request: { body: any; method: string; url: string }
+    statusCode: number
 }
 
 export type RpcErrorLog = {
-    contextType: 'rpc'
     context: any
+    contextType: 'rpc'
     data: any
     response: object | string
     stack: string[]
 }
 
-export type RpcSuccessLog = { contextType: 'rpc'; context: any; data: any; duration: string }
+export type RpcSuccessLog = { context: any; contextType: 'rpc'; data: any; duration: string }

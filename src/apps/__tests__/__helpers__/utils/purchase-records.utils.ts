@@ -1,13 +1,13 @@
+import type { TestContext } from 'testlib'
 import { PurchaseItemType } from 'apps/cores'
 import { oid } from 'testlib'
-import type { TestContext } from 'testlib'
 
 export function buildCreatePurchaseRecordDto(overrides = {}) {
     const createDto = {
         customerId: oid(0x0),
         paymentId: oid(0x0),
+        purchaseItems: [{ itemId: oid(0x0), type: PurchaseItemType.Tickets }],
         totalPrice: 1,
-        purchaseItems: [{ type: PurchaseItemType.Ticket, ticketId: oid(0x0) }],
         ...overrides
     }
     return createDto
@@ -19,6 +19,6 @@ export async function createPurchaseRecord(ctx: TestContext, override = {}) {
 
     const createDto = buildCreatePurchaseRecordDto(override)
 
-    const purchase = await purchaseRecordsService.create(createDto)
-    return purchase
+    const purchaseRecord = await purchaseRecordsService.create(createDto)
+    return purchaseRecord
 }

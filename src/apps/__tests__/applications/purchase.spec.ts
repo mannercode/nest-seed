@@ -1,9 +1,10 @@
+import type { PurchaseRecordDto, TicketDto } from 'apps/cores'
 import { Errors, getPayments, getTickets } from 'apps/__tests__/__helpers__'
 import { TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { toAny } from 'testlib'
-import { buildCreatePurchaseDto, type PurchaseFixture } from './purchase.fixture'
-import type { PurchaseRecordDto, TicketDto } from 'apps/cores'
+import type { PurchaseFixture } from './purchase.fixture'
+import { buildCreatePurchaseDto } from './purchase.fixture'
 
 describe('PurchaseService', () => {
     let fix: PurchaseFixture
@@ -34,16 +35,16 @@ describe('PurchaseService', () => {
                     .body(createDto)
                     .created({
                         ...createDto,
-                        id: expect.any(String),
                         createdAt: expect.any(Date),
-                        updatedAt: expect.any(Date),
-                        paymentId: expect.any(String)
+                        id: expect.any(String),
+                        paymentId: expect.any(String),
+                        updatedAt: expect.any(Date)
                     })
             })
 
             // 구매가 생성되었을 때
             describe('when the purchase is created', () => {
-                let purchase: PurchaseRecordDto
+                let purchaseRecord: PurchaseRecordDto
 
                 beforeEach(async () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
@@ -51,14 +52,14 @@ describe('PurchaseService', () => {
                         .post('/purchases')
                         .body(createDto)
                         .created()
-                    purchase = body
+                    purchaseRecord = body
                 })
 
                 // 결제 기록을 생성한다
                 it('creates the payment record', async () => {
-                    const payments = await getPayments(fix, [purchase.paymentId])
+                    const payments = await getPayments(fix, [purchaseRecord.paymentId])
 
-                    expect(payments[0].amount).toEqual(purchase.totalPrice)
+                    expect(payments[0].amount).toEqual(purchaseRecord.totalPrice)
                 })
 
                 // 구매된 티켓을 `Sold`로 표시한다

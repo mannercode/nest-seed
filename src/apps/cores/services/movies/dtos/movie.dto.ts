@@ -1,13 +1,13 @@
 import type { MovieGenre, MovieRating } from '../models'
 
 export class MovieDto {
-    id: string
-    title: string
-    genres: MovieGenre[]
-    releaseDate: Date
-    plot: string
-    durationInSeconds: number
     director: string
-    rating: MovieRating
+    durationInSeconds: number
+    genres: MovieGenre[]
+    id: string
     imageUrls: string[]
+    plot: string
+    rating: MovieRating
+    releaseDate: Date
+    title: string
 }

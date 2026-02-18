@@ -1,5 +1,6 @@
 import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
-import { HealthCheckService, MongooseHealthIndicator, TerminusModule } from '@nestjs/terminus'
+import { HealthCheckService, MongooseHealthIndicator } from '@nestjs/terminus'
+import { TerminusModule } from '@nestjs/terminus'
 import { RedisHealthIndicator } from 'common'
 import Redis from 'ioredis'
 import mongoose from 'mongoose'
@@ -9,16 +10,18 @@ import { MongooseConfigModule, RedisConfigModule } from 'shared'
 class HealthService {
     constructor(
         private readonly health: HealthCheckService,
-        private readonly mongoose: MongooseHealthIndicator,
-        private readonly redis: RedisHealthIndicator,
-        @Inject(MongooseConfigModule.moduleName) private readonly mongoConn: mongoose.Connection,
-        @Inject(RedisConfigModule.moduleName) private readonly redisConn: Redis
+        private readonly mongooseHealth: MongooseHealthIndicator,
+        private readonly redisHealth: RedisHealthIndicator,
+        @Inject(MongooseConfigModule.moduleName)
+        private readonly mongoConnection: mongoose.Connection,
+        @Inject(RedisConfigModule.moduleName) private readonly redisConnection: Redis
     ) {}
 
     check() {
         const checks = [
-            async () => this.mongoose.pingCheck('mongodb', { connection: this.mongoConn }),
-            async () => this.redis.isHealthy('redis', this.redisConn)
+            async () =>
+                this.mongooseHealth.pingCheck('mongodb', { connection: this.mongoConnection }),
+            async () => this.redisHealth.isHealthy('redis', this.redisConnection)
         ]
 
         return this.health.check(checks)
@@ -36,8 +39,8 @@ class HealthController {
 }
 
 @Module({
+    controllers: [HealthController],
     imports: [TerminusModule],
-    providers: [HealthService, RedisHealthIndicator],
-    controllers: [HealthController]
+    providers: [HealthService, RedisHealthIndicator]
 })
 export class HealthModule {}

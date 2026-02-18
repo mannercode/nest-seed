@@ -1,25 +1,30 @@
 import { Controller, Get, NotFoundException } from '@nestjs/common'
 import { APP_FILTER } from '@nestjs/core'
-import { MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
+import { NatsOptions } from '@nestjs/microservices'
+import { MessagePattern, Transport } from '@nestjs/microservices'
 import { ExceptionLoggerFilter } from 'common'
-import {
-    createHttpTestContext,
-    getNatsTestConnection,
-    HttpTestClient,
-    RpcTestClient,
-    withTestId
-} from 'testlib'
+import { HttpTestClient } from 'testlib'
+import { createHttpTestContext, getNatsTestConnection, RpcTestClient, withTestId } from 'testlib'
+
+export type ExceptionLoggerFilterFixture = {
+    httpClient: HttpTestClient
+    rpcClient: RpcTestClient
+    spyError: jest.SpyInstance
+    spyFatal: jest.SpyInstance
+    spyWarn: jest.SpyInstance
+    teardown: () => Promise<void>
+}
 
 @Controller()
 class TestController {
-    @Get('exception')
-    getHttpException() {
-        throw new NotFoundException({ code: 'ERR_CODE', message: 'message' })
-    }
-
     @Get('error')
     getHttpError() {
         throw new Error('error message')
+    }
+
+    @Get('exception')
+    getHttpException() {
+        throw new NotFoundException({ code: 'ERR_CODE', message: 'message' })
     }
 
     @Get('fatal')
@@ -28,14 +33,14 @@ class TestController {
         throw 'fatal error message'
     }
 
-    @MessagePattern(withTestId('exception'))
-    getRpcException() {
-        throw new NotFoundException({ code: 'ERR_CODE', message: 'message' })
-    }
-
     @MessagePattern(withTestId('error'))
     getRpcError() {
         throw new Error('error message')
+    }
+
+    @MessagePattern(withTestId('exception'))
+    getRpcException() {
+        throw new NotFoundException({ code: 'ERR_CODE', message: 'message' })
     }
 
     @MessagePattern(withTestId('fatal'))
@@ -45,28 +50,19 @@ class TestController {
     }
 }
 
-export type ExceptionLoggerFilterFixture = {
-    teardown: () => Promise<void>
-    httpClient: HttpTestClient
-    rpcClient: RpcTestClient
-    spyWarn: jest.SpyInstance
-    spyError: jest.SpyInstance
-    spyFatal: jest.SpyInstance
-}
-
 export async function createExceptionLoggerFilterFixture() {
     const brokerOptions = {
-        transport: Transport.NATS,
-        options: getNatsTestConnection()
+        options: getNatsTestConnection(),
+        transport: Transport.NATS
     } as NatsOptions
 
     const { httpClient, ...ctx } = await createHttpTestContext({
-        controllers: [TestController],
-        providers: [{ provide: APP_FILTER, useClass: ExceptionLoggerFilter }],
         configureApp: async (app) => {
             app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
             await app.startAllMicroservices()
-        }
+        },
+        controllers: [TestController],
+        providers: [{ provide: APP_FILTER, useClass: ExceptionLoggerFilter }]
     })
 
     const { Logger } = await import('@nestjs/common')
@@ -80,5 +76,5 @@ export async function createExceptionLoggerFilterFixture() {
         await ctx.close()
     }
 
-    return { teardown, httpClient, rpcClient, spyWarn, spyError, spyFatal }
+    return { httpClient, rpcClient, spyError, spyFatal, spyWarn, teardown }
 }

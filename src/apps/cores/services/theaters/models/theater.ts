@@ -1,25 +1,25 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, createMongooseSchema } from 'common'
+import { createMongooseSchema, MongooseSchema } from 'common'
 import { MongooseConfigModule } from 'shared'
 import { Seatmap } from './seatmap'
 import { TheaterLocation } from './theater-location'
 
 @Schema(MongooseConfigModule.schemaOptions)
 export class Theater extends MongooseSchema {
-    @Prop({ required: true })
-    name: string
-
     @Prop({
-        type: {
-            latitude: { type: Number, required: true },
-            longitude: { type: Number, required: true }
-        },
+        _id: false,
         required: true,
-        _id: false
+        type: {
+            latitude: { required: true, type: Number },
+            longitude: { required: true, type: Number }
+        }
     })
     location: TheaterLocation
 
-    @Prop({ type: Object, required: true, _id: false })
+    @Prop({ required: true })
+    name: string
+
+    @Prop({ _id: false, required: true, type: Object })
     seatmap: Seatmap
 }
 export const TheaterSchema = createMongooseSchema(Theater)

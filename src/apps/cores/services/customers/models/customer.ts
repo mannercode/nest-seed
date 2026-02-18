@@ -1,17 +1,17 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, createMongooseSchema } from 'common'
+import { createMongooseSchema, MongooseSchema } from 'common'
 import { MongooseConfigModule } from 'shared'
 
 @Schema(MongooseConfigModule.schemaOptions)
 export class Customer extends MongooseSchema {
     @Prop({ required: true })
-    name: string
+    birthDate: Date
 
-    @Prop({ unique: true, required: true })
+    @Prop({ required: true, unique: true })
     email: string
 
     @Prop({ required: true })
-    birthDate: Date
+    name: string
 
     @Prop({ required: true, select: false })
     password: string

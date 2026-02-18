@@ -2,28 +2,29 @@ import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Messages } from 'shared'
 import { AssetsService } from './assets.service'
-import { CompleteAssetDto, CreateAssetDto } from './dtos'
+import { CreateAssetDto, FinalizeAssetDto } from './dtos'
 
 @Controller()
 export class AssetsController {
     constructor(private readonly service: AssetsService) {}
 
     @MessagePattern(Messages.Assets.create)
-    create(@Payload() dto: CreateAssetDto) {
-        return this.service.create(dto)
+    create(@Payload() createDto: CreateAssetDto) {
+        return this.service.create(createDto)
     }
 
-    @MessagePattern(Messages.Assets.isUploadComplete)
-    isUploadComplete(@Payload('assetId') assetId: string) {
-        return this.service.isUploadComplete(assetId)
+    @MessagePattern(Messages.Assets.deleteMany)
+    async deleteMany(@Payload() assetIds: string[]): Promise<null> {
+        await this.service.deleteMany(assetIds)
+        return null
     }
 
-    @MessagePattern(Messages.Assets.complete)
-    complete(
+    @MessagePattern(Messages.Assets.finalizeUpload)
+    finalizeUpload(
         @Payload('assetId') assetId: string,
-        @Payload('completeDto') completeDto: CompleteAssetDto
+        @Payload('finalizeDto') finalizeDto: FinalizeAssetDto
     ) {
-        return this.service.complete(assetId, completeDto)
+        return this.service.finalizeUpload(assetId, finalizeDto)
     }
 
     @MessagePattern(Messages.Assets.getMany)
@@ -31,8 +32,8 @@ export class AssetsController {
         return this.service.getMany(assetIds)
     }
 
-    @MessagePattern(Messages.Assets.deleteMany)
-    deleteMany(@Payload() assetIds: string[]) {
-        return this.service.deleteMany(assetIds)
+    @MessagePattern(Messages.Assets.isUploadComplete)
+    isUploadComplete(@Payload('assetId') assetId: string) {
+        return this.service.isUploadComplete(assetId)
     }
 }

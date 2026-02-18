@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseRepository, objectIds, QueryBuilder, QueryBuilderOptions } from 'common'
+import { QueryBuilderOptions } from 'common'
+import { MongooseRepository, objectIds, QueryBuilder } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import {
@@ -19,6 +20,32 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         super(model, MongooseConfigModule.maxTake)
     }
 
+    async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
+        const query = this.buildQuery(aggregateDto)
+
+        const showtimeTicketSalesArray = await this.model.aggregate([
+            { $match: query },
+            {
+                $group: {
+                    _id: '$showtimeId',
+                    sold: { $sum: { $cond: [{ $eq: ['$status', TicketStatus.Sold] }, 1, 0] } },
+                    total: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    available: { $subtract: ['$total', '$sold'] },
+                    showtimeId: { $toString: '$_id' },
+                    sold: 1,
+                    total: 1
+                }
+            }
+        ])
+
+        return showtimeTicketSalesArray as TicketSalesForShowtimeDto[]
+    }
+
     async createMany(createDtos: CreateTicketDto[]) {
         const tickets = createDtos.map((dto) => {
             const ticket = this.newDocument()
@@ -32,16 +59,7 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
             return ticket
         })
 
-        return this.saveMany(tickets)
-    }
-
-    async updateStatusMany(ticketIds: string[], status: TicketStatus) {
-        const result = await this.model.updateMany(
-            { _id: { $in: objectIds(ticketIds) } },
-            { $set: { status } }
-        )
-
-        return result
+        await this.saveMany(tickets)
     }
 
     async search(searchDto: SearchTicketsDto) {
@@ -55,34 +73,17 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         return tickets
     }
 
-    async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
-        const query = this.buildQuery(aggregateDto)
+    async updateStatusMany(ticketIds: string[], status: TicketStatus) {
+        const result = await this.model.updateMany(
+            { _id: { $in: objectIds(ticketIds) } },
+            { $set: { status } }
+        )
 
-        const showtimeTicketSalesArray = await this.model.aggregate([
-            { $match: query },
-            {
-                $group: {
-                    _id: '$showtimeId',
-                    total: { $sum: 1 },
-                    sold: { $sum: { $cond: [{ $eq: ['$status', TicketStatus.Sold] }, 1, 0] } }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    showtimeId: { $toString: '$_id' },
-                    total: 1,
-                    sold: 1,
-                    available: { $subtract: ['$total', '$sold'] }
-                }
-            }
-        ])
-
-        return showtimeTicketSalesArray as TicketSalesForShowtimeDto[]
+        return result
     }
 
     private buildQuery(searchDto: SearchTicketsDto, options: QueryBuilderOptions = {}) {
-        const { sagaIds, movieIds, theaterIds, showtimeIds } = searchDto
+        const { movieIds, sagaIds, showtimeIds, theaterIds } = searchDto
 
         const builder = new QueryBuilder<Ticket>()
         builder.addIn('sagaId', sagaIds)

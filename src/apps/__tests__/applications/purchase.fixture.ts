@@ -1,3 +1,7 @@
+import type { AppTestContext } from 'apps/__tests__/__helpers__'
+import type { CreatePurchaseDto } from 'apps/applications'
+import type { TicketDto } from 'apps/cores'
+import type { TestContext } from 'testlib'
 import {
     buildHoldTicketsDto,
     createAppTestContext,
@@ -26,15 +30,12 @@ import { PurchasesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
 import { DateUtil, pickIds } from 'common'
 import { oid, toAny } from 'testlib'
-import type { AppTestContext } from 'apps/__tests__/__helpers__'
-import type { CreatePurchaseDto } from 'apps/applications'
-import type { TicketDto } from 'apps/cores'
-import type { TestContext } from 'testlib'
 
 export type PurchaseFixture = AppTestContext & {}
 
 export async function createPurchaseFixture(): Promise<PurchaseFixture> {
     const ctx = await createAppTestContext({
+        controllers: [PurchasesController],
         imports: [
             MoviesModule,
             AssetsModule,
@@ -57,8 +58,7 @@ export async function createPurchaseFixture(): Promise<PurchaseFixture> {
             TicketHoldingClient,
             PurchaseClient,
             AssetsClient
-        ],
-        controllers: [PurchasesController]
+        ]
     })
 
     return { ...ctx }
@@ -70,10 +70,22 @@ export function buildCreatePurchaseDto(
     tickets: TicketDto[],
     overrides: Partial<CreatePurchaseDto> = {}
 ) {
-    const purchaseItems = tickets.map(({ id }) => ({ type: PurchaseItemType.Ticket, ticketId: id }))
+    const purchaseItems = tickets.map(({ id }) => ({ itemId: id, type: PurchaseItemType.Tickets }))
 
-    const createDto = { customerId, totalPrice: 1, purchaseItems, ...overrides }
+    const createDto = { customerId, purchaseItems, totalPrice: 1, ...overrides }
     return createDto
+}
+
+export async function createShowtimeAndTickets(ctx: TestContext) {
+    const { Rules } = await import('shared')
+
+    const startTime = DateUtil.add({ minutes: Rules.Ticket.purchaseCutoffMinutes + 1 })
+
+    const [showtime] = await createShowtimes(ctx, [{ startTime }])
+
+    const createTicketDtos = Array.from({ length: 10 }, () => ({ showtimeId: showtime.id }))
+
+    return createTickets(ctx, createTicketDtos)
 }
 
 export async function holdTickets(ctx: TestContext, tickets: TicketDto[]) {
@@ -95,16 +107,4 @@ export async function holdTickets(ctx: TestContext, tickets: TicketDto[]) {
     )
 
     return heldTickets
-}
-
-export async function createShowtimeAndTickets(ctx: TestContext) {
-    const { Rules } = await import('shared')
-
-    const startTime = DateUtil.add({ minutes: Rules.Ticket.purchaseCutoffMinutes + 1 })
-
-    const [showtime] = await createShowtimes(ctx, [{ startTime }])
-
-    const createTicketDtos = Array.from({ length: 10 }, () => ({ showtimeId: showtime.id }))
-
-    return createTickets(ctx, createTicketDtos)
 }

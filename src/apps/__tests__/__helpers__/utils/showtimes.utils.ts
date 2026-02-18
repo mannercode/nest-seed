@@ -1,16 +1,16 @@
+import type { CreateShowtimeDto } from 'apps/cores'
+import type { TestContext } from 'testlib'
 import { DateUtil, newObjectIdString } from 'common'
 import { uniq } from 'lodash'
 import { oid } from 'testlib'
-import type { CreateShowtimeDto } from 'apps/cores'
-import type { TestContext } from 'testlib'
 
 export function buildCreateShowtimeDto(overrides: Partial<CreateShowtimeDto> = {}) {
     const createDto = {
-        sagaId: newObjectIdString(),
-        movieId: oid(0x0),
-        theaterId: oid(0x0),
-        startTime: new Date(0),
         endTime: new Date(0),
+        movieId: oid(0x0),
+        sagaId: newObjectIdString(),
+        startTime: new Date(0),
+        theaterId: oid(0x0),
         ...overrides
     }
 

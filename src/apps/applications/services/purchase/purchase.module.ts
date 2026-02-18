@@ -13,6 +13,7 @@ import { PurchaseService } from './purchase.service'
 import { TicketPurchaseService } from './services'
 
 @Module({
+    controllers: [PurchaseController],
     providers: [
         PurchaseService,
         TicketPurchaseService,
@@ -23,7 +24,6 @@ import { TicketPurchaseService } from './services'
         PurchaseRecordsClient,
         ShowtimesClient,
         PaymentsClient
-    ],
-    controllers: [PurchaseController]
+    ]
 })
 export class PurchaseModule {}

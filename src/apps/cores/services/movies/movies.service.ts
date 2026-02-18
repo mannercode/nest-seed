@@ -8,7 +8,8 @@ import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
 import { ensure, mapDocToDto, pickIds } from 'common'
 import { uniq } from 'lodash'
 import { Rules } from 'shared'
-import { MovieDto, SearchMoviesPageDto, UpsertMovieDto } from './dtos'
+import { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
+import { MovieDto } from './dtos'
 import { MovieErrors } from './errors'
 import { Movie } from './models'
 import { MoviePendingAssetsRepository } from './movie-pending-assets.repository'
@@ -18,7 +19,7 @@ import { MoviesRepository } from './movies.repository'
 export class MoviesService {
     constructor(
         private readonly moviesRepository: MoviesRepository,
-        private readonly assetsRepository: MoviePendingAssetsRepository,
+        private readonly pendingAssetsRepository: MoviePendingAssetsRepository,
         private readonly assetsClient: AssetsClient
     ) {}
 
@@ -28,17 +29,35 @@ export class MoviesService {
         return this.toDto(movie)
     }
 
-    async update(movieId: string, updateDto: UpsertMovieDto) {
-        const movie = await this.moviesRepository.update(movieId, updateDto)
-        return this.toDto(movie)
+    async createAsset(movieId: string, createDto: CreateAssetDto) {
+        if (!(await this.existsAll([movieId]))) {
+            throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
+        }
+
+        if (!createDto.mimeType.startsWith('image/')) {
+            throw new BadRequestException({
+                ...MovieErrors.UnsupportedAssetType,
+                mimeType: createDto.mimeType
+            })
+        }
+
+        const upload = await this.assetsClient.create(createDto)
+
+        await this.pendingAssetsRepository.addPendingAsset(movieId, upload.assetId)
+
+        return upload
     }
 
-    async getMany(movieIds: string[]) {
-        const movies = await this.moviesRepository.getByIds(movieIds)
-        return this.toDtos(movies)
+    async deleteAsset(movieId: string, assetId: string): Promise<void> {
+        if (!(await this.existsAll([movieId]))) {
+            throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
+        }
+
+        await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
+        await this.assetsClient.deleteMany([assetId])
     }
 
-    async deleteMany(movieIds: string[]) {
+    async deleteMany(movieIds: string[]): Promise<void> {
         const movies = await this.moviesRepository.findByIds(movieIds)
 
         if (0 < movies.length) {
@@ -50,24 +69,53 @@ export class MoviesService {
 
             await this.moviesRepository.deleteByIds(pickIds(movies))
         }
-
-        return {}
     }
 
-    async searchPage(searchDto: SearchMoviesPageDto) {
-        const { items, ...pagination } = await this.moviesRepository.searchPage(searchDto)
-
-        return { ...pagination, items: await this.toDtos(items) }
+    async existsAll(movieIds: string[]): Promise<boolean> {
+        return this.moviesRepository.existsAll(movieIds)
     }
 
-    async allExist(movieIds: string[]): Promise<boolean> {
-        return this.moviesRepository.allExist(movieIds)
+    async finalizeUpload(movieId: string, assetId: string): Promise<void> {
+        const movie = await this.moviesRepository.findById(movieId)
+
+        if (!movie) {
+            throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
+        }
+
+        if (movie.assetIds.includes(assetId)) {
+            await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
+            return
+        }
+
+        const hasPendingAsset = await this.pendingAssetsRepository.hasPendingAsset(movieId, assetId)
+
+        if (!hasPendingAsset) {
+            throw new NotFoundException({ ...MovieErrors.AssetNotFound, notFoundAssetId: assetId })
+        }
+
+        const isUploaded = await this.assetsClient.isUploadComplete(assetId)
+
+        if (!isUploaded) {
+            throw new UnprocessableEntityException({ ...MovieErrors.AssetUploadInvalid, assetId })
+        }
+
+        await this.assetsClient.finalizeUpload(assetId, {
+            owner: { entityId: movieId, service: 'movies' }
+        })
+
+        await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
+        await this.moviesRepository.addAsset(movieId, assetId)
+    }
+
+    async getMany(movieIds: string[]) {
+        const movies = await this.moviesRepository.getByIds(movieIds)
+        return this.toDtos(movies)
     }
 
     async publish(movieId: string) {
         const movie = await this.moviesRepository.getById(movieId)
 
-        const { title, genres, releaseDate, plot, durationInSeconds, director, rating } = movie
+        const { director, durationInSeconds, genres, plot, rating, releaseDate, title } = movie
         const defaults = Rules.Movie.defaults
 
         const missingFields: string[] = []
@@ -83,7 +131,7 @@ export class MoviesService {
 
         if (0 < missingFields.length) {
             throw new UnprocessableEntityException({
-                ...MovieErrors.InvalidForCompletion,
+                ...MovieErrors.InvalidForPublish,
                 missingFields
             })
         }
@@ -92,67 +140,15 @@ export class MoviesService {
         return this.toDto(movie)
     }
 
-    async createAsset(movieId: string, createDto: CreateAssetDto) {
-        if (!(await this.moviesRepository.allExist([movieId]))) {
-            throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
-        }
+    async searchPage(searchDto: SearchMoviesPageDto) {
+        const { items, ...pagination } = await this.moviesRepository.searchPage(searchDto)
 
-        if (!createDto.mimeType.startsWith('image/')) {
-            throw new BadRequestException({
-                ...MovieErrors.UnsupportedAssetType,
-                mimeType: createDto.mimeType
-            })
-        }
-
-        const upload = await this.assetsClient.create(createDto)
-
-        await this.assetsRepository.addAsset(movieId, upload.assetId)
-
-        return upload
+        return { ...pagination, items: await this.toDtos(items) }
     }
 
-    async deleteAsset(movieId: string, assetId: string): Promise<Record<string, never>> {
-        if (!(await this.moviesRepository.allExist([movieId]))) {
-            throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
-        }
-
-        await this.assetsRepository.removeAsset(movieId, assetId)
-        await this.assetsClient.deleteMany([assetId])
-        return {}
-    }
-
-    async completeAsset(movieId: string, assetId: string): Promise<Record<string, never>> {
-        const movie = await this.moviesRepository.findById(movieId)
-
-        if (!movie) {
-            throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
-        }
-
-        if (movie.assetIds.includes(assetId)) {
-            await this.assetsRepository.removeAsset(movieId, assetId)
-            return {}
-        }
-
-        const hasPendingAsset = await this.assetsRepository.hasAsset(movieId, assetId)
-
-        if (!hasPendingAsset) {
-            throw new NotFoundException({ ...MovieErrors.AssetNotFound, notFoundAssetId: assetId })
-        }
-
-        const isUploaded = await this.assetsClient.isUploadComplete(assetId)
-
-        if (!isUploaded) {
-            throw new UnprocessableEntityException({ ...MovieErrors.AssetUploadInvalid, assetId })
-        }
-
-        await this.assetsClient.complete(assetId, {
-            owner: { service: 'movies', entityId: movieId }
-        })
-
-        await this.assetsRepository.removeAsset(movieId, assetId)
-        await this.moviesRepository.addAsset(movieId, assetId)
-
-        return {}
+    async update(movieId: string, updateDto: UpsertMovieDto) {
+        const movie = await this.moviesRepository.update(movieId, updateDto)
+        return this.toDto(movie)
     }
 
     private async toDto(movie: Movie): Promise<MovieDto> {

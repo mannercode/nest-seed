@@ -1,6 +1,6 @@
-import { HardDeleteSample, SoftDeleteSample } from './mongoose-delete.fixture'
-import type { MongooseDeleteFixture } from './mongoose-delete.fixture'
 import type { HydratedDocument } from 'mongoose'
+import type { MongooseDeleteFixture } from './mongoose-delete.fixture'
+import { HardDeleteSample, SoftDeleteSample } from './mongoose-delete.fixture'
 
 describe('Mongoose Delete', () => {
     describe('Soft Delete', () => {

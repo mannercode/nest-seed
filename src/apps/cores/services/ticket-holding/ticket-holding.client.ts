@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, InjectClientProxy } from 'common'
+import { ClientProxyService } from 'common'
+import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
 import { HoldTicketsDto } from './dtos'
 
@@ -11,14 +12,14 @@ export class TicketHoldingClient {
         return this.proxy.request(Messages.TicketHolding.holdTickets, holdDto)
     }
 
-    searchHeldTicketIds(showtimeId: string, customerId: string): Promise<string[]> {
-        return this.proxy.request(Messages.TicketHolding.searchHeldTicketIds, {
-            showtimeId,
-            customerId
-        })
+    async releaseTickets(showtimeId: string, customerId: string): Promise<void> {
+        await this.proxy.request(Messages.TicketHolding.releaseTickets, { customerId, showtimeId })
     }
 
-    releaseTickets(showtimeId: string, customerId: string): Promise<boolean> {
-        return this.proxy.request(Messages.TicketHolding.releaseTickets, { showtimeId, customerId })
+    searchHeldTicketIds(showtimeId: string, customerId: string): Promise<string[]> {
+        return this.proxy.request(Messages.TicketHolding.searchHeldTicketIds, {
+            customerId,
+            showtimeId
+        })
     }
 }

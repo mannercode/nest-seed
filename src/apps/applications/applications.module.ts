@@ -1,5 +1,6 @@
 import { BullModule } from '@nestjs/bullmq'
 import { Module } from '@nestjs/common'
+import { QueueOptions } from 'bullmq'
 import Redis from 'ioredis'
 import { CommonModule, getProjectId, RedisConfigModule } from 'shared'
 import { HealthModule } from './modules'
@@ -16,11 +17,11 @@ import {
         RedisConfigModule,
         HealthModule,
         BullModule.forRootAsync('queue', {
+            inject: [RedisConfigModule.moduleName],
             useFactory: (redis: Redis) => ({
-                prefix: `{queue:${getProjectId()}}`,
-                connection: redis
-            }),
-            inject: [RedisConfigModule.moduleName]
+                connection: redis as QueueOptions['connection'],
+                prefix: `{queue:${getProjectId()}}`
+            })
         }),
         ShowtimeCreationModule,
         RecommendationModule,

@@ -4,27 +4,27 @@ import { PartialDateTimeRange } from 'common'
 
 export class SearchShowtimesDto {
     @IsOptional()
+    @Type(() => PartialDateTimeRange)
+    @ValidateNested()
+    endTimeRange?: PartialDateTimeRange
+
     @IsArray()
+    @IsOptional()
+    @IsString({ each: true })
+    movieIds?: string[]
+
+    @IsArray()
+    @IsOptional()
     @IsString({ each: true })
     sagaIds?: string[]
 
     @IsOptional()
-    @IsArray()
-    @IsString({ each: true })
-    movieIds?: string[]
-
-    @IsOptional()
-    @IsArray()
-    @IsString({ each: true })
-    theaterIds?: string[]
-
-    @IsOptional()
-    @ValidateNested()
     @Type(() => PartialDateTimeRange)
+    @ValidateNested()
     startTimeRange?: PartialDateTimeRange
 
+    @IsArray()
     @IsOptional()
-    @ValidateNested()
-    @Type(() => PartialDateTimeRange)
-    endTimeRange?: PartialDateTimeRange
+    @IsString({ each: true })
+    theaterIds?: string[]
 }

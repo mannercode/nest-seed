@@ -12,7 +12,7 @@ export class RecommendationService {
         private readonly watchRecordsClient: WatchRecordsClient
     ) {}
 
-    async searchRecommendedMovies(customerId: string | null) {
+    async searchRecommendedMovies(customerId: null | string) {
         const startTime = DateUtil.add({ minutes: Rules.Ticket.purchaseCutoffMinutes })
 
         const showingMovieIds = await this.showtimesClient.searchMovieIds({
@@ -25,8 +25,8 @@ export class RecommendationService {
         if (customerId) {
             const { items } = await this.watchRecordsClient.searchPage({
                 customerId,
-                take: 50,
-                orderby: { name: 'watchDate', direction: OrderDirection.Desc }
+                orderby: { direction: OrderDirection.Desc, name: 'watchDate' },
+                take: 50
             })
             const movieIds = items.map((record) => record.movieId)
             watchedMovies = await this.moviesClient.getMany(movieIds)

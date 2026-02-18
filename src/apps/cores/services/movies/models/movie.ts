@@ -1,5 +1,5 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, createMongooseSchema } from 'common'
+import { createMongooseSchema, MongooseSchema } from 'common'
 import { MongooseConfigModule, Rules } from 'shared'
 
 export enum MovieGenre {
@@ -15,12 +15,12 @@ export enum MovieGenre {
 }
 
 export enum MovieRating {
-    Unrated = 'Unrated',
     G = 'G',
+    NC17 = 'NC17',
     PG = 'PG',
     PG13 = 'PG13',
     R = 'R',
-    NC17 = 'NC17'
+    Unrated = 'Unrated'
 }
 
 function required(this: Movie) {
@@ -31,59 +31,59 @@ const { defaults } = Rules.Movie
 
 @Schema(MongooseConfigModule.schemaOptions)
 export class Movie extends MongooseSchema {
-    @Prop({ required, default: defaults.title })
-    title: string
+    @Prop({ default: [], type: [String] })
+    assetIds: string[]
 
-    @Prop({ required, default: defaults.plot })
-    plot: string
-
-    @Prop({ required, default: defaults.director })
+    @Prop({ default: defaults.director, required })
     director: string
 
-    @Prop({ default: defaults.releaseDate })
-    releaseDate: Date
+    @Prop({ default: false, required: true })
+    isPublished: boolean
 
     @Prop({
         default: defaults.durationInSeconds,
         validate: {
-            validator: function (this: Movie, value: number) {
+            message: 'Published movies must have a duration of at least 1 second',
+            validator(this: Movie, value: number) {
                 return !this.isPublished || value > 0
-            },
-            message: 'Published movies must have a duration of at least 1 second'
+            }
         }
     })
     durationInSeconds: number
 
     @Prop({
-        enum: MovieRating,
-        default: defaults.rating,
-        validate: {
-            validator: function (this: Movie, value: MovieRating) {
-                return !this.isPublished || value !== defaults.rating
-            },
-            message: 'Published movies cannot be unrated'
-        }
-    })
-    rating: MovieRating
-
-    @Prop({
+        default: [],
+        enum: MovieGenre,
         required,
         type: [String],
-        enum: MovieGenre,
-        default: [],
         validate: {
-            validator: function (this: Movie, value: MovieGenre[]) {
+            message: 'Published movies must have at least one genre',
+            validator(this: Movie, value: MovieGenre[]) {
                 return !this.isPublished || value.length > 0
-            },
-            message: 'Published movies must have at least one genre'
+            }
         }
     })
     genres: MovieGenre[]
 
-    @Prop({ type: [String], default: [] })
-    assetIds: string[]
+    @Prop({ default: defaults.plot, required })
+    plot: string
 
-    @Prop({ required: true, default: false })
-    isPublished: boolean
+    @Prop({
+        default: defaults.rating,
+        enum: MovieRating,
+        validate: {
+            message: 'Published movies cannot be unrated',
+            validator(this: Movie, value: MovieRating) {
+                return !this.isPublished || value !== defaults.rating
+            }
+        }
+    })
+    rating: MovieRating
+
+    @Prop({ default: defaults.releaseDate })
+    releaseDate: Date
+
+    @Prop({ default: defaults.title, required })
+    title: string
 }
 export const MovieSchema = createMongooseSchema(Movie)

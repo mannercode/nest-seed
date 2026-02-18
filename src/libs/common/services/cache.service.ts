@@ -1,4 +1,5 @@
-import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
+import { DynamicModule } from '@nestjs/common'
+import { Inject, Injectable, Module } from '@nestjs/common'
 import Redis from 'ioredis'
 import { defaultTo } from 'lodash'
 import { getRedisConnectionToken } from '../redis'
@@ -14,8 +15,32 @@ export class CacheService {
         return `CacheService_${defaultTo(name, 'default')}`
     }
 
-    private getKey(key: string) {
-        return `${this.prefix}:${key}`
+    async delete(key: string) {
+        await this.redis.del(this.getKey(key))
+    }
+
+    /**
+     * Runs a Lua script with namespaced keys.
+     * The cache prefix is always inserted as the first ARGV value.
+     */
+    async executeScript<T = unknown>(
+        script: string,
+        keys: string[],
+        scriptArgs: string[]
+    ): Promise<T> {
+        const result = await this.redis.eval(
+            script,
+            keys.length,
+            ...keys.map(this.getKey.bind(this)),
+            this.prefix,
+            ...scriptArgs
+        )
+        return result as T
+    }
+
+    async get(key: string): Promise<null | string> {
+        const value = await this.redis.get(this.getKey(key))
+        return value
     }
 
     async set(key: string, value: string, ttlMs = 0) {
@@ -30,46 +55,29 @@ export class CacheService {
         }
     }
 
-    async get(key: string): Promise<string | null> {
-        const value = await this.redis.get(this.getKey(key))
-        return value
-    }
-
-    async delete(key: string) {
-        await this.redis.del(this.getKey(key))
-    }
-
-    async executeScript(script: string, keys: string[], args: string[]): Promise<any> {
-        const result = await this.redis.eval(
-            script,
-            keys.length,
-            ...keys.map(this.getKey.bind(this)),
-            this.prefix,
-            ...args
-        )
-        return result
+    private getKey(key: string) {
+        return `${this.prefix}:${key}`
     }
 }
+
+export type CacheModuleOptions = { name?: string; prefix: string; redisName?: string }
 
 export function InjectCache(name?: string): ParameterDecorator {
     return Inject(CacheService.getName(name))
 }
 
-export type CacheModuleOptions = { name?: string; redisName?: string; prefix: string }
-
 @Module({})
 export class CacheModule {
     static register(options: CacheModuleOptions): DynamicModule {
-        const { name, redisName, prefix } = options
+        const { name, prefix, redisName } = options
 
         const provider = {
+            inject: [getRedisConnectionToken(redisName)],
             provide: CacheService.getName(name),
-            useFactory: async (redis: Redis) => {
-                return new CacheService(redis, `${prefix}:${defaultTo(name, 'default')}`)
-            },
-            inject: [getRedisConnectionToken(redisName)]
+            useFactory: async (redis: Redis) =>
+                new CacheService(redis, `${prefix}:${defaultTo(name, 'default')}`)
         }
 
-        return { module: CacheModule, providers: [provider], exports: [provider] }
+        return { exports: [provider], module: CacheModule, providers: [provider] }
     }
 }

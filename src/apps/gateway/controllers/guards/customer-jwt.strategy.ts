@@ -8,8 +8,8 @@ import { AppConfigService } from 'shared'
 export class CustomerJwtStrategy extends PassportStrategy(Strategy, 'customer-jwt') {
     constructor(readonly config: AppConfigService) {
         super({
-            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
+            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             secretOrKey: config.auth.accessSecret
         })
     }

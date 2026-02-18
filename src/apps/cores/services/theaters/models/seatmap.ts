@@ -2,12 +2,12 @@ import { Type } from 'class-transformer'
 import { IsNotEmpty, IsNumber, IsString, ValidateNested } from 'class-validator'
 
 export class Seat {
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     block: string
 
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     row: string
 
     @IsNumber()
@@ -15,28 +15,28 @@ export class Seat {
 }
 
 export class SeatRow {
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     name: string
 
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     seats: string
 }
 
 export class SeatBlock {
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     name: string
 
-    @ValidateNested({ each: true })
     @Type(() => SeatRow)
+    @ValidateNested({ each: true })
     rows: SeatRow[]
 }
 
 export class Seatmap {
-    @ValidateNested({ each: true })
     @Type(() => SeatBlock)
+    @ValidateNested({ each: true })
     blocks: SeatBlock[]
 
     static getAllSeats(seatmap: Seatmap) {

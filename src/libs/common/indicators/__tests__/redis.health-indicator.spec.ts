@@ -29,7 +29,7 @@ describe('RedisHealthIndicator', () => {
             // 오류 메시지와 함께 down 상태를 반환한다
             it('returns a down status with the error message', async () => {
                 const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
-                expect(healthStatus).toEqual({ key: { status: 'down', reason: 'error' } })
+                expect(healthStatus).toEqual({ key: { reason: 'error', status: 'down' } })
             })
         })
 
@@ -42,7 +42,7 @@ describe('RedisHealthIndicator', () => {
             // 원시 오류를 reason으로 반환한다
             it('returns the raw error as the reason', async () => {
                 const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
-                expect(healthStatus).toEqual({ key: { status: 'down', reason: 'unknown error' } })
+                expect(healthStatus).toEqual({ key: { reason: 'unknown error', status: 'down' } })
             })
         })
     })

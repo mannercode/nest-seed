@@ -15,6 +15,16 @@ export class AssetsRepository extends MongooseRepository<Asset> {
         super(model, MongooseConfigModule.maxTake)
     }
 
+    async assignOwner(assetId: string, owner: { entityId: string; service: string }) {
+        const asset = await this.getDocumentById(assetId)
+        asset.ownerService = owner.service
+        asset.ownerEntityId = owner.entityId
+
+        await asset.save()
+
+        return asset.toJSON()
+    }
+
     async create(createDto: CreateAssetDto) {
         const asset = this.newDocument()
         asset.originalName = createDto.originalName
@@ -27,19 +37,9 @@ export class AssetsRepository extends MongooseRepository<Asset> {
         return asset.toJSON()
     }
 
-    async findExpiredUncompleted(expireBefore: Date): Promise<Asset[]> {
+    async findExpiredIncomplete(expiresBefore: Date): Promise<Asset[]> {
         return this.model
-            .find({ ownerService: null, ownerEntityId: null, createdAt: { $lte: expireBefore } })
+            .find({ createdAt: { $lte: expiresBefore }, ownerEntityId: null, ownerService: null })
             .lean({ virtuals: true })
-    }
-
-    async assignOwner(assetId: string, owner: { service: string; entityId: string }) {
-        const asset = await this.getDocumentById(assetId)
-        asset.ownerService = owner.service
-        asset.ownerEntityId = owner.entityId
-
-        await asset.save()
-
-        return asset.toJSON()
     }
 }

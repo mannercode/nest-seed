@@ -67,15 +67,15 @@ describe('CacheService', () => {
 
         // TTL이 음수일 때
         describe('when the TTL is negative', () => {
-            let wrongTTL: number
+            let invalidTtl: number
 
             beforeEach(() => {
-                wrongTTL = -100
+                invalidTtl = -100
             })
 
             // 예외를 던진다
             it('throws', async () => {
-                await expect(fix.cacheService.set('key', 'value', wrongTTL)).rejects.toThrow(
+                await expect(fix.cacheService.set('key', 'value', invalidTtl)).rejects.toThrow(
                     'TTL must be a non-negative integer (0 for no expiration)'
                 )
             })

@@ -10,6 +10,7 @@ import { Customer, CustomerSchema } from './models'
 import { CustomerAuthenticationService } from './services'
 
 @Module({
+    controllers: [CustomersController],
     imports: [
         MongooseModule.forFeature(
             [{ name: Customer.name, schema: CustomerSchema }],
@@ -17,8 +18,9 @@ import { CustomerAuthenticationService } from './services'
         ),
         PassportModule,
         JwtAuthModule.register({
-            redisName: RedisConfigModule.connectionName,
+            inject: [AppConfigService],
             prefix: `jwtauth:${getProjectId()}`,
+            redisName: RedisConfigModule.connectionName,
             useFactory: ({ auth }: AppConfigService) => ({
                 auth: {
                     accessSecret: auth.accessSecret,
@@ -26,11 +28,9 @@ import { CustomerAuthenticationService } from './services'
                     refreshSecret: auth.refreshSecret,
                     refreshTokenTtlMs: Time.toMs(auth.refreshTokenExpiration)
                 }
-            }),
-            inject: [AppConfigService]
+            })
         })
     ],
-    providers: [CustomersService, CustomerAuthenticationService, CustomersRepository],
-    controllers: [CustomersController]
+    providers: [CustomersService, CustomerAuthenticationService, CustomersRepository]
 })
 export class CustomersModule {}

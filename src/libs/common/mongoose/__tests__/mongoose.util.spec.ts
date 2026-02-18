@@ -1,14 +1,14 @@
 import { BadRequestException, Logger } from '@nestjs/common'
 import { Prop, Schema } from '@nestjs/mongoose'
 import {
+    assignDefined,
     createMongooseSchema,
     mapDocToDto,
     MongooseSchema,
     newObjectIdString,
     objectId,
     objectIds,
-    QueryBuilder,
-    assignDefined
+    QueryBuilder
 } from 'common'
 import { model, Types } from 'mongoose'
 
@@ -74,7 +74,7 @@ describe('objectIds', () => {
 })
 
 describe('QueryBuilder', () => {
-    type TestModel = { _id: Types.ObjectId; entityId: string; name: string; createdAt: Date }
+    type TestModel = { _id: Types.ObjectId; createdAt: Date; entityId: string; name: string }
 
     let builder: QueryBuilder<TestModel>
 
@@ -187,7 +187,7 @@ describe('QueryBuilder', () => {
         describe('when start and end are provided', () => {
             // $gte와 $lte 조건을 추가한다
             it('adds $gte and $lte conditions', () => {
-                const range = { start: new Date('2023-01-01'), end: new Date('2023-12-31') }
+                const range = { end: new Date('2023-12-31'), start: new Date('2023-01-01') }
                 builder.addRange('createdAt', range)
                 expect(builder.build({})).toEqual({
                     createdAt: { $gte: range.start, $lte: range.end }
@@ -327,8 +327,8 @@ describe('assignDefined', () => {
     describe('when source[key] is null', () => {
         // null을 정의된 값으로 취급한다
         it('treats null as defined', () => {
-            const target = { email: 'old' as string | null }
-            const source = { email: null as string | null | undefined }
+            const target = { email: 'old' as null | string }
+            const source = { email: null as null | string | undefined }
 
             assignDefined(target, source, 'email')
 

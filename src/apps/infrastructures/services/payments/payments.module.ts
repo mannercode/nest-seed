@@ -7,13 +7,13 @@ import { PaymentsRepository } from './payments.repository'
 import { PaymentsService } from './payments.service'
 
 @Module({
+    controllers: [PaymentsController],
     imports: [
         MongooseModule.forFeature(
             [{ name: Payment.name, schema: PaymentSchema }],
             MongooseConfigModule.connectionName
         )
     ],
-    providers: [PaymentsService, PaymentsRepository],
-    controllers: [PaymentsController]
+    providers: [PaymentsService, PaymentsRepository]
 })
 export class PaymentsModule {}

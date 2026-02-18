@@ -1,33 +1,43 @@
-import { Server } from 'http'
 import {
     CanActivate,
     ExecutionContext,
     INestApplication,
-    Injectable,
     ModuleMetadata,
     Type
 } from '@nestjs/common'
-import { Test, TestingModule } from '@nestjs/testing'
+import { Injectable } from '@nestjs/common'
+import { TestingModule } from '@nestjs/testing'
+import { Test } from '@nestjs/testing'
+import { Server } from 'http'
 import { isDebuggingEnabled } from './utils'
 
 export type ModuleMetadataEx = ModuleMetadata & {
+    configureApp?: (app: INestApplication<Server>) => Promise<void>
     ignoreGuards?: Type<CanActivate>[]
     ignoreProviders?: Type<any>[]
     overrideProviders?: { original: Type<any>; replacement: any }[]
-    configureApp?: (app: INestApplication<Server>) => Promise<void>
 }
 
 export type TestContext = {
-    module: TestingModule
     app: INestApplication<Server>
     close: () => Promise<void>
+    module: TestingModule
 }
 
+class NullGuard implements CanActivate {
+    canActivate(_context: ExecutionContext): boolean {
+        return true
+    }
+}
+
+@Injectable()
+class NullProvider {}
+
 export async function createTestContext({
+    configureApp,
     ignoreGuards,
     ignoreProviders,
     overrideProviders,
-    configureApp,
     ...metadata
 }: ModuleMetadataEx): Promise<TestContext> {
     ignoreProviders?.forEach((provider) => {
@@ -60,14 +70,5 @@ export async function createTestContext({
         await app.close()
     }
 
-    return { module, app, close }
+    return { app, close, module }
 }
-
-class NullGuard implements CanActivate {
-    canActivate(_context: ExecutionContext): boolean {
-        return true
-    }
-}
-
-@Injectable()
-class NullProvider {}

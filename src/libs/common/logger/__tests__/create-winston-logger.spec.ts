@@ -1,7 +1,7 @@
-import { readFile } from 'fs/promises'
-import { createWinstonLogger, Path, sleep } from 'common'
-import { isDebuggingEnabled } from 'testlib'
 import type winston from 'winston'
+import { createWinstonLogger, Path, sleep } from 'common'
+import { readFile } from 'fs/promises'
+import { isDebuggingEnabled } from 'testlib'
 
 describe('createWinstonLogger', () => {
     let logger: winston.Logger
@@ -11,10 +11,10 @@ describe('createWinstonLogger', () => {
         tempDir = await Path.createTempDirectory()
 
         logger = createWinstonLogger({
-            directory: tempDir,
+            consoleLogLevel: isDebuggingEnabled() ? 'verbose' : 'silent',
             daysToKeepLogs: '1d',
-            fileLogLevel: 'verbose',
-            consoleLogLevel: isDebuggingEnabled() ? 'verbose' : 'silent'
+            directory: tempDir,
+            fileLogLevel: 'verbose'
         })
     })
 
@@ -46,10 +46,10 @@ describe('createWinstonLogger', () => {
         const message = 'test message'
         const logDetails = {
             contextType: 'http',
-            statusCode: 500,
-            request: { method: 'GET', url: '/exception', body: 'body' },
+            request: { body: 'body', method: 'GET', url: '/exception' },
             response: { code: 'ERR_CODE', message: 'message' },
-            stack: 'stack...'
+            stack: 'stack...',
+            statusCode: 500
         }
 
         logger.info(message, [logDetails])
@@ -69,8 +69,8 @@ describe('createWinstonLogger', () => {
     it('writes an RPC log entry', async () => {
         const message = 'test message'
         const logDetails = {
-            contextType: 'rpc',
             context: { args: ['subject'] },
+            contextType: 'rpc',
             data: {},
             response: { code: 'ERR_CODE', message: 'message' },
             stack: 'stack...'

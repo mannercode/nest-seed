@@ -22,20 +22,42 @@ import { Expect } from 'common'
 import { CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
 import { CustomerAuthRequest } from './types'
 
-@UseGuards(CustomerJwtAuthGuard)
 @Controller('customers')
+@UseGuards(CustomerJwtAuthGuard)
 export class CustomersController {
     constructor(private readonly customersClient: CustomersClient) {}
 
-    @Public()
     @Post()
+    @Public()
     async create(@Body() createDto: CreateCustomerDto) {
         return this.customersClient.create(createDto)
     }
 
-    @Patch(':customerId')
-    async update(@Param('customerId') customerId: string, @Body() updateDto: UpdateCustomerDto) {
-        return this.customersClient.update(customerId, updateDto)
+    @Delete(':customerId')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async delete(@Param('customerId') customerId: string) {
+        await this.customersClient.deleteMany([customerId])
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post('login')
+    @UseGuards(CustomerLocalAuthGuard)
+    async login(@Req() req: CustomerAuthRequest) {
+        Expect.defined(req.user, 'req.user must be returned in LocalStrategy.validate')
+
+        return this.customersClient.generateAuthTokens(req.user)
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post('refresh')
+    @Public()
+    async refreshToken(@Body('refreshToken') refreshToken: string) {
+        return this.customersClient.refreshAuthTokens(refreshToken)
+    }
+
+    @Get()
+    async searchPage(@Query() searchDto: SearchCustomersPageDto) {
+        return this.customersClient.searchPage(searchDto)
     }
 
     @Get('jwt-guard')
@@ -45,34 +67,12 @@ export class CustomersController {
 
     @Get(':customerId')
     async get(@Param('customerId') customerId: string) {
-        const customers = await this.customersClient.getMany([customerId])
-        return customers[0]
+        const [customer] = await this.customersClient.getMany([customerId])
+        return customer
     }
 
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @Delete(':customerId')
-    async delete(@Param('customerId') customerId: string) {
-        await this.customersClient.deleteMany([customerId])
-    }
-
-    @Get()
-    async searchPage(@Query() searchDto: SearchCustomersPageDto) {
-        return this.customersClient.searchPage(searchDto)
-    }
-
-    @UseGuards(CustomerLocalAuthGuard)
-    @HttpCode(HttpStatus.OK)
-    @Post('login')
-    async login(@Req() req: CustomerAuthRequest) {
-        Expect.defined(req.user, 'req.user must be returned in LocalStrategy.validate')
-
-        return this.customersClient.generateAuthTokens(req.user)
-    }
-
-    @Public()
-    @HttpCode(HttpStatus.OK)
-    @Post('refresh')
-    async refreshToken(@Body('refreshToken') refreshToken: string) {
-        return this.customersClient.refreshAuthTokens(refreshToken)
+    @Patch(':customerId')
+    async update(@Param('customerId') customerId: string, @Body() updateDto: UpdateCustomerDto) {
+        return this.customersClient.update(customerId, updateDto)
     }
 }

@@ -1,3 +1,6 @@
+import type { AppTestContext } from 'apps/__tests__/__helpers__'
+import type { TheaterLocation } from 'apps/cores'
+import type { TestContext } from 'testlib'
 import {
     createAndLoginCustomer,
     createAppTestContext,
@@ -24,28 +27,27 @@ import {
 } from 'apps/cores'
 import { BookingController, CustomerJwtStrategy } from 'apps/gateway'
 import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
-import type { AppTestContext } from 'apps/__tests__/__helpers__'
-import type { TheaterLocation } from 'apps/cores'
-import type { TestContext } from 'testlib'
+
+export type BookingFixture = AppTestContext
 
 export async function createAllResources(
     ctx: TestContext,
     locations: TheaterLocation[],
     startTimes: Date[]
 ) {
-    const { customer, accessToken, refreshToken } = await createAndLoginCustomer(ctx)
+    const { accessToken, customer, refreshToken } = await createAndLoginCustomer(ctx)
 
     const movie = await createMovie(ctx)
 
     const seatmap = { blocks: [{ name: 'A', rows: [{ name: '1', seats: 'OOOOOOOO' }] }] }
     const theaters = await Promise.all(
-        locations.map((location) => createTheater(ctx, { seatmap, location }))
+        locations.map((location) => createTheater(ctx, { location, seatmap }))
     )
 
     const showtimes = await createShowtimes(
         ctx,
         theaters.flatMap((theater) =>
-            startTimes.map((startTime) => ({ movieId: movie.id, theaterId: theater.id, startTime }))
+            startTimes.map((startTime) => ({ movieId: movie.id, startTime, theaterId: theater.id }))
         )
     )
 
@@ -53,21 +55,20 @@ export async function createAllResources(
         ctx,
         showtimes.flatMap(({ id, movieId, theaterId }) =>
             Seatmap.getAllSeats(seatmap).map((seat) => ({
-                showtimeId: id,
                 movieId,
-                theaterId,
-                seat
+                seat,
+                showtimeId: id,
+                theaterId
             }))
         )
     )
 
-    return { customer, accessToken, refreshToken, movie, theaters, showtimes, tickets }
+    return { accessToken, customer, movie, refreshToken, showtimes, theaters, tickets }
 }
-
-export type BookingFixture = AppTestContext
 
 export async function createBookingFixture(): Promise<BookingFixture> {
     const ctx = await createAppTestContext({
+        controllers: [BookingController],
         imports: [
             MoviesModule,
             AssetsModule,
@@ -90,8 +91,7 @@ export async function createBookingFixture(): Promise<BookingFixture> {
             TicketsClient,
             BookingClient,
             AssetsClient
-        ],
-        controllers: [BookingController]
+        ]
     })
 
     return { ...ctx }

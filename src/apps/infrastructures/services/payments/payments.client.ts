@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, InjectClientProxy } from 'common'
+import { ClientProxyService } from 'common'
+import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
 import { CreatePaymentDto, PaymentDto } from './dtos'
 

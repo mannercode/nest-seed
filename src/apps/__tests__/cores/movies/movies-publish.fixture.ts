@@ -1,20 +1,20 @@
+import type { AppTestContext } from 'apps/__tests__/__helpers__'
+import type { MovieDto } from 'apps/cores'
+import type { TestContext } from 'testlib'
 import { createAppTestContext } from 'apps/__tests__/__helpers__'
 import { RecommendationClient } from 'apps/applications'
 import { MoviesClient, MoviesModule } from 'apps/cores'
 import { MoviesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
-import type { AppTestContext } from 'apps/__tests__/__helpers__'
-import type { MovieDto } from 'apps/cores'
-import type { TestContext } from 'testlib'
 
 export type MoviesPublishFixture = AppTestContext & { moviesClient: MoviesClient }
 
 export async function createMoviesPublishFixture() {
     const ctx = await createAppTestContext({
-        imports: [MoviesModule, AssetsModule],
-        providers: [MoviesClient, AssetsClient],
+        controllers: [MoviesController],
         ignoreProviders: [RecommendationClient],
-        controllers: [MoviesController]
+        imports: [MoviesModule, AssetsModule],
+        providers: [MoviesClient, AssetsClient]
     })
 
     const moviesClient = ctx.module.get(MoviesClient)

@@ -1,28 +1,29 @@
 import { Module } from '@nestjs/common'
-import { getRedisConnectionToken, RedisModule, RedisModuleOptions } from 'common'
+import { RedisModuleOptions } from 'common'
+import { getRedisConnectionToken, RedisModule } from 'common'
 import { AppConfigService } from '../config'
 
 @Module({
     imports: [
         RedisModule.forRootAsync(
             {
+                inject: [AppConfigService],
                 useFactory: (config: AppConfigService) => {
                     const { nodes } = config.redis
-                    const redisOptions: RedisModuleOptions = { type: 'cluster', nodes }
+                    const redisOptions: RedisModuleOptions = { nodes, type: 'cluster' }
                     return redisOptions
-                },
-                inject: [AppConfigService]
+                }
             },
             RedisConfigModule.connectionName
         )
     ]
 })
 export class RedisConfigModule {
-    static get moduleName() {
-        return getRedisConnectionToken(this.connectionName)
-    }
-
     static get connectionName() {
         return 'redis-connection'
+    }
+
+    static get moduleName() {
+        return getRedisConnectionToken(this.connectionName)
     }
 }

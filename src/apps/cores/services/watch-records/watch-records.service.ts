@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { mapDocToDto } from 'common'
-import { CreateWatchRecordDto, SearchWatchRecordsPageDto, WatchRecordDto } from './dtos'
+import { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos'
+import { WatchRecordDto } from './dtos'
 import { WatchRecord } from './models'
 import { WatchRecordsRepository } from './watch-records.repository'
 
@@ -30,7 +31,7 @@ export class WatchRecordsService {
                 'id',
                 'customerId',
                 'movieId',
-                'purchaseId',
+                'purchaseRecordId',
                 'watchDate'
             ])
         )

@@ -1,5 +1,6 @@
 import { OrderDirection, pickIds } from 'common'
 import { expectEqualUnsorted, nullObjectId } from 'testlib'
+import type { MongooseRepositoryFixture, SampleDto } from './mongoose.repository.fixture'
 import {
     createSample,
     createSamples,
@@ -9,7 +10,6 @@ import {
     toDto,
     toDtos
 } from './mongoose.repository.fixture'
-import type { MongooseRepositoryFixture, SampleDto } from './mongoose.repository.fixture'
 
 describe('MongooseRepository', () => {
     let fix: MongooseRepositoryFixture
@@ -52,9 +52,7 @@ describe('MongooseRepository', () => {
                 return doc
             })
 
-            const saveSucceeded = await fix.repository.saveMany(docs)
-
-            expect(saveSucceeded).toBe(true)
+            await expect(fix.repository.saveMany(docs)).resolves.toBeUndefined()
         })
 
         // 필수 필드가 없으면 예외를 던진다
@@ -80,20 +78,20 @@ describe('MongooseRepository', () => {
             const skip = 10
             const take = 5
             const { items, ...pagination } = await fix.repository.findWithPagination({
-                pagination: { skip, take, orderby: { name: 'name', direction: OrderDirection.Asc } }
+                pagination: { orderby: { direction: OrderDirection.Asc, name: 'name' }, skip, take }
             })
 
             sortByName(samples)
             expect(samples.slice(skip, skip + take)).toEqual(toDtos(items))
-            expect(pagination).toEqual({ total: samples.length, skip, take })
+            expect(pagination).toEqual({ skip, take, total: samples.length })
         })
 
         // 오름차순으로 정렬한다
         it('sorts in ascending order', async () => {
             const { items } = await fix.repository.findWithPagination({
                 pagination: {
-                    take: samples.length,
-                    orderby: { name: 'name', direction: OrderDirection.Asc }
+                    orderby: { direction: OrderDirection.Asc, name: 'name' },
+                    take: samples.length
                 }
             })
 
@@ -105,8 +103,8 @@ describe('MongooseRepository', () => {
         it('sorts in descending order', async () => {
             const { items } = await fix.repository.findWithPagination({
                 pagination: {
-                    take: samples.length,
-                    orderby: { name: 'name', direction: OrderDirection.Desc }
+                    orderby: { direction: OrderDirection.Desc, name: 'name' },
+                    take: samples.length
                 }
             })
 
@@ -135,7 +133,7 @@ describe('MongooseRepository', () => {
             // 기본 take 값을 사용한다
             it('uses the default take value', async () => {
                 const { take } = await fix.repository.findWithPagination({
-                    pagination: { orderby: { name: 'name', direction: OrderDirection.Desc } }
+                    pagination: { orderby: { direction: OrderDirection.Desc, name: 'name' } }
                 })
 
                 expect(take).toEqual(maxTakeValue)
@@ -168,7 +166,7 @@ describe('MongooseRepository', () => {
         })
     })
 
-    describe('allExist', () => {
+    describe('existsAll', () => {
         let samples: SampleDto[]
 
         beforeEach(async () => {
@@ -180,7 +178,18 @@ describe('MongooseRepository', () => {
         describe('when all ids exist', () => {
             // true를 반환한다
             it('returns true', async () => {
-                const exists = await fix.repository.allExist(pickIds(samples))
+                const exists = await fix.repository.existsAll(pickIds(samples))
+                expect(exists).toBe(true)
+            })
+        })
+
+        // id에 중복이 포함될 때
+        describe('when ids contain duplicates', () => {
+            // true를 반환한다
+            it('returns true', async () => {
+                const [first] = samples
+                const exists = await fix.repository.existsAll([first.id, first.id])
+
                 expect(exists).toBe(true)
             })
         })
@@ -189,8 +198,17 @@ describe('MongooseRepository', () => {
         describe('when any id is missing', () => {
             // false를 반환한다
             it('returns false', async () => {
-                const exists = await fix.repository.allExist([nullObjectId])
+                const exists = await fix.repository.existsAll([nullObjectId])
                 expect(exists).toBe(false)
+            })
+        })
+
+        // id 배열이 비어 있을 때
+        describe('when ids are empty', () => {
+            // true를 반환한다
+            it('returns true', async () => {
+                const exists = await fix.repository.existsAll([])
+                expect(exists).toBe(true)
             })
         })
     })

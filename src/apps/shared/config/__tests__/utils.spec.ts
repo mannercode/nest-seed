@@ -5,7 +5,7 @@ describe('createMessagePatternMap', () => {
     describe('when mapping two levels', () => {
         // 점 구분 경로를 반환한다
         it('returns a dot-delimited path', () => {
-            const Messages = createMessagePatternMap({ Movies: { searchPage: null, create: null } })
+            const Messages = createMessagePatternMap({ Movies: { create: null, searchPage: null } })
 
             expect(Messages.Movies.searchPage).toEqual('Movies.searchPage')
         })
@@ -26,7 +26,7 @@ describe('createMessagePatternMap', () => {
         // prefix가 포함된 경로를 반환한다
         it('returns a prefixed path', () => {
             const Messages = createMessagePatternMap(
-                { Movies: { searchPage: null, create: null } },
+                { Movies: { create: null, searchPage: null } },
                 'Prefix'
             )
 

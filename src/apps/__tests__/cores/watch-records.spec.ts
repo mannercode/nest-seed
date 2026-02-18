@@ -1,7 +1,7 @@
+import type { SearchWatchRecordsPageDto, WatchRecordDto } from 'apps/cores'
 import { buildCreateWatchRecordDto, createWatchRecord } from 'apps/__tests__/__helpers__'
 import { oid } from 'testlib'
 import type { WatchRecordsFixture } from './watch-records.fixture'
-import type { SearchWatchRecordsPageDto, WatchRecordDto } from 'apps/cores'
 
 describe('WatchRecordsService', () => {
     let fix: WatchRecordsFixture
@@ -35,21 +35,21 @@ describe('WatchRecordsService', () => {
             ])
         })
 
-        const buildExpectedPage = (watchRecords: WatchRecordDto[]) => ({
+        const buildExpectedPage = (expectedRecords: WatchRecordDto[]) => ({
+            items: expect.arrayContaining(expectedRecords),
             skip: 0,
             take: expect.any(Number),
-            total: watchRecords.length,
-            items: expect.arrayContaining(watchRecords)
+            total: expectedRecords.length
         })
 
         // 필터가 제공될 때
         describe('when the filter is provided', () => {
             const queryAndExpect = async (
                 query: SearchWatchRecordsPageDto,
-                watchRecords: WatchRecordDto[]
+                expectedRecords: WatchRecordDto[]
             ) => {
-                const page = await fix.watchRecordsClient.searchPage(query)
-                expect(page).toEqual(buildExpectedPage(watchRecords))
+                const recordsPage = await fix.watchRecordsClient.searchPage(query)
+                expect(recordsPage).toEqual(buildExpectedPage(expectedRecords))
             }
 
             // customerId로 필터링된 기록을 반환한다

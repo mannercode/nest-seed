@@ -1,3 +1,4 @@
+import { S3ClientConfig } from '@aws-sdk/client-s3'
 import {
     DeleteObjectCommand,
     GetObjectCommand,
@@ -5,63 +6,63 @@ import {
     ListObjectsV2Command,
     PutObjectCommand,
     S3Client,
-    S3ClientConfig,
     S3ServiceException
 } from '@aws-sdk/client-s3'
-import { createPresignedPost, PresignedPost } from '@aws-sdk/s3-presigned-post'
+import { PresignedPost } from '@aws-sdk/s3-presigned-post'
+import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-import { DynamicModule, Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
+import { DynamicModule, OnModuleDestroy } from '@nestjs/common'
+import { Inject, Injectable, Module } from '@nestjs/common'
 import { defaultTo, some } from 'lodash'
 import { newObjectIdString } from '../mongoose'
 import { HttpUtil } from '../utils'
 
-export type S3PresignUrlOptions = { key: string; expiresInSec: number }
-export type S3PresignPostUploadOptions = S3PresignUrlOptions & {
-    contentType?: string
-    minContentLength?: number
-    maxContentLength?: number
-    // attachment; filename="a.txt"
-    contentDisposition?: string
-    metadata?: Record<string, string>
+export interface S3ClientFactoryConfig extends S3ClientConfig {
+    bucket: string
 }
-export type S3PresignPostUploadResult = PresignedPost
-export type S3UploadCompleteOptions = { key: string; contentType?: string; contentLength?: number }
-export type S3ObjectData = { data: Buffer; filename: string; contentType: string }
-export type S3DeleteObjectResult = { status: number; key: string }
+export type S3DeleteObjectResult = { key: string; status: number }
 export type S3ListObjectsOptions = {
-    prefix?: string
-    nextToken?: string
-    maxKeys?: number
     delimiter?: string
+    maxKeys?: number
+    nextToken?: string
+    prefix?: string
 }
-export type S3ObjectSummary = { key: string; lastModified?: Date; eTag?: string; size?: number }
 export type S3ListObjectsResult = {
-    contents: S3ObjectSummary[]
     commonPrefixes?: string[]
-    isTruncated: boolean
-    nextToken?: string
-    maxKeys?: number
-    prefix?: string
+    contents: S3ObjectSummary[]
     delimiter?: string
+    isTruncated: boolean
+    maxKeys?: number
+    nextToken?: string
+    prefix?: string
 }
-
-export type S3PresignDownloadOptions = S3PresignUrlOptions & {
+export type S3ObjectData = { contentType: string; data: Buffer; filename: string }
+export type S3ObjectModuleOptions = {
+    inject?: any[]
+    name?: string
+    useFactory: (...args: any[]) => Promise<S3ClientFactoryConfig> | S3ClientFactoryConfig
+}
+export type S3ObjectSummary = { eTag?: string; key: string; lastModified?: Date; size?: number }
+export type S3PresignDownloadOptions = {
     /** 다운로드 파일명 강제 */
     filename?: string
-    /** 다운로드 시 Content-Type 오버라이드 */
-    responseContentType?: string
     /** Content-Disposition 직접 지정 */
     responseContentDisposition?: string
+    /** 다운로드 시 Content-Type 오버라이드 */
+    responseContentType?: string
+} & S3PresignUrlOptions
+export type S3PresignPostUploadOptions = S3PresignUrlOptions & {
+    // attachment; filename="a.txt"
+    contentDisposition?: string
+    contentType?: string
+    maxContentLength?: number
+    metadata?: Record<string, string>
+    minContentLength?: number
 }
 
-/**
- * Compare Content-Type by base MIME type only (ignore params like `; charset=utf-8`).
- * Content-Type은 파라미터를 무시하고 base-type만 비교.
- * e.g. "application/json" === "application/json; charset=utf-8"
- */
-function normalizeContentType(v?: string) {
-    return v?.split(';', 1)[0].trim().toLowerCase()
-}
+export type S3PresignPostUploadResult = PresignedPost
+
+export type S3PresignUrlOptions = { expiresInSec: number; key: string }
 
 @Injectable()
 export class S3ObjectService implements OnModuleDestroy {
@@ -74,79 +75,16 @@ export class S3ObjectService implements OnModuleDestroy {
         return `S3ObjectService_${defaultTo(name, 'default')}`
     }
 
-    onModuleDestroy() {
-        this.s3.destroy()
-    }
-
-    async presignUploadPost(opts: S3PresignPostUploadOptions): Promise<S3PresignPostUploadResult> {
-        const {
-            key,
-            expiresInSec,
-            contentType,
-            minContentLength,
-            maxContentLength,
-            contentDisposition,
-            metadata
-        } = opts
-
-        const Fields: Record<string, string> = {}
-        const Conditions: any[] = []
-
-        if (contentType) {
-            Fields['Content-Type'] = contentType
-            Conditions.push(['eq', '$Content-Type', contentType])
-        }
-
-        if (contentDisposition) {
-            Fields['Content-Disposition'] = contentDisposition
-            Conditions.push(['eq', '$Content-Disposition', contentDisposition])
-        }
-
-        if (metadata) {
-            for (const [k, v] of Object.entries(metadata)) {
-                Fields[`x-amz-meta-${k}`] = v
-                Conditions.push(['eq', `$x-amz-meta-${k}`, v])
-            }
-        }
-
-        if (typeof minContentLength === 'number' || typeof maxContentLength === 'number') {
-            Conditions.push([
-                'content-length-range',
-                defaultTo(minContentLength, 0),
-                defaultTo(maxContentLength, 1024 * 1024 * 1024 * 1024)
-            ])
-        }
-
-        return createPresignedPost(this.s3, {
-            Bucket: this.bucket,
-            Key: key,
-            Expires: expiresInSec,
-            Fields,
-            Conditions
-        })
-    }
-
-    async presignDownloadUrl(opts: S3PresignDownloadOptions): Promise<string> {
-        const { key, expiresInSec, filename, responseContentType, responseContentDisposition } =
-            opts
-
-        const disposition = defaultTo(
-            responseContentDisposition,
-            filename ? HttpUtil.buildContentDisposition(filename) : undefined
+    async deleteObject(key: string): Promise<S3DeleteObjectResult> {
+        const { $metadata } = await this.s3.send(
+            new DeleteObjectCommand({ Bucket: this.bucket, Key: key })
         )
 
-        const command = new GetObjectCommand({
-            Bucket: this.bucket,
-            Key: key,
-            ResponseContentType: responseContentType,
-            ResponseContentDisposition: disposition
-        })
-
-        return getSignedUrl(this.s3, command, { expiresIn: expiresInSec })
+        return { key, status: defaultTo($metadata.httpStatusCode, 200) }
     }
 
-    async isUploadComplete(opts: S3UploadCompleteOptions): Promise<boolean> {
-        const { key, contentLength, contentType } = opts
+    async isUploadComplete(options: S3UploadCompleteOptions): Promise<boolean> {
+        const { contentLength, contentType, key } = options
 
         try {
             const { ContentLength, ContentType } = await this.s3.send(
@@ -178,79 +116,145 @@ export class S3ObjectService implements OnModuleDestroy {
         }
     }
 
-    async putObject(object: S3ObjectData): Promise<{ key: string }> {
-        const key = newObjectIdString()
-        const disposition = HttpUtil.buildContentDisposition(object.filename)
-
-        await this.s3.send(
-            new PutObjectCommand({
-                Bucket: this.bucket,
-                Key: key,
-                Body: object.data,
-                ContentType: object.contentType,
-                ContentDisposition: disposition
-            })
-        )
-
-        return { key }
-    }
-
-    async deleteObject(key: string): Promise<S3DeleteObjectResult> {
-        const { $metadata } = await this.s3.send(
-            new DeleteObjectCommand({ Bucket: this.bucket, Key: key })
-        )
-
-        return { status: defaultTo($metadata.httpStatusCode, 200), key }
-    }
-
     async listObjects(options: S3ListObjectsOptions): Promise<S3ListObjectsResult> {
         const result = await this.s3.send(
             new ListObjectsV2Command({
                 Bucket: this.bucket,
-                Prefix: options.prefix,
                 ContinuationToken: options.nextToken,
+                Delimiter: options.delimiter,
                 MaxKeys: options.maxKeys,
-                Delimiter: options.delimiter
+                Prefix: options.prefix
             })
         )
 
         const contents: S3ObjectSummary[] = defaultTo(result.Contents, [])
+            .filter((content) => typeof content.Key === 'string' && content.Key.length > 0)
             .map((content) => ({
-                key: defaultTo(content.Key, 'null'),
-                lastModified: content.LastModified as Date,
                 eTag: content.ETag?.replace(/^"+|"+$/g, ''),
+                key: content.Key as string,
+                lastModified: content.LastModified as Date,
                 size: content.Size
             }))
-            .filter((o) => o.key)
 
         const commonPrefixes: string[] = defaultTo(result.CommonPrefixes, [])
             .map((cp) => cp.Prefix)
             .filter((p): p is string => typeof p === 'string' && p.length > 0)
 
         return {
-            contents,
             commonPrefixes,
+            contents,
+            delimiter: defaultTo(result.Delimiter, options.delimiter),
             isTruncated: Boolean(result.IsTruncated),
-            nextToken: defaultTo(result.NextContinuationToken, undefined),
             maxKeys: defaultTo(result.MaxKeys, options.maxKeys),
-            prefix: defaultTo(result.Prefix, options.prefix),
-            delimiter: defaultTo(result.Delimiter, options.delimiter)
+            nextToken: defaultTo(result.NextContinuationToken, undefined),
+            prefix: defaultTo(result.Prefix, options.prefix)
         }
     }
+
+    onModuleDestroy() {
+        this.s3.destroy()
+    }
+
+    async presignDownloadUrl(options: S3PresignDownloadOptions): Promise<string> {
+        const { expiresInSec, filename, key, responseContentDisposition, responseContentType } =
+            options
+
+        const disposition = defaultTo(
+            responseContentDisposition,
+            filename ? HttpUtil.buildContentDisposition(filename) : undefined
+        )
+
+        const command = new GetObjectCommand({
+            Bucket: this.bucket,
+            Key: key,
+            ResponseContentDisposition: disposition,
+            ResponseContentType: responseContentType
+        })
+
+        return getSignedUrl(this.s3, command, { expiresIn: expiresInSec })
+    }
+
+    async presignUploadPost(
+        options: S3PresignPostUploadOptions
+    ): Promise<S3PresignPostUploadResult> {
+        const {
+            contentDisposition,
+            contentType,
+            expiresInSec,
+            key,
+            maxContentLength,
+            metadata,
+            minContentLength
+        } = options
+
+        const fields: Record<string, string> = {}
+        const conditions: any[] = []
+
+        if (contentType) {
+            fields['Content-Type'] = contentType
+            conditions.push(['eq', '$Content-Type', contentType])
+        }
+
+        if (contentDisposition) {
+            fields['Content-Disposition'] = contentDisposition
+            conditions.push(['eq', '$Content-Disposition', contentDisposition])
+        }
+
+        if (metadata) {
+            for (const [k, v] of Object.entries(metadata)) {
+                fields[`x-amz-meta-${k}`] = v
+                conditions.push(['eq', `$x-amz-meta-${k}`, v])
+            }
+        }
+
+        if (typeof minContentLength === 'number' || typeof maxContentLength === 'number') {
+            conditions.push([
+                'content-length-range',
+                defaultTo(minContentLength, 0),
+                defaultTo(maxContentLength, 1024 * 1024 * 1024 * 1024)
+            ])
+        }
+
+        return createPresignedPost(this.s3, {
+            Bucket: this.bucket,
+            Conditions: conditions,
+            Expires: expiresInSec,
+            Fields: fields,
+            Key: key
+        })
+    }
+
+    async putObject(object: S3ObjectData): Promise<{ key: string }> {
+        const key = newObjectIdString()
+        const disposition = HttpUtil.buildContentDisposition(object.filename)
+
+        await this.s3.send(
+            new PutObjectCommand({
+                Body: object.data,
+                Bucket: this.bucket,
+                ContentDisposition: disposition,
+                ContentType: object.contentType,
+                Key: key
+            })
+        )
+
+        return { key }
+    }
 }
+
+export type S3UploadCompleteOptions = { contentLength?: number; contentType?: string; key: string }
 
 export function InjectS3Object(name?: string): ParameterDecorator {
     return Inject(S3ObjectService.getName(name))
 }
 
-export interface S3ClientFactoryConfig extends S3ClientConfig {
-    bucket: string
-}
-
-export type S3ObjectModuleOptions = {
-    name?: string
-    useFactory: (...args: any[]) => Promise<S3ClientFactoryConfig> | S3ClientFactoryConfig
-    inject?: any[]
+/**
+ * Compare Content-Type by base MIME type only (ignore params like `; charset=utf-8`).
+ * Content-Type은 파라미터를 무시하고 base-type만 비교.
+ * e.g. "application/json" === "application/json; charset=utf-8"
+ */
+function normalizeContentType(v?: string) {
+    return v?.split(';', 1)[0].trim().toLowerCase()
 }
 
 @Module({})
@@ -260,16 +264,16 @@ export class S3ObjectModule {
         const inject = options.inject ?? []
 
         const provider = {
+            inject,
             provide: S3ObjectService.getName(name),
             useFactory: async (...args: any[]) => {
-                const { bucket, ...s3config } = await useFactory(...args)
+                const { bucket, ...s3Config } = await useFactory(...args)
 
-                const client = new S3Client(s3config)
+                const client = new S3Client(s3Config)
                 return new S3ObjectService(bucket, client)
-            },
-            inject
+            }
         }
 
-        return { module: S3ObjectModule, providers: [provider], exports: [provider] }
+        return { exports: [provider], module: S3ObjectModule, providers: [provider] }
     }
 }

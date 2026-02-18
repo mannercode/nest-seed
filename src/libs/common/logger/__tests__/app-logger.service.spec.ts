@@ -8,9 +8,9 @@ describe('AppLoggerService', () => {
 
     beforeEach(() => {
         winstonLogger = winston.createLogger({
-            silent: true,
-            level: '',
             format: winston.format.simple(),
+            level: '',
+            silent: true,
             transports: [new winston.transports.Console()]
         })
         appLoggerService = new AppLoggerService(winstonLogger)

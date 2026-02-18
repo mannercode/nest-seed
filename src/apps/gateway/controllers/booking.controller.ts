@@ -10,7 +10,8 @@ import {
     UseGuards
 } from '@nestjs/common'
 import { BookingClient } from 'apps/applications'
-import { DateUtil, LatLong, LatLongQuery } from 'common'
+import { LatLong } from 'common'
+import { DateUtil, LatLongQuery } from 'common'
 import { CustomerJwtAuthGuard } from './guards'
 import { CustomerAuthRequest } from './types'
 
@@ -18,12 +19,21 @@ import { CustomerAuthRequest } from './types'
 export class BookingController {
     constructor(private readonly bookingClient: BookingClient) {}
 
-    @Get('movies/:movieId/theaters')
-    async searchTheaters(
-        @Param('movieId') movieId: string,
-        @LatLongQuery('latLong') latLong: LatLong
+    @Get('showtimes/:showtimeId/tickets')
+    async getTicketsForShowtime(@Param('showtimeId') showtimeId: string) {
+        return this.bookingClient.getTickets(showtimeId)
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post('showtimes/:showtimeId/tickets/hold')
+    @UseGuards(CustomerJwtAuthGuard)
+    async holdTickets(
+        @Param('showtimeId') showtimeId: string,
+        @Body('ticketIds') ticketIds: string[],
+        @Req() req: CustomerAuthRequest
     ) {
-        return this.bookingClient.searchTheaters({ movieId, latLong })
+        const customerId = req.user.customerId
+        return this.bookingClient.holdTickets({ customerId, showtimeId, ticketIds })
     }
 
     @Get('movies/:movieId/theaters/:theaterId/showdates')
@@ -42,25 +52,16 @@ export class BookingController {
     ) {
         return this.bookingClient.searchShowtimes({
             movieId,
-            theaterId,
-            showdate: DateUtil.fromYMD(showdate)
+            showdate: DateUtil.fromYMD(showdate),
+            theaterId
         })
     }
 
-    @Get('showtimes/:showtimeId/tickets')
-    async getTicketsForShowtime(@Param('showtimeId') showtimeId: string) {
-        return this.bookingClient.getTickets(showtimeId)
-    }
-
-    @UseGuards(CustomerJwtAuthGuard)
-    @HttpCode(HttpStatus.OK)
-    @Post('showtimes/:showtimeId/tickets/hold')
-    async holdTickets(
-        @Param('showtimeId') showtimeId: string,
-        @Body('ticketIds') ticketIds: string[],
-        @Req() req: CustomerAuthRequest
+    @Get('movies/:movieId/theaters')
+    async searchTheaters(
+        @Param('movieId') movieId: string,
+        @LatLongQuery('latLong') latLong: LatLong
     ) {
-        const customerId = req.user.customerId
-        return this.bookingClient.holdTickets({ customerId, showtimeId, ticketIds })
+        return this.bookingClient.searchTheaters({ latLong, movieId })
     }
 }

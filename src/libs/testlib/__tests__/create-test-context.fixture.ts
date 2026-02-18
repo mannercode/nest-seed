@@ -1,30 +1,14 @@
 import { Controller, Get, Injectable, Param } from '@nestjs/common'
-import {
-    MessagePattern,
-    MicroserviceOptions,
-    NatsOptions,
-    Payload,
-    Transport
-} from '@nestjs/microservices'
-import {
-    createHttpTestContext,
-    getNatsTestConnection,
-    HttpTestClient,
-    RpcTestClient,
-    withTestId
-} from 'testlib'
+import { MicroserviceOptions, NatsOptions } from '@nestjs/microservices'
+import { MessagePattern, Payload, Transport } from '@nestjs/microservices'
+import { HttpTestClient } from 'testlib'
+import { createHttpTestContext, getNatsTestConnection, RpcTestClient, withTestId } from 'testlib'
 
-@Controller()
-class SampleController {
-    @MessagePattern(withTestId('getRpcMessage'))
-    getRpcMessage(@Payload() request: { arg: string }) {
-        return { id: request.arg }
-    }
-
-    @Get('message/:arg')
-    async getHttpMessage(@Param('arg') arg: string) {
-        return { received: arg }
-    }
+export type TestContextFixture = {
+    httpClient: HttpTestClient
+    rpcClient: RpcTestClient
+    sampleService: SampleService
+    teardown: () => Promise<void>
 }
 
 @Injectable()
@@ -34,32 +18,38 @@ export class SampleService {
     }
 }
 
-export type TestContextFixture = {
-    teardown: () => Promise<void>
-    rpcClient: RpcTestClient
-    httpClient: HttpTestClient
-    sampleService: SampleService
+@Controller()
+class SampleController {
+    @Get('message/:arg')
+    async getHttpMessage(@Param('arg') arg: string) {
+        return { received: arg }
+    }
+
+    @MessagePattern(withTestId('getRpcMessage'))
+    getRpcMessage(@Payload() request: { arg: string }) {
+        return { id: request.arg }
+    }
 }
 
 export async function createTestContextFixture(): Promise<TestContextFixture> {
     const brokerOpts = {
-        transport: Transport.NATS,
-        options: getNatsTestConnection()
+        options: getNatsTestConnection(),
+        transport: Transport.NATS
     } as NatsOptions
 
     const { httpClient, ...ctx } = await createHttpTestContext({
+        configureApp: async (app) => {
+            app.connectMicroservice<MicroserviceOptions>(brokerOpts, { inheritAppConfig: true })
+            await app.startAllMicroservices()
+        },
         controllers: [SampleController],
-        providers: [SampleService],
         overrideProviders: [
             {
                 original: SampleService,
                 replacement: { getMessage: jest.fn().mockReturnValue({ message: 'This is Mock' }) }
             }
         ],
-        configureApp: async (app) => {
-            app.connectMicroservice<MicroserviceOptions>(brokerOpts, { inheritAppConfig: true })
-            await app.startAllMicroservices()
-        }
+        providers: [SampleService]
     })
 
     const rpcClient = RpcTestClient.create(brokerOpts)
@@ -70,5 +60,5 @@ export async function createTestContextFixture(): Promise<TestContextFixture> {
         await ctx.close()
     }
 
-    return { teardown, rpcClient, httpClient, sampleService }
+    return { httpClient, rpcClient, sampleService, teardown }
 }

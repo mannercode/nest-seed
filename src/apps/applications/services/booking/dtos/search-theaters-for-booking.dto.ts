@@ -3,12 +3,12 @@ import { IsNotEmpty, IsString, ValidateNested } from 'class-validator'
 import { LatLong } from 'common'
 
 export class SearchTheatersForBookingDto {
-    @IsString()
     @IsNotEmpty()
-    movieId: string
+    @Type(() => LatLong)
+    @ValidateNested()
+    latLong: LatLong
 
     @IsNotEmpty()
-    @ValidateNested()
-    @Type(() => LatLong)
-    latLong: LatLong
+    @IsString()
+    movieId: string
 }

@@ -8,18 +8,18 @@ import { AssetsService } from './assets.service'
 import { Asset, AssetSchema } from './models'
 
 @Module({
+    controllers: [AssetsController],
+    exports: [AssetsService],
     imports: [
         MongooseModule.forFeature(
             [{ name: Asset.name, schema: AssetSchema }],
             MongooseConfigModule.connectionName
         ),
         S3ObjectModule.register({
-            useFactory: (config: AppConfigService) => config.s3,
-            inject: [AppConfigService]
+            inject: [AppConfigService],
+            useFactory: (config: AppConfigService) => config.s3
         })
     ],
-    providers: [AssetsService, AssetsRepository],
-    controllers: [AssetsController],
-    exports: [AssetsService]
+    providers: [AssetsService, AssetsRepository]
 })
 export class AssetsModule {}

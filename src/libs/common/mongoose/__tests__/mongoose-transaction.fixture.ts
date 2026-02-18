@@ -12,6 +12,12 @@ class Sample extends MongooseSchema {
 
 const SampleSchema = createMongooseSchema(Sample)
 
+export type MongooseTransactionFixture = {
+    model: Model<Sample>
+    repository: SamplesRepository
+    teardown: () => Promise<void>
+}
+
 @Injectable()
 class SamplesRepository extends MongooseRepository<Sample> {
     constructor(@InjectModel(Sample.name) readonly model: Model<Sample>) {
@@ -19,14 +25,8 @@ class SamplesRepository extends MongooseRepository<Sample> {
     }
 }
 
-export type MongooseTransactionFixture = {
-    teardown: () => Promise<void>
-    repository: SamplesRepository
-    model: Model<Sample>
-}
-
 export async function createMongooseTransactionFixture() {
-    const { module, close } = await createTestContext({
+    const { close, module } = await createTestContext({
         imports: [
             MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
             MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])
@@ -40,5 +40,5 @@ export async function createMongooseTransactionFixture() {
         await close()
     }
 
-    return { teardown, repository, model }
+    return { model, repository, teardown }
 }

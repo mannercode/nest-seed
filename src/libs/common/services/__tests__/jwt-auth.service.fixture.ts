@@ -9,19 +9,19 @@ import {
 import Redis from 'ioredis'
 import { createTestContext, getRedisTestConnection, withTestId } from 'testlib'
 
+export type JwtAuthServiceFixture = {
+    jwtService: JwtAuthService
+    redis: Redis
+    teardown: () => Promise<void>
+}
+
 @Injectable()
 class TestInjectJwtAuthService {
     constructor(@InjectJwtAuth() readonly _: JwtAuthService) {}
 }
 
-export type JwtAuthServiceFixture = {
-    teardown: () => Promise<void>
-    jwtService: JwtAuthService
-    redis: Redis
-}
-
 export async function createJwtAuthServiceFixture() {
-    const { module, close } = await createTestContext({
+    const { close, module } = await createTestContext({
         imports: [
             RedisModule.forRoot({ type: 'single', url: getRedisTestConnection() }),
             JwtAuthModule.register({
@@ -30,8 +30,8 @@ export async function createJwtAuthServiceFixture() {
                     return {
                         auth: {
                             accessSecret: 'accessSecret',
-                            refreshSecret: 'refreshSecret',
                             accessTokenTtlMs: 3000,
+                            refreshSecret: 'refreshSecret',
                             refreshTokenTtlMs: 3000
                         }
                     }
@@ -49,5 +49,5 @@ export async function createJwtAuthServiceFixture() {
         await redis.quit()
     }
 
-    return { teardown, jwtService, redis }
+    return { jwtService, redis, teardown }
 }

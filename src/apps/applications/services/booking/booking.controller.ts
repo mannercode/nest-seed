@@ -4,18 +4,23 @@ import { HoldTicketsDto } from 'apps/cores'
 import { Messages } from 'shared'
 import { BookingService } from './booking.service'
 import {
-    SearchTheatersForBookingDto,
     SearchShowdatesForBookingDto,
-    SearchShowtimesForBookingDto
+    SearchShowtimesForBookingDto,
+    SearchTheatersForBookingDto
 } from './dtos'
 
 @Controller()
 export class BookingController {
     constructor(private readonly service: BookingService) {}
 
-    @MessagePattern(Messages.Booking.searchTheaters)
-    searchTheaters(@Payload() dto: SearchTheatersForBookingDto) {
-        return this.service.searchTheaters(dto)
+    @MessagePattern(Messages.Booking.getTickets)
+    getTickets(@Payload() showtimeId: string) {
+        return this.service.getTickets(showtimeId)
+    }
+
+    @MessagePattern(Messages.Booking.holdTickets)
+    holdTickets(@Payload() dto: HoldTicketsDto) {
+        return this.service.holdTickets(dto)
     }
 
     @MessagePattern(Messages.Booking.searchShowdates)
@@ -28,13 +33,8 @@ export class BookingController {
         return this.service.searchShowtimes(dto)
     }
 
-    @MessagePattern(Messages.Booking.getTickets)
-    getTickets(@Payload() showtimeId: string) {
-        return this.service.getTickets(showtimeId)
-    }
-
-    @MessagePattern(Messages.Booking.holdTickets)
-    holdTickets(@Payload() dto: HoldTicketsDto) {
-        return this.service.holdTickets(dto)
+    @MessagePattern(Messages.Booking.searchTheaters)
+    searchTheaters(@Payload() dto: SearchTheatersForBookingDto) {
+        return this.service.searchTheaters(dto)
     }
 }

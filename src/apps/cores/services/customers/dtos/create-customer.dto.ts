@@ -2,19 +2,19 @@ import { Type } from 'class-transformer'
 import { IsDate, IsEmail, IsNotEmpty, IsString } from 'class-validator'
 
 export class CreateCustomerDto {
-    @IsString()
-    @IsNotEmpty()
-    name: string
+    @IsDate()
+    @Type(() => Date)
+    birthDate: Date
 
     @IsEmail()
     @IsNotEmpty()
     email: string
 
-    @IsDate()
-    @Type(() => Date)
-    birthDate: Date
-
-    @IsString()
     @IsNotEmpty()
+    @IsString()
+    name: string
+
+    @IsNotEmpty()
+    @IsString()
     password: string
 }

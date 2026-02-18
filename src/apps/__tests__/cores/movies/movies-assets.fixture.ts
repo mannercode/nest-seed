@@ -1,33 +1,17 @@
+import type { AppTestContext, TestAsset } from 'apps/__tests__/__helpers__'
+import type { TestContext } from 'testlib'
 import {
     buildCreateAssetDto,
     createAppTestContext,
-    fixtureFiles,
+    testAssets,
     uploadAsset
 } from 'apps/__tests__/__helpers__'
 import { RecommendationClient } from 'apps/applications'
 import { MoviesClient, MoviesModule } from 'apps/cores'
 import { MoviesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
-import type { AppTestContext, FixtureFile } from 'apps/__tests__/__helpers__'
-import type { TestContext } from 'testlib'
 
-export type MoviesAssetsFixture = AppTestContext & {
-    assetsClient: AssetsClient
-    asset: FixtureFile
-}
-
-export async function createMoviesAssetsFixture() {
-    const ctx = await createAppTestContext({
-        imports: [MoviesModule, AssetsModule],
-        providers: [MoviesClient, AssetsClient],
-        controllers: [MoviesController],
-        ignoreProviders: [RecommendationClient]
-    })
-
-    const assetsClient = ctx.module.get(AssetsClient)
-
-    return { ...ctx, assetsClient, asset: fixtureFiles.image }
-}
+export type MoviesAssetsFixture = AppTestContext & { asset: TestAsset; assetsClient: AssetsClient }
 
 export async function createMovie(ctx: TestContext) {
     const { MoviesService } = await import('apps/cores')
@@ -37,7 +21,7 @@ export async function createMovie(ctx: TestContext) {
     return movie
 }
 
-export async function createMovieAsset(ctx: TestContext, movieId: string, file: FixtureFile) {
+export async function createMovieAsset(ctx: TestContext, movieId: string, file: TestAsset) {
     const { MoviesService } = await import('apps/cores')
     const moviesService = ctx.module.get(MoviesService)
 
@@ -47,8 +31,31 @@ export async function createMovieAsset(ctx: TestContext, movieId: string, file: 
     return upload
 }
 
+export async function createMoviesAssetsFixture() {
+    const ctx = await createAppTestContext({
+        controllers: [MoviesController],
+        ignoreProviders: [RecommendationClient],
+        imports: [MoviesModule, AssetsModule],
+        providers: [MoviesClient, AssetsClient]
+    })
+
+    const assetsClient = ctx.module.get(AssetsClient)
+
+    return { ...ctx, asset: testAssets.image, assetsClient }
+}
+
+export async function uploadAndFinalizeMovieAsset(ctx: TestContext, movieId: string) {
+    const { MoviesService } = await import('apps/cores')
+    const moviesService = ctx.module.get(MoviesService)
+
+    const { assetId } = await uploadMovieAsset(ctx, movieId)
+
+    await moviesService.finalizeUpload(movieId, assetId)
+    return assetId
+}
+
 export async function uploadMovieAsset(ctx: TestContext, movieId: string) {
-    const { image } = fixtureFiles
+    const { image } = testAssets
 
     const upload = await createMovieAsset(ctx, movieId, image)
     const uploadResponse = await uploadAsset(image.path, upload)
@@ -56,14 +63,4 @@ export async function uploadMovieAsset(ctx: TestContext, movieId: string) {
     expect(uploadResponse.ok).toBe(true)
 
     return upload
-}
-
-export async function uploadCompleteMovieAsset(ctx: TestContext, movieId: string) {
-    const { MoviesService } = await import('apps/cores')
-    const moviesService = ctx.module.get(MoviesService)
-
-    const { assetId } = await uploadMovieAsset(ctx, movieId)
-
-    await moviesService.completeAsset(movieId, assetId)
-    return assetId
 }

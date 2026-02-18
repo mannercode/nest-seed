@@ -1,3 +1,5 @@
+import type { ConfigService } from '@nestjs/config'
+import { BaseConfigService } from 'common'
 import type { BaseConfigServiceFixture } from './base-config.service.fixture'
 
 describe('BaseConfigService', () => {
@@ -27,18 +29,30 @@ describe('BaseConfigService', () => {
 
         // 키가 존재하지 않을 때
         describe('when the key does not exist', () => {
-            let mockExit: jest.SpyInstance
-
-            beforeEach(() => {
-                mockExit = jest.spyOn(process, 'exit').mockImplementation()
-                jest.spyOn(console, 'error').mockImplementation()
+            // 예외를 던진다
+            it('throws an error', () => {
+                expect(() => fix.appConfigService.getString('not-exists-key')).toThrow(
+                    "Key 'not-exists-key' is not defined"
+                )
             })
+        })
 
-            // 프로세스를 종료한다
-            it('exits the process', () => {
-                fix.appConfigService.getString('not-exists-key')
+        // 값이 빈 문자열일 때
+        describe('when the value is an empty string', () => {
+            // 예외를 던진다
+            it('throws an error', () => {
+                class TestConfigService extends BaseConfigService {
+                    constructor(configService: ConfigService) {
+                        super(configService)
+                    }
+                }
 
-                expect(mockExit).toHaveBeenCalledWith(1)
+                const configService = { get: () => '' } as unknown as ConfigService
+                const service = new TestConfigService(configService)
+
+                expect(() => service.getString('EMPTY_KEY')).toThrow(
+                    "Key 'EMPTY_KEY' is not defined"
+                )
             })
         })
     })
@@ -64,18 +78,11 @@ describe('BaseConfigService', () => {
 
         // 키가 존재하지 않을 때
         describe('when the key does not exist', () => {
-            let mockExit: jest.SpyInstance
-
-            beforeEach(() => {
-                mockExit = jest.spyOn(process, 'exit').mockImplementation()
-                jest.spyOn(console, 'error').mockImplementation()
-            })
-
-            // 프로세스를 종료한다
-            it('exits the process', () => {
-                fix.appConfigService.getNumber('not-exists-key')
-
-                expect(mockExit).toHaveBeenCalledWith(1)
+            // 예외를 던진다
+            it('throws an error', () => {
+                expect(() => fix.appConfigService.getNumber('not-exists-key')).toThrow(
+                    "Key 'not-exists-key' is not defined"
+                )
             })
         })
     })
@@ -101,18 +108,11 @@ describe('BaseConfigService', () => {
 
         // 키가 존재하지 않을 때
         describe('when the key does not exist', () => {
-            let mockExit: jest.SpyInstance
-
-            beforeEach(() => {
-                mockExit = jest.spyOn(process, 'exit').mockImplementation()
-                jest.spyOn(console, 'error').mockImplementation()
-            })
-
-            // 프로세스를 종료한다
-            it('exits the process', () => {
-                fix.appConfigService.getBoolean('not-exists-key')
-
-                expect(mockExit).toHaveBeenCalledWith(1)
+            // 예외를 던진다
+            it('throws an error', () => {
+                expect(() => fix.appConfigService.getBoolean('not-exists-key')).toThrow(
+                    "Key 'not-exists-key' is not defined"
+                )
             })
         })
     })

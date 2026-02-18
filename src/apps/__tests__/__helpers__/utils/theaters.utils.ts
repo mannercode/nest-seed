@@ -2,8 +2,8 @@ import type { TestContext } from 'testlib'
 
 export function buildCreateTheaterDto(overrides = {}) {
     const createDto = {
-        name: `theater name`,
         location: { latitude: 0, longitude: 0 },
+        name: `theater name`,
         seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', seats: 'OOOOXXOOOO' }] }] },
         ...overrides
     }

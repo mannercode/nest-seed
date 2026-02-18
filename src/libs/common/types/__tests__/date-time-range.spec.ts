@@ -8,7 +8,7 @@ describe('DateTimeRange', () => {
         describe('when the date strings are valid', () => {
             // 문자열을 Date로 변환하고 검증을 통과한다
             it('converts strings to Dates and passes validation', () => {
-                const plainData = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z' }
+                const plainData = { end: '2023-01-02T00:00:00Z', start: '2023-01-01T00:00:00Z' }
 
                 const instance = plainToInstance(DateTimeRange, plainData)
 
@@ -24,7 +24,7 @@ describe('DateTimeRange', () => {
         describe('when a date string is invalid', () => {
             // 검증에 실패한다
             it('fails validation', () => {
-                const plainData = { start: 'invalid-date-string', end: '2023-01-02T00:00:00Z' }
+                const plainData = { end: '2023-01-02T00:00:00Z', start: 'invalid-date-string' }
 
                 const instance = plainToInstance(DateTimeRange, plainData)
 
@@ -45,12 +45,12 @@ describe('DateTimeRange', () => {
             // DateTimeRange를 생성한다
             it('creates a DateTimeRange', () => {
                 const result = DateTimeRange.create({
-                    start: new Date('2023-01-01'),
-                    end: new Date('2023-01-02')
+                    end: new Date('2023-01-02'),
+                    start: new Date('2023-01-01')
                 })
                 expect(result).toEqual({
-                    start: new Date('2023-01-01'),
-                    end: new Date('2023-01-02')
+                    end: new Date('2023-01-02'),
+                    start: new Date('2023-01-01')
                 })
             })
         })
@@ -59,10 +59,10 @@ describe('DateTimeRange', () => {
         describe('when start and days are provided', () => {
             // DateTimeRange를 생성한다
             it('creates a DateTimeRange', () => {
-                const result = DateTimeRange.create({ start: new Date('2023-01-01'), days: 2 })
+                const result = DateTimeRange.create({ days: 2, start: new Date('2023-01-01') })
                 expect(result).toEqual({
-                    start: new Date('2023-01-01'),
-                    end: new Date('2023-01-03')
+                    end: new Date('2023-01-03'),
+                    start: new Date('2023-01-01')
                 })
             })
         })
@@ -72,13 +72,24 @@ describe('DateTimeRange', () => {
             // DateTimeRange를 생성한다
             it('creates a DateTimeRange', () => {
                 const result = DateTimeRange.create({
-                    start: new Date('2023-01-01T12:00'),
-                    minutes: 30
+                    minutes: 30,
+                    start: new Date('2023-01-01T12:00')
                 })
                 expect(result).toEqual({
-                    start: new Date('2023-01-01T12:00'),
-                    end: new Date('2023-01-01T12:30')
+                    end: new Date('2023-01-01T12:30'),
+                    start: new Date('2023-01-01T12:00')
                 })
+            })
+        })
+
+        // start와 duration이 0일 때
+        describe('when start and zero duration are provided', () => {
+            // 시작과 같은 종료 시각을 가진 DateTimeRange를 생성한다
+            it('creates a DateTimeRange with the same start and end', () => {
+                const start = new Date('2023-01-01T12:00')
+                const result = DateTimeRange.create({ days: 0, start })
+
+                expect(result).toEqual({ end: start, start })
             })
         })
 
@@ -107,7 +118,7 @@ describe('PartialDateTimeRange', () => {
     describe('when the date strings are valid', () => {
         // 문자열을 Date로 변환하고 검증을 통과한다
         it('converts strings to Dates and passes validation', () => {
-            const plainData = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z' }
+            const plainData = { end: '2023-01-02T00:00:00Z', start: '2023-01-01T00:00:00Z' }
 
             const instance = plainToInstance(PartialDateTimeRange, plainData)
 

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { assignDefined, MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
+import { QueryBuilderOptions } from 'common'
+import { assignDefined, MongooseRepository, QueryBuilder } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { CreateCustomerDto, SearchCustomersPageDto, UpdateCustomerDto } from './dtos'
@@ -27,33 +28,6 @@ export class CustomersRepository extends MongooseRepository<Customer> {
         return customer.toJSON()
     }
 
-    async update(customerId: string, updateDto: UpdateCustomerDto) {
-        const customer = await this.getDocumentById(customerId)
-
-        assignDefined(customer, updateDto, 'name')
-        assignDefined(customer, updateDto, 'email')
-        assignDefined(customer, updateDto, 'birthDate')
-
-        await customer.save()
-
-        return customer.toJSON()
-    }
-
-    async searchPage(searchDto: SearchCustomersPageDto) {
-        const { take, skip, orderby } = searchDto
-
-        const pagination = await this.findWithPagination({
-            configureQuery: async (queryHelper) => {
-                const query = this.buildQuery(searchDto, { allowEmpty: true })
-
-                queryHelper.setQuery(query)
-            },
-            pagination: { take, skip, orderby }
-        })
-
-        return pagination
-    }
-
     async existsByEmail(email: string): Promise<boolean> {
         const result = await this.model.exists({ email: { $eq: email } }).lean()
 
@@ -72,8 +46,35 @@ export class CustomersRepository extends MongooseRepository<Customer> {
         return customer
     }
 
+    async searchPage(searchDto: SearchCustomersPageDto) {
+        const { orderby, skip, take } = searchDto
+
+        const pagination = await this.findWithPagination({
+            configureQuery: async (queryHelper) => {
+                const query = this.buildQuery(searchDto, { allowEmpty: true })
+
+                queryHelper.setQuery(query)
+            },
+            pagination: { orderby, skip, take }
+        })
+
+        return pagination
+    }
+
+    async update(customerId: string, updateDto: UpdateCustomerDto) {
+        const customer = await this.getDocumentById(customerId)
+
+        assignDefined(customer, updateDto, 'name')
+        assignDefined(customer, updateDto, 'email')
+        assignDefined(customer, updateDto, 'birthDate')
+
+        await customer.save()
+
+        return customer.toJSON()
+    }
+
     private buildQuery(searchDto: SearchCustomersPageDto, options: QueryBuilderOptions) {
-        const { name, email } = searchDto
+        const { email, name } = searchDto
 
         const builder = new QueryBuilder<Customer>()
         builder.addRegex('name', name)

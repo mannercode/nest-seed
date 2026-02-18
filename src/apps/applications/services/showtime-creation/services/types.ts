@@ -1,14 +1,14 @@
 import type { BulkCreateShowtimesDto } from '../dtos'
 
+export enum ShowtimeCreationStatus {
+    Error = 'error',
+    Failed = 'failed',
+    Processing = 'processing',
+    Succeeded = 'succeeded',
+    Waiting = 'waiting'
+}
+
 export class ShowtimeCreationJobData {
     createDto: BulkCreateShowtimesDto
     sagaId: string
-}
-
-export enum ShowtimeCreationStatus {
-    Waiting = 'waiting',
-    Processing = 'processing',
-    Succeeded = 'succeeded',
-    Failed = 'failed',
-    Error = 'error'
 }

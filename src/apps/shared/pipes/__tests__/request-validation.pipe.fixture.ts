@@ -2,26 +2,24 @@ import { Body, Controller, ParseArrayPipe, Post } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
 import { Type } from 'class-transformer'
 import { IsDate, IsNotEmpty, IsString } from 'class-validator'
-import { createHttpTestContext, HttpTestContext } from 'testlib'
+import { HttpTestContext } from 'testlib'
+import { createHttpTestContext } from 'testlib'
 import { RequestValidationPipe } from '..'
 
-class SampleDto {
-    @IsString()
-    @IsNotEmpty()
-    sampleId: string
+export type RequestValidationPipeFixture = HttpTestContext & { teardown: () => Promise<void> }
 
+class SampleDto {
     @IsDate()
     @Type(() => Date)
     date: Date
+
+    @IsNotEmpty()
+    @IsString()
+    sampleId: string
 }
 
 @Controller()
 class SamplesController {
-    @Post()
-    async handleQuery(@Body() body: SampleDto) {
-        return body
-    }
-
     @Post('array')
     async handleArray(@Body(new ParseArrayPipe({ items: SampleDto })) body: SampleDto[]) {
         return body
@@ -32,6 +30,11 @@ class SamplesController {
         @Body('samples', new ParseArrayPipe({ items: SampleDto })) samples: SampleDto[]
     ) {
         return samples
+    }
+
+    @Post()
+    async handleQuery(@Body() body: SampleDto) {
+        return body
     }
 }
 
@@ -47,5 +50,3 @@ export async function createRequestValidationPipeFixture() {
 
     return { ...ctx, teardown }
 }
-
-export type RequestValidationPipeFixture = HttpTestContext & { teardown: () => Promise<void> }

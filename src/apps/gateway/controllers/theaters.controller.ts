@@ -26,25 +26,25 @@ export class TheatersController {
         return this.theatersClient.create(createDto)
     }
 
-    @Patch(':theaterId')
-    async update(@Param('theaterId') theaterId: string, @Body() updateDto: UpdateTheaterDto) {
-        return this.theatersClient.update(theaterId, updateDto)
+    @Delete(':theaterId')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async delete(@Param('theaterId') theaterId: string) {
+        await this.theatersClient.deleteMany([theaterId])
     }
 
     @Get(':theaterId')
     async get(@Param('theaterId') theaterId: string) {
-        const theaters = await this.theatersClient.getMany([theaterId])
-        return theaters[0]
-    }
-
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @Delete(':theaterId')
-    async delete(@Param('theaterId') theaterId: string) {
-        await this.theatersClient.deleteMany([theaterId])
+        const [theater] = await this.theatersClient.getMany([theaterId])
+        return theater
     }
 
     @Get()
     async searchPage(@Query() searchDto: SearchTheatersPageDto) {
         return this.theatersClient.searchPage(searchDto)
+    }
+
+    @Patch(':theaterId')
+    async update(@Param('theaterId') theaterId: string, @Body() updateDto: UpdateTheaterDto) {
+        return this.theatersClient.update(theaterId, updateDto)
     }
 }

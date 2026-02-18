@@ -4,16 +4,12 @@ export function getRedisTestConnection() {
     return Env.getString('TESTLIB_REDIS_URL')
 }
 
-export const getNatsTestConnection = () => {
-    return JSON.parse(Env.getString('TESTLIB_NATS_OPTIONS'))
-}
+export const getNatsTestConnection = () => JSON.parse(Env.getString('TESTLIB_NATS_OPTIONS'))
 
-export const getMongoTestConnection = () => {
-    return {
-        uri: Env.getString('TESTLIB_MONGO_URI'),
-        dbName: Env.getString('TESTLIB_MONGO_DATABASE')
-    }
-}
+export const getMongoTestConnection = () => ({
+    dbName: Env.getString('TESTLIB_MONGO_DATABASE'),
+    uri: Env.getString('TESTLIB_MONGO_URI')
+})
 
 export const getS3TestConnection = () => {
     const endpoint = Env.getString('TESTLIB_S3_ENDPOINT')
@@ -25,5 +21,5 @@ export const getS3TestConnection = () => {
         secretAccessKey: Env.getString('TESTLIB_S3_SECRET_KEY')
     }
 
-    return { endpoint, credentials, region, forcePathStyle, bucket }
+    return { bucket, credentials, endpoint, forcePathStyle, region }
 }

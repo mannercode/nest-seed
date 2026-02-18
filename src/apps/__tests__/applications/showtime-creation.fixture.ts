@@ -1,3 +1,4 @@
+import type { AppTestContext as TestContext } from 'apps/__tests__/__helpers__'
 import { createAppTestContext } from 'apps/__tests__/__helpers__'
 import { ShowtimeCreationClient, ShowtimeCreationModule } from 'apps/applications'
 import {
@@ -13,7 +14,6 @@ import {
 import { ShowtimeCreationController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { reviveIsoDates } from 'common'
-import type { AppTestContext as TestContext } from 'apps/__tests__/__helpers__'
 
 export type ShowtimeCreationFixture = TestContext & {
     showtimesClient: ShowtimesClient
@@ -22,6 +22,7 @@ export type ShowtimeCreationFixture = TestContext & {
 
 export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationFixture> {
     const ctx = await createAppTestContext({
+        controllers: [ShowtimeCreationController],
         imports: [
             MoviesModule,
             AssetsModule,
@@ -37,8 +38,7 @@ export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationF
             TicketsClient,
             ShowtimeCreationClient,
             AssetsClient
-        ],
-        controllers: [ShowtimeCreationController]
+        ]
     })
 
     const showtimesClient = ctx.module.get(ShowtimesClient)
@@ -51,15 +51,15 @@ export function waitForCompletion(ctx: TestContext, status: string) {
     return new Promise<any>((resolve, reject) => {
         ctx.httpClient.get('/showtime-creation/event-stream').sse((data) => {
             try {
-                const result = reviveIsoDates(JSON.parse(data))
+                const statusUpdate = reviveIsoDates(JSON.parse(data))
 
-                if (['succeeded', 'failed', 'error'].includes(result.status)) {
+                if (['error', 'failed', 'succeeded'].includes(statusUpdate.status)) {
                     ctx.httpClient.abort()
 
-                    if (status === result.status) {
-                        resolve(result)
+                    if (status === statusUpdate.status) {
+                        resolve(statusUpdate)
                     } else {
-                        reject(result)
+                        reject(statusUpdate)
                     }
                 }
             } catch (error) {

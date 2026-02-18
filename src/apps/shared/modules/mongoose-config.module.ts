@@ -7,44 +7,44 @@ import { AppConfigService } from '../config'
     imports: [
         MongooseModule.forRootAsync({
             connectionName: MongooseConfigModule.connectionName,
+            inject: [AppConfigService],
             useFactory: async (config: AppConfigService) => {
-                const { user, password, host1, host2, host3, replicaSet, database } = config.mongo
+                const { database, host1, host2, host3, password, replicaSet, user } = config.mongo
 
                 return {
-                    uri: `mongodb://${user}:${password}@${host1},${host2},${host3}/?replicaSet=${replicaSet}`,
-                    dbName: database,
-                    waitQueueTimeoutMS: 5000,
-                    writeConcern: { w: 'majority', journal: true, wtimeoutMS: 5000 },
-                    bufferCommands: true,
+                    autoCreate: false,
                     autoIndex: false,
-                    autoCreate: false
+                    bufferCommands: true,
+                    dbName: database,
+                    uri: `mongodb://${user}:${password}@${host1},${host2},${host3}/?replicaSet=${replicaSet}`,
+                    waitQueueTimeoutMS: 5000,
+                    writeConcern: { journal: true, w: 'majority', wtimeoutMS: 5000 }
                 }
-            },
-            inject: [AppConfigService]
+            }
         })
     ]
 })
 export class MongooseConfigModule {
-    static get moduleName() {
-        return getConnectionToken(this.connectionName)
+    static schemaOptions: SchemaOptions = {
+        minimize: false,
+        // https://mongoosejs.com/docs/guide.html#optimisticConcurrency
+        optimisticConcurrency: true,
+        strict: 'throw',
+        strictQuery: 'throw',
+        timestamps: true,
+        toJSON: { flattenObjectIds: true, versionKey: false, virtuals: true },
+        validateBeforeSave: true
     }
 
     static get connectionName() {
         return 'mongo-connection'
     }
 
-    static schemaOptions: SchemaOptions = {
-        // https://mongoosejs.com/docs/guide.html#optimisticConcurrency
-        optimisticConcurrency: true,
-        minimize: false,
-        strict: 'throw',
-        strictQuery: 'throw',
-        timestamps: true,
-        validateBeforeSave: true,
-        toJSON: { virtuals: true, flattenObjectIds: true, versionKey: false }
-    }
-
     static get maxTake() {
         return 50
+    }
+
+    static get moduleName() {
+        return getConnectionToken(this.connectionName)
     }
 }

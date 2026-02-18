@@ -8,7 +8,7 @@ export class RecommendationController {
     constructor(private readonly service: RecommendationService) {}
 
     @MessagePattern(Messages.Recommendation.searchRecommendedMovies)
-    searchRecommendedMovies(@Payload() customerId: string | null) {
+    searchRecommendedMovies(@Payload() customerId: null | string) {
         return this.service.searchRecommendedMovies(customerId === '' ? null : customerId)
     }
 }

@@ -1,20 +1,18 @@
 import { Logger } from '@nestjs/common'
-import { HelloClass, getGreeting } from './mocking.fixture'
+import { getGreeting, HelloClass } from './mocking.fixture'
 
 jest.mock('@nestjs/common', () => {
-    class Logger {
-        static log = jest.fn()
+    class MockLogger {
         static error = jest.fn()
-        static warn = jest.fn()
+        static log = jest.fn()
         static verbose = jest.fn()
+        static warn = jest.fn()
     }
 
-    return { ...jest.requireActual('@nestjs/common'), Logger }
+    return { ...jest.requireActual('@nestjs/common'), Logger: MockLogger }
 })
 
-jest.mock('./mocking.fixture', () => {
-    return { HelloClass: jest.fn(), getGreeting: jest.fn() }
-})
+jest.mock('./mocking.fixture', () => ({ getGreeting: jest.fn(), HelloClass: jest.fn() }))
 
 describe('jest.mock examples', () => {
     // 모듈을 목킹한다

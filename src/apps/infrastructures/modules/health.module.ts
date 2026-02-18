@@ -1,5 +1,6 @@
 import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
-import { HealthCheckService, MongooseHealthIndicator, TerminusModule } from '@nestjs/terminus'
+import { HealthCheckService, MongooseHealthIndicator } from '@nestjs/terminus'
+import { TerminusModule } from '@nestjs/terminus'
 import mongoose from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 
@@ -7,13 +8,15 @@ import { MongooseConfigModule } from 'shared'
 class HealthService {
     constructor(
         private readonly health: HealthCheckService,
-        private readonly mongoose: MongooseHealthIndicator,
-        @Inject(MongooseConfigModule.moduleName) private readonly mongoConn: mongoose.Connection
+        private readonly mongooseHealth: MongooseHealthIndicator,
+        @Inject(MongooseConfigModule.moduleName)
+        private readonly mongoConnection: mongoose.Connection
     ) {}
 
     check() {
         const checks = [
-            async () => this.mongoose.pingCheck('mongodb', { connection: this.mongoConn })
+            async () =>
+                this.mongooseHealth.pingCheck('mongodb', { connection: this.mongoConnection })
         ]
 
         return this.health.check(checks)
@@ -30,5 +33,5 @@ class HealthController {
     }
 }
 
-@Module({ imports: [TerminusModule], providers: [HealthService], controllers: [HealthController] })
+@Module({ controllers: [HealthController], imports: [TerminusModule], providers: [HealthService] })
 export class HealthModule {}

@@ -9,6 +9,21 @@ export type DateAddOptions = {
 }
 
 export class DateUtil {
+    static add({
+        base = this.now(),
+        days = 0,
+        hours = 0,
+        minutes = 0,
+        seconds = 0
+    }: DateAddOptions): Date {
+        const totalMilliseconds =
+            days * 24 * 60 * 60 * 1000 +
+            hours * 60 * 60 * 1000 +
+            minutes * 60 * 1000 +
+            seconds * 1000
+        return new Date(base.getTime() + totalMilliseconds)
+    }
+
     /**
      * Returns the earliest date from an array of Date objects.
      * 날짜 배열 중 가장 이른 날짜를 반환합니다.
@@ -19,32 +34,6 @@ export class DateUtil {
     static earliest(dates: Date[]): Date {
         const minDate = minBy(dates, (date) => date.getTime())
         return minDate ? new Date(minDate.getTime()) : new Date(NaN)
-    }
-
-    /**
-     * Returns the latest date from an array of Date objects.
-     * 날짜 배열 중 가장 늦은 날짜를 반환합니다.
-     *
-     * @param {Date[]} dates - An array of Date objects.
-     * @returns {Date} The latest date in the array.
-     */
-    static latest(dates: Date[]): Date {
-        const maxDate = maxBy(dates, (date) => date.getTime())
-        return maxDate ? new Date(maxDate.getTime()) : new Date(NaN)
-    }
-
-    /**
-     * Converts a Date object to a YYYYMMDD format string.
-     * Date 객체를 YYYYMMDD 형식의 문자열로 변환합니다.
-     *
-     * @param {Date} date - The Date object to convert.
-     * @returns {string} A string in the format "YYYYMMDD".
-     */
-    static toYMD(date: Date): string {
-        const year = date.getFullYear()
-        const month = (date.getMonth() + 1).toString().padStart(2, '0') // Month is 0-based.
-        const day = date.getDate().toString().padStart(2, '0')
-        return `${year}${month}${day}`
     }
 
     /**
@@ -79,22 +68,33 @@ export class DateUtil {
         return new Date(year, month, day, hours, minutes)
     }
 
+    /**
+     * Returns the latest date from an array of Date objects.
+     * 날짜 배열 중 가장 늦은 날짜를 반환합니다.
+     *
+     * @param {Date[]} dates - An array of Date objects.
+     * @returns {Date} The latest date in the array.
+     */
+    static latest(dates: Date[]): Date {
+        const maxDate = maxBy(dates, (date) => date.getTime())
+        return maxDate ? new Date(maxDate.getTime()) : new Date(NaN)
+    }
+
     static now(): Date {
         return new Date()
     }
 
-    static add({
-        base = this.now(),
-        days = 0,
-        hours = 0,
-        minutes = 0,
-        seconds = 0
-    }: DateAddOptions): Date {
-        const totalMilliseconds =
-            days * 24 * 60 * 60 * 1000 +
-            hours * 60 * 60 * 1000 +
-            minutes * 60 * 1000 +
-            seconds * 1000
-        return new Date(base.getTime() + totalMilliseconds)
+    /**
+     * Converts a Date object to a YYYYMMDD format string.
+     * Date 객체를 YYYYMMDD 형식의 문자열로 변환합니다.
+     *
+     * @param {Date} date - The Date object to convert.
+     * @returns {string} A string in the format "YYYYMMDD".
+     */
+    static toYMD(date: Date): string {
+        const year = date.getFullYear()
+        const month = (date.getMonth() + 1).toString().padStart(2, '0') // Month is 0-based.
+        const day = date.getDate().toString().padStart(2, '0')
+        return `${year}${month}${day}`
     }
 }

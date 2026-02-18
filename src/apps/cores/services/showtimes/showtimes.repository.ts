@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
+import { QueryBuilderOptions } from 'common'
+import { MongooseRepository, QueryBuilder } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { CreateShowtimeDto, SearchShowtimesDto } from './dtos'
@@ -48,19 +49,12 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         return movieIds.map((id) => id.toString())
     }
 
-    async searchTheaterIds(searchDto: SearchShowtimesDto) {
-        const query = this.buildQuery(searchDto)
-
-        const theaterIds = await this.model.distinct('theaterId', query).exec()
-        return theaterIds.map((id) => id.toString())
-    }
-
     async searchShowdates(searchDto: SearchShowtimesDto) {
         const query = this.buildQuery(searchDto)
 
         const showdates = await this.model.aggregate([
             { $match: query },
-            { $project: { date: { $dateToString: { format: '%Y-%m-%d', date: '$startTime' } } } },
+            { $project: { date: { $dateToString: { date: '$startTime', format: '%Y-%m-%d' } } } },
             { $group: { _id: '$date' } },
             { $sort: { _id: 1 } }
         ])
@@ -68,8 +62,15 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         return showdates.map((item) => new Date(item._id))
     }
 
+    async searchTheaterIds(searchDto: SearchShowtimesDto) {
+        const query = this.buildQuery(searchDto)
+
+        const theaterIds = await this.model.distinct('theaterId', query).exec()
+        return theaterIds.map((id) => id.toString())
+    }
+
     private buildQuery(searchDto: SearchShowtimesDto, options: QueryBuilderOptions = {}) {
-        const { sagaIds, movieIds, theaterIds, startTimeRange, endTimeRange } = searchDto
+        const { endTimeRange, movieIds, sagaIds, startTimeRange, theaterIds } = searchDto
 
         const builder = new QueryBuilder<Showtime>()
         builder.addIn('sagaId', sagaIds)

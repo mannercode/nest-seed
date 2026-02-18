@@ -1,7 +1,7 @@
+import type { JwtAuthTokens } from 'common'
 import { createCustomer } from 'apps/__tests__/__helpers__'
 import { Errors, loginCustomer } from 'apps/__tests__/__helpers__'
 import type { CustomerAuthFixture } from './customer-auth.fixture'
-import type { JwtAuthTokens } from 'common'
 
 describe('CustomersService', () => {
     let fix: CustomerAuthFixture
@@ -94,8 +94,8 @@ describe('CustomersService', () => {
             let accessToken: string
 
             beforeEach(async () => {
-                const authTokens = await loginCustomer(fix, credentials)
-                accessToken = authTokens.accessToken
+                const loginResult = await loginCustomer(fix, credentials)
+                accessToken = loginResult.accessToken
             })
 
             // 접근을 허용한다

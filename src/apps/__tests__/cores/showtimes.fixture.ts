@@ -1,6 +1,6 @@
+import type { AppTestContext } from 'apps/__tests__/__helpers__'
 import { createAppTestContext } from 'apps/__tests__/__helpers__'
 import { ShowtimesClient, ShowtimesModule } from 'apps/cores'
-import type { AppTestContext } from 'apps/__tests__/__helpers__'
 
 export type ShowtimesFixture = AppTestContext & { showtimesClient: ShowtimesClient }
 

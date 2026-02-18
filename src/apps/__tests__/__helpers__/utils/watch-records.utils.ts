@@ -1,11 +1,11 @@
-import { nullDate, oid } from 'testlib'
 import type { TestContext } from 'testlib'
+import { nullDate, oid } from 'testlib'
 
 export function buildCreateWatchRecordDto(overrides = {}) {
     const createDto = {
         customerId: oid(0x0),
         movieId: oid(0x0),
-        purchaseId: oid(0x0),
+        purchaseRecordId: oid(0x0),
         watchDate: nullDate,
         ...overrides
     }

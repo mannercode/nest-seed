@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, InjectClientProxy, JwtAuthTokens, PaginationResult } from 'common'
+import { ClientProxyService, JwtAuthTokens, PaginationResult } from 'common'
+import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
 import {
     CreateCustomerDto,
@@ -18,31 +19,31 @@ export class CustomersClient {
         return this.proxy.request(Messages.Customers.create, createDto)
     }
 
-    update(customerId: string, updateDto: UpdateCustomerDto): Promise<CustomerDto> {
-        return this.proxy.request(Messages.Customers.update, { customerId, updateDto })
+    async deleteMany(customerIds: string[]): Promise<void> {
+        await this.proxy.request(Messages.Customers.deleteMany, customerIds)
     }
 
-    getMany(customerIds: string[]): Promise<CustomerDto[]> {
-        return this.proxy.request(Messages.Customers.getMany, customerIds)
-    }
-
-    deleteMany(customerIds: string[]): Promise<Record<string, never>> {
-        return this.proxy.request(Messages.Customers.deleteMany, customerIds)
-    }
-
-    searchPage(searchDto: SearchCustomersPageDto): Promise<PaginationResult<CustomerDto>> {
-        return this.proxy.request(Messages.Customers.searchPage, searchDto)
+    findCustomerByCredentials(credentials: CustomerCredentialsDto): Promise<CustomerDto | null> {
+        return this.proxy.request(Messages.Customers.findCustomerByCredentials, credentials)
     }
 
     generateAuthTokens(payload: CustomerAuthPayload): Promise<JwtAuthTokens> {
         return this.proxy.request(Messages.Customers.generateAuthTokens, payload)
     }
 
+    getMany(customerIds: string[]): Promise<CustomerDto[]> {
+        return this.proxy.request(Messages.Customers.getMany, customerIds)
+    }
+
     refreshAuthTokens(refreshToken: string): Promise<JwtAuthTokens> {
         return this.proxy.request(Messages.Customers.refreshAuthTokens, refreshToken)
     }
 
-    findCustomerByCredentials(credentials: CustomerCredentialsDto): Promise<CustomerDto | null> {
-        return this.proxy.request(Messages.Customers.findCustomerByCredentials, credentials)
+    searchPage(searchDto: SearchCustomersPageDto): Promise<PaginationResult<CustomerDto>> {
+        return this.proxy.request(Messages.Customers.searchPage, searchDto)
+    }
+
+    update(customerId: string, updateDto: UpdateCustomerDto): Promise<CustomerDto> {
+        return this.proxy.request(Messages.Customers.update, { customerId, updateDto })
     }
 }

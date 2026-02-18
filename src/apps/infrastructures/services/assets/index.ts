@@ -1,5 +1,5 @@
-export * from './dtos'
-export * from './models'
 export * from './assets.client'
 export * from './assets.module'
 export * from './assets.service'
+export * from './dtos'
+export * from './models'

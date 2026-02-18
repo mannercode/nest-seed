@@ -14,16 +14,16 @@ export class MoviePendingAssetsRepository extends MongooseRepository<MoviePendin
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async addAsset(movieId: string, assetId: string) {
-        const asset = this.newDocument()
-        asset.assetId = assetId
-        asset.movieId = movieId
-        await asset.save()
+    async addPendingAsset(movieId: string, assetId: string) {
+        const pendingAsset = this.newDocument()
+        pendingAsset.assetId = assetId
+        pendingAsset.movieId = movieId
+        await pendingAsset.save()
 
-        return asset.toJSON()
+        return pendingAsset.toJSON()
     }
 
-    async hasAsset(movieId: string, assetId: string): Promise<boolean> {
+    async hasPendingAsset(movieId: string, assetId: string): Promise<boolean> {
         const builder = new QueryBuilder<MoviePendingAsset>()
         builder.addEqual('movieId', movieId)
         builder.addEqual('assetId', assetId)
@@ -33,14 +33,12 @@ export class MoviePendingAssetsRepository extends MongooseRepository<MoviePendin
         return 0 < count
     }
 
-    async removeAsset(movieId: string, assetId: string): Promise<boolean> {
+    async removePendingAsset(movieId: string, assetId: string): Promise<void> {
         const builder = new QueryBuilder<MoviePendingAsset>()
         builder.addEqual('movieId', movieId)
         builder.addEqual('assetId', assetId)
         const query = builder.build({})
 
         await this.model.deleteOne(query).exec()
-
-        return true
     }
 }

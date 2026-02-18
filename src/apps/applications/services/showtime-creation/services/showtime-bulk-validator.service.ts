@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { MoviesClient, ShowtimeDto, ShowtimesClient, TheatersClient } from 'apps/cores'
-import { Expect, DateTimeRange, DateUtil, Time } from 'common'
+import { DateTimeRange, DateUtil, Expect, Time } from 'common'
 import { Rules } from 'shared'
 import { BulkCreateShowtimesDto } from '../dtos'
 
@@ -11,7 +11,7 @@ export const ShowtimeBulkValidatorServiceErrors = {
         code: 'ERR_SHOWTIME_CREATION_MOVIE_NOT_FOUND',
         message: 'The requested movie could not be found.'
     },
-    TheaterNotFound: {
+    TheatersNotFound: {
         code: 'ERR_SHOWTIME_CREATION_THEATERS_NOT_FOUND',
         message: 'One or more requested theaters could not be found.'
     }
@@ -46,7 +46,7 @@ export class ShowtimeBulkValidatorService {
 
         const conflictingShowtimes = await this.findConflictingShowtimes(createDto)
 
-        return { isValid: 0 === conflictingShowtimes.length, conflictingShowtimes }
+        return { conflictingShowtimes, isValid: 0 === conflictingShowtimes.length }
     }
 
     private async findConflictingShowtimes(createDto: BulkCreateShowtimesDto) {
@@ -62,16 +62,17 @@ export class ShowtimeBulkValidatorService {
             Expect.defined(timeslots, `Timeslots must be defined for theater ID: ${theaterId}`)
 
             for (const start of startTimes) {
-                const timeRange = DateTimeRange.create({ start, minutes: durationInMinutes })
+                const timeRange = DateTimeRange.create({ minutes: durationInMinutes, start })
 
                 iterateTimeslots(timeRange, (timeslot) => {
                     const showtime = timeslots.get(timeslot)
 
                     if (showtime) {
                         conflictingShowtimes.push(showtime)
-
                         return false
                     }
+
+                    return true
                 })
             }
         }
@@ -80,7 +81,7 @@ export class ShowtimeBulkValidatorService {
     }
 
     private async generateTimeslotMapByTheater(createDto: BulkCreateShowtimesDto) {
-        const { theaterIds, durationInMinutes, startTimes } = createDto
+        const { durationInMinutes, startTimes, theaterIds } = createDto
 
         const startDate = DateUtil.earliest(startTimes)
         const maxDate = DateUtil.latest(startTimes)
@@ -90,16 +91,16 @@ export class ShowtimeBulkValidatorService {
 
         for (const theaterId of theaterIds) {
             const fetchedShowtimes = await this.showtimesClient.search({
-                theaterIds: [theaterId],
-                startTimeRange: { start: startDate, end: endDate }
+                startTimeRange: { end: endDate, start: startDate },
+                theaterIds: [theaterId]
             })
 
             const timeslots = new Map<number, ShowtimeDto>()
 
             for (const showtime of fetchedShowtimes) {
-                const { startTime: start, endTime: end } = showtime
+                const { endTime: end, startTime: start } = showtime
 
-                iterateTimeslots({ start, end }, (timeslot) => {
+                iterateTimeslots({ end, start }, (timeslot) => {
                     timeslots.set(timeslot, showtime)
                 })
             }
@@ -111,7 +112,7 @@ export class ShowtimeBulkValidatorService {
     }
 
     private async verifyMovieExists(movieId: string) {
-        const movieExists = await this.moviesClient.allExist([movieId])
+        const movieExists = await this.moviesClient.existsAll([movieId])
 
         if (!movieExists) {
             throw new NotFoundException({
@@ -122,11 +123,11 @@ export class ShowtimeBulkValidatorService {
     }
 
     private async verifyTheatersExist(theaterIds: string[]) {
-        const theatersExist = await this.theatersClient.allExist(theaterIds)
+        const theatersExist = await this.theatersClient.existsAll(theaterIds)
 
         if (!theatersExist) {
             throw new NotFoundException({
-                ...ShowtimeBulkValidatorServiceErrors.TheaterNotFound,
+                ...ShowtimeBulkValidatorServiceErrors.TheatersNotFound,
                 theaterIds
             })
         }

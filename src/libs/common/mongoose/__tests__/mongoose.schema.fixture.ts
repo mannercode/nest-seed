@@ -1,9 +1,13 @@
 import { getModelToken, MongooseModule, Schema as NestSchema, Prop } from '@nestjs/mongoose'
 import { createMongooseSchema, MongooseSchema } from 'common'
-import { Model, mongo, Schema, Types } from 'mongoose'
+import { Model, Types } from 'mongoose'
+import { mongo, Schema } from 'mongoose'
 import { createTestContext, getMongoTestConnection } from 'testlib'
 
-type RawSample = Partial<SchemaTypeSample> & { [key: string]: any }
+export type MongooseSchemaFixture = {
+    model: Model<SchemaTypeSample>
+    teardown: () => Promise<void>
+}
 
 @NestSchema({
     toJSON: {
@@ -20,8 +24,26 @@ type RawSample = Partial<SchemaTypeSample> & { [key: string]: any }
     }
 })
 export class SchemaTypeSample extends MongooseSchema {
-    @Prop({ index: true, required: true })
-    sn: number
+    @Prop({ max: 65, min: 18 })
+    age: number
+
+    @Prop({ type: [Schema.Types.Mixed] })
+    array: any[]
+
+    @Prop()
+    binary: Buffer
+
+    @Prop({ type: Schema.Types.Decimal128 })
+    decimal: Types.Decimal128
+
+    @Prop()
+    living: boolean
+
+    @Prop({ type: Map })
+    map: Map<string, any>
+
+    @Prop({ type: Schema.Types.Mixed })
+    mixed: any
 
     @Prop({
         // https://mongoosejs.com/docs/guide.html#collation
@@ -29,64 +51,43 @@ export class SchemaTypeSample extends MongooseSchema {
     })
     name: string
 
-    @Prop({ min: 18, max: 65 })
-    age: number
-
-    @Prop({ default: Date.now })
-    updated: Date
+    @Prop({ type: { stuff: { lowercase: true, trim: true, type: String } } })
+    nested: { stuff: string }
 
     @Prop()
-    binary: Buffer
+    ofBuffer: Buffer[]
 
     @Prop()
-    living: boolean
-
-    @Prop({ type: Schema.Types.Mixed })
-    mixed: any
-
-    @Prop({ type: Schema.Types.ObjectId })
-    someId: Types.ObjectId
+    ofDates: Date[]
 
     @Prop({ type: [Schema.Types.Mixed] })
-    array: any[]
-
-    @Prop()
-    ofString: string[]
+    ofMixed: any[]
 
     @Prop()
     ofNumber: number[]
 
     @Prop()
-    ofDates: Date[]
-
-    @Prop()
-    ofBuffer: Buffer[]
-
-    @Prop({ type: [Schema.Types.Mixed] })
-    ofMixed: any[]
-
-    @Prop({ type: { stuff: { type: String, lowercase: true, trim: true } } })
-    nested: { stuff: string }
-
-    @Prop({ type: Map })
-    map: Map<string, any>
-
-    @Prop({ type: Schema.Types.Decimal128 })
-    decimal: Types.Decimal128
+    ofString: string[]
 
     @Prop()
     optional?: boolean
+
+    @Prop({ index: true, required: true })
+    sn: number
+
+    @Prop({ type: Schema.Types.ObjectId })
+    someId: Types.ObjectId
+
+    @Prop({ default: Date.now })
+    updated: Date
 }
 
-export type MongooseSchemaFixture = {
-    teardown: () => Promise<void>
-    model: Model<SchemaTypeSample>
-}
+type RawSample = Partial<SchemaTypeSample> & { [key: string]: any }
 
 export async function createMongooseSchemaFixture() {
     const schema = createMongooseSchema(SchemaTypeSample)
 
-    const { module, close } = await createTestContext({
+    const { close, module } = await createTestContext({
         imports: [
             MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
             MongooseModule.forFeature([{ name: 'schema', schema }])
@@ -99,5 +100,5 @@ export async function createMongooseSchemaFixture() {
         await close()
     }
 
-    return { teardown, model }
+    return { model, teardown }
 }

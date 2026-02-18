@@ -2,23 +2,23 @@ import { Type } from 'class-transformer'
 import { IsDate, IsNotEmpty, IsString } from 'class-validator'
 
 export class CreateShowtimeDto {
-    @IsString()
-    @IsNotEmpty()
-    sagaId: string
+    @IsDate()
+    @Type(() => Date)
+    endTime: Date
 
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     movieId: string
 
-    @IsString()
     @IsNotEmpty()
-    theaterId: string
+    @IsString()
+    sagaId: string
 
     @IsDate()
     @Type(() => Date)
     startTime: Date
 
-    @IsDate()
-    @Type(() => Date)
-    endTime: Date
+    @IsNotEmpty()
+    @IsString()
+    theaterId: string
 }

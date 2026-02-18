@@ -15,21 +15,20 @@ import { RequestValidationPipe } from '../pipes/request-validation.pipe'
 
 @Global()
 @Module({
+    exports: [AppConfigService, ClientProxyModule],
     imports: [
         ConfigModule.forRoot({
             cache: true,
             ignoreEnvFile: true,
-            validationSchema: AppConfigService.schema,
-            validationOptions: { abortEarly: false }
+            validationOptions: { abortEarly: false },
+            validationSchema: AppConfigService.schema
         }),
         ClientProxyModule.registerAsync({
-            useFactory: (config: AppConfigService) => {
-                return {
-                    transport: Transport.NATS,
-                    options: { servers: config.nats.servers, queue: getProjectId() }
-                }
-            },
-            inject: [AppConfigService]
+            inject: [AppConfigService],
+            useFactory: (config: AppConfigService) => ({
+                options: { queue: getProjectId(), servers: config.nats.servers },
+                transport: Transport.NATS
+            })
         }),
         ScheduleModule.forRoot()
     ],
@@ -39,14 +38,13 @@ import { RequestValidationPipe } from '../pipes/request-validation.pipe'
         { provide: APP_FILTER, useClass: ExceptionLoggerFilter },
         { provide: APP_INTERCEPTOR, useClass: SuccessLoggingInterceptor },
         {
+            inject: [AppConfigService],
             provide: AppLoggerService,
             useFactory: async ({ log }: AppConfigService) => {
                 const logger = createWinstonLogger(log)
                 return new AppLoggerService(logger)
-            },
-            inject: [AppConfigService]
+            }
         }
-    ],
-    exports: [AppConfigService, ClientProxyModule]
+    ]
 })
 export class CommonModule {}

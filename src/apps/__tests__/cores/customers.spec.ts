@@ -1,8 +1,8 @@
+import type { CustomerDto, SearchCustomersPageDto } from 'apps/cores'
 import { buildCreateCustomerDto, createCustomer, Errors } from 'apps/__tests__/__helpers__'
 import { omit } from 'lodash'
 import { nullObjectId } from 'testlib'
 import type { CustomersFixture } from './customers.fixture'
-import type { CustomerDto, SearchCustomersPageDto } from 'apps/cores'
 
 describe('CustomersService', () => {
     let fix: CustomersFixture
@@ -95,7 +95,7 @@ describe('CustomersService', () => {
 
             // 수정된 고객을 반환한다
             it('returns the updated customer', async () => {
-                const updateDto = { email: 'new@mail.com', birthDate: new Date('1900-12-31') }
+                const updateDto = { birthDate: new Date('1900-12-31'), email: 'new@mail.com' }
 
                 await fix.httpClient
                     .patch(`/customers/${customer.id}`)
@@ -169,19 +169,23 @@ describe('CustomersService', () => {
         let customerB2: CustomerDto
 
         beforeEach(async () => {
-            ;[customerA1, customerA2, customerB1, customerB2] = await Promise.all([
-                createCustomer(fix, { name: 'customer-a1', email: 'user-a1@mail.com' }),
-                createCustomer(fix, { name: 'customer-a2', email: 'user-a2@mail.com' }),
-                createCustomer(fix, { name: 'customer-b1', email: 'user-b1@mail.com' }),
-                createCustomer(fix, { name: 'customer-b2', email: 'user-b2@mail.com' })
+            const createdCustomers = await Promise.all([
+                createCustomer(fix, { email: 'user-a1@mail.com', name: 'customer-a1' }),
+                createCustomer(fix, { email: 'user-a2@mail.com', name: 'customer-a2' }),
+                createCustomer(fix, { email: 'user-b1@mail.com', name: 'customer-b1' }),
+                createCustomer(fix, { email: 'user-b2@mail.com', name: 'customer-b2' })
             ])
+            customerA1 = createdCustomers[0]
+            customerA2 = createdCustomers[1]
+            customerB1 = createdCustomers[2]
+            customerB2 = createdCustomers[3]
         })
 
         const buildExpectedPage = (customers: CustomerDto[]) => ({
+            items: expect.arrayContaining(customers),
             skip: 0,
             take: expect.any(Number),
-            total: customers.length,
-            items: expect.arrayContaining(customers)
+            total: customers.length
         })
 
         // 쿼리가 제공되지 않을 때

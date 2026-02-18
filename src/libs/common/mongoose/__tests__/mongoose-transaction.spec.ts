@@ -87,10 +87,10 @@ describe('Mongoose Transaction', () => {
     describe('when startTransaction throws', () => {
         beforeEach(() => {
             jest.spyOn(fix.model, 'startSession').mockResolvedValue({
+                inTransaction: jest.fn().mockReturnValue(false),
                 startTransaction: jest.fn().mockImplementation(() => {
                     throw new Error()
-                }),
-                inTransaction: jest.fn().mockReturnValue(false)
+                })
             } as any)
         })
 

@@ -1,14 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import {
-    Seatmap,
-    ShowtimeDto,
-    ShowtimesClient,
-    TheaterDto,
-    TheatersClient,
-    TicketsClient,
-    TicketStatus
-} from 'apps/cores'
-import { Expect, DateUtil } from 'common'
+import { ShowtimeDto, ShowtimesClient, TheaterDto, TheatersClient, TicketsClient } from 'apps/cores'
+import { Seatmap, TicketStatus } from 'apps/cores'
+import { DateUtil, Expect } from 'common'
 import { uniq } from 'lodash'
 import { BulkCreateShowtimesDto } from '../dtos'
 
@@ -29,15 +22,15 @@ export class ShowtimeBulkCreatorService {
     }
 
     private async bulkCreateShowtimes(createDto: BulkCreateShowtimesDto, sagaId: string) {
-        const { movieId, theaterIds, durationInMinutes, startTimes } = createDto
+        const { durationInMinutes, movieId, startTimes, theaterIds } = createDto
 
         const createDtos = theaterIds.flatMap((theaterId) =>
             startTimes.map((startTime) => ({
-                sagaId,
+                endTime: DateUtil.add({ base: startTime, minutes: durationInMinutes }),
                 movieId,
-                theaterId,
+                sagaId,
                 startTime,
-                endTime: DateUtil.add({ base: startTime, minutes: durationInMinutes })
+                theaterId
             }))
         )
 
@@ -62,12 +55,12 @@ export class ShowtimeBulkCreatorService {
                 Expect.defined(theater, 'The theater must exist.')
 
                 const createTicketDtos = Seatmap.getAllSeats(theater.seatmap).map((seat) => ({
-                    showtimeId: showtime.id,
-                    theaterId: showtime.theaterId,
                     movieId: showtime.movieId,
-                    status: TicketStatus.Available,
+                    sagaId,
                     seat,
-                    sagaId
+                    showtimeId: showtime.id,
+                    status: TicketStatus.Available,
+                    theaterId: showtime.theaterId
                 }))
 
                 const { count } = await this.ticketsClient.createMany(createTicketDtos)

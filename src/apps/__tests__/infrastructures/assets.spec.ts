@@ -1,22 +1,22 @@
+import type { AssetDto } from 'apps/infrastructures'
 import { HttpStatus } from '@nestjs/common'
 import {
-    buildCompleteAssetDto,
     buildCreateAssetDto,
+    buildFinalizeAssetDto,
     createAsset,
     downloadAsset,
-    fixtureFiles,
+    testAssets,
+    uploadAndFinalizeAsset,
     uploadAsset,
-    uploadComplete,
     uploadFile
 } from 'apps/__tests__/__helpers__'
 import { Checksum, pickIds, sleep } from 'common'
 import { nullObjectId, toAny } from 'testlib'
-import { type AssetsFixture } from './assets.fixture'
-import type { AssetDto } from 'apps/infrastructures'
+import type { AssetsFixture } from './assets.fixture'
 
 describe('AssetsService', () => {
     let fix: AssetsFixture
-    const file = fixtureFiles.small
+    const file = testAssets.small
 
     beforeEach(async () => {
         const { createAssetsFixture } = await import('./assets.fixture')
@@ -34,10 +34,10 @@ describe('AssetsService', () => {
 
                 expect(uploadRequest).toEqual({
                     assetId: expect.any(String),
-                    url: expect.any(String),
                     expiresAt: expect.any(Date),
+                    fields: expect.any(Object),
                     method: 'POST',
-                    fields: expect.any(Object)
+                    url: expect.any(String)
                 })
 
                 expect(uploadRequest.fields).toEqual(
@@ -99,8 +99,8 @@ describe('AssetsService', () => {
             let assetId: string
 
             beforeEach(async () => {
-                const uploadInfo = await createAsset(fix, file)
-                assetId = uploadInfo.assetId
+                const asset = await createAsset(fix, file)
+                assetId = asset.assetId
             })
 
             // false를 반환한다
@@ -111,7 +111,7 @@ describe('AssetsService', () => {
         })
     })
 
-    describe('complete', () => {
+    describe('finalizeUpload', () => {
         // 업로드가 완료되었을 때
         describe('when the upload is completed', () => {
             let assetId: string
@@ -122,22 +122,22 @@ describe('AssetsService', () => {
 
             // 다운로드 정보가 포함된 에셋을 반환한다
             it('returns the asset with download info', async () => {
-                const completeDto = buildCompleteAssetDto()
+                const finalizeDto = buildFinalizeAssetDto()
 
-                const asset = await fix.assetsClient.complete(assetId, completeDto)
+                const asset = await fix.assetsClient.finalizeUpload(assetId, finalizeDto)
 
                 expect(asset).toEqual(
                     expect.objectContaining({
-                        ...completeDto,
-                        download: { url: expect.any(String), expiresAt: expect.any(Date) }
+                        ...finalizeDto,
+                        download: { expiresAt: expect.any(Date), url: expect.any(String) }
                     })
                 )
             })
 
             // 체크섬이 일치하는 에셋을 다운로드한다
             it('downloads the asset with matching checksum', async () => {
-                const completeDto = buildCompleteAssetDto()
-                const asset = await fix.assetsClient.complete(assetId, completeDto)
+                const finalizeDto = buildFinalizeAssetDto()
+                const asset = await fix.assetsClient.finalizeUpload(assetId, finalizeDto)
 
                 const buffer = await downloadAsset(asset)
 
@@ -155,25 +155,26 @@ describe('AssetsService', () => {
                 toAny(Rules).Asset.uploadExpiresInSec = 1
 
                 const createDto = buildCreateAssetDto(file)
-                const uploadRequest = await fix.assetsClient.create(createDto)
-
-                assetId = uploadRequest.assetId
+                const createdAsset = await fix.assetsClient.create(createDto)
+                assetId = createdAsset.assetId
 
                 await sleep(1500)
             })
 
             // 404 Not Found를 던진다
             it('throws 404 Not Found', async () => {
-                const completeDto = buildCompleteAssetDto()
-                await expect(fix.assetsClient.complete(assetId, completeDto)).rejects.toMatchObject(
-                    { status: HttpStatus.NOT_FOUND }
-                )
+                const finalizeDto = buildFinalizeAssetDto()
+                await expect(
+                    fix.assetsClient.finalizeUpload(assetId, finalizeDto)
+                ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
             })
 
             // 삭제가 저장된다
             it('persists the deletion', async () => {
-                const completeDto = buildCompleteAssetDto()
-                await expect(fix.assetsClient.complete(assetId, completeDto)).rejects.toThrow()
+                const finalizeDto = buildFinalizeAssetDto()
+                await expect(
+                    fix.assetsClient.finalizeUpload(assetId, finalizeDto)
+                ).rejects.toThrow()
 
                 await expect(fix.assetsClient.getMany([assetId])).rejects.toMatchObject({
                     status: HttpStatus.NOT_FOUND
@@ -189,9 +190,9 @@ describe('AssetsService', () => {
 
             beforeEach(async () => {
                 assets = await Promise.all([
-                    uploadComplete(fix, file),
-                    uploadComplete(fix, file),
-                    uploadComplete(fix, file)
+                    uploadAndFinalizeAsset(fix, file),
+                    uploadAndFinalizeAsset(fix, file),
+                    uploadAndFinalizeAsset(fix, file)
                 ])
             })
 
@@ -203,7 +204,7 @@ describe('AssetsService', () => {
                     expect.arrayContaining(
                         assets.map((asset) => ({
                             ...asset,
-                            download: { url: expect.any(String), expiresAt: expect.any(Date) }
+                            download: { expiresAt: expect.any(Date), url: expect.any(String) }
                         }))
                     )
                 )
@@ -238,16 +239,15 @@ describe('AssetsService', () => {
 
             beforeEach(async () => {
                 assets = await Promise.all([
-                    uploadComplete(fix, file),
-                    uploadComplete(fix, file),
-                    uploadComplete(fix, file)
+                    uploadAndFinalizeAsset(fix, file),
+                    uploadAndFinalizeAsset(fix, file),
+                    uploadAndFinalizeAsset(fix, file)
                 ])
             })
 
-            // 빈 응답을 반환한다
-            it('returns an empty response', async () => {
-                const response = await fix.assetsClient.deleteMany(pickIds(assets))
-                expect(response).toEqual({})
+            // 응답을 반환하지 않는다
+            it('returns no response', async () => {
+                await expect(fix.assetsClient.deleteMany(pickIds(assets))).resolves.toBeUndefined()
             })
 
             // 삭제가 저장된다
@@ -271,10 +271,9 @@ describe('AssetsService', () => {
 
         // assetIds에 존재하지 않는 assetId가 포함될 때
         describe('when the assetIds include a non-existent assetId', () => {
-            // 빈 응답을 반환한다
-            it('returns an empty response', async () => {
-                const response = await fix.assetsClient.deleteMany([nullObjectId])
-                expect(response).toEqual({})
+            // 응답을 반환하지 않는다
+            it('returns no response', async () => {
+                await expect(fix.assetsClient.deleteMany([nullObjectId])).resolves.toBeUndefined()
             })
         })
     })
@@ -288,13 +287,12 @@ describe('AssetsService', () => {
             beforeEach(async () => {
                 const { Rules } = await import('shared')
                 toAny(Rules).Asset.uploadExpiresInSec = 1
-
-                const cronjob = fix.scheduler.getCronJob('assets.cleanupExpiredUploads')
-                fireOnTick = cronjob.fireOnTick
+                const cronJob = fix.scheduler.getCronJob('assets.cleanupExpiredUploads')
+                fireOnTick = cronJob.fireOnTick
 
                 const createDto = buildCreateAssetDto(file)
-                const uploadDto = await fix.assetsClient.create(createDto)
-                assetId = uploadDto.assetId
+                const createdAsset = await fix.assetsClient.create(createDto)
+                assetId = createdAsset.assetId
             })
 
             // 업로드가 만료되지 않았을 때

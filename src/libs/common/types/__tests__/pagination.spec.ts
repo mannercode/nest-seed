@@ -2,8 +2,8 @@ import { BadRequestException } from '@nestjs/common'
 import { plainToInstance } from 'class-transformer'
 import { CommonErrors } from 'common'
 import { withTestId } from 'testlib'
+import type { PaginationFixture } from './pagination.fixture'
 import { PaginationDto, PaginationErrors } from '..'
-import { type PaginationFixture } from './pagination.fixture'
 
 describe('PaginationDto', () => {
     let fix: PaginationFixture
@@ -25,7 +25,7 @@ describe('PaginationDto', () => {
             beforeEach(() => {
                 skip = 2
                 take = 3
-                query = { skip, take, orderby: 'name:asc' }
+                query = { orderby: 'name:asc', skip, take }
                 expectedResponse = {
                     response: { orderby: { direction: 'asc', name: 'name' }, skip, take }
                 }

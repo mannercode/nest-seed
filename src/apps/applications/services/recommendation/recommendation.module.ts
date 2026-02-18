@@ -4,7 +4,7 @@ import { RecommendationController } from './recommendation.controller'
 import { RecommendationService } from './recommendation.service'
 
 @Module({
-    providers: [RecommendationService, ShowtimesClient, MoviesClient, WatchRecordsClient],
-    controllers: [RecommendationController]
+    controllers: [RecommendationController],
+    providers: [RecommendationService, ShowtimesClient, MoviesClient, WatchRecordsClient]
 })
 export class RecommendationModule {}

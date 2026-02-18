@@ -8,15 +8,15 @@ import {
 } from 'common'
 import { createTestContext, getRedisTestConnection, withTestId } from 'testlib'
 
+export type CacheServiceFixture = { cacheService: CacheService; teardown: () => Promise<void> }
+
 @Injectable()
 class TestInjectCacheService {
     constructor(@InjectCache() readonly _: CacheService) {}
 }
 
-export type CacheServiceFixture = { teardown: () => Promise<void>; cacheService: CacheService }
-
 export async function createCacheServiceFixture() {
-    const { module, close } = await createTestContext({
+    const { close, module } = await createTestContext({
         imports: [
             RedisModule.forRoot({ type: 'single', url: getRedisTestConnection() }, 'name'),
             CacheModule.register({ prefix: withTestId('cache'), redisName: 'name' })
@@ -32,5 +32,5 @@ export async function createCacheServiceFixture() {
         await redis.quit()
     }
 
-    return { teardown, cacheService }
+    return { cacheService, teardown }
 }

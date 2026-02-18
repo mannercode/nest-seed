@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { assignDefined, MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
+import { QueryBuilderOptions } from 'common'
+import { assignDefined, MongooseRepository, QueryBuilder } from 'common'
 import { HydratedDocument, Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
@@ -14,16 +15,14 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async create(upsertDto: UpsertMovieDto) {
-        const movie = this.newDocument()
-
-        await this.applyUpsertDto(movie, upsertDto)
-
-        return movie.toJSON()
+    async addAsset(movieId: string, assetId: string) {
+        const movie = await this.getDocumentById(movieId)
+        movie.assetIds.push(assetId)
+        await movie.save()
     }
 
-    async update(movieId: string, upsertDto: UpsertMovieDto) {
-        const movie = await this.getDocumentById(movieId)
+    async create(upsertDto: UpsertMovieDto) {
+        const movie = this.newDocument()
 
         await this.applyUpsertDto(movie, upsertDto)
 
@@ -36,6 +35,29 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         movie.isPublished = true
 
         await movie.save()
+
+        return movie.toJSON()
+    }
+
+    async searchPage(searchDto: SearchMoviesPageDto) {
+        const { orderby, skip, take } = searchDto
+
+        const pagination = await this.findWithPagination({
+            configureQuery: async (queryHelper) => {
+                const query = this.buildQuery(searchDto, { allowEmpty: true })
+
+                queryHelper.setQuery(query)
+            },
+            pagination: { orderby, skip, take }
+        })
+
+        return pagination
+    }
+
+    async update(movieId: string, upsertDto: UpsertMovieDto) {
+        const movie = await this.getDocumentById(movieId)
+
+        await this.applyUpsertDto(movie, upsertDto)
 
         return movie.toJSON()
     }
@@ -53,29 +75,8 @@ export class MoviesRepository extends MongooseRepository<Movie> {
         await movie.save()
     }
 
-    async addAsset(movieId: string, assetId: string) {
-        const movie = await this.getDocumentById(movieId)
-        movie.assetIds.push(assetId)
-        await movie.save()
-    }
-
-    async searchPage(searchDto: SearchMoviesPageDto) {
-        const { take, skip, orderby } = searchDto
-
-        const pagination = await this.findWithPagination({
-            configureQuery: async (queryHelper) => {
-                const query = this.buildQuery(searchDto, { allowEmpty: true })
-
-                queryHelper.setQuery(query)
-            },
-            pagination: { take, skip, orderby }
-        })
-
-        return pagination
-    }
-
     private buildQuery(searchDto: SearchMoviesPageDto, options: QueryBuilderOptions) {
-        const { title, genre, releaseDate, plot, director, rating } = searchDto
+        const { director, genre, plot, rating, releaseDate, title } = searchDto
 
         const builder = new QueryBuilder<Movie>()
         builder.addEqual('isPublished', true)

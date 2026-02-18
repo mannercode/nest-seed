@@ -1,81 +1,98 @@
-import { BadRequestException, createParamDecorator, ExecutionContext } from '@nestjs/common'
-import { plainToClass } from 'class-transformer'
+import { ExecutionContext } from '@nestjs/common'
+import { BadRequestException, createParamDecorator } from '@nestjs/common'
+import { plainToInstance } from 'class-transformer'
 import { IsNumber, Max, Min, validate } from 'class-validator'
 
+const EARTH_RADIUS_METERS = 6_371_000
+const MAX_COORDINATE_LENGTH = 20
+
 export const LatLongErrors = {
-    Required: { code: 'ERR_LATLONG_REQUIRED', message: 'The latLong query parameter is required' },
-    FormatInvalid: {
-        code: 'ERR_LATLONG_FORMAT_INVALID',
-        message: 'LatLong should be in the format "latitude,longitude"'
+    InvalidFormat: {
+        code: 'ERR_LATLONG_INVALID_FORMAT',
+        message: 'latLong must be in the format "latitude,longitude"'
     },
-    ValidationFailed: {
-        code: 'ERR_LATLONG_VALIDATION_FAILED',
-        message: 'LatLong validation failed'
-    }
-}
+    OutOfRange: {
+        code: 'ERR_LATLONG_OUT_OF_RANGE',
+        message: 'Latitude must be between -90 and 90, longitude must be between -180 and 180'
+    },
+    Required: { code: 'ERR_LATLONG_REQUIRED', message: 'The latLong query parameter is required' }
+} as const
 
 export class LatLong {
     @IsNumber()
-    @Min(-90)
     @Max(90)
+    @Min(-90)
     latitude: number
 
     @IsNumber()
-    @Min(-180)
     @Max(180)
+    @Min(-180)
     longitude: number
 
-    static distanceInMeters(pointA: LatLong, pointB: LatLong) {
-        const toRad = (degree: number) => degree * (Math.PI / 180)
-        const earthRadiusInMeters = 6_371_000 // earth radius in meters
+    static distanceInMeters(from: LatLong, to: LatLong): number {
+        const toRadians = (degrees: number) => degrees * (Math.PI / 180)
 
-        const lat1 = toRad(pointA.latitude)
-        const lon1 = toRad(pointA.longitude)
-        const lat2 = toRad(pointB.latitude)
-        const lon2 = toRad(pointB.longitude)
+        const fromLat = toRadians(from.latitude)
+        const fromLng = toRadians(from.longitude)
+        const toLat = toRadians(to.latitude)
+        const toLng = toRadians(to.longitude)
 
-        const dLat = lat2 - lat1
-        const dLon = lon2 - lon1
+        const deltaLat = toLat - fromLat
+        const deltaLng = toLng - fromLng
 
-        const haversinValue =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+        const halfChordSquared =
+            Math.sin(deltaLat / 2) ** 2 +
+            Math.cos(fromLat) * Math.cos(toLat) * Math.sin(deltaLng / 2) ** 2
 
-        const centralAngle = 2 * Math.atan2(Math.sqrt(haversinValue), Math.sqrt(1 - haversinValue))
-        const distanceInMeters = earthRadiusInMeters * centralAngle
+        const centralAngle =
+            2 * Math.atan2(Math.sqrt(halfChordSquared), Math.sqrt(1 - halfChordSquared))
 
-        return distanceInMeters
+        return EARTH_RADIUS_METERS * centralAngle
     }
 }
 
-export const LatLongQuery = createParamDecorator(
-    async (name: string, context: ExecutionContext) => {
-        const request = context.switchToHttp().getRequest()
-        const value = request.query[name]
+function isNumericString(value: string): boolean {
+    if (value.length > MAX_COORDINATE_LENGTH) return false
+    return /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value)
+}
 
-        if (!value) {
+function parseCoordinatePair(value: unknown): null | { latitude: number; longitude: number } {
+    if (typeof value !== 'string') return null
+
+    const parts = value.split(',')
+    if (parts.length !== 2) return null
+
+    const [rawLat, rawLng] = parts
+    const latStr = rawLat.trim()
+    const lngStr = rawLng.trim()
+
+    if (!isNumericString(latStr) || !isNumericString(lngStr)) return null
+
+    return { latitude: Number(latStr), longitude: Number(lngStr) }
+}
+
+export const LatLongQuery = createParamDecorator(
+    async (paramName: string, ctx: ExecutionContext) => {
+        const request = ctx.switchToHttp().getRequest()
+        const raw = request.query[paramName]
+
+        if (!raw) {
             throw new BadRequestException(LatLongErrors.Required)
         }
 
-        const [latStr, longStr] = value.split(',')
+        const parsed = parseCoordinatePair(raw)
 
-        if (!latStr || !longStr) {
-            throw new BadRequestException(LatLongErrors.FormatInvalid)
+        if (!parsed) {
+            throw new BadRequestException(LatLongErrors.InvalidFormat)
         }
 
-        const latLong = plainToClass(LatLong, {
-            latitude: parseFloat(latStr),
-            longitude: parseFloat(longStr)
-        })
-
+        const latLong = plainToInstance(LatLong, parsed)
         const errors = await validate(latLong)
+
         if (errors.length > 0) {
             throw new BadRequestException({
-                ...LatLongErrors.ValidationFailed,
-                details: errors.map((error) => ({
-                    field: error.property,
-                    constraints: error.constraints
-                }))
+                ...LatLongErrors.OutOfRange,
+                details: errors.map((e) => ({ constraints: e.constraints, field: e.property }))
             })
         }
 

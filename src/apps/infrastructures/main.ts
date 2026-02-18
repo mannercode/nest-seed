@@ -4,9 +4,9 @@ import { InfrastructuresModule } from './infrastructures.module'
 
 export async function bootstrap() {
     const app = await NestFactory.create(InfrastructuresModule)
-    const natOptions = { queue: 'apps/infrastructures' }
+    const natsOptions = { queue: 'apps/infrastructures' }
 
-    await configureApp({ app, natOptions })
+    await configureApp({ app, natsOptions })
 
     console.log(`Infrastructures is running on: ${await app.getUrl()}`)
 }

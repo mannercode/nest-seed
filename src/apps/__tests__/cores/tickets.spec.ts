@@ -1,10 +1,10 @@
+import type { TicketDto } from 'apps/cores'
 import { HttpStatus } from '@nestjs/common'
 import { buildCreateTicketDto, createTickets, Errors } from 'apps/__tests__/__helpers__'
 import { TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { oid } from 'testlib'
 import type { TicketsFixture } from './tickets.fixture'
-import type { TicketDto } from 'apps/cores'
 
 describe('TicketsService', () => {
     let fix: TicketsFixture
@@ -39,13 +39,17 @@ describe('TicketsService', () => {
             let ticketForShowtime: TicketDto
 
             beforeEach(async () => {
-                ;[ticketForSaga, ticketForMovie, ticketForTheater, ticketForShowtime] =
-                    await createTickets(fix, [
-                        { sagaId },
-                        { movieId },
-                        { theaterId },
-                        { showtimeId }
-                    ])
+                const createdTickets = await createTickets(fix, [
+                    { sagaId },
+                    { movieId },
+                    { theaterId },
+                    { showtimeId }
+                ])
+
+                ticketForSaga = createdTickets[0]
+                ticketForMovie = createdTickets[1]
+                ticketForTheater = createdTickets[2]
+                ticketForShowtime = createdTickets[3]
             })
 
             // sagaIds로 필터링된 티켓을 반환한다
@@ -84,8 +88,8 @@ describe('TicketsService', () => {
                 const promise = fix.ticketsClient.search({})
 
                 await expect(promise).rejects.toMatchObject({
-                    status: HttpStatus.BAD_REQUEST,
-                    message: Errors.Mongoose.FiltersRequired.message
+                    message: Errors.Mongoose.FiltersRequired.message,
+                    status: HttpStatus.BAD_REQUEST
                 })
             })
         })
@@ -139,10 +143,10 @@ describe('TicketsService', () => {
 
                 expect(ticketSales).toEqual([
                     {
+                        available: totalCount - soldCount,
                         showtimeId,
-                        total: totalCount,
                         sold: soldCount,
-                        available: totalCount - soldCount
+                        total: totalCount
                     }
                 ])
             })

@@ -1,7 +1,7 @@
+import type { SearchTheatersPageDto, TheaterDto } from 'apps/cores'
 import { buildCreateTheaterDto, createTheater, Errors } from 'apps/__tests__/__helpers__'
 import { nullObjectId } from 'testlib'
 import type { TheatersFixture } from './theaters.fixture'
-import type { SearchTheatersPageDto, TheaterDto } from 'apps/cores'
 
 describe('TheatersService', () => {
     let fix: TheatersFixture
@@ -150,19 +150,23 @@ describe('TheatersService', () => {
         let theaterB2: TheaterDto
 
         beforeEach(async () => {
-            ;[theaterA1, theaterA2, theaterB1, theaterB2] = await Promise.all([
+            const createdTheaters = await Promise.all([
                 createTheater(fix, { name: 'theater-a1' }),
                 createTheater(fix, { name: 'theater-a2' }),
                 createTheater(fix, { name: 'theater-b1' }),
                 createTheater(fix, { name: 'theater-b2' })
             ])
+            theaterA1 = createdTheaters[0]
+            theaterA2 = createdTheaters[1]
+            theaterB1 = createdTheaters[2]
+            theaterB2 = createdTheaters[3]
         })
 
         const buildExpectedPage = (theaters: TheaterDto[]) => ({
+            items: expect.arrayContaining(theaters),
             skip: 0,
             take: expect.any(Number),
-            total: theaters.length,
-            items: expect.arrayContaining(theaters)
+            total: theaters.length
         })
 
         // 쿼리가 제공되지 않을 때

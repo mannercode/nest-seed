@@ -1,8 +1,9 @@
+import type { MovieDto } from 'apps/cores'
 import { Errors } from 'apps/__tests__/__helpers__'
 import { MovieGenre, MovieRating } from 'apps/cores'
 import { nullObjectId } from 'testlib'
-import { createUnpublishedMovie, type MoviesPublishFixture } from './movies-publish.fixture'
-import type { MovieDto } from 'apps/cores'
+import type { MoviesPublishFixture } from './movies-publish.fixture'
+import { createUnpublishedMovie } from './movies-publish.fixture'
 
 describe('MoviesPublish', () => {
     let fix: MoviesPublishFixture
@@ -25,13 +26,13 @@ describe('MoviesPublish', () => {
             // 필수 필드가 준비된 때
             describe('when required fields are ready', () => {
                 const updateDto = {
-                    title: `MovieTitle`,
-                    genres: [MovieGenre.Action],
-                    releaseDate: new Date(0),
-                    plot: `MoviePlot`,
-                    durationInSeconds: 90 * 60,
                     director: 'Quentin Tarantino',
-                    rating: MovieRating.PG
+                    durationInSeconds: 90 * 60,
+                    genres: [MovieGenre.Action],
+                    plot: `MoviePlot`,
+                    rating: MovieRating.PG,
+                    releaseDate: new Date(0),
+                    title: `MovieTitle`
                 }
 
                 beforeEach(async () => {
@@ -75,7 +76,7 @@ describe('MoviesPublish', () => {
                     await fix.httpClient
                         .post(`/movies/${movie.id}/publish`)
                         .unprocessableEntity({
-                            ...Errors.Movies.InvalidForCompletion,
+                            ...Errors.Movies.InvalidForPublish,
                             missingFields: expect.any(Array)
                         })
                 })

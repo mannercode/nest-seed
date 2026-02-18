@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
+import { QueryBuilderOptions } from 'common'
+import { MongooseRepository, QueryBuilder } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos'
@@ -19,7 +20,7 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
         const watchRecord = this.newDocument()
         watchRecord.customerId = createDto.customerId
         watchRecord.movieId = createDto.movieId
-        watchRecord.purchaseId = createDto.purchaseId
+        watchRecord.purchaseRecordId = createDto.purchaseRecordId
         watchRecord.watchDate = createDto.watchDate
 
         await watchRecord.save()
@@ -28,7 +29,7 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
     }
 
     async searchPage(searchDto: SearchWatchRecordsPageDto) {
-        const { take, skip, orderby } = searchDto
+        const { orderby, skip, take } = searchDto
 
         const pagination = await this.findWithPagination({
             configureQuery: async (queryHelper) => {
@@ -36,7 +37,7 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
 
                 queryHelper.setQuery(query)
             },
-            pagination: { take, skip, orderby }
+            pagination: { orderby, skip, take }
         })
 
         return pagination

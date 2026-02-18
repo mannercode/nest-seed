@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { assignDefined, MongooseRepository, QueryBuilder, QueryBuilderOptions } from 'common'
+import { QueryBuilderOptions } from 'common'
+import { assignDefined, MongooseRepository, QueryBuilder } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto } from './dtos'
@@ -25,6 +26,21 @@ export class TheatersRepository extends MongooseRepository<Theater> {
         return theater.toJSON()
     }
 
+    async searchPage(searchDto: SearchTheatersPageDto) {
+        const { orderby, skip, take } = searchDto
+
+        const pagination = await this.findWithPagination({
+            configureQuery: async (queryHelper) => {
+                const query = this.buildQuery(searchDto, { allowEmpty: true })
+
+                queryHelper.setQuery(query)
+            },
+            pagination: { orderby, skip, take }
+        })
+
+        return pagination
+    }
+
     async update(theaterId: string, updateDto: UpdateTheaterDto) {
         const theater = await this.getDocumentById(theaterId)
         assignDefined(theater, updateDto, 'name')
@@ -33,21 +49,6 @@ export class TheatersRepository extends MongooseRepository<Theater> {
         await theater.save()
 
         return theater.toJSON()
-    }
-
-    async searchPage(searchDto: SearchTheatersPageDto) {
-        const { take, skip, orderby } = searchDto
-
-        const pagination = await this.findWithPagination({
-            configureQuery: async (queryHelper) => {
-                const query = this.buildQuery(searchDto, { allowEmpty: true })
-
-                queryHelper.setQuery(query)
-            },
-            pagination: { take, skip, orderby }
-        })
-
-        return pagination
     }
 
     private buildQuery(searchDto: SearchTheatersPageDto, options: QueryBuilderOptions) {

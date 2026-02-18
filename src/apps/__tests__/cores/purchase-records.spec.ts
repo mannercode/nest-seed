@@ -1,3 +1,4 @@
+import type { PurchaseRecordDto } from 'apps/cores'
 import {
     buildCreatePurchaseRecordDto,
     createPurchaseRecord,
@@ -5,7 +6,6 @@ import {
 } from 'apps/__tests__/__helpers__'
 import { nullObjectId } from 'testlib'
 import type { PurchaseRecordsFixture } from './purchase-records.fixture'
-import type { PurchaseRecordDto } from 'apps/cores'
 
 describe('PurchaseRecordsService', () => {
     let fix: PurchaseRecordsFixture
@@ -20,29 +20,29 @@ describe('PurchaseRecordsService', () => {
         // 생성된 구매 기록을 반환한다
         it('returns the created purchase record', async () => {
             const createDto = buildCreatePurchaseRecordDto()
-            const createdPurchaseRecord = await fix.purchaseRecordsClient.create(createDto)
+            const purchaseRecord = await fix.purchaseRecordsClient.create(createDto)
 
-            expect(createdPurchaseRecord).toEqual({
-                id: expect.any(String),
+            expect(purchaseRecord).toEqual({
                 createdAt: expect.any(Date),
+                id: expect.any(String),
                 updatedAt: expect.any(Date),
                 ...createDto
             })
         })
     })
 
-    describe('GET /purchases/:purchaseId', () => {
+    describe('GET /purchases/:purchaseRecordId', () => {
         // 구매 기록이 존재할 때
         describe('when the purchase record exists', () => {
-            let purchase: PurchaseRecordDto
+            let purchaseRecord: PurchaseRecordDto
 
             beforeEach(async () => {
-                purchase = await createPurchaseRecord(fix)
+                purchaseRecord = await createPurchaseRecord(fix)
             })
 
             // 구매 기록을 반환한다
             it('returns the purchase record', async () => {
-                await fix.httpClient.get(`/purchases/${purchase.id}`).ok(purchase)
+                await fix.httpClient.get(`/purchases/${purchaseRecord.id}`).ok(purchaseRecord)
             })
         })
 

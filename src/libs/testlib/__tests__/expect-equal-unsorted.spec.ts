@@ -6,12 +6,12 @@ describe('expectEqualUnsorted', () => {
         // 객체 배열을 순서 없이 비교한다
         it('compares unordered arrays of objects', () => {
             const actual = [
-                { id: 1, name: 'John', age: 30 },
-                { id: 2, name: 'Jane', age: 25 }
+                { age: 30, id: 1, name: 'John' },
+                { age: 25, id: 2, name: 'Jane' }
             ]
             const expected = [
-                { id: 2, name: 'Jane', age: 25 },
-                { id: 1, name: 'John', age: 30 }
+                { age: 25, id: 2, name: 'Jane' },
+                { age: 30, id: 1, name: 'John' }
             ]
 
             expect(() => expectEqualUnsorted(actual, expected)).not.toThrow()
@@ -20,12 +20,12 @@ describe('expectEqualUnsorted', () => {
         // expect.anything 필드를 무시한다
         it('ignores fields with expect.anything', () => {
             const actual = [
-                { id: expect.anything(), name: 'Jane', age: 25 },
-                { id: expect.anything(), name: 'John', age: 30 }
+                { age: 25, id: expect.anything(), name: 'Jane' },
+                { age: 30, id: expect.anything(), name: 'John' }
             ]
             const expected = [
-                { id: 1, name: 'Jane', age: 25 },
-                { id: 2, name: 'John', age: 30 }
+                { age: 25, id: 1, name: 'Jane' },
+                { age: 30, id: 2, name: 'John' }
             ]
 
             expect(() => expectEqualUnsorted(actual, expected)).not.toThrow()
@@ -42,12 +42,12 @@ describe('expectEqualUnsorted', () => {
         // 내용이 다른 배열에 대해 오류를 던진다
         it('throws an error for arrays with different content', () => {
             const actual = [
-                { id: 1, name: 'John', age: 30 },
-                { id: 2, name: 'Jane', age: 25 }
+                { age: 30, id: 1, name: 'John' },
+                { age: 25, id: 2, name: 'Jane' }
             ]
             const expected = [
-                { id: 1, name: 'John', age: 40 },
-                { id: 2, name: 'Jane', age: 25 }
+                { age: 40, id: 1, name: 'John' },
+                { age: 25, id: 2, name: 'Jane' }
             ]
 
             expect(() => expectEqualUnsorted(actual, expected)).toThrow()
@@ -56,12 +56,12 @@ describe('expectEqualUnsorted', () => {
         // 중첩 객체가 다른 배열에 대해 오류를 던진다
         it('throws an error for arrays with different nested objects', () => {
             const actual = [
-                { id: 1, name: 'John', address: { city: 'New York', zip: '-' } },
-                { id: 2, name: 'Jane', address: { city: 'Los Angeles', zip: '90001' } }
+                { address: { city: 'New York', zip: '-' }, id: 1, name: 'John' },
+                { address: { city: 'Los Angeles', zip: '90001' }, id: 2, name: 'Jane' }
             ]
             const expected = [
-                { id: 1, name: 'John', address: { city: 'New York', zip: '10001' } },
-                { id: 2, name: 'Jane', address: { city: 'Los Angeles', zip: '90001' } }
+                { address: { city: 'New York', zip: '10001' }, id: 1, name: 'John' },
+                { address: { city: 'Los Angeles', zip: '90001' }, id: 2, name: 'Jane' }
             ]
 
             expect(() => expectEqualUnsorted(actual, expected)).toThrow()

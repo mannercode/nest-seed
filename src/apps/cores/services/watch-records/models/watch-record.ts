@@ -1,5 +1,5 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, createMongooseSchema } from 'common'
+import { createMongooseSchema, MongooseSchema } from 'common'
 import { MongooseConfigModule } from 'shared'
 
 @Schema(MongooseConfigModule.schemaOptions)
@@ -11,7 +11,7 @@ export class WatchRecord extends MongooseSchema {
     movieId: string
 
     @Prop({ required: true })
-    purchaseId: string
+    purchaseRecordId: string
 
     @Prop({ required: true })
     watchDate: Date

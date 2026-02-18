@@ -1,17 +1,32 @@
-import { Controller, Get, Post, Provider } from '@nestjs/common'
+import { Provider } from '@nestjs/common'
+import { Controller, Get, Post } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
-import { MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
+import { NatsOptions } from '@nestjs/microservices'
+import { MessagePattern, Transport } from '@nestjs/microservices'
 import { SuccessLoggingInterceptor } from 'common'
-import {
-    createHttpTestContext,
-    getNatsTestConnection,
-    HttpTestClient,
-    RpcTestClient,
-    withTestId
-} from 'testlib'
+import { HttpTestClient } from 'testlib'
+import { createHttpTestContext, getNatsTestConnection, RpcTestClient, withTestId } from 'testlib'
+
+export type SuccessLoggingInterceptorFixture = {
+    httpClient: HttpTestClient
+    rpcClient: RpcTestClient
+    spyError: jest.SpyInstance
+    spyVerbose: jest.SpyInstance
+    teardown: () => Promise<void>
+}
 
 @Controller()
 class TestController {
+    @MessagePattern(withTestId('exclude-path'))
+    excludeRpc() {
+        return { result: 'success' }
+    }
+
+    @Get('exclude-path')
+    async getExcludePath() {
+        return { result: 'success' }
+    }
+
     @Post('success')
     async httpSuccess() {
         return { result: 'success' }
@@ -21,42 +36,21 @@ class TestController {
     rpcSuccess() {
         return { result: 'success' }
     }
-
-    @Get('exclude-path')
-    async getExcludePath() {
-        return { result: 'success' }
-    }
-
-    @MessagePattern(withTestId('exclude-path'))
-    excludeRpc() {
-        return { result: 'success' }
-    }
-}
-
-export type SuccessLoggingInterceptorFixture = {
-    teardown: () => Promise<void>
-    httpClient: HttpTestClient
-    rpcClient: RpcTestClient
-    spyVerbose: jest.SpyInstance
-    spyError: jest.SpyInstance
 }
 
 export async function createSuccessLoggingInterceptorFixture(providers: Provider[]) {
     const brokerOptions = {
-        transport: Transport.NATS,
-        options: getNatsTestConnection()
+        options: getNatsTestConnection(),
+        transport: Transport.NATS
     } as NatsOptions
 
     const { httpClient, ...ctx } = await createHttpTestContext({
-        controllers: [TestController],
-        providers: [
-            { provide: APP_INTERCEPTOR, useClass: SuccessLoggingInterceptor },
-            ...providers
-        ],
         configureApp: async (app) => {
             app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
             await app.startAllMicroservices()
-        }
+        },
+        controllers: [TestController],
+        providers: [{ provide: APP_INTERCEPTOR, useClass: SuccessLoggingInterceptor }, ...providers]
     })
 
     const { Logger } = await import('@nestjs/common')
@@ -70,5 +64,5 @@ export async function createSuccessLoggingInterceptorFixture(providers: Provider
         await ctx.close()
     }
 
-    return { teardown, httpClient, rpcClient, spyVerbose, spyError }
+    return { httpClient, rpcClient, spyError, spyVerbose, teardown }
 }

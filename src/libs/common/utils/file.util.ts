@@ -2,10 +2,6 @@ import { stat } from 'fs/promises'
 import { Checksum } from './checksum'
 
 export class FileUtil {
-    static async getSize(filePath: string): Promise<number> {
-        return (await stat(filePath)).size
-    }
-
     static async areEqual(firstFilePath: string, secondFilePath: string): Promise<boolean> {
         const [firstSize, secondSize] = await Promise.all([
             this.getSize(firstFilePath),
@@ -23,5 +19,9 @@ export class FileUtil {
             firstChecksum.algorithm === secondChecksum.algorithm &&
             firstChecksum.base64 === secondChecksum.base64
         )
+    }
+
+    static async getSize(filePath: string): Promise<number> {
+        return (await stat(filePath)).size
     }
 }

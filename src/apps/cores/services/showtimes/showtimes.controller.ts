@@ -1,7 +1,8 @@
 import { Controller, ParseArrayPipe } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Messages } from 'shared'
-import { CreateShowtimeDto, CreateShowtimesResult, SearchShowtimesDto } from './dtos'
+import { CreateShowtimesResult, SearchShowtimesDto } from './dtos'
+import { CreateShowtimeDto } from './dtos'
 import { ShowtimesService } from './showtimes.service'
 
 @Controller()
@@ -13,6 +14,11 @@ export class ShowtimesController {
         @Payload(new ParseArrayPipe({ items: CreateShowtimeDto })) createDtos: CreateShowtimeDto[]
     ): Promise<CreateShowtimesResult> {
         return this.service.createMany(createDtos)
+    }
+
+    @MessagePattern(Messages.Showtimes.existsAll)
+    existsAll(@Payload() showtimeIds: string[]) {
+        return this.service.existsAll(showtimeIds)
     }
 
     @MessagePattern(Messages.Showtimes.getMany)
@@ -30,18 +36,13 @@ export class ShowtimesController {
         return this.service.searchMovieIds(searchDto)
     }
 
-    @MessagePattern(Messages.Showtimes.searchTheaterIds)
-    searchTheaterIds(@Payload() searchDto: SearchShowtimesDto) {
-        return this.service.searchTheaterIds(searchDto)
-    }
-
     @MessagePattern(Messages.Showtimes.searchShowdates)
     searchShowdates(@Payload() searchDto: SearchShowtimesDto) {
         return this.service.searchShowdates(searchDto)
     }
 
-    @MessagePattern(Messages.Showtimes.allExist)
-    allExist(@Payload() showtimeIds: string[]) {
-        return this.service.allExist(showtimeIds)
+    @MessagePattern(Messages.Showtimes.searchTheaterIds)
+    searchTheaterIds(@Payload() searchDto: SearchShowtimesDto) {
+        return this.service.searchTheaterIds(searchDto)
     }
 }

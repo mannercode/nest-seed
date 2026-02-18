@@ -1,5 +1,6 @@
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import { OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { Job, Queue } from 'bullmq'
 import { newObjectIdString, reviveIsoDates } from 'common'
 import { get } from 'lodash'
@@ -7,13 +8,14 @@ import { BulkCreateShowtimesDto } from '../dtos'
 import { ShowtimeCreationEvents } from '../showtime-creation.events'
 import { ShowtimeBulkCreatorService } from './showtime-bulk-creator.service'
 import { ShowtimeBulkValidatorService } from './showtime-bulk-validator.service'
-import { ShowtimeCreationJobData, ShowtimeCreationStatus } from './types'
+import { ShowtimeCreationJobData } from './types'
+import { ShowtimeCreationStatus } from './types'
 
 @Injectable()
 @Processor('showtime-creation')
 export class ShowtimeCreationWorkerService
     extends WorkerHost
-    implements OnModuleInit, OnModuleDestroy
+    implements OnModuleDestroy, OnModuleInit
 {
     constructor(
         private readonly validatorService: ShowtimeBulkValidatorService,
@@ -22,6 +24,22 @@ export class ShowtimeCreationWorkerService
         @InjectQueue('showtime-creation') private readonly queue: Queue
     ) {
         super()
+    }
+
+    async enqueueShowtimeCreationJob(createDto: BulkCreateShowtimesDto) {
+        const sagaId = newObjectIdString()
+
+        const jobData = { createDto, sagaId } as ShowtimeCreationJobData
+
+        await this.events.emitStatusChanged({ sagaId, status: ShowtimeCreationStatus.Waiting })
+
+        await this.queue.add('showtime-creation.create', jobData)
+
+        return sagaId
+    }
+
+    async onModuleDestroy() {
+        await this.worker.close()
     }
 
     async onModuleInit() {
@@ -39,22 +57,6 @@ export class ShowtimeCreationWorkerService
         await this.worker.waitUntilReady()
     }
 
-    async onModuleDestroy() {
-        await this.worker.close()
-    }
-
-    async enqueueShowtimeCreationJob(createDto: BulkCreateShowtimesDto) {
-        const sagaId = newObjectIdString()
-
-        const jobData = { createDto, sagaId } as ShowtimeCreationJobData
-
-        await this.events.emitStatusChanged({ status: ShowtimeCreationStatus.Waiting, sagaId })
-
-        await this.queue.add('showtime-creation.create', jobData)
-
-        return sagaId
-    }
-
     async process(job: Job<ShowtimeCreationJobData>) {
         try {
             const jobData = reviveIsoDates(job.data)
@@ -64,31 +66,31 @@ export class ShowtimeCreationWorkerService
             const message = get(error, 'message', String(error))
 
             await this.events.emitStatusChanged({
-                status: ShowtimeCreationStatus.Error,
+                message,
                 sagaId: job.data.sagaId,
-                message
+                status: ShowtimeCreationStatus.Error
             })
         }
     }
 
-    private async processJobData({ sagaId, createDto }: ShowtimeCreationJobData) {
-        await this.events.emitStatusChanged({ status: ShowtimeCreationStatus.Processing, sagaId })
+    private async processJobData({ createDto, sagaId }: ShowtimeCreationJobData) {
+        await this.events.emitStatusChanged({ sagaId, status: ShowtimeCreationStatus.Processing })
 
-        const { isValid, conflictingShowtimes } = await this.validatorService.validate(createDto)
+        const { conflictingShowtimes, isValid } = await this.validatorService.validate(createDto)
 
         if (isValid) {
             const creationResult = await this.creatorService.create(createDto, sagaId)
 
             await this.events.emitStatusChanged({
-                status: ShowtimeCreationStatus.Succeeded,
                 sagaId,
+                status: ShowtimeCreationStatus.Succeeded,
                 ...creationResult
             })
         } else {
             await this.events.emitStatusChanged({
-                status: ShowtimeCreationStatus.Failed,
+                conflictingShowtimes,
                 sagaId,
-                conflictingShowtimes
+                status: ShowtimeCreationStatus.Failed
             })
         }
     }

@@ -1,3 +1,4 @@
+import { SuccessLoggingInterceptor } from 'common'
 import { withTestId } from 'testlib'
 import type { SuccessLoggingInterceptorFixture } from './success-logging.interceptor.fixture'
 
@@ -22,10 +23,10 @@ describe('SuccessLoggingInterceptor', () => {
 
                 expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
                 expect(fix.spyVerbose).toHaveBeenCalledWith('success', {
-                    statusCode: 201,
                     contextType: 'http',
-                    request: { method: 'POST', url: '/success', body },
-                    duration: expect.any(String)
+                    duration: expect.any(String),
+                    request: { body, method: 'POST', url: '/success' },
+                    statusCode: 201
                 })
             })
         })
@@ -40,8 +41,8 @@ describe('SuccessLoggingInterceptor', () => {
 
                 expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
                 expect(fix.spyVerbose).toHaveBeenCalledWith('success', {
-                    contextType: 'rpc',
                     context: { args: [subject] },
+                    contextType: 'rpc',
                     data,
                     duration: expect.any(String)
                 })
@@ -109,6 +110,19 @@ describe('SuccessLoggingInterceptor', () => {
             await fix.rpcClient.expectRequest(subject, data, { result: 'success' })
 
             expect(fix.spyVerbose).toHaveBeenCalledTimes(0)
+        })
+    })
+
+    describe('shouldRpcLog', () => {
+        // rpc args가 배열이 아닐 때
+        describe('when rpc args are not an array', () => {
+            // true를 반환한다
+            it('returns true', () => {
+                const interceptor = new SuccessLoggingInterceptor(undefined, ['subject'])
+                const result = (interceptor as any).shouldRpcLog(undefined)
+
+                expect(result).toBe(true)
+            })
         })
     })
 })
