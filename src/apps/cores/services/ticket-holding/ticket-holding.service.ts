@@ -65,13 +65,14 @@ export class TicketHoldingService {
         const ticketKeys = ticketIds.map((ticketId) => getTicketKey(showtimeId, ticketId))
         const customerKeyStr = getCustomerKey(showtimeId, customerId)
         const keys = [...ticketKeys, customerKeyStr]
-
-        const result = await this.cacheService.executeScript(HOLD_TICKETS_SCRIPT, keys, [
+        const scriptArgs = [
             customerId,
             Rules.Ticket.holdDurationInMs.toString(),
             JSON.stringify(ticketIds),
             showtimeId
-        ])
+        ]
+
+        const result = await this.cacheService.executeScript(HOLD_TICKETS_SCRIPT, keys, scriptArgs)
 
         return result === 1
     }

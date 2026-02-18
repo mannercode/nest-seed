@@ -29,9 +29,8 @@ export function createMessagePatternMap<T extends Record<string, any>>(
 ): Paths<T> {
     const patternMap: Record<string, any> = {}
 
-    for (const key in patternTree) {
+    for (const [key, node] of Object.entries(patternTree)) {
         const currentPath = parentPath ? `${parentPath}.${key}` : key
-        const node = patternTree[key]
 
         if (typeof node === 'object' && node !== null) {
             patternMap[key] = createMessagePatternMap(node, currentPath)

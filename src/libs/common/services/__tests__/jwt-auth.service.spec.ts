@@ -32,7 +32,9 @@ describe('JwtAuthService', () => {
 
         beforeEach(async () => {
             const payload = { userId: 'userId', email: 'email' }
-            ;({ accessToken, refreshToken } = await fix.jwtService.generateAuthTokens(payload))
+            const tokens = await fix.jwtService.generateAuthTokens(payload)
+            accessToken = tokens.accessToken
+            refreshToken = tokens.refreshToken
         })
 
         // 리프레시 토큰이 유효할 때

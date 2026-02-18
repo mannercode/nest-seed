@@ -35,7 +35,9 @@ describe('BookingService', () => {
         ]
 
         beforeEach(async () => {
-            ;({ movie, accessToken } = await createAllResources(fix, locations, startTimes))
+            const resources = await createAllResources(fix, locations, startTimes)
+            movie = resources.movie
+            accessToken = resources.accessToken
         })
 
         // 선택한 티켓을 보유한다

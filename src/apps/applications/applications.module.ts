@@ -19,7 +19,7 @@ import type { QueueOptions } from 'bullmq'
         BullModule.forRootAsync('queue', {
             useFactory: (redis: Redis) => ({
                 prefix: `{queue:${getProjectId()}}`,
-                connection: redis as unknown as QueueOptions['connection']
+                connection: redis as QueueOptions['connection']
             }),
             inject: [RedisConfigModule.moduleName]
         }),

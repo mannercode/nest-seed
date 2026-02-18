@@ -218,7 +218,7 @@ describe('MoviesService', () => {
         beforeEach(async () => {
             const asset = await uploadAndFinalizeAsset(fix, testAssets.image)
 
-            ;[movieA1, movieA2, movieB1, movieB2] = await Promise.all([
+            const createdMovies = await Promise.all([
                 createMovie(fix, {
                     title: 'title-a1',
                     plot: 'plot-a1',
@@ -253,6 +253,11 @@ describe('MoviesService', () => {
                     genres: [MovieGenre.Thriller, MovieGenre.Western]
                 })
             ])
+
+            movieA1 = createdMovies[0]
+            movieA2 = createdMovies[1]
+            movieB1 = createdMovies[2]
+            movieB2 = createdMovies[3]
         })
 
         const buildExpectedPage = (movies: MovieDto[]) => {

@@ -39,13 +39,21 @@ export class CacheService {
         await this.redis.del(this.getKey(key))
     }
 
-    async executeScript<T = unknown>(script: string, keys: string[], args: string[]): Promise<T> {
+    /**
+     * Runs a Lua script with namespaced keys.
+     * The cache prefix is always inserted as the first ARGV value.
+     */
+    async executeScript<T = unknown>(
+        script: string,
+        keys: string[],
+        scriptArgs: string[]
+    ): Promise<T> {
         const result = await this.redis.eval(
             script,
             keys.length,
             ...keys.map(this.getKey.bind(this)),
             this.prefix,
-            ...args
+            ...scriptArgs
         )
         return result as T
     }

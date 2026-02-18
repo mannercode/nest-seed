@@ -17,8 +17,8 @@ TEST "Create a purchase" \
 			"customerId": "'${CUSTOMER_ID}'",
 			"totalPrice": 20000,
 			"purchaseItems": [
-				{ "type": "ticket", "ticketId": "'${TICKET_ID_1}'" },
-				{ "type": "ticket", "ticketId": "'${TICKET_ID_2}'" }
+				{ "type": "tickets", "itemId": "'${TICKET_ID_1}'" },
+				{ "type": "tickets", "itemId": "'${TICKET_ID_2}'" }
 			]
 		}'
 

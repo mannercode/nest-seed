@@ -169,12 +169,16 @@ describe('CustomersService', () => {
         let customerB2: CustomerDto
 
         beforeEach(async () => {
-            ;[customerA1, customerA2, customerB1, customerB2] = await Promise.all([
+            const createdCustomers = await Promise.all([
                 createCustomer(fix, { name: 'customer-a1', email: 'user-a1@mail.com' }),
                 createCustomer(fix, { name: 'customer-a2', email: 'user-a2@mail.com' }),
                 createCustomer(fix, { name: 'customer-b1', email: 'user-b1@mail.com' }),
                 createCustomer(fix, { name: 'customer-b2', email: 'user-b2@mail.com' })
             ])
+            customerA1 = createdCustomers[0]
+            customerA2 = createdCustomers[1]
+            customerB1 = createdCustomers[2]
+            customerB2 = createdCustomers[3]
         })
 
         const buildExpectedPage = (customers: CustomerDto[]) => ({

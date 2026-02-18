@@ -99,7 +99,8 @@ describe('AssetsService', () => {
             let assetId: string
 
             beforeEach(async () => {
-                ;({ assetId } = await createAsset(fix, file))
+                const asset = await createAsset(fix, file)
+                assetId = asset.assetId
             })
 
             // false를 반환한다
@@ -154,7 +155,8 @@ describe('AssetsService', () => {
                 toAny(Rules).Asset.uploadExpiresInSec = 1
 
                 const createDto = buildCreateAssetDto(file)
-                ;({ assetId } = await fix.assetsClient.create(createDto))
+                const createdAsset = await fix.assetsClient.create(createDto)
+                assetId = createdAsset.assetId
 
                 await sleep(1500)
             })
@@ -285,10 +287,12 @@ describe('AssetsService', () => {
             beforeEach(async () => {
                 const { Rules } = await import('shared')
                 toAny(Rules).Asset.uploadExpiresInSec = 1
-                ;({ fireOnTick } = fix.scheduler.getCronJob('assets.cleanupExpiredUploads'))
+                const cronJob = fix.scheduler.getCronJob('assets.cleanupExpiredUploads')
+                fireOnTick = cronJob.fireOnTick
 
                 const createDto = buildCreateAssetDto(file)
-                ;({ assetId } = await fix.assetsClient.create(createDto))
+                const createdAsset = await fix.assetsClient.create(createDto)
+                assetId = createdAsset.assetId
             })
 
             // 업로드가 만료되지 않았을 때

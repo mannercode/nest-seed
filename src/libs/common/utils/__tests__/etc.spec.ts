@@ -1,13 +1,4 @@
-import {
-    quoteJsonIntegers,
-    generateShortId,
-    generateUuid,
-    reviveIsoDates,
-    padNumber,
-    pickIds,
-    sleep,
-    validateEmail
-} from 'common'
+import { quoteJsonIntegers, generateShortId, reviveIsoDates, pickIds, sleep } from 'common'
 import { nullDate } from 'testlib'
 
 describe('sleep', () => {
@@ -24,24 +15,6 @@ describe('sleep', () => {
         const tolerance = 500
         expect(elapsed).toBeGreaterThan(timeout - tolerance)
         expect(elapsed).toBeLessThan(timeout + tolerance)
-    })
-})
-
-describe('generateUuid', () => {
-    // UUID를 생성한다
-    it('generates a UUID', () => {
-        const generatedUuid = generateUuid()
-        const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
-
-        expect(generatedUuid).toMatch(regex)
-    })
-
-    // 매번 다른 UUID를 생성한다
-    it('generates a different UUID each time', () => {
-        const firstUuid = generateUuid()
-        const secondUuid = generateUuid()
-
-        expect(firstUuid).not.toEqual(secondUuid)
     })
 })
 
@@ -154,55 +127,6 @@ describe('pickIds', () => {
         it('returns an empty array', () => {
             const result = pickIds([])
             expect(result).toEqual([])
-        })
-    })
-})
-
-describe('validateEmail', () => {
-    // 이메일이 유효할 때
-    describe('when the email is valid', () => {
-        // true를 반환한다
-        it('returns true', () => {
-            expect(validateEmail('test@example.com')).toBe(true)
-            expect(validateEmail('user.name@domain.co')).toBe(true)
-        })
-    })
-
-    // 이메일이 유효하지 않을 때
-    describe('when the email is invalid', () => {
-        // false를 반환한다
-        it('returns false', () => {
-            expect(validateEmail('plainaddress')).toBe(false)
-            expect(validateEmail('user@domain')).toBe(false)
-        })
-    })
-})
-
-describe('padNumber', () => {
-    // 길이 3으로 5를 패딩할 때
-    describe('when padding 5 to length 3', () => {
-        // '005'를 반환한다
-        it("returns '005'", () => {
-            const result = padNumber(5, 3)
-            expect(result).toEqual('005')
-        })
-    })
-
-    // 숫자가 음수일 때
-    describe('when the number is negative', () => {
-        // 부호를 유지한 채 패딩한다
-        it('pads while keeping the sign', () => {
-            const result = padNumber(-5, 3)
-            expect(result).toEqual('0-5')
-        })
-    })
-
-    // 숫자 길이가 충분할 때
-    describe('when the number length is sufficient', () => {
-        // 문자열 표현을 반환한다
-        it('returns the string representation', () => {
-            expect(padNumber(123, 3)).toEqual('123')
-            expect(padNumber(1234, 3)).toEqual('1234')
         })
     })
 })

@@ -15,14 +15,10 @@ export class Env {
 
     static getNumber(key: string): number {
         const value = this.getString(key)
-        const parsed = parseInt(value, 10)
-        if (isNaN(parsed)) {
+        const parsed = Number(value)
+        if (!Number.isFinite(parsed)) {
             throw new Error(`Environment variable ${key} must be a valid number`)
         }
         return parsed
-    }
-
-    static setValue(key: string, value: string) {
-        process.env[key] = value
     }
 }

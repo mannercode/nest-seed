@@ -40,23 +40,21 @@ prompt_selection() {
 
 mapfile -d '' -t all_specs < <(find ./specs -type f -name '*.spec' -print0 | sort -z)
 
-ROUTES=()
+SPECS=()
 for spec in "${all_specs[@]}"; do
-	route="/${spec#./specs/}"
-	route="${route%.spec}"
-	ROUTES+=("${route}")
+	SPECS+=("${spec#./specs/}")
 done
 
-printf '\n%b%s%b\n' "${C_BOLD}${C_BRIGHT_CYAN}" "Select e2e path:" "${C_RESET}"
-SELECTED_ROUTE=$(prompt_selection "all" "${ROUTES[@]}")
+printf '\n%b%s%b\n' "${C_BOLD}${C_BRIGHT_CYAN}" "Select e2e spec:" "${C_RESET}"
+SELECTED_SPEC=$(prompt_selection "*.spec" "${SPECS[@]}")
 
 npm run infra:reset
 npm run apps:reset
 
-if [[ "${SELECTED_ROUTE}" == "all" ]]; then
-	bash ./run.sh
+if [[ "${SELECTED_SPEC}" == "*.spec" ]]; then
+	bash ./run-specs.sh
 else
-	bash ./run.sh "./specs/${SELECTED_ROUTE#/}.spec"
+	bash ./run-specs.sh "./specs/${SELECTED_SPEC}"
 fi
 
 npm run apps:down

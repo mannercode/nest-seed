@@ -51,7 +51,7 @@ upload_presigned_post "${ASSET_IMAGE_PATH}" "${BODY}"
 LOG_LINE ""
 
 TEST "Complete movie asset after upload" \
-	200 POST /movies/${MOVIE_ID}/assets/${ASSET_ID}/complete
+	204 POST /movies/${MOVIE_ID}/assets/${ASSET_ID}/finalize
 
 TEST "Retrieve movie by ID" \
 	200 GET /movies/${MOVIE_ID}

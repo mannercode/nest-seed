@@ -1,4 +1,3 @@
-import syncFs from 'fs'
 import fs from 'fs/promises'
 import { tmpdir } from 'os'
 import p from 'path'
@@ -28,10 +27,6 @@ export class Path {
         } catch {
             return false
         }
-    }
-
-    static existsSync(path: string): boolean {
-        return syncFs.existsSync(path)
     }
 
     static async exists(path: string): Promise<boolean> {
@@ -66,16 +61,7 @@ export class Path {
     }
 
     static async copy(src: string, dest: string): Promise<void> {
-        if (await this.isDirectory(src)) {
-            await this.mkdir(dest)
-            const items = await fs.readdir(src)
-
-            for (const item of items) {
-                await this.copy(this.join(src, item), this.join(dest, item))
-            }
-        } else {
-            await fs.copyFile(src, dest)
-        }
+        await fs.cp(src, dest, { recursive: true, force: true })
     }
 
     static async createTempDirectory(): Promise<string> {

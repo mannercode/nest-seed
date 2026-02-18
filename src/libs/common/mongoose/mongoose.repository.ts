@@ -9,6 +9,7 @@ import type { OnModuleInit } from '@nestjs/common'
 import type { ClientSession, HydratedDocument, Model, ObjectId, QueryWithHelpers } from 'mongoose'
 
 type SessionArg = ClientSession | undefined
+type BulkSaveDocs<Doc> = Parameters<Model<Doc>['bulkSave']>[0]
 
 const defaultLeanOptions = { virtuals: true }
 
@@ -38,12 +39,10 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return new this.model()
     }
 
-    async saveMany(docs: HydratedDocument<Doc>[], session: SessionArg = undefined): Promise<void> {
-        const bulkSaveDocuments = docs as unknown as Parameters<Model<Doc>['bulkSave']>[0]
-        const { insertedCount, matchedCount, deletedCount } = await this.model.bulkSave(
-            bulkSaveDocuments,
-            { session }
-        )
+    async saveMany(docs: BulkSaveDocs<Doc>, session: SessionArg = undefined): Promise<void> {
+        const { insertedCount, matchedCount, deletedCount } = await this.model.bulkSave(docs, {
+            session
+        })
 
         Expect.equals(
             docs.length,

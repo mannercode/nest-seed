@@ -78,7 +78,9 @@ export class S3ObjectService implements OnModuleDestroy {
         this.s3.destroy()
     }
 
-    async presignUploadPost(opts: S3PresignPostUploadOptions): Promise<S3PresignPostUploadResult> {
+    async presignUploadPost(
+        options: S3PresignPostUploadOptions
+    ): Promise<S3PresignPostUploadResult> {
         const {
             key,
             expiresInSec,
@@ -87,7 +89,7 @@ export class S3ObjectService implements OnModuleDestroy {
             maxContentLength,
             contentDisposition,
             metadata
-        } = opts
+        } = options
 
         const fields: Record<string, string> = {}
         const conditions: any[] = []
@@ -126,9 +128,9 @@ export class S3ObjectService implements OnModuleDestroy {
         })
     }
 
-    async presignDownloadUrl(opts: S3PresignDownloadOptions): Promise<string> {
+    async presignDownloadUrl(options: S3PresignDownloadOptions): Promise<string> {
         const { key, expiresInSec, filename, responseContentType, responseContentDisposition } =
-            opts
+            options
 
         const disposition = defaultTo(
             responseContentDisposition,
@@ -145,8 +147,8 @@ export class S3ObjectService implements OnModuleDestroy {
         return getSignedUrl(this.s3, command, { expiresIn: expiresInSec })
     }
 
-    async isUploadComplete(opts: S3UploadCompleteOptions): Promise<boolean> {
-        const { key, contentLength, contentType } = opts
+    async isUploadComplete(options: S3UploadCompleteOptions): Promise<boolean> {
+        const { key, contentLength, contentType } = options
 
         try {
             const { ContentLength, ContentType } = await this.s3.send(

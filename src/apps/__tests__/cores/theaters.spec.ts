@@ -150,12 +150,16 @@ describe('TheatersService', () => {
         let theaterB2: TheaterDto
 
         beforeEach(async () => {
-            ;[theaterA1, theaterA2, theaterB1, theaterB2] = await Promise.all([
+            const createdTheaters = await Promise.all([
                 createTheater(fix, { name: 'theater-a1' }),
                 createTheater(fix, { name: 'theater-a2' }),
                 createTheater(fix, { name: 'theater-b1' }),
                 createTheater(fix, { name: 'theater-b2' })
             ])
+            theaterA1 = createdTheaters[0]
+            theaterA2 = createdTheaters[1]
+            theaterB1 = createdTheaters[2]
+            theaterB2 = createdTheaters[3]
         })
 
         const buildExpectedPage = (theaters: TheaterDto[]) => ({

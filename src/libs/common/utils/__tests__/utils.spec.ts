@@ -60,6 +60,20 @@ describe('Env', () => {
             })
         })
 
+        // 환경 변수가 숫자로 끝나지 않을 때
+        describe('when the env var contains a numeric prefix only', () => {
+            beforeEach(() => {
+                process.env.TEST_NUMBER = '123abc'
+            })
+
+            // 예외를 던진다
+            it('throws', () => {
+                expect(() => Env.getNumber('TEST_NUMBER')).toThrow(
+                    'Environment variable TEST_NUMBER must be a valid number'
+                )
+            })
+        })
+
         // 환경 변수가 제공되지 않을 때
         describe('when the env var is not provided', () => {
             // 예외를 던진다
@@ -85,18 +99,6 @@ describe('Env', () => {
             // true를 반환한다
             it('returns true', () => {
                 expect(Env.getBoolean('TEST_BOOLEAN')).toBe(true)
-            })
-        })
-    })
-
-    describe('setValue', () => {
-        // 문자열 값을 설정할 때
-        describe('when setting a string value', () => {
-            // process.env에 값을 그대로 설정한다
-            it('sets the value in process.env as-is', () => {
-                Env.setValue('TEST_VALUE', 'value')
-
-                expect(process.env.TEST_VALUE).toEqual('value')
             })
         })
     })

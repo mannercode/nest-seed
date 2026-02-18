@@ -47,15 +47,6 @@ describe('Path', () => {
         })
     })
 
-    // 지정한 경로가 존재하는지 동기로 확인한다
-    it('checks synchronously whether the specified path exists', async () => {
-        const filePath = Path.join(tempDir, 'file.txt')
-        await fs.writeFile(filePath, 'hello world')
-
-        const exists = Path.existsSync(filePath)
-        expect(exists).toBe(true)
-    })
-
     // 지정한 경로가 디렉터리인지 확인한다
     it('confirms whether the specified path is a directory', async () => {
         const exists = await Path.isDirectory(tempDir)

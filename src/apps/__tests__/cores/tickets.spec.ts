@@ -39,13 +39,17 @@ describe('TicketsService', () => {
             let ticketForShowtime: TicketDto
 
             beforeEach(async () => {
-                ;[ticketForSaga, ticketForMovie, ticketForTheater, ticketForShowtime] =
-                    await createTickets(fix, [
-                        { sagaId },
-                        { movieId },
-                        { theaterId },
-                        { showtimeId }
-                    ])
+                const createdTickets = await createTickets(fix, [
+                    { sagaId },
+                    { movieId },
+                    { theaterId },
+                    { showtimeId }
+                ])
+
+                ticketForSaga = createdTickets[0]
+                ticketForMovie = createdTickets[1]
+                ticketForTheater = createdTickets[2]
+                ticketForShowtime = createdTickets[3]
             })
 
             // sagaIds로 필터링된 티켓을 반환한다

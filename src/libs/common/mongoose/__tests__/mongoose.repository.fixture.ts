@@ -1,12 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
-import {
-    createMongooseSchema,
-    mapDocToDto,
-    MongooseRepository,
-    MongooseSchema,
-    padNumber
-} from 'common'
+import { createMongooseSchema, mapDocToDto, MongooseRepository, MongooseSchema } from 'common'
 import { Model } from 'mongoose'
 import { createTestContext, getMongoTestConnection } from 'testlib'
 
@@ -51,7 +45,7 @@ export async function createSamples(repository: SamplesRepository) {
     return Promise.all(
         Array.from({ length: 20 }, async (_unused, index) => {
             const doc = repository.newDocument()
-            doc.name = `Sample-${padNumber(index, 3)}`
+            doc.name = `Sample-${index.toString().padStart(3, '0')}`
             await doc.save()
 
             return doc.toJSON()

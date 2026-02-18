@@ -25,14 +25,19 @@ describe('RecommendationService', () => {
             let dramaMovie: MovieDto
 
             beforeEach(async () => {
-                ;[fantasyMovie, comedy1Movie, comedy2Movie, actionMovie, dramaMovie] =
-                    await createShowingMovies(fix, [
-                        { genres: [MovieGenre.Fantasy], releaseDate: new Date('2900-01-01') },
-                        { genres: [MovieGenre.Comedy], releaseDate: new Date('2900-02-01') },
-                        { genres: [MovieGenre.Comedy], releaseDate: new Date('2900-03-01') },
-                        { genres: [MovieGenre.Action], releaseDate: new Date('2900-04-01') },
-                        { genres: [MovieGenre.Drama], releaseDate: new Date('2900-05-01') }
-                    ])
+                const showingMovies = await createShowingMovies(fix, [
+                    { genres: [MovieGenre.Fantasy], releaseDate: new Date('2900-01-01') },
+                    { genres: [MovieGenre.Comedy], releaseDate: new Date('2900-02-01') },
+                    { genres: [MovieGenre.Comedy], releaseDate: new Date('2900-03-01') },
+                    { genres: [MovieGenre.Action], releaseDate: new Date('2900-04-01') },
+                    { genres: [MovieGenre.Drama], releaseDate: new Date('2900-05-01') }
+                ])
+
+                fantasyMovie = showingMovies[0]
+                comedy1Movie = showingMovies[1]
+                comedy2Movie = showingMovies[2]
+                actionMovie = showingMovies[3]
+                dramaMovie = showingMovies[4]
             })
 
             // 고객이 시청한 영화가 있을 때
@@ -40,14 +45,15 @@ describe('RecommendationService', () => {
                 let accessToken: string
 
                 beforeEach(async () => {
-                    ;({ accessToken } = await createWatchedMovies(fix, [
+                    const watchedMovies = await createWatchedMovies(fix, [
                         { genres: [MovieGenre.Action] },
                         { genres: [MovieGenre.Action] },
                         { genres: [MovieGenre.Action] },
                         { genres: [MovieGenre.Comedy] },
                         { genres: [MovieGenre.Comedy] },
                         { genres: [MovieGenre.Drama] }
-                    ]))
+                    ])
+                    accessToken = watchedMovies.accessToken
                 })
 
                 // 시청 기록을 기반으로 추천을 반환한다

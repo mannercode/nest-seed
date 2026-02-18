@@ -72,13 +72,7 @@ describe('ShowtimesService', () => {
             let showtimeInRangeB: ShowtimeDto
 
             beforeEach(async () => {
-                ;[
-                    showtimeForSaga,
-                    showtimeForMovie,
-                    showtimeForTheater,
-                    showtimeInRangeA,
-                    showtimeInRangeB
-                ] = await createShowtimes(fix, [
+                const createdShowtimes = await createShowtimes(fix, [
                     { sagaId },
                     { movieId },
                     { theaterId },
@@ -87,6 +81,12 @@ describe('ShowtimesService', () => {
                     { startTime: new Date('2020-01-02T14:00') },
                     { startTime: new Date('2020-01-03T12:00') }
                 ])
+
+                showtimeForSaga = createdShowtimes[0]
+                showtimeForMovie = createdShowtimes[1]
+                showtimeForTheater = createdShowtimes[2]
+                showtimeInRangeA = createdShowtimes[3]
+                showtimeInRangeB = createdShowtimes[4]
             })
 
             // sagaIds로 필터링된 상영 시간을 반환한다

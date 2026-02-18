@@ -224,7 +224,8 @@ describe('S3ObjectService', () => {
             let key: string
 
             beforeEach(async () => {
-                ;({ key } = await fix.s3Service.putObject(s3Object))
+                const created = await fix.s3Service.putObject(s3Object)
+                key = created.key
             })
 
             // true를 반환한다
@@ -416,7 +417,8 @@ describe('S3ObjectService', () => {
             let nextToken: string | undefined
 
             beforeEach(async () => {
-                ;({ nextToken } = await fix.s3Service.listObjects({ maxKeys }))
+                const listResult = await fix.s3Service.listObjects({ maxKeys })
+                nextToken = listResult.nextToken
             })
 
             // 다음 페이지의 객체를 반환한다
