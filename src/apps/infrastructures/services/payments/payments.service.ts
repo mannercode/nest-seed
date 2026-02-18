@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { mapDocToDto } from 'common'
-import { CreatePaymentDto, PaymentDto } from './dtos'
-import { Payment } from './models'
-import { PaymentsRepository } from './payments.repository'
+import type { CreatePaymentDto } from './dtos'
+import type { Payment } from './models'
+import type { PaymentsRepository } from './payments.repository'
+import { PaymentDto } from './dtos'
 
 @Injectable()
 export class PaymentsService {

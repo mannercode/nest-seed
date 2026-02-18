@@ -1,5 +1,5 @@
-import fs from 'fs/promises'
 import { FileUtil, Path } from 'common'
+import fs from 'fs/promises'
 
 describe('FileUtil', () => {
     const fileContent = 'Hello, World!'

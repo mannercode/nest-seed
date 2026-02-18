@@ -1,7 +1,7 @@
 export class ShowtimeDto {
+    endTime: Date
     id: string
-    theaterId: string
     movieId: string
     startTime: Date
-    endTime: Date
+    theaterId: string
 }

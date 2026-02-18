@@ -1,18 +1,18 @@
+import type { AssetDto } from 'apps/infrastructures'
 import { HttpStatus } from '@nestjs/common'
 import {
-    buildFinalizeAssetDto,
     buildCreateAssetDto,
+    buildFinalizeAssetDto,
     createAsset,
     downloadAsset,
     testAssets,
-    uploadAsset,
     uploadAndFinalizeAsset,
+    uploadAsset,
     uploadFile
 } from 'apps/__tests__/__helpers__'
 import { Checksum, pickIds, sleep } from 'common'
 import { nullObjectId, toAny } from 'testlib'
 import { type AssetsFixture } from './assets.fixture'
-import type { AssetDto } from 'apps/infrastructures'
 
 describe('AssetsService', () => {
     let fix: AssetsFixture
@@ -34,10 +34,10 @@ describe('AssetsService', () => {
 
                 expect(uploadRequest).toEqual({
                     assetId: expect.any(String),
-                    url: expect.any(String),
                     expiresAt: expect.any(Date),
+                    fields: expect.any(Object),
                     method: 'POST',
-                    fields: expect.any(Object)
+                    url: expect.any(String)
                 })
 
                 expect(uploadRequest.fields).toEqual(
@@ -129,7 +129,7 @@ describe('AssetsService', () => {
                 expect(asset).toEqual(
                     expect.objectContaining({
                         ...finalizeDto,
-                        download: { url: expect.any(String), expiresAt: expect.any(Date) }
+                        download: { expiresAt: expect.any(Date), url: expect.any(String) }
                     })
                 )
             })
@@ -204,7 +204,7 @@ describe('AssetsService', () => {
                     expect.arrayContaining(
                         assets.map((asset) => ({
                             ...asset,
-                            download: { url: expect.any(String), expiresAt: expect.any(Date) }
+                            download: { expiresAt: expect.any(Date), url: expect.any(String) }
                         }))
                     )
                 )

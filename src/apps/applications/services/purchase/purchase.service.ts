@@ -1,8 +1,8 @@
+import type { PurchaseRecordsClient } from 'apps/cores'
+import type { PaymentsClient } from 'apps/infrastructures'
 import { Injectable } from '@nestjs/common'
-import { PurchaseRecordsClient } from 'apps/cores'
-import { PaymentsClient } from 'apps/infrastructures'
-import { CreatePurchaseDto } from './dtos'
-import { TicketPurchaseService } from './services'
+import type { CreatePurchaseDto } from './dtos'
+import type { TicketPurchaseService } from './services'
 
 @Injectable()
 export class PurchaseService {
@@ -14,8 +14,8 @@ export class PurchaseService {
 
     async processPurchase(createDto: CreatePurchaseDto) {
         const payment = await this.paymentsClient.create({
-            customerId: createDto.customerId,
-            amount: createDto.totalPrice
+            amount: createDto.totalPrice,
+            customerId: createDto.customerId
         })
         await this.ticketProcessor.validatePurchase(createDto)
         const purchaseRecord = await this.purchaseRecordsClient.create({

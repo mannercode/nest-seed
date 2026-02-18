@@ -1,10 +1,11 @@
-import { ArgumentsHost, Catch, HttpException, Logger } from '@nestjs/common'
+import type { ArgumentsHost } from '@nestjs/common'
+import type { Request } from 'express'
+import { Catch, HttpException, Logger } from '@nestjs/common'
 import { BaseExceptionFilter } from '@nestjs/core'
 import { RpcException } from '@nestjs/microservices'
-import { Request } from 'express'
 import { defaultTo } from 'lodash'
 import { throwError } from 'rxjs'
-import { HttpErrorLog, RpcErrorLog } from './types'
+import type { HttpErrorLog, RpcErrorLog } from './types'
 
 /**
  * Only one global filter can be registered at a time.
@@ -29,34 +30,34 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
 
         if (contextType === 'http') {
             const httpContext = host.switchToHttp()
-            const { method, url, body } = httpContext.getRequest<Request>()
+            const { body, method, url } = httpContext.getRequest<Request>()
 
-            const httpLogBase = { contextType, request: { method, url, body } }
+            const httpLogBase = { contextType, request: { body, method, url } }
 
             if (exception instanceof HttpException) {
                 const errorLog = {
                     ...httpLogBase,
-                    statusCode: exception.getStatus(),
                     response: exception.getResponse(),
-                    stack: defaultTo(exception.stack, '').split('\n')
+                    stack: defaultTo(exception.stack, '').split('\n'),
+                    statusCode: exception.getStatus()
                 } as HttpErrorLog
 
                 Logger.warn('fail', errorLog)
             } else if (exception instanceof Error) {
                 const errorLog = {
                     ...httpLogBase,
-                    statusCode: 500,
                     response: { message: exception.message },
-                    stack: defaultTo(exception.stack, '').split('\n')
+                    stack: defaultTo(exception.stack, '').split('\n'),
+                    statusCode: 500
                 } as HttpErrorLog
 
                 Logger.error('error', errorLog)
             } else {
                 const errorLog = {
                     ...httpLogBase,
-                    statusCode: 500,
                     response: { message: exception },
-                    stack: []
+                    stack: [],
+                    statusCode: 500
                 } as HttpErrorLog
 
                 Logger.fatal('fatal', errorLog)
@@ -68,8 +69,8 @@ export class ExceptionLoggerFilter extends BaseExceptionFilter {
             const rpcContext = host.switchToRpc()
 
             const rpcLogBase = {
-                contextType,
                 context: rpcContext.getContext(),
+                contextType,
                 data: rpcContext.getData()
             }
 

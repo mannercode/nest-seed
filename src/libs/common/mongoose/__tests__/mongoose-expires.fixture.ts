@@ -1,23 +1,23 @@
+import type { Model } from 'mongoose'
 import { getModelToken, MongooseModule, Schema as NestSchema, Prop } from '@nestjs/mongoose'
 import { createMongooseSchema, MongooseSchema } from 'common'
-import { Model } from 'mongoose'
 import { createTestContext, getMongoTestConnection } from 'testlib'
 
 @NestSchema()
 export class ExpireSample extends MongooseSchema {
+    @Prop({ default: Date.now, expires: '500ms' })
+    expiresAt: Date
+
     @Prop({ index: true })
     sn: number
-
-    @Prop({ expires: '500ms', default: Date.now })
-    expiresAt: Date
 }
 
-export type MongooseExpiresFixture = { teardown: () => Promise<void>; model: Model<ExpireSample> }
+export type MongooseExpiresFixture = { model: Model<ExpireSample>; teardown: () => Promise<void> }
 
 export async function createMongooseExpiresFixture() {
     const schema = createMongooseSchema(ExpireSample)
 
-    const { module, close } = await createTestContext({
+    const { close, module } = await createTestContext({
         imports: [
             MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
             MongooseModule.forFeature([{ name: 'schema', schema }])
@@ -31,5 +31,5 @@ export async function createMongooseExpiresFixture() {
         await close()
     }
 
-    return { teardown, model }
+    return { model, teardown }
 }

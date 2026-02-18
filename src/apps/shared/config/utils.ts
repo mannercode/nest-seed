@@ -1,5 +1,11 @@
 import { Expect } from 'common'
 
+type Paths<T, ParentPath extends string = ''> = {
+    [K in keyof T]: T[K] extends object
+        ? Paths<T[K], `${ParentPath}${K & string}.`>
+        : `${ParentPath}${K & string}`
+}
+
 /**
  * 'createMessagePatternMap' is a function that converts the input object to a string.
  * This function replaces each leaf node of the object with a string separated by dots (.) that represent the path.
@@ -40,12 +46,6 @@ export function createMessagePatternMap<T extends Record<string, any>>(
     }
 
     return patternMap as Paths<T>
-}
-
-type Paths<T, ParentPath extends string = ''> = {
-    [K in keyof T]: T[K] extends object
-        ? Paths<T[K], `${ParentPath}${K & string}.`>
-        : `${ParentPath}${K & string}`
 }
 
 export function getProjectId() {

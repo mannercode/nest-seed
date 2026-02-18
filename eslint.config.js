@@ -1,6 +1,5 @@
 const path = require('path')
 const { builtinModules } = require('module')
-const js = require('@eslint/js')
 const typescriptEslintPlugin = require('@typescript-eslint/eslint-plugin')
 const typescriptParser = require('@typescript-eslint/parser')
 const allowedDependenciesPlugin = require('eslint-plugin-allowed-dependencies').default
@@ -11,10 +10,10 @@ const globals = require('globals')
 const jestPlugin = require('eslint-plugin-jest')
 const unusedImportsPlugin = require('eslint-plugin-unused-imports')
 
-const escapeForRegex = value => value.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&')
-const nodeBuiltinModulePattern = `^(?:node:)?(?:${[...new Set(
-    builtinModules.map(moduleName => moduleName.replace(/^node:/, '').split('/')[0])
-)]
+const escapeForRegex = (value) => value.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&')
+const nodeBuiltinModulePattern = `^(?:node:)?(?:${[
+    ...new Set(builtinModules.map((moduleName) => moduleName.replace(/^node:/, '').split('/')[0]))
+]
     .sort()
     .map(escapeForRegex)
     .join('|')})(?:/.*)?$`
@@ -46,9 +45,8 @@ module.exports = [
         languageOptions: {
             parser: typescriptParser,
             parserOptions: {
-                project: path.resolve(__dirname, './tsconfig.json'),
-                tsconfigRootDir: __dirname,
-                sourceType: 'module'
+                sourceType: 'module',
+                project: path.resolve(__dirname, './tsconfig.json')
             },
             globals: { ...baseGlobals }
         },
@@ -60,71 +58,35 @@ module.exports = [
             'unused-imports': unusedImportsPlugin
         },
         rules: {
-            ...js.configs.recommended.rules,
             ...typescriptEslintPlugin.configs.recommended.rules,
             ...prettierConfig.rules,
-            'func-names': 'warn',
-            'no-bitwise': 'error',
+            ...perfectionistPlugin.configs['recommended-natural'].rules,
             'object-shorthand': 'warn',
             'no-useless-rename': 'warn',
-            'default-case-last': 'error',
-            'consistent-return': 'error',
-            'no-constant-condition': 'warn',
-            'default-case': ['error', { commentPattern: '^no default$' }],
-            'lines-around-directive': ['error', { before: 'always', after: 'always' }],
-            'arrow-body-style': ['error', 'as-needed', { requireReturnForObjectLiteral: false }],
+            'arrow-body-style': ['warn', 'as-needed', { requireReturnForObjectLiteral: false }],
             'perfectionist/sort-imports': [
                 'warn',
-                {
-                    type: 'unsorted',
-                    order: 'asc',
-                    ignoreCase: true,
-                    newlinesBetween: 0,
-                    internalPattern: [
-                        '^apps(?:/.*)?$',
-                        '^common$',
-                        '^shared$',
-                        '^testlib$'
-                    ],
-                    groups: [
-                        [
-                            'value-builtin',
-                            'value-external',
-                            'value-internal',
-                            'value-parent',
-                            'value-sibling',
-                            'value-index',
-                            'ts-equals-import'
-                        ],
-                        [
-                            'type-builtin',
-                            'type-external',
-                            'type-internal',
-                            'type-parent',
-                            'type-sibling',
-                            'type-index'
-                        ],
-                        'unknown'
-                    ]
-                }
+                { type: 'natural', order: 'asc', newlinesBetween: 0 }
             ],
-            'padding-line-between-statements': [
+            'perfectionist/sort-exports': [
                 'warn',
-                { blankLine: 'always', prev: 'import', next: '*' },
-                { blankLine: 'any', prev: 'import', next: 'import' }
+                { type: 'natural', order: 'asc', newlinesBetween: 0 }
             ],
+            'no-bitwise': 'error',
+            'consistent-return': 'error',
+            'no-constant-condition': 'warn',
+            'default-case': 'off',
             'allowed/dependencies': ['warn', sourceDependencyOptions],
             'prettier/prettier': 'warn',
-            'no-undef': 'off',
-            'no-shadow': 'off',
             '@typescript-eslint/no-shadow': 'error',
-            '@typescript-eslint/interface-name-prefix': 'off',
             '@typescript-eslint/explicit-function-return-type': 'off',
             '@typescript-eslint/explicit-module-boundary-types': 'off',
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/no-empty-function': 'off',
             '@typescript-eslint/no-empty-object-type': 'off',
-            '@typescript-eslint/no-unused-vars': [
+            '@typescript-eslint/no-unused-vars': 'off',
+            'unused-imports/no-unused-imports': 'warn',
+            'unused-imports/no-unused-vars': [
                 'warn',
                 {
                     args: 'all',
@@ -133,8 +95,10 @@ module.exports = [
                     caughtErrorsIgnorePattern: '^_'
                 }
             ],
-            'unused-imports/no-unused-imports': 'warn',
-            // Promise/async correctness
+            '@typescript-eslint/no-non-null-assertion': 'warn',
+            '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports' }],
+            '@typescript-eslint/no-redeclare': 'warn',
+            '@typescript-eslint/adjacent-overload-signatures': 'warn',
             '@typescript-eslint/no-floating-promises': 'warn',
             '@typescript-eslint/no-misused-promises': 'warn',
             '@typescript-eslint/await-thenable': 'warn',
@@ -142,29 +106,13 @@ module.exports = [
                 'warn',
                 { ignoreArrowShorthand: true }
             ],
-
-            // Return/await
             '@typescript-eslint/return-await': ['warn', 'in-try-catch'],
-            'no-return-await': 'off',
-            'require-await': 'off',
-
-            // Null/undefined related
             '@typescript-eslint/prefer-optional-chain': 'warn',
             '@typescript-eslint/prefer-nullish-coalescing': 'warn',
-            '@typescript-eslint/no-non-null-assertion': 'warn',
-
-            // Type-aware safety
-            '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports' }],
             '@typescript-eslint/no-unnecessary-condition': 'warn',
             '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
             '@typescript-eslint/switch-exhaustiveness-check': 'warn',
-
-            // Throw quality
-            '@typescript-eslint/only-throw-error': 'warn',
-
-            'no-redeclare': 'off',
-            '@typescript-eslint/no-redeclare': 'warn',
-            '@typescript-eslint/adjacent-overload-signatures': 'warn'
+            '@typescript-eslint/only-throw-error': 'warn'
         }
     },
     {

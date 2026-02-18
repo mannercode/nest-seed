@@ -7,13 +7,13 @@ import { TheatersRepository } from './theaters.repository'
 import { TheatersService } from './theaters.service'
 
 @Module({
+    controllers: [TheatersController],
     imports: [
         MongooseModule.forFeature(
             [{ name: Theater.name, schema: TheaterSchema }],
             MongooseConfigModule.connectionName
         )
     ],
-    providers: [TheatersService, TheatersRepository],
-    controllers: [TheatersController]
+    providers: [TheatersService, TheatersRepository]
 })
 export class TheatersModule {}

@@ -1,10 +1,10 @@
+import type { TicketDto } from 'apps/cores'
 import { HttpStatus } from '@nestjs/common'
 import { buildCreateTicketDto, createTickets, Errors } from 'apps/__tests__/__helpers__'
 import { TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { oid } from 'testlib'
 import type { TicketsFixture } from './tickets.fixture'
-import type { TicketDto } from 'apps/cores'
 
 describe('TicketsService', () => {
     let fix: TicketsFixture
@@ -88,8 +88,8 @@ describe('TicketsService', () => {
                 const promise = fix.ticketsClient.search({})
 
                 await expect(promise).rejects.toMatchObject({
-                    status: HttpStatus.BAD_REQUEST,
-                    message: Errors.Mongoose.FiltersRequired.message
+                    message: Errors.Mongoose.FiltersRequired.message,
+                    status: HttpStatus.BAD_REQUEST
                 })
             })
         })
@@ -143,10 +143,10 @@ describe('TicketsService', () => {
 
                 expect(ticketSales).toEqual([
                     {
+                        available: totalCount - soldCount,
                         showtimeId,
-                        total: totalCount,
                         sold: soldCount,
-                        available: totalCount - soldCount
+                        total: totalCount
                     }
                 ])
             })

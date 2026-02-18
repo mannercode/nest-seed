@@ -2,17 +2,17 @@ import { Injectable } from '@nestjs/common'
 import { InjectS3Object, S3ObjectModule, S3ObjectService } from 'common'
 import { createTestContext, getS3TestConnection } from 'testlib'
 
+export type S3ObjectServiceFixture = { s3Service: S3ObjectService; teardown: () => Promise<void> }
+
 @Injectable()
 class TestInjectS3ObjectService {
     constructor(@InjectS3Object() readonly _: S3ObjectService) {}
 }
 
-export type S3ObjectServiceFixture = { teardown: () => Promise<void>; s3Service: S3ObjectService }
-
 export async function createS3ObjectServiceFixture() {
     const config = getS3TestConnection()
 
-    const { module, close } = await createTestContext({
+    const { close, module } = await createTestContext({
         imports: [S3ObjectModule.register({ useFactory: () => config })],
         providers: [TestInjectS3ObjectService]
     })
@@ -23,11 +23,11 @@ export async function createS3ObjectServiceFixture() {
         await close()
     }
 
-    return { teardown, s3Service }
+    return { s3Service, teardown }
 }
 
 export async function uploadObject(s3Service: S3ObjectService, key: string, body: string) {
-    const { url, fields } = await s3Service.presignUploadPost({ key, expiresInSec: 60 })
+    const { fields, url } = await s3Service.presignUploadPost({ expiresInSec: 60, key })
     const form = new FormData()
 
     Object.entries(fields).forEach(([fieldKey, value]) => {
@@ -37,7 +37,7 @@ export async function uploadObject(s3Service: S3ObjectService, key: string, body
     const blob = new Blob([Buffer.from(body)], { type: 'application/octet-stream' })
     form.append('file', blob, 'file')
 
-    const response = await fetch(url, { method: 'POST', body: form })
+    const response = await fetch(url, { body: form, method: 'POST' })
     expect(response.ok).toBe(true)
 }
 

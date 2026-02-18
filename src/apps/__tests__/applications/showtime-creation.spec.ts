@@ -1,10 +1,10 @@
+import type { MovieDto, ShowtimeDto, TheaterDto } from 'apps/cores'
+import type { Response } from 'superagent'
 import { createMovie, createShowtimes, createTheater } from 'apps/__tests__/__helpers__'
 import { DateUtil } from 'common'
 import { nullObjectId } from 'testlib'
-import { waitForCompletion } from './showtime-creation.fixture'
 import type { ShowtimeCreationFixture } from './showtime-creation.fixture'
-import type { MovieDto, ShowtimeDto, TheaterDto } from 'apps/cores'
-import type { Response } from 'superagent'
+import { waitForCompletion } from './showtime-creation.fixture'
 
 describe('ShowtimeCreationService', () => {
     let fix: ShowtimeCreationFixture
@@ -27,7 +27,7 @@ describe('ShowtimeCreationService', () => {
             it('returns the default page of movies', async () => {
                 await fix.httpClient
                     .get('/showtime-creation/movies')
-                    .ok({ skip: 0, take: expect.any(Number), total: 1, items: [movie] })
+                    .ok({ items: [movie], skip: 0, take: expect.any(Number), total: 1 })
             })
         })
     })
@@ -39,7 +39,7 @@ describe('ShowtimeCreationService', () => {
             it('returns the default page of theaters', async () => {
                 await fix.httpClient
                     .get('/showtime-creation/theaters')
-                    .ok({ skip: 0, take: expect.any(Number), total: 1, items: [theater] })
+                    .ok({ items: [theater], skip: 0, take: expect.any(Number), total: 1 })
             })
         })
     })
@@ -56,7 +56,7 @@ describe('ShowtimeCreationService', () => {
                         new Date('2100-01-01T09:00'),
                         new Date('2100-01-01T11:00'),
                         new Date('2100-01-01T13:00')
-                    ].map((startTime) => ({ theaterId: theater.id, startTime }))
+                    ].map((startTime) => ({ startTime, theaterId: theater.id }))
                 )
             })
 
@@ -79,10 +79,10 @@ describe('ShowtimeCreationService', () => {
                 createPromise = fix.httpClient
                     .post('/showtime-creation/showtimes')
                     .body({
+                        durationInMinutes: 1,
                         movieId: movie.id,
-                        theaterIds: [theater.id],
                         startTimes: [new Date('2100-01-01T09:00')],
-                        durationInMinutes: 1
+                        theaterIds: [theater.id]
                     })
                     .accepted()
             })
@@ -99,7 +99,7 @@ describe('ShowtimeCreationService', () => {
                     fix.httpClient.get('/showtime-creation/event-stream').sse((data) => {
                         const statusUpdate = JSON.parse(data)
 
-                        if (['succeeded', 'failed', 'error'].includes(statusUpdate.status)) {
+                        if (['error', 'failed', 'succeeded'].includes(statusUpdate.status)) {
                             fix.httpClient.abort()
 
                             if ('succeeded' === statusUpdate.status) {
@@ -148,17 +148,17 @@ describe('ShowtimeCreationService', () => {
                 const { body } = await fix.httpClient
                     .post('/showtime-creation/showtimes')
                     .body({
+                        durationInMinutes: 1,
                         movieId: nullObjectId,
-                        theaterIds: [theater.id],
                         startTimes: [new Date(0)],
-                        durationInMinutes: 1
+                        theaterIds: [theater.id]
                     })
                     .accepted()
 
                 await expect(completionPromise).resolves.toEqual({
+                    message: 'The requested movie could not be found.',
                     sagaId: body.sagaId,
-                    status: 'error',
-                    message: 'The requested movie could not be found.'
+                    status: 'error'
                 })
             })
         })
@@ -172,17 +172,17 @@ describe('ShowtimeCreationService', () => {
                 const { body } = await fix.httpClient
                     .post('/showtime-creation/showtimes')
                     .body({
+                        durationInMinutes: 1,
                         movieId: movie.id,
-                        theaterIds: [nullObjectId],
                         startTimes: [new Date(0)],
-                        durationInMinutes: 1
+                        theaterIds: [nullObjectId]
                     })
                     .accepted()
 
                 await expect(completionPromise).resolves.toEqual({
+                    message: 'One or more requested theaters could not be found.',
                     sagaId: body.sagaId,
-                    status: 'error',
-                    message: 'One or more requested theaters could not be found.'
+                    status: 'error'
                 })
             })
         })
@@ -200,9 +200,9 @@ describe('ShowtimeCreationService', () => {
                         new Date('2013-01-31T16:30'),
                         new Date('2013-01-31T18:30')
                     ].map((startTime) => ({
-                        theaterId: theater.id,
+                        endTime: DateUtil.add({ base: startTime, minutes: 90 }),
                         startTime,
-                        endTime: DateUtil.add({ base: startTime, minutes: 90 })
+                        theaterId: theater.id
                     }))
                 )
             })
@@ -214,14 +214,14 @@ describe('ShowtimeCreationService', () => {
                 await fix.httpClient
                     .post('/showtime-creation/showtimes')
                     .body({
+                        durationInMinutes: 30,
                         movieId: movie.id,
-                        theaterIds: [theater.id],
                         startTimes: [
                             new Date('2013-01-31T12:00'),
                             new Date('2013-01-31T16:00'),
                             new Date('2013-01-31T20:00')
                         ],
-                        durationInMinutes: 30
+                        theaterIds: [theater.id]
                     })
                     .accepted()
 
@@ -232,9 +232,9 @@ describe('ShowtimeCreationService', () => {
                 ]
 
                 await expect(completionPromise).resolves.toEqual({
+                    conflictingShowtimes,
                     sagaId: expect.any(String),
-                    status: 'failed',
-                    conflictingShowtimes
+                    status: 'failed'
                 })
             })
         })

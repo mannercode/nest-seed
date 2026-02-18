@@ -1,6 +1,6 @@
 import { Types } from 'mongoose'
-import { addDeletedAtFilterToPipeline } from '../mongoose.schema'
 import type { MongooseSchemaFixture } from './mongoose.schema.fixture'
+import { addDeletedAtFilterToPipeline } from '../mongoose.schema'
 
 describe('Mongoose schema types', () => {
     let fix: MongooseSchemaFixture
@@ -60,8 +60,8 @@ describe('Mongoose schema types', () => {
             it('adds a deletedAt match as the second stage', () => {
                 const geoNearStage = {
                     $geoNear: {
-                        near: { type: 'Point', coordinates: [127, 37] },
-                        distanceField: 'd'
+                        distanceField: 'd',
+                        near: { coordinates: [127, 37], type: 'Point' }
                     }
                 }
                 const pipeline: Record<string, any>[] = [geoNearStage]
@@ -77,7 +77,7 @@ describe('Mongoose schema types', () => {
             // deletedAt 필터를 두 번째 스테이지로 추가한다
             it('adds a deletedAt match as the second stage', () => {
                 const searchStage = {
-                    $search: { index: 'default', text: { query: 'a', path: 'name' } }
+                    $search: { index: 'default', text: { path: 'name', query: 'a' } }
                 }
                 const pipeline: Record<string, any>[] = [searchStage]
 
@@ -94,10 +94,10 @@ describe('Mongoose schema types', () => {
                 const vectorSearchStage = {
                     $vectorSearch: {
                         index: 'v',
-                        path: 'embedding',
-                        queryVector: [0.1],
+                        limit: 3,
                         numCandidates: 10,
-                        limit: 3
+                        path: 'embedding',
+                        queryVector: [0.1]
                     }
                 }
                 const pipeline: Record<string, any>[] = [vectorSearchStage]

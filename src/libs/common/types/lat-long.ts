@@ -1,4 +1,5 @@
-import { BadRequestException, createParamDecorator, ExecutionContext } from '@nestjs/common'
+import type { ExecutionContext } from '@nestjs/common'
+import { BadRequestException, createParamDecorator } from '@nestjs/common'
 import { plainToInstance } from 'class-transformer'
 import { IsNumber, Max, Min, validate } from 'class-validator'
 
@@ -6,7 +7,6 @@ const EARTH_RADIUS_METERS = 6_371_000
 const MAX_COORDINATE_LENGTH = 20
 
 export const LatLongErrors = {
-    Required: { code: 'ERR_LATLONG_REQUIRED', message: 'The latLong query parameter is required' },
     InvalidFormat: {
         code: 'ERR_LATLONG_INVALID_FORMAT',
         message: 'latLong must be in the format "latitude,longitude"'
@@ -14,18 +14,19 @@ export const LatLongErrors = {
     OutOfRange: {
         code: 'ERR_LATLONG_OUT_OF_RANGE',
         message: 'Latitude must be between -90 and 90, longitude must be between -180 and 180'
-    }
+    },
+    Required: { code: 'ERR_LATLONG_REQUIRED', message: 'The latLong query parameter is required' }
 } as const
 
 export class LatLong {
     @IsNumber()
-    @Min(-90)
     @Max(90)
+    @Min(-90)
     latitude: number
 
     @IsNumber()
-    @Min(-180)
     @Max(180)
+    @Min(-180)
     longitude: number
 
     static distanceInMeters(from: LatLong, to: LatLong): number {
@@ -55,7 +56,7 @@ function isNumericString(value: string): boolean {
     return /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value)
 }
 
-function parseCoordinatePair(value: unknown): { latitude: number; longitude: number } | null {
+function parseCoordinatePair(value: unknown): null | { latitude: number; longitude: number } {
     if (typeof value !== 'string') return null
 
     const parts = value.split(',')
@@ -91,7 +92,7 @@ export const LatLongQuery = createParamDecorator(
         if (errors.length > 0) {
             throw new BadRequestException({
                 ...LatLongErrors.OutOfRange,
-                details: errors.map((e) => ({ field: e.property, constraints: e.constraints }))
+                details: errors.map((e) => ({ constraints: e.constraints, field: e.property }))
             })
         }
 

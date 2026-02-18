@@ -2,25 +2,18 @@ import { Type } from 'class-transformer'
 import { IsDate, IsOptional } from 'class-validator'
 import { DateUtil } from '../utils'
 
-type DateTimeRangeOptions = { start?: Date; end?: Date; minutes?: number; days?: number }
+type DateTimeRangeOptions = { days?: number; end?: Date; minutes?: number; start?: Date }
 
 export class DateTimeRange {
     @IsDate()
     @Type(() => Date)
-    start: Date
+    end: Date
 
     @IsDate()
     @Type(() => Date)
-    end: Date
+    start: Date
 
-    private static fromValues(start: Date, end: Date): DateTimeRange {
-        const range = new DateTimeRange()
-        range.start = start
-        range.end = end
-        return range
-    }
-
-    static create({ start, end, days, minutes }: DateTimeRangeOptions): DateTimeRange {
+    static create({ days, end, minutes, start }: DateTimeRangeOptions): DateTimeRange {
         if (start) {
             if (end) {
                 return this.fromValues(start, end)
@@ -34,16 +27,23 @@ export class DateTimeRange {
 
         throw new Error('Invalid options provided.')
     }
+
+    private static fromValues(start: Date, end: Date): DateTimeRange {
+        const range = new DateTimeRange()
+        range.start = start
+        range.end = end
+        return range
+    }
 }
 
 export class PartialDateTimeRange {
-    @IsOptional()
     @IsDate()
-    @Type(() => Date)
-    start?: Date
-
     @IsOptional()
-    @IsDate()
     @Type(() => Date)
     end?: Date
+
+    @IsDate()
+    @IsOptional()
+    @Type(() => Date)
+    start?: Date
 }

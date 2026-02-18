@@ -3,30 +3,24 @@ import { tmpdir } from 'os'
 import p from 'path'
 
 export class Path {
-    static getAbsolute(src: string): string {
-        return p.isAbsolute(src) ? src : p.resolve(src)
-    }
-
-    static join(...paths: string[]): string {
-        return p.join(...paths)
-    }
-
     static basename(path: string): string {
         return p.basename(path)
     }
 
-    static dirname(path: string): string {
-        return p.dirname(path)
+    static async copy(src: string, dest: string): Promise<void> {
+        await fs.cp(src, dest, { force: true, recursive: true })
     }
 
-    static async isWritable(path: string): Promise<boolean> {
-        try {
-            await fs.access(path, fs.constants.W_OK)
+    static async createTempDirectory(): Promise<string> {
+        return fs.mkdtemp(`${tmpdir()}${this.sep()}`)
+    }
 
-            return true
-        } catch {
-            return false
-        }
+    static async delete(path: string): Promise<void> {
+        await fs.rm(path, { force: true, recursive: true })
+    }
+
+    static dirname(path: string): string {
+        return p.dirname(path)
     }
 
     static async exists(path: string): Promise<boolean> {
@@ -39,37 +33,31 @@ export class Path {
         }
     }
 
+    static getAbsolute(src: string): string {
+        return p.isAbsolute(src) ? src : p.resolve(src)
+    }
+
     static async isDirectory(path: string): Promise<boolean> {
         const stats = await fs.stat(path)
         return stats.isDirectory()
     }
 
+    static async isWritable(path: string): Promise<boolean> {
+        try {
+            await fs.access(path, fs.constants.W_OK)
+
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    static join(...paths: string[]): string {
+        return p.join(...paths)
+    }
+
     static async mkdir(path: string): Promise<void> {
         await fs.mkdir(path, { recursive: true })
-    }
-
-    static async delete(path: string): Promise<void> {
-        await fs.rm(path, { recursive: true, force: true })
-    }
-
-    static async subdirs(src: string): Promise<string[]> {
-        const items = await fs.readdir(src, { withFileTypes: true })
-        return items
-            .filter((item) => item.isDirectory())
-            .map((item) => item.name)
-            .sort((left, right) => left.localeCompare(right))
-    }
-
-    static async copy(src: string, dest: string): Promise<void> {
-        await fs.cp(src, dest, { recursive: true, force: true })
-    }
-
-    static async createTempDirectory(): Promise<string> {
-        return fs.mkdtemp(`${tmpdir()}${this.sep()}`)
-    }
-
-    static sep() {
-        return p.sep
     }
 
     static async move(src: string, dest: string): Promise<void> {
@@ -83,5 +71,17 @@ export class Path {
             await this.copy(src, dest)
             await this.delete(src)
         }
+    }
+
+    static sep() {
+        return p.sep
+    }
+
+    static async subdirs(src: string): Promise<string[]> {
+        const items = await fs.readdir(src, { withFileTypes: true })
+        return items
+            .filter((item) => item.isDirectory())
+            .map((item) => item.name)
+            .sort((left, right) => left.localeCompare(right))
     }
 }

@@ -7,22 +7,22 @@ export const RequestValidationPipeErrors = {
 export class RequestValidationPipe extends ValidationPipe {
     constructor() {
         super({
+            disableErrorMessages: false,
+            enableDebugMessages: false,
             exceptionFactory: (errors) =>
                 new BadRequestException({
                     ...RequestValidationPipeErrors.Failed,
                     details: errors.map((error) => ({
-                        field: error.property,
-                        constraints: error.constraints
+                        constraints: error.constraints,
+                        field: error.property
                     }))
                 }),
-            enableDebugMessages: false,
-            disableErrorMessages: false,
-            whitelist: true,
             forbidNonWhitelisted: true,
-            skipMissingProperties: false,
             forbidUnknownValues: true,
+            skipMissingProperties: false,
             transform: true,
-            transformOptions: { enableImplicitConversion: true }
+            transformOptions: { enableImplicitConversion: true },
+            whitelist: true
         })
     }
 }

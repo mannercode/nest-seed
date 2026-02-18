@@ -1,5 +1,5 @@
-import { sleep } from '../../utils'
 import type { MongooseExpiresFixture } from './mongoose-expires.fixture'
+import { sleep } from '../../utils'
 
 describe('Mongoose TTL expiration', () => {
     let fix: MongooseExpiresFixture

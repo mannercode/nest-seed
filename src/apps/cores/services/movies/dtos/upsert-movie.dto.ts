@@ -3,39 +3,39 @@ import { IsArray, IsDate, IsEnum, IsInt, IsOptional, IsString, MaxLength } from 
 import { MovieGenre, MovieRating } from '../models'
 
 export class UpsertMovieDto {
-    @IsString()
+    @IsArray()
     @IsOptional()
-    title?: string
+    @IsString({ each: true })
+    assetIds?: string[]
+
+    @IsOptional()
+    @IsString()
+    director?: string
+
+    @IsInt()
+    @IsOptional()
+    durationInSeconds?: number
 
     @IsArray()
     @IsEnum(MovieGenre, { each: true })
     @IsOptional()
     genres?: MovieGenre[]
 
-    @IsDate()
-    @Type(() => Date)
     @IsOptional()
-    releaseDate?: Date
-
     @IsString()
     @MaxLength(5000)
-    @IsOptional()
     plot?: string
-
-    @IsInt()
-    @IsOptional()
-    durationInSeconds?: number
-
-    @IsString()
-    @IsOptional()
-    director?: string
 
     @IsEnum(MovieRating)
     @IsOptional()
     rating?: MovieRating
 
-    @IsArray()
-    @IsString({ each: true })
+    @IsDate()
     @IsOptional()
-    assetIds?: string[]
+    @Type(() => Date)
+    releaseDate?: Date
+
+    @IsOptional()
+    @IsString()
+    title?: string
 }

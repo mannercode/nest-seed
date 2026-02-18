@@ -3,21 +3,21 @@ import { IsArray, IsNotEmpty, IsPositive, IsString, ValidateNested } from 'class
 import { PurchaseItemDto } from './purchase-record.dto'
 
 export class CreatePurchaseRecordDto {
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     customerId: string
 
+    @IsNotEmpty()
     @IsString()
-    @IsNotEmpty()
     paymentId: string
-
-    @IsPositive()
-    @IsNotEmpty()
-    totalPrice: number
 
     @IsArray()
     @IsNotEmpty()
-    @ValidateNested({ each: true })
     @Type(() => PurchaseItemDto)
+    @ValidateNested({ each: true })
     purchaseItems: PurchaseItemDto[]
+
+    @IsNotEmpty()
+    @IsPositive()
+    totalPrice: number
 }

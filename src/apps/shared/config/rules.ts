@@ -9,37 +9,37 @@ import { Time } from 'common'
  * 그래서 환경설정으로 설정하게 하거나 외부에서 주입받는 것은 불필요하다.
  */
 export const Rules = {
-    Ticket: {
-        // Minutes before showtime when the purchase window closes
-        // 티켓 구매 가능 시간 (상영 시작 전 몇 분까지 구매 가능한지)
-        purchaseCutoffMinutes: 30,
-
-        // Maximum number of tickets that can be purchased at once
-        // 한 번에 구매할 수 있는 최대 티켓 수
-        maxTicketsPerPurchase: 10,
-
-        // Time duration a ticket can be temporarily held (reserved)
-        // 티켓을 임시로 선점할 수 있는 시간
-        holdDurationInMs: Time.toMs('10m')
+    Asset: {
+        downloadExpiresInSec: 60 * 60,
+        expiredUploadCleanupCron: CronExpression.EVERY_10_MINUTES,
+        uploadExpiresInSec: 60 * 60
+    },
+    Movie: {
+        defaults: {
+            director: '',
+            durationInSeconds: -1,
+            plot: '',
+            rating: 'Unrated',
+            releaseDate: new Date('0000-01-01'),
+            title: ''
+        }
     },
     Showtime: {
         // The minimum unit of time used to divide showtimes (in minutes)
         // 상영 시간을 나누는 최소 단위 (분 단위)
         timeslotInMinutes: 10
     },
-    Asset: {
-        uploadExpiresInSec: 60 * 60,
-        downloadExpiresInSec: 60 * 60,
-        expiredUploadCleanupCron: CronExpression.EVERY_10_MINUTES
-    },
-    Movie: {
-        defaults: {
-            title: '',
-            plot: '',
-            director: '',
-            releaseDate: new Date('0000-01-01'),
-            durationInSeconds: -1,
-            rating: 'Unrated'
-        }
+    Ticket: {
+        // Time duration a ticket can be temporarily held (reserved)
+        // 티켓을 임시로 선점할 수 있는 시간
+        holdDurationInMs: Time.toMs('10m'),
+
+        // Maximum number of tickets that can be purchased at once
+        // 한 번에 구매할 수 있는 최대 티켓 수
+        maxTicketsPerPurchase: 10,
+
+        // Minutes before showtime when the purchase window closes
+        // 티켓 구매 가능 시간 (상영 시작 전 몇 분까지 구매 가능한지)
+        purchaseCutoffMinutes: 30
     }
 } as const

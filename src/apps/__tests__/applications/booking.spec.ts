@@ -1,9 +1,9 @@
+import type { MovieDto, ShowtimeDto, TheaterDto, TicketDto } from 'apps/cores'
 import { Errors } from 'apps/__tests__/__helpers__'
 import { TicketStatus } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, step } from 'testlib'
-import { createAllResources, type BookingFixture } from './booking.fixture'
-import type { MovieDto, ShowtimeDto, TheaterDto, TicketDto } from 'apps/cores'
+import { type BookingFixture, createAllResources } from './booking.fixture'
 
 describe('BookingService', () => {
     let fix: BookingFixture
@@ -79,8 +79,8 @@ describe('BookingService', () => {
                 const { body: showtimes } = await fix.httpClient.get(url).ok(
                     expect.arrayContaining(
                         [
-                            { movieId: movie.id, theaterId: theater.id, startTime: startTimes[0] },
-                            { movieId: movie.id, theaterId: theater.id, startTime: startTimes[1] }
+                            { movieId: movie.id, startTime: startTimes[0], theaterId: theater.id },
+                            { movieId: movie.id, startTime: startTimes[1], theaterId: theater.id }
                         ].map((item) => expect.objectContaining(item))
                     )
                 )

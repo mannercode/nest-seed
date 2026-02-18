@@ -1,9 +1,5 @@
 import { randomBytes } from 'crypto'
 
-export async function sleep(timeoutInMs: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, timeoutInMs))
-}
-
 /**
  * Generates a short unique identifier (ID) with the specified length.
  * 지정된 길이의 짧은 고유 식별자(ID)를 생성합니다.
@@ -32,6 +28,18 @@ export function generateShortId(length: number = 15): string {
     }
 
     return shortId
+}
+
+/**
+ * Extracts the 'id' property from each object in an array.
+ * 객체 배열에서 각 객체의 'id' 프로퍼티를 추출
+ *
+ * @template T - An object type with a string 'id' property
+ * @param {T[]} items - The array of objects
+ * @returns {string[]} An array of id values
+ */
+export function pickIds<T extends { id: string }>(items: T[]): string[] {
+    return items.map((item) => item.id)
 }
 
 /**
@@ -111,14 +119,6 @@ export function reviveIsoDates(input: any): any {
     return convertedObject
 }
 
-/**
- * Extracts the 'id' property from each object in an array.
- * 객체 배열에서 각 객체의 'id' 프로퍼티를 추출
- *
- * @template T - An object type with a string 'id' property
- * @param {T[]} items - The array of objects
- * @returns {string[]} An array of id values
- */
-export function pickIds<T extends { id: string }>(items: T[]): string[] {
-    return items.map((item) => item.id)
+export async function sleep(timeoutInMs: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, timeoutInMs))
 }

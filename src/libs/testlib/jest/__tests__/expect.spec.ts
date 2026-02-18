@@ -47,8 +47,8 @@ describe('jest.expect examples', () => {
     // 객체 배열의 부분을 비교한다
     it('compares a partial array of objects', () => {
         const fullObjects = [
-            { id: 1, name: 'A', extra: 'info' },
-            { id: 2, name: 'B', extra: 'data' }
+            { extra: 'info', id: 1, name: 'A' },
+            { extra: 'data', id: 2, name: 'B' }
         ]
         const partialObjects = [
             { id: 2, name: 'B' },

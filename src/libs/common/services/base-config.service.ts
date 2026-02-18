@@ -3,10 +3,10 @@ import type { ConfigService } from '@nestjs/config'
 export abstract class BaseConfigService {
     constructor(private readonly configService: ConfigService) {}
 
-    getString(key: string): string {
-        const value = this.configService.get<string>(key)
+    getBoolean(key: string): boolean {
+        const value = this.configService.get<boolean>(key)
 
-        if (value === undefined || value.length === 0) {
+        if (value === undefined) {
             throw new Error(`Key '${key}' is not defined`)
         }
 
@@ -22,10 +22,10 @@ export abstract class BaseConfigService {
         return value
     }
 
-    getBoolean(key: string): boolean {
-        const value = this.configService.get<boolean>(key)
+    getString(key: string): string {
+        const value = this.configService.get<string>(key)
 
-        if (value === undefined) {
+        if (value === undefined || value.length === 0) {
             throw new Error(`Key '${key}' is not defined`)
         }
 

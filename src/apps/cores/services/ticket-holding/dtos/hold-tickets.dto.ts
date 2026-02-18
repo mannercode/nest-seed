@@ -1,16 +1,16 @@
 import { ArrayNotEmpty, IsArray, IsNotEmpty, IsString } from 'class-validator'
 
 export class HoldTicketsDto {
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     customerId: string
 
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     showtimeId: string
 
-    @IsArray()
     @ArrayNotEmpty()
+    @IsArray()
     @IsString({ each: true })
     ticketIds: string[]
 }

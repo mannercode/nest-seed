@@ -1,8 +1,8 @@
+import type { HoldTicketsDto } from 'apps/cores'
 import { buildHoldTicketsDto } from 'apps/__tests__/__helpers__'
 import { sleep } from 'common'
 import { oid, toAny } from 'testlib'
 import type { TicketHoldingFixture } from './ticket-holding.fixture'
-import type { HoldTicketsDto } from 'apps/cores'
 
 describe('TicketHoldingService', () => {
     let fix: TicketHoldingFixture
@@ -32,13 +32,13 @@ describe('TicketHoldingService', () => {
             const customerId = oid(0xc1)
 
             beforeEach(async () => {
-                const holdDto = buildHoldTicketsDto({ ticketIds, customerId })
+                const holdDto = buildHoldTicketsDto({ customerId, ticketIds })
                 await fix.ticketHoldingClient.holdTickets(holdDto)
             })
 
             // 동일한 ticketIds를 다시 보유할 때 true를 반환한다
             it('returns true for re-holding the same ticketIds', async () => {
-                const holdDto = buildHoldTicketsDto({ ticketIds, customerId })
+                const holdDto = buildHoldTicketsDto({ customerId, ticketIds })
                 const isHeld = await fix.ticketHoldingClient.holdTickets(holdDto)
 
                 expect(isHeld).toBe(true)
@@ -46,7 +46,7 @@ describe('TicketHoldingService', () => {
 
             // 다른 고객에 대해 false를 반환한다
             it('returns false for another customer', async () => {
-                const holdDto = buildHoldTicketsDto({ ticketIds, customerId: oid(0xc2) })
+                const holdDto = buildHoldTicketsDto({ customerId: oid(0xc2), ticketIds })
                 const isHeld = await fix.ticketHoldingClient.holdTickets(holdDto)
 
                 expect(isHeld).toBe(false)
@@ -56,15 +56,15 @@ describe('TicketHoldingService', () => {
             describe('when the customer holds different ticketIds', () => {
                 beforeEach(async () => {
                     const holdDto = buildHoldTicketsDto({
-                        ticketIds: [oid(0xb0), oid(0xb1)],
-                        customerId
+                        customerId,
+                        ticketIds: [oid(0xb0), oid(0xb1)]
                     })
                     await fix.ticketHoldingClient.holdTickets(holdDto)
                 })
 
                 // 이전에 보유한 ticketIds를 해제한다
                 it('releases the previously held ticketIds', async () => {
-                    const holdDto = buildHoldTicketsDto({ ticketIds, customerId: oid(0xc2) })
+                    const holdDto = buildHoldTicketsDto({ customerId: oid(0xc2), ticketIds })
 
                     const isHeld = await fix.ticketHoldingClient.holdTickets(holdDto)
 

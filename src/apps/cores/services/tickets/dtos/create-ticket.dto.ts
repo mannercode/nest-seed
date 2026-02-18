@@ -4,27 +4,27 @@ import { Seat } from '../../theaters'
 import { TicketStatus } from '../models'
 
 export class CreateTicketDto {
-    @IsString()
     @IsNotEmpty()
-    sagaId: string
-
     @IsString()
-    @IsNotEmpty()
     movieId: string
 
-    @IsString()
     @IsNotEmpty()
-    theaterId: string
+    @IsString()
+    sagaId: string
 
-    @IsString()
     @IsNotEmpty()
+    @Type(() => Seat)
+    @ValidateNested()
+    seat: Seat
+
+    @IsNotEmpty()
+    @IsString()
     showtimeId: string
 
     @IsEnum(TicketStatus)
     status: TicketStatus
 
     @IsNotEmpty()
-    @ValidateNested()
-    @Type(() => Seat)
-    seat: Seat
+    @IsString()
+    theaterId: string
 }

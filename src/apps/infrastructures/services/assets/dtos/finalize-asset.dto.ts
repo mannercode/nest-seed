@@ -4,7 +4,7 @@ import { AssetOwnerDto } from './asset.dto'
 
 export class FinalizeAssetDto {
     @IsDefined()
-    @ValidateNested()
     @Type(() => AssetOwnerDto)
+    @ValidateNested()
     owner: AssetOwnerDto
 }

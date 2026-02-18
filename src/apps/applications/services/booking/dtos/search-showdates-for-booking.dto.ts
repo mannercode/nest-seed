@@ -1,11 +1,11 @@
 import { IsNotEmpty, IsString } from 'class-validator'
 
 export class SearchShowdatesForBookingDto {
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     movieId: string
 
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     theaterId: string
 }

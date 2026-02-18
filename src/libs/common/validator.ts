@@ -2,15 +2,16 @@
 import { Logger } from '@nestjs/common'
 import { isEqual } from 'lodash'
 
-export function ensure<T>(value: T | null | undefined, message = 'Value must exist.'): T {
-    if (value == null) {
-        throw new Error(message)
+export class Expect {
+    static defined<T>(
+        value: null | T | undefined,
+        message = 'Value must exist.'
+    ): asserts value is NonNullable<T> {
+        if (value == null) {
+            throw new Error(message)
+        }
     }
 
-    return value
-}
-
-export class Expect {
     static equalLength(a: any[] | undefined, b: any[] | undefined, message: string) {
         if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
             throw new Error(
@@ -24,15 +25,6 @@ export class Expect {
             throw new Error(`${JSON.stringify(a)} !== ${JSON.stringify(b)}, ${message}`)
         }
     }
-
-    static defined<T>(
-        value: T | null | undefined,
-        message = 'Value must exist.'
-    ): asserts value is NonNullable<T> {
-        if (value == null) {
-            throw new Error(message)
-        }
-    }
 }
 
 export class Verify {
@@ -43,4 +35,12 @@ export class Verify {
             )
         }
     }
+}
+
+export function ensure<T>(value: null | T | undefined, message = 'Value must exist.'): T {
+    if (value == null) {
+        throw new Error(message)
+    }
+
+    return value
 }

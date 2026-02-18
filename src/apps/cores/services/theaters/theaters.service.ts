@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { mapDocToDto } from 'common'
-import { CreateTheaterDto, SearchTheatersPageDto, TheaterDto, UpdateTheaterDto } from './dtos'
-import { Theater } from './models'
-import { TheatersRepository } from './theaters.repository'
+import type { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto } from './dtos'
+import type { Theater } from './models'
+import type { TheatersRepository } from './theaters.repository'
+import { TheaterDto } from './dtos'
 
 @Injectable()
 export class TheatersService {
@@ -14,10 +15,12 @@ export class TheatersService {
         return this.toDto(theater)
     }
 
-    async update(theaterId: string, updateDto: UpdateTheaterDto) {
-        const theater = await this.repository.update(theaterId, updateDto)
+    async deleteMany(theaterIds: string[]): Promise<void> {
+        await this.repository.deleteByIds(theaterIds)
+    }
 
-        return this.toDto(theater)
+    async existsAll(theaterIds: string[]) {
+        return this.repository.existsAll(theaterIds)
     }
 
     async getMany(theaterIds: string[]) {
@@ -27,18 +30,16 @@ export class TheatersService {
         return theaterDtos
     }
 
-    async deleteMany(theaterIds: string[]): Promise<void> {
-        await this.repository.deleteByIds(theaterIds)
-    }
-
     async searchPage(searchDto: SearchTheatersPageDto) {
         const { items, ...pagination } = await this.repository.searchPage(searchDto)
 
         return { ...pagination, items: this.toDtos(items) }
     }
 
-    async existsAll(theaterIds: string[]) {
-        return this.repository.existsAll(theaterIds)
+    async update(theaterId: string, updateDto: UpdateTheaterDto) {
+        const theater = await this.repository.update(theaterId, updateDto)
+
+        return this.toDto(theater)
     }
 
     private toDto(theater: Theater) {

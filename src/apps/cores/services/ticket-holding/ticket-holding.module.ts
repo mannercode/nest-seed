@@ -5,14 +5,14 @@ import { TicketHoldingController } from './ticket-holding.controller'
 import { TicketHoldingService } from './ticket-holding.service'
 
 @Module({
+    controllers: [TicketHoldingController],
     imports: [
         CacheModule.register({
             name: 'ticket-holding',
-            redisName: RedisConfigModule.connectionName,
-            prefix: `cache:${getProjectId()}`
+            prefix: `cache:${getProjectId()}`,
+            redisName: RedisConfigModule.connectionName
         })
     ],
-    providers: [TicketHoldingService],
-    controllers: [TicketHoldingController]
+    providers: [TicketHoldingService]
 })
 export class TicketHoldingModule {}

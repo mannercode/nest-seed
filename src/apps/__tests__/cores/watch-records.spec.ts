@@ -1,7 +1,7 @@
+import type { SearchWatchRecordsPageDto, WatchRecordDto } from 'apps/cores'
 import { buildCreateWatchRecordDto, createWatchRecord } from 'apps/__tests__/__helpers__'
 import { oid } from 'testlib'
 import type { WatchRecordsFixture } from './watch-records.fixture'
-import type { SearchWatchRecordsPageDto, WatchRecordDto } from 'apps/cores'
 
 describe('WatchRecordsService', () => {
     let fix: WatchRecordsFixture
@@ -36,10 +36,10 @@ describe('WatchRecordsService', () => {
         })
 
         const buildExpectedPage = (expectedRecords: WatchRecordDto[]) => ({
+            items: expect.arrayContaining(expectedRecords),
             skip: 0,
             take: expect.any(Number),
-            total: expectedRecords.length,
-            items: expect.arrayContaining(expectedRecords)
+            total: expectedRecords.length
         })
 
         // 필터가 제공될 때

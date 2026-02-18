@@ -1,9 +1,9 @@
+import type { PurchaseRecordDto, TicketDto } from 'apps/cores'
 import { Errors, getPayments, getTickets } from 'apps/__tests__/__helpers__'
 import { TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { toAny } from 'testlib'
 import { buildCreatePurchaseDto, type PurchaseFixture } from './purchase.fixture'
-import type { PurchaseRecordDto, TicketDto } from 'apps/cores'
 
 describe('PurchaseService', () => {
     let fix: PurchaseFixture
@@ -34,10 +34,10 @@ describe('PurchaseService', () => {
                     .body(createDto)
                     .created({
                         ...createDto,
-                        id: expect.any(String),
                         createdAt: expect.any(Date),
-                        updatedAt: expect.any(Date),
-                        paymentId: expect.any(String)
+                        id: expect.any(String),
+                        paymentId: expect.any(String),
+                        updatedAt: expect.any(Date)
                     })
             })
 

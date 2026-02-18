@@ -1,15 +1,16 @@
+import type { ConfigService } from '@nestjs/config'
 import { Injectable } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config'
+import { ConfigModule } from '@nestjs/config'
 import { BaseConfigService } from 'common'
 import Joi from 'joi'
 import { createTestContext } from 'testlib'
 
 const configSchema = Joi.object({
-    TEST_STRING_KEY: Joi.string().required(),
+    TEST_BOOLEAN_FALSE_KEY: Joi.boolean().required(),
+    TEST_BOOLEAN_KEY: Joi.boolean().required(),
     TEST_NUMBER_KEY: Joi.number().required(),
     TEST_NUMBER_ZERO_KEY: Joi.number().required(),
-    TEST_BOOLEAN_KEY: Joi.boolean().required(),
-    TEST_BOOLEAN_FALSE_KEY: Joi.boolean().required()
+    TEST_STRING_KEY: Joi.string().required()
 })
 
 @Injectable()
@@ -20,12 +21,12 @@ export class AppConfigService extends BaseConfigService {
 }
 
 export type BaseConfigServiceFixture = {
-    teardown: () => Promise<void>
     appConfigService: AppConfigService
+    teardown: () => Promise<void>
 }
 
 export async function createBaseConfigServiceFixture() {
-    const { module, close } = await createTestContext({
+    const { close, module } = await createTestContext({
         imports: [ConfigModule.forRoot({ validationSchema: configSchema })],
         providers: [AppConfigService]
     })
@@ -36,5 +37,5 @@ export async function createBaseConfigServiceFixture() {
         await close()
     }
 
-    return { teardown, appConfigService }
+    return { appConfigService, teardown }
 }

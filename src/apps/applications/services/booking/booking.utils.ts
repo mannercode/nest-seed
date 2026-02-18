@@ -1,13 +1,7 @@
+import type { ShowtimeDto, TheaterDto, TicketSalesForShowtimeDto } from 'apps/cores'
 import { LatLong } from 'common'
 import { omit, sortBy } from 'lodash'
 import type { ShowtimeForBookingDto } from './dtos'
-import type { ShowtimeDto, TheaterDto, TicketSalesForShowtimeDto } from 'apps/cores'
-
-export function sortTheatersByDistance(theaters: TheaterDto[], latLong: LatLong) {
-    return sortBy(theaters, (theater) =>
-        Math.abs(LatLong.distanceInMeters(theater.location, latLong))
-    )
-}
 
 export function generateShowtimesForBooking(
     showtimes: ShowtimeDto[],
@@ -24,4 +18,10 @@ export function generateShowtimesForBooking(
     })
 
     return showtimesForBooking as ShowtimeForBookingDto[]
+}
+
+export function sortTheatersByDistance(theaters: TheaterDto[], latLong: LatLong) {
+    return sortBy(theaters, (theater) =>
+        Math.abs(LatLong.distanceInMeters(theater.location, latLong))
+    )
 }

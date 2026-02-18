@@ -16,7 +16,7 @@ describe('RequestValidationPipe', () => {
         describe('when the payload is valid', () => {
             // 검증을 통과한다
             it('passes validation', async () => {
-                await fix.httpClient.post('/').body({ sampleId: 'id', date: nullDate }).created()
+                await fix.httpClient.post('/').body({ date: nullDate, sampleId: 'id' }).created()
             })
         })
 
@@ -36,7 +36,7 @@ describe('RequestValidationPipe', () => {
             it('passes validation', async () => {
                 await fix.httpClient
                     .post('/array')
-                    .body([{ sampleId: 'id', date: nullDate }])
+                    .body([{ date: nullDate, sampleId: 'id' }])
                     .created()
             })
         })
@@ -47,7 +47,7 @@ describe('RequestValidationPipe', () => {
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient
                     .post('/array')
-                    .body([{ sampleId: 'id', date: 'wrong' }])
+                    .body([{ date: 'wrong', sampleId: 'id' }])
                     .badRequest()
             })
         })
@@ -60,7 +60,7 @@ describe('RequestValidationPipe', () => {
             it('passes validation', async () => {
                 await fix.httpClient
                     .post('/nested')
-                    .body({ samples: [{ sampleId: 'id', date: nullDate }] })
+                    .body({ samples: [{ date: nullDate, sampleId: 'id' }] })
                     .created()
             })
         })
@@ -71,7 +71,7 @@ describe('RequestValidationPipe', () => {
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient
                     .post('/nested')
-                    .body({ samples: [{ sampleId: 'id', date: 'wrong' }] })
+                    .body({ samples: [{ date: 'wrong', sampleId: 'id' }] })
                     .badRequest()
             })
         })

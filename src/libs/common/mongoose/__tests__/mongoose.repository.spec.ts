@@ -1,5 +1,6 @@
 import { OrderDirection, pickIds } from 'common'
 import { expectEqualUnsorted, nullObjectId } from 'testlib'
+import type { MongooseRepositoryFixture, SampleDto } from './mongoose.repository.fixture'
 import {
     createSample,
     createSamples,
@@ -9,7 +10,6 @@ import {
     toDto,
     toDtos
 } from './mongoose.repository.fixture'
-import type { MongooseRepositoryFixture, SampleDto } from './mongoose.repository.fixture'
 
 describe('MongooseRepository', () => {
     let fix: MongooseRepositoryFixture
@@ -78,20 +78,20 @@ describe('MongooseRepository', () => {
             const skip = 10
             const take = 5
             const { items, ...pagination } = await fix.repository.findWithPagination({
-                pagination: { skip, take, orderby: { name: 'name', direction: OrderDirection.Asc } }
+                pagination: { orderby: { direction: OrderDirection.Asc, name: 'name' }, skip, take }
             })
 
             sortByName(samples)
             expect(samples.slice(skip, skip + take)).toEqual(toDtos(items))
-            expect(pagination).toEqual({ total: samples.length, skip, take })
+            expect(pagination).toEqual({ skip, take, total: samples.length })
         })
 
         // 오름차순으로 정렬한다
         it('sorts in ascending order', async () => {
             const { items } = await fix.repository.findWithPagination({
                 pagination: {
-                    take: samples.length,
-                    orderby: { name: 'name', direction: OrderDirection.Asc }
+                    orderby: { direction: OrderDirection.Asc, name: 'name' },
+                    take: samples.length
                 }
             })
 
@@ -103,8 +103,8 @@ describe('MongooseRepository', () => {
         it('sorts in descending order', async () => {
             const { items } = await fix.repository.findWithPagination({
                 pagination: {
-                    take: samples.length,
-                    orderby: { name: 'name', direction: OrderDirection.Desc }
+                    orderby: { direction: OrderDirection.Desc, name: 'name' },
+                    take: samples.length
                 }
             })
 
@@ -133,7 +133,7 @@ describe('MongooseRepository', () => {
             // 기본 take 값을 사용한다
             it('uses the default take value', async () => {
                 const { take } = await fix.repository.findWithPagination({
-                    pagination: { orderby: { name: 'name', direction: OrderDirection.Desc } }
+                    pagination: { orderby: { direction: OrderDirection.Desc, name: 'name' } }
                 })
 
                 expect(take).toEqual(maxTakeValue)

@@ -1,7 +1,7 @@
+import type { SearchTheatersPageDto, TheaterDto } from 'apps/cores'
 import { buildCreateTheaterDto, createTheater, Errors } from 'apps/__tests__/__helpers__'
 import { nullObjectId } from 'testlib'
 import type { TheatersFixture } from './theaters.fixture'
-import type { SearchTheatersPageDto, TheaterDto } from 'apps/cores'
 
 describe('TheatersService', () => {
     let fix: TheatersFixture
@@ -163,10 +163,10 @@ describe('TheatersService', () => {
         })
 
         const buildExpectedPage = (theaters: TheaterDto[]) => ({
+            items: expect.arrayContaining(theaters),
             skip: 0,
             take: expect.any(Number),
-            total: theaters.length,
-            items: expect.arrayContaining(theaters)
+            total: theaters.length
         })
 
         // 쿼리가 제공되지 않을 때

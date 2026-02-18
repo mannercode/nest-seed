@@ -3,13 +3,13 @@ import { Transform } from 'class-transformer'
 import { IsEnum, IsInt, IsOptional, IsPositive, IsString, Min } from 'class-validator'
 
 export const PaginationErrors = {
-    FormatInvalid: {
-        code: 'ERR_PAGINATION_ORDERBY_FORMAT_INVALID',
-        message: "Invalid orderby format. It should be 'name:direction'"
-    },
     DirectionInvalid: {
         code: 'ERR_PAGINATION_ORDERBY_DIRECTION_INVALID',
         message: 'Invalid direction. It should be either "asc" or "desc".'
+    },
+    FormatInvalid: {
+        code: 'ERR_PAGINATION_ORDERBY_FORMAT_INVALID',
+        message: "Invalid orderby format. It should be 'name:direction'"
     }
 }
 
@@ -19,23 +19,14 @@ export enum OrderDirection {
 }
 
 export class OrderBy {
-    @IsString()
-    name: string
-
     @IsEnum(OrderDirection)
     direction: OrderDirection
+
+    @IsString()
+    name: string
 }
 
 export class PaginationDto {
-    @IsOptional()
-    @IsPositive()
-    take?: number
-
-    @IsOptional()
-    @IsInt()
-    @Min(0)
-    skip?: number
-
     /**
      * In HttpController, 'orderby' is passed as a string (e.g., "name:asc"),
      * in RpcController, it's passed as an object ({ name, direction }).
@@ -74,12 +65,23 @@ export class PaginationDto {
             throw new BadRequestException(PaginationErrors.DirectionInvalid)
         }
 
-        return { name, direction: parsedDirection }
+        return { direction: parsedDirection, name }
     })
     orderby?: OrderBy
+
+    @IsInt()
+    @IsOptional()
+    @Min(0)
+    skip?: number
+
+    @IsOptional()
+    @IsPositive()
+    take?: number
 }
 
 export class PaginationResult<E> {
+    items: E[]
+
     @IsInt()
     skip: number
 
@@ -88,6 +90,4 @@ export class PaginationResult<E> {
 
     @IsInt()
     total: number
-
-    items: E[]
 }

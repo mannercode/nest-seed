@@ -1,7 +1,8 @@
+import type { ClientProxyService } from 'common'
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, InjectClientProxy } from 'common'
+import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
-import {
+import type {
     AggregateTicketSalesDto,
     CreateTicketDto,
     CreateTicketsResult,
@@ -9,29 +10,29 @@ import {
     TicketDto,
     TicketSalesForShowtimeDto
 } from './dtos'
-import { TicketStatus } from './models'
+import type { TicketStatus } from './models'
 
 @Injectable()
 export class TicketsClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
+    aggregateSales(aggregateDto: AggregateTicketSalesDto): Promise<TicketSalesForShowtimeDto[]> {
+        return this.proxy.request(Messages.Tickets.aggregateSales, aggregateDto)
+    }
+
     createMany(createDtos: CreateTicketDto[]): Promise<CreateTicketsResult> {
         return this.proxy.request(Messages.Tickets.createMany, createDtos)
     }
 
-    updateStatusMany(ticketIds: string[], status: TicketStatus): Promise<TicketDto[]> {
-        return this.proxy.request(Messages.Tickets.updateStatusMany, { ticketIds, status })
+    getMany(ticketIds: string[]): Promise<TicketDto[]> {
+        return this.proxy.request(Messages.Tickets.getMany, ticketIds)
     }
 
     search(searchDto: SearchTicketsDto): Promise<TicketDto[]> {
         return this.proxy.request(Messages.Tickets.search, searchDto)
     }
 
-    aggregateSales(aggregateDto: AggregateTicketSalesDto): Promise<TicketSalesForShowtimeDto[]> {
-        return this.proxy.request(Messages.Tickets.aggregateSales, aggregateDto)
-    }
-
-    getMany(ticketIds: string[]): Promise<TicketDto[]> {
-        return this.proxy.request(Messages.Tickets.getMany, ticketIds)
+    updateStatusMany(ticketIds: string[], status: TicketStatus): Promise<TicketDto[]> {
+        return this.proxy.request(Messages.Tickets.updateStatusMany, { status, ticketIds })
     }
 }

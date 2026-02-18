@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { mapDocToDto } from 'common'
-import { CreatePurchaseRecordDto, PurchaseRecordDto } from './dtos'
-import { PurchaseRecord } from './models'
-import { PurchaseRecordsRepository } from './purchase-records.repository'
+import type { CreatePurchaseRecordDto } from './dtos'
+import type { PurchaseRecord } from './models'
+import type { PurchaseRecordsRepository } from './purchase-records.repository'
+import { PurchaseRecordDto } from './dtos'
 
 @Injectable()
 export class PurchaseRecordsService {

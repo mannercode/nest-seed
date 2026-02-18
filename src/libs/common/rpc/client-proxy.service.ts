@@ -1,35 +1,20 @@
-import {
-    DynamicModule,
-    Global,
-    HttpException,
-    Inject,
-    Injectable,
-    Module,
-    OnModuleDestroy
-} from '@nestjs/common'
-import { ClientProvider, ClientProxy, ClientsModule } from '@nestjs/microservices'
+import type { DynamicModule, OnModuleDestroy } from '@nestjs/common'
+import type { ClientProvider, ClientProxy } from '@nestjs/microservices'
+import type { Observable } from 'rxjs'
+import { Global, HttpException, Inject, Injectable, Module } from '@nestjs/common'
+import { ClientsModule } from '@nestjs/microservices'
 import { defaultTo } from 'lodash'
-import { catchError, lastValueFrom, Observable, retry, throwError, timer } from 'rxjs'
+import { catchError, lastValueFrom, retry, throwError, timer } from 'rxjs'
 import { reviveIsoDates } from '../utils'
 
-async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
-    return lastValueFrom(
-        observer.pipe(
-            catchError((error) => {
-                const { status, response, options, message } = error
-
-                if (status && response) {
-                    return throwError(() => new HttpException(response, status, options))
-                }
-
-                return throwError(() => new Error(defaultTo(message, 'Unknown error')))
-            })
-        )
-    )
+export type ClientProxyModuleOptions = {
+    inject?: any[]
+    name?: string
+    useFactory: (...args: any[]) => ClientProvider | Promise<ClientProvider>
 }
 
-async function getProxyValue<T>(observer: Observable<T>): Promise<T> {
-    return reviveIsoDates(await waitProxyValue(observer))
+export function InjectClientProxy(name?: string): ParameterDecorator {
+    return Inject(ClientProxyService.getName(name))
 }
 
 @Injectable()
@@ -38,6 +23,10 @@ export class ClientProxyService implements OnModuleDestroy {
 
     static getName(name?: string) {
         return `ClientProxyService_${defaultTo(name, 'default')}`
+    }
+
+    emit(event: string, payload: any): Promise<void> {
+        return waitProxyValue(this.proxy.emit<void>(event, defaultTo(payload, '')))
     }
 
     async onModuleDestroy() {
@@ -84,41 +73,47 @@ export class ClientProxyService implements OnModuleDestroy {
             })
         )
     }
-
-    emit(event: string, payload: any): Promise<void> {
-        return waitProxyValue(this.proxy.emit<void>(event, defaultTo(payload, '')))
-    }
 }
 
-export function InjectClientProxy(name?: string): ParameterDecorator {
-    return Inject(ClientProxyService.getName(name))
+async function getProxyValue<T>(observer: Observable<T>): Promise<T> {
+    return reviveIsoDates(await waitProxyValue(observer))
 }
 
-export type ClientProxyModuleOptions = {
-    name?: string
-    useFactory: (...args: any[]) => Promise<ClientProvider> | ClientProvider
-    inject?: any[]
+async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
+    return lastValueFrom(
+        observer.pipe(
+            catchError((error) => {
+                const { message, options, response, status } = error
+
+                if (status && response) {
+                    return throwError(() => new HttpException(response, status, options))
+                }
+
+                return throwError(() => new Error(defaultTo(message, 'Unknown error')))
+            })
+        )
+    )
 }
 
 @Global()
 @Module({})
 export class ClientProxyModule {
     static registerAsync(options: ClientProxyModuleOptions): DynamicModule {
-        const { name, useFactory, inject } = options
+        const { inject, name, useFactory } = options
 
         const clientName = defaultTo(name, 'DefaultClientProxy')
 
         const provider = {
+            inject: [clientName],
             provide: ClientProxyService.getName(name),
-            useFactory: (proxy: ClientProxy) => new ClientProxyService(proxy),
-            inject: [clientName]
+            useFactory: (proxy: ClientProxy) => new ClientProxyService(proxy)
         }
 
         return {
+            exports: [provider],
+            imports: [ClientsModule.registerAsync([{ inject, name: clientName, useFactory }])],
             module: ClientProxyModule,
-            imports: [ClientsModule.registerAsync([{ name: clientName, useFactory, inject }])],
-            providers: [provider],
-            exports: [provider]
+            providers: [provider]
         }
     }
 }

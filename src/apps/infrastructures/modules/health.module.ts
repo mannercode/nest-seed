@@ -1,7 +1,18 @@
+import type { HealthCheckService, MongooseHealthIndicator } from '@nestjs/terminus'
+import type mongoose from 'mongoose'
 import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
-import { HealthCheckService, MongooseHealthIndicator, TerminusModule } from '@nestjs/terminus'
-import mongoose from 'mongoose'
+import { TerminusModule } from '@nestjs/terminus'
 import { MongooseConfigModule } from 'shared'
+
+@Controller()
+class HealthController {
+    constructor(private readonly service: HealthService) {}
+
+    @Get('health')
+    health() {
+        return this.service.check()
+    }
+}
 
 @Injectable()
 class HealthService {
@@ -22,15 +33,5 @@ class HealthService {
     }
 }
 
-@Controller()
-class HealthController {
-    constructor(private readonly service: HealthService) {}
-
-    @Get('health')
-    health() {
-        return this.service.check()
-    }
-}
-
-@Module({ imports: [TerminusModule], providers: [HealthService], controllers: [HealthController] })
+@Module({ controllers: [HealthController], imports: [TerminusModule], providers: [HealthService] })
 export class HealthModule {}

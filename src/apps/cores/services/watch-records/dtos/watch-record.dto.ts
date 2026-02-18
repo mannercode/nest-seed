@@ -1,6 +1,6 @@
 export class WatchRecordDto {
-    id: string
     customerId: string
+    id: string
     movieId: string
     purchaseRecordId: string
     watchDate: Date

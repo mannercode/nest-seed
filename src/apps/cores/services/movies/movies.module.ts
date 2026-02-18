@@ -9,6 +9,7 @@ import { MoviesRepository } from './movies.repository'
 import { MoviesService } from './movies.service'
 
 @Module({
+    controllers: [MoviesController],
     imports: [
         MongooseModule.forFeature(
             [{ name: Movie.name, schema: MovieSchema }],
@@ -19,7 +20,6 @@ import { MoviesService } from './movies.service'
             MongooseConfigModule.connectionName
         )
     ],
-    providers: [MoviesService, MoviesRepository, MoviePendingAssetsRepository, AssetsClient],
-    controllers: [MoviesController]
+    providers: [MoviesService, MoviesRepository, MoviePendingAssetsRepository, AssetsClient]
 })
 export class MoviesModule {}

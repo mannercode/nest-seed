@@ -1,15 +1,15 @@
+import type { OnModuleInit } from '@nestjs/common'
+import type { ClientSession, HydratedDocument, Model, ObjectId, QueryWithHelpers } from 'mongoose'
 import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { differenceWith, uniq } from 'lodash'
 import { defaultTo } from 'lodash'
+import type { PaginationDto, PaginationResult } from '../types'
 import { Expect, Verify } from '../validator'
 import { MongooseErrors } from './errors'
 import { objectId, objectIds } from './mongoose.util'
-import type { PaginationDto, PaginationResult } from '../types'
-import type { OnModuleInit } from '@nestjs/common'
-import type { ClientSession, HydratedDocument, Model, ObjectId, QueryWithHelpers } from 'mongoose'
 
-type SessionArg = ClientSession | undefined
 type BulkSaveDocs<Doc> = Parameters<Model<Doc>['bulkSave']>[0]
+type SessionArg = ClientSession | undefined
 
 const defaultLeanOptions = { virtuals: true }
 
@@ -19,36 +19,29 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         protected readonly maxTake: number
     ) {}
 
-    async onModuleInit() {
-        /**
-         * Since document.save() internally calls createCollection(),
-         * calling save() at the same time can cause a "Collection namespace is already in use" error.
-         * This issue often occurs in unit test environments due to frequent re-initialization.
-         *
-         * document.save()가 내부적으로 createCollection()을 호출한다.
-         * 동시에 save()를 호출하면 "Collection namespace is already in use" 오류가 발생할 수 있다.
-         * 이 문제는 주로 단위 테스트 환경에서 빈번한 초기화로 인해 발생한다.
-         *
-         * https://mongoosejs.com/docs/api/model.html#Model.createCollection()
-         */
-        await this.model.createCollection()
-        await this.model.createIndexes()
+    async deleteById(id: string, session: SessionArg = undefined) {
+        const doc = await this.getDocumentById(id, session)
+        await doc.deleteOne({ session })
     }
 
-    newDocument(): HydratedDocument<Doc> {
-        return new this.model()
-    }
-
-    async saveMany(docs: BulkSaveDocs<Doc>, session: SessionArg = undefined): Promise<void> {
-        const { insertedCount, matchedCount, deletedCount } = await this.model.bulkSave(docs, {
-            session
-        })
-
-        Expect.equals(
-            docs.length,
-            insertedCount + matchedCount + deletedCount,
-            `The number of inserted documents should match the requested count`
+    async deleteByIds(ids: string[], session: SessionArg = undefined) {
+        const { deletedCount } = await this.model.deleteMany(
+            { _id: { $in: objectIds(ids) } as any },
+            { session }
         )
+
+        return { deletedCount }
+    }
+
+    async existsAll(ids: string[], session: SessionArg = undefined) {
+        const uniqueIds = uniq(ids)
+        if (uniqueIds.length === 0) return true
+
+        const count = await this.model.countDocuments(
+            { _id: { $in: objectIds(uniqueIds) } } as any,
+            { session }
+        )
+        return count === uniqueIds.length
     }
 
     async findById(id: string, session: SessionArg = undefined) {
@@ -67,24 +60,49 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return docs as Doc[]
     }
 
-    protected async findDocumentById(id: string, session: SessionArg = undefined) {
-        const doc = await this.model.findById(objectId(id), null, { session })
+    async findWithPagination(args: {
+        configureQuery?: (queryHelper: QueryWithHelpers<Array<Doc>, Doc>) => Promise<void>
+        pagination: PaginationDto
+        session?: SessionArg
+    }) {
+        const { configureQuery, pagination, session } = args
 
-        return doc as HydratedDocument<Doc> | null
+        let take = defaultTo(pagination.take, this.maxTake)
+        let skip = defaultTo(pagination.skip, 0)
+
+        if (take <= 0) {
+            throw new BadRequestException({ ...MongooseErrors.TakeInvalid, take })
+        } else if (this.maxTake < take) {
+            throw new BadRequestException({
+                ...MongooseErrors.MaxTakeExceeded,
+                maxTake: this.maxTake,
+                take
+            })
+        }
+
+        const queryHelper = this.model.find({}, null, { session })
+        queryHelper.limit(take)
+        queryHelper.skip(skip)
+
+        if (pagination.orderby) {
+            const { direction, name } = pagination.orderby
+            queryHelper.sort({ [name]: direction })
+        }
+
+        if (configureQuery) {
+            await configureQuery(queryHelper)
+        }
+
+        queryHelper.lean(defaultLeanOptions)
+
+        const items = await queryHelper.exec()
+        const total = await this.model.countDocuments(queryHelper.getQuery()).exec()
+
+        return { items, skip, take, total } as PaginationResult<Doc>
     }
 
     async getById(id: string, session: SessionArg = undefined) {
         const doc = await this.findById(id, session)
-
-        if (!doc) {
-            throw new NotFoundException({ ...MongooseErrors.DocumentNotFound, notFoundId: id })
-        }
-
-        return doc
-    }
-
-    protected async getDocumentById(id: string, session: SessionArg = undefined) {
-        const doc = await this.findDocumentById(id, session)
 
         if (!doc) {
             throw new NotFoundException({ ...MongooseErrors.DocumentNotFound, notFoundId: id })
@@ -116,70 +134,36 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return docs
     }
 
-    async deleteById(id: string, session: SessionArg = undefined) {
-        const doc = await this.getDocumentById(id, session)
-        await doc.deleteOne({ session })
+    newDocument(): HydratedDocument<Doc> {
+        return new this.model()
     }
 
-    async deleteByIds(ids: string[], session: SessionArg = undefined) {
-        const { deletedCount } = await this.model.deleteMany(
-            { _id: { $in: objectIds(ids) } as any },
-            { session }
+    async onModuleInit() {
+        /**
+         * Since document.save() internally calls createCollection(),
+         * calling save() at the same time can cause a "Collection namespace is already in use" error.
+         * This issue often occurs in unit test environments due to frequent re-initialization.
+         *
+         * document.save()가 내부적으로 createCollection()을 호출한다.
+         * 동시에 save()를 호출하면 "Collection namespace is already in use" 오류가 발생할 수 있다.
+         * 이 문제는 주로 단위 테스트 환경에서 빈번한 초기화로 인해 발생한다.
+         *
+         * https://mongoosejs.com/docs/api/model.html#Model.createCollection()
+         */
+        await this.model.createCollection()
+        await this.model.createIndexes()
+    }
+
+    async saveMany(docs: BulkSaveDocs<Doc>, session: SessionArg = undefined): Promise<void> {
+        const { deletedCount, insertedCount, matchedCount } = await this.model.bulkSave(docs, {
+            session
+        })
+
+        Expect.equals(
+            docs.length,
+            insertedCount + matchedCount + deletedCount,
+            `The number of inserted documents should match the requested count`
         )
-
-        return { deletedCount }
-    }
-
-    async existsAll(ids: string[], session: SessionArg = undefined) {
-        const uniqueIds = uniq(ids)
-        if (uniqueIds.length === 0) return true
-
-        const count = await this.model.countDocuments(
-            { _id: { $in: objectIds(uniqueIds) } } as any,
-            { session }
-        )
-        return count === uniqueIds.length
-    }
-
-    async findWithPagination(args: {
-        configureQuery?: (queryHelper: QueryWithHelpers<Array<Doc>, Doc>) => Promise<void>
-        pagination: PaginationDto
-        session?: SessionArg
-    }) {
-        const { configureQuery, pagination, session } = args
-
-        let take = defaultTo(pagination.take, this.maxTake)
-        let skip = defaultTo(pagination.skip, 0)
-
-        if (take <= 0) {
-            throw new BadRequestException({ ...MongooseErrors.TakeInvalid, take })
-        } else if (this.maxTake < take) {
-            throw new BadRequestException({
-                ...MongooseErrors.MaxTakeExceeded,
-                take,
-                maxTake: this.maxTake
-            })
-        }
-
-        const queryHelper = this.model.find({}, null, { session })
-        queryHelper.limit(take)
-        queryHelper.skip(skip)
-
-        if (pagination.orderby) {
-            const { name, direction } = pagination.orderby
-            queryHelper.sort({ [name]: direction })
-        }
-
-        if (configureQuery) {
-            await configureQuery(queryHelper)
-        }
-
-        queryHelper.lean(defaultLeanOptions)
-
-        const items = await queryHelper.exec()
-        const total = await this.model.countDocuments(queryHelper.getQuery()).exec()
-
-        return { skip, take, total, items } as PaginationResult<Doc>
     }
 
     async withTransaction<T>(
@@ -213,5 +197,21 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
                 await session.endSession()
             }
         }
+    }
+
+    protected async findDocumentById(id: string, session: SessionArg = undefined) {
+        const doc = await this.model.findById(objectId(id), null, { session })
+
+        return doc as HydratedDocument<Doc> | null
+    }
+
+    protected async getDocumentById(id: string, session: SessionArg = undefined) {
+        const doc = await this.findDocumentById(id, session)
+
+        if (!doc) {
+            throw new NotFoundException({ ...MongooseErrors.DocumentNotFound, notFoundId: id })
+        }
+
+        return doc
     }
 }

@@ -1,8 +1,8 @@
+import type { MoviesClient, ShowtimeDto, ShowtimesClient, TheatersClient } from 'apps/cores'
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { MoviesClient, ShowtimeDto, ShowtimesClient, TheatersClient } from 'apps/cores'
-import { Expect, DateTimeRange, DateUtil, Time } from 'common'
+import { DateTimeRange, DateUtil, Expect, Time } from 'common'
 import { Rules } from 'shared'
-import { BulkCreateShowtimesDto } from '../dtos'
+import type { BulkCreateShowtimesDto } from '../dtos'
 
 type TimeslotMap = Map<number, ShowtimeDto>
 
@@ -46,7 +46,7 @@ export class ShowtimeBulkValidatorService {
 
         const conflictingShowtimes = await this.findConflictingShowtimes(createDto)
 
-        return { isValid: 0 === conflictingShowtimes.length, conflictingShowtimes }
+        return { conflictingShowtimes, isValid: 0 === conflictingShowtimes.length }
     }
 
     private async findConflictingShowtimes(createDto: BulkCreateShowtimesDto) {
@@ -62,7 +62,7 @@ export class ShowtimeBulkValidatorService {
             Expect.defined(timeslots, `Timeslots must be defined for theater ID: ${theaterId}`)
 
             for (const start of startTimes) {
-                const timeRange = DateTimeRange.create({ start, minutes: durationInMinutes })
+                const timeRange = DateTimeRange.create({ minutes: durationInMinutes, start })
 
                 iterateTimeslots(timeRange, (timeslot) => {
                     const showtime = timeslots.get(timeslot)
@@ -81,7 +81,7 @@ export class ShowtimeBulkValidatorService {
     }
 
     private async generateTimeslotMapByTheater(createDto: BulkCreateShowtimesDto) {
-        const { theaterIds, durationInMinutes, startTimes } = createDto
+        const { durationInMinutes, startTimes, theaterIds } = createDto
 
         const startDate = DateUtil.earliest(startTimes)
         const maxDate = DateUtil.latest(startTimes)
@@ -91,16 +91,16 @@ export class ShowtimeBulkValidatorService {
 
         for (const theaterId of theaterIds) {
             const fetchedShowtimes = await this.showtimesClient.search({
-                theaterIds: [theaterId],
-                startTimeRange: { start: startDate, end: endDate }
+                startTimeRange: { end: endDate, start: startDate },
+                theaterIds: [theaterId]
             })
 
             const timeslots = new Map<number, ShowtimeDto>()
 
             for (const showtime of fetchedShowtimes) {
-                const { startTime: start, endTime: end } = showtime
+                const { endTime: end, startTime: start } = showtime
 
-                iterateTimeslots({ start, end }, (timeslot) => {
+                iterateTimeslots({ end, start }, (timeslot) => {
                     timeslots.set(timeslot, showtime)
                 })
             }

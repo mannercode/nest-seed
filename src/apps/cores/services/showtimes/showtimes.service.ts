@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { mapDocToDto } from 'common'
-import { CreateShowtimeDto, SearchShowtimesDto, ShowtimeDto } from './dtos'
-import { Showtime } from './models'
-import { ShowtimesRepository } from './showtimes.repository'
+import type { CreateShowtimeDto, SearchShowtimesDto } from './dtos'
+import type { Showtime } from './models'
+import type { ShowtimesRepository } from './showtimes.repository'
+import { ShowtimeDto } from './dtos'
 
 @Injectable()
 export class ShowtimesService {
@@ -11,7 +12,11 @@ export class ShowtimesService {
     async createMany(createDtos: CreateShowtimeDto[]) {
         await this.repository.createMany(createDtos)
 
-        return { success: true, count: createDtos.length }
+        return { count: createDtos.length, success: true }
+    }
+
+    async existsAll(showtimeIds: string[]): Promise<boolean> {
+        return this.repository.existsAll(showtimeIds)
     }
 
     async getMany(showtimeIds: string[]) {
@@ -30,16 +35,12 @@ export class ShowtimesService {
         return this.repository.searchMovieIds(searchDto)
     }
 
-    async searchTheaterIds(searchDto: SearchShowtimesDto) {
-        return this.repository.searchTheaterIds(searchDto)
-    }
-
     async searchShowdates(searchDto: SearchShowtimesDto) {
         return this.repository.searchShowdates(searchDto)
     }
 
-    async existsAll(showtimeIds: string[]): Promise<boolean> {
-        return this.repository.existsAll(showtimeIds)
+    async searchTheaterIds(searchDto: SearchShowtimesDto) {
+        return this.repository.searchTheaterIds(searchDto)
     }
 
     private toDtos(showtimes: Showtime[]) {

@@ -1,5 +1,16 @@
+import type { HealthCheckService, HealthIndicatorFunction } from '@nestjs/terminus'
 import { Controller, Get, Injectable, Module } from '@nestjs/common'
-import { HealthCheckService, HealthIndicatorFunction, TerminusModule } from '@nestjs/terminus'
+import { TerminusModule } from '@nestjs/terminus'
+
+@Controller('health')
+class HealthController {
+    constructor(private readonly service: HealthService) {}
+
+    @Get()
+    health() {
+        return this.service.check()
+    }
+}
 
 @Injectable()
 class HealthService {
@@ -12,15 +23,5 @@ class HealthService {
     }
 }
 
-@Controller('health')
-class HealthController {
-    constructor(private readonly service: HealthService) {}
-
-    @Get()
-    health() {
-        return this.service.check()
-    }
-}
-
-@Module({ imports: [TerminusModule], providers: [HealthService], controllers: [HealthController] })
+@Module({ controllers: [HealthController], imports: [TerminusModule], providers: [HealthService] })
 export class HealthModule {}

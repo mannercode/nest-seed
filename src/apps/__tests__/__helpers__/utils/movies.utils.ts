@@ -1,17 +1,17 @@
-import { MovieGenre, MovieRating } from 'apps/cores'
-import type { UpsertMovieDto, MovieDto } from 'apps/cores'
+import type { MovieDto, UpsertMovieDto } from 'apps/cores'
 import type { TestContext } from 'testlib'
+import { MovieGenre, MovieRating } from 'apps/cores'
 
 export function buildCreateMovieDto(overrides = {}) {
     const createDto = {
-        title: `MovieTitle`,
-        genres: [MovieGenre.Action],
-        releaseDate: new Date(0),
-        plot: `MoviePlot`,
-        durationInSeconds: 90 * 60,
-        director: 'Quentin Tarantino',
-        rating: MovieRating.PG,
         assetIds: [] as string[],
+        director: 'Quentin Tarantino',
+        durationInSeconds: 90 * 60,
+        genres: [MovieGenre.Action],
+        plot: `MoviePlot`,
+        rating: MovieRating.PG,
+        releaseDate: new Date(0),
+        title: `MovieTitle`,
         ...overrides
     }
 

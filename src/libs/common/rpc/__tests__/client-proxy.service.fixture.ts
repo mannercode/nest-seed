@@ -1,33 +1,18 @@
-import { Controller, Get, MessageEvent, Sse } from '@nestjs/common'
-import { EventPattern, MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
-import { ClientProxyModule, ClientProxyService, InjectClientProxy } from 'common'
-import { Observable, ReplaySubject } from 'rxjs'
-import {
-    createHttpTestContext,
-    getNatsTestConnection,
-    HttpTestClient,
-    RpcTestClient,
-    withTestId
-} from 'testlib'
+import type { MessageEvent } from '@nestjs/common'
+import type { NatsOptions } from '@nestjs/microservices'
+import type { ClientProxyService } from 'common'
+import type { Observable } from 'rxjs'
+import type { HttpTestClient } from 'testlib'
+import { Controller, Get, Sse } from '@nestjs/common'
+import { EventPattern, MessagePattern, Transport } from '@nestjs/microservices'
+import { ClientProxyModule, InjectClientProxy } from 'common'
+import { ReplaySubject } from 'rxjs'
+import { createHttpTestContext, getNatsTestConnection, RpcTestClient, withTestId } from 'testlib'
 
-@Controller()
-class SendTestController {
-    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
-
-    @MessagePattern(withTestId('method'))
-    method() {
-        return { result: 'success' }
-    }
-
-    @Get('observable')
-    getObservable() {
-        return this.proxy.send(withTestId('method'), {})
-    }
-
-    @Get('promise')
-    getPromise() {
-        return this.proxy.request(withTestId('method'), {})
-    }
+export type ClientProxyServiceFixture = {
+    httpClient: HttpTestClient
+    rpcClient: RpcTestClient
+    teardown: () => Promise<void>
 }
 
 @Controller()
@@ -55,25 +40,39 @@ class EmitTestController {
     }
 }
 
-export type ClientProxyServiceFixture = {
-    teardown: () => Promise<void>
-    rpcClient: RpcTestClient
-    httpClient: HttpTestClient
+@Controller()
+class SendTestController {
+    constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
+
+    @Get('observable')
+    getObservable() {
+        return this.proxy.send(withTestId('method'), {})
+    }
+
+    @Get('promise')
+    getPromise() {
+        return this.proxy.request(withTestId('method'), {})
+    }
+
+    @MessagePattern(withTestId('method'))
+    method() {
+        return { result: 'success' }
+    }
 }
 
 export async function createClientProxyServiceFixture() {
     const brokerOptions: NatsOptions = {
-        transport: Transport.NATS,
-        options: getNatsTestConnection()
+        options: getNatsTestConnection(),
+        transport: Transport.NATS
     }
 
     const { httpClient, ...ctx } = await createHttpTestContext({
-        imports: [ClientProxyModule.registerAsync({ useFactory: () => brokerOptions })],
-        controllers: [SendTestController, EmitTestController],
         configureApp: async (app) => {
             app.connectMicroservice(brokerOptions, { inheritAppConfig: true })
             await app.startAllMicroservices()
-        }
+        },
+        controllers: [SendTestController, EmitTestController],
+        imports: [ClientProxyModule.registerAsync({ useFactory: () => brokerOptions })]
     })
 
     const rpcClient = RpcTestClient.create(brokerOptions)
@@ -83,5 +82,5 @@ export async function createClientProxyServiceFixture() {
         await ctx.close()
     }
 
-    return { teardown, httpClient, rpcClient }
+    return { httpClient, rpcClient, teardown }
 }

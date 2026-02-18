@@ -1,3 +1,9 @@
+import type {
+    CreateTheaterDto,
+    SearchTheatersPageDto,
+    TheatersClient,
+    UpdateTheaterDto
+} from 'apps/cores'
 import {
     Body,
     Controller,
@@ -10,12 +16,6 @@ import {
     Post,
     Query
 } from '@nestjs/common'
-import {
-    CreateTheaterDto,
-    SearchTheatersPageDto,
-    TheatersClient,
-    UpdateTheaterDto
-} from 'apps/cores'
 
 @Controller('theaters')
 export class TheatersController {
@@ -26,9 +26,10 @@ export class TheatersController {
         return this.theatersClient.create(createDto)
     }
 
-    @Patch(':theaterId')
-    async update(@Param('theaterId') theaterId: string, @Body() updateDto: UpdateTheaterDto) {
-        return this.theatersClient.update(theaterId, updateDto)
+    @Delete(':theaterId')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async delete(@Param('theaterId') theaterId: string) {
+        await this.theatersClient.deleteMany([theaterId])
     }
 
     @Get(':theaterId')
@@ -37,14 +38,13 @@ export class TheatersController {
         return theater
     }
 
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @Delete(':theaterId')
-    async delete(@Param('theaterId') theaterId: string) {
-        await this.theatersClient.deleteMany([theaterId])
-    }
-
     @Get()
     async searchPage(@Query() searchDto: SearchTheatersPageDto) {
         return this.theatersClient.searchPage(searchDto)
+    }
+
+    @Patch(':theaterId')
+    async update(@Param('theaterId') theaterId: string, @Body() updateDto: UpdateTheaterDto) {
+        return this.theatersClient.update(theaterId, updateDto)
     }
 }

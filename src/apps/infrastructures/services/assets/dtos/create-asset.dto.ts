@@ -3,20 +3,20 @@ import { IsInt, IsNotEmpty, IsString, Min, ValidateNested } from 'class-validato
 import { Checksum } from 'common'
 
 export class CreateAssetDto {
-    @IsString()
     @IsNotEmpty()
-    originalName: string
+    @Type(() => Checksum)
+    @ValidateNested()
+    checksum: Checksum
 
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     mimeType: string
+
+    @IsNotEmpty()
+    @IsString()
+    originalName: string
 
     @IsInt()
     @Min(1)
     size: number
-
-    @ValidateNested()
-    @Type(() => Checksum)
-    @IsNotEmpty()
-    checksum: Checksum
 }

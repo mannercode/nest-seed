@@ -15,9 +15,9 @@ export class Byte {
     static fromString(sizeExpression: string): number {
         const sizeUnitMap: { [key: string]: number } = {
             B: 1,
+            GB: 1024 * 1024 * 1024,
             KB: 1024,
             MB: 1024 * 1024,
-            GB: 1024 * 1024 * 1024,
             TB: 1024 * 1024 * 1024 * 1024
         }
 

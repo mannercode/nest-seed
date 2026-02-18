@@ -1,5 +1,5 @@
-import { withTestId } from 'testlib'
 import { SuccessLoggingInterceptor } from 'common'
+import { withTestId } from 'testlib'
 import type { SuccessLoggingInterceptorFixture } from './success-logging.interceptor.fixture'
 
 describe('SuccessLoggingInterceptor', () => {
@@ -23,10 +23,10 @@ describe('SuccessLoggingInterceptor', () => {
 
                 expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
                 expect(fix.spyVerbose).toHaveBeenCalledWith('success', {
-                    statusCode: 201,
                     contextType: 'http',
-                    request: { method: 'POST', url: '/success', body },
-                    duration: expect.any(String)
+                    duration: expect.any(String),
+                    request: { body, method: 'POST', url: '/success' },
+                    statusCode: 201
                 })
             })
         })
@@ -41,8 +41,8 @@ describe('SuccessLoggingInterceptor', () => {
 
                 expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
                 expect(fix.spyVerbose).toHaveBeenCalledWith('success', {
-                    contextType: 'rpc',
                     context: { args: [subject] },
+                    contextType: 'rpc',
                     data,
                     duration: expect.any(String)
                 })

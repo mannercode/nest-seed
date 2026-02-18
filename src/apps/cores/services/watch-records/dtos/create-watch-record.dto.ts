@@ -1,16 +1,16 @@
 import { IsDate, IsNotEmpty, IsString } from 'class-validator'
 
 export class CreateWatchRecordDto {
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     customerId: string
 
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     movieId: string
 
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     purchaseRecordId: string
 
     @IsDate()

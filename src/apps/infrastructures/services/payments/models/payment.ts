@@ -1,13 +1,13 @@
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSchema, createMongooseSchema } from 'common'
+import { createMongooseSchema, MongooseSchema } from 'common'
 import { MongooseConfigModule } from 'shared'
 
 @Schema(MongooseConfigModule.schemaOptions)
 export class Payment extends MongooseSchema {
     @Prop({ required: true })
-    customerId: string
+    amount: number
 
     @Prop({ required: true })
-    amount: number
+    customerId: string
 }
 export const PaymentSchema = createMongooseSchema(Payment)

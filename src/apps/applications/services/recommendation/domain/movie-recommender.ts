@@ -1,5 +1,5 @@
-import { countBy, defaultTo, flatMap, orderBy, sumBy } from 'lodash'
 import type { MovieDto } from 'apps/cores'
+import { countBy, defaultTo, flatMap, orderBy, sumBy } from 'lodash'
 
 export class MovieRecommender {
     static recommend(showingMovies: MovieDto[], watchedMovies: MovieDto[]) {
@@ -30,8 +30,8 @@ export class MovieRecommender {
             // 이미 본 영화는 제외
             .filter((movie) => !watchedMovieIds.has(movie.id))
             .map((movie) => ({
-                movie,
                 genreScore: sumBy(movie.genres, (genre) => genreScoreByGenre.get(genre) ?? 0),
+                movie,
                 releaseDate: movie.releaseDate.getTime()
             }))
 

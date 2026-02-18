@@ -1,3 +1,5 @@
+import type { AppTestContext, TestAsset } from 'apps/__tests__/__helpers__'
+import type { TestContext } from 'testlib'
 import {
     buildCreateAssetDto,
     createAppTestContext,
@@ -8,23 +10,8 @@ import { RecommendationClient } from 'apps/applications'
 import { MoviesClient, MoviesModule } from 'apps/cores'
 import { MoviesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
-import type { AppTestContext, TestAsset } from 'apps/__tests__/__helpers__'
-import type { TestContext } from 'testlib'
 
-export type MoviesAssetsFixture = AppTestContext & { assetsClient: AssetsClient; asset: TestAsset }
-
-export async function createMoviesAssetsFixture() {
-    const ctx = await createAppTestContext({
-        imports: [MoviesModule, AssetsModule],
-        providers: [MoviesClient, AssetsClient],
-        controllers: [MoviesController],
-        ignoreProviders: [RecommendationClient]
-    })
-
-    const assetsClient = ctx.module.get(AssetsClient)
-
-    return { ...ctx, assetsClient, asset: testAssets.image }
-}
+export type MoviesAssetsFixture = AppTestContext & { asset: TestAsset; assetsClient: AssetsClient }
 
 export async function createMovie(ctx: TestContext) {
     const { MoviesService } = await import('apps/cores')
@@ -44,15 +31,17 @@ export async function createMovieAsset(ctx: TestContext, movieId: string, file: 
     return upload
 }
 
-export async function uploadMovieAsset(ctx: TestContext, movieId: string) {
-    const { image } = testAssets
+export async function createMoviesAssetsFixture() {
+    const ctx = await createAppTestContext({
+        controllers: [MoviesController],
+        ignoreProviders: [RecommendationClient],
+        imports: [MoviesModule, AssetsModule],
+        providers: [MoviesClient, AssetsClient]
+    })
 
-    const upload = await createMovieAsset(ctx, movieId, image)
-    const uploadResponse = await uploadAsset(image.path, upload)
+    const assetsClient = ctx.module.get(AssetsClient)
 
-    expect(uploadResponse.ok).toBe(true)
-
-    return upload
+    return { ...ctx, asset: testAssets.image, assetsClient }
 }
 
 export async function uploadAndFinalizeMovieAsset(ctx: TestContext, movieId: string) {
@@ -63,4 +52,15 @@ export async function uploadAndFinalizeMovieAsset(ctx: TestContext, movieId: str
 
     await moviesService.finalizeUpload(movieId, assetId)
     return assetId
+}
+
+export async function uploadMovieAsset(ctx: TestContext, movieId: string) {
+    const { image } = testAssets
+
+    const upload = await createMovieAsset(ctx, movieId, image)
+    const uploadResponse = await uploadAsset(image.path, upload)
+
+    expect(uploadResponse.ok).toBe(true)
+
+    return upload
 }

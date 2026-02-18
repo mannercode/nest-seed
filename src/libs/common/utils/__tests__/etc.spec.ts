@@ -1,4 +1,4 @@
-import { quoteJsonIntegers, generateShortId, reviveIsoDates, pickIds, sleep } from 'common'
+import { generateShortId, pickIds, quoteJsonIntegers, reviveIsoDates, sleep } from 'common'
 import { nullDate } from 'testlib'
 
 describe('sleep', () => {
@@ -98,7 +98,7 @@ describe('reviveIsoDates', () => {
 
     // 문자열이 아닌 타입은 변환하지 않는다
     it('does not convert non-string types', () => {
-        const converted = reviveIsoDates({ number: 123, boolean: true })
+        const converted = reviveIsoDates({ boolean: true, number: 123 })
 
         expect(converted.number).toEqual(123)
         expect(converted.boolean).toBe(true)

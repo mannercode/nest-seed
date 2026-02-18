@@ -1,5 +1,5 @@
 export * from './dtos'
-export * from './services'
 export * from './purchase.client'
 export * from './purchase.module'
 export * from './purchase.service'
+export * from './services'

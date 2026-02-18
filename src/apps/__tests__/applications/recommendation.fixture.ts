@@ -1,8 +1,11 @@
+import type { AppTestContext } from 'apps/__tests__/__helpers__'
+import type { MovieDto } from 'apps/cores'
+import type { TestContext } from 'testlib'
 import {
     createAndLoginCustomer,
+    createAppTestContext,
     createMovie,
     createShowtimes,
-    createAppTestContext,
     createWatchRecord
 } from 'apps/__tests__/__helpers__'
 import { RecommendationClient, RecommendationModule } from 'apps/applications'
@@ -19,14 +22,12 @@ import {
 import { CustomerJwtStrategy, MoviesController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { DateUtil } from 'common'
-import type { AppTestContext } from 'apps/__tests__/__helpers__'
-import type { MovieDto } from 'apps/cores'
-import type { TestContext } from 'testlib'
 
 export type RecommendationFixture = AppTestContext & {}
 
 export async function createRecommendationFixture(): Promise<RecommendationFixture> {
     const ctx = await createAppTestContext({
+        controllers: [MoviesController],
         imports: [
             MoviesModule,
             AssetsModule,
@@ -43,25 +44,10 @@ export async function createRecommendationFixture(): Promise<RecommendationFixtu
             RecommendationClient,
             WatchRecordsClient,
             AssetsClient
-        ],
-        controllers: [MoviesController]
+        ]
     })
 
     return { ...ctx }
-}
-
-export async function createWatchedMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
-    const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
-
-    const { customer, accessToken } = await createAndLoginCustomer(ctx)
-
-    const watchRecords = await Promise.all(
-        movies.map((movie) =>
-            createWatchRecord(ctx, { customerId: customer.id, movieId: movie.id })
-        )
-    )
-
-    return { customer, accessToken, movies, watchRecords }
 }
 
 export async function createShowingMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
@@ -75,4 +61,18 @@ export async function createShowingMovies(ctx: TestContext, dtos: Partial<MovieD
     await createShowtimes(ctx, createShowtimesDtos)
 
     return movies
+}
+
+export async function createWatchedMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
+    const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
+
+    const { accessToken, customer } = await createAndLoginCustomer(ctx)
+
+    const watchRecords = await Promise.all(
+        movies.map((movie) =>
+            createWatchRecord(ctx, { customerId: customer.id, movieId: movie.id })
+        )
+    )
+
+    return { accessToken, customer, movies, watchRecords }
 }

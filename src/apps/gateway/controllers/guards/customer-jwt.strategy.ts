@@ -1,15 +1,15 @@
+import type { CustomerAuthPayload } from 'apps/cores'
+import type { AppConfigService } from 'shared'
 import { Injectable } from '@nestjs/common'
 import { PassportStrategy } from '@nestjs/passport'
-import { CustomerAuthPayload } from 'apps/cores'
 import { ExtractJwt, Strategy } from 'passport-jwt'
-import { AppConfigService } from 'shared'
 
 @Injectable()
 export class CustomerJwtStrategy extends PassportStrategy(Strategy, 'customer-jwt') {
     constructor(readonly config: AppConfigService) {
         super({
-            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
+            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             secretOrKey: config.auth.accessSecret
         })
     }

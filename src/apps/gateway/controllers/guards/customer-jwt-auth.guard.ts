@@ -1,9 +1,10 @@
-import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
+import type { ExecutionContext } from '@nestjs/common'
+import type { Reflector } from '@nestjs/core'
+import type { Observable } from 'rxjs'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { GUARDS_METADATA } from '@nestjs/common/constants'
-import { Reflector } from '@nestjs/core'
 import { AuthGuard } from '@nestjs/passport'
 import { defaultTo } from 'lodash'
-import { Observable } from 'rxjs'
 import { CustomerLocalAuthGuard } from './customer-local-auth.guard'
 import { AuthErrors } from './errors'
 import { IS_PUBLIC_KEY } from './public.decorator'
@@ -14,7 +15,7 @@ export class CustomerJwtAuthGuard extends AuthGuard('customer-jwt') {
         super()
     }
 
-    canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
+    canActivate(context: ExecutionContext): boolean | Observable<boolean> | Promise<boolean> {
         const isPublicRoute = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
             context.getHandler(),
             context.getClass()

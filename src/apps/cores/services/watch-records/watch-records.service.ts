@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { mapDocToDto } from 'common'
-import { CreateWatchRecordDto, SearchWatchRecordsPageDto, WatchRecordDto } from './dtos'
-import { WatchRecord } from './models'
-import { WatchRecordsRepository } from './watch-records.repository'
+import type { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos'
+import type { WatchRecord } from './models'
+import type { WatchRecordsRepository } from './watch-records.repository'
+import { WatchRecordDto } from './dtos'
 
 @Injectable()
 export class WatchRecordsService {

@@ -1,9 +1,9 @@
+import type { ShowtimeDto } from 'apps/cores'
 import { HttpStatus } from '@nestjs/common'
 import { buildCreateShowtimeDto, createShowtimes, Errors } from 'apps/__tests__/__helpers__'
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, oid } from 'testlib'
 import type { ShowtimesFixture } from './showtimes.fixture'
-import type { ShowtimeDto } from 'apps/cores'
 
 describe('ShowtimesService', () => {
     let fix: ShowtimesFixture
@@ -52,8 +52,8 @@ describe('ShowtimesService', () => {
                 const promise = fix.showtimesClient.getMany([nullObjectId])
 
                 await expect(promise).rejects.toMatchObject({
-                    status: HttpStatus.NOT_FOUND,
-                    message: Errors.Mongoose.MultipleDocumentsNotFound.message
+                    message: Errors.Mongoose.MultipleDocumentsNotFound.message,
+                    status: HttpStatus.NOT_FOUND
                 })
             })
         })
@@ -114,8 +114,8 @@ describe('ShowtimesService', () => {
             it('returns showtimes filtered by startTimeRange', async () => {
                 const showtimes = await fix.showtimesClient.search({
                     startTimeRange: {
-                        start: new Date('2020-01-01T00:00'),
-                        end: new Date('2020-01-02T12:00')
+                        end: new Date('2020-01-02T12:00'),
+                        start: new Date('2020-01-01T00:00')
                     }
                 })
 
@@ -133,8 +133,8 @@ describe('ShowtimesService', () => {
                 const promise = fix.showtimesClient.search({})
 
                 await expect(promise).rejects.toMatchObject({
-                    status: HttpStatus.BAD_REQUEST,
-                    message: Errors.Mongoose.FiltersRequired.message
+                    message: Errors.Mongoose.FiltersRequired.message,
+                    status: HttpStatus.BAD_REQUEST
                 })
             })
         })
@@ -180,9 +180,9 @@ describe('ShowtimesService', () => {
     describe('searchShowdates', () => {
         beforeEach(async () => {
             await createShowtimes(fix, [
-                { movieId: oid(0xa1), theaterId: oid(0xb1), startTime: new Date('2000-01-01') },
-                { movieId: oid(0xa1), theaterId: oid(0xb1), startTime: new Date('2000-01-02') },
-                { movieId: oid(0xa1), theaterId: oid(0x00), startTime: new Date('2000-01-03') }
+                { movieId: oid(0xa1), startTime: new Date('2000-01-01'), theaterId: oid(0xb1) },
+                { movieId: oid(0xa1), startTime: new Date('2000-01-02'), theaterId: oid(0xb1) },
+                { movieId: oid(0xa1), startTime: new Date('2000-01-03'), theaterId: oid(0x00) }
             ])
         })
 

@@ -1,22 +1,18 @@
+import type { MicroserviceOptions, NatsOptions } from '@nestjs/microservices'
+import type { HttpTestClient } from 'testlib'
 import { Controller, Get, Query, ValidationPipe } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
-import {
-    MessagePattern,
-    MicroserviceOptions,
-    NatsOptions,
-    Payload,
-    Transport
-} from '@nestjs/microservices'
-import {
-    createHttpTestContext,
-    getNatsTestConnection,
-    HttpTestClient,
-    RpcTestClient,
-    withTestId
-} from 'testlib'
-import { PaginationDto } from '..'
+import { MessagePattern, Payload, Transport } from '@nestjs/microservices'
+import { createHttpTestContext, getNatsTestConnection, RpcTestClient, withTestId } from 'testlib'
+import type { PaginationDto } from '..'
 
 export const maxTakeValue = 50
+
+export type PaginationFixture = {
+    httpClient: HttpTestClient
+    rpcClient: RpcTestClient
+    teardown: () => Promise<void>
+}
 
 @Controller()
 class SamplesController {
@@ -31,19 +27,17 @@ class SamplesController {
     }
 }
 
-export type PaginationFixture = {
-    teardown: () => Promise<void>
-    httpClient: HttpTestClient
-    rpcClient: RpcTestClient
-}
-
 export async function createPaginationFixture() {
     const brokerOpts = {
-        transport: Transport.NATS,
-        options: getNatsTestConnection()
+        options: getNatsTestConnection(),
+        transport: Transport.NATS
     } as NatsOptions
 
     const { httpClient, ...ctx } = await createHttpTestContext({
+        configureApp: async (app) => {
+            app.connectMicroservice<MicroserviceOptions>(brokerOpts, { inheritAppConfig: true })
+            await app.startAllMicroservices()
+        },
         controllers: [SamplesController],
         providers: [
             {
@@ -55,11 +49,7 @@ export async function createPaginationFixture() {
                     })
                 }
             }
-        ],
-        configureApp: async (app) => {
-            app.connectMicroservice<MicroserviceOptions>(brokerOpts, { inheritAppConfig: true })
-            await app.startAllMicroservices()
-        }
+        ]
     })
 
     const rpcClient = RpcTestClient.create(brokerOpts)
@@ -69,5 +59,5 @@ export async function createPaginationFixture() {
         await ctx.close()
     }
 
-    return { teardown, httpClient, rpcClient }
+    return { httpClient, rpcClient, teardown }
 }

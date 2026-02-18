@@ -1,19 +1,19 @@
+import type { MovieDto } from 'apps/cores'
 import { MovieGenre, MovieRating } from 'apps/cores'
 import { MovieRecommender } from '..'
-import type { MovieDto } from 'apps/cores'
 
 describe('MovieRecommender', () => {
     describe('recommend', () => {
         const createDto = (id: string, genres: MovieGenre[], releaseDate: Date): MovieDto => ({
-            id,
-            title: `MovieTitle#${id}`,
-            genres,
-            releaseDate,
-            plot: '.',
-            durationInSeconds: 0,
             director: '.',
+            durationInSeconds: 0,
+            genres,
+            id,
+            imageUrls: [],
+            plot: '.',
             rating: MovieRating.PG,
-            imageUrls: []
+            releaseDate,
+            title: `MovieTitle#${id}`
         })
 
         // 시청 기록이 없을 때

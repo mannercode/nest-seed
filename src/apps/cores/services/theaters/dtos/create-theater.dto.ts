@@ -3,17 +3,17 @@ import { IsNotEmpty, IsString, ValidateNested } from 'class-validator'
 import { Seatmap, TheaterLocation } from '../models'
 
 export class CreateTheaterDto {
-    @IsString()
     @IsNotEmpty()
-    name: string
-
-    @IsNotEmpty()
-    @ValidateNested()
     @Type(() => TheaterLocation)
+    @ValidateNested()
     location: TheaterLocation
 
     @IsNotEmpty()
-    @ValidateNested()
+    @IsString()
+    name: string
+
+    @IsNotEmpty()
     @Type(() => Seatmap)
+    @ValidateNested()
     seatmap: Seatmap
 }

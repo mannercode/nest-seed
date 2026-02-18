@@ -23,11 +23,11 @@ describe('ExceptionLoggerFilter', () => {
 
                 expect(fix.spyWarn).toHaveBeenCalledTimes(1)
                 expect(fix.spyWarn).toHaveBeenCalledWith('fail', {
-                    statusCode: 404,
                     contextType: 'http',
                     request: { method: 'GET', url: '/exception' },
                     response: { code: 'ERR_CODE', message: 'message' },
-                    stack: expect.any(Array)
+                    stack: expect.any(Array),
+                    statusCode: 404
                 })
             })
         })
@@ -40,11 +40,11 @@ describe('ExceptionLoggerFilter', () => {
 
                 expect(fix.spyError).toHaveBeenCalledTimes(1)
                 expect(fix.spyError).toHaveBeenCalledWith('error', {
-                    statusCode: 500,
                     contextType: 'http',
                     request: { method: 'GET', url: '/error' },
                     response: { message: 'error message' },
-                    stack: expect.any(Array)
+                    stack: expect.any(Array),
+                    statusCode: 500
                 })
             })
         })
@@ -57,11 +57,11 @@ describe('ExceptionLoggerFilter', () => {
 
                 expect(fix.spyFatal).toHaveBeenCalledTimes(1)
                 expect(fix.spyFatal).toHaveBeenCalledWith('fatal', {
-                    statusCode: 500,
                     contextType: 'http',
                     request: { method: 'GET', url: '/fatal' },
                     response: { message: 'fatal error message' },
-                    stack: expect.any(Array)
+                    stack: expect.any(Array),
+                    statusCode: 500
                 })
             })
         })
@@ -84,8 +84,8 @@ describe('ExceptionLoggerFilter', () => {
 
                 expect(fix.spyWarn).toHaveBeenCalledTimes(1)
                 expect(fix.spyWarn).toHaveBeenCalledWith('fail', {
-                    contextType: 'rpc',
                     context: { args: [subject] },
+                    contextType: 'rpc',
                     data: {},
                     response: { code: 'ERR_CODE', message: 'message' },
                     stack: expect.any(Array)
@@ -102,8 +102,8 @@ describe('ExceptionLoggerFilter', () => {
 
                 expect(fix.spyError).toHaveBeenCalledTimes(1)
                 expect(fix.spyError).toHaveBeenCalledWith('error', {
-                    contextType: 'rpc',
                     context: { args: [subject] },
+                    contextType: 'rpc',
                     data: {},
                     response: { message: 'error message' },
                     stack: expect.any(Array)
@@ -120,8 +120,8 @@ describe('ExceptionLoggerFilter', () => {
 
                 expect(fix.spyFatal).toHaveBeenCalledTimes(1)
                 expect(fix.spyFatal).toHaveBeenCalledWith('fatal', {
-                    contextType: 'rpc',
                     context: { args: [subject] },
+                    contextType: 'rpc',
                     data: {},
                     response: { message: 'fatal error message' },
                     stack: expect.any(Array)

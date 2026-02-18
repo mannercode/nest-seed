@@ -1,3 +1,9 @@
+import type {
+    CreateCustomerDto,
+    CustomersClient,
+    SearchCustomersPageDto,
+    UpdateCustomerDto
+} from 'apps/cores'
 import {
     Body,
     Controller,
@@ -12,35 +18,25 @@ import {
     Req,
     UseGuards
 } from '@nestjs/common'
-import {
-    CreateCustomerDto,
-    CustomersClient,
-    SearchCustomersPageDto,
-    UpdateCustomerDto
-} from 'apps/cores'
 import { Expect } from 'common'
+import type { CustomerAuthRequest } from './types'
 import { CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
-import { CustomerAuthRequest } from './types'
 
-@UseGuards(CustomerJwtAuthGuard)
 @Controller('customers')
+@UseGuards(CustomerJwtAuthGuard)
 export class CustomersController {
     constructor(private readonly customersClient: CustomersClient) {}
 
-    @Public()
     @Post()
+    @Public()
     async create(@Body() createDto: CreateCustomerDto) {
         return this.customersClient.create(createDto)
     }
 
-    @Patch(':customerId')
-    async update(@Param('customerId') customerId: string, @Body() updateDto: UpdateCustomerDto) {
-        return this.customersClient.update(customerId, updateDto)
-    }
-
-    @Get('jwt-guard')
-    async testJwtGuard() {
-        return { message: 'accessToken is valid' }
+    @Delete(':customerId')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async delete(@Param('customerId') customerId: string) {
+        await this.customersClient.deleteMany([customerId])
     }
 
     @Get(':customerId')
@@ -49,10 +45,20 @@ export class CustomersController {
         return customer
     }
 
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @Delete(':customerId')
-    async delete(@Param('customerId') customerId: string) {
-        await this.customersClient.deleteMany([customerId])
+    @HttpCode(HttpStatus.OK)
+    @Post('login')
+    @UseGuards(CustomerLocalAuthGuard)
+    async login(@Req() req: CustomerAuthRequest) {
+        Expect.defined(req.user, 'req.user must be returned in LocalStrategy.validate')
+
+        return this.customersClient.generateAuthTokens(req.user)
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post('refresh')
+    @Public()
+    async refreshToken(@Body('refreshToken') refreshToken: string) {
+        return this.customersClient.refreshAuthTokens(refreshToken)
     }
 
     @Get()
@@ -60,19 +66,13 @@ export class CustomersController {
         return this.customersClient.searchPage(searchDto)
     }
 
-    @UseGuards(CustomerLocalAuthGuard)
-    @HttpCode(HttpStatus.OK)
-    @Post('login')
-    async login(@Req() req: CustomerAuthRequest) {
-        Expect.defined(req.user, 'req.user must be returned in LocalStrategy.validate')
-
-        return this.customersClient.generateAuthTokens(req.user)
+    @Get('jwt-guard')
+    async testJwtGuard() {
+        return { message: 'accessToken is valid' }
     }
 
-    @Public()
-    @HttpCode(HttpStatus.OK)
-    @Post('refresh')
-    async refreshToken(@Body('refreshToken') refreshToken: string) {
-        return this.customersClient.refreshAuthTokens(refreshToken)
+    @Patch(':customerId')
+    async update(@Param('customerId') customerId: string, @Body() updateDto: UpdateCustomerDto) {
+        return this.customersClient.update(customerId, updateDto)
     }
 }

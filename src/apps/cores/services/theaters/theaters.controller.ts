@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Messages } from 'shared'
-import { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto } from './dtos'
-import { TheatersService } from './theaters.service'
+import type { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto } from './dtos'
+import type { TheatersService } from './theaters.service'
 
 @Controller()
 export class TheatersController {
@@ -13,12 +13,15 @@ export class TheatersController {
         return this.service.create(createDto)
     }
 
-    @MessagePattern(Messages.Theaters.update)
-    update(
-        @Payload('theaterId') theaterId: string,
-        @Payload('updateDto') updateDto: UpdateTheaterDto
-    ) {
-        return this.service.update(theaterId, updateDto)
+    @MessagePattern(Messages.Theaters.deleteMany)
+    async deleteMany(@Payload() theaterIds: string[]): Promise<null> {
+        await this.service.deleteMany(theaterIds)
+        return null
+    }
+
+    @MessagePattern(Messages.Theaters.existsAll)
+    existsAll(@Payload() theaterIds: string[]) {
+        return this.service.existsAll(theaterIds)
     }
 
     @MessagePattern(Messages.Theaters.getMany)
@@ -26,19 +29,16 @@ export class TheatersController {
         return this.service.getMany(theaterIds)
     }
 
-    @MessagePattern(Messages.Theaters.deleteMany)
-    async deleteMany(@Payload() theaterIds: string[]): Promise<null> {
-        await this.service.deleteMany(theaterIds)
-        return null
-    }
-
     @MessagePattern(Messages.Theaters.searchPage)
     searchPage(@Payload() searchDto: SearchTheatersPageDto) {
         return this.service.searchPage(searchDto)
     }
 
-    @MessagePattern(Messages.Theaters.existsAll)
-    existsAll(@Payload() theaterIds: string[]) {
-        return this.service.existsAll(theaterIds)
+    @MessagePattern(Messages.Theaters.update)
+    update(
+        @Payload('theaterId') theaterId: string,
+        @Payload('updateDto') updateDto: UpdateTheaterDto
+    ) {
+        return this.service.update(theaterId, updateDto)
     }
 }

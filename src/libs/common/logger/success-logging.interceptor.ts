@@ -1,16 +1,9 @@
-import {
-    CallHandler,
-    ExecutionContext,
-    Inject,
-    Injectable,
-    Logger,
-    NestInterceptor,
-    Optional
-} from '@nestjs/common'
-import { Request, Response } from 'express'
-import { Observable } from 'rxjs'
+import type { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common'
+import type { Request, Response } from 'express'
+import type { Observable } from 'rxjs'
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common'
 import { tap } from 'rxjs/operators'
-import { HttpSuccessLog, RpcSuccessLog } from './types'
+import type { HttpSuccessLog, RpcSuccessLog } from './types'
 
 @Injectable()
 export class SuccessLoggingInterceptor implements NestInterceptor {
@@ -22,20 +15,6 @@ export class SuccessLoggingInterceptor implements NestInterceptor {
         @Inject('LOGGING_EXCLUDE_RPC_PATHS')
         private readonly excludeRpcPaths: string[] | undefined
     ) {}
-
-    private shouldHttpLog(url: string): boolean {
-        if (this.excludeHttpPaths === undefined) return true
-
-        return !this.excludeHttpPaths.some((exclude) => url === exclude)
-    }
-
-    private shouldRpcLog(args: unknown): boolean {
-        if (this.excludeRpcPaths === undefined) return true
-        if (!Array.isArray(args)) return true
-
-        const stringArgs = args.filter((arg): arg is string => typeof arg === 'string')
-        return !this.excludeRpcPaths.some((exclude) => stringArgs.includes(exclude))
-    }
 
     async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
         const startTimestamp = Date.now()
@@ -50,14 +29,14 @@ export class SuccessLoggingInterceptor implements NestInterceptor {
                     if (contextType === 'http') {
                         const httpContext = context.switchToHttp()
                         const response = httpContext.getResponse<Response>()
-                        const { method, url, body } = httpContext.getRequest<Request>()
+                        const { body, method, url } = httpContext.getRequest<Request>()
 
                         if (this.shouldHttpLog(url)) {
                             const successLog = {
                                 contextType,
-                                statusCode: response.statusCode,
-                                request: { method, url, body },
-                                duration: `${elapsedMs}ms`
+                                duration: `${elapsedMs}ms`,
+                                request: { body, method, url },
+                                statusCode: response.statusCode
                             } as HttpSuccessLog
 
                             Logger.verbose('success', successLog)
@@ -68,8 +47,8 @@ export class SuccessLoggingInterceptor implements NestInterceptor {
 
                         if (this.shouldRpcLog(rpcCallContext.args)) {
                             const successLog = {
-                                contextType,
                                 context: rpcCallContext,
+                                contextType,
                                 data: rpcContext.getData(),
                                 duration: `${elapsedMs}ms`
                             } as RpcSuccessLog
@@ -85,5 +64,19 @@ export class SuccessLoggingInterceptor implements NestInterceptor {
                 }
             })
         )
+    }
+
+    private shouldHttpLog(url: string): boolean {
+        if (this.excludeHttpPaths === undefined) return true
+
+        return !this.excludeHttpPaths.some((exclude) => url === exclude)
+    }
+
+    private shouldRpcLog(args: unknown): boolean {
+        if (this.excludeRpcPaths === undefined) return true
+        if (!Array.isArray(args)) return true
+
+        const stringArgs = args.filter((arg): arg is string => typeof arg === 'string')
+        return !this.excludeRpcPaths.some((exclude) => stringArgs.includes(exclude))
     }
 }

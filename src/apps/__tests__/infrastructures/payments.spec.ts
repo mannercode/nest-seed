@@ -1,9 +1,9 @@
+import type { PaymentDto } from 'apps/infrastructures'
 import { HttpStatus } from '@nestjs/common'
 import { buildCreatePaymentDto, createPayment, Errors } from 'apps/__tests__/__helpers__'
 import { pickIds } from 'common'
 import { nullObjectId } from 'testlib'
 import type { PaymentsFixture } from './payments.fixture'
-import type { PaymentDto } from 'apps/infrastructures'
 
 describe('PaymentsService', () => {
     let fix: PaymentsFixture
@@ -23,8 +23,8 @@ describe('PaymentsService', () => {
 
             expect(payment).toEqual({
                 ...createDto,
-                id: expect.any(String),
                 createdAt: expect.any(Date),
+                id: expect.any(String),
                 updatedAt: expect.any(Date)
             })
         })
@@ -58,8 +58,8 @@ describe('PaymentsService', () => {
                 const promise = fix.paymentsClient.getMany([nullObjectId])
 
                 await expect(promise).rejects.toMatchObject({
-                    status: HttpStatus.NOT_FOUND,
-                    message: Errors.Mongoose.MultipleDocumentsNotFound.message
+                    message: Errors.Mongoose.MultipleDocumentsNotFound.message,
+                    status: HttpStatus.NOT_FOUND
                 })
             })
         })

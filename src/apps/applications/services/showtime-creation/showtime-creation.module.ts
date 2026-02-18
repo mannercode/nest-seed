@@ -12,6 +12,7 @@ import { ShowtimeCreationEvents } from './showtime-creation.events'
 import { ShowtimeCreationService } from './showtime-creation.service'
 
 @Module({
+    controllers: [ShowtimeCreationController],
     imports: [BullModule.registerQueue({ configKey: 'queue', name: 'showtime-creation' })],
     providers: [
         MoviesClient,
@@ -24,7 +25,6 @@ import { ShowtimeCreationService } from './showtime-creation.service'
         ShowtimeCreationWorkerService,
         ShowtimeBulkValidatorService,
         ShowtimeBulkCreatorService
-    ],
-    controllers: [ShowtimeCreationController]
+    ]
 })
 export class ShowtimeCreationModule {}

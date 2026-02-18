@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Messages } from 'shared'
-import { AssetsService } from './assets.service'
-import { CreateAssetDto, FinalizeAssetDto } from './dtos'
+import type { AssetsService } from './assets.service'
+import type { CreateAssetDto, FinalizeAssetDto } from './dtos'
 
 @Controller()
 export class AssetsController {
@@ -13,9 +13,10 @@ export class AssetsController {
         return this.service.create(createDto)
     }
 
-    @MessagePattern(Messages.Assets.isUploadComplete)
-    isUploadComplete(@Payload('assetId') assetId: string) {
-        return this.service.isUploadComplete(assetId)
+    @MessagePattern(Messages.Assets.deleteMany)
+    async deleteMany(@Payload() assetIds: string[]): Promise<null> {
+        await this.service.deleteMany(assetIds)
+        return null
     }
 
     @MessagePattern(Messages.Assets.finalizeUpload)
@@ -31,9 +32,8 @@ export class AssetsController {
         return this.service.getMany(assetIds)
     }
 
-    @MessagePattern(Messages.Assets.deleteMany)
-    async deleteMany(@Payload() assetIds: string[]): Promise<null> {
-        await this.service.deleteMany(assetIds)
-        return null
+    @MessagePattern(Messages.Assets.isUploadComplete)
+    isUploadComplete(@Payload('assetId') assetId: string) {
+        return this.service.isUploadComplete(assetId)
     }
 }

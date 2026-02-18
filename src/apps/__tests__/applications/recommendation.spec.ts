@@ -1,10 +1,10 @@
+import type { MovieDto } from 'apps/cores'
 import { MovieGenre } from 'apps/cores'
 import {
     createShowingMovies,
     createWatchedMovies,
     type RecommendationFixture
 } from './recommendation.fixture'
-import type { MovieDto } from 'apps/cores'
 
 describe('RecommendationService', () => {
     let fix: RecommendationFixture

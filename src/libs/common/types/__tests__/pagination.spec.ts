@@ -25,7 +25,7 @@ describe('PaginationDto', () => {
             beforeEach(() => {
                 skip = 2
                 take = 3
-                query = { skip, take, orderby: 'name:asc' }
+                query = { orderby: 'name:asc', skip, take }
                 expectedResponse = {
                     response: { orderby: { direction: 'asc', name: 'name' }, skip, take }
                 }

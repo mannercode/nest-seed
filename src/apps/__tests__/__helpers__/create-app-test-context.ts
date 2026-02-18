@@ -1,3 +1,7 @@
+import type { MicroserviceOptions } from '@nestjs/microservices'
+import type { QueueOptions } from 'bullmq'
+import type Redis from 'ioredis'
+import type { HttpTestContext, ModuleMetadataEx } from 'testlib'
 import { BullModule } from '@nestjs/bullmq'
 import { ConfigService } from '@nestjs/config'
 import { Transport } from '@nestjs/microservices'
@@ -13,10 +17,6 @@ import {
     RedisConfigModule
 } from 'shared'
 import { createHttpTestContext, isDebuggingEnabled } from 'testlib'
-import type { MicroserviceOptions } from '@nestjs/microservices'
-import type { QueueOptions } from 'bullmq'
-import type Redis from 'ioredis'
-import type { HttpTestContext, ModuleMetadataEx } from 'testlib'
 
 export type AppTestContext = HttpTestContext & { teardown: () => Promise<void> }
 
@@ -26,13 +26,13 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
         MongooseConfigModule,
         RedisConfigModule,
         BullModule.forRootAsync('queue', {
+            inject: [RedisConfigModule.moduleName],
             useFactory(redis: Redis) {
                 return {
-                    prefix: `{queue:${getProjectId()}}`,
-                    connection: redis as unknown as QueueOptions['connection']
+                    connection: redis as unknown as QueueOptions['connection'],
+                    prefix: `{queue:${getProjectId()}}`
                 }
-            },
-            inject: [RedisConfigModule.moduleName]
+            }
         })
     )
 
@@ -50,8 +50,8 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
 
             app.connectMicroservice<MicroserviceOptions>(
                 {
-                    transport: Transport.NATS,
-                    options: { servers: nats.servers, queue: getProjectId() }
+                    options: { queue: getProjectId(), servers: nats.servers },
+                    transport: Transport.NATS
                 },
                 { inheritAppConfig: true }
             )
@@ -73,16 +73,6 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
     return { ...ctx, teardown }
 }
 
-async function stopAllCronJobs(ctx: HttpTestContext) {
-    const scheduler = ctx.module.get(SchedulerRegistry)
-
-    const cronJobs = scheduler.getCronJobs()
-
-    for (const [_name, job] of cronJobs.entries()) {
-        await job.stop()
-    }
-}
-
 export function createConfigServiceMock(mockValues: Record<string, any>) {
     const realConfigService = new ConfigService()
 
@@ -93,6 +83,16 @@ export function createConfigServiceMock(mockValues: Record<string, any>) {
                 key in mockValues ? mockValues[key] : realConfigService.get(key)
             )
         }
+    }
+}
+
+async function stopAllCronJobs(ctx: HttpTestContext) {
+    const scheduler = ctx.module.get(SchedulerRegistry)
+
+    const cronJobs = scheduler.getCronJobs()
+
+    for (const [_name, job] of cronJobs.entries()) {
+        await job.stop()
     }
 }
 

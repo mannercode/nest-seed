@@ -3,14 +3,24 @@ import type { TestContext } from 'testlib'
 
 export function buildCreateCustomerDto(overrides = {}) {
     const createDto = {
-        name: 'name',
-        email: 'name@mail.com',
         birthDate: new Date(0),
+        email: 'name@mail.com',
+        name: 'name',
         password: 'password',
         ...overrides
     }
 
     return createDto as CreateCustomerDto
+}
+
+export async function createAndLoginCustomer(ctx: TestContext) {
+    const credentials = { email: 'user@mail.com', password: 'password' }
+
+    const customer = await createCustomer(ctx, credentials)
+
+    const { accessToken, refreshToken } = await loginCustomer(ctx, credentials)
+
+    return { accessToken, customer, refreshToken }
 }
 
 export async function createCustomer(ctx: TestContext, override = {}) {
@@ -34,15 +44,5 @@ export async function loginCustomer(ctx: TestContext, credentials: CustomerCrede
         email: credentials.email
     })
 
-    return { customer, accessToken, refreshToken }
-}
-
-export async function createAndLoginCustomer(ctx: TestContext) {
-    const credentials = { email: 'user@mail.com', password: 'password' }
-
-    const customer = await createCustomer(ctx, credentials)
-
-    const { accessToken, refreshToken } = await loginCustomer(ctx, credentials)
-
-    return { customer, accessToken, refreshToken }
+    return { accessToken, customer, refreshToken }
 }

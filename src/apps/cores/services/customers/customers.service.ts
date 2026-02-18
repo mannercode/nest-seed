@@ -1,17 +1,17 @@
 import { ConflictException, Injectable } from '@nestjs/common'
 import { mapDocToDto } from 'common'
-import { CustomersRepository } from './customers.repository'
-import {
+import type { CustomersRepository } from './customers.repository'
+import type {
     CreateCustomerDto,
     CustomerAuthPayload,
     CustomerCredentialsDto,
-    CustomerDto,
     SearchCustomersPageDto,
     UpdateCustomerDto
 } from './dtos'
+import type { Customer } from './models'
+import type { CustomerAuthenticationService } from './services'
+import { CustomerDto } from './dtos'
 import { CustomerErrors } from './errors'
-import { Customer } from './models'
-import { CustomerAuthenticationService } from './services'
 
 /**
  * The `findCustomerByCredentials` and `refreshAuthTokens` methods simply re-invoke methods from `CustomerAuthenticationService`,
@@ -46,10 +46,18 @@ export class CustomersService {
         return this.toDto(newCustomer)
     }
 
-    async update(customerId: string, updateDto: UpdateCustomerDto) {
-        const customer = await this.repository.update(customerId, updateDto)
+    async deleteMany(customerIds: string[]): Promise<void> {
+        await this.repository.deleteByIds(customerIds)
+    }
 
-        return this.toDto(customer)
+    async findCustomerByCredentials(credentials: CustomerCredentialsDto) {
+        const customer = await this.authenticationService.findCustomerByCredentials(credentials)
+
+        return customer ? this.toDto(customer) : null
+    }
+
+    async generateAuthTokens(payload: CustomerAuthPayload) {
+        return this.authenticationService.generateAuthTokens(payload)
     }
 
     async getMany(customerIds: string[]) {
@@ -58,8 +66,8 @@ export class CustomersService {
         return this.toDtos(customers)
     }
 
-    async deleteMany(customerIds: string[]): Promise<void> {
-        await this.repository.deleteByIds(customerIds)
+    async refreshAuthTokens(refreshToken: string) {
+        return this.authenticationService.refreshAuthTokens(refreshToken)
     }
 
     async searchPage(searchDto: SearchCustomersPageDto) {
@@ -68,18 +76,10 @@ export class CustomersService {
         return { ...pagination, items: this.toDtos(items) }
     }
 
-    async generateAuthTokens(payload: CustomerAuthPayload) {
-        return this.authenticationService.generateAuthTokens(payload)
-    }
+    async update(customerId: string, updateDto: UpdateCustomerDto) {
+        const customer = await this.repository.update(customerId, updateDto)
 
-    async refreshAuthTokens(refreshToken: string) {
-        return this.authenticationService.refreshAuthTokens(refreshToken)
-    }
-
-    async findCustomerByCredentials(credentials: CustomerCredentialsDto) {
-        const customer = await this.authenticationService.findCustomerByCredentials(credentials)
-
-        return customer ? this.toDto(customer) : null
+        return this.toDto(customer)
     }
 
     private toDto(customer: Customer) {

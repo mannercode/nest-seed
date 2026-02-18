@@ -1,10 +1,10 @@
+import type { MovieDto } from 'apps/cores'
+import type { AssetPresignedUploadDto } from 'apps/infrastructures'
 import { buildCreateAssetDto, Errors, testAssets, uploadAsset } from 'apps/__tests__/__helpers__'
 import { Expect } from 'common'
 import { nullObjectId } from 'testlib'
-import { createMovie, createMovieAsset, uploadAndFinalizeMovieAsset } from './movies-assets.fixture'
 import type { MoviesAssetsFixture } from './movies-assets.fixture'
-import type { MovieDto } from 'apps/cores'
-import type { AssetPresignedUploadDto } from 'apps/infrastructures'
+import { createMovie, createMovieAsset, uploadAndFinalizeMovieAsset } from './movies-assets.fixture'
 
 describe('MoviesAssets', () => {
     let fix: MoviesAssetsFixture
@@ -36,10 +36,10 @@ describe('MoviesAssets', () => {
                 expect(body).toEqual(
                     expect.objectContaining({
                         assetId: expect.any(String),
-                        url: expect.any(String),
                         expiresAt: expect.any(Date),
+                        fields: expect.objectContaining({ 'Content-Type': createDto.mimeType }),
                         method: 'POST',
-                        fields: expect.objectContaining({ 'Content-Type': createDto.mimeType })
+                        url: expect.any(String)
                     })
                 )
             })

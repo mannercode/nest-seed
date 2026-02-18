@@ -1,35 +1,36 @@
-import { Injectable, LoggerService } from '@nestjs/common'
-import winston from 'winston'
+import type { LoggerService } from '@nestjs/common'
+import type winston from 'winston'
+import { Injectable } from '@nestjs/common'
 
 @Injectable()
 export class AppLoggerService implements LoggerService {
     constructor(private readonly logger: winston.Logger) {}
 
-    onModuleDestroy() {
-        this.logger.close()
-    }
-
-    log(message: any, ...optionalParams: any[]) {
-        this.logger.info(message, ...optionalParams)
+    debug(message: any, ...optionalParams: any[]) {
+        this.logger.debug(message, ...optionalParams)
     }
 
     error(message: any, ...optionalParams: any[]) {
         this.logger.error(message, ...optionalParams)
     }
 
-    warn(message: any, ...optionalParams: any[]) {
-        this.logger.warn(message, ...optionalParams)
+    fatal(message: any, ...optionalParams: any[]) {
+        this.logger.error(message, ...optionalParams)
     }
 
-    debug(message: any, ...optionalParams: any[]) {
-        this.logger.debug(message, ...optionalParams)
+    log(message: any, ...optionalParams: any[]) {
+        this.logger.info(message, ...optionalParams)
+    }
+
+    onModuleDestroy() {
+        this.logger.close()
     }
 
     verbose(message: any, ...optionalParams: any[]) {
         this.logger.verbose(message, ...optionalParams)
     }
 
-    fatal(message: any, ...optionalParams: any[]) {
-        this.logger.error(message, ...optionalParams)
+    warn(message: any, ...optionalParams: any[]) {
+        this.logger.warn(message, ...optionalParams)
     }
 }

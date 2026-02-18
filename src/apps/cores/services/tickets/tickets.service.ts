@@ -1,34 +1,31 @@
 import { Injectable } from '@nestjs/common'
 import { Expect, mapDocToDto } from 'common'
-import {
+import type {
     AggregateTicketSalesDto,
     CreateTicketDto,
     CreateTicketsResult,
-    SearchTicketsDto,
-    TicketDto
+    SearchTicketsDto
 } from './dtos'
-import { Ticket, TicketStatus } from './models'
-import { TicketsRepository } from './tickets.repository'
+import type { Ticket, TicketStatus } from './models'
+import type { TicketsRepository } from './tickets.repository'
+import { TicketDto } from './dtos'
 
 @Injectable()
 export class TicketsService {
     constructor(private readonly repository: TicketsRepository) {}
 
+    async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
+        const salesByShowtime = await this.repository.aggregateSales(aggregateDto)
+        return salesByShowtime
+    }
+
     async createMany(createDtos: CreateTicketDto[]) {
         await this.repository.createMany(createDtos)
 
-        return { success: true, count: createDtos.length } as CreateTicketsResult
+        return { count: createDtos.length, success: true } as CreateTicketsResult
     }
 
-    async updateStatusMany(ticketIds: string[], status: TicketStatus) {
-        const result = await this.repository.updateStatusMany(ticketIds, status)
-
-        Expect.equals(
-            result.matchedCount,
-            result.modifiedCount,
-            'The status of all tickets must be changed.'
-        )
-
+    async getMany(ticketIds: string[]) {
         const tickets = await this.repository.getByIds(ticketIds)
 
         return this.toDtos(tickets)
@@ -40,12 +37,15 @@ export class TicketsService {
         return this.toDtos(tickets)
     }
 
-    async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
-        const salesByShowtime = await this.repository.aggregateSales(aggregateDto)
-        return salesByShowtime
-    }
+    async updateStatusMany(ticketIds: string[], status: TicketStatus) {
+        const result = await this.repository.updateStatusMany(ticketIds, status)
 
-    async getMany(ticketIds: string[]) {
+        Expect.equals(
+            result.matchedCount,
+            result.modifiedCount,
+            'The status of all tickets must be changed.'
+        )
+
         const tickets = await this.repository.getByIds(ticketIds)
 
         return this.toDtos(tickets)

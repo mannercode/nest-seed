@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common'
 import { toAny } from 'testlib'
 import { HttpUtil } from '../../utils/http.util'
-import { testBuffer, uploadObject, type S3ObjectServiceFixture } from './s3-object.service.fixture'
+import { type S3ObjectServiceFixture, testBuffer, uploadObject } from './s3-object.service.fixture'
 
 function buildPresignedPostForm(
     fields: Record<string, string>,
@@ -34,21 +34,21 @@ describe('S3ObjectService', () => {
         // 프리사인드 POST를 반환한다
         it('returns a presigned post', async () => {
             const presigned = await fix.s3Service.presignUploadPost({
-                key: 'key.txt',
-                expiresInSec: 60
+                expiresInSec: 60,
+                key: 'key.txt'
             })
 
-            expect(presigned).toEqual({ url: expect.any(String), fields: expect.any(Object) })
+            expect(presigned).toEqual({ fields: expect.any(Object), url: expect.any(String) })
         })
 
         // Content-Disposition 필드를 지원한다
         it('supports content disposition fields', async () => {
             const contentDisposition = 'attachment; filename="sample.txt"'
             const presigned = await fix.s3Service.presignUploadPost({
-                key: 'content-disposition.txt',
-                expiresInSec: 60,
+                contentDisposition,
                 contentType: 'text/plain',
-                contentDisposition
+                expiresInSec: 60,
+                key: 'content-disposition.txt'
             })
 
             expect(presigned.fields).toEqual(
@@ -57,7 +57,7 @@ describe('S3ObjectService', () => {
 
             const uploadBody = Buffer.from('hello')
             const okForm = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
-            const okResponse = await fetch(presigned.url, { method: 'POST', body: okForm })
+            const okResponse = await fetch(presigned.url, { body: okForm, method: 'POST' })
             expect(okResponse.ok).toBe(true)
 
             const badForm = buildPresignedPostForm(
@@ -65,15 +65,15 @@ describe('S3ObjectService', () => {
                 uploadBody,
                 'text/plain'
             )
-            const badResponse = await fetch(presigned.url, { method: 'POST', body: badForm })
+            const badResponse = await fetch(presigned.url, { body: badForm, method: 'POST' })
             expect(badResponse.ok).toBe(false)
         })
 
         // 메타데이터 필드를 지원한다
         it('supports metadata fields', async () => {
             const presigned = await fix.s3Service.presignUploadPost({
-                key: 'meta.txt',
                 expiresInSec: 60,
+                key: 'meta.txt',
                 metadata: { checksum: 'abc123' }
             })
 
@@ -83,7 +83,7 @@ describe('S3ObjectService', () => {
 
             const uploadBody = Buffer.from('hello')
             const okForm = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
-            const okResponse = await fetch(presigned.url, { method: 'POST', body: okForm })
+            const okResponse = await fetch(presigned.url, { body: okForm, method: 'POST' })
             expect(okResponse.ok).toBe(true)
 
             const badForm = buildPresignedPostForm(
@@ -91,22 +91,22 @@ describe('S3ObjectService', () => {
                 uploadBody,
                 'text/plain'
             )
-            const badResponse = await fetch(presigned.url, { method: 'POST', body: badForm })
+            const badResponse = await fetch(presigned.url, { body: badForm, method: 'POST' })
             expect(badResponse.ok).toBe(false)
         })
 
         // 프리사인드 POST가 반환될 때
         describe('when a presigned post is returned', () => {
-            let presigned: { url: string; fields: Record<string, string> }
+            let presigned: { fields: Record<string, string>; url: string }
             const uploadBody = Buffer.from('hello')
 
             beforeEach(async () => {
                 presigned = await fix.s3Service.presignUploadPost({
-                    key: 'key.txt',
-                    expiresInSec: 60,
                     contentType: 'text/plain',
-                    minContentLength: uploadBody.byteLength,
-                    maxContentLength: uploadBody.byteLength
+                    expiresInSec: 60,
+                    key: 'key.txt',
+                    maxContentLength: uploadBody.byteLength,
+                    minContentLength: uploadBody.byteLength
                 })
             })
 
@@ -114,7 +114,7 @@ describe('S3ObjectService', () => {
             it('allows uploading via the presigned post', async () => {
                 const form = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
 
-                const response = await fetch(presigned.url, { method: 'POST', body: form })
+                const response = await fetch(presigned.url, { body: form, method: 'POST' })
 
                 expect(response.ok).toBe(true)
             })
@@ -127,23 +127,23 @@ describe('S3ObjectService', () => {
                     'image/png'
                 )
 
-                const response = await fetch(presigned.url, { method: 'POST', body: form })
+                const response = await fetch(presigned.url, { body: form, method: 'POST' })
 
                 expect(response.ok).toBe(false)
             })
 
             // `contentLength`가 일치하지 않으면 실패한다
             it('fails for mismatched `contentLength`', async () => {
-                const { url, fields } = await fix.s3Service.presignUploadPost({
-                    key: 'key.txt',
-                    expiresInSec: 60,
+                const { fields, url } = await fix.s3Service.presignUploadPost({
                     contentType: 'text/plain',
+                    expiresInSec: 60,
+                    key: 'key.txt',
                     maxContentLength: uploadBody.byteLength - 1
                 })
 
                 const form = buildPresignedPostForm(fields, uploadBody, 'text/plain')
 
-                const response = await fetch(url, { method: 'POST', body: form })
+                const response = await fetch(url, { body: form, method: 'POST' })
 
                 expect(response.ok).toBe(false)
             })
@@ -163,8 +163,8 @@ describe('S3ObjectService', () => {
             // downloadUrl을 반환한다
             it('returns a downloadUrl', async () => {
                 const downloadUrl = await fix.s3Service.presignDownloadUrl({
-                    key,
-                    expiresInSec: 60
+                    expiresInSec: 60,
+                    key
                 })
                 expect(downloadUrl).toEqual(expect.any(String))
             })
@@ -172,8 +172,8 @@ describe('S3ObjectService', () => {
             // downloadUrl을 통해 다운로드를 허용한다
             it('allows downloading via the downloadUrl', async () => {
                 const downloadUrl = await fix.s3Service.presignDownloadUrl({
-                    key,
-                    expiresInSec: 60
+                    expiresInSec: 60,
+                    key
                 })
 
                 const response = await fetch(downloadUrl)
@@ -189,9 +189,9 @@ describe('S3ObjectService', () => {
             it('overrides content disposition when filename is provided', async () => {
                 const filename = 'report.txt'
                 const downloadUrl = await fix.s3Service.presignDownloadUrl({
-                    key,
                     expiresInSec: 60,
-                    filename
+                    filename,
+                    key
                 })
 
                 const response = await fetch(downloadUrl)
@@ -207,8 +207,8 @@ describe('S3ObjectService', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 const downloadUrl = await fix.s3Service.presignDownloadUrl({
-                    key: 'not-exists',
-                    expiresInSec: 60
+                    expiresInSec: 60,
+                    key: 'not-exists'
                 })
 
                 const response = await fetch(downloadUrl)
@@ -220,7 +220,7 @@ describe('S3ObjectService', () => {
     describe('isUploadComplete', () => {
         // 객체가 존재할 때
         describe('when the object exists', () => {
-            const s3Object = { data: testBuffer, filename: 'file.txt', contentType: 'text/plain' }
+            const s3Object = { contentType: 'text/plain', data: testBuffer, filename: 'file.txt' }
             let key: string
 
             beforeEach(async () => {
@@ -238,9 +238,9 @@ describe('S3ObjectService', () => {
             // 컨텐츠 정보가 일치하면 true를 반환한다
             it('returns true for matching content details', async () => {
                 const isCompleted = await fix.s3Service.isUploadComplete({
-                    key,
                     contentLength: s3Object.data.byteLength,
-                    contentType: s3Object.contentType
+                    contentType: s3Object.contentType,
+                    key
                 })
 
                 expect(isCompleted).toBe(true)
@@ -249,8 +249,8 @@ describe('S3ObjectService', () => {
             // 컨텐츠 길이가 일치하지 않으면 false를 반환한다
             it('returns false for mismatched content length', async () => {
                 const isCompleted = await fix.s3Service.isUploadComplete({
-                    key,
-                    contentLength: s3Object.data.byteLength + 1
+                    contentLength: s3Object.data.byteLength + 1,
+                    key
                 })
 
                 expect(isCompleted).toBe(false)
@@ -259,8 +259,8 @@ describe('S3ObjectService', () => {
             // 컨텐츠 타입이 일치하지 않으면 false를 반환한다
             it('returns false for mismatched content type', async () => {
                 const isCompleted = await fix.s3Service.isUploadComplete({
-                    key,
-                    contentType: 'image/png'
+                    contentType: 'image/png',
+                    key
                 })
 
                 expect(isCompleted).toBe(false)
@@ -286,8 +286,8 @@ describe('S3ObjectService', () => {
                 })
 
                 const isCompleted = await fix.s3Service.isUploadComplete({
-                    key: 'key',
-                    contentType: 'text/plain'
+                    contentType: 'text/plain',
+                    key: 'key'
                 })
 
                 expect(isCompleted).toBe(false)
@@ -324,7 +324,7 @@ describe('S3ObjectService', () => {
             it('returns a no-content status and the deleted key', async () => {
                 const result = await fix.s3Service.deleteObject(key)
 
-                expect(result).toEqual({ status: HttpStatus.NO_CONTENT, key })
+                expect(result).toEqual({ key, status: HttpStatus.NO_CONTENT })
             })
         })
 
@@ -335,7 +335,7 @@ describe('S3ObjectService', () => {
                 const key = 'not-exist-key'
                 const result = await fix.s3Service.deleteObject(key)
 
-                expect(result).toEqual({ status: HttpStatus.NO_CONTENT, key })
+                expect(result).toEqual({ key, status: HttpStatus.NO_CONTENT })
             })
         })
     })
@@ -370,9 +370,9 @@ describe('S3ObjectService', () => {
 
                 expect(contents).toEqual([
                     {
+                        eTag: undefined,
                         key: 'a.txt',
                         lastModified: new Date('2024-01-01T00:00:00.000Z'),
-                        eTag: undefined,
                         size: undefined
                     }
                 ])
@@ -433,7 +433,7 @@ describe('S3ObjectService', () => {
         describe('when the `delimiter` is provided', () => {
             // 최상위 객체와 공통 prefix를 반환한다
             it('returns top-level objects and common prefixes', async () => {
-                const { contents, commonPrefixes } = await fix.s3Service.listObjects({
+                const { commonPrefixes, contents } = await fix.s3Service.listObjects({
                     delimiter: '/'
                 })
 
@@ -448,9 +448,9 @@ describe('S3ObjectService', () => {
 
             // prefix 아래의 직접 자식만 반환한다
             it('returns only direct children under the prefix', async () => {
-                const { contents, commonPrefixes } = await fix.s3Service.listObjects({
-                    prefix: 'b/',
-                    delimiter: '/'
+                const { commonPrefixes, contents } = await fix.s3Service.listObjects({
+                    delimiter: '/',
+                    prefix: 'b/'
                 })
 
                 const listedKeys = contents.map((object) => object.key)

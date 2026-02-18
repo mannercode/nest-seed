@@ -3,77 +3,77 @@ import { createMessagePatternMap, getProjectId } from './utils'
 export const Messages = createMessagePatternMap(
     {
         Assets: {
-            getMany: null,
-            deleteMany: null,
             create: null,
+            deleteMany: null,
             finalizeUpload: null,
+            getMany: null,
             isUploadComplete: null
         },
-        Payments: { create: null, getMany: null },
-        WatchRecords: { create: null, searchPage: null },
-        Tickets: {
-            createMany: null,
-            updateStatusMany: null,
-            deleteBySagaIds: null,
-            search: null,
-            aggregateSales: null,
-            getMany: null
-        },
-        TicketHolding: { holdTickets: null, searchHeldTicketIds: null, releaseTickets: null },
-        Theaters: {
-            create: null,
-            update: null,
-            getMany: null,
-            deleteMany: null,
-            searchPage: null,
-            existsAll: null
-        },
-        Showtimes: {
-            createMany: null,
-            getMany: null,
-            deleteBySagaIds: null,
-            search: null,
-            searchMovieIds: null,
-            searchTheaterIds: null,
+        Booking: {
+            getTickets: null,
+            holdTickets: null,
             searchShowdates: null,
-            existsAll: null
-        },
-        PurchaseRecords: { create: null, getMany: null },
-        Movies: {
-            create: null,
-            publish: null,
-            update: null,
-            getMany: null,
-            deleteMany: null,
-            searchPage: null,
-            existsAll: null,
-            Assets: { create: null, delete: null, finalizeUpload: null }
+            searchShowtimes: null,
+            searchTheaters: null
         },
         Customers: {
             create: null,
-            update: null,
-            getMany: null,
             deleteMany: null,
-            searchPage: null,
+            findCustomerByCredentials: null,
             generateAuthTokens: null,
+            getMany: null,
             refreshAuthTokens: null,
-            findCustomerByCredentials: null
+            searchPage: null,
+            update: null
         },
-        ShowtimeCreation: {
-            searchMoviesPage: null,
-            searchTheatersPage: null,
-            searchShowtimes: null,
-            requestShowtimeCreation: null
+        Movies: {
+            Assets: { create: null, delete: null, finalizeUpload: null },
+            create: null,
+            deleteMany: null,
+            existsAll: null,
+            getMany: null,
+            publish: null,
+            searchPage: null,
+            update: null
         },
-        Recommendation: { searchRecommendedMovies: null },
+        Payments: { create: null, getMany: null },
         Purchase: { processPurchase: null },
-        Booking: {
-            searchTheaters: null,
-            searchShowdates: null,
+        PurchaseRecords: { create: null, getMany: null },
+        Recommendation: { searchRecommendedMovies: null },
+        ShowtimeCreation: {
+            requestShowtimeCreation: null,
+            searchMoviesPage: null,
             searchShowtimes: null,
-            getTickets: null,
-            holdTickets: null
-        }
+            searchTheatersPage: null
+        },
+        Showtimes: {
+            createMany: null,
+            deleteBySagaIds: null,
+            existsAll: null,
+            getMany: null,
+            search: null,
+            searchMovieIds: null,
+            searchShowdates: null,
+            searchTheaterIds: null
+        },
+        Theaters: {
+            create: null,
+            deleteMany: null,
+            existsAll: null,
+            getMany: null,
+            searchPage: null,
+            update: null
+        },
+        TicketHolding: { holdTickets: null, releaseTickets: null, searchHeldTicketIds: null },
+        Tickets: {
+            aggregateSales: null,
+            createMany: null,
+            deleteBySagaIds: null,
+            getMany: null,
+            search: null,
+            updateStatusMany: null
+        },
+        WatchRecords: { create: null, searchPage: null }
     },
     `${getProjectId()}.message`
 )

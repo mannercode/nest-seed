@@ -1,7 +1,8 @@
+import type { ClientProxyService, PaginationResult } from 'common'
 import { Injectable } from '@nestjs/common'
-import { ClientProxyService, InjectClientProxy, PaginationResult } from 'common'
+import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
-import { CreateTheaterDto, SearchTheatersPageDto, TheaterDto, UpdateTheaterDto } from './dtos'
+import type { CreateTheaterDto, SearchTheatersPageDto, TheaterDto, UpdateTheaterDto } from './dtos'
 
 @Injectable()
 export class TheatersClient {
@@ -11,23 +12,23 @@ export class TheatersClient {
         return this.proxy.request(Messages.Theaters.create, createDto)
     }
 
-    update(theaterId: string, updateDto: UpdateTheaterDto): Promise<TheaterDto> {
-        return this.proxy.request(Messages.Theaters.update, { theaterId, updateDto })
+    async deleteMany(theaterIds: string[]): Promise<void> {
+        await this.proxy.request(Messages.Theaters.deleteMany, theaterIds)
+    }
+
+    existsAll(theaterIds: string[]): Promise<boolean> {
+        return this.proxy.request(Messages.Theaters.existsAll, theaterIds)
     }
 
     getMany(theaterIds: string[]): Promise<TheaterDto[]> {
         return this.proxy.request(Messages.Theaters.getMany, theaterIds)
     }
 
-    async deleteMany(theaterIds: string[]): Promise<void> {
-        await this.proxy.request(Messages.Theaters.deleteMany, theaterIds)
-    }
-
     searchPage(searchDto: SearchTheatersPageDto): Promise<PaginationResult<TheaterDto>> {
         return this.proxy.request(Messages.Theaters.searchPage, searchDto)
     }
 
-    existsAll(theaterIds: string[]): Promise<boolean> {
-        return this.proxy.request(Messages.Theaters.existsAll, theaterIds)
+    update(theaterId: string, updateDto: UpdateTheaterDto): Promise<TheaterDto> {
+        return this.proxy.request(Messages.Theaters.update, { theaterId, updateDto })
     }
 }

@@ -1,9 +1,9 @@
+import type { Model } from 'mongoose'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { MongooseRepository } from 'common'
-import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import { CreateAssetDto } from './dtos'
+import type { CreateAssetDto } from './dtos'
 import { Asset } from './models'
 
 @Injectable()
@@ -13,6 +13,16 @@ export class AssetsRepository extends MongooseRepository<Asset> {
         readonly model: Model<Asset>
     ) {
         super(model, MongooseConfigModule.maxTake)
+    }
+
+    async assignOwner(assetId: string, owner: { entityId: string; service: string }) {
+        const asset = await this.getDocumentById(assetId)
+        asset.ownerService = owner.service
+        asset.ownerEntityId = owner.entityId
+
+        await asset.save()
+
+        return asset.toJSON()
     }
 
     async create(createDto: CreateAssetDto) {
@@ -29,17 +39,7 @@ export class AssetsRepository extends MongooseRepository<Asset> {
 
     async findExpiredIncomplete(expiresBefore: Date): Promise<Asset[]> {
         return this.model
-            .find({ ownerService: null, ownerEntityId: null, createdAt: { $lte: expiresBefore } })
+            .find({ createdAt: { $lte: expiresBefore }, ownerEntityId: null, ownerService: null })
             .lean({ virtuals: true })
-    }
-
-    async assignOwner(assetId: string, owner: { service: string; entityId: string }) {
-        const asset = await this.getDocumentById(assetId)
-        asset.ownerService = owner.service
-        asset.ownerEntityId = owner.entityId
-
-        await asset.save()
-
-        return asset.toJSON()
     }
 }

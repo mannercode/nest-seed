@@ -9,16 +9,16 @@ function colorizeHttpMethod(method: string | undefined) {
     const normalizedMethod = defaultTo(method, 'METHOD').toUpperCase()
 
     switch (normalizedMethod) {
+        case 'DELETE':
+            return styleText('red', normalizedMethod)
         case 'GET':
             return styleText('cyan', normalizedMethod)
+        case 'PATCH':
+            return styleText('blueBright', normalizedMethod)
         case 'POST':
             return styleText('yellow', normalizedMethod)
         case 'PUT':
             return styleText('blue', normalizedMethod)
-        case 'PATCH':
-            return styleText('blueBright', normalizedMethod)
-        case 'DELETE':
-            return styleText('red', normalizedMethod)
         default:
             return styleText('magenta', normalizedMethod)
     }
@@ -30,13 +30,24 @@ function colorizeLogLevel(level: string | undefined) {
     switch (normalizedLevel) {
         case 'ERROR':
             return styleText('red', normalizedLevel)
-        case 'WARN':
-            return styleText('yellow', normalizedLevel)
         case 'INFO':
             return styleText('cyan', normalizedLevel)
+        case 'WARN':
+            return styleText('yellow', normalizedLevel)
         default:
             return styleText('gray', normalizedLevel)
     }
+}
+
+function formatGenericLogMessage(
+    message: string,
+    level: string,
+    timestamp: string,
+    logDetails: unknown
+) {
+    const coloredEtc = styleText('blueBright', JSON.stringify(logDetails, null, 2))
+
+    return `${timestamp} ${level} ${message} ${coloredEtc}`
 }
 
 function formatHttpLogMessage(
@@ -67,21 +78,10 @@ function formatRpcLogMessage(
     return `${timestamp} ${level} RPC ${message} ${coloredContext} ${coloredData}`
 }
 
-function formatGenericLogMessage(
-    message: string,
-    level: string,
-    timestamp: string,
-    logDetails: unknown
-) {
-    const coloredEtc = styleText('blueBright', JSON.stringify(logDetails, null, 2))
-
-    return `${timestamp} ${level} ${message} ${coloredEtc}`
-}
-
 const consoleLogFormat = winston.format.combine(
     winston.format.timestamp({ format: 'HH:mm:ss' }),
     winston.format.printf((info) => {
-        const { message, level, timestamp, ...rest } = info
+        const { level, message, timestamp, ...rest } = info
 
         const coloredMessage = styleText('white', String(message))
         const coloredLevel = colorizeLogLevel(level)
@@ -99,34 +99,34 @@ const consoleLogFormat = winston.format.combine(
 )
 
 export type LoggerConfiguration = {
-    directory: string
-    daysToKeepLogs: string
-    fileLogLevel: string
     consoleLogLevel: string
+    daysToKeepLogs: string
+    directory: string
+    fileLogLevel: string
 }
 
 export function createWinstonLogger(config: LoggerConfiguration) {
-    const { directory, daysToKeepLogs, fileLogLevel, consoleLogLevel } = config
+    const { consoleLogLevel, daysToKeepLogs, directory, fileLogLevel } = config
 
     const transports: winston.transport[] = []
 
     transports.push(
         new DailyRotateFile({
-            dirname: directory,
-            zippedArchive: false,
-            maxSize: '10m',
             createSymlink: true,
+            datePattern: 'YYYY-MM-DD',
+            dirname: directory,
+            filename: `%DATE%.log`,
             format: winston.format.combine(
                 winston.format.timestamp({ format: 'HH:mm:ss.SSS' }),
                 winston.format.json()
             ),
             handleExceptions: true,
             handleRejections: true,
-            datePattern: 'YYYY-MM-DD',
+            level: fileLogLevel,
             maxFiles: daysToKeepLogs,
+            maxSize: '10m',
             symlinkName: `current.log`,
-            filename: `%DATE%.log`,
-            level: fileLogLevel
+            zippedArchive: false
         })
     )
 
@@ -134,9 +134,9 @@ export function createWinstonLogger(config: LoggerConfiguration) {
         transports.push(
             new winston.transports.Console({
                 format: consoleLogFormat,
-                level: consoleLogLevel,
                 handleExceptions: true,
-                handleRejections: true
+                handleRejections: true,
+                level: consoleLogLevel
             })
         )
     }

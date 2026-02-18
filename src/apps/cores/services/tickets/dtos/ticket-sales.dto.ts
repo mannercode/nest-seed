@@ -1,7 +1,7 @@
 export class TicketSalesDto {
-    total: number
-    sold: number
     available: number
+    sold: number
+    total: number
 }
 
 /**

@@ -1,7 +1,7 @@
-import { Type } from '@nestjs/common'
+import type { Type } from '@nestjs/common'
+import type { Model } from 'mongoose'
 import { getModelToken, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { createMongooseSchema, HardDelete, MongooseSchema } from 'common'
-import { Model } from 'mongoose'
 import { createTestContext, getMongoTestConnection } from 'testlib'
 
 @HardDelete()
@@ -17,12 +17,12 @@ export class SoftDeleteSample extends MongooseSchema {
     name: string
 }
 
-export type MongooseDeleteFixture<T> = { teardown: () => Promise<void>; model: Model<T> }
+export type MongooseDeleteFixture<T> = { model: Model<T>; teardown: () => Promise<void> }
 
 export async function createMongooseDeleteFixture<T>(cls: Type<T>) {
     const schema = createMongooseSchema(cls)
 
-    const { module, close } = await createTestContext({
+    const { close, module } = await createTestContext({
         imports: [
             MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
             MongooseModule.forFeature([{ name: 'schema', schema }])
@@ -35,5 +35,5 @@ export async function createMongooseDeleteFixture<T>(cls: Type<T>) {
         await close()
     }
 
-    return { teardown, model }
+    return { model, teardown }
 }

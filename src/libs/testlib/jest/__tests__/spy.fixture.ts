@@ -1,10 +1,10 @@
 export class HelloClass {
-    getHello(): string {
-        return 'Hello'
-    }
-
     get value() {
         return 0
+    }
+
+    getHello(): string {
+        return 'Hello'
     }
 }
 

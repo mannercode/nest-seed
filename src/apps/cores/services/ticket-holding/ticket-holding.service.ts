@@ -1,7 +1,8 @@
+import type { CacheService } from 'common'
 import { Injectable } from '@nestjs/common'
-import { CacheService, InjectCache } from 'common'
+import { InjectCache } from 'common'
 import { Rules } from 'shared'
-import { HoldTicketsDto } from './dtos'
+import type { HoldTicketsDto } from './dtos'
 
 const getCustomerKey = (showtimeId: string, customerId: string) =>
     `Customer:{${showtimeId}}:${customerId}`
@@ -77,12 +78,6 @@ export class TicketHoldingService {
         return result === 1
     }
 
-    async searchHeldTicketIds(showtimeId: string, customerId: string): Promise<string[]> {
-        const tickets = await this.cacheService.get(getCustomerKey(showtimeId, customerId))
-
-        return tickets ? JSON.parse(tickets) : []
-    }
-
     async releaseTickets(showtimeId: string, customerId: string): Promise<void> {
         const tickets = await this.searchHeldTicketIds(showtimeId, customerId)
 
@@ -91,5 +86,11 @@ export class TicketHoldingService {
         )
 
         await this.cacheService.delete(getCustomerKey(showtimeId, customerId))
+    }
+
+    async searchHeldTicketIds(showtimeId: string, customerId: string): Promise<string[]> {
+        const tickets = await this.cacheService.get(getCustomerKey(showtimeId, customerId))
+
+        return tickets ? JSON.parse(tickets) : []
     }
 }

@@ -1,34 +1,28 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common'
+import type { DynamicModule, Provider } from '@nestjs/common'
+import { Module } from '@nestjs/common'
 import Redis, { Cluster } from 'ioredis'
+import type { RedisConnection, RedisModuleAsyncOptions, RedisModuleOptions } from './redis.types'
 import { getRedisConnectionToken } from './redis.tokens'
-import { RedisConnection, RedisModuleAsyncOptions, RedisModuleOptions } from './redis.types'
 
 @Module({})
 export class RedisModule {
     static forRoot(options: RedisModuleOptions, connectionName?: string): DynamicModule {
         const provider = createRedisProvider(options, connectionName)
 
-        return { module: RedisModule, global: true, providers: [provider], exports: [provider] }
+        return { exports: [provider], global: true, module: RedisModule, providers: [provider] }
     }
 
     static forRootAsync(options: RedisModuleAsyncOptions, connectionName?: string): DynamicModule {
         const provider: Provider = {
+            inject: options.inject ?? [],
             provide: getRedisConnectionToken(connectionName),
             useFactory: async (...args: any[]) => {
                 const resolvedOptions = await options.useFactory(...args)
                 return createRedisClient(resolvedOptions)
-            },
-            inject: options.inject ?? []
+            }
         }
 
-        return { module: RedisModule, global: true, providers: [provider], exports: [provider] }
-    }
-}
-
-function createRedisProvider(options: RedisModuleOptions, connectionName?: string): Provider {
-    return {
-        provide: getRedisConnectionToken(connectionName),
-        useFactory: async () => createRedisClient(options)
+        return { exports: [provider], global: true, module: RedisModule, providers: [provider] }
     }
 }
 
@@ -50,4 +44,11 @@ function createRedisClient(options: RedisModuleOptions): RedisConnection {
     }
 
     return new Redis()
+}
+
+function createRedisProvider(options: RedisModuleOptions, connectionName?: string): Provider {
+    return {
+        provide: getRedisConnectionToken(connectionName),
+        useFactory: async () => createRedisClient(options)
+    }
 }

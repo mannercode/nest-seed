@@ -1,15 +1,17 @@
+import type { QueryFilter } from 'mongoose'
 import { BadRequestException } from '@nestjs/common'
 import { escapeRegExp, uniq } from 'lodash'
 import { Types } from 'mongoose'
 import { Verify } from '../validator'
 import { MongooseErrors } from './errors'
-import type { QueryFilter } from 'mongoose'
 
 export const newObjectIdString = () => new Types.ObjectId().toString()
 export const objectId = (id: string) => new Types.ObjectId(id)
 export const objectIds = (ids: string[]) => ids.map((id) => objectId(id))
 
 export type QueryBuilderOptions = { allowEmpty?: boolean }
+
+type Transform<T> = (value: T) => any
 
 export class QueryBuilder<T> {
     private query: any = {}
@@ -42,16 +44,9 @@ export class QueryBuilder<T> {
         return this
     }
 
-    addRegex(field: string, value?: string): this {
-        if (value) {
-            this.query[field] = new RegExp(escapeRegExp(value), 'i')
-        }
-        return this
-    }
-
-    addRange(field: string, range?: { start?: Date; end?: Date }): this {
+    addRange(field: string, range?: { end?: Date; start?: Date }): this {
         if (range) {
-            const { start, end } = range
+            const { end, start } = range
 
             if (start && end) {
                 this.query[field] = { $gte: start, $lte: end }
@@ -65,6 +60,13 @@ export class QueryBuilder<T> {
         return this
     }
 
+    addRegex(field: string, value?: string): this {
+        if (value) {
+            this.query[field] = new RegExp(escapeRegExp(value), 'i')
+        }
+        return this
+    }
+
     build({ allowEmpty }: QueryBuilderOptions): QueryFilter<T> {
         if (!allowEmpty && Object.keys(this.query).length === 0) {
             throw new BadRequestException(MongooseErrors.FiltersRequired)
@@ -72,6 +74,17 @@ export class QueryBuilder<T> {
 
         return this.query
     }
+}
+
+export function assignDefined<
+    Target extends Record<string, any>,
+    Source extends Record<string, any>,
+    K extends keyof Source & keyof Target
+>(target: Target, source: Source, key: K, transform?: Transform<NonNullable<Source[K]>>): void {
+    const value = source[key]
+    if (value === undefined) return
+
+    target[key] = transform ? transform(value as NonNullable<Source[K]>) : value
 }
 
 export function mapDocToDto<DOC extends object, DTO extends object, K extends keyof DTO>(
@@ -88,17 +101,4 @@ export function mapDocToDto<DOC extends object, DTO extends object, K extends ke
     }
 
     return dto
-}
-
-type Transform<T> = (value: T) => any
-
-export function assignDefined<
-    Target extends Record<string, any>,
-    Source extends Record<string, any>,
-    K extends keyof Source & keyof Target
->(target: Target, source: Source, key: K, transform?: Transform<NonNullable<Source[K]>>): void {
-    const value = source[key]
-    if (value === undefined) return
-
-    target[key] = transform ? transform(value as NonNullable<Source[K]>) : value
 }

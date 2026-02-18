@@ -1,3 +1,4 @@
+import type { MovieDto, SearchMoviesPageDto } from 'apps/cores'
 import {
     buildCreateMovieDto,
     createMovie,
@@ -11,7 +12,6 @@ import { omit } from 'lodash'
 import { Rules } from 'shared'
 import { nullObjectId } from 'testlib'
 import type { MoviesFixture } from './movies.fixture'
-import type { MovieDto, SearchMoviesPageDto } from 'apps/cores'
 
 describe('MoviesService', () => {
     let fix: MoviesFixture
@@ -45,9 +45,9 @@ describe('MoviesService', () => {
                     .post('/movies')
                     .body({})
                     .created({
+                        genres: [],
                         id: expect.any(String),
                         imageUrls: [],
-                        genres: [],
                         ...Rules.Movie.defaults
                     })
             })
@@ -114,13 +114,13 @@ describe('MoviesService', () => {
             // 수정된 영화를 반환한다
             it('returns the updated movie', async () => {
                 const updateDto = {
-                    genres: ['romance', 'thriller'],
-                    releaseDate: new Date('2000-01-01'),
-                    plot: 'new plot',
-                    durationInSeconds: 10 * 60,
+                    assetIds: [],
                     director: 'Steven Spielberg',
+                    durationInSeconds: 10 * 60,
+                    genres: ['romance', 'thriller'],
+                    plot: 'new plot',
                     rating: 'R',
-                    assetIds: []
+                    releaseDate: new Date('2000-01-01')
                 }
 
                 await fix.httpClient
@@ -220,37 +220,37 @@ describe('MoviesService', () => {
 
             const createdMovies = await Promise.all([
                 createMovie(fix, {
-                    title: 'title-a1',
-                    plot: 'plot-a1',
+                    assetIds: [asset.id],
                     director: 'James Cameron',
-                    releaseDate: new Date('2000-01-01'),
-                    rating: MovieRating.NC17,
                     genres: [MovieGenre.Action, MovieGenre.Comedy],
-                    assetIds: [asset.id]
-                }),
-                createMovie(fix, {
-                    title: 'title-a2',
-                    plot: 'plot-a2',
-                    director: 'Steven Spielberg',
-                    releaseDate: new Date('2000-01-02'),
+                    plot: 'plot-a1',
                     rating: MovieRating.NC17,
-                    genres: [MovieGenre.Romance, MovieGenre.Drama]
+                    releaseDate: new Date('2000-01-01'),
+                    title: 'title-a1'
                 }),
                 createMovie(fix, {
-                    title: 'title-b1',
-                    plot: 'plot-b1',
-                    director: 'James Cameron',
-                    releaseDate: new Date('2000-01-02'),
-                    rating: MovieRating.PG,
-                    genres: [MovieGenre.Drama, MovieGenre.Comedy]
-                }),
-                createMovie(fix, {
-                    title: 'title-b2',
-                    plot: 'plot-b2',
                     director: 'Steven Spielberg',
-                    releaseDate: new Date('2000-01-03'),
+                    genres: [MovieGenre.Romance, MovieGenre.Drama],
+                    plot: 'plot-a2',
+                    rating: MovieRating.NC17,
+                    releaseDate: new Date('2000-01-02'),
+                    title: 'title-a2'
+                }),
+                createMovie(fix, {
+                    director: 'James Cameron',
+                    genres: [MovieGenre.Drama, MovieGenre.Comedy],
+                    plot: 'plot-b1',
+                    rating: MovieRating.PG,
+                    releaseDate: new Date('2000-01-02'),
+                    title: 'title-b1'
+                }),
+                createMovie(fix, {
+                    director: 'Steven Spielberg',
+                    genres: [MovieGenre.Thriller, MovieGenre.Western],
+                    plot: 'plot-b2',
                     rating: MovieRating.R,
-                    genres: [MovieGenre.Thriller, MovieGenre.Western]
+                    releaseDate: new Date('2000-01-03'),
+                    title: 'title-b2'
                 })
             ])
 
@@ -263,10 +263,10 @@ describe('MoviesService', () => {
         const buildExpectedPage = (movies: MovieDto[]) => {
             movies.forEach((movie) => (movie.imageUrls = expect.any(Array)))
             return {
+                items: expect.arrayContaining(movies),
                 skip: 0,
                 take: expect.any(Number),
-                total: movies.length,
-                items: expect.arrayContaining(movies)
+                total: movies.length
             }
         }
 
