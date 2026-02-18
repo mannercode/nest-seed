@@ -38,7 +38,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return new this.model()
     }
 
-    async saveMany(docs: HydratedDocument<Doc>[], session: SessionArg = undefined) {
+    async saveMany(docs: HydratedDocument<Doc>[], session: SessionArg = undefined): Promise<void> {
         const bulkSaveDocuments = docs as unknown as Parameters<Model<Doc>['bulkSave']>[0]
         const { insertedCount, matchedCount, deletedCount } = await this.model.bulkSave(
             bulkSaveDocuments,
@@ -50,8 +50,6 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
             insertedCount + matchedCount + deletedCount,
             `The number of inserted documents should match the requested count`
         )
-
-        return true
     }
 
     async findById(id: string, session: SessionArg = undefined) {
@@ -134,10 +132,14 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
     }
 
     async existsAll(ids: string[], session: SessionArg = undefined) {
-        const count = await this.model.countDocuments({ _id: { $in: objectIds(ids) } } as any, {
-            session
-        })
-        return count === ids.length
+        const uniqueIds = uniq(ids)
+        if (uniqueIds.length === 0) return true
+
+        const count = await this.model.countDocuments(
+            { _id: { $in: objectIds(uniqueIds) } } as any,
+            { session }
+        )
+        return count === uniqueIds.length
     }
 
     async findWithPagination(args: {

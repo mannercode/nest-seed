@@ -32,7 +32,7 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
             return ticket
         })
 
-        return this.saveMany(tickets)
+        await this.saveMany(tickets)
     }
 
     async updateStatusMany(ticketIds: string[], status: TicketStatus) {

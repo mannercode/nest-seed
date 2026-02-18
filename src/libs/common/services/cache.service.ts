@@ -39,7 +39,7 @@ export class CacheService {
         await this.redis.del(this.getKey(key))
     }
 
-    async executeScript(script: string, keys: string[], args: string[]): Promise<any> {
+    async executeScript<T = unknown>(script: string, keys: string[], args: string[]): Promise<T> {
         const result = await this.redis.eval(
             script,
             keys.length,
@@ -47,7 +47,7 @@ export class CacheService {
             this.prefix,
             ...args
         )
-        return result
+        return result as T
     }
 }
 

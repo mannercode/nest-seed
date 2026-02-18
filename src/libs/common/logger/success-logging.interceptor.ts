@@ -29,10 +29,12 @@ export class SuccessLoggingInterceptor implements NestInterceptor {
         return !this.excludeHttpPaths.some((exclude) => url === exclude)
     }
 
-    private shouldRpcLog(args: string[]): boolean {
+    private shouldRpcLog(args: unknown): boolean {
         if (this.excludeRpcPaths === undefined) return true
+        if (!Array.isArray(args)) return true
 
-        return !this.excludeRpcPaths.some((exclude) => args.includes(exclude))
+        const stringArgs = args.filter((arg): arg is string => typeof arg === 'string')
+        return !this.excludeRpcPaths.some((exclude) => stringArgs.includes(exclude))
     }
 
     async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {

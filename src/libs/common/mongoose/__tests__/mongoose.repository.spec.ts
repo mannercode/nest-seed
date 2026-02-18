@@ -52,9 +52,7 @@ describe('MongooseRepository', () => {
                 return doc
             })
 
-            const saveSucceeded = await fix.repository.saveMany(docs)
-
-            expect(saveSucceeded).toBe(true)
+            await expect(fix.repository.saveMany(docs)).resolves.toBeUndefined()
         })
 
         // 필수 필드가 없으면 예외를 던진다
@@ -185,12 +183,32 @@ describe('MongooseRepository', () => {
             })
         })
 
+        // id에 중복이 포함될 때
+        describe('when ids contain duplicates', () => {
+            // true를 반환한다
+            it('returns true', async () => {
+                const [first] = samples
+                const exists = await fix.repository.existsAll([first.id, first.id])
+
+                expect(exists).toBe(true)
+            })
+        })
+
         // id 중 하나라도 없을 때
         describe('when any id is missing', () => {
             // false를 반환한다
             it('returns false', async () => {
                 const exists = await fix.repository.existsAll([nullObjectId])
                 expect(exists).toBe(false)
+            })
+        })
+
+        // id 배열이 비어 있을 때
+        describe('when ids are empty', () => {
+            // true를 반환한다
+            it('returns true', async () => {
+                const exists = await fix.repository.existsAll([])
+                expect(exists).toBe(true)
             })
         })
     })

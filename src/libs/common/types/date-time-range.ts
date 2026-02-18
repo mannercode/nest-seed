@@ -13,12 +13,22 @@ export class DateTimeRange {
     @Type(() => Date)
     end: Date
 
-    static create({ start, end, days, minutes }: DateTimeRangeOptions) {
+    private static fromValues(start: Date, end: Date): DateTimeRange {
+        const range = new DateTimeRange()
+        range.start = start
+        range.end = end
+        return range
+    }
+
+    static create({ start, end, days, minutes }: DateTimeRangeOptions): DateTimeRange {
         if (start) {
             if (end) {
-                return { start, end }
-            } else if (days || minutes) {
-                return { start, end: DateUtil.add({ base: start, days, minutes }) }
+                return this.fromValues(start, end)
+            }
+
+            if (days !== undefined || minutes !== undefined) {
+                const rangeEnd = DateUtil.add({ base: start, days, minutes })
+                return this.fromValues(start, rangeEnd)
             }
         }
 

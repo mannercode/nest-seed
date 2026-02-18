@@ -41,6 +41,18 @@ function excludeDeletedMiddleware(this: Query<any, any>) {
     }
 }
 
+export function addDeletedAtFilterToPipeline(pipeline: Record<string, any>[]) {
+    const matchStage = { $match: { deletedAt: null } }
+    const firstStage = pipeline[0] ?? {}
+
+    if ('$geoNear' in firstStage || '$search' in firstStage || '$vectorSearch' in firstStage) {
+        pipeline.splice(1, 0, matchStage)
+        return
+    }
+
+    pipeline.unshift(matchStage)
+}
+
 export function createMongooseSchema<T>(cls: Type<T>): Schema<T> {
     const schema = SchemaFactory.createForClass(cls)
     schema.plugin(mongooseLeanVirtuals)
@@ -59,21 +71,29 @@ export function createMongooseSchema<T>(cls: Type<T>): Schema<T> {
         schema.pre('findOneAndUpdate', excludeDeletedMiddleware)
         schema.pre('countDocuments', excludeDeletedMiddleware)
         schema.pre('aggregate', function addDeletedAtFilter() {
-            this.pipeline().unshift({ $match: { deletedAt: null } })
+            addDeletedAtFilterToPipeline(this.pipeline())
         })
         schema.statics.deleteOne = async function softDeleteOne(
             conditions,
             options?: { session?: ClientSession }
         ) {
-            const ret = await this.updateOne(conditions, { deletedAt: new Date() }, options).exec()
-            return { deletedCount: ret.modifiedCount }
+            const updateResult = await this.updateOne(
+                conditions,
+                { deletedAt: new Date() },
+                options
+            ).exec()
+            return { deletedCount: updateResult.modifiedCount }
         }
         schema.statics.deleteMany = async function softDeleteMany(
             conditions,
             options?: { session?: ClientSession }
         ) {
-            const ret = await this.updateMany(conditions, { deletedAt: new Date() }, options).exec()
-            return { deletedCount: ret.modifiedCount }
+            const updateResult = await this.updateMany(
+                conditions,
+                { deletedAt: new Date() },
+                options
+            ).exec()
+            return { deletedCount: updateResult.modifiedCount }
         }
         schema.methods.deleteOne = async function softDeleteOneInstance(options?: {
             session?: ClientSession

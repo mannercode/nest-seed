@@ -133,7 +133,7 @@ describe('Path', () => {
     // 절대 경로를 반환한다
     it('returns an absolute path', async () => {
         const relativePath = `.${Path.sep()}file.txt`
-        const absolutePath = await Path.getAbsolute(relativePath)
+        const absolutePath = Path.getAbsolute(relativePath)
 
         expect(p.isAbsolute(absolutePath)).toBe(true)
     })
@@ -148,7 +148,7 @@ describe('Path', () => {
 
         // 같은 경로를 반환한다
         it('returns the same path', async () => {
-            const result = await Path.getAbsolute(absolutePath)
+            const result = Path.getAbsolute(absolutePath)
 
             expect(result).toEqual(absolutePath)
         })
@@ -216,5 +216,42 @@ describe('Path', () => {
 
         const content = await fs.readFile(destFilePath, 'utf-8')
         expect(content).toEqual('hello world')
+    })
+
+    // rename이 EXDEV로 실패할 때
+    describe('when rename fails with EXDEV', () => {
+        // copy + delete로 폴백한다
+        it('falls back to copy and delete', async () => {
+            const src = '/tmp/src.txt'
+            const dest = '/tmp/dest.txt'
+
+            const exdevError = new Error('cross-device link') as NodeJS.ErrnoException
+            exdevError.code = 'EXDEV'
+
+            const renameSpy = jest.spyOn(fs, 'rename').mockRejectedValueOnce(exdevError)
+            const copySpy = jest.spyOn(Path, 'copy').mockResolvedValueOnce()
+            const deleteSpy = jest.spyOn(Path, 'delete').mockResolvedValueOnce()
+
+            await Path.move(src, dest)
+
+            expect(renameSpy).toHaveBeenCalledWith(src, dest)
+            expect(copySpy).toHaveBeenCalledWith(src, dest)
+            expect(deleteSpy).toHaveBeenCalledWith(src)
+        })
+    })
+
+    // rename이 EXDEV가 아닌 오류로 실패할 때
+    describe('when rename fails with a non-EXDEV error', () => {
+        // 오류를 그대로 던진다
+        it('rethrows the error', async () => {
+            const error = new Error('permission denied') as NodeJS.ErrnoException
+            error.code = 'EACCES'
+
+            jest.spyOn(fs, 'rename').mockRejectedValueOnce(error)
+
+            await expect(Path.move('/tmp/src.txt', '/tmp/dest.txt')).rejects.toThrow(
+                'permission denied'
+            )
+        })
     })
 })

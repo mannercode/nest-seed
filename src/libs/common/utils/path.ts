@@ -4,7 +4,7 @@ import { tmpdir } from 'os'
 import p from 'path'
 
 export class Path {
-    static async getAbsolute(src: string): Promise<string> {
+    static getAbsolute(src: string): string {
         return p.isAbsolute(src) ? src : p.resolve(src)
     }
 
@@ -58,19 +58,11 @@ export class Path {
     }
 
     static async subdirs(src: string): Promise<string[]> {
-        const directories: string[] = []
-
-        const items = await fs.readdir(src)
-
-        for (const item of items) {
-            const itemPath = this.join(src, item)
-
-            if (await this.isDirectory(itemPath)) {
-                directories.push(item)
-            }
-        }
-
-        return directories
+        const items = await fs.readdir(src, { withFileTypes: true })
+        return items
+            .filter((item) => item.isDirectory())
+            .map((item) => item.name)
+            .sort((left, right) => left.localeCompare(right))
     }
 
     static async copy(src: string, dest: string): Promise<void> {
@@ -96,6 +88,14 @@ export class Path {
 
     static async move(src: string, dest: string): Promise<void> {
         // rename may fail if moving to a different file-system
-        await fs.rename(src, dest)
+        try {
+            await fs.rename(src, dest)
+        } catch (error: unknown) {
+            const exdev = (error as NodeJS.ErrnoException).code === 'EXDEV'
+            if (!exdev) throw error
+
+            await this.copy(src, dest)
+            await this.delete(src)
+        }
     }
 }

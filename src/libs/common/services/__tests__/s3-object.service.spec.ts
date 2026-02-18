@@ -310,20 +310,6 @@ describe('S3ObjectService', () => {
         })
     })
 
-    // describe('putObject', () => {
-    //     describe('when the payload is valid', () => {
-    //         it('returns a key', async () => {
-    //             const { key } = await fix.s3Service.putObject({
-    //                 data: testBuffer,
-    //                 filename: 'file.txt',
-    //                 contentType: 'text/plain'
-    //             })
-
-    //             expect(key).toEqual(expect.any(String))
-    //         })
-    //     })
-    // })
-
     describe('deleteObject', () => {
         // 객체가 존재할 때
         describe('when the object exists', () => {
@@ -367,6 +353,28 @@ describe('S3ObjectService', () => {
                 const { contents } = await fix.s3Service.listObjects({})
 
                 expect(contents).toHaveLength(keys.length)
+            })
+
+            // 키가 없는 객체는 제외한다
+            it('ignores objects without keys', async () => {
+                const sendSpy = jest.spyOn(toAny(fix.s3Service).s3, 'send')
+                sendSpy.mockResolvedValueOnce({
+                    Contents: [
+                        { Key: 'a.txt', LastModified: new Date('2024-01-01T00:00:00.000Z') },
+                        { LastModified: new Date('2024-01-01T00:00:00.000Z') }
+                    ]
+                })
+
+                const { contents } = await fix.s3Service.listObjects({})
+
+                expect(contents).toEqual([
+                    {
+                        key: 'a.txt',
+                        lastModified: new Date('2024-01-01T00:00:00.000Z'),
+                        eTag: undefined,
+                        size: undefined
+                    }
+                ])
             })
         })
 

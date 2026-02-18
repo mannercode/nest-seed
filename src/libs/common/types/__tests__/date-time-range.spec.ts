@@ -82,6 +82,17 @@ describe('DateTimeRange', () => {
             })
         })
 
+        // start와 duration이 0일 때
+        describe('when start and zero duration are provided', () => {
+            // 시작과 같은 종료 시각을 가진 DateTimeRange를 생성한다
+            it('creates a DateTimeRange with the same start and end', () => {
+                const start = new Date('2023-01-01T12:00')
+                const result = DateTimeRange.create({ start, days: 0 })
+
+                expect(result).toEqual({ start, end: start })
+            })
+        })
+
         // start와 end가 제공되지 않을 때
         describe('when start and end are not provided', () => {
             // 예외를 던진다

@@ -215,13 +215,13 @@ export class S3ObjectService implements OnModuleDestroy {
         )
 
         const contents: S3ObjectSummary[] = defaultTo(result.Contents, [])
+            .filter((content) => typeof content.Key === 'string' && content.Key.length > 0)
             .map((content) => ({
-                key: defaultTo(content.Key, 'null'),
+                key: content.Key as string,
                 lastModified: content.LastModified as Date,
                 eTag: content.ETag?.replace(/^"+|"+$/g, ''),
                 size: content.Size
             }))
-            .filter((o) => o.key)
 
         const commonPrefixes: string[] = defaultTo(result.CommonPrefixes, [])
             .map((cp) => cp.Prefix)
@@ -262,9 +262,9 @@ export class S3ObjectModule {
         const provider = {
             provide: S3ObjectService.getName(name),
             useFactory: async (...args: any[]) => {
-                const { bucket, ...s3config } = await useFactory(...args)
+                const { bucket, ...s3Config } = await useFactory(...args)
 
-                const client = new S3Client(s3config)
+                const client = new S3Client(s3Config)
                 return new S3ObjectService(bucket, client)
             },
             inject

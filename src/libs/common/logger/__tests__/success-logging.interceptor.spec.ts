@@ -1,4 +1,5 @@
 import { withTestId } from 'testlib'
+import { SuccessLoggingInterceptor } from 'common'
 import type { SuccessLoggingInterceptorFixture } from './success-logging.interceptor.fixture'
 
 describe('SuccessLoggingInterceptor', () => {
@@ -109,6 +110,19 @@ describe('SuccessLoggingInterceptor', () => {
             await fix.rpcClient.expectRequest(subject, data, { result: 'success' })
 
             expect(fix.spyVerbose).toHaveBeenCalledTimes(0)
+        })
+    })
+
+    describe('shouldRpcLog', () => {
+        // rpc args가 배열이 아닐 때
+        describe('when rpc args are not an array', () => {
+            // true를 반환한다
+            it('returns true', () => {
+                const interceptor = new SuccessLoggingInterceptor(undefined, ['subject'])
+                const result = (interceptor as any).shouldRpcLog(undefined)
+
+                expect(result).toBe(true)
+            })
         })
     })
 })
