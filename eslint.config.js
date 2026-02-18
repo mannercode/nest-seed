@@ -46,7 +46,8 @@ module.exports = [
             parser: typescriptParser,
             parserOptions: {
                 sourceType: 'module',
-                project: path.resolve(__dirname, './tsconfig.json')
+                project: path.resolve(__dirname, './tsconfig.json'),
+                tsconfigRootDir: __dirname
             },
             globals: { ...baseGlobals }
         },
@@ -60,7 +61,22 @@ module.exports = [
         rules: {
             ...typescriptEslintPlugin.configs.recommended.rules,
             ...prettierConfig.rules,
-            ...perfectionistPlugin.configs['recommended-natural'].rules,
+            ...{
+                '@typescript-eslint/no-floating-promises': 'warn',
+                '@typescript-eslint/no-misused-promises': 'warn',
+                '@typescript-eslint/await-thenable': 'warn',
+                '@typescript-eslint/no-confusing-void-expression': [
+                    'warn',
+                    { ignoreArrowShorthand: true }
+                ],
+                '@typescript-eslint/return-await': ['warn', 'in-try-catch'],
+                '@typescript-eslint/prefer-optional-chain': 'warn',
+                '@typescript-eslint/prefer-nullish-coalescing': 'warn',
+                '@typescript-eslint/no-unnecessary-condition': 'warn',
+                '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
+                '@typescript-eslint/switch-exhaustiveness-check': 'warn',
+                '@typescript-eslint/only-throw-error': 'warn'
+            },
             'object-shorthand': 'warn',
             'no-useless-rename': 'warn',
             'arrow-body-style': ['warn', 'as-needed', { requireReturnForObjectLiteral: false }],
@@ -98,21 +114,7 @@ module.exports = [
             '@typescript-eslint/no-non-null-assertion': 'warn',
             '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports' }],
             '@typescript-eslint/no-redeclare': 'warn',
-            '@typescript-eslint/adjacent-overload-signatures': 'warn',
-            '@typescript-eslint/no-floating-promises': 'warn',
-            '@typescript-eslint/no-misused-promises': 'warn',
-            '@typescript-eslint/await-thenable': 'warn',
-            '@typescript-eslint/no-confusing-void-expression': [
-                'warn',
-                { ignoreArrowShorthand: true }
-            ],
-            '@typescript-eslint/return-await': ['warn', 'in-try-catch'],
-            '@typescript-eslint/prefer-optional-chain': 'warn',
-            '@typescript-eslint/prefer-nullish-coalescing': 'warn',
-            '@typescript-eslint/no-unnecessary-condition': 'warn',
-            '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
-            '@typescript-eslint/switch-exhaustiveness-check': 'warn',
-            '@typescript-eslint/only-throw-error': 'warn'
+            '@typescript-eslint/adjacent-overload-signatures': 'warn'
         }
     },
     {
