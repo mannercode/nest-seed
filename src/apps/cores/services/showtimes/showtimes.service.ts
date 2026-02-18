@@ -38,8 +38,8 @@ export class ShowtimesService {
         return this.repository.searchShowdates(searchDto)
     }
 
-    async allExist(showtimeIds: string[]): Promise<boolean> {
-        return this.repository.allExist(showtimeIds)
+    async existsAll(showtimeIds: string[]): Promise<boolean> {
+        return this.repository.existsAll(showtimeIds)
     }
 
     private toDtos(showtimes: Showtime[]) {

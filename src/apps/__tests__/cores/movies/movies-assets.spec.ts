@@ -1,7 +1,7 @@
 import { buildCreateAssetDto, Errors, testAssets, uploadAsset } from 'apps/__tests__/__helpers__'
 import { Expect } from 'common'
 import { nullObjectId } from 'testlib'
-import { createMovie, createMovieAsset, uploadCompleteMovieAsset } from './movies-assets.fixture'
+import { createMovie, createMovieAsset, uploadAndFinalizeMovieAsset } from './movies-assets.fixture'
 import type { MoviesAssetsFixture } from './movies-assets.fixture'
 import type { MovieDto } from 'apps/cores'
 import type { AssetPresignedUploadDto } from 'apps/infrastructures'
@@ -103,7 +103,7 @@ describe('MoviesAssets', () => {
                 let assetId: string
 
                 beforeEach(async () => {
-                    assetId = await uploadCompleteMovieAsset(fix, movie.id)
+                    assetId = await uploadAndFinalizeMovieAsset(fix, movie.id)
                 })
 
                 // 204 No Content를 반환한다
@@ -145,7 +145,7 @@ describe('MoviesAssets', () => {
         })
     })
 
-    describe('POST /movies/:movieId/assets/:assetId/complete', () => {
+    describe('POST /movies/:movieId/assets/:assetId/finalize', () => {
         // 영화가 존재할 때
         describe('when the movie exists', () => {
             let movie: MovieDto
@@ -165,22 +165,22 @@ describe('MoviesAssets', () => {
                 // 업로드가 성공한 때
                 describe('when upload succeeded', () => {
                     beforeEach(async () => {
-                        const res = await uploadAsset(fix.asset.path, upload)
-                        expect(res.ok).toBe(true)
+                        const uploadResponse = await uploadAsset(fix.asset.path, upload)
+                        expect(uploadResponse.ok).toBe(true)
                     })
 
-                    // 200 OK를 반환한다
-                    it('returns 200 OK', async () => {
+                    // 204 No Content를 반환한다
+                    it('returns 204 No Content', async () => {
                         await fix.httpClient
-                            .post(`/movies/${movie.id}/assets/${upload.assetId}/complete`)
-                            .ok({})
+                            .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
+                            .noContent()
                     })
 
                     // 영화에 에셋을 포함한다
                     it('includes the asset in the movie', async () => {
                         await fix.httpClient
-                            .post(`/movies/${movie.id}/assets/${upload.assetId}/complete`)
-                            .ok()
+                            .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
+                            .noContent()
 
                         await fix.httpClient
                             .get(`/movies/${movie.id}`)
@@ -188,14 +188,14 @@ describe('MoviesAssets', () => {
                     })
 
                     // 이미 완료된 때
-                    it('returns 200 OK when already completed', async () => {
+                    it('returns 204 No Content when already completed', async () => {
                         await fix.httpClient
-                            .post(`/movies/${movie.id}/assets/${upload.assetId}/complete`)
-                            .ok({})
+                            .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
+                            .noContent()
 
                         await fix.httpClient
-                            .post(`/movies/${movie.id}/assets/${upload.assetId}/complete`)
-                            .ok({})
+                            .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
+                            .noContent()
                     })
                 })
 
@@ -204,7 +204,7 @@ describe('MoviesAssets', () => {
                     // 422 Unprocessable Entity를 반환한다
                     it('returns 422 Unprocessable Entity', async () => {
                         await fix.httpClient
-                            .post(`/movies/${movie.id}/assets/${upload.assetId}/complete`)
+                            .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
                             .unprocessableEntity({
                                 ...Errors.Movies.AssetUploadInvalid,
                                 assetId: upload.assetId
@@ -218,7 +218,7 @@ describe('MoviesAssets', () => {
                 // 404 Not Found를 반환한다
                 it('returns 404 Not Found', async () => {
                     await fix.httpClient
-                        .post(`/movies/${movie.id}/assets/${nullObjectId}/complete`)
+                        .post(`/movies/${movie.id}/assets/${nullObjectId}/finalize`)
                         .notFound({ ...Errors.Movies.AssetNotFound, notFoundAssetId: nullObjectId })
                 })
             })
@@ -229,7 +229,7 @@ describe('MoviesAssets', () => {
             // 404 Not Found를 반환한다
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
-                    .post(`/movies/${nullObjectId}/assets/${nullObjectId}/complete`)
+                    .post(`/movies/${nullObjectId}/assets/${nullObjectId}/finalize`)
                     .notFound({ ...Errors.Movies.NotFound, notFoundMovieId: nullObjectId })
             })
         })

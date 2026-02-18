@@ -224,8 +224,7 @@ describe('S3ObjectService', () => {
             let key: string
 
             beforeEach(async () => {
-                const result = await fix.s3Service.putObject(s3Object)
-                key = result.key
+                ;({ key } = await fix.s3Service.putObject(s3Object))
             })
 
             // true를 반환한다
@@ -375,9 +374,8 @@ describe('S3ObjectService', () => {
         describe('when the `prefix` is provided', () => {
             // 지정한 prefix로 시작하는 키의 객체를 반환한다
             it('returns objects whose keys start with the given prefix', async () => {
-                const result = await fix.s3Service.listObjects({ prefix: 'b/' })
-
-                const listedKeys = result.contents.map((object) => object.key)
+                const { contents } = await fix.s3Service.listObjects({ prefix: 'b/' })
+                const listedKeys = contents.map((object) => object.key)
                 expect(listedKeys).toEqual(expect.arrayContaining(['b/c.txt', 'b/d.txt']))
                 expect(listedKeys).not.toContain('a.txt')
             })
@@ -410,8 +408,7 @@ describe('S3ObjectService', () => {
             let nextToken: string | undefined
 
             beforeEach(async () => {
-                const result = await fix.s3Service.listObjects({ maxKeys })
-                nextToken = result.nextToken
+                ;({ nextToken } = await fix.s3Service.listObjects({ maxKeys }))
             })
 
             // 다음 페이지의 객체를 반환한다

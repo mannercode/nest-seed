@@ -41,8 +41,8 @@ export class TicketsService {
     }
 
     async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
-        const statuses = await this.repository.aggregateSales(aggregateDto)
-        return statuses
+        const salesByShowtime = await this.repository.aggregateSales(aggregateDto)
+        return salesByShowtime
     }
 
     async getMany(ticketIds: string[]) {

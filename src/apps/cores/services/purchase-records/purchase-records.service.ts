@@ -9,24 +9,24 @@ export class PurchaseRecordsService {
     constructor(private readonly repository: PurchaseRecordsRepository) {}
 
     async create(createDto: CreatePurchaseRecordDto) {
-        const purchase = await this.repository.create(createDto)
+        const purchaseRecord = await this.repository.create(createDto)
 
-        return this.toDto(purchase)
+        return this.toDto(purchaseRecord)
     }
 
-    async getMany(purchaseIds: string[]) {
-        const purchases = await this.repository.getByIds(purchaseIds)
+    async getMany(purchaseRecordIds: string[]) {
+        const purchaseRecords = await this.repository.getByIds(purchaseRecordIds)
 
-        return this.toDtos(purchases)
+        return this.toDtos(purchaseRecords)
     }
 
-    private toDto(purchase: PurchaseRecord) {
-        return this.toDtos([purchase])[0]
+    private toDto(purchaseRecord: PurchaseRecord) {
+        return this.toDtos([purchaseRecord])[0]
     }
 
-    private toDtos(purchases: PurchaseRecord[]) {
-        return purchases.map((purchase) =>
-            mapDocToDto(purchase, PurchaseRecordDto, [
+    private toDtos(purchaseRecords: PurchaseRecord[]) {
+        return purchaseRecords.map((purchaseRecord) =>
+            mapDocToDto(purchaseRecord, PurchaseRecordDto, [
                 'id',
                 'customerId',
                 'paymentId',

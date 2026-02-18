@@ -168,7 +168,7 @@ describe('MongooseRepository', () => {
         })
     })
 
-    describe('allExist', () => {
+    describe('existsAll', () => {
         let samples: SampleDto[]
 
         beforeEach(async () => {
@@ -180,7 +180,7 @@ describe('MongooseRepository', () => {
         describe('when all ids exist', () => {
             // true를 반환한다
             it('returns true', async () => {
-                const exists = await fix.repository.allExist(pickIds(samples))
+                const exists = await fix.repository.existsAll(pickIds(samples))
                 expect(exists).toBe(true)
             })
         })
@@ -189,7 +189,7 @@ describe('MongooseRepository', () => {
         describe('when any id is missing', () => {
             // false를 반환한다
             it('returns false', async () => {
-                const exists = await fix.repository.allExist([nullObjectId])
+                const exists = await fix.repository.existsAll([nullObjectId])
                 expect(exists).toBe(false)
             })
         })

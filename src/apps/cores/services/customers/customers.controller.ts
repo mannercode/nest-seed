@@ -33,8 +33,9 @@ export class CustomersController {
     }
 
     @MessagePattern(Messages.Customers.deleteMany)
-    deleteMany(@Payload() customerIds: string[]) {
-        return this.service.deleteMany(customerIds)
+    async deleteMany(@Payload() customerIds: string[]): Promise<null> {
+        await this.service.deleteMany(customerIds)
+        return null
     }
 
     @MessagePattern(Messages.Customers.searchPage)

@@ -4,9 +4,9 @@ import { CoresModule } from './cores.module'
 
 export async function bootstrap() {
     const app = await NestFactory.create(CoresModule)
-    const natOptions = { queue: 'apps/cores' }
+    const natsOptions = { queue: 'apps/cores' }
 
-    await configureApp({ app, natOptions })
+    await configureApp({ app, natsOptions })
 
     console.log(`Cores is running on: ${await app.getUrl()}`)
 }

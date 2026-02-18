@@ -4,7 +4,7 @@ import { MongooseSchema, createMongooseSchema } from 'common'
 import { MongooseConfigModule } from 'shared'
 
 export enum PurchaseItemType {
-    Ticket = 'ticket',
+    Tickets = 'tickets',
     Foods = 'foods'
 }
 
@@ -14,7 +14,7 @@ export class PurchaseItem {
 
     @IsString()
     @IsNotEmpty()
-    ticketId: string
+    itemId: string
 }
 
 @Schema(MongooseConfigModule.schemaOptions)

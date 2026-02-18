@@ -7,7 +7,7 @@ export class PurchaseItemDto {
 
     @IsString()
     @IsNotEmpty()
-    ticketId: string
+    itemId: string
 }
 
 export class PurchaseRecordDto {

@@ -33,8 +33,8 @@ export class TheatersController {
 
     @Get(':theaterId')
     async get(@Param('theaterId') theaterId: string) {
-        const theaters = await this.theatersClient.getMany([theaterId])
-        return theaters[0]
+        const [theater] = await this.theatersClient.getMany([theaterId])
+        return theater
     }
 
     @HttpCode(HttpStatus.NO_CONTENT)

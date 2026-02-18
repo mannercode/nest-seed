@@ -45,8 +45,8 @@ export class CustomersController {
 
     @Get(':customerId')
     async get(@Param('customerId') customerId: string) {
-        const customers = await this.customersClient.getMany([customerId])
-        return customers[0]
+        const [customer] = await this.customersClient.getMany([customerId])
+        return customer
     }
 
     @HttpCode(HttpStatus.NO_CONTENT)

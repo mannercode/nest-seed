@@ -8,10 +8,10 @@ export class PurchaseRecordsClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     create(createDto: CreatePurchaseRecordDto): Promise<PurchaseRecordDto> {
-        return this.proxy.request(Messages.Purchases.create, createDto)
+        return this.proxy.request(Messages.PurchaseRecords.create, createDto)
     }
 
-    getMany(purchaseIds: string[]): Promise<PurchaseRecordDto[]> {
-        return this.proxy.request(Messages.Purchases.getMany, purchaseIds)
+    getMany(purchaseRecordIds: string[]): Promise<PurchaseRecordDto[]> {
+        return this.proxy.request(Messages.PurchaseRecords.getMany, purchaseRecordIds)
     }
 }

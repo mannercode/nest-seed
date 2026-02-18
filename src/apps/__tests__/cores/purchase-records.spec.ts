@@ -20,9 +20,9 @@ describe('PurchaseRecordsService', () => {
         // 생성된 구매 기록을 반환한다
         it('returns the created purchase record', async () => {
             const createDto = buildCreatePurchaseRecordDto()
-            const createdPurchaseRecord = await fix.purchaseRecordsClient.create(createDto)
+            const purchaseRecord = await fix.purchaseRecordsClient.create(createDto)
 
-            expect(createdPurchaseRecord).toEqual({
+            expect(purchaseRecord).toEqual({
                 id: expect.any(String),
                 createdAt: expect.any(Date),
                 updatedAt: expect.any(Date),
@@ -31,18 +31,18 @@ describe('PurchaseRecordsService', () => {
         })
     })
 
-    describe('GET /purchases/:purchaseId', () => {
+    describe('GET /purchases/:purchaseRecordId', () => {
         // 구매 기록이 존재할 때
         describe('when the purchase record exists', () => {
-            let purchase: PurchaseRecordDto
+            let purchaseRecord: PurchaseRecordDto
 
             beforeEach(async () => {
-                purchase = await createPurchaseRecord(fix)
+                purchaseRecord = await createPurchaseRecord(fix)
             })
 
             // 구매 기록을 반환한다
             it('returns the purchase record', async () => {
-                await fix.httpClient.get(`/purchases/${purchase.id}`).ok(purchase)
+                await fix.httpClient.get(`/purchases/${purchaseRecord.id}`).ok(purchaseRecord)
             })
         })
 

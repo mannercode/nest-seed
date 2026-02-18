@@ -6,7 +6,7 @@ export const Messages = createMessagePatternMap(
             getMany: null,
             deleteMany: null,
             create: null,
-            complete: null,
+            finalizeUpload: null,
             isUploadComplete: null
         },
         Payments: { create: null, getMany: null },
@@ -26,7 +26,7 @@ export const Messages = createMessagePatternMap(
             getMany: null,
             deleteMany: null,
             searchPage: null,
-            allExist: null
+            existsAll: null
         },
         Showtimes: {
             createMany: null,
@@ -36,17 +36,9 @@ export const Messages = createMessagePatternMap(
             searchMovieIds: null,
             searchTheaterIds: null,
             searchShowdates: null,
-            allExist: null
+            existsAll: null
         },
-        Purchases: { create: null, getMany: null },
-        MovieDrafts: {
-            create: null,
-            update: null,
-            get: null,
-            delete: null,
-            complete: null,
-            Assets: { create: null, delete: null, complete: null }
-        },
+        PurchaseRecords: { create: null, getMany: null },
         Movies: {
             create: null,
             publish: null,
@@ -54,8 +46,8 @@ export const Messages = createMessagePatternMap(
             getMany: null,
             deleteMany: null,
             searchPage: null,
-            allExist: null,
-            Assets: { create: null, delete: null, complete: null }
+            existsAll: null,
+            Assets: { create: null, delete: null, finalizeUpload: null }
         },
         Customers: {
             create: null,

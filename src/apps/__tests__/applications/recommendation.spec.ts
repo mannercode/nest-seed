@@ -40,16 +40,14 @@ describe('RecommendationService', () => {
                 let accessToken: string
 
                 beforeEach(async () => {
-                    const result = await createWatchedMovies(fix, [
+                    ;({ accessToken } = await createWatchedMovies(fix, [
                         { genres: [MovieGenre.Action] },
                         { genres: [MovieGenre.Action] },
                         { genres: [MovieGenre.Action] },
                         { genres: [MovieGenre.Comedy] },
                         { genres: [MovieGenre.Comedy] },
                         { genres: [MovieGenre.Drama] }
-                    ])
-
-                    accessToken = result.accessToken
+                    ]))
                 })
 
                 // 시청 기록을 기반으로 추천을 반환한다

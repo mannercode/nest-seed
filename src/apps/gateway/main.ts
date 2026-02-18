@@ -4,9 +4,9 @@ import { GatewayModule } from './gateway.module'
 
 export async function bootstrap() {
     const app = await NestFactory.create(GatewayModule)
-    const natOptions = { queue: 'apps/gateway' }
+    const natsOptions = { queue: 'apps/gateway' }
 
-    await configureApp({ app, natOptions })
+    await configureApp({ app, natsOptions })
 
     console.log(`Gateway is running on: ${await app.getUrl()}`)
 }

@@ -27,8 +27,8 @@ export class MoviesController {
     ) {}
 
     @Post()
-    async create(@Body() updateDto: UpsertMovieDto) {
-        return this.moviesClient.create(updateDto)
+    async create(@Body() upsertDto: UpsertMovieDto) {
+        return this.moviesClient.create(upsertDto)
     }
 
     @UseGuards(CustomerOptionalJwtAuthGuard)
@@ -46,8 +46,8 @@ export class MoviesController {
 
     @Get(':movieId')
     async get(@Param('movieId') movieId: string) {
-        const movies = await this.moviesClient.getMany([movieId])
-        return movies[0]
+        const [movie] = await this.moviesClient.getMany([movieId])
+        return movie
     }
 
     @HttpCode(HttpStatus.NO_CONTENT)
@@ -78,9 +78,9 @@ export class MoviesController {
         await this.moviesClient.deleteAsset(movieId, assetId)
     }
 
-    @HttpCode(HttpStatus.OK)
-    @Post(':movieId/assets/:assetId/complete')
-    completeAsset(@Param('movieId') movieId: string, @Param('assetId') assetId: string) {
-        return this.moviesClient.completeAsset(movieId, assetId)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Post(':movieId/assets/:assetId/finalize')
+    async finalizeUpload(@Param('movieId') movieId: string, @Param('assetId') assetId: string) {
+        await this.moviesClient.finalizeUpload(movieId, assetId)
     }
 }

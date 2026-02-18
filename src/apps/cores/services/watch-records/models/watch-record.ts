@@ -11,7 +11,7 @@ export class WatchRecord extends MongooseSchema {
     movieId: string
 
     @Prop({ required: true })
-    purchaseId: string
+    purchaseRecordId: string
 
     @Prop({ required: true })
     watchDate: Date

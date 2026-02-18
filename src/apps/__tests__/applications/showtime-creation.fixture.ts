@@ -51,15 +51,15 @@ export function waitForCompletion(ctx: TestContext, status: string) {
     return new Promise<any>((resolve, reject) => {
         ctx.httpClient.get('/showtime-creation/event-stream').sse((data) => {
             try {
-                const result = reviveIsoDates(JSON.parse(data))
+                const statusUpdate = reviveIsoDates(JSON.parse(data))
 
-                if (['succeeded', 'failed', 'error'].includes(result.status)) {
+                if (['succeeded', 'failed', 'error'].includes(statusUpdate.status)) {
                     ctx.httpClient.abort()
 
-                    if (status === result.status) {
-                        resolve(result)
+                    if (status === statusUpdate.status) {
+                        resolve(statusUpdate)
                     } else {
-                        reject(result)
+                        reject(statusUpdate)
                     }
                 }
             } catch (error) {

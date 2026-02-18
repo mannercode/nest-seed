@@ -8,7 +8,10 @@ export const MovieErrors = {
         code: 'ERR_MOVIE_ASSET_UPLOAD_INVALID',
         message: 'The asset upload could not be validated.'
     },
-    InvalidForCompletion: { code: 'ERR_MOVIE_INCOMPLETE', message: 'The movie is incomplete.' },
+    InvalidForPublish: {
+        code: 'ERR_MOVIE_INVALID_FOR_PUBLISH',
+        message: 'The movie is not ready to be published.'
+    },
     UnsupportedAssetType: {
         code: 'ERR_MOVIE_ASSET_TYPE_NOT_ALLOWED',
         message: 'Only image uploads are supported.'

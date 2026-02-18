@@ -30,8 +30,9 @@ export class MoviesController {
     }
 
     @MessagePattern(Messages.Movies.deleteMany)
-    deleteMany(@Payload() movieIds: string[]) {
-        return this.service.deleteMany(movieIds)
+    async deleteMany(@Payload() movieIds: string[]): Promise<null> {
+        await this.service.deleteMany(movieIds)
+        return null
     }
 
     @MessagePattern(Messages.Movies.searchPage)
@@ -39,9 +40,9 @@ export class MoviesController {
         return this.service.searchPage(searchDto)
     }
 
-    @MessagePattern(Messages.Movies.allExist)
-    allExist(@Payload() movieIds: string[]) {
-        return this.service.allExist(movieIds)
+    @MessagePattern(Messages.Movies.existsAll)
+    existsAll(@Payload() movieIds: string[]) {
+        return this.service.existsAll(movieIds)
     }
 
     @MessagePattern(Messages.Movies.Assets.create)
@@ -53,12 +54,20 @@ export class MoviesController {
     }
 
     @MessagePattern(Messages.Movies.Assets.delete)
-    deleteAsset(@Payload('movieId') movieId: string, @Payload('assetId') assetId: string) {
-        return this.service.deleteAsset(movieId, assetId)
+    async deleteAsset(
+        @Payload('movieId') movieId: string,
+        @Payload('assetId') assetId: string
+    ): Promise<null> {
+        await this.service.deleteAsset(movieId, assetId)
+        return null
     }
 
-    @MessagePattern(Messages.Movies.Assets.complete)
-    completeAsset(@Payload('movieId') movieId: string, @Payload('assetId') assetId: string) {
-        return this.service.completeAsset(movieId, assetId)
+    @MessagePattern(Messages.Movies.Assets.finalizeUpload)
+    async finalizeUpload(
+        @Payload('movieId') movieId: string,
+        @Payload('assetId') assetId: string
+    ): Promise<null> {
+        await this.service.finalizeUpload(movieId, assetId)
+        return null
     }
 }

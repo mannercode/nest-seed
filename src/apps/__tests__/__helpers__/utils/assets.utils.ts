@@ -4,7 +4,7 @@ import { pick } from 'lodash'
 import { testAssets, type TestAsset } from '../assets'
 import type {
     AssetDto,
-    CompleteAssetDto,
+    FinalizeAssetDto,
     CreateAssetDto,
     AssetPresignedUploadDto
 } from 'apps/infrastructures'
@@ -47,30 +47,32 @@ export async function uploadFile(ctx: TestContext, file: TestAsset) {
     return uploadRequest.assetId
 }
 
-export function buildCompleteAssetDto(overrides = {}) {
+export function buildFinalizeAssetDto(overrides = {}) {
     return {
         owner: { service: 'service', entityId: 'entity-id', ...overrides }
-    } as CompleteAssetDto
+    } as FinalizeAssetDto
 }
 
-export async function uploadComplete(ctx: TestContext, file: TestAsset) {
+export async function uploadAndFinalizeAsset(ctx: TestContext, file: TestAsset) {
     const assetId = await uploadFile(ctx, file)
 
     const { AssetsService } = await import('apps/infrastructures')
     const assetsService = ctx.module.get(AssetsService)
 
-    return assetsService.complete(assetId, buildCompleteAssetDto())
+    return assetsService.finalizeUpload(assetId, buildFinalizeAssetDto())
 }
 
 export async function downloadAsset({ download }: AssetDto) {
     if (null === download) throw new Error('download must have value')
 
-    const res = await fetch(download.url)
+    const downloadResponse = await fetch(download.url)
 
-    if (!res.ok) {
-        throw new Error(`Failed to download asset: ${res.status} ${res.statusText}`)
+    if (!downloadResponse.ok) {
+        throw new Error(
+            `Failed to download asset: ${downloadResponse.status} ${downloadResponse.statusText}`
+        )
     }
 
-    const arrayBuffer = await res.arrayBuffer()
+    const arrayBuffer = await downloadResponse.arrayBuffer()
     return Buffer.from(arrayBuffer)
 }

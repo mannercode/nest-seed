@@ -19,15 +19,15 @@ export class TheatersClient {
         return this.proxy.request(Messages.Theaters.getMany, theaterIds)
     }
 
-    deleteMany(theaterIds: string[]): Promise<Record<string, never>> {
-        return this.proxy.request(Messages.Theaters.deleteMany, theaterIds)
+    async deleteMany(theaterIds: string[]): Promise<void> {
+        await this.proxy.request(Messages.Theaters.deleteMany, theaterIds)
     }
 
     searchPage(searchDto: SearchTheatersPageDto): Promise<PaginationResult<TheaterDto>> {
         return this.proxy.request(Messages.Theaters.searchPage, searchDto)
     }
 
-    allExist(theaterIds: string[]): Promise<boolean> {
-        return this.proxy.request(Messages.Theaters.allExist, theaterIds)
+    existsAll(theaterIds: string[]): Promise<boolean> {
+        return this.proxy.request(Messages.Theaters.existsAll, theaterIds)
     }
 }

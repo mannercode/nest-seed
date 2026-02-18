@@ -7,10 +7,10 @@ export class PurchaseEvents {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
     emitTicketPurchased(customerId: string, ticketIds: string[]) {
-        return this.proxy.emit(Events.Purchase.TicketPurchased, { customerId, ticketIds })
+        return this.proxy.emit(Events.Purchase.ticketPurchased, { customerId, ticketIds })
     }
 
     emitTicketPurchaseCanceled(customerId: string, ticketIds: string[]) {
-        return this.proxy.emit(Events.Purchase.TicketPurchaseCanceled, { customerId, ticketIds })
+        return this.proxy.emit(Events.Purchase.ticketPurchaseCanceled, { customerId, ticketIds })
     }
 }

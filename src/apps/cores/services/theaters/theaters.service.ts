@@ -23,13 +23,12 @@ export class TheatersService {
     async getMany(theaterIds: string[]) {
         const theaters = await this.repository.getByIds(theaterIds)
 
-        const res = this.toDtos(theaters)
-        return res
+        const theaterDtos = this.toDtos(theaters)
+        return theaterDtos
     }
 
-    async deleteMany(theaterIds: string[]) {
+    async deleteMany(theaterIds: string[]): Promise<void> {
         await this.repository.deleteByIds(theaterIds)
-        return {}
     }
 
     async searchPage(searchDto: SearchTheatersPageDto) {
@@ -38,8 +37,8 @@ export class TheatersService {
         return { ...pagination, items: this.toDtos(items) }
     }
 
-    async allExist(theaterIds: string[]) {
-        return this.repository.allExist(theaterIds)
+    async existsAll(theaterIds: string[]) {
+        return this.repository.existsAll(theaterIds)
     }
 
     private toDto(theater: Theater) {

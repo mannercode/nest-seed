@@ -26,8 +26,8 @@ export class CustomersClient {
         return this.proxy.request(Messages.Customers.getMany, customerIds)
     }
 
-    deleteMany(customerIds: string[]): Promise<Record<string, never>> {
-        return this.proxy.request(Messages.Customers.deleteMany, customerIds)
+    async deleteMany(customerIds: string[]): Promise<void> {
+        await this.proxy.request(Messages.Customers.deleteMany, customerIds)
     }
 
     searchPage(searchDto: SearchCustomersPageDto): Promise<PaginationResult<CustomerDto>> {

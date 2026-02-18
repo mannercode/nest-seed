@@ -11,7 +11,7 @@ export const ShowtimeBulkValidatorServiceErrors = {
         code: 'ERR_SHOWTIME_CREATION_MOVIE_NOT_FOUND',
         message: 'The requested movie could not be found.'
     },
-    TheaterNotFound: {
+    TheatersNotFound: {
         code: 'ERR_SHOWTIME_CREATION_THEATERS_NOT_FOUND',
         message: 'One or more requested theaters could not be found.'
     }
@@ -112,7 +112,7 @@ export class ShowtimeBulkValidatorService {
     }
 
     private async verifyMovieExists(movieId: string) {
-        const movieExists = await this.moviesClient.allExist([movieId])
+        const movieExists = await this.moviesClient.existsAll([movieId])
 
         if (!movieExists) {
             throw new NotFoundException({
@@ -123,11 +123,11 @@ export class ShowtimeBulkValidatorService {
     }
 
     private async verifyTheatersExist(theaterIds: string[]) {
-        const theatersExist = await this.theatersClient.allExist(theaterIds)
+        const theatersExist = await this.theatersClient.existsAll(theaterIds)
 
         if (!theatersExist) {
             throw new NotFoundException({
-                ...ShowtimeBulkValidatorServiceErrors.TheaterNotFound,
+                ...ShowtimeBulkValidatorServiceErrors.TheatersNotFound,
                 theaterIds
             })
         }

@@ -7,9 +7,9 @@ import { AppConfigService } from './config/app-config.service'
 import type { INestApplication } from '@nestjs/common'
 import type { MicroserviceOptions } from '@nestjs/microservices'
 
-type ConfigureAppOptions = { app: INestApplication<any>; natOptions: { queue: string } }
+type ConfigureAppOptions = { app: INestApplication<any>; natsOptions: { queue: string } }
 
-export async function configureApp({ app, natOptions }: ConfigureAppOptions) {
+export async function configureApp({ app, natsOptions }: ConfigureAppOptions) {
     const { http, nats, log } = app.get(AppConfigService)
 
     await Path.mkdir(log.directory)
@@ -23,7 +23,7 @@ export async function configureApp({ app, natOptions }: ConfigureAppOptions) {
     app.use(express.json({ limit: http.requestPayloadLimit }))
 
     app.connectMicroservice<MicroserviceOptions>(
-        { transport: Transport.NATS, options: { servers: nats.servers, ...natOptions } },
+        { transport: Transport.NATS, options: { servers: nats.servers, ...natsOptions } },
         { inheritAppConfig: true }
     )
 

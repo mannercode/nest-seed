@@ -48,8 +48,8 @@ describe('WatchRecordsService', () => {
                 query: SearchWatchRecordsPageDto,
                 expectedRecords: WatchRecordDto[]
             ) => {
-                const page = await fix.watchRecordsClient.searchPage(query)
-                expect(page).toEqual(buildExpectedPage(expectedRecords))
+                const recordsPage = await fix.watchRecordsClient.searchPage(query)
+                expect(recordsPage).toEqual(buildExpectedPage(expectedRecords))
             }
 
             // customerId로 필터링된 기록을 반환한다

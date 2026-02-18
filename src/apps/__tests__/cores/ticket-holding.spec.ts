@@ -185,27 +185,21 @@ describe('TicketHoldingService', () => {
                 await fix.ticketHoldingClient.holdTickets(holdDto)
             })
 
-            // 보유된 티켓을 해제하면 true를 반환한다
-            it('returns true for releasing held tickets', async () => {
-                const isReleased = await fix.ticketHoldingClient.releaseTickets(
-                    holdDto.showtimeId,
-                    holdDto.customerId
-                )
-
-                expect(isReleased).toBe(true)
+            // 보유된 티켓을 해제하면 응답을 반환하지 않는다
+            it('returns no response for releasing held tickets', async () => {
+                await expect(
+                    fix.ticketHoldingClient.releaseTickets(holdDto.showtimeId, holdDto.customerId)
+                ).resolves.toBeUndefined()
             })
         })
 
         // 고객이 보유한 티켓이 없을 때
         describe('when the customer holds no tickets', () => {
-            // true를 반환한다
-            it('returns true', async () => {
-                const isReleased = await fix.ticketHoldingClient.releaseTickets(
-                    oid(0xa0),
-                    oid(0xc1)
-                )
-
-                expect(isReleased).toBe(true)
+            // 응답을 반환하지 않는다
+            it('returns no response', async () => {
+                await expect(
+                    fix.ticketHoldingClient.releaseTickets(oid(0xa0), oid(0xc1))
+                ).resolves.toBeUndefined()
             })
         })
     })

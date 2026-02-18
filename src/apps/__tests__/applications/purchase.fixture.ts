@@ -70,7 +70,7 @@ export function buildCreatePurchaseDto(
     tickets: TicketDto[],
     overrides: Partial<CreatePurchaseDto> = {}
 ) {
-    const purchaseItems = tickets.map(({ id }) => ({ type: PurchaseItemType.Ticket, ticketId: id }))
+    const purchaseItems = tickets.map(({ id }) => ({ type: PurchaseItemType.Tickets, itemId: id }))
 
     const createDto = { customerId, totalPrice: 1, purchaseItems, ...overrides }
     return createDto

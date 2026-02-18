@@ -22,10 +22,11 @@ export class TicketHoldingController {
     }
 
     @MessagePattern(Messages.TicketHolding.releaseTickets)
-    releaseTickets(
+    async releaseTickets(
         @Payload('showtimeId') showtimeId: string,
         @Payload('customerId') customerId: string
-    ) {
-        return this.service.releaseTickets(showtimeId, customerId)
+    ): Promise<null> {
+        await this.service.releaseTickets(showtimeId, customerId)
+        return null
     }
 }

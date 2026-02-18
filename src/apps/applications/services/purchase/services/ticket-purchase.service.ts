@@ -16,7 +16,7 @@ import { PurchaseEvents } from '../purchase.events'
 
 export const TicketPurchaseErrors = {
     MaxTicketsExceeded: {
-        code: 'ERR_PURCHASE_MAX_TICKETS_EXCEEDED',
+        code: 'ERR_TICKET_PURCHASE_LIMIT_EXCEEDED',
         message: 'You have exceeded the maximum number of tickets allowed for purchase.'
     },
     WindowClosed: {
@@ -24,7 +24,7 @@ export const TicketPurchaseErrors = {
         message: 'Ticket purchase is closed for this showtime.'
     },
     TicketNotHeld: {
-        code: 'ERR_PURCHASE_TICKET_NOT_HELD',
+        code: 'ERR_TICKET_PURCHASE_NOT_HELD',
         message: 'Only held tickets can be purchased.'
     }
 }
@@ -38,21 +38,19 @@ export class TicketPurchaseService {
         private readonly events: PurchaseEvents
     ) {}
 
-    async validatePurchase(createDto: CreatePurchaseDto) {
+    async validatePurchase(createDto: CreatePurchaseDto): Promise<void> {
         const ticketItems = createDto.purchaseItems.filter(
-            (item) => item.type === PurchaseItemType.Ticket
+            (item) => item.type === PurchaseItemType.Tickets
         )
         const showtimes = await this.getShowtimes(ticketItems)
 
         this.validateTicketCount(ticketItems)
         this.validatePurchaseTime(showtimes)
         await this.validateHeldTickets(createDto.customerId, showtimes, ticketItems)
-
-        return true
     }
 
     private async getShowtimes(ticketItems: PurchaseItemDto[]) {
-        const ticketIds = ticketItems.map((item) => item.ticketId)
+        const ticketIds = ticketItems.map((item) => item.itemId)
         const tickets = await this.ticketsClient.getMany(ticketIds)
         const showtimeIds = tickets.map((ticket) => ticket.showtimeId)
         const uniqueShowtimeIds = uniq(showtimeIds)
@@ -91,7 +89,7 @@ export class TicketPurchaseService {
     private async validateHeldTickets(
         customerId: string,
         showtimes: ShowtimeDto[],
-        purchaseItems: PurchaseItemDto[]
+        ticketItems: PurchaseItemDto[]
     ) {
         const heldTicketIds: string[] = []
 
@@ -103,36 +101,34 @@ export class TicketPurchaseService {
             heldTicketIds.push(...ticketIds)
         }
 
-        const isAllExist = purchaseItems.every((ticket) => heldTicketIds.includes(ticket.ticketId))
+        const areAllTicketsHeld = ticketItems.every((ticketItem) =>
+            heldTicketIds.includes(ticketItem.itemId)
+        )
 
-        if (!isAllExist) {
+        if (!areAllTicketsHeld) {
             throw new BadRequestException(TicketPurchaseErrors.TicketNotHeld)
         }
     }
 
-    async completePurchase(createDto: CreatePurchaseDto) {
+    async completePurchase(createDto: CreatePurchaseDto): Promise<void> {
         const ticketItems = createDto.purchaseItems.filter(
-            (item) => item.type === PurchaseItemType.Ticket
+            (item) => item.type === PurchaseItemType.Tickets
         )
-        const ticketIds = ticketItems.map((item) => item.ticketId)
+        const ticketIds = ticketItems.map((item) => item.itemId)
 
         await this.ticketsClient.updateStatusMany(ticketIds, TicketStatus.Sold)
 
         await this.events.emitTicketPurchased(createDto.customerId, ticketIds)
-
-        return true
     }
 
-    async rollbackPurchase(createDto: CreatePurchaseDto) {
+    async rollbackPurchase(createDto: CreatePurchaseDto): Promise<void> {
         const ticketItems = createDto.purchaseItems.filter(
-            (item) => item.type === PurchaseItemType.Ticket
+            (item) => item.type === PurchaseItemType.Tickets
         )
-        const ticketIds = ticketItems.map((item) => item.ticketId)
+        const ticketIds = ticketItems.map((item) => item.itemId)
 
         await this.ticketsClient.updateStatusMany(ticketIds, TicketStatus.Available)
 
         await this.events.emitTicketPurchaseCanceled(createDto.customerId, ticketIds)
-
-        return true
     }
 }

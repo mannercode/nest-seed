@@ -18,13 +18,13 @@ export class PurchaseService {
             amount: createDto.totalPrice
         })
         await this.ticketProcessor.validatePurchase(createDto)
-        const purchase = await this.purchaseRecordsClient.create({
+        const purchaseRecord = await this.purchaseRecordsClient.create({
             ...createDto,
             paymentId: payment.id
         })
         try {
             await this.ticketProcessor.completePurchase(createDto)
-            return purchase
+            return purchaseRecord
         } catch (error) {
             await this.ticketProcessor.rollbackPurchase(createDto)
             throw error

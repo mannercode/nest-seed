@@ -75,7 +75,7 @@ describe('MoviesPublish', () => {
                     await fix.httpClient
                         .post(`/movies/${movie.id}/publish`)
                         .unprocessableEntity({
-                            ...Errors.Movies.InvalidForCompletion,
+                            ...Errors.Movies.InvalidForPublish,
                             missingFields: expect.any(Array)
                         })
                 })

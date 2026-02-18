@@ -30,7 +30,7 @@ export class WatchRecordsService {
                 'id',
                 'customerId',
                 'movieId',
-                'purchaseId',
+                'purchaseRecordId',
                 'watchDate'
             ])
         )

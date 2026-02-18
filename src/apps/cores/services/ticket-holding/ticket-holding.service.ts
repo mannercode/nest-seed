@@ -82,7 +82,7 @@ export class TicketHoldingService {
         return tickets ? JSON.parse(tickets) : []
     }
 
-    async releaseTickets(showtimeId: string, customerId: string) {
+    async releaseTickets(showtimeId: string, customerId: string): Promise<void> {
         const tickets = await this.searchHeldTicketIds(showtimeId, customerId)
 
         await Promise.all(
@@ -90,7 +90,5 @@ export class TicketHoldingService {
         )
 
         await this.cacheService.delete(getCustomerKey(showtimeId, customerId))
-
-        return true
     }
 }

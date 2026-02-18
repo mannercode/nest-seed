@@ -19,7 +19,7 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
         const watchRecord = this.newDocument()
         watchRecord.customerId = createDto.customerId
         watchRecord.movieId = createDto.movieId
-        watchRecord.purchaseId = createDto.purchaseId
+        watchRecord.purchaseRecordId = createDto.purchaseRecordId
         watchRecord.watchDate = createDto.watchDate
 
         await watchRecord.save()

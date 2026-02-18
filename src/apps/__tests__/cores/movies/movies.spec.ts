@@ -3,7 +3,7 @@ import {
     createMovie,
     Errors,
     testAssets,
-    uploadComplete
+    uploadAndFinalizeAsset
 } from 'apps/__tests__/__helpers__'
 import { MovieGenre, MovieRating } from 'apps/cores'
 import { Checksum } from 'common'
@@ -74,7 +74,7 @@ describe('MoviesService', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
-                const asset = await uploadComplete(fix, testAssets.image)
+                const asset = await uploadAndFinalizeAsset(fix, testAssets.image)
                 movie = await createMovie(fix, { assetIds: [asset.id] })
             })
 
@@ -182,7 +182,7 @@ describe('MoviesService', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
-                const asset = await uploadComplete(fix, testAssets.image)
+                const asset = await uploadAndFinalizeAsset(fix, testAssets.image)
                 movie = await createMovie(fix, { assetIds: [asset.id] })
             })
 
@@ -216,7 +216,7 @@ describe('MoviesService', () => {
         let movieB2: MovieDto
 
         beforeEach(async () => {
-            const asset = await uploadComplete(fix, testAssets.image)
+            const asset = await uploadAndFinalizeAsset(fix, testAssets.image)
 
             ;[movieA1, movieA2, movieB1, movieB2] = await Promise.all([
                 createMovie(fix, {

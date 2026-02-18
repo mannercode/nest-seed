@@ -18,7 +18,7 @@ export class TicketHoldingClient {
         })
     }
 
-    releaseTickets(showtimeId: string, customerId: string): Promise<boolean> {
-        return this.proxy.request(Messages.TicketHolding.releaseTickets, { showtimeId, customerId })
+    async releaseTickets(showtimeId: string, customerId: string): Promise<void> {
+        await this.proxy.request(Messages.TicketHolding.releaseTickets, { showtimeId, customerId })
     }
 }

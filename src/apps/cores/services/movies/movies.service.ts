@@ -18,7 +18,7 @@ import { MoviesRepository } from './movies.repository'
 export class MoviesService {
     constructor(
         private readonly moviesRepository: MoviesRepository,
-        private readonly assetsRepository: MoviePendingAssetsRepository,
+        private readonly pendingAssetsRepository: MoviePendingAssetsRepository,
         private readonly assetsClient: AssetsClient
     ) {}
 
@@ -38,7 +38,7 @@ export class MoviesService {
         return this.toDtos(movies)
     }
 
-    async deleteMany(movieIds: string[]) {
+    async deleteMany(movieIds: string[]): Promise<void> {
         const movies = await this.moviesRepository.findByIds(movieIds)
 
         if (0 < movies.length) {
@@ -50,8 +50,6 @@ export class MoviesService {
 
             await this.moviesRepository.deleteByIds(pickIds(movies))
         }
-
-        return {}
     }
 
     async searchPage(searchDto: SearchMoviesPageDto) {
@@ -60,8 +58,8 @@ export class MoviesService {
         return { ...pagination, items: await this.toDtos(items) }
     }
 
-    async allExist(movieIds: string[]): Promise<boolean> {
-        return this.moviesRepository.allExist(movieIds)
+    async existsAll(movieIds: string[]): Promise<boolean> {
+        return this.moviesRepository.existsAll(movieIds)
     }
 
     async publish(movieId: string) {
@@ -83,7 +81,7 @@ export class MoviesService {
 
         if (0 < missingFields.length) {
             throw new UnprocessableEntityException({
-                ...MovieErrors.InvalidForCompletion,
+                ...MovieErrors.InvalidForPublish,
                 missingFields
             })
         }
@@ -93,7 +91,7 @@ export class MoviesService {
     }
 
     async createAsset(movieId: string, createDto: CreateAssetDto) {
-        if (!(await this.moviesRepository.allExist([movieId]))) {
+        if (!(await this.existsAll([movieId]))) {
             throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
         }
 
@@ -106,22 +104,21 @@ export class MoviesService {
 
         const upload = await this.assetsClient.create(createDto)
 
-        await this.assetsRepository.addAsset(movieId, upload.assetId)
+        await this.pendingAssetsRepository.addPendingAsset(movieId, upload.assetId)
 
         return upload
     }
 
-    async deleteAsset(movieId: string, assetId: string): Promise<Record<string, never>> {
-        if (!(await this.moviesRepository.allExist([movieId]))) {
+    async deleteAsset(movieId: string, assetId: string): Promise<void> {
+        if (!(await this.existsAll([movieId]))) {
             throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
         }
 
-        await this.assetsRepository.removeAsset(movieId, assetId)
+        await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
         await this.assetsClient.deleteMany([assetId])
-        return {}
     }
 
-    async completeAsset(movieId: string, assetId: string): Promise<Record<string, never>> {
+    async finalizeUpload(movieId: string, assetId: string): Promise<void> {
         const movie = await this.moviesRepository.findById(movieId)
 
         if (!movie) {
@@ -129,11 +126,11 @@ export class MoviesService {
         }
 
         if (movie.assetIds.includes(assetId)) {
-            await this.assetsRepository.removeAsset(movieId, assetId)
-            return {}
+            await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
+            return
         }
 
-        const hasPendingAsset = await this.assetsRepository.hasAsset(movieId, assetId)
+        const hasPendingAsset = await this.pendingAssetsRepository.hasPendingAsset(movieId, assetId)
 
         if (!hasPendingAsset) {
             throw new NotFoundException({ ...MovieErrors.AssetNotFound, notFoundAssetId: assetId })
@@ -145,14 +142,12 @@ export class MoviesService {
             throw new UnprocessableEntityException({ ...MovieErrors.AssetUploadInvalid, assetId })
         }
 
-        await this.assetsClient.complete(assetId, {
+        await this.assetsClient.finalizeUpload(assetId, {
             owner: { service: 'movies', entityId: movieId }
         })
 
-        await this.assetsRepository.removeAsset(movieId, assetId)
+        await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
         await this.moviesRepository.addAsset(movieId, assetId)
-
-        return {}
     }
 
     private async toDto(movie: Movie): Promise<MovieDto> {

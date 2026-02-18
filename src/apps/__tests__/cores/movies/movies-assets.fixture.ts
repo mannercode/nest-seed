@@ -55,12 +55,12 @@ export async function uploadMovieAsset(ctx: TestContext, movieId: string) {
     return upload
 }
 
-export async function uploadCompleteMovieAsset(ctx: TestContext, movieId: string) {
+export async function uploadAndFinalizeMovieAsset(ctx: TestContext, movieId: string) {
     const { MoviesService } = await import('apps/cores')
     const moviesService = ctx.module.get(MoviesService)
 
     const { assetId } = await uploadMovieAsset(ctx, movieId)
 
-    await moviesService.completeAsset(movieId, assetId)
+    await moviesService.finalizeUpload(movieId, assetId)
     return assetId
 }

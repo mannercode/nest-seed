@@ -27,9 +27,9 @@ export class AssetsRepository extends MongooseRepository<Asset> {
         return asset.toJSON()
     }
 
-    async findExpiredUncompleted(expireBefore: Date): Promise<Asset[]> {
+    async findExpiredIncomplete(expiresBefore: Date): Promise<Asset[]> {
         return this.model
-            .find({ ownerService: null, ownerEntityId: null, createdAt: { $lte: expireBefore } })
+            .find({ ownerService: null, ownerEntityId: null, createdAt: { $lte: expiresBefore } })
             .lean({ virtuals: true })
     }
 

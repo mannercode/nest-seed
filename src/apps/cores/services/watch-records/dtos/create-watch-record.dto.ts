@@ -11,7 +11,7 @@ export class CreateWatchRecordDto {
 
     @IsString()
     @IsNotEmpty()
-    purchaseId: string
+    purchaseRecordId: string
 
     @IsDate()
     watchDate: Date

@@ -94,8 +94,7 @@ describe('CustomersService', () => {
             let accessToken: string
 
             beforeEach(async () => {
-                const authTokens = await loginCustomer(fix, credentials)
-                accessToken = authTokens.accessToken
+                ;({ accessToken } = await loginCustomer(fix, credentials))
             })
 
             // 접근을 허용한다

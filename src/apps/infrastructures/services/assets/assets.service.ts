@@ -3,7 +3,7 @@ import { Cron } from '@nestjs/schedule'
 import { DateUtil, InjectS3Object, mapDocToDto, pickIds, S3ObjectService } from 'common'
 import { Rules } from 'shared'
 import { AssetsRepository } from './assets.repository'
-import { AssetDto, AssetPresignedUploadDto, CompleteAssetDto, CreateAssetDto } from './dtos'
+import { AssetDto, AssetPresignedUploadDto, CreateAssetDto, FinalizeAssetDto } from './dtos'
 import { Asset } from './models'
 
 export const AssetServiceErrors = {
@@ -45,7 +45,7 @@ export class AssetsService {
         }
     }
 
-    async complete(assetId: string, { owner }: CompleteAssetDto) {
+    async finalizeUpload(assetId: string, { owner }: FinalizeAssetDto) {
         const asset = await this.repository.getById(assetId)
         const expiresAt = this.getUploadExpiresAt(asset.createdAt)
 
@@ -79,17 +79,16 @@ export class AssetsService {
         return Promise.all(dtos.map((dto) => this.withDownloadInfo(dto)))
     }
 
-    async deleteMany(assetIds: string[]) {
+    async deleteMany(assetIds: string[]): Promise<void> {
         await this.repository.deleteByIds(assetIds)
 
         await Promise.all(assetIds.map((assetId) => this.s3Service.deleteObject(assetId)))
-        return {}
     }
 
     @Cron(Rules.Asset.expiredUploadCleanupCron, { name: 'assets.cleanupExpiredUploads' })
     async cleanupExpiredUploads() {
-        const expireBefore = this.getExpirationThreshold()
-        const expiredAssets = await this.repository.findExpiredUncompleted(expireBefore)
+        const expiresBefore = this.getExpirationThreshold()
+        const expiredAssets = await this.repository.findExpiredIncomplete(expiresBefore)
 
         if (0 < expiredAssets.length) {
             await this.deleteMany(pickIds(expiredAssets))
