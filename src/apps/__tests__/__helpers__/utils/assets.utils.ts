@@ -8,7 +8,8 @@ import type { TestContext } from 'testlib'
 import { readFile } from 'fs/promises'
 import { pick } from 'lodash'
 import { basename } from 'path'
-import { type TestAsset, testAssets } from '../assets'
+import type { TestAsset } from '../assets'
+import { testAssets } from '../assets'
 
 export function buildCreateAssetDto(file: TestAsset = testAssets.image): CreateAssetDto {
     return pick(file, ['originalName', 'mimeType', 'size', 'checksum'])

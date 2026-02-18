@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { mapDocToDto } from 'common'
-import type { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto } from './dtos'
-import type { Theater } from './models'
-import type { TheatersRepository } from './theaters.repository'
+import { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto } from './dtos'
 import { TheaterDto } from './dtos'
+import { Theater } from './models'
+import { TheatersRepository } from './theaters.repository'
 
 @Injectable()
 export class TheatersService {

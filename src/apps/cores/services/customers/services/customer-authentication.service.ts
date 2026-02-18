@@ -1,9 +1,9 @@
-import type { JwtAuthService } from 'common'
 import { Injectable } from '@nestjs/common'
 import { compare, hash } from 'bcrypt'
+import { JwtAuthService } from 'common'
 import { InjectJwtAuth } from 'common'
-import type { CustomersRepository } from '../customers.repository'
-import type { CustomerAuthPayload, CustomerCredentialsDto } from '../dtos'
+import { CustomersRepository } from '../customers.repository'
+import { CustomerAuthPayload, CustomerCredentialsDto } from '../dtos'
 
 @Injectable()
 export class CustomerAuthenticationService {

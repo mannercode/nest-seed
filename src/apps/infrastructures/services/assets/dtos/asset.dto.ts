@@ -1,5 +1,5 @@
-import type { Checksum } from 'common'
 import { IsNotEmpty, IsString } from 'class-validator'
+import { Checksum } from 'common'
 
 export class AssetDownloadDto {
     expiresAt: Date

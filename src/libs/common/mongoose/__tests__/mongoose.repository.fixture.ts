@@ -1,7 +1,7 @@
-import type { Model } from 'mongoose'
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { createMongooseSchema, mapDocToDto, MongooseRepository, MongooseSchema } from 'common'
+import { Model } from 'mongoose'
 import { createTestContext, getMongoTestConnection } from 'testlib'
 
 @Schema({ toJSON: { virtuals: true } })

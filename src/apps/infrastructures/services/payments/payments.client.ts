@@ -1,8 +1,8 @@
-import type { ClientProxyService } from 'common'
 import { Injectable } from '@nestjs/common'
+import { ClientProxyService } from 'common'
 import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
-import type { CreatePaymentDto, PaymentDto } from './dtos'
+import { CreatePaymentDto, PaymentDto } from './dtos'
 
 @Injectable()
 export class PaymentsClient {

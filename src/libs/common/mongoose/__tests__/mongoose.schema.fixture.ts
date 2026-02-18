@@ -1,6 +1,6 @@
-import type { Model, Types } from 'mongoose'
 import { getModelToken, MongooseModule, Schema as NestSchema, Prop } from '@nestjs/mongoose'
 import { createMongooseSchema, MongooseSchema } from 'common'
+import { Model, Types } from 'mongoose'
 import { mongo, Schema } from 'mongoose'
 import { createTestContext, getMongoTestConnection } from 'testlib'
 

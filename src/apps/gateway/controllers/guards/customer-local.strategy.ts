@@ -1,6 +1,6 @@
-import type { CustomerAuthPayload, CustomersClient } from 'apps/cores'
 import { Injectable } from '@nestjs/common'
 import { PassportStrategy } from '@nestjs/passport'
+import { CustomerAuthPayload, CustomersClient } from 'apps/cores'
 import { Strategy } from 'passport-local'
 
 @Injectable()

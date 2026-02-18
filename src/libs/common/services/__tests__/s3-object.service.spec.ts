@@ -1,7 +1,8 @@
 import { HttpStatus } from '@nestjs/common'
 import { toAny } from 'testlib'
+import type { S3ObjectServiceFixture } from './s3-object.service.fixture'
 import { HttpUtil } from '../../utils/http.util'
-import { type S3ObjectServiceFixture, testBuffer, uploadObject } from './s3-object.service.fixture'
+import { testBuffer, uploadObject } from './s3-object.service.fixture'
 
 function buildPresignedPostForm(
     fields: Record<string, string>,

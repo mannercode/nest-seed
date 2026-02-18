@@ -1,5 +1,5 @@
-import type { MovieDto, MoviesClient, ShowtimesClient, WatchRecordsClient } from 'apps/cores'
 import { Injectable } from '@nestjs/common'
+import { MovieDto, MoviesClient, ShowtimesClient, WatchRecordsClient } from 'apps/cores'
 import { DateUtil, OrderDirection } from 'common'
 import { Rules } from 'shared'
 import { MovieRecommender } from './domain'

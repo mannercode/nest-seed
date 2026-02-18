@@ -1,10 +1,10 @@
-import type { Provider } from '@nestjs/common'
-import type { NatsOptions } from '@nestjs/microservices'
-import type { HttpTestClient } from 'testlib'
+import { Provider } from '@nestjs/common'
 import { Controller, Get, Post } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
+import { NatsOptions } from '@nestjs/microservices'
 import { MessagePattern, Transport } from '@nestjs/microservices'
 import { SuccessLoggingInterceptor } from 'common'
+import { HttpTestClient } from 'testlib'
 import { createHttpTestContext, getNatsTestConnection, RpcTestClient, withTestId } from 'testlib'
 
 export type SuccessLoggingInterceptorFixture = {

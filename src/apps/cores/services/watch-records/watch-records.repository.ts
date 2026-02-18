@@ -1,10 +1,10 @@
-import type { QueryBuilderOptions } from 'common'
-import type { Model } from 'mongoose'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
+import { QueryBuilderOptions } from 'common'
 import { MongooseRepository, QueryBuilder } from 'common'
+import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import type { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos'
+import { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos'
 import { WatchRecord } from './models'
 
 @Injectable()

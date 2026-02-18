@@ -1,9 +1,9 @@
-import type { CreateAssetDto } from 'apps/infrastructures'
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
+import { CreateAssetDto } from 'apps/infrastructures'
 import { Messages } from 'shared'
-import type { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
-import type { MoviesService } from './movies.service'
+import { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
+import { MoviesService } from './movies.service'
 
 @Controller()
 export class MoviesController {

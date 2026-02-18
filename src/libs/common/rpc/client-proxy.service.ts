@@ -1,9 +1,9 @@
-import type { DynamicModule, OnModuleDestroy } from '@nestjs/common'
-import type { ClientProvider, ClientProxy } from '@nestjs/microservices'
-import type { Observable } from 'rxjs'
+import { DynamicModule, OnModuleDestroy } from '@nestjs/common'
 import { Global, HttpException, Inject, Injectable, Module } from '@nestjs/common'
+import { ClientProvider, ClientProxy } from '@nestjs/microservices'
 import { ClientsModule } from '@nestjs/microservices'
 import { defaultTo } from 'lodash'
+import { Observable } from 'rxjs'
 import { catchError, lastValueFrom, retry, throwError, timer } from 'rxjs'
 import { reviveIsoDates } from '../utils'
 

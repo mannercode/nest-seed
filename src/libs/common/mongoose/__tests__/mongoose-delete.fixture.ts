@@ -1,7 +1,7 @@
-import type { Type } from '@nestjs/common'
-import type { Model } from 'mongoose'
+import { Type } from '@nestjs/common'
 import { getModelToken, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { createMongooseSchema, HardDelete, MongooseSchema } from 'common'
+import { Model } from 'mongoose'
 import { createTestContext, getMongoTestConnection } from 'testlib'
 
 @HardDelete()

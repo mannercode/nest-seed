@@ -1,6 +1,3 @@
-import type { RecommendationClient } from 'apps/applications'
-import type { MoviesClient, SearchMoviesPageDto, UpsertMovieDto } from 'apps/cores'
-import type { CreateAssetDto } from 'apps/infrastructures'
 import {
     Body,
     Controller,
@@ -15,9 +12,12 @@ import {
     Req,
     UseGuards
 } from '@nestjs/common'
+import { RecommendationClient } from 'apps/applications'
+import { MoviesClient, SearchMoviesPageDto, UpsertMovieDto } from 'apps/cores'
+import { CreateAssetDto } from 'apps/infrastructures'
 import { defaultTo } from 'lodash'
-import type { CustomerOptionalAuthRequest } from './types'
 import { CustomerOptionalJwtAuthGuard } from './guards'
+import { CustomerOptionalAuthRequest } from './types'
 
 @Controller('movies')
 export class MoviesController {
@@ -54,6 +54,14 @@ export class MoviesController {
         await this.moviesClient.finalizeUpload(movieId, assetId)
     }
 
+    @Get('recommended')
+    @UseGuards(CustomerOptionalJwtAuthGuard)
+    async searchRecommendedMovies(@Req() req: CustomerOptionalAuthRequest) {
+        const customerId = defaultTo(req.user?.customerId, null)
+
+        return this.recommendationClient.searchRecommendedMovies(customerId)
+    }
+
     @Get(':movieId')
     async get(@Param('movieId') movieId: string) {
         const [movie] = await this.moviesClient.getMany([movieId])
@@ -69,14 +77,6 @@ export class MoviesController {
     @Get()
     async searchPage(@Query() searchDto: SearchMoviesPageDto) {
         return this.moviesClient.searchPage(searchDto)
-    }
-
-    @Get('recommended')
-    @UseGuards(CustomerOptionalJwtAuthGuard)
-    async searchRecommendedMovies(@Req() req: CustomerOptionalAuthRequest) {
-        const customerId = defaultTo(req.user?.customerId, null)
-
-        return this.recommendationClient.searchRecommendedMovies(customerId)
     }
 
     @Patch(':movieId')

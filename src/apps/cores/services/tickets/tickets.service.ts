@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common'
 import { Expect, mapDocToDto } from 'common'
-import type {
+import {
     AggregateTicketSalesDto,
     CreateTicketDto,
     CreateTicketsResult,
     SearchTicketsDto
 } from './dtos'
-import type { Ticket, TicketStatus } from './models'
-import type { TicketsRepository } from './tickets.repository'
 import { TicketDto } from './dtos'
+import { Ticket, TicketStatus } from './models'
+import { TicketsRepository } from './tickets.repository'
 
 @Injectable()
 export class TicketsService {

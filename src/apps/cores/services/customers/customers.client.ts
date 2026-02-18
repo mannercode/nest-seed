@@ -1,8 +1,8 @@
-import type { ClientProxyService, JwtAuthTokens, PaginationResult } from 'common'
 import { Injectable } from '@nestjs/common'
+import { ClientProxyService, JwtAuthTokens, PaginationResult } from 'common'
 import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
-import type {
+import {
     CreateCustomerDto,
     CustomerAuthPayload,
     CustomerCredentialsDto,

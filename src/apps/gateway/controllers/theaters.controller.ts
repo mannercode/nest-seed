@@ -1,9 +1,3 @@
-import type {
-    CreateTheaterDto,
-    SearchTheatersPageDto,
-    TheatersClient,
-    UpdateTheaterDto
-} from 'apps/cores'
 import {
     Body,
     Controller,
@@ -16,6 +10,12 @@ import {
     Post,
     Query
 } from '@nestjs/common'
+import {
+    CreateTheaterDto,
+    SearchTheatersPageDto,
+    TheatersClient,
+    UpdateTheaterDto
+} from 'apps/cores'
 
 @Controller('theaters')
 export class TheatersController {

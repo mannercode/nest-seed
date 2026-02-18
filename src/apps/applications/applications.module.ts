@@ -1,7 +1,7 @@
-import type { QueueOptions } from 'bullmq'
-import type Redis from 'ioredis'
 import { BullModule } from '@nestjs/bullmq'
 import { Module } from '@nestjs/common'
+import { QueueOptions } from 'bullmq'
+import Redis from 'ioredis'
 import { CommonModule, getProjectId, RedisConfigModule } from 'shared'
 import { HealthModule } from './modules'
 import {

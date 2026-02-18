@@ -1,10 +1,10 @@
-import type { MicroserviceOptions, NatsOptions } from '@nestjs/microservices'
-import type { HttpTestClient } from 'testlib'
 import { Controller, Get, Query, ValidationPipe } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
+import { MicroserviceOptions, NatsOptions } from '@nestjs/microservices'
 import { MessagePattern, Payload, Transport } from '@nestjs/microservices'
+import { HttpTestClient } from 'testlib'
 import { createHttpTestContext, getNatsTestConnection, RpcTestClient, withTestId } from 'testlib'
-import type { PaginationDto } from '..'
+import { PaginationDto } from '..'
 
 export const maxTakeValue = 50
 

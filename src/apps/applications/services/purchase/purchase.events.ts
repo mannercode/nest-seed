@@ -1,5 +1,5 @@
-import type { ClientProxyService } from 'common'
 import { Injectable } from '@nestjs/common'
+import { ClientProxyService } from 'common'
 import { InjectClientProxy } from 'common'
 import { Events } from 'shared'
 

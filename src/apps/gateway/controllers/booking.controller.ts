@@ -1,5 +1,3 @@
-import type { BookingClient } from 'apps/applications'
-import type { LatLong } from 'common'
 import {
     Body,
     Controller,
@@ -11,9 +9,11 @@ import {
     Req,
     UseGuards
 } from '@nestjs/common'
+import { BookingClient } from 'apps/applications'
+import { LatLong } from 'common'
 import { DateUtil, LatLongQuery } from 'common'
-import type { CustomerAuthRequest } from './types'
 import { CustomerJwtAuthGuard } from './guards'
+import { CustomerAuthRequest } from './types'
 
 @Controller('booking')
 export class BookingController {

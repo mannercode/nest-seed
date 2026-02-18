@@ -1,4 +1,3 @@
-import type Redis from 'ioredis'
 import { Injectable } from '@nestjs/common'
 import {
     getRedisConnectionToken,
@@ -7,6 +6,7 @@ import {
     JwtAuthService,
     RedisModule
 } from 'common'
+import Redis from 'ioredis'
 import { createTestContext, getRedisTestConnection, withTestId } from 'testlib'
 
 export type JwtAuthServiceFixture = {

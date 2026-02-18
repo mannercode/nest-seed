@@ -1,9 +1,9 @@
-import type { HoldTicketsDto, TheaterDto, TicketDto } from 'apps/cores'
-import type { ClientProxyService } from 'common'
 import { Injectable } from '@nestjs/common'
+import { HoldTicketsDto, TheaterDto, TicketDto } from 'apps/cores'
+import { ClientProxyService } from 'common'
 import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
-import type {
+import {
     SearchShowdatesForBookingDto,
     SearchShowtimesForBookingDto,
     SearchTheatersForBookingDto,

@@ -1,7 +1,7 @@
-import type { MicroserviceOptions, NatsOptions } from '@nestjs/microservices'
-import type { HttpTestClient } from 'testlib'
 import { Controller, Get, Injectable, Param } from '@nestjs/common'
+import { MicroserviceOptions, NatsOptions } from '@nestjs/microservices'
 import { MessagePattern, Payload, Transport } from '@nestjs/microservices'
+import { HttpTestClient } from 'testlib'
 import { createHttpTestContext, getNatsTestConnection, RpcTestClient, withTestId } from 'testlib'
 
 export type TestContextFixture = {

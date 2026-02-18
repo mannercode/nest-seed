@@ -1,9 +1,9 @@
-import type { HoldTicketsDto } from 'apps/cores'
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
+import { HoldTicketsDto } from 'apps/cores'
 import { Messages } from 'shared'
-import type { BookingService } from './booking.service'
-import type {
+import { BookingService } from './booking.service'
+import {
     SearchShowdatesForBookingDto,
     SearchShowtimesForBookingDto,
     SearchTheatersForBookingDto

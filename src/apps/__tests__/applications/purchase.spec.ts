@@ -3,7 +3,8 @@ import { Errors, getPayments, getTickets } from 'apps/__tests__/__helpers__'
 import { TicketStatus } from 'apps/cores'
 import { pickIds } from 'common'
 import { toAny } from 'testlib'
-import { buildCreatePurchaseDto, type PurchaseFixture } from './purchase.fixture'
+import type { PurchaseFixture } from './purchase.fixture'
+import { buildCreatePurchaseDto } from './purchase.fixture'
 
 describe('PurchaseService', () => {
     let fix: PurchaseFixture

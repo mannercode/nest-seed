@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Messages } from 'shared'
-import type { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos'
-import type { WatchRecordsService } from './watch-records.service'
+import { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos'
+import { WatchRecordsService } from './watch-records.service'
 
 @Controller()
 export class WatchRecordsController {

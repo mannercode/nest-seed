@@ -2,7 +2,8 @@ import type { MovieDto } from 'apps/cores'
 import { Errors } from 'apps/__tests__/__helpers__'
 import { MovieGenre, MovieRating } from 'apps/cores'
 import { nullObjectId } from 'testlib'
-import { createUnpublishedMovie, type MoviesPublishFixture } from './movies-publish.fixture'
+import type { MoviesPublishFixture } from './movies-publish.fixture'
+import { createUnpublishedMovie } from './movies-publish.fixture'
 
 describe('MoviesPublish', () => {
     let fix: MoviesPublishFixture

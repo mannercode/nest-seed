@@ -1,17 +1,17 @@
-import type {
+import { BadRequestException, Injectable } from '@nestjs/common'
+import {
     PurchaseItemDto,
     ShowtimeDto,
     ShowtimesClient,
     TicketHoldingClient,
     TicketsClient
 } from 'apps/cores'
-import { BadRequestException, Injectable } from '@nestjs/common'
 import { PurchaseItemType, TicketStatus } from 'apps/cores'
 import { DateUtil } from 'common'
 import { uniq } from 'lodash'
 import { Rules } from 'shared'
-import type { CreatePurchaseDto } from '../dtos'
-import type { PurchaseEvents } from '../purchase.events'
+import { CreatePurchaseDto } from '../dtos'
+import { PurchaseEvents } from '../purchase.events'
 
 export const TicketPurchaseErrors = {
     MaxTicketsExceeded: {

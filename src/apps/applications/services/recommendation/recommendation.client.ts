@@ -1,6 +1,6 @@
-import type { MovieDto } from 'apps/cores'
-import type { ClientProxyService } from 'common'
 import { Injectable } from '@nestjs/common'
+import { MovieDto } from 'apps/cores'
+import { ClientProxyService } from 'common'
 import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
 

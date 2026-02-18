@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Messages } from 'shared'
-import type { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto } from './dtos'
-import type { TheatersService } from './theaters.service'
+import { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto } from './dtos'
+import { TheatersService } from './theaters.service'
 
 @Controller()
 export class TheatersController {

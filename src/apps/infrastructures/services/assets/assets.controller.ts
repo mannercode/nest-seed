@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Messages } from 'shared'
-import type { AssetsService } from './assets.service'
-import type { CreateAssetDto, FinalizeAssetDto } from './dtos'
+import { AssetsService } from './assets.service'
+import { CreateAssetDto, FinalizeAssetDto } from './dtos'
 
 @Controller()
 export class AssetsController {

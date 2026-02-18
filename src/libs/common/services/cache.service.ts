@@ -1,6 +1,6 @@
-import type { DynamicModule } from '@nestjs/common'
-import type Redis from 'ioredis'
+import { DynamicModule } from '@nestjs/common'
 import { Inject, Injectable, Module } from '@nestjs/common'
+import Redis from 'ioredis'
 import { defaultTo } from 'lodash'
 import { getRedisConnectionToken } from '../redis'
 

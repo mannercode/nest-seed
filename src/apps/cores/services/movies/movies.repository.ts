@@ -1,10 +1,10 @@
-import type { QueryBuilderOptions } from 'common'
-import type { HydratedDocument, Model } from 'mongoose'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
+import { QueryBuilderOptions } from 'common'
 import { assignDefined, MongooseRepository, QueryBuilder } from 'common'
+import { HydratedDocument, Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import type { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
+import { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
 import { Movie } from './models'
 
 @Injectable()

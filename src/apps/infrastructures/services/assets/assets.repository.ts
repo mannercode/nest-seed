@@ -1,9 +1,9 @@
-import type { Model } from 'mongoose'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { MongooseRepository } from 'common'
+import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
-import type { CreateAssetDto } from './dtos'
+import { CreateAssetDto } from './dtos'
 import { Asset } from './models'
 
 @Injectable()

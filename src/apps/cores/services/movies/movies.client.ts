@@ -1,9 +1,9 @@
-import type { AssetPresignedUploadDto, CreateAssetDto } from 'apps/infrastructures'
-import type { ClientProxyService, PaginationResult } from 'common'
 import { Injectable } from '@nestjs/common'
+import { AssetPresignedUploadDto, CreateAssetDto } from 'apps/infrastructures'
+import { ClientProxyService, PaginationResult } from 'common'
 import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
-import type { MovieDto, SearchMoviesPageDto, UpsertMovieDto } from './dtos'
+import { MovieDto, SearchMoviesPageDto, UpsertMovieDto } from './dtos'
 
 @Injectable()
 export class MoviesClient {

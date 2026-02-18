@@ -1,9 +1,3 @@
-import type {
-    CreateCustomerDto,
-    CustomersClient,
-    SearchCustomersPageDto,
-    UpdateCustomerDto
-} from 'apps/cores'
 import {
     Body,
     Controller,
@@ -18,9 +12,15 @@ import {
     Req,
     UseGuards
 } from '@nestjs/common'
+import {
+    CreateCustomerDto,
+    CustomersClient,
+    SearchCustomersPageDto,
+    UpdateCustomerDto
+} from 'apps/cores'
 import { Expect } from 'common'
-import type { CustomerAuthRequest } from './types'
 import { CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
+import { CustomerAuthRequest } from './types'
 
 @Controller('customers')
 @UseGuards(CustomerJwtAuthGuard)
@@ -37,12 +37,6 @@ export class CustomersController {
     @HttpCode(HttpStatus.NO_CONTENT)
     async delete(@Param('customerId') customerId: string) {
         await this.customersClient.deleteMany([customerId])
-    }
-
-    @Get(':customerId')
-    async get(@Param('customerId') customerId: string) {
-        const [customer] = await this.customersClient.getMany([customerId])
-        return customer
     }
 
     @HttpCode(HttpStatus.OK)
@@ -69,6 +63,12 @@ export class CustomersController {
     @Get('jwt-guard')
     async testJwtGuard() {
         return { message: 'accessToken is valid' }
+    }
+
+    @Get(':customerId')
+    async get(@Param('customerId') customerId: string) {
+        const [customer] = await this.customersClient.getMany([customerId])
+        return customer
     }
 
     @Patch(':customerId')

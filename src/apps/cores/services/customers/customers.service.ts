@@ -1,17 +1,17 @@
 import { ConflictException, Injectable } from '@nestjs/common'
 import { mapDocToDto } from 'common'
-import type { CustomersRepository } from './customers.repository'
-import type {
+import { CustomersRepository } from './customers.repository'
+import {
     CreateCustomerDto,
     CustomerAuthPayload,
     CustomerCredentialsDto,
     SearchCustomersPageDto,
     UpdateCustomerDto
 } from './dtos'
-import type { Customer } from './models'
-import type { CustomerAuthenticationService } from './services'
 import { CustomerDto } from './dtos'
 import { CustomerErrors } from './errors'
+import { Customer } from './models'
+import { CustomerAuthenticationService } from './services'
 
 /**
  * The `findCustomerByCredentials` and `refreshAuthTokens` methods simply re-invoke methods from `CustomerAuthenticationService`,

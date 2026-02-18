@@ -1,18 +1,18 @@
-import type {
+import { Injectable, NotFoundException } from '@nestjs/common'
+import {
     HoldTicketsDto,
     ShowtimesClient,
     TheatersClient,
     TicketHoldingClient,
     TicketsClient
 } from 'apps/cores'
-import { Injectable, NotFoundException } from '@nestjs/common'
 import { pickIds } from 'common'
-import type {
+import { generateShowtimesForBooking, sortTheatersByDistance } from './booking.utils'
+import {
     SearchShowdatesForBookingDto,
     SearchShowtimesForBookingDto,
     SearchTheatersForBookingDto
 } from './dtos'
-import { generateShowtimesForBooking, sortTheatersByDistance } from './booking.utils'
 
 export const BookingServiceErrors = {
     ShowtimeNotFound: {

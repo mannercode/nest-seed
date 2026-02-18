@@ -1,6 +1,6 @@
-import type { CreatePurchaseDto, PurchaseClient } from 'apps/applications'
-import type { PurchaseRecordsClient } from 'apps/cores'
 import { Body, Controller, Get, Param, Post } from '@nestjs/common'
+import { CreatePurchaseDto, PurchaseClient } from 'apps/applications'
+import { PurchaseRecordsClient } from 'apps/cores'
 
 @Controller('purchases')
 export class PurchasesController {

@@ -1,8 +1,8 @@
-import type { PurchaseRecordsClient } from 'apps/cores'
-import type { PaymentsClient } from 'apps/infrastructures'
 import { Injectable } from '@nestjs/common'
-import type { CreatePurchaseDto } from './dtos'
-import type { TicketPurchaseService } from './services'
+import { PurchaseRecordsClient } from 'apps/cores'
+import { PaymentsClient } from 'apps/infrastructures'
+import { CreatePurchaseDto } from './dtos'
+import { TicketPurchaseService } from './services'
 
 @Injectable()
 export class PurchaseService {

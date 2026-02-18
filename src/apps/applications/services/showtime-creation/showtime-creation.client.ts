@@ -1,9 +1,9 @@
-import type { MovieDto, ShowtimeDto, TheaterDto } from 'apps/cores'
-import type { ClientProxyService, PaginationDto, PaginationResult } from 'common'
 import { Injectable } from '@nestjs/common'
+import { MovieDto, ShowtimeDto, TheaterDto } from 'apps/cores'
+import { ClientProxyService, PaginationDto, PaginationResult } from 'common'
 import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
-import type { BulkCreateShowtimesDto, RequestShowtimeCreationResponse } from './dtos'
+import { BulkCreateShowtimesDto, RequestShowtimeCreationResponse } from './dtos'
 
 @Injectable()
 export class ShowtimeCreationClient {

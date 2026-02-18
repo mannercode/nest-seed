@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { mapDocToDto } from 'common'
-import type { CreateShowtimeDto, SearchShowtimesDto } from './dtos'
-import type { Showtime } from './models'
-import type { ShowtimesRepository } from './showtimes.repository'
+import { CreateShowtimeDto, SearchShowtimesDto } from './dtos'
 import { ShowtimeDto } from './dtos'
+import { Showtime } from './models'
+import { ShowtimesRepository } from './showtimes.repository'
 
 @Injectable()
 export class ShowtimesService {

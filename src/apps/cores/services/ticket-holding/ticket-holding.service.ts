@@ -1,8 +1,8 @@
-import type { CacheService } from 'common'
 import { Injectable } from '@nestjs/common'
+import { CacheService } from 'common'
 import { InjectCache } from 'common'
 import { Rules } from 'shared'
-import type { HoldTicketsDto } from './dtos'
+import { HoldTicketsDto } from './dtos'
 
 const getCustomerKey = (showtimeId: string, customerId: string) =>
     `Customer:{${showtimeId}}:${customerId}`

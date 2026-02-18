@@ -1,8 +1,8 @@
-import type { DynamicModule, Provider } from '@nestjs/common'
+import { DynamicModule, Provider } from '@nestjs/common'
 import { Module } from '@nestjs/common'
 import Redis, { Cluster } from 'ioredis'
-import type { RedisConnection, RedisModuleAsyncOptions, RedisModuleOptions } from './redis.types'
 import { getRedisConnectionToken } from './redis.tokens'
+import { RedisConnection, RedisModuleAsyncOptions, RedisModuleOptions } from './redis.types'
 
 @Module({})
 export class RedisModule {

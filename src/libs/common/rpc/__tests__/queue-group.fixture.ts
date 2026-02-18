@@ -1,5 +1,5 @@
-import type { NatsOptions } from '@nestjs/microservices'
 import { Controller } from '@nestjs/common'
+import { NatsOptions } from '@nestjs/microservices'
 import { MessagePattern, Transport } from '@nestjs/microservices'
 import { createTestContext, getNatsTestConnection, RpcTestClient, withTestId } from 'testlib'
 

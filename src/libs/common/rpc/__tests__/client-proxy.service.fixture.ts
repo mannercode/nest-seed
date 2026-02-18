@@ -1,12 +1,12 @@
-import type { MessageEvent } from '@nestjs/common'
-import type { NatsOptions } from '@nestjs/microservices'
-import type { ClientProxyService } from 'common'
-import type { Observable } from 'rxjs'
-import type { HttpTestClient } from 'testlib'
+import { MessageEvent } from '@nestjs/common'
 import { Controller, Get, Sse } from '@nestjs/common'
+import { NatsOptions } from '@nestjs/microservices'
 import { EventPattern, MessagePattern, Transport } from '@nestjs/microservices'
+import { ClientProxyService } from 'common'
 import { ClientProxyModule, InjectClientProxy } from 'common'
+import { Observable } from 'rxjs'
 import { ReplaySubject } from 'rxjs'
+import { HttpTestClient } from 'testlib'
 import { createHttpTestContext, getNatsTestConnection, RpcTestClient, withTestId } from 'testlib'
 
 export type ClientProxyServiceFixture = {

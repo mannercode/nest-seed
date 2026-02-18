@@ -1,11 +1,11 @@
-import type { ArgumentsHost } from '@nestjs/common'
-import type { Request } from 'express'
+import { ArgumentsHost } from '@nestjs/common'
 import { Catch, HttpException, Logger } from '@nestjs/common'
 import { BaseExceptionFilter } from '@nestjs/core'
 import { RpcException } from '@nestjs/microservices'
+import { Request } from 'express'
 import { defaultTo } from 'lodash'
 import { throwError } from 'rxjs'
-import type { HttpErrorLog, RpcErrorLog } from './types'
+import { HttpErrorLog, RpcErrorLog } from './types'
 
 /**
  * Only one global filter can be registered at a time.

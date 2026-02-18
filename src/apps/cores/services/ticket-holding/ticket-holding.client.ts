@@ -1,8 +1,8 @@
-import type { ClientProxyService } from 'common'
 import { Injectable } from '@nestjs/common'
+import { ClientProxyService } from 'common'
 import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
-import type { HoldTicketsDto } from './dtos'
+import { HoldTicketsDto } from './dtos'
 
 @Injectable()
 export class TicketHoldingClient {

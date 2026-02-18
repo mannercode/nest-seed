@@ -1,7 +1,7 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { createMongooseSchema, MongooseSchema } from 'common'
 import { MongooseConfigModule } from 'shared'
-import type { Seat } from '../../theaters'
+import { Seat } from '../../theaters'
 
 export enum TicketStatus {
     Available = 'available',

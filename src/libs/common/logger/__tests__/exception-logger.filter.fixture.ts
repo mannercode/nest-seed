@@ -1,9 +1,9 @@
-import type { NatsOptions } from '@nestjs/microservices'
-import type { HttpTestClient } from 'testlib'
 import { Controller, Get, NotFoundException } from '@nestjs/common'
 import { APP_FILTER } from '@nestjs/core'
+import { NatsOptions } from '@nestjs/microservices'
 import { MessagePattern, Transport } from '@nestjs/microservices'
 import { ExceptionLoggerFilter } from 'common'
+import { HttpTestClient } from 'testlib'
 import { createHttpTestContext, getNatsTestConnection, RpcTestClient, withTestId } from 'testlib'
 
 export type ExceptionLoggerFilterFixture = {

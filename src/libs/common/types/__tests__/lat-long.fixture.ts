@@ -1,7 +1,7 @@
-import type { LatLong } from 'common'
-import type { HttpTestClient } from 'testlib'
 import { Controller, Get } from '@nestjs/common'
+import { LatLong } from 'common'
 import { LatLongQuery } from 'common'
+import { HttpTestClient } from 'testlib'
 import { createHttpTestContext } from 'testlib'
 
 export type LatLongFixture = { httpClient: HttpTestClient; teardown: () => Promise<void> }

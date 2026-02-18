@@ -1,13 +1,8 @@
-import type { ClientProxyService } from 'common'
 import { Injectable } from '@nestjs/common'
+import { ClientProxyService } from 'common'
 import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
-import type {
-    CreateShowtimeDto,
-    CreateShowtimesResult,
-    SearchShowtimesDto,
-    ShowtimeDto
-} from './dtos'
+import { CreateShowtimeDto, CreateShowtimesResult, SearchShowtimesDto, ShowtimeDto } from './dtos'
 
 @Injectable()
 export class ShowtimesClient {

@@ -1,9 +1,9 @@
 import { Controller, ParseArrayPipe } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Messages } from 'shared'
-import type { CreateShowtimesResult, SearchShowtimesDto } from './dtos'
-import type { ShowtimesService } from './showtimes.service'
+import { CreateShowtimesResult, SearchShowtimesDto } from './dtos'
 import { CreateShowtimeDto } from './dtos'
+import { ShowtimesService } from './showtimes.service'
 
 @Controller()
 export class ShowtimesController {

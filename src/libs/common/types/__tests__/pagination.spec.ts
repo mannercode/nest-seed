@@ -2,8 +2,8 @@ import { BadRequestException } from '@nestjs/common'
 import { plainToInstance } from 'class-transformer'
 import { CommonErrors } from 'common'
 import { withTestId } from 'testlib'
+import type { PaginationFixture } from './pagination.fixture'
 import { PaginationDto, PaginationErrors } from '..'
-import { type PaginationFixture } from './pagination.fixture'
 
 describe('PaginationDto', () => {
     let fix: PaginationFixture

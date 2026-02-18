@@ -1,5 +1,5 @@
-import type { Hash } from 'crypto'
 import { IsIn, IsNotEmpty, IsString } from 'class-validator'
+import { Hash } from 'crypto'
 import { createHash } from 'crypto'
 import { createReadStream } from 'fs'
 import { pipeline } from 'stream/promises'

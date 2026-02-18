@@ -1,9 +1,9 @@
-import type { PaginationDto } from 'common'
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
+import { PaginationDto } from 'common'
 import { Messages } from 'shared'
-import type { BulkCreateShowtimesDto } from './dtos'
-import type { ShowtimeCreationService } from './showtime-creation.service'
+import { BulkCreateShowtimesDto } from './dtos'
+import { ShowtimeCreationService } from './showtime-creation.service'
 
 @Controller()
 export class ShowtimeCreationController {

@@ -1,7 +1,7 @@
-import type { DynamicModule } from '@nestjs/common'
-import type Redis from 'ioredis'
+import { DynamicModule } from '@nestjs/common'
 import { Inject, Injectable, Module, UnauthorizedException } from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
+import Redis from 'ioredis'
 import { defaultTo, get, omit } from 'lodash'
 import { getRedisConnectionToken } from '../redis'
 import { generateShortId, Time } from '../utils'
@@ -31,6 +31,9 @@ export type JwtAuthModuleOptions = {
     redisName?: string
     useFactory: (...args: any[]) => JwtAuthFactoryOptions | Promise<JwtAuthFactoryOptions>
 }
+
+type JwtSignOptionsArg = Parameters<JwtService['signAsync']>[1]
+type JwtExpiresIn = NonNullable<JwtSignOptionsArg>['expiresIn']
 
 @Injectable()
 export class JwtAuthService {
@@ -74,7 +77,7 @@ export class JwtAuthService {
     }
 
     private async createToken(payload: object, secret: string, ttlMs: number) {
-        const expiresIn = Time.fromMs(ttlMs)
+        const expiresIn = Time.fromMs(ttlMs) as JwtExpiresIn
 
         const token = await this.jwtService.signAsync<object>(
             { ...payload, jti: generateShortId() },

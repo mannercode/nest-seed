@@ -3,7 +3,8 @@ import { Errors } from 'apps/__tests__/__helpers__'
 import { TicketStatus } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
 import { nullObjectId, step } from 'testlib'
-import { type BookingFixture, createAllResources } from './booking.fixture'
+import type { BookingFixture } from './booking.fixture'
+import { createAllResources } from './booking.fixture'
 
 describe('BookingService', () => {
     let fix: BookingFixture

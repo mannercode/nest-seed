@@ -1,8 +1,8 @@
-import type { ClientProxyService } from 'common'
 import { Injectable } from '@nestjs/common'
+import { ClientProxyService } from 'common'
 import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
-import type {
+import {
     AggregateTicketSalesDto,
     CreateTicketDto,
     CreateTicketsResult,
@@ -10,7 +10,7 @@ import type {
     TicketDto,
     TicketSalesForShowtimeDto
 } from './dtos'
-import type { TicketStatus } from './models'
+import { TicketStatus } from './models'
 
 @Injectable()
 export class TicketsClient {

@@ -1,14 +1,14 @@
-import type {
+import {
     CanActivate,
     ExecutionContext,
     INestApplication,
     ModuleMetadata,
     Type
 } from '@nestjs/common'
-import type { TestingModule } from '@nestjs/testing'
-import type { Server } from 'http'
 import { Injectable } from '@nestjs/common'
+import { TestingModule } from '@nestjs/testing'
 import { Test } from '@nestjs/testing'
+import { Server } from 'http'
 import { isDebuggingEnabled } from './utils'
 
 export type ModuleMetadataEx = ModuleMetadata & {

@@ -12,7 +12,7 @@ import {
 } from 'apps/__tests__/__helpers__'
 import { Checksum, pickIds, sleep } from 'common'
 import { nullObjectId, toAny } from 'testlib'
-import { type AssetsFixture } from './assets.fixture'
+import type { AssetsFixture } from './assets.fixture'
 
 describe('AssetsService', () => {
     let fix: AssetsFixture

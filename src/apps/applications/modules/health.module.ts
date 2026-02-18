@@ -1,19 +1,9 @@
-import type { HealthCheckService } from '@nestjs/terminus'
-import type Redis from 'ioredis'
 import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
+import { HealthCheckService } from '@nestjs/terminus'
 import { TerminusModule } from '@nestjs/terminus'
 import { RedisHealthIndicator } from 'common'
+import Redis from 'ioredis'
 import { RedisConfigModule } from 'shared'
-
-@Controller()
-class HealthController {
-    constructor(private readonly service: HealthService) {}
-
-    @Get('health')
-    health() {
-        return this.service.check()
-    }
-}
 
 @Injectable()
 class HealthService {
@@ -27,6 +17,16 @@ class HealthService {
         const checks = [async () => this.redis.isHealthy('redis', this.redisConn)]
 
         return this.health.check(checks)
+    }
+}
+
+@Controller()
+class HealthController {
+    constructor(private readonly service: HealthService) {}
+
+    @Get('health')
+    health() {
+        return this.service.check()
     }
 }
 

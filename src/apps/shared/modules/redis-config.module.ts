@@ -1,5 +1,5 @@
-import type { RedisModuleOptions } from 'common'
 import { Module } from '@nestjs/common'
+import { RedisModuleOptions } from 'common'
 import { getRedisConnectionToken, RedisModule } from 'common'
 import { AppConfigService } from '../config'
 

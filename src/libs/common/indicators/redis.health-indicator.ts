@@ -1,6 +1,6 @@
-import type { HealthIndicatorService } from '@nestjs/terminus'
-import type Redis from 'ioredis'
 import { Injectable } from '@nestjs/common'
+import { HealthIndicatorService } from '@nestjs/terminus'
+import Redis from 'ioredis'
 import { defaultTo, get } from 'lodash'
 
 @Injectable()

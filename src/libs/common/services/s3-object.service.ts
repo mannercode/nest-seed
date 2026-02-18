@@ -1,6 +1,4 @@
-import type { S3ClientConfig } from '@aws-sdk/client-s3'
-import type { PresignedPost } from '@aws-sdk/s3-presigned-post'
-import type { DynamicModule, OnModuleDestroy } from '@nestjs/common'
+import { S3ClientConfig } from '@aws-sdk/client-s3'
 import {
     DeleteObjectCommand,
     GetObjectCommand,
@@ -10,8 +8,10 @@ import {
     S3Client,
     S3ServiceException
 } from '@aws-sdk/client-s3'
+import { PresignedPost } from '@aws-sdk/s3-presigned-post'
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { DynamicModule, OnModuleDestroy } from '@nestjs/common'
 import { Inject, Injectable, Module } from '@nestjs/common'
 import { defaultTo, some } from 'lodash'
 import { newObjectIdString } from '../mongoose'

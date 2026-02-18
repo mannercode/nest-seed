@@ -1,8 +1,8 @@
-import type { HttpTestContext } from 'testlib'
 import { Body, Controller, ParseArrayPipe, Post } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
 import { Type } from 'class-transformer'
 import { IsDate, IsNotEmpty, IsString } from 'class-validator'
+import { HttpTestContext } from 'testlib'
 import { createHttpTestContext } from 'testlib'
 import { RequestValidationPipe } from '..'
 

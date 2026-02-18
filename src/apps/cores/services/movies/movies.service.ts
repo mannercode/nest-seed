@@ -1,19 +1,19 @@
-import type { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
 import {
     BadRequestException,
     Injectable,
     NotFoundException,
     UnprocessableEntityException
 } from '@nestjs/common'
+import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
 import { ensure, mapDocToDto, pickIds } from 'common'
 import { uniq } from 'lodash'
 import { Rules } from 'shared'
-import type { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
-import type { Movie } from './models'
-import type { MoviePendingAssetsRepository } from './movie-pending-assets.repository'
-import type { MoviesRepository } from './movies.repository'
+import { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
 import { MovieDto } from './dtos'
 import { MovieErrors } from './errors'
+import { Movie } from './models'
+import { MoviePendingAssetsRepository } from './movie-pending-assets.repository'
+import { MoviesRepository } from './movies.repository'
 
 @Injectable()
 export class MoviesService {

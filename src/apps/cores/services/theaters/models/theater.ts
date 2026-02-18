@@ -1,8 +1,8 @@
 import { Prop, Schema } from '@nestjs/mongoose'
 import { createMongooseSchema, MongooseSchema } from 'common'
 import { MongooseConfigModule } from 'shared'
-import type { Seatmap } from './seatmap'
-import type { TheaterLocation } from './theater-location'
+import { Seatmap } from './seatmap'
+import { TheaterLocation } from './theater-location'
 
 @Schema(MongooseConfigModule.schemaOptions)
 export class Theater extends MongooseSchema {

@@ -1,8 +1,8 @@
-import type { MoviesClient, ShowtimeDto, ShowtimesClient, TheatersClient } from 'apps/cores'
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { MoviesClient, ShowtimeDto, ShowtimesClient, TheatersClient } from 'apps/cores'
 import { DateTimeRange, DateUtil, Expect, Time } from 'common'
 import { Rules } from 'shared'
-import type { BulkCreateShowtimesDto } from '../dtos'
+import { BulkCreateShowtimesDto } from '../dtos'
 
 type TimeslotMap = Map<number, ShowtimeDto>
 

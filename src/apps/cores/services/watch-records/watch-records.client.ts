@@ -1,8 +1,8 @@
-import type { ClientProxyService, PaginationResult } from 'common'
 import { Injectable } from '@nestjs/common'
+import { ClientProxyService, PaginationResult } from 'common'
 import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
-import type { CreateWatchRecordDto, SearchWatchRecordsPageDto, WatchRecordDto } from './dtos'
+import { CreateWatchRecordDto, SearchWatchRecordsPageDto, WatchRecordDto } from './dtos'
 
 @Injectable()
 export class WatchRecordsClient {

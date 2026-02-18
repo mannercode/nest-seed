@@ -1,7 +1,7 @@
-import type { Model } from 'mongoose'
 import { Injectable } from '@nestjs/common'
 import { getModelToken, InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { createMongooseSchema, MongooseRepository, MongooseSchema } from 'common'
+import { Model } from 'mongoose'
 import { createTestContext, getMongoTestConnection } from 'testlib'
 
 @Schema()

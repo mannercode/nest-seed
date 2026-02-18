@@ -1,9 +1,9 @@
-import type { MessageEvent, OnModuleDestroy } from '@nestjs/common'
-import type { BulkCreateShowtimesDto, ShowtimeCreationClient } from 'apps/applications'
-import type { PaginationDto } from 'common'
-import type { Observable } from 'rxjs'
+import { MessageEvent, OnModuleDestroy } from '@nestjs/common'
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Sse } from '@nestjs/common'
 import { EventPattern } from '@nestjs/microservices'
+import { BulkCreateShowtimesDto, ShowtimeCreationClient } from 'apps/applications'
+import { PaginationDto } from 'common'
+import { Observable } from 'rxjs'
 import { Subject } from 'rxjs'
 import { Events } from 'shared'
 

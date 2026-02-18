@@ -1,15 +1,9 @@
-import type {
-    ShowtimeDto,
-    ShowtimesClient,
-    TheaterDto,
-    TheatersClient,
-    TicketsClient
-} from 'apps/cores'
 import { Injectable } from '@nestjs/common'
+import { ShowtimeDto, ShowtimesClient, TheaterDto, TheatersClient, TicketsClient } from 'apps/cores'
 import { Seatmap, TicketStatus } from 'apps/cores'
 import { DateUtil, Expect } from 'common'
 import { uniq } from 'lodash'
-import type { BulkCreateShowtimesDto } from '../dtos'
+import { BulkCreateShowtimesDto } from '../dtos'
 
 @Injectable()
 export class ShowtimeBulkCreatorService {
