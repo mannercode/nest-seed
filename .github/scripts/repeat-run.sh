@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -Eeuxo pipefail
+set -Eeuo pipefail
 
 if [ "$#" -lt 2 ]; then
     echo "Usage: $0 <repeat-count> <command> [args...]" >&2

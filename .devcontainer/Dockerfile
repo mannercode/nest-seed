@@ -4,7 +4,7 @@ ENV LANG=C.UTF-8
 ARG DEV_TOOLS="git curl jq tree vim net-tools screen iproute2 ca-certificates"
 ARG PLANTUML="openjdk-17-jre-headless graphviz fonts-noto-cjk"
 ARG SHELL_FORMATTER="shfmt"
-RUN set -eux; \
+RUN set -Eeu; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
       $DEV_TOOLS \
