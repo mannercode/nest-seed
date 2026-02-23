@@ -1,3 +1,5 @@
+export * from './asset-download.dto'
+export * from './asset-owner.dto'
 export * from './asset-presigned-upload.dto'
 export * from './asset.dto'
 export * from './create-asset.dto'

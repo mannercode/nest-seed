@@ -6,7 +6,7 @@ import { BulkCreateShowtimesDto } from '../dtos'
 
 type TimeslotMap = Map<number, ShowtimeDto>
 
-export const ShowtimeBulkValidatorServiceErrors = {
+export const ShowtimeBulkValidatorErrors = {
     MovieNotFound: {
         code: 'ERR_SHOWTIME_CREATION_MOVIE_NOT_FOUND',
         message: 'The requested movie could not be found.'
@@ -115,10 +115,7 @@ export class ShowtimeBulkValidatorService {
         const movieExists = await this.moviesClient.existsAll([movieId])
 
         if (!movieExists) {
-            throw new NotFoundException({
-                ...ShowtimeBulkValidatorServiceErrors.MovieNotFound,
-                movieId
-            })
+            throw new NotFoundException({ ...ShowtimeBulkValidatorErrors.MovieNotFound, movieId })
         }
     }
 
@@ -127,7 +124,7 @@ export class ShowtimeBulkValidatorService {
 
         if (!theatersExist) {
             throw new NotFoundException({
-                ...ShowtimeBulkValidatorServiceErrors.TheatersNotFound,
+                ...ShowtimeBulkValidatorErrors.TheatersNotFound,
                 theaterIds
             })
         }

@@ -26,7 +26,7 @@ import {
     TicketsClient,
     TicketsModule
 } from 'apps/cores'
-import { PurchasesController } from 'apps/gateway'
+import { PurchaseController } from 'apps/gateway'
 import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
 import { DateUtil, pickIds } from 'common'
 import { oid, toAny } from 'testlib'
@@ -35,7 +35,7 @@ export type PurchaseFixture = AppTestContext & {}
 
 export async function createPurchaseFixture(): Promise<PurchaseFixture> {
     const ctx = await createAppTestContext({
-        controllers: [PurchasesController],
+        controllers: [PurchaseController],
         imports: [
             MoviesModule,
             AssetsModule,

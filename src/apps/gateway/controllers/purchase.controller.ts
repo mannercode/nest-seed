@@ -3,7 +3,7 @@ import { CreatePurchaseDto, PurchaseClient } from 'apps/applications'
 import { PurchaseRecordsClient } from 'apps/cores'
 
 @Controller('purchases')
-export class PurchasesController {
+export class PurchaseController {
     constructor(
         private readonly purchaseRecordsClient: PurchaseRecordsClient,
         private readonly purchaseClient: PurchaseClient

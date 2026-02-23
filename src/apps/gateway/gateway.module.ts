@@ -13,7 +13,7 @@ import {
     CustomerLocalStrategy,
     CustomersController,
     MoviesController,
-    PurchasesController,
+    PurchaseController,
     ShowtimeCreationController,
     TheatersController
 } from './controllers'
@@ -26,7 +26,7 @@ import { HealthModule } from './modules'
         TheatersController,
         ShowtimeCreationController,
         BookingController,
-        PurchasesController
+        PurchaseController
     ],
     imports: [CommonModule, HealthModule],
     providers: [

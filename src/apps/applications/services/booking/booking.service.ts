@@ -14,7 +14,7 @@ import {
     SearchTheatersForBookingDto
 } from './dtos'
 
-export const BookingServiceErrors = {
+export const BookingErrors = {
     ShowtimeNotFound: {
         code: 'ERR_BOOKING_SHOWTIME_NOT_FOUND',
         message: 'The requested showtime could not be found.'
@@ -34,7 +34,7 @@ export class BookingService {
         const showtimeExists = await this.showtimesClient.existsAll([showtimeId])
 
         if (!showtimeExists) {
-            throw new NotFoundException({ ...BookingServiceErrors.ShowtimeNotFound, showtimeId })
+            throw new NotFoundException({ ...BookingErrors.ShowtimeNotFound, showtimeId })
         }
 
         const tickets = await this.ticketsClient.search({ showtimeIds: [showtimeId] })

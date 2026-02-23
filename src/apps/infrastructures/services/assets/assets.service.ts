@@ -8,7 +8,7 @@ import { AssetPresignedUploadDto, CreateAssetDto, FinalizeAssetDto } from './dto
 import { AssetDto } from './dtos'
 import { Asset } from './models'
 
-export const AssetServiceErrors = {
+export const AssetErrors = {
     UploadExpired: {
         code: 'ERR_ASSET_UPLOAD_EXPIRED',
         message: 'The upload request for this asset has expired.'
@@ -71,7 +71,7 @@ export class AssetsService {
             await this.repository.deleteById(assetId)
             await this.s3Service.deleteObject(assetId)
 
-            throw new NotFoundException({ ...AssetServiceErrors.UploadExpired, assetId, expiresAt })
+            throw new NotFoundException({ ...AssetErrors.UploadExpired, assetId, expiresAt })
         }
 
         const updatedAsset = await this.repository.assignOwner(assetId, owner)
