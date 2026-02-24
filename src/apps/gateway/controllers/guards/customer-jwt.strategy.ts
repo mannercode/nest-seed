@@ -14,14 +14,15 @@ export class CustomerJwtStrategy extends PassportStrategy(Strategy, 'customer-jw
         })
     }
 
-    validate(payload: CustomerAuthPayload): CustomerAuthPayload | null {
-        /**
-         * You can control it in the middle as follows
-         * 아래처럼 중간에서 제어할 수 있다
-         *
-         * const exists = await this.service.customersExist([payload.customerId])
-         * return exists ? payload : null
-         */
+    /**
+     * @example
+     * // 고객 존재 여부를 확인하려면 아래처럼 확장할 수 있다
+     * async validate(payload: CustomerAuthPayload) {
+     *     const exists = await this.service.customersExist([payload.customerId])
+     *     return exists ? payload : null
+     * }
+     */
+    validate(payload: CustomerAuthPayload): CustomerAuthPayload {
         return payload
     }
 }

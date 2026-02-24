@@ -1,7 +1,11 @@
 import { MessageEvent, OnModuleDestroy } from '@nestjs/common'
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Sse } from '@nestjs/common'
 import { EventPattern } from '@nestjs/microservices'
-import { BulkCreateShowtimesDto, ShowtimeCreationClient } from 'apps/applications'
+import {
+    BulkCreateShowtimesDto,
+    ShowtimeCreationClient,
+    ShowtimeCreationEvent
+} from 'apps/applications'
 import { PaginationDto } from 'common'
 import { Observable } from 'rxjs'
 import { Subject } from 'rxjs'
@@ -23,7 +27,7 @@ export class ShowtimeCreationHttpController implements OnModuleDestroy {
         // 모든 인스턴스에 이벤트를 브로드캐스팅한다.
         queue: false
     })
-    handleEvent(data: any) {
+    handleEvent(data: ShowtimeCreationEvent) {
         this.eventStream.next({ data })
     }
 
