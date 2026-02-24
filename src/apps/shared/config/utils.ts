@@ -1,4 +1,4 @@
-import { Expect } from 'common'
+import { Require } from 'common'
 
 type Paths<T, ParentPath extends string = ''> = {
     [K in keyof T]: T[K] extends object
@@ -49,7 +49,7 @@ export function createMessagePatternMap<T extends Record<string, any>>(
 }
 
 export function getProjectId() {
-    Expect.defined(process.env.PROJECT_ID, 'PROJECT_ID must be defined.')
+    Require.defined(process.env.PROJECT_ID, 'PROJECT_ID must be defined.')
 
     return process.env.PROJECT_ID
 }

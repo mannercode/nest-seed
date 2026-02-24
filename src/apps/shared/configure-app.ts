@@ -1,7 +1,7 @@
 import type { INestApplication } from '@nestjs/common'
 import type { MicroserviceOptions } from '@nestjs/microservices'
 import { Transport } from '@nestjs/microservices'
-import { AppLoggerService, Path } from 'common'
+import { AppLoggerService, FsUtil } from 'common'
 import compression from 'compression'
 import express from 'express'
 import { exit } from 'process'
@@ -12,9 +12,9 @@ type ConfigureAppOptions = { app: INestApplication<any>; natsOptions: { queue: s
 export async function configureApp({ app, natsOptions }: ConfigureAppOptions) {
     const { http, log, nats } = app.get(AppConfigService)
 
-    await Path.mkdir(log.directory)
+    await FsUtil.mkdir(log.directory)
 
-    if (!(await Path.isWritable(log.directory))) {
+    if (!(await FsUtil.isWritable(log.directory))) {
         console.error(`Error: Directory is not writable: '${log.directory}'`)
         exit(1)
     }

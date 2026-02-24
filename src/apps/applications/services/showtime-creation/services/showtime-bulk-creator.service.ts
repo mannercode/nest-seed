@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { ShowtimeDto, ShowtimesClient, TheaterDto, TheatersClient, TicketsClient } from 'apps/cores'
 import { Seatmap, TicketStatus } from 'apps/cores'
-import { DateUtil, Expect } from 'common'
+import { DateUtil, Require } from 'common'
 import { uniq } from 'lodash'
 import { BulkCreateShowtimesDto } from '../dtos'
 
@@ -52,7 +52,7 @@ export class ShowtimeBulkCreatorService {
             showtimes.map(async (showtime) => {
                 const theater = theatersById.get(showtime.theaterId)
 
-                Expect.defined(theater, 'The theater must exist.')
+                Require.defined(theater, 'The theater must exist.')
 
                 const createTicketDtos = Seatmap.getAllSeats(theater.seatmap).map((seat) => ({
                     movieId: showtime.movieId,

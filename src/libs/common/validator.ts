@@ -2,7 +2,7 @@
 import { Logger } from '@nestjs/common'
 import { isEqual } from 'lodash'
 
-export class Expect {
+export class Require {
     static defined<T>(
         value: null | T | undefined,
         message = 'Value must exist.'

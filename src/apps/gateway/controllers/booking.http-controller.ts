@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common'
 import { BookingClient } from 'apps/applications'
 import { LatLong } from 'common'
-import { DateUtil, LatLongQuery } from 'common'
+import { DateUtil, ParseLatLongQuery } from 'common'
 import { CustomerJwtAuthGuard } from './guards'
 import { CustomerAuthRequest } from './types'
 
@@ -60,7 +60,7 @@ export class BookingHttpController {
     @Get('movies/:movieId/theaters')
     async searchTheaters(
         @Param('movieId') movieId: string,
-        @LatLongQuery('latLong') latLong: LatLong
+        @ParseLatLongQuery('latLong') latLong: LatLong
     ) {
         return this.bookingClient.searchTheaters({ latLong, movieId })
     }

@@ -4,7 +4,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { differenceWith, uniq } from 'lodash'
 import { defaultTo } from 'lodash'
 import type { PaginationDto, PaginationResult } from '../types'
-import { Expect, Verify } from '../validator'
+import { Require, Verify } from '../validator'
 import { MongooseErrors } from './errors'
 import { objectId, objectIds } from './mongoose.util'
 
@@ -159,7 +159,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
             session
         })
 
-        Expect.equals(
+        Require.equals(
             docs.length,
             insertedCount + matchedCount + deletedCount,
             `The number of inserted documents should match the requested count`

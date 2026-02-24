@@ -3,11 +3,11 @@ import { Controller, Get, Post } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { NatsOptions } from '@nestjs/microservices'
 import { MessagePattern, Transport } from '@nestjs/microservices'
-import { SuccessLoggingInterceptor } from 'common'
+import { SuccessLoggerInterceptor } from 'common'
 import { HttpTestClient } from 'testlib'
 import { createHttpTestContext, getNatsTestConnection, RpcTestClient, withTestId } from 'testlib'
 
-export type SuccessLoggingInterceptorFixture = {
+export type SuccessLoggerInterceptorFixture = {
     httpClient: HttpTestClient
     rpcClient: RpcTestClient
     spyError: jest.SpyInstance
@@ -38,7 +38,7 @@ class TestController {
     }
 }
 
-export async function createSuccessLoggingInterceptorFixture(providers: Provider[]) {
+export async function createSuccessLoggerInterceptorFixture(providers: Provider[]) {
     const brokerOptions = {
         options: getNatsTestConnection(),
         transport: Transport.NATS
@@ -50,7 +50,7 @@ export async function createSuccessLoggingInterceptorFixture(providers: Provider
             await app.startAllMicroservices()
         },
         controllers: [TestController],
-        providers: [{ provide: APP_INTERCEPTOR, useClass: SuccessLoggingInterceptor }, ...providers]
+        providers: [{ provide: APP_INTERCEPTOR, useClass: SuccessLoggerInterceptor }, ...providers]
     })
 
     const { Logger } = await import('@nestjs/common')

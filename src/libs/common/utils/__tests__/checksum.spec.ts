@@ -1,4 +1,4 @@
-import { Checksum, Path } from 'common'
+import { Checksum, FsUtil, Path } from 'common'
 import fs from 'fs/promises'
 
 describe('Checksum', () => {
@@ -7,14 +7,14 @@ describe('Checksum', () => {
         let filePath: string
 
         beforeEach(async () => {
-            tempDir = await Path.createTempDirectory()
+            tempDir = await FsUtil.createTempDirectory()
             filePath = Path.join(tempDir, 'original.txt')
 
             await fs.writeFile(filePath, 'Hello, World!')
         })
 
         afterEach(async () => {
-            await Path.delete(tempDir)
+            await FsUtil.delete(tempDir)
         })
 
         // 알고리즘이 sha1일 때

@@ -76,7 +76,7 @@ export class QueryBuilder<T> {
     }
 }
 
-export function assignDefined<
+export function assignIfDefined<
     Target extends Record<string, any>,
     Source extends Record<string, any>,
     K extends keyof Source & keyof Target

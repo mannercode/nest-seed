@@ -1,16 +1,16 @@
-import { SuccessLoggingInterceptor } from 'common'
+import { SuccessLoggerInterceptor } from 'common'
 import { withTestId } from 'testlib'
-import type { SuccessLoggingInterceptorFixture } from './success-logging.interceptor.fixture'
+import type { SuccessLoggerInterceptorFixture } from './success-logger.interceptor.fixture'
 
-describe('SuccessLoggingInterceptor', () => {
-    let fix: SuccessLoggingInterceptorFixture
+describe('SuccessLoggerInterceptor', () => {
+    let fix: SuccessLoggerInterceptorFixture
 
     // 요청이 성공할 때
     describe('when the requests succeed', () => {
         beforeEach(async () => {
-            const { createSuccessLoggingInterceptorFixture } =
-                await import('./success-logging.interceptor.fixture')
-            fix = await createSuccessLoggingInterceptorFixture([])
+            const { createSuccessLoggerInterceptorFixture } =
+                await import('./success-logger.interceptor.fixture')
+            fix = await createSuccessLoggerInterceptorFixture([])
         })
         afterEach(() => fix.teardown())
 
@@ -76,9 +76,9 @@ describe('SuccessLoggingInterceptor', () => {
     // LOGGING_EXCLUDE_HTTP_PATHS에 요청 경로가 포함될 때
     describe('when LOGGING_EXCLUDE_HTTP_PATHS includes the request path', () => {
         beforeEach(async () => {
-            const { createSuccessLoggingInterceptorFixture } =
-                await import('./success-logging.interceptor.fixture')
-            fix = await createSuccessLoggingInterceptorFixture([
+            const { createSuccessLoggerInterceptorFixture } =
+                await import('./success-logger.interceptor.fixture')
+            fix = await createSuccessLoggerInterceptorFixture([
                 { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/exclude-path'] }
             ])
         })
@@ -95,9 +95,9 @@ describe('SuccessLoggingInterceptor', () => {
     // LOGGING_EXCLUDE_RPC_PATHS에 subject가 포함될 때
     describe('when LOGGING_EXCLUDE_RPC_PATHS includes the subject', () => {
         beforeEach(async () => {
-            const { createSuccessLoggingInterceptorFixture } =
-                await import('./success-logging.interceptor.fixture')
-            fix = await createSuccessLoggingInterceptorFixture([
+            const { createSuccessLoggerInterceptorFixture } =
+                await import('./success-logger.interceptor.fixture')
+            fix = await createSuccessLoggerInterceptorFixture([
                 { provide: 'LOGGING_EXCLUDE_RPC_PATHS', useValue: [withTestId('exclude-path')] }
             ])
         })
@@ -113,13 +113,13 @@ describe('SuccessLoggingInterceptor', () => {
         })
     })
 
-    describe('shouldRpcLog', () => {
+    describe('shouldLogRpc', () => {
         // rpc args가 배열이 아닐 때
         describe('when rpc args are not an array', () => {
             // true를 반환한다
             it('returns true', () => {
-                const interceptor = new SuccessLoggingInterceptor(undefined, ['subject'])
-                const result = (interceptor as any).shouldRpcLog(undefined)
+                const interceptor = new SuccessLoggerInterceptor(undefined, ['subject'])
+                const result = (interceptor as any).shouldLogRpc(undefined)
 
                 expect(result).toBe(true)
             })

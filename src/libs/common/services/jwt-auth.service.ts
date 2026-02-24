@@ -6,7 +6,7 @@ import { defaultTo, get, omit } from 'lodash'
 import { getRedisConnectionToken } from '../redis'
 import { generateShortId, Time } from '../utils'
 
-export const JwtAuthServiceErrors = {
+export const JwtAuthErrors = {
     RefreshTokenInvalid: {
         code: 'ERR_JWT_AUTH_REFRESH_TOKEN_INVALID',
         message: 'The provided refresh token is invalid'
@@ -70,7 +70,7 @@ export class JwtAuthService {
         const storedRefreshToken = await this.getStoredRefreshToken(payload.refreshTokenId)
 
         if (storedRefreshToken !== refreshToken) {
-            throw new UnauthorizedException(JwtAuthServiceErrors.RefreshTokenInvalid)
+            throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid)
         }
 
         return this.generateAuthTokens(payload)
@@ -97,7 +97,7 @@ export class JwtAuthService {
             const message = get(error, 'message', String(error))
 
             throw new UnauthorizedException({
-                ...JwtAuthServiceErrors.RefreshTokenVerificationFailed,
+                ...JwtAuthErrors.RefreshTokenVerificationFailed,
                 message
             })
         }

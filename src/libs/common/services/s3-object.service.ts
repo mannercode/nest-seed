@@ -17,7 +17,7 @@ import { defaultTo, some } from 'lodash'
 import { newObjectIdString } from '../mongoose'
 import { HttpUtil } from '../utils'
 
-export interface S3ClientFactoryConfig extends S3ClientConfig {
+export interface S3ServiceConfig extends S3ClientConfig {
     bucket: string
 }
 export type S3DeleteObjectResult = { key: string; status: number }
@@ -40,7 +40,7 @@ export type S3ObjectData = { contentType: string; data: Buffer; filename: string
 export type S3ObjectModuleOptions = {
     inject?: any[]
     name?: string
-    useFactory: (...args: any[]) => Promise<S3ClientFactoryConfig> | S3ClientFactoryConfig
+    useFactory: (...args: any[]) => Promise<S3ServiceConfig> | S3ServiceConfig
 }
 export type S3ObjectSummary = { eTag?: string; key: string; lastModified?: Date; size?: number }
 export type S3PresignDownloadOptions = {

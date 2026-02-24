@@ -1,5 +1,5 @@
 import type winston from 'winston'
-import { createWinstonLogger, Path, sleep } from 'common'
+import { createWinstonLogger, FsUtil, Path, sleep } from 'common'
 import { readFile } from 'fs/promises'
 import { isDebuggingEnabled } from 'testlib'
 
@@ -8,7 +8,7 @@ describe('createWinstonLogger', () => {
     let tempDir: string
 
     beforeEach(async () => {
-        tempDir = await Path.createTempDirectory()
+        tempDir = await FsUtil.createTempDirectory()
 
         logger = createWinstonLogger({
             consoleLogLevel: isDebuggingEnabled() ? 'verbose' : 'silent',
@@ -20,7 +20,7 @@ describe('createWinstonLogger', () => {
 
     afterEach(async () => {
         logger.close()
-        await Path.delete(tempDir)
+        await FsUtil.delete(tempDir)
     })
 
     async function getLogEntry() {

@@ -18,7 +18,7 @@ import {
     SearchCustomersPageDto,
     UpdateCustomerDto
 } from 'apps/cores'
-import { Expect } from 'common'
+import { Require } from 'common'
 import { CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
 import { CustomerAuthRequest } from './types'
 
@@ -43,7 +43,7 @@ export class CustomersHttpController {
     @Post('login')
     @UseGuards(CustomerLocalAuthGuard)
     async login(@Req() req: CustomerAuthRequest) {
-        Expect.defined(req.user, 'req.user must be returned in LocalStrategy.validate')
+        Require.defined(req.user, 'req.user must be returned in LocalStrategy.validate')
 
         return this.customersClient.generateAuthTokens(req.user)
     }

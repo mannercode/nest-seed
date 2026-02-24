@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { Expect, mapDocToDto } from 'common'
+import { mapDocToDto, Require } from 'common'
 import {
     AggregateTicketSalesDto,
     CreateTicketDto,
@@ -40,7 +40,7 @@ export class TicketsService {
     async updateStatusMany(ticketIds: string[], status: TicketStatus) {
         const result = await this.repository.updateStatusMany(ticketIds, status)
 
-        Expect.equals(
+        Require.equals(
             result.matchedCount,
             result.modifiedCount,
             'The status of all tickets must be changed.'

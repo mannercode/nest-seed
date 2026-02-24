@@ -71,7 +71,7 @@ function parseCoordinatePair(value: unknown): null | { latitude: number; longitu
     return { latitude: Number(latStr), longitude: Number(lngStr) }
 }
 
-export const LatLongQuery = createParamDecorator(
+export const ParseLatLongQuery = createParamDecorator(
     async (paramName: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest()
         const raw = request.query[paramName]

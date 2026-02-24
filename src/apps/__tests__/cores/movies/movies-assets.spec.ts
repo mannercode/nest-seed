@@ -1,7 +1,7 @@
 import type { MovieDto } from 'apps/cores'
 import type { AssetPresignedUploadDto } from 'apps/infrastructures'
 import { buildCreateAssetDto, Errors, testAssets, uploadAsset } from 'apps/__tests__/__helpers__'
-import { Expect } from 'common'
+import { Require } from 'common'
 import { nullObjectId } from 'testlib'
 import type { MoviesAssetsFixture } from './movies-assets.fixture'
 import {
@@ -118,7 +118,7 @@ describe('MoviesAssets', () => {
                 // 에셋 URL을 무효화한다
                 it('invalidates asset URL', async () => {
                     const [asset] = await fix.assetsClient.getMany([assetId])
-                    Expect.defined(asset.download)
+                    Require.defined(asset.download)
 
                     await fix.httpClient.delete(`/movies/${movie.id}/assets/${assetId}`).noContent()
 

@@ -6,7 +6,7 @@ import { tap } from 'rxjs/operators'
 import { HttpSuccessLog, RpcSuccessLog } from './types'
 
 @Injectable()
-export class SuccessLoggingInterceptor implements NestInterceptor {
+export class SuccessLoggerInterceptor implements NestInterceptor {
     constructor(
         @Optional()
         @Inject('LOGGING_EXCLUDE_HTTP_PATHS')
@@ -31,7 +31,7 @@ export class SuccessLoggingInterceptor implements NestInterceptor {
                         const response = httpContext.getResponse<Response>()
                         const { body, method, url } = httpContext.getRequest<Request>()
 
-                        if (this.shouldHttpLog(url)) {
+                        if (this.shouldLogHttp(url)) {
                             const successLog = {
                                 contextType,
                                 duration: `${elapsedMs}ms`,
@@ -45,7 +45,7 @@ export class SuccessLoggingInterceptor implements NestInterceptor {
                         const rpcContext = context.switchToRpc()
                         const rpcCallContext = rpcContext.getContext()
 
-                        if (this.shouldRpcLog(rpcCallContext.args)) {
+                        if (this.shouldLogRpc(rpcCallContext.args)) {
                             const successLog = {
                                 context: rpcCallContext,
                                 contextType,
@@ -66,13 +66,13 @@ export class SuccessLoggingInterceptor implements NestInterceptor {
         )
     }
 
-    private shouldHttpLog(url: string): boolean {
+    private shouldLogHttp(url: string): boolean {
         if (this.excludeHttpPaths === undefined) return true
 
         return !this.excludeHttpPaths.some((exclude) => url === exclude)
     }
 
-    private shouldRpcLog(args: unknown): boolean {
+    private shouldLogRpc(args: unknown): boolean {
         if (this.excludeRpcPaths === undefined) return true
         if (!Array.isArray(args)) return true
 
