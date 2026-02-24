@@ -11,7 +11,7 @@ import {
     TicketsClient,
     TicketsModule
 } from 'apps/cores'
-import { ShowtimeCreationController } from 'apps/gateway'
+import { ShowtimeCreationHttpController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { reviveIsoDates } from 'common'
 
@@ -22,7 +22,7 @@ export type ShowtimeCreationFixture = TestContext & {
 
 export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationFixture> {
     const ctx = await createAppTestContext({
-        controllers: [ShowtimeCreationController],
+        controllers: [ShowtimeCreationHttpController],
         imports: [
             MoviesModule,
             AssetsModule,

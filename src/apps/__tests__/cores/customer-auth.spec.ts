@@ -3,7 +3,7 @@ import { createCustomer } from 'apps/__tests__/__helpers__'
 import { Errors, loginCustomer } from 'apps/__tests__/__helpers__'
 import type { CustomerAuthFixture } from './customer-auth.fixture'
 
-describe('CustomersService', () => {
+describe('CustomerAuth', () => {
     let fix: CustomerAuthFixture
     const credentials = { email: 'user@mail.com', password: 'password' }
 

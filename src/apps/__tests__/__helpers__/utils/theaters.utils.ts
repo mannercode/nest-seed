@@ -4,7 +4,7 @@ export function buildCreateTheaterDto(overrides = {}) {
     const createDto = {
         location: { latitude: 0, longitude: 0 },
         name: `theater name`,
-        seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', seats: 'OOOOXXOOOO' }] }] },
+        seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', layout: 'OOOOXXOOOO' }] }] },
         ...overrides
     }
 

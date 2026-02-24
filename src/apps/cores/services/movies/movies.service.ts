@@ -23,8 +23,8 @@ export class MoviesService {
         private readonly assetsClient: AssetsClient
     ) {}
 
-    async create(createDto: UpsertMovieDto) {
-        const movie = await this.moviesRepository.create(createDto)
+    async create(upsertDto: UpsertMovieDto) {
+        const movie = await this.moviesRepository.create(upsertDto)
 
         return this.toDto(movie)
     }
@@ -146,8 +146,8 @@ export class MoviesService {
         return { ...pagination, items: await this.toDtos(items) }
     }
 
-    async update(movieId: string, updateDto: UpsertMovieDto) {
-        const movie = await this.moviesRepository.update(movieId, updateDto)
+    async update(movieId: string, upsertDto: UpsertMovieDto) {
+        const movie = await this.moviesRepository.update(movieId, upsertDto)
         return this.toDto(movie)
     }
 

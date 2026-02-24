@@ -1,7 +1,7 @@
 import type { ShowtimeDto, TheaterDto, TicketSalesForShowtimeDto } from 'apps/cores'
 import { LatLong } from 'common'
 import { omit, sortBy } from 'lodash'
-import type { ShowtimeForBookingDto } from './dtos'
+import type { BookingShowtimeDto } from './dtos'
 
 export function generateShowtimesForBooking(
     showtimes: ShowtimeDto[],
@@ -17,7 +17,7 @@ export function generateShowtimesForBooking(
         return { ...showtime, ticketSales: omit(ticketSales, ['showtimeId']) }
     })
 
-    return showtimesForBooking as ShowtimeForBookingDto[]
+    return showtimesForBooking as BookingShowtimeDto[]
 }
 
 export function sortTheatersByDistance(theaters: TheaterDto[], latLong: LatLong) {

@@ -4,10 +4,10 @@ import { ClientProxyService } from 'common'
 import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
 import {
-    SearchShowdatesForBookingDto,
-    SearchShowtimesForBookingDto,
-    SearchTheatersForBookingDto,
-    ShowtimeForBookingDto
+    BookingSearchShowdatesDto,
+    BookingSearchShowtimesDto,
+    BookingSearchTheatersDto,
+    BookingShowtimeDto
 } from './dtos'
 
 @Injectable()
@@ -22,15 +22,15 @@ export class BookingClient {
         return this.proxy.request(Messages.Booking.holdTickets, dto)
     }
 
-    searchShowdates(dto: SearchShowdatesForBookingDto): Promise<Date[]> {
+    searchShowdates(dto: BookingSearchShowdatesDto): Promise<Date[]> {
         return this.proxy.request(Messages.Booking.searchShowdates, dto)
     }
 
-    searchShowtimes(dto: SearchShowtimesForBookingDto): Promise<ShowtimeForBookingDto[]> {
+    searchShowtimes(dto: BookingSearchShowtimesDto): Promise<BookingShowtimeDto[]> {
         return this.proxy.request(Messages.Booking.searchShowtimes, dto)
     }
 
-    searchTheaters(dto: SearchTheatersForBookingDto): Promise<TheaterDto[]> {
+    searchTheaters(dto: BookingSearchTheatersDto): Promise<TheaterDto[]> {
         return this.proxy.request(Messages.Booking.searchTheaters, dto)
     }
 }

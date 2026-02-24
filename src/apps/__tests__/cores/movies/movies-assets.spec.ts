@@ -98,7 +98,7 @@ describe('MoviesAssets', () => {
                 movie = await createMovie(fix)
             })
 
-            // 업로드가 완료된 때
+            // 업로드가 완료되었을 때
             describe('when upload is completed', () => {
                 let assetId: string
 
@@ -162,7 +162,7 @@ describe('MoviesAssets', () => {
                     upload = await createMovieAsset(fix, movie.id, fix.asset)
                 })
 
-                // 업로드가 성공한 때
+                // 업로드가 성공했을 때
                 describe('when upload succeeded', () => {
                     beforeEach(async () => {
                         const uploadResponse = await uploadAsset(fix.asset.path, upload)
@@ -187,19 +187,24 @@ describe('MoviesAssets', () => {
                             .ok(expect.objectContaining({ imageUrls: [expect.any(String)] }))
                     })
 
-                    // 이미 완료된 때
-                    it('returns 204 No Content when already completed', async () => {
-                        await fix.httpClient
-                            .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
-                            .noContent()
+                    // 이미 완료되었을 때
+                    describe('when already finalized', () => {
+                        beforeEach(async () => {
+                            await fix.httpClient
+                                .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
+                                .noContent()
+                        })
 
-                        await fix.httpClient
-                            .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
-                            .noContent()
+                        // 204 No Content를 반환한다
+                        it('returns 204 No Content', async () => {
+                            await fix.httpClient
+                                .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
+                                .noContent()
+                        })
                     })
                 })
 
-                // 업로드가 완료되지 않은 때
+                // 업로드가 완료되지 않았을 때
                 describe('when the upload is not completed', () => {
                     // 422 Unprocessable Entity를 반환한다
                     it('returns 422 Unprocessable Entity', async () => {

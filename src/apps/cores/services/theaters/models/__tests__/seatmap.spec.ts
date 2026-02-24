@@ -7,7 +7,7 @@ describe('Seatmap', () => {
             // 좌석 수를 반환한다
             it('returns the number of seats', async () => {
                 const count = Seatmap.getSeatCount({
-                    blocks: [{ name: 'A', rows: [{ name: '1', seats: 'OOOOXXOOOO' }] }]
+                    blocks: [{ name: 'A', rows: [{ name: '1', layout: 'OOOOXXOOOO' }] }]
                 })
 
                 expect(count).toEqual(8)

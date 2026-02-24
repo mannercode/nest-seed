@@ -18,7 +18,7 @@ import {
 } from 'apps/cores'
 
 @Controller('theaters')
-export class TheatersController {
+export class TheatersHttpController {
     constructor(private readonly theatersClient: TheatersClient) {}
 
     @Post()

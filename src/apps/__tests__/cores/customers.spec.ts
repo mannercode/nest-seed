@@ -43,7 +43,7 @@ describe('CustomersService', () => {
             })
         })
 
-        // 필수 필드가 누락된 때
+        // 필수 필드가 누락되었을 때
         describe('when required fields are missing', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {

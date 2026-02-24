@@ -16,7 +16,7 @@ import { CustomerJwtAuthGuard } from './guards'
 import { CustomerAuthRequest } from './types'
 
 @Controller('booking')
-export class BookingController {
+export class BookingHttpController {
     constructor(private readonly bookingClient: BookingClient) {}
 
     @Get('showtimes/:showtimeId/tickets')

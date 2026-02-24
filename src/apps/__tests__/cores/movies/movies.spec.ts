@@ -37,7 +37,7 @@ describe('MoviesService', () => {
                 })
         })
 
-        // 필수 필드가 누락된 때
+        // 필수 필드가 누락되었을 때
         describe('when required fields are missing', () => {
             // 기본값으로 생성된 영화를 반환한다.
             it('returns the created movie with defaults', async () => {

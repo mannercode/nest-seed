@@ -20,7 +20,7 @@ import { CustomerOptionalJwtAuthGuard } from './guards'
 import { CustomerOptionalAuthRequest } from './types'
 
 @Controller('movies')
-export class MoviesController {
+export class MoviesHttpController {
     constructor(
         private readonly moviesClient: MoviesClient,
         private readonly recommendationClient: RecommendationClient
@@ -80,7 +80,7 @@ export class MoviesController {
     }
 
     @Patch(':movieId')
-    async update(@Param('movieId') movieId: string, @Body() updateDto: UpsertMovieDto) {
-        return this.moviesClient.update(movieId, updateDto)
+    async update(@Param('movieId') movieId: string, @Body() upsertDto: UpsertMovieDto) {
+        return this.moviesClient.update(movieId, upsertDto)
     }
 }

@@ -19,7 +19,7 @@ import {
     WatchRecordsClient,
     WatchRecordsModule
 } from 'apps/cores'
-import { CustomerJwtStrategy, MoviesController } from 'apps/gateway'
+import { CustomerJwtStrategy, MoviesHttpController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 import { DateUtil } from 'common'
 
@@ -27,7 +27,7 @@ export type RecommendationFixture = AppTestContext & {}
 
 export async function createRecommendationFixture(): Promise<RecommendationFixture> {
     const ctx = await createAppTestContext({
-        controllers: [MoviesController],
+        controllers: [MoviesHttpController],
         imports: [
             MoviesModule,
             AssetsModule,

@@ -8,7 +8,7 @@ import { Subject } from 'rxjs'
 import { Events } from 'shared'
 
 @Controller('showtime-creation')
-export class ShowtimeCreationController implements OnModuleDestroy {
+export class ShowtimeCreationHttpController implements OnModuleDestroy {
     private eventStream = new Subject<MessageEvent>()
 
     constructor(private readonly showtimeCreationClient: ShowtimeCreationClient) {}
