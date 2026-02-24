@@ -4,7 +4,11 @@ import { buildCreateAssetDto, Errors, testAssets, uploadAsset } from 'apps/__tes
 import { Expect } from 'common'
 import { nullObjectId } from 'testlib'
 import type { MoviesAssetsFixture } from './movies-assets.fixture'
-import { createMovie, createMovieAsset, uploadAndFinalizeMovieAsset } from './movies-assets.fixture'
+import {
+    createMovieAsset,
+    createUnpublishedMovie,
+    uploadAndFinalizeMovieAsset
+} from './movies-assets.fixture'
 
 describe('MoviesAssets', () => {
     let fix: MoviesAssetsFixture
@@ -21,7 +25,7 @@ describe('MoviesAssets', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
-                movie = await createMovie(fix)
+                movie = await createUnpublishedMovie(fix)
             })
 
             // 업로드 URL이 포함된 에셋 업로드 정보를 반환한다
@@ -95,7 +99,7 @@ describe('MoviesAssets', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
-                movie = await createMovie(fix)
+                movie = await createUnpublishedMovie(fix)
             })
 
             // 업로드가 완료되었을 때
@@ -151,7 +155,7 @@ describe('MoviesAssets', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
-                movie = await createMovie(fix)
+                movie = await createUnpublishedMovie(fix)
             })
 
             // 에셋이 존재할 때

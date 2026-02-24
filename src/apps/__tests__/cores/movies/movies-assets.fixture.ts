@@ -1,25 +1,16 @@
-import type { AppTestContext, TestAsset } from 'apps/__tests__/__helpers__'
+import type { TestAsset } from 'apps/__tests__/__helpers__'
+import type { AssetsClient } from 'apps/infrastructures'
 import type { TestContext } from 'testlib'
-import {
-    buildCreateAssetDto,
-    createAppTestContext,
-    testAssets,
-    uploadAsset
-} from 'apps/__tests__/__helpers__'
-import { RecommendationClient } from 'apps/applications'
-import { MoviesClient, MoviesModule } from 'apps/cores'
-import { MoviesHttpController } from 'apps/gateway'
-import { AssetsClient, AssetsModule } from 'apps/infrastructures'
+import { buildCreateAssetDto, testAssets, uploadAsset } from 'apps/__tests__/__helpers__'
+import type { MoviesBaseContext } from './create-movies-context'
+import { createMoviesContext } from './create-movies-context'
 
-export type MoviesAssetsFixture = AppTestContext & { asset: TestAsset; assetsClient: AssetsClient }
-
-export async function createMovie(ctx: TestContext) {
-    const { MoviesService } = await import('apps/cores')
-    const moviesService = ctx.module.get(MoviesService)
-
-    const movie = await moviesService.create({})
-    return movie
+export type MoviesAssetsFixture = MoviesBaseContext & {
+    asset: TestAsset
+    assetsClient: AssetsClient
 }
+
+export { createUnpublishedMovie } from './create-movies-context'
 
 export async function createMovieAsset(ctx: TestContext, movieId: string, file: TestAsset) {
     const { MoviesService } = await import('apps/cores')
@@ -32,13 +23,9 @@ export async function createMovieAsset(ctx: TestContext, movieId: string, file: 
 }
 
 export async function createMoviesAssetsFixture() {
-    const ctx = await createAppTestContext({
-        controllers: [MoviesHttpController],
-        ignoreProviders: [RecommendationClient],
-        imports: [MoviesModule, AssetsModule],
-        providers: [MoviesClient, AssetsClient]
-    })
+    const ctx = await createMoviesContext()
 
+    const { AssetsClient } = await import('apps/infrastructures')
     const assetsClient = ctx.module.get(AssetsClient)
 
     return { ...ctx, asset: testAssets.image, assetsClient }

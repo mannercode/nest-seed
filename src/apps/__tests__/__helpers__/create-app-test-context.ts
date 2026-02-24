@@ -73,6 +73,15 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
     return { ...ctx, teardown }
 }
 
+/**
+ * @example
+ * const configMock = createConfigServiceMock({ S3_ENDPOINT: s3.endpoint })
+ * const ctx = await createAppTestContext({
+ *     imports: [AssetsModule],
+ *     providers: [AssetsClient],
+ *     overrideProviders: [configMock]
+ * })
+ */
 export function createConfigServiceMock(mockValues: Record<string, any>) {
     const realConfigService = new ConfigService()
 
@@ -95,12 +104,3 @@ async function stopAllCronJobs(ctx: HttpTestContext) {
         await job.stop()
     }
 }
-
-// const configMock = createConfigServiceMock({
-//     S3_ENDPOINT: s3.endpoint,
-// })
-// const ctx = await createAppTestContext({
-//     imports: [AssetsModule],
-//     providers: [AssetsClient],
-//     overrideProviders: [configMock]
-// })
