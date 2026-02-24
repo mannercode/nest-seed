@@ -44,15 +44,24 @@ export type S3ObjectModuleOptions = {
 }
 export type S3ObjectSummary = { eTag?: string; key: string; lastModified?: Date; size?: number }
 export type S3PresignDownloadOptions = {
-    /** 다운로드 파일명 강제 */
+    /**
+     * Force the download filename.
+     * 다운로드 파일명 강제
+     */
     filename?: string
-    /** Content-Disposition 직접 지정 */
+    /**
+     * Specify Content-Disposition directly.
+     * Content-Disposition 직접 지정
+     */
     responseContentDisposition?: string
-    /** 다운로드 시 Content-Type 오버라이드 */
+    /**
+     * Override Content-Type on download.
+     * 다운로드 시 Content-Type 오버라이드
+     */
     responseContentType?: string
 } & S3PresignUrlOptions
 export type S3PresignPostUploadOptions = S3PresignUrlOptions & {
-    // attachment; filename="a.txt"
+    // ex) attachment; filename="a.txt"
     contentDisposition?: string
     contentType?: string
     maxContentLength?: number
