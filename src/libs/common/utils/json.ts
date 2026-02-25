@@ -18,7 +18,7 @@ export class Json {
         const maxSafe = BigInt(Number.MAX_SAFE_INTEGER)
         const minSafe = -maxSafe
 
-        return text.replace(/:(\s*)(-?\d+)(\s*[,}])/g, (match, space, raw, tail) => {
+        return text.replace(/([:\[,])(\s*)(-?\d+)(?=\s*[,\}\]])/g, (match, prefix, space, raw) => {
             const value = BigInt(raw)
 
             if (value < minInt64 || value > maxInt64) {
@@ -29,7 +29,7 @@ export class Json {
                 return match
             }
 
-            return `:${space}"${raw}"${tail}`
+            return `${prefix}${space}"${raw}"`
         })
     }
 

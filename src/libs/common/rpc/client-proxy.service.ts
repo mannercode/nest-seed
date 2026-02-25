@@ -64,7 +64,7 @@ export class ClientProxyService implements OnModuleDestroy {
                         /no responders/i.test(msg) ||
                         /no response from/i.test(msg)
                     ) {
-                        return timer(retryCount * 50)
+                        return timer(Math.min(50 * Math.pow(2, retryCount - 1), 2000))
                     }
 
                     return throwError(() => err)

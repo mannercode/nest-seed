@@ -1,8 +1,7 @@
 import type { OnModuleInit } from '@nestjs/common'
 import type { ClientSession, HydratedDocument, Model, ObjectId, QueryWithHelpers } from 'mongoose'
 import { BadRequestException, NotFoundException } from '@nestjs/common'
-import { differenceWith, uniq } from 'lodash'
-import { defaultTo } from 'lodash'
+import { defaultTo, differenceWith, uniq } from 'lodash'
 import type { PaginationDto, PaginationResult } from '../types'
 import { Require, Verify } from '../validator'
 import { MongooseErrors } from './errors'
@@ -95,8 +94,10 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
 
         queryHelper.lean(defaultLeanOptions)
 
-        const items = await queryHelper.exec()
-        const total = await this.model.countDocuments(queryHelper.getQuery()).exec()
+        const [items, total] = await Promise.all([
+            queryHelper.exec(),
+            this.model.countDocuments(queryHelper.getQuery()).exec()
+        ])
 
         return { items, skip, take, total } as PaginationResult<Doc>
     }
