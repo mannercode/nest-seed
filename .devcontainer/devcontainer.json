@@ -38,7 +38,8 @@
                 "mutantdino.resourcemonitor",
                 "mkhl.shfmt",
                 "github.vscode-pull-request-github",
-                "openai.chatgpt"
+                "openai.chatgpt",
+                "anthropic.claude-code"
             ],
             "settings": {
                 "files.watcherExclude": {
