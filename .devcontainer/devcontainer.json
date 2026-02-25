@@ -38,7 +38,6 @@
                 "mutantdino.resourcemonitor",
                 "mkhl.shfmt",
                 "github.vscode-pull-request-github",
-                "openai.chatgpt",
                 "anthropic.claude-code"
             ],
             "settings": {
