@@ -128,7 +128,7 @@ export class HttpTestClient {
 
         response.body = Json.reviveIsoDates(response.body)
 
-        if (expected) {
+        if (expected !== undefined) {
             expect(response.body).toEqual(expected)
         }
 
@@ -182,7 +182,8 @@ export class HttpTestClient {
         const parsedMessage: Partial<EventMessage> = {}
 
         lines.forEach((line) => {
-            const [key, value] = line.split(': ')
+            const [key, ...rest] = line.split(': ')
+            const value = rest.join(': ')
             if (key && value) {
                 switch (key) {
                     case 'data':

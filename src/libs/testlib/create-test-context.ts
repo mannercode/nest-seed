@@ -40,11 +40,13 @@ export async function createTestContext({
     overrideProviders,
     ...metadata
 }: ModuleMetadataEx): Promise<TestContext> {
-    ignoreProviders?.forEach((provider) => {
-        metadata.providers?.push({ provide: provider, useClass: NullProvider })
-    })
+    const providers = [
+        ...(metadata.providers ?? []),
+        ...(ignoreProviders?.map((provider) => ({ provide: provider, useClass: NullProvider })) ??
+            [])
+    ]
 
-    const builder = Test.createTestingModule(metadata)
+    const builder = Test.createTestingModule({ ...metadata, providers })
 
     ignoreGuards?.forEach((guard) => {
         builder.overrideGuard(guard).useClass(NullGuard)
