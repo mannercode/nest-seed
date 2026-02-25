@@ -1,11 +1,7 @@
-const path = require('path')
 const { builtinModules } = require('module')
-const typescriptEslintPlugin = require('@typescript-eslint/eslint-plugin')
-const typescriptParser = require('@typescript-eslint/parser')
+const tseslint = require('typescript-eslint')
 const allowedDependenciesPlugin = require('eslint-plugin-allowed-dependencies').default
 const perfectionistPlugin = require('eslint-plugin-perfectionist')
-const prettierPlugin = require('eslint-plugin-prettier')
-const prettierConfig = require('eslint-config-prettier')
 const globals = require('globals')
 const jestPlugin = require('eslint-plugin-jest')
 const unusedImportsPlugin = require('eslint-plugin-unused-imports')
@@ -27,40 +23,28 @@ const sourceDependencyOptions = {
 const testDependencyOptions = { ...sourceDependencyOptions, development: true }
 
 const baseGlobals = { ...globals.node, ...globals.es2021, module: 'readonly', require: 'readonly' }
-const testGlobals = {
-    describe: 'readonly',
-    it: 'readonly',
-    expect: 'readonly',
-    jest: 'readonly',
-    beforeAll: 'readonly',
-    afterAll: 'readonly',
-    beforeEach: 'readonly',
-    afterEach: 'readonly'
-}
 
 module.exports = [
     {
         files: ['src/**/*.ts'],
         linterOptions: { reportUnusedDisableDirectives: true },
         languageOptions: {
-            parser: typescriptParser,
+            parser: tseslint.parser,
             parserOptions: {
                 sourceType: 'module',
-                project: path.resolve(__dirname, './tsconfig.json'),
+                projectService: true,
                 tsconfigRootDir: __dirname
             },
             globals: { ...baseGlobals }
         },
         plugins: {
-            '@typescript-eslint': typescriptEslintPlugin,
+            '@typescript-eslint': tseslint.plugin,
             allowed: allowedDependenciesPlugin,
             perfectionist: perfectionistPlugin,
-            prettier: prettierPlugin,
             'unused-imports': unusedImportsPlugin
         },
         rules: {
-            ...typescriptEslintPlugin.configs.recommended.rules,
-            ...prettierConfig.rules,
+            ...tseslint.plugin.configs.recommended.rules,
             ...{
                 '@typescript-eslint/no-floating-promises': 'warn',
                 '@typescript-eslint/no-misused-promises': 'warn',
@@ -93,7 +77,6 @@ module.exports = [
             'no-constant-condition': 'warn',
             'default-case': 'off',
             'allowed/dependencies': ['warn', sourceDependencyOptions],
-            'prettier/prettier': 'warn',
             '@typescript-eslint/no-shadow': 'error',
             '@typescript-eslint/explicit-function-return-type': 'off',
             '@typescript-eslint/explicit-module-boundary-types': 'off',
@@ -123,7 +106,7 @@ module.exports = [
             'src/libs/testlib/**/*.ts',
             'src/apps/**/development.ts'
         ],
-        languageOptions: { globals: { ...baseGlobals, ...testGlobals } },
+        languageOptions: { globals: { ...baseGlobals, ...globals.jest } },
         plugins: { jest: jestPlugin },
         rules: {
             'allowed/dependencies': ['warn', testDependencyOptions],

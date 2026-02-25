@@ -33,7 +33,7 @@ export default {
         '/libs/testlib/'
     ],
     coverageDirectory: '<rootDir>/_output/coverage',
-    testTimeout: 60 * 1000,
+    testTimeout: 60 * 1000
     // for ECM modules:
     // https://github.com/kulshekhar/ts-jest/tree/main/examples/js-with-ts
     // transformIgnorePatterns: ['/node_modules/(?!chalk)/']
