@@ -58,9 +58,9 @@ export class AssetsService {
     }
 
     async deleteMany(assetIds: string[]): Promise<void> {
-        await this.repository.deleteByIds(assetIds)
-
         await Promise.all(assetIds.map((assetId) => this.s3Service.deleteObject(assetId)))
+
+        await this.repository.deleteByIds(assetIds)
     }
 
     async finalizeUpload(assetId: string, { owner }: FinalizeAssetDto) {

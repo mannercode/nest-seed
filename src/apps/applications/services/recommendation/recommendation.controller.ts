@@ -9,6 +9,6 @@ export class RecommendationController {
 
     @MessagePattern(Messages.Recommendation.searchRecommendedMovies)
     searchRecommendedMovies(@Payload() customerId: null | string) {
-        return this.service.searchRecommendedMovies(customerId === '' ? null : customerId)
+        return this.service.searchRecommendedMovies(customerId || null)
     }
 }
