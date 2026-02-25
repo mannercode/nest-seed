@@ -1,6 +1,5 @@
-import { Byte, FsUtil } from 'common'
+import { Byte, Path } from 'common'
 import fs from 'fs/promises'
-import path from 'path'
 import { createDummyFile } from 'testlib'
 
 describe('createDummyFile', () => {
@@ -8,12 +7,12 @@ describe('createDummyFile', () => {
     let testFilePath: string
 
     beforeEach(async () => {
-        tempDir = await FsUtil.createTempDirectory()
-        testFilePath = path.join(tempDir, 'test-file.txt')
+        tempDir = await Path.createTempDirectory()
+        testFilePath = Path.join(tempDir, 'test-file.txt')
     })
 
     afterEach(async () => {
-        await FsUtil.delete(tempDir)
+        await Path.delete(tempDir)
     })
 
     // 지정한 크기의 파일을 생성한다
