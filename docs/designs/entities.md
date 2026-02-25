@@ -17,8 +17,6 @@
 skinparam linetype ortho
 
 entity "Customer" {
-    id : string
-    --
     email : string <<unique>>
     name : string
     birthDate : Date
@@ -26,8 +24,6 @@ entity "Customer" {
 }
 
 entity "Movie" {
-    id : string
-    --
     title : string
     director : string
     plot : string
@@ -40,16 +36,12 @@ entity "Movie" {
 }
 
 entity "Theater" {
-    id : string
-    --
     name : string
     location : TheaterLocation
     seatmap : Seatmap
 }
 
 entity "Showtime" {
-    id : string
-    --
     movieId : string
     theaterId : string
     startTime : Date
@@ -58,8 +50,6 @@ entity "Showtime" {
 }
 
 entity "Ticket" {
-    id : string
-    --
     showtimeId : string
     movieId : string
     theaterId : string
@@ -69,8 +59,6 @@ entity "Ticket" {
 }
 
 entity "PurchaseRecord" {
-    id : string
-    --
     customerId : string
     purchaseItems : PurchaseItem[]
     totalPrice : number
@@ -78,8 +66,6 @@ entity "PurchaseRecord" {
 }
 
 entity "WatchRecord" {
-    id : string
-    --
     customerId : string
     movieId : string
     purchaseRecordId : string
@@ -87,15 +73,11 @@ entity "WatchRecord" {
 }
 
 entity "Payment" {
-    id : string
-    --
     customerId : string
     amount : number
 }
 
 entity "Asset" {
-    id : string
-    --
     originalName : string
     mimeType : string
     size : number
@@ -104,15 +86,15 @@ entity "Asset" {
     ownerEntityId : string|null
 }
 
-Movie ||--o{ Showtime : movieId
-Theater ||--o{ Showtime : theaterId
-Showtime ||--o{ Ticket : showtimeId
-Customer ||--o{ PurchaseRecord : customerId
-Customer ||--o{ WatchRecord : customerId
-Movie ||--o{ WatchRecord : movieId
-PurchaseRecord ||--o| Payment : paymentId
-PurchaseRecord ||--o{ WatchRecord : purchaseRecordId
-Movie ||--o{ Asset : "assetIds[]"
+Movie --{ Showtime : movieId
+Theater --{ Showtime : theaterId
+Showtime --{ Ticket : showtimeId
+Customer --{ PurchaseRecord : customerId
+Customer --{ WatchRecord : customerId
+Movie --{ WatchRecord : movieId
+PurchaseRecord -- Payment : paymentId
+PurchaseRecord --{ WatchRecord : purchaseRecordId
+Movie --{ Asset : "assetIds[]"
 
 @enduml
 ```
