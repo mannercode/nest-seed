@@ -4,6 +4,28 @@
 
 ## 1. 서비스 아키텍처 — SoLA (Service-oriented Layered Architecture)
 
+### 1.0. 시스템 개요
+
+```
+Client ── HTTP ──▶ Gateway ── NATS RPC ──┬──▶ Applications  (비즈니스 로직, 비동기 작업)
+                                         ├──▶ Cores          (도메인 모델, 데이터 영속성)
+                                         └──▶ Infrastructures (외부 서비스 연동)
+```
+
+| Service             | Role                                    | Domains                                                                                       |
+| ------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------- |
+| **Gateway**         | API 진입점, 인증(JWT/Local)             | Customers, Movies, Theaters, Booking, Purchase, ShowtimeCreation                              |
+| **Applications**    | 비즈니스 오케스트레이션, BullMQ 작업 큐 | ShowtimeCreation, Booking, Purchase, Recommendation                                           |
+| **Cores**           | 핵심 도메인 엔터티, 데이터 영속성       | Customers, Movies, Theaters, Showtimes, Tickets, TicketHolding, PurchaseRecords, WatchRecords |
+| **Infrastructures** | 외부 서비스 통합                        | Payments, Assets(MinIO)                                                                       |
+
+| Component   | Configuration                                     |
+| ----------- | ------------------------------------------------- |
+| **MongoDB** | 3-node replica set (27017-27019)                  |
+| **Redis**   | 6-node cluster, 3 primary + 3 replica (6379-6384) |
+| **NATS**    | 3-node cluster (4222-4224)                        |
+| **MinIO**   | S3-compatible object storage (9000, console 9001) |
+
 ### 1.1. 문제: MSA의 순환 참조
 
 MSA는 작은 서비스들이 협력해서 기능을 제공한다. 이때 서비스 간 참조에 제약이 없으면 기능이 확장되면서 순환 참조가 발생할 수 있다.
@@ -47,19 +69,6 @@ MSA는 작은 서비스들이 협력해서 기능을 제공한다. 이때 서비
 
 ### 1.4. Application Service 설계
 
-Application Service는 REST API의 네임스페이스와 1:1로 대응되며, 오케스트레이터 역할에 충실한다. 비즈니스 로직이 복잡해지면 내부 클래스로 책임을 분산시킨다.
-
-```
-ShowtimeCreationService            (오케스트레이터)
-  └─ ShowtimeCreationWorkerService (Queue 관리, 작업 흐름 제어)
-       ├─ ShowtimeBulkValidatorService  (요청 검증)
-       └─ ShowtimeBulkCreatorService    (Showtime/Ticket 생성)
-```
-
----
-
-## 2. 유스케이스 · API · 서비스의 1:1 대응
-
 유스케이스, REST API 네임스페이스, Application Service는 1:1로 대응된다.
 
 ```plantuml
@@ -102,15 +111,24 @@ API3 ..> SVC3
 
 유스케이스에서 시작해 API를 설계하고, API 구조에 맞춰 서비스를 만들기 때문에 세 레이어가 자연스럽게 정렬된다. 이 대응 관계가 유지되면 코드 어디서든 유스케이스 → API → 서비스를 일관되게 추적할 수 있다.
 
+Application Service는 오케스트레이터 역할에 충실한다. 비즈니스 로직이 복잡해지면 내부 클래스로 책임을 분산시킨다.
+
+```
+ShowtimeCreationService            (오케스트레이터)
+  └─ ShowtimeCreationWorkerService (Queue 관리, 작업 흐름 제어)
+       ├─ ShowtimeBulkValidatorService  (요청 검증)
+       └─ ShowtimeBulkCreatorService    (Showtime/Ticket 생성)
+```
+
 ---
 
-## 3. REST API 설계
+## 2. REST API 설계
 
-### 3.1. Namespace
+### 2.1. Namespace
 
 API 경로에 유스케이스 맥락을 반영하는 네임스페이스를 사용한다. 네임스페이스 단위로 API를 묶으면 해당 유스케이스의 요구사항이 크게 변하지 않는 한 API를 변경할 필요가 없다.
 
-### 3.2. 긴 쿼리 파라미터
+### 2.2. 긴 쿼리 파라미터
 
 쿼리 파라미터가 길어질 수 있는 API는 POST 방식으로 정의한다.
 
@@ -121,7 +139,7 @@ POST /showtime-creation/showtimes/search
 }
 ```
 
-### 3.3. 비동기 요청
+### 2.3. 비동기 요청
 
 처리 시간이 오래 걸리는 작업은 202 Accepted를 반환하고 비동기로 처리한다.
 
@@ -132,27 +150,27 @@ SSE  /showtime-creation/event-stream → { status, sagaId }
 
 ---
 
-## 4. 엔티티 설계
+## 3. 엔티티 설계
 
-### 4.1. MSA 데이터 비정규화
+### 3.1. MSA 데이터 비정규화
 
 서비스 간 DB를 공유하지 않으므로, 정규화보다 **서비스 간 결합 감소**를 우선한다.
 
 `Ticket`에 `movieId`·`theaterId`를 중복 저장하는 것이 대표적인 예다. 이 값들은 `Showtime`에도 존재하지만, 중복 저장하지 않으면 조회 시마다 `ShowtimesService`를 호출해야 한다.
 
-### 4.2. Entity vs Value Object
+### 3.2. Entity vs Value Object
 
 도메인 맥락에 따라 같은 개념이라도 Entity가 될 수도, Value Object가 될 수도 있다.
 
 `Theater.seatmap`은 티켓 생성을 위한 템플릿이다. 고객은 `Block`·`Row`·`Number`로 좌석을 찾을 뿐 좌석 ID는 필요 없으므로 Value Object로 정의한다.
 
-### 4.3. sagaId
+### 3.3. sagaId
 
 비동기 대량 작업의 추적과 취소를 위해 관련 엔티티에 `sagaId` 속성을 추가한다.
 
 ---
 
-## 6. 서비스 호출 흐름
+## 4. 서비스 호출 흐름
 
 REST API 호출은 4단계를 거쳐 서비스를 실행한다.
 
@@ -181,7 +199,7 @@ apps
 
 ---
 
-## 7. 서비스 이름 규칙
+## 5. 서비스 이름 규칙
 
 프로세스 중심 서비스는 단수형, 엔티티 관리 서비스는 복수형으로 명명한다.
 
@@ -190,9 +208,16 @@ apps
 | 프로세스 (단수)    | `BookingService`, `PurchaseService` | 특정 프로세스를 처리 |
 | 엔티티 관리 (복수) | `MoviesService`, `TheatersService`  | 엔티티 CRUD 담당     |
 
+`Service` suffix는 **다른 서비스를 직접 호출해 스스로 처리하는 경우**에만 붙인다. 필요한 데이터를 호출자에게 전달받아 계산만 수행하는 경우에는 suffix를 붙이지 않는다.
+
+```
+ShowtimeBulkValidatorService  ← Showtimes/Movies/Theaters 클라이언트를 직접 호출
+ShowtimeBulkValidator         ← 호출자가 데이터를 주입하면 검증 계산만 수행
+```
+
 ---
 
-## 8. API 단수/복수 설계
+## 6. API 단수/복수 설계
 
 id만 전달하는 조회·삭제 API는 처음부터 **복수형**으로 설계한다. 나중에 복수 처리가 필요해져서 API를 변경하는 것을 방지한다.
 
@@ -217,7 +242,7 @@ async getTheater(@Param('theaterId') theaterId: string) {
 
 ---
 
-## 9. 에러 메시지
+## 7. 에러 메시지
 
 - **언어 중립적인 code**를 반드시 포함한다. 다국어 지원은 클라이언트 책임이다.
 - `message`는 참고용으로 간단히 기술한다.
