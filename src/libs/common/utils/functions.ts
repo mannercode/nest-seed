@@ -41,3 +41,7 @@ export function generateShortId(length: number = 15): string {
 export function pickIds<T extends { id: string }>(items: T[]): string[] {
     return items.map((item) => item.id)
 }
+
+export async function sleep(timeoutInMs: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, timeoutInMs))
+}

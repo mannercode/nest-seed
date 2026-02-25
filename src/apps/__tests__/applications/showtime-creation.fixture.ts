@@ -13,7 +13,7 @@ import {
 } from 'apps/cores'
 import { ShowtimeCreationHttpController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
-import { reviveIsoDates } from 'common'
+import { Json } from 'common'
 
 export type ShowtimeCreationFixture = TestContext & {
     showtimesClient: ShowtimesClient
@@ -51,7 +51,7 @@ export function waitForCompletion(ctx: TestContext, status: string) {
     return new Promise<any>((resolve, reject) => {
         ctx.httpClient.get('/showtime-creation/event-stream').sse((data) => {
             try {
-                const statusUpdate = reviveIsoDates(JSON.parse(data))
+                const statusUpdate = Json.reviveIsoDates(JSON.parse(data))
 
                 if (['error', 'failed', 'succeeded'].includes(statusUpdate.status)) {
                     ctx.httpClient.abort()
