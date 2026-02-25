@@ -60,17 +60,18 @@ npm test
 
 ## Scripts
 
-| Script                | Description                                                 |
-| --------------------- | ----------------------------------------------------------- |
-| `npm run build`       | 특정 앱 빌드 (`TARGET_APP=gateway npm run build`)           |
-| `npm run start`       | 빌드된 앱 실행 (`TARGET_APP=gateway npm run start`)         |
-| `npm run debug`       | Watch 모드로 개발 실행 (`TARGET_APP=gateway npm run debug`) |
-| `npm test`            | 단위 테스트 실행 (coverage 포함)                            |
-| `npm run test:e2e`    | E2E 테스트 실행 (인프라 + 앱 자동 재시작)                   |
-| `npm run lint`        | TypeScript 타입 체크, ESLint, Prettier 검사                 |
-| `npm run format`      | ESLint 자동 수정 및 Prettier 포맷팅                         |
-| `npm run infra:reset` | 인프라 초기화 (down + up + wait)                            |
-| `npm run apps:reset`  | 앱 서비스 초기화 (down + up + wait)                         |
+| Script                | Description                                                       |
+| --------------------- | ----------------------------------------------------------------- |
+| `npm run build`       | 특정 앱 빌드 (`TARGET_APP=gateway npm run build`)                 |
+| `npm run start`       | 빌드된 앱 실행 (`TARGET_APP=gateway npm run start`)               |
+| `npm run debug`       | Watch 모드로 개발 실행 (`TARGET_APP=gateway npm run debug`)       |
+| `npm test`            | 단위 테스트 실행 (coverage 포함)                                  |
+| `npm run test:e2e`    | E2E 테스트 실행 (인프라 + 앱 자동 재시작)                         |
+| `npm run lint`        | TypeScript 타입 체크, ESLint, Prettier 검사                       |
+| `npm run format`      | ESLint 자동 수정 및 Prettier 포맷팅                               |
+| `npm run infra:reset` | 인프라 초기화 (down + up + wait)                                  |
+| `npm run infra:gui`   | 관리 콘솔 포함 인프라 실행 (mongo-express, RedisInsight, Grafana) |
+| `npm run apps:reset`  | 앱 서비스 초기화 (down + up + wait)                               |
 
 ## Testing
 
