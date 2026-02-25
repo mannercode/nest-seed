@@ -16,8 +16,8 @@ export class TheatersClient {
         await this.proxy.request(Messages.Theaters.deleteMany, theaterIds)
     }
 
-    existsAll(theaterIds: string[]): Promise<boolean> {
-        return this.proxy.request(Messages.Theaters.existsAll, theaterIds)
+    allExist(theaterIds: string[]): Promise<boolean> {
+        return this.proxy.request(Messages.Theaters.allExist, theaterIds)
     }
 
     getMany(theaterIds: string[]): Promise<TheaterDto[]> {

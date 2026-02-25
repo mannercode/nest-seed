@@ -3,19 +3,9 @@ import { MoviesClient, ShowtimeDto, ShowtimesClient, TheatersClient } from 'apps
 import { DateTimeRange, DateUtil, Require, Time } from 'common'
 import { Rules } from 'shared'
 import { BulkCreateShowtimesDto } from '../dtos'
+import { ShowtimeCreationErrors } from '../errors'
 
 type TimeslotMap = Map<number, ShowtimeDto>
-
-export const ShowtimeBulkValidatorErrors = {
-    MovieNotFound: {
-        code: 'ERR_SHOWTIME_CREATION_MOVIE_NOT_FOUND',
-        message: 'The requested movie could not be found.'
-    },
-    TheatersNotFound: {
-        code: 'ERR_SHOWTIME_CREATION_THEATERS_NOT_FOUND',
-        message: 'One or more requested theaters could not be found.'
-    }
-}
 
 const iterateTimeslots = (
     timeRange: DateTimeRange,
@@ -112,21 +102,18 @@ export class ShowtimeBulkValidatorService {
     }
 
     private async verifyMovieExists(movieId: string) {
-        const movieExists = await this.moviesClient.existsAll([movieId])
+        const movieExists = await this.moviesClient.allExist([movieId])
 
         if (!movieExists) {
-            throw new NotFoundException({ ...ShowtimeBulkValidatorErrors.MovieNotFound, movieId })
+            throw new NotFoundException({ ...ShowtimeCreationErrors.MovieNotFound, movieId })
         }
     }
 
     private async verifyTheatersExist(theaterIds: string[]) {
-        const theatersExist = await this.theatersClient.existsAll(theaterIds)
+        const theatersExist = await this.theatersClient.allExist(theaterIds)
 
         if (!theatersExist) {
-            throw new NotFoundException({
-                ...ShowtimeBulkValidatorErrors.TheatersNotFound,
-                theaterIds
-            })
+            throw new NotFoundException({ ...ShowtimeCreationErrors.TheatersNotFound, theaterIds })
         }
     }
 }

@@ -33,7 +33,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return { deletedCount }
     }
 
-    async existsAll(ids: string[], session: SessionArg = undefined) {
+    async allExist(ids: string[], session: SessionArg = undefined) {
         const uniqueIds = uniq(ids)
         if (uniqueIds.length === 0) return true
 

@@ -19,8 +19,8 @@ export class TheatersService {
         await this.repository.deleteByIds(theaterIds)
     }
 
-    async existsAll(theaterIds: string[]) {
-        return this.repository.existsAll(theaterIds)
+    async allExist(theaterIds: string[]) {
+        return this.repository.allExist(theaterIds)
     }
 
     async getMany(theaterIds: string[]) {

@@ -11,22 +11,8 @@ import { DateUtil } from 'common'
 import { uniq } from 'lodash'
 import { Rules } from 'shared'
 import { CreatePurchaseDto } from '../dtos'
+import { PurchaseErrors } from '../errors'
 import { PurchaseEvents } from '../purchase.events'
-
-export const TicketPurchaseErrors = {
-    MaxTicketsExceeded: {
-        code: 'ERR_TICKET_PURCHASE_LIMIT_EXCEEDED',
-        message: 'You have exceeded the maximum number of tickets allowed for purchase.'
-    },
-    TicketNotHeld: {
-        code: 'ERR_TICKET_PURCHASE_NOT_HELD',
-        message: 'Only held tickets can be purchased.'
-    },
-    WindowClosed: {
-        code: 'ERR_TICKET_PURCHASE_WINDOW_CLOSED',
-        message: 'Ticket purchase is closed for this showtime.'
-    }
-}
 
 @Injectable()
 export class TicketPurchaseService {
@@ -100,7 +86,7 @@ export class TicketPurchaseService {
         )
 
         if (!areAllTicketsHeld) {
-            throw new BadRequestException(TicketPurchaseErrors.TicketNotHeld)
+            throw new BadRequestException(PurchaseErrors.NotHeld)
         }
     }
 
@@ -113,7 +99,7 @@ export class TicketPurchaseService {
 
             if (purchaseWindowCloseTime.getTime() < DateUtil.now().getTime()) {
                 throw new BadRequestException({
-                    ...TicketPurchaseErrors.WindowClosed,
+                    ...PurchaseErrors.WindowClosed,
                     purchaseCutoffMinutes: Rules.Ticket.purchaseCutoffMinutes,
                     purchaseWindowCloseTime: purchaseWindowCloseTime.toString(),
                     startTime: startTime.toString()
@@ -125,7 +111,7 @@ export class TicketPurchaseService {
     private validateTicketCount(ticketItems: PurchaseItemDto[]) {
         if (Rules.Ticket.maxTicketsPerPurchase < ticketItems.length) {
             throw new BadRequestException({
-                ...TicketPurchaseErrors.MaxTicketsExceeded,
+                ...PurchaseErrors.LimitExceeded,
                 maxCount: Rules.Ticket.maxTicketsPerPurchase
             })
         }

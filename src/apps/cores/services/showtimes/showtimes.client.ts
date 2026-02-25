@@ -12,8 +12,8 @@ export class ShowtimesClient {
         return this.proxy.request(Messages.Showtimes.createMany, createDtos)
     }
 
-    existsAll(showtimeIds: string[]): Promise<boolean> {
-        return this.proxy.request(Messages.Showtimes.existsAll, showtimeIds)
+    allExist(showtimeIds: string[]): Promise<boolean> {
+        return this.proxy.request(Messages.Showtimes.allExist, showtimeIds)
     }
 
     getMany(showtimeIds: string[]): Promise<ShowtimeDto[]> {

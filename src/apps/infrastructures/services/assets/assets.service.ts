@@ -6,14 +6,8 @@ import { Rules } from 'shared'
 import { AssetsRepository } from './assets.repository'
 import { AssetPresignedUploadDto, CreateAssetDto, FinalizeAssetDto } from './dtos'
 import { AssetDto } from './dtos'
+import { AssetErrors } from './errors'
 import { Asset } from './models'
-
-export const AssetErrors = {
-    UploadExpired: {
-        code: 'ERR_ASSET_UPLOAD_EXPIRED',
-        message: 'The upload request for this asset has expired.'
-    }
-}
 
 @Injectable()
 export class AssetsService {

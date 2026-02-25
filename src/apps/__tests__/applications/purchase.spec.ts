@@ -85,7 +85,7 @@ describe('PurchaseService', () => {
                         .post('/purchases')
                         .body(createDto)
                         .badRequest({
-                            ...Errors.TicketPurchase.MaxTicketsExceeded,
+                            ...Errors.Purchase.LimitExceeded,
                             maxCount: expect.any(Number)
                         })
                 })
@@ -107,7 +107,7 @@ describe('PurchaseService', () => {
                         .post('/purchases')
                         .body(createDto)
                         .badRequest({
-                            ...Errors.TicketPurchase.WindowClosed,
+                            ...Errors.Purchase.WindowClosed,
                             purchaseCutoffMinutes: expect.any(Number),
                             purchaseWindowCloseTime: expect.any(String),
                             startTime: expect.any(String)
@@ -160,7 +160,7 @@ describe('PurchaseService', () => {
                 await fix.httpClient
                     .post('/purchases')
                     .body(createDto)
-                    .badRequest(Errors.TicketPurchase.TicketNotHeld)
+                    .badRequest(Errors.Purchase.NotHeld)
             })
         })
     })

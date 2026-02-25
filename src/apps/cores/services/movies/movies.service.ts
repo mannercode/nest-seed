@@ -30,7 +30,7 @@ export class MoviesService {
     }
 
     async createAsset(movieId: string, createDto: CreateAssetDto) {
-        if (!(await this.existsAll([movieId]))) {
+        if (!(await this.allExist([movieId]))) {
             throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
         }
 
@@ -49,7 +49,7 @@ export class MoviesService {
     }
 
     async deleteAsset(movieId: string, assetId: string): Promise<void> {
-        if (!(await this.existsAll([movieId]))) {
+        if (!(await this.allExist([movieId]))) {
             throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
         }
 
@@ -71,8 +71,8 @@ export class MoviesService {
         }
     }
 
-    async existsAll(movieIds: string[]): Promise<boolean> {
-        return this.moviesRepository.existsAll(movieIds)
+    async allExist(movieIds: string[]): Promise<boolean> {
+        return this.moviesRepository.allExist(movieIds)
     }
 
     async finalizeUpload(movieId: string, assetId: string): Promise<void> {

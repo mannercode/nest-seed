@@ -13,17 +13,7 @@ import {
     BookingSearchShowtimesDto,
     BookingSearchTheatersDto
 } from './dtos'
-
-export const BookingErrors = {
-    ShowtimeNotFound: {
-        code: 'ERR_BOOKING_SHOWTIME_NOT_FOUND',
-        message: 'The requested showtime could not be found.'
-    },
-    TicketsAlreadyHeld: {
-        code: 'ERR_BOOKING_TICKETS_ALREADY_HELD',
-        message: 'Some tickets are already held by another customer.'
-    }
-}
+import { BookingErrors } from './errors'
 
 @Injectable()
 export class BookingService {
@@ -35,7 +25,7 @@ export class BookingService {
     ) {}
 
     async getTickets(showtimeId: string) {
-        const showtimeExists = await this.showtimesClient.existsAll([showtimeId])
+        const showtimeExists = await this.showtimesClient.allExist([showtimeId])
 
         if (!showtimeExists) {
             throw new NotFoundException({ ...BookingErrors.ShowtimeNotFound, showtimeId })

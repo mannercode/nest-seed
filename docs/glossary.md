@@ -9,8 +9,6 @@
     - 예: `processPurchase`(행위) -> `PurchaseRecord`(결과물)
 - 범용 인프라 용어와 도메인 용어를 분리한다.
     - 예: 인프라 `AssetsService.finalizeUpload`, 도메인 `MoviesService.attachUploadedAsset`
-- 존재 여부 API는 `existsAll`로 통일한다.
-    - 의미: 입력된 모든 ID가 존재하면 `true`
 - `...RecordId`는 기록성 엔티티의 ID를 명시할 때 사용한다.
 
 ## 2. 핵심 용어
@@ -57,43 +55,34 @@
 - HTTP 라우트:
     - `/movies/:movieId/assets/:assetId/finalize`
 
-### 3.3 존재 여부
-
-- `existsAll(ids)`만 허용한다.
-- 금지: `allExist`, 모호한 `exists(ids)`
-
-### 3.4 기록 ID 명명
+### 3.3 기록 ID 명명
 
 - 기록성 엔티티 ID는 `...RecordId`를 사용한다.
     - 예: `purchaseRecordId`
 - 복수는 `...RecordIds`를 사용한다.
 
-### 3.5 이벤트 키 케이스
-
-- 이벤트 키는 camelCase로 통일한다.
-    - 예: `Events.Purchase.ticketPurchased`, `Events.Purchase.ticketPurchaseCanceled`
-
-### 3.6 에러 코드 접두어
-
-- Ticket purchase 도메인 에러 코드는 `ERR_TICKET_PURCHASE_*`로 통일한다.
-
 ## 4. 비권장/제거 용어
 
-| 비권장 용어                              | 대체 용어                                |
-| ---------------------------------------- | ---------------------------------------- |
-| `allExist`                               | `existsAll`                              |
-| `CompleteAssetDto`                       | `FinalizeAssetDto`                       |
-| `completeDto` (asset finalize payload)   | `finalizeDto`                            |
-| `/assets/:assetId/complete`              | `/assets/:assetId/finalize`              |
-| `InvalidForCompletion` (movie publish)   | `InvalidForPublish`                      |
-| `purchaseId` (watch record 맥락)         | `purchaseRecordId`                       |
-| `ticketId` (purchase item 공용 모델)     | `itemId`                                 |
-| `MovieDrafts` (현재 미구현 메시지)       | 제거                                     |
-| `Events.Purchase.TicketPurchased`        | `Events.Purchase.ticketPurchased`        |
-| `Events.Purchase.TicketPurchaseCanceled` | `Events.Purchase.ticketPurchaseCanceled` |
-| `ERR_PURCHASE_MAX_TICKETS_EXCEEDED`      | `ERR_TICKET_PURCHASE_LIMIT_EXCEEDED`     |
-| `ERR_PURCHASE_WINDOW_CLOSED`             | `ERR_TICKET_PURCHASE_WINDOW_CLOSED`      |
-| `ERR_PURCHASE_TICKET_NOT_HELD`           | `ERR_TICKET_PURCHASE_NOT_HELD`           |
+| 비권장 용어                               | 대체 용어                                |
+| ----------------------------------------- | ---------------------------------------- |
+| `existsAll`                               | `allExist`                               |
+| `CompleteAssetDto`                        | `FinalizeAssetDto`                       |
+| `completeDto` (asset finalize payload)    | `finalizeDto`                            |
+| `/assets/:assetId/complete`               | `/assets/:assetId/finalize`              |
+| `InvalidForCompletion` (movie publish)    | `InvalidForPublish`                      |
+| `purchaseId` (watch record 맥락)          | `purchaseRecordId`                       |
+| `ticketId` (purchase item 공용 모델)      | `itemId`                                 |
+| `MovieDrafts` (현재 미구현 메시지)        | 제거                                     |
+| `Events.Purchase.TicketPurchased`         | `Events.Purchase.ticketPurchased`        |
+| `Events.Purchase.TicketPurchaseCanceled`  | `Events.Purchase.ticketPurchaseCanceled` |
+| `ERR_PURCHASE_MAX_TICKETS_EXCEEDED`       | `ERR_PURCHASE_LIMIT_EXCEEDED`            |
+| `ERR_TICKET_PURCHASE_LIMIT_EXCEEDED`      | `ERR_PURCHASE_LIMIT_EXCEEDED`            |
+| `ERR_TICKET_PURCHASE_NOT_HELD`            | `ERR_PURCHASE_NOT_HELD`                  |
+| `ERR_TICKET_PURCHASE_WINDOW_CLOSED`       | `ERR_PURCHASE_WINDOW_CLOSED`             |
+| `TicketPurchaseErrors`                    | `PurchaseErrors`                         |
+| `TicketPurchaseErrors.MaxTicketsExceeded` | `PurchaseErrors.LimitExceeded`           |
+| `TicketPurchaseErrors.TicketNotHeld`      | `PurchaseErrors.NotHeld`                 |
+| `ShowtimeBulkValidatorErrors`             | `ShowtimeCreationErrors`                 |
 
 ## 5. 구현 시 체크리스트
 

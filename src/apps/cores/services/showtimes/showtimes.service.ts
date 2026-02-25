@@ -15,8 +15,8 @@ export class ShowtimesService {
         return { count: createDtos.length, success: true }
     }
 
-    async existsAll(showtimeIds: string[]): Promise<boolean> {
-        return this.repository.existsAll(showtimeIds)
+    async allExist(showtimeIds: string[]): Promise<boolean> {
+        return this.repository.allExist(showtimeIds)
     }
 
     async getMany(showtimeIds: string[]) {
