@@ -53,12 +53,21 @@
 
 ### Error Object
 
+Each entry is a factory function that returns an error object. Context-specific fields are passed as parameters and included in the returned object alongside `code` and `message`.
+
 ```typescript
 export const [Entity]Errors = {
-    PascalCaseKey: {
+    // No additional context
+    ErrorKey: () => ({
         code: 'ERR_[ENTITY]_[SPECIFIC_ERROR]',
         message: 'Human-readable description.'
-    }
+    }),
+    // With context parameters
+    ErrorKeyWithContext: (param: type) => ({
+        code: 'ERR_[ENTITY]_[SPECIFIC_ERROR]',
+        message: 'Human-readable description.',
+        param
+    })
 }
 ```
 
