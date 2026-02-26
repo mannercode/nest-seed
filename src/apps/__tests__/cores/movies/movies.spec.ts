@@ -94,10 +94,7 @@ describe('MoviesService', () => {
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .get(`/movies/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
+                    .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
             })
         })
     })
@@ -145,7 +142,7 @@ describe('MoviesService', () => {
                 await fix.httpClient
                     .patch(`/movies/${nullObjectId}`)
                     .body({})
-                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
+                    .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))
             })
         })
     })
@@ -170,10 +167,7 @@ describe('MoviesService', () => {
 
                 await fix.httpClient
                     .get(`/movies/${movie.id}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [movie.id]
-                    })
+                    .notFound(Errors.Mongoose.MultipleDocumentsNotFound([movie.id]))
             })
         })
 
@@ -323,7 +317,7 @@ describe('MoviesService', () => {
                 await fix.httpClient
                     .get('/movies')
                     .query({ wrong: 'value' })
-                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+                    .badRequest(Errors.RequestValidation.Failed(expect.any(Array)))
             })
         })
     })

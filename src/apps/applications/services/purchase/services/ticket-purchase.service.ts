@@ -86,7 +86,7 @@ export class TicketPurchaseService {
         )
 
         if (!areAllTicketsHeld) {
-            throw new BadRequestException(PurchaseErrors.NotHeld)
+            throw new BadRequestException(PurchaseErrors.NotHeld())
         }
     }
 
@@ -98,22 +98,22 @@ export class TicketPurchaseService {
             })
 
             if (purchaseWindowCloseTime.getTime() < DateUtil.now().getTime()) {
-                throw new BadRequestException({
-                    ...PurchaseErrors.WindowClosed,
-                    purchaseCutoffMinutes: Rules.Ticket.purchaseCutoffMinutes,
-                    purchaseWindowCloseTime: purchaseWindowCloseTime.toString(),
-                    startTime: startTime.toString()
-                })
+                throw new BadRequestException(
+                    PurchaseErrors.WindowClosed(
+                        Rules.Ticket.purchaseCutoffMinutes,
+                        purchaseWindowCloseTime.toString(),
+                        startTime.toString()
+                    )
+                )
             }
         }
     }
 
     private validateTicketCount(ticketItems: PurchaseItemDto[]) {
         if (Rules.Ticket.maxTicketsPerPurchase < ticketItems.length) {
-            throw new BadRequestException({
-                ...PurchaseErrors.LimitExceeded,
-                maxCount: Rules.Ticket.maxTicketsPerPurchase
-            })
+            throw new BadRequestException(
+                PurchaseErrors.LimitExceeded(Rules.Ticket.maxTicketsPerPurchase)
+            )
         }
     }
 }

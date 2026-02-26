@@ -34,7 +34,7 @@ describe('CustomerAuth', () => {
                 await fix.httpClient
                     .post('/customers/login')
                     .body({ ...credentials, password: 'wrong password' })
-                    .unauthorized(Errors.Auth.Unauthorized)
+                    .unauthorized(Errors.Auth.Unauthorized())
             })
         })
 
@@ -45,7 +45,7 @@ describe('CustomerAuth', () => {
                 await fix.httpClient
                     .post('/customers/login')
                     .body({ ...credentials, email: 'unknown@mail.com' })
-                    .unauthorized(Errors.Auth.Unauthorized)
+                    .unauthorized(Errors.Auth.Unauthorized())
             })
         })
     })
@@ -80,10 +80,7 @@ describe('CustomerAuth', () => {
                 await fix.httpClient
                     .post('/customers/refresh')
                     .body({ refreshToken: 'invalid-token' })
-                    .unauthorized({
-                        ...Errors.JwtAuth.RefreshTokenVerificationFailed,
-                        message: 'jwt malformed'
-                    })
+                    .unauthorized(Errors.JwtAuth.RefreshTokenVerificationFailed('jwt malformed'))
             })
         })
     })
@@ -114,7 +111,7 @@ describe('CustomerAuth', () => {
                 await fix.httpClient
                     .get('/customers/jwt-guard')
                     .headers({ Authorization: 'Bearer Invalid-Token' })
-                    .unauthorized(Errors.Auth.Unauthorized)
+                    .unauthorized(Errors.Auth.Unauthorized())
             })
         })
     })

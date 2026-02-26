@@ -65,7 +65,7 @@ export class AssetsService {
             await this.repository.deleteById(assetId)
             await this.s3Service.deleteObject(assetId)
 
-            throw new NotFoundException({ ...AssetErrors.UploadExpired, assetId, expiresAt })
+            throw new NotFoundException(AssetErrors.UploadExpired(assetId, expiresAt))
         }
 
         const updatedAsset = await this.repository.assignOwner(assetId, owner)

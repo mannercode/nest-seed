@@ -7,14 +7,14 @@ import { getRedisConnectionToken } from '../redis'
 import { generateShortId } from '../utils'
 
 export const JwtAuthErrors = {
-    RefreshTokenInvalid: {
+    RefreshTokenInvalid: () => ({
         code: 'ERR_JWT_AUTH_REFRESH_TOKEN_INVALID',
         message: 'The provided refresh token is invalid'
-    },
-    RefreshTokenVerificationFailed: {
+    }),
+    RefreshTokenVerificationFailed: (message: string) => ({
         code: 'ERR_JWT_AUTH_REFRESH_TOKEN_VERIFICATION_FAILED',
-        message: 'Refresh token verification failed'
-    }
+        message
+    })
 }
 
 export type AuthConfig = {
@@ -68,13 +68,13 @@ export class JwtAuthService {
         const payload = await this.getAuthTokenPayload(refreshToken)
 
         if (!payload.refreshTokenId) {
-            throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid)
+            throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
         }
 
         const storedRefreshToken = await this.getStoredRefreshToken(payload.refreshTokenId)
 
         if (storedRefreshToken !== refreshToken) {
-            throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid)
+            throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
         }
 
         return this.generateAuthTokens(payload)
@@ -100,10 +100,7 @@ export class JwtAuthService {
         } catch (error: unknown) {
             const message = get(error, 'message', String(error))
 
-            throw new UnauthorizedException({
-                ...JwtAuthErrors.RefreshTokenVerificationFailed,
-                message
-            })
+            throw new UnauthorizedException(JwtAuthErrors.RefreshTokenVerificationFailed(message))
         }
     }
 

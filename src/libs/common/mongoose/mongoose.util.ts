@@ -69,7 +69,7 @@ export class QueryBuilder<T> {
 
     build({ allowEmpty }: QueryBuilderOptions): QueryFilter<T> {
         if (!allowEmpty && Object.keys(this.query).length === 0) {
-            throw new BadRequestException(MongooseErrors.FiltersRequired)
+            throw new BadRequestException(MongooseErrors.FiltersRequired())
         }
 
         return this.query

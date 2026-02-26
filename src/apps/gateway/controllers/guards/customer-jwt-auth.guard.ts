@@ -41,7 +41,7 @@ export class CustomerJwtAuthGuard extends AuthGuard('customer-jwt') {
 
     handleRequest(error: any, user: any, _info: any, _context: any) {
         if (error || !user) {
-            throw new UnauthorizedException(AuthErrors.Unauthorized)
+            throw new UnauthorizedException(AuthErrors.Unauthorized())
         }
         return user
     }

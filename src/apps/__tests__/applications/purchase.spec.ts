@@ -84,10 +84,7 @@ describe('PurchaseService', () => {
                     await fix.httpClient
                         .post('/purchases')
                         .body(createDto)
-                        .badRequest({
-                            ...Errors.Purchase.LimitExceeded,
-                            maxCount: expect.any(Number)
-                        })
+                        .badRequest(Errors.Purchase.LimitExceeded(expect.any(Number)))
                 })
             })
 
@@ -106,12 +103,13 @@ describe('PurchaseService', () => {
                     await fix.httpClient
                         .post('/purchases')
                         .body(createDto)
-                        .badRequest({
-                            ...Errors.Purchase.WindowClosed,
-                            purchaseCutoffMinutes: expect.any(Number),
-                            purchaseWindowCloseTime: expect.any(String),
-                            startTime: expect.any(String)
-                        })
+                        .badRequest(
+                            Errors.Purchase.WindowClosed(
+                                expect.any(Number),
+                                expect.any(String),
+                                expect.any(String)
+                            )
+                        )
                 })
             })
 
@@ -160,7 +158,7 @@ describe('PurchaseService', () => {
                 await fix.httpClient
                     .post('/purchases')
                     .body(createDto)
-                    .badRequest(Errors.Purchase.NotHeld)
+                    .badRequest(Errors.Purchase.NotHeld())
             })
         })
     })

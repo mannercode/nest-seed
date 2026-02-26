@@ -58,7 +58,7 @@ describe('PaymentsService', () => {
                 const promise = fix.paymentsClient.getMany([nullObjectId])
 
                 await expect(promise).rejects.toMatchObject({
-                    message: Errors.Mongoose.MultipleDocumentsNotFound.message,
+                    message: Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]).message,
                     status: HttpStatus.NOT_FOUND
                 })
             })

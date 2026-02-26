@@ -28,7 +28,7 @@ export class BookingService {
         const showtimeExists = await this.showtimesClient.allExist([showtimeId])
 
         if (!showtimeExists) {
-            throw new NotFoundException({ ...BookingErrors.ShowtimeNotFound, showtimeId })
+            throw new NotFoundException(BookingErrors.ShowtimeNotFound(showtimeId))
         }
 
         const tickets = await this.ticketsClient.search({ showtimeIds: [showtimeId] })
@@ -39,7 +39,7 @@ export class BookingService {
         const success = await this.ticketHoldingClient.holdTickets(dto)
 
         if (!success) {
-            throw new ConflictException(BookingErrors.TicketsAlreadyHeld)
+            throw new ConflictException(BookingErrors.TicketsAlreadyHeld())
         }
 
         return { success }

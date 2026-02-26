@@ -137,7 +137,7 @@ describe('BookingService', () => {
                     .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body({ ticketIds })
-                    .conflict(Errors.Booking.TicketsAlreadyHeld)
+                    .conflict(Errors.Booking.TicketsAlreadyHeld())
             })
         })
     })
@@ -149,7 +149,7 @@ describe('BookingService', () => {
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .get(`/booking/showtimes/${nullObjectId}/tickets`)
-                    .notFound({ ...Errors.Booking.ShowtimeNotFound, showtimeId: nullObjectId })
+                    .notFound(Errors.Booking.ShowtimeNotFound(nullObjectId))
             })
         })
     })

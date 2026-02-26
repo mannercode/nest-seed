@@ -1,3 +1,6 @@
 export const AuthErrors = {
-    Unauthorized: { code: 'ERR_AUTH_UNAUTHORIZED', message: 'Unauthorized' }
+    Unauthorized: () => ({
+        code: 'ERR_AUTH_UNAUTHORIZED',
+        message: 'Unauthorized'
+    })
 }

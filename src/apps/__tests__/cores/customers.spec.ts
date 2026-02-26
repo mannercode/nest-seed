@@ -39,7 +39,7 @@ describe('CustomersService', () => {
                 await fix.httpClient
                     .post('/customers')
                     .body(createDto)
-                    .conflict({ ...Errors.Customers.EmailAlreadyExists, email: createDto.email })
+                    .conflict(Errors.Customers.EmailAlreadyExists(createDto.email))
             })
         })
 
@@ -50,7 +50,7 @@ describe('CustomersService', () => {
                 await fix.httpClient
                     .post('/customers')
                     .body({})
-                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+                    .badRequest(Errors.RequestValidation.Failed(expect.any(Array)))
             })
         })
     })
@@ -76,10 +76,7 @@ describe('CustomersService', () => {
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .get(`/customers/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
+                    .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
             })
         })
     })
@@ -121,7 +118,7 @@ describe('CustomersService', () => {
                 await fix.httpClient
                     .patch(`/customers/${nullObjectId}`)
                     .body({})
-                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
+                    .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))
             })
         })
     })
@@ -146,10 +143,7 @@ describe('CustomersService', () => {
 
                 await fix.httpClient
                     .get(`/customers/${customer.id}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [customer.id]
-                    })
+                    .notFound(Errors.Mongoose.MultipleDocumentsNotFound([customer.id]))
             })
         })
 
@@ -221,7 +215,7 @@ describe('CustomersService', () => {
                 await fix.httpClient
                     .get('/customers')
                     .query({ wrong: 'value' })
-                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+                    .badRequest(Errors.RequestValidation.Failed(expect.any(Array)))
             })
         })
     })

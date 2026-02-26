@@ -70,13 +70,9 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         let skip = defaultTo(pagination.skip, 0)
 
         if (take <= 0) {
-            throw new BadRequestException({ ...MongooseErrors.TakeInvalid, take })
+            throw new BadRequestException(MongooseErrors.TakeInvalid(take))
         } else if (this.maxTake < take) {
-            throw new BadRequestException({
-                ...MongooseErrors.MaxTakeExceeded,
-                maxTake: this.maxTake,
-                take
-            })
+            throw new BadRequestException(MongooseErrors.MaxTakeExceeded(this.maxTake, take))
         }
 
         const queryHelper = this.model.find({}, null, { session })
@@ -106,7 +102,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         const doc = await this.findById(id, session)
 
         if (!doc) {
-            throw new NotFoundException({ ...MongooseErrors.DocumentNotFound, notFoundId: id })
+            throw new NotFoundException(MongooseErrors.DocumentNotFound(id))
         }
 
         return doc
@@ -126,10 +122,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         )
 
         if (notFoundIds.length > 0) {
-            throw new NotFoundException({
-                ...MongooseErrors.MultipleDocumentsNotFound,
-                notFoundIds
-            })
+            throw new NotFoundException(MongooseErrors.MultipleDocumentsNotFound(notFoundIds))
         }
 
         return docs
@@ -210,7 +203,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         const doc = await this.findDocumentById(id, session)
 
         if (!doc) {
-            throw new NotFoundException({ ...MongooseErrors.DocumentNotFound, notFoundId: id })
+            throw new NotFoundException(MongooseErrors.DocumentNotFound(id))
         }
 
         return doc

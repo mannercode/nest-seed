@@ -105,7 +105,7 @@ export class ShowtimeBulkValidatorService {
         const movieExists = await this.moviesClient.allExist([movieId])
 
         if (!movieExists) {
-            throw new NotFoundException({ ...ShowtimeCreationErrors.MovieNotFound, movieId })
+            throw new NotFoundException(ShowtimeCreationErrors.MovieNotFound(movieId))
         }
     }
 
@@ -113,7 +113,7 @@ export class ShowtimeBulkValidatorService {
         const theatersExist = await this.theatersClient.allExist(theaterIds)
 
         if (!theatersExist) {
-            throw new NotFoundException({ ...ShowtimeCreationErrors.TheatersNotFound, theaterIds })
+            throw new NotFoundException(ShowtimeCreationErrors.TheatersNotFound(theaterIds))
         }
     }
 }

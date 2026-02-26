@@ -50,7 +50,7 @@ describe('LatLong', () => {
         describe('when the query is not provided', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
-                await fix.httpClient.get('/latLong').badRequest(LatLongErrors.Required)
+                await fix.httpClient.get('/latLong').badRequest(LatLongErrors.Required())
             })
         })
 
@@ -61,35 +61,35 @@ describe('LatLong', () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: '37.123' })
-                    .badRequest(LatLongErrors.InvalidFormat)
+                    .badRequest(LatLongErrors.InvalidFormat())
             })
 
             it('returns 400 Bad Request when location is passed multiple times', async () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: ['37.123,128.678', '38.123,129.678'] })
-                    .badRequest(LatLongErrors.InvalidFormat)
+                    .badRequest(LatLongErrors.InvalidFormat())
             })
 
             it('returns 400 Bad Request when extra coordinates are passed', async () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: '37.123,128.678,999' })
-                    .badRequest(LatLongErrors.InvalidFormat)
+                    .badRequest(LatLongErrors.InvalidFormat())
             })
 
             it('returns 400 Bad Request when non-numeric values are passed', async () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: '37abc,127xyz' })
-                    .badRequest(LatLongErrors.InvalidFormat)
+                    .badRequest(LatLongErrors.InvalidFormat())
             })
 
             it('returns 400 Bad Request when a coordinate exceeds 20 digits', async () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: '123456789012345678901,127' })
-                    .badRequest(LatLongErrors.InvalidFormat)
+                    .badRequest(LatLongErrors.InvalidFormat())
             })
         })
 
@@ -100,7 +100,7 @@ describe('LatLong', () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: '91,181' })
-                    .badRequest({ ...LatLongErrors.OutOfRange, details: expect.any(Array) })
+                    .badRequest(LatLongErrors.OutOfRange(expect.any(Array)))
             })
         })
     })

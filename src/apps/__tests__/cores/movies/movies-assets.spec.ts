@@ -71,10 +71,7 @@ describe('MoviesAssets', () => {
                     await fix.httpClient
                         .post(`/movies/${movie.id}/assets`)
                         .body(createDto)
-                        .badRequest({
-                            ...Errors.Movies.UnsupportedAssetType,
-                            mimeType: createDto.mimeType
-                        })
+                        .badRequest(Errors.Movies.UnsupportedAssetType(createDto.mimeType))
                 })
             })
         })
@@ -88,7 +85,7 @@ describe('MoviesAssets', () => {
                 await fix.httpClient
                     .post(`/movies/${nullObjectId}/assets`)
                     .body(createDto)
-                    .notFound({ ...Errors.Movies.NotFound, notFoundMovieId: nullObjectId })
+                    .notFound(Errors.Movies.NotFound(nullObjectId))
             })
         })
     })
@@ -144,7 +141,7 @@ describe('MoviesAssets', () => {
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .delete(`/movies/${nullObjectId}/assets/${nullObjectId}`)
-                    .notFound({ ...Errors.Movies.NotFound, notFoundMovieId: nullObjectId })
+                    .notFound(Errors.Movies.NotFound(nullObjectId))
             })
         })
     })
@@ -214,10 +211,9 @@ describe('MoviesAssets', () => {
                     it('returns 422 Unprocessable Entity', async () => {
                         await fix.httpClient
                             .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
-                            .unprocessableEntity({
-                                ...Errors.Movies.AssetUploadInvalid,
-                                assetId: upload.assetId
-                            })
+                            .unprocessableEntity(
+                                Errors.Movies.AssetUploadInvalid(upload.assetId)
+                            )
                     })
                 })
             })
@@ -228,7 +224,7 @@ describe('MoviesAssets', () => {
                 it('returns 404 Not Found', async () => {
                     await fix.httpClient
                         .post(`/movies/${movie.id}/assets/${nullObjectId}/finalize`)
-                        .notFound({ ...Errors.Movies.AssetNotFound, notFoundAssetId: nullObjectId })
+                        .notFound(Errors.Movies.AssetNotFound(nullObjectId))
                 })
             })
         })
@@ -239,7 +235,7 @@ describe('MoviesAssets', () => {
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .post(`/movies/${nullObjectId}/assets/${nullObjectId}/finalize`)
-                    .notFound({ ...Errors.Movies.NotFound, notFoundMovieId: nullObjectId })
+                    .notFound(Errors.Movies.NotFound(nullObjectId))
             })
         })
     })

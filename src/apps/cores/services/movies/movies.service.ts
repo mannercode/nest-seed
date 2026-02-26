@@ -31,14 +31,11 @@ export class MoviesService {
 
     async createAsset(movieId: string, createDto: CreateAssetDto) {
         if (!(await this.allExist([movieId]))) {
-            throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
+            throw new NotFoundException(MovieErrors.NotFound(movieId))
         }
 
         if (!createDto.mimeType.startsWith('image/')) {
-            throw new BadRequestException({
-                ...MovieErrors.UnsupportedAssetType,
-                mimeType: createDto.mimeType
-            })
+            throw new BadRequestException(MovieErrors.UnsupportedAssetType(createDto.mimeType))
         }
 
         const upload = await this.assetsClient.create(createDto)
@@ -50,7 +47,7 @@ export class MoviesService {
 
     async deleteAsset(movieId: string, assetId: string): Promise<void> {
         if (!(await this.allExist([movieId]))) {
-            throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
+            throw new NotFoundException(MovieErrors.NotFound(movieId))
         }
 
         await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
@@ -79,7 +76,7 @@ export class MoviesService {
         const movie = await this.moviesRepository.findById(movieId)
 
         if (!movie) {
-            throw new NotFoundException({ ...MovieErrors.NotFound, notFoundMovieId: movieId })
+            throw new NotFoundException(MovieErrors.NotFound(movieId))
         }
 
         if (movie.assetIds.includes(assetId)) {
@@ -90,13 +87,13 @@ export class MoviesService {
         const hasPendingAsset = await this.pendingAssetsRepository.hasPendingAsset(movieId, assetId)
 
         if (!hasPendingAsset) {
-            throw new NotFoundException({ ...MovieErrors.AssetNotFound, notFoundAssetId: assetId })
+            throw new NotFoundException(MovieErrors.AssetNotFound(assetId))
         }
 
         const isUploaded = await this.assetsClient.isUploadComplete(assetId)
 
         if (!isUploaded) {
-            throw new UnprocessableEntityException({ ...MovieErrors.AssetUploadInvalid, assetId })
+            throw new UnprocessableEntityException(MovieErrors.AssetUploadInvalid(assetId))
         }
 
         await this.assetsClient.finalizeUpload(assetId, {
@@ -130,10 +127,7 @@ export class MoviesService {
         if (genres.length === 0) missingFields.push('genres')
 
         if (0 < missingFields.length) {
-            throw new UnprocessableEntityException({
-                ...MovieErrors.InvalidForPublish,
-                missingFields
-            })
+            throw new UnprocessableEntityException(MovieErrors.InvalidForPublish(missingFields))
         }
 
         await this.moviesRepository.publish(movieId)

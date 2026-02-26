@@ -34,10 +34,7 @@ export class CustomersService {
         const emailExists = await this.repository.existsByEmail(createDto.email)
 
         if (emailExists) {
-            throw new ConflictException({
-                ...CustomerErrors.EmailAlreadyExists,
-                email: createDto.email
-            })
+            throw new ConflictException(CustomerErrors.EmailAlreadyExists(createDto.email))
         }
 
         const password = await this.authenticationService.hash(createDto.password)

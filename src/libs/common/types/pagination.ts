@@ -3,14 +3,14 @@ import { Transform } from 'class-transformer'
 import { IsEnum, IsInt, IsOptional, IsPositive, IsString, Min } from 'class-validator'
 
 export const PaginationErrors = {
-    DirectionInvalid: {
+    DirectionInvalid: () => ({
         code: 'ERR_PAGINATION_ORDERBY_DIRECTION_INVALID',
         message: 'Invalid direction. It should be either "asc" or "desc".'
-    },
-    FormatInvalid: {
+    }),
+    FormatInvalid: () => ({
         code: 'ERR_PAGINATION_ORDERBY_FORMAT_INVALID',
         message: "Invalid orderby format. It should be 'name:direction'"
-    }
+    })
 }
 
 export enum OrderDirection {
@@ -45,24 +45,24 @@ export class PaginationDto {
         }
 
         if (typeof value !== 'string') {
-            throw new BadRequestException(PaginationErrors.FormatInvalid)
+            throw new BadRequestException(PaginationErrors.FormatInvalid())
         }
 
         const parts = value.split(':').map((part) => part.trim())
 
         if (parts.length !== 2) {
-            throw new BadRequestException(PaginationErrors.FormatInvalid)
+            throw new BadRequestException(PaginationErrors.FormatInvalid())
         }
 
         const [name, direction] = parts
 
         if (!name || !direction) {
-            throw new BadRequestException(PaginationErrors.FormatInvalid)
+            throw new BadRequestException(PaginationErrors.FormatInvalid())
         }
 
         const parsedDirection = direction as OrderDirection
         if (!Object.values(OrderDirection).includes(parsedDirection)) {
-            throw new BadRequestException(PaginationErrors.DirectionInvalid)
+            throw new BadRequestException(PaginationErrors.DirectionInvalid())
         }
 
         return { direction: parsedDirection, name }

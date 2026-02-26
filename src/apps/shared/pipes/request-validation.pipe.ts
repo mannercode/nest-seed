@@ -1,7 +1,11 @@
 import { BadRequestException, ValidationPipe } from '@nestjs/common'
 
 export const RequestValidationPipeErrors = {
-    Failed: { code: 'ERR_REQUEST_VALIDATION_FAILED', message: 'Validation failed' }
+    Failed: (details: Array<{ constraints: Record<string, string> | undefined; field: string }>) => ({
+        code: 'ERR_REQUEST_VALIDATION_FAILED',
+        message: 'Validation failed',
+        details
+    })
 }
 
 export class RequestValidationPipe extends ValidationPipe {
@@ -10,13 +14,14 @@ export class RequestValidationPipe extends ValidationPipe {
             disableErrorMessages: false,
             enableDebugMessages: false,
             exceptionFactory: (errors) =>
-                new BadRequestException({
-                    ...RequestValidationPipeErrors.Failed,
-                    details: errors.map((error) => ({
-                        constraints: error.constraints,
-                        field: error.property
-                    }))
-                }),
+                new BadRequestException(
+                    RequestValidationPipeErrors.Failed(
+                        errors.map((error) => ({
+                            constraints: error.constraints,
+                            field: error.property
+                        }))
+                    )
+                ),
             forbidNonWhitelisted: true,
             forbidUnknownValues: true,
             skipMissingProperties: false,
