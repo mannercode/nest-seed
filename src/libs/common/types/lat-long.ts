@@ -11,7 +11,9 @@ export const LatLongErrors = {
         code: 'ERR_LATLONG_INVALID_FORMAT',
         message: 'latLong must be in the format "latitude,longitude"'
     }),
-    OutOfRange: (details: Array<{ constraints: Record<string, string> | undefined; field: string }>) => ({
+    OutOfRange: (
+        details: Array<{ constraints: Record<string, string> | undefined; field: string }>
+    ) => ({
         code: 'ERR_LATLONG_OUT_OF_RANGE',
         message: 'Latitude must be between -90 and 90, longitude must be between -180 and 180',
         details

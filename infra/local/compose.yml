@@ -3,6 +3,7 @@ include:
     - ./compose.minio.yml
     - ./compose.nats.yml
     - ./compose.redis.yml
+    - ./compose.temporal.yml
 
 services:
     infra-setup:
@@ -14,6 +15,7 @@ services:
             redis-setup: { condition: service_completed_successfully }
             nats-setup: { condition: service_completed_successfully }
             minio-setup: { condition: service_completed_successfully }
+            temporal-setup: { condition: service_completed_successfully }
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
-        command: 'rm mongo-key-generator mongo-setup redis-setup nats-setup minio-setup'
+        command: 'rm mongo-key-generator mongo-setup redis-setup nats-setup minio-setup temporal-setup'

@@ -162,6 +162,8 @@ Customer <-- Frontend: 좌석 선점 완료 안내
 
 ### 2.4. 결제 및 구매 완료
 
+Temporal 워크플로우(`purchaseWorkflow`)가 구매 흐름 전체를 오케스트레이션한다. 각 단계는 Temporal Activity로 실행되며, 실패 시 보상 스택을 역순으로 실행한다.
+
 ```plantuml
 @startuml
 actor Customer
@@ -178,38 +180,44 @@ Customer -> Frontend: 결제 정보 입력 및 구매 확정
     }
     end note
         Backend -> Purchase: processPurchase(dto)
+            Purchase -> Temporal: workflow.start(purchaseWorkflow, dto)
 
-            Purchase -> TicketPurchase: validatePurchase(dto)
-            activate TicketPurchase
-                TicketPurchase -> Tickets: getMany(ticketIds)
-                TicketPurchase <-- Tickets: TicketDto[]
-                TicketPurchase -> Showtimes: getMany(showtimeIds)
-                TicketPurchase <-- Showtimes: ShowtimeDto[]
-                TicketPurchase -> TicketPurchase: validateTicketCount(ticketItems)
-                note right: 최대 10장
-                TicketPurchase -> TicketPurchase: validatePurchaseTime(showtimes)
-                note right: 상영 시작 30분 전까지
-                TicketPurchase -> TicketHolding: searchHeldTicketIds(showtimeId, customerId)
-                TicketPurchase <-- TicketHolding: heldTicketIds[]
-                TicketPurchase -> TicketPurchase: 모든 티켓이 선점 상태인지 확인
-            Purchase <-- TicketPurchase: void (검증 완료)
-            deactivate TicketPurchase
+            box "Temporal Workflow: purchaseWorkflow" #LightBlue
+                Temporal -> TicketPurchase: [Activity] validatePurchase(dto)
+                activate TicketPurchase
+                    TicketPurchase -> Tickets: getMany(ticketIds)
+                    TicketPurchase <-- Tickets: TicketDto[]
+                    TicketPurchase -> Showtimes: getMany(showtimeIds)
+                    TicketPurchase <-- Showtimes: ShowtimeDto[]
+                    TicketPurchase -> TicketPurchase: validateTicketCount(ticketItems)
+                    note right: 최대 10장
+                    TicketPurchase -> TicketPurchase: validatePurchaseTime(showtimes)
+                    note right: 상영 시작 30분 전까지
+                    TicketPurchase -> TicketHolding: searchHeldTicketIds(showtimeId, customerId)
+                    TicketPurchase <-- TicketHolding: heldTicketIds[]
+                    TicketPurchase -> TicketPurchase: 모든 티켓이 선점 상태인지 확인
+                Temporal <-- TicketPurchase: void (검증 완료)
+                deactivate TicketPurchase
 
-            Purchase -> Payments: create({amount: totalPrice, customerId})
-            Purchase <-- Payments: PaymentDto
+                Temporal -> Payments: [Activity] createPayment(totalPrice, customerId)
+                Temporal <-- Payments: PaymentDto
+                note right: 보상 스택에 cancelPayment 등록
 
-            Purchase -> PurchaseRecords: create({...dto, paymentId})
-            Purchase <-- PurchaseRecords: PurchaseRecordDto
+                Temporal -> PurchaseRecords: [Activity] createPurchaseRecord({...dto, paymentId})
+                Temporal <-- PurchaseRecords: PurchaseRecordDto
+                note right: 보상 스택에 deletePurchaseRecord 등록
 
-            Purchase -> TicketPurchase: completePurchase(dto)
-            activate TicketPurchase
-                TicketPurchase -> Tickets: updateStatusMany(ticketIds, 'Sold')
-                TicketPurchase <-- Tickets: TicketDto[]
-                TicketPurchase -> Events: emitTicketPurchased(customerId, ticketIds)
-                note left: WatchRecords가 이 이벤트를 구독한다
-            Purchase <-- TicketPurchase: void
-            deactivate TicketPurchase
+                Temporal -> TicketPurchase: [Activity] completePurchase(dto)
+                activate TicketPurchase
+                    TicketPurchase -> Tickets: updateStatusMany(ticketIds, 'Sold')
+                    TicketPurchase <-- Tickets: TicketDto[]
+                    TicketPurchase -> Events: emitTicketPurchased(customerId, ticketIds)
+                    note left: WatchRecords가 이 이벤트를 구독한다
+                Temporal <-- TicketPurchase: void
+                deactivate TicketPurchase
+            end box
 
+            Purchase <-- Temporal: PurchaseRecordDto
         Backend <-- Purchase: PurchaseRecordDto
     Frontend <-- Backend: 구매 완료 정보
 Customer <-- Frontend: 구매 완료 안내
@@ -218,20 +226,26 @@ Customer <-- Frontend: 구매 완료 안내
 
 ---
 
-## 3. 롤백 처리
+## 3. 롤백 처리 (Temporal 보상 스택)
 
-`completePurchase` 중 예외 발생 시 `rollbackPurchase`를 호출한다.
+워크플로우 실행 중 예외가 발생하면 보상 스택을 역순으로 실행한다.
 
 ```plantuml
 @startuml
-Purchase -> TicketPurchase: completePurchase(dto)
-Purchase <-- TicketPurchase: error 발생
-Purchase -> TicketPurchase: rollbackPurchase(dto)
+[o-> Workflow: 예외 발생
+
+Workflow -> Workflow: 보상 스택 역순 실행
+    Workflow -> PurchaseRecords: [Compensation] deletePurchaseRecord(id)
+    Workflow <-- PurchaseRecords: void
+    Workflow -> Payments: [Compensation] cancelPayment(paymentId)
+    Workflow <-- Payments: void
+
+Workflow -> TicketPurchase: [Compensation] rollbackPurchase(dto)
     TicketPurchase -> Tickets: updateStatusMany(ticketIds, 'Available')
     TicketPurchase -> Events: emitTicketPurchaseCanceled(customerId, ticketIds)
-Purchase <-- TicketPurchase: void
-Purchase -> Purchase: throw error
+Workflow <-- TicketPurchase: void
+Workflow -> Workflow: throw error
 @enduml
 ```
 
-> 결제(`Payments.create`)는 롤백하지 않는다. 결제 취소는 별도 프로세스에서 처리한다.
+> 보상 스택은 성공한 Activity만 역순으로 취소한다. 예를 들어 `createPayment`까지만 성공했다면 `cancelPayment`만 실행되고 `deletePurchaseRecord`는 실행되지 않는다.

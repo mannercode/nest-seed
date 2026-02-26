@@ -58,7 +58,11 @@ export class AppConfigService extends BaseConfigService {
         S3_ENDPOINT: Joi.string().required(),
         S3_FORCE_PATH_STYLE: Joi.boolean().required(),
         S3_REGION: Joi.string().required(),
-        S3_SECRET_KEY: Joi.string().required()
+        S3_SECRET_KEY: Joi.string().required(),
+
+        TEMPORAL_HOST: Joi.string().required(),
+        TEMPORAL_NAMESPACE: Joi.string().default('default'),
+        TEMPORAL_PORT: Joi.number().required()
     })
 
     get auth() {
@@ -120,6 +124,13 @@ export class AppConfigService extends BaseConfigService {
         ]
 
         return { nodes }
+    }
+
+    get temporal() {
+        return {
+            address: `${this.getString('TEMPORAL_HOST')}:${this.getNumber('TEMPORAL_PORT')}`,
+            namespace: this.getString('TEMPORAL_NAMESPACE')
+        }
     }
 
     get s3() {

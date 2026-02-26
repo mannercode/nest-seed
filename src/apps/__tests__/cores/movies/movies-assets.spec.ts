@@ -211,9 +211,7 @@ describe('MoviesAssets', () => {
                     it('returns 422 Unprocessable Entity', async () => {
                         await fix.httpClient
                             .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
-                            .unprocessableEntity(
-                                Errors.Movies.AssetUploadInvalid(upload.assetId)
-                            )
+                            .unprocessableEntity(Errors.Movies.AssetUploadInvalid(upload.assetId))
                     })
                 })
             })

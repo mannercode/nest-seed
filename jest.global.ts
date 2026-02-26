@@ -1,5 +1,7 @@
 import { MongoDBContainer } from '@testcontainers/mongodb'
 import { NatsContainer } from '@testcontainers/nats'
+import { Connection } from '@temporalio/client'
+import { TestWorkflowEnvironment } from '@temporalio/testing'
 import fs from 'fs'
 import { GenericContainer } from 'testcontainers'
 import { getEnv, setEnv } from './jest.utils'
@@ -60,15 +62,21 @@ async function setupMinio() {
         .start()
 }
 
+async function setupTemporal() {
+    const testEnv = await TestWorkflowEnvironment.createLocal()
+    return testEnv
+}
+
 export default async function globalSetup() {
     const dirPath = getEnv('LOG_DIRECTORY')
     fs.mkdirSync(dirPath, { recursive: true })
 
-    const [nats, mongo, redis, minio] = await Promise.all([
+    const [nats, mongo, redis, minio, temporal] = await Promise.all([
         setupNats(),
         setupMongo(),
         setupRedis(),
-        setupMinio()
+        setupMinio(),
+        setupTemporal()
     ])
 
     setEnv('TESTLIB_NATS_OPTIONS', JSON.stringify(nats.getConnectionOptions()))
@@ -77,4 +85,8 @@ export default async function globalSetup() {
     setEnv('TESTLIB_MONGO_URI', `${mongo.getConnectionString()}?directConnection=true`)
     setEnv('TESTLIB_REDIS_URL', `redis://${redis.getHost()}:${redis.getMappedPort(6379)}`)
     setEnv('TESTLIB_S3_ENDPOINT', `http://${minio.getHost()}:${minio.getMappedPort(9000)}`)
+    setEnv(
+        'TESTLIB_TEMPORAL_ADDRESS',
+        (temporal.client.connection as Connection).options.address
+    )
 }

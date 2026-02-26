@@ -1,12 +1,9 @@
 import type { MicroserviceOptions } from '@nestjs/microservices'
-import type { QueueOptions } from 'bullmq'
-import type Redis from 'ioredis'
 import type { HttpTestContext, ModuleMetadataEx } from 'testlib'
-import { BullModule } from '@nestjs/bullmq'
 import { ConfigService } from '@nestjs/config'
 import { Transport } from '@nestjs/microservices'
 import { SchedulerRegistry } from '@nestjs/schedule'
-import { AppLoggerService } from 'common'
+import { AppLoggerService, TemporalClientModule } from 'common'
 import compression from 'compression'
 import express from 'express'
 import {
@@ -25,14 +22,9 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
         CommonModule,
         MongooseConfigModule,
         RedisConfigModule,
-        BullModule.forRootAsync('queue', {
-            inject: [RedisConfigModule.moduleName],
-            useFactory(redis: Redis) {
-                return {
-                    connection: redis as unknown as QueueOptions['connection'],
-                    prefix: `{queue:${getProjectId()}}`
-                }
-            }
+        TemporalClientModule.registerAsync({
+            inject: [AppConfigService],
+            useFactory: (config: AppConfigService) => config.temporal
         })
     )
 

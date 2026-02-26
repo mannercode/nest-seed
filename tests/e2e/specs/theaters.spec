@@ -9,7 +9,7 @@ TEST "Create a theater" \
 			"location": { "latitude": 37.5665, "longitude": 126.9780 },
 			"seatmap": {
 				"blocks": [
-					{ "name": "A", "rows": [{ "name": "1", "seats": "OOOOOOOO" }] }
+					{ "name": "A", "rows": [{ "name": "1", "layout": "OOOOOOOO" }] }
 				]
 			}
 		}'

@@ -24,15 +24,12 @@ describe('Json', () => {
         // 64비트 범위를 벗어날 때
         describe('when the value is outside the signed 64-bit range', () => {
             // 문자열로 변환하지 않는다
-            it.each(['9223372036854775808', '-9223372036854775809'])(
-                'keeps %s unquoted',
-                (raw) => {
-                    const text = `[{"bit64":${raw}}]`
-                    const processedText = Json.quoteIntegers(text)
+            it.each(['9223372036854775808', '-9223372036854775809'])('keeps %s unquoted', (raw) => {
+                const text = `[{"bit64":${raw}}]`
+                const processedText = Json.quoteIntegers(text)
 
-                    expect(processedText).toEqual(text)
-                }
-            )
+                expect(processedText).toEqual(text)
+            })
         })
     })
 
@@ -50,11 +47,7 @@ describe('Json', () => {
             const converted = Json.reviveIsoDates({
                 level1: {
                     date: '2023-06-18T12:12:34.567Z',
-                    level2: {
-                        date: ['2023-06-19T12:12:34.567Z'],
-                        date2: nullDate,
-                        null: null
-                    }
+                    level2: { date: ['2023-06-19T12:12:34.567Z'], date2: nullDate, null: null }
                 }
             })
             expect(converted.level1.date).toBeInstanceOf(Date)

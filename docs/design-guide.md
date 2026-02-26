@@ -12,19 +12,20 @@ Client ── HTTP ──▶ Gateway ── NATS RPC ──┬──▶ Applicat
                                          └──▶ Infrastructures (외부 서비스 연동)
 ```
 
-| Service             | Role                                    | Domains                                                                                       |
-| ------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------- |
-| **Gateway**         | API 진입점, 인증(JWT/Local)             | Customers, Movies, Theaters, Booking, Purchase, ShowtimeCreation                              |
-| **Applications**    | 비즈니스 오케스트레이션, BullMQ 작업 큐 | ShowtimeCreation, Booking, Purchase, Recommendation                                           |
-| **Cores**           | 핵심 도메인 엔터티, 데이터 영속성       | Customers, Movies, Theaters, Showtimes, Tickets, TicketHolding, PurchaseRecords, WatchRecords |
-| **Infrastructures** | 외부 서비스 통합                        | Payments, Assets(MinIO)                                                                       |
+| Service             | Role                                         | Domains                                                                                       |
+| ------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| **Gateway**         | API 진입점, 인증(JWT/Local)                  | Customers, Movies, Theaters, Booking, Purchase, ShowtimeCreation                              |
+| **Applications**    | 비즈니스 오케스트레이션, Temporal 워크플로우 | ShowtimeCreation, Booking, Purchase, Recommendation                                           |
+| **Cores**           | 핵심 도메인 엔터티, 데이터 영속성            | Customers, Movies, Theaters, Showtimes, Tickets, TicketHolding, PurchaseRecords, WatchRecords |
+| **Infrastructures** | 외부 서비스 통합                             | Payments, Assets(MinIO)                                                                       |
 
-| Component   | Configuration                                     |
-| ----------- | ------------------------------------------------- |
-| **MongoDB** | 3-node replica set (27017-27019)                  |
-| **Redis**   | 6-node cluster, 3 primary + 3 replica (6379-6384) |
-| **NATS**    | 3-node cluster (4222-4224)                        |
-| **MinIO**   | S3-compatible object storage (9000, console 9001) |
+| Component    | Configuration                                        |
+| ------------ | ---------------------------------------------------- |
+| **MongoDB**  | 3-node replica set (27017-27019)                     |
+| **Redis**    | 6-node cluster, 3 primary + 3 replica (6379-6384)    |
+| **NATS**     | 3-node cluster (4222-4224)                           |
+| **MinIO**    | S3-compatible object storage (9000, console 9001)    |
+| **Temporal** | Workflow engine + PostgreSQL backend (7233, UI 8233) |
 
 ### 1.1. 문제: MSA의 순환 참조
 
@@ -115,7 +116,7 @@ Application Service는 오케스트레이터 역할에 충실한다. 비즈니�
 
 ```
 ShowtimeCreationService            (오케스트레이터)
-  └─ ShowtimeCreationWorkerService (Queue 관리, 작업 흐름 제어)
+  └─ showtimeCreationWorkflow      (Temporal Workflow, 작업 흐름 제어)
        ├─ ShowtimeBulkValidatorService  (요청 검증)
        └─ ShowtimeBulkCreatorService    (Showtime/Ticket 생성)
 ```

@@ -71,7 +71,7 @@ Admin <-- Frontend: 영화/극장/기존 상영 시간 표시
 
 ### 2.2. 생성 요청 단계
 
-관리자가 상영 시작 시각들과 상영 시간을 입력하고 등록을 요청하는 단계이다.
+관리자가 상영 시작 시각들과 상영 시간을 입력하고 등록을 요청하는 단계이다. 요청을 받으면 sagaId를 생성하고 Temporal 워크플로우를 시작한 뒤 즉시 응답한다.
 
 ```plantuml
 @startuml
@@ -88,11 +88,9 @@ Admin -> Frontend: 상영 시작 시각, 상영 시간 입력 후 등록 요청
     }
     end note
         Backend -> ShowtimeCreation: requestShowtimeCreation(dto)
-            ShowtimeCreation -> Worker: enqueueShowtimeCreationJob(dto)
-                Worker -> Worker: sagaId = newObjectId()
-                Worker -> Events: emitStatusChanged({sagaId, status: Waiting})
-                Worker -> Queue: add('showtime-creation.create', {dto, sagaId})
-            ShowtimeCreation <-- Worker: sagaId
+            ShowtimeCreation -> ShowtimeCreation: sagaId = newObjectId()
+            ShowtimeCreation -> Events: emitStatusChanged({sagaId, status: Waiting})
+            ShowtimeCreation -> Temporal: workflow.start(showtimeCreationWorkflow, {sagaId, dto})
         Backend <-- ShowtimeCreation: RequestShowtimeCreationResponse { sagaId }
     Frontend <-- Backend: { sagaId }
 Admin <-- Frontend: sagaId 수신 (이후 이벤트 대기)
@@ -101,42 +99,44 @@ Admin <-- Frontend: sagaId 수신 (이후 이벤트 대기)
 
 ### 2.3. 백그라운드 처리 단계
 
-BullMQ 워커가 큐에서 작업을 꺼내어 검증과 생성을 수행하는 단계이다.
+Temporal 워크플로우(`showtimeCreationWorkflow`)가 검증과 생성을 수행한다. 각 단계는 Temporal Activity로 실행된다.
 
 ```plantuml
 @startuml
-[o-> Worker: queue에서 {dto, sagaId} 수신
-    Worker -> Events: emitStatusChanged({sagaId, status: Processing})
+box "Temporal Workflow: showtimeCreationWorkflow" #LightBlue
+    [o-> Workflow: {sagaId, dto} 수신
+        Workflow -> Events: [Activity] emitStatusChanged({sagaId, status: Processing})
 
-    Worker -> Validator: validate(dto)
-        Validator -> Movies: allExist([movieId])
-        Validator <-- Movies: boolean
-        Validator -> Theaters: allExist(theaterIds)
-        Validator <-- Theaters: boolean
-        Validator -> Validator: generateTimeslotMapByTheater(dto)
-            note right
-            극장별로 기존 상영 시간을 조회하여
-            timeslot(10분 단위) → ShowtimeDto Map 생성
-            end note
-        Validator -> Validator: findConflictingShowtimes(dto)
-    Worker <-- Validator: { conflictingShowtimes, isValid }
+        Workflow -> Validator: [Activity] validateShowtimes(dto)
+            Validator -> Movies: allExist([movieId])
+            Validator <-- Movies: boolean
+            Validator -> Theaters: allExist(theaterIds)
+            Validator <-- Theaters: boolean
+            Validator -> Validator: generateTimeslotMapByTheater(dto)
+                note right
+                극장별로 기존 상영 시간을 조회하여
+                timeslot(10분 단위) → ShowtimeDto Map 생성
+                end note
+            Validator -> Validator: findConflictingShowtimes(dto)
+        Workflow <-- Validator: { conflictingShowtimes, isValid }
 
-alt isValid = true
-    Worker -> Creator: create(dto, sagaId)
-        Creator -> Showtimes: createMany(showtimeDtos)
-        Creator -> Showtimes: search({sagaIds: [sagaId]})
-        Creator <-- Showtimes: ShowtimeDto[]
-        loop showtime in showtimes
-            Creator -> Theaters: getMany([theaterId])
-            Creator <-- Theaters: TheaterDto
-            Creator -> Tickets: createMany(ticketDtos based on seatmap)
-            Creator <-- Tickets: { count }
-        end
-    Worker <-- Creator: { createdShowtimeCount, createdTicketCount }
-    Worker -> Events: emitStatusChanged({sagaId, status: Succeeded, createdShowtimeCount, createdTicketCount})
-else isValid = false
-    Worker -> Events: emitStatusChanged({sagaId, status: Failed, conflictingShowtimes})
-end
+    alt isValid = true
+        Workflow -> Creator: [Activity] createShowtimes(dto, sagaId)
+            Creator -> Showtimes: createMany(showtimeDtos)
+            Creator -> Showtimes: search({sagaIds: [sagaId]})
+            Creator <-- Showtimes: ShowtimeDto[]
+            loop showtime in showtimes
+                Creator -> Theaters: getMany([theaterId])
+                Creator <-- Theaters: TheaterDto
+                Creator -> Tickets: createMany(ticketDtos based on seatmap)
+                Creator <-- Tickets: { count }
+            end
+        Workflow <-- Creator: { createdShowtimeCount, createdTicketCount }
+        Workflow -> Events: [Activity] emitStatusChanged({sagaId, status: Succeeded, createdShowtimeCount, createdTicketCount})
+    else isValid = false
+        Workflow -> Events: [Activity] emitStatusChanged({sagaId, status: Failed, conflictingShowtimes})
+    end
+end box
 @enduml
 ```
 

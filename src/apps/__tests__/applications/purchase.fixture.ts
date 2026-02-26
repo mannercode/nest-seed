@@ -6,9 +6,15 @@ import {
     buildHoldTicketsDto,
     createAppTestContext,
     createShowtimes,
+    createTemporalTestWorker,
     createTickets
 } from 'apps/__tests__/__helpers__'
-import { PurchaseClient, PurchaseModule } from 'apps/applications'
+import {
+    createPurchaseActivities,
+    PurchaseClient,
+    PurchaseModule,
+    TicketPurchaseService
+} from 'apps/applications'
 import {
     CustomersClient,
     CustomersModule,
@@ -27,7 +33,7 @@ import {
     TicketsModule
 } from 'apps/cores'
 import { PurchaseHttpController } from 'apps/gateway'
-import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
+import { AssetsClient, AssetsModule, PaymentsClient, PaymentsModule } from 'apps/infrastructures'
 import { DateUtil, pickIds } from 'common'
 import { oid, toAny } from 'testlib'
 
@@ -61,7 +67,23 @@ export async function createPurchaseFixture(): Promise<PurchaseFixture> {
         ]
     })
 
-    return { ...ctx }
+    const purchaseActivities = createPurchaseActivities({
+        ticketPurchaseService: ctx.module.get(TicketPurchaseService),
+        paymentsClient: ctx.module.get(PaymentsClient),
+        purchaseRecordsClient: ctx.module.get(PurchaseRecordsClient)
+    })
+
+    const temporalWorker = await createTemporalTestWorker({ activities: purchaseActivities })
+
+    const originalTeardown = ctx.teardown
+
+    return {
+        ...ctx,
+        teardown: async () => {
+            await temporalWorker.shutdown()
+            await originalTeardown()
+        }
+    }
 }
 
 const customerId = oid(0x01)

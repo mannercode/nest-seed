@@ -1,44 +1,38 @@
-import { Injectable } from '@nestjs/common'
-import { PurchaseRecordsClient } from 'apps/cores'
-import { PaymentsClient } from 'apps/infrastructures'
+import { HttpException, Inject, Injectable } from '@nestjs/common'
+import { Client, WorkflowFailedError } from '@temporalio/client'
+import { ApplicationFailure } from '@temporalio/common'
+import { TEMPORAL_CLIENT } from 'common'
+import { getTemporalTaskQueue } from 'shared'
+import type { purchaseWorkflow } from './workflows/purchase.workflow'
 import { CreatePurchaseDto } from './dtos'
-import { TicketPurchaseService } from './services'
 
 @Injectable()
 export class PurchaseService {
-    constructor(
-        private readonly purchaseRecordsClient: PurchaseRecordsClient,
-        private readonly paymentsClient: PaymentsClient,
-        private readonly ticketPurchaseService: TicketPurchaseService
-    ) {}
+    constructor(@Inject(TEMPORAL_CLIENT) private readonly temporalClient: Client) {}
 
     async processPurchase(createDto: CreatePurchaseDto) {
-        await this.ticketPurchaseService.validatePurchase(createDto)
-
-        const payment = await this.paymentsClient.create({
-            amount: createDto.totalPrice,
-            customerId: createDto.customerId
-        })
-
-        let purchaseRecord
-        try {
-            purchaseRecord = await this.purchaseRecordsClient.create({
-                ...createDto,
-                paymentId: payment.id
-            })
-        } catch (error) {
-            await this.paymentsClient.cancel(payment.id)
-            throw error
-        }
+        const handle = await this.temporalClient.workflow.start<typeof purchaseWorkflow>(
+            'purchaseWorkflow',
+            {
+                taskQueue: getTemporalTaskQueue(),
+                workflowId: `purchase-${createDto.customerId}-${Date.now()}`,
+                args: [createDto]
+            }
+        )
 
         try {
-            await this.ticketPurchaseService.completePurchase(createDto)
-            return purchaseRecord
+            return await handle.result()
         } catch (error) {
-            await this.ticketPurchaseService.rollbackPurchase(createDto)
-            await this.purchaseRecordsClient.delete(purchaseRecord.id)
-            await this.paymentsClient.cancel(payment.id)
-            throw error
+            throw unwrapWorkflowError(error as WorkflowFailedError)
         }
     }
+}
+
+function unwrapWorkflowError(error: WorkflowFailedError): Error {
+    const appFailure = error.cause?.cause
+    if (appFailure instanceof ApplicationFailure && appFailure.type === 'HttpException') {
+        const { status, response } = JSON.parse(appFailure.message)
+        return new HttpException(response, status)
+    }
+    return error
 }

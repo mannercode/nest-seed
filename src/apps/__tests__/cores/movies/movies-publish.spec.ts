@@ -75,9 +75,7 @@ describe('MoviesPublish', () => {
                 it('returns 422 Unprocessable Entity', async () => {
                     await fix.httpClient
                         .post(`/movies/${movie.id}/publish`)
-                        .unprocessableEntity(
-                            Errors.Movies.InvalidForPublish(expect.any(Array))
-                        )
+                        .unprocessableEntity(Errors.Movies.InvalidForPublish(expect.any(Array)))
                 })
             })
         })

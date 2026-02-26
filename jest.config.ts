@@ -30,7 +30,9 @@ export default {
         '/modules/',
         '/index\\.ts$',
         '\\.module\\.ts$',
-        '/libs/testlib/'
+        '/libs/testlib/',
+        '/temporal-worker\\.service\\.ts$',
+        '/workflows/'
     ],
     coverageDirectory: '<rootDir>/_output/coverage',
     testTimeout: 60 * 1000

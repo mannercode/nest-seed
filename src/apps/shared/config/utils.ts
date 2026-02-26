@@ -53,3 +53,7 @@ export function getProjectId() {
 
     return process.env.PROJECT_ID
 }
+
+export function getTemporalTaskQueue() {
+    return `${getProjectId()}.temporal.applications`
+}
