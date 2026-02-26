@@ -16,6 +16,10 @@ export class ShowtimesRepository extends MongooseRepository<Showtime> {
         super(model, MongooseConfigModule.maxTake)
     }
 
+    async deleteBySagaIds(sagaIds: string[]) {
+        await this.model.deleteMany({ sagaId: { $in: sagaIds } })
+    }
+
     async createMany(createDtos: CreateShowtimeDto[]) {
         const showtimes = createDtos.map((dto) => {
             const doc = this.newDocument()

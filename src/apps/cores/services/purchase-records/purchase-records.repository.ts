@@ -15,6 +15,10 @@ export class PurchaseRecordsRepository extends MongooseRepository<PurchaseRecord
         super(model, MongooseConfigModule.maxTake)
     }
 
+    async delete(purchaseRecordId: string) {
+        await this.deleteById(purchaseRecordId)
+    }
+
     async create(createDto: CreatePurchaseRecordDto) {
         const purchaseRecord = this.newDocument()
         purchaseRecord.customerId = createDto.customerId

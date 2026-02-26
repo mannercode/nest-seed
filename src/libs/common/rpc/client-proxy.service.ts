@@ -4,7 +4,7 @@ import { ClientProvider, ClientProxy } from '@nestjs/microservices'
 import { ClientsModule } from '@nestjs/microservices'
 import { defaultTo } from 'lodash'
 import { Observable } from 'rxjs'
-import { catchError, lastValueFrom, retry, throwError, timer } from 'rxjs'
+import { catchError, defaultIfEmpty, lastValueFrom, retry, throwError, timer } from 'rxjs'
 import { Json } from '../utils'
 
 export type ClientProxyModuleOptions = {
@@ -90,7 +90,8 @@ async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
                 }
 
                 return throwError(() => new Error(defaultTo(message, 'Unknown error')))
-            })
+            }),
+            defaultIfEmpty(undefined as T)
         )
     )
 }

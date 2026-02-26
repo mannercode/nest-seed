@@ -36,9 +36,9 @@ export const Messages = createMessagePatternMap(
             searchPage: null,
             update: null
         },
-        Payments: { create: null, getMany: null },
+        Payments: { cancel: null, create: null, getMany: null },
         Purchase: { processPurchase: null },
-        PurchaseRecords: { create: null, getMany: null },
+        PurchaseRecords: { create: null, delete: null, getMany: null },
         Recommendation: { searchRecommendedMovies: null },
         ShowtimeCreation: {
             requestShowtimeCreation: null,

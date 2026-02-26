@@ -8,6 +8,10 @@ import { CreateShowtimeDto, CreateShowtimesResult, SearchShowtimesDto, ShowtimeD
 export class ShowtimesClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
+    deleteBySagaIds(sagaIds: string[]): Promise<void> {
+        return this.proxy.request(Messages.Showtimes.deleteBySagaIds, sagaIds)
+    }
+
     createMany(createDtos: CreateShowtimeDto[]): Promise<CreateShowtimesResult> {
         return this.proxy.request(Messages.Showtimes.createMany, createDtos)
     }

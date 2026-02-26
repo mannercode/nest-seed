@@ -14,19 +14,30 @@ export class PurchaseService {
 
     async processPurchase(createDto: CreatePurchaseDto) {
         await this.ticketPurchaseService.validatePurchase(createDto)
+
         const payment = await this.paymentsClient.create({
             amount: createDto.totalPrice,
             customerId: createDto.customerId
         })
-        const purchaseRecord = await this.purchaseRecordsClient.create({
-            ...createDto,
-            paymentId: payment.id
-        })
+
+        let purchaseRecord
+        try {
+            purchaseRecord = await this.purchaseRecordsClient.create({
+                ...createDto,
+                paymentId: payment.id
+            })
+        } catch (error) {
+            await this.paymentsClient.cancel(payment.id)
+            throw error
+        }
+
         try {
             await this.ticketPurchaseService.completePurchase(createDto)
             return purchaseRecord
         } catch (error) {
             await this.ticketPurchaseService.rollbackPurchase(createDto)
+            await this.purchaseRecordsClient.delete(purchaseRecord.id)
+            await this.paymentsClient.cancel(payment.id)
             throw error
         }
     }

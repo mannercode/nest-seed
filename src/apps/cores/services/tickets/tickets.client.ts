@@ -16,6 +16,10 @@ import { TicketStatus } from './models'
 export class TicketsClient {
     constructor(@InjectClientProxy() private readonly proxy: ClientProxyService) {}
 
+    deleteBySagaIds(sagaIds: string[]): Promise<void> {
+        return this.proxy.request(Messages.Tickets.deleteBySagaIds, sagaIds)
+    }
+
     aggregateSales(aggregateDto: AggregateTicketSalesDto): Promise<TicketSalesForShowtimeDto[]> {
         return this.proxy.request(Messages.Tickets.aggregateSales, aggregateDto)
     }

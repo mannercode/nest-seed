@@ -14,6 +14,10 @@ import { TicketsRepository } from './tickets.repository'
 export class TicketsService {
     constructor(private readonly repository: TicketsRepository) {}
 
+    async deleteBySagaIds(sagaIds: string[]) {
+        await this.repository.deleteBySagaIds(sagaIds)
+    }
+
     async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
         const salesByShowtime = await this.repository.aggregateSales(aggregateDto)
         return salesByShowtime

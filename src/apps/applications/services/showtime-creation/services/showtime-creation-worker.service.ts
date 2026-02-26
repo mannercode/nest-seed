@@ -1,6 +1,7 @@
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
 import { OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { Injectable } from '@nestjs/common'
+import { ShowtimesClient, TicketsClient } from 'apps/cores'
 import { Job, Queue } from 'bullmq'
 import { Json, newObjectIdString } from 'common'
 import { get } from 'lodash'
@@ -21,6 +22,8 @@ export class ShowtimeCreationWorkerService
         private readonly validatorService: ShowtimeBulkValidatorService,
         private readonly creatorService: ShowtimeBulkCreatorService,
         private readonly events: ShowtimeCreationEvents,
+        private readonly showtimesClient: ShowtimesClient,
+        private readonly ticketsClient: TicketsClient,
         @InjectQueue('showtime-creation') private readonly queue: Queue
     ) {
         super()
@@ -65,12 +68,23 @@ export class ShowtimeCreationWorkerService
         } catch (error: unknown) {
             const message = get(error, 'message', String(error))
 
+            try {
+                await this.compensate(job.data.sagaId)
+            } catch {}
+
             await this.events.emitStatusChanged({
                 message,
                 sagaId: job.data.sagaId,
                 status: ShowtimeCreationStatus.Error
             })
         }
+    }
+
+    private async compensate(sagaId: string) {
+        await Promise.allSettled([
+            this.ticketsClient.deleteBySagaIds([sagaId]),
+            this.showtimesClient.deleteBySagaIds([sagaId])
+        ])
     }
 
     private async processJobData({ createDto, sagaId }: ShowtimeCreationJobData) {
