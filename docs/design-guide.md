@@ -249,15 +249,4 @@ async getTheater(@Param('theaterId') theaterId: string) {
 - `message`는 참고용으로 간단히 기술한다.
 - HTTP Status가 **4xx 범위일 때만** code를 포함한다. 5xx는 서버 장애이므로 클라이언트에 상세 원인을 노출하지 않는다.
 
-```ts
-export const CustomerErrors = {
-    EmailAlreadyExists: {
-        code: 'ERR_CUSTOMER_EMAIL_ALREADY_EXISTS',
-        message: 'The email address is already registered.'
-    }
-}
-```
-
-각 모듈 내 `errors.ts`에서 정의하고, 필요 시 통합 객체로 합쳐 프론트엔드에 전달한다.
-
 ---

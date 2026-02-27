@@ -56,7 +56,7 @@ MINIO_IMAGE=minio/minio:latest
 
 ## 계층 의존성 규칙 (ESLint)
 
-`eslint.config.js`의 `no-restricted-imports` 규칙으로 SoLA 계층 위반을 빌드 타임에 감지한다.
+`eslint.config.js`의 `no-restricted-imports` 규칙으로 [SoLA 계층](design-guide.md#1-서비스-아키텍처--sola-service-oriented-layered-architecture) 위반을 빌드 타임에 감지한다.
 
 | 계층 (`src/apps/`) | 참조 금지 대상                                        |
 | ------------------ | ----------------------------------------------------- |

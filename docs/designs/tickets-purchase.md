@@ -175,7 +175,7 @@ Customer -> Frontend: 결제 정보 입력 및 구매 확정
         customerId: string
         totalPrice: number
         purchaseItems: [
-            { type: 'Tickets', itemId: ticketId }
+            { type: 'tickets', itemId: ticketId }
         ]
     }
     end note
