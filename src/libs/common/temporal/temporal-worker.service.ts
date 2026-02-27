@@ -34,6 +34,6 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
     }
 
     async onModuleDestroy() {
-        this.worker?.shutdown()
+        this.worker.shutdown()
     }
 }

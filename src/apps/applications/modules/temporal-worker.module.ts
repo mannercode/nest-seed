@@ -68,7 +68,7 @@ export class TemporalWorkerModule implements OnModuleInit, OnModuleDestroy {
     }
 
     async onModuleDestroy() {
-        this.worker?.shutdown()
+        this.worker.shutdown()
     }
 
     private async loadWorkflowBundle() {

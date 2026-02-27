@@ -1,6 +1,5 @@
 import { HttpException, Inject, Injectable } from '@nestjs/common'
-import { Client, WorkflowFailedError } from '@temporalio/client'
-import { ApplicationFailure } from '@temporalio/common'
+import { ApplicationFailure, Client, WorkflowFailedError } from '@temporalio/client'
 import { TEMPORAL_CLIENT } from 'common'
 import { getTemporalTaskQueue } from 'shared'
 import type { purchaseWorkflow } from './workflows/purchase.workflow'
