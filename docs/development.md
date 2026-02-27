@@ -70,6 +70,126 @@ MINIO_IMAGE=minio/minio:latest
 
 ---
 
+## Import 규칙
+
+각 폴더에 `index.ts`(barrel export)를 두어 공개 API를 재수출한다. 순환 참조를 방지하기 위해 다음 규칙을 따른다.
+
+- **직계 조상 폴더**는 **상대 경로**로 import한다.
+
+    ```ts
+    /* users.service.ts */
+
+    // (X) 순환 참조 발생 가능
+    import { AuthService } from 'src/services'
+
+    // (O) 상대 경로로 참조
+    import { AuthService } from '../auth'
+    ```
+
+- **직계 조상이 아닌 폴더**는 **절대 경로**를 사용한다.
+
+    ```ts
+    /* users.controller.ts */
+
+    // (O) 절대 경로 사용
+    import { AuthService } from 'src/services'
+
+    // (X) 상대 경로로는 권장하지 않음
+    import { AuthService } from '../services'
+    ```
+
+> 폴더마다 `index.ts`를 두면 순환 참조를 더 빨리 발견할 수 있다.
+
+### testlib와 common의 순환 참조
+
+`src/libs`에는 `testlib`와 `common`이 있다. `testlib`는 `common`을 import하고, `common`의 `__tests__` 폴더에서 `testlib`를 import한다. 언뜻 순환처럼 보이지만, `__tests__` 폴더는 테스트 전용이며 런타임에 참조되지 않으므로 실제 순환 참조 문제가 발생하지 않는다.
+
+---
+
+## 테스트에서 Dynamic Import
+
+여러 테스트에서 같은 NATS 서버를 공유하기 때문에, 각 테스트마다 고유한 subject를 생성하기 위해 `process.env.TESTLIB_ID`를 사용한다.
+
+Jest의 모듈 캐시 때문에 `@MessagePattern` 데코레이터가 모듈 로딩 시점에 한 번만 평가된다. 따라서 최상위에서 이미 import된 모듈은 새로운 `process.env.TESTLIB_ID` 값을 인식하지 못한다.
+
+이 문제를 해결하기 위해 Jest 설정에서 `resetModules: true`를 적용하고, 테스트에서는 dynamic import를 사용한다.
+
+```ts
+// 타입 전용 import는 런타임에 영향을 주지 않는다
+import type { Fixture } from './customers.fixture'
+
+describe('Customers', () => {
+    let fix: Fixture
+
+    beforeEach(async () => {
+        const { createCustomersFixture } = await import('./customers.fixture')
+        fix = await createCustomersFixture()
+    })
+})
+```
+
+---
+
+## Entry File 구조
+
+각 앱 디렉터리에는 다음 파일이 존재한다.
+
+- `development.ts` — 개발 환경 엔트리
+- `main.ts` — 공통 부트스트랩 로직
+- `production.ts` — 프로덕션 환경 엔트리
+
+`main.ts`에서 `process.env.NODE_ENV` 분기를 사용하는 대신, 환경별 엔트리 파일을 분리하여 복잡성을 줄인다.
+
+```json
+// nest-cli.json — 개발 환경
+"entryFile": "apps/gateway/development"
+```
+
+```js
+// webpack.config.js — 프로덕션 빌드
+entry: path.resolve(dirname, 'production.ts')
+```
+
+---
+
+## ESM Modules
+
+NestJS는 CommonJS 모듈 시스템을 사용하지만, Node.js >= 22에서는 CommonJS와 ESM을 동시에 지원하므로 호환성 문제가 없다.
+
+그러나 Jest는 아직 ESM을 완전히 지원하지 않으므로, ESM 전용 모듈(예: `chalk`)을 사용할 때는 `jest.config.ts`에 등록해야 한다.
+
+```ts
+{
+    transformIgnorePatterns: ['!node_modules/(?!chalk)']
+}
+```
+
+---
+
+## Commit Message 규칙
+
+`@commitlint/config-conventional` 규칙을 사용한다. 커밋 메시지는 아래 형식을 따라야 하며, 위반 시 커밋이 실패한다.
+
+**형식**: `type: subject` 또는 `type(scope): subject`
+
+| type       | 용도                          |
+| ---------- | ----------------------------- |
+| `feat`     | 기능 추가                     |
+| `fix`      | 버그 수정                     |
+| `docs`     | 문서 변경                     |
+| `style`    | 코드 의미 변화 없는 포맷 변경 |
+| `refactor` | 리팩터링                      |
+| `perf`     | 성능 개선                     |
+| `test`     | 테스트 추가/수정              |
+| `build`    | 빌드/의존성 관련              |
+| `ci`       | CI 설정/스크립트 변경         |
+| `chore`    | 기타 잡무                     |
+| `revert`   | 되돌리기                      |
+
+예: `feat: add user login`, `fix(api): handle null pointer in auth`
+
+---
+
 ## 새 Core 서비스 추가 절차
 
 Core 서비스(예: `FooService`)를 추가하는 경우를 예시로 설명한다. Applications/Infrastructures도 동일한 패턴을 따른다.
