@@ -1,183 +1,160 @@
-# NEST-MSA
+# nest-msa
 
-Nest(NestJS) 기반의 MSA(Microservices Architecture) 예제 프로젝트로 주요 특징은 다음과 같습니다:
+NestJS 기반 마이크로서비스 아키텍처 템플릿. 영화 예매 도메인을 예제로 삼아 MSA의 다양한 개념과 기술을 검증한다.
 
-- Docker 기반 개발/테스트 환경: Dev Container와 Docker Compose를 함께 사용합니다.
-- 통합 인프라: MongoDB(Replica Set), Redis, NATS, MinIO를 기본 포함합니다.
-- 테스트 자동화: Jest 단위/통합 + 커버리지, Bash 기반 E2E 스위트 제공.
-- 계층화 아키텍처: gateway → applications → cores → infrastructures의 일방향 의존 구조를 적용했습니다.
-- MSA 지원: NATS 메시지 브로커 기반의 서비스 간 통신을 지원합니다.
-- 앱 엔트리 분리: 서비스별 `development.ts`/`production.ts`/`main.ts`로 실행 진입점을 나눴습니다.
+## Documentation
 
-## 1. 시스템 요구 사항
+- [Design Guide](docs/design-guide.md) — 시스템 아키텍처, 설계 원칙
+- [Domain Glossary](docs/glossary.md) — 도메인 용어 정의
+- [Entity Design](docs/designs/entities.md) — 엔터티 속성, 관계, ER 다이어그램
+- [Showtime Creation](docs/designs/showtime-creation.md) — 상영시간 생성 흐름
+- [Ticket Purchase](docs/designs/tickets-purchase.md) — 티켓 구매 흐름
+- [Decisions](docs/decisions.md) — 기술 선택 근거
+- [Development Setup](docs/development.md) — 환경 파일, Dev Container, VS Code 설정
 
-이 프로젝트를 실행하려면 다음과 같은 호스트 환경이 필요합니다:
+## Tech Stack
 
-- **CPU**: 4코어 이상
-- **메모리**: 16GB 이상 권장
-    - 16GB 미만이면 `npm test -- --runInBand` 또는 `npm test -- --maxWorkers=2`로 실행하세요.
-- **Docker 및 Docker Compose v2**
-- **Node.js 24.x** (Dev Container에서 자동 제공)
-- **VS Code 및 확장 프로그램**
-    - Dev Containers (ms-vscode-remote.remote-containers)
+| Category           | Technology                 |
+| ------------------ | -------------------------- |
+| **Framework**      | NestJS 11                  |
+| **Language**       | TypeScript 5               |
+| **Database**       | MongoDB (Mongoose)         |
+| **Cache**          | Redis                      |
+| **Messaging**      | NATS                       |
+| **Workflow**       | Temporal                   |
+| **Object Storage** | MinIO (S3-compatible)      |
+| **Auth**           | JWT + Passport             |
+| **Testing**        | Jest + Testcontainers      |
+| **Build**          | Webpack                    |
+| **Container**      | Docker (multi-stage build) |
 
-> Windows 환경은 호환성 이슈가 발생할 수 있으므로, VMware로 Ubuntu를 실행한 후 그 안에서 VSCode를 사용하는 방식을 권장합니다.
+## Getting Started
 
-## 2. 환경 파일 및 프로젝트 이름
+### Prerequisites
 
-- `.env`: 애플리케이션/테스트 공용 설정(프로젝트 ID, 포트, Mongo/Redis/NATS/MinIO 접속 정보, 로그 설정 등). 기본값은 `host.docker.internal`을 바라보도록 되어 있으므로 다른 네트워크라면 호스트 IP를 맞춰 주세요.
-- `.env.infra`: 로컬 인프라와 Jest Testcontainers에서 사용할 이미지 태그를 정의합니다.
-    ```env
-    MONGO_IMAGE=mongo:8.2.3
-    REDIS_IMAGE=redis:8.4-alpine
-    NATS_IMAGE=nats:2.12-alpine
-    MINIO_IMAGE=minio/minio:latest
-    ```
-- 프로젝트 이름 변경
-    - `.env`의 `PROJECT_ID`
-    - `package.json`의 `name`
+- Node.js 24+
+- Docker & Docker Compose
 
-## 3. 빠른 시작
+### 1. Install Dependencies
 
-1. 의존성 설치
-    ```sh
-    npm ci
-    ```
-2. 로컬 인프라 실행 (MongoDB Replica Set, Redis, NATS, MinIO)
-
-    ```sh
-    npm run infra:reset
-    ```
-
-    - `infra/local/compose.yml`을 사용하며 `.env`와 `.env.infra`를 함께 읽습니다.
-
-3. 유닛/통합 테스트 실행
-
-    ```sh
-    # 전체
-    npm test
-
-    # 특정 경로만
-    TEST_ROOT=src/apps npm test
-
-    # 리소스가 부족하면
-    npm test -- --runInBand
-    ```
-
-    - Docker가 실행 중이어야 하며 `.env.infra`의 이미지 태그로 Testcontainers가 기동됩니다.
-
-4. E2E 테스트 실행
-
-    ```sh
-    # 인프라/앱 reset + 스펙 실행 (성공 시 apps down)
-    npm run test:e2e
-
-    # 이미 실행 중인 HOST에 스펙만 실행
-    bash tests/e2e/run.sh
-    ```
-
-    - `curl`, `jq`가 필요합니다.
-    - `HTTP_PORT`는 루트 `.env`를 읽어 사용하며, 값이 없으면 기본 `3000`을 사용합니다.
-    - `run.sh`는 스펙 실행만 담당하며, 인프라/앱 제어는 `test:e2e` 스크립트에서 처리합니다.
-    - `test:e2e`는 `npm run infra:reset`, `npm run apps:reset` 실행 후, 스펙이 성공하면 `npm run apps:down`을 수행합니다.
-    - 스펙이 실패하면 앱 컨테이너를 유지하므로, 로그 확인 후 `npm run apps:down`으로 정리하세요.
-    - 기본 호출 대상은 `http://localhost:${HTTP_PORT}`(기본 3000) 입니다.
-
-5. 종료
-    ```sh
-    npm run apps:down
-    npm run infra:down
-    ```
-
-## 4. 서비스 실행 및 디버깅
-
-- Docker Compose로 전체 애플리케이션 빌드/실행: `npm run apps:up` 또는 `npm run apps:reset` (`compose.yml` 사용).
-- 전체 서비스가 준비될 때까지 대기: `npm run apps:wait`.
-- 단일 서비스 디버깅(핫 리로드): `TARGET_APP=gateway npm run debug` (`TARGET_APP`은 `gateway`, `applications`, `cores`, `infrastructures` 중 선택).
-- 빌드 후 실행: `TARGET_APP=gateway npm run build` → `TARGET_APP=gateway npm run start`.
-- `TARGET_APP`은 `nest-cli.json`의 프로젝트 키와 일치해야 합니다.
-- VS Code `Debug App` 구성에서 위 `TARGET_APP`을 선택해 바로 디버깅할 수 있습니다.
-
-## 5. 개발 환경(Dev Container)
-
-1. 호스트에서 [Git credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials)를 설정합니다.
-2. VSCode에서 "Reopen in Container" 명령을 실행합니다.
-3. Dev Container는 `.devcontainer/Dockerfile`(베이스 `node:24-slim`)을 사용하며, `postCreateCommand`/`postStartCommand`로 `npm ci` 및 `npm run infra:reset`을 자동 실행합니다.
-4. Dev Container에서도 별도 환경 변수 설정 없이 `npm run test:e2e`를 바로 실행할 수 있습니다.
-
-## 6. VS Code 실행/작업
-
-- 디버그 (`.vscode/launch.json`)
-    - `Debug App`: `npm run debug`를 실행하며 `TARGET_APP`을 선택합니다.
-    - 선택지: `gateway`, `applications`, `cores`, `infrastructures`.
-- 작업(Task) (`.vscode/tasks.json`)
-    - `Run Tests`: `npm test` 실행. `TEST_ROOT` 입력으로 범위를 선택합니다.
-    - `Run E2E Tests`: `npm run test:e2e` 실행. `curl`, `jq`가 필요합니다.
-    - `Repeat Tests`: 선택한 테스트 명령을 N회 반복 실행합니다.
-
-## 7. 프로젝트 구조
-
-```text
-src
-├── apps
-│   ├── gateway
-│   │   ├── controllers           # REST API 진입점
-│   │   └── modules
-│   ├── applications
-│   │   ├── services              # 유스케이스
-│   │   │   ├── booking
-│   │   │   ├── purchase
-│   │   │   ├── recommendation
-│   │   │   └── showtime-creation
-│   │   └── modules
-│   ├── cores
-│   │   ├── services              # 도메인 로직
-│   │   │   ├── customers
-│   │   │   ├── movies
-│   │   │   ├── purchase-records
-│   │   │   ├── showtimes
-│   │   │   ├── theaters
-│   │   │   ├── ticket-holding
-│   │   │   ├── tickets
-│   │   │   └── watch-records
-│   │   └── modules
-│   ├── infrastructures
-│   │   ├── services              # 외부 연동
-│   │   │   ├── assets
-│   │   │   └── payments
-│   │   └── modules
-│   ├── __tests__                 # 통합 테스트
-│   └── shared                    # 공통 코드
-│       ├── config
-│       ├── modules
-│       └── pipes
-└── libs
-    ├── common
-    └── testlib
+```bash
+npm ci
 ```
 
-## 7. 설계 문서
+### 2. Start Infrastructure
 
-설계 문서는 `PlantUML`을 사용해 작성되었으며, `docs/ko/designs` 경로에 있습니다.
+```bash
+npm run infra:reset
+```
 
-- VSCode 확장: `PlantUML (jebbs.plantuml)` 설치 필요
-- 미리보기 시 커서가 `@startuml`과 `@enduml` 사이에 있어야 합니다
-- 보안 설정이 필요한 경우: 우측 상단 `...` → `미리보기 보안 설정 변경`
+관리 콘솔 및 모니터링 대시보드(mongo-express, RedisInsight, Grafana)와 함께 실행하려면:
 
-예시:
+```bash
+npm run infra:gui
+```
 
-<img src="./docs/images/design-sample.png" alt="PlantUML로 작성한 문서" width="1061"/>
+### 3. Run Tests
 
-## 8. 추가 문서
+```bash
+npm test
+```
 
-이 프로젝트의 구현 및 설계에 대한 자세한 사항은 아래 문서를 참고하세요:
+## Scripts
 
-- 가이드 문서
-    - [본질 기반 해석](https://mannercode.com/2024/05/04/ebi.html)
-    - [설계 가이드](./docs/ko/guides/design.guide.md)
-    - [구현 가이드](./docs/ko/guides/implementation.guide.md)
-- 설계 문서
-    - [유스케이스](./docs/ko/designs/use-cases.md)
-    - [엔티티](./docs/ko/designs/entities.md)
-    - [상영시간 생성](./docs/ko/designs/showtime-creation.md)
-    - [티켓 구매](./docs/ko/designs/tickets-purchase.md)
+| Script                | Description                                                       |
+| --------------------- | ----------------------------------------------------------------- |
+| `npm run build`       | 특정 앱 빌드 (`TARGET_APP=gateway npm run build`)                 |
+| `npm run start`       | 빌드된 앱 실행 (`TARGET_APP=gateway npm run start`)               |
+| `npm run debug`       | Watch 모드로 개발 실행 (`TARGET_APP=gateway npm run debug`)       |
+| `npm test`            | 단위 테스트 실행 (coverage 포함)                                  |
+| `npm run test:e2e`    | E2E 테스트 실행 (인프라 + 앱 자동 재시작)                         |
+| `npm run lint`        | TypeScript 타입 체크, ESLint, Prettier 검사                       |
+| `npm run format`      | ESLint 자동 수정 및 Prettier 포맷팅                               |
+| `npm run infra:reset` | 인프라 초기화 (down + up + wait)                                  |
+| `npm run infra:gui`   | 관리 콘솔 포함 인프라 실행 (mongo-express, RedisInsight, Grafana) |
+| `npm run apps:reset`  | 앱 서비스 초기화 (down + up + wait)                               |
+
+## Testing
+
+### Unit Tests
+
+[Testcontainers](https://testcontainers.com/)를 사용하여 MongoDB와 NATS를 실제 컨테이너로 띄워 테스트한다.
+
+```bash
+npm test
+
+# 특정 서비스만 테스트
+TEST_ROOT=src/apps/__tests__/cores npm test
+```
+
+### E2E Tests
+
+전체 인프라와 앱을 Docker Compose로 실행한 후 HTTP API를 통해 시나리오를 검증한다. `curl`과 `jq`가 필요하다.
+
+```bash
+npm run test:e2e
+```
+
+## Project Structure
+
+```
+src/
+├── apps/
+│   ├── gateway/          # HTTP API 컨트롤러, 인증
+│   ├── applications/     # 비즈니스 로직 서비스 (Temporal Workflow)
+│   ├── cores/            # 도메인 모델, 리포지토리
+│   ├── infrastructures/  # 외부 서비스 연동 (결제, 파일)
+│   ├── shared/           # 공통 설정, 비즈니스 규칙(Rules), 파이프, 미들웨어
+│   └── __tests__/        # 단위/통합 테스트
+├── libs/
+│   ├── common/           # 공통 라이브러리 (로깅, DB, RPC, 캐시)
+│   └── testlib/          # 테스트 유틸리티
+├── tests/e2e/            # E2E 테스트 스펙
+└── infra/local/          # 로컬 인프라 Docker Compose
+```
+
+## Key Concepts
+
+### Service Decomposition
+
+4개 서비스(Gateway, Applications, Cores, Infrastructures)를 역할 기반으로 분리한다. 각 서비스는 겹치지 않는 책임을 갖기 때문에 독립적으로 변경·배포할 수 있다.
+
+### Dependency Layering
+
+모노레포 안에서 서비스 간 순환 의존이 생기면 변경 영향이 양방향으로 전파되어 레이어의 의미가 사라진다. ESLint `no-restricted-imports`로 의존 방향을 단방향으로 강제하여 이를 방지한다.
+
+### Inter-Service Communication
+
+서비스 간 통신에 NATS를 사용한다. HTTP 호출과 달리 서비스 디스커버리 없이 클러스터 내 모든 노드가 메시지를 라우팅하며, 동기 호출(RPC)과 비동기 알림(이벤트)을 하나의 브로커로 처리한다.
+
+### API Gateway
+
+인증, 요청 검증, 로깅 같은 횡단 관심사를 Gateway 한 곳에서 처리한다. 내부 서비스는 이런 관심사를 알 필요 없이 비즈니스 로직에만 집중할 수 있다.
+
+### Workflow Orchestration
+
+티켓 구매의 Saga 보상 패턴, 상영 일정 일괄 생성처럼 여러 서비스를 걸쳐 실행되는 흐름을 Temporal 워크플로우로 오케스트레이션한다. 워크플로우는 실패 시 자동 재시도되며, 보상 로직이 코드에 명시적으로 표현되어 장애 복구가 안정적이다.
+
+### Event-Driven Architecture
+
+티켓 구매 같은 이벤트는 RPC 대신 pub-sub으로 발행한다. 발행자는 구독자의 존재를 모르므로 느슨하게 결합되며, 구독자를 추가해도 발행 측 코드를 수정할 필요가 없다.
+
+### Repository Pattern
+
+Mongoose 쿼리를 공통 리포지토리로 추상화하여 서비스마다 같은 방식으로 데이터에 접근한다. 에러 처리, 페이지네이션, 트랜잭션 로직이 한 곳에 집중되므로 중복이 줄고 일관성이 유지된다.
+
+### Client-Service Parity
+
+각 서비스에 동일한 시그니처의 Client 래퍼를 두어 원격 RPC 호출을 로컬 메서드처럼 사용한다. 호출하는 쪽에서는 통신 프로토콜을 의식하지 않으며, 타입 안전성도 유지된다.
+
+### Clustered Infrastructure
+
+MongoDB 레플리카셋, Redis 클러스터, NATS 클러스터를 로컬 환경에서도 구성하여 프로덕션과 동일한 토폴로지에서 개발·테스트한다. 단일 노드에서는 발견되지 않는 클러스터 동기화, 페일오버 관련 문제를 사전에 검증할 수 있다.
+
+### Health Check
+
+각 서비스가 HTTP 헬스체크 엔드포인트를 제공하고 Docker 헬스체크와 연동한다. 컨테이너 오케스트레이터가 이를 통해 서비스 상태를 감지하고 비정상 컨테이너를 자동 재시작한다.
+
+### Testing Strategy
+
+Testcontainers로 실제 MongoDB, NATS 컨테이너를 띄워 테스트한다. Temporal은 `@temporalio/testing`의 in-process 테스트 서버를 사용한다. Mock 대신 실제 인프라를 사용하므로 트랜잭션, 인덱스, TTL, 워크플로우 실행 같은 동작을 그대로 검증할 수 있다. E2E 테스트는 전체 서비스 스택을 Docker Compose로 실행하여 HTTP API 단위로 시나리오를 검증한다.

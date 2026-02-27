@@ -1,6 +1,5 @@
 import { Byte, Path } from 'common'
 import fs from 'fs/promises'
-import path from 'path'
 import { createDummyFile } from 'testlib'
 
 describe('createDummyFile', () => {
@@ -9,7 +8,7 @@ describe('createDummyFile', () => {
 
     beforeEach(async () => {
         tempDir = await Path.createTempDirectory()
-        testFilePath = path.join(tempDir, 'test-file.txt')
+        testFilePath = Path.join(tempDir, 'test-file.txt')
     })
 
     afterEach(async () => {

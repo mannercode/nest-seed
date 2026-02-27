@@ -25,7 +25,7 @@ import {
     TicketsClient,
     TicketsModule
 } from 'apps/cores'
-import { BookingController, CustomerJwtStrategy } from 'apps/gateway'
+import { BookingHttpController, CustomerJwtStrategy } from 'apps/gateway'
 import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
 
 export type BookingFixture = AppTestContext
@@ -39,7 +39,7 @@ export async function createAllResources(
 
     const movie = await createMovie(ctx)
 
-    const seatmap = { blocks: [{ name: 'A', rows: [{ name: '1', seats: 'OOOOOOOO' }] }] }
+    const seatmap = { blocks: [{ name: 'A', rows: [{ name: '1', layout: 'OOOOOOOO' }] }] }
     const theaters = await Promise.all(
         locations.map((location) => createTheater(ctx, { location, seatmap }))
     )
@@ -68,7 +68,7 @@ export async function createAllResources(
 
 export async function createBookingFixture(): Promise<BookingFixture> {
     const ctx = await createAppTestContext({
-        controllers: [BookingController],
+        controllers: [BookingHttpController],
         imports: [
             MoviesModule,
             AssetsModule,

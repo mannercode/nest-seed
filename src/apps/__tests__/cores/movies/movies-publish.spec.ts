@@ -23,7 +23,7 @@ describe('MoviesPublish', () => {
                 movie = await createUnpublishedMovie(fix)
             })
 
-            // 필수 필드가 준비된 때
+            // 필수 필드가 준비되었을 때
             describe('when required fields are ready', () => {
                 const updateDto = {
                     director: 'Quentin Tarantino',
@@ -69,16 +69,13 @@ describe('MoviesPublish', () => {
                 })
             })
 
-            // 필수 필드가 누락된 때
+            // 필수 필드가 누락되었을 때
             describe('when required fields are missing', () => {
                 // 422 Unprocessable Entity를 반환한다
                 it('returns 422 Unprocessable Entity', async () => {
                     await fix.httpClient
                         .post(`/movies/${movie.id}/publish`)
-                        .unprocessableEntity({
-                            ...Errors.Movies.InvalidForPublish,
-                            missingFields: expect.any(Array)
-                        })
+                        .unprocessableEntity(Errors.Movies.InvalidForPublish(expect.any(Array)))
                 })
             })
         })
@@ -89,7 +86,7 @@ describe('MoviesPublish', () => {
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .post(`/movies/${nullObjectId}/publish`)
-                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
+                    .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))
             })
         })
     })

@@ -4,9 +4,9 @@ import { HoldTicketsDto } from 'apps/cores'
 import { Messages } from 'shared'
 import { BookingService } from './booking.service'
 import {
-    SearchShowdatesForBookingDto,
-    SearchShowtimesForBookingDto,
-    SearchTheatersForBookingDto
+    BookingSearchShowdatesDto,
+    BookingSearchShowtimesDto,
+    BookingSearchTheatersDto
 } from './dtos'
 
 @Controller()
@@ -24,17 +24,17 @@ export class BookingController {
     }
 
     @MessagePattern(Messages.Booking.searchShowdates)
-    searchShowdates(@Payload() dto: SearchShowdatesForBookingDto) {
+    searchShowdates(@Payload() dto: BookingSearchShowdatesDto) {
         return this.service.searchShowdates(dto)
     }
 
     @MessagePattern(Messages.Booking.searchShowtimes)
-    searchShowtimes(@Payload() dto: SearchShowtimesForBookingDto) {
+    searchShowtimes(@Payload() dto: BookingSearchShowtimesDto) {
         return this.service.searchShowtimes(dto)
     }
 
     @MessagePattern(Messages.Booking.searchTheaters)
-    searchTheaters(@Payload() dto: SearchTheatersForBookingDto) {
+    searchTheaters(@Payload() dto: BookingSearchTheatersDto) {
         return this.service.searchTheaters(dto)
     }
 }

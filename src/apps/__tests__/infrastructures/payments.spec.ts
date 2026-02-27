@@ -14,6 +14,22 @@ describe('PaymentsService', () => {
     })
     afterEach(() => fix.teardown())
 
+    describe('cancel', () => {
+        // 결제를 취소한다
+        it('cancels the payment', async () => {
+            const payment = await createPayment(fix)
+
+            await fix.paymentsClient.cancel(payment.id)
+
+            const promise = fix.paymentsClient.getMany([payment.id])
+
+            await expect(promise).rejects.toMatchObject({
+                message: Errors.Mongoose.MultipleDocumentsNotFound([payment.id]).message,
+                status: HttpStatus.NOT_FOUND
+            })
+        })
+    })
+
     describe('create', () => {
         // 생성된 결제를 반환한다
         it('returns the created payment', async () => {
@@ -58,7 +74,7 @@ describe('PaymentsService', () => {
                 const promise = fix.paymentsClient.getMany([nullObjectId])
 
                 await expect(promise).rejects.toMatchObject({
-                    message: Errors.Mongoose.MultipleDocumentsNotFound.message,
+                    message: Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]).message,
                     status: HttpStatus.NOT_FOUND
                 })
             })

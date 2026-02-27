@@ -4,8 +4,8 @@ import { ClientProvider, ClientProxy } from '@nestjs/microservices'
 import { ClientsModule } from '@nestjs/microservices'
 import { defaultTo } from 'lodash'
 import { Observable } from 'rxjs'
-import { catchError, lastValueFrom, retry, throwError, timer } from 'rxjs'
-import { reviveIsoDates } from '../utils'
+import { catchError, defaultIfEmpty, lastValueFrom, retry, throwError, timer } from 'rxjs'
+import { Json } from '../utils'
 
 export type ClientProxyModuleOptions = {
     inject?: any[]
@@ -64,7 +64,7 @@ export class ClientProxyService implements OnModuleDestroy {
                         /no responders/i.test(msg) ||
                         /no response from/i.test(msg)
                     ) {
-                        return timer(retryCount * 50)
+                        return timer(Math.min(50 * Math.pow(2, retryCount - 1), 2000))
                     }
 
                     return throwError(() => err)
@@ -76,7 +76,7 @@ export class ClientProxyService implements OnModuleDestroy {
 }
 
 async function getProxyValue<T>(observer: Observable<T>): Promise<T> {
-    return reviveIsoDates(await waitProxyValue(observer))
+    return Json.reviveIsoDates(await waitProxyValue(observer))
 }
 
 async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
@@ -90,7 +90,8 @@ async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {
                 }
 
                 return throwError(() => new Error(defaultTo(message, 'Unknown error')))
-            })
+            }),
+            defaultIfEmpty(undefined as T)
         )
     )
 }

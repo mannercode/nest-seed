@@ -25,8 +25,8 @@ export class MoviesClient {
         await this.proxy.request(Messages.Movies.deleteMany, movieIds)
     }
 
-    existsAll(movieIds: string[]): Promise<boolean> {
-        return this.proxy.request(Messages.Movies.existsAll, movieIds)
+    allExist(movieIds: string[]): Promise<boolean> {
+        return this.proxy.request(Messages.Movies.allExist, movieIds)
     }
 
     async finalizeUpload(movieId: string, assetId: string): Promise<void> {

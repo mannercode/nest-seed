@@ -166,7 +166,7 @@ describe('MongooseRepository', () => {
         })
     })
 
-    describe('existsAll', () => {
+    describe('allExist', () => {
         let samples: SampleDto[]
 
         beforeEach(async () => {
@@ -178,7 +178,7 @@ describe('MongooseRepository', () => {
         describe('when all ids exist', () => {
             // true를 반환한다
             it('returns true', async () => {
-                const exists = await fix.repository.existsAll(pickIds(samples))
+                const exists = await fix.repository.allExist(pickIds(samples))
                 expect(exists).toBe(true)
             })
         })
@@ -188,7 +188,7 @@ describe('MongooseRepository', () => {
             // true를 반환한다
             it('returns true', async () => {
                 const [first] = samples
-                const exists = await fix.repository.existsAll([first.id, first.id])
+                const exists = await fix.repository.allExist([first.id, first.id])
 
                 expect(exists).toBe(true)
             })
@@ -198,7 +198,7 @@ describe('MongooseRepository', () => {
         describe('when any id is missing', () => {
             // false를 반환한다
             it('returns false', async () => {
-                const exists = await fix.repository.existsAll([nullObjectId])
+                const exists = await fix.repository.allExist([nullObjectId])
                 expect(exists).toBe(false)
             })
         })
@@ -207,7 +207,7 @@ describe('MongooseRepository', () => {
         describe('when ids are empty', () => {
             // true를 반환한다
             it('returns true', async () => {
-                const exists = await fix.repository.existsAll([])
+                const exists = await fix.repository.allExist([])
                 expect(exists).toBe(true)
             })
         })

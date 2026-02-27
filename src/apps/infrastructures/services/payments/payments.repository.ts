@@ -15,6 +15,10 @@ export class PaymentsRepository extends MongooseRepository<Payment> {
         super(model, MongooseConfigModule.maxTake)
     }
 
+    async cancel(paymentId: string) {
+        await this.deleteById(paymentId)
+    }
+
     async create(createDto: CreatePaymentDto) {
         const payment = this.newDocument()
         payment.customerId = createDto.customerId

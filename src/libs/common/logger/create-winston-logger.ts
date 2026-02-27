@@ -98,14 +98,14 @@ const consoleLogFormat = winston.format.combine(
     })
 )
 
-export type LoggerConfiguration = {
+export type LoggerConfig = {
     consoleLogLevel: string
     daysToKeepLogs: string
     directory: string
     fileLogLevel: string
 }
 
-export function createWinstonLogger(config: LoggerConfiguration) {
+export function createWinstonLogger(config: LoggerConfig) {
     const { consoleLogLevel, daysToKeepLogs, directory, fileLogLevel } = config
 
     const transports: winston.transport[] = []

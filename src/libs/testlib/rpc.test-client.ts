@@ -23,7 +23,7 @@ export class RpcTestClient extends ClientProxyService {
     async expectRequest<T>(cmd: string, payload: any, expected: any): Promise<T> {
         const value = await super.request<T>(cmd, payload)
 
-        if (expected) {
+        if (expected !== undefined) {
             expect(value).toEqual(expected)
         }
 

@@ -4,17 +4,17 @@ import { JwtModule, JwtService } from '@nestjs/jwt'
 import Redis from 'ioredis'
 import { defaultTo, get, omit } from 'lodash'
 import { getRedisConnectionToken } from '../redis'
-import { generateShortId, Time } from '../utils'
+import { generateShortId } from '../utils'
 
-export const JwtAuthServiceErrors = {
-    RefreshTokenInvalid: {
+export const JwtAuthErrors = {
+    RefreshTokenInvalid: () => ({
         code: 'ERR_JWT_AUTH_REFRESH_TOKEN_INVALID',
         message: 'The provided refresh token is invalid'
-    },
-    RefreshTokenVerificationFailed: {
+    }),
+    RefreshTokenVerificationFailed: (message: string) => ({
         code: 'ERR_JWT_AUTH_REFRESH_TOKEN_VERIFICATION_FAILED',
-        message: 'Refresh token verification failed'
-    }
+        message
+    })
 }
 
 export type AuthConfig = {
@@ -67,17 +67,21 @@ export class JwtAuthService {
     async refreshAuthTokens(refreshToken: string) {
         const payload = await this.getAuthTokenPayload(refreshToken)
 
+        if (!payload.refreshTokenId) {
+            throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
+        }
+
         const storedRefreshToken = await this.getStoredRefreshToken(payload.refreshTokenId)
 
         if (storedRefreshToken !== refreshToken) {
-            throw new UnauthorizedException(JwtAuthServiceErrors.RefreshTokenInvalid)
+            throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
         }
 
         return this.generateAuthTokens(payload)
     }
 
     private async createToken(payload: object, secret: string, ttlMs: number) {
-        const expiresIn = Time.fromMs(ttlMs) as JwtExpiresIn
+        const expiresIn = Math.floor(ttlMs / 1000) as JwtExpiresIn
 
         const token = await this.jwtService.signAsync<object>(
             { ...payload, jti: generateShortId() },
@@ -96,10 +100,7 @@ export class JwtAuthService {
         } catch (error: unknown) {
             const message = get(error, 'message', String(error))
 
-            throw new UnauthorizedException({
-                ...JwtAuthServiceErrors.RefreshTokenVerificationFailed,
-                message
-            })
+            throw new UnauthorizedException(JwtAuthErrors.RefreshTokenVerificationFailed(message))
         }
     }
 

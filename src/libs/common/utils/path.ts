@@ -1,10 +1,27 @@
 import fs from 'fs/promises'
 import { tmpdir } from 'os'
 import p from 'path'
+import { Checksum } from './checksum'
 
 export class Path {
     static basename(path: string): string {
         return p.basename(path)
+    }
+
+    static dirname(path: string): string {
+        return p.dirname(path)
+    }
+
+    static getAbsolute(src: string): string {
+        return p.isAbsolute(src) ? src : p.resolve(src)
+    }
+
+    static join(...paths: string[]): string {
+        return p.join(...paths)
+    }
+
+    static sep() {
+        return p.sep
     }
 
     static async copy(src: string, dest: string): Promise<void> {
@@ -12,15 +29,11 @@ export class Path {
     }
 
     static async createTempDirectory(): Promise<string> {
-        return fs.mkdtemp(`${tmpdir()}${this.sep()}`)
+        return fs.mkdtemp(`${tmpdir()}${p.sep}`)
     }
 
     static async delete(path: string): Promise<void> {
         await fs.rm(path, { force: true, recursive: true })
-    }
-
-    static dirname(path: string): string {
-        return p.dirname(path)
     }
 
     static async exists(path: string): Promise<boolean> {
@@ -31,10 +44,6 @@ export class Path {
         } catch {
             return false
         }
-    }
-
-    static getAbsolute(src: string): string {
-        return p.isAbsolute(src) ? src : p.resolve(src)
     }
 
     static async isDirectory(path: string): Promise<boolean> {
@@ -50,10 +59,6 @@ export class Path {
         } catch {
             return false
         }
-    }
-
-    static join(...paths: string[]): string {
-        return p.join(...paths)
     }
 
     static async mkdir(path: string): Promise<void> {
@@ -73,15 +78,34 @@ export class Path {
         }
     }
 
-    static sep() {
-        return p.sep
-    }
-
     static async subdirs(src: string): Promise<string[]> {
         const items = await fs.readdir(src, { withFileTypes: true })
         return items
             .filter((item) => item.isDirectory())
             .map((item) => item.name)
             .sort((left, right) => left.localeCompare(right))
+    }
+
+    static async areEqual(firstFilePath: string, secondFilePath: string): Promise<boolean> {
+        const [firstSize, secondSize] = await Promise.all([
+            this.getSize(firstFilePath),
+            this.getSize(secondFilePath)
+        ])
+
+        if (firstSize !== secondSize) return false
+
+        const [firstChecksum, secondChecksum] = await Promise.all([
+            Checksum.fromFile(firstFilePath),
+            Checksum.fromFile(secondFilePath)
+        ])
+
+        return (
+            firstChecksum.algorithm === secondChecksum.algorithm &&
+            firstChecksum.base64 === secondChecksum.base64
+        )
+    }
+
+    static async getSize(filePath: string): Promise<number> {
+        return (await fs.stat(filePath)).size
     }
 }

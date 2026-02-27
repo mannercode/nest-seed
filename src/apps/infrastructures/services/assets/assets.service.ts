@@ -6,14 +6,8 @@ import { Rules } from 'shared'
 import { AssetsRepository } from './assets.repository'
 import { AssetPresignedUploadDto, CreateAssetDto, FinalizeAssetDto } from './dtos'
 import { AssetDto } from './dtos'
+import { AssetErrors } from './errors'
 import { Asset } from './models'
-
-export const AssetServiceErrors = {
-    UploadExpired: {
-        code: 'ERR_ASSET_UPLOAD_EXPIRED',
-        message: 'The upload request for this asset has expired.'
-    }
-}
 
 @Injectable()
 export class AssetsService {
@@ -58,9 +52,9 @@ export class AssetsService {
     }
 
     async deleteMany(assetIds: string[]): Promise<void> {
-        await this.repository.deleteByIds(assetIds)
-
         await Promise.all(assetIds.map((assetId) => this.s3Service.deleteObject(assetId)))
+
+        await this.repository.deleteByIds(assetIds)
     }
 
     async finalizeUpload(assetId: string, { owner }: FinalizeAssetDto) {
@@ -71,7 +65,7 @@ export class AssetsService {
             await this.repository.deleteById(assetId)
             await this.s3Service.deleteObject(assetId)
 
-            throw new NotFoundException({ ...AssetServiceErrors.UploadExpired, assetId, expiresAt })
+            throw new NotFoundException(AssetErrors.UploadExpired(assetId, expiresAt))
         }
 
         const updatedAsset = await this.repository.assignOwner(assetId, owner)

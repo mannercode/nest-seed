@@ -1,20 +1,6 @@
-import { IsNotEmpty, IsString } from 'class-validator'
-import { Checksum } from 'common'
-
-export class AssetDownloadDto {
-    expiresAt: Date
-    url: string
-}
-
-export class AssetOwnerDto {
-    @IsNotEmpty()
-    @IsString()
-    entityId: string
-
-    @IsNotEmpty()
-    @IsString()
-    service: string
-}
+import type { Checksum } from 'common'
+import type { AssetDownloadDto } from './asset-download.dto'
+import type { AssetOwnerDto } from './asset-owner.dto'
 
 export class AssetDto {
     checksum: Checksum

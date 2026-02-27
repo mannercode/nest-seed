@@ -10,8 +10,15 @@
         "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     ],
     "remoteUser": "node",
-    "mounts": ["source=${localEnv:HOME}/.codex,target=/home/node/.codex,type=bind"],
-    "initializeCommand": { "prepare-mounts": "mkdir -p ${localEnv:HOME}/.codex" },
+    "mounts": [
+        "source=${localEnv:HOME}/.codex,target=/home/node/.codex,type=bind",
+        "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind",
+        "source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind"
+    ],
+    "initializeCommand": {
+        "prepare-mounts": "mkdir -p ${localEnv:HOME}/.codex ${localEnv:HOME}/.claude ${localEnv:HOME}/.copilot",
+        "prepare-files": "touch ${localEnv:HOME}/.claude.json"
+    },
     "postCreateCommand": { "husky": "husky", "ci": "npm ci" },
     "postStartCommand": {
         "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null",
@@ -31,7 +38,7 @@
                 "mutantdino.resourcemonitor",
                 "mkhl.shfmt",
                 "github.vscode-pull-request-github",
-                "openai.chatgpt"
+                "anthropic.claude-code"
             ],
             "settings": {
                 "files.watcherExclude": {

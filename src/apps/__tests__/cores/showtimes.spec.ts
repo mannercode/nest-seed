@@ -14,6 +14,20 @@ describe('ShowtimesService', () => {
     })
     afterEach(() => fix.teardown())
 
+    describe('deleteBySagaIds', () => {
+        // sagaIds에 해당하는 상영 시간을 삭제한다
+        it('deletes showtimes by sagaIds', async () => {
+            const sagaId = oid(0x1)
+
+            await fix.showtimesClient.createMany([buildCreateShowtimeDto({ sagaId })])
+            await fix.showtimesClient.deleteBySagaIds([sagaId])
+
+            const showtimes = await fix.showtimesClient.search({ sagaIds: [sagaId] })
+
+            expect(showtimes).toHaveLength(0)
+        })
+    })
+
     describe('createMany', () => {
         // 상영 시간을 생성한다
         it('creates showtimes', async () => {
@@ -52,7 +66,7 @@ describe('ShowtimesService', () => {
                 const promise = fix.showtimesClient.getMany([nullObjectId])
 
                 await expect(promise).rejects.toMatchObject({
-                    message: Errors.Mongoose.MultipleDocumentsNotFound.message,
+                    message: Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]).message,
                     status: HttpStatus.NOT_FOUND
                 })
             })
@@ -133,7 +147,7 @@ describe('ShowtimesService', () => {
                 const promise = fix.showtimesClient.search({})
 
                 await expect(promise).rejects.toMatchObject({
-                    message: Errors.Mongoose.FiltersRequired.message,
+                    message: Errors.Mongoose.FiltersRequired().message,
                     status: HttpStatus.BAD_REQUEST
                 })
             })

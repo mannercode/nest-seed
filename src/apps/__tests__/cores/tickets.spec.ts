@@ -88,7 +88,7 @@ describe('TicketsService', () => {
                 const promise = fix.ticketsClient.search({})
 
                 await expect(promise).rejects.toMatchObject({
-                    message: Errors.Mongoose.FiltersRequired.message,
+                    message: Errors.Mongoose.FiltersRequired().message,
                     status: HttpStatus.BAD_REQUEST
                 })
             })

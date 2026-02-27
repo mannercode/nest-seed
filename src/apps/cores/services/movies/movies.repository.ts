@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { QueryBuilderOptions } from 'common'
-import { assignDefined, MongooseRepository, QueryBuilder } from 'common'
+import { assignIfDefined, MongooseRepository, QueryBuilder } from 'common'
 import { HydratedDocument, Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
@@ -63,14 +63,14 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     }
 
     private async applyUpsertDto(movie: HydratedDocument<Movie>, dto: UpsertMovieDto) {
-        assignDefined(movie, dto, 'title')
-        assignDefined(movie, dto, 'genres')
-        assignDefined(movie, dto, 'releaseDate')
-        assignDefined(movie, dto, 'plot')
-        assignDefined(movie, dto, 'durationInSeconds')
-        assignDefined(movie, dto, 'director')
-        assignDefined(movie, dto, 'rating')
-        assignDefined(movie, dto, 'assetIds')
+        assignIfDefined(movie, dto, 'title')
+        assignIfDefined(movie, dto, 'genres')
+        assignIfDefined(movie, dto, 'releaseDate')
+        assignIfDefined(movie, dto, 'plot')
+        assignIfDefined(movie, dto, 'durationInSeconds')
+        assignIfDefined(movie, dto, 'director')
+        assignIfDefined(movie, dto, 'rating')
+        assignIfDefined(movie, dto, 'assetIds')
 
         await movie.save()
     }

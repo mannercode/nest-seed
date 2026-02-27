@@ -24,6 +24,7 @@ import { TicketPurchaseService } from './services'
         PurchaseRecordsClient,
         ShowtimesClient,
         PaymentsClient
-    ]
+    ],
+    exports: [TicketPurchaseService, PaymentsClient, PurchaseRecordsClient]
 })
 export class PurchaseModule {}

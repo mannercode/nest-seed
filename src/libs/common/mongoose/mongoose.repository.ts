@@ -1,10 +1,9 @@
 import type { OnModuleInit } from '@nestjs/common'
 import type { ClientSession, HydratedDocument, Model, ObjectId, QueryWithHelpers } from 'mongoose'
 import { BadRequestException, NotFoundException } from '@nestjs/common'
-import { differenceWith, uniq } from 'lodash'
-import { defaultTo } from 'lodash'
+import { defaultTo, differenceWith, uniq } from 'lodash'
 import type { PaginationDto, PaginationResult } from '../types'
-import { Expect, Verify } from '../validator'
+import { Require, Verify } from '../validator'
 import { MongooseErrors } from './errors'
 import { objectId, objectIds } from './mongoose.util'
 
@@ -33,7 +32,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         return { deletedCount }
     }
 
-    async existsAll(ids: string[], session: SessionArg = undefined) {
+    async allExist(ids: string[], session: SessionArg = undefined) {
         const uniqueIds = uniq(ids)
         if (uniqueIds.length === 0) return true
 
@@ -71,13 +70,9 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         let skip = defaultTo(pagination.skip, 0)
 
         if (take <= 0) {
-            throw new BadRequestException({ ...MongooseErrors.TakeInvalid, take })
+            throw new BadRequestException(MongooseErrors.TakeInvalid(take))
         } else if (this.maxTake < take) {
-            throw new BadRequestException({
-                ...MongooseErrors.MaxTakeExceeded,
-                maxTake: this.maxTake,
-                take
-            })
+            throw new BadRequestException(MongooseErrors.MaxTakeExceeded(this.maxTake, take))
         }
 
         const queryHelper = this.model.find({}, null, { session })
@@ -95,8 +90,10 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
 
         queryHelper.lean(defaultLeanOptions)
 
-        const items = await queryHelper.exec()
-        const total = await this.model.countDocuments(queryHelper.getQuery()).exec()
+        const [items, total] = await Promise.all([
+            queryHelper.exec(),
+            this.model.countDocuments(queryHelper.getQuery()).exec()
+        ])
 
         return { items, skip, take, total } as PaginationResult<Doc>
     }
@@ -105,7 +102,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         const doc = await this.findById(id, session)
 
         if (!doc) {
-            throw new NotFoundException({ ...MongooseErrors.DocumentNotFound, notFoundId: id })
+            throw new NotFoundException(MongooseErrors.DocumentNotFound(id))
         }
 
         return doc
@@ -125,10 +122,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         )
 
         if (notFoundIds.length > 0) {
-            throw new NotFoundException({
-                ...MongooseErrors.MultipleDocumentsNotFound,
-                notFoundIds
-            })
+            throw new NotFoundException(MongooseErrors.MultipleDocumentsNotFound(notFoundIds))
         }
 
         return docs
@@ -159,7 +153,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
             session
         })
 
-        Expect.equals(
+        Require.equals(
             docs.length,
             insertedCount + matchedCount + deletedCount,
             `The number of inserted documents should match the requested count`
@@ -209,7 +203,7 @@ export abstract class MongooseRepository<Doc> implements OnModuleInit {
         const doc = await this.findDocumentById(id, session)
 
         if (!doc) {
-            throw new NotFoundException({ ...MongooseErrors.DocumentNotFound, notFoundId: id })
+            throw new NotFoundException(MongooseErrors.DocumentNotFound(id))
         }
 
         return doc

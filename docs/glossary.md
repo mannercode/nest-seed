@@ -1,104 +1,44 @@
-# Domain Glossary (`src/apps` 기준)
+# Domain Glossary
 
-이 문서는 `src/apps` 소스코드 기준의 도메인 용어 사전이다.
-문서/디자인 자료와 충돌 시, 이 문서와 코드 기준을 우선한다.
+영화 예매 도메인에서 사용하는 주요 용어를 정리한다.
 
-## 1. 용어 원칙
+| 용어               | 영문             | 설명                                                                                                                 |
+| ------------------ | ---------------- | -------------------------------------------------------------------------------------------------------------------- |
+| 고객               | Customer         | 서비스 이용자. 회원가입 후 영화를 검색하고 티켓을 구매한다.                                                          |
+| 영화               | Movie            | 상영 가능한 콘텐츠. 등급, 장르, 상영 시간 등의 정보를 가지며, 공개(publish) 상태가 되어야 상영시간을 등록할 수 있다. |
+| 극장               | Theater          | 영화를 상영하는 물리적 장소. 위치 좌표와 좌석 배치(seatmap)를 포함한다.                                              |
+| 좌석 배치          | Seatmap          | 극장의 좌석 구조. 블록(block) > 행(row) > 좌석(seat) 계층으로 구성된다.                                              |
+| 상영일             | Showdate         | 특정 극장에서 특정 영화가 상영되는 날짜. 상영시간(Showtime)에서 날짜만 추출한 값이다.                                |
+| 상영시간           | Showtime         | 특정 극장에서 특정 영화를 상영하는 시간대. 시작 시각과 종료 시각으로 정의된다.                                       |
+| 티켓               | Ticket           | 하나의 상영시간에서 한 좌석에 대한 예매 단위. `available` 또는 `sold` 상태를 갖는다.                                 |
+| 티켓 선점          | TicketHolding    | 구매 전 티켓을 임시로 잡아두는 행위. 10분간 유지되며, 시간 초과 시 자동 해제된다.                                    |
+| 구매 기록          | PurchaseRecord   | 완료된 구매 트랜잭션. 구매 항목(티켓, 식음료 등)과 결제 정보를 포함한다.                                             |
+| 시청 기록          | WatchRecord      | 고객이 영화를 관람한 이력. 추천 시스템의 입력 데이터로 활용된다.                                                     |
+| 결제               | Payment          | 구매에 대한 결제 처리. 외부 결제 시스템과의 연동을 추상화한다.                                                       |
+| 파일 자산          | Asset            | 업로드된 파일(포스터 이미지 등). Presigned URL을 통해 업로드/다운로드한다.                                           |
+| 상영시간 일괄 생성 | ShowtimeCreation | 영화·극장·시간 조합으로 상영시간과 티켓을 한 번에 생성하는 비동기 작업.                                              |
+| 예약               | Booking          | 고객이 극장·상영시간·좌석을 탐색하고 티켓을 선점하기까지의 과정.                                                     |
+| 구매               | Purchase         | 선점된 티켓에 대해 결제를 진행하고 구매를 확정하는 과정.                                                             |
+| 등급               | MovieRating      | 영화 관람 등급. `G`, `PG`, `PG13`, `R`, `NC17`, `Unrated` 중 하나.                                                   |
+| 장르               | MovieGenre       | 영화 장르. `action`, `comedy`, `drama`, `fantasy`, `horror`, `mystery`, `romance`, `thriller`, `western`.            |
 
-- 동작(행위)과 결과물(기록)을 구분한다.
-    - 예: `processPurchase`(행위) -> `PurchaseRecord`(결과물)
-- 범용 인프라 용어와 도메인 용어를 분리한다.
-    - 예: 인프라 `AssetsService.finalizeUpload`, 도메인 `MoviesService.attachUploadedAsset`
-- 존재 여부 API는 `existsAll`로 통일한다.
-    - 의미: 입력된 모든 ID가 존재하면 `true`
-- `...RecordId`는 기록성 엔티티의 ID를 명시할 때 사용한다.
+---
 
-## 2. 핵심 용어
+## 일반 용어
 
-| 용어                   | 의미                                      | 대표 코드 식별자                              |
-| ---------------------- | ----------------------------------------- | --------------------------------------------- |
-| Customer               | 사용자(고객) 엔티티                       | `CustomersService`, `CustomerDto`             |
-| Theater                | 상영관(극장) 엔티티                       | `TheatersService`, `TheaterDto`               |
-| Showtime               | 상영 일정(시작/종료 시각 포함)            | `ShowtimesService`, `ShowtimeDto`             |
-| Showdate               | 상영 날짜(일 단위 조회 축)                | `searchShowdates`, `showdate`                 |
-| Ticket                 | 좌석 단위 판매 티켓                       | `TicketDto`, `TicketStatus`                   |
-| Ticket Holding         | 티켓 임시 선점 상태                       | `TicketHoldingService`, `holdTickets`         |
-| Movie                  | 영화 엔티티                               | `MoviesService`, `MovieDto`                   |
-| Asset                  | 파일 메타데이터/소유자 정보               | `AssetsService`, `AssetDto`                   |
-| Upload Finalization    | 업로드 완료 확정(인프라)                  | `finalizeUpload`, `FinalizeAssetDto`          |
-| Asset Attachment       | 업로드 완료 자산을 영화에 연결            | `attachUploadedAsset`                         |
-| Payment                | 외부 결제 완료 기록(튜토리얼 단순화 모델) | `PaymentsService`, `PaymentDto`               |
-| Purchase               | 구매 수행 프로세스(행위)                  | `PurchaseService.processPurchase`             |
-| Purchase Item          | 구매 입력 아이템(다품목 확장 가능)        | `PurchaseItemDto`, `itemId`                   |
-| Purchase Record        | 구매 결과 기록(영수증 성격)               | `PurchaseRecordDto`, `PurchaseRecordsService` |
-| Watch Record           | 시청 이력 기록                            | `WatchRecordDto`, `purchaseRecordId`          |
-| Recommendation         | 추천 결과 계산                            | `RecommendationService`, `MovieRecommender`   |
-| Showtime Creation Saga | 상영 생성 비동기 워크플로우               | `ShowtimeCreationWorkerService`, `sagaId`     |
+도메인 용어와 별개로, 코드에서 사용하는 일반 용어의 구분 기준을 정리한다.
 
-## 3. 네이밍 규칙
+### Process / Task / Job
 
-### 3.1 구매(Purchase) 축
+| 이름        | 의미                                   | 스코프/기간         | 예시                                     |
+| ----------- | -------------------------------------- | ------------------- | ---------------------------------------- |
+| **Process** | 비즈니스 플로우, 여러 단계의 흐름      | 길고, 단계 여러 개  | "영화 등록 프로세스", "예매 프로세스"    |
+| **Task**    | 작은 일 하나, 프로세스의 구성 단위     | 짧고, 비교적 원자적 | "포스터 이미지 업로드", "상영 시간 검증" |
+| **Job**     | 백그라운드 작업, 큐에 넣고 돌리는 일감 | 비동기·배치         | "야간에 정산 잡 실행", "메일 발송 잡"    |
 
-- `Purchase`는 프로세스 이름이다.
-    - API: `Messages.Purchase.processPurchase`
-- 결과 데이터는 `PurchaseRecord`로 표현한다.
-    - API: `Messages.PurchaseRecords.create/getMany`
-- `PurchaseItem`의 식별자는 `itemId`를 사용한다.
-    - 티켓 전용 필드명(`ticketId`)을 구매 공용 모델에 두지 않는다.
-- 아이템군(enum)은 복수형 값을 사용한다.
-    - 예: `PurchaseItemType.Tickets`, `PurchaseItemType.Foods`
+### Complete / Finish
 
-### 3.2 자산(Asset) 축
-
-- 인프라 계층:
-    - `finalizeUpload`: 업로드 완료를 확정하고 owner를 할당
-- 영화 도메인 계층:
-    - `attachUploadedAsset`: 업로드 완료 자산을 movie에 연결
-- HTTP 라우트:
-    - `/movies/:movieId/assets/:assetId/finalize`
-
-### 3.3 존재 여부
-
-- `existsAll(ids)`만 허용한다.
-- 금지: `allExist`, 모호한 `exists(ids)`
-
-### 3.4 기록 ID 명명
-
-- 기록성 엔티티 ID는 `...RecordId`를 사용한다.
-    - 예: `purchaseRecordId`
-- 복수는 `...RecordIds`를 사용한다.
-
-### 3.5 이벤트 키 케이스
-
-- 이벤트 키는 camelCase로 통일한다.
-    - 예: `Events.Purchase.ticketPurchased`, `Events.Purchase.ticketPurchaseCanceled`
-
-### 3.6 에러 코드 접두어
-
-- Ticket purchase 도메인 에러 코드는 `ERR_TICKET_PURCHASE_*`로 통일한다.
-
-## 4. 비권장/제거 용어
-
-| 비권장 용어                              | 대체 용어                                |
-| ---------------------------------------- | ---------------------------------------- |
-| `allExist`                               | `existsAll`                              |
-| `CompleteAssetDto`                       | `FinalizeAssetDto`                       |
-| `completeDto` (asset finalize payload)   | `finalizeDto`                            |
-| `/assets/:assetId/complete`              | `/assets/:assetId/finalize`              |
-| `InvalidForCompletion` (movie publish)   | `InvalidForPublish`                      |
-| `purchaseId` (watch record 맥락)         | `purchaseRecordId`                       |
-| `ticketId` (purchase item 공용 모델)     | `itemId`                                 |
-| `MovieDrafts` (현재 미구현 메시지)       | 제거                                     |
-| `Events.Purchase.TicketPurchased`        | `Events.Purchase.ticketPurchased`        |
-| `Events.Purchase.TicketPurchaseCanceled` | `Events.Purchase.ticketPurchaseCanceled` |
-| `ERR_PURCHASE_MAX_TICKETS_EXCEEDED`      | `ERR_TICKET_PURCHASE_LIMIT_EXCEEDED`     |
-| `ERR_PURCHASE_WINDOW_CLOSED`             | `ERR_TICKET_PURCHASE_WINDOW_CLOSED`      |
-| `ERR_PURCHASE_TICKET_NOT_HELD`           | `ERR_TICKET_PURCHASE_NOT_HELD`           |
-
-## 5. 구현 시 체크리스트
-
-- 새 용어를 추가할 때 다음을 동시에 확인한다.
-    - DTO/Model/Service/Controller/Client/Message 키가 같은 용어를 쓰는가
-    - 행위 명칭과 결과물 명칭이 섞이지 않았는가
-    - 인프라 용어와 도메인 용어를 구분했는가
-    - 단수/복수(`Id`/`Ids`, `Record`/`Records`)가 일치하는가
+| 이름         | 의미                                                                             |
+| ------------ | -------------------------------------------------------------------------------- |
+| **complete** | 필요한 요건을 다 채워서 완성한다. 상태 값으로도 적합하다 (`status: "COMPLETED"`) |
+| **finish**   | 단순히 끝낸다. 성공/실패 여부와 무관하게 종료했다는 의미                         |

@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer'
 import { IsDefined, ValidateNested } from 'class-validator'
-import { AssetOwnerDto } from './asset.dto'
+import { AssetOwnerDto } from './asset-owner.dto'
 
 export class FinalizeAssetDto {
     @IsDefined()

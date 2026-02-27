@@ -37,9 +37,9 @@ export class MoviesController {
         return null
     }
 
-    @MessagePattern(Messages.Movies.existsAll)
-    existsAll(@Payload() movieIds: string[]) {
-        return this.service.existsAll(movieIds)
+    @MessagePattern(Messages.Movies.allExist)
+    allExist(@Payload() movieIds: string[]) {
+        return this.service.allExist(movieIds)
     }
 
     @MessagePattern(Messages.Movies.Assets.finalizeUpload)

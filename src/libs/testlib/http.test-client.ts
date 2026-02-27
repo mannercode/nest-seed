@@ -1,5 +1,5 @@
 import { HttpStatus } from '@nestjs/common'
-import { Byte, reviveIsoDates } from 'common'
+import { Byte, Json } from 'common'
 import { createWriteStream } from 'fs'
 import superagent from 'superagent'
 
@@ -126,9 +126,9 @@ export class HttpTestClient {
 
         expect(response.status).toEqual(status)
 
-        response.body = reviveIsoDates(response.body)
+        response.body = Json.reviveIsoDates(response.body)
 
-        if (expected) {
+        if (expected !== undefined) {
             expect(response.body).toEqual(expected)
         }
 
@@ -182,7 +182,8 @@ export class HttpTestClient {
         const parsedMessage: Partial<EventMessage> = {}
 
         lines.forEach((line) => {
-            const [key, value] = line.split(': ')
+            const [key, ...rest] = line.split(': ')
+            const value = rest.join(': ')
             if (key && value) {
                 switch (key) {
                     case 'data':

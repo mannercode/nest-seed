@@ -8,6 +8,11 @@ import { PaymentsService } from './payments.service'
 export class PaymentsController {
     constructor(private readonly service: PaymentsService) {}
 
+    @MessagePattern(Messages.Payments.cancel)
+    cancel(@Payload() paymentId: string) {
+        return this.service.cancel(paymentId)
+    }
+
     @MessagePattern(Messages.Payments.create)
     create(@Payload() createDto: CreatePaymentDto) {
         return this.service.create(createDto)

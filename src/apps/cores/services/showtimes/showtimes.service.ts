@@ -9,14 +9,18 @@ import { ShowtimesRepository } from './showtimes.repository'
 export class ShowtimesService {
     constructor(private readonly repository: ShowtimesRepository) {}
 
+    async deleteBySagaIds(sagaIds: string[]) {
+        await this.repository.deleteBySagaIds(sagaIds)
+    }
+
     async createMany(createDtos: CreateShowtimeDto[]) {
         await this.repository.createMany(createDtos)
 
         return { count: createDtos.length, success: true }
     }
 
-    async existsAll(showtimeIds: string[]): Promise<boolean> {
-        return this.repository.existsAll(showtimeIds)
+    async allExist(showtimeIds: string[]): Promise<boolean> {
+        return this.repository.allExist(showtimeIds)
     }
 
     async getMany(showtimeIds: string[]) {

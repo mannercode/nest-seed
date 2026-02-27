@@ -23,14 +23,14 @@ describe('TheatersService', () => {
                 .created({ ...createDto, id: expect.any(String) })
         })
 
-        // 필수 필드가 누락된 때
+        // 필수 필드가 누락되었을 때
         describe('when required fields are missing', () => {
             // 400 Bad Request를 반환한다
             it('returns 400 Bad Request', async () => {
                 await fix.httpClient
                     .post('/theaters')
                     .body({})
-                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+                    .badRequest(Errors.RequestValidation.Failed(expect.any(Array)))
             })
         })
     })
@@ -56,10 +56,7 @@ describe('TheatersService', () => {
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .get(`/theaters/${nullObjectId}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [nullObjectId]
-                    })
+                    .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
             })
         })
     })
@@ -102,7 +99,7 @@ describe('TheatersService', () => {
                 await fix.httpClient
                     .patch(`/theaters/${nullObjectId}`)
                     .body({})
-                    .notFound({ ...Errors.Mongoose.DocumentNotFound, notFoundId: nullObjectId })
+                    .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))
             })
         })
     })
@@ -127,10 +124,7 @@ describe('TheatersService', () => {
 
                 await fix.httpClient
                     .get(`/theaters/${theater.id}`)
-                    .notFound({
-                        ...Errors.Mongoose.MultipleDocumentsNotFound,
-                        notFoundIds: [theater.id]
-                    })
+                    .notFound(Errors.Mongoose.MultipleDocumentsNotFound([theater.id]))
             })
         })
 
@@ -197,7 +191,7 @@ describe('TheatersService', () => {
                 await fix.httpClient
                     .get('/theaters')
                     .query({ wrong: 'value' })
-                    .badRequest({ ...Errors.RequestValidation.Failed, details: expect.any(Array) })
+                    .badRequest(Errors.RequestValidation.Failed(expect.any(Array)))
             })
         })
     })

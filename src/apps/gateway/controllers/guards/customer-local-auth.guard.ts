@@ -6,7 +6,7 @@ import { AuthErrors } from './errors'
 export class CustomerLocalAuthGuard extends AuthGuard('customer-local') {
     handleRequest(error: any, user: any) {
         if (error || !user) {
-            throw new UnauthorizedException(AuthErrors.Unauthorized)
+            throw new UnauthorizedException(AuthErrors.Unauthorized())
         }
 
         return user

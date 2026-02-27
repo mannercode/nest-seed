@@ -10,6 +10,11 @@ import { TicketsService } from './tickets.service'
 export class TicketsController {
     constructor(private readonly service: TicketsService) {}
 
+    @MessagePattern(Messages.Tickets.deleteBySagaIds)
+    deleteBySagaIds(@Payload() sagaIds: string[]) {
+        return this.service.deleteBySagaIds(sagaIds)
+    }
+
     @MessagePattern(Messages.Tickets.aggregateSales)
     aggregateSales(@Payload() aggregateDto: AggregateTicketSalesDto) {
         return this.service.aggregateSales(aggregateDto)

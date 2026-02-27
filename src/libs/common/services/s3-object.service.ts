@@ -17,7 +17,7 @@ import { defaultTo, some } from 'lodash'
 import { newObjectIdString } from '../mongoose'
 import { HttpUtil } from '../utils'
 
-export interface S3ClientFactoryConfig extends S3ClientConfig {
+export interface S3ServiceConfig extends S3ClientConfig {
     bucket: string
 }
 export type S3DeleteObjectResult = { key: string; status: number }
@@ -40,19 +40,28 @@ export type S3ObjectData = { contentType: string; data: Buffer; filename: string
 export type S3ObjectModuleOptions = {
     inject?: any[]
     name?: string
-    useFactory: (...args: any[]) => Promise<S3ClientFactoryConfig> | S3ClientFactoryConfig
+    useFactory: (...args: any[]) => Promise<S3ServiceConfig> | S3ServiceConfig
 }
 export type S3ObjectSummary = { eTag?: string; key: string; lastModified?: Date; size?: number }
 export type S3PresignDownloadOptions = {
-    /** 다운로드 파일명 강제 */
+    /**
+     * Force the download filename.
+     * 다운로드 파일명 강제
+     */
     filename?: string
-    /** Content-Disposition 직접 지정 */
+    /**
+     * Specify Content-Disposition directly.
+     * Content-Disposition 직접 지정
+     */
     responseContentDisposition?: string
-    /** 다운로드 시 Content-Type 오버라이드 */
+    /**
+     * Override Content-Type on download.
+     * 다운로드 시 Content-Type 오버라이드
+     */
     responseContentType?: string
 } & S3PresignUrlOptions
 export type S3PresignPostUploadOptions = S3PresignUrlOptions & {
-    // attachment; filename="a.txt"
+    // ex) attachment; filename="a.txt"
     contentDisposition?: string
     contentType?: string
     maxContentLength?: number

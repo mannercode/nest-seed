@@ -1,13 +1,13 @@
 import type { AppTestContext } from 'apps/__tests__/__helpers__'
 import { createAppTestContext } from 'apps/__tests__/__helpers__'
 import { TheatersClient, TheatersModule } from 'apps/cores'
-import { TheatersController } from 'apps/gateway'
+import { TheatersHttpController } from 'apps/gateway'
 
 export type TheatersFixture = AppTestContext & {}
 
 export async function createTheatersFixture() {
     const ctx = await createAppTestContext({
-        controllers: [TheatersController],
+        controllers: [TheatersHttpController],
         imports: [TheatersModule],
         providers: [TheatersClient]
     })

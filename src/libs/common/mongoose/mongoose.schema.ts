@@ -57,6 +57,9 @@ export function createMongooseSchema<T>(cls: Type<T>): Schema<T> {
         schema.pre('find', excludeDeletedMiddleware)
         schema.pre('findOne', excludeDeletedMiddleware)
         schema.pre('findOneAndUpdate', excludeDeletedMiddleware)
+        schema.pre('findOneAndReplace', excludeDeletedMiddleware)
+        schema.pre('updateOne', excludeDeletedMiddleware)
+        schema.pre('updateMany', excludeDeletedMiddleware)
         schema.pre('countDocuments', excludeDeletedMiddleware)
         schema.pre('aggregate', function () {
             addDeletedAtFilterToPipeline(this.pipeline())

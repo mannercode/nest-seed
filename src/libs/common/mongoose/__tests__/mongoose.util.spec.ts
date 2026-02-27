@@ -1,7 +1,7 @@
 import { BadRequestException, Logger } from '@nestjs/common'
 import { Prop, Schema } from '@nestjs/mongoose'
 import {
-    assignDefined,
+    assignIfDefined,
     createMongooseSchema,
     mapDocToDto,
     MongooseSchema,
@@ -283,7 +283,7 @@ describe('mapDocToDto', () => {
     })
 })
 
-describe('assignDefined', () => {
+describe('assignIfDefined', () => {
     // source[key]가 정의되어 있을 때
     describe('when source[key] is defined', () => {
         // target[key]에 할당한다
@@ -291,7 +291,7 @@ describe('assignDefined', () => {
             const target = { name: 'old' }
             const source = { name: 'new' as string | undefined }
 
-            assignDefined(target, source, 'name')
+            assignIfDefined(target, source, 'name')
 
             expect(target.name).toBe('new')
         })
@@ -304,7 +304,7 @@ describe('assignDefined', () => {
             const target = { name: 'old' }
             const source = { name: undefined as string | undefined }
 
-            assignDefined(target, source, 'name')
+            assignIfDefined(target, source, 'name')
 
             expect(target.name).toBe('old')
         })
@@ -317,7 +317,7 @@ describe('assignDefined', () => {
             const target = { id: 'old' }
             const source = { id: '123' as string | undefined }
 
-            assignDefined(target, source, 'id', (v) => `obj:${v}`)
+            assignIfDefined(target, source, 'id', (v) => `obj:${v}`)
 
             expect(target.id).toBe('obj:123')
         })
@@ -330,7 +330,7 @@ describe('assignDefined', () => {
             const target = { email: 'old' as null | string }
             const source = { email: null as null | string | undefined }
 
-            assignDefined(target, source, 'email')
+            assignIfDefined(target, source, 'email')
 
             expect(target.email).toBeNull()
         })

@@ -20,6 +20,10 @@ export class TicketsRepository extends MongooseRepository<Ticket> {
         super(model, MongooseConfigModule.maxTake)
     }
 
+    async deleteBySagaIds(sagaIds: string[]) {
+        await this.model.deleteMany({ sagaId: { $in: sagaIds } })
+    }
+
     async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
         const query = this.buildQuery(aggregateDto)
 

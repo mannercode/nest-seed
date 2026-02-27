@@ -8,7 +8,7 @@ import {
     ClientProxyModule,
     createWinstonLogger,
     ExceptionLoggerFilter,
-    SuccessLoggingInterceptor
+    SuccessLoggerInterceptor
 } from 'common'
 import { AppConfigService, getProjectId } from '../config'
 import { RequestValidationPipe } from '../pipes/request-validation.pipe'
@@ -36,7 +36,7 @@ import { RequestValidationPipe } from '../pipes/request-validation.pipe'
         AppConfigService,
         { provide: APP_PIPE, useClass: RequestValidationPipe },
         { provide: APP_FILTER, useClass: ExceptionLoggerFilter },
-        { provide: APP_INTERCEPTOR, useClass: SuccessLoggingInterceptor },
+        { provide: APP_INTERCEPTOR, useClass: SuccessLoggerInterceptor },
         {
             inject: [AppConfigService],
             provide: AppLoggerService,

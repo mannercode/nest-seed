@@ -19,9 +19,9 @@ export class TheatersController {
         return null
     }
 
-    @MessagePattern(Messages.Theaters.existsAll)
-    existsAll(@Payload() theaterIds: string[]) {
-        return this.service.existsAll(theaterIds)
+    @MessagePattern(Messages.Theaters.allExist)
+    allExist(@Payload() theaterIds: string[]) {
+        return this.service.allExist(theaterIds)
     }
 
     @MessagePattern(Messages.Theaters.getMany)

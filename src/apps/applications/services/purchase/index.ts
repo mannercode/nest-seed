@@ -1,4 +1,6 @@
+export * from './activities/purchase.activities'
 export * from './dtos'
+export * from './errors'
 export * from './purchase.client'
 export * from './purchase.module'
 export * from './purchase.service'

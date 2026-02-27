@@ -9,6 +9,10 @@ import { PurchaseRecordsRepository } from './purchase-records.repository'
 export class PurchaseRecordsService {
     constructor(private readonly repository: PurchaseRecordsRepository) {}
 
+    async delete(purchaseRecordId: string) {
+        await this.repository.delete(purchaseRecordId)
+    }
+
     async create(createDto: CreatePurchaseRecordDto) {
         const purchaseRecord = await this.repository.create(createDto)
 

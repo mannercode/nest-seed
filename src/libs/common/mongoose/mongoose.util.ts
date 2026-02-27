@@ -69,14 +69,14 @@ export class QueryBuilder<T> {
 
     build({ allowEmpty }: QueryBuilderOptions): QueryFilter<T> {
         if (!allowEmpty && Object.keys(this.query).length === 0) {
-            throw new BadRequestException(MongooseErrors.FiltersRequired)
+            throw new BadRequestException(MongooseErrors.FiltersRequired())
         }
 
         return this.query
     }
 }
 
-export function assignDefined<
+export function assignIfDefined<
     Target extends Record<string, any>,
     Source extends Record<string, any>,
     K extends keyof Source & keyof Target

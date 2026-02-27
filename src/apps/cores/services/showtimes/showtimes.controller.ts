@@ -9,6 +9,11 @@ import { ShowtimesService } from './showtimes.service'
 export class ShowtimesController {
     constructor(private readonly service: ShowtimesService) {}
 
+    @MessagePattern(Messages.Showtimes.deleteBySagaIds)
+    deleteBySagaIds(@Payload() sagaIds: string[]) {
+        return this.service.deleteBySagaIds(sagaIds)
+    }
+
     @MessagePattern(Messages.Showtimes.createMany)
     createMany(
         @Payload(new ParseArrayPipe({ items: CreateShowtimeDto })) createDtos: CreateShowtimeDto[]
@@ -16,9 +21,9 @@ export class ShowtimesController {
         return this.service.createMany(createDtos)
     }
 
-    @MessagePattern(Messages.Showtimes.existsAll)
-    existsAll(@Payload() showtimeIds: string[]) {
-        return this.service.existsAll(showtimeIds)
+    @MessagePattern(Messages.Showtimes.allExist)
+    allExist(@Payload() showtimeIds: string[]) {
+        return this.service.allExist(showtimeIds)
     }
 
     @MessagePattern(Messages.Showtimes.getMany)

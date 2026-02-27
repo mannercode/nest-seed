@@ -84,10 +84,7 @@ describe('PurchaseService', () => {
                     await fix.httpClient
                         .post('/purchases')
                         .body(createDto)
-                        .badRequest({
-                            ...Errors.TicketPurchase.MaxTicketsExceeded,
-                            maxCount: expect.any(Number)
-                        })
+                        .badRequest(Errors.Purchase.LimitExceeded(expect.any(Number)))
                 })
             })
 
@@ -106,12 +103,13 @@ describe('PurchaseService', () => {
                     await fix.httpClient
                         .post('/purchases')
                         .body(createDto)
-                        .badRequest({
-                            ...Errors.TicketPurchase.WindowClosed,
-                            purchaseCutoffMinutes: expect.any(Number),
-                            purchaseWindowCloseTime: expect.any(String),
-                            startTime: expect.any(String)
-                        })
+                        .badRequest(
+                            Errors.Purchase.WindowClosed(
+                                expect.any(Number),
+                                expect.any(String),
+                                expect.any(String)
+                            )
+                        )
                 })
             })
 
@@ -142,6 +140,45 @@ describe('PurchaseService', () => {
                     expect(rollbackPurchaseSpy).toHaveBeenCalledTimes(1)
                 })
             })
+
+            // 구매 완료가 실패할 때
+            describe('when purchase completion fails', () => {
+                // 결제를 취소하고 구매 기록을 삭제한다
+                it('cancels the payment and deletes the purchase record', async () => {
+                    const { TicketPurchaseService } = await import('apps/applications')
+                    const ticketPurchaseService = fix.module.get(TicketPurchaseService)
+
+                    jest.spyOn(ticketPurchaseService, 'completePurchase').mockImplementationOnce(
+                        () => {
+                            throw new Error('complete failed')
+                        }
+                    )
+                    jest.spyOn(ticketPurchaseService, 'rollbackPurchase').mockResolvedValueOnce(
+                        undefined
+                    )
+
+                    const createDto = buildCreatePurchaseDto(heldTickets)
+
+                    await fix.httpClient.post('/purchases').body(createDto).internalServerError()
+                })
+            })
+
+            // 구매 기록 생성이 실패할 때
+            describe('when purchase record creation fails', () => {
+                // 결제를 취소한다
+                it('cancels the payment', async () => {
+                    const { PurchaseRecordsService } = await import('apps/cores')
+                    const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
+
+                    jest.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(() => {
+                        throw new Error('record creation failed')
+                    })
+
+                    const createDto = buildCreatePurchaseDto(heldTickets)
+
+                    await fix.httpClient.post('/purchases').body(createDto).internalServerError()
+                })
+            })
         })
 
         // 티켓이 보유되지 않았을 때
@@ -160,7 +197,7 @@ describe('PurchaseService', () => {
                 await fix.httpClient
                     .post('/purchases')
                     .body(createDto)
-                    .badRequest(Errors.TicketPurchase.TicketNotHeld)
+                    .badRequest(Errors.Purchase.NotHeld())
             })
         })
     })

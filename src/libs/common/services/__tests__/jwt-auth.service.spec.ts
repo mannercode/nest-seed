@@ -68,6 +68,22 @@ describe('JwtAuthService', () => {
             })
         })
 
+        // 토큰에 refreshTokenId가 없을 때
+        describe('when the token does not contain refreshTokenId', () => {
+            beforeEach(() => {
+                jest.spyOn(fix.jwtService as any, 'getAuthTokenPayload').mockResolvedValueOnce({
+                    email: 'email',
+                    userId: 'userId'
+                })
+            })
+
+            // 예외를 던진다
+            it('throws', async () => {
+                const promise = fix.jwtService.refreshAuthTokens(refreshToken)
+                await expect(promise).rejects.toThrow('The provided refresh token is invalid')
+            })
+        })
+
         // 저장된 리프레시 토큰이 일치하지 않을 때
         describe('when the stored refresh token does not match', () => {
             beforeEach(() => {

@@ -8,25 +8,25 @@ import {
 import { CustomersClient, MoviesClient, PurchaseRecordsClient, TheatersClient } from 'apps/cores'
 import { CommonModule } from 'shared'
 import {
-    BookingController,
+    BookingHttpController,
     CustomerJwtStrategy,
     CustomerLocalStrategy,
-    CustomersController,
-    MoviesController,
-    PurchasesController,
-    ShowtimeCreationController,
-    TheatersController
+    CustomersHttpController,
+    MoviesHttpController,
+    PurchaseHttpController,
+    ShowtimeCreationHttpController,
+    TheatersHttpController
 } from './controllers'
 import { HealthModule } from './modules'
 
 @Module({
     controllers: [
-        CustomersController,
-        MoviesController,
-        TheatersController,
-        ShowtimeCreationController,
-        BookingController,
-        PurchasesController
+        CustomersHttpController,
+        MoviesHttpController,
+        TheatersHttpController,
+        ShowtimeCreationHttpController,
+        BookingHttpController,
+        PurchaseHttpController
     ],
     imports: [CommonModule, HealthModule],
     providers: [

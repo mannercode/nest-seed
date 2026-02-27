@@ -2,7 +2,7 @@ import type { MovieDto, ShowtimeDto, TheaterDto, TicketDto } from 'apps/cores'
 import { Errors } from 'apps/__tests__/__helpers__'
 import { TicketStatus } from 'apps/cores'
 import { DateUtil, pickIds } from 'common'
-import { nullObjectId, step } from 'testlib'
+import { nullObjectId, oid, step } from 'testlib'
 import type { BookingFixture } from './booking.fixture'
 import { createAllResources } from './booking.fixture'
 
@@ -111,6 +111,37 @@ describe('BookingService', () => {
         })
     })
 
+    describe('POST /booking/showtimes/:showtimeId/tickets/hold', () => {
+        const locations = [{ latitude: 30.0, longitude: 130.0 }]
+        const startTimes = [new Date('2999-01-01T12:00')]
+
+        // 티켓이 이미 다른 고객에 의해 보유되었을 때
+        describe('when tickets are already held by another customer', () => {
+            let accessToken: string
+            let showtimeId: string
+            let ticketIds: string[]
+
+            beforeEach(async () => {
+                const resources = await createAllResources(fix, locations, startTimes)
+                accessToken = resources.accessToken
+                showtimeId = resources.showtimes[0].id
+                ticketIds = pickIds(resources.tickets.slice(0, 2))
+
+                const { holdTickets } = await import('apps/__tests__/__helpers__')
+                await holdTickets(fix, { customerId: oid(0xff), showtimeId, ticketIds })
+            })
+
+            // 409 Conflict를 반환한다
+            it('returns 409 Conflict', async () => {
+                await fix.httpClient
+                    .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body({ ticketIds })
+                    .conflict(Errors.Booking.TicketsAlreadyHeld())
+            })
+        })
+    })
+
     describe('GET /booking/showtimes/:id/tickets', () => {
         // 상영 시간이 존재하지 않을 때
         describe('when the showtime does not exist', () => {
@@ -118,7 +149,7 @@ describe('BookingService', () => {
             it('returns 404 Not Found', async () => {
                 await fix.httpClient
                     .get(`/booking/showtimes/${nullObjectId}/tickets`)
-                    .notFound({ ...Errors.Booking.ShowtimeNotFound, showtimeId: nullObjectId })
+                    .notFound(Errors.Booking.ShowtimeNotFound(nullObjectId))
             })
         })
     })

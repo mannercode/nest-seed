@@ -44,7 +44,7 @@ describe('PaginationDto', () => {
                 await fix.httpClient
                     .get('/pagination')
                     .query({ orderby: 'wrong' })
-                    .badRequest(CommonErrors.Pagination.FormatInvalid)
+                    .badRequest(CommonErrors.Pagination.FormatInvalid())
             })
         })
 
@@ -55,7 +55,7 @@ describe('PaginationDto', () => {
                 await fix.httpClient
                     .get('/pagination')
                     .query({ orderby: 'name:wrong' })
-                    .badRequest(CommonErrors.Pagination.DirectionInvalid)
+                    .badRequest(CommonErrors.Pagination.DirectionInvalid())
             })
         })
     })
@@ -100,7 +100,7 @@ describe('PaginationDto', () => {
             } catch (error) {
                 expect(error).toBeInstanceOf(BadRequestException)
                 expect((error as BadRequestException).getResponse()).toEqual(
-                    PaginationErrors.FormatInvalid
+                    PaginationErrors.FormatInvalid()
                 )
             }
         })
@@ -116,7 +116,7 @@ describe('PaginationDto', () => {
             } catch (error) {
                 expect(error).toBeInstanceOf(BadRequestException)
                 expect((error as BadRequestException).getResponse()).toEqual(
-                    PaginationErrors.FormatInvalid
+                    PaginationErrors.FormatInvalid()
                 )
             }
         })

@@ -30,10 +30,12 @@ export default {
         '/modules/',
         '/index\\.ts$',
         '\\.module\\.ts$',
-        '/libs/testlib/'
+        '/libs/testlib/',
+        '/temporal-worker\\.service\\.ts$',
+        '/workflows/'
     ],
     coverageDirectory: '<rootDir>/_output/coverage',
-    testTimeout: 60 * 1000,
+    testTimeout: 60 * 1000
     // for ECM modules:
     // https://github.com/kulshekhar/ts-jest/tree/main/examples/js-with-ts
     // transformIgnorePatterns: ['/node_modules/(?!chalk)/']

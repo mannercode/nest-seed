@@ -1,21 +1,15 @@
 # Security Policy
 
-## Supported Versions
+이 저장소는 NestJS MSA 아키텍처 참고 구현체(오픈소스 템플릿)입니다.
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+## 취약점 신고
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+보안 취약점을 발견하면 GitHub Issue를 통해 신고해 주세요.
 
-## Reporting a Vulnerability
+신고 시 다음 내용을 포함해 주세요.
 
-Use this section to tell people how to report a vulnerability.
+- 취약점 설명
+- 재현 단계
+- 잠재적 영향 범위
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+신고된 취약점은 검토 후 합리적인 시간 내에 응답합니다.

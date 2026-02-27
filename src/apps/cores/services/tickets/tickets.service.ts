@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { Expect, mapDocToDto } from 'common'
+import { mapDocToDto, Require } from 'common'
 import {
     AggregateTicketSalesDto,
     CreateTicketDto,
@@ -13,6 +13,10 @@ import { TicketsRepository } from './tickets.repository'
 @Injectable()
 export class TicketsService {
     constructor(private readonly repository: TicketsRepository) {}
+
+    async deleteBySagaIds(sagaIds: string[]) {
+        await this.repository.deleteBySagaIds(sagaIds)
+    }
 
     async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
         const salesByShowtime = await this.repository.aggregateSales(aggregateDto)
@@ -40,7 +44,7 @@ export class TicketsService {
     async updateStatusMany(ticketIds: string[], status: TicketStatus) {
         const result = await this.repository.updateStatusMany(ticketIds, status)
 
-        Expect.equals(
+        Require.equals(
             result.matchedCount,
             result.modifiedCount,
             'The status of all tickets must be changed.'

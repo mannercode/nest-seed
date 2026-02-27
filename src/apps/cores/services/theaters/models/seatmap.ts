@@ -21,7 +21,7 @@ export class SeatRow {
 
     @IsNotEmpty()
     @IsString()
-    seats: string
+    layout: string
 }
 
 export class SeatBlock {
@@ -48,8 +48,8 @@ export class Seatmap {
 
         for (const block of seatmap.blocks) {
             for (const row of block.rows) {
-                for (let seatIndex = 0; seatIndex < row.seats.length; seatIndex++) {
-                    if (row.seats[seatIndex] !== 'X') {
+                for (let seatIndex = 0; seatIndex < row.layout.length; seatIndex++) {
+                    if (row.layout[seatIndex] !== 'X') {
                         seatCount = seatCount + 1
                     }
                 }
@@ -62,8 +62,8 @@ export class Seatmap {
     static *seatsIterator(seatmap: Seatmap): IterableIterator<Seat> {
         for (const block of seatmap.blocks) {
             for (const row of block.rows) {
-                for (let seatIndex = 0; seatIndex < row.seats.length; seatIndex++) {
-                    if (row.seats[seatIndex] !== 'X') {
+                for (let seatIndex = 0; seatIndex < row.layout.length; seatIndex++) {
+                    if (row.layout[seatIndex] !== 'X') {
                         yield { block: block.name, row: row.name, seatNumber: seatIndex + 1 }
                     }
                 }

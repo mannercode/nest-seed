@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common'
 import { LatLong } from 'common'
-import { LatLongQuery } from 'common'
+import { ParseLatLongQuery } from 'common'
 import { HttpTestClient } from 'testlib'
 import { createHttpTestContext } from 'testlib'
 
@@ -9,7 +9,7 @@ export type LatLongFixture = { httpClient: HttpTestClient; teardown: () => Promi
 @Controller()
 class TestController {
     @Get('latLong')
-    async testLatLong(@LatLongQuery('location') latLong: LatLong) {
+    async testLatLong(@ParseLatLongQuery('location') latLong: LatLong) {
         return latLong
     }
 }

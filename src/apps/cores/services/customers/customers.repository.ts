@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { QueryBuilderOptions } from 'common'
-import { assignDefined, MongooseRepository, QueryBuilder } from 'common'
+import { assignIfDefined, MongooseRepository, QueryBuilder } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { CreateCustomerDto, SearchCustomersPageDto, UpdateCustomerDto } from './dtos'
@@ -64,9 +64,9 @@ export class CustomersRepository extends MongooseRepository<Customer> {
     async update(customerId: string, updateDto: UpdateCustomerDto) {
         const customer = await this.getDocumentById(customerId)
 
-        assignDefined(customer, updateDto, 'name')
-        assignDefined(customer, updateDto, 'email')
-        assignDefined(customer, updateDto, 'birthDate')
+        assignIfDefined(customer, updateDto, 'name')
+        assignIfDefined(customer, updateDto, 'email')
+        assignIfDefined(customer, updateDto, 'birthDate')
 
         await customer.save()
 
