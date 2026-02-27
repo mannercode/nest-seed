@@ -72,9 +72,6 @@
                 "[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
                 "plantuml.server": "http://localhost:5020/",
                 "plantuml.render": "PlantUMLServer",
-                "githubPullRequests.pullBranch": "never",
-                "githubPullRequests.createOnPublishBranch": "never",
-                "githubPullRequests.fileListLayout": "flat",
                 "githubIssues.queries": [
                     { "label": "My Issues", "query": "default" },
                     {
