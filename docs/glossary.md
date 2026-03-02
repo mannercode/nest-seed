@@ -19,6 +19,7 @@
 | 상영시간 일괄 생성 | ShowtimeCreation | 영화·극장·시간 조합으로 상영시간과 티켓을 한 번에 생성하는 비동기 작업.                                              |
 | 예약               | Booking          | 고객이 극장·상영시간·좌석을 탐색하고 티켓을 선점하기까지의 과정.                                                     |
 | 구매               | Purchase         | 선점된 티켓에 대해 결제를 진행하고 구매를 확정하는 과정.                                                             |
+| 추천               | Recommendation   | 고객의 시청 기록과 현재 상영 중인 영화를 기반으로 영화를 추천하는 기능. 장르 일치와 최신 개봉일을 기준으로 정렬한다. |
 | 등급               | MovieRating      | 영화 관람 등급. `G`, `PG`, `PG13`, `R`, `NC17`, `Unrated` 중 하나.                                                   |
 | 장르               | MovieGenre       | 영화 장르. `action`, `comedy`, `drama`, `fantasy`, `horror`, `mystery`, `romance`, `thriller`, `western`.            |
 

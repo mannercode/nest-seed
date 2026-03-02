@@ -49,7 +49,7 @@
 actor Customer
 
 Customer -> Frontend: 영화 예매 시스템 접속
-    Frontend -> Backend: 추천 영화 목록 요청\nGET /recommendation/movies
+    Frontend -> Backend: 추천 영화 목록 요청\nGET /movies/recommended
         Backend -> Recommendation: searchRecommendedMovies(customerId?)
             Recommendation -> Showtimes: searchMovieIds({startTimeRange: {start: now + 30m}})
             Recommendation <-- Showtimes: movieIds[]
@@ -209,7 +209,7 @@ Customer -> Frontend: 결제 정보 입력 및 구매 확정
 
                 Temporal -> TicketPurchase: [Activity] completePurchase(dto)
                 activate TicketPurchase
-                    TicketPurchase -> Tickets: updateStatusMany(ticketIds, 'Sold')
+                    TicketPurchase -> Tickets: updateStatusMany(ticketIds, TicketStatus.Sold)
                     TicketPurchase <-- Tickets: TicketDto[]
                     TicketPurchase -> Events: emitTicketPurchased(customerId, ticketIds)
                     note left: WatchRecords가 이 이벤트를 구독한다
@@ -241,7 +241,7 @@ Workflow -> Workflow: 보상 스택 역순 실행
     Workflow <-- Payments: void
 
 Workflow -> TicketPurchase: [Compensation] rollbackPurchase(dto)
-    TicketPurchase -> Tickets: updateStatusMany(ticketIds, 'Available')
+    TicketPurchase -> Tickets: updateStatusMany(ticketIds, TicketStatus.Available)
     TicketPurchase -> Events: emitTicketPurchaseCanceled(customerId, ticketIds)
 Workflow <-- TicketPurchase: void
 Workflow -> Workflow: throw error

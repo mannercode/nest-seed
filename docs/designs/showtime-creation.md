@@ -136,6 +136,10 @@ box "Temporal Workflow: showtimeCreationWorkflow" #LightBlue
     else isValid = false
         Workflow -> Events: [Activity] emitStatusChanged({sagaId, status: Failed, conflictingShowtimes})
     end
+
+    group Exception Handling [Activity 실행 중 예외 발생 시]
+        Workflow -> Events: emitStatusChanged({sagaId, status: Error, error})
+    end
 end box
 @enduml
 ```

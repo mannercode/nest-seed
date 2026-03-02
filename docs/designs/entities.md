@@ -89,7 +89,10 @@ entity "Asset" {
 Movie --{ Showtime : movieId
 Theater --{ Showtime : theaterId
 Showtime --{ Ticket : showtimeId
+Movie .left.{ Ticket : movieId (denorm)
+Theater .right.{ Ticket : theaterId (denorm)
 Customer --{ PurchaseRecord : customerId
+PurchaseRecord .right.{ Ticket : "purchaseItems[].itemId"
 Customer --{ WatchRecord : customerId
 Movie --{ WatchRecord : movieId
 PurchaseRecord -- Payment : paymentId
@@ -104,7 +107,7 @@ Movie --{ Asset : "assetIds[]"
 - Customer `password` — bcrypt 해시, 조회 시 기본 제외
 - MovieRating — `G` `PG` `PG13` `R` `NC17` `Unrated`
 - MovieGenre — `action` `comedy` `drama` `fantasy` `horror` `mystery` `romance` `thriller` `western`
-- TicketStatus — `available` `sold`
+- TicketStatus — `Available = 'available'` `Sold = 'sold'`
 - PurchaseItemType — `tickets` `foods`
 - TheaterLocation — `{ latitude, longitude }`
 - Seatmap — `SeatBlock[] > SeatRow[]`, layout: `X` = 빈 공간, 나머지 = 좌석
