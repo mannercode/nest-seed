@@ -4,6 +4,7 @@ NestJS 기반 마이크로서비스 아키텍처 템플릿. 영화 예매 도메
 
 ## Documentation
 
+- [Conventions](CONVENTIONS.md) — 네이밍 규칙, 에러 패턴, 테스트 컨벤션
 - [Design Guide](docs/design-guide.md) — 시스템 아키텍처, 설계 원칙
 - [Domain Glossary](docs/glossary.md) — 도메인 용어 정의
 - [Entity Design](docs/designs/entities.md) — 엔터티 속성, 관계, ER 다이어그램
@@ -133,7 +134,7 @@ src/
 
 ### Workflow Orchestration
 
-티켓 구매의 Saga 보상 패턴, 상영 일정 일괄 생성처럼 여러 서비스를 걸쳐 실행되는 흐름을 Temporal 워크플로우로 오케스트레이션한다. 워크플로우는 실패 시 자동 재시도되며, 보상 로직이 코드에 명시적으로 표현되어 장애 복구가 안정적이다.
+티켓 구매의 Saga 보상 패턴, 상영 일정 일괄 생성처럼 여러 서비스에 걸쳐 실행되는 흐름을 Temporal 워크플로우로 오케스트레이션한다. 워크플로우는 실패 시 자동 재시도되며, 보상 로직이 코드에 명시적으로 표현되어 장애 복구가 안정적이다.
 
 ### Event-Driven Architecture
 

@@ -9,7 +9,7 @@
 **선행 조건**:
 
 - 고객은 시스템에 로그인되어 있어야 한다.
-- 구매할 영화의 상영 시간과 좌석이 사용 가능해야 한다.
+- 구매할 영화의 상영시간과 좌석이 사용 가능해야 한다.
 
 **기본 흐름**:
 
@@ -19,8 +19,8 @@
 1. 고객은 극장을 선택한다.
 1. 시스템은 선택한 극장의 상영일 목록을 제공한다.
 1. 고객은 원하는 상영일을 선택한다.
-1. 시스템은 해당 상영일의 상영 시간 목록과 잔여 좌석 수를 제공한다.
-1. 고객은 원하는 상영 시간을 선택한다.
+1. 시스템은 해당 상영일의 상영시간 목록과 잔여 좌석 수를 제공한다.
+1. 고객은 원하는 상영시간을 선택한다.
 1. 시스템은 선택 가능한 좌석 목록을 제공한다.
 1. 고객은 하나 이상의 좌석을 선택한다. 선택한 좌석은 10분간 선점된다.
 1. 고객은 결제 정보를 입력하고 구매를 확정한다.
@@ -72,7 +72,7 @@ Customer <-- Frontend: 추천 영화 목록 제공
 @enduml
 ```
 
-### 2.2. 극장 / 날짜 / 상영 시간 선택
+### 2.2. 극장 / 날짜 / 상영시간 선택
 
 ```plantuml
 @startuml
@@ -100,7 +100,7 @@ Customer -> Frontend: 극장 선택
 Customer <-- Frontend: 상영일 목록 제공
 
 Customer -> Frontend: 상영일 선택
-    Frontend -> Backend: 상영 시간 목록 요청\nGET /booking/movies/{movieId}/theaters/{theaterId}/showdates/{showdate}/showtimes
+    Frontend -> Backend: 상영시간 목록 요청\nGET /booking/movies/{movieId}/theaters/{theaterId}/showdates/{showdate}/showtimes
         Backend -> Booking: searchShowtimes({movieId, theaterId, showdate})
             Booking -> Showtimes: search({movieIds, theaterIds, startTimeRange: [하루 범위]})
             Booking <-- Showtimes: ShowtimeDto[]
@@ -117,7 +117,7 @@ Customer -> Frontend: 상영일 선택
             Booking -> Booking: generateShowtimesForBooking(showtimes, ticketSales)
         Backend <-- Booking: ShowtimeWithSalesDto[]
     Frontend <-- Backend: showtimesWithSales[]
-Customer <-- Frontend: 상영 시간 + 잔여 좌석 수 제공
+Customer <-- Frontend: 상영시간 + 잔여 좌석 수 제공
 @enduml
 ```
 
@@ -127,7 +127,7 @@ Customer <-- Frontend: 상영 시간 + 잔여 좌석 수 제공
 @startuml
 actor Customer
 
-Customer -> Frontend: 상영 시간 선택
+Customer -> Frontend: 상영시간 선택
     Frontend -> Backend: 티켓 목록 요청\nGET /booking/showtimes/{showtimeId}/tickets
         Backend -> Booking: getTickets(showtimeId)
             Booking -> Showtimes: allExist([showtimeId])
