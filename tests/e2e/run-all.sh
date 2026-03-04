@@ -152,7 +152,7 @@ echo ""
 
 specs=()
 if [[ "$#" -eq 0 ]]; then
-	mapfile -d '' -t specs < <(find ./specs -type f -name '*.spec' -print0 | sort -z)
+	while IFS= read -r -d '' f; do specs+=("$f"); done < <(find ./specs -type f -name '*.spec' -print0 | sort -z)
 else
 	specs=("$@")
 fi
