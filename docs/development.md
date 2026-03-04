@@ -17,6 +17,7 @@ MONGO_IMAGE=mongo:8.2.3
 REDIS_IMAGE=redis:8.4-alpine
 NATS_IMAGE=nats:2.12-alpine
 MINIO_IMAGE=minio/minio:latest
+TEMPORAL_IMAGE=temporalio/auto-setup:1.25
 ```
 
 ### 프로젝트 이름 변경

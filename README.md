@@ -110,8 +110,8 @@ src/
 ├── libs/
 │   ├── common/           # 공통 라이브러리 (로깅, DB, RPC, 캐시)
 │   └── testlib/          # 테스트 유틸리티
-├── tests/e2e/            # E2E 테스트 스펙
-└── infra/local/          # 로컬 인프라 Docker Compose
+tests/e2e/                # E2E 테스트 스펙
+infra/local/              # 로컬 인프라 Docker Compose
 ```
 
 ## Key Concepts
