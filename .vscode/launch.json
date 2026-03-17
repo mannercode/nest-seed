@@ -9,7 +9,7 @@
             "type": "node",
             "request": "launch",
             "runtimeExecutable": "npm",
-            "runtimeArgs": ["run", "debug"],
+            "runtimeArgs": ["run", "dev"],
             "autoAttachChildProcesses": true,
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",

@@ -18,7 +18,7 @@
     "scripts": {
         "start": "node _output/dist/${TARGET_APP}/index.js",
         "build": "nest build ${TARGET_APP} -b webpack",
-        "debug": "nest start ${TARGET_APP} --watch",
+        "dev": "nest start ${TARGET_APP} --watch",
         "test": "jest --no-cache --coverage --roots \"<rootDir>/${TEST_ROOT:-src}\" --collectCoverageFrom \"${TEST_ROOT:-src}/**/*.ts\"",
         "test:e2e": "npm run infra:reset && npm run apps:reset && bash tests/e2e/run-specs.sh && npm run apps:down",
         "format": "eslint src/ --fix && prettier --write src/",
