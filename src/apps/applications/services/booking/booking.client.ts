@@ -1,7 +1,7 @@
+import { ClientProxyService } from '@mannercode/nestlib-microservice'
+import { InjectClientProxy } from '@mannercode/nestlib-microservice'
 import { Injectable } from '@nestjs/common'
 import { HoldTicketsDto, TheaterDto, TicketDto } from 'apps/cores'
-import { ClientProxyService } from 'common'
-import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
 import {
     BookingSearchShowdatesDto,

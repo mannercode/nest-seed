@@ -1,9 +1,11 @@
+import type { HttpTestContext, ModuleMetadataEx } from '@mannercode/nestlib-testing'
 import type { MicroserviceOptions } from '@nestjs/microservices'
-import type { HttpTestContext, ModuleMetadataEx } from 'testlib'
+import { AppLoggerService } from '@mannercode/nestlib-common'
+import { TemporalClientModule } from '@mannercode/nestlib-microservice'
+import { createHttpTestContext, isDebuggingEnabled } from '@mannercode/nestlib-testing'
 import { ConfigService } from '@nestjs/config'
 import { Transport } from '@nestjs/microservices'
 import { SchedulerRegistry } from '@nestjs/schedule'
-import { AppLoggerService, TemporalClientModule } from 'common'
 import compression from 'compression'
 import express from 'express'
 import {
@@ -13,7 +15,6 @@ import {
     MongooseConfigModule,
     RedisConfigModule
 } from 'shared'
-import { createHttpTestContext, isDebuggingEnabled } from 'testlib'
 
 export type AppTestContext = HttpTestContext & { teardown: () => Promise<void> }
 

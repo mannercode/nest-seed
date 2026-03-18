@@ -1,7 +1,7 @@
 import type { HoldTicketsDto } from 'apps/cores'
+import { sleep } from '@mannercode/nestlib-common'
+import { oid, toAny } from '@mannercode/nestlib-testing'
 import { buildHoldTicketsDto } from 'apps/__tests__/__helpers__'
-import { sleep } from 'common'
-import { oid, toAny } from 'testlib'
 import type { TicketHoldingFixture } from './ticket-holding.fixture'
 
 describe('TicketHoldingService', () => {

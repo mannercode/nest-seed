@@ -1,6 +1,6 @@
+import { RedisModuleOptions } from '@mannercode/nestlib-common'
+import { getRedisConnectionToken, RedisModule } from '@mannercode/nestlib-common'
 import { Module } from '@nestjs/common'
-import { RedisModuleOptions } from 'common'
-import { getRedisConnectionToken, RedisModule } from 'common'
 import { AppConfigService } from '../config'
 
 @Module({

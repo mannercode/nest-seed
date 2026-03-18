@@ -1,5 +1,5 @@
 import type { ShowtimeDto, TheaterDto, TicketSalesForShowtimeDto } from 'apps/cores'
-import { LatLong } from 'common'
+import { LatLong } from '@mannercode/nestlib-common'
 import { omit, sortBy } from 'lodash'
 import type { BookingShowtimeDto } from './dtos'
 

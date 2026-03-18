@@ -1,3 +1,4 @@
+import { pickIds } from '@mannercode/nestlib-common'
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import {
     HoldTicketsDto,
@@ -6,7 +7,6 @@ import {
     TicketHoldingClient,
     TicketsClient
 } from 'apps/cores'
-import { pickIds } from 'common'
 import { generateShowtimesForBooking, sortTheatersByDistance } from './booking.utils'
 import {
     BookingSearchShowdatesDto,

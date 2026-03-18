@@ -1,7 +1,8 @@
+import { PaginationResult } from '@mannercode/nestlib-common'
+import { ClientProxyService } from '@mannercode/nestlib-microservice'
+import { InjectClientProxy } from '@mannercode/nestlib-microservice'
 import { Injectable } from '@nestjs/common'
 import { AssetPresignedUploadDto, CreateAssetDto } from 'apps/infrastructures'
-import { ClientProxyService, PaginationResult } from 'common'
-import { InjectClientProxy } from 'common'
 import { Messages } from 'shared'
 import { MovieDto, SearchMoviesPageDto, UpsertMovieDto } from './dtos'
 

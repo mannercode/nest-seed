@@ -31,7 +31,7 @@ export default {
         '/modules/',
         '/index\\.ts$',
         '\\.module\\.ts$',
-        '/libs/testlib/',
+        '/node_modules/@mannercode/nestlib-testing/',
         '/temporal-worker\\.service\\.ts$',
         '/workflows/'
     ],

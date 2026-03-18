@@ -1,10 +1,10 @@
 import type { PurchaseRecordDto } from 'apps/cores'
+import { nullObjectId } from '@mannercode/nestlib-testing'
 import {
     buildCreatePurchaseRecordDto,
     createPurchaseRecord,
     Errors
 } from 'apps/__tests__/__helpers__'
-import { nullObjectId } from 'testlib'
 import type { PurchaseRecordsFixture } from './purchase-records.fixture'
 
 describe('PurchaseRecordsService', () => {

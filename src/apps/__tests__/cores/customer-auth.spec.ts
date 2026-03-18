@@ -1,4 +1,4 @@
-import type { JwtAuthTokens } from 'common'
+import type { JwtAuthTokens } from '@mannercode/nestlib-common'
 import { createCustomer } from 'apps/__tests__/__helpers__'
 import { Errors, loginCustomer } from 'apps/__tests__/__helpers__'
 import type { CustomerAuthFixture } from './customer-auth.fixture'

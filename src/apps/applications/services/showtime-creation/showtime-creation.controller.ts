@@ -1,6 +1,6 @@
+import { PaginationDto } from '@mannercode/nestlib-common'
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { PaginationDto } from 'common'
 import { Messages } from 'shared'
 import { BulkCreateShowtimesDto } from './dtos'
 import { ShowtimeCreationService } from './showtime-creation.service'

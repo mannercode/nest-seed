@@ -1,5 +1,5 @@
+import { mapDocToDto, Require } from '@mannercode/nestlib-common'
 import { Injectable } from '@nestjs/common'
-import { mapDocToDto, Require } from 'common'
 import {
     AggregateTicketSalesDto,
     CreateTicketDto,

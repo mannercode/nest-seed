@@ -1,5 +1,5 @@
 {
     "extends": "./tsconfig.json",
     "compilerOptions": { "types": ["node"] },
-    "exclude": ["src/**/__tests__/**/*", "src/libs/testlib/**/*"]
+    "exclude": ["src/**/__tests__/**/*"]
 }

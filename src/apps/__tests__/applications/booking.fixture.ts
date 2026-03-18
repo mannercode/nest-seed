@@ -1,6 +1,6 @@
+import type { TestContext } from '@mannercode/nestlib-testing'
 import type { AppTestContext } from 'apps/__tests__/__helpers__'
 import type { TheaterLocation } from 'apps/cores'
-import type { TestContext } from 'testlib'
 import {
     createAndLoginCustomer,
     createAppTestContext,

@@ -1,4 +1,4 @@
-import { nullDate } from 'testlib'
+import { nullDate } from '@mannercode/nestlib-testing'
 import type { RequestValidationPipeFixture } from './request-validation.pipe.fixture'
 
 describe('RequestValidationPipe', () => {

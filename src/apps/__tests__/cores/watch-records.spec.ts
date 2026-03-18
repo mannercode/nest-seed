@@ -1,6 +1,6 @@
 import type { SearchWatchRecordsPageDto, WatchRecordDto } from 'apps/cores'
+import { oid } from '@mannercode/nestlib-testing'
 import { buildCreateWatchRecordDto, createWatchRecord } from 'apps/__tests__/__helpers__'
-import { oid } from 'testlib'
 import type { WatchRecordsFixture } from './watch-records.fixture'
 
 describe('WatchRecordsService', () => {
@@ -37,8 +37,8 @@ describe('WatchRecordsService', () => {
 
         const buildExpectedPage = (expectedRecords: WatchRecordDto[]) => ({
             items: expect.arrayContaining(expectedRecords),
-            skip: 0,
-            take: expect.any(Number),
+            page: 1,
+            limit: expect.any(Number),
             total: expectedRecords.length
         })
 

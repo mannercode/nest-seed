@@ -1,15 +1,15 @@
+import {
+    AppLoggerService,
+    createWinstonLogger,
+    ExceptionLoggerFilter,
+    SuccessLoggerInterceptor
+} from '@mannercode/nestlib-common'
+import { ClientProxyModule } from '@mannercode/nestlib-microservice'
 import { Global, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import { Transport } from '@nestjs/microservices'
 import { ScheduleModule } from '@nestjs/schedule'
-import {
-    AppLoggerService,
-    ClientProxyModule,
-    createWinstonLogger,
-    ExceptionLoggerFilter,
-    SuccessLoggerInterceptor
-} from 'common'
 import { AppConfigService, getProjectId } from '../config'
 import { RequestValidationPipe } from '../pipes/request-validation.pipe'
 

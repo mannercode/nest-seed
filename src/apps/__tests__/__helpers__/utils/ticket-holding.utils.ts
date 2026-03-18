@@ -1,6 +1,6 @@
+import type { TestContext } from '@mannercode/nestlib-testing'
 import type { HoldTicketsDto } from 'apps/cores'
-import type { TestContext } from 'testlib'
-import { oid } from 'testlib'
+import { oid } from '@mannercode/nestlib-testing'
 
 export function buildHoldTicketsDto(holdDto?: Partial<HoldTicketsDto>) {
     return {

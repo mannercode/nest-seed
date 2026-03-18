@@ -1,6 +1,6 @@
+import { CacheService } from '@mannercode/nestlib-common'
+import { InjectCache } from '@mannercode/nestlib-common'
 import { Injectable } from '@nestjs/common'
-import { CacheService } from 'common'
-import { InjectCache } from 'common'
 import { Rules } from 'shared'
 import { HoldTicketsDto } from './dtos'
 

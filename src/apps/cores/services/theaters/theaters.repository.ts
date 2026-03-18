@@ -1,7 +1,7 @@
+import { QueryBuilderOptions } from '@mannercode/nestlib-common'
+import { assignIfDefined, MongooseRepository, QueryBuilder } from '@mannercode/nestlib-common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { QueryBuilderOptions } from 'common'
-import { assignIfDefined, MongooseRepository, QueryBuilder } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto } from './dtos'
@@ -27,7 +27,7 @@ export class TheatersRepository extends MongooseRepository<Theater> {
     }
 
     async searchPage(searchDto: SearchTheatersPageDto) {
-        const { orderby, skip, take } = searchDto
+        const { orderby, page, limit } = searchDto
 
         const pagination = await this.findWithPagination({
             configureQuery: async (queryHelper) => {
@@ -35,7 +35,7 @@ export class TheatersRepository extends MongooseRepository<Theater> {
 
                 queryHelper.setQuery(query)
             },
-            pagination: { orderby, skip, take }
+            pagination: { orderby, page, limit }
         })
 
         return pagination

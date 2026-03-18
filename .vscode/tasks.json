@@ -20,7 +20,7 @@
         {
             "id": "TestRoots",
             "type": "pickString",
-            "options": ["src", "src/apps", "src/libs/common"],
+            "options": ["src", "src/apps"],
             "description": "Select the source root."
         }
     ]

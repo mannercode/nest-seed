@@ -1,3 +1,4 @@
+import { PaginationDto } from '@mannercode/nestlib-common'
 import { MessageEvent, OnModuleDestroy } from '@nestjs/common'
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Sse } from '@nestjs/common'
 import { EventPattern } from '@nestjs/microservices'
@@ -6,7 +7,6 @@ import {
     ShowtimeCreationClient,
     ShowtimeCreationEvent
 } from 'apps/applications'
-import { PaginationDto } from 'common'
 import { Observable } from 'rxjs'
 import { Subject } from 'rxjs'
 import { Events } from 'shared'

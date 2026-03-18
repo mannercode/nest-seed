@@ -1,6 +1,6 @@
+import type { TestContext } from '@mannercode/nestlib-testing'
 import type { AppTestContext } from 'apps/__tests__/__helpers__'
 import type { MovieDto } from 'apps/cores'
-import type { TestContext } from 'testlib'
 import { createAppTestContext } from 'apps/__tests__/__helpers__'
 import { RecommendationClient } from 'apps/applications'
 import { MoviesClient, MoviesModule } from 'apps/cores'

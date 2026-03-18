@@ -1,5 +1,5 @@
+import type { TestContext } from '@mannercode/nestlib-testing'
 import type { MovieDto, UpsertMovieDto } from 'apps/cores'
-import type { TestContext } from 'testlib'
 import { MovieGenre, MovieRating } from 'apps/cores'
 
 export function buildCreateMovieDto(overrides = {}) {

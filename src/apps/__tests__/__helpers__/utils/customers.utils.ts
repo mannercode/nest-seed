@@ -1,5 +1,5 @@
+import type { TestContext } from '@mannercode/nestlib-testing'
 import type { CreateCustomerDto, CustomerCredentialsDto } from 'apps/cores'
-import type { TestContext } from 'testlib'
 
 export function buildCreateCustomerDto(overrides = {}) {
     const createDto = {

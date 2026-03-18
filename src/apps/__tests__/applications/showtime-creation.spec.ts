@@ -1,8 +1,8 @@
 import type { MovieDto, ShowtimeDto, TheaterDto } from 'apps/cores'
 import type { Response } from 'superagent'
+import { DateUtil } from '@mannercode/nestlib-common'
+import { nullObjectId } from '@mannercode/nestlib-testing'
 import { createMovie, createShowtimes, createTheater } from 'apps/__tests__/__helpers__'
-import { DateUtil } from 'common'
-import { nullObjectId } from 'testlib'
 import type { ShowtimeCreationFixture } from './showtime-creation.fixture'
 import { waitForCompletion } from './showtime-creation.fixture'
 
@@ -27,7 +27,7 @@ describe('ShowtimeCreationService', () => {
             it('returns the default page of movies', async () => {
                 await fix.httpClient
                     .get('/showtime-creation/movies')
-                    .ok({ items: [movie], skip: 0, take: expect.any(Number), total: 1 })
+                    .ok({ items: [movie], page: 1, limit: expect.any(Number), total: 1 })
             })
         })
     })
@@ -39,7 +39,7 @@ describe('ShowtimeCreationService', () => {
             it('returns the default page of theaters', async () => {
                 await fix.httpClient
                     .get('/showtime-creation/theaters')
-                    .ok({ items: [theater], skip: 0, take: expect.any(Number), total: 1 })
+                    .ok({ items: [theater], page: 1, limit: expect.any(Number), total: 1 })
             })
         })
     })

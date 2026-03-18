@@ -1,4 +1,5 @@
 import type { AppTestContext as TestContext } from 'apps/__tests__/__helpers__'
+import { Json } from '@mannercode/nestlib-common'
 import { createAppTestContext, createTemporalTestWorker } from 'apps/__tests__/__helpers__'
 import {
     createShowtimeCreationActivities,
@@ -20,7 +21,6 @@ import {
 } from 'apps/cores'
 import { ShowtimeCreationHttpController } from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
-import { Json } from 'common'
 
 export type ShowtimeCreationFixture = TestContext & {
     showtimesClient: ShowtimesClient

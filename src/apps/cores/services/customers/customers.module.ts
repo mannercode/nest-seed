@@ -1,7 +1,7 @@
+import { JwtAuthModule, Time } from '@mannercode/nestlib-common'
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'
-import { JwtAuthModule, Time } from 'common'
 import { AppConfigService, getProjectId, MongooseConfigModule, RedisConfigModule } from 'shared'
 import { CustomersController } from './customers.controller'
 import { CustomersRepository } from './customers.repository'
