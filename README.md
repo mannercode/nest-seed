@@ -66,7 +66,7 @@ npm test
 | --------------------- | ----------------------------------------------------------------- |
 | `npm run build`       | 특정 앱 빌드 (`TARGET_APP=gateway npm run build`)                 |
 | `npm run start`       | 빌드된 앱 실행 (`TARGET_APP=gateway npm run start`)               |
-| `npm run debug`       | Watch 모드로 개발 실행 (`TARGET_APP=gateway npm run debug`)       |
+| `npm run dev`         | Watch 모드로 개발 실행 (`TARGET_APP=gateway npm run dev`)         |
 | `npm test`            | 단위 테스트 실행 (coverage 포함)                                  |
 | `npm run test:e2e`    | E2E 테스트 실행 (인프라 + 앱 자동 재시작)                         |
 | `npm run lint`        | TypeScript 타입 체크, ESLint, Prettier 검사                       |
@@ -83,9 +83,6 @@ Docker Compose로 실행한 인프라(MongoDB, NATS, Redis, MinIO, Temporal)를 
 
 ```bash
 npm test
-
-# 특정 서비스만 테스트
-TEST_ROOT=src/apps/__tests__/cores npm test
 ```
 
 ### E2E Tests

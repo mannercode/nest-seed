@@ -42,16 +42,15 @@ TEMPORAL_IMAGE=temporalio/auto-setup:1.25
 
 ### 디버그 (`.vscode/launch.json`)
 
-- **Debug App**: `npm run debug`를 실행하며 `TARGET_APP`을 선택한다.
+- **Debug App**: `npm run dev`를 실행하며 `TARGET_APP`을 선택한다.
     - 선택지: `gateway`, `applications`, `cores`, `infrastructures`
 
 ### 작업 (`.vscode/tasks.json`)
 
-| Task            | Description                                            |
-| --------------- | ------------------------------------------------------ |
-| `Run Tests`     | `npm test` 실행. `TEST_ROOT` 입력으로 범위를 지정한다. |
-| `Run E2E Tests` | `npm run test:e2e` 실행. `curl`, `jq`가 필요하다.      |
-| `Repeat Tests`  | 선택한 테스트 명령을 N회 반복 실행한다.                |
+| Task            | Description                                       |
+| --------------- | ------------------------------------------------- |
+| `Run Tests`     | `npm test` 실행.                                  |
+| `Run E2E Tests` | `npm run test:e2e` 실행. `curl`, `jq`가 필요하다. |
 
 ---
 
