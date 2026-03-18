@@ -20,7 +20,7 @@
         "build": "nest build ${TARGET_APP} -b webpack",
         "dev": "nest start ${TARGET_APP} --watch",
         "test": "jest --no-cache --coverage --roots \"<rootDir>/${TEST_ROOT:-src}\" --collectCoverageFrom \"${TEST_ROOT:-src}/**/*.ts\"",
-        "test:e2e": "npm run infra:reset && npm run apps:reset && bash tests/e2e/run-specs.sh && npm run apps:down",
+        "test:e2e": "npm run infra:reset && npm run apps:reset && bash tests/e2e/run-all.sh && npm run apps:down",
         "format": "eslint src/ --fix && prettier --write src/",
         "lint": "tsc -p tsconfig.json --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
         "apps:down": "docker compose down -v -t 0 --remove-orphans",
