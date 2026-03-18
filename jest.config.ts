@@ -1,7 +1,8 @@
 import { createJsWithTsPreset, pathsToModuleNameMapper } from 'ts-jest'
-import tsconfig from './tsconfig.json' with { type: 'json' }
 
 const tsJestPreset = createJsWithTsPreset({ tsconfig: 'tsconfig.json' })
+
+import tsconfig from './tsconfig.json' with { type: 'json' }
 const { compilerOptions } = tsconfig
 
 export default {
