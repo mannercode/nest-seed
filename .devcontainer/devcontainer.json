@@ -36,7 +36,6 @@
                 "esbenp.prettier-vscode",
                 "mutantdino.resourcemonitor",
                 "mkhl.shfmt",
-                "github.vscode-pull-request-github",
                 "anthropic.claude-code"
             ],
             "settings": {
@@ -69,18 +68,7 @@
                 "[properties]": { "editor.defaultFormatter": "mkhl.shfmt" },
                 "[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
                 "plantuml.server": "http://localhost:5020/",
-                "plantuml.render": "PlantUMLServer",
-                "githubIssues.queries": [
-                    { "label": "My Issues", "query": "default" },
-                    {
-                        "label": "Created Issues",
-                        "query": "author:${user} state:open repo:${owner}/${repository} sort:created-desc"
-                    },
-                    {
-                        "label": "All Issues",
-                        "query": "repo:${owner}/${repository} sort:updated-desc"
-                    }
-                ]
+                "plantuml.render": "PlantUMLServer"
             }
         }
     }

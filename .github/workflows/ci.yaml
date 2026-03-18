@@ -30,4 +30,3 @@ jobs:
 
                       npm run lint
                       npm test
-                      npm run test:e2e

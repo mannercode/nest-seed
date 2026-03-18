@@ -2,11 +2,11 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Run Tests",
-            "detail": "npm test",
+            "label": "Run Unit Tests",
+            "detail": "npm run test:unit",
             "group": { "kind": "test", "isDefault": true },
             "type": "shell",
-            "command": "npm test"
+            "command": "npm run test:unit"
         },
         {
             "label": "Run E2E Tests",
