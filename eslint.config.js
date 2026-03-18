@@ -13,7 +13,7 @@ const nodeBuiltinModulePattern = `^(?:node:)?(?:${[
     .sort()
     .map(escapeForRegex)
     .join('|')})(?:/.*)?$`
-const internalAliasPattern = '^(?:apps(?:/.*)?|common|shared|testlib)$'
+const internalAliasPattern = '^(?:apps(?:/.*)?|shared|@mannercode/nestlib-.*)$'
 const dependencyIgnorePatterns = ['^\\.', nodeBuiltinModulePattern, internalAliasPattern]
 const sourceDependencyOptions = {
     packageDir: __dirname,
@@ -101,11 +101,7 @@ module.exports = [
         }
     },
     {
-        files: [
-            'src/**/__tests__/**/*.ts',
-            'src/libs/testlib/**/*.ts',
-            'src/apps/**/development.ts'
-        ],
+        files: ['src/**/__tests__/**/*.ts', 'src/apps/**/development.ts'],
         languageOptions: { globals: { ...baseGlobals, ...globals.jest } },
         plugins: { jest: jestPlugin },
         rules: {
