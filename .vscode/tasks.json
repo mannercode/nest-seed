@@ -6,7 +6,6 @@
             "detail": "npm test",
             "group": { "kind": "test", "isDefault": true },
             "type": "shell",
-            "options": { "env": { "TEST_ROOT": "${input:TestRoots}" } },
             "command": "npm test"
         },
         {
@@ -14,14 +13,6 @@
             "detail": "npm run test:e2e",
             "type": "shell",
             "command": "npm run test:e2e"
-        }
-    ],
-    "inputs": [
-        {
-            "id": "TestRoots",
-            "type": "pickString",
-            "options": ["src", "src/apps"],
-            "description": "Select the source root."
         }
     ]
 }

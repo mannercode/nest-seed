@@ -6,25 +6,12 @@ import { generateTestId, getEnv, setEnv } from './jest.utils'
 let appsMongoClient: MongoClient
 let appsS3Client: S3Client
 
-let testlibMongoClient: MongoClient
-let testlibS3Client: S3Client
-
 beforeAll(async () => {
-    await Promise.all([
-        createAppsMongo(),
-        createAppsS3Client(),
-        createTestlibMongo(),
-        createTestlibS3Client()
-    ])
+    await Promise.all([createAppsMongo(), createAppsS3Client()])
 })
 
 afterAll(async () => {
-    await Promise.all([
-        appsMongoClient.close(),
-        testlibMongoClient.close(),
-        appsS3Client.destroy(),
-        testlibS3Client.destroy()
-    ])
+    await Promise.all([appsMongoClient.close(), appsS3Client.destroy()])
 })
 
 beforeEach(async () => {
@@ -33,11 +20,9 @@ beforeEach(async () => {
     setEnv('TEST_ID', testId)
     setEnv('PROJECT_ID', `project-${testId}`)
     setEnv('MONGO_DATABASE', `mongo-${testId}`)
-    setEnv('TESTLIB_MONGO_DATABASE', `mongo-${testId}`)
 
     const bucket = `s3bucket${testId}`.toLowerCase()
     setEnv('S3_BUCKET', bucket)
-    setEnv('TESTLIB_S3_BUCKET', bucket)
 
     const temporalAddress = getEnv('TESTLIB_TEMPORAL_ADDRESS')
     const [temporalHost, temporalPort] = temporalAddress.split(':')
@@ -47,14 +32,10 @@ beforeEach(async () => {
 
     const command = new CreateBucketCommand({ Bucket: bucket })
     await appsS3Client.send(command)
-    await testlibS3Client.send(command)
 })
 
 afterEach(async () => {
-    await Promise.all([
-        appsMongoClient.db(getEnv('MONGO_DATABASE')).dropDatabase(),
-        testlibMongoClient.db(getEnv('TESTLIB_MONGO_DATABASE')).dropDatabase()
-    ])
+    await appsMongoClient.db(getEnv('MONGO_DATABASE')).dropDatabase()
 })
 
 async function createAppsMongo() {
@@ -71,15 +52,6 @@ async function createAppsMongo() {
     await appsMongoClient.connect()
 }
 
-async function createTestlibMongo() {
-    testlibMongoClient = new MongoClient(getEnv('TESTLIB_MONGO_URI'))
-
-    await testlibMongoClient.connect()
-    // Set TTL monitor interval to 1s to speed up TTL index `expires` tests
-    // TTL 인덱스 expires 동작을 빠르게 테스트하기 위해 TTL 모니터 주기를 1초로 설정
-    await testlibMongoClient.db('admin').command({ setParameter: 1, ttlMonitorSleepSecs: 1 })
-}
-
 function createAppsS3Client() {
     appsS3Client = createS3Client(
         getEnv('S3_ENDPOINT'),
@@ -87,19 +59,6 @@ function createAppsS3Client() {
         getEnv('S3_ACCESS_KEY'),
         getEnv('S3_SECRET_KEY'),
         getEnv('S3_FORCE_PATH_STYLE')
-    )
-}
-
-function createTestlibS3Client() {
-    setEnv('TESTLIB_S3_REGION', 'us-east-1')
-    setEnv('TESTLIB_S3_FORCE_PATH_STYLE', 'true')
-
-    testlibS3Client = createS3Client(
-        getEnv('TESTLIB_S3_ENDPOINT'),
-        getEnv('TESTLIB_S3_REGION'),
-        getEnv('TESTLIB_S3_ACCESS_KEY'),
-        getEnv('TESTLIB_S3_SECRET_KEY'),
-        getEnv('TESTLIB_S3_FORCE_PATH_STYLE')
     )
 }
 

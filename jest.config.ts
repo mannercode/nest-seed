@@ -28,11 +28,8 @@ export default {
         '/development\\.ts$',
         '/main\\.ts$',
         '/shared/configure-app\\.ts$',
-        '/modules/',
         '/index\\.ts$',
         '\\.module\\.ts$',
-        '/node_modules/@mannercode/nestlib-testing/',
-        '/temporal-worker\\.service\\.ts$',
         '/workflows/'
     ],
     coverageDirectory: '<rootDir>/_output/coverage',
