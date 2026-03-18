@@ -56,7 +56,7 @@ Customer -> Frontend: 영화 예매 시스템 접속
             Recommendation -> Movies: getMany(movieIds)
             Recommendation <-- Movies: MovieDto[]
             opt customerId 존재
-                Recommendation -> WatchRecords: searchPage({customerId, orderby: watchDate DESC, take: 50})
+                Recommendation -> WatchRecords: searchPage({customerId, orderby: watchDate DESC, limit: 50})
                 Recommendation <-- WatchRecords: { items: WatchRecordDto[] }
                 Recommendation -> Movies: getMany(watchedMovieIds)
                 Recommendation <-- Movies: watchedMovies[]
