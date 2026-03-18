@@ -23,12 +23,7 @@
 
         "baseUrl": ".",
         "outDir": "./_output/build",
-        "paths": {
-            "common": ["src/libs/common/index"],
-            "testlib": ["src/libs/testlib/index"],
-            "shared": ["src/apps/shared/index"],
-            "apps/*": ["src/apps/*"]
-        }
+        "paths": { "shared": ["src/apps/shared/index"], "apps/*": ["src/apps/*"] }
     },
     "include": ["src/**/*"]
 }

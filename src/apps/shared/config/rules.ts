@@ -1,5 +1,5 @@
+import { Time } from '@mannercode/nestlib-common'
 import { CronExpression } from '@nestjs/schedule'
-import { Time } from 'common'
 
 /**
  * This value rarely changes. Moreover, it is unlikely to vary depending on the theater or service.

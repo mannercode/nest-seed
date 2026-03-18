@@ -1,7 +1,7 @@
+import { RedisHealthIndicator } from '@mannercode/nestlib-common'
 import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
 import { HealthCheckService } from '@nestjs/terminus'
 import { TerminusModule } from '@nestjs/terminus'
-import { RedisHealthIndicator } from 'common'
 import Redis from 'ioredis'
 import { RedisConfigModule } from 'shared'
 

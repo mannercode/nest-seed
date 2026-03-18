@@ -3,13 +3,14 @@ set -Eeuo pipefail
 cd "$(dirname "$0")"
 . ./.env
 
-C_RESET='\033[0m'
-C_BOLD='\033[1m'
-C_GREEN='\033[32m'
-C_RED='\033[31m'
-C_CYAN='\033[36m'
-C_YELLOW='\033[33m'
-C_MAGENTA='\033[35m'
+RESET='\033[0m'
+BOLD='\033[1m'
+GREEN='\033[32m'
+RED='\033[31m'
+CYAN='\033[36m'
+YELLOW='\033[33m'
+MAGENTA='\033[35m'
+PURPLE=$'\033[1;35m'
 
 LOG_LINE() {
 	echo "$*" >>"${LOG_FILE}"
@@ -85,16 +86,16 @@ format_endpoint() {
 
 format_method() {
 	local method=$1
-	local method_style="${C_BOLD}"
+	local method_style="${BOLD}"
 
 	case "${method}" in
-	GET) method_style="${C_BOLD}${C_CYAN}" ;;
-	POST) method_style="${C_BOLD}${C_MAGENTA}" ;;
-	PATCH | PUT) method_style="${C_BOLD}${C_YELLOW}" ;;
-	DELETE) method_style="${C_BOLD}${C_RED}" ;;
+	GET) method_style="${BOLD}${CYAN}" ;;
+	POST) method_style="${BOLD}${MAGENTA}" ;;
+	PATCH | PUT) method_style="${BOLD}${YELLOW}" ;;
+	DELETE) method_style="${BOLD}${RED}" ;;
 	esac
 
-	printf '%b%-6s%b' "${method_style}" "${method}" "${C_RESET}"
+	printf '%b%-6s%b' "${method_style}" "${method}" "${RESET}"
 }
 
 TEST() {
@@ -113,12 +114,12 @@ TEST() {
 		FAILED_TESTS=$((FAILED_TESTS + 1))
 		LOG_LINE "RES='${STATUS}(expected:${expected_status})"
 
-		printf '%b %s %s\n' "${C_BOLD}${C_RED}[FAIL]${C_RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")"
+		printf '%b %s %s\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")"
 	else
 		PASSED_TESTS=$((PASSED_TESTS + 1))
 		LOG_LINE "RES='${STATUS}"
 
-		printf '%b %s %s\n' "${C_BOLD}${C_GREEN}[PASS]${C_RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")"
+		printf '%b %s %s\n' "${BOLD}${GREEN}[PASS]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")"
 	fi
 
 	LOG_JSON "${BODY}"
@@ -151,7 +152,7 @@ echo ""
 
 specs=()
 if [[ "$#" -eq 0 ]]; then
-	mapfile -d '' -t specs < <(find ./specs -type f -name '*.spec' -print0 | sort -z)
+	while IFS= read -r -d '' f; do specs+=("$f"); done < <(find ./specs -type f -name '*.spec' -print0 | sort -z)
 else
 	specs=("$@")
 fi
@@ -161,20 +162,20 @@ FAILED_TESTS=0
 LOG_FILE=''
 LOG_DIR="$(pwd)/logs/$(date '+%Y%m%d_%H%M%S')"
 
-for spec_path in "${specs[@]}"; do
-	LOG_FILE="${LOG_DIR}/${spec_path#./specs/}.log"
+for spepath in "${specs[@]}"; do
+	LOG_FILE="${LOG_DIR}/${spepath#./specs/}.log"
 	mkdir -p "$(dirname "${LOG_FILE}")"
 	: >"${LOG_FILE}"
 
-	pushd $(dirname "${spec_path}") >/dev/null
-	. "./$(basename "${spec_path}")"
+	pushd $(dirname "${spepath}") >/dev/null
+	. "./$(basename "${spepath}")"
 	popd >/dev/null
 done
 
 echo ""
-echo -e "${C_BOLD}logs${C_RESET}   : ${C_CYAN}${LOG_DIR}${C_RESET}"
-echo -e "${C_BOLD}passed${C_RESET} : ${C_GREEN}${PASSED_TESTS}${C_RESET}"
-echo -e "${C_BOLD}failed${C_RESET} : ${C_RED}${FAILED_TESTS}${C_RESET}"
+echo -e "${BOLD}logs${RESET}   : ${CYAN}${LOG_DIR}${RESET}"
+echo -e "${BOLD}passed${RESET} : ${GREEN}${PASSED_TESTS}${RESET}"
+echo -e "${BOLD}failed${RESET} : ${RED}${FAILED_TESTS}${RESET}"
 
 if [[ "${FAILED_TESTS}" -gt 0 ]]; then
 	exit 3

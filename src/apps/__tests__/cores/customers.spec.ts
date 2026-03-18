@@ -1,7 +1,7 @@
 import type { CustomerDto, SearchCustomersPageDto } from 'apps/cores'
+import { nullObjectId } from '@mannercode/nestlib-testing'
 import { buildCreateCustomerDto, createCustomer, Errors } from 'apps/__tests__/__helpers__'
 import { omit } from 'lodash'
-import { nullObjectId } from 'testlib'
 import type { CustomersFixture } from './customers.fixture'
 
 describe('CustomersService', () => {
@@ -177,8 +177,8 @@ describe('CustomersService', () => {
 
         const buildExpectedPage = (customers: CustomerDto[]) => ({
             items: expect.arrayContaining(customers),
-            skip: 0,
-            take: expect.any(Number),
+            page: 1,
+            limit: expect.any(Number),
             total: customers.length
         })
 

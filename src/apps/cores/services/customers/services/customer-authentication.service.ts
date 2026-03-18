@@ -1,7 +1,7 @@
+import { JwtAuthService } from '@mannercode/nestlib-common'
+import { InjectJwtAuth } from '@mannercode/nestlib-common'
 import { Injectable } from '@nestjs/common'
 import { compare, hash } from 'bcrypt'
-import { JwtAuthService } from 'common'
-import { InjectJwtAuth } from 'common'
 import { CustomersRepository } from '../customers.repository'
 import { CustomerAuthPayload, CustomerCredentialsDto } from '../dtos'
 

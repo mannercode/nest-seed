@@ -1,5 +1,5 @@
+import { createMongooseSchema, MongooseSchema } from '@mannercode/nestlib-common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { createMongooseSchema, MongooseSchema } from 'common'
 import { MongooseConfigModule } from 'shared'
 import { Seatmap } from './seatmap'
 import { TheaterLocation } from './theater-location'

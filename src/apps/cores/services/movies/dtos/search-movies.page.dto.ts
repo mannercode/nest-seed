@@ -1,6 +1,6 @@
+import { PaginationDto } from '@mannercode/nestlib-common'
 import { Type } from 'class-transformer'
 import { IsDate, IsEnum, IsOptional, IsString } from 'class-validator'
-import { PaginationDto } from 'common'
 import { MovieGenre, MovieRating } from '../models'
 
 export class SearchMoviesPageDto extends PaginationDto {

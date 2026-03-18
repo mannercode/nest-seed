@@ -1,5 +1,5 @@
+import { createMongooseSchema, HardDelete, MongooseSchema } from '@mannercode/nestlib-common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { createMongooseSchema, HardDelete, MongooseSchema } from 'common'
 import { MongooseConfigModule } from 'shared'
 
 @HardDelete()

@@ -1,7 +1,8 @@
 import { createJsWithTsPreset, pathsToModuleNameMapper } from 'ts-jest'
-import tsconfig from './tsconfig.json' with { type: 'json' }
 
 const tsJestPreset = createJsWithTsPreset({ tsconfig: 'tsconfig.json' })
+
+import tsconfig from './tsconfig.json' with { type: 'json' }
 const { compilerOptions } = tsconfig
 
 export default {
@@ -27,11 +28,8 @@ export default {
         '/development\\.ts$',
         '/main\\.ts$',
         '/shared/configure-app\\.ts$',
-        '/modules/',
         '/index\\.ts$',
         '\\.module\\.ts$',
-        '/libs/testlib/',
-        '/temporal-worker\\.service\\.ts$',
         '/workflows/'
     ],
     coverageDirectory: '<rootDir>/_output/coverage',

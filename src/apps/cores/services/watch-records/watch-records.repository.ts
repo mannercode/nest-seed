@@ -1,7 +1,7 @@
+import { QueryBuilderOptions } from '@mannercode/nestlib-common'
+import { MongooseRepository, QueryBuilder } from '@mannercode/nestlib-common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { QueryBuilderOptions } from 'common'
-import { MongooseRepository, QueryBuilder } from 'common'
 import { Model } from 'mongoose'
 import { MongooseConfigModule } from 'shared'
 import { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos'
@@ -29,7 +29,7 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
     }
 
     async searchPage(searchDto: SearchWatchRecordsPageDto) {
-        const { orderby, skip, take } = searchDto
+        const { orderby, page, limit } = searchDto
 
         const pagination = await this.findWithPagination({
             configureQuery: async (queryHelper) => {
@@ -37,7 +37,7 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
 
                 queryHelper.setQuery(query)
             },
-            pagination: { orderby, skip, take }
+            pagination: { orderby, page, limit }
         })
 
         return pagination

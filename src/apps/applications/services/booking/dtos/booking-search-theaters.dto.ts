@@ -1,6 +1,6 @@
+import { LatLong } from '@mannercode/nestlib-common'
 import { Type } from 'class-transformer'
 import { IsNotEmpty, IsString, ValidateNested } from 'class-validator'
-import { LatLong } from 'common'
 
 export class BookingSearchTheatersDto {
     @IsNotEmpty()

@@ -1,8 +1,8 @@
+import type { TestContext } from '@mannercode/nestlib-testing'
 import type { CreateShowtimeDto } from 'apps/cores'
-import type { TestContext } from 'testlib'
-import { DateUtil, newObjectIdString } from 'common'
+import { DateUtil, newObjectIdString } from '@mannercode/nestlib-common'
+import { oid } from '@mannercode/nestlib-testing'
 import { uniq } from 'lodash'
-import { oid } from 'testlib'
 
 export function buildCreateShowtimeDto(overrides: Partial<CreateShowtimeDto> = {}) {
     const createDto = {

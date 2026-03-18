@@ -1,6 +1,6 @@
+import { BaseConfigService } from '@mannercode/nestlib-common'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { BaseConfigService } from 'common'
 import Joi from 'joi'
 
 @Injectable()

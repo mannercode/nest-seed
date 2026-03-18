@@ -48,13 +48,8 @@ done
 printf '\n%b%s%b\n' "${C_BOLD}${C_BRIGHT_CYAN}" "Select e2e spec:" "${C_RESET}"
 SELECTED_SPEC=$(prompt_selection "*.spec" "${SPECS[@]}")
 
-npm run infra:reset
-npm run apps:reset
-
 if [[ "${SELECTED_SPEC}" == "*.spec" ]]; then
-	bash ./run-specs.sh
+	bash ./run-all.sh
 else
-	bash ./run-specs.sh "./specs/${SELECTED_SPEC}"
+	bash ./run-all.sh "./specs/${SELECTED_SPEC}"
 fi
-
-npm run apps:down

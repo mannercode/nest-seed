@@ -17,6 +17,7 @@ MONGO_IMAGE=mongo:8.2.3
 REDIS_IMAGE=redis:8.4-alpine
 NATS_IMAGE=nats:2.12-alpine
 MINIO_IMAGE=minio/minio:latest
+TEMPORAL_IMAGE=temporalio/auto-setup:1.25
 ```
 
 ### 프로젝트 이름 변경
@@ -41,16 +42,15 @@ MINIO_IMAGE=minio/minio:latest
 
 ### 디버그 (`.vscode/launch.json`)
 
-- **Debug App**: `npm run debug`를 실행하며 `TARGET_APP`을 선택한다.
+- **Debug App**: `npm run dev`를 실행하며 `TARGET_APP`을 선택한다.
     - 선택지: `gateway`, `applications`, `cores`, `infrastructures`
 
 ### 작업 (`.vscode/tasks.json`)
 
-| Task            | Description                                            |
-| --------------- | ------------------------------------------------------ |
-| `Run Tests`     | `npm test` 실행. `TEST_ROOT` 입력으로 범위를 지정한다. |
-| `Run E2E Tests` | `npm run test:e2e` 실행. `curl`, `jq`가 필요하다.      |
-| `Repeat Tests`  | 선택한 테스트 명령을 N회 반복 실행한다.                |
+| Task            | Description                                       |
+| --------------- | ------------------------------------------------- |
+| `Run Tests`     | `npm test` 실행.                                  |
+| `Run E2E Tests` | `npm run test:e2e` 실행. `curl`, `jq`가 필요하다. |
 
 ---
 
@@ -100,17 +100,13 @@ MINIO_IMAGE=minio/minio:latest
 
 > 폴더마다 `index.ts`를 두면 순환 참조를 더 빨리 발견할 수 있다.
 
-### testlib와 common의 순환 참조
-
-`src/libs`에는 `testlib`와 `common`이 있다. `testlib`는 `common`을 import하고, `common`의 `__tests__` 폴더에서 `testlib`를 import한다. 언뜻 순환처럼 보이지만, `__tests__` 폴더는 테스트 전용이며 런타임에 참조되지 않으므로 실제 순환 참조 문제가 발생하지 않는다.
-
 ---
 
 ## 테스트에서 Dynamic Import
 
-여러 테스트에서 같은 NATS 서버를 공유하기 때문에, 각 테스트마다 고유한 subject를 생성하기 위해 `process.env.TESTLIB_ID`를 사용한다.
+여러 테스트에서 같은 NATS 서버를 공유하기 때문에, 각 테스트마다 고유한 subject를 생성하기 위해 `process.env.TEST_ID`를 사용한다.
 
-Jest의 모듈 캐시 때문에 `@MessagePattern` 데코레이터가 모듈 로딩 시점에 한 번만 평가된다. 따라서 최상위에서 이미 import된 모듈은 새로운 `process.env.TESTLIB_ID` 값을 인식하지 못한다.
+Jest의 모듈 캐시 때문에 `@MessagePattern` 데코레이터가 모듈 로딩 시점에 한 번만 평가된다. 따라서 최상위에서 이미 import된 모듈은 새로운 `process.env.TEST_ID` 값을 인식하지 못한다.
 
 이 문제를 해결하기 위해 Jest 설정에서 `resetModules: true`를 적용하고, 테스트에서는 dynamic import를 사용한다.
 

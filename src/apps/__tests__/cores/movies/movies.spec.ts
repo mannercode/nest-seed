@@ -1,4 +1,6 @@
 import type { MovieDto, SearchMoviesPageDto } from 'apps/cores'
+import { Checksum } from '@mannercode/nestlib-common'
+import { nullObjectId } from '@mannercode/nestlib-testing'
 import {
     buildCreateMovieDto,
     createMovie,
@@ -7,10 +9,8 @@ import {
     uploadAndFinalizeAsset
 } from 'apps/__tests__/__helpers__'
 import { MovieGenre, MovieRating } from 'apps/cores'
-import { Checksum } from 'common'
 import { omit } from 'lodash'
 import { Rules } from 'shared'
-import { nullObjectId } from 'testlib'
 import type { MoviesFixture } from './movies.fixture'
 
 describe('MoviesService', () => {
@@ -258,8 +258,8 @@ describe('MoviesService', () => {
             movies.forEach((movie) => (movie.imageUrls = expect.any(Array)))
             return {
                 items: expect.arrayContaining(movies),
-                skip: 0,
-                take: expect.any(Number),
+                page: 1,
+                limit: expect.any(Number),
                 total: movies.length
             }
         }

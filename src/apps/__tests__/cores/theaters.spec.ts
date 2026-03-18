@@ -1,6 +1,6 @@
 import type { SearchTheatersPageDto, TheaterDto } from 'apps/cores'
+import { nullObjectId } from '@mannercode/nestlib-testing'
 import { buildCreateTheaterDto, createTheater, Errors } from 'apps/__tests__/__helpers__'
-import { nullObjectId } from 'testlib'
 import type { TheatersFixture } from './theaters.fixture'
 
 describe('TheatersService', () => {
@@ -158,8 +158,8 @@ describe('TheatersService', () => {
 
         const buildExpectedPage = (theaters: TheaterDto[]) => ({
             items: expect.arrayContaining(theaters),
-            skip: 0,
-            take: expect.any(Number),
+            page: 1,
+            limit: expect.any(Number),
             total: theaters.length
         })
 

@@ -1,5 +1,5 @@
+import { mapDocToDto } from '@mannercode/nestlib-common'
 import { ConflictException, Injectable } from '@nestjs/common'
-import { mapDocToDto } from 'common'
 import { CustomersRepository } from './customers.repository'
 import {
     CreateCustomerDto,

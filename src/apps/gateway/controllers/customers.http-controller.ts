@@ -1,3 +1,4 @@
+import { Require } from '@mannercode/nestlib-common'
 import {
     Body,
     Controller,
@@ -18,7 +19,6 @@ import {
     SearchCustomersPageDto,
     UpdateCustomerDto
 } from 'apps/cores'
-import { Require } from 'common'
 import { CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
 import { CustomerAuthRequest } from './types'
 

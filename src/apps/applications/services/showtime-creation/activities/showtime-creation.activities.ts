@@ -1,5 +1,5 @@
+import type { Json } from '@mannercode/nestlib-common'
 import type { ShowtimesClient, TicketsClient } from 'apps/cores'
-import type { Json } from 'common'
 import type { BulkCreateShowtimesDto } from '../dtos'
 import type { ShowtimeBulkCreatorService } from '../services/showtime-bulk-creator.service'
 import type { ShowtimeBulkValidatorService } from '../services/showtime-bulk-validator.service'

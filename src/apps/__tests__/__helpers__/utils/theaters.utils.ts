@@ -1,4 +1,4 @@
-import type { TestContext } from 'testlib'
+import type { TestContext } from '@mannercode/nestlib-testing'
 
 export function buildCreateTheaterDto(overrides = {}) {
     const createDto = {

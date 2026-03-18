@@ -1,6 +1,6 @@
+import { Checksum } from '@mannercode/nestlib-common'
 import { Type } from 'class-transformer'
 import { IsInt, IsNotEmpty, IsString, Min, ValidateNested } from 'class-validator'
-import { Checksum } from 'common'
 
 export class CreateAssetDto {
     @IsNotEmpty()
