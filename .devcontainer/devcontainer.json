@@ -23,17 +23,17 @@
         "prepare-files": "touch ${localEnv:HOME}/.claude.json"
     },
     "onCreateCommand": {
-        "clone-msa": "git clone https://github.com/mannercode/nest-msa.git nest-msa 2>/dev/null || true",
-        "clone-mono": "git clone https://github.com/mannercode/nest-mono.git nest-mono 2>/dev/null || true",
-        "clone-libs": "git clone https://github.com/mannercode/nest-libs.git nest-libs 2>/dev/null || true"
+        "msa-clone": "git clone https://github.com/mannercode/nest-msa.git nest-msa 2>/dev/null || true",
+        "mono-clone": "git clone https://github.com/mannercode/nest-mono.git nest-mono 2>/dev/null || true",
+        "libs-clone": "git clone https://github.com/mannercode/nest-libs.git nest-libs 2>/dev/null || true"
     },
     "postCreateCommand": {
-        "husky-msa": "cd nest-msa && husky",
-        "husky-mono": "cd nest-mono && husky",
-        "husky-nestlib": "cd nest-libs && husky",
-        "ci-msa": "cd nest-msa && npm ci",
-        "ci-mono": "cd nest-mono && npm ci",
-        "ci-nestlib": "cd nest-libs && npm ci"
+        "msa-husky": "cd nest-msa && husky",
+        "msa-ci": "cd nest-msa && npm ci",
+        "mono-husky": "cd nest-mono && husky",
+        "mono-ci": "cd nest-mono && npm ci",
+        "nestlib-husky": "cd nest-libs && husky",
+        "nestlib-ci": "cd nest-libs && npm ci"
     },
     "postStartCommand": {
         "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null"
@@ -88,21 +88,7 @@
                 "[properties]": { "editor.defaultFormatter": "mkhl.shfmt" },
                 "[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
                 "plantuml.server": "http://localhost:5020/",
-                "plantuml.render": "PlantUMLServer",
-                "githubPullRequests.pullBranch": "never",
-                "githubPullRequests.createOnPublishBranch": "never",
-                "githubPullRequests.fileListLayout": "flat",
-                "githubIssues.queries": [
-                    { "label": "My Issues", "query": "default" },
-                    {
-                        "label": "Created Issues",
-                        "query": "author:${user} state:open repo:${owner}/${repository} sort:created-desc"
-                    },
-                    {
-                        "label": "All Issues",
-                        "query": "repo:${owner}/${repository} sort:updated-desc"
-                    }
-                ]
+                "plantuml.render": "PlantUMLServer"
             }
         }
     }
