@@ -1,5 +1,5 @@
-import { Checksum } from '@mannercode/nestlib-common'
-import { createMongooseSchema, MongooseSchema } from '@mannercode/nestlib-common'
+import { Checksum } from '@mannercode/nest-common'
+import { createMongooseSchema, MongooseSchema } from '@mannercode/nest-common'
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseConfigModule } from 'shared'
 

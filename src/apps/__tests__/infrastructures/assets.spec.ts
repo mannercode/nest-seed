@@ -1,6 +1,6 @@
 import type { AssetDto } from 'apps/infrastructures'
-import { Checksum, pickIds, sleep } from '@mannercode/nestlib-common'
-import { nullObjectId, toAny } from '@mannercode/nestlib-testing'
+import { Checksum, pickIds, sleep } from '@mannercode/nest-common'
+import { nullObjectId, toAny } from '@mannercode/nest-testing'
 import { HttpStatus } from '@nestjs/common'
 import {
     buildCreateAssetDto,

@@ -1,6 +1,6 @@
 import type { PurchaseRecordDto, TicketDto } from 'apps/cores'
-import { pickIds } from '@mannercode/nestlib-common'
-import { toAny } from '@mannercode/nestlib-testing'
+import { pickIds } from '@mannercode/nest-common'
+import { toAny } from '@mannercode/nest-testing'
 import { Errors, getPayments, getTickets } from 'apps/__tests__/__helpers__'
 import { TicketStatus } from 'apps/cores'
 import type { PurchaseFixture } from './purchase.fixture'

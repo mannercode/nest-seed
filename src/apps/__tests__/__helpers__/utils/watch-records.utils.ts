@@ -1,5 +1,5 @@
-import type { TestContext } from '@mannercode/nestlib-testing'
-import { nullDate, oid } from '@mannercode/nestlib-testing'
+import type { TestContext } from '@mannercode/nest-testing'
+import { nullDate, oid } from '@mannercode/nest-testing'
 
 export function buildCreateWatchRecordDto(overrides = {}) {
     const createDto = {

@@ -1,4 +1,4 @@
-import { createMongooseSchema, MongooseSchema } from '@mannercode/nestlib-common'
+import { createMongooseSchema, MongooseSchema } from '@mannercode/nest-common'
 import { Prop, Schema } from '@nestjs/mongoose'
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
 import { MongooseConfigModule } from 'shared'

@@ -1,6 +1,6 @@
 import type { INestApplication } from '@nestjs/common'
 import type { MicroserviceOptions } from '@nestjs/microservices'
-import { AppLoggerService, Path } from '@mannercode/nestlib-common'
+import { AppLoggerService, Path } from '@mannercode/nest-common'
 import { Transport } from '@nestjs/microservices'
 import compression from 'compression'
 import express from 'express'

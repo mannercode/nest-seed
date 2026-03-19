@@ -1,5 +1,5 @@
-import { ClientProxyService } from '@mannercode/nestlib-microservice'
-import { InjectClientProxy } from '@mannercode/nestlib-microservice'
+import { ClientProxyService } from '@mannercode/nest-microservice'
+import { InjectClientProxy } from '@mannercode/nest-microservice'
 import { Injectable } from '@nestjs/common'
 import { MovieDto } from 'apps/cores'
 import { Messages } from 'shared'

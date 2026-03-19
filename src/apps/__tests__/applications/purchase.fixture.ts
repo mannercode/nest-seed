@@ -1,9 +1,9 @@
-import type { TestContext } from '@mannercode/nestlib-testing'
+import type { TestContext } from '@mannercode/nest-testing'
 import type { AppTestContext } from 'apps/__tests__/__helpers__'
 import type { CreatePurchaseDto } from 'apps/applications'
 import type { TicketDto } from 'apps/cores'
-import { DateUtil, pickIds } from '@mannercode/nestlib-common'
-import { oid, toAny } from '@mannercode/nestlib-testing'
+import { DateUtil, pickIds } from '@mannercode/nest-common'
+import { oid, toAny } from '@mannercode/nest-testing'
 import {
     buildHoldTicketsDto,
     createAppTestContext,

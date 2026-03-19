@@ -1,5 +1,5 @@
-import { QueryBuilderOptions } from '@mannercode/nestlib-common'
-import { assignIfDefined, MongooseRepository, QueryBuilder } from '@mannercode/nestlib-common'
+import { QueryBuilderOptions } from '@mannercode/nest-common'
+import { assignIfDefined, MongooseRepository, QueryBuilder } from '@mannercode/nest-common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { HydratedDocument, Model } from 'mongoose'

@@ -1,6 +1,6 @@
-import type { TestContext } from '@mannercode/nestlib-testing'
+import type { TestContext } from '@mannercode/nest-testing'
 import type { CreatePaymentDto } from 'apps/infrastructures'
-import { oid } from '@mannercode/nestlib-testing'
+import { oid } from '@mannercode/nest-testing'
 
 export function buildCreatePaymentDto(overrides = {}) {
     const createDto = { amount: 1, customerId: oid(0x0), ...overrides }

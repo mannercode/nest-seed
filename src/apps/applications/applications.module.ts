@@ -1,4 +1,4 @@
-import { TemporalClientModule } from '@mannercode/nestlib-microservice'
+import { TemporalClientModule } from '@mannercode/nest-microservice'
 import { Module } from '@nestjs/common'
 import { AppConfigService, CommonModule, RedisConfigModule } from 'shared'
 import { HealthModule, TemporalWorkerModule } from './modules'

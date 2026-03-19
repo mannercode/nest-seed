@@ -1,4 +1,4 @@
-import { CacheModule } from '@mannercode/nestlib-common'
+import { CacheModule } from '@mannercode/nest-common'
 import { Module } from '@nestjs/common'
 import { getProjectId, RedisConfigModule } from 'shared'
 import { TicketHoldingController } from './ticket-holding.controller'

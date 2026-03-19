@@ -1,6 +1,6 @@
 import type { TicketDto } from 'apps/cores'
-import { pickIds } from '@mannercode/nestlib-common'
-import { oid } from '@mannercode/nestlib-testing'
+import { pickIds } from '@mannercode/nest-common'
+import { oid } from '@mannercode/nest-testing'
 import { HttpStatus } from '@nestjs/common'
 import { buildCreateTicketDto, createTickets, Errors } from 'apps/__tests__/__helpers__'
 import { TicketStatus } from 'apps/cores'

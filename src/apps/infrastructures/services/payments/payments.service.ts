@@ -1,4 +1,4 @@
-import { mapDocToDto } from '@mannercode/nestlib-common'
+import { mapDocToDto } from '@mannercode/nest-common'
 import { Injectable } from '@nestjs/common'
 import { CreatePaymentDto } from './dtos'
 import { PaymentDto } from './dtos'

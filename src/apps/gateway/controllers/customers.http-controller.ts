@@ -1,4 +1,4 @@
-import { Require } from '@mannercode/nestlib-common'
+import { Require } from '@mannercode/nest-common'
 import {
     Body,
     Controller,

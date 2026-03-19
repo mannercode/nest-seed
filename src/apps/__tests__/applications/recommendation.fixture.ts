@@ -1,7 +1,7 @@
-import type { TestContext } from '@mannercode/nestlib-testing'
+import type { TestContext } from '@mannercode/nest-testing'
 import type { AppTestContext } from 'apps/__tests__/__helpers__'
 import type { MovieDto } from 'apps/cores'
-import { DateUtil } from '@mannercode/nestlib-common'
+import { DateUtil } from '@mannercode/nest-common'
 import {
     createAndLoginCustomer,
     createAppTestContext,

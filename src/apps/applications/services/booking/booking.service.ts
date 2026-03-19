@@ -1,4 +1,4 @@
-import { pickIds } from '@mannercode/nestlib-common'
+import { pickIds } from '@mannercode/nest-common'
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import {
     HoldTicketsDto,

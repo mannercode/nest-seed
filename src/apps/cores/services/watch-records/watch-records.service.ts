@@ -1,4 +1,4 @@
-import { mapDocToDto } from '@mannercode/nestlib-common'
+import { mapDocToDto } from '@mannercode/nest-common'
 import { Injectable } from '@nestjs/common'
 import { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos'
 import { WatchRecordDto } from './dtos'

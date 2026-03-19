@@ -3,8 +3,8 @@ import {
     createWinstonLogger,
     ExceptionLoggerFilter,
     SuccessLoggerInterceptor
-} from '@mannercode/nestlib-common'
-import { ClientProxyModule } from '@mannercode/nestlib-microservice'
+} from '@mannercode/nest-common'
+import { ClientProxyModule } from '@mannercode/nest-microservice'
 import { Global, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'

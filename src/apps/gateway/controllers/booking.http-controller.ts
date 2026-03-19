@@ -1,5 +1,5 @@
-import { LatLong } from '@mannercode/nestlib-common'
-import { DateUtil, ParseLatLongQuery } from '@mannercode/nestlib-common'
+import { LatLong } from '@mannercode/nest-common'
+import { DateUtil, ParseLatLongQuery } from '@mannercode/nest-common'
 import {
     Body,
     Controller,

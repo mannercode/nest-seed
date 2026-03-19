@@ -1,4 +1,4 @@
-import { PaginationDto } from '@mannercode/nestlib-common'
+import { PaginationDto } from '@mannercode/nest-common'
 import { MessageEvent, OnModuleDestroy } from '@nestjs/common'
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Sse } from '@nestjs/common'
 import { EventPattern } from '@nestjs/microservices'

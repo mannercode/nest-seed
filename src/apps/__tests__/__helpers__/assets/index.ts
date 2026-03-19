@@ -1,4 +1,4 @@
-import { Checksum } from '@mannercode/nestlib-common'
+import { Checksum } from '@mannercode/nest-common'
 import { readFileSync } from 'fs'
 import p from 'path'
 

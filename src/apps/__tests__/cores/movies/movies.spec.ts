@@ -1,6 +1,6 @@
 import type { MovieDto, SearchMoviesPageDto } from 'apps/cores'
-import { Checksum } from '@mannercode/nestlib-common'
-import { nullObjectId } from '@mannercode/nestlib-testing'
+import { Checksum } from '@mannercode/nest-common'
+import { nullObjectId } from '@mannercode/nest-testing'
 import {
     buildCreateMovieDto,
     createMovie,
