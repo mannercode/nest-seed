@@ -1,4 +1,4 @@
-import type { Checksum } from '@mannercode/nestlib-common'
+import type { Checksum } from '@mannercode/nest-common'
 import type { AssetDownloadDto } from './asset-download.dto'
 import type { AssetOwnerDto } from './asset-owner.dto'
 

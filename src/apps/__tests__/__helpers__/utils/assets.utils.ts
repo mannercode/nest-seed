@@ -1,4 +1,4 @@
-import type { TestContext } from '@mannercode/nestlib-testing'
+import type { TestContext } from '@mannercode/nest-testing'
 import type {
     AssetDto,
     AssetPresignedUploadDto,

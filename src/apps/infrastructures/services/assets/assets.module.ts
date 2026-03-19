@@ -1,4 +1,4 @@
-import { S3ObjectModule } from '@mannercode/nestlib-common'
+import { S3ObjectModule } from '@mannercode/nest-common'
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { AppConfigService, MongooseConfigModule } from 'shared'

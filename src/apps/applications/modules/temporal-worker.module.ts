@@ -1,4 +1,4 @@
-import { Json } from '@mannercode/nestlib-common'
+import { Json } from '@mannercode/nest-common'
 import { Module, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { bundleWorkflowCode, NativeConnection, Worker } from '@temporalio/worker'
 import { ShowtimesClient, TicketsClient } from 'apps/cores'

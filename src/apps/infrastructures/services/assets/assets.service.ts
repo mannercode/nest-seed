@@ -1,5 +1,5 @@
-import { S3ObjectService } from '@mannercode/nestlib-common'
-import { DateUtil, InjectS3Object, mapDocToDto, pickIds } from '@mannercode/nestlib-common'
+import { S3ObjectService } from '@mannercode/nest-common'
+import { DateUtil, InjectS3Object, mapDocToDto, pickIds } from '@mannercode/nest-common'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { Cron } from '@nestjs/schedule'
 import { Rules } from 'shared'

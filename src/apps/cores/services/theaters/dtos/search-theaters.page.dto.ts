@@ -1,4 +1,4 @@
-import { PaginationDto } from '@mannercode/nestlib-common'
+import { PaginationDto } from '@mannercode/nest-common'
 import { IsOptional, IsString } from 'class-validator'
 
 export class SearchTheatersPageDto extends PaginationDto {

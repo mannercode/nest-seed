@@ -1,5 +1,5 @@
 import type { SearchTheatersPageDto, TheaterDto } from 'apps/cores'
-import { nullObjectId } from '@mannercode/nestlib-testing'
+import { nullObjectId } from '@mannercode/nest-testing'
 import { buildCreateTheaterDto, createTheater, Errors } from 'apps/__tests__/__helpers__'
 import type { TheatersFixture } from './theaters.fixture'
 

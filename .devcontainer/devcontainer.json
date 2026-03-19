@@ -2,7 +2,10 @@
     "name": "${containerWorkspaceFolderBasename}",
     "hostRequirements": { "cpus": 4, "memory": "16gb", "storage": "32gb" },
     "build": { "dockerfile": "Dockerfile", "context": "." },
-    "features": { "ghcr.io/devcontainers/features/docker-in-docker:2": {} },
+    "features": {
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
     "privileged": true,
     "runArgs": [
         "--add-host",

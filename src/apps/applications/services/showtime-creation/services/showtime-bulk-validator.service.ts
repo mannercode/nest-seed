@@ -1,4 +1,4 @@
-import { DateTimeRange, DateUtil, Require, Time } from '@mannercode/nestlib-common'
+import { DateTimeRange, DateUtil, Require, Time } from '@mannercode/nest-common'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { MoviesClient, ShowtimeDto, ShowtimesClient, TheatersClient } from 'apps/cores'
 import { Rules } from 'shared'

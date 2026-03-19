@@ -1,4 +1,4 @@
-import { TEMPORAL_CLIENT } from '@mannercode/nestlib-microservice'
+import { TEMPORAL_CLIENT } from '@mannercode/nest-microservice'
 import { HttpException, Inject, Injectable } from '@nestjs/common'
 import { ApplicationFailure, Client, WorkflowFailedError } from '@temporalio/client'
 import { getTemporalTaskQueue } from 'shared'

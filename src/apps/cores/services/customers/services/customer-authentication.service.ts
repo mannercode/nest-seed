@@ -1,5 +1,5 @@
-import { JwtAuthService } from '@mannercode/nestlib-common'
-import { InjectJwtAuth } from '@mannercode/nestlib-common'
+import { JwtAuthService } from '@mannercode/nest-common'
+import { InjectJwtAuth } from '@mannercode/nest-common'
 import { Injectable } from '@nestjs/common'
 import { compare, hash } from 'bcrypt'
 import { CustomersRepository } from '../customers.repository'

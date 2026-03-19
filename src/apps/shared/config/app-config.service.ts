@@ -1,4 +1,4 @@
-import { BaseConfigService } from '@mannercode/nestlib-common'
+import { BaseConfigService } from '@mannercode/nest-common'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import Joi from 'joi'

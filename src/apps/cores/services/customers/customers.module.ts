@@ -1,4 +1,4 @@
-import { JwtAuthModule, Time } from '@mannercode/nestlib-common'
+import { JwtAuthModule, Time } from '@mannercode/nest-common'
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'

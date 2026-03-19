@@ -1,5 +1,5 @@
 import type { MovieDto } from 'apps/cores'
-import { nullObjectId } from '@mannercode/nestlib-testing'
+import { nullObjectId } from '@mannercode/nest-testing'
 import { Errors } from 'apps/__tests__/__helpers__'
 import { MovieGenre, MovieRating } from 'apps/cores'
 import type { MoviesPublishFixture } from './movies-publish.fixture'

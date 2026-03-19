@@ -1,5 +1,5 @@
-import type { TestContext } from '@mannercode/nestlib-testing'
-import { oid } from '@mannercode/nestlib-testing'
+import type { TestContext } from '@mannercode/nest-testing'
+import { oid } from '@mannercode/nest-testing'
 import { PurchaseItemType } from 'apps/cores'
 
 export function buildCreatePurchaseRecordDto(overrides = {}) {

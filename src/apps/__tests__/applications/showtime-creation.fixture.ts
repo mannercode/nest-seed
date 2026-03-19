@@ -1,5 +1,5 @@
 import type { AppTestContext as TestContext } from 'apps/__tests__/__helpers__'
-import { Json } from '@mannercode/nestlib-common'
+import { Json } from '@mannercode/nest-common'
 import { createAppTestContext, createTemporalTestWorker } from 'apps/__tests__/__helpers__'
 import {
     createShowtimeCreationActivities,

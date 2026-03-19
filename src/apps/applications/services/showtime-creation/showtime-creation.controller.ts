@@ -1,4 +1,4 @@
-import { PaginationDto } from '@mannercode/nestlib-common'
+import { PaginationDto } from '@mannercode/nest-common'
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { Messages } from 'shared'

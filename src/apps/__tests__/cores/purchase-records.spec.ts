@@ -1,5 +1,5 @@
 import type { PurchaseRecordDto } from 'apps/cores'
-import { nullObjectId } from '@mannercode/nestlib-testing'
+import { nullObjectId } from '@mannercode/nest-testing'
 import {
     buildCreatePurchaseRecordDto,
     createPurchaseRecord,

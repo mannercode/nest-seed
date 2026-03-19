@@ -1,4 +1,4 @@
-import { Time } from '@mannercode/nestlib-common'
+import { Time } from '@mannercode/nest-common'
 import { CronExpression } from '@nestjs/schedule'
 
 /**

@@ -1,5 +1,5 @@
-import { HttpTestContext } from '@mannercode/nestlib-testing'
-import { createHttpTestContext } from '@mannercode/nestlib-testing'
+import { HttpTestContext } from '@mannercode/nest-testing'
+import { createHttpTestContext } from '@mannercode/nest-testing'
 import { Body, Controller, ParseArrayPipe, Post } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
 import { Type } from 'class-transformer'

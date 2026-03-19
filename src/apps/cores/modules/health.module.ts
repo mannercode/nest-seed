@@ -1,4 +1,4 @@
-import { RedisHealthIndicator } from '@mannercode/nestlib-common'
+import { RedisHealthIndicator } from '@mannercode/nest-common'
 import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
 import { HealthCheckService, MongooseHealthIndicator } from '@nestjs/terminus'
 import { TerminusModule } from '@nestjs/terminus'

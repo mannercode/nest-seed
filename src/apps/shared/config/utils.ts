@@ -1,4 +1,4 @@
-import { Require } from '@mannercode/nestlib-common'
+import { Require } from '@mannercode/nest-common'
 
 type Paths<T, ParentPath extends string = ''> = {
     [K in keyof T]: T[K] extends object

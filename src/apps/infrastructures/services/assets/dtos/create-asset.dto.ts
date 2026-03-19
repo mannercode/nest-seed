@@ -1,4 +1,4 @@
-import { Checksum } from '@mannercode/nestlib-common'
+import { Checksum } from '@mannercode/nest-common'
 import { Type } from 'class-transformer'
 import { IsInt, IsNotEmpty, IsString, Min, ValidateNested } from 'class-validator'
 

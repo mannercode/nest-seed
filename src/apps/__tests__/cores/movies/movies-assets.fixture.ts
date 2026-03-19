@@ -1,4 +1,4 @@
-import type { TestContext } from '@mannercode/nestlib-testing'
+import type { TestContext } from '@mannercode/nest-testing'
 import type { TestAsset } from 'apps/__tests__/__helpers__'
 import type { AssetsClient } from 'apps/infrastructures'
 import { buildCreateAssetDto, testAssets, uploadAsset } from 'apps/__tests__/__helpers__'

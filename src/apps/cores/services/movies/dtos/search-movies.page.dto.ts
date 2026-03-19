@@ -1,4 +1,4 @@
-import { PaginationDto } from '@mannercode/nestlib-common'
+import { PaginationDto } from '@mannercode/nest-common'
 import { Type } from 'class-transformer'
 import { IsDate, IsEnum, IsOptional, IsString } from 'class-validator'
 import { MovieGenre, MovieRating } from '../models'

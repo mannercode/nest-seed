@@ -1,4 +1,4 @@
-import { ensure, mapDocToDto, pickIds } from '@mannercode/nestlib-common'
+import { ensure, mapDocToDto, pickIds } from '@mannercode/nest-common'
 import {
     BadRequestException,
     Injectable,

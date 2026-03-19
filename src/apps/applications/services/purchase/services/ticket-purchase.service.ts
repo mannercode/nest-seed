@@ -1,4 +1,4 @@
-import { DateUtil } from '@mannercode/nestlib-common'
+import { DateUtil } from '@mannercode/nest-common'
 import { BadRequestException, Injectable } from '@nestjs/common'
 import {
     PurchaseItemDto,

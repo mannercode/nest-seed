@@ -1,7 +1,7 @@
-import type { TestContext } from '@mannercode/nestlib-testing'
+import type { TestContext } from '@mannercode/nest-testing'
 import type { CreateTicketDto } from 'apps/cores'
-import { newObjectIdString } from '@mannercode/nestlib-common'
-import { oid } from '@mannercode/nestlib-testing'
+import { newObjectIdString } from '@mannercode/nest-common'
+import { oid } from '@mannercode/nest-testing'
 import { TicketStatus } from 'apps/cores'
 import { uniq } from 'lodash'
 
