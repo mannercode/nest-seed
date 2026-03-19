@@ -40,7 +40,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
     }
 
     async searchPage(searchDto: SearchMoviesPageDto) {
-        const { orderby, page, limit } = searchDto
+        const { orderby, page, size } = searchDto
 
         const pagination = await this.findWithPagination({
             configureQuery: async (queryHelper) => {
@@ -48,7 +48,7 @@ export class MoviesRepository extends MongooseRepository<Movie> {
 
                 queryHelper.setQuery(query)
             },
-            pagination: { orderby, page, limit }
+            pagination: { orderby, page, size }
         })
 
         return pagination

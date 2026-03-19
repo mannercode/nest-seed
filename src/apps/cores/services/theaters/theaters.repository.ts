@@ -27,7 +27,7 @@ export class TheatersRepository extends MongooseRepository<Theater> {
     }
 
     async searchPage(searchDto: SearchTheatersPageDto) {
-        const { orderby, page, limit } = searchDto
+        const { orderby, page, size } = searchDto
 
         const pagination = await this.findWithPagination({
             configureQuery: async (queryHelper) => {
@@ -35,7 +35,7 @@ export class TheatersRepository extends MongooseRepository<Theater> {
 
                 queryHelper.setQuery(query)
             },
-            pagination: { orderby, page, limit }
+            pagination: { orderby, page, size }
         })
 
         return pagination

@@ -47,7 +47,7 @@ export class CustomersRepository extends MongooseRepository<Customer> {
     }
 
     async searchPage(searchDto: SearchCustomersPageDto) {
-        const { orderby, page, limit } = searchDto
+        const { orderby, page, size } = searchDto
 
         const pagination = await this.findWithPagination({
             configureQuery: async (queryHelper) => {
@@ -55,7 +55,7 @@ export class CustomersRepository extends MongooseRepository<Customer> {
 
                 queryHelper.setQuery(query)
             },
-            pagination: { orderby, page, limit }
+            pagination: { orderby, page, size }
         })
 
         return pagination
