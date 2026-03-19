@@ -10,7 +10,7 @@
 
 ### `.env.infra`
 
-로컬 인프라 및 Jest Testcontainers에서 사용할 Docker 이미지 태그를 정의한다.
+로컬 인프라(Docker Compose)에서 사용할 Docker 이미지 태그를 정의한다.
 
 ```env
 MONGO_IMAGE=mongo:8.2.3

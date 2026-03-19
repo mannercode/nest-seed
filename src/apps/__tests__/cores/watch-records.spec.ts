@@ -38,7 +38,7 @@ describe('WatchRecordsService', () => {
         const buildExpectedPage = (expectedRecords: WatchRecordDto[]) => ({
             items: expect.arrayContaining(expectedRecords),
             page: 1,
-            limit: expect.any(Number),
+            size: expect.any(Number),
             total: expectedRecords.length
         })
 

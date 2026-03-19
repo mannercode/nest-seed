@@ -29,7 +29,7 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
     }
 
     async searchPage(searchDto: SearchWatchRecordsPageDto) {
-        const { orderby, page, limit } = searchDto
+        const { orderby, page, size } = searchDto
 
         const pagination = await this.findWithPagination({
             configureQuery: async (queryHelper) => {
@@ -37,7 +37,7 @@ export class WatchRecordsRepository extends MongooseRepository<WatchRecord> {
 
                 queryHelper.setQuery(query)
             },
-            pagination: { orderby, page, limit }
+            pagination: { orderby, page, size }
         })
 
         return pagination
