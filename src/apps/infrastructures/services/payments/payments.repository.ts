@@ -1,8 +1,8 @@
 import { MongooseRepository } from '@mannercode/nest-common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
+import { MongooseConfigModule } from 'app-common'
 import { Model } from 'mongoose'
-import { MongooseConfigModule } from 'shared'
 import { CreatePaymentDto } from './dtos'
 import { Payment } from './models'
 

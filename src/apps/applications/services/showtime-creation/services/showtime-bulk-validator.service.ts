@@ -1,7 +1,7 @@
 import { DateTimeRange, DateUtil, Require, Time } from '@mannercode/nest-common'
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { MoviesClient, ShowtimeDto, ShowtimesClient, TheatersClient } from 'apps/cores'
-import { Rules } from 'shared'
+import { CoreRules } from 'apps/cores/shared'
 import { BulkCreateShowtimesDto } from '../dtos'
 import { ShowtimeCreationErrors } from '../errors'
 
@@ -14,7 +14,7 @@ const iterateTimeslots = (
     for (
         let timeslot = timeRange.start.getTime();
         timeslot <= timeRange.end.getTime();
-        timeslot = timeslot + Time.toMs(`${Rules.Showtime.timeslotInMinutes}m`)
+        timeslot = timeslot + Time.toMs(`${CoreRules.Showtime.timeslotInMinutes}m`)
     ) {
         if (false === onTimeslot(timeslot)) {
             break
@@ -24,6 +24,8 @@ const iterateTimeslots = (
 
 @Injectable()
 export class ShowtimeBulkValidatorService {
+    private readonly logger = new Logger(ShowtimeBulkValidatorService.name)
+
     constructor(
         private readonly theatersClient: TheatersClient,
         private readonly moviesClient: MoviesClient,
@@ -35,6 +37,12 @@ export class ShowtimeBulkValidatorService {
         await this.verifyTheatersExist(createDto.theaterIds)
 
         const conflictingShowtimes = await this.findConflictingShowtimes(createDto)
+
+        this.logger.log('validate completed', {
+            movieId: createDto.movieId,
+            theaterCount: createDto.theaterIds.length,
+            conflictCount: conflictingShowtimes.length
+        })
 
         return { conflictingShowtimes, isValid: 0 === conflictingShowtimes.length }
     }

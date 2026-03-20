@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { Messages } from 'shared'
+import { Messages } from 'app-common'
 import { AssetsService } from './assets.service'
 import { CreateAssetDto, FinalizeAssetDto } from './dtos'
 

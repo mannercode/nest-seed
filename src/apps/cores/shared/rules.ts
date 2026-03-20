@@ -1,5 +1,4 @@
 import { Time } from '@mannercode/nest-common'
-import { CronExpression } from '@nestjs/schedule'
 
 /**
  * This value rarely changes. Moreover, it is unlikely to vary depending on the theater or service.
@@ -8,12 +7,7 @@ import { CronExpression } from '@nestjs/schedule'
  * 이 값은 거의 변경되지 않는다. 또한 극장이나 서비스 마다 달라질 가능성도 없다.
  * 그래서 환경설정으로 설정하게 하거나 외부에서 주입받는 것은 불필요하다.
  */
-export const Rules = {
-    Asset: {
-        downloadExpiresInSec: 60 * 60,
-        expiredUploadCleanupCron: CronExpression.EVERY_10_MINUTES,
-        uploadExpiresInSec: 60 * 60
-    },
+export const CoreRules = {
     Movie: {
         defaults: {
             director: '',

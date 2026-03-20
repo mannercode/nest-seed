@@ -2,7 +2,7 @@ import { S3ObjectService } from '@mannercode/nest-common'
 import { DateUtil, InjectS3Object, mapDocToDto, pickIds } from '@mannercode/nest-common'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { Cron } from '@nestjs/schedule'
-import { Rules } from 'shared'
+import { InfraRules } from '../../shared'
 import { AssetsRepository } from './assets.repository'
 import { AssetPresignedUploadDto, CreateAssetDto, FinalizeAssetDto } from './dtos'
 import { AssetDto } from './dtos'
@@ -16,7 +16,7 @@ export class AssetsService {
         @InjectS3Object() private readonly s3Service: S3ObjectService
     ) {}
 
-    @Cron(Rules.Asset.expiredUploadCleanupCron, { name: 'assets.cleanupExpiredUploads' })
+    @Cron(InfraRules.Asset.expiredUploadCleanupCron, { name: 'assets.cleanupExpiredUploads' })
     async cleanupExpiredUploads() {
         const expiresBefore = this.getExpirationThreshold()
         const expiredAssets = await this.repository.findExpiredIncomplete(expiresBefore)
@@ -30,7 +30,7 @@ export class AssetsService {
         const asset = await this.repository.create(createDto)
 
         const { mimeType, size } = createDto
-        const expiresInSec = Rules.Asset.uploadExpiresInSec
+        const expiresInSec = InfraRules.Asset.uploadExpiresInSec
 
         const presigned = await this.s3Service.presignUploadPost({
             contentType: mimeType,
@@ -92,11 +92,11 @@ export class AssetsService {
     }
 
     private getExpirationThreshold() {
-        return DateUtil.add({ base: DateUtil.now(), seconds: -Rules.Asset.uploadExpiresInSec })
+        return DateUtil.add({ base: DateUtil.now(), seconds: -InfraRules.Asset.uploadExpiresInSec })
     }
 
     private getUploadExpiresAt(createdAt: Date) {
-        return DateUtil.add({ base: createdAt, seconds: Rules.Asset.uploadExpiresInSec })
+        return DateUtil.add({ base: createdAt, seconds: InfraRules.Asset.uploadExpiresInSec })
     }
 
     private isUploadExpired(expiresAt: Date) {
@@ -129,7 +129,7 @@ export class AssetsService {
     }
 
     private async withDownloadInfo(assetDto: AssetDto): Promise<AssetDto> {
-        const expiresInSec = Rules.Asset.downloadExpiresInSec
+        const expiresInSec = InfraRules.Asset.downloadExpiresInSec
         const url = await this.s3Service.presignDownloadUrl({ expiresInSec, key: assetDto.id })
         const expiresAt = DateUtil.add({ seconds: expiresInSec })
 

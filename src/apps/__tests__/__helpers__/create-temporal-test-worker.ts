@@ -1,5 +1,5 @@
 import { bundleWorkflowCode, NativeConnection, Worker } from '@temporalio/worker'
-import { getTemporalTaskQueue } from 'shared'
+import { getTemporalTaskQueue } from 'app-common'
 
 export type TemporalTestWorkerOptions = { activities: object }
 

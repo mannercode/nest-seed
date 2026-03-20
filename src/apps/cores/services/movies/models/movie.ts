@@ -1,6 +1,7 @@
 import { createMongooseSchema, MongooseSchema } from '@mannercode/nest-common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseConfigModule, Rules } from 'shared'
+import { MongooseConfigModule } from 'app-common'
+import { CoreRules } from '../../../shared'
 
 export enum MovieGenre {
     Action = 'action',
@@ -27,7 +28,7 @@ function required(this: Movie) {
     return this.isPublished
 }
 
-const { defaults } = Rules.Movie
+const { defaults } = CoreRules.Movie
 
 @Schema(MongooseConfigModule.schemaOptions)
 export class Movie extends MongooseSchema {

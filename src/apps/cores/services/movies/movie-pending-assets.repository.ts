@@ -1,8 +1,8 @@
 import { MongooseRepository, QueryBuilder } from '@mannercode/nest-common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
+import { MongooseConfigModule } from 'app-common'
 import { Model } from 'mongoose'
-import { MongooseConfigModule } from 'shared'
 import { MoviePendingAsset } from './models'
 
 @Injectable()

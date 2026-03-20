@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common'
 import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
 import { uniq } from 'lodash'
-import { Rules } from 'shared'
+import { CoreRules } from '../../shared'
 import { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
 import { MovieDto } from './dtos'
 import { MovieErrors } from './errors'
@@ -113,7 +113,7 @@ export class MoviesService {
         const movie = await this.moviesRepository.getById(movieId)
 
         const { director, durationInSeconds, genres, plot, rating, releaseDate, title } = movie
-        const defaults = Rules.Movie.defaults
+        const defaults = CoreRules.Movie.defaults
 
         const missingFields: string[] = []
         if (title === defaults.title) missingFields.push('title')

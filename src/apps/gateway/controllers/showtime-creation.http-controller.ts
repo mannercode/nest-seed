@@ -2,6 +2,7 @@ import { PaginationDto } from '@mannercode/nest-common'
 import { MessageEvent, OnModuleDestroy } from '@nestjs/common'
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Sse } from '@nestjs/common'
 import { EventPattern } from '@nestjs/microservices'
+import { Events } from 'app-common'
 import {
     BulkCreateShowtimesDto,
     ShowtimeCreationClient,
@@ -9,7 +10,6 @@ import {
 } from 'apps/applications'
 import { Observable } from 'rxjs'
 import { Subject } from 'rxjs'
-import { Events } from 'shared'
 
 @Controller('showtime-creation')
 export class ShowtimeCreationHttpController implements OnModuleDestroy {

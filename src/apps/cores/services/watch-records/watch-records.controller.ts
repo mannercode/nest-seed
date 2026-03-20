@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { Messages } from 'shared'
+import { Messages } from 'app-common'
 import { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos'
 import { WatchRecordsService } from './watch-records.service'
 

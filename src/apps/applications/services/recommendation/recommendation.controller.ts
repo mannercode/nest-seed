@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { Messages } from 'shared'
+import { Messages } from 'app-common'
 import { RecommendationService } from './recommendation.service'
 
 @Controller()

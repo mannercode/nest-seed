@@ -1,7 +1,7 @@
 import { ClientProxyService } from '@mannercode/nest-microservice'
 import { InjectClientProxy } from '@mannercode/nest-microservice'
 import { Injectable } from '@nestjs/common'
-import { Messages } from 'shared'
+import { Messages } from 'app-common'
 import { CreateShowtimeDto, CreateShowtimesResult, SearchShowtimesDto, ShowtimeDto } from './dtos'
 
 @Injectable()

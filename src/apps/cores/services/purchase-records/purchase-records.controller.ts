@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { Messages } from 'shared'
+import { Messages } from 'app-common'
 import { CreatePurchaseRecordDto } from './dtos'
 import { PurchaseRecordsService } from './purchase-records.service'
 

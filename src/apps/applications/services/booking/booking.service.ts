@@ -1,5 +1,5 @@
 import { pickIds } from '@mannercode/nest-common'
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import {
     HoldTicketsDto,
     ShowtimesClient,
@@ -17,6 +17,8 @@ import { BookingErrors } from './errors'
 
 @Injectable()
 export class BookingService {
+    private readonly logger = new Logger(BookingService.name)
+
     constructor(
         private readonly showtimesClient: ShowtimesClient,
         private readonly theatersClient: TheatersClient,
@@ -36,6 +38,11 @@ export class BookingService {
     }
 
     async holdTickets(dto: HoldTicketsDto) {
+        this.logger.log('holdTickets', {
+            customerId: dto.customerId,
+            ticketCount: dto.ticketIds.length
+        })
+
         const success = await this.ticketHoldingClient.holdTickets(dto)
 
         if (!success) {
@@ -77,6 +84,8 @@ export class BookingService {
         const theaterIds = await this.showtimesClient.searchTheaterIds({ movieIds: [movieId] })
         const theaters = await this.theatersClient.getMany(theaterIds)
         const showingTheaters = sortTheatersByDistance(theaters, latLong)
+
+        this.logger.log('searchTheaters', { movieId, theaterCount: showingTheaters.length })
 
         return showingTheaters
     }

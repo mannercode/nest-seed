@@ -6,15 +6,15 @@ import { createHttpTestContext, isDebuggingEnabled } from '@mannercode/nest-test
 import { ConfigService } from '@nestjs/config'
 import { Transport } from '@nestjs/microservices'
 import { SchedulerRegistry } from '@nestjs/schedule'
-import compression from 'compression'
-import express from 'express'
 import {
     AppConfigService,
     CommonModule,
     getProjectId,
     MongooseConfigModule,
     RedisConfigModule
-} from 'shared'
+} from 'app-common'
+import compression from 'compression'
+import express from 'express'
 
 export type AppTestContext = HttpTestContext & { teardown: () => Promise<void> }
 

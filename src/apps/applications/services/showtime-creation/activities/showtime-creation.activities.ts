@@ -1,5 +1,6 @@
 import type { Json } from '@mannercode/nest-common'
 import type { ShowtimesClient, TicketsClient } from 'apps/cores'
+import { log } from '@temporalio/activity'
 import type { BulkCreateShowtimesDto } from '../dtos'
 import type { ShowtimeBulkCreatorService } from '../services/showtime-bulk-creator.service'
 import type { ShowtimeBulkValidatorService } from '../services/showtime-bulk-validator.service'
@@ -28,24 +29,36 @@ export function createShowtimeCreationActivities(deps: {
 }): ShowtimeCreationActivities {
     return {
         async emitStatusChanged(payload) {
+            log.info('emitStatusChanged', { sagaId: payload.sagaId, status: payload.status })
             await deps.events.emitStatusChanged(payload)
         },
 
         async validateShowtimes(createDto) {
+            log.info('validateShowtimes', {
+                movieId: createDto.movieId,
+                theaterCount: createDto.theaterIds.length
+            })
             const revived = deps.reviveIsoDates(createDto) as BulkCreateShowtimesDto
             return deps.validatorService.validate(revived)
         },
 
         async createShowtimes(createDto, sagaId) {
+            log.info('createShowtimes', { sagaId, movieId: createDto.movieId })
             const revived = deps.reviveIsoDates(createDto) as BulkCreateShowtimesDto
             return deps.creatorService.create(revived, sagaId)
         },
 
         async compensateShowtimeCreation(sagaId) {
-            await Promise.allSettled([
+            log.warn('compensateShowtimeCreation', { sagaId })
+            const results = await Promise.allSettled([
                 deps.ticketsClient.deleteBySagaIds([sagaId]),
                 deps.showtimesClient.deleteBySagaIds([sagaId])
             ])
+            log.warn('compensateShowtimeCreation completed', {
+                sagaId,
+                tickets: results[0].status,
+                showtimes: results[1].status
+            })
         }
     }
 }

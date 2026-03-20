@@ -1,6 +1,7 @@
 import type { PurchaseRecordsClient } from 'apps/cores'
 import type { PaymentsClient } from 'apps/infrastructures'
 import { HttpException } from '@nestjs/common'
+import { log } from '@temporalio/activity'
 import { ApplicationFailure } from '@temporalio/activity'
 import type { TicketPurchaseService } from '../services'
 
@@ -47,6 +48,7 @@ export function createPurchaseActivities(deps: {
 }): PurchaseActivities {
     return {
         async validatePurchase(createDto) {
+            log.info('validatePurchase', { customerId: createDto.customerId })
             try {
                 await deps.ticketPurchaseService.validatePurchase(createDto as any)
             } catch (error) {
@@ -55,16 +57,19 @@ export function createPurchaseActivities(deps: {
         },
 
         async createPayment(amount, customerId) {
+            log.info('createPayment', { amount, customerId })
             const payment = await deps.paymentsClient.create({ amount, customerId })
             return { id: payment.id }
         },
 
         async createPurchaseRecord(createDto) {
+            log.info('createPurchaseRecord', { customerId: createDto.customerId })
             const record = await deps.purchaseRecordsClient.create(createDto as any)
             return JSON.parse(JSON.stringify(record))
         },
 
         async completePurchase(createDto) {
+            log.info('completePurchase', { customerId: createDto.customerId })
             try {
                 await deps.ticketPurchaseService.completePurchase(createDto as any)
             } catch (error) {
@@ -73,14 +78,17 @@ export function createPurchaseActivities(deps: {
         },
 
         async cancelPayment(paymentId) {
+            log.warn('cancelPayment', { paymentId })
             await deps.paymentsClient.cancel(paymentId)
         },
 
         async deletePurchaseRecord(purchaseRecordId) {
+            log.warn('deletePurchaseRecord', { purchaseRecordId })
             await deps.purchaseRecordsClient.delete(purchaseRecordId)
         },
 
         async rollbackPurchase(createDto) {
+            log.warn('rollbackPurchase', { customerId: createDto.customerId })
             await deps.ticketPurchaseService.rollbackPurchase(createDto as any)
         }
     }

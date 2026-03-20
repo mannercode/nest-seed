@@ -1,7 +1,7 @@
 import { ClientProxyService } from '@mannercode/nest-microservice'
 import { InjectClientProxy } from '@mannercode/nest-microservice'
 import { Injectable } from '@nestjs/common'
-import { Events } from 'shared'
+import { Events } from 'app-common'
 
 @Injectable()
 export class PurchaseEvents {
