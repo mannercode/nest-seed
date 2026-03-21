@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { CommonModule, MongooseConfigModule } from 'shared'
+import { CommonModule, MongooseConfigModule } from 'app-common'
 import { HealthModule } from './modules'
 import { AssetsModule, PaymentsModule } from './services'
 

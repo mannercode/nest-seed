@@ -1,3 +1,4 @@
+import { log } from '@temporalio/workflow'
 import { proxyActivities } from '@temporalio/workflow'
 import type { ShowtimeCreationActivities } from '../activities/showtime-creation.activities'
 
@@ -18,13 +19,24 @@ export async function showtimeCreationWorkflow(input: {
 }) {
     const { sagaId, createDto } = input
 
+    log.info('showtimeCreationWorkflow', { sagaId })
+
     try {
         await emitStatusChanged({ sagaId, status: 'processing' } as any)
 
         const { isValid, conflictingShowtimes } = await validateShowtimes(createDto as any)
+        log.info('showtimeCreationWorkflow validateShowtimes completed', {
+            sagaId,
+            isValid,
+            conflictCount: conflictingShowtimes.length
+        })
 
         if (isValid) {
             const creationResult = await createShowtimes(createDto as any, sagaId)
+            log.info('showtimeCreationWorkflow createShowtimes completed', {
+                sagaId,
+                ...creationResult
+            })
 
             await emitStatusChanged({ sagaId, status: 'succeeded', ...creationResult } as any)
         } else {
@@ -33,6 +45,11 @@ export async function showtimeCreationWorkflow(input: {
     } catch (error: unknown) {
         const cause = error instanceof Error && error.cause instanceof Error ? error.cause : error
         const message = cause instanceof Error ? cause.message : String(cause)
+
+        log.warn('showtimeCreationWorkflow failed, executing compensation', {
+            sagaId,
+            error: message
+        })
 
         try {
             await compensateShowtimeCreation(sagaId)

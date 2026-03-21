@@ -1,12 +1,12 @@
 import { Json } from '@mannercode/nest-common'
 import { Module, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { bundleWorkflowCode, NativeConnection, Worker } from '@temporalio/worker'
+import { AppConfigService, getTemporalTaskQueue } from 'app-common'
 import { ShowtimesClient, TicketsClient } from 'apps/cores'
 import { PurchaseRecordsClient } from 'apps/cores'
 import { PaymentsClient } from 'apps/infrastructures'
 import * as fs from 'fs'
 import * as path from 'path'
-import { AppConfigService, getTemporalTaskQueue } from 'shared'
 import {
     createPurchaseActivities,
     PurchaseModule,

@@ -1,4 +1,4 @@
-import type { Seat } from '../../theaters'
+import type { Seat } from '../../../shared'
 import type { TicketStatus } from '../models'
 
 export class TicketDto {

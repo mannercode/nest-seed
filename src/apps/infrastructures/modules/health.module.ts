@@ -1,8 +1,8 @@
 import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
 import { HealthCheckService, MongooseHealthIndicator } from '@nestjs/terminus'
 import { TerminusModule } from '@nestjs/terminus'
+import { MongooseConfigModule } from 'app-common'
 import mongoose from 'mongoose'
-import { MongooseConfigModule } from 'shared'
 
 @Injectable()
 class HealthService {

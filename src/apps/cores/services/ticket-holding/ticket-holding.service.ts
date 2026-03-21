@@ -1,7 +1,7 @@
 import { CacheService } from '@mannercode/nest-common'
 import { InjectCache } from '@mannercode/nest-common'
 import { Injectable } from '@nestjs/common'
-import { Rules } from 'shared'
+import { CoreRules } from '../../shared'
 import { HoldTicketsDto } from './dtos'
 
 const getCustomerKey = (showtimeId: string, customerId: string) =>
@@ -68,7 +68,7 @@ export class TicketHoldingService {
         const keys = [...ticketKeys, customerKeyStr]
         const scriptArgs = [
             customerId,
-            Rules.Ticket.holdDurationInMs.toString(),
+            CoreRules.Ticket.holdDurationInMs.toString(),
             JSON.stringify(ticketIds),
             showtimeId
         ]
