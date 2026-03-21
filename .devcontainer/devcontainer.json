@@ -36,7 +36,8 @@
         "nestlib-ci": "cd nest-libs && npm ci"
     },
     "postStartCommand": {
-        "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null"
+        "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null",
+        "reset-infra": "cd nest-msa && npm run infra:reset"
     },
     "forwardPorts": [5010, 5020],
     "customizations": {
