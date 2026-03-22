@@ -2,7 +2,7 @@ import { QueryBuilderOptions } from '@mannercode/nest-common'
 import { MongooseRepository, objectIds, QueryBuilder } from '@mannercode/nest-common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'app-common'
+import { MongooseConfigModule } from 'common'
 import { Model } from 'mongoose'
 import {
     AggregateTicketSalesDto,

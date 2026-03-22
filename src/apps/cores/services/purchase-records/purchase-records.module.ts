@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'app-common'
+import { MongooseConfigModule } from 'common'
 import { PurchaseRecord, PurchaseRecordSchema } from './models'
 import { PurchaseRecordsController } from './purchase-records.controller'
 import { PurchaseRecordsRepository } from './purchase-records.repository'

@@ -9,7 +9,7 @@ import {
     TicketStatus,
     TicketsClient
 } from 'apps/cores'
-import { CoreRules } from 'apps/cores/shared'
+import { Rules } from 'common'
 import { uniq } from 'lodash'
 import { CreatePurchaseDto } from '../dtos'
 import { PurchaseErrors } from '../errors'
@@ -108,13 +108,13 @@ export class TicketPurchaseService {
         for (const { startTime } of showtimes) {
             const purchaseWindowCloseTime = DateUtil.add({
                 base: startTime,
-                minutes: -CoreRules.Ticket.purchaseCutoffMinutes
+                minutes: -Rules.Ticket.purchaseCutoffMinutes
             })
 
             if (purchaseWindowCloseTime.getTime() < DateUtil.now().getTime()) {
                 throw new BadRequestException(
                     PurchaseErrors.WindowClosed(
-                        CoreRules.Ticket.purchaseCutoffMinutes,
+                        Rules.Ticket.purchaseCutoffMinutes,
                         purchaseWindowCloseTime.toString(),
                         startTime.toString()
                     )
@@ -124,9 +124,9 @@ export class TicketPurchaseService {
     }
 
     private validateTicketCount(ticketItems: PurchaseItemDto[]) {
-        if (CoreRules.Ticket.maxTicketsPerPurchase < ticketItems.length) {
+        if (Rules.Ticket.maxTicketsPerPurchase < ticketItems.length) {
             throw new BadRequestException(
-                PurchaseErrors.LimitExceeded(CoreRules.Ticket.maxTicketsPerPurchase)
+                PurchaseErrors.LimitExceeded(Rules.Ticket.maxTicketsPerPurchase)
             )
         }
     }

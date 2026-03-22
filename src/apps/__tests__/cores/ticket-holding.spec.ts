@@ -76,8 +76,8 @@ describe('TicketHoldingService', () => {
         // 보유 시간이 만료되었을 때
         describe('when the hold duration has expired', () => {
             beforeEach(async () => {
-                const { CoreRules } = await import('apps/cores/shared')
-                toAny(CoreRules).Ticket.holdDurationInMs = 1000
+                const { Rules } = await import('common')
+                toAny(Rules).Ticket.holdDurationInMs = 1000
 
                 const holdDto = buildHoldTicketsDto({ customerId: oid(0xc1) })
                 await fix.ticketHoldingClient.holdTickets(holdDto)
@@ -154,8 +154,8 @@ describe('TicketHoldingService', () => {
             let holdDto: HoldTicketsDto
 
             beforeEach(async () => {
-                const { CoreRules } = await import('apps/cores/shared')
-                toAny(CoreRules).Ticket.holdDurationInMs = 1000
+                const { Rules } = await import('common')
+                toAny(Rules).Ticket.holdDurationInMs = 1000
 
                 holdDto = buildHoldTicketsDto()
                 await fix.ticketHoldingClient.holdTickets(holdDto)

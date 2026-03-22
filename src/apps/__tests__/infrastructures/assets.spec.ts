@@ -61,8 +61,8 @@ describe('AssetsService', () => {
         // 업로드 URL이 만료되었을 때
         describe('when the upload URL has expired', () => {
             beforeEach(async () => {
-                const { InfraRules } = await import('apps/infrastructures/shared')
-                toAny(InfraRules).Asset.uploadExpiresInSec = 1
+                const { Rules } = await import('common')
+                toAny(Rules).Asset.uploadExpiresInSec = 1
             })
 
             // URL 만료 후 업로드를 거부한다
@@ -151,8 +151,8 @@ describe('AssetsService', () => {
             let assetId: string
 
             beforeEach(async () => {
-                const { InfraRules } = await import('apps/infrastructures/shared')
-                toAny(InfraRules).Asset.uploadExpiresInSec = 1
+                const { Rules } = await import('common')
+                toAny(Rules).Asset.uploadExpiresInSec = 1
 
                 const createDto = buildCreateAssetDto(file)
                 const createdAsset = await fix.assetsClient.create(createDto)
@@ -285,8 +285,8 @@ describe('AssetsService', () => {
             let assetId: string
 
             beforeEach(async () => {
-                const { InfraRules } = await import('apps/infrastructures/shared')
-                toAny(InfraRules).Asset.uploadExpiresInSec = 1
+                const { Rules } = await import('common')
+                toAny(Rules).Asset.uploadExpiresInSec = 1
                 const cronJob = fix.scheduler.getCronJob('assets.cleanupExpiredUploads')
                 fireOnTick = cronJob.fireOnTick
 
@@ -311,8 +311,8 @@ describe('AssetsService', () => {
             // 업로드가 만료되었을 때
             describe('when the upload has expired', () => {
                 beforeEach(async () => {
-                    const { InfraRules } = await import('apps/infrastructures/shared')
-                    await sleep(InfraRules.Asset.uploadExpiresInSec * 1000 + 500)
+                    const { Rules } = await import('common')
+                    await sleep(Rules.Asset.uploadExpiresInSec * 1000 + 500)
 
                     await fireOnTick()
                     await sleep(1000)

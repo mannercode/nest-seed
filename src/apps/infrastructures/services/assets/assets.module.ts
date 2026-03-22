@@ -1,7 +1,7 @@
 import { S3ObjectModule } from '@mannercode/nest-common'
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { AppConfigService, MongooseConfigModule } from 'app-common'
+import { AppConfigService, MongooseConfigModule } from 'common'
 import { AssetsController } from './assets.controller'
 import { AssetsRepository } from './assets.repository'
 import { AssetsService } from './assets.service'

@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { Messages } from 'app-common'
+import { Messages } from 'common'
 import { HoldTicketsDto } from './dtos'
 import { TicketHoldingService } from './ticket-holding.service'
 
