@@ -2,7 +2,7 @@ import { PaginationResult } from '@mannercode/nest-common'
 import { ClientProxyService } from '@mannercode/nest-microservice'
 import { InjectClientProxy } from '@mannercode/nest-microservice'
 import { Injectable } from '@nestjs/common'
-import { Messages } from 'app-common'
+import { Messages } from 'common'
 import { CreateTheaterDto, SearchTheatersPageDto, TheaterDto, UpdateTheaterDto } from './dtos'
 
 @Injectable()

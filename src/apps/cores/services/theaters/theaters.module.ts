@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'app-common'
+import { MongooseConfigModule } from 'common'
 import { Theater, TheaterSchema } from './models'
 import { TheatersController } from './theaters.controller'
 import { TheatersRepository } from './theaters.repository'

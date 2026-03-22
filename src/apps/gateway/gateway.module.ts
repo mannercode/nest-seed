@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common'
-import { CommonModule } from 'app-common'
 import {
     BookingClient,
     PurchaseClient,
@@ -7,6 +6,7 @@ import {
     ShowtimeCreationClient
 } from 'apps/applications'
 import { CustomersClient, MoviesClient, PurchaseRecordsClient, TheatersClient } from 'apps/cores'
+import { CommonModule } from 'common'
 import {
     BookingHttpController,
     CustomerJwtStrategy,

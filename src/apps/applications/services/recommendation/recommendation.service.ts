@@ -1,7 +1,7 @@
 import { DateUtil, OrderDirection } from '@mannercode/nest-common'
 import { Injectable, Logger } from '@nestjs/common'
 import { MovieDto, MoviesClient, ShowtimesClient, WatchRecordsClient } from 'apps/cores'
-import { CoreRules } from 'apps/cores/shared'
+import { Rules } from 'common'
 import { defaultTo } from 'lodash'
 import { MovieRecommender } from './domain'
 
@@ -16,7 +16,7 @@ export class RecommendationService {
     ) {}
 
     async searchRecommendedMovies(customerId: null | string) {
-        const startTime = DateUtil.add({ minutes: CoreRules.Ticket.purchaseCutoffMinutes })
+        const startTime = DateUtil.add({ minutes: Rules.Ticket.purchaseCutoffMinutes })
 
         const showingMovieIds = await this.showtimesClient.searchMovieIds({
             startTimeRange: { start: startTime }

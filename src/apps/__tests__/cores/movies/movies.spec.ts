@@ -9,7 +9,7 @@ import {
     uploadAndFinalizeAsset
 } from 'apps/__tests__/__helpers__'
 import { MovieGenre, MovieRating } from 'apps/cores'
-import { CoreRules } from 'apps/cores/shared'
+import { Rules } from 'common'
 import { omit } from 'lodash'
 import type { MoviesFixture } from './movies.fixture'
 
@@ -48,7 +48,7 @@ describe('MoviesService', () => {
                         genres: [],
                         id: expect.any(String),
                         imageUrls: [],
-                        ...CoreRules.Movie.defaults
+                        ...Rules.Movie.defaults
                     })
             })
         })

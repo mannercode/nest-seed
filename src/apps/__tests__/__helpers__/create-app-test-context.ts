@@ -12,7 +12,7 @@ import {
     getProjectId,
     MongooseConfigModule,
     RedisConfigModule
-} from 'app-common'
+} from 'common'
 import compression from 'compression'
 import express from 'express'
 

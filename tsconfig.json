@@ -23,7 +23,7 @@
 
         "baseUrl": ".",
         "outDir": "./_output/build",
-        "paths": { "app-common": ["src/apps/app-common/index"], "apps/*": ["src/apps/*"] }
+        "paths": { "common": ["src/common/index"], "apps/*": ["src/apps/*"] }
     },
     "include": ["src/**/*"]
 }

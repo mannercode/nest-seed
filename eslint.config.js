@@ -13,7 +13,7 @@ const nodeBuiltinModulePattern = `^(?:node:)?(?:${[
     .sort()
     .map(escapeForRegex)
     .join('|')})(?:/.*)?$`
-const internalAliasPattern = '^(?:apps(?:/.*)?|app-common|@mannercode/nest-.*)$'
+const internalAliasPattern = '^(?:apps(?:/.*)?|common|@mannercode/nest-.*)$'
 const dependencyIgnorePatterns = ['^\\.', nodeBuiltinModulePattern, internalAliasPattern]
 const sourceDependencyOptions = {
     packageDir: __dirname,
@@ -217,16 +217,16 @@ module.exports = [
         }
     },
     {
-        files: ['src/apps/app-common/**/*.ts'],
+        files: ['src/common/**/*.ts'],
         rules: {
             'no-restricted-imports': [
                 'warn',
                 {
                     patterns: [
                         {
-                            group: ['app-common', 'app-common/**'],
+                            regex: '^common(?:/.*)?$',
                             message:
-                                'Use relative imports within app-common to avoid ancestor barrel cycles.'
+                                'Use relative imports within common to avoid ancestor barrel cycles.'
                         },
                         {
                             group: [
@@ -239,7 +239,7 @@ module.exports = [
                                 'apps/infrastructures',
                                 'apps/infrastructures/**'
                             ],
-                            message: 'app-common must not depend on app layers.'
+                            message: 'common must not depend on app layers.'
                         }
                     ]
                 }

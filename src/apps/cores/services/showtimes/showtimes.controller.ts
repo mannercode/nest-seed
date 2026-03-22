@@ -1,6 +1,6 @@
 import { Controller, ParseArrayPipe } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { Messages } from 'app-common'
+import { Messages } from 'common'
 import { CreateShowtimesResult, SearchShowtimesDto } from './dtos'
 import { CreateShowtimeDto } from './dtos'
 import { ShowtimesService } from './showtimes.service'
