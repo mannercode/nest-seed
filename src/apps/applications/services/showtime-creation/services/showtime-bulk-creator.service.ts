@@ -1,26 +1,26 @@
-import { DateUtil, Require } from '@mannercode/nest-common'
-import { Injectable, Logger } from '@nestjs/common'
+import { BaseService, DateUtil, Require } from '@mannercode/nest-common'
+import { Injectable } from '@nestjs/common'
 import { ShowtimeDto, ShowtimesClient, TheaterDto, TheatersClient, TicketsClient } from 'apps/cores'
 import { Seatmap, TicketStatus } from 'apps/cores'
 import { uniq } from 'lodash'
 import { BulkCreateShowtimesDto } from '../dtos'
 
 @Injectable()
-export class ShowtimeBulkCreatorService {
-    private readonly logger = new Logger(ShowtimeBulkCreatorService.name)
-
+export class ShowtimeBulkCreatorService extends BaseService {
     constructor(
         private readonly theatersClient: TheatersClient,
         private readonly showtimesClient: ShowtimesClient,
         private readonly ticketsClient: TicketsClient
-    ) {}
+    ) {
+        super()
+    }
 
     async create(createDto: BulkCreateShowtimesDto, sagaId: string) {
         const createdShowtimes = await this.bulkCreateShowtimes(createDto, sagaId)
 
         const createdTicketCount = await this.bulkCreateTickets(createdShowtimes, sagaId)
 
-        this.logger.log('create completed', {
+        this.log.info('create completed', {
             sagaId,
             showtimeCount: createdShowtimes.length,
             ticketCount: createdTicketCount

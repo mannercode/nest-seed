@@ -1,5 +1,5 @@
-import { DateUtil } from '@mannercode/nest-common'
-import { BadRequestException, Injectable, Logger } from '@nestjs/common'
+import { BaseService, DateUtil } from '@mannercode/nest-common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import {
     PurchaseItemDto,
     PurchaseItemType,
@@ -16,15 +16,15 @@ import { PurchaseErrors } from '../errors'
 import { PurchaseEvents } from '../purchase.events'
 
 @Injectable()
-export class TicketPurchaseService {
-    private readonly logger = new Logger(TicketPurchaseService.name)
-
+export class TicketPurchaseService extends BaseService {
     constructor(
         private readonly ticketsClient: TicketsClient,
         private readonly showtimesClient: ShowtimesClient,
         private readonly ticketHoldingClient: TicketHoldingClient,
         private readonly events: PurchaseEvents
-    ) {}
+    ) {
+        super()
+    }
 
     async completePurchase(createDto: CreatePurchaseDto): Promise<void> {
         const ticketItems = createDto.purchaseItems.filter(
@@ -32,7 +32,7 @@ export class TicketPurchaseService {
         )
         const ticketIds = ticketItems.map((item) => item.itemId)
 
-        this.logger.log('completePurchase', {
+        this.log.info('completePurchase', {
             customerId: createDto.customerId,
             ticketCount: ticketIds.length
         })
@@ -48,7 +48,7 @@ export class TicketPurchaseService {
         )
         const ticketIds = ticketItems.map((item) => item.itemId)
 
-        this.logger.warn('rollbackPurchase', {
+        this.log.warn('rollbackPurchase', {
             customerId: createDto.customerId,
             ticketCount: ticketIds.length
         })
@@ -59,7 +59,7 @@ export class TicketPurchaseService {
     }
 
     async validatePurchase(createDto: CreatePurchaseDto): Promise<void> {
-        this.logger.log('validatePurchase', { customerId: createDto.customerId })
+        this.log.info('validatePurchase', { customerId: createDto.customerId })
         const ticketItems = createDto.purchaseItems.filter(
             (item) => item.type === PurchaseItemType.Tickets
         )

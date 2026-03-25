@@ -1,20 +1,21 @@
+import { BaseService } from '@mannercode/nest-common'
 import { TEMPORAL_CLIENT } from '@mannercode/nest-microservice'
-import { HttpException, Inject, Injectable, Logger } from '@nestjs/common'
+import { HttpException, Inject, Injectable } from '@nestjs/common'
 import { ApplicationFailure, Client, WorkflowFailedError } from '@temporalio/client'
 import { getTemporalTaskQueue } from 'common'
 import type { purchaseWorkflow } from './workflows/purchase.workflow'
 import { CreatePurchaseDto } from './dtos'
 
 @Injectable()
-export class PurchaseService {
-    private readonly logger = new Logger(PurchaseService.name)
-
-    constructor(@Inject(TEMPORAL_CLIENT) private readonly temporalClient: Client) {}
+export class PurchaseService extends BaseService {
+    constructor(@Inject(TEMPORAL_CLIENT) private readonly temporalClient: Client) {
+        super()
+    }
 
     async processPurchase(createDto: CreatePurchaseDto) {
         const workflowId = `purchase-${createDto.customerId}-${Date.now()}`
 
-        this.logger.log('processPurchase', { workflowId, customerId: createDto.customerId })
+        this.log.info('processPurchase', { workflowId, customerId: createDto.customerId })
 
         const handle = await this.temporalClient.workflow.start<typeof purchaseWorkflow>(
             'purchaseWorkflow',
@@ -23,10 +24,10 @@ export class PurchaseService {
 
         try {
             const result = await handle.result()
-            this.logger.log('processPurchase completed', { workflowId })
+            this.log.info('processPurchase completed', { workflowId })
             return result
         } catch (error) {
-            this.logger.warn('processPurchase failed', { workflowId, error: String(error) })
+            this.log.warn('processPurchase failed', { workflowId, error: String(error) })
             throw unwrapWorkflowError(error as WorkflowFailedError)
         }
     }

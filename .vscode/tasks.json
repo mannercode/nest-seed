@@ -3,10 +3,11 @@
     "tasks": [
         {
             "label": "test:unit",
+            "type": "npm",
+            "script": "test:unit",
             "group": { "kind": "test", "isDefault": true },
-            "type": "shell",
-            "command": "npm run test:unit"
+            "problemMatcher": ["$tsc"]
         },
-        { "label": "test:e2e", "type": "shell", "command": "npm run test:e2e" }
+        { "label": "test:e2e", "type": "npm", "script": "test:e2e", "problemMatcher": [] }
     ]
 }

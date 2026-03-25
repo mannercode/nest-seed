@@ -1,5 +1,5 @@
-import { pickIds } from '@mannercode/nest-common'
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { BaseService, pickIds } from '@mannercode/nest-common'
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import {
     HoldTicketsDto,
     ShowtimesClient,
@@ -16,15 +16,15 @@ import {
 import { BookingErrors } from './errors'
 
 @Injectable()
-export class BookingService {
-    private readonly logger = new Logger(BookingService.name)
-
+export class BookingService extends BaseService {
     constructor(
         private readonly showtimesClient: ShowtimesClient,
         private readonly theatersClient: TheatersClient,
         private readonly ticketHoldingClient: TicketHoldingClient,
         private readonly ticketsClient: TicketsClient
-    ) {}
+    ) {
+        super()
+    }
 
     async getTickets(showtimeId: string) {
         const showtimeExists = await this.showtimesClient.allExist([showtimeId])
@@ -38,7 +38,7 @@ export class BookingService {
     }
 
     async holdTickets(dto: HoldTicketsDto) {
-        this.logger.log('holdTickets', {
+        this.log.info('holdTickets', {
             customerId: dto.customerId,
             ticketCount: dto.ticketIds.length
         })
@@ -85,7 +85,7 @@ export class BookingService {
         const theaters = await this.theatersClient.getMany(theaterIds)
         const showingTheaters = sortTheatersByDistance(theaters, latLong)
 
-        this.logger.log('searchTheaters', { movieId, theaterCount: showingTheaters.length })
+        this.log.info('searchTheaters', { movieId, theaterCount: showingTheaters.length })
 
         return showingTheaters
     }

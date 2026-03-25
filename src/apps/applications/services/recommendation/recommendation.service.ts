@@ -1,19 +1,19 @@
-import { DateUtil, OrderDirection } from '@mannercode/nest-common'
-import { Injectable, Logger } from '@nestjs/common'
+import { BaseService, DateUtil, OrderDirection } from '@mannercode/nest-common'
+import { Injectable } from '@nestjs/common'
 import { MovieDto, MoviesClient, ShowtimesClient, WatchRecordsClient } from 'apps/cores'
 import { Rules } from 'common'
 import { defaultTo } from 'lodash'
 import { MovieRecommender } from './domain'
 
 @Injectable()
-export class RecommendationService {
-    private readonly logger = new Logger(RecommendationService.name)
-
+export class RecommendationService extends BaseService {
     constructor(
         private readonly showtimesClient: ShowtimesClient,
         private readonly moviesClient: MoviesClient,
         private readonly watchRecordsClient: WatchRecordsClient
-    ) {}
+    ) {
+        super()
+    }
 
     async searchRecommendedMovies(customerId: null | string) {
         const startTime = DateUtil.add({ minutes: Rules.Ticket.purchaseCutoffMinutes })
@@ -37,7 +37,7 @@ export class RecommendationService {
 
         const recommendedMovies = MovieRecommender.recommend(showingMovies, watchedMovies)
 
-        this.logger.log('searchRecommendedMovies', {
+        this.log.info('searchRecommendedMovies', {
             customerId: defaultTo(customerId, 'anonymous'),
             showingMovieCount: showingMovies.length,
             recommendedCount: recommendedMovies.length
