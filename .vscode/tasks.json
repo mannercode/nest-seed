@@ -2,22 +2,43 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build",
+            "label": "packages:build",
             "group": { "kind": "build", "isDefault": true },
             "type": "shell",
             "command": "npm run build"
         },
-        { "label": "lint", "type": "shell", "command": "npm run lint" },
+        { "label": "packages:lint", "type": "shell", "command": "npm run lint" },
         {
-            "label": "test",
+            "label": "packages:test",
             "group": { "kind": "test", "isDefault": true },
             "type": "shell",
             "command": "npm test"
         },
+        { "label": "msa:lint", "type": "shell", "command": "npm --prefix templates/msa run lint" },
         {
-            "label": "test:templates",
+            "label": "msa:test:unit",
             "type": "shell",
-            "command": "npm --prefix templates/msa run test:unit && npm --prefix templates/mono run test:unit"
+            "command": "npm --prefix templates/msa run test:unit"
+        },
+        {
+            "label": "msa:test:e2e",
+            "type": "shell",
+            "command": "npm --prefix templates/msa run test:e2e"
+        },
+        {
+            "label": "mono:lint",
+            "type": "shell",
+            "command": "npm --prefix templates/mono run lint"
+        },
+        {
+            "label": "mono:test:unit",
+            "type": "shell",
+            "command": "npm --prefix templates/mono run test:unit"
+        },
+        {
+            "label": "mono:test:e2e",
+            "type": "shell",
+            "command": "npm --prefix templates/mono run test:e2e"
         }
     ]
 }
