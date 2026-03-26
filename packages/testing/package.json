@@ -13,7 +13,7 @@
     },
     "dependencies": {
         "@mannercode/common": "^1.0.0",
-        "@mannercode/microservice": "^1.0.0",
+        "@mannercode/microservice": "^1.0.1",
         "lodash": "^4.17.23",
         "superagent": "^10.3.0"
     },
@@ -32,7 +32,7 @@
         "@types/node": "^24",
         "@types/superagent": "^8.1.9",
         "reflect-metadata": "^0.2.2",
-        "typescript": "^5.9.3"
+        "typescript": "^6.0.2"
     },
     "publishConfig": {
         "access": "public"

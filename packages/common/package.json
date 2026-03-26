@@ -36,9 +36,9 @@
         "rxjs": "^7.0.0"
     },
     "devDependencies": {
-        "@aws-sdk/client-s3": "^3.1012.0",
-        "@aws-sdk/s3-presigned-post": "^3.1012.0",
-        "@aws-sdk/s3-request-presigner": "^3.1012.0",
+        "@aws-sdk/client-s3": "^3.1017.0",
+        "@aws-sdk/s3-presigned-post": "^3.1017.0",
+        "@aws-sdk/s3-request-presigner": "^3.1017.0",
         "@nestjs/common": "^11.1.17",
         "@nestjs/config": "^4.0.3",
         "@nestjs/core": "^11.1.17",
@@ -52,11 +52,11 @@
         "class-transformer": "^0.5.1",
         "class-validator": "0.14.4",
         "express": "^5.2.1",
-        "ioredis": "^5.10.0",
-        "mongoose": "^9.3.1",
+        "ioredis": "^5.10.1",
+        "mongoose": "^9.3.3",
         "reflect-metadata": "^0.2.2",
         "rxjs": "^7.8.2",
-        "typescript": "^5.9.3"
+        "typescript": "^6.0.2"
     },
     "publishConfig": {
         "access": "public"
