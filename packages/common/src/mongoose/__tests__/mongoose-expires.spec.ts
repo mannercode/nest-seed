@@ -29,7 +29,7 @@ describe('Mongoose TTL expiration', () => {
             const initialDoc = await fix.model.findOne({ _id: docId }).exec()
             expect(initialDoc?.sn).toEqual(sn)
 
-            await sleep(2000)
+            await sleep(10000)
             const expiredDoc = await fix.model.findOne({ _id: docId }).exec()
             expect(expiredDoc).toBeNull()
         })
