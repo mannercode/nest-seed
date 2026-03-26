@@ -1,0 +1,185 @@
+#!/bin/bash
+
+random_email() {
+	local epoch_ns
+	epoch_ns=$(date +%s%N)
+	printf 'test.%s.%s@example.com\n' "${epoch_ns}" "${RANDOM}"
+}
+
+CUSTOMER_NAME="customer name"
+CUSTOMER_BIRTHDATE="1990-01-01T00:00:00.000Z"
+CUSTOMER_PASSWORD="testpassword"
+CUSTOMER_EMAIL="customer@example.com"
+
+create_customer() {
+	CUSTOMER_EMAIL=$(random_email)
+
+	SETUP POST /customers \
+		-H 'Content-Type: application/json' \
+		-d '{
+				"name": "'"${CUSTOMER_NAME}"'",
+				"birthDate": "'"${CUSTOMER_BIRTHDATE}"'",
+				"email": "'"${CUSTOMER_EMAIL}"'",
+				"password": "'"${CUSTOMER_PASSWORD}"'"
+			}'
+
+	CUSTOMER_ID=$(echo "${BODY}" | jq -r '.id')
+}
+
+login_customer() {
+	SETUP POST /customers/login \
+		-H 'Content-Type: application/json' \
+		-d '{ "email": "'"${CUSTOMER_EMAIL}"'", "password": "'"${CUSTOMER_PASSWORD}"'" }'
+
+	CUSTOMER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
+	CUSTOMER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
+}
+
+create_and_login_customer() {
+	create_customer
+	login_customer
+}
+
+create_movie() {
+	SETUP POST /movies \
+		-H 'Content-Type: application/json' \
+		-d '{
+				"title": "movie title",
+				"genres": ["action", "drama"],
+				"releaseDate": "2024-01-01T00:00:00.000Z",
+				"plot": "movie plot for e2e flow",
+				"durationInSeconds": 7200,
+				"director": "e2e director",
+				"rating": "PG",
+				"assetIds": []
+			}'
+
+	MOVIE_ID=$(echo "${BODY}" | jq -r '.id')
+}
+
+publish_movie() {
+	SETUP POST /movies/${MOVIE_ID}/publish
+}
+
+create_theater() {
+	SETUP POST /theaters \
+		-H 'Content-Type: application/json' \
+		-d '{
+				"name": "theater name",
+				"location": { "latitude": 37.5665, "longitude": 126.9780 },
+				"seatmap": {
+					"blocks": [
+						{ "name": "A", "rows": [{ "name": "1", "layout": "OOOOOOOO" }] }
+					]
+				}
+			}'
+
+	THEATER_ID=$(echo "${BODY}" | jq -r '.id')
+}
+
+request_showtime_creation() {
+	local startTime=${1:-$(date -u -d '+1 day' '+%Y-%m-%dT%H:%M:%S.000Z')}
+
+	SETUP POST /showtime-creation/showtimes \
+		-H 'Content-Type: application/json' \
+		-d '{
+				"movieId": "'${MOVIE_ID}'",
+				"theaterIds": ["'${THEATER_ID}'"],
+				"durationInMinutes": 120,
+				"startTimes": ["'${startTime}'"]
+			}'
+
+	SAGA_ID=$(echo "${BODY}" | jq -r '.sagaId')
+}
+
+wait_for_showtime() {
+	local attempts=30
+	local attempt
+	local showtimeId
+
+	for ((attempt = 1; attempt <= attempts; attempt++)); do
+		SETUP POST /showtime-creation/showtimes/search \
+			-H 'Content-Type: application/json' \
+			-d '{ "theaterIds": ["'${THEATER_ID}'"] }'
+
+		showtimeId=$(
+			echo "${BODY}" |
+				jq -r --arg movieId "${MOVIE_ID}" --arg theaterId "${THEATER_ID}" \
+					'.[] | select(.movieId == $movieId and .theaterId == $theaterId) | .id' |
+				head -n 1
+		)
+
+		if [[ -n "${showtimeId}" && "${showtimeId}" != "null" ]]; then
+			SHOWTIME_ID="${showtimeId}"
+			return 0
+		fi
+
+		sleep 1
+	done
+
+	LOG_LINE "# Setup failed: showtime creation did not finish in ${attempts} seconds"
+	LOG_LINE "RES='setup-timeout'"
+	LOG_JSON "${BODY}"
+	LOG_LINE "'"
+	LOG_LINE ""
+	exit 2
+}
+
+wait_for_tickets() {
+	local attempts=30
+	local attempt
+	local ticketCount
+
+	for ((attempt = 1; attempt <= attempts; attempt++)); do
+		SETUP GET /booking/showtimes/${SHOWTIME_ID}/tickets
+
+		ticketCount=$(echo "${BODY}" | jq -r 'length')
+
+		if [[ "${ticketCount}" -ge 2 ]]; then
+			TICKET_ID_1=$(echo "${BODY}" | jq -r '.[0].id')
+			TICKET_ID_2=$(echo "${BODY}" | jq -r '.[1].id')
+			return 0
+		fi
+
+		sleep 1
+	done
+
+	LOG_LINE "# Setup failed: tickets were not created in ${attempts} seconds"
+	LOG_LINE "RES='setup-timeout'"
+	LOG_JSON "${BODY}"
+	LOG_LINE "'"
+	LOG_LINE ""
+	exit 2
+}
+
+setup_showtime_resources() {
+	create_movie
+	publish_movie
+	create_theater
+	request_showtime_creation
+	wait_for_showtime
+}
+
+upload_presigned_post() {
+	local filePath=$1
+	local uploadInfo=$2
+	local URL=$(printf '%s' "${uploadInfo}" | jq -r '.url')
+	local METHOD=$(printf '%s' "${uploadInfo}" | jq -r '.method')
+
+	local -a formArgs=()
+	while IFS=$'\t' read -r key value; do
+		formArgs+=(--form-string "${key}=${value}")
+	done < <(printf '%s' "${uploadInfo}" | jq -r '.fields | to_entries[] | [.key, .value] | @tsv')
+	formArgs+=(-F "file=@${filePath}")
+
+	LOG_COMMAND "${METHOD}" "${URL}" "${formArgs[@]}"
+	CURL "${METHOD}" "${URL}" "${formArgs[@]}"
+
+	if [[ "${STATUS}" -ge 300 ]]; then
+		LOG_LINE "# Upload failed"
+		LOG_LINE "RES='${STATUS}"
+		LOG_JSON "${BODY}"
+		LOG_LINE "'"
+		exit 2
+	fi
+}

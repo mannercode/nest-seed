@@ -1,0 +1,29 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug App",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["run", "dev"],
+            "autoAttachChildProcesses": true,
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "env": { "TARGET_APP": "${input:apps}" },
+            "skipFiles": ["<node_internals>/**"],
+            "restart": true
+        }
+    ],
+    "inputs": [
+        {
+            "id": "apps",
+            "type": "pickString",
+            "options": ["gateway", "applications", "cores", "infrastructures"],
+            "description": "Select a app to debug"
+        }
+    ]
+}

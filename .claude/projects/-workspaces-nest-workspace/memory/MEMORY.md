@@ -1,0 +1,2 @@
+- [Monorepo migration](project_monorepo.md) — 3 repos merged into one monorepo; source in packages/ and templates/
+- [User language](user_language.md) — Korean-speaking developer

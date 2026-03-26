@@ -1,0 +1,46 @@
+{
+    "name": "@mannercode/microservice",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "clean": "rm -rf dist *.tsbuildinfo",
+        "lint": "eslint src/ --max-warnings=0"
+    },
+    "dependencies": {
+        "@mannercode/common": "^1.0.0",
+        "lodash": "^4.17.23"
+    },
+    "peerDependencies": {
+        "@nestjs/common": "^11.0.0",
+        "@nestjs/microservices": "^11.0.0",
+        "@temporalio/client": "^1.15.0",
+        "@temporalio/worker": "^1.15.0",
+        "rxjs": "^7.0.0"
+    },
+    "devDependencies": {
+        "@nestjs/common": "^11.1.17",
+        "@nestjs/microservices": "^11.1.17",
+        "@temporalio/client": "^1.15.0",
+        "@temporalio/worker": "^1.15.0",
+        "@types/lodash": "^4.17.24",
+        "@types/node": "^24",
+        "reflect-metadata": "^0.2.2",
+        "nats": "^2.29.3",
+        "rxjs": "^7.8.2",
+        "typescript": "^5.9.3"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/mannercode/nest-workspace.git",
+        "directory": "packages/microservice"
+    }
+}

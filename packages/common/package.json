@@ -1,0 +1,70 @@
+{
+    "name": "@mannercode/common",
+    "version": "1.1.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "clean": "rm -rf dist *.tsbuildinfo",
+        "lint": "eslint src/ --max-warnings=0"
+    },
+    "dependencies": {
+        "lodash": "^4.17.23",
+        "mongoose-lean-virtuals": "^2.1.0",
+        "winston": "^3.19.0",
+        "winston-daily-rotate-file": "^5.0.0"
+    },
+    "peerDependencies": {
+        "@aws-sdk/client-s3": "^3.0.0",
+        "@aws-sdk/s3-presigned-post": "^3.0.0",
+        "@aws-sdk/s3-request-presigner": "^3.0.0",
+        "@nestjs/common": "^11.0.0",
+        "@nestjs/config": "^4.0.0",
+        "@nestjs/core": "^11.0.0",
+        "@nestjs/jwt": "^11.0.0",
+        "@nestjs/microservices": "^11.0.0",
+        "@nestjs/mongoose": "^11.0.0",
+        "@nestjs/terminus": "^11.0.0",
+        "class-transformer": "^0.5.0",
+        "class-validator": "0.14.4",
+        "express": "^5.0.0",
+        "ioredis": "^5.0.0",
+        "mongoose": "^9.0.0",
+        "rxjs": "^7.0.0"
+    },
+    "devDependencies": {
+        "@aws-sdk/client-s3": "^3.1012.0",
+        "@aws-sdk/s3-presigned-post": "^3.1012.0",
+        "@aws-sdk/s3-request-presigner": "^3.1012.0",
+        "@nestjs/common": "^11.1.17",
+        "@nestjs/config": "^4.0.3",
+        "@nestjs/core": "^11.1.17",
+        "@nestjs/jwt": "^11.0.2",
+        "@nestjs/microservices": "^11.1.17",
+        "@nestjs/mongoose": "^11.0.4",
+        "@nestjs/terminus": "^11.1.1",
+        "@types/express": "^5.0.6",
+        "@types/lodash": "^4.17.24",
+        "@types/node": "^24",
+        "class-transformer": "^0.5.1",
+        "class-validator": "0.14.4",
+        "express": "^5.2.1",
+        "ioredis": "^5.10.0",
+        "mongoose": "^9.3.1",
+        "reflect-metadata": "^0.2.2",
+        "rxjs": "^7.8.2",
+        "typescript": "^5.9.3"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/mannercode/nest-workspace.git",
+        "directory": "packages/common"
+    }
+}

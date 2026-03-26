@@ -1,0 +1,46 @@
+{
+    "name": "@mannercode/testing",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "clean": "rm -rf dist *.tsbuildinfo",
+        "lint": "eslint src/ --max-warnings=0"
+    },
+    "dependencies": {
+        "@mannercode/common": "^1.0.0",
+        "@mannercode/microservice": "^1.0.0",
+        "lodash": "^4.17.23",
+        "superagent": "^10.3.0"
+    },
+    "peerDependencies": {
+        "@nestjs/common": "^11.0.0",
+        "@nestjs/microservices": "^11.0.0",
+        "@nestjs/testing": "^11.0.0"
+    },
+    "devDependencies": {
+        "@nestjs/common": "^11.1.17",
+        "@nestjs/microservices": "^11.1.17",
+        "@nestjs/platform-express": "^11.1.17",
+        "@nestjs/testing": "^11.1.17",
+        "@types/jest": "^30.0.0",
+        "@types/lodash": "^4.17.24",
+        "@types/node": "^24",
+        "@types/superagent": "^8.1.9",
+        "reflect-metadata": "^0.2.2",
+        "typescript": "^5.9.3"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/mannercode/nest-workspace.git",
+        "directory": "packages/testing"
+    }
+}

@@ -1,0 +1,48 @@
+x-app-base: &app-base
+    environment: ['NODE_ENV=production']
+    env_file: .env
+    logging: { options: { max-size: '1m', max-file: '1' } }
+    extra_hosts: ['host.docker.internal:host-gateway']
+    healthcheck:
+        {
+            retries: 5,
+            start_period: 10s,
+            interval: 3s,
+            timeout: 3s,
+            test: 'curl -fsS http://localhost:$HTTP_PORT/health'
+        }
+
+services:
+    gateway:
+        <<: *app-base
+        build: { context: ., args: { TARGET_APP: gateway } }
+        image: gateway
+        container_name: gateway
+        ports: ['${HTTP_PORT}:${HTTP_PORT}']
+
+    applications:
+        <<: *app-base
+        build: { context: ., args: { TARGET_APP: applications } }
+        image: applications
+        container_name: applications
+
+    cores:
+        <<: *app-base
+        build: { context: ., args: { TARGET_APP: cores } }
+        image: cores
+        container_name: cores
+
+    infrastructures:
+        <<: *app-base
+        build: { context: ., args: { TARGET_APP: infrastructures } }
+        image: infrastructures
+        container_name: infrastructures
+
+    apps-setup:
+        image: docker:cli
+        container_name: apps-setup
+        depends_on:
+            gateway: { condition: service_healthy }
+            applications: { condition: service_healthy }
+            cores: { condition: service_healthy }
+            infrastructures: { condition: service_healthy }

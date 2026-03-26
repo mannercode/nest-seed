@@ -1,0 +1,9 @@
+{
+    "$schema": "https://turbo.build/schema.json",
+    "tasks": {
+        "build": { "dependsOn": ["^build"], "inputs": ["src/**"], "outputs": ["dist/**"] },
+        "clean": { "cache": false },
+        "lint": { "dependsOn": ["^build"], "inputs": ["src/**", "../../eslint.config.js"] },
+        "test": { "dependsOn": ["build"] }
+    }
+}

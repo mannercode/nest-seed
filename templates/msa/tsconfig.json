@@ -1,0 +1,38 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "target": "ESNext",
+        "lib": ["ESNext"],
+        "types": ["node", "jest"],
+
+        "strict": true,
+        "strictPropertyInitialization": false,
+
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+
+        "incremental": true,
+        "sourceMap": true,
+
+        "forceConsistentCasingInFileNames": true,
+        "noFallthroughCasesInSwitch": true,
+
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
+
+        "baseUrl": ".",
+        "outDir": "./_output/build",
+        "paths": {
+            "common": ["src/common/index"],
+            "apps/*": ["src/apps/*"],
+            "@mannercode/common": ["../../packages/common/src"],
+            "@mannercode/common/*": ["../../packages/common/src/*"],
+            "@mannercode/microservice": ["../../packages/microservice/src"],
+            "@mannercode/microservice/*": ["../../packages/microservice/src/*"],
+            "@mannercode/testing": ["../../packages/testing/src"],
+            "@mannercode/testing/*": ["../../packages/testing/src/*"]
+        }
+    },
+    "include": ["src/**/*", "../../packages/*/src/**/*"]
+}

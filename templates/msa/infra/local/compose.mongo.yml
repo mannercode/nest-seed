@@ -1,0 +1,121 @@
+x-mongo-base: &mongo-base
+    extends: { file: ./compose.common.yml, service: common-options }
+    image: $MONGO_IMAGE
+    deploy: { resources: { limits: { memory: 1g } } }
+    shm_size: '8m'
+    environment:
+        { MONGO_INITDB_ROOT_USERNAME: $MONGO_USERNAME, MONGO_INITDB_ROOT_PASSWORD: $MONGO_PASSWORD }
+    # Prevents "Too many open files" errors
+    ulimits: { nofile: { soft: 65536, hard: 65536 } }
+    # Why switch to port 27016
+    # - If MONGO_INITDB_* is set or /docker-entrypoint-initdb.d scripts exist, the official mongo image entrypoint
+    #   starts a temporary mongod on 127.0.0.1:27017 to run init tasks (admin/root user, etc.).
+    # - After init, it shuts down the temporary mongod and starts the service mongod.
+    # - During this handover, "Address already in use" may occur on 27017, so the service mongod uses 27016.
+    #
+    # 27016 포트로 변경하는 이유
+    # - MONGO_INITDB_* 또는 /docker-entrypoint-initdb.d 스크립트가 있으면 엔트리포인트가 127.0.0.1:27017로
+    #   초기화용 임시 mongod를 실행해 admin/root 사용자 생성 등 초기화를 수행한다.
+    # - 초기화가 끝나면 임시 mongod를 종료하고 서비스용 mongod를 다시 실행한다.
+    # - 이 전환 과정에서 27017 포트 충돌로 "Address already in use"가 간헐적으로 발생할 수 있어,
+    #   서비스용 mongod 포트를 27016으로 변경한다.
+    command: >
+        --replSet ${MONGO_REPLICA_SET}
+        --keyFile /etc/mongodb/mongodb.key
+        --bind_ip_all
+        --port 27016
+        --wiredTigerCacheSizeGB 0.25
+    volumes: ['mongodb_key:/etc/mongodb']
+    depends_on: ['mongo-key-generator']
+
+services:
+    mongo-key-generator:
+        container_name: mongo-key-generator
+        image: $MONGO_IMAGE
+        command: |
+            sh -euc '
+            openssl rand -base64 768 > mongodb.key &&
+            chmod 400 mongodb.key &&
+            chown mongodb:mongodb mongodb.key
+            '
+        volumes: ['mongodb_key:/mongodb_key']
+        working_dir: /mongodb_key
+
+    mongo1:
+        <<: *mongo-base
+        container_name: mongo1
+        ports: ['$MONGO_PORT1:27016']
+        healthcheck:
+            test: >
+                mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1/?authSource=admin"
+                --eval "db.adminCommand('ping')"
+
+    mongo2:
+        <<: *mongo-base
+        container_name: mongo2
+        ports: ['$MONGO_PORT2:27016']
+        healthcheck:
+            test: >
+                mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST2:$MONGO_PORT2/?authSource=admin"
+                --eval "db.adminCommand('ping')"
+
+    mongo3:
+        <<: *mongo-base
+        container_name: mongo3
+        ports: ['$MONGO_PORT3:27016']
+        healthcheck:
+            test: >
+                mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST3:$MONGO_PORT3/?authSource=admin"
+                --eval "db.adminCommand('ping')"
+
+    mongo-setup:
+        extends: { file: ./compose.common.yml, service: common-options }
+        container_name: mongo-setup
+        image: $MONGO_IMAGE
+        depends_on:
+            {
+                mongo1: { condition: service_healthy },
+                mongo2: { condition: service_healthy },
+                mongo3: { condition: service_healthy }
+            }
+        command: |
+            sh -eucx '
+                url="mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1/?authSource=admin"
+
+                mongosh $$url --eval "
+                    rs.initiate({
+                    _id: \"$MONGO_REPLICA_SET\",
+                    members: [
+                        { _id: 0, host: \"$MONGO_HOST1:$MONGO_PORT1\" },
+                        { _id: 1, host: \"$MONGO_HOST2:$MONGO_PORT2\" },
+                        { _id: 2, host: \"$MONGO_HOST3:$MONGO_PORT3\" }
+                        ]
+                    })
+                    "
+
+                i=0
+                until mongosh $$url --eval "rs.status().ok" | grep -q "1"; do
+                    i=$$((i+1))
+                    if [ $$i -ge 60 ]; then
+                        echo "MongoDB replica set did not become PRIMARY in time" >&2
+                        exit 1
+                    fi
+                    sleep 1
+                done
+            '
+
+    mongo-gui:
+        profiles: ['gui']
+        extends: { file: ./compose.common.yml, service: common-options }
+        container_name: mongo-gui
+        image: mongo-express:latest
+        depends_on: { mongo-setup: { condition: service_completed_successfully } }
+        environment:
+            {
+                ME_CONFIG_BASICAUTH: 'false',
+                ME_CONFIG_MONGODB_URL: 'mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@mongo1:27016,mongo2:27016,mongo3:27016/?authSource=admin&replicaSet=$MONGO_REPLICA_SET'
+            }
+        ports: ['8081:8081']
+
+volumes:
+    mongodb_key: {}

@@ -1,0 +1,7 @@
+export * from './booking.http-controller'
+export * from './customers.http-controller'
+export * from './guards'
+export * from './movies.http-controller'
+export * from './purchase.http-controller'
+export * from './showtime-creation.http-controller'
+export * from './theaters.http-controller'

@@ -1,0 +1,51 @@
+{
+    "name": "nest-templates",
+    "private": true,
+    "workspaces": [
+        "packages/*",
+        "templates/*"
+    ],
+    "scripts": {
+        "build": "turbo run build",
+        "clean": "turbo run clean",
+        "lint": "turbo run lint",
+        "test": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
+        "format": "prettier --write \"packages/*/src/**/*.ts\"",
+        "changeset:add": "changeset add",
+        "changeset:version": "changeset version",
+        "changeset:publish": "turbo run build && changeset publish"
+    },
+    "devDependencies": {
+        "@aws-sdk/client-s3": "^3.1014.0",
+        "@changesets/cli": "^2.30.0",
+        "@commitlint/cli": "^20.5.0",
+        "@commitlint/config-conventional": "^20.5.0",
+        "eslint": "^10.1.0",
+        "eslint-plugin-perfectionist": "^5.7.0",
+        "eslint-plugin-unused-imports": "^4.4.1",
+        "globals": "^17.4.0",
+        "@testcontainers/mongodb": "^11.13.0",
+        "@testcontainers/nats": "^11.13.0",
+        "@temporalio/client": "^1.15.0",
+        "@temporalio/testing": "^1.15.0",
+        "@types/jest": "^30.0.0",
+        "@types/node": "^24",
+        "@nestjs/config": "^4.0.3",
+        "husky": "^9.1.7",
+        "joi": "^18.0.2",
+        "jest": "^30.3.0",
+        "lint-staged": "^16.4.0",
+        "mongodb": "^7.1.0",
+        "prettier": "^3.8.1",
+        "reflect-metadata": "^0.2.2",
+        "testcontainers": "^11.13.0",
+        "ts-jest": "^29.4.6",
+        "turbo": "^2.8.20",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.57.1"
+    },
+    "overrides": {
+        "ioredis": "$ioredis"
+    },
+    "packageManager": "npm@11.12.0"
+}

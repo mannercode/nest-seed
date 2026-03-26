@@ -1,0 +1,108 @@
+x-nats-base: &nats-base
+    extends: { file: ./compose.common.yml, service: common-options }
+    image: ${NATS_IMAGE}
+    deploy: { resources: { limits: { memory: 256m } } }
+    shm_size: '8m'
+    healthcheck:
+        test: 'wget -qO- http://localhost:8222/varz || exit 1'
+
+services:
+    nats1:
+        <<: *nats-base
+        container_name: nats1
+        command: >
+            --cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222
+        ports: ['${NATS_PORT1}:4222']
+
+    nats2:
+        <<: *nats-base
+        container_name: nats2
+        command: >
+            --cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222
+            --routes=nats://nats1:6222
+        ports: ['${NATS_PORT2}:4222']
+        depends_on: ['nats1']
+
+    nats3:
+        <<: *nats-base
+        container_name: nats3
+        command: >
+            --cluster_name ${NATS_CLUSTER} --cluster nats://0.0.0.0:6222 --http_port 8222
+            --routes=nats://nats1:6222
+        ports: ['${NATS_PORT3}:4222']
+        depends_on: ['nats1']
+
+    nats-setup:
+        extends: { file: ./compose.common.yml, service: common-options }
+        container_name: nats-setup
+        image: natsio/nats-box
+        depends_on:
+            {
+                nats1: { condition: service_healthy },
+                nats2: { condition: service_healthy },
+                nats3: { condition: service_healthy }
+            }
+        command: |
+            sh -euc '
+            nats sub -s nats://nats1:4222 --count=2 hello >/tmp/sub.log 2>&1 &
+            SUB_PID=$!
+
+            sleep 0.3
+            nats pub -s nats://nats2:4222 hello first
+            nats pub -s nats://nats3:4222 hello second
+            wait $${SUB_PID}
+            cat /tmp/sub.log
+            '
+    nats-exporter1:
+        profiles: ['gui']
+        container_name: nats-exporter1
+        image: natsio/prometheus-nats-exporter:latest
+        command: >
+            -varz -connz -subz -routez -gatewayz -leafz -jsz=all -healthz
+            http://nats1:8222
+        depends_on: { nats1: { condition: service_healthy } }
+
+    nats-exporter2:
+        profiles: ['gui']
+        container_name: nats-exporter2
+        image: natsio/prometheus-nats-exporter:latest
+        command: >
+            -varz -connz -subz -routez -gatewayz -leafz -jsz=all -healthz
+            http://nats2:8222
+        depends_on: { nats2: { condition: service_healthy } }
+
+    nats-exporter3:
+        profiles: ['gui']
+        container_name: nats-exporter3
+        image: natsio/prometheus-nats-exporter:latest
+        command: >
+            -varz -connz -subz -routez -gatewayz -leafz -jsz=all -healthz
+            http://nats3:8222
+        depends_on: { nats3: { condition: service_healthy } }
+
+    prometheus:
+        profiles: ['gui']
+        image: prom/prometheus:latest
+        container_name: prometheus
+        command:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.retention.time=15d
+            - --web.enable-lifecycle
+        ports: ['9090:9090']
+        volumes:
+            - ./nats-prometheus.yml:/etc/prometheus/prometheus.yml:ro
+        depends_on:
+            - nats-exporter1
+            - nats-exporter2
+            - nats-exporter3
+
+    grafana:
+        profiles: ['gui']
+        image: grafana/grafana:latest
+        container_name: nats-grafana
+        ports: ['3300:3000']
+        environment:
+            - GF_SECURITY_ADMIN_USER=admin
+            - GF_SECURITY_ADMIN_PASSWORD=admin
+        depends_on:
+            - prometheus

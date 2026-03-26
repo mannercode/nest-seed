@@ -22,22 +22,9 @@
         "prepare-mounts": "mkdir -p ${localEnv:HOME}/.claude ${localEnv:HOME}/.config/gh",
         "prepare-files": "touch ${localEnv:HOME}/.claude.json"
     },
-    "onCreateCommand": {
-        "msa-clone": "git clone https://github.com/mannercode/nest-msa.git nest-msa 2>/dev/null || true",
-        "mono-clone": "git clone https://github.com/mannercode/nest-mono.git nest-mono 2>/dev/null || true",
-        "libs-clone": "git clone https://github.com/mannercode/nest-libs.git nest-libs 2>/dev/null || true"
-    },
-    "postCreateCommand": {
-        "msa-husky": "cd nest-msa && husky",
-        "msa-ci": "cd nest-msa && npm ci",
-        "mono-husky": "cd nest-mono && husky",
-        "mono-ci": "cd nest-mono && npm ci",
-        "nestlib-husky": "cd nest-libs && husky",
-        "nestlib-ci": "cd nest-libs && npm ci"
-    },
     "postStartCommand": {
         "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null",
-        "reset-infra": "cd nest-msa && npm run infra:reset"
+        // "reset-infra": "cd nest-msa && npm run infra:reset"
     },
     "forwardPorts": [5010, 5020],
     "customizations": {

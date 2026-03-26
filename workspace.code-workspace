@@ -1,8 +1,7 @@
 {
     "folders": [
-        { "path": "nest-msa", "name": "nest-msa" },
-        { "path": "nest-mono", "name": "nest-mono" },
-        { "path": "nest-libs", "name": "nest-libs" }
-    ],
-    "settings": {}
+        {
+            "path": "."
+        }
+    ]
 }
