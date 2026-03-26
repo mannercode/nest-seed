@@ -22,9 +22,9 @@
         "prepare-mounts": "mkdir -p ${localEnv:HOME}/.claude ${localEnv:HOME}/.config/gh",
         "prepare-files": "touch ${localEnv:HOME}/.claude.json"
     },
+    "postCreateCommand": { "husky": "husky", "ci": "npm ci" },
     "postStartCommand": {
-        "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null",
-        // "reset-infra": "cd nest-msa && npm run infra:reset"
+        "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null"
     },
     "forwardPorts": [5010, 5020],
     "customizations": {
@@ -49,11 +49,7 @@
                     "**/node_modules/**": true,
                     "**/_output/**": true
                 },
-                "search.exclude": {
-                    "**/node_modules/**": true,
-                    "**/_output/**": true,
-                    "**/dist/**": true
-                },
+                "search.exclude": { "**/node_modules/**": true, "**/_output/**": true, "**/dist/**": true },
                 "files.exclude": { "**/node_modules/**": true },
                 "files.associations": { "*.cfg": "shellscript" },
                 "remote.autoForwardPorts": false,

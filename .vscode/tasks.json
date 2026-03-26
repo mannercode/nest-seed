@@ -1,0 +1,22 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "group": { "kind": "build", "isDefault": true },
+            "type": "shell",
+            "command": "npm run build"
+        },
+        {
+            "label": "lint",
+            "type": "shell",
+            "command": "npm run lint"
+        },
+        {
+            "label": "test",
+            "group": { "kind": "test", "isDefault": true },
+            "type": "shell",
+            "command": "npm test"
+        }
+    ]
+}
