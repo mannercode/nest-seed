@@ -8,6 +8,8 @@ let s3Client: S3Client
 
 beforeAll(async () => {
     mongoClient = await MongoClient.connect(getEnv('TESTLIB_MONGO_URI'))
+    // Set TTL monitor interval to 1s to speed up TTL index `expires` tests
+    await mongoClient.db('admin').command({ setParameter: 1, ttlMonitorSleepSecs: 1 })
     s3Client = new S3Client({
         endpoint: getEnv('TESTLIB_S3_ENDPOINT'),
         region: getEnv('TESTLIB_S3_REGION'),
