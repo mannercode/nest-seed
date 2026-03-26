@@ -39,6 +39,7 @@
         "@nestjs/event-emitter": "^3.0.1",
         "@nestjs/jwt": "^11.0.2",
         "@nestjs/mapped-types": "^2.1.0",
+        "@nestjs/microservices": "^11.1.17",
         "@nestjs/mongoose": "^11.0.4",
         "@nestjs/passport": "^11.0.5",
         "@nestjs/platform-express": "^11.1.17",
@@ -55,6 +56,7 @@
         "lodash": "^4.17.23",
         "mongoose": "^9.3.1",
         "mongoose-lean-virtuals": "^2.1.0",
+        "passport": "^0.7.0",
         "passport-jwt": "^4.0.1",
         "passport-local": "^1.0.0",
         "reflect-metadata": "^0.2.2",
@@ -92,7 +94,7 @@
         "ts-loader": "^9.5.4",
         "ts-node": "^10.9.2",
         "tsconfig-paths": "^4.2.0",
-        "typescript": "^5.9.3",
+        "typescript": "^6.0.2",
         "typescript-eslint": "^8.57.1"
     }
 }
