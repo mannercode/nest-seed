@@ -7,16 +7,14 @@
             "type": "shell",
             "command": "npm run build"
         },
-        {
-            "label": "lint",
-            "type": "shell",
-            "command": "npm run lint"
-        },
+        { "label": "lint", "type": "shell", "command": "npm run lint" },
         {
             "label": "test",
             "group": { "kind": "test", "isDefault": true },
             "type": "shell",
             "command": "npm test"
-        }
+        },
+        { "label": "test:packages", "type": "shell", "command": "npm run test:packages" },
+        { "label": "test:templates", "type": "shell", "command": "npm run test:templates" }
     ]
 }
