@@ -14,7 +14,10 @@
             "type": "shell",
             "command": "npm test"
         },
-        { "label": "test:packages", "type": "shell", "command": "npm run test:packages" },
-        { "label": "test:templates", "type": "shell", "command": "npm run test:templates" }
+        {
+            "label": "test:templates",
+            "type": "shell",
+            "command": "npm --prefix templates/msa run test:unit && npm --prefix templates/mono run test:unit"
+        }
     ]
 }

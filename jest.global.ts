@@ -43,8 +43,6 @@ export default async function globalSetup() {
     setEnv('TESTLIB_MONGO_URI', `${mongo.getConnectionString()}?directConnection=true`)
     setEnv('TESTLIB_REDIS_URL', `redis://${redis.getHost()}:${redis.getMappedPort(6379)}`)
     setEnv('TESTLIB_S3_ENDPOINT', `http://${minio.getHost()}:${minio.getMappedPort(9000)}`)
-    setEnv('TESTLIB_S3_REGION', 'us-east-1')
-    setEnv('TESTLIB_S3_FORCE_PATH_STYLE', 'true')
     setEnv('TESTLIB_S3_ACCESS_KEY', 'admin')
     setEnv('TESTLIB_S3_SECRET_KEY', 'password')
     setEnv('TESTLIB_TEMPORAL_ADDRESS', temporal.address)
