@@ -45,7 +45,7 @@ function formatServiceLogMessage(
     timestamp: string,
     logDetails: Record<string, unknown>
 ) {
-    const { contextType, ...data } = logDetails
+    const { contextType: _, ...data } = logDetails
     const coloredData = styleText('blueBright', JSON.stringify(data, null, 2))
 
     return `${timestamp} ${level} SERVICE ${message} ${coloredData}`
