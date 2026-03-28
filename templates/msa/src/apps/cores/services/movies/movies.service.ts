@@ -6,7 +6,7 @@ import {
     UnprocessableEntityException
 } from '@nestjs/common'
 import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
-import { Rules } from 'common'
+import { Rules } from 'config'
 import { uniq } from 'lodash'
 import { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
 import { MovieDto } from './dtos'

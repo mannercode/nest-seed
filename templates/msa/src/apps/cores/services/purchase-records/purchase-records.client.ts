@@ -1,7 +1,7 @@
 import { ClientProxyService } from '@mannercode/microservice'
 import { InjectClientProxy } from '@mannercode/microservice'
 import { Injectable } from '@nestjs/common'
-import { Messages } from 'common'
+import { Messages } from 'config'
 import { CreatePurchaseRecordDto, PurchaseRecordDto } from './dtos'
 
 @Injectable()

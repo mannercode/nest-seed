@@ -1,7 +1,7 @@
 import { PaginationDto } from '@mannercode/common'
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { Messages } from 'common'
+import { Messages } from 'config'
 import { BulkCreateShowtimesDto } from './dtos'
 import { ShowtimeCreationService } from './showtime-creation.service'
 

@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { CommonModule, MongooseConfigModule, RedisConfigModule } from 'common'
+import { CommonModule, MongooseConfigModule, RedisConfigModule } from 'config'
 import { HealthModule } from './modules'
 import {
     CustomersModule,

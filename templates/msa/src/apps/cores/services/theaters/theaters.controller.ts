@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { Messages } from 'common'
+import { Messages } from 'config'
 import { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto } from './dtos'
 import { TheatersService } from './theaters.service'
 

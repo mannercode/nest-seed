@@ -1,7 +1,7 @@
 import { TEMPORAL_CLIENT } from '@mannercode/microservice'
 import { HttpException, Inject, Injectable, Logger } from '@nestjs/common'
 import { ApplicationFailure, Client, WorkflowFailedError } from '@temporalio/client'
-import { getTemporalTaskQueue } from 'common'
+import { getTemporalTaskQueue } from 'config'
 import type { purchaseWorkflow } from './workflows/purchase.workflow'
 import { CreatePurchaseDto } from './dtos'
 

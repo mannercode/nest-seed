@@ -7,14 +7,14 @@ import { BullModule } from '@nestjs/bullmq'
 import { ConfigService } from '@nestjs/config'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { SchedulerRegistry } from '@nestjs/schedule'
+import compression from 'compression'
 import {
     AppConfigService,
     CommonModule,
     getProjectId,
     MongooseConfigModule,
     RedisConfigModule
-} from 'common'
-import compression from 'compression'
+} from 'config'
 import express from 'express'
 
 export type AppTestContext = HttpTestContext & { teardown: () => Promise<void> }

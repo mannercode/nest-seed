@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { ApplicationsModule } from 'applications'
-import { CommonModule, MongooseConfigModule, RedisConfigModule } from 'common'
+import { CommonModule, MongooseConfigModule, RedisConfigModule } from 'config'
 import { CoresModule } from 'cores'
 import { InfrastructuresModule } from 'infrastructures'
 import {

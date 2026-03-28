@@ -9,7 +9,7 @@ import {
     uploadAndFinalizeAsset
 } from 'apps/__tests__/__helpers__'
 import { MovieGenre, MovieRating } from 'apps/cores'
-import { Rules } from 'common'
+import { Rules } from 'config'
 import { omit } from 'lodash'
 import type { MoviesFixture } from './movies.fixture'
 

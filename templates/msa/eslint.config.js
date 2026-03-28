@@ -13,7 +13,7 @@ const nodeBuiltinModulePattern = `^(?:node:)?(?:${[
     .sort()
     .map(escapeForRegex)
     .join('|')})(?:/.*)?$`
-const internalAliasPattern = '^(?:apps(?:/.*)?|common|@mannercode/.*)$'
+const internalAliasPattern = '^(?:apps(?:/.*)?|config|@mannercode/.*)$'
 const dependencyIgnorePatterns = ['^\\.', nodeBuiltinModulePattern, internalAliasPattern]
 const sourceDependencyOptions = {
     packageDir: __dirname,
@@ -217,16 +217,16 @@ module.exports = [
         }
     },
     {
-        files: ['src/common/**/*.ts'],
+        files: ['src/config/**/*.ts'],
         rules: {
             'no-restricted-imports': [
                 'warn',
                 {
                     patterns: [
                         {
-                            regex: '^common(?:/.*)?$',
+                            regex: '^config(?:/.*)?$',
                             message:
-                                'Use relative imports within common to avoid ancestor barrel cycles.'
+                                'Use relative imports within config to avoid ancestor barrel cycles.'
                         },
                         {
                             group: [
@@ -239,7 +239,7 @@ module.exports = [
                                 'apps/infrastructures',
                                 'apps/infrastructures/**'
                             ],
-                            message: 'common must not depend on app layers.'
+                            message: 'config must not depend on app layers.'
                         }
                     ]
                 }

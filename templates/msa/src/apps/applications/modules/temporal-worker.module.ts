@@ -4,7 +4,7 @@ import { bundleWorkflowCode, NativeConnection, Worker } from '@temporalio/worker
 import { ShowtimesClient, TicketsClient } from 'apps/cores'
 import { PurchaseRecordsClient } from 'apps/cores'
 import { PaymentsClient } from 'apps/infrastructures'
-import { AppConfigService, getTemporalTaskQueue } from 'common'
+import { AppConfigService, getTemporalTaskQueue } from 'config'
 import * as fs from 'fs'
 import * as path from 'path'
 import {

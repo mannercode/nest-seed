@@ -1,7 +1,7 @@
 import { CacheService } from '@mannercode/common'
 import { InjectCache } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { Rules } from 'common'
+import { Rules } from 'config'
 import { HoldTicketsDto } from './dtos'
 
 const getCustomerKey = (showtimeId: string, customerId: string) =>

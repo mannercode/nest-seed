@@ -3,7 +3,7 @@ import { ClientProxyService } from '@mannercode/microservice'
 import { InjectClientProxy } from '@mannercode/microservice'
 import { Injectable } from '@nestjs/common'
 import { AssetPresignedUploadDto, CreateAssetDto } from 'apps/infrastructures'
-import { Messages } from 'common'
+import { Messages } from 'config'
 import { MovieDto, SearchMoviesPageDto, UpsertMovieDto } from './dtos'
 
 @Injectable()

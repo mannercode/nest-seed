@@ -27,7 +27,7 @@
         "rootDir": "../..",
         "outDir": "./_output/build",
         "paths": {
-            "common": ["src/common/index"],
+            "config": ["src/config/index"],
             "apps/*": ["src/apps/*"],
             "@mannercode/common": ["../../packages/common/src"],
             "@mannercode/common/*": ["../../packages/common/src/*"],

@@ -1,6 +1,6 @@
 import { createMongooseSchema, MongooseSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'common'
+import { MongooseConfigModule } from 'config'
 import { Seat } from '../../../shared'
 
 export enum TicketStatus {

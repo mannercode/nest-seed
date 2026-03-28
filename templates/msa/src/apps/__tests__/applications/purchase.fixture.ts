@@ -99,7 +99,7 @@ export function buildCreatePurchaseDto(
 }
 
 export async function createShowtimeAndTickets(ctx: TestContext) {
-    const { Rules } = await import('common')
+    const { Rules } = await import('config')
 
     const startTime = DateUtil.add({ minutes: Rules.Ticket.purchaseCutoffMinutes + 1 })
 
@@ -115,7 +115,7 @@ export async function holdTickets(ctx: TestContext, tickets: TicketDto[]) {
     const ticketHoldingService = ctx.module.get(TicketHoldingService)
 
     const heldTicketCount = 4
-    const { Rules } = await import('common')
+    const { Rules } = await import('config')
     toAny(Rules).Ticket.maxTicketsPerPurchase = heldTicketCount
 
     const heldTickets = tickets.slice(0, heldTicketCount)

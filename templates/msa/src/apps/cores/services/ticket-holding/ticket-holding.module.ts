@@ -1,6 +1,6 @@
 import { CacheModule } from '@mannercode/common'
 import { Module } from '@nestjs/common'
-import { getProjectId, RedisConfigModule } from 'common'
+import { getProjectId, RedisConfigModule } from 'config'
 import { TicketHoldingController } from './ticket-holding.controller'
 import { TicketHoldingService } from './ticket-holding.service'
 

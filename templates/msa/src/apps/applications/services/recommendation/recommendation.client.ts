@@ -2,7 +2,7 @@ import { ClientProxyService } from '@mannercode/microservice'
 import { InjectClientProxy } from '@mannercode/microservice'
 import { Injectable } from '@nestjs/common'
 import { MovieDto } from 'apps/cores'
-import { Messages } from 'common'
+import { Messages } from 'config'
 
 @Injectable()
 export class RecommendationClient {

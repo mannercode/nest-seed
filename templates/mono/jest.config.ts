@@ -26,7 +26,7 @@ export default {
         '/production\\.ts$',
         '/development\\.ts$',
         '/main\\.ts$',
-        '/common/configure-app\\.ts$',
+        '/config/configure-app\\.ts$',
         '/index\\.ts$',
         '\\.module\\.ts$'
     ],

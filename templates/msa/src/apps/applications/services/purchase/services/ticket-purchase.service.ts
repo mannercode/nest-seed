@@ -9,7 +9,7 @@ import {
     TicketStatus,
     TicketsClient
 } from 'apps/cores'
-import { Rules } from 'common'
+import { Rules } from 'config'
 import { uniq } from 'lodash'
 import { CreatePurchaseDto } from '../dtos'
 import { PurchaseErrors } from '../errors'

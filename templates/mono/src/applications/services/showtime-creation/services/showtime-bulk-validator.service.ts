@@ -1,6 +1,6 @@
 import { DateTimeRange, DateUtil, Require, Time } from '@mannercode/common'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { Rules } from 'common'
+import { Rules } from 'config'
 import { MoviesService, ShowtimeDto, ShowtimesService, TheatersService } from 'cores'
 import { BulkCreateShowtimesDto } from '../dtos'
 import { ShowtimeCreationErrors } from '../errors'

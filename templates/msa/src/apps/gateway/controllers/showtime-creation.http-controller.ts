@@ -7,7 +7,7 @@ import {
     ShowtimeCreationClient,
     ShowtimeCreationEvent
 } from 'apps/applications'
-import { Events } from 'common'
+import { Events } from 'config'
 import { Observable } from 'rxjs'
 import { Subject } from 'rxjs'
 

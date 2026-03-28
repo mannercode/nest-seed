@@ -101,7 +101,7 @@ src/
 ├── applications/         # Business logic services (BullMQ)
 ├── cores/                # Domain models, repositories
 ├── infrastructures/      # External service integrations (payments, files)
-├── shared/               # Common config, business rules (Rules), pipes, middleware
+├── config/               # App config, business rules (Rules), pipes, middleware
 ├── modules/              # NestJS module definitions
 ├── __tests__/            # Unit/integration tests
 ├── tests/e2e/            # E2E test specs

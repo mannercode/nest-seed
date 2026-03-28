@@ -98,12 +98,12 @@ npm run test:e2e
 
 ```
 src/
+├── config/               # 앱 설정, 비즈니스 규칙(Rules), 파이프, 미들웨어
 ├── apps/
 │   ├── gateway/          # HTTP API 컨트롤러, 인증
 │   ├── applications/     # 비즈니스 로직 서비스 (Temporal Workflow)
 │   ├── cores/            # 도메인 모델, 리포지토리
 │   ├── infrastructures/  # 외부 서비스 연동 (결제, 파일)
-│   ├── shared/           # 공통 설정, 비즈니스 규칙(Rules), 파이프, 미들웨어
 │   └── __tests__/        # 단위/통합 테스트
 tests/e2e/                # E2E 테스트 스펙
 infra/local/              # 로컬 인프라 Docker Compose

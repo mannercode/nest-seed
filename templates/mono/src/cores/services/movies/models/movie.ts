@@ -1,6 +1,6 @@
 import { createMongooseSchema, MongooseSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseConfigModule, Rules } from 'common'
+import { MongooseConfigModule, Rules } from 'config'
 
 export enum MovieGenre {
     Action = 'action',

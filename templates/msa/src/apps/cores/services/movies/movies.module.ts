@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { AssetsClient } from 'apps/infrastructures'
-import { MongooseConfigModule } from 'common'
+import { MongooseConfigModule } from 'config'
 import { Movie, MoviePendingAsset, MoviePendingAssetSchema, MovieSchema } from './models'
 import { MoviePendingAssetsRepository } from './movie-pending-assets.repository'
 import { MoviesController } from './movies.controller'

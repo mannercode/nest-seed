@@ -3,7 +3,7 @@ import { ClientProxyService } from '@mannercode/microservice'
 import { InjectClientProxy } from '@mannercode/microservice'
 import { Injectable } from '@nestjs/common'
 import { MovieDto, ShowtimeDto, TheaterDto } from 'apps/cores'
-import { Messages } from 'common'
+import { Messages } from 'config'
 import { BulkCreateShowtimesDto, RequestShowtimeCreationResponse } from './dtos'
 
 @Injectable()

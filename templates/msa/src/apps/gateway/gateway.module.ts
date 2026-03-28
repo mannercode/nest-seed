@@ -6,7 +6,7 @@ import {
     ShowtimeCreationClient
 } from 'apps/applications'
 import { CustomersClient, MoviesClient, PurchaseRecordsClient, TheatersClient } from 'apps/cores'
-import { CommonModule } from 'common'
+import { CommonModule } from 'config'
 import {
     BookingHttpController,
     CustomerJwtStrategy,

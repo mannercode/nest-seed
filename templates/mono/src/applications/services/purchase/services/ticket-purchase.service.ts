@@ -1,6 +1,6 @@
 import { DateUtil } from '@mannercode/common'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
-import { Rules } from 'common'
+import { Rules } from 'config'
 import {
     PurchaseItemDto,
     ShowtimeDto,

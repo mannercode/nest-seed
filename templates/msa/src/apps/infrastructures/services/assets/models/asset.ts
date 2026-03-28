@@ -1,7 +1,7 @@
 import { Checksum } from '@mannercode/common'
 import { createMongooseSchema, MongooseSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'common'
+import { MongooseConfigModule } from 'config'
 
 @Schema(MongooseConfigModule.schemaOptions)
 export class Asset extends MongooseSchema {

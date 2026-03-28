@@ -73,7 +73,7 @@ describe('PurchaseService', () => {
             // 티켓 수가 최대치를 초과할 때
             describe('when the ticket count exceeds the maximum', () => {
                 beforeEach(async () => {
-                    const { Rules } = await import('common')
+                    const { Rules } = await import('config')
                     toAny(Rules).Ticket.maxTicketsPerPurchase = heldTickets.length - 1
                 })
 
@@ -91,7 +91,7 @@ describe('PurchaseService', () => {
             // 구매 가능 시간이 종료되었을 때
             describe('when the purchase window is closed', () => {
                 beforeEach(async () => {
-                    const { Rules } = await import('common')
+                    const { Rules } = await import('config')
                     toAny(Rules).Ticket.purchaseCutoffMinutes =
                         Rules.Ticket.purchaseCutoffMinutes + 2
                 })

@@ -1,7 +1,7 @@
 import { createMongooseSchema, MongooseSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
-import { MongooseConfigModule } from 'common'
+import { MongooseConfigModule } from 'config'
 
 export enum PurchaseItemType {
     Foods = 'foods',

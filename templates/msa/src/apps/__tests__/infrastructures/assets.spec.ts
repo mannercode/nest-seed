@@ -61,7 +61,7 @@ describe('AssetsService', () => {
         // 업로드 URL이 만료되었을 때
         describe('when the upload URL has expired', () => {
             beforeEach(async () => {
-                const { Rules } = await import('common')
+                const { Rules } = await import('config')
                 toAny(Rules).Asset.uploadExpiresInSec = 1
             })
 
@@ -151,7 +151,7 @@ describe('AssetsService', () => {
             let assetId: string
 
             beforeEach(async () => {
-                const { Rules } = await import('common')
+                const { Rules } = await import('config')
                 toAny(Rules).Asset.uploadExpiresInSec = 1
 
                 const createDto = buildCreateAssetDto(file)
@@ -285,7 +285,7 @@ describe('AssetsService', () => {
             let assetId: string
 
             beforeEach(async () => {
-                const { Rules } = await import('common')
+                const { Rules } = await import('config')
                 toAny(Rules).Asset.uploadExpiresInSec = 1
                 const cronJob = fix.scheduler.getCronJob('assets.cleanupExpiredUploads')
                 fireOnTick = cronJob.fireOnTick
@@ -311,7 +311,7 @@ describe('AssetsService', () => {
             // 업로드가 만료되었을 때
             describe('when the upload has expired', () => {
                 beforeEach(async () => {
-                    const { Rules } = await import('common')
+                    const { Rules } = await import('config')
                     await sleep(Rules.Asset.uploadExpiresInSec * 1000 + 500)
 
                     await fireOnTick()

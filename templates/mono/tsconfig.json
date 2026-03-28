@@ -27,7 +27,7 @@
         "rootDir": "../..",
         "outDir": "./_output/build",
         "paths": {
-            "common": ["src/common/index"],
+            "config": ["src/config/index"],
             "applications": ["src/applications/index"],
             "cores": ["src/cores/index"],
             "infrastructures": ["src/infrastructures/index"],
