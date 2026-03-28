@@ -1,13 +1,22 @@
 # nest-templates
 
-NestJS application templates monorepo. Implements a movie ticketing domain to validate architectural patterns across two styles: monolithic and microservice.
+NestJS application templates monorepo — movie ticketing domain for monolithic and microservice architectures.
 
-## Templates
+## Project Structure
 
-| Template                | Architecture  | Key Technologies                              |
-| ----------------------- | ------------- | --------------------------------------------- |
-| [mono](templates/mono/) | Monolithic    | NestJS, MongoDB, Redis, BullMQ, EventEmitter2 |
-| [msa](templates/msa/)   | Microservices | NestJS, MongoDB, Redis, NATS, Temporal        |
+```
+nest-templates/
+├── packages/                ← Shared libraries (npm packages)
+│   ├── common/              @mannercode/common      — Mongoose, Redis, JWT, S3, logging
+│   ├── microservice/        @mannercode/microservice — NATS RPC, Temporal workflows
+│   └── testing/             @mannercode/testing      — Test context factories, HTTP/RPC clients
+│
+├── seeds/                   ← Project seeds (copy one to start a new project)
+│   ├── mono/                Monolithic    — NestJS, MongoDB, Redis, BullMQ, EventEmitter2
+│   └── msa/                 Microservices — NestJS, MongoDB, Redis, NATS, Temporal
+│
+└── docs/                    ← Architecture, naming, testing documentation
+```
 
 Both templates share the same layered architecture (SoLA) and domain model, but differ in communication and orchestration strategies.
 
@@ -16,22 +25,6 @@ Both templates share the same layered architecture (SoLA) and domain model, but 
 - [Architecture Overview](docs/architecture.md) — Monorepo structure, package graph, SoLA layers, template comparison
 - [Naming Conventions](docs/naming-conventions.md) — Directory naming (common vs shared), file/class/method naming rules
 - [Testing Strategy](docs/testing-strategy.md) — Test principles, fixture patterns, HttpTestClient API, coverage config
-
-## Shared Packages
-
-Reusable libraries published under the `@mannercode` namespace.
-
-| Package                                            | Description                                             |
-| -------------------------------------------------- | ------------------------------------------------------- |
-| [@mannercode/common](packages/common/)             | Mongoose repository, Redis cache, JWT auth, S3, logging |
-| [@mannercode/microservice](packages/microservice/) | NATS RPC client with retry, Temporal workflow utilities |
-| [@mannercode/testing](packages/testing/)           | Test context factories, HTTP/RPC test clients           |
-
-```
-@mannercode/common
-  └─ @mannercode/microservice
-       └─ @mannercode/testing
-```
 
 ## Architecture: SoLA (Service-oriented Layered Architecture)
 
@@ -75,7 +68,7 @@ npm test
 ### 4. Try a Template
 
 ```bash
-cd templates/mono   # or templates/msa
+cd seeds/mono   # or seeds/msa
 npm ci
 npm run infra:reset
 npm test

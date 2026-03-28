@@ -6,8 +6,9 @@ const unusedImportsPlugin = require('eslint-plugin-unused-imports')
 const baseGlobals = { ...globals.node, ...globals.es2025, module: 'readonly', require: 'readonly' }
 
 module.exports = [
+    { ignores: ['*/src/**/*.d.ts'] },
     {
-        files: ['packages/*/src/**/*.ts'],
+        files: ['*/src/**/*.ts'],
         linterOptions: { reportUnusedDisableDirectives: true },
         languageOptions: {
             parser: tseslint.parser,
@@ -77,7 +78,7 @@ module.exports = [
         }
     },
     {
-        files: ['packages/*/src/**/__tests__/**/*.ts'],
+        files: ['*/src/**/__tests__/**/*.ts'],
         languageOptions: { globals: { ...baseGlobals, ...globals.jest } },
         rules: {}
     }

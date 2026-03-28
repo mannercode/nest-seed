@@ -5,9 +5,17 @@
 NestJS 기반 모노레포. 영화 예매 도메인으로 모놀리식(mono)과 마이크로서비스(msa) 아키텍처 템플릿을 제공한다.
 
 ```
-packages/          → 공유 라이브러리 (@mannercode/common, microservice, testing)
-templates/mono/    → 모놀리식 템플릿
-templates/msa/     → MSA 템플릿
+nest-templates/
+├── packages/                ← 공유 라이브러리 (npm 패키지)
+│   ├── common/              @mannercode/common      — Mongoose, Redis, JWT, S3, logging
+│   ├── microservice/        @mannercode/microservice — NATS RPC, Temporal workflows
+│   └── testing/             @mannercode/testing      — 테스트 컨텍스트, HTTP/RPC 클라이언트
+│
+├── seeds/                   ← 프로젝트 시드 (복사해서 새 프로젝트 시작)
+│   ├── mono/                모놀리식    — NestJS, MongoDB, Redis, BullMQ, EventEmitter2
+│   └── msa/                 마이크로서비스 — NestJS, MongoDB, Redis, NATS, Temporal
+│
+└── docs/                    ← 아키텍처, 네이밍, 테스트 문서
 ```
 
 ## Build & Test
@@ -17,7 +25,7 @@ npm ci                  # 의존성 설치
 npm run build           # 패키지 빌드 (Turborepo)
 npm test                # 패키지 테스트
 
-cd templates/mono       # 또는 templates/msa
+cd seeds/mono       # 또는 seeds/msa
 npm ci
 npm run infra:reset     # Docker 인프라 시작
 npm test                # 테스트 실행
@@ -37,15 +45,15 @@ ESLint import 규칙으로 레이어 간 역방향 의존을 차단한다.
 
 각 템플릿의 상세 컨벤션은 해당 디렉토리의 문서를 참고:
 
-- [templates/mono/CONVENTIONS.md](templates/mono/CONVENTIONS.md)
-- [templates/msa/CONVENTIONS.md](templates/msa/CONVENTIONS.md)
+- [seeds/mono/CONVENTIONS.md](seeds/mono/CONVENTIONS.md)
+- [seeds/msa/CONVENTIONS.md](seeds/msa/CONVENTIONS.md)
 - [docs/naming-conventions.md](docs/naming-conventions.md) — 디렉토리/파일/클래스/메서드 네이밍
 
 ## Directory Naming: common vs shared
 
 - `packages/common/` — `@mannercode/common`으로 배포되는 범용 라이브러리
-- `templates/*/src/config/` — 앱 내부 설정, 모듈, 파이프 (tsconfig `'config'` 별칭)
-- `templates/*/src/**/cores/shared/` — cores 레이어 내부에서만 공유되는 도메인 모델
+- `seeds/*/src/config/` — 앱 내부 설정, 모듈, 파이프 (tsconfig `'config'` 별칭)
+- `seeds/*/src/**/cores/shared/` — cores 레이어 내부에서만 공유되는 도메인 모델
 
 ## Testing
 

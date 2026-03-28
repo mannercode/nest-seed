@@ -8,7 +8,7 @@ nest-templates/
 │   ├── common/            # Base utilities (Mongoose, Redis, JWT, S3, Logger)
 │   ├── microservice/      # MSA utilities (NATS RPC, Temporal)
 │   └── testing/           # Test utilities (HttpTestClient, RpcTestClient)
-├── templates/
+├── seeds/
 │   ├── mono/              # Monolithic NestJS template
 │   └── msa/               # Microservice architecture template
 ├── turbo.json             # Turborepo task pipeline

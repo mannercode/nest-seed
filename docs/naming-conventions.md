@@ -8,10 +8,10 @@ This project uses both `common` and `shared` as directory names. Each serves a d
 
 Used for **broadly reusable** code — either as a published package or as app-wide configuration.
 
-| Location                  | Scope         | Import Path           | Contains                                |
-| ------------------------- | ------------- | --------------------- | --------------------------------------- |
-| `packages/common/`        | Cross-project | `@mannercode/common`  | Mongoose, Redis, JWT, S3, Logger, utils |
-| `templates/*/src/config/` | App-wide      | `'config'` (tsconfig) | AppConfig, Rules, Pipes, configureApp   |
+| Location              | Scope         | Import Path           | Contains                                |
+| --------------------- | ------------- | --------------------- | --------------------------------------- |
+| `packages/common/`    | Cross-project | `@mannercode/common`  | Mongoose, Redis, JWT, S3, Logger, utils |
+| `seeds/*/src/config/` | App-wide      | `'config'` (tsconfig) | AppConfig, Rules, Pipes, configureApp   |
 
 The tsconfig alias `'config'` and the npm package `@mannercode/common` resolve to different paths, and the names are clearly distinct.
 
@@ -19,9 +19,9 @@ The tsconfig alias `'config'` and the npm package `@mannercode/common` resolve t
 
 Used for **domain models shared within a bounded context**.
 
-| Location                           | Scope       | Import Path     | Contains                   |
-| ---------------------------------- | ----------- | --------------- | -------------------------- |
-| `templates/*/src/**/cores/shared/` | cores layer | Relative import | Domain models (e.g., Seat) |
+| Location                       | Scope       | Import Path     | Contains                   |
+| ------------------------------ | ----------- | --------------- | -------------------------- |
+| `seeds/*/src/**/cores/shared/` | cores layer | Relative import | Domain models (e.g., Seat) |
 
 The `shared` directory only exists inside `cores/` and contains models used by multiple core services. Its scope is intentionally narrow.
 

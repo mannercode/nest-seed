@@ -1,4 +1,5 @@
-process.loadEnvFile('.env.infra')
+import path from 'path'
+process.loadEnvFile(path.resolve(__dirname, '.env.infra'))
 
 export const setEnv = (key: string, value: string) => {
     process.env[key] = value

@@ -8,37 +8,41 @@
             "command": "npm run build"
         },
         { "label": "packages:lint", "type": "shell", "command": "npm run lint" },
-        {
-            "label": "packages:test",
-            "group": { "kind": "test", "isDefault": true },
-            "type": "shell",
-            "command": "npm test"
-        },
-        { "label": "msa:lint", "type": "shell", "command": "npm --prefix templates/msa run lint" },
-        {
-            "label": "msa:test:unit",
-            "type": "shell",
-            "command": "npm --prefix templates/msa run test:unit"
-        },
-        {
-            "label": "msa:test:e2e",
-            "type": "shell",
-            "command": "npm --prefix templates/msa run test:e2e"
-        },
-        {
-            "label": "mono:lint",
-            "type": "shell",
-            "command": "npm --prefix templates/mono run lint"
-        },
+        { "label": "packages:test", "type": "shell", "command": "npm test" },
+        { "label": "mono:lint", "type": "shell", "command": "npm --prefix seeds/mono run lint" },
         {
             "label": "mono:test:unit",
             "type": "shell",
-            "command": "npm --prefix templates/mono run test:unit"
+            "command": "npm --prefix seeds/mono run test:unit"
         },
         {
             "label": "mono:test:e2e",
             "type": "shell",
-            "command": "npm --prefix templates/mono run test:e2e"
+            "command": "npm --prefix seeds/mono run test:e2e"
+        },
+        { "label": "msa:lint", "type": "shell", "command": "npm --prefix seeds/msa run lint" },
+        {
+            "label": "msa:test:unit",
+            "type": "shell",
+            "command": "npm --prefix seeds/msa run test:unit"
+        },
+        {
+            "label": "msa:test:e2e",
+            "type": "shell",
+            "command": "npm --prefix seeds/msa run test:e2e"
+        },
+        {
+            "label": "all:test:unit",
+            "group": { "kind": "test", "isDefault": true },
+            "dependsOn": ["packages:test", "mono:test:unit", "msa:test:unit"],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
+            "label": "all:lint",
+            "dependsOn": ["packages:lint", "mono:lint", "msa:lint"],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
         }
     ]
 }

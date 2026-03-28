@@ -5,5 +5,11 @@ dist
 _output
 coverage
 
+# build artifacts in src (tsc without outDir)
+packages/*/src/**/*.js
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.js.map
+packages/*/src/**/*.d.ts.map
+
 .DS_Store
 desktop.ini

@@ -1,6 +1,9 @@
+import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
 import { createJsWithTsPreset, pathsToModuleNameMapper } from 'ts-jest'
 
-const tsJestPreset = createJsWithTsPreset({ tsconfig: 'tsconfig.json' })
+const configDir = dirname(fileURLToPath(import.meta.url))
+const tsJestPreset = createJsWithTsPreset({ tsconfig: join(configDir, 'tsconfig.json') })
 
 import tsconfig from './tsconfig.json' with { type: 'json' }
 const { compilerOptions } = tsconfig
@@ -15,15 +18,16 @@ export default {
     resetModules: true,
     resetMocks: true,
     restoreMocks: true,
-    roots: ['<rootDir>/packages'],
+    roots: ['<rootDir>'],
     moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
     collectCoverageFrom: [
-        '<rootDir>/packages/*/src/**/*.ts',
-        '!<rootDir>/packages/testing/src/**/*.ts'
+        '<rootDir>/*/src/**/*.ts',
+        '!<rootDir>/testing/src/**/*.ts',
+        '!<rootDir>/*/src/**/*.d.ts'
     ],
     coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },
     coverageReporters: ['lcov', 'text'],
-    coveragePathIgnorePatterns: ['__tests__', '/index\\.ts$'],
+    coveragePathIgnorePatterns: ['__tests__', '/index\\.ts$', '/dist/'],
     coverageDirectory: '<rootDir>/_output/coverage',
     testTimeout: 60 * 1000
 }

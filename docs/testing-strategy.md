@@ -15,10 +15,10 @@ Run against real infrastructure started via Docker Compose.
 
 ```bash
 # mono
-cd templates/mono && npm run infra:reset && npm test
+cd seeds/mono && npm run infra:reset && npm test
 
 # msa
-cd templates/msa && npm run infra:reset && npm run test:unit
+cd seeds/msa && npm run infra:reset && npm run test:unit
 ```
 
 **Pattern**: Fixture-based with `createXxxFixture()` factory functions.
