@@ -1,4 +1,0 @@
-- [Monorepo migration](project_monorepo.md) — 3 repos merged into one monorepo; source in packages/ and seeds/
-- [User language](user_language.md) — Korean-speaking developer
-- [Work autonomously](feedback_autonomous.md) — 당연한 작업은 물어보지 말고 알아서 진행
-- [No branch protection](feedback_branch_protection.md) — branch protection 설정 안 함

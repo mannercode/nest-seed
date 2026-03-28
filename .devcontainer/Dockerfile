@@ -2,7 +2,7 @@ FROM node:24-slim
 ENV LANG=C.UTF-8
 
 ARG REQUIRED="git curl jq ca-certificates"
-ARG DEV_TOOLS="screen iproute2"
+ARG DEV_TOOLS="tree screen iproute2"
 ARG PLANTUML="openjdk-17-jre-headless graphviz fonts-noto-cjk"
 ARG SHELL_FORMATTER="shfmt"
 RUN set -Eeu; \
