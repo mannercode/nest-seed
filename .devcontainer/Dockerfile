@@ -1,12 +1,14 @@
 FROM node:24-slim
 ENV LANG=C.UTF-8
 
-ARG DEV_TOOLS="git curl jq tree vim net-tools screen iproute2 ca-certificates"
+ARG REQUIRED="git curl jq ca-certificates"
+ARG DEV_TOOLS="screen iproute2"
 ARG PLANTUML="openjdk-17-jre-headless graphviz fonts-noto-cjk"
 ARG SHELL_FORMATTER="shfmt"
 RUN set -Eeu; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
+    $REQUIRED \
     $DEV_TOOLS \
     $PLANTUML \
     $SHELL_FORMATTER; \

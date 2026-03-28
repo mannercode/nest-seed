@@ -11,7 +11,7 @@ import {
     QueryBuilder
 } from '../mongoose.util'
 
-it('newObjectIdString', async () => {
+it('generates a new ObjectId string', async () => {
     const objectIdValue = newObjectIdString()
     expect(Types.ObjectId.isValid(objectIdValue)).toBe(true)
 })

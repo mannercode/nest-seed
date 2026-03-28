@@ -13,9 +13,11 @@ nest-templates/
 │
 ├── seeds/                   ← 프로젝트 시드 (복사해서 새 프로젝트 시작)
 │   ├── mono/                모놀리식    — NestJS, MongoDB, Redis, BullMQ, EventEmitter2
-│   └── msa/                 마이크로서비스 — NestJS, MongoDB, Redis, NATS, Temporal
+│   ├── msa/                 마이크로서비스 — NestJS, MongoDB, Redis, NATS, Temporal
+│   ├── docs/                공유 설계 문서 (한국어)
+│   └── CONVENTIONS.md       공유 코딩 컨벤션
 │
-└── docs/                    ← 아키텍처, 네이밍, 테스트 문서
+└── docs/                    ← 패키지 아키텍처 문서
 ```
 
 ## Build & Test
@@ -43,11 +45,8 @@ ESLint import 규칙으로 레이어 간 역방향 의존을 차단한다.
 
 ## Conventions
 
-각 템플릿의 상세 컨벤션은 해당 디렉토리의 문서를 참고:
-
-- [seeds/mono/CONVENTIONS.md](seeds/mono/CONVENTIONS.md)
-- [seeds/msa/CONVENTIONS.md](seeds/msa/CONVENTIONS.md)
-- [docs/naming-conventions.md](docs/naming-conventions.md) — 디렉토리/파일/클래스/메서드 네이밍
+- [seeds/CONVENTIONS.md](seeds/CONVENTIONS.md) — 네이밍 규칙, 에러 패턴, 테스트 컨벤션
+- [seeds/docs/naming-conventions.md](seeds/docs/naming-conventions.md) — 디렉토리/파일/클래스/메서드 네이밍
 
 ## Directory Naming: common vs shared
 
@@ -66,9 +65,8 @@ ESLint import 규칙으로 레이어 간 역방향 의존을 차단한다.
 ## Documentation
 
 - [README.md](README.md) — 프로젝트 소개, 시작 가이드
-- [docs/architecture.md](docs/architecture.md) — 아키텍처, 패키지 구조, 템플릿 비교
-- [docs/naming-conventions.md](docs/naming-conventions.md) — 네이밍 규칙 상세
-- [docs/testing-strategy.md](docs/testing-strategy.md) — 테스트 원칙, 패턴, 설정
+- [docs/architecture.md](docs/architecture.md) — 패키지 구조, 의존 관계
+- [seeds/docs/](seeds/docs/) — 설계 가이드, 네이밍 규칙, 테스트 전략, 개발 환경
 
 ## Instructions for Claude
 

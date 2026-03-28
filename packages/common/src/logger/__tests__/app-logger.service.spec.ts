@@ -20,42 +20,42 @@ describe('AppLoggerService', () => {
         appLoggerService.onModuleDestroy()
     })
 
-    it('info', () => {
+    it('logs at info level', () => {
         const spy = jest.spyOn(winstonLogger, 'info')
         appLoggerService.log(message)
 
         expect(spy).toHaveBeenCalledWith(message)
     })
 
-    it('error', () => {
+    it('logs at error level', () => {
         const spy = jest.spyOn(winstonLogger, 'error')
         appLoggerService.error(message)
 
         expect(spy).toHaveBeenCalledWith(message)
     })
 
-    it('warn', () => {
+    it('logs at warn level', () => {
         const spy = jest.spyOn(winstonLogger, 'warn')
         appLoggerService.warn(message)
 
         expect(spy).toHaveBeenCalledWith(message)
     })
 
-    it('debug', () => {
+    it('logs at debug level', () => {
         const spy = jest.spyOn(winstonLogger, 'debug')
         appLoggerService.debug(message)
 
         expect(spy).toHaveBeenCalledWith(message)
     })
 
-    it('verbose', () => {
+    it('logs at verbose level', () => {
         const spy = jest.spyOn(winstonLogger, 'verbose')
         appLoggerService.verbose(message)
 
         expect(spy).toHaveBeenCalledWith(message)
     })
 
-    it('fatal', () => {
+    it('logs at fatal level', () => {
         const spy = jest.spyOn(winstonLogger, 'error')
         appLoggerService.fatal(message)
 

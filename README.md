@@ -23,8 +23,8 @@ Both templates share the same layered architecture (SoLA) and domain model, but 
 ## Documentation
 
 - [Architecture Overview](docs/architecture.md) — Monorepo structure, package graph, SoLA layers, template comparison
-- [Naming Conventions](docs/naming-conventions.md) — Directory naming (common vs shared), file/class/method naming rules
-- [Testing Strategy](docs/testing-strategy.md) — Test principles, fixture patterns, HttpTestClient API, coverage config
+- [Naming Conventions](seeds/docs/naming-conventions.md) — Directory naming (common vs shared), file/class/method naming rules
+- [Testing Strategy](seeds/docs/testing-strategy.md) — Test principles, fixture patterns, HttpTestClient API, coverage config
 
 ## Architecture: SoLA (Service-oriented Layered Architecture)
 
@@ -74,7 +74,7 @@ npm run infra:reset
 npm test
 ```
 
-See each template's README for detailed setup and scripts.
+See [seeds/docs/development.md](seeds/docs/development.md) for detailed setup, scripts, and project structure.
 
 ## Monorepo Scripts
 
