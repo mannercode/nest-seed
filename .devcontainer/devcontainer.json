@@ -40,8 +40,7 @@
                 "esbenp.prettier-vscode",
                 "mutantdino.resourcemonitor",
                 "mkhl.shfmt",
-                "anthropic.claude-code",
-                "github.vscode-pull-request-github"
+                "anthropic.claude-code"
             ],
             "settings": {
                 "files.watcherExclude": { "**/_output/**": true },
