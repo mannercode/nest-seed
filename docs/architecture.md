@@ -4,7 +4,7 @@
 
 ```
 nest-templates/
-├── packages/              # 공유 라이브러리 (@mannercode/*)
+├── libs/              # 공유 라이브러리 (@mannercode/*)
 │   ├── common/            # 기본 유틸리티 (Mongoose, Redis, JWT, S3, Logger)
 │   ├── microservice/      # MSA 유틸리티 (NATS RPC, Temporal)
 │   └── testing/           # 테스트 유틸리티 (HttpTestClient, RpcTestClient)

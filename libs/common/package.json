@@ -65,6 +65,6 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/mannercode/nest-seed.git",
-        "directory": "packages/common"
+        "directory": "libs/common"
     }
 }

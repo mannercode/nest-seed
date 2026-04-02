@@ -2,59 +2,69 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "packages:build",
+            "label": "libs:build",
             "group": { "kind": "build", "isDefault": true },
             "type": "shell",
             "command": "npm run build"
         },
-        { "label": "packages:lint", "type": "shell", "command": "npm run lint" },
-        { "label": "packages:test", "type": "shell", "command": "npm test" },
+        {
+            "label": "libs:typecheck",
+            "type": "shell",
+            "command": "npx tsc -p libs/tsconfig.json --noEmit"
+        },
+        {
+            "label": "libs:lint",
+            "type": "shell",
+            "command": "npm run lint",
+            "dependsOn": ["libs:typecheck"]
+        },
+        { "label": "libs:test", "type": "shell", "command": "npm test" },
         {
             "label": "mono:lint",
             "type": "shell",
             "command": "npm --prefix seeds/mono run lint",
-            "dependsOn": ["packages:build"]
+            "dependsOn": ["libs:build"]
         },
         {
             "label": "mono:test:unit",
             "type": "shell",
             "command": "npm --prefix seeds/mono run test:unit",
-            "dependsOn": ["packages:build"]
+            "dependsOn": ["libs:build"]
         },
         {
             "label": "mono:test:e2e",
             "type": "shell",
             "command": "npm --prefix seeds/mono run test:e2e",
-            "dependsOn": ["packages:build"]
+            "dependsOn": ["libs:build"]
         },
         {
             "label": "msa:lint",
             "type": "shell",
             "command": "npm --prefix seeds/msa run lint",
-            "dependsOn": ["packages:build"]
+            "dependsOn": ["libs:build"]
         },
         {
             "label": "msa:test:unit",
             "type": "shell",
             "command": "npm --prefix seeds/msa run test:unit",
-            "dependsOn": ["packages:build"]
+            "dependsOn": ["libs:build"]
         },
         {
             "label": "msa:test:e2e",
             "type": "shell",
             "command": "npm --prefix seeds/msa run test:e2e",
-            "dependsOn": ["packages:build"]
+            "dependsOn": ["libs:build"]
         },
         {
             "label": "all:test:unit",
             "group": { "kind": "test", "isDefault": true },
-            "dependsOn": ["packages:test", "mono:test:unit", "msa:test:unit"],
+            "dependsOn": ["libs:test", "mono:test:unit", "msa:test:unit"],
             "dependsOrder": "sequence",
             "problemMatcher": []
         },
         {
             "label": "all:lint",
-            "dependsOn": ["packages:lint", "mono:lint", "msa:lint"],
+            "dependsOn": ["libs:lint", "mono:lint", "msa:lint"],
             "dependsOrder": "sequence",
             "problemMatcher": []
         }

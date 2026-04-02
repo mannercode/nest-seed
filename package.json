@@ -2,15 +2,15 @@
     "name": "nest-templates",
     "private": true,
     "workspaces": [
-        "packages/*",
+        "libs/*",
         "seeds/*"
     ],
     "scripts": {
-        "build": "turbo run build --filter='./packages/*'",
+        "build": "turbo run build --filter='./libs/*'",
         "clean": "turbo run clean",
-        "lint": "turbo run lint --filter='./packages/*'",
-        "test": "cd packages && NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest --coverage",
-        "format": "prettier --write \"packages/*/src/**/*.ts\"",
+        "lint": "turbo run lint --filter='./libs/*'",
+        "test": "cd libs && NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest --coverage",
+        "format": "prettier --write \"libs/*/src/**/*.ts\"",
         "changeset:add": "changeset add",
         "changeset:version": "changeset version",
         "changeset:publish": "npm run build && changeset publish"

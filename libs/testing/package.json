@@ -1,5 +1,5 @@
 {
-    "name": "@mannercode/microservice",
+    "name": "@mannercode/testing",
     "version": "1.0.2",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -13,25 +13,25 @@
     },
     "dependencies": {
         "@mannercode/common": "^1.0.1",
-        "lodash": "^4.18.1"
+        "@mannercode/microservice": "^1.0.2",
+        "lodash": "^4.18.1",
+        "superagent": "^10.3.0"
     },
     "peerDependencies": {
         "@nestjs/common": "^11.0.0",
         "@nestjs/microservices": "^11.0.0",
-        "@temporalio/client": "^1.15.0",
-        "@temporalio/worker": "^1.15.0",
-        "rxjs": "^7.0.0"
+        "@nestjs/testing": "^11.0.0"
     },
     "devDependencies": {
         "@nestjs/common": "^11.1.17",
         "@nestjs/microservices": "^11.1.17",
-        "@temporalio/client": "^1.15.0",
-        "@temporalio/worker": "^1.15.0",
+        "@nestjs/platform-express": "^11.1.17",
+        "@nestjs/testing": "^11.1.17",
+        "@types/jest": "^30.0.0",
         "@types/lodash": "^4.17.24",
         "@types/node": "^24",
+        "@types/superagent": "^8.1.9",
         "reflect-metadata": "^0.2.2",
-        "nats": "^2.29.3",
-        "rxjs": "^7.8.2",
         "typescript": "^6.0.2"
     },
     "publishConfig": {
@@ -41,6 +41,6 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/mannercode/nest-seed.git",
-        "directory": "packages/microservice"
+        "directory": "libs/testing"
     }
 }

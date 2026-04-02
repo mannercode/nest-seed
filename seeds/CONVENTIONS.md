@@ -8,11 +8,11 @@
 
 | 위치                           | 범위              | import 경로           | 내용                                    |
 | ------------------------------ | ----------------- | --------------------- | --------------------------------------- |
-| `packages/common/`             | 프로젝트 간 공유  | `@mannercode/common`  | Mongoose, Redis, JWT, S3, Logger, utils |
+| `libs/common/`                 | 프로젝트 간 공유  | `@mannercode/common`  | Mongoose, Redis, JWT, S3, Logger, utils |
 | `seeds/*/src/config/`          | 앱 전체           | `'config'` (tsconfig) | AppConfig, Rules, Pipes, configureApp   |
 | `seeds/*/src/**/cores/shared/` | cores 레이어 내부 | 상대 경로             | 도메인 모델 (예: Seat)                  |
 
-- `packages/common/` — 프로젝트 간 공유 인프라 유틸리티
+- `libs/common/` — 프로젝트 간 공유 인프라 유틸리티
 - `src/config/` — 앱 전체 설정, 모듈, 파이프
 - `cores/shared/` — 단일 아키텍처 레이어 내에서 공유되는 도메인 모델
 - `cores/` 외부에 `shared` 디렉토리를 만들지 않는다. 더 넓은 범위의 공유가 필요하면 `config`나 패키지로 이동한다.
