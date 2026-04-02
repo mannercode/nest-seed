@@ -1,9 +1,9 @@
-/* istanbul ignore file */
-import { defaultTo } from 'lodash'
 import { styleText } from 'node:util'
 import winston from 'winston'
 import DailyRotateFile from 'winston-daily-rotate-file'
 import type { HttpErrorLog, HttpSuccessLog, RpcErrorLog, RpcSuccessLog } from './types'
+/* istanbul ignore file */
+import { defaultTo } from '../utils'
 
 function colorizeHttpMethod(method: string | undefined) {
     const normalizedMethod = defaultTo(method, 'METHOD').toUpperCase()

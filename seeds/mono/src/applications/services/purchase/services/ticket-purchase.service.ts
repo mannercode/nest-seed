@@ -1,4 +1,5 @@
 import { DateUtil } from '@mannercode/common'
+import { uniq } from '@mannercode/common'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 import { Rules } from 'config'
 import {
@@ -9,7 +10,6 @@ import {
     TicketsService
 } from 'cores'
 import { PurchaseItemType, TicketStatus } from 'cores'
-import { uniq } from 'lodash'
 import { CreatePurchaseDto } from '../dtos'
 import { PurchaseErrors } from '../errors'
 import { PurchaseEvents } from '../purchase.events'

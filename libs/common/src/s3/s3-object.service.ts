@@ -12,9 +12,9 @@ import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { DynamicModule, OnModuleDestroy } from '@nestjs/common'
 import { Inject, Injectable, Module } from '@nestjs/common'
-import { defaultTo } from 'lodash'
 import { newObjectIdString } from '../mongoose'
 import { HttpUtil } from '../utils'
+import { defaultTo } from '../utils'
 
 export interface S3ServiceConfig extends S3ClientConfig {
     bucket: string

@@ -15,7 +15,7 @@ export class HttpUtil {
 
     static extractContentDisposition(cd: string): string {
         // filename*=UTF-8''...
-        const star = cd.match(/filename\*\s*=\s*([^']*)''([^;]+)/i)
+        const star = cd.match(/filename\* *= *([^']*)''([^;]+)/i)
 
         if (star?.[2]) {
             try {
@@ -28,12 +28,12 @@ export class HttpUtil {
         }
 
         // filename="..."
-        const quoted = cd.match(/filename\s*=\s*"([^"]+)"/i)
+        const quoted = cd.match(/filename *= *"([^"]+)"/i)
 
         if (quoted?.[1]) return quoted[1]
 
         // filename=bare
-        const bare = cd.match(/filename\s*=\s*([^;]+)/i)
+        const bare = cd.match(/filename *= *([^;]+)/i)
 
         if (bare?.[1]) return bare[1].trim()
 

@@ -1,6 +1,6 @@
 import type { ShowtimeDto, TheaterDto, TicketSalesForShowtimeDto } from 'apps/cores'
 import { LatLong } from '@mannercode/common'
-import { omit, sortBy } from 'lodash'
+import { omit, sortBy } from '@mannercode/common'
 import type { BookingShowtimeDto } from './dtos'
 
 export function generateShowtimesForBooking(

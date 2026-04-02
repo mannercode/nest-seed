@@ -1,4 +1,4 @@
-import { get } from 'lodash'
+import { get } from '@mannercode/common'
 
 describe('error handling', () => {
     describe('async functions', () => {

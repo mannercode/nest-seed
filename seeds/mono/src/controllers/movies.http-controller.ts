@@ -1,3 +1,4 @@
+import { defaultTo } from '@mannercode/common'
 import {
     Body,
     Controller,
@@ -15,7 +16,6 @@ import {
 import { RecommendationService } from 'applications'
 import { MoviesService, SearchMoviesPageDto, UpsertMovieDto } from 'cores'
 import { CreateAssetDto } from 'infrastructures'
-import { defaultTo } from 'lodash'
 import { CustomerOptionalJwtAuthGuard } from './guards'
 import { CustomerOptionalAuthRequest } from './types'
 

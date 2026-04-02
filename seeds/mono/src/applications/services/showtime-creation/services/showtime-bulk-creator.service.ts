@@ -1,8 +1,8 @@
 import { DateUtil, Require } from '@mannercode/common'
+import { uniq } from '@mannercode/common'
 import { Injectable, Logger } from '@nestjs/common'
 import { ShowtimeDto, ShowtimesService, TheaterDto, TheatersService, TicketsService } from 'cores'
 import { Seatmap, TicketStatus } from 'cores'
-import { uniq } from 'lodash'
 import { BulkCreateShowtimesDto } from '../dtos'
 
 @Injectable()

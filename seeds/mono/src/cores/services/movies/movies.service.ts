@@ -1,4 +1,5 @@
 import { ensure, mapDocToDto, pickIds } from '@mannercode/common'
+import { uniq } from '@mannercode/common'
 import {
     BadRequestException,
     Injectable,
@@ -7,7 +8,6 @@ import {
 } from '@nestjs/common'
 import { Rules } from 'config'
 import { AssetsService, CreateAssetDto } from 'infrastructures'
-import { uniq } from 'lodash'
 import { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
 import { MovieDto } from './dtos'
 import { MovieErrors } from './errors'

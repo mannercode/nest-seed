@@ -5,8 +5,8 @@ import type {
     CreateAssetDto,
     FinalizeAssetDto
 } from 'infrastructures'
+import { pick } from '@mannercode/common'
 import { readFile } from 'fs/promises'
-import { pick } from 'lodash'
 import { basename } from 'path'
 import type { TestAsset } from '../assets'
 import { testAssets } from '../assets'

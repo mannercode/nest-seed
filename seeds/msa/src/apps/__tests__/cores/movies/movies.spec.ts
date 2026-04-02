@@ -1,5 +1,6 @@
 import type { MovieDto, SearchMoviesPageDto } from 'apps/cores'
 import { Checksum } from '@mannercode/common'
+import { omit } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
 import {
     buildCreateMovieDto,
@@ -10,7 +11,6 @@ import {
 } from 'apps/__tests__/__helpers__'
 import { MovieGenre, MovieRating } from 'apps/cores'
 import { Rules } from 'config'
-import { omit } from 'lodash'
 import type { MoviesFixture } from './movies.fixture'
 
 describe('MoviesService', () => {

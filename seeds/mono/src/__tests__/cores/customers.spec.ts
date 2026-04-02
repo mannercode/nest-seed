@@ -1,6 +1,6 @@
 import type { CustomerDto, SearchCustomersPageDto } from 'cores'
+import { omit } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
-import { omit } from 'lodash'
 import type { CustomersFixture } from './customers.fixture'
 import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
 

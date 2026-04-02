@@ -1,4 +1,4 @@
-import { maxBy, minBy } from 'lodash'
+import { maxBy, minBy } from './lodash'
 
 export type DateAddOptions = {
     base?: Date

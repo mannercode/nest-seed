@@ -1,4 +1,4 @@
-import { fromPairs, keys, omit, pickBy, sortBy, toPairs } from 'lodash'
+import { omit, pickBy, sortBy } from '@mannercode/common'
 
 /**
  * Sorts and compares arrays of objects.
@@ -38,7 +38,7 @@ function containsAsymmetricMatcher(value: unknown): boolean {
 }
 
 function getAsymmetricMatcherKeys(record: Record<string, any>): string[] {
-    return keys(pickBy(record, (value) => containsAsymmetricMatcher(value)))
+    return Object.keys(pickBy(record, (value) => containsAsymmetricMatcher(value)))
 }
 
 function isAsymmetricMatcher(
@@ -59,8 +59,8 @@ function sortDtos<T extends Record<string, any>>(dtos: T[], excludeKeys: string[
 function stringifyWithSortedKeys(record: Record<string, any>): string {
     return JSON.stringify(record, (_key, value) => {
         if (value && typeof value === 'object' && !Array.isArray(value)) {
-            const sortedPairs = sortBy(toPairs(value), ([entryKey]) => entryKey)
-            return fromPairs(sortedPairs)
+            const sortedPairs = sortBy(Object.entries(value), ([entryKey]) => entryKey)
+            return Object.fromEntries(sortedPairs)
         }
         return value
     })

@@ -1,8 +1,8 @@
 import type { TestContext } from '@mannercode/testing'
 import type { CreateShowtimeDto } from 'apps/cores'
 import { DateUtil, newObjectIdString } from '@mannercode/common'
+import { uniq } from '@mannercode/common'
 import { oid } from '@mannercode/testing'
-import { uniq } from 'lodash'
 
 export function buildCreateShowtimeDto(overrides: Partial<CreateShowtimeDto> = {}) {
     const createDto = {

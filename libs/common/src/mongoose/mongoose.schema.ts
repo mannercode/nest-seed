@@ -1,8 +1,8 @@
 import type { Type } from '@nestjs/common'
 import type { ClientSession, Query, Schema } from 'mongoose'
 import { SchemaFactory } from '@nestjs/mongoose'
-import { defaultTo } from 'lodash'
 import mongooseLeanVirtuals from 'mongoose-lean-virtuals'
+import { defaultTo } from '../utils'
 
 /**
  * The difference between toObject and toJSON is that toJSON has flattenMaps set to true by default.

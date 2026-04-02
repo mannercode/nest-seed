@@ -1,5 +1,5 @@
 import type { MovieDto } from 'apps/cores'
-import { countBy, defaultTo, flatMap, orderBy, sumBy } from 'lodash'
+import { countBy, defaultTo, orderBy, sumBy } from '@mannercode/common'
 
 export class MovieRecommender {
     static recommend(showingMovies: MovieDto[], watchedMovies: MovieDto[]) {
@@ -9,7 +9,7 @@ export class MovieRecommender {
 
         // Calculate the frequency of each genre in the user's watch history.
         // 사용자가 관람한 영화의 장르 빈도를 계산
-        const genreFrequency = countBy(flatMap(watchedMovies, (movie) => movie.genres))
+        const genreFrequency = countBy(watchedMovies.flatMap((movie) => movie.genres))
 
         // Sort genres by their frequency in descending order.
         // 장르를 관람 빈도가 높은 순서로 정렬

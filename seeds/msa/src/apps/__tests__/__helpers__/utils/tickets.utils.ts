@@ -1,9 +1,9 @@
 import type { TestContext } from '@mannercode/testing'
 import type { CreateTicketDto } from 'apps/cores'
 import { newObjectIdString } from '@mannercode/common'
+import { uniq } from '@mannercode/common'
 import { oid } from '@mannercode/testing'
 import { TicketStatus } from 'apps/cores'
-import { uniq } from 'lodash'
 
 export function buildCreateTicketDto(overrides = {}) {
     const createDto = {

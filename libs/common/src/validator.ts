@@ -1,6 +1,6 @@
 /* istanbul ignore file */
 import { Logger } from '@nestjs/common'
-import { isEqual } from 'lodash'
+import { isEqual } from './utils'
 
 export class Require {
     static defined<T>(
@@ -13,10 +13,11 @@ export class Require {
     }
 
     static equalLength(a: any[] | undefined, b: any[] | undefined, message: string) {
-        if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
-            throw new Error(
-                `${message} first: ${a ? a.length : undefined}, second: ${b ? b.length : undefined}`
-            )
+        const aLen = Array.isArray(a) ? a.length : undefined
+        const bLen = Array.isArray(b) ? b.length : undefined
+
+        if (aLen === undefined || bLen === undefined || aLen !== bLen) {
+            throw new Error(`${message} first: ${aLen}, second: ${bLen}`)
         }
     }
 
@@ -29,10 +30,11 @@ export class Require {
 
 export class Verify {
     static equalLength(a: any[] | undefined, b: any[] | undefined, message: string) {
-        if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
-            Logger.warn(
-                `${message} first: ${a ? a.length : undefined}, second: ${b ? b.length : undefined}`
-            )
+        const aLen = Array.isArray(a) ? a.length : undefined
+        const bLen = Array.isArray(b) ? b.length : undefined
+
+        if (aLen === undefined || bLen === undefined || aLen !== bLen) {
+            Logger.warn(`${message} first: ${aLen}, second: ${bLen}`)
         }
     }
 }

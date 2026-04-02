@@ -1,8 +1,8 @@
 import { DateUtil, OrderDirection } from '@mannercode/common'
+import { defaultTo } from '@mannercode/common'
 import { Injectable, Logger } from '@nestjs/common'
 import { Rules } from 'config'
 import { MovieDto, MoviesService, ShowtimesService, WatchRecordsService } from 'cores'
-import { defaultTo } from 'lodash'
 import { MovieRecommender } from './domain'
 
 @Injectable()

@@ -1,8 +1,8 @@
 import { DynamicModule } from '@nestjs/common'
 import { Inject, Injectable, Module } from '@nestjs/common'
 import Redis from 'ioredis'
-import { defaultTo } from 'lodash'
 import { getRedisConnectionToken } from '../redis'
+import { defaultTo } from '../utils'
 
 @Injectable()
 export class CacheService {

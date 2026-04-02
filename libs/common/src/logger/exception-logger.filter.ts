@@ -3,8 +3,8 @@ import { Catch, HttpException, Logger } from '@nestjs/common'
 import { BaseExceptionFilter } from '@nestjs/core'
 import { RpcException } from '@nestjs/microservices'
 import { Request } from 'express'
-import { defaultTo } from 'lodash'
 import { throwError } from 'rxjs'
+import { defaultTo } from '../utils'
 import { HttpErrorLog, RpcErrorLog } from './types'
 
 /**

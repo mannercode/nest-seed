@@ -1,7 +1,7 @@
 import type { QueryFilter } from 'mongoose'
 import { BadRequestException } from '@nestjs/common'
-import { escapeRegExp, uniq } from 'lodash'
 import { Types } from 'mongoose'
+import { escapeRegExp, uniq } from '../utils'
 import { Verify } from '../validator'
 import { MongooseErrors } from './errors'
 
