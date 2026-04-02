@@ -107,6 +107,16 @@ describe('HttpUtil', () => {
                 expect(HttpUtil.extractContentDisposition('')).toBe('unknown')
                 expect(HttpUtil.extractContentDisposition('attachment')).toBe('unknown')
                 expect(HttpUtil.extractContentDisposition('inline; foo=bar')).toBe('unknown')
+                expect(HttpUtil.extractContentDisposition('attachment; noequals')).toBe('unknown')
+            })
+        })
+
+        // filename*에 ''가 없을 때
+        describe('when filename* has no encoding separator', () => {
+            // fallback으로 filename을 사용한다
+            it('falls back to filename', () => {
+                const cd = `attachment; filename*=noencoding; filename="fallback.txt"`
+                expect(HttpUtil.extractContentDisposition(cd)).toBe('fallback.txt')
             })
         })
 
