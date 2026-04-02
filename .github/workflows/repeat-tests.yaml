@@ -27,7 +27,7 @@ jobs:
         steps:
             - uses: actions/checkout@v5
             - name: Run CI inside Dev Container
-              uses: devcontainers/ci@v0.3
+              uses: devcontainers/ci@v0.4
               with:
                   configFile: .devcontainer/devcontainer.json
                   push: never
@@ -40,7 +40,7 @@ jobs:
         steps:
             - uses: actions/checkout@v5
             - name: Run CI inside Dev Container
-              uses: devcontainers/ci@v0.3
+              uses: devcontainers/ci@v0.4
               with:
                   configFile: .devcontainer/devcontainer.json
                   push: never
