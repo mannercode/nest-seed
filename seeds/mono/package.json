@@ -26,8 +26,8 @@
         "infra:gui": " COMPOSE_PROFILES=gui npm run infra:reset"
     },
     "dependencies": {
-        "@mannercode/common": "^1.0.2",
-        "@mannercode/testing": "^1.0.2",
+        "@mannercode/common": "^2.0.0",
+        "@mannercode/testing": "^2.0.0",
         "@aws-sdk/client-s3": "^3.1022.0",
         "@aws-sdk/s3-presigned-post": "^3.1022.0",
         "@aws-sdk/s3-request-presigner": "^3.1022.0",

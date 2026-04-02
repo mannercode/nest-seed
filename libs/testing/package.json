@@ -1,6 +1,6 @@
 {
     "name": "@mannercode/testing",
-    "version": "1.0.2",
+    "version": "2.0.0",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "files": [
@@ -12,8 +12,8 @@
         "lint": "eslint src/ --max-warnings=0"
     },
     "dependencies": {
-        "@mannercode/common": "^1.0.1",
-        "@mannercode/microservices": "^1.0.2",
+        "@mannercode/common": "^2.0.0",
+        "@mannercode/microservices": "^2.0.0",
         "lodash": "^4.18.1",
         "superagent": "^10.3.0"
     },
