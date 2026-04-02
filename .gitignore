@@ -3,7 +3,6 @@ dist
 .turbo
 *.tsbuildinfo
 _output
-coverage
 
 .DS_Store
 desktop.ini
