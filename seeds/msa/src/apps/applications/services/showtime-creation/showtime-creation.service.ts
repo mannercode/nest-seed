@@ -1,6 +1,6 @@
 import { newObjectIdString, PaginationDto } from '@mannercode/common'
 import { OrderDirection } from '@mannercode/common'
-import { TEMPORAL_CLIENT } from '@mannercode/microservice'
+import { TEMPORAL_CLIENT } from '@mannercode/microservices'
 import { Inject, Injectable } from '@nestjs/common'
 import { Client } from '@temporalio/client'
 import { MoviesClient, ShowtimesClient, TheatersClient } from 'apps/cores'

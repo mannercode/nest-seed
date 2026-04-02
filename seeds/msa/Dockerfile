@@ -5,7 +5,7 @@ ARG TARGET_APP
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --legacy-peer-deps
-RUN npm install --legacy-peer-deps @mannercode/common @mannercode/microservice @mannercode/testing
+RUN npm install --legacy-peer-deps @mannercode/common @mannercode/microservices @mannercode/testing
 COPY . .
 RUN node -e "\
   const fs=require('fs');\
@@ -33,7 +33,7 @@ RUN apt-get update && \
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev --legacy-peer-deps
-RUN npm install --legacy-peer-deps @mannercode/common @mannercode/microservice @mannercode/testing
+RUN npm install --legacy-peer-deps @mannercode/common @mannercode/microservices @mannercode/testing
 COPY --from=build /app/_output/dist/index.js /app/_output/dist/index.js
 COPY --from=build /app/_output/dist/workflow-bundle.js /app/_output/dist/workflow-bundle.js
 

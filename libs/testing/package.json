@@ -13,7 +13,7 @@
     },
     "dependencies": {
         "@mannercode/common": "^1.0.1",
-        "@mannercode/microservice": "^1.0.2",
+        "@mannercode/microservices": "^1.0.2",
         "lodash": "^4.18.1",
         "superagent": "^10.3.0"
     },

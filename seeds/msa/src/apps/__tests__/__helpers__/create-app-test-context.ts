@@ -1,7 +1,7 @@
 import type { HttpTestContext, ModuleMetadataEx } from '@mannercode/testing'
 import type { MicroserviceOptions } from '@nestjs/microservices'
 import { AppLoggerService } from '@mannercode/common'
-import { TemporalClientModule } from '@mannercode/microservice'
+import { TemporalClientModule } from '@mannercode/microservices'
 import { createHttpTestContext, isDebuggingEnabled } from '@mannercode/testing'
 import { ConfigService } from '@nestjs/config'
 import { Transport } from '@nestjs/microservices'

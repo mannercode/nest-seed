@@ -33,7 +33,7 @@
     },
     "dependencies": {
         "@mannercode/common": "^1.0.2",
-        "@mannercode/microservice": "^1.0.2",
+        "@mannercode/microservices": "^1.0.2",
         "@mannercode/testing": "^1.0.2",
         "@aws-sdk/client-s3": "^3.1022.0",
         "@aws-sdk/s3-presigned-post": "^3.1022.0",

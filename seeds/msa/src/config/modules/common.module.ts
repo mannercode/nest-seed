@@ -4,7 +4,7 @@ import {
     ExceptionLoggerFilter,
     SuccessLoggerInterceptor
 } from '@mannercode/common'
-import { ClientProxyModule } from '@mannercode/microservice'
+import { ClientProxyModule } from '@mannercode/microservices'
 import { Global, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'

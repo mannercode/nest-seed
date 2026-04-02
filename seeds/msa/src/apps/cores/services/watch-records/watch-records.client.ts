@@ -1,6 +1,6 @@
 import { PaginationResult } from '@mannercode/common'
-import { ClientProxyService } from '@mannercode/microservice'
-import { InjectClientProxy } from '@mannercode/microservice'
+import { ClientProxyService } from '@mannercode/microservices'
+import { InjectClientProxy } from '@mannercode/microservices'
 import { Injectable } from '@nestjs/common'
 import { Messages } from 'config'
 import { CreateWatchRecordDto, SearchWatchRecordsPageDto, WatchRecordDto } from './dtos'

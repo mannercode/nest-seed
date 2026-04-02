@@ -6,7 +6,7 @@
 nest-templates/
 ├── libs/              # 공유 라이브러리 (@mannercode/*)
 │   ├── common/            # 기본 유틸리티 (Mongoose, Redis, JWT, S3, Logger)
-│   ├── microservice/      # MSA 유틸리티 (NATS RPC, Temporal)
+│   ├── microservices/      # MSA 유틸리티 (NATS RPC, Temporal)
 │   └── testing/           # 테스트 유틸리티 (HttpTestClient, RpcTestClient)
 ├── seeds/
 │   ├── mono/              # 모놀리식 NestJS 시드
@@ -19,8 +19,8 @@ nest-templates/
 
 ```
 @mannercode/common          ← 내부 의존 없음
-  └─ @mannercode/microservice  ← common에 의존
-       └─ @mannercode/testing     ← common + microservice에 의존
+  └─ @mannercode/microservices  ← common에 의존
+       └─ @mannercode/testing     ← common + microservices에 의존
 ```
 
 ## 패키지 상세
@@ -43,7 +43,7 @@ nest-templates/
 | **validator**  | `Require`, `Verify`, `ensure()`                           |
 | **utils**      | env, base64, byte, checksum, date, time, http, json, path |
 
-### @mannercode/microservice
+### @mannercode/microservices
 
 분산 시스템을 위한 통신 및 오케스트레이션 레이어.
 

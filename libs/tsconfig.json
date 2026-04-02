@@ -5,7 +5,7 @@
         "baseUrl": ".",
         "paths": {
             "@mannercode/common": ["common/src"],
-            "@mannercode/microservice": ["microservice/src"],
+            "@mannercode/microservices": ["microservices/src"],
             "@mannercode/testing": ["testing/src"]
         }
     },

@@ -1,5 +1,5 @@
 {
-    "name": "@mannercode/microservice",
+    "name": "@mannercode/microservices",
     "version": "1.0.2",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -41,6 +41,6 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/mannercode/nest-seed.git",
-        "directory": "libs/microservice"
+        "directory": "libs/microservices"
     }
 }
