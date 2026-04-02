@@ -6,7 +6,6 @@ const unusedImportsPlugin = require('eslint-plugin-unused-imports')
 const baseGlobals = { ...globals.node, ...globals.es2025, module: 'readonly', require: 'readonly' }
 
 module.exports = [
-    { ignores: ['*/src/**/*.d.ts'] },
     {
         files: ['*/src/**/*.ts'],
         linterOptions: { reportUnusedDisableDirectives: true },

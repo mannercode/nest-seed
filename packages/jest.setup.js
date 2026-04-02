@@ -1,10 +1,10 @@
-import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
-import { MongoClient } from 'mongodb'
-import 'reflect-metadata'
-import { generateTestId, getEnv, setEnv } from './jest.utils'
+const { CreateBucketCommand, S3Client } = require('@aws-sdk/client-s3')
+const { MongoClient } = require('mongodb')
+require('reflect-metadata')
+const { generateTestId, getEnv, setEnv } = require('./jest.utils')
 
-let testlibMongoClient: MongoClient
-let testlibS3Client: S3Client
+let testlibMongoClient
+let testlibS3Client
 
 beforeAll(async () => {
     await Promise.all([createTestlibMongo(), createTestlibS3Client()])

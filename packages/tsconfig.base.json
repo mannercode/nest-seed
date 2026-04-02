@@ -12,8 +12,9 @@
 
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
+        "declaration": true,
+        "declarationMap": true,
 
-        "incremental": true,
         "sourceMap": true,
 
         "forceConsistentCasingInFileNames": true,
@@ -21,11 +22,7 @@
 
         "resolveJsonModule": true,
         "esModuleInterop": true,
-        "skipLibCheck": true,
 
-        "baseUrl": ".",
-        "outDir": "./_output/build",
-        "paths": { "config": ["src/config/index"], "apps/*": ["src/apps/*"] }
-    },
-    "include": ["src/**/*"]
+        "skipLibCheck": true
+    }
 }

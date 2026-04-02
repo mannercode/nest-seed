@@ -1,19 +1,19 @@
-import { createJsWithTsPreset, pathsToModuleNameMapper } from 'ts-jest'
-import tsconfig from './tsconfig.json' with { type: 'json' }
+const { createJsWithTsPreset, pathsToModuleNameMapper } = require('ts-jest')
+const tsconfig = require('./tsconfig.json')
 
 const tsJestPreset = createJsWithTsPreset({ tsconfig: 'tsconfig.json' })
 const { compilerOptions } = tsconfig
 
-export default {
+module.exports = {
     ...tsJestPreset,
-    globalSetup: '<rootDir>/jest.global.ts',
-    setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+    globalSetup: '<rootDir>/jest.global.js',
+    setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
     moduleFileExtensions: ['js', 'json', 'ts'],
     testRegex: '(__tests__/.*\\.spec\\.(ts|js))$',
     testEnvironment: 'node',
-    resetModules: true, // Reset module cache between tests
-    resetMocks: true, // Reset mock call counts/instances before each test
-    restoreMocks: true, // Restore original implementations after each test
+    resetModules: true,
+    resetMocks: true,
+    restoreMocks: true,
     rootDir: '.',
     roots: ['<rootDir>/src'],
     moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
@@ -28,11 +28,9 @@ export default {
         '/main\\.ts$',
         '/config/configure-app\\.ts$',
         '/index\\.ts$',
-        '\\.module\\.ts$'
+        '\\.module\\.ts$',
+        '/workflows/'
     ],
     coverageDirectory: '<rootDir>/_output/coverage',
     testTimeout: 60 * 1000
-    // for ECM modules:
-    // https://github.com/kulshekhar/ts-jest/tree/main/examples/js-with-ts
-    // transformIgnorePatterns: ['/node_modules/(?!chalk)/']
 }

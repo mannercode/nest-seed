@@ -1,10 +1,10 @@
-import { GenericContainer } from 'testcontainers'
-import { MongoDBContainer } from '@testcontainers/mongodb'
-import { NatsContainer } from '@testcontainers/nats'
-import { TestWorkflowEnvironment } from '@temporalio/testing'
-import { getEnv, setEnv } from './jest.utils'
+const { GenericContainer } = require('testcontainers')
+const { MongoDBContainer } = require('@testcontainers/mongodb')
+const { NatsContainer } = require('@testcontainers/nats')
+const { TestWorkflowEnvironment } = require('@temporalio/testing')
+const { getEnv, setEnv } = require('./jest.utils')
 
-export default async function globalSetup() {
+module.exports = async function globalSetup() {
     const [nats, mongo, redis, minio, temporal] = await Promise.all([
         new NatsContainer(getEnv('NATS_IMAGE'))
             .withName('testlib-nats')

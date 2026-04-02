@@ -24,21 +24,14 @@
         "skipLibCheck": true,
 
         "baseUrl": ".",
-        "rootDir": "../..",
         "outDir": "./_output/build",
         "paths": {
             "config": ["src/config/index"],
             "applications": ["src/applications/index"],
             "cores": ["src/cores/index"],
             "infrastructures": ["src/infrastructures/index"],
-            "controllers": ["src/controllers/index"],
-            "@mannercode/common": ["../../packages/common/src"],
-            "@mannercode/common/*": ["../../packages/common/src/*"],
-            "@mannercode/microservice": ["../../packages/microservice/src"],
-            "@mannercode/microservice/*": ["../../packages/microservice/src/*"],
-            "@mannercode/testing": ["../../packages/testing/src"],
-            "@mannercode/testing/*": ["../../packages/testing/src/*"]
+            "controllers": ["src/controllers/index"]
         }
     },
-    "include": ["src/**/*", "../../packages/*/src/**/*"]
+    "include": ["src/**/*"]
 }

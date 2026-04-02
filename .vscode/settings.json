@@ -3,7 +3,8 @@
         "**/.turbo": true,
         "**/.DS_Store": true,
         "**/node_modules": true,
-        "**/*.tsbuildinfo": true
+        "**/*.tsbuildinfo": true,
+        "**/package-lock.json": true
     },
     "files.watcherExclude": { "**/_output/**": true },
     "search.exclude": { "**/_output/**": true },

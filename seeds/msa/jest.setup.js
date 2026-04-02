@@ -1,14 +1,13 @@
-import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
-import { MongoClient } from 'mongodb'
-import 'reflect-metadata'
-import { generateTestId, getEnv, setEnv } from './jest.utils'
+const { CreateBucketCommand, S3Client } = require('@aws-sdk/client-s3')
+const { MongoClient } = require('mongodb')
+require('reflect-metadata')
+const { generateTestId, getEnv, setEnv } = require('./jest.utils')
 
-let mongoClient: MongoClient
-let s3Client: S3Client
+let mongoClient
+let s3Client
 
 beforeAll(async () => {
-    mongoClient = await connectMongo()
-    s3Client = createS3Client()
+    await Promise.all([connectMongo(), connectS3()])
 })
 
 afterAll(async () => {
@@ -25,7 +24,8 @@ beforeEach(async () => {
     const bucket = `s3bucket${testId}`.toLowerCase()
     setEnv('S3_BUCKET', bucket)
 
-    await s3Client.send(new CreateBucketCommand({ Bucket: bucket }))
+    const command = new CreateBucketCommand({ Bucket: bucket })
+    await s3Client.send(command)
 })
 
 afterEach(async () => {
@@ -39,16 +39,15 @@ async function connectMongo() {
         `${getEnv('MONGO_HOST3')}:${getEnv('MONGO_PORT3')}`
     ].join(',')
 
-    const client = new MongoClient(
+    mongoClient = new MongoClient(
         `mongodb://${getEnv('MONGO_USERNAME')}:${getEnv('MONGO_PASSWORD')}@${nodes}/?replicaSet=${getEnv('MONGO_REPLICA_SET')}`
     )
 
-    await client.connect()
-    return client
+    await mongoClient.connect()
 }
 
-function createS3Client() {
-    return new S3Client({
+function connectS3() {
+    s3Client = new S3Client({
         endpoint: getEnv('S3_ENDPOINT'),
         region: getEnv('S3_REGION'),
         credentials: {

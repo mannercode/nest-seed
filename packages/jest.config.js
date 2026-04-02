@@ -1,17 +1,14 @@
-import { dirname, join } from 'path'
-import { fileURLToPath } from 'url'
-import { createJsWithTsPreset, pathsToModuleNameMapper } from 'ts-jest'
+const { join } = require('path')
+const { createJsWithTsPreset, pathsToModuleNameMapper } = require('ts-jest')
+const tsconfig = require('./tsconfig.json')
 
-const configDir = dirname(fileURLToPath(import.meta.url))
-const tsJestPreset = createJsWithTsPreset({ tsconfig: join(configDir, 'tsconfig.json') })
-
-import tsconfig from './tsconfig.json' with { type: 'json' }
+const tsJestPreset = createJsWithTsPreset({ tsconfig: join(__dirname, 'tsconfig.json') })
 const { compilerOptions } = tsconfig
 
-export default {
+module.exports = {
     ...tsJestPreset,
-    globalSetup: '<rootDir>/jest.global.ts',
-    setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+    globalSetup: '<rootDir>/jest.global.js',
+    setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
     moduleFileExtensions: ['js', 'json', 'ts'],
     testRegex: '(__tests__/.*\\.spec\\.(ts|js))$',
     testEnvironment: 'node',
