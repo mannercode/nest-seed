@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-NestJS 기반 모노레포. 영화 예매 도메인으로 모놀리식(mono)과 마이크로서비스(msa) 아키텍처 템플릿을 제공한다.
+NestJS 기반 모노레포. 영화 예매 도메인으로 모놀리식(mono)과 마이크로서비스(msa) 아키텍처 시드를 제공한다.
 
 ```
 nest-templates/
@@ -14,8 +14,9 @@ nest-templates/
 ├── seeds/                   ← 프로젝트 시드 (복사해서 새 프로젝트 시작)
 │   ├── mono/                모놀리식    — NestJS, MongoDB, Redis, BullMQ, EventEmitter2
 │   ├── msa/                 마이크로서비스 — NestJS, MongoDB, Redis, NATS, Temporal
-│   ├── docs/                공유 설계 문서 (한국어)
-│   └── CONVENTIONS.md       공유 코딩 컨벤션
+│   ├── infra/               공용 인프라 (Docker Compose, 환경변수)
+│   ├── docs/                공유 설계 문서
+│   └── CONVENTIONS.md       프로젝트 컨벤션
 │
 └── docs/                    ← 패키지 아키텍처 문서
 ```
@@ -46,7 +47,6 @@ ESLint import 규칙으로 레이어 간 역방향 의존을 차단한다.
 ## Conventions
 
 - [seeds/CONVENTIONS.md](seeds/CONVENTIONS.md) — 네이밍 규칙, 에러 패턴, 테스트 컨벤션
-- [seeds/docs/naming-conventions.md](seeds/docs/naming-conventions.md) — 디렉토리/파일/클래스/메서드 네이밍
 
 ## Directory Naming: common vs shared
 
@@ -66,7 +66,11 @@ ESLint import 규칙으로 레이어 간 역방향 의존을 차단한다.
 
 - [README.md](README.md) — 프로젝트 소개, 시작 가이드
 - [docs/architecture.md](docs/architecture.md) — 패키지 구조, 의존 관계
-- [seeds/docs/](seeds/docs/) — 설계 가이드, 네이밍 규칙, 테스트 전략, 개발 환경
+- [seeds/CONVENTIONS.md](seeds/CONVENTIONS.md) — 네이밍 규칙, 테스트 컨벤션
+- [seeds/docs/design-guide.md](seeds/docs/design-guide.md) — SoLA 아키텍처, REST API, 엔티티 설계
+- [seeds/docs/development.md](seeds/docs/development.md) — 개발 환경, 스크립트, 테스트 인프라
+- [seeds/docs/decisions.md](seeds/docs/decisions.md) — 기술 선택 근거 (NATS, Temporal)
+- [seeds/docs/glossary.md](seeds/docs/glossary.md) — 도메인 용어
 
 ## Instructions for Claude
 

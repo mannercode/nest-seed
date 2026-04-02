@@ -1,131 +1,114 @@
 # nest-templates
 
-NestJS application templates monorepo — movie ticketing domain for monolithic and microservice architectures.
+NestJS 기반 모노레포. 영화 예매 도메인으로 모놀리식(mono)과 마이크로서비스(msa) 아키텍처 시드를 제공한다.
 
-## Project Structure
+## 프로젝트 구조
 
 ```
 nest-templates/
-├── packages/                ← Shared libraries (npm packages)
+├── packages/                ← 공유 라이브러리 (npm 패키지)
 │   ├── common/              @mannercode/common      — Mongoose, Redis, JWT, S3, logging
 │   ├── microservice/        @mannercode/microservice — NATS RPC, Temporal workflows
-│   └── testing/             @mannercode/testing      — Test context factories, HTTP/RPC clients
+│   └── testing/             @mannercode/testing      — 테스트 컨텍스트, HTTP/RPC 클라이언트
 │
-├── seeds/                   ← Project seeds (copy one to start a new project)
-│   ├── mono/                Monolithic    — NestJS, MongoDB, Redis, BullMQ, EventEmitter2
-│   └── msa/                 Microservices — NestJS, MongoDB, Redis, NATS, Temporal
+├── seeds/                   ← 프로젝트 시드 (복사해서 새 프로젝트 시작)
+│   ├── mono/                모놀리식    — NestJS, MongoDB, Redis, BullMQ, EventEmitter2
+│   ├── msa/                 마이크로서비스 — NestJS, MongoDB, Redis, NATS, Temporal
+│   └── infra/               공용 인프라 (Docker Compose, 환경변수)
 │
-└── docs/                    ← Architecture, naming, testing documentation
+└── docs/                    ← 아키텍처 문서
 ```
 
-Both templates share the same layered architecture (SoLA) and domain model, but differ in communication and orchestration strategies.
+두 시드는 동일한 레이어드 아키텍처(SoLA)와 도메인 모델을 공유하며, 통신 및 오케스트레이션 전략이 다르다.
 
-## Documentation
+## 시작하기
 
-- [Architecture Overview](docs/architecture.md) — Monorepo structure, package graph, SoLA layers, template comparison
-- [Naming Conventions](seeds/docs/naming-conventions.md) — Directory naming (common vs shared), file/class/method naming rules
-- [Testing Strategy](seeds/docs/testing-strategy.md) — Test principles, fixture patterns, HttpTestClient API, coverage config
-
-## Architecture: SoLA (Service-oriented Layered Architecture)
-
-```
-Controllers (Gateway)     ← Authentication, request validation, logging
-  ↓
-Applications              ← Business logic orchestration, async tasks
-  ↓
-Cores                     ← Domain entities, repositories
-  ↓
-Infrastructures           ← External services (payments, S3 storage)
-```
-
-Unidirectional dependency flow is enforced by ESLint rules. In the mono template, layers communicate via direct function calls. In the msa template, layers are separate services communicating via NATS RPC.
-
-## Getting Started
-
-### Prerequisites
+### 사전 요구 사항
 
 - Node.js 24+
 - Docker & Docker Compose
 
-### 1. Install Dependencies
+### 1. 의존성 설치
 
 ```bash
 npm ci
 ```
 
-### 2. Build Packages
+### 2. 패키지 빌드
 
 ```bash
 npm run build
 ```
 
-### 3. Run Package Tests
+### 3. 패키지 테스트
 
 ```bash
 npm test
 ```
 
-### 4. Try a Template
+### 4. 시드 실행
 
 ```bash
-cd seeds/mono   # or seeds/msa
+cd seeds/mono   # 또는 seeds/msa
 npm ci
 npm run infra:reset
 npm test
 ```
 
-See [seeds/docs/development.md](seeds/docs/development.md) for detailed setup, scripts, and project structure.
+상세 설정은 [seeds/docs/development.md](seeds/docs/development.md) 참조.
 
-## Monorepo Scripts
+## 모노레포 스크립트
 
-| Script                      | Description                        |
-| --------------------------- | ---------------------------------- |
-| `npm run build`             | Build all packages (via Turborepo) |
-| `npm test`                  | Run package tests with coverage    |
-| `npm run lint`              | ESLint across all packages         |
-| `npm run format`            | Prettier formatting                |
-| `npm run changeset:add`     | Create a changeset for versioning  |
-| `npm run changeset:version` | Apply changesets and bump versions |
-| `npm run changeset:publish` | Build and publish packages to npm  |
+| 스크립트                    | 설명                          |
+| --------------------------- | ----------------------------- |
+| `npm run build`             | 모든 패키지 빌드 (Turborepo)  |
+| `npm test`                  | 패키지 테스트 (커버리지 포함) |
+| `npm run lint`              | 전체 패키지 ESLint            |
+| `npm run format`            | Prettier 포맷팅               |
+| `npm run changeset:add`     | 체인지셋 생성                 |
+| `npm run changeset:version` | 체인지셋 적용 및 버전 범프    |
+| `npm run changeset:publish` | 빌드 후 npm 배포              |
 
-## Tech Stack
+## 기술 스택
 
-| Category            | Technology                 |
-| ------------------- | -------------------------- |
-| **Framework**       | NestJS 11                  |
-| **Language**        | TypeScript 6               |
-| **Database**        | MongoDB (Mongoose)         |
-| **Cache**           | Redis                      |
-| **Messaging**       | NATS (msa)                 |
-| **Workflow**        | Temporal (msa)             |
-| **Queue**           | BullMQ (mono)              |
-| **Events**          | EventEmitter2 (mono)       |
-| **Object Storage**  | MinIO (S3-compatible)      |
-| **Auth**            | JWT + Passport             |
-| **Testing**         | Jest (100% coverage)       |
-| **Build**           | Turborepo + Webpack        |
-| **Container**       | Docker (multi-stage build) |
-| **Package Manager** | npm workspaces             |
-| **Versioning**      | Changesets                 |
+| 분류                  | 기술                       |
+| --------------------- | -------------------------- |
+| **프레임워크**        | NestJS 11                  |
+| **언어**              | TypeScript 6               |
+| **데이터베이스**      | MongoDB (Mongoose)         |
+| **캐시**              | Redis                      |
+| **메시징**            | NATS (msa)                 |
+| **워크플로우**        | Temporal (msa)             |
+| **큐**                | BullMQ (mono)              |
+| **이벤트**            | EventEmitter2 (mono)       |
+| **오브젝트 스토리지** | MinIO (S3 호환)            |
+| **인증**              | JWT + Passport             |
+| **테스트**            | Jest (100% 커버리지)       |
+| **빌드**              | Turborepo + Webpack        |
+| **컨테이너**          | Docker (multi-stage build) |
+| **패키지 매니저**     | npm workspaces             |
+| **버전 관리**         | Changesets                 |
 
-## Testing Strategy
+## Mono vs MSA 비교
 
-- **No mocks** — tests use real MongoDB replica sets, Redis clusters, and MinIO via Docker
-- **100% coverage threshold** — enforced for branches, functions, lines, and statements
-- **Fixture pattern** — isolated test contexts with real infrastructure per test suite
-- **E2E tests** — full Docker Compose stack validated through HTTP API (curl + jq)
+| 항목           | mono                       | msa                                    |
+| -------------- | -------------------------- | -------------------------------------- |
+| 서비스         | 1 (단일 프로세스)          | 4 (Gateway, Apps, Cores, Infra)        |
+| 레이어 간 통신 | 직접 함수 호출             | NATS RPC                               |
+| 비동기 처리    | BullMQ 큐                  | Temporal 워크플로우 (Saga 패턴)        |
+| 이벤트         | EventEmitter2 (in-process) | NATS pub/sub                           |
+| 인프라         | MongoDB RS + Redis Cluster | + NATS Cluster + Temporal + PostgreSQL |
+| 포트           | 3000                       | 3000, 4000, 4001, 4002                 |
 
-## Mono vs MSA Comparison
+## 문서
 
-| Aspect                    | mono                       | msa                                    |
-| ------------------------- | -------------------------- | -------------------------------------- |
-| Services                  | 1 (single process)         | 4 (Gateway, Apps, Cores, Infra)        |
-| Inter-layer communication | Direct function calls      | NATS RPC                               |
-| Async processing          | BullMQ queues              | Temporal workflows (Saga pattern)      |
-| Events                    | EventEmitter2 (in-process) | NATS pub/sub                           |
-| Infrastructure            | MongoDB RS + Redis Cluster | + NATS Cluster + Temporal + PostgreSQL |
-| Ports                     | 3000                       | 3000, 4000, 4001, 4002                 |
+- [패키지 아키텍처](docs/architecture.md) — 모노레포 구조, 패키지 의존 그래프, 모듈 상세
+- [설계 가이드](seeds/docs/design-guide.md) — SoLA 아키텍처, REST API 설계, 엔티티 설계
+- [프로젝트 컨벤션](seeds/CONVENTIONS.md) — 네이밍 규칙, 테스트 컨벤션
+- [개발 환경](seeds/docs/development.md) — 스크립트, 프로젝트 구조, ESLint 규칙
+- [설계 결정](seeds/docs/decisions.md) — NATS, Temporal 선택 근거
+- [도메인 용어](seeds/docs/glossary.md) — 영화 예매 도메인 용어 정리
 
-## License
+## 라이선스
 
-See individual packages for license information.
+개별 패키지의 라이선스 정보를 참조.

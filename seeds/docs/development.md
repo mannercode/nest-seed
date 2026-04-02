@@ -70,33 +70,13 @@ infra/local/              # 로컬 인프라 Docker Compose
 
 ## 환경 파일
 
-### `.env`
+### `seeds/infra/.env`
 
-애플리케이션과 테스트에서 공용으로 사용하는 설정 파일이다. 프로젝트 ID, 포트, MongoDB/Redis/MinIO 접속 정보, 로그 설정 등이 포함된다. MSA에서는 NATS 접속 정보도 추가된다.
+인프라 설정을 통합 관리한다. Docker 이미지 태그와 인프라 접속 정보(MongoDB, Redis, NATS, MinIO, Temporal)가 포함된다. Dev Container 실행 시 `--env-file`로 컨테이너 환경변수에 주입되므로, 앱과 테스트에서 별도 파일 로딩 없이 `process.env`로 접근 가능하다.
 
-기본값은 `host.docker.internal`을 바라보도록 되어 있으므로, 다른 네트워크 환경이라면 호스트 IP를 맞춰야 한다.
+### `seeds/mono/.env`, `seeds/msa/.env`
 
-### `.env.infra`
-
-로컬 인프라 및 Jest Testcontainers에서 사용할 Docker 이미지 태그를 정의한다.
-
-**Mono:**
-
-```env
-MONGO_IMAGE=mongo:8.2.3
-REDIS_IMAGE=redis:8.4-alpine
-MINIO_IMAGE=minio/minio:latest
-```
-
-**MSA:**
-
-```env
-MONGO_IMAGE=mongo:8.2.3
-REDIS_IMAGE=redis:8.4-alpine
-NATS_IMAGE=nats:2.12-alpine
-MINIO_IMAGE=minio/minio:latest
-TEMPORAL_IMAGE=temporalio/auto-setup:1.25
-```
+앱 전용 설정만 포함한다. 프로젝트 ID, HTTP 포트, 인증, 로그 설정 등이 있다.
 
 ### 프로젝트 이름 변경
 
@@ -363,6 +343,39 @@ export class CoresModule {}
 
 - **Mono**: Gateway의 HTTP 컨트롤러에서 `FoosService`를 직접 주입하여 사용한다.
 - **MSA**: `src/apps/gateway`의 관련 모듈에서 `FoosClient`를 import하고, 컨트롤러에서 주입한다.
+
+---
+
+## 테스트 인프라
+
+### 환경 변수
+
+테스트는 `jest.global.ts`에서 Testcontainers를 시작하고 환경 변수를 설정하여 인프라에 연결한다.
+
+| 함수                          | 환경 변수                  |
+| ----------------------------- | -------------------------- |
+| `getMongoTestConnection()`    | `TESTLIB_MONGO_*`          |
+| `getRedisTestConnection()`    | `TESTLIB_REDIS_URL`        |
+| `getNatsTestConnection()`     | `TESTLIB_NATS_OPTIONS`     |
+| `getTemporalTestConnection()` | `TESTLIB_TEMPORAL_ADDRESS` |
+| `getS3TestConnection()`       | `TESTLIB_S3_*`             |
+
+### 커버리지 설정
+
+`jest.config.ts`에서 100% 커버리지를 강제한다.
+
+```typescript
+coverageThreshold: {
+    global: {
+        branches: 100,
+        functions: 100,
+        lines: 100,
+        statements: 100
+    }
+}
+```
+
+**커버리지 제외 대상**: `__tests__`, `main.ts`, `*.module.ts`, `index.ts`, `configure-app.ts`, `production.ts`, `development.ts`, `/workflows/`
 
 ---
 

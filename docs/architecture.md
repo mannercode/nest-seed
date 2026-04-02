@@ -1,67 +1,67 @@
-# Architecture Overview
+# 패키지 아키텍처
 
-## Monorepo Structure
+## 모노레포 구조
 
 ```
 nest-templates/
-├── packages/              # Shared libraries (@mannercode/*)
-│   ├── common/            # Base utilities (Mongoose, Redis, JWT, S3, Logger)
-│   ├── microservice/      # MSA utilities (NATS RPC, Temporal)
-│   └── testing/           # Test utilities (HttpTestClient, RpcTestClient)
+├── packages/              # 공유 라이브러리 (@mannercode/*)
+│   ├── common/            # 기본 유틸리티 (Mongoose, Redis, JWT, S3, Logger)
+│   ├── microservice/      # MSA 유틸리티 (NATS RPC, Temporal)
+│   └── testing/           # 테스트 유틸리티 (HttpTestClient, RpcTestClient)
 ├── seeds/
-│   ├── mono/              # Monolithic NestJS template
-│   └── msa/               # Microservice architecture template
-├── turbo.json             # Turborepo task pipeline
-└── package.json           # npm workspaces root
+│   ├── mono/              # 모놀리식 NestJS 시드
+│   └── msa/               # 마이크로서비스 아키텍처 시드
+├── turbo.json             # Turborepo 태스크 파이프라인
+└── package.json           # npm workspaces 루트
 ```
 
-## Package Dependency Graph
+## 패키지 의존 그래프
 
 ```
-@mannercode/common          ← No internal dependencies
-  └─ @mannercode/microservice  ← Depends on common
-       └─ @mannercode/testing     ← Depends on common + microservice
+@mannercode/common          ← 내부 의존 없음
+  └─ @mannercode/microservice  ← common에 의존
+       └─ @mannercode/testing     ← common + microservice에 의존
 ```
 
-## Packages
+## 패키지 상세
 
 ### @mannercode/common
 
-Foundation layer. Provides infrastructure abstractions reusable across any NestJS application.
+기반 레이어. 모든 NestJS 애플리케이션에서 재사용 가능한 인프라 추상화를 제공한다.
 
-| Module         | Key Exports                                                |
-| -------------- | ---------------------------------------------------------- |
-| **mongoose**   | `MongooseRepository`, `MongooseSchema`, pagination support |
-| **redis**      | `RedisModule`, connection management                       |
-| **cache**      | `CacheService`, `CacheModule`, namespaced keys, TTL, Lua   |
-| **jwt-auth**   | `JwtAuthService`, access/refresh tokens, Redis-backed      |
-| **s3**         | `S3ObjectService`, upload/download, presigned URLs         |
-| **logger**     | `AppLoggerService`, Winston, exception filter, interceptor |
-| **pagination** | `PaginationDto`, `PaginationResult`, `OrderBy`             |
-| **health**     | `RedisHealthIndicator`                                     |
-| **config**     | `BaseConfigService`                                        |
-| **validator**  | `Require`, `Verify`, `ensure()`                            |
-| **utils**      | env, base64, byte, checksum, date, time, http, json, path  |
+| 모듈           | 주요 export                                               |
+| -------------- | --------------------------------------------------------- |
+| **mongoose**   | `MongooseRepository`, `MongooseSchema`, 페이지네이션 지원 |
+| **redis**      | `RedisModule`, 연결 관리                                  |
+| **cache**      | `CacheService`, `CacheModule`, 네임스페이스 키, TTL, Lua  |
+| **jwt-auth**   | `JwtAuthService`, access/refresh 토큰, Redis 기반         |
+| **s3**         | `S3ObjectService`, 업로드/다운로드, presigned URL         |
+| **logger**     | `AppLoggerService`, Winston, 예외 필터, 인터셉터          |
+| **pagination** | `PaginationDto`, `PaginationResult`, `OrderBy`            |
+| **health**     | `RedisHealthIndicator`                                    |
+| **config**     | `BaseConfigService`                                       |
+| **validator**  | `Require`, `Verify`, `ensure()`                           |
+| **utils**      | env, base64, byte, checksum, date, time, http, json, path |
 
 ### @mannercode/microservice
 
-Communication and orchestration layer for distributed systems.
+분산 시스템을 위한 통신 및 오케스트레이션 레이어.
 
-| Module       | Key Exports                                                                                                 |
-| ------------ | ----------------------------------------------------------------------------------------------------------- |
-| **rpc**      | `ClientProxyService`, `ClientProxyModule` — NATS RPC with auto-retry (up to 9 retries, exponential backoff) |
-| **temporal** | `TemporalClientModule`, `TemporalWorkerService` — workflow bundling and lifecycle management                |
+| 모듈         | 주요 export                                                                               |
+| ------------ | ----------------------------------------------------------------------------------------- |
+| **rpc**      | `ClientProxyService`, `ClientProxyModule` — NATS RPC, 자동 재시도 (최대 9회, 지수 백오프) |
+| **temporal** | `TemporalClientModule`, `TemporalWorkerService` — 워크플로우 번들링 및 라이프사이클 관리  |
 
 ### @mannercode/testing
 
-Test infrastructure layer.
+테스트 인프라 레이어.
 
-| Module                | Key Exports                                                                     |
-| --------------------- | ------------------------------------------------------------------------------- |
-| **test context**      | `createTestContext()`, `createHttpTestContext()` — isolated NestJS test modules |
-| **http test client**  | `HttpTestClient` — fluent API (`.post().body().created()`)                      |
-| **rpc test client**   | `RpcTestClient` — `.expectRequest()`, `.expectError()`                          |
-| **infra connections** | `getRedisTestConnection()`, `getMongoTestConnection()`, etc.                    |
-| **jest utilities**    | Mocking, spying, fake timers helpers                                            |
+| 모듈                  | 주요 export                                                                  |
+| --------------------- | ---------------------------------------------------------------------------- |
+| **test context**      | `createTestContext()`, `createHttpTestContext()` — 격리된 NestJS 테스트 모듈 |
+| **http test client**  | `HttpTestClient` — fluent API (`.post().body().created()`)                   |
+| **rpc test client**   | `RpcTestClient` — `.expectRequest()`, `.expectError()`                       |
+| **infra connections** | `getRedisTestConnection()`, `getMongoTestConnection()` 등                    |
+| **jest utilities**    | Mocking, spying, fake timers 헬퍼                                            |
 
-For architecture details (SoLA, layer responsibilities, domain design), see [seeds/docs/design-guide.md](../seeds/docs/design-guide.md).
+아키텍처 상세(SoLA, 레이어 책임, 도메인 설계)는 [seeds/docs/design-guide.md](../seeds/docs/design-guide.md) 참조.
