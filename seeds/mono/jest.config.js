@@ -1,7 +1,7 @@
-const { createJsWithTsPreset, pathsToModuleNameMapper } = require('ts-jest')
+const { createDefaultPreset, pathsToModuleNameMapper } = require('ts-jest')
 const tsconfig = require('./tsconfig.json')
 
-const tsJestPreset = createJsWithTsPreset({ tsconfig: 'tsconfig.json' })
+const tsJestPreset = createDefaultPreset({ tsconfig: 'tsconfig.json' })
 const { compilerOptions } = tsconfig
 
 module.exports = {
@@ -9,7 +9,7 @@ module.exports = {
     globalSetup: '<rootDir>/jest.global.js',
     setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
     moduleFileExtensions: ['js', 'json', 'ts'],
-    testRegex: '(__tests__/.*\\.spec\\.(ts|js))$',
+    testRegex: '(__tests__/.*\\.spec\\.ts)$',
     testEnvironment: 'node',
     resetModules: true,
     resetMocks: true,

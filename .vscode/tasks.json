@@ -9,27 +9,41 @@
         },
         { "label": "packages:lint", "type": "shell", "command": "npm run lint" },
         { "label": "packages:test", "type": "shell", "command": "npm test" },
-        { "label": "mono:lint", "type": "shell", "command": "npm --prefix seeds/mono run lint" },
+        {
+            "label": "mono:lint",
+            "type": "shell",
+            "command": "npm --prefix seeds/mono run lint",
+            "dependsOn": ["packages:build"]
+        },
         {
             "label": "mono:test:unit",
             "type": "shell",
-            "command": "npm --prefix seeds/mono run test:unit"
+            "command": "npm --prefix seeds/mono run test:unit",
+            "dependsOn": ["packages:build"]
         },
         {
             "label": "mono:test:e2e",
             "type": "shell",
-            "command": "npm --prefix seeds/mono run test:e2e"
+            "command": "npm --prefix seeds/mono run test:e2e",
+            "dependsOn": ["packages:build"]
         },
-        { "label": "msa:lint", "type": "shell", "command": "npm --prefix seeds/msa run lint" },
+        {
+            "label": "msa:lint",
+            "type": "shell",
+            "command": "npm --prefix seeds/msa run lint",
+            "dependsOn": ["packages:build"]
+        },
         {
             "label": "msa:test:unit",
             "type": "shell",
-            "command": "npm --prefix seeds/msa run test:unit"
+            "command": "npm --prefix seeds/msa run test:unit",
+            "dependsOn": ["packages:build"]
         },
         {
             "label": "msa:test:e2e",
             "type": "shell",
-            "command": "npm --prefix seeds/msa run test:e2e"
+            "command": "npm --prefix seeds/msa run test:e2e",
+            "dependsOn": ["packages:build"]
         },
         {
             "label": "all:test:unit",

@@ -1,4 +1,3 @@
-export * from './base.service'
 export * from './cache'
 export * from './config'
 export * from './date-time-range'
