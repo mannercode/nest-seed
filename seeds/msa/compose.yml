@@ -1,6 +1,8 @@
 x-app-base: &app-base
     environment: ['NODE_ENV=production']
-    env_file: .env
+    env_file:
+        - ../infra/.env
+        - .env
     logging: { options: { max-size: '1m', max-file: '1' } }
     extra_hosts: ['host.docker.internal:host-gateway']
     healthcheck:

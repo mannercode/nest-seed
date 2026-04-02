@@ -1,3 +1,4 @@
+process.loadEnvFile('../infra/.env')
 process.loadEnvFile('.env')
 
 setEnv('NODE_ENV', 'test')

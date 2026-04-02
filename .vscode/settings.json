@@ -1,0 +1,26 @@
+{
+    "files.exclude": {
+        "**/.turbo": true,
+        "**/.DS_Store": true,
+        "**/node_modules": true,
+        "**/*.tsbuildinfo": true
+    },
+    "files.watcherExclude": { "**/_output/**": true },
+    "search.exclude": { "**/_output/**": true },
+    "files.associations": { "*.cfg": "shellscript" },
+    "js/ts.tsc.autoDetect": "off",
+    "js/ts.disableAutomaticTypeAcquisition": true,
+    "js/ts.format.enable": false,
+    "js/ts.validate.enable": false,
+    "js/ts.updateImportsOnFileMove.enabled": "never",
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "[dockerfile]": { "editor.defaultFormatter": "ms-azuretools.vscode-containers" },
+    "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+    "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+    "[html]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+    "[dotenv]": { "editor.defaultFormatter": "mkhl.shfmt" },
+    "[shellscript]": { "editor.defaultFormatter": "mkhl.shfmt" },
+    "[ignore]": { "editor.defaultFormatter": "mkhl.shfmt" },
+    "[properties]": { "editor.defaultFormatter": "mkhl.shfmt" },
+    "[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" }
+}

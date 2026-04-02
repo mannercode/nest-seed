@@ -1,3 +1,4 @@
+process.loadEnvFile('../infra/.env')
 process.loadEnvFile('.env')
 process.env.NODE_ENV = 'development'
 process.env.HTTP_PORT = '4001'
