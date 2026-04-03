@@ -1,5 +1,5 @@
 {
-    "name": "nest-seeds",
+    "name": "nest-seed",
     "private": true,
     "workspaces": [
         "libs/*",
@@ -16,32 +16,24 @@
         "changeset:publish": "npm run build && changeset publish"
     },
     "devDependencies": {
-        "@aws-sdk/client-s3": "^3.1023.0",
         "@changesets/cli": "^2.30.0",
         "@commitlint/cli": "^20.5.0",
         "@commitlint/config-conventional": "^20.5.0",
-        "@nestjs/config": "^4.0.3",
-        "@temporalio/client": "^1.15.0",
         "@temporalio/testing": "^1.15.0",
         "@testcontainers/mongodb": "^11.13.0",
         "@testcontainers/nats": "^11.13.0",
-        "@types/jest": "^30.0.0",
-        "@types/node": "^24",
         "eslint": "^10.1.0",
         "eslint-plugin-perfectionist": "^5.8.0",
         "eslint-plugin-unused-imports": "^4.4.1",
         "globals": "^17.4.0",
         "husky": "^9.1.7",
         "jest": "^30.3.0",
-        "joi": "^18.1.2",
         "lint-staged": "^16.4.0",
         "mongodb": "^7.1.1",
         "prettier": "^3.8.1",
-        "reflect-metadata": "^0.2.2",
         "testcontainers": "^11.13.0",
         "ts-jest": "^29.4.9",
         "turbo": "^2.9.3",
-        "typescript": "^6.0.2",
         "typescript-eslint": "^8.58.0"
     },
     "overrides": {

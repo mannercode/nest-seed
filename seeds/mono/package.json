@@ -2,9 +2,6 @@
     "name": "nest-mono",
     "version": "0.0.1",
     "private": true,
-    "comments": {
-        "apps:*": "App stack scripts for this repo (root-level docker compose)."
-    },
     "scripts": {
         "start": "node _output/dist/index.js",
         "build": "nest build -b webpack",

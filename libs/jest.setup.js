@@ -3,15 +3,15 @@ const { MongoClient } = require('mongodb')
 require('reflect-metadata')
 const { generateTestId, getEnv, setEnv } = require('./jest.utils')
 
-let testlibMongoClient
-let testlibS3Client
+let mongoClient
+let s3Client
 
 beforeAll(async () => {
     await Promise.all([createTestlibMongo(), createTestlibS3Client()])
 })
 
 afterAll(async () => {
-    await Promise.all([testlibMongoClient.close(), testlibS3Client.destroy()])
+    await Promise.all([mongoClient.close(), s3Client.destroy()])
 })
 
 beforeEach(async () => {
@@ -30,26 +30,26 @@ beforeEach(async () => {
     setEnv('TEMPORAL_NAMESPACE', 'default')
 
     const command = new CreateBucketCommand({ Bucket: bucket })
-    await testlibS3Client.send(command)
+    await s3Client.send(command)
 })
 
 afterEach(async () => {
-    await testlibMongoClient.db(getEnv('TESTLIB_MONGO_DATABASE')).dropDatabase()
+    await mongoClient.db(getEnv('TESTLIB_MONGO_DATABASE')).dropDatabase()
 })
 
 async function createTestlibMongo() {
-    testlibMongoClient = new MongoClient(getEnv('TESTLIB_MONGO_URI'))
+    mongoClient = new MongoClient(getEnv('TESTLIB_MONGO_URI'))
 
-    await testlibMongoClient.connect()
+    await mongoClient.connect()
     // Set TTL monitor interval to 1s to speed up TTL index `expires` tests
-    await testlibMongoClient.db('admin').command({ setParameter: 1, ttlMonitorSleepSecs: 1 })
+    await mongoClient.db('admin').command({ setParameter: 1, ttlMonitorSleepSecs: 1 })
 }
 
 function createTestlibS3Client() {
     setEnv('TESTLIB_S3_REGION', 'us-east-1')
     setEnv('TESTLIB_S3_FORCE_PATH_STYLE', 'true')
 
-    testlibS3Client = new S3Client({
+    s3Client = new S3Client({
         endpoint: getEnv('TESTLIB_S3_ENDPOINT'),
         region: getEnv('TESTLIB_S3_REGION'),
         credentials: {

@@ -1,5 +1,3 @@
-setEnv('NODE_ENV', 'test')
-
 const setEnv = (key, value) => {
     process.env[key] = value
 }
@@ -16,5 +14,7 @@ const generateTestId = () => {
         ''
     )
 }
+
+setEnv('NODE_ENV', 'test')
 
 module.exports = { setEnv, getEnv, generateTestId }

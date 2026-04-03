@@ -24,6 +24,7 @@
         "skipLibCheck": true,
 
         "baseUrl": ".",
+        "rootDir": ".",
         "outDir": "./_output/build",
         "paths": { "config": ["src/config/index"], "apps/*": ["src/apps/*"] }
     },

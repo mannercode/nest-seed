@@ -1,11 +1,11 @@
-# nest-seeds
+# nest-seed
 
 NestJS 기반 모노레포. 영화 예매 도메인으로 모놀리식(mono)과 마이크로서비스(msa) 아키텍처 시드를 제공한다.
 
 ## 프로젝트 구조
 
 ```
-nest-seeds/
+nest-seed/
 ├── libs/                ← 공유 라이브러리 (npm 패키지)
 │   ├── common/              @mannercode/common      — Mongoose, Redis, JWT, S3, logging
 │   ├── microservices/        @mannercode/microservices — NATS RPC, Temporal workflows

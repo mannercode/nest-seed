@@ -3,7 +3,7 @@
 ## 모노레포 구조
 
 ```
-nest-seeds/
+nest-seed/
 ├── libs/              # 공유 라이브러리 (@mannercode/*)
 │   ├── common/            # 기본 유틸리티 (Mongoose, Redis, JWT, S3, Logger)
 │   ├── microservices/      # MSA 유틸리티 (NATS RPC, Temporal)
