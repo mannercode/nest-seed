@@ -1,3 +1,10 @@
+1. libs/testing을 libs/common나 libs/microservices에 의존하지 않도록 개선.
+   개선에 어려운 부분은 사전에 보고할 것
+2. libs가 testing -> microservices -> common 이렇게 의존성을 가지는지 면밀하게 점검.
+3. 그 외에 순홤참조 관련 문제 없는지 점검
+
+
+
 - temporal 적용 후 검토는 하지 못한 상태
     - temporal 코드 모두 리뷰하고 libs/common에 통합 가능한지 검토해야 한다
     - temporal 도입하면서 sagaId는 어떻게 할지 재검토 필요

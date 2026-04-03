@@ -4,7 +4,7 @@ import { JwtModule, JwtService } from '@nestjs/jwt'
 import Redis from 'ioredis'
 import { getRedisConnectionToken } from '../redis'
 import { generateShortId } from '../utils'
-import { defaultTo, get, omit } from '../utils'
+import { defaultTo, getByPath, omit } from '../utils'
 
 export const JwtAuthErrors = {
     RefreshTokenInvalid: () => ({
@@ -98,7 +98,7 @@ export class JwtAuthService {
 
             return payload
         } catch (error: unknown) {
-            const message = get(error, 'message', String(error))
+            const message = getByPath(error, 'message', String(error))
 
             throw new UnauthorizedException(JwtAuthErrors.RefreshTokenVerificationFailed(message))
         }

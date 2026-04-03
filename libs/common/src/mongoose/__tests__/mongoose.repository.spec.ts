@@ -1,6 +1,6 @@
 import { expectEqualUnsorted, nullObjectId } from '@mannercode/testing'
 import type { MongooseRepositoryFixture, SampleDto } from './mongoose.repository.fixture'
-import { OrderDirection } from '../../pagination/pagination'
+import { OrderDirection } from '../../pagination'
 import { pickIds } from '../../utils'
 import {
     createSample,

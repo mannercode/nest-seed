@@ -1,6 +1,6 @@
 import { log } from '@temporalio/workflow'
 import { proxyActivities } from '@temporalio/workflow'
-import type { PurchaseActivities, PurchaseInput } from '../activities/purchase.activities'
+import type { PurchaseActivities, PurchaseInput } from '../activities'
 
 const {
     validatePurchase,

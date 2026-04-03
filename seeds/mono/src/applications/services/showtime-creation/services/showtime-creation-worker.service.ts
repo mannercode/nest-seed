@@ -1,5 +1,4 @@
-import { Json, newObjectIdString } from '@mannercode/common'
-import { get } from '@mannercode/common'
+import { getByPath, Json, newObjectIdString } from '@mannercode/common'
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { Job, Queue } from 'bullmq'
@@ -71,7 +70,7 @@ export class ShowtimeCreationWorkerService
 
             await this.processJobData(jobData)
         } catch (error: unknown) {
-            const message = get(error, 'message', String(error))
+            const message = getByPath(error, 'message', String(error))
 
             this.logger.warn('process error, executing compensation', {
                 sagaId: job.data.sagaId,

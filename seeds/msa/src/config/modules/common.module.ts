@@ -12,7 +12,7 @@ import { JwtModule } from '@nestjs/jwt'
 import { Transport } from '@nestjs/microservices'
 import { ScheduleModule } from '@nestjs/schedule'
 import { AppConfigService, getProjectId } from '../config'
-import { RequestValidationPipe } from '../pipes/request-validation.pipe'
+import { RequestValidationPipe } from '../pipes'
 
 @Global()
 @Module({

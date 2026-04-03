@@ -1,4 +1,4 @@
-import { get } from '@mannercode/common'
+import { getByPath } from '@mannercode/common'
 
 describe('error handling', () => {
     describe('async functions', () => {
@@ -58,7 +58,7 @@ describe('error handling', () => {
             try {
                 throwException()
             } catch (error: unknown) {
-                const message = get(error, 'message', String(error))
+                const message = getByPath(error, 'message', String(error))
 
                 expect(error).toBeInstanceOf(Error)
                 expect(message).toBe('error')

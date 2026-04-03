@@ -29,6 +29,13 @@ const testDependencyOptions = { ...sourceDependencyOptions, development: true }
 
 const baseGlobals = { ...globals.node, ...globals.es2021, module: 'readonly', require: 'readonly' }
 
+const barrelImportPatterns = [
+    {
+        regex: '\\.\\./(?!\\.)[^/]+/[^/]+',
+        message: 'Import from the barrel (index.ts) instead of submodules.'
+    }
+]
+
 module.exports = [
     {
         files: ['src/**/*.ts'],
@@ -77,6 +84,7 @@ module.exports = [
                 'warn',
                 { type: 'natural', order: 'asc', newlinesBetween: 0 }
             ],
+            'no-restricted-imports': ['warn', { patterns: [...barrelImportPatterns] }],
             'no-bitwise': 'error',
             'consistent-return': 'error',
             'no-constant-condition': 'warn',
@@ -134,6 +142,7 @@ module.exports = [
                 'warn',
                 {
                     patterns: [
+                        ...barrelImportPatterns,
                         {
                             group: ['controllers', 'controllers/**'],
                             message:
@@ -151,6 +160,7 @@ module.exports = [
                 'warn',
                 {
                     patterns: [
+                        ...barrelImportPatterns,
                         {
                             group: ['applications', 'applications/**'],
                             message:
@@ -172,6 +182,7 @@ module.exports = [
                 'warn',
                 {
                     patterns: [
+                        ...barrelImportPatterns,
                         {
                             group: ['cores', 'cores/**'],
                             message:
@@ -199,6 +210,7 @@ module.exports = [
                 'warn',
                 {
                     patterns: [
+                        ...barrelImportPatterns,
                         {
                             group: ['infrastructures', 'infrastructures/**'],
                             message:
@@ -228,6 +240,7 @@ module.exports = [
                 'warn',
                 {
                     patterns: [
+                        ...barrelImportPatterns,
                         {
                             regex: '^config(/.*)?$',
                             message:

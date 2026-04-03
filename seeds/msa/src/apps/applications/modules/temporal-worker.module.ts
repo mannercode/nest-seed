@@ -7,18 +7,14 @@ import { PaymentsClient } from 'apps/infrastructures'
 import { AppConfigService, getTemporalTaskQueue } from 'config'
 import * as fs from 'fs'
 import * as path from 'path'
-import {
-    createPurchaseActivities,
-    PurchaseModule,
-    TicketPurchaseService
-} from '../services/purchase'
+import { createPurchaseActivities, PurchaseModule, TicketPurchaseService } from '../services'
 import {
     createShowtimeCreationActivities,
     ShowtimeBulkCreatorService,
     ShowtimeBulkValidatorService,
     ShowtimeCreationEvents,
     ShowtimeCreationModule
-} from '../services/showtime-creation'
+} from '../services'
 
 @Module({ imports: [PurchaseModule, ShowtimeCreationModule] })
 export class TemporalWorkerModule implements OnModuleInit, OnModuleDestroy {

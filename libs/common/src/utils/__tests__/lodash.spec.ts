@@ -3,7 +3,7 @@ import {
     defaultTo,
     differenceWith,
     escapeRegExp,
-    get,
+    getByPath,
     isEqual,
     maxBy,
     minBy,
@@ -38,8 +38,8 @@ describe('lodash utilities', () => {
             [obj, 'a.b.d', 'fallback', 'fallback'],
             [obj, 'arr[0].id', undefined, 1],
             [null, 'a.b', 'default', 'default']
-        ])('get(%j, %s, %j) returns %j', (o, path, def, expected) => {
-            expect(get(o, path, def)).toBe(expected)
+        ])('getByPath(%j, %s, %j) returns %j', (o, path, def, expected) => {
+            expect(getByPath(o, path, def)).toBe(expected)
         })
     })
 

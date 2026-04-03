@@ -10,7 +10,7 @@ import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import { JwtModule } from '@nestjs/jwt'
 import { ScheduleModule } from '@nestjs/schedule'
 import { AppConfigService } from '../config'
-import { RequestValidationPipe } from '../pipes/request-validation.pipe'
+import { RequestValidationPipe } from '../pipes'
 
 @Global()
 @Module({

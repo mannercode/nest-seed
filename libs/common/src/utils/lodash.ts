@@ -2,7 +2,7 @@ export function defaultTo<T>(value: T | null | undefined, defaultValue: T): T {
     return value == null || value !== value ? defaultValue : value
 }
 
-export function get(obj: any, path: string, defaultValue?: any): any {
+export function getByPath(obj: any, path: string, defaultValue?: any): any {
     const keys = path.replace(/\[(\d+)]/g, '.$1').split('.')
     let result = obj
 

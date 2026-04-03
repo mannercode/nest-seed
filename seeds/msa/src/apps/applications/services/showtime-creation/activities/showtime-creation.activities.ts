@@ -2,9 +2,11 @@ import type { Json } from '@mannercode/common'
 import type { ShowtimesClient, TicketsClient } from 'apps/cores'
 import { log } from '@temporalio/activity'
 import type { BulkCreateShowtimesDto } from '../dtos'
-import type { ShowtimeBulkCreatorService } from '../services/showtime-bulk-creator.service'
-import type { ShowtimeBulkValidatorService } from '../services/showtime-bulk-validator.service'
-import type { ShowtimeCreationEvent } from '../services/types'
+import type {
+    ShowtimeBulkCreatorService,
+    ShowtimeBulkValidatorService,
+    ShowtimeCreationEvent
+} from '../services'
 import type { ShowtimeCreationEvents } from '../showtime-creation.events'
 
 export interface ShowtimeCreationActivities {

@@ -55,8 +55,8 @@ module.exports = [
                 {
                     patterns: [
                         {
-                            group: ['**/utils/*'],
-                            message: 'Import from the barrel (utils) instead of submodules.'
+                            regex: '\\.\\./(?!\\.)[^/]+/[^/]+',
+                            message: 'Import from the barrel (index.ts) instead of submodules.'
                         }
                     ]
                 }
