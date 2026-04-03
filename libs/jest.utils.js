@@ -15,6 +15,4 @@ const generateTestId = () => {
     )
 }
 
-setEnv('NODE_ENV', 'test')
-
 module.exports = { setEnv, getEnv, generateTestId }
