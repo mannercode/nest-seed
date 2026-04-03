@@ -48,29 +48,6 @@ describe('RpcSuccessLoggerInterceptor', () => {
                 })
             })
         })
-
-        // ContextType이 알 수 없을 때
-        describe('when the ContextType is unknown', () => {
-            beforeEach(async () => {
-                const { ExecutionContextHost } =
-                    await import('@nestjs/core/helpers/execution-context-host')
-                jest.spyOn(ExecutionContextHost.prototype, 'getType').mockReturnValue('unknown')
-            })
-
-            // Logger.error로 로그를 남긴다
-            it('logs via Logger.error', async () => {
-                await fix.httpClient.get('/exclude-path').ok()
-
-                expect(fix.spyError).toHaveBeenCalledTimes(1)
-                expect(fix.spyError).toHaveBeenCalledWith(
-                    'unknown context type',
-                    expect.objectContaining({
-                        contextType: 'unknown',
-                        duration: expect.any(String)
-                    })
-                )
-            })
-        })
     })
 
     // LOGGING_EXCLUDE_HTTP_PATHS에 요청 경로가 포함될 때

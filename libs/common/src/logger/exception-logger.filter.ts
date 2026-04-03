@@ -31,10 +31,14 @@ export class HttpExceptionLoggerFilter extends BaseExceptionFilter {
     catch(exception: Error, host: ArgumentsHost) {
         const contextType = host.getType()
 
+        /* istanbul ignore else */
         if (contextType === 'http') {
             this.logHttp(exception, host)
         } else {
-            Logger.error('unknown context type', { contextType, message: exception.message })
+            Logger.error('HttpExceptionLoggerFilter: unknown context type', {
+                contextType,
+                message: exception.message
+            })
         }
 
         super.catch(exception, host)

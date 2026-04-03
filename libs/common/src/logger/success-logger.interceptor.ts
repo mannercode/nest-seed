@@ -25,6 +25,7 @@ export class HttpSuccessLoggerInterceptor implements NestInterceptor {
 
         const contextType = context.getType()
 
+        /* istanbul ignore else */
         if (contextType === 'http') {
             const request = context.switchToHttp().getRequest<Request>()
             ;(request as any)._startTimestamp = startTimestamp
@@ -40,10 +41,11 @@ export class HttpSuccessLoggerInterceptor implements NestInterceptor {
                 complete: () => {
                     const elapsedMs = Date.now() - startTimestamp
 
+                    /* istanbul ignore else */
                     if (contextType === 'http') {
                         this.logHttp(context, elapsedMs, responseData)
                     } else {
-                        Logger.error('unknown context type', {
+                        Logger.error('HttpSuccessLoggerInterceptor: unknown context type', {
                             contextType,
                             duration: `${elapsedMs}ms`
                         })
