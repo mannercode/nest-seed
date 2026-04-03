@@ -16,7 +16,7 @@
         "changeset:publish": "npm run build && changeset publish"
     },
     "devDependencies": {
-        "@aws-sdk/client-s3": "^3.1022.0",
+        "@aws-sdk/client-s3": "^3.1023.0",
         "@changesets/cli": "^2.30.0",
         "@commitlint/cli": "^20.5.0",
         "@commitlint/config-conventional": "^20.5.0",
@@ -28,7 +28,7 @@
         "@types/jest": "^30.0.0",
         "@types/node": "^24",
         "eslint": "^10.1.0",
-        "eslint-plugin-perfectionist": "^5.7.0",
+        "eslint-plugin-perfectionist": "^5.8.0",
         "eslint-plugin-unused-imports": "^4.4.1",
         "globals": "^17.4.0",
         "husky": "^9.1.7",
@@ -48,5 +48,5 @@
         "ioredis": "$ioredis",
         "lodash": "^4.18.0"
     },
-    "packageManager": "npm@11.12.0"
+    "packageManager": "npm@11.12.1"
 }
