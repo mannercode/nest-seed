@@ -18,12 +18,12 @@ describe('jest.useFakeTimers examples', () => {
     })
 
     it('setSystemTime', () => {
-        const mockDate = new Date('1999-02-31T14:30')
+        const mockTime = new Date('1999-02-28T14:30').getTime()
 
-        jest.setSystemTime(mockDate)
+        jest.setSystemTime(mockTime)
 
         const currentDate = new Date()
 
-        expect(mockDate.toISOString()).toEqual(currentDate.toISOString())
+        expect(currentDate.getTime()).toEqual(mockTime)
     })
 })
