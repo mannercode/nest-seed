@@ -126,7 +126,9 @@ export class HttpTestClient {
 
         expect(response.status).toEqual(status)
 
-        response.body = reviveIsoDates(response.body)
+        response.body = JSON.parse(JSON.stringify(response.body), (_key, value) =>
+            typeof value === 'string' && isoDatePattern.test(value) ? new Date(value) : value
+        )
 
         if (expected !== undefined) {
             expect(response.body).toEqual(expected)
@@ -206,31 +208,3 @@ export class HttpTestClient {
 }
 
 const isoDatePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
-
-function reviveIsoDates(input: any): any {
-    if (typeof input === 'string' && isoDatePattern.test(input)) {
-        return new Date(input)
-    }
-
-    if (input === null || typeof input !== 'object' || input instanceof Date) {
-        return input
-    }
-
-    if (Array.isArray(input)) {
-        return input.map((item) => reviveIsoDates(item))
-    }
-
-    const result: Record<string, unknown> = {}
-
-    for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
-        if (typeof value === 'string' && isoDatePattern.test(value)) {
-            result[key] = new Date(value)
-        } else if (typeof value === 'object') {
-            result[key] = reviveIsoDates(value)
-        } else {
-            result[key] = value
-        }
-    }
-
-    return result
-}
