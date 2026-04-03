@@ -1,7 +1,6 @@
 import { JwtAuthModule, Time } from '@mannercode/common'
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { PassportModule } from '@nestjs/passport'
 import { AppConfigService, getProjectId, MongooseConfigModule, RedisConfigModule } from 'config'
 import { CustomersRepository } from './customers.repository'
 import { CustomersService } from './customers.service'
@@ -15,7 +14,6 @@ import { CustomerAuthenticationService } from './services'
             [{ name: Customer.name, schema: CustomerSchema }],
             MongooseConfigModule.connectionName
         ),
-        PassportModule,
         JwtAuthModule.register({
             inject: [AppConfigService],
             prefix: `jwtauth:${getProjectId()}`,

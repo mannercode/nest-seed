@@ -1,14 +1,26 @@
+import { LocalAuthGuard } from '@mannercode/common'
 import { Injectable, UnauthorizedException } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
+import { CustomersClient } from 'apps/cores'
 import { AuthErrors } from './errors'
 
 @Injectable()
-export class CustomerLocalAuthGuard extends AuthGuard('customer-local') {
-    handleRequest(error: any, user: any) {
-        if (error || !user) {
-            throw new UnauthorizedException(AuthErrors.Unauthorized())
-        }
+export class CustomerLocalAuthGuard extends LocalAuthGuard {
+    constructor(private readonly customersClient: CustomersClient) {
+        super({
+            passwordField: 'password',
+            usernameField: 'email',
+            validate: async (email: string, password: string) => {
+                const customer = await this.customersClient.findCustomerByCredentials({
+                    email,
+                    password
+                })
 
-        return user
+                if (!customer) {
+                    throw new UnauthorizedException(AuthErrors.Unauthorized())
+                }
+
+                return { customerId: customer.id, email }
+            }
+        })
     }
 }

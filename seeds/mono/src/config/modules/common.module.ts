@@ -7,14 +7,16 @@ import {
 import { Global, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
+import { JwtModule } from '@nestjs/jwt'
 import { ScheduleModule } from '@nestjs/schedule'
 import { AppConfigService } from '../config'
 import { RequestValidationPipe } from '../pipes/request-validation.pipe'
 
 @Global()
 @Module({
-    exports: [AppConfigService],
+    exports: [AppConfigService, JwtModule],
     imports: [
+        JwtModule.register({}),
         ConfigModule.forRoot({
             cache: true,
             ignoreEnvFile: true,

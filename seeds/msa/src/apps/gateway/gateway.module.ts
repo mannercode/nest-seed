@@ -9,8 +9,9 @@ import { CustomersClient, MoviesClient, PurchaseRecordsClient, TheatersClient } 
 import { CommonModule } from 'config'
 import {
     BookingHttpController,
-    CustomerJwtStrategy,
-    CustomerLocalStrategy,
+    CustomerJwtAuthGuard,
+    CustomerLocalAuthGuard,
+    CustomerOptionalJwtAuthGuard,
     CustomersHttpController,
     MoviesHttpController,
     PurchaseHttpController,
@@ -30,8 +31,9 @@ import { HealthModule } from './modules'
     ],
     imports: [CommonModule, HealthModule],
     providers: [
-        CustomerLocalStrategy,
-        CustomerJwtStrategy,
+        CustomerJwtAuthGuard,
+        CustomerLocalAuthGuard,
+        CustomerOptionalJwtAuthGuard,
         CustomersClient,
         MoviesClient,
         TheatersClient,

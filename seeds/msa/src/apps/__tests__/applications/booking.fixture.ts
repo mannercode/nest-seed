@@ -25,7 +25,7 @@ import {
     TicketsClient,
     TicketsModule
 } from 'apps/cores'
-import { BookingHttpController, CustomerJwtStrategy } from 'apps/gateway'
+import { BookingHttpController, CustomerJwtAuthGuard } from 'apps/gateway'
 import { AssetsClient, AssetsModule, PaymentsModule } from 'apps/infrastructures'
 
 export type BookingFixture = AppTestContext
@@ -83,7 +83,7 @@ export async function createBookingFixture(): Promise<BookingFixture> {
             BookingModule
         ],
         providers: [
-            CustomerJwtStrategy,
+            CustomerJwtAuthGuard,
             CustomersClient,
             MoviesClient,
             ShowtimesClient,

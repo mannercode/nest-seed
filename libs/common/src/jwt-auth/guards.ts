@@ -58,7 +58,7 @@ export abstract class JwtAuthGuard implements CanActivate {
         ])
     }
 
-    protected isUsingLocalAuth(context: ExecutionContext): boolean {
+    protected isUsingLocalAuth(_context: ExecutionContext): boolean {
         return false
     }
 

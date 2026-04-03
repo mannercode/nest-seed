@@ -20,7 +20,11 @@ import {
     WatchRecordsClient,
     WatchRecordsModule
 } from 'apps/cores'
-import { CustomerJwtStrategy, MoviesHttpController } from 'apps/gateway'
+import {
+    CustomerJwtAuthGuard,
+    CustomerOptionalJwtAuthGuard,
+    MoviesHttpController
+} from 'apps/gateway'
 import { AssetsClient, AssetsModule } from 'apps/infrastructures'
 
 export type RecommendationFixture = AppTestContext & {}
@@ -37,7 +41,8 @@ export async function createRecommendationFixture(): Promise<RecommendationFixtu
             RecommendationModule
         ],
         providers: [
-            CustomerJwtStrategy,
+            CustomerJwtAuthGuard,
+            CustomerOptionalJwtAuthGuard,
             CustomersClient,
             MoviesClient,
             ShowtimesClient,

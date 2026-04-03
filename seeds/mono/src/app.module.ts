@@ -6,8 +6,9 @@ import { CoresModule } from 'cores'
 import { InfrastructuresModule } from 'infrastructures'
 import {
     BookingHttpController,
-    CustomerJwtStrategy,
-    CustomerLocalStrategy,
+    CustomerJwtAuthGuard,
+    CustomerLocalAuthGuard,
+    CustomerOptionalJwtAuthGuard,
     CustomersHttpController,
     MoviesHttpController,
     PurchaseHttpController,
@@ -35,6 +36,6 @@ import { HealthModule } from './modules'
         InfrastructuresModule,
         ApplicationsModule
     ],
-    providers: [CustomerLocalStrategy, CustomerJwtStrategy]
+    providers: [CustomerJwtAuthGuard, CustomerLocalAuthGuard, CustomerOptionalJwtAuthGuard]
 })
 export class AppModule {}

@@ -2,7 +2,11 @@ import type { TestContext } from '@mannercode/testing'
 import type { MovieDto } from 'cores'
 import { DateUtil } from '@mannercode/common'
 import { RecommendationModule } from 'applications'
-import { CustomerJwtStrategy, MoviesHttpController } from 'controllers'
+import {
+    CustomerJwtAuthGuard,
+    CustomerOptionalJwtAuthGuard,
+    MoviesHttpController
+} from 'controllers'
 import { CustomersModule, MoviesModule, ShowtimesModule, WatchRecordsModule } from 'cores'
 import { AssetsModule } from 'infrastructures'
 import type { AppTestContext } from '../__helpers__'
@@ -27,7 +31,7 @@ export async function createRecommendationFixture(): Promise<RecommendationFixtu
             WatchRecordsModule,
             RecommendationModule
         ],
-        providers: [CustomerJwtStrategy]
+        providers: [CustomerJwtAuthGuard, CustomerOptionalJwtAuthGuard]
     })
 
     return { ...ctx }

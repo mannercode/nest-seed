@@ -1,7 +1,7 @@
 import type { TestContext } from '@mannercode/testing'
 import type { TheaterLocation } from 'cores'
 import { BookingModule, PurchaseModule } from 'applications'
-import { BookingHttpController, CustomerJwtStrategy } from 'controllers'
+import { BookingHttpController, CustomerJwtAuthGuard } from 'controllers'
 import {
     CustomersModule,
     MoviesModule,
@@ -77,7 +77,7 @@ export async function createBookingFixture(): Promise<BookingFixture> {
             PurchaseModule,
             BookingModule
         ],
-        providers: [CustomerJwtStrategy]
+        providers: [CustomerJwtAuthGuard]
     })
 
     return { ...ctx }

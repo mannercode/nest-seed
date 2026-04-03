@@ -1,13 +1,12 @@
+import { OptionalJwtAuthGuard } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { CustomerJwtAuthGuard } from './customer-jwt-auth.guard'
+import { Reflector } from '@nestjs/core'
+import { JwtService } from '@nestjs/jwt'
+import { AppConfigService } from 'config'
 
 @Injectable()
-export class CustomerOptionalJwtAuthGuard extends CustomerJwtAuthGuard {
-    handleRequest(error: any, user: any, _info: any, _context: any) {
-        if (error || !user) {
-            return null
-        }
-
-        return user
+export class CustomerOptionalJwtAuthGuard extends OptionalJwtAuthGuard {
+    constructor(jwtService: JwtService, reflector: Reflector, config: AppConfigService) {
+        super(jwtService, reflector, { secret: config.auth.accessSecret })
     }
 }

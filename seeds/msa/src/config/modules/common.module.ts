@@ -8,6 +8,7 @@ import { ClientProxyModule } from '@mannercode/microservices'
 import { Global, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
+import { JwtModule } from '@nestjs/jwt'
 import { Transport } from '@nestjs/microservices'
 import { ScheduleModule } from '@nestjs/schedule'
 import { AppConfigService, getProjectId } from '../config'
@@ -15,7 +16,7 @@ import { RequestValidationPipe } from '../pipes/request-validation.pipe'
 
 @Global()
 @Module({
-    exports: [AppConfigService, ClientProxyModule],
+    exports: [AppConfigService, ClientProxyModule, JwtModule],
     imports: [
         ConfigModule.forRoot({
             cache: true,
@@ -30,7 +31,8 @@ import { RequestValidationPipe } from '../pipes/request-validation.pipe'
                 transport: Transport.NATS
             })
         }),
-        ScheduleModule.forRoot()
+        ScheduleModule.forRoot(),
+        JwtModule.register({})
     ],
     providers: [
         AppConfigService,
