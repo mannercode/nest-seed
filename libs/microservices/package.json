@@ -11,28 +11,6 @@
         "clean": "rm -rf dist *.tsbuildinfo",
         "lint": "eslint src/ --max-warnings=0"
     },
-    "dependencies": {
-        "@mannercode/common": "^2.0.1"
-    },
-    "peerDependencies": {
-        "@nestjs/common": "^11.0.0",
-        "@nestjs/microservices": "^11.0.0",
-        "@temporalio/client": "^1.15.0",
-        "@temporalio/worker": "^1.15.0",
-        "rxjs": "^7.0.0"
-    },
-    "devDependencies": {
-        "@mannercode/testing": "^2.0.1",
-        "@nestjs/common": "^11.1.17",
-        "@nestjs/microservices": "^11.1.17",
-        "@temporalio/client": "^1.15.0",
-        "@temporalio/worker": "^1.15.0",
-        "@types/node": "^24",
-        "reflect-metadata": "^0.2.2",
-        "nats": "^2.29.3",
-        "rxjs": "^7.8.2",
-        "typescript": "^6.0.2"
-    },
     "publishConfig": {
         "access": "public"
     },
@@ -41,5 +19,16 @@
         "type": "git",
         "url": "https://github.com/mannercode/nest-seed.git",
         "directory": "libs/microservices"
+    },
+    "peerDependencies": {
+        "@mannercode/common": "^2.0.1",
+        "@nestjs/common": "^11.0.0",
+        "@nestjs/microservices": "^11.0.0",
+        "@temporalio/client": "^1.15.0",
+        "@temporalio/worker": "^1.15.0",
+        "rxjs": "^7.0.0"
+    },
+    "devDependencies": {
+        "@mannercode/testing": "^2.0.1"
     }
 }

@@ -11,25 +11,6 @@
         "clean": "rm -rf dist *.tsbuildinfo",
         "lint": "eslint src/ --max-warnings=0"
     },
-    "dependencies": {
-        "superagent": "^10.3.0"
-    },
-    "peerDependencies": {
-        "@nestjs/common": "^11.0.0",
-        "@nestjs/testing": "^11.0.0",
-        "class-validator": ">=0.13.2"
-    },
-    "devDependencies": {
-        "@nestjs/common": "^11.1.17",
-        "class-validator": "0.14.4",
-        "@nestjs/platform-express": "^11.1.17",
-        "@nestjs/testing": "^11.1.17",
-        "@types/jest": "^30.0.0",
-        "@types/node": "^24",
-        "@types/superagent": "^8.1.9",
-        "reflect-metadata": "^0.2.2",
-        "typescript": "^6.0.2"
-    },
     "publishConfig": {
         "access": "public"
     },
@@ -38,5 +19,13 @@
         "type": "git",
         "url": "https://github.com/mannercode/nest-seed.git",
         "directory": "libs/testing"
+    },
+    "dependencies": {
+        "superagent": "^10.3.0"
+    },
+    "peerDependencies": {
+        "@nestjs/common": "^11.0.0",
+        "@nestjs/testing": "^11.0.0",
+        "class-validator": "0.14.4"
     }
 }

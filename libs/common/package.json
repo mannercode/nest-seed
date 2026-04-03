@@ -11,6 +11,15 @@
         "clean": "rm -rf dist *.tsbuildinfo",
         "lint": "eslint src/ --max-warnings=0"
     },
+    "publishConfig": {
+        "access": "public"
+    },
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/mannercode/nest-seed.git",
+        "directory": "libs/common"
+    },
     "dependencies": {
         "mongoose-lean-virtuals": "^2.1.0",
         "winston": "^3.19.0",
@@ -34,35 +43,6 @@
         "rxjs": "^7.0.0"
     },
     "devDependencies": {
-        "@mannercode/testing": "^2.0.1",
-        "@aws-sdk/client-s3": "^3.1023.0",
-        "@aws-sdk/s3-presigned-post": "^3.1023.0",
-        "@aws-sdk/s3-request-presigner": "^3.1023.0",
-        "@nestjs/common": "^11.1.17",
-        "@nestjs/config": "^4.0.3",
-        "@nestjs/core": "^11.1.17",
-        "@nestjs/jwt": "^11.0.2",
-        "@nestjs/mongoose": "^11.0.4",
-        "@nestjs/terminus": "^11.1.1",
-        "@types/express": "^5.0.6",
-        "@types/node": "^24",
-        "class-transformer": "^0.5.1",
-        "class-validator": "0.14.4",
-        "express": "^5.2.1",
-        "ioredis": "^5.10.1",
-        "mongoose": "^9.3.3",
-        "reflect-metadata": "^0.2.2",
-        "rxjs": "^7.8.2",
-        "joi": "^18.1.2",
-        "typescript": "^6.0.2"
-    },
-    "publishConfig": {
-        "access": "public"
-    },
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/mannercode/nest-seed.git",
-        "directory": "libs/common"
+        "@mannercode/testing": "^2.0.1"
     }
 }
