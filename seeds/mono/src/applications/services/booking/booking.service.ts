@@ -40,7 +40,7 @@ export class BookingService {
     async holdTickets(dto: HoldTicketsDto) {
         this.logger.log('holdTickets', {
             customerId: dto.customerId,
-            ticketCount: Array.isArray(dto.ticketIds) ? dto.ticketIds.length : 0
+            ticketCount: dto.ticketIds.length
         })
 
         const success = await this.ticketHoldingService.holdTickets(dto)
