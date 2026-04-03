@@ -1,7 +1,6 @@
 import fs from 'fs/promises'
 import { tmpdir } from 'os'
 import path from 'path'
-import { Byte } from '../internals'
 import { createDummyFile } from '../utils'
 
 describe('createDummyFile', () => {
@@ -19,7 +18,7 @@ describe('createDummyFile', () => {
 
     // 지정한 크기의 파일을 생성한다
     it('creates a file of the given size', async () => {
-        const sizeInBytes = Byte.fromString('500KB')
+        const sizeInBytes = 500 * 1024
         await createDummyFile(testFilePath, sizeInBytes)
         const stats = await fs.stat(testFilePath)
         expect(stats.size).toBe(sizeInBytes)

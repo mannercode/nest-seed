@@ -1,32 +1,33 @@
-import { Env } from './internals'
+function envString(key: string): string {
+    const value = process.env[key]
+    if (!value) throw new Error(`Environment variable ${key} is not defined`)
+    return value
+}
 
 export function getRedisTestConnection() {
-    return Env.getString('TESTLIB_REDIS_URL')
+    return envString('TESTLIB_REDIS_URL')
 }
 
 export function getNatsTestConnection() {
-    return JSON.parse(Env.getString('TESTLIB_NATS_OPTIONS'))
+    return JSON.parse(envString('TESTLIB_NATS_OPTIONS'))
 }
 
 export function getMongoTestConnection() {
-    return {
-        dbName: Env.getString('TESTLIB_MONGO_DATABASE'),
-        uri: Env.getString('TESTLIB_MONGO_URI')
-    }
+    return { dbName: envString('TESTLIB_MONGO_DATABASE'), uri: envString('TESTLIB_MONGO_URI') }
 }
 
 export function getTemporalTestConnection() {
-    return Env.getString('TESTLIB_TEMPORAL_ADDRESS')
+    return envString('TESTLIB_TEMPORAL_ADDRESS')
 }
 
 export function getS3TestConnection() {
-    const endpoint = Env.getString('TESTLIB_S3_ENDPOINT')
-    const region = Env.getString('TESTLIB_S3_REGION')
-    const forcePathStyle = Env.getBoolean('TESTLIB_S3_FORCE_PATH_STYLE')
-    const bucket = Env.getString('TESTLIB_S3_BUCKET')
+    const endpoint = envString('TESTLIB_S3_ENDPOINT')
+    const region = envString('TESTLIB_S3_REGION')
+    const forcePathStyle = envString('TESTLIB_S3_FORCE_PATH_STYLE').toLowerCase() === 'true'
+    const bucket = envString('TESTLIB_S3_BUCKET')
     const credentials = {
-        accessKeyId: Env.getString('TESTLIB_S3_ACCESS_KEY'),
-        secretAccessKey: Env.getString('TESTLIB_S3_SECRET_KEY')
+        accessKeyId: envString('TESTLIB_S3_ACCESS_KEY'),
+        secretAccessKey: envString('TESTLIB_S3_SECRET_KEY')
     }
 
     return { bucket, credentials, endpoint, forcePathStyle, region }

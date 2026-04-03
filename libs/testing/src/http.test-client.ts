@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common'
 import { createWriteStream } from 'fs'
 import superagent from 'superagent'
-import { Byte, Json } from './internals'
+import { Json } from './internals'
 
 type EventMessage = { data: string; event: string; id: number }
 
@@ -49,7 +49,7 @@ export class HttpTestClient {
         const writeStream = createWriteStream(downloadFilePath)
 
         // Remove the default 200MB limit
-        this.agent.maxResponseSize(Byte.fromString('1TB'))
+        this.agent.maxResponseSize(1024 ** 4)
 
         this.agent.buffer().parse((response, callback) => {
             response.on('data', (chunk: any) => {

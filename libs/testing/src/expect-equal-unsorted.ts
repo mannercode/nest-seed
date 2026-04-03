@@ -1,5 +1,3 @@
-import { omit, pickBy, sortBy } from './internals'
-
 /**
  * Sorts and compares arrays of objects.
  * 객체 배열을 정렬하여 비교합니다.
@@ -63,5 +61,38 @@ function stringifyWithSortedKeys(record: Record<string, any>): string {
             return Object.fromEntries(sortedPairs)
         }
         return value
+    })
+}
+
+function omit<T extends object>(obj: T, keys: string[]): Omit<T, string> {
+    const result = { ...obj }
+
+    for (const key of keys) {
+        delete (result as any)[key]
+    }
+
+    return result
+}
+
+function pickBy<T extends object>(
+    obj: T,
+    predicate: (value: T[keyof T], key: string) => boolean
+): Partial<T> {
+    const result: Partial<T> = {}
+    for (const [key, value] of Object.entries(obj)) {
+        if (predicate(value as T[keyof T], key)) {
+            ;(result as any)[key] = value
+        }
+    }
+    return result
+}
+
+function sortBy<T>(arr: T[], key: (item: T) => any): T[] {
+    return [...arr].sort((a, b) => {
+        const va = key(a)
+        const vb = key(b)
+        if (va < vb) return -1
+        if (va > vb) return 1
+        return 0
     })
 }
