@@ -1,23 +1,11 @@
-import { HttpTestClient } from '@mannercode/testing'
-import {
-    createHttpTestContext,
-    getNatsTestConnection,
-    RpcTestClient,
-    withTestId
-} from '@mannercode/testing'
+import { HttpTestClient, createHttpTestContext } from '@mannercode/testing'
 import { Controller, Get, Query, ValidationPipe } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
-import { MicroserviceOptions, NatsOptions } from '@nestjs/microservices'
-import { MessagePattern, Payload, Transport } from '@nestjs/microservices'
 import { PaginationDto } from '..'
 
 export const maxSizeValue = 50
 
-export type PaginationFixture = {
-    httpClient: HttpTestClient
-    rpcClient: RpcTestClient
-    teardown: () => Promise<void>
-}
+export type PaginationFixture = { httpClient: HttpTestClient; teardown: () => Promise<void> }
 
 @Controller()
 class SamplesController {
@@ -25,24 +13,10 @@ class SamplesController {
     async getPagination(@Query() query: PaginationDto) {
         return { response: query }
     }
-
-    @MessagePattern(withTestId('getRpcPagination'))
-    getRpcPagination(@Payload() query: PaginationDto) {
-        return { response: query }
-    }
 }
 
 export async function createPaginationFixture() {
-    const brokerOpts = {
-        options: getNatsTestConnection(),
-        transport: Transport.NATS
-    } as NatsOptions
-
     const { httpClient, ...ctx } = await createHttpTestContext({
-        configureApp: async (app) => {
-            app.connectMicroservice<MicroserviceOptions>(brokerOpts, { inheritAppConfig: true })
-            await app.startAllMicroservices()
-        },
         controllers: [SamplesController],
         providers: [
             {
@@ -57,12 +31,9 @@ export async function createPaginationFixture() {
         ]
     })
 
-    const rpcClient = RpcTestClient.create(brokerOpts)
-
     const teardown = async () => {
-        await rpcClient.close()
         await ctx.close()
     }
 
-    return { httpClient, rpcClient, teardown }
+    return { httpClient, teardown }
 }

@@ -1,7 +1,6 @@
 import { mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { CreateShowtimeDto, SearchShowtimesDto } from './dtos'
-import { ShowtimeDto } from './dtos'
+import { CreateShowtimeDto, SearchShowtimesDto, ShowtimeDto } from './dtos'
 import { Showtime } from './models'
 import { ShowtimesRepository } from './showtimes.repository'
 

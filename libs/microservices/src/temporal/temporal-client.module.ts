@@ -1,5 +1,4 @@
-import { DynamicModule } from '@nestjs/common'
-import { Global, Inject, Module } from '@nestjs/common'
+import { DynamicModule, Global, Inject, Module } from '@nestjs/common'
 import { Client, Connection } from '@temporalio/client'
 
 export type TemporalClientModuleOptions = {

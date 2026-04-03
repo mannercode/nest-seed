@@ -1,6 +1,5 @@
 import { JwtAuthTokens, PaginationResult } from '@mannercode/common'
-import { ClientProxyService } from '@mannercode/microservices'
-import { InjectClientProxy } from '@mannercode/microservices'
+import { ClientProxyService, InjectClientProxy } from '@mannercode/microservices'
 import { Injectable } from '@nestjs/common'
 import { Messages } from 'config'
 import {

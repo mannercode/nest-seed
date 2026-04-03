@@ -1,5 +1,4 @@
-import { QueryBuilderOptions } from '@mannercode/common'
-import { MongooseRepository, QueryBuilder } from '@mannercode/common'
+import { QueryBuilderOptions, MongooseRepository, QueryBuilder } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { MongooseConfigModule } from 'config'

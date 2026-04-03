@@ -1,6 +1,5 @@
 import { Controller, Get, Injectable, Module } from '@nestjs/common'
-import { HealthCheckService, HealthIndicatorFunction } from '@nestjs/terminus'
-import { TerminusModule } from '@nestjs/terminus'
+import { HealthCheckService, HealthIndicatorFunction, TerminusModule } from '@nestjs/terminus'
 
 @Injectable()
 class HealthService {

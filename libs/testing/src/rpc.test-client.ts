@@ -1,27 +1,32 @@
-import type { NatsOptions } from '@nestjs/microservices'
-import { ClientProxyService } from '@mannercode/microservices'
-import { ClientProxyFactory } from '@nestjs/microservices'
+export interface RpcProxy {
+    emit(event: string, payload: any): Promise<void>
+    onModuleDestroy(): Promise<void>
+    request<T>(cmd: string, payload?: any): Promise<T>
+}
 
-export class RpcTestClient extends ClientProxyService {
-    static create(options: NatsOptions) {
-        const proxy = ClientProxyFactory.create(options)
+export class RpcTestClient {
+    constructor(private readonly proxy: RpcProxy) {}
 
-        return new RpcTestClient(proxy)
+    emit(event: string, payload: any): Promise<void> {
+        return this.proxy.emit(event, payload)
+    }
+
+    request<T>(cmd: string, payload?: any): Promise<T> {
+        return this.proxy.request(cmd, payload)
     }
 
     async close() {
-        await this.onModuleDestroy()
+        await this.proxy.onModuleDestroy()
     }
 
     async expectError(cmd: string, payload: any, expected: any) {
-        const promise = super.request(cmd, payload)
-        const error = await promise.catch((e) => e)
+        const error = await this.proxy.request(cmd, payload).catch((e) => e)
 
         expect(error).toEqual(expected)
     }
 
     async expectRequest<T>(cmd: string, payload: any, expected: any): Promise<T> {
-        const value = await super.request<T>(cmd, payload)
+        const value = await this.proxy.request<T>(cmd, payload)
 
         if (expected !== undefined) {
             expect(value).toEqual(expected)

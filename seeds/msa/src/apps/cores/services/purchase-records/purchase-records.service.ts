@@ -1,7 +1,6 @@
 import { mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { CreatePurchaseRecordDto } from './dtos'
-import { PurchaseRecordDto } from './dtos'
+import { CreatePurchaseRecordDto, PurchaseRecordDto } from './dtos'
 import { PurchaseRecord } from './models'
 import { PurchaseRecordsRepository } from './purchase-records.repository'
 

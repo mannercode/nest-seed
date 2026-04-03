@@ -1,5 +1,4 @@
-import { JwtAuthService } from '@mannercode/common'
-import { InjectJwtAuth } from '@mannercode/common'
+import { JwtAuthService, InjectJwtAuth } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { compare, hash } from 'bcrypt'
 import { CustomersRepository } from '../customers.repository'

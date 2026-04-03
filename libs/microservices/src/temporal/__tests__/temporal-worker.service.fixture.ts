@@ -1,6 +1,5 @@
 import { createTestContext, getTemporalTestConnection } from '@mannercode/testing'
-import type { TemporalWorkerOptions } from '../temporal-worker.service'
-import { TemporalWorkerService } from '../temporal-worker.service'
+import { type TemporalWorkerOptions, TemporalWorkerService } from '../temporal-worker.service'
 
 export type TemporalWorkerServiceFixture = {
     service: TemporalWorkerService

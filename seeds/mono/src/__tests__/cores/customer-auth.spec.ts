@@ -1,7 +1,6 @@
 import type { JwtAuthTokens } from '@mannercode/common'
 import type { CustomerAuthFixture } from './customer-auth.fixture'
-import { createCustomer } from '../__helpers__'
-import { Errors, loginCustomer } from '../__helpers__'
+import { createCustomer, Errors, loginCustomer } from '../__helpers__'
 
 describe('CustomerAuth', () => {
     let fix: CustomerAuthFixture

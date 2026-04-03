@@ -7,8 +7,7 @@ import { BulkCreateShowtimesDto } from '../dtos'
 import { ShowtimeCreationEvents } from '../showtime-creation.events'
 import { ShowtimeBulkCreatorService } from './showtime-bulk-creator.service'
 import { ShowtimeBulkValidatorService } from './showtime-bulk-validator.service'
-import { ShowtimeCreationJobData } from './types'
-import { ShowtimeCreationStatus } from './types'
+import { ShowtimeCreationJobData, ShowtimeCreationStatus } from './types'
 
 @Injectable()
 @Processor('showtime-creation')

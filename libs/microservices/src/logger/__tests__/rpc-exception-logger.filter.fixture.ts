@@ -1,5 +1,5 @@
-import { HttpTestClient } from '@mannercode/testing'
 import {
+    HttpTestClient,
     createHttpTestContext,
     getNatsTestConnection,
     RpcTestClient,
@@ -7,8 +7,8 @@ import {
 } from '@mannercode/testing'
 import { Controller, Get, NotFoundException } from '@nestjs/common'
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
-import { NatsOptions } from '@nestjs/microservices'
-import { MessagePattern, Transport } from '@nestjs/microservices'
+import { ClientProxyFactory, MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
+import { ClientProxyService } from '../../rpc'
 import { RpcExceptionLoggerFilter } from '../rpc-exception-logger.filter'
 import { RpcSuccessLoggerInterceptor } from '../rpc-success-logger.interceptor'
 
@@ -64,7 +64,9 @@ export async function createRpcExceptionLoggerFilterFixture() {
     const { Logger } = await import('@nestjs/common')
     const spyWarn = jest.spyOn(Logger, 'warn')
     const spyError = jest.spyOn(Logger, 'error')
-    const rpcClient = RpcTestClient.create(brokerOptions)
+    const rpcClient = new RpcTestClient(
+        new ClientProxyService(ClientProxyFactory.create(brokerOptions))
+    )
 
     const teardown = async () => {
         await rpcClient.close()

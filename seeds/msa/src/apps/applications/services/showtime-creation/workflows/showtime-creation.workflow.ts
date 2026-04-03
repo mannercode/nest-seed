@@ -1,5 +1,4 @@
-import { log } from '@temporalio/workflow'
-import { proxyActivities } from '@temporalio/workflow'
+import { log, proxyActivities } from '@temporalio/workflow'
 import type { ShowtimeCreationActivities } from '../activities'
 
 const { emitStatusChanged, validateShowtimes, createShowtimes, compensateShowtimeCreation } =

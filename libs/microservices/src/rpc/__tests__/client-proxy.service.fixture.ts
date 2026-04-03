@@ -1,18 +1,20 @@
-import { HttpTestClient } from '@mannercode/testing'
 import {
+    HttpTestClient,
     createHttpTestContext,
     getNatsTestConnection,
     RpcTestClient,
     withTestId
 } from '@mannercode/testing'
-import { MessageEvent } from '@nestjs/common'
-import { Controller, Get, Sse } from '@nestjs/common'
-import { NatsOptions } from '@nestjs/microservices'
-import { EventPattern, MessagePattern, Transport } from '@nestjs/microservices'
-import { Observable } from 'rxjs'
-import { ReplaySubject } from 'rxjs'
-import { ClientProxyService } from '../client-proxy.service'
-import { ClientProxyModule, InjectClientProxy } from '../client-proxy.service'
+import { Controller, Get, MessageEvent, Sse } from '@nestjs/common'
+import {
+    ClientProxyFactory,
+    EventPattern,
+    MessagePattern,
+    NatsOptions,
+    Transport
+} from '@nestjs/microservices'
+import { Observable, ReplaySubject } from 'rxjs'
+import { ClientProxyModule, ClientProxyService, InjectClientProxy } from '../client-proxy.service'
 
 export type ClientProxyServiceFixture = {
     httpClient: HttpTestClient
@@ -80,7 +82,9 @@ export async function createClientProxyServiceFixture() {
         imports: [ClientProxyModule.registerAsync({ useFactory: () => brokerOptions })]
     })
 
-    const rpcClient = RpcTestClient.create(brokerOptions)
+    const rpcClient = new RpcTestClient(
+        new ClientProxyService(ClientProxyFactory.create(brokerOptions))
+    )
 
     const teardown = async () => {
         await rpcClient.close()

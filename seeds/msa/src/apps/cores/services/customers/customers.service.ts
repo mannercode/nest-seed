@@ -6,9 +6,9 @@ import {
     CustomerAuthPayload,
     CustomerCredentialsDto,
     SearchCustomersPageDto,
-    UpdateCustomerDto
+    UpdateCustomerDto,
+    CustomerDto
 } from './dtos'
-import { CustomerDto } from './dtos'
 import { CustomerErrors } from './errors'
 import { Customer } from './models'
 import { CustomerAuthenticationService } from './services'

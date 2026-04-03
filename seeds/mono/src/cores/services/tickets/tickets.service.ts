@@ -4,9 +4,9 @@ import {
     AggregateTicketSalesDto,
     CreateTicketDto,
     CreateTicketsResult,
-    SearchTicketsDto
+    SearchTicketsDto,
+    TicketDto
 } from './dtos'
-import { TicketDto } from './dtos'
 import { Ticket, TicketStatus } from './models'
 import { TicketsRepository } from './tickets.repository'
 

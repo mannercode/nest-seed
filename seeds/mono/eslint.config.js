@@ -3,6 +3,7 @@ const tseslint = require('typescript-eslint')
 const allowedDependenciesPlugin = require('eslint-plugin-allowed-dependencies').default
 const perfectionistPlugin = require('eslint-plugin-perfectionist')
 const globals = require('globals')
+const importPlugin = require('eslint-plugin-import')
 const jestPlugin = require('eslint-plugin-jest')
 const unusedImportsPlugin = require('eslint-plugin-unused-imports')
 
@@ -52,6 +53,7 @@ module.exports = [
         plugins: {
             '@typescript-eslint': tseslint.plugin,
             allowed: allowedDependenciesPlugin,
+            import: importPlugin,
             perfectionist: perfectionistPlugin,
             'unused-imports': unusedImportsPlugin
         },
@@ -85,6 +87,7 @@ module.exports = [
                 { type: 'natural', order: 'asc', newlinesBetween: 0 }
             ],
             'no-restricted-imports': ['warn', { patterns: [...barrelImportPatterns] }],
+            'import/no-duplicates': ['warn', { 'prefer-inline': false }],
             'no-bitwise': 'error',
             'consistent-return': 'error',
             'no-constant-condition': 'warn',

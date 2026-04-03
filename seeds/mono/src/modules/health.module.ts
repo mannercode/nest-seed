@@ -1,7 +1,6 @@
 import { RedisHealthIndicator } from '@mannercode/common'
 import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
-import { HealthCheckService, MongooseHealthIndicator } from '@nestjs/terminus'
-import { TerminusModule } from '@nestjs/terminus'
+import { HealthCheckService, MongooseHealthIndicator, TerminusModule } from '@nestjs/terminus'
 import { MongooseConfigModule, RedisConfigModule } from 'config'
 import Redis from 'ioredis'
 import mongoose from 'mongoose'

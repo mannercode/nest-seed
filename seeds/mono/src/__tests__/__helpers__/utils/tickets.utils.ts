@@ -1,7 +1,6 @@
 import type { TestContext } from '@mannercode/testing'
 import type { CreateTicketDto } from 'cores'
-import { newObjectIdString } from '@mannercode/common'
-import { uniq } from '@mannercode/common'
+import { newObjectIdString, uniq } from '@mannercode/common'
 import { oid } from '@mannercode/testing'
 import { TicketStatus } from 'cores'
 

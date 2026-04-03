@@ -1,10 +1,8 @@
-import { DynamicModule } from '@nestjs/common'
-import { Inject, Injectable, Module, UnauthorizedException } from '@nestjs/common'
+import { DynamicModule, Inject, Injectable, Module, UnauthorizedException } from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
 import Redis from 'ioredis'
 import { getRedisConnectionToken } from '../redis'
-import { generateShortId } from '../utils'
-import { defaultTo, getByPath, omit } from '../utils'
+import { defaultTo, generateShortId, getByPath, omit } from '../utils'
 
 export const JwtAuthErrors = {
     RefreshTokenInvalid: () => ({

@@ -1,5 +1,4 @@
-import { DynamicModule, Provider } from '@nestjs/common'
-import { Module } from '@nestjs/common'
+import { DynamicModule, Module, Provider } from '@nestjs/common'
 import Redis, { Cluster } from 'ioredis'
 import { defaultTo } from '../utils'
 import { getRedisConnectionToken } from './redis.tokens'

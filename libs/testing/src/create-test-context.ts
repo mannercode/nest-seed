@@ -2,12 +2,11 @@ import {
     CanActivate,
     ExecutionContext,
     INestApplication,
+    Injectable,
     ModuleMetadata,
     Type
 } from '@nestjs/common'
-import { Injectable } from '@nestjs/common'
-import { TestingModule } from '@nestjs/testing'
-import { Test } from '@nestjs/testing'
+import { Test, TestingModule } from '@nestjs/testing'
 import { Server } from 'http'
 import { isDebuggingEnabled } from './utils'
 

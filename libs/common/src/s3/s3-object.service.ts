@@ -1,20 +1,17 @@
-import { S3ClientConfig } from '@aws-sdk/client-s3'
 import {
     DeleteObjectCommand,
     GetObjectCommand,
     HeadObjectCommand,
     ListObjectsV2Command,
     PutObjectCommand,
-    S3Client
+    S3Client,
+    S3ClientConfig
 } from '@aws-sdk/client-s3'
-import { PresignedPost } from '@aws-sdk/s3-presigned-post'
-import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
+import { PresignedPost, createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-import { DynamicModule, OnModuleDestroy } from '@nestjs/common'
-import { Inject, Injectable, Module } from '@nestjs/common'
+import { DynamicModule, Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
 import { newObjectIdString } from '../mongoose'
-import { HttpUtil } from '../utils'
-import { defaultTo } from '../utils'
+import { HttpUtil, defaultTo } from '../utils'
 
 export interface S3ServiceConfig extends S3ClientConfig {
     bucket: string

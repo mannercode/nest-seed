@@ -1,7 +1,6 @@
 import { createTestContext } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { ConfigModule } from '@nestjs/config'
+import { ConfigModule, ConfigService } from '@nestjs/config'
 import Joi from 'joi'
 import { BaseConfigService } from '../base-config.service'
 

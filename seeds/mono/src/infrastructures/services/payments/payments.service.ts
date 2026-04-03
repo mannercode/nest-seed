@@ -1,7 +1,6 @@
 import { mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { CreatePaymentDto } from './dtos'
-import { PaymentDto } from './dtos'
+import { CreatePaymentDto, PaymentDto } from './dtos'
 import { Payment } from './models'
 import { PaymentsRepository } from './payments.repository'
 

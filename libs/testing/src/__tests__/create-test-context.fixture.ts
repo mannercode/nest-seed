@@ -1,6 +1,13 @@
+import { ClientProxyService } from '@mannercode/microservices'
 import { Controller, Get, Injectable, Param } from '@nestjs/common'
-import { MicroserviceOptions, NatsOptions } from '@nestjs/microservices'
-import { MessagePattern, Payload, Transport } from '@nestjs/microservices'
+import {
+    ClientProxyFactory,
+    MessagePattern,
+    MicroserviceOptions,
+    NatsOptions,
+    Payload,
+    Transport
+} from '@nestjs/microservices'
 import { HttpTestClient } from '../http.test-client'
 import { createHttpTestContext, getNatsTestConnection, RpcTestClient, withTestId } from '../index'
 
@@ -52,7 +59,8 @@ export async function createTestContextFixture(): Promise<TestContextFixture> {
         providers: [SampleService]
     })
 
-    const rpcClient = RpcTestClient.create(brokerOpts)
+    const proxy = new ClientProxyService(ClientProxyFactory.create(brokerOpts))
+    const rpcClient = new RpcTestClient(proxy)
     const sampleService = ctx.module.get(SampleService)
 
     const teardown = async () => {

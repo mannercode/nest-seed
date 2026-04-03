@@ -1,4 +1,3 @@
-import { withTestId } from '@mannercode/testing'
 import { BadRequestException } from '@nestjs/common'
 import { plainToInstance } from 'class-transformer'
 import type { PaginationFixture } from './pagination.fixture'
@@ -60,23 +59,14 @@ describe('PaginationDto', () => {
         })
     })
 
-    describe('RPC controller', () => {
-        // 요청이 유효할 때
-        describe('when the request is valid', () => {
-            let input: Record<string, any>
+    // orderby가 이미 객체일 때
+    describe('when orderby is already an object', () => {
+        // 값을 그대로 반환한다
+        it('returns the value as-is', () => {
+            const orderby = { direction: 'asc', name: 'name' }
+            const dto = plainToInstance(PaginationDto, { orderby })
 
-            beforeEach(() => {
-                const page = 2
-                const size = 3
-                input = { size, orderby: { direction: 'asc', name: 'name' }, page }
-            })
-
-            // PaginationDto를 처리한다
-            it('handles PaginationDto', async () => {
-                await fix.rpcClient.expectRequest(withTestId('getRpcPagination'), input, {
-                    response: input
-                })
-            })
+            expect((dto as any).orderby).toEqual(orderby)
         })
     })
 

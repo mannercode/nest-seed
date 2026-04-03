@@ -1,4 +1,5 @@
 const tseslint = require('typescript-eslint')
+const importPlugin = require('eslint-plugin-import')
 const perfectionistPlugin = require('eslint-plugin-perfectionist')
 const globals = require('globals')
 const unusedImportsPlugin = require('eslint-plugin-unused-imports')
@@ -20,6 +21,7 @@ module.exports = [
         },
         plugins: {
             '@typescript-eslint': tseslint.plugin,
+            import: importPlugin,
             perfectionist: perfectionistPlugin,
             'unused-imports': unusedImportsPlugin
         },
@@ -61,6 +63,7 @@ module.exports = [
                     ]
                 }
             ],
+            'import/no-duplicates': ['warn', { 'prefer-inline': false }],
             'no-bitwise': 'error',
             'consistent-return': 'error',
             'no-constant-condition': 'warn',

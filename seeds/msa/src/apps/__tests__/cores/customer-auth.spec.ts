@@ -1,6 +1,5 @@
 import type { JwtAuthTokens } from '@mannercode/common'
-import { createCustomer } from 'apps/__tests__/__helpers__'
-import { Errors, loginCustomer } from 'apps/__tests__/__helpers__'
+import { createCustomer, Errors, loginCustomer } from 'apps/__tests__/__helpers__'
 import type { CustomerAuthFixture } from './customer-auth.fixture'
 
 describe('CustomerAuth', () => {

@@ -1,7 +1,6 @@
 import { createTestContext, getMongoTestConnection } from '@mannercode/testing'
 import { getModelToken, MongooseModule, Schema as NestSchema, Prop } from '@nestjs/mongoose'
-import { Model, Types } from 'mongoose'
-import { mongo, Schema } from 'mongoose'
+import { Model, Schema, Types, mongo } from 'mongoose'
 import { createMongooseSchema, MongooseSchema } from '../mongoose.schema'
 
 export type MongooseSchemaFixture = {

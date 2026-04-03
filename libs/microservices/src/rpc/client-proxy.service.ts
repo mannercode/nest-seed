@@ -1,10 +1,23 @@
 import { defaultTo, Json } from '@mannercode/common'
-import { DynamicModule, OnModuleDestroy } from '@nestjs/common'
-import { Global, HttpException, Inject, Injectable, Module } from '@nestjs/common'
-import { ClientProvider, ClientProxy } from '@nestjs/microservices'
-import { ClientsModule } from '@nestjs/microservices'
-import { Observable } from 'rxjs'
-import { catchError, defaultIfEmpty, lastValueFrom, retry, throwError, timer } from 'rxjs'
+import {
+    DynamicModule,
+    Global,
+    HttpException,
+    Inject,
+    Injectable,
+    Module,
+    OnModuleDestroy
+} from '@nestjs/common'
+import { ClientProvider, ClientProxy, ClientsModule } from '@nestjs/microservices'
+import {
+    Observable,
+    catchError,
+    defaultIfEmpty,
+    lastValueFrom,
+    retry,
+    throwError,
+    timer
+} from 'rxjs'
 
 export type ClientProxyModuleOptions = {
     inject?: any[]

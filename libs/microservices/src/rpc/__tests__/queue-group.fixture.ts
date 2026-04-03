@@ -5,8 +5,8 @@ import {
     withTestId
 } from '@mannercode/testing'
 import { Controller } from '@nestjs/common'
-import { NatsOptions } from '@nestjs/microservices'
-import { MessagePattern, Transport } from '@nestjs/microservices'
+import { ClientProxyFactory, MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
+import { ClientProxyService } from '../../rpc'
 
 @Controller()
 export class MessageController {
@@ -55,7 +55,9 @@ export async function createQueueGroupFixture() {
         )
     )
 
-    const rpcClient = RpcTestClient.create(brokerOptions)
+    const rpcClient = new RpcTestClient(
+        new ClientProxyService(ClientProxyFactory.create(brokerOptions))
+    )
 
     const teardown = async () => {
         await rpcClient.close()

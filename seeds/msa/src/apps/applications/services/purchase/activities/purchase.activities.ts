@@ -1,8 +1,7 @@
 import type { PurchaseRecordsClient } from 'apps/cores'
 import type { PaymentsClient } from 'apps/infrastructures'
 import { HttpException } from '@nestjs/common'
-import { log } from '@temporalio/activity'
-import { ApplicationFailure } from '@temporalio/activity'
+import { log, ApplicationFailure } from '@temporalio/activity'
 import type { TicketPurchaseService } from '../services'
 
 export type PurchaseInput = {
