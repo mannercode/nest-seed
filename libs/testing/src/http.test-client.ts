@@ -1,7 +1,6 @@
 import { HttpStatus } from '@nestjs/common'
 import { createWriteStream } from 'fs'
 import superagent from 'superagent'
-import { Json } from './internals'
 
 type EventMessage = { data: string; event: string; id: number }
 
@@ -49,6 +48,7 @@ export class HttpTestClient {
         const writeStream = createWriteStream(downloadFilePath)
 
         // Remove the default 200MB limit
+        // 1TB — superagent 기본 200MB 제한 해제
         this.agent.maxResponseSize(1024 ** 4)
 
         this.agent.buffer().parse((response, callback) => {
@@ -126,7 +126,7 @@ export class HttpTestClient {
 
         expect(response.status).toEqual(status)
 
-        response.body = Json.reviveIsoDates(response.body)
+        response.body = reviveIsoDates(response.body)
 
         if (expected !== undefined) {
             expect(response.body).toEqual(expected)
@@ -203,4 +203,34 @@ export class HttpTestClient {
 
         return parsedMessage as EventMessage
     }
+}
+
+const isoDatePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+
+function reviveIsoDates(input: any): any {
+    if (typeof input === 'string' && isoDatePattern.test(input)) {
+        return new Date(input)
+    }
+
+    if (input === null || typeof input !== 'object' || input instanceof Date) {
+        return input
+    }
+
+    if (Array.isArray(input)) {
+        return input.map((item) => reviveIsoDates(item))
+    }
+
+    const result: Record<string, unknown> = {}
+
+    for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
+        if (typeof value === 'string' && isoDatePattern.test(value)) {
+            result[key] = new Date(value)
+        } else if (typeof value === 'object') {
+            result[key] = reviveIsoDates(value)
+        } else {
+            result[key] = value
+        }
+    }
+
+    return result
 }
