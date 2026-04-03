@@ -16,10 +16,12 @@
     },
     "peerDependencies": {
         "@nestjs/common": "^11.0.0",
-        "@nestjs/testing": "^11.0.0"
+        "@nestjs/testing": "^11.0.0",
+        "class-validator": ">=0.13.2"
     },
     "devDependencies": {
         "@nestjs/common": "^11.1.17",
+        "class-validator": "0.14.4",
         "@nestjs/platform-express": "^11.1.17",
         "@nestjs/testing": "^11.1.17",
         "@types/jest": "^30.0.0",

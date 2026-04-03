@@ -1,5 +1,5 @@
+import type { Response } from '@mannercode/testing'
 import type { MovieDto, ShowtimeDto, TheaterDto } from 'apps/cores'
-import type { Response } from 'superagent'
 import { DateUtil } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
 import { createMovie, createShowtimes, createTheater } from 'apps/__tests__/__helpers__'

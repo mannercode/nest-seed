@@ -1,5 +1,5 @@
+import type { Response } from '@mannercode/testing'
 import type { MovieDto, ShowtimeDto, TheaterDto } from 'cores'
-import type { Response } from 'superagent'
 import { DateUtil } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
 import type { ShowtimeCreationFixture } from './showtime-creation.fixture'

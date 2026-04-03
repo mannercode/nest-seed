@@ -1,7 +1,9 @@
 import { HttpStatus } from '@nestjs/common'
 import { isDateString } from 'class-validator'
 import { createWriteStream } from 'fs'
-import superagent from 'superagent'
+import superagent, { type Response } from 'superagent'
+
+export type { Response }
 
 type EventMessage = { data: string; event: string; id: number }
 
