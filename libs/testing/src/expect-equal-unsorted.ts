@@ -1,4 +1,4 @@
-import { omit, pickBy, sortBy } from '@mannercode/common'
+import { omit, pickBy, sortBy } from './internals'
 
 /**
  * Sorts and compares arrays of objects.

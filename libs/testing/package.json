@@ -12,7 +12,6 @@
         "lint": "eslint src/ --max-warnings=0"
     },
     "dependencies": {
-        "@mannercode/common": "^2.0.1",
         "@mannercode/microservices": "^2.0.1",
         "superagent": "^10.3.0"
     },
@@ -22,6 +21,7 @@
         "@nestjs/testing": "^11.0.0"
     },
     "devDependencies": {
+        "@mannercode/common": "^2.0.1",
         "@nestjs/common": "^11.1.17",
         "@nestjs/microservices": "^11.1.17",
         "@nestjs/platform-express": "^11.1.17",

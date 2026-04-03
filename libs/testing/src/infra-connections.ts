@@ -1,4 +1,4 @@
-import { Env } from '@mannercode/common'
+import { Env } from './internals'
 
 export function getRedisTestConnection() {
     return Env.getString('TESTLIB_REDIS_URL')

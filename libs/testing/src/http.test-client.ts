@@ -1,7 +1,7 @@
-import { Byte, Json } from '@mannercode/common'
 import { HttpStatus } from '@nestjs/common'
 import { createWriteStream } from 'fs'
 import superagent from 'superagent'
+import { Byte, Json } from './internals'
 
 type EventMessage = { data: string; event: string; id: number }
 
