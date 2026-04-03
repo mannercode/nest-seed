@@ -1,3 +1,5 @@
+import { isDateString } from 'class-validator'
+
 export class Json {
     /**
      * Wraps 64-bit integers in a JSON string with quotes to preserve precision.
@@ -41,10 +43,7 @@ export class Json {
      * @returns {any} The converted object (date strings become Date objects).
      */
     static reviveIsoDates(input: any): any {
-        if (
-            typeof input === 'string' &&
-            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(input)
-        ) {
+        if (isDateString(input)) {
             return new Date(input)
         }
 
@@ -64,11 +63,8 @@ export class Json {
         const source = input as Record<string, unknown>
 
         for (const [key, nestedValue] of Object.entries(source)) {
-            if (
-                typeof nestedValue === 'string' &&
-                /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(nestedValue)
-            ) {
-                convertedObject[key] = new Date(nestedValue)
+            if (isDateString(nestedValue)) {
+                convertedObject[key] = new Date(nestedValue as string)
             } else if (typeof nestedValue === 'object') {
                 convertedObject[key] = Json.reviveIsoDates(nestedValue)
             } else {

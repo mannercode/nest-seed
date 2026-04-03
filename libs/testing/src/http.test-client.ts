@@ -1,4 +1,5 @@
 import { HttpStatus } from '@nestjs/common'
+import { isDateString } from 'class-validator'
 import { createWriteStream } from 'fs'
 import superagent from 'superagent'
 
@@ -127,7 +128,7 @@ export class HttpTestClient {
         expect(response.status).toEqual(status)
 
         response.body = JSON.parse(response.text, (_key, value) =>
-            typeof value === 'string' && isoDatePattern.test(value) ? new Date(value) : value
+            isDateString(value) ? new Date(value) : value
         )
 
         if (expected !== undefined) {
@@ -206,5 +207,3 @@ export class HttpTestClient {
         return parsedMessage as EventMessage
     }
 }
-
-const isoDatePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
