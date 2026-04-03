@@ -17,27 +17,50 @@ Passport 없이 NestJS Guard(`CanActivate`)를 직접 구현한 구조다.
 
 ## 인증 흐름
 
-```
-[회원가입] POST /customers → CustomersService.create()
-                              └─ bcrypt hash 후 DB 저장
+```plantuml
+@startuml
+actor Client
+participant Controller
+participant LocalAuthGuard
+participant JwtAuthGuard
+participant JwtAuthService
+database Redis
 
-[로그인]   POST /customers/login → LocalAuthGuard.canActivate()
-                                    └─ body에서 email/password 추출
-                                    └─ validate() → bcrypt.compare
-                                    └─ request.user = { customerId, email }
-                                  → Controller.login()
-                                    └─ JwtAuthService.generateAuthTokens(payload)
-                                    └─ { accessToken, refreshToken } 반환
+== 회원가입 ==
+Client -> Controller: POST /customers
+Controller -> Controller: bcrypt hash 후 DB 저장
+Controller --> Client: 201 Created
 
-[인증 요청] GET /customers/:id → JwtAuthGuard.canActivate()
-                                  └─ Authorization: Bearer <accessToken>
-                                  └─ jwtService.verifyAsync(token, { secret })
-                                  └─ request.user = decoded payload
+== 로그인 ==
+Client -> Controller: POST /customers/login\n{ email, password }
+Controller -> LocalAuthGuard: canActivate()
+LocalAuthGuard -> LocalAuthGuard: body에서 email/password 추출
+LocalAuthGuard -> LocalAuthGuard: validate() → bcrypt.compare
+LocalAuthGuard -> Controller: request.user = { customerId, email }
+Controller -> JwtAuthService: generateAuthTokens(payload)
+JwtAuthService -> JwtAuthService: accessToken 서명 (accessSecret, 짧은 TTL)
+JwtAuthService -> JwtAuthService: refreshToken 서명 (refreshSecret, 긴 TTL)
+JwtAuthService -> Redis: SET refreshTokenId → refreshToken (TTL)
+JwtAuthService --> Controller: { accessToken, refreshToken }
+Controller --> Client: 200 OK { accessToken, refreshToken }
 
-[토큰 갱신] POST /customers/refresh → JwtAuthService.refreshAuthTokens()
-                                       └─ refreshToken 검증
-                                       └─ Redis에 저장된 값과 비교
-                                       └─ 새 access/refresh 토큰 쌍 발급
+== 인증 요청 ==
+Client -> Controller: GET /customers/:id\nAuthorization: Bearer <accessToken>
+Controller -> JwtAuthGuard: canActivate()
+JwtAuthGuard -> JwtAuthGuard: verifyAsync(token, accessSecret)
+JwtAuthGuard -> Controller: request.user = decoded payload
+Controller --> Client: 200 OK
+
+== 토큰 갱신 ==
+Client -> Controller: POST /customers/refresh\n{ refreshToken }
+Controller -> JwtAuthService: refreshAuthTokens(refreshToken)
+JwtAuthService -> JwtAuthService: verifyAsync(token, refreshSecret)
+JwtAuthService -> Redis: GET refreshTokenId
+JwtAuthService -> JwtAuthService: 저장된 토큰과 비교
+JwtAuthService -> Redis: SET 새 refreshTokenId (TTL)
+JwtAuthService --> Controller: { accessToken, refreshToken }
+Controller --> Client: 200 OK { accessToken, refreshToken }
+@enduml
 ```
 
 ## 토큰 구조
@@ -46,6 +69,60 @@ Passport 없이 NestJS Guard(`CanActivate`)를 직접 구현한 구조다.
 - **Refresh Token**: 긴 TTL, `refreshSecret`으로 서명, `refreshTokenId` 포함
 - 두 토큰 모두 `jti`(JWT ID)를 포함한다
 - Refresh token은 Redis에 `{prefix}:{refreshTokenId}` 키로 저장되며 TTL이 설정된다
+
+## Guard 판단 흐름
+
+```plantuml
+@startuml
+start
+
+:HTTP 요청 수신;
+
+if (@Public() 메타데이터?) then (yes)
+    :인증 없이 통과;
+    stop
+endif
+
+if (LocalAuthGuard 사용?) then (yes)
+    :body에서 username/password 추출;
+    if (validate() 성공?) then (yes)
+        :request.user = 검증 결과;
+        stop
+    else (no)
+        :UnauthorizedException;
+        stop
+    endif
+endif
+
+if (OptionalJwtAuthGuard?) then (yes)
+    if (Bearer 토큰 존재?) then (yes)
+        if (토큰 유효?) then (yes)
+            :request.user = payload;
+        else (no)
+            :request.user = null;
+        endif
+    else (no)
+        :request.user = null;
+    endif
+    stop
+endif
+
+note right: JwtAuthGuard (기본)
+if (Bearer 토큰 존재?) then (yes)
+    if (토큰 유효?) then (yes)
+        :request.user = payload;
+        stop
+    else (no)
+        :UnauthorizedException;
+        stop
+    endif
+else (no)
+    :UnauthorizedException;
+    stop
+endif
+
+@enduml
+```
 
 ## 가드 사용 패턴
 
