@@ -19,10 +19,7 @@
         "@nestjs/testing": "^11.0.0"
     },
     "devDependencies": {
-        "@mannercode/common": "^2.0.1",
-        "@mannercode/microservices": "^2.0.1",
         "@nestjs/common": "^11.1.17",
-        "@nestjs/microservices": "^11.1.17",
         "@nestjs/platform-express": "^11.1.17",
         "@nestjs/testing": "^11.1.17",
         "@types/jest": "^30.0.0",

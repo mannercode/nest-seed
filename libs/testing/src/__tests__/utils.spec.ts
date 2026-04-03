@@ -1,5 +1,7 @@
-import { Byte, Path } from '@mannercode/common'
 import fs from 'fs/promises'
+import { tmpdir } from 'os'
+import path from 'path'
+import { Byte } from '../internals'
 import { createDummyFile } from '../utils'
 
 describe('createDummyFile', () => {
@@ -7,12 +9,12 @@ describe('createDummyFile', () => {
     let testFilePath: string
 
     beforeEach(async () => {
-        tempDir = await Path.createTempDirectory()
-        testFilePath = Path.join(tempDir, 'test-file.txt')
+        tempDir = await fs.mkdtemp(`${tmpdir()}${path.sep}`)
+        testFilePath = path.join(tempDir, 'test-file.txt')
     })
 
     afterEach(async () => {
-        await Path.delete(tempDir)
+        await fs.rm(tempDir, { force: true, recursive: true })
     })
 
     // 지정한 크기의 파일을 생성한다

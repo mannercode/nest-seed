@@ -22,6 +22,7 @@
         "rxjs": "^7.0.0"
     },
     "devDependencies": {
+        "@mannercode/testing": "^2.0.1",
         "@nestjs/common": "^11.1.17",
         "@nestjs/microservices": "^11.1.17",
         "@temporalio/client": "^1.15.0",

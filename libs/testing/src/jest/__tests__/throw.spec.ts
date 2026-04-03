@@ -1,5 +1,3 @@
-import { getByPath } from '@mannercode/common'
-
 describe('error handling', () => {
     describe('async functions', () => {
         // 값으로 resolve된다
@@ -58,10 +56,8 @@ describe('error handling', () => {
             try {
                 throwException()
             } catch (error: unknown) {
-                const message = getByPath(error, 'message', String(error))
-
                 expect(error).toBeInstanceOf(Error)
-                expect(message).toBe('error')
+                expect((error as Error).message).toBe('error')
             }
         })
     })

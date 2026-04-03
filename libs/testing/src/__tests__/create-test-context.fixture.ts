@@ -1,19 +1,9 @@
-import { ClientProxyService } from '@mannercode/microservices'
 import { Controller, Get, Injectable, Param } from '@nestjs/common'
-import {
-    ClientProxyFactory,
-    MessagePattern,
-    MicroserviceOptions,
-    NatsOptions,
-    Payload,
-    Transport
-} from '@nestjs/microservices'
 import { HttpTestClient } from '../http.test-client'
-import { createHttpTestContext, getNatsTestConnection, RpcTestClient, withTestId } from '../index'
+import { createHttpTestContext } from '../index'
 
 export type TestContextFixture = {
     httpClient: HttpTestClient
-    rpcClient: RpcTestClient
     sampleService: SampleService
     teardown: () => Promise<void>
 }
@@ -31,24 +21,10 @@ class SampleController {
     async getHttpMessage(@Param('arg') arg: string) {
         return { received: arg }
     }
-
-    @MessagePattern(withTestId('getRpcMessage'))
-    getRpcMessage(@Payload() request: { arg: string }) {
-        return { id: request.arg }
-    }
 }
 
 export async function createTestContextFixture(): Promise<TestContextFixture> {
-    const brokerOpts = {
-        options: getNatsTestConnection(),
-        transport: Transport.NATS
-    } as NatsOptions
-
     const { httpClient, ...ctx } = await createHttpTestContext({
-        configureApp: async (app) => {
-            app.connectMicroservice<MicroserviceOptions>(brokerOpts, { inheritAppConfig: true })
-            await app.startAllMicroservices()
-        },
         controllers: [SampleController],
         overrideProviders: [
             {
@@ -59,14 +35,11 @@ export async function createTestContextFixture(): Promise<TestContextFixture> {
         providers: [SampleService]
     })
 
-    const proxy = new ClientProxyService(ClientProxyFactory.create(brokerOpts))
-    const rpcClient = new RpcTestClient(proxy)
     const sampleService = ctx.module.get(SampleService)
 
     const teardown = async () => {
-        await rpcClient.close()
         await ctx.close()
     }
 
-    return { httpClient, rpcClient, sampleService, teardown }
+    return { httpClient, sampleService, teardown }
 }

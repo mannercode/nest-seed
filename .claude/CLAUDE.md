@@ -7,9 +7,9 @@ NestJS 기반 모노레포. 영화 예매 도메인으로 모놀리식(mono)과 
 ```
 nest-seed/
 ├── libs/                ← 공유 라이브러리 (npm 패키지)
-│   ├── common/              @mannercode/common      — Mongoose, Redis, JWT, S3, logging
-│   ├── microservices/        @mannercode/microservices — NATS RPC, Temporal workflows
-│   └── testing/             @mannercode/testing      — 테스트 컨텍스트, HTTP/RPC 클라이언트
+│   ├── common/              @mannercode/common      — Mongoose, Redis, JWT, S3, HTTP logging
+│   ├── microservices/        @mannercode/microservices — NATS RPC, Temporal, RPC logging
+│   └── testing/             @mannercode/testing      — 테스트 컨텍스트, HTTP/RPC 클라이언트 (독립)
 │
 ├── seeds/                   ← 프로젝트 시드 (복사해서 새 프로젝트 시작)
 │   ├── mono/                모놀리식    — NestJS, MongoDB, Redis, BullMQ, EventEmitter2
