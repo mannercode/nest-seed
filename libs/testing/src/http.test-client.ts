@@ -126,7 +126,7 @@ export class HttpTestClient {
 
         expect(response.status).toEqual(status)
 
-        response.body = JSON.parse(JSON.stringify(response.body), (_key, value) =>
+        response.body = JSON.parse(response.text, (_key, value) =>
             typeof value === 'string' && isoDatePattern.test(value) ? new Date(value) : value
         )
 
