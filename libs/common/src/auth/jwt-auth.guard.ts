@@ -1,19 +1,10 @@
 import { CanActivate, ExecutionContext } from '@nestjs/common'
-import { Injectable, SetMetadata, UnauthorizedException } from '@nestjs/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
-import { defaultTo } from '../utils'
-
-export const IS_PUBLIC_KEY = 'isPublic'
-export const Public = () => SetMetadata(IS_PUBLIC_KEY, true)
+import { IS_PUBLIC_KEY } from './public.decorator'
 
 export type JwtAuthGuardOptions = { secret: string }
-
-export type LocalAuthGuardOptions = {
-    passwordField?: string
-    usernameField?: string
-    validate: (username: string, password: string) => Promise<object | null>
-}
 
 @Injectable()
 export abstract class JwtAuthGuard implements CanActivate {
@@ -104,32 +95,5 @@ export abstract class OptionalJwtAuthGuard extends JwtAuthGuard {
 
         const [type, token] = authorization.split(' ')
         return type === 'Bearer' ? token : undefined
-    }
-}
-
-@Injectable()
-export abstract class LocalAuthGuard implements CanActivate {
-    constructor(protected readonly options: LocalAuthGuardOptions) {}
-
-    async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest()
-        const usernameField = defaultTo(this.options.usernameField, 'username')
-        const passwordField = defaultTo(this.options.passwordField, 'password')
-
-        const username = request.body?.[usernameField]
-        const password = request.body?.[passwordField]
-
-        if (!username || !password) {
-            throw new UnauthorizedException()
-        }
-
-        const user = await this.options.validate(username, password)
-
-        if (!user) {
-            throw new UnauthorizedException()
-        }
-
-        request.user = user
-        return true
     }
 }

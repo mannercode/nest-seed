@@ -4,7 +4,9 @@ import { GUARDS_METADATA } from '@nestjs/common/constants'
 import { Reflector } from '@nestjs/core'
 import { JwtModule, JwtService } from '@nestjs/jwt'
 import { defaultTo } from '../../utils'
-import { JwtAuthGuard, LocalAuthGuard, OptionalJwtAuthGuard, Public } from '../guards'
+import { JwtAuthGuard, OptionalJwtAuthGuard } from '../jwt-auth.guard'
+import { LocalAuthGuard } from '../local-auth.guard'
+import { Public } from '../public.decorator'
 
 const TEST_SECRET = 'test-secret'
 

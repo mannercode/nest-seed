@@ -1,4 +1,4 @@
-import { JwtAuthErrors } from './jwt-auth'
+import { JwtAuthErrors } from './auth'
 import { LatLongErrors } from './lat-long'
 import { MongooseErrors } from './mongoose'
 import { PaginationErrors } from './pagination'
