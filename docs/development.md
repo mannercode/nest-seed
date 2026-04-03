@@ -37,42 +37,40 @@ infra/local/              # 로컬 인프라 Docker Compose
 
 ### Mono
 
-| Script                | Description                                                       |
-| --------------------- | ----------------------------------------------------------------- |
-| `npm run build`       | 프로덕션 빌드                                                     |
-| `npm run start`       | 빌드된 앱 실행                                                    |
-| `npm run debug`       | Watch 모드로 개발 실행                                            |
-| `npm test`            | 단위 테스트 실행 (coverage 포함)                                  |
-| `npm run test:e2e`    | E2E 테스트 실행 (인프라 + 앱 자동 재시작)                         |
-| `npm run lint`        | TypeScript 타입 체크, ESLint, Prettier 검사                       |
-| `npm run format`      | ESLint 자동 수정 및 Prettier 포맷팅                               |
-| `npm run infra:reset` | 인프라 초기화 (down + up + wait)                                  |
-| `npm run infra:gui`   | 관리 콘솔 포함 인프라 실행 (mongo-express, RedisInsight, Grafana) |
-| `npm run apps:reset`  | 앱 서비스 초기화 (down + up + wait)                               |
+| Script               | Description                                 |
+| -------------------- | ------------------------------------------- |
+| `npm run build`      | 프로덕션 빌드                               |
+| `npm run start`      | 빌드된 앱 실행                              |
+| `npm run debug`      | Watch 모드로 개발 실행                      |
+| `npm test`           | 단위 테스트 실행 (coverage 포함)            |
+| `npm run test:e2e`   | E2E 테스트 실행 (인프라 + 앱 자동 재시작)   |
+| `npm run lint`       | TypeScript 타입 체크, ESLint, Prettier 검사 |
+| `npm run format`     | ESLint 자동 수정 및 Prettier 포맷팅         |
+| `npm run apps:reset` | 앱 서비스 초기화 (down + up + wait)         |
 
 ### MSA
 
-| Script                | Description                                                       |
-| --------------------- | ----------------------------------------------------------------- |
-| `npm run build`       | 특정 앱 빌드 (`TARGET_APP=gateway npm run build`)                 |
-| `npm run start`       | 빌드된 앱 실행 (`TARGET_APP=gateway npm run start`)               |
-| `npm run dev`         | Watch 모드로 개발 실행 (`TARGET_APP=gateway npm run dev`)         |
-| `npm test`            | 전체 테스트 실행 (단위 + E2E)                                     |
-| `npm run test:unit`   | 단위 테스트 실행 (coverage 포함)                                  |
-| `npm run test:e2e`    | E2E 테스트 실행 (인프라 + 앱 자동 재시작)                         |
-| `npm run lint`        | TypeScript 타입 체크, ESLint, Prettier 검사                       |
-| `npm run format`      | ESLint 자동 수정 및 Prettier 포맷팅                               |
-| `npm run infra:reset` | 인프라 초기화 (down + up + wait)                                  |
-| `npm run infra:gui`   | 관리 콘솔 포함 인프라 실행 (mongo-express, RedisInsight, Grafana) |
-| `npm run apps:reset`  | 앱 서비스 초기화 (down + up + wait)                               |
+| Script               | Description                                               |
+| -------------------- | --------------------------------------------------------- |
+| `npm run build`      | 특정 앱 빌드 (`TARGET_APP=gateway npm run build`)         |
+| `npm run start`      | 빌드된 앱 실행 (`TARGET_APP=gateway npm run start`)       |
+| `npm run dev`        | Watch 모드로 개발 실행 (`TARGET_APP=gateway npm run dev`) |
+| `npm test`           | 전체 테스트 실행 (단위 + E2E)                             |
+| `npm run test:unit`  | 단위 테스트 실행 (coverage 포함)                          |
+| `npm run test:e2e`   | E2E 테스트 실행 (인프라 + 앱 자동 재시작)                 |
+| `npm run lint`       | TypeScript 타입 체크, ESLint, Prettier 검사               |
+| `npm run format`     | ESLint 자동 수정 및 Prettier 포맷팅                       |
+| `npm run apps:reset` | 앱 서비스 초기화 (down + up + wait)                       |
+
+인프라는 Dev Container가 시작 시 자동으로 올린다. 수동 관리가 필요하면 `bash dev-infra/up.sh`를 실행한다.
 
 ---
 
 ## 환경 파일
 
-### `seeds/infra/.env`
+### `dev-infra/.env`
 
-인프라 설정을 통합 관리한다. Docker 이미지 태그와 인프라 접속 정보(MongoDB, Redis, NATS, MinIO, Temporal)가 포함된다. Dev Container 실행 시 `--env-file`로 컨테이너 환경변수에 주입되므로, 앱과 테스트에서 별도 파일 로딩 없이 `process.env`로 접근 가능하다.
+Docker 이미지 태그와 인프라 접속 정보(MongoDB, Redis, NATS, MinIO, Temporal)를 통합 관리한다. Dev Container 실행 시 `--env-file`로 컨테이너 환경변수에 주입되므로, 앱과 테스트에서 별도 파일 로딩 없이 `process.env`로 접근 가능하다.
 
 ### `seeds/mono/.env`, `seeds/msa/.env`
 
@@ -91,7 +89,7 @@ infra/local/              # 로컬 인프라 Docker Compose
 
 1. 호스트에서 [Git credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials)를 설정한다.
 2. VS Code에서 "Reopen in Container" 명령을 실행한다.
-3. Dev Container는 `.devcontainer/Dockerfile`(베이스 `node:24-slim`)을 사용하며, `postCreateCommand`/`postStartCommand`로 `npm ci` 및 `npm run infra:reset`을 자동 실행한다.
+3. Dev Container는 `.devcontainer/Dockerfile`(베이스 `node:24-slim`)을 사용하며, `postCreateCommand`로 `npm ci`, `postStartCommand`로 인프라를 자동으로 시작한다.
 4. Dev Container 안에서도 별도 환경 변수 설정 없이 `npm run test:e2e`를 바로 실행할 수 있다.
 
 ---
@@ -383,11 +381,11 @@ coverageThreshold: {
 
 ### Dev Container 시작 후 인프라 연결 실패
 
-`postStartCommand`로 실행된 `npm run infra:reset`이 완료되기 전에 테스트를 실행하면 연결 오류가 발생할 수 있다. 터미널에서 `npm run infra:reset`이 완료될 때까지 기다린 후 테스트를 실행한다.
+`postStartCommand`로 실행된 인프라 시작이 완료되기 전에 테스트를 실행하면 연결 오류가 발생할 수 있다. 터미널에서 인프라 초기화가 완료될 때까지 기다린 후 테스트를 실행한다.
 
 ### `npm test` 실행 시 타임아웃
 
-Testcontainers가 처음 실행될 때 Docker 이미지를 pull한다. 네트워크 환경에 따라 시간이 걸릴 수 있다. `.env.infra`에 정의된 이미지를 미리 `docker pull`해 두면 단축된다.
+Testcontainers가 처음 실행될 때 Docker 이미지를 pull한다. 네트워크 환경에 따라 시간이 걸릴 수 있다. `dev-infra/.env`에 정의된 이미지를 미리 `docker pull`해 두면 단축된다.
 
 ### ESLint 계층 규칙 위반 경고
 
@@ -395,4 +393,4 @@ Testcontainers가 처음 실행될 때 Docker 이미지를 pull한다. 네트워
 
 ### MongoDB 트랜잭션 오류 (로컬)
 
-로컬 MongoDB가 replica set으로 구성되지 않으면 트랜잭션이 실패한다. `npm run infra:reset`으로 인프라를 재시작하면 3-node replica set이 자동으로 초기화된다.
+로컬 MongoDB가 replica set으로 구성되지 않으면 트랜잭션이 실패한다. Dev Container를 재시작하면 인프라가 자동으로 초기화되어 3-node replica set이 구성된다.

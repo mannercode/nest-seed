@@ -1,5 +1,5 @@
 x-nats-base: &nats-base
-    extends: { file: ./compose.common.yml, service: common-options }
+    extends: { file: ../compose.common.yml, service: common-options }
     image: ${NATS_IMAGE}
     deploy: { resources: { limits: { memory: 256m } } }
     shm_size: '8m'
@@ -33,7 +33,7 @@ services:
         depends_on: ['nats1']
 
     nats-setup:
-        extends: { file: ./compose.common.yml, service: common-options }
+        extends: { file: ../compose.common.yml, service: common-options }
         container_name: nats-setup
         image: natsio/nats-box
         depends_on:

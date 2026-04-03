@@ -1,6 +1,6 @@
 services:
     temporal-postgresql:
-        extends: { file: ./compose.common.yml, service: common-options }
+        extends: { file: ../compose.common.yml, service: common-options }
         image: postgres:17-alpine
         container_name: temporal-postgresql
         environment:
@@ -14,7 +14,7 @@ services:
         shm_size: '16m'
 
     temporal:
-        extends: { file: ./compose.common.yml, service: common-options }
+        extends: { file: ../compose.common.yml, service: common-options }
         image: ${TEMPORAL_IMAGE}
         container_name: temporal
         depends_on:
@@ -34,7 +34,7 @@ services:
         shm_size: '16m'
 
     temporal-setup:
-        extends: { file: ./compose.common.yml, service: common-options }
+        extends: { file: ../compose.common.yml, service: common-options }
         image: docker:cli
         container_name: temporal-setup
         depends_on:
@@ -44,7 +44,7 @@ services:
 
     temporal-ui:
         profiles: ['gui']
-        extends: { file: ./compose.common.yml, service: common-options }
+        extends: { file: ../compose.common.yml, service: common-options }
         image: temporalio/ui:latest
         container_name: temporal-ui
         depends_on:

@@ -1,5 +1,4 @@
-const path = require('path')
-process.loadEnvFile(path.resolve(__dirname, '.env.infra'))
+setEnv('NODE_ENV', 'test')
 
 const setEnv = (key, value) => {
     process.env[key] = value
@@ -12,12 +11,10 @@ const getEnv = (key) => {
 }
 
 const generateTestId = () => {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+    const chars = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
     return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join(
         ''
     )
 }
-
-setEnv('NODE_ENV', 'test')
 
 module.exports = { setEnv, getEnv, generateTestId }

@@ -3,7 +3,7 @@
 ## 모노레포 구조
 
 ```
-nest-templates/
+nest-seeds/
 ├── libs/              # 공유 라이브러리 (@mannercode/*)
 │   ├── common/            # 기본 유틸리티 (Mongoose, Redis, JWT, S3, Logger)
 │   ├── microservices/      # MSA 유틸리티 (NATS RPC, Temporal)
@@ -64,4 +64,4 @@ nest-templates/
 | **infra connections** | `getRedisTestConnection()`, `getMongoTestConnection()` 등                    |
 | **jest utilities**    | Mocking, spying, fake timers 헬퍼                                            |
 
-아키텍처 상세(SoLA, 레이어 책임, 도메인 설계)는 [seeds/docs/design-guide.md](../seeds/docs/design-guide.md) 참조.
+아키텍처 상세(SoLA, 레이어 책임, 도메인 설계)는 [설계 가이드](design-guide.md) 참조.

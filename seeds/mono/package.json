@@ -3,8 +3,7 @@
     "version": "0.0.1",
     "private": true,
     "comments": {
-        "apps:*": "App stack scripts for this repo (root-level docker compose).",
-        "infra:*": "Shared infrastructure scripts using seeds/infra/ compose files."
+        "apps:*": "App stack scripts for this repo (root-level docker compose)."
     },
     "scripts": {
         "start": "node _output/dist/index.js",
@@ -18,12 +17,7 @@
         "apps:down": "docker compose down -v -t 0 --remove-orphans",
         "apps:up": "  docker compose up -d --build",
         "apps:wait": "docker wait apps-setup && docker rm apps-setup",
-        "apps:reset": "npm run apps:down && npm run apps:up && npm run apps:wait",
-        "infra:down": "COMPOSE_PROFILES=gui docker compose --project-directory ../infra -f ../infra/compose.yml down -v -t 0 --remove-orphans",
-        "infra:up": "                       docker compose --project-directory ../infra -f ../infra/compose.yml up -d",
-        "infra:wait": "docker wait infra-setup && docker rm infra-setup",
-        "infra:reset": "npm run infra:down && npm run infra:up && npm run infra:wait",
-        "infra:gui": " COMPOSE_PROFILES=gui npm run infra:reset"
+        "apps:reset": "npm run apps:down && npm run apps:up && npm run apps:wait"
     },
     "dependencies": {
         "@mannercode/common": "^2.0.0",
@@ -38,7 +32,6 @@
         "@nestjs/event-emitter": "^3.0.1",
         "@nestjs/jwt": "^11.0.2",
         "@nestjs/mapped-types": "^2.1.1",
-        "@nestjs/microservices": "^11.1.17",
         "@nestjs/mongoose": "^11.0.4",
         "@nestjs/platform-express": "^11.1.17",
         "@nestjs/schedule": "^6.1.1",
@@ -59,8 +52,6 @@
         "winston-daily-rotate-file": "^5.0.0"
     },
     "devDependencies": {
-        "@commitlint/cli": "^20.5.0",
-        "@commitlint/config-conventional": "^20.5.0",
         "@nestjs/cli": "^11.0.17",
         "@nestjs/schematics": "^11.0.10",
         "@nestjs/testing": "^11.1.17",
@@ -76,9 +67,7 @@
         "eslint-plugin-perfectionist": "^5.8.0",
         "eslint-plugin-unused-imports": "^4.4.1",
         "globals": "^17.4.0",
-        "husky": "^9.1.7",
         "jest": "^30.3.0",
-        "lint-staged": "^16.4.0",
         "prettier": "^3.8.1",
         "superagent": "^10.3.0",
         "ts-jest": "^29.4.9",

@@ -1,11 +1,11 @@
-# nest-templates
+# nest-seeds
 
 NestJS 기반 모노레포. 영화 예매 도메인으로 모놀리식(mono)과 마이크로서비스(msa) 아키텍처 시드를 제공한다.
 
 ## 프로젝트 구조
 
 ```
-nest-templates/
+nest-seeds/
 ├── libs/                ← 공유 라이브러리 (npm 패키지)
 │   ├── common/              @mannercode/common      — Mongoose, Redis, JWT, S3, logging
 │   ├── microservices/        @mannercode/microservices — NATS RPC, Temporal workflows
@@ -14,9 +14,9 @@ nest-templates/
 ├── seeds/                   ← 프로젝트 시드 (복사해서 새 프로젝트 시작)
 │   ├── mono/                모놀리식    — NestJS, MongoDB, Redis, BullMQ, EventEmitter2
 │   ├── msa/                 마이크로서비스 — NestJS, MongoDB, Redis, NATS, Temporal
-│   └── infra/               공용 인프라 (Docker Compose, 환경변수)
+├── dev-infra/               ← 개발 인프라 (Docker Compose, 환경변수)
 │
-└── docs/                    ← 아키텍처 문서
+└── docs/                    ← 아키텍처·설계 문서
 ```
 
 두 시드는 동일한 레이어드 아키텍처(SoLA)와 도메인 모델을 공유하며, 통신 및 오케스트레이션 전략이 다르다.
@@ -51,11 +51,10 @@ npm test
 ```bash
 cd seeds/mono   # 또는 seeds/msa
 npm ci
-npm run infra:reset
 npm test
 ```
 
-상세 설정은 [seeds/docs/development.md](seeds/docs/development.md) 참조.
+상세 설정은 [docs/development.md](docs/development.md) 참조.
 
 ## 모노레포 스크립트
 
@@ -103,11 +102,11 @@ npm test
 ## 문서
 
 - [패키지 아키텍처](docs/architecture.md) — 모노레포 구조, 패키지 의존 그래프, 모듈 상세
-- [설계 가이드](seeds/docs/design-guide.md) — SoLA 아키텍처, REST API 설계, 엔티티 설계
+- [설계 가이드](docs/design-guide.md) — SoLA 아키텍처, REST API 설계, 엔티티 설계
 - [프로젝트 컨벤션](seeds/CONVENTIONS.md) — 네이밍 규칙, 테스트 컨벤션
-- [개발 환경](seeds/docs/development.md) — 스크립트, 프로젝트 구조, ESLint 규칙
-- [설계 결정](seeds/docs/decisions.md) — NATS, Temporal 선택 근거
-- [도메인 용어](seeds/docs/glossary.md) — 영화 예매 도메인 용어 정리
+- [개발 환경](docs/development.md) — 스크립트, 프로젝트 구조, ESLint 규칙
+- [설계 결정](docs/decisions.md) — NATS, Temporal 선택 근거
+- [도메인 용어](docs/glossary.md) — 영화 예매 도메인 용어 정리
 
 ## 라이선스
 

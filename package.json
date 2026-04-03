@@ -1,5 +1,5 @@
 {
-    "name": "nest-templates",
+    "name": "nest-seeds",
     "private": true,
     "workspaces": [
         "libs/*",
@@ -46,7 +46,6 @@
     },
     "overrides": {
         "class-validator": "0.14.4",
-        "ioredis": "$ioredis",
         "lodash": "^4.18.0"
     },
     "packageManager": "npm@11.12.1"

@@ -14,11 +14,11 @@ nest-seed/
 ├── seeds/                   ← 프로젝트 시드 (복사해서 새 프로젝트 시작)
 │   ├── mono/                모놀리식    — NestJS, MongoDB, Redis, BullMQ, EventEmitter2
 │   ├── msa/                 마이크로서비스 — NestJS, MongoDB, Redis, NATS, Temporal
-│   ├── infra/               공용 인프라 (Docker Compose, 환경변수)
-│   ├── docs/                공유 설계 문서
 │   └── CONVENTIONS.md       프로젝트 컨벤션
 │
-└── docs/                    ← 패키지 아키텍처 문서
+├── dev-infra/               ← 개발 인프라 (Docker Compose, 환경변수)
+│
+└── docs/                    ← 아키텍처·설계 문서
 ```
 
 ## Build & Test
@@ -30,7 +30,6 @@ npm test                # 패키지 테스트
 
 cd seeds/mono       # 또는 seeds/msa
 npm ci
-npm run infra:reset     # Docker 인프라 시작
 npm test                # 테스트 실행
 ```
 
@@ -49,10 +48,10 @@ Controllers (Gateway) → Applications → Cores → Infrastructures
 ## Key References
 
 - @seeds/CONVENTIONS.md — 네이밍 규칙, 에러 패턴, 테스트 컨벤션
-- @seeds/docs/design-guide.md — SoLA 아키텍처, REST API, 엔티티 설계
-- @seeds/docs/development.md — 개발 환경, 스크립트, 테스트 인프라
-- @seeds/docs/decisions.md — 기술 선택 근거 (NATS, Temporal)
-- @seeds/docs/glossary.md — 도메인 용어
+- @docs/design-guide.md — SoLA 아키텍처, REST API, 엔티티 설계
+- @docs/development.md — 개발 환경, 스크립트, 테스트 인프라
+- @docs/decisions.md — 기술 선택 근거 (NATS, Temporal)
+- @docs/glossary.md — 도메인 용어
 - @docs/architecture.md — 패키지 구조, 의존 관계
 
 ## Directory Naming
