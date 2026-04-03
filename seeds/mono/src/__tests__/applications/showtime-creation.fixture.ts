@@ -1,5 +1,5 @@
-import { Json } from '@mannercode/common'
 import { ShowtimeCreationModule } from 'applications'
+import { isDateString } from 'class-validator'
 import { ShowtimeCreationHttpController } from 'controllers'
 import {
     MoviesModule,
@@ -41,7 +41,9 @@ export function waitForCompletion(ctx: TestContext, status: string) {
     return new Promise<any>((resolve, reject) => {
         ctx.httpClient.get('/showtime-creation/event-stream').sse((data) => {
             try {
-                const statusUpdate = Json.reviveIsoDates(JSON.parse(data))
+                const statusUpdate = JSON.parse(data, (_key, value) =>
+                    isDateString(value) ? new Date(value) : value
+                )
 
                 if (['error', 'failed', 'succeeded'].includes(statusUpdate.status)) {
                     ctx.httpClient.abort()
