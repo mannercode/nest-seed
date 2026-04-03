@@ -1,8 +1,7 @@
 import type winston from 'winston'
 import { isDebuggingEnabled } from '@mannercode/testing'
 import { readFile } from 'fs/promises'
-import { sleep } from '../../utils/functions'
-import { Path } from '../../utils/path'
+import { Path, sleep } from '../../utils'
 import { createWinstonLogger } from '../create-winston-logger'
 
 const MESSAGE = Symbol.for('message')
@@ -102,56 +101,6 @@ describe('createWinstonLogger', () => {
         expect(output).toContain('HTTP')
         expect(output).toContain('success')
         expect(output).toContain('/test')
-
-        consoleLogger.close()
-    })
-
-    // RPC 로그 항목을 기록한다
-    it('writes an RPC log entry', async () => {
-        const message = 'test message'
-        const logDetails = {
-            contextType: 'rpc',
-            request: { subject: 'test.subject', data: {} },
-            response: { code: 'ERR_CODE', message: 'message' },
-            stack: 'stack...'
-        }
-
-        logger.info(message, logDetails)
-        await sleep(200)
-
-        const entry = await getLogEntry()
-
-        expect(entry).toEqual({
-            ...logDetails,
-            level: 'info',
-            message,
-            timestamp: expect.any(String)
-        })
-    })
-
-    // RPC 콘솔 포맷이 올바르게 출력된다
-    it('formats RPC log for console output', async () => {
-        const consoleLogger = createWinstonLogger({
-            consoleLogLevel: 'info',
-            daysToKeepLogs: '1d',
-            directory: tempDir,
-            fileLogLevel: 'silent'
-        })
-
-        const { getOutput } = spyConsoleTransport(consoleLogger)
-
-        const logDetails = {
-            contextType: 'rpc',
-            request: { subject: 'test.subject', data: { id: '123' } }
-        }
-
-        consoleLogger.info('success', logDetails)
-        await sleep(200)
-
-        const output = getOutput()
-        expect(output).toContain('RPC')
-        expect(output).toContain('success')
-        expect(output).toContain('test.subject')
 
         consoleLogger.close()
     })

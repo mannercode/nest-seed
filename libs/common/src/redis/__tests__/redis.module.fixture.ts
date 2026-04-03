@@ -106,6 +106,22 @@ export async function createRedisModuleOptionsOnlyFixture() {
     return { redis, teardown }
 }
 
+export async function createRedisModuleClusterFixture() {
+    const { close, module } = await createTestContext({
+        imports: [
+            RedisModule.forRoot({ type: 'cluster', nodes: [{ host: 'localhost', port: 7000 }] })
+        ]
+    })
+
+    const redis = module.get<RedisConnection>(getRedisConnectionToken())
+
+    const teardown = async () => {
+        await close()
+    }
+
+    return { redis, teardown }
+}
+
 export async function createRedisModuleUrlWithOptionsFixture() {
     const { close, module } = await createTestContext({
         imports: [

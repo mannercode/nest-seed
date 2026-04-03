@@ -1,4 +1,3 @@
-/* istanbul ignore file */
 import { Logger } from '@nestjs/common'
 import { isEqual } from './utils'
 

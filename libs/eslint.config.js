@@ -50,6 +50,17 @@ module.exports = [
                 'warn',
                 { type: 'natural', order: 'asc', newlinesBetween: 0 }
             ],
+            'no-restricted-imports': [
+                'warn',
+                {
+                    patterns: [
+                        {
+                            group: ['**/utils/*'],
+                            message: 'Import from the barrel (utils) instead of submodules.'
+                        }
+                    ]
+                }
+            ],
             'no-bitwise': 'error',
             'consistent-return': 'error',
             'no-constant-condition': 'warn',

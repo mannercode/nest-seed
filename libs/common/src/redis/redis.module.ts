@@ -1,6 +1,7 @@
 import { DynamicModule, Provider } from '@nestjs/common'
 import { Module } from '@nestjs/common'
 import Redis, { Cluster } from 'ioredis'
+import { defaultTo } from '../utils'
 import { getRedisConnectionToken } from './redis.tokens'
 import { RedisConnection, RedisModuleAsyncOptions, RedisModuleOptions } from './redis.types'
 
@@ -27,7 +28,6 @@ export class RedisModule {
 }
 
 function createRedisClient(options: RedisModuleOptions): RedisConnection {
-    /* istanbul ignore next -- cluster requires a real Redis Cluster */
     if (options.type === 'cluster') {
         return new Cluster(options.nodes, options.options)
     }
@@ -40,8 +40,7 @@ function createRedisClient(options: RedisModuleOptions): RedisConnection {
         return new Redis(options.url)
     }
 
-    /* istanbul ignore next -- default connects to localhost:6379 */
-    return options.options ? new Redis(options.options) : new Redis()
+    return new Redis(defaultTo(options.options, {}))
 }
 
 function createRedisProvider(options: RedisModuleOptions, connectionName?: string): Provider {

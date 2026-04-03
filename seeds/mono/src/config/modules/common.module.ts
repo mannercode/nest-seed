@@ -1,8 +1,8 @@
 import {
     AppLoggerService,
     createWinstonLogger,
-    ExceptionLoggerFilter,
-    SuccessLoggerInterceptor
+    HttpExceptionLoggerFilter,
+    HttpSuccessLoggerInterceptor
 } from '@mannercode/common'
 import { Global, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
@@ -28,8 +28,8 @@ import { RequestValidationPipe } from '../pipes/request-validation.pipe'
     providers: [
         AppConfigService,
         { provide: APP_PIPE, useClass: RequestValidationPipe },
-        { provide: APP_FILTER, useClass: ExceptionLoggerFilter },
-        { provide: APP_INTERCEPTOR, useClass: SuccessLoggerInterceptor },
+        { provide: APP_FILTER, useClass: HttpExceptionLoggerFilter },
+        { provide: APP_INTERCEPTOR, useClass: HttpSuccessLoggerInterceptor },
         {
             inject: [AppConfigService],
             provide: AppLoggerService,

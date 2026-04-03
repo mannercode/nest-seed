@@ -1,8 +1,8 @@
+/* istanbul ignore file */
 import { styleText } from 'node:util'
 import winston from 'winston'
 import DailyRotateFile from 'winston-daily-rotate-file'
-import type { HttpErrorLog, HttpSuccessLog, RpcErrorLog, RpcSuccessLog } from './types'
-/* istanbul ignore file */
+import type { HttpErrorLog, HttpSuccessLog } from './types'
 import { defaultTo } from '../utils'
 
 function colorizeHttpMethod(method: string | undefined) {
@@ -78,60 +78,66 @@ function formatHttpLogMessage(
     return `${timestamp} ${level} HTTP ${message} ${statusCode} ${method} ${url} ${body} `
 }
 
-function formatRpcLogMessage(
+export type LogFormatter = (
     message: string,
     level: string,
     timestamp: string,
-    logDetails: RpcErrorLog | RpcSuccessLog
-) {
-    const { request } = logDetails
-    const coloredSubject = styleText('green', String(request.subject))
-    const coloredData = styleText('blueBright', JSON.stringify(request.data, null, 2))
-
-    return `${timestamp} ${level} RPC ${message} ${coloredSubject} ${coloredData}`
-}
-
-const consoleLogFormat = winston.format.combine(
-    winston.format.timestamp({ format: 'HH:mm:ss' }),
-    winston.format.printf((info) => {
-        const { level, message, timestamp, ...rest } = info
-
-        const coloredMessage = styleText('white', String(message))
-        const coloredLevel = colorizeLogLevel(level)
-        const coloredTimestamp = styleText('gray', String(timestamp))
-        const logDetails = rest as any
-
-        if (logDetails?.contextType === 'http') {
-            return formatHttpLogMessage(coloredMessage, coloredLevel, coloredTimestamp, logDetails)
-        } else if (logDetails?.contextType === 'rpc') {
-            return formatRpcLogMessage(coloredMessage, coloredLevel, coloredTimestamp, logDetails)
-        } else if (logDetails?.contextType === 'service') {
-            return formatServiceLogMessage(
-                coloredMessage,
-                coloredLevel,
-                coloredTimestamp,
-                logDetails
-            )
-        } else {
-            return formatGenericLogMessage(
-                coloredMessage,
-                coloredLevel,
-                coloredTimestamp,
-                logDetails
-            )
-        }
-    })
-)
+    logDetails: any
+) => string
 
 export type LoggerConfig = {
     consoleLogLevel: string
+    customFormatters?: Record<string, LogFormatter>
     daysToKeepLogs: string
     directory: string
     fileLogLevel: string
 }
 
+function createConsoleLogFormat(customFormatters?: Record<string, LogFormatter>) {
+    return winston.format.combine(
+        winston.format.timestamp({ format: 'HH:mm:ss' }),
+        winston.format.printf((info) => {
+            const { level, message, timestamp, ...rest } = info
+
+            const coloredMessage = styleText('white', String(message))
+            const coloredLevel = colorizeLogLevel(level)
+            const coloredTimestamp = styleText('gray', String(timestamp))
+            const logDetails = rest as any
+            const contextType = logDetails?.contextType
+
+            const customFormatter = customFormatters?.[contextType]
+            if (customFormatter) {
+                return customFormatter(coloredMessage, coloredLevel, coloredTimestamp, logDetails)
+            }
+
+            if (contextType === 'http') {
+                return formatHttpLogMessage(
+                    coloredMessage,
+                    coloredLevel,
+                    coloredTimestamp,
+                    logDetails
+                )
+            } else if (contextType === 'service') {
+                return formatServiceLogMessage(
+                    coloredMessage,
+                    coloredLevel,
+                    coloredTimestamp,
+                    logDetails
+                )
+            } else {
+                return formatGenericLogMessage(
+                    coloredMessage,
+                    coloredLevel,
+                    coloredTimestamp,
+                    logDetails
+                )
+            }
+        })
+    )
+}
+
 export function createWinstonLogger(config: LoggerConfig) {
-    const { consoleLogLevel, daysToKeepLogs, directory, fileLogLevel } = config
+    const { consoleLogLevel, customFormatters, daysToKeepLogs, directory, fileLogLevel } = config
 
     const transports: winston.transport[] = []
 
@@ -158,7 +164,7 @@ export function createWinstonLogger(config: LoggerConfig) {
     if (consoleLogLevel && consoleLogLevel !== 'silent') {
         transports.push(
             new winston.transports.Console({
-                format: consoleLogFormat,
+                format: createConsoleLogFormat(customFormatters),
                 handleExceptions: true,
                 handleRejections: true,
                 level: consoleLogLevel

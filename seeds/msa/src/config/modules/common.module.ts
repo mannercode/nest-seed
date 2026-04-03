@@ -1,10 +1,10 @@
+import { AppLoggerService, createWinstonLogger } from '@mannercode/common'
 import {
-    AppLoggerService,
-    createWinstonLogger,
-    ExceptionLoggerFilter,
-    SuccessLoggerInterceptor
-} from '@mannercode/common'
-import { ClientProxyModule } from '@mannercode/microservices'
+    ClientProxyModule,
+    formatRpcLogMessage,
+    RpcExceptionLoggerFilter,
+    RpcSuccessLoggerInterceptor
+} from '@mannercode/microservices'
 import { Global, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
@@ -37,13 +37,16 @@ import { RequestValidationPipe } from '../pipes/request-validation.pipe'
     providers: [
         AppConfigService,
         { provide: APP_PIPE, useClass: RequestValidationPipe },
-        { provide: APP_FILTER, useClass: ExceptionLoggerFilter },
-        { provide: APP_INTERCEPTOR, useClass: SuccessLoggerInterceptor },
+        { provide: APP_FILTER, useClass: RpcExceptionLoggerFilter },
+        { provide: APP_INTERCEPTOR, useClass: RpcSuccessLoggerInterceptor },
         {
             inject: [AppConfigService],
             provide: AppLoggerService,
             useFactory: async ({ log }: AppConfigService) => {
-                const logger = createWinstonLogger(log)
+                const logger = createWinstonLogger({
+                    ...log,
+                    customFormatters: { rpc: formatRpcLogMessage }
+                })
                 return new AppLoggerService(logger)
             }
         }
