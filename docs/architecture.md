@@ -18,20 +18,10 @@ nest-seed/
 ## 패키지 의존 그래프
 
 ```
-@mannercode/common          ← 내부 의존 없음 (devDep: testing)
-@mannercode/microservices   ← common에 의존   (devDep: testing)
-@mannercode/testing         ← 내부 의존 없음
-```
-
-소스 코드(빌드 결과물) 기준 의존 방향:
-
-```
 microservices → common
-testing       → (독립)
+testing       (독립)
+common        (독립)
 ```
-
-common과 microservices는 테스트(devDependencies)에서만 testing을 사용한다.
-testing은 내부에 필요한 유틸을 복제(`internals.ts`)하여 다른 `@mannercode` 패키지에 의존하지 않는다.
 
 ## 패키지 상세
 
