@@ -62,13 +62,13 @@ infra/local/              # 로컬 인프라 Docker Compose
 | `npm run format`     | ESLint 자동 수정 및 Prettier 포맷팅                       |
 | `npm run apps:reset` | 앱 서비스 초기화 (down + up + wait)                       |
 
-인프라는 Dev Container가 시작 시 자동으로 올린다. 수동 관리가 필요하면 `bash dev-infra/up.sh`를 실행한다.
+인프라는 Dev Container가 시작 시 자동으로 올린다. 수동 관리가 필요하면 `bash .devcontainer/setup-infra.sh`를 실행한다.
 
 ---
 
 ## 환경 파일
 
-### `dev-infra/.env`
+### `.devcontainer/.env`
 
 Docker 이미지 태그와 인프라 접속 정보(MongoDB, Redis, NATS, MinIO, Temporal)를 통합 관리한다. Dev Container 실행 시 `--env-file`로 컨테이너 환경변수에 주입되므로, 앱과 테스트에서 별도 파일 로딩 없이 `process.env`로 접근 가능하다.
 
@@ -385,7 +385,7 @@ coverageThreshold: {
 
 ### `npm test` 실행 시 타임아웃
 
-Testcontainers가 처음 실행될 때 Docker 이미지를 pull한다. 네트워크 환경에 따라 시간이 걸릴 수 있다. `dev-infra/.env`에 정의된 이미지를 미리 `docker pull`해 두면 단축된다.
+Testcontainers가 처음 실행될 때 Docker 이미지를 pull한다. 네트워크 환경에 따라 시간이 걸릴 수 있다. `.devcontainer/.env`에 정의된 이미지를 미리 `docker pull`해 두면 단축된다.
 
 ### ESLint 계층 규칙 위반 경고
 

@@ -14,9 +14,9 @@ nest-seed/
 ├── apps/                   ← 애플리케이션 (복사해서 새 프로젝트 시작)
 │   ├── mono/                모놀리식    — NestJS, MongoDB, Redis, BullMQ, EventEmitter2
 │   ├── msa/                 마이크로서비스 — NestJS, MongoDB, Redis, NATS, Temporal
-│   └── CONVENTIONS.md       프로젝트 컨벤션
 │
-├── dev-infra/               ← 개발 인프라 (Docker Compose, 환경변수)
+│
+├── .devcontainer/           ← Dev Container + 개발 인프라 (Docker Compose, 환경변수)
 │
 └── docs/                    ← 아키텍처·설계 문서
 ```
@@ -47,7 +47,7 @@ Controllers (Gateway) → Applications → Cores → Infrastructures
 
 ## Key References
 
-- @apps/CONVENTIONS.md — 네이밍 규칙, 에러 패턴, 테스트 컨벤션
+- @docs/conventions.md — 네이밍 규칙, 에러 패턴, 테스트 컨벤션
 - @docs/design-guide.md — SoLA 아키텍처, REST API, 엔티티 설계
 - @docs/development.md — 개발 환경, 스크립트, 테스트 인프라
 - @docs/decisions.md — 기술 선택 근거 (NATS, Temporal)

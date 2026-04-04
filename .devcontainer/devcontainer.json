@@ -9,7 +9,7 @@
     "privileged": true,
     "runArgs": [
         "--env-file",
-        "dev-infra/.env",
+        ".devcontainer/infra/.env",
         "--add-host",
         "host.docker.internal:127.0.0.1",
         "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
@@ -27,7 +27,7 @@
     "postCreateCommand": { "husky": "husky", "ci": "npm ci" },
     "postStartCommand": {
         "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null",
-        "infra": "bash dev-infra/up.sh"
+        "infra": "bash .devcontainer/setup-infra.sh"
     },
     "forwardPorts": [5010, 5020],
     "customizations": {

@@ -1,6 +1,6 @@
 #!/bin/bash
 set -Eeuo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/infra"
 
 docker rm -f $(docker ps -aq) 2>/dev/null || true
 docker volume prune -af
