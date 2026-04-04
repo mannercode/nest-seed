@@ -7,7 +7,7 @@
         "build": "nest build -b webpack",
         "debug": "nest start --watch",
         "test": "npm run test:unit && npm run test:e2e",
-        "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest --no-cache --coverage",
+        "test:unit": "jest --no-cache --coverage",
         "test:e2e": "npm run apps:reset && bash tests/e2e/run-all.sh && npm run apps:down",
         "format": "eslint src/ --fix && prettier --write src/",
         "lint": "tsc -p tsconfig.json --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
