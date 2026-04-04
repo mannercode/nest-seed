@@ -9,7 +9,7 @@
         "build": "turbo run build --filter='./libs/*'",
         "clean": "turbo run clean",
         "lint": "turbo run lint --filter='./libs/*'",
-        "test": "cd libs && NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
+        "test": "cd libs && NODE_OPTIONS='--experimental-vm-modules' jest --coverage && cd ../apps/mono && npm run test:unit && cd ../msa && npm run test:unit",
         "format": "prettier --write \"libs/*/src/**/*.ts\"",
         "changeset:add": "changeset add",
         "changeset:version": "changeset version",
