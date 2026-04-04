@@ -1,4 +1,4 @@
-import { toDateOrValue } from '@mannercode/common'
+import { JsonUtil } from '@mannercode/common'
 import { HttpStatus } from '@nestjs/common'
 import { createWriteStream } from 'fs'
 import superagent, { type Response } from 'superagent'
@@ -130,8 +130,7 @@ export class HttpTestClient {
         expect(response.status).toEqual(status)
 
         if (response.type === 'application/json') {
-            console.log('response.text', response.text)
-            response.body = JSON.parse(response.text, (_key, value) => toDateOrValue(value))
+            response.body = JsonUtil.parse(response.text)
         }
 
         if (expected !== undefined) {

@@ -1,4 +1,4 @@
-import { getByPath, Json, newObjectIdString } from '@mannercode/common'
+import { getByPath, JsonUtil, newObjectIdString } from '@mannercode/common'
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { Job, Queue } from 'bullmq'
@@ -65,7 +65,7 @@ export class ShowtimeCreationWorkerService
         try {
             this.logger.log('process start', { sagaId: job.data.sagaId })
 
-            const jobData = Json.reviveDates(job.data)
+            const jobData = JsonUtil.reviveDates(job.data)
 
             await this.processJobData(jobData)
         } catch (error: unknown) {
