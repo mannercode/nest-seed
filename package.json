@@ -2,13 +2,14 @@
     "name": "nest-seed",
     "private": true,
     "workspaces": [
-        "libs/*"
+        "libs/*",
+        "apps/*"
     ],
     "scripts": {
         "build": "turbo run build --filter='./libs/*'",
         "clean": "turbo run clean",
         "lint": "turbo run lint --filter='./libs/*'",
-        "test": "cd libs && jest --coverage",
+        "test": "cd libs && NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
         "format": "prettier --write \"libs/*/src/**/*.ts\"",
         "changeset:add": "changeset add",
         "changeset:version": "changeset version",

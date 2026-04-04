@@ -77,3 +77,21 @@ NestJS가 지원하는 메시지 브로커 여러 종류를 검토한 결과, NA
 - Temporal은 워크플로우 상태를 서버가 관리하므로, Worker 프로세스가 죽어도 다른 Worker가 이어서 실행할 수 있다. BullMQ는 작업 단위 재시도만 지원한다.
 
 ---
+
+## 4. Node.js 옵션: --experimental-vm-modules
+
+### 결정
+
+테스트 실행 시 `NODE_OPTIONS='--experimental-vm-modules'`를 설정한다.
+
+### 근거
+
+AWS SDK v3 (`@aws-sdk/client-s3` 등)이 내부적으로 dynamic import를 사용하는데, Node.js 24에서 VM 모듈 없이 실행하면 `ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG` 에러가 발생한다. Jest가 VM 환경에서 테스트를 실행하기 때문에 이 플래그가 필요하다.
+
+### 적용 위치
+
+- `apps/msa/package.json` — `test:unit` 스크립트
+- `apps/mono/package.json` — `test:unit` 스크립트
+- `package.json` (루트) — `test` 스크립트
+
+---

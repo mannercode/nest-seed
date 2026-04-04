@@ -1,4 +1,5 @@
 import type { ShowtimesClient, TicketsClient } from 'apps/cores'
+import { JsonUtil } from '@mannercode/common'
 import { log } from '@temporalio/activity'
 import type { BulkCreateShowtimesDto } from '../dtos'
 import type {
@@ -38,12 +39,14 @@ export function createShowtimeCreationActivities(deps: {
                 movieId: createDto.movieId,
                 theaterCount: createDto.theaterIds.length
             })
-            return deps.validatorService.validate(createDto)
+            const revived = JsonUtil.reviveDates(createDto) as BulkCreateShowtimesDto
+            return deps.validatorService.validate(revived)
         },
 
         async createShowtimes(createDto, sagaId) {
             log.info('createShowtimes', { sagaId, movieId: createDto.movieId })
-            return deps.creatorService.create(createDto, sagaId)
+            const revived = JsonUtil.reviveDates(createDto) as BulkCreateShowtimesDto
+            return deps.creatorService.create(revived, sagaId)
         },
 
         async compensateShowtimeCreation(sagaId) {

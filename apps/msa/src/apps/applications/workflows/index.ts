@@ -1,2 +1,2 @@
-export { purchaseWorkflow } from '../services'
-export { showtimeCreationWorkflow } from '../services'
+export { purchaseWorkflow } from '../services/purchase/workflows'
+export { showtimeCreationWorkflow } from '../services/showtime-creation/workflows'

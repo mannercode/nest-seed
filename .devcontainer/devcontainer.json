@@ -14,7 +14,6 @@
         "host.docker.internal:127.0.0.1",
         "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     ],
-    "remoteEnv": { "NODE_OPTIONS": "--experimental-vm-modules" },
     "remoteUser": "node",
     "mounts": [
         "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind",

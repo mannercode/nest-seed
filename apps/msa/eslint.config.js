@@ -149,6 +149,10 @@ module.exports = [
         }
     },
     {
+        files: ['src/apps/applications/**/workflows/**/*.ts'],
+        rules: { 'no-restricted-imports': 'off' }
+    },
+    {
         files: ['src/apps/applications/**/*.ts'],
         rules: {
             'no-restricted-imports': [
