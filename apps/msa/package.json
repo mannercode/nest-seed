@@ -72,7 +72,6 @@
         "@types/node": "^24",
         "eslint": "^10.1.0",
         "eslint-plugin-allowed-dependencies": "^2.1.0",
-        "eslint-plugin-import": "^2.32.0",
         "eslint-plugin-jest": "^29.15.1",
         "eslint-plugin-perfectionist": "^5.8.0",
         "eslint-plugin-unused-imports": "^4.4.1",

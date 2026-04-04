@@ -27,7 +27,7 @@
     "postCreateCommand": { "husky": "husky", "ci": "npm ci" },
     "postStartCommand": {
         "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null",
-        "infra": "bash .devcontainer/setup-infra.sh"
+        "infra": "bash .devcontainer/reset-infra.sh"
     },
     "forwardPorts": [5010, 5020],
     "customizations": {

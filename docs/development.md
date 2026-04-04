@@ -62,7 +62,7 @@ infra/local/              # 로컬 인프라 Docker Compose
 | `npm run format`     | ESLint 자동 수정 및 Prettier 포맷팅                       |
 | `npm run apps:reset` | 앱 서비스 초기화 (down + up + wait)                       |
 
-인프라는 Dev Container가 시작 시 자동으로 올린다. 수동 관리가 필요하면 `bash .devcontainer/setup-infra.sh`를 실행한다.
+인프라는 Dev Container가 시작 시 자동으로 올린다. 수동 관리가 필요하면 `bash .devcontainer/reset-infra.sh`를 실행한다.
 
 ---
 

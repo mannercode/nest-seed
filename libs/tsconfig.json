@@ -2,11 +2,10 @@
     "extends": "./tsconfig.base.json",
     "compilerOptions": {
         "noEmit": true,
-        "baseUrl": ".",
         "paths": {
-            "@mannercode/common": ["common/src"],
-            "@mannercode/microservices": ["microservices/src"],
-            "@mannercode/testing": ["testing/src"]
+            "@mannercode/common": ["./common/src"],
+            "@mannercode/microservices": ["./microservices/src"],
+            "@mannercode/testing": ["./testing/src"]
         }
     },
     "include": ["*/src/**/*"]

@@ -36,7 +36,21 @@ NestJS가 지원하는 메시지 브로커 여러 종류를 검토한 결과, NA
 
 ---
 
-## 2. 워크플로우 오케스트레이션: Temporal 선택
+## 2. ESLint: eslint-plugin-import 사용 금지
+
+### 결정
+
+중복 import 감지(`import/no-duplicates`) 용도로 사용하던 **eslint-plugin-import**를 제거하고, 별도의 대체 규칙을 두지 않는다.
+
+### 근거
+
+- **업데이트 정체**: eslint-plugin-import는 ESLint 9+ Flat Config 공식 지원이 없고, 유지보수가 사실상 멈춘 상태다.
+- **peer dep 충돌**: ESLint 10과 peer dependency가 충돌하여 설치 시 override가 필요했다. (커밋 `593dce1` → Revert `ae222e0`)
+- **대체 불필요**: `consistent-type-imports` 규칙으로 type import를 분리하면 ESLint 내장 `no-duplicate-imports`와 충돌한다. `perfectionist/sort-imports`로 import를 정렬하면 중복은 자연스럽게 드러나므로, 별도 규칙 없이도 충분하다.
+
+---
+
+## 3. 워크플로우 오케스트레이션: Temporal 선택
 
 > MSA 시드에서는 Temporal을 사용하고, Mono 시드에서는 BullMQ를 사용합니다.
 
