@@ -28,7 +28,5 @@
         "@temporalio/worker": "^1.15.0",
         "rxjs": "^7.0.0"
     },
-    "devDependencies": {
-        "@mannercode/testing": "^2.0.1"
-    }
+    "devDependencies": {}
 }
