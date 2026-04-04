@@ -1,8 +1,8 @@
 ---
 paths:
     - 'libs/*/src/__tests__/**'
-    - 'seeds/*/src/__tests__/**'
-    - 'seeds/*/tests/**'
+    - 'apps/*/src/__tests__/**'
+    - 'apps/*/tests/**'
 ---
 
 # 테스트 컨벤션

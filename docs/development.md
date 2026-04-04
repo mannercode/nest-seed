@@ -72,7 +72,7 @@ infra/local/              # 로컬 인프라 Docker Compose
 
 Docker 이미지 태그와 인프라 접속 정보(MongoDB, Redis, NATS, MinIO, Temporal)를 통합 관리한다. Dev Container 실행 시 `--env-file`로 컨테이너 환경변수에 주입되므로, 앱과 테스트에서 별도 파일 로딩 없이 `process.env`로 접근 가능하다.
 
-### `seeds/mono/.env`, `seeds/msa/.env`
+### `apps/mono/.env`, `apps/msa/.env`
 
 앱 전용 설정만 포함한다. 프로젝트 ID, HTTP 포트, 인증, 로그 설정 등이 있다.
 

@@ -22,37 +22,37 @@
         {
             "label": "mono:lint",
             "type": "shell",
-            "command": "npm --prefix seeds/mono run lint",
+            "command": "npm --prefix apps/mono run lint",
             "dependsOn": ["libs:build"]
         },
         {
             "label": "mono:test:unit",
             "type": "shell",
-            "command": "npm --prefix seeds/mono run test:unit",
+            "command": "npm --prefix apps/mono run test:unit",
             "dependsOn": ["libs:build"]
         },
         {
             "label": "mono:test:e2e",
             "type": "shell",
-            "command": "npm --prefix seeds/mono run test:e2e",
+            "command": "npm --prefix apps/mono run test:e2e",
             "dependsOn": ["libs:build"]
         },
         {
             "label": "msa:lint",
             "type": "shell",
-            "command": "npm --prefix seeds/msa run lint",
+            "command": "npm --prefix apps/msa run lint",
             "dependsOn": ["libs:build"]
         },
         {
             "label": "msa:test:unit",
             "type": "shell",
-            "command": "npm --prefix seeds/msa run test:unit",
+            "command": "npm --prefix apps/msa run test:unit",
             "dependsOn": ["libs:build"]
         },
         {
             "label": "msa:test:e2e",
             "type": "shell",
-            "command": "npm --prefix seeds/msa run test:e2e",
+            "command": "npm --prefix apps/msa run test:e2e",
             "dependsOn": ["libs:build"]
         },
         {

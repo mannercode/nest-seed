@@ -11,7 +11,7 @@ nest-seed/
 │   ├── microservices/        @mannercode/microservices — NATS RPC, Temporal workflows
 │   └── testing/             @mannercode/testing      — 테스트 컨텍스트, HTTP/RPC 클라이언트
 │
-├── seeds/                   ← 프로젝트 시드 (복사해서 새 프로젝트 시작)
+├── apps/                    ← 애플리케이션 (복사해서 새 프로젝트 시작)
 │   ├── mono/                모놀리식    — NestJS, MongoDB, Redis, BullMQ, EventEmitter2
 │   ├── msa/                 마이크로서비스 — NestJS, MongoDB, Redis, NATS, Temporal
 ├── dev-infra/               ← 개발 인프라 (Docker Compose, 환경변수)
@@ -49,7 +49,7 @@ npm test
 ### 4. 시드 실행
 
 ```bash
-cd seeds/mono   # 또는 seeds/msa
+cd apps/mono   # 또는 apps/msa
 npm ci
 npm test
 ```
@@ -103,7 +103,7 @@ npm test
 
 - [패키지 아키텍처](docs/architecture.md) — 모노레포 구조, 패키지 의존 그래프, 모듈 상세
 - [설계 가이드](docs/design-guide.md) — SoLA 아키텍처, REST API 설계, 엔티티 설계
-- [프로젝트 컨벤션](seeds/CONVENTIONS.md) — 네이밍 규칙, 테스트 컨벤션
+- [프로젝트 컨벤션](apps/CONVENTIONS.md) — 네이밍 규칙, 테스트 컨벤션
 - [개발 환경](docs/development.md) — 스크립트, 프로젝트 구조, ESLint 규칙
 - [설계 결정](docs/decisions.md) — NATS, Temporal 선택 근거
 - [도메인 용어](docs/glossary.md) — 영화 예매 도메인 용어 정리

@@ -1,7 +1,7 @@
 ---
 paths:
     - 'libs/*/src/**/*.ts'
-    - 'seeds/*/src/**/*.ts'
+    - 'apps/*/src/**/*.ts'
 ---
 
 # 네이밍 규칙

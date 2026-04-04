@@ -1,7 +1,7 @@
 ---
 paths:
-    - 'seeds/mono/src/**/*.ts'
-    - 'seeds/msa/src/**/*.ts'
+    - 'apps/mono/src/**/*.ts'
+    - 'apps/msa/src/**/*.ts'
 ---
 
 # SoLA 레이어 규칙

@@ -6,11 +6,11 @@
 
 이 프로젝트에서 `common`과 `shared`는 서로 다른 범위를 가진다.
 
-| 위치                           | 범위              | import 경로           | 내용                                    |
-| ------------------------------ | ----------------- | --------------------- | --------------------------------------- |
-| `libs/common/`                 | 프로젝트 간 공유  | `@mannercode/common`  | Mongoose, Redis, JWT, S3, Logger, utils |
-| `seeds/*/src/config/`          | 앱 전체           | `'config'` (tsconfig) | AppConfig, Rules, Pipes, configureApp   |
-| `seeds/*/src/**/cores/shared/` | cores 레이어 내부 | 상대 경로             | 도메인 모델 (예: Seat)                  |
+| 위치                          | 범위              | import 경로           | 내용                                    |
+| ----------------------------- | ----------------- | --------------------- | --------------------------------------- |
+| `libs/common/`                | 프로젝트 간 공유  | `@mannercode/common`  | Mongoose, Redis, JWT, S3, Logger, utils |
+| `apps/*/src/config/`          | 앱 전체           | `'config'` (tsconfig) | AppConfig, Rules, Pipes, configureApp   |
+| `apps/*/src/**/cores/shared/` | cores 레이어 내부 | 상대 경로             | 도메인 모델 (예: Seat)                  |
 
 - `libs/common/` — 프로젝트 간 공유 인프라 유틸리티
 - `src/config/` — 앱 전체 설정, 모듈, 파이프

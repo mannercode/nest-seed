@@ -3,7 +3,7 @@
     "private": true,
     "workspaces": [
         "libs/*",
-        "seeds/*"
+        "apps/*"
     ],
     "scripts": {
         "build": "turbo run build --filter='./libs/*'",

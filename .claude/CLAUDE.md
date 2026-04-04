@@ -11,7 +11,7 @@ nest-seed/
 │   ├── microservices/        @mannercode/microservices — NATS RPC, Temporal, RPC logging
 │   └── testing/             @mannercode/testing      — 테스트 컨텍스트, HTTP/RPC 클라이언트 (독립)
 │
-├── seeds/                   ← 프로젝트 시드 (복사해서 새 프로젝트 시작)
+├── apps/                   ← 애플리케이션 (복사해서 새 프로젝트 시작)
 │   ├── mono/                모놀리식    — NestJS, MongoDB, Redis, BullMQ, EventEmitter2
 │   ├── msa/                 마이크로서비스 — NestJS, MongoDB, Redis, NATS, Temporal
 │   └── CONVENTIONS.md       프로젝트 컨벤션
@@ -28,7 +28,7 @@ npm ci                  # 의존성 설치
 npm run build           # 패키지 빌드 (Turborepo)
 npm test                # 패키지 테스트
 
-cd seeds/mono       # 또는 seeds/msa
+cd apps/mono       # 또는 apps/msa
 npm ci
 npm test                # 테스트 실행
 ```
@@ -47,7 +47,7 @@ Controllers (Gateway) → Applications → Cores → Infrastructures
 
 ## Key References
 
-- @seeds/CONVENTIONS.md — 네이밍 규칙, 에러 패턴, 테스트 컨벤션
+- @apps/CONVENTIONS.md — 네이밍 규칙, 에러 패턴, 테스트 컨벤션
 - @docs/design-guide.md — SoLA 아키텍처, REST API, 엔티티 설계
 - @docs/development.md — 개발 환경, 스크립트, 테스트 인프라
 - @docs/decisions.md — 기술 선택 근거 (NATS, Temporal)
@@ -57,8 +57,8 @@ Controllers (Gateway) → Applications → Cores → Infrastructures
 ## Directory Naming
 
 - `libs/common/` — `@mannercode/common`으로 배포되는 범용 라이브러리
-- `seeds/*/src/config/` — 앱 내부 설정, 모듈, 파이프 (tsconfig `'config'` 별칭)
-- `seeds/*/src/**/cores/shared/` — cores 레이어 내부에서만 공유되는 도메인 모델
+- `apps/*/src/config/` — 앱 내부 설정, 모듈, 파이프 (tsconfig `'config'` 별칭)
+- `apps/*/src/**/cores/shared/` — cores 레이어 내부에서만 공유되는 도메인 모델
 
 ## Commit Message
 
@@ -71,4 +71,4 @@ types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
 - 대화 중 유용한 정보가 나오면 `docs/`에 문서로 정리한다.
 - README.md와 docs/ 문서를 최신 상태로 유지한다.
 - 코드 변경 시 관련 문서도 함께 업데이트한다.
-- seeds에는 독립 실행 가능한 것만 포함한다. 나머지는 루트에서 관리한다.
+- apps에는 독립 실행 가능한 것만 포함한다. 나머지는 루트에서 관리한다.

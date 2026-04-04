@@ -8,7 +8,7 @@ nest-seed/
 │   ├── common/            # 기본 유틸리티 (Mongoose, Redis, JWT, S3, Logger)
 │   ├── microservices/      # MSA 유틸리티 (NATS RPC, Temporal)
 │   └── testing/           # 테스트 유틸리티 (HttpTestClient, RpcTestClient)
-├── seeds/
+├── apps/
 │   ├── mono/              # 모놀리식 NestJS 시드
 │   └── msa/               # 마이크로서비스 아키텍처 시드
 ├── turbo.json             # Turborepo 태스크 파이프라인
@@ -64,5 +64,7 @@ common        (독립)
 | **rpc test client**   | `RpcTestClient` — `.expectRequest()`, `.expectError()`                       |
 | **infra connections** | `getRedisTestConnection()`, `getMongoTestConnection()` 등                    |
 | **jest utilities**    | Mocking, spying, fake timers 헬퍼                                            |
+
+libs 개발·빌드·테스트·릴리스 워크플로우는 [libs 개발 가이드](libs.md) 참조.
 
 아키텍처 상세(SoLA, 레이어 책임, 도메인 설계)는 [설계 가이드](design-guide.md) 참조.
