@@ -13,9 +13,6 @@ concurrency:
     group: ci-${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 
-env:
-    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
     ci:
         runs-on: ubuntu-24.04-arm

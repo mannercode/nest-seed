@@ -2,6 +2,11 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "clean",
+            "type": "shell",
+            "command": "rm -rf node_modules .turbo libs/*/dist libs/*/*.tsbuildinfo apps/*/node_modules apps/*/_output apps/*/*.tsbuildinfo"
+        },
+        {
             "label": "libs:build",
             "group": { "kind": "build", "isDefault": true },
             "type": "shell",

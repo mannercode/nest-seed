@@ -3,33 +3,33 @@ on:
     push:
         branches: ['main']
 
+permissions:
+    contents: write
+    pull-requests: write
+    id-token: write
+
 concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
+    group: publish-${{ github.ref }}
     cancel-in-progress: false
 
 jobs:
     publish:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 15
-        permissions:
-            contents: write
-            pull-requests: write
-            id-token: write
         steps:
             - uses: actions/checkout@v5
-            - uses: actions/setup-node@v5
+
+            - uses: actions/setup-node@v4
               with:
                   node-version: 24
                   registry-url: 'https://registry.npmjs.org'
 
             - run: npm ci
-            - run: npm run build
 
             - name: Create Release Pull Request or Publish
-              id: changesets
               uses: changesets/action@v1
               with:
-                  publish: npx changeset publish
+                  publish: npm run changeset:publish
                   title: 'chore: version packages'
                   commit: 'chore: version packages'
               env:
