@@ -129,9 +129,11 @@ export class HttpTestClient {
 
         expect(response.status).toEqual(status)
 
-        response.body = JSON.parse(response.text, (_key, value) =>
-            isDateString(value) ? new Date(value) : value
-        )
+        if (response.type === 'application/json') {
+            response.body = JSON.parse(response.text, (_key, value) =>
+                isDateString(value) ? new Date(value) : value
+            )
+        }
 
         if (expected !== undefined) {
             expect(response.body).toEqual(expected)
