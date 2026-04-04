@@ -87,6 +87,9 @@
         "typescript-eslint": "^8.58.0"
     },
     "overrides": {
+        "eslint-plugin-import": {
+            "eslint": "$eslint"
+        },
         "lodash": "^4.18.0"
     }
 }
