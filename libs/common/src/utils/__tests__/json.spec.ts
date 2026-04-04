@@ -33,10 +33,10 @@ describe('Json', () => {
         })
     })
 
-    describe('reviveIsoDates', () => {
+    describe('reviveDates', () => {
         // ISO 8601 날짜 문자열을 Date 객체로 변환한다
         it('converts ISO 8601 date strings to Date objects', () => {
-            const converted = Json.reviveIsoDates({ date: '2023-06-18T12:12:34.567Z' })
+            const converted = Json.reviveDates({ date: '2023-06-18T12:12:34.567Z' })
 
             expect(converted.date).toBeInstanceOf(Date)
             expect(converted.date.toISOString()).toEqual('2023-06-18T12:12:34.567Z')
@@ -44,7 +44,7 @@ describe('Json', () => {
 
         // 중첩 객체의 날짜 문자열을 재귀적으로 변환한다
         it('recursively converts date strings in nested objects', () => {
-            const converted = Json.reviveIsoDates({
+            const converted = Json.reviveDates({
                 level1: {
                     date: '2023-06-18T12:12:34.567Z',
                     level2: { date: ['2023-06-19T12:12:34.567Z'], date2: nullDate, null: null }
@@ -57,13 +57,19 @@ describe('Json', () => {
 
         // 날짜 형식이 아닌 문자열은 무시한다
         it('ignores strings that are not in date format', () => {
-            const converted = Json.reviveIsoDates({ text: 'Hello, world!' })
+            const converted = Json.reviveDates({ text: 'Hello, world!' })
             expect(converted.text).toEqual('Hello, world!')
+        })
+
+        // isDateString이 true지만 유효하지 않은 Date인 문자열은 그대로 유지한다
+        it('keeps invalid date strings as-is', () => {
+            const converted = Json.reviveDates({ amzDate: '20230618T121234Z' })
+            expect(converted.amzDate).toEqual('20230618T121234Z')
         })
 
         // 문자열이 아닌 타입은 변환하지 않는다
         it('does not convert non-string types', () => {
-            const converted = Json.reviveIsoDates({ boolean: true, number: 123 })
+            const converted = Json.reviveDates({ boolean: true, number: 123 })
 
             expect(converted.number).toEqual(123)
             expect(converted.boolean).toBe(true)

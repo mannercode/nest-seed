@@ -1,6 +1,5 @@
 import type { MoviesClient } from 'apps/cores'
-import type { MoviesBaseContext } from './create-movies-context'
-import { createMoviesContext } from './create-movies-context'
+import { createMoviesContext, MoviesBaseContext } from './create-movies-context'
 
 export type MoviesPublishFixture = MoviesBaseContext & { moviesClient: MoviesClient }
 

@@ -1,4 +1,3 @@
-import { Json } from '@mannercode/common'
 import { Module, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { bundleWorkflowCode, NativeConnection, Worker } from '@temporalio/worker'
 import { ShowtimesClient, TicketsClient, PurchaseRecordsClient } from 'apps/cores'
@@ -49,8 +48,7 @@ export class TemporalWorkerModule implements OnModuleInit, OnModuleDestroy {
             creatorService: this.creatorService,
             events: this.showtimeCreationEvents,
             showtimesClient: this.showtimesClient,
-            ticketsClient: this.ticketsClient,
-            reviveIsoDates: Json.reviveIsoDates
+            ticketsClient: this.ticketsClient
         })
 
         this.worker = await Worker.create({

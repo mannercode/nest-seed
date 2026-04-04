@@ -1,4 +1,4 @@
-import { defaultTo, Json } from '@mannercode/common'
+import { defaultTo } from '@mannercode/common'
 import {
     DynamicModule,
     Global,
@@ -47,7 +47,7 @@ export class ClientProxyService implements OnModuleDestroy {
 
     request<T>(cmd: string, payload?: any): Promise<T> {
         const observable = this.send<T>(cmd, payload)
-        return getProxyValue(observable)
+        return waitProxyValue(observable)
     }
 
     send<T>(cmd: string, payload: any): Observable<T> {
@@ -85,10 +85,6 @@ export class ClientProxyService implements OnModuleDestroy {
             })
         )
     }
-}
-
-async function getProxyValue<T>(observer: Observable<T>): Promise<T> {
-    return Json.reviveIsoDates(await waitProxyValue(observer))
 }
 
 async function waitProxyValue<T>(observer: Observable<T>): Promise<T> {

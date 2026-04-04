@@ -1,8 +1,7 @@
-import type { TestContext } from '@mannercode/testing'
-import type { AppTestContext } from 'apps/__tests__/__helpers__'
-import type { MovieDto } from 'apps/cores'
 import { DateUtil } from '@mannercode/common'
+import { TestContext } from '@mannercode/testing'
 import {
+    AppTestContext,
     createAndLoginCustomer,
     createAppTestContext,
     createMovie,
@@ -13,6 +12,7 @@ import { RecommendationClient, RecommendationModule } from 'apps/applications'
 import {
     CustomersClient,
     CustomersModule,
+    MovieDto,
     MoviesClient,
     MoviesModule,
     ShowtimesClient,

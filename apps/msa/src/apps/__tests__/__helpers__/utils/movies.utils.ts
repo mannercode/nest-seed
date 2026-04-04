@@ -1,6 +1,5 @@
 import type { TestContext } from '@mannercode/testing'
-import type { MovieDto, UpsertMovieDto } from 'apps/cores'
-import { MovieGenre, MovieRating } from 'apps/cores'
+import { MovieGenre, MovieRating, MovieDto, UpsertMovieDto } from 'apps/cores'
 
 export function buildCreateMovieDto(overrides = {}) {
     const createDto = {

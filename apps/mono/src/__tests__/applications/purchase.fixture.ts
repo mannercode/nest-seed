@@ -1,9 +1,6 @@
-import type { TestContext } from '@mannercode/testing'
-import type { CreatePurchaseDto } from 'applications'
-import type { TicketDto } from 'cores'
 import { DateUtil, pickIds } from '@mannercode/common'
-import { oid, toAny } from '@mannercode/testing'
-import { PurchaseModule } from 'applications'
+import { oid, toAny, TestContext } from '@mannercode/testing'
+import { PurchaseModule, CreatePurchaseDto } from 'applications'
 import { PurchaseHttpController } from 'controllers'
 import {
     CustomersModule,
@@ -12,12 +9,13 @@ import {
     PurchaseRecordsModule,
     ShowtimesModule,
     TheatersModule,
+    TicketDto,
     TicketHoldingModule,
     TicketsModule
 } from 'cores'
 import { AssetsModule, PaymentsModule } from 'infrastructures'
-import type { AppTestContext } from '../__helpers__'
 import {
+    AppTestContext,
     buildHoldTicketsDto,
     createAppTestContext,
     createShowtimes,

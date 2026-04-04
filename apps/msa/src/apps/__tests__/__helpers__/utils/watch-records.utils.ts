@@ -1,5 +1,4 @@
-import type { TestContext } from '@mannercode/testing'
-import { nullDate, oid } from '@mannercode/testing'
+import { nullDate, oid, TestContext } from '@mannercode/testing'
 
 export function buildCreateWatchRecordDto(overrides = {}) {
     const createDto = {

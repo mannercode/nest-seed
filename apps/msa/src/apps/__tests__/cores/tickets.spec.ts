@@ -1,9 +1,8 @@
-import type { TicketDto } from 'apps/cores'
 import { pickIds } from '@mannercode/common'
 import { oid } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
 import { buildCreateTicketDto, createTickets, Errors } from 'apps/__tests__/__helpers__'
-import { TicketStatus } from 'apps/cores'
+import { TicketStatus, TicketDto } from 'apps/cores'
 import type { TicketsFixture } from './tickets.fixture'
 
 describe('TicketsService', () => {

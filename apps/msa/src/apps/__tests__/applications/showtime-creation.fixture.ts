@@ -1,6 +1,8 @@
-import type { AppTestContext as TestContext } from 'apps/__tests__/__helpers__'
-import { Json } from '@mannercode/common'
-import { createAppTestContext, createTemporalTestWorker } from 'apps/__tests__/__helpers__'
+import {
+    createAppTestContext,
+    createTemporalTestWorker,
+    AppTestContext as TestContext
+} from 'apps/__tests__/__helpers__'
 import {
     createShowtimeCreationActivities,
     ShowtimeBulkCreatorService,
@@ -57,8 +59,7 @@ export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationF
         creatorService: ctx.module.get(ShowtimeBulkCreatorService),
         events: ctx.module.get(ShowtimeCreationEvents),
         showtimesClient,
-        ticketsClient,
-        reviveIsoDates: Json.reviveIsoDates
+        ticketsClient
     })
 
     const temporalWorker = await createTemporalTestWorker({

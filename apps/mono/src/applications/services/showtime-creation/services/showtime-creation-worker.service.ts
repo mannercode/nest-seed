@@ -65,7 +65,7 @@ export class ShowtimeCreationWorkerService
         try {
             this.logger.log('process start', { sagaId: job.data.sagaId })
 
-            const jobData = Json.reviveIsoDates(job.data)
+            const jobData = Json.reviveDates(job.data)
 
             await this.processJobData(jobData)
         } catch (error: unknown) {

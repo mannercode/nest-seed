@@ -1,10 +1,8 @@
-import type { Response } from '@mannercode/testing'
 import type { MovieDto, ShowtimeDto, TheaterDto } from 'cores'
 import { DateUtil } from '@mannercode/common'
-import { nullObjectId } from '@mannercode/testing'
-import type { ShowtimeCreationFixture } from './showtime-creation.fixture'
+import { nullObjectId, Response } from '@mannercode/testing'
 import { createMovie, createShowtimes, createTheater } from '../__helpers__'
-import { waitForCompletion } from './showtime-creation.fixture'
+import { waitForCompletion, ShowtimeCreationFixture } from './showtime-creation.fixture'
 
 describe('ShowtimeCreationService', () => {
     let fix: ShowtimeCreationFixture

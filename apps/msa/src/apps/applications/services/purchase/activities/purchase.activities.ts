@@ -21,8 +21,8 @@ export interface PurchaseActivities {
         paymentId: string
         purchaseItems: Array<{ itemId: string; type: string }>
         totalPrice: number
-        createdAt: string
-        updatedAt: string
+        createdAt: Date
+        updatedAt: Date
     }>
     completePurchase(createDto: PurchaseInput): Promise<void>
     cancelPayment(paymentId: string): Promise<void>
@@ -64,7 +64,7 @@ export function createPurchaseActivities(deps: {
         async createPurchaseRecord(createDto) {
             log.info('createPurchaseRecord', { customerId: createDto.customerId })
             const record = await deps.purchaseRecordsClient.create(createDto as any)
-            return JSON.parse(JSON.stringify(record))
+            return record
         },
 
         async completePurchase(createDto) {

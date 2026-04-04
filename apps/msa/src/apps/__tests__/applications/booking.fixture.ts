@@ -1,7 +1,6 @@
-import type { TestContext } from '@mannercode/testing'
-import type { AppTestContext } from 'apps/__tests__/__helpers__'
-import type { TheaterLocation } from 'apps/cores'
+import { TestContext } from '@mannercode/testing'
 import {
+    AppTestContext,
     createAndLoginCustomer,
     createAppTestContext,
     createMovie,
@@ -19,6 +18,7 @@ import {
     Seatmap,
     ShowtimesClient,
     ShowtimesModule,
+    TheaterLocation,
     TheatersClient,
     TheatersModule,
     TicketHoldingModule,

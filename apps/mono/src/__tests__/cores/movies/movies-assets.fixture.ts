@@ -1,9 +1,7 @@
 import type { TestContext } from '@mannercode/testing'
 import type { AssetsService } from 'infrastructures'
-import type { TestAsset } from '../../__helpers__'
-import type { MoviesBaseContext } from './create-movies-context'
-import { buildCreateAssetDto, testAssets, uploadAsset } from '../../__helpers__'
-import { createMoviesContext } from './create-movies-context'
+import { buildCreateAssetDto, testAssets, uploadAsset, TestAsset } from '../../__helpers__'
+import { createMoviesContext, MoviesBaseContext } from './create-movies-context'
 
 export type MoviesAssetsFixture = MoviesBaseContext & {
     asset: TestAsset

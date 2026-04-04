@@ -1,8 +1,7 @@
-import type { MovieDto, SearchMoviesPageDto } from 'cores'
 import { Checksum, omit } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
 import { Rules } from 'config'
-import { MovieGenre, MovieRating } from 'cores'
+import { MovieGenre, MovieRating, MovieDto, SearchMoviesPageDto } from 'cores'
 import type { MoviesFixture } from './movies.fixture'
 import {
     buildCreateMovieDto,

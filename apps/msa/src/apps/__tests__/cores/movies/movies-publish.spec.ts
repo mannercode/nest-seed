@@ -1,9 +1,7 @@
-import type { MovieDto } from 'apps/cores'
 import { nullObjectId } from '@mannercode/testing'
 import { Errors } from 'apps/__tests__/__helpers__'
-import { MovieGenre, MovieRating } from 'apps/cores'
-import type { MoviesPublishFixture } from './movies-publish.fixture'
-import { createUnpublishedMovie } from './movies-publish.fixture'
+import { MovieGenre, MovieRating, MovieDto } from 'apps/cores'
+import { createUnpublishedMovie, MoviesPublishFixture } from './movies-publish.fixture'
 
 describe('MoviesPublish', () => {
     let fix: MoviesPublishFixture

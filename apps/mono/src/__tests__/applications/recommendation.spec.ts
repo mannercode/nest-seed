@@ -1,7 +1,9 @@
-import type { MovieDto } from 'cores'
-import { MovieGenre } from 'cores'
-import type { RecommendationFixture } from './recommendation.fixture'
-import { createShowingMovies, createWatchedMovies } from './recommendation.fixture'
+import { MovieGenre, MovieDto } from 'cores'
+import {
+    createShowingMovies,
+    createWatchedMovies,
+    RecommendationFixture
+} from './recommendation.fixture'
 
 describe('RecommendationService', () => {
     let fix: RecommendationFixture

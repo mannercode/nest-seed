@@ -1,8 +1,12 @@
-import type { HttpTestContext, ModuleMetadataEx } from '@mannercode/testing'
 import type { QueueOptions } from 'bullmq'
 import type Redis from 'ioredis'
 import { AppLoggerService } from '@mannercode/common'
-import { createHttpTestContext, isDebuggingEnabled } from '@mannercode/testing'
+import {
+    createHttpTestContext,
+    isDebuggingEnabled,
+    HttpTestContext,
+    ModuleMetadataEx
+} from '@mannercode/testing'
 import { BullModule } from '@nestjs/bullmq'
 import { ConfigService } from '@nestjs/config'
 import { EventEmitterModule } from '@nestjs/event-emitter'

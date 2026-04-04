@@ -1,5 +1,13 @@
 import { isDateString } from 'class-validator'
 
+export function toDateOrValue(value: unknown): unknown {
+    if (isDateString(value)) {
+        const date = new Date(value as string)
+        if (!isNaN(date.getTime())) return date
+    }
+    return value
+}
+
 export class Json {
     /**
      * Wraps 64-bit integers in a JSON string with quotes to preserve precision.
@@ -42,10 +50,9 @@ export class Json {
      * @param {any} input - The object or value to convert.
      * @returns {any} The converted object (date strings become Date objects).
      */
-    static reviveIsoDates(input: any): any {
-        if (isDateString(input)) {
-            return new Date(input)
-        }
+    static reviveDates(input: any): any {
+        const revived = toDateOrValue(input)
+        if (revived !== input) return revived
 
         if (input === null || typeof input !== 'object') {
             return input
@@ -56,19 +63,17 @@ export class Json {
         }
 
         if (Array.isArray(input)) {
-            return input.map((item) => Json.reviveIsoDates(item))
+            return input.map((item) => Json.reviveDates(item))
         }
 
         const convertedObject: Record<string, unknown> = {}
         const source = input as Record<string, unknown>
 
         for (const [key, nestedValue] of Object.entries(source)) {
-            if (isDateString(nestedValue)) {
-                convertedObject[key] = new Date(nestedValue as string)
-            } else if (typeof nestedValue === 'object') {
-                convertedObject[key] = Json.reviveIsoDates(nestedValue)
+            if (typeof nestedValue === 'object') {
+                convertedObject[key] = Json.reviveDates(nestedValue)
             } else {
-                convertedObject[key] = nestedValue
+                convertedObject[key] = toDateOrValue(nestedValue)
             }
         }
 

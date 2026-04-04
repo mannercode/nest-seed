@@ -1,5 +1,4 @@
-import type { TestContext } from '@mannercode/testing'
-import type { TheaterLocation } from 'cores'
+import { TestContext } from '@mannercode/testing'
 import { BookingModule, PurchaseModule } from 'applications'
 import { BookingHttpController, CustomerJwtAuthGuard } from 'controllers'
 import {
@@ -8,13 +7,14 @@ import {
     PurchaseRecordsModule,
     Seatmap,
     ShowtimesModule,
+    TheaterLocation,
     TheatersModule,
     TicketHoldingModule,
     TicketsModule
 } from 'cores'
 import { AssetsModule, PaymentsModule } from 'infrastructures'
-import type { AppTestContext } from '../__helpers__'
 import {
+    AppTestContext,
     createAndLoginCustomer,
     createAppTestContext,
     createMovie,

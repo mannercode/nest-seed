@@ -108,7 +108,7 @@ module.exports = [
                 }
             ],
             '@typescript-eslint/no-non-null-assertion': 'warn',
-            '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports' }],
+            'no-duplicate-imports': 'warn',
             '@typescript-eslint/no-redeclare': 'warn',
             '@typescript-eslint/adjacent-overload-signatures': 'warn'
         }

@@ -1,5 +1,4 @@
-import type { GuardsFixture } from './guards.fixture'
-import { createGuardsFixture } from './guards.fixture'
+import { createGuardsFixture, GuardsFixture } from './guards.fixture'
 
 describe('Auth Guards', () => {
     let fix: GuardsFixture

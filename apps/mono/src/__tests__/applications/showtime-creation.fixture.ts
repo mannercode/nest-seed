@@ -10,8 +10,7 @@ import {
     TicketsService
 } from 'cores'
 import { AssetsModule } from 'infrastructures'
-import type { AppTestContext as TestContext } from '../__helpers__'
-import { createAppTestContext } from '../__helpers__'
+import { createAppTestContext, AppTestContext as TestContext } from '../__helpers__'
 
 export type ShowtimeCreationFixture = TestContext & {
     showtimesService: ShowtimesService

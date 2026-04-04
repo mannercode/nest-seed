@@ -8,8 +8,7 @@ import type {
 import { pick } from '@mannercode/common'
 import { readFile } from 'fs/promises'
 import { basename } from 'path'
-import type { TestAsset } from '../assets'
-import { testAssets } from '../assets'
+import { testAssets, TestAsset } from '../assets'
 
 export function buildCreateAssetDto(file: TestAsset = testAssets.image): CreateAssetDto {
     return pick(file, ['originalName', 'mimeType', 'size', 'checksum'])

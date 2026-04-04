@@ -1,5 +1,5 @@
+import { toDateOrValue } from '@mannercode/common'
 import { HttpStatus } from '@nestjs/common'
-import { isDateString } from 'class-validator'
 import { createWriteStream } from 'fs'
 import superagent, { type Response } from 'superagent'
 
@@ -130,9 +130,8 @@ export class HttpTestClient {
         expect(response.status).toEqual(status)
 
         if (response.type === 'application/json') {
-            response.body = JSON.parse(response.text, (_key, value) =>
-                isDateString(value) ? new Date(value) : value
-            )
+            console.log('response.text', response.text)
+            response.body = JSON.parse(response.text, (_key, value) => toDateOrValue(value))
         }
 
         if (expected !== undefined) {

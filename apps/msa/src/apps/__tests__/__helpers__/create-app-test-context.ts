@@ -1,10 +1,13 @@
-import type { HttpTestContext, ModuleMetadataEx } from '@mannercode/testing'
-import type { MicroserviceOptions } from '@nestjs/microservices'
 import { AppLoggerService } from '@mannercode/common'
 import { TemporalClientModule } from '@mannercode/microservices'
-import { createHttpTestContext, isDebuggingEnabled } from '@mannercode/testing'
+import {
+    createHttpTestContext,
+    isDebuggingEnabled,
+    HttpTestContext,
+    ModuleMetadataEx
+} from '@mannercode/testing'
 import { ConfigService } from '@nestjs/config'
-import { Transport } from '@nestjs/microservices'
+import { Transport, MicroserviceOptions } from '@nestjs/microservices'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import compression from 'compression'
 import {
