@@ -29,7 +29,7 @@ jobs:
             - name: Create Release Pull Request or Publish
               uses: changesets/action@v1
               with:
-                  publish: bash -c 'npx turbo run build && npx changeset publish'
+                  publish: bash .github/scripts/publish.sh
                   title: 'chore: version packages'
                   commit: 'chore: version packages'
               env:
