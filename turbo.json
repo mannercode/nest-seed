@@ -5,8 +5,7 @@
         "clean": { "cache": false },
         "lint": { "dependsOn": ["^build"], "inputs": ["src/**", "../eslint.config.js"] },
         "format": { "cache": false },
-        "test": { "dependsOn": ["build"] },
-        "test:unit": { "dependsOn": ["^build"], "cache": false },
-        "test:e2e": { "cache": false }
+        "test:unit": { "dependsOn": ["^build"], "cache": false, "passThroughEnv": ["*"] },
+        "test:e2e": { "cache": false, "passThroughEnv": ["*"] }
     }
 }

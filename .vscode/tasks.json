@@ -1,77 +1,45 @@
 {
     "version": "2.0.0",
     "tasks": [
+        { "label": "clean", "type": "shell", "command": "npm run clean" },
         {
-            "label": "clean",
-            "type": "shell",
-            "command": "rm -rf node_modules .turbo libs/*/dist libs/*/*.tsbuildinfo apps/*/node_modules apps/*/_output apps/*/*.tsbuildinfo"
-        },
-        {
-            "label": "libs:build",
+            "label": "build",
             "group": { "kind": "build", "isDefault": true },
             "type": "shell",
             "command": "npm run build"
         },
+        { "label": "lint", "type": "shell", "command": "npm run lint" },
         {
-            "label": "libs:typecheck",
+            "label": "test:unit",
+            "group": { "kind": "test", "isDefault": true },
             "type": "shell",
-            "command": "npx tsc -p libs/tsconfig.json --noEmit"
+            "command": "npm test"
         },
-        {
-            "label": "libs:lint",
-            "type": "shell",
-            "command": "npm run lint",
-            "dependsOn": ["libs:typecheck"]
-        },
-        { "label": "libs:test", "type": "shell", "command": "npm test" },
         {
             "label": "mono:lint",
             "type": "shell",
-            "command": "npm --prefix apps/mono run lint",
-            "dependsOn": ["libs:build"]
+            "command": "npx turbo run lint --filter=nest-mono"
         },
         {
             "label": "mono:test:unit",
             "type": "shell",
-            "command": "npm --prefix apps/mono run test:unit",
-            "dependsOn": ["libs:build"]
+            "command": "npx turbo run test:unit --filter=nest-mono"
         },
         {
             "label": "mono:test:e2e",
             "type": "shell",
-            "command": "npm --prefix apps/mono run test:e2e",
-            "dependsOn": ["libs:build"]
+            "command": "npx turbo run test:e2e --filter=nest-mono"
         },
-        {
-            "label": "msa:lint",
-            "type": "shell",
-            "command": "npm --prefix apps/msa run lint",
-            "dependsOn": ["libs:build"]
-        },
+        { "label": "msa:lint", "type": "shell", "command": "npx turbo run lint --filter=nest-msa" },
         {
             "label": "msa:test:unit",
             "type": "shell",
-            "command": "npm --prefix apps/msa run test:unit",
-            "dependsOn": ["libs:build"]
+            "command": "npx turbo run test:unit --filter=nest-msa"
         },
         {
             "label": "msa:test:e2e",
             "type": "shell",
-            "command": "npm --prefix apps/msa run test:e2e",
-            "dependsOn": ["libs:build"]
-        },
-        {
-            "label": "all:test:unit",
-            "group": { "kind": "test", "isDefault": true },
-            "dependsOn": ["libs:test", "mono:test:unit", "msa:test:unit"],
-            "dependsOrder": "sequence",
-            "problemMatcher": []
-        },
-        {
-            "label": "all:lint",
-            "dependsOn": ["libs:lint", "mono:lint", "msa:lint"],
-            "dependsOrder": "sequence",
-            "problemMatcher": []
+            "command": "npx turbo run test:e2e --filter=nest-msa"
         }
     ]
 }

@@ -9,7 +9,7 @@
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "clean": "rm -rf dist *.tsbuildinfo",
-        "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest --no-cache --coverage",
+        "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest --no-cache",
         "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
         "format": "eslint src/ --fix && prettier --write src/"
     },

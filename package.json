@@ -10,7 +10,7 @@
         "clean": "turbo run clean",
         "lint": "turbo run lint",
         "format": "turbo run format",
-        "test": "turbo run test:unit --concurrency=1",
+        "test:unit": "turbo run test:unit --concurrency=1",
         "test:e2e": "turbo run test:e2e --concurrency=1"
     },
     "devDependencies": {

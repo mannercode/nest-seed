@@ -1,10 +1,14 @@
 const { builtinModules } = require('module')
-const tseslint = require('typescript-eslint')
-const allowedDependenciesPlugin = require('eslint-plugin-allowed-dependencies').default
-const perfectionistPlugin = require('eslint-plugin-perfectionist')
 const globals = require('globals')
+const allowedDependenciesPlugin = require('eslint-plugin-allowed-dependencies').default
 const jestPlugin = require('eslint-plugin-jest')
-const unusedImportsPlugin = require('eslint-plugin-unused-imports')
+const {
+    tseslint,
+    baseGlobals,
+    basePlugins,
+    baseRules,
+    barrelImportPatterns
+} = require('../../eslint.config.base')
 
 const escapeForRegex = (value) => value.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&')
 const nodeBuiltinModulePattern = `^(?:node:)?(?:${[
@@ -27,15 +31,6 @@ const sourceDependencyOptions = {
 }
 const testDependencyOptions = { ...sourceDependencyOptions, development: true }
 
-const baseGlobals = { ...globals.node, ...globals.es2021, module: 'readonly', require: 'readonly' }
-
-const barrelImportPatterns = [
-    {
-        regex: '\\.\\./(?!\\.)[^/]+/[^/]+',
-        message: 'Import from the barrel (index.ts) instead of submodules.'
-    }
-]
-
 module.exports = [
     {
         files: ['src/**/*.ts'],
@@ -49,68 +44,11 @@ module.exports = [
             },
             globals: { ...baseGlobals }
         },
-        plugins: {
-            '@typescript-eslint': tseslint.plugin,
-            allowed: allowedDependenciesPlugin,
-            perfectionist: perfectionistPlugin,
-            'unused-imports': unusedImportsPlugin
-        },
+        plugins: { ...basePlugins, allowed: allowedDependenciesPlugin },
         rules: {
-            ...tseslint.plugin.configs.recommended.rules,
-            ...{
-                '@typescript-eslint/no-floating-promises': 'warn',
-                '@typescript-eslint/no-misused-promises': 'warn',
-                '@typescript-eslint/await-thenable': 'warn',
-                '@typescript-eslint/no-confusing-void-expression': [
-                    'warn',
-                    { ignoreArrowShorthand: true }
-                ],
-                '@typescript-eslint/return-await': ['warn', 'in-try-catch'],
-                '@typescript-eslint/prefer-optional-chain': 'warn',
-                '@typescript-eslint/prefer-nullish-coalescing': 'warn',
-                '@typescript-eslint/no-unnecessary-condition': 'warn',
-                '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
-                '@typescript-eslint/switch-exhaustiveness-check': 'warn',
-                '@typescript-eslint/only-throw-error': 'warn'
-            },
-            'object-shorthand': 'warn',
-            'no-useless-rename': 'warn',
-            'arrow-body-style': ['warn', 'as-needed', { requireReturnForObjectLiteral: false }],
-            'perfectionist/sort-imports': [
-                'warn',
-                { type: 'natural', order: 'asc', newlinesBetween: 0 }
-            ],
-            'perfectionist/sort-exports': [
-                'warn',
-                { type: 'natural', order: 'asc', newlinesBetween: 0 }
-            ],
-            'no-restricted-imports': ['warn', { patterns: [...barrelImportPatterns] }],
-            'no-bitwise': 'error',
-            'consistent-return': 'error',
-            'no-constant-condition': 'warn',
+            ...baseRules,
             'default-case': 'off',
-            'allowed/dependencies': ['warn', sourceDependencyOptions],
-            '@typescript-eslint/no-shadow': 'error',
-            '@typescript-eslint/explicit-function-return-type': 'off',
-            '@typescript-eslint/explicit-module-boundary-types': 'off',
-            '@typescript-eslint/no-explicit-any': 'off',
-            '@typescript-eslint/no-empty-function': 'off',
-            '@typescript-eslint/no-empty-object-type': 'off',
-            '@typescript-eslint/no-unused-vars': 'off',
-            'unused-imports/no-unused-imports': 'warn',
-            'unused-imports/no-unused-vars': [
-                'warn',
-                {
-                    args: 'all',
-                    argsIgnorePattern: '^_',
-                    varsIgnorePattern: '^_',
-                    caughtErrorsIgnorePattern: '^_'
-                }
-            ],
-            '@typescript-eslint/no-non-null-assertion': 'warn',
-            'no-duplicate-imports': 'warn',
-            '@typescript-eslint/no-redeclare': 'warn',
-            '@typescript-eslint/adjacent-overload-signatures': 'warn'
+            'allowed/dependencies': ['warn', sourceDependencyOptions]
         }
     },
     {
