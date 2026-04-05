@@ -21,7 +21,6 @@ jobs:
                   push: never
                   runCmd: |
                       set -Eeuo pipefail
-                      docker rm -f $(docker ps -aq)
                       npm run build
                       bash .github/scripts/repeat.sh 50 npm run test:unit
     e2e:

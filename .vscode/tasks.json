@@ -2,10 +2,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "*** VERIFY ALL ***",
+            "label": "verify:all",
             "dependsOn": ["all:clean", "all:build", "all:lint", "all:test:unit", "all:test:e2e"],
-            "dependsOrder": "sequence",
-            "problemMatcher": []
+            "dependsOrder": "sequence"
         },
         { "label": "all:clean", "type": "shell", "command": "npm run clean" },
         {
@@ -21,35 +20,10 @@
             "type": "shell",
             "command": "npm run test:unit"
         },
-        {
-            "label": "all:test:e2e",
-            "group": { "kind": "test" },
-            "type": "shell",
-            "command": "npm run test:e2e"
-        },
-        {
-            "label": "mono:test:unit",
-            "group": { "kind": "test" },
-            "type": "shell",
-            "command": "npm run test:unit -w apps/mono"
-        },
-        {
-            "label": "mono:test:e2e",
-            "group": { "kind": "test" },
-            "type": "shell",
-            "command": "npm run test:e2e -w apps/mono"
-        },
-        {
-            "label": "msa:test:unit",
-            "group": { "kind": "test" },
-            "type": "shell",
-            "command": "npm run test:unit -w apps/msa"
-        },
-        {
-            "label": "msa:test:e2e",
-            "group": { "kind": "test" },
-            "type": "shell",
-            "command": "npm run test:e2e -w apps/msa"
-        }
+        { "label": "all:test:e2e", "type": "shell", "command": "npm run test:e2e" },
+        { "label": "mono:test:unit", "type": "shell", "command": "npm run test:unit -w apps/mono" },
+        { "label": "mono:test:e2e", "type": "shell", "command": "npm run test:e2e -w apps/mono" },
+        { "label": "msa:test:unit", "type": "shell", "command": "npm run test:unit -w apps/msa" },
+        { "label": "msa:test:e2e", "type": "shell", "command": "npm run test:e2e -w apps/msa" }
     ]
 }
