@@ -89,7 +89,7 @@ Docker 이미지 태그와 인프라 접속 정보(MongoDB, Redis, NATS, MinIO, 
 
 1. 호스트에서 [Git credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials)를 설정한다.
 2. VS Code에서 "Reopen in Container" 명령을 실행한다.
-3. Dev Container는 `.devcontainer/Dockerfile`(베이스 `node:24-slim`)을 사용하며, `postCreateCommand`로 `npm ci`, `postStartCommand`로 인프라를 자동으로 시작한다.
+3. Dev Container는 `.devcontainer/Dockerfile`(베이스 `node:24-slim`)을 사용하며, `postCreateCommand`로 `npm install`, `postStartCommand`로 인프라를 자동으로 시작한다.
 4. Dev Container 안에서도 별도 환경 변수 설정 없이 `npm run test:e2e:mono`를 바로 실행할 수 있다.
 
 ---

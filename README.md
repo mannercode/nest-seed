@@ -31,7 +31,7 @@ nest-seed/
 ### 1. 의존성 설치
 
 ```bash
-npm ci
+npm install
 ```
 
 ### 2. 패키지 빌드
@@ -50,7 +50,7 @@ npm run test:unit
 
 ```bash
 cd apps/mono   # 또는 apps/msa
-npm ci
+npm install
 npm test
 ```
 

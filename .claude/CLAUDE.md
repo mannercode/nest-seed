@@ -21,18 +21,6 @@ nest-seed/
 └── docs/                    ← 아키텍처·설계 문서
 ```
 
-## Build & Test
-
-```bash
-npm ci                  # 의존성 설치
-npm run build           # 패키지 빌드
-npm run test:unit       # 패키지 테스트
-
-cd apps/mono       # 또는 apps/msa
-npm ci
-npm test                # 테스트 실행
-```
-
 ## Architecture
 
 SoLA (Service-oriented Layered Architecture) — 단방향 의존만 허용:
