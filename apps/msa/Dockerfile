@@ -24,15 +24,15 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/* && \
     npm cache clean --force
-WORKDIR /monorepo
-COPY --from=build /monorepo/package.json ./
-COPY --from=build /monorepo/libs/common/package.json libs/common/
-COPY --from=build /monorepo/libs/common/dist/ libs/common/dist/
-COPY --from=build /monorepo/libs/microservices/package.json libs/microservices/
-COPY --from=build /monorepo/libs/microservices/dist/ libs/microservices/dist/
-COPY --from=build /monorepo/apps/msa/package.json apps/msa/
-RUN npm install --omit=dev
-COPY --from=build /monorepo/apps/msa/_output/dist/index.js apps/msa/_output/dist/index.js
-COPY --from=build /monorepo/apps/msa/_output/dist/workflow-bundle.js apps/msa/_output/dist/workflow-bundle.js
+WORKDIR /monorepo/apps/msa
+COPY --from=build /monorepo/package.json /monorepo/
+COPY --from=build /monorepo/libs/common/package.json /monorepo/libs/common/
+COPY --from=build /monorepo/libs/common/dist/ /monorepo/libs/common/dist/
+COPY --from=build /monorepo/libs/microservices/package.json /monorepo/libs/microservices/
+COPY --from=build /monorepo/libs/microservices/dist/ /monorepo/libs/microservices/dist/
+COPY --from=build /monorepo/apps/msa/package.json /monorepo/apps/msa/
+RUN npm install --omit=dev --prefix /monorepo
+COPY --from=build /monorepo/apps/msa/_output/dist/index.js _output/dist/index.js
+COPY --from=build /monorepo/apps/msa/_output/dist/workflow-bundle.js _output/dist/workflow-bundle.js
 
-CMD ["node", "apps/msa/_output/dist/index.js"]
+CMD ["node", "_output/dist/index.js"]
