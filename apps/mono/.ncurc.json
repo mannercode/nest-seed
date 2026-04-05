@@ -1,1 +1,1 @@
-{ "target": "latest", "reject": ["class-validator", "@types/node"] }
+{ "target": "latest", "reject": ["@types/node"] }

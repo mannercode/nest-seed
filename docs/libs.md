@@ -35,20 +35,6 @@
 
 libs 3개의 공통 devDependencies(NestJS, TypeScript, 테스트 도구 등)는 루트 `package.json`에서 일괄 관리한다. 각 lib의 `devDependencies`에는 workspace 패키지 참조(`@mannercode/testing`)만 남긴다.
 
-### overrides
-
-`overrides`는 간접 의존성(transitive dependency)의 버전을 강제한다.
-
-```json
-"overrides": {
-    "class-validator": "0.14.4",
-    "lodash": "^4.18.0"
-}
-```
-
-- `class-validator`: NestJS 11이 0.15를 미지원하므로 0.14.4로 고정
-- `lodash`: 보안 패치가 포함된 4.18 이상으로 강제
-
 ---
 
 ## TypeScript 설정
