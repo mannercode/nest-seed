@@ -27,7 +27,12 @@
             "type": "shell",
             "command": "turbo run test:e2e --concurrency=1"
         },
-
+        {
+            "label": "libs:test:unit",
+            "group": { "kind": "test" },
+            "type": "shell",
+            "command": "turbo run test:unit --concurrency=1 --filter=./libs/*"
+        },
         {
             "label": "mono:test:unit",
             "group": { "kind": "test" },
