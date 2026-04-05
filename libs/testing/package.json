@@ -1,0 +1,32 @@
+{
+    "name": "@mannercode/testing",
+    "version": "2.0.2",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "clean": "rm -rf dist *.tsbuildinfo",
+        "lint": "eslint src/ --max-warnings=0"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/mannercode/nest-seed.git",
+        "directory": "libs/testing"
+    },
+    "dependencies": {
+        "superagent": "^10.3.0"
+    },
+    "peerDependencies": {
+        "@mannercode/common": "^2.0.2",
+        "@nestjs/common": "^11.0.0",
+        "@nestjs/testing": "^11.0.0",
+        "class-validator": "0.14.4"
+    }
+}

@@ -1,0 +1,64 @@
+import { DateUtil } from '@mannercode/common'
+import { TestContext } from '@mannercode/testing'
+import { RecommendationModule } from 'applications'
+import {
+    CustomerJwtAuthGuard,
+    CustomerOptionalJwtAuthGuard,
+    MoviesHttpController
+} from 'controllers'
+import { CustomersModule, MoviesModule, MovieDto, ShowtimesModule, WatchRecordsModule } from 'cores'
+import { AssetsModule } from 'infrastructures'
+import {
+    AppTestContext,
+    createAndLoginCustomer,
+    createAppTestContext,
+    createMovie,
+    createShowtimes,
+    createWatchRecord
+} from '../__helpers__'
+
+export type RecommendationFixture = AppTestContext & {}
+
+export async function createRecommendationFixture(): Promise<RecommendationFixture> {
+    const ctx = await createAppTestContext({
+        controllers: [MoviesHttpController],
+        imports: [
+            MoviesModule,
+            AssetsModule,
+            CustomersModule,
+            ShowtimesModule,
+            WatchRecordsModule,
+            RecommendationModule
+        ],
+        providers: [CustomerJwtAuthGuard, CustomerOptionalJwtAuthGuard]
+    })
+
+    return { ...ctx }
+}
+
+export async function createShowingMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
+    const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
+
+    const createShowtimesDtos = movies.map((movie) => ({
+        movieId: movie.id,
+        startTime: DateUtil.add({ days: 1 })
+    }))
+
+    await createShowtimes(ctx, createShowtimesDtos)
+
+    return movies
+}
+
+export async function createWatchedMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
+    const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
+
+    const { accessToken, customer } = await createAndLoginCustomer(ctx)
+
+    const watchRecords = await Promise.all(
+        movies.map((movie) =>
+            createWatchRecord(ctx, { customerId: customer.id, movieId: movie.id })
+        )
+    )
+
+    return { accessToken, customer, movies, watchRecords }
+}

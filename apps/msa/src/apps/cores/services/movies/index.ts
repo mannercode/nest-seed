@@ -1,0 +1,6 @@
+export * from './dtos'
+export * from './errors'
+export * from './models'
+export * from './movies.client'
+export * from './movies.module'
+export * from './movies.service'

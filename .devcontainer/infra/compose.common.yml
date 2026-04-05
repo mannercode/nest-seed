@@ -1,0 +1,5 @@
+services:
+    common-options:
+        logging: { options: { max-size: '1m', max-file: '1' } }
+        extra_hosts: ['host.docker.internal:host-gateway']
+        healthcheck: { interval: 30s, timeout: 3s }

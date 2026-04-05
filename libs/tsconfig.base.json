@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "moduleResolution": "node10",
+        "ignoreDeprecations": "6.0",
+        "target": "ESNext",
+        "lib": ["ESNext"],
+        "types": ["node", "jest"],
+
+        "strict": true,
+        "strictPropertyInitialization": false,
+
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "declaration": true,
+        "declarationMap": true,
+
+        "sourceMap": true,
+
+        "forceConsistentCasingInFileNames": true,
+        "noFallthroughCasesInSwitch": true,
+
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
+
+        "skipLibCheck": true
+    }
+}

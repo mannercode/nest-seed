@@ -1,0 +1,56 @@
+{
+    "name": "${containerWorkspaceFolderBasename}",
+    "hostRequirements": { "cpus": 4, "memory": "16gb", "storage": "32gb" },
+    "build": { "dockerfile": "Dockerfile", "context": "." },
+    "features": {
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+    "privileged": true,
+    "runArgs": [
+        "--env-file",
+        ".devcontainer/infra/.env",
+        "--add-host",
+        "host.docker.internal:127.0.0.1",
+        "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
+    ],
+    "remoteUser": "node",
+    "mounts": [
+        "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind",
+        "source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind",
+        "source=${localEnv:HOME}/.config/gh,target=/home/node/.config/gh,type=bind"
+    ],
+    "initializeCommand": {
+        "prepare-mounts": "mkdir -p ${localEnv:HOME}/.claude ${localEnv:HOME}/.config/gh",
+        "prepare-files": "touch ${localEnv:HOME}/.claude.json"
+    },
+    "postCreateCommand": { "husky": "husky", "ci": "npm install" },
+    "postStartCommand": {
+        "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null",
+        "infra": "bash .devcontainer/infra/reset.sh"
+    },
+    "forwardPorts": [5010, 5020],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "firsttris.vscode-jest-runner",
+                "ms-vscode.live-server",
+                "ms-azuretools.vscode-docker",
+                "ms-azuretools.vscode-containers",
+                "jebbs.plantuml",
+                "esbenp.prettier-vscode",
+                "mutantdino.resourcemonitor",
+                "mkhl.shfmt",
+                "anthropic.claude-code"
+            ],
+            "settings": {
+                "remote.autoForwardPorts": false,
+                "remote.downloadExtensionsLocally": true,
+                "livePreview.portNumber": 5010,
+                "plantuml.server": "http://localhost:5020/",
+                "plantuml.render": "PlantUMLServer"
+            }
+        }
+    }
+}

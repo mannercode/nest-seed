@@ -1,0 +1,45 @@
+import { RedisHealthIndicator } from '@mannercode/common'
+import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
+import { HealthCheckService, MongooseHealthIndicator, TerminusModule } from '@nestjs/terminus'
+import { MongooseConfigModule, RedisConfigModule } from 'config'
+import Redis from 'ioredis'
+import mongoose from 'mongoose'
+
+@Injectable()
+class HealthService {
+    constructor(
+        private readonly health: HealthCheckService,
+        private readonly mongooseHealth: MongooseHealthIndicator,
+        private readonly redisHealth: RedisHealthIndicator,
+        @Inject(MongooseConfigModule.moduleName)
+        private readonly mongoConnection: mongoose.Connection,
+        @Inject(RedisConfigModule.moduleName) private readonly redisConnection: Redis
+    ) {}
+
+    check() {
+        const checks = [
+            async () =>
+                this.mongooseHealth.pingCheck('mongodb', { connection: this.mongoConnection }),
+            async () => this.redisHealth.isHealthy('redis', this.redisConnection)
+        ]
+
+        return this.health.check(checks)
+    }
+}
+
+@Controller('health')
+class HealthController {
+    constructor(private readonly service: HealthService) {}
+
+    @Get()
+    health() {
+        return this.service.check()
+    }
+}
+
+@Module({
+    controllers: [HealthController],
+    imports: [TerminusModule],
+    providers: [HealthService, RedisHealthIndicator]
+})
+export class HealthModule {}

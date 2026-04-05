@@ -1,0 +1,14 @@
+include:
+    - ./compose.nats.yml
+    - ./compose.temporal.yml
+
+services:
+    msa-setup:
+        image: docker:cli
+        container_name: msa-setup
+        depends_on:
+            nats-setup: { condition: service_completed_successfully }
+            temporal-setup: { condition: service_completed_successfully }
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+        command: 'rm nats-setup temporal-setup'

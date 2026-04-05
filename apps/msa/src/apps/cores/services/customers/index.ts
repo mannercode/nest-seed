@@ -1,0 +1,7 @@
+export * from './customers.client'
+export * from './customers.module'
+export * from './customers.repository'
+export * from './customers.service'
+export * from './dtos'
+export * from './errors'
+export * from './models'

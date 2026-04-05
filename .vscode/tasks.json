@@ -1,0 +1,77 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "clean",
+            "type": "shell",
+            "command": "rm -rf node_modules .turbo libs/*/dist libs/*/*.tsbuildinfo apps/*/node_modules apps/*/_output apps/*/*.tsbuildinfo"
+        },
+        {
+            "label": "libs:build",
+            "group": { "kind": "build", "isDefault": true },
+            "type": "shell",
+            "command": "npm run build"
+        },
+        {
+            "label": "libs:typecheck",
+            "type": "shell",
+            "command": "npx tsc -p libs/tsconfig.json --noEmit"
+        },
+        {
+            "label": "libs:lint",
+            "type": "shell",
+            "command": "npm run lint",
+            "dependsOn": ["libs:typecheck"]
+        },
+        { "label": "libs:test", "type": "shell", "command": "npm test" },
+        {
+            "label": "mono:lint",
+            "type": "shell",
+            "command": "npm --prefix apps/mono run lint",
+            "dependsOn": ["libs:build"]
+        },
+        {
+            "label": "mono:test:unit",
+            "type": "shell",
+            "command": "npm --prefix apps/mono run test:unit",
+            "dependsOn": ["libs:build"]
+        },
+        {
+            "label": "mono:test:e2e",
+            "type": "shell",
+            "command": "npm --prefix apps/mono run test:e2e",
+            "dependsOn": ["libs:build"]
+        },
+        {
+            "label": "msa:lint",
+            "type": "shell",
+            "command": "npm --prefix apps/msa run lint",
+            "dependsOn": ["libs:build"]
+        },
+        {
+            "label": "msa:test:unit",
+            "type": "shell",
+            "command": "npm --prefix apps/msa run test:unit",
+            "dependsOn": ["libs:build"]
+        },
+        {
+            "label": "msa:test:e2e",
+            "type": "shell",
+            "command": "npm --prefix apps/msa run test:e2e",
+            "dependsOn": ["libs:build"]
+        },
+        {
+            "label": "all:test:unit",
+            "group": { "kind": "test", "isDefault": true },
+            "dependsOn": ["libs:test", "mono:test:unit", "msa:test:unit"],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
+            "label": "all:lint",
+            "dependsOn": ["libs:lint", "mono:lint", "msa:lint"],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        }
+    ]
+}

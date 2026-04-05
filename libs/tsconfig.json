@@ -1,0 +1,12 @@
+{
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "noEmit": true,
+        "paths": {
+            "@mannercode/common": ["./common/src"],
+            "@mannercode/microservices": ["./microservices/src"],
+            "@mannercode/testing": ["./testing/src"]
+        }
+    },
+    "include": ["*/src/**/*"]
+}

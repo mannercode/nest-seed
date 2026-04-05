@@ -1,0 +1,135 @@
+x-redis-base: &redis-base
+    extends: { file: ./compose.common.yml, service: common-options }
+    image: $REDIS_IMAGE
+    healthcheck:
+        test: 'redis-cli ping'
+    deploy: { resources: { limits: { memory: 128m } } }
+    shm_size: '8m'
+    command: |
+        sh -euc '
+          redis-server --port 6379 \
+          --cluster-enabled yes \
+          --cluster-config-file nodes.conf \
+          --cluster-announce-ip $$ANNOUNCE_IP \
+          --cluster-announce-port $$ANNOUNCE_PORT \
+          --cluster-announce-bus-port $$ANNOUNCE_BUS_PORT \
+          --protected-mode no \
+          --appendonly yes
+        '
+
+services:
+    redis1:
+        <<: *redis-base
+        container_name: redis1
+        environment:
+            {
+                ANNOUNCE_IP: $REDIS_HOST1,
+                ANNOUNCE_PORT: $REDIS_PORT1,
+                ANNOUNCE_BUS_PORT: 1$REDIS_PORT1
+            }
+        ports: ['$REDIS_PORT1:6379', '1$REDIS_PORT1:16379']
+
+    redis2:
+        <<: *redis-base
+        container_name: redis2
+        environment:
+            {
+                ANNOUNCE_IP: $REDIS_HOST2,
+                ANNOUNCE_PORT: $REDIS_PORT2,
+                ANNOUNCE_BUS_PORT: 1$REDIS_PORT2
+            }
+        ports: ['$REDIS_PORT2:6379', '1$REDIS_PORT2:16379']
+
+    redis3:
+        <<: *redis-base
+        container_name: redis3
+        environment:
+            {
+                ANNOUNCE_IP: $REDIS_HOST3,
+                ANNOUNCE_PORT: $REDIS_PORT3,
+                ANNOUNCE_BUS_PORT: 1$REDIS_PORT3
+            }
+        ports: ['$REDIS_PORT3:6379', '1$REDIS_PORT3:16379']
+
+    redis4:
+        <<: *redis-base
+        container_name: redis4
+        environment:
+            {
+                ANNOUNCE_IP: $REDIS_HOST4,
+                ANNOUNCE_PORT: $REDIS_PORT4,
+                ANNOUNCE_BUS_PORT: 1$REDIS_PORT4
+            }
+        ports: ['$REDIS_PORT4:6379', '1$REDIS_PORT4:16379']
+
+    redis5:
+        <<: *redis-base
+        container_name: redis5
+        environment:
+            {
+                ANNOUNCE_IP: $REDIS_HOST5,
+                ANNOUNCE_PORT: $REDIS_PORT5,
+                ANNOUNCE_BUS_PORT: 1$REDIS_PORT5
+            }
+        ports: ['$REDIS_PORT5:6379', '1$REDIS_PORT5:16379']
+
+    redis6:
+        <<: *redis-base
+        container_name: redis6
+        environment:
+            {
+                ANNOUNCE_IP: $REDIS_HOST6,
+                ANNOUNCE_PORT: $REDIS_PORT6,
+                ANNOUNCE_BUS_PORT: 1$REDIS_PORT6
+            }
+        ports: ['$REDIS_PORT6:6379', '1$REDIS_PORT6:16379']
+
+    redis-setup:
+        extends: { file: ./compose.common.yml, service: common-options }
+        container_name: redis-setup
+        image: $REDIS_IMAGE
+        depends_on:
+            {
+                redis1: { condition: service_healthy },
+                redis2: { condition: service_healthy },
+                redis3: { condition: service_healthy },
+                redis4: { condition: service_healthy },
+                redis5: { condition: service_healthy },
+                redis6: { condition: service_healthy }
+            }
+        command: |
+            sh -euc '
+            REDIS_NODES=" \
+                $REDIS_HOST1:$REDIS_PORT1 \
+                $REDIS_HOST2:$REDIS_PORT2 \
+                $REDIS_HOST3:$REDIS_PORT3 \
+                $REDIS_HOST4:$REDIS_PORT4 \
+                $REDIS_HOST5:$REDIS_PORT5 \
+                $REDIS_HOST6:$REDIS_PORT6 \
+                "
+
+            echo "yes" |
+                redis-cli --cluster create $$REDIS_NODES --cluster-replicas 1
+            '
+
+    redis-gui:
+        profiles: ['gui']
+        extends: { file: ./compose.common.yml, service: common-options }
+        container_name: redis-gui
+        image: redis/redisinsight:latest
+        environment:
+            {
+                RI_DATABASE_MANAGEMENT: true,
+
+                RI_REDIS_HOST0: $REDIS_HOST1,
+                RI_REDIS_PORT0: $REDIS_PORT1,
+                RI_REDIS_ALIAS0: redis1,
+
+                RI_REDIS_HOST1: $REDIS_HOST2,
+                RI_REDIS_PORT1: $REDIS_PORT2,
+                RI_REDIS_ALIAS1: redis2
+            }
+        ports: ['5540:5540']
+
+# - name: Enable memory overcommit for Redis
+#   run: sudo sysctl -w vm.overcommit_memory=1
