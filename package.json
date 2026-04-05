@@ -11,10 +11,7 @@
         "lint": "turbo run lint",
         "format": "turbo run format",
         "test": "turbo run test:unit --concurrency=1",
-        "test:e2e": "turbo run test:e2e --concurrency=1",
-        "changeset:add": "changeset add",
-        "changeset:version": "changeset version",
-        "changeset:publish": "npm run build && changeset publish"
+        "test:e2e": "turbo run test:e2e --concurrency=1"
     },
     "devDependencies": {
         "@aws-sdk/client-s3": "3.1024.0",
