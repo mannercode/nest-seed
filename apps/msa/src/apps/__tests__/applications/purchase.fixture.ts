@@ -1,20 +1,12 @@
 import { DateUtil, pickIds } from '@mannercode/common'
 import { oid, toAny, TestContext } from '@mannercode/testing'
 import {
-    AppTestContext,
-    buildHoldTicketsDto,
-    createAppTestContext,
-    createShowtimes,
-    createTemporalTestWorker,
-    createTickets
-} from 'apps/__tests__/__helpers__'
-import {
     CreatePurchaseDto,
     createPurchaseActivities,
     PurchaseClient,
     PurchaseModule,
     TicketPurchaseService
-} from 'apps/applications'
+} from 'applications'
 import {
     CustomersClient,
     CustomersModule,
@@ -32,9 +24,17 @@ import {
     TicketHoldingModule,
     TicketsClient,
     TicketsModule
-} from 'apps/cores'
-import { PurchaseHttpController } from 'apps/gateway'
-import { AssetsClient, AssetsModule, PaymentsClient, PaymentsModule } from 'apps/infrastructures'
+} from 'cores'
+import { PurchaseHttpController } from 'gateway'
+import { AssetsClient, AssetsModule, PaymentsClient, PaymentsModule } from 'infrastructures'
+import {
+    AppTestContext,
+    buildHoldTicketsDto,
+    createAppTestContext,
+    createShowtimes,
+    createTemporalTestWorker,
+    createTickets
+} from '../__helpers__'
 
 export type PurchaseFixture = AppTestContext & {}
 
@@ -110,7 +110,7 @@ export async function createShowtimeAndTickets(ctx: TestContext) {
 }
 
 export async function holdTickets(ctx: TestContext, tickets: TicketDto[]) {
-    const { TicketHoldingService } = await import('apps/cores')
+    const { TicketHoldingService } = await import('cores')
     const ticketHoldingService = ctx.module.get(TicketHoldingService)
 
     const heldTicketCount = 4

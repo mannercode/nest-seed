@@ -1,9 +1,9 @@
-import type { PaymentDto } from 'apps/infrastructures'
+import type { PaymentDto } from 'infrastructures'
 import { pickIds } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
-import { buildCreatePaymentDto, createPayment, Errors } from 'apps/__tests__/__helpers__'
 import type { PaymentsFixture } from './payments.fixture'
+import { buildCreatePaymentDto, createPayment, Errors } from '../__helpers__'
 
 describe('PaymentsService', () => {
     let fix: PaymentsFixture

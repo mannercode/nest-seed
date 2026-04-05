@@ -1,14 +1,6 @@
 import { DateUtil } from '@mannercode/common'
 import { TestContext } from '@mannercode/testing'
-import {
-    AppTestContext,
-    createAndLoginCustomer,
-    createAppTestContext,
-    createMovie,
-    createShowtimes,
-    createWatchRecord
-} from 'apps/__tests__/__helpers__'
-import { RecommendationClient, RecommendationModule } from 'apps/applications'
+import { RecommendationClient, RecommendationModule } from 'applications'
 import {
     CustomersClient,
     CustomersModule,
@@ -19,13 +11,17 @@ import {
     ShowtimesModule,
     WatchRecordsClient,
     WatchRecordsModule
-} from 'apps/cores'
+} from 'cores'
+import { CustomerJwtAuthGuard, CustomerOptionalJwtAuthGuard, MoviesHttpController } from 'gateway'
+import { AssetsClient, AssetsModule } from 'infrastructures'
 import {
-    CustomerJwtAuthGuard,
-    CustomerOptionalJwtAuthGuard,
-    MoviesHttpController
-} from 'apps/gateway'
-import { AssetsClient, AssetsModule } from 'apps/infrastructures'
+    AppTestContext,
+    createAndLoginCustomer,
+    createAppTestContext,
+    createMovie,
+    createShowtimes,
+    createWatchRecord
+} from '../__helpers__'
 
 export type RecommendationFixture = AppTestContext & {}
 

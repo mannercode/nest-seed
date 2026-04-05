@@ -1,8 +1,8 @@
-import type { CustomerDto, SearchCustomersPageDto } from 'apps/cores'
+import type { CustomerDto, SearchCustomersPageDto } from 'cores'
 import { omit } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
-import { buildCreateCustomerDto, createCustomer, Errors } from 'apps/__tests__/__helpers__'
 import type { CustomersFixture } from './customers.fixture'
+import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
 
 describe('CustomersService', () => {
     let fix: CustomersFixture

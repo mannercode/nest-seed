@@ -1,15 +1,15 @@
 import { Checksum, omit } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
+import { Rules } from 'config'
+import { MovieGenre, MovieRating, MovieDto, SearchMoviesPageDto } from 'cores'
+import type { MoviesFixture } from './movies.fixture'
 import {
     buildCreateMovieDto,
     createMovie,
     Errors,
     testAssets,
     uploadAndFinalizeAsset
-} from 'apps/__tests__/__helpers__'
-import { MovieGenre, MovieRating, MovieDto, SearchMoviesPageDto } from 'apps/cores'
-import { Rules } from 'config'
-import type { MoviesFixture } from './movies.fixture'
+} from '../../__helpers__'
 
 describe('MoviesService', () => {
     let fix: MoviesFixture

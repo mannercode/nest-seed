@@ -1,5 +1,6 @@
-import { createCustomer, Errors } from 'apps/__tests__/__helpers__'
+import type { JwtAuthTokens } from '@mannercode/common'
 import type { CustomerAuthFixture } from './customer-auth.fixture'
+import { createCustomer, Errors, loginCustomer } from '../__helpers__'
 
 describe('CustomerAuthentication', () => {
     let fix: CustomerAuthFixture
@@ -44,6 +45,54 @@ describe('CustomerAuthentication', () => {
                     .post('/customers/login')
                     .body({ ...credentials, email: 'unknown@mail.com' })
                     .unauthorized(Errors.Auth.Unauthorized())
+            })
+        })
+    })
+
+    describe('GET /customers', () => {
+        // 액세스 토큰이 유효하지 않을 때
+        describe('when the access token is invalid', () => {
+            // 401 Unauthorized를 반환한다
+            it('returns 401 Unauthorized', async () => {
+                await fix.httpClient
+                    .get('/customers')
+                    .headers({ Authorization: 'Bearer invalid-token' })
+                    .unauthorized(Errors.Auth.Unauthorized())
+            })
+        })
+    })
+
+    describe('POST /customers/refresh', () => {
+        // 리프레시 토큰이 유효할 때
+        describe('when the refresh token is valid', () => {
+            let authTokens: JwtAuthTokens
+
+            beforeEach(async () => {
+                authTokens = await loginCustomer(fix, credentials)
+            })
+
+            // 새 인증 토큰을 반환한다
+            it('returns new auth tokens', async () => {
+                const { accessToken, refreshToken } = authTokens
+
+                const { body } = await fix.httpClient
+                    .post('/customers/refresh')
+                    .body({ refreshToken })
+                    .ok()
+
+                expect(body.accessToken).not.toEqual(accessToken)
+                expect(body.refreshToken).not.toEqual(refreshToken)
+            })
+        })
+
+        // 리프레시 토큰이 유효하지 않을 때
+        describe('when the refresh token is invalid', () => {
+            // 401 Unauthorized를 반환한다
+            it('returns 401 Unauthorized', async () => {
+                await fix.httpClient
+                    .post('/customers/refresh')
+                    .body({ refreshToken: 'invalid-token' })
+                    .unauthorized(Errors.JwtAuth.RefreshTokenVerificationFailed('jwt malformed'))
             })
         })
     })

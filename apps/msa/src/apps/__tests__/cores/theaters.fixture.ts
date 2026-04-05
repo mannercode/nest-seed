@@ -1,6 +1,6 @@
-import { createAppTestContext, AppTestContext } from 'apps/__tests__/__helpers__'
-import { TheatersClient, TheatersModule } from 'apps/cores'
-import { TheatersHttpController } from 'apps/gateway'
+import { TheatersClient, TheatersModule } from 'cores'
+import { TheatersHttpController } from 'gateway'
+import { createAppTestContext, AppTestContext } from '../__helpers__'
 
 export type TheatersFixture = AppTestContext & {}
 

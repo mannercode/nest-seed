@@ -1,7 +1,7 @@
-import type { MovieDto, ShowtimeDto, TheaterDto } from 'apps/cores'
+import type { MovieDto, ShowtimeDto, TheaterDto } from 'cores'
 import { DateUtil } from '@mannercode/common'
 import { nullObjectId, Response } from '@mannercode/testing'
-import { createMovie, createShowtimes, createTheater } from 'apps/__tests__/__helpers__'
+import { createMovie, createShowtimes, createTheater } from '../__helpers__'
 import { waitForCompletion, ShowtimeCreationFixture } from './showtime-creation.fixture'
 
 describe('ShowtimeCreationService', () => {

@@ -1,7 +1,7 @@
 import { DateUtil, pickIds } from '@mannercode/common'
 import { nullObjectId, oid, step } from '@mannercode/testing'
-import { Errors } from 'apps/__tests__/__helpers__'
-import { TicketStatus, MovieDto, ShowtimeDto, TheaterDto, TicketDto } from 'apps/cores'
+import { TicketStatus, MovieDto, ShowtimeDto, TheaterDto, TicketDto } from 'cores'
+import { Errors } from '../__helpers__'
 import { createAllResources, BookingFixture } from './booking.fixture'
 
 describe('BookingService', () => {
@@ -125,7 +125,7 @@ describe('BookingService', () => {
                 showtimeId = resources.showtimes[0].id
                 ticketIds = pickIds(resources.tickets.slice(0, 2))
 
-                const { holdTickets } = await import('apps/__tests__/__helpers__')
+                const { holdTickets } = await import('../__helpers__')
                 await holdTickets(fix, { customerId: oid(0xff), showtimeId, ticketIds })
             })
 

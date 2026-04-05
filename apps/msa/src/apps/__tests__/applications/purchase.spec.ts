@@ -1,7 +1,7 @@
 import { pickIds } from '@mannercode/common'
 import { toAny } from '@mannercode/testing'
-import { Errors, getPayments, getTickets } from 'apps/__tests__/__helpers__'
-import { TicketStatus, PurchaseRecordDto, TicketDto } from 'apps/cores'
+import { TicketStatus, PurchaseRecordDto, TicketDto } from 'cores'
+import { Errors, getPayments, getTickets } from '../__helpers__'
 import { buildCreatePurchaseDto, PurchaseFixture } from './purchase.fixture'
 
 describe('PurchaseService', () => {
@@ -116,14 +116,14 @@ describe('PurchaseService', () => {
                 let rollbackPurchaseSpy: jest.SpyInstance
 
                 beforeEach(async () => {
-                    const { TicketsService } = await import('apps/cores')
+                    const { TicketsService } = await import('cores')
                     const ticketsService = fix.module.get(TicketsService)
 
                     jest.spyOn(ticketsService, 'updateStatusMany').mockImplementationOnce(() => {
                         throw new Error('purchase error')
                     })
 
-                    const { TicketPurchaseService } = await import('apps/applications')
+                    const { TicketPurchaseService } = await import('applications')
                     const ticketPurchaseService = fix.module.get(TicketPurchaseService)
 
                     rollbackPurchaseSpy = jest.spyOn(ticketPurchaseService, 'rollbackPurchase')
@@ -143,7 +143,7 @@ describe('PurchaseService', () => {
             describe('when purchase completion fails', () => {
                 // 결제를 취소하고 구매 기록을 삭제한다
                 it('cancels the payment and deletes the purchase record', async () => {
-                    const { TicketPurchaseService } = await import('apps/applications')
+                    const { TicketPurchaseService } = await import('applications')
                     const ticketPurchaseService = fix.module.get(TicketPurchaseService)
 
                     jest.spyOn(ticketPurchaseService, 'completePurchase').mockImplementationOnce(
@@ -165,7 +165,7 @@ describe('PurchaseService', () => {
             describe('when purchase record creation fails', () => {
                 // 결제를 취소한다
                 it('cancels the payment', async () => {
-                    const { PurchaseRecordsService } = await import('apps/cores')
+                    const { PurchaseRecordsService } = await import('cores')
                     const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
 
                     jest.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(() => {

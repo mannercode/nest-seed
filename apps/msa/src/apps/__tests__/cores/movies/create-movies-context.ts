@@ -1,9 +1,9 @@
 import type { TestContext } from '@mannercode/testing'
-import { createAppTestContext, AppTestContext } from 'apps/__tests__/__helpers__'
-import { RecommendationClient } from 'apps/applications'
-import { MoviesClient, MoviesModule, MovieDto } from 'apps/cores'
-import { MoviesHttpController } from 'apps/gateway'
-import { AssetsClient, AssetsModule } from 'apps/infrastructures'
+import { RecommendationClient } from 'applications'
+import { MoviesClient, MoviesModule, MovieDto } from 'cores'
+import { MoviesHttpController } from 'gateway'
+import { AssetsClient, AssetsModule } from 'infrastructures'
+import { createAppTestContext, AppTestContext } from '../../__helpers__'
 
 export type MoviesBaseContext = AppTestContext
 
@@ -17,7 +17,7 @@ export async function createMoviesContext(): Promise<MoviesBaseContext> {
 }
 
 export async function createUnpublishedMovie(ctx: TestContext): Promise<MovieDto> {
-    const { MoviesService } = await import('apps/cores')
+    const { MoviesService } = await import('cores')
     const moviesService = ctx.module.get(MoviesService)
 
     const movie = await moviesService.create({})

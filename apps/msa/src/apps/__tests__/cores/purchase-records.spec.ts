@@ -1,11 +1,7 @@
-import type { PurchaseRecordDto } from 'apps/cores'
+import type { PurchaseRecordDto } from 'cores'
 import { nullObjectId } from '@mannercode/testing'
-import {
-    buildCreatePurchaseRecordDto,
-    createPurchaseRecord,
-    Errors
-} from 'apps/__tests__/__helpers__'
 import type { PurchaseRecordsFixture } from './purchase-records.fixture'
+import { buildCreatePurchaseRecordDto, createPurchaseRecord, Errors } from '../__helpers__'
 
 describe('PurchaseRecordsService', () => {
     let fix: PurchaseRecordsFixture

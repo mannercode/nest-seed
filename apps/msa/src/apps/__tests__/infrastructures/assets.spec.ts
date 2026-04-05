@@ -1,7 +1,8 @@
-import type { AssetDto } from 'apps/infrastructures'
+import type { AssetDto } from 'infrastructures'
 import { Checksum, pickIds, sleep } from '@mannercode/common'
 import { nullObjectId, toAny } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
+import type { AssetsFixture } from './assets.fixture'
 import {
     buildCreateAssetDto,
     buildFinalizeAssetDto,
@@ -11,8 +12,7 @@ import {
     uploadAndFinalizeAsset,
     uploadAsset,
     uploadFile
-} from 'apps/__tests__/__helpers__'
-import type { AssetsFixture } from './assets.fixture'
+} from '../__helpers__'
 
 describe('AssetsService', () => {
     let fix: AssetsFixture

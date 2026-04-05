@@ -1,7 +1,7 @@
-import type { SearchTheatersPageDto, TheaterDto } from 'apps/cores'
+import type { SearchTheatersPageDto, TheaterDto } from 'cores'
 import { nullObjectId } from '@mannercode/testing'
-import { buildCreateTheaterDto, createTheater, Errors } from 'apps/__tests__/__helpers__'
 import type { TheatersFixture } from './theaters.fixture'
+import { buildCreateTheaterDto, createTheater, Errors } from '../__helpers__'
 
 describe('TheatersService', () => {
     let fix: TheatersFixture

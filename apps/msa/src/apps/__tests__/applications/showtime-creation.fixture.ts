@@ -1,17 +1,12 @@
 import { JsonUtil } from '@mannercode/common'
 import {
-    createAppTestContext,
-    createTemporalTestWorker,
-    AppTestContext as TestContext
-} from 'apps/__tests__/__helpers__'
-import {
     createShowtimeCreationActivities,
     ShowtimeBulkCreatorService,
     ShowtimeBulkValidatorService,
     ShowtimeCreationClient,
     ShowtimeCreationEvents,
     ShowtimeCreationModule
-} from 'apps/applications'
+} from 'applications'
 import {
     MoviesClient,
     MoviesModule,
@@ -21,9 +16,14 @@ import {
     TheatersModule,
     TicketsClient,
     TicketsModule
-} from 'apps/cores'
-import { ShowtimeCreationHttpController } from 'apps/gateway'
-import { AssetsClient, AssetsModule } from 'apps/infrastructures'
+} from 'cores'
+import { ShowtimeCreationHttpController } from 'gateway'
+import { AssetsClient, AssetsModule } from 'infrastructures'
+import {
+    createAppTestContext,
+    createTemporalTestWorker,
+    AppTestContext as TestContext
+} from '../__helpers__'
 
 export type ShowtimeCreationFixture = TestContext & {
     showtimesClient: ShowtimesClient

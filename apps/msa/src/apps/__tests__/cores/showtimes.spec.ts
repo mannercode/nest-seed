@@ -1,9 +1,9 @@
-import type { ShowtimeDto } from 'apps/cores'
+import type { ShowtimeDto } from 'cores'
 import { DateUtil, pickIds } from '@mannercode/common'
 import { nullObjectId, oid } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
-import { buildCreateShowtimeDto, createShowtimes, Errors } from 'apps/__tests__/__helpers__'
 import type { ShowtimesFixture } from './showtimes.fixture'
+import { buildCreateShowtimeDto, createShowtimes, Errors } from '../__helpers__'
 
 describe('ShowtimesService', () => {
     let fix: ShowtimesFixture

@@ -1,8 +1,8 @@
-import type { HoldTicketsDto } from 'apps/cores'
+import type { HoldTicketsDto } from 'cores'
 import { sleep } from '@mannercode/common'
 import { oid, toAny } from '@mannercode/testing'
-import { buildHoldTicketsDto } from 'apps/__tests__/__helpers__'
 import type { TicketHoldingFixture } from './ticket-holding.fixture'
+import { buildHoldTicketsDto } from '../__helpers__'
 
 describe('TicketHoldingService', () => {
     let fix: TicketHoldingFixture

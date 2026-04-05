@@ -1,5 +1,5 @@
-import { createAppTestContext, AppTestContext } from 'apps/__tests__/__helpers__'
-import { WatchRecordsClient, WatchRecordsModule } from 'apps/cores'
+import { WatchRecordsClient, WatchRecordsModule } from 'cores'
+import { createAppTestContext, AppTestContext } from '../__helpers__'
 
 export type WatchRecordsFixture = AppTestContext & { watchRecordsClient: WatchRecordsClient }
 

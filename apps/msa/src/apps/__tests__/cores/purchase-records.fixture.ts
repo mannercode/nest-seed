@@ -1,7 +1,7 @@
-import { createAppTestContext, AppTestContext } from 'apps/__tests__/__helpers__'
-import { PurchaseClient } from 'apps/applications'
-import { PurchaseRecordsClient, PurchaseRecordsModule } from 'apps/cores'
-import { PurchaseHttpController } from 'apps/gateway'
+import { PurchaseClient } from 'applications'
+import { PurchaseRecordsClient, PurchaseRecordsModule } from 'cores'
+import { PurchaseHttpController } from 'gateway'
+import { createAppTestContext, AppTestContext } from '../__helpers__'
 
 export type PurchaseRecordsFixture = AppTestContext & {
     purchaseRecordsClient: PurchaseRecordsClient

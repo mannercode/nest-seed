@@ -1,4 +1,4 @@
-import { MovieGenre, MovieDto } from 'apps/cores'
+import { MovieGenre, MovieDto } from 'cores'
 import {
     createShowingMovies,
     createWatchedMovies,

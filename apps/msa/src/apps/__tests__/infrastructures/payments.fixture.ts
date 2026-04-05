@@ -1,5 +1,5 @@
-import { createAppTestContext, AppTestContext } from 'apps/__tests__/__helpers__'
-import { PaymentsClient, PaymentsModule } from 'apps/infrastructures'
+import { PaymentsClient, PaymentsModule } from 'infrastructures'
+import { createAppTestContext, AppTestContext } from '../__helpers__'
 
 export type PaymentsFixture = AppTestContext & { paymentsClient: PaymentsClient }
 

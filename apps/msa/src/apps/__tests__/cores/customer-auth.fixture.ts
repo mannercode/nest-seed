@@ -1,11 +1,11 @@
-import { createAppTestContext, AppTestContext } from 'apps/__tests__/__helpers__'
-import { CustomersClient, CustomersModule } from 'apps/cores'
+import { CustomersClient, CustomersModule } from 'cores'
 import {
     CustomerJwtAuthGuard,
     CustomerLocalAuthGuard,
     CustomerOptionalJwtAuthGuard,
     CustomersHttpController
-} from 'apps/gateway'
+} from 'gateway'
+import { createAppTestContext, AppTestContext } from '../__helpers__'
 
 export type CustomerAuthFixture = AppTestContext & {}
 
