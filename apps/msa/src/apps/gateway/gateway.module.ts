@@ -4,9 +4,9 @@ import {
     PurchaseClient,
     RecommendationClient,
     ShowtimeCreationClient
-} from 'apps/applications'
-import { CustomersClient, MoviesClient, PurchaseRecordsClient, TheatersClient } from 'apps/cores'
+} from 'applications'
 import { CommonModule } from 'config'
+import { CustomersClient, MoviesClient, PurchaseRecordsClient, TheatersClient } from 'cores'
 import {
     BookingHttpController,
     CustomerJwtAuthGuard,

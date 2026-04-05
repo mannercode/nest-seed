@@ -1,4 +1,4 @@
-import type { MovieDto } from 'apps/cores'
+import type { MovieDto } from 'cores'
 import { countBy, defaultTo, orderBy, sumBy } from '@mannercode/common'
 
 export class MovieRecommender {

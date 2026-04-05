@@ -1,4 +1,4 @@
-import type { ShowtimeDto, TheaterDto, TicketSalesForShowtimeDto } from 'apps/cores'
+import type { ShowtimeDto, TheaterDto, TicketSalesForShowtimeDto } from 'cores'
 import { LatLong, omit, sortBy } from '@mannercode/common'
 import type { BookingShowtimeDto } from './dtos'
 

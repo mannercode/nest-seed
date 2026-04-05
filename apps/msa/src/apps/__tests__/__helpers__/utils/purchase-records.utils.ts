@@ -1,5 +1,5 @@
 import { oid, TestContext } from '@mannercode/testing'
-import { PurchaseItemType } from 'apps/cores'
+import { PurchaseItemType } from 'cores'
 
 export function buildCreatePurchaseRecordDto(overrides = {}) {
     const createDto = {
@@ -13,7 +13,7 @@ export function buildCreatePurchaseRecordDto(overrides = {}) {
 }
 
 export async function createPurchaseRecord(ctx: TestContext, override = {}) {
-    const { PurchaseRecordsService } = await import('apps/cores')
+    const { PurchaseRecordsService } = await import('cores')
     const purchaseRecordsService = ctx.module.get(PurchaseRecordsService)
 
     const createDto = buildCreatePurchaseRecordDto(override)

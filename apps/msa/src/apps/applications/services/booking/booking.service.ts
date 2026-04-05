@@ -6,7 +6,7 @@ import {
     TheatersClient,
     TicketHoldingClient,
     TicketsClient
-} from 'apps/cores'
+} from 'cores'
 import { generateShowtimesForBooking, sortTheatersByDistance } from './booking.utils'
 import {
     BookingSearchShowdatesDto,

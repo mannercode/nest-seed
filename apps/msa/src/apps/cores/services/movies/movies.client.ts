@@ -1,8 +1,8 @@
 import { PaginationResult } from '@mannercode/common'
 import { ClientProxyService, InjectClientProxy } from '@mannercode/microservices'
 import { Injectable } from '@nestjs/common'
-import { AssetPresignedUploadDto, CreateAssetDto } from 'apps/infrastructures'
 import { Messages } from 'config'
+import { AssetPresignedUploadDto, CreateAssetDto } from 'infrastructures'
 import { MovieDto, SearchMoviesPageDto, UpsertMovieDto } from './dtos'
 
 @Injectable()

@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { HoldTicketsDto } from 'apps/cores'
 import { Messages } from 'config'
+import { HoldTicketsDto } from 'cores'
 import { BookingService } from './booking.service'
 import {
     BookingSearchShowdatesDto,

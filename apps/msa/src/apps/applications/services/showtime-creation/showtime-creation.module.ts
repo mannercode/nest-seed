@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { MoviesClient, ShowtimesClient, TheatersClient, TicketsClient } from 'apps/cores'
+import { MoviesClient, ShowtimesClient, TheatersClient, TicketsClient } from 'cores'
 import { ShowtimeBulkCreatorService, ShowtimeBulkValidatorService } from './services'
 import { ShowtimeCreationClient } from './showtime-creation.client'
 import { ShowtimeCreationController } from './showtime-creation.controller'

@@ -1,7 +1,7 @@
 import { ClientProxyService, InjectClientProxy } from '@mannercode/microservices'
 import { Injectable } from '@nestjs/common'
-import { HoldTicketsDto, TheaterDto, TicketDto } from 'apps/cores'
 import { Messages } from 'config'
+import { HoldTicketsDto, TheaterDto, TicketDto } from 'cores'
 import {
     BookingSearchShowdatesDto,
     BookingSearchShowtimesDto,

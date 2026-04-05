@@ -1,4 +1,4 @@
-import type { CreateShowtimeDto } from 'apps/cores'
+import type { CreateShowtimeDto } from 'cores'
 import { DateUtil, newObjectIdString, uniq } from '@mannercode/common'
 import { oid, TestContext } from '@mannercode/testing'
 
@@ -20,7 +20,7 @@ export function buildCreateShowtimeDto(overrides: Partial<CreateShowtimeDto> = {
 }
 
 export async function createShowtimes(ctx: TestContext, overrides: Partial<CreateShowtimeDto>[]) {
-    const { ShowtimesService } = await import('apps/cores')
+    const { ShowtimesService } = await import('cores')
     const showtimesService = ctx.module.get(ShowtimesService)
 
     const createDtos = overrides.map((override) => buildCreateShowtimeDto(override))

@@ -1,4 +1,4 @@
-import type { HoldTicketsDto } from 'apps/cores'
+import type { HoldTicketsDto } from 'cores'
 import { oid, TestContext } from '@mannercode/testing'
 
 export function buildHoldTicketsDto(holdDto?: Partial<HoldTicketsDto>) {
@@ -11,7 +11,7 @@ export function buildHoldTicketsDto(holdDto?: Partial<HoldTicketsDto>) {
 }
 
 export async function holdTickets(ctx: TestContext, holdDto?: Partial<HoldTicketsDto>) {
-    const { TicketHoldingService } = await import('apps/cores')
+    const { TicketHoldingService } = await import('cores')
     const ticketHoldingService = ctx.module.get(TicketHoldingService)
 
     return ticketHoldingService.holdTickets(buildHoldTicketsDto(holdDto))

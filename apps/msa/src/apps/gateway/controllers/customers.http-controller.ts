@@ -18,7 +18,7 @@ import {
     CustomersClient,
     SearchCustomersPageDto,
     UpdateCustomerDto
-} from 'apps/cores'
+} from 'cores'
 import { CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
 import { CustomerAuthRequest } from './types'
 
@@ -58,11 +58,6 @@ export class CustomersHttpController {
     @Get()
     async searchPage(@Query() searchDto: SearchCustomersPageDto) {
         return this.customersClient.searchPage(searchDto)
-    }
-
-    @Get('jwt-guard')
-    async testJwtGuard() {
-        return { message: 'accessToken is valid' }
     }
 
     @Get(':customerId')

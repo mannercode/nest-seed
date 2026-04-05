@@ -12,7 +12,7 @@ export function buildCreateTheaterDto(overrides = {}) {
 }
 
 export async function createTheater(ctx: TestContext, override = {}) {
-    const { TheatersService } = await import('apps/cores')
+    const { TheatersService } = await import('cores')
     const theatersService = ctx.module.get(TheatersService)
 
     const createDto = buildCreateTheaterDto(override)

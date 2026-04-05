@@ -1,9 +1,9 @@
 import { Module, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { bundleWorkflowCode, NativeConnection, Worker } from '@temporalio/worker'
-import { ShowtimesClient, TicketsClient, PurchaseRecordsClient } from 'apps/cores'
-import { PaymentsClient } from 'apps/infrastructures'
 import { AppConfigService, getTemporalTaskQueue } from 'config'
+import { ShowtimesClient, TicketsClient, PurchaseRecordsClient } from 'cores'
 import * as fs from 'fs'
+import { PaymentsClient } from 'infrastructures'
 import * as path from 'path'
 import {
     createPurchaseActivities,

@@ -1,5 +1,5 @@
-import type { PurchaseRecordsClient } from 'apps/cores'
-import type { PaymentsClient } from 'apps/infrastructures'
+import type { PurchaseRecordsClient } from 'cores'
+import type { PaymentsClient } from 'infrastructures'
 import { HttpException } from '@nestjs/common'
 import { log, ApplicationFailure } from '@temporalio/activity'
 import type { TicketPurchaseService } from '../services'

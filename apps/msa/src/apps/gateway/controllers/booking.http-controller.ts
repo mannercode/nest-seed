@@ -10,7 +10,7 @@ import {
     Req,
     UseGuards
 } from '@nestjs/common'
-import { BookingClient } from 'apps/applications'
+import { BookingClient } from 'applications'
 import { CustomerJwtAuthGuard } from './guards'
 import { CustomerAuthRequest } from './types'
 

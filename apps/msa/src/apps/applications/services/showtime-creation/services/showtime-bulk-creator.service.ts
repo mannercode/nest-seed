@@ -8,7 +8,7 @@ import {
     TicketsClient,
     Seatmap,
     TicketStatus
-} from 'apps/cores'
+} from 'cores'
 import { BulkCreateShowtimesDto } from '../dtos'
 
 @Injectable()

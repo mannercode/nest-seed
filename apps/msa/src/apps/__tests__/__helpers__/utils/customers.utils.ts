@@ -1,5 +1,5 @@
 import type { TestContext } from '@mannercode/testing'
-import type { CreateCustomerDto, CustomerCredentialsDto } from 'apps/cores'
+import type { CreateCustomerDto, CustomerCredentialsDto } from 'cores'
 
 export function buildCreateCustomerDto(overrides = {}) {
     const createDto = {
@@ -24,7 +24,7 @@ export async function createAndLoginCustomer(ctx: TestContext) {
 }
 
 export async function createCustomer(ctx: TestContext, override = {}) {
-    const { CustomersService } = await import('apps/cores')
+    const { CustomersService } = await import('cores')
     const customersService = ctx.module.get(CustomersService)
 
     const createDto = buildCreateCustomerDto(override)
@@ -34,7 +34,7 @@ export async function createCustomer(ctx: TestContext, override = {}) {
 }
 
 export async function loginCustomer(ctx: TestContext, credentials: CustomerCredentialsDto) {
-    const { CustomersService } = await import('apps/cores')
+    const { CustomersService } = await import('cores')
     const customersService = ctx.module.get(CustomersService)
 
     const customer = await customersService.findCustomerByCredentials(credentials)

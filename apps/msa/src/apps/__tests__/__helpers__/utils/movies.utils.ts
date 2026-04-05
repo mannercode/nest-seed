@@ -1,5 +1,5 @@
 import type { TestContext } from '@mannercode/testing'
-import { MovieGenre, MovieRating, MovieDto, UpsertMovieDto } from 'apps/cores'
+import { MovieGenre, MovieRating, MovieDto, UpsertMovieDto } from 'cores'
 
 export function buildCreateMovieDto(overrides = {}) {
     const createDto = {
@@ -18,7 +18,7 @@ export function buildCreateMovieDto(overrides = {}) {
 }
 
 export async function createMovie(ctx: TestContext, override = {}): Promise<MovieDto> {
-    const { MoviesService } = await import('apps/cores')
+    const { MoviesService } = await import('cores')
     const moviesService = ctx.module.get(MoviesService)
 
     const createDto = buildCreateMovieDto(override)

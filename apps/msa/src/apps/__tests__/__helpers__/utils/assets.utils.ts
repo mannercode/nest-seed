@@ -4,7 +4,7 @@ import type {
     AssetPresignedUploadDto,
     CreateAssetDto,
     FinalizeAssetDto
-} from 'apps/infrastructures'
+} from 'infrastructures'
 import { pick } from '@mannercode/common'
 import { readFile } from 'fs/promises'
 import { basename } from 'path'
@@ -21,7 +21,7 @@ export function buildFinalizeAssetDto(overrides = {}) {
 }
 
 export async function createAsset(ctx: TestContext, file: TestAsset = testAssets.image) {
-    const { AssetsService } = await import('apps/infrastructures')
+    const { AssetsService } = await import('infrastructures')
     const assetsService = ctx.module.get(AssetsService)
 
     const createDto = buildCreateAssetDto(file)
@@ -46,7 +46,7 @@ export async function downloadAsset({ download }: AssetDto) {
 export async function uploadAndFinalizeAsset(ctx: TestContext, file: TestAsset) {
     const assetId = await uploadFile(ctx, file)
 
-    const { AssetsService } = await import('apps/infrastructures')
+    const { AssetsService } = await import('infrastructures')
     const assetsService = ctx.module.get(AssetsService)
 
     return assetsService.finalizeUpload(assetId, buildFinalizeAssetDto())

@@ -1,4 +1,4 @@
-import type { ShowtimesClient, TicketsClient } from 'apps/cores'
+import type { ShowtimesClient, TicketsClient } from 'cores'
 import { JsonUtil } from '@mannercode/common'
 import { log } from '@temporalio/activity'
 import type { BulkCreateShowtimesDto } from '../dtos'

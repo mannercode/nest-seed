@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { CreateAssetDto } from 'apps/infrastructures'
 import { Messages } from 'config'
+import { CreateAssetDto } from 'infrastructures'
 import { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
 import { MoviesService } from './movies.service'
 

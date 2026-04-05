@@ -1,8 +1,8 @@
 import { PaginationDto, PaginationResult } from '@mannercode/common'
 import { ClientProxyService, InjectClientProxy } from '@mannercode/microservices'
 import { Injectable } from '@nestjs/common'
-import { MovieDto, ShowtimeDto, TheaterDto } from 'apps/cores'
 import { Messages } from 'config'
+import { MovieDto, ShowtimeDto, TheaterDto } from 'cores'
 import { BulkCreateShowtimesDto, RequestShowtimeCreationResponse } from './dtos'
 
 @Injectable()

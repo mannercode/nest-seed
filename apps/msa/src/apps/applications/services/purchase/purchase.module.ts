@@ -1,11 +1,6 @@
 import { Module } from '@nestjs/common'
-import {
-    PurchaseRecordsClient,
-    ShowtimesClient,
-    TicketHoldingClient,
-    TicketsClient
-} from 'apps/cores'
-import { PaymentsClient } from 'apps/infrastructures'
+import { PurchaseRecordsClient, ShowtimesClient, TicketHoldingClient, TicketsClient } from 'cores'
+import { PaymentsClient } from 'infrastructures'
 import { PurchaseClient } from './purchase.client'
 import { PurchaseController } from './purchase.controller'
 import { PurchaseEvents } from './purchase.events'

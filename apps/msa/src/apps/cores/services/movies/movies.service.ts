@@ -5,8 +5,8 @@ import {
     NotFoundException,
     UnprocessableEntityException
 } from '@nestjs/common'
-import { AssetsClient, CreateAssetDto } from 'apps/infrastructures'
 import { Rules } from 'config'
+import { AssetsClient, CreateAssetDto } from 'infrastructures'
 import { SearchMoviesPageDto, UpsertMovieDto, MovieDto } from './dtos'
 import { MovieErrors } from './errors'
 import { Movie } from './models'

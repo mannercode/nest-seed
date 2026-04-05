@@ -1,6 +1,6 @@
-import { PurchaseItemDto } from 'apps/cores'
 import { Type } from 'class-transformer'
 import { IsArray, IsNotEmpty, IsPositive, IsString, ValidateNested } from 'class-validator'
+import { PurchaseItemDto } from 'cores'
 
 export class CreatePurchaseDto {
     @IsNotEmpty()

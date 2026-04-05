@@ -1,4 +1,4 @@
-import type { ShowtimeDto } from 'apps/cores'
+import type { ShowtimeDto } from 'cores'
 import type { BulkCreateShowtimesDto } from '../dtos'
 
 export enum ShowtimeCreationStatus {

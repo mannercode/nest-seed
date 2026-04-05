@@ -12,11 +12,7 @@ import {
     Sse
 } from '@nestjs/common'
 import { EventPattern } from '@nestjs/microservices'
-import {
-    BulkCreateShowtimesDto,
-    ShowtimeCreationClient,
-    ShowtimeCreationEvent
-} from 'apps/applications'
+import { BulkCreateShowtimesDto, ShowtimeCreationClient, ShowtimeCreationEvent } from 'applications'
 import { Events } from 'config'
 import { Observable, Subject } from 'rxjs'
 
