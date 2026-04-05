@@ -1,7 +1,7 @@
 import type { CustomerAuthFixture } from './customer-auth.fixture'
 import { createCustomer, Errors } from '../__helpers__'
 
-describe('CustomerAuth', () => {
+describe('CustomerAuthentication', () => {
     let fix: CustomerAuthFixture
     const credentials = { email: 'user@mail.com', password: 'password' }
 
