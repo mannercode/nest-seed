@@ -28,6 +28,7 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
 
-                      npm run lint
-                      npm run build
-                      npm test
+                      turbo run lint
+                      turbo run build
+                      turbo run test:unit
+                      turbo run test:e2e

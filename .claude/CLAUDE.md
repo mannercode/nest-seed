@@ -25,8 +25,8 @@ nest-seed/
 
 ```bash
 npm ci                  # 의존성 설치
-npm run build           # 패키지 빌드 (Turborepo)
-npm test                # 패키지 테스트
+turbo run build         # 패키지 빌드
+turbo run test:unit     # 패키지 테스트
 
 cd apps/mono       # 또는 apps/msa
 npm ci

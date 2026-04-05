@@ -8,15 +8,15 @@
 
 루트에서 실행한다.
 
-| Script                      | Description                         |
-| --------------------------- | ----------------------------------- |
-| `npm run build`             | Turborepo로 libs 3개 패키지 빌드    |
-| `npm test`                  | Jest + Testcontainers로 전체 테스트 |
-| `npm run lint`              | ESLint 검사                         |
-| `npm run format`            | Prettier 포맷팅                     |
-| `npm run changeset:add`     | 변경 사항 기록 (릴리스 준비)        |
-| `npm run changeset:version` | 버전 범프 및 CHANGELOG 생성         |
-| `npm run changeset:publish` | 빌드 후 npm 퍼블리시                |
+| Script                  | Description                         |
+| ----------------------- | ----------------------------------- |
+| `turbo run build`       | Turborepo로 libs 3개 패키지 빌드    |
+| `turbo run test:unit`   | Jest + Testcontainers로 단위 테스트 |
+| `turbo run test:e2e`    | E2E 테스트                          |
+| `turbo run lint`        | ESLint 검사                         |
+| `turbo run format`      | Prettier 포맷팅                     |
+| `npx changeset add`     | 변경 사항 기록 (릴리스 준비)        |
+| `npx changeset version` | 버전 범프 및 CHANGELOG 생성         |
 
 ---
 
@@ -155,16 +155,16 @@ jest.setup.js           각 테스트 스위트마다 실행
 
 ```bash
 # 1. 변경 사항 기록
-npm run changeset:add
+npx changeset add
 # → .changeset/ 에 changeset 파일 생성, major/minor/patch 선택
 
 # 2. 버전 범프
-npm run changeset:version
+npx changeset version
 # → package.json 버전 업데이트, CHANGELOG.md 생성
 
 # 3. 퍼블리시
-npm run changeset:publish
-# → npm run build 후 changeset publish 실행
+turbo run build && changeset publish
+# → turbo run build 후 changeset publish 실행
 ```
 
 설정 (`.changeset/config.json`):

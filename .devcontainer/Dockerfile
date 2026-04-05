@@ -14,5 +14,5 @@ RUN set -Eeu; \
     $SHELL_FORMATTER; \
     rm -rf /var/lib/apt/lists/*; \
     curl -fsSL "https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar" -o /opt/plantuml.jar; \
-    npm i -g npm-check-updates husky @commitlint/cli; \
+    npm i -g npm-check-updates husky @commitlint/cli turbo; \
     npm cache clean --force

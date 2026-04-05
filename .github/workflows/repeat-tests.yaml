@@ -35,7 +35,7 @@ jobs:
                   configFile: .devcontainer/devcontainer.json
                   push: never
                   runCmd: |
-                      bash .github/scripts/repeat-run.sh 50 npm run test:unit
+                      bash .github/scripts/repeat-run.sh 50 turbo run test:unit
 
     repeat-e2e:
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_repeat_e2e) || github.event_name == 'schedule' }}
@@ -48,4 +48,4 @@ jobs:
                   configFile: .devcontainer/devcontainer.json
                   push: never
                   runCmd: |
-                      bash .github/scripts/repeat-run.sh 30 npm run test:e2e
+                      bash .github/scripts/repeat-run.sh 30 turbo run test:e2e

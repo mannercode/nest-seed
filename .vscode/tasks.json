@@ -1,45 +1,39 @@
 {
     "version": "2.0.0",
     "tasks": [
-        { "label": "clean", "type": "shell", "command": "npm run clean" },
+        { "label": "clean", "type": "shell", "command": "turbo run clean" },
         {
-            "label": "build",
+            "label": "libs:build",
             "group": { "kind": "build", "isDefault": true },
             "type": "shell",
-            "command": "npm run build"
+            "command": "turbo run build"
         },
-        { "label": "lint", "type": "shell", "command": "npm run lint" },
+        { "label": "lint", "type": "shell", "command": "turbo run lint" },
         {
             "label": "test:unit",
             "group": { "kind": "test", "isDefault": true },
             "type": "shell",
-            "command": "npm test"
-        },
-        {
-            "label": "mono:lint",
-            "type": "shell",
-            "command": "npx turbo run lint --filter=nest-mono"
+            "command": "turbo run test:unit --concurrency=1"
         },
         {
             "label": "mono:test:unit",
             "type": "shell",
-            "command": "npx turbo run test:unit --filter=nest-mono"
+            "command": "turbo run test:unit --filter=nest-mono"
         },
         {
             "label": "mono:test:e2e",
             "type": "shell",
-            "command": "npx turbo run test:e2e --filter=nest-mono"
+            "command": "turbo run test:e2e --filter=nest-mono"
         },
-        { "label": "msa:lint", "type": "shell", "command": "npx turbo run lint --filter=nest-msa" },
         {
             "label": "msa:test:unit",
             "type": "shell",
-            "command": "npx turbo run test:unit --filter=nest-msa"
+            "command": "turbo run test:unit --filter=nest-msa"
         },
         {
             "label": "msa:test:e2e",
             "type": "shell",
-            "command": "npx turbo run test:e2e --filter=nest-msa"
+            "command": "turbo run test:e2e --filter=nest-msa"
         }
     ]
 }

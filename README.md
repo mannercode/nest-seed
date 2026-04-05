@@ -37,13 +37,13 @@ npm ci
 ### 2. 패키지 빌드
 
 ```bash
-npm run build
+turbo run build
 ```
 
 ### 3. 패키지 테스트
 
 ```bash
-npm test
+turbo run test:unit
 ```
 
 ### 4. 시드 실행
@@ -58,15 +58,13 @@ npm test
 
 ## 모노레포 스크립트
 
-| 스크립트                    | 설명                          |
-| --------------------------- | ----------------------------- |
-| `npm run build`             | 모든 패키지 빌드 (Turborepo)  |
-| `npm test`                  | 패키지 테스트 (커버리지 포함) |
-| `npm run lint`              | 전체 패키지 ESLint            |
-| `npm run format`            | Prettier 포맷팅               |
-| `npm run changeset:add`     | 체인지셋 생성                 |
-| `npm run changeset:version` | 체인지셋 적용 및 버전 범프    |
-| `npm run changeset:publish` | 빌드 후 npm 배포              |
+| 스크립트              | 설명                               |
+| --------------------- | ---------------------------------- |
+| `turbo run build`     | 모든 패키지 빌드                   |
+| `turbo run test:unit` | 패키지 단위 테스트 (커버리지 포함) |
+| `turbo run test:e2e`  | 패키지 E2E 테스트                  |
+| `turbo run lint`      | 전체 패키지 ESLint                 |
+| `turbo run format`    | Prettier 포맷팅                    |
 
 ## 기술 스택
 
