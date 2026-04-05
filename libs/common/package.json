@@ -5,7 +5,7 @@
     "types": "dist/index.d.ts",
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
-        "clean": "rm -rf dist *.tsbuildinfo",
+        "clean": "rm -rf dist *.tsbuildinfo _output",
         "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest --no-cache --coverage",
         "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
         "format": "eslint src/ --fix && prettier --write src/"
