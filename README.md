@@ -37,13 +37,13 @@ npm ci
 ### 2. 패키지 빌드
 
 ```bash
-turbo run build
+npm run build
 ```
 
 ### 3. 패키지 테스트
 
 ```bash
-turbo run test:unit
+npm run test:unit
 ```
 
 ### 4. 시드 실행
@@ -58,13 +58,12 @@ npm test
 
 ## 모노레포 스크립트
 
-| 스크립트              | 설명                               |
-| --------------------- | ---------------------------------- |
-| `turbo run build`     | 모든 패키지 빌드                   |
-| `turbo run test:unit` | 패키지 단위 테스트 (커버리지 포함) |
-| `turbo run test:e2e`  | 패키지 E2E 테스트                  |
-| `turbo run lint`      | 전체 패키지 ESLint                 |
-| `turbo run format`    | Prettier 포맷팅                    |
+| 스크립트            | 설명                               |
+| ------------------- | ---------------------------------- |
+| `npm run build`     | 모든 패키지 빌드                   |
+| `npm run test:unit` | 패키지 단위 테스트 (커버리지 포함) |
+| `npm run lint`      | 전체 패키지 ESLint                 |
+| `npm run format`    | Prettier 포맷팅                    |
 
 ## 기술 스택
 
@@ -81,7 +80,7 @@ npm test
 | **오브젝트 스토리지** | MinIO (S3 호환)            |
 | **인증**              | JWT + Passport             |
 | **테스트**            | Jest (100% 커버리지)       |
-| **빌드**              | Turborepo + Webpack        |
+| **빌드**              | Webpack                    |
 | **컨테이너**          | Docker (multi-stage build) |
 | **패키지 매니저**     | npm workspaces             |
 

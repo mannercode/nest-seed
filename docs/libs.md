@@ -8,13 +8,12 @@
 
 루트에서 실행한다.
 
-| Script                | Description                         |
-| --------------------- | ----------------------------------- |
-| `turbo run build`     | Turborepo로 libs 3개 패키지 빌드    |
-| `turbo run test:unit` | Jest + Testcontainers로 단위 테스트 |
-| `turbo run test:e2e`  | E2E 테스트                          |
-| `turbo run lint`      | ESLint 검사                         |
-| `turbo run format`    | Prettier 포맷팅                     |
+| Script              | Description                         |
+| ------------------- | ----------------------------------- |
+| `npm run build`     | libs 3개 패키지 빌드                |
+| `npm run test:unit` | Jest + Testcontainers로 단위 테스트 |
+| `npm run lint`      | ESLint 검사                         |
+| `npm run format`    | Prettier 포맷팅                     |
 
 ---
 
@@ -70,18 +69,9 @@ libs/
 
 ---
 
-## Turborepo
+## 빌드 순서
 
-`turbo.json`으로 빌드 파이프라인을 관리한다.
-
-| Task    | dependsOn | 설명                                                       |
-| ------- | --------- | ---------------------------------------------------------- |
-| `build` | `^build`  | 의존 패키지 빌드 후 자신 빌드. `src/**` → `dist/**`        |
-| `clean` | —         | 캐시 없이 `dist/` 삭제                                     |
-| `lint`  | `^build`  | 빌드 후 lint. `src/**`와 `eslint.config.js` 변경 시 재실행 |
-| `test`  | `build`   | 빌드 후 테스트                                             |
-
-`microservices`는 `common`에 의존하므로, `turbo run build`는 common → testing/microservices 순으로 빌드한다.
+`microservices`와 `testing`은 `common`에 의존하므로, `npm run build`는 common → microservices/testing 순으로 빌드한다. `npm-run-all2`의 `run-s`/`run-p`로 순차/병렬 실행을 제어한다.
 
 ---
 

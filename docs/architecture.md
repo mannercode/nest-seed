@@ -11,7 +11,7 @@ nest-seed/
 ├── apps/
 │   ├── mono/              # 모놀리식 NestJS 시드
 │   └── msa/               # 마이크로서비스 아키텍처 시드
-├── turbo.json             # Turborepo 태스크 파이프라인
+├── package.json           # npm workspaces + npm-run-all2 스크립트
 └── package.json           # npm workspaces 루트
 ```
 

@@ -3,59 +3,47 @@
     "tasks": [
         {
             "label": "*** VERIFY ALL ***",
-            "dependsOn": ["all:clean", "all:lint", "all:build", "all:test:unit", "all:test:e2e"],
+            "dependsOn": ["all:clean", "all:build", "all:lint", "all:test:unit"],
             "dependsOrder": "sequence",
             "problemMatcher": []
         },
-        { "label": "all:clean", "type": "shell", "command": "turbo run clean" },
+        { "label": "all:clean", "type": "shell", "command": "npm run clean" },
         {
             "label": "all:build",
             "group": { "kind": "build", "isDefault": true },
             "type": "shell",
-            "command": "turbo run build"
+            "command": "npm run build"
         },
-        { "label": "all:lint", "type": "shell", "command": "turbo run lint" },
+        { "label": "all:lint", "type": "shell", "command": "npm run lint" },
         {
             "label": "all:test:unit",
             "group": { "kind": "test", "isDefault": true },
             "type": "shell",
-            "command": "turbo run test:unit --concurrency=1"
-        },
-        {
-            "label": "all:test:e2e",
-            "group": { "kind": "test" },
-            "type": "shell",
-            "command": "turbo run test:e2e --concurrency=1"
-        },
-        {
-            "label": "libs:test:unit",
-            "group": { "kind": "test" },
-            "type": "shell",
-            "command": "turbo run test:unit --concurrency=1 --filter=./libs/*"
+            "command": "npm run test:unit"
         },
         {
             "label": "mono:test:unit",
             "group": { "kind": "test" },
             "type": "shell",
-            "command": "turbo run test:unit --filter=nest-mono"
+            "command": "npm run test:unit -w apps/mono"
         },
         {
             "label": "mono:test:e2e",
             "group": { "kind": "test" },
             "type": "shell",
-            "command": "turbo run test:e2e --filter=nest-mono"
+            "command": "npm run test:e2e -w apps/mono"
         },
         {
             "label": "msa:test:unit",
             "group": { "kind": "test" },
             "type": "shell",
-            "command": "turbo run test:unit --filter=nest-msa"
+            "command": "npm run test:unit -w apps/msa"
         },
         {
             "label": "msa:test:e2e",
             "group": { "kind": "test" },
             "type": "shell",
-            "command": "turbo run test:e2e --filter=nest-msa"
+            "command": "npm run test:e2e -w apps/msa"
         }
     ]
 }

@@ -90,7 +90,7 @@ Docker 이미지 태그와 인프라 접속 정보(MongoDB, Redis, NATS, MinIO, 
 1. 호스트에서 [Git credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials)를 설정한다.
 2. VS Code에서 "Reopen in Container" 명령을 실행한다.
 3. Dev Container는 `.devcontainer/Dockerfile`(베이스 `node:24-slim`)을 사용하며, `postCreateCommand`로 `npm ci`, `postStartCommand`로 인프라를 자동으로 시작한다.
-4. Dev Container 안에서도 별도 환경 변수 설정 없이 `turbo run test:e2e`를 바로 실행할 수 있다.
+4. Dev Container 안에서도 별도 환경 변수 설정 없이 `npm run test:e2e:mono`를 바로 실행할 수 있다.
 
 ---
 
@@ -104,10 +104,10 @@ Docker 이미지 태그와 인프라 접속 정보(MongoDB, Redis, NATS, MinIO, 
 
 ### 작업 (`.vscode/tasks.json`)
 
-| Task            | Description                                   |
-| --------------- | --------------------------------------------- |
-| `test:unit`     | `turbo run test:unit` 실행.                   |
-| `mono:test:e2e` | `turbo run test:e2e --filter=nest-mono` 실행. |
+| Task            | Description                   |
+| --------------- | ----------------------------- |
+| `all:test:unit` | `npm run test:unit` 실행.     |
+| `mono:test:e2e` | `npm run test:e2e:mono` 실행. |
 
 ---
 
@@ -135,7 +135,7 @@ Docker 이미지 태그와 인프라 접속 정보(MongoDB, Redis, NATS, MinIO, 
 | `infrastructures` | `gateway`, `applications`, `cores`                    |
 | `shared`          | `gateway`, `applications`, `cores`, `infrastructures` |
 
-규칙 위반 시 ESLint `warn`으로 보고된다. `turbo run lint`로 전체 검사할 수 있다.
+규칙 위반 시 ESLint `warn`으로 보고된다. `npm run lint`로 전체 검사할 수 있다.
 
 ---
 
