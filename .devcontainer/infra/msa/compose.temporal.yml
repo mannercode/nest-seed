@@ -35,16 +35,15 @@ services:
 
     temporal-setup:
         extends: { file: ../compose.common.yml, service: common-options }
-        image: docker:cli
+        image: alpine
         container_name: temporal-setup
         depends_on:
             temporal: { condition: service_healthy }
-        volumes: ['/var/run/docker.sock:/var/run/docker.sock']
         command: echo temporal ready
 
     temporal-ui:
-        profiles: ['gui']
         extends: { file: ../compose.common.yml, service: common-options }
+        profiles: ['gui']
         image: temporalio/ui:latest
         container_name: temporal-ui
         depends_on:

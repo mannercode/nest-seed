@@ -5,6 +5,7 @@ include:
 
 services:
     infra-setup:
+        extends: { file: ./compose.common.yml, service: common-options }
         image: docker:cli
         container_name: infra-setup
         depends_on:

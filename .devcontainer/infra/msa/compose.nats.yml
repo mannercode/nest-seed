@@ -54,6 +54,7 @@ services:
             cat /tmp/sub.log
             '
     nats-exporter1:
+        extends: { file: ../compose.common.yml, service: common-options }
         profiles: ['gui']
         container_name: nats-exporter1
         image: natsio/prometheus-nats-exporter:latest
@@ -63,6 +64,7 @@ services:
         depends_on: { nats1: { condition: service_healthy } }
 
     nats-exporter2:
+        extends: { file: ../compose.common.yml, service: common-options }
         profiles: ['gui']
         container_name: nats-exporter2
         image: natsio/prometheus-nats-exporter:latest
@@ -72,6 +74,7 @@ services:
         depends_on: { nats2: { condition: service_healthy } }
 
     nats-exporter3:
+        extends: { file: ../compose.common.yml, service: common-options }
         profiles: ['gui']
         container_name: nats-exporter3
         image: natsio/prometheus-nats-exporter:latest
@@ -81,6 +84,7 @@ services:
         depends_on: { nats3: { condition: service_healthy } }
 
     prometheus:
+        extends: { file: ../compose.common.yml, service: common-options }
         profiles: ['gui']
         image: prom/prometheus:latest
         container_name: prometheus
@@ -97,6 +101,7 @@ services:
             - nats-exporter3
 
     grafana:
+        extends: { file: ../compose.common.yml, service: common-options }
         profiles: ['gui']
         image: grafana/grafana:latest
         container_name: nats-grafana

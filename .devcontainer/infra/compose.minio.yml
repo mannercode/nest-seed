@@ -15,6 +15,7 @@ services:
             test: 'curl -fsS http://localhost:9000/minio/health/ready'
 
     minio-setup:
+        extends: { file: ./compose.common.yml, service: common-options }
         container_name: minio-setup
         image: amazon/aws-cli:latest
         depends_on:

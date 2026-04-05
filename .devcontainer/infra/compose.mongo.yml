@@ -30,6 +30,7 @@ x-mongo-base: &mongo-base
 
 services:
     mongo-key-generator:
+        extends: { file: ./compose.common.yml, service: common-options }
         container_name: mongo-key-generator
         image: $MONGO_IMAGE
         command: |
@@ -105,8 +106,8 @@ services:
             '
 
     mongo-gui:
-        profiles: ['gui']
         extends: { file: ./compose.common.yml, service: common-options }
+        profiles: ['gui']
         container_name: mongo-gui
         image: mongo-express:latest
         depends_on: { mongo-setup: { condition: service_completed_successfully } }
