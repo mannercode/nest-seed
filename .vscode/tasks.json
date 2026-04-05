@@ -1,37 +1,54 @@
 {
     "version": "2.0.0",
     "tasks": [
-        { "label": "clean", "type": "shell", "command": "turbo run clean" },
         {
-            "label": "libs:build",
+            "label": "*** VERIFY ALL ***",
+            "dependsOn": ["all:clean", "all:lint", "all:build", "all:test:unit", "all:test:e2e"],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        { "label": "all:clean", "type": "shell", "command": "turbo run clean" },
+        {
+            "label": "all:build",
             "group": { "kind": "build", "isDefault": true },
             "type": "shell",
             "command": "turbo run build"
         },
-        { "label": "lint", "type": "shell", "command": "turbo run lint" },
+        { "label": "all:lint", "type": "shell", "command": "turbo run lint" },
         {
-            "label": "test:unit",
+            "label": "all:test:unit",
             "group": { "kind": "test", "isDefault": true },
             "type": "shell",
             "command": "turbo run test:unit --concurrency=1"
         },
         {
+            "label": "all:test:e2e",
+            "group": { "kind": "test" },
+            "type": "shell",
+            "command": "turbo run test:e2e --concurrency=1"
+        },
+
+        {
             "label": "mono:test:unit",
+            "group": { "kind": "test" },
             "type": "shell",
             "command": "turbo run test:unit --filter=nest-mono"
         },
         {
             "label": "mono:test:e2e",
+            "group": { "kind": "test" },
             "type": "shell",
             "command": "turbo run test:e2e --filter=nest-mono"
         },
         {
             "label": "msa:test:unit",
+            "group": { "kind": "test" },
             "type": "shell",
             "command": "turbo run test:unit --filter=nest-msa"
         },
         {
             "label": "msa:test:e2e",
+            "group": { "kind": "test" },
             "type": "shell",
             "command": "turbo run test:e2e --filter=nest-msa"
         }
