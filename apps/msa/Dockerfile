@@ -6,7 +6,6 @@ WORKDIR /monorepo
 COPY package.json ./
 COPY libs/common/package.json libs/common/
 COPY libs/microservices/package.json libs/microservices/
-COPY libs/testing/package.json libs/testing/
 COPY apps/msa/package.json apps/msa/
 RUN npm install
 
@@ -31,8 +30,6 @@ COPY --from=build /monorepo/libs/common/package.json libs/common/
 COPY --from=build /monorepo/libs/common/dist/ libs/common/dist/
 COPY --from=build /monorepo/libs/microservices/package.json libs/microservices/
 COPY --from=build /monorepo/libs/microservices/dist/ libs/microservices/dist/
-COPY --from=build /monorepo/libs/testing/package.json libs/testing/
-COPY --from=build /monorepo/libs/testing/dist/ libs/testing/dist/
 COPY --from=build /monorepo/apps/msa/package.json apps/msa/
 RUN npm install --omit=dev
 COPY --from=build /monorepo/apps/msa/_output/dist/index.js apps/msa/_output/dist/index.js
