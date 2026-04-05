@@ -16,7 +16,7 @@ fi
 
 dump_compose_logs () {
     docker ps -a || true
-    docker stats -a --no-stream
+    docker stats -a --no-stream || true
 
     for id in $(docker ps -aq); do
         echo "========================= ${id} ========================="

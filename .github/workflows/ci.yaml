@@ -5,14 +5,11 @@ on:
         branches: ['main']
     push:
         branches: ['main']
-
 permissions:
     contents: read
-
 concurrency:
-    group: ci-${{ github.workflow }}-${{ github.ref }}
+    group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
-
 jobs:
     ci:
         runs-on: ubuntu-24.04-arm
@@ -20,14 +17,13 @@ jobs:
         steps:
             - uses: actions/checkout@v5
 
-            - name: Run CI inside Dev Container
+            - name: Run in devcontainer
               uses: devcontainers/ci@v0.3
               with:
                   configFile: .devcontainer/devcontainer.json
                   push: never
                   runCmd: |
                       set -Eeuo pipefail
-
                       npm run build
                       npm run lint
                       npm run test:unit

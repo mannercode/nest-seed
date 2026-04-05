@@ -1,0 +1,49 @@
+# https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
+name: Test Stability
+on:
+    schedule:
+        - cron: '0 */6 * * *'
+    workflow_dispatch:
+        inputs:
+            unit:
+                description: 'Run unit tests (50 iterations)'
+                type: boolean
+            e2e:
+                description: 'Run e2e tests (30 iterations)'
+                type: boolean
+permissions:
+    contents: read
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+jobs:
+    unit:
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.unit) || github.event_name == 'schedule' }}
+        runs-on: ubuntu-24.04-arm
+        timeout-minutes: 360
+        steps:
+            - uses: actions/checkout@v5
+            - name: Run in devcontainer
+              uses: devcontainers/ci@v0.3
+              with:
+                  configFile: .devcontainer/devcontainer.json
+                  push: never
+                  runCmd: |
+                      set -Eeuo pipefail
+                      docker rm -f $(docker ps -aq)
+                      npm run build
+                      bash .github/scripts/repeat.sh 50 npm run test:unit
+    e2e:
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.e2e) || github.event_name == 'schedule' }}
+        runs-on: ubuntu-24.04-arm
+        timeout-minutes: 360
+        steps:
+            - uses: actions/checkout@v5
+            - name: Run in devcontainer
+              uses: devcontainers/ci@v0.3
+              with:
+                  configFile: .devcontainer/devcontainer.json
+                  push: never
+                  runCmd: |
+                      set -Eeuo pipefail
+                      bash .github/scripts/repeat.sh 30 npm run test:e2e
