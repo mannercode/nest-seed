@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install
 COPY . .
-RUN TARGET_APP=${TARGET_APP} npm run build
+RUN TARGET_APP=${TARGET_APP} npm run bundle
 RUN cp /app/_output/dist/${TARGET_APP}/index.js /app/_output/dist/index.js
 RUN node scripts/bundle-workflows.js
 

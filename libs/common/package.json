@@ -1,6 +1,6 @@
 {
     "name": "@mannercode/common",
-    "version": "2.0.2",
+    "version": "2.0.3",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "files": [
@@ -9,7 +9,9 @@
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "clean": "rm -rf dist *.tsbuildinfo",
-        "lint": "eslint src/ --max-warnings=0"
+        "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest --no-cache --coverage",
+        "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
+        "format": "eslint src/ --fix && prettier --write src/"
     },
     "publishConfig": {
         "access": "public"
@@ -36,7 +38,7 @@
         "@nestjs/mongoose": "^11.0.0",
         "@nestjs/terminus": "^11.0.0",
         "class-transformer": "^0.5.0",
-        "class-validator": "0.14.4",
+        "class-validator": "^0.15.0",
         "express": "^5.0.0",
         "ioredis": "^5.0.0",
         "mongoose": "^9.0.0",

@@ -1,1 +1,1 @@
-{ "reject": ["@types/node", "class-validator"] }
+{ "reject": ["@types/node"] }

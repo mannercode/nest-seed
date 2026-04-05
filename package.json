@@ -6,11 +6,12 @@
         "apps/*"
     ],
     "scripts": {
-        "build": "turbo run build --filter='./libs/*'",
+        "build": "turbo run build",
         "clean": "turbo run clean",
-        "lint": "turbo run lint --filter='./libs/*'",
-        "test": "cd libs && NODE_OPTIONS='--experimental-vm-modules' jest --coverage && cd ../apps/mono && npm run test:unit && cd ../msa && npm run test:unit",
-        "format": "prettier --write \"libs/*/src/**/*.ts\"",
+        "lint": "turbo run lint",
+        "format": "turbo run format",
+        "test": "turbo run test:unit --concurrency=1",
+        "test:e2e": "turbo run test:e2e --concurrency=1",
         "changeset:add": "changeset add",
         "changeset:version": "changeset version",
         "changeset:publish": "npm run build && changeset publish"
@@ -41,7 +42,7 @@
         "@types/superagent": "^8.1.9",
         "@typescript-eslint/parser": "^8.58.0",
         "class-transformer": "^0.5.1",
-        "class-validator": "0.14.4",
+        "class-validator": "0.15.1",
         "eslint": "^10.2.0",
         "eslint-plugin-perfectionist": "^5.8.0",
         "eslint-plugin-unused-imports": "^4.4.1",

@@ -4,6 +4,9 @@
         "build": { "dependsOn": ["^build"], "inputs": ["src/**"], "outputs": ["dist/**"] },
         "clean": { "cache": false },
         "lint": { "dependsOn": ["^build"], "inputs": ["src/**", "../eslint.config.js"] },
-        "test": { "dependsOn": ["build"] }
+        "format": { "cache": false },
+        "test": { "dependsOn": ["build"] },
+        "test:unit": { "dependsOn": ["^build"], "cache": false },
+        "test:e2e": { "cache": false }
     }
 }

@@ -1,6 +1,6 @@
 {
     "name": "@mannercode/testing",
-    "version": "2.0.2",
+    "version": "2.0.3",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "files": [
@@ -9,7 +9,9 @@
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "clean": "rm -rf dist *.tsbuildinfo",
-        "lint": "eslint src/ --max-warnings=0"
+        "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest --no-cache --coverage",
+        "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
+        "format": "eslint src/ --fix && prettier --write src/"
     },
     "publishConfig": {
         "access": "public"
@@ -24,9 +26,8 @@
         "superagent": "^10.3.0"
     },
     "peerDependencies": {
-        "@mannercode/common": "^2.0.2",
+        "@mannercode/common": "^2.0.3",
         "@nestjs/common": "^11.0.0",
-        "@nestjs/testing": "^11.0.0",
-        "class-validator": "0.14.4"
+        "@nestjs/testing": "^11.0.0"
     }
 }

@@ -91,5 +91,15 @@ module.exports = [
         files: ['*/src/**/__tests__/**/*.ts'],
         languageOptions: { globals: { ...baseGlobals, ...globals.jest } },
         rules: {}
+    },
+    {
+        files: ['*/src/**/*.spec.ts', '*/src/**/*.test.ts'],
+        ignores: ['*/src/**/__tests__/**'],
+        rules: {
+            'no-restricted-syntax': [
+                'error',
+                { selector: 'Program', message: 'Test files must live under __tests__.' }
+            ]
+        }
     }
 ]

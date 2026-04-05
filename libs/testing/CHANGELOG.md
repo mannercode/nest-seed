@@ -1,5 +1,13 @@
 # @mannercode/testing
 
+## 2.0.3
+
+### Patch Changes
+
+- class-validator peer dep을 ^0.15.0으로 업데이트, testing에서 불필요한 class-validator 제거, scripts 정리
+- Updated dependencies
+    - @mannercode/common@2.0.3
+
 ## 2.0.2
 
 ### Patch Changes
