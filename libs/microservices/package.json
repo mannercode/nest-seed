@@ -3,9 +3,6 @@
     "version": "2.0.3",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
-    "files": [
-        "dist"
-    ],
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "clean": "rm -rf dist *.tsbuildinfo",
@@ -13,17 +10,8 @@
         "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
         "format": "eslint src/ --fix && prettier --write src/"
     },
-    "publishConfig": {
-        "access": "public"
-    },
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/mannercode/nest-seed.git",
-        "directory": "libs/microservices"
-    },
     "peerDependencies": {
-        "@mannercode/common": "^2.0.3",
+        "@mannercode/common": "*",
         "@nestjs/common": "^11.0.0",
         "@nestjs/microservices": "^11.0.0",
         "@temporalio/client": "^1.15.0",

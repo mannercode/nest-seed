@@ -15,7 +15,6 @@
         "bundle": "nest build ${TARGET_APP} -b webpack",
         "clean": "rm -rf _output tests/e2e/logs",
         "dev": "nest start ${TARGET_APP} --watch",
-        "test": "npm run test:unit && npm run test:e2e",
         "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest --no-cache --coverage",
         "test:e2e": "npm run apps:reset && bash tests/e2e/run-all.sh && npm run apps:down",
         "format": "eslint src/ --fix && prettier --write src/",
@@ -29,8 +28,8 @@
         "@aws-sdk/client-s3": "3.1024.0",
         "@aws-sdk/s3-presigned-post": "3.1024.0",
         "@aws-sdk/s3-request-presigner": "3.1024.0",
-        "@mannercode/common": "2.0.3",
-        "@mannercode/microservices": "2.0.3",
+        "@mannercode/common": "*",
+        "@mannercode/microservices": "*",
         "@nestjs/common": "11.1.18",
         "@nestjs/config": "4.0.3",
         "@nestjs/core": "11.1.18",
@@ -58,7 +57,7 @@
         "rxjs": "7.8.2"
     },
     "devDependencies": {
-        "@mannercode/testing": "2.0.3",
+        "@mannercode/testing": "*",
         "@nestjs/cli": "11.0.17",
         "@nestjs/schematics": "11.0.10",
         "@nestjs/testing": "11.1.18",

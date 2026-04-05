@@ -248,24 +248,6 @@ NestJS는 CommonJS 모듈 시스템을 사용하지만, Node.js >= 22에서는 C
 
 ---
 
-## npm 배포
-
-`@mannercode/*` 패키지는 GitHub Actions + OIDC로 npm에 자동 배포된다.
-
-### 흐름
-
-1. `libs/` 코드 변경 후 `npx changeset add`로 changeset 생성
-2. main에 push하면 `.github/workflows/publish.yaml`이 실행
-3. changesets/action이 버전 PR을 생성하거나, 대기 중인 changeset이 있으면 npm에 배포
-
-### 설정
-
-- **인증**: npm 토큰 대신 GitHub OIDC(`id-token: write` + `NPM_CONFIG_PROVENANCE: true`)를 사용
-- **버전 관리**: changesets 기반. `npx changeset add`로 changeset을 생성하고, `npx changeset version`으로 버전을 올린다
-- **수동 배포**: `turbo run build && changeset publish` (npm 로그인 필요)
-
----
-
 ## Commit Message 규칙
 
 `@commitlint/config-conventional` 규칙을 사용한다. 커밋 메시지는 아래 형식을 따라야 하며, 위반 시 커밋이 실패한다.

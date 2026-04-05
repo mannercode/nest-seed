@@ -84,7 +84,6 @@ npm test
 | **빌드**              | Turborepo + Webpack        |
 | **컨테이너**          | Docker (multi-stage build) |
 | **패키지 매니저**     | npm workspaces             |
-| **버전 관리**         | Changesets                 |
 
 ## Mono vs MSA 비교
 

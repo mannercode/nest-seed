@@ -54,26 +54,32 @@ x-app-base: &app-base
 services:
     gateway:
         <<: *app-base
-        build: { context: ., args: { TARGET_APP: gateway } }
+        build: { context: ../.., dockerfile: apps/msa/Dockerfile, args: { TARGET_APP: gateway } }
         image: gateway
         container_name: gateway
         ports: ['${HTTP_PORT}:${HTTP_PORT}']
 
     applications:
         <<: *app-base
-        build: { context: ., args: { TARGET_APP: applications } }
+        build:
+            { context: ../.., dockerfile: apps/msa/Dockerfile, args: { TARGET_APP: applications } }
         image: applications
         container_name: applications
 
     cores:
         <<: *app-base
-        build: { context: ., args: { TARGET_APP: cores } }
+        build: { context: ../.., dockerfile: apps/msa/Dockerfile, args: { TARGET_APP: cores } }
         image: cores
         container_name: cores
 
     infrastructures:
         <<: *app-base
-        build: { context: ., args: { TARGET_APP: infrastructures } }
+        build:
+            {
+                context: ../..,
+                dockerfile: apps/msa/Dockerfile,
+                args: { TARGET_APP: infrastructures }
+            }
         image: infrastructures
         container_name: infrastructures
 

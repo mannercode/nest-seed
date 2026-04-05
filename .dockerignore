@@ -1,0 +1,9 @@
+node_modules
+_output
+.git
+.changeset
+.devcontainer
+.github
+.vscode
+.claude
+docs

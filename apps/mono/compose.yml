@@ -45,7 +45,7 @@ x-app-base: &app-base
 services:
     app:
         <<: *app-base
-        build: { context: . }
+        build: { context: ../.., dockerfile: apps/mono/Dockerfile }
         image: nest-mono
         container_name: app
         ports: ['${HTTP_PORT}:${HTTP_PORT}']
