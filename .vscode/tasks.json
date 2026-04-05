@@ -14,6 +14,7 @@
         },
         { "label": "all:clean", "type": "shell", "command": "npm run clean" },
         { "label": "all:lint", "type": "shell", "command": "npm run lint" },
+        { "label": "all:format", "type": "shell", "command": "npm run format" },
         { "label": "all:test:unit", "type": "shell", "command": "npm run test:unit" },
         { "label": "all:test:e2e", "type": "shell", "command": "npm run test:e2e" },
         { "label": "mono:test:unit", "type": "shell", "command": "npm run test:unit -w apps/mono" },

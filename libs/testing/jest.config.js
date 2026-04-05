@@ -1,3 +1,3 @@
-const base = require('../jest.config.base')
+const base = require('../jest.config')
 
 module.exports = { ...base, collectCoverageFrom: [] }

@@ -1,12 +1,14 @@
 *
 
 !package.json
+!tsconfig.json
 
-!libs/tsconfig.base.json
-!libs/tsconfig.build.json
+!libs/tsconfig.json
 !libs/*/package.json
 !libs/*/tsconfig.build.json
 !libs/*/src/
+
+libs/testing/
 
 !apps/*/package.json
 !apps/*/tsconfig.json

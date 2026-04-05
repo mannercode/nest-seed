@@ -1,6 +1,12 @@
 {
-    "extends": "../tsconfig.build.json",
-    "compilerOptions": { "outDir": "_output/dist", "rootDir": "src" },
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "noEmit": false,
+        "types": ["node"],
+        "paths": {},
+        "outDir": "_output/dist",
+        "rootDir": "src"
+    },
     "include": ["src/**/*"],
     "exclude": ["src/**/__tests__/**"]
 }

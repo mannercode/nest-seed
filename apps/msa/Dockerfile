@@ -9,6 +9,7 @@ COPY libs/microservices/package.json libs/microservices/
 COPY apps/msa/package.json apps/msa/
 RUN npm install
 
+COPY tsconfig.json ./
 COPY libs/ libs/
 RUN npm run build
 
@@ -27,9 +28,9 @@ RUN apt-get update && \
 WORKDIR /monorepo/apps/msa
 COPY --from=build /monorepo/package.json /monorepo/
 COPY --from=build /monorepo/libs/common/package.json /monorepo/libs/common/
-COPY --from=build /monorepo/libs/common/dist/ /monorepo/libs/common/dist/
+COPY --from=build /monorepo/libs/common/_output/dist/ /monorepo/libs/common/_output/dist/
 COPY --from=build /monorepo/libs/microservices/package.json /monorepo/libs/microservices/
-COPY --from=build /monorepo/libs/microservices/dist/ /monorepo/libs/microservices/dist/
+COPY --from=build /monorepo/libs/microservices/_output/dist/ /monorepo/libs/microservices/_output/dist/
 COPY --from=build /monorepo/apps/msa/package.json /monorepo/apps/msa/
 RUN npm install --omit=dev --prefix /monorepo
 COPY --from=build /monorepo/apps/msa/_output/dist/index.js _output/dist/index.js

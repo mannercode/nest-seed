@@ -6,6 +6,7 @@ COPY libs/common/package.json libs/common/
 COPY apps/mono/package.json apps/mono/
 RUN npm install
 
+COPY tsconfig.json ./
 COPY libs/ libs/
 RUN npm run build
 
@@ -18,7 +19,7 @@ RUN apk add --no-cache curl
 WORKDIR /monorepo/apps/mono
 COPY --from=build /monorepo/package.json /monorepo/
 COPY --from=build /monorepo/libs/common/package.json /monorepo/libs/common/
-COPY --from=build /monorepo/libs/common/dist/ /monorepo/libs/common/dist/
+COPY --from=build /monorepo/libs/common/_output/dist/ /monorepo/libs/common/_output/dist/
 COPY --from=build /monorepo/apps/mono/package.json /monorepo/apps/mono/
 RUN npm install --omit=dev --prefix /monorepo
 COPY --from=build /monorepo/apps/mono/_output/dist/index.js _output/dist/index.js
