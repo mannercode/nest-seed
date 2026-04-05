@@ -29,7 +29,7 @@ jobs:
             - name: Create Release Pull Request or Publish
               uses: changesets/action@v1
               with:
-                  publish: turbo run build && changeset publish
+                  publish: npx turbo run build && npx changeset publish
                   title: 'chore: version packages'
                   commit: 'chore: version packages'
               env:
