@@ -10,7 +10,6 @@
         "clean": "npm run clean --workspaces",
         "lint": "npm run lint --workspaces",
         "format": "npm run format --workspaces",
-        "test": "npm run test:unit && npm run test:e2e",
         "test:unit": "npm run test:unit --workspaces",
         "test:e2e": "npm run test:e2e --workspaces --if-present"
     },

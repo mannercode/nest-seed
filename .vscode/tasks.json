@@ -3,7 +3,7 @@
     "tasks": [
         {
             "label": "*** VERIFY ALL ***",
-            "dependsOn": ["all:clean", "all:build", "all:lint", "all:test:unit"],
+            "dependsOn": ["all:clean", "all:build", "all:lint", "all:test:unit", "all:test:e2e"],
             "dependsOrder": "sequence",
             "problemMatcher": []
         },
@@ -20,6 +20,12 @@
             "group": { "kind": "test", "isDefault": true },
             "type": "shell",
             "command": "npm run test:unit"
+        },
+        {
+            "label": "all:test:e2e",
+            "group": { "kind": "test" },
+            "type": "shell",
+            "command": "npm run test:e2e"
         },
         {
             "label": "mono:test:unit",
