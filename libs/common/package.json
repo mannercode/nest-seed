@@ -23,9 +23,9 @@
         "directory": "libs/common"
     },
     "dependencies": {
-        "mongoose-lean-virtuals": "^2.1.0",
-        "winston": "^3.19.0",
-        "winston-daily-rotate-file": "^5.0.0"
+        "mongoose-lean-virtuals": "2.1.0",
+        "winston": "3.19.0",
+        "winston-daily-rotate-file": "5.0.0"
     },
     "peerDependencies": {
         "@aws-sdk/client-s3": "^3.0.0",
