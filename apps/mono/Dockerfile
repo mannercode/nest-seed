@@ -9,25 +9,24 @@ COPY apps/mono/package.json apps/mono/
 RUN npm install
 
 COPY libs/ libs/
-RUN npm run build --workspace=libs/common && \
-    npm run build --workspace=libs/microservices && \
-    npm run build --workspace=libs/testing
+RUN npm run build
 
 COPY apps/mono/ apps/mono/
 RUN npm run bundle --workspace=apps/mono
 
-RUN node -e "\
-  const pkg = require('./apps/mono/package.json'); \
-  delete pkg.dependencies['@mannercode/common']; \
-  delete pkg.devDependencies; \
-  require('fs').writeFileSync('/tmp/package.json', JSON.stringify(pkg, null, 2));"
-
 FROM node:24-alpine AS runtime
 
 RUN apk add --no-cache curl
-WORKDIR /app
-COPY --from=build /tmp/package.json ./
+WORKDIR /monorepo
+COPY --from=build /monorepo/package.json ./
+COPY --from=build /monorepo/libs/common/package.json libs/common/
+COPY --from=build /monorepo/libs/common/dist/ libs/common/dist/
+COPY --from=build /monorepo/libs/microservices/package.json libs/microservices/
+COPY --from=build /monorepo/libs/microservices/dist/ libs/microservices/dist/
+COPY --from=build /monorepo/libs/testing/package.json libs/testing/
+COPY --from=build /monorepo/libs/testing/dist/ libs/testing/dist/
+COPY --from=build /monorepo/apps/mono/package.json apps/mono/
 RUN npm install --omit=dev
-COPY --from=build /monorepo/apps/mono/_output/dist/index.js /app/_output/dist/index.js
+COPY --from=build /monorepo/apps/mono/_output/dist/index.js apps/mono/_output/dist/index.js
 
-CMD ["node", "_output/dist/index.js"]
+CMD ["node", "apps/mono/_output/dist/index.js"]

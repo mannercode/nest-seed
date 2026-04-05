@@ -28,6 +28,6 @@ module.exports = (options) => {
             path: path.resolve(__dirname, `./_output/dist/${basename}`),
             filename: 'index.js'
         },
-        externals: [nodeExternals({ modulesFromFile: true, allowlist: [/^@mannercode/] })]
+        externals: [nodeExternals({ modulesFromFile: true })]
     }
 }
