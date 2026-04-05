@@ -2,7 +2,6 @@
     "files.exclude": {
         "**/.DS_Store": true,
         "**/node_modules": true,
-        "**/*.tsbuildinfo": true,
         "**/package-lock.json": true
     },
     "files.watcherExclude": { "**/_output/**": true },

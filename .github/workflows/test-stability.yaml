@@ -22,7 +22,7 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
                       npm run build
-                      bash .github/scripts/repeat.sh 50 npm run test:unit
+                      bash .github/scripts/repeat.sh 300 npm run test:unit
     e2e:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
@@ -35,4 +35,4 @@ jobs:
                   push: never
                   runCmd: |
                       set -Eeuo pipefail
-                      bash .github/scripts/repeat.sh 30 npm run test:e2e
+                      bash .github/scripts/repeat.sh 300 npm run test:e2e

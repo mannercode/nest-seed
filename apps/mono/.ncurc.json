@@ -1,1 +1,0 @@
-{ "target": "latest", "reject": ["@types/node"] }

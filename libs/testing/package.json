@@ -1,11 +1,10 @@
 {
     "name": "@mannercode/testing",
-    "version": "2.0.3",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
+    "main": "_output/dist/index.js",
+    "types": "_output/dist/index.d.ts",
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
-        "clean": "rm -rf dist *.tsbuildinfo _output",
+        "clean": "rm -rf _output",
         "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest --no-cache",
         "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
         "format": "eslint src/ --fix && prettier --write src/"

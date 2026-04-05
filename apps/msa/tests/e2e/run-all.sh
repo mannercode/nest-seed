@@ -160,7 +160,7 @@ fi
 PASSED_TESTS=0
 FAILED_TESTS=0
 LOG_FILE=''
-LOG_DIR="$(pwd)/logs/$(date '+%Y%m%d_%H%M%S')"
+LOG_DIR="$(pwd)/_output/logs/$(date '+%Y%m%d_%H%M%S')"
 
 for spepath in "${specs[@]}"; do
 	LOG_FILE="${LOG_DIR}/${spepath#./specs/}.log"

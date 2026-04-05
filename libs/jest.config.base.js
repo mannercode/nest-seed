@@ -16,6 +16,9 @@ module.exports = {
     moduleNameMapper: pathsToModuleNameMapper(tsconfig.compilerOptions.paths, {
         prefix: join(__dirname, '/')
     }),
+    roots: ['<rootDir>/src'],
+    collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
+    coverageDirectory: '<rootDir>/_output/coverage',
     coveragePathIgnorePatterns: ['__tests__', '/index\\.ts$'],
     coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },
     coverageReporters: ['lcov', 'text'],
