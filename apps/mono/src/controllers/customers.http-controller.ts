@@ -60,11 +60,6 @@ export class CustomersHttpController {
         return this.customersService.searchPage(searchDto)
     }
 
-    @Get('jwt-guard')
-    async testJwtGuard() {
-        return { message: 'accessToken is valid' }
-    }
-
     @Get(':customerId')
     async get(@Param('customerId') customerId: string) {
         const [customer] = await this.customersService.getMany([customerId])
