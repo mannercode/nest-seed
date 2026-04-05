@@ -4,7 +4,7 @@
         "**/.DS_Store": true,
         "**/node_modules": true,
         "**/*.tsbuildinfo": true,
-        "**/package-lock.json": true
+        "**/package-lock.json": false
     },
     "files.watcherExclude": { "**/_output/**": true },
     "search.exclude": { "**/_output/**": true },
@@ -16,7 +16,6 @@
     "js/ts.updateImportsOnFileMove.enabled": "never",
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "prettier.resolveGlobalModules": false,
-    "prettier.prettierPath": "",
     "jestrunner.enableESM": true,
     "[dockerfile]": { "editor.defaultFormatter": "ms-azuretools.vscode-containers" },
     "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },

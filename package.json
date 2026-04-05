@@ -63,9 +63,5 @@
         "typescript": "^6.0.2",
         "typescript-eslint": "^8.58.0"
     },
-    "overrides": {
-        "class-validator": "0.14.4",
-        "lodash": "^4.18.0"
-    },
     "packageManager": "npm@11.12.1"
 }
