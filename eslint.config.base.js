@@ -2,22 +2,18 @@ const tseslint = require('typescript-eslint')
 const perfectionistPlugin = require('eslint-plugin-perfectionist')
 const globals = require('globals')
 const unusedImportsPlugin = require('eslint-plugin-unused-imports')
-
 const baseGlobals = { ...globals.node, ...globals.es2025, module: 'readonly', require: 'readonly' }
-
 const barrelImportPatterns = [
     {
         regex: '\\.\\./(?!\\.)[^/]+/[^/]+',
         message: 'Import from the barrel (index.ts) instead of submodules.'
     }
 ]
-
 const basePlugins = {
     '@typescript-eslint': tseslint.plugin,
     perfectionist: perfectionistPlugin,
     'unused-imports': unusedImportsPlugin
 }
-
 const baseRules = {
     ...tseslint.plugin.configs.recommended.rules,
     '@typescript-eslint/no-floating-promises': 'warn',
