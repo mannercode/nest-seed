@@ -57,7 +57,7 @@ libs/
 
 ## 빌드 순서
 
-`microservices`와 `testing`은 `common`에 의존하므로, `npm run build`는 common → microservices/testing 순으로 빌드한다. `npm-run-all2`의 `run-s`/`run-p`로 순차/병렬 실행을 제어한다.
+`microservices`와 `testing`은 `common`에 의존하므로, `npm run build`는 common → microservices/testing 순으로 빌드한다. npm workspaces의 `--workspaces` 플래그로 각 패키지 빌드를 실행한다.
 
 ---
 
@@ -116,7 +116,6 @@ jest.setup.js           각 테스트 스위트마다 실행
 
 - **import 정렬**: `perfectionist/sort-imports`, `perfectionist/sort-exports` — natural 순서
 - **barrel import 강제**: `no-restricted-imports` — 상위 폴더의 서브모듈 직접 import 금지
-- **타입 import**: `consistent-type-imports` — `import type` 사용 강제
 - **미사용 import 제거**: `unused-imports/no-unused-imports`
 - **Promise 안전성**: `no-floating-promises`, `no-misused-promises`, `await-thenable`
 - **switch 완전성**: `switch-exhaustiveness-check`

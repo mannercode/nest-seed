@@ -25,9 +25,9 @@
         "apps:wait": "docker wait apps-setup && docker rm apps-setup"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "3.1024.0",
-        "@aws-sdk/s3-presigned-post": "3.1024.0",
-        "@aws-sdk/s3-request-presigner": "3.1024.0",
+        "@aws-sdk/client-s3": "3.1025.0",
+        "@aws-sdk/s3-presigned-post": "3.1025.0",
+        "@aws-sdk/s3-request-presigner": "3.1025.0",
         "@mannercode/common": "*",
         "@mannercode/microservices": "*",
         "@nestjs/common": "11.1.18",

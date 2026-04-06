@@ -1,14 +1,12 @@
-1. libs/testing을 libs/common나 libs/microservices에 의존하지 않도록 개선.
-   개선에 어려운 부분은 사전에 보고할 것
-2. libs가 testing -> microservices -> common 이렇게 의존성을 가지는지 면밀하게 점검.
-3. 그 외에 순홤참조 관련 문제 없는지 점검
-
-
+- msa/gateway 제거 검토
+    - msa는 mono를 서비스로 분리하고 MSA 인프라를 적용하는 것이 목적
+    - gateway(BFF)는 mono의 HTTP 컨트롤러를 NATS 프록시로 재작성한 것으로 중복
+    - 각 서비스가 HTTP를 직접 노출하고, 외부 라우팅/인증은 인프라 게이트웨이(Kong 등)로 위임
+    - 현재 gateway의 컨트롤러를 각 서비스로 이동
 
 - temporal 적용 후 검토는 하지 못한 상태
-    - temporal 코드 모두 리뷰하고 libs/common에 통합 가능한지 검토해야 한다
     - temporal 도입하면서 sagaId는 어떻게 할지 재검토 필요
-- sagaId를 모든 엔티티에 기본으로?
+
 - 아래 기술들 추가할거 없나 검토
     1. 컨테이너/오케스트레이션
        • Docker: 서비스 패키징 표준
@@ -44,8 +42,6 @@
 
     “NestJS + Temporal” 기준으로 현실적인 기본 세트(많이 쓰는 조합)
     • Kubernetes + API Gateway + (필요시) Service Mesh
-    • Kafka(또는 RabbitMQ)
     • OpenTelemetry + Prometheus/Grafana + Jaeger
     • Vault(또는 K8s Secrets + KMS)
     • Argo CD(GitOps)
-    Temporal은 여기에 “사가/장기 워크플로우”를 담당하는 엔진으로 들어가는 그림입니다.

@@ -1,90 +1,154 @@
 # nest-seed
 
-NestJS 기반 모노레포. 영화 예매 도메인으로 모놀리식(mono)과 마이크로서비스(msa) 아키텍처 시드를 제공한다.
-
-## 프로젝트 구조
-
-```
-nest-seed/
-├── libs/                ← 공유 라이브러리 (npm 패키지)
-│   ├── common/              @mannercode/common      — Mongoose, Redis, JWT, S3, logging
-│   ├── microservices/        @mannercode/microservices — NATS RPC, Temporal workflows
-│   └── testing/             @mannercode/testing      — 테스트 컨텍스트, HTTP/RPC 클라이언트
-│
-├── apps/                    ← 애플리케이션 (복사해서 새 프로젝트 시작)
-│   ├── mono/                모놀리식    — NestJS, MongoDB, Redis, BullMQ, EventEmitter2
-│   ├── msa/                 마이크로서비스 — NestJS, MongoDB, Redis, NATS, Temporal
-├── .devcontainer/           ← Dev Container + 개발 인프라 (Docker Compose, 환경변수)
-│
-└── docs/                    ← 아키텍처·설계 문서
-```
-
-두 시드는 동일한 레이어드 아키텍처(SoLA)와 도메인 모델을 공유하며, 통신 및 오케스트레이션 전략이 다르다.
+NestJS 기반 모노레포. 영화 예매 도메인으로 모놀리식(mono)과 마이크로서비스 아키텍처(MSA) 아키텍처 시드를 제공한다.
 
 ## 시작하기
 
-### 사전 요구 사항
+### 1. Dev Container 실행
 
-- Node.js 24+
-- Docker & Docker Compose
-
-### 1. 의존성 설치
+사전 요구 사항: Docker, VS Code (Dev Containers 확장)
 
 ```bash
-npm install
+git clone <repository-url>
+code nest-seed
 ```
 
-### 2. 패키지 빌드
+VS Code에서 `Reopen in Container`를 실행한다.
+
+> 호스트에서 [Git credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials)를 미리 설정한다.
+
+컨테이너는 `.devcontainer/devcontainer.json`으로 구성되며, 주요 설정은 다음과 같다.
+
+- 최소 사양: CPU 4, RAM 16GB, Storage 32GB
+- `node:24-slim` 기반, non-root 사용자(`node`)로 실행
+- Docker-in-Docker로 컨테이너 내에서 Docker 사용
+- 컨테이너 생성 시 `npm install` 자동 실행
+- 컨테이너 시작 시 인프라(MongoDB RS, Redis Cluster, MinIO) 자동 기동
+- sudo 권한이 필요한 패키지는 `.devcontainer/Dockerfile`에서 설치 (예: `npm i -g npm-check-updates husky @commitlint/cli`)
+
+인프라 시작이 완료될 때까지 터미널 출력을 확인한 후 다음 단계를 진행한다.
+
+### 2. libs 빌드
+
+apps가 libs에 의존하므로 먼저 빌드한다.
 
 ```bash
 npm run build
 ```
 
-### 3. 패키지 테스트
+`all:build` 태스크가 기본 빌드로 등록되어 있어 `⌘⇧B`(macOS) / `⌃⇧B`(Linux)로도 실행할 수 있다.
+
+```jsonc
+// .vscode/tasks.json
+{
+    "label": "all:build",
+    "group": { "kind": "build", "isDefault": true },
+    "type": "shell",
+    "command": "npm run build"
+}
+```
+
+### 3. 단위 테스트
+
+이 프로젝트는 테스트 코드로 기능을 검증하는 방식을 지향한다. libs는 주로 단위 테스트, apps는 통합 테스트에 가깝다. 특히 MSA는 여러 서비스를 동시에 실행해야 하므로 서버를 띄우고 curl로 확인하는 방식은 한계가 있다.
+
+libs와 apps 전체 단위 테스트를 실행한다.
 
 ```bash
 npm run test:unit
 ```
 
-### 4. 시드 실행
+개별 앱만 실행하려면:
 
 ```bash
-cd apps/mono   # 또는 apps/msa
-npm install
-npm test
+cd apps/mono
+npm run test:unit
+
+cd apps/msa
+npm run test:unit
 ```
 
-상세 설정은 [docs/development.md](docs/development.md) 참조.
+### 4. E2E 테스트
 
-## 모노레포 스크립트
+E2E 테스트는 Docker Compose로 앱을 빌드·실행한 뒤, curl 기반 셸 스크립트로 API를 검증한다.
 
-| 스크립트            | 설명                               |
-| ------------------- | ---------------------------------- |
-| `npm run build`     | 모든 패키지 빌드                   |
-| `npm run test:unit` | 패키지 단위 테스트 (커버리지 포함) |
-| `npm run lint`      | 전체 패키지 ESLint                 |
-| `npm run format`    | Prettier 포맷팅                    |
+```bash
+cd apps/mono
+npm run test:e2e
+```
 
-## 기술 스택
+E2E 스펙은 `tests/e2e/specs/` 디렉토리에 `.spec` 셸 스크립트로 작성한다.
 
-| 분류                  | 기술                       |
-| --------------------- | -------------------------- |
-| **프레임워크**        | NestJS 11                  |
-| **언어**              | TypeScript 6               |
-| **데이터베이스**      | MongoDB (Mongoose)         |
-| **캐시**              | Redis                      |
-| **메시징**            | NATS (msa)                 |
-| **워크플로우**        | Temporal (msa)             |
-| **큐**                | BullMQ (mono)              |
-| **이벤트**            | EventEmitter2 (mono)       |
-| **오브젝트 스토리지** | MinIO (S3 호환)            |
-| **인증**              | JWT + Passport             |
-| **테스트**            | Jest (100% 커버리지)       |
-| **빌드**              | Webpack                    |
-| **컨테이너**          | Docker (multi-stage build) |
-| **패키지 매니저**     | npm workspaces             |
+```
+tests/e2e/
+├── run-all.sh              # 전체 스펙 실행
+├── run-select.sh           # 스펙 선택 실행 (대화형)
+├── assets/                 # 테스트용 파일 (이미지 등)
+└── specs/
+    ├── _common.fixture     # 공통 셋업
+    ├── customers.spec
+    ├── movies.spec
+    ├── theaters.spec
+    ├── booking.spec
+    ├── purchases.spec
+    └── showtime-creation.spec
+```
 
-## Mono vs MSA 비교
+스펙 파일 예시 (`customers.spec`):
+
+```bash
+TEST "Create a customer" \
+    201 POST /customers \
+    -H 'Content-Type: application/json' \
+    -d '{ "name": "customer name", "email": "'${CUSTOMER_EMAIL}'", ... }'
+
+CUSTOMER_ID=$(echo "${BODY}" | jq -r '.id')
+
+TEST "Login customer" \
+    200 POST /customers/login \
+    -H 'Content-Type: application/json' \
+    -d '{ "email": "'${CUSTOMER_EMAIL}'", "password": "password" }'
+```
+
+`TEST` 함수는 `설명`, `기대 상태코드`, `HTTP 메서드`, `URL`, `curl 옵션` 순으로 인자를 받고, 상태코드가 일치하지 않으면 FAIL로 보고한다. 실행 결과는 `_output/logs/`에 기록된다.
+
+MSA도 동일한 구조다.
+
+```bash
+cd apps/msa
+npm run test:e2e
+```
+
+### 5. Mono 앱 실행
+
+```bash
+cd apps/mono
+npm run debug
+```
+
+앱이 시작되면 API를 호출할 수 있다.
+
+```bash
+curl http://localhost:3000/movies
+```
+
+## 프로젝트 구조
+
+```
+nest-seed/
+├── libs/                    ← 공유 라이브러리 (npm 패키지)
+│   ├── common/              @mannercode/common
+│   ├── microservices/       @mannercode/microservices
+│   └── testing/             @mannercode/testing
+│
+├── apps/                    ← 애플리케이션
+│   ├── mono/                모놀리식    — NestJS, MongoDB, Redis, BullMQ
+│   └── msa/                 마이크로서비스 — NestJS, MongoDB, Redis, NATS, Temporal
+│
+└── .devcontainer/           ← Dev Container + 개발 인프라
+```
+
+## Mono vs MSA
 
 | 항목           | mono                       | msa                                    |
 | -------------- | -------------------------- | -------------------------------------- |
@@ -93,17 +157,15 @@ npm test
 | 비동기 처리    | BullMQ 큐                  | Temporal 워크플로우 (Saga 패턴)        |
 | 이벤트         | EventEmitter2 (in-process) | NATS pub/sub                           |
 | 인프라         | MongoDB RS + Redis Cluster | + NATS Cluster + Temporal + PostgreSQL |
-| 포트           | 3000                       | 3000, 4000, 4001, 4002                 |
 
 ## 문서
 
-- [패키지 아키텍처](docs/architecture.md) — 모노레포 구조, 패키지 의존 그래프, 모듈 상세
-- [설계 가이드](docs/design-guide.md) — SoLA 아키텍처, REST API 설계, 엔티티 설계
-- [프로젝트 컨벤션](docs/conventions.md) — 네이밍 규칙, 테스트 컨벤션
-- [개발 환경](docs/development.md) — 스크립트, 프로젝트 구조, ESLint 규칙
-- [설계 결정](docs/decisions.md) — NATS, Temporal 선택 근거
-- [도메인 용어](docs/glossary.md) — 영화 예매 도메인 용어 정리
-
-## 라이선스
-
-개별 패키지의 라이선스 정보를 참조.
+- [아키텍처](architecture.md) — 모노레포 구조, SoLA 계층, 서비스 호출 흐름
+- [인증](auth.md) — JWT 인증 흐름, Guard 패턴
+- [컨벤션](conventions.md) — 네이밍 규칙, 에러 패턴, Import, 커밋 메시지
+- [설계 결정](decisions.md) — NATS, Temporal 선택 근거
+- [REST API & 엔티티 설계](design-guide.md) — 리소스 중심 설계, 비정규화
+- [개발 환경](development.md) — 스크립트, 환경 파일, Dev Container, 트러블슈팅
+- [도메인 용어](glossary.md) — 영화 예매 도메인 용어
+- [libs 개발](libs.md) — 빌드, 테스트, 배포 워크플로우
+- [테스트](testing.md) — 테스트 구조, Fixture, 인프라, 커버리지
