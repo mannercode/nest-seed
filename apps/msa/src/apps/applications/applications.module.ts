@@ -5,6 +5,7 @@ import { HealthModule, TemporalWorkerModule } from './modules'
 import {
     BookingModule,
     PurchaseModule,
+    RecommendationHttpModule,
     RecommendationModule,
     ShowtimeCreationModule
 } from './services'
@@ -20,6 +21,7 @@ import {
         }),
         ShowtimeCreationModule,
         RecommendationModule,
+        RecommendationHttpModule,
         BookingModule,
         PurchaseModule,
         TemporalWorkerModule

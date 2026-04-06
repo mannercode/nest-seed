@@ -3,6 +3,7 @@ import { CommonModule, MongooseConfigModule, RedisConfigModule } from 'config'
 import { HealthModule } from './modules'
 import {
     CustomersModule,
+    MoviesHttpModule,
     MoviesModule,
     PurchaseRecordsModule,
     ShowtimesModule,
@@ -20,6 +21,7 @@ import {
         HealthModule,
         CustomersModule,
         MoviesModule,
+        MoviesHttpModule,
         TheatersModule,
         ShowtimesModule,
         TicketsModule,

@@ -17,7 +17,6 @@ import {
     TicketsClient,
     TicketsModule
 } from 'cores'
-import { ShowtimeCreationHttpController } from 'gateway'
 import { AssetsClient, AssetsModule } from 'infrastructures'
 import {
     createAppTestContext,
@@ -32,7 +31,6 @@ export type ShowtimeCreationFixture = TestContext & {
 
 export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationFixture> {
     const ctx = await createAppTestContext({
-        controllers: [ShowtimeCreationHttpController],
         imports: [
             MoviesModule,
             AssetsModule,

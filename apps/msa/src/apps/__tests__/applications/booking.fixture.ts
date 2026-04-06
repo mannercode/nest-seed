@@ -1,6 +1,7 @@
 import { TestContext } from '@mannercode/testing'
 import { BookingClient, BookingModule, PurchaseModule } from 'applications'
 import {
+    CustomerJwtAuthGuard,
     CustomersClient,
     CustomersModule,
     MoviesClient,
@@ -16,7 +17,6 @@ import {
     TicketsClient,
     TicketsModule
 } from 'cores'
-import { BookingHttpController, CustomerJwtAuthGuard } from 'gateway'
 import { AssetsClient, AssetsModule, PaymentsModule } from 'infrastructures'
 import {
     AppTestContext,
@@ -68,7 +68,6 @@ export async function createAllResources(
 
 export async function createBookingFixture(): Promise<BookingFixture> {
     const ctx = await createAppTestContext({
-        controllers: [BookingHttpController],
         imports: [
             MoviesModule,
             AssetsModule,

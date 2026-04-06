@@ -4,11 +4,6 @@
     "compilerOptions": { "deleteOutDir": true, "webpack": false },
     "monorepo": true,
     "projects": {
-        "gateway": {
-            "type": "application",
-            "entryFile": "apps/gateway/development",
-            "sourceRoot": "src"
-        },
         "applications": {
             "type": "application",
             "entryFile": "apps/applications/development",

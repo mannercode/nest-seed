@@ -1,7 +1,5 @@
 import type { TestContext } from '@mannercode/testing'
-import { RecommendationClient } from 'applications'
-import { MoviesClient, MoviesModule, MovieDto } from 'cores'
-import { MoviesHttpController } from 'gateway'
+import { MoviesClient, MoviesHttpModule, MovieDto } from 'cores'
 import { AssetsClient, AssetsModule } from 'infrastructures'
 import { createAppTestContext, AppTestContext } from '../../__helpers__'
 
@@ -9,9 +7,7 @@ export type MoviesBaseContext = AppTestContext
 
 export async function createMoviesContext(): Promise<MoviesBaseContext> {
     return createAppTestContext({
-        controllers: [MoviesHttpController],
-        ignoreProviders: [RecommendationClient],
-        imports: [MoviesModule, AssetsModule],
+        imports: [MoviesHttpModule, AssetsModule],
         providers: [MoviesClient, AssetsClient]
     })
 }

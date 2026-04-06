@@ -52,12 +52,34 @@ x-app-base: &app-base
         }
 
 services:
-    gateway:
-        <<: *app-base
-        build: { context: ../.., dockerfile: apps/msa/Dockerfile, args: { TARGET_APP: gateway } }
-        image: gateway
-        container_name: gateway
-        ports: ['${HTTP_PORT}:${HTTP_PORT}']
+    kong:
+        image: kong:3.7
+        container_name: kong
+        environment:
+            KONG_DATABASE: 'off'
+            KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+            KONG_PROXY_LISTEN: '0.0.0.0:${HTTP_PORT}'
+            KONG_ADMIN_LISTEN: '0.0.0.0:8001'
+            KONG_PROXY_ACCESS_LOG: /dev/stdout
+            KONG_ADMIN_ACCESS_LOG: /dev/stdout
+            KONG_PROXY_ERROR_LOG: /dev/stderr
+            KONG_ADMIN_ERROR_LOG: /dev/stderr
+        volumes:
+            - ./kong/kong.yml:/kong/kong.yml:ro
+        ports:
+            - '${HTTP_PORT}:${HTTP_PORT}'
+        depends_on:
+            applications: { condition: service_healthy }
+            cores: { condition: service_healthy }
+            infrastructures: { condition: service_healthy }
+        healthcheck:
+            test: ['CMD', 'kong', 'health']
+            retries: 5
+            start_period: 10s
+            interval: 3s
+            timeout: 3s
+        logging: { options: { max-size: '1m', max-file: '1' } }
+        extra_hosts: ['host.docker.internal:host-gateway']
 
     applications:
         <<: *app-base
@@ -87,7 +109,7 @@ services:
         image: docker:cli
         container_name: apps-setup
         depends_on:
-            gateway: { condition: service_healthy }
+            kong: { condition: service_healthy }
             applications: { condition: service_healthy }
             cores: { condition: service_healthy }
             infrastructures: { condition: service_healthy }

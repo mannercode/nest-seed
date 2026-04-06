@@ -50,17 +50,17 @@ infra/local/              # 로컬 인프라 Docker Compose
 
 ### MSA
 
-| Script               | Description                                               |
-| -------------------- | --------------------------------------------------------- |
-| `npm run build`      | 특정 앱 빌드 (`TARGET_APP=gateway npm run build`)         |
-| `npm run start`      | 빌드된 앱 실행 (`TARGET_APP=gateway npm run start`)       |
-| `npm run dev`        | Watch 모드로 개발 실행 (`TARGET_APP=gateway npm run dev`) |
-| `npm test`           | 전체 테스트 실행 (단위 + E2E)                             |
-| `npm run test:unit`  | 단위 테스트 실행 (coverage 포함)                          |
-| `npm run test:e2e`   | E2E 테스트 실행 (인프라 + 앱 자동 재시작)                 |
-| `npm run lint`       | TypeScript 타입 체크, ESLint, Prettier 검사               |
-| `npm run format`     | ESLint 자동 수정 및 Prettier 포맷팅                       |
-| `npm run apps:reset` | 앱 서비스 초기화 (down + up + wait)                       |
+| Script               | Description                                             |
+| -------------------- | ------------------------------------------------------- |
+| `npm run build`      | 특정 앱 빌드 (`TARGET_APP=cores npm run build`)         |
+| `npm run start`      | 빌드된 앱 실행 (`TARGET_APP=cores npm run start`)       |
+| `npm run dev`        | Watch 모드로 개발 실행 (`TARGET_APP=cores npm run dev`) |
+| `npm test`           | 전체 테스트 실행 (단위 + E2E)                           |
+| `npm run test:unit`  | 단위 테스트 실행 (coverage 포함)                        |
+| `npm run test:e2e`   | E2E 테스트 실행 (인프라 + 앱 자동 재시작)               |
+| `npm run lint`       | TypeScript 타입 체크, ESLint, Prettier 검사             |
+| `npm run format`     | ESLint 자동 수정 및 Prettier 포맷팅                     |
+| `npm run apps:reset` | 앱 서비스 초기화 (down + up + wait)                     |
 
 인프라는 Dev Container가 시작 시 자동으로 올린다. 수동 관리가 필요하면 `bash .devcontainer/infra/reset.sh`를 실행한다.
 
@@ -100,7 +100,7 @@ Docker 이미지 태그와 인프라 접속 정보(MongoDB, Redis, NATS, MinIO, 
 
 - **Mono**: `npm run debug`를 실행하여 Watch 모드로 앱을 디버깅한다.
 - **MSA**: `npm run dev`를 실행하며 `TARGET_APP`을 선택한다.
-    - 선택지: `gateway`, `applications`, `cores`, `infrastructures`
+    - 선택지: `applications`, `cores`, `infrastructures`
 
 ### 작업 (`.vscode/tasks.json`)
 
@@ -130,7 +130,7 @@ Docker 이미지 태그와 인프라 접속 정보(MongoDB, Redis, NATS, MinIO, 
 
 ```json
 // nest-cli.json — 개발 환경
-"entryFile": "apps/gateway/development"
+"entryFile": "apps/cores/development"
 ```
 
 ```js
@@ -219,10 +219,10 @@ export class FoosModule {}
 export class CoresModule {}
 ```
 
-### 3단계: Gateway에서 사용
+### 3단계: HTTP 컨트롤러 노출
 
-- **Mono**: Gateway의 HTTP 컨트롤러에서 `FoosService`를 직접 주입하여 사용한다.
-- **MSA**: `src/apps/gateway`의 관련 모듈에서 `FoosClient`를 import하고, 컨트롤러에서 주입한다.
+- **Mono**: HTTP 컨트롤러에서 `FoosService`를 직접 주입하여 사용한다.
+- **MSA**: 해당 도메인을 소유한 앱(예: `cores` 또는 `applications`)에 `*.http-controller.ts`를 추가하고 모듈에 등록한다. Kong이 path 기반으로 라우팅한다.
 
 ---
 

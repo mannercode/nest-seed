@@ -1,0 +1,64 @@
+_format_version: '3.0'
+_transform: true
+
+# Kong DB-less declarative configuration.
+#
+# Routing rules:
+# - cores serves: /customers, /theaters, /movies (CRUD), GET /purchases/:id
+# - applications serves: /booking, /showtime-creation, POST /purchases, GET /movies/recommended
+# - More specific paths win over generic ones (Kong selects longest prefix match);
+#   /purchases is split by HTTP method.
+#
+# strip_path: false   → upstream receives the original request path unchanged.
+# preserve_host: false → upstream Host header is set to the upstream hostname.
+
+services:
+    - name: cores
+      url: http://cores:3100
+      routes:
+          - name: cores-customers
+            paths:
+                - /customers
+            strip_path: false
+          - name: cores-theaters
+            paths:
+                - /theaters
+            strip_path: false
+          - name: cores-movies
+            paths:
+                - /movies
+            strip_path: false
+          - name: cores-purchases-get
+            paths:
+                - /purchases
+            methods:
+                - GET
+            strip_path: false
+          - name: cores-health
+            paths:
+                - /health
+            strip_path: false
+
+    - name: applications
+      url: http://applications:3100
+      routes:
+          - name: applications-booking
+            paths:
+                - /booking
+            strip_path: false
+          - name: applications-showtime-creation
+            paths:
+                - /showtime-creation
+            strip_path: false
+          - name: applications-movies-recommended
+            paths:
+                - /movies/recommended
+            methods:
+                - GET
+            strip_path: false
+          - name: applications-purchases-post
+            paths:
+                - /purchases
+            methods:
+                - POST
+            strip_path: false

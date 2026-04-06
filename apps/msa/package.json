@@ -6,7 +6,7 @@
         "scripts": {
             "TARGET_APP": [
                 "TARGET_APP must match a Nest project key defined in nest-cli.json.",
-                "Example: TARGET_APP=gateway npm run build"
+                "Example: TARGET_APP=cores npm run build"
             ]
         }
     },

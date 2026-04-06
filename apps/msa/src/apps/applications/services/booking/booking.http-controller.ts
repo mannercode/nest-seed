@@ -10,17 +10,16 @@ import {
     Req,
     UseGuards
 } from '@nestjs/common'
-import { BookingClient } from 'applications'
-import { CustomerJwtAuthGuard } from './guards'
-import { CustomerAuthRequest } from './types'
+import { CustomerAuthRequest, CustomerJwtAuthGuard } from 'cores'
+import { BookingService } from './booking.service'
 
 @Controller('booking')
 export class BookingHttpController {
-    constructor(private readonly bookingClient: BookingClient) {}
+    constructor(private readonly service: BookingService) {}
 
     @Get('showtimes/:showtimeId/tickets')
     async getTicketsForShowtime(@Param('showtimeId') showtimeId: string) {
-        return this.bookingClient.getTickets(showtimeId)
+        return this.service.getTickets(showtimeId)
     }
 
     @HttpCode(HttpStatus.OK)
@@ -32,7 +31,7 @@ export class BookingHttpController {
         @Req() req: CustomerAuthRequest
     ) {
         const customerId = req.user.customerId
-        return this.bookingClient.holdTickets({ customerId, showtimeId, ticketIds })
+        return this.service.holdTickets({ customerId, showtimeId, ticketIds })
     }
 
     @Get('movies/:movieId/theaters/:theaterId/showdates')
@@ -40,7 +39,7 @@ export class BookingHttpController {
         @Param('movieId') movieId: string,
         @Param('theaterId') theaterId: string
     ) {
-        return this.bookingClient.searchShowdates({ movieId, theaterId })
+        return this.service.searchShowdates({ movieId, theaterId })
     }
 
     @Get('movies/:movieId/theaters/:theaterId/showdates/:showdate/showtimes')
@@ -49,7 +48,7 @@ export class BookingHttpController {
         @Param('theaterId') theaterId: string,
         @Param('showdate') showdate: string
     ) {
-        return this.bookingClient.searchShowtimes({
+        return this.service.searchShowtimes({
             movieId,
             showdate: DateUtil.fromYMD(showdate),
             theaterId
@@ -61,6 +60,6 @@ export class BookingHttpController {
         @Param('movieId') movieId: string,
         @ParseLatLongQuery('latLong') latLong: LatLong
     ) {
-        return this.bookingClient.searchTheaters({ latLong, movieId })
+        return this.service.searchTheaters({ latLong, movieId })
     }
 }

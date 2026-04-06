@@ -4,10 +4,11 @@ import { ShowtimeBulkCreatorService, ShowtimeBulkValidatorService } from './serv
 import { ShowtimeCreationClient } from './showtime-creation.client'
 import { ShowtimeCreationController } from './showtime-creation.controller'
 import { ShowtimeCreationEvents } from './showtime-creation.events'
+import { ShowtimeCreationHttpController } from './showtime-creation.http-controller'
 import { ShowtimeCreationService } from './showtime-creation.service'
 
 @Module({
-    controllers: [ShowtimeCreationController],
+    controllers: [ShowtimeCreationController, ShowtimeCreationHttpController],
     providers: [
         MoviesClient,
         TheatersClient,

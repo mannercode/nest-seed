@@ -13,30 +13,25 @@ import {
     Req,
     UseGuards
 } from '@nestjs/common'
-import {
-    CreateCustomerDto,
-    CustomersClient,
-    SearchCustomersPageDto,
-    UpdateCustomerDto
-} from 'cores'
-import { CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
-import { CustomerAuthRequest } from './types'
+import { CustomersService } from './customers.service'
+import { CreateCustomerDto, SearchCustomersPageDto, UpdateCustomerDto } from './dtos'
+import { CustomerAuthRequest, CustomerJwtAuthGuard, CustomerLocalAuthGuard, Public } from './guards'
 
 @Controller('customers')
 @UseGuards(CustomerJwtAuthGuard)
 export class CustomersHttpController {
-    constructor(private readonly customersClient: CustomersClient) {}
+    constructor(private readonly service: CustomersService) {}
 
     @Post()
     @Public()
     async create(@Body() createDto: CreateCustomerDto) {
-        return this.customersClient.create(createDto)
+        return this.service.create(createDto)
     }
 
     @Delete(':customerId')
     @HttpCode(HttpStatus.NO_CONTENT)
     async delete(@Param('customerId') customerId: string) {
-        await this.customersClient.deleteMany([customerId])
+        await this.service.deleteMany([customerId])
     }
 
     @HttpCode(HttpStatus.OK)
@@ -45,14 +40,14 @@ export class CustomersHttpController {
     async login(@Req() req: CustomerAuthRequest) {
         Require.defined(req.user, 'req.user must be returned in LocalStrategy.validate')
 
-        return this.customersClient.generateAuthTokens(req.user)
+        return this.service.generateAuthTokens(req.user)
     }
 
     @HttpCode(HttpStatus.OK)
     @Post('refresh')
     @Public()
     async refreshToken(@Body('refreshToken') refreshToken: string) {
-        return this.customersClient.refreshAuthTokens(refreshToken)
+        return this.service.refreshAuthTokens(refreshToken)
     }
 
     @Get('me')
@@ -62,17 +57,17 @@ export class CustomersHttpController {
 
     @Get()
     async searchPage(@Query() searchDto: SearchCustomersPageDto) {
-        return this.customersClient.searchPage(searchDto)
+        return this.service.searchPage(searchDto)
     }
 
     @Get(':customerId')
     async get(@Param('customerId') customerId: string) {
-        const [customer] = await this.customersClient.getMany([customerId])
+        const [customer] = await this.service.getMany([customerId])
         return customer
     }
 
     @Patch(':customerId')
     async update(@Param('customerId') customerId: string, @Body() updateDto: UpdateCustomerDto) {
-        return this.customersClient.update(customerId, updateDto)
+        return this.service.update(customerId, updateDto)
     }
 }

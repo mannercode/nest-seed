@@ -4,11 +4,12 @@ import { PaymentsClient } from 'infrastructures'
 import { PurchaseClient } from './purchase.client'
 import { PurchaseController } from './purchase.controller'
 import { PurchaseEvents } from './purchase.events'
+import { PurchaseHttpController } from './purchase.http-controller'
 import { PurchaseService } from './purchase.service'
 import { TicketPurchaseService } from './services'
 
 @Module({
-    controllers: [PurchaseController],
+    controllers: [PurchaseController, PurchaseHttpController],
     providers: [
         PurchaseService,
         TicketPurchaseService,

@@ -20,6 +20,7 @@ import { MoviesService } from './movies.service'
             MongooseConfigModule.connectionName
         )
     ],
-    providers: [MoviesService, MoviesRepository, MoviePendingAssetsRepository, AssetsClient]
+    providers: [MoviesService, MoviesRepository, MoviePendingAssetsRepository, AssetsClient],
+    exports: [MoviesService]
 })
 export class MoviesModule {}

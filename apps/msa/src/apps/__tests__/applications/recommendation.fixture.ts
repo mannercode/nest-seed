@@ -1,7 +1,9 @@
 import { DateUtil } from '@mannercode/common'
 import { TestContext } from '@mannercode/testing'
-import { RecommendationClient, RecommendationModule } from 'applications'
+import { RecommendationClient, RecommendationHttpModule } from 'applications'
 import {
+    CustomerJwtAuthGuard,
+    CustomerOptionalJwtAuthGuard,
     CustomersClient,
     CustomersModule,
     MovieDto,
@@ -12,7 +14,6 @@ import {
     WatchRecordsClient,
     WatchRecordsModule
 } from 'cores'
-import { CustomerJwtAuthGuard, CustomerOptionalJwtAuthGuard, MoviesHttpController } from 'gateway'
 import { AssetsClient, AssetsModule } from 'infrastructures'
 import {
     AppTestContext,
@@ -27,14 +28,13 @@ export type RecommendationFixture = AppTestContext & {}
 
 export async function createRecommendationFixture(): Promise<RecommendationFixture> {
     const ctx = await createAppTestContext({
-        controllers: [MoviesHttpController],
         imports: [
             MoviesModule,
             AssetsModule,
             CustomersModule,
             ShowtimesModule,
             WatchRecordsModule,
-            RecommendationModule
+            RecommendationHttpModule
         ],
         providers: [
             CustomerJwtAuthGuard,

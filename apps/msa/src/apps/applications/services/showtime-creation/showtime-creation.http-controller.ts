@@ -12,15 +12,17 @@ import {
     Sse
 } from '@nestjs/common'
 import { EventPattern } from '@nestjs/microservices'
-import { BulkCreateShowtimesDto, ShowtimeCreationClient, ShowtimeCreationEvent } from 'applications'
 import { Events } from 'config'
 import { Observable, Subject } from 'rxjs'
+import type { ShowtimeCreationEvent } from './services/types'
+import { BulkCreateShowtimesDto } from './dtos'
+import { ShowtimeCreationService } from './showtime-creation.service'
 
 @Controller('showtime-creation')
 export class ShowtimeCreationHttpController implements OnModuleDestroy {
     private eventStream = new Subject<MessageEvent>()
 
-    constructor(private readonly showtimeCreationClient: ShowtimeCreationClient) {}
+    constructor(private readonly service: ShowtimeCreationService) {}
 
     @Sse('event-stream')
     getEventStream(): Observable<MessageEvent> {
@@ -43,22 +45,22 @@ export class ShowtimeCreationHttpController implements OnModuleDestroy {
     @HttpCode(HttpStatus.ACCEPTED)
     @Post('showtimes')
     async requestShowtimeCreation(@Body() createDto: BulkCreateShowtimesDto) {
-        return this.showtimeCreationClient.requestShowtimeCreation(createDto)
+        return this.service.requestShowtimeCreation(createDto)
     }
 
     @Get('movies')
     async searchMoviesPage(@Query() searchDto: PaginationDto) {
-        return this.showtimeCreationClient.searchMoviesPage(searchDto)
+        return this.service.searchMoviesPage(searchDto)
     }
 
     @HttpCode(HttpStatus.OK)
     @Post('showtimes/search')
     async searchShowtimesByTheaterIds(@Body('theaterIds') theaterIds: string[]) {
-        return this.showtimeCreationClient.searchShowtimes(theaterIds)
+        return this.service.searchShowtimes(theaterIds)
     }
 
     @Get('theaters')
     async searchTheatersPage(@Query() searchDto: PaginationDto) {
-        return this.showtimeCreationClient.searchTheatersPage(searchDto)
+        return this.service.searchTheatersPage(searchDto)
     }
 }

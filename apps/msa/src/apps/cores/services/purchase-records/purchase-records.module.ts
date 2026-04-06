@@ -3,11 +3,12 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { MongooseConfigModule } from 'config'
 import { PurchaseRecord, PurchaseRecordSchema } from './models'
 import { PurchaseRecordsController } from './purchase-records.controller'
+import { PurchaseRecordsHttpController } from './purchase-records.http-controller'
 import { PurchaseRecordsRepository } from './purchase-records.repository'
 import { PurchaseRecordsService } from './purchase-records.service'
 
 @Module({
-    controllers: [PurchaseRecordsController],
+    controllers: [PurchaseRecordsController, PurchaseRecordsHttpController],
     imports: [
         MongooseModule.forFeature(
             [{ name: PurchaseRecord.name, schema: PurchaseRecordSchema }],
