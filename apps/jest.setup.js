@@ -1,7 +1,8 @@
+require('reflect-metadata')
 const { CreateBucketCommand, S3Client } = require('@aws-sdk/client-s3')
 const { MongoClient } = require('mongodb')
-require('reflect-metadata')
-const { generateTestId, getEnv, setEnv } = require('./jest.utils')
+
+process.loadEnvFile('.env')
 
 let mongoClient
 let s3Client
@@ -18,29 +19,29 @@ afterAll(async () => {
 beforeEach(async () => {
     const testId = generateTestId()
 
-    setEnv('TEST_ID', testId)
-    setEnv('PROJECT_ID', `project-${testId}`)
-    setEnv('MONGO_DATABASE', `mongo-${testId}`)
+    process.env.TEST_ID = testId
+    process.env.PROJECT_ID = `project-${testId}`
+    process.env.MONGO_DATABASE = `mongo-${testId}`
 
     const bucket = `s3bucket${testId}`.toLowerCase()
-    setEnv('S3_BUCKET', bucket)
+    process.env.S3_BUCKET = bucket
 
     await s3Client.send(new CreateBucketCommand({ Bucket: bucket }))
 })
 
 afterEach(async () => {
-    await mongoClient.db(getEnv('MONGO_DATABASE')).dropDatabase()
+    await mongoClient.db(process.env.MONGO_DATABASE).dropDatabase()
 })
 
 async function connectMongo() {
     const nodes = [
-        `${getEnv('MONGO_HOST1')}:${getEnv('MONGO_PORT1')}`,
-        `${getEnv('MONGO_HOST2')}:${getEnv('MONGO_PORT2')}`,
-        `${getEnv('MONGO_HOST3')}:${getEnv('MONGO_PORT3')}`
+        `${process.env.MONGO_HOST1}:${process.env.MONGO_PORT1}`,
+        `${process.env.MONGO_HOST2}:${process.env.MONGO_PORT2}`,
+        `${process.env.MONGO_HOST3}:${process.env.MONGO_PORT3}`
     ].join(',')
 
     const client = new MongoClient(
-        `mongodb://${getEnv('MONGO_USERNAME')}:${getEnv('MONGO_PASSWORD')}@${nodes}/?replicaSet=${getEnv('MONGO_REPLICA_SET')}`
+        `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@${nodes}/?replicaSet=${process.env.MONGO_REPLICA_SET}`
     )
 
     await client.connect()
@@ -49,12 +50,19 @@ async function connectMongo() {
 
 function createS3Client() {
     return new S3Client({
-        endpoint: getEnv('S3_ENDPOINT'),
-        region: getEnv('S3_REGION'),
+        endpoint: process.env.S3_ENDPOINT,
+        region: process.env.S3_REGION,
         credentials: {
-            accessKeyId: getEnv('S3_ACCESS_KEY'),
-            secretAccessKey: getEnv('S3_SECRET_KEY')
+            accessKeyId: process.env.S3_ACCESS_KEY,
+            secretAccessKey: process.env.S3_SECRET_KEY
         },
-        forcePathStyle: getEnv('S3_FORCE_PATH_STYLE').toLowerCase() === 'true'
+        forcePathStyle: process.env.S3_FORCE_PATH_STYLE.toLowerCase() === 'true'
     })
+}
+
+function generateTestId() {
+    const chars = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
+    return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join(
+        ''
+    )
 }

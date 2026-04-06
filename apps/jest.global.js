@@ -1,7 +1,8 @@
 const fs = require('fs')
-const { getEnv } = require('./jest.utils')
+
+process.loadEnvFile('.env')
 
 module.exports = async function globalSetup() {
-    const dirPath = getEnv('LOG_DIRECTORY')
+    const dirPath = process.env.LOG_DIRECTORY
     fs.mkdirSync(dirPath, { recursive: true })
 }

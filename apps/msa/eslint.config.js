@@ -17,7 +17,8 @@ const nodeBuiltinModulePattern = `^(?:node:)?(?:${[
     .sort()
     .map(escapeForRegex)
     .join('|')})(?:/.*)?$`
-const internalAliasPattern = '^(?:apps(?:/.*)?|config|@mannercode/.*)$'
+const internalAliasPattern =
+    '^(?:applications|gateway|cores|infrastructures|config|@mannercode/.*)$'
 const dependencyIgnorePatterns = ['^\\.', nodeBuiltinModulePattern, internalAliasPattern]
 const sourceDependencyOptions = {
     packageDir: __dirname,

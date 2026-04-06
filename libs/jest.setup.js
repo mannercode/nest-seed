@@ -1,7 +1,6 @@
+require('reflect-metadata')
 const { CreateBucketCommand, S3Client } = require('@aws-sdk/client-s3')
 const { MongoClient } = require('mongodb')
-require('reflect-metadata')
-const { generateTestId, getEnv, setEnv } = require('./jest.utils')
 
 let mongoClient
 let s3Client
@@ -17,28 +16,26 @@ afterAll(async () => {
 beforeEach(async () => {
     const testId = generateTestId()
 
-    setEnv('TEST_ID', testId)
-    setEnv('TESTLIB_MONGO_DATABASE', `mongo-${testId}`)
+    process.env.TEST_ID = testId
+    process.env.TESTLIB_MONGO_DATABASE = `mongo-${testId}`
 
     const bucket = `s3bucket${testId}`.toLowerCase()
-    setEnv('TESTLIB_S3_BUCKET', bucket)
+    process.env.TESTLIB_S3_BUCKET = bucket
 
-    const temporalAddress = getEnv('TESTLIB_TEMPORAL_ADDRESS')
-    const [temporalHost, temporalPort] = temporalAddress.split(':')
-    setEnv('TEMPORAL_HOST', temporalHost)
-    setEnv('TEMPORAL_PORT', temporalPort)
-    setEnv('TEMPORAL_NAMESPACE', 'default')
+    const [temporalHost, temporalPort] = process.env.TESTLIB_TEMPORAL_ADDRESS.split(':')
+    process.env.TEMPORAL_HOST = temporalHost
+    process.env.TEMPORAL_PORT = temporalPort
+    process.env.TEMPORAL_NAMESPACE = 'default'
 
-    const command = new CreateBucketCommand({ Bucket: bucket })
-    await s3Client.send(command)
+    await s3Client.send(new CreateBucketCommand({ Bucket: bucket }))
 })
 
 afterEach(async () => {
-    await mongoClient.db(getEnv('TESTLIB_MONGO_DATABASE')).dropDatabase()
+    await mongoClient.db(process.env.TESTLIB_MONGO_DATABASE).dropDatabase()
 })
 
 async function createTestlibMongo() {
-    mongoClient = new MongoClient(getEnv('TESTLIB_MONGO_URI'))
+    mongoClient = new MongoClient(process.env.TESTLIB_MONGO_URI)
 
     await mongoClient.connect()
     // Set TTL monitor interval to 1s to speed up TTL index `expires` tests
@@ -46,16 +43,23 @@ async function createTestlibMongo() {
 }
 
 function createTestlibS3Client() {
-    setEnv('TESTLIB_S3_REGION', 'us-east-1')
-    setEnv('TESTLIB_S3_FORCE_PATH_STYLE', 'true')
+    process.env.TESTLIB_S3_REGION = 'us-east-1'
+    process.env.TESTLIB_S3_FORCE_PATH_STYLE = 'true'
 
     s3Client = new S3Client({
-        endpoint: getEnv('TESTLIB_S3_ENDPOINT'),
-        region: getEnv('TESTLIB_S3_REGION'),
+        endpoint: process.env.TESTLIB_S3_ENDPOINT,
+        region: process.env.TESTLIB_S3_REGION,
         credentials: {
-            accessKeyId: getEnv('TESTLIB_S3_ACCESS_KEY'),
-            secretAccessKey: getEnv('TESTLIB_S3_SECRET_KEY')
+            accessKeyId: process.env.TESTLIB_S3_ACCESS_KEY,
+            secretAccessKey: process.env.TESTLIB_S3_SECRET_KEY
         },
-        forcePathStyle: getEnv('TESTLIB_S3_FORCE_PATH_STYLE').toLowerCase() === 'true'
+        forcePathStyle: process.env.TESTLIB_S3_FORCE_PATH_STYLE.toLowerCase() === 'true'
     })
+}
+
+function generateTestId() {
+    const chars = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
+    return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join(
+        ''
+    )
 }

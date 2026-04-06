@@ -2,12 +2,12 @@ import { CommonErrors } from '@mannercode/common'
 import { ApplicationErrors } from 'applications'
 import { SharedErrors } from 'config'
 import { CoreErrors } from 'cores'
-import { AppErrors } from '../../errors'
+import { ControllerErrors } from '../../errors'
 
 export const Errors = {
     ...CommonErrors,
     ...SharedErrors,
-    ...AppErrors,
+    ...ControllerErrors,
     ...ApplicationErrors,
     ...CoreErrors
 }
