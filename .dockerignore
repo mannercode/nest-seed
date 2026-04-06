@@ -1,23 +1,23 @@
 *
 
-!package.json
-!tsconfig.json
+!/package.json
+!/tsconfig.json
 
-!libs/tsconfig.json
-!libs/*/package.json
-!libs/*/tsconfig.build.json
-!libs/*/src/
+!/libs/tsconfig.json
+!/libs/*/package.json
+!/libs/*/tsconfig.build.json
+!/libs/*/src/
 
 libs/testing/
 
-!apps/jest.*.js
-!apps/webpack.config.js
-!apps/*/package.json
-!apps/*/tsconfig.json
-!apps/*/tsconfig.build.json
-!apps/*/nest-cli.json
-!apps/*/src/
-!apps/*/scripts/
+!/apps/jest.*.js
+!/apps/webpack.config.js
+!/apps/*/package.json
+!/apps/*/tsconfig.json
+!/apps/*/tsconfig.build.json
+!/apps/*/nest-cli.json
+!/apps/*/src/
+!/apps/*/scripts/
 
 **/node_modules
 **/_output
