@@ -22,8 +22,6 @@ jobs:
                   push: never
                   runCmd: |
                       set -Eeuo pipefail
-                      tree -I 'node_modules'
-                      find . -path "./node_modules" -prune -o -type f -name "*.json" -exec ls -lh {} \;
                       npm run build
                       npm run lint
                       npm run test:unit
