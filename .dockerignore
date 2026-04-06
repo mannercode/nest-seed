@@ -1,3 +1,6 @@
+# Whitelist approach: exclude everything, then allow only what's needed.
+# All patterns MUST use / anchor — without it, patterns match at any depth,
+# causing unintended files (e.g. libs/testing/package.json) to leak into the build context.
 *
 
 !/package.json
@@ -8,6 +11,7 @@
 !/libs/*/tsconfig.build.json
 !/libs/*/src/
 
+# testing is not used by apps, so exclude it
 libs/testing/
 
 !/apps/jest.*.js
