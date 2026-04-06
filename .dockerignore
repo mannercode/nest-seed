@@ -10,10 +10,11 @@
 
 libs/testing/
 
+!apps/jest.*.js
+!apps/webpack.config.js
 !apps/*/package.json
 !apps/*/tsconfig.json
 !apps/*/tsconfig.build.json
-!apps/*/webpack.config.js
 !apps/*/nest-cli.json
 !apps/*/src/
 !apps/*/scripts/

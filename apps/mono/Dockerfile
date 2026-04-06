@@ -10,6 +10,7 @@ COPY tsconfig.json ./
 COPY libs/ libs/
 RUN npm run build
 
+COPY apps/jest.*.js apps/webpack.config.js apps/
 COPY apps/mono/ apps/mono/
 RUN npm run bundle --workspace=apps/mono
 

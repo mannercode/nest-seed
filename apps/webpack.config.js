@@ -3,7 +3,7 @@ const nodeExternals = require('webpack-node-externals')
 
 module.exports = (options) => {
     const dirname = path.dirname(options.entry)
-    const basename = path.basename(dirname)
+    const appDir = process.cwd()
 
     if (options.module?.rules) {
         for (const rule of options.module.rules) {
@@ -21,13 +21,13 @@ module.exports = (options) => {
         }
     }
 
+    const segments = path.relative(appDir, dirname).split(path.sep)
+    const outputDir = segments.length > 2 ? segments[segments.length - 1] : ''
+
     return {
         ...options,
         entry: path.resolve(dirname, 'production.ts'),
-        output: {
-            path: path.resolve(__dirname, `./_output/dist/${basename}`),
-            filename: 'index.js'
-        },
+        output: { path: path.resolve(appDir, '_output/dist', outputDir), filename: 'index.js' },
         externals: [nodeExternals({ modulesFromFile: true })]
     }
 }

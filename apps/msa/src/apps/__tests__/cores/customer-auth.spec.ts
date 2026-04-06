@@ -49,6 +49,41 @@ describe('CustomerAuthentication', () => {
         })
     })
 
+    describe('GET /customers/me', () => {
+        // 액세스 토큰이 유효할 때
+        describe('when the access token is valid', () => {
+            let authTokens: JwtAuthTokens
+
+            beforeEach(async () => {
+                authTokens = await loginCustomer(fix, credentials)
+            })
+
+            // 현재 고객 정보를 반환한다
+            it('returns the current customer info', async () => {
+                await fix.httpClient
+                    .get('/customers/me')
+                    .headers({ Authorization: `Bearer ${authTokens.accessToken}` })
+                    .ok(
+                        expect.objectContaining({
+                            customerId: expect.any(String),
+                            email: credentials.email
+                        })
+                    )
+            })
+        })
+
+        // 액세스 토큰이 유효하지 않을 때
+        describe('when the access token is invalid', () => {
+            // 401 Unauthorized를 반환한다
+            it('returns 401 Unauthorized', async () => {
+                await fix.httpClient
+                    .get('/customers/me')
+                    .headers({ Authorization: 'Bearer invalid-token' })
+                    .unauthorized(Errors.Auth.Unauthorized())
+            })
+        })
+    })
+
     describe('GET /customers', () => {
         // 액세스 토큰이 유효하지 않을 때
         describe('when the access token is invalid', () => {

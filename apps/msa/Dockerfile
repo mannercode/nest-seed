@@ -13,6 +13,7 @@ COPY tsconfig.json ./
 COPY libs/ libs/
 RUN npm run build
 
+COPY apps/jest.*.js apps/webpack.config.js apps/
 COPY apps/msa/ apps/msa/
 RUN TARGET_APP=${TARGET_APP} npm run bundle --workspace=apps/msa
 RUN cp /monorepo/apps/msa/_output/dist/${TARGET_APP}/index.js /monorepo/apps/msa/_output/dist/index.js

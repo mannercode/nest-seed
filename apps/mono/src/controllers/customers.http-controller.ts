@@ -55,6 +55,11 @@ export class CustomersHttpController {
         return this.customersService.refreshAuthTokens(refreshToken)
     }
 
+    @Get('me')
+    async getMe(@Req() req: CustomerAuthRequest) {
+        return req.user
+    }
+
     @Get()
     async searchPage(@Query() searchDto: SearchCustomersPageDto) {
         return this.customersService.searchPage(searchDto)

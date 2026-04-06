@@ -1,20 +1,23 @@
+const path = require('path')
 const { createDefaultPreset, pathsToModuleNameMapper } = require('ts-jest')
-const tsconfig = require('./tsconfig.json')
 
-const tsJestPreset = createDefaultPreset({ tsconfig: 'tsconfig.json' })
+const appDir = process.cwd()
+const tsconfigPath = path.resolve(appDir, 'tsconfig.json')
+const tsconfig = require(tsconfigPath)
+const tsJestPreset = createDefaultPreset({ tsconfig: tsconfigPath })
 const { compilerOptions } = tsconfig
 
 module.exports = {
     ...tsJestPreset,
-    globalSetup: '<rootDir>/jest.global.js',
-    setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+    globalSetup: path.resolve(__dirname, 'jest.global.js'),
+    setupFilesAfterEnv: [path.resolve(__dirname, 'jest.setup.js')],
     moduleFileExtensions: ['js', 'json', 'ts'],
     testRegex: '(__tests__/.*\\.spec\\.ts)$',
     testEnvironment: 'node',
     resetModules: true,
     resetMocks: true,
     restoreMocks: true,
-    rootDir: '.',
+    rootDir: appDir,
     roots: ['<rootDir>/src'],
     moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
     modulePaths: [compilerOptions.baseUrl],

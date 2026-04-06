@@ -31,8 +31,8 @@ TEST "Refresh customer tokens" \
 CUSTOMER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
 CUSTOMER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
 
-TEST "Validate customer JWT guard" \
-	200 GET /customers/jwt-guard \
+TEST "Retrieve current customer" \
+	200 GET /customers/me \
 	-H "Authorization: Bearer ${CUSTOMER_ACCESS_TOKEN}"
 
 TEST "Retrieve customers page" \
