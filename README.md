@@ -207,6 +207,40 @@ nest-seed/
 - Dev Container 구성
 - ESLint 계층 의존성 검증
 
+### 6. mono만 필요한 경우 (msa 제거)
+
+분산 아키텍처가 필요 없고 모놀리식만 사용하려면 다음을 제거한다.
+
+**삭제할 디렉토리/파일**
+
+| 경로                       | 사유                               |
+| -------------------------- | ---------------------------------- |
+| `apps/msa/`                | MSA 앱 전체                        |
+| `libs/microservices/`      | NATS RPC, Temporal 래퍼 (msa 전용) |
+| `.devcontainer/infra/msa/` | NATS, Temporal, PostgreSQL 인프라  |
+
+**수정할 파일**
+
+| 파일                              | 변경 내용                                                          |
+| --------------------------------- | ------------------------------------------------------------------ |
+| `package.json` (root)             | `@mannercode/microservices` 의존성 제거 (devDeps에 있다면)         |
+| `libs/tsconfig.json`              | `@mannercode/microservices` paths 항목 제거                        |
+| `.devcontainer/devcontainer.json` | `runArgs`에서 `--env-file .devcontainer/infra/msa/.env` 두 줄 제거 |
+| `.devcontainer/infra/reset.sh`    | `cd msa && docker compose up -d` 및 `msa-setup` 관련 라인 제거     |
+| `README.md`                       | "Mono vs MSA" 표 제거, 본 가이드 섹션 6 제거                       |
+| `docs/architecture.md`            | MSA 관련 섹션 제거 (서비스 호출 흐름 MSA 부분, ESLint MSA 표 등)   |
+| `docs/decisions.md`               | NATS, Temporal 결정 항목 제거 (또는 "참고용" 표시)                 |
+| `docs/tech-stack.md`              | NATS/Temporal 채택 항목 정리                                       |
+
+**검증**
+
+```bash
+npm install              # workspace 정리
+npm run build            # libs 빌드
+npm run lint             # 의존성 깨진 곳 확인
+npm run test:unit        # 테스트 통과 확인
+```
+
 ---
 
 ## 문서
