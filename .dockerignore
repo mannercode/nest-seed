@@ -12,7 +12,8 @@
 !/libs/*/src/
 
 # testing is not used by apps, so exclude it
-libs/testing/
+libs/testing
+libs/testing/**
 
 !/apps/jest.*.js
 !/apps/webpack.config.js
