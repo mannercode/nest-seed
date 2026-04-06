@@ -63,48 +63,7 @@ libs/
 
 ## 테스트 인프라
 
-### 실행 흐름
-
-```
-jest.global.js          Testcontainers로 인프라 기동 (1회)
-  ↓                     NATS, MongoDB, Redis, MinIO, Temporal
-jest.setup.js           각 테스트 스위트마다 실행
-  ↓                     TEST_ID 생성, 전용 DB/S3 버킷 생성, 종료 시 DB 삭제
-*.spec.ts               개별 테스트 실행
-```
-
-### 환경 변수
-
-`jest.global.js`에서 Testcontainers를 시작하고 환경 변수를 설정한다.
-
-| 환경 변수                  | 설정 주체           | 용도                  |
-| -------------------------- | ------------------- | --------------------- |
-| `TESTLIB_NATS_OPTIONS`     | `jest.global`       | NATS 연결 옵션 (JSON) |
-| `TESTLIB_MONGO_URI`        | `jest.global`       | MongoDB 연결 문자열   |
-| `TESTLIB_MONGO_DATABASE`   | `jest.setup`        | 테스트별 DB 이름      |
-| `TESTLIB_REDIS_URL`        | `jest.global`       | Redis 연결 URL        |
-| `TESTLIB_S3_*`             | `jest.global/setup` | MinIO/S3 설정         |
-| `TESTLIB_TEMPORAL_ADDRESS` | `jest.global`       | Temporal 서버 주소    |
-| `TEST_ID`                  | `jest.setup`        | 테스트 격리용 고유 ID |
-
-### 테스트 격리
-
-`jest.setup.js`에서 `beforeEach`마다 10자리 랜덤 `TEST_ID`를 생성한다. 이를 기반으로:
-
-- MongoDB: `mongo-{TEST_ID}` 데이터베이스 생성, `afterEach`에서 삭제
-- S3: `s3bucket{TEST_ID}` 버킷 생성
-- NATS: `withTestId(subject)`로 고유 subject 생성
-
-### Jest 설정
-
-| 설정                         | 값                                   | 이유                                             |
-| ---------------------------- | ------------------------------------ | ------------------------------------------------ |
-| `resetModules`               | `true`                               | 테스트마다 모듈 캐시 초기화, `TEST_ID` 격리 보장 |
-| `resetMocks`                 | `true`                               | mock 상태 자동 초기화                            |
-| `testRegex`                  | `__tests__/.*\.spec\.ts`             | `__tests__` 폴더 내 spec 파일만 실행             |
-| `testTimeout`                | 60초                                 | Testcontainers 기동 시간 고려                    |
-| `coverageThreshold`          | 100% (전체)                          | branches, functions, lines, statements 모두 100% |
-| `coveragePathIgnorePatterns` | `__tests__`, `index.ts`, `/testing/` | 테스트 코드, barrel, testing 패키지 제외         |
+테스트 실행 흐름, 환경 변수, 격리 전략, Jest 설정은 [testing.md](testing.md#7-테스트-인프라) 참조.
 
 ---
 

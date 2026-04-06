@@ -158,6 +158,57 @@ nest-seed/
 | 이벤트         | EventEmitter2 (in-process) | NATS pub/sub                           |
 | 인프라         | MongoDB RS + Redis Cluster | + NATS Cluster + Temporal + PostgreSQL |
 
+## 새 프로젝트로 복사해서 사용하기
+
+이 시드를 템플릿으로 사용해 새 프로젝트를 시작할 때 변경해야 할 항목.
+
+### 1. 패키지 이름 / 스코프
+
+| 위치                                  | 현재            | 변경             |
+| ------------------------------------- | --------------- | ---------------- |
+| `package.json` (root)                 | `nest-seed`     | 새 프로젝트 이름 |
+| `apps/mono/package.json`              | `nest-mono`     | 새 mono 이름     |
+| `apps/msa/package.json`               | `nest-msa`      | 새 msa 이름      |
+| `libs/*/package.json`                 | `@mannercode/*` | `@yourorg/*`     |
+| `libs/tsconfig.json` (paths)          | `@mannercode/*` | `@yourorg/*`     |
+| `apps/{mono,msa}/package.json` (deps) | `@mannercode/*` | `@yourorg/*`     |
+
+### 2. 환경 / 인프라 식별자
+
+| 위치                       | 현재                                                | 변경           |
+| -------------------------- | --------------------------------------------------- | -------------- |
+| `apps/mono/.env`           | `PROJECT_ID=nest-mono`                              | 새 ID          |
+| `apps/msa/.env`            | `PROJECT_ID=nest-msa`                               | 새 ID          |
+| `apps/mono/compose.yml`    | `image: nest-mono`, `container_name: app`           | 새 이름        |
+| `apps/msa/compose.yml`     | `image: gateway/applications/cores/infrastructures` | 충돌 시 prefix |
+| `.devcontainer/infra/.env` | `nest-bucket` (S3 버킷)                             | 새 버킷 이름   |
+
+### 3. 도메인 코드 교체
+
+`apps/{mono,msa}/src/`의 영화 예매 도메인을 새 도메인으로 교체:
+
+- 모듈/서비스/컨트롤러/모델/DTO: Customers, Movies, Theaters, Showtimes, Tickets, Bookings, Purchases
+- 단위 테스트: `apps/{mono,msa}/src/__tests__/`
+- e2e 스펙: `apps/{mono,msa}/tests/e2e/specs/*.spec`
+- 도메인 용어: `docs/glossary.md`
+
+### 4. CI / 저장소
+
+- `.github/workflows/ci.yaml` — 트리거 분기, 필요 시 시크릿
+- README.md의 `git clone <repository-url>` 자리
+
+### 5. 유지할 것 (시드의 핵심)
+
+다음은 그대로 두는 것이 좋다 (스코프 이름만 변경):
+
+- `libs/` 구조와 코드
+- SoLA 계층 분리 (controllers/applications/cores/infrastructures)
+- 테스트 인프라 (Jest + Testcontainers + e2e shell spec)
+- Dev Container 구성
+- ESLint 계층 의존성 검증
+
+---
+
 ## 문서
 
 - [아키텍처](architecture.md) — 모노레포 구조, SoLA 계층, 서비스 호출 흐름
@@ -167,5 +218,6 @@ nest-seed/
 - [REST API & 엔티티 설계](design-guide.md) — 리소스 중심 설계, 비정규화
 - [개발 환경](development.md) — 스크립트, 환경 파일, Dev Container, 트러블슈팅
 - [도메인 용어](glossary.md) — 영화 예매 도메인 용어
+- [기술 스택](tech-stack.md) — 채택 현황, 우선순위, 거부 목록
 - [libs 개발](libs.md) — 빌드, 테스트, 배포 워크플로우
 - [테스트](testing.md) — 테스트 구조, Fixture, 인프라, 커버리지
