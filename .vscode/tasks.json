@@ -3,13 +3,12 @@
     "tasks": [
         {
             "label": "all:build",
+            "detail": "⇧⌘B",
             "group": { "kind": "build", "isDefault": true },
             "type": "shell",
             "command": "npm run build"
         },
-        { "label": "all:clean", "type": "shell", "command": "npm run clean" },
-        { "label": "all:lint", "type": "shell", "command": "npm run lint" },
-        { "label": "all:format", "type": "shell", "command": "npm run format" },
+        { "label": "tools", "type": "shell", "command": "${input:toolCommand}" },
         { "label": "test:unit", "type": "shell", "command": "npm run test:unit" },
         { "label": "test:e2e", "type": "shell", "command": "npm run test:e2e" },
         { "label": "test:unit:libs", "type": "shell", "command": "npm run test:unit -w libs" },
@@ -18,9 +17,23 @@
         { "label": "test:e2e:mono", "type": "shell", "command": "npm run test:e2e -w apps/mono" },
         { "label": "test:e2e:msa", "type": "shell", "command": "npm run test:e2e -w apps/msa" },
         {
-            "label": "VERIFY CI",
-            "dependsOn": ["all:clean", "all:build", "all:lint", "test:unit", "test:e2e"],
-            "dependsOrder": "sequence"
+            "label": "verify ci",
+            "type": "shell",
+            "command": "npm run clean && npm run build && npm run lint && npm run test:unit && npm run test:e2e"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "toolCommand",
+            "type": "pickString",
+            "description": "tool",
+            "options": [
+                "npm run clean",
+                "npm run lint",
+                "npm run format",
+                "ncu --deep",
+                "ncu -u --deep"
+            ]
         }
     ]
 }
