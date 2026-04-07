@@ -213,24 +213,25 @@ nest-seed/
 
 **삭제할 디렉토리/파일**
 
-| 경로                       | 사유                               |
-| -------------------------- | ---------------------------------- |
-| `apps/msa/`                | MSA 앱 전체                        |
-| `libs/microservices/`      | NATS RPC, Temporal 래퍼 (msa 전용) |
-| `.devcontainer/infra/msa/` | NATS, Temporal, PostgreSQL 인프라  |
+| 경로                          | 사유                                                       |
+| ----------------------------- | ---------------------------------------------------------- |
+| `apps/msa/`                   | MSA 앱 전체 (Kong 설정 `apps/msa/kong/` 포함, 함께 사라짐) |
+| `libs/microservices/`         | NATS RPC, Temporal 래퍼 (msa 전용)                         |
+| `libs/testing-microservices/` | NATS/Temporal 테스트 헬퍼 (msa 전용)                       |
+| `.devcontainer/infra/msa/`    | NATS, Temporal, PostgreSQL 인프라                          |
 
 **수정할 파일**
 
-| 파일                              | 변경 내용                                                          |
-| --------------------------------- | ------------------------------------------------------------------ |
-| `package.json` (root)             | `@mannercode/microservices` 의존성 제거 (devDeps에 있다면)         |
-| `libs/tsconfig.json`              | `@mannercode/microservices` paths 항목 제거                        |
-| `.devcontainer/devcontainer.json` | `runArgs`에서 `--env-file .devcontainer/infra/msa/.env` 두 줄 제거 |
-| `.devcontainer/infra/reset.sh`    | `cd msa && docker compose up -d` 및 `msa-setup` 관련 라인 제거     |
-| `README.md`                       | "Mono vs MSA" 표 제거, 본 가이드 섹션 6 제거                       |
-| `docs/architecture.md`            | MSA 관련 섹션 제거 (서비스 호출 흐름 MSA 부분, ESLint MSA 표 등)   |
-| `docs/decisions.md`               | NATS, Temporal 결정 항목 제거 (또는 "참고용" 표시)                 |
-| `docs/tech-stack.md`              | NATS/Temporal 채택 항목 정리                                       |
+| 파일                              | 변경 내용                                                                                |
+| --------------------------------- | ---------------------------------------------------------------------------------------- |
+| `package.json` (root)             | `@mannercode/microservices`, `@mannercode/testing-microservices` 의존성 제거 (있다면)    |
+| `libs/tsconfig.json`              | `@mannercode/microservices`, `@mannercode/testing-microservices` paths 항목 제거         |
+| `.devcontainer/devcontainer.json` | `runArgs`에서 `--env-file .devcontainer/infra/msa/.env` 두 줄 제거                       |
+| `.devcontainer/infra/reset.sh`    | `cd msa && docker compose up -d` 및 `msa-setup` 관련 라인 제거                           |
+| `README.md`                       | "Mono vs MSA" 표 제거, 본 가이드 섹션 6 제거                                             |
+| `docs/architecture.md`            | MSA 관련 섹션 제거 (서비스 호출 흐름 MSA 부분, ESLint MSA 표, microservices 패키지 설명) |
+| `docs/decisions.md`               | NATS, Temporal 결정 항목 제거 (또는 "참고용" 표시)                                       |
+| `docs/tech-stack.md`              | NATS/Temporal/Kong 채택 항목 정리                                                        |
 
 **검증**
 
