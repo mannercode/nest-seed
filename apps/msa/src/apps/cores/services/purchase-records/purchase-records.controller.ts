@@ -17,9 +17,4 @@ export class PurchaseRecordsController {
     create(@Payload() createDto: CreatePurchaseRecordDto) {
         return this.service.create(createDto)
     }
-
-    @MessagePattern(Messages.PurchaseRecords.getMany)
-    getMany(@Payload() purchaseRecordIds: string[]) {
-        return this.service.getMany(purchaseRecordIds)
-    }
 }

@@ -9,43 +9,9 @@ export const Messages = createMessagePatternMap(
             getMany: null,
             isUploadComplete: null
         },
-        Booking: {
-            getTickets: null,
-            holdTickets: null,
-            searchShowdates: null,
-            searchShowtimes: null,
-            searchTheaters: null
-        },
-        Customers: {
-            create: null,
-            deleteMany: null,
-            findCustomerByCredentials: null,
-            generateAuthTokens: null,
-            getMany: null,
-            refreshAuthTokens: null,
-            searchPage: null,
-            update: null
-        },
-        Movies: {
-            Assets: { create: null, delete: null, finalizeUpload: null },
-            create: null,
-            deleteMany: null,
-            allExist: null,
-            getMany: null,
-            publish: null,
-            searchPage: null,
-            update: null
-        },
+        Movies: { allExist: null, getMany: null, searchPage: null },
         Payments: { cancel: null, create: null, getMany: null },
-        Purchase: { processPurchase: null },
-        PurchaseRecords: { create: null, delete: null, getMany: null },
-        Recommendation: { searchRecommendedMovies: null },
-        ShowtimeCreation: {
-            requestShowtimeCreation: null,
-            searchMoviesPage: null,
-            searchShowtimes: null,
-            searchTheatersPage: null
-        },
+        PurchaseRecords: { create: null, delete: null },
         Showtimes: {
             createMany: null,
             deleteBySagaIds: null,
@@ -56,14 +22,7 @@ export const Messages = createMessagePatternMap(
             searchShowdates: null,
             searchTheaterIds: null
         },
-        Theaters: {
-            create: null,
-            deleteMany: null,
-            allExist: null,
-            getMany: null,
-            searchPage: null,
-            update: null
-        },
+        Theaters: { allExist: null, getMany: null, searchPage: null },
         TicketHolding: { holdTickets: null, releaseTickets: null, searchHeldTicketIds: null },
         Tickets: {
             aggregateSales: null,

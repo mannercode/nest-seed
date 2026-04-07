@@ -3,12 +3,10 @@ import { oid, toAny, TestContext } from '@mannercode/testing'
 import {
     CreatePurchaseDto,
     createPurchaseActivities,
-    PurchaseClient,
     PurchaseModule,
     TicketPurchaseService
 } from 'applications'
 import {
-    CustomersClient,
     CustomersModule,
     MoviesClient,
     MoviesModule,
@@ -52,14 +50,12 @@ export async function createPurchaseFixture(): Promise<PurchaseFixture> {
             PurchaseModule
         ],
         providers: [
-            CustomersClient,
             MoviesClient,
             PurchaseRecordsClient,
             ShowtimesClient,
             TheatersClient,
             TicketsClient,
             TicketHoldingClient,
-            PurchaseClient,
             AssetsClient
         ]
     })

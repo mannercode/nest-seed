@@ -2,7 +2,6 @@ import { JwtAuthModule, Time } from '@mannercode/common'
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { AppConfigService, getProjectId, MongooseConfigModule, RedisConfigModule } from 'config'
-import { CustomersController } from './customers.controller'
 import { CustomersHttpController } from './customers.http-controller'
 import { CustomersRepository } from './customers.repository'
 import { CustomersService } from './customers.service'
@@ -15,7 +14,7 @@ import { Customer, CustomerSchema } from './models'
 import { CustomerAuthenticationService } from './services'
 
 @Module({
-    controllers: [CustomersController, CustomersHttpController],
+    controllers: [CustomersHttpController],
     imports: [
         MongooseModule.forFeature(
             [{ name: Customer.name, schema: CustomerSchema }],

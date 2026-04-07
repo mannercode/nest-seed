@@ -1,8 +1,7 @@
 import { TestContext } from '@mannercode/testing'
-import { BookingClient, BookingModule, PurchaseModule } from 'applications'
+import { BookingModule, PurchaseModule } from 'applications'
 import {
     CustomerJwtAuthGuard,
-    CustomersClient,
     CustomersModule,
     MoviesClient,
     MoviesModule,
@@ -83,12 +82,10 @@ export async function createBookingFixture(): Promise<BookingFixture> {
         ],
         providers: [
             CustomerJwtAuthGuard,
-            CustomersClient,
             MoviesClient,
             ShowtimesClient,
             TheatersClient,
             TicketsClient,
-            BookingClient,
             AssetsClient
         ]
     })

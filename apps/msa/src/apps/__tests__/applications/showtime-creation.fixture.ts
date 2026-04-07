@@ -3,7 +3,6 @@ import {
     createShowtimeCreationActivities,
     ShowtimeBulkCreatorService,
     ShowtimeBulkValidatorService,
-    ShowtimeCreationClient,
     ShowtimeCreationEvents,
     ShowtimeCreationModule
 } from 'applications'
@@ -39,14 +38,7 @@ export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationF
             TicketsModule,
             ShowtimeCreationModule
         ],
-        providers: [
-            MoviesClient,
-            TheatersClient,
-            ShowtimesClient,
-            TicketsClient,
-            ShowtimeCreationClient,
-            AssetsClient
-        ]
+        providers: [MoviesClient, TheatersClient, ShowtimesClient, TicketsClient, AssetsClient]
     })
 
     const showtimesClient = ctx.module.get(ShowtimesClient)

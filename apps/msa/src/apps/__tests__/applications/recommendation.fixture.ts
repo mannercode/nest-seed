@@ -1,10 +1,9 @@
 import { DateUtil } from '@mannercode/common'
 import { TestContext } from '@mannercode/testing'
-import { RecommendationClient, RecommendationHttpModule } from 'applications'
+import { RecommendationHttpModule } from 'applications'
 import {
     CustomerJwtAuthGuard,
     CustomerOptionalJwtAuthGuard,
-    CustomersClient,
     CustomersModule,
     MovieDto,
     MoviesClient,
@@ -39,10 +38,8 @@ export async function createRecommendationFixture(): Promise<RecommendationFixtu
         providers: [
             CustomerJwtAuthGuard,
             CustomerOptionalJwtAuthGuard,
-            CustomersClient,
             MoviesClient,
             ShowtimesClient,
-            RecommendationClient,
             WatchRecordsClient,
             AssetsClient
         ]

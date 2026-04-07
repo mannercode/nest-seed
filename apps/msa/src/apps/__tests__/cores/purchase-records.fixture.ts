@@ -11,6 +11,6 @@ export async function createPurchaseRecordsFixture(): Promise<PurchaseRecordsFix
         providers: [PurchaseRecordsClient]
     })
 
-    const purchaseRecordsClient = ctx.module.get(PurchaseRecordsClient)
+    const purchaseRecordsClient = ctx.module.get<PurchaseRecordsClient>(PurchaseRecordsClient)
     return { ...ctx, purchaseRecordsClient }
 }

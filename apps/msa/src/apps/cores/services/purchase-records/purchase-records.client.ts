@@ -14,8 +14,4 @@ export class PurchaseRecordsClient {
     create(createDto: CreatePurchaseRecordDto): Promise<PurchaseRecordDto> {
         return this.proxy.request(Messages.PurchaseRecords.create, createDto)
     }
-
-    getMany(purchaseRecordIds: string[]): Promise<PurchaseRecordDto[]> {
-        return this.proxy.request(Messages.PurchaseRecords.getMany, purchaseRecordIds)
-    }
 }

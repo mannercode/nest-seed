@@ -6,12 +6,11 @@ import {
     TicketHoldingClient,
     TicketsClient
 } from 'cores'
-import { BookingController } from './booking.controller'
 import { BookingHttpController } from './booking.http-controller'
 import { BookingService } from './booking.service'
 
 @Module({
-    controllers: [BookingController, BookingHttpController],
+    controllers: [BookingHttpController],
     providers: [
         BookingService,
         ShowtimesClient,
