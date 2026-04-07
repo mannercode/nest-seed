@@ -2,22 +2,25 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "all:build",
-            "detail": "⇧⌘B",
+            "label": "⇧⌘Build",
             "group": { "kind": "build", "isDefault": true },
             "type": "shell",
             "command": "npm run build"
         },
-        { "label": "tools", "type": "shell", "command": "${input:toolCommand}" },
-        { "label": "test:unit", "type": "shell", "command": "npm run test:unit" },
-        { "label": "test:e2e", "type": "shell", "command": "npm run test:e2e" },
-        { "label": "test:unit:libs", "type": "shell", "command": "npm run test:unit -w libs" },
-        { "label": "test:unit:mono", "type": "shell", "command": "npm run test:unit -w apps/mono" },
-        { "label": "test:unit:msa", "type": "shell", "command": "npm run test:unit -w apps/msa" },
-        { "label": "test:e2e:mono", "type": "shell", "command": "npm run test:e2e -w apps/mono" },
-        { "label": "test:e2e:msa", "type": "shell", "command": "npm run test:e2e -w apps/msa" },
         {
-            "label": "verify ci",
+            "label": "Tools",
+            "type": "shell",
+            "command": "bash",
+            "args": ["-c", "${input:toolCommand}"]
+        },
+        {
+            "label": "Tests",
+            "type": "shell",
+            "command": "bash",
+            "args": ["-c", "${input:testCommand}"]
+        },
+        {
+            "label": "Verify AtoZ",
             "type": "shell",
             "command": "npm run clean && npm run build && npm run lint && npm run test:unit && npm run test:e2e"
         }
@@ -33,6 +36,20 @@
                 "npm run format",
                 "ncu --deep",
                 "ncu -u --deep"
+            ]
+        },
+        {
+            "id": "testCommand",
+            "type": "pickString",
+            "description": "test",
+            "options": [
+                "npm run test:unit",
+                "npm run test:e2e",
+                "npm run test:unit -w libs",
+                "npm run test:unit -w apps/mono",
+                "npm run test:unit -w apps/msa",
+                "npm run test:e2e -w apps/mono",
+                "npm run test:e2e -w apps/msa"
             ]
         }
     ]
