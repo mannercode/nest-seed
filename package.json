@@ -6,12 +6,12 @@
         "apps/*"
     ],
     "scripts": {
-        "build": "npm run build --workspaces --if-present",
+        "build": "npm run build --workspaces",
         "clean": "npm run clean --workspaces",
         "lint": "npm run lint --workspaces",
         "format": "npm run format --workspaces",
         "test:unit": "npm run test:unit --workspaces",
-        "test:e2e": "npm run test:e2e --workspaces --if-present"
+        "test:e2e": "npm run test:e2e --workspaces"
     },
     "devDependencies": {
         "@aws-sdk/client-s3": "3.1025.0",

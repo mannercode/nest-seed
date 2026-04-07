@@ -2,11 +2,6 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "verify:all",
-            "dependsOn": ["all:clean", "all:build", "all:lint", "all:test:unit", "all:test:e2e"],
-            "dependsOrder": "sequence"
-        },
-        {
             "label": "all:build",
             "group": { "kind": "build", "isDefault": true },
             "type": "shell",
@@ -15,11 +10,17 @@
         { "label": "all:clean", "type": "shell", "command": "npm run clean" },
         { "label": "all:lint", "type": "shell", "command": "npm run lint" },
         { "label": "all:format", "type": "shell", "command": "npm run format" },
-        { "label": "all:test:unit", "type": "shell", "command": "npm run test:unit" },
-        { "label": "all:test:e2e", "type": "shell", "command": "npm run test:e2e" },
-        { "label": "mono:test:unit", "type": "shell", "command": "npm run test:unit -w apps/mono" },
-        { "label": "mono:test:e2e", "type": "shell", "command": "npm run test:e2e -w apps/mono" },
-        { "label": "msa:test:unit", "type": "shell", "command": "npm run test:unit -w apps/msa" },
-        { "label": "msa:test:e2e", "type": "shell", "command": "npm run test:e2e -w apps/msa" }
+        { "label": "test:unit", "type": "shell", "command": "npm run test:unit" },
+        { "label": "test:e2e", "type": "shell", "command": "npm run test:e2e" },
+        { "label": "test:unit:libs", "type": "shell", "command": "npm run test:unit -w libs" },
+        { "label": "test:unit:mono", "type": "shell", "command": "npm run test:unit -w apps/mono" },
+        { "label": "test:unit:msa", "type": "shell", "command": "npm run test:unit -w apps/msa" },
+        { "label": "test:e2e:mono", "type": "shell", "command": "npm run test:e2e -w apps/mono" },
+        { "label": "test:e2e:msa", "type": "shell", "command": "npm run test:e2e -w apps/msa" },
+        {
+            "label": "VERIFY CI",
+            "dependsOn": ["all:clean", "all:build", "all:lint", "test:unit", "test:e2e"],
+            "dependsOrder": "sequence"
+        }
     ]
 }
