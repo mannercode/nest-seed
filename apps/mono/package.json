@@ -4,6 +4,7 @@
     "private": true,
     "scripts": {
         "start": "node _output/dist/index.js",
+        "build": "echo 'no build (use bundle)'",
         "bundle": "nest build -b webpack --webpackPath ../webpack.config.js",
         "clean": "npm run apps:down; rm -rf _output tests/e2e/logs",
         "debug": "nest start --watch",

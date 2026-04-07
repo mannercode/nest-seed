@@ -6,12 +6,13 @@
         "scripts": {
             "TARGET_APP": [
                 "TARGET_APP must match a Nest project key defined in nest-cli.json.",
-                "Example: TARGET_APP=cores npm run build"
+                "Example: TARGET_APP=cores npm run bundle"
             ]
         }
     },
     "scripts": {
         "start": "node _output/dist/${TARGET_APP}/index.js",
+        "build": "echo 'no build (use bundle)'",
         "bundle": "nest build ${TARGET_APP} -b webpack --webpackPath ../webpack.config.js",
         "clean": "npm run apps:down; rm -rf _output tests/e2e/logs",
         "dev": "nest start ${TARGET_APP} --watch",

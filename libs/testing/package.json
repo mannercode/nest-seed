@@ -5,9 +5,10 @@
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "clean": "rm -rf _output",
-        "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest --no-cache",
         "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
-        "format": "eslint src/ --fix && prettier --write src/"
+        "format": "eslint src/ --fix && prettier --write src/",
+        "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest --no-cache",
+        "test:e2e": "echo 'no e2e tests'"
     },
     "dependencies": {
         "superagent": "10.3.0"
