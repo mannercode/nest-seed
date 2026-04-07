@@ -8,16 +8,8 @@ export function getRedisTestConnection() {
     return envString('TESTLIB_REDIS_URL')
 }
 
-export function getNatsTestConnection() {
-    return JSON.parse(envString('TESTLIB_NATS_OPTIONS'))
-}
-
 export function getMongoTestConnection() {
     return { dbName: envString('TESTLIB_MONGO_DATABASE'), uri: envString('TESTLIB_MONGO_URI') }
-}
-
-export function getTemporalTestConnection() {
-    return envString('TESTLIB_TEMPORAL_ADDRESS')
 }
 
 export function getS3TestConnection() {

@@ -1,10 +1,10 @@
 import {
     HttpTestClient,
     createHttpTestContext,
-    getNatsTestConnection,
     RpcTestClient,
     withTestId
 } from '@mannercode/testing'
+import { getNatsTestConnection } from '@mannercode/testing-microservices'
 import { Controller, Get, Post, Provider } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { ClientProxyFactory, MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'

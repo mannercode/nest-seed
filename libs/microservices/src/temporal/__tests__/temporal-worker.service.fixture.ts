@@ -1,4 +1,5 @@
-import { createTestContext, getTemporalTestConnection } from '@mannercode/testing'
+import { createTestContext } from '@mannercode/testing'
+import { getTemporalTestConnection } from '@mannercode/testing-microservices'
 import { type TemporalWorkerOptions, TemporalWorkerService } from '../temporal-worker.service'
 
 export type TemporalWorkerServiceFixture = {

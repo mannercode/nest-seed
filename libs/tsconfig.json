@@ -7,7 +7,8 @@
         "paths": {
             "@mannercode/common": ["./common/src"],
             "@mannercode/microservices": ["./microservices/src"],
-            "@mannercode/testing": ["./testing/src"]
+            "@mannercode/testing": ["./testing/src"],
+            "@mannercode/testing-microservices": ["./testing-microservices/src"]
         }
     },
     "include": ["*/src/**/*"]

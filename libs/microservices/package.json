@@ -17,5 +17,8 @@
         "@temporalio/worker": "^1.15.0",
         "rxjs": "^7.0.0"
     },
-    "devDependencies": {}
+    "devDependencies": {
+        "@mannercode/testing": "*",
+        "@mannercode/testing-microservices": "*"
+    }
 }

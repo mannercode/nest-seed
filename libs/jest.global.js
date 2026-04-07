@@ -1,16 +1,8 @@
 const { GenericContainer } = require('testcontainers')
 const { MongoDBContainer } = require('@testcontainers/mongodb')
-const { NatsContainer } = require('@testcontainers/nats')
-const { TestWorkflowEnvironment } = require('@temporalio/testing')
 
 module.exports = async function globalSetup() {
-    const [nats, mongo, redis, minio, temporal] = await Promise.all([
-        new NatsContainer(process.env.NATS_IMAGE)
-            .withName('testlib-nats')
-            .withReuse()
-            .withResourcesQuota({ memory: 0.25 })
-            .start(),
-
+    const [mongo, redis, minio] = await Promise.all([
         new MongoDBContainer(process.env.MONGO_IMAGE)
             .withName('testlib-mongo')
             .withReuse()
@@ -32,17 +24,12 @@ module.exports = async function globalSetup() {
             .withEnvironment({ MINIO_ROOT_USER: 'admin', MINIO_ROOT_PASSWORD: 'password' })
             .withCommand(['server', '/data'])
             .withResourcesQuota({ memory: 0.5 })
-            .start(),
-
-        TestWorkflowEnvironment.createLocal()
+            .start()
     ])
 
-    const natsOptions = nats.getConnectionOptions()
-    process.env.TESTLIB_NATS_OPTIONS = JSON.stringify(natsOptions)
     process.env.TESTLIB_MONGO_URI = `${mongo.getConnectionString()}?directConnection=true`
     process.env.TESTLIB_REDIS_URL = `redis://${redis.getHost()}:${redis.getMappedPort(6379)}`
     process.env.TESTLIB_S3_ENDPOINT = `http://${minio.getHost()}:${minio.getMappedPort(9000)}`
     process.env.TESTLIB_S3_ACCESS_KEY = 'admin'
     process.env.TESTLIB_S3_SECRET_KEY = 'password'
-    process.env.TESTLIB_TEMPORAL_ADDRESS = temporal.address
 }

@@ -22,11 +22,6 @@ beforeEach(async () => {
     const bucket = `s3bucket${testId}`.toLowerCase()
     process.env.TESTLIB_S3_BUCKET = bucket
 
-    const [temporalHost, temporalPort] = process.env.TESTLIB_TEMPORAL_ADDRESS.split(':')
-    process.env.TEMPORAL_HOST = temporalHost
-    process.env.TEMPORAL_PORT = temporalPort
-    process.env.TEMPORAL_NAMESPACE = 'default'
-
     await s3Client.send(new CreateBucketCommand({ Bucket: bucket }))
 })
 

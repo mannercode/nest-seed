@@ -1,0 +1,16 @@
+{
+    "name": "@mannercode/testing-microservices",
+    "main": "_output/dist/index.js",
+    "types": "_output/dist/index.d.ts",
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "clean": "rm -rf _output",
+        "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
+        "format": "eslint src/ --fix && prettier --write src/"
+    },
+    "peerDependencies": {
+        "@mannercode/testing": "*",
+        "@temporalio/testing": "^1.15.0",
+        "@testcontainers/nats": "^11.0.0"
+    }
+}
