@@ -1,5 +1,5 @@
-import { createTestContext, RpcTestClient, withTestId } from '@mannercode/testing'
-import { getNatsTestConnection } from '@mannercode/testing-microservices'
+import { createTestContext, withTestId } from '@mannercode/testing'
+import { getNatsTestConnection, RpcTestClient } from '@mannercode/testing-microservices'
 import { Controller } from '@nestjs/common'
 import { ClientProxyFactory, MessagePattern, NatsOptions, Transport } from '@nestjs/microservices'
 import { ClientProxyService } from '../../rpc'
