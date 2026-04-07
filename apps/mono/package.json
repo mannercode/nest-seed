@@ -47,7 +47,7 @@
     },
     "devDependencies": {
         "@mannercode/testing": "*",
-        "@nestjs/cli": "11.0.17",
+        "@nestjs/cli": "11.0.18",
         "@nestjs/schematics": "11.0.10",
         "@nestjs/testing": "11.1.18",
         "@types/bcrypt": "6.0.0",
