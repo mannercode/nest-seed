@@ -12,7 +12,7 @@
     },
     "scripts": {
         "start": "node _output/dist/${TARGET_APP}/index.js",
-        "build": "echo 'no build (use bundle)'",
+        "build": "echo 'skipped (use npm run bundle)'",
         "bundle": "nest build ${TARGET_APP} -b webpack --webpackPath ../webpack.config.js",
         "clean": "npm run apps:down; rm -rf _output tests/e2e/logs",
         "dev": "nest start ${TARGET_APP} --watch",
