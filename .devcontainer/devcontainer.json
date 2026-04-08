@@ -30,8 +30,9 @@
     "postStartCommand": {
         "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null",
         "infra": "bash .devcontainer/infra/reset.sh",
-        "build-libs": "npm run build"
+        "build-libs": "npm run build || true"
     },
+    "waitFor": "postStartCommand",
     "forwardPorts": [5010, 5020],
     "customizations": {
         "vscode": {
