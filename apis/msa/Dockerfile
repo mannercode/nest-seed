@@ -6,6 +6,7 @@ WORKDIR /monorepo
 COPY package.json ./
 COPY libs/common/package.json libs/common/
 COPY libs/microservices/package.json libs/microservices/
+COPY libs/testing/package.json libs/testing/
 COPY apis/msa/package.json apis/msa/
 RUN npm install
 

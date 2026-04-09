@@ -3,6 +3,7 @@ FROM node:24-alpine AS build
 WORKDIR /monorepo
 COPY package.json ./
 COPY libs/common/package.json libs/common/
+COPY libs/testing/package.json libs/testing/
 COPY apis/mono/package.json apis/mono/
 RUN npm install
 

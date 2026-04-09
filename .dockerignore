@@ -11,10 +11,6 @@
 !/libs/*/tsconfig.build.json
 !/libs/*/src/
 
-# testing is not used by apis, so exclude it
-libs/testing
-libs/testing/**
-
 !/apis/jest.*.js
 !/apis/*/package.json
 !/apis/*/webpack.config.js
