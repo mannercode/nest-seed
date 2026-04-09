@@ -123,7 +123,7 @@ npm run test:e2e
 
 ```bash
 cd apis/mono
-npm run debug
+npm run dev
 ```
 
 앱이 시작되면 API를 호출할 수 있다.

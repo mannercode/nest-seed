@@ -14,9 +14,9 @@
         "test:e2e": "npm run test:e2e --workspaces"
     },
     "devDependencies": {
-        "@aws-sdk/client-s3": "3.1025.0",
-        "@aws-sdk/s3-presigned-post": "3.1025.0",
-        "@aws-sdk/s3-request-presigner": "3.1025.0",
+        "@aws-sdk/client-s3": "3.1027.0",
+        "@aws-sdk/s3-presigned-post": "3.1027.0",
+        "@aws-sdk/s3-request-presigner": "3.1027.0",
         "@commitlint/cli": "20.5.0",
         "@commitlint/config-conventional": "20.5.0",
         "@nestjs/common": "11.1.18",
@@ -30,13 +30,13 @@
         "@temporalio/client": "1.15.0",
         "@temporalio/testing": "1.15.0",
         "@temporalio/worker": "1.15.0",
-        "@testcontainers/mongodb": "11.13.0",
-        "@testcontainers/nats": "11.13.0",
+        "@testcontainers/mongodb": "11.14.0",
+        "@testcontainers/nats": "11.14.0",
         "@types/express": "5.0.6",
         "@types/jest": "30.0.0",
         "@types/node": "24",
         "@types/superagent": "8.1.9",
-        "@typescript-eslint/parser": "8.58.0",
+        "@typescript-eslint/parser": "8.58.1",
         "class-transformer": "0.5.1",
         "class-validator": "0.15.1",
         "eslint": "10.2.0",
@@ -54,10 +54,10 @@
         "prettier": "3.8.1",
         "reflect-metadata": "0.2.2",
         "rxjs": "7.8.2",
-        "testcontainers": "11.13.0",
+        "testcontainers": "11.14.0",
         "ts-jest": "29.4.9",
         "typescript": "6.0.2",
-        "typescript-eslint": "8.58.0"
+        "typescript-eslint": "8.58.1"
     },
     "packageManager": "npm@11.12.1"
 }

@@ -41,7 +41,7 @@ infra/local/              # 로컬 인프라 Docker Compose
 | ------------------- | ------------------------------------------- |
 | `npm run build`     | 프로덕션 빌드                               |
 | `npm run start`     | 빌드된 앱 실행                              |
-| `npm run debug`     | Watch 모드로 개발 실행                      |
+| `npm run dev`       | Watch 모드로 개발 실행                      |
 | `npm test`          | 단위 테스트 실행 (coverage 포함)            |
 | `npm run test:e2e`  | E2E 테스트 실행 (인프라 + 앱 자동 재시작)   |
 | `npm run lint`      | TypeScript 타입 체크, ESLint, Prettier 검사 |
@@ -98,7 +98,7 @@ Docker 이미지 태그와 인프라 접속 정보(MongoDB, Redis, NATS, MinIO, 
 
 ### 디버그 (`.vscode/launch.json`)
 
-- **Mono**: `npm run debug`를 실행하여 Watch 모드로 앱을 디버깅한다.
+- **Mono**: `npm run dev`를 실행하여 Watch 모드로 앱을 디버깅한다.
 - **MSA**: `npm run dev`를 실행하며 `TARGET_APP`을 선택한다.
     - 선택지: `applications`, `cores`, `infrastructures`
 
