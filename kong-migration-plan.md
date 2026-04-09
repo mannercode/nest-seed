@@ -1,6 +1,6 @@
 # Kong 도입 작업 계획 — Phase 1: Gateway 해체
 
-> apps/msa의 NestJS Gateway를 제거하고, Kong이 각 마이크로서비스(applications / cores / infrastructures)로 직접 라우팅하도록 전환한다.
+> apis/msa의 NestJS Gateway를 제거하고, Kong이 각 마이크로서비스(applications / cores / infrastructures)로 직접 라우팅하도록 전환한다.
 >
 > 이 문서는 5단계 Kong 도입 로드맵 중 **소스 영향이 가장 큰 1단계**의 실행 계획이다. (전체 로드맵: 1. Gateway 해체 → 2. 인증 이관 → 3. CORS/Rate limit 이관 → 4. 로깅/메트릭 이관 → 5. Health check 위임)
 
@@ -10,7 +10,7 @@
 
 ### 목표
 
-- [apps/msa/src/apps/gateway/](apps/msa/src/apps/gateway/) 디렉토리와 `gateway` 컨테이너를 제거한다.
+- [apis/msa/src/apps/gateway/](apis/msa/src/apps/gateway/) 디렉토리와 `gateway` 컨테이너를 제거한다.
 - 외부 HTTP 진입점은 Kong이 담당한다.
 - `applications`, `cores`, `infrastructures` 각 서비스가 HTTP 컨트롤러를 직접 노출한다.
 - 기존 NATS `MessagePattern` 기반 내부 통신은 **유지**한다 (서비스 간 통신용).
@@ -25,11 +25,11 @@
 
 | 항목                                                                     | 변경                                      |
 | ------------------------------------------------------------------------ | ----------------------------------------- |
-| [apps/msa/src/apps/gateway/](apps/msa/src/apps/gateway/)                 | **삭제**                                  |
-| [apps/msa/src/apps/cores/](apps/msa/src/apps/cores/)                     | HTTP 컨트롤러 추가                        |
-| [apps/msa/src/apps/applications/](apps/msa/src/apps/applications/)       | HTTP 컨트롤러 추가                        |
-| [apps/msa/src/apps/infrastructures/](apps/msa/src/apps/infrastructures/) | (필요 시) HTTP 컨트롤러 추가              |
-| [apps/msa/compose.yml](apps/msa/compose.yml)                             | `gateway` 서비스 제거, `kong` 서비스 추가 |
+| [apis/msa/src/apps/gateway/](apis/msa/src/apps/gateway/)                 | **삭제**                                  |
+| [apis/msa/src/apps/cores/](apis/msa/src/apps/cores/)                     | HTTP 컨트롤러 추가                        |
+| [apis/msa/src/apps/applications/](apis/msa/src/apps/applications/)       | HTTP 컨트롤러 추가                        |
+| [apis/msa/src/apps/infrastructures/](apis/msa/src/apps/infrastructures/) | (필요 시) HTTP 컨트롤러 추가              |
+| [apis/msa/compose.yml](apis/msa/compose.yml)                             | `gateway` 서비스 제거, `kong` 서비스 추가 |
 | 라우팅 정책                                                              | Kong declarative config (`kong.yml`) 신규 |
 
 ---
@@ -38,7 +38,7 @@
 
 ### Gateway가 노출하는 컨트롤러
 
-[apps/msa/src/apps/gateway/controllers/](apps/msa/src/apps/gateway/controllers/) 기준 7개 HTTP 컨트롤러:
+[apis/msa/src/apps/gateway/controllers/](apis/msa/src/apps/gateway/controllers/) 기준 7개 HTTP 컨트롤러:
 
 | 컨트롤러                         | 호출 대상 NATS Client                   | 이전 위치    |
 | -------------------------------- | --------------------------------------- | ------------ |
@@ -58,7 +58,7 @@
 
 ### 컨트롤러 동작의 핵심 패턴
 
-[customers.http-controller.ts:32-34](apps/msa/src/apps/gateway/controllers/customers.http-controller.ts#L32-L34)
+[customers.http-controller.ts:32-34](apis/msa/src/apps/gateway/controllers/customers.http-controller.ts#L32-L34)
 
 ```ts
 async create(@Body() createDto: CreateCustomerDto) {
@@ -74,8 +74,8 @@ async create(@Body() createDto: CreateCustomerDto) {
 
 ### Step 1. Kong 인프라 준비 (소스 변경 없음)
 
-- [ ] [apps/msa/compose.yml](apps/msa/compose.yml)에 `kong` 서비스 추가 (DB-less 모드, declarative config)
-- [ ] `apps/msa/kong/kong.yml` 신규 작성 (라우트는 비어 있어도 OK, 추후 채움)
+- [ ] [apis/msa/compose.yml](apis/msa/compose.yml)에 `kong` 서비스 추가 (DB-less 모드, declarative config)
+- [ ] `apis/msa/kong/kong.yml` 신규 작성 (라우트는 비어 있어도 OK, 추후 채움)
 - [ ] `kong` → `applications` / `cores` / `infrastructures` 로의 네트워크 연결 확인
 - [ ] 외부 노출 포트를 `gateway` 대신 `kong`이 받도록 준비 (아직 트래픽은 보내지 않음)
 
@@ -87,13 +87,13 @@ async create(@Body() createDto: CreateCustomerDto) {
 
 #### 2-a. cores
 
-- [ ] [cores/services/customers/](apps/msa/src/apps/cores/services/customers/)에 `customers.http-controller.ts` 추가
+- [ ] [cores/services/customers/](apis/msa/src/apps/cores/services/customers/)에 `customers.http-controller.ts` 추가
     - `CustomersHttpController`의 라우트 구조를 그대로 복사
     - `CustomersClient` 의존을 `CustomersService` 직접 호출로 치환
     - 가드는 일단 그대로 따라옴 (Phase 2에서 제거)
 - [ ] 동일 작업: `movies`, `theaters`
-- [ ] [cores.module.ts](apps/msa/src/apps/cores/cores.module.ts)에 새 컨트롤러 등록
-- [ ] [cores/main.ts](apps/msa/src/apps/cores/main.ts)에서 HTTP 어댑터(NestExpress) 활성화 — 현재 NATS-only인지 hybrid인지 확인 후 hybrid로 변경
+- [ ] [cores.module.ts](apis/msa/src/apps/cores/cores.module.ts)에 새 컨트롤러 등록
+- [ ] [cores/main.ts](apis/msa/src/apps/cores/main.ts)에서 HTTP 어댑터(NestExpress) 활성화 — 현재 NATS-only인지 hybrid인지 확인 후 hybrid로 변경
 
 #### 2-b. applications
 
@@ -140,11 +140,11 @@ async create(@Body() createDto: CreateCustomerDto) {
 
 ### Step 4. Gateway 제거
 
-- [ ] [apps/msa/src/apps/gateway/](apps/msa/src/apps/gateway/) 디렉토리 삭제
-- [ ] [apps/msa/compose.yml](apps/msa/compose.yml)에서 `gateway` 서비스 / `apps-setup`의 `gateway` 의존 제거
-- [ ] [apps/msa/src/apps/](apps/msa/src/apps/)의 build target 목록(`TARGET_APP=gateway`)에서 gateway 제거
+- [ ] [apis/msa/src/apps/gateway/](apis/msa/src/apps/gateway/) 디렉토리 삭제
+- [ ] [apis/msa/compose.yml](apis/msa/compose.yml)에서 `gateway` 서비스 / `api-setup`의 `gateway` 의존 제거
+- [ ] [apis/msa/src/apps/](apis/msa/src/apps/)의 build target 목록(`TARGET_APP=gateway`)에서 gateway 제거
 - [ ] gateway에서만 쓰던 NATS Client 클래스(`BookingClient`, `PurchaseClient`, `CustomersClient` 등) 사용처 점검 — **다른 서비스가 서비스 간 호출용으로 쓰고 있을 수 있음**. 사용처 0이면 삭제, 아니면 유지.
-- [ ] gateway 전용 테스트 ([apps/msa/src/apps/**tests**/](apps/msa/src/apps/__tests__/))를 새 위치에 맞게 이동/재작성
+- [ ] gateway 전용 테스트 ([apis/msa/src/apps/**tests**/](apis/msa/src/apps/__tests__/))를 새 위치에 맞게 이동/재작성
 
 **검증:** 전체 빌드 + 전체 테스트 + E2E 통과.
 
@@ -165,8 +165,8 @@ async create(@Body() createDto: CreateCustomerDto) {
 
 ## 5. 완료 정의 (Definition of Done)
 
-- [ ] [apps/msa/src/apps/gateway/](apps/msa/src/apps/gateway/) 디렉토리가 존재하지 않는다.
-- [ ] [apps/msa/compose.yml](apps/msa/compose.yml)에 `gateway` 서비스가 없고 `kong` 서비스가 있다.
+- [ ] [apis/msa/src/apps/gateway/](apis/msa/src/apps/gateway/) 디렉토리가 존재하지 않는다.
+- [ ] [apis/msa/compose.yml](apis/msa/compose.yml)에 `gateway` 서비스가 없고 `kong` 서비스가 있다.
 - [ ] Kong 경유로 기존 7개 컨트롤러의 모든 엔드포인트가 동작한다.
 - [ ] 기존 E2E 테스트 스위트가 Kong 경유 baseURL로 모두 통과한다.
 - [ ] 인증 흐름(login / refresh / JWT 보호 엔드포인트)이 회귀 없이 동작한다.

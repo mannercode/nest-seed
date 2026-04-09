@@ -21,13 +21,10 @@ module.exports = (options) => {
         }
     }
 
-    const segments = path.relative(appDir, dirname).split(path.sep)
-    const outputDir = segments.length > 2 ? segments[segments.length - 1] : ''
-
     return {
         ...options,
         entry: path.resolve(dirname, 'production.ts'),
-        output: { path: path.resolve(appDir, '_output/dist', outputDir), filename: 'index.js' },
+        output: { path: path.resolve(appDir, '_output/dist'), filename: 'index.js' },
         externals: [nodeExternals({ modulesFromFile: true })]
     }
 }

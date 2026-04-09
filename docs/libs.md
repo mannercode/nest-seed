@@ -21,7 +21,7 @@
 
 ### npm workspaces
 
-루트 `package.json`의 `"workspaces": ["libs/*", "apps/*"]`로 모노레포를 구성한다. 루트 `node_modules/`에 호이스팅되므로 모든 workspace 패키지가 공유한다.
+루트 `package.json`의 `"workspaces": ["libs/*", "apis/*"]`로 모노레포를 구성한다. 루트 `node_modules/`에 호이스팅되므로 모든 workspace 패키지가 공유한다.
 
 ### 의존성 종류
 

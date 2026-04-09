@@ -8,7 +8,7 @@ nest-seed/
 │   ├── common/            # 기본 유틸리티 (Mongoose, Redis, JWT, S3, Logger)
 │   ├── microservices/      # MSA 유틸리티 (NATS RPC, Temporal)
 │   └── testing/           # 테스트 유틸리티 (HttpTestClient, RpcTestClient)
-├── apps/
+├── apis/
 │   ├── mono/              # 모놀리식 NestJS 시드
 │   └── msa/               # 마이크로서비스 아키텍처 시드
 └── package.json           # npm workspaces + npm-run-all2 스크립트

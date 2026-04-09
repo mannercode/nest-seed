@@ -84,13 +84,13 @@ services:
     applications:
         <<: *app-base
         build:
-            { context: ../.., dockerfile: apps/msa/Dockerfile, args: { TARGET_APP: applications } }
+            { context: ../.., dockerfile: apis/msa/Dockerfile, args: { TARGET_APP: applications } }
         image: applications
         container_name: applications
 
     cores:
         <<: *app-base
-        build: { context: ../.., dockerfile: apps/msa/Dockerfile, args: { TARGET_APP: cores } }
+        build: { context: ../.., dockerfile: apis/msa/Dockerfile, args: { TARGET_APP: cores } }
         image: cores
         container_name: cores
 
@@ -99,15 +99,15 @@ services:
         build:
             {
                 context: ../..,
-                dockerfile: apps/msa/Dockerfile,
+                dockerfile: apis/msa/Dockerfile,
                 args: { TARGET_APP: infrastructures }
             }
         image: infrastructures
         container_name: infrastructures
 
-    apps-setup:
+    api-setup:
         image: docker:cli
-        container_name: apps-setup
+        container_name: api-setup
         depends_on:
             kong: { condition: service_healthy }
             applications: { condition: service_healthy }

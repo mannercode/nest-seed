@@ -11,18 +11,18 @@
 !/libs/*/tsconfig.build.json
 !/libs/*/src/
 
-# testing is not used by apps, so exclude it
+# testing is not used by apis, so exclude it
 libs/testing
 libs/testing/**
 
-!/apps/jest.*.js
-!/apps/webpack.config.js
-!/apps/*/package.json
-!/apps/*/tsconfig.json
-!/apps/*/tsconfig.build.json
-!/apps/*/nest-cli.json
-!/apps/*/src/
-!/apps/*/scripts/
+!/apis/jest.*.js
+!/apis/*/package.json
+!/apis/*/webpack.config.js
+!/apis/*/tsconfig.json
+!/apis/*/tsconfig.build.json
+!/apis/*/nest-cli.json
+!/apis/*/src/
+!/apis/*/scripts/
 
 **/node_modules
 **/_output

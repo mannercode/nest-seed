@@ -82,7 +82,7 @@ Pact (계약 테스트), k6 (부하 테스트), Trivy (이미지 스캔), Cosign
 | 기술                             | 거부 사유                                                                                                                                                                                    |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Kafka**                        | NATS 선택. kafkajs 유지보수 종료(2022), maxWaitTimeInMs 폴링으로 테스트 종료 느림, 토픽 사전 생성 비용, broker3+controller3 메모리 부담 (자세한 근거: [decisions.md](decisions.md) 1번)      |
-| **OpenAPI / Swagger**            | bash + curl 기반 e2e shell spec(`apps/{mono,msa}/tests/e2e/specs/*.spec`)으로 대체. 코드 동기화 비용 없음, 실행 가능한 살아있는 문서, 시나리오 흐름 표현, CI 통합 용이, 데코레이터 부담 없음 |
+| **OpenAPI / Swagger**            | bash + curl 기반 e2e shell spec(`apis/{mono,msa}/tests/e2e/specs/*.spec`)으로 대체. 코드 동기화 비용 없음, 실행 가능한 살아있는 문서, 시나리오 흐름 표현, CI 통합 용이, 데코레이터 부담 없음 |
 | **BFF Gateway**                  | mono와 중복. 외부 라우팅/인증은 인프라 게이트웨이로 위임 (TODO.md `msa/gateway 제거 검토` 항목 참조)                                                                                         |
 | **Service Mesh (Istio/Linkerd)** | 시드 복잡도 초과. K8s 운영 단계에서 별도 검토                                                                                                                                                |
 | **Datadog / New Relic**          | SaaS 의존, OSS 시드에 부적합. 운영자가 선택                                                                                                                                                  |

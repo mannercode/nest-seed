@@ -30,7 +30,7 @@ VS Code에서 `Reopen in Container`를 실행한다.
 
 ### 2. libs 빌드
 
-apps가 libs에 의존하므로 먼저 빌드한다.
+apis가 libs에 의존하므로 먼저 빌드한다.
 
 ```bash
 npm run build
@@ -50,9 +50,9 @@ npm run build
 
 ### 3. 단위 테스트
 
-이 프로젝트는 테스트 코드로 기능을 검증하는 방식을 지향한다. libs는 주로 단위 테스트, apps는 통합 테스트에 가깝다. 특히 MSA는 여러 서비스를 동시에 실행해야 하므로 서버를 띄우고 curl로 확인하는 방식은 한계가 있다.
+이 프로젝트는 테스트 코드로 기능을 검증하는 방식을 지향한다. libs는 주로 단위 테스트, apis는 통합 테스트에 가깝다. 특히 MSA는 여러 서비스를 동시에 실행해야 하므로 서버를 띄우고 curl로 확인하는 방식은 한계가 있다.
 
-libs와 apps 전체 단위 테스트를 실행한다.
+libs와 apis 전체 단위 테스트를 실행한다.
 
 ```bash
 npm run test:unit
@@ -61,10 +61,10 @@ npm run test:unit
 개별 앱만 실행하려면:
 
 ```bash
-cd apps/mono
+cd apis/mono
 npm run test:unit
 
-cd apps/msa
+cd apis/msa
 npm run test:unit
 ```
 
@@ -73,7 +73,7 @@ npm run test:unit
 E2E 테스트는 Docker Compose로 앱을 빌드·실행한 뒤, curl 기반 셸 스크립트로 API를 검증한다.
 
 ```bash
-cd apps/mono
+cd apis/mono
 npm run test:e2e
 ```
 
@@ -115,14 +115,14 @@ TEST "Login customer" \
 MSA도 동일한 구조다.
 
 ```bash
-cd apps/msa
+cd apis/msa
 npm run test:e2e
 ```
 
 ### 5. Mono 앱 실행
 
 ```bash
-cd apps/mono
+cd apis/mono
 npm run debug
 ```
 
@@ -141,7 +141,7 @@ nest-seed/
 │   ├── microservices/       @mannercode/microservices
 │   └── testing/             @mannercode/testing
 │
-├── apps/                    ← 애플리케이션
+├── apis/                    ← 백엔드 API
 │   ├── mono/                모놀리식    — NestJS, MongoDB, Redis, BullMQ
 │   └── msa/                 마이크로서비스 — NestJS, MongoDB, Redis, NATS, Temporal
 │
@@ -167,29 +167,29 @@ nest-seed/
 | 위치                                  | 현재            | 변경             |
 | ------------------------------------- | --------------- | ---------------- |
 | `package.json` (root)                 | `nest-seed`     | 새 프로젝트 이름 |
-| `apps/mono/package.json`              | `nest-mono`     | 새 mono 이름     |
-| `apps/msa/package.json`               | `nest-msa`      | 새 msa 이름      |
+| `apis/mono/package.json`              | `nest-mono`     | 새 mono 이름     |
+| `apis/msa/package.json`               | `nest-msa`      | 새 msa 이름      |
 | `libs/*/package.json`                 | `@mannercode/*` | `@yourorg/*`     |
 | `libs/tsconfig.json` (paths)          | `@mannercode/*` | `@yourorg/*`     |
-| `apps/{mono,msa}/package.json` (deps) | `@mannercode/*` | `@yourorg/*`     |
+| `apis/{mono,msa}/package.json` (deps) | `@mannercode/*` | `@yourorg/*`     |
 
 ### 2. 환경 / 인프라 식별자
 
 | 위치                       | 현재                                                | 변경           |
 | -------------------------- | --------------------------------------------------- | -------------- |
-| `apps/mono/.env`           | `PROJECT_ID=nest-mono`                              | 새 ID          |
-| `apps/msa/.env`            | `PROJECT_ID=nest-msa`                               | 새 ID          |
-| `apps/mono/compose.yml`    | `image: nest-mono`, `container_name: app`           | 새 이름        |
-| `apps/msa/compose.yml`     | `image: gateway/applications/cores/infrastructures` | 충돌 시 prefix |
+| `apis/mono/.env`           | `PROJECT_ID=nest-mono`                              | 새 ID          |
+| `apis/msa/.env`            | `PROJECT_ID=nest-msa`                               | 새 ID          |
+| `apis/mono/compose.yml`    | `image: nest-mono`, `container_name: app`           | 새 이름        |
+| `apis/msa/compose.yml`     | `image: gateway/applications/cores/infrastructures` | 충돌 시 prefix |
 | `.devcontainer/infra/.env` | `nest-bucket` (S3 버킷)                             | 새 버킷 이름   |
 
 ### 3. 도메인 코드 교체
 
-`apps/{mono,msa}/src/`의 영화 예매 도메인을 새 도메인으로 교체:
+`apis/{mono,msa}/src/`의 영화 예매 도메인을 새 도메인으로 교체:
 
 - 모듈/서비스/컨트롤러/모델/DTO: Customers, Movies, Theaters, Showtimes, Tickets, Bookings, Purchases
-- 단위 테스트: `apps/{mono,msa}/src/__tests__/`
-- e2e 스펙: `apps/{mono,msa}/tests/e2e/specs/*.spec`
+- 단위 테스트: `apis/{mono,msa}/src/__tests__/`
+- e2e 스펙: `apis/{mono,msa}/tests/e2e/specs/*.spec`
 - 도메인 용어: `docs/glossary.md`
 
 ### 4. CI / 저장소
@@ -215,7 +215,7 @@ nest-seed/
 
 | 경로                          | 사유                                                       |
 | ----------------------------- | ---------------------------------------------------------- |
-| `apps/msa/`                   | MSA 앱 전체 (Kong 설정 `apps/msa/kong/` 포함, 함께 사라짐) |
+| `apis/msa/`                   | MSA 앱 전체 (Kong 설정 `apis/msa/kong/` 포함, 함께 사라짐) |
 | `libs/microservices/`         | NATS RPC, Temporal 래퍼 (msa 전용)                         |
 | `libs/testing-microservices/` | NATS/Temporal 테스트 헬퍼 (msa 전용)                       |
 | `.devcontainer/infra/msa/`    | NATS, Temporal, PostgreSQL 인프라                          |

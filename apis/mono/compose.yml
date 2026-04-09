@@ -45,13 +45,13 @@ x-app-base: &app-base
 services:
     app:
         <<: *app-base
-        build: { context: ../.., dockerfile: apps/mono/Dockerfile }
+        build: { context: ../.., dockerfile: apis/mono/Dockerfile }
         image: nest-mono
         container_name: app
         ports: ['${HTTP_PORT}:${HTTP_PORT}']
 
-    apps-setup:
+    api-setup:
         image: docker:cli
-        container_name: apps-setup
+        container_name: api-setup
         depends_on:
             app: { condition: service_healthy }

@@ -37,30 +37,30 @@ infra/local/              # 로컬 인프라 Docker Compose
 
 ### Mono
 
-| Script               | Description                                 |
-| -------------------- | ------------------------------------------- |
-| `npm run build`      | 프로덕션 빌드                               |
-| `npm run start`      | 빌드된 앱 실행                              |
-| `npm run debug`      | Watch 모드로 개발 실행                      |
-| `npm test`           | 단위 테스트 실행 (coverage 포함)            |
-| `npm run test:e2e`   | E2E 테스트 실행 (인프라 + 앱 자동 재시작)   |
-| `npm run lint`       | TypeScript 타입 체크, ESLint, Prettier 검사 |
-| `npm run format`     | ESLint 자동 수정 및 Prettier 포맷팅         |
-| `npm run apps:reset` | 앱 서비스 초기화 (down + up + wait)         |
+| Script              | Description                                 |
+| ------------------- | ------------------------------------------- |
+| `npm run build`     | 프로덕션 빌드                               |
+| `npm run start`     | 빌드된 앱 실행                              |
+| `npm run debug`     | Watch 모드로 개발 실행                      |
+| `npm test`          | 단위 테스트 실행 (coverage 포함)            |
+| `npm run test:e2e`  | E2E 테스트 실행 (인프라 + 앱 자동 재시작)   |
+| `npm run lint`      | TypeScript 타입 체크, ESLint, Prettier 검사 |
+| `npm run format`    | ESLint 자동 수정 및 Prettier 포맷팅         |
+| `npm run api:reset` | 앱 서비스 초기화 (down + up + wait)         |
 
 ### MSA
 
-| Script               | Description                                             |
-| -------------------- | ------------------------------------------------------- |
-| `npm run build`      | 특정 앱 빌드 (`TARGET_APP=cores npm run build`)         |
-| `npm run start`      | 빌드된 앱 실행 (`TARGET_APP=cores npm run start`)       |
-| `npm run dev`        | Watch 모드로 개발 실행 (`TARGET_APP=cores npm run dev`) |
-| `npm test`           | 전체 테스트 실행 (단위 + E2E)                           |
-| `npm run test:unit`  | 단위 테스트 실행 (coverage 포함)                        |
-| `npm run test:e2e`   | E2E 테스트 실행 (인프라 + 앱 자동 재시작)               |
-| `npm run lint`       | TypeScript 타입 체크, ESLint, Prettier 검사             |
-| `npm run format`     | ESLint 자동 수정 및 Prettier 포맷팅                     |
-| `npm run apps:reset` | 앱 서비스 초기화 (down + up + wait)                     |
+| Script              | Description                                             |
+| ------------------- | ------------------------------------------------------- |
+| `npm run build`     | 특정 앱 빌드 (`TARGET_APP=cores npm run build`)         |
+| `npm run start`     | 빌드된 앱 실행 (`TARGET_APP=cores npm run start`)       |
+| `npm run dev`       | Watch 모드로 개발 실행 (`TARGET_APP=cores npm run dev`) |
+| `npm test`          | 전체 테스트 실행 (단위 + E2E)                           |
+| `npm run test:unit` | 단위 테스트 실행 (coverage 포함)                        |
+| `npm run test:e2e`  | E2E 테스트 실행 (인프라 + 앱 자동 재시작)               |
+| `npm run lint`      | TypeScript 타입 체크, ESLint, Prettier 검사             |
+| `npm run format`    | ESLint 자동 수정 및 Prettier 포맷팅                     |
+| `npm run api:reset` | 앱 서비스 초기화 (down + up + wait)                     |
 
 인프라는 Dev Container가 시작 시 자동으로 올린다. 수동 관리가 필요하면 `bash .devcontainer/infra/reset.sh`를 실행한다.
 
@@ -72,7 +72,7 @@ infra/local/              # 로컬 인프라 Docker Compose
 
 Docker 이미지 태그와 인프라 접속 정보(MongoDB, Redis, NATS, MinIO, Temporal)를 통합 관리한다. Dev Container 실행 시 `--env-file`로 컨테이너 환경변수에 주입되므로, 앱과 테스트에서 별도 파일 로딩 없이 `process.env`로 접근 가능하다.
 
-### `apps/mono/.env`, `apps/msa/.env`
+### `apis/mono/.env`, `apis/msa/.env`
 
 앱 전용 설정만 포함한다. 프로젝트 ID, HTTP 포트, 인증, 로그 설정 등이 있다.
 
