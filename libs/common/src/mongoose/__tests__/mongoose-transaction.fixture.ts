@@ -2,16 +2,16 @@ import { createTestContext, getMongoTestConnection } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
 import { getModelToken, InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { MongooseRepository } from '../mongoose.repository'
-import { createMongooseSchema, MongooseSchema } from '../mongoose.schema'
+import { CrudRepository } from '../crud.repository'
+import { createCrudSchema, CrudSchema } from '../crud.schema'
 
 @Schema()
-class Sample extends MongooseSchema {
+class Sample extends CrudSchema {
     @Prop({ required: true })
     name: string
 }
 
-const SampleSchema = createMongooseSchema(Sample)
+const SampleSchema = createCrudSchema(Sample)
 
 export type MongooseTransactionFixture = {
     model: Model<Sample>
@@ -20,7 +20,7 @@ export type MongooseTransactionFixture = {
 }
 
 @Injectable()
-class SamplesRepository extends MongooseRepository<Sample> {
+class SamplesRepository extends CrudRepository<Sample> {
     constructor(@InjectModel(Sample.name) readonly model: Model<Sample>) {
         super(model, 1)
     }

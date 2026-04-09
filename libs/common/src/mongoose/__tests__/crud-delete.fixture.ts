@@ -2,25 +2,25 @@ import { createTestContext, getMongoTestConnection } from '@mannercode/testing'
 import { Type } from '@nestjs/common'
 import { getModelToken, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { createMongooseSchema, HardDelete, MongooseSchema } from '../mongoose.schema'
+import { createCrudSchema, CrudSchema, HardDelete } from '../crud.schema'
 
 @HardDelete()
 @Schema()
-export class HardDeleteSample extends MongooseSchema {
+export class HardDeleteSample extends CrudSchema {
     @Prop()
     name: string
 }
 
 @Schema()
-export class SoftDeleteSample extends MongooseSchema {
+export class SoftDeleteSample extends CrudSchema {
     @Prop()
     name: string
 }
 
-export type MongooseDeleteFixture<T> = { model: Model<T>; teardown: () => Promise<void> }
+export type CrudDeleteFixture<T> = { model: Model<T>; teardown: () => Promise<void> }
 
-export async function createMongooseDeleteFixture<T>(cls: Type<T>) {
-    const schema = createMongooseSchema(cls)
+export async function createCrudDeleteFixture<T>(cls: Type<T>) {
+    const schema = createCrudSchema(cls)
 
     const { close, module } = await createTestContext({
         imports: [

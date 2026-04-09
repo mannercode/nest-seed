@@ -1,18 +1,14 @@
 import type { HydratedDocument } from 'mongoose'
-import {
-    HardDeleteSample,
-    SoftDeleteSample,
-    MongooseDeleteFixture
-} from './mongoose-delete.fixture'
+import { HardDeleteSample, SoftDeleteSample, CrudDeleteFixture } from './crud-delete.fixture'
 
-describe('Mongoose Delete', () => {
+describe('Crud Delete', () => {
     describe('Soft Delete', () => {
-        let fix: MongooseDeleteFixture<SoftDeleteSample>
+        let fix: CrudDeleteFixture<SoftDeleteSample>
         let createdDoc: HydratedDocument<SoftDeleteSample>
 
         beforeEach(async () => {
-            const { createMongooseDeleteFixture } = await import('./mongoose-delete.fixture')
-            fix = await createMongooseDeleteFixture(SoftDeleteSample)
+            const { createCrudDeleteFixture } = await import('./crud-delete.fixture')
+            fix = await createCrudDeleteFixture(SoftDeleteSample)
 
             createdDoc = new fix.model()
             createdDoc.name = 'name'
@@ -79,12 +75,12 @@ describe('Mongoose Delete', () => {
     })
 
     describe('Hard Delete', () => {
-        let fix: MongooseDeleteFixture<HardDeleteSample>
+        let fix: CrudDeleteFixture<HardDeleteSample>
         let createdDoc: HydratedDocument<HardDeleteSample>
 
         beforeEach(async () => {
-            const { createMongooseDeleteFixture } = await import('./mongoose-delete.fixture')
-            fix = await createMongooseDeleteFixture(HardDeleteSample)
+            const { createCrudDeleteFixture } = await import('./crud-delete.fixture')
+            fix = await createCrudDeleteFixture(HardDeleteSample)
 
             createdDoc = new fix.model()
             createdDoc.name = 'name'

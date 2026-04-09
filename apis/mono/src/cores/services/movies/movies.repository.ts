@@ -1,7 +1,7 @@
 import {
     QueryBuilderOptions,
     assignIfDefined,
-    MongooseRepository,
+    CrudRepository,
     QueryBuilder
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
@@ -12,7 +12,7 @@ import { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
 import { Movie } from './models'
 
 @Injectable()
-export class MoviesRepository extends MongooseRepository<Movie> {
+export class MoviesRepository extends CrudRepository<Movie> {
     constructor(
         @InjectModel(Movie.name, MongooseConfigModule.connectionName) readonly model: Model<Movie>
     ) {

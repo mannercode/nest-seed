@@ -1,9 +1,9 @@
-import { createMongooseSchema, MongooseSchema } from '@mannercode/common'
+import { createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseConfigModule } from 'config'
 
 @Schema(MongooseConfigModule.schemaOptions)
-export class WatchRecord extends MongooseSchema {
+export class WatchRecord extends CrudSchema {
     @Prop({ required: true })
     customerId: string
 
@@ -16,4 +16,4 @@ export class WatchRecord extends MongooseSchema {
     @Prop({ required: true })
     watchDate: Date
 }
-export const WatchRecordSchema = createMongooseSchema(WatchRecord)
+export const WatchRecordSchema = createCrudSchema(WatchRecord)

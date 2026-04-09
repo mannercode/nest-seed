@@ -2,16 +2,16 @@ import { createTestContext, getMongoTestConnection } from '@mannercode/testing'
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { MongooseRepository } from '../mongoose.repository'
-import { createMongooseSchema, MongooseSchema } from '../mongoose.schema'
+import { CrudRepository } from '../crud.repository'
+import { createCrudSchema, CrudSchema } from '../crud.schema'
 import { mapDocToDto } from '../mongoose.util'
 
 @Schema({ toJSON: { virtuals: true } })
-class Sample extends MongooseSchema {
+class Sample extends CrudSchema {
     @Prop({ required: true })
     name: string
 }
-const SampleSchema = createMongooseSchema(Sample)
+const SampleSchema = createCrudSchema(Sample)
 
 export class SampleDto {
     id: string
@@ -20,7 +20,7 @@ export class SampleDto {
 
 export const maxSizeValue = 50
 
-export type MongooseRepositoryFixture = {
+export type CrudRepositoryFixture = {
     BadRequestException: typeof BadRequestException
     NotFoundException: typeof NotFoundException
     repository: SamplesRepository
@@ -28,13 +28,13 @@ export type MongooseRepositoryFixture = {
 }
 
 @Injectable()
-class SamplesRepository extends MongooseRepository<Sample> {
+class SamplesRepository extends CrudRepository<Sample> {
     constructor(@InjectModel(Sample.name) readonly model: Model<Sample>) {
         super(model, maxSizeValue)
     }
 }
 
-export async function createMongooseRepositoryFixture() {
+export async function createCrudRepositoryFixture() {
     const { close, module } = await createTestContext({
         imports: [
             MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),

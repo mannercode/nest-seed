@@ -11,7 +11,14 @@ type SessionArg = ClientSession | undefined
 
 const defaultLeanOptions = { virtuals: true }
 
-export abstract class MongooseRepository<Doc> implements OnModuleInit {
+/**
+ * CRUD category 의 repository base.
+ *
+ * 일반적인 도메인 엔티티의 CRUD 동작 (find, save, delete, paginate, transaction) 을
+ * 제공한다. Append-only category (audit log 등) 는 본 base 가 아니라
+ * `AppendOnlyRepository` 를 사용한다 — delete/update 메서드를 타입에서 노출하지 않음.
+ */
+export abstract class CrudRepository<Doc> implements OnModuleInit {
     constructor(
         protected readonly model: Model<Doc>,
         protected readonly maxSize: number

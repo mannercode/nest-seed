@@ -1,7 +1,7 @@
 import {
     QueryBuilderOptions,
     assignIfDefined,
-    MongooseRepository,
+    CrudRepository,
     QueryBuilder
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
@@ -12,7 +12,7 @@ import { CreateCustomerDto, SearchCustomersPageDto, UpdateCustomerDto } from './
 import { Customer } from './models'
 
 @Injectable()
-export class CustomersRepository extends MongooseRepository<Customer> {
+export class CustomersRepository extends CrudRepository<Customer> {
     constructor(
         @InjectModel(Customer.name, MongooseConfigModule.connectionName)
         readonly model: Model<Customer>

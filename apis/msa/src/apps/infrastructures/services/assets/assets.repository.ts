@@ -1,4 +1,4 @@
-import { MongooseRepository } from '@mannercode/common'
+import { CrudRepository } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { MongooseConfigModule } from 'config'
@@ -7,7 +7,7 @@ import { CreateAssetDto } from './dtos'
 import { Asset } from './models'
 
 @Injectable()
-export class AssetsRepository extends MongooseRepository<Asset> {
+export class AssetsRepository extends CrudRepository<Asset> {
     constructor(
         @InjectModel(Asset.name, MongooseConfigModule.connectionName)
         readonly model: Model<Asset>

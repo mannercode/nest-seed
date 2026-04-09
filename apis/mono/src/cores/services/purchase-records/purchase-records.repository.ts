@@ -1,4 +1,4 @@
-import { MongooseRepository } from '@mannercode/common'
+import { CrudRepository } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { MongooseConfigModule } from 'config'
@@ -7,7 +7,7 @@ import { CreatePurchaseRecordDto } from './dtos'
 import { PurchaseRecord } from './models'
 
 @Injectable()
-export class PurchaseRecordsRepository extends MongooseRepository<PurchaseRecord> {
+export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     constructor(
         @InjectModel(PurchaseRecord.name, MongooseConfigModule.connectionName)
         readonly model: Model<PurchaseRecord>

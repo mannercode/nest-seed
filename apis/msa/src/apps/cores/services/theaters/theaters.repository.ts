@@ -1,7 +1,7 @@
 import {
     QueryBuilderOptions,
     assignIfDefined,
-    MongooseRepository,
+    CrudRepository,
     QueryBuilder
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
@@ -12,7 +12,7 @@ import { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto } from './dto
 import { Theater } from './models'
 
 @Injectable()
-export class TheatersRepository extends MongooseRepository<Theater> {
+export class TheatersRepository extends CrudRepository<Theater> {
     constructor(
         @InjectModel(Theater.name, MongooseConfigModule.connectionName)
         readonly model: Model<Theater>

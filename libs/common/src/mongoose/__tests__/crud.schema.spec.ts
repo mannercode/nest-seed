@@ -1,13 +1,13 @@
 import { Types } from 'mongoose'
-import type { MongooseSchemaFixture } from './mongoose.schema.fixture'
-import { addDeletedAtFilterToPipeline } from '../mongoose.schema'
+import type { CrudSchemaFixture } from './crud.schema.fixture'
+import { addDeletedAtFilterToPipeline } from '../crud.schema'
 
-describe('Mongoose schema types', () => {
-    let fix: MongooseSchemaFixture
+describe('Crud schema types', () => {
+    let fix: CrudSchemaFixture
 
     beforeEach(async () => {
-        const { createMongooseSchemaFixture } = await import('./mongoose.schema.fixture')
-        fix = await createMongooseSchemaFixture()
+        const { createCrudSchemaFixture } = await import('./crud.schema.fixture')
+        fix = await createCrudSchemaFixture()
     })
     afterEach(() => fix.teardown())
 

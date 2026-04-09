@@ -1,7 +1,7 @@
 import { BadRequestException, Logger } from '@nestjs/common'
 import { Prop, Schema } from '@nestjs/mongoose'
 import { model, Types } from 'mongoose'
-import { createMongooseSchema, MongooseSchema } from '../mongoose.schema'
+import { createCrudSchema, CrudSchema } from '../crud.schema'
 import {
     assignIfDefined,
     mapDocToDto,
@@ -255,7 +255,7 @@ describe('QueryBuilder', () => {
 
 describe('mapDocToDto', () => {
     @Schema({ toJSON: { virtuals: true } })
-    class Sample extends MongooseSchema {
+    class Sample extends CrudSchema {
         @Prop()
         name: string
 
@@ -269,7 +269,7 @@ describe('mapDocToDto', () => {
         optional?: boolean
     }
 
-    const sampleSchema = createMongooseSchema(Sample)
+    const sampleSchema = createCrudSchema(Sample)
     const SampleModel = model<Sample>('SampleForTest', sampleSchema)
 
     // lean 객체를 DTO로 매핑한다

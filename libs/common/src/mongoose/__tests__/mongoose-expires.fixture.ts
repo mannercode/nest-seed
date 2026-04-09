@@ -1,10 +1,10 @@
 import { createTestContext, getMongoTestConnection } from '@mannercode/testing'
 import { getModelToken, MongooseModule, Schema as NestSchema, Prop } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { createMongooseSchema, MongooseSchema } from '../mongoose.schema'
+import { createCrudSchema, CrudSchema } from '../crud.schema'
 
 @NestSchema()
-export class ExpireSample extends MongooseSchema {
+export class ExpireSample extends CrudSchema {
     @Prop({ default: Date.now, expires: '500ms' })
     expiresAt: Date
 
@@ -15,7 +15,7 @@ export class ExpireSample extends MongooseSchema {
 export type MongooseExpiresFixture = { model: Model<ExpireSample>; teardown: () => Promise<void> }
 
 export async function createMongooseExpiresFixture() {
-    const schema = createMongooseSchema(ExpireSample)
+    const schema = createCrudSchema(ExpireSample)
 
     const { close, module } = await createTestContext({
         imports: [

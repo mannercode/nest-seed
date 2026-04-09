@@ -28,19 +28,19 @@ common        (독립)
 
 기반 레이어. 모든 NestJS 애플리케이션에서 재사용 가능한 인프라 추상화를 제공한다.
 
-| 모듈           | 주요 export                                                                              |
-| -------------- | ---------------------------------------------------------------------------------------- |
-| **mongoose**   | `MongooseRepository`, `MongooseSchema`, 페이지네이션 지원                                |
-| **redis**      | `RedisModule`, 연결 관리                                                                 |
-| **cache**      | `CacheService`, `CacheModule`, 네임스페이스 키, TTL, Lua                                 |
-| **auth**       | JWT/Local/Optional Guard, `JwtAuthService`, `@Public()` — [상세](auth.md)                |
-| **s3**         | `S3ObjectService`, 업로드/다운로드, presigned URL                                        |
-| **logger**     | `AppLoggerService`, Winston, `HttpExceptionLoggerFilter`, `HttpSuccessLoggerInterceptor` |
-| **pagination** | `PaginationDto`, `PaginationResult`, `OrderBy`                                           |
-| **health**     | `RedisHealthIndicator`                                                                   |
-| **config**     | `BaseConfigService`                                                                      |
-| **validator**  | `Require`, `Verify`, `ensure()`                                                          |
-| **utils**      | env, base64, byte, checksum, date, time, http, json, path                                |
+| 모듈           | 주요 export                                                                                   |
+| -------------- | --------------------------------------------------------------------------------------------- |
+| **mongoose**   | `CrudRepository`, `CrudSchema`, `AppendOnlyRepository`, `AppendOnlySchema`, 페이지네이션 지원 |
+| **redis**      | `RedisModule`, 연결 관리                                                                      |
+| **cache**      | `CacheService`, `CacheModule`, 네임스페이스 키, TTL, Lua                                      |
+| **auth**       | JWT/Local/Optional Guard, `JwtAuthService`, `@Public()` — [상세](auth.md)                     |
+| **s3**         | `S3ObjectService`, 업로드/다운로드, presigned URL                                             |
+| **logger**     | `AppLoggerService`, Winston, `HttpExceptionLoggerFilter`, `HttpSuccessLoggerInterceptor`      |
+| **pagination** | `PaginationDto`, `PaginationResult`, `OrderBy`                                                |
+| **health**     | `RedisHealthIndicator`                                                                        |
+| **config**     | `BaseConfigService`                                                                           |
+| **validator**  | `Require`, `Verify`, `ensure()`                                                               |
+| **utils**      | env, base64, byte, checksum, date, time, http, json, path                                     |
 
 ### @mannercode/microservices
 

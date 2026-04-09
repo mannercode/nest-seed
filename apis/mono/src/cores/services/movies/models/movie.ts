@@ -1,4 +1,4 @@
-import { createMongooseSchema, MongooseSchema } from '@mannercode/common'
+import { createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseConfigModule, Rules } from 'config'
 
@@ -30,7 +30,7 @@ function required(this: Movie) {
 const { defaults } = Rules.Movie
 
 @Schema(MongooseConfigModule.schemaOptions)
-export class Movie extends MongooseSchema {
+export class Movie extends CrudSchema {
     @Prop({ default: [], type: [String] })
     assetIds: string[]
 
@@ -86,4 +86,4 @@ export class Movie extends MongooseSchema {
     @Prop({ default: defaults.title, required })
     title: string
 }
-export const MovieSchema = createMongooseSchema(Movie)
+export const MovieSchema = createCrudSchema(Movie)

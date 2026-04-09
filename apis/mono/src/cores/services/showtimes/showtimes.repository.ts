@@ -1,4 +1,4 @@
-import { QueryBuilderOptions, MongooseRepository, QueryBuilder } from '@mannercode/common'
+import { QueryBuilderOptions, CrudRepository, QueryBuilder } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { MongooseConfigModule } from 'config'
@@ -7,7 +7,7 @@ import { CreateShowtimeDto, SearchShowtimesDto } from './dtos'
 import { Showtime } from './models'
 
 @Injectable()
-export class ShowtimesRepository extends MongooseRepository<Showtime> {
+export class ShowtimesRepository extends CrudRepository<Showtime> {
     constructor(
         @InjectModel(Showtime.name, MongooseConfigModule.connectionName)
         readonly model: Model<Showtime>

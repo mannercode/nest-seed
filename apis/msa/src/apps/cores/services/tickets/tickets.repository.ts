@@ -1,9 +1,4 @@
-import {
-    QueryBuilderOptions,
-    MongooseRepository,
-    objectIds,
-    QueryBuilder
-} from '@mannercode/common'
+import { QueryBuilderOptions, CrudRepository, objectIds, QueryBuilder } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { MongooseConfigModule } from 'config'
@@ -17,7 +12,7 @@ import {
 import { Ticket, TicketStatus } from './models'
 
 @Injectable()
-export class TicketsRepository extends MongooseRepository<Ticket> {
+export class TicketsRepository extends CrudRepository<Ticket> {
     constructor(
         @InjectModel(Ticket.name, MongooseConfigModule.connectionName) readonly model: Model<Ticket>
     ) {

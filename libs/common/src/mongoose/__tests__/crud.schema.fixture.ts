@@ -1,12 +1,9 @@
 import { createTestContext, getMongoTestConnection } from '@mannercode/testing'
 import { getModelToken, MongooseModule, Schema as NestSchema, Prop } from '@nestjs/mongoose'
 import { Model, Schema, Types, mongo } from 'mongoose'
-import { createMongooseSchema, MongooseSchema } from '../mongoose.schema'
+import { createCrudSchema, CrudSchema } from '../crud.schema'
 
-export type MongooseSchemaFixture = {
-    model: Model<SchemaTypeSample>
-    teardown: () => Promise<void>
-}
+export type CrudSchemaFixture = { model: Model<SchemaTypeSample>; teardown: () => Promise<void> }
 
 @NestSchema({
     toJSON: {
@@ -22,7 +19,7 @@ export type MongooseSchemaFixture = {
         }
     }
 })
-export class SchemaTypeSample extends MongooseSchema {
+export class SchemaTypeSample extends CrudSchema {
     @Prop({ max: 65, min: 18 })
     age: number
 
@@ -83,8 +80,8 @@ export class SchemaTypeSample extends MongooseSchema {
 
 type RawSample = Partial<SchemaTypeSample> & { [key: string]: any }
 
-export async function createMongooseSchemaFixture() {
-    const schema = createMongooseSchema(SchemaTypeSample)
+export async function createCrudSchemaFixture() {
+    const schema = createCrudSchema(SchemaTypeSample)
 
     const { close, module } = await createTestContext({
         imports: [

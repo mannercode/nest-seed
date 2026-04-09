@@ -1,4 +1,4 @@
-import { createMongooseSchema, MongooseSchema } from '@mannercode/common'
+import { createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseConfigModule } from 'config'
 import { Seat } from '../../../shared'
@@ -9,7 +9,7 @@ export enum TicketStatus {
 }
 
 @Schema(MongooseConfigModule.schemaOptions)
-export class Ticket extends MongooseSchema {
+export class Ticket extends CrudSchema {
     @Prop({ required: true })
     movieId: string
 
@@ -28,4 +28,4 @@ export class Ticket extends MongooseSchema {
     @Prop({ required: true })
     theaterId: string
 }
-export const TicketSchema = createMongooseSchema(Ticket)
+export const TicketSchema = createCrudSchema(Ticket)

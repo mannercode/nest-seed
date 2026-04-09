@@ -1,4 +1,4 @@
-import { MongooseRepository, QueryBuilder } from '@mannercode/common'
+import { CrudRepository, QueryBuilder } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { MongooseConfigModule } from 'config'
@@ -6,7 +6,7 @@ import { Model } from 'mongoose'
 import { MoviePendingAsset } from './models'
 
 @Injectable()
-export class MoviePendingAssetsRepository extends MongooseRepository<MoviePendingAsset> {
+export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAsset> {
     constructor(
         @InjectModel(MoviePendingAsset.name, MongooseConfigModule.connectionName)
         readonly model: Model<MoviePendingAsset>

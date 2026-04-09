@@ -21,7 +21,16 @@ import { defaultTo } from '../utils'
  * attributes: { key1: 'value1', key2: 'value2' },
  */
 
-export abstract class MongooseSchema {
+/**
+ * CRUD category 의 schema base.
+ *
+ * 일반적인 도메인 엔티티(생성/조회/수정/삭제 모두 가능)용. soft-delete 가 default 이고
+ * `@HardDelete()` 데코레이터로 모델별 hard-delete opt-out 가능.
+ *
+ * Append-only category (audit log 등) 는 본 base 가 아니라 `AppendOnlySchema` /
+ * `createAppendOnlySchema` 를 사용한다.
+ */
+export abstract class CrudSchema {
     createdAt: Date
     deletedAt: Date | null
     id: string
@@ -41,7 +50,7 @@ export function addDeletedAtFilterToPipeline(pipeline: Record<string, any>[]) {
     pipeline.unshift(matchStage)
 }
 
-export function createMongooseSchema<T>(cls: Type<T>): Schema<T> {
+export function createCrudSchema<T>(cls: Type<T>): Schema<T> {
     const schema = SchemaFactory.createForClass(cls)
     schema.plugin(mongooseLeanVirtuals)
 
