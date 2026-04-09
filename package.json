@@ -11,16 +11,17 @@
         "lint": "npm run lint --workspaces",
         "format": "npm run format --workspaces",
         "test:unit": "npm run test:unit --workspaces",
-        "test:e2e": "npm run test:e2e --workspaces"
+        "test:e2e": "npm run test:e2e --workspaces",
+        "atoz": "npm run clean && npm run build && npm run lint && npm run test:unit && npm run test:e2e"
     },
     "devDependencies": {
-        "@aws-sdk/client-s3": "3.1027.0",
-        "@aws-sdk/s3-presigned-post": "3.1027.0",
-        "@aws-sdk/s3-request-presigner": "3.1027.0",
+        "@aws-sdk/client-s3": "3.1028.0",
+        "@aws-sdk/s3-presigned-post": "3.1028.0",
+        "@aws-sdk/s3-request-presigner": "3.1028.0",
         "@commitlint/cli": "20.5.0",
         "@commitlint/config-conventional": "20.5.0",
         "@nestjs/common": "11.1.18",
-        "@nestjs/config": "4.0.3",
+        "@nestjs/config": "4.0.4",
         "@nestjs/core": "11.1.18",
         "@nestjs/jwt": "11.0.2",
         "@nestjs/microservices": "11.1.18",

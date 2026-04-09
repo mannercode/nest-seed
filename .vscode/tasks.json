@@ -18,11 +18,6 @@
             "type": "shell",
             "command": "bash",
             "args": ["-c", "${input:testCommand}"]
-        },
-        {
-            "label": "Verify AtoZ",
-            "type": "shell",
-            "command": "npm run clean && npm run build && npm run lint && npm run test:unit && npm run test:e2e"
         }
     ],
     "inputs": [
@@ -35,7 +30,7 @@
                 "npm run lint",
                 "npm run format",
                 "ncu --deep",
-                "ncu -u --deep"
+                "ncu --deep -u && npm install"
             ]
         },
         {
@@ -49,7 +44,8 @@
                 "npm run test:unit -w apis/mono",
                 "npm run test:unit -w apis/msa",
                 "npm run test:e2e -w apis/mono",
-                "npm run test:e2e -w apis/msa"
+                "npm run test:e2e -w apis/msa",
+                "npm run atoz"
             ]
         }
     ]
