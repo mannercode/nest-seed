@@ -14,7 +14,7 @@
         "start": "node _output/dist/${TARGET_APP}/index.js",
         "build": "echo 'skipped (use npm run bundle)'",
         "bundle": "nest build ${TARGET_APP} -b webpack --webpackPath ./webpack.config.js",
-        "clean": "npm run api:down; rm -rf _output tests/e2e/logs",
+        "clean": "npm run api:down",
         "dev": "nest start ${TARGET_APP} --watch",
         "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest --no-cache --coverage --config ../jest.config.js",
         "test:e2e": "npm run api:reset && bash tests/e2e/run-all.sh; status=$?; npm run api:down; exit $status",

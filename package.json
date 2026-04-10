@@ -7,7 +7,7 @@
     ],
     "scripts": {
         "build": "npm run build --workspaces",
-        "clean": "npm run clean --workspaces",
+        "clean": "npm run clean --workspaces --if-present && git clean -fdX ",
         "lint": "npm run lint --workspaces",
         "format": "npm run format --workspaces",
         "test:unit": "npm run test:unit --workspaces",
