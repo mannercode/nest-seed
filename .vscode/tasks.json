@@ -40,6 +40,7 @@
             "options": [
                 "npm run test:unit",
                 "npm run test:e2e",
+                "npm run test:stress",
                 "npm run test:unit -w libs",
                 "npm run test:unit -w apis/mono",
                 "npm run test:unit -w apis/msa",

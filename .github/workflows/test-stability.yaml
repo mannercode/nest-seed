@@ -35,4 +35,4 @@ jobs:
                   push: never
                   runCmd: |
                       set -Eeuo pipefail
-                      bash .github/scripts/repeat.sh 50 npm run test:e2e
+                      bash .github/scripts/repeat.sh 50 npm run test:stress
