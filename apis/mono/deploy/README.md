@@ -10,19 +10,20 @@ MongoDB, Redis 등 인프라는 이미 존재한다고 전제한다.
 ```bash
 cp .env.example .env   # 환경변수 편집
 ./deploy.sh            # 운영 배포
-./test.sh              # 배포 + 스트레스 테스트 (완료 후 자동 정리)
+./test-stress.sh       # 스트레스 테스트 (완료 후 자동 정리)
 ```
 
 ## 구성
 
-| 파일            | 설명                                |
-| --------------- | ----------------------------------- |
-| `compose.yml`   | app x N replicas + nginx 로드밸런서 |
-| `nginx.conf`    | least_conn 방식 리버스 프록시       |
-| `deploy.sh`     | 운영 배포                           |
-| `test.sh`       | 배포 + 스트레스 테스트 + 정리       |
-| `e2e/stress.sh` | docs/api 스펙을 동시 다발로 실행    |
-| `.env.example`  | 환경변수 템플릿                     |
+| 파일               | 설명                                |
+| ------------------ | ----------------------------------- |
+| `compose.yml`      | app x N replicas + nginx 로드밸런서 |
+| `compose.e2e.yml`  | 단일 app + api-setup (e2e 테스트용) |
+| `nginx.conf`       | least_conn 방식 리버스 프록시       |
+| `deploy.sh`        | 운영 배포                           |
+| `test-e2e.sh`      | e2e 테스트 (단일 app, 1회 호출)     |
+| `test-stress.sh`   | 스트레스 테스트 (N replicas + nginx) |
+| `.env.example`     | 환경변수 템플릿                     |
 
 ## 주요 설정
 

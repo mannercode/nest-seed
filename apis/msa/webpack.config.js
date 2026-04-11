@@ -29,6 +29,6 @@ module.exports = (options) => {
         ...options,
         entry: path.resolve(dirname, 'production.ts'),
         output: { path: path.resolve(appDir, '_output/dist', outputDir), filename: 'index.js' },
-        externals: [nodeExternals({ modulesFromFile: true })]
+        externals: [nodeExternals({ modulesFromFile: true, allowlist: [/^@mannercode\//] })]
     }
 }

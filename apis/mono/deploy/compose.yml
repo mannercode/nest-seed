@@ -1,7 +1,8 @@
 x-app-base: &app-base
     environment:
         - NODE_ENV=production
-        - HTTP_PORT=3000
+        - PROJECT_ID=${PROJECT_ID}
+        - HTTP_PORT=${HTTP_PORT:-3000}
         - HTTP_REQUEST_PAYLOAD_LIMIT=${HTTP_REQUEST_PAYLOAD_LIMIT:-50mb}
         - HTTP_PAGINATION_DEFAULT_SIZE=${HTTP_PAGINATION_DEFAULT_SIZE:-50}
         - AUTH_ACCESS_SECRET=${AUTH_ACCESS_SECRET}
@@ -42,21 +43,26 @@ x-app-base: &app-base
         - LOG_CONSOLE_LEVEL=${LOG_CONSOLE_LEVEL:-info}
     logging: { options: { max-size: '10m', max-file: '3' } }
     extra_hosts: ['host.docker.internal:host-gateway']
-    restart: unless-stopped
     healthcheck:
         retries: 5
         start_period: 10s
         interval: 10s
         timeout: 5s
-        test: 'curl -fsS http://localhost:3000/health'
+        test: 'curl -fsS http://localhost:${HTTP_PORT:-3000}/health'
 
 services:
     app:
         <<: *app-base
-        build: { context: ../../../, dockerfile: apis/mono/Dockerfile }
+        build: { context: ../../.., dockerfile: apis/mono/Dockerfile }
         image: nest-mono
         deploy:
             replicas: ${REPLICAS:-4}
+
+    api-setup:
+        image: docker:cli
+        container_name: api-setup
+        depends_on:
+            app: { condition: service_healthy }
 
     nginx:
         image: nginx:alpine

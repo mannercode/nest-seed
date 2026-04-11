@@ -7,6 +7,7 @@ COPY package.json ./
 COPY libs/common/package.json libs/common/
 COPY libs/microservices/package.json libs/microservices/
 COPY libs/testing/package.json libs/testing/
+COPY libs/testing-microservices/package.json libs/testing-microservices/
 COPY apis/msa/package.json apis/msa/
 RUN npm install
 
@@ -28,13 +29,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
     npm cache clean --force
 WORKDIR /monorepo/apis/msa
-COPY --from=build /monorepo/package.json /monorepo/
-COPY --from=build /monorepo/libs/common/package.json /monorepo/libs/common/
-COPY --from=build /monorepo/libs/common/_output/dist/ /monorepo/libs/common/_output/dist/
-COPY --from=build /monorepo/libs/microservices/package.json /monorepo/libs/microservices/
-COPY --from=build /monorepo/libs/microservices/_output/dist/ /monorepo/libs/microservices/_output/dist/
 COPY --from=build /monorepo/apis/msa/package.json /monorepo/apis/msa/
-RUN npm install --omit=dev --prefix /monorepo
+RUN cd /monorepo/apis/msa && npm install --omit=dev
 COPY --from=build /monorepo/apis/msa/_output/dist/index.js _output/dist/index.js
 COPY --from=build /monorepo/apis/msa/_output/dist/workflow-bundle.js _output/dist/workflow-bundle.js
 
