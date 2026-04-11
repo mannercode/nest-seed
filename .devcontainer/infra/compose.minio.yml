@@ -3,7 +3,7 @@ services:
         extends: { file: ./compose.common.yml, service: common-options }
         container_name: minio
         image: ${MINIO_IMAGE}
-        deploy: { resources: { limits: { memory: 512m } } }
+        deploy: { resources: { limits: { memory: 256m } } }
         shm_size: '8m'
         ports: ['9000:9000', '9001:9001']
         environment:

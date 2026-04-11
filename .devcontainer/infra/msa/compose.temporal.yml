@@ -30,7 +30,7 @@ services:
             test: ['CMD', 'tctl', '--address', 'temporal:7233', 'cluster', 'health']
             interval: 5s
             start_period: 20s
-        deploy: { resources: { limits: { memory: 512m } } }
+        deploy: { resources: { limits: { memory: 256m } } }
         shm_size: '16m'
 
     temporal-setup:
