@@ -32,8 +32,8 @@ cleanup() {
 trap cleanup EXIT
 
 echo "Building and deploying mono app..."
-REPLICAS=${REPLICAS:-4} docker compose --env-file "$ENV_FILE" up --build -d
-docker compose --env-file "$ENV_FILE" up --wait
+REPLICAS=${REPLICAS:-4} docker compose --env-file "$ENV_FILE" up -d --build
+docker wait api-setup && docker rm api-setup
 
 echo ""
 docker compose --env-file "$ENV_FILE" ps
