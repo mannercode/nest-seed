@@ -1,5 +1,10 @@
 require('reflect-metadata')
-const { CreateBucketCommand, S3Client } = require('@aws-sdk/client-s3')
+const {
+    CreateBucketCommand,
+    DeleteObjectsCommand,
+    ListObjectsV2Command,
+    S3Client
+} = require('@aws-sdk/client-s3')
 const { MongoClient } = require('mongodb')
 
 process.loadEnvFile('.env')
@@ -8,8 +13,16 @@ let mongoClient
 let s3Client
 
 beforeAll(async () => {
+    const workerId = process.env.JEST_WORKER_ID ?? '1'
+    process.env.MONGO_DATABASE = `mongo-w${workerId}`
+    process.env.S3_BUCKET = `s3bucket-w${workerId}`
+
     mongoClient = await connectMongo()
     s3Client = createS3Client()
+
+    await ensureBucket(process.env.S3_BUCKET)
+    await cleanDatabase()
+    await emptyBucket(s3Client, process.env.S3_BUCKET)
 })
 
 afterAll(async () => {
@@ -18,20 +31,36 @@ afterAll(async () => {
 
 beforeEach(async () => {
     const testId = generateTestId()
-
     process.env.TEST_ID = testId
     process.env.PROJECT_ID = `project-${testId}`
-    process.env.MONGO_DATABASE = `mongo-${testId}`
-
-    const bucket = `s3bucket${testId}`.toLowerCase()
-    process.env.S3_BUCKET = bucket
-
-    await s3Client.send(new CreateBucketCommand({ Bucket: bucket }))
 })
 
 afterEach(async () => {
-    await mongoClient.db(process.env.MONGO_DATABASE).dropDatabase()
+    await Promise.all([cleanDatabase(), emptyBucket(s3Client, process.env.S3_BUCKET)])
 })
+
+async function cleanDatabase() {
+    const db = mongoClient.db(process.env.MONGO_DATABASE)
+    const collections = await db.collections()
+    await Promise.all(collections.map((c) => c.deleteMany({})))
+}
+
+async function ensureBucket(bucket) {
+    try {
+        await s3Client.send(new CreateBucketCommand({ Bucket: bucket }))
+    } catch (err) {
+        if (err.name !== 'BucketAlreadyOwnedByYou' && err.name !== 'BucketAlreadyExists') {
+            throw err
+        }
+    }
+}
+
+function generateTestId() {
+    const chars = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
+    return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join(
+        ''
+    )
+}
 
 async function connectMongo() {
     const nodes = [
@@ -60,9 +89,23 @@ function createS3Client() {
     })
 }
 
-function generateTestId() {
-    const chars = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
-    return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join(
-        ''
-    )
+async function emptyBucket(client, bucket) {
+    let continuationToken
+
+    do {
+        const listed = await client.send(
+            new ListObjectsV2Command({ Bucket: bucket, ContinuationToken: continuationToken })
+        )
+
+        if (listed.Contents?.length) {
+            await client.send(
+                new DeleteObjectsCommand({
+                    Bucket: bucket,
+                    Delete: { Objects: listed.Contents.map((o) => ({ Key: o.Key })) }
+                })
+            )
+        }
+
+        continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined
+    } while (continuationToken)
 }

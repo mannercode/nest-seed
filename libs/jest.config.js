@@ -7,6 +7,7 @@ const tsJestPreset = createDefaultPreset({ tsconfig: join(__dirname, 'tsconfig.j
 module.exports = {
     ...tsJestPreset,
     globalSetup: join(__dirname, 'jest.global.js'),
+    globalTeardown: join(__dirname, 'jest.teardown.js'),
     setupFilesAfterEnv: [join(__dirname, 'jest.setup.js')],
     testRegex: '(__tests__/.*\\.spec\\.ts)$',
     testEnvironment: 'node',

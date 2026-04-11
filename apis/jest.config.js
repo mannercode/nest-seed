@@ -10,6 +10,7 @@ const { compilerOptions } = tsconfig
 module.exports = {
     ...tsJestPreset,
     globalSetup: path.resolve(__dirname, 'jest.global.js'),
+    globalTeardown: path.resolve(__dirname, 'jest.teardown.js'),
     setupFilesAfterEnv: [path.resolve(__dirname, 'jest.setup.js')],
     moduleFileExtensions: ['js', 'json', 'ts'],
     testRegex: '(__tests__/.*\\.spec\\.ts)$',
