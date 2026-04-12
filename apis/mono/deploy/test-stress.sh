@@ -31,6 +31,15 @@ cleanup() {
 }
 trap cleanup EXIT
 
+echo "Cleaning up infra data from previous runs..."
+source "$ENV_FILE"
+
+docker exec mongo1 mongosh \
+    "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOST1}:${MONGO_PORT1}/?replicaSet=${MONGO_REPLICA_SET}" \
+    --quiet --eval "db.getSiblingDB('${MONGO_DATABASE}').dropDatabase()"
+
+docker exec redis1 redis-cli -c FLUSHALL >/dev/null
+
 echo "Building and deploying mono app..."
 REPLICAS=${REPLICAS:-4} docker compose --env-file "$ENV_FILE" up -d --build
 docker wait api-setup && docker rm api-setup
