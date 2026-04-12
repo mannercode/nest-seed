@@ -92,6 +92,7 @@ run_client() {
 TOTAL=0
 PASSED=0
 FAILED=0
+FAILED_LOGS=()
 
 for ((round = 1; round <= ROUNDS; round++)); do
     echo -e "${BOLD}Round ${round}/${ROUNDS}${RESET}"
@@ -111,7 +112,9 @@ for ((round = 1; round <= ROUNDS; round++)); do
             echo -e "  ${GREEN}[PASS]${RESET} client ${client}"
         else
             FAILED=$((FAILED + 1))
-            echo -e "  ${RED}[FAIL]${RESET} client ${client} (see ${LOG_DIR}/client_${client}_round_${round}.log)"
+            local fail_log="${LOG_DIR}/client_${client}_round_${round}.log"
+            echo -e "  ${RED}[FAIL]${RESET} client ${client} (see ${fail_log})"
+            FAILED_LOGS+=("${fail_log}")
         fi
     done
 
@@ -125,5 +128,11 @@ echo -e "  failed : ${RED}${FAILED}${RESET}"
 echo -e "  logs   : ${CYAN}${LOG_DIR}${RESET}"
 
 if [[ "${FAILED}" -gt 0 ]]; then
+    echo ""
+    for log in "${FAILED_LOGS[@]}"; do
+        echo -e "${BOLD}${RED}=== ${log} ===${RESET}"
+        cat "${log}"
+        echo ""
+    done
     exit 1
 fi
