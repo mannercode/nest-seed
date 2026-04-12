@@ -1,0 +1,260 @@
+# ==============================================================================
+# Kong DB-less 선언형 설정 — 기능별 데모
+# ==============================================================================
+#
+# Kong 주요 개념:
+#   Service  = 백엔드 서비스 (업스트림 URL)
+#   Route    = 어떤 요청을 어떤 Service로 보낼지 결정하는 규칙
+#   Plugin   = Route/Service/전역에 적용되는 미들웨어 (인증, 제한, 로깅 등)
+#   Consumer = API를 사용하는 클라이언트 (인증 자격증명을 가짐)
+#   Upstream = 로드밸런싱할 백엔드 서버 그룹
+#
+# 구조:
+#   클라이언트 → Kong (:8000) ─┬─ /users/**    → users    (:3001)
+#                              ├─ /products/** → products (:3002) [rate-limit, cache]
+#                              └─ /orders/**   → orders   (:3003) [API key 인증 필요]
+
+_format_version: '3.0'
+_transform: true
+
+# ==============================================================================
+# 1. Global Plugins — 모든 서비스/라우트에 적용
+# ==============================================================================
+plugins:
+    # ── CORS (Cross-Origin Resource Sharing) ──
+    # 브라우저에서 다른 도메인의 API를 호출할 때 필요.
+    # 프론트엔드(localhost:5173)에서 API(localhost:8000)를 호출하는 상황.
+    # 이 플러그인 없으면 브라우저가 CORS 에러로 요청을 차단한다.
+    - name: cors
+      config:
+          origins:
+              - '*' # 모든 도메인 허용 (프로덕션에서는 특정 도메인만)
+          methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+          headers:
+              - Content-Type
+              - Authorization
+              - apikey
+          max_age: 3600 # preflight 응답 캐시 시간 (초)
+
+    # ── Correlation ID ──
+    # 모든 요청에 고유한 추적 ID를 부여한다.
+    # MSA에서 하나의 요청이 여러 서비스를 거칠 때, 이 ID로 전체 흐름을 추적한다.
+    # 응답 헤더와 업스트림 요청 헤더 모두에 Kong-Request-ID가 추가된다.
+    - name: correlation-id
+      config:
+          header_name: Kong-Request-ID
+          generator: uuid # 요청마다 UUID 생성
+          echo_downstream: true # 응답 헤더에도 포함
+
+# ==============================================================================
+# 2. Services + Routes + Route-specific Plugins
+# ==============================================================================
+services:
+    # ──────────────────────────────────────────────────────────────────────
+    # users 서비스 — Request/Response Transformer 데모
+    # ──────────────────────────────────────────────────────────────────────
+    # Kong이 요청/응답 헤더를 자동으로 추가·수정·삭제할 수 있다.
+    # 백엔드 코드를 수정하지 않고도 헤더를 조작할 수 있어서 유용하다.
+    - name: users
+      url: http://users:3001
+      routes:
+          - name: users-route
+            paths:
+                - /users
+            strip_path: false
+            plugins:
+                # ── Request Transformer ──
+                # Kong → 업스트림으로 전달되는 요청에 헤더를 추가한다.
+                # 백엔드는 이 헤더로 요청이 Kong을 경유했음을 알 수 있다.
+                - name: request-transformer
+                  config:
+                      add:
+                          headers:
+                              - 'X-Via-Kong: true'
+                              - 'X-Service-Name: users'
+
+                # ── Response Transformer ──
+                # 업스트림 → 클라이언트로 가는 응답에 헤더를 추가한다.
+                # API 버전, 캐시 정책 등을 Kong 레벨에서 일괄 적용할 때 유용하다.
+                - name: response-transformer
+                  config:
+                      add:
+                          headers:
+                              - 'X-API-Version: v1'
+                              - 'X-Powered-By: Kong'
+
+    # ──────────────────────────────────────────────────────────────────────
+    # products 서비스 — Rate Limiting + Proxy Cache 데모
+    # ──────────────────────────────────────────────────────────────────────
+    - name: products
+      url: http://products:3002
+      routes:
+          - name: products-route
+            paths:
+                - /products
+            strip_path: false
+            plugins:
+                # ── Rate Limiting ──
+                # 클라이언트당 API 호출 횟수를 제한한다.
+                # DDoS 방어, 과도한 크롤링 차단, 요금제별 차등 제한 등에 사용.
+                # 제한 초과 시 429 Too Many Requests를 반환한다.
+                - name: rate-limiting
+                  config:
+                      minute: 10 # 분당 10회 제한
+                      policy: local # 카운터 저장 위치 (local/redis/cluster)
+                      # 응답 헤더에 남은 횟수가 표시된다:
+                      #   X-RateLimit-Limit-Minute: 10
+                      #   X-RateLimit-Remaining-Minute: 9
+
+                # ── Proxy Cache ──
+                # GET 응답을 Kong 내부에 캐시하여 백엔드 부하를 줄인다.
+                # 동일한 GET 요청이 오면 백엔드에 전달하지 않고 캐시된 응답을 반환한다.
+                # 응답 헤더로 캐시 상태를 확인할 수 있다:
+                #   X-Cache-Status: Hit (캐시 적중) / Miss (캐시 미스) / Bypass (캐시 안 함)
+                - name: proxy-cache
+                  config:
+                      strategy: memory # 메모리에 캐시 (redis도 가능)
+                      content_type:
+                          - application/json
+                      cache_ttl: 30 # 캐시 유지 시간 (초)
+                      request_method:
+                          - GET # GET 요청만 캐시
+
+                # ── Request Size Limiting ──
+                # 요청 본문(body) 크기를 제한한다.
+                # 대용량 파일 업로드 방어, 서버 메모리 보호에 사용.
+                # 초과 시 413 Payload Too Large를 반환한다.
+                - name: request-size-limiting
+                  config:
+                      allowed_payload_size: 1 # 1MB 제한
+                      size_unit: megabytes
+
+    # ──────────────────────────────────────────────────────────────────────
+    # orders 서비스 — API Key Authentication + ACL 데모
+    # ──────────────────────────────────────────────────────────────────────
+    # 인증 없이 접근하면 Kong이 401 Unauthorized를 반환한다.
+    # 백엔드에 인증 로직이 없어도 Kong이 대신 처리해준다.
+    - name: orders
+      url: http://orders:3003
+      routes:
+          - name: orders-route
+            paths:
+                - /orders
+            strip_path: false
+            plugins:
+                # ── Key Authentication ──
+                # 요청에 API 키가 있어야 통과시킨다.
+                # 키는 헤더(apikey), 쿼리스트링(?apikey=xxx), 또는 본문에 넣을 수 있다.
+                # 통과하면 Kong이 X-Consumer-Username, X-Consumer-ID 헤더를 추가해준다.
+                - name: key-auth
+                  config:
+                      key_names:
+                          - apikey # 이 이름의 헤더 또는 쿼리 파라미터에서 키를 찾는다
+                      hide_credentials: true # 업스트림에 apikey 헤더를 전달하지 않는다
+
+                # ── ACL (Access Control List) ──
+                # Consumer가 특정 그룹에 속해 있어야 접근을 허용한다.
+                # Key Auth로 "누구인지" 확인한 뒤, ACL로 "권한이 있는지" 확인하는 2단계.
+                - name: acl
+                  config:
+                      allow:
+                          - order-managers # 이 그룹에 속한 Consumer만 접근 가능
+
+                # ── Rate Limiting (인증된 사용자별) ──
+                # Consumer 단위로 호출 횟수를 제한한다.
+                # 전역 rate-limit과 달리 인증된 사용자마다 개별 카운터를 가진다.
+                - name: rate-limiting
+                  config:
+                      minute: 30
+                      policy: local
+                      limit_by: consumer # IP가 아닌 Consumer별로 제한
+
+    # ──────────────────────────────────────────────────────────────────────
+    # IP Restriction 데모 — 내부 전용 엔드포인트
+    # ──────────────────────────────────────────────────────────────────────
+    # 특정 IP만 접근할 수 있도록 제한한다.
+    # 관리자 대시보드, 내부 API, 모니터링 엔드포인트 등에 사용.
+    # 허용되지 않은 IP에서 접근하면 403 Forbidden을 반환한다.
+    - name: users-internal
+      url: http://users:3001
+      routes:
+          - name: internal-health-route
+            paths:
+                - /internal/health
+            strip_path: true # /internal/health → /users/health로 변환
+            plugins:
+                - name: ip-restriction
+                  config:
+                      allow:
+                          - 172.16.0.0/12 # Docker 내부 네트워크
+                          - 127.0.0.1 # 로컬호스트
+                      # deny로 특정 IP를 차단할 수도 있다
+
+                # ── Request Termination ──
+                # 특정 조건에서 요청을 즉시 차단하고 커스텀 응답을 반환한다.
+                # 서비스 점검, 특정 경로 비활성화, 리다이렉션 등에 사용.
+                # 여기서는 IP 제한에 걸린 경우의 대안 예시로 포함.
+                # (실제로는 ip-restriction과 동시에 적용하면 ip-restriction이 먼저 동작)
+
+# ==============================================================================
+# 3. Consumers — API를 사용하는 클라이언트 정의
+# ==============================================================================
+# Consumer = API 사용자. 사람이 아니라 "클라이언트 앱"이라고 생각하면 된다.
+# 모바일 앱, 파트너사 서버, 프론트엔드 등 각각을 Consumer로 등록한다.
+consumers:
+    # 관리자 앱
+    - username: admin-app
+      keyauth_credentials:
+          - key: admin-secret-key-123 # 이 키로 인증
+      acls:
+          - group: order-managers # orders 접근 권한 그룹
+
+    # 파트너사 앱
+    - username: partner-app
+      keyauth_credentials:
+          - key: partner-key-456
+      acls:
+          - group: order-managers
+
+    # 일반 앱 (ACL 그룹 없음 → orders 접근 불가)
+    - username: public-app
+      keyauth_credentials:
+          - key: public-key-789
+      # acls 없음 → key-auth는 통과하지만 ACL에서 403 Forbidden
+
+# ==============================================================================
+# 4. Upstreams — 로드밸런싱 설정
+# ==============================================================================
+# 하나의 서비스에 여러 인스턴스(target)를 등록하면
+# Kong이 자동으로 요청을 분산한다.
+#
+# 이 설정을 사용하려면 service.url 대신 service.host에 upstream 이름을 지정한다.
+# 예: url: http://products-upstream:3002
+#
+# 아래는 참고용 설정이다. 실제 활성화하려면 products 서비스의 url을 변경해야 한다.
+upstreams:
+    - name: products-upstream
+      # 로드밸런싱 알고리즘
+      algorithm: round-robin # round-robin / consistent-hashing / least-connections / latency
+      # Health Check: 백엔드가 죽었는지 주기적으로 확인한다.
+      # 죽은 인스턴스는 자동으로 제외하고, 살아나면 다시 포함시킨다.
+      healthchecks:
+          active:
+              http_path: /products/health
+              healthy:
+                  interval: 5 # 5초마다 헬스체크
+                  successes: 2 # 2회 연속 성공하면 healthy로 판단
+              unhealthy:
+                  interval: 5
+                  http_failures: 3 # 3회 연속 실패하면 unhealthy로 판단
+      targets:
+          - target: products:3002
+            weight: 100 # 가중치 (트래픽 비율 조절)
+          # 인스턴스를 추가하려면:
+          # - target: products-2:3002
+          #   weight: 100
