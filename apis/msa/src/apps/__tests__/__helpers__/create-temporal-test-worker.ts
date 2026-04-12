@@ -29,6 +29,7 @@ export async function createTemporalTestWorker(options: TemporalTestWorkerOption
         async shutdown() {
             worker.shutdown()
             await runPromise
+            await connection.close()
         }
     }
 }
