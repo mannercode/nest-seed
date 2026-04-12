@@ -11,8 +11,8 @@ if [ ! -f "$ENV_FILE" ]; then
     exit 1
 fi
 
-CLIENTS=${CLIENTS:-20}
-ROUNDS=${ROUNDS:-10}
+CLIENTS=${CLIENTS:-10}
+ROUNDS=${ROUNDS:-20}
 LISTEN_PORT=${LISTEN_PORT:-3000}
 SERVER_URL="http://localhost:${LISTEN_PORT}"
 API_SPEC_DIR="${SCRIPT_DIR}/specs"
