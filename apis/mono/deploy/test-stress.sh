@@ -32,13 +32,37 @@ cleanup() {
 trap cleanup EXIT
 
 echo "Cleaning up infra data from previous runs..."
-source "$ENV_FILE"
+node -e "
+const { MongoClient } = require('mongodb');
+const Redis = require('ioredis');
+(async () => {
+    const nodes = [
+        process.env.MONGO_HOST1 + ':' + process.env.MONGO_PORT1,
+        process.env.MONGO_HOST2 + ':' + process.env.MONGO_PORT2,
+        process.env.MONGO_HOST3 + ':' + process.env.MONGO_PORT3,
+    ].join(',');
+    const mongo = new MongoClient(
+        'mongodb://' + process.env.MONGO_USERNAME + ':' + process.env.MONGO_PASSWORD +
+        '@' + nodes + '/?replicaSet=' + process.env.MONGO_REPLICA_SET
+    );
+    await mongo.connect();
+    await mongo.db(process.env.MONGO_DATABASE).dropDatabase();
+    await mongo.close();
 
-docker exec mongo1 mongosh \
-    "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOST1}:${MONGO_PORT1}/?replicaSet=${MONGO_REPLICA_SET}" \
-    --quiet --eval "db.getSiblingDB('${MONGO_DATABASE}').dropDatabase()"
-
-docker exec redis1 redis-cli -c FLUSHALL >/dev/null
+    const redisNodes = [
+        { host: process.env.REDIS_HOST1, port: +process.env.REDIS_PORT1 },
+        { host: process.env.REDIS_HOST2, port: +process.env.REDIS_PORT2 },
+        { host: process.env.REDIS_HOST3, port: +process.env.REDIS_PORT3 },
+        { host: process.env.REDIS_HOST4, port: +process.env.REDIS_PORT4 },
+        { host: process.env.REDIS_HOST5, port: +process.env.REDIS_PORT5 },
+        { host: process.env.REDIS_HOST6, port: +process.env.REDIS_PORT6 },
+    ];
+    const cluster = new Redis.Cluster(redisNodes);
+    const masters = cluster.nodes('master');
+    await Promise.all(masters.map(n => n.flushall()));
+    await cluster.quit();
+})();
+"
 
 echo "Building and deploying mono app..."
 REPLICAS=${REPLICAS:-4} docker compose --env-file "$ENV_FILE" up -d --build
