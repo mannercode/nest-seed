@@ -19,6 +19,7 @@ import {
 @Module({ imports: [PurchaseModule, ShowtimeCreationModule] })
 export class TemporalWorkerModule implements OnModuleInit, OnModuleDestroy {
     private worker!: Worker
+    private connection!: NativeConnection
 
     constructor(
         private readonly config: AppConfigService,
@@ -33,7 +34,7 @@ export class TemporalWorkerModule implements OnModuleInit, OnModuleDestroy {
     ) {}
 
     async onModuleInit() {
-        const connection = await NativeConnection.connect({ address: this.config.temporal.address })
+        this.connection = await NativeConnection.connect({ address: this.config.temporal.address })
 
         const workflowBundle = await this.loadWorkflowBundle()
 
@@ -52,7 +53,7 @@ export class TemporalWorkerModule implements OnModuleInit, OnModuleDestroy {
         })
 
         this.worker = await Worker.create({
-            connection,
+            connection: this.connection,
             namespace: this.config.temporal.namespace,
             taskQueue: getTemporalTaskQueue(),
             workflowBundle,
@@ -64,6 +65,7 @@ export class TemporalWorkerModule implements OnModuleInit, OnModuleDestroy {
 
     async onModuleDestroy() {
         this.worker.shutdown()
+        await this.connection.close()
     }
 
     private async loadWorkflowBundle() {
@@ -75,7 +77,7 @@ export class TemporalWorkerModule implements OnModuleInit, OnModuleDestroy {
         } catch {}
 
         return bundleWorkflowCode({
-            workflowsPath: path.resolve(process.cwd(), 'src/apps/applications/workflows/index.ts')
+            workflowsPath: path.resolve(process.cwd(), 'src/apps/applications/workflows.ts')
         })
     }
 }

@@ -11,7 +11,7 @@ on_failure () {
     for id in $(docker ps -aq); do
         name=$(docker inspect --format '{{.Name}} ({{.State.Status}})' "${id}")
         echo "========================= ${name} ========================="
-        docker logs --tail 500 "${id}"
+        docker logs --tail 200 "${id}"
     done
 }
 trap on_failure ERR

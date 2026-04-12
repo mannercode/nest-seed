@@ -3,7 +3,7 @@ const path = require('path')
 const fs = require('fs')
 
 async function main() {
-    const workflowsPath = path.resolve(__dirname, '../src/apps/applications/workflows/index.ts')
+    const workflowsPath = path.resolve(__dirname, '../src/apps/applications/workflows.ts')
 
     const outputDir = path.resolve(__dirname, '../_output/dist')
     fs.mkdirSync(outputDir, { recursive: true })

@@ -11,7 +11,7 @@ export async function createTemporalTestWorker(options: TemporalTestWorkerOption
     const connection = await NativeConnection.connect({ address })
 
     workflowBundleCache ??= await bundleWorkflowCode({
-        workflowsPath: require.resolve('../../applications/workflows')
+        workflowsPath: require.resolve('../../applications/workflows.ts')
     })
 
     const worker = await Worker.create({
