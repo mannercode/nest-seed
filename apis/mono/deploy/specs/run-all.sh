@@ -152,7 +152,7 @@ echo ""
 
 specs=()
 if [[ "$#" -eq 0 ]]; then
-	while IFS= read -r -d '' f; do specs+=("$f"); done < <(find ./specs -type f -name '*.spec' -print0 | sort -z)
+	while IFS= read -r -d '' f; do specs+=("$f"); done < <(find . -type f -name '*.spec' -print0 | sort -z)
 else
 	specs=("$@")
 fi
@@ -163,7 +163,7 @@ LOG_FILE=''
 LOG_DIR="$(pwd)/_output/logs/$(date '+%Y%m%d_%H%M%S')"
 
 for spepath in "${specs[@]}"; do
-	LOG_FILE="${LOG_DIR}/${spepath#./specs/}.log"
+	LOG_FILE="${LOG_DIR}/${spepath#./}.log"
 	mkdir -p "$(dirname "${LOG_FILE}")"
 	: >"${LOG_FILE}"
 

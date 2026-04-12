@@ -15,7 +15,7 @@ CLIENTS=${CLIENTS:-20}
 ROUNDS=${ROUNDS:-10}
 LISTEN_PORT=${LISTEN_PORT:-3000}
 SERVER_URL="http://localhost:${LISTEN_PORT}"
-API_SPEC_DIR="${SCRIPT_DIR}/api"
+API_SPEC_DIR="${SCRIPT_DIR}/specs"
 LOG_DIR="${SCRIPT_DIR}/_output/logs/$(date '+%Y%m%d_%H%M%S')"
 
 RESET='\033[0m'

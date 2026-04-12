@@ -38,11 +38,11 @@ prompt_selection() {
 	printf '%s\n' "${options[${current}]}"
 }
 
-mapfile -d '' -t all_specs < <(find ./specs -type f -name '*.spec' -print0 | sort -z)
+mapfile -d '' -t all_specs < <(find . -type f -name '*.spec' -print0 | sort -z)
 
 SPECS=()
 for spec in "${all_specs[@]}"; do
-	SPECS+=("${spec#./specs/}")
+	SPECS+=("${spec#./}")
 done
 
 printf '\n%b%s%b\n' "${C_BOLD}${C_BRIGHT_CYAN}" "Select e2e spec:" "${C_RESET}"
@@ -51,5 +51,5 @@ SELECTED_SPEC=$(prompt_selection "*.spec" "${SPECS[@]}")
 if [[ "${SELECTED_SPEC}" == "*.spec" ]]; then
 	bash ./run-all.sh
 else
-	bash ./run-all.sh "./specs/${SELECTED_SPEC}"
+	bash ./run-all.sh "./${SELECTED_SPEC}"
 fi
