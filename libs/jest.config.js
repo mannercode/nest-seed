@@ -23,5 +23,6 @@ module.exports = {
     coveragePathIgnorePatterns: ['__tests__', '/index\\.ts$'],
     coverageThreshold: { global: { branches: 100, functions: 100, lines: 100, statements: 100 } },
     coverageReporters: ['lcov', 'text'],
+    maxWorkers: '50%',
     testTimeout: 60 * 1000
 }
