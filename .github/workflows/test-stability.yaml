@@ -22,7 +22,7 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
                       npm run build
-                      bash .github/scripts/repeat.sh 100 npm run test:unit -w libs/common -w libs/microservices -w libs/testing -w libs/testing-microservices
+                      bash .github/scripts/repeat.sh 100 npm run test:unit -w libs
     unit-mono:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
