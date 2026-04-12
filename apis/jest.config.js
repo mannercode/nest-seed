@@ -36,7 +36,6 @@ module.exports = {
         '/workflows'
     ],
     coverageDirectory: '<rootDir>/_output/coverage',
-    maxWorkers: '50%',
     testTimeout: 60 * 1000
     // for ECM modules:
     // https://github.com/kulshekhar/ts-jest/tree/main/examples/js-with-ts
