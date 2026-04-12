@@ -27,11 +27,11 @@ export class BookingHttpController {
     @UseGuards(CustomerJwtAuthGuard)
     async holdTickets(
         @Param('showtimeId') showtimeId: string,
-        @Body('ticketIds') ticketIds: string[],
+        @Body() body: { ticketIds: string[] },
         @Req() req: CustomerAuthRequest
     ) {
         const customerId = req.user.customerId
-        return this.service.holdTickets({ customerId, showtimeId, ticketIds })
+        return this.service.holdTickets({ customerId, showtimeId, ticketIds: body.ticketIds })
     }
 
     @Get('movies/:movieId/theaters/:theaterId/showdates')
