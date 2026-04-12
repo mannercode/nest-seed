@@ -91,4 +91,4 @@ jobs:
                   push: never
                   runCmd: |
                       set -Eeuo pipefail
-                      bash .github/scripts/repeat.sh 3 npm run test:stress -w apis/mono
+                      bash .github/scripts/repeat.sh 100 npm run test:stress -w apis/mono
