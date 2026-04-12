@@ -51,7 +51,7 @@ jobs:
                       set -Eeuo pipefail
                       npm run build
                       bash .github/scripts/repeat.sh 100 npm run test:unit -w apis/msa
-    bootup:
+    bootup-mono:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
         steps:
@@ -64,7 +64,21 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
                       npm run build
-                      bash .github/scripts/repeat.sh 20 bash .github/scripts/bootup-test.sh
+                      bash .github/scripts/repeat.sh 20 bash .github/scripts/bootup-test.sh mono
+    bootup-msa:
+        runs-on: ubuntu-24.04-arm
+        timeout-minutes: 360
+        steps:
+            - uses: actions/checkout@v5
+            - name: Run in devcontainer
+              uses: devcontainers/ci@v0.3
+              with:
+                  configFile: .devcontainer/devcontainer.json
+                  push: never
+                  runCmd: |
+                      set -Eeuo pipefail
+                      npm run build
+                      bash .github/scripts/repeat.sh 20 bash .github/scripts/bootup-test.sh msa
     stress-mono:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
