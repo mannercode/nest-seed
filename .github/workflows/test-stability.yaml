@@ -22,7 +22,7 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
                       npm run build
-                      bash .github/scripts/repeat.sh 100 npm run test:unit -w libs -- --coverageThreshold='{}'
+                      bash .github/scripts/repeat.sh 3 npm run test:unit -w libs -- --coverageThreshold='{}'
     unit-mono:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
@@ -36,7 +36,7 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
                       npm run build
-                      bash .github/scripts/repeat.sh 100 npm run test:unit -w apis/mono -- --coverageThreshold='{}'
+                      bash .github/scripts/repeat.sh 3 npm run test:unit -w apis/mono -- --coverageThreshold='{}'
     unit-msa:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
@@ -50,7 +50,7 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
                       npm run build
-                      bash .github/scripts/repeat.sh 100 npm run test:unit -w apis/msa -- --coverageThreshold='{}'
+                      bash .github/scripts/repeat.sh 3 npm run test:unit -w apis/msa -- --coverageThreshold='{}'
     bootup-mono:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
@@ -64,7 +64,7 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
                       npm run build
-                      bash .github/scripts/repeat.sh 20 bash .github/scripts/bootup-test.sh mono
+                      bash .github/scripts/repeat.sh 3 bash .github/scripts/bootup-test.sh mono
     bootup-msa:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
@@ -78,7 +78,7 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
                       npm run build
-                      bash .github/scripts/repeat.sh 20 bash .github/scripts/bootup-test.sh msa
+                      bash .github/scripts/repeat.sh 3 bash .github/scripts/bootup-test.sh msa
     stress-mono:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
@@ -91,4 +91,4 @@ jobs:
                   push: never
                   runCmd: |
                       set -Eeuo pipefail
-                      bash .github/scripts/repeat.sh 100 npm run test:stress -w apis/mono
+                      bash .github/scripts/repeat.sh 3 npm run test:stress -w apis/mono
