@@ -9,7 +9,7 @@ concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 jobs:
-    unit:
+    unit-libs:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
         steps:
@@ -22,8 +22,8 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
                       npm run build
-                      bash .github/scripts/repeat.sh 100 npm run test:unit
-    stress:
+                      bash .github/scripts/repeat.sh 100 npm run test:unit -w libs/common -w libs/microservices -w libs/testing -w libs/testing-microservices
+    unit-mono:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
         steps:
@@ -35,4 +35,46 @@ jobs:
                   push: never
                   runCmd: |
                       set -Eeuo pipefail
-                      bash .github/scripts/repeat.sh 100 npm run test:stress
+                      npm run build
+                      bash .github/scripts/repeat.sh 100 npm run test:unit -w apis/mono
+    unit-msa:
+        runs-on: ubuntu-24.04-arm
+        timeout-minutes: 360
+        steps:
+            - uses: actions/checkout@v5
+            - name: Run in devcontainer
+              uses: devcontainers/ci@v0.3
+              with:
+                  configFile: .devcontainer/devcontainer.json
+                  push: never
+                  runCmd: |
+                      set -Eeuo pipefail
+                      npm run build
+                      bash .github/scripts/repeat.sh 100 npm run test:unit -w apis/msa
+    bootup:
+        runs-on: ubuntu-24.04-arm
+        timeout-minutes: 360
+        steps:
+            - uses: actions/checkout@v5
+            - name: Run in devcontainer
+              uses: devcontainers/ci@v0.3
+              with:
+                  configFile: .devcontainer/devcontainer.json
+                  push: never
+                  runCmd: |
+                      set -Eeuo pipefail
+                      npm run build
+                      bash .github/scripts/repeat.sh 20 bash .github/scripts/bootup-test.sh
+    stress-mono:
+        runs-on: ubuntu-24.04-arm
+        timeout-minutes: 360
+        steps:
+            - uses: actions/checkout@v5
+            - name: Run in devcontainer
+              uses: devcontainers/ci@v0.3
+              with:
+                  configFile: .devcontainer/devcontainer.json
+                  push: never
+                  runCmd: |
+                      set -Eeuo pipefail
+                      bash .github/scripts/repeat.sh 100 npm run test:stress -w apis/mono
