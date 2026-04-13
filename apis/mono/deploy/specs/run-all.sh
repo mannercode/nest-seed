@@ -114,7 +114,8 @@ TEST() {
 		FAILED_TESTS=$((FAILED_TESTS + 1))
 		LOG_LINE "RES='${STATUS}(expected:${expected_status})"
 
-		printf '%b %s %s\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")"
+		printf '%b %s %s (got %s, expected %s)\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")" "${STATUS}" "${expected_status}"
+		printf '  %s\n' "${BODY}" | head -5
 	else
 		PASSED_TESTS=$((PASSED_TESTS + 1))
 		LOG_LINE "RES='${STATUS}"
