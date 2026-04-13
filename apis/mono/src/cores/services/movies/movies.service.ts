@@ -167,7 +167,7 @@ export class MoviesService {
         const assetIds = uniq(movies.flatMap((movie) => movie.assetIds))
 
         if (0 < assetIds.length) {
-            const assets = await this.assetsService.getMany(assetIds)
+            const assets = await this.assetsService.findMany(assetIds)
 
             const assetUrlById = new Map<string, string>()
 
@@ -176,9 +176,9 @@ export class MoviesService {
             })
 
             movies.forEach((movie, index) => {
-                dtos[index].imageUrls = movie.assetIds.map((assetId) =>
-                    ensure(assetUrlById.get(assetId))
-                )
+                dtos[index].imageUrls = movie.assetIds
+                    .filter((assetId) => assetUrlById.has(assetId))
+                    .map((assetId) => ensure(assetUrlById.get(assetId)))
             })
         }
 

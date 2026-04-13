@@ -72,6 +72,13 @@ export class AssetsService {
         return this.withDownloadInfo(dto)
     }
 
+    async findMany(assetIds: string[]) {
+        const assets = await this.repository.findByIds(assetIds)
+
+        const dtos = this.toDtos(assets)
+        return Promise.all(dtos.map((dto) => this.withDownloadInfo(dto)))
+    }
+
     async getMany(assetIds: string[]) {
         const assets = await this.repository.getByIds(assetIds)
 
