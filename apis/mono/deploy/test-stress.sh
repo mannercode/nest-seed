@@ -112,9 +112,8 @@ for ((round = 1; round <= ROUNDS; round++)); do
             echo -e "  ${GREEN}[PASS]${RESET} client ${client}"
         else
             FAILED=$((FAILED + 1))
-            local fail_log="${LOG_DIR}/client_${client}_round_${round}.log"
-            echo -e "  ${RED}[FAIL]${RESET} client ${client} (see ${fail_log})"
-            FAILED_LOGS+=("${fail_log}")
+            echo -e "  ${RED}[FAIL]${RESET} client ${client} (see ${LOG_DIR}/client_${client}_round_${round}.log)"
+            FAILED_LOGS+=("${LOG_DIR}/client_${client}_round_${round}.log")
         fi
     done
 
