@@ -133,5 +133,6 @@ if [[ "${FAILED}" -gt 0 ]]; then
         cat "${log}"
         echo ""
     done
+
     exit 1
 fi

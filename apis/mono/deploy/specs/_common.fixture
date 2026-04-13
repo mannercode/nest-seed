@@ -122,6 +122,8 @@ wait_for_showtime() {
 	LOG_JSON "${BODY}"
 	LOG_LINE "'"
 	LOG_LINE ""
+	echo "[FAIL] SETUP wait_for_showtime: timed out after ${attempts}s (movieId=${MOVIE_ID}, theaterId=${THEATER_ID})"
+	echo "  last response: ${BODY}" | head -5
 	exit 2
 }
 
@@ -149,6 +151,8 @@ wait_for_tickets() {
 	LOG_JSON "${BODY}"
 	LOG_LINE "'"
 	LOG_LINE ""
+	echo "[FAIL] SETUP wait_for_tickets: timed out after ${attempts}s (showtimeId=${SHOWTIME_ID}, ticketCount=${ticketCount})"
+	echo "  last response: ${BODY}" | head -5
 	exit 2
 }
 
