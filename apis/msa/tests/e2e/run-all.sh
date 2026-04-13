@@ -1,5 +1,6 @@
 #!/bin/bash
 set -Eeuo pipefail
+trap 'echo "[ERR] ${BASH_SOURCE[0]}:${LINENO} (exit code: $?)" >&2' ERR
 cd "$(dirname "$0")"
 . ./.env
 
@@ -48,12 +49,17 @@ CURL() {
 	local url=$2
 	shift 2
 
-	if response=$(curl -sSX "${method}" -w "%{http_code}" "${url}" "$@"); then
-		STATUS="${response:${#response}-3}"
-		BODY="${response:0:${#response}-3}"
-	else
+	local curl_exit=0
+	response=$(curl -sSX "${method}" -w "%{http_code}" "${url}" "$@") || curl_exit=$?
+
+	if [[ "${curl_exit}" -ne 0 ]]; then
+		printf '%b %s %s\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "${url}"
+		printf '  curl exit code: %d, response: %s\n' "${curl_exit}" "${response}"
 		exit 1
 	fi
+
+	STATUS="${response:${#response}-3}"
+	BODY="${response:0:${#response}-3}"
 }
 
 format_endpoint() {
@@ -114,7 +120,8 @@ TEST() {
 		FAILED_TESTS=$((FAILED_TESTS + 1))
 		LOG_LINE "RES='${STATUS}(expected:${expected_status})"
 
-		printf '%b %s %s\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")"
+		printf '%b %s %s (got %s, expected %s)\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")" "${STATUS}" "${expected_status}"
+		printf '  %s\n' "${BODY}" | head -5
 	else
 		PASSED_TESTS=$((PASSED_TESTS + 1))
 		LOG_LINE "RES='${STATUS}"
@@ -144,6 +151,8 @@ SETUP() {
 
 	if [[ "${STATUS}" -ge 400 ]]; then
 		LOG_LINE "# Setup failed"
+		printf '%b SETUP %s %s (status %s)\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")" "${STATUS}"
+		printf '  %s\n' "${BODY}" | head -5
 		exit 2
 	fi
 }
