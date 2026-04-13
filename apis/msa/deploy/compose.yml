@@ -84,13 +84,17 @@ services:
     applications:
         <<: *app-base
         build:
-            { context: ../.., dockerfile: apis/msa/Dockerfile, args: { TARGET_APP: applications } }
+            {
+                context: ../../..,
+                dockerfile: apis/msa/Dockerfile,
+                args: { TARGET_APP: applications }
+            }
         image: applications
         container_name: applications
 
     cores:
         <<: *app-base
-        build: { context: ../.., dockerfile: apis/msa/Dockerfile, args: { TARGET_APP: cores } }
+        build: { context: ../../.., dockerfile: apis/msa/Dockerfile, args: { TARGET_APP: cores } }
         image: cores
         container_name: cores
 
@@ -98,7 +102,7 @@ services:
         <<: *app-base
         build:
             {
-                context: ../..,
+                context: ../../..,
                 dockerfile: apis/msa/Dockerfile,
                 args: { TARGET_APP: infrastructures }
             }
