@@ -1,6 +1,6 @@
 x-app-base: &app-base
     env_file:
-        - .env
+        - ../.env
     environment:
         - NODE_ENV=production
         - MONGO_REPLICA_SET
