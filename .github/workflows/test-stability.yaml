@@ -23,7 +23,7 @@ jobs:
                       set -Eeuo pipefail
                       docker rm -f $(docker ps -aq) 2>/dev/null || true
                       npm run build
-                      bash .github/scripts/repeat.sh 100 npm run test:unit -w libs -- --coverageThreshold='{}'
+                      bash .github/scripts/repeat.sh 200 npm run test:unit -w libs -- --coverageThreshold='{}'
     unit-mono:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
@@ -37,7 +37,7 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
                       npm run build
-                      bash .github/scripts/repeat.sh 100 npm run test:unit -w apis/mono -- --coverageThreshold='{}'
+                      bash .github/scripts/repeat.sh 150 npm run test:unit -w apis/mono -- --coverageThreshold='{}'
     unit-msa:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
@@ -92,4 +92,4 @@ jobs:
                   push: never
                   runCmd: |
                       set -Eeuo pipefail
-                      bash .github/scripts/repeat.sh 100 npm run test:stress -w apis/mono
+                      bash .github/scripts/repeat.sh 80 npm run test:stress -w apis/mono

@@ -20,10 +20,10 @@
     "mounts": [
         "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind",
         "source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind",
-        "source=${localEnv:HOME}/.config/gh,target=/home/node/.config/gh,type=bind"
+        "source=${localEnv:HOME}/.config,target=/home/node/.config,type=bind"
     ],
     "initializeCommand": {
-        "prepare-mounts": "mkdir -p ${localEnv:HOME}/.claude ${localEnv:HOME}/.config/gh",
+        "prepare-mounts": "mkdir -p ${localEnv:HOME}/.claude ${localEnv:HOME}/.config",
         "prepare-files": "touch ${localEnv:HOME}/.claude.json"
     },
     "postCreateCommand": { "husky": "husky", "ci": "npm install" },
