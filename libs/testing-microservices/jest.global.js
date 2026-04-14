@@ -22,4 +22,6 @@ module.exports = async function globalSetup() {
 
     process.env.TESTLIB_NATS_OPTIONS = JSON.stringify(nats.getConnectionOptions())
     process.env.TESTLIB_TEMPORAL_ADDRESS = temporal.address
+
+    globalThis.__TEMPORAL_ENV__ = temporal
 }
