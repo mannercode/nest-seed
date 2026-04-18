@@ -20,7 +20,6 @@ import {
 export class TemporalWorkerModule implements OnModuleInit, OnModuleDestroy {
     private worker!: Worker
     private connection!: NativeConnection
-    private runPromise!: Promise<void>
 
     constructor(
         private readonly config: AppConfigService,
@@ -61,12 +60,11 @@ export class TemporalWorkerModule implements OnModuleInit, OnModuleDestroy {
             activities: { ...purchaseActivities, ...showtimeCreationActivities }
         })
 
-        this.runPromise = this.worker.run()
+        void this.worker.run()
     }
 
     async onModuleDestroy() {
         this.worker.shutdown()
-        await this.runPromise
         await this.connection.close()
     }
 
