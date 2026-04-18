@@ -117,6 +117,19 @@ for ((round = 1; round <= ROUNDS; round++)); do
         fi
     done
 
+    if [[ "${FAILED}" -gt 0 ]]; then
+        echo ""
+        echo -e "${BOLD}Capturing container state at round ${round}...${RESET}"
+        docker compose --env-file "$ENV_FILE" ps -a 2>/dev/null || true
+        for cid in $(docker compose --env-file "$ENV_FILE" ps -aq 2>/dev/null); do
+            cname=$(docker inspect --format '{{.Name}} ({{.State.Status}})' "$cid" 2>/dev/null || echo "$cid")
+            echo -e "${BOLD}--- logs ${cname} (last 50) ---${RESET}"
+            docker logs --tail 50 "$cid" 2>&1 || true
+            echo ""
+        done
+        break
+    fi
+
     echo ""
 done
 
