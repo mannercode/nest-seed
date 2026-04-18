@@ -1,6 +1,7 @@
 import type { CustomerDto, SearchCustomersPageDto } from 'cores'
 import { omit } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
+import superagent from 'superagent'
 import type { CustomersFixture } from './customers.fixture'
 import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
 
@@ -41,6 +42,38 @@ describe('CustomersService', () => {
                     .body(createDto)
                     .conflict(Errors.Customers.EmailAlreadyExists(createDto.email))
             })
+        })
+
+        // 같은 이메일로 동시에 여러 요청이 들어올 때
+        describe('when multiple requests create with the same email concurrently', () => {
+            // 정확히 하나는 201 Created, 나머지는 전부 409 Conflict 여야 한다 (500 노출 금지)
+            it(
+                'accepts exactly one request and rejects others with 409 only',
+                async () => {
+                    const email = 'race@mail.com'
+                    const count = 10
+                    const url = `${fix.httpClient.serverUrl}/customers`
+
+                    const responses = await Promise.all(
+                        Array.from({ length: count }, () =>
+                            superagent
+                                .post(url)
+                                .send(buildCreateCustomerDto({ email }))
+                                .ok(() => true)
+                        )
+                    )
+
+                    const statuses = responses.map((r) => r.status)
+                    const createdCount = statuses.filter((s) => s === 201).length
+                    const conflictCount = statuses.filter((s) => s === 409).length
+                    const otherStatuses = statuses.filter((s) => s !== 201 && s !== 409)
+
+                    expect(createdCount).toBe(1)
+                    expect(conflictCount).toBe(count - 1)
+                    expect(otherStatuses).toEqual([])
+                },
+                30 * 1000
+            )
         })
 
         // 필수 필드가 누락되었을 때

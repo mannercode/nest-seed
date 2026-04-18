@@ -8,6 +8,19 @@ export const newObjectIdString = () => new Types.ObjectId().toString()
 export const objectId = (id: string) => new Types.ObjectId(id)
 export const objectIds = (ids: string[]) => ids.map((id) => objectId(id))
 
+/**
+ * MongoDB duplicate key error (E11000) 판별.
+ * Unique index 위반시 race-safe 한 Conflict 처리를 위해 사용.
+ */
+export function isDuplicateKeyError(error: unknown): boolean {
+    return (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: unknown }).code === 11000
+    )
+}
+
 export type QueryBuilderOptions = { allowEmpty?: boolean }
 
 type Transform<T> = (value: T) => any

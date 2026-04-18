@@ -1,4 +1,4 @@
-import { mapDocToDto } from '@mannercode/common'
+import { isDuplicateKeyError, mapDocToDto } from '@mannercode/common'
 import { ConflictException, Injectable } from '@nestjs/common'
 import { CustomersRepository } from './customers.repository'
 import {
@@ -31,16 +31,17 @@ export class CustomersService {
     ) {}
 
     async create(createDto: CreateCustomerDto) {
-        const emailExists = await this.repository.existsByEmail(createDto.email)
-
-        if (emailExists) {
-            throw new ConflictException(CustomerErrors.EmailAlreadyExists(createDto.email))
-        }
-
         const password = await this.authenticationService.hash(createDto.password)
-        const newCustomer = await this.repository.create({ ...createDto, password })
 
-        return this.toDto(newCustomer)
+        try {
+            const newCustomer = await this.repository.create({ ...createDto, password })
+            return this.toDto(newCustomer)
+        } catch (error) {
+            if (isDuplicateKeyError(error)) {
+                throw new ConflictException(CustomerErrors.EmailAlreadyExists(createDto.email))
+            }
+            throw error
+        }
     }
 
     async deleteMany(customerIds: string[]): Promise<void> {
