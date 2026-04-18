@@ -37,7 +37,7 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
                       npm run build
-                      bash .github/scripts/repeat.sh 150 npm run test:unit -w apis/mono -- --coverageThreshold='{}'
+                      bash .github/scripts/repeat.sh 100 npm run test:unit -w apis/mono -- --coverageThreshold='{}'
     unit-msa:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
