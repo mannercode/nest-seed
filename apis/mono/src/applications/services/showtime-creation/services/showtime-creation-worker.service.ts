@@ -89,11 +89,28 @@ export class ShowtimeCreationWorkerService
     }
 
     private async compensate(sagaId: string) {
+        const targets = ['tickets', 'showtimes'] as const
         const results = await Promise.allSettled([
             this.ticketsService.deleteBySagaIds([sagaId]),
             this.showtimesService.deleteBySagaIds([sagaId])
         ])
-        this.logger.log('compensate completed', { sagaId, results: results.map((r) => r.status) })
+
+        const failures = results
+            .map((r, i) =>
+                r.status === 'rejected'
+                    ? {
+                          target: targets[i],
+                          reason: getByPath(r.reason, 'message', String(r.reason))
+                      }
+                    : null
+            )
+            .filter((f) => f !== null)
+
+        if (failures.length > 0) {
+            this.logger.error('compensate partial failure', { sagaId, failures })
+        } else {
+            this.logger.log('compensate completed', { sagaId })
+        }
     }
 
     private async processJobData({ createDto, sagaId }: ShowtimeCreationJobData) {
