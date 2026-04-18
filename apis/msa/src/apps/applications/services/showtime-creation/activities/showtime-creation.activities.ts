@@ -9,13 +9,21 @@ import type {
 } from '../services'
 import type { ShowtimeCreationEvents } from '../showtime-creation.events'
 
+/**
+ * Temporal payload 는 JSON 직렬화되므로 Date 는 string 으로 전달된다.
+ * Activity 내부에서 JsonUtil.reviveDates 로 Date 로 복원한다.
+ */
+export type SerializedBulkCreateShowtimesDto = Omit<BulkCreateShowtimesDto, 'startTimes'> & {
+    startTimes: string[]
+}
+
 export interface ShowtimeCreationActivities {
     emitStatusChanged(payload: ShowtimeCreationEvent): Promise<void>
     validateShowtimes(
-        createDto: BulkCreateShowtimesDto
+        createDto: SerializedBulkCreateShowtimesDto
     ): Promise<{ isValid: boolean; conflictingShowtimes: any[] }>
     createShowtimes(
-        createDto: BulkCreateShowtimesDto,
+        createDto: SerializedBulkCreateShowtimesDto,
         sagaId: string
     ): Promise<{ createdShowtimeCount: number; createdTicketCount: number }>
     compensateShowtimeCreation(sagaId: string): Promise<void>

@@ -1,5 +1,6 @@
 import { log, proxyActivities } from '@temporalio/workflow'
-import type { ShowtimeCreationActivities } from '../activities'
+import type { SerializedBulkCreateShowtimesDto, ShowtimeCreationActivities } from '../activities'
+import { ShowtimeCreationStatus } from '../services/types'
 
 const { emitStatusChanged, validateShowtimes, createShowtimes, compensateShowtimeCreation } =
     proxyActivities<ShowtimeCreationActivities>({
@@ -9,21 +10,16 @@ const { emitStatusChanged, validateShowtimes, createShowtimes, compensateShowtim
 
 export async function showtimeCreationWorkflow(input: {
     sagaId: string
-    createDto: {
-        durationInMinutes: number
-        movieId: string
-        startTimes: string[]
-        theaterIds: string[]
-    }
+    createDto: SerializedBulkCreateShowtimesDto
 }) {
     const { sagaId, createDto } = input
 
     log.info('showtimeCreationWorkflow', { sagaId })
 
     try {
-        await emitStatusChanged({ sagaId, status: 'processing' } as any)
+        await emitStatusChanged({ sagaId, status: ShowtimeCreationStatus.Processing })
 
-        const { isValid, conflictingShowtimes } = await validateShowtimes(createDto as any)
+        const { isValid, conflictingShowtimes } = await validateShowtimes(createDto)
         log.info('showtimeCreationWorkflow validateShowtimes completed', {
             sagaId,
             isValid,
@@ -31,15 +27,23 @@ export async function showtimeCreationWorkflow(input: {
         })
 
         if (isValid) {
-            const creationResult = await createShowtimes(createDto as any, sagaId)
+            const creationResult = await createShowtimes(createDto, sagaId)
             log.info('showtimeCreationWorkflow createShowtimes completed', {
                 sagaId,
                 ...creationResult
             })
 
-            await emitStatusChanged({ sagaId, status: 'succeeded', ...creationResult } as any)
+            await emitStatusChanged({
+                sagaId,
+                status: ShowtimeCreationStatus.Succeeded,
+                ...creationResult
+            })
         } else {
-            await emitStatusChanged({ conflictingShowtimes, sagaId, status: 'failed' } as any)
+            await emitStatusChanged({
+                conflictingShowtimes,
+                sagaId,
+                status: ShowtimeCreationStatus.Failed
+            })
         }
     } catch (error: unknown) {
         const cause = error instanceof Error && error.cause instanceof Error ? error.cause : error
@@ -52,10 +56,16 @@ export async function showtimeCreationWorkflow(input: {
 
         try {
             await compensateShowtimeCreation(sagaId)
-        } catch {
-            /* compensation best-effort */
+        } catch (compensateError) {
+            log.error('compensation failed', {
+                sagaId,
+                error:
+                    compensateError instanceof Error
+                        ? compensateError.message
+                        : String(compensateError)
+            })
         }
 
-        await emitStatusChanged({ message, sagaId, status: 'error' } as any)
+        await emitStatusChanged({ message, sagaId, status: ShowtimeCreationStatus.Error })
     }
 }

@@ -1,5 +1,6 @@
 import { log, proxyActivities } from '@temporalio/workflow'
-import type { PurchaseActivities, PurchaseInput } from '../activities'
+import type { PurchaseActivities } from '../activities'
+import type { CreatePurchaseDto } from '../dtos'
 
 const {
     validatePurchase,
@@ -14,7 +15,7 @@ const {
     retry: { maximumAttempts: 1 }
 })
 
-export async function purchaseWorkflow(createDto: PurchaseInput) {
+export async function purchaseWorkflow(createDto: CreatePurchaseDto) {
     const compensations: Array<() => Promise<void>> = []
 
     log.info('purchaseWorkflow', { customerId: createDto.customerId })
@@ -42,16 +43,24 @@ export async function purchaseWorkflow(createDto: PurchaseInput) {
         for (const compensation of compensations.reverse()) {
             try {
                 await compensation()
-            } catch {
-                /* compensation best-effort */
+            } catch (compensationError) {
+                log.error('compensation failed', {
+                    error:
+                        compensationError instanceof Error
+                            ? compensationError.message
+                            : String(compensationError)
+                })
             }
         }
 
         try {
             log.warn('purchaseWorkflow rollbackPurchase', { customerId: createDto.customerId })
             await rollbackPurchase(createDto)
-        } catch {
-            /* rollback best-effort */
+        } catch (rollbackError) {
+            log.error('rollback failed', {
+                error:
+                    rollbackError instanceof Error ? rollbackError.message : String(rollbackError)
+            })
         }
 
         throw error

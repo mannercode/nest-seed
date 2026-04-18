@@ -1,33 +1,18 @@
-import type { PurchaseRecordsClient } from 'cores'
+import type { CreatePurchaseRecordDto, PurchaseRecordDto, PurchaseRecordsClient } from 'cores'
 import type { PaymentsClient } from 'infrastructures'
 import { HttpException } from '@nestjs/common'
 import { log, ApplicationFailure } from '@temporalio/activity'
+import type { CreatePurchaseDto } from '../dtos'
 import type { TicketPurchaseService } from '../services'
 
-export type PurchaseInput = {
-    customerId: string
-    purchaseItems: Array<{ itemId: string; type: string }>
-    totalPrice: number
-}
-
 export interface PurchaseActivities {
-    validatePurchase(createDto: PurchaseInput): Promise<void>
+    validatePurchase(createDto: CreatePurchaseDto): Promise<void>
     createPayment(amount: number, customerId: string): Promise<{ id: string }>
-    createPurchaseRecord(
-        createDto: PurchaseInput & { paymentId: string }
-    ): Promise<{
-        id: string
-        customerId: string
-        paymentId: string
-        purchaseItems: Array<{ itemId: string; type: string }>
-        totalPrice: number
-        createdAt: Date
-        updatedAt: Date
-    }>
-    completePurchase(createDto: PurchaseInput): Promise<void>
+    createPurchaseRecord(createDto: CreatePurchaseRecordDto): Promise<PurchaseRecordDto>
+    completePurchase(createDto: CreatePurchaseDto): Promise<void>
     cancelPayment(paymentId: string): Promise<void>
     deletePurchaseRecord(purchaseRecordId: string): Promise<void>
-    rollbackPurchase(createDto: PurchaseInput): Promise<void>
+    rollbackPurchase(createDto: CreatePurchaseDto): Promise<void>
 }
 
 function rethrowAsApplicationFailure(error: unknown): never {
@@ -49,7 +34,7 @@ export function createPurchaseActivities(deps: {
         async validatePurchase(createDto) {
             log.info('validatePurchase', { customerId: createDto.customerId })
             try {
-                await deps.ticketPurchaseService.validatePurchase(createDto as any)
+                await deps.ticketPurchaseService.validatePurchase(createDto)
             } catch (error) {
                 rethrowAsApplicationFailure(error)
             }
@@ -63,14 +48,13 @@ export function createPurchaseActivities(deps: {
 
         async createPurchaseRecord(createDto) {
             log.info('createPurchaseRecord', { customerId: createDto.customerId })
-            const record = await deps.purchaseRecordsClient.create(createDto as any)
-            return record
+            return deps.purchaseRecordsClient.create(createDto)
         },
 
         async completePurchase(createDto) {
             log.info('completePurchase', { customerId: createDto.customerId })
             try {
-                await deps.ticketPurchaseService.completePurchase(createDto as any)
+                await deps.ticketPurchaseService.completePurchase(createDto)
             } catch (error) {
                 rethrowAsApplicationFailure(error)
             }
@@ -88,7 +72,7 @@ export function createPurchaseActivities(deps: {
 
         async rollbackPurchase(createDto) {
             log.warn('rollbackPurchase', { customerId: createDto.customerId })
-            await deps.ticketPurchaseService.rollbackPurchase(createDto as any)
+            await deps.ticketPurchaseService.rollbackPurchase(createDto)
         }
     }
 }
