@@ -1,4 +1,4 @@
-import { DynamicModule, Global, Inject, Module } from '@nestjs/common'
+import { DynamicModule, Global, Inject, Module, OnModuleDestroy } from '@nestjs/common'
 import { Client, Connection } from '@temporalio/client'
 
 export type TemporalClientModuleOptions = {
@@ -17,7 +17,13 @@ export function InjectTemporalClient(): ParameterDecorator {
 
 @Global()
 @Module({})
-export class TemporalClientModule {
+export class TemporalClientModule implements OnModuleDestroy {
+    constructor(@Inject(TEMPORAL_CONNECTION) private readonly connection: Connection) {}
+
+    async onModuleDestroy() {
+        await this.connection.close()
+    }
+
     static registerAsync(options: TemporalClientModuleOptions): DynamicModule {
         const { inject, useFactory } = options
 
