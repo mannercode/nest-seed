@@ -1,7 +1,9 @@
+const { builtinModules } = require('module')
 const tseslint = require('typescript-eslint')
 const perfectionistPlugin = require('eslint-plugin-perfectionist')
 const globals = require('globals')
 const unusedImportsPlugin = require('eslint-plugin-unused-imports')
+
 const baseGlobals = { ...globals.node, ...globals.es2025, module: 'readonly', require: 'readonly' }
 const barrelImportPatterns = [
     {
@@ -9,6 +11,20 @@ const barrelImportPatterns = [
         message: 'Import from the barrel (index.ts) instead of submodules.'
     }
 ]
+
+const escapeForRegex = (value) => value.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&')
+
+/**
+ * Regex string matching every Node.js builtin module (with or without "node:" prefix)
+ * and any subpath, e.g. fs, node:fs/promises, crypto, etc. Used by eslint-plugin-
+ * allowed-dependencies to ignore builtins.
+ */
+const nodeBuiltinModulePattern = `^(?:node:)?(?:${[
+    ...new Set(builtinModules.map((moduleName) => moduleName.replace(/^node:/, '').split('/')[0]))
+]
+    .sort()
+    .map(escapeForRegex)
+    .join('|')})(?:/.*)?$`
 const basePlugins = {
     '@typescript-eslint': tseslint.plugin,
     perfectionist: perfectionistPlugin,
@@ -59,4 +75,12 @@ const baseRules = {
     '@typescript-eslint/adjacent-overload-signatures': 'warn'
 }
 
-module.exports = { tseslint, baseGlobals, basePlugins, baseRules, barrelImportPatterns }
+module.exports = {
+    tseslint,
+    baseGlobals,
+    basePlugins,
+    baseRules,
+    barrelImportPatterns,
+    nodeBuiltinModulePattern,
+    escapeForRegex
+}

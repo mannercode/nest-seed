@@ -1,6 +1,11 @@
 {
     "compilerOptions": {
         "module": "commonjs",
+        // "node10" and "baseUrl" (set in each project's tsconfig) are both
+        // deprecated and will be removed in TypeScript 7. ignoreDeprecations
+        // silences the warning. When upgrading to TS 7, switch moduleResolution
+        // to "bundler" or "node16" and drop baseUrl (paths are resolved
+        // relative to the tsconfig by default now).
         "moduleResolution": "node10",
         "ignoreDeprecations": "6.0",
         "target": "ESNext",
@@ -8,7 +13,13 @@
         "types": ["node", "jest"],
 
         "strict": true,
+        // NestJS DI relies on constructor parameter initialization through the
+        // container, so property initializers are not required.
         "strictPropertyInitialization": false,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
 
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
@@ -16,7 +27,6 @@
         "sourceMap": true,
 
         "forceConsistentCasingInFileNames": true,
-        "noFallthroughCasesInSwitch": true,
 
         "resolveJsonModule": true,
         "esModuleInterop": true,

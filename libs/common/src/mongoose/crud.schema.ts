@@ -112,21 +112,21 @@ export function createCrudSchema<T>(cls: Type<T>): Schema<T> {
         // deletedAt null 을 주입한다
         schema.pre('bulkWrite', function (ops) {
             for (const op of ops) {
-                if ('updateOne' in op && op.updateOne) {
-                    op.updateOne.filter = { ...(op.updateOne.filter ?? {}), deletedAt: null }
-                } else if ('updateMany' in op && op.updateMany) {
-                    op.updateMany.filter = { ...(op.updateMany.filter ?? {}), deletedAt: null }
-                } else if ('replaceOne' in op && op.replaceOne) {
-                    op.replaceOne.filter = { ...(op.replaceOne.filter ?? {}), deletedAt: null }
-                } else if ('deleteOne' in op && op.deleteOne) {
-                    const filter = op.deleteOne.filter ?? {}
+                if ('updateOne' in op) {
+                    op.updateOne.filter = { ...op.updateOne.filter, deletedAt: null }
+                } else if ('updateMany' in op) {
+                    op.updateMany.filter = { ...op.updateMany.filter, deletedAt: null }
+                } else if ('replaceOne' in op) {
+                    op.replaceOne.filter = { ...op.replaceOne.filter, deletedAt: null }
+                } else if ('deleteOne' in op) {
+                    const filter = op.deleteOne.filter
                     delete (op as any).deleteOne
                     ;(op as any).updateOne = {
                         filter: { ...filter, deletedAt: null },
                         update: { deletedAt: new Date() }
                     }
-                } else if ('deleteMany' in op && op.deleteMany) {
-                    const filter = op.deleteMany.filter ?? {}
+                } else if ('deleteMany' in op) {
+                    const filter = op.deleteMany.filter
                     delete (op as any).deleteMany
                     ;(op as any).updateMany = {
                         filter: { ...filter, deletedAt: null },

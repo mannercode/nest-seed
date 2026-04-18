@@ -119,9 +119,7 @@ export class HttpTestClient {
         return this
     }
     async send(status: number, expected?: any): Promise<superagent.Response> {
-        // Without ok(() => true), status codes 400 and above will throw an exception.
-        // ok(() => true)를 하지 않으면 400 이상 상태 코드는 예외를 던진다.
-        const response = await this.agent.ok(() => true)
+        const response = await this.sendRaw()
 
         if (response.status !== status) {
             console.log(JSON.stringify(response.body))
@@ -129,12 +127,24 @@ export class HttpTestClient {
 
         expect(response.status).toEqual(status)
 
-        if (response.type === 'application/json') {
-            response.body = JsonUtil.parse(response.text)
-        }
-
         if (expected !== undefined) {
             expect(response.body).toEqual(expected)
+        }
+
+        return response
+    }
+    /**
+     * Send without asserting a specific status. Caller inspects response.status
+     * itself. Useful for concurrent/race tests where different requests may
+     * legitimately return different statuses.
+     */
+    async sendRaw(): Promise<superagent.Response> {
+        // Without ok(() => true), status codes 400 and above will throw an exception.
+        // ok(() => true)를 하지 않으면 400 이상 상태 코드는 예외를 던진다.
+        const response = await this.agent.ok(() => true)
+
+        if (response.type === 'application/json') {
+            response.body = JsonUtil.parse(response.text)
         }
 
         return response

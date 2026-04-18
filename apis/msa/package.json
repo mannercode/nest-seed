@@ -2,14 +2,6 @@
     "name": "nest-msa",
     "version": "0.0.2",
     "private": true,
-    "comments": {
-        "scripts": {
-            "TARGET_APP": [
-                "TARGET_APP must match a Nest project key defined in nest-cli.json.",
-                "Example: TARGET_APP=cores npm run bundle"
-            ]
-        }
-    },
     "scripts": {
         "start": "node _output/dist/${TARGET_APP}/index.js",
         "build": "echo 'skipped (use npm run bundle)'",

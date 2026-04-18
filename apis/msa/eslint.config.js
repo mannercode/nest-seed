@@ -1,4 +1,3 @@
-const { builtinModules } = require('module')
 const globals = require('globals')
 const allowedDependenciesPlugin = require('eslint-plugin-allowed-dependencies').default
 const jestPlugin = require('eslint-plugin-jest')
@@ -7,16 +6,10 @@ const {
     baseGlobals,
     basePlugins,
     baseRules,
-    barrelImportPatterns
+    barrelImportPatterns,
+    nodeBuiltinModulePattern
 } = require('../../eslint.config.base')
 
-const escapeForRegex = (value) => value.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&')
-const nodeBuiltinModulePattern = `^(?:node:)?(?:${[
-    ...new Set(builtinModules.map((moduleName) => moduleName.replace(/^node:/, '').split('/')[0]))
-]
-    .sort()
-    .map(escapeForRegex)
-    .join('|')})(?:/.*)?$`
 const internalAliasPattern = '^(?:applications|cores|infrastructures|config|@mannercode/.*)$'
 const dependencyIgnorePatterns = ['^\\.', nodeBuiltinModulePattern, internalAliasPattern]
 const sourceDependencyOptions = {

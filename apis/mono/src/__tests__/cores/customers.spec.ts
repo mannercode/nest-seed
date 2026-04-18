@@ -1,7 +1,6 @@
 import type { CustomerDto, SearchCustomersPageDto } from 'cores'
 import { omit } from '@mannercode/common'
-import { nullObjectId } from '@mannercode/testing'
-import superagent from 'superagent'
+import { HttpTestClient, nullObjectId } from '@mannercode/testing'
 import type { CustomersFixture } from './customers.fixture'
 import { buildCreateCustomerDto, createCustomer, Errors } from '../__helpers__'
 
@@ -52,18 +51,19 @@ describe('CustomersService', () => {
                 async () => {
                     const email = 'race@mail.com'
                     const count = 10
-                    const url = `${fix.httpClient.serverUrl}/customers`
+                    const serverUrl = fix.httpClient.serverUrl
 
-                    const responses = await Promise.all(
-                        Array.from({ length: count }, () =>
-                            superagent
-                                .post(url)
-                                .send(buildCreateCustomerDto({ email }))
-                                .ok(() => true)
-                        )
+                    const statuses = await Promise.all(
+                        Array.from({ length: count }, async () => {
+                            const client = new HttpTestClient(serverUrl)
+                            const response = await client
+                                .post('/customers')
+                                .body(buildCreateCustomerDto({ email }))
+                                .sendRaw()
+                            return response.status
+                        })
                     )
 
-                    const statuses = responses.map((r) => r.status)
                     const createdCount = statuses.filter((s) => s === 201).length
                     const conflictCount = statuses.filter((s) => s === 409).length
                     const otherStatuses = statuses.filter((s) => s !== 201 && s !== 409)
