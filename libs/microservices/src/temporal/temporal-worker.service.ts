@@ -12,32 +12,28 @@ export type TemporalWorkerOptions = {
 @Injectable()
 export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
     private worker!: Worker
-    private connection!: NativeConnection
-    private runPromise!: Promise<void>
 
     constructor(private readonly options: TemporalWorkerOptions) {}
 
     async onModuleInit() {
-        this.connection = await NativeConnection.connect({ address: this.options.address })
+        const connection = await NativeConnection.connect({ address: this.options.address })
 
         const workflowBundle = await bundleWorkflowCode({
             workflowsPath: this.options.workflowsPath
         })
 
         this.worker = await Worker.create({
-            connection: this.connection,
+            connection,
             namespace: this.options.namespace,
             taskQueue: this.options.taskQueue,
             workflowBundle,
             activities: this.options.activities
         })
 
-        this.runPromise = this.worker.run()
+        void this.worker.run()
     }
 
     async onModuleDestroy() {
         this.worker.shutdown()
-        await this.runPromise
-        await this.connection.close()
     }
 }
