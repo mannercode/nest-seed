@@ -55,8 +55,6 @@ export function createCrudSchema<T>(cls: Type<T>): Schema<T> {
     schema.plugin(mongooseLeanVirtuals)
 
     const isHardDelete = defaultTo(Reflect.getMetadata(HARD_DELETE_KEY, cls), false)
-    // The softDelete feature has not been tested under various conditions and is therefore incomplete.
-    // softDelete는 다양한 상황을 테스트하지 않았다. 불완전한 기능이다.
     if (isHardDelete === false) {
         schema.add({ deletedAt: { default: null, type: Date } } as any)
         // An index is set on deletedAt because it is frequently queried in soft delete scenarios.
@@ -70,6 +68,7 @@ export function createCrudSchema<T>(cls: Type<T>): Schema<T> {
         schema.pre('updateOne', excludeDeletedMiddleware)
         schema.pre('updateMany', excludeDeletedMiddleware)
         schema.pre('countDocuments', excludeDeletedMiddleware)
+        schema.pre('distinct', excludeDeletedMiddleware)
         schema.pre('aggregate', function () {
             addDeletedAtFilterToPipeline(this.pipeline())
         })
@@ -95,10 +94,47 @@ export function createCrudSchema<T>(cls: Type<T>): Schema<T> {
             ).exec()
             return { deletedCount: updateResult.modifiedCount }
         }
+        schema.statics.findOneAndDelete = async function (
+            conditions,
+            options?: { session?: ClientSession }
+        ) {
+            return this.findOneAndUpdate(
+                conditions,
+                { deletedAt: new Date() },
+                { ...options, returnDocument: 'before' }
+            ).exec()
+        }
         schema.methods.deleteOne = async function (options?: { session?: ClientSession }) {
             this.deletedAt = new Date()
             return this.save(options)
         }
+        // bulkWrite: softDelete middleware 를 우회하므로 각 operation 의 filter 에
+        // deletedAt null 을 주입한다
+        schema.pre('bulkWrite', function (ops) {
+            for (const op of ops) {
+                if ('updateOne' in op && op.updateOne) {
+                    op.updateOne.filter = { ...(op.updateOne.filter ?? {}), deletedAt: null }
+                } else if ('updateMany' in op && op.updateMany) {
+                    op.updateMany.filter = { ...(op.updateMany.filter ?? {}), deletedAt: null }
+                } else if ('replaceOne' in op && op.replaceOne) {
+                    op.replaceOne.filter = { ...(op.replaceOne.filter ?? {}), deletedAt: null }
+                } else if ('deleteOne' in op && op.deleteOne) {
+                    const filter = op.deleteOne.filter ?? {}
+                    delete (op as any).deleteOne
+                    ;(op as any).updateOne = {
+                        filter: { ...filter, deletedAt: null },
+                        update: { deletedAt: new Date() }
+                    }
+                } else if ('deleteMany' in op && op.deleteMany) {
+                    const filter = op.deleteMany.filter ?? {}
+                    delete (op as any).deleteMany
+                    ;(op as any).updateMany = {
+                        filter: { ...filter, deletedAt: null },
+                        update: { deletedAt: new Date() }
+                    }
+                }
+            }
+        })
     }
 
     return schema
