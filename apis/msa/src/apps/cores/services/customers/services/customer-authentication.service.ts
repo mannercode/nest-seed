@@ -1,6 +1,7 @@
 import { JwtAuthService, InjectJwtAuth } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { compare, hash } from 'bcrypt'
+import { Rules } from 'config'
 import { CustomersRepository } from '../customers.repository'
 import { CustomerAuthPayload, CustomerCredentialsDto } from '../dtos'
 
@@ -30,10 +31,7 @@ export class CustomerAuthenticationService {
     }
 
     async hash(rawPassword: string) {
-        const saltRounds = 10
-
-        const hashedPassword = await hash(rawPassword, saltRounds)
-        return hashedPassword
+        return hash(rawPassword, Rules.Auth.bcryptSaltRounds)
     }
 
     async refreshAuthTokens(refreshToken: string) {

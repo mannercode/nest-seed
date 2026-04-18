@@ -14,6 +14,11 @@ export const Rules = {
         expiredUploadCleanupCron: CronExpression.EVERY_10_MINUTES,
         uploadExpiresInSec: 60 * 60
     },
+    Auth: {
+        // bcrypt salt rounds — cost factor. 10 is OWASP-recommended default.
+        // bcrypt salt rounds — 비용 계수. 10 은 OWASP 권장 기본값.
+        bcryptSaltRounds: 10
+    },
     Movie: {
         defaults: {
             director: '',
