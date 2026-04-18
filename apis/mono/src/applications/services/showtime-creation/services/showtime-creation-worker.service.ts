@@ -78,7 +78,12 @@ export class ShowtimeCreationWorkerService
 
             try {
                 await this.compensate(job.data.sagaId)
-            } catch {}
+            } catch (compensateError) {
+                this.logger.error('compensate threw unexpectedly', {
+                    sagaId: job.data.sagaId,
+                    error: getByPath(compensateError, 'message', String(compensateError))
+                })
+            }
 
             this.events.emitStatusChanged({
                 message,
@@ -89,11 +94,28 @@ export class ShowtimeCreationWorkerService
     }
 
     private async compensate(sagaId: string) {
+        const targets = ['tickets', 'showtimes'] as const
         const results = await Promise.allSettled([
             this.ticketsService.deleteBySagaIds([sagaId]),
             this.showtimesService.deleteBySagaIds([sagaId])
         ])
-        this.logger.log('compensate completed', { sagaId, results: results.map((r) => r.status) })
+
+        const failures = results
+            .map((r, i) =>
+                r.status === 'rejected'
+                    ? {
+                          target: targets[i],
+                          reason: getByPath(r.reason, 'message', String(r.reason))
+                      }
+                    : null
+            )
+            .filter((f) => f !== null)
+
+        if (failures.length > 0) {
+            this.logger.error('compensate partial failure', { sagaId, failures })
+        } else {
+            this.logger.log('compensate completed', { sagaId })
+        }
     }
 
     private async processJobData({ createDto, sagaId }: ShowtimeCreationJobData) {
