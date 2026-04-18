@@ -14,10 +14,10 @@ export function buildCreateAssetDto(file: TestAsset = testAssets.image): CreateA
     return pick(file, ['originalName', 'mimeType', 'size', 'checksum'])
 }
 
-export function buildFinalizeAssetDto(overrides = {}) {
-    return {
-        owner: { entityId: 'entity-id', service: 'service', ...overrides }
-    } as FinalizeAssetDto
+export function buildFinalizeAssetDto(
+    ownerOverrides: Partial<FinalizeAssetDto['owner']> = {}
+): FinalizeAssetDto {
+    return { owner: { entityId: 'entity-id', service: 'service', ...ownerOverrides } }
 }
 
 export async function createAsset(ctx: TestContext, file: TestAsset = testAssets.image) {

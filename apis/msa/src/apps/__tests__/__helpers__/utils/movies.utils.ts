@@ -1,8 +1,8 @@
 import type { TestContext } from '@mannercode/testing'
 import { MovieGenre, MovieRating, MovieDto, UpsertMovieDto } from 'cores'
 
-export function buildCreateMovieDto(overrides = {}) {
-    const createDto = {
+export function buildCreateMovieDto(overrides: Partial<UpsertMovieDto> = {}): UpsertMovieDto {
+    return {
         assetIds: [] as string[],
         director: 'Quentin Tarantino',
         durationInSeconds: 90 * 60,
@@ -13,11 +13,12 @@ export function buildCreateMovieDto(overrides = {}) {
         title: `MovieTitle`,
         ...overrides
     }
-
-    return createDto as UpsertMovieDto
 }
 
-export async function createMovie(ctx: TestContext, override = {}): Promise<MovieDto> {
+export async function createMovie(
+    ctx: TestContext,
+    override: Partial<UpsertMovieDto> = {}
+): Promise<MovieDto> {
     const { MoviesService } = await import('cores')
     const moviesService = ctx.module.get(MoviesService)
 

@@ -2,8 +2,8 @@ import { newObjectIdString, uniq } from '@mannercode/common'
 import { oid, TestContext } from '@mannercode/testing'
 import { TicketStatus, CreateTicketDto } from 'cores'
 
-export function buildCreateTicketDto(overrides = {}) {
-    const createDto = {
+export function buildCreateTicketDto(overrides: Partial<CreateTicketDto> = {}): CreateTicketDto {
+    return {
         movieId: oid(0x0),
         sagaId: newObjectIdString(),
         seat: { block: '1b', row: '1r', seatNumber: 1 },
@@ -12,7 +12,6 @@ export function buildCreateTicketDto(overrides = {}) {
         theaterId: oid(0x0),
         ...overrides
     }
-    return createDto
 }
 
 export async function createTickets(ctx: TestContext, overrides: Partial<CreateTicketDto>[]) {

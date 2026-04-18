@@ -1,7 +1,7 @@
 import fs from 'fs/promises'
 import { tmpdir } from 'os'
 import path from 'path'
-import { createDummyFile } from '../utils'
+import { createDummyFile, step } from '../utils'
 
 describe('createDummyFile', () => {
     let tempDir: string
@@ -22,5 +22,40 @@ describe('createDummyFile', () => {
         await createDummyFile(testFilePath, sizeInBytes)
         const stats = await fs.stat(testFilePath)
         expect(stats.size).toBe(sizeInBytes)
+    })
+})
+
+describe('step', () => {
+    // 성공 시 콜백 반환값을 반환한다
+    it('awaits the callback on success', async () => {
+        let executed = false
+        await step('do work', async () => {
+            executed = true
+        })
+        expect(executed).toBe(true)
+    })
+
+    // 콜백이 실패하면 단계 이름을 포함한 에러를 던진다
+    it('rethrows with the step name on failure', async () => {
+        const promise = step('bad step', async () => {
+            throw new Error('inner failure')
+        })
+
+        await expect(promise).rejects.toThrow(/step "bad step" failed.*inner failure/)
+    })
+
+    // 원본 에러를 cause로 유지한다
+    it('preserves the original error as cause', async () => {
+        const original = new Error('original')
+        let caught: unknown
+        try {
+            await step('s', () => {
+                throw original
+            })
+        } catch (e) {
+            caught = e
+        }
+        expect(caught).toBeInstanceOf(Error)
+        expect((caught as Error).cause).toBe(original)
     })
 })

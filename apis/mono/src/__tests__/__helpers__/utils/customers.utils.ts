@@ -1,16 +1,16 @@
 import type { TestContext } from '@mannercode/testing'
 import type { CreateCustomerDto, CustomerCredentialsDto } from 'cores'
 
-export function buildCreateCustomerDto(overrides = {}) {
-    const createDto = {
+export function buildCreateCustomerDto(
+    overrides: Partial<CreateCustomerDto> = {}
+): CreateCustomerDto {
+    return {
         birthDate: new Date(0),
         email: 'name@mail.com',
         name: 'name',
         password: 'password',
         ...overrides
     }
-
-    return createDto as CreateCustomerDto
 }
 
 export async function createAndLoginCustomer(ctx: TestContext) {
@@ -23,7 +23,7 @@ export async function createAndLoginCustomer(ctx: TestContext) {
     return { accessToken, customer, refreshToken }
 }
 
-export async function createCustomer(ctx: TestContext, override = {}) {
+export async function createCustomer(ctx: TestContext, override: Partial<CreateCustomerDto> = {}) {
     const { CustomersService } = await import('cores')
     const customersService = ctx.module.get(CustomersService)
 
@@ -38,9 +38,14 @@ export async function loginCustomer(ctx: TestContext, credentials: CustomerCrede
     const customersService = ctx.module.get(CustomersService)
 
     const customer = await customersService.findCustomerByCredentials(credentials)
+    if (!customer) {
+        throw new Error(
+            `loginCustomer: no customer found for credentials (email=${credentials.email})`
+        )
+    }
 
     const { accessToken, refreshToken } = await customersService.generateAuthTokens({
-        customerId: customer ? customer.id : '',
+        customerId: customer.id,
         email: credentials.email
     })
 
