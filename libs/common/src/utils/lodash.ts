@@ -140,9 +140,9 @@ export function pickBy<T extends object>(
     predicate: (value: T[keyof T], key: string) => boolean
 ): Partial<T> {
     const result: Partial<T> = {}
-    for (const [key, value] of Object.entries(obj)) {
-        if (predicate(value as T[keyof T], key)) {
-            ;(result as any)[key] = value
+    for (const [key, value] of Object.entries(obj) as Array<[keyof T, T[keyof T]]>) {
+        if (predicate(value, key as string)) {
+            result[key] = value
         }
     }
     return result

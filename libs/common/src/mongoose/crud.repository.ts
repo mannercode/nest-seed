@@ -1,4 +1,11 @@
-import type { ClientSession, HydratedDocument, Model, ObjectId, QueryWithHelpers } from 'mongoose'
+import type {
+    ClientSession,
+    HydratedDocument,
+    Model,
+    ObjectId,
+    QueryFilter,
+    QueryWithHelpers
+} from 'mongoose'
 import { BadRequestException, NotFoundException, OnModuleInit } from '@nestjs/common'
 import type { PaginationDto, PaginationResult } from '../pagination'
 import { defaultTo, differenceWith, uniq } from '../utils'
@@ -31,7 +38,7 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
 
     async deleteByIds(ids: string[], session: SessionArg = undefined) {
         const { deletedCount } = await this.model.deleteMany(
-            { _id: { $in: objectIds(ids) } as any },
+            { _id: { $in: objectIds(ids) } } as QueryFilter<Doc>,
             { session }
         )
 
@@ -43,7 +50,7 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
         if (uniqueIds.length === 0) return true
 
         const count = await this.model.countDocuments(
-            { _id: { $in: objectIds(uniqueIds) } } as any,
+            { _id: { $in: objectIds(uniqueIds) } } as QueryFilter<Doc>,
             { session }
         )
         return count === uniqueIds.length
@@ -59,7 +66,7 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
 
     async findByIds(ids: string[], session: SessionArg = undefined): Promise<Doc[]> {
         const docs = await this.model
-            .find({ _id: { $in: objectIds(ids) } as any }, null, { session })
+            .find({ _id: { $in: objectIds(ids) } } as QueryFilter<Doc>, null, { session })
             .lean(defaultLeanOptions)
 
         return docs as Doc[]

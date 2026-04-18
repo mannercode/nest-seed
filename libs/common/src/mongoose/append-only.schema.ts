@@ -20,24 +20,21 @@ export abstract class AppendOnlySchema {
     id: string
 }
 
-const APPEND_ONLY_BLOCKED_QUERY_OPS = [
-    'updateOne',
-    'updateMany',
-    'findOneAndUpdate',
-    'findOneAndReplace',
-    'replaceOne',
-    'deleteOne',
-    'deleteMany'
-] as const
-
 export function createAppendOnlySchema<T>(cls: Type<T>): Schema<T> {
     const schema = SchemaFactory.createForClass(cls)
     schema.plugin(mongooseLeanVirtuals)
 
     // Query-level mutation 차단 (model.updateOne, model.deleteOne 등 직접 호출)
-    schema.pre(APPEND_ONLY_BLOCKED_QUERY_OPS as unknown as any, function () {
+    const throwMutation = function () {
         throw new Error(`${cls.name} is append-only; mutation is not allowed`)
-    })
+    }
+    schema.pre('updateOne', throwMutation)
+    schema.pre('updateMany', throwMutation)
+    schema.pre('findOneAndUpdate', throwMutation)
+    schema.pre('findOneAndReplace', throwMutation)
+    schema.pre('replaceOne', throwMutation)
+    schema.pre('deleteOne', throwMutation)
+    schema.pre('deleteMany', throwMutation)
 
     // Document-level deleteOne 차단 (doc.deleteOne())
     schema.pre('deleteOne', { document: true, query: false }, function () {
