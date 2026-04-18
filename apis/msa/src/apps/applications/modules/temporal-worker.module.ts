@@ -1,4 +1,4 @@
-import { Logger, Module, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import { Module, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { bundleWorkflowCode, NativeConnection, Worker } from '@temporalio/worker'
 import { AppConfigService, getTemporalTaskQueue } from 'config'
 import { ShowtimesClient, TicketsClient, PurchaseRecordsClient } from 'cores'
@@ -18,10 +18,8 @@ import {
 
 @Module({ imports: [PurchaseModule, ShowtimeCreationModule] })
 export class TemporalWorkerModule implements OnModuleInit, OnModuleDestroy {
-    private readonly logger = new Logger(TemporalWorkerModule.name)
     private worker!: Worker
     private connection!: NativeConnection
-    private runPromise!: Promise<void>
 
     constructor(
         private readonly config: AppConfigService,
@@ -62,14 +60,11 @@ export class TemporalWorkerModule implements OnModuleInit, OnModuleDestroy {
             activities: { ...purchaseActivities, ...showtimeCreationActivities }
         })
 
-        this.runPromise = this.worker.run().catch((error) => {
-            this.logger.error('worker exited with error', { error: String(error) })
-        })
+        void this.worker.run()
     }
 
     async onModuleDestroy() {
         this.worker.shutdown()
-        await this.runPromise
         await this.connection.close()
     }
 

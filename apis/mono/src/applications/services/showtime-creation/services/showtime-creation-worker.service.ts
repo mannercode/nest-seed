@@ -78,12 +78,7 @@ export class ShowtimeCreationWorkerService
 
             try {
                 await this.compensate(job.data.sagaId)
-            } catch (compensateError) {
-                this.logger.error('compensate failed', {
-                    sagaId: job.data.sagaId,
-                    error: getByPath(compensateError, 'message', String(compensateError))
-                })
-            }
+            } catch {}
 
             this.events.emitStatusChanged({
                 message,

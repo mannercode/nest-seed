@@ -60,7 +60,10 @@ export class HttpTestClient {
             })
             response.on('end', () => {
                 writeStream.close((closeError) => {
-                    callback(closeError ?? null, '')
+                    if (!writeStream.closed) console.error('writeStream not closed')
+                    if (closeError) console.error('error', closeError)
+
+                    callback(null, '')
                 })
             })
             response.on('error', (responseError: any) => {
