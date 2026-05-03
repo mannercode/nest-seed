@@ -49,6 +49,16 @@ TEST "Update user by ID" \
 	-H "Content-Type: application/json" \
 	-d '{ "name": "new name", "birthDate": "2000-01-01T00:00:00.000Z" }'
 
+TEST "Logout user (revoke refresh)" \
+	204 POST /users/logout \
+	-H 'Content-Type: application/json' \
+	-d '{ "refreshToken": "'${USER_REFRESH_TOKEN}'" }'
+
+TEST "Refresh after logout fails" \
+	401 POST /users/refresh \
+	-H 'Content-Type: application/json' \
+	-d '{ "refreshToken": "'${USER_REFRESH_TOKEN}'" }'
+
 TEST "Delete user by ID" \
 	204 DELETE /users/${USER_ID} \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
