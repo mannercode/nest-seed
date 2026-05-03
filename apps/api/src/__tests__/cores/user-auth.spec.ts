@@ -137,10 +137,7 @@ describe('UserAuthentication', () => {
         it('revokes the refresh token: subsequent refresh fails', async () => {
             const { refreshToken } = await loginUser(fix, credentials)
 
-            await fix.httpClient
-                .post('/users/logout')
-                .body({ refreshToken })
-                .noContent()
+            await fix.httpClient.post('/users/logout').body({ refreshToken }).noContent()
 
             await fix.httpClient
                 .post('/users/refresh')
@@ -150,10 +147,7 @@ describe('UserAuthentication', () => {
 
         // 잘못된 토큰으로 logout 호출해도 204 (best-effort)
         it('returns 204 even for a malformed token', async () => {
-            await fix.httpClient
-                .post('/users/logout')
-                .body({ refreshToken: 'garbage' })
-                .noContent()
+            await fix.httpClient.post('/users/logout').body({ refreshToken: 'garbage' }).noContent()
         })
     })
 })

@@ -197,6 +197,65 @@ describe('TemporalWorkerService', () => {
         await expect(service.onModuleDestroy()).resolves.toBeUndefined()
     })
 
+    // workflowBundlePath 가 존재하면 그 파일을 그대로 워커에 주입한다 (production 경로)
+    it('loads workflow code from workflowBundlePath when the file exists', async () => {
+        const { TemporalWorkerService } = await import('../temporal-worker.service')
+        const { bundleWorkflowCode } = await import('@temporalio/worker')
+        const fs = await import('fs')
+        const path = await import('path')
+        const os = await import('os')
+
+        const taskQueue = withTestId('worker-bundle')
+        const { address, namespace } = config()
+
+        // 미리 번들 → 임시 파일로 저장 (build step 이 production 에서 만들어 두는 형태와 동일)
+        const { code } = await bundleWorkflowCode({ workflowsPath: require.resolve('./workflows') })
+        const bundlePath = path.join(os.tmpdir(), `${withTestId('wf-bundle')}.js`)
+        fs.writeFileSync(bundlePath, code)
+
+        const service = new TemporalWorkerService({
+            activities: { echo: async (msg: string) => `echo:${msg}` },
+            address,
+            namespace,
+            taskQueue,
+            workflowBundlePath: bundlePath
+        })
+
+        await service.onModuleInit()
+
+        try {
+            const { echoWorkflow } = await import('./workflows')
+            const result = await client.workflow.execute(echoWorkflow, {
+                args: ['from-bundle'],
+                taskQueue,
+                workflowId: withTestId('wf')
+            })
+            expect(result).toBe('echo:from-bundle')
+        } finally {
+            await service.onModuleDestroy()
+            fs.unlinkSync(bundlePath)
+        }
+    }, 120_000)
+
+    // workflowsPath / workflowBundlePath 둘 다 없거나 잘못되면 명시적으로 throw 한다
+    it('throws when neither workflowBundlePath nor workflowsPath resolves', async () => {
+        const { TemporalWorkerService } = await import('../temporal-worker.service')
+        const { address, namespace } = config()
+
+        const service = new TemporalWorkerService({
+            activities: {},
+            address,
+            namespace,
+            taskQueue: withTestId('worker-no-bundle')
+            // 둘 다 누락
+        })
+
+        await expect(service.onModuleInit()).rejects.toThrow(
+            /neither workflowBundlePath.*nor workflowsPath/
+        )
+        await service.onModuleDestroy()
+    })
+
     // connection.close() 가 throw 해도 destroy 가 무사히 끝난다
     it('swallows errors when the connection close fails', async () => {
         const { TemporalWorkerService } = await import('../temporal-worker.service')

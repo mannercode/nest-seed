@@ -2,6 +2,7 @@ import { CacheModule, NatsPubSubModule, TemporalWorkerService } from '@mannercod
 import { Module } from '@nestjs/common'
 import { AppConfigService, getProjectId, NatsConfigModule, RedisConfigModule } from 'config'
 import { MoviesModule, ShowtimesModule, TheatersModule, TicketsModule } from 'cores'
+import path from 'path'
 import {
     ShowtimeBulkCreatorService,
     ShowtimeBulkValidatorService,
@@ -42,6 +43,14 @@ import { getShowtimeCreationTaskQueue } from './temporal/types'
                     address: config.temporal.address,
                     namespace: config.temporal.namespace,
                     taskQueue: getShowtimeCreationTaskQueue(),
+                    // Prod: path of the pre-bundle produced by
+                    // scripts/bundle-workflows.js (lives next to dist/index.js).
+                    // Dev/tests: the file isn't there → service falls back to
+                    // workflowsPath and bundles on the fly.
+                    workflowBundlePath: path.join(
+                        __dirname,
+                        'showtime-creation-workflow-bundle.js'
+                    ),
                     workflowsPath: require.resolve('./temporal/workflows')
                 })
         }

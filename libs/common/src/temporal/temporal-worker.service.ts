@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { bundleWorkflowCode, NativeConnection, Worker } from '@temporalio/worker'
+import { existsSync, readFileSync } from 'fs'
 import { TemporalWorkerOptions } from './temporal.types'
 
 @Injectable()
@@ -14,9 +15,7 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
     async onModuleInit() {
         this.connection = await NativeConnection.connect({ address: this.options.address })
 
-        const workflowBundle = await bundleWorkflowCode({
-            workflowsPath: this.options.workflowsPath
-        })
+        const workflowBundle = await this.resolveWorkflowBundle()
 
         this.worker = await Worker.create({
             activities: this.options.activities,
@@ -43,5 +42,27 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
         // activities still in flight can complete or be cancelled cleanly.
         if (this.runPromise) await this.runPromise
         await this.connection?.close().catch(() => undefined)
+    }
+
+    /**
+     * Production: load the pre-built bundle that the build step (e.g.
+     * `apps/api/scripts/bundle-workflows.js`) wrote to disk. After webpack
+     * collapses the app into one `index.js`, `bundleWorkflowCode` cannot
+     * resolve workflowsPath at runtime — it would need the source tree
+     * which is not shipped.
+     *
+     * Dev / tests: bundle the source on the fly via workflowsPath.
+     */
+    private async resolveWorkflowBundle() {
+        const { workflowBundlePath, workflowsPath } = this.options
+        if (workflowBundlePath && existsSync(workflowBundlePath)) {
+            return { code: readFileSync(workflowBundlePath, 'utf8') }
+        }
+        if (!workflowsPath) {
+            throw new Error(
+                'TemporalWorkerService: neither workflowBundlePath (file present) nor workflowsPath was provided'
+            )
+        }
+        return bundleWorkflowCode({ workflowsPath })
     }
 }
