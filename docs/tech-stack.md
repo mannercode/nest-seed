@@ -6,21 +6,22 @@
 
 ## 1. 채택 (이미 적용)
 
-| 분야                   | 기술                                                     |
-| ---------------------- | -------------------------------------------------------- |
-| 프레임워크             | NestJS                                                   |
-| 메시징 (msa)           | NATS                                                     |
-| 메시징 (mono)          | Redis Pub/Sub (`PubSubService`, cross-replica SSE)       |
-| 분산 락 (mono)         | Redis SET NX + Lua (`cache.withLock` / `withLockBlocking`) |
-| 워크플로우             | Temporal (msa) / BullMQ (mono)                           |
-| DB                     | MongoDB (replica set)                                    |
-| 캐시/큐                | Redis (cluster)                                          |
-| 객체 스토리지          | S3 / MinIO                                               |
-| 컨테이너               | Docker, Docker Compose                                   |
-| CI                     | GitHub Actions                                           |
-| 테스트 (단위/통합)     | Jest + Testcontainers                                    |
-| 테스트 (e2e)           | bash + curl spec                                         |
-| 테스트 (분산 stress)   | Node 블랙박스 + 4-replica docker compose                 |
+| 분야                   | 기술                                                       |
+| ---------------------- | ---------------------------------------------------------- |
+| 프레임워크             | NestJS                                                     |
+| 이벤트                 | Redis Pub/Sub (`PubSubService`, cross-replica SSE)         |
+| 분산 락                | Redis SET NX + Lua (`cache.withLock` / `withLockBlocking`) |
+| 워크플로우             | BullMQ                                                     |
+| DB                     | MongoDB (replica set)                                      |
+| 캐시/큐                | Redis (cluster)                                            |
+| 객체 스토리지          | S3 / MinIO                                                 |
+| 컨테이너               | Docker, Docker Compose                                     |
+| CI                     | GitHub Actions                                             |
+| 테스트 (단위/통합)     | Jest + Testcontainers                                      |
+| 테스트 (e2e)           | bash + curl spec                                           |
+| 테스트 (분산 stress)   | Node 블랙박스 + N-replica docker compose                   |
+
+> 과거 msa 시드에서 채택했던 NATS / Temporal / Kong 은 [msa-archive.md](msa-archive.md) 참조.
 
 ---
 
@@ -83,11 +84,10 @@ Pact (계약 테스트), k6 (부하 테스트), Trivy (이미지 스캔), Cosign
 
 ## 4. 명시적 거부 (근거 기록)
 
-| 기술                             | 거부 사유                                                                                                                                                                                    |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Kafka**                        | NATS 선택. kafkajs 유지보수 종료(2022), maxWaitTimeInMs 폴링으로 테스트 종료 느림, 토픽 사전 생성 비용, broker3+controller3 메모리 부담 (자세한 근거: [decisions.md](decisions.md) 1번)      |
-| **OpenAPI / Swagger**            | bash + curl 기반 e2e shell spec(`apis/{mono,msa}/tests/e2e/specs/*.spec`)으로 대체. 코드 동기화 비용 없음, 실행 가능한 살아있는 문서, 시나리오 흐름 표현, CI 통합 용이, 데코레이터 부담 없음 |
-| **BFF Gateway**                  | mono와 중복. 외부 라우팅/인증은 인프라 게이트웨이로 위임 (TODO.md `msa/gateway 제거 검토` 항목 참조)                                                                                         |
-| **Service Mesh (Istio/Linkerd)** | 시드 복잡도 초과. K8s 운영 단계에서 별도 검토                                                                                                                                                |
-| **Datadog / New Relic**          | SaaS 의존, OSS 시드에 부적합. 운영자가 선택                                                                                                                                                  |
-| **Consul / Eureka**              | K8s 환경에서는 기본 DNS/Service로 해결                                                                                                                                                       |
+| 기술                             | 거부 사유                                                                                                                                                                       |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Kafka**                        | 과거 msa 에서 NATS 선택. kafkajs 유지보수 종료(2022), maxWaitTimeInMs 폴링으로 테스트 종료 느림, 토픽 사전 생성 비용, broker3+controller3 메모리 부담 (msa 자체는 archive 됨)   |
+| **OpenAPI / Swagger**            | bash + curl 기반 e2e shell spec(`apis/mono/tests/e2e/specs/*.spec`)으로 대체. 코드 동기화 비용 없음, 실행 가능한 살아있는 문서, 시나리오 흐름 표현, CI 통합 용이, 데코레이터 부담 없음 |
+| **Service Mesh (Istio/Linkerd)** | 시드 복잡도 초과. K8s 운영 단계에서 별도 검토                                                                                                                                   |
+| **Datadog / New Relic**          | SaaS 의존, OSS 시드에 부적합. 운영자가 선택                                                                                                                                     |
+| **Consul / Eureka**              | K8s 환경에서는 기본 DNS/Service로 해결                                                                                                                                          |

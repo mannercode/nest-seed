@@ -14,7 +14,7 @@ docker volume prune -af
 
 # docker hub anonymous pull rate limit (100/6h per IP) plus shared runner IPs
 # can flake compose up on first pull. retry pattern matches
-# apis/mono/deploy/test.sh / apis/msa/deploy/test.sh.
+# apis/mono/deploy/test.sh.
 compose_up_with_retry() {
     local label="$1"
     for attempt in 1 2 3 4 5; do
@@ -30,9 +30,7 @@ compose_up_with_retry() {
 }
 
 compose_up_with_retry "infra"
-cd msa
-compose_up_with_retry "msa-infra"
 
-docker wait infra-setup msa-setup
-docker rm infra-setup msa-setup
+docker wait infra-setup
+docker rm infra-setup
 echo "=== reset.sh done ==="

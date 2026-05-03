@@ -8,7 +8,7 @@ docker rm -f $(docker ps -aq) 2>/dev/null || true
 docker volume prune -af
 
 # docker hub's unauthenticated 100/6h pull limit is shared across actions
-# runners. a first `up` can fail pulling mongo/redis/minio/temporal/etc.
+# runners. a first `up` can fail pulling mongo/redis/minio/etc.
 # retry with backoff; images stay cached after a successful pull.
 compose_up() {
     for attempt in 1 2 3 4 5; do
@@ -27,12 +27,6 @@ if [ "$scope" = "mono" ]; then
     compose_up
     docker wait infra-setup
     docker rm infra-setup
-elif [ "$scope" = "msa" ]; then
-    compose_up
-    cd msa
-    compose_up
-    docker wait infra-setup msa-setup
-    docker rm infra-setup msa-setup
 fi
 
 cd /workspaces/nest-seed

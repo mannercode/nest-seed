@@ -3,10 +3,7 @@ import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseConfigModule } from 'config'
 import { Seat } from '../../../shared'
 
-export const TicketStatus = {
-    Available: 'available',
-    Sold: 'sold'
-} as const
+export const TicketStatus = { Available: 'available', Sold: 'sold' } as const
 
 export type TicketStatus = (typeof TicketStatus)[keyof typeof TicketStatus]
 

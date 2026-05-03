@@ -139,9 +139,9 @@ await client
 
 ## 6. Dynamic Import
 
-각 테스트마다 고유한 DB 이름과 NATS subject를 생성하기 위해 `process.env.TEST_ID`를 사용한다.
+각 테스트마다 고유한 DB 이름을 생성하기 위해 `process.env.TEST_ID`를 사용한다.
 
-Jest 설정에서 `resetModules: true`를 적용하고, 테스트에서는 dynamic import를 사용하여 각 테스트가 독립된 환경에서 실행되도록 한다. MSA에서는 `@MessagePattern` 데코레이터가 모듈 로딩 시점에 한 번만 평가되므로 이 방식이 필수적이다.
+Jest 설정에서 `resetModules: true`를 적용하고, 테스트에서는 dynamic import를 사용하여 각 테스트가 독립된 환경에서 실행되도록 한다.
 
 ```ts
 // 타입 전용 import는 런타임에 영향을 주지 않는다
@@ -161,13 +161,13 @@ describe('Customers', () => {
 
 ## 7. 테스트 인프라
 
-Mock 없음 — 실제 MongoDB RS, Redis Cluster, NATS, MinIO, Temporal을 사용한다.
+Mock 없음 — 실제 MongoDB RS, Redis Cluster, MinIO를 사용한다.
 
 ### 실행 흐름
 
 ```
 jest.global.js          Testcontainers로 인프라 기동 (1회)
-  ↓                     NATS, MongoDB, Redis, MinIO, Temporal
+  ↓                     MongoDB, Redis, MinIO
 jest.setup.js           각 테스트 스위트마다 실행
   ↓                     TEST_ID 생성, 전용 DB/S3 버킷 생성, 종료 시 DB 삭제
 *.spec.ts               개별 테스트 실행
@@ -179,12 +179,10 @@ jest.setup.js           각 테스트 스위트마다 실행
 
 | 환경 변수                  | 설정 주체           | 용도                  |
 | -------------------------- | ------------------- | --------------------- |
-| `TESTLIB_NATS_OPTIONS`     | `jest.global`       | NATS 연결 옵션 (JSON) |
 | `TESTLIB_MONGO_URI`        | `jest.global`       | MongoDB 연결 문자열   |
 | `TESTLIB_MONGO_DATABASE`   | `jest.setup`        | 테스트별 DB 이름      |
 | `TESTLIB_REDIS_URL`        | `jest.global`       | Redis 연결 URL        |
 | `TESTLIB_S3_*`             | `jest.global/setup` | MinIO/S3 설정         |
-| `TESTLIB_TEMPORAL_ADDRESS` | `jest.global`       | Temporal 서버 주소    |
 | `TEST_ID`                  | `jest.setup`        | 테스트 격리용 고유 ID |
 
 ### 테스트 격리
@@ -193,7 +191,6 @@ jest.setup.js           각 테스트 스위트마다 실행
 
 - MongoDB: `mongo-{TEST_ID}` 데이터베이스 생성, `afterEach`에서 삭제
 - S3: `s3bucket{TEST_ID}` 버킷 생성
-- NATS: `withTestId(subject)`로 고유 subject 생성
 
 ---
 

@@ -6,20 +6,19 @@
 nest-seed/
 ├── libs/              # 공유 라이브러리 (@mannercode/*)
 │   ├── common/            # 기본 유틸리티 (Mongoose, Redis, JWT, S3, Logger)
-│   ├── microservices/      # MSA 유틸리티 (NATS RPC, Temporal)
-│   └── testing/           # 테스트 유틸리티 (HttpTestClient, RpcTestClient)
+│   └── testing/           # 테스트 유틸리티 (HttpTestClient)
 ├── apis/
-│   ├── mono/              # 모놀리식 NestJS 시드
-│   └── msa/               # 마이크로서비스 아키텍처 시드
-└── package.json           # npm workspaces + npm-run-all2 스크립트
+│   └── mono/              # 모놀리식 NestJS 시드
+└── package.json           # npm workspaces 스크립트
 ```
+
+> 한때 함께 있던 `apis/msa`, `libs/microservices`, `libs/testing-microservices` 는 2026-04-29 에 제거됨. 자세한 내용은 [docs/msa-archive.md](msa-archive.md).
 
 ## 2. 패키지 의존 그래프
 
 ```
-microservices → common
-testing       (독립)
-common        (독립)
+testing  (독립)
+common   (독립)
 ```
 
 ## 3. 패키지 상세
@@ -43,16 +42,6 @@ common        (독립)
 | **validator**  | `Require`, `Verify`, `ensure()`                                                               |
 | **utils**      | env, base64, byte, checksum, date, time, http, json, path                                     |
 
-### @mannercode/microservices
-
-분산 시스템을 위한 통신 및 오케스트레이션 레이어.
-
-| 모듈         | 주요 export                                                                               |
-| ------------ | ----------------------------------------------------------------------------------------- |
-| **logger**   | `RpcExceptionLoggerFilter`, `RpcSuccessLoggerInterceptor` — HTTP 필터를 상속하여 RPC 추가 |
-| **rpc**      | `ClientProxyService`, `ClientProxyModule` — NATS RPC, 자동 재시도 (최대 9회, 지수 백오프) |
-| **temporal** | `TemporalClientModule`, `TemporalWorkerService` — 워크플로우 번들링 및 라이프사이클 관리  |
-
 ### @mannercode/testing
 
 테스트 인프라 레이어.
@@ -61,7 +50,6 @@ common        (독립)
 | --------------------- | ---------------------------------------------------------------------------- |
 | **test context**      | `createTestContext()`, `createHttpTestContext()` — 격리된 NestJS 테스트 모듈 |
 | **http test client**  | `HttpTestClient` — fluent API (`.post().body().created()`)                   |
-| **rpc test client**   | `RpcTestClient` — `.expectRequest()`, `.expectError()`                       |
 | **infra connections** | `getRedisTestConnection()`, `getMongoTestConnection()` 등                    |
 | **jest utilities**    | Mocking, spying, fake timers 헬퍼                                            |
 
@@ -89,7 +77,7 @@ Client ── HTTP ──▶ Gateway ──┬──▶ Applications     (비즈
 | Component   | Configuration                                     |
 | ----------- | ------------------------------------------------- |
 | **MongoDB** | 3-node replica set (27017-27019)                  |
-| **Redis**   | 6-node cluster, 3 primary + 3 replica (6379-6384) |
+| **Redis**   | 3-node cluster, primary only (6379-6381)          |
 | **MinIO**   | S3-compatible object storage (9000, console 9001) |
 
 ### 4.2. 문제: 순환 참조
@@ -219,8 +207,6 @@ mono 는 단일 애플리케이션이지만 프로덕션/테스트에서 **4 rep
 
 ## 6. 서비스 호출 흐름
 
-### Mono
-
 HTTP 컨트롤러가 서비스를 직접 주입받아 실행한다.
 
 ```
@@ -240,40 +226,13 @@ src/
             └── movies.service.ts
 ```
 
-### MSA
-
-REST API 호출은 4단계를 거쳐 서비스를 실행한다.
-
-```
-┌────────────────────────────┐        ┌──────────────────────────────┐
-│    #1 Gateway Controller   │        │          #4 Service          │
-│      ┌─────────────────────┤        ├────────────────────────┐     │
-│      │  #2 Service Client  ├───────>│  #3 Service Controller │     │
-│      └─────────────────────┤        ├────────────────────────┘     │
-└────────────────────────────┘        └──────────────────────────────┘
-```
-
-```
-apps
-├── gateway
-│   └── controllers
-│       └── #1 movies.http-controller.ts
-│
-└── cores
-    └── services
-        └── movies
-            ├── #2 movies.client.ts
-            ├── #3 movies.controller.ts
-            └── #4 movies.service.ts
-```
+> msa 의 4단계 호출(gateway controller → service client → service controller → service) 는 archive 참조: [docs/msa-archive.md](msa-archive.md).
 
 ---
 
 ## 7. ESLint 계층 의존성 검증
 
 `eslint.config.js`의 `no-restricted-imports` 규칙으로 SoLA 계층 위반을 빌드 타임에 감지한다.
-
-**Mono** (`src/`):
 
 | 계층              | 참조 금지 대상                                            |
 | ----------------- | --------------------------------------------------------- |
@@ -282,15 +241,5 @@ apps
 | `cores`           | `controllers`, `applications`                             |
 | `infrastructures` | `controllers`, `applications`, `cores`                    |
 | `shared`          | `controllers`, `applications`, `cores`, `infrastructures` |
-
-**MSA** (`src/apps/`):
-
-| 계층              | 참조 금지 대상                                        |
-| ----------------- | ----------------------------------------------------- |
-| `gateway`         | 없음 (모든 하위 계층 참조 가능)                       |
-| `applications`    | `gateway`                                             |
-| `cores`           | `gateway`, `applications`                             |
-| `infrastructures` | `gateway`, `applications`, `cores`                    |
-| `shared`          | `gateway`, `applications`, `cores`, `infrastructures` |
 
 규칙 위반 시 ESLint `warn`으로 보고된다. `npm run lint`로 전체 검사할 수 있다.

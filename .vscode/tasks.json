@@ -48,13 +48,10 @@
                 "npm test",
                 "npm test -w libs",
                 "npm test -w apis/mono",
-                "npm test -w apis/msa",
                 "bash apis/mono/deploy/test.sh",
-                "bash apis/msa/deploy/test.sh",
                 "bash apis/mono/tests/runner.sh sse",
                 "npm run atoz",
-                "npm run atoz -w apis/mono",
-                "npm run atoz -w apis/msa"
+                "npm run atoz -w apis/mono"
             ]
         }
     ]

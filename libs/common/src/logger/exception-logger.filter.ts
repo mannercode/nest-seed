@@ -14,8 +14,7 @@ import { HttpErrorLog } from './types'
  * 내부 구현이므로 버전에 따라 바뀔 수 있다.
  * 등록 순서에 의존하지 않도록 상속으로 필터를 확장한다.
  *
- * HTTP 전용 예외 로거. RPC가 필요하면 @mannercode/microservices의
- * RpcExceptionLoggerFilter를 사용한다.
+ * HTTP 전용 예외 로거.
  *
  * 전역 필터를 추가해야 한다면 HttpExceptionLoggerFilter를 상속 후 super.catch()를 호출한다.
  *

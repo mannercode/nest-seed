@@ -28,7 +28,6 @@
 | 응답 (비동기 요청 응답) | `[action-entity].response.ts` | `request-showtime-creation.response.ts` |
 | 모델                    | `[entity].ts`                 | `customer.ts`                           |
 | 에러                    | `errors.ts`                   | `errors.ts`                             |
-| 클라이언트 (MSA)        | `[service].client.ts`         | `customers.client.ts`                   |
 
 ### 클래스 & DTO 네이밍
 

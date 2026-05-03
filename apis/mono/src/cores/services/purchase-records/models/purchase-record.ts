@@ -3,10 +3,7 @@ import { Prop, Schema } from '@nestjs/mongoose'
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
 import { MongooseConfigModule } from 'config'
 
-export const PurchaseItemType = {
-    Foods: 'foods',
-    Tickets: 'tickets'
-} as const
+export const PurchaseItemType = { Foods: 'foods', Tickets: 'tickets' } as const
 
 export type PurchaseItemType = (typeof PurchaseItemType)[keyof typeof PurchaseItemType]
 

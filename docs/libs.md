@@ -45,7 +45,7 @@ libs/
 ├── tsconfig.json            ← IDE/테스트용: base + paths 별칭 + noEmit
 ├── tsconfig.build.json      ← 빌드용: base + jest 타입 제외
 │
-└── {common,testing,microservices}/
+└── {common,testing}/
     ├── tsconfig.json         ← ../tsconfig.json 상속 (IDE/테스트)
     └── tsconfig.build.json   ← ../tsconfig.build.json 상속 (tsc 빌드)
 ```
@@ -57,7 +57,7 @@ libs/
 
 ## 빌드 순서
 
-`microservices`와 `testing`은 `common`에 의존하므로, `npm run build`는 common → microservices/testing 순으로 빌드한다. npm workspaces의 `--workspaces` 플래그로 각 패키지 빌드를 실행한다.
+`testing` 은 `common` 과 독립적이고, `npm run build` 는 npm workspaces의 `--workspaces` 플래그로 각 패키지를 병렬 빌드한다.
 
 ---
 
