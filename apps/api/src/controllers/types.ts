@@ -1,5 +1,5 @@
-import type { CustomerAuthPayload } from 'cores'
+import type { UserAuthPayload } from 'cores'
 import type { Request } from 'express'
 
-export type CustomerAuthRequest = Request & { user: CustomerAuthPayload }
-export type CustomerOptionalAuthRequest = Request & { user?: CustomerAuthPayload }
+export type UserAuthRequest = Request & { user: UserAuthPayload }
+export type UserOptionalAuthRequest = Request & { user?: UserAuthPayload }

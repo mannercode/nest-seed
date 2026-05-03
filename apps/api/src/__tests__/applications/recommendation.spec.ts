@@ -40,7 +40,7 @@ describe('RecommendationService', () => {
             })
 
             // 고객이 시청한 영화가 있을 때
-            describe('when the customer has watched movies', () => {
+            describe('when the user has watched movies', () => {
                 let accessToken: string
 
                 beforeEach(async () => {
@@ -71,7 +71,7 @@ describe('RecommendationService', () => {
             })
 
             // 고객이 게스트일 때
-            describe('when the customer is a guest', () => {
+            describe('when the user is a guest', () => {
                 // 기본 추천을 반환한다
                 it('returns default recommendations', async () => {
                     await fix.httpClient.get('/movies/recommended').ok([

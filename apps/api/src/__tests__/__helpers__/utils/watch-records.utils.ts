@@ -5,7 +5,7 @@ export function buildCreateWatchRecordDto(
     overrides: Partial<CreateWatchRecordDto> = {}
 ): CreateWatchRecordDto {
     return {
-        customerId: oid(0x0),
+        userId: oid(0x0),
         movieId: oid(0x0),
         purchaseRecordId: oid(0x0),
         watchDate: nullDate,

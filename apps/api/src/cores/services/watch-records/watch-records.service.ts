@@ -28,7 +28,7 @@ export class WatchRecordsService {
         return watchRecords.map((watchRecord) =>
             mapDocToDto(watchRecord, WatchRecordDto, [
                 'id',
-                'customerId',
+                'userId',
                 'movieId',
                 'purchaseRecordId',
                 'watchDate'

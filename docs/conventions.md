@@ -21,21 +21,21 @@
 
 | 유형                    | 패턴                          | 예시                                    |
 | ----------------------- | ----------------------------- | --------------------------------------- |
-| DTO                     | `[action-entity].dto.ts`      | `create-customer.dto.ts`                |
-| 페이지네이션 검색 DTO   | `search-[entity].page.dto.ts` | `search-customers.page.dto.ts`          |
+| DTO                     | `[action-entity].dto.ts`      | `create-user.dto.ts`                |
+| 페이지네이션 검색 DTO   | `search-[entity].page.dto.ts` | `search-users.page.dto.ts`          |
 | 비페이지네이션 검색 DTO | `search-[entity].dto.ts`      | `search-showtimes.dto.ts`               |
 | 결과 (동기 벌크 연산)   | `[action-entity].result.ts`   | `create-tickets.result.ts`              |
 | 응답 (비동기 요청 응답) | `[action-entity].response.ts` | `request-showtime-creation.response.ts` |
-| 모델                    | `[entity].ts`                 | `customer.ts`                           |
+| 모델                    | `[entity].ts`                 | `user.ts`                           |
 | 에러                    | `errors.ts`                   | `errors.ts`                             |
 
 ### 클래스 & DTO 네이밍
 
-- **DTO**: `[Action][Entity]Dto` — `CreateCustomerDto`, `SearchMoviesPageDto`
-- **엔티티 DTO**: `[Entity]Dto` — `CustomerDto`, `TicketDto`
+- **DTO**: `[Action][Entity]Dto` — `CreateUserDto`, `SearchMoviesPageDto`
+- **엔티티 DTO**: `[Entity]Dto` — `UserDto`, `TicketDto`
 - **결과**: `[Action][Entity]Result` — `CreateShowtimesResult`
 - **응답**: `[Action]Response` — `RequestShowtimeCreationResponse`
-- **에러 상수**: `[Entity]Errors` — `CustomerErrors`, `BookingErrors`
+- **에러 상수**: `[Entity]Errors` — `UserErrors`, `BookingErrors`
 
 ### 메서드 네이밍
 
@@ -104,8 +104,8 @@ ShowtimeBulkValidator         ← 호출자가 데이터를 주입하면 검증 
 ### 생성자 파라미터
 
 - **Client/Service**: 타입의 camelCase 그대로 — `ticketsClient: TicketsClient`, `paymentsClient: PaymentsClient`
-- **Repository**: 서비스당 하나일 때 `repository` — `repository: CustomersRepository`
-- **Controller**: 항상 `service` — `service: CustomersService`
+- **Repository**: 서비스당 하나일 때 `repository` — `repository: UsersRepository`
+- **Controller**: 항상 `service` — `service: UsersService`
 - **Client proxy**: 항상 `proxy` — `proxy: ClientProxyService`
 
 ### 이벤트 키

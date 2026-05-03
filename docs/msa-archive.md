@@ -47,18 +47,18 @@
 apps/api/src/
 ├── controllers/                     # HTTP 진입점 + guards (모든 도메인 공용)
 │   ├── booking.http-controller.ts
-│   ├── customers.http-controller.ts
+│   ├── users.http-controller.ts
 │   └── guards/
-│       ├── customer-jwt-auth.guard.ts
-│       ├── customer-local-auth.guard.ts
-│       └── customer-optional-jwt-auth.guard.ts
+│       ├── user-jwt-auth.guard.ts
+│       ├── user-local-auth.guard.ts
+│       └── user-optional-jwt-auth.guard.ts
 ├── applications/services/           # 도메인 서비스 (cross-aggregate)
 │   ├── booking/
 │   ├── purchase/
 │   ├── recommendation/
 │   └── showtime-creation/
 ├── cores/services/                  # 단일 aggregate CRUD
-│   ├── customers/
+│   ├── users/
 │   ├── movies/
 │   ├── showtimes/
 │   ├── theaters/
@@ -76,11 +76,11 @@ apps/api/src/
 ```
 apis/msa/src/
 ├── apps/
-│   ├── cores/                       # 1차 도메인 (CRUD + customer auth guard)
+│   ├── cores/                       # 1차 도메인 (CRUD + user auth guard)
 │   │   ├── services/
-│   │   │   ├── customers/
-│   │   │   │   ├── customers.http-controller.ts   # 외부 HTTP
-│   │   │   │   ├── customers.controller.ts        # NATS RPC (다른 app 이 호출)
+│   │   │   ├── users/
+│   │   │   │   ├── users.http-controller.ts   # 외부 HTTP
+│   │   │   │   ├── users.controller.ts        # NATS RPC (다른 app 이 호출)
 │   │   │   │   └── guards/                        # mono 의 controllers/guards 와 동일 코드
 │   │   │   ├── movies/
 │   │   │   └── ...
@@ -159,4 +159,4 @@ msa 만 사용하던 라이브러리 워크스페이스도 함께 제거됨:
 - **분산 시스템의 실제 비용**: 2 구현 동시 유지가 코드량보다 **인지·운영 surface** 측면에서 큰 부담.
 - **NATS RPC + Temporal** 의 공존 가능성 — 같은 도메인을 두 transport 로 운영해 본 결과, 단순 RPC 는 NATS, orchestration 은 Temporal 이 자연스러운 분담.
 - **Kong 의 declarative `kong.yml`** 은 작은 지정만으로 routing 을 표현 가능하지만, plugin 활용을 시작하면 곧 외부 의존 (DB or postgres-less mode) 결정이 따라옴.
-- **테스트 stability**: race scenario (`apps/api/tests/runner.sh customer-race` 등) 는 msa 환경에서도 동일하게 의미 있었으나, msa 전용 race 는 따로 만들지 않았음 — 즉 msa 의 검증은 unit + spec 수준에서 그쳤다는 점이 archive 시 공유.
+- **테스트 stability**: race scenario (`apps/api/tests/runner.sh user-race` 등) 는 msa 환경에서도 동일하게 의미 있었으나, msa 전용 race 는 따로 만들지 않았음 — 즉 msa 의 검증은 unit + spec 수준에서 그쳤다는 점이 archive 시 공유.

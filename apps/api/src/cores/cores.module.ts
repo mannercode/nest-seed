@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { CommonModule } from 'config'
 import {
-    CustomersModule,
+    UsersModule,
     MoviesModule,
     PurchaseRecordsModule,
     ShowtimesModule,
@@ -14,7 +14,7 @@ import {
 @Module({
     imports: [
         CommonModule,
-        CustomersModule,
+        UsersModule,
         MoviesModule,
         TheatersModule,
         ShowtimesModule,
@@ -24,7 +24,7 @@ import {
         PurchaseRecordsModule
     ],
     exports: [
-        CustomersModule,
+        UsersModule,
         MoviesModule,
         TheatersModule,
         ShowtimesModule,

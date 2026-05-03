@@ -72,9 +72,9 @@ Client ── HTTP ──▶ Gateway ──┬──▶ Applications     (비즈
 
 | Layer               | Role                              | Domains                                                                                       |
 | ------------------- | --------------------------------- | --------------------------------------------------------------------------------------------- |
-| **Gateway**         | API 진입점, 인증(JWT/Local)       | Customers, Movies, Theaters, Booking, Purchase, ShowtimeCreation                              |
+| **Gateway**         | API 진입점, 인증(JWT/Local)       | Users, Movies, Theaters, Booking, Purchase, ShowtimeCreation                              |
 | **Applications**    | 비즈니스 오케스트레이션           | ShowtimeCreation, Booking, Purchase, Recommendation                                           |
-| **Cores**           | 핵심 도메인 엔터티, 데이터 영속성 | Customers, Movies, Theaters, Showtimes, Tickets, TicketHolding, PurchaseRecords, WatchRecords |
+| **Cores**           | 핵심 도메인 엔터티, 데이터 영속성 | Users, Movies, Theaters, Showtimes, Tickets, TicketHolding, PurchaseRecords, WatchRecords |
 | **Infrastructures** | 외부 서비스 통합                  | Payments, Assets(MinIO)                                                                       |
 
 | Component    | Configuration                                              |

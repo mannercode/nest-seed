@@ -13,9 +13,7 @@ export type PurchaseEventsFixture = TestContext & {
 }
 
 export async function createPurchaseEventsFixture(): Promise<PurchaseEventsFixture> {
-    const ctx = await createAppTestContext({
-        imports: [PurchaseModule]
-    })
+    const ctx = await createAppTestContext({ imports: [PurchaseModule] })
 
     return {
         ...ctx,

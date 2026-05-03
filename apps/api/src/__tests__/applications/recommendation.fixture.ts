@@ -1,16 +1,12 @@
 import { DateUtil } from '@mannercode/common'
 import { TestContext } from '@mannercode/testing'
 import { RecommendationModule } from 'applications'
-import {
-    CustomerJwtAuthGuard,
-    CustomerOptionalJwtAuthGuard,
-    MoviesHttpController
-} from 'controllers'
-import { CustomersModule, MoviesModule, MovieDto, ShowtimesModule, WatchRecordsModule } from 'cores'
+import { UserJwtAuthGuard, UserOptionalJwtAuthGuard, MoviesHttpController } from 'controllers'
+import { UsersModule, MoviesModule, MovieDto, ShowtimesModule, WatchRecordsModule } from 'cores'
 import { AssetsModule } from 'infrastructures'
 import {
     AppTestContext,
-    createAndLoginCustomer,
+    createAndLoginUser,
     createAppTestContext,
     createMovie,
     createShowtimes,
@@ -25,12 +21,12 @@ export async function createRecommendationFixture(): Promise<RecommendationFixtu
         imports: [
             MoviesModule,
             AssetsModule,
-            CustomersModule,
+            UsersModule,
             ShowtimesModule,
             WatchRecordsModule,
             RecommendationModule
         ],
-        providers: [CustomerJwtAuthGuard, CustomerOptionalJwtAuthGuard]
+        providers: [UserJwtAuthGuard, UserOptionalJwtAuthGuard]
     })
 
     return { ...ctx }
@@ -52,13 +48,11 @@ export async function createShowingMovies(ctx: TestContext, dtos: Partial<MovieD
 export async function createWatchedMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
     const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))
 
-    const { accessToken, customer } = await createAndLoginCustomer(ctx)
+    const { accessToken, user } = await createAndLoginUser(ctx)
 
     const watchRecords = await Promise.all(
-        movies.map((movie) =>
-            createWatchRecord(ctx, { customerId: customer.id, movieId: movie.id })
-        )
+        movies.map((movie) => createWatchRecord(ctx, { userId: user.id, movieId: movie.id }))
     )
 
-    return { accessToken, customer, movies, watchRecords }
+    return { accessToken, user, movies, watchRecords }
 }

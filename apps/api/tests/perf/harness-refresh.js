@@ -1,6 +1,6 @@
-// Sustained-load perf harness for the customer-refresh path.
+// Sustained-load perf harness for the user-refresh path.
 //
-// POST /customers/refresh exercises Redis on every call: read the prior
+// POST /users/refresh exercises Redis on every call: read the prior
 // refresh token (GET against the cluster), generate new access+refresh
 // JWTs, store the new refresh token (SET with TTL). No bcrypt, no DB read
 // for the token itself — JWT verify is in-memory. So this is the closest
@@ -79,7 +79,7 @@ async function setupWorker(workerId, seed) {
     const email = uniqueEmail(workerId, seed)
     const password = 'refreshpass'
 
-    const create = await doRequest(agent, 'POST', '/customers', {
+    const create = await doRequest(agent, 'POST', '/users', {
         name: `r${workerId}`,
         email,
         password,
@@ -90,7 +90,7 @@ async function setupWorker(workerId, seed) {
         throw new Error(`worker ${workerId} setup: create returned ${create.status}`)
     }
 
-    const login = await doRequest(agent, 'POST', '/customers/login', { email, password })
+    const login = await doRequest(agent, 'POST', '/users/login', { email, password })
     if (login.status !== 200 || !login.body || !login.body.refreshToken) {
         agent.destroy()
         throw new Error(`worker ${workerId} setup: login returned ${login.status}`)
@@ -101,7 +101,7 @@ async function setupWorker(workerId, seed) {
 
 async function workerLoop(workerId, state, stopAt, samplesRef, statusesRef, replicasRef) {
     while (Date.now() < stopAt) {
-        const result = await doRequest(state.agent, 'POST', '/customers/refresh', {
+        const result = await doRequest(state.agent, 'POST', '/users/refresh', {
             refreshToken: state.refreshToken
         })
         if (samplesRef.sampling) {
@@ -148,9 +148,9 @@ async function main() {
         `[perf-refresh] server=${SERVER_URL} concurrency=${CONCURRENCY} warmup=${WARMUP_MS}ms duration=${DURATION_MS}ms label=${LABEL || '(none)'}`
     )
 
-    // Setup phase. Each worker creates its own customer + logs in.
+    // Setup phase. Each worker creates its own user + logs in.
     const seed = Date.now()
-    console.error(`[perf-refresh] setting up ${CONCURRENCY} customers...`)
+    console.error(`[perf-refresh] setting up ${CONCURRENCY} users...`)
     const setupT0 = Date.now()
     const workerStates = await Promise.all(
         Array.from({ length: CONCURRENCY }, (_, i) => setupWorker(i, seed))
@@ -193,7 +193,7 @@ async function main() {
 
     const summary = {
         label: LABEL,
-        scenario: 'customer-refresh',
+        scenario: 'user-refresh',
         concurrency: CONCURRENCY,
         durationMs: DURATION_MS,
         warmupMs: WARMUP_MS,
@@ -218,7 +218,7 @@ async function main() {
     const outDir = path.resolve(__dirname, '../../../../_output/perf')
     fs.mkdirSync(outDir, { recursive: true })
     const stamp = new Date().toISOString().replace(/[:.]/g, '-')
-    const file = path.join(outDir, `customer-refresh-${stamp}${LABEL ? '-' + LABEL : ''}.json`)
+    const file = path.join(outDir, `user-refresh-${stamp}${LABEL ? '-' + LABEL : ''}.json`)
     fs.writeFileSync(file, JSON.stringify(summary, null, 2))
 
     console.error(

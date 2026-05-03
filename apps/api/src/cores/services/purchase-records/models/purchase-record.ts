@@ -19,7 +19,7 @@ export class PurchaseItem {
 @Schema(MongooseConfigModule.schemaOptions)
 export class PurchaseRecord extends CrudSchema {
     @Prop({ required: true })
-    customerId: string
+    userId: string
 
     @Prop({ default: null })
     paymentId: string

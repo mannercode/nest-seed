@@ -23,13 +23,13 @@ describe('WatchRecordsService', () => {
     })
 
     describe('searchPage', () => {
-        const customerId = oid(0xa1)
+        const userId = oid(0xa1)
         let watchRecords: WatchRecordDto[]
 
         beforeEach(async () => {
             watchRecords = await Promise.all([
-                createWatchRecord(fix, { customerId }),
-                createWatchRecord(fix, { customerId }),
+                createWatchRecord(fix, { userId }),
+                createWatchRecord(fix, { userId }),
                 createWatchRecord(fix, {}),
                 createWatchRecord(fix, {})
             ])
@@ -52,9 +52,9 @@ describe('WatchRecordsService', () => {
                 expect(recordsPage).toEqual(buildExpectedPage(expectedRecords))
             }
 
-            // customerId로 필터링된 기록을 반환한다
-            it('returns records filtered by customerId', async () => {
-                await queryAndExpect({ customerId }, [watchRecords[0], watchRecords[1]])
+            // userId로 필터링된 기록을 반환한다
+            it('returns records filtered by userId', async () => {
+                await queryAndExpect({ userId }, [watchRecords[0], watchRecords[1]])
             })
         })
     })

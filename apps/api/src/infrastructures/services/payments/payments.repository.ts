@@ -21,7 +21,7 @@ export class PaymentsRepository extends CrudRepository<Payment> {
 
     async create(createDto: CreatePaymentDto) {
         const payment = this.newDocument()
-        payment.customerId = createDto.customerId
+        payment.userId = createDto.userId
         payment.amount = createDto.amount
 
         await payment.save()

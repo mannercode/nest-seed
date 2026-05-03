@@ -17,7 +17,7 @@ export class WatchRecordsRepository extends CrudRepository<WatchRecord> {
 
     async create(createDto: CreateWatchRecordDto) {
         const watchRecord = this.newDocument()
-        watchRecord.customerId = createDto.customerId
+        watchRecord.userId = createDto.userId
         watchRecord.movieId = createDto.movieId
         watchRecord.purchaseRecordId = createDto.purchaseRecordId
         watchRecord.watchDate = createDto.watchDate
@@ -43,10 +43,10 @@ export class WatchRecordsRepository extends CrudRepository<WatchRecord> {
     }
 
     private buildQuery(searchDto: SearchWatchRecordsPageDto, options: QueryBuilderOptions) {
-        const { customerId } = searchDto
+        const { userId } = searchDto
 
         const builder = new QueryBuilder<WatchRecord>()
-        builder.addEquals('customerId', customerId)
+        builder.addEquals('userId', userId)
 
         const query = builder.build(options)
         return query

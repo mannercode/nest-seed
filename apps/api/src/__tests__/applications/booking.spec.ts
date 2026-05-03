@@ -14,7 +14,7 @@ describe('BookingService', () => {
     afterEach(() => fix.teardown())
 
     // 고객이 예매 흐름을 진행할 때
-    describe('when a customer goes through the booking flow', () => {
+    describe('when a user goes through the booking flow', () => {
         let movie: MovieDto
         let accessToken: string
 
@@ -114,7 +114,7 @@ describe('BookingService', () => {
         const startTimes = [new Date('2999-01-01T12:00')]
 
         // 티켓이 이미 다른 고객에 의해 보유되었을 때
-        describe('when tickets are already held by another customer', () => {
+        describe('when tickets are already held by another user', () => {
             let accessToken: string
             let showtimeId: string
             let ticketIds: string[]
@@ -126,7 +126,7 @@ describe('BookingService', () => {
                 ticketIds = pickIds(resources.tickets.slice(0, 2))
 
                 const { holdTickets } = await import('../__helpers__')
-                await holdTickets(fix, { customerId: oid(0xff), showtimeId, ticketIds })
+                await holdTickets(fix, { userId: oid(0xff), showtimeId, ticketIds })
             })
 
             // 409 Conflict를 반환한다

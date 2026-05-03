@@ -3,7 +3,7 @@ import { ArrayNotEmpty, IsArray, IsNotEmpty, IsString } from 'class-validator'
 export class HoldTicketsDto {
     @IsNotEmpty()
     @IsString()
-    customerId: string
+    userId: string
 
     @IsNotEmpty()
     @IsString()

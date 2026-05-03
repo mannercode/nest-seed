@@ -5,7 +5,7 @@ export function buildCreatePurchaseRecordDto(
     overrides: Partial<CreatePurchaseRecordDto> = {}
 ): CreatePurchaseRecordDto {
     return {
-        customerId: oid(0x0),
+        userId: oid(0x0),
         paymentId: oid(0x0),
         purchaseItems: [{ itemId: oid(0x0), type: PurchaseItemType.Tickets }],
         totalPrice: 1,

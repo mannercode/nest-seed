@@ -21,7 +21,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
 
     async create(createDto: CreatePurchaseRecordDto) {
         const purchaseRecord = this.newDocument()
-        purchaseRecord.customerId = createDto.customerId
+        purchaseRecord.userId = createDto.userId
         purchaseRecord.paymentId = createDto.paymentId
         purchaseRecord.totalPrice = createDto.totalPrice
         purchaseRecord.purchaseItems = createDto.purchaseItems.map((item) => ({ ...item }))

@@ -32,7 +32,7 @@ export class PurchaseRecordsService {
         return purchaseRecords.map((purchaseRecord) =>
             mapDocToDto(purchaseRecord, PurchaseRecordDto, [
                 'id',
-                'customerId',
+                'userId',
                 'paymentId',
                 'totalPrice',
                 'purchaseItems',

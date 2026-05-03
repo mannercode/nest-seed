@@ -45,18 +45,18 @@
 4. **`mongoose-lean-virtuals` 패키지 완전 제거**
     - `libs/common/package.json` 에서 dependency 삭제
     - `libs/common/src/mongoose/crud.schema.ts` · `append-only.schema.ts` 에서 `schema.plugin(mongooseLeanVirtuals)` 제거
-    - 모든 `.lean({ virtuals: true })` 호출처 (`showtimes.repository.ts:search` · `tickets.repository.ts:search` · `assets.repository.ts:findExpiredIncomplete` · `customers.repository.ts:findByEmailWithPassword`) 를 pure `.lean()` + `leanToPublic` 매핑으로 교체
+    - 모든 `.lean({ virtuals: true })` 호출처 (`showtimes.repository.ts:search` · `tickets.repository.ts:search` · `assets.repository.ts:findExpiredIncomplete` · `users.repository.ts:findByEmailWithPassword`) 를 pure `.lean()` + `leanToPublic` 매핑으로 교체
     - 결과: schema 에 attach 되던 hook 오버헤드와 npm dep 모두 없어짐
-    - `theaters/movies/customers` 의 검색 API 는 **substring + case-insensitive 그대로** (한 번 prefix 로 바꿨다가 사용자 요건 확인 후 원복)
+    - `theaters/movies/users` 의 검색 API 는 **substring + case-insensitive 그대로** (한 번 prefix 로 바꿨다가 사용자 요건 확인 후 원복)
 
 5. **각 도메인 model — compound index 추가**
     - `theaters`: `{deletedAt:1, name:1}` + `{name:1}`
     - `movies`: `{deletedAt:1, isPublished:1, title:1}` + `{title:1}`
-    - `customers`: `{deletedAt:1, name:1}` + `{deletedAt:1, email:1}`
+    - `users`: `{deletedAt:1, name:1}` + `{deletedAt:1, email:1}`
     - `showtimes` (HardDelete): `{theaterId:1, startTime:1}` + `{sagaId:1}`
     - `tickets`: `{deletedAt:1, showtimeId:1}` + `{sagaId:1}`
     - 현재 검색이 substring regex 라 IXSCAN 활용 못 함. 향후 prefix 기반 엔드포인트 추가하면 즉시 활용 가능 — 유지 비용 작아서 남겨둠
-    - 미사용 `name_text` (theaters/customers) 는 drop 함
+    - 미사용 `name_text` (theaters/users) 는 drop 함
 
 ### 인프라
 
@@ -65,7 +65,7 @@
     - `--wiredTigerCacheSizeGB 0.25 → 1.0` (WT cache = mongo RAM 의 50%, 권장 범위 내)
     - 한 번 1.5 GiB 로 올렸다가 75% 초과는 권장 외라 1.0 으로 원복
 
-6b. **`.devcontainer/infra/compose.redis.yml`** — 6-node → 3-node cluster - cycle 5 에서 Redis 가 모든 워크로드에서 심하게 under-utilized (primary CPU 15-18%, 메모리 5%) 확인. HA 관점으로 3 primary + 3 replica 는 표준이지만 dev 환경 대비 과잉 - redis4/5/6 컨테이너 삭제, `redis-setup` 의 `--cluster-replicas 1 → 0` - `--cluster-require-full-coverage no` 추가 (primary 1개 다운돼도 다른 슬롯은 접근 가능) - `.env` · `apps/api/deploy/compose.yml` · `apis/msa/deploy/compose.yml` · `app-config.service.ts` (mono/msa 양쪽) 에서 `REDIS_HOST4-6`, `REDIS_PORT4-6` 환경변수와 node 배열 원소 제거 - ioredis cluster client (`type: 'cluster'`) 설정은 그대로 유지 — 3-node 도 cluster 모드에서 정상 작동, fork 사용자가 prod 갈 때 replica 다시 붙이는 데 코드 변경 불필요 - 메모리 1.5 GiB 확보, 컨테이너 3개 감소. dev 환경 시작 시간 단축 - 실측: 3-node 전환 후 customer-refresh c=100 **5535 RPS** (6-node 때 3489 대비 +59%). slot routing 단순화 + primary 당 slot 담당 넓어진 효과. race test 4종 PASS
+6b. **`.devcontainer/infra/compose.redis.yml`** — 6-node → 3-node cluster - cycle 5 에서 Redis 가 모든 워크로드에서 심하게 under-utilized (primary CPU 15-18%, 메모리 5%) 확인. HA 관점으로 3 primary + 3 replica 는 표준이지만 dev 환경 대비 과잉 - redis4/5/6 컨테이너 삭제, `redis-setup` 의 `--cluster-replicas 1 → 0` - `--cluster-require-full-coverage no` 추가 (primary 1개 다운돼도 다른 슬롯은 접근 가능) - `.env` · `apps/api/deploy/compose.yml` · `apis/msa/deploy/compose.yml` · `app-config.service.ts` (mono/msa 양쪽) 에서 `REDIS_HOST4-6`, `REDIS_PORT4-6` 환경변수와 node 배열 원소 제거 - ioredis cluster client (`type: 'cluster'`) 설정은 그대로 유지 — 3-node 도 cluster 모드에서 정상 작동, fork 사용자가 prod 갈 때 replica 다시 붙이는 데 코드 변경 불필요 - 메모리 1.5 GiB 확보, 컨테이너 3개 감소. dev 환경 시작 시간 단축 - 실측: 3-node 전환 후 user-refresh c=100 **5535 RPS** (6-node 때 3489 대비 +59%). slot routing 단순화 + primary 당 slot 담당 넓어진 효과. race test 4종 PASS
 
 7. **`apps/api/deploy/nginx.conf`**
     - `worker_processes 8` (auto = 16 대비 proxy 용엔 적정)
@@ -100,7 +100,7 @@
 - `readPreference` 기본값 (primary) 유지
 - WT cache = mongo RAM 의 50% (권장 상한)
 - mongo pool 축소에 `waitQueueTimeoutMS: 5000` — 큐 포화 시 명시적 timeout
-- 4종 race 정합성 테스트 PASS (customer-race / ticket-holding-race / showtime-overlap-race / purchase-double-spend)
+- 4종 race 정합성 테스트 PASS (user-race / ticket-holding-race / showtime-overlap-race / purchase-double-spend)
 - 단위 테스트 `libs/common` 417 · `apps/api` 주요 repo 76 PASS
 - tsc + eslint clean
 
@@ -139,11 +139,11 @@ SCENARIO=theater-read-name-filter CONCURRENCY=200 \
 SCENARIO=theater-write CONCURRENCY=100 \
   node apps/api/tests/perf/harness.js
 
-# Redis (customer-refresh — JWT setup 포함)
+# Redis (user-refresh — JWT setup 포함)
 CONCURRENCY=200 node apps/api/tests/perf/harness-refresh.js
 
-# 필터 read (customer, JWT 보호)
-CONCURRENCY=100 node apps/api/tests/perf/harness-customer-filter.js
+# 필터 read (user, JWT 보호)
+CONCURRENCY=100 node apps/api/tests/perf/harness-user-filter.js
 
 # gzip 클라이언트 시뮬
 ACCEPT_GZIP=1 SCENARIO=theater-read CONCURRENCY=200 \

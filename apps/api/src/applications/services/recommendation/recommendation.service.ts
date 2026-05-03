@@ -14,7 +14,7 @@ export class RecommendationService {
         private readonly watchRecordsService: WatchRecordsService
     ) {}
 
-    async searchRecommendedMovies(customerId: null | string) {
+    async searchRecommendedMovies(userId: null | string) {
         const startTime = DateUtil.add({ minutes: Rules.Ticket.purchaseCutoffMinutes })
 
         const showingMovieIds = await this.showtimesService.searchMovieIds({
@@ -24,9 +24,9 @@ export class RecommendationService {
         const showingMovies = await this.moviesService.getMany(showingMovieIds)
         let watchedMovies: MovieDto[] = []
 
-        if (customerId) {
+        if (userId) {
             const { items } = await this.watchRecordsService.searchPage({
-                customerId,
+                userId,
                 orderby: { direction: OrderDirection.Desc, name: 'watchDate' },
                 size: 50
             })
@@ -37,7 +37,7 @@ export class RecommendationService {
         const recommendedMovies = MovieRecommender.recommend(showingMovies, watchedMovies)
 
         this.logger.log('searchRecommendedMovies', {
-            customerId: defaultTo(customerId, 'anonymous'),
+            userId: defaultTo(userId, 'anonymous'),
             showingMovieCount: showingMovies.length,
             recommendedCount: recommendedMovies.length
         })

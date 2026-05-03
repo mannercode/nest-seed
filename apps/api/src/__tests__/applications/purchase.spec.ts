@@ -15,7 +15,7 @@ describe('PurchaseService', () => {
 
     describe('POST /purchases', () => {
         // 고객이 티켓을 보유하고 있을 때
-        describe('when the customer holds tickets', () => {
+        describe('when the user holds tickets', () => {
             let heldTickets: TicketDto[]
 
             beforeEach(async () => {

@@ -1,13 +1,13 @@
 // Distributed stress test: purchase double-spend race — concurrent groups.
 //
-// Each inner iteration: provisions a fresh showtime and CUSTOMER_GROUPS
-// customers each hold a distinct ticket pair. Every customer then fires
+// Each inner iteration: provisions a fresh showtime and USER_GROUPS
+// users each hold a distinct ticket pair. Every user then fires
 // PURCHASES_PER_GROUP concurrent POST /purchases on their own ticket
-// pair. All CUSTOMER_GROUPS × PURCHASES_PER_GROUP requests fire
+// pair. All USER_GROUPS × PURCHASES_PER_GROUP requests fire
 // simultaneously. Per group: exactly 1 × 2xx success, rest × 4xx
 // (409 AlreadySold / 400 NotHeld).
 //
-// Movie/theater and customer accounts are created once outside the loop;
+// Movie/theater and user accounts are created once outside the loop;
 // per-iter work is the fresh showtime, tickets, holds, and race.
 //
 // Fails if: any group != 1 success, any 5xx, or fewer than 2 replicas
@@ -16,7 +16,7 @@
 const http = require('http')
 
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000'
-const CUSTOMER_GROUPS = Number(process.env.PURCHASE_CUSTOMER_GROUPS || 5)
+const USER_GROUPS = Number(process.env.PURCHASE_USER_GROUPS || 5)
 const PURCHASES_PER_GROUP = Number(process.env.PURCHASE_CLIENT_COUNT || 50)
 const INNER_ITERATIONS = Number(process.env.INNER_ITERATIONS || 150)
 const SHOWTIME_DEADLINE_MS = Number(process.env.SHOWTIME_DEADLINE_MS || 60_000)
@@ -144,7 +144,7 @@ async function setupMovieTheater() {
         throw new Error(`publish: ${publish.status}`)
     }
 
-    // Big seatmap so we can carve out CUSTOMER_GROUPS disjoint ticket pairs.
+    // Big seatmap so we can carve out USER_GROUPS disjoint ticket pairs.
     const theater = await requestRaw('POST', '/theaters', {
         body: {
             name: 'purchase-race',
@@ -180,42 +180,42 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
     if (tickets.status !== 200 || !Array.isArray(tickets.body)) {
         throw new Error(`tickets: ${tickets.status}`)
     }
-    if (tickets.body.length < CUSTOMER_GROUPS * 2) {
-        throw new Error(`tickets: need ${CUSTOMER_GROUPS * 2}, got ${tickets.body.length}`)
+    if (tickets.body.length < USER_GROUPS * 2) {
+        throw new Error(`tickets: need ${USER_GROUPS * 2}, got ${tickets.body.length}`)
     }
 
-    const groups = Array.from({ length: CUSTOMER_GROUPS }, (_, g) => [
+    const groups = Array.from({ length: USER_GROUPS }, (_, g) => [
         tickets.body[g * 2].id,
         tickets.body[g * 2 + 1].id
     ])
     return { showtimeId, groups }
 }
 
-async function createAndLoginCustomer(index) {
+async function createAndLoginUser(index) {
     const email = `purchase.${Date.now()}.${index}.${Math.random().toString(36).slice(2)}@example.com`
     const password = 'purchasepass'
-    const create = await requestRaw('POST', '/customers', {
+    const create = await requestRaw('POST', '/users', {
         body: { name: `pur-${index}`, birthDate: '1990-01-01T00:00:00.000Z', email, password }
     })
-    if (create.status !== 201) throw new Error(`customer create ${index}: ${create.status}`)
+    if (create.status !== 201) throw new Error(`user create ${index}: ${create.status}`)
 
-    const login = await requestRaw('POST', '/customers/login', { body: { email, password } })
+    const login = await requestRaw('POST', '/users/login', { body: { email, password } })
     if (login.status !== 200 && login.status !== 201) {
-        throw new Error(`customer login ${index}: ${login.status}`)
+        throw new Error(`user login ${index}: ${login.status}`)
     }
-    return { customerId: create.body.id, accessToken: login.body.accessToken }
+    return { userId: create.body.id, accessToken: login.body.accessToken }
 }
 
-async function runInner(iteration, movieId, theaterId, customers, startTimeOffsetMs) {
+async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs) {
     const { showtimeId, groups } = await createShowtimeTickets(
         movieId,
         theaterId,
         startTimeOffsetMs
     )
 
-    // Each customer holds their group's ticket pair.
+    // Each user holds their group's ticket pair.
     await Promise.all(
-        customers.map(async (cust, g) => {
+        users.map(async (cust, g) => {
             const hold = await requestRaw('POST', `/booking/showtimes/${showtimeId}/tickets/hold`, {
                 body: { ticketIds: groups[g] },
                 headers: { authorization: `Bearer ${cust.accessToken}` }
@@ -226,16 +226,16 @@ async function runInner(iteration, movieId, theaterId, customers, startTimeOffse
         })
     )
 
-    // All customers fire PURCHASES_PER_GROUP concurrent purchases at once.
+    // All users fire PURCHASES_PER_GROUP concurrent purchases at once.
     const attempts = []
-    for (let g = 0; g < CUSTOMER_GROUPS; g++) {
-        const cust = customers[g]
+    for (let g = 0; g < USER_GROUPS; g++) {
+        const cust = users[g]
         const purchaseItems = groups[g].map((id) => ({ itemId: id, type: 'tickets' }))
         const totalPrice = groups[g].length * 1000
         for (let c = 0; c < PURCHASES_PER_GROUP; c++) {
             attempts.push(
                 requestRaw('POST', '/purchases', {
-                    body: { customerId: cust.customerId, purchaseItems, totalPrice }
+                    body: { userId: cust.userId, purchaseItems, totalPrice }
                 }).then((r) => ({ ...r, group: g }))
             )
         }
@@ -243,7 +243,7 @@ async function runInner(iteration, movieId, theaterId, customers, startTimeOffse
 
     const results = await Promise.all(attempts)
 
-    const byGroup = Array.from({ length: CUSTOMER_GROUPS }, () => ({
+    const byGroup = Array.from({ length: USER_GROUPS }, () => ({
         ok: 0,
         rejected: 0,
         other: []
@@ -257,7 +257,7 @@ async function runInner(iteration, movieId, theaterId, customers, startTimeOffse
         if (r.replicaId) replicaSet.add(r.replicaId)
     }
 
-    for (let g = 0; g < CUSTOMER_GROUPS; g++) {
+    for (let g = 0; g < USER_GROUPS; g++) {
         const slot = byGroup[g]
         if (slot.ok !== 1) {
             console.error(
@@ -293,25 +293,25 @@ async function runInner(iteration, movieId, theaterId, customers, startTimeOffse
 
 async function main() {
     console.log(
-        `[purchase] server=${SERVER_URL} groups=${CUSTOMER_GROUPS} purchases/group=${PURCHASES_PER_GROUP} inner=${INNER_ITERATIONS}`
+        `[purchase] server=${SERVER_URL} groups=${USER_GROUPS} purchases/group=${PURCHASES_PER_GROUP} inner=${INNER_ITERATIONS}`
     )
 
     const { movieId, theaterId } = await setupMovieTheater()
-    const customers = await Promise.all(
-        Array.from({ length: CUSTOMER_GROUPS }, (_, i) => createAndLoginCustomer(i))
+    const users = await Promise.all(
+        Array.from({ length: USER_GROUPS }, (_, i) => createAndLoginUser(i))
     )
 
     const spacingMs = 3 * 60 * 60 * 1000
 
     for (let i = 1; i <= INNER_ITERATIONS; i++) {
-        const result = await runInner(i, movieId, theaterId, customers, i * spacingMs)
+        const result = await runInner(i, movieId, theaterId, users, i * spacingMs)
         console.log(
             `[purchase] iter ${i}/${INNER_ITERATIONS} OK — ${result.total} reqs, ${result.replicas} replicas`
         )
     }
 
     console.log(
-        `[purchase] PASS: ${INNER_ITERATIONS} iters × ${CUSTOMER_GROUPS} groups × ${PURCHASES_PER_GROUP} purchases`
+        `[purchase] PASS: ${INNER_ITERATIONS} iters × ${USER_GROUPS} groups × ${PURCHASES_PER_GROUP} purchases`
     )
 }
 

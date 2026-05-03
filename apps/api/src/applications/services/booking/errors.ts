@@ -6,6 +6,6 @@ export const BookingErrors = {
     }),
     TicketsAlreadyHeld: () => ({
         code: 'ERR_BOOKING_TICKETS_ALREADY_HELD',
-        message: 'Some tickets are already held by another customer.'
+        message: 'Some tickets are already held by another user.'
     })
 }

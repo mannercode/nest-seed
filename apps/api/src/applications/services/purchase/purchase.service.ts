@@ -22,7 +22,7 @@ export class PurchaseService {
     ) {}
 
     async processPurchase(createDto: CreatePurchaseDto) {
-        this.logger.log('processPurchase', { customerId: createDto.customerId })
+        this.logger.log('processPurchase', { userId: createDto.userId })
 
         const ticketIds = createDto.purchaseItems
             .filter((item) => item.type === PurchaseItemType.Tickets)
@@ -30,7 +30,7 @@ export class PurchaseService {
         const lockKey = `tickets:${[...ticketIds].sort().join(',')}`
 
         // Serialize concurrent purchases that touch the same ticket set.
-        // validatePurchase only checks that the customer still *holds* the
+        // validatePurchase only checks that the user still *holds* the
         // tickets — the hold is not released on completion, so N concurrent
         // purchases would all pass validation and each create its own
         // payment. The lock plus an availability check inside guarantees
@@ -55,7 +55,7 @@ export class PurchaseService {
 
         const payment = await this.paymentsService.create({
             amount: createDto.totalPrice,
-            customerId: createDto.customerId
+            userId: createDto.userId
         })
         this.logger.log('processPurchase createPayment completed', { paymentId: payment.id })
 

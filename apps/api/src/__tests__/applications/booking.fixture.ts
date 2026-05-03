@@ -1,8 +1,8 @@
 import { TestContext } from '@mannercode/testing'
 import { BookingModule, PurchaseModule } from 'applications'
-import { BookingHttpController, CustomerJwtAuthGuard } from 'controllers'
+import { BookingHttpController, UserJwtAuthGuard } from 'controllers'
 import {
-    CustomersModule,
+    UsersModule,
     MoviesModule,
     PurchaseRecordsModule,
     Seatmap,
@@ -15,7 +15,7 @@ import {
 import { AssetsModule, PaymentsModule } from 'infrastructures'
 import {
     AppTestContext,
-    createAndLoginCustomer,
+    createAndLoginUser,
     createAppTestContext,
     createMovie,
     createShowtimes,
@@ -30,7 +30,7 @@ export async function createAllResources(
     locations: TheaterLocation[],
     startTimes: Date[]
 ) {
-    const { accessToken, customer, refreshToken } = await createAndLoginCustomer(ctx)
+    const { accessToken, user, refreshToken } = await createAndLoginUser(ctx)
 
     const movie = await createMovie(ctx)
 
@@ -58,7 +58,7 @@ export async function createAllResources(
         )
     )
 
-    return { accessToken, customer, movie, refreshToken, showtimes, theaters, tickets }
+    return { accessToken, user, movie, refreshToken, showtimes, theaters, tickets }
 }
 
 export async function createBookingFixture(): Promise<BookingFixture> {
@@ -70,14 +70,14 @@ export async function createBookingFixture(): Promise<BookingFixture> {
             TheatersModule,
             TicketsModule,
             PurchaseRecordsModule,
-            CustomersModule,
+            UsersModule,
             ShowtimesModule,
             TicketHoldingModule,
             PaymentsModule,
             PurchaseModule,
             BookingModule
         ],
-        providers: [CustomerJwtAuthGuard]
+        providers: [UserJwtAuthGuard]
     })
 
     return { ...ctx }

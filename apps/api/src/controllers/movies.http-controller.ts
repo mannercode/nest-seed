@@ -16,8 +16,8 @@ import {
 import { RecommendationService } from 'applications'
 import { MoviesService, SearchMoviesPageDto, UpsertMovieDto } from 'cores'
 import { CreateAssetDto } from 'infrastructures'
-import { CustomerOptionalJwtAuthGuard } from './guards'
-import { CustomerOptionalAuthRequest } from './types'
+import { UserOptionalJwtAuthGuard } from './guards'
+import { UserOptionalAuthRequest } from './types'
 
 @Controller('movies')
 export class MoviesHttpController {
@@ -55,11 +55,11 @@ export class MoviesHttpController {
     }
 
     @Get('recommended')
-    @UseGuards(CustomerOptionalJwtAuthGuard)
-    async searchRecommendedMovies(@Req() req: CustomerOptionalAuthRequest) {
-        const customerId = defaultTo(req.user?.customerId, null)
+    @UseGuards(UserOptionalJwtAuthGuard)
+    async searchRecommendedMovies(@Req() req: UserOptionalAuthRequest) {
+        const userId = defaultTo(req.user?.userId, null)
 
-        return this.recommendationService.searchRecommendedMovies(customerId)
+        return this.recommendationService.searchRecommendedMovies(userId)
     }
 
     @Get(':movieId')

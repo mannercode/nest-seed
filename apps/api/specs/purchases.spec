@@ -1,12 +1,12 @@
 #!/bin/bash
 . ./common.fixture
 
-create_and_login_customer
+create_and_login_user
 setup_showtime_resources
 wait_for_tickets
 
 SETUP POST /booking/showtimes/${SHOWTIME_ID}/tickets/hold \
-	-H "Authorization: Bearer ${CUSTOMER_ACCESS_TOKEN}" \
+	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}" \
 	-H 'Content-Type: application/json' \
 	-d '{ "ticketIds": ["'${TICKET_ID_1}'", "'${TICKET_ID_2}'"] }'
 
@@ -14,7 +14,7 @@ TEST "Create a purchase" \
 	201 POST /purchases \
 	-H 'Content-Type: application/json' \
 	-d '{
-			"customerId": "'${CUSTOMER_ID}'",
+			"userId": "'${USER_ID}'",
 			"totalPrice": 20000,
 			"purchaseItems": [
 				{ "type": "tickets", "itemId": "'${TICKET_ID_1}'" },

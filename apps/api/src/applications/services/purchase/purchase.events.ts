@@ -29,5 +29,5 @@ export class PurchaseEvents {
     }
 }
 
-export type TicketPurchasedEvent = { customerId: string; ticketIds: string[] }
-export type TicketPurchaseCanceledEvent = { customerId: string; ticketIds: string[] }
+export type TicketPurchasedEvent = { userId: string; ticketIds: string[] }
+export type TicketPurchaseCanceledEvent = { userId: string; ticketIds: string[] }

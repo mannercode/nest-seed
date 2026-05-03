@@ -81,7 +81,7 @@ specs/
 ├── run.sh                 # 전체 스펙 실행
 ├── common.fixture        # 공통 셋업
 ├── assets/                # 테스트용 파일 (이미지 등)
-├── customers.spec
+├── users.spec
 ├── movies.spec
 ├── theaters.spec
 ├── booking.spec
@@ -89,20 +89,20 @@ specs/
 └── showtime-creation.spec
 ```
 
-스펙 파일 예시 (`customers.spec`):
+스펙 파일 예시 (`users.spec`):
 
 ```bash
-TEST "Create a customer" \
-    201 POST /customers \
+TEST "Create a user" \
+    201 POST /users \
     -H 'Content-Type: application/json' \
-    -d '{ "name": "customer name", "email": "'${CUSTOMER_EMAIL}'", ... }'
+    -d '{ "name": "user name", "email": "'${USER_EMAIL}'", ... }'
 
-CUSTOMER_ID=$(echo "${BODY}" | jq -r '.id')
+USER_ID=$(echo "${BODY}" | jq -r '.id')
 
-TEST "Login customer" \
-    200 POST /customers/login \
+TEST "Login user" \
+    200 POST /users/login \
     -H 'Content-Type: application/json' \
-    -d '{ "email": "'${CUSTOMER_EMAIL}'", "password": "password" }'
+    -d '{ "email": "'${USER_EMAIL}'", "password": "password" }'
 ```
 
 `TEST` 함수는 `설명`, `기대 상태코드`, `HTTP 메서드`, `URL`, `curl 옵션` 순으로 인자를 받고, 상태코드가 일치하지 않으면 FAIL로 보고한다. 실행 결과는 `_output/logs/`에 기록된다.
@@ -113,7 +113,7 @@ TEST "Login customer" \
 
 ```bash
 bash apps/api/tests/runner.sh <scenario>
-# scenario: sse | customer-race | ticket-holding-race | showtime-overlap-race | purchase-double-spend
+# scenario: sse | user-race | ticket-holding-race | showtime-overlap-race | purchase-double-spend
 ```
 
 ### 6. 앱 실행
@@ -169,7 +169,7 @@ nest-seed/
 
 `apps/api/src/`의 영화 예매 도메인을 새 도메인으로 교체:
 
-- 모듈/서비스/컨트롤러/모델/DTO: Customers, Movies, Theaters, Showtimes, Tickets, Bookings, Purchases
+- 모듈/서비스/컨트롤러/모델/DTO: Users, Movies, Theaters, Showtimes, Tickets, Bookings, Purchases
 - 단위 테스트: `apps/api/src/__tests__/`
 - e2e 스펙: `apps/api/tests/e2e/specs/*.spec`
 - 도메인 용어: `docs/glossary.md`

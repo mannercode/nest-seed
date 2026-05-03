@@ -7,5 +7,5 @@ export class CreatePaymentDto {
 
     @IsNotEmpty()
     @IsString()
-    customerId: string
+    userId: string
 }

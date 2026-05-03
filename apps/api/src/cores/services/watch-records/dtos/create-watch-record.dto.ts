@@ -3,7 +3,7 @@ import { IsDate, IsNotEmpty, IsString } from 'class-validator'
 export class CreateWatchRecordDto {
     @IsNotEmpty()
     @IsString()
-    customerId: string
+    userId: string
 
     @IsNotEmpty()
     @IsString()

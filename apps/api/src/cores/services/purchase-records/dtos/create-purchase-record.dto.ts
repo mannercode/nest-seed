@@ -4,7 +4,7 @@ import { PurchaseItemDto } from './purchase-item.dto'
 export class CreatePurchaseRecordDto {
     @IsNotEmpty()
     @IsString()
-    customerId: string
+    userId: string
 
     @IsNotEmpty()
     @IsString()

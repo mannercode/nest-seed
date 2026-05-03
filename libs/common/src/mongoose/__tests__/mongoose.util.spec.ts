@@ -202,7 +202,7 @@ describe('QueryBuilder', () => {
             })
         })
 
-        // cycle-12: prefix + caseSensitive 조합 (theater/movie/customer 검색 모드)
+        // cycle-12: prefix + caseSensitive 조합 (theater/movie/user 검색 모드)
         describe('with both prefix and caseSensitive', () => {
             it('anchors and drops the i flag', () => {
                 builder.addRegex('name', 'test', { prefix: true, caseSensitive: true })

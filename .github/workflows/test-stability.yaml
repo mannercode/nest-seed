@@ -54,7 +54,7 @@ jobs:
             matrix:
                 scenario:
                     - sse
-                    - customer-race
+                    - user-race
                     - ticket-holding-race
                     - showtime-overlap-race
                     - purchase-double-spend

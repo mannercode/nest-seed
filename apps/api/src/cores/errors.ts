@@ -1,3 +1,3 @@
-import { CustomerErrors, MovieErrors } from './services'
+import { UserErrors, MovieErrors } from './services'
 
-export const CoreErrors = { Customers: CustomerErrors, Movies: MovieErrors }
+export const CoreErrors = { Users: UserErrors, Movies: MovieErrors }

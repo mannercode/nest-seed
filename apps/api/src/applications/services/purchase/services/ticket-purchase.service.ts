@@ -32,13 +32,13 @@ export class TicketPurchaseService {
         const ticketIds = ticketItems.map((item) => item.itemId)
 
         this.logger.log('completePurchase', {
-            customerId: createDto.customerId,
+            userId: createDto.userId,
             ticketCount: ticketIds.length
         })
 
         await this.ticketsService.updateStatusMany(ticketIds, TicketStatus.Sold)
 
-        await this.events.emitTicketPurchased({ customerId: createDto.customerId, ticketIds })
+        await this.events.emitTicketPurchased({ userId: createDto.userId, ticketIds })
     }
 
     async rollbackPurchase(createDto: CreatePurchaseDto): Promise<void> {
@@ -48,20 +48,17 @@ export class TicketPurchaseService {
         const ticketIds = ticketItems.map((item) => item.itemId)
 
         this.logger.warn('rollbackPurchase', {
-            customerId: createDto.customerId,
+            userId: createDto.userId,
             ticketCount: ticketIds.length
         })
 
         await this.ticketsService.updateStatusMany(ticketIds, TicketStatus.Available)
 
-        await this.events.emitTicketPurchaseCanceled({
-            customerId: createDto.customerId,
-            ticketIds
-        })
+        await this.events.emitTicketPurchaseCanceled({ userId: createDto.userId, ticketIds })
     }
 
     async validatePurchase(createDto: CreatePurchaseDto): Promise<void> {
-        this.logger.log('validatePurchase', { customerId: createDto.customerId })
+        this.logger.log('validatePurchase', { userId: createDto.userId })
         const ticketItems = createDto.purchaseItems.filter(
             (item) => item.type === PurchaseItemType.Tickets
         )
@@ -69,7 +66,7 @@ export class TicketPurchaseService {
 
         this.validateTicketCount(ticketItems)
         this.validatePurchaseTime(showtimes)
-        await this.validateHeldTickets(createDto.customerId, showtimes, ticketItems)
+        await this.validateHeldTickets(createDto.userId, showtimes, ticketItems)
     }
 
     private async getShowtimes(ticketItems: PurchaseItemDto[]) {
@@ -83,7 +80,7 @@ export class TicketPurchaseService {
     }
 
     private async validateHeldTickets(
-        customerId: string,
+        userId: string,
         showtimes: ShowtimeDto[],
         ticketItems: PurchaseItemDto[]
     ) {
@@ -92,7 +89,7 @@ export class TicketPurchaseService {
         for (const showtime of showtimes) {
             const ticketIds = await this.ticketHoldingService.searchHeldTicketIds(
                 showtime.id,
-                customerId
+                userId
             )
             heldTicketIds.push(...ticketIds)
         }

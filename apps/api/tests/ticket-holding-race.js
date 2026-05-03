@@ -3,11 +3,11 @@
 //
 // Each inner iteration: provisions a fresh showtime with enough tickets
 // for TICKET_GROUPS × 2 tickets, splits the tickets into TICKET_GROUPS
-// disjoint pairs, and races CUSTOMERS_PER_GROUP customers per pair.
-// Every customer in a group fires a hold on the same pair at the same
+// disjoint pairs, and races USERS_PER_GROUP users per pair.
+// Every user in a group fires a hold on the same pair at the same
 // time as every other group. Per group: exactly 1 × 200, rest × 409.
 //
-// Customers are created once and reused across inner iters; per-iter
+// Users are created once and reused across inner iters; per-iter
 // only provisions fresh tickets (held tickets can't be re-raced under
 // the same lock key).
 //
@@ -18,11 +18,11 @@ const http = require('http')
 
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000'
 const TICKET_GROUPS = Number(process.env.HOLD_TICKET_GROUPS || 5)
-const CUSTOMERS_PER_GROUP = Number(process.env.HOLD_CLIENT_COUNT || 50)
+const USERS_PER_GROUP = Number(process.env.HOLD_CLIENT_COUNT || 50)
 const INNER_ITERATIONS = Number(process.env.INNER_ITERATIONS || 200)
 const SHOWTIME_DEADLINE_MS = Number(process.env.SHOWTIME_DEADLINE_MS || 60_000)
 
-const TOTAL_CUSTOMERS = TICKET_GROUPS * CUSTOMERS_PER_GROUP
+const TOTAL_USERS = TICKET_GROUPS * USERS_PER_GROUP
 
 function requestRaw(method, path, { body, headers } = {}) {
     const url = new URL(path, SERVER_URL)
@@ -195,17 +195,17 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
     return { showtimeId, groups }
 }
 
-async function createAndLoginCustomer(index) {
+async function createAndLoginUser(index) {
     const email = `hold.${Date.now()}.${index}.${Math.random().toString(36).slice(2)}@example.com`
     const password = 'holdpassword'
-    const create = await requestRaw('POST', '/customers', {
+    const create = await requestRaw('POST', '/users', {
         body: { name: `hold-${index}`, birthDate: '1990-01-01T00:00:00.000Z', email, password }
     })
-    if (create.status !== 201) throw new Error(`customer create ${index}: ${create.status}`)
+    if (create.status !== 201) throw new Error(`user create ${index}: ${create.status}`)
 
-    const login = await requestRaw('POST', '/customers/login', { body: { email, password } })
+    const login = await requestRaw('POST', '/users/login', { body: { email, password } })
     if (login.status !== 200 && login.status !== 201) {
-        throw new Error(`customer login ${index}: ${login.status}`)
+        throw new Error(`user login ${index}: ${login.status}`)
     }
     return login.body.accessToken
 }
@@ -217,14 +217,14 @@ async function runInner(iteration, movieId, theaterId, tokens, startTimeOffsetMs
         startTimeOffsetMs
     )
 
-    // Build attempts: every (group, customer) pair fires a hold on that
-    // group's ticket pair. All TICKET_GROUPS × CUSTOMERS_PER_GROUP fire
+    // Build attempts: every (group, user) pair fires a hold on that
+    // group's ticket pair. All TICKET_GROUPS × USERS_PER_GROUP fire
     // simultaneously via a flat Promise.all.
     const attempts = []
     for (let g = 0; g < TICKET_GROUPS; g++) {
         const ticketIds = groups[g]
-        for (let c = 0; c < CUSTOMERS_PER_GROUP; c++) {
-            const token = tokens[g * CUSTOMERS_PER_GROUP + c]
+        for (let c = 0; c < USERS_PER_GROUP; c++) {
+            const token = tokens[g * USERS_PER_GROUP + c]
             attempts.push(
                 requestRaw('POST', `/booking/showtimes/${showtimeId}/tickets/hold`, {
                     body: { ticketIds },
@@ -273,12 +273,12 @@ async function runInner(iteration, movieId, theaterId, tokens, startTimeOffsetMs
 
 async function main() {
     console.log(
-        `[hold] server=${SERVER_URL} groups=${TICKET_GROUPS} customers/group=${CUSTOMERS_PER_GROUP} inner=${INNER_ITERATIONS}`
+        `[hold] server=${SERVER_URL} groups=${TICKET_GROUPS} users/group=${USERS_PER_GROUP} inner=${INNER_ITERATIONS}`
     )
 
     const { movieId, theaterId } = await setupMovieTheater()
     const tokens = await Promise.all(
-        Array.from({ length: TOTAL_CUSTOMERS }, (_, i) => createAndLoginCustomer(i))
+        Array.from({ length: TOTAL_USERS }, (_, i) => createAndLoginUser(i))
     )
 
     const spacingMs = 3 * 60 * 60 * 1000
@@ -291,7 +291,7 @@ async function main() {
     }
 
     console.log(
-        `[hold] PASS: ${INNER_ITERATIONS} iters × ${TICKET_GROUPS} groups × ${CUSTOMERS_PER_GROUP} customers`
+        `[hold] PASS: ${INNER_ITERATIONS} iters × ${TICKET_GROUPS} groups × ${USERS_PER_GROUP} users`
     )
 }
 

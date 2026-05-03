@@ -29,7 +29,7 @@ export class PurchaseNotificationService implements OnModuleInit, OnModuleDestro
         const event = JsonUtil.parse(message) as TicketPurchasedEvent
         this.received.push(event)
         this.logger.log('would send purchase confirmation', {
-            customerId: event.customerId,
+            userId: event.userId,
             ticketCount: event.ticketIds.length
         })
     }

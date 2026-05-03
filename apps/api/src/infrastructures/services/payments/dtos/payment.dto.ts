@@ -1,7 +1,7 @@
 export class PaymentDto {
     amount: number
     createdAt: Date
-    customerId: string
+    userId: string
     id: string
     updatedAt: Date
 }

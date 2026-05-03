@@ -10,7 +10,7 @@
 
 **무엇이 잘못돼 있었나** — [mongoose-config.module.ts](../apps/api/src/config/modules/mongoose-config.module.ts) 가 `maxPoolSize` 를 명시하지 않아 기본값 100을 사용하고 있었다. 4 replica × 100 = 400 이지만 한 replica 당 피크 부하가 100을 넘으면 그 replica 에서 즉시 고갈된다.
 
-**드러난 방식** — iter 당 500 concurrent POST 를 쏘는 시나리오(customer-race / ticket-holding)에서 `MongoWaitQueueTimeoutError: Timed out while checking out a connection from connection pool` 가 터지면서 500 응답이 섞여 나왔다.
+**드러난 방식** — iter 당 500 concurrent POST 를 쏘는 시나리오(user-race / ticket-holding)에서 `MongoWaitQueueTimeoutError: Timed out while checking out a connection from connection pool` 가 터지면서 500 응답이 섞여 나왔다.
 
 **조치** — `maxPoolSize: 200` 로 올렸다 ([9bb6664](https://github.com/mannercode/nest-seed/commit/9bb6664)). 실 서비스 부하 수준은 이 이상일 수도 있으니 앞으로 관측치에 따라 재조정 대상.
 
@@ -48,9 +48,9 @@
 
 ## 5. bcrypt 가 Node 기본 libuv threadpool(=4) 을 포화시켰다
 
-**무엇이 잘못돼 있었나** — 컨테이너 환경변수에 `UV_THREADPOOL_SIZE` 가 없어 기본 4 스레드로 돌았다. bcrypt 10-round hash 는 CPU-bound 로 libuv 에서 돈다. POST /customers / POST /customers/login 이 bcrypt 를 태우는데, 500 concurrent 요청이 들어오면 4 스레드에 125 개씩 쌓여 대기 4~5 초 걸린다.
+**무엇이 잘못돼 있었나** — 컨테이너 환경변수에 `UV_THREADPOOL_SIZE` 가 없어 기본 4 스레드로 돌았다. bcrypt 10-round hash 는 CPU-bound 로 libuv 에서 돈다. POST /users / POST /users/login 이 bcrypt 를 태우는데, 500 concurrent 요청이 들어오면 4 스레드에 125 개씩 쌓여 대기 4~5 초 걸린다.
 
-**드러난 방식** — customer-race 가 5/6 회 PASS 한 뒤, 6번째 run iter 2 에서 1 × 502 가 떨어졌다. nginx 로그를 보면 POST /customers 가 모두 4.5~5.5 초 걸리고 있었고, CPU 경합으로 한 요청이 transient TCP 리셋으로 502 가 됐다.
+**드러난 방식** — user-race 가 5/6 회 PASS 한 뒤, 6번째 run iter 2 에서 1 × 502 가 떨어졌다. nginx 로그를 보면 POST /users 가 모두 4.5~5.5 초 걸리고 있었고, CPU 경합으로 한 요청이 transient TCP 리셋으로 502 가 됐다.
 
 **조치** — compose env 에 `UV_THREADPOOL_SIZE=16` 을 박았다 ([6f17aed](https://github.com/mannercode/nest-seed/commit/6f17aed)). bcrypt 처리량이 4배로 늘어 큐 대기가 사라졌다. Dockerfile 은 건드리지 않고 compose 쪽에서만 조정.
 

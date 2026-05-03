@@ -7,7 +7,7 @@
 //
 // Env:
 //   SERVER_URL     default http://localhost:3000
-//   SCENARIO       customer-write | customer-read | mixed    (default: customer-write)
+//   SCENARIO       user-write | user-read | mixed    (default: user-write)
 //   CONCURRENCY    number of in-flight requests              (default: 100)
 //   DURATION_MS    steady-state duration in ms               (default: 30000)
 //   WARMUP_MS      warmup before measurement window          (default: 3000)
@@ -19,7 +19,7 @@ const path = require('path')
 const os = require('os')
 
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000'
-const SCENARIO = process.env.SCENARIO || 'customer-write'
+const SCENARIO = process.env.SCENARIO || 'user-write'
 const CONCURRENCY = Number(process.env.CONCURRENCY || 100)
 const DURATION_MS = Number(process.env.DURATION_MS || 30_000)
 const WARMUP_MS = Number(process.env.WARMUP_MS || 3_000)
@@ -40,10 +40,10 @@ function uniqueEmail(workerId, seq) {
 }
 
 function buildRequestFactory(scenario) {
-    if (scenario === 'customer-write') {
+    if (scenario === 'user-write') {
         return (workerId, seq) => ({
             method: 'POST',
-            path: '/customers',
+            path: '/users',
             body: {
                 name: `perf-${workerId}-${seq}`,
                 email: uniqueEmail(workerId, seq),
@@ -53,11 +53,11 @@ function buildRequestFactory(scenario) {
             expectStatus: 201
         })
     }
-    if (scenario === 'customer-read') {
-        // NOTE: GET /customers requires JWT — this scenario measures auth-reject
+    if (scenario === 'user-read') {
+        // NOTE: GET /users requires JWT — this scenario measures auth-reject
         // throughput, not mongo-read throughput. Use theater-read or movie-read
         // for unauthenticated mongo-read measurement.
-        return () => ({ method: 'GET', path: '/customers?take=50', body: null, expectStatus: 200 })
+        return () => ({ method: 'GET', path: '/users?take=50', body: null, expectStatus: 200 })
     }
     if (scenario === 'theater-write') {
         // POST /theaters has no auth guard; pure mongo write + majority commit.

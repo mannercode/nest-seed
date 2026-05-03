@@ -6,38 +6,38 @@ random_email() {
 	printf 'test.%s.%s@example.com\n' "${epoch_ns}" "${RANDOM}"
 }
 
-CUSTOMER_NAME="customer name"
-CUSTOMER_BIRTHDATE="1990-01-01T00:00:00.000Z"
-CUSTOMER_PASSWORD="testpassword"
-CUSTOMER_EMAIL="customer@example.com"
+USER_NAME="user name"
+USER_BIRTHDATE="1990-01-01T00:00:00.000Z"
+USER_PASSWORD="testpassword"
+USER_EMAIL="user@example.com"
 
-create_customer() {
-	CUSTOMER_EMAIL=$(random_email)
+create_user() {
+	USER_EMAIL=$(random_email)
 
-	SETUP POST /customers \
+	SETUP POST /users \
 		-H 'Content-Type: application/json' \
 		-d '{
-				"name": "'"${CUSTOMER_NAME}"'",
-				"birthDate": "'"${CUSTOMER_BIRTHDATE}"'",
-				"email": "'"${CUSTOMER_EMAIL}"'",
-				"password": "'"${CUSTOMER_PASSWORD}"'"
+				"name": "'"${USER_NAME}"'",
+				"birthDate": "'"${USER_BIRTHDATE}"'",
+				"email": "'"${USER_EMAIL}"'",
+				"password": "'"${USER_PASSWORD}"'"
 			}'
 
-	CUSTOMER_ID=$(echo "${BODY}" | jq -r '.id')
+	USER_ID=$(echo "${BODY}" | jq -r '.id')
 }
 
-login_customer() {
-	SETUP POST /customers/login \
+login_user() {
+	SETUP POST /users/login \
 		-H 'Content-Type: application/json' \
-		-d '{ "email": "'"${CUSTOMER_EMAIL}"'", "password": "'"${CUSTOMER_PASSWORD}"'" }'
+		-d '{ "email": "'"${USER_EMAIL}"'", "password": "'"${USER_PASSWORD}"'" }'
 
-	CUSTOMER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
-	CUSTOMER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
+	USER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
+	USER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
 }
 
-create_and_login_customer() {
-	create_customer
-	login_customer
+create_and_login_user() {
+	create_user
+	login_user
 }
 
 create_movie() {

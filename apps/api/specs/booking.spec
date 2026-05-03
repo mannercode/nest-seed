@@ -1,7 +1,7 @@
 #!/bin/bash
 . ./common.fixture
 
-create_and_login_customer
+create_and_login_user
 setup_showtime_resources
 
 TEST "Search booking theaters by movie and location" \
@@ -25,8 +25,8 @@ TEST "Retrieve booking tickets by showtime" \
 TICKET_ID_1=$(echo "${BODY}" | jq -r '.[0].id')
 TICKET_ID_2=$(echo "${BODY}" | jq -r '.[1].id')
 
-TEST "Hold booking tickets for a customer" \
+TEST "Hold booking tickets for a user" \
 	200 POST /booking/showtimes/${SHOWTIME_ID}/tickets/hold \
-	-H "Authorization: Bearer ${CUSTOMER_ACCESS_TOKEN}" \
+	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}" \
 	-H 'Content-Type: application/json' \
 	-d '{ "ticketIds": ["'${TICKET_ID_1}'", "'${TICKET_ID_2}'"] }'

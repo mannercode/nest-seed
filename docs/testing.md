@@ -31,32 +31,32 @@ describe('ServiceName')                       -- 최상위: 서비스/모듈명 
 각 테스트 스위트는 `createXxxFixture()` 팩토리로 격리된 컨텍스트를 생성한다.
 
 ```typescript
-describe('CustomersService', () => {
-    let fix: CustomersFixture
+describe('UsersService', () => {
+    let fix: UsersFixture
 
     beforeEach(async () => {
-        fix = await createCustomersFixture()
+        fix = await createUsersFixture()
     })
 
     afterEach(async () => {
         await fix.teardown()
     })
 
-    describe('POST /customers', () => {
+    describe('POST /users', () => {
         // 생성된 고객을 반환한다
-        it('returns the created customer', async () => {
-            await fix.httpClient.post('/customers').body(dto).created(expected)
+        it('returns the created user', async () => {
+            await fix.httpClient.post('/users').body(dto).created(expected)
         })
 
         // 이메일이 이미 존재할 때
         describe('when the email already exists', () => {
             beforeEach(async () => {
-                await fix.httpClient.post('/customers').body(dto).created()
+                await fix.httpClient.post('/users').body(dto).created()
             })
 
             // 409 Conflict를 반환한다
             it('returns 409 Conflict', async () => {
-                await fix.httpClient.post('/customers').body(dto).conflict()
+                await fix.httpClient.post('/users').body(dto).conflict()
             })
         })
     })
@@ -93,7 +93,7 @@ it.each([
 PATCH, DELETE 등 상태를 변경하는 API 테스트 시, **응답 검증**과 **영속성(DB) 검증**은 서로 다른 `it`으로 분리한다.
 
 ```typescript
-describe('DELETE /customers/:id', () => {
+describe('DELETE /users/:id', () => {
     beforeEach(async () => {
         /* delete 실행 */
     })
@@ -104,7 +104,7 @@ describe('DELETE /customers/:id', () => {
     })
 
     // DB에서 고객이 삭제된다
-    it('removes the customer from the database', async () => {
+    it('removes the user from the database', async () => {
         /* DB 검증 */
     })
 })
@@ -124,7 +124,7 @@ await client.post('/movies').body(createDto).created(expectedDto)
 await client.get('/movies').query({ title: 'Inception' }).ok(expectedList)
 
 // 특정 에러 상태 기대
-await client.post('/customers').body(duplicateDto).conflict()
+await client.post('/users').body(duplicateDto).conflict()
 
 // 파일 업로드
 await client
@@ -145,14 +145,14 @@ Jest 설정에서 `resetModules: true`를 적용하고, 테스트에서는 dynam
 
 ```ts
 // 타입 전용 import는 런타임에 영향을 주지 않는다
-import type { Fixture } from './customers.fixture'
+import type { Fixture } from './users.fixture'
 
-describe('Customers', () => {
+describe('Users', () => {
     let fix: Fixture
 
     beforeEach(async () => {
-        const { createCustomersFixture } = await import('./customers.fixture')
-        fix = await createCustomersFixture()
+        const { createUsersFixture } = await import('./users.fixture')
+        fix = await createUsersFixture()
     })
 })
 ```
@@ -233,7 +233,7 @@ coverageThreshold: {
 | 파일                       | 검증 대상                                                                                      |
 | -------------------------- | ---------------------------------------------------------------------------------------------- |
 | `sse.js`                   | SSE 이벤트가 Redis pub/sub 을 통해 모든 replica 의 클라이언트에 전달되는지                     |
-| `customer-race.js`         | 동일 이메일 동시 POST /customers — Mongo unique index 로 정확히 1 × 201 + N-1 × 409            |
+| `user-race.js`         | 동일 이메일 동시 POST /users — Mongo unique index 로 정확히 1 × 201 + N-1 × 409            |
 | `ticket-holding-race.js`   | 동시 hold-tickets — Redis SET NX 로 정확히 1 × 200 + N-1 × 409                                 |
 | `showtime-overlap-race.js` | 겹치는 시간대 saga 2개 동시 요청 — 분산 락으로 정확히 1 succeeded + 1 failed                   |
 | `purchase-double-spend.js` | 동일 티켓 세트 동시 구매 — 분산 락 + 상태 검증으로 정확히 1 × 201 + N-1 × 409 (payment 도 1개) |
@@ -252,4 +252,4 @@ bash apps/api/tests/runner.sh purchase-double-spend
 
 ### 9.3. CI
 
-`.github/workflows/test-stability.yaml` 의 `scenario` matrix 에 각 시나리오 (`sse`, `customer-race`, `ticket-holding-race`, `showtime-overlap-race`, `purchase-double-spend`) 를 등록해 50회 반복으로 flakiness 를 누적 관측한다.
+`.github/workflows/test-stability.yaml` 의 `scenario` matrix 에 각 시나리오 (`sse`, `user-race`, `ticket-holding-race`, `showtime-overlap-race`, `purchase-double-spend`) 를 등록해 50회 반복으로 flakiness 를 누적 관측한다.

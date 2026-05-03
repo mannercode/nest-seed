@@ -27,16 +27,16 @@ participant JwtAuthService
 database Redis
 
 == 회원가입 ==
-Client -> Controller: POST /customers
+Client -> Controller: POST /users
 Controller -> Controller: bcrypt hash 후 DB 저장
 Controller --> Client: 201 Created
 
 == 로그인 ==
-Client -> Controller: POST /customers/login\n{ email, password }
+Client -> Controller: POST /users/login\n{ email, password }
 Controller -> LocalAuthGuard: canActivate()
 LocalAuthGuard -> LocalAuthGuard: body에서 email/password 추출
 LocalAuthGuard -> LocalAuthGuard: validate() → bcrypt.compare
-LocalAuthGuard -> Controller: request.user = { customerId, email }
+LocalAuthGuard -> Controller: request.user = { userId, email }
 Controller -> JwtAuthService: generateAuthTokens(payload)
 JwtAuthService -> JwtAuthService: accessToken 서명 (accessSecret, 짧은 TTL)
 JwtAuthService -> JwtAuthService: refreshToken 서명 (refreshSecret, 긴 TTL)
@@ -45,14 +45,14 @@ JwtAuthService --> Controller: { accessToken, refreshToken }
 Controller --> Client: 200 OK { accessToken, refreshToken }
 
 == 인증 요청 ==
-Client -> Controller: GET /customers/:id\nAuthorization: Bearer <accessToken>
+Client -> Controller: GET /users/:id\nAuthorization: Bearer <accessToken>
 Controller -> JwtAuthGuard: canActivate()
 JwtAuthGuard -> JwtAuthGuard: verifyAsync(token, accessSecret)
 JwtAuthGuard -> Controller: request.user = decoded payload
 Controller --> Client: 200 OK
 
 == 토큰 갱신 ==
-Client -> Controller: POST /customers/refresh\n{ refreshToken }
+Client -> Controller: POST /users/refresh\n{ refreshToken }
 Controller -> JwtAuthService: refreshAuthTokens(refreshToken)
 JwtAuthService -> JwtAuthService: verifyAsync(token, refreshSecret)
 JwtAuthService -> Redis: GET refreshTokenId
@@ -130,7 +130,7 @@ endif
 
 ```ts
 @Injectable()
-export class CustomerJwtAuthGuard extends JwtAuthGuard {
+export class UserJwtAuthGuard extends JwtAuthGuard {
     constructor(jwtService: JwtService, reflector: Reflector, config: AppConfigService) {
         super(jwtService, reflector, { secret: config.auth.accessSecret })
     }
@@ -140,7 +140,7 @@ export class CustomerJwtAuthGuard extends JwtAuthGuard {
         const guards =
             this.reflector.get(GUARDS_METADATA, context.getHandler()) ??
             this.reflector.get(GUARDS_METADATA, context.getClass())
-        return defaultTo(guards, []).some((guard) => guard === CustomerLocalAuthGuard)
+        return defaultTo(guards, []).some((guard) => guard === UserLocalAuthGuard)
     }
 }
 ```
@@ -149,18 +149,18 @@ export class CustomerJwtAuthGuard extends JwtAuthGuard {
 
 ```ts
 @Injectable()
-export class CustomerLocalAuthGuard extends LocalAuthGuard {
-    constructor(private readonly customersService: CustomersService) {
+export class UserLocalAuthGuard extends LocalAuthGuard {
+    constructor(private readonly usersService: UsersService) {
         super({
             usernameField: 'email',
             passwordField: 'password',
             validate: async (email, password) => {
-                const customer = await this.customersService.findCustomerByCredentials({
+                const user = await this.usersService.findUserByCredentials({
                     email,
                     password
                 })
-                if (!customer) throw new UnauthorizedException(AuthErrors.Unauthorized())
-                return { customerId: customer.id, email }
+                if (!user) throw new UnauthorizedException(AuthErrors.Unauthorized())
+                return { userId: user.id, email }
             }
         })
     }
@@ -170,17 +170,17 @@ export class CustomerLocalAuthGuard extends LocalAuthGuard {
 ### 3. 컨트롤러에서 가드 적용
 
 ```ts
-@Controller('customers')
-@UseGuards(CustomerJwtAuthGuard)          // 클래스 레벨 — 전체 엔드포인트 JWT 필수
-export class CustomersHttpController {
+@Controller('users')
+@UseGuards(UserJwtAuthGuard)          // 클래스 레벨 — 전체 엔드포인트 JWT 필수
+export class UsersHttpController {
 
     @Post('signup')
     @Public()                              // JWT 검증 건너뛰기
-    async signup(@Body() dto: CreateCustomerDto) { ... }
+    async signup(@Body() dto: CreateUserDto) { ... }
 
     @Post('login')
-    @UseGuards(CustomerLocalAuthGuard)     // body에서 자격증명 검증
-    async login(@Req() req: CustomerAuthRequest) {
+    @UseGuards(UserLocalAuthGuard)     // body에서 자격증명 검증
+    async login(@Req() req: UserAuthRequest) {
         return this.service.generateAuthTokens(req.user)
     }
 }
@@ -190,9 +190,9 @@ export class CustomersHttpController {
 
 ```ts
 @Get('recommended')
-@UseGuards(CustomerOptionalJwtAuthGuard)   // 토큰 없으면 user=null, 있으면 디코딩
-async searchRecommendedMovies(@Req() req: CustomerOptionalAuthRequest) {
-    const customerId = defaultTo(req.user?.customerId, null)
+@UseGuards(UserOptionalJwtAuthGuard)   // 토큰 없으면 user=null, 있으면 디코딩
+async searchRecommendedMovies(@Req() req: UserOptionalAuthRequest) {
+    const userId = defaultTo(req.user?.userId, null)
 }
 ```
 
@@ -202,7 +202,7 @@ async searchRecommendedMovies(@Req() req: CustomerOptionalAuthRequest) {
 
 ```ts
 JwtAuthModule.register({
-    prefix: 'customer-auth',
+    prefix: 'user-auth',
     inject: [AppConfigService],
     useFactory: (config: AppConfigService) => ({
         auth: {

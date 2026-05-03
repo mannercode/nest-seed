@@ -5,7 +5,7 @@ import { MongooseConfigModule } from 'config'
 @Schema(MongooseConfigModule.schemaOptions)
 export class WatchRecord extends CrudSchema {
     @Prop({ required: true })
-    customerId: string
+    userId: string
 
     @Prop({ required: true })
     movieId: string

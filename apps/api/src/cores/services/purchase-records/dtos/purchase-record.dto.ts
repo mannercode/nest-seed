@@ -2,7 +2,7 @@ import type { PurchaseItemDto } from './purchase-item.dto'
 
 export class PurchaseRecordDto {
     createdAt: Date
-    customerId: string
+    userId: string
     id: string
     paymentId: string
     purchaseItems: PurchaseItemDto[]

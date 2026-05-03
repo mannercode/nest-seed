@@ -3,7 +3,7 @@ import { oid, toAny, TestContext } from '@mannercode/testing'
 import { PurchaseModule, CreatePurchaseDto } from 'applications'
 import { PurchaseHttpController } from 'controllers'
 import {
-    CustomersModule,
+    UsersModule,
     MoviesModule,
     PurchaseItemType,
     PurchaseRecordsModule,
@@ -33,7 +33,7 @@ export async function createPurchaseFixture(): Promise<PurchaseFixture> {
             TheatersModule,
             TicketsModule,
             PurchaseRecordsModule,
-            CustomersModule,
+            UsersModule,
             ShowtimesModule,
             TicketHoldingModule,
             PaymentsModule,
@@ -44,7 +44,7 @@ export async function createPurchaseFixture(): Promise<PurchaseFixture> {
     return { ...ctx }
 }
 
-const customerId = oid(0x01)
+const userId = oid(0x01)
 
 export function buildCreatePurchaseDto(
     tickets: TicketDto[],
@@ -52,7 +52,7 @@ export function buildCreatePurchaseDto(
 ) {
     const purchaseItems = tickets.map(({ id }) => ({ itemId: id, type: PurchaseItemType.Tickets }))
 
-    const createDto = { customerId, purchaseItems, totalPrice: 1, ...overrides }
+    const createDto = { userId, purchaseItems, totalPrice: 1, ...overrides }
     return createDto
 }
 
@@ -80,7 +80,7 @@ export async function holdTickets(ctx: TestContext, tickets: TicketDto[]) {
 
     await ticketHoldingService.holdTickets(
         buildHoldTicketsDto({
-            customerId,
+            userId,
             showtimeId: tickets[0].showtimeId,
             ticketIds: pickIds(tickets)
         })

@@ -33,7 +33,7 @@ export class PurchaseEventLoggerService implements OnModuleInit, OnModuleDestroy
         const event = JsonUtil.parse(message) as TicketPurchasedEvent
         this.entries.push({ event, kind: 'purchased' })
         this.logger.log('purchase observed', {
-            customerId: event.customerId,
+            userId: event.userId,
             ticketCount: event.ticketIds.length
         })
     }
@@ -41,7 +41,7 @@ export class PurchaseEventLoggerService implements OnModuleInit, OnModuleDestroy
         const event = JsonUtil.parse(message) as TicketPurchaseCanceledEvent
         this.entries.push({ event, kind: 'canceled' })
         this.logger.log('purchase canceled', {
-            customerId: event.customerId,
+            userId: event.userId,
             ticketCount: event.ticketIds.length
         })
     }

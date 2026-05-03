@@ -5,7 +5,7 @@ import { PurchaseItemDto } from 'cores'
 export class CreatePurchaseDto {
     @IsNotEmpty()
     @IsString()
-    customerId: string
+    userId: string
 
     @IsArray()
     @IsNotEmpty()

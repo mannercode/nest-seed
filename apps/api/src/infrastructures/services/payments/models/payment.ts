@@ -8,6 +8,6 @@ export class Payment extends CrudSchema {
     amount: number
 
     @Prop({ required: true })
-    customerId: string
+    userId: string
 }
 export const PaymentSchema = createCrudSchema(Payment)

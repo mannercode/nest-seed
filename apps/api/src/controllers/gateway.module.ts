@@ -2,16 +2,12 @@ import { Module } from '@nestjs/common'
 import { ApplicationsModule } from 'applications'
 import { CoresModule } from 'cores'
 import { BookingHttpController } from './booking.http-controller'
-import { CustomersHttpController } from './customers.http-controller'
-import {
-    CustomerJwtAuthGuard,
-    CustomerLocalAuthGuard,
-    CustomerOptionalJwtAuthGuard
-} from './guards'
+import { UserJwtAuthGuard, UserLocalAuthGuard, UserOptionalJwtAuthGuard } from './guards'
 import { MoviesHttpController } from './movies.http-controller'
 import { PurchaseHttpController } from './purchase.http-controller'
 import { ShowtimeCreationHttpController } from './showtime-creation.http-controller'
 import { TheatersHttpController } from './theaters.http-controller'
+import { UsersHttpController } from './users.http-controller'
 
 // Controllers/guards inject services from CoresModule and ApplicationsModule.
 // NestJS DI is module-scoped: a controller can only resolve providers exported
@@ -23,12 +19,12 @@ import { TheatersHttpController } from './theaters.http-controller'
     imports: [CoresModule, ApplicationsModule],
     controllers: [
         BookingHttpController,
-        CustomersHttpController,
+        UsersHttpController,
         MoviesHttpController,
         PurchaseHttpController,
         ShowtimeCreationHttpController,
         TheatersHttpController
     ],
-    providers: [CustomerJwtAuthGuard, CustomerLocalAuthGuard, CustomerOptionalJwtAuthGuard]
+    providers: [UserJwtAuthGuard, UserLocalAuthGuard, UserOptionalJwtAuthGuard]
 })
 export class GatewayModule {}
