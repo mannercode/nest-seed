@@ -1,5 +1,5 @@
 #!/bin/bash
-. ./_common.fixture
+. ./common.fixture
 
 CUSTOMER_EMAIL=$(random_email)
 

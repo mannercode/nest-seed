@@ -1,5 +1,5 @@
 #!/bin/bash
-. ./_common.fixture
+. ./common.fixture
 
 TEST "Create a movie" \
 	201 POST /movies \

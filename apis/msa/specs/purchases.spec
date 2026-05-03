@@ -1,5 +1,5 @@
 #!/bin/bash
-. ./_common.fixture
+. ./common.fixture
 
 create_and_login_customer
 setup_showtime_resources

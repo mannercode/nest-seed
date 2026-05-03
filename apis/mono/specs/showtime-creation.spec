@@ -1,5 +1,5 @@
 #!/bin/bash
-. ./_common.fixture
+. ./common.fixture
 
 create_movie
 publish_movie

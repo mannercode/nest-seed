@@ -78,7 +78,7 @@ bash apis/mono/deploy/test.sh
 ```
 specs/
 ├── run.sh                 # 전체 스펙 실행
-├── _common.fixture        # 공통 셋업
+├── common.fixture        # 공통 셋업
 ├── assets/                # 테스트용 파일 (이미지 등)
 ├── customers.spec
 ├── movies.spec
