@@ -2,12 +2,10 @@ const globals = require('globals')
 const allowedDependenciesPlugin = require('eslint-plugin-allowed-dependencies').default
 const jestPlugin = require('eslint-plugin-jest')
 const {
-    tseslint,
     baseGlobals,
-    basePlugins,
-    baseRules,
     barrelImportPatterns,
-    nodeBuiltinModulePattern
+    nodeBuiltinModulePattern,
+    createBaseConfigs
 } = require('../../eslint.config.base')
 
 const internalAliasPattern = '^(?:applications|controllers|cores|infrastructures|config)$'
@@ -25,21 +23,11 @@ const sourceDependencyOptions = {
 const testDependencyOptions = { ...sourceDependencyOptions, development: true }
 
 module.exports = [
+    ...createBaseConfigs({ tsconfigRootDir: __dirname }),
     {
         files: ['src/**/*.ts'],
-        linterOptions: { reportUnusedDisableDirectives: true },
-        languageOptions: {
-            parser: tseslint.parser,
-            parserOptions: {
-                sourceType: 'module',
-                projectService: true,
-                tsconfigRootDir: __dirname
-            },
-            globals: { ...baseGlobals }
-        },
-        plugins: { ...basePlugins, allowed: allowedDependenciesPlugin },
+        plugins: { allowed: allowedDependenciesPlugin },
         rules: {
-            ...baseRules,
             'default-case': 'off',
             'allowed/dependencies': ['warn', sourceDependencyOptions]
         }
@@ -54,16 +42,6 @@ module.exports = [
             'jest/no-disabled-tests': 'warn',
             'jest/valid-expect': 'warn',
             'jest/no-identical-title': 'warn'
-        }
-    },
-    {
-        files: ['src/**/*.spec.ts', 'src/**/*.test.ts'],
-        ignores: ['src/**/__tests__/**'],
-        rules: {
-            'no-restricted-syntax': [
-                'error',
-                { selector: 'Program', message: 'Test files must live under __tests__.' }
-            ]
         }
     },
     {

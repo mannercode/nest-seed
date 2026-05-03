@@ -1,3 +1,5 @@
 export * from './common.module'
 export * from './mongoose-config.module'
+export * from './nats-config.module'
 export * from './redis-config.module'
+export * from './temporal-config.module'

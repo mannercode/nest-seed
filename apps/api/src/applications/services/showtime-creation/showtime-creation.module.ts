@@ -1,21 +1,21 @@
-import { CacheModule, PubSubModule } from '@mannercode/common'
-import { BullModule } from '@nestjs/bullmq'
+import { CacheModule, NatsPubSubModule, TemporalWorkerService } from '@mannercode/common'
 import { Module } from '@nestjs/common'
-import { getProjectId, RedisConfigModule } from 'config'
+import { AppConfigService, getProjectId, NatsConfigModule, RedisConfigModule } from 'config'
 import { MoviesModule, ShowtimesModule, TheatersModule, TicketsModule } from 'cores'
 import {
     ShowtimeBulkCreatorService,
     ShowtimeBulkValidatorService,
-    ShowtimeCreationWorkerService
+    ShowtimeCreationOrchestratorService
 } from './services'
 import { ShowtimeCreationEvents } from './showtime-creation.events'
 import { ShowtimeCreationService } from './showtime-creation.service'
+import { ShowtimeCreationActivities } from './temporal/activities'
+import { getShowtimeCreationTaskQueue } from './temporal/types'
 
 @Module({
     exports: [ShowtimeCreationService, ShowtimeCreationEvents],
     imports: [
-        BullModule.registerQueue({ configKey: 'queue', name: 'showtime-creation' }),
-        PubSubModule.register({ redisName: RedisConfigModule.connectionName }),
+        NatsPubSubModule.register({ natsName: NatsConfigModule.connectionName }),
         CacheModule.register({
             name: 'showtime-creation',
             prefix: `cache:${getProjectId()}`,
@@ -29,9 +29,22 @@ import { ShowtimeCreationService } from './showtime-creation.service'
     providers: [
         ShowtimeCreationEvents,
         ShowtimeCreationService,
-        ShowtimeCreationWorkerService,
+        ShowtimeCreationOrchestratorService,
         ShowtimeBulkValidatorService,
-        ShowtimeBulkCreatorService
+        ShowtimeBulkCreatorService,
+        ShowtimeCreationActivities,
+        {
+            inject: [AppConfigService, ShowtimeCreationActivities],
+            provide: TemporalWorkerService,
+            useFactory: (config: AppConfigService, activities: ShowtimeCreationActivities) =>
+                new TemporalWorkerService({
+                    activities: activities.bind(),
+                    address: config.temporal.address,
+                    namespace: config.temporal.namespace,
+                    taskQueue: getShowtimeCreationTaskQueue(),
+                    workflowsPath: require.resolve('./temporal/workflows')
+                })
+        }
     ]
 })
 export class ShowtimeCreationModule {}

@@ -1,20 +1,24 @@
-import { InjectPubSub, JsonUtil, PubSubService } from '@mannercode/common'
+import { InjectNatsPubSub, JsonUtil, NatsPubSubService } from '@mannercode/common'
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import { getProjectId } from 'config'
 import { Observable, Subject } from 'rxjs'
 import type { ShowtimeCreationEvent } from './services/types'
 
 /**
- * Bridges worker → SSE client across replicas.
+ * Bridges Temporal worker → SSE client across replicas.
  *
- * The worker that processes a job may live on a different replica than the
- * HTTP controller serving an SSE stream. We publish status changes onto a
- * Redis pub/sub channel and subscribe on every replica, forwarding incoming
+ * The worker that runs a workflow may live on a different replica than the
+ * HTTP controller serving an SSE stream. Status changes are published onto
+ * a NATS subject and every replica subscribes, forwarding incoming
  * messages to a local RxJS Subject. `observeStatusChanged` exposes that
  * Subject so the controller can map events into SSE payloads.
+ *
+ * Subject name is namespaced by PROJECT_ID so parallel test workers (each
+ * with a unique PROJECT_ID) don't see one another's events.
  */
 @Injectable()
 export class ShowtimeCreationEvents implements OnModuleInit, OnModuleDestroy {
-    private static readonly CHANNEL = 'showtime-creation.statusChanged'
+    private readonly natsSubject = `${getProjectId()}.showtime-creation.statusChanged`
 
     private readonly subject = new Subject<ShowtimeCreationEvent>()
     private readonly handler = (message: string) => {
@@ -22,19 +26,19 @@ export class ShowtimeCreationEvents implements OnModuleInit, OnModuleDestroy {
         this.subject.next(event)
     }
 
-    constructor(@InjectPubSub() private readonly pubSub: PubSubService) {}
+    constructor(@InjectNatsPubSub() private readonly natsPubSub: NatsPubSubService) {}
 
     async onModuleInit() {
-        await this.pubSub.subscribe(ShowtimeCreationEvents.CHANNEL, this.handler)
+        await this.natsPubSub.subscribe(this.natsSubject, this.handler)
     }
 
     async onModuleDestroy() {
-        await this.pubSub.unsubscribe(ShowtimeCreationEvents.CHANNEL, this.handler)
+        await this.natsPubSub.unsubscribe(this.natsSubject, this.handler)
         this.subject.complete()
     }
 
     async emitStatusChanged(payload: ShowtimeCreationEvent) {
-        await this.pubSub.publish(ShowtimeCreationEvents.CHANNEL, JSON.stringify(payload))
+        await this.natsPubSub.publish(this.natsSubject, JSON.stringify(payload))
     }
 
     observeStatusChanged(): Observable<ShowtimeCreationEvent> {

@@ -1,0 +1,27 @@
+services:
+    nats:
+        extends: { file: ./compose.common.yml, service: common-options }
+        container_name: nats
+        image: $NATS_IMAGE
+        deploy: { resources: { limits: { memory: 256m } } }
+        shm_size: '8m'
+        # `-js` enables JetStream. `--store_dir /data` is mapped to a named
+        # volume so streams survive container restarts. `-m` exposes the
+        # monitoring HTTP port for healthchecks (and ad-hoc inspection).
+        command: >
+            --name nats
+            -js
+            --store_dir /data
+            -m 8222
+        ports:
+            - '$NATS_PORT:4222'
+            - '$NATS_MONITORING_PORT:8222'
+        volumes:
+            - nats_data:/data
+        # `/healthz` is the standard NATS 2.10+ health endpoint. With
+        # `?js-enabled-only=true` it also asserts JetStream is up.
+        healthcheck:
+            test: 'wget -qO- "http://localhost:8222/healthz?js-enabled-only=true" || exit 1'
+
+volumes:
+    nats_data: {}

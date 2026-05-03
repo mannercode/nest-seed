@@ -2,7 +2,7 @@ import { PaginationDto, OrderDirection } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { MoviesService, ShowtimesService, TheatersService } from 'cores'
 import { BulkCreateShowtimesDto, RequestShowtimeCreationResponse } from './dtos'
-import { ShowtimeCreationWorkerService } from './services'
+import { ShowtimeCreationOrchestratorService } from './services'
 
 @Injectable()
 export class ShowtimeCreationService {
@@ -10,13 +10,13 @@ export class ShowtimeCreationService {
         private readonly theatersService: TheatersService,
         private readonly moviesService: MoviesService,
         private readonly showtimesService: ShowtimesService,
-        private readonly workerService: ShowtimeCreationWorkerService
+        private readonly orchestrator: ShowtimeCreationOrchestratorService
     ) {}
 
     async requestShowtimeCreation(
         createDto: BulkCreateShowtimesDto
     ): Promise<RequestShowtimeCreationResponse> {
-        const sagaId = await this.workerService.enqueueShowtimeCreationJob(createDto)
+        const sagaId = await this.orchestrator.enqueueShowtimeCreationJob(createDto)
 
         return { sagaId }
     }

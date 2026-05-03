@@ -6,22 +6,22 @@
 
 ## 1. 채택 (이미 적용)
 
-| 분야                 | 기술                                                       |
-| -------------------- | ---------------------------------------------------------- |
-| 프레임워크           | NestJS                                                     |
-| 이벤트               | Redis Pub/Sub (`PubSubService`, cross-replica SSE)         |
-| 분산 락              | Redis SET NX + Lua (`cache.withLock` / `withLockBlocking`) |
-| 워크플로우           | BullMQ                                                     |
-| DB                   | MongoDB (replica set)                                      |
-| 캐시/큐              | Redis (cluster)                                            |
-| 객체 스토리지        | S3 / MinIO                                                 |
-| 컨테이너             | Docker, Docker Compose                                     |
-| CI                   | GitHub Actions                                             |
-| 테스트 (단위/통합)   | Jest + Testcontainers                                      |
-| 테스트 (e2e)         | bash + curl spec                                           |
-| 테스트 (분산 stress) | Node 블랙박스 + N-replica docker compose                   |
+| 분야                 | 기술                                                                |
+| -------------------- | ------------------------------------------------------------------- |
+| 프레임워크           | NestJS                                                              |
+| 이벤트 (cross-replica) | NATS pub/sub (`NatsPubSubService`, SSE 브로드캐스트, queue group) |
+| 워크플로우 (saga)    | Temporal (workflow + activities, 영속·재시도·보상)                  |
+| 분산 락              | Redis SET NX + Lua (`cache.withLock` / `withLockBlocking`)          |
+| DB                   | MongoDB (replica set)                                               |
+| 캐시                 | Redis (cluster)                                                     |
+| 객체 스토리지        | S3 / MinIO                                                          |
+| 컨테이너             | Docker, Docker Compose                                              |
+| CI                   | GitHub Actions                                                      |
+| 테스트 (단위/통합)   | Jest + Testcontainers                                               |
+| 테스트 (e2e)         | bash + curl spec                                                    |
+| 테스트 (분산 stress) | Node 블랙박스 + N-replica docker compose                            |
 
-> 과거 msa 시드에서 채택했던 NATS / Temporal / Kong 은 [msa-archive.md](msa-archive.md) 참조.
+> 본 시드는 코드를 단일 `apps/api` 로 통합한 monolith 지만 4 replica 배포 + NATS / Temporal 인프라를 유지하는 **MSA-ready monolith** 다. cross-replica 메시징과 saga 오케스트레이션이 monolith 안에서도 필요한 동시에, 서비스 분리 시점이 오면 인프라 교체 없이 코드 경계만 끊으면 된다. 과거 msa 코드 자체는 [msa-archive.md](msa-archive.md) 참조.
 
 ---
 
@@ -86,7 +86,8 @@ Pact (계약 테스트), k6 (부하 테스트), Trivy (이미지 스캔), Cosign
 
 | 기술                             | 거부 사유                                                                                                                                                                             |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Kafka**                        | 과거 msa 에서 NATS 선택. kafkajs 유지보수 종료(2022), maxWaitTimeInMs 폴링으로 테스트 종료 느림, 토픽 사전 생성 비용, broker3+controller3 메모리 부담 (msa 자체는 archive 됨)         |
+| **Kafka**                        | NATS 채택. kafkajs 유지보수 종료(2022), maxWaitTimeInMs 폴링으로 테스트 종료 느림, 토픽 사전 생성 비용, broker3+controller3 메모리 부담. NATS pub/sub + JetStream(필요 시)으로 충분    |
+| **BullMQ**                       | Temporal 채택. saga 의 보상/재시도/상태머신을 직접 손으로 짜는 부담을 Temporal workflow 가 흡수. JetStream/NATS 와 역할 명확히 분리                                                    |
 | **OpenAPI / Swagger**            | bash + curl 기반 e2e shell spec(`apps/api/tests/e2e/specs/*.spec`)으로 대체. 코드 동기화 비용 없음, 실행 가능한 살아있는 문서, 시나리오 흐름 표현, CI 통합 용이, 데코레이터 부담 없음 |
 | **Service Mesh (Istio/Linkerd)** | 시드 복잡도 초과. K8s 운영 단계에서 별도 검토                                                                                                                                         |
 | **Datadog / New Relic**          | SaaS 의존, OSS 시드에 부적합. 운영자가 선택                                                                                                                                           |

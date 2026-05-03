@@ -1,5 +1,6 @@
 export * from './booking.http-controller'
 export * from './customers.http-controller'
+export * from './gateway.module'
 export * from './guards'
 export * from './movies.http-controller'
 export * from './purchase.http-controller'

@@ -5,7 +5,7 @@
 ```
 src/
 ├── controllers/          # HTTP API 컨트롤러, 인증
-├── applications/         # 비즈니스 로직 서비스 (BullMQ)
+├── applications/         # 비즈니스 로직 서비스 (Temporal workflow + activities)
 ├── cores/                # 도메인 모델, 리포지토리
 ├── infrastructures/      # 외부 서비스 연동 (결제, 파일)
 ├── config/               # 앱 설정, 비즈니스 규칙(Rules), 파이프, 미들웨어

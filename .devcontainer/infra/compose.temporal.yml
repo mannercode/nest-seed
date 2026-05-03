@@ -1,0 +1,61 @@
+services:
+    temporal-postgresql:
+        extends: { file: ./compose.common.yml, service: common-options }
+        image: postgres:17-alpine
+        container_name: temporal-postgresql
+        environment:
+            POSTGRES_USER: temporal
+            POSTGRES_PASSWORD: temporal
+            POSTGRES_DB: temporal
+        ports: ['$TEMPORAL_DB_PORT:5432']
+        volumes:
+            - temporal_pgdata:/var/lib/postgresql/data
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U temporal']
+        deploy: { resources: { limits: { memory: 256m } } }
+        shm_size: '16m'
+
+    temporal:
+        extends: { file: ./compose.common.yml, service: common-options }
+        image: $TEMPORAL_IMAGE
+        container_name: temporal
+        depends_on:
+            temporal-postgresql: { condition: service_healthy }
+        environment:
+            DB: postgres12
+            DB_PORT: '5432'
+            POSTGRES_USER: temporal
+            POSTGRES_PWD: temporal
+            POSTGRES_SEEDS: temporal-postgresql
+        ports: ['$TEMPORAL_PORT:7233']
+        # auto-setup runs schema migrations on first boot (~30s). After that
+        # subsequent boots are fast. healthcheck has a longer start_period to
+        # absorb that initial cost without flapping.
+        healthcheck:
+            test: ['CMD', 'tctl', '--address', 'temporal:7233', 'cluster', 'health']
+            interval: 5s
+            start_period: 30s
+        deploy: { resources: { limits: { memory: 384m } } }
+        shm_size: '16m'
+
+    temporal-setup:
+        extends: { file: ./compose.common.yml, service: common-options }
+        image: alpine
+        container_name: temporal-setup
+        depends_on:
+            temporal: { condition: service_healthy }
+        command: echo temporal ready
+
+    temporal-ui:
+        extends: { file: ./compose.common.yml, service: common-options }
+        profiles: ['gui']
+        image: temporalio/ui:latest
+        container_name: temporal-ui
+        depends_on:
+            temporal: { condition: service_healthy }
+        environment:
+            TEMPORAL_ADDRESS: temporal:7233
+        ports: ['$TEMPORAL_UI_PORT:8080']
+
+volumes:
+    temporal_pgdata: {}

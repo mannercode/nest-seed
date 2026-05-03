@@ -2,6 +2,9 @@
 
 본 repo 는 한때 **mono 와 msa 두 가지 구현**을 동일 도메인(영화관 예매)에 대해 유지했다. 2026-04-29 기준 msa 를 제거했다. 이 문서는 **무엇이 있었는지·왜 있었는지·왜 제거했는지** 를 기록한다. 다시 필요해질 때 이 문서와 git history (`apis/msa` 가 마지막으로 살아있던 commit) 를 출발점으로 재구성 가능.
 
+> **2026-05-03 update — MSA-ready monolith 로 재포지셔닝.**
+> msa 구현 자체는 archive 상태로 유지하되, msa 에서 사용하던 **NATS / Temporal 인프라는 mono 로 다시 도입**했다. 동기는 4 replica 기본 배포에서 cross-replica 메시징 (Redis Pub/Sub `PubSubService`) 과 saga 직접 구현 (BullMQ + 수동 compensate) 의 한계가 누적된 것. 코드는 단일 `apps/api` 그대로 두되 인프라만 MSA 수준으로 끌어올려, 코드를 여러 프로젝트로 나누지 않고도 같은 분산 표면을 사용한다. 추후 진정한 MSA 분리가 필요해지면 코드 경계만 끊으면 되고 인프라 교체 비용은 들지 않는다. 자세한 현행 사용은 [architecture.md](architecture.md) §5 참조.
+
 ## 제거 결정 (2026-04-29)
 
 ### 결정의 종합적 배경

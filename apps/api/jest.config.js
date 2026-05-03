@@ -27,7 +27,13 @@ module.exports = {
         '/main\\.ts$',
         '/config/configure-app\\.ts$',
         '/index\\.ts$',
-        '\\.module\\.ts$'
+        '\\.module\\.ts$',
+        // Temporal workflow body runs inside `bundleWorkflowCode`'s sandbox
+        // VM, so jest's istanbul instrumentation can't see executions even
+        // though showtime-creation.spec.ts exercises it end-to-end. Pure
+        // logic (extractRootMessage etc) lives in sibling files and IS
+        // covered by unit tests.
+        '/temporal/workflows\\.ts$'
     ],
     coverageDirectory: '<rootDir>/_output/coverage'
 }

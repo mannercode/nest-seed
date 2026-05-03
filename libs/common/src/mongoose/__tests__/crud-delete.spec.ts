@@ -149,7 +149,7 @@ describe('Crud Delete', () => {
                 const doc = await fix.model.findOneAndUpdate(
                     { _id: createdDoc._id },
                     { name: 'updated' },
-                    { new: true }
+                    { returnDocument: 'after' }
                 )
                 expect(doc).toBeNull()
             })

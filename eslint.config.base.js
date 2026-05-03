@@ -78,6 +78,40 @@ const baseRules = {
     '@typescript-eslint/adjacent-overload-signatures': 'warn'
 }
 
+function createBaseConfigs({ tsconfigRootDir, srcGlob = 'src/**' }) {
+    return [
+        {
+            files: [`${srcGlob}/*.ts`],
+            linterOptions: { reportUnusedDisableDirectives: true },
+            languageOptions: {
+                parser: tseslint.parser,
+                parserOptions: {
+                    sourceType: 'module',
+                    projectService: true,
+                    tsconfigRootDir
+                },
+                globals: { ...baseGlobals }
+            },
+            plugins: { ...basePlugins },
+            rules: { ...baseRules }
+        },
+        {
+            files: [`${srcGlob}/__tests__/**/*.ts`],
+            languageOptions: { globals: { ...baseGlobals, ...globals.jest } }
+        },
+        {
+            files: [`${srcGlob}/*.spec.ts`, `${srcGlob}/*.test.ts`],
+            ignores: [`${srcGlob}/__tests__/**`],
+            rules: {
+                'no-restricted-syntax': [
+                    'error',
+                    { selector: 'Program', message: 'Test files must live under __tests__.' }
+                ]
+            }
+        }
+    ]
+}
+
 module.exports = {
     tseslint,
     baseGlobals,
@@ -85,5 +119,6 @@ module.exports = {
     baseRules,
     barrelImportPatterns,
     nodeBuiltinModulePattern,
-    escapeForRegex
+    escapeForRegex,
+    createBaseConfigs
 }

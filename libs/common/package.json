@@ -4,6 +4,7 @@
     "types": "_output/dist/index.d.ts",
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
+        "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
         "clean": "jest --clearCache",
         "test": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
         "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
@@ -24,11 +25,14 @@
         "@nestjs/jwt": "^11.0.0",
         "@nestjs/mongoose": "^11.0.0",
         "@nestjs/terminus": "^11.0.0",
+        "@temporalio/client": "^1.17.0",
+        "@temporalio/worker": "^1.17.0",
         "class-transformer": "^0.5.0",
         "class-validator": "^0.15.0",
         "express": "^5.0.0",
         "ioredis": "^5.0.0",
         "mongoose": "^9.0.0",
+        "nats": "^2.29.0",
         "rxjs": "^7.0.0"
     },
     "devDependencies": {}

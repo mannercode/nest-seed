@@ -13,6 +13,8 @@ nest-seed/
 ```
 
 > 한때 함께 있던 `apis/msa`, `libs/microservices`, `libs/testing-microservices` 는 2026-04-29 에 제거됨. 자세한 내용은 [docs/msa-archive.md](msa-archive.md).
+>
+> **MSA-ready monolith**: 코드는 단일 `apps/api` 로 통합됐지만, 4 replica 기본 배포 + NATS/Temporal 같은 분산 인프라는 그대로 유지한다. 즉 코드를 여러 프로젝트로 나누지 않을 뿐 언제든 MSA 로 전환 가능한 모놀리스 구조이며, cross-replica 메시징(NATS pub/sub)과 saga 오케스트레이션(Temporal workflow)은 monolith 안에서도 정상적으로 필요하다.
 
 ## 2. 패키지 의존 그래프
 
@@ -32,7 +34,8 @@ common   (독립)
 | **mongoose**   | `CrudRepository`, `CrudSchema`, `AppendOnlyRepository`, `AppendOnlySchema`, 페이지네이션 지원     |
 | **redis**      | `RedisModule`, 연결 관리 (single/cluster)                                                         |
 | **cache**      | `CacheService`, `CacheModule`, 네임스페이스 키, TTL, Lua, `withLock` / `withLockBlocking` 분산 락 |
-| **pubsub**     | `PubSubService`, `PubSubModule`, Redis pub/sub 기반 cross-replica 메시지 팬아웃                   |
+| **nats**       | `NatsModule`, `NatsPubSubService`/`NatsPubSubModule`, NATS pub/sub 기반 cross-replica 메시지 팬아웃 (queue group 지원) |
+| **temporal**   | `TemporalClientModule`, `TemporalWorkerService`, saga workflow 오케스트레이션 (영속·재시도·보상)  |
 | **auth**       | JWT/Local/Optional Guard, `JwtAuthService`, `@Public()` — [상세](auth.md)                         |
 | **s3**         | `S3ObjectService`, 업로드/다운로드, presigned URL                                                 |
 | **logger**     | `AppLoggerService`, Winston, `HttpExceptionLoggerFilter`, `HttpSuccessLoggerInterceptor`          |
@@ -74,11 +77,13 @@ Client ── HTTP ──▶ Gateway ──┬──▶ Applications     (비즈
 | **Cores**           | 핵심 도메인 엔터티, 데이터 영속성 | Customers, Movies, Theaters, Showtimes, Tickets, TicketHolding, PurchaseRecords, WatchRecords |
 | **Infrastructures** | 외부 서비스 통합                  | Payments, Assets(MinIO)                                                                       |
 
-| Component   | Configuration                                     |
-| ----------- | ------------------------------------------------- |
-| **MongoDB** | 3-node replica set (27017-27019)                  |
-| **Redis**   | 3-node cluster, primary only (6379-6381)          |
-| **MinIO**   | S3-compatible object storage (9000, console 9001) |
+| Component    | Configuration                                              |
+| ------------ | ---------------------------------------------------------- |
+| **MongoDB**  | 3-node replica set (27017-27019)                           |
+| **Redis**    | 3-node cluster, primary only (6379-6381)                   |
+| **MinIO**    | S3-compatible object storage (9000, console 9001)          |
+| **NATS**     | single node + JetStream (4222, monitoring 8222)            |
+| **Temporal** | server + postgres backend (7233, optional UI 8233)         |
 
 ### 4.2. 문제: 순환 참조
 
@@ -179,27 +184,41 @@ api 는 단일 애플리케이션이지만 프로덕션/테스트에서 **N repl
 
 현재 사용 지점:
 
-| 위치                                                                                                                                  | 유형                                   | 목적                                                 |
-| ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------- |
-| [AssetsService.cleanupExpiredUploads](../apps/api/src/infrastructures/services/assets/assets.service.ts)                              | `withLock`                             | 4 replica 의 cron 중 한 번만 삭제 작업 실행          |
-| [ShowtimeCreationWorkerService](../apps/api/src/applications/services/showtime-creation/services/showtime-creation-worker.service.ts) | `withLockBlocking`                     | 겹치는 시간대 saga 의 validate-then-insert race 차단 |
-| [PurchaseService.processPurchase](../apps/api/src/applications/services/purchase/purchase.service.ts)                                 | `withLockBlocking` (ticketIds 기반 키) | 동일 티켓 세트 중복 구매(double-spend) 차단          |
+| 위치                                                                                                                              | 유형                                   | 목적                                                 |
+| --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------- |
+| [AssetsService.cleanupExpiredUploads](../apps/api/src/infrastructures/services/assets/assets.service.ts)                          | `withLock`                             | 4 replica 의 cron 중 한 번만 삭제 작업 실행          |
+| [ShowtimeCreationActivities.validateAndCreate](../apps/api/src/applications/services/showtime-creation/temporal/activities.ts)    | `withLockBlocking`                     | 겹치는 시간대 saga 의 validate-then-insert race 차단 |
+| [PurchaseService.processPurchase](../apps/api/src/applications/services/purchase/purchase.service.ts)                             | `withLockBlocking` (ticketIds 기반 키) | 동일 티켓 세트 중복 구매(double-spend) 차단          |
 
 **선택 기준**: `withLock` 은 "피크에 한 번만" 의미. `withLockBlocking` 은 "모든 요청을 순서대로" 의미. race 를 취소하려면 `withLock`, 직렬화가 필요하면 `withLockBlocking`.
 
-### 5.2. Cross-replica 메시지 — `PubSubService`
+### 5.2. Cross-replica 메시지 — `NatsPubSubService`
 
-프로세스 로컬 `EventEmitter2` 는 요청이 도착한 replica 안에서만 이벤트가 전달된다. 다른 replica 의 SSE 클라이언트로 이벤트를 전달하려면 Redis pub/sub 이 필요하다.
+프로세스 로컬 `EventEmitter2` 는 요청이 도착한 replica 안에서만 이벤트가 전달된다. 다른 replica 의 SSE 클라이언트로 이벤트를 전달하려면 cross-replica 브로드캐스트가 필요하다.
 
-`PubSubService` 는 publisher 연결을 `duplicate()` 해서 subscriber 전용 연결을 만들고 (ioredis 제약), 채널별 핸들러 집합을 관리한다. `subscribe` / `unsubscribe` 는 Redis 의 SUBSCRIBE/UNSUBSCRIBE ack 를 기다린 뒤 resolve 한다.
+`NatsPubSubService` 는 NATS subject 기반 pub/sub 으로 모든 구독 replica 에 메시지를 팬아웃한다. queue group 옵션을 주면 같은 그룹 안에서 한 인스턴스만 처리되는 work-queue 의미론도 가능하다. 핸들러 한 개의 throw 가 다른 핸들러 전달을 막지 않도록 격리한다.
 
 현재 사용 지점:
 
-| 위치                                                                                                          | 목적                                                                                                                           |
-| ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| [ShowtimeCreationEvents](../apps/api/src/applications/services/showtime-creation/showtime-creation.events.ts) | saga 상태 변화를 Redis 채널로 publish → 모든 replica 의 subscribe 핸들러가 로컬 RxJS Subject 로 포워드 → SSE 컨트롤러가 스트림 |
+| 위치                                                                                                          | 목적                                                                                                                                |
+| ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| [ShowtimeCreationEvents](../apps/api/src/applications/services/showtime-creation/showtime-creation.events.ts) | saga 상태 변화를 NATS subject 로 publish → 모든 replica 의 subscribe 핸들러가 로컬 RxJS Subject 로 포워드 → SSE 컨트롤러가 스트림   |
 
-### 5.3. Replica 식별 — `x-replica-id` 응답 헤더
+### 5.3. Saga 오케스트레이션 — `TemporalClient` / `TemporalWorkerService`
+
+장시간 실행되거나 부분 실패 시 보상이 필요한 작업은 Temporal workflow 로 표현한다. workflow 함수는 결정적(deterministic)이어야 하므로 모든 부수효과는 activity 로 분리되고, Temporal server 가 workflow history 를 영속화하면서 재시작·보상·재시도를 보장한다.
+
+현재 사용 지점:
+
+| 위치                                                                                                                                              | 역할                                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| [showtimeCreationWorkflow](../apps/api/src/applications/services/showtime-creation/temporal/workflows.ts)                                          | validate → create → emitStatusChanged 흐름을 결정적 workflow 로 표현. 실패 시 catch 에서 compensate activity 호출 후 Error 상태 publish |
+| [ShowtimeCreationActivities](../apps/api/src/applications/services/showtime-creation/temporal/activities.ts)                                       | DI 주입된 NestJS 서비스로 실제 부수효과 수행 (lock, DB write, NATS publish, 보상 삭제)                                        |
+| [ShowtimeCreationOrchestratorService](../apps/api/src/applications/services/showtime-creation/services/showtime-creation-orchestrator.service.ts) | HTTP 요청을 받아 workflow 시작(`temporal.workflow.start`) 후 sagaId 반환                                                      |
+
+`TemporalClientModule.forRootAsync` 는 connection + Client 를 글로벌 provider 로 노출하고, `TemporalWorkerService` 는 task queue + workflowsPath + activities 를 받아 worker 를 부팅한다. workflow 코드는 `bundleWorkflowCode` 로 격리 번들링되므로 `@nestjs/common` 같은 데코레이터 의존성을 끌어들여서는 안 된다 (status enum 도 workflow 내부에서는 string literal 로 표현).
+
+### 5.4. Replica 식별 — `x-replica-id` 응답 헤더
 
 [configure-app.ts](../apps/api/src/config/configure-app.ts) 의 미들웨어가 모든 HTTP 응답에 `x-replica-id: <os.hostname()>` 를 설정한다. 컨테이너 hostname 이 replica 고유 ID 이므로, stress 테스트가 여러 요청이 실제로 서로 다른 replica 에 분산됐는지 검증할 때 사용한다.
 

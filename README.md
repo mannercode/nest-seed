@@ -137,8 +137,8 @@ nest-seed/
 │   ├── common/              @mannercode/common
 │   └── testing/             @mannercode/testing
 │
-├── apps/                    ← 백엔드 API
-│   └── api/                 NestJS, MongoDB, Redis, BullMQ
+├── apps/                    ← 백엔드 API (MSA-ready monolith, 4 replica 기본)
+│   └── api/                 NestJS, MongoDB, Redis, NATS, Temporal
 │
 └── .devcontainer/           ← Dev Container + 개발 인프라
 ```

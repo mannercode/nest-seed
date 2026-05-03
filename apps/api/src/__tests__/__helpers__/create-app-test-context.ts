@@ -1,5 +1,3 @@
-import type { QueueOptions } from 'bullmq'
-import type Redis from 'ioredis'
 import { AppLoggerService } from '@mannercode/common'
 import {
     createHttpTestContext,
@@ -7,17 +5,16 @@ import {
     HttpTestContext,
     ModuleMetadataEx
 } from '@mannercode/testing'
-import { BullModule } from '@nestjs/bullmq'
 import { ConfigService } from '@nestjs/config'
-import { EventEmitterModule } from '@nestjs/event-emitter'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import compression from 'compression'
 import {
     AppConfigService,
     CommonModule,
-    getProjectId,
     MongooseConfigModule,
-    RedisConfigModule
+    NatsConfigModule,
+    RedisConfigModule,
+    TemporalConfigModule
 } from 'config'
 import express from 'express'
 
@@ -26,16 +23,8 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
         CommonModule,
         MongooseConfigModule,
         RedisConfigModule,
-        EventEmitterModule.forRoot(),
-        BullModule.forRootAsync('queue', {
-            inject: [RedisConfigModule.moduleName],
-            useFactory(redis: Redis) {
-                return {
-                    connection: redis as unknown as QueueOptions['connection'],
-                    prefix: `{queue:${getProjectId()}}`
-                }
-            }
-        })
+        NatsConfigModule,
+        TemporalConfigModule
     )
 
     const ctx = await createHttpTestContext({

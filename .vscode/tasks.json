@@ -1,12 +1,7 @@
 {
     "version": "2.0.0",
     "tasks": [
-        {
-            "label": "⇧⌘Build",
-            "group": { "kind": "build", "isDefault": true },
-            "type": "shell",
-            "command": "npm run build"
-        },
+        { "label": "Dev (watch)", "type": "shell", "command": "npm run dev" },
         {
             "label": "Tools",
             "type": "shell",
@@ -33,6 +28,7 @@
             "type": "pickString",
             "description": "tool",
             "options": [
+                "npm run build",
                 "npm run clean",
                 "npm run lint",
                 "npm run format",
@@ -46,12 +42,9 @@
             "description": "test",
             "options": [
                 "npm test",
-                "npm test -w libs",
-                "npm test -w apps/api",
-                "bash apps/api/deploy/test.sh",
-                "bash apps/api/tests/runner.sh sse",
+                "npm test -w apps",
                 "npm run atoz",
-                "npm run atoz -w apps/api"
+                "npm run atoz -w apps"
             ]
         }
     ]

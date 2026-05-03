@@ -38,7 +38,7 @@ export class TicketPurchaseService {
 
         await this.ticketsService.updateStatusMany(ticketIds, TicketStatus.Sold)
 
-        this.events.emitTicketPurchased(createDto.customerId, ticketIds)
+        await this.events.emitTicketPurchased({ customerId: createDto.customerId, ticketIds })
     }
 
     async rollbackPurchase(createDto: CreatePurchaseDto): Promise<void> {
@@ -54,7 +54,10 @@ export class TicketPurchaseService {
 
         await this.ticketsService.updateStatusMany(ticketIds, TicketStatus.Available)
 
-        this.events.emitTicketPurchaseCanceled(createDto.customerId, ticketIds)
+        await this.events.emitTicketPurchaseCanceled({
+            customerId: createDto.customerId,
+            ticketIds
+        })
     }
 
     async validatePurchase(createDto: CreatePurchaseDto): Promise<void> {

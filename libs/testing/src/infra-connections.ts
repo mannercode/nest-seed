@@ -12,6 +12,17 @@ export function getMongoTestConnection() {
     return { dbName: envString('TESTLIB_MONGO_DATABASE'), uri: envString('TESTLIB_MONGO_URI') }
 }
 
+export function getNatsTestConnection() {
+    return JSON.parse(envString('TESTLIB_NATS_OPTIONS'))
+}
+
+export function getTemporalTestConnection() {
+    return {
+        address: envString('TESTLIB_TEMPORAL_ADDRESS'),
+        namespace: envString('TESTLIB_TEMPORAL_NAMESPACE')
+    }
+}
+
 export function getS3TestConnection() {
     const endpoint = envString('TESTLIB_S3_ENDPOINT')
     const region = envString('TESTLIB_S3_REGION')

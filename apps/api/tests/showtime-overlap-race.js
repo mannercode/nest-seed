@@ -3,10 +3,10 @@
 //
 // Each inner iteration: OVERLAP_COUNT saga POSTs are submitted in
 // parallel, every pair mutually overlapping (staggered startTimes with
-// durations that always intersect). With 4 BullMQ workers, multiple
-// jobs run simultaneously — only the holder of the validate+create
-// lock may succeed. Expected: exactly 1 succeeded, OVERLAP_COUNT - 1
-// failed.
+// durations that always intersect). With 4 Temporal workers (one per
+// replica), multiple workflows run simultaneously — only the holder of
+// the validate+create distributed lock may succeed. Expected: exactly
+// 1 succeeded, OVERLAP_COUNT - 1 failed.
 //
 // Fails if: more than one succeeds, zero succeed, or sagas don't reach
 // terminal state in time.
