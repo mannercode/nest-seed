@@ -42,7 +42,7 @@ export async function createRpcExceptionLoggerFilterFixture() {
     const brokerOptions = {
         options: getNatsTestConnection(),
         transport: Transport.NATS
-    } as NatsOptions
+    } satisfies NatsOptions
 
     const { httpClient, ...ctx } = await createHttpTestContext({
         configureApp: async (app) => {

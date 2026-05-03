@@ -44,14 +44,14 @@ export class RpcSuccessLoggerInterceptor extends HttpSuccessLoggerInterceptor {
 
                     if (this.shouldLogRpc(rpcContext.args)) {
                         const successLog = {
-                            contextType: 'rpc' as const,
+                            contextType: 'rpc',
                             duration: `${elapsedMs}ms`,
                             request: {
                                 subject: rpcContext.args?.[0],
                                 data: context.switchToRpc().getData()
                             },
                             response: responseData
-                        } as RpcSuccessLog
+                        } satisfies RpcSuccessLog
 
                         Logger.verbose('success', successLog)
                     }

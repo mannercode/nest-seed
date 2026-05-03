@@ -35,7 +35,7 @@ export async function createQueueGroupFixture() {
     const brokerOptions = {
         options: { ...getNatsTestConnection(), queue: 'queue-group' },
         transport: Transport.NATS
-    } as NatsOptions
+    } satisfies NatsOptions
 
     const instanceCount = 10
 

@@ -26,17 +26,17 @@ export class RpcExceptionLoggerFilter extends HttpExceptionLoggerFilter {
         const rpcCallContext = rpcContext.getContext()
 
         const rpcLogBase = {
-            contextType: 'rpc' as const,
+            contextType: 'rpc',
             duration: `${Date.now() - rpcCallContext._startTimestamp}ms`,
             request: { subject: rpcCallContext.args?.[0], data: rpcContext.getData() }
-        }
+        } as const
 
         if (exception instanceof HttpException) {
             const errorLog = {
                 ...rpcLogBase,
                 response: exception.getResponse(),
                 stack: defaultTo(exception.stack, '').split('\n')
-            } as RpcErrorLog
+            } satisfies RpcErrorLog
 
             Logger.warn('fail', errorLog)
 
@@ -46,7 +46,7 @@ export class RpcExceptionLoggerFilter extends HttpExceptionLoggerFilter {
                 ...rpcLogBase,
                 response: { message: exception.message },
                 stack: defaultTo(exception.stack, '').split('\n')
-            } as RpcErrorLog
+            } satisfies RpcErrorLog
 
             Logger.error('error', errorLog)
 
