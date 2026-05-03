@@ -3,7 +3,7 @@ set -Eeuo pipefail
 cd "$(dirname "$0")"
 
 # Diagnostic snapshot — surfaces resource pressure (OOM/disk) when reset.sh
-# fails abruptly. The 2026-04-28 Test Stability bootup-mono regression hit
+# fails abruptly. The 2026-04-28 Test Stability bootup-api regression hit
 # `exit code: undefined` mid-pull, suggesting signal kill from runner OS.
 echo "=== reset.sh start ==="
 echo "[mem]"; head -5 /proc/meminfo 2>/dev/null || true

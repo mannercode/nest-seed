@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Mixed read/write workload matrix for mono.
+# Mixed read/write workload matrix for the api stack.
 #
 # Each case starts theater-read and theater-write processes at (nearly) the same
 # moment so they share the measurement window. Both use the same LABEL so the
 # output JSONs can be paired after the fact.
 #
-# Prereq: mono stack up (REPLICAS=8 recommended), theaters seeded (~50K+).
+# Prereq: api stack up (REPLICAS=8 recommended), theaters seeded (~50K+).
 #
-# Usage: bash apis/mono/tests/perf/mixed-runner.sh
+# Usage: bash apps/api/tests/perf/mixed-runner.sh
 
 set -euo pipefail
 

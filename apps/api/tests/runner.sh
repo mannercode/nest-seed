@@ -31,7 +31,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "Building and deploying 4-replica mono stack..."
+echo "Building and deploying 4-replica api stack..."
 # docker hub imposes an unauthenticated pull rate limit (100/6h per IP),
 # and GitHub Actions runners share IPs. first up may fail pulling
 # nginx:alpine. retry with backoff; image ends up cached after a success.

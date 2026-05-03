@@ -11,14 +11,14 @@
 !/libs/*/tsconfig.build.json
 !/libs/*/src/
 
-!/apis/jest.*.js
-!/apis/*/package.json
-!/apis/*/webpack.config.js
-!/apis/*/tsconfig.json
-!/apis/*/tsconfig.build.json
-!/apis/*/nest-cli.json
-!/apis/*/src/
-!/apis/*/scripts/
+!/apps/*/package.json
+!/apps/*/webpack.config.js
+!/apps/*/tsconfig.json
+!/apps/*/tsconfig.build.json
+!/apps/*/nest-cli.json
+!/apps/*/src/
+!/apps/*/scripts/
+!/apps/*/jest.*.js
 
 **/node_modules
 **/_output
