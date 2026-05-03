@@ -79,21 +79,23 @@ export class CacheService {
 
         if (acquired !== 'OK') return { ran: false }
 
-        try {
-            return { ran: true, result: await fn() }
-        } finally {
-            await this.redis.eval(
-                `
-                if redis.call('get', KEYS[1]) == ARGV[1] then
-                    return redis.call('del', KEYS[1])
-                end
-                return 0
-                `,
-                1,
-                lockKey,
-                token
-            )
+        await using _release = {
+            [Symbol.asyncDispose]: async () => {
+                await this.redis.eval(
+                    `
+                    if redis.call('get', KEYS[1]) == ARGV[1] then
+                        return redis.call('del', KEYS[1])
+                    end
+                    return 0
+                    `,
+                    1,
+                    lockKey,
+                    token
+                )
+            }
         }
+
+        return { ran: true, result: await fn() }
     }
 
     /**
