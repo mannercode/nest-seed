@@ -19,8 +19,6 @@ import {
 } from 'config'
 import express from 'express'
 
-export type AppTestContext = HttpTestContext & { teardown: () => Promise<void> }
-
 export async function createAppTestContext(metadata: ModuleMetadataEx) {
     metadata.imports?.push(
         CommonModule,
@@ -68,6 +66,8 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
 
     return { ...ctx, teardown }
 }
+
+export type AppTestContext = Awaited<ReturnType<typeof createAppTestContext>>
 
 /**
  * @example
