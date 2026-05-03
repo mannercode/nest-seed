@@ -128,11 +128,11 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
 
         // Pagination runs find + count in parallel. For empty filters, count
         // was measured at ~4-5× the latency of find+skip+limit on dev data
-        // (mongo primary ran 1000% CPU on list endpoints — see
-        // docs/perf/cycle-01-baseline.md). countDocuments with the CrudSchema
-        // pre-hook collapses to countDocuments({ deletedAt: null }), an index
-        // scan over every non-deleted row. estimatedDocumentCount reads the
-        // collection metadata (O(1)), so for the empty-filter path we use it.
+        // (mongo primary ran 1000% CPU on list endpoints). countDocuments with
+        // the CrudSchema pre-hook collapses to countDocuments({ deletedAt:
+        // null }), an index scan over every non-deleted row.
+        // estimatedDocumentCount reads the collection metadata (O(1)), so for
+        // the empty-filter path we use it.
         //
         // Tradeoff: estimatedDocumentCount returns *all* rows including
         // soft-deleted ones, so the reported `total` can exceed the number of

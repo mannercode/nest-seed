@@ -16,7 +16,7 @@ MongoDB, Redis 등 인프라는 이미 존재한다고 전제한다.
 인프라 설정 외의 관련 리소스:
 
 - [../specs/](../specs/) — curl 기반 API 스펙 (실행 가능한 문서, `test.sh` 가 호출)
-- [../tests/](../tests/) — 4-replica 분산 race 시나리오 — [testing.md#9-분산-테스트](../../../docs/testing.md#9-분산-테스트)
+- [../tests/](../tests/) — 4-replica 분산 race 시나리오 — [testing.md](../../../docs/testing.md#5-분산-테스트-cross-replica-race)
 
 ## 주요 설정
 
