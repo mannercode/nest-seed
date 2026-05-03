@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { getConnectionToken, MongooseModule } from '@nestjs/mongoose'
 import { SchemaOptions } from 'mongoose'
-import { AppConfigService } from '../config'
+import { AppConfigService } from '../app-config.service'
 
 @Module({
     imports: [

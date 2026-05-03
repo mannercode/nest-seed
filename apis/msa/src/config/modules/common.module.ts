@@ -11,8 +11,9 @@ import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import { JwtModule } from '@nestjs/jwt'
 import { Transport } from '@nestjs/microservices'
 import { ScheduleModule } from '@nestjs/schedule'
-import { AppConfigService, getProjectId } from '../config'
+import { AppConfigService } from '../app-config.service'
 import { RequestValidationPipe } from '../pipes'
+import { getProjectId } from '../utils'
 
 @Global()
 @Module({

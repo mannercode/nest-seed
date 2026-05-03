@@ -4,7 +4,7 @@ import compression from 'compression'
 import express from 'express'
 import { hostname } from 'os'
 import { exit } from 'process'
-import { AppConfigService } from './config/app-config.service'
+import { AppConfigService } from './app-config.service'
 
 type ConfigureAppOptions = { app: INestApplication<any> }
 
