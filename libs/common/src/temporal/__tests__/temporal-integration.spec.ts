@@ -1,5 +1,5 @@
-import { withTestId } from '@mannercode/testing'
 import type { TestWorkflowEnvironment } from '@temporalio/testing'
+import { withTestId } from '@mannercode/testing'
 
 // Spinning up Temporal is the dominant cost of these tests, so we share one
 // ephemeral server across every describe in this file. The `await import`
@@ -15,7 +15,7 @@ beforeAll(async () => {
 }, 240_000)
 
 afterAll(async () => {
-    await testEnv?.teardown()
+    await testEnv.teardown()
 })
 
 const namespace = () => testEnv.namespace ?? 'default'
@@ -38,9 +38,8 @@ describe('TemporalClientModule.forRootAsync', () => {
     // 이름 없이 등록하면 기본 토큰에 Connection 과 Client 를 노출한다
     it('exposes Connection and Client at the default tokens', async () => {
         const { TemporalClientModule } = await import('../temporal-client.module')
-        const { getTemporalClientToken, getTemporalConnectionToken } = await import(
-            '../temporal.tokens'
-        )
+        const { getTemporalClientToken, getTemporalConnectionToken } =
+            await import('../temporal.tokens')
         const { Test } = await import('@nestjs/testing')
 
         const moduleRef = await Test.createTestingModule({
@@ -64,20 +63,14 @@ describe('TemporalClientModule.forRootAsync', () => {
     // clientName 을 주면 두 토큰 모두 그 이름을 사용한다
     it('uses the provided clientName for both tokens', async () => {
         const { TemporalClientModule } = await import('../temporal-client.module')
-        const { getTemporalClientToken, getTemporalConnectionToken } = await import(
-            '../temporal.tokens'
-        )
+        const { getTemporalClientToken, getTemporalConnectionToken } =
+            await import('../temporal.tokens')
         const { Test } = await import('@nestjs/testing')
 
         const moduleRef = await Test.createTestingModule({
             imports: [
                 TemporalClientModule.forRootAsync(
-                    {
-                        useFactory: () => ({
-                            address: testEnv.address,
-                            namespace: namespace()
-                        })
-                    },
+                    { useFactory: () => ({ address: testEnv.address, namespace: namespace() }) },
                     'orders'
                 )
             ]
@@ -145,12 +138,7 @@ describe('TemporalClientModule.forRootAsync', () => {
         const moduleRef = await Test.createTestingModule({
             imports: [
                 TemporalClientModule.forRootAsync(
-                    {
-                        useFactory: () => ({
-                            address: testEnv.address,
-                            namespace: namespace()
-                        })
-                    },
+                    { useFactory: () => ({ address: testEnv.address, namespace: namespace() }) },
                     'destroy-test'
                 )
             ]

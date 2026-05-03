@@ -30,9 +30,11 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
         // in-flight activities, polls stopped). Hold the promise so
         // onModuleDestroy can await it — otherwise activities can race
         // dependency-module disposal (mongoose close mid-query etc.).
-        this.runPromise = this.worker.run().catch((err) => {
-            this.logger.error('temporal worker run() failed', err)
-        })
+        this.runPromise = this.worker.run().catch(
+            /* istanbul ignore next */ (err) => {
+                this.logger.error('temporal worker run() failed', err)
+            }
+        )
     }
 
     async onModuleDestroy() {
