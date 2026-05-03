@@ -38,6 +38,10 @@ export class UserAuthenticationService {
         return this.jwtAuthService.refreshAuthTokens(refreshToken)
     }
 
+    async revokeRefreshToken(refreshToken: string): Promise<void> {
+        await this.jwtAuthService.revokeRefreshToken(refreshToken)
+    }
+
     async validate(rawPassword: string, hashedPassword: string) {
         return compare(rawPassword, hashedPassword)
     }

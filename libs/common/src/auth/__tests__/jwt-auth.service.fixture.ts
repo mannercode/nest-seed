@@ -4,6 +4,9 @@ import Redis from 'ioredis'
 import { getRedisConnectionToken, RedisModule } from '../../redis'
 import { InjectJwtAuth, JwtAuthModule, JwtAuthService } from '../jwt-auth.service'
 
+export const TEST_AUTH_AUDIENCE = 'test-audience'
+export const TEST_AUTH_ISSUER = 'test-issuer'
+
 export type JwtAuthServiceFixture = {
     jwtService: JwtAuthService
     redis: Redis
@@ -26,6 +29,8 @@ export async function createJwtAuthServiceFixture() {
                         auth: {
                             accessSecret: 'accessSecret',
                             accessTokenTtlMs: 3000,
+                            audience: TEST_AUTH_AUDIENCE,
+                            issuer: TEST_AUTH_ISSUER,
                             refreshSecret: 'refreshSecret',
                             refreshTokenTtlMs: 3000
                         }

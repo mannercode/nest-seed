@@ -9,6 +9,8 @@ export class AppConfigService extends BaseConfigService {
         AUTH_ACCESS_SECRET: Joi.string().required(),
 
         AUTH_ACCESS_TOKEN_EXPIRATION: Joi.string().required(),
+        AUTH_AUDIENCE: Joi.string().required(),
+        AUTH_ISSUER: Joi.string().required(),
         AUTH_REFRESH_SECRET: Joi.string().required(),
         AUTH_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
         HTTP_PAGINATION_DEFAULT_SIZE: Joi.number().required(),
@@ -58,6 +60,8 @@ export class AppConfigService extends BaseConfigService {
         return {
             accessSecret: this.getString('AUTH_ACCESS_SECRET'),
             accessTokenExpiration: this.getString('AUTH_ACCESS_TOKEN_EXPIRATION'),
+            audience: this.getString('AUTH_AUDIENCE'),
+            issuer: this.getString('AUTH_ISSUER'),
             refreshSecret: this.getString('AUTH_REFRESH_SECRET'),
             refreshTokenExpiration: this.getString('AUTH_REFRESH_TOKEN_EXPIRATION')
         }

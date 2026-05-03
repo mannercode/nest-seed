@@ -131,4 +131,29 @@ describe('UserAuthentication', () => {
             })
         })
     })
+
+    describe('POST /users/logout', () => {
+        // 정상 로그아웃 — 204 + 이후 refresh 불가
+        it('revokes the refresh token: subsequent refresh fails', async () => {
+            const { refreshToken } = await loginUser(fix, credentials)
+
+            await fix.httpClient
+                .post('/users/logout')
+                .body({ refreshToken })
+                .noContent()
+
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken })
+                .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
+        })
+
+        // 잘못된 토큰으로 logout 호출해도 204 (best-effort)
+        it('returns 204 even for a malformed token', async () => {
+            await fix.httpClient
+                .post('/users/logout')
+                .body({ refreshToken: 'garbage' })
+                .noContent()
+        })
+    })
 })

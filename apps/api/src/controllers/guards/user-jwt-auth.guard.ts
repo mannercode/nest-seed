@@ -10,7 +10,11 @@ import { UserLocalAuthGuard } from './user-local-auth.guard'
 @Injectable()
 export class UserJwtAuthGuard extends JwtAuthGuard {
     constructor(jwtService: JwtService, reflector: Reflector, config: AppConfigService) {
-        super(jwtService, reflector, { secret: config.auth.accessSecret })
+        super(jwtService, reflector, {
+            audience: config.auth.audience,
+            issuer: config.auth.issuer,
+            secret: config.auth.accessSecret
+        })
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {

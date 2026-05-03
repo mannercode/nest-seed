@@ -22,6 +22,8 @@ import { UsersService } from './users.service'
                 auth: {
                     accessSecret: auth.accessSecret,
                     accessTokenTtlMs: TimeUtil.toMs(auth.accessTokenExpiration),
+                    audience: auth.audience,
+                    issuer: auth.issuer,
                     refreshSecret: auth.refreshSecret,
                     refreshTokenTtlMs: TimeUtil.toMs(auth.refreshTokenExpiration)
                 }

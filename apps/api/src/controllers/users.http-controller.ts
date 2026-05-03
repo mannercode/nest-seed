@@ -50,6 +50,13 @@ export class UsersHttpController {
         return this.usersService.refreshAuthTokens(refreshToken)
     }
 
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Post('logout')
+    @Public()
+    async logout(@Body('refreshToken') refreshToken: string) {
+        await this.usersService.revokeRefreshToken(refreshToken)
+    }
+
     @Get('me')
     async getMe(@Req() req: UserAuthRequest) {
         return req.user

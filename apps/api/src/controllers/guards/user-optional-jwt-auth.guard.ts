@@ -7,6 +7,10 @@ import { AppConfigService } from 'config'
 @Injectable()
 export class UserOptionalJwtAuthGuard extends OptionalJwtAuthGuard {
     constructor(jwtService: JwtService, reflector: Reflector, config: AppConfigService) {
-        super(jwtService, reflector, { secret: config.auth.accessSecret })
+        super(jwtService, reflector, {
+            audience: config.auth.audience,
+            issuer: config.auth.issuer,
+            secret: config.auth.accessSecret
+        })
     }
 }

@@ -68,6 +68,10 @@ export class UsersService {
         return this.authenticationService.refreshAuthTokens(refreshToken)
     }
 
+    async revokeRefreshToken(refreshToken: string): Promise<void> {
+        await this.authenticationService.revokeRefreshToken(refreshToken)
+    }
+
     async searchPage(searchDto: SearchUsersPageDto) {
         const { items, ...pagination } = await this.repository.searchPage(searchDto)
 
