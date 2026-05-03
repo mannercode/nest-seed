@@ -3,10 +3,12 @@ import { Prop, Schema } from '@nestjs/mongoose'
 import { MongooseConfigModule } from 'config'
 import { Seat } from '../../../shared'
 
-export enum TicketStatus {
-    Available = 'available',
-    Sold = 'sold'
-}
+export const TicketStatus = {
+    Available: 'available',
+    Sold: 'sold'
+} as const
+
+export type TicketStatus = (typeof TicketStatus)[keyof typeof TicketStatus]
 
 @Schema(MongooseConfigModule.schemaOptions)
 export class Ticket extends CrudSchema {

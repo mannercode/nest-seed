@@ -1,13 +1,16 @@
 import type { ShowtimeDto } from 'cores'
 import type { BulkCreateShowtimesDto } from '../dtos'
 
-export enum ShowtimeCreationStatus {
-    Error = 'error',
-    Failed = 'failed',
-    Processing = 'processing',
-    Succeeded = 'succeeded',
-    Waiting = 'waiting'
-}
+export const ShowtimeCreationStatus = {
+    Error: 'error',
+    Failed: 'failed',
+    Processing: 'processing',
+    Succeeded: 'succeeded',
+    Waiting: 'waiting'
+} as const
+
+export type ShowtimeCreationStatus =
+    (typeof ShowtimeCreationStatus)[keyof typeof ShowtimeCreationStatus]
 
 export class ShowtimeCreationJobData {
     createDto: BulkCreateShowtimesDto
@@ -15,13 +18,17 @@ export class ShowtimeCreationJobData {
 }
 
 export type ShowtimeCreationEvent =
-    | { sagaId: string; status: ShowtimeCreationStatus.Error; message: string }
-    | { sagaId: string; status: ShowtimeCreationStatus.Failed; conflictingShowtimes: ShowtimeDto[] }
-    | { sagaId: string; status: ShowtimeCreationStatus.Processing }
+    | { sagaId: string; status: typeof ShowtimeCreationStatus.Error; message: string }
     | {
           sagaId: string
-          status: ShowtimeCreationStatus.Succeeded
+          status: typeof ShowtimeCreationStatus.Failed
+          conflictingShowtimes: ShowtimeDto[]
+      }
+    | { sagaId: string; status: typeof ShowtimeCreationStatus.Processing }
+    | {
+          sagaId: string
+          status: typeof ShowtimeCreationStatus.Succeeded
           createdShowtimeCount: number
           createdTicketCount: number
       }
-    | { sagaId: string; status: ShowtimeCreationStatus.Waiting }
+    | { sagaId: string; status: typeof ShowtimeCreationStatus.Waiting }

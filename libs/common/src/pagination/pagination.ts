@@ -13,10 +13,12 @@ export const PaginationErrors = {
     })
 }
 
-export enum OrderDirection {
-    Asc = 'asc',
-    Desc = 'desc'
-}
+export const OrderDirection = {
+    Asc: 'asc',
+    Desc: 'desc'
+} as const
+
+export type OrderDirection = (typeof OrderDirection)[keyof typeof OrderDirection]
 
 export class OrderBy {
     @IsEnum(OrderDirection)

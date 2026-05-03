@@ -71,7 +71,10 @@ const baseRules = {
     ],
     '@typescript-eslint/no-non-null-assertion': 'warn',
     'no-duplicate-imports': 'warn',
-    '@typescript-eslint/no-redeclare': 'warn',
+    // TS already errors on real redeclares; this rule additionally flags the
+    // const + same-named type pattern used for `as const` enums, which is the
+    // canonical replacement for `enum`. Disabled to avoid false positives.
+    '@typescript-eslint/no-redeclare': 'off',
     '@typescript-eslint/adjacent-overload-signatures': 'warn'
 }
 
