@@ -77,9 +77,6 @@ nest-seed/
 | ------------------------------- | --------------- | --------------- |
 | `package.json` (root)           | `nest-seed`     | 새 프로젝트 이름 |
 | `apps/api/package.json`         | `nest-api`      | 새 api 이름     |
-| `libs/*/package.json`           | `@mannercode/*` | `@yourorg/*`    |
-| `libs/tsconfig.json` (paths)    | `@mannercode/*` | `@yourorg/*`    |
-| `apps/api/package.json` (deps)  | `@mannercode/*` | `@yourorg/*`    |
 
 ### 2. 환경과 인프라 식별자
 
@@ -115,10 +112,7 @@ nest-seed/
 마지막으로 전체가 깨지지 않았는지 다음 명령들로 확인한다.
 
 ```bash
-npm install              # workspace 의존성 정리
-npm run build            # libs 빌드
-npm run lint             # 의존성·타입·포맷 검사
-npm test                 # 테스트 통과 확인
+npm run atoz
 ```
 
 ---
