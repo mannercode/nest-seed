@@ -34,7 +34,7 @@
 2. **`libs/common/src/mongoose/mongoose.util.ts`**
     - `QueryBuilder.addRegex` 에 `{ prefix?, caseSensitive? }` 옵션 파라미터 추가. 기본값은 기존 동작 (substring + case-insensitive) 그대로. 현재 사용 호출처 없음 — 향후 prefix-전용 검색 엔드포인트 추가 시 옵트인 용도
 
-3. **`apis/mono/src/config/modules/mongoose-config.module.ts`**
+3. **`apps/api/src/config/modules/mongoose-config.module.ts`**
     - ~~mongo pool `(min: 10, max: 50)`~~ → **`(min: 50, max: 200)` 로 원복** (2026-04-26).
       Test Stability 의 race scenario (500 concurrent POST + bcrypt) 가 maxPool=50/replica 를
       넘겨 `MongoWaitQueueTimeoutError` 가 떨어짐. cycle-04 의 perf 스윕은 c=400 까지만 봤고
@@ -65,9 +65,9 @@
     - `--wiredTigerCacheSizeGB 0.25 → 1.0` (WT cache = mongo RAM 의 50%, 권장 범위 내)
     - 한 번 1.5 GiB 로 올렸다가 75% 초과는 권장 외라 1.0 으로 원복
 
-6b. **`.devcontainer/infra/compose.redis.yml`** — 6-node → 3-node cluster - cycle 5 에서 Redis 가 모든 워크로드에서 심하게 under-utilized (primary CPU 15-18%, 메모리 5%) 확인. HA 관점으로 3 primary + 3 replica 는 표준이지만 dev 환경 대비 과잉 - redis4/5/6 컨테이너 삭제, `redis-setup` 의 `--cluster-replicas 1 → 0` - `--cluster-require-full-coverage no` 추가 (primary 1개 다운돼도 다른 슬롯은 접근 가능) - `.env` · `apis/mono/deploy/compose.yml` · `apis/msa/deploy/compose.yml` · `app-config.service.ts` (mono/msa 양쪽) 에서 `REDIS_HOST4-6`, `REDIS_PORT4-6` 환경변수와 node 배열 원소 제거 - ioredis cluster client (`type: 'cluster'`) 설정은 그대로 유지 — 3-node 도 cluster 모드에서 정상 작동, fork 사용자가 prod 갈 때 replica 다시 붙이는 데 코드 변경 불필요 - 메모리 1.5 GiB 확보, 컨테이너 3개 감소. dev 환경 시작 시간 단축 - 실측: 3-node 전환 후 customer-refresh c=100 **5535 RPS** (6-node 때 3489 대비 +59%). slot routing 단순화 + primary 당 slot 담당 넓어진 효과. race test 4종 PASS
+6b. **`.devcontainer/infra/compose.redis.yml`** — 6-node → 3-node cluster - cycle 5 에서 Redis 가 모든 워크로드에서 심하게 under-utilized (primary CPU 15-18%, 메모리 5%) 확인. HA 관점으로 3 primary + 3 replica 는 표준이지만 dev 환경 대비 과잉 - redis4/5/6 컨테이너 삭제, `redis-setup` 의 `--cluster-replicas 1 → 0` - `--cluster-require-full-coverage no` 추가 (primary 1개 다운돼도 다른 슬롯은 접근 가능) - `.env` · `apps/api/deploy/compose.yml` · `apis/msa/deploy/compose.yml` · `app-config.service.ts` (mono/msa 양쪽) 에서 `REDIS_HOST4-6`, `REDIS_PORT4-6` 환경변수와 node 배열 원소 제거 - ioredis cluster client (`type: 'cluster'`) 설정은 그대로 유지 — 3-node 도 cluster 모드에서 정상 작동, fork 사용자가 prod 갈 때 replica 다시 붙이는 데 코드 변경 불필요 - 메모리 1.5 GiB 확보, 컨테이너 3개 감소. dev 환경 시작 시간 단축 - 실측: 3-node 전환 후 customer-refresh c=100 **5535 RPS** (6-node 때 3489 대비 +59%). slot routing 단순화 + primary 당 slot 담당 넓어진 효과. race test 4종 PASS
 
-7. **`apis/mono/deploy/nginx.conf`**
+7. **`apps/api/deploy/nginx.conf`**
     - `worker_processes 8` (auto = 16 대비 proxy 용엔 적정)
     - `upstream mono_app { keepalive 128 }` (기존 32)
     - `gzip on; gzip_types application/json; ...` (localhost 에선 -3~-9 %, 실 prod 에선 큰 이득)
@@ -78,18 +78,18 @@
 8. **`REPLICAS=8`** 환경변수로 compose 기동. compose 기본값 4 유지 (CI 보호).
     ```
     REPLICAS=8 docker compose --env-file ../.env up -d --build
-    docker restart mono-nginx   # DNS 재해석
+    docker restart api-nginx   # DNS 재해석
     ```
 
 ## 폐기된 시도 (다시 시도하지 말 것)
 
-| 시도                                      | 결과                       | 사유                                                                      |
-| ----------------------------------------- | -------------------------- | ------------------------------------------------------------------------- |
-| `readPreference: secondaryPreferred`      | -3~-12% 회귀               | 이 dataset 에선 mongo primary 포화 안 됨, 분산 이득 < 추가 latency        |
-| nginx `access_log off`                    | +5-6% but 디버깅 손실      | stress test 실패 시 replica 추적 불가                                     |
-| `writeConcern: { w: 1 }`                  | +5-13% but durability 위험 | primary failover 시 write 소실. 필요하면 컬렉션별 opt-in 으로 (아래 설명) |
-| 검색 API substring → prefix+caseSensitive | 필터 +65× but 기능 훼손    | 사용자 substring 필수 확인, cycle-31 원복. 필터 개선은 별도 트랙으로      |
-| WT cache 1.0 → 1.5 GiB                    | +10-20% but 권장 50% 초과  | 안정성 우선 — 1.0 으로 원복                                               |
+| 시도                                      | 결과                       | 사유                                                                                |
+| ----------------------------------------- | -------------------------- | ----------------------------------------------------------------------------------- |
+| `readPreference: secondaryPreferred`      | -3~-12% 회귀               | 이 dataset 에선 mongo primary 포화 안 됨, 분산 이득 < 추가 latency                  |
+| nginx `access_log off`                    | +5-6% but 디버깅 손실      | stress test 실패 시 replica 추적 불가                                               |
+| `writeConcern: { w: 1 }`                  | +5-13% but durability 위험 | primary failover 시 write 소실. 필요하면 컬렉션별 opt-in 으로 (아래 설명)           |
+| 검색 API substring → prefix+caseSensitive | 필터 +65× but 기능 훼손    | 사용자 substring 필수 확인, cycle-31 원복. 필터 개선은 별도 트랙으로                |
+| WT cache 1.0 → 1.5 GiB                    | +10-20% but 권장 50% 초과  | 안정성 우선 — 1.0 으로 원복                                                         |
 | mongo pool `(50,200)` → `(10,50)`         | perf 동일 + warm conn 1/4  | race test 500 concurrent 에서 풀 고갈로 `MongoWaitQueueTimeoutError`. (50,200) 원복 |
 
 ## 안정성 상태
@@ -101,7 +101,7 @@
 - WT cache = mongo RAM 의 50% (권장 상한)
 - mongo pool 축소에 `waitQueueTimeoutMS: 5000` — 큐 포화 시 명시적 timeout
 - 4종 race 정합성 테스트 PASS (customer-race / ticket-holding-race / showtime-overlap-race / purchase-double-spend)
-- 단위 테스트 `libs/common` 417 · `apis/mono` 주요 repo 76 PASS
+- 단위 테스트 `libs/common` 417 · `apps/api` 주요 repo 76 PASS
 - tsc + eslint clean
 
 ## 의미 변경
@@ -124,30 +124,30 @@
 
 ## 하네스 사용법
 
-측정 하네스는 `apis/mono/tests/perf/` 에 있음:
+측정 하네스는 `apps/api/tests/perf/` 에 있음:
 
 ```bash
 # 빈 필터 read
 SCENARIO=theater-read CONCURRENCY=200 DURATION_MS=15000 LABEL=adhoc \
-  node apis/mono/tests/perf/harness.js
+  node apps/api/tests/perf/harness.js
 
 # 필터 read (substring)
 SCENARIO=theater-read-name-filter CONCURRENCY=200 \
-  node apis/mono/tests/perf/harness.js
+  node apps/api/tests/perf/harness.js
 
 # write
 SCENARIO=theater-write CONCURRENCY=100 \
-  node apis/mono/tests/perf/harness.js
+  node apps/api/tests/perf/harness.js
 
 # Redis (customer-refresh — JWT setup 포함)
-CONCURRENCY=200 node apis/mono/tests/perf/harness-refresh.js
+CONCURRENCY=200 node apps/api/tests/perf/harness-refresh.js
 
 # 필터 read (customer, JWT 보호)
-CONCURRENCY=100 node apis/mono/tests/perf/harness-customer-filter.js
+CONCURRENCY=100 node apps/api/tests/perf/harness-customer-filter.js
 
 # gzip 클라이언트 시뮬
 ACCEPT_GZIP=1 SCENARIO=theater-read CONCURRENCY=200 \
-  node apis/mono/tests/perf/harness.js
+  node apps/api/tests/perf/harness.js
 ```
 
 환경변수: `SERVER_URL` (기본 `http://localhost:3000`), `WARMUP_MS` (기본 3000). 결과 JSON 은 `_output/perf/<scenario>-<timestamp>.json` 에 자동 저장.

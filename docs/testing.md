@@ -177,13 +177,13 @@ jest.setup.js           각 테스트 스위트마다 실행
 
 `jest.global.js`에서 Testcontainers를 시작하고 환경 변수를 설정한다.
 
-| 환경 변수                  | 설정 주체           | 용도                  |
-| -------------------------- | ------------------- | --------------------- |
-| `TESTLIB_MONGO_URI`        | `jest.global`       | MongoDB 연결 문자열   |
-| `TESTLIB_MONGO_DATABASE`   | `jest.setup`        | 테스트별 DB 이름      |
-| `TESTLIB_REDIS_URL`        | `jest.global`       | Redis 연결 URL        |
-| `TESTLIB_S3_*`             | `jest.global/setup` | MinIO/S3 설정         |
-| `TEST_ID`                  | `jest.setup`        | 테스트 격리용 고유 ID |
+| 환경 변수                | 설정 주체           | 용도                  |
+| ------------------------ | ------------------- | --------------------- |
+| `TESTLIB_MONGO_URI`      | `jest.global`       | MongoDB 연결 문자열   |
+| `TESTLIB_MONGO_DATABASE` | `jest.setup`        | 테스트별 DB 이름      |
+| `TESTLIB_REDIS_URL`      | `jest.global`       | Redis 연결 URL        |
+| `TESTLIB_S3_*`           | `jest.global/setup` | MinIO/S3 설정         |
+| `TEST_ID`                | `jest.setup`        | 테스트 격리용 고유 ID |
 
 ### 테스트 격리
 
@@ -226,16 +226,16 @@ coverageThreshold: {
 
 ## 9. 분산 테스트
 
-단일 프로세스 테스트로는 검증할 수 없는 **cross-replica race** 를 4-replica docker compose 스택에서 블랙박스로 검증한다. 소스는 [apis/mono/tests/](../apis/mono/tests/) 에 있고, 각 시나리오는 별도 Node 스크립트 (앱 코드 import 없음, HTTP 만 사용) 이다. 무거운 인프라 의존 테스트라 package.json 에는 노출하지 않고 shell 로 직접 호출한다.
+단일 프로세스 테스트로는 검증할 수 없는 **cross-replica race** 를 4-replica docker compose 스택에서 블랙박스로 검증한다. 소스는 [apps/api/tests/](../apps/api/tests/) 에 있고, 각 시나리오는 별도 Node 스크립트 (앱 코드 import 없음, HTTP 만 사용) 이다. 무거운 인프라 의존 테스트라 package.json 에는 노출하지 않고 shell 로 직접 호출한다.
 
 ### 9.1. 시나리오
 
-| 파일 | 검증 대상 |
-|---|---|
-| `sse.js` | SSE 이벤트가 Redis pub/sub 을 통해 모든 replica 의 클라이언트에 전달되는지 |
-| `customer-race.js` | 동일 이메일 동시 POST /customers — Mongo unique index 로 정확히 1 × 201 + N-1 × 409 |
-| `ticket-holding-race.js` | 동시 hold-tickets — Redis SET NX 로 정확히 1 × 200 + N-1 × 409 |
-| `showtime-overlap-race.js` | 겹치는 시간대 saga 2개 동시 요청 — 분산 락으로 정확히 1 succeeded + 1 failed |
+| 파일                       | 검증 대상                                                                                      |
+| -------------------------- | ---------------------------------------------------------------------------------------------- |
+| `sse.js`                   | SSE 이벤트가 Redis pub/sub 을 통해 모든 replica 의 클라이언트에 전달되는지                     |
+| `customer-race.js`         | 동일 이메일 동시 POST /customers — Mongo unique index 로 정확히 1 × 201 + N-1 × 409            |
+| `ticket-holding-race.js`   | 동시 hold-tickets — Redis SET NX 로 정확히 1 × 200 + N-1 × 409                                 |
+| `showtime-overlap-race.js` | 겹치는 시간대 saga 2개 동시 요청 — 분산 락으로 정확히 1 succeeded + 1 failed                   |
 | `purchase-double-spend.js` | 동일 티켓 세트 동시 구매 — 분산 락 + 상태 검증으로 정확히 1 × 201 + N-1 × 409 (payment 도 1개) |
 
 모든 시나리오는 각 요청마다 별도 `http.Agent({keepAlive:false})` 를 사용해 nginx `least_conn` 이 실제로 replica 를 분산하도록 유도하고, 응답의 `x-replica-id` 헤더로 분산이 일어났는지 함께 검증한다.
@@ -243,13 +243,13 @@ coverageThreshold: {
 ### 9.2. 실행
 
 ```bash
-bash apis/mono/tests/runner.sh <scenario>
+bash apps/api/tests/runner.sh <scenario>
 # e.g.
-bash apis/mono/tests/runner.sh purchase-double-spend
+bash apps/api/tests/runner.sh purchase-double-spend
 ```
 
-디스패처 [run.sh](../apis/mono/tests/runner.sh) 가 compose 스택을 빌드·기동하고 해당 시나리오 스크립트를 실행한 뒤 정리한다. 실패 시 컨테이너 로그 200줄을 덤프한다.
+디스패처 [run.sh](../apps/api/tests/runner.sh) 가 compose 스택을 빌드·기동하고 해당 시나리오 스크립트를 실행한 뒤 정리한다. 실패 시 컨테이너 로그 200줄을 덤프한다.
 
 ### 9.3. CI
 
-`.github/workflows/test-stability.yaml` 에 각 시나리오를 **독립 job** 으로 등록한다 (`sse-mono`, `customer-race-mono`, `ticket-holding-race-mono`, `showtime-overlap-race-mono`, `purchase-double-spend-mono`). 각 60회 반복으로 flakiness 를 누적 관측한다.
+`.github/workflows/test-stability.yaml` 의 `scenario` matrix 에 각 시나리오 (`sse`, `customer-race`, `ticket-holding-race`, `showtime-overlap-race`, `purchase-double-spend`) 를 등록해 50회 반복으로 flakiness 를 누적 관측한다.

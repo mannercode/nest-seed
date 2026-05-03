@@ -1,20 +1,20 @@
 # Mixed read/write 동시성 측정
 
 **날짜:** 2026-04-24
-**스택:** mono (`REPLICAS=8`) + nginx → mongo 3-node RS (1 GiB/node, WT cache 256 MiB) + redis 3-node cluster.
+**스택:** api (`REPLICAS=8`) + nginx → mongo 3-node RS (1 GiB/node, WT cache 256 MiB) + redis 3-node cluster.
 **데이터:** theaters 75K (seed 완료).
-**방법:** [`apis/mono/tests/perf/mixed-runner.sh`](../../apis/mono/tests/perf/mixed-runner.sh) — `theater-read` 와 `theater-write` 하네스를 같은 LABEL 로 동시에 띄워 30s steady-state 측정 (warmup 3s). 두 하네스는 keep-alive pool 을 공유하지 않아 TCP 경합은 배제.
+**방법:** [`apps/api/tests/perf/mixed-runner.sh`](../../apps/api/tests/perf/mixed-runner.sh) — `theater-read` 와 `theater-write` 하네스를 같은 LABEL 로 동시에 띄워 30s steady-state 측정 (warmup 3s). 두 하네스는 keep-alive pool 을 공유하지 않아 TCP 경합은 배제.
 
 ## 결과 요약
 
-| Case              | read c | write c | read RPS | write RPS | Total RPS | read p95 | write p95 |
-|-------------------|-------:|--------:|---------:|----------:|----------:|---------:|----------:|
-| iso-r200          | 200    | 0       | **2416** | —         | 2416      | 116 ms   | —         |
-| iso-w100          | 0      | 100     | —        | **3020**  | 3020      | —        | 51 ms     |
-| mixed-r100w50     | 100    | 50      | 1563     | 698       | **2261**  | 92 ms    | 103 ms    |
-| mixed-r100w100    | 100    | 100     | 1227     | 1165      | **2392**  | 117 ms   | 127 ms    |
-| mixed-r200w50     | 200    | 50      | 1841     | 443       | **2284**  | 150 ms   | 164 ms    |
-| mixed-r200w100    | 200    | 100     | 1541     | 752       | **2293**  | 178 ms   | 189 ms    |
+| Case           | read c | write c | read RPS | write RPS | Total RPS | read p95 | write p95 |
+| -------------- | -----: | ------: | -------: | --------: | --------: | -------: | --------: |
+| iso-r200       |    200 |       0 | **2416** |         — |      2416 |   116 ms |         — |
+| iso-w100       |      0 |     100 |        — |  **3020** |      3020 |        — |     51 ms |
+| mixed-r100w50  |    100 |      50 |     1563 |       698 |  **2261** |    92 ms |    103 ms |
+| mixed-r100w100 |    100 |     100 |     1227 |      1165 |  **2392** |   117 ms |    127 ms |
+| mixed-r200w50  |    200 |      50 |     1841 |       443 |  **2284** |   150 ms |    164 ms |
+| mixed-r200w100 |    200 |     100 |     1541 |       752 |  **2293** |   178 ms |    189 ms |
 
 ## 발견
 
@@ -26,10 +26,10 @@
 
 ### 2. Write 가 Read 보다 훨씬 많이 깎임
 
-| 지표 | 격리 | mixed-r200w100 | Δ |
-|------|------:|---------------:|---:|
-| read RPS (c=200 기준) | 2416 | 1541 | **−36 %** |
-| write RPS (c=100 기준) | 3020 | 752 | **−75 %** |
+| 지표                   | 격리 | mixed-r200w100 |         Δ |
+| ---------------------- | ---: | -------------: | --------: |
+| read RPS (c=200 기준)  | 2416 |           1541 | **−36 %** |
+| write RPS (c=100 기준) | 3020 |            752 | **−75 %** |
 
 Write 는 majority-commit 을 위해 primary + 2 secondaries 의 journal-ack 을 기다린다. Read 가 primary CPU 를 잡고 있으면 write 의 commit-latency 가 튄다. 반대로 write 는 commit 후엔 primary CPU 를 놔주기 때문에 read 는 상대적으로 덜 깎임.
 
@@ -37,11 +37,11 @@ Write 는 majority-commit 을 위해 primary + 2 secondaries 의 journal-ack 을
 
 각 case 의 docker stats 중간 스냅샷 기준:
 
-| Case            | mongo1 | mongo2 | mongo3 | app 총계 (8 replica) |
-|-----------------|-------:|-------:|-------:|---------------------:|
-| iso-r200        | 135 %  |   3 %  |   3 %  | ~1046 % (~10 cores)  |
-| iso-w100        | 205 %  | 132 %  | 131 %  | ~753 %               |
-| mixed-r200w100  | 207 %  |  84 %  |  81 %  | ~823 %               |
+| Case           | mongo1 | mongo2 | mongo3 | app 총계 (8 replica) |
+| -------------- | -----: | -----: | -----: | -------------------: |
+| iso-r200       |  135 % |    3 % |    3 % |  ~1046 % (~10 cores) |
+| iso-w100       |  205 % |  132 % |  131 % |               ~753 % |
+| mixed-r200w100 |  207 % |   84 % |   81 % |               ~823 % |
 
 - **mongo1 은 어떤 mixed 케이스에서도 ~200-215 %** — 사실상 2 코어가 완전 포화된 상태의 mongod 한계.
 - **mongo2/mongo3 는 read 전담 가능성이 100 % 열려 있음** — isolated read 시 3 % 에 불과. Read 가 모두 primary 로만 간 결과 (mongoose 기본 `readPreference: primary`).

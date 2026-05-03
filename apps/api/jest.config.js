@@ -1,8 +1,8 @@
 const path = require('path')
 const { createDefaultPreset, pathsToModuleNameMapper } = require('ts-jest')
-const baseConfig = require('../jest.config.base')
+const baseConfig = require('../../jest.config.base')
 
-const appDir = process.cwd()
+const appDir = __dirname
 const tsconfigPath = path.resolve(appDir, 'tsconfig.json')
 const tsconfig = require(tsconfigPath)
 const tsJestPreset = createDefaultPreset({ tsconfig: tsconfigPath })
@@ -27,8 +27,7 @@ module.exports = {
         '/main\\.ts$',
         '/config/configure-app\\.ts$',
         '/index\\.ts$',
-        '\\.module\\.ts$',
-        '/workflows'
+        '\\.module\\.ts$'
     ],
     coverageDirectory: '<rootDir>/_output/coverage'
 }

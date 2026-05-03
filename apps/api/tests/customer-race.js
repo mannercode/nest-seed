@@ -57,7 +57,8 @@ async function runInner(iteration) {
     // Build EMAIL_GROUPS × CLIENTS_PER_GROUP requests, all fired together.
     const emails = Array.from(
         { length: EMAIL_GROUPS },
-        (_, g) => `race.${Date.now()}.${iteration}.${g}.${Math.random().toString(36).slice(2)}@example.com`
+        (_, g) =>
+            `race.${Date.now()}.${iteration}.${g}.${Math.random().toString(36).slice(2)}@example.com`
     )
 
     const requests = emails.flatMap((email) =>

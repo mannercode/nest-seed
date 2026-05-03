@@ -91,9 +91,7 @@ function openSseClient(clientId) {
                     while ((idx = buffer.indexOf('\n\n')) !== -1) {
                         const frame = buffer.slice(0, idx)
                         buffer = buffer.slice(idx + 2)
-                        const dataLine = frame
-                            .split('\n')
-                            .find((line) => line.startsWith('data:'))
+                        const dataLine = frame.split('\n').find((line) => line.startsWith('data:'))
                         if (!dataLine) continue
                         const payload = dataLine.slice('data:'.length).trim()
                         try {
@@ -150,9 +148,7 @@ async function setupFixture() {
     const theater = await requestJson('POST', '/theaters', {
         name: 'stress-theater',
         location: { latitude: 37.5665, longitude: 126.978 },
-        seatmap: {
-            blocks: [{ name: 'A', rows: [{ name: '1', layout: 'OOOOOOOO' }] }]
-        }
+        seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', layout: 'OOOOOOOO' }] }] }
     })
     if (theater.status !== 201) throw new Error(`theater create failed: ${theater.status}`)
 

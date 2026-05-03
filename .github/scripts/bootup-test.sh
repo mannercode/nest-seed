@@ -23,11 +23,11 @@ compose_up() {
     return 1
 }
 
-if [ "$scope" = "mono" ]; then
+if [ "$scope" = "api" ]; then
     compose_up
     docker wait infra-setup
     docker rm infra-setup
 fi
 
 cd /workspaces/nest-seed
-npm test -w "apis/$scope" -- --coverageThreshold='{}'
+npm test -w "apps/$scope" -- --coverageThreshold='{}'

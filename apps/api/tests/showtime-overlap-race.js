@@ -85,9 +85,7 @@ function openSseCollector() {
                     while ((idx = buffer.indexOf('\n\n')) !== -1) {
                         const frame = buffer.slice(0, idx)
                         buffer = buffer.slice(idx + 2)
-                        const dataLine = frame
-                            .split('\n')
-                            .find((line) => line.startsWith('data:'))
+                        const dataLine = frame.split('\n').find((line) => line.startsWith('data:'))
                         if (!dataLine) continue
                         try {
                             events.push(JSON.parse(dataLine.slice('data:'.length).trim()))
@@ -144,9 +142,7 @@ async function setupFixture() {
     const theater = await requestJson('POST', '/theaters', {
         name: 'overlap',
         location: { latitude: 37.5665, longitude: 126.978 },
-        seatmap: {
-            blocks: [{ name: 'A', rows: [{ name: '1', layout: 'OOOOOOOO' }] }]
-        }
+        seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', layout: 'OOOOOOOO' }] }] }
     })
     if (theater.status !== 201) throw new Error(`theater: ${theater.status}`)
 
@@ -221,9 +217,7 @@ async function runInner(iteration, movieId, theaterId, sse, baseOffsetMs) {
 }
 
 async function main() {
-    console.log(
-        `[overlap] server=${SERVER_URL} overlap=${OVERLAP_COUNT} inner=${INNER_ITERATIONS}`
-    )
+    console.log(`[overlap] server=${SERVER_URL} overlap=${OVERLAP_COUNT} inner=${INNER_ITERATIONS}`)
 
     const { movieId, theaterId } = await setupFixture()
     const sse = openSseCollector()
@@ -244,9 +238,7 @@ async function main() {
         await sse.close().catch(() => {})
     }
 
-    console.log(
-        `[overlap] PASS: ${INNER_ITERATIONS} iters × ${OVERLAP_COUNT}-way race`
-    )
+    console.log(`[overlap] PASS: ${INNER_ITERATIONS} iters × ${OVERLAP_COUNT}-way race`)
 }
 
 main().catch((err) => {

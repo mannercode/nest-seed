@@ -1,6 +1,6 @@
 /**
  * Shared defaults for all workspace jest configs. A concrete config
- * (libs/jest.config.js, apis/jest.config.js) layers its globalSetup,
+ * (libs/jest.config.js, apps/api/jest.config.js) layers its globalSetup,
  * moduleNameMapper, and coverage rules on top of this.
  */
 module.exports = {

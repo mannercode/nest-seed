@@ -32,7 +32,7 @@ VS Code에서 `Reopen in Container`를 실행한다.
 
 ### 2. libs 빌드
 
-apis가 libs에 의존하므로 먼저 빌드한다.
+apps가 libs에 의존하므로 먼저 빌드한다.
 
 ```bash
 npm run build
@@ -52,9 +52,9 @@ npm run build
 
 ### 3. 단위 테스트
 
-이 프로젝트는 테스트 코드로 기능을 검증하는 방식을 지향한다. libs는 주로 단위 테스트, apis는 통합 테스트에 가깝다.
+이 프로젝트는 테스트 코드로 기능을 검증하는 방식을 지향한다. libs는 주로 단위 테스트, apps는 통합 테스트에 가깝다.
 
-libs와 apis 전체 단위 테스트를 실행한다.
+libs와 apps 전체 단위 테스트를 실행한다.
 
 ```bash
 npm test
@@ -63,7 +63,7 @@ npm test
 개별 앱만 실행하려면:
 
 ```bash
-npm test -w apis/mono
+npm test -w apps/api
 ```
 
 ### 4. Deploy 테스트
@@ -71,7 +71,7 @@ npm test -w apis/mono
 Deploy 테스트는 Docker Compose로 앱을 빌드·실행한 뒤, `specs/` 의 curl 기반 셸 스크립트로 API 가 응답하는지 검증한다. 스펙은 실행 가능한 API 문서 역할도 겸한다.
 
 ```bash
-bash apis/mono/deploy/test.sh
+bash apps/api/deploy/test.sh
 ```
 
 스펙은 `specs/` 디렉토리에 `.spec` 셸 스크립트로 작성한다.
@@ -107,19 +107,19 @@ TEST "Login customer" \
 
 `TEST` 함수는 `설명`, `기대 상태코드`, `HTTP 메서드`, `URL`, `curl 옵션` 순으로 인자를 받고, 상태코드가 일치하지 않으면 FAIL로 보고한다. 실행 결과는 `_output/logs/`에 기록된다.
 
-### 5. 분산 테스트 (mono)
+### 5. 분산 테스트
 
 4-replica docker compose 스택을 띄워 cross-replica race 를 검증한다 — SSE 팬아웃, 동시 가입/홀드, saga 중첩, 중복 구매 등. package.json 에는 노출하지 않고 shell 로 직접 호출한다. 자세한 내용은 [testing.md#9-분산-테스트](docs/testing.md#9-분산-테스트).
 
 ```bash
-bash apis/mono/tests/runner.sh <scenario>
+bash apps/api/tests/runner.sh <scenario>
 # scenario: sse | customer-race | ticket-holding-race | showtime-overlap-race | purchase-double-spend
 ```
 
-### 6. Mono 앱 실행
+### 6. 앱 실행
 
 ```bash
-cd apis/mono
+cd apps/api
 npm run dev
 ```
 
@@ -137,8 +137,8 @@ nest-seed/
 │   ├── common/              @mannercode/common
 │   └── testing/             @mannercode/testing
 │
-├── apis/                    ← 백엔드 API
-│   └── mono/                모놀리식 — NestJS, MongoDB, Redis, BullMQ
+├── apps/                    ← 백엔드 API
+│   └── api/                 NestJS, MongoDB, Redis, BullMQ
 │
 └── .devcontainer/           ← Dev Container + 개발 인프라
 ```
@@ -149,29 +149,29 @@ nest-seed/
 
 ### 1. 패키지 이름 / 스코프
 
-| 위치                            | 현재            | 변경             |
-| ------------------------------- | --------------- | ---------------- |
-| `package.json` (root)           | `nest-seed`     | 새 프로젝트 이름 |
-| `apis/mono/package.json`        | `nest-mono`     | 새 mono 이름     |
-| `libs/*/package.json`           | `@mannercode/*` | `@yourorg/*`     |
-| `libs/tsconfig.json` (paths)    | `@mannercode/*` | `@yourorg/*`     |
-| `apis/mono/package.json` (deps) | `@mannercode/*` | `@yourorg/*`     |
+| 위치                           | 현재            | 변경             |
+| ------------------------------ | --------------- | ---------------- |
+| `package.json` (root)          | `nest-seed`     | 새 프로젝트 이름 |
+| `apps/api/package.json`        | `nest-api`      | 새 api 이름      |
+| `libs/*/package.json`          | `@mannercode/*` | `@yourorg/*`     |
+| `libs/tsconfig.json` (paths)   | `@mannercode/*` | `@yourorg/*`     |
+| `apps/api/package.json` (deps) | `@mannercode/*` | `@yourorg/*`     |
 
 ### 2. 환경 / 인프라 식별자
 
-| 위치                       | 현재                                      | 변경         |
-| -------------------------- | ----------------------------------------- | ------------ |
-| `apis/mono/.env`           | `PROJECT_ID=nest-mono`                    | 새 ID        |
-| `apis/mono/compose.yml`    | `image: nest-mono`, `container_name: app` | 새 이름      |
-| `.devcontainer/infra/.env` | `nest-bucket` (S3 버킷)                   | 새 버킷 이름 |
+| 위치                       | 현재                                     | 변경         |
+| -------------------------- | ---------------------------------------- | ------------ |
+| `apps/api/.env`            | `PROJECT_ID=nest-api`                    | 새 ID        |
+| `apps/api/compose.yml`     | `image: nest-api`, `container_name: app` | 새 이름      |
+| `.devcontainer/infra/.env` | `nest-bucket` (S3 버킷)                  | 새 버킷 이름 |
 
 ### 3. 도메인 코드 교체
 
-`apis/mono/src/`의 영화 예매 도메인을 새 도메인으로 교체:
+`apps/api/src/`의 영화 예매 도메인을 새 도메인으로 교체:
 
 - 모듈/서비스/컨트롤러/모델/DTO: Customers, Movies, Theaters, Showtimes, Tickets, Bookings, Purchases
-- 단위 테스트: `apis/mono/src/__tests__/`
-- e2e 스펙: `apis/mono/tests/e2e/specs/*.spec`
+- 단위 테스트: `apps/api/src/__tests__/`
+- e2e 스펙: `apps/api/tests/e2e/specs/*.spec`
 - 도메인 용어: `docs/glossary.md`
 
 ### 4. CI / 저장소

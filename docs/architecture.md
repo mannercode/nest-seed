@@ -7,8 +7,8 @@ nest-seed/
 ├── libs/              # 공유 라이브러리 (@mannercode/*)
 │   ├── common/            # 기본 유틸리티 (Mongoose, Redis, JWT, S3, Logger)
 │   └── testing/           # 테스트 유틸리티 (HttpTestClient)
-├── apis/
-│   └── mono/              # 모놀리식 NestJS 시드
+├── apps/
+│   └── api/              # NestJS 시드
 └── package.json           # npm workspaces 스크립트
 ```
 
@@ -27,20 +27,20 @@ common   (독립)
 
 기반 레이어. 모든 NestJS 애플리케이션에서 재사용 가능한 인프라 추상화를 제공한다.
 
-| 모듈           | 주요 export                                                                                   |
-| -------------- | --------------------------------------------------------------------------------------------- |
-| **mongoose**   | `CrudRepository`, `CrudSchema`, `AppendOnlyRepository`, `AppendOnlySchema`, 페이지네이션 지원 |
-| **redis**      | `RedisModule`, 연결 관리 (single/cluster)                                                     |
+| 모듈           | 주요 export                                                                                       |
+| -------------- | ------------------------------------------------------------------------------------------------- |
+| **mongoose**   | `CrudRepository`, `CrudSchema`, `AppendOnlyRepository`, `AppendOnlySchema`, 페이지네이션 지원     |
+| **redis**      | `RedisModule`, 연결 관리 (single/cluster)                                                         |
 | **cache**      | `CacheService`, `CacheModule`, 네임스페이스 키, TTL, Lua, `withLock` / `withLockBlocking` 분산 락 |
-| **pubsub**     | `PubSubService`, `PubSubModule`, Redis pub/sub 기반 cross-replica 메시지 팬아웃               |
-| **auth**       | JWT/Local/Optional Guard, `JwtAuthService`, `@Public()` — [상세](auth.md)                     |
-| **s3**         | `S3ObjectService`, 업로드/다운로드, presigned URL                                             |
-| **logger**     | `AppLoggerService`, Winston, `HttpExceptionLoggerFilter`, `HttpSuccessLoggerInterceptor`      |
-| **pagination** | `PaginationDto`, `PaginationResult`, `OrderBy`                                                |
-| **health**     | `RedisHealthIndicator`                                                                        |
-| **config**     | `BaseConfigService`                                                                           |
-| **validator**  | `Require`, `Verify`, `ensure()`                                                               |
-| **utils**      | env, base64, byte, checksum, date, time, http, json, path                                     |
+| **pubsub**     | `PubSubService`, `PubSubModule`, Redis pub/sub 기반 cross-replica 메시지 팬아웃                   |
+| **auth**       | JWT/Local/Optional Guard, `JwtAuthService`, `@Public()` — [상세](auth.md)                         |
+| **s3**         | `S3ObjectService`, 업로드/다운로드, presigned URL                                                 |
+| **logger**     | `AppLoggerService`, Winston, `HttpExceptionLoggerFilter`, `HttpSuccessLoggerInterceptor`          |
+| **pagination** | `PaginationDto`, `PaginationResult`, `OrderBy`                                                    |
+| **health**     | `RedisHealthIndicator`                                                                            |
+| **config**     | `BaseConfigService`                                                                               |
+| **validator**  | `Require`, `Verify`, `ensure()`                                                                   |
+| **utils**      | env, base64, byte, checksum, date, time, http, json, path                                         |
 
 ### @mannercode/testing
 
@@ -170,7 +170,7 @@ export class ShowtimesHttpController {
 
 ## 5. 분산 환경 협력
 
-mono 는 단일 애플리케이션이지만 프로덕션/테스트에서 **4 replica** 로 수평 확장된다. 같은 레플리카가 독점할 수 없는 상태는 Redis 를 매개로 조정한다.
+api 는 단일 애플리케이션이지만 프로덕션/테스트에서 **N replica** 로 수평 확장된다. 같은 레플리카가 독점할 수 없는 상태는 Redis 를 매개로 조정한다.
 
 ### 5.1. 분산 락 — `cache.withLock` / `cache.withLockBlocking`
 
@@ -179,11 +179,11 @@ mono 는 단일 애플리케이션이지만 프로덕션/테스트에서 **4 rep
 
 현재 사용 지점:
 
-| 위치 | 유형 | 목적 |
-|---|---|---|
-| [AssetsService.cleanupExpiredUploads](../apis/mono/src/infrastructures/services/assets/assets.service.ts) | `withLock` | 4 replica 의 cron 중 한 번만 삭제 작업 실행 |
-| [ShowtimeCreationWorkerService](../apis/mono/src/applications/services/showtime-creation/services/showtime-creation-worker.service.ts) | `withLockBlocking` | 겹치는 시간대 saga 의 validate-then-insert race 차단 |
-| [PurchaseService.processPurchase](../apis/mono/src/applications/services/purchase/purchase.service.ts) | `withLockBlocking` (ticketIds 기반 키) | 동일 티켓 세트 중복 구매(double-spend) 차단 |
+| 위치                                                                                                                                  | 유형                                   | 목적                                                 |
+| ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------- |
+| [AssetsService.cleanupExpiredUploads](../apps/api/src/infrastructures/services/assets/assets.service.ts)                              | `withLock`                             | 4 replica 의 cron 중 한 번만 삭제 작업 실행          |
+| [ShowtimeCreationWorkerService](../apps/api/src/applications/services/showtime-creation/services/showtime-creation-worker.service.ts) | `withLockBlocking`                     | 겹치는 시간대 saga 의 validate-then-insert race 차단 |
+| [PurchaseService.processPurchase](../apps/api/src/applications/services/purchase/purchase.service.ts)                                 | `withLockBlocking` (ticketIds 기반 키) | 동일 티켓 세트 중복 구매(double-spend) 차단          |
 
 **선택 기준**: `withLock` 은 "피크에 한 번만" 의미. `withLockBlocking` 은 "모든 요청을 순서대로" 의미. race 를 취소하려면 `withLock`, 직렬화가 필요하면 `withLockBlocking`.
 
@@ -195,13 +195,13 @@ mono 는 단일 애플리케이션이지만 프로덕션/테스트에서 **4 rep
 
 현재 사용 지점:
 
-| 위치 | 목적 |
-|---|---|
-| [ShowtimeCreationEvents](../apis/mono/src/applications/services/showtime-creation/showtime-creation.events.ts) | saga 상태 변화를 Redis 채널로 publish → 모든 replica 의 subscribe 핸들러가 로컬 RxJS Subject 로 포워드 → SSE 컨트롤러가 스트림 |
+| 위치                                                                                                          | 목적                                                                                                                           |
+| ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| [ShowtimeCreationEvents](../apps/api/src/applications/services/showtime-creation/showtime-creation.events.ts) | saga 상태 변화를 Redis 채널로 publish → 모든 replica 의 subscribe 핸들러가 로컬 RxJS Subject 로 포워드 → SSE 컨트롤러가 스트림 |
 
 ### 5.3. Replica 식별 — `x-replica-id` 응답 헤더
 
-[configure-app.ts](../apis/mono/src/config/configure-app.ts) 의 미들웨어가 모든 HTTP 응답에 `x-replica-id: <os.hostname()>` 를 설정한다. 컨테이너 hostname 이 replica 고유 ID 이므로, stress 테스트가 여러 요청이 실제로 서로 다른 replica 에 분산됐는지 검증할 때 사용한다.
+[configure-app.ts](../apps/api/src/config/configure-app.ts) 의 미들웨어가 모든 HTTP 응답에 `x-replica-id: <os.hostname()>` 를 설정한다. 컨테이너 hostname 이 replica 고유 ID 이므로, stress 테스트가 여러 요청이 실제로 서로 다른 replica 에 분산됐는지 검증할 때 사용한다.
 
 ---
 

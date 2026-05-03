@@ -25,23 +25,23 @@
 
 ## 아키텍처 비교 (mono vs msa)
 
-| 축 | mono | msa |
-| --- | --- | --- |
-| Process 모델 | 단일 NestJS app × N replica | 3 NestJS app (cores/applications/infrastructures) × 각 replica |
-| Gateway | nginx | Kong (declarative `kong.yml`) |
-| Inter-service 통신 | 같은 process 의 in-memory 호출 | NATS RPC (`@nestjs/microservices` + custom queue-group) |
-| Long-running workflow | BullMQ + Redis pubsub event-stream | **Temporal** workflow + activities |
-| 인증 | controllers/guards/ 단일 위치 | cores 가 guard 정의 → 다른 app 이 import 후 자체 적용 |
-| 트랜잭션 경계 | mongo session 으로 한 process 안에서 묶임 | 분산 saga (Temporal 의 compensation activities) |
-| Deploy compose | `apis/mono/deploy/compose.yml` | `apis/msa/deploy/compose.yml` + `apis/msa/deploy/kong/kong.yml` |
-| Test 종류 | unit + spec(deploy 통합) + bootup repeat + race scenario | 동일 set 을 msa 용으로 별도 |
+| 축                    | mono                                                     | msa                                                             |
+| --------------------- | -------------------------------------------------------- | --------------------------------------------------------------- |
+| Process 모델          | 단일 NestJS app × N replica                              | 3 NestJS app (cores/applications/infrastructures) × 각 replica  |
+| Gateway               | nginx                                                    | Kong (declarative `kong.yml`)                                   |
+| Inter-service 통신    | 같은 process 의 in-memory 호출                           | NATS RPC (`@nestjs/microservices` + custom queue-group)         |
+| Long-running workflow | BullMQ + Redis pubsub event-stream                       | **Temporal** workflow + activities                              |
+| 인증                  | controllers/guards/ 단일 위치                            | cores 가 guard 정의 → 다른 app 이 import 후 자체 적용           |
+| 트랜잭션 경계         | mongo session 으로 한 process 안에서 묶임                | 분산 saga (Temporal 의 compensation activities)                 |
+| Deploy compose        | `apps/api/deploy/compose.yml`                            | `apis/msa/deploy/compose.yml` + `apis/msa/deploy/kong/kong.yml` |
+| Test 종류             | unit + spec(deploy 통합) + bootup repeat + race scenario | 동일 set 을 msa 용으로 별도                                     |
 
 ## 폴더 구조 비교 (핵심만)
 
 ### mono — 단일 app, 도메인을 폴더로 분리
 
 ```
-apis/mono/src/
+apps/api/src/
 ├── controllers/                     # HTTP 진입점 + guards (모든 도메인 공용)
 │   ├── booking.http-controller.ts
 │   ├── customers.http-controller.ts
@@ -120,18 +120,18 @@ msa 만 사용하던 라이브러리 워크스페이스도 함께 제거됨:
 
 ## 기술 선택 메모 (msa 가 보여주던 것)
 
-| 영역 | mono 선택 | msa 선택 | 이유/메모 |
-| --- | --- | --- | --- |
-| Event-stream | Redis pubsub + custom SSE bridge | NATS pub/sub | NATS 가 msa 의 RPC 와 같은 transport 라 단순 |
-| Long-running 작업 | BullMQ (Redis) | Temporal | Temporal 이 saga/compensation 모델·관측·재시도 면에서 우수, but 운영 surface 큼 |
-| Service 경계 | 단일 process, 모듈로 분리 | NestJS application 단위 | 진정한 isolation vs 운영 단순성의 trade-off |
-| Gateway plugin | nginx (gzip, keepalive 등 제한적 set) | Kong (rate-limit, JWT, ACL 등 풍부) | Kong 의 plugin 생태계가 정책 enforcement 에 유리 — [docs/plans/kong-migration.md](plans/kong-migration.md) 도 참고 |
+| 영역              | mono 선택                             | msa 선택                            | 이유/메모                                                                                                          |
+| ----------------- | ------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Event-stream      | Redis pubsub + custom SSE bridge      | NATS pub/sub                        | NATS 가 msa 의 RPC 와 같은 transport 라 단순                                                                       |
+| Long-running 작업 | BullMQ (Redis)                        | Temporal                            | Temporal 이 saga/compensation 모델·관측·재시도 면에서 우수, but 운영 surface 큼                                    |
+| Service 경계      | 단일 process, 모듈로 분리             | NestJS application 단위             | 진정한 isolation vs 운영 단순성의 trade-off                                                                        |
+| Gateway plugin    | nginx (gzip, keepalive 등 제한적 set) | Kong (rate-limit, JWT, ACL 등 풍부) | Kong 의 plugin 생태계가 정책 enforcement 에 유리 — [docs/plans/kong-migration.md](plans/kong-migration.md) 도 참고 |
 
 ## 운영·CI 측 영향
 
 제거 시 다음 매트릭스가 단순화됨:
 
-- `.github/workflows/test-stability.yaml` 의 `unit` matrix: `[libs, apis/mono, apis/msa]` → `[libs, apis/mono]`
+- `.github/workflows/test-stability.yaml` 의 `unit` matrix: `[libs, apps/api, apis/msa]` → `[libs, apps/api]`
 - `.github/workflows/test-stability.yaml` 의 `bootup` matrix: `[mono, msa]` → `[mono]`
 - `.devcontainer/infra/reset.sh` 의 두 번째 `compose up` (msa-infra: temporal + nats) 제거
 - devcontainer 메모리/디스크 압박 완화 (temporal + postgres + nats3 컨테이너 4개 제거)
@@ -156,4 +156,4 @@ msa 만 사용하던 라이브러리 워크스페이스도 함께 제거됨:
 - **분산 시스템의 실제 비용**: 2 구현 동시 유지가 코드량보다 **인지·운영 surface** 측면에서 큰 부담.
 - **NATS RPC + Temporal** 의 공존 가능성 — 같은 도메인을 두 transport 로 운영해 본 결과, 단순 RPC 는 NATS, orchestration 은 Temporal 이 자연스러운 분담.
 - **Kong 의 declarative `kong.yml`** 은 작은 지정만으로 routing 을 표현 가능하지만, plugin 활용을 시작하면 곧 외부 의존 (DB or postgres-less mode) 결정이 따라옴.
-- **테스트 stability**: race scenario (`apis/mono/tests/runner.sh customer-race` 등) 는 msa 환경에서도 동일하게 의미 있었으나, msa 전용 race 는 따로 만들지 않았음 — 즉 msa 의 검증은 unit + spec 수준에서 그쳤다는 점이 archive 시 공유.
+- **테스트 stability**: race scenario (`apps/api/tests/runner.sh customer-race` 등) 는 msa 환경에서도 동일하게 의미 있었으나, msa 전용 race 는 따로 만들지 않았음 — 즉 msa 의 검증은 unit + spec 수준에서 그쳤다는 점이 archive 시 공유.

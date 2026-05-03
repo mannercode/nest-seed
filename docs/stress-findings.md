@@ -1,6 +1,6 @@
 # 부하 테스트로 드러난 문제와 조치
 
-`apis/mono/tests/` 의 분산 부하 테스트(5 scenario × repeat 50)를 굴리면서 기존 코드·설정에 잠복해 있던 문제들이 드러났다. 각 항목은 **코드/설정이 무엇이 잘못돼 있었는지**, 부하 테스트가 그걸 **어떻게 드러냈는지**, **무엇을 고쳤는지** 순서로 정리한다.
+`apps/api/tests/` 의 분산 부하 테스트(5 scenario × repeat 50)를 굴리면서 기존 코드·설정에 잠복해 있던 문제들이 드러났다. 각 항목은 **코드/설정이 무엇이 잘못돼 있었는지**, 부하 테스트가 그걸 **어떻게 드러냈는지**, **무엇을 고쳤는지** 순서로 정리한다.
 
 > 본 문서의 일부 항목은 당시 함께 유지하던 **msa 구현** 의 사례를 인용한다 (예: `apis/msa/deploy/test.sh`, `apis/msa unit`). msa 는 2026-04-29 에 제거됐으므로 그 경로 참조는 깨진 링크임에 유의 — 사건의 history 보존 목적으로 본문은 그대로 둔다. msa 자체에 대한 회고는 [msa-archive.md](msa-archive.md).
 
@@ -8,7 +8,7 @@
 
 ## 1. mongoose 커넥션 풀이 부하에 비해 너무 작았다
 
-**무엇이 잘못돼 있었나** — [mongoose-config.module.ts](../apis/mono/src/config/modules/mongoose-config.module.ts) 가 `maxPoolSize` 를 명시하지 않아 기본값 100을 사용하고 있었다. 4 replica × 100 = 400 이지만 한 replica 당 피크 부하가 100을 넘으면 그 replica 에서 즉시 고갈된다.
+**무엇이 잘못돼 있었나** — [mongoose-config.module.ts](../apps/api/src/config/modules/mongoose-config.module.ts) 가 `maxPoolSize` 를 명시하지 않아 기본값 100을 사용하고 있었다. 4 replica × 100 = 400 이지만 한 replica 당 피크 부하가 100을 넘으면 그 replica 에서 즉시 고갈된다.
 
 **드러난 방식** — iter 당 500 concurrent POST 를 쏘는 시나리오(customer-race / ticket-holding)에서 `MongoWaitQueueTimeoutError: Timed out while checking out a connection from connection pool` 가 터지면서 500 응답이 섞여 나왔다.
 
@@ -38,7 +38,7 @@
 
 ## 4. nginx 에 upstream retry/keepalive 설정이 전혀 없었다
 
-**무엇이 잘못돼 있었나** — [nginx.conf](../apis/mono/deploy/nginx.conf) 는 단순 `proxy_pass` 만 있고 `keepalive`, `proxy_next_upstream` 등 resilience 디렉티브가 없었다. 단일 upstream TCP reset 이 곧바로 502 HTML 페이지로 응답됐다.
+**무엇이 잘못돼 있었나** — [nginx.conf](../apps/api/deploy/nginx.conf) 는 단순 `proxy_pass` 만 있고 `keepalive`, `proxy_next_upstream` 등 resilience 디렉티브가 없었다. 단일 upstream TCP reset 이 곧바로 502 HTML 페이지로 응답됐다.
 
 **드러난 방식** — showtime-overlap-race 에서 iter 24/30 까지 정상이다가 iter 25 에서 응답이 `<html><head><title>502 Bad Gateway>...` 로 시작. 테스트의 `JSON.parse(raw)` 가 크래시. nginx 로그엔 `recv() failed (104: Connection reset by peer) while reading response header from upstream` 이 찍혀 있었다.
 
@@ -58,7 +58,7 @@
 
 ## 6. 테스트 부팅 스크립트가 Docker Hub rate limit 에 대응이 없었다
 
-**무엇이 잘못돼 있었나** — [runner.sh](../apis/mono/tests/runner.sh) 와 [bootup-test.sh](../.github/scripts/bootup-test.sh) 가 `docker compose up -d --build` 를 단발로 불렀다. Docker Hub 의 미인증 풀 제한(100/6h per IP)은 GitHub Actions runner 공유 IP pool 에서 금방 걸린다.
+**무엇이 잘못돼 있었나** — [runner.sh](../apps/api/tests/runner.sh) 와 [bootup-test.sh](../.github/scripts/bootup-test.sh) 가 `docker compose up -d --build` 를 단발로 불렀다. Docker Hub 의 미인증 풀 제한(100/6h per IP)은 GitHub Actions runner 공유 IP pool 에서 금방 걸린다.
 
 **드러난 방식** — scenario/bootup job 이 부팅 단계에서 `error from registry: You have reached your unauthenticated pull rate limit` 로 실패했다. nginx:alpine, mongo, redis, minio, temporal/postgres 등 Docker Hub 이미지가 많아 한 job 이 실패하면 다른 job 도 비슷한 시점에 걸린다.
 
@@ -68,7 +68,7 @@
 
 ## 7. unit matrix 가 공용 infra 를 날려버리고 있었다
 
-**무엇이 잘못돼 있었나** — test-stability matrix 를 리팩터하면서 libs 전용이던 `docker rm -f $(docker ps -aq)` 구문이 모든 scope 에 적용됐다. libs 는 testcontainers 를 써서 공용 infra 와 독립이지만 apis/mono·apis/msa 의 unit 테스트는 devcontainer 의 공용 mongo/redis/minio 를 재사용한다.
+**무엇이 잘못돼 있었나** — test-stability matrix 를 리팩터하면서 libs 전용이던 `docker rm -f $(docker ps -aq)` 구문이 모든 scope 에 적용됐다. libs 는 testcontainers 를 써서 공용 infra 와 독립이지만 apps/api·apis/msa 의 unit 테스트는 devcontainer 의 공용 mongo/redis/minio 를 재사용한다.
 
 **드러난 방식** — apis/msa unit 에서 MinIO `ECONNREFUSED` 로 테스트가 실패. docker ps 를 보니 MinIO 컨테이너가 matrix 의 teardown 단계에 삭제돼 있었다.
 
@@ -78,7 +78,7 @@
 
 ## 8. CI 빌드 단계의 `npm install` 이 네트워크 flake 에 무방비
 
-**무엇이 잘못돼 있었나** — [apis/mono/deploy/test.sh](../apis/mono/deploy/test.sh), [apis/msa/deploy/test.sh](../apis/msa/deploy/test.sh) 가 `docker compose up -d --build` 를 단발로 호출. Docker build 안의 `RUN npm install` 이 registry.npmjs.org 에 `ECONNRESET` 을 받으면 그대로 빌드 실패 → atoz 실패.
+**무엇이 잘못돼 있었나** — [apps/api/deploy/test.sh](../apps/api/deploy/test.sh), [apis/msa/deploy/test.sh](../apis/msa/deploy/test.sh) 가 `docker compose up -d --build` 를 단발로 호출. Docker build 안의 `RUN npm install` 이 registry.npmjs.org 에 `ECONNRESET` 을 받으면 그대로 빌드 실패 → atoz 실패.
 
 **드러난 방식** — scenario 강도를 올린 push 에서 CI 가 MSA atoz 의 `#17 [applications build 9/17] RUN npm install` 에서 `npm error code ECONNRESET / network read ECONNRESET` 로 실패. 전부 일시적 transport 오류.
 
@@ -92,13 +92,13 @@
 
 **드러난 방식** — INNER_ITERATIONS 를 30 → 500 으로 올린 뒤 showtime-overlap-race 가 iter 358/500 에서 1 회 502 를 받아 `<html>` 응답으로 `JSON.parse` 크래시. nginx 로그에 위 메시지. POST 는 `proxy_next_upstream` 기본값에서 재시도되지 않아 그대로 클라이언트로 전파. 저확률 이슈라 INNER 30 에서는 숨었다가 500 으로 올리니 사실상 매 run 노출.
 
-**조치** — [configure-app.ts](../apis/mono/src/config/configure-app.ts) 에서 `app.listen()` 반환 server 의 `keepAliveTimeout = 65_000`, `headersTimeout = 66_000` 으로 맞췄다 (업계 표준: upstream 쪽 타임아웃보다 크게). MSA 도 동일하게 적용 ([1ae8a91](https://github.com/mannercode/nest-seed/commit/1ae8a91)).
+**조치** — [configure-app.ts](../apps/api/src/config/configure-app.ts) 에서 `app.listen()` 반환 server 의 `keepAliveTimeout = 65_000`, `headersTimeout = 66_000` 으로 맞췄다 (업계 표준: upstream 쪽 타임아웃보다 크게). MSA 도 동일하게 적용 ([1ae8a91](https://github.com/mannercode/nest-seed/commit/1ae8a91)).
 
 ---
 
 ## 10. ioredis cluster 기본 redirect 예산이 부하 burst 에 부족
 
-**무엇이 잘못돼 있었나** — [redis-config.module.ts](../apis/mono/src/config/modules/redis-config.module.ts) 가 `ClusterOptions` 없이 생성. ioredis 기본값 `maxRedirections: 16` 이라 slot cache 가 아직 안정되지 않은 상태에서 burst 가 들어오면 한 요청이 여러 번 `MOVED` redirect 를 받다가 16 회 초과.
+**무엇이 잘못돼 있었나** — [redis-config.module.ts](../apps/api/src/config/modules/redis-config.module.ts) 가 `ClusterOptions` 없이 생성. ioredis 기본값 `maxRedirections: 16` 이라 slot cache 가 아직 안정되지 않은 상태에서 burst 가 들어오면 한 요청이 여러 번 `MOVED` redirect 를 받다가 16 회 초과.
 
 **드러난 방식** — showtime-overlap-race 가 iter 156/500 에서 500 응답. 앱 로그 에 `Error: Too many Cluster redirections. Last error: ReplyError: MOVED 6290 host.docker.internal:6380`. saga enqueue 가 실패하면서 POST 500 반환.
 
@@ -118,7 +118,7 @@
 
 ## 12. BullMQ 가 완료/실패 job 을 기본값으로 무기한 Redis 에 쌓는다
 
-**무엇이 잘못돼 있었나** — [showtime-creation-worker.service.ts](../apis/mono/src/applications/services/showtime-creation/services/showtime-creation-worker.service.ts) 의 `queue.add('showtime-creation.create', jobData)` 호출이 옵션 없이 진행. BullMQ 기본값은 completed/failed job 을 **영원히** Redis 에 보관. 장시간 스트레스에서 수만~수십만 개 saga record 가 누적 → 128MB 제한의 dev infra Redis 가 메모리 압박 → cluster slot routing 이 흔들리고 `Too many Cluster redirections` 연쇄 발생.
+**무엇이 잘못돼 있었나** — [showtime-creation-worker.service.ts](../apps/api/src/applications/services/showtime-creation/services/showtime-creation-worker.service.ts) 의 `queue.add('showtime-creation.create', jobData)` 호출이 옵션 없이 진행. BullMQ 기본값은 completed/failed job 을 **영원히** Redis 에 보관. 장시간 스트레스에서 수만~수십만 개 saga record 가 누적 → 128MB 제한의 dev infra Redis 가 메모리 압박 → cluster slot routing 이 흔들리고 `Too many Cluster redirections` 연쇄 발생.
 
 **드러난 방식** — overlap 이 outer 25 회 PASS 뒤 26 회째 inner iter 191/500 에서 다시 `Too many Cluster redirections`. 누적 saga ~125k. 10, 11 번 조치를 누적했는데도 동일 증상 — 위쪽 조치들은 symptom(redirect 예산, socket 수명) 이고 진짜 원인은 Redis 에 쌓이는 데이터 자체였다.
 

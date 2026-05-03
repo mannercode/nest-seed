@@ -14,7 +14,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                scope: [libs, apis/mono]
+                scope: [libs, apps/api]
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
         steps:
@@ -33,7 +33,7 @@ jobs:
             fail-fast: false
             matrix:
                 include:
-                    - scope: mono
+                    - scope: api
                       count: 100
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
@@ -69,4 +69,4 @@ jobs:
                   push: never
                   runCmd: |
                       set -Eeuo pipefail
-                      bash .github/scripts/repeat.sh 50 bash apis/mono/tests/runner.sh ${{ matrix.scenario }}
+                      bash .github/scripts/repeat.sh 50 bash apps/api/tests/runner.sh ${{ matrix.scenario }}

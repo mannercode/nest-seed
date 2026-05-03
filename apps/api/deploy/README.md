@@ -7,11 +7,11 @@ MongoDB, Redis 등 인프라는 이미 존재한다고 전제한다.
 
 ## 구성
 
-| 파일          | 설명                                                                 |
-| ------------- | -------------------------------------------------------------------- |
-| `compose.yml` | app x N replicas + nginx 로드밸런서                                  |
-| `nginx.conf`  | least_conn 방식 리버스 프록시, upstream 정보 access log               |
-| `test.sh`     | compose up → [../specs/run.sh](../specs/) 실행 → down (배포 검증)    |
+| 파일          | 설명                                                              |
+| ------------- | ----------------------------------------------------------------- |
+| `compose.yml` | app x N replicas + nginx 로드밸런서                               |
+| `nginx.conf`  | least_conn 방식 리버스 프록시, upstream 정보 access log           |
+| `test.sh`     | compose up → [../specs/run.sh](../specs/) 실행 → down (배포 검증) |
 
 인프라 설정 외의 관련 리소스:
 
@@ -20,9 +20,9 @@ MongoDB, Redis 등 인프라는 이미 존재한다고 전제한다.
 
 ## 주요 설정
 
-| 변수       | 기본값 | 설명                |
-| ---------- | ------ | ------------------- |
-| `REPLICAS` | 4      | 앱 컨테이너 수      |
+| 변수       | 기본값 | 설명           |
+| ---------- | ------ | -------------- |
+| `REPLICAS` | 4      | 앱 컨테이너 수 |
 
 인프라 연결은 `host.docker.internal`을 통해 호스트 머신의 기존 서비스에 접근한다.
 

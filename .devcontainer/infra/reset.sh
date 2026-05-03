@@ -14,7 +14,7 @@ docker volume prune -af
 
 # docker hub anonymous pull rate limit (100/6h per IP) plus shared runner IPs
 # can flake compose up on first pull. retry pattern matches
-# apis/mono/deploy/test.sh.
+# apps/api/deploy/test.sh.
 compose_up_with_retry() {
     local label="$1"
     for attempt in 1 2 3 4 5; do

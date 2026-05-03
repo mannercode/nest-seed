@@ -47,11 +47,11 @@
             "options": [
                 "npm test",
                 "npm test -w libs",
-                "npm test -w apis/mono",
-                "bash apis/mono/deploy/test.sh",
-                "bash apis/mono/tests/runner.sh sse",
+                "npm test -w apps/api",
+                "bash apps/api/deploy/test.sh",
+                "bash apps/api/tests/runner.sh sse",
                 "npm run atoz",
-                "npm run atoz -w apis/mono"
+                "npm run atoz -w apps/api"
             ]
         }
     ]

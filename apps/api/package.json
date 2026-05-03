@@ -1,5 +1,5 @@
 {
-    "name": "nest-mono",
+    "name": "nest-api",
     "version": "0.0.2",
     "private": true,
     "scripts": {
@@ -7,7 +7,7 @@
         "bundle": "nest build -b webpack",
         "clean": "docker compose --env-file .env -f deploy/compose.yml down -v -t 0 && jest --clearCache",
         "dev": "nest start --watch",
-        "test": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage --config ../jest.config.js",
+        "test": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
         "format": "eslint src/ --fix && prettier --write src/",
         "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
         "atoz": "npm run clean && npm run lint && npm test && bash deploy/test.sh"
