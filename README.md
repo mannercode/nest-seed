@@ -1,67 +1,77 @@
 # nest-seed
 
-NestJS 모노레포 시드. 영화 예매 도메인을 예시로, **MSA-ready monolith** 구조 — 코드는 단일 `apps/api` 지만 4 replica 기본 배포 + NATS / Temporal 인프라를 유지한다.
+NestJS 모노레포 시드다. 영화 예매 도메인을 예시로 담았으며, 구조는 **MSA-ready monolith** 를 지향한다. 코드는 단일 `apps/api` 안에 모여 있지만 4 replica로 기본 배포되고, NATS와 Temporal 같은 분산 인프라를 그대로 유지한다. 나중에 서비스를 분리해야 할 때가 와도 인프라는 교체할 필요 없이 코드 경계만 끊으면 되도록 설계했다.
 
 ## 시작하기
 
 ### 1. Dev Container
 
-사전 요구: Docker, VS Code (Dev Containers 확장).
+먼저 Docker와 VS Code, 그리고 Dev Containers 확장이 필요하다.
 
 ```bash
 git clone <repository-url>
 code nest-seed
 ```
 
-VS Code에서 `Reopen in Container`. 컨테이너 시작 시 인프라(MongoDB RS · Redis Cluster · MinIO · NATS · Temporal)가 자동 기동된다. 인프라 초기화가 완료될 때까지 터미널 출력을 확인한 뒤 다음 단계.
+VS Code에서 `Reopen in Container`를 실행하면 컨테이너가 뜨면서 MongoDB Replica Set, Redis Cluster, MinIO, NATS, Temporal이 자동으로 함께 기동된다. 인프라 초기화에는 약간 시간이 걸리므로, 터미널에 출력되는 로그가 안정될 때까지 기다린 뒤 다음 단계로 넘어간다.
 
-> 호스트에서 [Git credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials)를 미리 설정한다.
+> 호스트에 [Git credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials) 설정이 미리 되어 있어야 컨테이너 안에서도 git이 동작한다.
 
-최소 사양: CPU 4, RAM 16GB, Storage 32GB.
+권장 사양은 CPU 4코어, RAM 16GB, 디스크 32GB 이상이다.
 
-### 2. 빌드 → 테스트 → 실행
+### 2. 빌드하고 테스트하고 실행하기
+
+`apps/api`가 `libs/*`에 의존하기 때문에, 가장 먼저 libs를 빌드해야 한다.
 
 ```bash
-npm run build           # apps가 libs에 의존하므로 먼저 빌드
-npm test                # 단위/통합 테스트
-bash apps/api/deploy/test.sh   # Docker Compose로 빌드·기동 후 curl spec 검증
-cd apps/api && npm run dev     # watch 모드 실행
+npm run build                    # libs 빌드
+npm test                         # 단위·통합 테스트
+bash apps/api/deploy/test.sh     # Docker Compose로 빌드·기동한 뒤 curl 스펙으로 검증
+cd apps/api && npm run dev       # watch 모드로 개발 서버 실행
 curl http://localhost:3000/movies
 ```
 
 ### 3. 분산 race 테스트
 
-4-replica docker compose 스택을 띄워 cross-replica race를 검증한다 — SSE 팬아웃, 동시 가입/홀드, saga 중첩, 중복 구매. `package.json`에는 노출하지 않고 shell로 직접 호출. 자세한 내용은 [docs/testing.md#5-분산-테스트-cross-replica-race](docs/testing.md#5-분산-테스트-cross-replica-race).
+단일 프로세스로는 재현하기 어려운 race 조건을 검증하기 위해, 4-replica docker compose 스택을 띄우고 블랙박스 시나리오를 돌리는 테스트가 따로 있다. SSE 팬아웃이 모든 replica로 전달되는지, 동일 이메일로 동시에 가입을 시도하면 한 건만 성공하는지, 같은 좌석을 동시에 홀드하면 한 건만 통과하는지, 같은 티켓 세트가 중복 결제되지 않는지 등을 다룬다.
+
+이 테스트는 인프라가 무거워서 `package.json` 스크립트로 노출하지 않고 shell에서 직접 호출한다.
 
 ```bash
 bash apps/api/tests/runner.sh <scenario>
 # scenario: sse | user-race | ticket-holding-race | showtime-overlap-race | purchase-double-spend
 ```
 
+자세한 동작과 검증 방식은 [docs/testing.md](docs/testing.md#5-분산-테스트-cross-replica-race)에서 다룬다.
+
 ## 프로젝트 구조
 
 ```
 nest-seed/
-├── libs/                 ← 공유 라이브러리 (npm 패키지)
-│   ├── common/           @mannercode/common  — Mongoose, Redis, JWT, S3, Logger, NATS, Temporal
-│   └── testing/          @mannercode/testing — HttpTestClient, fixture 헬퍼
+├── libs/                    ← 공유 라이브러리 (npm 패키지)
+│   ├── common/              @mannercode/common  — Mongoose, Redis, JWT, S3, Logger, NATS, Temporal
+│   └── testing/             @mannercode/testing — HttpTestClient, fixture 헬퍼
 │
-├── apps/api/             ← NestJS API (4 replica 기본)
+├── apps/api/                ← NestJS API (4 replica 기본)
 │   ├── src/
-│   │   ├── controllers/      HTTP 진입점, 가드
-│   │   ├── applications/     비즈니스 로직 (Temporal workflow + activities)
-│   │   ├── cores/            도메인 모델, 리포지토리
-│   │   ├── infrastructures/  외부 서비스 (결제, 파일)
-│   │   └── config/           앱 설정, Rules, 파이프
-│   ├── tests/                분산 race 시나리오, perf 하네스
-│   └── deploy/               Docker Compose, nginx
+│   │   ├── controllers/         HTTP 진입점, 가드
+│   │   ├── applications/        비즈니스 로직 (Temporal workflow + activities)
+│   │   ├── cores/               도메인 모델, 리포지토리
+│   │   ├── infrastructures/     외부 서비스 (결제, 파일)
+│   │   └── config/              앱 설정, Rules, 파이프
+│   ├── tests/                   분산 race 시나리오, perf 하네스
+│   └── deploy/                  Docker Compose, nginx
 │
-└── .devcontainer/        ← Dev Container + 개발 인프라
+└── .devcontainer/           ← Dev Container + 개발 인프라
 ```
 
 ## 새 프로젝트로 fork 하기
 
-### 1. 패키지 이름 / 스코프
+이 시드를 가져다 새 프로젝트를 시작할 때 손대야 할 자리들을 정리한다.
+
+### 1. 패키지 이름과 스코프
+
+먼저 패키지 식별자를 새 프로젝트 이름으로 일괄 교체한다.
 
 | 위치                            | 현재            | 변경            |
 | ------------------------------- | --------------- | --------------- |
@@ -71,35 +81,41 @@ nest-seed/
 | `libs/tsconfig.json` (paths)    | `@mannercode/*` | `@yourorg/*`    |
 | `apps/api/package.json` (deps)  | `@mannercode/*` | `@yourorg/*`    |
 
-### 2. 환경 / 인프라 식별자
+### 2. 환경과 인프라 식별자
 
-| 위치                       | 현재                                     | 변경         |
-| -------------------------- | ---------------------------------------- | ------------ |
-| `apps/api/.env`            | `PROJECT_ID=nest-api`                    | 새 ID        |
+다음으로 컨테이너 이름과 버킷 이름처럼 런타임에 노출되는 식별자를 바꾼다.
+
+| 위치                          | 현재                                     | 변경         |
+| ----------------------------- | ---------------------------------------- | ------------ |
+| `apps/api/.env`               | `PROJECT_ID=nest-api`                    | 새 ID        |
 | `apps/api/deploy/compose.yml` | `image: nest-api`, `container_name: app` | 새 이름      |
-| `.devcontainer/infra/.env` | `nest-bucket` (S3 버킷)                  | 새 버킷 이름 |
+| `.devcontainer/infra/.env`    | `nest-bucket` (S3 버킷)                  | 새 버킷 이름 |
 
 ### 3. 도메인 코드 교체
 
-`apps/api/src/`의 영화 예매 도메인(Users, Movies, Theaters, Showtimes, Tickets, Bookings, Purchases)을 새 도메인으로 교체. 단위 테스트는 `apps/api/src/__tests__/`, e2e 스펙은 `apps/api/tests/e2e/specs/*.spec`.
+`apps/api/src/`에 들어 있는 영화 예매 도메인(Users, Movies, Theaters, Showtimes, Tickets, Bookings, Purchases)을 새 도메인으로 교체한다. 단위 테스트는 `apps/api/src/__tests__/` 아래에, e2e 스펙은 `apps/api/tests/e2e/specs/*.spec` 에 있으므로 함께 수정한다.
 
-### 4. CI / 저장소
+### 4. CI와 저장소 정리
 
-- `.github/workflows/ci.yaml` — 트리거 분기, 시크릿
-- 본 README의 `git clone <repository-url>` 자리
+- `.github/workflows/ci.yaml` 의 트리거 분기와 시크릿을 새 저장소 기준으로 맞춘다.
+- 본 README의 `git clone <repository-url>` 자리를 실제 URL로 바꾼다.
 
-### 5. 유지할 것 (시드의 핵심)
+### 5. 유지하면 좋은 것
 
-- `libs/` 구조와 코드
-- SoLA 계층 분리 (controllers/applications/cores/infrastructures)
+다음 항목들은 시드의 핵심이라 이름만 바꾸고 구조는 그대로 두기를 권한다.
+
+- `libs/` 의 구조와 코드
+- SoLA 계층 분리 (controllers / applications / cores / infrastructures)
 - 테스트 인프라 (Jest + Testcontainers + e2e shell spec + 분산 race)
 - Dev Container 구성
 - ESLint 계층 의존성 검증
 
 ### 6. 검증
 
+마지막으로 전체가 깨지지 않았는지 다음 명령들로 확인한다.
+
 ```bash
-npm install              # workspace 정리
+npm install              # workspace 의존성 정리
 npm run build            # libs 빌드
 npm run lint             # 의존성·타입·포맷 검사
 npm test                 # 테스트 통과 확인
@@ -109,7 +125,7 @@ npm test                 # 테스트 통과 확인
 
 ## 문서
 
-- [아키텍처](docs/architecture.md) — SoLA 계층 분리, 분산 협력 (락 / NATS / Temporal)
+- [아키텍처](docs/architecture.md) — SoLA 계층 분리와 분산 협력 (락, NATS, Temporal)
 - [컨벤션](docs/conventions.md) — 네이밍, 에러, import, REST API 설계
-- [테스트](docs/testing.md) — 한글 주석, fixture, dynamic import, 분산 race
+- [테스트](docs/testing.md) — 한글 주석 규칙, fixture, dynamic import, 분산 race
 - [설계 결정](docs/decisions.md) — 분산 도구의 판단 기준과 거부 목록
