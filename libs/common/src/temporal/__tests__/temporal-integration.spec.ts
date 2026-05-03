@@ -1,24 +1,25 @@
-import type { TestWorkflowEnvironment } from '@temporalio/testing'
-import { withTestId } from '@mannercode/testing'
+import type { Client, Connection } from '@temporalio/client'
+import { getTemporalTestConnection, withTestId } from '@mannercode/testing'
 
-// Spinning up Temporal is the dominant cost of these tests, so we share one
-// ephemeral server across every describe in this file. The `await import`
-// inside each `it` (project convention with `resetModules: true`) still gives
-// us fresh class identities per test — only `testEnv` is reused.
-let testEnv: TestWorkflowEnvironment
+// One Connection + Client shared across this file. The `await import` inside
+// each `it` (project convention with `resetModules: true`) still gives fresh
+// class identities for the modules under test — only the live infra handles
+// are reused.
+let connection: Connection
+let client: Client
 
 beforeAll(async () => {
-    const { TestWorkflowEnvironment } = await import('@temporalio/testing')
-    // First run downloads the Temporal CLI (~80MB) into the OS temp dir;
-    // subsequent runs reuse the cached binary and start in ~3s.
-    testEnv = await TestWorkflowEnvironment.createLocal()
-}, 240_000)
+    const { Client, Connection } = await import('@temporalio/client')
+    const { address, namespace } = getTemporalTestConnection()
+    connection = await Connection.connect({ address })
+    client = new Client({ connection, namespace })
+}, 60_000)
 
 afterAll(async () => {
-    await testEnv.teardown()
+    await connection.close()
 })
 
-const namespace = () => testEnv.namespace ?? 'default'
+const config = () => getTemporalTestConnection()
 
 describe('InjectTemporalClient', () => {
     // 이름 없이 호출하면 parameter decorator 를 반환한다 (기본 이름)
@@ -43,18 +44,12 @@ describe('TemporalClientModule.forRootAsync', () => {
         const { Test } = await import('@nestjs/testing')
 
         const moduleRef = await Test.createTestingModule({
-            imports: [
-                TemporalClientModule.forRootAsync({
-                    useFactory: () => ({ address: testEnv.address, namespace: namespace() })
-                })
-            ]
+            imports: [TemporalClientModule.forRootAsync({ useFactory: () => config() })]
         }).compile()
 
         try {
-            const connection = moduleRef.get(getTemporalConnectionToken())
-            const client = moduleRef.get(getTemporalClientToken())
-            expect(connection).toBeDefined()
-            expect(client).toBeDefined()
+            expect(moduleRef.get(getTemporalConnectionToken())).toBeDefined()
+            expect(moduleRef.get(getTemporalClientToken())).toBeDefined()
         } finally {
             await moduleRef.close()
         }
@@ -68,12 +63,7 @@ describe('TemporalClientModule.forRootAsync', () => {
         const { Test } = await import('@nestjs/testing')
 
         const moduleRef = await Test.createTestingModule({
-            imports: [
-                TemporalClientModule.forRootAsync(
-                    { useFactory: () => ({ address: testEnv.address, namespace: namespace() }) },
-                    'orders'
-                )
-            ]
+            imports: [TemporalClientModule.forRootAsync({ useFactory: () => config() }, 'orders')]
         }).compile()
 
         try {
@@ -92,15 +82,14 @@ describe('TemporalClientModule.forRootAsync', () => {
 
         const ADDRESS_TOKEN = 'TEMPORAL_TEST_ADDRESS'
         const calls: string[] = []
-        const addr = testEnv.address
-        const ns = namespace()
+        const { address, namespace } = config()
 
         // forRootAsync's dynamic module is global, but its `inject` tokens
         // must still resolve from somewhere — so we expose ADDRESS_TOKEN via
         // a @Global() helper module.
         @Global()
         @Module({
-            providers: [{ provide: ADDRESS_TOKEN, useValue: addr }],
+            providers: [{ provide: ADDRESS_TOKEN, useValue: address }],
             exports: [ADDRESS_TOKEN]
         })
         class AddressModule {}
@@ -111,9 +100,9 @@ describe('TemporalClientModule.forRootAsync', () => {
                 TemporalClientModule.forRootAsync(
                     {
                         inject: [ADDRESS_TOKEN],
-                        useFactory: (address: string) => {
-                            calls.push(address)
-                            return { address, namespace: ns }
+                        useFactory: (addr: string) => {
+                            calls.push(addr)
+                            return { address: addr, namespace }
                         }
                     },
                     'with-inject'
@@ -124,7 +113,7 @@ describe('TemporalClientModule.forRootAsync', () => {
         try {
             // useFactory is wired into both providers (connection and client),
             // so it runs twice with the same injected address.
-            expect(calls).toEqual([addr, addr])
+            expect(calls).toEqual([address, address])
         } finally {
             await moduleRef.close()
         }
@@ -137,10 +126,7 @@ describe('TemporalClientModule.forRootAsync', () => {
 
         const moduleRef = await Test.createTestingModule({
             imports: [
-                TemporalClientModule.forRootAsync(
-                    { useFactory: () => ({ address: testEnv.address, namespace: namespace() }) },
-                    'destroy-test'
-                )
+                TemporalClientModule.forRootAsync({ useFactory: () => config() }, 'destroy-test')
             ]
         }).compile()
 
@@ -167,6 +153,7 @@ describe('TemporalWorkerService', () => {
         const { TemporalWorkerService } = await import('../temporal-worker.service')
         const taskQueue = withTestId('worker')
         const calls: string[] = []
+        const { address, namespace } = config()
 
         const service = new TemporalWorkerService({
             activities: {
@@ -175,8 +162,8 @@ describe('TemporalWorkerService', () => {
                     return `echo:${msg}`
                 }
             },
-            address: testEnv.address,
-            namespace: namespace(),
+            address,
+            namespace,
             taskQueue,
             workflowsPath: require.resolve('./workflows')
         })
@@ -185,7 +172,7 @@ describe('TemporalWorkerService', () => {
 
         try {
             const { echoWorkflow } = await import('./workflows')
-            const result = await testEnv.client.workflow.execute(echoWorkflow, {
+            const result = await client.workflow.execute(echoWorkflow, {
                 args: ['hello'],
                 taskQueue,
                 workflowId: withTestId('wf')
@@ -214,11 +201,12 @@ describe('TemporalWorkerService', () => {
     it('swallows errors when the connection close fails', async () => {
         const { TemporalWorkerService } = await import('../temporal-worker.service')
         const taskQueue = withTestId('worker-close')
+        const { address, namespace } = config()
 
         const service = new TemporalWorkerService({
             activities: { echo: async (msg: string) => `echo:${msg}` },
-            address: testEnv.address,
-            namespace: namespace(),
+            address,
+            namespace,
             taskQueue,
             workflowsPath: require.resolve('./workflows')
         })
