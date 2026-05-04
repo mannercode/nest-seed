@@ -12,7 +12,7 @@ services:
             - temporal_pgdata:/var/lib/postgresql/data
         healthcheck:
             test: ['CMD-SHELL', 'pg_isready -U temporal']
-        deploy: { resources: { limits: { memory: 256m } } }
+        deploy: { resources: { limits: { memory: 1g } } }
         shm_size: '16m'
 
     # auto-setup 의 schema setup 부분 — one-shot. temporal/visibility 두 DB
@@ -34,7 +34,7 @@ services:
             POSTGRES_SEEDS: temporal-postgresql
             SQL_PASSWORD: temporal
         volumes:
-            - ./temporal-scripts:/scripts:ro
+            - ./temporal/scripts:/scripts:ro
         entrypoint: ['/bin/sh']
         command: '/scripts/setup-postgres.sh'
 
@@ -54,12 +54,12 @@ services:
             DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
         ports: ['$TEMPORAL_PORT:7233']
         volumes:
-            - ./temporal-dynamicconfig:/etc/temporal/config/dynamicconfig:ro
+            - ./temporal/dynamicconfig:/etc/temporal/config/dynamicconfig:ro
         healthcheck:
             test: ['CMD-SHELL', 'nc -z localhost 7233']
             interval: 5s
             start_period: 30s
-        deploy: { resources: { limits: { memory: 384m } } }
+        deploy: { resources: { limits: { memory: 1g } } }
         shm_size: '16m'
 
     # auto-setup 이 자동으로 만들던 default namespace — server only 는 안
@@ -75,7 +75,7 @@ services:
             TEMPORAL_ADDRESS: temporal:7233
             DEFAULT_NAMESPACE: default
         volumes:
-            - ./temporal-scripts:/scripts:ro
+            - ./temporal/scripts:/scripts:ro
         entrypoint: ['/bin/sh']
         command: '/scripts/create-namespace.sh'
 
