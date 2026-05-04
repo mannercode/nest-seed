@@ -32,9 +32,18 @@ cleanup() {
 trap cleanup EXIT
 
 echo "Building and deploying 4-replica api stack..."
-# 모든 base image 가 ghcr.io/mannercode/mirror/* 에서 pull 되므로 docker
-# hub rate limit 발생할 경로 없음. retry 루프 불필요.
-REPLICAS="${REPLICAS:-4}" docker compose --env-file "$ENV_FILE" up -d --build
+# Lockfile hash 가 deps 이미지 태그. apps/api/Dockerfile 의 FROM 이 사용.
+export DEPS_TAG=$(sha256sum "${MONO_DIR}/../../package-lock.json" | cut -c1-16)
+
+# nginx:alpine, docker:cli 등 외부 이미지를 docker hub 직접 pull → 100/6h
+# rate limit 가능. 첫 pull flake 흡수용 선형 백오프.
+for attempt in 1 2 3 4 5; do
+    REPLICAS="${REPLICAS:-4}" docker compose --env-file "$ENV_FILE" up -d --build && break
+    echo "compose up failed (attempt $attempt); sleeping..."
+    docker compose --env-file "$ENV_FILE" down -v -t 0 || true
+    sleep $((attempt * 10))
+    [ "$attempt" = 5 ] && { echo "compose up failed after 5 attempts"; exit 1; }
+done
 docker wait api-setup && docker rm api-setup
 
 echo ""

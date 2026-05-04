@@ -1,9 +1,7 @@
 name: Cleanup ghcr packages
 on:
     schedule:
-        # Weekly Mon 03:00 UTC — 1 hour after Mirror Docker Images cron
-        # so untagged predecessors from the mirror push are reaped in
-        # the same window.
+        # Weekly Mon 03:00 UTC.
         - cron: '0 3 * * 1'
     workflow_dispatch:
 
@@ -15,43 +13,18 @@ concurrency:
     cancel-in-progress: false
 
 jobs:
-    # mirror cron 이 같은 태그에 새 SHA 를 push 하면 옛 SHA 는 untagged
-    # version 으로 남아 storage 만 차지. api-deps 는 lockfile hash 마다
-    # 다른 태그라 untagged 가 거의 없지만 매트릭스에 같이 둠 (innocuous).
-    untagged:
+    # api-deps 는 lockfile 변경마다 새 태그 → 무한 누적. untagged 정리 +
+    # 최근 5개 lockfile hash 만 유지.
+    cleanup:
         runs-on: ubuntu-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                package:
-                    - mirror/minio
-                    - mirror/mongo
-                    - mirror/nats
-                    - mirror/nginx
-                    - mirror/node
-                    - mirror/postgres
-                    - mirror/redis
-                    - mirror/temporal-auto-setup
-                    - mirror/aws-cli
-                    - mirror/docker
-                    - mirror/mongo-express
-                    - mirror/redisinsight
-                    - mirror/temporal-ui
-                    - api-deps
         steps:
             - uses: actions/delete-package-versions@v5
               with:
                   owner: ${{ github.repository_owner }}
-                  package-name: ${{ matrix.package }}
+                  package-name: api-deps
                   package-type: container
                   delete-only-untagged-versions: 'true'
 
-    # api-deps 는 lockfile 변경마다 새 태그 → 무한 누적. 최근 5개만 유지.
-    # mirror/* 는 태그가 고정된 floating set 이라 적용 대상 아님.
-    keep-recent-deps:
-        runs-on: ubuntu-latest
-        needs: untagged
-        steps:
             - uses: actions/delete-package-versions@v5
               with:
                   owner: ${{ github.repository_owner }}

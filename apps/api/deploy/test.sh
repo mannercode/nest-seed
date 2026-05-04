@@ -23,7 +23,16 @@ trap cleanup EXIT
 # 이 시점엔 이미 존재. compose 가 build args 로 인터폴레이션.
 export DEPS_TAG=$(sha256sum "${REPO_ROOT}/package-lock.json" | cut -c1-16)
 
-docker compose --env-file "$ENV_FILE" up -d --build
+# nginx:alpine, docker:cli 등 외부 이미지를 docker hub 에서 직접 pull. 공유
+# runner IP 기준 100/6h rate limit 가능성 다시 등장. 첫 pull flake 흡수용
+# 선형 백오프.
+for attempt in 1 2 3 4 5; do
+    docker compose --env-file "$ENV_FILE" up -d --build && break
+    echo "compose up failed (attempt $attempt); sleeping..."
+    docker compose --env-file "$ENV_FILE" down -v -t 0 || true
+    sleep $((attempt * 10))
+    [ "$attempt" = 5 ] && { echo "compose up failed after 5 attempts"; exit 1; }
+done
 docker wait api-setup && docker rm api-setup
 
 bash "${APP_DIR}/specs/run.sh"
