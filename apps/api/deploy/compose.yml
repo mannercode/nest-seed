@@ -63,7 +63,7 @@ services:
             dockerfile: apps/api/Dockerfile
             args:
                 DEPS_TAG: ${DEPS_TAG}
-        image: nest-api
+        image: nest-seed-api
         deploy:
             replicas: ${REPLICAS:-4}
 

@@ -76,7 +76,7 @@ nest-seed/
 | 위치                    | 현재        | 변경             |
 | ----------------------- | ----------- | ---------------- |
 | `package.json` (root)   | `nest-seed` | 새 프로젝트 이름 |
-| `apps/api/package.json` | `nest-api`  | 새 api 이름      |
+| `apps/api/package.json` | `nest-seed-api`  | 새 api 이름      |
 
 ### 2. 환경과 인프라 식별자
 
@@ -84,8 +84,8 @@ nest-seed/
 
 | 위치                          | 현재                                     | 변경         |
 | ----------------------------- | ---------------------------------------- | ------------ |
-| `apps/api/.env`               | `PROJECT_ID=nest-api`                    | 새 ID        |
-| `apps/api/deploy/compose.yml` | `image: nest-api`, `container_name: app` | 새 이름      |
+| `apps/api/.env`               | `PROJECT_ID=nest-seed-api`                    | 새 ID        |
+| `apps/api/deploy/compose.yml` | `image: nest-seed-api`, `container_name: app` | 새 이름      |
 | `.devcontainer/infra/.env`    | `nest-bucket` (S3 버킷)                  | 새 버킷 이름 |
 
 ### 3. 도메인 코드 교체
