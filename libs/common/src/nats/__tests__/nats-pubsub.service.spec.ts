@@ -1,10 +1,11 @@
 import { withTestId } from '@mannercode/testing'
 import type { NatsPubSubServiceFixture } from './nats-pubsub.service.fixture'
 
-// 5s 기본값: 로컬에선 ms 단위로 끝나지만 CI 의 NATS testcontainer 가 첫
-// 메시지 흐름을 만들 때 1~3s 걸리는 경우가 관측됨 (`isolates handler
-// errors` 가 2s 에서 flake). 진짜 hang 일 때만 잡아내고 정상 지연은 흡수.
-async function waitFor(predicate: () => boolean, timeoutMs = 5000) {
+// 10s 기본값: 로컬에선 ms 단위로 끝나지만 CI 에서 fixture 가 매 테스트마다
+// NATS testcontainer 에 두 개의 새 connection 을 열고 닫는 패턴이라 첫
+// 메시지 흐름이 5s 도 넘기는 경우가 있음. (run 25294199302 — 2s,
+// run 25294512426 — 5s 둘 다 flake.) 진짜 hang 만 잡아내도록 여유 있게.
+async function waitFor(predicate: () => boolean, timeoutMs = 10_000) {
     const start = Date.now()
     while (!predicate()) {
         if (Date.now() - start > timeoutMs) {
