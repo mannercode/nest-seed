@@ -113,12 +113,16 @@ type JwtExpiresIn = NonNullable<JwtSignOptionsArg>['expiresIn']
  */
 @Injectable()
 export class JwtAuthService {
+    // No default on `userIdField` — JwtAuthModule.register always resolves it
+    // through `defaultTo(userIdField, DEFAULT_USER_ID_FIELD)` so a TS default
+    // here would be dead code (an uncovered branch). Direct instantiations
+    // must pass the field explicitly.
     constructor(
         private readonly jwtService: JwtService,
         private readonly config: AuthConfig,
         private readonly redis: Redis,
         public readonly prefix: string,
-        private readonly userIdField: string = DEFAULT_USER_ID_FIELD,
+        private readonly userIdField: string,
         private readonly onEvent?: OnSecurityEvent
     ) {}
 

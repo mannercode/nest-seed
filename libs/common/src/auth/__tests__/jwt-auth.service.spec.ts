@@ -320,6 +320,20 @@ describe('JwtAuthService', () => {
             expect(issued?.context).toEqual(ctx)
         })
 
+        // onEvent 가 등록 안 된 인스턴스: emit 이 호출돼도 조용히 no-op
+        it('is a no-op when no hook was registered', async () => {
+            // onEvent 를 일시적으로 제거해 hook-less 인스턴스를 시뮬레이션
+            const original = (fix.jwtService as any).onEvent
+            ;(fix.jwtService as any).onEvent = undefined
+            try {
+                await expect(
+                    fix.jwtService.generateAuthTokens({ sub: 'u1' })
+                ).resolves.toBeDefined()
+            } finally {
+                ;(fix.jwtService as any).onEvent = original
+            }
+        })
+
         // 훅이 throw 해도 인증은 통과한다
         it('swallows hook errors so auth keeps working', async () => {
             // jwtService 에 문제가 되는 hook 으로 직접 교체
@@ -336,6 +350,50 @@ describe('JwtAuthService', () => {
                 ;(fix.jwtService as any).onEvent = original
                 consoleErr.mockRestore()
             }
+        })
+    })
+
+    describe('payload without a user id', () => {
+        // sub 가 없는 payload: per-user index 가 만들어지지 않고도 모든 흐름이 동작해야 한다
+        // (storeToken 의 if(userId) false 분기, revokeFamily 의 if(userId) false 분기)
+        it('issues, refreshes, revokes a token whose payload has no sub', async () => {
+            const tokens = await fix.jwtService.generateAuthTokens({ email: 'no-sub@x' })
+
+            const rotated = await fix.jwtService.refreshAuthTokens(tokens.refreshToken)
+            expect(rotated.refreshToken).not.toEqual(tokens.refreshToken)
+
+            await fix.jwtService.revokeRefreshToken(rotated.refreshToken)
+
+            await expect(fix.jwtService.refreshAuthTokens(rotated.refreshToken)).rejects.toThrow(
+                'The provided refresh token is invalid'
+            )
+        })
+
+        // sub 가 string 이 아니면 userId 로 간주되지 않는다 (typeof string check)
+        it('treats a non-string sub as no user id', async () => {
+            const tokens = await fix.jwtService.generateAuthTokens({ sub: 12345 })
+
+            // user index 미생성 → revokeAllForUser 가 그 값으로 호출돼도 영향 없음
+            await fix.jwtService.revokeAllForUser('12345')
+
+            // 일반 회전은 정상
+            const rotated = await fix.jwtService.refreshAuthTokens(tokens.refreshToken)
+            expect(rotated.refreshToken).toEqual(expect.any(String))
+        })
+
+        // sub 없는 토큰으로 reuse 감지 시 revokeFamily 가 userId=undefined 로 호출된다
+        it('cascades reuse-revoke even when payload has no sub', async () => {
+            const tokens = await fix.jwtService.generateAuthTokens({ email: 'no-sub@x' })
+            const rotated = await fix.jwtService.refreshAuthTokens(tokens.refreshToken)
+
+            await expect(fix.jwtService.refreshAuthTokens(tokens.refreshToken)).rejects.toThrow(
+                /reuse detected/i
+            )
+
+            // family 가 폐기됐으니 회전된 새 토큰도 더 이상 유효하지 않다
+            await expect(fix.jwtService.refreshAuthTokens(rotated.refreshToken)).rejects.toThrow(
+                'The provided refresh token is invalid'
+            )
         })
     })
 
