@@ -50,6 +50,10 @@ export class NatsPubSubService implements OnModuleDestroy {
             state = { handlers: new Set(), sub }
             this.subscriptions.set(subject, state)
             this.startConsumeLoop(state)
+            // SUB 프로토콜 메시지는 client → server 로 비동기 전송됨. flush 로
+            // 서버 ack 를 받아야 "이후 publish 가 이 구독에 도달" 이 보장됨.
+            // 안 하면 race 때문에 직후 publish 가 누락될 수 있음.
+            await this.connection.flush()
         }
 
         state.handlers.add(handler)

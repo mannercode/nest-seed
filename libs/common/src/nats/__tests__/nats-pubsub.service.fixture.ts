@@ -35,6 +35,11 @@ export async function createNatsPubSubServiceFixture(): Promise<NatsPubSubServic
     const ncA = contextA.module.get<NatsConnection>(getNatsConnectionToken('replicaA'))
     const ncB = contextB.module.get<NatsConnection>(getNatsConnectionToken('replicaB'))
 
+    // 두 connection 이 server 와 round-trip 가능한 상태임을 증명.
+    // 이후 spec 의 timeout 윈도우에 testcontainer 콜드스타트 / TCP handshake
+    // 비용이 끼어들지 않고, 순수 메시지 round-trip 만 측정됨.
+    await Promise.all([ncA.flush(), ncB.flush()])
+
     const teardown = async () => {
         await contextA.close()
         await contextB.close()

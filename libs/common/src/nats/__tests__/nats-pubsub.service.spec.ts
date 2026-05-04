@@ -1,11 +1,10 @@
 import { withTestId } from '@mannercode/testing'
 import type { NatsPubSubServiceFixture } from './nats-pubsub.service.fixture'
 
-// 10s 기본값: 로컬에선 ms 단위로 끝나지만 CI 에서 fixture 가 매 테스트마다
-// NATS testcontainer 에 두 개의 새 connection 을 열고 닫는 패턴이라 첫
-// 메시지 흐름이 5s 도 넘기는 경우가 있음. (run 25294199302 — 2s,
-// run 25294512426 — 5s 둘 다 flake.) 진짜 hang 만 잡아내도록 여유 있게.
-async function waitFor(predicate: () => boolean, timeoutMs = 10_000) {
+// fixture 가 connection 을 flush 해 둬서 측정 윈도우엔 순수 메시지 round-trip
+// 만 들어옴. NatsPubSubService.subscribe() 도 flush 후 리턴하므로 subscribe →
+// publish 사이 race 도 없음. 500ms 가 터지면 진짜 latency 회귀 신호로 본다.
+async function waitFor(predicate: () => boolean, timeoutMs = 500) {
     const start = Date.now()
     while (!predicate()) {
         if (Date.now() - start > timeoutMs) {
