@@ -27,7 +27,7 @@ jobs:
                     - { src: 'redis:8.6-alpine',                         dest: 'redis:8.6-alpine' }
                     - { src: 'temporalio/auto-setup:1.29',               dest: 'temporal-auto-setup:1.29' }
                     # Tier 2: boot tools
-                    - { src: 'amazon/aws-cli:2',                         dest: 'aws-cli:2' }
+                    - { src: 'amazon/aws-cli:latest',                    dest: 'aws-cli:latest' }
                     - { src: 'docker:cli',                               dest: 'docker:cli' }
                     # Tier 3: GUI (gui profile)
                     - { src: 'mongo-express:latest',                     dest: 'mongo-express:latest' }
@@ -41,3 +41,16 @@ jobs:
               run: echo "${{ secrets.GITHUB_TOKEN }}" | crane auth login ghcr.io -u "${{ github.actor }}" --password-stdin
             - name: Copy ${{ matrix.src }}
               run: crane copy "${{ matrix.src }}" "ghcr.io/${{ github.repository_owner }}/mirror/${{ matrix.dest }}"
+            # GHCR 패키지는 default 로 private 으로 publish 됨. mirror 이미지는
+            # docker hub public 원본의 단순 미러라 private 유지할 이유 없고,
+            # private 이면 외부에서 anon pull 못함 → ECONNRESET 회피 의미가
+            # 절반밖에 안 살음. publish 후 명시적으로 public 으로 토글.
+            - name: Make package public
+              env:
+                  DEST: ${{ matrix.dest }}
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  pkg="${DEST%%:*}"
+                  gh api --method PATCH \
+                      "/orgs/${{ github.repository_owner }}/packages/container/mirror%2F${pkg}/visibility" \
+                      -f visibility=public
