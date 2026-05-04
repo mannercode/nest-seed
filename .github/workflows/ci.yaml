@@ -10,29 +10,29 @@ on:
         - cron: '17 */6 * * *'
 permissions:
     contents: read
+    packages: write
 concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 jobs:
+    # api-deps 이미지가 ghcr 에 존재해야 main Dockerfile 의 FROM 이 풀림.
+    # build-deps-image.yaml 가 lockfile hash 가 같으면 즉시 skip 하므로
+    # 일반 코드 변경 시 ~5초로 통과.
+    build-deps:
+        uses: ./.github/workflows/build-deps-image.yaml
+        secrets: inherit
+
     ci:
+        needs: build-deps
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 60
         steps:
             - uses: actions/checkout@v5
-            # ACTIONS_RUNTIME_TOKEN / ACTIONS_CACHE_URL 을 step env 로 노출.
-            # devcontainer 안의 buildx 가 type=gha cache backend 와 통신하기
-            # 위해 필요. 이 두 변수가 없으면 cache 가 동작하지 않고 매번 npm
-            # install 이 registry 를 직접 hit → ECONNRESET flake 재발.
-            - uses: crazy-max/ghaction-github-runtime@v4
             - name: Run in devcontainer
               uses: devcontainers/ci@v0.3
               with:
                   configFile: .devcontainer/devcontainer.json
                   push: never
-                  env: |
-                      ACTIONS_RUNTIME_TOKEN
-                      ACTIONS_CACHE_URL
-                      ACTIONS_RESULTS_URL
                   runCmd: |
                       set -Eeuo pipefail
                       npm run atoz

@@ -58,7 +58,11 @@ x-app-base: &app-base
 services:
     app:
         <<: *app-base
-        build: { context: ../../.., dockerfile: apps/api/Dockerfile }
+        build:
+            context: ../../..
+            dockerfile: apps/api/Dockerfile
+            args:
+                DEPS_TAG: ${DEPS_TAG}
         image: nest-api
         deploy:
             replicas: ${REPLICAS:-4}
