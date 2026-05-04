@@ -18,6 +18,7 @@ jobs:
         secrets: inherit
 
     unit:
+        needs: build-deps
         strategy:
             fail-fast: false
             matrix:
@@ -36,6 +37,7 @@ jobs:
                       npm run build
                       bash .github/scripts/repeat.sh 100 npm test -w ${{ matrix.scope }} -- --coverageThreshold='{}'
     bootup:
+        needs: build-deps
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
         steps:
