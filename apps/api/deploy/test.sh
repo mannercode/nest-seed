@@ -30,8 +30,12 @@ if [ -n "${ACTIONS_RUNTIME_TOKEN:-}" ]; then
     set -a
     eval "$(grep -E '^[A-Z_][A-Z0-9_]*=' "$ENV_FILE")"
     set +a
+    # build context 가 ../../.. (repo root) 라 cwd 밖 path. buildx 의
+    # entitlement 체크가 "additional privileges requested" 로 거부. cwd
+    # 상위 read access 를 명시 허가.
     docker buildx bake \
         --file "compose.yml" \
+        --allow "fs.read=../../.." \
         --set "*.cache-from=type=gha,scope=api-build" \
         --set "*.cache-to=type=gha,scope=api-build,mode=max" \
         --load
