@@ -9,17 +9,11 @@ on:
     push:
         branches: [main]
         paths:
-            - 'package.json'
             - 'package-lock.json'
-            - 'libs/*/package.json'
-            - 'apps/*/package.json'
             - 'apps/api/deps.Dockerfile'
     pull_request:
         paths:
-            - 'package.json'
             - 'package-lock.json'
-            - 'libs/*/package.json'
-            - 'apps/*/package.json'
             - 'apps/api/deps.Dockerfile'
 
 permissions:
@@ -38,8 +32,10 @@ jobs:
         steps:
             - uses: actions/checkout@v5
 
+            # tag 는 lockfile + deps.Dockerfile 합본 hash. deps.Dockerfile
+            # 변경도 이미지에 반영되도록 포함. test.sh 도 동일 식으로 계산.
             - id: hash
-              run: echo "tag=$(sha256sum package-lock.json | cut -c1-16)" >> "$GITHUB_OUTPUT"
+              run: echo "tag=$(cat package-lock.json apps/api/deps.Dockerfile | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
 
             # 같은 hash 의 이미지가 이미 ghcr 에 있으면 빌드 skip — 일반 코드
             # 변경 (lockfile 동일) 시 워크플로 ~5초로 즉시 통과.
@@ -48,7 +44,7 @@ jobs:
                   TAG: ${{ steps.hash.outputs.tag }}
               run: |
                   if docker manifest inspect \
-                       "ghcr.io/${{ github.repository_owner }}/api-deps:${TAG}" 2>/dev/null; then
+                       "ghcr.io/${{ github.repository }}/api-deps:${TAG}" 2>/dev/null; then
                       echo "exists=true" >> "$GITHUB_OUTPUT"
                   else
                       echo "exists=false" >> "$GITHUB_OUTPUT"
@@ -77,4 +73,4 @@ jobs:
                   file: apps/api/deps.Dockerfile
                   push: true
                   platforms: linux/amd64,linux/arm64
-                  tags: ghcr.io/${{ github.repository_owner }}/api-deps:${{ steps.hash.outputs.tag }}
+                  tags: ghcr.io/${{ github.repository }}/api-deps:${{ steps.hash.outputs.tag }}

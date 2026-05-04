@@ -21,13 +21,15 @@ jobs:
             - uses: actions/delete-package-versions@v5
               with:
                   owner: ${{ github.repository_owner }}
-                  package-name: api-deps
+                  # GitHub Packages API 는 path 의 슬래시를 URL-encode 해야 함.
+                  package-name: nest-seed%2Fapi-deps
                   package-type: container
                   delete-only-untagged-versions: 'true'
 
             - uses: actions/delete-package-versions@v5
               with:
                   owner: ${{ github.repository_owner }}
-                  package-name: api-deps
+                  # GitHub Packages API 는 path 의 슬래시를 URL-encode 해야 함.
+                  package-name: nest-seed%2Fapi-deps
                   package-type: container
                   min-versions-to-keep: 5
