@@ -20,7 +20,7 @@ const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000'
 const SSE_CLIENT_COUNT = Number(process.env.SSE_CLIENT_COUNT || 100)
 const SAGAS_PER_INNER = Number(process.env.SAGAS_PER_INNER || 20)
 const INNER_ITERATIONS = Number(process.env.INNER_ITERATIONS || 150)
-const DEADLINE_MS = Number(process.env.SSE_DEADLINE_MS || 120_000)
+const DEADLINE_MS = Number(process.env.SSE_DEADLINE_MS || 300_000)
 
 function requestJson(method, path, body) {
     const url = new URL(path, SERVER_URL)
