@@ -1,6 +1,5 @@
 import { JsonUtil } from '@mannercode/common'
 import { ShowtimeCreationModule } from 'applications'
-import { ShowtimeCreationHttpController } from 'controllers'
 import {
     MoviesModule,
     ShowtimesModule,
@@ -9,6 +8,7 @@ import {
     TicketsModule,
     TicketsService
 } from 'cores'
+import { ShowtimeCreationHttpController } from 'gateway'
 import { AssetsModule } from 'infrastructures'
 import { createAppTestContext, type AppTestContext } from '../__helpers__'
 

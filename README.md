@@ -54,7 +54,7 @@ nest-seed/
 │
 ├── apps/api/                ← NestJS API (4 replica 기본)
 │   ├── src/
-│   │   ├── controllers/         HTTP 진입점, 가드
+│   │   ├── gateway/             HTTP 진입점, 가드
 │   │   ├── applications/        비즈니스 로직 (Temporal workflow + activities)
 │   │   ├── cores/               도메인 모델, 리포지토리
 │   │   ├── infrastructures/     외부 서비스 (결제, 파일)
@@ -69,45 +69,35 @@ nest-seed/
 
 이 시드를 가져다 새 프로젝트를 시작할 때 손대야 할 자리들을 정리한다.
 
-### 1. 패키지 이름과 스코프
+### 1. 식별자 치환
 
-먼저 패키지 식별자를 새 프로젝트 이름으로 일괄 교체한다.
+`nest-seed` 를 새 프로젝트 이름으로 일괄 치환한다. `package.json`, `apps/api/.env`, `apps/api/deploy/compose.yml`, `.devcontainer/infra/.env` 등에 흩어진 식별자(패키지 이름, `PROJECT_ID`, `AUTH_ISSUER`, S3 버킷 등)가 한 번에 잡힌다.
 
-| 위치                    | 현재        | 변경             |
-| ----------------------- | ----------- | ---------------- |
-| `package.json` (root)   | `nest-seed` | 새 프로젝트 이름 |
-| `apps/api/package.json` | `nest-seed-api`  | 새 api 이름      |
+다만 다음 두 가지는 단순 치환만으로 끝나지 않는다.
 
-### 2. 환경과 인프라 식별자
+- **GHCR deps 이미지 경로** — `apps/api/tests/runner.sh`, `apps/api/deploy/test.sh` 의 `ghcr.io/mannercode/nest-seed/api-deps` 는 시드 저장소가 사전 빌드해 둔 이미지다. 포크 후에는 본인 저장소에 deps 이미지를 빌드·푸시한 뒤 그 경로로 바꾼다.
+- **`@mannercode` npm 스코프** — `libs/common`, `libs/testing` 의 패키지 스코프는 `nest-seed` 검색에 잡히지 않는다. npm 으로 배포할 계획이라면 본인 스코프로 따로 치환한다.
 
-다음으로 컨테이너 이름과 버킷 이름처럼 런타임에 노출되는 식별자를 바꾼다.
-
-| 위치                          | 현재                                     | 변경         |
-| ----------------------------- | ---------------------------------------- | ------------ |
-| `apps/api/.env`               | `PROJECT_ID=nest-seed-api`                    | 새 ID        |
-| `apps/api/deploy/compose.yml` | `image: nest-seed-api`, `container_name: app` | 새 이름      |
-| `.devcontainer/infra/.env`    | `nest-bucket` (S3 버킷)                  | 새 버킷 이름 |
-
-### 3. 도메인 코드 교체
+### 2. 도메인 코드 교체
 
 `apps/api/src/`에 들어 있는 영화 예매 도메인(Users, Movies, Theaters, Showtimes, Tickets, Bookings, Purchases)을 새 도메인으로 교체한다. 단위 테스트는 `apps/api/src/__tests__/` 아래에, e2e 스펙은 `apps/api/tests/e2e/specs/*.spec` 에 있으므로 함께 수정한다.
 
-### 4. CI와 저장소 정리
+### 3. CI와 저장소 정리
 
 - `.github/workflows/ci.yaml` 의 트리거 분기와 시크릿을 새 저장소 기준으로 맞춘다.
 - 본 README의 `git clone <repository-url>` 자리를 실제 URL로 바꾼다.
 
-### 5. 유지하면 좋은 것
+### 4. 유지하면 좋은 것
 
 다음 항목들은 시드의 핵심이라 이름만 바꾸고 구조는 그대로 두기를 권한다.
 
 - `libs/` 의 구조와 코드
-- SoLA 계층 분리 (controllers / applications / cores / infrastructures)
+- SoLA 계층 분리 (gateway / applications / cores / infrastructures)
 - 테스트 인프라 (Jest + Testcontainers + e2e shell spec + 분산 race)
 - Dev Container 구성
 - ESLint 계층 의존성 검증
 
-### 6. 검증
+### 5. 검증
 
 마지막으로 전체가 깨지지 않았는지 다음 명령들로 확인한다.
 

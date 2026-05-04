@@ -1,10 +1,10 @@
+import { UsersModule } from 'cores'
 import {
     UserJwtAuthGuard,
     UserLocalAuthGuard,
     UserOptionalJwtAuthGuard,
     UsersHttpController
-} from 'controllers'
-import { UsersModule } from 'cores'
+} from 'gateway'
 import { type AppTestContext, createAppTestContext } from '../__helpers__'
 
 export type UserAuthFixture = AppTestContext & {}

@@ -25,9 +25,9 @@
         "dev:api": "npm run dev -w apps/api"
     },
     "devDependencies": {
-        "@aws-sdk/client-s3": "3.1041.0",
-        "@aws-sdk/s3-presigned-post": "3.1041.0",
-        "@aws-sdk/s3-request-presigner": "3.1041.0",
+        "@aws-sdk/client-s3": "3.1042.0",
+        "@aws-sdk/s3-presigned-post": "3.1042.0",
+        "@aws-sdk/s3-request-presigner": "3.1042.0",
         "@commitlint/cli": "20.5.3",
         "@commitlint/config-conventional": "20.5.3",
         "@nestjs/common": "11.1.19",
@@ -47,7 +47,7 @@
         "@types/jest": "30.0.0",
         "@types/node": "24",
         "@types/superagent": "8.1.9",
-        "@typescript-eslint/parser": "8.59.1",
+        "@typescript-eslint/parser": "8.59.2",
         "class-transformer": "0.5.1",
         "class-validator": "0.15.1",
         "concurrently": "9.2.1",
@@ -59,7 +59,7 @@
         "husky": "9.1.7",
         "ioredis": "5.10.1",
         "jest": "30.3.0",
-        "joi": "18.1.2",
+        "joi": "18.2.1",
         "lint-staged": "16.4.0",
         "mongodb": "7.2.0",
         "mongoose": "9.6.1",
@@ -69,7 +69,7 @@
         "testcontainers": "11.14.0",
         "ts-jest": "29.4.9",
         "typescript": "6.0.3",
-        "typescript-eslint": "8.59.1"
+        "typescript-eslint": "8.59.2"
     },
     "packageManager": "npm@11.13.0"
 }

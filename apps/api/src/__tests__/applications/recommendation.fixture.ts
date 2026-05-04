@@ -1,7 +1,6 @@
 import type { TestContext } from '@mannercode/testing'
 import { DateUtil } from '@mannercode/common'
 import { RecommendationModule } from 'applications'
-import { UserJwtAuthGuard, UserOptionalJwtAuthGuard, MoviesHttpController } from 'controllers'
 import {
     UsersModule,
     MoviesModule,
@@ -9,6 +8,7 @@ import {
     WatchRecordsModule,
     type MovieDto
 } from 'cores'
+import { UserJwtAuthGuard, UserOptionalJwtAuthGuard, MoviesHttpController } from 'gateway'
 import { AssetsModule } from 'infrastructures'
 import {
     createAndLoginUser,

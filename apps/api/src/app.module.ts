@@ -9,7 +9,7 @@ import {
 } from 'config'
 import { CoresModule } from 'cores'
 import { InfrastructuresModule } from 'infrastructures'
-import { GatewayModule } from './controllers'
+import { GatewayModule } from './gateway'
 import { HealthModule } from './modules'
 
 @Module({

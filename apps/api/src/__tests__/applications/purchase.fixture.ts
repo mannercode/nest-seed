@@ -1,7 +1,6 @@
 import { DateUtil, pickIds } from '@mannercode/common'
 import { oid, toAny, type TestContext } from '@mannercode/testing'
 import { PurchaseModule, type CreatePurchaseDto } from 'applications'
-import { PurchaseHttpController } from 'controllers'
 import {
     UsersModule,
     MoviesModule,
@@ -13,6 +12,7 @@ import {
     TicketsModule,
     type TicketDto
 } from 'cores'
+import { PurchaseHttpController } from 'gateway'
 import { AssetsModule, PaymentsModule } from 'infrastructures'
 import {
     buildHoldTicketsDto,
