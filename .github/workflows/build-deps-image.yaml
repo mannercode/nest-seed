@@ -74,3 +74,15 @@ jobs:
                   push: true
                   platforms: linux/amd64,linux/arm64
                   tags: ghcr.io/${{ github.repository }}/api-deps:${{ steps.hash.outputs.tag }}
+
+            # 새 이미지 push 직후 이전 build 의 모든 entry 삭제. multi-arch
+            # 한 번 push = manifest list 1 + per-platform child 2 → 3 entry.
+            # min-versions-to-keep: 3 = 방금 push 한 가장 최근 build 의 3
+            # entry 만 남기고 그 이전 entry 모두 삭제.
+            - if: steps.check.outputs.exists == 'false'
+              uses: actions/delete-package-versions@v5
+              with:
+                  owner: ${{ github.repository_owner }}
+                  package-name: nest-seed%2Fapi-deps
+                  package-type: container
+                  min-versions-to-keep: 3
