@@ -64,13 +64,13 @@ services:
             replicas: ${REPLICAS:-4}
 
     api-setup:
-        image: docker:cli
+        image: $DOCKER_IMAGE
         container_name: api-setup
         depends_on:
             app: { condition: service_healthy }
 
     nginx:
-        image: nginx:alpine
+        image: $NGINX_IMAGE
         container_name: api-nginx
         ports: ['${LISTEN_PORT:-3000}:80']
         volumes: ['./nginx.conf:/etc/nginx/nginx.conf:ro']
