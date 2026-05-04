@@ -15,7 +15,7 @@ import {
     ShowtimeCreationEvents,
     ShowtimeCreationService
 } from 'applications'
-import { interval, map, merge, Observable } from 'rxjs'
+import { map, Observable } from 'rxjs'
 
 @Controller('showtime-creation')
 export class ShowtimeCreationHttpController {
@@ -26,11 +26,7 @@ export class ShowtimeCreationHttpController {
 
     @Sse('event-stream')
     getEventStream(): Observable<MessageEvent> {
-        // 15s keepalive: nginx proxy_read_timeout(60s) 가 idle SSE 를 끊지 않게
-        // 한다. payload 는 sagaId 가 없어 모든 컨슈머의 status 매칭에서 무시됨.
-        const events$ = this.events.observeStatusChanged().pipe(map((data) => ({ data })))
-        const keepalive$ = interval(15_000).pipe(map(() => ({ data: { __keepalive: true } })))
-        return merge(events$, keepalive$)
+        return this.events.observeStatusChanged().pipe(map((data) => ({ data })))
     }
 
     @HttpCode(HttpStatus.ACCEPTED)
