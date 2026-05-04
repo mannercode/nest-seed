@@ -22,7 +22,7 @@ jobs:
         uses: ./.github/workflows/build-deps-image.yaml
         secrets: inherit
 
-    ci:
+    test-atoz:
         needs: build-deps
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 60
