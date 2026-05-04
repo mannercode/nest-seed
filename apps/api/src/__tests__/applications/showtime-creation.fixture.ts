@@ -10,9 +10,9 @@ import {
     TicketsService
 } from 'cores'
 import { AssetsModule } from 'infrastructures'
-import { createAppTestContext, type AppTestContext as TestContext } from '../__helpers__'
+import { createAppTestContext, type AppTestContext } from '../__helpers__'
 
-export type ShowtimeCreationFixture = TestContext & {
+export type ShowtimeCreationFixture = AppTestContext & {
     showtimesService: ShowtimesService
     ticketsService: TicketsService
 }
@@ -36,7 +36,7 @@ export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationF
     return { ...ctx, showtimesService, ticketsService }
 }
 
-export function waitForCompletion(ctx: TestContext, status: string) {
+export function waitForCompletion(ctx: AppTestContext, status: string) {
     return new Promise<any>((resolve, reject) => {
         ctx.httpClient.get('/showtime-creation/event-stream').sse((data) => {
             try {
