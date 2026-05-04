@@ -32,6 +32,14 @@ jobs:
         steps:
             - uses: actions/checkout@v5
 
+            # 패키지가 private 이라 manifest inspect 도 auth 필요. login 을
+            # check 보다 먼저 둬야 unchanged push 에서 정상 skip 됨.
+            - uses: docker/login-action@v4
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+
             # tag 는 lockfile + deps.Dockerfile 합본 hash. deps.Dockerfile
             # 변경도 이미지에 반영되도록 포함. test.sh 도 동일 식으로 계산.
             - id: hash
@@ -50,13 +58,6 @@ jobs:
                       echo "exists=false" >> "$GITHUB_OUTPUT"
                   fi
 
-            - if: steps.check.outputs.exists == 'false'
-              uses: docker/login-action@v4
-              with:
-                  registry: ghcr.io
-                  username: ${{ github.actor }}
-                  password: ${{ secrets.GITHUB_TOKEN }}
-
             # CI runner (ubuntu-24.04-arm) 와 amd64 devcontainer 둘 다 같은
             # api-deps 이미지를 pull 하므로 multi-arch 필수. QEMU 로 native arch
             # 외 cross-build. npm ci 는 대부분 pure JS 라 emulation 비용 작음.
@@ -74,15 +75,3 @@ jobs:
                   push: true
                   platforms: linux/amd64,linux/arm64
                   tags: ghcr.io/${{ github.repository }}/api-deps:${{ steps.hash.outputs.tag }}
-
-            # 새 이미지 push 직후 이전 build 의 모든 entry 삭제. multi-arch
-            # 한 번 push = manifest list 1 + per-platform child 2 → 3 entry.
-            # min-versions-to-keep: 3 = 방금 push 한 가장 최근 build 의 3
-            # entry 만 남기고 그 이전 entry 모두 삭제.
-            - if: steps.check.outputs.exists == 'false'
-              uses: actions/delete-package-versions@v5
-              with:
-                  owner: ${{ github.repository_owner }}
-                  package-name: nest-seed%2Fapi-deps
-                  package-type: container
-                  min-versions-to-keep: 3
