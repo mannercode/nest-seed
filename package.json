@@ -1,6 +1,9 @@
 {
     "name": "nest-seed",
     "private": true,
+    "comments":[
+        "workspaces 순서는 빌드 순서에 영향을 준다."
+    ],
     "workspaces": [
         "libs/common",
         "libs/testing",
@@ -12,8 +15,11 @@
         "lint": "npm run lint --workspaces --if-present",
         "format": "npm run format --workspaces --if-present",
         "test": "npm test --workspaces --if-present",
-        "dev": "concurrently -n common,testing,api -c blue,green,yellow 'npm run dev -w libs/common' 'npm run dev -w libs/testing' 'npm run dev -w apps/api'",
-        "atoz": "npm run clean && npm install && npm run atoz --workspaces --if-present"
+        "atoz": "npm run clean && npm install && npm run atoz --workspaces --if-present",
+        "dev": "concurrently 'npm:dev:*'",
+        "dev:common": "npm run dev -w libs/common",
+        "dev:testing": "npm run dev -w libs/testing",
+        "dev:api": "npm run dev -w apps/api"
     },
     "devDependencies": {
         "@aws-sdk/client-s3": "3.1041.0",
