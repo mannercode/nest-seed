@@ -3,7 +3,7 @@ include:
     - ./compose.minio.yml
     - ./compose.redis.yml
     - ./compose.nats.yml
-    - ./compose.temporal.yml
+    - ./temporal/compose.temporal.yml
 
 services:
     infra-setup:

@@ -1,6 +1,6 @@
 services:
     temporal-postgresql:
-        extends: { file: ./compose.common.yml, service: common-options }
+        extends: { file: ../compose.common.yml, service: common-options }
         image: $POSTGRES_IMAGE
         container_name: temporal-postgresql
         environment:
@@ -12,14 +12,14 @@ services:
             - temporal_pgdata:/var/lib/postgresql/data
         healthcheck:
             test: ['CMD-SHELL', 'pg_isready -U temporal']
-        deploy: { resources: { limits: { memory: 1g } } }
-        shm_size: '16m'
+        deploy: { resources: { limits: { memory: 2g } } }
+        shm_size: '256m'
 
     # auto-setup 의 schema setup 부분 — one-shot. temporal/visibility 두 DB
     # create + setup-schema + update-schema. 멱등 (재실행 시 create 만 fail
     # 하고 update 는 성공하도록 setup-postgres.sh 가 처리).
     temporal-setup:
-        extends: { file: ./compose.common.yml, service: common-options }
+        extends: { file: ../compose.common.yml, service: common-options }
         image: $TEMPORAL_ADMIN_TOOLS_IMAGE
         container_name: temporal-setup
         depends_on:
@@ -34,12 +34,12 @@ services:
             POSTGRES_SEEDS: temporal-postgresql
             SQL_PASSWORD: temporal
         volumes:
-            - ./temporal/scripts:/scripts:ro
+            - ./scripts:/scripts:ro
         entrypoint: ['/bin/sh']
         command: '/scripts/setup-postgres.sh'
 
     temporal:
-        extends: { file: ./compose.common.yml, service: common-options }
+        extends: { file: ../compose.common.yml, service: common-options }
         image: $TEMPORAL_SERVER_IMAGE
         container_name: temporal
         depends_on:
@@ -54,7 +54,7 @@ services:
             DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
         ports: ['$TEMPORAL_PORT:7233']
         volumes:
-            - ./temporal/dynamicconfig:/etc/temporal/config/dynamicconfig:ro
+            - ./dynamicconfig:/etc/temporal/config/dynamicconfig:ro
         healthcheck:
             test: ['CMD-SHELL', 'nc -z localhost 7233']
             interval: 5s
@@ -66,7 +66,7 @@ services:
     # 만들어주므로 admin-tools 의 `temporal operator namespace create` 로
     # one-shot. 이미 존재하면 idempotent.
     temporal-create-namespace:
-        extends: { file: ./compose.common.yml, service: common-options }
+        extends: { file: ../compose.common.yml, service: common-options }
         image: $TEMPORAL_ADMIN_TOOLS_IMAGE
         container_name: temporal-create-namespace
         depends_on:
@@ -75,12 +75,12 @@ services:
             TEMPORAL_ADDRESS: temporal:7233
             DEFAULT_NAMESPACE: default
         volumes:
-            - ./temporal/scripts:/scripts:ro
+            - ./scripts:/scripts:ro
         entrypoint: ['/bin/sh']
         command: '/scripts/create-namespace.sh'
 
     temporal-ui:
-        extends: { file: ./compose.common.yml, service: common-options }
+        extends: { file: ../compose.common.yml, service: common-options }
         profiles: ['gui']
         image: $TEMPORAL_UI_IMAGE
         container_name: temporal-ui
