@@ -5,7 +5,7 @@
 # shared library ld-linux-x86-64.so.2`.
 FROM ghcr.io/mannercode/mirror/node:24-slim AS build
 
-WORKDIR /monorepo
+WORKDIR /workspace
 COPY package.json ./
 COPY libs/common/package.json libs/common/
 COPY libs/testing/package.json libs/testing/
@@ -15,25 +15,25 @@ RUN --mount=type=cache,target=/root/.npm \
 
 COPY tsconfig.json ./
 COPY libs/ libs/
-RUN npm run build
+RUN npm run build --workspace=libs/common
 
 COPY apps/api/ apps/api/
-RUN npm run bundle --workspace=apps/api
+RUN npm run build --workspace=apps/api
 
 FROM ghcr.io/mannercode/mirror/node:24-slim AS runtime
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends curl \
  && rm -rf /var/lib/apt/lists/*
-WORKDIR /monorepo/apps/api
-COPY --from=build /monorepo/apps/api/package.json /monorepo/apps/api/
+WORKDIR /workspace/apps/api
+COPY --from=build /workspace/apps/api/package.json /workspace/apps/api/
 RUN --mount=type=cache,target=/root/.npm \
-    cd /monorepo/apps/api && npm install --omit=dev --prefer-offline --no-audit
-COPY --from=build /monorepo/apps/api/_output/dist/index.js _output/dist/index.js
+    cd /workspace/apps/api && npm install --omit=dev --prefer-offline --no-audit
+COPY --from=build /workspace/apps/api/_output/dist/index.js _output/dist/index.js
 # Pre-bundled workflow code produced by scripts/bundle-workflows.js. The
 # runtime resolves it via TemporalWorkerOptions.workflowBundlePath because
 # require.resolve against source paths fails after webpack rolls the app
 # into a single index.js.
-COPY --from=build /monorepo/apps/api/_output/dist/showtime-creation-workflow-bundle.js _output/dist/showtime-creation-workflow-bundle.js
+COPY --from=build /workspace/apps/api/_output/dist/showtime-creation-workflow-bundle.js _output/dist/showtime-creation-workflow-bundle.js
 
 CMD ["node", "_output/dist/index.js"]

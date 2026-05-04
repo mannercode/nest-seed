@@ -4,7 +4,7 @@
     "private": true,
     "scripts": {
         "start": "node _output/dist/index.js",
-        "bundle": "nest build -b webpack && node scripts/bundle-workflows.js",
+        "build": "nest build -b webpack && node scripts/bundle-workflows.js",
         "clean": "docker compose --env-file .env -f deploy/compose.yml down -v -t 0 && jest --clearCache",
         "dev": "nest start --watch",
         "test": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
