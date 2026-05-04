@@ -8,4 +8,4 @@ COPY package.json package-lock.json ./
 COPY libs/common/package.json libs/common/
 COPY libs/testing/package.json libs/testing/
 COPY apps/api/package.json apps/api/
-RUN npm install
+RUN npm ci --no-audit
