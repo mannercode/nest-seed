@@ -13,15 +13,9 @@ trap on_err ERR
 docker rm -f $(docker ps -aq) 2>/dev/null || true
 docker volume prune -af
 
-# docker hub anonymous pull rate limit (100/6h per IP) + 공유 runner IP가 겹쳐
-# 첫 pull이 자주 실패. 선형 백오프로 재시도.
-for attempt in 1 2 3 4 5; do
-    docker compose up -d && break
-    echo "[reset.sh] compose up failed (attempt $attempt)"
-    [ $attempt -eq 5 ] && { echo "[reset.sh] gave up after 5 attempts"; exit 1; }
-    docker compose down -v -t 0 || true
-    sleep $((attempt * 10))
-done
+# 모든 base image 가 ghcr.io/mannercode/mirror/* 에서 pull 되므로 docker
+# hub rate limit 이 발생할 경로가 없음. retry 루프 불필요.
+docker compose up -d
 
 docker wait infra-setup
 docker rm infra-setup

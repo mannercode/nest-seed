@@ -7,24 +7,10 @@ cd .devcontainer/infra
 docker rm -f $(docker ps -aq) 2>/dev/null || true
 docker volume prune -af
 
-# docker hub's unauthenticated 100/6h pull limit is shared across actions
-# runners. a first `up` can fail pulling mongo/redis/minio/etc.
-# retry with backoff; images stay cached after a successful pull.
-compose_up() {
-    for attempt in 1 2 3 4 5; do
-        if docker compose up -d; then
-            return 0
-        fi
-        echo "compose up failed (attempt $attempt); sleeping before retry..."
-        docker compose down -v -t 0 || true
-        sleep $((attempt * 10))
-    done
-    echo "compose up failed after 5 attempts"
-    return 1
-}
-
+# Base images가 모두 ghcr.io/mannercode/mirror/* 에서 pull 되므로 docker
+# hub rate limit 발생할 경로 없음. retry 루프 불필요.
 if [ "$scope" = "api" ]; then
-    compose_up
+    docker compose up -d
     docker wait infra-setup
     docker rm infra-setup
 fi

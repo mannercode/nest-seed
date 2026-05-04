@@ -32,21 +32,9 @@ cleanup() {
 trap cleanup EXIT
 
 echo "Building and deploying 4-replica api stack..."
-# docker hub imposes an unauthenticated pull rate limit (100/6h per IP),
-# and GitHub Actions runners share IPs. first up may fail pulling
-# nginx:alpine. retry with backoff; image ends up cached after a success.
-for attempt in 1 2 3 4 5; do
-    if REPLICAS="${REPLICAS:-4}" docker compose --env-file "$ENV_FILE" up -d --build; then
-        break
-    fi
-    echo "compose up failed (attempt $attempt); sleeping before retry..."
-    docker compose --env-file "$ENV_FILE" down -v -t 0 || true
-    sleep $((attempt * 10))
-    if [ "$attempt" = 5 ]; then
-        echo "compose up failed after 5 attempts"
-        exit 1
-    fi
-done
+# 모든 base image 가 ghcr.io/mannercode/mirror/* 에서 pull 되므로 docker
+# hub rate limit 발생할 경로 없음. retry 루프 불필요.
+REPLICAS="${REPLICAS:-4}" docker compose --env-file "$ENV_FILE" up -d --build
 docker wait api-setup && docker rm api-setup
 
 echo ""
