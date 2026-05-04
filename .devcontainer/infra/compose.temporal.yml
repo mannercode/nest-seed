@@ -15,28 +15,69 @@ services:
         deploy: { resources: { limits: { memory: 256m } } }
         shm_size: '16m'
 
-    temporal:
+    # auto-setup 의 schema setup 부분 — one-shot. temporal/visibility 두 DB
+    # create + setup-schema + update-schema. 멱등 (재실행 시 create 만 fail
+    # 하고 update 는 성공하도록 setup-postgres.sh 가 처리).
+    temporal-setup:
         extends: { file: ./compose.common.yml, service: common-options }
-        image: $TEMPORAL_IMAGE
-        container_name: temporal
+        image: $TEMPORAL_ADMIN_TOOLS_IMAGE
+        container_name: temporal-setup
         depends_on:
             temporal-postgresql: { condition: service_healthy }
+        environment:
+            # SQL_PASSWORD 는 temporal-sql-tool 이 실제 사용하는 변수.
+            # POSTGRES_PWD 는 다른 도구용 — 둘 다 set 해야 schema 작업 통과.
+            DB: postgres12
+            DB_PORT: '5432'
+            POSTGRES_USER: temporal
+            POSTGRES_PWD: temporal
+            POSTGRES_SEEDS: temporal-postgresql
+            SQL_PASSWORD: temporal
+        volumes:
+            - ./temporal-scripts:/scripts:ro
+        entrypoint: ['/bin/sh']
+        command: '/scripts/setup-postgres.sh'
+
+    temporal:
+        extends: { file: ./compose.common.yml, service: common-options }
+        image: $TEMPORAL_SERVER_IMAGE
+        container_name: temporal
+        depends_on:
+            temporal-setup: { condition: service_completed_successfully }
         environment:
             DB: postgres12
             DB_PORT: '5432'
             POSTGRES_USER: temporal
             POSTGRES_PWD: temporal
             POSTGRES_SEEDS: temporal-postgresql
+            BIND_ON_IP: 0.0.0.0
+            DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
         ports: ['$TEMPORAL_PORT:7233']
-        # auto-setup runs schema migrations on first boot (~30s). After that
-        # subsequent boots are fast. healthcheck has a longer start_period to
-        # absorb that initial cost without flapping.
+        volumes:
+            - ./temporal-dynamicconfig:/etc/temporal/config/dynamicconfig:ro
         healthcheck:
-            test: ['CMD', 'tctl', '--address', 'temporal:7233', 'cluster', 'health']
+            test: ['CMD-SHELL', 'nc -z localhost 7233']
             interval: 5s
             start_period: 30s
         deploy: { resources: { limits: { memory: 384m } } }
         shm_size: '16m'
+
+    # auto-setup 이 자동으로 만들던 default namespace — server only 는 안
+    # 만들어주므로 admin-tools 의 `temporal operator namespace create` 로
+    # one-shot. 이미 존재하면 idempotent.
+    temporal-create-namespace:
+        extends: { file: ./compose.common.yml, service: common-options }
+        image: $TEMPORAL_ADMIN_TOOLS_IMAGE
+        container_name: temporal-create-namespace
+        depends_on:
+            temporal: { condition: service_healthy }
+        environment:
+            TEMPORAL_ADDRESS: temporal:7233
+            DEFAULT_NAMESPACE: default
+        volumes:
+            - ./temporal-scripts:/scripts:ro
+        entrypoint: ['/bin/sh']
+        command: '/scripts/create-namespace.sh'
 
     temporal-ui:
         extends: { file: ./compose.common.yml, service: common-options }

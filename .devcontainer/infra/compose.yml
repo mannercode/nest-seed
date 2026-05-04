@@ -15,8 +15,8 @@ services:
             mongo-setup: { condition: service_completed_successfully }
             redis-setup: { condition: service_completed_successfully }
             minio-setup: { condition: service_completed_successfully }
-            temporal: { condition: service_healthy }
+            temporal-create-namespace: { condition: service_completed_successfully }
             nats: { condition: service_healthy }
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
-        command: 'rm mongo-key-generator mongo-setup redis-setup minio-setup'
+        command: 'rm mongo-key-generator mongo-setup redis-setup minio-setup temporal-setup temporal-create-namespace'
