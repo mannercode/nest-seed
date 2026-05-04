@@ -76,7 +76,12 @@ async function startTemporal() {
         .withResourcesQuota({ memory: 0.25 })
         .start()
 
-    return new GenericContainer(process.env.TEMPORAL_IMAGE)
+    // testlib 은 jest globalSetup 의 단일 container 패턴이라 auto-setup
+    // (deprecated 지만 dev 용은 계속 동작) 을 그대로 사용. infra 의 compose
+    // stack 은 server + admin-tools 로 분리됐지만 testcontainers 로 그
+    // 패턴을 재현하려면 4개 container 시퀀스 + reuse 정책 충돌이 커서,
+    // testlib 한정으론 auto-setup hardcode 가 단순/효율 양면에서 합리적.
+    return new GenericContainer('temporalio/auto-setup:1.29')
         .withName('testlib-temporal')
         .withReuse()
         .withNetworkMode(TEMPORAL_NETWORK_NAME)
