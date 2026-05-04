@@ -2,7 +2,8 @@
     "name": "nest-seed",
     "private": true,
     "workspaces": [
-        "libs/*",
+        "libs/common",
+        "libs/testing",
         "apps/*"
     ],
     "scripts": {
@@ -11,6 +12,7 @@
         "lint": "npm run lint --workspaces --if-present",
         "format": "npm run format --workspaces --if-present",
         "test": "npm test --workspaces --if-present",
+        "dev": "concurrently -n common,testing,api -c blue,green,yellow 'npm run dev -w libs/common' 'npm run dev -w libs/testing' 'npm run dev -w apps/api'",
         "atoz": "npm run clean && npm install && npm run atoz --workspaces --if-present"
     },
     "devDependencies": {
@@ -39,7 +41,7 @@
         "@typescript-eslint/parser": "8.59.1",
         "class-transformer": "0.5.1",
         "class-validator": "0.15.1",
-        "concurrently": "9.2.1",
+        "concurrently": "^9.2.1",
         "eslint": "10.3.0",
         "eslint-plugin-perfectionist": "5.9.0",
         "eslint-plugin-unused-imports": "4.4.1",
