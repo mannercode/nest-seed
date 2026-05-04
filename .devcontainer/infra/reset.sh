@@ -21,15 +21,6 @@ set +a
 docker rm -f $(docker ps -aq) 2>/dev/null || true
 docker volume prune -af
 
-# 외부 이미지를 docker hub 에서 직접 pull 하므로 100/6h IP rate limit 가능성
-# 다시 등장. 첫 pull flake 흡수용 선형 백오프.
-for attempt in 1 2 3 4 5; do
-    docker compose up -d && break
-    echo "[reset.sh] compose up failed (attempt $attempt)"
-    [ $attempt -eq 5 ] && { echo "[reset.sh] gave up after 5 attempts"; exit 1; }
-    docker compose down -v -t 0 || true
-    sleep $((attempt * 10))
-done
-
+docker compose up -d
 docker wait infra-setup
 docker rm infra-setup

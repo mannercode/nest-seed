@@ -32,18 +32,26 @@ cleanup() {
 trap cleanup EXIT
 
 echo "Building and deploying 4-replica api stack..."
-# Lockfile hash 가 deps 이미지 태그. apps/api/Dockerfile 의 FROM 이 사용.
-export DEPS_TAG=$(sha256sum "${MONO_DIR}/../../package-lock.json" | cut -c1-16)
+REPO_ROOT="$(cd "${MONO_DIR}/../.." && pwd)"
 
-# nginx:alpine, docker:cli 등 외부 이미지를 docker hub 직접 pull → 100/6h
-# rate limit 가능. 첫 pull flake 흡수용 선형 백오프.
-for attempt in 1 2 3 4 5; do
-    REPLICAS="${REPLICAS:-4}" docker compose --env-file "$ENV_FILE" up -d --build && break
-    echo "compose up failed (attempt $attempt); sleeping..."
-    docker compose --env-file "$ENV_FILE" down -v -t 0 || true
-    sleep $((attempt * 10))
-    [ "$attempt" = 5 ] && { echo "compose up failed after 5 attempts"; exit 1; }
-done
+# lockfile + deps.Dockerfile 합본 hash 가 deps 이미지 태그. deploy/test.sh
+# 와 동일 식이어야 함 — 한쪽만 바꾸면 ghcr tag mismatch.
+export DEPS_TAG=$(cat "${REPO_ROOT}/package-lock.json" "${REPO_ROOT}/apps/api/deps.Dockerfile" | sha256sum | cut -c1-16)
+
+# 로컬 실행 fallback: ghcr 미인증/태그 부재 시 deps.Dockerfile 로 직접 빌드해
+# 같은 tag 로 로컬 캐시에 둔다. compose build 의 FROM 이 캐시 hit.
+DEPS_IMAGE="ghcr.io/mannercode/nest-seed/api-deps:${DEPS_TAG}"
+if ! docker image inspect "$DEPS_IMAGE" >/dev/null 2>&1; then
+    if ! docker pull "$DEPS_IMAGE" 2>/dev/null; then
+        echo "Deps image not in ghcr (or no auth); building locally."
+        docker build \
+            -f "${REPO_ROOT}/apps/api/deps.Dockerfile" \
+            -t "$DEPS_IMAGE" \
+            "${REPO_ROOT}"
+    fi
+fi
+
+REPLICAS="${REPLICAS:-4}" docker compose --env-file "$ENV_FILE" up -d --build
 docker wait api-setup && docker rm api-setup
 
 echo ""

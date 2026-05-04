@@ -28,11 +28,25 @@ jobs:
         timeout-minutes: 60
         steps:
             - uses: actions/checkout@v5
+
+            # Docker Hub 익명 100/6h IP 한도는 공유 러너에서 다른 조직과
+            # 합산 → 첫 pull flake 의 주범. 인증하면 200/6h 계정 격리.
+            # 호스트 daemon (devcontainer build 용) + 내부 daemon (runCmd
+            # 안의 docker compose 용) 둘 다 login 필요.
+            - uses: docker/login-action@v3
+              with:
+                  username: ${{ secrets.DOCKERHUB_USERNAME }}
+                  password: ${{ secrets.DOCKERHUB_TOKEN }}
+
             - name: Run in devcontainer
               uses: devcontainers/ci@v0.3
               with:
                   configFile: .devcontainer/devcontainer.json
                   push: never
+                  env: |
+                      DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+                      DOCKERHUB_TOKEN=${{ secrets.DOCKERHUB_TOKEN }}
                   runCmd: |
                       set -Eeuo pipefail
+                      echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
                       npm run atoz

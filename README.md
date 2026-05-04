@@ -73,10 +73,10 @@ nest-seed/
 
 먼저 패키지 식별자를 새 프로젝트 이름으로 일괄 교체한다.
 
-| 위치                            | 현재            | 변경            |
-| ------------------------------- | --------------- | --------------- |
-| `package.json` (root)           | `nest-seed`     | 새 프로젝트 이름 |
-| `apps/api/package.json`         | `nest-api`      | 새 api 이름     |
+| 위치                    | 현재        | 변경             |
+| ----------------------- | ----------- | ---------------- |
+| `package.json` (root)   | `nest-seed` | 새 프로젝트 이름 |
+| `apps/api/package.json` | `nest-api`  | 새 api 이름      |
 
 ### 2. 환경과 인프라 식별자
 
@@ -94,7 +94,10 @@ nest-seed/
 
 ### 4. CI와 저장소 정리
 
-- `.github/workflows/ci.yaml` 의 트리거 분기와 시크릿을 새 저장소 기준으로 맞춘다.
+- `.github/workflows/ci.yaml` 의 트리거 분기를 새 저장소 기준으로 맞춘다.
+- GitHub repo Settings → Secrets and variables → Actions 에서 다음 두 secret 등록 (CI 가 Docker Hub 익명 100/6h IP 한도 대신 인증 200/6h 계정 격리 사용):
+    - `DOCKERHUB_USERNAME` — Docker Hub 사용자명
+    - `DOCKERHUB_TOKEN` — Docker Hub Personal Access Token (Public Repo Read-only 권한이면 충분)
 - 본 README의 `git clone <repository-url>` 자리를 실제 URL로 바꾼다.
 
 ### 5. 유지하면 좋은 것
