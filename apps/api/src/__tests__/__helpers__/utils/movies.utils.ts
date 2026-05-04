@@ -1,5 +1,5 @@
 import type { TestContext } from '@mannercode/testing'
-import { MovieGenre, MovieRating, MovieDto, UpsertMovieDto } from 'cores'
+import { MovieGenre, MovieRating, type MovieDto, type UpsertMovieDto } from 'cores'
 
 export function buildCreateMovieDto(overrides: Partial<UpsertMovieDto> = {}): UpsertMovieDto {
     return {

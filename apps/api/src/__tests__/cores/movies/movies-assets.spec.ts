@@ -1,13 +1,13 @@
+import type { MovieDto } from 'cores'
+import type { AssetPresignedUploadDto } from 'infrastructures'
 import { Require } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
-import { MovieDto } from 'cores'
-import { AssetPresignedUploadDto } from 'infrastructures'
 import { buildCreateAssetDto, Errors, testAssets, uploadAsset } from '../../__helpers__'
 import {
-    MoviesAssetsFixture,
     createMovieAsset,
     createUnpublishedMovie,
-    uploadAndFinalizeMovieAsset
+    uploadAndFinalizeMovieAsset,
+    type MoviesAssetsFixture
 } from './movies-assets.fixture'
 
 describe('MoviesAssets', () => {

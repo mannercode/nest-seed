@@ -6,7 +6,7 @@ import { hostname } from 'os'
 import { exit } from 'process'
 import { AppConfigService } from './app-config.service'
 
-type ConfigureAppOptions = { app: INestApplication<any> }
+type ConfigureAppOptions = { app: INestApplication }
 
 export async function configureApp({ app }: ConfigureAppOptions) {
     const { http, log } = app.get(AppConfigService)

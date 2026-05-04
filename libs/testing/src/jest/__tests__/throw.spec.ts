@@ -23,7 +23,7 @@ describe('error handling', () => {
             }
 
             const promise = throwException()
-            const error = await promise.catch((e) => e)
+            const error = await promise.catch((e: unknown) => e as Error)
 
             expect(error).toBeInstanceOf(Error)
             expect(error.message).toBe('error')

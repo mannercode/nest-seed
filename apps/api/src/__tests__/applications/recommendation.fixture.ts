@@ -1,16 +1,22 @@
+import type { TestContext } from '@mannercode/testing'
 import { DateUtil } from '@mannercode/common'
-import { TestContext } from '@mannercode/testing'
 import { RecommendationModule } from 'applications'
 import { UserJwtAuthGuard, UserOptionalJwtAuthGuard, MoviesHttpController } from 'controllers'
-import { UsersModule, MoviesModule, MovieDto, ShowtimesModule, WatchRecordsModule } from 'cores'
+import {
+    UsersModule,
+    MoviesModule,
+    ShowtimesModule,
+    WatchRecordsModule,
+    type MovieDto
+} from 'cores'
 import { AssetsModule } from 'infrastructures'
 import {
-    AppTestContext,
     createAndLoginUser,
     createAppTestContext,
     createMovie,
     createShowtimes,
-    createWatchRecord
+    createWatchRecord,
+    type AppTestContext
 } from '../__helpers__'
 
 export type RecommendationFixture = AppTestContext & {}

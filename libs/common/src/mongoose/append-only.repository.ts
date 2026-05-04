@@ -1,5 +1,5 @@
+import type { OnModuleInit } from '@nestjs/common'
 import type { HydratedDocument, Model } from 'mongoose'
-import { OnModuleInit } from '@nestjs/common'
 
 /**
  * Append-only category 의 repository base.

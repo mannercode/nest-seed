@@ -1,6 +1,6 @@
 import { newObjectIdString, uniq } from '@mannercode/common'
-import { oid, TestContext } from '@mannercode/testing'
-import { TicketStatus, CreateTicketDto } from 'cores'
+import { oid, type TestContext } from '@mannercode/testing'
+import { TicketStatus, type CreateTicketDto } from 'cores'
 
 export function buildCreateTicketDto(overrides: Partial<CreateTicketDto> = {}): CreateTicketDto {
     return {

@@ -1,6 +1,6 @@
 import type { CreateShowtimeDto } from 'cores'
 import { DateUtil, newObjectIdString, uniq } from '@mannercode/common'
-import { oid, TestContext } from '@mannercode/testing'
+import { oid, type TestContext } from '@mannercode/testing'
 
 export function buildCreateShowtimeDto(overrides: Partial<CreateShowtimeDto> = {}) {
     const createDto = {

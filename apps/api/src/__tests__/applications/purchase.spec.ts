@@ -1,8 +1,8 @@
 import { pickIds } from '@mannercode/common'
 import { toAny } from '@mannercode/testing'
-import { TicketStatus, PurchaseRecordDto, TicketDto } from 'cores'
+import { TicketStatus, type PurchaseRecordDto, type TicketDto } from 'cores'
 import { Errors, getPayments, getTickets } from '../__helpers__'
-import { buildCreatePurchaseDto, PurchaseFixture } from './purchase.fixture'
+import { buildCreatePurchaseDto, type PurchaseFixture } from './purchase.fixture'
 
 describe('PurchaseService', () => {
     let fix: PurchaseFixture

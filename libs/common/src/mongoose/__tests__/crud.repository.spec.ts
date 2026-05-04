@@ -4,15 +4,15 @@ import { OrderDirection } from '../../pagination'
 import { pickIds } from '../../utils'
 import { leanToPublic } from '../crud.repository'
 import {
-    CrudRepositoryFixture,
-    SampleDto,
     createSample,
     createSamples,
     maxSizeValue,
     sortByName,
     sortByNameDescending,
     toDto,
-    toDtos
+    toDtos,
+    type CrudRepositoryFixture,
+    type SampleDto
 } from './crud.repository.fixture'
 
 describe('CrudRepository', () => {

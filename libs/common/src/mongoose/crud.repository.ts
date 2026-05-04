@@ -2,11 +2,10 @@ import type {
     ClientSession,
     HydratedDocument,
     Model,
-    ObjectId,
     QueryFilter,
     QueryWithHelpers
 } from 'mongoose'
-import { BadRequestException, NotFoundException, OnModuleInit } from '@nestjs/common'
+import { BadRequestException, NotFoundException, type OnModuleInit } from '@nestjs/common'
 import type { PaginationDto, PaginationResult } from '../pagination'
 import { defaultTo, differenceWith, uniq } from '../utils'
 import { Require, Verify } from '../validator'
@@ -34,7 +33,7 @@ const defaultLeanOptions = {}
 // derived class-transformer config — so it never reaches the wire anyway).
 export function leanToPublic<T extends { _id?: unknown }>(doc: T): T {
     if (doc._id != null) {
-        ;(doc as any).id = String(doc._id)
+        ;(doc as any).id = (doc._id as { toString(): string }).toString()
     }
     return doc
 }
@@ -173,7 +172,7 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
         const notFoundIds = differenceWith(
             uniqueIds,
             docs,
-            (id, doc) => id === (doc as { _id: ObjectId })._id.toString()
+            (id, doc) => id === (doc as { _id: { toString(): string } })._id.toString()
         )
 
         if (notFoundIds.length > 0) {

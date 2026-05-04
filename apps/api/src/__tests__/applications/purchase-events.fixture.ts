@@ -4,7 +4,7 @@ import {
     PurchaseModule,
     PurchaseNotificationService
 } from 'applications'
-import { createAppTestContext, AppTestContext as TestContext } from '../__helpers__'
+import { createAppTestContext, type AppTestContext as TestContext } from '../__helpers__'
 
 export type PurchaseEventsFixture = TestContext & {
     events: PurchaseEvents

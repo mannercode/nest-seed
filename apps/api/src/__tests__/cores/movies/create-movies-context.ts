@@ -1,9 +1,9 @@
 import type { TestContext } from '@mannercode/testing'
 import { RecommendationService } from 'applications'
 import { MoviesHttpController } from 'controllers'
-import { MoviesModule, MovieDto } from 'cores'
+import { MoviesModule, type MovieDto } from 'cores'
 import { AssetsModule } from 'infrastructures'
-import { createAppTestContext, AppTestContext } from '../../__helpers__'
+import { createAppTestContext, type AppTestContext } from '../../__helpers__'
 
 export type MoviesBaseContext = AppTestContext
 

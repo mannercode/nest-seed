@@ -11,6 +11,12 @@ const barrelImportPatterns = [
         message: 'Import from the barrel (index.ts) instead of submodules.'
     }
 ]
+const restrictedSyntaxBase = [
+    {
+        selector: 'TSEnumDeclaration',
+        message: 'Use an `as const` object + same-named type alias instead of `enum`.'
+    }
+]
 
 const escapeForRegex = (value) => value.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&')
 
@@ -43,12 +49,28 @@ const baseRules = {
     '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
     '@typescript-eslint/switch-exhaustiveness-check': 'warn',
     '@typescript-eslint/only-throw-error': 'warn',
+    '@typescript-eslint/no-base-to-string': 'error',
+    '@typescript-eslint/no-for-in-array': 'error',
+    '@typescript-eslint/require-array-sort-compare': 'error',
+    '@typescript-eslint/no-array-delete': 'error',
+    '@typescript-eslint/use-unknown-in-catch-callback-variable': 'error',
+    '@typescript-eslint/prefer-promise-reject-errors': 'error',
+    '@typescript-eslint/consistent-type-imports': ['warn', { fixStyle: 'inline-type-imports' }],
+    '@typescript-eslint/no-import-type-side-effects': 'warn',
+    '@typescript-eslint/no-duplicate-type-constituents': 'warn',
+    '@typescript-eslint/no-redundant-type-constituents': 'warn',
+    '@typescript-eslint/no-unnecessary-type-arguments': 'warn',
+    '@typescript-eslint/prefer-includes': 'warn',
+    '@typescript-eslint/prefer-string-starts-ends-with': 'warn',
+    '@typescript-eslint/no-meaningless-void-operator': 'warn',
+    '@typescript-eslint/no-unnecessary-template-expression': 'warn',
     'object-shorthand': 'warn',
     'no-useless-rename': 'warn',
     'arrow-body-style': ['warn', 'as-needed', { requireReturnForObjectLiteral: false }],
     'perfectionist/sort-imports': ['warn', { type: 'natural', order: 'asc', newlinesBetween: 0 }],
     'perfectionist/sort-exports': ['warn', { type: 'natural', order: 'asc', newlinesBetween: 0 }],
     'no-restricted-imports': ['warn', { patterns: [...barrelImportPatterns] }],
+    'no-restricted-syntax': ['error', ...restrictedSyntaxBase],
     'no-bitwise': 'error',
     'consistent-return': 'error',
     'no-constant-condition': 'warn',
@@ -105,6 +127,7 @@ function createBaseConfigs({ tsconfigRootDir, srcGlob = 'src/**' }) {
             rules: {
                 'no-restricted-syntax': [
                     'error',
+                    ...restrictedSyntaxBase,
                     { selector: 'Program', message: 'Test files must live under __tests__.' }
                 ]
             }

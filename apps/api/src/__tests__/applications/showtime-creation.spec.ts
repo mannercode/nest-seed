@@ -1,8 +1,8 @@
 import type { MovieDto, ShowtimeDto, TheaterDto } from 'cores'
 import { DateUtil } from '@mannercode/common'
-import { nullObjectId, Response } from '@mannercode/testing'
+import { nullObjectId, type Response } from '@mannercode/testing'
 import { createMovie, createShowtimes, createTheater } from '../__helpers__'
-import { waitForCompletion, ShowtimeCreationFixture } from './showtime-creation.fixture'
+import { waitForCompletion, type ShowtimeCreationFixture } from './showtime-creation.fixture'
 
 describe('ShowtimeCreationService', () => {
     let fix: ShowtimeCreationFixture
@@ -113,7 +113,11 @@ describe('ShowtimeCreationService', () => {
                             if ('succeeded' === statusUpdate.status) {
                                 resolve(statusUpdate)
                             } else {
-                                reject(statusUpdate)
+                                reject(
+                                    new Error(`unexpected status: ${statusUpdate.status}`, {
+                                        cause: statusUpdate
+                                    })
+                                )
                             }
                         }
                     }, reject)

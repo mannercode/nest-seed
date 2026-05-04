@@ -13,8 +13,8 @@ import { isDebuggingEnabled } from './utils'
 export type ModuleMetadataEx = ModuleMetadata & {
     configureApp?: (app: INestApplication<Server>) => Promise<void>
     ignoreGuards?: Type<CanActivate>[]
-    ignoreProviders?: Type<any>[]
-    overrideProviders?: { original: Type<any>; replacement: any }[]
+    ignoreProviders?: Type[]
+    overrideProviders?: { original: Type; replacement: any }[]
 }
 
 export type TestContext = {

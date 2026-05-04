@@ -1,5 +1,5 @@
 import type { HydratedDocument } from 'mongoose'
-import { HardDeleteSample, SoftDeleteSample, CrudDeleteFixture } from './crud-delete.fixture'
+import { HardDeleteSample, SoftDeleteSample, type CrudDeleteFixture } from './crud-delete.fixture'
 
 describe('Crud Delete', () => {
     describe('Soft Delete', () => {

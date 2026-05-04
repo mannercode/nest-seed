@@ -1,5 +1,5 @@
 import type { CreatePaymentDto } from 'infrastructures'
-import { oid, TestContext } from '@mannercode/testing'
+import { oid, type TestContext } from '@mannercode/testing'
 
 export function buildCreatePaymentDto(overrides: Partial<CreatePaymentDto> = {}): CreatePaymentDto {
     return { amount: 1, userId: oid(0x0), ...overrides }

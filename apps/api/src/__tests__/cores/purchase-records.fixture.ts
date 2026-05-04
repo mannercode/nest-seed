@@ -1,7 +1,7 @@
 import { PurchaseModule } from 'applications'
 import { PurchaseHttpController } from 'controllers'
 import { PurchaseRecordsModule, PurchaseRecordsService } from 'cores'
-import { createAppTestContext, AppTestContext } from '../__helpers__'
+import { createAppTestContext, type AppTestContext } from '../__helpers__'
 
 export type PurchaseRecordsFixture = AppTestContext & {
     purchaseRecordsService: PurchaseRecordsService

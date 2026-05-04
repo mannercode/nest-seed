@@ -1,8 +1,14 @@
 import { DateUtil, pickIds } from '@mannercode/common'
 import { nullObjectId, oid, step } from '@mannercode/testing'
-import { TicketStatus, MovieDto, ShowtimeDto, TheaterDto, TicketDto } from 'cores'
+import {
+    TicketStatus,
+    type MovieDto,
+    type ShowtimeDto,
+    type TheaterDto,
+    type TicketDto
+} from 'cores'
 import { Errors } from '../__helpers__'
-import { createAllResources, BookingFixture } from './booking.fixture'
+import { createAllResources, type BookingFixture } from './booking.fixture'
 
 describe('BookingService', () => {
     let fix: BookingFixture

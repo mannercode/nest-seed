@@ -1,8 +1,8 @@
-import { MovieGenre, MovieDto } from 'cores'
+import { MovieGenre, type MovieDto } from 'cores'
 import {
     createShowingMovies,
     createWatchedMovies,
-    RecommendationFixture
+    type RecommendationFixture
 } from './recommendation.fixture'
 
 describe('RecommendationService', () => {

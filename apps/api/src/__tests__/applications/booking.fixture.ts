@@ -1,4 +1,4 @@
-import { TestContext } from '@mannercode/testing'
+import type { TestContext } from '@mannercode/testing'
 import { BookingModule, PurchaseModule } from 'applications'
 import { BookingHttpController, UserJwtAuthGuard } from 'controllers'
 import {
@@ -7,20 +7,20 @@ import {
     PurchaseRecordsModule,
     Seatmap,
     ShowtimesModule,
-    TheaterLocation,
     TheatersModule,
     TicketHoldingModule,
-    TicketsModule
+    TicketsModule,
+    type TheaterLocation
 } from 'cores'
 import { AssetsModule, PaymentsModule } from 'infrastructures'
 import {
-    AppTestContext,
     createAndLoginUser,
     createAppTestContext,
     createMovie,
     createShowtimes,
     createTheater,
-    createTickets
+    createTickets,
+    type AppTestContext
 } from '../__helpers__'
 
 export type BookingFixture = AppTestContext

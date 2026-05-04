@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common'
-import { Types, QueryFilter } from 'mongoose'
+import { Types, type QueryFilter } from 'mongoose'
 import { escapeRegExp, uniq } from '../utils'
 import { Verify } from '../validator'
 import { MongooseErrors } from './errors'

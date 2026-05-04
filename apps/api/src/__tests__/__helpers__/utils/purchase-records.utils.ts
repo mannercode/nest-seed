@@ -1,5 +1,5 @@
-import { oid, TestContext } from '@mannercode/testing'
-import { CreatePurchaseRecordDto, PurchaseItemType } from 'cores'
+import { oid, type TestContext } from '@mannercode/testing'
+import { PurchaseItemType, type CreatePurchaseRecordDto } from 'cores'
 
 export function buildCreatePurchaseRecordDto(
     overrides: Partial<CreatePurchaseRecordDto> = {}

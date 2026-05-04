@@ -1,6 +1,6 @@
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { AssetsModule, AssetsService } from 'infrastructures'
-import { createAppTestContext, AppTestContext } from '../__helpers__'
+import { createAppTestContext, type AppTestContext } from '../__helpers__'
 
 export type AssetsFixture = AppTestContext & {
     assetsService: AssetsService

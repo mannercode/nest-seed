@@ -10,7 +10,7 @@ import {
     TicketsService
 } from 'cores'
 import { AssetsModule } from 'infrastructures'
-import { createAppTestContext, AppTestContext as TestContext } from '../__helpers__'
+import { createAppTestContext, type AppTestContext as TestContext } from '../__helpers__'
 
 export type ShowtimeCreationFixture = TestContext & {
     showtimesService: ShowtimesService
@@ -48,12 +48,16 @@ export function waitForCompletion(ctx: TestContext, status: string) {
                     if (status === statusUpdate.status) {
                         resolve(statusUpdate)
                     } else {
-                        reject(statusUpdate)
+                        reject(
+                            new Error(`unexpected status: ${statusUpdate.status}`, {
+                                cause: statusUpdate
+                            })
+                        )
                     }
                 }
             } catch (error) {
                 ctx.httpClient.abort()
-                reject(error)
+                reject(error instanceof Error ? error : new Error(String(error)))
             }
         }, reject)
     })

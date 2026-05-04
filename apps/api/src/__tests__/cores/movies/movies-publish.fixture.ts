@@ -1,5 +1,5 @@
 import type { MoviesService } from 'cores'
-import { createMoviesContext, MoviesBaseContext } from './create-movies-context'
+import { createMoviesContext, type MoviesBaseContext } from './create-movies-context'
 
 export type MoviesPublishFixture = MoviesBaseContext & { moviesService: MoviesService }
 

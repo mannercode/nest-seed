@@ -1,5 +1,5 @@
 import type { CreateWatchRecordDto } from 'cores'
-import { nullDate, oid, TestContext } from '@mannercode/testing'
+import { nullDate, oid, type TestContext } from '@mannercode/testing'
 
 export function buildCreateWatchRecordDto(
     overrides: Partial<CreateWatchRecordDto> = {}
