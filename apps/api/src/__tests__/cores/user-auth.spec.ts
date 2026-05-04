@@ -58,15 +58,16 @@ describe('UserAuthentication', () => {
                 authTokens = await loginUser(fix, credentials)
             })
 
-            // 현재 고객 정보를 반환한다
+            // 현재 고객 정보(User DTO)를 반환한다 — JWT payload 가 아닌 도메인 DTO
             it('returns the current user info', async () => {
                 await fix.httpClient
                     .get('/users/me')
                     .headers({ Authorization: `Bearer ${authTokens.accessToken}` })
                     .ok(
                         expect.objectContaining({
-                            userId: expect.any(String),
-                            email: credentials.email
+                            id: expect.any(String),
+                            email: credentials.email,
+                            name: expect.any(String)
                         })
                     )
             })
@@ -148,6 +149,34 @@ describe('UserAuthentication', () => {
         // 잘못된 토큰으로 logout 호출해도 204 (best-effort)
         it('returns 204 even for a malformed token', async () => {
             await fix.httpClient.post('/users/logout').body({ refreshToken: 'garbage' }).noContent()
+        })
+    })
+
+    describe('POST /users/me/logout-all', () => {
+        // 두 디바이스 로그인 후 logout-all → 양쪽 모두 refresh 불가
+        it('revokes every active session for the caller', async () => {
+            const sessionA = await loginUser(fix, credentials)
+            const sessionB = await loginUser(fix, credentials)
+
+            await fix.httpClient
+                .post('/users/me/logout-all')
+                .headers({ Authorization: `Bearer ${sessionA.accessToken}` })
+                .noContent()
+
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: sessionA.refreshToken })
+                .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
+
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: sessionB.refreshToken })
+                .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
+        })
+
+        // 인증 없이 호출하면 401
+        it('returns 401 without an access token', async () => {
+            await fix.httpClient.post('/users/me/logout-all').unauthorized()
         })
     })
 })

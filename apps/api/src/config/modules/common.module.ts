@@ -14,7 +14,7 @@ import { RequestValidationPipe } from '../pipes'
 
 @Global()
 @Module({
-    exports: [AppConfigService, JwtModule],
+    exports: [AppConfigService, AppLoggerService, JwtModule],
     imports: [
         JwtModule.register({}),
         ConfigModule.forRoot({

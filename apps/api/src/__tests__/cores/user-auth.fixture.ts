@@ -5,7 +5,7 @@ import {
     UsersHttpController
 } from 'controllers'
 import { UsersModule } from 'cores'
-import { createAppTestContext, AppTestContext } from '../__helpers__'
+import { type AppTestContext, createAppTestContext } from '../__helpers__'
 
 export type UserAuthFixture = AppTestContext & {}
 

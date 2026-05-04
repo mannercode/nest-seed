@@ -57,7 +57,7 @@ export class MoviesHttpController {
     @Get('recommended')
     @UseGuards(UserOptionalJwtAuthGuard)
     async searchRecommendedMovies(@Req() req: UserOptionalAuthRequest) {
-        const userId = defaultTo(req.user?.userId, null)
+        const userId = defaultTo(req.user?.sub, null)
 
         return this.recommendationService.searchRecommendedMovies(userId)
     }

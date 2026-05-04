@@ -16,7 +16,7 @@ export class UserLocalAuthGuard extends LocalAuthGuard {
                     throw new UnauthorizedException(AuthErrors.Unauthorized())
                 }
 
-                return { userId: user.id, email }
+                return { sub: user.id, email }
             }
         })
     }

@@ -57,9 +57,16 @@ export class UsersHttpController {
         await this.usersService.revokeRefreshToken(refreshToken)
     }
 
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Post('me/logout-all')
+    async logoutAll(@Req() req: UserAuthRequest) {
+        await this.usersService.revokeAllForUser(req.user.sub)
+    }
+
     @Get('me')
     async getMe(@Req() req: UserAuthRequest) {
-        return req.user
+        const [user] = await this.usersService.getMany([req.user.sub])
+        return user
     }
 
     @Get()

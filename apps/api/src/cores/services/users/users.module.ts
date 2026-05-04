@@ -1,9 +1,9 @@
-import { JwtAuthModule, TimeUtil } from '@mannercode/common'
+import { AppLoggerService, JwtAuthModule, TimeUtil } from '@mannercode/common'
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { AppConfigService, getProjectId, MongooseConfigModule, RedisConfigModule } from 'config'
 import { User, UserSchema } from './models'
-import { UserAuthenticationService } from './services'
+import { SecurityEventLogger, UserAuthenticationService } from './services'
 import { UsersRepository } from './users.repository'
 import { UsersService } from './users.service'
 
@@ -15,10 +15,10 @@ import { UsersService } from './users.service'
             MongooseConfigModule.connectionName
         ),
         JwtAuthModule.register({
-            inject: [AppConfigService],
+            inject: [AppConfigService, AppLoggerService],
             prefix: `jwtauth:${getProjectId()}`,
             redisName: RedisConfigModule.connectionName,
-            useFactory: ({ auth }: AppConfigService) => ({
+            useFactory: ({ auth }: AppConfigService, logger: AppLoggerService) => ({
                 auth: {
                     accessSecret: auth.accessSecret,
                     accessTokenTtlMs: TimeUtil.toMs(auth.accessTokenExpiration),
@@ -26,7 +26,8 @@ import { UsersService } from './users.service'
                     issuer: auth.issuer,
                     refreshSecret: auth.refreshSecret,
                     refreshTokenTtlMs: TimeUtil.toMs(auth.refreshTokenExpiration)
-                }
+                },
+                onEvent: new SecurityEventLogger(logger).handle
             })
         })
     ],

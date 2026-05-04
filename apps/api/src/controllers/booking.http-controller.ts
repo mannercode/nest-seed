@@ -31,7 +31,7 @@ export class BookingHttpController {
         @Body() body: { ticketIds: string[] },
         @Req() req: UserAuthRequest
     ) {
-        const userId = req.user.userId
+        const userId = req.user.sub
         return this.bookingService.holdTickets({ userId, showtimeId, ticketIds: body.ticketIds })
     }
 

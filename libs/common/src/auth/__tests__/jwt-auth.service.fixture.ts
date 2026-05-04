@@ -2,12 +2,19 @@ import { createTestContext, getRedisTestConnection, withTestId } from '@mannerco
 import { Injectable } from '@nestjs/common'
 import Redis from 'ioredis'
 import { getRedisConnectionToken, RedisModule } from '../../redis'
-import { InjectJwtAuth, JwtAuthModule, JwtAuthService } from '../jwt-auth.service'
+import {
+    InjectJwtAuth,
+    JwtAuthModule,
+    JwtAuthService,
+    OnSecurityEvent,
+    SecurityEvent
+} from '../jwt-auth.service'
 
 export const TEST_AUTH_AUDIENCE = 'test-audience'
 export const TEST_AUTH_ISSUER = 'test-issuer'
 
 export type JwtAuthServiceFixture = {
+    events: SecurityEvent[]
     jwtService: JwtAuthService
     redis: Redis
     teardown: () => Promise<void>
@@ -19,6 +26,11 @@ class TestInjectJwtAuthService {
 }
 
 export async function createJwtAuthServiceFixture() {
+    const events: SecurityEvent[] = []
+    const onEvent: OnSecurityEvent = (event) => {
+        events.push(event)
+    }
+
     const { close, module } = await createTestContext({
         imports: [
             RedisModule.forRoot({ type: 'single', url: getRedisTestConnection() }),
@@ -33,7 +45,8 @@ export async function createJwtAuthServiceFixture() {
                             issuer: TEST_AUTH_ISSUER,
                             refreshSecret: 'refreshSecret',
                             refreshTokenTtlMs: 3000
-                        }
+                        },
+                        onEvent
                     }
                 }
             })
@@ -49,5 +62,5 @@ export async function createJwtAuthServiceFixture() {
         await redis.quit()
     }
 
-    return { jwtService, redis, teardown }
+    return { events, jwtService, redis, teardown }
 }

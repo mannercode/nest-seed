@@ -68,6 +68,10 @@ export class UsersService {
         return this.authenticationService.refreshAuthTokens(refreshToken)
     }
 
+    async revokeAllForUser(userId: string): Promise<void> {
+        await this.authenticationService.revokeAllForUser(userId)
+    }
+
     async revokeRefreshToken(refreshToken: string): Promise<void> {
         await this.authenticationService.revokeRefreshToken(refreshToken)
     }

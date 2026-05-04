@@ -21,6 +21,7 @@ export const JwtAuthErrors = {
 }
 
 const JWT_ALGORITHM = 'HS256' as const
+const DEFAULT_USER_ID_FIELD = 'sub'
 
 export type AuthConfig = {
     accessSecret: string
@@ -30,6 +31,51 @@ export type AuthConfig = {
     refreshSecret: string
     refreshTokenTtlMs: number
 }
+
+/**
+ * Out-of-band metadata about the operation being performed. Threaded into
+ * security events so consumers (audit log, SIEM, alerting) can attribute
+ * actions to a request. JwtAuthService never inspects these — it just relays.
+ */
+export type EventContext = { ip?: string; userAgent?: string; source?: string }
+
+export type SecurityEvent =
+    | {
+          type: 'token.issued'
+          userId?: string
+          familyId: string
+          tokenId: string
+          at: Date
+          context?: EventContext
+      }
+    | {
+          type: 'token.refreshed'
+          userId?: string
+          familyId: string
+          oldTokenId: string
+          newTokenId: string
+          at: Date
+          context?: EventContext
+      }
+    | {
+          type: 'token.reuse_detected'
+          userId?: string
+          familyId: string
+          presentedTokenId: string
+          at: Date
+          context?: EventContext
+      }
+    | {
+          type: 'family.revoked'
+          userId?: string
+          familyId: string
+          reason: 'logout' | 'reuse' | 'logout_all'
+          at: Date
+          context?: EventContext
+      }
+    | { type: 'verify.failed'; reason: string; at: Date; context?: EventContext }
+
+export type OnSecurityEvent = (event: SecurityEvent) => void | Promise<void>
 
 export type JwtAuthModuleOptions = {
     inject?: any[]
@@ -47,8 +93,9 @@ type JwtExpiresIn = NonNullable<JwtSignOptionsArg>['expiresIn']
  *
  * Storage layout in Redis (per JwtAuthService instance, namespaced by `prefix`):
  *
- *   {prefix}:token:{tokenId}    → JSON { hash, familyId }    TTL = refreshTokenTtlMs
- *   {prefix}:family:{familyId}  → SET of live tokenIds       TTL = refreshTokenTtlMs (extended on rotation)
+ *   {prefix}:{familyId}:token:{tokenId}    → JSON { hash, familyId }    TTL = refreshTokenTtlMs
+ *   {prefix}:{familyId}:family             → SET of live tokenIds       TTL = refreshTokenTtlMs (extended on rotation)
+ *   {prefix}:user:{userId}:families        → SET of familyIds for user  TTL = refreshTokenTtlMs (extended on rotation)
  *
  * - **Hash storage**: only SHA-256(refreshToken) is kept; the raw JWT lives only
  *   on the client. A Redis dump leak doesn't directly hand attackers usable
@@ -60,6 +107,9 @@ type JwtExpiresIn = NonNullable<JwtSignOptionsArg>['expiresIn']
  *   so neither the legitimate user nor the attacker can refresh further.
  * - **Algorithm pinning + iss/aud claims** prevent algorithm-confusion attacks
  *   and block tokens minted by other services that happen to share a secret.
+ * - **Per-user index** enables `revokeAllForUser` (e.g., on password change or
+ *   "log out everywhere"). The userId is extracted from the JWT payload using
+ *   the configured `userIdField` (default `sub`, per RFC 7519).
  */
 @Injectable()
 export class JwtAuthService {
@@ -67,24 +117,42 @@ export class JwtAuthService {
         private readonly jwtService: JwtService,
         private readonly config: AuthConfig,
         private readonly redis: Redis,
-        public readonly prefix: string
+        public readonly prefix: string,
+        private readonly userIdField: string = DEFAULT_USER_ID_FIELD,
+        private readonly onEvent?: OnSecurityEvent
     ) {}
 
     static getName(name?: string) {
         return `JwtAuthService_${defaultTo(name, 'default')}`
     }
 
-    async generateAuthTokens(payload: object): Promise<JwtAuthTokens> {
+    async generateAuthTokens(payload: object, context?: EventContext): Promise<JwtAuthTokens> {
         const familyId = generateShortId(30)
-        return this.issueTokensInFamily(payload, familyId)
+        const userId = this.getUserId(payload)
+        const result = await this.issueTokensInFamily(payload, familyId, userId)
+        await this.emit({
+            type: 'token.issued',
+            userId,
+            familyId,
+            tokenId: result.refreshTokenId,
+            at: new Date(),
+            context
+        })
+        return result.tokens
     }
 
-    async refreshAuthTokens(refreshToken: string): Promise<JwtAuthTokens> {
-        const payload = await this.getAuthTokenPayload(refreshToken)
+    async refreshAuthTokens(refreshToken: string, context?: EventContext): Promise<JwtAuthTokens> {
+        const payload = await this.getAuthTokenPayload(refreshToken, context)
         const tokenId = getByPath(payload, 'refreshTokenId') as string | undefined
         const familyId = getByPath(payload, 'familyId') as string | undefined
 
         if (!tokenId || !familyId) {
+            await this.emit({
+                type: 'verify.failed',
+                reason: 'invalid_payload',
+                at: new Date(),
+                context
+            })
             throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
         }
 
@@ -96,13 +164,42 @@ export class JwtAuthService {
             // theft. Burn the entire family so no one can keep refreshing.
             const familyStillAlive = await this.redis.exists(this.familyKey(familyId))
             if (familyStillAlive) {
-                await this.revokeFamily(familyId)
+                const userId = this.getUserId(payload)
+                await this.revokeFamily(familyId, userId)
+                await this.emit({
+                    type: 'token.reuse_detected',
+                    userId,
+                    familyId,
+                    presentedTokenId: tokenId,
+                    at: new Date(),
+                    context
+                })
+                await this.emit({
+                    type: 'family.revoked',
+                    userId,
+                    familyId,
+                    reason: 'reuse',
+                    at: new Date(),
+                    context
+                })
                 throw new UnauthorizedException(JwtAuthErrors.RefreshTokenReuseDetected())
             }
+            await this.emit({
+                type: 'verify.failed',
+                reason: 'token_not_found',
+                at: new Date(),
+                context
+            })
             throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
         }
 
         if (stored.hash !== this.hashToken(refreshToken) || stored.familyId !== familyId) {
+            await this.emit({
+                type: 'verify.failed',
+                reason: 'hash_mismatch',
+                at: new Date(),
+                context
+            })
             throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
         }
 
@@ -111,13 +208,24 @@ export class JwtAuthService {
         await this.consumeToken(tokenId, familyId)
 
         const carryPayload = omit(payload, ['refreshTokenId', 'familyId'])
-        return this.issueTokensInFamily(carryPayload, familyId)
+        const userId = this.getUserId(carryPayload)
+        const result = await this.issueTokensInFamily(carryPayload, familyId, userId)
+        await this.emit({
+            type: 'token.refreshed',
+            userId,
+            familyId,
+            oldTokenId: tokenId,
+            newTokenId: result.refreshTokenId,
+            at: new Date(),
+            context
+        })
+        return result.tokens
     }
 
-    async revokeRefreshToken(refreshToken: string): Promise<void> {
+    async revokeRefreshToken(refreshToken: string, context?: EventContext): Promise<void> {
         let payload: Record<string, unknown>
         try {
-            payload = await this.getAuthTokenPayload(refreshToken)
+            payload = await this.getAuthTokenPayload(refreshToken, context, false)
         } catch {
             // Logout is best-effort: an unparseable / expired token can't
             // identify a family, so there's nothing to revoke. Stay quiet
@@ -125,10 +233,48 @@ export class JwtAuthService {
             return
         }
         const familyId = getByPath(payload, 'familyId') as string | undefined
-        if (familyId) await this.revokeFamily(familyId)
+        if (!familyId) return
+
+        const userId = this.getUserId(payload)
+        await this.revokeFamily(familyId, userId)
+        await this.emit({
+            type: 'family.revoked',
+            userId,
+            familyId,
+            reason: 'logout',
+            at: new Date(),
+            context
+        })
     }
 
-    private async issueTokensInFamily(payload: object, familyId: string): Promise<JwtAuthTokens> {
+    /**
+     * Revoke every active session for the given user. Used for "log out from
+     * all devices" / password-change flows. Iterates the per-user family
+     * index and revokes each family. Safe to call when the user has no
+     * active sessions (no-op).
+     */
+    async revokeAllForUser(userId: string, context?: EventContext): Promise<void> {
+        const userKey = this.userFamiliesKey(userId)
+        const familyIds = await this.redis.smembers(userKey)
+        for (const familyId of familyIds) {
+            await this.revokeFamily(familyId, userId)
+            await this.emit({
+                type: 'family.revoked',
+                userId,
+                familyId,
+                reason: 'logout_all',
+                at: new Date(),
+                context
+            })
+        }
+        await this.redis.del(userKey)
+    }
+
+    private async issueTokensInFamily(
+        payload: object,
+        familyId: string,
+        userId: string | undefined
+    ): Promise<{ refreshTokenId: string; tokens: JwtAuthTokens }> {
         const accessToken = await this.createToken(
             payload,
             this.config.accessSecret,
@@ -140,8 +286,8 @@ export class JwtAuthService {
             this.config.refreshSecret,
             this.config.refreshTokenTtlMs
         )
-        await this.storeToken(refreshTokenId, familyId, refreshToken)
-        return { accessToken, refreshToken }
+        await this.storeToken(refreshTokenId, familyId, refreshToken, userId)
+        return { refreshTokenId, tokens: { accessToken, refreshToken } }
     }
 
     private async createToken(payload: object, secret: string, ttlMs: number) {
@@ -160,7 +306,7 @@ export class JwtAuthService {
         return token
     }
 
-    private async getAuthTokenPayload(token: string) {
+    private async getAuthTokenPayload(token: string, context?: EventContext, emitOnFailure = true) {
         try {
             const decoded = await this.jwtService.verifyAsync(token, {
                 algorithms: [JWT_ALGORITHM],
@@ -174,8 +320,16 @@ export class JwtAuthService {
         } catch (error: unknown) {
             const message = getByPath(error, 'message', String(error))
 
+            if (emitOnFailure) {
+                await this.emit({ type: 'verify.failed', reason: message, at: new Date(), context })
+            }
             throw new UnauthorizedException(JwtAuthErrors.RefreshTokenVerificationFailed(message))
         }
+    }
+
+    private getUserId(payload: unknown): string | undefined {
+        const value = getByPath(payload, this.userIdField)
+        return typeof value === 'string' ? value : undefined
     }
 
     private hashToken(token: string): string {
@@ -186,7 +340,8 @@ export class JwtAuthService {
      * Both keys embed `{familyId}` as a Redis Cluster hash tag so every key
      * for one family lands on the same slot — required because we use MULTI
      * pipelines that touch token + family entries atomically (Redis Cluster
-     * rejects multi-key ops crossing slots: `CROSSSLOT`).
+     * rejects multi-key ops crossing slots: `CROSSSLOT`). The per-user
+     * index uses `{userId}` instead — touched in separate (non-MULTI) calls.
      */
     private tokenKey(tokenId: string, familyId: string) {
         return `${this.prefix}:{${familyId}}:token:${tokenId}`
@@ -194,6 +349,10 @@ export class JwtAuthService {
 
     private familyKey(familyId: string) {
         return `${this.prefix}:{${familyId}}:family`
+    }
+
+    private userFamiliesKey(userId: string) {
+        return `${this.prefix}:user:{${userId}}:families`
     }
 
     private async getStoredToken(
@@ -205,7 +364,12 @@ export class JwtAuthService {
         return JSON.parse(raw) as { familyId: string; hash: string }
     }
 
-    private async storeToken(tokenId: string, familyId: string, refreshToken: string) {
+    private async storeToken(
+        tokenId: string,
+        familyId: string,
+        refreshToken: string,
+        userId: string | undefined
+    ) {
         const ttlMs = this.config.refreshTokenTtlMs
         const value = JSON.stringify({ familyId, hash: this.hashToken(refreshToken) })
         // Pipeline so token + family update land together; the family TTL is
@@ -217,6 +381,16 @@ export class JwtAuthService {
             .sadd(this.familyKey(familyId), tokenId)
             .pexpire(this.familyKey(familyId), ttlMs)
             .exec()
+
+        if (userId) {
+            // Different cluster slot from family/token keys (different hash
+            // tag), so this can't be folded into the MULTI above.
+            await this.redis
+                .multi()
+                .sadd(this.userFamiliesKey(userId), familyId)
+                .pexpire(this.userFamiliesKey(userId), ttlMs)
+                .exec()
+        }
     }
 
     private async consumeToken(tokenId: string, familyId: string) {
@@ -227,7 +401,7 @@ export class JwtAuthService {
             .exec()
     }
 
-    private async revokeFamily(familyId: string) {
+    private async revokeFamily(familyId: string, userId: string | undefined) {
         const tokenIds = await this.redis.smembers(this.familyKey(familyId))
         const pipeline = this.redis.multi()
         for (const tokenId of tokenIds) {
@@ -235,10 +409,32 @@ export class JwtAuthService {
         }
         pipeline.del(this.familyKey(familyId))
         await pipeline.exec()
+
+        if (userId) {
+            await this.redis.srem(this.userFamiliesKey(userId), familyId)
+        }
+    }
+
+    private async emit(event: SecurityEvent) {
+        if (!this.onEvent) return
+        try {
+            await this.onEvent(event)
+        } catch (err) {
+            // Hook failures must not break authentication. Log and continue.
+            console.error('[JwtAuthService] onEvent hook failed', err)
+        }
     }
 }
 
-type JwtAuthFactoryOptions = { auth: AuthConfig }
+type JwtAuthFactoryOptions = {
+    auth: AuthConfig
+    onEvent?: OnSecurityEvent
+    /**
+     * JWT payload field used to identify the subject for the per-user
+     * revocation index. Defaults to `'sub'` (RFC 7519 standard claim).
+     */
+    userIdField?: string
+}
 
 export class JwtAuthTokens {
     accessToken: string
@@ -258,13 +454,16 @@ export class JwtAuthModule {
             inject: [JwtService, getRedisConnectionToken(redisName), ...defaultTo(inject, [])],
             provide: JwtAuthService.getName(name),
             useFactory: async (jwtService: JwtService, redis: Redis, ...args: any[]) => {
-                const { auth } = await useFactory(...args)
+                const factoryOptions = await useFactory(...args)
+                const { auth, onEvent, userIdField } = factoryOptions
 
                 return new JwtAuthService(
                     jwtService,
                     auth,
                     redis,
-                    `${prefix}:${defaultTo(name, 'default')}`
+                    `${prefix}:${defaultTo(name, 'default')}`,
+                    defaultTo(userIdField, DEFAULT_USER_ID_FIELD),
+                    onEvent
                 )
             }
         }

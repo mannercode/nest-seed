@@ -41,7 +41,7 @@ export async function loginUser(ctx: TestContext, credentials: UserCredentialsDt
     }
 
     const { accessToken, refreshToken } = await usersService.generateAuthTokens({
-        userId: user.id,
+        sub: user.id,
         email: credentials.email
     })
 

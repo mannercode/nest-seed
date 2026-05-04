@@ -45,4 +45,43 @@ describe('UserAuthenticationService', () => {
             expect(isMatch).toBe(false)
         })
     })
+
+    describe('findUserByCredentials timing equalization', () => {
+        // 사용자가 없어도 validate (= bcrypt.compare) 가 호출되어 시간이 평탄화된다
+        it('runs validate even when the email is not registered', async () => {
+            const repo = { findByEmailWithPassword: jest.fn().mockResolvedValue(null) }
+            const svc = new UserAuthenticationService(repo as any, {} as any)
+            const validateSpy = jest.spyOn(svc, 'validate')
+
+            const result = await svc.findUserByCredentials({
+                email: 'noone@x.com',
+                password: 'anything'
+            })
+
+            expect(result).toBeNull()
+            expect(validateSpy).toHaveBeenCalledTimes(1)
+            // 더미 해시와 비교했어야 함 (= bcrypt 형식의 해시이지만 사용자 실해시는 아님)
+            const [, hashArg] = validateSpy.mock.calls[0]
+            expect(typeof hashArg).toBe('string')
+            expect(hashArg.startsWith('$2')).toBe(true)
+        })
+
+        // 사용자가 있고 비번이 틀려도 null 반환 (실해시와 비교됨)
+        it('returns null and runs validate for an existing user with wrong password', async () => {
+            const realHash = await service.hash('correct')
+            const repo = {
+                findByEmailWithPassword: jest
+                    .fn()
+                    .mockResolvedValue({ id: 'u1', email: 'a@b.com', password: realHash })
+            }
+            const svc = new UserAuthenticationService(repo as any, {} as any)
+            const validateSpy = jest.spyOn(svc, 'validate')
+
+            const result = await svc.findUserByCredentials({ email: 'a@b.com', password: 'wrong' })
+
+            expect(result).toBeNull()
+            expect(validateSpy).toHaveBeenCalledTimes(1)
+            expect(validateSpy.mock.calls[0][1]).toBe(realHash)
+        })
+    })
 })
