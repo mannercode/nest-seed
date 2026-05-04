@@ -29,12 +29,6 @@ jobs:
                       npm run build
                       bash .github/scripts/repeat.sh 100 npm test -w ${{ matrix.scope }} --if-present -- --coverageThreshold='{}'
     bootup:
-        strategy:
-            fail-fast: false
-            matrix:
-                include:
-                    - scope: api
-                      count: 100
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
         steps:
@@ -47,7 +41,7 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
                       npm run build
-                      bash .github/scripts/repeat.sh ${{ matrix.count }} bash .github/scripts/bootup-test.sh ${{ matrix.scope }}
+                      bash .github/scripts/repeat.sh 100 bash .github/scripts/bootup-test.sh
     scenario:
         strategy:
             fail-fast: false
