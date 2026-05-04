@@ -1,19 +1,10 @@
-const { GenericContainer, Wait } = require('testcontainers')
+const { GenericContainer } = require('testcontainers')
 const { MongoDBContainer } = require('@testcontainers/mongodb')
 const { NatsContainer } = require('@testcontainers/nats')
-
-const TEMPORAL_NETWORK_NAME = 'testlib-temporal-net'
-const TEMPORAL_PG_ALIAS = 'temporal-postgres'
+const { TestWorkflowEnvironment } = require('@temporalio/testing')
 
 module.exports = async function globalSetup() {
-    // Temporal needs Postgres reachable by container alias, so both attach
-    // to a stable user-defined docker network. We create it via dockerode
-    // (idempotent) instead of testcontainers' Network class — that one
-    // generates a fresh UUID-named network on every run, leaving orphans
-    // when paired with withReuse().
-    await ensureDockerNetwork(TEMPORAL_NETWORK_NAME)
-
-    const [mongo, redis, minio, nats, temporal] = await Promise.all([
+    const [mongo, redis, minio, nats, temporalEnv] = await Promise.all([
         new MongoDBContainer(process.env.MONGO_IMAGE)
             .withName('testlib-mongo')
             .withReuse()
@@ -44,7 +35,10 @@ module.exports = async function globalSetup() {
             .withResourcesQuota({ memory: 0.25 })
             .start(),
 
-        startTemporal()
+        // @temporalio/testing 의 ephemeral test server (Temporal CLI binary).
+        // 기존 testcontainer (postgres + auto-setup, ~30s 첫 부팅) 대신 in-process
+        // child binary 로 수초 내 부팅. auto-setup deprecation 도 회피.
+        TestWorkflowEnvironment.createLocal()
     ])
 
     process.env.TESTLIB_MONGO_URI = `${mongo.getConnectionString()}?directConnection=true`
@@ -55,62 +49,11 @@ module.exports = async function globalSetup() {
     // NatsContainer enforces user/pass auth by default; pass the full
     // connection options through so consumers don't have to know about it.
     process.env.TESTLIB_NATS_OPTIONS = JSON.stringify(nats.getConnectionOptions())
-    process.env.TESTLIB_TEMPORAL_ADDRESS = `${temporal.getHost()}:${temporal.getMappedPort(7233)}`
-    process.env.TESTLIB_TEMPORAL_NAMESPACE = 'default'
-}
+    process.env.TESTLIB_TEMPORAL_ADDRESS = temporalEnv.address
+    process.env.TESTLIB_TEMPORAL_NAMESPACE = temporalEnv.namespace ?? 'default'
 
-async function startTemporal() {
-    // Postgres must be ready before Temporal's auto-setup runs schema migrations.
-    await new GenericContainer('postgres:17-alpine')
-        .withName('testlib-temporal-pg')
-        .withReuse()
-        .withNetworkMode(TEMPORAL_NETWORK_NAME)
-        .withNetworkAliases(TEMPORAL_PG_ALIAS)
-        .withEnvironment({
-            POSTGRES_USER: 'temporal',
-            POSTGRES_PASSWORD: 'temporal',
-            POSTGRES_DB: 'temporal'
-        })
-        .withExposedPorts(5432)
-        .withWaitStrategy(Wait.forSuccessfulCommand('pg_isready -U temporal'))
-        .withResourcesQuota({ memory: 0.25 })
-        .start()
-
-    // testlib 은 jest globalSetup 의 단일 container 패턴이라 auto-setup
-    // (deprecated 지만 dev 용은 계속 동작) 을 그대로 사용. infra 의 compose
-    // stack 은 server + admin-tools 로 분리됐지만 testcontainers 로 그
-    // 패턴을 재현하려면 4개 container 시퀀스 + reuse 정책 충돌이 커서,
-    // testlib 한정으론 auto-setup hardcode 가 단순/효율 양면에서 합리적.
-    return new GenericContainer('temporalio/auto-setup:1.29')
-        .withName('testlib-temporal')
-        .withReuse()
-        .withNetworkMode(TEMPORAL_NETWORK_NAME)
-        .withEnvironment({
-            // Default Temporal binds gRPC only to the container's docker IP
-            // (e.g. 172.21.0.3:7233), so localhost-based healthchecks fail.
-            // BIND_ON_IP=0.0.0.0 makes the auto-setup entrypoint regenerate
-            // config to listen on all interfaces.
-            BIND_ON_IP: '0.0.0.0',
-            DB: 'postgres12',
-            DB_PORT: '5432',
-            POSTGRES_USER: 'temporal',
-            POSTGRES_PWD: 'temporal',
-            POSTGRES_SEEDS: TEMPORAL_PG_ALIAS
-        })
-        .withExposedPorts(7233)
-        // First boot runs schema migrations (~30s); reuse hits are fast.
-        .withStartupTimeout(120_000)
-        .withWaitStrategy(Wait.forSuccessfulCommand('tctl --address localhost:7233 cluster health'))
-        .withResourcesQuota({ memory: 0.5 })
-        .start()
-}
-
-async function ensureDockerNetwork(name) {
-    const Docker = require('dockerode')
-    const docker = new Docker()
-    const existing = await docker.listNetworks({
-        filters: JSON.stringify({ name: [name] })
-    })
-    if (existing.some((n) => n.Name === name)) return
-    await docker.createNetwork({ Name: name, Driver: 'bridge', CheckDuplicate: true })
+    // jest globalSetup / globalTeardown 은 같은 process 에서 실행되므로
+    // globalThis 로 instance 공유. teardown 에서 ephemeral server child
+    // process 정리.
+    globalThis.__TEMPORAL_TEST_ENV__ = temporalEnv
 }

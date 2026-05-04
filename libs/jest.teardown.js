@@ -12,7 +12,15 @@ const DB_PATTERN = /^mongo-w\d+$/
 const BUCKET_PATTERN = /^s3bucket-w\d+$/
 
 module.exports = async function globalTeardown() {
-    await Promise.all([cleanupMongo(), cleanupS3(), cleanupRedis()])
+    await Promise.all([cleanupMongo(), cleanupS3(), cleanupRedis(), cleanupTemporal()])
+}
+
+// jest.global.js 가 globalThis 에 stash 한 TestWorkflowEnvironment 의 ephemeral
+// server child process 를 명시 종료. 안 부르면 jest 가 끝난 뒤 orphan 가능.
+async function cleanupTemporal() {
+    const env = globalThis.__TEMPORAL_TEST_ENV__
+    if (!env) return
+    await env.teardown()
 }
 
 async function cleanupMongo() {
