@@ -1,0 +1,73 @@
+name: Build Deps Image
+on:
+    workflow_call:
+        outputs:
+            tag:
+                description: 'lockfile hash used as the deps image tag'
+                value: ${{ jobs.build-deps.outputs.tag }}
+    workflow_dispatch:
+    push:
+        branches: [main]
+        paths:
+            - 'package.json'
+            - 'package-lock.json'
+            - 'libs/*/package.json'
+            - 'apps/*/package.json'
+            - 'apps/api/deps.Dockerfile'
+    pull_request:
+        paths:
+            - 'package.json'
+            - 'package-lock.json'
+            - 'libs/*/package.json'
+            - 'apps/*/package.json'
+            - 'apps/api/deps.Dockerfile'
+
+permissions:
+    contents: read
+    packages: write
+
+concurrency:
+    group: build-deps-${{ github.ref }}
+    cancel-in-progress: false
+
+jobs:
+    build-deps:
+        runs-on: ubuntu-24.04-arm
+        outputs:
+            tag: ${{ steps.hash.outputs.tag }}
+        steps:
+            - uses: actions/checkout@v5
+
+            - id: hash
+              run: echo "tag=$(sha256sum package-lock.json | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+            # 같은 hash 의 이미지가 이미 ghcr 에 있으면 빌드 skip — 일반 코드
+            # 변경 (lockfile 동일) 시 워크플로 ~5초로 즉시 통과.
+            - id: check
+              env:
+                  TAG: ${{ steps.hash.outputs.tag }}
+              run: |
+                  if docker manifest inspect \
+                       "ghcr.io/${{ github.repository_owner }}/api-deps:${TAG}" 2>/dev/null; then
+                      echo "exists=true" >> "$GITHUB_OUTPUT"
+                  else
+                      echo "exists=false" >> "$GITHUB_OUTPUT"
+                  fi
+
+            - if: steps.check.outputs.exists == 'false'
+              uses: docker/login-action@v3
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+
+            - if: steps.check.outputs.exists == 'false'
+              uses: docker/setup-buildx-action@v3
+
+            - if: steps.check.outputs.exists == 'false'
+              uses: docker/build-push-action@v6
+              with:
+                  context: .
+                  file: apps/api/deps.Dockerfile
+                  push: true
+                  tags: ghcr.io/${{ github.repository_owner }}/api-deps:${{ steps.hash.outputs.tag }}
