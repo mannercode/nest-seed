@@ -1,7 +1,7 @@
 services:
     temporal-postgresql:
         extends: { file: ./compose.common.yml, service: common-options }
-        image: postgres:17-alpine
+        image: $POSTGRES_IMAGE
         container_name: temporal-postgresql
         environment:
             POSTGRES_USER: temporal
@@ -38,18 +38,10 @@ services:
         deploy: { resources: { limits: { memory: 384m } } }
         shm_size: '16m'
 
-    temporal-setup:
-        extends: { file: ./compose.common.yml, service: common-options }
-        image: alpine
-        container_name: temporal-setup
-        depends_on:
-            temporal: { condition: service_healthy }
-        command: echo temporal ready
-
     temporal-ui:
         extends: { file: ./compose.common.yml, service: common-options }
         profiles: ['gui']
-        image: temporalio/ui:latest
+        image: $TEMPORAL_UI_IMAGE
         container_name: temporal-ui
         depends_on:
             temporal: { condition: service_healthy }

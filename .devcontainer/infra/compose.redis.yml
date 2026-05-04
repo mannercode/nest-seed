@@ -78,7 +78,7 @@ services:
         extends: { file: ./compose.common.yml, service: common-options }
         profiles: ['gui']
         container_name: redis-gui
-        image: redis/redisinsight:latest
+        image: $REDIS_INSIGHT_IMAGE
         environment:
             {
                 RI_DATABASE_MANAGEMENT: true,

@@ -112,7 +112,7 @@ services:
         extends: { file: ./compose.common.yml, service: common-options }
         profiles: ['gui']
         container_name: mongo-gui
-        image: mongo-express:latest
+        image: $MONGO_EXPRESS_IMAGE
         depends_on: { mongo-setup: { condition: service_completed_successfully } }
         environment:
             {

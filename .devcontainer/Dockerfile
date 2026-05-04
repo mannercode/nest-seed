@@ -1,4 +1,4 @@
-FROM node:24-slim
+FROM ghcr.io/mannercode/mirror/node:24-slim
 ENV LANG=C.UTF-8
 
 ARG REQUIRED="git curl jq ca-certificates"
