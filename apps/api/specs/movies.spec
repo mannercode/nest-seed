@@ -16,7 +16,7 @@ TEST 201 POST /movies \
 
 MOVIE_ID=$(echo "${BODY}" | jq -r '.id')
 
-TEST 400 POST /movies \
+TEST 201 POST /movies \
 	-H 'Content-Type: application/json' \
 	-d '{}'
 
