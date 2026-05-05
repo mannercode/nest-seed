@@ -80,8 +80,9 @@ export class AssetsService {
         const expiresAt = this.getUploadExpiresAt(asset.createdAt)
 
         if (this.isUploadExpired(expiresAt)) {
-            await this.repository.deleteById(assetId)
-            await this.s3Service.deleteObject(assetId)
+            // S3 → DB 순서 (deleteMany 와 동일). 반대로 하면 DB 삭제 후 S3 실패 시
+            // cleanup cron 이 DB 만 보기 때문에 S3 객체가 영구 고아가 된다.
+            await this.deleteMany([assetId])
 
             throw new NotFoundException(AssetErrors.UploadExpired(assetId, expiresAt))
         }

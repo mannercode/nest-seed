@@ -50,7 +50,11 @@ export class MongooseConfigModule {
     }
 
     static get maxTake() {
-        return 50
+        // HTTP_PAGINATION_DEFAULT_SIZE 는 ConfigModule 의 Joi 스키마에서
+        // required + number 로 검증되므로, 이 게터 호출 시점엔 항상 유효한
+        // 숫자 문자열이 보장된다. 환경변수 직접 읽는 이유는 repository
+        // 생성자가 static getter 로 maxSize 를 집어가는 구조라 DI 우회 필요.
+        return Number(process.env.HTTP_PAGINATION_DEFAULT_SIZE)
     }
 
     static get moduleName() {

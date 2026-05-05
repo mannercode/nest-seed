@@ -20,7 +20,5 @@ export function generateShowtimesForBooking(
 }
 
 export function sortTheatersByDistance(theaters: TheaterDto[], latLong: LatLong) {
-    return sortBy(theaters, (theater) =>
-        Math.abs(LatLong.distanceInMeters(theater.location, latLong))
-    )
+    return sortBy(theaters, (theater) => LatLong.distanceInMeters(theater.location, latLong))
 }

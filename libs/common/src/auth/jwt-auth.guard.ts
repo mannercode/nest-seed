@@ -69,7 +69,7 @@ export abstract class JwtAuthGuard implements CanActivate {
         return { algorithms: defaultTo(algorithms, DEFAULT_ALGORITHMS), audience, issuer, secret }
     }
 
-    private extractBearerToken(request: any): string | undefined {
+    protected extractBearerToken(request: any): string | undefined {
         const authorization = request.headers?.authorization
         if (!authorization) return undefined
 
@@ -86,7 +86,7 @@ export abstract class OptionalJwtAuthGuard extends JwtAuthGuard {
         }
 
         const request = context.switchToHttp().getRequest()
-        const token = this.extractOptionalBearerToken(request)
+        const token = this.extractBearerToken(request)
 
         if (!token) {
             request.user = null
@@ -101,13 +101,5 @@ export abstract class OptionalJwtAuthGuard extends JwtAuthGuard {
         }
 
         return true
-    }
-
-    private extractOptionalBearerToken(request: any): string | undefined {
-        const authorization = request.headers?.authorization
-        if (!authorization) return undefined
-
-        const [type, token] = authorization.split(' ')
-        return type === 'Bearer' ? token : undefined
     }
 }

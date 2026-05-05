@@ -135,7 +135,7 @@ import { AuthService } from 'src/services'   // X — 순환 참조 위험
 **조상이 아닌 폴더는 절대 경로를 쓴다.** 이쪽은 상대 경로로 쓰면 `../../../` 처럼 깊이가 길어져 가독성이 떨어진다.
 
 ```ts
-/* users.controller.ts */
+/* users.http-controller.ts */
 import { AuthService } from 'src/services'   // O
 ```
 

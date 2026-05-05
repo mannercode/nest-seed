@@ -98,8 +98,11 @@ export class MoviesService {
             owner: { entityId: movieId, service: 'movies' }
         })
 
-        await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
+        // addAsset → removePendingAsset 순서. 반대로 하면 addAsset 실패 시
+        // 자산은 owner=movie 인데 movie 는 참조 안 하고 pending 도 이미 제거되어
+        // 재시도 경로 (includes=false, hasPending=false → AssetNotFound) 가 막힌다.
         await this.moviesRepository.addAsset(movieId, assetId)
+        await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
     }
 
     async getMany(movieIds: string[]) {

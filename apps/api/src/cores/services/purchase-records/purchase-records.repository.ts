@@ -15,10 +15,6 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         super(model, MongooseConfigModule.maxTake)
     }
 
-    async delete(purchaseRecordId: string) {
-        await this.deleteById(purchaseRecordId)
-    }
-
     async create(createDto: CreatePurchaseRecordDto) {
         const purchaseRecord = this.newDocument()
         purchaseRecord.userId = createDto.userId

@@ -1,3 +1,3 @@
 import { AuthErrors } from './gateway'
 
-export const ControllerErrors = { Auth: AuthErrors }
+export const GatewayErrors = { Auth: AuthErrors }

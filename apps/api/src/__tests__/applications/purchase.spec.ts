@@ -159,7 +159,7 @@ describe('PurchaseService', () => {
                         ticketPurchaseService,
                         'rollbackPurchase'
                     )
-                    const deletePurchaseRecordSpy = jest.spyOn(purchaseRecordsService, 'delete')
+                    const deletePurchaseRecordSpy = jest.spyOn(purchaseRecordsService, 'deleteMany')
                     const cancelPaymentSpy = jest.spyOn(paymentsService, 'cancel')
 
                     const createDto = buildCreatePurchaseDto(heldTickets)

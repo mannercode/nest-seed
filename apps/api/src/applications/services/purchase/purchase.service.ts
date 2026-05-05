@@ -86,7 +86,7 @@ export class PurchaseService {
                 { paymentId: payment.id, purchaseRecordId: purchaseRecord.id }
             )
             await this.ticketPurchaseService.rollbackPurchase(createDto)
-            await this.purchaseRecordsService.delete(purchaseRecord.id)
+            await this.purchaseRecordsService.deleteMany([purchaseRecord.id])
             await this.paymentsService.cancel(payment.id)
             throw error
         }

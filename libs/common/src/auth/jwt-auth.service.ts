@@ -1,4 +1,11 @@
-import { DynamicModule, Inject, Injectable, Module, UnauthorizedException } from '@nestjs/common'
+import {
+    DynamicModule,
+    Inject,
+    Injectable,
+    Logger,
+    Module,
+    UnauthorizedException
+} from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
 import { createHash } from 'crypto'
 import Redis from 'ioredis'
@@ -113,6 +120,8 @@ type JwtExpiresIn = NonNullable<JwtSignOptionsArg>['expiresIn']
  */
 @Injectable()
 export class JwtAuthService {
+    private readonly logger = new Logger(JwtAuthService.name)
+
     // No default on `userIdField` — JwtAuthModule.register always resolves it
     // through `defaultTo(userIdField, DEFAULT_USER_ID_FIELD)` so a TS default
     // here would be dead code (an uncovered branch). Direct instantiations
@@ -425,7 +434,7 @@ export class JwtAuthService {
             await this.onEvent(event)
         } catch (err) {
             // Hook failures must not break authentication. Log and continue.
-            console.error('[JwtAuthService] onEvent hook failed', err)
+            this.logger.error('onEvent hook failed', err)
         }
     }
 }

@@ -89,8 +89,18 @@ async function runInner(iteration) {
     for (const [email, g] of byEmail) {
         if (g.created !== 1) {
             console.error(
-                `[race] iter=${iteration} email=${email}: expected 1 × 201, got ${g.created}`
+                `[race] iter=${iteration} email=${email}: expected 1 × 201, got ${g.created} (409=${g.conflict}, other=${g.other.length})`
             )
+            // Dump all 50 responses for this email so the next failure
+            // shows whether the "winner" returned a 5xx, a 0 (socket
+            // hangup), or something unexpected — the previous flake hit
+            // 0 × 201 with no other diagnostic visible.
+            const sameEmail = results.filter((r) => r.email === email)
+            for (const [idx, r] of sameEmail.entries()) {
+                console.error(
+                    `  [${idx}] status=${r.status} replica=${r.replicaId} body=${(r.body || '').slice(0, 120)}`
+                )
+            }
             throw new Error(`iter ${iteration}: email ${email} had ${g.created} × 201`)
         }
         if (g.other.length > 0) {

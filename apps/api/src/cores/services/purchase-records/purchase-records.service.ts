@@ -8,8 +8,8 @@ import { PurchaseRecordsRepository } from './purchase-records.repository'
 export class PurchaseRecordsService {
     constructor(private readonly repository: PurchaseRecordsRepository) {}
 
-    async delete(purchaseRecordId: string) {
-        await this.repository.delete(purchaseRecordId)
+    async deleteMany(purchaseRecordIds: string[]): Promise<void> {
+        await this.repository.deleteByIds(purchaseRecordIds)
     }
 
     async create(createDto: CreatePurchaseRecordDto) {
