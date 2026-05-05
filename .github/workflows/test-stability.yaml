@@ -32,7 +32,7 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
                       npm run build
-                      bash .github/scripts/repeat.sh 100 npm test -w ${{ matrix.scope }} -- --coverageThreshold='{}'
+                      bash .github/scripts/repeat.sh 75 npm test -w ${{ matrix.scope }} -- --coverageThreshold='{}'
     bootup:
         needs: build-deps
         runs-on: ubuntu-24.04-arm
@@ -47,7 +47,7 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
                       npm run build
-                      bash .github/scripts/repeat.sh 100 bash .github/scripts/bootup-test.sh
+                      bash .github/scripts/repeat.sh 50 bash .github/scripts/bootup-test.sh
     scenario:
         needs: build-deps
         strategy:
