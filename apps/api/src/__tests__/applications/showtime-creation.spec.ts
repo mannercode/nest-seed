@@ -237,11 +237,11 @@ describe('ShowtimeCreationService', () => {
                     })
                     .accepted()
 
-                const conflictingShowtimes = [
-                    initialShowtimes[0],
-                    initialShowtimes[2],
-                    initialShowtimes[3]
-                ]
+                // 새 12:00-12:30 은 기존 12:00-13:30 (initialShowtimes[0]) 의 내부와
+                // 겹쳐 충돌. 새 16:00-16:30 과 기존 16:30-18:00 (initialShowtimes[2]),
+                // 새 20:00-20:30 과 기존 18:30-20:00 (initialShowtimes[3]) 은
+                // back-to-back (끝=시작) 이라 endTime exclusive 정책상 충돌 아님.
+                const conflictingShowtimes = [initialShowtimes[0]]
 
                 await expect(completionPromise).resolves.toEqual({
                     conflictingShowtimes,
