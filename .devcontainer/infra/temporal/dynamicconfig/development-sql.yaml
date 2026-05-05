@@ -4,3 +4,10 @@ limit.maxIDLength:
 system.forceSearchAttributesCacheRefreshOnRead:
     - value: true # Dev setup only. Don't enable in production.
       constraints: {}
+# Allow sub-day namespace retention. Default frontend.minRetentionDays=1
+# blocks the 1h retention we set on the default namespace below — without
+# this, completed workflow histories accumulate up to a day and slow the
+# transfer-queue processor under sustained test load.
+frontend.minRetentionDays:
+    - value: 0
+      constraints: {}
