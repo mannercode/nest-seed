@@ -23,7 +23,7 @@ export class BookingHttpController {
         return this.bookingService.getTickets(showtimeId)
     }
 
-    @HttpCode(HttpStatus.OK)
+    @HttpCode(HttpStatus.NO_CONTENT)
     @Post('showtimes/:showtimeId/tickets/hold')
     @UseGuards(UserJwtAuthGuard)
     async holdTickets(
@@ -32,7 +32,7 @@ export class BookingHttpController {
         @Req() req: UserAuthRequest
     ) {
         const userId = req.user.sub
-        return this.bookingService.holdTickets({ userId, showtimeId, ticketIds: body.ticketIds })
+        await this.bookingService.holdTickets({ userId, showtimeId, ticketIds: body.ticketIds })
     }
 
     @Get('movies/:movieId/theaters/:theaterId/showdates')

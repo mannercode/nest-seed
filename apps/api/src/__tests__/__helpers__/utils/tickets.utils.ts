@@ -20,8 +20,7 @@ export async function createTickets(ctx: TestContext, overrides: Partial<CreateT
 
     const createDtos = overrides.map((override) => buildCreateTicketDto(override))
 
-    const { success } = await ticketsService.createMany(createDtos)
-    expect(success).toBe(true)
+    await ticketsService.createMany(createDtos)
 
     const sagaIds = uniq(createDtos.map((dto) => dto.sagaId))
 

@@ -37,7 +37,7 @@ export class BookingService {
         return tickets
     }
 
-    async holdTickets(dto: HoldTicketsDto) {
+    async holdTickets(dto: HoldTicketsDto): Promise<void> {
         this.logger.log('holdTickets', { userId: dto.userId, ticketCount: dto.ticketIds.length })
 
         const success = await this.ticketHoldingService.holdTickets(dto)
@@ -45,8 +45,6 @@ export class BookingService {
         if (!success) {
             throw new ConflictException(BookingErrors.TicketsAlreadyHeld())
         }
-
-        return { success }
     }
 
     async searchShowdates({ movieId, theaterId }: BookingSearchShowdatesDto) {

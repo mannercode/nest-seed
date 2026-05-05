@@ -29,13 +29,13 @@ describe('ShowtimesService', () => {
     })
 
     describe('createMany', () => {
-        // 상영 시간을 생성한다
-        it('creates showtimes', async () => {
+        // 생성된 상영 시간 수를 반환한다
+        it('returns the created showtime count', async () => {
             const createDtos = [buildCreateShowtimeDto({ sagaId: oid(0x1) })]
 
-            const { success } = await fix.showtimesService.createMany(createDtos)
+            const { count } = await fix.showtimesService.createMany(createDtos)
 
-            expect(success).toBe(true)
+            expect(count).toBe(createDtos.length)
         })
     })
 

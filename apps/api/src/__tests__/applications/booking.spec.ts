@@ -110,7 +110,7 @@ describe('BookingService', () => {
                     .post(`/booking/showtimes/${showtime.id}/tickets/hold`)
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body({ ticketIds })
-                    .ok({ success: true })
+                    .noContent()
             })
         })
     })

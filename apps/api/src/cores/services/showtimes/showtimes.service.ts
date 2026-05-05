@@ -1,6 +1,6 @@
 import { mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { CreateShowtimeDto, SearchShowtimesDto, ShowtimeDto } from './dtos'
+import { CreateShowtimeDto, CreateShowtimesResult, SearchShowtimesDto, ShowtimeDto } from './dtos'
 import { Showtime } from './models'
 import { ShowtimesRepository } from './showtimes.repository'
 
@@ -12,10 +12,10 @@ export class ShowtimesService {
         await this.repository.deleteBySagaIds(sagaIds)
     }
 
-    async createMany(createDtos: CreateShowtimeDto[]) {
+    async createMany(createDtos: CreateShowtimeDto[]): Promise<CreateShowtimesResult> {
         await this.repository.createMany(createDtos)
 
-        return { count: createDtos.length, success: true }
+        return { count: createDtos.length }
     }
 
     async allExist(showtimeIds: string[]): Promise<boolean> {

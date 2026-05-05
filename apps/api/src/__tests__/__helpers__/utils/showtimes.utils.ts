@@ -25,8 +25,7 @@ export async function createShowtimes(ctx: TestContext, overrides: Partial<Creat
 
     const createDtos = overrides.map((override) => buildCreateShowtimeDto(override))
 
-    const { success } = await showtimesService.createMany(createDtos)
-    expect(success).toBe(true)
+    await showtimesService.createMany(createDtos)
 
     const sagaIds = uniq(createDtos.map((dto) => dto.sagaId))
 

@@ -26,7 +26,7 @@ export class TicketsService {
     async createMany(createDtos: CreateTicketDto[]): Promise<CreateTicketsResult> {
         await this.repository.createMany(createDtos)
 
-        return { count: createDtos.length, success: true }
+        return { count: createDtos.length }
     }
 
     async getMany(ticketIds: string[]) {

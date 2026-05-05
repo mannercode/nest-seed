@@ -15,13 +15,13 @@ describe('TicketsService', () => {
     afterEach(() => fix.teardown())
 
     describe('createMany', () => {
-        // 티켓을 생성한다
-        it('creates tickets', async () => {
+        // 생성된 티켓 수를 반환한다
+        it('returns the created ticket count', async () => {
             const createDtos = [buildCreateTicketDto({ sagaId: oid(0x1) })]
 
-            const { success } = await fix.ticketsService.createMany(createDtos)
+            const { count } = await fix.ticketsService.createMany(createDtos)
 
-            expect(success).toBe(true)
+            expect(count).toBe(createDtos.length)
         })
     })
 
