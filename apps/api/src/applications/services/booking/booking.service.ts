@@ -48,7 +48,10 @@ export class BookingService {
     }
 
     async searchShowdates({ movieId, theaterId }: BookingSearchShowdatesDto) {
+        // endTime > now 필터로 과거 상영시간 제외. recommendation/showtime-creation
+        // 이 모두 future 필터를 거는 것과 일치. cutoff 컷은 결제 시점에서 본다.
         return this.showtimesService.searchShowdates({
+            endTimeRange: { start: new Date() },
             movieIds: [movieId],
             theaterIds: [theaterId]
         })
@@ -62,6 +65,7 @@ export class BookingService {
         endOfDay.setHours(23, 59, 59, 999)
 
         const showtimes = await this.showtimesService.search({
+            endTimeRange: { start: new Date() },
             movieIds: [movieId],
             startTimeRange: { end: endOfDay, start: startOfDay },
             theaterIds: [theaterId]
@@ -76,7 +80,10 @@ export class BookingService {
     }
 
     async searchTheaters({ latLong, movieId }: BookingSearchTheatersDto) {
-        const theaterIds = await this.showtimesService.searchTheaterIds({ movieIds: [movieId] })
+        const theaterIds = await this.showtimesService.searchTheaterIds({
+            endTimeRange: { start: new Date() },
+            movieIds: [movieId]
+        })
         const theaters = await this.theatersService.getMany(theaterIds)
         const showingTheaters = sortTheatersByDistance(theaters, latLong)
 
