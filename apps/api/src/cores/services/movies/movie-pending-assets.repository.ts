@@ -39,6 +39,9 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
         builder.addEquals('assetId', assetId)
         const query = builder.build({})
 
-        await this.model.deleteOne(query).exec()
+        // createCrudSchema 의 soft-delete static 은 Promise<{deletedCount}> 를
+        // 직접 반환하므로 `.exec()` 체인을 걸지 않는다 (기존 raw schema 의
+        // Query 객체 반환 가정과 다름).
+        await this.model.deleteOne(query)
     }
 }

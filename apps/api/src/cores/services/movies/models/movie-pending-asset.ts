@@ -1,7 +1,9 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
+import { createCrudSchema, CrudSchema } from '@mannercode/common'
+import { Prop, Schema } from '@nestjs/mongoose'
+import { MongooseConfigModule } from 'config'
 
-@Schema()
-export class MoviePendingAsset {
+@Schema(MongooseConfigModule.schemaOptions)
+export class MoviePendingAsset extends CrudSchema {
     @Prop({ required: true })
     assetId: string
 
@@ -9,4 +11,4 @@ export class MoviePendingAsset {
     movieId: string
 }
 
-export const MoviePendingAssetSchema = SchemaFactory.createForClass(MoviePendingAsset)
+export const MoviePendingAssetSchema = createCrudSchema(MoviePendingAsset)
