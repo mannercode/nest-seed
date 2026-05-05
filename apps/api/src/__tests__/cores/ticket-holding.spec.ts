@@ -185,18 +185,36 @@ describe('TicketHoldingService', () => {
                 await fix.ticketHoldingService.holdTickets(holdDto)
             })
 
-            // 보유된 티켓을 해제하면 응답을 반환하지 않는다
-            it('returns no response for releasing held tickets', async () => {
-                await expect(
-                    fix.ticketHoldingService.releaseTickets(holdDto.showtimeId, holdDto.userId)
-                ).resolves.toBeUndefined()
+            // 보유 상태가 사라진다
+            it('clears the held ticketIds', async () => {
+                await fix.ticketHoldingService.releaseTickets(holdDto.showtimeId, holdDto.userId)
+
+                const heldTicketIds = await fix.ticketHoldingService.searchHeldTicketIds(
+                    holdDto.showtimeId,
+                    holdDto.userId
+                )
+                expect(heldTicketIds).toHaveLength(0)
+            })
+
+            // 다른 고객이 같은 ticketIds 를 다시 보유할 수 있다
+            it('lets another user hold the same ticketIds', async () => {
+                await fix.ticketHoldingService.releaseTickets(holdDto.showtimeId, holdDto.userId)
+
+                const otherDto = buildHoldTicketsDto({
+                    showtimeId: holdDto.showtimeId,
+                    ticketIds: holdDto.ticketIds,
+                    userId: oid(0xff)
+                })
+                const isHeld = await fix.ticketHoldingService.holdTickets(otherDto)
+
+                expect(isHeld).toBe(true)
             })
         })
 
         // 고객이 보유한 티켓이 없을 때
         describe('when the user holds no tickets', () => {
-            // 응답을 반환하지 않는다
-            it('returns no response', async () => {
+            // 멱등하게 동작한다 (예외 없이 반환)
+            it('is idempotent', async () => {
                 await expect(
                     fix.ticketHoldingService.releaseTickets(oid(0xa0), oid(0xc1))
                 ).resolves.toBeUndefined()
