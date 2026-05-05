@@ -10,8 +10,7 @@ SETUP POST /booking/showtimes/${SHOWTIME_ID}/tickets/hold \
 	-H 'Content-Type: application/json' \
 	-d '{ "ticketIds": ["'${TICKET_ID_1}'", "'${TICKET_ID_2}'"] }'
 
-TEST "Create a purchase" \
-	201 POST /purchases \
+TEST 201 POST /purchases \
 	-H 'Content-Type: application/json' \
 	-d '{
 			"userId": "'${USER_ID}'",
@@ -24,5 +23,4 @@ TEST "Create a purchase" \
 
 PURCHASE_ID=$(echo "${BODY}" | jq -r '.id')
 
-TEST "Retrieve purchase by ID" \
-	200 GET /purchases/${PURCHASE_ID}
+TEST 200 GET /purchases/${PURCHASE_ID}

@@ -104,14 +104,33 @@ format_method() {
 	printf '%b%-6s%b' "${method_style}" "${method}" "${RESET}"
 }
 
-TEST() {
-	local description=$1
-	local expected_status=$2
-	local method=$3
-	local endpoint=$4
-	shift 4
+format_response() {
+	local status=$1
+	local body=${2:-}
 
-	LOG_LINE "# ${description}"
+	if [[ "${status}" -lt 400 ]]; then
+		printf '%s' "${status}"
+		return
+	fi
+
+	local code=''
+	if [[ -n "${body}" ]]; then
+		code=$(printf '%s' "${body}" | jq -r '.code // empty' 2>/dev/null || true)
+	fi
+
+	if [[ -n "${code}" ]]; then
+		printf '%s, %s' "${status}" "${code}"
+	else
+		printf '%s' "${status}"
+	fi
+}
+
+TEST() {
+	local expected_status=$1
+	local method=$2
+	local endpoint=$3
+	shift 3
+
 	LOG_COMMAND "${method}" "${SERVER_URL}${endpoint}" "$@"
 
 	CURL "${method}" "${SERVER_URL}${endpoint}" "$@"
@@ -120,13 +139,12 @@ TEST() {
 		FAILED_TESTS=$((FAILED_TESTS + 1))
 		LOG_LINE "RES='${STATUS}(expected:${expected_status})"
 
-		printf '%b %s %s (got %s, expected %s)\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")" "${STATUS}" "${expected_status}"
-		printf '  %s\n' "${BODY}" | head -5
+		printf '%b %s %s → got %s, expected %s\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")" "$(format_response "${STATUS}" "${BODY}")" "${expected_status}"
 	else
 		PASSED_TESTS=$((PASSED_TESTS + 1))
 		LOG_LINE "RES='${STATUS}"
 
-		printf '%b %s %s\n' "${BOLD}${GREEN}[PASS]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")"
+		printf '%b %s %s → %s\n' "${BOLD}${GREEN}[PASS]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")" "$(format_response "${STATUS}" "${BODY}")"
 	fi
 
 	LOG_JSON "${BODY}"

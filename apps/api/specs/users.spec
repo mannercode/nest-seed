@@ -3,8 +3,7 @@
 
 USER_EMAIL=$(random_email)
 
-TEST "Create a user" \
-	201 POST /users \
+TEST 201 POST /users \
 	-H 'Content-Type: application/json' \
 	-d '{
 			"name": "user name",
@@ -15,50 +14,98 @@ TEST "Create a user" \
 
 USER_ID=$(echo "${BODY}" | jq -r '.id')
 
-TEST "Login user" \
-	200 POST /users/login \
+TEST 409 POST /users \
+	-H 'Content-Type: application/json' \
+	-d '{
+			"name": "user name",
+			"birthDate": "1990-01-01T00:00:00.000Z",
+			"email": "'${USER_EMAIL}'",
+			"password": "password"
+		}'
+
+TEST 400 POST /users \
+	-H 'Content-Type: application/json' \
+	-d '{}'
+
+TEST 400 POST /users \
+	-H 'Content-Type: application/json' \
+	-d '{
+			"name": "user name",
+			"birthDate": "1990-01-01T00:00:00.000Z",
+			"email": "not-an-email",
+			"password": "password"
+		}'
+
+TEST 400 POST /users \
+	-H 'Content-Type: application/json' \
+	-d '{
+			"name": "user name",
+			"birthDate": "1990-01-01T00:00:00.000Z",
+			"email": "'$(random_email)'"
+		}'
+
+TEST 200 POST /users/login \
 	-H 'Content-Type: application/json' \
 	-d '{ "email": "'${USER_EMAIL}'", "password": "password" }'
 
 USER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
 USER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
 
-TEST "Refresh user tokens" \
-	200 POST /users/refresh \
+TEST 401 POST /users/login \
+	-H 'Content-Type: application/json' \
+	-d '{ "email": "'${USER_EMAIL}'", "password": "wrong-password" }'
+
+TEST 401 POST /users/login \
+	-H 'Content-Type: application/json' \
+	-d '{ "email": "unknown@example.com", "password": "password" }'
+
+TEST 200 POST /users/refresh \
 	-H 'Content-Type: application/json' \
 	-d '{ "refreshToken": "'${USER_REFRESH_TOKEN}'" }'
 
 USER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
 USER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
 
-TEST "Retrieve current user" \
-	200 GET /users/me \
+TEST 401 POST /users/refresh \
+	-H 'Content-Type: application/json' \
+	-d '{ "refreshToken": "invalid-token" }'
+
+TEST 200 GET /users/me \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
 
-TEST "Retrieve users page" \
-	200 GET /users \
+TEST 401 GET /users/me
+
+TEST 401 GET /users/me \
+	-H "Authorization: Bearer invalid-token"
+
+TEST 200 GET /users \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
 
-TEST "Retrieve user by ID" \
-	200 GET /users/${USER_ID} \
+TEST 401 GET /users
+
+TEST 200 GET /users/${USER_ID} \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
 
-TEST "Update user by ID" \
-	200 PATCH /users/${USER_ID} \
+TEST 404 GET /users/000000000000000000000000 \
+	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
+
+TEST 200 PATCH /users/${USER_ID} \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}" \
 	-H "Content-Type: application/json" \
 	-d '{ "name": "new name", "birthDate": "2000-01-01T00:00:00.000Z" }'
 
-TEST "Logout user (revoke refresh)" \
-	204 POST /users/logout \
+TEST 404 PATCH /users/000000000000000000000000 \
+	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}" \
+	-H "Content-Type: application/json" \
+	-d '{ "name": "new name" }'
+
+TEST 204 POST /users/logout \
 	-H 'Content-Type: application/json' \
 	-d '{ "refreshToken": "'${USER_REFRESH_TOKEN}'" }'
 
-TEST "Refresh after logout fails" \
-	401 POST /users/refresh \
+TEST 401 POST /users/refresh \
 	-H 'Content-Type: application/json' \
 	-d '{ "refreshToken": "'${USER_REFRESH_TOKEN}'" }'
 
-TEST "Delete user by ID" \
-	204 DELETE /users/${USER_ID} \
+TEST 204 DELETE /users/${USER_ID} \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
