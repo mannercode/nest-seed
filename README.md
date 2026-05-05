@@ -80,11 +80,11 @@ nest-seed/
 
 ### 2. 도메인 코드 교체
 
-`apps/api/src/`에 들어 있는 영화 예매 도메인(Users, Movies, Theaters, Showtimes, Tickets, Bookings, Purchases)을 새 도메인으로 교체한다. 단위 테스트는 `apps/api/src/__tests__/` 아래에, e2e 스펙은 `apps/api/tests/e2e/specs/*.spec` 에 있으므로 함께 수정한다.
+`apps/api/src/`에 들어 있는 영화 예매 도메인(Users, Movies, Theaters, Showtimes, Tickets, Bookings, Purchases)을 새 도메인으로 교체한다. 단위 테스트는 `apps/api/src/__tests__/` 아래에, e2e 스펙은 `apps/api/specs/*.spec` 에 있으므로 함께 수정한다.
 
 ### 3. CI와 저장소 정리
 
-- `.github/workflows/ci.yaml` 의 트리거 분기와 시크릿을 새 저장소 기준으로 맞춘다.
+- `.github/workflows/` 의 트리거 분기와 시크릿을 새 저장소 기준으로 맞춘다 (`test-atoz.yaml` 이 메인 CI, `test-stability.yaml` 이 분산 race 누적 측정, `build-deps-image.yaml` 이 GHCR deps 이미지 빌드).
 - 본 README의 `git clone <repository-url>` 자리를 실제 URL로 바꾼다.
 
 ### 4. 유지하면 좋은 것

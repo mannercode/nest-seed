@@ -33,7 +33,7 @@
 2. 상위 계층은 하위 계층을 참조할 수 있다 (Application → Core → Infrastructure).
 3. 하위 계층은 상위 계층의 존재를 알지 못한다.
 
-이 규칙은 ESLint의 `no-restricted-imports` 로 빌드 타임에 강제된다 ([eslint.config.js](../eslint.config.js)).
+이 규칙은 ESLint의 `no-restricted-imports` 로 빌드 타임에 강제된다 ([apps/api/eslint.config.js](../apps/api/eslint.config.js)).
 
 ### 1.3. Application Service는 *조합이 필요할 때만* 만든다
 
