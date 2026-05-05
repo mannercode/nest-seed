@@ -7,6 +7,12 @@ cd "$(dirname "$0")"
 on_err() {
     echo "[mem]"; head -5 /proc/meminfo 2>/dev/null || true
     echo "[disk]"; df -h / /tmp 2>/dev/null || true
+    echo "[docker ps -a]"; docker ps -a 2>/dev/null || true
+    for cid in $(docker ps -aq 2>/dev/null); do
+        cname=$(docker inspect --format '{{.Name}} ({{.State.Status}}, exit={{.State.ExitCode}})' "$cid" 2>/dev/null || echo "$cid")
+        echo "--- logs $cname (last 80) ---"
+        docker logs --tail 80 "$cid" 2>&1 || true
+    done
 }
 trap on_err ERR
 
