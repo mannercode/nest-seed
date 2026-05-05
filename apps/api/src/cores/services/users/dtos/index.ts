@@ -1,4 +1,5 @@
 export * from './create-user.dto'
+export * from './refresh-token.body.dto'
 export * from './search-users.page.dto'
 export * from './update-user.dto'
 export * from './user-auth-payload'

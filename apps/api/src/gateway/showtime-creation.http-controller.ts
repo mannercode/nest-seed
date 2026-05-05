@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common'
 import {
     BulkCreateShowtimesDto,
+    SearchShowtimesByTheatersBodyDto,
     ShowtimeCreationEvents,
     ShowtimeCreationService
 } from 'applications'
@@ -42,8 +43,8 @@ export class ShowtimeCreationHttpController {
 
     @HttpCode(HttpStatus.OK)
     @Post('showtimes/search')
-    async searchShowtimesByTheaterIds(@Body('theaterIds') theaterIds: string[]) {
-        return this.showtimeCreationService.searchShowtimes(theaterIds)
+    async searchShowtimesByTheaterIds(@Body() body: SearchShowtimesByTheatersBodyDto) {
+        return this.showtimeCreationService.searchShowtimes(body.theaterIds)
     }
 
     @Get('theaters')

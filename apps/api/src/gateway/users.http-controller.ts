@@ -13,7 +13,13 @@ import {
     Req,
     UseGuards
 } from '@nestjs/common'
-import { CreateUserDto, UsersService, SearchUsersPageDto, UpdateUserDto } from 'cores'
+import {
+    CreateUserDto,
+    RefreshTokenBodyDto,
+    SearchUsersPageDto,
+    UpdateUserDto,
+    UsersService
+} from 'cores'
 import { UserJwtAuthGuard, UserLocalAuthGuard, Public } from './guards'
 import { UserAuthRequest } from './types'
 
@@ -46,15 +52,15 @@ export class UsersHttpController {
     @HttpCode(HttpStatus.OK)
     @Post('refresh')
     @Public()
-    async refreshToken(@Body('refreshToken') refreshToken: string) {
-        return this.usersService.refreshAuthTokens(refreshToken)
+    async refreshToken(@Body() body: RefreshTokenBodyDto) {
+        return this.usersService.refreshAuthTokens(body.refreshToken)
     }
 
     @HttpCode(HttpStatus.NO_CONTENT)
     @Post('logout')
     @Public()
-    async logout(@Body('refreshToken') refreshToken: string) {
-        await this.usersService.revokeRefreshToken(refreshToken)
+    async logout(@Body() body: RefreshTokenBodyDto) {
+        await this.usersService.revokeRefreshToken(body.refreshToken)
     }
 
     @HttpCode(HttpStatus.NO_CONTENT)
