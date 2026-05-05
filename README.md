@@ -59,6 +59,7 @@ nest-seed/
 │   │   ├── cores/               도메인 모델, 리포지토리
 │   │   ├── infrastructures/     외부 서비스 (결제, 파일)
 │   │   └── config/              앱 설정, Rules, 파이프
+│   ├── specs/                   e2e 셸 스펙, API 동작 문서
 │   ├── tests/                   분산 race 시나리오, perf 하네스
 │   └── deploy/                  Docker Compose, nginx
 │
