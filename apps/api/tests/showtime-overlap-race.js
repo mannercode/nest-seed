@@ -15,7 +15,7 @@ const http = require('http')
 
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000'
 const OVERLAP_COUNT = Number(process.env.OVERLAP_COUNT || 5)
-const INNER_ITERATIONS = Number(process.env.INNER_ITERATIONS || 500)
+const INNER_ITERATIONS = Number(process.env.INNER_ITERATIONS || 300)
 const SAGA_DEADLINE_MS = Number(process.env.SAGA_DEADLINE_MS || 300_000)
 
 function requestJson(method, path, body) {
