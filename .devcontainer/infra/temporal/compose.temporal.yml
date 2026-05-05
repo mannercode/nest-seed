@@ -59,7 +59,12 @@ services:
             test: ['CMD-SHELL', 'nc -z localhost 7233']
             interval: 5s
             start_period: 30s
-        deploy: { resources: { limits: { memory: 1g } } }
+        # Bumped from 1g — under sustained test load `docker stats` showed
+        # the temporal server pinned at 99.99% of a 1g cap, which puts the
+        # Go runtime into thrashing GC and timed out persistence calls
+        # (the "context deadline exceeded" failures we kept hitting on
+        # transfer-queue and timer-queue tasks).
+        deploy: { resources: { limits: { memory: 3g } } }
         shm_size: '16m'
 
     # auto-setup 이 자동으로 만들던 default namespace — server only 는 안
