@@ -47,9 +47,7 @@ while :; do
         echo "Namespace '$NAMESPACE' already exists"
         break
     fi
-    # 1h retention so completed workflow histories get GC'd quickly under
-    # sustained test load. minRetentionDays=0 dynamic config required.
-    if temporal operator namespace create -n "$NAMESPACE" --retention 1h --address "$TEMPORAL_ADDRESS" >/dev/null 2>&1; then
+    if temporal operator namespace create -n "$NAMESPACE" --address "$TEMPORAL_ADDRESS" >/dev/null 2>&1; then
         echo "Namespace '$NAMESPACE' created"
         break
     fi
