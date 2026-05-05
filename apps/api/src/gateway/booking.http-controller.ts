@@ -10,7 +10,7 @@ import {
     Req,
     UseGuards
 } from '@nestjs/common'
-import { BookingService } from 'applications'
+import { BookingService, HoldTicketsBodyDto } from 'applications'
 import { UserJwtAuthGuard } from './guards'
 import { UserAuthRequest } from './types'
 
@@ -28,7 +28,7 @@ export class BookingHttpController {
     @UseGuards(UserJwtAuthGuard)
     async holdTickets(
         @Param('showtimeId') showtimeId: string,
-        @Body() body: { ticketIds: string[] },
+        @Body() body: HoldTicketsBodyDto,
         @Req() req: UserAuthRequest
     ) {
         const userId = req.user.sub
