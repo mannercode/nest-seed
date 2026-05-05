@@ -8,7 +8,7 @@ include:
 services:
     infra-setup:
         extends: { file: ./compose.common.yml, service: common-options }
-        image: $DOCKER_IMAGE
+        image: docker:cli
         container_name: infra-setup
         depends_on:
             mongo-key-generator: { condition: service_completed_successfully }
