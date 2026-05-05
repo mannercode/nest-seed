@@ -101,9 +101,8 @@ function buildRequestFactory(scenario) {
         })
     }
     if (scenario === 'theater-read-name-filter') {
-        // Prefix 매치가 되는 패턴 (cycle-10 prefix-mode + cycle-12 compound
-        // index). 현실적 검색 시나리오 ("사용자가 타이핑해서 좁혀 나감")
-        // 에 가까운 좁은 prefix 사용.
+        // 좁은 substring 으로 매치 0 에 가까운 검색 (cycle-31 substring 회귀
+        // 후 prefix 인덱스 미활용 — 현재는 collscan 베이스라인 측정용).
         return () => ({
             method: 'GET',
             path: '/theaters?page=1&size=50&name=perf-theater-17769404',
@@ -131,8 +130,8 @@ function buildRequestFactory(scenario) {
         })
     }
     if (scenario === 'movie-read-title-filter') {
-        // movies 도 cycle-12 와 같은 prefix + case-sensitive 패턴 (cycle-15).
-        // 좁은 prefix → 매치 0 에 가까워 countDocuments 가 IXSCAN 으로 빠짐.
+        // 좁은 substring 으로 매치 0 에 가까운 검색 (cycle-31 substring 회귀
+        // 후 prefix 인덱스 미활용 — 현재는 collscan 베이스라인 측정용).
         return () => ({
             method: 'GET',
             path: '/movies?page=1&size=50&title=perf-movie-17769404',

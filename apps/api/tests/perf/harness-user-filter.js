@@ -1,11 +1,10 @@
-// User filter 전용 perf 하네스 (cycle-15b 검증용).
+// User filter 전용 perf 하네스.
 //
 // GET /users 가 JWT 보호이므로 worker 마다 자체 계정으로 register + login
-// 하고 access token 을 받아 `?name=<prefix>` 필터 쿼리를 루프 실행.
+// 하고 access token 을 받아 `?name=<filter>` 쿼리를 루프 실행.
 //
-// 비교 기준: cycle-09 theater 필터 baseline 23 RPS → cycle-12 compound index
-// 3776 RPS (150x). users 는 같은 CrudRepository + compound index 구조
-// (cycle-15b) 라 유사한 수준 기대.
+// cycle-31 substring 회귀 후엔 인덱스 미활용 (collscan 베이스라인). 좁은
+// substring 으로 매치 0 에 가까운 케이스를 측정해 필터 비용을 단독 노출.
 //
 // Env: SERVER_URL, CONCURRENCY, DURATION_MS, WARMUP_MS, LABEL, FILTER_PREFIX
 
@@ -19,8 +18,7 @@ const CONCURRENCY = Number(process.env.CONCURRENCY || 100)
 const DURATION_MS = Number(process.env.DURATION_MS || 30_000)
 const WARMUP_MS = Number(process.env.WARMUP_MS || 3_000)
 const LABEL = process.env.LABEL || ''
-// prefix-mode + case-sensitive 적용 상태에선 substring 매치 불가. 실제 검색
-// UX 시뮬 (앞 글자부터 타이핑) — 좁은 prefix 로 match 수 적게 유지.
+// 좁은 substring 으로 매치 수 적게 유지 (베이스라인 측정 일관성).
 const FILTER_PREFIX = process.env.FILTER_PREFIX || 'perf-user-17769404'
 
 const url = new URL(SERVER_URL)
