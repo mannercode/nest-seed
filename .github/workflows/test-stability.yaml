@@ -59,6 +59,7 @@ jobs:
                     - ticket-holding-race
                     - showtime-overlap-race
                     - purchase-double-spend
+                    - replica-chaos
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
         steps:
