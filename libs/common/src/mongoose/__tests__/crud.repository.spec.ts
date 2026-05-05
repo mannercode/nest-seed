@@ -56,7 +56,10 @@ describe('CrudRepository', () => {
                 return doc
             })
 
-            await expect(fix.repository.saveMany(docs)).resolves.toBeUndefined()
+            await fix.repository.saveMany(docs)
+
+            const fetched = await fix.repository.findByIds(docs.map((d) => d._id.toString()))
+            expect(fetched).toHaveLength(docs.length)
         })
 
         // 필수 필드가 없으면 예외를 던진다
