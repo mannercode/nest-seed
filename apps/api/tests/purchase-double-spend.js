@@ -220,7 +220,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
                 body: { ticketIds: groups[g] },
                 headers: { authorization: `Bearer ${cust.accessToken}` }
             })
-            if (hold.status !== 200) {
+            if (hold.status !== 204) {
                 throw new Error(`iter ${iteration} group=${g}: hold status=${hold.status}`)
             }
         })
@@ -243,11 +243,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
 
     const results = await Promise.all(attempts)
 
-    const byGroup = Array.from({ length: USER_GROUPS }, () => ({
-        ok: 0,
-        rejected: 0,
-        other: []
-    }))
+    const byGroup = Array.from({ length: USER_GROUPS }, () => ({ ok: 0, rejected: 0, other: [] }))
     const replicaSet = new Set()
     for (const r of results) {
         const slot = byGroup[r.group]

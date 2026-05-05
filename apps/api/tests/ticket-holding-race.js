@@ -5,13 +5,13 @@
 // for TICKET_GROUPS × 2 tickets, splits the tickets into TICKET_GROUPS
 // disjoint pairs, and races USERS_PER_GROUP users per pair.
 // Every user in a group fires a hold on the same pair at the same
-// time as every other group. Per group: exactly 1 × 200, rest × 409.
+// time as every other group. Per group: exactly 1 × 204, rest × 409.
 //
 // Users are created once and reused across inner iters; per-iter
 // only provisions fresh tickets (held tickets can't be re-raced under
 // the same lock key).
 //
-// Fails if: any group's 200 count != 1, any 5xx, or responses came from
+// Fails if: any group's 204 count != 1, any 5xx, or responses came from
 // fewer than 2 replicas.
 
 const http = require('http')
@@ -240,7 +240,7 @@ async function runInner(iteration, movieId, theaterId, tokens, startTimeOffsetMs
     const replicaSet = new Set()
     for (const r of results) {
         const g = byGroup[r.group]
-        if (r.status === 200) g.ok++
+        if (r.status === 204) g.ok++
         else if (r.status === 409) g.conflict++
         else g.other.push(r)
         if (r.replicaId) replicaSet.add(r.replicaId)
@@ -249,8 +249,8 @@ async function runInner(iteration, movieId, theaterId, tokens, startTimeOffsetMs
     for (let g = 0; g < TICKET_GROUPS; g++) {
         const slot = byGroup[g]
         if (slot.ok !== 1) {
-            console.error(`[hold] iter=${iteration} group=${g}: expected 1 × 200, got ${slot.ok}`)
-            throw new Error(`iter ${iteration} group ${g}: ${slot.ok} × 200`)
+            console.error(`[hold] iter=${iteration} group=${g}: expected 1 × 204, got ${slot.ok}`)
+            throw new Error(`iter ${iteration} group ${g}: ${slot.ok} × 204`)
         }
         if (slot.other.length > 0) {
             for (const r of slot.other.slice(0, 5)) {
