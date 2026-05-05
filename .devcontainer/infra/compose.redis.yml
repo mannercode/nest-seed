@@ -10,7 +10,8 @@ x-redis-base: &redis-base
           redis-server --port 6379 \
           --cluster-enabled yes \
           --cluster-config-file nodes.conf \
-          --cluster-announce-ip $$ANNOUNCE_IP \
+          --cluster-announce-hostname $$ANNOUNCE_IP \
+          --cluster-preferred-endpoint-type hostname \
           --cluster-announce-port $$ANNOUNCE_PORT \
           --cluster-announce-bus-port $$ANNOUNCE_BUS_PORT \
           --cluster-require-full-coverage no \

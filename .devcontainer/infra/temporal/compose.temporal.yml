@@ -1,7 +1,7 @@
 services:
     temporal-postgresql:
         extends: { file: ../compose.common.yml, service: common-options }
-        image: $POSTGRES_IMAGE
+        image: $TEMPORAL_POSTGRES_IMAGE
         container_name: temporal-postgresql
         environment:
             POSTGRES_USER: temporal
