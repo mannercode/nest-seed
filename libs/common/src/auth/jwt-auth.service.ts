@@ -217,8 +217,32 @@ export class JwtAuthService {
         }
 
         // Consume this token before issuing the next one so the same window
-        // can't accept the same refresh twice.
-        await this.consumeToken(tokenId, familyId)
+        // can't accept the same refresh twice. Atomic DEL count tells us
+        // whether we won the race against concurrent refreshes of the same
+        // tokenId — a loser is indistinguishable from a replayed
+        // already-rotated token, so reuse detection burns the family.
+        const consumed = await this.consumeToken(tokenId, familyId)
+        if (!consumed) {
+            const loserUserId = this.getUserId(payload)
+            await this.revokeFamily(familyId, loserUserId)
+            await this.emit({
+                type: 'token.reuse_detected',
+                userId: loserUserId,
+                familyId,
+                presentedTokenId: tokenId,
+                at: new Date(),
+                context
+            })
+            await this.emit({
+                type: 'family.revoked',
+                userId: loserUserId,
+                familyId,
+                reason: 'reuse',
+                at: new Date(),
+                context
+            })
+            throw new UnauthorizedException(JwtAuthErrors.RefreshTokenReuseDetected())
+        }
 
         const carryPayload = omit(payload, ['refreshTokenId', 'familyId'])
         const userId = this.getUserId(carryPayload)
@@ -406,12 +430,16 @@ export class JwtAuthService {
         }
     }
 
-    private async consumeToken(tokenId: string, familyId: string) {
-        await this.redis
+    private async consumeToken(tokenId: string, familyId: string): Promise<boolean> {
+        const result = await this.redis
             .multi()
             .del(this.tokenKey(tokenId, familyId))
             .srem(this.familyKey(familyId), tokenId)
             .exec()
+        if (!result) return false
+        const [err, count] = result[0]
+        if (err) return false
+        return (count as number) > 0
     }
 
     private async revokeFamily(familyId: string, userId: string | undefined) {
