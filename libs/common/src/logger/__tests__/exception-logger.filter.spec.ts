@@ -49,4 +49,26 @@ describe('HttpExceptionLoggerFilter', () => {
             })
         })
     })
+
+    // success interceptor 없이 filter 단독으로 등록된 경우 (request._startTimestamp 미설정)
+    describe('without HttpSuccessLoggerInterceptor', () => {
+        let solo: ExceptionLoggerFilterFixture
+
+        beforeEach(async () => {
+            const { createExceptionLoggerFilterFixture } =
+                await import('./exception-logger.filter.fixture')
+            solo = await createExceptionLoggerFilterFixture({ withInterceptor: false })
+        })
+        afterEach(() => solo.teardown())
+
+        // _startTimestamp 가 없어도 duration 을 산출해 로그를 남긴다
+        it('still logs with duration when _startTimestamp is absent', async () => {
+            await solo.httpClient.get('/exception').notFound()
+
+            expect(solo.spyWarn).toHaveBeenCalledWith(
+                'fail',
+                expect.objectContaining({ duration: expect.stringMatching(/^\d+ms$/) })
+            )
+        })
+    })
 })

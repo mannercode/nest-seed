@@ -24,13 +24,18 @@ class TestController {
     }
 }
 
-export async function createExceptionLoggerFilterFixture() {
+export async function createExceptionLoggerFilterFixture(
+    options: { withInterceptor?: boolean } = {}
+) {
+    const { withInterceptor = true } = options
+    const providers: any[] = [{ provide: APP_FILTER, useClass: HttpExceptionLoggerFilter }]
+    if (withInterceptor) {
+        providers.push({ provide: APP_INTERCEPTOR, useClass: HttpSuccessLoggerInterceptor })
+    }
+
     const { httpClient, ...ctx } = await createHttpTestContext({
         controllers: [TestController],
-        providers: [
-            { provide: APP_FILTER, useClass: HttpExceptionLoggerFilter },
-            { provide: APP_INTERCEPTOR, useClass: HttpSuccessLoggerInterceptor }
-        ]
+        providers
     })
 
     const { Logger } = await import('@nestjs/common')
