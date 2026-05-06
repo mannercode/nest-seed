@@ -8,7 +8,7 @@ import type {
 import { BadRequestException, NotFoundException, type OnModuleInit } from '@nestjs/common'
 import type { PaginationDto, PaginationResult } from '../pagination'
 import { defaultTo, differenceWith, uniq } from '../utils'
-import { Require, Verify } from '../validator'
+import { Assume, Require } from '../validator'
 import { MongooseErrors } from './errors'
 import { objectId, objectIds } from './mongoose.util'
 
@@ -165,7 +165,7 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
     async getByIds(ids: string[], session: SessionArg = undefined) {
         const uniqueIds = uniq(ids)
 
-        Verify.equalLength(uniqueIds, ids, `Duplicate IDs detected and removed:${ids}`)
+        Assume.equalLength(uniqueIds, ids, `Duplicate IDs detected and removed:${ids}`)
 
         const docs = await this.findByIds(uniqueIds, session)
 

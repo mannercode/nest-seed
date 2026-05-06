@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common'
-import { ensure, Require, Verify } from '../validator'
+import { Assume, ensure, Require } from '../validator'
 
 describe('Require', () => {
     describe('defined', () => {
@@ -83,7 +83,7 @@ describe('Require', () => {
     })
 })
 
-describe('Verify', () => {
+describe('Assume', () => {
     describe('equalLength', () => {
         // 두 배열의 길이가 다를 때
         describe('when the arrays have different lengths', () => {
@@ -91,7 +91,7 @@ describe('Verify', () => {
             it('logs a warning', () => {
                 const spy = jest.spyOn(Logger, 'warn').mockImplementation()
 
-                Verify.equalLength([1], [1, 2], 'mismatch')
+                Assume.equalLength([1], [1, 2], 'mismatch')
 
                 expect(spy).toHaveBeenCalledWith('mismatch first: 1, second: 2')
             })
@@ -103,7 +103,7 @@ describe('Verify', () => {
             it('logs a warning', () => {
                 const spy = jest.spyOn(Logger, 'warn').mockImplementation()
 
-                Verify.equalLength(undefined, [1], 'mismatch')
+                Assume.equalLength(undefined, [1], 'mismatch')
 
                 expect(spy).toHaveBeenCalledWith('mismatch first: undefined, second: 1')
             })
@@ -115,7 +115,7 @@ describe('Verify', () => {
             it('logs a warning', () => {
                 const spy = jest.spyOn(Logger, 'warn').mockImplementation()
 
-                Verify.equalLength([1], undefined, 'mismatch')
+                Assume.equalLength([1], undefined, 'mismatch')
 
                 expect(spy).toHaveBeenCalledWith('mismatch first: 1, second: undefined')
             })
@@ -127,7 +127,7 @@ describe('Verify', () => {
             it('does not log', () => {
                 const spy = jest.spyOn(Logger, 'warn').mockImplementation()
 
-                Verify.equalLength([1], [2], 'mismatch')
+                Assume.equalLength([1], [2], 'mismatch')
 
                 expect(spy).not.toHaveBeenCalled()
             })

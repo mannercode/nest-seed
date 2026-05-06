@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common'
 import { Types, type QueryFilter } from 'mongoose'
 import { escapeRegExp, uniq } from '../utils'
-import { Verify } from '../validator'
+import { Assume } from '../validator'
 import { MongooseErrors } from './errors'
 
 export const newObjectIdString = () => new Types.ObjectId().toString()
@@ -41,7 +41,7 @@ export class QueryBuilder<T> {
         if (ids && ids.length > 0) {
             const uniqueIds = uniq(ids)
 
-            Verify.equalLength(
+            Assume.equalLength(
                 uniqueIds,
                 ids,
                 `Duplicate ${String(field)} detected and removed: ${ids}`
