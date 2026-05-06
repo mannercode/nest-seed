@@ -3,7 +3,7 @@ import {
     assignIfDefined,
     CrudRepository,
     QueryBuilder,
-    leanToPublic
+    leanOneToPublic
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
@@ -50,7 +50,7 @@ export class UsersRepository extends CrudRepository<User> {
             .lean()
             .exec()
 
-        return user ? (leanToPublic(user as any) as typeof user) : null
+        return leanOneToPublic<User>(user)
     }
 
     async searchPage(searchDto: SearchUsersPageDto) {

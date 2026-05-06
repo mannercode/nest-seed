@@ -1,4 +1,4 @@
-import { CrudRepository, leanToPublic } from '@mannercode/common'
+import { CrudRepository, leanArrayToPublic } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { MongooseConfigModule } from 'config'
@@ -42,6 +42,6 @@ export class AssetsRepository extends CrudRepository<Asset> {
         const docs = await this.model
             .find({ createdAt: { $lte: expiresBefore }, ownerEntityId: null, ownerService: null })
             .lean()
-        return (docs as any[]).map(leanToPublic) as Asset[]
+        return leanArrayToPublic<Asset>(docs)
     }
 }

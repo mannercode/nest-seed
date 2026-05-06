@@ -3,7 +3,7 @@ import {
     CrudRepository,
     objectIds,
     QueryBuilder,
-    leanToPublic
+    leanArrayToPublic
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
@@ -76,7 +76,7 @@ export class TicketsRepository extends CrudRepository<Ticket> {
 
         // cycle-19: lean-virtuals 플러그인 제거 + leanToPublic (cycle-06 패턴).
         const tickets = await this.model.find(query).sort({ sagaId: 1 }).lean().exec()
-        return (tickets as any[]).map(leanToPublic) as typeof tickets
+        return leanArrayToPublic<Ticket>(tickets)
     }
 
     async updateStatusMany(ticketIds: string[], status: TicketStatus) {

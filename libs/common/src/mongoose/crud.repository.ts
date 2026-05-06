@@ -38,6 +38,17 @@ export function leanToPublic<T extends { _id?: unknown }>(doc: T): T {
     return doc
 }
 
+// Lean 결과를 public 타입으로 변환하는 두 헬퍼. mongoose lean 타입(LeanDocument<T>)이
+// `T extends { _id?: unknown }` 제약과 직접 호환되지 않아 호출자마다 동일한 cast가
+// 반복되던 패턴을 한 곳으로 응축. 동작은 leanToPublic 그대로.
+export function leanArrayToPublic<T>(docs: unknown): T[] {
+    return (docs as any[]).map(leanToPublic) as T[]
+}
+
+export function leanOneToPublic<T>(doc: unknown): null | T {
+    return doc ? (leanToPublic(doc as any) as T) : null
+}
+
 /**
  * CRUD category 의 repository base.
  *
@@ -81,7 +92,7 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
             .findById(objectId(id), null, { session })
             .lean(defaultLeanOptions)
 
-        return doc ? (leanToPublic(doc as any) as Doc) : null
+        return leanOneToPublic<Doc>(doc)
     }
 
     async findByIds(ids: string[], session: SessionArg = undefined): Promise<Doc[]> {
@@ -89,7 +100,7 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
             .find({ _id: { $in: objectIds(ids) } } as QueryFilter<Doc>, null, { session })
             .lean(defaultLeanOptions)
 
-        return (docs as any[]).map(leanToPublic) as Doc[]
+        return leanArrayToPublic<Doc>(docs)
     }
 
     async findWithPagination(args: {
@@ -148,7 +159,7 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
                 : this.model.countDocuments(rawFilter).exec()
         ])
 
-        const items = (rawItems as any[]).map(leanToPublic)
+        const items = leanArrayToPublic<Doc>(rawItems)
         return { items, page, size, total } as PaginationResult<Doc>
     }
 
