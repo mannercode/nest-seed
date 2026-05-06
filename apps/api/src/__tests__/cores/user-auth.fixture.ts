@@ -1,10 +1,5 @@
 import { UsersModule } from 'cores'
-import {
-    UserJwtAuthGuard,
-    UserLocalAuthGuard,
-    UserOptionalJwtAuthGuard,
-    UsersHttpController
-} from 'gateway'
+import { UserJwtAuthGuard, UserLocalAuthGuard, UsersHttpController } from 'gateway'
 import { type AppTestContext, createAppTestContext } from '../__helpers__'
 
 export type UserAuthFixture = AppTestContext & {}
@@ -13,7 +8,7 @@ export async function createUserAuthFixture() {
     const ctx = await createAppTestContext({
         controllers: [UsersHttpController],
         imports: [UsersModule],
-        providers: [UserJwtAuthGuard, UserLocalAuthGuard, UserOptionalJwtAuthGuard]
+        providers: [UserJwtAuthGuard, UserLocalAuthGuard]
     })
 
     return { ...ctx }
