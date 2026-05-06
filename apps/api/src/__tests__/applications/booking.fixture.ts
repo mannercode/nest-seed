@@ -1,9 +1,8 @@
 import type { TestContext } from '@mannercode/testing'
-import { BookingModule, PurchaseModule } from 'applications'
+import { BookingModule } from 'applications'
 import {
     UsersModule,
     MoviesModule,
-    PurchaseRecordsModule,
     Seatmap,
     ShowtimesModule,
     TheatersModule,
@@ -12,7 +11,7 @@ import {
     type TheaterLocation
 } from 'cores'
 import { BookingHttpController, UserJwtAuthGuard } from 'gateway'
-import { AssetsModule, PaymentsModule } from 'infrastructures'
+import { AssetsModule } from 'infrastructures'
 import {
     createAndLoginUser,
     createAppTestContext,
@@ -69,12 +68,9 @@ export async function createBookingFixture(): Promise<BookingFixture> {
             AssetsModule,
             TheatersModule,
             TicketsModule,
-            PurchaseRecordsModule,
             UsersModule,
             ShowtimesModule,
             TicketHoldingModule,
-            PaymentsModule,
-            PurchaseModule,
             BookingModule
         ],
         providers: [UserJwtAuthGuard]
