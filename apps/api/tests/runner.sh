@@ -33,23 +33,8 @@ trap cleanup EXIT
 
 echo "Building and deploying 4-replica api stack..."
 REPO_ROOT="$(cd "${MONO_DIR}/../.." && pwd)"
-
-# lockfile + deps.Dockerfile 합본 hash 가 deps 이미지 태그. deploy/test.sh
-# 와 동일 식이어야 함 — 한쪽만 바꾸면 ghcr tag mismatch.
-export DEPS_TAG=$(cat "${REPO_ROOT}/package-lock.json" "${REPO_ROOT}/apps/api/deps.Dockerfile" | sha256sum | cut -c1-16)
-
-# 로컬 실행 fallback: ghcr 미인증/태그 부재 시 deps.Dockerfile 로 직접 빌드해
-# 같은 tag 로 로컬 캐시에 둔다. compose build 의 FROM 이 캐시 hit.
-DEPS_IMAGE="ghcr.io/mannercode/nest-seed/api-deps:${DEPS_TAG}"
-if ! docker image inspect "$DEPS_IMAGE" >/dev/null 2>&1; then
-    if ! docker pull "$DEPS_IMAGE" 2>/dev/null; then
-        echo "Deps image not in ghcr (or no auth); building locally."
-        docker build \
-            -f "${REPO_ROOT}/apps/api/deps.Dockerfile" \
-            -t "$DEPS_IMAGE" \
-            "${REPO_ROOT}"
-    fi
-fi
+# shellcheck source=../scripts/ensure-deps-image.sh
+. "${MONO_DIR}/scripts/ensure-deps-image.sh"
 
 REPLICAS="${REPLICAS:-4}" docker compose --env-file "$ENV_FILE" up -d --build
 docker wait api-setup && docker rm api-setup
