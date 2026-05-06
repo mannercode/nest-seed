@@ -10,15 +10,17 @@
     "workspaces": [
         "libs/common",
         "libs/testing",
+        "tools/dev-tools",
+        "tools/jest-helpers",
         "apps/*"
     ],
     "scripts": {
-        "build": "npm run build --workspaces",
-        "clean": "npm run clean --workspaces && git clean -fdX",
-        "lint": "npm run lint --workspaces",
-        "format": "npm run format --workspaces",
-        "test": "npm test --workspaces",
-        "atoz": "npm run clean && npm ci && npm run atoz --workspaces",
+        "build": "npm run build --workspaces --if-present",
+        "clean": "npm run clean --workspaces --if-present && git clean -fdX",
+        "lint": "npm run lint --workspaces --if-present",
+        "format": "npm run format --workspaces --if-present",
+        "test": "npm test --workspaces --if-present",
+        "atoz": "npm run clean && npm ci && npm run atoz --workspaces --if-present",
         "dev": "concurrently 'npm:dev:*'",
         "dev:common": "npm run dev -w libs/common",
         "dev:testing": "npm run dev -w libs/testing",

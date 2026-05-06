@@ -1,15 +1,12 @@
+const { S3Client } = require('@aws-sdk/client-s3')
 const {
-    DeleteBucketCommand,
-    DeleteObjectsCommand,
-    ListBucketsCommand,
-    ListObjectsV2Command,
-    S3Client
-} = require('@aws-sdk/client-s3')
+    WORKER_BUCKET_PATTERN,
+    WORKER_DB_PATTERN,
+    dropMatchingBuckets,
+    dropMatchingDatabases
+} = require('@mannercode/jest-helpers')
 const { MongoClient } = require('mongodb')
 const Redis = require('ioredis')
-
-const DB_PATTERN = /^mongo-w\d+$/
-const BUCKET_PATTERN = /^s3bucket-w\d+$/
 
 module.exports = async function globalTeardown() {
     await Promise.all([cleanupMongo(), cleanupS3(), cleanupRedis(), cleanupTemporal()])
@@ -28,9 +25,7 @@ async function cleanupMongo() {
     await client.connect()
 
     try {
-        const { databases } = await client.db().admin().listDatabases()
-        const targets = databases.filter((d) => DB_PATTERN.test(d.name))
-        await Promise.all(targets.map((d) => client.db(d.name).dropDatabase()))
+        await dropMatchingDatabases(client, WORKER_DB_PATTERN)
     } finally {
         await client.close()
     }
@@ -48,37 +43,10 @@ async function cleanupS3() {
     })
 
     try {
-        const { Buckets } = await client.send(new ListBucketsCommand({}))
-        const targets = (Buckets ?? []).filter((b) => BUCKET_PATTERN.test(b.Name))
-
-        for (const bucket of targets) {
-            await emptyBucket(client, bucket.Name)
-            await client.send(new DeleteBucketCommand({ Bucket: bucket.Name }))
-        }
+        await dropMatchingBuckets(client, WORKER_BUCKET_PATTERN)
     } finally {
         client.destroy()
     }
-}
-
-async function emptyBucket(client, bucket) {
-    let continuationToken
-
-    do {
-        const listed = await client.send(
-            new ListObjectsV2Command({ Bucket: bucket, ContinuationToken: continuationToken })
-        )
-
-        if (listed.Contents?.length) {
-            await client.send(
-                new DeleteObjectsCommand({
-                    Bucket: bucket,
-                    Delete: { Objects: listed.Contents.map((o) => ({ Key: o.Key })) }
-                })
-            )
-        }
-
-        continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined
-    } while (continuationToken)
 }
 
 async function cleanupRedis() {

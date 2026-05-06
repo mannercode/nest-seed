@@ -1,11 +1,7 @@
 require('reflect-metadata')
-const {
-    CreateBucketCommand,
-    DeleteObjectsCommand,
-    ListObjectsV2Command,
-    S3Client
-} = require('@aws-sdk/client-s3')
+const { CreateBucketCommand, S3Client } = require('@aws-sdk/client-s3')
 const { MongoClient } = require('mongodb')
+const { cleanCollections, emptyBucket, generateTestId } = require('@mannercode/jest-helpers')
 
 let mongoClient
 let s3Client
@@ -33,7 +29,10 @@ beforeAll(async () => {
     })
 
     await ensureBucket(process.env.TESTLIB_S3_BUCKET)
-    await Promise.all([cleanDatabase(), emptyBucket()])
+    await Promise.all([
+        cleanCollections(mongoClient, process.env.TESTLIB_MONGO_DATABASE),
+        emptyBucket(s3Client, process.env.TESTLIB_S3_BUCKET)
+    ])
 })
 
 afterAll(async () => {
@@ -46,36 +45,11 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-    await Promise.all([cleanDatabase(), emptyBucket()])
+    await Promise.all([
+        cleanCollections(mongoClient, process.env.TESTLIB_MONGO_DATABASE),
+        emptyBucket(s3Client, process.env.TESTLIB_S3_BUCKET)
+    ])
 })
-
-async function cleanDatabase() {
-    const db = mongoClient.db(process.env.TESTLIB_MONGO_DATABASE)
-    const collections = await db.collections()
-    await Promise.all(collections.map((c) => c.deleteMany({})))
-}
-
-async function emptyBucket() {
-    const bucket = process.env.TESTLIB_S3_BUCKET
-    let continuationToken
-
-    do {
-        const listed = await s3Client.send(
-            new ListObjectsV2Command({ Bucket: bucket, ContinuationToken: continuationToken })
-        )
-
-        if (listed.Contents?.length) {
-            await s3Client.send(
-                new DeleteObjectsCommand({
-                    Bucket: bucket,
-                    Delete: { Objects: listed.Contents.map((o) => ({ Key: o.Key })) }
-                })
-            )
-        }
-
-        continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined
-    } while (continuationToken)
-}
 
 async function ensureBucket(bucket) {
     try {
@@ -85,11 +59,4 @@ async function ensureBucket(bucket) {
             throw err
         }
     }
-}
-
-function generateTestId() {
-    const chars = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
-    return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join(
-        ''
-    )
 }

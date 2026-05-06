@@ -1,10 +1,6 @@
 require('reflect-metadata')
-const {
-    CreateBucketCommand,
-    DeleteObjectsCommand,
-    ListObjectsV2Command,
-    S3Client
-} = require('@aws-sdk/client-s3')
+const { CreateBucketCommand, S3Client } = require('@aws-sdk/client-s3')
+const { cleanCollections, emptyBucket, generateTestId } = require('@mannercode/jest-helpers')
 const { MongoClient } = require('mongodb')
 
 process.loadEnvFile('.env')
@@ -21,7 +17,7 @@ beforeAll(async () => {
     s3Client = createS3Client()
 
     await ensureBucket(process.env.S3_BUCKET)
-    await cleanDatabase()
+    await cleanCollections(mongoClient, process.env.MONGO_DATABASE)
     await emptyBucket(s3Client, process.env.S3_BUCKET)
 })
 
@@ -36,14 +32,11 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-    await Promise.all([cleanDatabase(), emptyBucket(s3Client, process.env.S3_BUCKET)])
+    await Promise.all([
+        cleanCollections(mongoClient, process.env.MONGO_DATABASE),
+        emptyBucket(s3Client, process.env.S3_BUCKET)
+    ])
 })
-
-async function cleanDatabase() {
-    const db = mongoClient.db(process.env.MONGO_DATABASE)
-    const collections = await db.collections()
-    await Promise.all(collections.map((c) => c.deleteMany({})))
-}
 
 async function ensureBucket(bucket) {
     try {
@@ -53,13 +46,6 @@ async function ensureBucket(bucket) {
             throw err
         }
     }
-}
-
-function generateTestId() {
-    const chars = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
-    return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join(
-        ''
-    )
 }
 
 async function connectMongo() {
@@ -87,25 +73,4 @@ function createS3Client() {
         },
         forcePathStyle: process.env.S3_FORCE_PATH_STYLE.toLowerCase() === 'true'
     })
-}
-
-async function emptyBucket(client, bucket) {
-    let continuationToken
-
-    do {
-        const listed = await client.send(
-            new ListObjectsV2Command({ Bucket: bucket, ContinuationToken: continuationToken })
-        )
-
-        if (listed.Contents?.length) {
-            await client.send(
-                new DeleteObjectsCommand({
-                    Bucket: bucket,
-                    Delete: { Objects: listed.Contents.map((o) => ({ Key: o.Key })) }
-                })
-            )
-        }
-
-        continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined
-    } while (continuationToken)
 }
