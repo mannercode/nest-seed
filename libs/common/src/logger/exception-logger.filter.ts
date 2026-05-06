@@ -49,7 +49,7 @@ export class HttpExceptionLoggerFilter extends BaseExceptionFilter {
         const { body, method, url } = request
         const httpLogBase = {
             contextType: 'http' as const,
-            duration: `${Date.now() - (request as any)._startTimestamp}ms`,
+            duration: `${Date.now() - (request._startTimestamp ?? Date.now())}ms`,
             request: { body, method, url }
         }
 

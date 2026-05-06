@@ -28,7 +28,7 @@ export class HttpSuccessLoggerInterceptor implements NestInterceptor {
         /* istanbul ignore else */
         if (contextType === 'http') {
             const request = context.switchToHttp().getRequest<Request>()
-            ;(request as any)._startTimestamp = startTimestamp
+            request._startTimestamp = startTimestamp
         }
 
         let responseData: any
