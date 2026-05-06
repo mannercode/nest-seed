@@ -39,7 +39,7 @@ curl http://localhost:3000/movies
 
 ```bash
 bash apps/api/tests/runner.sh <scenario>
-# scenario: sse | user-race | ticket-holding-race | showtime-overlap-race | purchase-double-spend | replica-chaos
+# scenario: sse | user-race | ticket-holding-race | showtime-overlap-race | purchase-double-spend | replica-chaos | jwt-refresh-race
 ```
 
 자세한 동작과 검증 방식은 [docs/testing.md](docs/testing.md#5-분산-테스트-cross-replica-race)에서 다룬다.

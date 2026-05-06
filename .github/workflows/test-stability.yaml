@@ -60,6 +60,7 @@ jobs:
                     - showtime-overlap-race
                     - purchase-double-spend
                     - replica-chaos
+                    - jwt-refresh-race
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
         steps:
