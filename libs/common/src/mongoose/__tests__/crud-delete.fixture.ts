@@ -1,7 +1,8 @@
-import { createTestContext, getMongoTestConnection } from '@mannercode/testing'
+import { createTestContext } from '@mannercode/testing'
 import { Type } from '@nestjs/common'
 import { getModelToken, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
+import { getMongoTestConnection } from '../../infra-connections'
 import { createCrudSchema, CrudSchema, HardDelete } from '../crud.schema'
 
 @HardDelete()

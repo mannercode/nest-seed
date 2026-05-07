@@ -1,7 +1,8 @@
-import { createTestContext, getMongoTestConnection } from '@mannercode/testing'
+import { createTestContext } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
 import { getModelToken, InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
+import { getMongoTestConnection } from '../../infra-connections'
 import { CrudRepository } from '../crud.repository'
 import { createCrudSchema, CrudSchema } from '../crud.schema'
 

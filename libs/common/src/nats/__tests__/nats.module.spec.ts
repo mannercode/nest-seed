@@ -1,5 +1,6 @@
-import { createTestContext, getNatsTestConnection } from '@mannercode/testing'
+import { createTestContext } from '@mannercode/testing'
 import type { NatsConnection } from '../nats.types'
+import { getNatsTestConnection } from '../../infra-connections'
 import { NatsModule } from '../nats.module'
 import { DEFAULT_NATS_CONNECTION_NAME, getNatsConnectionToken } from '../nats.tokens'
 

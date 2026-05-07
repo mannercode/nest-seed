@@ -1,5 +1,6 @@
 import type { Client, Connection } from '@temporalio/client'
-import { getTemporalTestConnection, withTestId } from '@mannercode/testing'
+import { withTestId } from '@mannercode/testing'
+import { getTemporalTestConnection } from '../../infra-connections'
 
 // One Connection + Client shared across this file. The `await import` inside
 // each `it` (project convention with `resetModules: true`) still gives fresh

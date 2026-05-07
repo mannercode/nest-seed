@@ -1,6 +1,7 @@
-import { createTestContext, getRedisTestConnection } from '@mannercode/testing'
+import { createTestContext } from '@mannercode/testing'
 import { Inject, Injectable } from '@nestjs/common'
 import type { RedisConnection } from '../redis.types'
+import { getRedisTestConnection } from '../../infra-connections'
 import { RedisModule } from '../redis.module'
 import { getRedisConnectionToken } from '../redis.tokens'
 

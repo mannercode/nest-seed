@@ -1,6 +1,7 @@
 import type Redis from 'ioredis'
-import { createTestContext, getRedisTestConnection } from '@mannercode/testing'
+import { createTestContext } from '@mannercode/testing'
 import { HealthIndicatorService } from '@nestjs/terminus'
+import { getRedisTestConnection } from '../../infra-connections'
 import { getRedisConnectionToken, RedisModule } from '../../redis'
 import { RedisHealthIndicator } from '../redis.health-indicator'
 

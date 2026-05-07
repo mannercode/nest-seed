@@ -1,6 +1,7 @@
-import { createTestContext, getMongoTestConnection } from '@mannercode/testing'
+import { createTestContext } from '@mannercode/testing'
 import { getModelToken, MongooseModule, Schema as NestSchema, Prop } from '@nestjs/mongoose'
 import { Model, Schema, Types, mongo } from 'mongoose'
+import { getMongoTestConnection } from '../../infra-connections'
 import { createCrudSchema, CrudSchema } from '../crud.schema'
 
 export type CrudSchemaFixture = { model: Model<SchemaTypeSample>; teardown: () => Promise<void> }

@@ -1,6 +1,7 @@
-import { createTestContext, getRedisTestConnection, withTestId } from '@mannercode/testing'
+import { createTestContext, withTestId } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
 import Redis from 'ioredis'
+import { getRedisTestConnection } from '../../infra-connections'
 import { getRedisConnectionToken, RedisModule } from '../../redis'
 import {
     InjectJwtAuth,

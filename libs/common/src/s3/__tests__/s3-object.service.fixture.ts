@@ -1,6 +1,7 @@
-import { createTestContext, getS3TestConnection } from '@mannercode/testing'
+import { createTestContext } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
 import { InjectS3Object, S3ObjectModule, S3ObjectService } from '..'
+import { getS3TestConnection } from '../../infra-connections'
 
 export type S3ObjectServiceFixture = { s3Service: S3ObjectService; teardown: () => Promise<void> }
 
