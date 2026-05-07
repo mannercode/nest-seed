@@ -1,6 +1,5 @@
 import { JsonUtil } from '@mannercode/common'
 import { HttpStatus } from '@nestjs/common'
-import { createWriteStream } from 'fs'
 import superagent, { type Response } from 'superagent'
 
 export type { Response }
@@ -44,34 +43,6 @@ export class HttpTestClient {
 
     delete(url: string): this {
         this.agent = superagent.delete(`${this.serverUrl}${url}`)
-        return this
-    }
-
-    download(downloadFilePath: string) {
-        const writeStream = createWriteStream(downloadFilePath)
-
-        // Remove the default 200MB limit
-        // 1TB — superagent 기본 200MB 제한 해제
-        this.agent.maxResponseSize(1024 ** 4)
-
-        this.agent.buffer().parse((response, callback) => {
-            response.on('data', (chunk: any) => {
-                writeStream.write(chunk)
-            })
-            response.on('end', () => {
-                writeStream.close((closeError) => {
-                    if (!writeStream.closed) console.error('writeStream not closed')
-                    if (closeError) console.error('error', closeError)
-
-                    callback(null, '')
-                })
-            })
-            response.on('error', (responseError: any) => {
-                console.error('response error', responseError)
-                writeStream.destroy(responseError)
-            })
-        })
-
         return this
     }
 

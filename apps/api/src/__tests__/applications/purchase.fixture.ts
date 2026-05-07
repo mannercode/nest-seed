@@ -22,10 +22,10 @@ import {
     type AppTestContext
 } from '../__helpers__'
 
-export type PurchaseFixture = AppTestContext & {}
+export type PurchaseFixture = AppTestContext
 
 export async function createPurchaseFixture(): Promise<PurchaseFixture> {
-    const ctx = await createAppTestContext({
+    return createAppTestContext({
         controllers: [PurchaseHttpController],
         imports: [
             MoviesModule,
@@ -40,8 +40,6 @@ export async function createPurchaseFixture(): Promise<PurchaseFixture> {
             PurchaseModule
         ]
     })
-
-    return { ...ctx }
 }
 
 const userId = oid(0x01)

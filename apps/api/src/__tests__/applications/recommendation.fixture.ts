@@ -19,10 +19,10 @@ import {
     type AppTestContext
 } from '../__helpers__'
 
-export type RecommendationFixture = AppTestContext & {}
+export type RecommendationFixture = AppTestContext
 
 export async function createRecommendationFixture(): Promise<RecommendationFixture> {
-    const ctx = await createAppTestContext({
+    return createAppTestContext({
         controllers: [MoviesHttpController],
         imports: [
             MoviesModule,
@@ -34,8 +34,6 @@ export async function createRecommendationFixture(): Promise<RecommendationFixtu
         ],
         providers: [UserJwtAuthGuard, UserOptionalJwtAuthGuard]
     })
-
-    return { ...ctx }
 }
 
 export async function createShowingMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
