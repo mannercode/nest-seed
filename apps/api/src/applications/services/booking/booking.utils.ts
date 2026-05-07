@@ -1,22 +1,21 @@
 import type { ShowtimeDto, TheaterDto, TicketSalesForShowtimeDto } from 'cores'
-import { LatLong, omit, sortBy } from '@mannercode/common'
+import { LatLong, omit, Require, sortBy } from '@mannercode/common'
 import type { BookingShowtimeDto } from './dtos'
 
 export function generateShowtimesForBooking(
     showtimes: ShowtimeDto[],
     ticketSalesForShowtimes: TicketSalesForShowtimeDto[]
-) {
+): BookingShowtimeDto[] {
     const ticketSalesByShowtime = new Map(
         ticketSalesForShowtimes.map((status) => [status.showtimeId, status])
     )
 
-    const showtimesForBooking = showtimes.map((showtime) => {
+    return showtimes.map((showtime) => {
         const ticketSales = ticketSalesByShowtime.get(showtime.id)
+        Require.defined(ticketSales, `ticketSales missing for showtime ${showtime.id}`)
 
         return { ...showtime, ticketSales: omit(ticketSales, ['showtimeId']) }
     })
-
-    return showtimesForBooking as BookingShowtimeDto[]
 }
 
 export function sortTheatersByDistance(theaters: TheaterDto[], latLong: LatLong) {
