@@ -83,9 +83,15 @@ export class UsersService {
     }
 
     async update(userId: string, updateDto: UpdateUserDto) {
-        const user = await this.repository.update(userId, updateDto)
-
-        return this.toDto(user)
+        try {
+            const user = await this.repository.update(userId, updateDto)
+            return this.toDto(user)
+        } catch (error) {
+            if (isDuplicateKeyError(error) && updateDto.email) {
+                throw new ConflictException(UserErrors.EmailAlreadyExists(updateDto.email))
+            }
+            throw error
+        }
     }
 
     private toDto(user: User) {

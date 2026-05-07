@@ -169,6 +169,25 @@ describe('UsersService', () => {
                     .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))
             })
         })
+
+        // 다른 고객의 이메일로 변경하려 할 때
+        describe("when updating to another user's email", () => {
+            const existingEmail = 'taken@mail.com'
+            let target: UserDto
+
+            beforeEach(async () => {
+                await createUser(fix, { email: existingEmail })
+                target = await createUser(fix, { email: 'mine@mail.com' })
+            })
+
+            // 409 Conflict를 반환한다
+            it('returns 409 Conflict', async () => {
+                await fix.httpClient
+                    .patch(`/users/${target.id}`)
+                    .body({ email: existingEmail })
+                    .conflict(Errors.Users.EmailAlreadyExists(existingEmail))
+            })
+        })
     })
 
     describe('DELETE /users/:id', () => {
