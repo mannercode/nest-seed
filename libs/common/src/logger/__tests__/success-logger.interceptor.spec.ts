@@ -28,6 +28,27 @@ describe('HttpSuccessLoggerInterceptor', () => {
                     statusCode: 201
                 })
             })
+
+            // body의 민감 필드를 [REDACTED]로 마스킹한다
+            it('redacts sensitive fields in the logged body', async () => {
+                await fix.httpClient
+                    .post('/success')
+                    .body({ email: 'a@b.com', password: 'secret', refreshToken: 'r1' })
+                    .created({ result: 'success' })
+
+                expect(fix.spyVerbose).toHaveBeenCalledWith(
+                    'success',
+                    expect.objectContaining({
+                        request: expect.objectContaining({
+                            body: {
+                                email: 'a@b.com',
+                                password: '[REDACTED]',
+                                refreshToken: '[REDACTED]'
+                            }
+                        })
+                    })
+                )
+            })
         })
     })
 

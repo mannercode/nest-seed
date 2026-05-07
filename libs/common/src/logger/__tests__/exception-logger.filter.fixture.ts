@@ -1,5 +1,5 @@
 import { HttpTestClient, createHttpTestContext } from '@mannercode/testing'
-import { Controller, Get, NotFoundException } from '@nestjs/common'
+import { Body, Controller, Get, NotFoundException, Post } from '@nestjs/common'
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
 import { HttpExceptionLoggerFilter } from '../exception-logger.filter'
 import { HttpSuccessLoggerInterceptor } from '../success-logger.interceptor'
@@ -20,6 +20,11 @@ class TestController {
 
     @Get('exception')
     getHttpException() {
+        throw new NotFoundException({ code: 'ERR_CODE', message: 'message' })
+    }
+
+    @Post('exception')
+    postHttpException(@Body() _body: unknown) {
         throw new NotFoundException({ code: 'ERR_CODE', message: 'message' })
     }
 }

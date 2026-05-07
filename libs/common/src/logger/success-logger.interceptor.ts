@@ -10,6 +10,7 @@ import {
 import { Request, Response } from 'express'
 import { Observable } from 'rxjs'
 import { tap } from 'rxjs/operators'
+import { redactSensitive } from './redact'
 import { HttpSuccessLog } from './types'
 
 @Injectable()
@@ -64,8 +65,8 @@ export class HttpSuccessLoggerInterceptor implements NestInterceptor {
             const successLog = {
                 contextType: 'http' as const,
                 duration: `${elapsedMs}ms`,
-                request: { body, method, url },
-                response: responseData,
+                request: { body: redactSensitive(body), method, url },
+                response: redactSensitive(responseData),
                 statusCode: httpResponse.statusCode
             } as HttpSuccessLog
 

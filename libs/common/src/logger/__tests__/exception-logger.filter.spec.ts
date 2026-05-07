@@ -31,6 +31,26 @@ describe('HttpExceptionLoggerFilter', () => {
             })
         })
 
+        // 요청 body에 민감 필드가 있을 때
+        describe('when the request body contains sensitive fields', () => {
+            // body의 password를 [REDACTED]로 마스킹한다
+            it('redacts password in the logged body', async () => {
+                await fix.httpClient
+                    .post('/exception')
+                    .body({ email: 'a@b.com', password: 'secret' })
+                    .notFound()
+
+                expect(fix.spyWarn).toHaveBeenCalledWith(
+                    'fail',
+                    expect.objectContaining({
+                        request: expect.objectContaining({
+                            body: { email: 'a@b.com', password: '[REDACTED]' }
+                        })
+                    })
+                )
+            })
+        })
+
         // 일반 Error가 발생할 때
         describe('when a generic Error is thrown', () => {
             // Logger.error로 로그를 남긴다

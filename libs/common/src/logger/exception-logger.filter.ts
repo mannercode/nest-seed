@@ -2,6 +2,7 @@ import { ArgumentsHost, Catch, HttpException, Logger } from '@nestjs/common'
 import { BaseExceptionFilter } from '@nestjs/core'
 import { Request } from 'express'
 import { defaultTo } from '../utils'
+import { redactSensitive } from './redact'
 import { HttpErrorLog } from './types'
 
 /**
@@ -50,13 +51,13 @@ export class HttpExceptionLoggerFilter extends BaseExceptionFilter {
         const httpLogBase = {
             contextType: 'http' as const,
             duration: `${Date.now() - (request._startTimestamp ?? Date.now())}ms`,
-            request: { body, method, url }
+            request: { body: redactSensitive(body), method, url }
         }
 
         if (exception instanceof HttpException) {
             const errorLog = {
                 ...httpLogBase,
-                response: exception.getResponse(),
+                response: redactSensitive(exception.getResponse()),
                 stack: defaultTo(exception.stack, '').split('\n'),
                 statusCode: exception.getStatus()
             } as HttpErrorLog
