@@ -55,7 +55,9 @@ export class ShowtimeBulkValidatorService {
 
         const timeslotsByTheater = await this.generateTimeslotMapByTheater(createDto)
 
-        const conflictingShowtimes: ShowtimeDto[] = []
+        // 같은 기존 showtime 이 여러 startTime 의 첫 timeslot 과 매칭될 수 있으므로
+        // id 기반 Map 으로 모아 dedup 한다.
+        const conflictsById = new Map<string, ShowtimeDto>()
 
         for (const theaterId of theaterIds) {
             const timeslots = timeslotsByTheater.get(theaterId)
@@ -69,7 +71,7 @@ export class ShowtimeBulkValidatorService {
                     const showtime = timeslots.get(timeslot)
 
                     if (showtime) {
-                        conflictingShowtimes.push(showtime)
+                        conflictsById.set(showtime.id, showtime)
                         return false
                     }
 
@@ -78,7 +80,7 @@ export class ShowtimeBulkValidatorService {
             }
         }
 
-        return conflictingShowtimes
+        return [...conflictsById.values()]
     }
 
     private async generateTimeslotMapByTheater(createDto: BulkCreateShowtimesDto) {

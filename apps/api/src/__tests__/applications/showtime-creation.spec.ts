@@ -251,6 +251,49 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
+        // 단일 기존 상영 시간이 여러 새 startTime 과 모두 충돌하는 경우
+        describe('when a single existing showtime overlaps multiple proposed startTimes', () => {
+            let initialShowtime: ShowtimeDto
+
+            beforeEach(async () => {
+                // 기존 12:00-13:30 (90분) 하나가 새 12:00, 12:30, 13:00 세 startTime 의
+                // 첫 timeslot 과 모두 매칭. dedup 이 없으면 같은 showtime 이 3번 들어감.
+                const [created] = await createShowtimes(fix, [
+                    {
+                        endTime: new Date('2013-01-31T13:30'),
+                        startTime: new Date('2013-01-31T12:00'),
+                        theaterId: theater.id
+                    }
+                ])
+                initialShowtime = created
+            })
+
+            // 충돌 목록에 같은 상영 시간을 한 번만 포함한다
+            it('reports the conflict only once', async () => {
+                const completionPromise = waitForCompletion(fix, 'failed')
+
+                await fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .body({
+                        durationInMinutes: 10,
+                        movieId: movie.id,
+                        startTimes: [
+                            new Date('2013-01-31T12:00'),
+                            new Date('2013-01-31T12:30'),
+                            new Date('2013-01-31T13:00')
+                        ],
+                        theaterIds: [theater.id]
+                    })
+                    .accepted()
+
+                await expect(completionPromise).resolves.toEqual({
+                    conflictingShowtimes: [initialShowtime],
+                    sagaId: expect.any(String),
+                    status: 'failed'
+                })
+            })
+        })
+
         // 기존 상영 시간이 새 범위보다 먼저 시작하지만 겹치는 경우
         describe('when an existing showtime starts before the new range but overlaps', () => {
             let initialShowtime: ShowtimeDto
