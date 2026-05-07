@@ -134,6 +134,38 @@ describe('JwtAuthService', () => {
             )
         })
 
+        // 동시 회전 race: atomic DEL count 로 정확히 1명만 새 토큰을 받고,
+        // 나머지는 이미 회전된 토큰을 다시 제출한 것과 구별 불가하므로 reuse
+        // 감지로 401 을 받는다. (family 폐기 여부는 winner storeToken 과
+        // loser revokeFamily 의 미세한 timing 에 좌우되므로 단언하지 않는다.
+        // 핵심 invariant 는 "동시에 유효한 새 토큰이 둘 이상 생기지 않는다".)
+        it('serializes concurrent refreshes: exactly one wins, others trigger reuse detection', async () => {
+            type Attempt =
+                | { ok: true; tokens: { accessToken: string; refreshToken: string } }
+                | { ok: false; err: Error }
+
+            const attempts: Attempt[] = await Promise.all(
+                Array.from({ length: 10 }, async () => {
+                    try {
+                        return {
+                            ok: true,
+                            tokens: await fix.jwtService.refreshAuthTokens(refreshToken)
+                        } as const
+                    } catch (err) {
+                        return { ok: false, err: err as Error } as const
+                    }
+                })
+            )
+
+            const winners = attempts.filter((a) => a.ok)
+            const losers = attempts.filter((a): a is Extract<Attempt, { ok: false }> => !a.ok)
+            expect(winners).toHaveLength(1)
+            expect(losers).toHaveLength(9)
+            losers.forEach((l) => {
+                expect(l.err.message).toMatch(/reuse detected/i)
+            })
+        })
+
         // refresh 토큰은 Redis 에 hash 형태로 저장된다 (plaintext 미저장)
         it('stores refresh tokens as SHA-256 hashes in Redis', async () => {
             const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)

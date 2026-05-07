@@ -431,15 +431,16 @@ export class JwtAuthService {
     }
 
     private async consumeToken(tokenId: string, familyId: string): Promise<boolean> {
-        const result = await this.redis
+        // result[0] is the DEL reply: [err, count]. count > 0 means we won
+        // the race against concurrent consumers; 0 means another worker
+        // already deleted the entry.
+        const result = (await this.redis
             .multi()
             .del(this.tokenKey(tokenId, familyId))
             .srem(this.familyKey(familyId), tokenId)
-            .exec()
-        if (!result) return false
-        const [err, count] = result[0]
-        if (err) return false
-        return (count as number) > 0
+            .exec()) as [Error | null, number][]
+        const [, count] = result[0]
+        return count > 0
     }
 
     private async revokeFamily(familyId: string, userId: string | undefined) {
