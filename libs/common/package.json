@@ -36,6 +36,7 @@
         "rxjs": "^7.0.0"
     },
     "devDependencies": {
+        "@mannercode/jest-helpers": "*",
         "@mannercode/testing": "*"
     }
 }
