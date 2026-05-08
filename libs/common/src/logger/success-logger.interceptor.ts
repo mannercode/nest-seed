@@ -11,6 +11,7 @@ import { Request, Response } from 'express'
 import { Observable } from 'rxjs'
 import { tap } from 'rxjs/operators'
 import { redactSensitive } from './redact'
+import { markRequestStart } from './request-timing'
 import { HttpSuccessLog } from './types'
 
 @Injectable()
@@ -28,8 +29,7 @@ export class HttpSuccessLoggerInterceptor implements NestInterceptor {
 
         /* istanbul ignore else */
         if (contextType === 'http') {
-            const request = context.switchToHttp().getRequest<Request>()
-            request._startTimestamp = startTimestamp
+            markRequestStart(context.switchToHttp().getRequest<Request>())
         }
 
         let responseData: any

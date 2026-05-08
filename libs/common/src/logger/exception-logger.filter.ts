@@ -3,6 +3,7 @@ import { BaseExceptionFilter } from '@nestjs/core'
 import { Request } from 'express'
 import { defaultTo } from '../utils'
 import { redactSensitive } from './redact'
+import { elapsedSinceRequestStart } from './request-timing'
 import { HttpErrorLog } from './types'
 
 /**
@@ -50,7 +51,7 @@ export class HttpExceptionLoggerFilter extends BaseExceptionFilter {
         const { body, method, url } = request
         const httpLogBase = {
             contextType: 'http' as const,
-            duration: `${Date.now() - (request._startTimestamp ?? Date.now())}ms`,
+            duration: `${elapsedSinceRequestStart(request)}ms`,
             request: { body: redactSensitive(body), method, url }
         }
 

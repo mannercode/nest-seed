@@ -1,6 +1,34 @@
-import { JsonUtil } from '@mannercode/common'
 import { HttpStatus } from '@nestjs/common'
 import superagent, { type Response } from 'superagent'
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+
+// Inlined to keep libs/testing free of any production dependency on
+// @mannercode/common — the only previous use of JsonUtil.parse was here.
+function parseJsonResponse(text: string): unknown {
+    return JSON.parse(quoteUnsafeIntegers(text), (_key, value) => {
+        if (typeof value === 'string' && ISO_DATE.test(value)) {
+            return new Date(value)
+        }
+        return value
+    })
+}
+
+// Wrap 64-bit integers outside JS Number-safe range in quotes so the JSON
+// parser preserves them as strings rather than losing precision.
+function quoteUnsafeIntegers(text: string): string {
+    const maxInt64 = 9223372036854775807n
+    const minInt64 = -9223372036854775808n
+    const maxSafe = BigInt(Number.MAX_SAFE_INTEGER)
+    const minSafe = -maxSafe
+
+    return text.replace(/([:[,])(\s*)(-?\d+)(?=\s*[,\}\]])/g, (match, prefix, space, raw) => {
+        const value = BigInt(raw)
+        if (value < minInt64 || value > maxInt64) return match
+        if (minSafe <= value && value <= maxSafe) return match
+        return `${prefix}${space}"${raw}"`
+    })
+}
 
 export type { Response }
 
@@ -115,7 +143,7 @@ export class HttpTestClient {
         const response = await this.agent.ok(() => true)
 
         if (response.type === 'application/json') {
-            response.body = JsonUtil.parse(response.text)
+            response.body = parseJsonResponse(response.text)
         }
 
         return response
