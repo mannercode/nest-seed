@@ -2,7 +2,6 @@ import { createTestContext } from '@mannercode/testing'
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { getMongoTestConnection } from '../../infra-connections'
 import { CrudRepository } from '../crud.repository'
 import { createCrudSchema, CrudSchema } from '../crud.schema'
 import { mapDocToDto } from '../mongoose.util'
@@ -38,7 +37,12 @@ class SamplesRepository extends CrudRepository<Sample> {
 export async function createCrudRepositoryFixture() {
     const { close, module } = await createTestContext({
         imports: [
-            MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
+            MongooseModule.forRootAsync({
+                useFactory: () => ({
+                    uri: process.env.TESTLIB_MONGO_URI,
+                    dbName: process.env.TESTLIB_MONGO_DATABASE
+                })
+            }),
             MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])
         ],
         providers: [SamplesRepository]

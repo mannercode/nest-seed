@@ -1,7 +1,6 @@
 import { createTestContext } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
-import { InjectS3Object, S3ObjectModule, S3ObjectService } from '..'
-import { getS3TestConnection } from '../../infra-connections'
+import { InjectS3Object, S3ObjectModule, S3ObjectService, type S3ServiceConfig } from '..'
 
 export type S3ObjectServiceFixture = { s3Service: S3ObjectService; teardown: () => Promise<void> }
 
@@ -11,7 +10,17 @@ class TestInjectS3ObjectService {
 }
 
 export async function createS3ObjectServiceFixture() {
-    const config = getS3TestConnection()
+    const config: S3ServiceConfig = {
+        bucket: process.env.TESTLIB_S3_BUCKET as string,
+        credentials: {
+            accessKeyId: process.env.TESTLIB_S3_ACCESS_KEY as string,
+            secretAccessKey: process.env.TESTLIB_S3_SECRET_KEY as string
+        },
+        endpoint: process.env.TESTLIB_S3_ENDPOINT,
+        forcePathStyle:
+            (process.env.TESTLIB_S3_FORCE_PATH_STYLE as string).toLowerCase() === 'true',
+        region: process.env.TESTLIB_S3_REGION
+    }
 
     const { close, module } = await createTestContext({
         imports: [S3ObjectModule.register({ useFactory: () => config })],

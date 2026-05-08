@@ -1,7 +1,6 @@
 import { createTestContext } from '@mannercode/testing'
 import { Inject, Injectable } from '@nestjs/common'
 import type { RedisConnection } from '../redis.types'
-import { getRedisTestConnection } from '../../infra-connections'
 import { RedisModule } from '../redis.module'
 import { getRedisConnectionToken } from '../redis.tokens'
 
@@ -19,7 +18,7 @@ class TestNamedRedisConsumer {
 
 export async function createRedisModuleFixture() {
     const { close, module } = await createTestContext({
-        imports: [RedisModule.forRoot({ type: 'single', url: getRedisTestConnection() })],
+        imports: [RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL })],
         providers: [TestRedisConsumer]
     })
 
@@ -35,7 +34,9 @@ export async function createRedisModuleFixture() {
 
 export async function createRedisModuleNamedFixture() {
     const { close, module } = await createTestContext({
-        imports: [RedisModule.forRoot({ type: 'single', url: getRedisTestConnection() }, 'named')],
+        imports: [
+            RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL }, 'named')
+        ],
         providers: [TestNamedRedisConsumer]
     })
 
@@ -53,7 +54,7 @@ export async function createRedisModuleAsyncFixture() {
     const { close, module } = await createTestContext({
         imports: [
             RedisModule.forRootAsync({
-                useFactory: () => ({ type: 'single' as const, url: getRedisTestConnection() })
+                useFactory: () => ({ type: 'single' as const, url: process.env.TESTLIB_REDIS_URL })
             })
         ],
         providers: [TestRedisConsumer]
@@ -71,7 +72,7 @@ export async function createRedisModuleAsyncFixture() {
 
 export async function createRedisModuleUrlOnlyFixture() {
     const { close, module } = await createTestContext({
-        imports: [RedisModule.forRoot({ type: 'single', url: getRedisTestConnection() })]
+        imports: [RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL })]
     })
 
     const redis = module.get<RedisConnection>(getRedisConnectionToken())
@@ -85,7 +86,7 @@ export async function createRedisModuleUrlOnlyFixture() {
 }
 
 export async function createRedisModuleOptionsOnlyFixture() {
-    const url = new URL(getRedisTestConnection())
+    const url = new URL(process.env.TESTLIB_REDIS_URL as string)
 
     const { close, module } = await createTestContext({
         imports: [
@@ -127,7 +128,7 @@ export async function createRedisModuleUrlWithOptionsFixture() {
         imports: [
             RedisModule.forRoot({
                 type: 'single',
-                url: getRedisTestConnection(),
+                url: process.env.TESTLIB_REDIS_URL,
                 options: { db: 0 }
             })
         ]

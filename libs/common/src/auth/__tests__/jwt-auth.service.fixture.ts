@@ -1,15 +1,8 @@
 import { createTestContext, withTestId } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
 import Redis from 'ioredis'
-import { getRedisTestConnection } from '../../infra-connections'
+import { InjectJwtAuth, JwtAuthModule, JwtAuthService, OnSecurityEvent, SecurityEvent } from '..'
 import { getRedisConnectionToken, RedisModule } from '../../redis'
-import {
-    InjectJwtAuth,
-    JwtAuthModule,
-    JwtAuthService,
-    OnSecurityEvent,
-    SecurityEvent
-} from '../jwt-auth.service'
 
 export const TEST_AUTH_AUDIENCE = 'test-audience'
 export const TEST_AUTH_ISSUER = 'test-issuer'
@@ -34,7 +27,7 @@ export async function createJwtAuthServiceFixture() {
 
     const { close, module } = await createTestContext({
         imports: [
-            RedisModule.forRoot({ type: 'single', url: getRedisTestConnection() }),
+            RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL }),
             JwtAuthModule.register({
                 prefix: withTestId('jwt-auth'),
                 useFactory() {

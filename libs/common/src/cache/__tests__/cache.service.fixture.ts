@@ -1,8 +1,7 @@
 import { createTestContext, withTestId } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
-import { getRedisTestConnection } from '../../infra-connections'
+import { CacheModule, CacheService, InjectCache } from '..'
 import { getRedisConnectionToken, RedisModule } from '../../redis'
-import { CacheModule, CacheService, InjectCache } from '../cache.service'
 
 export type CacheServiceFixture = { cacheService: CacheService; teardown: () => Promise<void> }
 
@@ -14,7 +13,7 @@ class TestInjectCacheService {
 export async function createCacheServiceFixture() {
     const { close, module } = await createTestContext({
         imports: [
-            RedisModule.forRoot({ type: 'single', url: getRedisTestConnection() }, 'name'),
+            RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL }, 'name'),
             CacheModule.register({ prefix: withTestId('cache'), redisName: 'name' })
         ],
         providers: [TestInjectCacheService]

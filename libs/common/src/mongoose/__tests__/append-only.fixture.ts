@@ -2,7 +2,6 @@ import { createTestContext } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
 import { getModelToken, InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { getMongoTestConnection } from '../../infra-connections'
 import { AppendOnlyRepository } from '../append-only.repository'
 import { AppendOnlySchema, createAppendOnlySchema } from '../append-only.schema'
 
@@ -36,7 +35,12 @@ export type AppendOnlyFixture = {
 export async function createAppendOnlyFixture(): Promise<AppendOnlyFixture> {
     const { close, module } = await createTestContext({
         imports: [
-            MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
+            MongooseModule.forRootAsync({
+                useFactory: () => ({
+                    uri: process.env.TESTLIB_MONGO_URI,
+                    dbName: process.env.TESTLIB_MONGO_DATABASE
+                })
+            }),
             MongooseModule.forFeature([
                 { name: AppendOnlySample.name, schema: AppendOnlySampleSchema }
             ])

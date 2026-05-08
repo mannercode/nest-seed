@@ -2,7 +2,6 @@ import { createTestContext } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
 import { getModelToken, InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { getMongoTestConnection } from '../../infra-connections'
 import { CrudRepository } from '../crud.repository'
 import { createCrudSchema, CrudSchema } from '../crud.schema'
 
@@ -30,7 +29,12 @@ class SamplesRepository extends CrudRepository<Sample> {
 export async function createMongooseTransactionFixture() {
     const { close, module } = await createTestContext({
         imports: [
-            MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
+            MongooseModule.forRootAsync({
+                useFactory: () => ({
+                    uri: process.env.TESTLIB_MONGO_URI,
+                    dbName: process.env.TESTLIB_MONGO_DATABASE
+                })
+            }),
             MongooseModule.forFeature([{ name: Sample.name, schema: SampleSchema }])
         ],
         providers: [SamplesRepository]

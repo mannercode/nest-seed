@@ -1,6 +1,6 @@
 import type { Client, Connection } from '@temporalio/client'
 import { withTestId } from '@mannercode/testing'
-import { getTemporalTestConnection } from '../../infra-connections'
+import type { TemporalClientConfig } from '../temporal.types'
 
 // One Connection + Client shared across this file. The `await import` inside
 // each `it` (project convention with `resetModules: true`) still gives fresh
@@ -9,9 +9,14 @@ import { getTemporalTestConnection } from '../../infra-connections'
 let connection: Connection
 let client: Client
 
+const config = (): TemporalClientConfig => ({
+    address: process.env.TESTLIB_TEMPORAL_ADDRESS as string,
+    namespace: process.env.TESTLIB_TEMPORAL_NAMESPACE as string
+})
+
 beforeAll(async () => {
     const { Client, Connection } = await import('@temporalio/client')
-    const { address, namespace } = getTemporalTestConnection()
+    const { address, namespace } = config()
     connection = await Connection.connect({ address })
     client = new Client({ connection, namespace })
 }, 60_000)
@@ -19,8 +24,6 @@ beforeAll(async () => {
 afterAll(async () => {
     await connection.close()
 })
-
-const config = () => getTemporalTestConnection()
 
 describe('InjectTemporalClient', () => {
     // 이름 없이 호출하면 parameter decorator 를 반환한다 (기본 이름)

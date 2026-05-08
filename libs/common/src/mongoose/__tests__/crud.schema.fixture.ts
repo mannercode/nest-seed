@@ -1,7 +1,6 @@
 import { createTestContext } from '@mannercode/testing'
 import { getModelToken, MongooseModule, Schema as NestSchema, Prop } from '@nestjs/mongoose'
 import { Model, Schema, Types, mongo } from 'mongoose'
-import { getMongoTestConnection } from '../../infra-connections'
 import { createCrudSchema, CrudSchema } from '../crud.schema'
 
 export type CrudSchemaFixture = { model: Model<SchemaTypeSample>; teardown: () => Promise<void> }
@@ -86,7 +85,12 @@ export async function createCrudSchemaFixture() {
 
     const { close, module } = await createTestContext({
         imports: [
-            MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
+            MongooseModule.forRootAsync({
+                useFactory: () => ({
+                    uri: process.env.TESTLIB_MONGO_URI,
+                    dbName: process.env.TESTLIB_MONGO_DATABASE
+                })
+            }),
             MongooseModule.forFeature([{ name: 'schema', schema }])
         ]
     })

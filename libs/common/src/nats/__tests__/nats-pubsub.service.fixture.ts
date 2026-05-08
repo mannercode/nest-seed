@@ -1,6 +1,5 @@
 import { createTestContext } from '@mannercode/testing'
 import type { NatsConnection } from '../nats.types'
-import { getNatsTestConnection } from '../../infra-connections'
 import { NatsPubSubModule, NatsPubSubService } from '../nats-pubsub.service'
 import { NatsModule } from '../nats.module'
 import { getNatsConnectionToken } from '../nats.tokens'
@@ -18,14 +17,20 @@ export type NatsPubSubServiceFixture = {
 export async function createNatsPubSubServiceFixture(): Promise<NatsPubSubServiceFixture> {
     const contextA = await createTestContext({
         imports: [
-            NatsModule.forRootAsync({ useFactory: () => getNatsTestConnection() }, 'replicaA'),
+            NatsModule.forRootAsync(
+                { useFactory: () => JSON.parse(process.env.TESTLIB_NATS_OPTIONS as string) },
+                'replicaA'
+            ),
             NatsPubSubModule.register({ name: 'replicaA', natsName: 'replicaA' })
         ]
     })
 
     const contextB = await createTestContext({
         imports: [
-            NatsModule.forRootAsync({ useFactory: () => getNatsTestConnection() }, 'replicaB'),
+            NatsModule.forRootAsync(
+                { useFactory: () => JSON.parse(process.env.TESTLIB_NATS_OPTIONS as string) },
+                'replicaB'
+            ),
             NatsPubSubModule.register({ name: 'replicaB', natsName: 'replicaB' })
         ]
     })

@@ -2,7 +2,6 @@ import { createTestContext } from '@mannercode/testing'
 import { Type } from '@nestjs/common'
 import { getModelToken, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { getMongoTestConnection } from '../../infra-connections'
 import { createCrudSchema, CrudSchema, HardDelete } from '../crud.schema'
 
 @HardDelete()
@@ -25,7 +24,12 @@ export async function createCrudDeleteFixture<T>(cls: Type<T>) {
 
     const { close, module } = await createTestContext({
         imports: [
-            MongooseModule.forRootAsync({ useFactory: () => getMongoTestConnection() }),
+            MongooseModule.forRootAsync({
+                useFactory: () => ({
+                    uri: process.env.TESTLIB_MONGO_URI,
+                    dbName: process.env.TESTLIB_MONGO_DATABASE
+                })
+            }),
             MongooseModule.forFeature([{ name: 'schema', schema }])
         ]
     })

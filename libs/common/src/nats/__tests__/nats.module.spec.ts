@@ -1,6 +1,5 @@
 import { createTestContext } from '@mannercode/testing'
 import type { NatsConnection } from '../nats.types'
-import { getNatsTestConnection } from '../../infra-connections'
 import { NatsModule } from '../nats.module'
 import { DEFAULT_NATS_CONNECTION_NAME, getNatsConnectionToken } from '../nats.tokens'
 
@@ -20,7 +19,12 @@ describe('NatsModule', () => {
     // forRoot 가 connection 을 글로벌 provider 로 노출한다
     it('exposes the connection via forRoot', async () => {
         const ctx = await createTestContext({
-            imports: [NatsModule.forRoot(getNatsTestConnection(), 'forRoot')]
+            imports: [
+                NatsModule.forRoot(
+                    JSON.parse(process.env.TESTLIB_NATS_OPTIONS as string),
+                    'forRoot'
+                )
+            ]
         })
         try {
             const nc = ctx.module.get<NatsConnection>(getNatsConnectionToken('forRoot'))
@@ -36,7 +40,7 @@ describe('NatsModule', () => {
         const ctx = await createTestContext({
             imports: [
                 NatsModule.forRootAsync(
-                    { useFactory: () => getNatsTestConnection() },
+                    { useFactory: () => JSON.parse(process.env.TESTLIB_NATS_OPTIONS as string) },
                     'forRootAsync'
                 )
             ]

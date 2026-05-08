@@ -35,5 +35,7 @@
         "nats": "^2.29.0",
         "rxjs": "^7.0.0"
     },
-    "devDependencies": {}
+    "devDependencies": {
+        "@mannercode/testing": "*"
+    }
 }
