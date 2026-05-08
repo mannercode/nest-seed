@@ -4,70 +4,24 @@ import {
     HeadObjectCommand,
     ListObjectsV2Command,
     PutObjectCommand,
-    S3Client,
-    S3ClientConfig
+    S3Client
 } from '@aws-sdk/client-s3'
-import { PresignedPost, createPresignedPost } from '@aws-sdk/s3-presigned-post'
+import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-import { DynamicModule, Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common'
+import { Injectable, OnModuleDestroy } from '@nestjs/common'
 import { newObjectIdString } from '../mongoose'
 import { HttpUtil, defaultTo } from '../utils'
-
-export interface S3ServiceConfig extends S3ClientConfig {
-    bucket: string
-}
-export type S3DeleteObjectResult = { key: string; status: number }
-export type S3ListObjectsOptions = {
-    delimiter?: string
-    maxKeys?: number
-    nextToken?: string
-    prefix?: string
-}
-export type S3ListObjectsResult = {
-    commonPrefixes?: string[]
-    contents: S3ObjectSummary[]
-    delimiter?: string
-    isTruncated: boolean
-    maxKeys?: number
-    nextToken?: string
-    prefix?: string
-}
-export type S3ObjectData = { contentType: string; data: Buffer; filename: string }
-export type S3ObjectModuleOptions = {
-    inject?: any[]
-    name?: string
-    useFactory: (...args: any[]) => Promise<S3ServiceConfig> | S3ServiceConfig
-}
-export type S3ObjectSummary = { eTag?: string; key: string; lastModified?: Date; size?: number }
-export type S3PresignDownloadOptions = {
-    /**
-     * Force the download filename.
-     * 다운로드 파일명 강제
-     */
-    filename?: string
-    /**
-     * Specify Content-Disposition directly.
-     * Content-Disposition 직접 지정
-     */
-    responseContentDisposition?: string
-    /**
-     * Override Content-Type on download.
-     * 다운로드 시 Content-Type 오버라이드
-     */
-    responseContentType?: string
-} & S3PresignUrlOptions
-export type S3PresignPostUploadOptions = S3PresignUrlOptions & {
-    // ex) attachment; filename="a.txt"
-    contentDisposition?: string
-    contentType?: string
-    maxContentLength?: number
-    metadata?: Record<string, string>
-    minContentLength?: number
-}
-
-export type S3PresignPostUploadResult = PresignedPost
-
-export type S3PresignUrlOptions = { expiresInSec: number; key: string }
+import {
+    S3DeleteObjectResult,
+    S3ListObjectsOptions,
+    S3ListObjectsResult,
+    S3ObjectData,
+    S3ObjectSummary,
+    S3PresignDownloadOptions,
+    S3PresignPostUploadOptions,
+    S3PresignPostUploadResult,
+    S3UploadCompleteOptions
+} from './s3-object.types'
 
 @Injectable()
 export class S3ObjectService implements OnModuleDestroy {
@@ -240,12 +194,6 @@ export class S3ObjectService implements OnModuleDestroy {
     }
 }
 
-export type S3UploadCompleteOptions = { contentLength?: number; contentType?: string; key: string }
-
-export function InjectS3Object(name?: string): ParameterDecorator {
-    return Inject(S3ObjectService.getName(name))
-}
-
 /**
  * Compare Content-Type by base MIME type only (ignore params like `; charset=utf-8`).
  * Content-Type은 파라미터를 무시하고 base-type만 비교.
@@ -253,25 +201,4 @@ export function InjectS3Object(name?: string): ParameterDecorator {
  */
 function normalizeContentType(v?: string) {
     return v?.split(';', 1)[0].trim().toLowerCase()
-}
-
-@Module({})
-export class S3ObjectModule {
-    static register(options: S3ObjectModuleOptions): DynamicModule {
-        const { name, useFactory } = options
-        const inject = options.inject ?? []
-
-        const provider = {
-            inject,
-            provide: S3ObjectService.getName(name),
-            useFactory: async (...args: any[]) => {
-                const { bucket, ...s3Config } = await useFactory(...args)
-
-                const client = new S3Client(s3Config)
-                return new S3ObjectService(bucket, client)
-            }
-        }
-
-        return { exports: [provider], module: S3ObjectModule, providers: [provider] }
-    }
 }

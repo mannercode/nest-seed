@@ -1,6 +1,5 @@
-import { DynamicModule, Inject, Injectable, Module } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import Redis from 'ioredis'
-import { getRedisConnectionToken } from '../redis'
 import { defaultTo } from '../utils'
 
 @Injectable()
@@ -126,27 +125,5 @@ export class CacheService {
 
     private getKey(key: string) {
         return `${this.prefix}:${key}`
-    }
-}
-
-export type CacheModuleOptions = { name?: string; prefix: string; redisName?: string }
-
-export function InjectCache(name?: string): ParameterDecorator {
-    return Inject(CacheService.getName(name))
-}
-
-@Module({})
-export class CacheModule {
-    static register(options: CacheModuleOptions): DynamicModule {
-        const { name, prefix, redisName } = options
-
-        const provider = {
-            inject: [getRedisConnectionToken(redisName)],
-            provide: CacheService.getName(name),
-            useFactory: async (redis: Redis) =>
-                new CacheService(redis, `${prefix}:${defaultTo(name, 'default')}`)
-        }
-
-        return { exports: [provider], module: CacheModule, providers: [provider] }
     }
 }

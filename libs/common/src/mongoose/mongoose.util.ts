@@ -1,7 +1,6 @@
 import { BadRequestException } from '@nestjs/common'
 import { Types, type QueryFilter } from 'mongoose'
-import { escapeRegExp, uniq } from '../utils'
-import { Assume } from '../validator'
+import { Assume, escapeRegExp, uniq } from '../utils'
 import { MongooseErrors } from './errors'
 
 export const newObjectIdString = () => new Types.ObjectId().toString()

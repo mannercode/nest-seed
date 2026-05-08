@@ -34,6 +34,10 @@ import { getShowtimeCreationTaskQueue } from './temporal/types'
         ShowtimeBulkValidatorService,
         ShowtimeBulkCreatorService,
         ShowtimeCreationActivities,
+        // TemporalWorkerService stays as a same-module provider so its DI
+        // factory can inject ShowtimeCreationActivities (also same-module).
+        // Wrapping in a TemporalWorkerModule.forRootAsync would put the
+        // factory into a child module that can't see this module's providers.
         {
             inject: [AppConfigService, ShowtimeCreationActivities],
             provide: TemporalWorkerService,

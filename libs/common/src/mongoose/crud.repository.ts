@@ -7,8 +7,7 @@ import type {
 } from 'mongoose'
 import { BadRequestException, NotFoundException, type OnModuleInit } from '@nestjs/common'
 import type { PaginationDto, PaginationResult } from '../pagination'
-import { defaultTo, differenceWith, uniq } from '../utils'
-import { Assume, Require } from '../validator'
+import { Assume, defaultTo, differenceWith, Require, uniq } from '../utils'
 import { MongooseErrors } from './errors'
 import { objectId, objectIds } from './mongoose.util'
 
