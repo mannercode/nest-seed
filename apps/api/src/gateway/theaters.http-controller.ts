@@ -12,6 +12,9 @@ import {
 } from '@nestjs/common'
 import { CreateTheaterDto, SearchTheatersPageDto, TheatersService, UpdateTheaterDto } from 'core'
 
+// AUTHZ: 시드는 인가 검사를 일부러 비워 둔다. 포크 시 도메인 정책에 맞춰
+// `@UseGuards(UserJwtAuthGuard)` 등의 가드와 admin 검사를 추가하라.
+// README "5. 인가" 섹션 참고.
 @Controller('theaters')
 export class TheatersHttpController {
     constructor(private readonly theatersService: TheatersService) {}
