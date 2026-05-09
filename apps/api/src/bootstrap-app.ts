@@ -4,11 +4,11 @@ import compression from 'compression'
 import express from 'express'
 import { hostname } from 'os'
 import { exit } from 'process'
-import { AppConfigService } from './app-config.service'
+import { AppConfigService } from './config'
 
-type ConfigureAppOptions = { app: INestApplication }
+type BootstrapAppOptions = { app: INestApplication }
 
-export async function configureApp({ app }: ConfigureAppOptions) {
+export async function bootstrapApp({ app }: BootstrapAppOptions) {
     const { http, log } = app.get(AppConfigService)
 
     await PathUtil.mkdir(log.directory)

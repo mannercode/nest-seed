@@ -1,4 +1,6 @@
+import { HttpExceptionLoggerFilter, HttpSuccessLoggerInterceptor } from '@mannercode/common'
 import { Module } from '@nestjs/common'
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import { ApplicationModule } from 'application'
 import {
     MongooseConfigModule,
@@ -7,10 +9,9 @@ import {
     TemporalConfigModule
 } from 'config'
 import { CoreModule } from 'core'
+import { GatewayModule, HealthModule, RequestValidationPipe } from 'gateway'
 import { InfrastructureModule } from 'infrastructure'
-import { GatewayModule } from './gateway'
 import { GlobalModule } from './global.module'
-import { HealthModule } from './health.module'
 
 @Module({
     imports: [
@@ -24,6 +25,11 @@ import { HealthModule } from './health.module'
         InfrastructureModule,
         ApplicationModule,
         GatewayModule
+    ],
+    providers: [
+        { provide: APP_PIPE, useClass: RequestValidationPipe },
+        { provide: APP_FILTER, useClass: HttpExceptionLoggerFilter },
+        { provide: APP_INTERCEPTOR, useClass: HttpSuccessLoggerInterceptor }
     ]
 })
 export class AppModule {}

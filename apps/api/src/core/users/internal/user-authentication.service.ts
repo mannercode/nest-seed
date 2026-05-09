@@ -1,15 +1,18 @@
 import { JwtAuthService, InjectJwtAuth } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { compare, hash, hashSync } from 'bcrypt'
-import { Rules } from 'config'
 import { UserAuthPayload, UserCredentialsDto } from '../dtos'
 import { UsersRepository } from '../users.repository'
+
+// bcrypt 비용 계수. 10 은 OWASP 권장 기본값. 환경마다 조정할 값이 아니라
+// .env 가 아닌 코드 상수로 둔다.
+const BCRYPT_SALT_ROUNDS = 10
 
 /**
  * 가입된 이메일과 미가입 이메일의 응답 시간 차이로 계정 열거가 가능해지는 것을 막기 위한
  * 사전 계산 더미 해시. user 가 없을 때도 한 번은 bcrypt 를 돌려 시간을 평탄화한다.
  */
-const TIMING_DUMMY_HASH = hashSync('timing-equalization-only', Rules.Auth.bcryptSaltRounds)
+const TIMING_DUMMY_HASH = hashSync('timing-equalization-only', BCRYPT_SALT_ROUNDS)
 
 @Injectable()
 export class UserAuthenticationService {
@@ -32,7 +35,7 @@ export class UserAuthenticationService {
     }
 
     async hash(rawPassword: string) {
-        return hash(rawPassword, Rules.Auth.bcryptSaltRounds)
+        return hash(rawPassword, BCRYPT_SALT_ROUNDS)
     }
 
     async refreshAuthTokens(refreshToken: string) {

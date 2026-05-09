@@ -1,7 +1,7 @@
 import { CacheModule, S3ObjectModule } from '@mannercode/common'
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { AppConfigService, getProjectId, MongooseConfigModule, RedisConfigModule } from 'config'
+import { AppConfigService, MongooseConfigModule, RedisConfigModule } from 'config'
 import { AssetsRepository } from './assets.repository'
 import { AssetsService } from './assets.service'
 import { Asset, AssetSchema } from './models'
@@ -19,7 +19,7 @@ import { Asset, AssetSchema } from './models'
         }),
         CacheModule.register({
             name: 'assets',
-            prefix: `cache:${getProjectId()}`,
+            prefix: `cache:${AppConfigService.projectId}`,
             redisName: RedisConfigModule.connectionName
         })
     ],

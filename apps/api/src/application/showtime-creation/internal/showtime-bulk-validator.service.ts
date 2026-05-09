@@ -1,15 +1,16 @@
 import { DateTimeRange, DateUtil, Require, TimeUtil } from '@mannercode/common'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { Rules } from 'config'
 import { MoviesService, ShowtimeDto, ShowtimesService, TheatersService } from 'core'
 import { BulkCreateShowtimesDto } from '../dtos'
 import { ShowtimeCreationErrors } from '../errors'
 
 type TimeslotMap = Map<number, ShowtimeDto>
 
-// 모듈 로드 시 1회 평가. iterateTimeslots 가 반복문 안에서 매번 정규식
-// 매칭을 돌리지 않도록 캐싱.
-const TIMESLOT_STEP_MS = TimeUtil.toMs(`${Rules.Showtime.timeslotInMinutes}m`)
+// 상영 시간을 나누는 최소 단위. 도메인 정책 상수 — 환경마다 바꿀 값이 아니라
+// 코드 상수로 둔다. 모듈 로드 시 1회 평가하여 iterateTimeslots 가 반복문 안에서
+// 매번 재계산하지 않도록 캐싱.
+const TIMESLOT_MINUTES = 10
+const TIMESLOT_STEP_MS = TimeUtil.toMs(`${TIMESLOT_MINUTES}m`)
 
 const iterateTimeslots = (
     timeRange: DateTimeRange,

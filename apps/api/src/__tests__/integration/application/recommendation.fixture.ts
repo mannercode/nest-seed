@@ -1,9 +1,6 @@
 import type { TestContext } from '@mannercode/testing'
+import type { MovieDto } from 'core'
 import { DateUtil } from '@mannercode/common'
-import { RecommendationModule } from 'application'
-import { UsersModule, MoviesModule, ShowtimesModule, WatchRecordsModule, type MovieDto } from 'core'
-import { UserJwtAuthGuard, UserOptionalJwtAuthGuard, MoviesHttpController } from 'gateway'
-import { AssetsModule } from 'infrastructure'
 import {
     createAndLoginUser,
     createAppTestContext,
@@ -16,18 +13,7 @@ import {
 export type RecommendationFixture = AppTestContext
 
 export async function createRecommendationFixture(): Promise<RecommendationFixture> {
-    return createAppTestContext({
-        controllers: [MoviesHttpController],
-        imports: [
-            MoviesModule,
-            AssetsModule,
-            UsersModule,
-            ShowtimesModule,
-            WatchRecordsModule,
-            RecommendationModule
-        ],
-        providers: [UserJwtAuthGuard, UserOptionalJwtAuthGuard]
-    })
+    return createAppTestContext()
 }
 
 export async function createShowingMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {

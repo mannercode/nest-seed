@@ -1,6 +1,4 @@
-import { PurchaseModule } from 'application'
-import { PurchaseRecordsModule, PurchaseRecordsService } from 'core'
-import { PurchaseHttpController } from 'gateway'
+import { PurchaseRecordsService } from 'core'
 import { createAppTestContext, type AppTestContext } from '../helpers'
 
 export type PurchaseRecordsFixture = AppTestContext & {
@@ -8,10 +6,7 @@ export type PurchaseRecordsFixture = AppTestContext & {
 }
 
 export async function createPurchaseRecordsFixture(): Promise<PurchaseRecordsFixture> {
-    const ctx = await createAppTestContext({
-        controllers: [PurchaseHttpController],
-        imports: [PurchaseRecordsModule, PurchaseModule]
-    })
+    const ctx = await createAppTestContext()
 
     const purchaseRecordsService = ctx.module.get(PurchaseRecordsService)
     return { ...ctx, purchaseRecordsService }

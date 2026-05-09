@@ -1,10 +1,10 @@
-import { PurchaseEvents, PurchaseModule } from 'application'
+import { PurchaseEvents } from 'application'
 import { createAppTestContext, type AppTestContext } from '../helpers'
 
 export type PurchaseEventsFixture = AppTestContext & { events: PurchaseEvents }
 
 export async function createPurchaseEventsFixture(): Promise<PurchaseEventsFixture> {
-    const ctx = await createAppTestContext({ imports: [PurchaseModule] })
+    const ctx = await createAppTestContext()
     return { ...ctx, events: ctx.module.get(PurchaseEvents) }
 }
 

@@ -1,6 +1,6 @@
 import { InjectNatsPubSub, NatsPubSubService } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { getProjectId } from 'config'
+import { AppConfigService } from 'config'
 
 /**
  * 여러 replica 간의 purchase 도메인 이벤트.
@@ -14,8 +14,8 @@ import { getProjectId } from 'config'
 @Injectable()
 export class PurchaseEvents {
     readonly subjects = {
-        canceled: `${getProjectId()}.purchase.ticketPurchaseCanceled`,
-        purchased: `${getProjectId()}.purchase.ticketPurchased`
+        canceled: `${AppConfigService.projectId}.purchase.ticketPurchaseCanceled`,
+        purchased: `${AppConfigService.projectId}.purchase.ticketPurchased`
     }
 
     constructor(@InjectNatsPubSub() private readonly natsPubSub: NatsPubSubService) {}

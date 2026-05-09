@@ -8,24 +8,18 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import compression from 'compression'
-import {
-    AppConfigService,
-    MongooseConfigModule,
-    NatsConfigModule,
-    RedisConfigModule,
-    TemporalConfigModule
-} from 'config'
+import { AppConfigService, RedisConfigModule } from 'config'
 import express from 'express'
-import { GlobalModule } from '../../../global.module'
+import { AppModule } from '../../../app.module'
 
-export async function createAppTestContext(metadata: ModuleMetadataEx) {
-    metadata.imports?.push(
-        GlobalModule,
-        MongooseConfigModule,
-        RedisConfigModule,
-        NatsConfigModule,
-        TemporalConfigModule
-    )
+/**
+ * 통합 테스트용 Nest 앱을 띄운다. AppModule 을 통째로 가져와 운영 그래프와
+ * 동일한 모듈 구성을 사용하므로, 테스트 fixture 는 추가 imports / controllers
+ * 를 따로 선언할 필요가 없다. mock 이나 가드 무력화는 기존대로
+ * overrideProviders / ignoreGuards 옵션으로 적용한다.
+ */
+export async function createAppTestContext(metadata: ModuleMetadataEx = {}) {
+    const imports = [AppModule, ...(metadata.imports ?? [])]
 
     const ctx = await createHttpTestContext({
         configureApp: async (app) => {
@@ -39,7 +33,8 @@ export async function createAppTestContext(metadata: ModuleMetadataEx) {
                 app.useLogger(logger)
             }
         },
-        ...metadata
+        ...metadata,
+        imports
     })
 
     await stopAllCronJobs(ctx)
@@ -60,8 +55,6 @@ export type AppTestContext = Awaited<ReturnType<typeof createAppTestContext>>
  * @example
  * const configMock = createConfigServiceMock({ S3_ENDPOINT: s3.endpoint })
  * const ctx = await createAppTestContext({
- *     imports: [AssetsModule],
- *     providers: [],
  *     overrideProviders: [configMock]
  * })
  */

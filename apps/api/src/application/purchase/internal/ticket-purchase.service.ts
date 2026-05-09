@@ -1,6 +1,6 @@
 import { DateUtil, uniq } from '@mannercode/common'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
-import { Rules } from 'config'
+import { AppConfigService } from 'config'
 import {
     PurchaseItemDto,
     ShowtimeDto,
@@ -22,7 +22,8 @@ export class TicketPurchaseService {
         private readonly ticketsService: TicketsService,
         private readonly showtimesService: ShowtimesService,
         private readonly ticketHoldingService: TicketHoldingService,
-        private readonly events: PurchaseEvents
+        private readonly events: PurchaseEvents,
+        private readonly config: AppConfigService
     ) {}
 
     async completePurchase(createDto: CreatePurchaseDto): Promise<void> {
@@ -104,16 +105,18 @@ export class TicketPurchaseService {
     }
 
     private validatePurchaseTime(showtimes: ShowtimeDto[]) {
+        const cutoffMinutes = this.config.ticket.purchaseCutoffMinutes
+
         for (const { startTime } of showtimes) {
             const purchaseWindowCloseTime = DateUtil.add({
                 base: startTime,
-                minutes: -Rules.Ticket.purchaseCutoffMinutes
+                minutes: -cutoffMinutes
             })
 
             if (purchaseWindowCloseTime.getTime() < DateUtil.now().getTime()) {
                 throw new BadRequestException(
                     PurchaseErrors.WindowClosed(
-                        Rules.Ticket.purchaseCutoffMinutes,
+                        cutoffMinutes,
                         purchaseWindowCloseTime.toString(),
                         startTime.toString()
                     )
@@ -123,10 +126,10 @@ export class TicketPurchaseService {
     }
 
     private validateTicketCount(ticketItems: PurchaseItemDto[]) {
-        if (Rules.Ticket.maxTicketsPerPurchase < ticketItems.length) {
-            throw new BadRequestException(
-                PurchaseErrors.LimitExceeded(Rules.Ticket.maxTicketsPerPurchase)
-            )
+        const maxPerPurchase = this.config.ticket.maxPerPurchase
+
+        if (maxPerPurchase < ticketItems.length) {
+            throw new BadRequestException(PurchaseErrors.LimitExceeded(maxPerPurchase))
         }
     }
 }

@@ -1,4 +1,5 @@
 export * from './assets'
 export * from './create-app-test-context'
 export * from './errors'
+export * from './override-config'
 export * from './utils'

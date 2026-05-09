@@ -1,6 +1,7 @@
 import { createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseConfigModule, Rules } from 'config'
+import { MongooseConfigModule } from 'config'
+import { MovieDefaults } from './movie-defaults'
 
 export const MovieGenre = {
     Action: 'action',
@@ -31,7 +32,7 @@ function required(this: Movie) {
     return this.isPublished
 }
 
-const { defaults } = Rules.Movie
+const defaults = MovieDefaults
 
 @Schema(MongooseConfigModule.schemaOptions)
 export class Movie extends CrudSchema {

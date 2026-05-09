@@ -1,6 +1,6 @@
 import type { AssetDto } from 'infrastructure'
 import { Checksum, pickIds, sleep } from '@mannercode/common'
-import { nullObjectId, toAny } from '@mannercode/testing'
+import { nullObjectId } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
 import type { AssetsFixture } from './assets.fixture'
 import {
@@ -8,6 +8,7 @@ import {
     buildFinalizeAssetDto,
     createAsset,
     downloadAsset,
+    overrideConfigGetter,
     testAssets,
     uploadAndFinalizeAsset,
     uploadAsset,
@@ -54,8 +55,7 @@ describe('AssetsService', () => {
         })
 
         it('업로드 URL이 만료된 후에는 업로드를 거부한다', async () => {
-            const { Rules } = await import('config')
-            toAny(Rules).Asset.uploadExpiresInSec = 1
+            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 1 })
 
             const createDto = buildCreateAssetDto(file)
             const uploadRequest = await fix.assetsService.create(createDto)
@@ -119,8 +119,7 @@ describe('AssetsService', () => {
             let assetId: string
 
             beforeEach(async () => {
-                const { Rules } = await import('config')
-                toAny(Rules).Asset.uploadExpiresInSec = 1
+                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 1 })
 
                 const createDto = buildCreateAssetDto(file)
                 const createdAsset = await fix.assetsService.create(createDto)
@@ -256,8 +255,7 @@ describe('AssetsService', () => {
         let assetId: string
 
         beforeEach(async () => {
-            const { Rules } = await import('config')
-            toAny(Rules).Asset.uploadExpiresInSec = 1
+            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 1 })
             const cronJob = fix.scheduler.getCronJob('assets.cleanupExpiredUploads')
             fireOnTick = cronJob.fireOnTick
 
@@ -274,8 +272,9 @@ describe('AssetsService', () => {
         })
 
         it('업로드가 만료된 에셋은 제거한다', async () => {
-            const { Rules } = await import('config')
-            await sleep(Rules.Asset.uploadExpiresInSec * 1000 + 500)
+            const { AppConfigService } = await import('config')
+            const config = fix.module.get(AppConfigService)
+            await sleep(config.asset.uploadExpiresInSec * 1000 + 500)
 
             await fireOnTick()
             await sleep(1000)

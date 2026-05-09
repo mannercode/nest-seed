@@ -1,7 +1,6 @@
 import { pickIds } from '@mannercode/common'
-import { toAny } from '@mannercode/testing'
 import { TicketStatus, type TicketDto } from 'core'
-import { Errors, getPayments, getTickets } from '../helpers'
+import { Errors, getPayments, getTickets, overrideConfigGetter } from '../helpers'
 import { buildCreatePurchaseDto, type PurchaseFixture } from './purchase.fixture'
 
 describe('PurchaseService', () => {
@@ -60,8 +59,9 @@ describe('PurchaseService', () => {
             })
 
             it('티켓 수가 최대치를 초과하면 400을 반환한다', async () => {
-                const { Rules } = await import('config')
-                toAny(Rules).Ticket.maxTicketsPerPurchase = heldTickets.length - 1
+                await overrideConfigGetter(fix.module, 'ticket', {
+                    maxPerPurchase: heldTickets.length - 1
+                })
 
                 const createDto = buildCreatePurchaseDto(heldTickets)
 
@@ -72,8 +72,11 @@ describe('PurchaseService', () => {
             })
 
             it('구매 가능 시간이 종료되면 400을 반환한다', async () => {
-                const { Rules } = await import('config')
-                toAny(Rules).Ticket.purchaseCutoffMinutes = Rules.Ticket.purchaseCutoffMinutes + 2
+                const { AppConfigService } = await import('config')
+                const config = fix.module.get(AppConfigService)
+                await overrideConfigGetter(fix.module, 'ticket', {
+                    purchaseCutoffMinutes: config.ticket.purchaseCutoffMinutes + 2
+                })
 
                 const createDto = buildCreatePurchaseDto(heldTickets)
 

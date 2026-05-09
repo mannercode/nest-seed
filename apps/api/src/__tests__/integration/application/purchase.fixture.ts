@@ -1,45 +1,20 @@
+import type { CreatePurchaseDto } from 'application'
 import { DateUtil, pickIds } from '@mannercode/common'
-import { oid, toAny, type TestContext } from '@mannercode/testing'
-import { PurchaseModule, type CreatePurchaseDto } from 'application'
-import {
-    UsersModule,
-    MoviesModule,
-    PurchaseItemType,
-    PurchaseRecordsModule,
-    ShowtimesModule,
-    TheatersModule,
-    TicketHoldingModule,
-    TicketsModule,
-    type TicketDto
-} from 'core'
-import { PurchaseHttpController } from 'gateway'
-import { AssetsModule, PaymentsModule } from 'infrastructure'
+import { oid, type TestContext } from '@mannercode/testing'
+import { PurchaseItemType, type TicketDto } from 'core'
 import {
     buildHoldTicketsDto,
     createAppTestContext,
     createShowtimes,
     createTickets,
+    overrideConfigGetter,
     type AppTestContext
 } from '../helpers'
 
 export type PurchaseFixture = AppTestContext
 
 export async function createPurchaseFixture(): Promise<PurchaseFixture> {
-    return createAppTestContext({
-        controllers: [PurchaseHttpController],
-        imports: [
-            MoviesModule,
-            AssetsModule,
-            TheatersModule,
-            TicketsModule,
-            PurchaseRecordsModule,
-            UsersModule,
-            ShowtimesModule,
-            TicketHoldingModule,
-            PaymentsModule,
-            PurchaseModule
-        ]
-    })
+    return createAppTestContext()
 }
 
 const userId = oid(0x01)
@@ -55,9 +30,9 @@ export function buildCreatePurchaseDto(
 }
 
 export async function createShowtimeAndTickets(ctx: TestContext) {
-    const { Rules } = await import('config')
-
-    const startTime = DateUtil.add({ minutes: Rules.Ticket.purchaseCutoffMinutes + 1 })
+    const { AppConfigService } = await import('config')
+    const config = ctx.module.get(AppConfigService)
+    const startTime = DateUtil.add({ minutes: config.ticket.purchaseCutoffMinutes + 1 })
 
     const [showtime] = await createShowtimes(ctx, [{ startTime }])
 
@@ -71,8 +46,7 @@ export async function holdTickets(ctx: TestContext, tickets: TicketDto[]) {
     const ticketHoldingService = ctx.module.get(TicketHoldingService)
 
     const heldTicketCount = 4
-    const { Rules } = await import('config')
-    toAny(Rules).Ticket.maxTicketsPerPurchase = heldTicketCount
+    await overrideConfigGetter(ctx.module, 'ticket', { maxPerPurchase: heldTicketCount })
 
     const heldTickets = tickets.slice(0, heldTicketCount)
 

@@ -1,8 +1,8 @@
 import type { HoldTicketsDto } from 'core'
 import { sleep } from '@mannercode/common'
-import { oid, toAny } from '@mannercode/testing'
+import { oid } from '@mannercode/testing'
 import type { TicketHoldingFixture } from './ticket-holding.fixture'
-import { buildHoldTicketsDto } from '../helpers'
+import { buildHoldTicketsDto, overrideConfigGetter } from '../helpers'
 
 describe('TicketHoldingService', () => {
     let fix: TicketHoldingFixture
@@ -61,8 +61,7 @@ describe('TicketHoldingService', () => {
         })
 
         it('보유 시간이 만료되면 다른 고객이 같은 ticketIds를 보유할 수 있다', async () => {
-            const { Rules } = await import('config')
-            toAny(Rules).Ticket.holdDurationInMs = 1000
+            await overrideConfigGetter(fix.module, 'ticket', { holdDurationInMs: 1000 })
 
             const holdDto = buildHoldTicketsDto({ userId: oid(0xc1) })
             await fix.ticketHoldingService.holdTickets(holdDto)
@@ -119,8 +118,7 @@ describe('TicketHoldingService', () => {
         })
 
         it('보유 시간이 만료되면 빈 배열을 반환한다', async () => {
-            const { Rules } = await import('config')
-            toAny(Rules).Ticket.holdDurationInMs = 1000
+            await overrideConfigGetter(fix.module, 'ticket', { holdDurationInMs: 1000 })
 
             const holdDto = buildHoldTicketsDto()
             await fix.ticketHoldingService.holdTickets(holdDto)

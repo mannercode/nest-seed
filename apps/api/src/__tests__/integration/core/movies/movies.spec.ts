@@ -1,7 +1,6 @@
 import { Checksum, omit } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
-import { Rules } from 'config'
-import { MovieGenre, MovieRating, type MovieDto } from 'core'
+import { MovieDefaults, MovieGenre, MovieRating, type MovieDto } from 'core'
 import type { MoviesFixture } from './movies.fixture'
 import {
     buildCreateMovieDto,
@@ -38,12 +37,7 @@ describe('MoviesService', () => {
             await fix.httpClient
                 .post('/movies')
                 .body({})
-                .created({
-                    genres: [],
-                    id: expect.any(String),
-                    imageUrls: [],
-                    ...Rules.Movie.defaults
-                })
+                .created({ genres: [], id: expect.any(String), imageUrls: [], ...MovieDefaults })
         })
     })
 

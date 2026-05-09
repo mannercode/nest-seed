@@ -1,6 +1,6 @@
 import { CacheService, getByPath, InjectCache } from '@mannercode/common'
 import { Injectable, Logger } from '@nestjs/common'
-import { Rules } from 'config'
+import { AppConfigService } from 'config'
 import { HoldTicketsDto } from './dtos'
 
 const getUserKey = (showtimeId: string, userId: string) => `User:{${showtimeId}}:${userId}`
@@ -60,7 +60,10 @@ const HOLD_TICKETS_SCRIPT = `
 export class TicketHoldingService {
     private readonly logger = new Logger(TicketHoldingService.name)
 
-    constructor(@InjectCache('ticket-holding') private readonly cacheService: CacheService) {}
+    constructor(
+        @InjectCache('ticket-holding') private readonly cacheService: CacheService,
+        private readonly config: AppConfigService
+    ) {}
 
     async holdTickets({ userId, showtimeId, ticketIds }: HoldTicketsDto) {
         const ticketKeys = ticketIds.map((ticketId) => getTicketKey(showtimeId, ticketId))
@@ -68,7 +71,7 @@ export class TicketHoldingService {
         const keys = [...ticketKeys, userKeyStr]
         const scriptArgs = [
             userId,
-            Rules.Ticket.holdDurationInMs.toString(),
+            this.config.ticket.holdDurationInMs.toString(),
             JSON.stringify(ticketIds),
             showtimeId
         ]

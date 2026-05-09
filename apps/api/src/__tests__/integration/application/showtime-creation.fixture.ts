@@ -1,15 +1,5 @@
 import { JsonUtil } from '@mannercode/common'
-import { ShowtimeCreationModule } from 'application'
-import {
-    MoviesModule,
-    ShowtimesModule,
-    ShowtimesService,
-    TheatersModule,
-    TicketsModule,
-    TicketsService
-} from 'core'
-import { ShowtimeCreationHttpController } from 'gateway'
-import { AssetsModule } from 'infrastructure'
+import { ShowtimesService, TicketsService } from 'core'
 import { createAppTestContext, type AppTestContext } from '../helpers'
 
 export type ShowtimeCreationFixture = AppTestContext & {
@@ -18,17 +8,7 @@ export type ShowtimeCreationFixture = AppTestContext & {
 }
 
 export async function createShowtimeCreationFixture(): Promise<ShowtimeCreationFixture> {
-    const ctx = await createAppTestContext({
-        controllers: [ShowtimeCreationHttpController],
-        imports: [
-            MoviesModule,
-            AssetsModule,
-            TheatersModule,
-            ShowtimesModule,
-            TicketsModule,
-            ShowtimeCreationModule
-        ]
-    })
+    const ctx = await createAppTestContext()
 
     const showtimesService = ctx.module.get(ShowtimesService)
     const ticketsService = ctx.module.get(TicketsService)

@@ -5,11 +5,10 @@ import {
     NotFoundException,
     UnprocessableEntityException
 } from '@nestjs/common'
-import { Rules } from 'config'
 import { AssetsService, CreateAssetDto } from 'infrastructure'
 import { SearchMoviesPageDto, UpsertMovieDto, MovieDto } from './dtos'
 import { MovieErrors } from './errors'
-import { Movie } from './models'
+import { Movie, MovieDefaults } from './models'
 import { MoviePendingAssetsRepository } from './movie-pending-assets.repository'
 import { MoviesRepository } from './movies.repository'
 
@@ -114,7 +113,7 @@ export class MoviesService {
         const movie = await this.moviesRepository.getById(movieId)
 
         const { director, durationInSeconds, genres, plot, rating, releaseDate, title } = movie
-        const defaults = Rules.Movie.defaults
+        const defaults = MovieDefaults
 
         const missingFields: string[] = []
         if (title === defaults.title) missingFields.push('title')

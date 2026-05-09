@@ -9,8 +9,8 @@ import {
     S3ObjectService
 } from '@mannercode/common'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { Cron } from '@nestjs/schedule'
-import { Rules } from 'config'
+import { Cron, CronExpression } from '@nestjs/schedule'
+import { AppConfigService } from 'config'
 import { AssetsRepository } from './assets.repository'
 import { AssetPresignedUploadDto, CreateAssetDto, FinalizeAssetDto, AssetDto } from './dtos'
 import { AssetErrors } from './errors'
@@ -21,6 +21,10 @@ const CLEANUP_LOCK_KEY = 'cleanup-expired-uploads'
 // 다음 cron interval 한 회차 이상으로 작업이 굶주리지 않을 만큼은 짧게.
 const CLEANUP_LOCK_TTL_MS = 5 * 60 * 1000
 
+// Cron 데코레이터는 모듈 로드 시점에 평가되므로 DI 로 못 가져온다.
+// 운영에서 튜닝할 값이 아니라 코드 상수로 둔다.
+const EXPIRED_UPLOAD_CLEANUP_CRON = CronExpression.EVERY_10_MINUTES
+
 @Injectable()
 export class AssetsService {
     private readonly logger = new Logger(AssetsService.name)
@@ -28,10 +32,11 @@ export class AssetsService {
     constructor(
         private readonly repository: AssetsRepository,
         @InjectS3Object() private readonly s3Service: S3ObjectService,
-        @InjectCache('assets') private readonly cache: CacheService
+        @InjectCache('assets') private readonly cache: CacheService,
+        private readonly config: AppConfigService
     ) {}
 
-    @Cron(Rules.Asset.expiredUploadCleanupCron, { name: 'assets.cleanupExpiredUploads' })
+    @Cron(EXPIRED_UPLOAD_CLEANUP_CRON, { name: 'assets.cleanupExpiredUploads' })
     async cleanupExpiredUploads() {
         // 모든 replica 가 이 cron 을 돌리니까, 실제 작업은 distributed lock 으로 가둬야 한다.
         // withLock 은 Redis SET NX + token 매칭 DEL 을 써서, 한 interval 에 정확히 하나의
@@ -50,7 +55,7 @@ export class AssetsService {
         const asset = await this.repository.create(createDto)
 
         const { mimeType, size } = createDto
-        const expiresInSec = Rules.Asset.uploadExpiresInSec
+        const expiresInSec = this.config.asset.uploadExpiresInSec
 
         const presigned = await this.s3Service.presignUploadPost({
             contentType: mimeType,
@@ -138,11 +143,14 @@ export class AssetsService {
     }
 
     private getExpirationThreshold() {
-        return DateUtil.add({ base: DateUtil.now(), seconds: -Rules.Asset.uploadExpiresInSec })
+        return DateUtil.add({
+            base: DateUtil.now(),
+            seconds: -this.config.asset.uploadExpiresInSec
+        })
     }
 
     private getUploadExpiresAt(createdAt: Date) {
-        return DateUtil.add({ base: createdAt, seconds: Rules.Asset.uploadExpiresInSec })
+        return DateUtil.add({ base: createdAt, seconds: this.config.asset.uploadExpiresInSec })
     }
 
     private isUploadExpired(expiresAt: Date) {
@@ -175,7 +183,7 @@ export class AssetsService {
     }
 
     private async withDownloadInfo(assetDto: AssetDto): Promise<AssetDto> {
-        const expiresInSec = Rules.Asset.downloadExpiresInSec
+        const expiresInSec = this.config.asset.downloadExpiresInSec
         const url = await this.s3Service.presignDownloadUrl({ expiresInSec, key: assetDto.id })
         const expiresAt = DateUtil.add({ seconds: expiresInSec })
 

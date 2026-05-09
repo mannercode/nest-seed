@@ -1,6 +1,6 @@
 import { DateUtil, OrderDirection, defaultTo } from '@mannercode/common'
 import { Injectable, Logger } from '@nestjs/common'
-import { Rules } from 'config'
+import { AppConfigService } from 'config'
 import { MovieDto, MoviesService, ShowtimesService, WatchRecordsService } from 'core'
 import { MovieRecommender } from './domain'
 
@@ -11,11 +11,12 @@ export class RecommendationService {
     constructor(
         private readonly showtimesService: ShowtimesService,
         private readonly moviesService: MoviesService,
-        private readonly watchRecordsService: WatchRecordsService
+        private readonly watchRecordsService: WatchRecordsService,
+        private readonly config: AppConfigService
     ) {}
 
     async searchRecommendedMovies(userId: null | string) {
-        const startTime = DateUtil.add({ minutes: Rules.Ticket.purchaseCutoffMinutes })
+        const startTime = DateUtil.add({ minutes: this.config.ticket.purchaseCutoffMinutes })
 
         const showingMovieIds = await this.showtimesService.searchMovieIds({
             startTimeRange: { start: startTime }

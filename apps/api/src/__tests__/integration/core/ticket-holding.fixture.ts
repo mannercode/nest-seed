@@ -1,10 +1,10 @@
-import { TicketHoldingModule, TicketHoldingService } from 'core'
+import { TicketHoldingService } from 'core'
 import { createAppTestContext, type AppTestContext } from '../helpers'
 
 export type TicketHoldingFixture = AppTestContext & { ticketHoldingService: TicketHoldingService }
 
 export async function createTicketHoldingFixture() {
-    const ctx = await createAppTestContext({ imports: [TicketHoldingModule] })
+    const ctx = await createAppTestContext()
 
     const ticketHoldingService = ctx.module.get(TicketHoldingService)
 
