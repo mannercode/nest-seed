@@ -41,7 +41,7 @@ describe('WatchRecordsService', () => {
             total: expectedRecords.length
         })
 
-        it('userId로 필터링된 기록을 반환한다', async () => {
+        it('userId로 필터링한다', async () => {
             const recordsPage = await fix.watchRecordsService.searchPage({ userId })
             expect(recordsPage).toEqual(buildExpectedPage([watchRecords[0], watchRecords[1]]))
         })

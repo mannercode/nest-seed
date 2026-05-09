@@ -126,7 +126,7 @@ describe('TheatersService', () => {
             total: theaters.length
         })
 
-        it('쿼리가 없으면 전체 목록을 반환한다', async () => {
+        it('쿼리가 없으면 전체 극장 페이지를 반환한다', async () => {
             const expected = buildExpectedPage([theaterA1, theaterA2, theaterB1, theaterB2])
 
             await fix.httpClient.get('/theaters').ok(expected)

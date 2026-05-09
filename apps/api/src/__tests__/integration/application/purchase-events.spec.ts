@@ -7,15 +7,15 @@ const CANCELED_LOG = 'purchase canceled'
 const countLogCalls = (logSpy: jest.SpyInstance, message: string) =>
     logSpy.mock.calls.filter(([msg]) => msg === message).length
 
-describe('PurchaseEvents subscribers', () => {
+describe('PurchaseEvents 구독자', () => {
     let fix: PurchaseEventsFixture
     let logSpy: jest.SpyInstance
 
     beforeEach(async () => {
         const { createPurchaseEventsFixture } = await import('./purchase-events.fixture')
         fix = await createPurchaseEventsFixture()
-        // resetModules:true 환경에서 subscriber 가 사용하는 Logger 와 같은 realm 의
-        // 클래스를 잡기 위해 dynamic import 로 가져온다.
+        // resetModules:true 환경에서 subscriber가 사용하는 Logger와 같은 realm의
+        // 클래스를 잡기 위해 dynamic import로 가져온다.
         const { Logger } = await import('@nestjs/common')
         logSpy = jest.spyOn(Logger.prototype, 'log')
     })

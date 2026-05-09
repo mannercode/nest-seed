@@ -63,7 +63,7 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('POST /showtime-creation/showtimes', () => {
-        describe('정상 요청 한 건', () => {
+        describe('정상 요청 흐름', () => {
             let createPromise: Promise<Response>
 
             beforeEach(async () => {
