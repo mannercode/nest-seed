@@ -25,7 +25,10 @@ import { AppConfigService } from '../app-config.service'
                             redisOptions: {
                                 keepAlive: 30_000,
                                 connectTimeout: 10_000,
-                                maxRetriesPerRequest: null
+                                // maxRetriesPerRequest=null 은 무한 재시도라 Redis 다운 시
+                                // HTTP 요청이 영구 펜딩으로 쌓인다. 유한 값(기본 20)으로 두어
+                                // 일정 시간 안에 'Connection is closed' 로 실패하게 한다.
+                                maxRetriesPerRequest: 20
                             }
                         },
                         type: 'cluster'

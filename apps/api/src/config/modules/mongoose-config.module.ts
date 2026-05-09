@@ -11,6 +11,12 @@ import { AppConfigService } from '../app-config.service'
             useFactory: async (config: AppConfigService) => {
                 const { database, host1, host2, host3, password, replicaSet, user } = config.mongo
 
+                // userinfo 는 RFC 3986 에 따라 URL-encode 한다. 비번에 `@`/`:`/`/` 가 들어가면
+                // 인코딩 없이는 URI 파서가 잘못 끊는다. host 부분은 이미 hostname:port 형식이므로
+                // 인코딩 대상 아님.
+                const encodedUser = encodeURIComponent(user)
+                const encodedPassword = encodeURIComponent(password)
+
                 return {
                     autoCreate: true,
                     autoIndex: true,
@@ -24,7 +30,7 @@ import { AppConfigService } from '../app-config.service'
                     // read/write c=400 까지만 커버해서 이 burst 영역을 놓쳤다.
                     minPoolSize: 50,
                     maxPoolSize: 200,
-                    uri: `mongodb://${user}:${password}@${host1},${host2},${host3}/?replicaSet=${replicaSet}`,
+                    uri: `mongodb://${encodedUser}:${encodedPassword}@${host1},${host2},${host3}/?replicaSet=${replicaSet}`,
                     waitQueueTimeoutMS: 5000,
                     writeConcern: { journal: true, w: 'majority', wtimeoutMS: 5000 }
                 }
