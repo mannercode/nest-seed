@@ -1,10 +1,10 @@
 const { join } = require('path')
 const { createDefaultPreset, pathsToModuleNameMapper } = require('ts-jest')
 const baseConfig = require('../../jest.config.base')
-const tsconfig = require('../tsconfig.json')
+const tsconfig = require('./tsconfig.json')
 
-const libsTsconfigPath = join(__dirname, '..', 'tsconfig.json')
-const tsJestPreset = createDefaultPreset({ tsconfig: libsTsconfigPath })
+const tsconfigPath = join(__dirname, 'tsconfig.json')
+const tsJestPreset = createDefaultPreset({ tsconfig: tsconfigPath })
 
 module.exports = {
     ...baseConfig,
@@ -13,7 +13,7 @@ module.exports = {
     globalTeardown: join(__dirname, 'jest.teardown.js'),
     setupFilesAfterEnv: [join(__dirname, 'jest.setup.js')],
     moduleNameMapper: pathsToModuleNameMapper(tsconfig.compilerOptions.paths, {
-        prefix: join(__dirname, '..', '/')
+        prefix: join(__dirname, '/')
     }),
     roots: ['<rootDir>/src'],
     collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
