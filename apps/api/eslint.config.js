@@ -8,7 +8,7 @@ const {
     createBaseConfigs
 } = require('../../eslint.config.base')
 
-const internalAliasPattern = '^(?:application|gateway|core|infrastructure|shared)$'
+const internalAliasPattern = '^(?:application|gateway|core|infrastructure|config)$'
 const dependencyIgnorePatterns = [
     '^\\.',
     nodeBuiltinModulePattern,
@@ -45,7 +45,7 @@ module.exports = [
         }
     },
     {
-        files: ['src/gateway/**/*.ts'],
+        files: ['src/services/gateway/**/*.ts'],
         rules: {
             'no-restricted-imports': [
                 'warn',
@@ -63,7 +63,7 @@ module.exports = [
         }
     },
     {
-        files: ['src/application/**/*.ts'],
+        files: ['src/services/application/**/*.ts'],
         rules: {
             'no-restricted-imports': [
                 'warn',
@@ -85,7 +85,7 @@ module.exports = [
         }
     },
     {
-        files: ['src/core/**/*.ts'],
+        files: ['src/services/core/**/*.ts'],
         rules: {
             'no-restricted-imports': [
                 'warn',
@@ -113,7 +113,7 @@ module.exports = [
         }
     },
     {
-        files: ['src/infrastructure/**/*.ts'],
+        files: ['src/services/infrastructure/**/*.ts'],
         rules: {
             'no-restricted-imports': [
                 'warn',
@@ -143,7 +143,7 @@ module.exports = [
         }
     },
     {
-        files: ['src/shared/**/*.ts'],
+        files: ['src/config/**/*.ts'],
         rules: {
             'no-restricted-imports': [
                 'warn',
@@ -151,9 +151,9 @@ module.exports = [
                     patterns: [
                         ...barrelImportPatterns,
                         {
-                            regex: '^shared(/.*)?$',
+                            regex: '^config(/.*)?$',
                             message:
-                                'Use relative imports within shared to avoid ancestor barrel cycles.'
+                                'Use relative imports within config to avoid ancestor barrel cycles.'
                         },
                         {
                             group: [
@@ -166,7 +166,7 @@ module.exports = [
                                 'infrastructure',
                                 'infrastructure/**'
                             ],
-                            message: 'shared must not depend on app layers.'
+                            message: 'config must not depend on app layers.'
                         }
                     ]
                 }

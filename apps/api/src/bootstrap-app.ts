@@ -1,11 +1,11 @@
 import { AppLoggerService, PathUtil } from '@mannercode/common'
 import { NestFactory } from '@nestjs/core'
 import compression from 'compression'
+import { AppConfigService } from 'config'
 import express from 'express'
 import { hostname } from 'os'
 import { exit } from 'process'
 import { AppModule } from './app.module'
-import { AppConfigService } from './shared'
 
 export async function bootstrapApp() {
     const app = await NestFactory.create(AppModule)

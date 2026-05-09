@@ -3,7 +3,7 @@ import { Global, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { ScheduleModule } from '@nestjs/schedule'
-import { AppConfigService } from './shared'
+import { AppConfigService } from 'config'
 
 /**
  * 어디서나 주입 가능한 공용 제공자와, 한 번만 등록되어야 하는 forRoot 호출을 모은다.

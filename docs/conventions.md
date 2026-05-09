@@ -4,21 +4,24 @@
 
 ## 1. 네이밍
 
-### 1.1. 디렉토리: `common` vs `shared`
+### 1.1. 디렉토리 배치
 
-이름이 비슷해서 헷갈리지만 둘은 프로젝트와의 *관계* 가 다르다.
+`apps/*/src/` 안의 자리는 _서비스 코드인지, 그 바깥 자원인지_ 로 갈라 둔다.
 
-- **`common` = 각 프로젝트의 *일부가 되는* 것.** 라이브러리로 import 되어 그 프로젝트의 빌드 산출물 안에서 실행되는 코드. 의존성으로 끌어와서 내 일부로 만든다.
-- **`shared` = 프로젝트의 일부가 아니라 프로젝트가 *사용하는 독립된* 무언가.** 한 도메인이나 레이어의 소속이 아닌, 모두가 외부 자원처럼 가져다 쓰는 분리된 자리.
-
-| 위치                 | 관계                                         | import 경로          |
-| -------------------- | -------------------------------------------- | -------------------- |
-| `libs/common/`       | 각 프로젝트의 일부가 되는 라이브러리         | `@mannercode/common` |
-| `apps/*/src/shared/` | 프로젝트 안에서 어느 곳에도 속하지 않는 독립 자리 | `'shared'`           |
-
-`apps/*/src/shared/` 는 application / core / gateway / infrastructure 네 레이어가 실행 중에 함께 의존하는 것만 담는다. 환경 변수 검증 (`AppConfigService`), 외부 자원 연결 모듈 (`MongooseConfigModule` 등), 그리고 `getProjectId` 같이 모든 레이어가 부르는 함수가 들어간다. 부팅에만 쓰이는 모듈/함수는 `apps/*/src/` 직속에 둔다.
+- **`apps/*/src/services/`** — 서비스 코드 묶음. application / core / gateway / infrastructure 네 레이어가 들어간다.
+- **`apps/*/src/config/`** — 서비스가 의존하는 환경/외부 자원 진입점. 환경 변수 검증 (`AppConfigService`), 외부 자원 연결 모듈 (`MongooseConfigModule` 등), `getProjectId` 같이 부트 시점에 결정되어 모든 레이어가 의존하는 자원.
+- **`apps/*/src/` 직속** — 서비스도 config 도 아닌 것 (앱 부팅 절차, 운영 모듈). 예: `bootstrap-app.ts`, `app.module.ts`, `global.module.ts`, `health.module.ts`.
 
 `core/` 안에는 별도의 공유 자리를 두지 않는다. 두 도메인이 같은 자료 구조를 다뤄야 한다면, 한 모델로 강제로 묶는 대신 각 도메인이 자기 본질에 맞는 이름으로 따로 정의한다 (예: Theater 의 `Seat` = 극장이 정의하는 좌석, Ticket 의 `SeatPosition` = 티켓이 가리키는 좌석 좌표). 자료 구조의 우연한 일치는 모델 공유의 근거가 아니다.
+
+### 1.1.1. `libs/common` 의 의미
+
+`libs/common` 은 _각 프로젝트의 일부가 되는_ 라이브러리 묶음이다. 라이브러리로 import 되어 그 프로젝트의 빌드 산출물 안에서 실행되는 코드 — 의존성으로 끌어와 내 일부로 만든다. 상속 베이스 (`BaseConfigService`, `CrudSchema`), static 유틸 (`DateUtil`, `TimeUtil`), 주입형 서비스 (`AppLoggerService`) 등 형태는 다양하다.
+
+| 위치                 | 관계                                    | import 경로          |
+| -------------------- | --------------------------------------- | -------------------- |
+| `libs/common/`       | 각 프로젝트의 일부가 되는 라이브러리    | `@mannercode/common` |
+| `apps/*/src/config/` | 서비스가 의존하는 환경/외부 자원 진입점 | `'config'`           |
 
 ### 1.2. 파일
 

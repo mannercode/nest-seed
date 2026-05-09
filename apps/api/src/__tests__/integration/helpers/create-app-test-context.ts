@@ -8,8 +8,8 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import compression from 'compression'
+import { AppConfigService, RedisConfigModule } from 'config'
 import express from 'express'
-import { AppConfigService, RedisConfigModule } from 'shared'
 import { AppModule } from '../../../app.module'
 
 /**

@@ -6,11 +6,11 @@
         "rootDir": ".",
         "outDir": "./_output/build",
         "paths": {
-            "shared": ["src/shared/index"],
-            "application": ["src/application/index"],
-            "core": ["src/core/index"],
-            "infrastructure": ["src/infrastructure/index"],
-            "gateway": ["src/gateway/index"]
+            "config": ["src/config/index"],
+            "application": ["src/services/application/index"],
+            "core": ["src/services/core/index"],
+            "infrastructure": ["src/services/infrastructure/index"],
+            "gateway": ["src/services/gateway/index"]
         }
     },
     "include": ["src/**/*"]

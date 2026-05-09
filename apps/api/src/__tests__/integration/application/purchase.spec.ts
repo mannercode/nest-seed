@@ -72,7 +72,7 @@ describe('PurchaseService', () => {
             })
 
             it('구매 가능 시간이 종료되면 400을 반환한다', async () => {
-                const { AppConfigService } = await import('shared')
+                const { AppConfigService } = await import('config')
                 const config = fix.module.get(AppConfigService)
                 await overrideConfigGetter(fix.module, 'ticket', {
                     purchaseCutoffMinutes: config.ticket.purchaseCutoffMinutes + 2
