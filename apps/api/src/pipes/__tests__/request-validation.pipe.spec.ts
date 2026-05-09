@@ -11,69 +11,45 @@ describe('RequestValidationPipe', () => {
     })
     afterEach(() => fix.teardown())
 
-    describe('object', () => {
-        // 페이로드가 유효할 때
-        describe('when the payload is valid', () => {
-            // 검증을 통과한다
-            it('passes validation', async () => {
-                await fix.httpClient.post('/').body({ date: nullDate, sampleId: 'id' }).created()
-            })
+    describe('객체', () => {
+        it('유효한 페이로드는 검증을 통과한다', async () => {
+            await fix.httpClient.post('/').body({ date: nullDate, sampleId: 'id' }).created()
         })
 
-        // 페이로드에 유효하지 않거나 알 수 없는 필드가 포함될 때
-        describe('when the payload includes invalid or unknown fields', () => {
-            // 400 Bad Request를 반환한다
-            it('returns 400 Bad Request', async () => {
-                await fix.httpClient.post('/').body({ wrong: 'id' }).badRequest()
-            })
+        it('유효하지 않거나 알 수 없는 필드가 있으면 400을 반환한다', async () => {
+            await fix.httpClient.post('/').body({ wrong: 'id' }).badRequest()
         })
     })
 
-    describe('array', () => {
-        // 페이로드가 유효한 배열일 때
-        describe('when the payload is a valid array', () => {
-            // 검증을 통과한다
-            it('passes validation', async () => {
-                await fix.httpClient
-                    .post('/array')
-                    .body([{ date: nullDate, sampleId: 'id' }])
-                    .created()
-            })
+    describe('배열', () => {
+        it('유효한 배열은 검증을 통과한다', async () => {
+            await fix.httpClient
+                .post('/array')
+                .body([{ date: nullDate, sampleId: 'id' }])
+                .created()
         })
 
-        // 항목 중 하나라도 유효하지 않을 때
-        describe('when any item is invalid', () => {
-            // 400 Bad Request를 반환한다
-            it('returns 400 Bad Request', async () => {
-                await fix.httpClient
-                    .post('/array')
-                    .body([{ date: 'wrong', sampleId: 'id' }])
-                    .badRequest()
-            })
+        it('배열 항목 중 하나라도 유효하지 않으면 400을 반환한다', async () => {
+            await fix.httpClient
+                .post('/array')
+                .body([{ date: 'wrong', sampleId: 'id' }])
+                .badRequest()
         })
     })
 
-    describe('nested array', () => {
-        // 페이로드가 유효한 중첩 배열일 때
-        describe('when the payload is a valid nested array', () => {
-            // 검증을 통과한다
-            it('passes validation', async () => {
-                await fix.httpClient
-                    .post('/nested')
-                    .body({ samples: [{ date: nullDate, sampleId: 'id' }] })
-                    .created()
-            })
+    describe('중첩 배열', () => {
+        it('유효한 중첩 배열은 검증을 통과한다', async () => {
+            await fix.httpClient
+                .post('/nested')
+                .body({ samples: [{ date: nullDate, sampleId: 'id' }] })
+                .created()
         })
 
-        // 중첩 항목 중 하나라도 유효하지 않을 때
-        describe('when any nested item is invalid', () => {
-            // 400 Bad Request를 반환한다
-            it('returns 400 Bad Request', async () => {
-                await fix.httpClient
-                    .post('/nested')
-                    .body({ samples: [{ date: 'wrong', sampleId: 'id' }] })
-                    .badRequest()
-            })
+        it('중첩 배열 항목 중 하나라도 유효하지 않으면 400을 반환한다', async () => {
+            await fix.httpClient
+                .post('/nested')
+                .body({ samples: [{ date: 'wrong', sampleId: 'id' }] })
+                .badRequest()
         })
     })
 })

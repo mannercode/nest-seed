@@ -22,7 +22,7 @@ describe('PurchaseEvents subscribers', () => {
 
     afterEach(() => fix.teardown())
 
-    it('ticketPurchased 는 queue-group 핸들러(notification) 와 broadcast 핸들러(logger) 양쪽으로 도달한다', async () => {
+    it('ticketPurchased 이벤트는 notification(queue-group)과 logger(broadcast) 양쪽에 도달한다', async () => {
         const { waitFor } = await import('./purchase-events.fixture')
         const userId = 'user-1'
         const ticketIds = ['t1', 't2']
@@ -39,7 +39,7 @@ describe('PurchaseEvents subscribers', () => {
         expect(countLogCalls(logSpy, PURCHASED_LOG)).toBe(1)
     })
 
-    it('ticketPurchaseCanceled 는 logger 만 구독함 — notification 은 받지 않는다', async () => {
+    it('ticketPurchaseCanceled 이벤트는 logger에만 도달하고 notification에는 도달하지 않는다', async () => {
         const { waitFor } = await import('./purchase-events.fixture')
         const userId = 'user-2'
         const ticketIds = ['t3']
@@ -48,7 +48,7 @@ describe('PurchaseEvents subscribers', () => {
 
         await waitFor(() => countLogCalls(logSpy, CANCELED_LOG) > 0)
 
-        // notification 측은 timed window 안에서 끝까지 비어 있어야 한다
+        // notification 측은 대기 구간 끝까지 비어 있어야 한다.
         await new Promise((r) => setTimeout(r, 100))
         expect(countLogCalls(logSpy, CANCELED_LOG)).toBe(1)
         expect(countLogCalls(logSpy, NOTIFICATION_LOG)).toBe(0)

@@ -1,4 +1,3 @@
-import type { PaymentDto } from 'infrastructure'
 import { pickIds } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
@@ -45,32 +44,24 @@ describe('PaymentsService', () => {
     })
 
     describe('getMany', () => {
-        describe('결제가 존재할 때', () => {
-            let payments: PaymentDto[]
+        it('주어진 paymentIds에 해당하는 결제를 반환한다', async () => {
+            const payments = await Promise.all([
+                createPayment(fix),
+                createPayment(fix),
+                createPayment(fix)
+            ])
 
-            beforeEach(async () => {
-                payments = await Promise.all([
-                    createPayment(fix),
-                    createPayment(fix),
-                    createPayment(fix)
-                ])
-            })
+            const fetchedPayments = await fix.paymentsService.getMany(pickIds(payments))
 
-            it('paymentIds에 대한 결제를 반환한다', async () => {
-                const fetchedPayments = await fix.paymentsService.getMany(pickIds(payments))
-
-                expect(fetchedPayments).toEqual(expect.arrayContaining(payments))
-            })
+            expect(fetchedPayments).toEqual(expect.arrayContaining(payments))
         })
 
-        describe('paymentIds에 존재하지 않는 paymentId가 포함될 때', () => {
-            it('404 Not Found를 던진다', async () => {
-                const promise = fix.paymentsService.getMany([nullObjectId])
+        it('paymentIds 중 하나라도 없으면 404를 던진다', async () => {
+            const promise = fix.paymentsService.getMany([nullObjectId])
 
-                await expect(promise).rejects.toMatchObject({
-                    message: Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]).message,
-                    status: HttpStatus.NOT_FOUND
-                })
+            await expect(promise).rejects.toMatchObject({
+                message: Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]).message,
+                status: HttpStatus.NOT_FOUND
             })
         })
     })

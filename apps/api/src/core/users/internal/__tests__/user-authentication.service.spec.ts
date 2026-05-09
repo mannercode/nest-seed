@@ -8,15 +8,13 @@ describe('UserAuthenticationService', () => {
     })
 
     describe('hash', () => {
-        // 해시된 비밀번호를 반환한다
-        it('returns hashed password', async () => {
+        it('해시된 비밀번호를 반환한다', async () => {
             const hashedPassword = await service.hash('password')
 
             expect(hashedPassword).not.toEqual('password')
         })
 
-        // 같은 비밀번호라도 다른 해시를 반환한다
-        it('returns different hashes for the same password', async () => {
+        it('같은 비밀번호라도 매번 다른 해시를 반환한다', async () => {
             const hash1 = await service.hash('password')
             const hash2 = await service.hash('password')
 
@@ -31,24 +29,21 @@ describe('UserAuthenticationService', () => {
             hashedPassword = await service.hash('password')
         })
 
-        // 일치하는 비밀번호면 true를 반환한다
-        it('returns true for a matching password', async () => {
+        it('일치하는 비밀번호이면 true를 반환한다', async () => {
             const isMatch = await service.validate('password', hashedPassword)
 
             expect(isMatch).toBe(true)
         })
 
-        // 일치하지 않는 비밀번호면 false를 반환한다
-        it('returns false for a non-matching password', async () => {
+        it('일치하지 않는 비밀번호이면 false를 반환한다', async () => {
             const isMatch = await service.validate('wrongpassword', hashedPassword)
 
             expect(isMatch).toBe(false)
         })
     })
 
-    describe('findUserByCredentials timing equalization', () => {
-        // 사용자가 없어도 validate (= bcrypt.compare) 가 호출되어 시간이 평탄화된다
-        it('runs validate even when the email is not registered', async () => {
+    describe('findUserByCredentials의 타이밍 평탄화', () => {
+        it('이메일이 없어도 validate를 호출해 응답 시간을 평탄화한다', async () => {
             const repo = { findByEmailWithPassword: jest.fn().mockResolvedValue(null) }
             const svc = new UserAuthenticationService(repo as any, {} as any)
             const validateSpy = jest.spyOn(svc, 'validate')
@@ -60,14 +55,13 @@ describe('UserAuthenticationService', () => {
 
             expect(result).toBeNull()
             expect(validateSpy).toHaveBeenCalledTimes(1)
-            // 더미 해시와 비교했어야 함 (= bcrypt 형식의 해시이지만 사용자 실해시는 아님)
+            // 더미 해시와 비교했는지 확인 (bcrypt 형식이지만 실제 사용자 해시는 아님).
             const [, hashArg] = validateSpy.mock.calls[0]
             expect(typeof hashArg).toBe('string')
             expect(hashArg.startsWith('$2')).toBe(true)
         })
 
-        // 사용자가 있고 비번이 틀려도 null 반환 (실해시와 비교됨)
-        it('returns null and runs validate for an existing user with wrong password', async () => {
+        it('비밀번호가 틀린 기존 사용자에 대해 validate를 호출하고 null을 반환한다', async () => {
             const realHash = await service.hash('correct')
             const repo = {
                 findByEmailWithPassword: jest

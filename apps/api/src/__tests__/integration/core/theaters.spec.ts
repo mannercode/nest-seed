@@ -1,4 +1,4 @@
-import type { SearchTheatersPageDto, TheaterDto } from 'core'
+import type { TheaterDto } from 'core'
 import { nullObjectId } from '@mannercode/testing'
 import type { TheatersFixture } from './theaters.fixture'
 import { buildCreateTheaterDto, createTheater, Errors } from '../helpers'
@@ -22,101 +22,81 @@ describe('TheatersService', () => {
                 .created({ ...createDto, id: expect.any(String) })
         })
 
-        describe('필수 필드가 누락되었을 때', () => {
-            it('400 Bad Request를 반환한다', async () => {
-                await fix.httpClient
-                    .post('/theaters')
-                    .body({})
-                    .badRequest(Errors.RequestValidation.Failed(expect.any(Array)))
-            })
+        it('필수 필드가 누락되면 400을 반환한다', async () => {
+            await fix.httpClient
+                .post('/theaters')
+                .body({})
+                .badRequest(Errors.RequestValidation.Failed(expect.any(Array)))
         })
     })
 
     describe('GET /theaters/:id', () => {
-        describe('극장이 존재할 때', () => {
-            let theater: TheaterDto
+        it('id에 해당하는 극장을 반환한다', async () => {
+            const theater = await createTheater(fix)
 
-            beforeEach(async () => {
-                theater = await createTheater(fix)
-            })
-
-            it('극장을 반환한다', async () => {
-                await fix.httpClient.get(`/theaters/${theater.id}`).ok(theater)
-            })
+            await fix.httpClient.get(`/theaters/${theater.id}`).ok(theater)
         })
 
-        describe('극장이 존재하지 않을 때', () => {
-            it('404 Not Found를 반환한다', async () => {
-                await fix.httpClient
-                    .get(`/theaters/${nullObjectId}`)
-                    .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
-            })
+        it('id에 해당하는 극장이 없으면 404를 반환한다', async () => {
+            await fix.httpClient
+                .get(`/theaters/${nullObjectId}`)
+                .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
         })
     })
 
     describe('PATCH /theaters/:id', () => {
-        describe('극장이 존재할 때', () => {
-            let theater: TheaterDto
+        let theater: TheaterDto
 
-            beforeEach(async () => {
-                theater = await createTheater(fix, { name: 'original-name' })
-            })
-
-            it('수정된 극장을 반환한다', async () => {
-                const updateDto = {
-                    location: { latitude: 30.0, longitude: 120.0 },
-                    seatmap: { blocks: [] }
-                }
-
-                await fix.httpClient
-                    .patch(`/theaters/${theater.id}`)
-                    .body(updateDto)
-                    .ok({ ...theater, ...updateDto })
-            })
-
-            it('수정 내용이 저장된다', async () => {
-                const updateDto = { name: 'update-name' }
-                await fix.httpClient.patch(`/theaters/${theater.id}`).body(updateDto).ok()
-
-                await fix.httpClient.get(`/theaters/${theater.id}`).ok({ ...theater, ...updateDto })
-            })
+        beforeEach(async () => {
+            theater = await createTheater(fix, { name: 'original-name' })
         })
 
-        describe('극장이 존재하지 않을 때', () => {
-            it('404 Not Found를 반환한다', async () => {
-                await fix.httpClient
-                    .patch(`/theaters/${nullObjectId}`)
-                    .body({})
-                    .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))
-            })
+        it('수정된 극장을 반환한다', async () => {
+            const updateDto = {
+                location: { latitude: 30.0, longitude: 120.0 },
+                seatmap: { blocks: [] }
+            }
+
+            await fix.httpClient
+                .patch(`/theaters/${theater.id}`)
+                .body(updateDto)
+                .ok({ ...theater, ...updateDto })
+        })
+
+        it('수정 내용이 영속된다', async () => {
+            const updateDto = { name: 'update-name' }
+            await fix.httpClient.patch(`/theaters/${theater.id}`).body(updateDto).ok()
+
+            await fix.httpClient.get(`/theaters/${theater.id}`).ok({ ...theater, ...updateDto })
+        })
+
+        it('id에 해당하는 극장이 없으면 404를 반환한다', async () => {
+            await fix.httpClient
+                .patch(`/theaters/${nullObjectId}`)
+                .body({})
+                .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))
         })
     })
 
     describe('DELETE /theaters/:id', () => {
-        describe('극장이 존재할 때', () => {
-            let theater: TheaterDto
+        it('극장이 존재하면 204를 반환한다', async () => {
+            const theater = await createTheater(fix)
 
-            beforeEach(async () => {
-                theater = await createTheater(fix)
-            })
-
-            it('204 No Content를 반환한다', async () => {
-                await fix.httpClient.delete(`/theaters/${theater.id}`).noContent()
-            })
-
-            it('삭제가 저장된다', async () => {
-                await fix.httpClient.delete(`/theaters/${theater.id}`).noContent()
-
-                await fix.httpClient
-                    .get(`/theaters/${theater.id}`)
-                    .notFound(Errors.Mongoose.MultipleDocumentsNotFound([theater.id]))
-            })
+            await fix.httpClient.delete(`/theaters/${theater.id}`).noContent()
         })
 
-        describe('극장이 존재하지 않을 때', () => {
-            it('204 No Content를 반환한다', async () => {
-                await fix.httpClient.delete(`/theaters/${nullObjectId}`).noContent()
-            })
+        it('삭제 후에는 조회 시 404가 반환된다', async () => {
+            const theater = await createTheater(fix)
+
+            await fix.httpClient.delete(`/theaters/${theater.id}`).noContent()
+
+            await fix.httpClient
+                .get(`/theaters/${theater.id}`)
+                .notFound(Errors.Mongoose.MultipleDocumentsNotFound([theater.id]))
+        })
+
+        it('극장이 없어도 204를 반환한다', async () => {
+            await fix.httpClient.delete(`/theaters/${nullObjectId}`).noContent()
         })
     })
 
@@ -146,30 +126,24 @@ describe('TheatersService', () => {
             total: theaters.length
         })
 
-        describe('쿼리가 제공되지 않을 때', () => {
-            it('기본 페이지를 반환한다', async () => {
-                const expected = buildExpectedPage([theaterA1, theaterA2, theaterB1, theaterB2])
+        it('쿼리가 없으면 전체 목록을 반환한다', async () => {
+            const expected = buildExpectedPage([theaterA1, theaterA2, theaterB1, theaterB2])
 
-                await fix.httpClient.get('/theaters').ok(expected)
-            })
+            await fix.httpClient.get('/theaters').ok(expected)
         })
 
-        describe('필터가 제공될 때', () => {
-            const queryAndExpect = (query: SearchTheatersPageDto, theaters: TheaterDto[]) =>
-                fix.httpClient.get('/theaters').query(query).ok(buildExpectedPage(theaters))
-
-            it('부분 이름 일치로 필터링된 극장을 반환한다', async () => {
-                await queryAndExpect({ name: 'theater-a' }, [theaterA1, theaterA2])
-            })
+        it('name 부분 일치로 필터링한다', async () => {
+            await fix.httpClient
+                .get('/theaters')
+                .query({ name: 'theater-a' })
+                .ok(buildExpectedPage([theaterA1, theaterA2]))
         })
 
-        describe('쿼리 파라미터가 유효하지 않을 때', () => {
-            it('400 Bad Request를 반환한다', async () => {
-                await fix.httpClient
-                    .get('/theaters')
-                    .query({ wrong: 'value' })
-                    .badRequest(Errors.RequestValidation.Failed(expect.any(Array)))
-            })
+        it('알 수 없는 쿼리 파라미터는 400을 반환한다', async () => {
+            await fix.httpClient
+                .get('/theaters')
+                .query({ wrong: 'value' })
+                .badRequest(Errors.RequestValidation.Failed(expect.any(Array)))
         })
     })
 })

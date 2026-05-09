@@ -9,8 +9,7 @@ describe('SecurityEventLogger', () => {
         svc = new SecurityEventLogger(logger as any)
     })
 
-    // 고위험 — error 레벨로 기록
-    it('logs token.reuse_detected at error level', () => {
+    it('token.reuse_detected는 error 레벨로 기록한다', () => {
         const event = {
             type: 'token.reuse_detected' as const,
             familyId: 'f1',
@@ -24,8 +23,7 @@ describe('SecurityEventLogger', () => {
         expect(logger.log).not.toHaveBeenCalled()
     })
 
-    // 검증 실패 — warn 레벨
-    it('logs verify.failed at warn level', () => {
+    it('verify.failed는 warn 레벨로 기록한다', () => {
         const event = { type: 'verify.failed' as const, reason: 'jwt malformed', at: new Date() }
         svc.handle(event)
 
@@ -34,16 +32,45 @@ describe('SecurityEventLogger', () => {
         expect(logger.log).not.toHaveBeenCalled()
     })
 
-    // 일반 동작 — log 레벨 (3종)
-    it.each([
-        ['family.revoked', { reason: 'logout' }],
-        ['token.issued', { tokenId: 't1' }],
-        ['token.refreshed', { oldTokenId: 'o1', newTokenId: 'n1' }]
-    ] as const)('logs %s at info level', (type, extra) => {
-        const event = { type, familyId: 'f1', at: new Date(), ...extra } as any
+    it('family.revoked는 info 레벨로 기록한다', () => {
+        const event = {
+            type: 'family.revoked' as const,
+            familyId: 'f1',
+            reason: 'logout',
+            at: new Date()
+        } as any
         svc.handle(event)
 
-        expect(logger.log).toHaveBeenCalledWith(`security_event:${type}`, event)
+        expect(logger.log).toHaveBeenCalledWith('security_event:family.revoked', event)
+        expect(logger.warn).not.toHaveBeenCalled()
+        expect(logger.error).not.toHaveBeenCalled()
+    })
+
+    it('token.issued는 info 레벨로 기록한다', () => {
+        const event = {
+            type: 'token.issued' as const,
+            familyId: 'f1',
+            tokenId: 't1',
+            at: new Date()
+        } as any
+        svc.handle(event)
+
+        expect(logger.log).toHaveBeenCalledWith('security_event:token.issued', event)
+        expect(logger.warn).not.toHaveBeenCalled()
+        expect(logger.error).not.toHaveBeenCalled()
+    })
+
+    it('token.refreshed는 info 레벨로 기록한다', () => {
+        const event = {
+            type: 'token.refreshed' as const,
+            familyId: 'f1',
+            oldTokenId: 'o1',
+            newTokenId: 'n1',
+            at: new Date()
+        } as any
+        svc.handle(event)
+
+        expect(logger.log).toHaveBeenCalledWith('security_event:token.refreshed', event)
         expect(logger.warn).not.toHaveBeenCalled()
         expect(logger.error).not.toHaveBeenCalled()
     })

@@ -1,6 +1,6 @@
 import { pickIds } from '@mannercode/common'
 import { toAny } from '@mannercode/testing'
-import { TicketStatus, type PurchaseRecordDto, type TicketDto } from 'core'
+import { TicketStatus, type TicketDto } from 'core'
 import { Errors, getPayments, getTickets } from '../helpers'
 import { buildCreatePurchaseDto, type PurchaseFixture } from './purchase.fixture'
 
@@ -38,77 +38,64 @@ describe('PurchaseService', () => {
                     })
             })
 
-            describe('구매가 생성되었을 때', () => {
-                let purchaseRecord: PurchaseRecordDto
+            it('구매 생성 시 결제 기록이 생성된다', async () => {
+                const createDto = buildCreatePurchaseDto(heldTickets)
+                const { body: purchaseRecord } = await fix.httpClient
+                    .post('/purchases')
+                    .body(createDto)
+                    .created()
 
-                beforeEach(async () => {
-                    const createDto = buildCreatePurchaseDto(heldTickets)
-                    const { body } = await fix.httpClient
-                        .post('/purchases')
-                        .body(createDto)
-                        .created()
-                    purchaseRecord = body
-                })
+                const payments = await getPayments(fix, [purchaseRecord.paymentId])
 
-                it('결제 기록을 생성한다', async () => {
-                    const payments = await getPayments(fix, [purchaseRecord.paymentId])
-
-                    expect(payments[0].amount).toEqual(purchaseRecord.totalPrice)
-                })
-
-                it('구매된 티켓을 `Sold`로 표시한다', async () => {
-                    const soldTickets = await getTickets(fix, pickIds(heldTickets))
-
-                    expect(soldTickets.every((t) => t.status === TicketStatus.Sold)).toBe(true)
-                })
+                expect(payments[0].amount).toEqual(purchaseRecord.totalPrice)
             })
 
-            describe('티켓 수가 최대치를 초과할 때', () => {
-                beforeEach(async () => {
-                    const { Rules } = await import('config')
-                    toAny(Rules).Ticket.maxTicketsPerPurchase = heldTickets.length - 1
-                })
+            it('구매 생성 시 티켓 상태가 Sold로 바뀐다', async () => {
+                const createDto = buildCreatePurchaseDto(heldTickets)
+                await fix.httpClient.post('/purchases').body(createDto).created()
 
-                it('400 Bad Request를 반환한다', async () => {
-                    const createDto = buildCreatePurchaseDto(heldTickets)
+                const soldTickets = await getTickets(fix, pickIds(heldTickets))
 
-                    await fix.httpClient
-                        .post('/purchases')
-                        .body(createDto)
-                        .badRequest(Errors.Purchase.LimitExceeded(expect.any(Number)))
-                })
+                expect(soldTickets.every((t) => t.status === TicketStatus.Sold)).toBe(true)
             })
 
-            describe('구매 가능 시간이 종료되었을 때', () => {
-                beforeEach(async () => {
-                    const { Rules } = await import('config')
-                    toAny(Rules).Ticket.purchaseCutoffMinutes =
-                        Rules.Ticket.purchaseCutoffMinutes + 2
-                })
+            it('티켓 수가 최대치를 초과하면 400을 반환한다', async () => {
+                const { Rules } = await import('config')
+                toAny(Rules).Ticket.maxTicketsPerPurchase = heldTickets.length - 1
 
-                it('400 Bad Request를 반환한다', async () => {
-                    const createDto = buildCreatePurchaseDto(heldTickets)
+                const createDto = buildCreatePurchaseDto(heldTickets)
 
-                    await fix.httpClient
-                        .post('/purchases')
-                        .body(createDto)
-                        .badRequest(
-                            Errors.Purchase.WindowClosed(
-                                expect.any(Number),
-                                expect.any(String),
-                                expect.any(String)
-                            )
+                await fix.httpClient
+                    .post('/purchases')
+                    .body(createDto)
+                    .badRequest(Errors.Purchase.LimitExceeded(expect.any(Number)))
+            })
+
+            it('구매 가능 시간이 종료되면 400을 반환한다', async () => {
+                const { Rules } = await import('config')
+                toAny(Rules).Ticket.purchaseCutoffMinutes = Rules.Ticket.purchaseCutoffMinutes + 2
+
+                const createDto = buildCreatePurchaseDto(heldTickets)
+
+                await fix.httpClient
+                    .post('/purchases')
+                    .body(createDto)
+                    .badRequest(
+                        Errors.Purchase.WindowClosed(
+                            expect.any(Number),
+                            expect.any(String),
+                            expect.any(String)
                         )
-                })
+                    )
             })
 
-            describe('내부 오류가 발생할 때', () => {
+            describe('내부 오류로 completePurchase가 실패할 때', () => {
                 // completePurchase 진입 직후의 로그에서 throw → completePurchase 안에서 터져
-                // PurchaseService 의 catch 블록 (rollbackPurchase + deleteMany + cancel) 이 발화한다.
+                // PurchaseService의 catch 블록(rollbackPurchase + deleteMany + cancel)이 실행된다.
                 // 특정 메서드 호출이 아닌 관측 가능한 로그 지점을 트리거로 잡아 구현 디테일과 분리한다.
                 beforeEach(async () => {
-                    // resetModules:true 환경에서 production 코드가 실제로 사용하는
-                    // Logger 와 같은 realm 의 클래스를 잡아야 spy 가 작동한다.
+                    // resetModules:true 환경에서 프로덕션 코드가 사용하는 Logger와 같은 realm의
+                    // 클래스를 잡아야 spy가 작동한다.
                     const { Logger } = await import('@nestjs/common')
                     jest.spyOn(Logger.prototype, 'log').mockImplementation(((message: any) => {
                         if (message === 'completePurchase') {
@@ -117,7 +104,7 @@ describe('PurchaseService', () => {
                     }) as any)
                 })
 
-                it('구매한 티켓을 Available 로 복구한다', async () => {
+                it('구매한 티켓을 Available로 되돌린다', async () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
                     await fix.httpClient.post('/purchases').body(createDto).internalServerError()
@@ -146,59 +133,45 @@ describe('PurchaseService', () => {
                 })
             })
 
-            describe('티켓이 이미 판매된 상태일 때', () => {
-                beforeEach(async () => {
-                    const createDto = buildCreatePurchaseDto(heldTickets)
-                    await fix.httpClient.post('/purchases').body(createDto).created()
-                })
-
-                it('409 Conflict를 반환한다', async () => {
-                    const createDto = buildCreatePurchaseDto(heldTickets)
-
-                    await fix.httpClient
-                        .post('/purchases')
-                        .body(createDto)
-                        .conflict(Errors.Purchase.AlreadySold(pickIds(heldTickets)))
-                })
-            })
-
-            describe('구매 기록 생성이 실패할 때', () => {
-                it('결제를 취소한다', async () => {
-                    const { PurchaseRecordsService } = await import('core')
-                    const { PaymentsService } = await import('infrastructure')
-                    const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                    const paymentsService = fix.module.get(PaymentsService)
-
-                    jest.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(() => {
-                        throw new Error('record creation failed')
-                    })
-                    const cancelPaymentSpy = jest.spyOn(paymentsService, 'cancel')
-
-                    const createDto = buildCreatePurchaseDto(heldTickets)
-
-                    await fix.httpClient.post('/purchases').body(createDto).internalServerError()
-
-                    expect(cancelPaymentSpy).toHaveBeenCalledTimes(1)
-                })
-            })
-        })
-
-        describe('티켓이 보유되지 않았을 때', () => {
-            let tickets: TicketDto[]
-
-            beforeEach(async () => {
-                const { createShowtimeAndTickets } = await import('./purchase.fixture')
-                tickets = await createShowtimeAndTickets(fix)
-            })
-
-            it('400 Bad Request를 반환한다', async () => {
-                const createDto = buildCreatePurchaseDto(tickets.slice(0, 1))
+            it('이미 판매된 티켓을 다시 구매하려 하면 409를 반환한다', async () => {
+                const createDto = buildCreatePurchaseDto(heldTickets)
+                await fix.httpClient.post('/purchases').body(createDto).created()
 
                 await fix.httpClient
                     .post('/purchases')
                     .body(createDto)
-                    .badRequest(Errors.Purchase.NotHeld())
+                    .conflict(Errors.Purchase.AlreadySold(pickIds(heldTickets)))
             })
+
+            it('구매 기록 생성이 실패하면 결제가 취소된다', async () => {
+                const { PurchaseRecordsService } = await import('core')
+                const { PaymentsService } = await import('infrastructure')
+                const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
+                const paymentsService = fix.module.get(PaymentsService)
+
+                jest.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(() => {
+                    throw new Error('record creation failed')
+                })
+                const cancelPaymentSpy = jest.spyOn(paymentsService, 'cancel')
+
+                const createDto = buildCreatePurchaseDto(heldTickets)
+
+                await fix.httpClient.post('/purchases').body(createDto).internalServerError()
+
+                expect(cancelPaymentSpy).toHaveBeenCalledTimes(1)
+            })
+        })
+
+        it('티켓을 보유하지 않은 채로 구매하면 400을 반환한다', async () => {
+            const { createShowtimeAndTickets } = await import('./purchase.fixture')
+            const tickets = await createShowtimeAndTickets(fix)
+
+            const createDto = buildCreatePurchaseDto(tickets.slice(0, 1))
+
+            await fix.httpClient
+                .post('/purchases')
+                .body(createDto)
+                .badRequest(Errors.Purchase.NotHeld())
         })
     })
 })

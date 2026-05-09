@@ -25,85 +25,66 @@ describe('AssetsService', () => {
     afterEach(() => fix.teardown())
 
     describe('create', () => {
-        describe('DTO가 유효할 때', () => {
-            it('업로드 요청을 반환한다', async () => {
-                const createDto = buildCreateAssetDto(file)
-                const uploadRequest = await fix.assetsService.create(createDto)
+        it('업로드 요청을 반환한다', async () => {
+            const createDto = buildCreateAssetDto(file)
+            const uploadRequest = await fix.assetsService.create(createDto)
 
-                expect(uploadRequest).toEqual({
-                    assetId: expect.any(String),
-                    expiresAt: expect.any(Date),
-                    fields: expect.any(Object),
-                    method: 'POST',
-                    url: expect.any(String)
+            expect(uploadRequest).toEqual({
+                assetId: expect.any(String),
+                expiresAt: expect.any(Date),
+                fields: expect.any(Object),
+                method: 'POST',
+                url: expect.any(String)
+            })
+
+            expect(uploadRequest.fields).toEqual(
+                expect.objectContaining({
+                    'Content-Type': createDto.mimeType,
+                    key: uploadRequest.assetId
                 })
-
-                expect(uploadRequest.fields).toEqual(
-                    expect.objectContaining({
-                        'Content-Type': createDto.mimeType,
-                        key: uploadRequest.assetId
-                    })
-                )
-            })
-
-            it('업로드 요청을 사용해 파일을 업로드한다', async () => {
-                const createDto = buildCreateAssetDto(file)
-                const uploadRequest = await fix.assetsService.create(createDto)
-
-                const uploadRes = await uploadAsset(file.path, uploadRequest)
-                expect(uploadRes.ok).toBe(true)
-            })
+            )
         })
 
-        describe('업로드 URL이 만료되었을 때', () => {
-            beforeEach(async () => {
-                const { Rules } = await import('config')
-                toAny(Rules).Asset.uploadExpiresInSec = 1
-            })
+        it('반환된 업로드 요청으로 파일을 업로드할 수 있다', async () => {
+            const createDto = buildCreateAssetDto(file)
+            const uploadRequest = await fix.assetsService.create(createDto)
 
-            it('URL 만료 후 업로드를 거부한다', async () => {
-                const createDto = buildCreateAssetDto(file)
-                const uploadRequest = await fix.assetsService.create(createDto)
+            const uploadRes = await uploadAsset(file.path, uploadRequest)
+            expect(uploadRes.ok).toBe(true)
+        })
 
-                await sleep(1500)
+        it('업로드 URL이 만료된 후에는 업로드를 거부한다', async () => {
+            const { Rules } = await import('config')
+            toAny(Rules).Asset.uploadExpiresInSec = 1
 
-                const uploadRes = await uploadAsset(file.path, uploadRequest)
-                expect(uploadRes.ok).toBe(false)
-            })
+            const createDto = buildCreateAssetDto(file)
+            const uploadRequest = await fix.assetsService.create(createDto)
+
+            await sleep(1500)
+
+            const uploadRes = await uploadAsset(file.path, uploadRequest)
+            expect(uploadRes.ok).toBe(false)
         })
     })
 
     describe('isUploadComplete', () => {
-        describe('업로드가 완료되었을 때', () => {
-            let assetId: string
+        it('업로드가 완료되었으면 true를 반환한다', async () => {
+            const assetId = await uploadFile(fix, file)
 
-            beforeEach(async () => {
-                assetId = await uploadFile(fix, file)
-            })
-
-            it('true를 반환한다', async () => {
-                const isCompleted = await fix.assetsService.isUploadComplete(assetId)
-                expect(isCompleted).toBe(true)
-            })
+            const isCompleted = await fix.assetsService.isUploadComplete(assetId)
+            expect(isCompleted).toBe(true)
         })
 
-        describe('업로드가 완료되지 않았을 때', () => {
-            let assetId: string
+        it('업로드가 완료되지 않았으면 false를 반환한다', async () => {
+            const asset = await createAsset(fix, file)
 
-            beforeEach(async () => {
-                const asset = await createAsset(fix, file)
-                assetId = asset.assetId
-            })
-
-            it('false를 반환한다', async () => {
-                const isCompleted = await fix.assetsService.isUploadComplete(assetId)
-                expect(isCompleted).toBe(false)
-            })
+            const isCompleted = await fix.assetsService.isUploadComplete(asset.assetId)
+            expect(isCompleted).toBe(false)
         })
     })
 
     describe('finalizeUpload', () => {
-        describe('업로드가 완료되었을 때', () => {
+        describe('업로드가 완료된 에셋', () => {
             let assetId: string
 
             beforeEach(async () => {
@@ -123,7 +104,7 @@ describe('AssetsService', () => {
                 )
             })
 
-            it('체크섬이 일치하는 에셋을 다운로드한다', async () => {
+            it('반환된 다운로드 URL로 받은 파일이 원본과 체크섬이 일치한다', async () => {
                 const finalizeDto = buildFinalizeAssetDto()
                 const asset = await fix.assetsService.finalizeUpload(assetId, finalizeDto)
 
@@ -134,7 +115,7 @@ describe('AssetsService', () => {
             })
         })
 
-        describe('업로드가 만료되었을 때', () => {
+        describe('업로드가 만료된 에셋', () => {
             let assetId: string
 
             beforeEach(async () => {
@@ -148,14 +129,14 @@ describe('AssetsService', () => {
                 await sleep(1500)
             })
 
-            it('404 Not Found를 던진다', async () => {
+            it('finalize 시 404를 던진다', async () => {
                 const finalizeDto = buildFinalizeAssetDto()
                 await expect(
                     fix.assetsService.finalizeUpload(assetId, finalizeDto)
                 ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
             })
 
-            it('삭제가 저장된다', async () => {
+            it('finalize 실패 후에는 에셋이 조회되지 않는다', async () => {
                 const finalizeDto = buildFinalizeAssetDto()
                 await expect(
                     fix.assetsService.finalizeUpload(assetId, finalizeDto)
@@ -180,7 +161,7 @@ describe('AssetsService', () => {
                 ])
             })
 
-            it('assetIds에 대한 다운로드 정보가 포함된 에셋을 반환한다', async () => {
+            it('assetIds에 해당하는 다운로드 정보가 포함된 에셋을 반환한다', async () => {
                 const fetchedAssets = await fix.assetsService.getMany(pickIds(assets))
 
                 expect(fetchedAssets).toEqual(
@@ -193,7 +174,7 @@ describe('AssetsService', () => {
                 )
             })
 
-            it('체크섬이 일치하는 에셋을 다운로드한다', async () => {
+            it('반환된 다운로드 URL로 받은 파일이 원본과 체크섬이 일치한다', async () => {
                 const [fetchedAsset] = await fix.assetsService.getMany([assets[0].id])
 
                 const buffer = await downloadAsset(fetchedAsset)
@@ -203,11 +184,9 @@ describe('AssetsService', () => {
             })
         })
 
-        describe('assetIds에 존재하지 않는 assetId가 포함될 때', () => {
-            it('404 Not Found를 던진다', async () => {
-                await expect(fix.assetsService.getMany([nullObjectId])).rejects.toMatchObject({
-                    status: HttpStatus.NOT_FOUND
-                })
+        it('assetIds 중 하나라도 없으면 404를 던진다', async () => {
+            await expect(fix.assetsService.getMany([nullObjectId])).rejects.toMatchObject({
+                status: HttpStatus.NOT_FOUND
             })
         })
     })
@@ -224,11 +203,11 @@ describe('AssetsService', () => {
                 ])
             })
 
-            it('응답을 반환하지 않는다', async () => {
+            it('성공 시 반환값이 없다', async () => {
                 await expect(fix.assetsService.deleteMany(pickIds(assets))).resolves.toBeUndefined()
             })
 
-            it('삭제가 저장된다', async () => {
+            it('삭제 후에는 조회 시 404가 반환된다', async () => {
                 await fix.assetsService.deleteMany([assets[0].id])
 
                 await expect(fix.assetsService.getMany([assets[0].id])).rejects.toMatchObject({
@@ -236,7 +215,7 @@ describe('AssetsService', () => {
                 })
             })
 
-            it('이미지 URL을 무효화한다', async () => {
+            it('삭제하면 다운로드 URL이 무효화된다', async () => {
                 await fix.assetsService.deleteMany([assets[0].id])
 
                 const { download } = assets[0]
@@ -245,54 +224,42 @@ describe('AssetsService', () => {
             })
         })
 
-        describe('assetIds에 존재하지 않는 assetId가 포함될 때', () => {
-            it('응답을 반환하지 않는다', async () => {
-                await expect(fix.assetsService.deleteMany([nullObjectId])).resolves.toBeUndefined()
-            })
+        it('assetIds 중 존재하지 않는 id가 있어도 예외 없이 끝난다', async () => {
+            await expect(fix.assetsService.deleteMany([nullObjectId])).resolves.toBeUndefined()
         })
     })
 
     describe('cleanupExpiredUploadsJob', () => {
-        describe('업로드된 에셋이 존재할 때', () => {
-            let fireOnTick: () => Promise<void>
-            let assetId: string
+        let fireOnTick: () => Promise<void>
+        let assetId: string
 
-            beforeEach(async () => {
-                const { Rules } = await import('config')
-                toAny(Rules).Asset.uploadExpiresInSec = 1
-                const cronJob = fix.scheduler.getCronJob('assets.cleanupExpiredUploads')
-                fireOnTick = cronJob.fireOnTick
+        beforeEach(async () => {
+            const { Rules } = await import('config')
+            toAny(Rules).Asset.uploadExpiresInSec = 1
+            const cronJob = fix.scheduler.getCronJob('assets.cleanupExpiredUploads')
+            fireOnTick = cronJob.fireOnTick
 
-                const createDto = buildCreateAssetDto(file)
-                const createdAsset = await fix.assetsService.create(createDto)
-                assetId = createdAsset.assetId
-            })
+            const createDto = buildCreateAssetDto(file)
+            const createdAsset = await fix.assetsService.create(createDto)
+            assetId = createdAsset.assetId
+        })
 
-            describe('업로드가 만료되지 않았을 때', () => {
-                beforeEach(async () => {
-                    await fireOnTick()
-                    await sleep(1000)
-                })
+        it('업로드가 만료되지 않은 에셋은 유지한다', async () => {
+            await fireOnTick()
+            await sleep(1000)
 
-                it('에셋을 유지한다', async () => {
-                    await expect(fix.assetsService.getMany([assetId])).resolves.toHaveLength(1)
-                })
-            })
+            await expect(fix.assetsService.getMany([assetId])).resolves.toHaveLength(1)
+        })
 
-            describe('업로드가 만료되었을 때', () => {
-                beforeEach(async () => {
-                    const { Rules } = await import('config')
-                    await sleep(Rules.Asset.uploadExpiresInSec * 1000 + 500)
+        it('업로드가 만료된 에셋은 제거한다', async () => {
+            const { Rules } = await import('config')
+            await sleep(Rules.Asset.uploadExpiresInSec * 1000 + 500)
 
-                    await fireOnTick()
-                    await sleep(1000)
-                })
+            await fireOnTick()
+            await sleep(1000)
 
-                it('에셋을 제거한다', async () => {
-                    await expect(fix.assetsService.getMany([assetId])).rejects.toMatchObject({
-                        status: HttpStatus.NOT_FOUND
-                    })
-                })
+            await expect(fix.assetsService.getMany([assetId])).rejects.toMatchObject({
+                status: HttpStatus.NOT_FOUND
             })
         })
     })

@@ -38,37 +38,29 @@ describe('ShowtimesService', () => {
     })
 
     describe('getMany', () => {
-        describe('상영 시간이 존재할 때', () => {
-            let showtimes: ShowtimeDto[]
+        it('주어진 showtimeIds에 해당하는 상영 시간을 반환한다', async () => {
+            const showtimes = await createShowtimes(fix, [
+                { startTime: new Date('2000-01-01T12:00') },
+                { startTime: new Date('2000-01-01T14:00') }
+            ])
 
-            beforeEach(async () => {
-                showtimes = await createShowtimes(fix, [
-                    { startTime: new Date('2000-01-01T12:00') },
-                    { startTime: new Date('2000-01-01T14:00') }
-                ])
-            })
+            const fetchedShowtimes = await fix.showtimesService.getMany(pickIds(showtimes))
 
-            it('showtimeIds에 대한 상영 시간을 반환한다', async () => {
-                const fetchedShowtimes = await fix.showtimesService.getMany(pickIds(showtimes))
-
-                expect(fetchedShowtimes).toEqual(expect.arrayContaining(showtimes))
-            })
+            expect(fetchedShowtimes).toEqual(expect.arrayContaining(showtimes))
         })
 
-        describe('showtimeIds에 존재하지 않는 showtimeId가 포함될 때', () => {
-            it('404 Not Found를 던진다', async () => {
-                const promise = fix.showtimesService.getMany([nullObjectId])
+        it('showtimeIds 중 하나라도 없으면 404를 던진다', async () => {
+            const promise = fix.showtimesService.getMany([nullObjectId])
 
-                await expect(promise).rejects.toMatchObject({
-                    message: Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]).message,
-                    status: HttpStatus.NOT_FOUND
-                })
+            await expect(promise).rejects.toMatchObject({
+                message: Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]).message,
+                status: HttpStatus.NOT_FOUND
             })
         })
     })
 
     describe('search', () => {
-        describe('필터가 제공될 때', () => {
+        describe('id/시간 필터링', () => {
             const sagaId = oid(0x1)
             const movieId = oid(0x2)
             const theaterId = oid(0x3)
@@ -96,25 +88,25 @@ describe('ShowtimesService', () => {
                 showtimeInRangeB = createdShowtimes[4]
             })
 
-            it('sagaIds로 필터링된 상영 시간을 반환한다', async () => {
+            it('sagaIds로 필터링한다', async () => {
                 const showtimes = await fix.showtimesService.search({ sagaIds: [sagaId] })
 
                 expect(showtimes).toEqual([showtimeForSaga])
             })
 
-            it('movieIds로 필터링된 상영 시간을 반환한다', async () => {
+            it('movieIds로 필터링한다', async () => {
                 const showtimes = await fix.showtimesService.search({ movieIds: [movieId] })
 
                 expect(showtimes).toEqual([showtimeForMovie])
             })
 
-            it('theaterIds로 필터링된 상영 시간을 반환한다', async () => {
+            it('theaterIds로 필터링한다', async () => {
                 const showtimes = await fix.showtimesService.search({ theaterIds: [theaterId] })
 
                 expect(showtimes).toEqual([showtimeForTheater])
             })
 
-            it('startTimeRange로 필터링된 상영 시간을 반환한다', async () => {
+            it('startTimeRange로 필터링한다', async () => {
                 const showtimes = await fix.showtimesService.search({
                     startTimeRange: {
                         end: new Date('2020-01-02T12:00'),
@@ -129,14 +121,12 @@ describe('ShowtimesService', () => {
             })
         })
 
-        describe('필터가 비어 있을 때', () => {
-            it('400 Bad Request를 던진다', async () => {
-                const promise = fix.showtimesService.search({})
+        it('필터가 비어 있으면 400을 던진다', async () => {
+            const promise = fix.showtimesService.search({})
 
-                await expect(promise).rejects.toMatchObject({
-                    message: Errors.Mongoose.FiltersRequired().message,
-                    status: HttpStatus.BAD_REQUEST
-                })
+            await expect(promise).rejects.toMatchObject({
+                message: Errors.Mongoose.FiltersRequired().message,
+                status: HttpStatus.BAD_REQUEST
             })
         })
     })
@@ -151,7 +141,7 @@ describe('ShowtimesService', () => {
             ])
         })
 
-        it('startTimeRange로 필터링된 movieIds를 반환한다', async () => {
+        it('startTimeRange로 필터링한 movieIds를 반환한다', async () => {
             const movieIds = await fix.showtimesService.searchMovieIds({
                 startTimeRange: { start: new Date() }
             })
@@ -169,7 +159,7 @@ describe('ShowtimesService', () => {
             ])
         })
 
-        it('movieIds로 필터링된 theaterIds를 반환한다', async () => {
+        it('movieIds로 필터링한 theaterIds를 반환한다', async () => {
             const theaterIds = await fix.showtimesService.searchTheaterIds({
                 movieIds: [oid(0xaa)]
             })
@@ -187,7 +177,7 @@ describe('ShowtimesService', () => {
             ])
         })
 
-        it('movieIds와 theaterIds로 필터링된 상영 날짜를 반환한다', async () => {
+        it('movieIds와 theaterIds로 필터링한 상영 날짜를 반환한다', async () => {
             const showdates = await fix.showtimesService.searchShowdates({
                 movieIds: [oid(0xa1)],
                 theaterIds: [oid(0xb1)]

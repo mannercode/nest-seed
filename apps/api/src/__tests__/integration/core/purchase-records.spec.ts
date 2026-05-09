@@ -1,4 +1,3 @@
-import type { PurchaseRecordDto } from 'core'
 import { nullObjectId } from '@mannercode/testing'
 import type { PurchaseRecordsFixture } from './purchase-records.fixture'
 import { buildCreatePurchaseRecordDto, createPurchaseRecord, Errors } from '../helpers'
@@ -27,24 +26,16 @@ describe('PurchaseRecordsService', () => {
     })
 
     describe('GET /purchases/:purchaseRecordId', () => {
-        describe('구매 기록이 존재할 때', () => {
-            let purchaseRecord: PurchaseRecordDto
+        it('id에 해당하는 구매 기록을 반환한다', async () => {
+            const purchaseRecord = await createPurchaseRecord(fix)
 
-            beforeEach(async () => {
-                purchaseRecord = await createPurchaseRecord(fix)
-            })
-
-            it('구매 기록을 반환한다', async () => {
-                await fix.httpClient.get(`/purchases/${purchaseRecord.id}`).ok(purchaseRecord)
-            })
+            await fix.httpClient.get(`/purchases/${purchaseRecord.id}`).ok(purchaseRecord)
         })
 
-        describe('구매 기록이 존재하지 않을 때', () => {
-            it('404 Not Found를 반환한다', async () => {
-                await fix.httpClient
-                    .get(`/purchases/${nullObjectId}`)
-                    .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
-            })
+        it('id에 해당하는 구매 기록이 없으면 404를 반환한다', async () => {
+            await fix.httpClient
+                .get(`/purchases/${nullObjectId}`)
+                .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
         })
     })
 })

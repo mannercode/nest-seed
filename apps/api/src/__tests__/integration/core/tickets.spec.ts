@@ -25,7 +25,7 @@ describe('TicketsService', () => {
     })
 
     describe('search', () => {
-        describe('필터가 제공될 때', () => {
+        describe('id 필터링', () => {
             const sagaId = oid(0x1)
             const movieId = oid(0x2)
             const theaterId = oid(0x3)
@@ -49,94 +49,82 @@ describe('TicketsService', () => {
                 ticketForShowtime = createdTickets[3]
             })
 
-            it('sagaIds로 필터링된 티켓을 반환한다', async () => {
+            it('sagaIds로 필터링한다', async () => {
                 const tickets = await fix.ticketsService.search({ sagaIds: [sagaId] })
 
                 expect(tickets).toEqual([ticketForSaga])
             })
 
-            it('movieIds로 필터링된 티켓을 반환한다', async () => {
+            it('movieIds로 필터링한다', async () => {
                 const tickets = await fix.ticketsService.search({ movieIds: [movieId] })
 
                 expect(tickets).toEqual([ticketForMovie])
             })
 
-            it('theaterIds로 필터링된 티켓을 반환한다', async () => {
+            it('theaterIds로 필터링한다', async () => {
                 const tickets = await fix.ticketsService.search({ theaterIds: [theaterId] })
 
                 expect(tickets).toEqual([ticketForTheater])
             })
 
-            it('showtimeIds로 필터링된 티켓을 반환한다', async () => {
+            it('showtimeIds로 필터링한다', async () => {
                 const tickets = await fix.ticketsService.search({ showtimeIds: [showtimeId] })
 
                 expect(tickets).toEqual([ticketForShowtime])
             })
         })
 
-        describe('필터가 비어 있을 때', () => {
-            it('400 Bad Request를 던진다', async () => {
-                const promise = fix.ticketsService.search({})
+        it('필터가 비어 있으면 400을 던진다', async () => {
+            const promise = fix.ticketsService.search({})
 
-                await expect(promise).rejects.toMatchObject({
-                    message: Errors.Mongoose.FiltersRequired().message,
-                    status: HttpStatus.BAD_REQUEST
-                })
+            await expect(promise).rejects.toMatchObject({
+                message: Errors.Mongoose.FiltersRequired().message,
+                status: HttpStatus.BAD_REQUEST
             })
         })
     })
 
     describe('updateStatusMany', () => {
-        describe('티켓이 존재할 때', () => {
-            let tickets: TicketDto[]
+        it('주어진 티켓들의 상태를 일괄 변경한 결과를 반환한다', async () => {
+            const tickets = await createTickets(fix, [
+                { status: TicketStatus.Available },
+                { status: TicketStatus.Available },
+                { status: TicketStatus.Available }
+            ])
 
-            beforeEach(async () => {
-                tickets = await createTickets(fix, [
-                    { status: TicketStatus.Available },
-                    { status: TicketStatus.Available },
-                    { status: TicketStatus.Available }
-                ])
-            })
+            const updatedTickets = await fix.ticketsService.updateStatusMany(
+                pickIds(tickets),
+                TicketStatus.Sold
+            )
 
-            it('수정된 티켓을 반환한다', async () => {
-                const updatedTickets = await fix.ticketsService.updateStatusMany(
-                    pickIds(tickets),
-                    TicketStatus.Sold
-                )
-
-                expect(updatedTickets.every((t) => t.status === TicketStatus.Sold)).toBe(true)
-            })
+            expect(updatedTickets.every((t) => t.status === TicketStatus.Sold)).toBe(true)
         })
     })
 
     describe('aggregateSales', () => {
-        describe('showtimeIds가 제공될 때', () => {
+        it('showtimeIds에 대한 판매 통계를 반환한다', async () => {
             const showtimeId = oid(0x10)
             const totalCount = 50
             const soldCount = 5
 
-            beforeEach(async () => {
-                const createDtos = Array.from({ length: totalCount }, () => ({ showtimeId }))
-                const createdTickets = await createTickets(fix, createDtos)
+            const createDtos = Array.from({ length: totalCount }, () => ({ showtimeId }))
+            const createdTickets = await createTickets(fix, createDtos)
 
-                const soldTickets = createdTickets.slice(0, soldCount)
-                await fix.ticketsService.updateStatusMany(pickIds(soldTickets), TicketStatus.Sold)
+            const soldTickets = createdTickets.slice(0, soldCount)
+            await fix.ticketsService.updateStatusMany(pickIds(soldTickets), TicketStatus.Sold)
+
+            const ticketSales = await fix.ticketsService.aggregateSales({
+                showtimeIds: [showtimeId]
             })
 
-            it('showtimeIds에 대한 판매 통계를 반환한다', async () => {
-                const ticketSales = await fix.ticketsService.aggregateSales({
-                    showtimeIds: [showtimeId]
-                })
-
-                expect(ticketSales).toEqual([
-                    {
-                        available: totalCount - soldCount,
-                        showtimeId,
-                        sold: soldCount,
-                        total: totalCount
-                    }
-                ])
-            })
+            expect(ticketSales).toEqual([
+                {
+                    available: totalCount - soldCount,
+                    showtimeId,
+                    sold: soldCount,
+                    total: totalCount
+                }
+            ])
         })
     })
 })

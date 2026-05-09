@@ -19,7 +19,7 @@ describe('BookingService', () => {
     })
     afterEach(() => fix.teardown())
 
-    describe('고객이 예매 흐름을 진행할 때', () => {
+    describe('고객 예매 흐름', () => {
         let movie: MovieDto
         let accessToken: string
 
@@ -44,13 +44,13 @@ describe('BookingService', () => {
             accessToken = resources.accessToken
         })
 
-        it('선택한 티켓을 보유한다', async () => {
+        it('극장 → 상영일 → 상영시간 → 티켓 → 보유 단계를 거쳐 티켓을 보유한다', async () => {
             let theater: TheaterDto
             let showdate: Date
             let showtime: ShowtimeDto
             let tickets: TicketDto[]
 
-            await step('1. lists theaters for the movie by distance', async () => {
+            await step('1. 영화에 해당하는 극장을 거리순으로 조회한다', async () => {
                 const latLong = '31.9,131.9'
                 const { body: theaters } = await fix.httpClient
                     .get(`/booking/movies/${movie.id}/theaters?latLong=${latLong}`)
@@ -67,7 +67,7 @@ describe('BookingService', () => {
                 theater = theaters[0]
             })
 
-            await step('2. lists show dates for the theater', async () => {
+            await step('2. 극장의 상영일 목록을 조회한다', async () => {
                 const { body: showdates } = await fix.httpClient
                     .get(`/booking/movies/${movie.id}/theaters/${theater.id}/showdates`)
                     .ok([new Date('2999-01-01'), new Date('2999-01-02'), new Date('2999-01-03')])
@@ -75,7 +75,7 @@ describe('BookingService', () => {
                 showdate = showdates[0]
             })
 
-            await step('3. lists showtimes for the selected show date', async () => {
+            await step('3. 선택한 상영일의 상영시간 목록을 조회한다', async () => {
                 const yymmdd = DateUtil.toYMD(showdate)
                 const url = `/booking/movies/${movie.id}/theaters/${theater.id}/showdates/${yymmdd}/showtimes`
 
@@ -91,7 +91,7 @@ describe('BookingService', () => {
                 showtime = showtimes[0]
             })
 
-            await step('4. lists available tickets for the showtime', async () => {
+            await step('4. 상영시간의 가용 티켓을 조회한다', async () => {
                 const { body } = await fix.httpClient
                     .get(`/booking/showtimes/${showtime.id}/tickets`)
                     .ok()
@@ -101,7 +101,7 @@ describe('BookingService', () => {
                 expect(tickets.every((t) => t.status === TicketStatus.Available)).toBe(true)
             })
 
-            await step('5. holds selected tickets', async () => {
+            await step('5. 선택한 티켓을 보유한다', async () => {
                 const ticketIds = pickIds(tickets.slice(0, 2))
 
                 await fix.httpClient
@@ -117,38 +117,28 @@ describe('BookingService', () => {
         const locations = [{ latitude: 30.0, longitude: 130.0 }]
         const startTimes = [new Date('2999-01-01T12:00')]
 
-        describe('티켓이 이미 다른 고객에 의해 보유되었을 때', () => {
-            let accessToken: string
-            let showtimeId: string
-            let ticketIds: string[]
+        it('티켓이 이미 다른 고객에게 보유되어 있으면 409를 반환한다', async () => {
+            const resources = await createAllResources(fix, locations, startTimes)
+            const accessToken = resources.accessToken
+            const showtimeId = resources.showtimes[0].id
+            const ticketIds = pickIds(resources.tickets.slice(0, 2))
 
-            beforeEach(async () => {
-                const resources = await createAllResources(fix, locations, startTimes)
-                accessToken = resources.accessToken
-                showtimeId = resources.showtimes[0].id
-                ticketIds = pickIds(resources.tickets.slice(0, 2))
+            const { holdTickets } = await import('../helpers')
+            await holdTickets(fix, { userId: oid(0xff), showtimeId, ticketIds })
 
-                const { holdTickets } = await import('../helpers')
-                await holdTickets(fix, { userId: oid(0xff), showtimeId, ticketIds })
-            })
-
-            it('409 Conflict를 반환한다', async () => {
-                await fix.httpClient
-                    .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body({ ticketIds })
-                    .conflict(Errors.Booking.TicketsAlreadyHeld())
-            })
+            await fix.httpClient
+                .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
+                .headers({ Authorization: `Bearer ${accessToken}` })
+                .body({ ticketIds })
+                .conflict(Errors.Booking.TicketsAlreadyHeld())
         })
     })
 
     describe('GET /booking/showtimes/:id/tickets', () => {
-        describe('상영 시간이 존재하지 않을 때', () => {
-            it('404 Not Found를 반환한다', async () => {
-                await fix.httpClient
-                    .get(`/booking/showtimes/${nullObjectId}/tickets`)
-                    .notFound(Errors.Booking.ShowtimeNotFound(nullObjectId))
-            })
+        it('상영 시간이 없으면 404를 반환한다', async () => {
+            await fix.httpClient
+                .get(`/booking/showtimes/${nullObjectId}/tickets`)
+                .notFound(Errors.Booking.ShowtimeNotFound(nullObjectId))
         })
     })
 })

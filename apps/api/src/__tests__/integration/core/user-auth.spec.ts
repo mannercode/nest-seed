@@ -1,4 +1,3 @@
-import type { JwtAuthTokens } from '@mannercode/common'
 import type { UserAuthFixture } from './user-auth.fixture'
 import { createUser, Errors, loginUser } from '../helpers'
 
@@ -15,110 +14,81 @@ describe('UserAuthentication', () => {
     afterEach(() => fix.teardown())
 
     describe('POST /users/login', () => {
-        describe('자격 증명이 유효할 때', () => {
-            it('인증 토큰을 반환한다', async () => {
-                await fix.httpClient
-                    .post('/users/login')
-                    .body(credentials)
-                    .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
-            })
+        it('자격 증명이 유효하면 인증 토큰을 반환한다', async () => {
+            await fix.httpClient
+                .post('/users/login')
+                .body(credentials)
+                .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
         })
 
-        describe('비밀번호가 올바르지 않을 때', () => {
-            it('401 Unauthorized를 반환한다', async () => {
-                await fix.httpClient
-                    .post('/users/login')
-                    .body({ ...credentials, password: 'wrong password' })
-                    .unauthorized(Errors.Auth.Unauthorized())
-            })
+        it('비밀번호가 틀리면 401을 반환한다', async () => {
+            await fix.httpClient
+                .post('/users/login')
+                .body({ ...credentials, password: 'wrong password' })
+                .unauthorized(Errors.Auth.Unauthorized())
         })
 
-        describe('이메일이 등록되지 않았을 때', () => {
-            it('401 Unauthorized를 반환한다', async () => {
-                await fix.httpClient
-                    .post('/users/login')
-                    .body({ ...credentials, email: 'unknown@mail.com' })
-                    .unauthorized(Errors.Auth.Unauthorized())
-            })
+        it('등록되지 않은 이메일이면 401을 반환한다', async () => {
+            await fix.httpClient
+                .post('/users/login')
+                .body({ ...credentials, email: 'unknown@mail.com' })
+                .unauthorized(Errors.Auth.Unauthorized())
         })
     })
 
     describe('GET /users/me', () => {
-        describe('액세스 토큰이 유효할 때', () => {
-            let authTokens: JwtAuthTokens
+        it('유효한 access 토큰이면 현재 고객의 도메인 DTO를 반환한다', async () => {
+            const authTokens = await loginUser(fix, credentials)
 
-            beforeEach(async () => {
-                authTokens = await loginUser(fix, credentials)
-            })
-
-            it('현재 고객 정보(User DTO)를 반환한다 — JWT payload 가 아닌 도메인 DTO', async () => {
-                await fix.httpClient
-                    .get('/users/me')
-                    .headers({ Authorization: `Bearer ${authTokens.accessToken}` })
-                    .ok(
-                        expect.objectContaining({
-                            id: expect.any(String),
-                            email: credentials.email,
-                            name: expect.any(String)
-                        })
-                    )
-            })
+            await fix.httpClient
+                .get('/users/me')
+                .headers({ Authorization: `Bearer ${authTokens.accessToken}` })
+                .ok(
+                    expect.objectContaining({
+                        id: expect.any(String),
+                        email: credentials.email,
+                        name: expect.any(String)
+                    })
+                )
         })
 
-        describe('액세스 토큰이 유효하지 않을 때', () => {
-            it('401 Unauthorized를 반환한다', async () => {
-                await fix.httpClient
-                    .get('/users/me')
-                    .headers({ Authorization: 'Bearer invalid-token' })
-                    .unauthorized(Errors.Auth.Unauthorized())
-            })
+        it('access 토큰이 유효하지 않으면 401을 반환한다', async () => {
+            await fix.httpClient
+                .get('/users/me')
+                .headers({ Authorization: 'Bearer invalid-token' })
+                .unauthorized(Errors.Auth.Unauthorized())
         })
     })
 
     describe('GET /users', () => {
-        describe('액세스 토큰이 유효하지 않을 때', () => {
-            it('401 Unauthorized를 반환한다', async () => {
-                await fix.httpClient
-                    .get('/users')
-                    .headers({ Authorization: 'Bearer invalid-token' })
-                    .unauthorized(Errors.Auth.Unauthorized())
-            })
+        it('access 토큰이 유효하지 않으면 401을 반환한다', async () => {
+            await fix.httpClient
+                .get('/users')
+                .headers({ Authorization: 'Bearer invalid-token' })
+                .unauthorized(Errors.Auth.Unauthorized())
         })
     })
 
     describe('POST /users/refresh', () => {
-        describe('리프레시 토큰이 유효할 때', () => {
-            let authTokens: JwtAuthTokens
+        it('유효한 refresh 토큰이면 새 인증 토큰을 반환한다', async () => {
+            const { accessToken, refreshToken } = await loginUser(fix, credentials)
 
-            beforeEach(async () => {
-                authTokens = await loginUser(fix, credentials)
-            })
+            const { body } = await fix.httpClient.post('/users/refresh').body({ refreshToken }).ok()
 
-            it('새 인증 토큰을 반환한다', async () => {
-                const { accessToken, refreshToken } = authTokens
-
-                const { body } = await fix.httpClient
-                    .post('/users/refresh')
-                    .body({ refreshToken })
-                    .ok()
-
-                expect(body.accessToken).not.toEqual(accessToken)
-                expect(body.refreshToken).not.toEqual(refreshToken)
-            })
+            expect(body.accessToken).not.toEqual(accessToken)
+            expect(body.refreshToken).not.toEqual(refreshToken)
         })
 
-        describe('리프레시 토큰이 유효하지 않을 때', () => {
-            it('401 Unauthorized를 반환한다', async () => {
-                await fix.httpClient
-                    .post('/users/refresh')
-                    .body({ refreshToken: 'invalid-token' })
-                    .unauthorized(Errors.JwtAuth.RefreshTokenVerificationFailed('jwt malformed'))
-            })
+        it('refresh 토큰이 유효하지 않으면 401을 반환한다', async () => {
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: 'invalid-token' })
+                .unauthorized(Errors.JwtAuth.RefreshTokenVerificationFailed('jwt malformed'))
         })
     })
 
     describe('POST /users/logout', () => {
-        it('정상 로그아웃 — 204 + 이후 refresh 불가', async () => {
+        it('로그아웃하면 204를 반환하고 이후 refresh가 차단된다', async () => {
             const { refreshToken } = await loginUser(fix, credentials)
 
             await fix.httpClient.post('/users/logout').body({ refreshToken }).noContent()
@@ -129,13 +99,13 @@ describe('UserAuthentication', () => {
                 .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
         })
 
-        it('잘못된 토큰으로 logout 호출해도 204 (best-effort)', async () => {
+        it('잘못된 토큰으로 로그아웃해도 204를 반환한다 (best-effort)', async () => {
             await fix.httpClient.post('/users/logout').body({ refreshToken: 'garbage' }).noContent()
         })
     })
 
     describe('POST /users/me/logout-all', () => {
-        it('두 디바이스 로그인 후 logout-all → 양쪽 모두 refresh 불가', async () => {
+        it('전체 로그아웃 시 모든 디바이스의 refresh가 차단된다', async () => {
             const sessionA = await loginUser(fix, credentials)
             const sessionB = await loginUser(fix, credentials)
 
@@ -155,7 +125,7 @@ describe('UserAuthentication', () => {
                 .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
         })
 
-        it('인증 없이 호출하면 401', async () => {
+        it('인증 없이 호출하면 401을 반환한다', async () => {
             await fix.httpClient.post('/users/me/logout-all').unauthorized()
         })
     })

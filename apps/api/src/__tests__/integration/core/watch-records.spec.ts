@@ -1,4 +1,4 @@
-import type { SearchWatchRecordsPageDto, WatchRecordDto } from 'core'
+import type { WatchRecordDto } from 'core'
 import { oid } from '@mannercode/testing'
 import type { WatchRecordsFixture } from './watch-records.fixture'
 import { buildCreateWatchRecordDto, createWatchRecord } from '../helpers'
@@ -41,18 +41,9 @@ describe('WatchRecordsService', () => {
             total: expectedRecords.length
         })
 
-        describe('필터가 제공될 때', () => {
-            const queryAndExpect = async (
-                query: SearchWatchRecordsPageDto,
-                expectedRecords: WatchRecordDto[]
-            ) => {
-                const recordsPage = await fix.watchRecordsService.searchPage(query)
-                expect(recordsPage).toEqual(buildExpectedPage(expectedRecords))
-            }
-
-            it('userId로 필터링된 기록을 반환한다', async () => {
-                await queryAndExpect({ userId }, [watchRecords[0], watchRecords[1]])
-            })
+        it('userId로 필터링된 기록을 반환한다', async () => {
+            const recordsPage = await fix.watchRecordsService.searchPage({ userId })
+            expect(recordsPage).toEqual(buildExpectedPage([watchRecords[0], watchRecords[1]]))
         })
     })
 })
