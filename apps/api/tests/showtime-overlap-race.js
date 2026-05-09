@@ -1,15 +1,14 @@
-// Distributed stress test: overlapping showtime-creation saga race —
+// 겹치는 showtime-creation saga race 의 분산 스트레스 테스트 —
 // N-way overlap.
 //
-// Each inner iteration: OVERLAP_COUNT saga POSTs are submitted in
-// parallel, every pair mutually overlapping (staggered startTimes with
-// durations that always intersect). With 4 Temporal workers (one per
-// replica), multiple workflows run simultaneously — only the holder of
-// the validate+create distributed lock may succeed. Expected: exactly
-// 1 succeeded, OVERLAP_COUNT - 1 failed.
+// 각 inner iteration: OVERLAP_COUNT 개의 saga POST 를 병렬로 보내는데, 모든 pair
+// 가 서로 겹치도록 startTime 을 어긋나게 두고 duration 이 항상 교차한다.
+// Temporal worker 4 개 (replica 당 하나) 환경에서 여러 workflow 가 동시에 도는데,
+// validate+create distributed lock 을 획득한 saga 만 성공할 수 있다. 기댓값:
+// 정확히 1 succeeded, OVERLAP_COUNT - 1 failed.
 //
-// Fails if: more than one succeeds, zero succeed, or sagas don't reach
-// terminal state in time.
+// 실패 조건: 둘 이상 성공, 아무도 성공하지 못함, 또는 saga 가 시간 안에 terminal
+// state 에 도달하지 못함.
 
 const http = require('http')
 
@@ -90,7 +89,7 @@ function openSseCollector() {
                         try {
                             events.push(JSON.parse(dataLine.slice('data:'.length).trim()))
                         } catch {
-                            /* ignore */
+                            /* 무시 */
                         }
                     }
                 })
@@ -150,11 +149,11 @@ async function setupFixture() {
 }
 
 async function runInner(iteration, movieId, theaterId, sse, baseOffsetMs) {
-    // N sagas, each startTime 10 minutes apart, each 120 minutes long.
-    // So sagas at base, base+10m, base+20m, ..., base+(N-1)×10m.
-    // Last saga ends at base + (N-1)×10m + 120m.
-    // All pairwise overlap: adjacent pairs overlap 110m; first/last pair
-    // overlaps 120m − (N-1)×10m (positive as long as N ≤ 13).
+    // N 개 saga, startTime 은 10 분씩 어긋나고 각 120 분 길이.
+    // 즉 saga 들은 base, base+10m, base+20m, ..., base+(N-1)×10m 에 위치.
+    // 마지막 saga 는 base + (N-1)×10m + 120m 에 끝난다.
+    // 모든 pair 가 겹친다: 인접 pair 는 110m 겹치고, 처음/끝 pair 는
+    // 120m − (N-1)×10m 만큼 겹친다 (N ≤ 13 이면 양수).
     const base = new Date(Date.now() + 24 * 60 * 60 * 1000 + baseOffsetMs)
     base.setUTCSeconds(0, 0)
     base.setUTCMinutes(0)
@@ -223,8 +222,8 @@ async function main() {
     const sse = openSseCollector()
     await sse.connected
 
-    // Each iter uses roughly OVERLAP_COUNT × 10min + 120min timeline.
-    // Space iters 12h apart so winning showtime never conflicts with next iter.
+    // 각 iter 는 대략 OVERLAP_COUNT × 10min + 120min 의 timeline 을 쓴다.
+    // iter 간격을 12h 로 둬서 우승 showtime 이 다음 iter 와 충돌하지 않게 한다.
     const spacingMs = 12 * 60 * 60 * 1000
 
     try {

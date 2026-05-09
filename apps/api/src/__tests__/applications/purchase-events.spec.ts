@@ -10,8 +10,7 @@ describe('PurchaseEvents subscribers', () => {
 
     afterEach(() => fix.teardown())
 
-    // ticketPurchased 는 queue-group 핸들러(notification) 와 broadcast 핸들러(logger) 양쪽으로 도달한다
-    it('delivers ticketPurchased to both notification and logger', async () => {
+    it('ticketPurchased 는 queue-group 핸들러(notification) 와 broadcast 핸들러(logger) 양쪽으로 도달한다', async () => {
         const { waitFor } = await import('./purchase-events.fixture')
         const userId = 'user-1'
         const ticketIds = ['t1', 't2']
@@ -29,8 +28,7 @@ describe('PurchaseEvents subscribers', () => {
         expect(purchased).toEqual([{ event: { userId, ticketIds }, kind: 'purchased' }])
     })
 
-    // ticketPurchaseCanceled 는 logger 만 구독함 — notification 은 받지 않는다
-    it('delivers ticketPurchaseCanceled only to the logger', async () => {
+    it('ticketPurchaseCanceled 는 logger 만 구독함 — notification 은 받지 않는다', async () => {
         const { waitFor } = await import('./purchase-events.fixture')
         const userId = 'user-2'
         const ticketIds = ['t3']

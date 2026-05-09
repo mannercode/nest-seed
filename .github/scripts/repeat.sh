@@ -18,11 +18,11 @@ trap on_failure ERR
 
 start_ts=$(date +%s)
 
-# Reset infra (mongo/redis/temporal/...) every RESET_EVERY iters to bound
-# temporal-postgresql / mongo growth across long stress runs. Without
-# this, completed Temporal workflow histories accumulate over hundreds
-# of iters and the transfer-queue-processor eventually stalls. Cost:
-# ~30s per reset, so once per 10 iters keeps overhead under 5%.
+# 긴 stress 실행에서 temporal-postgresql / mongo 가 무한정 커지지 않도록
+# RESET_EVERY iter 마다 infra (mongo/redis/temporal/...) 를 reset 한다.
+# 이게 없으면 완료된 Temporal workflow history 가 수백 iter 에 걸쳐 쌓여
+# 결국 transfer-queue-processor 가 stall 한다. 비용: reset 당 ~30s,
+# 10 iter 당 한 번이면 overhead 5% 이내.
 RESET_EVERY="${RESET_EVERY:-10}"
 RESET_SCRIPT="$(cd "$(dirname "$0")/../../.devcontainer/infra" && pwd)/reset.sh"
 

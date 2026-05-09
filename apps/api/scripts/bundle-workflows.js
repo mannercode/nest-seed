@@ -1,15 +1,15 @@
 /**
- * Pre-bundles the showtime-creation workflow into a single JS string
- * that the production runtime loads at startup.
+ * showtime-creation workflow 를 production runtime 이 시작 시 로드하는
+ * 단일 JS 문자열로 미리 번들링한다.
  *
- * Why: `bundleWorkflowCode` needs a real filesystem path to the workflow
- * source (or compiled JS). After webpack rolls everything into one
- * `_output/dist/index.js`, `require.resolve('./temporal/workflows')`
- * returns null (the file no longer exists at the bundled path) and
- * Worker.create fails with "path must be a string".
+ * Why: `bundleWorkflowCode` 는 workflow 소스 (또는 컴파일된 JS) 의 실제
+ * 파일시스템 경로가 필요하다. webpack 으로 모든 걸 하나의
+ * `_output/dist/index.js` 에 말아넣은 뒤에는 `require.resolve('./temporal/workflows')`
+ * 가 null 을 반환하고 (번들 경로에 더 이상 그 파일이 없음) Worker.create 가
+ * "path must be a string" 으로 실패한다.
  *
- * Hooked from `npm run bundle`. The output is read by
- * TemporalWorkerService when `workflowBundlePath` is provided.
+ * `npm run bundle` 에서 호출된다. 결과물은 `workflowBundlePath` 가 주어졌을
+ * 때 TemporalWorkerService 가 읽는다.
  */
 const { bundleWorkflowCode } = require('@temporalio/worker')
 const fs = require('fs')

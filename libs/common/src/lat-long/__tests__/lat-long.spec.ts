@@ -11,8 +11,7 @@ describe('LatLong', () => {
     afterEach(() => fix.teardown())
 
     describe('distanceInMeters', () => {
-        // 두 좌표가 제공될 때
-        describe('when two coordinates are provided', () => {
+        describe('두 좌표가 제공될 때', () => {
             let seoul: LatLong
             let busan: LatLong
 
@@ -21,8 +20,7 @@ describe('LatLong', () => {
                 busan = { latitude: 35.1796, longitude: 129.0756 }
             })
 
-            // 두 좌표 사이 거리를 계산한다
-            it('calculates the distance between them', () => {
+            it('두 좌표 사이 거리를 계산한다', () => {
                 const actualDistance = LatLong.distanceInMeters(seoul, busan)
 
                 const expectedDistance = 325000
@@ -35,10 +33,8 @@ describe('LatLong', () => {
     })
 
     describe('GET /latLong', () => {
-        // 쿼리가 유효할 때
-        describe('when the query is valid', () => {
-            // 위도와 경도를 반환한다
-            it('returns the latitude and longitude', async () => {
+        describe('쿼리가 유효할 때', () => {
+            it('위도와 경도를 반환한다', async () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: '37.123,128.678' })
@@ -46,18 +42,14 @@ describe('LatLong', () => {
             })
         })
 
-        // 쿼리가 제공되지 않을 때
-        describe('when the query is not provided', () => {
-            // 400 Bad Request를 반환한다
-            it('returns 400 Bad Request', async () => {
+        describe('쿼리가 제공되지 않을 때', () => {
+            it('400 Bad Request를 반환한다', async () => {
                 await fix.httpClient.get('/latLong').badRequest(LatLongErrors.Required())
             })
         })
 
-        // 쿼리 형식이 유효하지 않을 때
-        describe('when the query has an invalid format', () => {
-            // 400 Bad Request를 반환한다
-            it('returns 400 Bad Request', async () => {
+        describe('쿼리 형식이 유효하지 않을 때', () => {
+            it('400 Bad Request를 반환한다', async () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: '37.123' })
@@ -93,10 +85,8 @@ describe('LatLong', () => {
             })
         })
 
-        // 쿼리가 범위를 벗어날 때
-        describe('when the query is out of range', () => {
-            // 400 Bad Request를 반환한다
-            it('returns 400 Bad Request', async () => {
+        describe('쿼리가 범위를 벗어날 때', () => {
+            it('400 Bad Request를 반환한다', async () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: '91,181' })

@@ -1,17 +1,16 @@
-// Distributed stress test: purchase double-spend race — concurrent groups.
+// purchase double-spend race 의 분산 스트레스 테스트 — 동시 group 방식.
 //
-// Each inner iteration: provisions a fresh showtime and USER_GROUPS
-// users each hold a distinct ticket pair. Every user then fires
-// PURCHASES_PER_GROUP concurrent POST /purchases on their own ticket
-// pair. All USER_GROUPS × PURCHASES_PER_GROUP requests fire
-// simultaneously. Per group: exactly 1 × 2xx success, rest × 4xx
-// (409 AlreadySold / 400 NotHeld).
+// 각 inner iteration: 새 showtime 을 만들고 USER_GROUPS 명의 유저가 각자 서로
+// 다른 ticket pair 를 hold 한다. 그 다음 각 유저가 자기 ticket pair 로
+// PURCHASES_PER_GROUP 개의 동시 POST /purchases 를 발사한다. 모든
+// USER_GROUPS × PURCHASES_PER_GROUP 요청이 동시에 나간다. group 당:
+// 정확히 1 × 2xx 성공, 나머지는 4xx (409 AlreadySold / 400 NotHeld).
 //
-// Movie/theater and user accounts are created once outside the loop;
-// per-iter work is the fresh showtime, tickets, holds, and race.
+// movie/theater 와 유저 계정은 루프 밖에서 한 번만 만들고, 각 iter 마다 새
+// showtime, ticket, hold, race 만 수행한다.
 //
-// Fails if: any group != 1 success, any 5xx, or fewer than 2 replicas
-// served the requests.
+// 실패 조건: 어떤 group 의 성공이 1 이 아니거나, 5xx 가 발생하거나, 2 개 미만의
+// replica 만 요청을 처리한 경우.
 
 const http = require('http')
 
@@ -112,7 +111,7 @@ function waitForSagaSuccess(sagaId) {
                                 return
                             }
                         } catch {
-                            /* ignore */
+                            /* 무시 */
                         }
                     }
                 })
@@ -144,7 +143,7 @@ async function setupMovieTheater() {
         throw new Error(`publish: ${publish.status}`)
     }
 
-    // Big seatmap so we can carve out USER_GROUPS disjoint ticket pairs.
+    // USER_GROUPS 만큼의 disjoint ticket pair 를 잘라낼 수 있도록 큰 seatmap.
     const theater = await requestRaw('POST', '/theaters', {
         body: {
             name: 'purchase-race',
@@ -213,7 +212,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
         startTimeOffsetMs
     )
 
-    // Each user holds their group's ticket pair.
+    // 각 유저가 자기 group 의 ticket pair 를 hold.
     await Promise.all(
         users.map(async (cust, g) => {
             const hold = await requestRaw('POST', `/booking/showtimes/${showtimeId}/tickets/hold`, {
@@ -226,7 +225,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
         })
     )
 
-    // All users fire PURCHASES_PER_GROUP concurrent purchases at once.
+    // 모든 유저가 동시에 PURCHASES_PER_GROUP 개의 purchase 를 발사한다.
     const attempts = []
     for (let g = 0; g < USER_GROUPS; g++) {
         const cust = users[g]

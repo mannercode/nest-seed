@@ -6,22 +6,22 @@ import { extractRootMessage } from './extract-root-message'
 const { compensate, emitStatusChanged, validateAndCreate } = proxyActivities<
     ReturnType<ShowtimeCreationActivities['bind']>
 >({
-    // Validate+create lock can wait up to 10 minutes (`waitMs`) before
-    // throwing, so the activity timeout is set above that to absorb the
-    // worst case without spurious cancellations.
+    // validate+create lock 은 throw 전까지 최대 10 분 (`waitMs`) 까지 대기할 수
+    // 있으므로, activity timeout 을 그 위로 잡아 spurious cancellation 없이
+    // worst case 를 흡수한다.
     startToCloseTimeout: '15 minutes',
-    // Don't auto-retry — the workflow's catch block runs compensate and
-    // surfaces an Error status. Retrying would cause duplicate side effects.
+    // 자동 retry 하지 않는다 — workflow 의 catch 블록이 compensate 를 실행하고
+    // Error 상태를 노출한다. retry 하면 side effect 가 중복 발생한다.
     retry: { maximumAttempts: 1 }
 })
 
 export async function showtimeCreationWorkflow(
     input: ShowtimeCreationWorkflowInput
 ): Promise<void> {
-    // Status string literals match the ShowtimeCreationStatus union in
-    // services/types.ts. We don't import the const object — workflow code is
-    // sandboxed and pulling in a sibling module that transitively requires
-    // `@nestjs/common` decorators makes Webpack bundling fail.
+    // status 문자열은 services/types.ts 의 ShowtimeCreationStatus union 과 일치한다.
+    // const 객체를 import 하지 않는 이유: workflow 코드는 sandbox 에서 실행되는데
+    // 형제 모듈이 transitive 로 `@nestjs/common` decorator 를 가져오는 순간 Webpack
+    // 번들링이 깨진다.
     await emitStatusChanged({ sagaId: input.sagaId, status: 'processing' })
 
     try {

@@ -28,8 +28,8 @@ export class ShowtimeCreationActivities {
     ) {}
 
     /**
-     * Returns the activity bag passed to TemporalWorkerService. Methods are
-     * bound so Temporal can invoke them as plain functions.
+     * TemporalWorkerService 에 넘기는 activity bag 을 반환한다. 메서드를 bind 해
+     * Temporal 이 plain function 으로 호출할 수 있게 한다.
      */
     bind() {
         return {
@@ -48,12 +48,11 @@ export class ShowtimeCreationActivities {
     ): Promise<ValidateAndCreateResult> {
         const { createDto, sagaId } = JsonUtil.reviveDates(input)
 
-        // Validate-then-insert is a read-modify-write on the showtimes
-        // collection. With one Temporal worker per replica, two overlapping
-        // sagas can both pass validation before either commits. A cross-
-        // replica lock serializes the (validate, create) pair so exactly
-        // one saga sees a conflicting showtime whenever another has
-        // already inserted.
+        // validate-then-insert 는 showtimes collection 에 대한 read-modify-write
+        // 다. replica 당 Temporal worker 가 하나씩 있으면, 겹치는 saga 두 개가
+        // commit 전에 모두 validation 을 통과할 수 있다. cross-replica lock 으로
+        // (validate, create) 쌍을 직렬화해, 다른 saga 가 이미 insert 한 상태라면
+        // 정확히 한 saga 만 conflicting showtime 을 보게 한다.
         let result!: ValidateAndCreateResult
         await this.cache.withLockBlocking(
             VALIDATE_CREATE_LOCK_KEY,
@@ -92,7 +91,7 @@ export class ShowtimeCreationActivities {
         })
     }
 
-    // Keep enum mapping in one place so workflow code stays free of imports
-    // outside the workflow boundary.
+    // enum 매핑을 한 곳에 모아둔다. 그래야 workflow 코드가 workflow 경계 밖
+    // import 없이 깨끗하게 유지된다.
     static readonly Status = ShowtimeCreationStatus
 }

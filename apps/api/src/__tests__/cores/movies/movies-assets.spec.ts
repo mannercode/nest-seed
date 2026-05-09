@@ -20,16 +20,14 @@ describe('MoviesAssets', () => {
     afterEach(() => fix.teardown())
 
     describe('POST /movies/:movieId/assets', () => {
-        // 영화가 존재할 때
-        describe('when the movie exists', () => {
+        describe('영화가 존재할 때', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
                 movie = await createUnpublishedMovie(fix)
             })
 
-            // 업로드 URL이 포함된 에셋 업로드 정보를 반환한다
-            it('returns a created asset upload with an upload URL', async () => {
+            it('업로드 URL이 포함된 에셋 업로드 정보를 반환한다', async () => {
                 const createDto = buildCreateAssetDto(fix.asset)
 
                 const { body } = await fix.httpClient
@@ -48,8 +46,7 @@ describe('MoviesAssets', () => {
                 )
             })
 
-            // 업로드 URL로 에셋을 업로드한다
-            it('uploads the asset via the upload URL', async () => {
+            it('업로드 URL로 에셋을 업로드한다', async () => {
                 const createDto = buildCreateAssetDto(fix.asset)
 
                 const { body: upload } = await fix.httpClient
@@ -62,12 +59,10 @@ describe('MoviesAssets', () => {
                 expect(response.ok).toBe(true)
             })
 
-            // 에셋 타입이 지원되지 않을 때
-            describe('when the asset type is not supported', () => {
+            describe('에셋 타입이 지원되지 않을 때', () => {
                 const createDto = buildCreateAssetDto(testAssets.json)
 
-                // 400 Bad Request를 반환한다
-                it('returns 400 Bad Request', async () => {
+                it('400 Bad Request를 반환한다', async () => {
                     await fix.httpClient
                         .post(`/movies/${movie.id}/assets`)
                         .body(createDto)
@@ -76,10 +71,8 @@ describe('MoviesAssets', () => {
             })
         })
 
-        // 영화가 존재하지 않을 때
-        describe('when the movie does not exist', () => {
-            // 404 Not Found를 반환한다
-            it('returns 404 Not Found', async () => {
+        describe('영화가 존재하지 않을 때', () => {
+            it('404 Not Found를 반환한다', async () => {
                 const createDto = buildCreateAssetDto(fix.asset)
 
                 await fix.httpClient
@@ -91,29 +84,25 @@ describe('MoviesAssets', () => {
     })
 
     describe('DELETE /movies/:movieId/assets/:assetId', () => {
-        // 영화가 존재할 때
-        describe('when the movie exists', () => {
+        describe('영화가 존재할 때', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
                 movie = await createUnpublishedMovie(fix)
             })
 
-            // 업로드가 완료되었을 때
-            describe('when upload is completed', () => {
+            describe('업로드가 완료되었을 때', () => {
                 let assetId: string
 
                 beforeEach(async () => {
                     assetId = await uploadAndFinalizeMovieAsset(fix, movie.id)
                 })
 
-                // 204 No Content를 반환한다
-                it('returns 204 No Content', async () => {
+                it('204 No Content를 반환한다', async () => {
                     await fix.httpClient.delete(`/movies/${movie.id}/assets/${assetId}`).noContent()
                 })
 
-                // 에셋 URL을 무효화한다
-                it('invalidates asset URL', async () => {
+                it('에셋 URL을 무효화한다', async () => {
                     const [asset] = await fix.assetsService.getMany([assetId])
                     Require.defined(asset.download)
 
@@ -124,10 +113,8 @@ describe('MoviesAssets', () => {
                 })
             })
 
-            // 에셋이 존재하지 않을 때
-            describe('when the asset does not exist', () => {
-                // 204 No Content를 반환한다
-                it('returns 204 No Content', async () => {
+            describe('에셋이 존재하지 않을 때', () => {
+                it('204 No Content를 반환한다', async () => {
                     await fix.httpClient
                         .delete(`/movies/${movie.id}/assets/${nullObjectId}`)
                         .noContent()
@@ -135,10 +122,8 @@ describe('MoviesAssets', () => {
             })
         })
 
-        // 영화가 존재하지 않을 때
-        describe('when the movie does not exist', () => {
-            // 404 Not Found를 반환한다
-            it('returns 404 Not Found', async () => {
+        describe('영화가 존재하지 않을 때', () => {
+            it('404 Not Found를 반환한다', async () => {
                 await fix.httpClient
                     .delete(`/movies/${nullObjectId}/assets/${nullObjectId}`)
                     .notFound(Errors.Movies.NotFound(nullObjectId))
@@ -147,38 +132,33 @@ describe('MoviesAssets', () => {
     })
 
     describe('POST /movies/:movieId/assets/:assetId/finalize', () => {
-        // 영화가 존재할 때
-        describe('when the movie exists', () => {
+        describe('영화가 존재할 때', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
                 movie = await createUnpublishedMovie(fix)
             })
 
-            // 에셋이 존재할 때
-            describe('when the asset exists', () => {
+            describe('에셋이 존재할 때', () => {
                 let upload: AssetPresignedUploadDto
 
                 beforeEach(async () => {
                     upload = await createMovieAsset(fix, movie.id, fix.asset)
                 })
 
-                // 업로드가 성공했을 때
-                describe('when upload succeeded', () => {
+                describe('업로드가 성공했을 때', () => {
                     beforeEach(async () => {
                         const uploadResponse = await uploadAsset(fix.asset.path, upload)
                         expect(uploadResponse.ok).toBe(true)
                     })
 
-                    // 204 No Content를 반환한다
-                    it('returns 204 No Content', async () => {
+                    it('204 No Content를 반환한다', async () => {
                         await fix.httpClient
                             .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
                             .noContent()
                     })
 
-                    // 영화에 에셋을 포함한다
-                    it('includes the asset in the movie', async () => {
+                    it('영화에 에셋을 포함한다', async () => {
                         await fix.httpClient
                             .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
                             .noContent()
@@ -188,16 +168,14 @@ describe('MoviesAssets', () => {
                             .ok(expect.objectContaining({ imageUrls: [expect.any(String)] }))
                     })
 
-                    // 이미 완료되었을 때
-                    describe('when already finalized', () => {
+                    describe('이미 완료되었을 때', () => {
                         beforeEach(async () => {
                             await fix.httpClient
                                 .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
                                 .noContent()
                         })
 
-                        // 204 No Content를 반환한다
-                        it('returns 204 No Content', async () => {
+                        it('204 No Content를 반환한다', async () => {
                             await fix.httpClient
                                 .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
                                 .noContent()
@@ -205,10 +183,8 @@ describe('MoviesAssets', () => {
                     })
                 })
 
-                // 업로드가 완료되지 않았을 때
-                describe('when the upload is not completed', () => {
-                    // 422 Unprocessable Entity를 반환한다
-                    it('returns 422 Unprocessable Entity', async () => {
+                describe('업로드가 완료되지 않았을 때', () => {
+                    it('422 Unprocessable Entity를 반환한다', async () => {
                         await fix.httpClient
                             .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
                             .unprocessableEntity(Errors.Movies.AssetUploadInvalid(upload.assetId))
@@ -216,10 +192,8 @@ describe('MoviesAssets', () => {
                 })
             })
 
-            // 에셋이 존재하지 않을 때
-            describe('when the asset does not exist', () => {
-                // 404 Not Found를 반환한다
-                it('returns 404 Not Found', async () => {
+            describe('에셋이 존재하지 않을 때', () => {
+                it('404 Not Found를 반환한다', async () => {
                     await fix.httpClient
                         .post(`/movies/${movie.id}/assets/${nullObjectId}/finalize`)
                         .notFound(Errors.Movies.AssetNotFound(nullObjectId))
@@ -227,10 +201,8 @@ describe('MoviesAssets', () => {
             })
         })
 
-        // 영화가 존재하지 않을 때
-        describe('when the movie does not exist', () => {
-            // 404 Not Found를 반환한다
-            it('returns 404 Not Found', async () => {
+        describe('영화가 존재하지 않을 때', () => {
+            it('404 Not Found를 반환한다', async () => {
                 await fix.httpClient
                     .post(`/movies/${nullObjectId}/assets/${nullObjectId}/finalize`)
                     .notFound(Errors.Movies.NotFound(nullObjectId))

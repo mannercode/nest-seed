@@ -62,8 +62,7 @@ describe('AppLoggerService', () => {
         expect(spy).toHaveBeenCalledWith(message)
     })
 
-    // 선택적 파라미터를 winston으로 전달한다
-    it('passes optional params through to winston', () => {
+    it('선택적 파라미터를 winston으로 전달한다', () => {
         const spy = jest.spyOn(winstonLogger, 'info')
         const context = 'OrdersService'
         const meta = { requestId: 'req-123' }

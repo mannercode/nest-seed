@@ -5,8 +5,8 @@ on:
     push:
         branches: ['main']
     schedule:
-        # Every 6 hours at :17 UTC so main gets a periodic green run even
-        # without commits, catching dependency/infra-driven breakage.
+        # 6시간마다 :17 UTC 에 실행해 commit 이 없어도 main 이 주기적으로 green
+        # 으로 돌아 dependency/infra 변경으로 인한 회귀를 잡는다.
         - cron: '17 */6 * * *'
 permissions:
     contents: read

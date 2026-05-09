@@ -6,8 +6,8 @@ const tsconfig = require('../tsconfig.json')
 const libsTsconfigPath = join(__dirname, '..', 'tsconfig.json')
 const tsJestPreset = createDefaultPreset({ tsconfig: libsTsconfigPath })
 
-// libs/testing has no infra dependency — no globalSetup/Teardown/setupFilesAfterEnv.
-// Its tests are pure unit tests of helpers and run without booting Mongo/Redis/S3/NATS/Temporal.
+// libs/testing 은 infra 의존성이 없다 — globalSetup/Teardown/setupFilesAfterEnv 미사용.
+// helper 들의 순수 unit test 라 Mongo/Redis/S3/NATS/Temporal 부팅 없이 돈다.
 module.exports = {
     ...baseConfig,
     ...tsJestPreset,
@@ -15,7 +15,7 @@ module.exports = {
         prefix: join(__dirname, '..', '/')
     }),
     roots: ['<rootDir>/src'],
-    // Coverage left disabled here pending a follow-up — many helpers are
-    // exercised only indirectly by libs/common consumers.
+    // 후속 작업 대기 중이라 coverage 는 비활성화 상태로 둠 — 많은 helper 가
+    // libs/common consumer 를 통해 간접적으로만 호출된다.
     collectCoverageFrom: []
 }

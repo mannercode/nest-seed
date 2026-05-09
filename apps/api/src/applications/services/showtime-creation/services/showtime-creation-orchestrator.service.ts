@@ -23,9 +23,9 @@ export class ShowtimeCreationOrchestratorService {
 
         await this.events.emitStatusChanged({ sagaId, status: ShowtimeCreationStatus.Waiting })
 
-        // workflowId == sagaId both ties Temporal history to the saga and
-        // doubles as a dedup key — Reject prevents duplicate starts on the
-        // same id.
+        // workflowId == sagaId 로 두면 Temporal history 와 saga 가 묶이고,
+        // 동시에 dedup key 역할도 한다 — Reject 가 같은 id 로 중복 start 되는 것을
+        // 막아준다.
         await this.temporal.workflow.start(SHOWTIME_CREATION_WORKFLOW, {
             args: [{ createDto, sagaId }],
             taskQueue: getShowtimeCreationTaskQueue(),

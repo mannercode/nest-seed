@@ -16,8 +16,7 @@ describe('createDummyFile', () => {
         await fs.rm(tempDir, { force: true, recursive: true })
     })
 
-    // 지정한 크기의 파일을 생성한다
-    it('creates a file of the given size', async () => {
+    it('지정한 크기의 파일을 생성한다', async () => {
         const sizeInBytes = 500 * 1024
         await createDummyFile(testFilePath, sizeInBytes)
         const stats = await fs.stat(testFilePath)
@@ -26,8 +25,7 @@ describe('createDummyFile', () => {
 })
 
 describe('step', () => {
-    // 성공 시 콜백 반환값을 반환한다
-    it('awaits the callback on success', async () => {
+    it('성공 시 콜백 반환값을 반환한다', async () => {
         let executed = false
         await step('do work', async () => {
             executed = true
@@ -35,8 +33,7 @@ describe('step', () => {
         expect(executed).toBe(true)
     })
 
-    // 콜백이 실패하면 단계 이름을 포함한 에러를 던진다
-    it('rethrows with the step name on failure', async () => {
+    it('콜백이 실패하면 단계 이름을 포함한 에러를 던진다', async () => {
         const promise = step('bad step', async () => {
             throw new Error('inner failure')
         })
@@ -44,8 +41,7 @@ describe('step', () => {
         await expect(promise).rejects.toThrow(/step "bad step" failed.*inner failure/)
     })
 
-    // 원본 에러를 cause로 유지한다
-    it('preserves the original error as cause', async () => {
+    it('원본 에러를 cause로 유지한다', async () => {
         const original = new Error('original')
         let caught: unknown
         try {

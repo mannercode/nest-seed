@@ -11,8 +11,7 @@ describe('Crud schema types', () => {
     })
     afterEach(() => fix.teardown())
 
-    // 기본 Mongoose 데이터 타입을 모두 저장하고 조회한다
-    it('stores and retrieves all default Mongoose data types', async () => {
+    it('기본 Mongoose 데이터 타입을 모두 저장하고 조회한다', async () => {
         const doc = new fix.model()
         doc.sn = 1234567
         doc.name = 'Statue of Liberty'
@@ -42,10 +41,8 @@ describe('Crud schema types', () => {
     })
 
     describe('addDeletedAtFilterToPipeline', () => {
-        // 첫 스테이지가 없을 때
-        describe('when the pipeline is empty', () => {
-            // deletedAt 필터를 첫 스테이지로 추가한다
-            it('adds a deletedAt match as the first stage', () => {
+        describe('첫 스테이지가 없을 때', () => {
+            it('deletedAt 필터를 첫 스테이지로 추가한다', () => {
                 const pipeline: Record<string, any>[] = []
 
                 addDeletedAtFilterToPipeline(pipeline)
@@ -54,10 +51,8 @@ describe('Crud schema types', () => {
             })
         })
 
-        // 첫 스테이지가 $geoNear일 때
-        describe('when the first stage is $geoNear', () => {
-            // deletedAt 필터를 두 번째 스테이지로 추가한다
-            it('adds a deletedAt match as the second stage', () => {
+        describe('첫 스테이지가 $geoNear일 때', () => {
+            it('deletedAt 필터를 두 번째 스테이지로 추가한다', () => {
                 const geoNearStage = {
                     $geoNear: {
                         distanceField: 'd',
@@ -72,10 +67,8 @@ describe('Crud schema types', () => {
             })
         })
 
-        // 첫 스테이지가 $search일 때
-        describe('when the first stage is $search', () => {
-            // deletedAt 필터를 두 번째 스테이지로 추가한다
-            it('adds a deletedAt match as the second stage', () => {
+        describe('첫 스테이지가 $search일 때', () => {
+            it('deletedAt 필터를 두 번째 스테이지로 추가한다', () => {
                 const searchStage = {
                     $search: { index: 'default', text: { path: 'name', query: 'a' } }
                 }
@@ -87,10 +80,8 @@ describe('Crud schema types', () => {
             })
         })
 
-        // 첫 스테이지가 $vectorSearch일 때
-        describe('when the first stage is $vectorSearch', () => {
-            // deletedAt 필터를 두 번째 스테이지로 추가한다
-            it('adds a deletedAt match as the second stage', () => {
+        describe('첫 스테이지가 $vectorSearch일 때', () => {
+            it('deletedAt 필터를 두 번째 스테이지로 추가한다', () => {
                 const vectorSearchStage = {
                     $vectorSearch: {
                         index: 'v',

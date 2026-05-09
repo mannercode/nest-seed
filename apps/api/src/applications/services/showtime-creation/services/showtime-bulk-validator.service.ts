@@ -93,10 +93,10 @@ export class ShowtimeBulkValidatorService {
         const timeslotsByTheater = new Map<string, TimeslotMap>()
 
         for (const theaterId of theaterIds) {
-            // Fetch any showtime whose time range overlaps [startDate, endDate] —
-            // not just those that *start* inside the window. An existing showtime
-            // can start before the window yet still conflict (e.g. new 10:00-12:00
-            // overlaps existing 09:00-11:00).
+            // [startDate, endDate] 와 시간 범위가 겹치는 모든 showtime 을 가져온다 —
+            // 윈도우 안에서 *시작* 하는 것만이 아니다. 기존 showtime 이 윈도우 이전에
+            // 시작했지만 여전히 충돌할 수 있다 (예: 신규 10:00-12:00 이 기존 09:00-11:00
+            // 과 겹친다).
             const fetchedShowtimes = await this.showtimesService.search({
                 endTimeRange: { start: startDate },
                 startTimeRange: { end: endDate },

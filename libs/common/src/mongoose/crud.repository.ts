@@ -16,20 +16,21 @@ type SessionArg = ClientSession | undefined
 
 const defaultLeanOptions = {}
 
-// Lean results return `{ _id: ObjectId, ... }`. The schema virtual exposes
-// `id: string` and strips `_id` via `toJSON.flattenObjectIds`, but that
-// transform only fires for hydrated documents or when the
-// mongoose-lean-virtuals plugin is engaged (lean({ virtuals: true })).
-// Running the plugin cost ~30% of read RPS on paginated endpoints (cycle-06
-// measurement). A direct set is much cheaper and preserves the existing
-// public `id: string` response shape.
+// Lean 결과는 `{ _id: ObjectId, ... }` 형태로 돌아온다. schema virtual 이
+// `id: string` 을 노출하고 `toJSON.flattenObjectIds` 로 `_id` 를 떼지만,
+// 그 transform 은 hydrated document 이거나 mongoose-lean-virtuals plugin
+// 이 켜진 경우 (lean({ virtuals: true })) 에만 동작한다. plugin 을 켜면
+// paginated endpoint 의 read RPS 가 약 30% 깎였다 (cycle-06 측정).
+// 직접 set 하는 쪽이 훨씬 싸고 기존의 public `id: string` response shape
+// 도 유지된다.
 //
-// We add `id` but keep `_id` in the in-memory doc: downstream internal code
-// (`getByIds` and callers) still does `doc._id.toString()` for comparison,
-// and the HTTP response serialization already drops `_id` on its own
-// (empirically verified — the lean POJO goes through some serialization
-// layer that hides `_id`, likely a global NestJS interceptor / schema-
-// derived class-transformer config — so it never reaches the wire anyway).
+// `id` 만 추가하고 in-memory doc 의 `_id` 는 그대로 둔다: downstream
+// 내부 코드 (`getByIds` 와 caller) 가 비교를 위해 여전히
+// `doc._id.toString()` 을 하기 때문이고, HTTP response serialization 이
+// 알아서 `_id` 를 떨군다 (실측 — lean POJO 가 어떤 serialization layer
+// 를 거치며 `_id` 를 가리는데, 아마 global NestJS interceptor 거나
+// schema 에서 파생된 class-transformer 설정일 것이다 — 어쨌든 wire 까지
+// 도달하지 않는다).
 export function leanToPublic<T extends { _id?: unknown }>(doc: T): T {
     if (doc._id != null) {
         ;(doc as any).id = (doc._id as { toString(): string }).toString()
@@ -135,19 +136,20 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
 
         queryHelper.lean(defaultLeanOptions)
 
-        // Pagination runs find + count in parallel. For empty filters, count
-        // was measured at ~4-5× the latency of find+skip+limit on dev data
-        // (mongo primary ran 1000% CPU on list endpoints). countDocuments with
-        // the CrudSchema pre-hook collapses to countDocuments({ deletedAt:
-        // null }), an index scan over every non-deleted row.
-        // estimatedDocumentCount reads the collection metadata (O(1)), so for
-        // the empty-filter path we use it.
+        // Pagination 은 find + count 를 병렬로 돌린다. 빈 filter 에서는
+        // count 가 find+skip+limit 보다 4~5배 느리게 측정됐다 (dev data;
+        // list endpoint 에서 mongo primary 가 1000% CPU 를 먹었음).
+        // CrudSchema pre-hook 이 끼면 countDocuments 는
+        // countDocuments({ deletedAt: null }) 로 접혀 모든 non-deleted row
+        // 에 대한 index scan 이 된다. estimatedDocumentCount 는 collection
+        // metadata 만 읽으므로 (O(1)), 빈 filter 경로에서는 이 쪽을 쓴다.
         //
-        // Tradeoff: estimatedDocumentCount returns *all* rows including
-        // soft-deleted ones, so the reported `total` can exceed the number of
-        // rows actually returned across pages. That's acceptable for list
-        // pagination in this codebase — soft-deleted rows are excluded from
-        // `find`, so last-page gaps are possible but ordering stays consistent.
+        // Tradeoff: estimatedDocumentCount 는 soft-deleted row 까지 포함한
+        // *전체* row 수를 돌려주므로 보고되는 `total` 이 실제로 page 들에
+        // 걸쳐 반환되는 row 수보다 커질 수 있다. 이 codebase 의 list
+        // pagination 에서는 허용 가능한 절충 — soft-deleted row 는
+        // `find` 에서 제외되므로 마지막 page 에 빈 자리가 생길 수는 있지만
+        // 정렬은 일관되게 유지된다.
         const rawFilter = queryHelper.getQuery()
         const filterIsEmpty = Object.keys(rawFilter).length === 0
 
@@ -198,10 +200,6 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
 
     async onModuleInit() {
         /**
-         * Since document.save() internally calls createCollection(),
-         * calling save() at the same time can cause a "Collection namespace is already in use" error.
-         * This issue often occurs in unit test environments due to frequent re-initialization.
-         *
          * document.save()가 내부적으로 createCollection()을 호출한다.
          * 동시에 save()를 호출하면 "Collection namespace is already in use" 오류가 발생할 수 있다.
          * 이 문제는 주로 단위 테스트 환경에서 빈번한 초기화로 인해 발생한다.

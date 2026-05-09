@@ -25,10 +25,11 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
             workflowBundle
         })
 
-        // run() resolves only after the worker has fully shut down (drained
-        // in-flight activities, polls stopped). Hold the promise so
-        // onModuleDestroy can await it — otherwise activities can race
-        // dependency-module disposal (mongoose close mid-query etc.).
+        // run() 은 worker 가 완전히 종료된 (in-flight activity 가 drain 되고
+        // polling 이 멈춘) 뒤에야 resolve 된다. promise 를 잡아 두어야
+        // onModuleDestroy 에서 await 할 수 있다 — 그렇지 않으면 activity 가
+        // 의존 module disposal (mongoose 가 query 중간에 close 되는 등) 과
+        // race 할 수 있다.
         this.runPromise = this.worker.run().catch(
             /* istanbul ignore next */ (err: unknown) => {
                 this.logger.error('temporal worker run() failed', err)
@@ -38,20 +39,20 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
 
     async onModuleDestroy() {
         this.worker?.shutdown()
-        // Await full drain before closing the underlying connection so
-        // activities still in flight can complete or be cancelled cleanly.
+        // 진행 중인 activity 가 깔끔하게 완료되거나 취소될 수 있도록 underlying
+        // connection 을 닫기 전에 완전한 drain 을 기다린다.
         if (this.runPromise) await this.runPromise
         await this.connection?.close().catch(() => undefined)
     }
 
     /**
-     * Production: load the pre-built bundle that the build step (e.g.
-     * `apps/api/scripts/bundle-workflows.js`) wrote to disk. After webpack
-     * collapses the app into one `index.js`, `bundleWorkflowCode` cannot
-     * resolve workflowsPath at runtime — it would need the source tree
-     * which is not shipped.
+     * Production: build step (예: `apps/api/scripts/bundle-workflows.js`)
+     * 이 disk 에 써둔 pre-built bundle 을 load 한다. webpack 이 app 을 한
+     * `index.js` 로 합치고 나면 `bundleWorkflowCode` 가 runtime 에
+     * workflowsPath 를 resolve 할 수 없다 — source tree 가 필요한데
+     * ship 되지 않기 때문.
      *
-     * Dev / tests: bundle the source on the fly via workflowsPath.
+     * Dev / tests: workflowsPath 를 통해 source 를 즉석에서 bundling 한다.
      */
     private async resolveWorkflowBundle() {
         const { workflowBundlePath, workflowsPath } = this.options

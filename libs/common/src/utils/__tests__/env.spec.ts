@@ -6,22 +6,18 @@ describe('Env', () => {
             delete process.env.TEST_STRING
         })
 
-        // 환경 변수가 제공될 때
-        describe('when the env var is provided', () => {
+        describe('환경 변수가 제공될 때', () => {
             beforeEach(() => {
                 process.env.TEST_STRING = 'hello'
             })
 
-            // 값을 반환한다
-            it('returns the value', () => {
+            it('값을 반환한다', () => {
                 expect(Env.getString('TEST_STRING')).toBe('hello')
             })
         })
 
-        // 환경 변수가 제공되지 않을 때
-        describe('when the env var is not provided', () => {
-            // 예외를 던진다
-            it('throws', () => {
+        describe('환경 변수가 제공되지 않을 때', () => {
+            it('예외를 던진다', () => {
                 expect(() => Env.getString('TEST_STRING')).toThrow(
                     'Environment variable TEST_STRING is not defined'
                 )
@@ -34,50 +30,42 @@ describe('Env', () => {
             delete process.env.TEST_NUMBER
         })
 
-        // 환경 변수가 숫자일 때
-        describe('when the env var is numeric', () => {
+        describe('환경 변수가 숫자일 때', () => {
             beforeEach(() => {
                 process.env.TEST_NUMBER = '123'
             })
 
-            // 숫자를 반환한다
-            it('returns the number', () => {
+            it('숫자를 반환한다', () => {
                 expect(Env.getNumber('TEST_NUMBER')).toBe(123)
             })
         })
 
-        // 환경 변수가 숫자가 아닐 때
-        describe('when the env var is not numeric', () => {
+        describe('환경 변수가 숫자가 아닐 때', () => {
             beforeEach(() => {
                 process.env.TEST_NUMBER = 'abc'
             })
 
-            // 예외를 던진다
-            it('throws', () => {
+            it('예외를 던진다', () => {
                 expect(() => Env.getNumber('TEST_NUMBER')).toThrow(
                     'Environment variable TEST_NUMBER must be a valid number'
                 )
             })
         })
 
-        // 환경 변수가 숫자로 끝나지 않을 때
-        describe('when the env var contains a numeric prefix only', () => {
+        describe('환경 변수가 숫자로 끝나지 않을 때', () => {
             beforeEach(() => {
                 process.env.TEST_NUMBER = '123abc'
             })
 
-            // 예외를 던진다
-            it('throws', () => {
+            it('예외를 던진다', () => {
                 expect(() => Env.getNumber('TEST_NUMBER')).toThrow(
                     'Environment variable TEST_NUMBER must be a valid number'
                 )
             })
         })
 
-        // 환경 변수가 제공되지 않을 때
-        describe('when the env var is not provided', () => {
-            // 예외를 던진다
-            it('throws', () => {
+        describe('환경 변수가 제공되지 않을 때', () => {
+            it('예외를 던진다', () => {
                 expect(() => Env.getNumber('TEST_NUMBER')).toThrow(
                     'Environment variable TEST_NUMBER is not defined'
                 )
@@ -90,14 +78,12 @@ describe('Env', () => {
             delete process.env.TEST_BOOLEAN
         })
 
-        // 환경 변수가 true일 때
-        describe('when the env var is true', () => {
+        describe('환경 변수가 true일 때', () => {
             beforeEach(() => {
                 process.env.TEST_BOOLEAN = 'true'
             })
 
-            // true를 반환한다
-            it('returns true', () => {
+            it('true를 반환한다', () => {
                 expect(Env.getBoolean('TEST_BOOLEAN')).toBe(true)
             })
         })

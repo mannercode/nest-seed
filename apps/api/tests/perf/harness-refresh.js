@@ -1,18 +1,17 @@
-// Sustained-load perf harness for the user-refresh path.
+// user-refresh path 의 sustained-load perf harness.
 //
-// POST /users/refresh exercises Redis on every call: read the prior
-// refresh token (GET against the cluster), generate new access+refresh
-// JWTs, store the new refresh token (SET with TTL). No bcrypt, no DB read
-// for the token itself — JWT verify is in-memory. So this is the closest
-// clean signal we can get for ioredis cluster throughput from inside the
-// app.
+// POST /users/refresh 는 매 호출마다 Redis 를 사용한다: 이전 refresh token 을 읽고
+// (cluster 에 GET), 새 access+refresh JWT 를 생성한 뒤 새 refresh token 을 저장한다
+// (TTL 이 붙은 SET). bcrypt 도 없고 token 자체에 대한 DB read 도 없다 — JWT verify
+// 는 in-memory 다. 그래서 app 내부에서 측정하는 ioredis cluster throughput 신호로
+// 가장 깨끗하다.
 //
-// Setup: concurrent workers each register and log in once before the
-// measurement window, then loop refreshing their own token. Each worker
-// holds its own refresh token to avoid cross-worker invalidation races
-// (a refresh atomically rotates the stored token).
+// Setup: 측정 창 시작 전에 worker 들이 각자 register + login 을 한 번 한 뒤 자기
+// token 으로 refresh 를 루프로 돌린다. worker 마다 자기 refresh token 을 들고 있어
+// cross-worker invalidation race 를 피한다 (refresh 는 저장된 token 을 atomic 하게
+// 회전시킨다).
 //
-// Env: same shape as harness.js — SERVER_URL, CONCURRENCY, DURATION_MS,
+// Env: harness.js 와 같은 구조 — SERVER_URL, CONCURRENCY, DURATION_MS,
 // WARMUP_MS, LABEL.
 
 const http = require('http')
@@ -109,13 +108,12 @@ async function workerLoop(workerId, state, stopAt, samplesRef, statusesRef, repl
             statusesRef.map.set(result.status, (statusesRef.map.get(result.status) || 0) + 1)
             if (result.replicaId) replicasRef.set.add(result.replicaId)
         }
-        // Even outside the measurement window, rotate so the stored token
-        // stays consistent.
+        // 측정 창 밖에서도 저장된 token 의 일관성을 위해 rotation 은 계속한다.
         if (result.status === 200 && result.body && result.body.refreshToken) {
             state.refreshToken = result.body.refreshToken
         } else if (result.status !== 200) {
-            // Token invalidated (e.g. another concurrent refresh under same
-            // user, shouldn't happen with isolated workers). Bail this worker.
+            // Token 이 무효화됨 (예: 같은 유저로 동시 refresh 가 들어온 경우, worker
+            // 가 격리돼 있으면 발생하지 않아야 함). 이 worker 는 종료한다.
             return
         }
     }
@@ -148,7 +146,7 @@ async function main() {
         `[perf-refresh] server=${SERVER_URL} concurrency=${CONCURRENCY} warmup=${WARMUP_MS}ms duration=${DURATION_MS}ms label=${LABEL || '(none)'}`
     )
 
-    // Setup phase. Each worker creates its own user + logs in.
+    // Setup 단계. worker 마다 자체 유저를 만들고 로그인한다.
     const seed = Date.now()
     console.error(`[perf-refresh] setting up ${CONCURRENCY} users...`)
     const setupT0 = Date.now()

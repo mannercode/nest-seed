@@ -19,10 +19,8 @@ describe('ShowtimeCreationService', () => {
     afterEach(() => fix.teardown())
 
     describe('GET /showtime-creation/movies', () => {
-        // 쿼리가 제공되지 않을 때
-        describe('when the query is not provided', () => {
-            // 기본 영화 페이지를 반환한다
-            it('returns the default page of movies', async () => {
+        describe('쿼리가 제공되지 않을 때', () => {
+            it('기본 영화 페이지를 반환한다', async () => {
                 await fix.httpClient
                     .get('/showtime-creation/movies')
                     .ok({
@@ -36,10 +34,8 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('GET /showtime-creation/theaters', () => {
-        // 쿼리가 제공되지 않을 때
-        describe('when the query is not provided', () => {
-            // 기본 극장 페이지를 반환한다
-            it('returns the default page of theaters', async () => {
+        describe('쿼리가 제공되지 않을 때', () => {
+            it('기본 극장 페이지를 반환한다', async () => {
                 await fix.httpClient
                     .get('/showtime-creation/theaters')
                     .ok({
@@ -53,8 +49,7 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('POST /showtime-creation/showtimes/search', () => {
-        // 극장에 대한 상영 시간이 존재할 때
-        describe('when showtimes exist for the theater', () => {
+        describe('극장에 대한 상영 시간이 존재할 때', () => {
             let showtimes: ShowtimeDto[]
 
             beforeEach(async () => {
@@ -68,8 +63,7 @@ describe('ShowtimeCreationService', () => {
                 )
             })
 
-            // theaterIds에 대한 상영 시간을 반환한다
-            it('returns showtimes for the theaterIds', async () => {
+            it('theaterIds에 대한 상영 시간을 반환한다', async () => {
                 await fix.httpClient
                     .post('/showtime-creation/showtimes/search')
                     .body({ theaterIds: [theater.id] })
@@ -79,8 +73,7 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('POST /showtime-creation/showtimes', () => {
-        // 상영 시간 생성이 요청될 때
-        describe('when showtime creation is requested', () => {
+        describe('상영 시간 생성이 요청될 때', () => {
             let createPromise: Promise<Response>
 
             beforeEach(async () => {
@@ -95,14 +88,12 @@ describe('ShowtimeCreationService', () => {
                     .accepted()
             })
 
-            // sagaId를 반환한다
-            it('returns a sagaId', async () => {
+            it('sagaId를 반환한다', async () => {
                 const { body } = await createPromise
                 expect(body).toEqual(expect.objectContaining({ sagaId: expect.any(String) }))
             })
 
-            // 사가 상태 업데이트를 스트리밍한다
-            it('streams saga status updates', async () => {
+            it('사가 상태 업데이트를 스트리밍한다', async () => {
                 const eventPromise = new Promise((resolve, reject) => {
                     fix.httpClient.get('/showtime-creation/event-stream').sse((data) => {
                         const statusUpdate = JSON.parse(data)
@@ -130,8 +121,7 @@ describe('ShowtimeCreationService', () => {
                 )
             })
 
-            // 상영 시간을 생성한다
-            it('creates showtimes', async () => {
+            it('상영 시간을 생성한다', async () => {
                 const { body } = await createPromise
                 const { createdShowtimeCount } = await waitForCompletion(fix, 'succeeded')
 
@@ -141,8 +131,7 @@ describe('ShowtimeCreationService', () => {
                 expect(createdShowtimes).toHaveLength(createdShowtimeCount)
             })
 
-            // 티켓을 생성한다
-            it('creates tickets', async () => {
+            it('티켓을 생성한다', async () => {
                 const { body } = await createPromise
                 const { createdTicketCount } = await waitForCompletion(fix, 'succeeded')
 
@@ -151,10 +140,8 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        // 영화가 존재하지 않을 때
-        describe('when the movie does not exist', () => {
-            // 오류를 보고한다
-            it('reports an error', async () => {
+        describe('영화가 존재하지 않을 때', () => {
+            it('오류를 보고한다', async () => {
                 const completionPromise = waitForCompletion(fix, 'error')
 
                 const { body } = await fix.httpClient
@@ -175,10 +162,8 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        // 극장이 존재하지 않을 때
-        describe('when the theater does not exist', () => {
-            // 오류를 보고한다
-            it('reports an error', async () => {
+        describe('극장이 존재하지 않을 때', () => {
+            it('오류를 보고한다', async () => {
                 const completionPromise = waitForCompletion(fix, 'error')
 
                 const { body } = await fix.httpClient
@@ -199,8 +184,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        // 상영 시간이 충돌할 때
-        describe('when showtimes conflict', () => {
+        describe('상영 시간이 충돌할 때', () => {
             let initialShowtimes: ShowtimeDto[]
 
             beforeEach(async () => {
@@ -219,8 +203,7 @@ describe('ShowtimeCreationService', () => {
                 )
             })
 
-            // 충돌하는 상영 시간을 반환한다
-            it('returns the conflicting showtimes', async () => {
+            it('충돌하는 상영 시간을 반환한다', async () => {
                 const completionPromise = waitForCompletion(fix, 'failed')
 
                 await fix.httpClient
@@ -251,8 +234,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        // 단일 기존 상영 시간이 여러 새 startTime 과 모두 충돌하는 경우
-        describe('when a single existing showtime overlaps multiple proposed startTimes', () => {
+        describe('단일 기존 상영 시간이 여러 새 startTime 과 모두 충돌하는 경우', () => {
             let initialShowtime: ShowtimeDto
 
             beforeEach(async () => {
@@ -268,8 +250,7 @@ describe('ShowtimeCreationService', () => {
                 initialShowtime = created
             })
 
-            // 충돌 목록에 같은 상영 시간을 한 번만 포함한다
-            it('reports the conflict only once', async () => {
+            it('충돌 목록에 같은 상영 시간을 한 번만 포함한다', async () => {
                 const completionPromise = waitForCompletion(fix, 'failed')
 
                 await fix.httpClient
@@ -294,8 +275,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        // 기존 상영 시간이 새 범위보다 먼저 시작하지만 겹치는 경우
-        describe('when an existing showtime starts before the new range but overlaps', () => {
+        describe('기존 상영 시간이 새 범위보다 먼저 시작하지만 겹치는 경우', () => {
             let initialShowtime: ShowtimeDto
 
             beforeEach(async () => {
@@ -311,8 +291,7 @@ describe('ShowtimeCreationService', () => {
                 initialShowtime = created
             })
 
-            // 충돌로 보고한다
-            it('reports the conflict', async () => {
+            it('충돌로 보고한다', async () => {
                 const completionPromise = waitForCompletion(fix, 'failed')
 
                 await fix.httpClient

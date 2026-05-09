@@ -15,8 +15,7 @@ describe('PaymentsService', () => {
     afterEach(() => fix.teardown())
 
     describe('cancel', () => {
-        // 결제를 취소한다
-        it('cancels the payment', async () => {
+        it('결제를 취소한다', async () => {
             const payment = await createPayment(fix)
 
             await fix.paymentsService.cancel(payment.id)
@@ -31,8 +30,7 @@ describe('PaymentsService', () => {
     })
 
     describe('create', () => {
-        // 생성된 결제를 반환한다
-        it('returns the created payment', async () => {
+        it('생성된 결제를 반환한다', async () => {
             const createDto = buildCreatePaymentDto()
 
             const payment = await fix.paymentsService.create(createDto)
@@ -47,8 +45,7 @@ describe('PaymentsService', () => {
     })
 
     describe('getMany', () => {
-        // 결제가 존재할 때
-        describe('when the payments exist', () => {
+        describe('결제가 존재할 때', () => {
             let payments: PaymentDto[]
 
             beforeEach(async () => {
@@ -59,18 +56,15 @@ describe('PaymentsService', () => {
                 ])
             })
 
-            // paymentIds에 대한 결제를 반환한다
-            it('returns payments for the paymentIds', async () => {
+            it('paymentIds에 대한 결제를 반환한다', async () => {
                 const fetchedPayments = await fix.paymentsService.getMany(pickIds(payments))
 
                 expect(fetchedPayments).toEqual(expect.arrayContaining(payments))
             })
         })
 
-        // paymentIds에 존재하지 않는 paymentId가 포함될 때
-        describe('when the paymentIds include a non-existent paymentId', () => {
-            // 404 Not Found를 던진다
-            it('throws 404 Not Found', async () => {
+        describe('paymentIds에 존재하지 않는 paymentId가 포함될 때', () => {
+            it('404 Not Found를 던진다', async () => {
                 const promise = fix.paymentsService.getMany([nullObjectId])
 
                 await expect(promise).rejects.toMatchObject({

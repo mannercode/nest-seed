@@ -41,8 +41,7 @@ describe('createWinstonLogger', () => {
         return entry
     }
 
-    // 일반 로그 항목을 기록한다
-    it('writes a general log entry', async () => {
+    it('일반 로그 항목을 기록한다', async () => {
         const message = 'test message'
 
         logger.info(message)
@@ -53,8 +52,7 @@ describe('createWinstonLogger', () => {
         expect(entry).toEqual({ level: 'info', message, timestamp: expect.any(String) })
     })
 
-    // HTTP 로그 항목을 기록한다
-    it('writes an HTTP log entry', async () => {
+    it('HTTP 로그 항목을 기록한다', async () => {
         const message = 'test message'
         const logDetails = {
             contextType: 'http',
@@ -77,8 +75,7 @@ describe('createWinstonLogger', () => {
         })
     })
 
-    // HTTP 콘솔 포맷이 올바르게 출력된다
-    it('formats HTTP log for console output', async () => {
+    it('HTTP 콘솔 포맷이 올바르게 출력된다', async () => {
         const consoleLogger = createWinstonLogger({
             consoleLogLevel: 'info',
             daysToKeepLogs: '1d',
@@ -105,8 +102,7 @@ describe('createWinstonLogger', () => {
         consoleLogger.close()
     })
 
-    // Service 콘솔 포맷이 올바르게 출력된다
-    it('formats service log for console output', async () => {
+    it('Service 콘솔 포맷이 올바르게 출력된다', async () => {
         const consoleLogger = createWinstonLogger({
             consoleLogLevel: 'info',
             daysToKeepLogs: '1d',

@@ -46,8 +46,8 @@ module.exports = async function globalSetup() {
     process.env.TESTLIB_S3_ENDPOINT = `http://${minio.getHost()}:${minio.getMappedPort(9000)}`
     process.env.TESTLIB_S3_ACCESS_KEY = 'admin'
     process.env.TESTLIB_S3_SECRET_KEY = 'password'
-    // NatsContainer enforces user/pass auth by default; pass the full
-    // connection options through so consumers don't have to know about it.
+    // NatsContainer 는 기본적으로 user/pass auth 를 강제한다. consumer 가
+    // 신경 쓰지 않도록 connection option 을 전체로 전달한다.
     process.env.TESTLIB_NATS_OPTIONS = JSON.stringify(nats.getConnectionOptions())
     process.env.TESTLIB_TEMPORAL_ADDRESS = temporalEnv.address
     process.env.TESTLIB_TEMPORAL_NAMESPACE = temporalEnv.namespace ?? 'default'

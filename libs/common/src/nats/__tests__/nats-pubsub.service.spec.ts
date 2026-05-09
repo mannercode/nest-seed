@@ -25,8 +25,7 @@ describe('NatsPubSubService', () => {
     })
     afterEach(() => fix.teardown())
 
-    // 두 replica 가 같은 NATS 를 공유할 때 한쪽 publish 가 다른 쪽 subscriber 에 도달한다
-    it('delivers messages from one replica to another', async () => {
+    it('두 replica 가 같은 NATS 를 공유할 때 한쪽 publish 가 다른 쪽 subscriber 에 도달한다', async () => {
         const received: string[] = []
         await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
 
@@ -36,8 +35,7 @@ describe('NatsPubSubService', () => {
         expect(received).toEqual(['hello'])
     })
 
-    // 한 subject 에 여러 subscriber 가 있을 때 모두 메시지를 받는다
-    it('fans messages out to multiple handlers on the same subject', async () => {
+    it('한 subject 에 여러 subscriber 가 있을 때 모두 메시지를 받는다', async () => {
         const received1: string[] = []
         const received2: string[] = []
 
@@ -52,8 +50,7 @@ describe('NatsPubSubService', () => {
         expect(received2).toEqual(['payload'])
     })
 
-    // unsubscribe 후에는 해당 handler 에 메시지가 오지 않는다
-    it('stops delivering to a handler after it unsubscribes', async () => {
+    it('unsubscribe 후에는 해당 handler 에 메시지가 오지 않는다', async () => {
         const received: string[] = []
         const handler = (msg: string) => received.push(msg)
 
@@ -65,19 +62,17 @@ describe('NatsPubSubService', () => {
         await fix.pubSubB.unsubscribe(subject, handler)
 
         await fix.pubSubA.publish(subject, 'after-unsub')
-        // No reliable signal that "nothing arrived"; settle briefly then check.
+        // "아무것도 도착하지 않았음" 을 보장할 신호가 없으므로 잠깐 대기 후 검사.
         await new Promise((r) => setTimeout(r, 50))
 
         expect(received).toEqual(['before-unsub'])
     })
 
-    // 구독한 적 없는 subject 에 대한 unsubscribe 는 no-op 이어야 한다
-    it('no-ops unsubscribe on an unknown subject', async () => {
+    it('구독한 적 없는 subject 에 대한 unsubscribe 는 no-op 이어야 한다', async () => {
         await expect(fix.pubSubB.unsubscribe('never-subscribed', () => {})).resolves.toBeUndefined()
     })
 
-    // 여러 handler 중 하나만 제거해도 NATS 구독은 유지된다
-    it('keeps the NATS subscription alive while other handlers remain', async () => {
+    it('여러 handler 중 하나만 제거해도 NATS 구독은 유지된다', async () => {
         const received: string[] = []
         const firstHandler = () => {}
         const secondHandler = (msg: string) => received.push(msg)
@@ -92,8 +87,7 @@ describe('NatsPubSubService', () => {
         expect(received).toEqual(['still-listening'])
     })
 
-    // queue group 을 지정하면 같은 그룹 안에서 한 인스턴스만 메시지를 받는다
-    it('routes a message to one queue-group member only', async () => {
+    it('queue group 을 지정하면 같은 그룹 안에서 한 인스턴스만 메시지를 받는다', async () => {
         const receivedA: string[] = []
         const receivedB: string[] = []
         const queue = withTestId('queue-group')
@@ -103,14 +97,13 @@ describe('NatsPubSubService', () => {
 
         await fix.pubSubA.publish(subject, 'queued')
         await waitFor(() => receivedA.length + receivedB.length > 0)
-        // Settle so a duplicate delivery (if any) would also have landed.
+        // 중복 전달이 있었다면 도달했을 시간을 두기 위해 잠깐 대기.
         await new Promise((r) => setTimeout(r, 50))
 
         expect(receivedA.length + receivedB.length).toBe(1)
     })
 
-    // handler 한 개가 throw 해도 나머지 handler 로 전달이 막히지 않는다
-    it('isolates handler errors so other handlers still receive', async () => {
+    it('handler 한 개가 throw 해도 나머지 handler 로 전달이 막히지 않는다', async () => {
         const received: string[] = []
 
         await fix.pubSubB.subscribe(subject, () => {
@@ -126,22 +119,19 @@ describe('NatsPubSubService', () => {
 })
 
 describe('InjectNatsPubSub', () => {
-    // decorator factory 가 parameter decorator 를 반환한다 (기본 이름)
-    it('returns a parameter decorator using the default name', async () => {
+    it('decorator factory 가 parameter decorator 를 반환한다 (기본 이름)', async () => {
         const { InjectNatsPubSub } = await import('../nats-pubsub.service')
         expect(typeof InjectNatsPubSub()).toBe('function')
     })
 
-    // decorator factory 가 parameter decorator 를 반환한다 (명명된 인스턴스)
-    it('returns a parameter decorator for a named NatsPubSubService', async () => {
+    it('decorator factory 가 parameter decorator 를 반환한다 (명명된 인스턴스)', async () => {
         const { InjectNatsPubSub } = await import('../nats-pubsub.service')
         expect(typeof InjectNatsPubSub('my-bus')).toBe('function')
     })
 })
 
 describe('NatsPubSubModule.register', () => {
-    // 기본 옵션으로도 DynamicModule 을 만들 수 있다
-    it('builds a module with defaults', async () => {
+    it('기본 옵션으로도 DynamicModule 을 만들 수 있다', async () => {
         const { NatsPubSubModule } = await import('../nats-pubsub.service')
         const dynamicModule = NatsPubSubModule.register()
         expect(dynamicModule.module).toBe(NatsPubSubModule)

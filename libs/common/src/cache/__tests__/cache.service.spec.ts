@@ -11,26 +11,22 @@ describe('CacheService', () => {
     afterEach(() => fix.teardown())
 
     describe('set', () => {
-        // TTL이 제공되지 않을 때
-        describe('when the TTL is not provided', () => {
-            // 값을 저장한다
-            it('stores the value', async () => {
+        describe('TTL이 제공되지 않을 때', () => {
+            it('값을 저장한다', async () => {
                 await fix.cacheService.set('key', 'value')
                 const cachedValue = await fix.cacheService.get('key')
                 expect(cachedValue).toEqual('value')
             })
         })
 
-        // TTL이 제공될 때
-        describe('when a TTL is provided', () => {
+        describe('TTL이 제공될 때', () => {
             let ttl: number
 
             beforeEach(() => {
                 ttl = 1000
             })
 
-            // TTL 이후에 만료된다
-            it('expires after the TTL', async () => {
+            it('TTL 이후에 만료된다', async () => {
                 await fix.cacheService.set('key', 'value', ttl)
 
                 const beforeExpiration = await fix.cacheService.get('key')
@@ -43,16 +39,14 @@ describe('CacheService', () => {
             })
         })
 
-        // TTL이 0일 때
-        describe('when the TTL is 0', () => {
+        describe('TTL이 0일 때', () => {
             let ttl: number
 
             beforeEach(() => {
                 ttl = 0
             })
 
-            // 만료되지 않는다
-            it('does not expire', async () => {
+            it('만료되지 않는다', async () => {
                 await fix.cacheService.set('key', 'value', ttl)
 
                 const beforeExpiration = await fix.cacheService.get('key')
@@ -65,16 +59,14 @@ describe('CacheService', () => {
             })
         })
 
-        // TTL이 음수일 때
-        describe('when the TTL is negative', () => {
+        describe('TTL이 음수일 때', () => {
             let invalidTtl: number
 
             beforeEach(() => {
                 invalidTtl = -100
             })
 
-            // 예외를 던진다
-            it('throws', async () => {
+            it('예외를 던진다', async () => {
                 await expect(fix.cacheService.set('key', 'value', invalidTtl)).rejects.toThrow(
                     'TTL must be a non-negative integer (0 for no expiration)'
                 )
@@ -83,10 +75,8 @@ describe('CacheService', () => {
     })
 
     describe('delete', () => {
-        // 키가 존재할 때
-        describe('when the key exists', () => {
-            // 캐시된 값을 삭제한다
-            it('deletes the cached value', async () => {
+        describe('키가 존재할 때', () => {
+            it('캐시된 값을 삭제한다', async () => {
                 await fix.cacheService.set('key', 'value')
 
                 const beforeDelete = await fix.cacheService.get('key')
@@ -101,8 +91,7 @@ describe('CacheService', () => {
     })
 
     describe('executeScript', () => {
-        // 스크립트를 실행하고 결과를 반환한다
-        it('runs the script and returns the result', async () => {
+        it('스크립트를 실행하고 결과를 반환한다', async () => {
             const script = `return redis.call('SET', KEYS[1], ARGV[2])`
             const keys = ['key']
             const args = ['value']
@@ -116,8 +105,7 @@ describe('CacheService', () => {
     })
 
     describe('withLock', () => {
-        // 락을 점유한 중에는 다른 호출이 fn 을 실행하지 않는다
-        it('allows only one concurrent runner per key', async () => {
+        it('락을 점유한 중에는 다른 호출이 fn 을 실행하지 않는다', async () => {
             let running = 0
             let maxConcurrent = 0
             let executedCount = 0
@@ -140,8 +128,7 @@ describe('CacheService', () => {
             expect(executedCount).toBeGreaterThanOrEqual(1)
         }, 30_000)
 
-        // 락 보유자만 해제할 수 있어야 한다 (만료 후 다른 runner 의 락은 안 지운다)
-        it('releases only the lock it acquired', async () => {
+        it('락 보유자만 해제할 수 있어야 한다 (만료 후 다른 runner 의 락은 안 지운다)', async () => {
             await fix.cacheService.set('lock:job', 'other-runner', 10_000)
 
             const result = await fix.cacheService.withLock('job', 5_000, async () => {
@@ -154,8 +141,7 @@ describe('CacheService', () => {
             expect(value).toBe('other-runner')
         })
 
-        // TTL 이 0 이하이면 예외를 던진다
-        it('throws when TTL is zero or negative', async () => {
+        it('TTL 이 0 이하이면 예외를 던진다', async () => {
             await expect(fix.cacheService.withLock('job', 0, async () => null)).rejects.toThrow(
                 'Lock TTL must be a positive integer (ms)'
             )
@@ -164,8 +150,7 @@ describe('CacheService', () => {
             )
         })
 
-        // fn 이 예외를 던져도 락을 해제한다
-        it('releases the lock even when fn throws', async () => {
+        it('fn 이 예외를 던져도 락을 해제한다', async () => {
             await expect(
                 fix.cacheService.withLock('job', 5_000, () => {
                     throw new Error('boom')
@@ -179,14 +164,12 @@ describe('CacheService', () => {
     })
 
     describe('withLockBlocking', () => {
-        // 경쟁이 없을 때 즉시 실행된다
-        it('runs immediately when uncontended', async () => {
+        it('경쟁이 없을 때 즉시 실행된다', async () => {
             const result = await fix.cacheService.withLockBlocking('job', 5_000, async () => 42)
             expect(result).toBe(42)
         })
 
-        // 동시 호출은 직렬화되어 모두 실행된다
-        it('serializes concurrent callers so every fn runs once', async () => {
+        it('동시 호출은 직렬화되어 모두 실행된다', async () => {
             let running = 0
             let maxConcurrent = 0
             const runnerCount = 10
@@ -212,8 +195,7 @@ describe('CacheService', () => {
             expect(maxConcurrent).toBe(1)
         }, 30_000)
 
-        // 대기 시간 안에 락을 못 잡으면 예외를 던진다
-        it('throws when the lock cannot be acquired before the wait deadline', async () => {
+        it('대기 시간 안에 락을 못 잡으면 예외를 던진다', async () => {
             // 다른 보유자가 오래 잡고 있는 상황을 흉내
             await fix.cacheService.set('lock:job', 'other', 10_000)
 

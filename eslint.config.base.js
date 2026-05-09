@@ -21,9 +21,9 @@ const restrictedSyntaxBase = [
 const escapeForRegex = (value) => value.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&')
 
 /**
- * Regex string matching every Node.js builtin module (with or without "node:" prefix)
- * and any subpath, e.g. fs, node:fs/promises, crypto, etc. Used by eslint-plugin-
- * allowed-dependencies to ignore builtins.
+ * 모든 Node.js builtin module 에 매치되는 regex 문자열 ("node:" 접두사 유무 모두,
+ * 그리고 임의 subpath 포함) — 예: fs, node:fs/promises, crypto 등. eslint-plugin-
+ * allowed-dependencies 가 builtin 을 무시할 때 사용한다.
  */
 const nodeBuiltinModulePattern = `^(?:node:)?(?:${[
     ...new Set(builtinModules.map((moduleName) => moduleName.replace(/^node:/, '').split('/')[0]))
@@ -93,9 +93,9 @@ const baseRules = {
     ],
     '@typescript-eslint/no-non-null-assertion': 'warn',
     'no-duplicate-imports': 'warn',
-    // TS already errors on real redeclares; this rule additionally flags the
-    // const + same-named type pattern used for `as const` enums, which is the
-    // canonical replacement for `enum`. Disabled to avoid false positives.
+    // 실제 redeclare 는 TS 가 이미 잡아준다. 이 rule 은 추가로 `as const` enum
+    // 의 canonical 대체 패턴인 const + 같은 이름의 type alias 까지 잡는데
+    // false positive 가 나서 비활성화.
     '@typescript-eslint/no-redeclare': 'off',
     '@typescript-eslint/adjacent-overload-signatures': 'warn'
 }

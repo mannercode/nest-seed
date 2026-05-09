@@ -6,13 +6,6 @@ import { UserAuthPayload, UserCredentialsDto } from '../dtos'
 import { UsersRepository } from '../users.repository'
 
 /**
- * Precomputed bcrypt hash used to keep `findUserByCredentials` runtime
- * roughly constant whether or not the email exists. Without this, an
- * attacker can enumerate registered emails by measuring response time
- * (real bcrypt vs. early-return). The plaintext is irrelevant — the
- * password being checked is the attacker's input, which can never match
- * a hash produced from this fixed string.
- *
  * 가입된 이메일과 미가입 이메일의 응답 시간 차이로 계정 열거가 가능해지는 것을 막기 위한
  * 사전 계산 더미 해시. user 가 없을 때도 한 번은 bcrypt 를 돌려 시간을 평탄화한다.
  */

@@ -94,5 +94,5 @@ services:
             }
         ports: ['5540:5540']
 
-# - name: Enable memory overcommit for Redis
+# - name: Redis 용 memory overcommit 활성화
 #   run: sudo sysctl -w vm.overcommit_memory=1

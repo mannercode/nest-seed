@@ -1,7 +1,7 @@
 /**
- * Shared defaults for all workspace jest configs. A concrete config
- * (libs/jest.config.js, apps/api/jest.config.js) layers its globalSetup,
- * moduleNameMapper, and coverage rules on top of this.
+ * 모든 workspace jest config 의 공유 기본값. 구체 config
+ * (libs/jest.config.js, apps/api/jest.config.js) 가 이 위에 globalSetup,
+ * moduleNameMapper, coverage 규칙 등을 얹는다.
  */
 module.exports = {
     testRegex: '(__tests__/.*\\.spec\\.ts)$',

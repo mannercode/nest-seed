@@ -4,7 +4,6 @@ import { SchemaFactory } from '@nestjs/mongoose'
 import { defaultTo } from '../utils'
 
 /**
- * The difference between toObject and toJSON is that toJSON has flattenMaps set to true by default.
  * toObject와 toJSON의 차이는 toJSON는 flattenMaps의 기본값이 true라는 것 뿐이다.
  *
  * @Schema()
@@ -55,7 +54,6 @@ export function createCrudSchema<T>(cls: Type<T>): Schema<T> {
     const isHardDelete = defaultTo(Reflect.getMetadata(HARD_DELETE_KEY, cls), false)
     if (isHardDelete === false) {
         schema.add({ deletedAt: { default: null, type: Date } } as any)
-        // An index is set on deletedAt because it is frequently queried in soft delete scenarios.
         // soft delete 상황에서 deletedAt이 자주 조회되므로 인덱스를 설정함
         schema.index({ deletedAt: 1 })
 

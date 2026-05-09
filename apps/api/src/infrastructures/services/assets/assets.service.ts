@@ -1,13 +1,14 @@
 import {
     CacheService,
     DateUtil,
+    getByPath,
     InjectCache,
     InjectS3Object,
     mapDocToDto,
     pickIds,
     S3ObjectService
 } from '@mannercode/common'
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { Cron } from '@nestjs/schedule'
 import { Rules } from 'config'
 import { AssetsRepository } from './assets.repository'
@@ -16,13 +17,14 @@ import { AssetErrors } from './errors'
 import { Asset } from './models'
 
 const CLEANUP_LOCK_KEY = 'cleanup-expired-uploads'
-// Long enough that the worst-case cleanup finishes before the lock auto-expires,
-// yet short enough that a crashed runner can't starve the job for longer than
-// one full cron interval.
+// 최악 경우 cleanup 이 lock 자동 만료 전에 끝낼 수 있을 만큼은 길고, runner 가 죽었을 때
+// 다음 cron interval 한 회차 이상으로 작업이 굶주리지 않을 만큼은 짧게.
 const CLEANUP_LOCK_TTL_MS = 5 * 60 * 1000
 
 @Injectable()
 export class AssetsService {
+    private readonly logger = new Logger(AssetsService.name)
+
     constructor(
         private readonly repository: AssetsRepository,
         @InjectS3Object() private readonly s3Service: S3ObjectService,
@@ -31,9 +33,9 @@ export class AssetsService {
 
     @Cron(Rules.Asset.expiredUploadCleanupCron, { name: 'assets.cleanupExpiredUploads' })
     async cleanupExpiredUploads() {
-        // Every replica runs this cron, so the actual work must be guarded by a
-        // distributed lock. withLock uses Redis SET NX + a token-matched DEL so
-        // exactly one replica does the cleanup in a given interval.
+        // 모든 replica 가 이 cron 을 돌리니까, 실제 작업은 distributed lock 으로 가둬야 한다.
+        // withLock 은 Redis SET NX + token 매칭 DEL 을 써서, 한 interval 에 정확히 하나의
+        // replica 만 cleanup 을 수행하도록 보장한다.
         await this.cache.withLock(CLEANUP_LOCK_KEY, CLEANUP_LOCK_TTL_MS, async () => {
             const expiresBefore = this.getExpirationThreshold()
             const expiredAssets = await this.repository.findExpiredIncomplete(expiresBefore)
@@ -70,7 +72,25 @@ export class AssetsService {
     }
 
     async deleteMany(assetIds: string[]): Promise<void> {
-        await Promise.all(assetIds.map((assetId) => this.s3Service.deleteObject(assetId)))
+        if (assetIds.length === 0) return
+
+        // S3 한 건이 실패해도 나머지 객체 삭제 시도는 끝까지 진행한다 (Promise.all 처럼
+        // 한 번 reject 됐다고 다른 in-flight 결과를 무시하지 않음). 단, 어느 하나라도
+        // 실패했다면 DB 행은 그대로 두고 첫 실패를 throw — 호출자(cleanup cron 등)가
+        // 다음 회차에 같은 자산을 다시 들고 들어와 재시도할 수 있도록 한다. 그래야
+        // S3 객체가 DB 참조 없이 영구 고아가 되는 상황이 막힌다.
+        const results = await Promise.allSettled(
+            assetIds.map((assetId) => this.s3Service.deleteObject(assetId))
+        )
+        const failed = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+        if (failed.length > 0) {
+            this.logger.warn('partial S3 delete failure; DB rows retained for retry', {
+                failedCount: failed.length,
+                reasons: failed.map((r) => getByPath(r, 'reason.message', String(r.reason))),
+                totalCount: assetIds.length
+            })
+            throw failed[0].reason
+        }
 
         await this.repository.deleteByIds(assetIds)
     }

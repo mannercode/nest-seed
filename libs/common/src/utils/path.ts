@@ -66,7 +66,7 @@ export class PathUtil {
     }
 
     static async move(src: string, dest: string): Promise<void> {
-        // rename may fail if moving to a different file-system
+        // 다른 file-system 으로 옮기는 경우 rename 이 실패할 수 있다
         try {
             await fs.rename(src, dest)
         } catch (error: unknown) {

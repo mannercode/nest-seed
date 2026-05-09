@@ -4,8 +4,7 @@ describe('RedisModule', () => {
     describe('forRoot', () => {
         let fix: RedisModuleFixture
 
-        // URL로 연결한다
-        describe('with url', () => {
+        describe('URL로 연결한다', () => {
             beforeEach(async () => {
                 const { createRedisModuleFixture } = await import('./redis.module.fixture')
                 fix = await createRedisModuleFixture()
@@ -18,8 +17,7 @@ describe('RedisModule', () => {
             })
         })
 
-        // 커넥션 이름을 지정한다
-        describe('with named connection', () => {
+        describe('커넥션 이름을 지정한다', () => {
             beforeEach(async () => {
                 const { createRedisModuleNamedFixture } = await import('./redis.module.fixture')
                 fix = await createRedisModuleNamedFixture()
@@ -32,8 +30,7 @@ describe('RedisModule', () => {
             })
         })
 
-        // URL과 옵션을 함께 제공한다
-        describe('with url and options', () => {
+        describe('URL과 옵션을 함께 제공한다', () => {
             beforeEach(async () => {
                 const { createRedisModuleUrlWithOptionsFixture } =
                     await import('./redis.module.fixture')
@@ -47,8 +44,7 @@ describe('RedisModule', () => {
             })
         })
 
-        // 옵션만 제공한다
-        describe('with options only', () => {
+        describe('옵션만 제공한다', () => {
             beforeEach(async () => {
                 const { createRedisModuleOptionsOnlyFixture } =
                     await import('./redis.module.fixture')
@@ -72,8 +68,7 @@ describe('RedisModule', () => {
         })
         afterEach(() => fix.teardown())
 
-        // 비동기로 Redis 연결을 생성한다
-        it('creates a Redis connection asynchronously', async () => {
+        it('비동기로 Redis 연결을 생성한다', async () => {
             const result = await fix.redis.ping()
             expect(result).toBe('PONG')
         })

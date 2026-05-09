@@ -18,9 +18,9 @@ export async function configureApp({ app }: ConfigureAppOptions) {
         exit(1)
     }
 
-    // Replica identifier for distributed stress tests. In docker the hostname
-    // is the container id, which is unique per replica. The value is safe to
-    // expose — it's the same information visible in docker ps / nginx upstream.
+    // 분산 stress 테스트용 replica 식별자. docker 에선 hostname 이 container id 라
+    // replica 마다 유일하다. 노출돼도 안전 — docker ps / nginx upstream 에서 어차피
+    // 보이는 정보다.
     const replicaId = hostname()
     app.use((_req: express.Request, res: express.Response, next: express.NextFunction) => {
         res.setHeader('x-replica-id', replicaId)
@@ -36,9 +36,8 @@ export async function configureApp({ app }: ConfigureAppOptions) {
     app.enableShutdownHooks()
 
     const server = await app.listen(http.port)
-    // Keep idle upstream connections alive longer than nginx's pool timeout
-    // (default 60s) so nginx never tries to reuse a connection Node has
-    // already closed — which would surface to clients as a 502.
+    // idle upstream 연결을 nginx pool timeout (기본 60s) 보다 길게 살려둬서, nginx 가
+    // Node 가 이미 닫은 연결을 재사용하려다 클라이언트에 502 를 내는 일이 없도록 한다.
     server.keepAliveTimeout = 65_000
     server.headersTimeout = 66_000
 }

@@ -14,8 +14,7 @@ describe('PurchaseService', () => {
     afterEach(() => fix.teardown())
 
     describe('POST /purchases', () => {
-        // 고객이 티켓을 보유하고 있을 때
-        describe('when the user holds tickets', () => {
+        describe('고객이 티켓을 보유하고 있을 때', () => {
             let heldTickets: TicketDto[]
 
             beforeEach(async () => {
@@ -24,8 +23,7 @@ describe('PurchaseService', () => {
                 heldTickets = await holdTickets(fix, tickets)
             })
 
-            // 생성된 구매를 반환한다
-            it('returns the created purchase', async () => {
+            it('생성된 구매를 반환한다', async () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
 
                 await fix.httpClient
@@ -40,8 +38,7 @@ describe('PurchaseService', () => {
                     })
             })
 
-            // 구매가 생성되었을 때
-            describe('when the purchase is created', () => {
+            describe('구매가 생성되었을 때', () => {
                 let purchaseRecord: PurchaseRecordDto
 
                 beforeEach(async () => {
@@ -53,30 +50,26 @@ describe('PurchaseService', () => {
                     purchaseRecord = body
                 })
 
-                // 결제 기록을 생성한다
-                it('creates the payment record', async () => {
+                it('결제 기록을 생성한다', async () => {
                     const payments = await getPayments(fix, [purchaseRecord.paymentId])
 
                     expect(payments[0].amount).toEqual(purchaseRecord.totalPrice)
                 })
 
-                // 구매된 티켓을 `Sold`로 표시한다
-                it('marks purchased tickets as `Sold`', async () => {
+                it('구매된 티켓을 `Sold`로 표시한다', async () => {
                     const soldTickets = await getTickets(fix, pickIds(heldTickets))
 
                     expect(soldTickets.every((t) => t.status === TicketStatus.Sold)).toBe(true)
                 })
             })
 
-            // 티켓 수가 최대치를 초과할 때
-            describe('when the ticket count exceeds the maximum', () => {
+            describe('티켓 수가 최대치를 초과할 때', () => {
                 beforeEach(async () => {
                     const { Rules } = await import('config')
                     toAny(Rules).Ticket.maxTicketsPerPurchase = heldTickets.length - 1
                 })
 
-                // 400 Bad Request를 반환한다
-                it('returns 400 Bad Request', async () => {
+                it('400 Bad Request를 반환한다', async () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
                     await fix.httpClient
@@ -86,16 +79,14 @@ describe('PurchaseService', () => {
                 })
             })
 
-            // 구매 가능 시간이 종료되었을 때
-            describe('when the purchase window is closed', () => {
+            describe('구매 가능 시간이 종료되었을 때', () => {
                 beforeEach(async () => {
                     const { Rules } = await import('config')
                     toAny(Rules).Ticket.purchaseCutoffMinutes =
                         Rules.Ticket.purchaseCutoffMinutes + 2
                 })
 
-                // 400 Bad Request를 반환한다
-                it('returns 400 Bad Request', async () => {
+                it('400 Bad Request를 반환한다', async () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
                     await fix.httpClient
@@ -111,8 +102,7 @@ describe('PurchaseService', () => {
                 })
             })
 
-            // 내부 오류가 발생할 때
-            describe('when an internal error occurs', () => {
+            describe('내부 오류가 발생할 때', () => {
                 let rollbackPurchaseSpy: jest.SpyInstance
 
                 beforeEach(async () => {
@@ -129,8 +119,7 @@ describe('PurchaseService', () => {
                     rollbackPurchaseSpy = jest.spyOn(ticketPurchaseService, 'rollbackPurchase')
                 })
 
-                // 구매를 롤백한다
-                it('rolls back the purchase', async () => {
+                it('구매를 롤백한다', async () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
                     await fix.httpClient.post('/purchases').body(createDto).internalServerError()
@@ -139,10 +128,8 @@ describe('PurchaseService', () => {
                 })
             })
 
-            // 구매 완료가 실패할 때
-            describe('when purchase completion fails', () => {
-                // 결제를 취소하고 구매 기록을 삭제한다
-                it('cancels the payment and deletes the purchase record', async () => {
+            describe('구매 완료가 실패할 때', () => {
+                it('결제를 취소하고 구매 기록을 삭제한다', async () => {
                     const { TicketPurchaseService } = await import('applications')
                     const { PurchaseRecordsService } = await import('cores')
                     const { PaymentsService } = await import('infrastructures')
@@ -172,15 +159,13 @@ describe('PurchaseService', () => {
                 })
             })
 
-            // 티켓이 이미 판매된 상태일 때
-            describe('when the tickets have already been sold', () => {
+            describe('티켓이 이미 판매된 상태일 때', () => {
                 beforeEach(async () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
                     await fix.httpClient.post('/purchases').body(createDto).created()
                 })
 
-                // 409 Conflict를 반환한다
-                it('returns 409 Conflict', async () => {
+                it('409 Conflict를 반환한다', async () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
                     await fix.httpClient
@@ -190,10 +175,8 @@ describe('PurchaseService', () => {
                 })
             })
 
-            // 구매 기록 생성이 실패할 때
-            describe('when purchase record creation fails', () => {
-                // 결제를 취소한다
-                it('cancels the payment', async () => {
+            describe('구매 기록 생성이 실패할 때', () => {
+                it('결제를 취소한다', async () => {
                     const { PurchaseRecordsService } = await import('cores')
                     const { PaymentsService } = await import('infrastructures')
                     const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
@@ -213,8 +196,7 @@ describe('PurchaseService', () => {
             })
         })
 
-        // 티켓이 보유되지 않았을 때
-        describe('when the tickets are not held', () => {
+        describe('티켓이 보유되지 않았을 때', () => {
             let tickets: TicketDto[]
 
             beforeEach(async () => {
@@ -222,8 +204,7 @@ describe('PurchaseService', () => {
                 tickets = await createShowtimeAndTickets(fix)
             })
 
-            // 400 Bad Request를 반환한다
-            it('returns 400 Bad Request', async () => {
+            it('400 Bad Request를 반환한다', async () => {
                 const createDto = buildCreatePurchaseDto(tickets.slice(0, 1))
 
                 await fix.httpClient

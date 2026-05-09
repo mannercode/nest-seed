@@ -1,6 +1,6 @@
-# Whitelist approach: exclude everything, then allow only what's needed.
-# All patterns MUST use / anchor — without it, patterns match at any depth,
-# causing unintended files (e.g. libs/testing/package.json) to leak into the build context.
+# Whitelist 방식: 일단 전부 제외하고, 필요한 것만 허용한다.
+# 모든 패턴은 반드시 / 앵커를 써야 한다 — 안 그러면 임의 깊이에서 매치돼
+# 의도치 않은 파일 (예: libs/testing/package.json) 이 build context 로 새어 들어간다.
 *
 
 !/package.json

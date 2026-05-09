@@ -24,8 +24,8 @@ export async function createPurchaseEventsFixture(): Promise<PurchaseEventsFixtu
 }
 
 /**
- * Polls until `predicate` returns true or `timeoutMs` elapses. NATS
- * delivery is async so we can't assert immediately after emit.
+ * `predicate` 가 true 를 반환하거나 `timeoutMs` 가 경과할 때까지 폴링한다.
+ * NATS 전달은 async 라 emit 직후에 assert 할 수 없다.
  */
 export async function waitFor(predicate: () => boolean, timeoutMs = 2000) {
     const start = Date.now()

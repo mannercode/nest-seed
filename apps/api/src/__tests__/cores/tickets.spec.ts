@@ -15,8 +15,7 @@ describe('TicketsService', () => {
     afterEach(() => fix.teardown())
 
     describe('createMany', () => {
-        // 생성된 티켓 수를 반환한다
-        it('returns the created ticket count', async () => {
+        it('생성된 티켓 수를 반환한다', async () => {
             const createDtos = [buildCreateTicketDto({ sagaId: oid(0x1) })]
 
             const { count } = await fix.ticketsService.createMany(createDtos)
@@ -26,8 +25,7 @@ describe('TicketsService', () => {
     })
 
     describe('search', () => {
-        // 필터가 제공될 때
-        describe('when the filter is provided', () => {
+        describe('필터가 제공될 때', () => {
             const sagaId = oid(0x1)
             const movieId = oid(0x2)
             const theaterId = oid(0x3)
@@ -51,39 +49,33 @@ describe('TicketsService', () => {
                 ticketForShowtime = createdTickets[3]
             })
 
-            // sagaIds로 필터링된 티켓을 반환한다
-            it('returns tickets filtered by sagaIds', async () => {
+            it('sagaIds로 필터링된 티켓을 반환한다', async () => {
                 const tickets = await fix.ticketsService.search({ sagaIds: [sagaId] })
 
                 expect(tickets).toEqual([ticketForSaga])
             })
 
-            // movieIds로 필터링된 티켓을 반환한다
-            it('returns tickets filtered by movieIds', async () => {
+            it('movieIds로 필터링된 티켓을 반환한다', async () => {
                 const tickets = await fix.ticketsService.search({ movieIds: [movieId] })
 
                 expect(tickets).toEqual([ticketForMovie])
             })
 
-            // theaterIds로 필터링된 티켓을 반환한다
-            it('returns tickets filtered by theaterIds', async () => {
+            it('theaterIds로 필터링된 티켓을 반환한다', async () => {
                 const tickets = await fix.ticketsService.search({ theaterIds: [theaterId] })
 
                 expect(tickets).toEqual([ticketForTheater])
             })
 
-            // showtimeIds로 필터링된 티켓을 반환한다
-            it('returns tickets filtered by showtimeIds', async () => {
+            it('showtimeIds로 필터링된 티켓을 반환한다', async () => {
                 const tickets = await fix.ticketsService.search({ showtimeIds: [showtimeId] })
 
                 expect(tickets).toEqual([ticketForShowtime])
             })
         })
 
-        // 필터가 비어 있을 때
-        describe('when the filter is empty', () => {
-            // 400 Bad Request를 던진다
-            it('throws 400 Bad Request', async () => {
+        describe('필터가 비어 있을 때', () => {
+            it('400 Bad Request를 던진다', async () => {
                 const promise = fix.ticketsService.search({})
 
                 await expect(promise).rejects.toMatchObject({
@@ -95,8 +87,7 @@ describe('TicketsService', () => {
     })
 
     describe('updateStatusMany', () => {
-        // 티켓이 존재할 때
-        describe('when the tickets exist', () => {
+        describe('티켓이 존재할 때', () => {
             let tickets: TicketDto[]
 
             beforeEach(async () => {
@@ -107,8 +98,7 @@ describe('TicketsService', () => {
                 ])
             })
 
-            // 수정된 티켓을 반환한다
-            it('returns the updated tickets', async () => {
+            it('수정된 티켓을 반환한다', async () => {
                 const updatedTickets = await fix.ticketsService.updateStatusMany(
                     pickIds(tickets),
                     TicketStatus.Sold
@@ -120,8 +110,7 @@ describe('TicketsService', () => {
     })
 
     describe('aggregateSales', () => {
-        // showtimeIds가 제공될 때
-        describe('when the showtimeIds are provided', () => {
+        describe('showtimeIds가 제공될 때', () => {
             const showtimeId = oid(0x10)
             const totalCount = 50
             const soldCount = 5
@@ -134,8 +123,7 @@ describe('TicketsService', () => {
                 await fix.ticketsService.updateStatusMany(pickIds(soldTickets), TicketStatus.Sold)
             })
 
-            // showtimeIds에 대한 판매 통계를 반환한다
-            it('returns sales stats for the showtimeIds', async () => {
+            it('showtimeIds에 대한 판매 통계를 반환한다', async () => {
                 const ticketSales = await fix.ticketsService.aggregateSales({
                     showtimeIds: [showtimeId]
                 })

@@ -3,7 +3,6 @@
     "private": true,
     "comments": {
         "workspaces": [
-            "Order of workspaces = build order. Keep dependencies listed first.",
             "workspaces 항목 순서 = 빌드 순서. 의존성이 먼저 오도록 유지할 것."
         ]
     },

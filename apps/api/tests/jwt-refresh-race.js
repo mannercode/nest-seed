@@ -1,28 +1,26 @@
-// Distributed stress test: JWT refresh-token rotation under heavy
-// parallel contention.
+// JWT refresh-token rotation 의 분산 스트레스 테스트. 강한 병렬 경합 하에서 동작 검증.
 //
-// libs/common/src/auth/jwt-auth.service.ts implements rotation with
-// reuse detection: a successful refresh deletes the consumed tokenId
-// from the family registry and issues a new one; any subsequent
-// refresh with a tokenId no longer in the registry purges the entire
-// family. The race-safety invariant is that concurrent refreshes of
-// the same starting token must not produce two simultaneously usable
-// next tokens — either one wins and the rest get 401, or the rotation
-// race triggers reuse detection and the family is revoked entirely.
+// libs/common/src/auth/jwt-auth.service.ts 는 reuse detection 과 함께 rotation 을
+// 구현한다: refresh 성공 시 family registry 에서 소비된 tokenId 를 지우고 새 tokenId 를
+// 발급한다. 이후 registry 에 없는 tokenId 로 들어오는 refresh 요청은 family 전체를
+// purge 한다. race-safety invariant 는, 같은 시작 token 으로 동시에 들어온 refresh 들이
+// 동시에 사용 가능한 next token 을 두 개 이상 만들어서는 안 된다는 것이다. 하나만
+// 이기고 나머지는 401, 아니면 rotation race 가 reuse detection 을 트리거해 family 가
+// 통째로 revoke 되거나 둘 중 하나여야 한다.
 //
-// Each inner iteration: USER_GROUPS distinct users are created and
-// logged in, then each user's single refresh token is hit by
-// CLIENTS_PER_USER concurrent /users/refresh requests across replicas.
-// All groups fire at once for nginx-level cross-replica spread.
+// 각 inner iteration: USER_GROUPS 만큼의 유저를 만들고 로그인한 뒤, 각 유저의 단일
+// refresh token 에 대해 CLIENTS_PER_USER 개의 동시 /users/refresh 요청을 replica 들에
+// 걸쳐 보낸다. 모든 group 이 동시에 발사되어 nginx 레벨에서 cross-replica 분산이
+// 발생하도록 한다.
 //
-// Per-group invariants:
-//   - at least 1 × 200 (some refresh winner exists)
-//   - 0 × 5xx or any other unexpected status
-//   - of the new tokens returned, at most one can refresh again — more
-//     than one simultaneously valid means a rotation race window
+// group 별 invariant:
+//   - 최소 1 × 200 (refresh winner 가 적어도 하나 존재)
+//   - 5xx 나 그 외 예상치 못한 status 는 0
+//   - 새로 받은 token 들 중 다시 refresh 가능한 token 은 최대 하나여야 한다. 두 개
+//     이상 동시 유효하면 rotation race window 가 발생한 것이다.
 //
-// Fails if any group violates the above, or if responses landed on a
-// single replica (cross-replica unverified).
+// 위 invariant 를 위반하거나, 응답이 단일 replica 에서만 처리됐다면 (cross-replica 미검증)
+// 실패 처리한다.
 
 const http = require('http')
 
@@ -95,14 +93,14 @@ async function createAndLogin(suffix) {
 }
 
 async function runInner(iteration) {
-    // Setup: USER_GROUPS users, each holding a single fresh refresh token.
+    // Setup: USER_GROUPS 명의 유저, 각각 새 refresh token 하나씩 보유.
     const tokens = await Promise.all(
         Array.from({ length: USER_GROUPS }, (_, g) => createAndLogin(`${iteration}-${g}`))
     )
 
-    // Concurrent refresh storm: every user fires CLIENTS_PER_USER refreshes
-    // of its single original token. All groups fire together so nginx sees
-    // USER_GROUPS × CLIENTS_PER_USER concurrent requests across replicas.
+    // 동시 refresh 폭주: 각 유저가 자기 single original token 으로 CLIENTS_PER_USER
+    // 번의 refresh 를 발사한다. 모든 group 이 동시에 발사돼 nginx 가
+    // USER_GROUPS × CLIENTS_PER_USER 만큼의 동시 요청을 replica 들에 분산해서 받는다.
     const requests = tokens.flatMap((token, g) =>
         Array.from({ length: CLIENTS_PER_USER }, () =>
             postJson('/users/refresh', { refreshToken: token }).then((r) => ({ ...r, group: g }))
@@ -138,10 +136,10 @@ async function runInner(iteration) {
             )
         }
 
-        // Race-safe rotation invariant: of the new tokens emitted, at most
-        // one can still refresh — either rotation produced exactly one new
-        // token (others got 401 from reuse detection) or the family was
-        // purged entirely (followups all 401).
+        // Race-safe rotation invariant: 새로 발급된 token 들 중 다시 refresh 가
+        // 가능한 token 은 최대 하나여야 한다. rotation 이 정확히 하나의 새 token 만
+        // 생성했거나 (나머지는 reuse detection 으로 401), family 가 통째로 purge 돼
+        // followup 이 모두 401 이거나 둘 중 하나다.
         const newTokens = g.ok.map((r) => JSON.parse(r.body).refreshToken)
         const followups = await Promise.all(
             newTokens.map((t) => postJson('/users/refresh', { refreshToken: t }))

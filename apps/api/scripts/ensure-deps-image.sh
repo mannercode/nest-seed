@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Compute DEPS_TAG (lockfile + deps.Dockerfile hash) and ensure the image
-# is available locally — pull from ghcr first, fall back to a local build
-# if the tag is missing or auth is unavailable. Sets DEPS_TAG and
-# DEPS_IMAGE for downstream `docker compose` build args.
+# DEPS_TAG (lockfile + deps.Dockerfile 해시) 를 계산하고 image 가 로컬에
+# 있는지 보장한다 — 우선 ghcr 에서 pull 하고, tag 가 없거나 auth 가 없으면
+# 로컬 build 로 fallback 한다. 하위 `docker compose` build args 용으로
+# DEPS_TAG 와 DEPS_IMAGE 를 export 한다.
 #
-# Tag formula must stay identical to .github/workflows/build-deps-image.yaml
-# — diverging breaks ghcr cache hits.
+# Tag 산출식은 .github/workflows/build-deps-image.yaml 과 반드시 동일해야
+# 한다 — 어긋나면 ghcr cache hit 가 깨진다.
 #
 # Usage: REPO_ROOT=/abs/path source apps/api/scripts/ensure-deps-image.sh
 

@@ -14,8 +14,7 @@ describe('UsersService', () => {
     afterEach(() => fix.teardown())
 
     describe('POST /users', () => {
-        // 생성된 고객을 반환한다
-        it('returns the created user', async () => {
+        it('생성된 고객을 반환한다', async () => {
             const createDto = buildCreateUserDto()
 
             await fix.httpClient
@@ -24,16 +23,14 @@ describe('UsersService', () => {
                 .created({ ...omit(createDto, ['password']), id: expect.any(String) })
         })
 
-        // 이메일이 이미 존재할 때
-        describe('when the email already exists', () => {
+        describe('이메일이 이미 존재할 때', () => {
             const email = 'user@mail.com'
 
             beforeEach(async () => {
                 await createUser(fix, { email })
             })
 
-            // 409 Conflict를 반환한다
-            it('returns 409 Conflict', async () => {
+            it('409 Conflict를 반환한다', async () => {
                 const createDto = buildCreateUserDto({ email })
 
                 await fix.httpClient
@@ -43,11 +40,9 @@ describe('UsersService', () => {
             })
         })
 
-        // 같은 이메일로 동시에 여러 요청이 들어올 때
-        describe('when multiple requests create with the same email concurrently', () => {
-            // 정확히 하나는 201 Created, 나머지는 전부 409 Conflict 여야 한다 (500 노출 금지)
+        describe('같은 이메일로 동시에 여러 요청이 들어올 때', () => {
             it(
-                'accepts exactly one request and rejects others with 409 only',
+                '정확히 하나는 201 Created, 나머지는 전부 409 Conflict 여야 한다 (500 노출 금지)',
                 async () => {
                     const email = 'race@mail.com'
                     const count = 10
@@ -76,10 +71,8 @@ describe('UsersService', () => {
             )
         })
 
-        // 필수 필드가 누락되었을 때
-        describe('when required fields are missing', () => {
-            // 400 Bad Request를 반환한다
-            it('returns 400 Bad Request', async () => {
+        describe('필수 필드가 누락되었을 때', () => {
+            it('400 Bad Request를 반환한다', async () => {
                 await fix.httpClient
                     .post('/users')
                     .body({})
@@ -87,10 +80,8 @@ describe('UsersService', () => {
             })
         })
 
-        // 중복 키 이외의 저장 오류가 발생할 때
-        describe('when the repository rejects with a non-duplicate error', () => {
-            // 오류를 그대로 전파한다 (ConflictException 으로 변환하지 않는다)
-            it('propagates the error', async () => {
+        describe('중복 키 이외의 저장 오류가 발생할 때', () => {
+            it('오류를 그대로 전파한다 (ConflictException 으로 변환하지 않는다)', async () => {
                 const { UsersService } = await import('cores')
                 const service = fix.module.get(UsersService)
 
@@ -106,24 +97,20 @@ describe('UsersService', () => {
     })
 
     describe('GET /users/:id', () => {
-        // 고객이 존재할 때
-        describe('when the user exists', () => {
+        describe('고객이 존재할 때', () => {
             let user: UserDto
 
             beforeEach(async () => {
                 user = await createUser(fix)
             })
 
-            // 고객을 반환한다
-            it('returns the user', async () => {
+            it('고객을 반환한다', async () => {
                 await fix.httpClient.get(`/users/${user.id}`).ok(user)
             })
         })
 
-        // 고객이 존재하지 않을 때
-        describe('when the user does not exist', () => {
-            // 404 Not Found를 반환한다
-            it('returns 404 Not Found', async () => {
+        describe('고객이 존재하지 않을 때', () => {
+            it('404 Not Found를 반환한다', async () => {
                 await fix.httpClient
                     .get(`/users/${nullObjectId}`)
                     .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
@@ -132,16 +119,14 @@ describe('UsersService', () => {
     })
 
     describe('PATCH /users/:id', () => {
-        // 고객이 존재할 때
-        describe('when the user exists', () => {
+        describe('고객이 존재할 때', () => {
             let user: UserDto
 
             beforeEach(async () => {
                 user = await createUser(fix, { name: 'original-name' })
             })
 
-            // 수정된 고객을 반환한다
-            it('returns the updated user', async () => {
+            it('수정된 고객을 반환한다', async () => {
                 const updateDto = { birthDate: new Date('1900-12-31'), email: 'new@mail.com' }
 
                 await fix.httpClient
@@ -150,8 +135,7 @@ describe('UsersService', () => {
                     .ok({ ...user, ...updateDto })
             })
 
-            // 수정 내용이 저장된다
-            it('persists the update', async () => {
+            it('수정 내용이 저장된다', async () => {
                 const updateDto = { name: 'update-name' }
                 await fix.httpClient.patch(`/users/${user.id}`).body(updateDto).ok()
 
@@ -159,10 +143,8 @@ describe('UsersService', () => {
             })
         })
 
-        // 고객이 존재하지 않을 때
-        describe('when the user does not exist', () => {
-            // 404 Not Found를 반환한다
-            it('returns 404 Not Found', async () => {
+        describe('고객이 존재하지 않을 때', () => {
+            it('404 Not Found를 반환한다', async () => {
                 await fix.httpClient
                     .patch(`/users/${nullObjectId}`)
                     .body({})
@@ -170,8 +152,7 @@ describe('UsersService', () => {
             })
         })
 
-        // 다른 고객의 이메일로 변경하려 할 때
-        describe("when updating to another user's email", () => {
+        describe('다른 고객의 이메일로 변경하려 할 때', () => {
             const existingEmail = 'taken@mail.com'
             let target: UserDto
 
@@ -180,8 +161,7 @@ describe('UsersService', () => {
                 target = await createUser(fix, { email: 'mine@mail.com' })
             })
 
-            // 409 Conflict를 반환한다
-            it('returns 409 Conflict', async () => {
+            it('409 Conflict를 반환한다', async () => {
                 await fix.httpClient
                     .patch(`/users/${target.id}`)
                     .body({ email: existingEmail })
@@ -191,21 +171,18 @@ describe('UsersService', () => {
     })
 
     describe('DELETE /users/:id', () => {
-        // 고객이 존재할 때
-        describe('when the user exists', () => {
+        describe('고객이 존재할 때', () => {
             let user: UserDto
 
             beforeEach(async () => {
                 user = await createUser(fix)
             })
 
-            // 204 No Content를 반환한다
-            it('returns 204 No Content', async () => {
+            it('204 No Content를 반환한다', async () => {
                 await fix.httpClient.delete(`/users/${user.id}`).noContent()
             })
 
-            // 삭제가 저장된다
-            it('persists the deletion', async () => {
+            it('삭제가 저장된다', async () => {
                 await fix.httpClient.delete(`/users/${user.id}`).noContent()
 
                 await fix.httpClient
@@ -214,10 +191,8 @@ describe('UsersService', () => {
             })
         })
 
-        // 고객이 존재하지 않을 때
-        describe('when the user does not exist', () => {
-            // 204 No Content를 반환한다
-            it('returns 204 No Content', async () => {
+        describe('고객이 존재하지 않을 때', () => {
+            it('204 No Content를 반환한다', async () => {
                 await fix.httpClient.delete(`/users/${nullObjectId}`).noContent()
             })
         })
@@ -249,36 +224,29 @@ describe('UsersService', () => {
             total: users.length
         })
 
-        // 쿼리가 제공되지 않을 때
-        describe('when the query is not provided', () => {
-            // 기본 고객 페이지를 반환한다
-            it('returns the default page of users', async () => {
+        describe('쿼리가 제공되지 않을 때', () => {
+            it('기본 고객 페이지를 반환한다', async () => {
                 const expected = buildExpectedPage([userA1, userA2, userB1, userB2])
 
                 await fix.httpClient.get('/users').ok(expected)
             })
         })
 
-        // 필터가 제공될 때
-        describe('when the filter is provided', () => {
+        describe('필터가 제공될 때', () => {
             const queryAndExpect = (query: SearchUsersPageDto, users: UserDto[]) =>
                 fix.httpClient.get('/users').query(query).ok(buildExpectedPage(users))
 
-            // 부분 이름 일치로 필터링된 고객을 반환한다
-            it('returns users filtered by a partial name match', async () => {
+            it('부분 이름 일치로 필터링된 고객을 반환한다', async () => {
                 await queryAndExpect({ name: 'user-a' }, [userA1, userA2])
             })
 
-            // 부분 이메일 일치로 필터링된 고객을 반환한다
-            it('returns users filtered by a partial email match', async () => {
+            it('부분 이메일 일치로 필터링된 고객을 반환한다', async () => {
                 await queryAndExpect({ email: 'user-b' }, [userB1, userB2])
             })
         })
 
-        // 쿼리 파라미터가 유효하지 않을 때
-        describe('when the query parameters are invalid', () => {
-            // 400 Bad Request를 반환한다
-            it('returns 400 Bad Request', async () => {
+        describe('쿼리 파라미터가 유효하지 않을 때', () => {
+            it('400 Bad Request를 반환한다', async () => {
                 await fix.httpClient
                     .get('/users')
                     .query({ wrong: 'value' })
@@ -290,14 +258,12 @@ describe('UsersService', () => {
     describe('UsersRepository.existsByEmail', () => {
         const email = 'exists-check@mail.com'
 
-        // 같은 이메일의 고객이 존재할 때
-        describe('when a user with the email exists', () => {
+        describe('같은 이메일의 고객이 존재할 때', () => {
             beforeEach(async () => {
                 await createUser(fix, { email })
             })
 
-            // true를 반환한다
-            it('returns true', async () => {
+            it('true를 반환한다', async () => {
                 const { UsersRepository } = await import('cores')
                 const repo = fix.module.get(UsersRepository)
 
@@ -305,10 +271,8 @@ describe('UsersService', () => {
             })
         })
 
-        // 같은 이메일의 고객이 없을 때
-        describe('when no user with the email exists', () => {
-            // false를 반환한다
-            it('returns false', async () => {
+        describe('같은 이메일의 고객이 없을 때', () => {
+            it('false를 반환한다', async () => {
                 const { UsersRepository } = await import('cores')
                 const repo = fix.module.get(UsersRepository)
 

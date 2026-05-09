@@ -1,11 +1,10 @@
 import { randomBytes } from 'crypto'
 
 /**
- * Generates a short unique identifier (ID) with the specified length.
  * 지정된 길이의 짧은 고유 식별자(ID)를 생성합니다.
  *
- * @param {number} [length=15] - The length of the ID to generate (default: 15).
- * @returns {string} The generated short ID string.
+ * @param {number} [length=15] 생성할 ID 길이 (기본값: 15).
+ * @returns {string} 생성된 short ID 문자열.
  */
 export function generateShortId(length: number = 15): string {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -31,7 +30,6 @@ export function generateShortId(length: number = 15): string {
 }
 
 /**
- * Extracts the 'id' property from each object in an array.
  * 객체 배열에서 각 객체의 'id' 프로퍼티를 추출
  */
 export function pickIds<T extends { id: string }>(items: T[]): string[] {

@@ -27,9 +27,6 @@ export class OrderBy {
 
 export class PaginationDto {
     /**
-     * In HttpController, 'orderby' is passed as a string (e.g., "name:asc"),
-     * in RpcController, it's passed as an object ({ name, direction }).
-     *
      * HttpController에서는 'orderby'가 문자열(예: "name:asc")로 전달되고,
      * RpcController에서는 객체({ name, direction })로 전달됩니다.
      */

@@ -2,10 +2,10 @@ import { AppLoggerService, SecurityEvent } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 
 /**
- * First-pass consumer for JwtAuthService security events: mirrors them into
- * the application logger pipeline. Keeps the hook from being dead code while
- * we defer the permanent audit-log decision (storage, retention, PII policy)
- * to a follow-up.
+ * JwtAuthService 보안 이벤트의 first-pass consumer. 이벤트를 application
+ * logger pipeline 으로 옮긴다. 영구 audit-log 결정 (저장소, 보관 기간, PII
+ * 정책) 은 후속 작업으로 미루는 동안, 이 hook 이 dead code 가 되지 않게
+ * 유지한다.
  */
 @Injectable()
 export class SecurityEventLogger {

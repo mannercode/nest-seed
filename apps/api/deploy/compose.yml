@@ -1,9 +1,9 @@
 x-app-base: &app-base
     environment:
         - NODE_ENV=production
-        # libuv thread pool: bcrypt and fs ops run here. Default 4 gets
-        # saturated by bursts of password hashing (POST /users, login),
-        # blocking request completion and tripping upstream resets.
+        # libuv thread pool: bcrypt 와 fs 연산이 여기서 돈다. 기본값 4 는
+        # password hashing 폭주 (POST /users, login) 로 금방 포화돼 요청
+        # 완료를 막고 upstream reset 을 유발한다.
         - UV_THREADPOOL_SIZE=16
         - PROJECT_ID=${PROJECT_ID}
         - HTTP_PORT=${HTTP_PORT:-3000}

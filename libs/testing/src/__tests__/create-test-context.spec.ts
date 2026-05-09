@@ -9,14 +9,12 @@ describe('createTestContext', () => {
     })
     afterEach(() => fix.teardown())
 
-    // 프로바이더가 오버라이드되면 목 서비스가 사용된다
-    it('uses the mocked service when the provider is overridden', async () => {
+    it('프로바이더가 오버라이드되면 목 서비스가 사용된다', async () => {
         const message = fix.sampleService.getMessage()
         expect(message).toEqual({ message: 'This is Mock' })
     })
 
-    // HTTP 메시지에 올바르게 응답한다
-    it('responds correctly to an HTTP message', async () => {
+    it('HTTP 메시지에 올바르게 응답한다', async () => {
         await fix.httpClient.get('/message/value').ok({ received: 'value' })
     })
 })

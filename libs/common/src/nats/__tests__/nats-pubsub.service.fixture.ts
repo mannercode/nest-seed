@@ -11,8 +11,8 @@ export type NatsPubSubServiceFixture = {
 }
 
 /**
- * Two NatsPubSubService instances that share the same NATS server so we can
- * drive a cross-replica scenario (A publishes, B subscribes — or both do).
+ * 같은 NATS 서버를 공유하는 두 NatsPubSubService 인스턴스. cross-replica
+ * 시나리오 (A publish, B subscribe — 또는 양쪽 모두) 를 구동하기 위함.
  */
 export async function createNatsPubSubServiceFixture(): Promise<NatsPubSubServiceFixture> {
     const contextA = await createTestContext({

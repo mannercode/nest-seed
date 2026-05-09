@@ -1,13 +1,12 @@
-// Distributed stress test: user email uniqueness under heavy parallel
-// contention.
+// 강한 병렬 경합 하에서 user email 유일성의 분산 스트레스 테스트.
 //
-// Each inner iteration: EMAIL_GROUPS distinct emails, each attacked by
-// CLIENTS_PER_GROUP concurrent POSTs to /users. All groups fire at
-// once so nginx sees EMAIL_GROUPS × CLIENTS_PER_GROUP concurrent requests
-// across replicas. Per group: exactly 1 × 201, rest × 409; no 5xx.
+// 각 inner iteration: EMAIL_GROUPS 개의 서로 다른 email, 각각에 대해
+// CLIENTS_PER_GROUP 개의 동시 POST /users 를 보낸다. 모든 group 이 동시에 발사돼
+// nginx 가 EMAIL_GROUPS × CLIENTS_PER_GROUP 만큼의 동시 요청을 replica 에 분산
+// 한다. group 당: 정확히 1 × 201, 나머지 409, 5xx 없음.
 //
-// Fails if: any group doesn't have exactly 1×201, any 5xx or other
-// unexpected status, or responses all landed on one replica.
+// 실패 조건: 어떤 group 이 정확히 1×201 이 아님, 5xx 또는 그 외 예상치 못한
+// status, 또는 모든 응답이 하나의 replica 에서만 옴.
 
 const http = require('http')
 
@@ -54,7 +53,7 @@ function post(path, body) {
 }
 
 async function runInner(iteration) {
-    // Build EMAIL_GROUPS × CLIENTS_PER_GROUP requests, all fired together.
+    // EMAIL_GROUPS × CLIENTS_PER_GROUP 개의 요청 구성, 동시에 발사한다.
     const emails = Array.from(
         { length: EMAIL_GROUPS },
         (_, g) =>
@@ -74,7 +73,7 @@ async function runInner(iteration) {
 
     const results = await Promise.all(requests)
 
-    // Aggregate per email.
+    // email 별로 집계.
     const byEmail = new Map()
     const replicaSet = new Set()
     for (const r of results) {
@@ -91,10 +90,10 @@ async function runInner(iteration) {
             console.error(
                 `[race] iter=${iteration} email=${email}: expected 1 × 201, got ${g.created} (409=${g.conflict}, other=${g.other.length})`
             )
-            // Dump all 50 responses for this email so the next failure
-            // shows whether the "winner" returned a 5xx, a 0 (socket
-            // hangup), or something unexpected — the previous flake hit
-            // 0 × 201 with no other diagnostic visible.
+            // 이 email 의 50 개 응답을 전부 덤프해 다음 실패 시 "winner" 가
+            // 5xx 를 냈는지, 0 (socket hangup) 을 냈는지, 아니면 예상 못한
+            // 상태를 냈는지 알 수 있도록 한다 — 이전 flake 는 다른 진단
+            // 정보 없이 0 × 201 만 찍혔다.
             const sameEmail = results.filter((r) => r.email === email)
             for (const [idx, r] of sameEmail.entries()) {
                 console.error(

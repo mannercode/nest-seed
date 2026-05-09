@@ -1,18 +1,17 @@
-// Distributed stress test: cross-replica SSE fan-out under heavy load.
+// 강한 부하 하에서 cross-replica SSE fan-out 의 분산 스트레스 테스트.
 //
-// Each inner iteration: opens SSE_CLIENT_COUNT SSE connections across
-// replicas, fires SAGAS_PER_INNER saga-creation POSTs simultaneously
-// (each with a distinct staggered startTime), and asserts that every
-// SSE client receives every saga's succeeded event. The pass condition
-// is SSE_CLIENT_COUNT × SAGAS_PER_INNER events delivered correctly.
+// 각 inner iteration: replica 들에 걸쳐 SSE_CLIENT_COUNT 개의 SSE 연결을 연 뒤,
+// SAGAS_PER_INNER 개의 saga-creation POST 를 동시에 발사하고 (각각 서로 다른
+// 어긋난 startTime 을 가짐), 모든 SSE 클라이언트가 모든 saga 의 succeeded
+// 이벤트를 받는지 검증한다. 통과 조건은 SSE_CLIENT_COUNT × SAGAS_PER_INNER
+// 개의 이벤트가 정확히 전달되는 것이다.
 //
-// Per inner iter exercises thousands of Redis pub/sub messages because
-// each replica publishes status changes for each saga (Waiting →
-// Processing → Succeeded) and every subscriber forwards to its
-// local Subject.
+// 각 inner iter 는 수천 개의 Redis pub/sub 메시지를 발생시킨다. replica 별로
+// 각 saga 의 상태 변화 (Waiting → Processing → Succeeded) 를 publish 하고
+// 모든 subscriber 가 자기 local Subject 로 forward 하기 때문이다.
 //
-// Fails if: any SSE client misses any saga's succeeded event, or SSE
-// clients landed on fewer than 2 replicas (no cross-replica coverage).
+// 실패 조건: 어떤 SSE 클라이언트가 어떤 saga 의 succeeded 이벤트를 놓침, 또는
+// SSE 클라이언트들이 2 개 미만의 replica 에만 연결됨 (cross-replica 미검증).
 
 const http = require('http')
 
@@ -156,7 +155,7 @@ async function setupFixture() {
 }
 
 async function runInner(movieId, theaterId, iteration, baseOffsetMs) {
-    // Open a fresh batch of SSE clients per iter.
+    // iter 마다 새 SSE 클라이언트 batch 를 연다.
     const clients = Array.from({ length: SSE_CLIENT_COUNT }, (_, i) => openSseClient(i))
     await Promise.all(clients.map((c) => c.connected))
 
@@ -168,8 +167,8 @@ async function runInner(movieId, theaterId, iteration, baseOffsetMs) {
         )
     }
 
-    // Fire SAGAS_PER_INNER sagas at once. Each uses a distinct non-overlapping
-    // startTime so the validator doesn't reject them.
+    // SAGAS_PER_INNER 개의 saga 를 동시에 발사. validator 가 거부하지 않도록
+    // 각각 서로 겹치지 않는 startTime 을 사용한다.
     const sagaSpacingMs = 3 * 60 * 60 * 1000 // 3h
     const sagaPromises = Array.from({ length: SAGAS_PER_INNER }, (_, i) => {
         const startTime = new Date(
@@ -191,7 +190,7 @@ async function runInner(movieId, theaterId, iteration, baseOffsetMs) {
         return r.body.sagaId
     })
 
-    // Every client must receive every saga's succeeded event.
+    // 모든 클라이언트가 모든 saga 의 succeeded 이벤트를 받아야 한다.
     const ok = await waitUntil(
         () =>
             clients.every((c) =>
@@ -234,8 +233,8 @@ async function main() {
 
     const { movieId, theaterId } = await setupFixture()
 
-    // Each inner iter uses SAGAS_PER_INNER × 3h of timeline starting at
-    // baseOffset; space iterations far enough apart that they don't collide.
+    // 각 inner iter 는 baseOffset 부터 SAGAS_PER_INNER × 3h 의 timeline 을 사용한다.
+    // iter 사이 간격을 충분히 둬서 서로 충돌하지 않도록 한다.
     const iterSpacingMs = SAGAS_PER_INNER * 3 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000
 
     for (let i = 1; i <= INNER_ITERATIONS; i++) {

@@ -195,8 +195,7 @@ export class S3ObjectService implements OnModuleDestroy {
 }
 
 /**
- * Compare Content-Type by base MIME type only (ignore params like `; charset=utf-8`).
- * Content-Type은 파라미터를 무시하고 base-type만 비교.
+ * Content-Type은 파라미터를 무시하고 base-type만 비교 (`; charset=utf-8` 같은 파라미터는 무시).
  * e.g. "application/json" === "application/json; charset=utf-8"
  */
 function normalizeContentType(v?: string) {

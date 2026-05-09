@@ -8,14 +8,8 @@ x-mongo-base: &mongo-base
     shm_size: '8m'
     environment:
         { MONGO_INITDB_ROOT_USERNAME: $MONGO_USERNAME, MONGO_INITDB_ROOT_PASSWORD: $MONGO_PASSWORD }
-    # Prevents "Too many open files" errors
+    # "Too many open files" 에러 방지
     ulimits: { nofile: { soft: 65536, hard: 65536 } }
-    # Why switch to port 27016
-    # - If MONGO_INITDB_* is set or /docker-entrypoint-initdb.d scripts exist, the official mongo image entrypoint
-    #   starts a temporary mongod on 127.0.0.1:27017 to run init tasks (admin/root user, etc.).
-    # - After init, it shuts down the temporary mongod and starts the service mongod.
-    # - During this handover, "Address already in use" may occur on 27017, so the service mongod uses 27016.
-    #
     # 27016 포트로 변경하는 이유
     # - MONGO_INITDB_* 또는 /docker-entrypoint-initdb.d 스크립트가 있으면 엔트리포인트가 127.0.0.1:27017로
     #   초기화용 임시 mongod를 실행해 admin/root 사용자 생성 등 초기화를 수행한다.

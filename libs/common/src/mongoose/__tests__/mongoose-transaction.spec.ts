@@ -10,10 +10,8 @@ describe('Mongoose Transaction', () => {
     afterEach(() => fix.teardown())
 
     describe('withTransaction', () => {
-        // 트랜잭션이 성공할 때
-        describe('when the transaction succeeds', () => {
-            // 트랜잭션을 커밋한다
-            it('commits the transaction', async () => {
+        describe('트랜잭션이 성공할 때', () => {
+            it('트랜잭션을 커밋한다', async () => {
                 const newDoc = await fix.repository.withTransaction(async (session) => {
                     const doc = fix.repository.newDocument()
                     doc.name = 'name'
@@ -25,8 +23,7 @@ describe('Mongoose Transaction', () => {
             })
         })
 
-        // 롤백이 요청될 때
-        describe('when rollback is requested', () => {
+        describe('롤백이 요청될 때', () => {
             let newDoc: any
 
             beforeEach(async () => {
@@ -35,8 +32,7 @@ describe('Mongoose Transaction', () => {
                 await newDoc.save()
             })
 
-            // 트랜잭션을 롤백한다
-            it('rolls back the transaction', async () => {
+            it('트랜잭션을 롤백한다', async () => {
                 await fix.repository.withTransaction(async (session, rollback) => {
                     await fix.repository.deleteById(newDoc.id, session)
                     rollback()
@@ -47,10 +43,8 @@ describe('Mongoose Transaction', () => {
             })
         })
 
-        // 트랜잭션 중 오류가 발생할 때
-        describe('when an error occurs during the transaction', () => {
-            // 변경 사항을 롤백한다
-            it('rolls back changes', async () => {
+        describe('트랜잭션 중 오류가 발생할 때', () => {
+            it('변경 사항을 롤백한다', async () => {
                 const promise = fix.repository.withTransaction(async (session) => {
                     const doc = fix.repository.newDocument()
                     doc.name = 'name'
@@ -67,24 +61,21 @@ describe('Mongoose Transaction', () => {
         })
     })
 
-    // startSession이 예외를 던질 때
-    describe('when startSession throws', () => {
+    describe('startSession이 예외를 던질 때', () => {
         beforeEach(() => {
             jest.spyOn(fix.model, 'startSession').mockImplementation(() => {
                 throw new Error()
             })
         })
 
-        // 예외를 던진다
-        it('throws', async () => {
+        it('예외를 던진다', async () => {
             const promise = fix.repository.withTransaction(async (_session) => {})
 
             await expect(promise).rejects.toThrow()
         })
     })
 
-    // startTransaction이 예외를 던질 때
-    describe('when startTransaction throws', () => {
+    describe('startTransaction이 예외를 던질 때', () => {
         beforeEach(() => {
             jest.spyOn(fix.model, 'startSession').mockResolvedValue({
                 inTransaction: jest.fn().mockReturnValue(false),
@@ -94,8 +85,7 @@ describe('Mongoose Transaction', () => {
             } as any)
         })
 
-        // 예외를 던진다
-        it('throws', async () => {
+        it('예외를 던진다', async () => {
             const promise = fix.repository.withTransaction(async (_session) => {})
 
             await expect(promise).rejects.toThrow()

@@ -36,7 +36,6 @@ export class UsersRepository extends CrudRepository<User> {
     async existsByEmail(email: string): Promise<boolean> {
         const result = await this.model.exists({ email: { $eq: email } }).lean()
 
-        // Explicitly converts a value to a boolean
         // 값을 boolean 타입으로 강제 변환
         return !!result
     }

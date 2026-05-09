@@ -9,7 +9,6 @@ export type CrudSchemaFixture = { model: Model<SchemaTypeSample>; teardown: () =
     toJSON: {
         transform: (_doc: RawSample, ret: RawSample) => {
             if (Array.isArray(ret.ofBuffer)) {
-                // Even if stored as Buffer, it is recognized as mongo.Binary when loaded.
                 // Buffer로 저장해도 로드하면 mongo.Binary 타입이다.
                 ret.ofBuffer = ret.ofBuffer.map((b: any) =>
                     b instanceof mongo.Binary ? b.buffer : b

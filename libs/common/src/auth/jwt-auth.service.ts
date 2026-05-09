@@ -32,36 +32,36 @@ type JwtSignOptionsArg = Parameters<JwtService['signAsync']>[1]
 type JwtExpiresIn = NonNullable<JwtSignOptionsArg>['expiresIn']
 
 /**
- * JWT-based auth with **refresh-token rotation** and **reuse detection**.
+ * **refresh-token rotation** 과 **reuse detection** 을 갖춘 JWT 기반 auth.
  *
- * Storage layout in Redis (per JwtAuthService instance, namespaced by `prefix`):
+ * Redis 저장 구조 (JwtAuthService instance 별, `prefix` 로 namespacing):
  *
  *   {prefix}:{familyId}:token:{tokenId}    → JSON { hash, familyId }    TTL = refreshTokenTtlMs
- *   {prefix}:{familyId}:family             → SET of live tokenIds       TTL = refreshTokenTtlMs (extended on rotation)
- *   {prefix}:user:{userId}:families        → SET of familyIds for user  TTL = refreshTokenTtlMs (extended on rotation)
+ *   {prefix}:{familyId}:family             → 살아있는 tokenId 의 SET    TTL = refreshTokenTtlMs (rotation 시 연장)
+ *   {prefix}:user:{userId}:families        → user 의 familyId SET       TTL = refreshTokenTtlMs (rotation 시 연장)
  *
- * - **Hash storage**: only SHA-256(refreshToken) is kept; the raw JWT lives only
- *   on the client. A Redis dump leak doesn't directly hand attackers usable
- *   tokens.
- * - **Rotation**: a successful refresh deletes the consumed token entry and
- *   issues a new tokenId in the same family.
- * - **Reuse detection**: presenting an already-rotated token (token entry gone
- *   but family still alive) is treated as theft → the entire family is purged
- *   so neither the legitimate user nor the attacker can refresh further.
- * - **Algorithm pinning + iss/aud claims** prevent algorithm-confusion attacks
- *   and block tokens minted by other services that happen to share a secret.
- * - **Per-user index** enables `revokeAllForUser` (e.g., on password change or
- *   "log out everywhere"). The userId is extracted from the JWT payload using
- *   the configured `userIdField` (default `'sub'`, per RFC 7519).
+ * - **Hash 저장**: SHA-256(refreshToken) 만 보관하고 raw JWT 는 client 에만
+ *   존재한다. Redis dump 가 유출되어도 그대로 쓸 수 있는 token 이 공격자 손에
+ *   바로 들어가지는 않는다.
+ * - **Rotation**: refresh 가 성공하면 소비된 token entry 를 삭제하고 같은
+ *   family 안에서 새 tokenId 를 발급한다.
+ * - **Reuse detection**: 이미 rotation 된 token (token entry 는 사라졌지만
+ *   family 는 아직 살아있는 상태) 이 제시되면 도난으로 간주 → family 전체를
+ *   날려서 정상 user 와 공격자 모두 더 이상 refresh 하지 못하게 한다.
+ * - **Algorithm pinning + iss/aud claim** 으로 algorithm-confusion 공격을
+ *   막고, secret 을 공유하는 다른 service 가 발급한 token 을 차단한다.
+ * - **per-user index** 덕분에 `revokeAllForUser` (예: 비밀번호 변경이나
+ *   "전체 로그아웃") 가 가능하다. userId 는 설정된 `userIdField` (기본
+ *   `'sub'`, RFC 7519) 를 통해 JWT payload 에서 뽑아낸다.
  */
 @Injectable()
 export class JwtAuthService {
     private readonly logger = new Logger(JwtAuthService.name)
 
-    // No default on `userIdField` — JwtAuthModule.register always resolves it
-    // through `defaultTo(userIdField, DEFAULT_USER_ID_FIELD)` so a TS default
-    // here would be dead code (an uncovered branch). Direct instantiations
-    // must pass the field explicitly.
+    // `userIdField` 에 기본값을 두지 않는다 — JwtAuthModule.register 가 항상
+    // `defaultTo(userIdField, DEFAULT_USER_ID_FIELD)` 로 해소하므로 TS 의
+    // 기본값은 dead code (커버되지 않는 branch) 가 된다. 직접 instantiate 할
+    // 때는 field 를 명시적으로 넘겨야 한다.
     constructor(
         private readonly jwtService: JwtService,
         private readonly config: AuthConfig,
@@ -149,11 +149,11 @@ export class JwtAuthService {
             throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
         }
 
-        // Consume this token before issuing the next one so the same window
-        // can't accept the same refresh twice. Atomic DEL count tells us
-        // whether we won the race against concurrent refreshes of the same
-        // tokenId — a loser is indistinguishable from a replayed
-        // already-rotated token, so reuse detection burns the family.
+        // 다음 token 을 발급하기 전에 이 token 을 소비해서 같은 window 가
+        // 동일한 refresh 를 두 번 받아주지 못하게 한다. atomic DEL 의 count
+        // 로 같은 tokenId 에 대한 동시 refresh race 에서 우리가 이겼는지
+        // 알 수 있다 — race 의 패자는 이미 rotation 된 token 이 replay 된
+        // 경우와 구분할 수 없으므로, reuse detection 이 family 를 태운다.
         const consumed = await this.consumeToken(tokenId, familyId)
         if (!consumed) {
             const loserUserId = this.getUserId(payload)
@@ -298,11 +298,11 @@ export class JwtAuthService {
     }
 
     /**
-     * Both keys embed `{familyId}` as a Redis Cluster hash tag so every key
-     * for one family lands on the same slot — required because we use MULTI
-     * pipelines that touch token + family entries atomically (Redis Cluster
-     * rejects multi-key ops crossing slots: `CROSSSLOT`). The per-user
-     * index uses `{userId}` instead — touched in separate (non-MULTI) calls.
+     * 두 key 모두 `{familyId}` 를 Redis Cluster hash tag 로 박아서 한 family
+     * 의 모든 key 가 같은 slot 에 떨어지도록 한다 — token + family entry 를
+     * atomic 하게 다루는 MULTI pipeline 을 쓰기 때문에 필요하다 (Redis
+     * Cluster 는 slot 을 넘나드는 multi-key 연산을 `CROSSSLOT` 으로 거부).
+     * per-user index 는 따로 (non-MULTI 로) 다루므로 `{userId}` 를 쓴다.
      */
     private tokenKey(tokenId: string, familyId: string) {
         return `${this.prefix}:{${familyId}}:token:${tokenId}`
@@ -350,15 +350,26 @@ export class JwtAuthService {
     }
 
     private async consumeToken(tokenId: string, familyId: string): Promise<boolean> {
-        // result[0] is the DEL reply: [err, count]. count > 0 means we won
-        // the race against concurrent consumers; 0 means another worker
-        // already deleted the entry.
-        const result = (await this.redis
+        // result[0] 가 DEL 응답: [err, count]. count > 0 이면 동시 소비자
+        // 들과의 race 에서 우리가 이긴 것이고, 0 이면 다른 worker 가 이미
+        // entry 를 지운 것이다.
+        //
+        // ioredis 의 `multi().exec()` 타입은 `Array<[Error | null, unknown]>
+        // | null` — null 은 transaction 이 abort (예: connection error) 된
+        // 경우에 나온다. 그 경우 DEL 이 실제로 돌았는지 알 수 없으므로
+        // 짐작하지 않고 그대로 throw 한다: false 를 돌리면 일시적 error 일
+        // 수 있는데 family 를 태워버리고, true 를 돌리면 같은 source 에서
+        // 유효 token 두 개가 나갈 수 있다. throw 된 error 는 5xx 가 되어
+        // client 가 재시도할 수 있고 family 는 그대로 유지된다.
+        const result = await this.redis
             .multi()
             .del(this.tokenKey(tokenId, familyId))
             .srem(this.familyKey(familyId), tokenId)
-            .exec()) as [Error | null, number][]
-        const [, count] = result[0]
+            .exec()
+        if (!result) {
+            throw new Error('Refresh token consume aborted: redis multi exec returned null')
+        }
+        const [, count] = result[0] as [Error | null, number]
         return count > 0
     }
 
@@ -381,7 +392,7 @@ export class JwtAuthService {
         try {
             await this.onEvent(event)
         } catch (err) {
-            // Hook failures must not break authentication. Log and continue.
+            // hook 실패가 authentication 을 깨뜨려서는 안 된다. log 만 남기고 계속.
             this.logger.error('onEvent hook failed', err)
         }
     }

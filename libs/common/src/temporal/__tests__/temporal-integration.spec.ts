@@ -2,10 +2,9 @@ import type { Client, Connection } from '@temporalio/client'
 import { withTestId } from '@mannercode/testing'
 import type { TemporalClientConfig } from '../temporal.types'
 
-// One Connection + Client shared across this file. The `await import` inside
-// each `it` (project convention with `resetModules: true`) still gives fresh
-// class identities for the modules under test — only the live infra handles
-// are reused.
+// 이 파일 전체가 공유하는 단일 Connection + Client. 각 `it` 안의
+// `await import` (프로젝트 컨벤션: `resetModules: true`) 는 SUT 모듈들에
+// 대해 새 클래스 identity 를 만들어 주고, 살아있는 infra handle 만 재사용한다.
 let connection: Connection
 let client: Client
 
@@ -26,22 +25,19 @@ afterAll(async () => {
 })
 
 describe('InjectTemporalClient', () => {
-    // 이름 없이 호출하면 parameter decorator 를 반환한다 (기본 이름)
-    it('returns a parameter decorator using the default name', async () => {
+    it('이름 없이 호출하면 parameter decorator 를 반환한다 (기본 이름)', async () => {
         const { InjectTemporalClient } = await import('../temporal-client.module')
         expect(typeof InjectTemporalClient()).toBe('function')
     })
 
-    // 이름을 주면 그 이름의 client 토큰에 대한 decorator 를 반환한다
-    it('returns a parameter decorator with an explicit name', async () => {
+    it('이름을 주면 그 이름의 client 토큰에 대한 decorator 를 반환한다', async () => {
         const { InjectTemporalClient } = await import('../temporal-client.module')
         expect(typeof InjectTemporalClient('orders')).toBe('function')
     })
 })
 
 describe('TemporalClientModule.forRootAsync', () => {
-    // 이름 없이 등록하면 기본 토큰에 Connection 과 Client 를 노출한다
-    it('exposes Connection and Client at the default tokens', async () => {
+    it('이름 없이 등록하면 기본 토큰에 Connection 과 Client 를 노출한다', async () => {
         const { TemporalClientModule } = await import('../temporal-client.module')
         const { getTemporalClientToken, getTemporalConnectionToken } =
             await import('../temporal.tokens')
@@ -59,8 +55,7 @@ describe('TemporalClientModule.forRootAsync', () => {
         }
     })
 
-    // clientName 을 주면 두 토큰 모두 그 이름을 사용한다
-    it('uses the provided clientName for both tokens', async () => {
+    it('clientName 을 주면 두 토큰 모두 그 이름을 사용한다', async () => {
         const { TemporalClientModule } = await import('../temporal-client.module')
         const { getTemporalClientToken, getTemporalConnectionToken } =
             await import('../temporal.tokens')
@@ -78,8 +73,7 @@ describe('TemporalClientModule.forRootAsync', () => {
         }
     })
 
-    // inject 로 지정한 provider 가 useFactory 인자로 들어온다
-    it('passes injected providers to useFactory', async () => {
+    it('inject 로 지정한 provider 가 useFactory 인자로 들어온다', async () => {
         const { Global, Module } = await import('@nestjs/common')
         const { TemporalClientModule } = await import('../temporal-client.module')
         const { Test } = await import('@nestjs/testing')
@@ -88,9 +82,9 @@ describe('TemporalClientModule.forRootAsync', () => {
         const calls: string[] = []
         const { address, namespace } = config()
 
-        // forRootAsync's dynamic module is global, but its `inject` tokens
-        // must still resolve from somewhere — so we expose ADDRESS_TOKEN via
-        // a @Global() helper module.
+        // forRootAsync 의 dynamic module 은 global 이지만 `inject` 토큰은
+        // 어딘가에서 resolve 돼야 한다 — 그래서 @Global() helper module 로
+        // ADDRESS_TOKEN 을 노출한다.
         @Global()
         @Module({
             providers: [{ provide: ADDRESS_TOKEN, useValue: address }],
@@ -115,16 +109,15 @@ describe('TemporalClientModule.forRootAsync', () => {
         }).compile()
 
         try {
-            // useFactory is wired into both providers (connection and client),
-            // so it runs twice with the same injected address.
+            // useFactory 는 두 provider (connection, client) 양쪽에 연결돼
+            // 있어서 같은 주입 address 로 두 번 실행된다.
             expect(calls).toEqual([address, address])
         } finally {
             await moduleRef.close()
         }
     })
 
-    // 모듈 destroy 시 connection 을 닫고, 닫기 실패도 무시한다
-    it('closes connections on destroy and tolerates close errors', async () => {
+    it('모듈 destroy 시 connection 을 닫고, 닫기 실패도 무시한다', async () => {
         const { TemporalClientModule } = await import('../temporal-client.module')
         const { Test } = await import('@nestjs/testing')
 
@@ -134,8 +127,8 @@ describe('TemporalClientModule.forRootAsync', () => {
             ]
         }).compile()
 
-        // Push a bogus connection whose close() rejects so we cover the
-        // .catch(() => undefined) branch in onModuleDestroy.
+        // close() 가 reject 하는 bogus connection 을 push 해서 onModuleDestroy
+        // 의 .catch(() => undefined) 분기를 커버한다.
         const fakeConnection = {
             close: jest.fn(async () => {
                 throw new Error('boom')
@@ -146,14 +139,13 @@ describe('TemporalClientModule.forRootAsync', () => {
         await expect(moduleRef.close()).resolves.toBeUndefined()
 
         expect(fakeConnection.close).toHaveBeenCalled()
-        // Static array is reset after destroy.
+        // destroy 후 정적 배열은 비워진다.
         expect((TemporalClientModule as any).connections).toEqual([])
     })
 })
 
 describe('TemporalWorkerService', () => {
-    // 워커가 connect → bundle → run 을 거쳐 workflow 를 실행하고 정상 종료한다
-    it('runs a workflow with activities and shuts down cleanly', async () => {
+    it('워커가 connect → bundle → run 을 거쳐 workflow 를 실행하고 정상 종료한다', async () => {
         const { TemporalWorkerService } = await import('../temporal-worker.service')
         const taskQueue = withTestId('worker')
         const calls: string[] = []
@@ -188,8 +180,7 @@ describe('TemporalWorkerService', () => {
         }
     }, 120_000)
 
-    // init 을 호출하지 않고 destroy 만 호출해도 throw 하지 않는다
-    it('is a no-op on destroy when init was never called', async () => {
+    it('init 을 호출하지 않고 destroy 만 호출해도 throw 하지 않는다', async () => {
         const { TemporalWorkerService } = await import('../temporal-worker.service')
         const service = new TemporalWorkerService({
             activities: {},
@@ -201,8 +192,7 @@ describe('TemporalWorkerService', () => {
         await expect(service.onModuleDestroy()).resolves.toBeUndefined()
     })
 
-    // workflowBundlePath 가 존재하면 그 파일을 그대로 워커에 주입한다 (production 경로)
-    it('loads workflow code from workflowBundlePath when the file exists', async () => {
+    it('workflowBundlePath 가 존재하면 그 파일을 그대로 워커에 주입한다 (production 경로)', async () => {
         const { TemporalWorkerService } = await import('../temporal-worker.service')
         const { bundleWorkflowCode } = await import('@temporalio/worker')
         const fs = await import('fs')
@@ -241,8 +231,7 @@ describe('TemporalWorkerService', () => {
         }
     }, 120_000)
 
-    // workflowsPath / workflowBundlePath 둘 다 없거나 잘못되면 명시적으로 throw 한다
-    it('throws when neither workflowBundlePath nor workflowsPath resolves', async () => {
+    it('workflowsPath / workflowBundlePath 둘 다 없거나 잘못되면 명시적으로 throw 한다', async () => {
         const { TemporalWorkerService } = await import('../temporal-worker.service')
         const { address, namespace } = config()
 
@@ -260,8 +249,7 @@ describe('TemporalWorkerService', () => {
         await service.onModuleDestroy()
     })
 
-    // connection.close() 가 throw 해도 destroy 가 무사히 끝난다
-    it('swallows errors when the connection close fails', async () => {
+    it('connection.close() 가 throw 해도 destroy 가 무사히 끝난다', async () => {
         const { TemporalWorkerService } = await import('../temporal-worker.service')
         const taskQueue = withTestId('worker-close')
         const { address, namespace } = config()

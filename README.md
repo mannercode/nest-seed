@@ -112,5 +112,5 @@ npm run atoz
 
 - [아키텍처](docs/architecture.md) — SoLA 계층 분리와 분산 협력 (락, NATS, Temporal)
 - [컨벤션](docs/conventions.md) — 네이밍, 에러, import, REST API 설계
-- [테스트](docs/testing.md) — 한글 주석 규칙, fixture, dynamic import, 분산 race
+- [테스트](docs/testing.md) — 한글 메시지 규칙, fixture, dynamic import, 분산 race
 - [설계 결정](docs/decisions.md) — 분산 도구의 판단 기준과 거부 목록

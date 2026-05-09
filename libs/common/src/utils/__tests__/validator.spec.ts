@@ -3,80 +3,62 @@ import { Assume, ensure, Require } from '../validator'
 
 describe('Require', () => {
     describe('defined', () => {
-        // 값이 null일 때
-        describe('when the value is null', () => {
-            // 예외를 던진다
-            it('throws an error', () => {
+        describe('값이 null일 때', () => {
+            it('예외를 던진다', () => {
                 expect(() => Require.defined(null)).toThrow('Value must exist.')
             })
         })
 
-        // 값이 undefined일 때
-        describe('when the value is undefined', () => {
-            // 예외를 던진다
-            it('throws an error', () => {
+        describe('값이 undefined일 때', () => {
+            it('예외를 던진다', () => {
                 expect(() => Require.defined(undefined)).toThrow('Value must exist.')
             })
         })
 
-        // 값이 존재할 때
-        describe('when the value exists', () => {
-            // 예외를 던지지 않는다
-            it('does not throw', () => {
+        describe('값이 존재할 때', () => {
+            it('예외를 던지지 않는다', () => {
                 expect(() => Require.defined('value')).not.toThrow()
             })
         })
     })
 
     describe('equalLength', () => {
-        // 두 배열의 길이가 다를 때
-        describe('when the arrays have different lengths', () => {
-            // 예외를 던진다
-            it('throws an error', () => {
+        describe('두 배열의 길이가 다를 때', () => {
+            it('예외를 던진다', () => {
                 expect(() => Require.equalLength([1], [1, 2], 'mismatch')).toThrow(
                     'mismatch first: 1, second: 2'
                 )
             })
         })
 
-        // 첫 번째 배열이 undefined일 때
-        describe('when the first array is undefined', () => {
-            // 예외를 던진다
-            it('throws an error', () => {
+        describe('첫 번째 배열이 undefined일 때', () => {
+            it('예외를 던진다', () => {
                 expect(() => Require.equalLength(undefined, [1], 'mismatch')).toThrow()
             })
         })
 
-        // 두 번째 배열이 undefined일 때
-        describe('when the second array is undefined', () => {
-            // 예외를 던진다
-            it('throws an error', () => {
+        describe('두 번째 배열이 undefined일 때', () => {
+            it('예외를 던진다', () => {
                 expect(() => Require.equalLength([1], undefined, 'mismatch')).toThrow()
             })
         })
 
-        // 두 배열의 길이가 같을 때
-        describe('when the arrays have the same length', () => {
-            // 예외를 던지지 않는다
-            it('does not throw', () => {
+        describe('두 배열의 길이가 같을 때', () => {
+            it('예외를 던지지 않는다', () => {
                 expect(() => Require.equalLength([1], [2], 'mismatch')).not.toThrow()
             })
         })
     })
 
     describe('equals', () => {
-        // 값이 다를 때
-        describe('when the values are different', () => {
-            // 예외를 던진다
-            it('throws an error', () => {
+        describe('값이 다를 때', () => {
+            it('예외를 던진다', () => {
                 expect(() => Require.equals(1, 2, 'not equal')).toThrow()
             })
         })
 
-        // 값이 같을 때
-        describe('when the values are equal', () => {
-            // 예외를 던지지 않는다
-            it('does not throw', () => {
+        describe('값이 같을 때', () => {
+            it('예외를 던지지 않는다', () => {
                 expect(() => Require.equals(1, 1, 'not equal')).not.toThrow()
             })
         })
@@ -85,10 +67,8 @@ describe('Require', () => {
 
 describe('Assume', () => {
     describe('equalLength', () => {
-        // 두 배열의 길이가 다를 때
-        describe('when the arrays have different lengths', () => {
-            // Logger.warn을 호출한다
-            it('logs a warning', () => {
+        describe('두 배열의 길이가 다를 때', () => {
+            it('Logger.warn을 호출한다', () => {
                 const spy = jest.spyOn(Logger, 'warn').mockImplementation()
 
                 Assume.equalLength([1], [1, 2], 'mismatch')
@@ -97,10 +77,8 @@ describe('Assume', () => {
             })
         })
 
-        // 첫 번째 배열이 undefined일 때
-        describe('when the first array is undefined', () => {
-            // Logger.warn을 호출한다
-            it('logs a warning', () => {
+        describe('첫 번째 배열이 undefined일 때', () => {
+            it('Logger.warn을 호출한다', () => {
                 const spy = jest.spyOn(Logger, 'warn').mockImplementation()
 
                 Assume.equalLength(undefined, [1], 'mismatch')
@@ -109,10 +87,8 @@ describe('Assume', () => {
             })
         })
 
-        // 두 번째 배열이 undefined일 때
-        describe('when the second array is undefined', () => {
-            // Logger.warn을 호출한다
-            it('logs a warning', () => {
+        describe('두 번째 배열이 undefined일 때', () => {
+            it('Logger.warn을 호출한다', () => {
                 const spy = jest.spyOn(Logger, 'warn').mockImplementation()
 
                 Assume.equalLength([1], undefined, 'mismatch')
@@ -121,10 +97,8 @@ describe('Assume', () => {
             })
         })
 
-        // 두 배열의 길이가 같을 때
-        describe('when the arrays have the same length', () => {
-            // Logger.warn을 호출하지 않는다
-            it('does not log', () => {
+        describe('두 배열의 길이가 같을 때', () => {
+            it('Logger.warn을 호출하지 않는다', () => {
                 const spy = jest.spyOn(Logger, 'warn').mockImplementation()
 
                 Assume.equalLength([1], [2], 'mismatch')
@@ -136,18 +110,14 @@ describe('Assume', () => {
 })
 
 describe('ensure', () => {
-    // 값이 null일 때
-    describe('when the value is null', () => {
-        // 예외를 던진다
-        it('throws an error', () => {
+    describe('값이 null일 때', () => {
+        it('예외를 던진다', () => {
             expect(() => ensure(null)).toThrow('Value must exist.')
         })
     })
 
-    // 값이 존재할 때
-    describe('when the value exists', () => {
-        // 값을 반환한다
-        it('returns the value', () => {
+    describe('값이 존재할 때', () => {
+        it('값을 반환한다', () => {
             expect(ensure('hello')).toBe('hello')
         })
     })

@@ -1,9 +1,8 @@
 /**
- * Sorts and compares arrays of objects.
- * 객체 배열을 정렬하여 비교합니다.
+ * 객체 배열을 정렬하여 비교한다.
  *
- * @param actual The actual array of objects
- * @param expected The expected array of objects
+ * @param actual 실제 객체 배열
+ * @param expected 기대 객체 배열
  * @example
  * expectEqualUnsorted([{ id: 1, name: 'test' }], [{ id: expect.any(Number), name: 'test' }]);
  */

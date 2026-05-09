@@ -13,16 +13,14 @@ describe('MoviesPublish', () => {
     afterEach(() => fix.teardown())
 
     describe('POST /movies/:movieId/publish', () => {
-        // 미발행 영화가 존재할 때
-        describe('when an unpublished movie exists', () => {
+        describe('미발행 영화가 존재할 때', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
                 movie = await createUnpublishedMovie(fix)
             })
 
-            // 필수 필드가 준비되었을 때
-            describe('when required fields are ready', () => {
+            describe('필수 필드가 준비되었을 때', () => {
                 const updateDto = {
                     director: 'Quentin Tarantino',
                     durationInSeconds: 90 * 60,
@@ -37,8 +35,7 @@ describe('MoviesPublish', () => {
                     await fix.httpClient.patch(`/movies/${movie.id}`).body(updateDto).ok()
                 })
 
-                // 공개된 영화를 반환한다
-                it('returns the published movie', async () => {
+                it('공개된 영화를 반환한다', async () => {
                     await fix.httpClient
                         .post(`/movies/${movie.id}/publish`)
                         .ok(
@@ -50,8 +47,7 @@ describe('MoviesPublish', () => {
                         )
                 })
 
-                // 공개 후 영화를 검색한다
-                it('finds the movie after publishing', async () => {
+                it('공개 후 영화를 검색한다', async () => {
                     const { body: publishedMovie } = await fix.httpClient
                         .post(`/movies/${movie.id}/publish`)
                         .ok()
@@ -60,17 +56,14 @@ describe('MoviesPublish', () => {
                     expect(moviePage.items[0]).toEqual(publishedMovie)
                 })
 
-                // 공개 전에는 검색되지 않는다
-                it('does not find the movie before publishing', async () => {
+                it('공개 전에는 검색되지 않는다', async () => {
                     const moviePage = await fix.moviesService.searchPage({ title: `MovieTitle` })
                     expect(moviePage.items).toHaveLength(0)
                 })
             })
 
-            // 필수 필드가 누락되었을 때
-            describe('when required fields are missing', () => {
-                // 422 Unprocessable Entity를 반환한다
-                it('returns 422 Unprocessable Entity', async () => {
+            describe('필수 필드가 누락되었을 때', () => {
+                it('422 Unprocessable Entity를 반환한다', async () => {
                     await fix.httpClient
                         .post(`/movies/${movie.id}/publish`)
                         .unprocessableEntity(Errors.Movies.InvalidForPublish(expect.any(Array)))
@@ -78,10 +71,8 @@ describe('MoviesPublish', () => {
             })
         })
 
-        // 영화가 존재하지 않을 때
-        describe('when the movie does not exist', () => {
-            // 404 Not Found를 반환한다
-            it('returns 404 Not Found', async () => {
+        describe('영화가 존재하지 않을 때', () => {
+            it('404 Not Found를 반환한다', async () => {
                 await fix.httpClient
                     .post(`/movies/${nullObjectId}/publish`)
                     .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))

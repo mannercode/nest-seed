@@ -5,7 +5,6 @@ function isDateString(value: unknown): value is string {
 
 export class JsonUtil {
     /**
-     * Parses a JSON string, converting 64-bit integers to quoted strings and date strings to Date objects.
      * JSON 문자열을 파싱하며 64비트 정수를 문자열로, 날짜 문자열을 Date 객체로 변환
      */
     static parse(text: string): any {
@@ -13,11 +12,10 @@ export class JsonUtil {
     }
 
     /**
-     * Recursively traverses a JSON-like object or value and converts date strings to Date objects.
      * JSON 형태의 객체를 재귀적으로 순회하며 날짜 문자열을 Date 객체로 변환
      *
-     * @param {any} input - The object or value to convert.
-     * @returns {any} The converted object (date strings become Date objects).
+     * @param {any} input 변환할 object 또는 값.
+     * @returns {any} 변환된 object (날짜 문자열은 Date object 가 된다).
      */
     static reviveDates(input: any): any {
         if (isDateString(input)) {
@@ -60,7 +58,6 @@ export class JsonUtil {
     }
 
     /**
-     * Wraps 64-bit integers in a JSON string with quotes to preserve precision.
      * JSON 문자열 내 64비트 정수를 문자열로 감싸 정밀도를 유지
      */
     private static quoteIntegers(text: string): string {

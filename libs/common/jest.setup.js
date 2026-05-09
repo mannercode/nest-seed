@@ -3,9 +3,9 @@ const { S3Client } = require('@aws-sdk/client-s3')
 const { setupJestLifecycle } = require('@mannercode/jest-helpers')
 const { MongoClient } = require('mongodb')
 
-// Env vars set by jest.global.js (Testcontainers boot). jest.setup.js extends
-// the set with worker-scoped names and constants. Validate up front so a
-// missing one fails the whole worker before any spec runs.
+// jest.global.js (Testcontainers boot) 가 세팅하는 env. jest.setup.js 가 여기에
+// worker scope 이름과 상수를 추가한다. spec 이 돌기 전에 미리 검증해 누락이
+// 있으면 worker 전체를 실패시킨다.
 const REQUIRED_TESTLIB_ENV = [
     'TESTLIB_MONGO_URI',
     'TESTLIB_REDIS_URL',
@@ -34,7 +34,7 @@ setupJestLifecycle({
         return { client, dbName }
     },
     afterMongoConnect: (client) =>
-        // Set TTL monitor interval to 1s to speed up TTL index `expires` tests.
+        // TTL index `expires` 테스트 속도를 위해 TTL monitor interval 을 1s 로 설정.
         client.db('admin').command({ setParameter: 1, ttlMonitorSleepSecs: 1 }),
     createS3Client: () => {
         process.env.TESTLIB_S3_REGION = 'us-east-1'

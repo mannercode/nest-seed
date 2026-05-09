@@ -11,19 +11,18 @@ type LogEntry =
     | { kind: 'canceled'; event: TicketPurchaseCanceledEvent }
 
 /**
- * Demo subscriber: "every replica observes every purchase event."
+ * Demo subscriber: "모든 replica 가 모든 purchase event 를 관찰한다".
  *
- * No queue group → NATS broadcasts each message to all subscribers. With
- * 4 replicas the handler runs 4 times per event. That is the right
- * shape when each replica owns a per-process resource that must be kept
- * in sync — typical examples are in-memory caches, hot-reloaded config,
- * or local metrics gauges.
+ * queue group 없음 → NATS 가 각 메시지를 모든 subscriber 에 broadcast 한다.
+ * replica 4 개면 event 당 handler 가 4 번 실행된다. 각 replica 가 동기화되어야
+ * 하는 process 단위 자원을 들고 있을 때 적합한 형태다. 대표 예: in-memory
+ * cache, hot-reloaded config, local metrics gauge.
  *
- * For "exactly one replica handles each event" (notifications, ledger
- * updates) join a queue group — see PurchaseNotificationService.
+ * "event 하나를 정확히 한 replica 만 처리" (알림, ledger 업데이트) 가 필요하면
+ * queue group 에 합류시킨다. PurchaseNotificationService 참고.
  *
- * `entries` is exposed for the demo test. A real implementation would
- * mutate per-replica state (cache, gauge, etc.) and skip the array.
+ * `entries` 는 demo test 용으로 노출된다. 실제 구현이라면 replica 단위 상태
+ * (cache, gauge 등) 를 변경하고 배열은 두지 않는다.
  */
 @Injectable()
 export class PurchaseEventLoggerService implements OnModuleInit, OnModuleDestroy {

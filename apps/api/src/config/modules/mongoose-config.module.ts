@@ -16,13 +16,12 @@ import { AppConfigService } from '../app-config.service'
                     autoIndex: true,
                     bufferCommands: true,
                     dbName: database,
-                    // Reverted to (50, 200) after cycle-04's (10, 50) caused
-                    // MongoWaitQueueTimeoutError in Test Stability race
-                    // scenarios — race tests drive 500 concurrent POST against
-                    // 4 replicas (=125/replica), which overflowed maxPool=50
-                    // and queued past waitQueueTimeoutMS=5s. cycle-04's perf
-                    // sweep only covered theater-read/write up to c=400 and
-                    // missed this burst regime.
+                    // cycle-04 의 (10, 50) 이 Test Stability race 시나리오에서
+                    // MongoWaitQueueTimeoutError 를 일으켜 (50, 200) 으로 되돌림.
+                    // race 테스트는 4 replica 에 500 동시 POST (=125/replica) 를
+                    // 쏘는데, maxPool=50 이 넘쳐서 waitQueueTimeoutMS=5s 까지
+                    // queue 가 밀렸다. cycle-04 의 perf sweep 은 theater
+                    // read/write c=400 까지만 커버해서 이 burst 영역을 놓쳤다.
                     minPoolSize: 50,
                     maxPoolSize: 200,
                     uri: `mongodb://${user}:${password}@${host1},${host2},${host3}/?replicaSet=${replicaSet}`,

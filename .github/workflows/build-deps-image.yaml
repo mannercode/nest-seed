@@ -3,7 +3,7 @@ on:
     workflow_call:
         outputs:
             tag:
-                description: 'lockfile hash used as the deps image tag'
+                description: 'deps 이미지 tag 로 사용되는 lockfile hash'
                 value: ${{ jobs.build-deps.outputs.tag }}
     workflow_dispatch:
     push:

@@ -20,8 +20,8 @@ module.exports = createGlobalTeardown({
             forcePathStyle: true
         }),
     connectRedis: () => new Redis(process.env.TESTLIB_REDIS_URL),
-    // jest.global.js stashes the TestWorkflowEnvironment on globalThis;
-    // explicit teardown() ends its child process so jest can exit cleanly.
+    // jest.global.js 가 TestWorkflowEnvironment 를 globalThis 에 보관해둔다.
+    // 명시적 teardown() 으로 child process 를 종료해 jest 가 깔끔히 빠지도록 한다.
     extra: async () => {
         const env = globalThis.__TEMPORAL_TEST_ENV__
         if (env) await env.teardown()

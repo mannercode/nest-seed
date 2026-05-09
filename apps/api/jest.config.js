@@ -28,11 +28,11 @@ module.exports = {
         '/config/configure-app\\.ts$',
         '/index\\.ts$',
         '\\.module\\.ts$',
-        // Temporal workflow body runs inside `bundleWorkflowCode`'s sandbox
-        // VM, so jest's istanbul instrumentation can't see executions even
-        // though showtime-creation.spec.ts exercises it end-to-end. Pure
-        // logic (extractRootMessage etc) lives in sibling files and IS
-        // covered by unit tests.
+        // Temporal workflow 본문은 `bundleWorkflowCode` 의 sandbox VM 안에서
+        // 실행되므로 jest 의 istanbul instrumentation 이 실행 흐름을 볼 수
+        // 없다. showtime-creation.spec.ts 가 end-to-end 로 실행해도 마찬가지다.
+        // 순수 로직 (extractRootMessage 등) 은 sibling 파일에 있고 unit test
+        // 로 커버된다.
         '/temporal/workflows\\.ts$'
     ],
     coverageDirectory: '<rootDir>/_output/coverage'

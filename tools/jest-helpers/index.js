@@ -70,17 +70,17 @@ async function dropMatchingBuckets(s3Client, pattern) {
 }
 
 /**
- * Per-worker test lifecycle. Each consumer (apps/api, libs/common) supplies
- * connection builders so the env-naming/connection-style differences stay at
- * the call site while the lifecycle (connect → ensure → cleanup → close) is
- * shared. Callable directly from jest.setup.js.
+ * 워커별 테스트 lifecycle. 각 소비자 (apps/api, libs/common) 가 connection
+ * builder 를 공급하므로 env 네이밍/connection 스타일 차이는 호출부에
+ * 남기고 lifecycle (connect → ensure → cleanup → close) 만 공유한다.
+ * jest.setup.js 에서 바로 호출 가능.
  */
 function setupJestLifecycle({
     connectMongo, // (workerId) => Promise<{ client, dbName }>
     createS3Client, // () => S3Client
     bucketName, // (workerId) => string
-    afterMongoConnect, // optional: (client) => Promise<void>
-    onBeforeEach // optional: (testId) => void | Promise<void>
+    afterMongoConnect, // 선택: (client) => Promise<void>
+    onBeforeEach // 선택: (testId) => void | Promise<void>
 }) {
     let mongoClient
     let s3Client
@@ -121,17 +121,16 @@ function setupJestLifecycle({
 }
 
 /**
- * Per-worker leftover cleanup. Run once after the whole jest worker pool
- * exits. Each consumer supplies connection factories (mongo / s3 / redis);
- * `extra` is for additional cleanups specific to one consumer (e.g. libs/common
- * tearing down the in-process Temporal server). Returns the function to
- * export from jest.teardown.js.
+ * 워커별 잔여 cleanup. 전체 jest worker pool 이 종료된 뒤 한 번 실행된다.
+ * 각 소비자가 connection factory (mongo / s3 / redis) 를 공급하고, `extra`
+ * 는 특정 소비자에 한정된 추가 cleanup (예: libs/common 의 in-process
+ * Temporal 서버 종료) 용. jest.teardown.js 에서 export 할 함수를 반환한다.
  */
 function createGlobalTeardown({
     connectMongo, // () => Promise<MongoClient>
     createS3Client, // () => S3Client
     connectRedis, // () => Redis (single or Cluster)
-    extra // optional: () => Promise<void>
+    extra // 선택: () => Promise<void>
 }) {
     return async function globalTeardown() {
         const tasks = [
@@ -165,7 +164,7 @@ async function cleanupS3Matching(createS3Client) {
 async function cleanupRedisAll(connectRedis) {
     const redis = connectRedis()
     try {
-        // ioredis Cluster exposes nodes(role); single connection doesn't.
+        // ioredis Cluster 는 nodes(role) 을 노출하지만, single connection 은 그렇지 않다.
         if (typeof redis.nodes === 'function') {
             const masters = redis.nodes('master')
             await Promise.all(masters.map((node) => node.flushall()))

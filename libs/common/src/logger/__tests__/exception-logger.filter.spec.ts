@@ -11,10 +11,8 @@ describe('HttpExceptionLoggerFilter', () => {
     afterEach(() => fix.teardown())
 
     describe('HTTP context', () => {
-        // HttpException이 발생할 때
-        describe('when an HttpException is thrown', () => {
-            // Logger.warn으로 로그를 남긴다
-            it('logs via Logger.warn', async () => {
+        describe('HttpException이 발생할 때', () => {
+            it('Logger.warn으로 로그를 남긴다', async () => {
                 await fix.httpClient
                     .get('/exception')
                     .notFound({ code: 'ERR_CODE', message: 'message' })
@@ -31,10 +29,8 @@ describe('HttpExceptionLoggerFilter', () => {
             })
         })
 
-        // 요청 body에 민감 필드가 있을 때
-        describe('when the request body contains sensitive fields', () => {
-            // body의 password를 [REDACTED]로 마스킹한다
-            it('redacts password in the logged body', async () => {
+        describe('요청 body에 민감 필드가 있을 때', () => {
+            it('body의 password를 [REDACTED]로 마스킹한다', async () => {
                 await fix.httpClient
                     .post('/exception')
                     .body({ email: 'a@b.com', password: 'secret' })
@@ -51,10 +47,8 @@ describe('HttpExceptionLoggerFilter', () => {
             })
         })
 
-        // 일반 Error가 발생할 때
-        describe('when a generic Error is thrown', () => {
-            // Logger.error로 로그를 남긴다
-            it('logs via Logger.error', async () => {
+        describe('일반 Error가 발생할 때', () => {
+            it('Logger.error로 로그를 남긴다', async () => {
                 await fix.httpClient.get('/error').internalServerError()
 
                 expect(fix.spyError).toHaveBeenCalledTimes(1)
@@ -81,8 +75,7 @@ describe('HttpExceptionLoggerFilter', () => {
         })
         afterEach(() => solo.teardown())
 
-        // _startTimestamp 가 없어도 duration 을 산출해 로그를 남긴다
-        it('still logs with duration when _startTimestamp is absent', async () => {
+        it('_startTimestamp 가 없어도 duration 을 산출해 로그를 남긴다', async () => {
             await solo.httpClient.get('/exception').notFound()
 
             expect(solo.spyWarn).toHaveBeenCalledWith(

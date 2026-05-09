@@ -1,11 +1,11 @@
 import type { Request } from 'express'
 
-// Cross-component contract for request duration: HttpSuccessLoggerInterceptor
-// (which sees request entry but not exception flow) marks the start, and
-// HttpExceptionLoggerFilter (which sees exception flow but not entry) reads
-// the elapsed time. Storing the timestamp via WeakMap keeps it off the
-// express.Request object — no global type augmentation, no risk of
-// colliding with another middleware that reuses the same field name.
+// request duration 에 대한 component 간 contract: HttpSuccessLoggerInterceptor
+// (request 진입은 보지만 exception flow 는 못 봄) 가 시작을 mark 하고,
+// HttpExceptionLoggerFilter (exception flow 는 보지만 진입은 못 봄) 가
+// elapsed time 을 읽는다. timestamp 를 WeakMap 에 두면 express.Request
+// object 를 건드리지 않아도 된다 — global type augmentation 도, 같은
+// field 이름을 쓰는 다른 middleware 와 부딪힐 위험도 없다.
 const startTimestamps = new WeakMap<Request, number>()
 
 export function markRequestStart(request: Request): void {

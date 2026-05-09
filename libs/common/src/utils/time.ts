@@ -1,15 +1,11 @@
 export class TimeUtil {
     /**
-     * Converts a millisecond value into a time format string.
-     * The returned string can include d (days), h (hours), m (minutes), s (seconds), ms (milliseconds) units,
-     * and if negative, a '-' sign is prefixed.
-     *
      * 밀리초 값을 시간 형식 문자열로 변환합니다.
      * 반환되는 문자열은 d(일), h(시간), m(분), s(초), ms(밀리초) 단위로 구성되며,
      * 음수의 경우 "-" 기호가 접두사로 붙습니다.
      *
-     * @param {number} milliseconds - The millisecond value to convert.
-     * @returns {string} The time format string representing the given milliseconds.
+     * @param {number} milliseconds 변환할 millisecond 값.
+     * @returns {string} 주어진 millisecond 를 표현한 time 형식 문자열.
      */
     static fromMs(milliseconds: number): string {
         if (milliseconds === 0) {
@@ -39,17 +35,13 @@ export class TimeUtil {
     }
 
     /**
-     * Converts a time format string into milliseconds.
-     * The input string should be a combination of numbers and units (ms, s, m, h, d),
-     * and can include multiple units separated by spaces or no space.
-     *
      * 시간 형식 문자열을 밀리초로 변환합니다.
      * 입력 문자열은 숫자와 단위(ms, s, m, h, d)를 조합한 형식이어야 하며,
      * 여러 단위를 공백없이 또는 공백으로 구분하여 사용할 수 있습니다.
      *
-     * @param {string} timeExpression - The time format string to convert (e.g., "1d 2h", "30m", "500ms").
-     * @returns {number} The millisecond value of the given time string.
-     * @throws {Exception} Throws an exception if the string format is invalid.
+     * @param {string} timeExpression 변환할 time 형식 문자열 (예: "1d 2h", "30m", "500ms").
+     * @returns {number} 주어진 time 문자열의 millisecond 값.
+     * @throws {Exception} 문자열 형식이 invalid 하면 exception 을 throw 한다.
      */
     static toMs(timeExpression: string): number {
         const timeUnitMap: { [key: string]: number } = {
@@ -60,7 +52,7 @@ export class TimeUtil {
             s: 1000
         }
 
-        // Valid time format regex
+        // 유효한 time format regex
         const validFormatRegex = /^(-?\d+(\.\d+)?)(ms|s|m|h|d)(\s*(-?\d+(\.\d+)?)(ms|s|m|h|d))*$/
 
         if (!validFormatRegex.test(timeExpression)) {

@@ -1,16 +1,12 @@
 export class ByteUtil {
     /**
-     * Converts a size string to a numeric value in bytes.
-     * The input string should include a sign, numbers, and a unit (B, KB, MB, GB, TB),
-     * and may include multiple size units separated by spaces.
-     *
      * 문자열 형식의 크기 정보를 바이트 단위의 숫자로 변환합니다.
      * 입력 문자열은 부호, 숫자, 단위(B, KB, MB, GB, TB)를 포함해야 하며,
      * 여러 크기 단위를 공백으로 구분하여 표현할 수 있습니다.
      *
-     * @param {string} sizeExpression - The size format string to convert (e.g., "10MB", "2GB", "-500KB").
-     * @returns {number} The total byte value corresponding to the string.
-     * @throws {Exception} Throws an exception if the string format is invalid.
+     * @param {string} sizeExpression 변환할 size 형식 문자열 (예: "10MB", "2GB", "-500KB").
+     * @returns {number} 문자열에 해당하는 총 byte 값.
+     * @throws {Exception} 문자열 형식이 invalid 하면 exception 을 throw 한다.
      */
     static fromString(sizeExpression: string): number {
         const sizeUnitMap: { [key: string]: number } = {
@@ -43,16 +39,12 @@ export class ByteUtil {
     }
 
     /**
-     * Converts a byte value to a string representation.
-     * The returned string can include units TB, GB, MB, KB, B in sequence,
-     * and if negative, a \"-\" sign is prefixed.
-     *
      * 바이트 값을 문자열 형식으로 변환합니다.
      * 반환되는 문자열은 TB, GB, MB, KB, B 단위를 차례대로 포함하며,
      * 음수인 경우 "-" 기호가 접두사로 붙습니다.
      *
-     * @param {number} bytes - The byte value to convert.
-     * @returns {string} A string representation of the provided byte value.
+     * @param {number} bytes 변환할 byte 값.
+     * @returns {string} 주어진 byte 값을 문자열로 표현한 결과.
      */
     static toString(bytes: number): string {
         if (bytes === 0) {

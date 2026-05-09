@@ -1,10 +1,8 @@
 import { expectEqualUnsorted } from '../expect-equal-unsorted'
 
 describe('expectEqualUnsorted', () => {
-    // 비교가 성공할 때
-    describe('when the comparison succeeds', () => {
-        // 객체 배열을 순서 없이 비교한다
-        it('compares unordered arrays of objects', () => {
+    describe('비교가 성공할 때', () => {
+        it('객체 배열을 순서 없이 비교한다', () => {
             const actual = [
                 { age: 30, id: 1, name: 'John' },
                 { age: 25, id: 2, name: 'Jane' }
@@ -17,8 +15,7 @@ describe('expectEqualUnsorted', () => {
             expect(() => expectEqualUnsorted(actual, expected)).not.toThrow()
         })
 
-        // expect.anything 필드를 무시한다
-        it('ignores fields with expect.anything', () => {
+        it('expect.anything 필드를 무시한다', () => {
             const actual = [
                 { age: 25, id: expect.anything(), name: 'Jane' },
                 { age: 30, id: expect.anything(), name: 'John' }
@@ -31,16 +28,13 @@ describe('expectEqualUnsorted', () => {
             expect(() => expectEqualUnsorted(actual, expected)).not.toThrow()
         })
 
-        // 빈 배열을 처리한다
-        it('handles empty arrays', () => {
+        it('빈 배열을 처리한다', () => {
             expect(() => expectEqualUnsorted([], [])).not.toThrow()
         })
     })
 
-    // 비교가 실패할 때
-    describe('when the comparison fails', () => {
-        // 내용이 다른 배열에 대해 오류를 던진다
-        it('throws an error for arrays with different content', () => {
+    describe('비교가 실패할 때', () => {
+        it('내용이 다른 배열에 대해 오류를 던진다', () => {
             const actual = [
                 { age: 30, id: 1, name: 'John' },
                 { age: 25, id: 2, name: 'Jane' }
@@ -53,8 +47,7 @@ describe('expectEqualUnsorted', () => {
             expect(() => expectEqualUnsorted(actual, expected)).toThrow()
         })
 
-        // 중첩 객체가 다른 배열에 대해 오류를 던진다
-        it('throws an error for arrays with different nested objects', () => {
+        it('중첩 객체가 다른 배열에 대해 오류를 던진다', () => {
             const actual = [
                 { address: { city: 'New York', zip: '-' }, id: 1, name: 'John' },
                 { address: { city: 'Los Angeles', zip: '90001' }, id: 2, name: 'Jane' }
@@ -67,8 +60,7 @@ describe('expectEqualUnsorted', () => {
             expect(() => expectEqualUnsorted(actual, expected)).toThrow()
         })
 
-        // 인자가 undefined이면 오류를 던진다
-        it('throws an error when an argument is undefined', () => {
+        it('인자가 undefined이면 오류를 던진다', () => {
             expect(() => expectEqualUnsorted(undefined, [])).toThrow('actual or expected undefined')
             expect(() => expectEqualUnsorted([], undefined)).toThrow('actual or expected undefined')
         })

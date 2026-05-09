@@ -11,17 +11,17 @@ export type TemporalWorkerOptions = {
     namespace: string
     taskQueue: string
     /**
-     * Path to a pre-built workflow bundle (output of `bundleWorkflowCode`
-     * written to disk at build time). Preferred in production where
-     * `require.resolve` against source paths fails after webpack rolls the
-     * app into a single file. If the file is missing, falls back to
-     * runtime bundling via `workflowsPath`.
+     * pre-built workflow bundle (build time 에 disk 에 써진
+     * `bundleWorkflowCode` 의 출력) 의 경로. webpack 이 app 을 한 file 로
+     * 말아버린 production 에서는 source path 에 대한 `require.resolve` 가
+     * 실패하므로 이 쪽이 선호된다. file 이 없으면 `workflowsPath` 를 통한
+     * runtime bundling 으로 fallback 한다.
      */
     workflowBundlePath?: string
     /**
-     * Source path to the workflow file. Used at dev/test runtime where
-     * the source tree is reachable. Optional when `workflowBundlePath`
-     * points to an existing pre-built bundle.
+     * workflow file 의 source path. source tree 가 닿는 dev/test runtime
+     * 에서 쓴다. `workflowBundlePath` 가 이미 pre-built bundle 을 가리키는
+     * 경우엔 optional 이다.
      */
     workflowsPath?: string
 }

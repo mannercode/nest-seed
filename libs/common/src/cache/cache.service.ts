@@ -18,8 +18,8 @@ export class CacheService {
     }
 
     /**
-     * Runs a Lua script with namespaced keys.
-     * The cache prefix is always inserted as the first ARGV value.
+     * namespacing 된 key 로 Lua script 를 실행한다.
+     * cache prefix 는 항상 ARGV 의 첫 번째 값으로 들어간다.
      */
     async executeScript<T = unknown>(
         script: string,
@@ -54,16 +54,16 @@ export class CacheService {
     }
 
     /**
-     * Distributed lock scoped to this cache. Exactly one caller holding the
-     * key runs `fn`; concurrent callers return `{ ran: false }`. The lock is
-     * released when `fn` settles (even on throw); if the process dies, the
-     * TTL bounds how long the key stays stuck.
+     * 이 cache 범위로 한정된 distributed lock. key 를 잡은 caller 한 명만
+     * `fn` 을 실행하고, 동시 caller 는 `{ ran: false }` 를 받는다. lock 은
+     * `fn` 이 끝나면 (throw 되어도) 해제된다. process 가 죽으면 TTL 이
+     * key 가 막혀 있을 수 있는 시간의 상한이 된다.
      *
-     * - lock key lives at `${prefix}:lock:${key}`
-     * - ttlMs should be larger than the worst-case runtime of `fn`; it caps
-     *   the duration a crashed process can starve others
-     * - only the owner (matching token) deletes the key, so an expired lock
-     *   that a peer has already re-acquired is not clobbered
+     * - lock key 는 `${prefix}:lock:${key}` 에 둔다
+     * - ttlMs 는 `fn` 의 최악의 runtime 보다 커야 한다. crash 한 process 가
+     *   다른 caller 를 굶길 수 있는 시간을 cap 한다
+     * - owner (token 일치) 만 key 를 지우므로, 이미 만료되어 다른 peer 가
+     *   다시 잡은 lock 을 덮어쓰지 않는다
      */
     async withLock<T>(
         key: string,
@@ -98,13 +98,13 @@ export class CacheService {
     }
 
     /**
-     * Blocking variant of `withLock`: polls until the lock is free, then
-     * acquires it and runs `fn` exactly once. Throws if the lock cannot be
-     * acquired within `waitMs`.
+     * `withLock` 의 blocking variant: lock 이 풀릴 때까지 polling 하다가
+     * 잡으면 `fn` 을 정확히 한 번 실행한다. `waitMs` 안에 못 잡으면 throw
+     * 한다.
      *
-     * Use when callers must serialize with peers (not skip on contention).
-     * `pollMs` should be short enough that a released lock is picked up
-     * quickly, but not so short that it hammers Redis.
+     * 경쟁 시 skip 하지 않고 다른 caller 와 직렬화해야 할 때 쓴다.
+     * `pollMs` 는 풀린 lock 을 빠르게 잡을 수 있을 만큼 짧되, Redis 를
+     * 두드려 패지 않을 정도로는 길게 잡는다.
      */
     async withLockBlocking<T>(
         key: string,

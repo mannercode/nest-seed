@@ -8,13 +8,13 @@ const DEFAULT_ALGORITHMS: JwtVerifyOptions['algorithms'] = ['HS256']
 
 export type JwtAuthGuardOptions = {
     /**
-     * Allowed signing algorithms. Defaults to `['HS256']`. Pinning blocks
-     * JWT algorithm-confusion attacks (forcing `none`, swapping HS↔RS).
+     * 허용할 서명 algorithm 목록. 기본값은 `['HS256']`. 고정해두면 JWT
+     * algorithm-confusion 공격 (`none` 강제, HS↔RS 교체) 을 막는다.
      */
     algorithms?: JwtVerifyOptions['algorithms']
-    /** Required `aud` claim. Tokens with a different audience are rejected. */
+    /** 필수 `aud` claim. audience 가 다른 token 은 거부된다. */
     audience?: string
-    /** Required `iss` claim. Tokens with a different issuer are rejected. */
+    /** 필수 `iss` claim. issuer 가 다른 token 은 거부된다. */
     issuer?: string
     secret: string
 }

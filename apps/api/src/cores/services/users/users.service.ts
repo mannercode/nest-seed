@@ -14,11 +14,6 @@ import { UserAuthenticationService } from './services'
 import { UsersRepository } from './users.repository'
 
 /**
- * The `findUserByCredentials` and `refreshAuthTokens` methods simply re-invoke methods from `UserAuthenticationService`,
- * which may seem like an anti-pattern.
- * However, the more important principle is that all externally exposed functionalities should go through `UsersService`.
- * Therefore, `UsersController` should only reference `UsersService` and must not directly call `UserAuthenticationService`.
- *
  * findUserByCredentials, refreshAuthTokens는 단순히 UserAuthenticationService의 메소드를 재호출 하고 있어서 안티 패턴으로 보인다.
  * 그러나 더 중요한 원칙은 외부에 노출되는 모든 기능은 UsersService을 통해서 이뤄져야 한다는 것이다.
  * 따라서 UsersController는 UsersService만 참조해야 하고 UserAuthenticationService를 직접 호출하면 안 된다.

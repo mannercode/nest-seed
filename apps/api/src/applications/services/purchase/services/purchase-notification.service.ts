@@ -5,21 +5,20 @@ import { PurchaseEvents, TicketPurchasedEvent } from '../purchase.events'
 const QUEUE_GROUP = 'purchase-notification'
 
 /**
- * Demo subscriber: "send a notification once per purchase, regardless of
- * how many replicas are running."
+ * Demo subscriber: "replica 가 몇 개든 purchase 당 알림을 한 번만 보낸다".
  *
- * Joining a NATS queue group means NATS picks exactly one instance from
- * the group to receive each message. With 4 replicas, a purchase emits
- * one event and the notification handler runs once total, not four times.
+ * NATS queue group 에 합류하면 NATS 가 group 내 정확히 한 인스턴스를 골라
+ * 메시지를 전달한다. replica 4 개라도 purchase 한 번이면 알림 handler 는
+ * 전체에서 한 번만 실행된다.
  *
- * Use this pattern for side effects that must NOT be amplified by the
- * replica count: outbound emails / SMS / external API calls / ledger
- * writes. For "every replica needs to know" (cache invalidation, hot
- * config reload) omit the queue option — see PurchaseEventLoggerService.
+ * 외부 메일/SMS/외부 API 호출/ledger write 처럼 replica 수만큼 증폭되면 안 되는
+ * side effect 에 이 패턴을 쓴다. "모든 replica 가 알아야 하는" 경우 (cache
+ * invalidation, hot config reload) 는 queue 옵션을 빼면 된다.
+ * PurchaseEventLoggerService 참고.
  *
- * `received` is exposed for the demo test so you can confirm the handler
- * fired without relying on logger spies. A real implementation would call
- * SendGrid / Twilio / etc and skip the array.
+ * `received` 는 demo test 에서 logger spy 없이 handler 가 실행됐는지 확인하기
+ * 위해 노출된다. 실제 구현이라면 SendGrid / Twilio 등을 호출하고 배열은 두지
+ * 않는다.
  */
 @Injectable()
 export class PurchaseNotificationService implements OnModuleInit, OnModuleDestroy {

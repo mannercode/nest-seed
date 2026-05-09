@@ -1,20 +1,18 @@
-// Distributed stress test: replica chaos — kill 1 of 4 app replicas
-// mid-traffic and verify (a) nginx routes around it via
-// proxy_next_upstream, (b) the killed replica rejoins after restart and
-// serves again, (c) no user-facing 5xx during the failover window.
+// replica chaos 분산 스트레스 테스트 — 트래픽 중에 4 개 app replica 중 1 개를
+// 죽여서 (a) nginx 가 proxy_next_upstream 으로 우회하는지, (b) 재시작된 replica 가
+// 복귀해서 다시 응답하는지, (c) failover 창 동안 사용자 5xx 가 없는지를 검증한다.
 //
-// Phases (timed from test start):
-//   0-30s   warmup traffic with all 4 replicas alive
+// Phase (테스트 시작 기준 시간):
+//   0-30s   replica 4 개 전부 살아있는 상태에서 warmup 트래픽
 //   30s     docker kill <target>
-//   30-60s  traffic continues with 3 replicas
+//   30-60s  replica 3 개로 트래픽 계속
 //   60s     docker start <target>
-//   60-90s  wait for target healthcheck, traffic still flowing
-//   90-150s post-recovery traffic; all 4 replicas must serve
+//   60-90s  target healthcheck 대기, 트래픽 유지
+//   90-150s post-recovery 트래픽; 4 개 replica 모두 응답해야 함
 //
-// Fails if: error rate >1% across all phases (nginx retries should mask
-// transient kill-window failures), the killed replica does not become
-// healthy within 60s of restart, or fewer than 4 replicas serve in the
-// post-recovery window.
+// 실패 조건: 전체 phase 합산 에러율 >1% (nginx retry 가 kill 창에서의 일시적
+// 실패를 마스킹해야 함), 재시작 후 60s 내 healthy 가 되지 않음, post-recovery
+// 창에서 4 개 미만의 replica 만 응답.
 
 const http = require('http')
 const { execSync } = require('child_process')

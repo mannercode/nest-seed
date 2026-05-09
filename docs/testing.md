@@ -4,22 +4,24 @@
 
 ---
 
-## 1. 테스트 구조와 한글 주석 규칙
+## 1. 테스트 구조와 한글 메시지 규칙
 
-테스트 코드는 사람이 _읽기 위한_ 문서이기도 하다. 그래서 영어 메서드 이름과 한글 주석을 함께 써서, 코드만 보고도 시나리오가 자연스럽게 읽히도록 한다.
+테스트 코드는 사람이 _읽기 위한_ 문서이기도 하다. 코드 식별자를 가리키는 자리에는 영어를 그대로 쓰고, 시나리오를 서술하는 자리에는 한글 문자열을 직접 넣어 코드만 보고도 흐름이 자연스럽게 읽히도록 한다.
 
 ```
-describe('ServiceName')                       -- 서비스나 모듈 이름. 한글 주석 없음
-  describe('POST /resource')                  -- 엔드포인트나 메서드. 한글 주석 없음
-    describe('when the condition is met')     -- 조건. 위에 한글 주석을 단다
-      beforeEach(...)                         -- 조건을 실현하는 셋업
-      it('returns the result')                -- 결과 검증. 위에 한글 주석을 단다
+describe('ServiceName')         -- 서비스나 모듈 이름. 코드 식별자라 영어
+  describe('POST /resource')    -- 엔드포인트. 영어
+    describe('methodName')      -- 메서드 이름. 코드 식별자라 영어
+      describe('조건이 충족되면')  -- 조건. 한글 문자열을 그대로 넣는다
+        beforeEach(...)         -- 조건을 실현하는 셋업
+        it('결과를 반환한다')      -- 결과 검증. 한글 문자열을 그대로 넣는다
 ```
 
 세부 약속은 다음과 같다.
 
-- 조건을 표현하는 `describe` 는 항상 `when ~` 으로 시작한다. 그 위 한글 주석은 `~할 때`, `~되었을 때`, `~않았을 때` 처럼 절 형태로 적는다.
-- `it` 의 메시지에는 조건을 다시 적지 않는다. 부모 `describe` 에 이미 조건이 적혀 있기 때문이다. 그 위 한글 주석은 `~한다`, `~반환한다`, `~던진다` 같은 결과 형태로 적는다.
+- 최상위 `describe('ServiceName')`, HTTP 메서드/URL `describe('POST /resource')`, 메서드 이름 `describe('methodName')` 처럼 코드 식별자를 가리키는 자리는 영어를 그대로 쓴다.
+- 조건을 표현하는 `describe` 는 한글 문자열을 직접 넣고, `~할 때`, `~되었을 때`, `~않았을 때` 처럼 절 형태로 적는다. 별도의 한글 주석 줄은 두지 않는다.
+- 결과 검증을 표현하는 `it` 도 한글 문자열을 직접 넣고, `~한다`, `~반환한다`, `~던진다` 같은 결과 형태로 적는다. 부모 `describe` 에 조건이 이미 적혀 있으므로 `it` 메시지에 조건을 다시 적지 않는다.
 - 조건의 셋업은 `beforeEach` 가 담당하고, `it` 안에서는 검증만 한다. 조건과 검증이 한 함수에 섞이면 시나리오가 잘 읽히지 않는다.
 
 ---
@@ -41,19 +43,16 @@ describe('UsersService', () => {
     })
 
     describe('POST /users', () => {
-        // 생성된 고객을 반환한다
-        it('returns the created user', async () => {
+        it('생성된 고객을 반환한다', async () => {
             await fix.httpClient.post('/users').body(dto).created(expected)
         })
 
-        // 이메일이 이미 존재할 때
-        describe('when the email already exists', () => {
+        describe('이메일이 이미 존재하면', () => {
             beforeEach(async () => {
                 await fix.httpClient.post('/users').body(dto).created()
             })
 
-            // 409 Conflict를 반환한다
-            it('returns 409 Conflict', async () => {
+            it('409 Conflict를 반환한다', async () => {
                 await fix.httpClient.post('/users').body(dto).conflict()
             })
         })

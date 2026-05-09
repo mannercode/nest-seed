@@ -34,10 +34,10 @@ import { getShowtimeCreationTaskQueue } from './temporal/types'
         ShowtimeBulkValidatorService,
         ShowtimeBulkCreatorService,
         ShowtimeCreationActivities,
-        // TemporalWorkerService stays as a same-module provider so its DI
-        // factory can inject ShowtimeCreationActivities (also same-module).
-        // Wrapping in a TemporalWorkerModule.forRootAsync would put the
-        // factory into a child module that can't see this module's providers.
+        // TemporalWorkerService 는 같은 module 의 provider 로 둔다. 그래야 DI
+        // factory 가 같은 module 의 ShowtimeCreationActivities 를 inject 할 수 있다.
+        // TemporalWorkerModule.forRootAsync 로 감싸면 factory 가 child module 에
+        // 들어가 이 module 의 provider 들을 못 본다.
         {
             inject: [AppConfigService, ShowtimeCreationActivities],
             provide: TemporalWorkerService,
@@ -47,10 +47,10 @@ import { getShowtimeCreationTaskQueue } from './temporal/types'
                     address: config.temporal.address,
                     namespace: config.temporal.namespace,
                     taskQueue: getShowtimeCreationTaskQueue(),
-                    // Prod: path of the pre-bundle produced by
-                    // scripts/bundle-workflows.js (lives next to dist/index.js).
-                    // Dev/tests: the file isn't there → service falls back to
-                    // workflowsPath and bundles on the fly.
+                    // Prod: scripts/bundle-workflows.js 가 만들어내는 pre-bundle
+                    // 의 경로 (dist/index.js 옆에 위치).
+                    // Dev/test: 파일이 없으므로 service 가 workflowsPath 로
+                    // fallback 해서 즉석에서 bundling 한다.
                     workflowBundlePath: path.join(
                         __dirname,
                         'showtime-creation-workflow-bundle.js'

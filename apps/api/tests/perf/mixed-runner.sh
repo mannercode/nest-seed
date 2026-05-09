@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# Mixed read/write workload matrix for the api stack.
+# api stack 용 mixed read/write workload matrix.
 #
-# Each case starts theater-read and theater-write processes at (nearly) the same
-# moment so they share the measurement window. Both use the same LABEL so the
-# output JSONs can be paired after the fact.
+# 각 케이스는 theater-read 와 theater-write 프로세스를 (거의) 동시에 띄워 측정 창을
+# 공유시킨다. 같은 LABEL 을 쓰므로 결과 JSON 을 사후에 짝지을 수 있다.
 #
-# Prereq: api stack up (REPLICAS=8 recommended), theaters seeded (~50K+).
+# Prereq: api stack 가동 중 (REPLICAS=8 권장), theaters 가 seed 돼 있어야 함 (~50K+).
 #
 # Usage: bash apps/api/tests/perf/mixed-runner.sh
 

@@ -3,8 +3,8 @@ import superagent, { type Response } from 'superagent'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
 
-// Inlined to keep libs/testing free of any production dependency on
-// @mannercode/common — the only previous use of JsonUtil.parse was here.
+// libs/testing 에서 @mannercode/common 에 대한 production dependency 를
+// 없애기 위해 인라인. 이전엔 JsonUtil.parse 를 여기서만 썼다.
 function parseJsonResponse(text: string): unknown {
     return JSON.parse(quoteUnsafeIntegers(text), (_key, value) => {
         if (typeof value === 'string' && ISO_DATE.test(value)) {
@@ -14,8 +14,8 @@ function parseJsonResponse(text: string): unknown {
     })
 }
 
-// Wrap 64-bit integers outside JS Number-safe range in quotes so the JSON
-// parser preserves them as strings rather than losing precision.
+// JS Number-safe 범위를 벗어난 64-bit 정수를 따옴표로 감싸 JSON 파서가
+// precision 을 잃지 않고 문자열로 보존하도록 한다.
 function quoteUnsafeIntegers(text: string): string {
     const maxInt64 = 9223372036854775807n
     const minInt64 = -9223372036854775808n
@@ -133,12 +133,10 @@ export class HttpTestClient {
         return response
     }
     /**
-     * Send without asserting a specific status. Caller inspects response.status
-     * itself. Useful for concurrent/race tests where different requests may
-     * legitimately return different statuses.
+     * 특정 status 단언 없이 전송한다. 호출자가 response.status 를 직접 검사한다.
+     * 동시/race 테스트에서 요청마다 다른 상태가 정상일 때 유용하다.
      */
     async sendRaw(): Promise<superagent.Response> {
-        // Without ok(() => true), status codes 400 and above will throw an exception.
         // ok(() => true)를 하지 않으면 400 이상 상태 코드는 예외를 던진다.
         const response = await this.agent.ok(() => true)
 

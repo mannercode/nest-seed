@@ -8,9 +8,9 @@ export type AuthConfig = {
 }
 
 /**
- * Out-of-band metadata about the operation being performed. Threaded into
- * security events so consumers (audit log, SIEM, alerting) can attribute
- * actions to a request. JwtAuthService never inspects these — it just relays.
+ * 수행 중인 operation 에 대한 out-of-band metadata. security event 에 같이
+ * 실어 보내서 consumer (audit log, SIEM, alerting) 가 action 을 request 에
+ * 귀속시킬 수 있게 한다. JwtAuthService 는 들여다보지 않고 그대로 전달만 한다.
  */
 export type EventContext = { ip?: string; userAgent?: string; source?: string }
 
@@ -56,8 +56,8 @@ export type JwtAuthFactoryOptions = {
     auth: AuthConfig
     onEvent?: OnSecurityEvent
     /**
-     * JWT payload field used to identify the subject for the per-user
-     * revocation index. Defaults to `'sub'` (RFC 7519 standard claim).
+     * per-user revocation index 의 subject 식별에 쓰는 JWT payload field.
+     * 기본값은 `'sub'` (RFC 7519 표준 claim).
      */
     userIdField?: string
 }

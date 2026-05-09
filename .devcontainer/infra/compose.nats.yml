@@ -5,9 +5,9 @@ services:
         image: $NATS_IMAGE
         deploy: { resources: { limits: { memory: 256m } } }
         shm_size: '8m'
-        # `-js` enables JetStream. `--store_dir /data` is mapped to a named
-        # volume so streams survive container restarts. `-m` exposes the
-        # monitoring HTTP port for healthchecks (and ad-hoc inspection).
+        # `-js` 는 JetStream 활성화. `--store_dir /data` 는 named volume 에
+        # 매핑돼 컨테이너 재시작 후에도 stream 이 유지된다. `-m` 은 healthcheck
+        # (와 임시 검사) 용도로 monitoring HTTP 포트를 노출한다.
         command: >
             --name nats
             -js
@@ -18,8 +18,8 @@ services:
             - '$NATS_MONITORING_PORT:8222'
         volumes:
             - nats_data:/data
-        # `/healthz` is the standard NATS 2.10+ health endpoint. With
-        # `?js-enabled-only=true` it also asserts JetStream is up.
+        # `/healthz` 는 NATS 2.10+ 표준 health endpoint. `?js-enabled-only=true`
+        # 를 붙이면 JetStream 가동 여부도 함께 검증한다.
         healthcheck:
             test: 'wget -qO- "http://localhost:8222/healthz?js-enabled-only=true" || exit 1'
 

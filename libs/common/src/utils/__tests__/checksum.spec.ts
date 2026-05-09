@@ -18,10 +18,8 @@ describe('Checksum', () => {
             await PathUtil.delete(tempDir)
         })
 
-        // 알고리즘이 sha1일 때
-        describe('when the algorithm is sha1', () => {
-            // SHA1 체크섬을 반환한다
-            it('returns the SHA1 checksum', async () => {
+        describe('알고리즘이 sha1일 때', () => {
+            it('SHA1 체크섬을 반환한다', async () => {
                 const checksum = await Checksum.fromFile(filePath, 'sha1')
 
                 expect(checksum).toEqual({
@@ -31,10 +29,8 @@ describe('Checksum', () => {
             })
         })
 
-        // 알고리즘이 제공되지 않을 때
-        describe('when the algorithm is not provided', () => {
-            // SHA256 체크섬을 반환한다
-            it('returns the SHA256 checksum', async () => {
+        describe('알고리즘이 제공되지 않을 때', () => {
+            it('SHA256 체크섬을 반환한다', async () => {
                 const checksum = await Checksum.fromFile(filePath)
 
                 expect(checksum).toEqual({
@@ -52,10 +48,8 @@ describe('Checksum', () => {
             buffer = Buffer.from('Hello, World!')
         })
 
-        // 알고리즘이 sha1일 때
-        describe('when the algorithm is sha1', () => {
-            // SHA1 체크섬을 반환한다
-            it('returns the SHA1 checksum', async () => {
+        describe('알고리즘이 sha1일 때', () => {
+            it('SHA1 체크섬을 반환한다', async () => {
                 const checksum = Checksum.fromBuffer(buffer, 'sha1')
 
                 expect(checksum).toEqual({
@@ -65,10 +59,8 @@ describe('Checksum', () => {
             })
         })
 
-        // 알고리즘이 제공되지 않을 때
-        describe('when the algorithm is not provided', () => {
-            // SHA256 체크섬을 반환한다
-            it('returns the SHA256 checksum', async () => {
+        describe('알고리즘이 제공되지 않을 때', () => {
+            it('SHA256 체크섬을 반환한다', async () => {
                 const checksum = Checksum.fromBuffer(buffer)
 
                 expect(checksum).toEqual({

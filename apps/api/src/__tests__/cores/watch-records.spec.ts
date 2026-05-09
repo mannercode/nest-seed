@@ -13,8 +13,7 @@ describe('WatchRecordsService', () => {
     afterEach(() => fix.teardown())
 
     describe('create', () => {
-        // 생성된 시청 기록을 반환한다
-        it('returns the created watch record', async () => {
+        it('생성된 시청 기록을 반환한다', async () => {
             const createDto = buildCreateWatchRecordDto()
             const watchRecord = await fix.watchRecordsService.create(createDto)
 
@@ -42,8 +41,7 @@ describe('WatchRecordsService', () => {
             total: expectedRecords.length
         })
 
-        // 필터가 제공될 때
-        describe('when the filter is provided', () => {
+        describe('필터가 제공될 때', () => {
             const queryAndExpect = async (
                 query: SearchWatchRecordsPageDto,
                 expectedRecords: WatchRecordDto[]
@@ -52,8 +50,7 @@ describe('WatchRecordsService', () => {
                 expect(recordsPage).toEqual(buildExpectedPage(expectedRecords))
             }
 
-            // userId로 필터링된 기록을 반환한다
-            it('returns records filtered by userId', async () => {
+            it('userId로 필터링된 기록을 반환한다', async () => {
                 await queryAndExpect({ userId }, [watchRecords[0], watchRecords[1]])
             })
         })

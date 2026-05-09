@@ -19,8 +19,7 @@ describe('BookingService', () => {
     })
     afterEach(() => fix.teardown())
 
-    // 고객이 예매 흐름을 진행할 때
-    describe('when a user goes through the booking flow', () => {
+    describe('고객이 예매 흐름을 진행할 때', () => {
         let movie: MovieDto
         let accessToken: string
 
@@ -45,8 +44,7 @@ describe('BookingService', () => {
             accessToken = resources.accessToken
         })
 
-        // 선택한 티켓을 보유한다
-        it('holds selected tickets', async () => {
+        it('선택한 티켓을 보유한다', async () => {
             let theater: TheaterDto
             let showdate: Date
             let showtime: ShowtimeDto
@@ -119,8 +117,7 @@ describe('BookingService', () => {
         const locations = [{ latitude: 30.0, longitude: 130.0 }]
         const startTimes = [new Date('2999-01-01T12:00')]
 
-        // 티켓이 이미 다른 고객에 의해 보유되었을 때
-        describe('when tickets are already held by another user', () => {
+        describe('티켓이 이미 다른 고객에 의해 보유되었을 때', () => {
             let accessToken: string
             let showtimeId: string
             let ticketIds: string[]
@@ -135,8 +132,7 @@ describe('BookingService', () => {
                 await holdTickets(fix, { userId: oid(0xff), showtimeId, ticketIds })
             })
 
-            // 409 Conflict를 반환한다
-            it('returns 409 Conflict', async () => {
+            it('409 Conflict를 반환한다', async () => {
                 await fix.httpClient
                     .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
                     .headers({ Authorization: `Bearer ${accessToken}` })
@@ -147,10 +143,8 @@ describe('BookingService', () => {
     })
 
     describe('GET /booking/showtimes/:id/tickets', () => {
-        // 상영 시간이 존재하지 않을 때
-        describe('when the showtime does not exist', () => {
-            // 404 Not Found를 반환한다
-            it('returns 404 Not Found', async () => {
+        describe('상영 시간이 존재하지 않을 때', () => {
+            it('404 Not Found를 반환한다', async () => {
                 await fix.httpClient
                     .get(`/booking/showtimes/${nullObjectId}/tickets`)
                     .notFound(Errors.Booking.ShowtimeNotFound(nullObjectId))

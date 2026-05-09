@@ -1,18 +1,17 @@
-// Distributed stress test: ticket holding race across replicas, multiple
-// concurrent ticket sets.
+// replica 들에 걸친 ticket holding race 의 분산 스트레스 테스트, 여러 ticket set
+// 을 동시에 사용.
 //
-// Each inner iteration: provisions a fresh showtime with enough tickets
-// for TICKET_GROUPS × 2 tickets, splits the tickets into TICKET_GROUPS
-// disjoint pairs, and races USERS_PER_GROUP users per pair.
-// Every user in a group fires a hold on the same pair at the same
-// time as every other group. Per group: exactly 1 × 204, rest × 409.
+// 각 inner iteration: TICKET_GROUPS × 2 개의 ticket 이 들어가도록 새 showtime 을
+// 만들고, ticket 을 TICKET_GROUPS 개의 disjoint pair 로 나눈 뒤 pair 마다
+// USERS_PER_GROUP 명의 유저를 경쟁시킨다. 한 group 내 모든 유저가 같은 pair 에
+// 대해 hold 를 발사하고 다른 group 도 동시에 발사한다. group 당: 정확히
+// 1 × 204, 나머지는 409.
 //
-// Users are created once and reused across inner iters; per-iter
-// only provisions fresh tickets (held tickets can't be re-raced under
-// the same lock key).
+// 유저는 한 번 만들어 inner iter 들에 걸쳐 재사용한다. 매 iter 마다 새 ticket
+// 만 만들어둔다 (hold 된 ticket 은 같은 lock key 로 다시 race 시킬 수 없다).
 //
-// Fails if: any group's 204 count != 1, any 5xx, or responses came from
-// fewer than 2 replicas.
+// 실패 조건: 어떤 group 의 204 카운트가 1 이 아님, 5xx 발생, 또는 응답이 2 개
+// 미만의 replica 에서만 옴.
 
 const http = require('http')
 
@@ -115,7 +114,7 @@ function waitForSagaSuccess(sagaId) {
                                 return
                             }
                         } catch {
-                            /* ignore */
+                            /* 무시 */
                         }
                     }
                 })
@@ -147,7 +146,7 @@ async function setupMovieTheater() {
         throw new Error(`publish: ${publish.status}`)
     }
 
-    // Big seatmap: 1 block × 1 row × 20 tickets — enough for up to 10 groups.
+    // 큰 seatmap: 1 block × 1 row × 20 tickets — 최대 10 group 까지 충분.
     const theater = await requestRaw('POST', '/theaters', {
         body: {
             name: 'hold-race',
@@ -187,7 +186,7 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
         throw new Error(`tickets: need ${TICKET_GROUPS * 2}, got ${tickets.body.length}`)
     }
 
-    // Split into TICKET_GROUPS disjoint pairs.
+    // TICKET_GROUPS 개의 disjoint pair 로 분할.
     const groups = Array.from({ length: TICKET_GROUPS }, (_, g) => [
         tickets.body[g * 2].id,
         tickets.body[g * 2 + 1].id
@@ -217,9 +216,9 @@ async function runInner(iteration, movieId, theaterId, tokens, startTimeOffsetMs
         startTimeOffsetMs
     )
 
-    // Build attempts: every (group, user) pair fires a hold on that
-    // group's ticket pair. All TICKET_GROUPS × USERS_PER_GROUP fire
-    // simultaneously via a flat Promise.all.
+    // attempts 구성: (group, user) pair 마다 자기 group 의 ticket pair 에 대해
+    // hold 를 발사한다. TICKET_GROUPS × USERS_PER_GROUP 전부가 flat Promise.all
+    // 로 동시에 발사된다.
     const attempts = []
     for (let g = 0; g < TICKET_GROUPS; g++) {
         const ticketIds = groups[g]

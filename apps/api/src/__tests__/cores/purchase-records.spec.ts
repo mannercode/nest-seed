@@ -13,8 +13,7 @@ describe('PurchaseRecordsService', () => {
     afterEach(() => fix.teardown())
 
     describe('create', () => {
-        // 생성된 구매 기록을 반환한다
-        it('returns the created purchase record', async () => {
+        it('생성된 구매 기록을 반환한다', async () => {
             const createDto = buildCreatePurchaseRecordDto()
             const purchaseRecord = await fix.purchaseRecordsService.create(createDto)
 
@@ -28,24 +27,20 @@ describe('PurchaseRecordsService', () => {
     })
 
     describe('GET /purchases/:purchaseRecordId', () => {
-        // 구매 기록이 존재할 때
-        describe('when the purchase record exists', () => {
+        describe('구매 기록이 존재할 때', () => {
             let purchaseRecord: PurchaseRecordDto
 
             beforeEach(async () => {
                 purchaseRecord = await createPurchaseRecord(fix)
             })
 
-            // 구매 기록을 반환한다
-            it('returns the purchase record', async () => {
+            it('구매 기록을 반환한다', async () => {
                 await fix.httpClient.get(`/purchases/${purchaseRecord.id}`).ok(purchaseRecord)
             })
         })
 
-        // 구매 기록이 존재하지 않을 때
-        describe('when the purchase record does not exist', () => {
-            // 404 Not Found를 반환한다
-            it('returns 404 Not Found', async () => {
+        describe('구매 기록이 존재하지 않을 때', () => {
+            it('404 Not Found를 반환한다', async () => {
                 await fix.httpClient
                     .get(`/purchases/${nullObjectId}`)
                     .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
