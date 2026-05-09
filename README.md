@@ -55,9 +55,9 @@ nest-seed/
 ├── apps/api/                ← NestJS API (4 replica 기본)
 │   ├── src/
 │   │   ├── gateway/             HTTP 진입점, 가드
-│   │   ├── applications/        비즈니스 로직 (Temporal workflow + activities)
-│   │   ├── cores/               도메인 모델, 리포지토리
-│   │   ├── infrastructures/     외부 서비스 (결제, 파일)
+│   │   ├── application/         비즈니스 로직 (Temporal workflow + activities)
+│   │   ├── core/                도메인 모델, 리포지토리
+│   │   ├── infrastructure/      외부 서비스 (결제, 파일)
 │   │   └── config/              앱 설정, Rules, 파이프
 │   ├── examples/                실행 가능한 API 사용 예제 (curl 기반)
 │   ├── tests/                   분산 race 시나리오, perf 하네스
@@ -93,7 +93,7 @@ nest-seed/
 다음 항목들은 시드의 핵심이라 이름만 바꾸고 구조는 그대로 두기를 권한다.
 
 - `libs/` 의 구조와 코드
-- SoLA 계층 분리 (gateway / applications / cores / infrastructures)
+- SoLA 계층 분리 (gateway / application / core / infrastructure)
 - 테스트 인프라 (Jest + Testcontainers + e2e shell spec + 분산 race)
 - Dev Container 구성
 - ESLint 계층 의존성 검증

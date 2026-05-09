@@ -1,28 +1,28 @@
 import { Module } from '@nestjs/common'
-import { ApplicationsModule } from 'applications'
+import { ApplicationModule } from 'application'
 import {
-    CommonModule,
     MongooseConfigModule,
     NatsConfigModule,
     RedisConfigModule,
     TemporalConfigModule
 } from 'config'
-import { CoresModule } from 'cores'
-import { InfrastructuresModule } from 'infrastructures'
+import { CoreModule } from 'core'
+import { InfrastructureModule } from 'infrastructure'
 import { GatewayModule } from './gateway'
-import { HealthModule } from './modules'
+import { GlobalModule } from './global.module'
+import { HealthModule } from './health.module'
 
 @Module({
     imports: [
-        CommonModule,
+        GlobalModule,
         MongooseConfigModule,
         RedisConfigModule,
         NatsConfigModule,
         TemporalConfigModule,
         HealthModule,
-        CoresModule,
-        InfrastructuresModule,
-        ApplicationsModule,
+        CoreModule,
+        InfrastructureModule,
+        ApplicationModule,
         GatewayModule
     ]
 })

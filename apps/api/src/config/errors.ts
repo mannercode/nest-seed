@@ -1,3 +1,3 @@
-import { RequestValidationPipeErrors } from './pipes'
+import { RequestValidationPipeErrors } from '../pipes'
 
 export const SharedErrors = { RequestValidation: RequestValidationPipeErrors }

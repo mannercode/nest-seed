@@ -8,7 +8,7 @@ const {
     createBaseConfigs
 } = require('../../eslint.config.base')
 
-const internalAliasPattern = '^(?:applications|gateway|cores|infrastructures|config)$'
+const internalAliasPattern = '^(?:application|gateway|core|infrastructure|config)$'
 const dependencyIgnorePatterns = [
     '^\\.',
     nodeBuiltinModulePattern,
@@ -63,7 +63,7 @@ module.exports = [
         }
     },
     {
-        files: ['src/applications/**/*.ts'],
+        files: ['src/application/**/*.ts'],
         rules: {
             'no-restricted-imports': [
                 'warn',
@@ -71,13 +71,13 @@ module.exports = [
                     patterns: [
                         ...barrelImportPatterns,
                         {
-                            group: ['applications', 'applications/**'],
+                            group: ['application', 'application/**'],
                             message:
-                                'Use relative imports within applications to avoid ancestor barrel cycles.'
+                                'Use relative imports within application to avoid ancestor barrel cycles.'
                         },
                         {
                             group: ['gateway', 'gateway/**'],
-                            message: 'Layering rule: applications must not depend on gateway.'
+                            message: 'Layering rule: application must not depend on gateway.'
                         }
                     ]
                 }
@@ -85,7 +85,7 @@ module.exports = [
         }
     },
     {
-        files: ['src/cores/**/*.ts'],
+        files: ['src/core/**/*.ts'],
         rules: {
             'no-restricted-imports': [
                 'warn',
@@ -93,19 +93,19 @@ module.exports = [
                     patterns: [
                         ...barrelImportPatterns,
                         {
-                            group: ['cores', 'cores/**'],
+                            group: ['core', 'core/**'],
                             message:
-                                'Use relative imports within cores to avoid ancestor barrel cycles.'
+                                'Use relative imports within core to avoid ancestor barrel cycles.'
                         },
                         {
                             group: [
                                 'gateway',
                                 'gateway/**',
-                                'applications',
-                                'applications/**'
+                                'application',
+                                'application/**'
                             ],
                             message:
-                                'Layering rule: cores must not depend on gateway or applications.'
+                                'Layering rule: core must not depend on gateway or application.'
                         }
                     ]
                 }
@@ -113,7 +113,7 @@ module.exports = [
         }
     },
     {
-        files: ['src/infrastructures/**/*.ts'],
+        files: ['src/infrastructure/**/*.ts'],
         rules: {
             'no-restricted-imports': [
                 'warn',
@@ -121,21 +121,21 @@ module.exports = [
                     patterns: [
                         ...barrelImportPatterns,
                         {
-                            group: ['infrastructures', 'infrastructures/**'],
+                            group: ['infrastructure', 'infrastructure/**'],
                             message:
-                                'Use relative imports within infrastructures to avoid ancestor barrel cycles.'
+                                'Use relative imports within infrastructure to avoid ancestor barrel cycles.'
                         },
                         {
                             group: [
                                 'gateway',
                                 'gateway/**',
-                                'applications',
-                                'applications/**',
-                                'cores',
-                                'cores/**'
+                                'application',
+                                'application/**',
+                                'core',
+                                'core/**'
                             ],
                             message:
-                                'Layering rule: infrastructures must not depend on gateway, applications, or cores.'
+                                'Layering rule: infrastructure must not depend on gateway, application, or core.'
                         }
                     ]
                 }
@@ -159,12 +159,12 @@ module.exports = [
                             group: [
                                 'gateway',
                                 'gateway/**',
-                                'applications',
-                                'applications/**',
-                                'cores',
-                                'cores/**',
-                                'infrastructures',
-                                'infrastructures/**'
+                                'application',
+                                'application/**',
+                                'core',
+                                'core/**',
+                                'infrastructure',
+                                'infrastructure/**'
                             ],
                             message: 'config must not depend on app layers.'
                         }

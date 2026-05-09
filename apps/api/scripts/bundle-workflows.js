@@ -17,7 +17,7 @@ const path = require('path')
 
 const SRC_WORKFLOWS = path.resolve(
     __dirname,
-    '../src/applications/services/showtime-creation/temporal/workflows.ts'
+    '../src/application/showtime-creation/temporal/workflows.ts'
 )
 const OUT_DIR = path.resolve(__dirname, '../_output/dist')
 const OUT_FILE = path.join(OUT_DIR, 'showtime-creation-workflow-bundle.js')

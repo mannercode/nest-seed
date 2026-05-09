@@ -1,6 +1,6 @@
 import { LocalAuthGuard } from '@mannercode/common'
 import { Injectable, UnauthorizedException } from '@nestjs/common'
-import { UsersService } from 'cores'
+import { UsersService } from 'core'
 import { AuthErrors } from './errors'
 
 @Injectable()

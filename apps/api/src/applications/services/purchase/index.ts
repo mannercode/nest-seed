@@ -1,6 +1,0 @@
-export * from './dtos'
-export * from './errors'
-export * from './purchase.events'
-export * from './purchase.module'
-export * from './purchase.service'
-export * from './services'

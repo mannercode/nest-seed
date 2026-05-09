@@ -1,4 +1,4 @@
-import type { UserAuthPayload } from 'cores'
+import type { UserAuthPayload } from 'core'
 import type { Request } from 'express'
 
 export type UserAuthRequest = Request & { user: UserAuthPayload }

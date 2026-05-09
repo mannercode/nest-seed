@@ -13,9 +13,9 @@ import {
     Req,
     UseGuards
 } from '@nestjs/common'
-import { RecommendationService } from 'applications'
-import { MoviesService, SearchMoviesPageDto, UpsertMovieDto } from 'cores'
-import { CreateAssetDto } from 'infrastructures'
+import { RecommendationService } from 'application'
+import { MoviesService, SearchMoviesPageDto, UpsertMovieDto } from 'core'
+import { CreateAssetDto } from 'infrastructure'
 import { UserOptionalJwtAuthGuard } from './guards'
 import { UserOptionalAuthRequest } from './types'
 

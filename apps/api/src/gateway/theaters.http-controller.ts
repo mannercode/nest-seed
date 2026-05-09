@@ -10,7 +10,7 @@ import {
     Post,
     Query
 } from '@nestjs/common'
-import { CreateTheaterDto, SearchTheatersPageDto, TheatersService, UpdateTheaterDto } from 'cores'
+import { CreateTheaterDto, SearchTheatersPageDto, TheatersService, UpdateTheaterDto } from 'core'
 
 @Controller('theaters')
 export class TheatersHttpController {

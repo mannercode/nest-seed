@@ -10,7 +10,7 @@ import {
     Req,
     UseGuards
 } from '@nestjs/common'
-import { BookingService, HoldTicketsBodyDto } from 'applications'
+import { BookingService, HoldTicketsBodyDto } from 'application'
 import { UserJwtAuthGuard } from './guards'
 import { UserAuthRequest } from './types'
 

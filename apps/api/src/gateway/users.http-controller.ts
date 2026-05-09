@@ -19,7 +19,7 @@ import {
     SearchUsersPageDto,
     UpdateUserDto,
     UsersService
-} from 'cores'
+} from 'core'
 import { UserJwtAuthGuard, UserLocalAuthGuard, Public } from './guards'
 import { UserAuthRequest } from './types'
 

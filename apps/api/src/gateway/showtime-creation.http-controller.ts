@@ -15,7 +15,7 @@ import {
     SearchShowtimesByTheatersBodyDto,
     ShowtimeCreationEvents,
     ShowtimeCreationService
-} from 'applications'
+} from 'application'
 import { map, Observable } from 'rxjs'
 
 @Controller('showtime-creation')

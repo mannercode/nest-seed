@@ -7,9 +7,9 @@
         "outDir": "./_output/build",
         "paths": {
             "config": ["src/config/index"],
-            "applications": ["src/applications/index"],
-            "cores": ["src/cores/index"],
-            "infrastructures": ["src/infrastructures/index"],
+            "application": ["src/application/index"],
+            "core": ["src/core/index"],
+            "infrastructure": ["src/infrastructure/index"],
             "gateway": ["src/gateway/index"]
         }
     },
