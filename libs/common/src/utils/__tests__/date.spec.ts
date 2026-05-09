@@ -26,7 +26,7 @@ describe('DateUtil', () => {
         })
     })
 
-    describe('earliest and latest', () => {
+    describe('earliest, latest', () => {
         const dates = [
             new Date('2022-01-01T12:00:00Z'),
             new Date('2022-01-03T15:30:00Z'),
@@ -43,16 +43,14 @@ describe('DateUtil', () => {
             expect(date).toEqual(new Date('2022-01-03T15:30:00Z'))
         })
 
-        describe('배열이 비어있을 때', () => {
-            it('earliest는 Invalid Date를 반환한다', () => {
-                const date = DateUtil.earliest([])
-                expect(Number.isNaN(date.getTime())).toBe(true)
-            })
+        it('earliest는 빈 배열에 Invalid Date를 반환한다', () => {
+            const date = DateUtil.earliest([])
+            expect(Number.isNaN(date.getTime())).toBe(true)
+        })
 
-            it('latest는 Invalid Date를 반환한다', () => {
-                const date = DateUtil.latest([])
-                expect(Number.isNaN(date.getTime())).toBe(true)
-            })
+        it('latest는 빈 배열에 Invalid Date를 반환한다', () => {
+            const date = DateUtil.latest([])
+            expect(Number.isNaN(date.getTime())).toBe(true)
         })
     })
 

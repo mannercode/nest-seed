@@ -25,7 +25,7 @@ describe('createDummyFile', () => {
 })
 
 describe('step', () => {
-    it('성공 시 콜백 반환값을 반환한다', async () => {
+    it('콜백을 실행한다', async () => {
         let executed = false
         await step('do work', async () => {
             executed = true

@@ -278,5 +278,4 @@ describe('TemporalWorkerService', () => {
     it.todo('onModuleDestroy를 두 번 호출하면 두 번째는 아무 일도 일어나지 않는다')
     it.todo('workflowBundlePath 파일이 없으면 런타임에 번들로 대체된다')
     it.todo('workflowBundlePath가 빈 문자열이면 런타임에 번들로 대체된다')
-    it.todo('connection.close()가 예외를 던져도 worker는 정상 종료된다')
 })

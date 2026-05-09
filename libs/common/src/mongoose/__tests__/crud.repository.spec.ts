@@ -115,7 +115,7 @@ describe('CrudRepository', () => {
             expect(toDtos(items)).toEqual(samples)
         })
 
-        it('size 값이 0 이하이면 예외를 던진다', async () => {
+        it('size가 0 이하이면 BadRequestException을 던진다', async () => {
             const promise = fix.repository.findWithPagination({ pagination: { size: -1 } })
 
             await expect(promise).rejects.toThrow(fix.BadRequestException)

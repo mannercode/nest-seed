@@ -75,7 +75,7 @@ describe('createWinstonLogger', () => {
         })
     })
 
-    it('HTTP 콘솔 포맷이 올바르게 출력된다', async () => {
+    it('HTTP 컨텍스트는 콘솔에 HTTP 라벨과 함께 출력된다', async () => {
         const consoleLogger = createWinstonLogger({
             consoleLogLevel: 'info',
             daysToKeepLogs: '1d',
@@ -104,7 +104,7 @@ describe('createWinstonLogger', () => {
 
     it.todo('consoleLogLevel이 "silent"이면 Console transport를 등록하지 않는다')
 
-    it('Service 콘솔 포맷이 올바르게 출력된다', async () => {
+    it('service 컨텍스트는 콘솔에 SERVICE 라벨과 함께 출력된다', async () => {
         const consoleLogger = createWinstonLogger({
             consoleLogLevel: 'info',
             daysToKeepLogs: '1d',

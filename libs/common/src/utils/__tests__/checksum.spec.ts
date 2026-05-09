@@ -27,14 +27,12 @@ describe('Checksum', () => {
             expect(fileChecksum).toEqual(bufferChecksum)
         })
 
-        describe('알고리즘이 제공되지 않을 때', () => {
-            it('SHA256 체크섬을 반환한다', async () => {
-                const checksum = await Checksum.fromFile(filePath)
+        it('알고리즘을 지정하지 않으면 SHA-256 해시를 반환한다', async () => {
+            const checksum = await Checksum.fromFile(filePath)
 
-                expect(checksum).toEqual({
-                    algorithm: 'sha256',
-                    base64: '3/1gIbsr1bCvZ2KQgJ7DpTGR3YHH9wpLKGiKNiGCmG8='
-                })
+            expect(checksum).toEqual({
+                algorithm: 'sha256',
+                base64: '3/1gIbsr1bCvZ2KQgJ7DpTGR3YHH9wpLKGiKNiGCmG8='
             })
         })
     })
@@ -46,28 +44,21 @@ describe('Checksum', () => {
             buffer = Buffer.from('Hello, World!')
         })
 
-        describe('알고리즘이 sha1일 때', () => {
-            it('SHA1 체크섬을 반환한다', async () => {
-                const checksum = Checksum.fromBuffer(buffer, 'sha1')
+        it('알고리즘이 sha1이면 SHA-1 해시를 반환한다', async () => {
+            const checksum = Checksum.fromBuffer(buffer, 'sha1')
 
-                expect(checksum).toEqual({
-                    algorithm: 'sha1',
-                    base64: 'CgqfKmdylCVXq1NV12r0Qvj2XgE='
-                })
+            expect(checksum).toEqual({ algorithm: 'sha1', base64: 'CgqfKmdylCVXq1NV12r0Qvj2XgE=' })
+        })
+
+        it('알고리즘을 지정하지 않으면 SHA-256 해시를 반환한다', async () => {
+            const checksum = Checksum.fromBuffer(buffer)
+
+            expect(checksum).toEqual({
+                algorithm: 'sha256',
+                base64: '3/1gIbsr1bCvZ2KQgJ7DpTGR3YHH9wpLKGiKNiGCmG8='
             })
         })
 
-        describe('알고리즘이 제공되지 않을 때', () => {
-            it('SHA256 체크섬을 반환한다', async () => {
-                const checksum = Checksum.fromBuffer(buffer)
-
-                expect(checksum).toEqual({
-                    algorithm: 'sha256',
-                    base64: '3/1gIbsr1bCvZ2KQgJ7DpTGR3YHH9wpLKGiKNiGCmG8='
-                })
-            })
-        })
-
-        it.todo('빈 버퍼도 표준 SHA-256 해시 (e3b0c44...) 를 반환한다')
+        it.todo('빈 버퍼도 표준 SHA-256 해시(e3b0c44...)를 반환한다')
     })
 })

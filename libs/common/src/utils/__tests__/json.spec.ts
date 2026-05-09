@@ -85,8 +85,8 @@ describe('JsonUtil', () => {
             expect(JsonUtil.reviveDates({ v: true }).v).toBe(true)
         })
 
-        it.todo('밀리초가 없는 ISO 8601 (예: "2023-01-01T00:00:00Z") 은 Date로 되살리지 않는다')
+        it.todo('밀리초가 없는 ISO 8601(예: "2023-01-01T00:00:00Z")은 Date로 되살리지 않는다')
 
-        it.todo('Z 대신 +09:00 같은 timezone offset 이 붙은 ISO 8601 은 Date로 되살리지 않는다')
+        it.todo('Z 대신 +09:00 같은 타임존 오프셋이 붙은 ISO 8601은 Date로 되살리지 않는다')
     })
 })

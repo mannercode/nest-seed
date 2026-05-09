@@ -212,7 +212,7 @@ describe('S3ObjectService', () => {
                 key = created.key
             })
 
-            it('true를 반환한다', async () => {
+            it('key만 넘기면 true를 반환한다', async () => {
                 const isCompleted = await fix.s3Service.isUploadComplete({ key })
 
                 expect(isCompleted).toBe(true)

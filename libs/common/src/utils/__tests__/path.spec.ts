@@ -166,7 +166,7 @@ describe('PathUtil', () => {
             expect(deleteSpy).toHaveBeenCalledWith(src)
         })
 
-        it('move는 EXDEV 가 아닌 rename 오류는 그대로 throw한다', async () => {
+        it('move는 EXDEV가 아닌 rename 오류는 그대로 throw한다', async () => {
             const error = new Error('permission denied') as NodeJS.ErrnoException
             error.code = 'EACCES'
 

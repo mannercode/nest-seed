@@ -160,7 +160,7 @@ describe('isEqual', () => {
         expect(isEqual({ a: 1 }, { a: 1 })).toBe(true)
     })
 
-    it('중첩 배열까지 깊이 같으면 true를 반환한다', () => {
+    it('중첩 배열까지 모두 같으면 true를 반환한다', () => {
         expect(isEqual({ a: [1] }, { a: [1] })).toBe(true)
     })
 
@@ -205,8 +205,8 @@ describe('isEqual', () => {
     })
 
     it.todo('순환 참조 객체끼리 비교하면 RangeError를 던진다')
-    it.todo('두 Date는 epoch이 달라도 같다고 판정된다')
-    it.todo('두 Map은 entries가 달라도 같다고 판정된다')
+    it.todo('두 Date는 시각이 달라도 같다고 판정된다 (얕은 비교 한계)')
+    it.todo('두 Map은 내용이 달라도 같다고 판정된다 (얕은 비교 한계)')
 })
 
 describe('differenceWith', () => {

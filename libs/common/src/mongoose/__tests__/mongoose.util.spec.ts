@@ -62,7 +62,7 @@ describe('QueryBuilder', () => {
         builder = new QueryBuilder<TestModel>()
     })
 
-    describe('addEqual', () => {
+    describe('addEquals', () => {
         it('값이 있으면 조건을 추가한다', () => {
             builder.addEquals('name', 'test')
             expect(builder.build({})).toEqual({ name: 'test' })
