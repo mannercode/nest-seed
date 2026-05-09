@@ -1,0 +1,13 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "declaration": true,
+        "declarationMap": true,
+        "noEmit": true,
+        "baseUrl": ".",
+        "paths": {
+            "@mannercode/testing": ["../testing/src"]
+        }
+    },
+    "include": ["src/**/*"]
+}
