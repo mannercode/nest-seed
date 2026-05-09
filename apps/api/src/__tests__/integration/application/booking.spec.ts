@@ -44,7 +44,7 @@ describe('BookingService', () => {
             accessToken = resources.accessToken
         })
 
-        it('극장 → 상영일 → 상영시간 → 티켓 → 보유 단계를 거쳐 티켓을 보유한다', async () => {
+        it('극장 → 상영일 → 상영 시간 → 티켓 → 보유 단계를 거쳐 티켓을 보유한다', async () => {
             let theater: TheaterDto
             let showdate: Date
             let showtime: ShowtimeDto
@@ -75,7 +75,7 @@ describe('BookingService', () => {
                 showdate = showdates[0]
             })
 
-            await step('3. 선택한 상영일의 상영시간 목록을 조회한다', async () => {
+            await step('3. 선택한 상영일의 상영 시간 목록을 조회한다', async () => {
                 const yymmdd = DateUtil.toYMD(showdate)
                 const url = `/booking/movies/${movie.id}/theaters/${theater.id}/showdates/${yymmdd}/showtimes`
 
@@ -91,7 +91,7 @@ describe('BookingService', () => {
                 showtime = showtimes[0]
             })
 
-            await step('4. 상영시간의 가용 티켓을 조회한다', async () => {
+            await step('4. 상영 시간의 가용 티켓을 조회한다', async () => {
                 const { body } = await fix.httpClient
                     .get(`/booking/showtimes/${showtime.id}/tickets`)
                     .ok()

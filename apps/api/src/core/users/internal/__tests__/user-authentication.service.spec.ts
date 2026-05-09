@@ -55,13 +55,13 @@ describe('UserAuthenticationService', () => {
 
             expect(result).toBeNull()
             expect(validateSpy).toHaveBeenCalledTimes(1)
-            // 더미 해시와 비교했는지 확인 (bcrypt 형식이지만 실제 사용자 해시는 아님).
+            // 더미 해시와 비교했는지 확인 (bcrypt 형식이지만 실제 고객 해시는 아님).
             const [, hashArg] = validateSpy.mock.calls[0]
             expect(typeof hashArg).toBe('string')
             expect(hashArg.startsWith('$2')).toBe(true)
         })
 
-        it('비밀번호가 틀린 기존 사용자에 대해 validate를 호출하고 null을 반환한다', async () => {
+        it('비밀번호가 틀린 기존 고객에 대해 validate를 호출하고 null을 반환한다', async () => {
             const realHash = await service.hash('correct')
             const repo = {
                 findByEmailWithPassword: jest

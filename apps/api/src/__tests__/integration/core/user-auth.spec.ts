@@ -99,7 +99,7 @@ describe('UserAuthentication', () => {
                 .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
         })
 
-        it('잘못된 토큰으로 로그아웃해도 204를 반환한다 (best-effort)', async () => {
+        it('잘못된 토큰으로 로그아웃해도 204를 반환한다', async () => {
             await fix.httpClient.post('/users/logout').body({ refreshToken: 'garbage' }).noContent()
         })
     })

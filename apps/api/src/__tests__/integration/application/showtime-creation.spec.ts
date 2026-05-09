@@ -213,7 +213,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('한 기존 상영이 여러 새 startTime과 모두 충돌해도 결과에 한 번만 들어간다', async () => {
+        it('한 기존 상영 시간이 여러 새 startTime과 모두 충돌해도 결과에 한 번만 들어간다', async () => {
             // 기존 12:00-13:30(90분) 하나가 새 12:00, 12:30, 13:00 세 startTime의 첫 슬롯과
             // 모두 매칭. dedup이 없으면 같은 showtime이 3번 들어간다.
             const [initialShowtime] = await createShowtimes(fix, [
@@ -247,7 +247,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('기존 상영이 새 범위보다 먼저 시작했어도 끝이 겹치면 충돌로 보고한다', async () => {
+        it('기존 상영 시간이 새 범위보다 먼저 시작했어도 끝이 겹치면 충돌로 보고한다', async () => {
             // 기존 09:00–11:00(120분), 새 요청은 10:00부터라 startTime만 보면 범위 밖.
             // endTime이 새 범위와 겹치므로 overlap으로 간주되어야 한다.
             const [initialShowtime] = await createShowtimes(fix, [
