@@ -24,14 +24,16 @@
         "dev": "concurrently 'npm:dev:*'",
         "dev:common": "npm run dev -w libs/common",
         "dev:testing": "npm run dev -w libs/testing",
-        "dev:api": "npm run dev -w apps/api"
+        "dev:api": "npm run dev -w apps/api",
+        "list-tests": "node tools/dev-tools/list-tests.js",
+        "list-tests:html": "mkdir -p _output && node tools/dev-tools/list-tests.js libs apps/api --html > _output/test-list.html && echo '✅ _output/test-list.html'"
     },
     "devDependencies": {
         "@aws-sdk/client-s3": "3.1045.0",
         "@aws-sdk/s3-presigned-post": "3.1045.0",
         "@aws-sdk/s3-request-presigner": "3.1045.0",
-        "@commitlint/cli": "20.5.3",
-        "@commitlint/config-conventional": "20.5.3",
+        "@commitlint/cli": "21.0.0",
+        "@commitlint/config-conventional": "21.0.0",
         "@nestjs/common": "11.1.19",
         "@nestjs/config": "4.0.4",
         "@nestjs/core": "11.1.19",
@@ -40,9 +42,9 @@
         "@nestjs/mongoose": "11.0.4",
         "@nestjs/terminus": "11.1.1",
         "@nestjs/testing": "11.1.19",
-        "@temporalio/client": "1.17.0",
-        "@temporalio/testing": "1.17.0",
-        "@temporalio/worker": "1.17.0",
+        "@temporalio/client": "1.17.1",
+        "@temporalio/testing": "1.17.1",
+        "@temporalio/worker": "1.17.1",
         "@testcontainers/mongodb": "11.14.0",
         "@testcontainers/nats": "11.14.0",
         "@types/express": "5.0.6",
@@ -60,11 +62,11 @@
         "globals": "17.6.0",
         "husky": "9.1.7",
         "ioredis": "5.10.1",
-        "jest": "30.4.0",
+        "jest": "30.4.2",
         "joi": "18.2.1",
-        "lint-staged": "17.0.2",
+        "lint-staged": "17.0.3",
         "mongodb": "7.2.0",
-        "mongoose": "9.6.1",
+        "mongoose": "9.6.2",
         "prettier": "3.8.3",
         "reflect-metadata": "0.2.2",
         "rxjs": "7.8.2",
@@ -73,5 +75,5 @@
         "typescript": "6.0.3",
         "typescript-eslint": "8.59.2"
     },
-    "packageManager": "npm@11.14.0"
+    "packageManager": "npm@11.14.1"
 }
