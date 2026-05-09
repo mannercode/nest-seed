@@ -14,19 +14,13 @@ function parseJsonResponse(text: string): unknown {
     })
 }
 
-// JS Number-safe 범위를 벗어난 64-bit 정수를 따옴표로 감싸 JSON 파서가
-// precision 을 잃지 않고 문자열로 보존하도록 한다.
+// JS Number-safe 범위를 벗어난 정수만 따옴표로 감싸 precision 을 보존한다.
+// (test client 는 server 가 검증한 입력만 받으므로 int64 boundary 는 검사 안 함.)
 function quoteUnsafeIntegers(text: string): string {
-    const maxInt64 = 9223372036854775807n
-    const minInt64 = -9223372036854775808n
-    const maxSafe = BigInt(Number.MAX_SAFE_INTEGER)
-    const minSafe = -maxSafe
-
+    const SAFE = BigInt(Number.MAX_SAFE_INTEGER)
     return text.replace(/([:[,])(\s*)(-?\d+)(?=\s*[,\}\]])/g, (match, prefix, space, raw) => {
-        const value = BigInt(raw)
-        if (value < minInt64 || value > maxInt64) return match
-        if (minSafe <= value && value <= maxSafe) return match
-        return `${prefix}${space}"${raw}"`
+        const n = BigInt(raw)
+        return -SAFE <= n && n <= SAFE ? match : `${prefix}${space}"${raw}"`
     })
 }
 

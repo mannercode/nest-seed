@@ -14,9 +14,9 @@ import {
     sortBy,
     sumBy,
     uniq
-} from '../lodash'
+} from '../collections'
 
-describe('lodash utilities', () => {
+describe('collection utilities', () => {
     describe('defaultTo', () => {
         it.each([
             [null, 'default', 'default'],
@@ -25,9 +25,11 @@ describe('lodash utilities', () => {
             ['value', 'default', 'value'],
             [0, 1, 0],
             ['', 'default', '']
-        ])('defaultTo(%j, %j) returns %j', (value, defaultValue, expected) => {
+        ])('defaultTo(%j, %j) 는 %j 를 반환한다', (value, defaultValue, expected) => {
             expect(defaultTo(value, defaultValue)).toBe(expected)
         })
+
+        it.todo('defaultTo 가 NaN 을 missing 으로 취급한다 (JavaScript NaN !== NaN 특성 lock-down)')
     })
 
     describe('get', () => {
@@ -38,9 +40,11 @@ describe('lodash utilities', () => {
             [obj, 'a.b.d', 'fallback', 'fallback'],
             [obj, 'arr[0].id', undefined, 1],
             [null, 'a.b', 'default', 'default']
-        ])('getByPath(%j, %s, %j) returns %j', (o, path, def, expected) => {
+        ])('getByPath(%j, %s, %j) 는 %j 를 반환한다', (o, path, def, expected) => {
             expect(getByPath(o, path, def)).toBe(expected)
         })
+
+        it.todo('getByPath 가 중간 경로의 null/undefined 를 만나면 default 를 반환한다')
     })
 
     describe('omit', () => {
@@ -52,6 +56,8 @@ describe('lodash utilities', () => {
         it('지정된 키를 제외한 객체를 반환한다', () => {
             expect(omit({ a: 1, b: 2, c: 3 }, ['b'])).toEqual({ a: 1, c: 3 })
         })
+
+        it.todo('omit 이 입력 객체를 mutate 하지 않고 shallow copy 를 반환한다')
     })
 
     describe('pick', () => {
@@ -62,12 +68,18 @@ describe('lodash utilities', () => {
         it('존재하지 않는 키는 무시한다', () => {
             expect(pick({ a: 1 } as any, ['a', 'b'])).toEqual({ a: 1 })
         })
+
+        it.todo(
+            'pick 은 obj 에 없는 key 는 결과에 추가하지 않는다 (key in obj 검사로 undefined 누설 차단)'
+        )
     })
 
     describe('uniq', () => {
-        it('removes duplicates', () => {
+        it('중복 요소를 제거한다', () => {
             expect(uniq([1, 2, 2, 3, 1])).toEqual([1, 2, 3])
         })
+
+        it.todo('uniq 가 첫 등장 순서를 보존한다 (Set 의 insertion order 를 가정한다)')
     })
 
     describe('sortBy', () => {
@@ -116,6 +128,10 @@ describe('lodash utilities', () => {
                 { age: 20, name: 'a' }
             ])
         })
+
+        it.todo(
+            'orders 인자가 빈 배열이면 모든 key 가 asc 방향으로 정렬된다 (default 동작 lock-down)'
+        )
     })
 
     describe('isEqual', () => {
@@ -135,9 +151,17 @@ describe('lodash utilities', () => {
             [{ a: [1] }, { a: [1] }, true],
             [1, null, false],
             [[], {}, false]
-        ])('isEqual(%j, %j) returns %j', (a, b, expected) => {
+        ])('isEqual(%j, %j) 는 %j 를 반환한다', (a, b, expected) => {
             expect(isEqual(a, b)).toBe(expected)
         })
+
+        it.todo(
+            '순환 참조 객체끼리 비교해도 stack overflow 없이 false 또는 true 로 결정된다 (현 동작 명세)'
+        )
+
+        it.todo('Date 두 개를 값으로 비교한다 (epoch 동일 → true)')
+
+        it.todo('두 Map 의 동등성을 일반 객체처럼 다룬다 (현 동작 명세)')
     })
 
     describe('differenceWith', () => {

@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common'
-import { isEqual } from './lodash'
+import { isEqual } from './collections'
 
 export class Assume {
     static equalLength(a: any[] | undefined, b: any[] | undefined, message: string) {

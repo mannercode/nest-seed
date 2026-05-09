@@ -16,6 +16,8 @@ type SessionArg = ClientSession | undefined
 
 const defaultLeanOptions = {}
 
+// **Mutates `doc` in place** and returns the same reference for convenience.
+//
 // Lean 결과는 `{ _id: ObjectId, ... }` 형태로 돌아온다. schema virtual 이
 // `id: string` 을 노출하고 `toJSON.flattenObjectIds` 로 `_id` 를 떼지만,
 // 그 transform 은 hydrated document 이거나 mongoose-lean-virtuals plugin
@@ -41,10 +43,13 @@ export function leanToPublic<T extends { _id?: unknown }>(doc: T): T {
 // Lean 결과를 public 타입으로 변환하는 두 헬퍼. mongoose lean 타입(LeanDocument<T>)이
 // `T extends { _id?: unknown }` 제약과 직접 호환되지 않아 호출자마다 동일한 cast가
 // 반복되던 패턴을 한 곳으로 응축. 동작은 leanToPublic 그대로.
+//
+// Note: `leanToPublic` 으로 위임하므로 입력 doc 들을 **in place 로 mutate** 한다.
 export function leanArrayToPublic<T>(docs: unknown): T[] {
     return (docs as any[]).map(leanToPublic) as T[]
 }
 
+// Note: `leanToPublic` 으로 위임하므로 입력 doc 을 **in place 로 mutate** 한다.
 export function leanOneToPublic<T>(doc: unknown): null | T {
     return doc ? (leanToPublic(doc as any) as T) : null
 }

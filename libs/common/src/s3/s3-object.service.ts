@@ -9,7 +9,7 @@ import {
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Injectable, OnModuleDestroy } from '@nestjs/common'
-import { newObjectIdString } from '../mongoose'
+import { randomUUID } from 'crypto'
 import { HttpUtil, defaultTo } from '../utils'
 import {
     S3DeleteObjectResult,
@@ -177,7 +177,7 @@ export class S3ObjectService implements OnModuleDestroy {
     }
 
     async putObject(object: S3ObjectData): Promise<{ key: string }> {
-        const key = newObjectIdString()
+        const key = randomUUID()
         const disposition = HttpUtil.buildContentDisposition(object.filename)
 
         await this.s3.send(
