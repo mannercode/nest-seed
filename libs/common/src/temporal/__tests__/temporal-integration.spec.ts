@@ -117,7 +117,8 @@ describe('TemporalClientModule.forRootAsync', () => {
     })
 
     it('모듈 종료 시 connection을 닫고, 닫기 실패는 무시한다', async () => {
-        const { TemporalClientModule } = await import('../temporal-client.module')
+        const { TemporalClientModule, TemporalConnectionRegistry } =
+            await import('../temporal-client.module')
         const { Test } = await import('@nestjs/testing')
 
         const moduleRef = await Test.createTestingModule({
@@ -126,20 +127,21 @@ describe('TemporalClientModule.forRootAsync', () => {
             ]
         }).compile()
 
-        // close()가 reject하는 가짜 connection을 추가해 onModuleDestroy의
-        // .catch(() => undefined) 분기를 커버한다.
+        // close()가 reject하는 가짜 connection 을 registry 에 추가해
+        // onModuleDestroy 의 .catch(() => undefined) 분기를 커버한다.
         const fakeConnection = {
             close: jest.fn(async () => {
                 throw new Error('boom')
             })
         }
-        ;(TemporalClientModule as any).connections.push(fakeConnection)
+        const registry = moduleRef.get(TemporalConnectionRegistry)
+        registry.add(fakeConnection as any)
 
         await expect(moduleRef.close()).resolves.toBeUndefined()
 
         expect(fakeConnection.close).toHaveBeenCalled()
-        // 종료 후 정적 배열은 비워진다.
-        expect((TemporalClientModule as any).connections).toEqual([])
+        // 종료 후 registry 도 비워진다.
+        expect(registry.list()).toEqual([])
     })
 })
 

@@ -73,8 +73,9 @@ export abstract class JwtAuthGuard implements CanActivate {
         const authorization = request.headers?.authorization
         if (!authorization) return undefined
 
+        // RFC 6750: scheme 비교는 case-insensitive ("Bearer" / "bearer" / "BEARER" 모두 허용).
         const [type, token] = authorization.split(' ')
-        return type === 'Bearer' ? token : undefined
+        return type?.toLowerCase() === 'bearer' ? token : undefined
     }
 }
 

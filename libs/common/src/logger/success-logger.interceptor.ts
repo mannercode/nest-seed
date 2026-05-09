@@ -11,7 +11,7 @@ import { Request, Response } from 'express'
 import { Observable } from 'rxjs'
 import { tap } from 'rxjs/operators'
 import { redactSensitive } from './redact'
-import { markRequestStart } from './request-timing'
+import { elapsedSinceRequestStart, markRequestStart } from './request-timing'
 import { HttpSuccessLog } from './types'
 
 @Injectable()
@@ -23,8 +23,6 @@ export class HttpSuccessLoggerInterceptor implements NestInterceptor {
     ) {}
 
     async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
-        const startTimestamp = Date.now()
-
         const contextType = context.getType()
 
         /* istanbul ignore else */
@@ -40,15 +38,12 @@ export class HttpSuccessLoggerInterceptor implements NestInterceptor {
                     responseData = data
                 },
                 complete: () => {
-                    const elapsedMs = Date.now() - startTimestamp
-
                     /* istanbul ignore else */
                     if (contextType === 'http') {
-                        this.logHttp(context, elapsedMs, responseData)
+                        this.logHttp(context, responseData)
                     } else {
                         Logger.error('HttpSuccessLoggerInterceptor: unknown context type', {
-                            contextType,
-                            duration: `${elapsedMs}ms`
+                            contextType
                         })
                     }
                 }
@@ -56,12 +51,17 @@ export class HttpSuccessLoggerInterceptor implements NestInterceptor {
         )
     }
 
-    protected logHttp(context: ExecutionContext, elapsedMs: number, responseData: any) {
+    protected logHttp(context: ExecutionContext, responseData: any) {
         const httpContext = context.switchToHttp()
         const httpResponse = httpContext.getResponse<Response>()
-        const { body, method, url } = httpContext.getRequest<Request>()
+        const request = httpContext.getRequest<Request>()
+        const { body, method, url } = request
 
         if (this.shouldLogHttp(url)) {
+            // 시작 시각은 markRequestStart 가 WeakMap 에 박아둔 값을 그대로 쓴다 —
+            // 이 인터셉터가 실패하고 ExceptionLoggerFilter 가 받았을 때와 동일한
+            // 기준점이라 success/fail 로그 사이에 미세한 시각 차가 생기지 않는다.
+            const elapsedMs = elapsedSinceRequestStart(request)
             const successLog = {
                 contextType: 'http' as const,
                 duration: `${elapsedMs}ms`,

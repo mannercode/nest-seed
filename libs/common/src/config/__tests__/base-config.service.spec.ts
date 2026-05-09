@@ -66,6 +66,18 @@ describe('BaseConfigService', () => {
                 "Key 'not-exists-key' is not defined"
             )
         })
+
+        // ConfigService 가 schema coercion 없이 string 으로 돌려줘도 BaseConfigService
+        // 가 자체 변환을 책임진다는 contract 검증.
+        it('coercion 없이 들어온 숫자 문자열도 number 로 변환한다', () => {
+            const service = createServiceWithConfig({ N: '42' })
+            expect(service.getNumber('N')).toBe(42)
+        })
+
+        it('숫자가 아닌 문자열이면 finite-number 메시지로 예외를 던진다', () => {
+            const service = createServiceWithConfig({ N: 'abc' })
+            expect(() => service.getNumber('N')).toThrow("Key 'N' is not a finite number: 'abc'")
+        })
     })
 
     describe('getBoolean', () => {
@@ -84,5 +96,33 @@ describe('BaseConfigService', () => {
                 "Key 'not-exists-key' is not defined"
             )
         })
+
+        it('coercion 없이 들어온 "true" / "false" 문자열도 변환한다', () => {
+            const service = createServiceWithConfig({ T: 'true', F: 'false' })
+            expect(service.getBoolean('T')).toBe(true)
+            expect(service.getBoolean('F')).toBe(false)
+        })
+
+        it('대소문자 / 공백 변형도 받아준다', () => {
+            const service = createServiceWithConfig({ T: '  TRUE  ', F: 'False' })
+            expect(service.getBoolean('T')).toBe(true)
+            expect(service.getBoolean('F')).toBe(false)
+        })
+
+        it('true / false 가 아닌 문자열이면 boolean 메시지로 예외를 던진다', () => {
+            const service = createServiceWithConfig({ B: 'maybe' })
+            expect(() => service.getBoolean('B')).toThrow("Key 'B' is not a boolean: 'maybe'")
+        })
     })
 })
+
+class TestConfigService extends BaseConfigService {
+    constructor(configService: ConfigService) {
+        super(configService)
+    }
+}
+
+function createServiceWithConfig(values: Record<string, unknown>) {
+    const configService = { get: (key: string) => values[key] } as unknown as ConfigService
+    return new TestConfigService(configService)
+}

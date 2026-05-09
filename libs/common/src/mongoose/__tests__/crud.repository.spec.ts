@@ -74,7 +74,7 @@ describe('CrudRepository', () => {
             ]
 
             // bulkSave가 1건만 처리한 것처럼 보이도록 위조한다.
-            jest.spyOn((fix.repository as any).model, 'bulkSave').mockResolvedValueOnce({
+            jest.spyOn(fix.model, 'bulkSave').mockResolvedValueOnce({
                 deletedCount: 0,
                 insertedCount: 1,
                 matchedCount: 0
@@ -190,9 +190,8 @@ describe('CrudRepository', () => {
         })
 
         it('필터가 비어 있으면 estimatedDocumentCount만 호출되고 countDocuments는 호출되지 않는다', async () => {
-            const model = (fix.repository as any).model
-            const estimatedSpy = jest.spyOn(model, 'estimatedDocumentCount')
-            const countSpy = jest.spyOn(model, 'countDocuments')
+            const estimatedSpy = jest.spyOn(fix.model, 'estimatedDocumentCount')
+            const countSpy = jest.spyOn(fix.model, 'countDocuments')
 
             await fix.repository.findWithPagination({ pagination: {} })
 
@@ -201,9 +200,8 @@ describe('CrudRepository', () => {
         })
 
         it('필터가 비어 있지 않으면 countDocuments가 필터와 함께 호출된다', async () => {
-            const model = (fix.repository as any).model
-            const estimatedSpy = jest.spyOn(model, 'estimatedDocumentCount')
-            const countSpy = jest.spyOn(model, 'countDocuments')
+            const estimatedSpy = jest.spyOn(fix.model, 'estimatedDocumentCount')
+            const countSpy = jest.spyOn(fix.model, 'countDocuments')
 
             await fix.repository.findWithPagination({
                 configureQuery: async (q) => {

@@ -1,6 +1,6 @@
 import { createTestContext } from '@mannercode/testing'
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
-import { InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
+import { getModelToken, InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
 import { CrudRepository } from '../crud.repository'
 import { createCrudSchema, CrudSchema } from '../crud.schema'
@@ -23,6 +23,7 @@ export const maxSizeValue = 50
 export type CrudRepositoryFixture = {
     BadRequestException: typeof BadRequestException
     NotFoundException: typeof NotFoundException
+    model: Model<Sample>
     repository: SamplesRepository
     teardown: () => Promise<void>
 }
@@ -49,12 +50,13 @@ export async function createCrudRepositoryFixture() {
     })
 
     const repository = module.get(SamplesRepository)
+    const model = module.get<Model<Sample>>(getModelToken(Sample.name))
 
     const teardown = async () => {
         await close()
     }
 
-    return { BadRequestException, NotFoundException, repository, teardown }
+    return { BadRequestException, NotFoundException, model, repository, teardown }
 }
 
 export async function createSample(repository: SamplesRepository) {

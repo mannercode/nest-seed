@@ -1,4 +1,11 @@
-import { DynamicModule, Inject, Module, OnModuleDestroy, Provider } from '@nestjs/common'
+import {
+    DynamicModule,
+    Inject,
+    Injectable,
+    Module,
+    OnModuleDestroy,
+    Provider
+} from '@nestjs/common'
 import { Client, Connection } from '@temporalio/client'
 import {
     DEFAULT_TEMPORAL_CLIENT_NAME,
@@ -11,10 +18,32 @@ export function InjectTemporalClient(name?: string): ParameterDecorator {
     return Inject(getTemporalClientToken(name))
 }
 
-@Module({})
-export class TemporalClientModule implements OnModuleDestroy {
-    private static connections: Connection[] = []
+/**
+ * forRootAsync 가 만들어낸 connection 들을 모아 onModuleDestroy 시점에
+ * 일괄 close 한다. 한 process 에 여러 NestJS app (병렬 테스트 등) 이 살아도
+ * registry 가 provider 로 인스턴스화되므로 app 별로 격리된다.
+ */
+@Injectable()
+export class TemporalConnectionRegistry implements OnModuleDestroy {
+    private connections: Connection[] = []
 
+    add(connection: Connection) {
+        this.connections.push(connection)
+    }
+
+    list(): readonly Connection[] {
+        return this.connections
+    }
+
+    async onModuleDestroy() {
+        const list = this.connections
+        this.connections = []
+        await Promise.all(list.map((c) => c.close().catch(() => undefined)))
+    }
+}
+
+@Module({})
+export class TemporalClientModule {
     static forRootAsync(
         options: TemporalClientModuleAsyncOptions,
         clientName?: string
@@ -22,12 +51,12 @@ export class TemporalClientModule implements OnModuleDestroy {
         const name = clientName ?? DEFAULT_TEMPORAL_CLIENT_NAME
 
         const connectionProvider: Provider = {
-            inject: options.inject ?? [],
+            inject: [TemporalConnectionRegistry, ...(options.inject ?? [])],
             provide: getTemporalConnectionToken(name),
-            useFactory: async (...args: any[]) => {
+            useFactory: async (registry: TemporalConnectionRegistry, ...args: any[]) => {
                 const config = await options.useFactory(...args)
                 const connection = await Connection.connect({ address: config.address })
-                TemporalClientModule.connections.push(connection)
+                registry.add(connection)
                 return connection
             }
         }
@@ -45,14 +74,7 @@ export class TemporalClientModule implements OnModuleDestroy {
             exports: [clientProvider],
             global: true,
             module: TemporalClientModule,
-            providers: [connectionProvider, clientProvider]
+            providers: [TemporalConnectionRegistry, connectionProvider, clientProvider]
         }
-    }
-
-    async onModuleDestroy() {
-        await Promise.all(
-            TemporalClientModule.connections.map((c) => c.close().catch(() => undefined))
-        )
-        TemporalClientModule.connections = []
     }
 }

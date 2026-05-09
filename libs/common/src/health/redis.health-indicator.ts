@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { HealthIndicatorService } from '@nestjs/terminus'
 import Redis from 'ioredis'
-import { defaultTo, getByPath } from '../utils'
+import { getByPath } from '../utils'
 
 @Injectable()
 export class RedisHealthIndicator {
@@ -15,9 +15,7 @@ export class RedisHealthIndicator {
 
             return indicator.up()
         } catch (error: unknown) {
-            const message = getByPath(error, 'message', String(error))
-
-            const reason = defaultTo(message, error)
+            const reason = getByPath(error, 'message', String(error))
             return indicator.down({ reason })
         }
     }
