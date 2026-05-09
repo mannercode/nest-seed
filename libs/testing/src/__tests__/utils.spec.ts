@@ -57,9 +57,9 @@ describe('step', () => {
 })
 
 describe('withTestId', () => {
-    it.todo('TEST_ID 환경변수가 없으면 withTestId 가 throw 한다')
+    it.todo('TEST_ID 환경변수가 없으면 예외를 던진다')
 })
 
 describe('oid', () => {
-    it.todo('oid(1) 이 "000000000000000000000001" 로 24자리 hex 로 패딩된다')
+    it.todo('oid(1)은 24자리 16진수 "000000000000000000000001"로 패딩된다')
 })

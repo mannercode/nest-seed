@@ -1,9 +1,9 @@
 import { withTestId } from '@mannercode/testing'
 import type { NatsPubSubServiceFixture } from './nats-pubsub.service.fixture'
 
-// fixture 가 connection 을 flush 해 둬서 측정 윈도우엔 순수 메시지 round-trip
-// 만 들어옴. NatsPubSubService.subscribe() 도 flush 후 리턴하므로 subscribe →
-// publish 사이 race 도 없음. 500ms 가 터지면 진짜 latency 회귀 신호로 본다.
+// fixture가 연결을 flush해 두므로 측정 구간에는 순수 메시지 왕복만 들어온다.
+// NatsPubSubService.subscribe()도 flush 후 리턴하므로 subscribe→publish 간 경합도 없다.
+// 500ms 초과는 진짜 지연 회귀 신호로 본다.
 async function waitFor(predicate: () => boolean, timeoutMs = 500) {
     const start = Date.now()
     while (!predicate()) {
@@ -25,7 +25,7 @@ describe('NatsPubSubService', () => {
     })
     afterEach(() => fix.teardown())
 
-    it('두 replica 가 같은 NATS 를 공유할 때 한쪽 publish 가 다른 쪽 subscriber 에 도달한다', async () => {
+    it('두 replica가 같은 NATS를 공유하면 한쪽의 publish가 다른 쪽 subscriber에 도달한다', async () => {
         const received: string[] = []
         await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
 
@@ -35,7 +35,7 @@ describe('NatsPubSubService', () => {
         expect(received).toEqual(['hello'])
     })
 
-    it('한 subject 에 여러 subscriber 가 있을 때 모두 메시지를 받는다', async () => {
+    it('한 subject에 여러 subscriber가 있으면 모두 메시지를 받는다', async () => {
         const received1: string[] = []
         const received2: string[] = []
 
@@ -50,7 +50,7 @@ describe('NatsPubSubService', () => {
         expect(received2).toEqual(['payload'])
     })
 
-    it('unsubscribe 후에는 해당 handler 에 메시지가 오지 않는다', async () => {
+    it('unsubscribe된 handler에는 더 이상 메시지가 오지 않는다', async () => {
         const received: string[] = []
         const handler = (msg: string) => received.push(msg)
 
@@ -62,14 +62,14 @@ describe('NatsPubSubService', () => {
         await fix.pubSubB.unsubscribe(subject, handler)
 
         await fix.pubSubA.publish(subject, 'after-unsub')
-        // "아무것도 도착하지 않았음" 을 보장할 신호가 없으므로 잠깐 대기 후 검사.
-        // 200ms 정착 후 — 50ms 는 부하 시 too tight, NATS round-trip 만 측정되도록 여유 줌.
+        // "아무 메시지도 오지 않음"을 보장할 신호가 없어 잠깐 대기 후 검사한다.
+        // 부하 시 50ms는 부족하므로 200ms 여유를 둔다.
         await new Promise((r) => setTimeout(r, 200))
 
         expect(received).toEqual(['before-unsub'])
     })
 
-    it('구독한 적 없는 subject 에 대한 unsubscribe 는 no-op 이어야 한다', async () => {
+    it('구독한 적 없는 subject에 unsubscribe해도 아무 일도 일어나지 않는다', async () => {
         await expect(fix.pubSubB.unsubscribe('never-subscribed', () => {})).resolves.toBeUndefined()
     })
 
@@ -88,7 +88,7 @@ describe('NatsPubSubService', () => {
         expect(received).toEqual(['still-listening'])
     })
 
-    it('queue group 을 지정하면 같은 그룹 안에서 한 인스턴스만 메시지를 받는다', async () => {
+    it('queue 그룹을 지정하면 같은 그룹에서 인스턴스 하나만 메시지를 받는다', async () => {
         const receivedA: string[] = []
         const receivedB: string[] = []
         const queue = withTestId('queue-group')
@@ -98,13 +98,13 @@ describe('NatsPubSubService', () => {
 
         await fix.pubSubA.publish(subject, 'queued')
         await waitFor(() => receivedA.length + receivedB.length > 0)
-        // 중복 전달이 있었다면 도달했을 시간을 두기 위해 잠깐 대기.
+        // 중복 전달이 있었다면 도달했을 시간만큼 잠깐 대기.
         await new Promise((r) => setTimeout(r, 50))
 
         expect(receivedA.length + receivedB.length).toBe(1)
     })
 
-    it('handler 한 개가 throw 해도 나머지 handler 로 전달이 막히지 않는다', async () => {
+    it('handler 하나가 예외를 던져도 나머지 handler에 전달이 막히지 않는다', async () => {
         const received: string[] = []
 
         await fix.pubSubB.subscribe(subject, () => {
@@ -118,32 +118,32 @@ describe('NatsPubSubService', () => {
         expect(received).toEqual(['after-throw'])
     })
 
-    describe('consume loop 의 iterator 가 throw 할 때', () => {
-        it.todo('logger.error 를 한 번 호출하고 loop 를 조용히 종료한다')
-        it.todo('throw 이후의 publish 는 더 이상 handler 에 전달되지 않는다')
+    describe('소비 루프의 이터레이터가 예외를 던지면', () => {
+        it.todo('logger.error를 한 번 호출하고 루프를 조용히 종료한다')
+        it.todo('이후의 publish는 더 이상 handler에 전달되지 않는다')
+        it.todo('끊긴 subject에 다시 구독하면 메시지가 정상 도달한다')
     })
 
-    it.todo(
-        '한 subject 의 모든 handler 를 unsubscribe 한 뒤 같은 subject 에 다시 subscribe 하면 publish 가 정상 도달한다'
-    )
-    it.todo('이미 제거된 handler 를 다시 unsubscribe 해도 throw 하지 않는다')
-    it.todo(
-        'subscribe 호출이 flush() 를 await 후에야 리턴해, 직후 publish 가 handler 에 도달한다 (flush race 차단 mechanism lock-down — commit 09a1909)'
-    )
+    it.todo('subject의 모든 handler를 해제한 뒤 다시 구독하면 publish가 정상 도달한다')
+    it.todo('이미 제거된 handler를 다시 unsubscribe해도 예외를 던지지 않는다')
+    it.todo('같은 subject에 등록된 여러 handler는 등록 순서대로 호출된다')
+    it.todo('subscribe 직후 publish한 메시지도 handler에 도달한다')
 })
 
 describe('InjectNatsPubSub', () => {
-    it.each([undefined, 'my-bus'])(
-        'name=%s 일 때 parameter decorator 를 반환한다',
-        async (name) => {
-            const { InjectNatsPubSub } = await import('../nats-pubsub.service')
-            expect(typeof InjectNatsPubSub(name)).toBe('function')
-        }
-    )
+    it('이름 없이 호출하면 파라미터 데코레이터를 반환한다', async () => {
+        const { InjectNatsPubSub } = await import('../nats-pubsub.service')
+        expect(typeof InjectNatsPubSub(undefined)).toBe('function')
+    })
+
+    it('이름과 함께 호출해도 파라미터 데코레이터를 반환한다', async () => {
+        const { InjectNatsPubSub } = await import('../nats-pubsub.service')
+        expect(typeof InjectNatsPubSub('my-bus')).toBe('function')
+    })
 })
 
 describe('NatsPubSubModule.register', () => {
-    it('기본 옵션으로도 DynamicModule 을 만들 수 있다', async () => {
+    it('기본 옵션으로 DynamicModule을 생성한다', async () => {
         const { NatsPubSubModule } = await import('../nats-pubsub.service')
         const dynamicModule = NatsPubSubModule.register()
         expect(dynamicModule.module).toBe(NatsPubSubModule)

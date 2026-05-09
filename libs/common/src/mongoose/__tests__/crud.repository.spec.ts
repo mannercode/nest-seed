@@ -67,9 +67,7 @@ describe('CrudRepository', () => {
             await expect(promise).rejects.toThrow()
         })
 
-        it.todo(
-            'inserted + matched + deleted 의 합이 docs.length 와 다르면 Require.equals 가 throw 한다'
-        )
+        it.todo('저장된 문서 수가 입력 수와 다르면 예외를 던진다')
     })
 
     describe('findWithPagination', () => {
@@ -123,7 +121,7 @@ describe('CrudRepository', () => {
             await expect(promise).rejects.toThrow(fix.BadRequestException)
         })
 
-        it('maxLimit을 초과한 size에 대해 BadRequestException을 던진다', async () => {
+        it('size가 maxLimit을 초과하면 BadRequestException을 던진다', async () => {
             const size = maxSizeValue + 1
 
             const promise = fix.repository.findWithPagination({ pagination: { size } })
@@ -131,14 +129,12 @@ describe('CrudRepository', () => {
             await expect(promise).rejects.toThrow(fix.BadRequestException)
         })
 
-        describe('size가 제공되지 않을 때', () => {
-            it('기본 size 값을 사용한다', async () => {
-                const { size } = await fix.repository.findWithPagination({
-                    pagination: { orderby: { direction: OrderDirection.Desc, name: 'name' } }
-                })
-
-                expect(size).toEqual(maxSizeValue)
+        it('size가 없으면 기본값을 사용한다', async () => {
+            const { size } = await fix.repository.findWithPagination({
+                pagination: { orderby: { direction: OrderDirection.Desc, name: 'name' } }
             })
+
+            expect(size).toEqual(maxSizeValue)
         })
 
         it('설정된 조건을 적용한다', async () => {
@@ -165,13 +161,11 @@ describe('CrudRepository', () => {
             ])
         })
 
+        it.todo('필터가 비어 있으면 soft-deleted 문서는 total에 포함되고 items에서는 제외된다')
         it.todo(
-            '빈 filter 에서 estimatedDocumentCount 의 트레이드오프대로 soft-deleted 행이 total 에는 포함되고 items 에서는 제외된다'
+            '필터가 비어 있으면 estimatedDocumentCount만 호출되고 countDocuments는 호출되지 않는다'
         )
-        it.todo(
-            '빈 filter 일 때 model.estimatedDocumentCount() 가 호출되고 model.countDocuments() 는 호출되지 않는다 (perf 최적화 분기 lock-down)'
-        )
-        it.todo('비어있지 않은 filter 일 때 model.countDocuments() 가 filter 와 함께 호출된다')
+        it.todo('필터가 비어 있지 않으면 countDocuments가 필터와 함께 호출된다')
     })
 
     describe('allExist', () => {
@@ -182,24 +176,24 @@ describe('CrudRepository', () => {
             samples = toDtos(docs)
         })
 
-        it('모든 id가 존재할 때 true를 반환한다', async () => {
+        it('모든 id가 존재하면 true를 반환한다', async () => {
             const exists = await fix.repository.allExist(pickIds(samples))
             expect(exists).toBe(true)
         })
 
-        it('id에 중복이 포함될 때 true를 반환한다', async () => {
+        it('id에 중복이 있어도 true를 반환한다', async () => {
             const [first] = samples
             const exists = await fix.repository.allExist([first.id, first.id])
 
             expect(exists).toBe(true)
         })
 
-        it('id 중 하나라도 없을 때 false를 반환한다', async () => {
+        it('id 중 하나라도 없으면 false를 반환한다', async () => {
             const exists = await fix.repository.allExist([nullObjectId])
             expect(exists).toBe(false)
         })
 
-        it('id 배열이 비어 있을 때 true를 반환한다', async () => {
+        it('id 배열이 비어 있으면 true를 반환한다', async () => {
             const exists = await fix.repository.allExist([])
             expect(exists).toBe(true)
         })
@@ -219,7 +213,7 @@ describe('CrudRepository', () => {
             expect(toDto(doc)).toEqual(sample)
         })
 
-        it('없는 id에 대해 null을 반환한다', async () => {
+        it('id가 존재하지 않으면 null을 반환한다', async () => {
             const doc = await fix.repository.findById(nullObjectId)
 
             expect(doc).toBeNull()
@@ -260,7 +254,7 @@ describe('CrudRepository', () => {
             expect(toDto(doc)).toEqual(sample)
         })
 
-        it('없는 id에 대해 NotFoundException을 던진다', async () => {
+        it('id가 존재하지 않으면 NotFoundException을 던진다', async () => {
             const promise = fix.repository.getById(nullObjectId)
 
             await expect(promise).rejects.toThrow(fix.NotFoundException)
@@ -275,26 +269,20 @@ describe('CrudRepository', () => {
             samples = toDtos(docs)
         })
 
-        describe('모든 id가 존재할 때', () => {
-            it('문서를 반환한다', async () => {
-                const ids = pickIds(samples)
-                const docs = await fix.repository.getByIds(ids)
+        it('모든 id가 존재하면 문서를 반환한다', async () => {
+            const ids = pickIds(samples)
+            const docs = await fix.repository.getByIds(ids)
 
-                expectEqualUnsorted(toDtos(docs), samples)
-            })
+            expectEqualUnsorted(toDtos(docs), samples)
         })
 
-        describe('id 중 하나라도 없을 때', () => {
-            it('NotFoundException을 던진다', async () => {
-                const promise = fix.repository.getByIds([nullObjectId])
+        it('id 중 하나라도 없으면 NotFoundException을 던진다', async () => {
+            const promise = fix.repository.getByIds([nullObjectId])
 
-                await expect(promise).rejects.toThrow(fix.NotFoundException)
-            })
+            await expect(promise).rejects.toThrow(fix.NotFoundException)
         })
 
-        describe('중복된 id 가 입력으로 들어왔을 때', () => {
-            it.todo('Assume.equalLength 가 throw 한다')
-        })
+        it.todo('중복된 id가 입력되면 예외를 던진다')
     })
 
     describe('deleteById', () => {
@@ -312,7 +300,7 @@ describe('CrudRepository', () => {
             expect(doc).toBeNull()
         })
 
-        it('없는 id에 대해 NotFoundException을 던진다', async () => {
+        it('id가 존재하지 않으면 NotFoundException을 던진다', async () => {
             const promise = fix.repository.deleteById(nullObjectId)
 
             await expect(promise).rejects.toThrow(fix.NotFoundException)
@@ -327,42 +315,36 @@ describe('CrudRepository', () => {
             samples = toDtos(docs)
         })
 
-        describe('모든 id가 존재할 때', () => {
-            it('문서를 삭제한다', async () => {
-                const ids = pickIds(samples.slice(5, 10))
-                const result = await fix.repository.deleteByIds(ids)
-                expect(result).toEqual({ deletedCount: ids.length })
+        it('모든 id가 존재하면 문서를 삭제한다', async () => {
+            const ids = pickIds(samples.slice(5, 10))
+            const result = await fix.repository.deleteByIds(ids)
+            expect(result).toEqual({ deletedCount: ids.length })
 
-                const docs = await fix.repository.findByIds(ids)
-                expect(docs).toHaveLength(0)
-            })
+            const docs = await fix.repository.findByIds(ids)
+            expect(docs).toHaveLength(0)
         })
 
-        describe('id 중 하나라도 없을 때', () => {
-            it('없는 id는 무시한다', async () => {
-                const promise = fix.repository.deleteByIds([nullObjectId])
-                await expect(promise).resolves.toEqual({ deletedCount: 0 })
-            })
+        it('없는 id는 무시한다', async () => {
+            const promise = fix.repository.deleteByIds([nullObjectId])
+            await expect(promise).resolves.toEqual({ deletedCount: 0 })
         })
     })
 })
 
 describe('leanToPublic', () => {
-    it('_id 가 있을 때 id 필드를 추가한다', () => {
+    it('_id가 있으면 id 필드를 추가한다', () => {
         const objectId = new Types.ObjectId()
         const result = leanToPublic<{ _id: Types.ObjectId; id?: string }>({ _id: objectId })
         expect(result.id).toBe(String(objectId))
     })
 
-    it('_id 가 nullish 이면 id 를 추가하지 않는다', () => {
+    it('_id가 없거나 null이면 id를 추가하지 않는다', () => {
         const result = leanToPublic<{ _id?: unknown; id?: string }>({})
         expect(result.id).toBeUndefined()
     })
 
-    it.todo('입력 객체를 in-place 변경하며 같은 참조를 돌려준다')
-    it.todo(
-        'lean 호출이 virtuals 옵션 없이 실행된다 (mongoose-lean-virtuals 비활성 — perf 가정 lock-down)'
-    )
-    it.todo('lean 결과에 id 필드가 자동으로 생기지 않는다 (leanToPublic 의 존재 이유 lock-down)')
-    it.todo('lean 결과의 _id 는 ObjectId 인스턴스로 유지되어 toString() 비교가 가능하다')
+    it.todo('입력 객체를 직접 변경하고 같은 참조를 반환한다')
+    it.todo('virtuals 옵션 없이 lean으로 호출되어야 한다')
+    it.todo('lean 결과에는 id 필드가 자동 생성되지 않는다')
+    it.todo('lean 결과의 _id는 ObjectId 인스턴스로 유지된다')
 })

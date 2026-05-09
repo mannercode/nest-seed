@@ -1,5 +1,5 @@
-describe('error handling', () => {
-    describe('async functions', () => {
+describe('예외 처리', () => {
+    describe('async 함수', () => {
         it('값으로 resolve된다', async () => {
             const returnValue = async () => 'ok'
 
@@ -27,7 +27,7 @@ describe('error handling', () => {
         })
     })
 
-    describe('sync functions', () => {
+    describe('동기 함수', () => {
         it('예외를 던지지 않는다', () => {
             const returnValue = () => 'ok'
 

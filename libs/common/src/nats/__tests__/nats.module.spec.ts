@@ -4,16 +4,19 @@ import { NatsModule } from '../nats.module'
 import { DEFAULT_NATS_CONNECTION_NAME, getNatsConnectionToken } from '../nats.tokens'
 
 describe('getNatsConnectionToken', () => {
-    it.each([
-        [undefined, `NatsConnection:${DEFAULT_NATS_CONNECTION_NAME}`],
-        ['foo', 'NatsConnection:foo']
-    ])('name=%s 일 때 connection 토큰을 만든다', (name, expected) => {
-        expect(getNatsConnectionToken(name)).toBe(expected)
+    it('이름이 없으면 기본 이름으로 토큰을 만든다', () => {
+        expect(getNatsConnectionToken(undefined)).toBe(
+            `NatsConnection:${DEFAULT_NATS_CONNECTION_NAME}`
+        )
+    })
+
+    it('이름이 있으면 해당 이름으로 토큰을 만든다', () => {
+        expect(getNatsConnectionToken('foo')).toBe('NatsConnection:foo')
     })
 })
 
 describe('NatsModule', () => {
-    it('forRoot 가 connection 을 글로벌 provider 로 노출한다', async () => {
+    it('forRoot는 connection을 글로벌 provider로 노출한다', async () => {
         const ctx = await createTestContext({
             imports: [
                 NatsModule.forRoot(
@@ -31,7 +34,7 @@ describe('NatsModule', () => {
         }
     })
 
-    it('forRootAsync 가 useFactory 결과로 connection 을 만든다', async () => {
+    it('forRootAsync는 useFactory의 반환값으로 connection을 만든다', async () => {
         const ctx = await createTestContext({
             imports: [
                 NatsModule.forRootAsync(

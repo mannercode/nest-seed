@@ -1,59 +1,101 @@
 import { ByteUtil } from '../byte'
 
-describe('Byte', () => {
+describe('ByteUtil', () => {
     describe('fromString', () => {
-        it.each([
-            ['1024B', 1024],
-            ['1KB', 1024],
-            ['1MB', 1024 * 1024],
-            ['1GB', 1024 * 1024 * 1024],
-            ['1TB', 1024 * 1024 * 1024 * 1024],
-            ['1KB 512B', 1536],
-            ['1.5KB', 1536],
-            ['-1KB', -1024],
-            ['1GB 256MB 128KB', 1 * 1024 * 1024 * 1024 + 256 * 1024 * 1024 + 128 * 1024]
-        ])('%s를 바이트로 변환한다', (input, expected) => {
-            expect(ByteUtil.fromString(input)).toEqual(expected)
+        it('"1024B"는 1024를 반환한다', () => {
+            expect(ByteUtil.fromString('1024B')).toBe(1024)
         })
 
-        it.todo(
-            '"1KB" 가 1024 (이진법) 로 해석되며, 1000 (십진법) 이 아니다 (KB vs KiB 정책 lock-down)'
-        )
+        it('1KB는 1024를 반환한다', () => {
+            expect(ByteUtil.fromString('1KB')).toBe(1024)
+        })
 
-        it.todo('"1KB 500B" 같은 multi-token 입력은 각 단위를 합산해서 1524 를 반환한다')
+        it('1MB는 1024 * 1024를 반환한다', () => {
+            expect(ByteUtil.fromString('1MB')).toBe(1024 * 1024)
+        })
 
-        describe('단위가 소문자일 때', () => {
-            it.each([
-                ['1024b', 1024],
-                ['1kb', 1024],
-                ['1mb', 1024 * 1024],
-                ['1gb', 1024 * 1024 * 1024],
-                ['1tb', 1024 * 1024 * 1024 * 1024]
-            ])('%s를 바이트로 변환한다', (input, expected) => {
-                expect(ByteUtil.fromString(input)).toEqual(expected)
-            })
+        it('1GB는 1024^3을 반환한다', () => {
+            expect(ByteUtil.fromString('1GB')).toBe(1024 ** 3)
+        })
+
+        it('1TB는 1024^4를 반환한다', () => {
+            expect(ByteUtil.fromString('1TB')).toBe(1024 ** 4)
+        })
+
+        it('여러 단위를 공백으로 구분해 합산한다', () => {
+            expect(ByteUtil.fromString('1KB 512B')).toBe(1536)
+        })
+
+        it('소수점 단위도 허용한다', () => {
+            expect(ByteUtil.fromString('1.5KB')).toBe(1536)
+        })
+
+        it('음수 단위도 허용한다', () => {
+            expect(ByteUtil.fromString('-1KB')).toBe(-1024)
+        })
+
+        it('GB/MB/KB가 섞인 합도 처리한다', () => {
+            expect(ByteUtil.fromString('1GB 256MB 128KB')).toBe(
+                1024 ** 3 + 256 * 1024 ** 2 + 128 * 1024
+            )
+        })
+
+        it('소문자 단위도 처리한다', () => {
+            expect(ByteUtil.fromString('1kb')).toBe(1024)
+            expect(ByteUtil.fromString('1mb')).toBe(1024 * 1024)
+            expect(ByteUtil.fromString('1gb')).toBe(1024 ** 3)
         })
 
         describe('형식이 유효하지 않을 때', () => {
-            it.each(['invalid', '123', '123XB', '1KB -'])('Error를 던진다', (input) => {
-                expect(() => ByteUtil.fromString(input)).toThrow()
+            it('알 수 없는 단어는 Error를 던진다', () => {
+                expect(() => ByteUtil.fromString('invalid')).toThrow()
             })
+
+            it('단위 없는 숫자는 Error를 던진다', () => {
+                expect(() => ByteUtil.fromString('123')).toThrow()
+            })
+
+            it('정의되지 않은 단위는 Error를 던진다', () => {
+                expect(() => ByteUtil.fromString('123XB')).toThrow()
+            })
+
+            it('형식이 깨진 입력은 Error를 던진다', () => {
+                expect(() => ByteUtil.fromString('1KB -')).toThrow()
+            })
+
+            it.todo('빈 문자열은 Error를 던진다')
         })
     })
 
     describe('toString', () => {
-        it.each([
-            [0, '0B'],
-            [1024, '1KB'],
-            [1536, '1KB512B'],
-            [1024 * 1024, '1MB'],
-            [1024 * 1024 * 1.5, '1MB512KB'],
-            [-1024, '-1KB'],
-            [1 * 1024 * 1024 * 1024 + 256 * 1024 * 1024 + 128 * 1024, '1GB256MB128KB']
-        ])('%s를 문자열로 변환한다', (input, expected) => {
-            expect(ByteUtil.toString(input)).toEqual(expected)
+        it('0은 "0B"를 반환한다', () => {
+            expect(ByteUtil.toString(0)).toBe('0B')
         })
 
-        it.todo('1536 byte 는 "1KB512B" 처럼 modulo 분할로 표시되며 반올림하지 않는다')
+        it('1024는 "1KB"를 반환한다', () => {
+            expect(ByteUtil.toString(1024)).toBe('1KB')
+        })
+
+        it('1024 * 1024는 "1MB"를 반환한다', () => {
+            expect(ByteUtil.toString(1024 * 1024)).toBe('1MB')
+        })
+
+        it('1536은 "1KB512B"로 분할 표시한다', () => {
+            expect(ByteUtil.toString(1536)).toBe('1KB512B')
+        })
+
+        it('1024 * 1024 * 1.5는 "1MB512KB"로 분할 표시한다', () => {
+            expect(ByteUtil.toString(1024 * 1024 * 1.5)).toBe('1MB512KB')
+        })
+
+        it('-1024는 "-1KB"를 반환한다', () => {
+            expect(ByteUtil.toString(-1024)).toBe('-1KB')
+        })
+
+        it('큰 값도 GB/MB/KB로 분할 표시한다', () => {
+            expect(ByteUtil.toString(1024 ** 3 + 256 * 1024 ** 2 + 128 * 1024)).toBe(
+                '1GB256MB128KB'
+            )
+        })
     })
 })

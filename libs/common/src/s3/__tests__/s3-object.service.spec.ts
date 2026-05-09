@@ -92,7 +92,7 @@ describe('S3ObjectService', () => {
             expect(badResponse.ok).toBe(false)
         })
 
-        describe('프리사인드 POST가 반환될 때', () => {
+        describe('contentLength 제약이 걸린 프리사인드 POST', () => {
             let presigned: { fields: Record<string, string>; url: string }
             const uploadBody = Buffer.from('hello')
 
@@ -106,7 +106,7 @@ describe('S3ObjectService', () => {
                 })
             })
 
-            it('프리사인드 POST로 업로드를 허용한다', async () => {
+            it('업로드를 허용한다', async () => {
                 const form = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
 
                 const response = await fetch(presigned.url, { body: form, method: 'POST' })
@@ -114,7 +114,7 @@ describe('S3ObjectService', () => {
                 expect(response.ok).toBe(true)
             })
 
-            it('`contentType`이 일치하지 않으면 실패한다', async () => {
+            it('contentType이 일치하지 않으면 실패한다', async () => {
                 const form = buildPresignedPostForm(
                     { ...presigned.fields, 'Content-Type': 'image/png' },
                     uploadBody,
@@ -126,7 +126,7 @@ describe('S3ObjectService', () => {
                 expect(response.ok).toBe(false)
             })
 
-            it('`contentLength`가 일치하지 않으면 실패한다', async () => {
+            it('contentLength가 일치하지 않으면 실패한다', async () => {
                 const { fields, url } = await fix.s3Service.presignUploadPost({
                     contentType: 'text/plain',
                     expiresInSec: 60,
@@ -160,7 +160,7 @@ describe('S3ObjectService', () => {
                 expect(downloadUrl).toEqual(expect.any(String))
             })
 
-            it('downloadUrl을 통해 다운로드를 허용한다', async () => {
+            it('downloadUrl로 다운로드할 수 있다', async () => {
                 const downloadUrl = await fix.s3Service.presignDownloadUrl({
                     expiresInSec: 60,
                     key
@@ -175,7 +175,7 @@ describe('S3ObjectService', () => {
                 expect(buffer.toString('utf8')).toBe(body)
             })
 
-            it('파일명이 제공되면 content disposition을 덮어쓴다', async () => {
+            it('filename을 지정하면 Content-Disposition을 덮어쓴다', async () => {
                 const filename = 'report.txt'
                 const downloadUrl = await fix.s3Service.presignDownloadUrl({
                     expiresInSec: 60,
@@ -191,16 +191,14 @@ describe('S3ObjectService', () => {
             })
         })
 
-        describe('객체가 존재하지 않을 때', () => {
-            it('404 Not Found를 반환한다', async () => {
-                const downloadUrl = await fix.s3Service.presignDownloadUrl({
-                    expiresInSec: 60,
-                    key: 'not-exists'
-                })
-
-                const response = await fetch(downloadUrl)
-                expect(response.status).toBe(404)
+        it('객체가 존재하지 않으면 다운로드 시 404를 반환한다', async () => {
+            const downloadUrl = await fix.s3Service.presignDownloadUrl({
+                expiresInSec: 60,
+                key: 'not-exists'
             })
+
+            const response = await fetch(downloadUrl)
+            expect(response.status).toBe(404)
         })
     })
 
@@ -230,7 +228,7 @@ describe('S3ObjectService', () => {
                 expect(isCompleted).toBe(true)
             })
 
-            it('컨텐츠 길이가 일치하지 않으면 false를 반환한다', async () => {
+            it('contentLength가 일치하지 않으면 false를 반환한다', async () => {
                 const isCompleted = await fix.s3Service.isUploadComplete({
                     contentLength: s3Object.data.byteLength + 1,
                     key
@@ -239,7 +237,7 @@ describe('S3ObjectService', () => {
                 expect(isCompleted).toBe(false)
             })
 
-            it('컨텐츠 타입이 일치하지 않으면 false를 반환한다', async () => {
+            it('contentType이 일치하지 않으면 false를 반환한다', async () => {
                 const isCompleted = await fix.s3Service.isUploadComplete({
                     contentType: 'image/png',
                     key
@@ -249,69 +247,53 @@ describe('S3ObjectService', () => {
             })
         })
 
-        describe('객체가 존재하지 않을 때', () => {
-            it('false를 반환한다', async () => {
-                const isCompleted = await fix.s3Service.isUploadComplete({ key: 'not-exists' })
+        it('객체가 존재하지 않으면 false를 반환한다', async () => {
+            const isCompleted = await fix.s3Service.isUploadComplete({ key: 'not-exists' })
 
-                expect(isCompleted).toBe(false)
-            })
+            expect(isCompleted).toBe(false)
         })
 
-        describe('컨텐츠 타입이 기대되지만 누락된 때', () => {
-            it('false를 반환한다', async () => {
-                jest.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
-                    ContentLength: 1
-                })
+        it('contentType을 기대했는데 응답에 없으면 false를 반환한다', async () => {
+            jest.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({ ContentLength: 1 })
 
-                const isCompleted = await fix.s3Service.isUploadComplete({
-                    contentType: 'text/plain',
-                    key: 'key'
-                })
-
-                expect(isCompleted).toBe(false)
+            const isCompleted = await fix.s3Service.isUploadComplete({
+                contentType: 'text/plain',
+                key: 'key'
             })
+
+            expect(isCompleted).toBe(false)
         })
 
-        describe('요청이 예기치 않게 실패할 때', () => {
-            beforeEach(async () => {
-                jest.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(
-                    new Error('unexpected')
-                )
-            })
+        it('S3 요청이 예기치 않게 실패하면 예외를 던진다', async () => {
+            jest.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(
+                new Error('unexpected')
+            )
 
-            it('오류를 던진다', async () => {
-                const promise = fix.s3Service.isUploadComplete({ key: 'key' })
+            const promise = fix.s3Service.isUploadComplete({ key: 'key' })
 
-                await expect(promise).rejects.toThrow('unexpected')
-            })
+            await expect(promise).rejects.toThrow('unexpected')
         })
 
-        it.todo('HEAD 응답이 404 가 아닌 (예: 403, 500) 에러면 그대로 throw 한다')
-        it.todo('error 객체에 $metadata 가 undefined 이면 (404 비교가 불가) 그대로 throw 된다')
+        it.todo('HEAD 응답이 404가 아닌 에러(예: 403, 500)면 예외를 그대로 던진다')
+        it.todo('error 객체에 $metadata가 undefined여도 예외를 그대로 던진다')
+        it.todo('isUploadComplete가 예외를 던진 뒤에도 같은 인스턴스의 다음 호출은 정상 동작한다')
     })
 
     describe('deleteObject', () => {
-        describe('객체가 존재할 때', () => {
+        it('객체가 존재하면 no-content와 함께 키를 반환한다', async () => {
             const key = 'foo/data2.json'
+            await uploadObject(fix.s3Service, key, 'upload body')
 
-            beforeEach(async () => {
-                await uploadObject(fix.s3Service, key, 'upload body')
-            })
+            const result = await fix.s3Service.deleteObject(key)
 
-            it('no-content 상태와 삭제된 키를 반환한다', async () => {
-                const result = await fix.s3Service.deleteObject(key)
-
-                expect(result).toEqual({ key, status: HttpStatus.NO_CONTENT })
-            })
+            expect(result).toEqual({ key, status: HttpStatus.NO_CONTENT })
         })
 
-        describe('객체가 존재하지 않을 때', () => {
-            it('no-content 상태와 삭제된 키를 반환한다', async () => {
-                const key = 'not-exist-key'
-                const result = await fix.s3Service.deleteObject(key)
+        it('객체가 존재하지 않아도 no-content와 함께 키를 반환한다', async () => {
+            const key = 'not-exist-key'
+            const result = await fix.s3Service.deleteObject(key)
 
-                expect(result).toEqual({ key, status: HttpStatus.NO_CONTENT })
-            })
+            expect(result).toEqual({ key, status: HttpStatus.NO_CONTENT })
         })
     })
 
@@ -322,122 +304,100 @@ describe('S3ObjectService', () => {
             await Promise.all(keys.map((key) => uploadObject(fix.s3Service, key, 'upload body')))
         })
 
-        describe('옵션이 제공되지 않을 때', () => {
-            it('모든 객체를 나열한다', async () => {
-                const { contents } = await fix.s3Service.listObjects({})
+        it('옵션이 없으면 모든 객체를 반환한다', async () => {
+            const { contents } = await fix.s3Service.listObjects({})
 
-                expect(contents).toHaveLength(keys.length)
-            })
-
-            it('키가 없는 객체는 제외한다', async () => {
-                const sendSpy = jest.spyOn(toAny(fix.s3Service).s3, 'send')
-                sendSpy.mockResolvedValueOnce({
-                    Contents: [
-                        { Key: 'a.txt', LastModified: new Date('2024-01-01T00:00:00.000Z') },
-                        { LastModified: new Date('2024-01-01T00:00:00.000Z') }
-                    ]
-                })
-
-                const { contents } = await fix.s3Service.listObjects({})
-
-                expect(contents).toEqual([
-                    {
-                        eTag: undefined,
-                        key: 'a.txt',
-                        lastModified: new Date('2024-01-01T00:00:00.000Z'),
-                        size: undefined
-                    }
-                ])
-            })
+            expect(contents).toHaveLength(keys.length)
         })
 
-        describe('`prefix`가 제공될 때', () => {
-            it('지정한 prefix로 시작하는 키의 객체를 반환한다', async () => {
-                const { contents } = await fix.s3Service.listObjects({ prefix: 'b/' })
-                const listedKeys = contents.map((object) => object.key)
-                expect(listedKeys).toEqual(expect.arrayContaining(['b/c.txt', 'b/d.txt']))
-                expect(listedKeys).not.toContain('a.txt')
+        it('키가 없는 객체는 제외한다', async () => {
+            const sendSpy = jest.spyOn(toAny(fix.s3Service).s3, 'send')
+            sendSpy.mockResolvedValueOnce({
+                Contents: [
+                    { Key: 'a.txt', LastModified: new Date('2024-01-01T00:00:00.000Z') },
+                    { LastModified: new Date('2024-01-01T00:00:00.000Z') }
+                ]
             })
 
-            describe('prefix와 일치하는 객체가 없을 때', () => {
-                it('빈 contents를 반환한다', async () => {
-                    const { contents } = await fix.s3Service.listObjects({ prefix: 'nonexistent' })
+            const { contents } = await fix.s3Service.listObjects({})
 
-                    expect(contents).toHaveLength(0)
-                })
-            })
+            expect(contents).toEqual([
+                {
+                    eTag: undefined,
+                    key: 'a.txt',
+                    lastModified: new Date('2024-01-01T00:00:00.000Z'),
+                    size: undefined
+                }
+            ])
         })
 
-        describe('`maxKeys`가 제공될 때', () => {
-            it('결과를 제한한다', async () => {
-                const maxKeys = 2
-                const { contents } = await fix.s3Service.listObjects({ maxKeys })
-
-                expect(contents).toHaveLength(maxKeys)
-            })
+        it('prefix를 지정하면 해당 prefix로 시작하는 객체만 반환한다', async () => {
+            const { contents } = await fix.s3Service.listObjects({ prefix: 'b/' })
+            const listedKeys = contents.map((object) => object.key)
+            expect(listedKeys).toEqual(expect.arrayContaining(['b/c.txt', 'b/d.txt']))
+            expect(listedKeys).not.toContain('a.txt')
         })
 
-        describe('`nextToken`이 제공될 때', () => {
+        it('prefix와 일치하는 객체가 없으면 빈 contents를 반환한다', async () => {
+            const { contents } = await fix.s3Service.listObjects({ prefix: 'nonexistent' })
+
+            expect(contents).toHaveLength(0)
+        })
+
+        it('maxKeys를 지정하면 결과 개수를 제한한다', async () => {
             const maxKeys = 2
-            let nextToken: string | undefined
+            const { contents } = await fix.s3Service.listObjects({ maxKeys })
 
-            beforeEach(async () => {
-                const listResult = await fix.s3Service.listObjects({ maxKeys })
-                nextToken = listResult.nextToken
-            })
-
-            it('다음 페이지의 객체를 반환한다', async () => {
-                const { contents } = await fix.s3Service.listObjects({ maxKeys, nextToken })
-
-                expect(contents).toHaveLength(keys.length - maxKeys)
-            })
+            expect(contents).toHaveLength(maxKeys)
         })
 
-        describe('`delimiter`가 제공될 때', () => {
-            it('최상위 객체와 공통 prefix를 반환한다', async () => {
-                const { commonPrefixes, contents } = await fix.s3Service.listObjects({
-                    delimiter: '/'
-                })
+        it('nextToken을 지정하면 다음 페이지를 반환한다', async () => {
+            const maxKeys = 2
+            const listResult = await fix.s3Service.listObjects({ maxKeys })
+            const nextToken = listResult.nextToken
 
-                const listedKeys = contents.map((object) => object.key)
+            const { contents } = await fix.s3Service.listObjects({ maxKeys, nextToken })
 
-                expect(listedKeys).toEqual(expect.arrayContaining(['a.txt']))
-                expect(listedKeys).not.toEqual(expect.arrayContaining(['b/c.txt', 'b/d.txt']))
-                expect(contents).toHaveLength(1)
-
-                expect(commonPrefixes).toEqual(expect.arrayContaining(['b/']))
-            })
-
-            it('prefix 아래의 직접 자식만 반환한다', async () => {
-                const { commonPrefixes, contents } = await fix.s3Service.listObjects({
-                    delimiter: '/',
-                    prefix: 'b/'
-                })
-
-                const listedKeys = contents.map((object) => object.key)
-
-                expect(listedKeys).toEqual(expect.arrayContaining(['b/c.txt', 'b/d.txt']))
-                expect(listedKeys).not.toEqual(expect.arrayContaining(['a.txt']))
-
-                expect(commonPrefixes ?? []).toHaveLength(0)
-            })
+            expect(contents).toHaveLength(keys.length - maxKeys)
         })
 
-        it.todo(
-            'AWS S3 가 ETag 를 quoted 형태 ("abc123") 로 돌려줘도 양 끝 quote 가 stripping 된 값을 반환한다'
-        )
+        it('delimiter를 지정하면 최상위 객체와 공통 prefix를 반환한다', async () => {
+            const { commonPrefixes, contents } = await fix.s3Service.listObjects({ delimiter: '/' })
+
+            const listedKeys = contents.map((object) => object.key)
+
+            expect(listedKeys).toEqual(expect.arrayContaining(['a.txt']))
+            expect(listedKeys).not.toEqual(expect.arrayContaining(['b/c.txt', 'b/d.txt']))
+            expect(contents).toHaveLength(1)
+
+            expect(commonPrefixes).toEqual(expect.arrayContaining(['b/']))
+        })
+
+        it('delimiter와 prefix를 함께 주면 prefix 바로 아래의 자식만 반환한다', async () => {
+            const { commonPrefixes, contents } = await fix.s3Service.listObjects({
+                delimiter: '/',
+                prefix: 'b/'
+            })
+
+            const listedKeys = contents.map((object) => object.key)
+
+            expect(listedKeys).toEqual(expect.arrayContaining(['b/c.txt', 'b/d.txt']))
+            expect(listedKeys).not.toEqual(expect.arrayContaining(['a.txt']))
+
+            expect(commonPrefixes ?? []).toHaveLength(0)
+        })
+
+        it.todo('S3가 따옴표가 붙은 ETag를 반환해도 따옴표를 제거한 값으로 반환한다')
     })
 
-    it.todo(
-        'newObjectIdString() 으로 생성된 key 10000 개에 중복이 없다 (ObjectId 12-byte entropy 기반 collision 안전성)'
-    )
+    it.todo('newObjectIdString()으로 생성된 키 10000개에 중복이 없다')
 
     describe('onModuleDestroy', () => {
-        it.todo('s3.destroy() 가 호출되어 connection pool 누수를 막는다')
+        it.todo('모듈 종료 시 S3 연결을 정리한다')
     })
 })
 
 describe('normalizeContentType', () => {
-    it.todo('charset 파라미터가 붙은 content-type 의 base type 만 비교한다')
-    it.todo('대문자 / 공백이 섞인 content-type 도 정규화 후 비교한다')
+    it.todo('charset이 붙은 content-type은 base 타입만 비교한다')
+    it.todo('대소문자나 공백이 섞인 content-type도 정규화 후 비교한다')
 })

@@ -14,8 +14,8 @@ jest.mock('@nestjs/common', () => {
 
 jest.mock('./mocking.fixture', () => ({ getGreeting: jest.fn(), HelloClass: jest.fn() }))
 
-describe('jest.mock examples', () => {
-    it('모듈을 목킹한다', () => {
+describe('jest.mock 예제', () => {
+    it('모듈을 mock으로 대체한다', () => {
         ;(Logger.verbose as unknown as jest.Mock).mockImplementation(() => undefined)
 
         Logger.verbose('arg1', 'arg2')
@@ -23,7 +23,7 @@ describe('jest.mock examples', () => {
         expect(Logger.verbose).toHaveBeenCalledWith('arg1', 'arg2')
     })
 
-    it('클래스를 목킹한다', () => {
+    it('클래스를 mock으로 대체한다', () => {
         ;(HelloClass as jest.Mock).mockImplementation(() => ({
             getHello: jest.fn().mockReturnValue('Mocked getHello')
         }))
@@ -34,7 +34,7 @@ describe('jest.mock examples', () => {
         expect(instance.getHello).toHaveBeenCalledTimes(1)
     })
 
-    it('함수를 목킹한다', () => {
+    it('함수를 mock으로 대체한다', () => {
         ;(getGreeting as jest.Mock).mockReturnValue('Mocked getGreeting')
 
         expect(getGreeting()).toEqual('Mocked getGreeting')

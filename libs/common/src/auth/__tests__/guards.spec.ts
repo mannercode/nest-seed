@@ -46,11 +46,11 @@ describe('Auth Guards', () => {
                 .created()
         })
 
-        it.todo('Authorization header 가 "Bearer" 만 있고 token 부분이 없으면 401 을 던진다')
+        it.todo('Authorization 헤더가 "Bearer"만 있고 토큰이 없으면 401을 반환한다')
     })
 
-    describe('JwtAuthGuard (default isUsingLocalAuth)', () => {
-        it('isUsingLocalAuth 미구현 시 LocalAuthGuard가 있어도 JWT 검증한다', async () => {
+    describe('JwtAuthGuard (isUsingLocalAuth 기본 구현)', () => {
+        it('isUsingLocalAuth를 재정의하지 않으면 LocalAuthGuard가 있어도 JWT를 검증한다', async () => {
             await fix.httpClient
                 .post('/default/login')
                 .body({ email: 'test@test.com', password: 'pass' })
@@ -58,8 +58,8 @@ describe('Auth Guards', () => {
         })
     })
 
-    describe('Public decorator', () => {
-        it('@Public() 데코레이터가 있는 엔드포인트는 토큰 없이 접근 가능하다', async () => {
+    describe('@Public 데코레이터', () => {
+        it('@Public이 붙은 엔드포인트는 토큰 없이 접근할 수 있다', async () => {
             await fix.httpClient.get('/jwt/public').ok()
         })
     })
@@ -83,24 +83,22 @@ describe('Auth Guards', () => {
             await fix.httpClient.post('/local/login').body({}).unauthorized()
         })
 
-        it('usernameField/passwordField 기본값(username/password)으로 로그인할 수 있다', async () => {
+        it('usernameField/passwordField 기본값은 username/password이다', async () => {
             await fix.httpClient
                 .post('/local/login-default')
                 .body({ username: 'admin', password: 'pass' })
                 .created()
         })
 
-        it.todo(
-            'LocalAuthGuard 는 options.usernameField / passwordField 로 body 의 임의 필드명을 읽도록 설정할 수 있다'
-        )
+        it.todo('usernameField/passwordField 옵션으로 body의 임의 필드명을 사용할 수 있다')
     })
 
     describe('OptionalJwtAuthGuard', () => {
-        it('토큰 없이도 접근 가능하다', async () => {
+        it('토큰이 없어도 접근할 수 있다', async () => {
             await fix.httpClient.get('/optional').ok()
         })
 
-        it('유효한 토큰이 있으면 접근 가능하다', async () => {
+        it('유효한 토큰이 있으면 접근할 수 있다', async () => {
             const token = await fix.jwtService.signAsync({ userId: 'user-1' })
 
             await fix.httpClient
@@ -109,14 +107,14 @@ describe('Auth Guards', () => {
                 .ok()
         })
 
-        it('잘못된 토큰이어도 접근 가능하다', async () => {
+        it('잘못된 토큰이어도 접근할 수 있다', async () => {
             await fix.httpClient
                 .get('/optional')
                 .headers({ Authorization: 'Bearer invalid-token' })
                 .ok()
         })
 
-        it('@Public() 라우트는 토큰 없이 접근 가능하다', async () => {
+        it('@Public이 붙은 라우트는 토큰 없이 접근할 수 있다', async () => {
             await fix.httpClient.get('/optional/public').ok()
         })
 

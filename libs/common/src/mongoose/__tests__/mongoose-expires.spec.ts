@@ -10,26 +10,17 @@ describe('Mongoose TTL expiration', () => {
     })
     afterEach(() => fix.teardown())
 
-    describe('TTL이 만료되었을 때', () => {
-        let docId: any
-        let sn: number
+    it('TTL이 지나면 문서가 자동으로 삭제된다', async () => {
+        const doc = new fix.model()
+        const sn = 1234567
+        doc.sn = sn
+        await doc.save()
 
-        beforeEach(async () => {
-            const doc = new fix.model()
-            sn = 1234567
-            doc.sn = sn
+        const initialDoc = await fix.model.findOne({ _id: doc._id }).exec()
+        expect(initialDoc?.sn).toEqual(sn)
 
-            await doc.save()
-            docId = doc._id
-        })
-
-        it('문서를 자동으로 삭제한다', async () => {
-            const initialDoc = await fix.model.findOne({ _id: docId }).exec()
-            expect(initialDoc?.sn).toEqual(sn)
-
-            await sleep(2000)
-            const expiredDoc = await fix.model.findOne({ _id: docId }).exec()
-            expect(expiredDoc).toBeNull()
-        })
+        await sleep(2000)
+        const expiredDoc = await fix.model.findOne({ _id: doc._id }).exec()
+        expect(expiredDoc).toBeNull()
     })
 })

@@ -34,12 +34,12 @@ describe('Jest reset options', () => {
     const sharedMock = jest.fn()
 
     describe('resetMocks가 활성화되었을 때', () => {
-        it('목 호출을 기록한다', () => {
+        it('mock 호출을 기록한다', () => {
             sharedMock('first')
             expect(sharedMock).toHaveBeenCalledTimes(1)
         })
 
-        it('테스트 사이에 목 호출 횟수를 초기화한다', () => {
+        it('테스트 사이에 mock 호출 횟수를 초기화한다', () => {
             expect(sharedMock).toHaveBeenCalledTimes(0)
         })
     })

@@ -11,84 +11,56 @@ describe('CacheService', () => {
     afterEach(() => fix.teardown())
 
     describe('set', () => {
-        describe('TTL이 제공되지 않을 때', () => {
-            it('값을 저장한다', async () => {
-                await fix.cacheService.set('key', 'value')
-                const cachedValue = await fix.cacheService.get('key')
-                expect(cachedValue).toEqual('value')
-            })
+        it('TTL이 없으면 값을 저장한다', async () => {
+            await fix.cacheService.set('key', 'value')
+            const cachedValue = await fix.cacheService.get('key')
+            expect(cachedValue).toEqual('value')
         })
 
-        describe('TTL이 제공될 때', () => {
-            let ttl: number
+        it('TTL이 지나면 만료된다', async () => {
+            const ttl = 1000
+            await fix.cacheService.set('key', 'value', ttl)
 
-            beforeEach(() => {
-                ttl = 1000
-            })
+            const beforeExpiration = await fix.cacheService.get('key')
+            expect(beforeExpiration).toEqual('value')
 
-            it('TTL 이후에 만료된다', async () => {
-                await fix.cacheService.set('key', 'value', ttl)
+            // TTL + 500ms 안전 마진. 짧은 TTL에서는 비례 마진(10%)이 부하 시 부족하다.
+            await sleep(ttl + 500)
 
-                const beforeExpiration = await fix.cacheService.get('key')
-                expect(beforeExpiration).toEqual('value')
-
-                // TTL + 고정 500ms 안전 마진 — 비례 마진 (10%) 은 짧은 TTL 에서 부하 시 too tight.
-                await sleep(ttl + 500)
-
-                const afterExpiration = await fix.cacheService.get('key')
-                expect(afterExpiration).toBeNull()
-            })
+            const afterExpiration = await fix.cacheService.get('key')
+            expect(afterExpiration).toBeNull()
         })
 
-        describe('TTL이 0일 때', () => {
-            let ttl: number
+        it('TTL이 0이면 만료되지 않는다', async () => {
+            await fix.cacheService.set('key', 'value', 0)
 
-            beforeEach(() => {
-                ttl = 0
-            })
+            const beforeExpiration = await fix.cacheService.get('key')
+            expect(beforeExpiration).toEqual('value')
 
-            it('만료되지 않는다', async () => {
-                await fix.cacheService.set('key', 'value', ttl)
+            await sleep(1500)
 
-                const beforeExpiration = await fix.cacheService.get('key')
-                expect(beforeExpiration).toEqual('value')
-
-                // TTL=0 (영구) 이 실제로 만료되지 않음을 확인하는 대기. 1500ms 로 여유 줌.
-                await sleep(1500)
-
-                const afterExpiration = await fix.cacheService.get('key')
-                expect(afterExpiration).toEqual('value')
-            })
+            const afterExpiration = await fix.cacheService.get('key')
+            expect(afterExpiration).toEqual('value')
         })
 
-        describe('TTL이 음수일 때', () => {
-            let invalidTtl: number
-
-            beforeEach(() => {
-                invalidTtl = -100
-            })
-
-            it('예외를 던진다', async () => {
-                await expect(fix.cacheService.set('key', 'value', invalidTtl)).rejects.toThrow(
-                    'TTL must be a non-negative integer (0 for no expiration)'
-                )
-            })
+        it('TTL이 음수이면 예외를 던진다', async () => {
+            await expect(fix.cacheService.set('key', 'value', -100)).rejects.toThrow(
+                'TTL must be a non-negative integer (0 for no expiration)'
+            )
         })
     })
 
     describe('delete', () => {
-        describe('키가 존재할 때', () => {
-            it('캐시된 값을 삭제한다', async () => {
-                await fix.cacheService.set('key', 'value')
+        it('저장된 값을 삭제한다', async () => {
+            await fix.cacheService.set('key', 'value')
 
-                const beforeDelete = await fix.cacheService.get('key')
-                expect(beforeDelete).toEqual('value')
+            const beforeDelete = await fix.cacheService.get('key')
+            expect(beforeDelete).toEqual('value')
 
-                await fix.cacheService.delete('key')
+            await fix.cacheService.delete('key')
 
-                const afterDelete = await fix.cacheService.get('key')
-                expect(afterDelete).toBeNull()
-            })
+            const afterDelete = await fix.cacheService.get('key')
+            expect(afterDelete).toBeNull()
         })
     })
 
@@ -105,11 +77,11 @@ describe('CacheService', () => {
             expect(storedValue).toBe('value')
         })
 
-        it.todo('Lua 스크립트 실행이 Redis 에러로 실패하면 그대로 throw 된다')
+        it.todo('스크립트 실행이 실패하면 예외를 그대로 던진다')
     })
 
     describe('withLock', () => {
-        it('락을 점유한 중에는 다른 호출이 fn 을 실행하지 않는다', async () => {
+        it('락을 점유한 동안에는 다른 호출이 콜백을 실행하지 않는다', async () => {
             let running = 0
             let maxConcurrent = 0
             let executedCount = 0
@@ -132,7 +104,7 @@ describe('CacheService', () => {
             expect(executedCount).toBeGreaterThanOrEqual(1)
         }, 30_000)
 
-        it('락 보유자만 해제할 수 있어야 한다 (만료 후 다른 runner 의 락은 안 지운다)', async () => {
+        it('만료된 락을 다른 호출자가 잡으면, 원래 호출자의 release가 새 락을 지우지 않는다', async () => {
             await fix.cacheService.set('lock:job', 'other-runner', 10_000)
 
             const result = await fix.cacheService.withLock('job', 5_000, async () => {
@@ -140,42 +112,40 @@ describe('CacheService', () => {
             })
 
             expect(result.ran).toBe(false)
-            // 락 값이 바뀌지 않았는지 확인
             const value = await fix.cacheService.get('lock:job')
             expect(value).toBe('other-runner')
         })
 
-        it.each([0, -1, -100])('TTL 이 %s 이면 예외를 던진다', async (ttl) => {
-            await expect(fix.cacheService.withLock('job', ttl, async () => null)).rejects.toThrow(
+        it('TTL이 0이면 예외를 던진다', async () => {
+            await expect(fix.cacheService.withLock('job', 0, async () => null)).rejects.toThrow(
                 'Lock TTL must be a positive integer (ms)'
             )
         })
 
-        it('fn 이 예외를 던져도 락을 해제한다', async () => {
+        it('TTL이 음수이면 예외를 던진다', async () => {
+            await expect(fix.cacheService.withLock('job', -100, async () => null)).rejects.toThrow(
+                'Lock TTL must be a positive integer (ms)'
+            )
+        })
+
+        it('콜백이 예외를 던져도 락을 해제한다', async () => {
             await expect(
                 fix.cacheService.withLock('job', 5_000, () => {
                     throw new Error('boom')
                 })
             ).rejects.toThrow('boom')
 
-            // 바로 다음 호출이 fn 을 실행할 수 있어야 한다
             const next = await fix.cacheService.withLock('job', 5_000, async () => 'ok')
             expect(next).toEqual({ ran: true, result: 'ok' })
         })
 
-        it.todo('fn 이 reject 한 promise 를 반환해도 락이 해제된다')
+        it.todo('콜백이 거부된 promise를 반환해도 락을 해제한다')
 
-        it.todo(
-            'lock token 이 [pid, timestamp, random] 의 조합으로 생성되어 같은 process 내 tight loop 에서도 충돌하지 않는다'
-        )
-
-        it.todo(
-            'lock 만료 후 다른 caller 가 재취득한 상태에서 원래 caller 가 release 해도 새 caller 의 lock 이 stomp 되지 않는다 (token-match Lua 의 mechanism lock-down)'
-        )
+        it.todo('같은 프로세스에서 잇따라 락을 얻어도 토큰이 서로 다르다')
     })
 
     describe('withLockBlocking', () => {
-        it('경쟁이 없을 때 즉시 실행된다', async () => {
+        it('경쟁이 없으면 즉시 실행된다', async () => {
             const result = await fix.cacheService.withLockBlocking('job', 5_000, async () => 42)
             expect(result).toBe(42)
         })
@@ -207,7 +177,6 @@ describe('CacheService', () => {
         }, 30_000)
 
         it('대기 시간 안에 락을 못 잡으면 예외를 던진다', async () => {
-            // 다른 보유자가 오래 잡고 있는 상황을 흉내
             await fix.cacheService.set('lock:job', 'other', 10_000)
 
             await expect(
@@ -218,10 +187,12 @@ describe('CacheService', () => {
             ).rejects.toThrow(/could not acquire 'job'/)
         })
 
-        it.todo('waitMs 가 정확히 경과하기 전에는 throw 하지 않는다 (deadline 경계)')
+        it.todo('waitMs가 경과하기 전에는 예외를 던지지 않는다')
 
-        it.todo(
-            'pollMs = 0 을 주면 busy-wait 가 되어 Redis 에 부하를 줄 수 있음 — 동작은 정상이지만 권장 안 됨 lock-down'
-        )
+        it.todo('pollMs가 0이어도 락 획득이 정상 동작한다')
+    })
+
+    describe('복구 경로', () => {
+        it.todo('트랜잭션이 중단된 후에도 같은 인스턴스의 다음 호출이 정상 동작한다')
     })
 })

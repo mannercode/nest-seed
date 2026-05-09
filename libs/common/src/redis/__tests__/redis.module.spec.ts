@@ -25,9 +25,8 @@ describe('RedisModule', () => {
         })
 
         it('URL과 옵션을 함께 제공한다', async () => {
-            const { createRedisModuleUrlWithOptionsFixture } = await import(
-                './redis.module.fixture'
-            )
+            const { createRedisModuleUrlWithOptionsFixture } =
+                await import('./redis.module.fixture')
             const fix = await createRedisModuleUrlWithOptionsFixture()
             try {
                 const result = await fix.redis.ping()
@@ -38,9 +37,7 @@ describe('RedisModule', () => {
         })
 
         it('옵션만 제공한다', async () => {
-            const { createRedisModuleOptionsOnlyFixture } = await import(
-                './redis.module.fixture'
-            )
+            const { createRedisModuleOptionsOnlyFixture } = await import('./redis.module.fixture')
             const fix = await createRedisModuleOptionsOnlyFixture()
             try {
                 const result = await fix.redis.ping()

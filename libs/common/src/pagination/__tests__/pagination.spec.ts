@@ -13,96 +13,75 @@ describe('PaginationDto', () => {
     })
     afterEach(() => fix.teardown())
 
-    describe('HTTP controller', () => {
-        describe('요청이 유효할 때', () => {
-            let page: number
-            let size: number
-            let query: Record<string, any>
-            let expectedResponse: Record<string, any>
-
-            beforeEach(() => {
-                page = 2
-                size = 3
-                query = { size, orderby: 'name:asc', page }
-                expectedResponse = {
-                    response: { size, orderby: { direction: 'asc', name: 'name' }, page }
-                }
-            })
-
-            it('PaginationDto를 처리한다', async () => {
-                await fix.httpClient.get('/pagination').query(query).ok(expectedResponse)
-            })
-
-            it.todo('orderby name="0" 같은 falsy 이지만 유효한 문자열도 정상 처리된다')
-        })
-
-        describe('`orderby`가 올바르지 않을 때', () => {
-            it('400 Bad Request를 반환한다', async () => {
-                await fix.httpClient
-                    .get('/pagination')
-                    .query({ orderby: 'wrong' })
-                    .badRequest(CommonErrors.Pagination.FormatInvalid())
-            })
-        })
-
-        describe('정렬 방향이 유효하지 않을 때', () => {
-            it('400 Bad Request를 반환한다', async () => {
-                await fix.httpClient
-                    .get('/pagination')
-                    .query({ orderby: 'name:wrong' })
-                    .badRequest(CommonErrors.Pagination.DirectionInvalid())
-            })
-
-            it.todo('direction 이 대문자 (ASC/DESC) 면 BadRequest 다')
-
-            it.todo('field 와 direction 좌우의 공백은 trim 후 정상 처리된다')
-        })
-    })
-
-    describe('orderby가 이미 객체일 때', () => {
-        it('값을 그대로 반환한다', () => {
-            const orderby = { direction: 'asc', name: 'name' }
-            const dto = plainToInstance(PaginationDto, { orderby })
-
-            expect((dto as any).orderby).toEqual(orderby)
-        })
-    })
-
-    describe('orderby가 제공되지 않을 때', () => {
-        it('값을 그대로 유지한다', () => {
-            const dto = plainToInstance(PaginationDto, { orderby: null })
-
-            expect((dto as any).orderby).toBeNull()
-        })
-    })
-
-    describe('orderby가 문자열이 아닐 때', () => {
-        it('BadRequestException을 던진다', () => {
-            try {
-                plainToInstance(PaginationDto, { orderby: 123 as any })
-                throw new Error('Expected BadRequestException to be thrown')
-            } catch (error) {
-                expect(error).toBeInstanceOf(BadRequestException)
-                expect((error as BadRequestException).getResponse()).toEqual(
-                    PaginationErrors.FormatInvalid()
-                )
+    describe('HTTP 컨트롤러', () => {
+        it('유효한 쿼리는 PaginationDto로 처리된다', async () => {
+            const page = 2
+            const size = 3
+            const query = { size, orderby: 'name:asc', page }
+            const expectedResponse = {
+                response: { size, orderby: { direction: 'asc', name: 'name' }, page }
             }
-        })
-    })
 
-    describe('orderby의 name 또는 direction이 비어 있을 때', () => {
-        it('BadRequestException을 던진다', () => {
-            try {
-                plainToInstance(PaginationDto, { orderby: 'name:' })
-                throw new Error('Expected BadRequestException to be thrown')
-            } catch (error) {
-                expect(error).toBeInstanceOf(BadRequestException)
-                expect((error as BadRequestException).getResponse()).toEqual(
-                    PaginationErrors.FormatInvalid()
-                )
-            }
+            await fix.httpClient.get('/pagination').query(query).ok(expectedResponse)
         })
 
-        it.todo('콜론만 있고 name·direction 둘 다 없으면 BadRequest 다 (":")')
+        it.todo('orderby name="0"처럼 falsy하지만 유효한 문자열도 정상 처리된다')
+
+        it('orderby 형식이 잘못되면 400을 반환한다', async () => {
+            await fix.httpClient
+                .get('/pagination')
+                .query({ orderby: 'wrong' })
+                .badRequest(CommonErrors.Pagination.FormatInvalid())
+        })
+
+        it('정렬 방향이 유효하지 않으면 400을 반환한다', async () => {
+            await fix.httpClient
+                .get('/pagination')
+                .query({ orderby: 'name:wrong' })
+                .badRequest(CommonErrors.Pagination.DirectionInvalid())
+        })
+
+        it.todo('direction이 대문자(ASC/DESC)이면 400을 반환한다')
+
+        it.todo('field와 direction 양옆의 공백은 잘라낸 뒤 처리된다')
     })
+
+    it('orderby가 이미 객체이면 그대로 유지한다', () => {
+        const orderby = { direction: 'asc', name: 'name' }
+        const dto = plainToInstance(PaginationDto, { orderby })
+
+        expect((dto as any).orderby).toEqual(orderby)
+    })
+
+    it('orderby가 null이면 그대로 유지한다', () => {
+        const dto = plainToInstance(PaginationDto, { orderby: null })
+
+        expect((dto as any).orderby).toBeNull()
+    })
+
+    it('orderby가 문자열이 아니면 BadRequestException을 던진다', () => {
+        try {
+            plainToInstance(PaginationDto, { orderby: 123 as any })
+            throw new Error('Expected BadRequestException to be thrown')
+        } catch (error) {
+            expect(error).toBeInstanceOf(BadRequestException)
+            expect((error as BadRequestException).getResponse()).toEqual(
+                PaginationErrors.FormatInvalid()
+            )
+        }
+    })
+
+    it('orderby의 name 또는 direction이 비어 있으면 BadRequestException을 던진다', () => {
+        try {
+            plainToInstance(PaginationDto, { orderby: 'name:' })
+            throw new Error('Expected BadRequestException to be thrown')
+        } catch (error) {
+            expect(error).toBeInstanceOf(BadRequestException)
+            expect((error as BadRequestException).getResponse()).toEqual(
+                PaginationErrors.FormatInvalid()
+            )
+        }
+    })
+
+    it.todo('orderby가 ":"만 들어오면 BadRequestException을 던진다')
 })

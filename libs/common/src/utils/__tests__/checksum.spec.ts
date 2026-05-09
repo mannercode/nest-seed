@@ -18,7 +18,7 @@ describe('Checksum', () => {
             await PathUtil.delete(tempDir)
         })
 
-        it('동일한 내용에 대해 fromBuffer와 같은 다이제스트를 스트리밍 방식으로 산출한다', async () => {
+        it('같은 내용이면 fromBuffer와 동일한 해시를 산출한다', async () => {
             const buffer = await fs.readFile(filePath)
 
             const fileChecksum = await Checksum.fromFile(filePath, 'sha1')
@@ -67,5 +67,7 @@ describe('Checksum', () => {
                 })
             })
         })
+
+        it.todo('빈 버퍼도 표준 SHA-256 해시 (e3b0c44...) 를 반환한다')
     })
 })

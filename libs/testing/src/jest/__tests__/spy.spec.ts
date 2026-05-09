@@ -12,7 +12,7 @@ describe('jest.spyOn', () => {
         expect(mockFunc).toHaveBeenCalled()
     })
 
-    it('모듈 함수를 목킹한다', () => {
+    it('모듈 함수를 mock으로 대체한다', () => {
         expect(Module.getGreeting()).toEqual('Greeting')
 
         const mockFunc = jest.spyOn(Module, 'getGreeting').mockReturnValue('Mocked Value')
@@ -21,7 +21,7 @@ describe('jest.spyOn', () => {
         expect(mockFunc).toHaveBeenCalled()
     })
 
-    it('클래스 인스턴스 메서드를 목킹한다', () => {
+    it('클래스 인스턴스 메서드를 mock으로 대체한다', () => {
         const localObj = new Module.HelloClass()
         const mockFunc = jest.spyOn(localObj, 'getHello').mockReturnValue('Mocked Value')
 
@@ -29,7 +29,7 @@ describe('jest.spyOn', () => {
         expect(mockFunc).toHaveBeenCalled()
     })
 
-    it('클래스 getter를 목킹한다', () => {
+    it('클래스 getter를 mock으로 대체한다', () => {
         const localObj = new Module.HelloClass()
         const mockFunc = jest.spyOn(localObj, 'value', 'get').mockReturnValue(1000)
 

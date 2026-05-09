@@ -1,4 +1,4 @@
-describe('jest.expect examples', () => {
+describe('jest.expect 예제', () => {
     it('toBe와 toEqual로 값을 비교한다', () => {
         /**
          * toEqual

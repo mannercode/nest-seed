@@ -10,61 +10,53 @@ describe('Mongoose Transaction', () => {
     afterEach(() => fix.teardown())
 
     describe('withTransaction', () => {
-        describe('트랜잭션이 성공할 때', () => {
-            it('트랜잭션을 커밋한다', async () => {
-                const newDoc = await fix.repository.withTransaction(async (session) => {
-                    const doc = fix.repository.newDocument()
-                    doc.name = 'name'
-                    return doc.save({ session })
-                })
-
-                const found = await fix.repository.findById(newDoc.id)
-                expect(found).toMatchObject({ id: newDoc.id, name: newDoc.name })
+        it('콜백이 성공하면 커밋한다', async () => {
+            const newDoc = await fix.repository.withTransaction(async (session) => {
+                const doc = fix.repository.newDocument()
+                doc.name = 'name'
+                return doc.save({ session })
             })
+
+            const found = await fix.repository.findById(newDoc.id)
+            expect(found).toMatchObject({ id: newDoc.id, name: newDoc.name })
         })
 
-        describe('롤백이 요청될 때', () => {
-            let newDoc: any
+        it('rollback()을 호출하면 롤백한다', async () => {
+            const newDoc = fix.repository.newDocument()
+            newDoc.name = 'name'
+            await newDoc.save()
 
-            beforeEach(async () => {
-                newDoc = fix.repository.newDocument()
-                newDoc.name = 'name'
-                await newDoc.save()
+            await fix.repository.withTransaction(async (session, rollback) => {
+                await fix.repository.deleteById(newDoc.id, session)
+                rollback()
             })
 
-            it('트랜잭션을 롤백한다', async () => {
-                await fix.repository.withTransaction(async (session, rollback) => {
-                    await fix.repository.deleteById(newDoc.id, session)
-                    rollback()
-                })
-
-                const found = await fix.repository.findById(newDoc.id)
-                expect(found).toMatchObject({ id: newDoc.id, name: newDoc.name })
-            })
+            const found = await fix.repository.findById(newDoc.id)
+            expect(found).toMatchObject({ id: newDoc.id, name: newDoc.name })
         })
 
-        describe('트랜잭션 중 오류가 발생할 때', () => {
-            it('변경 사항을 롤백한다', async () => {
-                const promise = fix.repository.withTransaction(async (session) => {
-                    const doc = fix.repository.newDocument()
-                    doc.name = 'name'
-                    await doc.save({ session })
+        it('콜백이 예외를 던지면 변경 사항을 롤백한다', async () => {
+            const promise = fix.repository.withTransaction(async (session) => {
+                const doc = fix.repository.newDocument()
+                doc.name = 'name'
+                await doc.save({ session })
 
-                    throw new Error('An error occurred during the transaction.')
-                })
-
-                await expect(promise).rejects.toThrow()
-
-                const { total } = await fix.repository.findWithPagination({ pagination: {} })
-                expect(total).toEqual(0)
+                throw new Error('An error occurred during the transaction.')
             })
+
+            await expect(promise).rejects.toThrow()
+
+            const { total } = await fix.repository.findWithPagination({ pagination: {} })
+            expect(total).toEqual(0)
         })
 
-        it.todo('rollback() 호출 후에는 commitTransaction 이 아니라 abortTransaction 이 실행된다')
+        it.todo('rollback() 호출 시 커밋이 아닌 중단으로 종료된다')
+
+        it.todo('endSession() 자체가 예외를 던져도 연결 풀이 누수되지 않는다')
     })
 
     describe('에러 처리', () => {
-        it('startSession이 예외를 던질 때 예외를 전파한다', async () => {
+        it('startSession이 예외를 던지면 예외를 전파한다', async () => {
             jest.spyOn(fix.model, 'startSession').mockImplementation(() => {
                 throw new Error()
             })
@@ -74,7 +66,7 @@ describe('Mongoose Transaction', () => {
             await expect(promise).rejects.toThrow()
         })
 
-        it('startTransaction이 예외를 던질 때 예외를 전파한다', async () => {
+        it('startTransaction이 예외를 던지면 예외를 전파한다', async () => {
             jest.spyOn(fix.model, 'startSession').mockResolvedValue({
                 inTransaction: jest.fn().mockReturnValue(false),
                 startTransaction: jest.fn().mockImplementation(() => {

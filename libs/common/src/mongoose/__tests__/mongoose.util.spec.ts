@@ -30,32 +30,26 @@ describe('objectId', () => {
 })
 
 describe('objectIds', () => {
-    describe('모든 id가 유효할 때', () => {
-        it('ObjectId로 변환한다', () => {
-            const idStrings = ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012']
-            const result = objectIds(idStrings)
+    it('모든 id가 유효하면 ObjectId 배열로 변환한다', () => {
+        const idStrings = ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012']
+        const result = objectIds(idStrings)
 
-            expect(result.map((id) => id.toString())).toEqual(idStrings)
-            expect(result).toEqual([expect.any(Types.ObjectId), expect.any(Types.ObjectId)])
-        })
+        expect(result.map((id) => id.toString())).toEqual(idStrings)
+        expect(result).toEqual([expect.any(Types.ObjectId), expect.any(Types.ObjectId)])
     })
 
-    describe('id가 비어 있을 때', () => {
-        it('빈 배열을 반환한다', () => {
-            const result = objectIds([])
+    it('빈 배열이면 빈 배열을 반환한다', () => {
+        const result = objectIds([])
 
-            expect(result).toEqual([])
-        })
+        expect(result).toEqual([])
     })
 
-    describe('id 중 하나라도 유효하지 않을 때', () => {
-        it('예외를 던진다', () => {
-            const idStrings = ['507f1f77bcf86cd799439011', 'invalid-id']
+    it('id 중 하나라도 유효하지 않으면 예외를 던진다', () => {
+        const idStrings = ['507f1f77bcf86cd799439011', 'invalid-id']
 
-            expect(() => objectIds(idStrings)).toThrow(
-                'input must be a 24 character hex string, 12 byte Uint8Array, or an integer'
-            )
-        })
+        expect(() => objectIds(idStrings)).toThrow(
+            'input must be a 24 character hex string, 12 byte Uint8Array, or an integer'
+        )
     })
 })
 
@@ -69,181 +63,127 @@ describe('QueryBuilder', () => {
     })
 
     describe('addEqual', () => {
-        describe('값이 제공될 때', () => {
-            it('조건을 추가한다', () => {
-                builder.addEquals('name', 'test')
-                expect(builder.build({})).toEqual({ name: 'test' })
-            })
+        it('값이 있으면 조건을 추가한다', () => {
+            builder.addEquals('name', 'test')
+            expect(builder.build({})).toEqual({ name: 'test' })
         })
 
-        describe('값이 제공되지 않을 때', () => {
-            it('조건을 추가하지 않는다', () => {
-                builder.addEquals('name', undefined)
-                builder.addEquals('name', null)
-                expect(builder.build({ allowEmpty: true })).toEqual({})
-            })
+        it('값이 null이거나 undefined이면 조건을 추가하지 않는다', () => {
+            builder.addEquals('name', undefined)
+            builder.addEquals('name', null)
+            expect(builder.build({ allowEmpty: true })).toEqual({})
         })
 
-        it.todo(
-            'value 가 0 / false / "" 같은 falsy 이지만 null/undefined 가 아닌 값은 정상적으로 query 에 추가된다'
-        )
+        it.todo('0/false/""처럼 falsy하지만 null/undefined가 아닌 값은 조건에 추가된다')
     })
 
     describe('addId', () => {
-        describe('id가 제공될 때', () => {
-            it('ObjectId 조건을 추가한다', () => {
-                const id = new Types.ObjectId().toString()
-                builder.addId('_id', id)
-                expect(builder.build({})).toEqual({ _id: objectId(id) })
-            })
+        it('id가 있으면 ObjectId 조건을 추가한다', () => {
+            const id = new Types.ObjectId().toString()
+            builder.addId('_id', id)
+            expect(builder.build({})).toEqual({ _id: objectId(id) })
         })
 
-        describe('id가 제공되지 않을 때', () => {
-            it('조건을 추가하지 않는다', () => {
-                builder.addId('_id', undefined)
-                expect(builder.build({ allowEmpty: true })).toEqual({})
-            })
+        it('id가 없으면 조건을 추가하지 않는다', () => {
+            builder.addId('_id', undefined)
+            expect(builder.build({ allowEmpty: true })).toEqual({})
         })
     })
 
     describe('addIn', () => {
-        describe('ids가 제공될 때', () => {
-            const ids = ['123', '456']
-
-            it('$in 조건을 추가한다', () => {
-                builder.addIn('entityId', ids)
-                expect(builder.build({})).toEqual({ entityId: { $in: ids } })
-            })
+        it('ids가 있으면 $in 조건을 추가한다', () => {
+            builder.addIn('entityId', ['123', '456'])
+            expect(builder.build({})).toEqual({ entityId: { $in: ['123', '456'] } })
         })
 
-        describe('ids에 중복이 있을 때', () => {
-            const ids = ['123', '123']
-
-            beforeEach(() => {
-                jest.spyOn(Logger, 'warn').mockImplementation(() => {})
-            })
-
-            it('중복을 제거한다', () => {
-                builder.addIn('entityId', ids)
-                expect(builder.build({})).toEqual({ entityId: { $in: ['123'] } })
-            })
+        it('ids에 중복이 있으면 중복을 제거한다', () => {
+            jest.spyOn(Logger, 'warn').mockImplementation(() => {})
+            builder.addIn('entityId', ['123', '123'])
+            expect(builder.build({})).toEqual({ entityId: { $in: ['123'] } })
         })
 
-        describe('ids가 비어 있거나 제공되지 않을 때', () => {
-            it('조건을 추가하지 않는다', () => {
-                builder.addIn('entityId', [])
-                builder.addIn('entityId', undefined)
-                expect(builder.build({ allowEmpty: true })).toEqual({})
-            })
+        it('ids가 비어 있거나 없으면 조건을 추가하지 않는다', () => {
+            builder.addIn('entityId', [])
+            builder.addIn('entityId', undefined)
+            expect(builder.build({ allowEmpty: true })).toEqual({})
         })
     })
 
     describe('addRegex', () => {
-        describe('값이 제공될 때', () => {
-            it('정규식 조건을 추가한다', () => {
-                builder.addRegex('name', 'test')
-                expect(builder.build({})).toEqual({ name: new RegExp('test', 'i') })
-            })
+        it('값이 있으면 정규식 조건을 추가한다', () => {
+            builder.addRegex('name', 'test')
+            expect(builder.build({})).toEqual({ name: new RegExp('test', 'i') })
         })
 
-        describe('값이 제공되지 않을 때', () => {
-            it('조건을 추가하지 않는다', () => {
-                builder.addRegex('name', undefined)
-                expect(builder.build({ allowEmpty: true })).toEqual({})
-            })
+        it('값이 없으면 조건을 추가하지 않는다', () => {
+            builder.addRegex('name', undefined)
+            expect(builder.build({ allowEmpty: true })).toEqual({})
         })
 
-        // cycle-10: prefix 옵션으로 ^ 앵커링
-        describe('with { prefix: true }', () => {
-            it('anchors the regex at start', () => {
-                builder.addRegex('name', 'hello', { prefix: true })
-                expect(builder.build({})).toEqual({ name: new RegExp('^hello', 'i') })
-            })
-
-            it('escapes regex special chars', () => {
-                builder.addRegex('name', 'a.b*', { prefix: true })
-                expect(builder.build({})).toEqual({ name: new RegExp('^a\\.b\\*', 'i') })
-            })
+        it('prefix:true이면 정규식을 시작 위치에 고정한다', () => {
+            builder.addRegex('name', 'hello', { prefix: true })
+            expect(builder.build({})).toEqual({ name: new RegExp('^hello', 'i') })
         })
 
-        // cycle-10: caseSensitive 옵션으로 i 플래그 제거
-        describe('with { caseSensitive: true }', () => {
-            it('drops the i flag', () => {
-                builder.addRegex('name', 'test', { caseSensitive: true })
-                expect(builder.build({})).toEqual({ name: new RegExp('test') })
-            })
+        it('prefix:true이면 정규식 메타문자를 escape한다', () => {
+            builder.addRegex('name', 'a.b*', { prefix: true })
+            expect(builder.build({})).toEqual({ name: new RegExp('^a\\.b\\*', 'i') })
         })
 
-        // cycle-12: prefix + caseSensitive 조합 (theater/movie/user 검색 모드)
-        describe('with both prefix and caseSensitive', () => {
-            it('anchors and drops the i flag', () => {
-                builder.addRegex('name', 'test', { prefix: true, caseSensitive: true })
-                expect(builder.build({})).toEqual({ name: new RegExp('^test') })
-            })
+        it('caseSensitive:true이면 i 플래그를 제거한다', () => {
+            builder.addRegex('name', 'test', { caseSensitive: true })
+            expect(builder.build({})).toEqual({ name: new RegExp('test') })
         })
 
-        it.todo(
-            '정규식 메타문자 (.,*,+,? 등) 가 포함된 value 도 escapeRegExp 로 escape 되어 regex injection 이 차단된다'
-        )
-        it.todo(
-            'prefix: true 와 정규식 메타문자가 결합된 value 도 escape 된 채 prefix anchoring 이 적용된다 (예: "a.b" → /^a\\.b/)'
-        )
+        it('prefix와 caseSensitive를 함께 주면 둘 다 적용된다', () => {
+            builder.addRegex('name', 'test', { prefix: true, caseSensitive: true })
+            expect(builder.build({})).toEqual({ name: new RegExp('^test') })
+        })
+
+        it.todo('정규식 메타문자가 포함된 값도 escape되어 정규식 주입을 차단한다')
+        it.todo('prefix:true와 정규식 메타문자가 결합되어도 escape된 채 시작 위치 고정이 적용된다')
     })
 
     describe('addRange', () => {
-        describe('start와 end가 제공될 때', () => {
-            it('$gte와 $lte 조건을 추가한다', () => {
-                const range = { end: new Date('2023-12-31'), start: new Date('2023-01-01') }
-                builder.addRange('createdAt', range)
-                expect(builder.build({})).toEqual({
-                    createdAt: { $gte: range.start, $lte: range.end }
-                })
-            })
+        it('start와 end가 모두 있으면 $gte와 $lte를 추가한다', () => {
+            const range = { end: new Date('2023-12-31'), start: new Date('2023-01-01') }
+            builder.addRange('createdAt', range)
+            expect(builder.build({})).toEqual({ createdAt: { $gte: range.start, $lte: range.end } })
         })
 
-        describe('start만 제공될 때', () => {
-            it('$gte만 추가한다', () => {
-                const range = { start: new Date('2023-01-01') }
-                builder.addRange('createdAt', range)
-                expect(builder.build({})).toEqual({ createdAt: { $gte: range.start } })
-            })
+        it('start만 있으면 $gte만 추가한다', () => {
+            const range = { start: new Date('2023-01-01') }
+            builder.addRange('createdAt', range)
+            expect(builder.build({})).toEqual({ createdAt: { $gte: range.start } })
         })
 
-        describe('end만 제공될 때', () => {
-            it('$lte만 추가한다', () => {
-                const range = { end: new Date('2023-12-31') }
-                builder.addRange('createdAt', range)
-                expect(builder.build({})).toEqual({ createdAt: { $lte: range.end } })
-            })
+        it('end만 있으면 $lte만 추가한다', () => {
+            const range = { end: new Date('2023-12-31') }
+            builder.addRange('createdAt', range)
+            expect(builder.build({})).toEqual({ createdAt: { $lte: range.end } })
         })
 
-        describe('range가 비어 있거나 제공되지 않을 때', () => {
-            it('조건을 추가하지 않는다', () => {
-                builder.addRange('createdAt', undefined)
-                builder.addRange('createdAt', {})
-                expect(builder.build({ allowEmpty: true })).toEqual({})
-            })
+        it('range가 비어 있거나 없으면 조건을 추가하지 않는다', () => {
+            builder.addRange('createdAt', undefined)
+            builder.addRange('createdAt', {})
+            expect(builder.build({ allowEmpty: true })).toEqual({})
         })
+
+        it.todo('start와 end가 같으면 $gte와 $lte 모두 같은 값으로 빌드된다')
     })
 
     describe('build', () => {
-        describe('조건이 존재할 때', () => {
-            it('쿼리 객체를 반환한다', () => {
-                builder.addEquals('name', 'test')
-                expect(builder.build({})).toEqual({ name: 'test' })
-            })
+        it('조건이 있으면 쿼리 객체를 반환한다', () => {
+            builder.addEquals('name', 'test')
+            expect(builder.build({})).toEqual({ name: 'test' })
         })
 
-        describe('조건이 없을 때', () => {
-            it('BadRequestException을 던진다', () => {
-                expect(() => builder.build({})).toThrow(BadRequestException)
-            })
+        it('조건이 없으면 BadRequestException을 던진다', () => {
+            expect(() => builder.build({})).toThrow(BadRequestException)
         })
 
-        describe('allowEmpty가 true일 때', () => {
-            it('빈 쿼리를 반환한다', () => {
-                expect(builder.build({ allowEmpty: true })).toEqual({})
-            })
+        it('allowEmpty:true이면 조건이 없어도 빈 쿼리를 반환한다', () => {
+            expect(builder.build({ allowEmpty: true })).toEqual({})
         })
     })
 })
@@ -275,23 +215,23 @@ describe('mapDocToDto', () => {
         expect(dto).toEqual({ id: expect.any(String), name: 'name', optional: undefined })
     })
 
-    it.todo('mapDocToDto 가 keys 에 없는 필드는 DTO 에 누설하지 않는다')
+    it.todo('keys에 없는 필드는 DTO에 포함되지 않는다')
 })
 
 describe('isDuplicateKeyError', () => {
-    it('MongoDB E11000 에러 객체일 때 true', () => {
+    it('code가 11000이면 true를 반환한다', () => {
         expect(isDuplicateKeyError({ code: 11000, message: 'duplicate' })).toBe(true)
     })
 
-    it('code 가 11000 이 아닐 때 false', () => {
+    it('code가 11000이 아니면 false를 반환한다', () => {
         expect(isDuplicateKeyError({ code: 121 })).toBe(false)
     })
 
-    it('code 속성이 없을 때 false', () => {
+    it('code 속성이 없으면 false를 반환한다', () => {
         expect(isDuplicateKeyError({ message: 'boom' })).toBe(false)
     })
 
-    it('null 또는 원시 타입일 때 false', () => {
+    it('null이거나 원시 타입이면 false를 반환한다', () => {
         expect(isDuplicateKeyError(null)).toBe(false)
         expect(isDuplicateKeyError(undefined)).toBe(false)
         expect(isDuplicateKeyError('error')).toBe(false)
@@ -300,49 +240,39 @@ describe('isDuplicateKeyError', () => {
 })
 
 describe('assignIfDefined', () => {
-    describe('source[key]가 정의되어 있을 때', () => {
-        it('target[key]에 할당한다', () => {
-            const target = { name: 'old' }
-            const source = { name: 'new' as string | undefined }
+    it('source[key]가 정의되어 있으면 target[key]에 할당한다', () => {
+        const target = { name: 'old' }
+        const source = { name: 'new' as string | undefined }
 
-            assignIfDefined(target, source, 'name')
+        assignIfDefined(target, source, 'name')
 
-            expect(target.name).toBe('new')
-        })
+        expect(target.name).toBe('new')
     })
 
-    describe('source[key]가 제공되지 않을 때', () => {
-        it('target을 변경하지 않는다', () => {
-            const target = { name: 'old' }
-            const source = { name: undefined as string | undefined }
+    it('source[key]가 undefined이면 target을 변경하지 않는다', () => {
+        const target = { name: 'old' }
+        const source = { name: undefined as string | undefined }
 
-            assignIfDefined(target, source, 'name')
+        assignIfDefined(target, source, 'name')
 
-            expect(target.name).toBe('old')
-        })
+        expect(target.name).toBe('old')
     })
 
-    describe('transform이 제공될 때', () => {
-        it('변환된 값을 할당한다', () => {
-            const target = { id: 'old' }
-            const source = { id: '123' as string | undefined }
+    it('transform이 주어지면 변환된 값을 할당한다', () => {
+        const target = { id: 'old' }
+        const source = { id: '123' as string | undefined }
 
-            assignIfDefined(target, source, 'id', (v) => `obj:${v}`)
+        assignIfDefined(target, source, 'id', (v) => `obj:${v}`)
 
-            expect(target.id).toBe('obj:123')
-        })
+        expect(target.id).toBe('obj:123')
     })
 
-    describe('source[key]가 null일 때', () => {
-        it('null을 정의된 값으로 취급한다', () => {
-            const target = { email: 'old' as null | string }
-            const source = { email: null as null | string | undefined }
+    it('source[key]가 null이면 null을 정의된 값으로 취급해 그대로 할당한다', () => {
+        const target = { email: 'old' as null | string }
+        const source = { email: null as null | string | undefined }
 
-            assignIfDefined(target, source, 'email')
+        assignIfDefined(target, source, 'email')
 
-            expect(target.email).toBeNull()
-        })
+        expect(target.email).toBeNull()
     })
-
-    it.todo('value 가 null 이면 그대로 target 에 할당되고, undefined 일 때만 skip 된다')
 })

@@ -41,62 +41,51 @@ describe('Crud schema types', () => {
     })
 
     describe('addDeletedAtFilterToPipeline', () => {
-        describe('첫 스테이지가 없을 때', () => {
-            it('deletedAt 필터를 첫 스테이지로 추가한다', () => {
-                const pipeline: Record<string, any>[] = []
+        it('빈 파이프라인이면 deletedAt 필터를 첫 스테이지로 추가한다', () => {
+            const pipeline: Record<string, any>[] = []
 
-                addDeletedAtFilterToPipeline(pipeline)
+            addDeletedAtFilterToPipeline(pipeline)
 
-                expect(pipeline).toEqual([{ $match: { deletedAt: null } }])
-            })
+            expect(pipeline).toEqual([{ $match: { deletedAt: null } }])
         })
 
-        describe('첫 스테이지가 $geoNear일 때', () => {
-            it('deletedAt 필터를 두 번째 스테이지로 추가한다', () => {
-                const geoNearStage = {
-                    $geoNear: {
-                        distanceField: 'd',
-                        near: { coordinates: [127, 37], type: 'Point' }
-                    }
-                }
-                const pipeline: Record<string, any>[] = [geoNearStage]
+        it('첫 스테이지가 $geoNear이면 deletedAt 필터를 두 번째 스테이지로 추가한다', () => {
+            const geoNearStage = {
+                $geoNear: { distanceField: 'd', near: { coordinates: [127, 37], type: 'Point' } }
+            }
+            const pipeline: Record<string, any>[] = [geoNearStage]
 
-                addDeletedAtFilterToPipeline(pipeline)
+            addDeletedAtFilterToPipeline(pipeline)
 
-                expect(pipeline).toEqual([geoNearStage, { $match: { deletedAt: null } }])
-            })
+            expect(pipeline).toEqual([geoNearStage, { $match: { deletedAt: null } }])
         })
 
-        describe('첫 스테이지가 $search일 때', () => {
-            it('deletedAt 필터를 두 번째 스테이지로 추가한다', () => {
-                const searchStage = {
-                    $search: { index: 'default', text: { path: 'name', query: 'a' } }
-                }
-                const pipeline: Record<string, any>[] = [searchStage]
+        it('첫 스테이지가 $search이면 deletedAt 필터를 두 번째 스테이지로 추가한다', () => {
+            const searchStage = {
+                $search: { index: 'default', text: { path: 'name', query: 'a' } }
+            }
+            const pipeline: Record<string, any>[] = [searchStage]
 
-                addDeletedAtFilterToPipeline(pipeline)
+            addDeletedAtFilterToPipeline(pipeline)
 
-                expect(pipeline).toEqual([searchStage, { $match: { deletedAt: null } }])
-            })
+            expect(pipeline).toEqual([searchStage, { $match: { deletedAt: null } }])
         })
 
-        describe('첫 스테이지가 $vectorSearch일 때', () => {
-            it('deletedAt 필터를 두 번째 스테이지로 추가한다', () => {
-                const vectorSearchStage = {
-                    $vectorSearch: {
-                        index: 'v',
-                        limit: 3,
-                        numCandidates: 10,
-                        path: 'embedding',
-                        queryVector: [0.1]
-                    }
+        it('첫 스테이지가 $vectorSearch이면 deletedAt 필터를 두 번째 스테이지로 추가한다', () => {
+            const vectorSearchStage = {
+                $vectorSearch: {
+                    index: 'v',
+                    limit: 3,
+                    numCandidates: 10,
+                    path: 'embedding',
+                    queryVector: [0.1]
                 }
-                const pipeline: Record<string, any>[] = [vectorSearchStage]
+            }
+            const pipeline: Record<string, any>[] = [vectorSearchStage]
 
-                addDeletedAtFilterToPipeline(pipeline)
+            addDeletedAtFilterToPipeline(pipeline)
 
-                expect(pipeline).toEqual([vectorSearchStage, { $match: { deletedAt: null } }])
-            })
+            expect(pipeline).toEqual([vectorSearchStage, { $match: { deletedAt: null } }])
         })
     })
 })
