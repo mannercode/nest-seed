@@ -59,33 +59,29 @@ describe('Mongoose Transaction', () => {
                 expect(total).toEqual(0)
             })
         })
+
+        it.todo('rollback() 호출 후에는 commitTransaction 이 아니라 abortTransaction 이 실행된다')
     })
 
-    describe('startSession이 예외를 던질 때', () => {
-        beforeEach(() => {
+    describe('에러 처리', () => {
+        it('startSession이 예외를 던질 때 예외를 전파한다', async () => {
             jest.spyOn(fix.model, 'startSession').mockImplementation(() => {
                 throw new Error()
             })
-        })
 
-        it('예외를 던진다', async () => {
             const promise = fix.repository.withTransaction(async (_session) => {})
 
             await expect(promise).rejects.toThrow()
         })
-    })
 
-    describe('startTransaction이 예외를 던질 때', () => {
-        beforeEach(() => {
+        it('startTransaction이 예외를 던질 때 예외를 전파한다', async () => {
             jest.spyOn(fix.model, 'startSession').mockResolvedValue({
                 inTransaction: jest.fn().mockReturnValue(false),
                 startTransaction: jest.fn().mockImplementation(() => {
                     throw new Error()
                 })
             } as any)
-        })
 
-        it('예외를 던진다', async () => {
             const promise = fix.repository.withTransaction(async (_session) => {})
 
             await expect(promise).rejects.toThrow()

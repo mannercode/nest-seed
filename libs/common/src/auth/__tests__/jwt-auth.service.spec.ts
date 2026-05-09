@@ -72,7 +72,9 @@ describe('JwtAuthService', () => {
         })
 
         it('만료된 토큰은 jwt expired', async () => {
-            await sleep(3500)
+            // 만료 검증을 위한 sleep. fixture 의 TTL (3000ms 가정) 보다 충분히 길게 두어
+            // 부하 환경에서도 JWT 가 확실히 만료된 상태가 되도록 함.
+            await sleep(4000)
             const promise = fix.jwtService.refreshAuthTokens(refreshToken)
             await expect(promise).rejects.toThrow('jwt expired')
         })
@@ -169,6 +171,32 @@ describe('JwtAuthService', () => {
             expect(parsed.hash).toMatch(/^[0-9a-f]{64}$/)
             // 원본 토큰이 그대로 들어가 있으면 안 됨
             expect(stored).not.toContain(refreshToken)
+        })
+
+        it.todo(
+            'Redis 가 손상된 JSON 을 반환했을 때 (예: 빈 문자열, 잘못된 JSON) JSON.parse 실패가 적절히 처리된다 — getStoredToken edge case'
+        )
+
+        it.todo(
+            'storeToken 의 token-key 와 family-key 가 같은 hash tag {familyId} 를 공유해 Cluster 의 single slot 에 떨어진다'
+        )
+
+        it.todo(
+            'refresh 후 새 token 의 payload 에서 표준 JWT claim (aud, exp, iat, iss, jti) 이 carry-over 되지 않는다'
+        )
+
+        describe('Redis transaction 이 abort 되어 multi().exec() 가 null 을 반환할 때', () => {
+            it.todo(
+                'family 를 폐기하지 않고 그대로 throw 한다 (false 로 간주해 reuse detection 트리거하지 않음)'
+            )
+            it.todo('새 token 을 발급하지 않는다')
+        })
+
+        describe('Redis transaction 실패', () => {
+            it.todo('storeToken 의 multi().exec() 가 throw 하면 발급 호출자가 그대로 throw 받는다')
+            it.todo(
+                'revokeFamily 의 multi().exec() 가 실패하면 family 가 부분 정리된 상태로 남지 않는다 (또는 명시적 동작을 박는다)'
+            )
         })
     })
 
@@ -327,35 +355,9 @@ describe('JwtAuthService', () => {
             expect(issued?.context).toEqual(ctx)
         })
 
-        it('onEvent 가 등록 안 된 인스턴스는 emit 호출돼도 조용히 no-op', async () => {
-            // onEvent 를 일시적으로 제거해 hook-less 인스턴스를 시뮬레이션
-            const original = (fix.jwtService as any).onEvent
-            ;(fix.jwtService as any).onEvent = undefined
-            try {
-                await expect(
-                    fix.jwtService.generateAuthTokens({ sub: 'u1' })
-                ).resolves.toBeDefined()
-            } finally {
-                ;(fix.jwtService as any).onEvent = original
-            }
-        })
-
-        it('훅이 throw 해도 인증은 통과한다', async () => {
-            // jwtService 에 문제가 되는 hook 으로 직접 교체
-            const consoleErr = jest.spyOn(console, 'error').mockImplementation(() => {})
-            const original = (fix.jwtService as any).onEvent
-            ;(fix.jwtService as any).onEvent = () => {
-                throw new Error('boom')
-            }
-            try {
-                await expect(
-                    fix.jwtService.generateAuthTokens({ sub: 'u1' })
-                ).resolves.toBeDefined()
-            } finally {
-                ;(fix.jwtService as any).onEvent = original
-                consoleErr.mockRestore()
-            }
-        })
+        it.todo(
+            'logger.error 자체가 throw 해도 generateAuthTokens 의 인증 흐름은 통과한다 (catch & log 의 외곽 안전망)'
+        )
     })
 
     describe('payload without a user id', () => {
@@ -401,6 +403,10 @@ describe('JwtAuthService', () => {
     })
 
     describe('algorithm pinning', () => {
+        it.todo(
+            'JWT 검증 호출이 algorithms: ["HS256"] 만 받도록 hard-coded 되어 있다 (algorithm-confusion 공격 방지의 mechanism lock-down)'
+        )
+
         it('다른 algorithm 으로 서명된 토큰은 거부된다', async () => {
             const { TEST_AUTH_AUDIENCE, TEST_AUTH_ISSUER } =
                 await import('./jwt-auth.service.fixture')

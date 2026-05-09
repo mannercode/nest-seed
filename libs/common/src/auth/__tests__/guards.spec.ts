@@ -45,6 +45,8 @@ describe('Auth Guards', () => {
                 .body({ email: 'test@test.com', password: 'pass' })
                 .created()
         })
+
+        it.todo('Authorization header 가 "Bearer" 만 있고 token 부분이 없으면 401 을 던진다')
     })
 
     describe('JwtAuthGuard (default isUsingLocalAuth)', () => {
@@ -87,6 +89,10 @@ describe('Auth Guards', () => {
                 .body({ username: 'admin', password: 'pass' })
                 .created()
         })
+
+        it.todo(
+            'LocalAuthGuard 는 options.usernameField / passwordField 로 body 의 임의 필드명을 읽도록 설정할 수 있다'
+        )
     })
 
     describe('OptionalJwtAuthGuard', () => {

@@ -121,4 +121,8 @@ describe('ensure', () => {
             expect(ensure('hello')).toBe('hello')
         })
     })
+
+    it.todo(
+        'ensure 가 0/false/"" 는 그대로 통과시키고 null/undefined 만 throw 한다 (== null 의 정확한 의미 lock-down)'
+    )
 })

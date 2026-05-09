@@ -17,6 +17,8 @@ describe('Time', () => {
         it('유효하지 않은 형식이면 예외를 던진다', () => {
             expect(() => TimeUtil.toMs('2z')).toThrow(Error)
         })
+
+        it.todo('"1d 2h" 같은 multi-token 도 각 단위를 합산해서 ms 로 변환한다')
     })
 
     describe('fromMs', () => {

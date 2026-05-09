@@ -32,7 +32,8 @@ describe('CacheService', () => {
                 const beforeExpiration = await fix.cacheService.get('key')
                 expect(beforeExpiration).toEqual('value')
 
-                await sleep(ttl * 1.1)
+                // TTL + 고정 500ms 안전 마진 — 비례 마진 (10%) 은 짧은 TTL 에서 부하 시 too tight.
+                await sleep(ttl + 500)
 
                 const afterExpiration = await fix.cacheService.get('key')
                 expect(afterExpiration).toBeNull()
@@ -52,7 +53,8 @@ describe('CacheService', () => {
                 const beforeExpiration = await fix.cacheService.get('key')
                 expect(beforeExpiration).toEqual('value')
 
-                await sleep(1000)
+                // TTL=0 (영구) 이 실제로 만료되지 않음을 확인하는 대기. 1500ms 로 여유 줌.
+                await sleep(1500)
 
                 const afterExpiration = await fix.cacheService.get('key')
                 expect(afterExpiration).toEqual('value')
@@ -102,6 +104,8 @@ describe('CacheService', () => {
             const storedValue = await fix.cacheService.get('key')
             expect(storedValue).toBe('value')
         })
+
+        it.todo('Lua 스크립트 실행이 Redis 에러로 실패하면 그대로 throw 된다')
     })
 
     describe('withLock', () => {
@@ -141,11 +145,8 @@ describe('CacheService', () => {
             expect(value).toBe('other-runner')
         })
 
-        it('TTL 이 0 이하이면 예외를 던진다', async () => {
-            await expect(fix.cacheService.withLock('job', 0, async () => null)).rejects.toThrow(
-                'Lock TTL must be a positive integer (ms)'
-            )
-            await expect(fix.cacheService.withLock('job', -1, async () => null)).rejects.toThrow(
+        it.each([0, -1, -100])('TTL 이 %s 이면 예외를 던진다', async (ttl) => {
+            await expect(fix.cacheService.withLock('job', ttl, async () => null)).rejects.toThrow(
                 'Lock TTL must be a positive integer (ms)'
             )
         })
@@ -161,6 +162,16 @@ describe('CacheService', () => {
             const next = await fix.cacheService.withLock('job', 5_000, async () => 'ok')
             expect(next).toEqual({ ran: true, result: 'ok' })
         })
+
+        it.todo('fn 이 reject 한 promise 를 반환해도 락이 해제된다')
+
+        it.todo(
+            'lock token 이 [pid, timestamp, random] 의 조합으로 생성되어 같은 process 내 tight loop 에서도 충돌하지 않는다'
+        )
+
+        it.todo(
+            'lock 만료 후 다른 caller 가 재취득한 상태에서 원래 caller 가 release 해도 새 caller 의 lock 이 stomp 되지 않는다 (token-match Lua 의 mechanism lock-down)'
+        )
     })
 
     describe('withLockBlocking', () => {
@@ -206,5 +217,11 @@ describe('CacheService', () => {
                 })
             ).rejects.toThrow(/could not acquire 'job'/)
         })
+
+        it.todo('waitMs 가 정확히 경과하기 전에는 throw 하지 않는다 (deadline 경계)')
+
+        it.todo(
+            'pollMs = 0 을 주면 busy-wait 가 되어 Redis 에 부하를 줄 수 있음 — 동작은 정상이지만 권장 안 됨 lock-down'
+        )
     })
 })

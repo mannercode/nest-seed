@@ -4,39 +4,39 @@ import p from 'path'
 import { PathUtil } from '../path'
 
 describe('Path', () => {
-    it('절대 경로를 반환한다', async () => {
-        const relativePath = `.${PathUtil.sep()}file.txt`
-        const absolutePath = PathUtil.getAbsolute(relativePath)
+    describe('getAbsolute', () => {
+        it('상대 경로를 절대 경로로 변환한다', async () => {
+            const relativePath = `.${PathUtil.sep()}file.txt`
+            const absolutePath = PathUtil.getAbsolute(relativePath)
 
-        expect(p.isAbsolute(absolutePath)).toBe(true)
-    })
-
-    describe('경로가 이미 절대 경로일 때', () => {
-        let absolutePath: string
-
-        beforeEach(() => {
-            absolutePath = p.join(os.tmpdir(), 'file.txt')
+            expect(p.isAbsolute(absolutePath)).toBe(true)
         })
 
-        it('같은 경로를 반환한다', async () => {
+        it('이미 절대 경로일 때 같은 경로를 반환한다', async () => {
+            const absolutePath = p.join(os.tmpdir(), 'file.txt')
+
             const result = PathUtil.getAbsolute(absolutePath)
 
             expect(result).toEqual(absolutePath)
         })
     })
 
-    it('basename을 반환한다', () => {
-        const filePath = 'dir/file.txt'
-        const basename = PathUtil.basename(filePath)
+    describe('basename', () => {
+        it('파일명을 반환한다', () => {
+            const filePath = 'dir/file.txt'
+            const basename = PathUtil.basename(filePath)
 
-        expect(basename).toEqual('file.txt')
+            expect(basename).toEqual('file.txt')
+        })
     })
 
-    it('dirname을 반환한다', () => {
-        const filePath = 'dir/file.txt'
-        const dirname = PathUtil.dirname(filePath)
+    describe('dirname', () => {
+        it('디렉터리 경로를 반환한다', () => {
+            const filePath = 'dir/file.txt'
+            const dirname = PathUtil.dirname(filePath)
 
-        expect(dirname).toEqual('dir')
+            expect(dirname).toEqual('dir')
+        })
     })
 
     describe('file system operations', () => {
@@ -83,6 +83,10 @@ describe('Path', () => {
             const exists = await PathUtil.isDirectory(tempDir)
             expect(exists).toBe(true)
         })
+
+        it.todo(
+            '존재하지 않는 path 에 대해 isDirectory 는 false 를 돌려주는 게 아니라 fs.stat 의 ENOENT 를 그대로 throw 한다 (exists 와 비대칭)'
+        )
 
         it('디렉터리를 생성하고 삭제한다', async () => {
             const dirPath = PathUtil.join(tempDir, 'testdir')
@@ -190,6 +194,10 @@ describe('Path', () => {
             const content = await fs.readFile(destFilePath, 'utf-8')
             expect(content).toEqual('hello world')
         })
+
+        it.todo(
+            '서로 다른 file system 으로 move 할 때 rename 이 EXDEV 로 실패하면 copy + delete fallback 으로 처리된다'
+        )
 
         describe('rename이 EXDEV로 실패할 때', () => {
             it('copy + delete로 폴백한다', async () => {

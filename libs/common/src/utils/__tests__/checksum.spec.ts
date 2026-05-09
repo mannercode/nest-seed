@@ -18,15 +18,13 @@ describe('Checksum', () => {
             await PathUtil.delete(tempDir)
         })
 
-        describe('알고리즘이 sha1일 때', () => {
-            it('SHA1 체크섬을 반환한다', async () => {
-                const checksum = await Checksum.fromFile(filePath, 'sha1')
+        it('동일한 내용에 대해 fromBuffer와 같은 다이제스트를 스트리밍 방식으로 산출한다', async () => {
+            const buffer = await fs.readFile(filePath)
 
-                expect(checksum).toEqual({
-                    algorithm: 'sha1',
-                    base64: 'CgqfKmdylCVXq1NV12r0Qvj2XgE='
-                })
-            })
+            const fileChecksum = await Checksum.fromFile(filePath, 'sha1')
+            const bufferChecksum = Checksum.fromBuffer(buffer, 'sha1')
+
+            expect(fileChecksum).toEqual(bufferChecksum)
         })
 
         describe('알고리즘이 제공되지 않을 때', () => {

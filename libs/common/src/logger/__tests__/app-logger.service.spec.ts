@@ -20,45 +20,19 @@ describe('AppLoggerService', () => {
         appLoggerService.onModuleDestroy()
     })
 
-    it('logs at info level', () => {
-        const spy = jest.spyOn(winstonLogger, 'info')
-        appLoggerService.log(message)
+    it.each([
+        ['log', 'info'],
+        ['error', 'error'],
+        ['warn', 'warn'],
+        ['debug', 'debug'],
+        ['verbose', 'verbose'],
+        // fatal 은 winston 에 동급 레벨이 없어 error 로 매핑된다
+        ['fatal', 'error']
+    ] as const)('%s() 는 winstonLogger.%s() 로 위임한다', (serviceMethod, winstonMethod) => {
+        const spy = jest.spyOn(winstonLogger, winstonMethod)
+        appLoggerService[serviceMethod](message)
 
-        expect(spy).toHaveBeenCalledWith(message)
-    })
-
-    it('logs at error level', () => {
-        const spy = jest.spyOn(winstonLogger, 'error')
-        appLoggerService.error(message)
-
-        expect(spy).toHaveBeenCalledWith(message)
-    })
-
-    it('logs at warn level', () => {
-        const spy = jest.spyOn(winstonLogger, 'warn')
-        appLoggerService.warn(message)
-
-        expect(spy).toHaveBeenCalledWith(message)
-    })
-
-    it('logs at debug level', () => {
-        const spy = jest.spyOn(winstonLogger, 'debug')
-        appLoggerService.debug(message)
-
-        expect(spy).toHaveBeenCalledWith(message)
-    })
-
-    it('logs at verbose level', () => {
-        const spy = jest.spyOn(winstonLogger, 'verbose')
-        appLoggerService.verbose(message)
-
-        expect(spy).toHaveBeenCalledWith(message)
-    })
-
-    it('logs at fatal level', () => {
-        const spy = jest.spyOn(winstonLogger, 'error')
-        appLoggerService.fatal(message)
-
+        expect(spy).toHaveBeenCalledTimes(1)
         expect(spy).toHaveBeenCalledWith(message)
     })
 

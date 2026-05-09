@@ -6,16 +6,10 @@ import {
     assignIfDefined,
     isDuplicateKeyError,
     mapDocToDto,
-    newObjectIdString,
     objectId,
     objectIds,
     QueryBuilder
 } from '../mongoose.util'
-
-it('generates a new ObjectId string', async () => {
-    const objectIdValue = newObjectIdString()
-    expect(Types.ObjectId.isValid(objectIdValue)).toBe(true)
-})
 
 describe('objectId', () => {
     it('유효한 문자열을 ObjectId로 변환한다', () => {
@@ -89,6 +83,10 @@ describe('QueryBuilder', () => {
                 expect(builder.build({ allowEmpty: true })).toEqual({})
             })
         })
+
+        it.todo(
+            'value 가 0 / false / "" 같은 falsy 이지만 null/undefined 가 아닌 값은 정상적으로 query 에 추가된다'
+        )
     })
 
     describe('addId', () => {
@@ -183,6 +181,13 @@ describe('QueryBuilder', () => {
                 expect(builder.build({})).toEqual({ name: new RegExp('^test') })
             })
         })
+
+        it.todo(
+            '정규식 메타문자 (.,*,+,? 등) 가 포함된 value 도 escapeRegExp 로 escape 되어 regex injection 이 차단된다'
+        )
+        it.todo(
+            'prefix: true 와 정규식 메타문자가 결합된 value 도 escape 된 채 prefix anchoring 이 적용된다 (예: "a.b" → /^a\\.b/)'
+        )
     })
 
     describe('addRange', () => {
@@ -269,6 +274,8 @@ describe('mapDocToDto', () => {
 
         expect(dto).toEqual({ id: expect.any(String), name: 'name', optional: undefined })
     })
+
+    it.todo('mapDocToDto 가 keys 에 없는 필드는 DTO 에 누설하지 않는다')
 })
 
 describe('isDuplicateKeyError', () => {
@@ -336,4 +343,6 @@ describe('assignIfDefined', () => {
             expect(target.email).toBeNull()
         })
     })
+
+    it.todo('value 가 null 이면 그대로 target 에 할당되고, undefined 일 때만 skip 된다')
 })

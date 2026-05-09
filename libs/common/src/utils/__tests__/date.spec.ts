@@ -21,6 +21,10 @@ describe('DateUtil', () => {
                 expect(() => DateUtil.fromYMD('')).toThrow()
             })
         })
+
+        it.todo(
+            '월 자리에 13 / 00 같은 잘못된 값을 줘도 throw 하지 않고 JS Date 의 자연스러운 rollover 로 다음/이전 달이 된다 (silent rollover lock-down)'
+        )
     })
 
     describe('toYMD', () => {
@@ -58,6 +62,8 @@ describe('DateUtil', () => {
                 expect(Number.isNaN(date.getTime())).toBe(true)
             })
         })
+
+        it.todo('earliest 와 latest 모두 빈 배열을 넣으면 Invalid Date (new Date(NaN)) 를 반환한다')
     })
 
     describe('now', () => {
@@ -91,5 +97,9 @@ describe('DateUtil', () => {
                 expect(date.getTime() >= before && date.getTime() <= after).toBe(true)
             })
         })
+
+        it.todo('음수 단위는 과거 방향으로 이동한다')
+
+        it.todo('양수와 음수 단위가 섞이면 합산 결과대로 이동한다')
     })
 })

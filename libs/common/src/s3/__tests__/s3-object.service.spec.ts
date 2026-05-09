@@ -285,6 +285,9 @@ describe('S3ObjectService', () => {
                 await expect(promise).rejects.toThrow('unexpected')
             })
         })
+
+        it.todo('HEAD 응답이 404 가 아닌 (예: 403, 500) 에러면 그대로 throw 한다')
+        it.todo('error 객체에 $metadata 가 undefined 이면 (404 비교가 불가) 그대로 throw 된다')
     })
 
     describe('deleteObject', () => {
@@ -419,5 +422,22 @@ describe('S3ObjectService', () => {
                 expect(commonPrefixes ?? []).toHaveLength(0)
             })
         })
+
+        it.todo(
+            'AWS S3 가 ETag 를 quoted 형태 ("abc123") 로 돌려줘도 양 끝 quote 가 stripping 된 값을 반환한다'
+        )
     })
+
+    it.todo(
+        'newObjectIdString() 으로 생성된 key 10000 개에 중복이 없다 (ObjectId 12-byte entropy 기반 collision 안전성)'
+    )
+
+    describe('onModuleDestroy', () => {
+        it.todo('s3.destroy() 가 호출되어 connection pool 누수를 막는다')
+    })
+})
+
+describe('normalizeContentType', () => {
+    it.todo('charset 파라미터가 붙은 content-type 의 base type 만 비교한다')
+    it.todo('대문자 / 공백이 섞인 content-type 도 정규화 후 비교한다')
 })

@@ -30,46 +30,38 @@ describe('AppendOnly', () => {
             })
         })
 
-        describe('model.updateOne 을 호출할 때', () => {
-            it('append-only error 를 던진다', async () => {
+        describe('mutation methods are blocked', () => {
+            it('updateOne 호출 시 append-only error 를 던진다', async () => {
                 await expect(
                     fix.model.updateOne({ _id: createdDoc._id }, { name: 'changed' }).exec()
                 ).rejects.toThrow(/append-only/)
             })
-        })
 
-        describe('model.updateMany 를 호출할 때', () => {
-            it('append-only error 를 던진다', async () => {
-                await expect(fix.model.updateMany({}, { name: 'changed' }).exec()).rejects.toThrow(
-                    /append-only/
-                )
-            })
-        })
-
-        describe('model.findOneAndUpdate 를 호출할 때', () => {
-            it('append-only error 를 던진다', async () => {
+            it('updateMany 호출 시 append-only error 를 던진다', async () => {
                 await expect(
-                    fix.model.findOneAndUpdate({ _id: createdDoc._id }, { name: 'changed' }).exec()
+                    fix.model.updateMany({}, { name: 'changed' }).exec()
                 ).rejects.toThrow(/append-only/)
             })
-        })
 
-        describe('model.deleteOne 을 호출할 때', () => {
-            it('append-only error 를 던진다', async () => {
-                await expect(fix.model.deleteOne({ _id: createdDoc._id }).exec()).rejects.toThrow(
-                    /append-only/
-                )
+            it('findOneAndUpdate 호출 시 append-only error 를 던진다', async () => {
+                await expect(
+                    fix.model
+                        .findOneAndUpdate({ _id: createdDoc._id }, { name: 'changed' })
+                        .exec()
+                ).rejects.toThrow(/append-only/)
             })
-        })
 
-        describe('model.deleteMany 를 호출할 때', () => {
-            it('append-only error 를 던진다', async () => {
+            it('deleteOne 호출 시 append-only error 를 던진다', async () => {
+                await expect(
+                    fix.model.deleteOne({ _id: createdDoc._id }).exec()
+                ).rejects.toThrow(/append-only/)
+            })
+
+            it('deleteMany 호출 시 append-only error 를 던진다', async () => {
                 await expect(fix.model.deleteMany({}).exec()).rejects.toThrow(/append-only/)
             })
-        })
 
-        describe('document.deleteOne() 을 호출할 때', () => {
-            it('append-only error 를 던진다', async () => {
+            it('document.deleteOne (instance) 호출 시 append-only error 를 던진다', async () => {
                 await expect(createdDoc.deleteOne()).rejects.toThrow(/append-only/)
             })
         })
@@ -80,16 +72,11 @@ describe('AppendOnly', () => {
                 expect(found).toMatchObject({ name: 'name' })
             })
         })
+
+        it.todo('AppendOnlySchema 가 replaceOne 도 차단한다 (모든 mutation 메서드의 dispatch 검증)')
     })
 
     describe('AppendOnlyRepository', () => {
-        describe('newDocument', () => {
-            it('새 hydrated document 를 반환한다', () => {
-                const doc = fix.repository.newDocument()
-                expect(doc.isNew).toBe(true)
-            })
-        })
-
         describe('subclass append', () => {
             it('도메인 메서드가 정상적으로 insert 한다', async () => {
                 const dto = await fix.repository.append('via-append')

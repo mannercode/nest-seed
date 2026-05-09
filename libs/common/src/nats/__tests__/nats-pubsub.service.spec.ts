@@ -63,7 +63,8 @@ describe('NatsPubSubService', () => {
 
         await fix.pubSubA.publish(subject, 'after-unsub')
         // "아무것도 도착하지 않았음" 을 보장할 신호가 없으므로 잠깐 대기 후 검사.
-        await new Promise((r) => setTimeout(r, 50))
+        // 200ms 정착 후 — 50ms 는 부하 시 too tight, NATS round-trip 만 측정되도록 여유 줌.
+        await new Promise((r) => setTimeout(r, 200))
 
         expect(received).toEqual(['before-unsub'])
     })
@@ -116,18 +117,29 @@ describe('NatsPubSubService', () => {
         await waitFor(() => received.length > 0)
         expect(received).toEqual(['after-throw'])
     })
+
+    describe('consume loop 의 iterator 가 throw 할 때', () => {
+        it.todo('logger.error 를 한 번 호출하고 loop 를 조용히 종료한다')
+        it.todo('throw 이후의 publish 는 더 이상 handler 에 전달되지 않는다')
+    })
+
+    it.todo(
+        '한 subject 의 모든 handler 를 unsubscribe 한 뒤 같은 subject 에 다시 subscribe 하면 publish 가 정상 도달한다'
+    )
+    it.todo('이미 제거된 handler 를 다시 unsubscribe 해도 throw 하지 않는다')
+    it.todo(
+        'subscribe 호출이 flush() 를 await 후에야 리턴해, 직후 publish 가 handler 에 도달한다 (flush race 차단 mechanism lock-down — commit 09a1909)'
+    )
 })
 
 describe('InjectNatsPubSub', () => {
-    it('decorator factory 가 parameter decorator 를 반환한다 (기본 이름)', async () => {
-        const { InjectNatsPubSub } = await import('../nats-pubsub.service')
-        expect(typeof InjectNatsPubSub()).toBe('function')
-    })
-
-    it('decorator factory 가 parameter decorator 를 반환한다 (명명된 인스턴스)', async () => {
-        const { InjectNatsPubSub } = await import('../nats-pubsub.service')
-        expect(typeof InjectNatsPubSub('my-bus')).toBe('function')
-    })
+    it.each([undefined, 'my-bus'])(
+        'name=%s 일 때 parameter decorator 를 반환한다',
+        async (name) => {
+            const { InjectNatsPubSub } = await import('../nats-pubsub.service')
+            expect(typeof InjectNatsPubSub(name)).toBe('function')
+        }
+    )
 })
 
 describe('NatsPubSubModule.register', () => {

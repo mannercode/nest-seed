@@ -38,6 +38,8 @@ describe('RedisHealthIndicator', () => {
                 const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
                 expect(healthStatus).toEqual({ key: { reason: 'unknown error', status: 'down' } })
             })
+
+            it.todo('error.message 가 없으면 error 자체를 reason 으로 기록한다')
         })
     })
 })

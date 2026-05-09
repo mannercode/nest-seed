@@ -32,6 +32,8 @@ describe('PaginationDto', () => {
             it('PaginationDto를 처리한다', async () => {
                 await fix.httpClient.get('/pagination').query(query).ok(expectedResponse)
             })
+
+            it.todo('orderby name="0" 같은 falsy 이지만 유효한 문자열도 정상 처리된다')
         })
 
         describe('`orderby`가 올바르지 않을 때', () => {
@@ -50,6 +52,10 @@ describe('PaginationDto', () => {
                     .query({ orderby: 'name:wrong' })
                     .badRequest(CommonErrors.Pagination.DirectionInvalid())
             })
+
+            it.todo('direction 이 대문자 (ASC/DESC) 면 BadRequest 다')
+
+            it.todo('field 와 direction 좌우의 공백은 trim 후 정상 처리된다')
         })
     })
 
@@ -96,5 +102,7 @@ describe('PaginationDto', () => {
                 )
             }
         })
+
+        it.todo('콜론만 있고 name·direction 둘 다 없으면 BadRequest 다 (":")')
     })
 })

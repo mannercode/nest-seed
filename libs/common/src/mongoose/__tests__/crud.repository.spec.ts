@@ -66,6 +66,10 @@ describe('CrudRepository', () => {
 
             await expect(promise).rejects.toThrow()
         })
+
+        it.todo(
+            'inserted + matched + deleted 의 합이 docs.length 와 다르면 Require.equals 가 throw 한다'
+        )
     })
 
     describe('findWithPagination', () => {
@@ -160,6 +164,14 @@ describe('CrudRepository', () => {
                 'Sample-009'
             ])
         })
+
+        it.todo(
+            '빈 filter 에서 estimatedDocumentCount 의 트레이드오프대로 soft-deleted 행이 total 에는 포함되고 items 에서는 제외된다'
+        )
+        it.todo(
+            '빈 filter 일 때 model.estimatedDocumentCount() 가 호출되고 model.countDocuments() 는 호출되지 않는다 (perf 최적화 분기 lock-down)'
+        )
+        it.todo('비어있지 않은 filter 일 때 model.countDocuments() 가 filter 와 함께 호출된다')
     })
 
     describe('allExist', () => {
@@ -170,34 +182,26 @@ describe('CrudRepository', () => {
             samples = toDtos(docs)
         })
 
-        describe('모든 id가 존재할 때', () => {
-            it('true를 반환한다', async () => {
-                const exists = await fix.repository.allExist(pickIds(samples))
-                expect(exists).toBe(true)
-            })
+        it('모든 id가 존재할 때 true를 반환한다', async () => {
+            const exists = await fix.repository.allExist(pickIds(samples))
+            expect(exists).toBe(true)
         })
 
-        describe('id에 중복이 포함될 때', () => {
-            it('true를 반환한다', async () => {
-                const [first] = samples
-                const exists = await fix.repository.allExist([first.id, first.id])
+        it('id에 중복이 포함될 때 true를 반환한다', async () => {
+            const [first] = samples
+            const exists = await fix.repository.allExist([first.id, first.id])
 
-                expect(exists).toBe(true)
-            })
+            expect(exists).toBe(true)
         })
 
-        describe('id 중 하나라도 없을 때', () => {
-            it('false를 반환한다', async () => {
-                const exists = await fix.repository.allExist([nullObjectId])
-                expect(exists).toBe(false)
-            })
+        it('id 중 하나라도 없을 때 false를 반환한다', async () => {
+            const exists = await fix.repository.allExist([nullObjectId])
+            expect(exists).toBe(false)
         })
 
-        describe('id 배열이 비어 있을 때', () => {
-            it('true를 반환한다', async () => {
-                const exists = await fix.repository.allExist([])
-                expect(exists).toBe(true)
-            })
+        it('id 배열이 비어 있을 때 true를 반환한다', async () => {
+            const exists = await fix.repository.allExist([])
+            expect(exists).toBe(true)
         })
     })
 
@@ -287,6 +291,10 @@ describe('CrudRepository', () => {
                 await expect(promise).rejects.toThrow(fix.NotFoundException)
             })
         })
+
+        describe('중복된 id 가 입력으로 들어왔을 때', () => {
+            it.todo('Assume.equalLength 가 throw 한다')
+        })
     })
 
     describe('deleteById', () => {
@@ -350,4 +358,11 @@ describe('leanToPublic', () => {
         const result = leanToPublic<{ _id?: unknown; id?: string }>({})
         expect(result.id).toBeUndefined()
     })
+
+    it.todo('입력 객체를 in-place 변경하며 같은 참조를 돌려준다')
+    it.todo(
+        'lean 호출이 virtuals 옵션 없이 실행된다 (mongoose-lean-virtuals 비활성 — perf 가정 lock-down)'
+    )
+    it.todo('lean 결과에 id 필드가 자동으로 생기지 않는다 (leanToPublic 의 존재 이유 lock-down)')
+    it.todo('lean 결과의 _id 는 ObjectId 인스턴스로 유지되어 toString() 비교가 가능하다')
 })

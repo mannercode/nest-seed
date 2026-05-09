@@ -25,15 +25,24 @@ describe('BaseConfigService', () => {
             })
         })
 
-        describe('키가 존재하지 않을 때', () => {
+        describe('환경변수가 정의되어 있지 않을 때', () => {
             it('예외를 던진다', () => {
-                expect(() => fix.appConfigService.getString('not-exists-key')).toThrow(
-                    "Key 'not-exists-key' is not defined"
+                class TestConfigService extends BaseConfigService {
+                    constructor(configService: ConfigService) {
+                        super(configService)
+                    }
+                }
+
+                const configService = { get: () => undefined } as unknown as ConfigService
+                const service = new TestConfigService(configService)
+
+                expect(() => service.getString('SOME_KEY')).toThrow(
+                    "Key 'SOME_KEY' is not defined"
                 )
             })
         })
 
-        describe('값이 빈 문자열일 때', () => {
+        describe('환경변수 값이 빈 문자열일 때', () => {
             it('예외를 던진다', () => {
                 class TestConfigService extends BaseConfigService {
                     constructor(configService: ConfigService) {
@@ -44,8 +53,8 @@ describe('BaseConfigService', () => {
                 const configService = { get: () => '' } as unknown as ConfigService
                 const service = new TestConfigService(configService)
 
-                expect(() => service.getString('EMPTY_KEY')).toThrow(
-                    "Key 'EMPTY_KEY' is not defined"
+                expect(() => service.getString('SOME_KEY')).toThrow(
+                    "Key 'SOME_KEY' is not defined"
                 )
             })
         })

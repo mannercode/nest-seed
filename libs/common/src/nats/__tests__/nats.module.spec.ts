@@ -4,12 +4,11 @@ import { NatsModule } from '../nats.module'
 import { DEFAULT_NATS_CONNECTION_NAME, getNatsConnectionToken } from '../nats.tokens'
 
 describe('getNatsConnectionToken', () => {
-    it('이름이 없으면 기본 connection 이름을 사용한다', () => {
-        expect(getNatsConnectionToken()).toBe(`NatsConnection:${DEFAULT_NATS_CONNECTION_NAME}`)
-    })
-
-    it('이름을 주면 토큰에 반영된다', () => {
-        expect(getNatsConnectionToken('foo')).toBe('NatsConnection:foo')
+    it.each([
+        [undefined, `NatsConnection:${DEFAULT_NATS_CONNECTION_NAME}`],
+        ['foo', 'NatsConnection:foo']
+    ])('name=%s 일 때 connection 토큰을 만든다', (name, expected) => {
+        expect(getNatsConnectionToken(name)).toBe(expected)
     })
 })
 

@@ -65,4 +65,9 @@ describe('expectEqualUnsorted', () => {
             expect(() => expectEqualUnsorted([], undefined)).toThrow('actual or expected undefined')
         })
     })
+
+    describe('특수 값', () => {
+        it.todo('NaN 만 들어있는 두 배열을 같다고 판정한다 (또는 현 동작 명세대로 단언)')
+        it.todo('배열-배열 (배열 안에 배열) 도 정렬 후 비교한다')
+    })
 })

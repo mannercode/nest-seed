@@ -16,6 +16,12 @@ describe('Byte', () => {
             expect(ByteUtil.fromString(input)).toEqual(expected)
         })
 
+        it.todo(
+            '"1KB" 가 1024 (이진법) 로 해석되며, 1000 (십진법) 이 아니다 (KB vs KiB 정책 lock-down)'
+        )
+
+        it.todo('"1KB 500B" 같은 multi-token 입력은 각 단위를 합산해서 1524 를 반환한다')
+
         describe('단위가 소문자일 때', () => {
             it.each([
                 ['1024b', 1024],
@@ -47,5 +53,7 @@ describe('Byte', () => {
         ])('%s를 문자열로 변환한다', (input, expected) => {
             expect(ByteUtil.toString(input)).toEqual(expected)
         })
+
+        it.todo('1536 byte 는 "1KB512B" 처럼 modulo 분할로 표시되며 반올림하지 않는다')
     })
 })

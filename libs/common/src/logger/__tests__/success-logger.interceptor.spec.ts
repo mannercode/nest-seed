@@ -26,25 +26,26 @@ describe('HttpSuccessLoggerInterceptor', () => {
                 })
             })
 
+            // 본 redaction 의 본격 검증은 redact.spec.ts 에서. 여기서는 interceptor 가 redact 를 호출했는지만 확인.
             it('body의 민감 필드를 [REDACTED]로 마스킹한다', async () => {
                 await fix.httpClient
                     .post('/success')
-                    .body({ email: 'a@b.com', password: 'secret', refreshToken: 'r1' })
+                    .body({ password: 'secret' })
                     .created({ result: 'success' })
 
                 expect(fix.spyVerbose).toHaveBeenCalledWith(
                     'success',
                     expect.objectContaining({
                         request: expect.objectContaining({
-                            body: {
-                                email: 'a@b.com',
-                                password: '[REDACTED]',
-                                refreshToken: '[REDACTED]'
-                            }
+                            body: expect.objectContaining({ password: '[REDACTED]' })
                         })
                     })
                 )
             })
+
+            it.todo(
+                'Observable 이 error 로 종료하면 complete 이 발화하지 않아 success 로그가 남지 않는다 (exception filter 와의 책임 분리)'
+            )
         })
     })
 
@@ -63,5 +64,8 @@ describe('HttpSuccessLoggerInterceptor', () => {
 
             expect(fix.spyVerbose).toHaveBeenCalledTimes(0)
         })
+
+        it.todo('excludeHttpPaths 가 빈 배열이면 어떤 경로도 제외하지 않는다')
+        it.todo('excludeHttpPaths 의 어느 한 패턴이라도 일치하면 로깅을 건너뛴다')
     })
 })

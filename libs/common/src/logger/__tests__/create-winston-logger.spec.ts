@@ -102,6 +102,8 @@ describe('createWinstonLogger', () => {
         consoleLogger.close()
     })
 
+    it.todo('consoleLogLevel 이 "silent" 면 Console transport 를 등록하지 않는다')
+
     it('Service 콘솔 포맷이 올바르게 출력된다', async () => {
         const consoleLogger = createWinstonLogger({
             consoleLogLevel: 'info',
@@ -125,4 +127,8 @@ describe('createWinstonLogger', () => {
 
         consoleLogger.close()
     })
+
+    it.todo(
+        'contextType 이 service 면 formatServiceLogMessage 가, http/service 둘 다 아니면 formatGenericLogMessage 가 사용된다 (formatter dispatch lock-down)'
+    )
 })

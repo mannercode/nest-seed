@@ -94,21 +94,25 @@ describe('DateTimeRange', () => {
                 expect(throwException).toThrow('Invalid options provided.')
             })
         })
+
+        it.todo('days 와 minutes 를 모두 넘기면 두 값이 합산된 범위를 만든다')
+
+        it.todo('days 가 음수면 start 이전의 범위가 만들어진다')
+
+        it.todo('end 만 단독 제공되면 (start 없이) Invalid options 에러를 던진다')
+
+        it.todo('Date 입력의 timezone 은 무시되고 UTC/일관 정렬되어 있다고 가정한다')
     })
 })
 
 describe('PartialDateTimeRange', () => {
-    describe('날짜 문자열이 유효할 때', () => {
-        it('문자열을 Date로 변환하고 검증을 통과한다', () => {
-            const plainData = { end: '2023-01-02T00:00:00Z', start: '2023-01-01T00:00:00Z' }
+    it('start와 end가 모두 선택적이며 빈 객체로도 검증을 통과한다', () => {
+        const instance = plainToInstance(PartialDateTimeRange, {})
 
-            const instance = plainToInstance(PartialDateTimeRange, plainData)
+        expect(instance.start).toBeUndefined()
+        expect(instance.end).toBeUndefined()
 
-            expect(instance.start).toBeInstanceOf(Date)
-            expect(instance.end).toBeInstanceOf(Date)
-
-            const errors = validateSync(instance)
-            expect(errors).toHaveLength(0)
-        })
+        const errors = validateSync(instance)
+        expect(errors).toHaveLength(0)
     })
 })

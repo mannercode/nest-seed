@@ -37,6 +37,10 @@ describe('JsonUtil', () => {
                 expect(parsed.value).toEqual(value)
             }
         )
+
+        it.todo('64-bit 안전 범위(MAX_SAFE_INTEGER 미만) 정수는 number 그대로 둔다')
+
+        it.todo('배열 요소 안의 64-bit 정수도 string 으로 변환된다')
     })
 
     describe('reviveDates', () => {
@@ -73,5 +77,13 @@ describe('JsonUtil', () => {
             const converted = JsonUtil.reviveDates({ value })
             expect(converted.value).toEqual(value)
         })
+
+        it.todo(
+            'milliseconds (.SSS) 가 없는 ISO 8601 (예: "2023-01-01T00:00:00Z") 은 ISO_DATE regex 와 일치하지 않아 Date 로 되살리지 않는다'
+        )
+
+        it.todo(
+            'Z 가 아닌 timezone offset (예: "+09:00") 이 붙은 ISO 8601 도 ISO_DATE regex 미일치로 Date 로 되살리지 않는다'
+        )
     })
 })

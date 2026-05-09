@@ -2,60 +2,52 @@ import type { RedisModuleFixture } from './redis.module.fixture'
 
 describe('RedisModule', () => {
     describe('forRoot', () => {
-        let fix: RedisModuleFixture
-
-        describe('URL로 연결한다', () => {
-            beforeEach(async () => {
-                const { createRedisModuleFixture } = await import('./redis.module.fixture')
-                fix = await createRedisModuleFixture()
-            })
-            afterEach(() => fix.teardown())
-
-            it('creates a Redis connection', async () => {
+        it('URL로 연결한다', async () => {
+            const { createRedisModuleFixture } = await import('./redis.module.fixture')
+            const fix = await createRedisModuleFixture()
+            try {
                 const result = await fix.redis.ping()
                 expect(result).toBe('PONG')
-            })
+            } finally {
+                await fix.teardown()
+            }
         })
 
-        describe('커넥션 이름을 지정한다', () => {
-            beforeEach(async () => {
-                const { createRedisModuleNamedFixture } = await import('./redis.module.fixture')
-                fix = await createRedisModuleNamedFixture()
-            })
-            afterEach(() => fix.teardown())
-
-            it('creates a named Redis connection', async () => {
+        it('커넥션 이름을 지정한다', async () => {
+            const { createRedisModuleNamedFixture } = await import('./redis.module.fixture')
+            const fix = await createRedisModuleNamedFixture()
+            try {
                 const result = await fix.redis.ping()
                 expect(result).toBe('PONG')
-            })
+            } finally {
+                await fix.teardown()
+            }
         })
 
-        describe('URL과 옵션을 함께 제공한다', () => {
-            beforeEach(async () => {
-                const { createRedisModuleUrlWithOptionsFixture } =
-                    await import('./redis.module.fixture')
-                fix = await createRedisModuleUrlWithOptionsFixture()
-            })
-            afterEach(() => fix.teardown())
-
-            it('creates a Redis connection', async () => {
+        it('URL과 옵션을 함께 제공한다', async () => {
+            const { createRedisModuleUrlWithOptionsFixture } = await import(
+                './redis.module.fixture'
+            )
+            const fix = await createRedisModuleUrlWithOptionsFixture()
+            try {
                 const result = await fix.redis.ping()
                 expect(result).toBe('PONG')
-            })
+            } finally {
+                await fix.teardown()
+            }
         })
 
-        describe('옵션만 제공한다', () => {
-            beforeEach(async () => {
-                const { createRedisModuleOptionsOnlyFixture } =
-                    await import('./redis.module.fixture')
-                fix = await createRedisModuleOptionsOnlyFixture()
-            })
-            afterEach(() => fix.teardown())
-
-            it('creates a Redis connection', async () => {
+        it('옵션만 제공한다', async () => {
+            const { createRedisModuleOptionsOnlyFixture } = await import(
+                './redis.module.fixture'
+            )
+            const fix = await createRedisModuleOptionsOnlyFixture()
+            try {
                 const result = await fix.redis.ping()
                 expect(result).toBe('PONG')
-            })
+            } finally {
+                await fix.teardown()
+            }
         })
     })
 

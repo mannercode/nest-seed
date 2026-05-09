@@ -87,5 +87,9 @@ describe('Env', () => {
                 expect(Env.getBoolean('TEST_BOOLEAN')).toBe(true)
             })
         })
+
+        it.todo(
+            'getBoolean 이 정확히 "true" (대소문자 무시) 만 true 로 인정하고 "1"/"yes"/"TRUE" 등은 false 로 처리한다 (정책 lock-down)'
+        )
     })
 })

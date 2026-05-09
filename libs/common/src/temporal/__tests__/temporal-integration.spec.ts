@@ -25,15 +25,13 @@ afterAll(async () => {
 })
 
 describe('InjectTemporalClient', () => {
-    it('이름 없이 호출하면 parameter decorator 를 반환한다 (기본 이름)', async () => {
-        const { InjectTemporalClient } = await import('../temporal-client.module')
-        expect(typeof InjectTemporalClient()).toBe('function')
-    })
-
-    it('이름을 주면 그 이름의 client 토큰에 대한 decorator 를 반환한다', async () => {
-        const { InjectTemporalClient } = await import('../temporal-client.module')
-        expect(typeof InjectTemporalClient('orders')).toBe('function')
-    })
+    it.each([undefined, 'my-client'])(
+        'name=%s 일 때 parameter decorator 를 반환한다',
+        async (name) => {
+            const { InjectTemporalClient } = await import('../temporal-client.module')
+            expect(typeof InjectTemporalClient(name)).toBe('function')
+        }
+    )
 })
 
 describe('TemporalClientModule.forRootAsync', () => {
@@ -274,4 +272,15 @@ describe('TemporalWorkerService', () => {
         await expect(service.onModuleDestroy()).resolves.toBeUndefined()
         expect(fakeConnection.close).toHaveBeenCalled()
     }, 120_000)
+
+    it.todo(
+        'onModuleDestroy 이전에 worker.run() 의 promise 가 drain 된 뒤에야 connection 이 닫힌다 (ordering)'
+    )
+    it.todo('onModuleDestroy 가 두 번 호출돼도 두 번째는 no-op 이다')
+    it.todo(
+        'workflowBundlePath 가 지정됐지만 파일이 없으면 bundleWorkflowCode 런타임 호출로 fallback 한다'
+    )
+    it.todo(
+        'workflowBundlePath 가 빈 문자열 ("") 이면 existsSync 가 false 라 bundleWorkflowCode fallback 으로 진행된다'
+    )
 })

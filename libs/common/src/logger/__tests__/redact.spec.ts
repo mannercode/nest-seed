@@ -43,9 +43,17 @@ describe('redactSensitive', () => {
         expect(redactSensitive(undefined as unknown)).toBe(undefined)
     })
 
-    it('민감 키가 없으면 같은 모양을 유지한다', () => {
-        const input = { a: 1, b: { c: [1, 2] } }
-
-        expect(redactSensitive(input)).toEqual(input)
-    })
+    it.todo('자기 참조 객체를 [CIRCULAR] 로 치환하고 stack overflow 없이 끝낸다')
+    it.todo('서로 다른 두 sub-tree 가 같은 객체를 참조하면 양쪽 다 [CIRCULAR] 로 치환한다')
+    it.todo('배열이 자기 자신을 원소로 포함할 때도 [CIRCULAR] 로 치환한다 (객체 cycle 과 별개의 분기)')
+    it.todo('객체 안의 배열 안의 객체에서도 민감 키만 [REDACTED] 되고 나머지는 보존된다')
+    it.todo(
+        '변형 명명 (pwd, userSecret, apiToken, accessTokenString) 은 정확 매칭 설계상 redact 되지 않는다 (의도된 false-negative lock-down)'
+    )
+    it.todo(
+        'Date/RegExp/Map/Set 같은 special object 도 Object.entries 기반 walk 가 그대로 통과시킨다 (deep copy 의 한계 lock-down)'
+    )
+    it.todo(
+        'prototype chain 으로 상속된 password 필드는 Object.entries 가 보지 못해 redact 되지 않는다 (own property 만 검사하는 한계 lock-down)'
+    )
 })

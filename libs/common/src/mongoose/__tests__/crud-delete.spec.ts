@@ -71,33 +71,35 @@ describe('Crud Delete', () => {
                 await fix.model.deleteOne({ _id: createdDoc._id })
             })
 
-            it('find는 삭제된 문서를 제외한다', async () => {
+            it('find 호출 시 삭제된 문서가 제외된다', async () => {
                 const docs = await fix.model.find({})
                 expect(docs).toHaveLength(0)
             })
 
-            it('findOne은 삭제된 문서를 제외한다', async () => {
+            it('findOne 호출 시 삭제된 문서가 제외된다', async () => {
                 const doc = await fix.model.findOne({ _id: { $eq: createdDoc._id } })
                 expect(doc).toBeNull()
             })
 
-            it('findById는 삭제된 문서를 제외한다', async () => {
+            it('findById 호출 시 삭제된 문서가 제외된다', async () => {
                 const doc = await fix.model.findById(createdDoc._id)
                 expect(doc).toBeNull()
             })
 
-            it('countDocuments는 삭제된 문서를 제외한다', async () => {
+            it('countDocuments 호출 시 삭제된 문서가 제외된다', async () => {
                 const count = await fix.model.countDocuments({})
                 expect(count).toBe(0)
             })
 
-            it('exists는 삭제된 문서를 제외한다', async () => {
+            it('exists 호출 시 삭제된 문서가 제외된다', async () => {
                 const result = await fix.model.exists({ _id: { $eq: createdDoc._id } })
                 expect(result).toBeNull()
             })
 
-            it('집계는 삭제된 문서를 제외한다', async () => {
-                const aggregateResult = await fix.model.aggregate([{ $match: { name: 'name' } }])
+            it('aggregate 호출 시 삭제된 문서가 제외된다', async () => {
+                const aggregateResult = await fix.model.aggregate([
+                    { $match: { name: 'name' } }
+                ])
                 expect(aggregateResult).toHaveLength(0)
             })
 
@@ -105,6 +107,10 @@ describe('Crud Delete', () => {
                 const docs = await fix.model.find({}).setOptions({ withDeleted: true })
                 expect(docs).toHaveLength(1)
             })
+
+            it.todo(
+                'withDeleted:true 옵션을 주면 soft-deleted 문서도 find 결과에 포함된다 (escape hatch lock-down)'
+            )
         })
 
         describe('삭제된 문서를 대상으로 한 update 동작', () => {
@@ -278,6 +284,19 @@ describe('Crud Delete', () => {
                 expect(docs).toHaveLength(2)
                 expect(docs.every((d) => d.deletedAt instanceof Date)).toBe(true)
             })
+
+            it.todo(
+                'deleteOne / deleteMany 가 updateOne/updateMany 로 변환되며 filter 에 deletedAt:null 이 자동 주입된다'
+            )
+            it.todo(
+                'bulkWrite 의 update 계열도 filter 에 deletedAt:null 이 주입돼 이미 soft-delete 된 문서는 영향받지 않는다'
+            )
+            it.todo(
+                'bulkWrite 의 deleteOne/deleteMany 가 mongoose driver 에 도달하기 전에 updateOne/updateMany 로 변환된다 (pre-hook 실행 순서 lock-down)'
+            )
+            it.todo(
+                'bulkWrite 의 insertOne 은 변환 대상이 아니므로 deletedAt 주입 없이 그대로 통과한다'
+            )
         })
 
         describe('findOneAndReplace on soft-deleted documents', () => {

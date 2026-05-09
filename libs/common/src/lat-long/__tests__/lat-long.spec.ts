@@ -30,6 +30,16 @@ describe('LatLong', () => {
                 expect(actualDistance).toBeLessThan(expectedDistance + tolerance)
             })
         })
+
+        it.todo('극점 (위도 ±90) 좌표끼리의 거리를 정확히 계산한다')
+
+        it.todo('정반대 (antipode) 좌표 간 거리는 지구 둘레의 절반에 근접한다')
+
+        it.todo('1m 미만 정밀도가 필요한 매우 가까운 좌표 차이도 안정적으로 계산한다')
+
+        it.todo(
+            'coordinate 문자열의 scientific notation (예: "1.23e-5") 도 Number() 결과대로 파싱된다'
+        )
     })
 
     describe('GET /latLong', () => {
@@ -56,33 +66,37 @@ describe('LatLong', () => {
                     .badRequest(LatLongErrors.InvalidFormat())
             })
 
-            it('returns 400 Bad Request when location is passed multiple times', async () => {
+            it('location 이 여러 번 전달되면 400 Bad Request 를 반환한다', async () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: ['37.123,128.678', '38.123,129.678'] })
                     .badRequest(LatLongErrors.InvalidFormat())
             })
 
-            it('returns 400 Bad Request when extra coordinates are passed', async () => {
+            it('좌표가 추가로 전달되면 400 Bad Request 를 반환한다', async () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: '37.123,128.678,999' })
                     .badRequest(LatLongErrors.InvalidFormat())
             })
 
-            it('returns 400 Bad Request when non-numeric values are passed', async () => {
+            it('숫자가 아닌 값이 전달되면 400 Bad Request 를 반환한다', async () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: '37abc,127xyz' })
                     .badRequest(LatLongErrors.InvalidFormat())
             })
 
-            it('returns 400 Bad Request when a coordinate exceeds 20 digits', async () => {
+            it('좌표가 20자리를 초과하면 400 Bad Request 를 반환한다', async () => {
                 await fix.httpClient
                     .get('/latLong')
                     .query({ location: '123456789012345678901,127' })
                     .badRequest(LatLongErrors.InvalidFormat())
             })
+
+            it.todo(
+                '"123." 처럼 trailing dot 으로 끝나는 좌표는 isNumericString regex 가 허용해 Number("123.") = 123 으로 파싱된다'
+            )
         })
 
         describe('쿼리가 범위를 벗어날 때', () => {

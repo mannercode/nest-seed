@@ -5,6 +5,7 @@ jest.mock('ioredis', () => {
 
 describe('RedisModule', () => {
     describe('forRoot with cluster', () => {
+        // Note: mock-only — does not exercise actual cluster routing. Real cluster behavior is covered by integration in jwt-auth tests.
         it('cluster 옵션으로 Cluster 인스턴스를 생성한다', async () => {
             const { Cluster } = await import('ioredis')
             const mockCluster = { ping: jest.fn().mockResolvedValue('PONG') }
