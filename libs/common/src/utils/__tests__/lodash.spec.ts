@@ -102,7 +102,7 @@ describe('sortBy', () => {
         expect(sortBy(items, 'name')).toEqual([{ name: 'a' }, { name: 'b' }, { name: 'c' }])
     })
 
-    it('함수로 정렬한다', () => {
+    it('키 추출 함수로 정렬한다', () => {
         expect(sortBy(items, (i) => i.name)).toEqual([{ name: 'a' }, { name: 'b' }, { name: 'c' }])
     })
 
@@ -120,7 +120,7 @@ describe('orderBy', () => {
         { age: 30, name: 'a' }
     ]
 
-    it('정렬 함수와 단일 방향으로 정렬한다', () => {
+    it('키 추출 함수와 방향 하나로 정렬한다', () => {
         const result = orderBy(items, (i) => i.age, 'desc')
         expect(result[0].age).toBe(30)
         expect(result[2].age).toBe(20)
@@ -131,7 +131,7 @@ describe('orderBy', () => {
         expect(result).toEqual([{ v: 1 }, { v: 2 }, { v: 3 }])
     })
 
-    it('여러 키와 여러 방향으로 정렬한다', () => {
+    it('여러 키 이름과 여러 방향으로 정렬한다', () => {
         const result = orderBy(items, ['age', 'name'], ['desc', 'asc'])
         expect(result).toEqual([
             { age: 30, name: 'a' },
@@ -243,11 +243,11 @@ describe('minBy', () => {
 })
 
 describe('countBy', () => {
-    it('함수로 그룹별 개수를 반환한다', () => {
+    it('키 함수로 그룹별 개수를 센다', () => {
         expect(countBy([6.1, 4.2, 6.3], (n) => String(Math.floor(n)))).toEqual({ '4': 1, '6': 2 })
     })
 
-    it('함수가 없으면 값을 문자열로 변환해 그룹화한다', () => {
+    it('키 함수 없이 호출하면 값을 문자열로 변환해 그룹별 개수를 센다', () => {
         expect(countBy(['a', 'b', 'a'])).toEqual({ a: 2, b: 1 })
     })
 
@@ -255,7 +255,7 @@ describe('countBy', () => {
 })
 
 describe('sumBy', () => {
-    it('각 항목에 함수를 적용한 결과의 합을 반환한다', () => {
+    it('각 항목에서 추출한 값을 합산한다', () => {
         expect(sumBy([{ v: 1 }, { v: 2 }, { v: 3 }], (i) => i.v)).toBe(6)
     })
 

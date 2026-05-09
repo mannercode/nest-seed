@@ -176,27 +176,23 @@ describe('Crud Delete', () => {
             })
         })
 
-        describe('이미 삭제된 문서를 다시 deleteOne 하면', () => {
-            beforeEach(async () => {
-                await fix.model.deleteOne({ _id: createdDoc._id })
-            })
+        it('이미 삭제된 문서를 다시 deleteOne해도 deletedAt이 갱신되지 않는다 (멱등)', async () => {
+            await fix.model.deleteOne({ _id: createdDoc._id })
 
-            it('deletedAt이 다시 갱신되지 않는다 (멱등)', async () => {
-                const firstDoc = await fix.model
-                    .findOne({ _id: { $eq: createdDoc._id } })
-                    .setOptions({ withDeleted: true })
-                    .exec()
-                const firstDeletedAt = firstDoc?.deletedAt
+            const firstDoc = await fix.model
+                .findOne({ _id: { $eq: createdDoc._id } })
+                .setOptions({ withDeleted: true })
+                .exec()
+            const firstDeletedAt = firstDoc?.deletedAt
 
-                await fix.model.deleteOne({ _id: createdDoc._id })
+            await fix.model.deleteOne({ _id: createdDoc._id })
 
-                const secondDoc = await fix.model
-                    .findOne({ _id: { $eq: createdDoc._id } })
-                    .setOptions({ withDeleted: true })
-                    .exec()
+            const secondDoc = await fix.model
+                .findOne({ _id: { $eq: createdDoc._id } })
+                .setOptions({ withDeleted: true })
+                .exec()
 
-                expect(secondDoc?.deletedAt).toEqual(firstDeletedAt)
-            })
+            expect(secondDoc?.deletedAt).toEqual(firstDeletedAt)
         })
 
         describe('복원', () => {
@@ -290,15 +286,13 @@ describe('Crud Delete', () => {
             it.todo('insertOne은 변환되지 않고 그대로 통과한다')
         })
 
-        describe('unique index와의 상호작용', () => {
-            // unique 인덱스는 collection 전체(삭제 포함)에 적용된다.
-            // 알려진 한계로, 애플리케이션이 필요하면 partial index를 써야 한다.
-            it('unique index는 삭제된 문서에도 여전히 적용된다', async () => {
-                await fix.model.collection.createIndex({ name: 1 }, { unique: true })
-                await fix.model.deleteOne({ _id: createdDoc._id })
+        // unique 인덱스는 collection 전체(삭제 포함)에 적용되는 알려진 한계.
+        // 회피하려면 애플리케이션이 partial index를 써야 한다.
+        it('unique index는 삭제된 문서에도 여전히 적용된다', async () => {
+            await fix.model.collection.createIndex({ name: 1 }, { unique: true })
+            await fix.model.deleteOne({ _id: createdDoc._id })
 
-                await expect(fix.model.create({ name: 'name' })).rejects.toThrow(/duplicate key/i)
-            })
+            await expect(fix.model.create({ name: 'name' })).rejects.toThrow(/duplicate key/i)
         })
 
         describe('deletedAt을 명시적으로 조회하면', () => {

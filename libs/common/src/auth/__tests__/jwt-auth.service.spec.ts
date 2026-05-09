@@ -22,7 +22,7 @@ describe('JwtAuthService', () => {
             })
         })
 
-        it('토큰에 issuer와 audience가 포함된다', async () => {
+        it('access 토큰에 issuer와 audience가 포함된다', async () => {
             const { TEST_AUTH_AUDIENCE, TEST_AUTH_ISSUER } =
                 await import('./jwt-auth.service.fixture')
             const tokens = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
@@ -345,8 +345,6 @@ describe('JwtAuthService', () => {
     })
 
     describe('사용자 ID 없는 payload', () => {
-        // sub가 없을 때 사용자별 인덱스 없이도 모든 흐름이 동작해야 한다.
-        // (storeToken의 if(userId) false 분기, revokeFamily의 if(userId) false 분기)
         it('sub가 없어도 발급, 회전, 폐기가 정상 동작한다', async () => {
             const tokens = await fix.jwtService.generateAuthTokens({ email: 'no-sub@x' })
 

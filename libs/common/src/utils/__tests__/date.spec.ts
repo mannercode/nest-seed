@@ -33,12 +33,12 @@ describe('DateUtil', () => {
             new Date('2022-01-02T09:20:00Z')
         ]
 
-        it('가장 이른 날짜를 반환한다', () => {
+        it('earliest는 가장 이른 날짜를 반환한다', () => {
             const date = DateUtil.earliest(dates)
             expect(date).toEqual(new Date('2022-01-01T12:00:00Z'))
         })
 
-        it('가장 늦은 날짜를 반환한다', () => {
+        it('latest는 가장 늦은 날짜를 반환한다', () => {
             const date = DateUtil.latest(dates)
             expect(date).toEqual(new Date('2022-01-03T15:30:00Z'))
         })

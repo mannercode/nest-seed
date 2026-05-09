@@ -16,7 +16,7 @@ describe('AppendOnly', () => {
     afterEach(() => fix.teardown())
 
     describe('AppendOnlySchema', () => {
-        it('새 문서는 정상적으로 저장된다', () => {
+        it('새 문서는 저장된다', () => {
             expect(createdDoc.id).toBeDefined()
             expect(createdDoc.name).toBe('name')
         })
@@ -26,7 +26,7 @@ describe('AppendOnly', () => {
             await expect(createdDoc.save()).rejects.toThrow(/append-only/)
         })
 
-        it('findById로 문서를 정상 조회한다', async () => {
+        it('findById로 문서를 조회할 수 있다', async () => {
             const found = await fix.model.findById(createdDoc._id).lean({ virtuals: true })
             expect(found).toMatchObject({ name: 'name' })
         })

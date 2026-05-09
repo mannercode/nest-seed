@@ -18,11 +18,11 @@ describe('TimeUtil', () => {
             expect(TimeUtil.toMs('1d2h')).toEqual((24 + 2) * 60 * 60 * 1000)
         })
 
-        it('소수점 단위를 처리한다', () => {
+        it('소수점 값도 변환한다', () => {
             expect(TimeUtil.toMs('0.5s')).toEqual(0.5 * 1000)
         })
 
-        it('음수 단위를 처리한다', () => {
+        it('음수 값도 변환한다', () => {
             expect(TimeUtil.toMs('-30s')).toEqual(-30 * 1000)
         })
 
@@ -48,7 +48,7 @@ describe('TimeUtil', () => {
             expect(TimeUtil.fromMs(0)).toEqual('0ms')
         })
 
-        it('음수도 처리한다', () => {
+        it('음수 값도 변환한다', () => {
             expect(TimeUtil.fromMs(-30 * 1000)).toEqual('-30s')
         })
     })

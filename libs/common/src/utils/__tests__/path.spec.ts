@@ -70,7 +70,7 @@ describe('PathUtil', () => {
             expect(result).toBe(true)
         })
 
-        it.todo('isDirectory는 존재하지 않는 경로에 대해 ENOENT를 그대로 throw한다')
+        it.todo('isDirectory는 존재하지 않는 경로에 대해 ENOENT 예외를 그대로 던진다')
 
         it('mkdir로 만든 디렉터리를 delete로 지운다', async () => {
             const dirPath = PathUtil.join(tempDir, 'testdir')
@@ -166,7 +166,7 @@ describe('PathUtil', () => {
             expect(deleteSpy).toHaveBeenCalledWith(src)
         })
 
-        it('move는 EXDEV가 아닌 rename 오류는 그대로 throw한다', async () => {
+        it('move는 EXDEV가 아닌 rename 예외는 그대로 던진다', async () => {
             const error = new Error('permission denied') as NodeJS.ErrnoException
             error.code = 'EACCES'
 

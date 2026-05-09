@@ -10,7 +10,7 @@ describe('ByteUtil', () => {
             expect(ByteUtil.fromString('1KB')).toBe(1024)
         })
 
-        it('1MB는 1024 * 1024를 반환한다', () => {
+        it('1MB는 1024^2를 반환한다', () => {
             expect(ByteUtil.fromString('1MB')).toBe(1024 * 1024)
         })
 
@@ -34,36 +34,36 @@ describe('ByteUtil', () => {
             expect(ByteUtil.fromString('-1KB')).toBe(-1024)
         })
 
-        it('GB/MB/KB가 섞인 합도 처리한다', () => {
+        it('GB/MB/KB가 섞여 있어도 합산한다', () => {
             expect(ByteUtil.fromString('1GB 256MB 128KB')).toBe(
                 1024 ** 3 + 256 * 1024 ** 2 + 128 * 1024
             )
         })
 
-        it('소문자 단위도 처리한다', () => {
+        it('소문자 단위도 인식한다', () => {
             expect(ByteUtil.fromString('1kb')).toBe(1024)
             expect(ByteUtil.fromString('1mb')).toBe(1024 * 1024)
             expect(ByteUtil.fromString('1gb')).toBe(1024 ** 3)
         })
 
         describe('형식이 유효하지 않을 때', () => {
-            it('알 수 없는 단어는 Error를 던진다', () => {
+            it('알 수 없는 단어는 예외를 던진다', () => {
                 expect(() => ByteUtil.fromString('invalid')).toThrow()
             })
 
-            it('단위 없는 숫자는 Error를 던진다', () => {
+            it('단위 없는 숫자는 예외를 던진다', () => {
                 expect(() => ByteUtil.fromString('123')).toThrow()
             })
 
-            it('정의되지 않은 단위는 Error를 던진다', () => {
+            it('정의되지 않은 단위는 예외를 던진다', () => {
                 expect(() => ByteUtil.fromString('123XB')).toThrow()
             })
 
-            it('형식이 깨진 입력은 Error를 던진다', () => {
+            it('형식이 깨진 입력은 예외를 던진다', () => {
                 expect(() => ByteUtil.fromString('1KB -')).toThrow()
             })
 
-            it.todo('빈 문자열은 Error를 던진다')
+            it.todo('빈 문자열은 예외를 던진다')
         })
     })
 
