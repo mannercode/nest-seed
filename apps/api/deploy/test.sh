@@ -24,4 +24,4 @@ trap cleanup EXIT
 docker compose --env-file "$ENV_FILE" up -d --build
 docker wait api-setup && docker rm api-setup
 
-bash "${APP_DIR}/specs/run.sh"
+bash "${APP_DIR}/examples/run.sh"

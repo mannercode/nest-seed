@@ -11,11 +11,11 @@ MongoDB, Redis 등 인프라는 이미 존재한다고 전제한다.
 | ------------- | ----------------------------------------------------------------- |
 | `compose.yml` | app x N replicas + nginx 로드밸런서                               |
 | `nginx.conf`  | least_conn 방식 리버스 프록시, upstream 정보 access log           |
-| `test.sh`     | compose up → [../specs/run.sh](../specs/) 실행 → down (배포 검증) |
+| `test.sh`     | compose up → [../examples/run.sh](../examples/) 실행 → down (배포 검증) |
 
 인프라 설정 외의 관련 리소스:
 
-- [../specs/](../specs/) — curl 기반 API 스펙 (실행 가능한 문서, `test.sh` 가 호출)
+- [../examples/](../examples/) — curl 기반 API 사용 예제 (실행 가능한 문서, `test.sh` 가 호출)
 - [../tests/](../tests/) — 4-replica 분산 race 시나리오 — [testing.md](../../../docs/testing.md#5-분산-테스트-cross-replica-race)
 
 ## 주요 설정
