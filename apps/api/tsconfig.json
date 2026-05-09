@@ -6,7 +6,7 @@
         "rootDir": ".",
         "outDir": "./_output/build",
         "paths": {
-            "config": ["src/config/index"],
+            "shared": ["src/shared/index"],
             "application": ["src/application/index"],
             "core": ["src/core/index"],
             "infrastructure": ["src/infrastructure/index"],

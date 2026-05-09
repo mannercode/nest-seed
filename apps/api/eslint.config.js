@@ -8,7 +8,7 @@ const {
     createBaseConfigs
 } = require('../../eslint.config.base')
 
-const internalAliasPattern = '^(?:application|gateway|core|infrastructure|config)$'
+const internalAliasPattern = '^(?:application|gateway|core|infrastructure|shared)$'
 const dependencyIgnorePatterns = [
     '^\\.',
     nodeBuiltinModulePattern,
@@ -143,7 +143,7 @@ module.exports = [
         }
     },
     {
-        files: ['src/config/**/*.ts'],
+        files: ['src/shared/**/*.ts'],
         rules: {
             'no-restricted-imports': [
                 'warn',
@@ -151,9 +151,9 @@ module.exports = [
                     patterns: [
                         ...barrelImportPatterns,
                         {
-                            regex: '^config(/.*)?$',
+                            regex: '^shared(/.*)?$',
                             message:
-                                'Use relative imports within config to avoid ancestor barrel cycles.'
+                                'Use relative imports within shared to avoid ancestor barrel cycles.'
                         },
                         {
                             group: [
@@ -166,7 +166,7 @@ module.exports = [
                                 'infrastructure',
                                 'infrastructure/**'
                             ],
-                            message: 'config must not depend on app layers.'
+                            message: 'shared must not depend on app layers.'
                         }
                     ]
                 }

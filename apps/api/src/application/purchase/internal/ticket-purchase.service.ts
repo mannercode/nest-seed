@@ -1,6 +1,5 @@
 import { DateUtil, uniq } from '@mannercode/common'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
-import { AppConfigService } from 'config'
 import {
     PurchaseItemDto,
     ShowtimeDto,
@@ -10,6 +9,7 @@ import {
     PurchaseItemType,
     TicketStatus
 } from 'core'
+import { AppConfigService } from 'shared'
 import { CreatePurchaseDto } from '../dtos'
 import { PurchaseErrors } from '../errors'
 import { PurchaseEvents } from '../purchase.events'

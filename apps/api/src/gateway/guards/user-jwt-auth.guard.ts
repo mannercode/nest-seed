@@ -3,7 +3,7 @@ import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/com
 import { GUARDS_METADATA } from '@nestjs/common/constants'
 import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
-import { AppConfigService } from 'config'
+import { AppConfigService } from 'shared'
 import { AuthErrors } from './errors'
 import { UserLocalAuthGuard } from './user-local-auth.guard'
 

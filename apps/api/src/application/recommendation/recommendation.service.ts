@@ -1,7 +1,7 @@
 import { DateUtil, OrderDirection, defaultTo } from '@mannercode/common'
 import { Injectable, Logger } from '@nestjs/common'
-import { AppConfigService } from 'config'
 import { MovieDto, MoviesService, ShowtimesService, WatchRecordsService } from 'core'
+import { AppConfigService } from 'shared'
 import { MovieRecommender } from './domain'
 
 @Injectable()

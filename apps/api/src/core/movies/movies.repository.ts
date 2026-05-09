@@ -6,8 +6,8 @@ import {
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'config'
 import { HydratedDocument, Model } from 'mongoose'
+import { MongooseConfigModule } from 'shared'
 import { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
 import { Movie } from './models'
 

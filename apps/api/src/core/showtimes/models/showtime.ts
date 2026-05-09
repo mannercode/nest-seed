@@ -1,6 +1,6 @@
 import { createCrudSchema, HardDelete, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'config'
+import { MongooseConfigModule } from 'shared'
 
 @HardDelete()
 @Schema(MongooseConfigModule.schemaOptions)

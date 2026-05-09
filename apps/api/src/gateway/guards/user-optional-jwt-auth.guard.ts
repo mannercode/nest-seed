@@ -2,7 +2,7 @@ import { OptionalJwtAuthGuard } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
-import { AppConfigService } from 'config'
+import { AppConfigService } from 'shared'
 
 @Injectable()
 export class UserOptionalJwtAuthGuard extends OptionalJwtAuthGuard {

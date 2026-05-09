@@ -30,7 +30,7 @@ export function buildCreatePurchaseDto(
 }
 
 export async function createShowtimeAndTickets(ctx: TestContext) {
-    const { AppConfigService } = await import('config')
+    const { AppConfigService } = await import('shared')
     const config = ctx.module.get(AppConfigService)
     const startTime = DateUtil.add({ minutes: config.ticket.purchaseCutoffMinutes + 1 })
 

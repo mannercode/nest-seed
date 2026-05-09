@@ -22,17 +22,16 @@ module.exports = {
     collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
     coveragePathIgnorePatterns: [
         '__tests__',
-        '/production\\.ts$',
-        '/development\\.ts$',
-        '/main\\.ts$',
-        '/config/configure-app\\.ts$',
+        // src 바로 아래의 .ts 는 진입점/와이어링 (development, production,
+        // bootstrap-app, app.module, global.module, errors, project-id 등) 이라
+        // 커버리지 측정 의미가 없다.
+        '/src/[^/]+\\.ts$',
         '/index\\.ts$',
         '\\.module\\.ts$',
-        // Temporal workflow 본문은 `bundleWorkflowCode` 의 sandbox VM 안에서
-        // 실행되므로 jest 의 istanbul instrumentation 이 실행 흐름을 볼 수
-        // 없다. showtime-creation.spec.ts 가 end-to-end 로 실행해도 마찬가지다.
-        // 순수 로직 (extractRootMessage 등) 은 sibling 파일에 있고 unit test
-        // 로 커버된다.
+        // Temporal 워크플로 본문은 `bundleWorkflowCode` 의 격리된 가상머신 안에서
+        // 실행되므로 jest 의 istanbul 계측이 실행 흐름을 볼 수 없다.
+        // showtime-creation.spec.ts 가 종단 간으로 실행해도 마찬가지다. 순수 로직
+        // (extractRootMessage 등) 은 옆 파일에 있고 단위 테스트로 덮인다.
         '/temporal/workflows\\.ts$'
     ],
     coverageDirectory: '<rootDir>/_output/coverage'

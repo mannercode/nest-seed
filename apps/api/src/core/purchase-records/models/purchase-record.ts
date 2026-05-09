@@ -1,7 +1,7 @@
 import { createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
-import { MongooseConfigModule } from 'config'
+import { MongooseConfigModule } from 'shared'
 
 export const PurchaseItemType = { Foods: 'foods', Tickets: 'tickets' } as const
 

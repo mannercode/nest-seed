@@ -1,3 +1,3 @@
-import { bootstrap } from './main'
+import { bootstrapApp } from './bootstrap-app'
 
-void bootstrap()
+void bootstrapApp()

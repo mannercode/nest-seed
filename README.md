@@ -59,7 +59,7 @@ nest-seed/
 │   │   ├── core/                도메인 모델, 리포지토리
 │   │   ├── infrastructure/      외부 서비스 (결제, 파일)
 │   │   └── config/              앱 설정, Rules, 파이프
-│   ├── examples/                실행 가능한 API 사용 예제 (curl 기반)
+│   ├── api-docs/                실행 가능한 API 문서 (curl 기반)
 │   ├── tests/                   분산 race 시나리오, perf 하네스
 │   └── deploy/                  Docker Compose, nginx
 │
@@ -81,7 +81,7 @@ nest-seed/
 
 ### 2. 도메인 코드 교체
 
-`apps/api/src/`에 들어 있는 영화 예매 도메인(Users, Movies, Theaters, Showtimes, Tickets, Bookings, Purchases)을 새 도메인으로 교체한다. 단위 테스트는 `apps/api/src/__tests__/` 아래에, API 사용 예제는 `apps/api/examples/*.spec` 에 있으므로 함께 수정한다.
+`apps/api/src/`에 들어 있는 영화 예매 도메인(Users, Movies, Theaters, Showtimes, Tickets, Bookings, Purchases)을 새 도메인으로 교체한다. 단위 테스트는 `apps/api/src/__tests__/` 아래에, 실행 가능한 API 문서는 `apps/api/api-docs/*.spec` 에 있으므로 함께 수정한다.
 
 ### 3. CI와 저장소 정리
 

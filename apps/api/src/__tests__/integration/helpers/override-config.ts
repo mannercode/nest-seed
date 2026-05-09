@@ -1,5 +1,5 @@
 import type { TestingModule } from '@nestjs/testing'
-import type { AppConfigService } from 'config'
+import type { AppConfigService } from 'shared'
 
 /**
  * AppConfigService 의 그룹 getter 를 부분 override 한다.
@@ -15,7 +15,7 @@ export async function overrideConfigGetter<K extends 'asset' | 'ticket'>(
     key: K,
     override: Partial<AppConfigService[K]>
 ) {
-    const { AppConfigService } = await import('config')
+    const { AppConfigService } = await import('shared')
     const config = module.get(AppConfigService)
     const original = config[key]
     const merged = { ...original, ...override }

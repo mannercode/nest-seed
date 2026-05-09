@@ -272,7 +272,7 @@ describe('AssetsService', () => {
         })
 
         it('업로드가 만료된 에셋은 제거한다', async () => {
-            const { AppConfigService } = await import('config')
+            const { AppConfigService } = await import('shared')
             const config = fix.module.get(AppConfigService)
             await sleep(config.asset.uploadExpiresInSec * 1000 + 500)
 

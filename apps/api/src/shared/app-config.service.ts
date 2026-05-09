@@ -1,4 +1,4 @@
-import { BaseConfigService, Require } from '@mannercode/common'
+import { BaseConfigService } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import Joi from 'joi'
@@ -55,8 +55,8 @@ export class AppConfigService extends BaseConfigService {
         S3_REGION: Joi.string().required(),
         S3_SECRET_KEY: Joi.string().required(),
 
-        // Project / runtime tunables. PROJECT_ID 는 module-load 시점에도 필요해
-        // 환경에서 반드시 정의돼야 한다 (default 없음).
+        // PROJECT_ID 는 모듈 로드 시점에 getProjectId() 가 process.env 에서 직접
+        // 읽지만, NestFactory.create 시점에 Joi 가 다시 검증하도록 schema 에 둔다.
         PROJECT_ID: Joi.string().required(),
 
         // 도메인 정책 — env 미정의 시 default 가 사용되므로 운영 튜닝만 .env 에 둔다.
@@ -66,15 +66,6 @@ export class AppConfigService extends BaseConfigService {
         TICKET_MAX_PER_PURCHASE: Joi.number().default(10),
         TICKET_PURCHASE_CUTOFF_MINUTES: Joi.number().default(30)
     })
-
-    /**
-     * Module-load 시점에 PROJECT_ID 가 필요한 경우용 정적 접근.
-     * Joi 검증 이전이라 직접 process.env 를 읽고 부재 시 throw.
-     */
-    static get projectId(): string {
-        Require.defined(process.env.PROJECT_ID, 'PROJECT_ID must be defined.')
-        return process.env.PROJECT_ID
-    }
 
     get auth() {
         return {
@@ -148,10 +139,6 @@ export class AppConfigService extends BaseConfigService {
             forcePathStyle: this.getBoolean('S3_FORCE_PATH_STYLE'),
             region: this.getString('S3_REGION')
         }
-    }
-
-    get projectId() {
-        return this.getString('PROJECT_ID')
     }
 
     get asset() {

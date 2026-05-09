@@ -1,10 +1,9 @@
-import type { Seat } from '../../shared'
-import type { TicketStatus } from '../models'
+import type { SeatPosition, TicketStatus } from '../models'
 
 export class TicketDto {
     id: string
     movieId: string
-    seat: Seat
+    seat: SeatPosition
     showtimeId: string
     status: TicketStatus
     theaterId: string

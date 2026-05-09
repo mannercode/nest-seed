@@ -1,7 +1,7 @@
 import { newObjectIdString } from '@mannercode/common'
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { Client, WorkflowIdReusePolicy } from '@temporalio/client'
-import { TemporalConfigModule } from 'config'
+import { TemporalConfigModule } from 'shared'
 import { BulkCreateShowtimesDto } from '../dtos'
 import { ShowtimeCreationEvents } from '../showtime-creation.events'
 import { getShowtimeCreationTaskQueue, SHOWTIME_CREATION_WORKFLOW } from '../temporal'

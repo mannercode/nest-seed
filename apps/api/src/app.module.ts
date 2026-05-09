@@ -2,15 +2,15 @@ import { HttpExceptionLoggerFilter, HttpSuccessLoggerInterceptor } from '@manner
 import { Module } from '@nestjs/common'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import { ApplicationModule } from 'application'
+import { CoreModule } from 'core'
+import { GatewayModule, HealthModule, RequestValidationPipe } from 'gateway'
+import { InfrastructureModule } from 'infrastructure'
 import {
     MongooseConfigModule,
     NatsConfigModule,
     RedisConfigModule,
     TemporalConfigModule
-} from 'config'
-import { CoreModule } from 'core'
-import { GatewayModule, HealthModule, RequestValidationPipe } from 'gateway'
-import { InfrastructureModule } from 'infrastructure'
+} from 'shared'
 import { GlobalModule } from './global.module'
 
 @Module({

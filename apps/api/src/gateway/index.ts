@@ -1,4 +1,5 @@
 export * from './booking.http-controller'
+export * from './errors'
 export * from './gateway.module'
 export * from './guards'
 export * from './health.module'

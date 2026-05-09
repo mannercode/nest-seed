@@ -1,20 +1,24 @@
 # 컨벤션
 
-이 문서는 코드 리뷰나 자동화로 강제되는 약속들을 모아 둔다. *왜 이렇게 정했는지* 가 중요한 항목은 함께 적었고, 나머지는 일관성 자체가 목적이라고 보면 된다.
+이 문서는 코드 리뷰나 자동화로 강제되는 약속들을 모아 둔다. _왜 이렇게 정했는지_ 가 중요한 항목은 함께 적었고, 나머지는 일관성 자체가 목적이라고 보면 된다.
 
 ## 1. 네이밍
 
 ### 1.1. 디렉토리: `common` vs `shared`
 
-이름이 비슷해서 헷갈리지만 둘은 범위가 다르다. `common`은 *프로젝트 간* 공유, `shared`는 *한 계층 안에서* 공유다.
+이름이 비슷해서 헷갈리지만 둘은 프로젝트와의 *관계* 가 다르다.
 
-| 위치                          | 범위              | import 경로          |
-| ----------------------------- | ----------------- | -------------------- |
-| `libs/common/`                | 프로젝트 간 공유  | `@mannercode/common` |
-| `apps/*/src/config/`          | 앱 전체           | `'config'`           |
-| `apps/*/src/**/core/shared/`  | core 레이어 내부  | 상대 경로            |
+- **`common` = 각 프로젝트의 *일부가 되는* 것.** 라이브러리로 import 되어 그 프로젝트의 빌드 산출물 안에서 실행되는 코드. 의존성으로 끌어와서 내 일부로 만든다.
+- **`shared` = 프로젝트의 일부가 아니라 프로젝트가 *사용하는 독립된* 무언가.** 한 도메인이나 레이어의 소속이 아닌, 모두가 외부 자원처럼 가져다 쓰는 분리된 자리.
 
-`core/` 바깥에는 `shared` 디렉토리를 만들지 않는다. 더 넓은 범위로 공유하고 싶다면 `config` 로 옮기거나 별도 패키지로 빼는 것이 일관된 선택이다.
+| 위치                 | 관계                                         | import 경로          |
+| -------------------- | -------------------------------------------- | -------------------- |
+| `libs/common/`       | 각 프로젝트의 일부가 되는 라이브러리         | `@mannercode/common` |
+| `apps/*/src/shared/` | 프로젝트 안에서 어느 곳에도 속하지 않는 독립 자리 | `'shared'`           |
+
+`apps/*/src/shared/` 는 application / core / gateway / infrastructure 네 레이어가 실행 중에 함께 의존하는 것만 담는다. 환경 변수 검증 (`AppConfigService`), 외부 자원 연결 모듈 (`MongooseConfigModule` 등), 그리고 `getProjectId` 같이 모든 레이어가 부르는 함수가 들어간다. 부팅에만 쓰이는 모듈/함수는 `apps/*/src/` 직속에 둔다.
+
+`core/` 안에는 별도의 공유 자리를 두지 않는다. 두 도메인이 같은 자료 구조를 다뤄야 한다면, 한 모델로 강제로 묶는 대신 각 도메인이 자기 본질에 맞는 이름으로 따로 정의한다 (예: Theater 의 `Seat` = 극장이 정의하는 좌석, Ticket 의 `SeatPosition` = 티켓이 가리키는 좌석 좌표). 자료 구조의 우연한 일치는 모델 공유의 근거가 아니다.
 
 ### 1.2. 파일
 
@@ -47,16 +51,16 @@ Repository에는 `findById` / `findByIds` 와 `getById` / `getByIds` 가 있다.
 
 ### 1.4. 서비스 이름의 단/복수와 suffix
 
-서비스 이름에는 두 가지 축이 있다. 하나는 *단수냐 복수냐*, 다른 하나는 *`Service` suffix를 붙이느냐 마느냐* 다.
+서비스 이름에는 두 가지 축이 있다. 하나는 _단수냐 복수냐_, 다른 하나는 _`Service` suffix를 붙이느냐 마느냐_ 다.
 
-먼저 단/복수는 이 서비스가 *프로세스 중심* 인지 *엔티티 관리 중심* 인지로 가른다.
+먼저 단/복수는 이 서비스가 _프로세스 중심_ 인지 _엔티티 관리 중심_ 인지로 가른다.
 
-| 유형               | 예시                                | 설명                 |
-| ------------------ | ----------------------------------- | -------------------- |
-| 프로세스 (단수)    | `BookingService`, `PurchaseService` | 특정 프로세스 처리   |
-| 엔티티 관리 (복수) | `MoviesService`, `TheatersService`  | 엔티티 CRUD          |
+| 유형               | 예시                                | 설명               |
+| ------------------ | ----------------------------------- | ------------------ |
+| 프로세스 (단수)    | `BookingService`, `PurchaseService` | 특정 프로세스 처리 |
+| 엔티티 관리 (복수) | `MoviesService`, `TheatersService`  | 엔티티 CRUD        |
 
-다음으로 suffix는 *이 클래스가 스스로 일을 처리하는가, 계산만 하는가* 로 가른다. 다른 서비스를 직접 호출해 작업을 끝내는 클래스에는 `Service` 를 붙이고, 외부에서 데이터를 모두 받아 계산만 하는 클래스에는 붙이지 않는다.
+다음으로 suffix는 _이 클래스가 스스로 일을 처리하는가, 계산만 하는가_ 로 가른다. 다른 서비스를 직접 호출해 작업을 끝내는 클래스에는 `Service` 를 붙이고, 외부에서 데이터를 모두 받아 계산만 하는 클래스에는 붙이지 않는다.
 
 ```
 ShowtimeBulkValidatorService  ← Showtimes/Movies/Theaters 서비스를 직접 호출
@@ -74,19 +78,19 @@ ShowtimeBulkValidator         ← 호출자가 데이터를 주입하고, 검증
 | `can`    | 권한이나 가능 여부  |
 | `should` | 규칙 기반 권장 여부 |
 
-검증 함수는 *실패했을 때 어떻게 동작하는가* 로 동사를 고른다.
+검증 함수는 _실패했을 때 어떻게 동작하는가_ 로 동사를 고른다.
 
-| 동사     | 동작                               |
-| -------- | ---------------------------------- |
-| `verify` | 실패하면 예외를 던진다             |
-| `check`  | 결과를 boolean으로 돌려준다        |
-| `ensure` | 없으면 만들어 둔다                 |
+| 동사     | 동작                        |
+| -------- | --------------------------- |
+| `verify` | 실패하면 예외를 던진다      |
+| `check`  | 결과를 boolean으로 돌려준다 |
+| `ensure` | 없으면 만들어 둔다          |
 
 이름은 항상 긍정형으로 둔다 (`isActive` 는 OK, `isNotActive` 는 피한다). 부정 의미는 호출 쪽에서 `!isActive()` 로 표현하는 편이 일관된다.
 
 ### 1.6. 날짜와 시간 필드
 
-시점을 다루는 필드는 접미어로 *어디까지 정밀한지* 를 알 수 있게 한다.
+시점을 다루는 필드는 접미어로 _어디까지 정밀한지_ 를 알 수 있게 한다.
 
 - `xxxDate` — 달력 날짜만 (예: `releaseDate`, `birthDate`)
 - `xxxAt` — 시·분·초 포함 timestamp (예: `createdAt`, `expiresAt`)
@@ -99,10 +103,7 @@ ShowtimeBulkValidator         ← 호출자가 데이터를 주입하고, 검증
 
 ```ts
 export const UserErrors = {
-    NotFound: () => ({
-        code: 'ERR_USER_NOT_FOUND',
-        message: 'User does not exist.'
-    }),
+    NotFound: () => ({ code: 'ERR_USER_NOT_FOUND', message: 'User does not exist.' }),
     EmailAlreadyExists: (email: string) => ({
         code: 'ERR_USER_EMAIL_ALREADY_EXISTS',
         message: 'Email is already registered.',
@@ -122,21 +123,21 @@ export const UserErrors = {
 
 ## 3. Import 규칙
 
-각 폴더에 `index.ts` (barrel export)를 두고 그 폴더의 공개 API를 한 곳에서 재수출한다. import는 *어디서 어디를 가리키는가* 에 따라 두 가지 규칙이 다르다.
+각 폴더에 `index.ts` (barrel export)를 두고 그 폴더의 공개 API를 한 곳에서 재수출한다. import는 _어디서 어디를 가리키는가_ 에 따라 두 가지 규칙이 다르다.
 
 **직계 조상 폴더는 상대 경로로 import 한다.** 절대 경로(`tsconfig` 의 `paths` 별칭)로 자기 조상을 참조하면 그 조상이 다시 자식을 import 하면서 순환 참조가 생기기 쉽다.
 
 ```ts
 /* users.service.ts */
-import { AuthService } from '../auth'        // O
-import { AuthService } from 'src/services'   // X — 순환 참조 위험
+import { AuthService } from '../auth' // O
+import { AuthService } from 'src/services' // X — 순환 참조 위험
 ```
 
 **조상이 아닌 폴더는 절대 경로를 쓴다.** 이쪽은 상대 경로로 쓰면 `../../../` 처럼 깊이가 길어져 가독성이 떨어진다.
 
 ```ts
 /* users.http-controller.ts */
-import { AuthService } from 'src/services'   // O
+import { AuthService } from 'src/services' // O
 ```
 
 폴더마다 `index.ts` 를 두는 이유 중 하나는 순환 참조가 일찍 드러나도록 하기 위해서다. 모든 import가 `index.ts` 를 거치면, 의존 그래프가 단순해지고 사이클이 생기면 곧바로 빌드 오류로 보인다.
@@ -147,7 +148,7 @@ import { AuthService } from 'src/services'   // O
 
 ### 4.1. 리소스 중심 설계
 
-URL 경로는 *행위* 가 아니라 *리소스* 를 기준으로 구성하고, 리소스 사이의 관계는 중첩 경로로 표현한다.
+URL 경로는 _행위_ 가 아니라 _리소스_ 를 기준으로 구성하고, 리소스 사이의 관계는 중첩 경로로 표현한다.
 
 ```
 GET    /movies                    목록
@@ -158,7 +159,7 @@ DELETE /movies/:id                삭제
 GET    /movies/:id/showtimes      하위 리소스
 ```
 
-다만 어떤 유스케이스는 여러 단계의 API로 분해되고, 그 단계들이 그 유스케이스 *맥락 안에서만* 의미를 가지는 경우가 있다. 이런 *복합 유스케이스* 는 namespace로 묶어 단독 API와 구분한다.
+다만 어떤 유스케이스는 여러 단계의 API로 분해되고, 그 단계들이 그 유스케이스 _맥락 안에서만_ 의미를 가지는 경우가 있다. 이런 _복합 유스케이스_ 는 namespace로 묶어 단독 API와 구분한다.
 
 ```
 # 복합 유스케이스 — namespace로 묶음
@@ -213,7 +214,7 @@ POST /showtimes/search
 
 ## 5. 데이터 비정규화
 
-조회 성능과 *계층 간 결합 감소* 를 위해 일정 수준의 비정규화는 적극 활용한다. 예를 들어 `Ticket` 에 `movieId` 와 `theaterId` 를 함께 저장해 두면, 티켓을 조회할 때마다 `ShowtimesService` 를 다시 호출할 필요가 없다. 두 값을 한 곳에서 항상 같이 갱신해야 한다는 부담은 생기지만, 그 비용을 감당할 만한 자리에서는 비정규화가 더 단순한 답이다.
+조회 성능과 _계층 간 결합 감소_ 를 위해 일정 수준의 비정규화는 적극 활용한다. 예를 들어 `Ticket` 에 `movieId` 와 `theaterId` 를 함께 저장해 두면, 티켓을 조회할 때마다 `ShowtimesService` 를 다시 호출할 필요가 없다. 두 값을 한 곳에서 항상 같이 갱신해야 한다는 부담은 생기지만, 그 비용을 감당할 만한 자리에서는 비정규화가 더 단순한 답이다.
 
 ---
 

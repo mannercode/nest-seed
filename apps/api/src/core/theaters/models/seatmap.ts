@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer'
 import { IsNotEmpty, IsString, ValidateNested } from 'class-validator'
-import { Seat } from '../../shared'
+import { Seat } from './seat'
 
 export class SeatRow {
     @IsNotEmpty()

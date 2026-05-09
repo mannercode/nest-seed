@@ -1,7 +1,7 @@
 import { InjectNatsPubSub, JsonUtil, NatsPubSubService } from '@mannercode/common'
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import { AppConfigService } from 'config'
 import { Observable, Subject } from 'rxjs'
+import { getProjectId } from 'shared'
 import type { ShowtimeCreationEvent } from './internal/types'
 
 /**
@@ -18,7 +18,7 @@ import type { ShowtimeCreationEvent } from './internal/types'
  */
 @Injectable()
 export class ShowtimeCreationEvents implements OnModuleInit, OnModuleDestroy {
-    private readonly natsSubject = `${AppConfigService.projectId}.showtime-creation.statusChanged`
+    private readonly natsSubject = `${getProjectId()}.showtime-creation.statusChanged`
 
     private readonly subject = new Subject<ShowtimeCreationEvent>()
     private readonly handler = (message: string) => {

@@ -1,7 +1,7 @@
 import { createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'config'
-import { Seat } from '../../shared'
+import { MongooseConfigModule } from 'shared'
+import { SeatPosition } from './seat-position'
 
 export const TicketStatus = { Available: 'available', Sold: 'sold' } as const
 
@@ -16,7 +16,7 @@ export class Ticket extends CrudSchema {
     sagaId: string
 
     @Prop({ required: true, type: Object })
-    seat: Seat
+    seat: SeatPosition
 
     @Prop({ required: true })
     showtimeId: string

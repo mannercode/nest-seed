@@ -1,6 +1,5 @@
 import { IsEnum, IsNotEmpty, IsString, ValidateNested } from 'class-validator'
-import { Seat } from '../../shared'
-import { TicketStatus } from '../models'
+import { SeatPosition, TicketStatus } from '../models'
 
 export class CreateTicketDto {
     @IsNotEmpty()
@@ -13,7 +12,7 @@ export class CreateTicketDto {
 
     @IsNotEmpty()
     @ValidateNested()
-    seat: Seat
+    seat: SeatPosition
 
     @IsNotEmpty()
     @IsString()

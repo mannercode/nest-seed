@@ -10,7 +10,7 @@ import {
 } from '@mannercode/common'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { Cron, CronExpression } from '@nestjs/schedule'
-import { AppConfigService } from 'config'
+import { AppConfigService } from 'shared'
 import { AssetsRepository } from './assets.repository'
 import { AssetPresignedUploadDto, CreateAssetDto, FinalizeAssetDto, AssetDto } from './dtos'
 import { AssetErrors } from './errors'

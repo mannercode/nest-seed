@@ -1,6 +1,6 @@
 import { CacheService, getByPath, InjectCache } from '@mannercode/common'
 import { Injectable, Logger } from '@nestjs/common'
-import { AppConfigService } from 'config'
+import { AppConfigService } from 'shared'
 import { HoldTicketsDto } from './dtos'
 
 const getUserKey = (showtimeId: string, userId: string) => `User:{${showtimeId}}:${userId}`

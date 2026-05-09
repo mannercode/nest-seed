@@ -1,7 +1,7 @@
 import { AppLoggerService, JwtAuthModule, TimeUtil } from '@mannercode/common'
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { AppConfigService, MongooseConfigModule, RedisConfigModule } from 'config'
+import { AppConfigService, getProjectId, MongooseConfigModule, RedisConfigModule } from 'shared'
 import { SecurityEventLogger, UserAuthenticationService } from './internal'
 import { User, UserSchema } from './models'
 import { UsersRepository } from './users.repository'
@@ -16,7 +16,7 @@ import { UsersService } from './users.service'
         ),
         JwtAuthModule.register({
             inject: [AppConfigService, AppLoggerService],
-            prefix: `jwtauth:${AppConfigService.projectId}`,
+            prefix: `jwtauth:${getProjectId()}`,
             redisName: RedisConfigModule.connectionName,
             useFactory: ({ auth }: AppConfigService, logger: AppLoggerService) => ({
                 auth: {

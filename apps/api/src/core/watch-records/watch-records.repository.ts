@@ -1,8 +1,8 @@
 import { QueryBuilderOptions, CrudRepository, QueryBuilder } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'config'
 import { Model } from 'mongoose'
+import { MongooseConfigModule } from 'shared'
 import { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos'
 import { WatchRecord } from './models'
 

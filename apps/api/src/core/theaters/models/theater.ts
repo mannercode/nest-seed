@@ -1,6 +1,6 @@
 import { createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'config'
+import { MongooseConfigModule } from 'shared'
 import { Seatmap } from './seatmap'
 import { TheaterLocation } from './theater-location'
 
