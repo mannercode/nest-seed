@@ -73,13 +73,26 @@ describe('DateTimeRange', () => {
             expect(throwException).toThrow('Invalid options provided.')
         })
 
-        it.todo('days와 minutes를 함께 주면 두 값이 합산된다')
+        it('days와 minutes를 함께 주면 두 값이 합산된다', () => {
+            const start = new Date('2023-01-01T00:00:00Z')
+            const result = DateTimeRange.create({ days: 1, minutes: 30, start })
 
-        it.todo('days가 음수이면 start 이전 시점의 범위를 만든다')
+            expect(result.end.getTime() - start.getTime()).toBe(
+                24 * 60 * 60 * 1000 + 30 * 60 * 1000
+            )
+        })
 
-        it.todo('end만 주어지면 예외를 던진다')
+        it('days가 음수이면 start 이전 시점의 범위를 만든다', () => {
+            const start = new Date('2023-01-10T00:00:00Z')
+            const result = DateTimeRange.create({ days: -3, start })
 
-        it.todo('Date 입력의 timezone은 무시되고 UTC로 정렬된다고 가정한다')
+            expect(result.end).toEqual(new Date('2023-01-07T00:00:00Z'))
+        })
+
+        it('end만 주어지면 예외를 던진다', () => {
+            const throwException = () => DateTimeRange.create({ end: new Date() })
+            expect(throwException).toThrow('Invalid options provided.')
+        })
     })
 })
 
@@ -89,6 +102,19 @@ describe('PartialDateTimeRange', () => {
 
         expect(instance.start).toBeUndefined()
         expect(instance.end).toBeUndefined()
+
+        const errors = validateSync(instance)
+        expect(errors).toHaveLength(0)
+    })
+
+    it('start와 end 문자열을 Date 객체로 변환한다', () => {
+        const instance = plainToInstance(PartialDateTimeRange, {
+            end: '2023-01-02T00:00:00Z',
+            start: '2023-01-01T00:00:00Z'
+        })
+
+        expect(instance.start).toBeInstanceOf(Date)
+        expect(instance.end).toBeInstanceOf(Date)
 
         const errors = validateSync(instance)
         expect(errors).toHaveLength(0)

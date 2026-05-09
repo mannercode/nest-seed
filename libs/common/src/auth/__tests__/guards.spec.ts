@@ -46,7 +46,12 @@ describe('Auth Guards', () => {
                 .created()
         })
 
-        it.todo('Authorization 헤더가 "Bearer"만 있고 토큰이 없으면 401을 반환한다')
+        it('Authorization 헤더가 "Bearer"만 있고 토큰이 없으면 401을 반환한다', async () => {
+            await fix.httpClient
+                .get('/jwt/protected')
+                .headers({ Authorization: 'Bearer ' })
+                .unauthorized()
+        })
     })
 
     describe('JwtAuthGuard (isUsingLocalAuth 기본 구현)', () => {
@@ -90,7 +95,12 @@ describe('Auth Guards', () => {
                 .created()
         })
 
-        it.todo('usernameField/passwordField 옵션으로 body의 임의 필드명을 사용할 수 있다')
+        it('usernameField/passwordField 옵션으로 body의 임의 필드명을 사용할 수 있다', async () => {
+            await fix.httpClient
+                .post('/local/login-custom')
+                .body({ login: 'custom', pwd: 'secret' })
+                .created()
+        })
     })
 
     describe('OptionalJwtAuthGuard', () => {

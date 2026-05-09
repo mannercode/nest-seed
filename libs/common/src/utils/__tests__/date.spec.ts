@@ -16,7 +16,17 @@ describe('DateUtil', () => {
             expect(() => DateUtil.fromYMD('')).toThrow()
         })
 
-        it.todo('잘못된 월(13, 00)은 다음/이전 달로 자동 보정된다')
+        it('잘못된 월(13, 00)은 다음/이전 달로 자동 보정된다', () => {
+            // YYYYMMDD = 20201301 → month=13. Date 생성자가 month=12(0-based)이면 1년 더해 1월로 넘긴다.
+            const overflow = DateUtil.fromYMD('20201301')
+            expect(overflow.getFullYear()).toBe(2021)
+            expect(overflow.getMonth()).toBe(0)
+
+            // YYYYMMDD = 20200001 → month=00. Date 생성자가 -1을 받으면 전년 12월로 해석한다.
+            const underflow = DateUtil.fromYMD('20200001')
+            expect(underflow.getFullYear()).toBe(2019)
+            expect(underflow.getMonth()).toBe(11)
+        })
     })
 
     describe('toYMD', () => {
@@ -84,10 +94,26 @@ describe('DateUtil', () => {
             expect(date.getTime() >= before && date.getTime() <= after).toBe(true)
         })
 
-        it.todo('음수 단위는 과거 방향으로 더한다')
+        it('음수 단위는 과거 방향으로 더한다', () => {
+            const base = new Date('2020-06-15T12:00:00Z')
+            const result = DateUtil.add({ base, days: -3, hours: -2 })
 
-        it.todo('양수와 음수 단위가 섞이면 합산해 더한다')
+            expect(result).toEqual(new Date('2020-06-12T10:00:00Z'))
+        })
 
-        it.todo('DST 경계를 넘으면 시계 시각이 1시간 어긋난다')
+        it('양수와 음수 단위가 섞이면 합산해 더한다', () => {
+            const base = new Date('2020-06-15T12:00:00Z')
+            const result = DateUtil.add({ base, days: 1, hours: -3, minutes: 30 })
+
+            expect(result).toEqual(new Date('2020-06-16T09:30:00Z'))
+        })
+
+        // DST 경계 동작은 환경의 TZ에 의존하므로 add()가 절대 ms 기반으로 동작한다는 사실만 단언한다.
+        it('DST와 무관하게 절대 ms 기준으로 더한다', () => {
+            const base = new Date('2020-03-08T00:00:00Z')
+            const result = DateUtil.add({ base, hours: 24 })
+
+            expect(result.getTime() - base.getTime()).toBe(24 * 60 * 60 * 1000)
+        })
     })
 })

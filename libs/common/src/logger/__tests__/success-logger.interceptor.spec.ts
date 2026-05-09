@@ -42,26 +42,54 @@ describe('HttpSuccessLoggerInterceptor', () => {
             )
         })
 
-        it.todo('Observable이 에러로 종료되면 success 로그를 남기지 않는다')
+        it('Observable이 에러로 종료되면 success 로그를 남기지 않는다', async () => {
+            await fix.httpClient.get('/failure').internalServerError()
+
+            expect(fix.spyVerbose).not.toHaveBeenCalled()
+        })
     })
 
     describe('LOGGING_EXCLUDE_HTTP_PATHS', () => {
-        beforeEach(async () => {
+        afterEach(() => fix.teardown())
+
+        it('포함된 경로의 요청은 로깅을 건너뛴다', async () => {
             const { createSuccessLoggerInterceptorFixture } =
                 await import('./success-logger.interceptor.fixture')
             fix = await createSuccessLoggerInterceptorFixture([
                 { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/exclude-path'] }
             ])
-        })
-        afterEach(() => fix.teardown())
 
-        it('포함된 경로의 요청은 로깅을 건너뛴다', async () => {
             await fix.httpClient.get('/exclude-path').ok({ result: 'success' })
 
             expect(fix.spyVerbose).toHaveBeenCalledTimes(0)
         })
 
-        it.todo('빈 배열이면 어떤 경로도 제외하지 않는다')
-        it.todo('패턴 중 하나라도 일치하면 로깅을 건너뛴다')
+        it('빈 배열이면 어떤 경로도 제외하지 않는다', async () => {
+            const { createSuccessLoggerInterceptorFixture } =
+                await import('./success-logger.interceptor.fixture')
+            fix = await createSuccessLoggerInterceptorFixture([
+                { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: [] }
+            ])
+
+            await fix.httpClient.get('/exclude-path').ok({ result: 'success' })
+
+            // 빈 제외 배열이면 모든 경로가 로깅된다.
+            expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
+        })
+
+        it('패턴 중 하나라도 일치하면 로깅을 건너뛴다', async () => {
+            const { createSuccessLoggerInterceptorFixture } =
+                await import('./success-logger.interceptor.fixture')
+            fix = await createSuccessLoggerInterceptorFixture([
+                {
+                    provide: 'LOGGING_EXCLUDE_HTTP_PATHS',
+                    useValue: ['/never-matches', '/exclude-path']
+                }
+            ])
+
+            await fix.httpClient.get('/exclude-path').ok({ result: 'success' })
+
+            expect(fix.spyVerbose).toHaveBeenCalledTimes(0)
+        })
     })
 })

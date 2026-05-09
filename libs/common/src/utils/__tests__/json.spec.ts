@@ -37,7 +37,11 @@ describe('JsonUtil', () => {
             expect(JsonUtil.parse('{"v":"19990101"}').v).toBe('19990101')
         })
 
-        it.todo('경계값 MAX_SAFE_INTEGER 자체는 number로 유지한다')
+        it('경계값 MAX_SAFE_INTEGER 자체는 number로 유지한다', () => {
+            const parsed = JsonUtil.parse(`[{"v":${Number.MAX_SAFE_INTEGER}}]`)
+            expect(parsed[0].v).toBe(Number.MAX_SAFE_INTEGER)
+            expect(typeof parsed[0].v).toBe('number')
+        })
     })
 
     describe('reviveDates', () => {
@@ -85,8 +89,14 @@ describe('JsonUtil', () => {
             expect(JsonUtil.reviveDates({ v: true }).v).toBe(true)
         })
 
-        it.todo('밀리초가 없는 ISO 8601(예: "2023-01-01T00:00:00Z")은 Date로 되살리지 않는다')
+        it('밀리초가 없는 ISO 8601(예: "2023-01-01T00:00:00Z")은 Date로 되살리지 않는다', () => {
+            const result = JsonUtil.reviveDates({ v: '2023-01-01T00:00:00Z' })
+            expect(result.v).toBe('2023-01-01T00:00:00Z')
+        })
 
-        it.todo('Z 대신 +09:00 같은 타임존 오프셋이 붙은 ISO 8601은 Date로 되살리지 않는다')
+        it('Z 대신 +09:00 같은 타임존 오프셋이 붙은 ISO 8601은 Date로 되살리지 않는다', () => {
+            const result = JsonUtil.reviveDates({ v: '2023-01-01T00:00:00.000+09:00' })
+            expect(result.v).toBe('2023-01-01T00:00:00.000+09:00')
+        })
     })
 })

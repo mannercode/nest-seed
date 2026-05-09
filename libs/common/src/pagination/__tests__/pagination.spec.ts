@@ -25,7 +25,12 @@ describe('PaginationDto', () => {
             await fix.httpClient.get('/pagination').query(query).ok(expectedResponse)
         })
 
-        it.todo('orderby name="0"처럼 falsy하지만 유효한 문자열도 정상 처리된다')
+        it('orderby name="0"처럼 falsy하지만 유효한 문자열도 정상 처리된다', async () => {
+            await fix.httpClient
+                .get('/pagination')
+                .query({ orderby: '0:asc' })
+                .ok({ response: { orderby: { direction: 'asc', name: '0' } } })
+        })
 
         it('orderby 형식이 잘못되면 400을 반환한다', async () => {
             await fix.httpClient
@@ -41,9 +46,19 @@ describe('PaginationDto', () => {
                 .badRequest(CommonErrors.Pagination.DirectionInvalid())
         })
 
-        it.todo('direction이 대문자(ASC/DESC)이면 400을 반환한다')
+        it('direction이 대문자(ASC/DESC)이면 400을 반환한다', async () => {
+            await fix.httpClient
+                .get('/pagination')
+                .query({ orderby: 'name:ASC' })
+                .badRequest(CommonErrors.Pagination.DirectionInvalid())
+        })
 
-        it.todo('field와 direction 양옆의 공백은 잘라낸 뒤 처리된다')
+        it('field와 direction 양옆의 공백은 잘라낸 뒤 처리된다', async () => {
+            await fix.httpClient
+                .get('/pagination')
+                .query({ orderby: '  name  :  asc  ' })
+                .ok({ response: { orderby: { direction: 'asc', name: 'name' } } })
+        })
     })
 
     it('orderby가 이미 객체이면 그대로 유지한다', () => {
@@ -83,5 +98,15 @@ describe('PaginationDto', () => {
         }
     })
 
-    it.todo('orderby가 ":"만 들어오면 BadRequestException을 던진다')
+    it('orderby가 ":"만 들어오면 BadRequestException을 던진다', () => {
+        try {
+            plainToInstance(PaginationDto, { orderby: ':' })
+            throw new Error('Expected BadRequestException to be thrown')
+        } catch (error) {
+            expect(error).toBeInstanceOf(BadRequestException)
+            expect((error as BadRequestException).getResponse()).toEqual(
+                PaginationErrors.FormatInvalid()
+            )
+        }
+    })
 })

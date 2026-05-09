@@ -63,7 +63,9 @@ describe('ByteUtil', () => {
                 expect(() => ByteUtil.fromString('1KB -')).toThrow()
             })
 
-            it.todo('빈 문자열은 예외를 던진다')
+            it('빈 문자열은 예외를 던진다', () => {
+                expect(() => ByteUtil.fromString('')).toThrow()
+            })
         })
     })
 

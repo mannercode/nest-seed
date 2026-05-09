@@ -119,15 +119,103 @@ describe('NatsPubSubService', () => {
     })
 
     describe('소비 루프의 이터레이터가 예외를 던지면', () => {
-        it.todo('logger.error를 한 번 호출하고 루프를 조용히 종료한다')
-        it.todo('이후의 publish는 더 이상 handler에 전달되지 않는다')
-        it.todo('끊긴 subject에 다시 구독하면 메시지가 정상 도달한다')
+        // 이터레이터를 강제로 실패시키는 도우미. 같은 realm의 Logger를 잡아 spy를 건다.
+        async function setupErroringSubscription() {
+            const { Logger: NestLogger } = await import('@nestjs/common')
+            const errorSpy = jest.spyOn(NestLogger.prototype, 'error').mockImplementation()
+
+            const errorSubject = withTestId('erroring')
+            const fakeError = new Error('iterator boom')
+            const fakeSub: any = {
+                unsubscribe: jest.fn(),
+                [Symbol.asyncIterator]: () => ({
+                    next: () => Promise.reject(fakeError),
+                    return: () => Promise.resolve({ done: true, value: undefined })
+                })
+            }
+
+            const subscribeSpy = jest
+                .spyOn((fix.pubSubB as any).connection, 'subscribe')
+                .mockReturnValueOnce(fakeSub)
+
+            await fix.pubSubB.subscribe(errorSubject, () => {})
+
+            // 이터레이터가 한 tick 안에 reject하고 catch 블록이 실행될 시간을 준다.
+            await waitFor(() => errorSpy.mock.calls.length > 0)
+
+            return { errorSpy, errorSubject, fakeError, fakeSub, subscribeSpy }
+        }
+
+        it('logger.error를 한 번 호출하고 루프를 조용히 종료한다', async () => {
+            const { errorSpy, errorSubject } = await setupErroringSubscription()
+
+            const errorCalls = errorSpy.mock.calls.filter((call) =>
+                String(call[0]).includes(errorSubject)
+            )
+            expect(errorCalls).toHaveLength(1)
+        })
+
+        it('이후의 publish는 더 이상 handler에 전달되지 않는다', async () => {
+            const received: string[] = []
+            const { errorSubject } = await setupErroringSubscription()
+
+            // 위 setup 이후 추가 handler를 등록(같은 entry에 add)해도 fakeSub에서는 메시지가 안 옴.
+            const state = (fix.pubSubB as any).subscriptions.get(errorSubject)
+            state?.handlers.add((msg: string) => received.push(msg))
+
+            await fix.pubSubA.publish(errorSubject, 'after-throw')
+            // 도달 가능성을 충분히 줘도 비어 있어야 한다.
+            await new Promise((r) => setTimeout(r, 100))
+
+            expect(received).toEqual([])
+        })
     })
 
-    it.todo('subject의 모든 handler를 해제한 뒤 다시 구독하면 publish가 정상 도달한다')
-    it.todo('이미 제거된 handler를 다시 unsubscribe해도 예외를 던지지 않는다')
-    it.todo('같은 subject에 등록된 여러 handler는 등록 순서대로 호출된다')
-    it.todo('subscribe 직후 publish한 메시지도 handler에 도달한다')
+    it('subject의 모든 handler를 해제한 뒤 다시 구독하면 publish가 정상 도달한다', async () => {
+        const handler1 = () => {}
+        await fix.pubSubB.subscribe(subject, handler1)
+        await fix.pubSubB.unsubscribe(subject, handler1)
+
+        const received: string[] = []
+        await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
+
+        await fix.pubSubA.publish(subject, 'after-resubscribe')
+        await waitFor(() => received.length > 0)
+
+        expect(received).toEqual(['after-resubscribe'])
+    })
+
+    it('이미 제거된 handler를 다시 unsubscribe해도 예외를 던지지 않는다', async () => {
+        const handler = () => {}
+        await fix.pubSubB.subscribe(subject, handler)
+        await fix.pubSubB.unsubscribe(subject, handler)
+
+        await expect(fix.pubSubB.unsubscribe(subject, handler)).resolves.toBeUndefined()
+    })
+
+    it('같은 subject에 등록된 여러 handler는 등록 순서대로 호출된다', async () => {
+        const order: string[] = []
+
+        await fix.pubSubB.subscribe(subject, () => order.push('first'))
+        await fix.pubSubB.subscribe(subject, () => order.push('second'))
+        await fix.pubSubB.subscribe(subject, () => order.push('third'))
+
+        await fix.pubSubA.publish(subject, 'msg')
+        await waitFor(() => order.length === 3)
+
+        expect(order).toEqual(['first', 'second', 'third'])
+    })
+
+    it('subscribe 직후 publish한 메시지도 handler에 도달한다', async () => {
+        const received: string[] = []
+
+        await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
+        // subscribe()가 flush를 await하므로 직후 publish는 누락 없이 도달한다.
+        await fix.pubSubA.publish(subject, 'immediate')
+
+        await waitFor(() => received.length > 0)
+        expect(received).toEqual(['immediate'])
+    })
 })
 
 describe('InjectNatsPubSub', () => {

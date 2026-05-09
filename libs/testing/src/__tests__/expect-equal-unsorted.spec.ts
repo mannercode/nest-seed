@@ -62,6 +62,21 @@ describe('expectEqualUnsorted', () => {
         expect(() => expectEqualUnsorted([], undefined)).toThrow('actual or expected undefined')
     })
 
-    it.todo('NaN만 들어 있는 두 배열을 같다고 판정한다')
-    it.todo('중첩 배열도 정렬 후 비교한다')
+    it('NaN만 들어 있는 두 배열을 같다고 판정한다', () => {
+        // JSON.stringify(NaN)은 "null"이라 정렬 키가 같아진다.
+        expect(() => expectEqualUnsorted([{ v: NaN }], [{ v: NaN }])).not.toThrow()
+    })
+
+    it('중첩 배열도 정렬 후 비교한다', () => {
+        const actual = [
+            { id: 1, items: [3, 1, 2] },
+            { id: 2, items: ['c', 'a', 'b'] }
+        ]
+        const expected = [
+            { id: 2, items: ['c', 'a', 'b'] },
+            { id: 1, items: [3, 1, 2] }
+        ]
+
+        expect(() => expectEqualUnsorted(actual, expected)).not.toThrow()
+    })
 })

@@ -61,7 +61,10 @@ describe('getByPath', () => {
         expect(getByPath(null, 'a.b', 'default')).toBe('default')
     })
 
-    it.todo('중간 경로에 null/undefined가 있으면 기본값을 반환한다')
+    it('중간 경로에 null/undefined가 있으면 기본값을 반환한다', () => {
+        expect(getByPath({ a: null }, 'a.b.c', 'fallback')).toBe('fallback')
+        expect(getByPath({ a: { b: undefined } }, 'a.b.c', 'fallback')).toBe('fallback')
+    })
 })
 
 describe('omit', () => {
@@ -74,7 +77,11 @@ describe('omit', () => {
         expect(omit({ a: 1, b: 2, c: 3 }, ['b'])).toEqual({ a: 1, c: 3 })
     })
 
-    it.todo('입력 객체를 변경하지 않는다')
+    it('입력 객체를 변경하지 않는다', () => {
+        const input = { a: 1, b: 2, c: 3 }
+        omit(input, ['b'])
+        expect(input).toEqual({ a: 1, b: 2, c: 3 })
+    })
 })
 
 describe('pick', () => {
@@ -92,7 +99,9 @@ describe('uniq', () => {
         expect(uniq([1, 2, 2, 3, 1])).toEqual([1, 2, 3])
     })
 
-    it.todo('첫 등장 순서를 보존한다')
+    it('첫 등장 순서를 보존한다', () => {
+        expect(uniq([3, 1, 2, 1, 3])).toEqual([3, 1, 2])
+    })
 })
 
 describe('sortBy', () => {
@@ -110,7 +119,9 @@ describe('sortBy', () => {
         expect(sortBy([{ v: 1 }, { v: 1 }], 'v')).toEqual([{ v: 1 }, { v: 1 }])
     })
 
-    it.todo('빈 배열을 받으면 빈 배열을 반환한다')
+    it('빈 배열을 받으면 빈 배열을 반환한다', () => {
+        expect(sortBy([] as { name: string }[], 'name')).toEqual([])
+    })
 })
 
 describe('orderBy', () => {
@@ -140,7 +151,10 @@ describe('orderBy', () => {
         ])
     })
 
-    it.todo('방향 배열이 비어 있으면 모두 오름차순으로 정렬한다')
+    it('방향 배열이 비어 있으면 모두 오름차순으로 정렬한다', () => {
+        const result = orderBy([{ v: 3 }, { v: 1 }, { v: 2 }], ['v'], [])
+        expect(result).toEqual([{ v: 1 }, { v: 2 }, { v: 3 }])
+    })
 })
 
 describe('isEqual', () => {
@@ -204,9 +218,24 @@ describe('isEqual', () => {
         expect(isEqual([], {})).toBe(false)
     })
 
-    it.todo('순환 참조 객체끼리 비교하면 RangeError를 던진다')
-    it.todo('두 Date는 시각이 달라도 같다고 판정된다 (얕은 비교 한계)')
-    it.todo('두 Map은 내용이 달라도 같다고 판정된다 (얕은 비교 한계)')
+    it('순환 참조 객체끼리 비교하면 RangeError를 던진다', () => {
+        const a: any = { x: 1 }
+        a.self = a
+        const b: any = { x: 1 }
+        b.self = b
+
+        expect(() => isEqual(a, b)).toThrow(RangeError)
+    })
+
+    it('두 Date는 시각이 달라도 같다고 판정된다 (얕은 비교 한계)', () => {
+        // Date는 own enumerable 키가 없으므로 둘 다 Object.keys = []. 같다고 판정된다.
+        expect(isEqual(new Date(0), new Date(1))).toBe(true)
+    })
+
+    it('두 Map은 내용이 달라도 같다고 판정된다 (얕은 비교 한계)', () => {
+        // Map도 own enumerable 키가 없어 같다고 판정된다.
+        expect(isEqual(new Map([['a', 1]]), new Map([['b', 2]]))).toBe(true)
+    })
 })
 
 describe('differenceWith', () => {
@@ -251,7 +280,9 @@ describe('countBy', () => {
         expect(countBy(['a', 'b', 'a'])).toEqual({ a: 2, b: 1 })
     })
 
-    it.todo('빈 배열이면 빈 객체를 반환한다')
+    it('빈 배열이면 빈 객체를 반환한다', () => {
+        expect(countBy([])).toEqual({})
+    })
 })
 
 describe('sumBy', () => {
@@ -259,7 +290,9 @@ describe('sumBy', () => {
         expect(sumBy([{ v: 1 }, { v: 2 }, { v: 3 }], (i) => i.v)).toBe(6)
     })
 
-    it.todo('빈 배열이면 0을 반환한다')
+    it('빈 배열이면 0을 반환한다', () => {
+        expect(sumBy([], (i: { v: number }) => i.v)).toBe(0)
+    })
 })
 
 describe('pickBy', () => {

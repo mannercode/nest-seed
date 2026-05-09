@@ -274,8 +274,105 @@ describe('TemporalWorkerService', () => {
         expect(fakeConnection.close).toHaveBeenCalled()
     }, 120_000)
 
-    it.todo('onModuleDestroy는 worker 종료를 기다린 뒤에 connection을 닫는다')
-    it.todo('onModuleDestroy를 두 번 호출하면 두 번째는 아무 일도 일어나지 않는다')
-    it.todo('workflowBundlePath 파일이 없으면 런타임에 번들로 대체된다')
-    it.todo('workflowBundlePath가 빈 문자열이면 런타임에 번들로 대체된다')
+    it('onModuleDestroy는 worker 종료를 기다린 뒤에 connection을 닫는다', async () => {
+        const { TemporalWorkerService } = await import('../temporal-worker.service')
+        const taskQueue = withTestId('worker-shutdown-order')
+        const { address, namespace } = config()
+
+        const service = new TemporalWorkerService({
+            activities: { echo: async (msg: string) => `echo:${msg}` },
+            address,
+            namespace,
+            taskQueue,
+            workflowsPath: require.resolve('./workflows')
+        })
+
+        await service.onModuleInit()
+
+        const order: string[] = []
+        const realRunPromise = (service as any).runPromise as Promise<void>
+        ;(service as any).runPromise = realRunPromise.then(() => order.push('worker-stopped'))
+        const realConnection = (service as any).connection
+        const closeSpy = jest.spyOn(realConnection, 'close').mockImplementation(async () => {
+            order.push('connection-closed')
+        })
+
+        await service.onModuleDestroy()
+
+        expect(order).toEqual(['worker-stopped', 'connection-closed'])
+        expect(closeSpy).toHaveBeenCalled()
+    }, 120_000)
+
+    it('onModuleDestroy를 두 번 호출하면 두 번째는 아무 일도 일어나지 않는다', async () => {
+        const { TemporalWorkerService } = await import('../temporal-worker.service')
+        const service = new TemporalWorkerService({
+            activities: {},
+            address: 'unused:0',
+            namespace: 'default',
+            taskQueue: 'unused',
+            workflowsPath: require.resolve('./workflows')
+        })
+
+        await expect(service.onModuleDestroy()).resolves.toBeUndefined()
+        await expect(service.onModuleDestroy()).resolves.toBeUndefined()
+    })
+
+    it('workflowBundlePath 파일이 없으면 런타임에 번들로 대체된다', async () => {
+        const { TemporalWorkerService } = await import('../temporal-worker.service')
+        const taskQueue = withTestId('worker-missing-bundle')
+        const { address, namespace } = config()
+
+        const service = new TemporalWorkerService({
+            activities: { echo: async (msg: string) => `echo:${msg}` },
+            address,
+            namespace,
+            taskQueue,
+            // 존재하지 않는 경로 + workflowsPath fallback.
+            workflowBundlePath: '/tmp/this-file-definitely-does-not-exist.js',
+            workflowsPath: require.resolve('./workflows')
+        })
+
+        await service.onModuleInit()
+
+        try {
+            const { echoWorkflow } = await import('./workflows')
+            const result = await client.workflow.execute(echoWorkflow, {
+                args: ['runtime-bundle'],
+                taskQueue,
+                workflowId: withTestId('wf')
+            })
+            expect(result).toBe('echo:runtime-bundle')
+        } finally {
+            await service.onModuleDestroy()
+        }
+    }, 120_000)
+
+    it('workflowBundlePath가 빈 문자열이면 런타임에 번들로 대체된다', async () => {
+        const { TemporalWorkerService } = await import('../temporal-worker.service')
+        const taskQueue = withTestId('worker-empty-bundle')
+        const { address, namespace } = config()
+
+        const service = new TemporalWorkerService({
+            activities: { echo: async (msg: string) => `echo:${msg}` },
+            address,
+            namespace,
+            taskQueue,
+            workflowBundlePath: '',
+            workflowsPath: require.resolve('./workflows')
+        })
+
+        await service.onModuleInit()
+
+        try {
+            const { echoWorkflow } = await import('./workflows')
+            const result = await client.workflow.execute(echoWorkflow, {
+                args: ['empty-bundle'],
+                taskQueue,
+                workflowId: withTestId('wf')
+            })
+            expect(result).toBe('echo:empty-bundle')
+        } finally {
+            await service.onModuleDestroy()
+        }
+    }, 120_000)
 })

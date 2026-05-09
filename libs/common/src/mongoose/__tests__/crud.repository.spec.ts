@@ -67,7 +67,21 @@ describe('CrudRepository', () => {
             await expect(promise).rejects.toThrow()
         })
 
-        it.todo('저장된 문서 수가 입력 수와 다르면 예외를 던진다')
+        it('bulkSave 결과 카운트의 합이 입력 수와 다르면 예외를 던진다', async () => {
+            const docs = [
+                Object.assign(fix.repository.newDocument(), { name: 'doc-1' }),
+                Object.assign(fix.repository.newDocument(), { name: 'doc-2' })
+            ]
+
+            // bulkSave가 1건만 처리한 것처럼 보이도록 위조한다.
+            jest.spyOn((fix.repository as any).model, 'bulkSave').mockResolvedValueOnce({
+                deletedCount: 0,
+                insertedCount: 1,
+                matchedCount: 0
+            } as any)
+
+            await expect(fix.repository.saveMany(docs)).rejects.toThrow(/!==/)
+        })
     })
 
     describe('findWithPagination', () => {
@@ -161,11 +175,46 @@ describe('CrudRepository', () => {
             ])
         })
 
-        it.todo('필터가 비어 있으면 soft-deleted 문서는 total에 포함되고 items에서는 제외된다')
-        it.todo(
-            '필터가 비어 있으면 estimatedDocumentCount만 호출되고 countDocuments는 호출되지 않는다'
-        )
-        it.todo('필터가 비어 있지 않으면 countDocuments가 필터와 함께 호출된다')
+        it('필터가 비어 있으면 soft-deleted 문서는 total에 포함되고 items에서는 제외된다', async () => {
+            const doc = fix.repository.newDocument()
+            doc.name = 'soft-deleted'
+            await doc.save()
+            await fix.repository.deleteById(doc.id)
+
+            const { items, total } = await fix.repository.findWithPagination({ pagination: {} })
+
+            // total은 estimatedDocumentCount로 모든 row(삭제 포함)를 센다.
+            expect(total).toBeGreaterThanOrEqual(samples.length + 1)
+            // items에는 삭제된 문서가 안 들어간다.
+            expect(toDtos(items).find((d) => d.name === 'soft-deleted')).toBeUndefined()
+        })
+
+        it('필터가 비어 있으면 estimatedDocumentCount만 호출되고 countDocuments는 호출되지 않는다', async () => {
+            const model = (fix.repository as any).model
+            const estimatedSpy = jest.spyOn(model, 'estimatedDocumentCount')
+            const countSpy = jest.spyOn(model, 'countDocuments')
+
+            await fix.repository.findWithPagination({ pagination: {} })
+
+            expect(estimatedSpy).toHaveBeenCalledTimes(1)
+            expect(countSpy).not.toHaveBeenCalled()
+        })
+
+        it('필터가 비어 있지 않으면 countDocuments가 필터와 함께 호출된다', async () => {
+            const model = (fix.repository as any).model
+            const estimatedSpy = jest.spyOn(model, 'estimatedDocumentCount')
+            const countSpy = jest.spyOn(model, 'countDocuments')
+
+            await fix.repository.findWithPagination({
+                configureQuery: async (q) => {
+                    q.setQuery({ name: 'Sample-001' })
+                },
+                pagination: {}
+            })
+
+            expect(countSpy).toHaveBeenCalled()
+            expect(estimatedSpy).not.toHaveBeenCalled()
+        })
     })
 
     describe('allExist', () => {
@@ -282,7 +331,16 @@ describe('CrudRepository', () => {
             await expect(promise).rejects.toThrow(fix.NotFoundException)
         })
 
-        it.todo('중복된 id가 입력되면 예외를 던진다')
+        it('중복된 id가 입력되면 중복을 제거하고 한 번만 반환한다 (warn 로그 남김)', async () => {
+            const [first] = samples
+            const { Logger } = await import('@nestjs/common')
+            const warnSpy = jest.spyOn(Logger, 'warn').mockImplementation()
+
+            const docs = await fix.repository.getByIds([first.id, first.id])
+
+            expect(docs).toHaveLength(1)
+            expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Duplicate IDs detected'))
+        })
     })
 
     describe('deleteById', () => {
@@ -343,8 +401,12 @@ describe('leanToPublic', () => {
         expect(result.id).toBeUndefined()
     })
 
-    it.todo('입력 객체를 직접 변경하고 같은 참조를 반환한다')
-    it.todo('virtuals 옵션 없이 lean으로 호출되어야 한다')
-    it.todo('lean 결과에는 id 필드가 자동 생성되지 않는다')
-    it.todo('lean 결과의 _id는 ObjectId 인스턴스로 유지된다')
+    it('입력 객체를 직접 변경하고 같은 참조를 반환한다', () => {
+        const objectIdValue = new Types.ObjectId()
+        const input = { _id: objectIdValue } as { _id: Types.ObjectId; id?: string }
+        const result = leanToPublic(input)
+
+        expect(result).toBe(input)
+        expect(input.id).toBe(String(objectIdValue))
+    })
 })

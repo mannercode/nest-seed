@@ -86,6 +86,9 @@ describe('HttpUtil', () => {
             expect(HttpUtil.extractContentDisposition(badStarNoQuoted)).toBe('bare-fallback.txt')
         })
 
-        it.todo('filename* 값이 빈 문자열이면 따옴표 filename으로 대체한다')
+        it('filename* 값이 빈 문자열이면 따옴표 filename으로 대체한다', () => {
+            const cd = `attachment; filename*=; filename="fallback.txt"`
+            expect(HttpUtil.extractContentDisposition(cd)).toBe('fallback.txt')
+        })
     })
 })

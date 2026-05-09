@@ -70,7 +70,13 @@ describe('PathUtil', () => {
             expect(result).toBe(true)
         })
 
-        it.todo('isDirectory는 존재하지 않는 경로에 대해 ENOENT 예외를 그대로 던진다')
+        it('isDirectory는 존재하지 않는 경로에 대해 ENOENT 예외를 그대로 던진다', async () => {
+            const nonExistent = PathUtil.join(tempDir, 'no-such-path')
+
+            await expect(PathUtil.isDirectory(nonExistent)).rejects.toMatchObject({
+                code: 'ENOENT'
+            })
+        })
 
         it('mkdir로 만든 디렉터리를 delete로 지운다', async () => {
             const dirPath = PathUtil.join(tempDir, 'testdir')

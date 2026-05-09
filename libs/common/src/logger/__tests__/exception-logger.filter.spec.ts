@@ -27,8 +27,32 @@ describe('HttpExceptionLoggerFilter', () => {
             })
         })
 
-        it.todo('4xx HttpException(401, 422)도 4xx 카테고리로 redact 후 로깅된다')
-        it.todo('HttpException.getResponse()가 string이어도 redact가 안전하게 통과한다')
+        it('401 HttpException도 Logger.warn으로 로깅된다', async () => {
+            await fix.httpClient.get('/unauthorized').unauthorized()
+
+            expect(fix.spyWarn).toHaveBeenCalledWith(
+                'fail',
+                expect.objectContaining({ statusCode: 401 })
+            )
+        })
+
+        it('422 HttpException도 Logger.warn으로 로깅된다', async () => {
+            await fix.httpClient.get('/unprocessable').unprocessableEntity()
+
+            expect(fix.spyWarn).toHaveBeenCalledWith(
+                'fail',
+                expect.objectContaining({ statusCode: 422 })
+            )
+        })
+
+        it('HttpException.getResponse()가 string이어도 redact가 안전하게 통과한다', async () => {
+            await fix.httpClient.get('/string-response').badRequest()
+
+            expect(fix.spyWarn).toHaveBeenCalledWith(
+                'fail',
+                expect.objectContaining({ response: 'plain string body', statusCode: 400 })
+            )
+        })
 
         // redact의 본격 검증은 redact.spec.ts에 있다. 여기선 호출 여부만 확인.
         it('요청 body에 password가 있으면 [REDACTED]로 마스킹한다', async () => {
@@ -58,9 +82,38 @@ describe('HttpExceptionLoggerFilter', () => {
             })
         })
 
-        it.todo('@Catch(Error)는 Error 인스턴스가 아닌 throw(문자열, 숫자 등)는 잡지 않는다')
+        it('@Catch(Error)는 Error 인스턴스가 아닌 throw(문자열 등)는 잡지 않는다', async () => {
+            await fix.httpClient.get('/throw-string').internalServerError()
 
-        it.todo('contextType이 http가 아니면 Logger.error에 unknown context type 메시지를 남긴다')
+            // 이 필터는 @Catch(Error)이므로 string throw에는 invoked되지 않아야 한다.
+            expect(fix.spyError).not.toHaveBeenCalledWith('error', expect.anything())
+            expect(fix.spyWarn).not.toHaveBeenCalledWith('fail', expect.anything())
+        })
+
+        it('contextType이 http가 아니면 Logger.error에 unknown context type 메시지를 남긴다', async () => {
+            const { HttpExceptionLoggerFilter } = await import('../exception-logger.filter')
+            const filter = new HttpExceptionLoggerFilter()
+
+            const fakeHost = {
+                getType: () => 'rpc',
+                getArgs: () => [],
+                getArgByIndex: () => undefined,
+                switchToHttp: () => ({ getRequest: () => ({}), getResponse: () => ({}) }),
+                switchToRpc: () => ({}),
+                switchToWs: () => ({})
+            } as any
+
+            try {
+                filter.catch(new Error('boom'), fakeHost)
+            } catch {
+                // super.catch가 던질 수 있으나 이 단언과 무관.
+            }
+
+            expect(fix.spyError).toHaveBeenCalledWith(
+                'HttpExceptionLoggerFilter: unknown context type',
+                expect.objectContaining({ contextType: 'rpc' })
+            )
+        })
     })
 
     // success interceptor 없이 filter 단독으로 등록된 경우.

@@ -30,6 +30,11 @@ describe('RedisHealthIndicator', () => {
             expect(healthStatus).toEqual({ key: { reason: 'unknown error', status: 'down' } })
         })
 
-        it.todo('메시지가 없는 Error는 Error 값 자체를 reason으로 기록한다')
+        it('message 속성이 없는 객체를 던지면 String(value)를 reason으로 기록한다', async () => {
+            jest.spyOn(fix.redis, 'ping').mockRejectedValueOnce({ code: 'X' })
+
+            const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
+            expect(healthStatus).toEqual({ key: { reason: '[object Object]', status: 'down' } })
+        })
     })
 })

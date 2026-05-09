@@ -6,10 +6,22 @@ import {
     assignIfDefined,
     isDuplicateKeyError,
     mapDocToDto,
+    newObjectIdString,
     objectId,
     objectIds,
     QueryBuilder
 } from '../mongoose.util'
+
+describe('newObjectIdString', () => {
+    it('새 ObjectId를 24자리 16진 문자열로 반환한다', () => {
+        const id = newObjectIdString()
+        expect(id).toMatch(/^[0-9a-f]{24}$/)
+    })
+
+    it('호출할 때마다 다른 값을 반환한다', () => {
+        expect(newObjectIdString()).not.toBe(newObjectIdString())
+    })
+})
 
 describe('objectId', () => {
     it('유효한 문자열을 ObjectId로 변환한다', () => {
@@ -74,7 +86,18 @@ describe('QueryBuilder', () => {
             expect(builder.build({ allowEmpty: true })).toEqual({})
         })
 
-        it.todo('0/false/""처럼 falsy하지만 null/undefined가 아닌 값은 조건에 추가된다')
+        it('0/false/""처럼 falsy하지만 null/undefined가 아닌 값은 조건에 추가된다', () => {
+            builder.addEquals('name', 0 as any)
+            expect(builder.build({})).toEqual({ name: 0 })
+
+            const b2 = new QueryBuilder<TestModel>()
+            b2.addEquals('name', false as any)
+            expect(b2.build({})).toEqual({ name: false })
+
+            const b3 = new QueryBuilder<TestModel>()
+            b3.addEquals('name', '')
+            expect(b3.build({})).toEqual({ name: '' })
+        })
     })
 
     describe('addId', () => {
@@ -140,8 +163,16 @@ describe('QueryBuilder', () => {
             expect(builder.build({})).toEqual({ name: new RegExp('^test') })
         })
 
-        it.todo('정규식 메타문자가 포함된 값도 escape되어 정규식 주입을 차단한다')
-        it.todo('prefix:true와 정규식 메타문자가 결합되어도 escape된 채 시작 위치 고정이 적용된다')
+        it('정규식 메타문자가 포함된 값도 escape되어 정규식 주입을 차단한다', () => {
+            builder.addRegex('name', '.*')
+            // .* 메타문자가 그대로 들어가면 모든 값에 매칭되겠지만 escape되어 리터럴로 처리된다.
+            expect(builder.build({})).toEqual({ name: new RegExp('\\.\\*', 'i') })
+        })
+
+        it('prefix:true와 정규식 메타문자가 결합되어도 escape된 채 시작 위치 고정이 적용된다', () => {
+            builder.addRegex('name', '.*', { prefix: true })
+            expect(builder.build({})).toEqual({ name: new RegExp('^\\.\\*', 'i') })
+        })
     })
 
     describe('addRange', () => {
@@ -169,7 +200,12 @@ describe('QueryBuilder', () => {
             expect(builder.build({ allowEmpty: true })).toEqual({})
         })
 
-        it.todo('start와 end가 같으면 $gte와 $lte 모두 같은 값으로 빌드된다')
+        it('start와 end가 같으면 $gte와 $lte 모두 같은 값으로 빌드된다', () => {
+            const sameDate = new Date('2023-06-15T12:00:00Z')
+            builder.addRange('createdAt', { end: sameDate, start: sameDate })
+
+            expect(builder.build({})).toEqual({ createdAt: { $gte: sameDate, $lte: sameDate } })
+        })
     })
 
     describe('build', () => {
@@ -215,7 +251,14 @@ describe('mapDocToDto', () => {
         expect(dto).toEqual({ id: expect.any(String), name: 'name', optional: undefined })
     })
 
-    it.todo('keys에 없는 필드는 DTO에 포함되지 않는다')
+    it('keys에 없는 필드는 DTO에 포함되지 않는다', () => {
+        const doc = new SampleModel({ name: 'name', optional: true }).toJSON()
+
+        const dto = mapDocToDto(doc, SampleDto, ['id', 'name'])
+
+        expect(dto).toEqual({ id: expect.any(String), name: 'name' })
+        expect((dto as any).optional).toBeUndefined()
+    })
 })
 
 describe('isDuplicateKeyError', () => {

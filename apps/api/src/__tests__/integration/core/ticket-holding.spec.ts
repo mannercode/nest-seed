@@ -174,5 +174,31 @@ describe('TicketHoldingService', () => {
                 fix.ticketHoldingService.releaseTickets(oid(0xa0), oid(0xc1))
             ).resolves.toBeUndefined()
         })
+
+        it('일부 티켓 키 삭제가 실패해도 경고 로그만 남기고 계속 진행한다', async () => {
+            const holdDto = buildHoldTicketsDto()
+            await fix.ticketHoldingService.holdTickets(holdDto)
+
+            const cacheService = (fix.ticketHoldingService as any).cacheService
+            const realDelete = cacheService.delete.bind(cacheService)
+            let calls = 0
+            jest.spyOn(cacheService, 'delete').mockImplementation((key: any) => {
+                calls++
+                // 첫 호출(티켓 키 하나) 실패, 나머지(다른 티켓 + user 키)는 정상.
+                if (calls === 1) return Promise.reject(new Error('delete failed'))
+                return realDelete(key)
+            })
+            const { Logger } = await import('@nestjs/common')
+            const warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation()
+
+            await expect(
+                fix.ticketHoldingService.releaseTickets(holdDto.showtimeId, holdDto.userId)
+            ).resolves.toBeUndefined()
+
+            expect(warnSpy).toHaveBeenCalledWith(
+                'partial ticket release failure',
+                expect.objectContaining({ failedCount: 1 })
+            )
+        })
     })
 })

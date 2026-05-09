@@ -59,8 +59,23 @@ describe('Env', () => {
             expect(Env.getBoolean('TEST_BOOLEAN')).toBe(true)
         })
 
-        it.todo('대소문자 변형 ("TRUE", "True") 도 true로 처리한다')
+        it('대소문자 변형(TRUE, True)도 true로 처리한다', () => {
+            process.env.TEST_BOOLEAN = 'TRUE'
+            expect(Env.getBoolean('TEST_BOOLEAN')).toBe(true)
 
-        it.todo('"true"가 아닌 모든 값은 false로 처리한다')
+            process.env.TEST_BOOLEAN = 'True'
+            expect(Env.getBoolean('TEST_BOOLEAN')).toBe(true)
+        })
+
+        it('"true"가 아닌 모든 값은 false로 처리한다', () => {
+            process.env.TEST_BOOLEAN = '1'
+            expect(Env.getBoolean('TEST_BOOLEAN')).toBe(false)
+
+            process.env.TEST_BOOLEAN = 'yes'
+            expect(Env.getBoolean('TEST_BOOLEAN')).toBe(false)
+
+            process.env.TEST_BOOLEAN = 'truthy'
+            expect(Env.getBoolean('TEST_BOOLEAN')).toBe(false)
+        })
     })
 })

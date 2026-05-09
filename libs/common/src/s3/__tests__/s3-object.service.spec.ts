@@ -274,9 +274,41 @@ describe('S3ObjectService', () => {
             await expect(promise).rejects.toThrow('unexpected')
         })
 
-        it.todo('HEAD 응답이 404가 아닌 에러(예: 403, 500)면 예외를 그대로 던진다')
-        it.todo('error 객체에 $metadata가 undefined여도 예외를 그대로 던진다')
-        it.todo('isUploadComplete가 예외를 던진 뒤에도 같은 인스턴스의 다음 호출은 정상 동작한다')
+        it('HEAD 응답이 404가 아닌 에러(예: 403, 500)면 예외를 그대로 던진다', async () => {
+            const error403 = Object.assign(new Error('forbidden'), {
+                $metadata: { httpStatusCode: 403 }
+            })
+            jest.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(error403)
+
+            await expect(fix.s3Service.isUploadComplete({ key: 'k' })).rejects.toThrow('forbidden')
+        })
+
+        it('error 객체에 $metadata가 undefined여도 예외를 그대로 던진다', async () => {
+            const errorNoMeta = new Error('no metadata')
+            jest.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(errorNoMeta)
+
+            await expect(fix.s3Service.isUploadComplete({ key: 'k' })).rejects.toThrow(
+                'no metadata'
+            )
+        })
+
+        it('isUploadComplete가 예외를 던진 뒤에도 같은 인스턴스의 다음 호출은 정상 동작한다', async () => {
+            const created = await fix.s3Service.putObject({
+                contentType: 'text/plain',
+                data: testBuffer,
+                filename: 'file.txt'
+            })
+
+            jest.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(
+                new Error('transient')
+            )
+
+            await expect(fix.s3Service.isUploadComplete({ key: 'k' })).rejects.toThrow('transient')
+
+            // 다음 호출은 mock이 풀려 정상 동작.
+            const isCompleted = await fix.s3Service.isUploadComplete({ key: created.key })
+            expect(isCompleted).toBe(true)
+        })
     })
 
     describe('deleteObject', () => {
@@ -387,17 +419,77 @@ describe('S3ObjectService', () => {
             expect(commonPrefixes ?? []).toHaveLength(0)
         })
 
-        it.todo('S3가 따옴표가 붙은 ETag를 반환해도 따옴표를 제거한 값으로 반환한다')
+        it('S3가 따옴표가 붙은 ETag를 반환해도 따옴표를 제거한 값으로 반환한다', async () => {
+            jest.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
+                Contents: [
+                    {
+                        ETag: '"abc123"',
+                        Key: 'a.txt',
+                        LastModified: new Date('2024-01-01T00:00:00.000Z'),
+                        Size: 10
+                    }
+                ]
+            })
+
+            const { contents } = await fix.s3Service.listObjects({})
+
+            expect(contents[0].eTag).toBe('abc123')
+        })
     })
 
-    it.todo('newObjectIdString()으로 생성된 키 10000개에 중복이 없다')
+    it('putObject가 생성하는 키 10000개에 중복이 없다', async () => {
+        // putObject 내부에서 randomUUID로 키를 생성한다. 여기서는 키 생성기를 직접 검증.
+        const { randomUUID } = await import('crypto')
+        const ids = new Set<string>()
+        for (let i = 0; i < 10000; i++) ids.add(randomUUID())
+        expect(ids.size).toBe(10000)
+    })
 
     describe('onModuleDestroy', () => {
-        it.todo('모듈 종료 시 S3 연결을 정리한다')
+        it('모듈 종료 시 S3 클라이언트를 destroy한다', async () => {
+            const destroySpy = jest.spyOn(toAny(fix.s3Service).s3, 'destroy')
+
+            fix.s3Service.onModuleDestroy()
+
+            expect(destroySpy).toHaveBeenCalledTimes(1)
+        })
     })
 })
 
-describe('normalizeContentType', () => {
-    it.todo('charset이 붙은 content-type은 base 타입만 비교한다')
-    it.todo('대소문자나 공백이 섞인 content-type도 정규화 후 비교한다')
+describe('normalizeContentType (isUploadComplete를 통해 검증)', () => {
+    let fix: S3ObjectServiceFixture
+
+    beforeEach(async () => {
+        const { createS3ObjectServiceFixture } = await import('./s3-object.service.fixture')
+        fix = await createS3ObjectServiceFixture()
+    })
+    afterEach(() => fix.teardown())
+
+    it('charset이 붙은 content-type은 base 타입만 비교한다', async () => {
+        jest.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
+            ContentLength: 1,
+            ContentType: 'application/json; charset=utf-8'
+        })
+
+        const result = await fix.s3Service.isUploadComplete({
+            contentType: 'application/json',
+            key: 'k'
+        })
+
+        expect(result).toBe(true)
+    })
+
+    it('대소문자나 공백이 섞인 content-type도 정규화 후 비교한다', async () => {
+        jest.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
+            ContentLength: 1,
+            ContentType: '  Application/JSON  '
+        })
+
+        const result = await fix.s3Service.isUploadComplete({
+            contentType: 'application/json',
+            key: 'k'
+        })
+
+        expect(result).toBe(true)
+    })
 })

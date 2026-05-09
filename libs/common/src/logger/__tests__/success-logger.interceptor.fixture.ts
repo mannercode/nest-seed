@@ -17,9 +17,19 @@ class TestController {
         return { result: 'success' }
     }
 
+    @Get('also-excluded')
+    async getAlsoExcluded() {
+        return { result: 'success' }
+    }
+
     @Post('success')
     async httpSuccess() {
         return { result: 'success' }
+    }
+
+    @Get('failure')
+    async httpFailure() {
+        throw new Error('intentional')
     }
 }
 

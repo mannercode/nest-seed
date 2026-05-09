@@ -227,6 +227,28 @@ describe('AssetsService', () => {
         it('assetIds 중 존재하지 않는 id가 있어도 예외 없이 끝난다', async () => {
             await expect(fix.assetsService.deleteMany([nullObjectId])).resolves.toBeUndefined()
         })
+
+        it('빈 배열을 넘기면 즉시 반환한다', async () => {
+            await expect(fix.assetsService.deleteMany([])).resolves.toBeUndefined()
+        })
+
+        it('S3 객체 일부 삭제가 실패하면 경고 로그를 남기고 첫 실패를 던진다 (DB 행은 보존)', async () => {
+            const asset = await uploadAndFinalizeAsset(fix, file)
+            const s3Service = (fix.assetsService as any).s3Service
+            jest.spyOn(s3Service, 'deleteObject').mockRejectedValueOnce(new Error('s3 down'))
+
+            const { Logger } = await import('@nestjs/common')
+            const warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation()
+
+            await expect(fix.assetsService.deleteMany([asset.id])).rejects.toThrow('s3 down')
+
+            expect(warnSpy).toHaveBeenCalledWith(
+                'partial S3 delete failure; DB rows retained for retry',
+                expect.objectContaining({ failedCount: 1 })
+            )
+            // DB 행은 보존되어 다음 cleanup이 재시도할 수 있다.
+            await expect(fix.assetsService.getMany([asset.id])).resolves.toBeDefined()
+        })
     })
 
     describe('cleanupExpiredUploadsJob', () => {

@@ -64,7 +64,11 @@ describe('AppendOnly', () => {
                 await expect(createdDoc.deleteOne()).rejects.toThrow(/append-only/)
             })
 
-            it.todo('replaceOne도 예외를 던진다')
+            it('replaceOne도 예외를 던진다', async () => {
+                await expect(
+                    fix.model.replaceOne({ _id: createdDoc._id }, { name: 'replaced' }).exec()
+                ).rejects.toThrow(/append-only/)
+            })
         })
     })
 

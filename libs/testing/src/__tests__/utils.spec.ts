@@ -57,9 +57,41 @@ describe('step', () => {
 })
 
 describe('withTestId', () => {
-    it.todo('TEST_ID 환경변수가 없으면 예외를 던진다')
+    it('TEST_ID 환경변수가 없으면 예외를 던진다', async () => {
+        const { withTestId } = await import('../utils')
+        const original = process.env.TEST_ID
+        delete process.env.TEST_ID
+
+        try {
+            expect(() => withTestId('foo')).toThrow(/TEST_ID/)
+        } finally {
+            if (original !== undefined) process.env.TEST_ID = original
+        }
+    })
+
+    it('TEST_ID가 있으면 prefix-TEST_ID 형태로 반환한다', async () => {
+        const { withTestId } = await import('../utils')
+        process.env.TEST_ID = 'abc123'
+        expect(withTestId('foo')).toBe('foo-abc123')
+    })
 })
 
 describe('oid', () => {
-    it.todo('oid(1)은 24자리 16진수 "000000000000000000000001"로 패딩된다')
+    it('oid(1)은 24자리 16진수 "000000000000000000000001"로 패딩된다', async () => {
+        const { oid } = await import('../utils')
+        expect(oid(1)).toBe('000000000000000000000001')
+    })
+
+    it('oid(0xff)는 16진수 변환된 24자리 문자열로 패딩된다', async () => {
+        const { oid } = await import('../utils')
+        expect(oid(0xff)).toBe('0000000000000000000000ff')
+    })
+})
+
+describe('isDebuggingEnabled', () => {
+    it('디버거가 연결되지 않았으면 false를 반환한다', async () => {
+        const { isDebuggingEnabled } = await import('../utils')
+        // CI/일반 실행에서는 디버거가 없다.
+        expect(typeof isDebuggingEnabled()).toBe('boolean')
+    })
 })

@@ -1,5 +1,6 @@
 node_modules
 _output
+coverage
 
 .DS_Store
 desktop.ini

@@ -58,3 +58,77 @@ export async function createJwtAuthServiceFixture() {
 
     return { events, jwtService, redis, teardown }
 }
+
+export async function createJwtAuthServiceFixtureWithoutOnEvent() {
+    const { close, module } = await createTestContext({
+        imports: [
+            RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL }),
+            JwtAuthModule.register({
+                prefix: withTestId('jwt-auth-no-event'),
+                useFactory() {
+                    return {
+                        auth: {
+                            accessSecret: 'accessSecret',
+                            accessTokenTtlMs: 3000,
+                            audience: TEST_AUTH_AUDIENCE,
+                            issuer: TEST_AUTH_ISSUER,
+                            refreshSecret: 'refreshSecret',
+                            refreshTokenTtlMs: 3000
+                        }
+                        // onEvent를 제공하지 않는 경로를 검증한다.
+                    }
+                }
+            })
+        ]
+    })
+
+    const jwtService = module.get(JwtAuthService.getName())
+    const redis = module.get(getRedisConnectionToken())
+
+    const teardown = async () => {
+        await close()
+        await redis.quit()
+    }
+
+    return { jwtService, redis, teardown }
+}
+
+export async function createJwtAuthServiceFixtureWithShortTtl() {
+    const events: SecurityEvent[] = []
+    const onEvent: OnSecurityEvent = (event) => {
+        events.push(event)
+    }
+
+    const { close, module } = await createTestContext({
+        imports: [
+            RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL }),
+            JwtAuthModule.register({
+                prefix: withTestId('jwt-auth-short'),
+                useFactory() {
+                    return {
+                        auth: {
+                            accessSecret: 'accessSecret',
+                            // 1초 미만 TTL은 floor 후 0초 → 즉시 만료된다.
+                            accessTokenTtlMs: 500,
+                            audience: TEST_AUTH_AUDIENCE,
+                            issuer: TEST_AUTH_ISSUER,
+                            refreshSecret: 'refreshSecret',
+                            refreshTokenTtlMs: 3000
+                        },
+                        onEvent
+                    }
+                }
+            })
+        ]
+    })
+
+    const jwtService = module.get(JwtAuthService.getName())
+    const redis = module.get(getRedisConnectionToken())
+
+    const teardown = async () => {
+        await close()
+        await redis.quit()
+    }
+
+    return { events, jwtService, redis, teardown }
+}

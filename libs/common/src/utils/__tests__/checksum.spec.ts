@@ -59,6 +59,14 @@ describe('Checksum', () => {
             })
         })
 
-        it.todo('빈 버퍼도 표준 SHA-256 해시(e3b0c44...)를 반환한다')
+        it('빈 버퍼도 표준 SHA-256 해시를 반환한다', () => {
+            const checksum = Checksum.fromBuffer(Buffer.alloc(0))
+
+            expect(checksum).toEqual({
+                algorithm: 'sha256',
+                // 빈 입력에 대한 SHA-256 표준 해시값.
+                base64: '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU='
+            })
+        })
     })
 })

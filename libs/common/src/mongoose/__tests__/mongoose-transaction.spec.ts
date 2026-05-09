@@ -50,9 +50,41 @@ describe('Mongoose Transaction', () => {
             expect(total).toEqual(0)
         })
 
-        it.todo('rollback() 호출 시 커밋이 아닌 중단으로 종료된다')
+        it('rollback() 호출 시 커밋이 아닌 중단으로 종료된다', async () => {
+            // session.abortTransaction이 호출되고 commitTransaction은 호출되지 않는지 확인.
+            const fakeSession = {
+                abortTransaction: jest.fn().mockResolvedValue(undefined),
+                commitTransaction: jest.fn().mockResolvedValue(undefined),
+                endSession: jest.fn().mockResolvedValue(undefined),
+                inTransaction: jest.fn().mockReturnValue(true),
+                startTransaction: jest.fn()
+            }
+            jest.spyOn(fix.model, 'startSession').mockResolvedValue(fakeSession as any)
 
-        it.todo('endSession() 자체가 예외를 던져도 연결 풀이 누수되지 않는다')
+            await fix.repository.withTransaction(async (_session, rollback) => {
+                rollback()
+            })
+
+            expect(fakeSession.abortTransaction).toHaveBeenCalledTimes(1)
+            expect(fakeSession.commitTransaction).not.toHaveBeenCalled()
+        })
+
+        it('endSession()이 예외를 던지면 호출자가 그 예외를 받는다', async () => {
+            const fakeSession = {
+                abortTransaction: jest.fn().mockResolvedValue(undefined),
+                commitTransaction: jest.fn().mockResolvedValue(undefined),
+                endSession: jest.fn().mockRejectedValue(new Error('endSession failed')),
+                inTransaction: jest.fn().mockReturnValue(true),
+                startTransaction: jest.fn()
+            }
+            jest.spyOn(fix.model, 'startSession').mockResolvedValue(fakeSession as any)
+
+            await expect(fix.repository.withTransaction(async () => 'ok')).rejects.toThrow(
+                'endSession failed'
+            )
+
+            expect(fakeSession.endSession).toHaveBeenCalledTimes(1)
+        })
     })
 
     describe('에러 처리', () => {

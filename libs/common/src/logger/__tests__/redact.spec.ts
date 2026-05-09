@@ -43,11 +43,72 @@ describe('redactSensitive', () => {
         expect(redactSensitive(undefined as unknown)).toBe(undefined)
     })
 
-    it.todo('순환 참조는 [CIRCULAR]로 치환하고 스택 오버플로 없이 끝낸다')
-    it.todo('서로 다른 위치에서 같은 객체를 참조하면 양쪽 모두 [CIRCULAR]로 치환한다')
-    it.todo('배열이 자기 자신을 원소로 포함해도 [CIRCULAR]로 치환한다')
-    it.todo('중첩된 배열 안의 객체에서도 민감 키만 [REDACTED]되고 나머지는 유지된다')
-    it.todo('정확히 일치하지 않는 변형 키(pwd, userSecret, apiToken 등)는 마스킹하지 않는다')
-    it.todo('Date / RegExp / Map / Set은 deep copy 없이 그대로 통과한다')
-    it.todo('prototype 체인으로 상속된 민감 필드는 마스킹하지 않는다')
+    it('순환 참조는 [CIRCULAR]로 치환하고 스택 오버플로 없이 끝낸다', () => {
+        const a: any = { password: 'secret', name: 'a' }
+        a.self = a
+
+        const result = redactSensitive(a)
+
+        expect(result.password).toBe('[REDACTED]')
+        expect(result.self).toBe('[CIRCULAR]')
+    })
+
+    it('서로 다른 위치에서 같은 객체를 참조하면 양쪽 모두 [CIRCULAR]로 치환한다', () => {
+        // 구현이 WeakSet으로 방문을 추적하므로, DAG에서 두 번째 방문도 [CIRCULAR]가 된다.
+        const shared = { name: 'shared' }
+        const root = { a: shared, b: shared }
+
+        const result = redactSensitive(root) as any
+
+        // 첫 방문은 정상 처리, 두 번째는 [CIRCULAR].
+        const visitedAsObject = result.a !== '[CIRCULAR]' ? result.a : result.b
+        const visitedAsCircular = result.a === '[CIRCULAR]' ? result.a : result.b
+
+        expect(visitedAsObject).toEqual({ name: 'shared' })
+        expect(visitedAsCircular).toBe('[CIRCULAR]')
+    })
+
+    it('배열이 자기 자신을 원소로 포함해도 [CIRCULAR]로 치환한다', () => {
+        const arr: any[] = [1, 2]
+        arr.push(arr)
+
+        const result = redactSensitive(arr)
+
+        expect(result.slice(0, 2)).toEqual([1, 2])
+        expect(result[2]).toBe('[CIRCULAR]')
+    })
+
+    it('중첩된 배열 안의 객체에서도 민감 키만 [REDACTED]되고 나머지는 유지된다', () => {
+        const result = redactSensitive([[{ name: 'a', password: 'p1' }, { token: 't1' }]]) as any
+
+        expect(result).toEqual([[{ name: 'a', password: '[REDACTED]' }, { token: '[REDACTED]' }]])
+    })
+
+    it('정확히 일치하지 않는 변형 키(pwd, userSecret, apiToken 등)는 마스킹하지 않는다', () => {
+        // 'secret', 'apikey'는 SENSITIVE_FIELDS에 있지만 'userSecret', 'apiToken'은 부분 일치라 통과한다.
+        const result = redactSensitive({
+            pwd: 'p1',
+            userSecret: 's1',
+            apiToken: 't1',
+            accessTokenString: 'a1'
+        })
+
+        expect(result).toEqual({
+            pwd: 'p1',
+            userSecret: 's1',
+            apiToken: 't1',
+            accessTokenString: 'a1'
+        })
+    })
+
+    it('prototype 체인으로 상속된 민감 필드는 마스킹하지 않는다', () => {
+        // Object.entries는 own enumerable만 본다.
+        const proto = { password: 'should-leak' }
+        const obj = Object.create(proto)
+        obj.name = 'x'
+
+        const result = redactSensitive(obj)
+
+        expect(result).toEqual({ name: 'x' })
+    })
 })

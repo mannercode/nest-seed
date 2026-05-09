@@ -102,7 +102,23 @@ describe('createWinstonLogger', () => {
         consoleLogger.close()
     })
 
-    it.todo('consoleLogLevel이 "silent"이면 Console transport를 등록하지 않는다')
+    it('consoleLogLevel이 "silent"이면 Console transport를 등록하지 않는다', () => {
+        const silentLogger = createWinstonLogger({
+            consoleLogLevel: 'silent',
+            daysToKeepLogs: '1d',
+            directory: tempDir,
+            fileLogLevel: 'silent'
+        })
+
+        try {
+            const consoleTransport = silentLogger.transports.find(
+                (t) => t.constructor.name === 'Console'
+            )
+            expect(consoleTransport).toBeUndefined()
+        } finally {
+            silentLogger.close()
+        }
+    })
 
     it('service 컨텍스트는 콘솔에 SERVICE 라벨과 함께 출력된다', async () => {
         const consoleLogger = createWinstonLogger({
@@ -128,5 +144,28 @@ describe('createWinstonLogger', () => {
         consoleLogger.close()
     })
 
-    it.todo('contextType이 service이면 service formatter, 아니면 generic formatter가 적용된다')
+    it('contextType이 service면 SERVICE 라벨이, 아니면 generic 포맷이 적용된다', async () => {
+        const consoleLogger = createWinstonLogger({
+            consoleLogLevel: 'info',
+            daysToKeepLogs: '1d',
+            directory: tempDir,
+            fileLogLevel: 'silent'
+        })
+
+        const { getOutput } = spyConsoleTransport(consoleLogger)
+
+        // service formatter 경로
+        consoleLogger.info('Foo.bar', { contextType: 'service', x: 1 })
+        // generic formatter 경로 (contextType 없음)
+        consoleLogger.info('plain message', { other: 'value' })
+        await sleep(200)
+
+        const output = getOutput()
+        expect(output).toContain('SERVICE')
+        expect(output).toContain('Foo.bar')
+        expect(output).toContain('plain message')
+        expect(output).toContain('other')
+
+        consoleLogger.close()
+    })
 })

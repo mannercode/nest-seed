@@ -15,7 +15,9 @@ describe('generateShortId', () => {
         expect(id1).not.toEqual(id2)
     })
 
-    it.todo('length가 0이면 빈 문자열을 반환한다')
+    it('length가 0이면 빈 문자열을 반환한다', () => {
+        expect(generateShortId(0)).toBe('')
+    })
 })
 
 describe('pickIds', () => {

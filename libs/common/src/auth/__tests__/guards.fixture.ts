@@ -118,6 +118,22 @@ class TestLocalAuthGuardDefault extends LocalAuthGuard {
     }
 }
 
+@Injectable()
+class TestLocalAuthGuardCustomFields extends LocalAuthGuard {
+    constructor() {
+        super({
+            passwordField: 'pwd',
+            usernameField: 'login',
+            validate: async (login: string, pwd: string) => {
+                if (login === 'custom' && pwd === 'secret') {
+                    return { userId: 'user-1' }
+                }
+                return null
+            }
+        })
+    }
+}
+
 @Controller('local')
 class LocalTestController {
     @UseGuards(TestLocalAuthGuard)
@@ -129,6 +145,12 @@ class LocalTestController {
     @UseGuards(TestLocalAuthGuardDefault)
     @Post('login-default')
     loginDefault() {
+        return { message: 'logged in' }
+    }
+
+    @UseGuards(TestLocalAuthGuardCustomFields)
+    @Post('login-custom')
+    loginCustom() {
         return { message: 'logged in' }
     }
 }
@@ -153,7 +175,8 @@ export async function createGuardsFixture(): Promise<GuardsFixture> {
             TestJwtAuthGuardDefault,
             TestOptionalJwtAuthGuard,
             TestLocalAuthGuard,
-            TestLocalAuthGuardDefault
+            TestLocalAuthGuardDefault,
+            TestLocalAuthGuardCustomFields
         ]
     })
 
