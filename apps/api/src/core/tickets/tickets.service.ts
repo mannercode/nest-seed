@@ -44,6 +44,13 @@ export class TicketsService {
     async updateStatusMany(ticketIds: string[], status: TicketStatus) {
         const result = await this.repository.updateStatusMany(ticketIds, status)
 
+        // matched < input → 존재하지 않는 ticketId 가 섞여 있다 (caller 잘못).
+        Require.equals(
+            result.matchedCount,
+            ticketIds.length,
+            'All ticket IDs must match existing documents.'
+        )
+        // matched > modified → 일부 티켓이 이미 같은 상태였음 (멱등성 가정 위배).
         Require.equals(
             result.matchedCount,
             result.modifiedCount,

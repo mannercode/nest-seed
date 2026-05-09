@@ -141,4 +141,34 @@ describe('BookingService', () => {
                 .notFound(Errors.Booking.ShowtimeNotFound(nullObjectId))
         })
     })
+
+    describe('GET /booking/movies/:movieId/theaters/:theaterId/showdates/:showdate/showtimes', () => {
+        // parseShowdate 의 두 가드 분기 (형식 / 달력일자) 가 400 으로 떨어지는지 확인.
+        const movieId = nullObjectId
+        const theaterId = nullObjectId
+
+        it('YYYYMMDD 형식이 아니면 400을 반환한다', async () => {
+            await fix.httpClient
+                .get(`/booking/movies/${movieId}/theaters/${theaterId}/showdates/abc/showtimes`)
+                .badRequest({
+                    code: 'ERR_BOOKING_SHOWDATE_INVALID',
+                    message: 'showdate must be in YYYYMMDD format',
+                    showdate: 'abc'
+                })
+        })
+
+        it('형식은 맞지만 실제 달력에 없는 날짜이면 400을 반환한다', async () => {
+            // 20240230 (2 월 30 일) — Date.UTC 가 silent overflow 로 보정해
+            // 다른 달이 되므로, round-trip 비교에서 invalid 로 거부된다.
+            await fix.httpClient
+                .get(
+                    `/booking/movies/${movieId}/theaters/${theaterId}/showdates/20240230/showtimes`
+                )
+                .badRequest({
+                    code: 'ERR_BOOKING_SHOWDATE_INVALID',
+                    message: 'showdate must be a valid calendar date',
+                    showdate: '20240230'
+                })
+        })
+    })
 })

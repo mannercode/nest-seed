@@ -58,11 +58,15 @@ export class BookingService {
     }
 
     async searchShowtimes({ movieId, showdate, theaterId }: BookingSearchShowtimesDto) {
+        // showdate 는 YYYYMMDD 로 들어오는데, 짝이 되는 searchShowdates 가
+        // Mongo `$dateToString` (timezone 명시 없음 → UTC) 으로 만든 UTC 자정
+        // Date 들을 돌려준다. 그래서 이 경계도 UTC 자정 기준으로 잡아야 두
+        // 메서드 결과가 비-UTC 컨테이너에서도 어긋나지 않는다.
         const startOfDay = new Date(showdate)
-        startOfDay.setHours(0, 0, 0, 0)
+        startOfDay.setUTCHours(0, 0, 0, 0)
 
         const endOfDay = new Date(showdate)
-        endOfDay.setHours(23, 59, 59, 999)
+        endOfDay.setUTCHours(23, 59, 59, 999)
 
         const showtimes = await this.showtimesService.search({
             endTimeRange: { start: new Date() },

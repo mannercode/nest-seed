@@ -7,6 +7,10 @@ import { ShowtimeCreationErrors } from '../errors'
 
 type TimeslotMap = Map<number, ShowtimeDto>
 
+// 모듈 로드 시 1회 평가. iterateTimeslots 가 반복문 안에서 매번 정규식
+// 매칭을 돌리지 않도록 캐싱.
+const TIMESLOT_STEP_MS = TimeUtil.toMs(`${Rules.Showtime.timeslotInMinutes}m`)
+
 const iterateTimeslots = (
     timeRange: DateTimeRange,
     onTimeslot: (timeslot: number) => boolean | void
@@ -14,11 +18,8 @@ const iterateTimeslots = (
     // end 는 exclusive — A 가 end=12:00 으로 끝나면 12:00 부터 시작하는 B 와
     // back-to-back 으로 충돌 없이 이어진다. 청소 시간이 필요한 경우 호출 측에서
     // gap 을 강제하는 방식으로 풀어야 한다.
-    for (
-        let timeslot = timeRange.start.getTime();
-        timeslot < timeRange.end.getTime();
-        timeslot = timeslot + TimeUtil.toMs(`${Rules.Showtime.timeslotInMinutes}m`)
-    ) {
+    const endMs = timeRange.end.getTime()
+    for (let timeslot = timeRange.start.getTime(); timeslot < endMs; timeslot += TIMESLOT_STEP_MS) {
         if (false === onTimeslot(timeslot)) {
             break
         }

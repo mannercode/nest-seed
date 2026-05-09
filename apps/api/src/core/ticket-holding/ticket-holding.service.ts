@@ -26,13 +26,20 @@ const HOLD_TICKETS_SCRIPT = `
     -- 고객 키 (KEYS 배열의 마지막 요소)
     local userKey = KEYS[#KEYS]
 
-    -- 이전에 고객이 선점한 티켓 목록 가져오기
+    -- 이전에 고객이 선점한 티켓 목록 가져오기.
+    -- partial-release-failure 시나리오 (ticket-key 만 삭제되고 user-key 가 남거나
+    -- 그 반대) 에서 stale 한 ticketId 가 섞일 수 있으므로, 소유자가 *우리*
+    -- userId 인 키만 DEL 한다. 그래야 그 사이에 다른 고객이 같은 ticketId 를
+    -- 다시 선점한 경우, 이 cleanup 으로 그 hold 가 끊기지 않는다.
     local previousTicketIdsJson = redis.call('GET', userKey)
     if previousTicketIdsJson then
         local previousTicketIds = cjson.decode(previousTicketIdsJson)
         for _, ticketId in ipairs(previousTicketIds) do
             local ticketKey = prefix .. ':Ticket:{' .. showtimeId .. '}:' .. ticketId
-            redis.call('DEL', ticketKey)
+            local ownerId = redis.call('GET', ticketKey)
+            if ownerId == userId then
+                redis.call('DEL', ticketKey)
+            end
         end
     end
 
