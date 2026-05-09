@@ -7,8 +7,8 @@
 !/package-lock.json
 !/tsconfig.json
 
-!/libs/tsconfig.json
 !/libs/*/package.json
+!/libs/*/tsconfig.json
 !/libs/*/tsconfig.build.json
 !/libs/*/src/
 
@@ -20,6 +20,12 @@
 !/apps/*/src/
 !/apps/*/scripts/
 !/apps/*/jest.*.js
+
+# tools/ 워크스페이스 (jest-helpers, dev-tools 등) 는 apps/api 의 devDep 에서
+# 참조되므로 npm ci 가 workspace 그래프를 정상적으로 풀려면 빌드 컨텍스트에
+# 들어와야 한다. 안 그러면 prune 단계에서 registry 로 조회 fallback 되어 404 발생.
+!/tools/
+!/tools/*/
 
 **/node_modules
 **/_output
