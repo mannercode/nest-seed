@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-: "${WORKSPACE_ROOT:?WORKSPACE_ROOT must be set (devcontainer 의 containerEnv 가 자동 주입)}"
+: "${WORKSPACE_ROOT:?}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_DIR="${WORKSPACE_ROOT}/apps/api"

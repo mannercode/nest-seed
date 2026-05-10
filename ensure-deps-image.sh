@@ -10,7 +10,7 @@
 # WORKSPACE_ROOT 는 devcontainer.json 의 containerEnv 에서 자동 주입된다.
 # 다른 환경에서 실행할 일이 생기면 그곳에서도 같은 변수를 export 해 둘 것.
 
-: "${WORKSPACE_ROOT:?WORKSPACE_ROOT must be set (devcontainer 의 containerEnv 가 자동 주입)}"
+: "${WORKSPACE_ROOT:?}"
 
 export DEPS_TAG=$(cat "${WORKSPACE_ROOT}/package-lock.json" "${WORKSPACE_ROOT}/deps.Dockerfile" | sha256sum | cut -c1-16)
 export DEPS_IMAGE="ghcr.io/mannercode/nest-seed/deps:${DEPS_TAG}"
