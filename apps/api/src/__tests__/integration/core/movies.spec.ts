@@ -8,13 +8,13 @@ import {
     testAssets,
     uploadAndFinalizeAsset,
     type AppTestContext
-} from '../../helpers'
+} from '../helpers'
 
 describe('MoviesService', () => {
     let fix: AppTestContext
 
     beforeEach(async () => {
-        const { createAppTestContext } = await import('../../helpers')
+        const { createAppTestContext } = await import('../helpers')
         fix = await createAppTestContext()
     })
     afterEach(() => fix.teardown())

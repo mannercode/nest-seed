@@ -11,14 +11,14 @@ import {
     uploadAndFinalizeMovieAsset,
     uploadAsset,
     type AppTestContext
-} from '../../helpers'
+} from '../helpers'
 
 describe('MoviesAssets', () => {
     let fix: AppTestContext
     let assetsService: AssetsService
 
     beforeEach(async () => {
-        const { createAppTestContext } = await import('../../helpers')
+        const { createAppTestContext } = await import('../helpers')
         const { AssetsService } = await import('infrastructure')
         fix = await createAppTestContext()
         assetsService = fix.module.get(AssetsService)

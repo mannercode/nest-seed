@@ -1,13 +1,13 @@
 import { nullObjectId } from '@mannercode/testing'
 import { MovieGenre, MovieRating, type MovieDto, type MoviesService } from 'core'
-import { createUnpublishedMovie, Errors, type AppTestContext } from '../../helpers'
+import { createUnpublishedMovie, Errors, type AppTestContext } from '../helpers'
 
 describe('MoviesPublish', () => {
     let fix: AppTestContext
     let moviesService: MoviesService
 
     beforeEach(async () => {
-        const { createAppTestContext } = await import('../../helpers')
+        const { createAppTestContext } = await import('../helpers')
         const { MoviesService } = await import('core')
         fix = await createAppTestContext()
         moviesService = fix.module.get(MoviesService)

@@ -8,7 +8,7 @@ import {
     type TicketDto
 } from 'core'
 import { Errors, type AppTestContext } from '../helpers'
-import { createAllResources } from './booking.fixture'
+import { createAllResources } from './booking.utils'
 
 describe('BookingService', () => {
     let fix: AppTestContext

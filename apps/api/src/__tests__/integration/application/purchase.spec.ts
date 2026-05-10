@@ -7,7 +7,7 @@ import {
     overrideConfigGetter,
     type AppTestContext
 } from '../helpers'
-import { buildCreatePurchaseDto } from './purchase.fixture'
+import { buildCreatePurchaseDto } from './purchase.utils'
 
 describe('PurchaseService', () => {
     let fix: AppTestContext
@@ -23,7 +23,7 @@ describe('PurchaseService', () => {
             let heldTickets: TicketDto[]
 
             beforeEach(async () => {
-                const { createShowtimeAndTickets, holdTickets } = await import('./purchase.fixture')
+                const { createShowtimeAndTickets, holdTickets } = await import('./purchase.utils')
                 const tickets = await createShowtimeAndTickets(fix)
                 heldTickets = await holdTickets(fix, tickets)
             })
@@ -172,7 +172,7 @@ describe('PurchaseService', () => {
         })
 
         it('티켓을 보유하지 않은 채로 구매하면 400을 반환한다', async () => {
-            const { createShowtimeAndTickets } = await import('./purchase.fixture')
+            const { createShowtimeAndTickets } = await import('./purchase.utils')
             const tickets = await createShowtimeAndTickets(fix)
 
             const createDto = buildCreatePurchaseDto(tickets.slice(0, 1))

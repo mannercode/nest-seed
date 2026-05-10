@@ -1,6 +1,6 @@
 import { MovieGenre, type MovieDto } from 'core'
 import type { AppTestContext } from '../helpers'
-import { createShowingMovies, createWatchedMovies } from './recommendation.fixture'
+import { createShowingMovies, createWatchedMovies } from './recommendation.utils'
 
 describe('RecommendationService', () => {
     let fix: AppTestContext

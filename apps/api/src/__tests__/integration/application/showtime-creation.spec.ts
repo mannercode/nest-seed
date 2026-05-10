@@ -2,7 +2,7 @@ import type { MovieDto, ShowtimesService, TheaterDto, TicketsService } from 'cor
 import { DateUtil } from '@mannercode/common'
 import { nullObjectId, type Response } from '@mannercode/testing'
 import { createMovie, createShowtimes, createTheater, type AppTestContext } from '../helpers'
-import { waitForCompletion } from './showtime-creation.fixture'
+import { waitForCompletion } from './showtime-creation.utils'
 
 describe('ShowtimeCreationService', () => {
     let fix: AppTestContext

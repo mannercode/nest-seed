@@ -27,7 +27,7 @@ describe('PurchaseEvents 구독자', () => {
     afterEach(() => fix.teardown())
 
     it('ticketPurchased 이벤트는 notification(queue-group)과 logger(broadcast) 양쪽에 도달한다', async () => {
-        const { waitFor } = await import('./purchase-events.fixture')
+        const { waitFor } = await import('./purchase-events.utils')
         const userId = 'user-1'
         const ticketIds = ['t1', 't2']
 
@@ -44,7 +44,7 @@ describe('PurchaseEvents 구독자', () => {
     })
 
     it('ticketPurchaseCanceled 이벤트는 logger에만 도달하고 notification에는 도달하지 않는다', async () => {
-        const { waitFor } = await import('./purchase-events.fixture')
+        const { waitFor } = await import('./purchase-events.utils')
         const userId = 'user-2'
         const ticketIds = ['t3']
 
