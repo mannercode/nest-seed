@@ -1,4 +1,3 @@
-export * from './application.module'
 export * from './booking'
 export * from './errors'
 export * from './purchase'

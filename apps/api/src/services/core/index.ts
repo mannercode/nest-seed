@@ -1,4 +1,3 @@
-export * from './core.module'
 export * from './errors'
 export * from './movies'
 export * from './purchase-records'
