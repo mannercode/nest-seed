@@ -7,7 +7,7 @@ x-mongo-base: &mongo-base
     deploy: { resources: { limits: { memory: 2g } } }
     shm_size: '8m'
     environment:
-        { MONGO_INITDB_ROOT_USERNAME: $MONGO_USERNAME, MONGO_INITDB_ROOT_PASSWORD: $MONGO_PASSWORD }
+        { MONGO_INITDB_ROOT_USERNAME: mongouser, MONGO_INITDB_ROOT_PASSWORD: mongopass }
     # "Too many open files" 에러 방지
     ulimits: { nofile: { soft: 65536, hard: 65536 } }
     # 27016 포트로 변경하는 이유
@@ -17,7 +17,7 @@ x-mongo-base: &mongo-base
     # - 이 전환 과정에서 27017 포트 충돌로 "Address already in use"가 간헐적으로 발생할 수 있어,
     #   서비스용 mongod 포트를 27016으로 변경한다.
     command: >
-        --replSet ${MONGO_REPLICA_SET}
+        --replSet mongo
         --keyFile /etc/mongodb/mongodb.key
         --bind_ip_all
         --port 27016
@@ -42,28 +42,28 @@ services:
     mongo1:
         <<: *mongo-base
         container_name: mongo1
-        ports: ['$MONGO_PORT1:27016']
+        ports: ['27017:27016']
         healthcheck:
             test: >
-                mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1/?authSource=admin"
+                mongosh  "mongodb://mongouser:mongopass@host.docker.internal:27017/?authSource=admin"
                 --eval "db.adminCommand('ping')"
 
     mongo2:
         <<: *mongo-base
         container_name: mongo2
-        ports: ['$MONGO_PORT2:27016']
+        ports: ['27018:27016']
         healthcheck:
             test: >
-                mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST2:$MONGO_PORT2/?authSource=admin"
+                mongosh  "mongodb://mongouser:mongopass@host.docker.internal:27018/?authSource=admin"
                 --eval "db.adminCommand('ping')"
 
     mongo3:
         <<: *mongo-base
         container_name: mongo3
-        ports: ['$MONGO_PORT3:27016']
+        ports: ['27019:27016']
         healthcheck:
             test: >
-                mongosh  "mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST3:$MONGO_PORT3/?authSource=admin"
+                mongosh  "mongodb://mongouser:mongopass@host.docker.internal:27019/?authSource=admin"
                 --eval "db.adminCommand('ping')"
 
     mongo-setup:
@@ -78,15 +78,15 @@ services:
             }
         command: |
             sh -eucx '
-                url="mongodb://$MONGO_USERNAME:$MONGO_PASSWORD@$MONGO_HOST1:$MONGO_PORT1/?authSource=admin"
+                url="mongodb://mongouser:mongopass@host.docker.internal:27017/?authSource=admin"
 
                 mongosh $$url --eval "
                     rs.initiate({
-                    _id: \"$MONGO_REPLICA_SET\",
+                    _id: \"mongo\",
                     members: [
-                        { _id: 0, host: \"$MONGO_HOST1:$MONGO_PORT1\" },
-                        { _id: 1, host: \"$MONGO_HOST2:$MONGO_PORT2\" },
-                        { _id: 2, host: \"$MONGO_HOST3:$MONGO_PORT3\" }
+                        { _id: 0, host: \"host.docker.internal:27017\" },
+                        { _id: 1, host: \"host.docker.internal:27018\" },
+                        { _id: 2, host: \"host.docker.internal:27019\" }
                         ]
                     })
                     "

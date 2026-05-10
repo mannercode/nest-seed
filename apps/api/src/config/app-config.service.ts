@@ -21,17 +21,8 @@ export class AppConfigService extends BaseConfigService {
         LOG_DAYS_TO_KEEP: Joi.string().required(),
         LOG_DIRECTORY: Joi.string().required(),
         LOG_FILE_LEVEL: Joi.string().required(),
+        MONGO_URI: Joi.string().required(),
         MONGO_DATABASE: Joi.string().required(),
-        MONGO_HOST1: Joi.string().required(),
-        MONGO_HOST2: Joi.string().required(),
-        MONGO_HOST3: Joi.string().required(),
-        MONGO_PASSWORD: Joi.string().required(),
-        MONGO_PORT1: Joi.number().required(),
-
-        MONGO_PORT2: Joi.number().required(),
-        MONGO_PORT3: Joi.number().required(),
-        MONGO_REPLICA_SET: Joi.string().required(),
-        MONGO_USERNAME: Joi.string().required(),
         NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
         REDIS_HOST1: Joi.string().required(),
         REDIS_HOST2: Joi.string().required(),
@@ -97,13 +88,8 @@ export class AppConfigService extends BaseConfigService {
 
     get mongo() {
         return {
-            database: this.getString('MONGO_DATABASE'),
-            host1: `${this.getString('MONGO_HOST1')}:${this.getNumber('MONGO_PORT1')}`,
-            host2: `${this.getString('MONGO_HOST2')}:${this.getNumber('MONGO_PORT2')}`,
-            host3: `${this.getString('MONGO_HOST3')}:${this.getNumber('MONGO_PORT3')}`,
-            password: this.getString('MONGO_PASSWORD'),
-            replicaSet: this.getString('MONGO_REPLICA_SET'),
-            user: this.getString('MONGO_USERNAME')
+            uri: this.getString('MONGO_URI'),
+            dbName: this.getString('MONGO_DATABASE')
         }
     }
 

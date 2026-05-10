@@ -10,14 +10,7 @@ setupJestLifecycle({
         const dbName = `mongo-w${workerId}`
         process.env.MONGO_DATABASE = dbName
 
-        const nodes = [
-            `${process.env.MONGO_HOST1}:${process.env.MONGO_PORT1}`,
-            `${process.env.MONGO_HOST2}:${process.env.MONGO_PORT2}`,
-            `${process.env.MONGO_HOST3}:${process.env.MONGO_PORT3}`
-        ].join(',')
-        const client = new MongoClient(
-            `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@${nodes}/?replicaSet=${process.env.MONGO_REPLICA_SET}`
-        )
+        const client = new MongoClient(process.env.MONGO_URI)
         await client.connect()
         return { client, dbName }
     },
