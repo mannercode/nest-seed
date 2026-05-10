@@ -1,5 +1,5 @@
 ARG DEPS_TAG
-FROM ghcr.io/mannercode/nest-seed/deps:${DEPS_TAG} AS build
+FROM nest-seed-deps:${DEPS_TAG} AS build
 
 COPY tsconfig.json ./
 COPY libs/ libs/

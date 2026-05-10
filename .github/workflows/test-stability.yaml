@@ -3,19 +3,11 @@ on:
     workflow_dispatch:
 permissions:
     contents: read
-    packages: write
 concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 jobs:
-    # scenario job 의 runner.sh 가 deps 이미지를 사용하므로 먼저 보장.
-    # hash 동일 시 ~5초 skip — 실제 빌드는 lockfile/deps.Dockerfile 변경시만.
-    build-deps:
-        uses: ./.github/workflows/build-deps-image.yaml
-        secrets: inherit
-
     unit:
-        needs: build-deps
         strategy:
             fail-fast: false
             matrix:
@@ -34,7 +26,6 @@ jobs:
                       npm run build
                       bash .github/scripts/repeat.sh 75 npm test -w ${{ matrix.scope }} -- --coverageThreshold='{}'
     bootup:
-        needs: build-deps
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 360
         steps:
@@ -49,7 +40,6 @@ jobs:
                       npm run build
                       bash .github/scripts/repeat.sh 50 bash .github/scripts/bootup-test.sh
     scenario:
-        needs: build-deps
         strategy:
             fail-fast: false
             matrix:

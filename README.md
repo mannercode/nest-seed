@@ -75,10 +75,7 @@ nest-seed/
 
 `nest-seed` 를 새 프로젝트 이름으로 일괄 치환한다. `package.json`, `apps/api/.env`, `deploy/compose.yml`, `.devcontainer/infra/.env` 등에 흩어진 식별자(패키지 이름, `PROJECT_ID`, `AUTH_ISSUER`, S3 버킷 등)가 한 번에 잡힌다.
 
-다만 다음 두 가지는 단순 치환만으로 끝나지 않는다.
-
-- **GHCR deps 이미지 경로** — `ensure-deps-image.sh` 와 `apps/api/Dockerfile` 의 `ghcr.io/mannercode/nest-seed/deps` 는 시드 저장소가 사전 빌드해 둔 이미지다. 포크 후에는 본인 저장소에 deps 이미지를 빌드·푸시한 뒤 그 경로로 바꾼다.
-- **`@mannercode` npm 스코프** — `libs/common`, `libs/testing` 의 패키지 스코프는 `nest-seed` 검색에 잡히지 않는다. npm 으로 배포할 계획이라면 본인 스코프로 따로 치환한다.
+다만 **`@mannercode` npm 스코프** 는 단순 치환만으로 끝나지 않는다 — `libs/common`, `libs/testing` 의 패키지 스코프는 `nest-seed` 검색에 잡히지 않으므로, npm 으로 배포할 계획이라면 본인 스코프로 따로 치환한다.
 
 ### 2. 도메인 코드 교체
 
@@ -86,7 +83,7 @@ nest-seed/
 
 ### 3. CI와 저장소 정리
 
-- `.github/workflows/` 의 트리거 분기와 시크릿을 새 저장소 기준으로 맞춘다 (`test-atoz.yaml` 이 메인 CI, `test-stability.yaml` 이 분산 race 누적 측정, `build-deps-image.yaml` 이 GHCR deps 이미지 빌드).
+- `.github/workflows/` 의 트리거 분기와 시크릿을 새 저장소 기준으로 맞춘다 (`test-atoz.yaml` 이 메인 CI, `test-stability.yaml` 이 분산 race 누적 측정).
 - 본 README의 `git clone <repository-url>` 자리를 실제 URL로 바꾼다.
 
 ### 4. 유지하면 좋은 것

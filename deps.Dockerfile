@@ -1,6 +1,7 @@
-# node_modules 만 baked-in 한 base 이미지. lockfile hash 를 태그로 ghcr 에
-# publish (build-deps-image.yaml workflow). main Dockerfile 이 이걸 FROM 으로
-# 받아 npm install 자체가 빌드 시점에 일어나지 않게 함.
+# node_modules 만 baked-in 한 base 이미지. ensure-deps-image.sh 가 lockfile +
+# 이 Dockerfile 합본 hash 를 태그로 로컬 build 한다. apps/*/Dockerfile 이
+# 이걸 FROM 으로 받아 npm install 이 main 빌드 시점에 일어나지 않게 함.
+# 모노레포 워크스페이스가 단일 lockfile 을 공유하므로 base 는 하나면 충분.
 FROM node:24-slim
 
 WORKDIR /workspace
