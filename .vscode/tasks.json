@@ -42,9 +42,7 @@
             "options": [
                 "npm run dev",
                 "npm test",
-                "npm test -w apps",
                 "npm run atoz",
-                "npm run atoz -w apps"
             ]
         }
     ]
