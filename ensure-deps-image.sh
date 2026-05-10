@@ -7,19 +7,20 @@
 # Tag 산출식은 .github/workflows/build-deps-image.yaml 과 반드시 동일해야
 # 한다 — 어긋나면 ghcr cache hit 가 깨진다.
 #
-# Usage: REPO_ROOT=/abs/path source ensure-deps-image.sh
+# WORKSPACE_ROOT 는 devcontainer.json 의 containerEnv 에서 자동 주입된다.
+# 다른 환경에서 실행할 일이 생기면 그곳에서도 같은 변수를 export 해 둘 것.
 
-: "${REPO_ROOT:?REPO_ROOT must be set before sourcing this script}"
+: "${WORKSPACE_ROOT:?WORKSPACE_ROOT must be set (devcontainer 의 containerEnv 가 자동 주입)}"
 
-export DEPS_TAG=$(cat "${REPO_ROOT}/package-lock.json" "${REPO_ROOT}/deps.Dockerfile" | sha256sum | cut -c1-16)
+export DEPS_TAG=$(cat "${WORKSPACE_ROOT}/package-lock.json" "${WORKSPACE_ROOT}/deps.Dockerfile" | sha256sum | cut -c1-16)
 export DEPS_IMAGE="ghcr.io/mannercode/nest-seed/deps:${DEPS_TAG}"
 
 if ! docker image inspect "$DEPS_IMAGE" >/dev/null 2>&1; then
     if ! docker pull "$DEPS_IMAGE" 2>/dev/null; then
         echo "Deps image not in ghcr (or no auth); building locally."
         docker build \
-            -f "${REPO_ROOT}/deps.Dockerfile" \
+            -f "${WORKSPACE_ROOT}/deps.Dockerfile" \
             -t "$DEPS_IMAGE" \
-            "${REPO_ROOT}"
+            "${WORKSPACE_ROOT}"
     fi
 fi

@@ -75,24 +75,5 @@ services:
                 redis-cli --cluster create $$REDIS_NODES --cluster-replicas 0
             '
 
-    redis-gui:
-        extends: { file: ./compose.common.yml, service: common-options }
-        profiles: ['gui']
-        container_name: redis-gui
-        image: $REDIS_INSIGHT_IMAGE
-        environment:
-            {
-                RI_DATABASE_MANAGEMENT: true,
-
-                RI_REDIS_HOST0: $REDIS_HOST1,
-                RI_REDIS_PORT0: $REDIS_PORT1,
-                RI_REDIS_ALIAS0: redis1,
-
-                RI_REDIS_HOST1: $REDIS_HOST2,
-                RI_REDIS_PORT1: $REDIS_PORT2,
-                RI_REDIS_ALIAS1: redis2
-            }
-        ports: ['5540:5540']
-
 # - name: Redis 용 memory overcommit 활성화
 #   run: sudo sysctl -w vm.overcommit_memory=1

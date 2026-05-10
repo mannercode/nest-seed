@@ -83,16 +83,5 @@ services:
         entrypoint: ['/bin/sh']
         command: '/scripts/create-namespace.sh'
 
-    temporal-ui:
-        extends: { file: ../compose.common.yml, service: common-options }
-        profiles: ['gui']
-        image: $TEMPORAL_UI_IMAGE
-        container_name: temporal-ui
-        depends_on:
-            temporal: { condition: service_healthy }
-        environment:
-            TEMPORAL_ADDRESS: temporal:7233
-        ports: ['$TEMPORAL_UI_PORT:8080']
-
 volumes:
     temporal_pgdata: {}

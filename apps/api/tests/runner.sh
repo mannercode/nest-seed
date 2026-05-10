@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+: "${WORKSPACE_ROOT:?WORKSPACE_ROOT must be set (devcontainer 의 containerEnv 가 자동 주입)}"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-APP_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-REPO_ROOT="$(cd "${APP_DIR}/../.." && pwd)"
-COMPOSE_DIR="${REPO_ROOT}/deploy"
+APP_DIR="${WORKSPACE_ROOT}/apps/api"
+COMPOSE_DIR="${WORKSPACE_ROOT}/deploy"
 
 TEST_NAME="${1:?Usage: $0 <test-name>}"
 TEST_SCRIPT="${SCRIPT_DIR}/${TEST_NAME}.js"
@@ -34,7 +35,7 @@ trap cleanup EXIT
 
 echo "Building and deploying 4-replica api stack..."
 # shellcheck source=../../../ensure-deps-image.sh
-. "${REPO_ROOT}/ensure-deps-image.sh"
+. "${WORKSPACE_ROOT}/ensure-deps-image.sh"
 
 REPLICAS="${REPLICAS:-4}" docker compose --env-file "$ENV_FILE" up -d --build
 docker wait api-setup && docker rm api-setup
