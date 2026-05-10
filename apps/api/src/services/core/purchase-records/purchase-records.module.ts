@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { MongooseSetupModule } from 'modules'
+import { MONGO_CONNECTION_NAME } from 'config'
 import { PurchaseRecord, PurchaseRecordSchema } from './models'
 import { PurchaseRecordsRepository } from './purchase-records.repository'
 import { PurchaseRecordsService } from './purchase-records.service'
@@ -10,7 +10,7 @@ import { PurchaseRecordsService } from './purchase-records.service'
     imports: [
         MongooseModule.forFeature(
             [{ name: PurchaseRecord.name, schema: PurchaseRecordSchema }],
-            MongooseSetupModule.connectionName
+            MONGO_CONNECTION_NAME
         )
     ],
     providers: [PurchaseRecordsService, PurchaseRecordsRepository]

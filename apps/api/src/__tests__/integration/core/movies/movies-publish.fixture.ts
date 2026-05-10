@@ -1,12 +1,10 @@
 import type { MoviesService } from 'core'
-import { createMoviesContext, type MoviesBaseContext } from './create-movies-context'
+import { createAppTestContext, type AppTestContext } from '../../helpers'
 
-export type MoviesPublishFixture = MoviesBaseContext & { moviesService: MoviesService }
-
-export { createUnpublishedMovie } from './create-movies-context'
+export type MoviesPublishFixture = AppTestContext & { moviesService: MoviesService }
 
 export async function createMoviesPublishFixture() {
-    const ctx = await createMoviesContext()
+    const ctx = await createAppTestContext()
 
     const { MoviesService } = await import('core')
     const moviesService = ctx.module.get(MoviesService)

@@ -8,9 +8,8 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import compression from 'compression'
-import { AppConfigService } from 'config'
+import { AppConfigService, REDIS_CONNECTION_TOKEN } from 'config'
 import express from 'express'
-import { RedisSetupModule } from 'modules'
 import { AppModule } from '../../../app.module'
 
 /**
@@ -43,7 +42,7 @@ export async function createAppTestContext(metadata: ModuleMetadataEx = {}) {
     const teardown = async () => {
         await ctx.close()
 
-        const redis = ctx.module.get(RedisSetupModule.moduleName)
+        const redis = ctx.module.get(REDIS_CONNECTION_TOKEN)
         await redis.quit()
     }
 

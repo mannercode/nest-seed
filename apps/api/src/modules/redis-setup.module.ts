@@ -1,6 +1,6 @@
-import { RedisModuleOptions, getRedisConnectionToken, RedisModule } from '@mannercode/common'
+import { RedisModule, RedisModuleOptions } from '@mannercode/common'
 import { Module } from '@nestjs/common'
-import { AppConfigService } from 'config'
+import { AppConfigService, REDIS_CONNECTION_NAME } from 'config'
 
 @Module({
     imports: [
@@ -36,16 +36,8 @@ import { AppConfigService } from 'config'
                     return redisOptions
                 }
             },
-            RedisSetupModule.connectionName
+            REDIS_CONNECTION_NAME
         )
     ]
 })
-export class RedisSetupModule {
-    static get connectionName() {
-        return 'redis-connection'
-    }
-
-    static get moduleName() {
-        return getRedisConnectionToken(this.connectionName)
-    }
-}
+export class RedisSetupModule {}

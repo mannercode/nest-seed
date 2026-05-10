@@ -1,6 +1,6 @@
-import { getTemporalClientToken, TemporalClientModule } from '@mannercode/common'
+import { TemporalClientModule } from '@mannercode/common'
 import { Module } from '@nestjs/common'
-import { AppConfigService } from 'config'
+import { AppConfigService, TEMPORAL_CLIENT_NAME } from 'config'
 
 @Module({
     imports: [
@@ -12,16 +12,8 @@ import { AppConfigService } from 'config'
                     namespace: config.temporal.namespace
                 })
             },
-            TemporalSetupModule.clientName
+            TEMPORAL_CLIENT_NAME
         )
     ]
 })
-export class TemporalSetupModule {
-    static get clientName() {
-        return 'temporal-client'
-    }
-
-    static get clientToken() {
-        return getTemporalClientToken(this.clientName)
-    }
-}
+export class TemporalSetupModule {}

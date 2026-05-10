@@ -28,3 +28,11 @@ export async function createMovie(
     await moviesService.publish(movie.id)
     return movie
 }
+
+export async function createUnpublishedMovie(ctx: TestContext): Promise<MovieDto> {
+    const { MoviesService } = await import('core')
+    const moviesService = ctx.module.get(MoviesService)
+
+    const movie = await moviesService.create({})
+    return movie
+}

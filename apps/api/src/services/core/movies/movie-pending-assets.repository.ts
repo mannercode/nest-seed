@@ -1,17 +1,18 @@
 import { CrudRepository, QueryBuilder } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseSetupModule } from 'modules'
+import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import { Model } from 'mongoose'
 import { MoviePendingAsset } from './models'
 
 @Injectable()
 export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAsset> {
     constructor(
-        @InjectModel(MoviePendingAsset.name, MongooseSetupModule.connectionName)
-        readonly model: Model<MoviePendingAsset>
+        @InjectModel(MoviePendingAsset.name, MONGO_CONNECTION_NAME)
+        readonly model: Model<MoviePendingAsset>,
+        config: AppConfigService
     ) {
-        super(model, MongooseSetupModule.maxTake)
+        super(model, config.http.paginationDefaultSize)
     }
 
     async addPendingAsset(movieId: string, assetId: string) {

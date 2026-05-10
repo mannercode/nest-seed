@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
+import { MONGO_CONNECTION_NAME } from 'config'
 import { AssetsModule } from 'infrastructure'
-import { MongooseSetupModule } from 'modules'
 import { Movie, MoviePendingAsset, MoviePendingAssetSchema, MovieSchema } from './models'
 import { MoviePendingAssetsRepository } from './movie-pending-assets.repository'
 import { MoviesRepository } from './movies.repository'
@@ -12,11 +12,11 @@ import { MoviesService } from './movies.service'
     imports: [
         MongooseModule.forFeature(
             [{ name: Movie.name, schema: MovieSchema }],
-            MongooseSetupModule.connectionName
+            MONGO_CONNECTION_NAME
         ),
         MongooseModule.forFeature(
             [{ name: MoviePendingAsset.name, schema: MoviePendingAssetSchema }],
-            MongooseSetupModule.connectionName
+            MONGO_CONNECTION_NAME
         ),
         AssetsModule
     ],

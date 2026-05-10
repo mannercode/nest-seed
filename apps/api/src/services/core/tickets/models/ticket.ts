@@ -1,13 +1,13 @@
 import { createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSetupModule } from 'modules'
+import { MONGOOSE_SCHEMA_OPTIONS } from 'config'
 import { SeatPosition } from './seat-position'
 
 export const TicketStatus = { Available: 'available', Sold: 'sold' } as const
 
 export type TicketStatus = (typeof TicketStatus)[keyof typeof TicketStatus]
 
-@Schema(MongooseSetupModule.schemaOptions)
+@Schema(MONGOOSE_SCHEMA_OPTIONS)
 export class Ticket extends CrudSchema {
     @Prop({ required: true })
     movieId: string

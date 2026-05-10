@@ -6,7 +6,7 @@ import {
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseSetupModule } from 'modules'
+import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import { Model } from 'mongoose'
 import { CreateShowtimeDto, SearchShowtimesDto } from './dtos'
 import { Showtime } from './models'
@@ -14,10 +14,11 @@ import { Showtime } from './models'
 @Injectable()
 export class ShowtimesRepository extends CrudRepository<Showtime> {
     constructor(
-        @InjectModel(Showtime.name, MongooseSetupModule.connectionName)
-        readonly model: Model<Showtime>
+        @InjectModel(Showtime.name, MONGO_CONNECTION_NAME)
+        readonly model: Model<Showtime>,
+        config: AppConfigService
     ) {
-        super(model, MongooseSetupModule.maxTake)
+        super(model, config.http.paginationDefaultSize)
     }
 
     async deleteBySagaIds(sagaIds: string[]) {

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { MongooseSetupModule } from 'modules'
+import { MONGO_CONNECTION_NAME } from 'config'
 import { WatchRecord, WatchRecordSchema } from './models'
 import { WatchRecordsRepository } from './watch-records.repository'
 import { WatchRecordsService } from './watch-records.service'
@@ -10,7 +10,7 @@ import { WatchRecordsService } from './watch-records.service'
     imports: [
         MongooseModule.forFeature(
             [{ name: WatchRecord.name, schema: WatchRecordSchema }],
-            MongooseSetupModule.connectionName
+            MONGO_CONNECTION_NAME
         )
     ],
     providers: [WatchRecordsService, WatchRecordsRepository]

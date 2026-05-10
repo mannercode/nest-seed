@@ -7,7 +7,7 @@ import {
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseSetupModule } from 'modules'
+import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import { Model } from 'mongoose'
 import {
     AggregateTicketSalesDto,
@@ -20,9 +20,10 @@ import { Ticket, TicketStatus } from './models'
 @Injectable()
 export class TicketsRepository extends CrudRepository<Ticket> {
     constructor(
-        @InjectModel(Ticket.name, MongooseSetupModule.connectionName) readonly model: Model<Ticket>
+        @InjectModel(Ticket.name, MONGO_CONNECTION_NAME) readonly model: Model<Ticket>,
+        config: AppConfigService
     ) {
-        super(model, MongooseSetupModule.maxTake)
+        super(model, config.http.paginationDefaultSize)
     }
 
     async deleteBySagaIds(sagaIds: string[]) {

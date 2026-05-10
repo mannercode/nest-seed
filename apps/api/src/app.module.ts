@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { AppConfigModule, GlobalModule, HealthModule } from 'modules'
+import { AppConfigModule, GlobalModule, HealthModule } from './modules'
 import { ApplicationModule, CoreModule, GatewayModule, InfrastructureModule } from './services'
 
 @Module({

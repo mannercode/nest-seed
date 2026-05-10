@@ -12,6 +12,10 @@ import {
 
 export type BookingFixture = AppTestContext
 
+export async function createBookingFixture(): Promise<BookingFixture> {
+    return createAppTestContext()
+}
+
 export async function createAllResources(
     ctx: TestContext,
     locations: TheaterLocation[],
@@ -46,10 +50,4 @@ export async function createAllResources(
     )
 
     return { accessToken, user, movie, refreshToken, showtimes, theaters, tickets }
-}
-
-export async function createBookingFixture(): Promise<BookingFixture> {
-    const ctx = await createAppTestContext()
-
-    return { ...ctx }
 }

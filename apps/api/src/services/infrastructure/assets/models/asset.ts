@@ -1,8 +1,8 @@
 import { Checksum, createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSetupModule } from 'modules'
+import { MONGOOSE_SCHEMA_OPTIONS } from 'config'
 
-@Schema(MongooseSetupModule.schemaOptions)
+@Schema(MONGOOSE_SCHEMA_OPTIONS)
 export class Asset extends CrudSchema {
     @Prop({ required: true, type: Object })
     checksum: Checksum

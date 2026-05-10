@@ -1,9 +1,9 @@
 import { createCrudSchema, HardDelete, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseSetupModule } from 'modules'
+import { MONGOOSE_SCHEMA_OPTIONS } from 'config'
 
 @HardDelete()
-@Schema(MongooseSetupModule.schemaOptions)
+@Schema(MONGOOSE_SCHEMA_OPTIONS)
 export class Showtime extends CrudSchema {
     @Prop({ required: true })
     endTime: Date

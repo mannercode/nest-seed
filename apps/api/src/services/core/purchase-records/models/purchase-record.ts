@@ -1,7 +1,7 @@
 import { createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
-import { MongooseSetupModule } from 'modules'
+import { MONGOOSE_SCHEMA_OPTIONS } from 'config'
 
 export const PurchaseItemType = { Foods: 'foods', Tickets: 'tickets' } as const
 
@@ -16,7 +16,7 @@ export class PurchaseItem {
     type: PurchaseItemType
 }
 
-@Schema(MongooseSetupModule.schemaOptions)
+@Schema(MONGOOSE_SCHEMA_OPTIONS)
 export class PurchaseRecord extends CrudSchema {
     @Prop({ required: true })
     userId: string

@@ -1,10 +1,9 @@
 import { RedisHealthIndicator } from '@mannercode/common'
 import { Controller, Get, Inject, Injectable, Module } from '@nestjs/common'
 import { HealthCheckService, MongooseHealthIndicator, TerminusModule } from '@nestjs/terminus'
+import { MONGO_CONNECTION_TOKEN, REDIS_CONNECTION_TOKEN } from 'config'
 import Redis from 'ioredis'
 import mongoose from 'mongoose'
-import { MongooseSetupModule } from './mongoose-setup.module'
-import { RedisSetupModule } from './redis-setup.module'
 
 @Injectable()
 class HealthService {
@@ -12,9 +11,9 @@ class HealthService {
         private readonly health: HealthCheckService,
         private readonly mongooseHealth: MongooseHealthIndicator,
         private readonly redisHealth: RedisHealthIndicator,
-        @Inject(MongooseSetupModule.moduleName)
+        @Inject(MONGO_CONNECTION_TOKEN)
         private readonly mongoConnection: mongoose.Connection,
-        @Inject(RedisSetupModule.moduleName) private readonly redisConnection: Redis
+        @Inject(REDIS_CONNECTION_TOKEN) private readonly redisConnection: Redis
     ) {}
 
     check() {

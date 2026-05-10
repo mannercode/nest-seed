@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { MongooseSetupModule } from 'modules'
+import { MONGO_CONNECTION_NAME } from 'config'
 import { Payment, PaymentSchema } from './models'
 import { PaymentsRepository } from './payments.repository'
 import { PaymentsService } from './payments.service'
@@ -10,7 +10,7 @@ import { PaymentsService } from './payments.service'
     imports: [
         MongooseModule.forFeature(
             [{ name: Payment.name, schema: PaymentSchema }],
-            MongooseSetupModule.connectionName
+            MONGO_CONNECTION_NAME
         )
     ],
     providers: [PaymentsService, PaymentsRepository]

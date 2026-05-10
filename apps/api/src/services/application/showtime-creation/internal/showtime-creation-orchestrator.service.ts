@@ -1,7 +1,7 @@
 import { newObjectIdString } from '@mannercode/common'
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { Client, WorkflowIdReusePolicy } from '@temporalio/client'
-import { TemporalSetupModule } from 'modules'
+import { TEMPORAL_CLIENT_TOKEN } from 'config'
 import { BulkCreateShowtimesDto } from '../dtos'
 import { ShowtimeCreationEvents } from '../showtime-creation.events'
 import { getShowtimeCreationTaskQueue, SHOWTIME_CREATION_WORKFLOW } from '../temporal'
@@ -13,7 +13,7 @@ export class ShowtimeCreationOrchestratorService {
 
     constructor(
         private readonly events: ShowtimeCreationEvents,
-        @Inject(TemporalSetupModule.clientToken) private readonly temporal: Client
+        @Inject(TEMPORAL_CLIENT_TOKEN) private readonly temporal: Client
     ) {}
 
     async enqueueShowtimeCreationJob(createDto: BulkCreateShowtimesDto): Promise<string> {

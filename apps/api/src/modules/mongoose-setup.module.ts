@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common'
-import { getConnectionToken, MongooseModule } from '@nestjs/mongoose'
-import { AppConfigService } from 'config'
-import { SchemaOptions } from 'mongoose'
+import { MongooseModule } from '@nestjs/mongoose'
+import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 
 @Module({
     imports: [
         MongooseModule.forRootAsync({
-            connectionName: MongooseSetupModule.connectionName,
+            connectionName: MONGO_CONNECTION_NAME,
             inject: [AppConfigService],
             useFactory: async (config: AppConfigService) => {
                 const { database, host1, host2, host3, password, replicaSet, user } = config.mongo
@@ -38,31 +37,4 @@ import { SchemaOptions } from 'mongoose'
         })
     ]
 })
-export class MongooseSetupModule {
-    static schemaOptions: SchemaOptions = {
-        minimize: false,
-        // https://mongoosejs.com/docs/guide.html#optimisticConcurrency
-        optimisticConcurrency: true,
-        strict: 'throw',
-        strictQuery: 'throw',
-        timestamps: true,
-        toJSON: { flattenObjectIds: true, versionKey: false, virtuals: true },
-        validateBeforeSave: true
-    }
-
-    static get connectionName() {
-        return 'mongo-connection'
-    }
-
-    static get maxTake() {
-        // HTTP_PAGINATION_DEFAULT_SIZE 는 ConfigModule 의 Joi 스키마에서
-        // required + number 로 검증되므로, 이 게터 호출 시점엔 항상 유효한
-        // 숫자 문자열이 보장된다. 환경변수 직접 읽는 이유는 repository
-        // 생성자가 static getter 로 maxSize 를 집어가는 구조라 DI 우회 필요.
-        return Number(process.env.HTTP_PAGINATION_DEFAULT_SIZE)
-    }
-
-    static get moduleName() {
-        return getConnectionToken(this.connectionName)
-    }
-}
+export class MongooseSetupModule {}
