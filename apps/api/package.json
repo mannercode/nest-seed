@@ -5,12 +5,13 @@
     "scripts": {
         "start": "node _output/dist/index.js",
         "build": "nest build -b webpack && node scripts/bundle-workflows.js",
-        "clean": "jest --clearCache",
+        "clean": "docker compose --env-file .env -f ../../deploy/compose.yml down -v -t 0 && jest --clearCache",
         "predev": "free-port 3000",
         "dev": "nest start --watch",
         "test": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
         "format": "eslint src/ --fix && prettier --write src/",
-        "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/"
+        "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
+        "atoz": "npm run clean && npm run lint && npm test && bash ../../deploy/test.sh"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "3.1045.0",
