@@ -8,7 +8,7 @@ concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 jobs:
-    # scenario job 의 runner.sh 가 api-deps 이미지를 사용하므로 먼저 보장.
+    # scenario job 의 runner.sh 가 deps 이미지를 사용하므로 먼저 보장.
     # hash 동일 시 ~5초 skip — 실제 빌드는 lockfile/deps.Dockerfile 변경시만.
     build-deps:
         uses: ./.github/workflows/build-deps-image.yaml

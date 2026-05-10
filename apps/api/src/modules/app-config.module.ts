@@ -1,12 +1,10 @@
 import { Global, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
-import { AppConfigService } from './app-config.service'
-import {
-    MongooseConfigModule,
-    NatsConfigModule,
-    RedisConfigModule,
-    TemporalConfigModule
-} from './modules'
+import { AppConfigService } from 'config'
+import { MongooseSetupModule } from './mongoose-setup.module'
+import { NatsSetupModule } from './nats-setup.module'
+import { RedisSetupModule } from './redis-setup.module'
+import { TemporalSetupModule } from './temporal-setup.module'
 
 /**
  * config 의 모든 책임을 한 모듈로 노출한다.
@@ -17,7 +15,7 @@ import {
  *   외부 자원과 연결을 만들고 DI 토큰으로 노출.
  *
  * @Global 이라 AppModule 이 한 번만 import 하면 AppConfigService 와 4 개의
- * *-config 모듈 토큰이 어디서나 inject 가능해진다.
+ * *-setup 모듈 토큰이 어디서나 inject 가능해진다.
  */
 @Global()
 @Module({
@@ -28,18 +26,18 @@ import {
             validationOptions: { abortEarly: false },
             validationSchema: AppConfigService.schema
         }),
-        MongooseConfigModule,
-        RedisConfigModule,
-        NatsConfigModule,
-        TemporalConfigModule
+        MongooseSetupModule,
+        RedisSetupModule,
+        NatsSetupModule,
+        TemporalSetupModule
     ],
     providers: [AppConfigService],
     exports: [
         AppConfigService,
-        MongooseConfigModule,
-        RedisConfigModule,
-        NatsConfigModule,
-        TemporalConfigModule
+        MongooseSetupModule,
+        RedisSetupModule,
+        NatsSetupModule,
+        TemporalSetupModule
     ]
 })
 export class AppConfigModule {}

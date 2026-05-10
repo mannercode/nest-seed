@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'config'
+import { MongooseSetupModule } from 'modules'
 import { Ticket, TicketSchema } from './models'
 import { TicketsRepository } from './tickets.repository'
 import { TicketsService } from './tickets.service'
@@ -10,7 +10,7 @@ import { TicketsService } from './tickets.service'
     imports: [
         MongooseModule.forFeature(
             [{ name: Ticket.name, schema: TicketSchema }],
-            MongooseConfigModule.connectionName
+            MongooseSetupModule.connectionName
         )
     ],
     providers: [TicketsService, TicketsRepository]

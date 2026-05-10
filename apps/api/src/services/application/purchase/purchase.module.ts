@@ -1,8 +1,9 @@
 import { CacheModule, NatsPubSubModule } from '@mannercode/common'
 import { Module } from '@nestjs/common'
-import { getProjectId, NatsConfigModule, RedisConfigModule } from 'config'
+import { getProjectId } from 'config'
 import { PurchaseRecordsModule, ShowtimesModule, TicketHoldingModule, TicketsModule } from 'core'
 import { PaymentsModule } from 'infrastructure'
+import { NatsSetupModule, RedisSetupModule } from 'modules'
 import {
     PurchaseEventLoggerService,
     PurchaseNotificationService,
@@ -19,11 +20,11 @@ import { PurchaseService } from './purchase.service'
         PurchaseRecordsModule,
         ShowtimesModule,
         PaymentsModule,
-        NatsPubSubModule.register({ natsName: NatsConfigModule.connectionName }),
+        NatsPubSubModule.register({ natsName: NatsSetupModule.connectionName }),
         CacheModule.register({
             name: 'purchase',
             prefix: `cache:${getProjectId()}`,
-            redisName: RedisConfigModule.connectionName
+            redisName: RedisSetupModule.connectionName
         })
     ],
     providers: [

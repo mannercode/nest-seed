@@ -11,14 +11,14 @@
 
 : "${REPO_ROOT:?REPO_ROOT must be set before sourcing this script}"
 
-export DEPS_TAG=$(cat "${REPO_ROOT}/package-lock.json" "${REPO_ROOT}/apps/api/deps.Dockerfile" | sha256sum | cut -c1-16)
-export DEPS_IMAGE="ghcr.io/mannercode/nest-seed/api-deps:${DEPS_TAG}"
+export DEPS_TAG=$(cat "${REPO_ROOT}/package-lock.json" "${REPO_ROOT}/deps.Dockerfile" | sha256sum | cut -c1-16)
+export DEPS_IMAGE="ghcr.io/mannercode/nest-seed/deps:${DEPS_TAG}"
 
 if ! docker image inspect "$DEPS_IMAGE" >/dev/null 2>&1; then
     if ! docker pull "$DEPS_IMAGE" 2>/dev/null; then
         echo "Deps image not in ghcr (or no auth); building locally."
         docker build \
-            -f "${REPO_ROOT}/apps/api/deps.Dockerfile" \
+            -f "${REPO_ROOT}/deps.Dockerfile" \
             -t "$DEPS_IMAGE" \
             "${REPO_ROOT}"
     fi

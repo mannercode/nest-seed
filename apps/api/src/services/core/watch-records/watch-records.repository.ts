@@ -1,7 +1,7 @@
 import { QueryBuilderOptions, CrudRepository, QueryBuilder } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'config'
+import { MongooseSetupModule } from 'modules'
 import { Model } from 'mongoose'
 import { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos'
 import { WatchRecord } from './models'
@@ -9,10 +9,10 @@ import { WatchRecord } from './models'
 @Injectable()
 export class WatchRecordsRepository extends CrudRepository<WatchRecord> {
     constructor(
-        @InjectModel(WatchRecord.name, MongooseConfigModule.connectionName)
+        @InjectModel(WatchRecord.name, MongooseSetupModule.connectionName)
         readonly model: Model<WatchRecord>
     ) {
-        super(model, MongooseConfigModule.maxTake)
+        super(model, MongooseSetupModule.maxTake)
     }
 
     async create(createDto: CreateWatchRecordDto) {

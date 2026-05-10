@@ -1,8 +1,8 @@
 import { createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'config'
+import { MongooseSetupModule } from 'modules'
 
-@Schema(MongooseConfigModule.schemaOptions)
+@Schema(MongooseSetupModule.schemaOptions)
 export class MoviePendingAsset extends CrudSchema {
     @Prop({ required: true })
     assetId: string

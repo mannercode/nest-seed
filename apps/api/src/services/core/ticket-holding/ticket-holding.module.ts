@@ -1,6 +1,7 @@
 import { CacheModule } from '@mannercode/common'
 import { Module } from '@nestjs/common'
-import { getProjectId, RedisConfigModule } from 'config'
+import { getProjectId } from 'config'
+import { RedisSetupModule } from 'modules'
 import { TicketHoldingService } from './ticket-holding.service'
 
 @Module({
@@ -9,7 +10,7 @@ import { TicketHoldingService } from './ticket-holding.service'
         CacheModule.register({
             name: 'ticket-holding',
             prefix: `cache:${getProjectId()}`,
-            redisName: RedisConfigModule.connectionName
+            redisName: RedisSetupModule.connectionName
         })
     ],
     providers: [TicketHoldingService]

@@ -1,7 +1,8 @@
 import { CacheModule, S3ObjectModule } from '@mannercode/common'
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { AppConfigService, getProjectId, MongooseConfigModule, RedisConfigModule } from 'config'
+import { AppConfigService, getProjectId } from 'config'
+import { MongooseSetupModule, RedisSetupModule } from 'modules'
 import { AssetsRepository } from './assets.repository'
 import { AssetsService } from './assets.service'
 import { Asset, AssetSchema } from './models'
@@ -11,7 +12,7 @@ import { Asset, AssetSchema } from './models'
     imports: [
         MongooseModule.forFeature(
             [{ name: Asset.name, schema: AssetSchema }],
-            MongooseConfigModule.connectionName
+            MongooseSetupModule.connectionName
         ),
         S3ObjectModule.register({
             inject: [AppConfigService],
@@ -20,7 +21,7 @@ import { Asset, AssetSchema } from './models'
         CacheModule.register({
             name: 'assets',
             prefix: `cache:${getProjectId()}`,
-            redisName: RedisConfigModule.connectionName
+            redisName: RedisSetupModule.connectionName
         })
     ],
     providers: [AssetsService, AssetsRepository]

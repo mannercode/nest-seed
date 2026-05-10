@@ -6,7 +6,7 @@ import {
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'config'
+import { MongooseSetupModule } from 'modules'
 import { HydratedDocument, Model } from 'mongoose'
 import { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
 import { Movie } from './models'
@@ -14,9 +14,9 @@ import { Movie } from './models'
 @Injectable()
 export class MoviesRepository extends CrudRepository<Movie> {
     constructor(
-        @InjectModel(Movie.name, MongooseConfigModule.connectionName) readonly model: Model<Movie>
+        @InjectModel(Movie.name, MongooseSetupModule.connectionName) readonly model: Model<Movie>
     ) {
-        super(model, MongooseConfigModule.maxTake)
+        super(model, MongooseSetupModule.maxTake)
     }
 
     async addAsset(movieId: string, assetId: string) {

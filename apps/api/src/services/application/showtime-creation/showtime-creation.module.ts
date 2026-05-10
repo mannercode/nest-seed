@@ -1,7 +1,8 @@
 import { CacheModule, NatsPubSubModule, TemporalWorkerService } from '@mannercode/common'
 import { Module } from '@nestjs/common'
-import { AppConfigService, getProjectId, NatsConfigModule, RedisConfigModule } from 'config'
+import { AppConfigService, getProjectId } from 'config'
 import { MoviesModule, ShowtimesModule, TheatersModule, TicketsModule } from 'core'
+import { NatsSetupModule, RedisSetupModule } from 'modules'
 import path from 'path'
 import {
     ShowtimeBulkCreatorService,
@@ -16,11 +17,11 @@ import { getShowtimeCreationTaskQueue } from './temporal/types'
 @Module({
     exports: [ShowtimeCreationService, ShowtimeCreationEvents],
     imports: [
-        NatsPubSubModule.register({ natsName: NatsConfigModule.connectionName }),
+        NatsPubSubModule.register({ natsName: NatsSetupModule.connectionName }),
         CacheModule.register({
             name: 'showtime-creation',
             prefix: `cache:${getProjectId()}`,
-            redisName: RedisConfigModule.connectionName
+            redisName: RedisSetupModule.connectionName
         }),
         MoviesModule,
         TheatersModule,

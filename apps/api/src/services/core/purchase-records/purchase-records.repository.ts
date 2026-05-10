@@ -1,7 +1,7 @@
 import { CrudRepository } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'config'
+import { MongooseSetupModule } from 'modules'
 import { Model } from 'mongoose'
 import { CreatePurchaseRecordDto } from './dtos'
 import { PurchaseRecord } from './models'
@@ -9,10 +9,10 @@ import { PurchaseRecord } from './models'
 @Injectable()
 export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     constructor(
-        @InjectModel(PurchaseRecord.name, MongooseConfigModule.connectionName)
+        @InjectModel(PurchaseRecord.name, MongooseSetupModule.connectionName)
         readonly model: Model<PurchaseRecord>
     ) {
-        super(model, MongooseConfigModule.maxTake)
+        super(model, MongooseSetupModule.maxTake)
     }
 
     async create(createDto: CreatePurchaseRecordDto) {

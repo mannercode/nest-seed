@@ -1,6 +1,6 @@
 import { getNatsConnectionToken, NatsModule } from '@mannercode/common'
 import { Module } from '@nestjs/common'
-import { AppConfigService } from '../app-config.service'
+import { AppConfigService } from 'config'
 
 @Module({
     imports: [
@@ -9,11 +9,11 @@ import { AppConfigService } from '../app-config.service'
                 inject: [AppConfigService],
                 useFactory: (config: AppConfigService) => ({ servers: config.nats.servers })
             },
-            NatsConfigModule.connectionName
+            NatsSetupModule.connectionName
         )
     ]
 })
-export class NatsConfigModule {
+export class NatsSetupModule {
     static get connectionName() {
         return 'nats-connection'
     }

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'config'
+import { MongooseSetupModule } from 'modules'
 import { Theater, TheaterSchema } from './models'
 import { TheatersRepository } from './theaters.repository'
 import { TheatersService } from './theaters.service'
@@ -10,7 +10,7 @@ import { TheatersService } from './theaters.service'
     imports: [
         MongooseModule.forFeature(
             [{ name: Theater.name, schema: TheaterSchema }],
-            MongooseConfigModule.connectionName
+            MongooseSetupModule.connectionName
         )
     ],
     providers: [TheatersService, TheatersRepository]

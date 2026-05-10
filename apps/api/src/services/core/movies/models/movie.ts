@@ -1,6 +1,6 @@
 import { createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'config'
+import { MongooseSetupModule } from 'modules'
 import { MovieDefaults } from './movie-defaults'
 
 export const MovieGenre = {
@@ -34,7 +34,7 @@ function required(this: Movie) {
 
 const defaults = MovieDefaults
 
-@Schema(MongooseConfigModule.schemaOptions)
+@Schema(MongooseSetupModule.schemaOptions)
 export class Movie extends CrudSchema {
     @Prop({ default: [], type: [String] })
     assetIds: string[]

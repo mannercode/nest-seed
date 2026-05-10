@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'config'
+import { MongooseSetupModule } from 'modules'
 import { Showtime, ShowtimeSchema } from './models'
 import { ShowtimesRepository } from './showtimes.repository'
 import { ShowtimesService } from './showtimes.service'
@@ -10,7 +10,7 @@ import { ShowtimesService } from './showtimes.service'
     imports: [
         MongooseModule.forFeature(
             [{ name: Showtime.name, schema: ShowtimeSchema }],
-            MongooseConfigModule.connectionName
+            MongooseSetupModule.connectionName
         )
     ],
     providers: [ShowtimesService, ShowtimesRepository]

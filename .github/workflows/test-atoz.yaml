@@ -15,7 +15,7 @@ concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 jobs:
-    # api-deps 이미지가 ghcr 에 존재해야 main Dockerfile 의 FROM 이 풀림.
+    # deps 이미지가 ghcr 에 존재해야 main Dockerfile 의 FROM 이 풀림.
     # build-deps-image.yaml 가 lockfile hash 가 같으면 즉시 skip 하므로
     # 일반 코드 변경 시 ~5초로 통과.
     build-deps:

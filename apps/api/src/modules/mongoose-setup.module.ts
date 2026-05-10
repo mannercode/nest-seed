@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common'
 import { getConnectionToken, MongooseModule } from '@nestjs/mongoose'
+import { AppConfigService } from 'config'
 import { SchemaOptions } from 'mongoose'
-import { AppConfigService } from '../app-config.service'
 
 @Module({
     imports: [
         MongooseModule.forRootAsync({
-            connectionName: MongooseConfigModule.connectionName,
+            connectionName: MongooseSetupModule.connectionName,
             inject: [AppConfigService],
             useFactory: async (config: AppConfigService) => {
                 const { database, host1, host2, host3, password, replicaSet, user } = config.mongo
@@ -38,7 +38,7 @@ import { AppConfigService } from '../app-config.service'
         })
     ]
 })
-export class MongooseConfigModule {
+export class MongooseSetupModule {
     static schemaOptions: SchemaOptions = {
         minimize: false,
         // https://mongoosejs.com/docs/guide.html#optimisticConcurrency

@@ -7,7 +7,7 @@ import {
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'config'
+import { MongooseSetupModule } from 'modules'
 import { Model } from 'mongoose'
 import { CreateUserDto, SearchUsersPageDto, UpdateUserDto } from './dtos'
 import { User } from './models'
@@ -15,10 +15,10 @@ import { User } from './models'
 @Injectable()
 export class UsersRepository extends CrudRepository<User> {
     constructor(
-        @InjectModel(User.name, MongooseConfigModule.connectionName)
+        @InjectModel(User.name, MongooseSetupModule.connectionName)
         readonly model: Model<User>
     ) {
-        super(model, MongooseConfigModule.maxTake)
+        super(model, MongooseSetupModule.maxTake)
     }
 
     async create(createDto: CreateUserDto) {

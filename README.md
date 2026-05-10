@@ -76,7 +76,7 @@ nest-seed/
 
 다만 다음 두 가지는 단순 치환만으로 끝나지 않는다.
 
-- **GHCR deps 이미지 경로** — `apps/api/tests/runner.sh`, `apps/api/deploy/test.sh` 의 `ghcr.io/mannercode/nest-seed/api-deps` 는 시드 저장소가 사전 빌드해 둔 이미지다. 포크 후에는 본인 저장소에 deps 이미지를 빌드·푸시한 뒤 그 경로로 바꾼다.
+- **GHCR deps 이미지 경로** — `apps/api/scripts/ensure-deps-image.sh` 와 `apps/api/Dockerfile` 의 `ghcr.io/mannercode/nest-seed/deps` 는 시드 저장소가 사전 빌드해 둔 이미지다. 포크 후에는 본인 저장소에 deps 이미지를 빌드·푸시한 뒤 그 경로로 바꾼다.
 - **`@mannercode` npm 스코프** — `libs/common`, `libs/testing` 의 패키지 스코프는 `nest-seed` 검색에 잡히지 않는다. npm 으로 배포할 계획이라면 본인 스코프로 따로 치환한다.
 
 ### 2. 도메인 코드 교체

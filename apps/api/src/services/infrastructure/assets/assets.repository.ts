@@ -1,7 +1,7 @@
 import { CrudRepository, leanArrayToPublic } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { MongooseConfigModule } from 'config'
+import { MongooseSetupModule } from 'modules'
 import { Model } from 'mongoose'
 import { CreateAssetDto } from './dtos'
 import { Asset } from './models'
@@ -9,10 +9,10 @@ import { Asset } from './models'
 @Injectable()
 export class AssetsRepository extends CrudRepository<Asset> {
     constructor(
-        @InjectModel(Asset.name, MongooseConfigModule.connectionName)
+        @InjectModel(Asset.name, MongooseSetupModule.connectionName)
         readonly model: Model<Asset>
     ) {
-        super(model, MongooseConfigModule.maxTake)
+        super(model, MongooseSetupModule.maxTake)
     }
 
     async assignOwner(assetId: string, owner: { entityId: string; service: string }) {

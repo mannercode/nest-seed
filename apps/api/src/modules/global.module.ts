@@ -6,7 +6,7 @@ import { AppConfigService } from 'config'
 
 /**
  * AppConfigService 외 어디서나 주입 가능한 공용 제공자를 모은다.
- * (AppConfigService 와 *-config 모듈은 AppConfigModule 자체가 @Global 이라
+ * (AppConfigService 와 *-setup 모듈은 AppConfigModule 자체가 @Global 이라
  * 별도로 노출할 필요 없음.)
  *
  * - ScheduleModule: AssetsService 의 @Cron 데코레이터를 위해 SchedulerRegistry 가
