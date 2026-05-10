@@ -10,7 +10,7 @@
 
 - **`apps/*/src/services/`** — 서비스 코드 묶음. application / core / gateway / infrastructure 네 레이어가 들어간다.
 - **`apps/*/src/config/`** — 서비스가 의존하는 환경/외부 자원 진입점. 환경 변수 검증 (`AppConfigService`), 외부 자원 연결 모듈 (`MongooseConfigModule` 등), `getProjectId` 같이 부트 시점에 결정되어 모든 레이어가 의존하는 자원.
-- **`apps/*/src/` 직속** — 서비스도 config 도 아닌 것 (앱 부팅 절차, 운영 모듈). 예: `bootstrap-app.ts`, `app.module.ts`, `global.module.ts`, `health.module.ts`.
+- **`apps/*/src/` 직속** — 서비스도 config 도 아닌 것 (앱 부팅 절차, 운영 모듈). 예: `bootstrap.ts`, `app.module.ts`, `global.module.ts`, `health.module.ts`.
 
 `core/` 안에는 별도의 공유 자리를 두지 않는다. 두 도메인이 같은 자료 구조를 다뤄야 한다면, 한 모델로 강제로 묶는 대신 각 도메인이 자기 본질에 맞는 이름으로 따로 정의한다 (예: Theater 의 `Seat` = 극장이 정의하는 좌석, Ticket 의 `SeatPosition` = 티켓이 가리키는 좌석 좌표). 자료 구조의 우연한 일치는 모델 공유의 근거가 아니다.
 

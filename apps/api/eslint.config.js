@@ -8,7 +8,7 @@ const {
     createBaseConfigs
 } = require('../../eslint.config.base')
 
-const internalAliasPattern = '^(?:application|gateway|core|infrastructure|config|modules|services)$'
+const internalAliasPattern = '^(?:application|gateway|core|infrastructure|config|modules)$'
 const dependencyIgnorePatterns = [
     '^\\.',
     nodeBuiltinModulePattern,
@@ -181,11 +181,6 @@ module.exports = [
                 {
                     patterns: [
                         ...barrelImportPatterns,
-                        {
-                            regex: '^modules(/.*)?$',
-                            message:
-                                'Use relative imports within modules to avoid ancestor barrel cycles.'
-                        },
                         {
                             group: [
                                 'gateway',

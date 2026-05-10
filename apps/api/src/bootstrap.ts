@@ -7,7 +7,7 @@ import { hostname } from 'os'
 import { exit } from 'process'
 import { AppModule } from './app.module'
 
-export async function bootstrapApp() {
+export async function bootstrap() {
     const app = await NestFactory.create(AppModule)
     const { http, log } = app.get(AppConfigService)
 

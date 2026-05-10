@@ -1,4 +1,4 @@
-// mono stack 용 sustained-load perf 하네스.
+// 4-replica api 스택용 sustained-load perf 하네스.
 //
 // 정해진 concurrency 수준에서 시나리오별 throughput + latency percentile 을 측정한다.
 // stdout 마지막 줄에 JSON 을 출력하고 stderr 에 사람이 읽기 좋은 요약을 출력한다.

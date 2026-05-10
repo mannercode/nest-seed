@@ -2,8 +2,8 @@
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-MONO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-REPO_ROOT="$(cd "${MONO_DIR}/../.." && pwd)"
+APP_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${APP_DIR}/../.." && pwd)"
 COMPOSE_DIR="${REPO_ROOT}/deploy"
 
 TEST_NAME="${1:?Usage: $0 <test-name>}"
@@ -16,7 +16,7 @@ fi
 
 cd "$COMPOSE_DIR"
 
-ENV_FILE="${ENV_FILE:-${MONO_DIR}/.env}"
+ENV_FILE="${ENV_FILE:-${APP_DIR}/.env}"
 LISTEN_PORT="${LISTEN_PORT:-3000}"
 SERVER_URL="http://localhost:${LISTEN_PORT}"
 

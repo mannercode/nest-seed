@@ -62,7 +62,7 @@ nest-seed/
 │   ├── api-docs/                실행 가능한 API 문서 (curl 기반)
 │   └── tests/                   분산 race 시나리오, perf 하네스
 │
-├── deploy/                  ← Docker Compose, nginx (mono 진입점)
+├── deploy/                  ← Docker Compose, nginx (앱 진입점)
 │
 └── .devcontainer/           ← Dev Container + 개발 인프라
 ```

@@ -23,7 +23,7 @@ module.exports = {
     coveragePathIgnorePatterns: [
         '__tests__',
         // src 바로 아래의 .ts 는 진입점/와이어링 (development, production,
-        // bootstrap-app, app.module, global.module, errors, project-id 등) 이라
+        // bootstrap, app.module, global.module, errors, project-id 등) 이라
         // 커버리지 측정 의미가 없다.
         '/src/[^/]+\\.ts$',
         '/index\\.ts$',

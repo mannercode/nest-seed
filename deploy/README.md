@@ -1,6 +1,6 @@
-# Mono App Deployment
+# App Deployment
 
-Docker Compose로 mono 앱을 멀티 컨테이너로 배포한다.
+Docker Compose로 앱을 멀티 컨테이너로 배포한다.
 Node.js는 싱글 스레드이므로 컨테이너 N개 복제 + Nginx 로드밸런서 구성으로 멀티 코어를 활용한다.
 
 MongoDB, Redis 등 인프라는 이미 존재한다고 전제한다.
@@ -28,4 +28,4 @@ MongoDB, Redis 등 인프라는 이미 존재한다고 전제한다.
 
 ## `x-replica-id` 응답 헤더
 
-[bootstrap-app.ts](../apps/api/src/bootstrap-app.ts) 의 미들웨어가 모든 HTTP 응답에 `x-replica-id: <os.hostname()>` 를 실어 보낸다. 컨테이너 hostname 이 replica 고유 ID 이므로, nginx 가 실제로 여러 replica 로 분산했는지 클라이언트 쪽에서 검증할 수 있다. 분산 테스트가 이 헤더로 cross-replica 커버리지를 확인한다.
+[bootstrap.ts](../apps/api/src/bootstrap.ts) 의 미들웨어가 모든 HTTP 응답에 `x-replica-id: <os.hostname()>` 를 실어 보낸다. 컨테이너 hostname 이 replica 고유 ID 이므로, nginx 가 실제로 여러 replica 로 분산했는지 클라이언트 쪽에서 검증할 수 있다. 분산 테스트가 이 헤더로 cross-replica 커버리지를 확인한다.
