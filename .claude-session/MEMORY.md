@@ -1,5 +1,0 @@
-- [Persist when searching for issues](feedback_persist_searching.md) — 사용자가 검토를 시킬 때 "못 찾으면 종료" 하면 안 된다
-- [Review scope spans docs/configs/tests/scripts](feedback_review_scope.md) — 코드뿐 아니라 문서·설정·테스트도, 평가 기준에 간결성·가독성 포함
-- [TDD — 실패 테스트 먼저, 그다음 수정](feedback_tdd_first.md) — 버그 수정 시 증상 재현 테스트부터
-- [검토에 architectural coherence 차원 포함](feedback_zoom_out_review.md) — 매 라운드 line-level 외에 공유 config/모듈의 정합성도 본다
-- [모듈 배치/의존 방향도 의심하라](feedback_question_layout.md) — "파일 안의 버그"가 아니라 "왜 여기 있나"를 묻는다
