@@ -107,15 +107,16 @@ nest-seed/
 서비스로 가져갈 때는 포크한 쪽에서 도메인 정책 (admin role, owner-only 등) 에
 맞춰 가드와 검사를 채워 넣어야 한다.
 
-| 컨트롤러 | 노출 동작 |
-|---|---|
-| `MoviesHttpController` | 영화 생성/수정/삭제/publish, asset 업로드/삭제/finalize |
-| `TheatersHttpController` | 극장 생성/수정/삭제 |
-| `PurchaseHttpController` | 구매 처리. body 의 `userId` 를 그대로 받아 임의 사용자 명의로 결제 가능 |
-| `ShowtimeCreationHttpController` | bulk 상영시간 생성 요청, SSE 이벤트 스트림 |
+| 컨트롤러                                                      | 노출 동작                                                                                                              |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `MoviesHttpController`                                        | 영화 생성/수정/삭제/publish, asset 업로드/삭제/finalize                                                                |
+| `TheatersHttpController`                                      | 극장 생성/수정/삭제                                                                                                    |
+| `PurchaseHttpController`                                      | 구매 처리. body 의 `userId` 를 그대로 받아 임의 사용자 명의로 결제 가능                                                |
+| `ShowtimeCreationHttpController`                              | bulk 상영시간 생성 요청, SSE 이벤트 스트림                                                                             |
 | `UsersHttpController` (`@UseGuards(UserJwtAuthGuard)` 적용됨) | 인증된 사용자가 임의 userId 의 데이터 read/update/delete + `searchPage` 로 모든 사용자 PII 노출. owner/admin 검사 없음 |
 
 추천 패턴:
+
 - 클래스/핸들러에 `@UseGuards(UserJwtAuthGuard)` 를 걸고, 통합 fixture 도 액세스 토큰을 같이 보내도록 고친다
 - owner-only 엔드포인트는 `req.user.sub === :userId` 같은 검사를 핸들러나 별도 가드에서 한다
 - admin 전용은 JWT payload 의 role claim 을 검사하는 가드 (`AdminJwtAuthGuard` 등) 를 새로 만들어 붙인다
