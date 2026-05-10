@@ -1,14 +1,20 @@
 import { pickIds } from '@mannercode/common'
 import { TicketStatus, type TicketDto } from 'core'
-import { Errors, getPayments, getTickets, overrideConfigGetter } from '../helpers'
-import { buildCreatePurchaseDto, type PurchaseFixture } from './purchase.fixture'
+import {
+    Errors,
+    getPayments,
+    getTickets,
+    overrideConfigGetter,
+    type AppTestContext
+} from '../helpers'
+import { buildCreatePurchaseDto } from './purchase.fixture'
 
 describe('PurchaseService', () => {
-    let fix: PurchaseFixture
+    let fix: AppTestContext
 
     beforeEach(async () => {
-        const { createPurchaseFixture } = await import('./purchase.fixture')
-        fix = await createPurchaseFixture()
+        const { createAppTestContext } = await import('../helpers')
+        fix = await createAppTestContext()
     })
     afterEach(() => fix.teardown())
 

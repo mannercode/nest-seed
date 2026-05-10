@@ -1,14 +1,16 @@
 import { nullObjectId } from '@mannercode/testing'
-import { MovieGenre, MovieRating, type MovieDto } from 'core'
-import type { MoviesPublishFixture } from './movies-publish.fixture'
-import { createUnpublishedMovie, Errors } from '../../helpers'
+import { MovieGenre, MovieRating, type MovieDto, type MoviesService } from 'core'
+import { createUnpublishedMovie, Errors, type AppTestContext } from '../../helpers'
 
 describe('MoviesPublish', () => {
-    let fix: MoviesPublishFixture
+    let fix: AppTestContext
+    let moviesService: MoviesService
 
     beforeEach(async () => {
-        const { createMoviesPublishFixture } = await import('./movies-publish.fixture')
-        fix = await createMoviesPublishFixture()
+        const { createAppTestContext } = await import('../../helpers')
+        const { MoviesService } = await import('core')
+        fix = await createAppTestContext()
+        moviesService = fix.module.get(MoviesService)
     })
     afterEach(() => fix.teardown())
 
@@ -47,12 +49,12 @@ describe('MoviesPublish', () => {
                     .post(`/movies/${movie.id}/publish`)
                     .ok()
 
-                const moviePage = await fix.moviesService.searchPage({ title: `MovieTitle` })
+                const moviePage = await moviesService.searchPage({ title: `MovieTitle` })
                 expect(moviePage.items[0]).toEqual(publishedMovie)
             })
 
             it('공개 전에는 검색에서 노출되지 않는다', async () => {
-                const moviePage = await fix.moviesService.searchPage({ title: `MovieTitle` })
+                const moviePage = await moviesService.searchPage({ title: `MovieTitle` })
                 expect(moviePage.items).toHaveLength(0)
             })
         })

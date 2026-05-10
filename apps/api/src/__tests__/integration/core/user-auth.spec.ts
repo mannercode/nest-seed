@@ -1,13 +1,12 @@
-import type { UserAuthFixture } from './user-auth.fixture'
-import { createUser, Errors, loginUser } from '../helpers'
+import { createUser, Errors, loginUser, type AppTestContext } from '../helpers'
 
 describe('UserAuthentication', () => {
-    let fix: UserAuthFixture
+    let fix: AppTestContext
     const credentials = { email: 'user@mail.com', password: 'password' }
 
     beforeEach(async () => {
-        const { createUserAuthFixture } = await import('./user-auth.fixture')
-        fix = await createUserAuthFixture()
+        const { createAppTestContext } = await import('../helpers')
+        fix = await createAppTestContext()
 
         await createUser(fix, credentials)
     })

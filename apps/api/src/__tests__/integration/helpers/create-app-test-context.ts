@@ -1,4 +1,4 @@
-import { AppLoggerService } from '@mannercode/common'
+import { AppLoggerService, getRedisConnectionToken } from '@mannercode/common'
 import {
     createHttpTestContext,
     isDebuggingEnabled,
@@ -8,7 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import compression from 'compression'
-import { AppConfigService, REDIS_CONNECTION_TOKEN } from 'config'
+import { AppConfigService, REDIS_CONNECTION_NAME } from 'config'
 import express from 'express'
 import { AppModule } from '../../../app.module'
 
@@ -42,7 +42,7 @@ export async function createAppTestContext(metadata: ModuleMetadataEx = {}) {
     const teardown = async () => {
         await ctx.close()
 
-        const redis = ctx.module.get(REDIS_CONNECTION_TOKEN)
+        const redis = ctx.module.get(getRedisConnectionToken(REDIS_CONNECTION_NAME))
         await redis.quit()
     }
 

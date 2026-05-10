@@ -1,16 +1,18 @@
-import type { ShowtimeDto } from 'core'
+import type { ShowtimeDto, ShowtimesService } from 'core'
 import { DateUtil, pickIds } from '@mannercode/common'
 import { nullObjectId, oid } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
-import type { ShowtimesFixture } from './showtimes.fixture'
-import { buildCreateShowtimeDto, createShowtimes, Errors } from '../helpers'
+import { buildCreateShowtimeDto, createShowtimes, Errors, type AppTestContext } from '../helpers'
 
 describe('ShowtimesService', () => {
-    let fix: ShowtimesFixture
+    let fix: AppTestContext
+    let showtimesService: ShowtimesService
 
     beforeEach(async () => {
-        const { createShowtimesFixture } = await import('./showtimes.fixture')
-        fix = await createShowtimesFixture()
+        const { createAppTestContext } = await import('../helpers')
+        const { ShowtimesService } = await import('core')
+        fix = await createAppTestContext()
+        showtimesService = fix.module.get(ShowtimesService)
     })
     afterEach(() => fix.teardown())
 
@@ -18,10 +20,10 @@ describe('ShowtimesService', () => {
         it('sagaIds에 해당하는 상영 시간을 삭제한다', async () => {
             const sagaId = oid(0x1)
 
-            await fix.showtimesService.createMany([buildCreateShowtimeDto({ sagaId })])
-            await fix.showtimesService.deleteBySagaIds([sagaId])
+            await showtimesService.createMany([buildCreateShowtimeDto({ sagaId })])
+            await showtimesService.deleteBySagaIds([sagaId])
 
-            const showtimes = await fix.showtimesService.search({ sagaIds: [sagaId] })
+            const showtimes = await showtimesService.search({ sagaIds: [sagaId] })
 
             expect(showtimes).toHaveLength(0)
         })
@@ -31,7 +33,7 @@ describe('ShowtimesService', () => {
         it('생성된 상영 시간 수를 반환한다', async () => {
             const createDtos = [buildCreateShowtimeDto({ sagaId: oid(0x1) })]
 
-            const { count } = await fix.showtimesService.createMany(createDtos)
+            const { count } = await showtimesService.createMany(createDtos)
 
             expect(count).toBe(createDtos.length)
         })
@@ -44,13 +46,13 @@ describe('ShowtimesService', () => {
                 { startTime: new Date('2000-01-01T14:00') }
             ])
 
-            const fetchedShowtimes = await fix.showtimesService.getMany(pickIds(showtimes))
+            const fetchedShowtimes = await showtimesService.getMany(pickIds(showtimes))
 
             expect(fetchedShowtimes).toEqual(expect.arrayContaining(showtimes))
         })
 
         it('showtimeIds 중 하나라도 없으면 404를 던진다', async () => {
-            const promise = fix.showtimesService.getMany([nullObjectId])
+            const promise = showtimesService.getMany([nullObjectId])
 
             await expect(promise).rejects.toMatchObject({
                 message: Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]).message,
@@ -89,25 +91,25 @@ describe('ShowtimesService', () => {
             })
 
             it('sagaIds로 필터링한다', async () => {
-                const showtimes = await fix.showtimesService.search({ sagaIds: [sagaId] })
+                const showtimes = await showtimesService.search({ sagaIds: [sagaId] })
 
                 expect(showtimes).toEqual([showtimeForSaga])
             })
 
             it('movieIds로 필터링한다', async () => {
-                const showtimes = await fix.showtimesService.search({ movieIds: [movieId] })
+                const showtimes = await showtimesService.search({ movieIds: [movieId] })
 
                 expect(showtimes).toEqual([showtimeForMovie])
             })
 
             it('theaterIds로 필터링한다', async () => {
-                const showtimes = await fix.showtimesService.search({ theaterIds: [theaterId] })
+                const showtimes = await showtimesService.search({ theaterIds: [theaterId] })
 
                 expect(showtimes).toEqual([showtimeForTheater])
             })
 
             it('startTimeRange로 필터링한다', async () => {
-                const showtimes = await fix.showtimesService.search({
+                const showtimes = await showtimesService.search({
                     startTimeRange: {
                         end: new Date('2020-01-02T12:00'),
                         start: new Date('2020-01-01T00:00')
@@ -122,7 +124,7 @@ describe('ShowtimesService', () => {
         })
 
         it('필터가 비어 있으면 400을 던진다', async () => {
-            const promise = fix.showtimesService.search({})
+            const promise = showtimesService.search({})
 
             await expect(promise).rejects.toMatchObject({
                 message: Errors.Mongoose.FiltersRequired().message,
@@ -142,7 +144,7 @@ describe('ShowtimesService', () => {
         })
 
         it('startTimeRange로 필터링한 movieIds를 반환한다', async () => {
-            const movieIds = await fix.showtimesService.searchMovieIds({
+            const movieIds = await showtimesService.searchMovieIds({
                 startTimeRange: { start: new Date() }
             })
 
@@ -160,9 +162,7 @@ describe('ShowtimesService', () => {
         })
 
         it('movieIds로 필터링한 theaterIds를 반환한다', async () => {
-            const theaterIds = await fix.showtimesService.searchTheaterIds({
-                movieIds: [oid(0xaa)]
-            })
+            const theaterIds = await showtimesService.searchTheaterIds({ movieIds: [oid(0xaa)] })
 
             expect(theaterIds).toEqual([oid(0xb1), oid(0xb2)])
         })
@@ -178,7 +178,7 @@ describe('ShowtimesService', () => {
         })
 
         it('movieIds와 theaterIds로 필터링한 상영 날짜를 반환한다', async () => {
-            const showdates = await fix.showtimesService.searchShowdates({
+            const showdates = await showtimesService.searchShowdates({
                 movieIds: [oid(0xa1)],
                 theaterIds: [oid(0xb1)]
             })

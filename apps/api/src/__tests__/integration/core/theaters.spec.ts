@@ -1,14 +1,13 @@
 import type { TheaterDto } from 'core'
 import { nullObjectId } from '@mannercode/testing'
-import type { TheatersFixture } from './theaters.fixture'
-import { buildCreateTheaterDto, createTheater, Errors } from '../helpers'
+import { buildCreateTheaterDto, createTheater, Errors, type AppTestContext } from '../helpers'
 
 describe('TheatersService', () => {
-    let fix: TheatersFixture
+    let fix: AppTestContext
 
     beforeEach(async () => {
-        const { createTheatersFixture } = await import('./theaters.fixture')
-        fix = await createTheatersFixture()
+        const { createAppTestContext } = await import('../helpers')
+        fix = await createAppTestContext()
     })
     afterEach(() => fix.teardown())
 

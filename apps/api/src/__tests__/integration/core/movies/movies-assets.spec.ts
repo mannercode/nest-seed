@@ -1,5 +1,5 @@
 import type { MovieDto } from 'core'
-import type { AssetPresignedUploadDto } from 'infrastructure'
+import type { AssetPresignedUploadDto, AssetsService } from 'infrastructure'
 import { Require } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
 import {
@@ -7,20 +7,20 @@ import {
     createUnpublishedMovie,
     Errors,
     testAssets,
-    uploadAsset
+    uploadAsset,
+    type AppTestContext
 } from '../../helpers'
-import {
-    createMovieAsset,
-    uploadAndFinalizeMovieAsset,
-    type MoviesAssetsFixture
-} from './movies-assets.fixture'
+import { createMovieAsset, uploadAndFinalizeMovieAsset } from './movies-assets.fixture'
 
 describe('MoviesAssets', () => {
-    let fix: MoviesAssetsFixture
+    let fix: AppTestContext
+    let assetsService: AssetsService
 
     beforeEach(async () => {
-        const { createMoviesAssetsFixture } = await import('./movies-assets.fixture')
-        fix = await createMoviesAssetsFixture()
+        const { createAppTestContext } = await import('../../helpers')
+        const { AssetsService } = await import('infrastructure')
+        fix = await createAppTestContext()
+        assetsService = fix.module.get(AssetsService)
     })
     afterEach(() => fix.teardown())
 
@@ -32,7 +32,7 @@ describe('MoviesAssets', () => {
         })
 
         it('업로드 URL이 포함된 에셋 업로드 정보를 반환한다', async () => {
-            const createDto = buildCreateAssetDto(fix.asset)
+            const createDto = buildCreateAssetDto(testAssets.image)
 
             const { body } = await fix.httpClient
                 .post(`/movies/${movie.id}/assets`)
@@ -51,14 +51,14 @@ describe('MoviesAssets', () => {
         })
 
         it('반환된 업로드 URL로 에셋을 업로드할 수 있다', async () => {
-            const createDto = buildCreateAssetDto(fix.asset)
+            const createDto = buildCreateAssetDto(testAssets.image)
 
             const { body: upload } = await fix.httpClient
                 .post(`/movies/${movie.id}/assets`)
                 .body(createDto)
                 .created()
 
-            const response = await uploadAsset(fix.asset.path, upload)
+            const response = await uploadAsset(testAssets.image.path, upload)
 
             expect(response.ok).toBe(true)
         })
@@ -73,7 +73,7 @@ describe('MoviesAssets', () => {
         })
 
         it('영화가 없으면 404를 반환한다', async () => {
-            const createDto = buildCreateAssetDto(fix.asset)
+            const createDto = buildCreateAssetDto(testAssets.image)
 
             await fix.httpClient
                 .post(`/movies/${nullObjectId}/assets`)
@@ -97,7 +97,7 @@ describe('MoviesAssets', () => {
             })
 
             it('에셋 URL이 무효화된다', async () => {
-                const [asset] = await fix.assetsService.getMany([assetId])
+                const [asset] = await assetsService.getMany([assetId])
                 Require.defined(asset.download)
 
                 await fix.httpClient.delete(`/movies/${movie.id}/assets/${assetId}`).noContent()
@@ -127,9 +127,9 @@ describe('MoviesAssets', () => {
 
             beforeEach(async () => {
                 movie = await createUnpublishedMovie(fix)
-                upload = await createMovieAsset(fix, movie.id, fix.asset)
+                upload = await createMovieAsset(fix, movie.id, testAssets.image)
 
-                const uploadResponse = await uploadAsset(fix.asset.path, upload)
+                const uploadResponse = await uploadAsset(testAssets.image.path, upload)
                 expect(uploadResponse.ok).toBe(true)
             })
 
@@ -162,7 +162,7 @@ describe('MoviesAssets', () => {
 
         it('업로드 전 에셋을 finalize하면 422를 반환한다', async () => {
             const movie = await createUnpublishedMovie(fix)
-            const upload = await createMovieAsset(fix, movie.id, fix.asset)
+            const upload = await createMovieAsset(fix, movie.id, testAssets.image)
 
             await fix.httpClient
                 .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)

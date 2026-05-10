@@ -1,21 +1,21 @@
 import { Checksum, omit } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
 import { MovieDefaults, MovieGenre, MovieRating, type MovieDto } from 'core'
-import type { MoviesFixture } from './movies.fixture'
 import {
     buildCreateMovieDto,
     createMovie,
     Errors,
     testAssets,
-    uploadAndFinalizeAsset
+    uploadAndFinalizeAsset,
+    type AppTestContext
 } from '../../helpers'
 
 describe('MoviesService', () => {
-    let fix: MoviesFixture
+    let fix: AppTestContext
 
     beforeEach(async () => {
-        const { createMoviesFixture } = await import('./movies.fixture')
-        fix = await createMoviesFixture()
+        const { createAppTestContext } = await import('../../helpers')
+        fix = await createAppTestContext()
     })
     afterEach(() => fix.teardown())
 

@@ -1,21 +1,23 @@
-import type { WatchRecordDto } from 'core'
+import type { WatchRecordDto, WatchRecordsService } from 'core'
 import { oid } from '@mannercode/testing'
-import type { WatchRecordsFixture } from './watch-records.fixture'
-import { buildCreateWatchRecordDto, createWatchRecord } from '../helpers'
+import { buildCreateWatchRecordDto, createWatchRecord, type AppTestContext } from '../helpers'
 
 describe('WatchRecordsService', () => {
-    let fix: WatchRecordsFixture
+    let fix: AppTestContext
+    let watchRecordsService: WatchRecordsService
 
     beforeEach(async () => {
-        const { createWatchRecordsFixture } = await import('./watch-records.fixture')
-        fix = await createWatchRecordsFixture()
+        const { createAppTestContext } = await import('../helpers')
+        const { WatchRecordsService } = await import('core')
+        fix = await createAppTestContext()
+        watchRecordsService = fix.module.get(WatchRecordsService)
     })
     afterEach(() => fix.teardown())
 
     describe('create', () => {
         it('생성된 시청 기록을 반환한다', async () => {
             const createDto = buildCreateWatchRecordDto()
-            const watchRecord = await fix.watchRecordsService.create(createDto)
+            const watchRecord = await watchRecordsService.create(createDto)
 
             expect(watchRecord).toEqual({ ...createDto, id: expect.any(String) })
         })
@@ -42,7 +44,7 @@ describe('WatchRecordsService', () => {
         })
 
         it('userId로 필터링한다', async () => {
-            const recordsPage = await fix.watchRecordsService.searchPage({ userId })
+            const recordsPage = await watchRecordsService.searchPage({ userId })
             expect(recordsPage).toEqual(buildExpectedPage([watchRecords[0], watchRecords[1]]))
         })
     })

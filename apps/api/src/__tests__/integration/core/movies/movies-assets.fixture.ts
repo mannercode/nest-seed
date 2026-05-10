@@ -1,18 +1,5 @@
 import type { TestContext } from '@mannercode/testing'
-import type { AssetsService } from 'infrastructure'
-import {
-    buildCreateAssetDto,
-    createAppTestContext,
-    testAssets,
-    uploadAsset,
-    type AppTestContext,
-    type TestAsset
-} from '../../helpers'
-
-export type MoviesAssetsFixture = AppTestContext & {
-    asset: TestAsset
-    assetsService: AssetsService
-}
+import { buildCreateAssetDto, testAssets, uploadAsset, type TestAsset } from '../../helpers'
 
 export async function createMovieAsset(ctx: TestContext, movieId: string, file: TestAsset) {
     const { MoviesService } = await import('core')
@@ -22,15 +9,6 @@ export async function createMovieAsset(ctx: TestContext, movieId: string, file: 
     const upload = await moviesService.createAsset(movieId, createDto)
 
     return upload
-}
-
-export async function createMoviesAssetsFixture() {
-    const ctx = await createAppTestContext()
-
-    const { AssetsService } = await import('infrastructure')
-    const assetsService = ctx.module.get(AssetsService)
-
-    return { ...ctx, asset: testAssets.image, assetsService }
 }
 
 export async function uploadAndFinalizeMovieAsset(ctx: TestContext, movieId: string) {

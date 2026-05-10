@@ -4,18 +4,10 @@ import { oid, type TestContext } from '@mannercode/testing'
 import { PurchaseItemType, type TicketDto } from 'core'
 import {
     buildHoldTicketsDto,
-    createAppTestContext,
     createShowtimes,
     createTickets,
-    overrideConfigGetter,
-    type AppTestContext
+    overrideConfigGetter
 } from '../helpers'
-
-export type PurchaseFixture = AppTestContext
-
-export async function createPurchaseFixture(): Promise<PurchaseFixture> {
-    return createAppTestContext()
-}
 
 const userId = oid(0x01)
 

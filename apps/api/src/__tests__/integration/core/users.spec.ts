@@ -1,15 +1,15 @@
 import type { UserDto } from 'core'
 import { omit } from '@mannercode/common'
 import { HttpTestClient, nullObjectId } from '@mannercode/testing'
-import type { UsersFixture } from './users.fixture'
-import { buildCreateUserDto, createUser, Errors } from '../helpers'
+import { buildCreateUserDto, createUser, Errors, type AppTestContext } from '../helpers'
 
 describe('UsersService', () => {
-    let fix: UsersFixture
+    let fix: AppTestContext
 
     beforeEach(async () => {
-        const { createUsersFixture } = await import('./users.fixture')
-        fix = await createUsersFixture()
+        const { createAppTestContext } = await import('../helpers')
+        const { UserJwtAuthGuard } = await import('gateway')
+        fix = await createAppTestContext({ ignoreGuards: [UserJwtAuthGuard] })
     })
     afterEach(() => fix.teardown())
 

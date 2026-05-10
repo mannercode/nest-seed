@@ -1,20 +1,28 @@
+import type { PurchaseRecordsService } from 'core'
 import { nullObjectId } from '@mannercode/testing'
-import type { PurchaseRecordsFixture } from './purchase-records.fixture'
-import { buildCreatePurchaseRecordDto, createPurchaseRecord, Errors } from '../helpers'
+import {
+    buildCreatePurchaseRecordDto,
+    createPurchaseRecord,
+    Errors,
+    type AppTestContext
+} from '../helpers'
 
 describe('PurchaseRecordsService', () => {
-    let fix: PurchaseRecordsFixture
+    let fix: AppTestContext
+    let purchaseRecordsService: PurchaseRecordsService
 
     beforeEach(async () => {
-        const { createPurchaseRecordsFixture } = await import('./purchase-records.fixture')
-        fix = await createPurchaseRecordsFixture()
+        const { createAppTestContext } = await import('../helpers')
+        const { PurchaseRecordsService } = await import('core')
+        fix = await createAppTestContext()
+        purchaseRecordsService = fix.module.get(PurchaseRecordsService)
     })
     afterEach(() => fix.teardown())
 
     describe('create', () => {
         it('생성된 구매 기록을 반환한다', async () => {
             const createDto = buildCreatePurchaseRecordDto()
-            const purchaseRecord = await fix.purchaseRecordsService.create(createDto)
+            const purchaseRecord = await purchaseRecordsService.create(createDto)
 
             expect(purchaseRecord).toEqual({
                 createdAt: expect.any(Date),

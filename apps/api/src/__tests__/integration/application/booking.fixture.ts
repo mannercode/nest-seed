@@ -2,19 +2,11 @@ import type { TestContext } from '@mannercode/testing'
 import { Seatmap, type TheaterLocation } from 'core'
 import {
     createAndLoginUser,
-    createAppTestContext,
     createMovie,
     createShowtimes,
     createTheater,
-    createTickets,
-    type AppTestContext
+    createTickets
 } from '../helpers'
-
-export type BookingFixture = AppTestContext
-
-export async function createBookingFixture(): Promise<BookingFixture> {
-    return createAppTestContext()
-}
 
 export async function createAllResources(
     ctx: TestContext,

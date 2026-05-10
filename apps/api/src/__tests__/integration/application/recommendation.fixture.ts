@@ -1,20 +1,7 @@
 import type { TestContext } from '@mannercode/testing'
 import type { MovieDto } from 'core'
 import { DateUtil } from '@mannercode/common'
-import {
-    createAndLoginUser,
-    createAppTestContext,
-    createMovie,
-    createShowtimes,
-    createWatchRecord,
-    type AppTestContext
-} from '../helpers'
-
-export type RecommendationFixture = AppTestContext
-
-export async function createRecommendationFixture(): Promise<RecommendationFixture> {
-    return createAppTestContext()
-}
+import { createAndLoginUser, createMovie, createShowtimes, createWatchRecord } from '../helpers'
 
 export async function createShowingMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
     const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))

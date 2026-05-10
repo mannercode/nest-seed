@@ -7,15 +7,15 @@ import {
     type TheaterDto,
     type TicketDto
 } from 'core'
-import { Errors } from '../helpers'
-import { createAllResources, type BookingFixture } from './booking.fixture'
+import { Errors, type AppTestContext } from '../helpers'
+import { createAllResources } from './booking.fixture'
 
 describe('BookingService', () => {
-    let fix: BookingFixture
+    let fix: AppTestContext
 
     beforeEach(async () => {
-        const { createBookingFixture } = await import('./booking.fixture')
-        fix = await createBookingFixture()
+        const { createAppTestContext } = await import('../helpers')
+        fix = await createAppTestContext()
     })
     afterEach(() => fix.teardown())
 

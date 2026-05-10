@@ -1,16 +1,13 @@
 import { MovieGenre, type MovieDto } from 'core'
-import {
-    createShowingMovies,
-    createWatchedMovies,
-    type RecommendationFixture
-} from './recommendation.fixture'
+import type { AppTestContext } from '../helpers'
+import { createShowingMovies, createWatchedMovies } from './recommendation.fixture'
 
 describe('RecommendationService', () => {
-    let fix: RecommendationFixture
+    let fix: AppTestContext
 
     beforeEach(async () => {
-        const { createRecommendationFixture } = await import('./recommendation.fixture')
-        fix = await createRecommendationFixture()
+        const { createAppTestContext } = await import('../helpers')
+        fix = await createAppTestContext()
     })
     afterEach(() => fix.teardown())
 

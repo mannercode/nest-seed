@@ -1,4 +1,5 @@
-import type { PurchaseEventsFixture } from './purchase-events.fixture'
+import type { PurchaseEvents } from 'application'
+import type { AppTestContext } from '../helpers'
 
 const NOTIFICATION_LOG = 'would send purchase confirmation'
 const PURCHASED_LOG = 'purchase observed'
@@ -8,12 +9,15 @@ const countLogCalls = (logSpy: jest.SpyInstance, message: string) =>
     logSpy.mock.calls.filter(([msg]) => msg === message).length
 
 describe('PurchaseEvents 구독자', () => {
-    let fix: PurchaseEventsFixture
+    let fix: AppTestContext
+    let events: PurchaseEvents
     let logSpy: jest.SpyInstance
 
     beforeEach(async () => {
-        const { createPurchaseEventsFixture } = await import('./purchase-events.fixture')
-        fix = await createPurchaseEventsFixture()
+        const { createAppTestContext } = await import('../helpers')
+        const { PurchaseEvents } = await import('application')
+        fix = await createAppTestContext()
+        events = fix.module.get(PurchaseEvents)
         // resetModules:true 환경에서 subscriber가 사용하는 Logger와 같은 realm의
         // 클래스를 잡기 위해 dynamic import로 가져온다.
         const { Logger } = await import('@nestjs/common')
@@ -27,7 +31,7 @@ describe('PurchaseEvents 구독자', () => {
         const userId = 'user-1'
         const ticketIds = ['t1', 't2']
 
-        await fix.events.emitTicketPurchased({ userId, ticketIds })
+        await events.emitTicketPurchased({ userId, ticketIds })
 
         await waitFor(
             () =>
@@ -44,7 +48,7 @@ describe('PurchaseEvents 구독자', () => {
         const userId = 'user-2'
         const ticketIds = ['t3']
 
-        await fix.events.emitTicketPurchaseCanceled({ userId, ticketIds })
+        await events.emitTicketPurchaseCanceled({ userId, ticketIds })
 
         await waitFor(() => countLogCalls(logSpy, CANCELED_LOG) > 0)
 

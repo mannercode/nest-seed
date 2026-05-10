@@ -1,15 +1,18 @@
+import type { PaymentsService } from 'infrastructure'
 import { pickIds } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
-import type { PaymentsFixture } from './payments.fixture'
-import { buildCreatePaymentDto, createPayment, Errors } from '../helpers'
+import { buildCreatePaymentDto, createPayment, Errors, type AppTestContext } from '../helpers'
 
 describe('PaymentsService', () => {
-    let fix: PaymentsFixture
+    let fix: AppTestContext
+    let paymentsService: PaymentsService
 
     beforeEach(async () => {
-        const { createPaymentsFixture } = await import('./payments.fixture')
-        fix = await createPaymentsFixture()
+        const { createAppTestContext } = await import('../helpers')
+        const { PaymentsService } = await import('infrastructure')
+        fix = await createAppTestContext()
+        paymentsService = fix.module.get(PaymentsService)
     })
     afterEach(() => fix.teardown())
 
@@ -17,9 +20,9 @@ describe('PaymentsService', () => {
         it('결제를 취소한다', async () => {
             const payment = await createPayment(fix)
 
-            await fix.paymentsService.cancel(payment.id)
+            await paymentsService.cancel(payment.id)
 
-            const promise = fix.paymentsService.getMany([payment.id])
+            const promise = paymentsService.getMany([payment.id])
 
             await expect(promise).rejects.toMatchObject({
                 message: Errors.Mongoose.MultipleDocumentsNotFound([payment.id]).message,
@@ -32,7 +35,7 @@ describe('PaymentsService', () => {
         it('생성된 결제를 반환한다', async () => {
             const createDto = buildCreatePaymentDto()
 
-            const payment = await fix.paymentsService.create(createDto)
+            const payment = await paymentsService.create(createDto)
 
             expect(payment).toEqual({
                 ...createDto,
@@ -51,13 +54,13 @@ describe('PaymentsService', () => {
                 createPayment(fix)
             ])
 
-            const fetchedPayments = await fix.paymentsService.getMany(pickIds(payments))
+            const fetchedPayments = await paymentsService.getMany(pickIds(payments))
 
             expect(fetchedPayments).toEqual(expect.arrayContaining(payments))
         })
 
         it('paymentIds 중 하나라도 없으면 404를 던진다', async () => {
-            const promise = fix.paymentsService.getMany([nullObjectId])
+            const promise = paymentsService.getMany([nullObjectId])
 
             await expect(promise).rejects.toMatchObject({
                 message: Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]).message,

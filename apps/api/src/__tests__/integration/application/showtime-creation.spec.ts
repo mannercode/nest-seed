@@ -1,17 +1,22 @@
-import type { MovieDto, TheaterDto } from 'core'
+import type { MovieDto, ShowtimesService, TheaterDto, TicketsService } from 'core'
 import { DateUtil } from '@mannercode/common'
 import { nullObjectId, type Response } from '@mannercode/testing'
-import { createMovie, createShowtimes, createTheater } from '../helpers'
-import { waitForCompletion, type ShowtimeCreationFixture } from './showtime-creation.fixture'
+import { createMovie, createShowtimes, createTheater, type AppTestContext } from '../helpers'
+import { waitForCompletion } from './showtime-creation.fixture'
 
 describe('ShowtimeCreationService', () => {
-    let fix: ShowtimeCreationFixture
+    let fix: AppTestContext
+    let showtimesService: ShowtimesService
+    let ticketsService: TicketsService
     let movie: MovieDto
     let theater: TheaterDto
 
     beforeEach(async () => {
-        const { createShowtimeCreationFixture } = await import('./showtime-creation.fixture')
-        fix = await createShowtimeCreationFixture()
+        const { createAppTestContext } = await import('../helpers')
+        const { ShowtimesService, TicketsService } = await import('core')
+        fix = await createAppTestContext()
+        showtimesService = fix.module.get(ShowtimesService)
+        ticketsService = fix.module.get(TicketsService)
 
         movie = await createMovie(fix)
         theater = await createTheater(fix)
@@ -115,9 +120,7 @@ describe('ShowtimeCreationService', () => {
                 const { body } = await createPromise
                 const { createdShowtimeCount } = await waitForCompletion(fix, 'succeeded')
 
-                const createdShowtimes = await fix.showtimesService.search({
-                    sagaIds: [body.sagaId]
-                })
+                const createdShowtimes = await showtimesService.search({ sagaIds: [body.sagaId] })
                 expect(createdShowtimes).toHaveLength(createdShowtimeCount)
             })
 
@@ -125,7 +128,7 @@ describe('ShowtimeCreationService', () => {
                 const { body } = await createPromise
                 const { createdTicketCount } = await waitForCompletion(fix, 'succeeded')
 
-                const createdTickets = await fix.ticketsService.search({ sagaIds: [body.sagaId] })
+                const createdTickets = await ticketsService.search({ sagaIds: [body.sagaId] })
                 expect(createdTickets).toHaveLength(createdTicketCount)
             })
         })
