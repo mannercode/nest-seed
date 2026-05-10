@@ -6,10 +6,10 @@ MongoDB, Redis 같은 인프라는 이미 떠 있다고 가정한다.
 
 ## 구성
 
-| 파일          | 설명                                                                           |
-| ------------- | ------------------------------------------------------------------------------ |
-| `compose.yml` | API 컨테이너 N개 + nginx 로드밸런서                                            |
-| `nginx.conf`  | `least_conn` 방식 리버스 프록시, upstream 정보 access log                      |
+| 파일          | 설명                                                                          |
+| ------------- | ----------------------------------------------------------------------------- |
+| `compose.yml` | API 컨테이너 N개 + nginx 로드밸런서                                           |
+| `nginx.conf`  | `least_conn` 방식 리버스 프록시, upstream 정보 access log                     |
 | `test.sh`     | compose up → [../apps/api/api-docs/run.sh](../apps/api/api-docs/) 실행 → down |
 
 인프라 설정 외에 함께 볼 만한 리소스는 다음과 같다.

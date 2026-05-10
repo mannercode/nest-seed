@@ -110,12 +110,12 @@ nest-seed/
 
 이 시드는 **인증(`UserJwtAuthGuard`)만 일부 엔드포인트에 걸어 두었다. 인가(role / ownership 검사)는 일부러 넣지 않았다.** 아래 컨트롤러는 가드 없이 열려 있거나, 인증된 사용자라면 남의 데이터도 건드릴 수 있다. 실제 서비스로 가져갈 때는 도메인 정책에 맞게 admin 권한, owner-only 검사 등을 추가해야 한다.
 
-| 컨트롤러                                                      | 노출 동작                                                                                               |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `MoviesHttpController`                                        | 영화 생성/수정/삭제/publish, asset 업로드/삭제/finalize                                                 |
-| `TheatersHttpController`                                      | 극장 생성/수정/삭제                                                                                     |
-| `PurchaseHttpController`                                      | 구매 처리. body의 `userId`를 그대로 받아서 임의 사용자 이름으로 결제할 수 있음                          |
-| `ShowtimeCreationHttpController`                              | 상영시간 대량 생성 요청, SSE 이벤트 스트림                                                              |
+| 컨트롤러                                                      | 노출 동작                                                                                                |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `MoviesHttpController`                                        | 영화 생성/수정/삭제/publish, asset 업로드/삭제/finalize                                                  |
+| `TheatersHttpController`                                      | 극장 생성/수정/삭제                                                                                      |
+| `PurchaseHttpController`                                      | 구매 처리. body의 `userId`를 그대로 받아서 임의 사용자 이름으로 결제할 수 있음                           |
+| `ShowtimeCreationHttpController`                              | 상영시간 대량 생성 요청, SSE 이벤트 스트림                                                               |
 | `UsersHttpController` (`@UseGuards(UserJwtAuthGuard)` 적용됨) | 인증된 사용자가 임의 `userId`의 데이터 read/update/delete 가능. `searchPage`로 모든 사용자 PII 노출 가능 |
 
 권장 방식은 다음과 같다.

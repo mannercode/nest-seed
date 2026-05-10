@@ -104,7 +104,7 @@ API 컨테이너가 여러 개면 한 컨테이너 안에서만 생각해서는 
 | ----------------------------------------------------------------------------------------------------------------------------- | ------------------ | ---------------------------------------------- |
 | [AssetsService.cleanupExpiredUploads](../apps/api/src/services/infrastructure/assets/assets.service.ts)                       | `withLock`         | 4개 컨테이너의 cron 중 한 번만 실행            |
 | [ShowtimeCreationActivities.validateAndCreate](../apps/api/src/services/application/showtime-creation/temporal/activities.ts) | `withLockBlocking` | 겹치는 시간대 saga의 validate-then-insert 차단 |
-| [PurchaseService.processPurchase](../apps/api/src/services/application/purchase/purchase.service.ts)                          | `withLockBlocking` | 같은 티켓 묶음의 중복 구매 차단               |
+| [PurchaseService.processPurchase](../apps/api/src/services/application/purchase/purchase.service.ts)                          | `withLockBlocking` | 같은 티켓 묶음의 중복 구매 차단                |
 
 ### 2.2. 컨테이너 사이 메시지 — `NatsPubSubService`
 
