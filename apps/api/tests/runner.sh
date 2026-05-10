@@ -3,7 +3,8 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 MONO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-COMPOSE_DIR="${MONO_DIR}/deploy"
+REPO_ROOT="$(cd "${MONO_DIR}/../.." && pwd)"
+COMPOSE_DIR="${REPO_ROOT}/deploy"
 
 TEST_NAME="${1:?Usage: $0 <test-name>}"
 TEST_SCRIPT="${SCRIPT_DIR}/${TEST_NAME}.js"
@@ -32,9 +33,8 @@ cleanup() {
 trap cleanup EXIT
 
 echo "Building and deploying 4-replica api stack..."
-REPO_ROOT="$(cd "${MONO_DIR}/../.." && pwd)"
-# shellcheck source=../scripts/ensure-deps-image.sh
-. "${MONO_DIR}/scripts/ensure-deps-image.sh"
+# shellcheck source=../../../ensure-deps-image.sh
+. "${REPO_ROOT}/ensure-deps-image.sh"
 
 REPLICAS="${REPLICAS:-4}" docker compose --env-file "$ENV_FILE" up -d --build
 docker wait api-setup && docker rm api-setup

@@ -26,7 +26,7 @@ VS Code에서 `Reopen in Container`를 실행하면 컨테이너가 뜨면서 Mo
 ```bash
 npm run build                    # libs 빌드
 npm test                         # 단위·통합 테스트
-bash apps/api/deploy/test.sh     # Docker Compose로 빌드·기동한 뒤 curl 스펙으로 검증
+bash deploy/test.sh              # Docker Compose로 빌드·기동한 뒤 curl 스펙으로 검증
 cd apps/api && npm run dev       # watch 모드로 개발 서버 실행
 curl http://localhost:3000/movies
 ```
@@ -60,8 +60,9 @@ nest-seed/
 │   │   ├── infrastructure/      외부 서비스 (결제, 파일)
 │   │   └── config/              앱 설정, Rules, 파이프
 │   ├── api-docs/                실행 가능한 API 문서 (curl 기반)
-│   ├── tests/                   분산 race 시나리오, perf 하네스
-│   └── deploy/                  Docker Compose, nginx
+│   └── tests/                   분산 race 시나리오, perf 하네스
+│
+├── deploy/                  ← Docker Compose, nginx (mono 진입점)
 │
 └── .devcontainer/           ← Dev Container + 개발 인프라
 ```
@@ -72,11 +73,11 @@ nest-seed/
 
 ### 1. 식별자 치환
 
-`nest-seed` 를 새 프로젝트 이름으로 일괄 치환한다. `package.json`, `apps/api/.env`, `apps/api/deploy/compose.yml`, `.devcontainer/infra/.env` 등에 흩어진 식별자(패키지 이름, `PROJECT_ID`, `AUTH_ISSUER`, S3 버킷 등)가 한 번에 잡힌다.
+`nest-seed` 를 새 프로젝트 이름으로 일괄 치환한다. `package.json`, `apps/api/.env`, `deploy/compose.yml`, `.devcontainer/infra/.env` 등에 흩어진 식별자(패키지 이름, `PROJECT_ID`, `AUTH_ISSUER`, S3 버킷 등)가 한 번에 잡힌다.
 
 다만 다음 두 가지는 단순 치환만으로 끝나지 않는다.
 
-- **GHCR deps 이미지 경로** — `apps/api/scripts/ensure-deps-image.sh` 와 `apps/api/Dockerfile` 의 `ghcr.io/mannercode/nest-seed/deps` 는 시드 저장소가 사전 빌드해 둔 이미지다. 포크 후에는 본인 저장소에 deps 이미지를 빌드·푸시한 뒤 그 경로로 바꾼다.
+- **GHCR deps 이미지 경로** — `ensure-deps-image.sh` 와 `apps/api/Dockerfile` 의 `ghcr.io/mannercode/nest-seed/deps` 는 시드 저장소가 사전 빌드해 둔 이미지다. 포크 후에는 본인 저장소에 deps 이미지를 빌드·푸시한 뒤 그 경로로 바꾼다.
 - **`@mannercode` npm 스코프** — `libs/common`, `libs/testing` 의 패키지 스코프는 `nest-seed` 검색에 잡히지 않는다. npm 으로 배포할 계획이라면 본인 스코프로 따로 치환한다.
 
 ### 2. 도메인 코드 교체

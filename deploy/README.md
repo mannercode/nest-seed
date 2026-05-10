@@ -9,14 +9,14 @@ MongoDB, Redis 등 인프라는 이미 존재한다고 전제한다.
 
 | 파일          | 설명                                                              |
 | ------------- | ----------------------------------------------------------------- |
-| `compose.yml` | app x N replicas + nginx 로드밸런서                               |
+| `compose.yml` | api x N replicas + nginx 로드밸런서                               |
 | `nginx.conf`  | least_conn 방식 리버스 프록시, upstream 정보 access log           |
-| `test.sh`     | compose up → [../api-docs/run.sh](../api-docs/) 실행 → down (배포 검증) |
+| `test.sh`     | compose up → [../apps/api/api-docs/run.sh](../apps/api/api-docs/) 실행 → down (배포 검증) |
 
 인프라 설정 외의 관련 리소스:
 
-- [../api-docs/](../api-docs/) — curl 기반 실행 가능한 API 문서 (`test.sh` 가 호출)
-- [../tests/](../tests/) — 4-replica 분산 race 시나리오 — [testing.md](../../../docs/testing.md#5-분산-테스트-cross-replica-race)
+- [../apps/api/api-docs/](../apps/api/api-docs/) — curl 기반 실행 가능한 API 문서 (`test.sh` 가 호출)
+- [../apps/api/tests/](../apps/api/tests/) — 4-replica 분산 race 시나리오 — [testing.md](../docs/testing.md#5-분산-테스트-cross-replica-race)
 
 ## 주요 설정
 
@@ -28,4 +28,4 @@ MongoDB, Redis 등 인프라는 이미 존재한다고 전제한다.
 
 ## `x-replica-id` 응답 헤더
 
-[configure-app.ts](../src/config/configure-app.ts) 의 미들웨어가 모든 HTTP 응답에 `x-replica-id: <os.hostname()>` 를 실어 보낸다. 컨테이너 hostname 이 replica 고유 ID 이므로, nginx 가 실제로 여러 replica 로 분산했는지 클라이언트 쪽에서 검증할 수 있다. 분산 테스트가 이 헤더로 cross-replica 커버리지를 확인한다.
+[bootstrap-app.ts](../apps/api/src/bootstrap-app.ts) 의 미들웨어가 모든 HTTP 응답에 `x-replica-id: <os.hostname()>` 를 실어 보낸다. 컨테이너 hostname 이 replica 고유 ID 이므로, nginx 가 실제로 여러 replica 로 분산했는지 클라이언트 쪽에서 검증할 수 있다. 분산 테스트가 이 헤더로 cross-replica 커버리지를 확인한다.

@@ -8,6 +8,7 @@
         "paths": {
             "config": ["src/config/index"],
             "modules": ["src/modules/index"],
+            "services": ["src/services/index"],
             "application": ["src/services/application/index"],
             "core": ["src/services/core/index"],
             "infrastructure": ["src/services/infrastructure/index"],

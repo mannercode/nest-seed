@@ -7,7 +7,7 @@
 # Tag 산출식은 .github/workflows/build-deps-image.yaml 과 반드시 동일해야
 # 한다 — 어긋나면 ghcr cache hit 가 깨진다.
 #
-# Usage: REPO_ROOT=/abs/path source apps/api/scripts/ensure-deps-image.sh
+# Usage: REPO_ROOT=/abs/path source ensure-deps-image.sh
 
 : "${REPO_ROOT:?REPO_ROOT must be set before sourcing this script}"
 

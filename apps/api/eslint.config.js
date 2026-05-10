@@ -8,7 +8,7 @@ const {
     createBaseConfigs
 } = require('../../eslint.config.base')
 
-const internalAliasPattern = '^(?:application|gateway|core|infrastructure|config|modules)$'
+const internalAliasPattern = '^(?:application|gateway|core|infrastructure|config|modules|services)$'
 const dependencyIgnorePatterns = [
     '^\\.',
     nodeBuiltinModulePattern,
