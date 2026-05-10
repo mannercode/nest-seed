@@ -27,6 +27,9 @@ module.exports = {
     // 풀지 않는다 — 워커를 1 로 직렬화해 다른 워커/컨테이너 부하 없이
     // 단독 메모리를 쓰게 한다.
     maxWorkers: 1,
+    // 누수 원인 추적용 — testFile 끝마다 워커 RSS/heap MB 출력. 어떤 spec
+    // 직후 메모리가 폭증하는지 가시화한다.
+    logHeapUsage: true,
     collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
     coveragePathIgnorePatterns: [
         '__tests__',
