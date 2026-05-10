@@ -29,7 +29,7 @@ module.exports = {
     // 워커 RSS 가 1.5GB 도달하면 jest 가 워커를 회수(새 워커 fork)해 누적을
     // 끊는다. 1 GB 는 baseline 직후라 너무 잦은 회수, 2 GB 는 V8 heap 천장에
     // 너무 가까워 OOM 위험.
-    workerIdleMemoryLimit: '1500MB',
+    workerIdleMemoryLimit: '15MB',
     collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
     coveragePathIgnorePatterns: [
         '__tests__',
