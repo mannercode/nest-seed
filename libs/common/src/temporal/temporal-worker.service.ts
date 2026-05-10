@@ -5,15 +5,6 @@ import { TemporalWorkerOptions } from './temporal.types'
 
 @Injectable()
 export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
-    // bundleWorkflowCode 는 호출마다 webpack 컴파일러를 띄워 ~1.4MB workflow
-    // bundle 을 만든다. 컴파일러의 module graph / loader cache 가 워커 프로세스
-    // V8 heap 에 남아 fixture 마다 부팅 시 누적되고, 통합 테스트 몇 개만 돌아도
-    // heap 천장에 닿아 OOM 이 났다. 같은 workflowsPath 로 만든 bundle 은
-    // immutable 이므로 process 단위로 캐시해 한 번만 돌리고 재사용한다 —
-    // fixture 격리는 worker/connection 인스턴스 격리이지 bundle 코드 자체가
-    // 아니다. process 종료 시 함께 사라지므로 prod 동작에는 영향 없다.
-    private static readonly bundleCache = new Map<string, Promise<{ code: string }>>()
-
     private readonly logger = new Logger(TemporalWorkerService.name)
     private worker?: Worker
     private connection?: NativeConnection
@@ -73,10 +64,6 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
                 'TemporalWorkerService: neither workflowBundlePath (file present) nor workflowsPath was provided'
             )
         }
-        const existing = TemporalWorkerService.bundleCache.get(workflowsPath)
-        if (existing) return existing
-        const promise = bundleWorkflowCode({ workflowsPath })
-        TemporalWorkerService.bundleCache.set(workflowsPath, promise)
-        return promise
+        return bundleWorkflowCode({ workflowsPath })
     }
 }
