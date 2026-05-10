@@ -19,14 +19,6 @@ module.exports = {
     roots: ['<rootDir>/src'],
     moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
     modulePaths: [compilerOptions.baseUrl],
-    // 통합 테스트마다 fixture 가 NestJS + Mongo + Redis + Temporal + NATS 를
-    // 풀스택으로 부팅하므로 워커 1 개만 떠도 RSS + 컨테이너 메모리가 무거워
-    // 16GB ARM 러너의 천장에 가깝다. 워커 2 개로 줄여도 booking·showtimes
-    // spec 이 jest 자동 retry 에서도 같은 자리에서 OOM 했고 (단일 testFile
-    // 부팅이 임계를 넘김), 격리(매 fixture 부트) 는 의도이므로 공유로
-    // 풀지 않는다 — 워커를 1 로 직렬화해 다른 워커/컨테이너 부하 없이
-    // 단독 메모리를 쓰게 한다.
-    maxWorkers: 1,
     // 누수 원인 추적용 — testFile 끝마다 워커 RSS/heap MB 출력. 어떤 spec
     // 직후 메모리가 폭증하는지 가시화한다.
     logHeapUsage: true,
