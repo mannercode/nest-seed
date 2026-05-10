@@ -19,6 +19,12 @@ module.exports = {
     roots: ['<rootDir>/src'],
     moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
     modulePaths: [compilerOptions.baseUrl],
+    // 통합 테스트마다 fixture 가 NestJS + Mongo + Redis + Temporal + NATS 를
+    // 풀스택으로 부팅하므로 워커당 메모리 점유가 크다. 16GB ARM 러너에서
+    // 기본값(cpus-1) 으로 돌리면 동시 부팅 부하로 OOM·Mongo 풀 타임아웃·gRPC
+    // deadline 이 줄줄이 터진다. 격리(매 fixture 부트) 는 의도이고 공유로
+    // 풀지 않는다 — 동시 실행수만 줄여서 피크 메모리를 낮춘다.
+    maxWorkers: 2,
     collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
     coveragePathIgnorePatterns: [
         '__tests__',
