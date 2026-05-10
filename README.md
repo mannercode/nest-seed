@@ -1,6 +1,6 @@
 # nest-seed
 
-NestJS 모노레포 시드다. 영화 예매 도메인을 예시로 담았으며, 구조는 **MSA-ready monolith** 를 지향한다. 코드는 단일 `apps/api` 안에 모여 있지만 4 replica로 기본 배포되고, NATS와 Temporal 같은 분산 인프라를 그대로 유지한다. 나중에 서비스를 분리해야 할 때가 와도 인프라는 교체할 필요 없이 코드 경계만 끊으면 되도록 설계했다.
+NestJS 모노레포 시드다. 영화 예매 도메인을 예시로 담았다. 구조는 **MSA 로 갈 준비가 된 모놀리스** 를 지향한다 — 코드는 단일 `apps/api` 안에 모여 있지만, 기본적으로 4 replica 로 배포하고 NATS 와 Temporal 같은 분산 인프라를 그대로 쓴다. 나중에 어떤 서비스를 따로 떼어내야 할 때가 와도 인프라는 그대로 두고 코드 경계만 끊으면 되도록 짜 두었다.
 
 ## 시작하기
 
@@ -33,7 +33,7 @@ curl http://localhost:3000/movies
 
 ### 3. 분산 race 테스트
 
-단일 프로세스로는 재현하기 어려운 race 조건을 검증하기 위해, 4-replica docker compose 스택을 띄우고 블랙박스 시나리오를 돌리는 테스트가 따로 있다. SSE 팬아웃이 모든 replica로 전달되는지, 동일 이메일로 동시에 가입을 시도하면 한 건만 성공하는지, 같은 좌석을 동시에 홀드하면 한 건만 통과하는지, 같은 티켓 세트가 중복 결제되지 않는지 등을 다룬다.
+한 프로세스 안에서는 재현하기 어려운 race 를 확인하려고, 4-replica docker compose 스택을 띄우고 블랙박스 시나리오를 돌리는 테스트가 따로 있다. SSE 이벤트가 모든 replica 로 빠짐없이 가는지, 같은 이메일로 동시에 가입을 시도하면 한 건만 성공하는지, 같은 좌석을 동시에 hold 하면 한 건만 통과하는지, 같은 티켓 세트가 중복으로 결제되지는 않는지 같은 시나리오를 다룬다.
 
 이 테스트는 인프라가 무거워서 `package.json` 스크립트로 노출하지 않고 shell에서 직접 호출한다.
 
@@ -54,11 +54,14 @@ nest-seed/
 │
 ├── apps/api/                ← NestJS API (4 replica 기본)
 │   ├── src/
-│   │   ├── gateway/             HTTP 진입점, 가드
-│   │   ├── application/         비즈니스 로직 (Temporal workflow + activities)
-│   │   ├── core/                도메인 모델, 리포지토리
-│   │   ├── infrastructure/      외부 서비스 (결제, 파일)
-│   │   └── config/              앱 설정, Rules, 파이프
+│   │   ├── services/            서비스 코드 묶음
+│   │   │   ├── gateway/             HTTP 진입점, 가드, 파이프
+│   │   │   ├── application/         비즈니스 로직 (Temporal workflow + activities)
+│   │   │   ├── core/                도메인 모델, 리포지토리
+│   │   │   └── infrastructure/      외부 서비스 (결제, 파일)
+│   │   ├── config/              환경 변수, 외부 자원 진입점
+│   │   ├── modules/             NestJS 모듈 wiring (AppConfig, Global, Health, *-setup)
+│   │   └── bootstrap.ts         앱 부팅 진입점
 │   ├── api-docs/                실행 가능한 API 문서 (curl 기반)
 │   └── tests/                   분산 race 시나리오, perf 하네스
 │
@@ -99,10 +102,10 @@ nest-seed/
 ### 5. 인가 (Authorization) — 포크 시 추가
 
 이 시드는 **인증 (`UserJwtAuthGuard`) 만 일부 엔드포인트에 걸려 있고, 인가
-(role / ownership 검사) 는 의도적으로 빠져 있다**. 다음 컨트롤러는 가드 없이
-공개되어 있어 익명 / 모든 인증 사용자가 mutate 할 수 있다 — 실 서비스로
-가져갈 때 fork 한 쪽이 도메인 정책 (admin role, owner-only 등) 에 맞춰 가드와
-검사를 채워 넣어야 한다.
+(role / ownership 검사) 는 일부러 빼 두었다**. 다음 컨트롤러는 가드 없이
+열려 있어서, 익명 사용자나 아무 인증 사용자나 데이터를 바꿀 수 있다. 실
+서비스로 가져갈 때는 포크한 쪽에서 도메인 정책 (admin role, owner-only 등) 에
+맞춰 가드와 검사를 채워 넣어야 한다.
 
 | 컨트롤러 | 노출 동작 |
 |---|---|
@@ -113,9 +116,9 @@ nest-seed/
 | `UsersHttpController` (`@UseGuards(UserJwtAuthGuard)` 적용됨) | 인증된 사용자가 임의 userId 의 데이터 read/update/delete + `searchPage` 로 모든 사용자 PII 노출. owner/admin 검사 없음 |
 
 추천 패턴:
-- 클래스/핸들러에 `@UseGuards(UserJwtAuthGuard)` 추가하고 통합 fixture 도 액세스 토큰을 같이 보내도록 갱신
-- owner-only 엔드포인트는 `req.user.sub === :userId` 같은 검사를 핸들러 또는 별도 가드에서 수행
-- admin 전용은 JWT payload 의 role claim 을 검증하는 가드 (`AdminJwtAuthGuard` 등) 신규 추가
+- 클래스/핸들러에 `@UseGuards(UserJwtAuthGuard)` 를 걸고, 통합 fixture 도 액세스 토큰을 같이 보내도록 고친다
+- owner-only 엔드포인트는 `req.user.sub === :userId` 같은 검사를 핸들러나 별도 가드에서 한다
+- admin 전용은 JWT payload 의 role claim 을 검사하는 가드 (`AdminJwtAuthGuard` 등) 를 새로 만들어 붙인다
 
 ### 6. 검증
 

@@ -9,14 +9,15 @@
 `apps/*/src/` 안의 자리는 _서비스 코드인지, 그 바깥 자원인지_ 로 갈라 둔다.
 
 - **`apps/*/src/services/`** — 서비스 코드 묶음. application / core / gateway / infrastructure 네 레이어가 들어간다.
-- **`apps/*/src/config/`** — 서비스가 의존하는 환경/외부 자원 진입점. 환경 변수 검증 (`AppConfigService`), 외부 자원 연결 모듈 (`MongooseConfigModule` 등), `getProjectId` 같이 부트 시점에 결정되어 모든 레이어가 의존하는 자원.
-- **`apps/*/src/` 직속** — 서비스도 config 도 아닌 것 (앱 부팅 절차, 운영 모듈). 예: `bootstrap.ts`, `app.module.ts`, `global.module.ts`, `health.module.ts`.
+- **`apps/*/src/config/`** — 앱이 돌면서 읽어야 하는 값을 모아 둔 자리. 환경 변수를 묶어 주는 `AppConfigService`, `getProjectId`, mongoose 스키마 옵션처럼 부팅할 때 한 번 정해진 뒤 모든 레이어가 가져다 쓰는 값들.
+- **`apps/*/src/modules/`** — NestJS 모듈을 모아 두는 자리. `AppConfigModule`, `GlobalModule`, `HealthModule`, 그리고 외부 자원과의 연결을 잡아 주는 `MongooseSetupModule` 같은 `*-setup` 모듈이 들어간다.
+- **`apps/*/src/` 직속** — 서비스도 config 도 modules 도 아닌, 앱을 부팅하는 코드 그 자체. `bootstrap.ts`, `app.module.ts`, `development.ts`, `production.ts`.
 
-`core/` 안에는 별도의 공유 자리를 두지 않는다. 두 도메인이 같은 자료 구조를 다뤄야 한다면, 한 모델로 강제로 묶는 대신 각 도메인이 자기 본질에 맞는 이름으로 따로 정의한다 (예: Theater 의 `Seat` = 극장이 정의하는 좌석, Ticket 의 `SeatPosition` = 티켓이 가리키는 좌석 좌표). 자료 구조의 우연한 일치는 모델 공유의 근거가 아니다.
+`core/` 안에는 따로 공유 자리를 두지 않는다. 두 도메인이 비슷한 자료 구조를 다룬다고 해도, 억지로 한 모델로 묶지 않고 각 도메인이 자기 의미에 맞는 이름으로 따로 정의한다 (예: Theater 의 `Seat` = 극장이 정의하는 좌석, Ticket 의 `SeatPosition` = 티켓이 가리키는 좌석 좌표). 모양이 우연히 같다고 해서 같은 모델로 묶을 이유는 없다.
 
 ### 1.1.1. `libs/common` 의 의미
 
-`libs/common` 은 _각 프로젝트의 일부가 되는_ 라이브러리 묶음이다. 라이브러리로 import 되어 그 프로젝트의 빌드 산출물 안에서 실행되는 코드 — 의존성으로 끌어와 내 일부로 만든다. 상속 베이스 (`BaseConfigService`, `CrudSchema`), static 유틸 (`DateUtil`, `TimeUtil`), 주입형 서비스 (`AppLoggerService`) 등 형태는 다양하다.
+`libs/common` 은 _각 프로젝트가 자기 안으로 가져다 쓰는_ 라이브러리 묶음이다. import 해 와서 그 프로젝트의 빌드 결과물 안에 같이 들어가는 코드 — 의존성으로 끌어와 내 일부로 만든다. 상속해서 쓰는 베이스 클래스 (`BaseConfigService`, `CrudSchema`), 정적 유틸 (`DateUtil`, `TimeUtil`), 주입해서 쓰는 서비스 (`AppLoggerService`) 등 형태는 다양하다.
 
 | 위치                 | 관계                                    | import 경로          |
 | -------------------- | --------------------------------------- | -------------------- |
@@ -37,7 +38,7 @@
 
 ### 1.3. 메서드
 
-서비스가 노출하는 메서드 이름은 의미가 한 눈에 보이도록 통일한다. 같은 이름은 어느 서비스에서나 같은 동작을 한다.
+서비스가 바깥으로 내미는 메서드는 이름만 봐도 무슨 일을 하는지 알 수 있게 이름을 통일한다. 같은 이름은 어느 서비스에서든 같은 동작을 한다.
 
 | 메서드                             | 용도                       | 반환                          |
 | ---------------------------------- | -------------------------- | ----------------------------- |
@@ -89,7 +90,7 @@ ShowtimeBulkValidator         ← 호출자가 데이터를 주입하고, 검증
 | `check`  | 결과를 boolean으로 돌려준다 |
 | `ensure` | 없으면 만들어 둔다          |
 
-이름은 항상 긍정형으로 둔다 (`isActive` 는 OK, `isNotActive` 는 피한다). 부정 의미는 호출 쪽에서 `!isActive()` 로 표현하는 편이 일관된다.
+이름은 항상 긍정형으로 둔다 (`isActive` 는 OK, `isNotActive` 는 피한다). 부정 의미는 호출 쪽에서 `!isActive()` 로 적는 쪽이 더 깔끔하다.
 
 ### 1.6. 날짜와 시간 필드
 
@@ -102,7 +103,7 @@ ShowtimeBulkValidator         ← 호출자가 데이터를 주입하고, 검증
 
 ## 2. 에러 객체
 
-각 도메인은 자기 에러 목록을 팩토리 함수의 객체로 정의한다. 컨텍스트별로 달라지는 값(예: 어떤 이메일이 중복인지)은 함수 인자로 받아 결과 객체에 함께 담는다.
+각 도메인은 자기 에러 목록을 팩토리 함수들이 모인 객체로 정의한다. 상황마다 달라지는 값 (예: 어떤 이메일이 중복인지) 은 함수 인자로 받아 결과 객체에 같이 담는다.
 
 ```ts
 export const UserErrors = {
@@ -117,10 +118,10 @@ export const UserErrors = {
 
 지켜야 할 약속은 다음과 같다.
 
-- 에러 정의는 서비스 디렉토리 안의 `errors.ts` 파일로 분리한다. 서비스 클래스 파일에 인라인으로 넣지 않는다.
+- 에러 정의는 서비스 디렉토리 안의 `errors.ts` 파일로 따로 빼 둔다. 서비스 클래스 파일 안에 같이 적지 않는다.
 - 같은 디렉토리의 `index.ts` 에서 `export * from './errors'` 로 다시 내보낸다.
-- HTTP 4xx 응답에만 `code` 를 포함한다. 5xx는 서버 장애라서 클라이언트에 상세 원인을 노출하지 않는다.
-- `message` 는 디버깅과 로그용 참고 정보일 뿐, 다국어 표현은 클라이언트가 `code` 를 보고 결정한다.
+- HTTP 4xx 응답에만 `code` 를 같이 보낸다. 5xx 는 서버 장애라서 클라이언트에 상세 원인을 보여 주지 않는다.
+- `message` 는 디버깅과 로그에 쓰는 참고용일 뿐이다. 다국어 문구는 클라이언트가 `code` 를 보고 자기가 정한다.
 
 ---
 
@@ -128,22 +129,22 @@ export const UserErrors = {
 
 각 폴더에 `index.ts` (barrel export)를 두고 그 폴더의 공개 API를 한 곳에서 재수출한다. import는 _어디서 어디를 가리키는가_ 에 따라 두 가지 규칙이 다르다.
 
-**직계 조상 폴더는 상대 경로로 import 한다.** 절대 경로(`tsconfig` 의 `paths` 별칭)로 자기 조상을 참조하면 그 조상이 다시 자식을 import 하면서 순환 참조가 생기기 쉽다.
+**자기보다 위에 있는 폴더는 상대 경로로 import 한다.** 절대 경로 (`tsconfig` 의 `paths` 별칭) 로 위 폴더를 부르면, 그 위 폴더가 또 자식들을 import 하면서 순환 참조가 생기기 쉽다.
 
 ```ts
-/* users.service.ts */
+/* core/users/users.service.ts */
 import { AuthService } from '../auth' // O
-import { AuthService } from 'src/services' // X — 순환 참조 위험
+import { AuthService } from 'core' // X — core 의 자식이 core 배럴을 거꾸로 참조하면 순환 참조 위험
 ```
 
-**조상이 아닌 폴더는 절대 경로를 쓴다.** 이쪽은 상대 경로로 쓰면 `../../../` 처럼 깊이가 길어져 가독성이 떨어진다.
+**위쪽 줄기에 있지 않은 폴더는 절대 경로를 쓴다.** 이쪽은 상대 경로로 쓰면 `../../../` 처럼 길어져서 읽기 어려워진다.
 
 ```ts
-/* users.http-controller.ts */
-import { AuthService } from 'src/services' // O
+/* gateway/users.http-controller.ts */
+import { UsersService } from 'core' // O — gateway 에서 core 는 형제 묶음이라 별칭 사용
 ```
 
-폴더마다 `index.ts` 를 두는 이유 중 하나는 순환 참조가 일찍 드러나도록 하기 위해서다. 모든 import가 `index.ts` 를 거치면, 의존 그래프가 단순해지고 사이클이 생기면 곧바로 빌드 오류로 보인다.
+폴더마다 `index.ts` 를 두는 이유 중 하나는 사이클이 생겼을 때 빨리 드러나게 하려는 것이다. 모든 import 가 `index.ts` 를 거치면 의존 그래프가 단순해져서, 사이클이 생기는 순간 빌드 오류로 곧장 보인다.
 
 ---
 
@@ -162,7 +163,7 @@ DELETE /movies/:id                삭제
 GET    /movies/:id/showtimes      하위 리소스
 ```
 
-다만 어떤 유스케이스는 여러 단계의 API로 분해되고, 그 단계들이 그 유스케이스 _맥락 안에서만_ 의미를 가지는 경우가 있다. 이런 _복합 유스케이스_ 는 namespace로 묶어 단독 API와 구분한다.
+다만 어떤 유스케이스는 여러 단계의 API 로 쪼개지는데, 그 단계들이 _그 유스케이스 안에서만_ 쓸모가 있는 경우가 있다. 이런 _복합 유스케이스_ 는 namespace 로 묶어서, 단독으로도 의미가 있는 API 와 구분한다.
 
 ```
 # 복합 유스케이스 — namespace로 묶음
@@ -217,7 +218,7 @@ POST /showtimes/search
 
 ## 5. 데이터 비정규화
 
-조회 성능과 _계층 간 결합 감소_ 를 위해 일정 수준의 비정규화는 적극 활용한다. 예를 들어 `Ticket` 에 `movieId` 와 `theaterId` 를 함께 저장해 두면, 티켓을 조회할 때마다 `ShowtimesService` 를 다시 호출할 필요가 없다. 두 값을 한 곳에서 항상 같이 갱신해야 한다는 부담은 생기지만, 그 비용을 감당할 만한 자리에서는 비정규화가 더 단순한 답이다.
+조회 성능을 높이고 _계층 사이 의존을 줄이려고_ 어느 정도 데이터를 중복해서 저장하는 것은 마다하지 않는다. 예를 들어 `Ticket` 에 `movieId` 와 `theaterId` 를 같이 저장해 두면, 티켓을 조회할 때마다 `ShowtimesService` 를 다시 부를 필요가 없다. 그 대신 두 값을 한 곳에서 항상 같이 갱신해야 하는 부담이 생긴다. 그 부담을 감수할 만한 자리에서는 중복 저장이 오히려 더 단순한 답이다.
 
 ---
 
