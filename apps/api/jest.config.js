@@ -19,9 +19,17 @@ module.exports = {
     roots: ['<rootDir>/src'],
     moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
     modulePaths: [compilerOptions.baseUrl],
-    // 누수 원인 추적용 — testFile 끝마다 워커 RSS/heap MB 출력. 어떤 spec
-    // 직후 메모리가 폭증하는지 가시화한다.
-    logHeapUsage: true,
+    // 통합 spec 은 매 it (beforeEach) 마다 createAppTestContext 로 AppModule 을
+    // 통째 부팅한다. resetModules:true (격리는 의도) 는 모듈을 매 it fresh
+    // evaluate 시키는데, 이전 evaluate 의 NestJS 클래스 instance 가 어딘가
+    // strong ref (reflect-metadata global Map / mongoose connections 등) 로
+    // 잡혀 GC 되지 못하고 native buffer (BSON/arrayBuffer) 가 it 당 ~16MB
+    // 누적된다. 통합 spec 3 개만 돌아도 V8 heap 천장(~2.6GB)에 닿아 OOM.
+    // 격리 의도와 framework 누적의 trade-off 는 후속 작업으로 미루고, 여기서는
+    // 워커 RSS 가 1.5GB 도달하면 jest 가 워커를 회수(새 워커 fork)해 누적을
+    // 끊는다. 1 GB 는 baseline 직후라 너무 잦은 회수, 2 GB 는 V8 heap 천장에
+    // 너무 가까워 OOM 위험.
+    workerIdleMemoryLimit: '1500MB',
     collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
     coveragePathIgnorePatterns: [
         '__tests__',
