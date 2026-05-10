@@ -87,10 +87,7 @@ export class AppConfigService extends BaseConfigService {
     }
 
     get mongo() {
-        return {
-            uri: this.getString('MONGO_URI'),
-            dbName: this.getString('MONGO_DATABASE')
-        }
+        return { uri: this.getString('MONGO_URI'), dbName: this.getString('MONGO_DATABASE') }
     }
 
     get redis() {
