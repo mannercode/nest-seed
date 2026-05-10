@@ -4,13 +4,14 @@ import { Require } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
 import {
     buildCreateAssetDto,
+    createMovieAsset,
     createUnpublishedMovie,
     Errors,
     testAssets,
+    uploadAndFinalizeMovieAsset,
     uploadAsset,
     type AppTestContext
 } from '../../helpers'
-import { createMovieAsset, uploadAndFinalizeMovieAsset } from './movies-assets.fixture'
 
 describe('MoviesAssets', () => {
     let fix: AppTestContext
