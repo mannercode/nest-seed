@@ -85,8 +85,8 @@ export class MoviesRepository extends CrudRepository<Movie> {
 
         const builder = new QueryBuilder<Movie>()
         builder.addEquals('isPublished', true)
-        // 부분 문자열 검색에 대소문자 구분 없이 매칭한다. API 계약에서 이미
-        // 그렇게 약속한 동작이라서, mongo 인덱스를 못 타도 그대로 둔다.
+        // API 계약은 대소문자를 구분하지 않는 부분 문자열 검색입니다. 일반 Mongo
+        // 인덱스를 활용하지 못하는 형태지만, 시드의 검색 동작을 명확히 보여 주려고 유지합니다.
         builder.addRegex('title', title)
         builder.addEquals('genres', genre)
         builder.addEquals('releaseDate', releaseDate)

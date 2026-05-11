@@ -16,17 +16,17 @@ type SessionArg = ClientSession | undefined
 
 const defaultLeanOptions = {}
 
-// 입력으로 받은 `doc` 을 그대로 바꾸고 같은 참조를 돌려준다.
+// 입력으로 받은 `doc`을 그대로 수정하고 같은 참조를 반환합니다.
 //
-// `lean()` 결과는 `{ _id: ObjectId, ... }` 모양으로 돌아온다. 스키마 가상
-// 필드의 `id: string` 과 `toJSON.flattenObjectIds` 는 hydrated 문서에만
-// 적용된다. `lean` 결과에 같은 효과를 보려면 `mongoose-lean-virtuals`
-// 플러그인을 끼워야 하는데, 그 플러그인은 페이지네이션 읽기 처리량을
-// 눈에 띄게 떨어뜨린다. 그래서 여기서 문자열 `id` 를 직접 박는다.
+// `lean()` 결과는 `{ _id: ObjectId, ... }` 형태로 반환됩니다. 스키마 가상
+// 필드의 `id: string`과 `toJSON.flattenObjectIds`는 hydrated 문서에만
+// 적용됩니다. `lean` 결과에 같은 효과를 보려면 `mongoose-lean-virtuals`
+// 플러그인을 추가해야 하는데, 그 플러그인은 페이지네이션 읽기 처리량을
+// 유의미하게 낮춥니다. 그래서 여기서 문자열 `id`를 직접 설정합니다.
 //
-// `_id` 는 일부러 남겨 둔다. 내부 코드 일부가 비교를 위해
-// `doc._id.toString()` 을 쓰고 있고, HTTP 응답으로 나갈 때는 어차피
-// 직렬화 단계에서 빠진다.
+// `_id`는 의도적으로 남겨 둡니다. 내부 코드 일부가 비교를 위해
+// `doc._id.toString()`을 쓰고 있고, HTTP 응답으로 나갈 때는 어차피
+// 직렬화 단계에서 빠집니다.
 export function leanToPublic<T extends { _id?: unknown }>(doc: T): T {
     if (doc._id != null) {
         ;(doc as any).id = (doc._id as { toString(): string }).toString()
@@ -34,28 +34,28 @@ export function leanToPublic<T extends { _id?: unknown }>(doc: T): T {
     return doc
 }
 
-// `lean()` 결과를 공개 타입으로 바꾸는 두 헬퍼다. mongoose 의 `LeanDocument<T>`
-// 타입이 `T extends { _id?: unknown }` 제약과 바로 맞물리지 않아서, 호출하는
-// 쪽마다 같은 cast 를 반복하던 부분을 한 곳으로 모았다.
+// `lean()` 결과를 공개 타입으로 바꾸는 두 헬퍼입니다. mongoose의 `LeanDocument<T>`
+// 타입이 `T extends { _id?: unknown }` 제약과 바로 맞물리지 않아서, 호출 지점마다
+// 같은 cast를 반복하던 부분을 한 곳으로 모았습니다.
 //
-// `leanToPublic` 을 그대로 부르므로, 입력 문서들도 그 자리에서 같이 바뀐다.
+// `leanToPublic`을 그대로 부르므로, 입력 문서들도 그 자리에서 같이 바뀝니다.
 export function leanArrayToPublic<T>(docs: unknown): T[] {
     return (docs as any[]).map(leanToPublic) as T[]
 }
 
-// 입력 문서를 `leanToPublic` 으로 바꾼 뒤 그대로 돌려준다. 입력이 null 이면
-// null 을 돌려준다.
+// 입력 문서를 `leanToPublic`으로 바꾼 뒤 그대로 반환합니다. 입력이 null이면
+// null을 반환합니다.
 export function leanOneToPublic<T>(doc: unknown): null | T {
     return doc ? (leanToPublic(doc as any) as T) : null
 }
 
 /**
  * CRUD 도메인용 리포지토리 기반 클래스. 보통의 도메인 엔티티가 쓰는 조회,
- * 저장, 삭제, 페이지네이션, 트랜잭션을 한곳에서 제공한다.
+ * 저장, 삭제, 페이지네이션, 트랜잭션을 한곳에서 제공합니다.
  *
  * 감사 로그처럼 추가만 일어나는 도메인은 이 기반이 아니라
- * `AppendOnlyRepository` 를 쓴다. 그쪽은 삭제·수정 메서드를 타입 차원에서
- * 노출하지 않는다.
+ * `AppendOnlyRepository`를 사용합니다. 해당 구현은 삭제·수정 메서드를 타입 차원에서
+ * 노출하지 않습니다.
  */
 export abstract class CrudRepository<Doc> implements OnModuleInit {
     constructor(
@@ -137,18 +137,18 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
 
         queryHelper.lean(defaultLeanOptions)
 
-        // 페이지네이션은 조회와 카운트를 함께 돌린다. 필터가 비어 있을 때
-        // 카운트가 조회보다 몇 배는 느리게 관측됐다. `CrudSchema` 의 pre-hook
-        // 이 끼면서 `countDocuments` 가 사실상 `{ deletedAt: null }` 카운트로
-        // 바뀌고, 삭제되지 않은 모든 행에 대한 인덱스 스캔이 되기 때문이다.
-        // `estimatedDocumentCount` 는 컬렉션 메타데이터만 읽으므로 즉시
-        // 돌아온다. 그래서 필터가 빈 경로에서는 이쪽으로 간다.
+        // 페이지네이션은 조회와 카운트를 함께 실행합니다. 필터가 비어 있을 때
+        // 카운트가 조회보다 몇 배는 느리게 관측됐습니다. `CrudSchema`의 pre-hook
+        // 이 포함되면서 `countDocuments`가 사실상 `{ deletedAt: null }` 카운트로
+        // 바뀌고, 삭제되지 않은 모든 행에 대한 인덱스 스캔이 되기 때문입니다.
+        // `estimatedDocumentCount`는 컬렉션 메타데이터만 읽으므로 즉시
+        // 반환됩니다. 그래서 필터가 빈 경로에서는 이 경로를 사용합니다.
         //
-        // 한 가지 한계가 있다. `estimatedDocumentCount` 는 soft-delete 된
-        // 행까지 포함한 전체 수를 돌려준다. 응답의 `total` 이 실제로 페이지에
-        // 잡혀 나오는 행보다 커질 수 있다. 마지막 페이지에 빈자리가 생길
+        // 한 가지 한계가 있습니다. `estimatedDocumentCount`는 soft-delete 된
+        // 행까지 포함한 전체 수를 반환합니다. 응답의 `total`이 실제로 페이지에
+        // 표시되는 행보다 커질 수 있습니다. 마지막 페이지에 빈자리가 생길
         // 수는 있지만 정렬은 일관되게 유지되므로, 이 서비스에서는 받아들일
-        // 만한 절충이다.
+        // 만한 절충입니다.
         const rawFilter = queryHelper.getQuery()
         const filterIsEmpty = Object.keys(rawFilter).length === 0
 
@@ -199,12 +199,12 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
 
     async onModuleInit() {
         /**
-         * `document.save()` 가 내부적으로 `createCollection()` 을 부른다.
-         * 같은 시점에 여러 곳에서 `save()` 가 호출되면, mongo 가 같은
+         * `document.save()`가 내부적으로 `createCollection()`을 부릅니다.
+         * 같은 시점에 여러 곳에서 `save()`가 호출되면, Mongo가 같은
          * 컬렉션을 동시에 만들려 들면서 "Collection namespace is already in
-         * use" 에러를 낸다. 단위 테스트처럼 빠르게 초기화를 반복하는 환경에서
-         * 자주 나타나는 증상이다. 모듈이 뜨는 시점에 컬렉션과 인덱스를
-         * 미리 만들어 두면 이 경합이 사라진다.
+         * use" 에러를 냅니다. 단위 테스트처럼 빠르게 초기화를 반복하는 환경에서
+         * 자주 나타나는 증상입니다. 모듈 초기화 시점에 컬렉션과 인덱스를
+         * 미리 만들어 두면 이 경합이 사라집니다.
          */
         await this.model.createCollection()
         await this.model.createIndexes()

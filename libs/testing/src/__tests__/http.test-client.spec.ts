@@ -56,7 +56,7 @@ describe('HttpTestClient', () => {
                 .body({ second: true })
                 .created()
 
-            // superagent.send는 같은 contentType이면 두 번째 호출 시 object를 머지한다.
+            // superagent.send는 같은 contentType이면 두 번째 호출 시 object를 머지합니다.
             // 핵심은 두 번째 호출이 무시되지 않는다는 것.
             expect(body).toEqual(expect.objectContaining({ second: true }))
         })

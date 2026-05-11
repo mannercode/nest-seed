@@ -1,6 +1,6 @@
 /**
- * 로그인에서 받은 access 토큰을 `sessionStorage` 에 둔다. 시드 수준이라
- * refresh 토큰은 다루지 않는다. 만료되면 다시 로그인한다.
+ * 로그인에서 받은 access 토큰을 `sessionStorage`에 둡니다. 시드 수준이라
+ * refresh 토큰은 다루지 않습니다. 만료되면 다시 로그인합니다.
  */
 
 const TOKEN_KEY = 'console:access-token'

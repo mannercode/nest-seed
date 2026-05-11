@@ -21,10 +21,9 @@ const restrictedSyntaxBase = [
 const escapeForRegex = (value) => value.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&')
 
 /**
- * Node.js 내장 모듈에 모두 맞는 정규식 문자열을 만든다. `node:` 접두가
- * 붙은 형태와 안 붙은 형태, 하위 경로까지 함께 잡는다. 예: `fs`,
- * `node:fs/promises`, `crypto`. `eslint-plugin-allowed-dependencies` 가
- * 내장 모듈을 검사에서 빼는 데 쓴다.
+ * allowed-dependencies 규칙은 import 문자열을 정규식으로 검사합니다. Node.js
+ * 내장 모듈은 `fs`, `node:fs/promises`처럼 표기 방식이 섞여 있으므로, 접두사와
+ * 하위 경로를 모두 허용하는 패턴을 미리 만듭니다.
  */
 const nodeBuiltinModulePattern = `^(?:node:)?(?:${[
     ...new Set(builtinModules.map((moduleName) => moduleName.replace(/^node:/, '').split('/')[0]))
@@ -94,9 +93,9 @@ const baseRules = {
     ],
     '@typescript-eslint/no-non-null-assertion': 'warn',
     'no-duplicate-imports': 'warn',
-    // 실제 재선언은 TypeScript 가 이미 잡는다. 이 규칙은 추가로 `as const`
-    // enum 의 대체 패턴(같은 이름의 const 와 type alias 한 쌍) 까지 잡으려
-    // 들어서, 그 표준 패턴이 false positive 로 걸린다. 그래서 끈다.
+    // 실제 재선언은 TypeScript가 이미 검출합니다. 이 규칙은 `as const` enum
+    // 대체 패턴(같은 이름의 const와 type alias 한 쌍)도 재선언으로 판단하므로,
+    // 타입스크립트 프로젝트에서 흔한 패턴을 허용하기 위해 비활성화합니다.
     '@typescript-eslint/no-redeclare': 'off',
     '@typescript-eslint/adjacent-overload-signatures': 'warn'
 }

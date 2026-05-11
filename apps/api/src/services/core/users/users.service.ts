@@ -14,11 +14,9 @@ import { User } from './models'
 import { UsersRepository } from './users.repository'
 
 /**
- * `findUserByCredentials` 와 `refreshAuthTokens` 는 `UserAuthenticationService`
- * 의 같은 이름 메서드를 그대로 다시 부른다. 얼핏 보면 군더더기처럼 보이지만,
- * 외부에 노출되는 모든 기능은 `UsersService` 만 거치도록 한다는 원칙을
- * 지키기 위해서다. 컨트롤러는 `UsersService` 만 참조하고,
- * `UserAuthenticationService` 를 직접 부르지 않는다.
+ * 인증 세부 구현은 `UserAuthenticationService`에 두되, 외부 진입점은
+ * `UsersService`로 유지합니다. 컨트롤러가 이 facade만 의존하면 사용자 도메인의
+ * 공개 API가 한곳에 모이고, 인증 구현을 교체해도 컨트롤러 계층은 바뀌지 않습니다.
  */
 @Injectable()
 export class UsersService {

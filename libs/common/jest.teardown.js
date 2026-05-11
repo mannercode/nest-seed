@@ -20,9 +20,8 @@ module.exports = createGlobalTeardown({
             forcePathStyle: true
         }),
     connectRedis: () => new Redis(process.env.TESTLIB_REDIS_URL),
-    // `jest.global.js` 가 띄운 Temporal 테스트 인스턴스를 `globalThis` 에
-    // 보관해 둔다. 여기서 다시 꺼내 `teardown()` 으로 닫아야 자식 프로세스가
-    // 남지 않고 jest 가 깔끔하게 빠진다.
+    // Temporal 테스트 환경은 자식 프로세스를 시작하므로 teardown에서 반드시 닫아야
+    // 합니다. `jest.global.js`가 같은 프로세스의 `globalThis`에 인스턴스를 보관합니다.
     extra: async () => {
         const env = globalThis.__TEMPORAL_TEST_ENV__
         if (env) await env.teardown()

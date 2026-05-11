@@ -1,12 +1,7 @@
 export class ByteUtil {
     /**
-     * 문자열 형식의 크기 정보를 바이트 단위의 숫자로 변환합니다.
-     * 입력 문자열은 부호, 숫자, 단위(B, KB, MB, GB, TB)를 포함해야 하며,
-     * 여러 크기 단위를 공백으로 구분하여 표현할 수 있습니다.
-     *
-     * @param {string} sizeExpression 변환할 size 형식 문자열 (예: "10MB", "2GB", "-500KB").
-     * @returns {number} 문자열에 해당하는 총 byte 값.
-     * @throws {Exception} 문자열 형식이 invalid 하면 exception 을 throw 한다.
+     * `10MB`, `2GB`, `-500KB` 같은 크기 표현식을 바이트 수로 변환합니다. 여러
+     * 단위는 공백으로 구분할 수 있고, 형식이 맞지 않으면 예외를 던집니다.
      */
     static fromString(sizeExpression: string): number {
         const sizeUnitMap: { [key: string]: number } = {
@@ -39,12 +34,8 @@ export class ByteUtil {
     }
 
     /**
-     * 바이트 값을 문자열 형식으로 변환합니다.
-     * 반환되는 문자열은 TB, GB, MB, KB, B 단위를 차례대로 포함하며,
-     * 음수인 경우 "-" 기호가 접두사로 붙습니다.
-     *
-     * @param {number} bytes 변환할 byte 값.
-     * @returns {string} 주어진 byte 값을 문자열로 표현한 결과.
+     * 바이트 수를 `1MB512KB`처럼 큰 단위부터 이어 붙인 문자열로 변환합니다.
+     * 0은 `0B`, 음수는 전체 결과 앞에 `-`를 붙여 표현합니다.
      */
     static toString(bytes: number): string {
         if (bytes === 0) {

@@ -165,7 +165,7 @@ describe('QueryBuilder', () => {
 
         it('정규식 메타문자가 포함된 값도 escape되어 정규식 주입을 차단한다', () => {
             builder.addRegex('name', '.*')
-            // .* 메타문자가 그대로 들어가면 모든 값에 매칭되겠지만 escape되어 리터럴로 처리된다.
+            // .* 메타문자가 그대로 들어가면 모든 값에 매칭되겠지만 escape되어 리터럴로 처리됩니다.
             expect(builder.build({})).toEqual({ name: new RegExp('\\.\\*', 'i') })
         })
 

@@ -6,9 +6,9 @@ include:
     - ./temporal/compose.temporal.yml
 
 services:
-    # 모든 setup 이 끝났음을 알리는 sentinel. `reset.sh` 가 이 컨테이너의
-    # 종료를 기다려 infra 가 준비된 시점을 안다. 종료된 setup 컨테이너 정리는
-    # `reset.sh` 가 맡는다.
+    # 모든 setup 서비스가 성공한 뒤 종료되는 sentinel입니다. `reset.sh`는 이
+    # 컨테이너의 종료를 기다려 인프라 준비 완료 시점을 판단하고, 이후 종료된
+    # setup 컨테이너를 정리합니다.
     infra-setup:
         extends: { file: ./compose.common.yml, service: common-options }
         image: alpine:3
@@ -20,10 +20,10 @@ services:
             nats: { condition: service_healthy }
         command: ['true']
 
-# devcontainer 와 deploy compose 가 같은 네트워크에 함께 들어와야 한다.
-# 그래서 외부 네트워크로 둔다. 이름은 workspace 폴더 이름과 같다.
-# devcontainer.json 의 `containerEnv` 가 `COMPOSE_PROJECT_NAME` 으로 그
-# 값을 자동으로 넣어 준다.
+# devcontainer 인프라와 deploy compose가 같은 Docker 네트워크를 공유해야 API가
+# Mongo, Redis, NATS, Temporal에 서비스 이름으로 접근할 수 있습니다. 네트워크 이름은
+# workspace 폴더명(`COMPOSE_PROJECT_NAME`)을 사용해 두 compose 파일이 같은 대상을
+# 참조하게 합니다.
 networks:
     default:
         name: ${COMPOSE_PROJECT_NAME}

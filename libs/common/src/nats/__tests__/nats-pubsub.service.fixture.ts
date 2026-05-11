@@ -11,9 +11,9 @@ export type NatsPubSubServiceFixture = {
 }
 
 /**
- * 같은 NATS 서버를 함께 쓰는 `NatsPubSubService` 인스턴스 두 개를 띄운다.
- * 한쪽이 발행하고 다른 쪽이 구독하는 식으로, 복제본 사이로 메시지가
- * 흐르는 시나리오를 재현하기 위한 fixture 다.
+ * 같은 NATS 서버를 함께 쓰는 `NatsPubSubService` 인스턴스 두 개를 시작합니다.
+ * 한 인스턴스가 발행하고 다른 인스턴스가 구독하는 방식으로, 복제본 사이로 메시지가
+ * 흐르는 시나리오를 재현하기 위한 fixture입니다.
  */
 export async function createNatsPubSubServiceFixture(): Promise<NatsPubSubServiceFixture> {
     const contextA = await createTestContext({
@@ -42,9 +42,9 @@ export async function createNatsPubSubServiceFixture(): Promise<NatsPubSubServic
     const ncA = contextA.module.get<NatsConnection>(getNatsConnectionToken('replicaA'))
     const ncB = contextB.module.get<NatsConnection>(getNatsConnectionToken('replicaB'))
 
-    // 두 connection 이 server 와 round-trip 가능한 상태임을 증명.
-    // 이후 spec 의 timeout 윈도우에 testcontainer 콜드스타트 / TCP handshake
-    // 비용이 끼어들지 않고, 순수 메시지 round-trip 만 측정됨.
+    // 두 connection이 server와 round-trip 가능한 상태임을 확인.
+    // 이후 spec의 timeout 윈도우에 testcontainer 콜드스타트 / TCP handshake
+    // 비용이 포함되지 않고, 순수 메시지 round-trip만 측정됨.
     await Promise.all([ncA.flush(), ncB.flush()])
 
     const teardown = async () => {

@@ -29,10 +29,9 @@ export class Ticket extends CrudSchema {
 }
 export const TicketSchema = createCrudSchema(Ticket)
 
-// 특정 상영의 티켓을 조회하거나 판매 현황을 집계하는 경로를 위한 복합
-// 인덱스다. `deletedAt` 을 앞에 두는 이유는, soft-delete 가 모든 조회에
-// `deletedAt: null` 필터를 자동으로 끼우기 때문이다. 같은 인덱스 하나로
-// 이 필터까지 한 번에 커버된다.
+// 특정 상영의 티켓 조회와 판매 현황 집계가 가장 자주 쓰는 접근 경로입니다.
+// soft-delete 미들웨어가 모든 조회에 `deletedAt: null`을 추가하므로, 이 필드를
+// 앞에 두어 같은 인덱스가 삭제 필터와 showtime 필터를 함께 처리하게 합니다.
 TicketSchema.index({ deletedAt: 1, showtimeId: 1 })
-// saga 단위 조회·삭제 경로용.
+// showtime-creation 보상 처리에서 saga가 만든 티켓을 한 번에 찾는 경로입니다.
 TicketSchema.index({ sagaId: 1 })

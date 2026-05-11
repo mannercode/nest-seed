@@ -40,8 +40,8 @@ export class UsersRepository extends CrudRepository<User> {
     }
 
     async findByEmailWithPassword(email: string) {
-        // 로그인 경로다. 뒤이은 인증 처리에서 `user.id` 를 그대로 써야 하므로
-        // `leanOneToPublic` 으로 ObjectId 를 문자열로 바꿔 둔다.
+        // 로그인 경로입니다. 뒤이은 인증 처리에서 `user.id`를 그대로 써야 하므로
+        // `leanOneToPublic`으로 ObjectId를 문자열로 바꿔 둡니다.
         const user = await this.model
             .findOne({ email: { $eq: email } })
             .select('+password')
@@ -82,8 +82,8 @@ export class UsersRepository extends CrudRepository<User> {
         const { email, name } = searchDto
 
         const builder = new QueryBuilder<User>()
-        // 부분 문자열 검색에 대소문자 구분 없이 매칭한다. API 계약에서 이미
-        // 그렇게 약속한 동작이라서, mongo 가 인덱스를 못 타도 그대로 둔다.
+        // API 계약은 대소문자를 구분하지 않는 부분 문자열 검색입니다. 일반 Mongo
+        // 인덱스를 활용하지 못하는 형태지만, 시드의 검색 동작을 명확히 보여 주려고 유지합니다.
         builder.addRegex('name', name)
         builder.addRegex('email', email)
 

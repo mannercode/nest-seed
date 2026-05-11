@@ -1,17 +1,17 @@
-// 여러 티켓 묶음을 동시에 잡으려는 경쟁을 복제본 너머로 재현하는 부하
-// 테스트다.
+// 여러 티켓 묶음을 동시에 선점하려는 경쟁을 복제본 너머로 재현하는 부하
+// 테스트입니다.
 //
-// 한 회차는 이렇게 돈다. 새 상영을 하나 만들고, 거기 들어가는 티켓을 서로
-// 겹치지 않는 쌍 여러 개로 나눈다. 각 쌍마다 같은 사용자 그룹이 동시에
-// hold 를 시도한다. 다른 그룹도 같은 시점에 자기 쌍에 대해 발사한다.
-// 그룹 한 개당 결과는 정확히 한 사용자가 204 를 받고, 나머지는 409 다.
+// 한 회차는 이렇게 진행됩니다. 새 상영을 하나 만들고, 거기 들어가는 티켓을 서로
+// 겹치지 않는 쌍 여러 개로 나눕니다. 각 쌍마다 같은 사용자 그룹이 동시에
+// hold를 시도합니다. 다른 그룹도 같은 시점에 각자의 쌍에 대해 발사합니다.
+// 그룹 한 개당 결과는 정확히 한 사용자가 204를 받고, 나머지는 409입니다.
 //
-// 사용자 계정은 처음 한 번 만들어 회차 사이에 그대로 다시 쓴다. 매 회차마다
-// 새 티켓만 만든다. 이미 hold 된 티켓은 같은 락 키로 다시 경쟁시킬 수 없기
-// 때문이다.
+// 사용자 계정은 처음 한 번 만들어 회차 사이에 그대로 다시 사용합니다. 매 회차마다
+// 새 티켓만 만듭니다. 이미 hold 된 티켓은 같은 락 키로 다시 경쟁시킬 수 없기
+// 때문입니다.
 //
-// 다음 중 하나라도 해당하면 실패로 본다. 어떤 그룹의 204 응답 수가 1 이
-// 아니거나, 5xx 가 발생하거나, 응답을 한 복제본 수가 둘보다 적은 경우.
+// 다음 중 하나라도 해당하면 실패로 봅니다. 어떤 그룹의 204 응답 수가 1이
+// 아니거나, 5xx가 발생하거나, 응답을 한 복제본 수가 둘보다 적은 경우.
 
 const http = require('http')
 
@@ -146,7 +146,7 @@ async function setupMovieTheater() {
         throw new Error(`publish: ${publish.status}`)
     }
 
-    // 큰 seatmap: 1 block × 1 row × 20 tickets — 최대 10 group 까지 충분.
+    // 큰 seatmap: 1 block × 1 row × 20 tickets — 최대 10 group까지 충분.
     const theater = await requestRaw('POST', '/theaters', {
         body: {
             name: 'hold-race',
@@ -186,7 +186,7 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
         throw new Error(`tickets: need ${TICKET_GROUPS * 2}, got ${tickets.body.length}`)
     }
 
-    // TICKET_GROUPS 개의 disjoint pair 로 분할.
+    // TICKET_GROUPS 개의 disjoint pair로 분할.
     const groups = Array.from({ length: TICKET_GROUPS }, (_, g) => [
         tickets.body[g * 2].id,
         tickets.body[g * 2 + 1].id
@@ -216,9 +216,9 @@ async function runInner(iteration, movieId, theaterId, tokens, startTimeOffsetMs
         startTimeOffsetMs
     )
 
-    // attempts 구성: (group, user) pair 마다 자기 group 의 ticket pair 에 대해
-    // hold 를 발사한다. TICKET_GROUPS × USERS_PER_GROUP 전부가 flat Promise.all
-    // 로 동시에 발사된다.
+    // attempts 구성: (group, user) pair마다 각자의 group의 ticket pair에 대해
+    // hold를 발사합니다. TICKET_GROUPS × USERS_PER_GROUP 전부가 flat Promise.all
+    // 로 동시에 발사됩니다.
     const attempts = []
     for (let g = 0; g < TICKET_GROUPS; g++) {
         const ticketIds = groups[g]

@@ -1,13 +1,13 @@
 // 강한 동시 경합 위에서 사용자 이메일 유일성이 깨지지 않는지 검증하는
-// 부하 테스트다.
+// 부하 테스트입니다.
 //
-// 한 회차는 이렇게 돈다. 서로 다른 이메일 여러 개를 준비하고, 각 이메일
-// 마다 동일한 가입 요청을 한꺼번에 보낸다. 모든 그룹을 같은 시점에 발사
-// 해서 nginx 가 요청을 복제본들에 흩뿌리게 한다. 그룹 한 개당 결과는
-// 정확히 한 요청만 201 이고 나머지는 409 다. 5xx 는 한 건도 없어야 한다.
+// 한 회차는 서로 다른 이메일 여러 개를 준비하고, 각 이메일마다 동일한 가입 요청을
+// 한꺼번에 보냅니다. 모든 그룹을 같은 시점에 보내 nginx가 요청을 여러 복제본으로
+// 분산하게 합니다. 그룹 한 개당 결과는
+// 정확히 한 요청만 201이고 나머지는 409입니다. 5xx는 한 건도 없어야 합니다.
 //
-// 다음 중 하나라도 해당하면 실패로 본다. 어떤 그룹의 201 응답 수가 1 이
-// 아니거나, 5xx 나 예상 못한 상태 코드가 나오거나, 모든 응답이 한 복제본
+// 다음 중 하나라도 해당하면 실패로 봅니다. 어떤 그룹의 201 응답 수가 1이
+// 아니거나, 5xx나 예상하지 못한 상태 코드가 나오거나, 모든 응답이 한 복제본
 // 에서만 온 경우.
 
 const http = require('http')
@@ -55,7 +55,7 @@ function post(path, body) {
 }
 
 async function runInner(iteration) {
-    // EMAIL_GROUPS × CLIENTS_PER_GROUP 개의 요청 구성, 동시에 발사한다.
+    // EMAIL_GROUPS × CLIENTS_PER_GROUP 개의 요청 구성, 동시에 발사합니다.
     const emails = Array.from(
         { length: EMAIL_GROUPS },
         (_, g) =>
@@ -92,10 +92,9 @@ async function runInner(iteration) {
             console.error(
                 `[race] iter=${iteration} email=${email}: expected 1 × 201, got ${g.created} (409=${g.conflict}, other=${g.other.length})`
             )
-            // 이 email 의 50 개 응답을 전부 덤프해 다음 실패 시 "winner" 가
-            // 5xx 를 냈는지, 0 (socket hangup) 을 냈는지, 아니면 예상 못한
-            // 상태를 냈는지 알 수 있도록 한다 — 이전 flake 는 다른 진단
-            // 정보 없이 0 × 201 만 찍혔다.
+            // 이 email의 응답 전체를 남겨 다음 실패 때 성공 후보가 5xx였는지,
+            // socket hangup이었는지, 예상하지 못한 상태였는지 구분합니다. 이전
+            // flake는 진단 정보 없이 0 x 201만 출력했습니다.
             const sameEmail = results.filter((r) => r.email === email)
             for (const [idx, r] of sameEmail.entries()) {
                 console.error(

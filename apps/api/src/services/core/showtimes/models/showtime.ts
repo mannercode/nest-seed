@@ -22,9 +22,9 @@ export class Showtime extends CrudSchema {
 }
 export const ShowtimeSchema = createCrudSchema(Showtime)
 
-// 예매 화면이 자주 쓰는 조회 패턴인 "한 극장의 특정 시간대 상영" 을
-// 위한 복합 인덱스다. 이 스키마는 hard-delete 라서 다른 도메인과 달리
-// 인덱스 앞쪽에 `deletedAt` 필터가 끼지 않는다.
+// 예매 화면은 "한 극장의 특정 시간대 상영"을 반복해서 조회합니다. 이 스키마는
+// hard-delete라 다른 도메인과 달리 `deletedAt` 필터가 붙지 않으므로,
+// theaterId와 startTime만으로 접근 경로를 만듭니다.
 ShowtimeSchema.index({ theaterId: 1, startTime: 1 })
-// saga 단위로 한 번에 지우는 경로용.
+// showtime-creation 보상 처리에서 saga가 만든 상영을 한 번에 찾는 경로입니다.
 ShowtimeSchema.index({ sagaId: 1 })

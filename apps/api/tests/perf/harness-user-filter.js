@@ -1,10 +1,10 @@
 // User filter 전용 perf 하네스.
 //
-// GET /users 가 JWT 보호이므로 worker 마다 자체 계정으로 register + login
-// 하고 access token 을 받아 `?name=<filter>` 쿼리를 루프 실행.
+// GET /users가 JWT 보호이므로 worker마다 자체 계정으로 register + login
+// 하고 access token을 받아 `?name=<filter>` 쿼리를 루프 실행.
 //
-// 부분 문자열 정규식은 인덱스를 못 타서 컬렉션 전체 스캔이 된다. 검색어를
-// 좁게 잡아 매치 수를 거의 0 으로 맞추고, 그 비용을 단독으로 측정한다.
+// 부분 문자열 정규식은 일반 인덱스를 활용하지 못해 컬렉션 전체를 스캔합니다.
+// 검색어를 좁게 설정해 매치 수를 거의 0으로 맞추고, 그 비용을 단독으로 측정합니다.
 //
 // Env: SERVER_URL, CONCURRENCY, DURATION_MS, WARMUP_MS, LABEL, FILTER_PREFIX
 
@@ -18,8 +18,8 @@ const CONCURRENCY = Number(process.env.CONCURRENCY || 100)
 const DURATION_MS = Number(process.env.DURATION_MS || 30_000)
 const WARMUP_MS = Number(process.env.WARMUP_MS || 3_000)
 const LABEL = process.env.LABEL || ''
-// 부분 문자열을 좁게 잡아 매치 수를 거의 0 으로 맞춘다. 그래야 기준값
-// 측정이 회차마다 같은 조건에서 나온다.
+// 부분 문자열을 좁게 설정해 매치 수를 거의 0으로 맞춥니다. 그래야 기준값
+// 측정이 회차마다 같은 조건에서 나옵니다.
 const FILTER_PREFIX = process.env.FILTER_PREFIX || 'perf-user-17769404'
 
 const url = new URL(SERVER_URL)

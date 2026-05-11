@@ -250,8 +250,8 @@ describe('AssetsService', () => {
                 'partial S3 delete failure; DB rows retained for retry',
                 expect.objectContaining({ failedCount: 1 })
             )
-            // DB 행은 그대로 남는다. 다음 cleanup 회차가 같은 자산을 다시
-            // 들고 와 재시도할 수 있다.
+            // DB 행은 그대로 남습니다. 다음 cleanup 회차가 같은 자산을 다시
+            // 들고 와 재시도할 수 있습니다.
             await expect(assetsService.getMany([asset.id])).resolves.toBeDefined()
         })
     })

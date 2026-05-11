@@ -17,8 +17,8 @@ RUN set -Eeu; \
     npm i -g npm-check-updates husky @commitlint/cli @anthropic-ai/claude-code playwright@1.59.1; \
     npm cache clean --force
 
-# 이미지 빌드는 root 권한으로, 컨테이너 실행은 node 권한으로 한다.
-# 브라우저를 기본 위치(`~/.cache/ms-playwright`)에 두면 `/root/` 아래로 들어가
-# node 가 읽지 못한다. 그래서 `/opt` 에 둔다.
+# 브라우저 바이너리는 이미지 빌드 중 root 권한으로 설치되지만, 테스트는 node
+# 사용자로 실행됩니다. 기본 경로(`/root/.cache/ms-playwright`) 대신 두 사용자가
+# 모두 접근할 수 있는 `/opt/playwright`에 설치합니다.
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
 RUN playwright install --with-deps chromium

@@ -3,8 +3,8 @@ import superagent, { type Response } from 'superagent'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
 
-// libs/testing 에서 @mannercode/common 에 대한 production dependency 를
-// 없애기 위해 인라인. 이전엔 JsonUtil.parse 를 여기서만 썼다.
+// libs/testing에서 @mannercode/common에 대한 production dependency를
+// 없애기 위해 인라인. 이전엔 JsonUtil.parse를 여기서만 사용했습니다.
 function parseJsonResponse(text: string): unknown {
     return JSON.parse(quoteUnsafeIntegers(text), (_key, value) => {
         if (typeof value === 'string' && ISO_DATE.test(value)) {
@@ -14,8 +14,8 @@ function parseJsonResponse(text: string): unknown {
     })
 }
 
-// JS Number-safe 범위를 벗어난 정수만 따옴표로 감싸 precision 을 보존한다.
-// (test client 는 server 가 검증한 입력만 받으므로 int64 boundary 는 검사 안 함.)
+// JS Number-safe 범위를 벗어난 정수만 따옴표로 감싸 precision을 보존합니다.
+// (test client는 server가 검증한 입력만 받으므로 int64 boundary는 검사 안 함.)
 function quoteUnsafeIntegers(text: string): string {
     const SAFE = BigInt(Number.MAX_SAFE_INTEGER)
     return text.replace(/([:[,])(\s*)(-?\d+)(?=\s*[,\}\]])/g, (match, prefix, space, raw) => {
@@ -127,14 +127,14 @@ export class HttpTestClient {
         return response
     }
     /**
-     * 응답 상태를 따로 단언하지 않고 보낸다. 호출하는 쪽이 `response.status`
-     * 를 직접 본다. 같은 요청을 동시에 여러 번 보낼 때처럼, 요청마다 응답
-     * 상태가 달라도 정상으로 보는 시나리오에 쓴다.
+     * 응답 상태를 따로 단언하지 않고 보냅니다. 호출자가 `response.status`
+     * 를 직접 확인합니다. 같은 요청을 동시에 여러 번 보낼 때처럼, 요청마다 응답
+     * 상태가 달라도 정상으로 보는 시나리오에 사용합니다.
      */
     async sendRaw(): Promise<superagent.Response> {
-        // `ok(() => true)` 를 빼면 superagent 가 400 이상 상태에서 예외를
-        // 던진다. 호출자가 직접 상태를 보게 두려고 모든 상태를 OK 로 표시
-        // 한다.
+        // `ok(() => true)`를 제외하면 superagent가 400 이상 상태에서 예외를
+        // 던집니다. 호출자가 직접 상태를 확인하도록 모든 상태를 OK로 표시
+        // 합니다.
         const response = await this.agent.ok(() => true)
 
         if (response.type === 'application/json') {

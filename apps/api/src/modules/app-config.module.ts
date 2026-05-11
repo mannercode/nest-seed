@@ -7,9 +7,9 @@ import { RedisSetupModule } from './redis-setup.module'
 import { TemporalSetupModule } from './temporal-setup.module'
 
 /**
- * config 의 책임을 한 모듈로 묶는다. `@Global` 이라 `AppModule` 이 한 번만
- * 가져오면 `AppConfigService` 와 외부 자원 setup 모듈의 토큰을 어디서나
- * inject 할 수 있다.
+ * config의 책임을 한 모듈로 묶습니다. `@Global`이라 `AppModule`이 한 번만
+ * 가져오면 `AppConfigService`와 외부 자원 setup 모듈의 토큰을 어디서나
+ * inject 할 수 있습니다.
  */
 @Global()
 @Module({

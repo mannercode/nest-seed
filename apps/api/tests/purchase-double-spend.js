@@ -1,17 +1,17 @@
 // 같은 티켓 묶음을 중복 결제하려는 경쟁을 복제본 너머로 재현하는 부하
-// 테스트다.
+// 테스트입니다.
 //
-// 한 회차는 이렇게 돈다. 새 상영을 하나 만들고, 사용자 그룹마다 서로
-// 겹치지 않는 티켓 쌍 하나씩을 hold 한다. 그 다음 각 사용자가 자기 쌍에
-// 대해 결제 요청 여러 건을 동시에 발사한다. 그룹 한 개당 결과는 정확히
-// 하나가 2xx 로 성공하고, 나머지는 4xx (409 AlreadySold 또는 400
-// NotHeld) 다.
+// 한 회차는 이렇게 진행됩니다. 새 상영을 하나 만들고, 사용자 그룹마다 서로
+// 겹치지 않는 티켓 쌍 하나씩을 hold 합니다. 그 다음 각 사용자가 각자의 쌍에
+// 대해 결제 요청 여러 건을 동시에 발사합니다. 그룹 한 개당 결과는 정확히
+// 하나가 2xx로 성공하고, 나머지는 4xx (409 AlreadySold 또는 400
+// NotHeld)입니다.
 //
-// 영화, 극장, 사용자 계정은 회차 바깥에서 한 번만 만든다. 매 회차마다
-// 상영, 티켓, hold, 경쟁만 새로 돌린다.
+// 영화, 극장, 사용자 계정은 회차 바깥에서 한 번만 만듭니다. 매 회차마다
+// 상영, 티켓, hold, 경쟁만 새로 실행합니다.
 //
-// 다음 중 하나라도 해당하면 실패로 본다. 어떤 그룹의 성공 응답 수가
-// 1 이 아니거나, 5xx 가 발생하거나, 응답을 한 복제본 수가 둘보다 적은
+// 다음 중 하나라도 해당하면 실패로 봅니다. 어떤 그룹의 성공 응답 수가
+// 1이 아니거나, 5xx가 발생하거나, 응답을 한 복제본 수가 둘보다 적은
 // 경우.
 
 const http = require('http')
@@ -145,7 +145,7 @@ async function setupMovieTheater() {
         throw new Error(`publish: ${publish.status}`)
     }
 
-    // USER_GROUPS 만큼의 disjoint ticket pair 를 잘라낼 수 있도록 큰 seatmap.
+    // USER_GROUPS만큼의 disjoint ticket pair를 잘라낼 수 있도록 큰 seatmap.
     const theater = await requestRaw('POST', '/theaters', {
         body: {
             name: 'purchase-race',
@@ -214,7 +214,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
         startTimeOffsetMs
     )
 
-    // 각 유저가 자기 group 의 ticket pair 를 hold.
+    // 각 유저가 각자의 group의 ticket pair를 hold.
     await Promise.all(
         users.map(async (cust, g) => {
             const hold = await requestRaw('POST', `/booking/showtimes/${showtimeId}/tickets/hold`, {
@@ -227,7 +227,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
         })
     )
 
-    // 모든 유저가 동시에 PURCHASES_PER_GROUP 개의 purchase 를 발사한다.
+    // 모든 유저가 동시에 PURCHASES_PER_GROUP 개의 purchase를 발사합니다.
     const attempts = []
     for (let g = 0; g < USER_GROUPS; g++) {
         const cust = users[g]

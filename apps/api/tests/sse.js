@@ -1,16 +1,16 @@
 // 강한 부하 위에서 SSE 이벤트가 복제본을 넘어 모든 구독자에게 전달되는지
-// 검증하는 부하 테스트다.
+// 검증하는 부하 테스트입니다.
 //
-// 한 회차는 이렇게 돈다. 복제본들에 SSE 연결을 여러 개 연다. 그 다음
-// 시작 시각이 서로 어긋난 saga 생성 요청 여러 건을 동시에 발사한다. 모든
-// SSE 클라이언트가 모든 saga 의 succeeded 이벤트를 받아야 통과다. 받아야
-// 할 총 이벤트 수는 클라이언트 수와 saga 수의 곱이다.
+// 한 회차는 이렇게 진행됩니다. 복제본들에 SSE 연결을 여러 개 엽니다. 그 다음
+// 시작 시각이 서로 어긋난 saga 생성 요청 여러 건을 동시에 발사합니다. 모든
+// SSE 클라이언트가 모든 saga의 succeeded 이벤트를 받아야 통과입니다. 받아야
+// 할 총 이벤트 수는 클라이언트 수와 saga 수의 곱입니다.
 //
-// 한 회차는 NATS 메시지를 수천 개씩 만든다. 각 saga 의 상태 변화
-// (Waiting → Processing → Succeeded) 를 복제본마다 발행하고, 모든 구독자가
-// 자기 안의 Subject 로 흘려보내기 때문이다.
+// 한 회차는 NATS 메시지를 수천 개씩 만듭니다. 각 saga의 상태 변화
+// (Waiting → Processing → Succeeded)를 복제본마다 발행하고, 모든 구독자가
+// 각 복제본 내부 Subject로 전달하기 때문입니다.
 //
-// 다음 중 하나라도 해당하면 실패로 본다. 어떤 클라이언트가 어떤 saga 의
+// 다음 중 하나라도 해당하면 실패로 봅니다. 어떤 클라이언트가 어떤 saga의
 // succeeded 이벤트를 놓치거나, SSE 클라이언트들이 한 복제본에만 연결되어
 // 있어 복제본 사이 전달이 검증되지 않는 경우.
 
@@ -156,7 +156,7 @@ async function setupFixture() {
 }
 
 async function runInner(movieId, theaterId, iteration, baseOffsetMs) {
-    // iter 마다 새 SSE 클라이언트 batch 를 연다.
+    // iter마다 새 SSE 클라이언트 batch를 엽니다.
     const clients = Array.from({ length: SSE_CLIENT_COUNT }, (_, i) => openSseClient(i))
     await Promise.all(clients.map((c) => c.connected))
 
@@ -168,8 +168,8 @@ async function runInner(movieId, theaterId, iteration, baseOffsetMs) {
         )
     }
 
-    // SAGAS_PER_INNER 개의 saga 를 동시에 발사. validator 가 거부하지 않도록
-    // 각각 서로 겹치지 않는 startTime 을 사용한다.
+    // SAGAS_PER_INNER 개의 saga를 동시에 발사. validator가 거부하지 않도록
+    // 각각 서로 겹치지 않는 startTime을 사용합니다.
     const sagaSpacingMs = 3 * 60 * 60 * 1000 // 3h
     const sagaPromises = Array.from({ length: SAGAS_PER_INNER }, (_, i) => {
         const startTime = new Date(
@@ -191,7 +191,7 @@ async function runInner(movieId, theaterId, iteration, baseOffsetMs) {
         return r.body.sagaId
     })
 
-    // 모든 클라이언트가 모든 saga 의 succeeded 이벤트를 받아야 한다.
+    // 모든 클라이언트가 모든 saga의 succeeded 이벤트를 받아야 합니다.
     const ok = await waitUntil(
         () =>
             clients.every((c) =>
@@ -234,8 +234,8 @@ async function main() {
 
     const { movieId, theaterId } = await setupFixture()
 
-    // 각 inner iter 는 baseOffset 부터 SAGAS_PER_INNER × 3h 의 timeline 을 사용한다.
-    // iter 사이 간격을 충분히 둬서 서로 충돌하지 않도록 한다.
+    // 각 inner iter는 baseOffset부터 SAGAS_PER_INNER × 3h의 timeline을 사용합니다.
+    // iter 사이 간격을 충분히 설정해 서로 충돌하지 않도록 합니다.
     const iterSpacingMs = SAGAS_PER_INNER * 3 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000
 
     for (let i = 1; i <= INNER_ITERATIONS; i++) {

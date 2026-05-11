@@ -4,9 +4,8 @@ services:
         image: ${MINIO_IMAGE}
         deploy: { resources: { limits: { memory: 256m } } }
         shm_size: '8m'
-        # 9000(S3 API) 은 같은 네트워크 안에서 service 이름으로 닿으므로
-        # 호스트로 노출하지 않는다. 9001(웹 콘솔) 만 호스트 브라우저에서
-        # 열어 볼 수 있게 노출한다.
+        # 앱과 테스트는 compose 네트워크 안에서 S3 API(9000)에 접근합니다.
+        # 호스트에는 브라우저로 확인할 웹 콘솔(9001)만 노출합니다.
         ports: ['9001:9001']
         environment:
             MINIO_ROOT_USER: ${S3_ACCESS_KEY}

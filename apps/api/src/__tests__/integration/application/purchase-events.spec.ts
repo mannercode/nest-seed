@@ -18,9 +18,9 @@ describe('PurchaseEvents 구독자', () => {
         const { PurchaseEvents } = await import('application')
         fix = await createAppTestContext()
         events = fix.module.get(PurchaseEvents)
-        // `resetModules: true` 환경에서는 spy 대상이 되는 Logger 가
-        // 구독자가 쓰는 Logger 와 같은 realm 이어야 한다. 그래서 정적
-        // import 가 아닌 동적 import 로 같은 모듈 그래프에서 가져온다.
+        // `resetModules: true` 환경에서는 spy 대상이 되는 Logger가
+        // 구독자가 쓰는 Logger와 같은 realm이어야 합니다. 그래서 정적
+        // import가 아닌 동적 import로 같은 모듈 그래프에서 가져옵니다.
         const { Logger } = await import('@nestjs/common')
         logSpy = jest.spyOn(Logger.prototype, 'log')
     })
@@ -53,8 +53,8 @@ describe('PurchaseEvents 구독자', () => {
 
         await waitFor(() => countLogCalls(logSpy, CANCELED_LOG) > 0)
 
-        // notification 쪽은 대기 시간이 끝날 때까지 한 번도 호출되지
-        // 않아야 한다.
+        // notification 구독자는 대기 시간이 끝날 때까지 한 번도 호출되지
+        // 않아야 합니다.
         await new Promise((r) => setTimeout(r, 100))
         expect(countLogCalls(logSpy, CANCELED_LOG)).toBe(1)
         expect(countLogCalls(logSpy, NOTIFICATION_LOG)).toBe(0)

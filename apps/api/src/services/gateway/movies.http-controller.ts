@@ -19,10 +19,10 @@ import { CreateAssetDto } from 'infrastructure'
 import { UserOptionalJwtAuthGuard } from './guards'
 import { UserOptionalAuthRequest } from './types'
 
-// 인가: 이 컨트롤러는 인가 검사를 일부러 비워 둔다. 도메인마다 필요한 정책이
-// 다르기 때문이다. 포크해서 쓸 때는 `@UseGuards(UserJwtAuthGuard)` 같은
-// 가드와 admin/owner 검사를 직접 붙인다. 자세한 안내는 README "5. 인가"
-// 절에 있다.
+// 인가: 이 컨트롤러는 인가 검사를 일부러 비워 둡니다. 도메인마다 필요한 정책이
+// 다르기 때문입니다. 포크해서 쓸 때는 `@UseGuards(UserJwtAuthGuard)` 같은
+// 가드와 admin/owner 검사를 직접 붙입니다. 자세한 안내는 README "5. 인가"
+// 절에 있습니다.
 @Controller('movies')
 export class MoviesHttpController {
     constructor(

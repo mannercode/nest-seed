@@ -70,10 +70,10 @@ async function dropMatchingBuckets(s3Client, pattern) {
 }
 
 /**
- * 워커별 테스트 lifecycle. 각 소비자 (apps/api, libs/common) 가 connection
- * builder 를 공급하므로 env 네이밍/connection 스타일 차이는 호출부에
- * 남기고 lifecycle (connect → ensure → cleanup → close) 만 공유한다.
- * jest.setup.js 에서 바로 호출 가능.
+ * 각 Jest 워커가 Mongo, S3 fixture를 준비하고 정리하는 공통 흐름입니다.
+ * 워크스페이스마다 환경 변수 이름과 연결 방식이 다르므로, 연결 생성 함수는
+ * 호출부가 넘기고 이 helper는 순서(connect → ensure → cleanup → close)만
+ * 책임집니다.
  */
 function setupJestLifecycle({
     connectMongo, // (workerId) => Promise<{ client, dbName }>
@@ -121,10 +121,10 @@ function setupJestLifecycle({
 }
 
 /**
- * 워커별 잔여 cleanup. 전체 jest worker pool 이 종료된 뒤 한 번 실행된다.
- * 각 소비자가 connection factory (mongo / s3 / redis) 를 공급하고, `extra`
- * 는 특정 소비자에 한정된 추가 cleanup (예: libs/common 의 in-process
- * Temporal 서버 종료) 용. jest.teardown.js 에서 export 할 함수를 반환한다.
+ * 전체 Jest worker pool이 종료된 뒤 한 번 실행되는 공통 정리 함수입니다.
+ * 각 워크스페이스가 Mongo/S3/Redis 연결 생성 함수를 넘기고, `extra`에는
+ * 해당 워크스페이스에만 필요한 정리 작업(예: in-process Temporal 서버 종료)을
+ * 넣습니다.
  */
 function createGlobalTeardown({
     connectMongo, // () => Promise<MongoClient>
@@ -164,7 +164,7 @@ async function cleanupS3Matching(createS3Client) {
 async function cleanupRedisAll(connectRedis) {
     const redis = connectRedis()
     try {
-        // ioredis Cluster 는 nodes(role) 을 노출하지만, single connection 은 그렇지 않다.
+        // ioredis Cluster와 단일 연결은 flush 방법이 달라 런타임에 구분합니다.
         if (typeof redis.nodes === 'function') {
             const masters = redis.nodes('master')
             await Promise.all(masters.map((node) => node.flushall()))

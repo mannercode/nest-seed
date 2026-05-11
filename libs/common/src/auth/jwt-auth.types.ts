@@ -8,9 +8,9 @@ export type AuthConfig = {
 }
 
 /**
- * 보안 이벤트와 함께 흘려보내는 부가 정보다. audit 로그, SIEM, 알림 같은
- * 후속 소비자가 어떤 요청에서 일어난 일인지 추적할 수 있게 해 준다.
- * `JwtAuthService` 는 이 값을 들여다보지 않고 그대로 전달만 한다.
+ * 보안 이벤트와 함께 전달하는 부가 정보입니다. audit 로그, SIEM, 알림 같은
+ * 후속 소비자가 어떤 요청에서 일어난 일인지 추적할 수 있게 합니다.
+ * `JwtAuthService`는 이 값을 들여다보지 않고 그대로 전달만 합니다.
  */
 export type EventContext = { ip?: string; userAgent?: string; source?: string }
 
@@ -57,7 +57,7 @@ export type JwtAuthFactoryOptions = {
     onEvent?: OnSecurityEvent
     /**
      * 사용자 단위 무효화 인덱스를 만들 때 어떤 클레임으로 사용자를 식별할지
-     * 지정한다. 기본값은 `'sub'` 다 (RFC 7519 의 표준 클레임).
+     * 지정합니다. 기본값은 `'sub'` 다 (RFC 7519 의 표준 클레임).
      */
     userIdField?: string
 }

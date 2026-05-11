@@ -285,7 +285,7 @@ describe('Crud Delete', () => {
 
             it('insertOne은 변환되지 않고 그대로 삽입된다', async () => {
                 // bulkWrite의 insertOne은 soft-delete 미들웨어 변환 대상이 아니라
-                // 정상적으로 새 문서를 추가한다.
+                // 정상적으로 새 문서를 추가합니다.
                 await fix.model.bulkWrite([{ insertOne: { document: { name: 'inserted' } } }])
 
                 const inserted = await fix.model.findOne({ name: 'inserted' })
@@ -295,7 +295,7 @@ describe('Crud Delete', () => {
         })
 
         // unique 인덱스는 collection 전체(삭제 포함)에 적용되는 알려진 한계.
-        // 회피하려면 애플리케이션이 partial index를 써야 한다.
+        // 회피하려면 애플리케이션이 partial index를 써야 합니다.
         it('unique index는 삭제된 문서에도 여전히 적용된다', async () => {
             await fix.model.collection.createIndex({ name: 1 }, { unique: true })
             await fix.model.deleteOne({ _id: createdDoc._id })

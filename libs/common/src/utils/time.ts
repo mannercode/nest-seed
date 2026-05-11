@@ -1,11 +1,7 @@
 export class TimeUtil {
     /**
-     * 밀리초 값을 시간 형식 문자열로 변환합니다.
-     * 반환되는 문자열은 d(일), h(시간), m(분), s(초), ms(밀리초) 단위로 구성되며,
-     * 음수의 경우 "-" 기호가 접두사로 붙습니다.
-     *
-     * @param {number} milliseconds 변환할 millisecond 값.
-     * @returns {string} 주어진 millisecond 를 표현한 time 형식 문자열.
+     * 밀리초 값을 `1d2h3m4s5ms`처럼 큰 단위부터 이어 붙인 문자열로 변환합니다.
+     * 0은 `0ms`, 음수는 전체 결과 앞에 `-`를 붙여 표현합니다.
      */
     static fromMs(milliseconds: number): string {
         if (milliseconds === 0) {
@@ -35,13 +31,8 @@ export class TimeUtil {
     }
 
     /**
-     * 시간 형식 문자열을 밀리초로 변환합니다.
-     * 입력 문자열은 숫자와 단위(ms, s, m, h, d)를 조합한 형식이어야 하며,
-     * 여러 단위를 공백없이 또는 공백으로 구분하여 사용할 수 있습니다.
-     *
-     * @param {string} timeExpression 변환할 time 형식 문자열 (예: "1d 2h", "30m", "500ms").
-     * @returns {number} 주어진 time 문자열의 millisecond 값.
-     * @throws {Exception} 문자열 형식이 invalid 하면 exception 을 throw 한다.
+     * `1d 2h`, `30m`, `500ms` 같은 시간 표현식을 밀리초로 변환합니다. 단위는
+     * `ms`, `s`, `m`, `h`, `d`만 허용하며, 형식이 맞지 않으면 예외를 던집니다.
      */
     static toMs(timeExpression: string): number {
         const timeUnitMap: { [key: string]: number } = {

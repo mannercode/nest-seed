@@ -18,12 +18,12 @@ trap on_failure ERR
 
 start_ts=$(date +%s)
 
-# 부하 테스트를 길게 돌리면 Temporal 의 PostgreSQL 과 MongoDB 가 계속
+# 부하 테스트를 길게 돌리면 Temporal의 PostgreSQL과 MongoDB가 계속
 # 부풀어 오른다. 그래서 `RESET_EVERY` 회차마다 한 번씩 인프라
-# (mongo, redis, temporal 등) 를 reset 한다. 이걸 빼면 끝난 Temporal
+# (Mongo, Redis, temporal 등) 를 reset 합니다. 이걸 빼면 끝난 Temporal
 # 워크플로우 기록이 수백 회차 동안 쌓여 결국 transfer-queue-processor
 # 가 멈춰 버린다. reset 한 번은 약 30 초가 걸리고, 열 회차마다 한 번이면
-# 전체 부하의 5% 안쪽에서 끝난다.
+# 전체 부하의 5% 안쪽에서 끝납니다.
 RESET_EVERY="${RESET_EVERY:-10}"
 RESET_SCRIPT="$(cd "$(dirname "$0")/../../.devcontainer/infra" && pwd)/reset.sh"
 

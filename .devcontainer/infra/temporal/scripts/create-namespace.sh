@@ -1,7 +1,7 @@
 #!/bin/sh
-# Temporal 서버가 뜬 뒤 default namespace 를 만든다. auto-setup 이미지는
-# 이 작업을 자동으로 해 줬지만, 서버 전용 이미지는 그렇지 않아 admin-tools
-# 로 한 번 만든다. 한 번만 돌면 되는 one-shot 서비스다.
+# `temporalio/server` 이미지는 namespace를 자동 생성하지 않습니다. 서버가
+# 준비된 뒤 admin-tools에서 default namespace를 한 번 등록해, 이후 워커와
+# 클라이언트가 같은 namespace로 연결되도록 합니다.
 set -eu
 
 NAMESPACE=${DEFAULT_NAMESPACE:-default}

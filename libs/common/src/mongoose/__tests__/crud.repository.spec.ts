@@ -73,7 +73,7 @@ describe('CrudRepository', () => {
                 Object.assign(fix.repository.newDocument(), { name: 'doc-2' })
             ]
 
-            // bulkSave가 1건만 처리한 것처럼 보이도록 위조한다.
+            // bulkSave가 1건만 처리한 것처럼 보이도록 위조합니다.
             jest.spyOn(fix.model, 'bulkSave').mockResolvedValueOnce({
                 deletedCount: 0,
                 insertedCount: 1,
@@ -183,9 +183,9 @@ describe('CrudRepository', () => {
 
             const { items, total } = await fix.repository.findWithPagination({ pagination: {} })
 
-            // total은 estimatedDocumentCount로 모든 row(삭제 포함)를 센다.
+            // total은 estimatedDocumentCount로 모든 row(삭제 포함)를 셉니다.
             expect(total).toBeGreaterThanOrEqual(samples.length + 1)
-            // items에는 삭제된 문서가 안 들어간다.
+            // items에는 삭제된 문서가 안 들어갑니다.
             expect(toDtos(items).find((d) => d.name === 'soft-deleted')).toBeUndefined()
         })
 

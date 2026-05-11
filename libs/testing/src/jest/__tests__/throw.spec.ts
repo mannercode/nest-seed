@@ -14,7 +14,7 @@ describe('예외 처리', () => {
             await expect(throwException()).rejects.toThrow('error')
         })
 
-        it('reject된 예외를 잡는다', async () => {
+        it('reject된 예외를 포착한다', async () => {
             const throwException = async () => {
                 throw new Error('error')
             }
@@ -42,7 +42,7 @@ describe('예외 처리', () => {
             expect(throwException).toThrow('error')
         })
 
-        it('던져진 예외를 잡는다', () => {
+        it('던져진 예외를 포착한다', () => {
             const throwException = () => {
                 throw new Error('error')
             }

@@ -15,7 +15,7 @@ export class JsonUtil {
      * JSON 형태의 객체를 재귀적으로 순회하며 날짜 문자열을 Date 객체로 변환
      *
      * @param {any} input 변환할 object 또는 값.
-     * @returns {any} 변환된 object (날짜 문자열은 Date object 가 된다).
+     * @returns {any} 변환된 object (날짜 문자열은 Date object가 된다).
      */
     static reviveDates(input: any): any {
         if (isDateString(input)) {

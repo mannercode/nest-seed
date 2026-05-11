@@ -40,9 +40,9 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
         builder.addEquals('assetId', assetId)
         const query = builder.build({})
 
-        // `createCrudSchema` 가 만들어 준 soft-delete 정적 메서드는 mongoose 의
-        // Query 객체가 아니라 `Promise<{ deletedCount }>` 를 바로 돌려준다.
-        // 그래서 `.exec()` 를 붙이지 않는다.
+        // `createCrudSchema`가 만들어 준 soft-delete 정적 메서드는 mongoose의
+        // Query 객체가 아니라 `Promise<{ deletedCount }>`를 바로 반환합니다.
+        // 그래서 `.exec()`를 붙이지 않습니다.
         await this.model.deleteOne(query)
     }
 }

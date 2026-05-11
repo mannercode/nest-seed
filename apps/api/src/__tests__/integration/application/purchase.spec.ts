@@ -99,16 +99,16 @@ describe('PurchaseService', () => {
             })
 
             describe('내부 오류로 completePurchase가 실패할 때', () => {
-                // `completePurchase` 가 처음 찍는 로그를 트리거로 잡아 그
-                // 안에서 예외를 던진다. 그러면 `PurchaseService` 의 catch
-                // 블록이 돌면서 결제 취소, 구매 기록 삭제, 티켓 롤백이
-                // 함께 실행된다. 특정 메서드 호출을 직접 가로채는 대신
-                // 관측 가능한 로그를 트리거로 잡아, 테스트가 구현 세부에
-                // 묶이지 않게 한다.
+                // `completePurchase`가 처음 기록하는 로그를 트리거로 사용해 그
+                // 안에서 예외를 던집니다. 그러면 `PurchaseService`의 catch
+                // 블록이 실행되면서 결제 취소, 구매 기록 삭제, 티켓 롤백이
+                // 함께 실행됩니다. 특정 메서드 호출을 직접 가로채는 대신
+                // 관측 가능한 로그를 트리거로 사용해, 테스트가 구현 세부에
+                // 묶이지 않게 합니다.
                 beforeEach(async () => {
-                    // `resetModules: true` 환경에서는 spy 대상 Logger 가 운영
-                    // 코드가 쓰는 Logger 와 같은 realm 이어야 한다. 그래서
-                    // 동적 import 로 같은 모듈 그래프에서 가져온다.
+                    // `resetModules: true` 환경에서는 spy 대상 Logger가 운영
+                    // 코드가 쓰는 Logger와 같은 realm이어야 합니다. 그래서
+                    // 동적 import로 같은 모듈 그래프에서 가져옵니다.
                     const { Logger } = await import('@nestjs/common')
                     jest.spyOn(Logger.prototype, 'log').mockImplementation(((message: any) => {
                         if (message === 'completePurchase') {

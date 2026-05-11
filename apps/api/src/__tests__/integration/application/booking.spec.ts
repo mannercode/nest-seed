@@ -143,9 +143,9 @@ describe('BookingService', () => {
     })
 
     describe('GET /booking/movies/:movieId/theaters/:theaterId/showdates/:showdate/showtimes', () => {
-        // `parseShowdate` 는 두 가지 이유로 거절할 수 있다. 형식이 다르거나,
-        // 형식은 맞아도 달력에 없는 날짜이거나. 두 분기 모두 400 으로
-        // 떨어지는지 확인한다.
+        // `parseShowdate`는 두 가지 이유로 거절할 수 있습니다. 형식이 다르거나,
+        // 형식은 맞아도 달력에 없는 날짜이거나. 두 분기 모두 400으로
+        // 떨어지는지 확인합니다.
         const movieId = nullObjectId
         const theaterId = nullObjectId
 
@@ -160,9 +160,9 @@ describe('BookingService', () => {
         })
 
         it('형식은 맞지만 실제 달력에 없는 날짜이면 400을 반환한다', async () => {
-            // 20240230 은 2월 30일이라 달력에 없다. `Date.UTC` 는 이 값을
+            // 20240230은 2월 30일이라 달력에 없습니다. `Date.UTC`는 이 값을
             // 조용히 다음 달로 넘기기 때문에, 컨트롤러의 round-trip 비교에서
-            // 잡혀 거절된다.
+            // 확인되어 거절됩니다.
             await fix.httpClient
                 .get(
                     `/booking/movies/${movieId}/theaters/${theaterId}/showdates/20240230/showtimes`

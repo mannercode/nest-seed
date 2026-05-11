@@ -35,15 +35,14 @@ module.exports = async function globalSetup() {
     process.env.TESTLIB_S3_ENDPOINT = `http://${minio.getHost()}:${minio.getMappedPort(9000)}`
     process.env.TESTLIB_S3_ACCESS_KEY = 'admin'
     process.env.TESTLIB_S3_SECRET_KEY = 'password'
-    // `NatsContainer` 는 기본으로 사용자/비밀번호 인증을 강제한다. 이 값을
-    // 받는 쪽이 그 사실을 따로 챙기지 않도록, 연결 옵션 전체를 그대로
-    // 넘긴다.
+    // `NatsContainer`는 기본으로 사용자/비밀번호 인증을 켭니다. 테스트 코드가
+    // 인증 방식까지 알 필요 없도록 컨테이너가 제공한 연결 옵션 전체를 전달합니다.
     process.env.TESTLIB_NATS_OPTIONS = JSON.stringify(nats.getConnectionOptions())
     process.env.TESTLIB_TEMPORAL_ADDRESS = temporalEnv.address
     process.env.TESTLIB_TEMPORAL_NAMESPACE = temporalEnv.namespace ?? 'default'
 
-    // jest 의 `globalSetup` 과 `globalTeardown` 은 같은 프로세스에서 돈다.
-    // 그래서 띄운 인스턴스를 `globalThis` 에 두고 teardown 에서 다시 꺼내
-    // 닫는다.
+    // Jest의 `globalSetup`과 `globalTeardown`은 같은 프로세스에서 실행됩니다.
+    // Temporal 테스트 환경은 자식 프로세스를 포함하므로, 인스턴스를 보관했다가
+    // teardown에서 명시적으로 닫아야 Jest가 정상 종료됩니다.
     globalThis.__TEMPORAL_TEST_ENV__ = temporalEnv
 }

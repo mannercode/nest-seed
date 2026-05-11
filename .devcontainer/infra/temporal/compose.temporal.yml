@@ -13,16 +13,17 @@ services:
         deploy: { resources: { limits: { memory: 2g } } }
         shm_size: '256m'
 
-    # `temporal` / `temporal_visibility` 두 DB 의 스키마를 만든다. `create`
-    # 실패는 무시하고 `update` 만 마저 돌려 재실행에도 안전.
+    # server 전용 이미지는 DB 스키마를 만들지 않습니다. admin-tools에서
+    # `temporal`과 `temporal_visibility` 스키마를 적용하고, 이미 생성된 DB에서도
+    # versioned schema update는 계속 실행되게 둡니다.
     temporal-setup:
         extends: { file: ../compose.common.yml, service: common-options }
         image: $TEMPORAL_ADMIN_TOOLS_IMAGE
         depends_on:
             temporal-postgresql: { condition: service_healthy }
         environment:
-            # SQL_PASSWORD 는 temporal-sql-tool, POSTGRES_PWD 는 다른 도구가
-            # 읽는다. 둘 다 같은 값이어야 통과.
+            # temporal-sql-tool은 SQL_PASSWORD를, 일부 Temporal 도구는 POSTGRES_PWD를
+            # 읽습니다. 두 변수에 같은 값을 넣어 도구별 환경 변수 차이를 흡수합니다.
             DB: postgres12
             DB_PORT: '5432'
             POSTGRES_USER: temporal
@@ -53,13 +54,14 @@ services:
             test: ['CMD-SHELL', 'nc -z localhost 7233']
             interval: 5s
             start_period: 30s
-        # 한도 1g 에서 transfer-queue / timer-queue 가 "context deadline
-        # exceeded" 로 깨지는 것을 보고 3g 로 올렸다.
+        # 1GB 제한에서는 devcontainer 부팅 직후 transfer-queue와 timer-queue가
+        # "context deadline exceeded"로 초기화에 실패했습니다. 테스트 환경의
+        # 안정성을 위해 서버 컨테이너에 3GB를 배정합니다.
         deploy: { resources: { limits: { memory: 3g } } }
         shm_size: '16m'
 
-    # auto-setup 이미지는 default namespace 를 만들어 줬지만 server 전용
-    # 이미지는 그렇지 않다. admin-tools 로 한 번 만든다 (이미 있으면 통과).
+    # server 전용 이미지는 default namespace를 생성하지 않습니다. 서버가 healthy가
+    # 된 뒤 admin-tools에서 namespace를 보장합니다.
     temporal-create-namespace:
         extends: { file: ../compose.common.yml, service: common-options }
         image: $TEMPORAL_ADMIN_TOOLS_IMAGE

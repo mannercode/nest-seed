@@ -25,8 +25,8 @@ export class MovieRecommender {
                 releaseDate: movie.releaseDate.getTime()
             }))
 
-        // 관람 이력이 없으면 장르 점수가 모두 0 이라서 정렬에 쓸 만한 신호가
-        // 없다. 그래서 이력이 없을 때는 최신 개봉일 순으로만 정렬한다.
+        // 관람 이력이 없으면 장르 점수가 모두 0이라서 정렬에 쓸 만한 신호가
+        // 없습니다. 그래서 이력이 없을 때는 최신 개봉일 순으로만 정렬합니다.
         const sortedMovies =
             watchedMovies.length === 0
                 ? orderBy(scoredMovies, ['releaseDate'], ['desc'])

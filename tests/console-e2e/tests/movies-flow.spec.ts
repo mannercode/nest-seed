@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test'
 
 /**
  * 가입 → 로그인 → 영화 등록 → 목록 노출까지 한 번에 통과하는 스모크
- * 테스트. 매 실행마다 이메일을 새로 만들어, DB 에 이전 데이터가 남아
- * 있어도 영향을 받지 않게 한다.
+ * 테스트. 매 실행마다 이메일을 새로 만들어, DB에 이전 데이터가 남아
+ * 있어도 영향을 받지 않게 합니다.
  */
 test('signup → login → create movie → list shows it', async ({ page }) => {
     const stamp = Date.now()

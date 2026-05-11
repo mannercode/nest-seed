@@ -39,8 +39,8 @@ export class HttpUtil {
     static extractContentDisposition(cd: string): string {
         const params = ContentDispositionParser.parse(cd)
 
-        // RFC 5987 의 `filename*=UTF-8''...` 형식을 먼저 본다. 비-ASCII 를
-        // 안전하게 표현하므로 우선 처리한다.
+        // RFC 5987 의 `filename*=UTF-8''...` 형식을 먼저 봅니다. 비-ASCII를
+        // 안전하게 표현하므로 우선 처리합니다.
         const starValue = params.get('filename*')
 
         if (starValue) {
@@ -58,7 +58,7 @@ export class HttpUtil {
         }
 
         // 위 형식이 없거나 디코딩이 실패하면 평범한 `filename=...` 값을
-        // 마지막 수단으로 쓴다.
+        // 마지막 수단으로 사용합니다.
         const filename = params.get('filename')
 
         if (filename) return filename

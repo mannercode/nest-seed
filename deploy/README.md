@@ -1,8 +1,8 @@
 # 앱 배포
 
-Docker Compose로 앱을 여러 컨테이너에 나누어 배포합니다. Node.js는 싱글 스레드로 동작하므로 API 컨테이너를 여러 개 띄우고, Nginx 로드밸런서로 요청을 나눕니다. 이렇게 여러 CPU 코어를 활용합니다.
+Docker Compose로 앱을 여러 컨테이너에 나누어 배포합니다. Node.js는 싱글 스레드로 동작하므로 API 컨테이너를 여러 개 시작하고, Nginx 로드밸런서로 요청을 나눕니다. 이렇게 여러 CPU 코어를 활용합니다.
 
-MongoDB, Redis 같은 인프라는 이미 떠 있다고 가정합니다.
+MongoDB, Redis 같은 인프라는 이미 실행 중이라고 가정합니다.
 
 ## 구성
 
@@ -15,7 +15,7 @@ MongoDB, Redis 같은 인프라는 이미 떠 있다고 가정합니다.
 인프라 설정 외에 함께 볼 만한 리소스는 다음과 같습니다.
 
 - [../apps/api/api-docs/](../apps/api/api-docs/) — curl 기반 실행 가능한 API 문서. `test.sh`가 호출합니다.
-- [../apps/api/tests/](../apps/api/tests/) — API 컨테이너 4개로 돌리는 분산 레이스 시나리오. [testing.md](../docs/testing.md#5-분산-테스트-cross-replica-race)에서 자세히 설명합니다.
+- [../apps/api/tests/](../apps/api/tests/) — API 컨테이너 4개로 실행하는 분산 레이스 시나리오. [testing.md](../docs/testing.md#5-분산-테스트-cross-replica-race)에서 자세히 설명합니다.
 
 ## 주요 설정
 

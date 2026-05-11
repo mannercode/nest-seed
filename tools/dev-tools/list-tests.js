@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 /**
- * Jest spec 파일에서 describe/it 트리를 추출해 출력한다.
- * 테스트 작성 현황 / 구조 파악용. TypeScript compiler API 로 AST 를 읽으므로
- * 다중 라인 string, template literal, it.each 등도 안전하게 다룬다.
+ * Jest spec 파일에서 describe/it 트리를 추출해 출력합니다.
+ * 테스트 작성 현황 / 구조 파악용. TypeScript compiler API로 AST를 읽으므로
+ * 다중 라인 string, template literal, it.each 등도 안전하게 다룹니다.
  *
  *   node tools/dev-tools/list-tests.js                       # 기본: libs/ 트리
  *   node tools/dev-tools/list-tests.js apps/api              # 다른 경로
- *   node tools/dev-tools/list-tests.js --md > tests.md       # markdown 으로 출력
+ *   node tools/dev-tools/list-tests.js --md > tests.md       # markdown으로 출력
  *   node tools/dev-tools/list-tests.js --html > tests.html   # 브라우저용 (펼치기/접기/검색)
- *   node tools/dev-tools/list-tests.js --todos-only          # it.todo 만
- *   node tools/dev-tools/list-tests.js --no-todos            # 구현된 it 만
+ *   node tools/dev-tools/list-tests.js --todos-only          # it.todo만
+ *   node tools/dev-tools/list-tests.js --no-todos            # 구현된 it만
  *   node tools/dev-tools/list-tests.js --json                # 기계 읽기 용
  */
 const fs = require('fs')
@@ -56,7 +56,7 @@ function findSpecFiles(dirs) {
     return specs.sort()
 }
 
-// jest 전역의 describe / it / test 와 그 변형 (each / todo / skip / only)
+// Jest 전역의 describe / it / test와 그 변형 (each / todo / skip / only)
 function classifyCallExpression(node, sourceFile) {
     const callee = node.expression
 
@@ -76,7 +76,7 @@ function classifyCallExpression(node, sourceFile) {
         const base =
             obj.text === 'describe' ? 'describe' : obj.text === 'it' || obj.text === 'test' ? 'it' : null
         if (!base) return null
-        if (prop === 'todo') return 'it.todo' // describe.todo 는 jest 에 없음
+        if (prop === 'todo') return 'it.todo' // describe.todo는 Jest에 없음
         if (prop === 'each' || prop === 'concurrent' || prop === 'skip' || prop === 'only') return base
         return null
     }

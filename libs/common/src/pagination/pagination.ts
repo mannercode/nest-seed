@@ -27,9 +27,9 @@ export class OrderBy {
 
 export class PaginationDto {
     /**
-     * `orderby` 가 들어오는 형태는 두 가지다. HTTP 컨트롤러는 `"name:asc"`
+     * `orderby`가 들어오는 형태는 두 가지입니다. HTTP 컨트롤러는 `"name:asc"`
      * 같은 문자열로 받고, RPC 컨트롤러는 `{ name, direction }` 객체로
-     * 받는다. 두 입력을 모두 받아 같은 형태로 변환한다.
+     * 받습니다. 두 입력을 모두 받아 같은 형태로 변환합니다.
      */
     @IsOptional()
     @Transform(({ value }) => {

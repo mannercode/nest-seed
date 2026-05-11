@@ -10,9 +10,8 @@ export type ValidateAndCreateResult =
 
 export const SHOWTIME_CREATION_WORKFLOW = 'showtimeCreationWorkflow'
 
-// Task queue 이름 앞에 `PROJECT_ID` 를 붙여 namespace 를 나눈다. 그래서
-// 병렬 테스트 워커들이 서로의 워크플로우를 끌고 가지 않는다. 운영에서는
-// `PROJECT_ID` 가 고정이라 queue 이름도 그대로 유지된다.
+// Task queue 이름에 `PROJECT_ID`를 포함해 병렬 테스트 워커의 workflow 실행 공간을
+// 분리합니다. 운영에서는 `PROJECT_ID`가 고정되어 queue 이름도 안정적으로 유지됩니다.
 export function getShowtimeCreationTaskQueue() {
     return `showtime-creation-${getProjectId()}`
 }

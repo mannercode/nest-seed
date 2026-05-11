@@ -228,12 +228,12 @@ describe('isEqual', () => {
     })
 
     it('두 Date는 시각이 달라도 같다고 판정된다 (얕은 비교 한계)', () => {
-        // Date는 own enumerable 키가 없으므로 둘 다 Object.keys = []. 같다고 판정된다.
+        // Date는 own enumerable 키가 없으므로 둘 다 Object.keys = []. 같다고 판정됩니다.
         expect(isEqual(new Date(0), new Date(1))).toBe(true)
     })
 
     it('두 Map은 내용이 달라도 같다고 판정된다 (얕은 비교 한계)', () => {
-        // Map도 own enumerable 키가 없어 같다고 판정된다.
+        // Map도 own enumerable 키가 없어 같다고 판정됩니다.
         expect(isEqual(new Map([['a', 1]]), new Map([['b', 2]]))).toBe(true)
     })
 })

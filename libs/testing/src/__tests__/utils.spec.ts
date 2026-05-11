@@ -91,7 +91,7 @@ describe('oid', () => {
 describe('isDebuggingEnabled', () => {
     it('디버거가 연결되지 않았으면 false를 반환한다', async () => {
         const { isDebuggingEnabled } = await import('../utils')
-        // CI/일반 실행에서는 디버거가 없다.
+        // CI/일반 실행에서는 디버거가 없습니다.
         expect(typeof isDebuggingEnabled()).toBe('boolean')
     })
 })

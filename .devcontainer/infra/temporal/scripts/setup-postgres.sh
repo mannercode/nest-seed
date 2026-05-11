@@ -1,8 +1,8 @@
 #!/bin/sh
-# temporalio/admin-tools 컨테이너 안에서 돈다. `temporal` 과
-# `temporal_visibility` 두 DB 의 스키마를 만든다. 첫 부팅에 한 번만 의미가
-# 있고, 다시 돌리면 `create` 단계가 실패하지만 그대로 통과시키므로 다시
-# 돌려도 안전하다. 한 번만 도는 one-shot 서비스다.
+# `temporalio/server` 이미지는 PostgreSQL 스키마를 준비하지 않습니다. 첫 부팅 때
+# admin-tools에서 `temporal`과 `temporal_visibility` 스키마를 적용합니다.
+# `create` 단계는 이미 존재하는 DB에서 실패할 수 있으므로 무시하고, versioned
+# schema update는 매번 실행해 필요한 migration을 반영합니다.
 set -eu
 
 : "${POSTGRES_SEEDS:?ERROR: POSTGRES_SEEDS environment variable is required}"

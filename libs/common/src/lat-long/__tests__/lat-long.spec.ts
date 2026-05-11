@@ -103,7 +103,7 @@ describe('LatLong', () => {
         })
 
         it('"37."처럼 끝에 점이 붙은 좌표는 Number("37.") = 37로 파싱된다', async () => {
-            // 정규식의 \d+(?:\.\d*)? 분기가 "37."을 받아주므로 정상 파싱된다.
+            // 정규식의 \d+(?:\.\d*)? 분기가 "37."을 받아주므로 정상 파싱됩니다.
             await fix.httpClient
                 .get('/latLong')
                 .query({ location: '37.,127' })
@@ -111,7 +111,7 @@ describe('LatLong', () => {
         })
 
         it('정확히 20자(MAX_COORDINATE_LENGTH 경계)인 좌표는 길이 체크를 통과한다', async () => {
-            // 길이 체크는 통과하지만 값이 90 초과라 범위 검증에서 거부된다.
+            // 길이 체크는 통과하지만 값이 90 초과라 범위 검증에서 거부됩니다.
             const lat = '12345678901234567.89' // 20자
             await fix.httpClient
                 .get('/latLong')
@@ -120,7 +120,7 @@ describe('LatLong', () => {
         })
 
         it('지수 표기법(1.23e-5)은 형식 오류로 거부된다', async () => {
-            // 정규식이 e를 허용하지 않으므로 거부된다.
+            // 정규식이 e를 허용하지 않으므로 거부됩니다.
             await fix.httpClient
                 .get('/latLong')
                 .query({ location: '1.23e-5,127' })

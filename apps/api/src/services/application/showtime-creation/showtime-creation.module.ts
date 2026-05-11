@@ -34,11 +34,9 @@ import { getShowtimeCreationTaskQueue } from './temporal/types'
         ShowtimeBulkValidatorService,
         ShowtimeBulkCreatorService,
         ShowtimeCreationActivities,
-        // `TemporalWorkerService` 를 같은 모듈의 provider 로 둔다. 그래야 이
-        // 모듈 안의 `ShowtimeCreationActivities` 를 useFactory 에서 주입받을
-        // 수 있다. `TemporalWorkerModule.forRootAsync` 처럼 자식 모듈로 감싸
-        // 만들면, useFactory 가 자식 모듈 범위에서 돌면서 이 모듈의 provider
-        // 를 못 본다.
+        // worker provider를 이 모듈에 직접 두어 `ShowtimeCreationActivities`를
+        // 같은 provider 범위에서 주입받습니다. 별도 자식 모듈로 감싸면 factory가
+        // 이 모듈의 provider를 볼 수 없습니다.
         {
             inject: [AppConfigService, ShowtimeCreationActivities],
             provide: TemporalWorkerService,
@@ -49,9 +47,9 @@ import { getShowtimeCreationTaskQueue } from './temporal/types'
                     namespace: config.temporal.namespace,
                     taskQueue: getShowtimeCreationTaskQueue(),
                     // 운영 환경에서는 빌드 단계의 `scripts/bundle-workflows.js`
-                    // 가 만든 번들이 `dist/index.js` 옆에 놓인다. dev 와
+                    // 가 만든 번들이 `dist/index.js` 옆에 놓입니다. dev와
                     // 테스트에서는 그 파일이 없으므로, 서비스가
-                    // `workflowsPath` 를 보고 그 자리에서 번들을 만든다.
+                    // `workflowsPath`를 보고 그 자리에서 번들을 만듭니다.
                     workflowBundlePath: path.join(
                         __dirname,
                         'showtime-creation-workflow-bundle.js'

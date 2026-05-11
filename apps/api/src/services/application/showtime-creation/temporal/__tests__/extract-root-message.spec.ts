@@ -15,7 +15,7 @@ describe('extractRootMessage', () => {
     it('SuppressedError가 있으면 suppressed의 message를 우선한다', () => {
         const original = new Error('movie not found')
         const disposal = new Error('Connection is closed')
-        // ESM SuppressedError 흉내. 실제 런타임이 같은 형태의 객체를 만든다.
+        // ESM SuppressedError 흉내. 실제 런타임이 같은 형태의 객체를 만듭니다.
         const suppressed = Object.assign(new Error('An error was suppressed during disposal'), {
             error: disposal,
             suppressed: original

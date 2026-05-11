@@ -24,9 +24,9 @@ const HOLD_TICKETS_SCRIPT = `
     local userKey = KEYS[#KEYS]
 
     -- 이전 해제가 중간에 실패해 ticket 키와 user 키가 어긋난 적이 있었다면,
-    -- user 키에 이미 다른 사람 차지가 된 ticketId 가 섞여 있을 수 있다.
-    -- 그래서 소유자가 우리와 같은 키만 DEL 한다. 같지 않은 키는 그대로
-    -- 두어서, 다른 사람이 새로 잡은 hold 를 우리가 끊지 않게 한다.
+    -- user 키에 이미 다른 사람 차지가 된 ticketId가 섞여 있을 수 있습니다.
+    -- 그래서 소유자가 우리와 같은 키만 DEL 합니다. 같지 않은 키는 그대로
+    -- 두어서, 다른 사람이 새로 획득한 hold를 우리가 끊지 않게 합니다.
     local previousTicketIdsJson = redis.call('GET', userKey)
     if previousTicketIdsJson then
         local previousTicketIds = cjson.decode(previousTicketIdsJson)
@@ -77,11 +77,11 @@ export class TicketHoldingService {
     async releaseTickets(showtimeId: string, userId: string): Promise<void> {
         const tickets = await this.searchHeldTicketIds(showtimeId, userId)
 
-        // ticket 키 하나가 삭제되지 못해도 나머지 키와 user 키 정리는 끝까지
-        // 간다. 부분 실패가 영구 잠금으로 이어지지 않는 이유는 두 가지다.
-        // 첫째, hold 에 걸린 TTL 이 끝나면 남은 키가 사라진다.
-        // 둘째, 다음 `holdTickets` 가 user 키를 다시 읽어 우리 소유로 남은
-        // ticket 키를 정리해 준다.
+        // ticket 키 하나를 삭제하지 못해도 나머지 키와 user 키 정리는 계속합니다.
+        // 부분 실패가 영구 잠금으로 이어지지 않는 이유는 두 가지입니다.
+        // 첫째, hold에 걸린 TTL이 끝나면 남은 키가 사라집니다.
+        // 둘째, 다음 `holdTickets`가 user 키를 다시 읽어 같은 사용자의 잔여
+        // ticket 키를 정리합니다.
         const results = await Promise.allSettled(
             tickets.map((ticketId) => this.cacheService.delete(getTicketKey(showtimeId, ticketId)))
         )

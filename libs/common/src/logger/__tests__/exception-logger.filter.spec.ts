@@ -54,7 +54,7 @@ describe('HttpExceptionLoggerFilter', () => {
             )
         })
 
-        // redact의 본격 검증은 redact.spec.ts에 있다. 여기선 호출 여부만 확인.
+        // redact의 본격 검증은 redact.spec.ts에 있습니다. 여기선 호출 여부만 확인.
         it('요청 body에 password가 있으면 [REDACTED]로 마스킹한다', async () => {
             await fix.httpClient.post('/exception').body({ password: 'secret' }).notFound()
 
@@ -82,10 +82,10 @@ describe('HttpExceptionLoggerFilter', () => {
             })
         })
 
-        it('@Catch(Error)는 Error 인스턴스가 아닌 throw(문자열 등)는 잡지 않는다', async () => {
+        it('@Catch(Error)는 Error 인스턴스가 아닌 throw(문자열 등)는 처리하지 않는다', async () => {
             await fix.httpClient.get('/throw-string').internalServerError()
 
-            // 이 필터는 @Catch(Error)이므로 string throw에는 invoked되지 않아야 한다.
+            // 이 필터는 @Catch(Error)이므로 string throw에는 invoked되지 않아야 합니다.
             expect(fix.spyError).not.toHaveBeenCalledWith('error', expect.anything())
             expect(fix.spyWarn).not.toHaveBeenCalledWith('fail', expect.anything())
         })

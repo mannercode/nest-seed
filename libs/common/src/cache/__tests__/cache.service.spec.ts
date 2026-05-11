@@ -24,7 +24,7 @@ describe('CacheService', () => {
             const beforeExpiration = await fix.cacheService.get('key')
             expect(beforeExpiration).toEqual('value')
 
-            // TTL + 500ms 안전 마진. 짧은 TTL에서는 비례 마진(10%)이 부하 시 부족하다.
+            // TTL + 500ms 안전 마진. 짧은 TTL에서는 비례 마진(10%)이 부하가 걸릴 때 부족합니다.
             await sleep(ttl + 500)
 
             const afterExpiration = await fix.cacheService.get('key')
@@ -78,7 +78,7 @@ describe('CacheService', () => {
         })
 
         it('스크립트 실행이 실패하면 예외를 그대로 던진다', async () => {
-            // 잘못된 Lua 스크립트 → Redis가 에러를 반환한다.
+            // 잘못된 Lua 스크립트 → Redis가 에러를 반환합니다.
             await expect(
                 fix.cacheService.executeScript('this is not lua', [], [])
             ).rejects.toThrow()
@@ -151,13 +151,13 @@ describe('CacheService', () => {
                 })
             ).rejects.toThrow('rejected')
 
-            // 락이 해제되어 다음 호출이 즉시 잡을 수 있다.
+            // 락이 해제되어 다음 호출이 즉시 획득할 수 있습니다.
             const next = await fix.cacheService.withLock('job', 5_000, async () => 'ok')
             expect(next).toEqual({ ran: true, result: 'ok' })
         })
 
         it('같은 프로세스에서 잇따라 락을 얻어도 토큰이 서로 다르다', async () => {
-            // 두 번 연속 잡고 풀고 잡고 풀어, 락 키 값이 매번 새로 생성되는지 확인.
+            // 두 번 연속 획득하고 해제하는 과정을 반복해, 락 키 값이 매번 새로 생성되는지 확인.
             await fix.cacheService.withLock('job', 5_000, async () => {})
             await fix.cacheService.withLock('job', 5_000, async () => {})
 
@@ -211,7 +211,7 @@ describe('CacheService', () => {
         })
 
         it('waitMs가 경과하기 전에는 예외를 던지지 않는다', async () => {
-            // 다른 보유자가 짧게 잡고 있다가 풀리면 같은 호출이 잡아 정상 동작.
+            // 다른 보유자가 짧게 보유하다가 해제하면 같은 호출이 락을 획득해 정상 동작.
             await fix.cacheService.set('lock:job', 'other', 100)
 
             const start = Date.now()
@@ -235,7 +235,7 @@ describe('CacheService', () => {
 
     describe('복구 경로', () => {
         it('Lua 스크립트가 실패한 뒤에도 같은 인스턴스의 다음 호출이 정상 동작한다', async () => {
-            // executeScript가 한 번 실패해도 service 인스턴스는 깨지지 않는다.
+            // executeScript가 한 번 실패해도 service 인스턴스는 손상되지 않습니다.
             await expect(
                 fix.cacheService.executeScript('this is not lua', [], [])
             ).rejects.toThrow()

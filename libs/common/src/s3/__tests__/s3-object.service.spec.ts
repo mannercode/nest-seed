@@ -438,7 +438,7 @@ describe('S3ObjectService', () => {
     })
 
     it('putObject가 생성하는 키 10000개에 중복이 없다', async () => {
-        // putObject 내부에서 randomUUID로 키를 생성한다. 여기서는 키 생성기를 직접 검증.
+        // putObject 내부에서 randomUUID로 키를 생성합니다. 여기서는 키 생성기를 직접 검증.
         const { randomUUID } = await import('crypto')
         const ids = new Set<string>()
         for (let i = 0; i < 10000; i++) ids.add(randomUUID())

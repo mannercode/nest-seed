@@ -5,16 +5,14 @@ import { Observable, Subject } from 'rxjs'
 import type { ShowtimeCreationEvent } from './internal/types'
 
 /**
- * Temporal 워커와 SSE 클라이언트를 서로 다른 복제본에서도 이어 주는 다리다.
+ * Temporal 워커와 SSE 클라이언트를 복제본 경계 너머로 연결합니다.
  *
- * 워크플로우를 돌리는 워커가 SSE 응답을 다루는 컨트롤러와 다른 복제본에 있을
- * 수 있다. 상태 변화는 NATS subject 로 publish 되고, 모든 복제본이 같은
- * subject 를 구독한다. 들어온 메시지는 복제본 안의 RxJS Subject 로 다시
- * 흘려보낸다. `observeStatusChanged` 가 그 Subject 를 노출해서, 컨트롤러는
- * 그것을 받아 SSE 본문으로 변환한다.
+ * 워크플로우를 실행하는 워커와 SSE 응답을 가진 컨트롤러가 서로 다른 복제본에
+ * 있을 수 있습니다. 상태 변화는 NATS subject로 publish 하고, 각 복제본은 받은
+ * 메시지를 로컬 RxJS Subject에 전달합니다. 컨트롤러는 `observeStatusChanged`로
+ * 그 Subject를 구독해 SSE 본문을 만듭니다.
  *
- * subject 이름 앞에 `PROJECT_ID` 를 붙여 namespace 를 나눈다. 그래서 병렬
- * 테스트 워커끼리 서로의 이벤트를 보지 않는다.
+ * subject 이름 앞에 `PROJECT_ID`를 붙여 병렬 테스트 워커의 이벤트 공간을 분리합니다.
  */
 @Injectable()
 export class ShowtimeCreationEvents implements OnModuleInit, OnModuleDestroy {

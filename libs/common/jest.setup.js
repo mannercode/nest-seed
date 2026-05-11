@@ -3,9 +3,9 @@ const { S3Client } = require('@aws-sdk/client-s3')
 const { setupJestLifecycle } = require('@mannercode/jest-helpers')
 const { MongoClient } = require('mongodb')
 
-// `jest.global.js` 가 컨테이너를 띄우면서 채워 두는 환경 변수다. 여기에
-// 워커마다 다른 이름과 상수도 더 채운다. 테스트가 돌기 전에 이 목록을
-// 미리 확인해, 빠진 값이 있으면 워커 전체를 실패시킨다.
+// `jest.global.js`가 컨테이너를 시작하면서 채워 두는 환경 변수입니다. 여기에
+// 워커마다 다른 이름과 상수도 더 채웁니다. 테스트가 실행되기 전에 이 목록을
+// 미리 확인해, 빠진 값이 있으면 워커 전체를 실패시킵니다.
 const REQUIRED_TESTLIB_ENV = [
     'TESTLIB_MONGO_URI',
     'TESTLIB_REDIS_URL',
@@ -34,8 +34,8 @@ setupJestLifecycle({
         return { client, dbName }
     },
     afterMongoConnect: (client) =>
-        // TTL 인덱스를 다루는 테스트가 빨리 끝나도록 TTL 감시 주기를 1 초로
-        // 줄인다. 기본값은 60 초라 테스트 안에서 만료를 기다리기 어렵다.
+        // TTL 인덱스를 다루는 테스트가 빨리 완료되도록 TTL 감시 주기를 1초로
+        // 줄입니다. 기본값은 60초라 테스트 안에서 만료를 기다리기 어렵습니다.
         client.db('admin').command({ setParameter: 1, ttlMonitorSleepSecs: 1 }),
     createS3Client: () => {
         process.env.TESTLIB_S3_REGION = 'us-east-1'

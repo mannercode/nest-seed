@@ -1,28 +1,28 @@
-// JWT refresh 토큰 회전을 강한 동시 경합 위에서 검증하는 분산 부하 테스트다.
+// JWT refresh 토큰 회전을 강한 동시 경합 위에서 검증하는 분산 부하 테스트입니다.
 //
-// `libs/common/src/auth/jwt-auth.service.ts` 는 회전과 재사용 탐지를 함께
-// 구현한다. refresh 가 성공하면 family 레지스트리에서 쓴 토큰 ID 를 지우고
-// 새 ID 를 발급한다. 그 뒤로 레지스트리에 없는 ID 로 들어오는 refresh 는
-// family 를 통째로 무효화한다.
+// `libs/common/src/auth/jwt-auth.service.ts`는 회전과 재사용 탐지를 함께
+// 구현합니다. refresh가 성공하면 family 레지스트리에서 쓴 토큰 ID를 지우고
+// 새 ID를 발급합니다. 그 뒤로 레지스트리에 없는 ID로 들어오는 refresh는
+// family 전체를 무효화합니다.
 //
-// 안전 조건은 단순하다. 같은 토큰 하나로 동시에 들어온 refresh 들이 동시에
-// 쓸 수 있는 새 토큰을 두 개 이상 만들면 안 된다. 결과는 둘 중 하나여야
-// 한다. 한 요청만 통과하고 나머지는 401 이거나, 회전 경합이 재사용 탐지를
-// 자극해 family 가 통째로 무효화되거나.
+// 안전 조건은 단순합니다. 같은 토큰 하나로 동시에 들어온 refresh 들이 동시에
+// 쓸 수 있는 새 토큰을 두 개 이상 만들면 안 됩니다. 결과는 둘 중 하나여야
+// 합니다. 한 요청만 통과하고 나머지는 401이거나, 회전 경합이 재사용 탐지를
+// 자극해 family 전체가 무효화되거나.
 //
-// 한 회차는 이렇게 돈다. 사용자 그룹을 여러 개 만들고 각자 로그인한다. 각
+// 한 회차는 이렇게 진행됩니다. 사용자 그룹을 여러 개 만들고 각자 로그인합니다. 각
 // 사용자의 refresh 토큰 하나에 대해 동시 `/users/refresh` 요청을 복제본
-// 여러 대에 걸쳐 보낸다. 모든 그룹을 같은 시점에 발사해서 nginx 가 요청을
-// 복제본들에 흩뿌리게 만든다.
+// 여러 대에 걸쳐 보냅니다. 모든 그룹을 같은 시점에 발사해서 nginx가 요청을
+// 복제본들에 분산되게 만듭니다.
 //
-// 그룹마다 다음을 확인한다.
+// 그룹마다 다음을 확인합니다.
 //   - 200 응답이 최소 한 건 있어야 한다 (회전에 성공한 요청 하나).
-//   - 5xx 나 예상 못한 상태 코드는 한 건도 없어야 한다.
-//   - 새로 받은 토큰 가운데 다시 refresh 가 통과하는 토큰은 최대 한 건이다.
-//     둘 이상이 동시에 유효하면 회전 경합 구멍이 뚫린 것이다.
+//   - 5xx나 예상하지 못한 상태 코드는 한 건도 없어야 합니다.
+//   - 새로 받은 토큰 가운데 다시 refresh가 통과하는 토큰은 최대 한 건입니다.
+//     둘 이상이 동시에 유효하면 회전 경합이 안전하지 않다는 뜻입니다.
 //
 // 위 조건을 어기거나, 응답을 처리한 복제본이 하나뿐이라 복제본 사이 분산이
-// 확인되지 않으면 테스트를 실패로 본다.
+// 확인되지 않으면 테스트를 실패로 봅니다.
 
 const http = require('http')
 
@@ -95,15 +95,15 @@ async function createAndLogin(suffix) {
 }
 
 async function runInner(iteration) {
-    // 사용자 그룹 수만큼 사용자를 만든다. 각자 새 refresh 토큰을 하나씩 들고
-    // 출발한다.
+    // 사용자 그룹 수만큼 사용자를 만듭니다. 각자 새 refresh 토큰을 하나씩 들고
+    // 출발합니다.
     const tokens = await Promise.all(
         Array.from({ length: USER_GROUPS }, (_, g) => createAndLogin(`${iteration}-${g}`))
     )
 
-    // 사용자마다 자기 원래 토큰 하나로 refresh 요청을 한꺼번에 보낸다. 모든
-    // 그룹이 같은 시점에 발사하므로, nginx 는 그룹 수 × 사용자당 요청 수
-    // 만큼의 동시 요청을 복제본들에 분산해서 받는다.
+    // 사용자마다 각자의 원래 토큰 하나로 refresh 요청을 한꺼번에 보냅니다. 모든
+    // 그룹이 같은 시점에 발사하므로, nginx는 그룹 수 × 사용자당 요청 수
+    // 만큼의 동시 요청을 복제본들에 분산해서 받습니다.
     const requests = tokens.flatMap((token, g) =>
         Array.from({ length: CLIENTS_PER_USER }, () =>
             postJson('/users/refresh', { refreshToken: token }).then((r) => ({ ...r, group: g }))
@@ -139,10 +139,10 @@ async function runInner(iteration) {
             )
         }
 
-        // 회전이 안전한지 확인한다. 새로 받은 토큰 가운데 다시 refresh 가
-        // 통과하는 토큰은 최대 한 건이어야 한다. 회전이 정확히 한 토큰만
-        // 만들고 나머지는 재사용 탐지로 401 이거나, family 가 통째로
-        // 무효화돼 후속 호출이 전부 401 이거나 둘 중 하나다.
+        // 회전이 안전한지 확인합니다. 새로 받은 토큰 가운데 다시 refresh가
+        // 통과하는 토큰은 최대 한 건이어야 합니다. 회전이 정확히 한 토큰만
+        // 만들고 나머지는 재사용 탐지로 401이거나, family 전체가
+        // 무효화돼 후속 호출이 전부 401이거나 둘 중 하나입니다.
         const newTokens = g.ok.map((r) => JSON.parse(r.body).refreshToken)
         const followups = await Promise.all(
             newTokens.map((t) => postJson('/users/refresh', { refreshToken: t }))

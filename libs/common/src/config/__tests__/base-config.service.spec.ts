@@ -67,7 +67,7 @@ describe('BaseConfigService', () => {
             )
         })
 
-        // ConfigService 가 schema coercion 없이 string 으로 돌려줘도 BaseConfigService
+        // ConfigService가 schema coercion 없이 string으로 반환해도 BaseConfigService
         // 가 자체 변환을 책임진다는 contract 검증.
         it('coercion 없이 들어온 숫자 문자열도 number 로 변환한다', () => {
             const service = createServiceWithConfig({ N: '42' })

@@ -75,7 +75,7 @@ export async function createJwtAuthServiceFixtureWithoutOnEvent() {
                             refreshSecret: 'refreshSecret',
                             refreshTokenTtlMs: 3000
                         }
-                        // onEvent를 제공하지 않는 경로를 검증한다.
+                        // onEvent를 제공하지 않는 경로를 검증합니다.
                     }
                 }
             })
@@ -108,7 +108,7 @@ export async function createJwtAuthServiceFixtureWithShortTtl() {
                     return {
                         auth: {
                             accessSecret: 'accessSecret',
-                            // 1초 미만 TTL은 floor 후 0초 → 즉시 만료된다.
+                            // 1초 미만 TTL은 floor 후 0초 → 즉시 만료됩니다.
                             accessTokenTtlMs: 500,
                             audience: TEST_AUTH_AUDIENCE,
                             issuer: TEST_AUTH_ISSUER,

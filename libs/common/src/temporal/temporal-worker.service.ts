@@ -25,11 +25,11 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
             workflowBundle
         })
 
-        // `run()` 은 워커가 완전히 종료된 뒤에만 resolve 된다. 진행 중이던
-        // 액티비티가 모두 끝나고 polling 이 멈춘 시점이다. 이 Promise 를
-        // 들고 있어야 `onModuleDestroy` 에서 기다릴 수 있다. 그러지 않으면
-        // 액티비티가 끝나기 전에 의존 모듈이 먼저 닫혀, mongoose 가 쿼리
-        // 중간에 끊기는 식의 경합이 생긴다.
+        // `run()`은 워커가 완전히 종료된 뒤에만 resolve 됩니다. 진행 중이던
+        // 액티비티가 모두 끝나고 polling이 멈춘 시점입니다. 이 Promise를
+        // 들고 있어야 `onModuleDestroy`에서 기다릴 수 있습니다. 그러지 않으면
+        // 액티비티가 끝나기 전에 의존 모듈이 먼저 닫혀, mongoose가 쿼리
+        // 중간에 끊기는 식의 경합이 생깁니다.
         this.runPromise = this.worker.run().catch(
             /* istanbul ignore next */ (err: unknown) => {
                 this.logger.error('temporal worker run() failed', err)
@@ -40,20 +40,18 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
     async onModuleDestroy() {
         this.worker?.shutdown()
         // 진행 중이던 액티비티가 정상 종료 또는 취소까지 도달하도록, 연결을
-        // 닫기 전에 워커가 완전히 빠질 때까지 기다린다.
+        // 닫기 전에 워커가 완전히 빠질 때까지 기다립니다.
         if (this.runPromise) await this.runPromise
         await this.connection?.close().catch(() => undefined)
     }
 
     /**
-     * 운영 환경에서는 빌드 단계가 디스크에 미리 만들어 둔 번들 파일
-     * (예: `apps/api/scripts/bundle-workflows.js` 가 만든 파일) 을 그대로
-     * 읽는다. webpack 이 앱을 한 `index.js` 로 합치고 나면, 런타임에
-     * `bundleWorkflowCode` 가 워크플로우 소스를 찾지 못한다. 번들에 그
-     * 트리가 포함되지 않기 때문이다.
+     * 운영 환경에서는 빌드 단계에서 만든 workflow 번들 파일을 읽습니다. webpack이
+     * 앱을 한 `index.js`로 합치면 런타임의 `bundleWorkflowCode`가 원본 workflow
+     * 파일 트리를 찾을 수 없기 때문입니다.
      *
-     * dev 와 테스트에서는 미리 만든 번들이 없으므로, `workflowsPath` 로
-     * 소스를 가리켜 그 자리에서 번들을 만든다.
+     * dev와 테스트에서는 미리 만든 번들이 없으므로, `workflowsPath`로
+     * 소스를 가리켜 그 자리에서 번들을 만듭니다.
      */
     private async resolveWorkflowBundle() {
         const { workflowBundlePath, workflowsPath } = this.options
