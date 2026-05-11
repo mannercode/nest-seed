@@ -22,7 +22,26 @@ trap cleanup EXIT
 # shellcheck source=../ensure-deps-image.sh
 . "${WORKSPACE_ROOT}/ensure-deps-image.sh"
 
-docker compose --env-file "$ENV_FILE" up -d --build
-docker wait api-setup && docker rm api-setup
+# api 컨테이너가 infra (mongo/redis/...) 와 같은 네트워크에 join 해야 한다.
+# devcontainer postStart 에서 reset.sh 가 만들어두지만 멱등 보장.
+docker network create nest-seed-infra 2>/dev/null || true
+
+# api image 도 dod 격리상 stdin tar context 로 직접 build (compose 의 build:
+# context 는 호스트 경로를 요구해 빠졌다). tag 만 만들어두면 compose 가 image:
+# 로 참조한다.
+tar c \
+    --exclude='./node_modules' \
+    --exclude='./.git' \
+    --exclude='**/node_modules' \
+    --exclude='**/_output' \
+    --exclude='**/__tests__' \
+    -C "${WORKSPACE_ROOT}" . | \
+    docker build \
+        -f apps/api/Dockerfile \
+        --build-arg DEPS_TAG="${DEPS_TAG}" \
+        -t api \
+        -
+
+docker compose --env-file "$ENV_FILE" up -d --wait
 
 bash "${APP_DIR}/api-docs/run.sh"

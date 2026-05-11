@@ -19,8 +19,18 @@ export DEPS_TAG=$(cat "${WORKSPACE_ROOT}/package-lock.json" "${WORKSPACE_ROOT}/d
 export DEPS_IMAGE="deps:${DEPS_TAG}"
 
 if ! docker image inspect "$DEPS_IMAGE" >/dev/null 2>&1; then
-    docker build \
-        -f "${WORKSPACE_ROOT}/deps.Dockerfile" \
-        -t "$DEPS_IMAGE" \
-        "${WORKSPACE_ROOT}"
+    # dod 환경에서 build context 를 호스트 경로로 줄 수 없으므로 (devcontainer
+    # 안 경로는 호스트 docker daemon 이 모름) tar 로 stdin 전송한다.
+    # .dockerignore 는 stdin 컨텍스트엔 적용 안 되므로 tar 단계에서 직접 exclude.
+    tar c \
+        --exclude='./node_modules' \
+        --exclude='./.git' \
+        --exclude='**/node_modules' \
+        --exclude='**/_output' \
+        --exclude='**/__tests__' \
+        -C "${WORKSPACE_ROOT}" . | \
+        docker build \
+            -f deps.Dockerfile \
+            -t "$DEPS_IMAGE" \
+            -
 fi

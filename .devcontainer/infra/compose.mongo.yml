@@ -6,8 +6,7 @@ x-mongo-base: &mongo-base
     # 떨어졌음. 메모리 증설로 cache 한도를 함께 끌어올린다.
     deploy: { resources: { limits: { memory: 2g } } }
     shm_size: '8m'
-    environment:
-        { MONGO_INITDB_ROOT_USERNAME: mongouser, MONGO_INITDB_ROOT_PASSWORD: mongopass }
+    environment: { MONGO_INITDB_ROOT_USERNAME: mongouser, MONGO_INITDB_ROOT_PASSWORD: mongopass }
     # "Too many open files" 에러 방지
     ulimits: { nofile: { soft: 65536, hard: 65536 } }
     # 27016 포트로 변경하는 이유
@@ -28,7 +27,6 @@ x-mongo-base: &mongo-base
 services:
     mongo-key-generator:
         extends: { file: ./compose.common.yml, service: common-options }
-        container_name: mongo-key-generator
         image: $MONGO_IMAGE
         command: |
             sh -euc '
@@ -41,34 +39,27 @@ services:
 
     mongo1:
         <<: *mongo-base
-        container_name: mongo1
-        ports: ['27017:27016']
         healthcheck:
             test: >
-                mongosh  "mongodb://mongouser:mongopass@host.docker.internal:27017/?authSource=admin"
+                mongosh "mongodb://mongouser:mongopass@localhost:27016/?authSource=admin&directConnection=true"
                 --eval "db.adminCommand('ping')"
 
     mongo2:
         <<: *mongo-base
-        container_name: mongo2
-        ports: ['27018:27016']
         healthcheck:
             test: >
-                mongosh  "mongodb://mongouser:mongopass@host.docker.internal:27018/?authSource=admin"
+                mongosh "mongodb://mongouser:mongopass@localhost:27016/?authSource=admin&directConnection=true"
                 --eval "db.adminCommand('ping')"
 
     mongo3:
         <<: *mongo-base
-        container_name: mongo3
-        ports: ['27019:27016']
         healthcheck:
             test: >
-                mongosh  "mongodb://mongouser:mongopass@host.docker.internal:27019/?authSource=admin"
+                mongosh "mongodb://mongouser:mongopass@localhost:27016/?authSource=admin&directConnection=true"
                 --eval "db.adminCommand('ping')"
 
     mongo-setup:
         extends: { file: ./compose.common.yml, service: common-options }
-        container_name: mongo-setup
         image: $MONGO_IMAGE
         depends_on:
             {
@@ -78,15 +69,18 @@ services:
             }
         command: |
             sh -eucx '
-                url="mongodb://mongouser:mongopass@host.docker.internal:27017/?authSource=admin"
+                # rs.initiate 의 host 는 client 가 다시 접속할 때 쓰는 advertise 주소.
+                # devcontainer 도 같은 nest-seed-infra 네트워크에 join 하므로
+                # service name (mongo1/mongo2/mongo3) 으로 도달 가능하다.
+                url="mongodb://mongouser:mongopass@mongo1:27016/?authSource=admin&directConnection=true"
 
                 mongosh $$url --eval "
                     rs.initiate({
                     _id: \"mongo\",
                     members: [
-                        { _id: 0, host: \"host.docker.internal:27017\" },
-                        { _id: 1, host: \"host.docker.internal:27018\" },
-                        { _id: 2, host: \"host.docker.internal:27019\" }
+                        { _id: 0, host: \"mongo1:27016\" },
+                        { _id: 1, host: \"mongo2:27016\" },
+                        { _id: 2, host: \"mongo3:27016\" }
                         ]
                     })
                     "

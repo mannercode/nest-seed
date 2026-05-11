@@ -2,12 +2,10 @@ services:
     temporal-postgresql:
         extends: { file: ../compose.common.yml, service: common-options }
         image: $TEMPORAL_POSTGRES_IMAGE
-        container_name: temporal-postgresql
         environment:
             POSTGRES_USER: temporal
             POSTGRES_PASSWORD: temporal
             POSTGRES_DB: temporal
-        ports: ['$TEMPORAL_DB_PORT:5432']
         volumes:
             - temporal_pgdata:/var/lib/postgresql/data
         healthcheck:
@@ -21,7 +19,6 @@ services:
     temporal-setup:
         extends: { file: ../compose.common.yml, service: common-options }
         image: $TEMPORAL_ADMIN_TOOLS_IMAGE
-        container_name: temporal-setup
         depends_on:
             temporal-postgresql: { condition: service_healthy }
         environment:
@@ -33,15 +30,17 @@ services:
             POSTGRES_PWD: temporal
             POSTGRES_SEEDS: temporal-postgresql
             SQL_PASSWORD: temporal
+        # devcontainer 와 같은 source volume 을 공유해서 호스트 경로 노출 없이
+        # scripts 에 도달. devcontainer 내부 경로 (/workspaces/nest-seed) 그대로
+        # 다른 컨테이너에 마운트해 path 도 동일.
         volumes:
-            - ./scripts:/scripts:ro
+            - nest-seed-workspace:/workspaces/nest-seed:ro
         entrypoint: ['/bin/sh']
-        command: '/scripts/setup-postgres.sh'
+        command: '/workspaces/nest-seed/.devcontainer/infra/temporal/scripts/setup-postgres.sh'
 
     temporal:
         extends: { file: ../compose.common.yml, service: common-options }
         image: $TEMPORAL_SERVER_IMAGE
-        container_name: temporal
         depends_on:
             temporal-setup: { condition: service_completed_successfully }
         environment:
@@ -51,10 +50,11 @@ services:
             POSTGRES_PWD: temporal
             POSTGRES_SEEDS: temporal-postgresql
             BIND_ON_IP: 0.0.0.0
-            DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
-        ports: ['$TEMPORAL_PORT:7233']
+            # source volume 안의 파일을 절대경로로 직접 지정 — 별도 mount path
+            # 마련하지 않고 source volume 그대로 활용.
+            DYNAMIC_CONFIG_FILE_PATH: /workspaces/nest-seed/.devcontainer/infra/temporal/dynamicconfig/development-sql.yaml
         volumes:
-            - ./dynamicconfig:/etc/temporal/config/dynamicconfig:ro
+            - nest-seed-workspace:/workspaces/nest-seed:ro
         healthcheck:
             test: ['CMD-SHELL', 'nc -z localhost 7233']
             interval: 5s
@@ -72,16 +72,20 @@ services:
     temporal-create-namespace:
         extends: { file: ../compose.common.yml, service: common-options }
         image: $TEMPORAL_ADMIN_TOOLS_IMAGE
-        container_name: temporal-create-namespace
         depends_on:
             temporal: { condition: service_healthy }
         environment:
             TEMPORAL_ADDRESS: temporal:7233
             DEFAULT_NAMESPACE: default
         volumes:
-            - ./scripts:/scripts:ro
+            - nest-seed-workspace:/workspaces/nest-seed:ro
         entrypoint: ['/bin/sh']
-        command: '/scripts/create-namespace.sh'
+        command: '/workspaces/nest-seed/.devcontainer/infra/temporal/scripts/create-namespace.sh'
 
 volumes:
     temporal_pgdata: {}
+    # devcontainer 가 workspaceMount 로 사용하는 source volume. 외부에서 미리
+    # 생성 (devcontainer initializeCommand) 되며 코드 자체가 들어 있어 호스트
+    # 파일시스템 노출 없이 모든 컨테이너가 같은 코드를 본다.
+    nest-seed-workspace:
+        external: true

@@ -39,7 +39,6 @@ x-api-base: &api-base
         - LOG_FILE_LEVEL=${LOG_FILE_LEVEL:-verbose}
         - LOG_CONSOLE_LEVEL=${LOG_CONSOLE_LEVEL:-info}
     logging: { options: { max-size: '10m', max-file: '3' } }
-    extra_hosts: ['host.docker.internal:host-gateway']
     healthcheck:
         retries: 5
         start_period: 10s
@@ -50,29 +49,32 @@ x-api-base: &api-base
 services:
     api:
         <<: *api-base
-        build:
-            context: ..
-            dockerfile: apps/api/Dockerfile
-            args:
-                # build 시에는 ensure-deps-image.sh 가 export 해서 정상 값이
-                # 들어가고, down/config 처럼 빌드 안 하는 명령은 빈 값으로 통과
-                # 시켜 "DEPS_TAG not set" 경고를 막는다.
-                DEPS_TAG: ${DEPS_TAG:-}
+        # build 는 호스트 docker daemon 의 호스트 경로 컨텍스트가 필요해 격리를
+        # 깬다. 외부에서 `tar c | docker build -` 로 미리 image 를 만들고 여기는
+        # tag 만 참조한다 (deploy/test.sh, ensure-deps-image.sh 가 빌드 책임).
         image: api
         deploy:
             replicas: ${REPLICAS:-4}
 
-    api-setup:
-        image: docker:cli
-        container_name: api-setup
-        depends_on:
-            api: { condition: service_healthy }
-
     nginx:
         image: nginx:alpine
-        container_name: api-nginx
         ports: ['${LISTEN_PORT:-3000}:80']
-        volumes: ['./nginx.conf:/etc/nginx/nginx.conf:ro']
+        # nginx.conf 는 source volume 안에서 절대경로로 참조. bind mount 회피.
+        volumes:
+            - nest-seed-workspace:/workspaces/nest-seed:ro
+        command: ['nginx', '-c', '/workspaces/nest-seed/deploy/nginx.conf', '-g', 'daemon off;']
         depends_on:
             api: { condition: service_healthy }
         restart: unless-stopped
+
+# infra (mongo/redis/nats/temporal/minio) 와 같은 외부 네트워크에 join 해
+# service name 으로 직접 접근.
+networks:
+    default:
+        name: nest-seed-infra
+        external: true
+
+volumes:
+    # devcontainer 가 workspaceMount 로 사용하는 source volume.
+    nest-seed-workspace:
+        external: true

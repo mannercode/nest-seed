@@ -1,7 +1,6 @@
 services:
     nats:
         extends: { file: ./compose.common.yml, service: common-options }
-        container_name: nats
         image: $NATS_IMAGE
         deploy: { resources: { limits: { memory: 256m } } }
         shm_size: '8m'
@@ -13,9 +12,6 @@ services:
             -js
             --store_dir /data
             -m 8222
-        ports:
-            - '$NATS_PORT:4222'
-            - '$NATS_MONITORING_PORT:8222'
         volumes:
             - nats_data:/data
         # `/healthz` 는 NATS 2.10+ 표준 health endpoint. `?js-enabled-only=true`

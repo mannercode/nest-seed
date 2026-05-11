@@ -7,8 +7,8 @@ cd "$(dirname "$0")"
 on_err() {
     echo "[mem]"; head -5 /proc/meminfo 2>/dev/null || true
     echo "[disk]"; df -h / /tmp 2>/dev/null || true
-    echo "[docker ps -a]"; docker ps -a 2>/dev/null || true
-    for cid in $(docker ps -aq 2>/dev/null); do
+    echo "[docker compose ps]"; docker compose ps -a 2>/dev/null || true
+    for cid in $(docker compose ps -aq 2>/dev/null); do
         cname=$(docker inspect --format '{{.Name}} ({{.State.Status}}, exit={{.State.ExitCode}})' "$cid" 2>/dev/null || echo "$cid")
         echo "--- logs $cname (last 80) ---"
         docker logs --tail 80 "$cid" 2>&1 || true
@@ -24,9 +24,24 @@ set -a
 source .env
 set +a
 
-docker rm -f $(docker ps -aq) 2>/dev/null || true
-docker volume prune -af
+# dod (docker-outside-of-docker) 환경 — `docker rm -f $(docker ps -aq)` 같은
+# daemon-wide 명령은 호스트의 다른 컨테이너 (devcontainer 자기 자신 포함) 를
+# 다 죽이므로 절대 쓰지 말 것. compose project (COMPOSE_PROJECT_NAME) 단위로만.
+docker compose down -v -t 0
+
+# 외부 네트워크는 멱등 생성. devcontainer 와 deploy compose 도 같은 이름으로 join.
+docker network create nest-seed-infra 2>/dev/null || true
 
 docker compose up -d
-docker wait infra-setup
-docker rm infra-setup
+
+# infra-setup 은 모든 setup 이 service_completed_successfully 됐음을 알리는
+# sentinel — 자기 자신도 즉시 종료한다. `docker compose wait` 는 running
+# 컨테이너만 처리해 이미 종료된 sentinel 에서는 "no containers" 로 실패하므로
+# container-level `docker wait` 로 종료 코드를 직접 받는다.
+sentinel=$(docker compose ps -aq infra-setup)
+[ -n "$sentinel" ] || { echo "infra-setup container not created" >&2; exit 1; }
+exit_code=$(docker wait "$sentinel")
+[ "$exit_code" = "0" ] || { echo "infra-setup failed (exit=$exit_code)" >&2; exit "$exit_code"; }
+
+# setup 컨테이너들은 종료된 상태로 남아 있음 — 다음 up 에서 conflict 안 나도록 정리.
+docker compose ps -a --status=exited -q | xargs -r docker rm

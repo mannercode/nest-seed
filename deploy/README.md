@@ -23,7 +23,7 @@ MongoDB, Redis 같은 인프라는 이미 떠 있다고 가정한다.
 | ---------- | ------ | ----------------- |
 | `REPLICAS` | 4      | API 컨테이너 개수 |
 
-인프라 연결은 `host.docker.internal`을 통해 호스트 머신의 기존 서비스에 접근한다.
+인프라 연결은 `nest-seed-infra` docker 네트워크에 join 해서 service name (`mongo1`, `redis1`, `nats`, `temporal`, `minio` …) 으로 직접 도달한다.
 
 ## `x-replica-id` 응답 헤더
 

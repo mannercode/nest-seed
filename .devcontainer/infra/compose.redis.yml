@@ -5,15 +5,18 @@ x-redis-base: &redis-base
         test: 'redis-cli ping'
     deploy: { resources: { limits: { memory: 512m } } }
     shm_size: '8m'
+    # cluster-announce 는 다른 노드/클라이언트가 redirect 받을 때 쓰는 주소.
+    # 같은 nest-seed-infra 네트워크 안에서는 service name (redis1/2/3) 으로
+    # 도달 가능하므로 hostname 을 그걸로 노출. port 는 모두 6379.
     command: |
         sh -euc '
           redis-server --port 6379 \
           --cluster-enabled yes \
           --cluster-config-file nodes.conf \
-          --cluster-announce-hostname $$ANNOUNCE_IP \
+          --cluster-announce-hostname $$ANNOUNCE_HOSTNAME \
           --cluster-preferred-endpoint-type hostname \
-          --cluster-announce-port $$ANNOUNCE_PORT \
-          --cluster-announce-bus-port $$ANNOUNCE_BUS_PORT \
+          --cluster-announce-port 6379 \
+          --cluster-announce-bus-port 16379 \
           --cluster-require-full-coverage no \
           --protected-mode no \
           --appendonly yes
@@ -22,40 +25,21 @@ x-redis-base: &redis-base
 services:
     redis1:
         <<: *redis-base
-        container_name: redis1
         environment:
-            {
-                ANNOUNCE_IP: $REDIS_HOST1,
-                ANNOUNCE_PORT: $REDIS_PORT1,
-                ANNOUNCE_BUS_PORT: 1$REDIS_PORT1
-            }
-        ports: ['$REDIS_PORT1:6379', '1$REDIS_PORT1:16379']
+            ANNOUNCE_HOSTNAME: redis1
 
     redis2:
         <<: *redis-base
-        container_name: redis2
         environment:
-            {
-                ANNOUNCE_IP: $REDIS_HOST2,
-                ANNOUNCE_PORT: $REDIS_PORT2,
-                ANNOUNCE_BUS_PORT: 1$REDIS_PORT2
-            }
-        ports: ['$REDIS_PORT2:6379', '1$REDIS_PORT2:16379']
+            ANNOUNCE_HOSTNAME: redis2
 
     redis3:
         <<: *redis-base
-        container_name: redis3
         environment:
-            {
-                ANNOUNCE_IP: $REDIS_HOST3,
-                ANNOUNCE_PORT: $REDIS_PORT3,
-                ANNOUNCE_BUS_PORT: 1$REDIS_PORT3
-            }
-        ports: ['$REDIS_PORT3:6379', '1$REDIS_PORT3:16379']
+            ANNOUNCE_HOSTNAME: redis3
 
     redis-setup:
         extends: { file: ./compose.common.yml, service: common-options }
-        container_name: redis-setup
         image: $REDIS_IMAGE
         depends_on:
             {
@@ -65,11 +49,7 @@ services:
             }
         command: |
             sh -euc '
-            REDIS_NODES=" \
-                $REDIS_HOST1:$REDIS_PORT1 \
-                $REDIS_HOST2:$REDIS_PORT2 \
-                $REDIS_HOST3:$REDIS_PORT3 \
-                "
+            REDIS_NODES="redis1:6379 redis2:6379 redis3:6379"
 
             echo "yes" |
                 redis-cli --cluster create $$REDIS_NODES --cluster-replicas 0

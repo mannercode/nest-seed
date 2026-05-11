@@ -6,17 +6,22 @@ include:
     - ./temporal/compose.temporal.yml
 
 services:
+    # 모든 setup 이 끝났음을 알리는 sentinel. reset.sh 가 이 컨테이너의 종료를
+    # 기다려서 infra ready 시점을 안다. exited 컨테이너 정리는 reset.sh 에서.
     infra-setup:
         extends: { file: ./compose.common.yml, service: common-options }
-        image: docker:cli
-        container_name: infra-setup
+        image: alpine:3
         depends_on:
-            mongo-key-generator: { condition: service_completed_successfully }
             mongo-setup: { condition: service_completed_successfully }
             redis-setup: { condition: service_completed_successfully }
             minio-setup: { condition: service_completed_successfully }
             temporal-create-namespace: { condition: service_completed_successfully }
             nats: { condition: service_healthy }
-        volumes:
-            - /var/run/docker.sock:/var/run/docker.sock
-        command: 'rm mongo-key-generator mongo-setup redis-setup minio-setup temporal-setup temporal-create-namespace'
+        command: ['true']
+
+# devcontainer 와 deploy compose 도 같은 네트워크에 join 하므로 외부 네트워크.
+# reset.sh 가 미리 `docker network create nest-seed-infra` 한다.
+networks:
+    default:
+        name: nest-seed-infra
+        external: true

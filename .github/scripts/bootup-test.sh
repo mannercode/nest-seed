@@ -1,18 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ROOT="$(pwd)"
-cd .devcontainer/infra
+# CI 도 dev 와 동일한 reset 경로를 쓴다 — daemon-wide 명령 (rm -f $(ps -aq),
+# volume prune -af) 은 reset.sh 가 compose-scoped 로 대체했다.
+bash .devcontainer/infra/reset.sh
 
-# devcontainer.json 의 --env-file 캐시를 우회 — reset.sh 와 같은 이유.
-set -a; source .env; set +a
-
-docker rm -f $(docker ps -aq) 2>/dev/null || true
-docker volume prune -af
-
-docker compose up -d
-docker wait infra-setup
-docker rm infra-setup
-
-cd "$ROOT"
 npm test -w apps

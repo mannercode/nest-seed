@@ -3,19 +3,24 @@
     "hostRequirements": { "cpus": 4, "memory": "16gb", "storage": "32gb" },
     "build": { "dockerfile": "Dockerfile", "context": "." },
     "features": {
-        "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
         "ghcr.io/devcontainers/features/github-cli:1": {}
     },
-    "privileged": true,
     "runArgs": [
         "--env-file",
         ".devcontainer/infra/.env",
-        "--add-host",
-        "host.docker.internal:127.0.0.1",
-        "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
+        "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
+        "--network=nest-seed-infra"
     ],
     "remoteUser": "node",
     "containerEnv": { "WORKSPACE_ROOT": "${containerWorkspaceFolder}" },
+    // 호스트 파일시스템 노출 없이 source code 자체를 named volume 에 둔다.
+    // dod 환경에서 다른 컨테이너 (compose 서비스, build context 등) 가 같은
+    // volume 을 mount 하면 호스트 경로 없이 같은 코드를 본다. 첫 부팅 시
+    // VSCode 의 "Clone Repository in Container Volume" 으로 git clone 하면
+    // 자동으로 이 volume 에 들어간다 — 그 후엔 모든 작업이 컨테이너 안에서.
+    "workspaceMount": "source=nest-seed-workspace,target=/workspaces/nest-seed,type=volume",
+    "workspaceFolder": "/workspaces/nest-seed",
     "mounts": [
         "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind",
         "source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind",
@@ -23,15 +28,16 @@
     ],
     "initializeCommand": {
         "prepare-mounts": "mkdir -p ${localEnv:HOME}/.claude ${localEnv:HOME}/.config",
-        "prepare-files": "touch ${localEnv:HOME}/.claude.json"
+        "prepare-files": "touch ${localEnv:HOME}/.claude.json",
+        "prepare-network": "docker network create nest-seed-infra 2>/dev/null || true"
     },
-    "postCreateCommand": { "husky": "husky", "install": "npm install" },
-    "postStartCommand": {
-        "infra": "bash .devcontainer/infra/reset.sh",
-        "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null"
-    },
-    "waitFor": "postStartCommand",
-    "forwardPorts": [5010, 5020],
+    // "postCreateCommand": { "husky": "husky", "install": "npm install" },
+    // "postStartCommand": {
+    //     "infra": "bash .devcontainer/infra/reset.sh",
+    //     "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null"
+    // },
+    // "waitFor": "postStartCommand",
+    "forwardPorts": [5010, 5020, 9001],
     "customizations": {
         "vscode": {
             "extensions": [
