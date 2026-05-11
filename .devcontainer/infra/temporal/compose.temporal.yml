@@ -31,10 +31,10 @@ services:
             POSTGRES_SEEDS: temporal-postgresql
             SQL_PASSWORD: temporal
         # devcontainer 와 같은 source volume 을 공유해서 호스트 경로 노출 없이
-        # scripts 에 도달. devcontainer 내부 경로 (/workspaces/nest-seed) 그대로
-        # 다른 컨테이너에 마운트해 path 도 동일.
+        # scripts 에 도달. VSCode 가 volume 을 /workspaces 에 mount 하고 그 안
+        # nest-seed/ 서브폴더에 clone 하므로 target 도 /workspaces.
         volumes:
-            - nest-seed-workspace:/workspaces/nest-seed:ro
+            - nest-seed:/workspaces:ro
         entrypoint: ['/bin/sh']
         command: '/workspaces/nest-seed/.devcontainer/infra/temporal/scripts/setup-postgres.sh'
 
@@ -54,7 +54,7 @@ services:
             # 마련하지 않고 source volume 그대로 활용.
             DYNAMIC_CONFIG_FILE_PATH: /workspaces/nest-seed/.devcontainer/infra/temporal/dynamicconfig/development-sql.yaml
         volumes:
-            - nest-seed-workspace:/workspaces/nest-seed:ro
+            - nest-seed:/workspaces:ro
         healthcheck:
             test: ['CMD-SHELL', 'nc -z localhost 7233']
             interval: 5s
@@ -78,14 +78,14 @@ services:
             TEMPORAL_ADDRESS: temporal:7233
             DEFAULT_NAMESPACE: default
         volumes:
-            - nest-seed-workspace:/workspaces/nest-seed:ro
+            - nest-seed:/workspaces:ro
         entrypoint: ['/bin/sh']
         command: '/workspaces/nest-seed/.devcontainer/infra/temporal/scripts/create-namespace.sh'
 
 volumes:
     temporal_pgdata: {}
-    # devcontainer 가 workspaceMount 로 사용하는 source volume. 외부에서 미리
-    # 생성 (devcontainer initializeCommand) 되며 코드 자체가 들어 있어 호스트
-    # 파일시스템 노출 없이 모든 컨테이너가 같은 코드를 본다.
-    nest-seed-workspace:
+    # VSCode 의 "Clone Repository in Named Container Volume" 으로 만들어진
+    # source volume. devcontainer 가 /workspaces 에 mount 하고 그 안 nest-seed/
+    # 에 git clone. 호스트 파일시스템 노출 없이 모든 컨테이너가 같은 코드를 본다.
+    nest-seed:
         external: true
