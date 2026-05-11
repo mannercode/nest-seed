@@ -19,7 +19,7 @@
     // volume 을 mount 하면 호스트 경로 없이 같은 코드를 본다. 첫 부팅 시
     // VSCode 의 "Clone Repository in Container Volume" 으로 git clone 하면
     // 자동으로 이 volume 에 들어간다 — 그 후엔 모든 작업이 컨테이너 안에서.
-    "workspaceMount": "source=nest-seed-workspace,target=/workspaces/nest-seed,type=volume",
+    // "workspaceMount": "source=nest-seed-workspace,target=/workspaces/nest-seed,type=volume",
     "workspaceFolder": "/workspaces/nest-seed",
     "mounts": [
         "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind",
