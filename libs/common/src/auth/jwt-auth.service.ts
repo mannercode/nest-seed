@@ -151,10 +151,10 @@ export class JwtAuthService {
 
         // 새 토큰을 발급하기 전에 지금 토큰을 먼저 소비한다. 그래야 같은
         // 토큰 하나로 동시에 들어온 refresh 두 건이 모두 통과하는 일이
-        // 막힌다. atomic DEL 이 돌려주는 카운트로 우리가 그 race 에서
-        // 이겼는지 알 수 있다. 진 쪽은 이미 회전된 토큰을 다시 제출한
-        // 경우와 구분이 안 되므로, 재사용 탐지가 family 를 통째로 무효화
-        // 한다.
+        // 막힌다. 원자적 DEL 이 돌려주는 카운트로, 같은 토큰을 동시에 쓴
+        // 다른 호출 가운데 우리가 먼저 지웠는지 알 수 있다. 그 경쟁에서
+        // 진 쪽은 이미 회전된 토큰을 다시 제출한 경우와 구분이 안 되므로,
+        // 재사용 탐지가 family 를 통째로 무효화한다.
         const consumed = await this.consumeToken(tokenId, familyId)
         if (!consumed) {
             const loserUserId = this.getUserId(payload)

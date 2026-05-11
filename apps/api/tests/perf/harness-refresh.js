@@ -1,18 +1,17 @@
-// user-refresh path 의 sustained-load perf harness.
+// `/users/refresh` 경로에 지속 부하를 걸어 측정하는 하네스다.
 //
-// POST /users/refresh 는 매 호출마다 Redis 를 사용한다: 이전 refresh token 을 읽고
-// (cluster 에 GET), 새 access+refresh JWT 를 생성한 뒤 새 refresh token 을 저장한다
-// (TTL 이 붙은 SET). bcrypt 도 없고 token 자체에 대한 DB read 도 없다 — JWT verify
-// 는 in-memory 다. 그래서 app 내부에서 측정하는 ioredis cluster throughput 신호로
-// 가장 깨끗하다.
+// 이 경로는 호출마다 Redis 를 두 번 친다. 이전 refresh 토큰을 GET 으로 읽고,
+// 새 access·refresh JWT 를 만들어 TTL 이 붙은 SET 으로 저장한다. bcrypt 는
+// 없고, 토큰을 위해 DB 를 읽는 일도 없다. JWT 검증도 메모리 안에서 끝난다.
+// 그래서 ioredis 클러스터 처리량을 가장 깨끗하게 본다.
 //
-// Setup: 측정 창 시작 전에 worker 들이 각자 register + login 을 한 번 한 뒤 자기
-// token 으로 refresh 를 루프로 돌린다. worker 마다 자기 refresh token 을 들고 있어
-// cross-worker invalidation race 를 피한다 (refresh 는 저장된 token 을 atomic 하게
-// 회전시킨다).
+// 측정 전 준비는 이렇게 한다. 워커마다 한 번씩 가입과 로그인을 끝내고, 받은
+// 토큰으로 refresh 를 반복한다. 워커마다 자기 토큰을 들고 있어, 같은 토큰을
+// 여러 워커가 동시에 회전시키며 무효화를 부르는 경합이 일어나지 않는다.
+// refresh 한 번은 저장된 토큰 하나를 원자적으로 회전시킨다.
 //
-// Env: harness.js 와 같은 구조 — SERVER_URL, CONCURRENCY, DURATION_MS,
-// WARMUP_MS, LABEL.
+// 환경 변수는 `harness.js` 와 같다: `SERVER_URL`, `CONCURRENCY`,
+// `DURATION_MS`, `WARMUP_MS`, `LABEL`.
 
 const http = require('http')
 const fs = require('fs')
@@ -108,12 +107,13 @@ async function workerLoop(workerId, state, stopAt, samplesRef, statusesRef, repl
             statusesRef.map.set(result.status, (statusesRef.map.get(result.status) || 0) + 1)
             if (result.replicaId) replicasRef.set.add(result.replicaId)
         }
-        // 측정 창 밖에서도 저장된 token 의 일관성을 위해 rotation 은 계속한다.
+        // 측정 구간이 끝난 뒤에도 저장된 토큰이 어긋나지 않도록 회전은 계속한다.
         if (result.status === 200 && result.body && result.body.refreshToken) {
             state.refreshToken = result.body.refreshToken
         } else if (result.status !== 200) {
-            // Token 이 무효화됨 (예: 같은 유저로 동시 refresh 가 들어온 경우, worker
-            // 가 격리돼 있으면 발생하지 않아야 함). 이 worker 는 종료한다.
+            // 토큰이 무효가 된 경우다. 워커가 서로 격리돼 있으면 일어나지 않아야
+            // 하지만, 같은 사용자에 대해 동시 refresh 가 들어오면 발생한다.
+            // 이 워커는 여기서 끝낸다.
             return
         }
     }
@@ -146,7 +146,7 @@ async function main() {
         `[perf-refresh] server=${SERVER_URL} concurrency=${CONCURRENCY} warmup=${WARMUP_MS}ms duration=${DURATION_MS}ms label=${LABEL || '(none)'}`
     )
 
-    // Setup 단계. worker 마다 자체 유저를 만들고 로그인한다.
+    // 측정 전 준비 단계. 워커마다 자기 사용자를 만들고 로그인한다.
     const seed = Date.now()
     console.error(`[perf-refresh] setting up ${CONCURRENCY} users...`)
     const setupT0 = Date.now()

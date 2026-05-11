@@ -1,8 +1,7 @@
 #!/bin/sh
-# temporal server up 후 default namespace 생성. server only image 는 자동
-# namespace bootstrap 안 함 (auto-setup 이 하던 일). one-shot service.
-#
-# samples-server 의 원본 스크립트에 MAX_ATTdMPTS typo 가 있어서 수정함.
+# Temporal 서버가 뜬 뒤 default namespace 를 만든다. auto-setup 이미지는
+# 이 작업을 자동으로 해 줬지만, 서버 전용 이미지는 그렇지 않아 admin-tools
+# 로 한 번 만든다. 한 번만 돌면 되는 one-shot 서비스다.
 set -eu
 
 NAMESPACE=${DEFAULT_NAMESPACE:-default}

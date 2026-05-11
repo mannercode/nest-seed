@@ -18,7 +18,8 @@ const CONCURRENCY = Number(process.env.CONCURRENCY || 100)
 const DURATION_MS = Number(process.env.DURATION_MS || 30_000)
 const WARMUP_MS = Number(process.env.WARMUP_MS || 3_000)
 const LABEL = process.env.LABEL || ''
-// 좁은 substring 으로 매치 수 적게 유지 (베이스라인 측정 일관성).
+// 부분 문자열을 좁게 잡아 매치 수를 거의 0 으로 맞춘다. 그래야 기준값
+// 측정이 회차마다 같은 조건에서 나온다.
 const FILTER_PREFIX = process.env.FILTER_PREFIX || 'perf-user-17769404'
 
 const url = new URL(SERVER_URL)

@@ -127,11 +127,14 @@ export class HttpTestClient {
         return response
     }
     /**
-     * 특정 status 단언 없이 전송한다. 호출자가 response.status 를 직접 검사한다.
-     * 동시/race 테스트에서 요청마다 다른 상태가 정상일 때 유용하다.
+     * 응답 상태를 따로 단언하지 않고 보낸다. 호출하는 쪽이 `response.status`
+     * 를 직접 본다. 같은 요청을 동시에 여러 번 보낼 때처럼, 요청마다 응답
+     * 상태가 달라도 정상으로 보는 시나리오에 쓴다.
      */
     async sendRaw(): Promise<superagent.Response> {
-        // ok(() => true)를 하지 않으면 400 이상 상태 코드는 예외를 던진다.
+        // `ok(() => true)` 를 빼면 superagent 가 400 이상 상태에서 예외를
+        // 던진다. 호출자가 직접 상태를 보게 두려고 모든 상태를 OK 로 표시
+        // 한다.
         const response = await this.agent.ok(() => true)
 
         if (response.type === 'application/json') {

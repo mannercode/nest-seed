@@ -24,5 +24,5 @@ export class Theater extends CrudSchema {
 }
 export const TheaterSchema = createCrudSchema(Theater)
 
-// 검색 인덱스는 두지 않는다. 부분 문자열 정규식은 prefix 나 exact match
+// 검색 인덱스는 두지 않는다. 부분 문자열 정규식은 접두 일치나 정확 일치
 // 인덱스를 못 탄다. 검색 방식이 바뀌면 그때 다시 본다.

@@ -1,7 +1,8 @@
 #!/bin/sh
-# temporalio/admin-tools 안에서 실행 — temporal + visibility 두 DB 의
-# schema 를 생성/setup. 첫 부팅 시 1회만 의미 있고 (re-run 시 create 가
-# fail 하지만 계속 진행), one-shot service 로 사용.
+# temporalio/admin-tools 컨테이너 안에서 돈다. `temporal` 과
+# `temporal_visibility` 두 DB 의 스키마를 만든다. 첫 부팅에 한 번만 의미가
+# 있고, 다시 돌리면 `create` 단계가 실패하지만 그대로 통과시키므로 다시
+# 돌려도 안전하다. 한 번만 도는 one-shot 서비스다.
 set -eu
 
 : "${POSTGRES_SEEDS:?ERROR: POSTGRES_SEEDS environment variable is required}"
