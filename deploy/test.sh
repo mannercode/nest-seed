@@ -19,7 +19,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# shellcheck source=../ensure-deps-image.sh
 . "${WORKSPACE_ROOT}/ensure-deps-image.sh"
 
 tar c \

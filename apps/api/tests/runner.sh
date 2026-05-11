@@ -34,7 +34,6 @@ cleanup() {
 trap cleanup EXIT
 
 echo "Building and deploying 4-replica api stack..."
-# shellcheck source=../../../ensure-deps-image.sh
 . "${WORKSPACE_ROOT}/ensure-deps-image.sh"
 
 REPLICAS="${REPLICAS:-4}" docker compose --env-file "$ENV_FILE" up -d --build --wait
