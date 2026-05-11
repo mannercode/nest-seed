@@ -24,13 +24,21 @@ set -a
 source .env
 set +a
 
+# devcontainer 안에서는 containerEnv 가 PROJECT_NAME / COMPOSE_PROJECT_NAME 을
+# 미리 inject 한다. CI 등 외부에서 바로 호출되는 경우만 fallback 으로 workspace
+# basename 에서 계산. 한 곳 (= workspace 폴더 이름) 만 바뀌어도 모든 흐름이
+# 따라온다.
+: "${PROJECT_NAME:=$(basename "${WORKSPACE_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}")}"
+: "${COMPOSE_PROJECT_NAME:=${PROJECT_NAME}-infra}"
+export PROJECT_NAME COMPOSE_PROJECT_NAME
+
 # dod (docker-outside-of-docker) 환경 — `docker rm -f $(docker ps -aq)` 같은
 # daemon-wide 명령은 호스트의 다른 컨테이너 (devcontainer 자기 자신 포함) 를
 # 다 죽이므로 절대 쓰지 말 것. compose project (COMPOSE_PROJECT_NAME) 단위로만.
 docker compose down -v -t 0
 
 # 외부 네트워크는 멱등 생성. devcontainer 와 deploy compose 도 같은 이름으로 join.
-docker network create nest-seed-infra 2>/dev/null || true
+docker network create "${COMPOSE_PROJECT_NAME}" 2>/dev/null || true
 
 docker compose up -d
 

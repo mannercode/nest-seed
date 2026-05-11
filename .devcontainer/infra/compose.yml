@@ -20,8 +20,9 @@ services:
         command: ['true']
 
 # devcontainer 와 deploy compose 도 같은 네트워크에 join 하므로 외부 네트워크.
-# reset.sh 가 미리 `docker network create nest-seed-infra` 한다.
+# 이름은 ${COMPOSE_PROJECT_NAME} (= ${PROJECT_NAME}-infra). devcontainer.json
+# 의 containerEnv 가 ${containerWorkspaceFolderBasename} 에서 자동 inject.
 networks:
     default:
-        name: nest-seed-infra
+        name: ${COMPOSE_PROJECT_NAME}
         external: true
