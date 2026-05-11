@@ -20,7 +20,7 @@ services:
         command: ['true']
 
 # devcontainer 와 deploy compose 도 같은 네트워크에 join 하므로 외부 네트워크.
-# 이름은 ${COMPOSE_PROJECT_NAME} (= ${PROJECT_NAME}-infra). devcontainer.json
+# 이름은 ${COMPOSE_PROJECT_NAME} (= workspace basename). devcontainer.json
 # 의 containerEnv 가 ${containerWorkspaceFolderBasename} 에서 자동 inject.
 networks:
     default:

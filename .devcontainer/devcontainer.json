@@ -10,16 +10,16 @@
         "--env-file",
         ".devcontainer/infra/.env",
         "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
-        "--network=${localWorkspaceFolderBasename}-infra"
+        "--network=${localWorkspaceFolderBasename}"
     ],
     "remoteUser": "node",
     // 시드 프로젝트라 다른 이름으로 fork 됐을 때도 그대로 동작하도록 workspace
-    // basename 에서 PROJECT_NAME 을 만든다. compose 파일/스크립트 모두 이 변수
-    // 만 참조 — 한 곳만 바꾸면 (rename) 전 흐름이 따라온다.
+    // basename 을 COMPOSE_PROJECT_NAME 에 직접 inject. docker compose 표준
+    // 변수라 compose 파일/스크립트 모두 이것만 참조하면 됨 — network 이름,
+    // volume 이름, compose project 이름이 모두 같은 값으로 통일.
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
-        "PROJECT_NAME": "${containerWorkspaceFolderBasename}",
-        "COMPOSE_PROJECT_NAME": "${containerWorkspaceFolderBasename}-infra"
+        "COMPOSE_PROJECT_NAME": "${containerWorkspaceFolderBasename}"
     },
     // 호스트 파일시스템 노출 없이 source code 자체를 named volume 에 둔다.
     // dod 환경에서 다른 컨테이너 (compose 서비스, build context 등) 가 같은
@@ -36,7 +36,7 @@
     "initializeCommand": {
         "prepare-mounts": "mkdir -p ${localEnv:HOME}/.claude ${localEnv:HOME}/.config",
         "prepare-files": "touch ${localEnv:HOME}/.claude.json",
-        "prepare-network": "docker network create ${localWorkspaceFolderBasename}-infra 2>/dev/null || true"
+        "prepare-network": "docker network create ${localWorkspaceFolderBasename} 2>/dev/null || true"
     },
     // "postCreateCommand": { "husky": "husky", "install": "npm install" },
     // "postStartCommand": {

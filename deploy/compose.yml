@@ -62,7 +62,7 @@ services:
         # nginx.conf 는 source volume 안에서 절대경로로 참조. bind mount 회피.
         volumes:
             - source:/workspaces:ro
-        command: ['nginx', '-c', '/workspaces/${PROJECT_NAME}/deploy/nginx.conf', '-g', 'daemon off;']
+        command: ['nginx', '-c', '/workspaces/${COMPOSE_PROJECT_NAME}/deploy/nginx.conf', '-g', 'daemon off;']
         depends_on:
             api: { condition: service_healthy }
         restart: unless-stopped
@@ -77,5 +77,5 @@ networks:
 volumes:
     # devcontainer 가 workspaceMount 로 사용하는 source volume.
     source:
-        name: ${PROJECT_NAME}
+        name: ${COMPOSE_PROJECT_NAME}
         external: true

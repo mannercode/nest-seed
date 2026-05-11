@@ -32,11 +32,11 @@ services:
             SQL_PASSWORD: temporal
         # devcontainer 와 같은 source volume 을 공유해서 호스트 경로 노출 없이
         # scripts 에 도달. VSCode 가 volume 을 /workspaces 에 mount 하고 그 안
-        # ${PROJECT_NAME}/ 서브폴더에 clone 하므로 target 도 /workspaces.
+        # ${COMPOSE_PROJECT_NAME}/ 서브폴더에 clone 하므로 target 도 /workspaces.
         volumes:
             - source:/workspaces:ro
         entrypoint: ['/bin/sh']
-        command: '/workspaces/${PROJECT_NAME}/.devcontainer/infra/temporal/scripts/setup-postgres.sh'
+        command: '/workspaces/${COMPOSE_PROJECT_NAME}/.devcontainer/infra/temporal/scripts/setup-postgres.sh'
 
     temporal:
         extends: { file: ../compose.common.yml, service: common-options }
@@ -52,7 +52,7 @@ services:
             BIND_ON_IP: 0.0.0.0
             # source volume 안의 파일을 절대경로로 직접 지정 — 별도 mount path
             # 마련하지 않고 source volume 그대로 활용.
-            DYNAMIC_CONFIG_FILE_PATH: /workspaces/${PROJECT_NAME}/.devcontainer/infra/temporal/dynamicconfig/development-sql.yaml
+            DYNAMIC_CONFIG_FILE_PATH: /workspaces/${COMPOSE_PROJECT_NAME}/.devcontainer/infra/temporal/dynamicconfig/development-sql.yaml
         volumes:
             - source:/workspaces:ro
         healthcheck:
@@ -80,15 +80,15 @@ services:
         volumes:
             - source:/workspaces:ro
         entrypoint: ['/bin/sh']
-        command: '/workspaces/${PROJECT_NAME}/.devcontainer/infra/temporal/scripts/create-namespace.sh'
+        command: '/workspaces/${COMPOSE_PROJECT_NAME}/.devcontainer/infra/temporal/scripts/create-namespace.sh'
 
 volumes:
     temporal_pgdata: {}
     # VSCode 의 "Clone Repository in Named Container Volume" 으로 만들어진
-    # source volume. 사용자가 prompt 에 입력한 volume name (= ${PROJECT_NAME})
+    # source volume. 사용자가 prompt 에 입력한 volume name (= ${COMPOSE_PROJECT_NAME})
     # 으로 만들어지고, devcontainer 가 /workspaces 에 mount + 그 안
-    # ${PROJECT_NAME}/ 에 git clone. 호스트 파일시스템 노출 없이 모든
+    # ${COMPOSE_PROJECT_NAME}/ 에 git clone. 호스트 파일시스템 노출 없이 모든
     # 컨테이너가 같은 코드를 본다.
     source:
-        name: ${PROJECT_NAME}
+        name: ${COMPOSE_PROJECT_NAME}
         external: true
