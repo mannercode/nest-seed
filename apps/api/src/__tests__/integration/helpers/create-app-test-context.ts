@@ -1,4 +1,9 @@
-import { AppLoggerService, getRedisConnectionToken } from '@mannercode/common'
+import {
+    AppLoggerService,
+    getNatsConnectionToken,
+    getRedisConnectionToken,
+    type NatsConnection
+} from '@mannercode/common'
 import {
     createHttpTestContext,
     isDebuggingEnabled,
@@ -8,7 +13,7 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import compression from 'compression'
-import { AppConfigService, REDIS_CONNECTION_NAME } from 'config'
+import { AppConfigService, NATS_CONNECTION_NAME, REDIS_CONNECTION_NAME } from 'config'
 import express from 'express'
 import { AppModule } from '../../../app.module'
 
@@ -40,10 +45,11 @@ export async function createAppTestContext(metadata: ModuleMetadataEx = {}) {
     await stopAllCronJobs(ctx)
 
     const teardown = async () => {
-        await ctx.close()
-
         const redis = ctx.module.get(getRedisConnectionToken(REDIS_CONNECTION_NAME))
-        await redis.quit()
+        const nats = ctx.module.get<NatsConnection>(getNatsConnectionToken(NATS_CONNECTION_NAME))
+
+        await ctx.close()
+        await Promise.all([redis.quit(), nats.drain().catch(() => undefined)])
     }
 
     return { ...ctx, teardown }
