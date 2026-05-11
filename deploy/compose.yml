@@ -54,8 +54,11 @@ services:
             context: ..
             dockerfile: apps/api/Dockerfile
             args:
-                DEPS_TAG: ${DEPS_TAG}
-        image: nest-seed-api
+                # build 시에는 ensure-deps-image.sh 가 export 해서 정상 값이
+                # 들어가고, down/config 처럼 빌드 안 하는 명령은 빈 값으로 통과
+                # 시켜 "DEPS_TAG not set" 경고를 막는다.
+                DEPS_TAG: ${DEPS_TAG:-}
+        image: api
         deploy:
             replicas: ${REPLICAS:-4}
 

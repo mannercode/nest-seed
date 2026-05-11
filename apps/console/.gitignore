@@ -1,0 +1,8 @@
+.next/
+_output/
+node_modules/
+next-env.d.ts
+# Local env overrides (per-developer, never committed). 커밋되는 기본값은
+# .env 에 있고 Next.js 가 그것을 먼저 읽는다.
+.env*.local
+*.tsbuildinfo

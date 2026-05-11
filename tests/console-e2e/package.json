@@ -1,0 +1,18 @@
+{
+    "name": "console-e2e",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "test": "playwright test",
+        "test:ui": "playwright test --ui",
+        "lint": "tsc --noEmit",
+        "clean": "rm -rf _output",
+        "atoz": "npm run clean && npm run lint && CI=1 playwright test"
+    },
+    "devDependencies": {
+        "@playwright/test": "1.59.1",
+        "@types/node": "24",
+        "typescript": "6.0.3"
+    }
+}

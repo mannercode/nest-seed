@@ -1,9 +1,0 @@
-{
-    "name": "snapshot-diff",
-    "private": true,
-    "type": "commonjs",
-    "dependencies": {
-        "stream-chain": "^3.4.0",
-        "stream-json": "^2.1.0"
-    }
-}

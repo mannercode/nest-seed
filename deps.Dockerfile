@@ -9,6 +9,12 @@ COPY package.json package-lock.json ./
 COPY libs/common/package.json libs/common/
 COPY libs/testing/package.json libs/testing/
 COPY apps/api/package.json apps/api/
+COPY apps/console/package.json apps/console/
+# 루트 workspaces 가 tests/* 까지 잡으므로 일관성 유지를 위해 함께 복사.
+# console-e2e 자체는 deploy 이미지에서 안 쓰지만, npm ci 가 워크스페이스
+# 그래프를 풀 때 디스크상 package.json 이 있어야 lockfile 의 노드와 어긋나지
+# 않는다 (tools/* 와 같은 stub 패턴).
+COPY tests/console-e2e/package.json tests/console-e2e/
 # tools/ 워크스페이스 — apps/api 와 libs/common 의 devDep 으로 등장하므로
 # npm ci 가 workspace 그래프를 풀 때 필요. tools/* 디렉토리에 package.json 만
 # 있으면 충분하다 (없으면 npm 이 registry 조회 fallback 후 404 로 깨진다).

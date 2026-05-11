@@ -1,0 +1,32 @@
+{
+    "name": "console",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "predev": "free-port 3100",
+        "dev": "next dev -p 3100",
+        "build": "next build",
+        "prestart": "free-port 3100",
+        "start": "next start -p 3100",
+        "clean": "rm -rf .next",
+        "lint": "tsc --noEmit",
+        "atoz": "npm run clean && npm run lint && npm run build"
+    },
+    "dependencies": {
+        "next": "16.2.6",
+        "react": "19.2.6",
+        "react-dom": "19.2.6"
+    },
+    "devDependencies": {
+        "@mannercode/dev-tools": "*",
+        "@tailwindcss/postcss": "^4.3.0",
+        "@types/node": "24",
+        "@types/react": "19.2.14",
+        "@types/react-dom": "19.2.3",
+        "autoprefixer": "^10.5.0",
+        "postcss": "^8.5.14",
+        "tailwindcss": "^4.3.0",
+        "typescript": "6.0.3"
+    }
+}

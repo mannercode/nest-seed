@@ -11,7 +11,8 @@
         "libs/testing",
         "tools/dev-tools",
         "tools/jest-helpers",
-        "apps/*"
+        "apps/*",
+        "tests/*"
     ],
     "scripts": {
         "build": "npm run build --workspaces --if-present",
@@ -25,8 +26,8 @@
         "dev:common": "npm run dev -w libs/common",
         "dev:testing": "npm run dev -w libs/testing",
         "dev:api": "npm run dev -w apps/api",
-        "list-tests": "node tools/dev-tools/list-tests.js",
-        "list-tests:html": "mkdir -p _output && node tools/dev-tools/list-tests.js libs apps/api --html > _output/test-list.html && echo '✅ _output/test-list.html'"
+        "dev:console": "npm run dev -w apps/console",
+        "list-tests:html": "mkdir -p _output && node tools/dev-tools/list-tests.js libs apps/api --html > _output/test-list.html"
     },
     "devDependencies": {
         "@aws-sdk/client-s3": "3.1045.0",
@@ -64,7 +65,7 @@
         "ioredis": "5.10.1",
         "jest": "30.4.2",
         "joi": "18.2.1",
-        "lint-staged": "17.0.3",
+        "lint-staged": "17.0.4",
         "mongodb": "7.2.0",
         "mongoose": "9.6.2",
         "prettier": "3.8.3",

@@ -27,6 +27,11 @@
 !/tools/
 !/tools/*/
 
+# tests/* 워크스페이스 — deps.Dockerfile 의 npm ci 가 워크스페이스 그래프를
+# 풀 때 디스크상 package.json 이 필요. 실 deploy 이미지에는 들어가지 않지만
+# stub 으로 두는 패턴 (libs/*/package.json 과 동일).
+!/tests/*/package.json
+
 **/node_modules
 **/_output
 **/__tests__

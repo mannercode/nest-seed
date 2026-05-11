@@ -1,5 +1,5 @@
 ARG DEPS_TAG
-FROM nest-seed-deps:${DEPS_TAG} AS build
+FROM deps:${DEPS_TAG} AS build
 
 COPY tsconfig.json ./
 COPY libs/ libs/
