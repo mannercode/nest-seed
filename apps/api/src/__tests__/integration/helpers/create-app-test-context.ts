@@ -13,10 +13,10 @@ import express from 'express'
 import { AppModule } from '../../../app.module'
 
 /**
- * 통합 테스트용 Nest 앱을 띄운다. AppModule 을 통째로 가져와 운영 그래프와
- * 동일한 모듈 구성을 사용하므로, 테스트 fixture 는 추가 imports / controllers
- * 를 따로 선언할 필요가 없다. mock 이나 가드 무력화는 기존대로
- * overrideProviders / ignoreGuards 옵션으로 적용한다.
+ * 통합 테스트용 NestJS 앱을 띄운다. `AppModule` 을 통째로 가져오므로 운영
+ * 환경과 같은 모듈 그래프 위에서 검증한다. 테스트 fixture 는 추가
+ * `imports` 나 컨트롤러를 따로 선언할 필요가 없다. mock 으로 바꾸거나
+ * 가드를 끄려면 `overrideProviders` 와 `ignoreGuards` 옵션을 그대로 쓴다.
  */
 export async function createAppTestContext(metadata: ModuleMetadataEx = {}) {
     const imports = [AppModule, ...(metadata.imports ?? [])]

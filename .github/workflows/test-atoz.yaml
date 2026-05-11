@@ -1,12 +1,13 @@
-name: CI
+name: Test AtoZ
 on:
     pull_request:
         branches: ['main']
     push:
         branches: ['main']
     schedule:
-        # 6시간마다 :17 UTC 에 실행해 commit 이 없어도 main 이 주기적으로 green
-        # 으로 돌아 dependency/infra 변경으로 인한 회귀를 잡는다.
+        # UTC 기준 6 시간마다 매시 :17 에 돌린다. 새 커밋이 없어도 main 이
+        # 주기적으로 통과하는지 확인해, 의존성이나 인프라 변경에서 들어온
+        # 회귀를 일찍 잡는다.
         - cron: '17 */6 * * *'
 permissions:
     contents: read

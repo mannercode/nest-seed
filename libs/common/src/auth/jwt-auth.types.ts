@@ -8,9 +8,9 @@ export type AuthConfig = {
 }
 
 /**
- * 수행 중인 operation 에 대한 out-of-band metadata. security event 에 같이
- * 실어 보내서 consumer (audit log, SIEM, alerting) 가 action 을 request 에
- * 귀속시킬 수 있게 한다. JwtAuthService 는 들여다보지 않고 그대로 전달만 한다.
+ * 보안 이벤트와 함께 흘려보내는 부가 정보다. audit 로그, SIEM, 알림 같은
+ * 후속 소비자가 어떤 요청에서 일어난 일인지 추적할 수 있게 해 준다.
+ * `JwtAuthService` 는 이 값을 들여다보지 않고 그대로 전달만 한다.
  */
 export type EventContext = { ip?: string; userAgent?: string; source?: string }
 
@@ -56,8 +56,8 @@ export type JwtAuthFactoryOptions = {
     auth: AuthConfig
     onEvent?: OnSecurityEvent
     /**
-     * per-user revocation index 의 subject 식별에 쓰는 JWT payload field.
-     * 기본값은 `'sub'` (RFC 7519 표준 claim).
+     * 사용자 단위 무효화 인덱스를 만들 때 어떤 클레임으로 사용자를 식별할지
+     * 지정한다. 기본값은 `'sub'` 다 (RFC 7519 의 표준 클레임).
      */
     userIdField?: string
 }

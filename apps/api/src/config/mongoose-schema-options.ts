@@ -6,7 +6,6 @@ import type { SchemaOptions } from 'mongoose'
  */
 export const MONGOOSE_SCHEMA_OPTIONS: SchemaOptions = {
     minimize: false,
-    // https://mongoosejs.com/docs/guide.html#optimisticConcurrency
     optimisticConcurrency: true,
     strict: 'throw',
     strictQuery: 'throw',

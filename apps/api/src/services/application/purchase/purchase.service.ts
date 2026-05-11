@@ -29,12 +29,12 @@ export class PurchaseService {
             .map((item) => item.itemId)
         const lockKey = `tickets:${[...ticketIds].sort().join(',')}`
 
-        // 같은 ticket set 을 건드리는 동시 purchase 를 직렬화한다.
-        // validatePurchase 는 사용자가 ticket 을 *holding* 중인지만 확인한다.
-        // 완료 시 hold 가 풀리지 않으므로 N 개 동시 purchase 가 모두 검증을
-        // 통과해 각자 payment 를 만들 수 있다. lock + 내부의 가용성 체크가
-        // 합쳐져, 한 번 Sold 로 commit 되면 후속 peer 는 payment 에 닿기
-        // 전에 abort 되도록 보장한다.
+        // 같은 티켓 묶음에 대한 동시 결제를 한 번에 하나씩만 처리한다.
+        // `validatePurchase` 는 사용자가 그 티켓을 hold 하고 있는지만 본다.
+        // 결제가 끝나도 hold 가 풀리지 않으므로, 락이 없으면 동시에 들어온
+        // 결제 여러 건이 모두 검증을 통과해 각자 결제 레코드를 만든다.
+        // 락 안에서 가용성을 다시 확인하면, 한 번 `Sold` 로 바뀐 뒤에는
+        // 다음 결제가 결제 단계에 닿기 전에 거절된다.
         return this.cache.withLockBlocking(
             lockKey,
             PURCHASE_LOCK_TTL_MS,

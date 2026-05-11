@@ -4,7 +4,8 @@ import { SchemaFactory } from '@nestjs/mongoose'
 import { defaultTo } from '../utils'
 
 /**
- * toObject와 toJSON의 차이는 toJSON는 flattenMaps의 기본값이 true라는 것 뿐이다.
+ * `toObject` 와 `toJSON` 의 차이는 `flattenMaps` 기본값뿐이다. `toJSON` 은
+ * 기본이 true 라서 Map 을 평범한 객체로 풀어 준다.
  *
  * @Schema()
  * export class Sample {
@@ -20,13 +21,12 @@ import { defaultTo } from '../utils'
  */
 
 /**
- * CRUD category 의 schema base.
+ * 보통의 도메인 엔티티(생성·조회·수정·삭제 모두 가능)에 쓰는 스키마 기반
+ * 클래스다. 기본 동작은 soft-delete 다. 특정 모델에서 hard-delete 가 필요하면
+ * `@HardDelete()` 데코레이터를 그 모델에 붙인다.
  *
- * 일반적인 도메인 엔티티(생성/조회/수정/삭제 모두 가능)용. soft-delete 가 default 이고
- * `@HardDelete()` 데코레이터로 모델별 hard-delete opt-out 가능.
- *
- * Append-only category (audit log 등) 는 본 base 가 아니라 `AppendOnlySchema` /
- * `createAppendOnlySchema` 를 사용한다.
+ * 감사 로그처럼 추가만 일어나는 도메인은 이 기반이 아니라 `AppendOnlySchema`
+ * 와 `createAppendOnlySchema` 를 쓴다.
  */
 export abstract class CrudSchema {
     createdAt: Date
@@ -54,7 +54,8 @@ export function createCrudSchema<T>(cls: Type<T>): Schema<T> {
     const isHardDelete = defaultTo(Reflect.getMetadata(HARD_DELETE_KEY, cls), false)
     if (isHardDelete === false) {
         schema.add({ deletedAt: { default: null, type: Date } } as any)
-        // soft delete 상황에서 deletedAt이 자주 조회되므로 인덱스를 설정함
+        // soft-delete 가 켜진 모든 조회는 `deletedAt: null` 필터를 자동으로
+        // 끼우므로, 이 필드 인덱스 하나로 거의 모든 경로가 빨라진다.
         schema.index({ deletedAt: 1 })
 
         schema.pre('find', excludeDeletedMiddleware)
@@ -104,8 +105,9 @@ export function createCrudSchema<T>(cls: Type<T>): Schema<T> {
             this.deletedAt = new Date()
             return this.save(options)
         }
-        // bulkWrite: softDelete middleware 를 우회하므로 각 operation 의 filter 에
-        // deletedAt null 을 주입한다
+        // `bulkWrite` 는 soft-delete 미들웨어를 거치지 않는다. 그래서 각
+        // 연산의 필터에 `deletedAt: null` 을 직접 끼워 넣고, 삭제 계열
+        // 연산은 update 로 바꿔서 같은 효과를 낸다.
         schema.pre('bulkWrite', function (ops) {
             for (const op of ops) {
                 if ('updateOne' in op) {

@@ -8,13 +8,13 @@ const DEFAULT_ALGORITHMS: JwtVerifyOptions['algorithms'] = ['HS256']
 
 export type JwtAuthGuardOptions = {
     /**
-     * 허용할 서명 algorithm 목록. 기본값은 `['HS256']`. 고정해두면 JWT
-     * algorithm-confusion 공격 (`none` 강제, HS↔RS 교체) 을 막는다.
+     * 허용할 서명 알고리즘 목록. 기본값은 `['HS256']`. 고정해 두면 알고리즘
+     * 혼동 공격(`none` 으로 바꾸기, HS↔RS 교체) 을 막는다.
      */
     algorithms?: JwtVerifyOptions['algorithms']
-    /** 필수 `aud` claim. audience 가 다른 token 은 거부된다. */
+    /** 필수 `aud` 클레임. audience 가 다른 토큰은 거절한다. */
     audience?: string
-    /** 필수 `iss` claim. issuer 가 다른 token 은 거부된다. */
+    /** 필수 `iss` 클레임. issuer 가 다른 토큰은 거절한다. */
     issuer?: string
     secret: string
 }
@@ -73,7 +73,8 @@ export abstract class JwtAuthGuard implements CanActivate {
         const authorization = request.headers?.authorization
         if (!authorization) return undefined
 
-        // RFC 6750: scheme 비교는 case-insensitive ("Bearer" / "bearer" / "BEARER" 모두 허용).
+        // RFC 6750 에 따라 인증 스킴 비교는 대소문자를 가리지 않는다.
+        // "Bearer", "bearer", "BEARER" 모두 받아들인다.
         const [type, token] = authorization.split(' ')
         return type?.toLowerCase() === 'bearer' ? token : undefined
     }

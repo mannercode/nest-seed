@@ -1,14 +1,15 @@
-// 겹치는 showtime-creation saga race 의 분산 스트레스 테스트 —
-// N-way overlap.
+// 시간이 겹치는 상영 생성 saga 들이 동시에 들어왔을 때 분산 락이 한 건만
+// 통과시키는지 검증하는 부하 테스트다.
 //
-// 각 inner iteration: OVERLAP_COUNT 개의 saga POST 를 병렬로 보내는데, 모든 pair
-// 가 서로 겹치도록 startTime 을 어긋나게 두고 duration 이 항상 교차한다.
-// Temporal worker 4 개 (replica 당 하나) 환경에서 여러 workflow 가 동시에 도는데,
-// validate+create distributed lock 을 획득한 saga 만 성공할 수 있다. 기댓값:
-// 정확히 1 succeeded, OVERLAP_COUNT - 1 failed.
+// 한 회차는 이렇게 돈다. saga 요청 여러 건을 한꺼번에 보낸다. 각 요청의
+// 시작 시각을 어긋나게 두면서 길이를 충분히 길게 잡아, 어떤 두 요청을 골라도
+// 시간이 겹치게 만든다. 복제본마다 Temporal 워커가 한 대씩 떠 있어서 여러
+// 워크플로우가 동시에 돌지만, 검증·삽입 분산 락을 잡은 saga 한 건만 성공
+// 한다. 기대 결과는 정확히 한 건이 succeeded, 나머지는 failed 다.
 //
-// 실패 조건: 둘 이상 성공, 아무도 성공하지 못함, 또는 saga 가 시간 안에 terminal
-// state 에 도달하지 못함.
+// 다음 중 하나라도 해당하면 실패로 본다. 둘 이상이 succeeded 이거나,
+// 아무도 성공하지 못하거나, 시간 안에 saga 가 종료 상태에 도달하지 못한
+// 경우.
 
 const http = require('http')
 

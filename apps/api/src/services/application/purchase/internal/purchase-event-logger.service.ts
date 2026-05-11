@@ -7,15 +7,15 @@ import {
 } from '../purchase.events'
 
 /**
- * Demo subscriber: "모든 replica 가 모든 purchase event 를 관찰한다".
+ * 시드용 구독자다. "모든 복제본이 모든 구매 이벤트를 본다" 패턴을 보여 준다.
  *
- * queue group 없음 → NATS 가 각 메시지를 모든 subscriber 에 broadcast 한다.
- * replica 4 개면 event 당 handler 가 4 번 실행된다. 각 replica 가 동기화되어야
- * 하는 process 단위 자원을 들고 있을 때 적합한 형태다. 대표 예: in-memory
- * cache, hot-reloaded config, local metrics gauge.
+ * queue group 을 지정하지 않으면 NATS 가 각 메시지를 구독자 전체에 그대로
+ * 뿌린다. 복제본이 4 개면 한 이벤트마다 핸들러가 4 번 실행된다. 각 복제본
+ * 안에 자기만의 자원이 있어서 모두가 동기화돼야 할 때 어울리는 형태다.
+ * 인메모리 캐시 무효화, 핫리로드 설정 갱신, 로컬 메트릭 집계가 그 예다.
  *
- * "event 하나를 정확히 한 replica 만 처리" (알림, ledger 업데이트) 가 필요하면
- * queue group 에 합류시킨다. PurchaseNotificationService 참고.
+ * 반대로 같은 이벤트를 한 복제본만 처리해야 하는 일(알림 발송, ledger
+ * 업데이트)은 queue group 을 쓴다. `PurchaseNotificationService` 가 그 예다.
  */
 @Injectable()
 export class PurchaseEventLoggerService implements OnModuleInit, OnModuleDestroy {

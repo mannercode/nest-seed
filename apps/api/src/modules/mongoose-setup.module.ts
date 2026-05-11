@@ -15,12 +15,11 @@ import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
                     autoIndex: true,
                     bufferCommands: true,
                     dbName,
-                    // cycle-04 의 (10, 50) 이 Test Stability race 시나리오에서
-                    // MongoWaitQueueTimeoutError 를 일으켜 (50, 200) 으로 되돌림.
-                    // race 테스트는 4 replica 에 500 동시 POST (=125/replica) 를
-                    // 쏘는데, maxPool=50 이 넘쳐서 waitQueueTimeoutMS=5s 까지
-                    // queue 가 밀렸다. cycle-04 의 perf sweep 은 theater
-                    // read/write c=400 까지만 커버해서 이 burst 영역을 놓쳤다.
+                    // 부하 테스트가 복제본 4 개에 동시에 요청 500 건을 보내면,
+                    // 복제본 한 대가 125 건을 받는다. 최대 연결 수가 50 이면
+                    // 모자라서 일부 요청이 대기 시간 5 초를 넘기고
+                    // `MongoWaitQueueTimeoutError` 로 끝난다. 200 으로 두면
+                    // 이 영역에서 대기가 거의 발생하지 않는다.
                     minPoolSize: 50,
                     maxPoolSize: 200,
                     uri,

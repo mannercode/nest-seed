@@ -48,8 +48,9 @@ export class BookingService {
     }
 
     async searchShowdates({ movieId, theaterId }: BookingSearchShowdatesDto) {
-        // endTime > now 필터로 과거 상영시간 제외. recommendation/showtime-creation
-        // 이 모두 future 필터를 거는 것과 일치. cutoff 컷은 결제 시점에서 본다.
+        // 끝난 상영은 보여 주지 않으려고 `endTime > now` 로 거른다. 추천과
+        // 상영 생성 화면도 같은 방식으로 미래 상영만 본다. 결제 마감 시간은
+        // 결제 시점에서 따로 확인한다.
         return this.showtimesService.searchShowdates({
             endTimeRange: { start: new Date() },
             movieIds: [movieId],
@@ -58,10 +59,10 @@ export class BookingService {
     }
 
     async searchShowtimes({ movieId, showdate, theaterId }: BookingSearchShowtimesDto) {
-        // showdate 는 YYYYMMDD 로 들어오는데, 짝이 되는 searchShowdates 가
-        // Mongo `$dateToString` (timezone 명시 없음 → UTC) 으로 만든 UTC 자정
-        // Date 들을 돌려준다. 그래서 이 경계도 UTC 자정 기준으로 잡아야 두
-        // 메서드 결과가 비-UTC 컨테이너에서도 어긋나지 않는다.
+        // `showdate` 는 YYYYMMDD 로 들어온다. 짝이 되는 `searchShowdates` 는
+        // mongo `$dateToString` 의 UTC 결과를 그대로 돌려준다. 이쪽도 UTC
+        // 자정 기준으로 범위를 잡아야 두 API 결과가 호스트 시간대와 상관없이
+        // 맞는다.
         const startOfDay = new Date(showdate)
         startOfDay.setUTCHours(0, 0, 0, 0)
 

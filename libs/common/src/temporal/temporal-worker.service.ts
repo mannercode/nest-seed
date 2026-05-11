@@ -25,11 +25,11 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
             workflowBundle
         })
 
-        // run() 은 worker 가 완전히 종료된 (in-flight activity 가 drain 되고
-        // polling 이 멈춘) 뒤에야 resolve 된다. promise 를 잡아 두어야
-        // onModuleDestroy 에서 await 할 수 있다 — 그렇지 않으면 activity 가
-        // 의존 module disposal (mongoose 가 query 중간에 close 되는 등) 과
-        // race 할 수 있다.
+        // `run()` 은 워커가 완전히 종료된 뒤에만 resolve 된다. 진행 중이던
+        // 액티비티가 모두 끝나고 polling 이 멈춘 시점이다. 이 Promise 를
+        // 들고 있어야 `onModuleDestroy` 에서 기다릴 수 있다. 그러지 않으면
+        // 액티비티가 끝나기 전에 의존 모듈이 먼저 닫혀, mongoose 가 쿼리
+        // 중간에 끊기는 식의 경합이 생긴다.
         this.runPromise = this.worker.run().catch(
             /* istanbul ignore next */ (err: unknown) => {
                 this.logger.error('temporal worker run() failed', err)
@@ -39,20 +39,21 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
 
     async onModuleDestroy() {
         this.worker?.shutdown()
-        // 진행 중인 activity 가 깔끔하게 완료되거나 취소될 수 있도록 underlying
-        // connection 을 닫기 전에 완전한 drain 을 기다린다.
+        // 진행 중이던 액티비티가 정상 종료 또는 취소까지 도달하도록, 연결을
+        // 닫기 전에 워커가 완전히 빠질 때까지 기다린다.
         if (this.runPromise) await this.runPromise
         await this.connection?.close().catch(() => undefined)
     }
 
     /**
-     * Production: build step (예: `apps/api/scripts/bundle-workflows.js`)
-     * 이 disk 에 써둔 pre-built bundle 을 load 한다. webpack 이 app 을 한
-     * `index.js` 로 합치고 나면 `bundleWorkflowCode` 가 runtime 에
-     * workflowsPath 를 resolve 할 수 없다 — source tree 가 필요한데
-     * ship 되지 않기 때문.
+     * 운영 환경에서는 빌드 단계가 디스크에 미리 만들어 둔 번들 파일
+     * (예: `apps/api/scripts/bundle-workflows.js` 가 만든 파일) 을 그대로
+     * 읽는다. webpack 이 앱을 한 `index.js` 로 합치고 나면, 런타임에
+     * `bundleWorkflowCode` 가 워크플로우 소스를 찾지 못한다. 번들에 그
+     * 트리가 포함되지 않기 때문이다.
      *
-     * Dev / tests: workflowsPath 를 통해 source 를 즉석에서 bundling 한다.
+     * dev 와 테스트에서는 미리 만든 번들이 없으므로, `workflowsPath` 로
+     * 소스를 가리켜 그 자리에서 번들을 만든다.
      */
     private async resolveWorkflowBundle() {
         const { workflowBundlePath, workflowsPath } = this.options

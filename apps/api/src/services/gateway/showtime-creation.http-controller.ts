@@ -18,9 +18,10 @@ import {
 } from 'application'
 import { map, Observable } from 'rxjs'
 
-// AUTHZ: 시드는 인가 검사를 일부러 비워 둔다. 포크 시 도메인 정책에 맞춰
-// `@UseGuards(UserJwtAuthGuard)` (또는 admin 가드) 를 추가하라. SSE 스트림은
-// 다른 사용자의 saga 진행 상황까지 노출되므로 특히 주의. README "5. 인가" 섹션 참고.
+// 인가: 이 컨트롤러도 인가 검사를 비워 둔다. SSE 스트림은 다른 사용자가
+// 만든 saga 의 진행 상황까지 그대로 보여 주므로 특히 주의한다. 포크할 때는
+// `@UseGuards(UserJwtAuthGuard)` 또는 관리자 가드를 도메인 정책에 맞게
+// 붙인다. 자세한 안내는 README "5. 인가" 절에 있다.
 @Controller('showtime-creation')
 export class ShowtimeCreationHttpController {
     constructor(

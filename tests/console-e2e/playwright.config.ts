@@ -5,14 +5,14 @@ const CONSOLE_PORT = 3100
 const BASE_URL = `http://localhost:${CONSOLE_PORT}`
 
 /**
- * api + console dev 서버를 띄운 뒤 테스트 실행. 이미 `npm run dev` 가 떠 있다면
- * 그대로 재사용한다. mongo/redis/nats/temporal 인프라는 .devcontainer/infra 에서
- * 미리 떠 있어야 한다.
+ * api 와 console dev 서버를 띄운 뒤 테스트를 실행한다. 이미 `npm run dev`
+ * 로 떠 있다면 그대로 재사용한다. mongo, redis, nats, temporal 같은 인프라는
+ * `.devcontainer/infra` 가 먼저 띄워 두고 있어야 한다.
  */
 export default defineConfig({
     testDir: './tests',
-    // 다른 워크스페이스와 동일한 `_output` 패턴. test-results 가 cwd 에
-    // 흩어지지 않게 한곳에 모은다.
+    // 다른 워크스페이스와 같은 `_output` 패턴을 따른다. test-results 가
+    // 작업 디렉터리에 흩어지지 않도록 한곳에 모은다.
     outputDir: './_output/test-results',
     fullyParallel: false,
     forbidOnly: !!process.env.CI,

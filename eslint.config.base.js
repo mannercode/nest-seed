@@ -21,9 +21,10 @@ const restrictedSyntaxBase = [
 const escapeForRegex = (value) => value.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&')
 
 /**
- * 모든 Node.js builtin module 에 매치되는 regex 문자열 ("node:" 접두사 유무 모두,
- * 그리고 임의 subpath 포함) — 예: fs, node:fs/promises, crypto 등. eslint-plugin-
- * allowed-dependencies 가 builtin 을 무시할 때 사용한다.
+ * Node.js 내장 모듈에 모두 맞는 정규식 문자열을 만든다. `node:` 접두가
+ * 붙은 형태와 안 붙은 형태, 하위 경로까지 함께 잡는다. 예: `fs`,
+ * `node:fs/promises`, `crypto`. `eslint-plugin-allowed-dependencies` 가
+ * 내장 모듈을 검사에서 빼는 데 쓴다.
  */
 const nodeBuiltinModulePattern = `^(?:node:)?(?:${[
     ...new Set(builtinModules.map((moduleName) => moduleName.replace(/^node:/, '').split('/')[0]))
@@ -93,9 +94,9 @@ const baseRules = {
     ],
     '@typescript-eslint/no-non-null-assertion': 'warn',
     'no-duplicate-imports': 'warn',
-    // 실제 redeclare 는 TS 가 이미 잡아준다. 이 rule 은 추가로 `as const` enum
-    // 의 canonical 대체 패턴인 const + 같은 이름의 type alias 까지 잡는데
-    // false positive 가 나서 비활성화.
+    // 실제 재선언은 TypeScript 가 이미 잡는다. 이 규칙은 추가로 `as const`
+    // enum 의 대체 패턴(같은 이름의 const 와 type alias 한 쌍) 까지 잡으려
+    // 들어서, 그 표준 패턴이 false positive 로 걸린다. 그래서 끈다.
     '@typescript-eslint/no-redeclare': 'off',
     '@typescript-eslint/adjacent-overload-signatures': 'warn'
 }
@@ -107,11 +108,7 @@ function createBaseConfigs({ tsconfigRootDir, srcGlob = 'src/**' }) {
             linterOptions: { reportUnusedDisableDirectives: true },
             languageOptions: {
                 parser: tseslint.parser,
-                parserOptions: {
-                    sourceType: 'module',
-                    projectService: true,
-                    tsconfigRootDir
-                },
+                parserOptions: { sourceType: 'module', projectService: true, tsconfigRootDir },
                 globals: { ...baseGlobals }
             },
             plugins: { ...basePlugins },

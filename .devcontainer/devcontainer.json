@@ -32,13 +32,13 @@
         "prepare-files": "touch ${localEnv:HOME}/.claude.json",
         "prepare-network": "docker network create ${localWorkspaceFolderBasename} 2>/dev/null || true"
     },
-    "postCreateCommand": { "husky": "husky", "install": "npm install" },
-    "postStartCommand": {
-        "infra": "bash .devcontainer/infra/reset.sh",
-        "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null"
-    },
+    // "postCreateCommand": { "husky": "husky", "install": "npm install" },
+    // "postStartCommand": {
+    //     "infra": "bash .devcontainer/infra/reset.sh",
+    //     "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null"
+    // },
     // "waitFor": "postStartCommand",
-    "forwardPorts": [5010, 5020, 9001],
+    "forwardPorts": [3000, 3100, 5010, 5020],
     "customizations": {
         "vscode": {
             "extensions": [

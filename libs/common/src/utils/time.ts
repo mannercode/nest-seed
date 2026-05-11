@@ -52,7 +52,6 @@ export class TimeUtil {
             s: 1000
         }
 
-        // 유효한 time format regex
         const validFormatRegex = /^(-?\d+(\.\d+)?)(ms|s|m|h|d)(\s*(-?\d+(\.\d+)?)(ms|s|m|h|d))*$/
 
         if (!validFormatRegex.test(timeExpression)) {

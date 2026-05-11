@@ -28,8 +28,9 @@ export class ShowtimeCreationActivities {
     ) {}
 
     /**
-     * TemporalWorkerService 에 넘기는 activity bag 을 반환한다. 메서드를 bind 해
-     * Temporal 이 plain function 으로 호출할 수 있게 한다.
+     * `TemporalWorkerService` 에 등록할 액티비티 묶음을 돌려준다. Temporal 은
+     * 일반 함수로 호출하므로, 각 메서드를 `bind` 해서 `this` 를 잃지 않게
+     * 한다.
      */
     bind() {
         return {
@@ -48,11 +49,12 @@ export class ShowtimeCreationActivities {
     ): Promise<ValidateAndCreateResult> {
         const { createDto, sagaId } = JsonUtil.reviveDates(input)
 
-        // validate-then-insert 는 showtimes collection 에 대한 read-modify-write
-        // 다. replica 당 Temporal worker 가 하나씩 있으면, 겹치는 saga 두 개가
-        // commit 전에 모두 validation 을 통과할 수 있다. cross-replica lock 으로
-        // (validate, create) 쌍을 직렬화해, 다른 saga 가 이미 insert 한 상태라면
-        // 정확히 한 saga 만 conflicting showtime 을 보게 한다.
+        // 검증과 삽입은 한 묶음이라야 한다. 복제본마다 Temporal 워커가
+        // 있어서 같은 시간대에 겹치는 saga 두 개가 동시에 돌면, 둘 다
+        // 삽입 전에 검증을 통과해 버린다. 그 사이 다른 saga 가 먼저 삽입한
+        // 결과를 못 보기 때문이다. 그래서 복제본을 넘는 분산 락으로 검증과
+        // 삽입을 한 쌍으로 묶는다. 한 saga 가 끝나기 전엔 다음 saga 가 같은
+        // 시간대를 못 본다.
         let result!: ValidateAndCreateResult
         await this.cache.withLockBlocking(
             VALIDATE_CREATE_LOCK_KEY,
@@ -91,7 +93,9 @@ export class ShowtimeCreationActivities {
         })
     }
 
-    // enum 매핑을 한 곳에 모아둔다. 그래야 workflow 코드가 workflow 경계 밖
-    // import 없이 깨끗하게 유지된다.
+    // 워크플로우가 상태 값을 쓸 때 enum 객체를 직접 import 하지 않게 한다.
+    // 워크플로우 코드는 샌드박스 안에서 도는데, 바깥의 NestJS 모듈을
+    // import 하면 번들이 깨진다. 이 클래스를 통해 한 곳에서만 enum 을
+    // 노출한다.
     static readonly Status = ShowtimeCreationStatus
 }

@@ -5,15 +5,15 @@ import { ScheduleModule } from '@nestjs/schedule'
 import { AppConfigService } from 'config'
 
 /**
- * AppConfigService 외 어디서나 주입 가능한 공용 제공자를 모은다.
- * (AppConfigService 와 *-setup 모듈은 AppConfigModule 자체가 @Global 이라
- * 별도로 노출할 필요 없음.)
+ * 어디서나 주입할 수 있는 공용 provider 를 모은다. `AppConfigService` 와
+ * `*-setup` 모듈은 `AppConfigModule` 이 이미 `@Global` 이라서 여기 다시
+ * 넣지 않는다.
  *
- * - ScheduleModule: AssetsService 의 @Cron 데코레이터를 위해 SchedulerRegistry 가
- *   모듈 그래프에 있어야 한다.
- * - JwtModule: gateway/guards 가 JwtService 를 주입한다. 빈 register({}) 는 토큰만
- *   노출하고 실제 secret/ttl 은 JwtAuthModule(UsersModule) 이 채운다.
- * - AppLoggerService: 로깅 단일 진입점.
+ * - `ScheduleModule`: `@Cron` 을 쓰는 서비스가 의존하는 `SchedulerRegistry`
+ *   를 모듈 그래프에 올려 둔다.
+ * - `JwtModule`: 가드들이 `JwtService` 를 주입받기 위해 토큰만 먼저 등록한다.
+ *   실제 secret 과 만료 시간은 `UsersModule` 안의 인증 모듈이 채운다.
+ * - `AppLoggerService`: 로거 진입점.
  */
 @Global()
 @Module({

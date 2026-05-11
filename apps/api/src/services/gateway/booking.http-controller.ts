@@ -18,9 +18,10 @@ import { UserAuthRequest } from './types'
 const SHOWDATE_PATTERN = /^(\d{4})(\d{2})(\d{2})$/
 
 /**
- * URL path 의 YYYYMMDD 를 UTC 자정 Date 로 파싱한다. UTC 기준인 이유는
- * BookingService 의 검색 경계 / Mongo `$dateToString` 결과와 일치시키기 위함 —
- * server local TZ 를 끼워 넣으면 비-UTC 컨테이너에서 결과가 어긋난다.
+ * URL 의 YYYYMMDD 를 UTC 자정 Date 로 바꾼다. UTC 로 맞추는 이유는
+ * `BookingService` 의 검색 범위와 mongo `$dateToString` 의 결과가 모두
+ * UTC 기준이라서다. 호스트 시간대를 끼우면 호스트가 UTC 가 아닐 때
+ * 결과가 어긋난다.
  */
 function parseShowdate(value: string): Date {
     const match = SHOWDATE_PATTERN.exec(value)
@@ -37,8 +38,9 @@ function parseShowdate(value: string): Date {
     const day = Number(dayStr)
     const ms = Date.UTC(year, month - 1, day)
     const date = new Date(ms)
-    // Date.UTC 는 month/day overflow 를 silent 로 보정한다 (예: 13 → 다음 해 1월).
-    // round-trip 비교로 입력이 실제 달력일자였는지 확인한다.
+    // `Date.UTC` 는 13월이나 2월 30일 같은 값을 조용히 보정해 다른 달로
+    // 넘긴다. 그래서 한 번 만든 Date 를 다시 분해해 원본과 같은지 확인한다.
+    // 다르면 달력에 없는 날짜였다는 뜻이다.
     if (
         date.getUTCFullYear() !== year ||
         date.getUTCMonth() !== month - 1 ||

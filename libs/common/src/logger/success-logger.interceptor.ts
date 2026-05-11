@@ -58,9 +58,10 @@ export class HttpSuccessLoggerInterceptor implements NestInterceptor {
         const { body, method, url } = request
 
         if (this.shouldLogHttp(url)) {
-            // 시작 시각은 markRequestStart 가 WeakMap 에 박아둔 값을 그대로 쓴다 —
-            // 이 인터셉터가 실패하고 ExceptionLoggerFilter 가 받았을 때와 동일한
-            // 기준점이라 success/fail 로그 사이에 미세한 시각 차가 생기지 않는다.
+            // 시작 시각은 `markRequestStart` 가 WeakMap 에 박아 둔 값을
+            // 그대로 쓴다. 같은 요청이 예외 경로로 갔을 때
+            // `HttpExceptionLoggerFilter` 도 같은 값을 읽으므로, 성공 로그와
+            // 실패 로그가 같은 기준점에서 시간을 잰다.
             const elapsedMs = elapsedSinceRequestStart(request)
             const successLog = {
                 contextType: 'http' as const,

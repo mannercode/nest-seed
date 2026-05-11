@@ -1,15 +1,19 @@
 /**
- * Temporal 은 activity 에러를 `ActivityFailure` 로 감싸는데, 그 자신의
- * `message` 는 일반적인 "Activity task failed" 다. 던져진 HttpException 의
- * message 는 더 안쪽에 있다. `cause` 표준 체인을 따라가면서 `SuppressedError`
- * 의 `suppressed` slot 도 함께 본다 (다른 에러가 진행 중일 때 `await using`
- * disposal 이 던지면 발생 — disposal 에러가 primary 가 되고 원본이
- * "suppressed" 가 된다). disposal 잡음보다 원본을 우선한다.
+ * Temporal 은 액티비티 에러를 `ActivityFailure` 로 감싸 던진다. 바깥 에러의
+ * `message` 는 늘 "Activity task failed" 같은 일반 문구다. 우리가 만든
+ * `HttpException` 의 메시지는 그 안쪽에 들어 있다. 그래서 `cause` 체인을
+ * 끝까지 따라간다.
  *
- * `workflows.ts` 바깥에 둬서 coverage 까지 unit test 할 수 있게 한다 —
- * `bundleWorkflowCode` 는 workflow 코드를 sandbox VM 에서 실행하는데, Jest 의
- * istanbul instrumentation 이 그걸 보지 못하므로 workflow 모듈 안의 코드는
- * integration test 가 실행해도 0% coverage 로 잡힌다.
+ * 중간에 `SuppressedError` 가 끼는 경우도 본다. 다른 에러가 흘러가는 중에
+ * `await using` 의 disposer 가 또 던지면, disposer 가 던진 쪽이 메인이 되고
+ * 원래 에러는 `suppressed` 슬롯으로 밀려난다. 사용자 입장에선 원래 에러가
+ * 더 중요하므로 그쪽을 먼저 본다.
+ *
+ * 이 함수는 `workflows.ts` 와 분리해서 둔다. 워크플로우 코드는
+ * `bundleWorkflowCode` 가 만든 샌드박스 VM 안에서 도는데, 거기서는 Jest 의
+ * istanbul 계측이 닿지 않는다. 워크플로우 안에 두면 통합 테스트로 돌려도
+ * 커버리지가 0% 로 나온다. 분리해 두면 단위 테스트로 커버리지를 챙길 수
+ * 있다.
  */
 export function extractRootMessage(error: unknown): string {
     let current: unknown = error

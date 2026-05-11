@@ -12,13 +12,13 @@ const REDACTED = '[REDACTED]'
 const CIRCULAR = '[CIRCULAR]'
 
 /**
- * 잘 알려진 민감 key (password, refreshToken, accessToken, …) 의 값을
- * `[REDACTED]` 로 치환한 deep copy 를 돌려준다. HTTP request/response body
- * 가 log sink 에 도달하기 전에 가리는 데 쓴다.
+ * 미리 정해 둔 민감 키(`password`, `refreshToken`, `accessToken` 등)의 값을
+ * `[REDACTED]` 로 바꾼 깊은 복사본을 돌려준다. HTTP 요청·응답 본문이 로그에
+ * 닿기 전에 가리는 용도다.
  *
- * self-referential graph 도 허용한다 — 같은 object 를 다시 방문하면 무한
- * recursion 대신 `[CIRCULAR]` 로 접는다. (예: error logging 경로에 가끔
- * 끼어드는 `error.cause = error` 같은 chain.)
+ * 객체끼리 서로를 참조하는 자기 순환 그래프도 안전하게 처리한다. 같은
+ * 객체를 다시 만나면 끝없이 재귀하지 않고 `[CIRCULAR]` 로 접는다. 예를 들어
+ * 에러 로깅 경로에 끼어드는 `error.cause = error` 같은 사슬이 그렇다.
  */
 export function redactSensitive<T>(value: T): T {
     return walk(value, new WeakSet<object>()) as T

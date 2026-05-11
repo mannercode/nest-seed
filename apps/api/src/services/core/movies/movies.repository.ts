@@ -85,7 +85,8 @@ export class MoviesRepository extends CrudRepository<Movie> {
 
         const builder = new QueryBuilder<Movie>()
         builder.addEquals('isPublished', true)
-        // substring + case-insensitive 유지 (cycle-31 원복).
+        // 부분 문자열 검색에 대소문자 구분 없이 매칭한다. API 계약에서 이미
+        // 그렇게 약속한 동작이라서, mongo 인덱스를 못 타도 그대로 둔다.
         builder.addRegex('title', title)
         builder.addEquals('genres', genre)
         builder.addEquals('releaseDate', releaseDate)

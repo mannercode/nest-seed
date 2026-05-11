@@ -14,9 +14,11 @@ import { User } from './models'
 import { UsersRepository } from './users.repository'
 
 /**
- * findUserByCredentials, refreshAuthTokens는 단순히 UserAuthenticationService의 메소드를 재호출 하고 있어서 안티 패턴으로 보인다.
- * 그러나 더 중요한 원칙은 외부에 노출되는 모든 기능은 UsersService을 통해서 이뤄져야 한다는 것이다.
- * 따라서 UsersController는 UsersService만 참조해야 하고 UserAuthenticationService를 직접 호출하면 안 된다.
+ * `findUserByCredentials` 와 `refreshAuthTokens` 는 `UserAuthenticationService`
+ * 의 같은 이름 메서드를 그대로 다시 부른다. 얼핏 보면 군더더기처럼 보이지만,
+ * 외부에 노출되는 모든 기능은 `UsersService` 만 거치도록 한다는 원칙을
+ * 지키기 위해서다. 컨트롤러는 `UsersService` 만 참조하고,
+ * `UserAuthenticationService` 를 직접 부르지 않는다.
  */
 @Injectable()
 export class UsersService {

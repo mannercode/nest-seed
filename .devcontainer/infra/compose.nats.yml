@@ -4,9 +4,9 @@ services:
         image: $NATS_IMAGE
         deploy: { resources: { limits: { memory: 256m } } }
         shm_size: '8m'
-        # `-js` 는 JetStream 활성화. `--store_dir /data` 는 named volume 에
-        # 매핑돼 컨테이너 재시작 후에도 stream 이 유지된다. `-m` 은 healthcheck
-        # (와 임시 검사) 용도로 monitoring HTTP 포트를 노출한다.
+        # `--store_dir /data` 는 named volume 에 매핑되므로 컨테이너를
+        # 재시작해도 stream 이 남는다. `-m 8222` 는 healthcheck 가 쓸
+        # 모니터링 HTTP 포트를 연다.
         command: >
             --name nats
             -js
@@ -14,8 +14,9 @@ services:
             -m 8222
         volumes:
             - nats_data:/data
-        # `/healthz` 는 NATS 2.10+ 표준 health endpoint. `?js-enabled-only=true`
-        # 를 붙이면 JetStream 가동 여부도 함께 검증한다.
+        # `/healthz` 는 NATS 2.10+ 의 표준 health endpoint 다.
+        # `?js-enabled-only=true` 를 붙이면 JetStream 이 떴는지도 같이
+        # 확인한다.
         healthcheck:
             test: 'wget -qO- "http://localhost:8222/healthz?js-enabled-only=true" || exit 1'
 

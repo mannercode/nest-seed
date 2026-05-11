@@ -8,10 +8,11 @@ RUN npm run build --workspace=libs/common
 
 COPY apps/api/ apps/api/
 RUN npm run build --workspace=apps/api
-# devDeps 제거는 build stage 에서 수행한다. workspace 그래프 (root + tools/* + libs/* +
-# apps/api) 가 모두 살아 있는 상태라야 npm prune 이 @mannercode/* 같은 workspace
-# devDep 을 registry 조회 없이 정상 처리한다. runtime stage 는 root 가 없는
-# bare /workspace/apps/api 라 prune 이 그래프를 못 풀어 404 로 깨진다.
+# devDependency 제거는 build 단계에서 한다. 워크스페이스 그래프(root,
+# `tools/*`, `libs/*`, `apps/api`) 가 그대로 남아 있어야 `npm prune` 이
+# `@mannercode/*` 같은 워크스페이스 의존을 registry 조회 없이 풀 수 있다.
+# runtime 단계는 root `package.json` 이 없으므로, 같은 명령을 거기서 돌리면
+# 그래프를 못 풀고 404 로 죽는다.
 RUN npm prune --omit=dev
 
 FROM node:24-slim AS runtime

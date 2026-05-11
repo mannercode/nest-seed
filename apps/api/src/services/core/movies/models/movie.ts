@@ -93,5 +93,6 @@ export class Movie extends CrudSchema {
 }
 export const MovieSchema = createCrudSchema(Movie)
 
-// 검색 인덱스 없음. cycle-31 substring 회귀로 title 인덱스가 활용 못 하게
-// 되어 모두 제거. isPublished prefix 의 좁히기 효과는 seed 규모에서 marginal.
+// 검색 인덱스는 두지 않는다. 검색이 부분 문자열 정규식이라 인덱스를 타지
+// 못한다. `isPublished` 만으로 만든 인덱스도 시드 규모(수만 행)에서는 효과가
+// 거의 없다.

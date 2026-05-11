@@ -17,12 +17,13 @@ import { AssetErrors } from './errors'
 import { Asset } from './models'
 
 const CLEANUP_LOCK_KEY = 'cleanup-expired-uploads'
-// 최악 경우 cleanup 이 lock 자동 만료 전에 끝낼 수 있을 만큼은 길고, runner 가 죽었을 때
-// 다음 cron interval 한 회차 이상으로 작업이 굶주리지 않을 만큼은 짧게.
+// 락 만료 시간은 두 조건을 동시에 맞춘다. cleanup 작업이 가장 오래 걸려도
+// 자동 만료보다 먼저 끝날 만큼 길게 두고, 작업을 잡은 컨테이너가 죽었을 때
+// 다음 cron 한 회차 안에 다른 컨테이너가 다시 가져갈 만큼은 짧게 둔다.
 const CLEANUP_LOCK_TTL_MS = 5 * 60 * 1000
 
-// Cron 데코레이터는 모듈 로드 시점에 평가되므로 DI 로 못 가져온다.
-// 운영에서 튜닝할 값이 아니라 코드 상수로 둔다.
+// `@Cron` 데코레이터는 모듈을 읽어 들이는 시점에 평가되므로 DI 로 값을
+// 받아 올 수 없다. 운영에서 자주 바꿀 값도 아니라 코드 상수로 둔다.
 const EXPIRED_UPLOAD_CLEANUP_CRON = CronExpression.EVERY_10_MINUTES
 
 @Injectable()
@@ -38,9 +39,10 @@ export class AssetsService {
 
     @Cron(EXPIRED_UPLOAD_CLEANUP_CRON, { name: 'assets.cleanupExpiredUploads' })
     async cleanupExpiredUploads() {
-        // 모든 replica 가 이 cron 을 돌리니까, 실제 작업은 distributed lock 으로 가둬야 한다.
-        // withLock 은 Redis SET NX + token 매칭 DEL 을 써서, 한 interval 에 정확히 하나의
-        // replica 만 cleanup 을 수행하도록 보장한다.
+        // 모든 복제본이 같은 cron 을 돌린다. 그래서 실제 작업은 분산 락
+        // 안에서 한다. `withLock` 은 Redis `SET NX` 로 자리를 잡고 토큰이
+        // 일치할 때만 DEL 한다. 한 cron 회차에 한 복제본만 cleanup 을
+        // 수행하게 된다.
         await this.cache.withLock(CLEANUP_LOCK_KEY, CLEANUP_LOCK_TTL_MS, async () => {
             const expiresBefore = this.getExpirationThreshold()
             const expiredAssets = await this.repository.findExpiredIncomplete(expiresBefore)
@@ -79,11 +81,12 @@ export class AssetsService {
     async deleteMany(assetIds: string[]): Promise<void> {
         if (assetIds.length === 0) return
 
-        // S3 한 건이 실패해도 나머지 객체 삭제 시도는 끝까지 진행한다 (Promise.all 처럼
-        // 한 번 reject 됐다고 다른 in-flight 결과를 무시하지 않음). 단, 어느 하나라도
-        // 실패했다면 DB 행은 그대로 두고 첫 실패를 throw — 호출자(cleanup cron 등)가
-        // 다음 회차에 같은 자산을 다시 들고 들어와 재시도할 수 있도록 한다. 그래야
-        // S3 객체가 DB 참조 없이 영구 고아가 되는 상황이 막힌다.
+        // S3 한 건이 실패해도 나머지 삭제는 끝까지 시도한다. `Promise.all`
+        // 처럼 첫 실패에서 다른 진행 중인 호출까지 같이 버리지 않는다.
+        // 다만 하나라도 실패하면 DB 행은 지우지 않고 첫 실패를 그대로
+        // 던진다. 호출자(예: cleanup cron) 가 다음 회차에 같은 자산을 다시
+        // 잡아 재시도할 수 있어야, S3 객체가 DB 참조 없이 남는 상황을
+        // 막을 수 있기 때문이다.
         const results = await Promise.allSettled(
             assetIds.map((assetId) => this.s3Service.deleteObject(assetId))
         )
@@ -105,8 +108,10 @@ export class AssetsService {
         const expiresAt = this.getUploadExpiresAt(asset.createdAt)
 
         if (this.isUploadExpired(expiresAt)) {
-            // S3 → DB 순서 (deleteMany 와 동일). 반대로 하면 DB 삭제 후 S3 실패 시
-            // cleanup cron 이 DB 만 보기 때문에 S3 객체가 영구 고아가 된다.
+            // 삭제 순서는 S3 먼저, DB 나중이다. 반대로 하면 DB 가 먼저
+            // 사라진 뒤 S3 가 실패했을 때 cleanup cron 이 DB 만 보고는 그
+            // 자산을 찾지 못한다. 그러면 S3 객체가 어디서도 참조되지 않은
+            // 채 그대로 남는다.
             await this.deleteMany([assetId])
 
             throw new NotFoundException(AssetErrors.UploadExpired(assetId, expiresAt))

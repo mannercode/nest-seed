@@ -1,26 +1,28 @@
-// JWT refresh-token rotation 의 분산 스트레스 테스트. 강한 병렬 경합 하에서 동작 검증.
+// JWT refresh 토큰 회전을 강한 동시 경합 위에서 검증하는 분산 부하 테스트다.
 //
-// libs/common/src/auth/jwt-auth.service.ts 는 reuse detection 과 함께 rotation 을
-// 구현한다: refresh 성공 시 family registry 에서 소비된 tokenId 를 지우고 새 tokenId 를
-// 발급한다. 이후 registry 에 없는 tokenId 로 들어오는 refresh 요청은 family 전체를
-// purge 한다. race-safety invariant 는, 같은 시작 token 으로 동시에 들어온 refresh 들이
-// 동시에 사용 가능한 next token 을 두 개 이상 만들어서는 안 된다는 것이다. 하나만
-// 이기고 나머지는 401, 아니면 rotation race 가 reuse detection 을 트리거해 family 가
-// 통째로 revoke 되거나 둘 중 하나여야 한다.
+// `libs/common/src/auth/jwt-auth.service.ts` 는 회전과 재사용 탐지를 함께
+// 구현한다. refresh 가 성공하면 family 레지스트리에서 쓴 토큰 ID 를 지우고
+// 새 ID 를 발급한다. 그 뒤로 레지스트리에 없는 ID 로 들어오는 refresh 는
+// family 를 통째로 무효화한다.
 //
-// 각 inner iteration: USER_GROUPS 만큼의 유저를 만들고 로그인한 뒤, 각 유저의 단일
-// refresh token 에 대해 CLIENTS_PER_USER 개의 동시 /users/refresh 요청을 replica 들에
-// 걸쳐 보낸다. 모든 group 이 동시에 발사되어 nginx 레벨에서 cross-replica 분산이
-// 발생하도록 한다.
+// 안전 조건은 단순하다. 같은 토큰 하나로 동시에 들어온 refresh 들이 동시에
+// 쓸 수 있는 새 토큰을 두 개 이상 만들면 안 된다. 결과는 둘 중 하나여야
+// 한다. 한 요청만 통과하고 나머지는 401 이거나, 회전 경합이 재사용 탐지를
+// 자극해 family 가 통째로 무효화되거나.
 //
-// group 별 invariant:
-//   - 최소 1 × 200 (refresh winner 가 적어도 하나 존재)
-//   - 5xx 나 그 외 예상치 못한 status 는 0
-//   - 새로 받은 token 들 중 다시 refresh 가능한 token 은 최대 하나여야 한다. 두 개
-//     이상 동시 유효하면 rotation race window 가 발생한 것이다.
+// 한 회차는 이렇게 돈다. 사용자 그룹을 여러 개 만들고 각자 로그인한다. 각
+// 사용자의 refresh 토큰 하나에 대해 동시 `/users/refresh` 요청을 복제본
+// 여러 대에 걸쳐 보낸다. 모든 그룹을 같은 시점에 발사해서 nginx 가 요청을
+// 복제본들에 흩뿌리게 만든다.
 //
-// 위 invariant 를 위반하거나, 응답이 단일 replica 에서만 처리됐다면 (cross-replica 미검증)
-// 실패 처리한다.
+// 그룹마다 다음을 확인한다.
+//   - 200 응답이 최소 한 건 있어야 한다 (회전에 성공한 요청 하나).
+//   - 5xx 나 예상 못한 상태 코드는 한 건도 없어야 한다.
+//   - 새로 받은 토큰 가운데 다시 refresh 가 통과하는 토큰은 최대 한 건이다.
+//     둘 이상이 동시에 유효하면 회전 경합 구멍이 뚫린 것이다.
+//
+// 위 조건을 어기거나, 응답이 한 복제본에서만 처리됐다면 (cross-replica
+// 검증 실패) 테스트를 실패로 본다.
 
 const http = require('http')
 
@@ -93,14 +95,15 @@ async function createAndLogin(suffix) {
 }
 
 async function runInner(iteration) {
-    // Setup: USER_GROUPS 명의 유저, 각각 새 refresh token 하나씩 보유.
+    // 사용자 그룹 수만큼 사용자를 만든다. 각자 새 refresh 토큰을 하나씩 들고
+    // 출발한다.
     const tokens = await Promise.all(
         Array.from({ length: USER_GROUPS }, (_, g) => createAndLogin(`${iteration}-${g}`))
     )
 
-    // 동시 refresh 폭주: 각 유저가 자기 single original token 으로 CLIENTS_PER_USER
-    // 번의 refresh 를 발사한다. 모든 group 이 동시에 발사돼 nginx 가
-    // USER_GROUPS × CLIENTS_PER_USER 만큼의 동시 요청을 replica 들에 분산해서 받는다.
+    // 사용자마다 자기 원래 토큰 하나로 refresh 요청을 한꺼번에 보낸다. 모든
+    // 그룹이 같은 시점에 발사하므로, nginx 는 그룹 수 × 사용자당 요청 수
+    // 만큼의 동시 요청을 복제본들에 분산해서 받는다.
     const requests = tokens.flatMap((token, g) =>
         Array.from({ length: CLIENTS_PER_USER }, () =>
             postJson('/users/refresh', { refreshToken: token }).then((r) => ({ ...r, group: g }))
@@ -136,10 +139,10 @@ async function runInner(iteration) {
             )
         }
 
-        // Race-safe rotation invariant: 새로 발급된 token 들 중 다시 refresh 가
-        // 가능한 token 은 최대 하나여야 한다. rotation 이 정확히 하나의 새 token 만
-        // 생성했거나 (나머지는 reuse detection 으로 401), family 가 통째로 purge 돼
-        // followup 이 모두 401 이거나 둘 중 하나다.
+        // 회전이 안전한지 확인한다. 새로 받은 토큰 가운데 다시 refresh 가
+        // 통과하는 토큰은 최대 한 건이어야 한다. 회전이 정확히 한 토큰만
+        // 만들고 나머지는 재사용 탐지로 401 이거나, family 가 통째로
+        // 무효화돼 후속 호출이 전부 401 이거나 둘 중 하나다.
         const newTokens = g.ok.map((r) => JSON.parse(r.body).refreshToken)
         const followups = await Promise.all(
             newTokens.map((t) => postJson('/users/refresh', { refreshToken: t }))

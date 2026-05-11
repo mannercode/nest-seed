@@ -23,11 +23,12 @@ import {
 import { UserJwtAuthGuard, UserLocalAuthGuard, Public } from './guards'
 import { UserAuthRequest } from './types'
 
-// AUTHZ: 클래스 레벨 JWT 가드 외에는 owner/admin 검사가 비어 있다 — 인증된
-// 사용자가 임의 userId 의 데이터를 read/update/delete 할 수 있고, `searchPage`
-// 는 모든 사용자의 PII 를 노출한다. 포크 시 owner-only 핸들러는
-// `req.user.sub === userId` 검사를, 관리자 전용은 admin 가드를 추가하라.
-// README "5. 인가" 섹션 참고.
+// 인가: 클래스 레벨 JWT 가드 외에는 owner/admin 검사를 비워 두었다.
+// 지금 상태에서는 로그인한 사용자가 다른 사용자 ID 의 데이터를 읽고
+// 바꾸고 지울 수 있다. 목록 조회도 모든 사용자의 개인 정보를 그대로
+// 돌려준다. 포크해서 쓸 때는 본인만 접근하는 핸들러에
+// `req.user.sub === userId` 검사를, 관리자 전용 핸들러에는 admin 가드를
+// 붙인다. 자세한 안내는 README "5. 인가" 절에 있다.
 @Controller('users')
 @UseGuards(UserJwtAuthGuard)
 export class UsersHttpController {

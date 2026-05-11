@@ -75,7 +75,6 @@ export class TicketsRepository extends CrudRepository<Ticket> {
     async search(searchDto: SearchTicketsDto) {
         const query = this.buildQuery(searchDto)
 
-        // cycle-19: lean-virtuals 플러그인 제거 + leanToPublic (cycle-06 패턴).
         const tickets = await this.model.find(query).sort({ sagaId: 1 }).lean().exec()
         return leanArrayToPublic<Ticket>(tickets)
     }

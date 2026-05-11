@@ -1,17 +1,17 @@
-// 4-replica api 스택용 sustained-load perf 하네스.
+// 복제본 4 대 환경의 api 스택에 지속 부하를 걸어 측정하는 하네스다.
 //
-// 정해진 concurrency 수준에서 시나리오별 throughput + latency percentile 을 측정한다.
-// stdout 마지막 줄에 JSON 을 출력하고 stderr 에 사람이 읽기 좋은 요약을 출력한다.
-// 튜닝 사이클마다 반복 호출되도록 설계됐고, raw 결과는
-// _output/perf/<scenario>-<timestamp>.json 에 기록된다.
+// 지정한 동시성 수준에서 시나리오별 처리량과 응답 시간 분위수를 잰다.
+// 결과는 stdout 마지막 줄에 JSON 한 줄로 찍고, 사람이 읽을 요약은 stderr 에
+// 찍는다. 튜닝 사이클마다 반복해서 부르는 도구이고, 원본 결과는
+// `_output/perf/<scenario>-<timestamp>.json` 에 저장한다.
 //
-// Env:
-//   SERVER_URL     기본값 http://localhost:3000
-//   SCENARIO       user-write | user-read | mixed    (기본: user-write)
-//   CONCURRENCY    동시 요청 개수                              (기본: 100)
-//   DURATION_MS    steady-state 측정 시간 ms                    (기본: 30000)
-//   WARMUP_MS      측정 창 진입 전 warmup 시간                  (기본: 3000)
-//   LABEL          JSON 출력에 저장되는 자유 형식 tag           (기본: '')
+// 환경 변수:
+//   SERVER_URL     대상 서버 (기본 http://localhost:3000)
+//   SCENARIO       user-write | user-read | mixed (기본 user-write)
+//   CONCURRENCY    동시 요청 수 (기본 100)
+//   DURATION_MS    정상 부하 측정 시간 ms (기본 30000)
+//   WARMUP_MS      측정 전 워밍업 시간 ms (기본 3000)
+//   LABEL          결과 JSON 에 같이 저장할 자유 태그 (기본 '')
 
 const http = require('http')
 const fs = require('fs')
@@ -27,9 +27,9 @@ const LABEL = process.env.LABEL || ''
 const ACCEPT_GZIP = process.env.ACCEPT_GZIP === '1'
 
 const url = new URL(SERVER_URL)
-// keepAlive=true 로 nginx keepalive pool 을 사용한다. worker 마다 자체 Agent 를
-// 갖게 해 ioredis/nginx 측에서 보고 싶은 동작 (pool-level queueing) 을 가리는
-// socket contention 을 피한다. TCP layer 가 병목이 되어서는 안 된다.
+// `keepAlive: true` 로 nginx keep-alive 풀을 그대로 쓴다. 워커마다 자기
+// Agent 를 따로 두어 소켓 경합을 피한다. 그래야 측정 대상인 ioredis 와
+// nginx 풀의 큐 동작이 가려지지 않는다. TCP 계층이 병목이 되어선 안 된다.
 function makeAgent() {
     return new http.Agent({ keepAlive: true, maxSockets: 4 })
 }
@@ -53,14 +53,14 @@ function buildRequestFactory(scenario) {
         })
     }
     if (scenario === 'user-read') {
-        // NOTE: GET /users 는 JWT 필요 — 이 시나리오는 auth-reject throughput 을
-        // 측정하지 mongo-read throughput 을 측정하는 게 아니다. 인증 없이 mongo-read
-        // 를 재고 싶다면 theater-read 나 movie-read 를 사용한다.
+        // `GET /users` 는 JWT 가 필요하다. 이 시나리오가 재는 것은 mongo 읽기
+        // 처리량이 아니라 인증 실패 응답의 처리량이다. 인증 없이 mongo 읽기를
+        // 측정하고 싶으면 `theater-read` 나 `movie-read` 시나리오를 쓴다.
         return () => ({ method: 'GET', path: '/users?take=50', body: null, expectStatus: 200 })
     }
     if (scenario === 'theater-write') {
-        // POST /theaters 는 auth guard 가 없다; 순수 mongo write + majority commit.
-        // body 는 작지만 무시할 수준은 아니다 (nested validation).
+        // `POST /theaters` 는 가드가 없다. 순수 mongo 쓰기 + majority commit
+        // 비용만 잰다. 본문은 작지만 중첩 검증이 있어서 무시할 수준은 아니다.
         return (workerId, seq) => ({
             method: 'POST',
             path: '/theaters',
@@ -83,7 +83,8 @@ function buildRequestFactory(scenario) {
         })
     }
     if (scenario === 'theater-read') {
-        // Pagination 은 page/size (PaginationDto) 사용, take/skip 아니다.
+        // 페이지네이션은 `take` / `skip` 이 아니라 `PaginationDto` 의
+        // `page` / `size` 로 받는다.
         return () => ({
             method: 'GET',
             path: '/theaters?page=1&size=50',
@@ -100,8 +101,9 @@ function buildRequestFactory(scenario) {
         })
     }
     if (scenario === 'theater-read-name-filter') {
-        // 좁은 substring 으로 매치 0 에 가까운 검색 (cycle-31 substring 회귀
-        // 후 prefix 인덱스 미활용 — 현재는 collscan 베이스라인 측정용).
+        // 검색어를 좁게 잡아 매치 수를 거의 0 에 맞춘다. 부분 문자열
+        // 정규식은 인덱스를 못 타서 컬렉션 전체 스캔이 된다. 그 비용을
+        // 단독으로 측정하기 위한 시나리오다.
         return () => ({
             method: 'GET',
             path: '/theaters?page=1&size=50&name=perf-theater-17769404',
@@ -118,7 +120,8 @@ function buildRequestFactory(scenario) {
         })
     }
     if (scenario === 'movie-write') {
-        // 순수 mongo write (bcrypt 없음). 필터 측정 전 seed 용도.
+        // 순수 mongo 쓰기 (bcrypt 없음). 필터 측정 전에 데이터를 채워 두는
+        // 용도다.
         return (workerId, seq) => ({
             method: 'POST',
             path: '/movies',
@@ -129,8 +132,9 @@ function buildRequestFactory(scenario) {
         })
     }
     if (scenario === 'movie-read-title-filter') {
-        // 좁은 substring 으로 매치 0 에 가까운 검색 (cycle-31 substring 회귀
-        // 후 prefix 인덱스 미활용 — 현재는 collscan 베이스라인 측정용).
+        // 검색어를 좁게 잡아 매치 수를 거의 0 에 맞춘다. 부분 문자열
+        // 정규식은 인덱스를 못 타서 컬렉션 전체 스캔이 된다. 그 비용을
+        // 단독으로 측정하기 위한 시나리오다.
         return () => ({
             method: 'GET',
             path: '/movies?page=1&size=50&title=perf-movie-17769404',
@@ -248,7 +252,7 @@ async function main() {
         console.error(`[perf] warmup done, measuring for ${DURATION_MS}ms`)
     }, WARMUP_MS)
 
-    // Stats snapshots: 측정 창 안에 균등하게 3 개의 snapshot 을 찍는다.
+    // 측정 구간 안에 같은 간격으로 통계 스냅숏 세 개를 찍는다.
     const statsSnapshots = []
     for (let i = 1; i <= 3; i++) {
         setTimeout(
@@ -300,7 +304,7 @@ async function main() {
         `[perf] RPS=${summary.rps}  p50=${summary.latencyMs.p50}ms  p95=${summary.latencyMs.p95}ms  p99=${summary.latencyMs.p99}ms  max=${summary.latencyMs.max}ms  samples=${summary.totalSamples}  statuses=${JSON.stringify(summary.statusCodes)}  replicas=${summary.replicasSeen}`
     )
     console.error(`[perf] wrote ${file}`)
-    // pipe 하기 쉽도록 stdout 에 single JSON line 출력
+    // 파이프로 받아 처리하기 쉽도록 stdout 에 한 줄짜리 JSON 으로 찍는다.
     console.log(JSON.stringify(summary))
 }
 

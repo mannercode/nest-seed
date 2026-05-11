@@ -16,23 +16,17 @@ type SessionArg = ClientSession | undefined
 
 const defaultLeanOptions = {}
 
-// **Mutates `doc` in place** and returns the same reference for convenience.
+// 입력으로 받은 `doc` 을 그대로 바꾸고 같은 참조를 돌려준다.
 //
-// Lean 결과는 `{ _id: ObjectId, ... }` 형태로 돌아온다. schema virtual 이
-// `id: string` 을 노출하고 `toJSON.flattenObjectIds` 로 `_id` 를 떼지만,
-// 그 transform 은 hydrated document 이거나 mongoose-lean-virtuals plugin
-// 이 켜진 경우 (lean({ virtuals: true })) 에만 동작한다. plugin 을 켜면
-// paginated endpoint 의 read RPS 가 약 30% 깎였다 (cycle-06 측정).
-// 직접 set 하는 쪽이 훨씬 싸고 기존의 public `id: string` response shape
-// 도 유지된다.
+// `lean()` 결과는 `{ _id: ObjectId, ... }` 모양으로 돌아온다. 스키마 가상
+// 필드의 `id: string` 과 `toJSON.flattenObjectIds` 는 hydrated 문서에만
+// 적용된다. `lean` 결과에 같은 효과를 보려면 `mongoose-lean-virtuals`
+// 플러그인을 끼워야 하는데, 그 플러그인은 페이지네이션 읽기 처리량을
+// 눈에 띄게 떨어뜨린다. 그래서 여기서 문자열 `id` 를 직접 박는다.
 //
-// `id` 만 추가하고 in-memory doc 의 `_id` 는 그대로 둔다: downstream
-// 내부 코드 (`getByIds` 와 caller) 가 비교를 위해 여전히
-// `doc._id.toString()` 을 하기 때문이고, HTTP response serialization 이
-// 알아서 `_id` 를 떨군다 (실측 — lean POJO 가 어떤 serialization layer
-// 를 거치며 `_id` 를 가리는데, 아마 global NestJS interceptor 거나
-// schema 에서 파생된 class-transformer 설정일 것이다 — 어쨌든 wire 까지
-// 도달하지 않는다).
+// `_id` 는 일부러 남겨 둔다. 내부 코드 일부가 비교를 위해
+// `doc._id.toString()` 을 쓰고 있고, HTTP 응답으로 나갈 때는 어차피
+// 직렬화 단계에서 빠진다.
 export function leanToPublic<T extends { _id?: unknown }>(doc: T): T {
     if (doc._id != null) {
         ;(doc as any).id = (doc._id as { toString(): string }).toString()
@@ -40,26 +34,28 @@ export function leanToPublic<T extends { _id?: unknown }>(doc: T): T {
     return doc
 }
 
-// Lean 결과를 public 타입으로 변환하는 두 헬퍼. mongoose lean 타입(LeanDocument<T>)이
-// `T extends { _id?: unknown }` 제약과 직접 호환되지 않아 호출자마다 동일한 cast가
-// 반복되던 패턴을 한 곳으로 응축. 동작은 leanToPublic 그대로.
+// `lean()` 결과를 공개 타입으로 바꾸는 두 헬퍼다. mongoose 의 `LeanDocument<T>`
+// 타입이 `T extends { _id?: unknown }` 제약과 바로 맞물리지 않아서, 호출하는
+// 쪽마다 같은 cast 를 반복하던 부분을 한 곳으로 모았다.
 //
-// Note: `leanToPublic` 으로 위임하므로 입력 doc 들을 **in place 로 mutate** 한다.
+// `leanToPublic` 을 그대로 부르므로, 입력 문서들도 그 자리에서 같이 바뀐다.
 export function leanArrayToPublic<T>(docs: unknown): T[] {
     return (docs as any[]).map(leanToPublic) as T[]
 }
 
-// Note: `leanToPublic` 으로 위임하므로 입력 doc 을 **in place 로 mutate** 한다.
+// 입력 문서를 `leanToPublic` 으로 바꾼 뒤 그대로 돌려준다. 입력이 null 이면
+// null 을 돌려준다.
 export function leanOneToPublic<T>(doc: unknown): null | T {
     return doc ? (leanToPublic(doc as any) as T) : null
 }
 
 /**
- * CRUD category 의 repository base.
+ * CRUD 도메인용 리포지토리 기반 클래스. 보통의 도메인 엔티티가 쓰는 조회,
+ * 저장, 삭제, 페이지네이션, 트랜잭션을 한곳에서 제공한다.
  *
- * 일반적인 도메인 엔티티의 CRUD 동작 (find, save, delete, paginate, transaction) 을
- * 제공한다. Append-only category (audit log 등) 는 본 base 가 아니라
- * `AppendOnlyRepository` 를 사용한다 — delete/update 메서드를 타입에서 노출하지 않음.
+ * 감사 로그처럼 추가만 일어나는 도메인은 이 기반이 아니라
+ * `AppendOnlyRepository` 를 쓴다. 그쪽은 삭제·수정 메서드를 타입 차원에서
+ * 노출하지 않는다.
  */
 export abstract class CrudRepository<Doc> implements OnModuleInit {
     constructor(
@@ -141,20 +137,18 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
 
         queryHelper.lean(defaultLeanOptions)
 
-        // Pagination 은 find + count 를 병렬로 돌린다. 빈 filter 에서는
-        // count 가 find+skip+limit 보다 4~5배 느리게 측정됐다 (dev data;
-        // list endpoint 에서 mongo primary 가 1000% CPU 를 먹었음).
-        // CrudSchema pre-hook 이 끼면 countDocuments 는
-        // countDocuments({ deletedAt: null }) 로 접혀 모든 non-deleted row
-        // 에 대한 index scan 이 된다. estimatedDocumentCount 는 collection
-        // metadata 만 읽으므로 (O(1)), 빈 filter 경로에서는 이 쪽을 쓴다.
+        // 페이지네이션은 조회와 카운트를 함께 돌린다. 필터가 비어 있을 때
+        // 카운트가 조회보다 몇 배는 느리게 관측됐다. `CrudSchema` 의 pre-hook
+        // 이 끼면서 `countDocuments` 가 사실상 `{ deletedAt: null }` 카운트로
+        // 바뀌고, 삭제되지 않은 모든 행에 대한 인덱스 스캔이 되기 때문이다.
+        // `estimatedDocumentCount` 는 컬렉션 메타데이터만 읽으므로 즉시
+        // 돌아온다. 그래서 필터가 빈 경로에서는 이쪽으로 간다.
         //
-        // Tradeoff: estimatedDocumentCount 는 soft-deleted row 까지 포함한
-        // *전체* row 수를 돌려주므로 보고되는 `total` 이 실제로 page 들에
-        // 걸쳐 반환되는 row 수보다 커질 수 있다. 이 codebase 의 list
-        // pagination 에서는 허용 가능한 절충 — soft-deleted row 는
-        // `find` 에서 제외되므로 마지막 page 에 빈 자리가 생길 수는 있지만
-        // 정렬은 일관되게 유지된다.
+        // 한 가지 한계가 있다. `estimatedDocumentCount` 는 soft-delete 된
+        // 행까지 포함한 전체 수를 돌려준다. 응답의 `total` 이 실제로 페이지에
+        // 잡혀 나오는 행보다 커질 수 있다. 마지막 페이지에 빈자리가 생길
+        // 수는 있지만 정렬은 일관되게 유지되므로, 이 서비스에서는 받아들일
+        // 만한 절충이다.
         const rawFilter = queryHelper.getQuery()
         const filterIsEmpty = Object.keys(rawFilter).length === 0
 
@@ -205,11 +199,12 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
 
     async onModuleInit() {
         /**
-         * document.save()가 내부적으로 createCollection()을 호출한다.
-         * 동시에 save()를 호출하면 "Collection namespace is already in use" 오류가 발생할 수 있다.
-         * 이 문제는 주로 단위 테스트 환경에서 빈번한 초기화로 인해 발생한다.
-         *
-         * https://mongoosejs.com/docs/api/model.html#Model.createCollection()
+         * `document.save()` 가 내부적으로 `createCollection()` 을 부른다.
+         * 같은 시점에 여러 곳에서 `save()` 가 호출되면, mongo 가 같은
+         * 컬렉션을 동시에 만들려 들면서 "Collection namespace is already in
+         * use" 에러를 낸다. 단위 테스트처럼 빠르게 초기화를 반복하는 환경에서
+         * 자주 나타나는 증상이다. 모듈이 뜨는 시점에 컬렉션과 인덱스를
+         * 미리 만들어 두면 이 경합이 사라진다.
          */
         await this.model.createCollection()
         await this.model.createIndexes()

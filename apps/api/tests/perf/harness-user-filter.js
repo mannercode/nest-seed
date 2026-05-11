@@ -3,8 +3,8 @@
 // GET /users 가 JWT 보호이므로 worker 마다 자체 계정으로 register + login
 // 하고 access token 을 받아 `?name=<filter>` 쿼리를 루프 실행.
 //
-// cycle-31 substring 회귀 후엔 인덱스 미활용 (collscan 베이스라인). 좁은
-// substring 으로 매치 0 에 가까운 케이스를 측정해 필터 비용을 단독 노출.
+// 부분 문자열 정규식은 인덱스를 못 타서 컬렉션 전체 스캔이 된다. 검색어를
+// 좁게 잡아 매치 수를 거의 0 으로 맞추고, 그 비용을 단독으로 측정한다.
 //
 // Env: SERVER_URL, CONCURRENCY, DURATION_MS, WARMUP_MS, LABEL, FILTER_PREFIX
 

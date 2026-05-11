@@ -1,6 +1,7 @@
 /**
- * 브라우저에서 NestJS API 로 보내는 fetch 래퍼. console 은 next.config.mjs 의
- * `/api/*` rewrite 를 거쳐 API 로 가므로 호출자는 origin 없이 path 만 넘긴다.
+ * 브라우저에서 NestJS API 로 보내는 fetch 래퍼다. console 은
+ * `next.config.mjs` 의 `/api/*` rewrite 를 거쳐 API 로 간다. 호출자는 origin
+ * 없이 경로만 넘기면 된다.
  */
 
 export class ApiError extends Error {

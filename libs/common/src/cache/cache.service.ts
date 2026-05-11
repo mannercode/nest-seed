@@ -18,8 +18,9 @@ export class CacheService {
     }
 
     /**
-     * namespacing 된 key 로 Lua script 를 실행한다.
-     * cache prefix 는 항상 ARGV 의 첫 번째 값으로 들어간다.
+     * 캐시 prefix 가 붙은 키로 Lua 스크립트를 실행한다. 캐시 prefix 는 항상
+     * 첫 번째 ARGV 로 들어가므로, 스크립트 안에서 prefix 가 필요할 때 그대로
+     * 쓸 수 있다.
      */
     async executeScript<T = unknown>(
         script: string,
@@ -54,16 +55,17 @@ export class CacheService {
     }
 
     /**
-     * 이 cache 범위로 한정된 distributed lock. key 를 잡은 caller 한 명만
-     * `fn` 을 실행하고, 동시 caller 는 `{ ran: false }` 를 받는다. lock 은
-     * `fn` 이 끝나면 (throw 되어도) 해제된다. process 가 죽으면 TTL 이
-     * key 가 막혀 있을 수 있는 시간의 상한이 된다.
+     * 이 캐시 범위 안에서만 동작하는 분산 락이다. 같은 키를 잡은 호출자
+     * 한 명만 `fn` 을 실행한다. 동시에 들어온 다른 호출자는 `{ ran: false }`
+     * 만 받고 끝난다. 락은 `fn` 이 끝나면(예외가 나도) 풀린다. 프로세스가
+     * 죽어 락이 그대로 남으면, TTL 이 그 키가 막혀 있을 수 있는 시간의
+     * 상한이 된다.
      *
-     * - lock key 는 `${prefix}:lock:${key}` 에 둔다
-     * - ttlMs 는 `fn` 의 최악의 runtime 보다 커야 한다. crash 한 process 가
-     *   다른 caller 를 굶길 수 있는 시간을 cap 한다
-     * - owner (token 일치) 만 key 를 지우므로, 이미 만료되어 다른 peer 가
-     *   다시 잡은 lock 을 덮어쓰지 않는다
+     * - 락 키는 `${prefix}:lock:${key}` 에 둔다.
+     * - `ttlMs` 는 `fn` 이 가장 오래 걸렸을 때 시간보다 커야 한다. 프로세스가
+     *   죽었을 때 다른 호출자가 굶주리는 시간을 이 값이 막아 준다.
+     * - 락을 잡을 때 만든 토큰과 일치할 때만 키를 지운다. 그래서 만료된
+     *   뒤 다른 호출자가 다시 잡은 락을 우리가 실수로 풀어 버리지 않는다.
      */
     async withLock<T>(
         key: string,
@@ -98,13 +100,13 @@ export class CacheService {
     }
 
     /**
-     * `withLock` 의 blocking variant: lock 이 풀릴 때까지 polling 하다가
-     * 잡으면 `fn` 을 정확히 한 번 실행한다. `waitMs` 안에 못 잡으면 throw
-     * 한다.
+     * `withLock` 의 대기형 변종이다. 락을 잡지 못하면 짧게 기다렸다 다시
+     * 시도하고, 잡는 데 성공하면 `fn` 을 정확히 한 번 실행한다. `waitMs` 안에
+     * 끝까지 못 잡으면 예외를 던진다.
      *
-     * 경쟁 시 skip 하지 않고 다른 caller 와 직렬화해야 할 때 쓴다.
-     * `pollMs` 는 풀린 lock 을 빠르게 잡을 수 있을 만큼 짧되, Redis 를
-     * 두드려 패지 않을 정도로는 길게 잡는다.
+     * 들어온 요청을 그냥 버리지 않고 한 번에 하나씩 순서대로 처리해야 할
+     * 때 쓴다. `pollMs` 는 풀린 락을 빠르게 잡을 만큼 짧게 두되, Redis 를
+     * 너무 자주 두드리지 않을 정도로는 길게 둔다.
      */
     async withLockBlocking<T>(
         key: string,

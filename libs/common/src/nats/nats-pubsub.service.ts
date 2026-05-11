@@ -8,11 +8,11 @@ type MessageHandler = (message: string) => void
 type SubscriptionState = { sub: Subscription; handlers: Set<MessageHandler> }
 
 /**
- * NATS 기반 pub/sub. cross-replica volatile broadcast (SSE bridging, cache
- * invalidation 등) 의 Redis Pub/Sub 을 대체한다.
+ * NATS 기반 pub/sub 서비스다. 복제본 사이에 휘발성 메시지를 뿌리는 경로
+ * (SSE 다리, 캐시 무효화 등) 를 맡는다.
  *
- * handler 는 등록된 순서대로 호출되고, 한 handler 의 예외가 뒤따르는
- * handler 의 실행을 막지 않는다.
+ * 같은 subject 의 핸들러는 등록된 순서대로 호출된다. 한 핸들러가 예외를
+ * 던져도 뒤따르는 핸들러는 정상적으로 실행된다.
  */
 @Injectable()
 export class NatsPubSubService implements OnModuleDestroy {
@@ -35,7 +35,8 @@ export class NatsPubSubService implements OnModuleDestroy {
 
     async publish(subject: string, message: string): Promise<void> {
         this.connection.publish(subject, this.codec.encode(message))
-        // 호출자가 await 했을 때 byte 가 wire 까지 나갔음을 보장하도록 flush 한다
+        // 호출자가 `await` 로 결과를 기다린 시점에는 메시지가 서버까지
+        // 빠져나가 있어야 한다. 그래서 `flush` 로 확인한다.
         await this.connection.flush()
     }
 
@@ -50,9 +51,10 @@ export class NatsPubSubService implements OnModuleDestroy {
             state = { handlers: new Set(), sub }
             this.subscriptions.set(subject, state)
             this.startConsumeLoop(subject, state)
-            // SUB 프로토콜 메시지는 client → server 로 비동기 전송됨. flush 로
-            // 서버 ack 를 받아야 "이후 publish 가 이 구독에 도달" 이 보장됨.
-            // 안 하면 race 때문에 직후 publish 가 누락될 수 있음.
+            // SUB 메시지는 클라이언트에서 서버로 비동기로 흘러간다. `flush`
+            // 로 서버 응답까지 받아야 "이제 publish 한 메시지가 이 구독에
+            // 도달한다" 가 보장된다. 이 단계를 건너뛰면 구독 직후 publish 가
+            // 가끔 누락된다.
             await this.connection.flush()
         }
 
@@ -71,21 +73,23 @@ export class NatsPubSubService implements OnModuleDestroy {
     }
 
     private startConsumeLoop(subject: string, state: SubscriptionState) {
-        // sub.unsubscribe() 가 호출되면 drain 된다. for-await 가 깔끔히
-        // 빠져나오므로 별도의 cancellation 추적은 필요없다. iterator 가
-        // throw 하면 (server disconnect, 예기치 못한 protocol error) loop
-        // 가 조용히 끝나는데 — "트래픽 없음" 으로 위장되지 않도록 log 를
-        // 남겨서 operator 가 멈춘 subscription 을 알아챌 수 있게 한다.
+        // `sub.unsubscribe()` 가 호출되면 iterator 가 정상 종료한다. `for await`
+        // 가 깔끔히 빠져나오므로 따로 취소 신호를 다룰 필요가 없다.
+        // 이터레이터가 예외를 던지는 경우 (서버 연결 끊김, 예기치 못한
+        // 프로토콜 오류) 는 그대로 두면 "트래픽이 없는 것" 처럼 조용히
+        // 사라진다. 그래서 로그를 남겨서 운영자가 멈춘 구독을 알아채게
+        // 한다.
         void (async () => {
             try {
                 for await (const msg of state.sub) {
                     const text = this.codec.decode(msg.data)
-                    // 한 handler 의 throw 가 다른 handler 전달을 막지 않도록 각각 격리
+                    // 한 핸들러가 던진 예외가 같은 메시지를 받는 다른 핸들러
+                    // 까지 막지 않도록, 핸들러별로 try/catch 로 격리한다.
                     for (const handler of state.handlers) {
                         try {
                             handler(text)
                         } catch {
-                            /* swallow — handler 가 자체적으로 error 보고를 책임진다 */
+                            /* 핸들러가 자체적으로 에러를 보고할 책임이 있다고 보고, 여기서는 무시한다 */
                         }
                     }
                 }

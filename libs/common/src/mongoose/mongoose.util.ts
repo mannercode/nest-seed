@@ -8,8 +8,8 @@ export const objectId = (id: string) => new Types.ObjectId(id)
 export const objectIds = (ids: string[]) => ids.map((id) => objectId(id))
 
 /**
- * MongoDB duplicate key error (E11000) 판별.
- * Unique index 위반시 race-safe 한 Conflict 처리를 위해 사용.
+ * MongoDB 의 중복 키 에러(E11000) 인지 판별한다. unique 인덱스가 깨졌을 때
+ * 안전하게 409 Conflict 로 매핑하기 위해 쓴다.
  */
 export function isDuplicateKeyError(error: unknown): boolean {
     return typeof error === 'object' && error !== null && 'code' in error && error.code === 11000
@@ -72,14 +72,12 @@ export class QueryBuilder<T> {
         options?: { caseSensitive?: boolean; prefix?: boolean }
     ): this {
         if (value) {
-            // Substring match (기본) 은 어떤 인덱스도 활용하지 못해 COLLSCAN 이
-            // 됨 (cycle-09 측정: 216K docs 에서 23 RPS). 더 빠르게 가려면:
-            //  - `prefix: true` 로 `^value` 앵커링 → prefix range scan 후보
-            //  - `caseSensitive: true` 로 `i` flag 제거 → 일반 ascending 인덱스
-            //    (`{ field: 1 }`) 활용 가능. case-insensitive 인덱스가 따로
-            //    있다면 caseSensitive 없이도 되지만 mongoose 기본 인덱스는 그냥
-            //    binary 비교라 `i` flag 와 호환 안 됨.
-            //  prefix + caseSensitive 둘 다 켜야 진짜 IXSCAN 으로 떨어진다 (cycle-10).
+            // 기본값(부분 문자열 + 대소문자 무시) 은 인덱스를 못 탄다. 컬렉션
+            // 전체 스캔이 된다. 인덱스를 타게 만들려면 두 옵션을 함께 켠다.
+            // - `prefix: true` 로 `^value` 를 붙여 prefix 범위 스캔 후보로 만든다.
+            // - `caseSensitive: true` 로 `i` 플래그를 빼서 일반 오름차순
+            //   인덱스를 쓸 수 있게 한다. mongoose 기본 인덱스는 바이너리
+            //   비교라 대소문자 무시 모드와는 맞물리지 않는다.
             const pattern = options?.prefix ? '^' + escapeRegExp(value) : escapeRegExp(value)
             this.query[field] = options?.caseSensitive
                 ? new RegExp(pattern)

@@ -1,18 +1,17 @@
 x-mongo-base: &mongo-base
     extends: { file: ./compose.common.yml, service: common-options }
     image: $MONGO_IMAGE
-    # Phase 2 (cycle-11): 1 GiB → 2 GiB. cycle-09 에서 250K theaters 시점에
-    # WT cache 256 MiB 가 evict 시작하면서 read RPS 가 c=200 에서 ~1000 으로
-    # 떨어졌음. 메모리 증설로 cache 한도를 함께 끌어올린다.
+    # WiredTiger 캐시가 데이터를 다 못 담고 비우기 시작하면 읽기 속도가
+    # 크게 떨어진다. 컨테이너 메모리와 `wiredTigerCacheSizeGB` 를 함께
+    # 올려서 시드 규모(수십만 행) 안에서는 비우기가 일어나지 않게 한다.
     deploy: { resources: { limits: { memory: 2g } } }
     shm_size: '8m'
-    # "Too many open files" 에러 방지
+    # "Too many open files" 에러 방지.
     ulimits: { nofile: { soft: 65536, hard: 65536 } }
-    # auth 와 keyFile 모두 제거 — replica set 멤버 간 inter-cluster auth 가 빠짐.
-    # 의도: dev/test devcontainer 와 CI 만 사용하는 환경 + 운영은 어차피 매니지드
-    # 서비스 (DocumentDB 등) 라 keyFile 흉내가 의미 없음. 이 단순화로
-    # mongo-key-generator 컨테이너와 mongodb_key 볼륨이 통째로 빠진다.
-    # 27016 포트 trick 은 그대로 — initdb 임시 mongod 와의 충돌 회피용.
+    # 인증은 끄고 쓴다. 운영은 매니지드 서비스로 가므로 keyFile 인증은
+    # 의미가 없고, dev/test 에서는 운영 부담이 더 크다.
+    # 포트는 27016 을 쓴다. 27017 을 그대로 쓰면 mongo 이미지의 init 단계에서
+    # 임시로 띄우는 mongod 와 충돌한다.
     command: >
         --replSet mongo
         --bind_ip_all
@@ -52,9 +51,10 @@ services:
             }
         command: |
             sh -eucx '
-                # rs.initiate 의 host 는 client 가 다시 접속할 때 쓰는 advertise 주소.
-                # devcontainer 도 같은 nest-seed 네트워크에 join 하므로 service
-                # name (mongo1/mongo2/mongo3) 으로 도달 가능하다.
+                # `rs.initiate` 가 등록하는 host 는 클라이언트가 다음에
+                # 접속할 때 다시 쓰는 주소다. devcontainer 도 같은 compose
+                # 네트워크 안에 있으므로 service 이름(mongo1/mongo2/mongo3)
+                # 으로 닿는다.
                 url="mongodb://mongo1:27016/?directConnection=true"
 
                 mongosh $$url --eval "

@@ -13,24 +13,20 @@ const HOLD_TICKETS_SCRIPT = `
     local ticketIdsJson = ARGV[4]
     local showtimeId = ARGV[5]
 
-    -- 티켓이 이미 다른 고객에 의해 선점되었는지 확인
     for i = 1, #KEYS - 1 do
         local key = KEYS[i]
         local ownerId = redis.call('GET', key)
         if ownerId and ownerId ~= userId then
-            -- 티켓 선점 실패
             return 0
         end
     end
 
-    -- 고객 키 (KEYS 배열의 마지막 요소)
     local userKey = KEYS[#KEYS]
 
-    -- 이전에 고객이 선점한 티켓 목록 가져오기.
-    -- partial-release-failure 시나리오 (ticket-key 만 삭제되고 user-key 가 남거나
-    -- 그 반대) 에서 stale 한 ticketId 가 섞일 수 있으므로, 소유자가 *우리*
-    -- userId 인 키만 DEL 한다. 그래야 그 사이에 다른 고객이 같은 ticketId 를
-    -- 다시 선점한 경우, 이 cleanup 으로 그 hold 가 끊기지 않는다.
+    -- 이전 해제가 중간에 실패해 ticket 키와 user 키가 어긋난 적이 있었다면,
+    -- user 키에 이미 다른 사람 차지가 된 ticketId 가 섞여 있을 수 있다.
+    -- 그래서 소유자가 우리와 같은 키만 DEL 한다. 같지 않은 키는 그대로
+    -- 두어서, 다른 사람이 새로 잡은 hold 를 우리가 끊지 않게 한다.
     local previousTicketIdsJson = redis.call('GET', userKey)
     if previousTicketIdsJson then
         local previousTicketIds = cjson.decode(previousTicketIdsJson)
@@ -43,16 +39,13 @@ const HOLD_TICKETS_SCRIPT = `
         end
     end
 
-    -- 모든 티켓을 현재 고객으로 설정
     for i = 1, #KEYS - 1 do
         local key = KEYS[i]
         redis.call('SET', key, userId, 'PX', ttlMs)
     end
 
-    -- 고객에 대한 티켓 목록 저장
     redis.call('SET', userKey, ticketIdsJson, 'PX', ttlMs)
 
-    -- 티켓 선점 성공
     return 1
 `
 
@@ -84,10 +77,11 @@ export class TicketHoldingService {
     async releaseTickets(showtimeId: string, userId: string): Promise<void> {
         const tickets = await this.searchHeldTicketIds(showtimeId, userId)
 
-        // 한 ticket-key 삭제가 실패해도 나머지와 user-key 정리는 계속 진행한다.
-        // hold TTL 로 결국 회복되므로 부분 실패가 영구 잠금으로 이어지지 않는다.
-        // 다음 holdTickets 의 Lua 스크립트가 user-key 를 다시 읽어 잔존 ticket-key 를
-        // DEL 하므로 user-key 만 살아남으면 자가 치유된다.
+        // ticket 키 하나가 삭제되지 못해도 나머지 키와 user 키 정리는 끝까지
+        // 간다. 부분 실패가 영구 잠금으로 이어지지 않는 이유는 두 가지다.
+        // 첫째, hold 에 걸린 TTL 이 끝나면 남은 키가 사라진다.
+        // 둘째, 다음 `holdTickets` 가 user 키를 다시 읽어 우리 소유로 남은
+        // ticket 키를 정리해 준다.
         const results = await Promise.allSettled(
             tickets.map((ticketId) => this.cacheService.delete(getTicketKey(showtimeId, ticketId)))
         )

@@ -43,9 +43,6 @@ export class ShowtimesRepository extends CrudRepository<Showtime> {
     async search(searchDto: SearchShowtimesDto) {
         const query = this.buildQuery(searchDto)
 
-        // cycle-19: mongoose-lean-virtuals 플러그인 제거 (cycle-06 패턴 복제).
-        // lean 결과에 leanToPublic 로 `_id → id` 매핑. 플러그인 hook 오버헤드
-        // 없이 동일한 공개 `id: string` 계약 유지.
         const showtimes = await this.model.find(query).sort({ startTime: 1 }).lean().exec()
         return leanArrayToPublic<Showtime>(showtimes)
     }

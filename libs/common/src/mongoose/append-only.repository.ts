@@ -2,29 +2,33 @@ import type { OnModuleInit } from '@nestjs/common'
 import type { HydratedDocument, Model } from 'mongoose'
 
 /**
- * Append-only category 의 repository base.
+ * 추가만 일어나는 도메인용 리포지토리 기반 클래스다. 노출 면을 일부러
+ * 작게 잡았다. 이 도메인의 모든 사용자가 공통으로 필요한 책임은 두 가지뿐이라
+ * 그렇다.
  *
- * 의도적으로 surface 가 작다 — append-only 카테고리에서 *모든* consumer 에게 공통으로
- * 필요한 책임은 두 가지뿐이다:
- * (a) 컬렉션 lifecycle (`createCollection`/`createIndexes` 동시 호출 race 회피)
- * (b) `newDocument` helper
+ * - 컬렉션 라이프사이클(`createCollection` / `createIndexes` 의 동시 호출
+ *   경합을 막는 일).
+ * - `newDocument` 헬퍼.
  *
- * 도메인별 append/find 메서드는 subclass 가 직접 정의한다 — 모델마다 필드/유효성/조회
- * 패턴이 다르므로 generic read API 를 base 에 미리 박는 것은 premature abstraction 이다.
- * 두 번째 append-only 모델이 등장하면 그때 두 사례를 비교해서 공통 책임을 본 base 로
- * 끌어올린다.
+ * 도메인별 추가·조회 메서드는 하위 클래스가 직접 정의한다. 모델마다 필드와
+ * 검증, 조회 패턴이 달라서, 공통 조회 API 를 미리 박는 것은 이른 추상화다.
+ * 두 번째 append-only 모델이 들어오면 그때 두 사례를 비교해 공통을 기반에
+ * 올린다.
  *
- * delete/update mutation 은 schema 레벨 (`createAppendOnlySchema`) 에서 throw 로 차단되므로
- * 본 repository 타입에도 자연스럽게 노출되지 않는다 (delete/update 메서드 자체가 없음).
+ * 수정·삭제는 스키마 단계(`createAppendOnlySchema`)에서 throw 로 막힌다.
+ * 그래서 이 리포지토리 타입에도 그 메서드들이 자연스럽게 노출되지 않는다.
  */
 export abstract class AppendOnlyRepository<Doc> implements OnModuleInit {
     constructor(protected readonly model: Model<Doc>) {}
 
     async onModuleInit() {
         /**
-         * document.save() 가 내부적으로 createCollection() 을 호출한다. 동시에 save() 를
-         * 호출하면 "Collection namespace is already in use" 오류가 발생할 수 있다 (특히
-         * 단위 테스트 환경에서 빈번한 재초기화 시).
+         * `document.save()` 가 내부에서 `createCollection()` 을 부른다.
+         * 같은 시점에 `save()` 가 여러 곳에서 동시에 호출되면 mongo 가 같은
+         * 컬렉션을 동시에 만들려 들면서 "Collection namespace is already in
+         * use" 에러를 낸다. 단위 테스트처럼 빠르게 초기화를 반복하는 환경에서
+         * 자주 보이는 증상이다. 모듈이 뜨는 시점에 미리 한 번 만들어 두면
+         * 경합이 사라진다.
          */
         await this.model.createCollection()
         await this.model.createIndexes()

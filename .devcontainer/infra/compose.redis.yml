@@ -5,9 +5,9 @@ x-redis-base: &redis-base
         test: 'redis-cli ping'
     deploy: { resources: { limits: { memory: 512m } } }
     shm_size: '8m'
-    # cluster-announce 는 다른 노드/클라이언트가 redirect 받을 때 쓰는 주소.
-    # 같은 nest-seed-infra 네트워크 안에서는 service name (redis1/2/3) 으로
-    # 도달 가능하므로 hostname 을 그걸로 노출. port 는 모두 6379.
+    # `cluster-announce` 는 다른 노드와 클라이언트가 redirect 를 받을 때 다시
+    # 접속할 주소다. 같은 compose 네트워크 안에서는 service 이름
+    # (redis1/2/3) 으로 닿는다. 포트는 모두 6379 로 통일한다.
     command: |
         sh -euc '
           redis-server --port 6379 \
@@ -54,6 +54,3 @@ services:
             echo "yes" |
                 redis-cli --cluster create $$REDIS_NODES --cluster-replicas 0
             '
-
-# - name: Redis 용 memory overcommit 활성화
-#   run: sudo sysctl -w vm.overcommit_memory=1

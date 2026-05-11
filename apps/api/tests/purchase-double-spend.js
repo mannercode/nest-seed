@@ -1,16 +1,18 @@
-// purchase double-spend race 의 분산 스트레스 테스트 — 동시 group 방식.
+// 같은 티켓 묶음을 중복 결제하려는 경쟁을 복제본 너머로 재현하는 부하
+// 테스트다.
 //
-// 각 inner iteration: 새 showtime 을 만들고 USER_GROUPS 명의 유저가 각자 서로
-// 다른 ticket pair 를 hold 한다. 그 다음 각 유저가 자기 ticket pair 로
-// PURCHASES_PER_GROUP 개의 동시 POST /purchases 를 발사한다. 모든
-// USER_GROUPS × PURCHASES_PER_GROUP 요청이 동시에 나간다. group 당:
-// 정확히 1 × 2xx 성공, 나머지는 4xx (409 AlreadySold / 400 NotHeld).
+// 한 회차는 이렇게 돈다. 새 상영을 하나 만들고, 사용자 그룹마다 서로
+// 겹치지 않는 티켓 쌍 하나씩을 hold 한다. 그 다음 각 사용자가 자기 쌍에
+// 대해 결제 요청 여러 건을 동시에 발사한다. 그룹 한 개당 결과는 정확히
+// 하나가 2xx 로 성공하고, 나머지는 4xx (409 AlreadySold 또는 400
+// NotHeld) 다.
 //
-// movie/theater 와 유저 계정은 루프 밖에서 한 번만 만들고, 각 iter 마다 새
-// showtime, ticket, hold, race 만 수행한다.
+// 영화, 극장, 사용자 계정은 회차 바깥에서 한 번만 만든다. 매 회차마다
+// 상영, 티켓, hold, 경쟁만 새로 돌린다.
 //
-// 실패 조건: 어떤 group 의 성공이 1 이 아니거나, 5xx 가 발생하거나, 2 개 미만의
-// replica 만 요청을 처리한 경우.
+// 다음 중 하나라도 해당하면 실패로 본다. 어떤 그룹의 성공 응답 수가
+// 1 이 아니거나, 5xx 가 발생하거나, 응답을 한 복제본 수가 둘보다 적은
+// 경우.
 
 const http = require('http')
 

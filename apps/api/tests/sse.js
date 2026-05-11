@@ -1,17 +1,18 @@
-// 강한 부하 하에서 cross-replica SSE fan-out 의 분산 스트레스 테스트.
+// 강한 부하 위에서 SSE 이벤트가 복제본을 넘어 모든 구독자에게 전달되는지
+// 검증하는 부하 테스트다.
 //
-// 각 inner iteration: replica 들에 걸쳐 SSE_CLIENT_COUNT 개의 SSE 연결을 연 뒤,
-// SAGAS_PER_INNER 개의 saga-creation POST 를 동시에 발사하고 (각각 서로 다른
-// 어긋난 startTime 을 가짐), 모든 SSE 클라이언트가 모든 saga 의 succeeded
-// 이벤트를 받는지 검증한다. 통과 조건은 SSE_CLIENT_COUNT × SAGAS_PER_INNER
-// 개의 이벤트가 정확히 전달되는 것이다.
+// 한 회차는 이렇게 돈다. 복제본들에 SSE 연결을 여러 개 연다. 그 다음
+// 시작 시각이 서로 어긋난 saga 생성 요청 여러 건을 동시에 발사한다. 모든
+// SSE 클라이언트가 모든 saga 의 succeeded 이벤트를 받아야 통과다. 받아야
+// 할 총 이벤트 수는 클라이언트 수와 saga 수의 곱이다.
 //
-// 각 inner iter 는 수천 개의 Redis pub/sub 메시지를 발생시킨다. replica 별로
-// 각 saga 의 상태 변화 (Waiting → Processing → Succeeded) 를 publish 하고
-// 모든 subscriber 가 자기 local Subject 로 forward 하기 때문이다.
+// 한 회차는 NATS 메시지를 수천 개씩 만든다. 각 saga 의 상태 변화
+// (Waiting → Processing → Succeeded) 를 복제본마다 발행하고, 모든 구독자가
+// 자기 안의 Subject 로 흘려보내기 때문이다.
 //
-// 실패 조건: 어떤 SSE 클라이언트가 어떤 saga 의 succeeded 이벤트를 놓침, 또는
-// SSE 클라이언트들이 2 개 미만의 replica 에만 연결됨 (cross-replica 미검증).
+// 다음 중 하나라도 해당하면 실패로 본다. 어떤 클라이언트가 어떤 saga 의
+// succeeded 이벤트를 놓치거나, SSE 클라이언트들이 한 복제본에만 연결되어
+// 있어 cross-replica 검증이 되지 않는 경우.
 
 const http = require('http')
 

@@ -1,6 +1,6 @@
-# Whitelist 방식: 일단 전부 제외하고, 필요한 것만 허용한다.
-# 모든 패턴은 반드시 / 앵커를 써야 한다 — 안 그러면 임의 깊이에서 매치돼
-# 의도치 않은 파일 (예: libs/testing/package.json) 이 build context 로 새어 들어간다.
+# 화이트리스트 방식이다. 일단 전부 제외하고, 빌드에 필요한 것만 다시
+# 허용한다. 모든 패턴은 반드시 `/` 로 시작한다. 그러지 않으면 어느 깊이
+# 에서나 매칭돼, 의도하지 않은 파일이 빌드 컨텍스트로 새어 들어간다.
 *
 
 !/package.json
@@ -21,15 +21,17 @@
 !/apps/*/scripts/
 !/apps/*/jest.*.js
 
-# tools/ 워크스페이스 (jest-helpers, dev-tools 등) 는 apps/api 의 devDep 에서
-# 참조되므로 npm ci 가 workspace 그래프를 정상적으로 풀려면 빌드 컨텍스트에
-# 들어와야 한다. 안 그러면 prune 단계에서 registry 로 조회 fallback 되어 404 발생.
+# `tools/` 워크스페이스(`jest-helpers`, `dev-tools` 등) 는 `apps/api` 의
+# devDependency 가 참조한다. `npm ci` 가 워크스페이스 그래프를 풀려면
+# 이 디렉토리가 빌드 컨텍스트에 들어와 있어야 한다. 빠지면 prune 단계가
+# registry 에서 찾으려다 404 로 깨진다.
 !/tools/
 !/tools/*/
 
-# tests/* 워크스페이스 — deps.Dockerfile 의 npm ci 가 워크스페이스 그래프를
-# 풀 때 디스크상 package.json 이 필요. 실 deploy 이미지에는 들어가지 않지만
-# stub 으로 두는 패턴 (libs/*/package.json 과 동일).
+# `tests/*` 워크스페이스도 `deps.Dockerfile` 의 `npm ci` 가 워크스페이스
+# 그래프를 풀 때 디스크에 `package.json` 이 있어야 lockfile 과 어긋나지
+# 않는다. 배포 이미지에 실제 파일이 들어가는 건 아니라서 `package.json`
+# 만 stub 으로 둔다.
 !/tests/*/package.json
 
 **/node_modules

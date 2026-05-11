@@ -44,8 +44,8 @@ export default function NewMoviePage() {
         setError(null)
         setBusy(true)
         try {
-            // searchPage 가 published 영화만 보여주므로, 등록 직후 publish 까지
-            // 같이 호출해야 목록에 즉시 노출된다.
+            // 영화 목록 API 는 공개된 영화만 돌려준다. 등록 직후에 목록에
+            // 바로 보이도록, 생성한 뒤 공개 처리까지 같이 호출한다.
             const created = await api.post<{ id: string }>('/movies', {
                 accessToken: readToken() ?? undefined,
                 body: {

@@ -66,7 +66,8 @@ export class PathUtil {
     }
 
     static async move(src: string, dest: string): Promise<void> {
-        // 다른 file-system 으로 옮기는 경우 rename 이 실패할 수 있다
+        // 두 경로가 서로 다른 파일 시스템에 있으면 `rename` 이 EXDEV 로
+        // 실패한다. 그 경우에는 복사 후 원본을 지우는 식으로 풀어 준다.
         try {
             await fs.rename(src, dest)
         } catch (error: unknown) {

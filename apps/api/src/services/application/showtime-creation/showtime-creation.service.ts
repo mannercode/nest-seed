@@ -22,9 +22,8 @@ export class ShowtimeCreationService {
     }
 
     async searchMoviesPage(searchDto: PaginationDto) {
-        // caller 가 명시한 orderby 가 있으면 그대로 따른다 (그동안 묵시적 덮어쓰기로
-        // caller 가 보낸 정렬이 사라지던 동작을 바로잡음). 명시 안 한 경우만 이 화면의
-        // 기본 정렬인 'releaseDate desc' 를 채워 준다.
+        // 호출자가 정렬을 지정했으면 그대로 쓴다. 지정하지 않은 경우에만
+        // 이 화면의 기본값(개봉일 내림차순)을 채운다.
         const orderby = searchDto.orderby ?? { direction: OrderDirection.Desc, name: 'releaseDate' }
 
         return this.moviesService.searchPage({ ...searchDto, orderby })

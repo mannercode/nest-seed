@@ -1,11 +1,12 @@
 import type { Request } from 'express'
 
-// request duration 에 대한 component 간 contract: HttpSuccessLoggerInterceptor
-// (request 진입은 보지만 exception flow 는 못 봄) 가 시작을 mark 하고,
-// HttpExceptionLoggerFilter (exception flow 는 보지만 진입은 못 봄) 가
-// elapsed time 을 읽는다. timestamp 를 WeakMap 에 두면 express.Request
-// object 를 건드리지 않아도 된다 — global type augmentation 도, 같은
-// field 이름을 쓰는 다른 middleware 와 부딪힐 위험도 없다.
+// 요청 처리 시간을 두 컴포넌트가 함께 본다.
+// `HttpSuccessLoggerInterceptor` 는 요청 진입은 알지만 예외 흐름은 못 보고,
+// `HttpExceptionLoggerFilter` 는 예외 흐름은 알지만 진입은 못 본다. 그래서
+// 인터셉터가 시작 시각을 표시해 두면, 필터가 그 값을 읽어 경과 시간을 잰다.
+// 시작 시각을 `WeakMap` 에 두면 `express.Request` 객체를 직접 건드리지 않아도
+// 된다. 전역 타입 확장도 필요 없고, 같은 필드 이름을 쓰는 다른 미들웨어와
+// 부딪힐 일도 없다.
 const startTimestamps = new WeakMap<Request, number>()
 
 export function markRequestStart(request: Request): void {

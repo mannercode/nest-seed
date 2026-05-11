@@ -18,9 +18,10 @@ export async function bootstrap() {
         exit(1)
     }
 
-    // 분산 부하 테스트용 복제본 식별자. docker 에선 hostname 이 컨테이너 id 라
-    // 복제본마다 유일하다. 노출돼도 안전 — docker ps / nginx 상류에서 어차피
-    // 보이는 정보다.
+    // 복제본을 구별하기 위한 식별자. docker 환경에서는 hostname 이 컨테이너
+    // id 와 같아서 복제본마다 다른 값이 나온다. 분산 부하 테스트가 어느
+    // 복제본이 응답했는지 볼 때 쓴다. `docker ps` 와 nginx upstream 로그에
+    // 이미 같은 값이 보이므로 외부 노출은 따로 위험하지 않다.
     const replicaId = hostname()
     app.use((_req: express.Request, res: express.Response, next: express.NextFunction) => {
         res.setHeader('x-replica-id', replicaId)
@@ -36,8 +37,9 @@ export async function bootstrap() {
     app.enableShutdownHooks()
 
     const server = await app.listen(http.port)
-    // 유휴 상류 연결을 nginx 풀 타임아웃(기본 60초) 보다 길게 살려둬서, nginx 가
-    // Node 가 이미 닫은 연결을 재사용하려다 클라이언트에 502 를 내는 일이 없도록 한다.
+    // 유휴 상류 연결을 nginx keep-alive 풀의 60초보다 길게 살려 둔다.
+    // 같지 않으면 nginx 가 이미 Node 쪽에서 닫힌 연결을 다시 쓰려다 502 를
+    // 낸다.
     server.keepAliveTimeout = 65_000
     server.headersTimeout = 66_000
 

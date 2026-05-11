@@ -17,9 +17,8 @@ RUN set -Eeu; \
     npm i -g npm-check-updates husky @commitlint/cli @anthropic-ai/claude-code playwright@1.59.1; \
     npm cache clean --force
 
-# Playwright 브라우저 + 동적 링크 시스템 라이브러리. Dockerfile RUN 은 root
-# 로 도므로 `--with-deps` (apt 설치 단계 포함) 가 그대로 가능. 브라우저 경로는
-# /opt/playwright 로 외부에 두어 npm reinstall 영향을 받지 않고 모든 워크스페이스
-# (tests/console-e2e) 가 공유한다.
+# 이미지 빌드는 root 권한으로, 컨테이너 실행은 node 권한으로 한다.
+# 브라우저를 기본 위치(`~/.cache/ms-playwright`)에 두면 `/root/` 아래로 들어가
+# node 가 읽지 못한다. 그래서 `/opt` 에 둔다.
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
 RUN playwright install --with-deps chromium

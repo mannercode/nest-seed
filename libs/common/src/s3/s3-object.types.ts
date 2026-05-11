@@ -35,22 +35,16 @@ export type S3ObjectModuleOptions = {
 export type S3ObjectSummary = { eTag?: string; key: string; lastModified?: Date; size?: number }
 
 export type S3PresignDownloadOptions = {
-    /**
-     * 다운로드 파일명 강제
-     */
+    /** 다운로드할 때 강제로 쓸 파일 이름. */
     filename?: string
-    /**
-     * Content-Disposition 직접 지정
-     */
+    /** `Content-Disposition` 헤더를 직접 지정한다. */
     responseContentDisposition?: string
-    /**
-     * 다운로드 시 Content-Type 오버라이드
-     */
+    /** 다운로드 응답의 `Content-Type` 을 덮어쓴다. */
     responseContentType?: string
 } & S3PresignUrlOptions
 
 export type S3PresignPostUploadOptions = S3PresignUrlOptions & {
-    // 예) attachment; filename="a.txt"
+    // 예: `attachment; filename="a.txt"`
     contentDisposition?: string
     contentType?: string
     maxContentLength?: number

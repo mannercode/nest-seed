@@ -3,13 +3,14 @@ import { Injectable } from '@nestjs/common'
 import { getProjectId } from 'config'
 
 /**
- * 여러 replica 간의 purchase 도메인 이벤트.
+ * 복제본 사이로 흐르는 구매 도메인 이벤트.
  *
- * Subject 는 PROJECT_ID 로 namespace 가 분리되어 있어, 병렬 test worker 끼리
- * 서로의 이벤트를 보지 않는다. NATS pub/sub 은 기본적으로 broadcast-volatile
- * semantics 다 (구독 중인 모든 replica 가 각 메시지를 받는다). service 단위로
- * 정확히 한 번만 처리하고 싶다면 `subscribe(..., { queue })` 옵션으로 NATS
- * queue group 에 합류시킨다.
+ * subject 이름 앞에 `PROJECT_ID` 를 붙여서 namespace 를 나눈다. 그래서 병렬
+ * 테스트 워커끼리 서로의 이벤트를 보지 않는다.
+ *
+ * NATS pub/sub 의 기본 동작은 broadcast 다. 구독 중인 모든 복제본이 각
+ * 메시지를 한 번씩 받는다. 같은 이벤트를 서비스 단위로 정확히 한 번만 처리
+ * 하고 싶으면 `subscribe(..., { queue })` 로 NATS queue group 에 들여 둔다.
  */
 @Injectable()
 export class PurchaseEvents {

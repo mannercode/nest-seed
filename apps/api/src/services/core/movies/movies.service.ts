@@ -97,9 +97,11 @@ export class MoviesService {
             owner: { entityId: movieId, service: 'movies' }
         })
 
-        // addAsset → removePendingAsset 순서. 반대로 하면 addAsset 실패 시
-        // 자산은 owner=movie 인데 movie 는 참조 안 하고 pending 도 이미 제거되어
-        // 재시도 경로 (includes=false, hasPending=false → AssetNotFound) 가 막힌다.
+        // 순서를 `addAsset` → `removePendingAsset` 로 둔다. 거꾸로 하면
+        // `addAsset` 이 실패했을 때 자산의 소유자는 이미 movie 로 바뀌어
+        // 있는데 movie 쪽은 그 자산을 참조하지 않고, pending 목록도 비어
+        // 있다. 그러면 사용자가 다시 finalize 를 호출해도 어디서도 자산을
+        // 못 찾고 `AssetNotFound` 가 난다.
         await this.moviesRepository.addAsset(movieId, assetId)
         await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
     }

@@ -18,5 +18,6 @@ export class User extends CrudSchema {
 }
 export const UserSchema = createCrudSchema(User)
 
-// 검색 인덱스 없음 (email 의 unique single-field 인덱스는 @Prop 로 자동 생성).
-// cycle-31 substring 회귀로 prefix 인덱스 활용 불가 — 모두 제거.
+// `email` 의 단일 필드 unique 인덱스는 `@Prop({ unique: true })` 가 알아서
+// 만들어 준다. 검색용 인덱스는 따로 두지 않는다. 부분 문자열 정규식이라
+// 어차피 인덱스를 못 탄다.

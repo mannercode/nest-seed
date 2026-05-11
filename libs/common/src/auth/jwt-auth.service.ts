@@ -32,36 +32,36 @@ type JwtSignOptionsArg = Parameters<JwtService['signAsync']>[1]
 type JwtExpiresIn = NonNullable<JwtSignOptionsArg>['expiresIn']
 
 /**
- * **refresh-token rotation** 과 **reuse detection** 을 갖춘 JWT 기반 auth.
+ * refresh 토큰 회전과 재사용 탐지를 갖춘 JWT 인증 서비스다.
  *
- * Redis 저장 구조 (JwtAuthService instance 별, `prefix` 로 namespacing):
+ * Redis 저장 구조 (인스턴스마다 `prefix` 로 분리):
  *
- *   {prefix}:{familyId}:token:{tokenId}    → JSON { hash, familyId }    TTL = refreshTokenTtlMs
- *   {prefix}:{familyId}:family             → 살아있는 tokenId 의 SET    TTL = refreshTokenTtlMs (rotation 시 연장)
- *   {prefix}:user:{userId}:families        → user 의 familyId SET       TTL = refreshTokenTtlMs (rotation 시 연장)
+ *   {prefix}:{familyId}:token:{tokenId}   → JSON `{ hash, familyId }`, TTL = refresh 만료
+ *   {prefix}:{familyId}:family            → 살아 있는 tokenId 의 SET, TTL = refresh 만료
+ *   {prefix}:user:{userId}:families       → 그 사용자의 familyId SET, TTL = refresh 만료
  *
- * - **Hash 저장**: SHA-256(refreshToken) 만 보관하고 raw JWT 는 client 에만
- *   존재한다. Redis dump 가 유출되어도 그대로 쓸 수 있는 token 이 공격자 손에
- *   바로 들어가지는 않는다.
- * - **Rotation**: refresh 가 성공하면 소비된 token entry 를 삭제하고 같은
- *   family 안에서 새 tokenId 를 발급한다.
- * - **Reuse detection**: 이미 rotation 된 token (token entry 는 사라졌지만
- *   family 는 아직 살아있는 상태) 이 제시되면 도난으로 간주 → family 전체를
- *   날려서 정상 user 와 공격자 모두 더 이상 refresh 하지 못하게 한다.
- * - **Algorithm pinning + iss/aud claim** 으로 algorithm-confusion 공격을
- *   막고, secret 을 공유하는 다른 service 가 발급한 token 을 차단한다.
- * - **per-user index** 덕분에 `revokeAllForUser` (예: 비밀번호 변경이나
- *   "전체 로그아웃") 가 가능하다. userId 는 설정된 `userIdField` (기본
- *   `'sub'`, RFC 7519) 를 통해 JWT payload 에서 뽑아낸다.
+ * - 해시만 저장한다. `SHA-256(refreshToken)` 만 Redis 에 두고, 원본 JWT 는
+ *   클라이언트에만 둔다. Redis 덤프가 유출되어도 그대로 쓸 수 있는 토큰이
+ *   공격자에게 바로 넘어가지 않는다.
+ * - refresh 가 성공할 때마다 토큰을 회전한다. 쓴 토큰 항목은 지우고, 같은
+ *   family 안에서 새 토큰 ID 를 발급한다.
+ * - 이미 회전된 토큰(토큰 항목은 사라졌지만 family 는 살아 있는 상태)이
+ *   다시 들어오면 도난으로 간주한다. family 를 통째로 날려서 정상 사용자도
+ *   공격자도 더는 refresh 하지 못하게 한다.
+ * - 서명 알고리즘을 고정하고 `iss` / `aud` 클레임을 검증한다. 알고리즘 혼동
+ *   공격이나, 같은 secret 으로 다른 서비스가 발급한 토큰을 거른다.
+ * - 사용자별 family 인덱스 덕에 `revokeAllForUser` (비밀번호 변경, 전체
+ *   로그아웃) 가 가능하다. 사용자 ID 는 `userIdField` 가 가리키는 클레임에서
+ *   가져온다 (기본은 RFC 7519 의 `sub`).
  */
 @Injectable()
 export class JwtAuthService {
     private readonly logger = new Logger(JwtAuthService.name)
 
-    // `userIdField` 에 기본값을 두지 않는다 — JwtAuthModule.register 가 항상
-    // `defaultTo(userIdField, DEFAULT_USER_ID_FIELD)` 로 해소하므로 TS 의
-    // 기본값은 dead code (커버되지 않는 branch) 가 된다. 직접 instantiate 할
-    // 때는 field 를 명시적으로 넘겨야 한다.
+    // `userIdField` 에는 일부러 기본값을 두지 않는다. `JwtAuthModule.register`
+    // 가 호출하기 전에 `defaultTo(userIdField, DEFAULT_USER_ID_FIELD)` 로
+    // 값을 채워 주므로, 여기 기본값을 둬도 그 분기는 절대 실행되지 않는다.
+    // 이 클래스를 직접 `new` 로 만든다면 `userIdField` 를 반드시 명시한다.
     constructor(
         private readonly jwtService: JwtService,
         private readonly config: AuthConfig,
@@ -149,11 +149,12 @@ export class JwtAuthService {
             throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
         }
 
-        // 다음 token 을 발급하기 전에 이 token 을 소비해서 같은 window 가
-        // 동일한 refresh 를 두 번 받아주지 못하게 한다. atomic DEL 의 count
-        // 로 같은 tokenId 에 대한 동시 refresh race 에서 우리가 이겼는지
-        // 알 수 있다 — race 의 패자는 이미 rotation 된 token 이 replay 된
-        // 경우와 구분할 수 없으므로, reuse detection 이 family 를 태운다.
+        // 새 토큰을 발급하기 전에 지금 토큰을 먼저 소비한다. 그래야 같은
+        // 토큰 하나로 동시에 들어온 refresh 두 건이 모두 통과하는 일이
+        // 막힌다. atomic DEL 이 돌려주는 카운트로 우리가 그 race 에서
+        // 이겼는지 알 수 있다. 진 쪽은 이미 회전된 토큰을 다시 제출한
+        // 경우와 구분이 안 되므로, 재사용 탐지가 family 를 통째로 무효화
+        // 한다.
         const consumed = await this.consumeToken(tokenId, familyId)
         if (!consumed) {
             const loserUserId = this.getUserId(payload)
@@ -298,11 +299,14 @@ export class JwtAuthService {
     }
 
     /**
-     * 두 key 모두 `{familyId}` 를 Redis Cluster hash tag 로 박아서 한 family
-     * 의 모든 key 가 같은 slot 에 떨어지도록 한다 — token + family entry 를
-     * atomic 하게 다루는 MULTI pipeline 을 쓰기 때문에 필요하다 (Redis
-     * Cluster 는 slot 을 넘나드는 multi-key 연산을 `CROSSSLOT` 으로 거부).
-     * per-user index 는 따로 (non-MULTI 로) 다루므로 `{userId}` 를 쓴다.
+     * 두 키 모두 `{familyId}` 를 Redis Cluster 해시 태그로 박는다. 같은
+     * family 의 키가 같은 슬롯에 모이게 만들기 위해서다. token 키와
+     * family 키를 한 MULTI 파이프라인 안에서 함께 다루는데, Redis
+     * Cluster 는 슬롯이 다른 키를 한 트랜잭션에 묶으면 `CROSSSLOT` 으로
+     * 거절한다.
+     *
+     * 사용자별 인덱스는 별도 트랜잭션에서 다루므로 `{userId}` 로 해시 태그를
+     * 박는다.
      */
     private tokenKey(tokenId: string, familyId: string) {
         return `${this.prefix}:{${familyId}}:token:${tokenId}`
@@ -350,17 +354,16 @@ export class JwtAuthService {
     }
 
     private async consumeToken(tokenId: string, familyId: string): Promise<boolean> {
-        // result[0] 가 DEL 응답: [err, count]. count > 0 이면 동시 소비자
-        // 들과의 race 에서 우리가 이긴 것이고, 0 이면 다른 worker 가 이미
-        // entry 를 지운 것이다.
+        // 결과의 첫 항목이 DEL 응답이다 (`[err, count]`). 카운트가 1 이상이면
+        // 동시에 들어온 소비자 중 우리가 먼저 지운 것이다. 0 이면 다른
+        // 워커가 이미 지운 뒤다.
         //
-        // ioredis 의 `multi().exec()` 타입은 `Array<[Error | null, unknown]>
-        // | null` — null 은 transaction 이 abort (예: connection error) 된
-        // 경우에 나온다. 그 경우 DEL 이 실제로 돌았는지 알 수 없으므로
-        // 짐작하지 않고 그대로 throw 한다: false 를 돌리면 일시적 error 일
-        // 수 있는데 family 를 태워버리고, true 를 돌리면 같은 source 에서
-        // 유효 token 두 개가 나갈 수 있다. throw 된 error 는 5xx 가 되어
-        // client 가 재시도할 수 있고 family 는 그대로 유지된다.
+        // ioredis 의 `multi().exec()` 는 transaction 이 중단되면 (예: 연결
+        // 끊김) `null` 을 돌려준다. 이 경우에는 DEL 이 실제로 돌았는지
+        // 알 길이 없다. 그래서 짐작 없이 그대로 throw 한다. false 를 돌리면
+        // 일시 오류였을 때도 family 를 태우고, true 를 돌리면 같은 토큰에서
+        // 유효한 새 토큰이 두 개 나갈 수 있다. throw 하면 5xx 가 되어
+        // 클라이언트가 다시 시도하고, family 는 그대로 남는다.
         const result = await this.redis
             .multi()
             .del(this.tokenKey(tokenId, familyId))
@@ -392,7 +395,7 @@ export class JwtAuthService {
         try {
             await this.onEvent(event)
         } catch (err) {
-            // hook 실패가 authentication 을 깨뜨려서는 안 된다. log 만 남기고 계속.
+            // 이 훅이 실패해도 인증 자체는 계속 진행한다. 로그만 남긴다.
             this.logger.error('onEvent hook failed', err)
         }
     }

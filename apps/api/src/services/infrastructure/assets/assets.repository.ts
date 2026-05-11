@@ -39,7 +39,6 @@ export class AssetsRepository extends CrudRepository<Asset> {
     }
 
     async findExpiredIncomplete(expiresBefore: Date): Promise<Asset[]> {
-        // cycle-19: lean-virtuals 플러그인 제거 + leanToPublic (cycle-06 패턴).
         const docs = await this.model
             .find({ createdAt: { $lte: expiresBefore }, ownerEntityId: null, ownerService: null })
             .lean()

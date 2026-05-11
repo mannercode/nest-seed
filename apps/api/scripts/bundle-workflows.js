@@ -1,15 +1,16 @@
 /**
- * showtime-creation workflow 를 production runtime 이 시작 시 로드하는
- * 단일 JS 문자열로 미리 번들링한다.
+ * showtime-creation 워크플로우를 한 덩어리 JS 문자열로 미리 번들한다.
+ * 운영 환경의 Temporal 워커가 시작할 때 이 파일을 그대로 읽어 쓴다.
  *
- * Why: `bundleWorkflowCode` 는 workflow 소스 (또는 컴파일된 JS) 의 실제
- * 파일시스템 경로가 필요하다. webpack 으로 모든 걸 하나의
- * `_output/dist/index.js` 에 말아넣은 뒤에는 `require.resolve('./temporal/workflows')`
- * 가 null 을 반환하고 (번들 경로에 더 이상 그 파일이 없음) Worker.create 가
- * "path must be a string" 으로 실패한다.
+ * `bundleWorkflowCode` 는 워크플로우 소스(또는 컴파일 결과)가 실제 파일
+ * 시스템에 있어야 동작한다. webpack 이 앱을 한 `_output/dist/index.js`
+ * 로 묶고 나면 `require.resolve('./temporal/workflows')` 가 null 을 돌려
+ * 준다. 번들에는 그 파일이 더 이상 없기 때문이다. 그 상태로 `Worker.create`
+ * 를 부르면 "path must be a string" 으로 실패한다. 빌드 단계에서 미리 번들을
+ * 만들어 두는 이유다.
  *
- * `npm run bundle` 에서 호출된다. 결과물은 `workflowBundlePath` 가 주어졌을
- * 때 TemporalWorkerService 가 읽는다.
+ * `npm run bundle` 에서 이 스크립트를 호출한다. 결과 파일은
+ * `TemporalWorkerService` 가 `workflowBundlePath` 옵션으로 받아서 읽는다.
  */
 const { bundleWorkflowCode } = require('@temporalio/worker')
 const fs = require('fs')

@@ -1,18 +1,21 @@
-// replica chaos 분산 스트레스 테스트 — 트래픽 중에 4 개 app replica 중 1 개를
-// 죽여서 (a) nginx 가 proxy_next_upstream 으로 우회하는지, (b) 재시작된 replica 가
-// 복귀해서 다시 응답하는지, (c) failover 창 동안 사용자 5xx 가 없는지를 검증한다.
+// 트래픽이 흐르는 중에 api 복제본 4 대 가운데 한 대를 죽여 본다. 이 부하
+// 테스트는 세 가지를 함께 검증한다.
+//  - nginx 가 `proxy_next_upstream` 으로 살아 있는 복제본에 우회하는가
+//  - 재시작한 복제본이 다시 응답하는가
+//  - 장애 복구 구간 동안 사용자에게 5xx 가 거의 보이지 않는가
 //
-// Phase (테스트 시작 기준 시간):
-//   0-30s   replica 4 개 전부 살아있는 상태에서 warmup 트래픽
-//   30s     docker kill <target>
-//   30-60s  replica 3 개로 트래픽 계속
-//   60s     docker start <target>
-//   60-90s  target healthcheck 대기, 트래픽 유지
-//   90-150s post-recovery 트래픽; 4 개 replica 모두 응답해야 함
+// 테스트 시작 시점을 기준으로 단계가 이렇게 흐른다.
+//   0~30초    복제본 4 대가 모두 살아 있는 상태에서 워밍업.
+//   30초      대상 복제본을 `docker kill` 로 죽인다.
+//   30~60초   복제본 3 대만으로 트래픽을 계속 받는다.
+//   60초      대상 복제본을 `docker start` 로 다시 띄운다.
+//   60~90초   복제본이 healthy 가 될 때까지 기다리며 트래픽을 유지한다.
+//   90~150초  복구 후 트래픽. 복제본 4 대가 모두 응답해야 한다.
 //
-// 실패 조건: 전체 phase 합산 에러율 >1% (nginx retry 가 kill 창에서의 일시적
-// 실패를 마스킹해야 함), 재시작 후 60s 내 healthy 가 되지 않음, post-recovery
-// 창에서 4 개 미만의 replica 만 응답.
+// 다음 중 하나라도 해당하면 실패로 본다. 전체 구간 합산 에러율이 1% 를
+// 넘기면 (nginx 재시도가 죽이는 구간의 일시 실패를 가려 줘야 한다),
+// 재시작 뒤 60초 안에 healthy 가 되지 않으면, 또는 복구 후 구간에서 응답한
+// 복제본 수가 4 보다 적으면.
 
 const http = require('http')
 const { execSync } = require('child_process')
