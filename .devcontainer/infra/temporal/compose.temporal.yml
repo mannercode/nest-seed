@@ -69,7 +69,7 @@ services:
             temporal: { condition: service_healthy }
         environment:
             TEMPORAL_ADDRESS: temporal:7233
-            DEFAULT_NAMESPACE: default
+            DEFAULT_NAMESPACE: ${TEMPORAL_NAMESPACE}
         volumes:
             - ./scripts:/scripts:ro
         entrypoint: ['/bin/sh']

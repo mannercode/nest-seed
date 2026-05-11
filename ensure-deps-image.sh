@@ -9,7 +9,7 @@
 : "${WORKSPACE_ROOT:?}"
 
 export DEPS_TAG=$(cat "${WORKSPACE_ROOT}/package-lock.json" "${WORKSPACE_ROOT}/deps.Dockerfile" | sha256sum | cut -c1-16)
-export DEPS_IMAGE="deps:${DEPS_TAG}"
+export DEPS_IMAGE="nest-seed-deps:${DEPS_TAG}"
 
 if ! docker image inspect "$DEPS_IMAGE" >/dev/null 2>&1; then
     docker build -f "${WORKSPACE_ROOT}/deps.Dockerfile" -t "$DEPS_IMAGE" "${WORKSPACE_ROOT}"
