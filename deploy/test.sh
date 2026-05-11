@@ -44,4 +44,8 @@ tar c \
 
 docker compose --env-file "$ENV_FILE" up -d --wait
 
-bash "${APP_DIR}/api-docs/run.sh"
+# dod 환경에선 devcontainer 의 localhost 가 nginx 컨테이너로 안 닿고
+# (sibling container, host port 매핑은 호스트 자체의 포트), 같은 nest-seed
+# 네트워크의 service name 으로만 도달. api-docs/.env 의 default
+# SERVER_URL=http://localhost:3000 을 nginx:80 으로 override.
+SERVER_URL=http://nginx:80 bash "${APP_DIR}/api-docs/run.sh"
