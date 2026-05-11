@@ -27,7 +27,7 @@
     // 명령 팔레트의 "Dev Containers: Clone Repository in Named Container Volume"
     // 으로 volume name (= nest-seed) 지정해서 git clone — 그 명령이 알아서
     // workspaceMount 를 inject 하므로 여기 명시하지 않는다.
-    "workspaceFolder": "/workspaces/nest-seed",
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
     "mounts": [
         "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind",
         "source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind",
