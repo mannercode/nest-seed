@@ -24,12 +24,13 @@
     "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
     "workspaceFolder": "${localWorkspaceFolder}",
     "mounts": [
+        "source=${localEnv:HOME}/.codex,target=/home/node/.codex,type=bind",
+        "source=${localEnv:HOME}/.config,target=/home/node/.config,type=bind",
         "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind",
-        "source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind",
-        "source=${localEnv:HOME}/.config,target=/home/node/.config,type=bind"
+        "source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind"
     ],
     "initializeCommand": {
-        "prepare-mounts": "mkdir -p ${localEnv:HOME}/.claude ${localEnv:HOME}/.config",
+        "prepare-mounts": "mkdir -p ${localEnv:HOME}/.codex ${localEnv:HOME}/.claude ${localEnv:HOME}/.config",
         "prepare-files": "touch ${localEnv:HOME}/.claude.json",
         "prepare-network": "docker network create ${localWorkspaceFolderBasename} 2>/dev/null || true"
     },
@@ -52,7 +53,8 @@
                 "esbenp.prettier-vscode",
                 "mutantdino.resourcemonitor",
                 "mkhl.shfmt",
-                "anthropic.claude-code"
+                "anthropic.claude-code",
+                "openai.chatgpt"
             ],
             "settings": {
                 "remote.autoForwardPorts": false,
