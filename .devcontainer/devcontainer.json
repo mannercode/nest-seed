@@ -17,9 +17,10 @@
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
         "COMPOSE_PROJECT_NAME": "${containerWorkspaceFolderBasename}"
     },
-    // dod 환경에서 호스트 docker 가 컨테이너 안 path 를 그대로 인식해야 compose
-    // 의 bind mount / build context 가 표준으로 동작. 그래서 source/target 을
-    // 같은 호스트 path 로 둔다.
+    // dod 환경에서는 호스트 docker 가 컨테이너 안에서 부른 경로를 그대로
+    // 본다. compose 의 bind mount 와 build context 가 표준대로 풀리려면,
+    // 컨테이너 안 경로와 호스트 경로가 같아야 한다. 그래서 source 와
+    // target 을 같은 호스트 경로로 둔다.
     "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
     "workspaceFolder": "${localWorkspaceFolder}",
     "mounts": [

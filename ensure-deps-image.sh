@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# DEPS_TAG (lockfile + deps.Dockerfile 해시) 로 deps base image 가 이미 있는지
-# 보고, 없으면 build. 모노레포 root lockfile 을 모든 apps/* 가 공유하므로 npm
-# ci 결과를 한 번 baked-in 해서 apps/*/Dockerfile 의 FROM 으로 쓴다.
-# 호출 측이 source 해서 DEPS_TAG / DEPS_IMAGE 를 받아 compose build args 로 넘긴다.
+# `DEPS_TAG` 를 lockfile 과 `deps.Dockerfile` 의 합본 해시로 정한다. 그 태그의
+# 베이스 이미지가 이미 있으면 그대로 쓰고, 없으면 그 자리에서 빌드한다.
+# 모노레포 루트의 lockfile 을 모든 `apps/*` 가 공유하므로, `npm ci` 결과를
+# 한 번 굳혀 둔 베이스 이미지를 `apps/*/Dockerfile` 이 `FROM` 으로 받아 쓴다.
+# 이 스크립트를 부르는 쪽은 `source` 로 불러 `DEPS_TAG` 와 `DEPS_IMAGE` 를
+# 받아, compose 빌드 인자로 넘긴다.
 
 : "${WORKSPACE_ROOT:?}"
 
