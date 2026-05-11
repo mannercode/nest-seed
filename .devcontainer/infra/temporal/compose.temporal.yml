@@ -13,30 +13,26 @@ services:
         deploy: { resources: { limits: { memory: 2g } } }
         shm_size: '256m'
 
-    # auto-setup 의 schema setup 부분 — one-shot. temporal/visibility 두 DB
-    # create + setup-schema + update-schema. 멱등 (재실행 시 create 만 fail
-    # 하고 update 는 성공하도록 setup-postgres.sh 가 처리).
+    # `temporal` / `temporal_visibility` 두 DB 의 스키마를 만든다. `create`
+    # 실패는 무시하고 `update` 만 마저 돌려 재실행에도 안전.
     temporal-setup:
         extends: { file: ../compose.common.yml, service: common-options }
         image: $TEMPORAL_ADMIN_TOOLS_IMAGE
         depends_on:
             temporal-postgresql: { condition: service_healthy }
         environment:
-            # SQL_PASSWORD 는 temporal-sql-tool 이 실제 사용하는 변수.
-            # POSTGRES_PWD 는 다른 도구용 — 둘 다 set 해야 schema 작업 통과.
+            # SQL_PASSWORD 는 temporal-sql-tool, POSTGRES_PWD 는 다른 도구가
+            # 읽는다. 둘 다 같은 값이어야 통과.
             DB: postgres12
             DB_PORT: '5432'
             POSTGRES_USER: temporal
             POSTGRES_PWD: temporal
             POSTGRES_SEEDS: temporal-postgresql
             SQL_PASSWORD: temporal
-        # devcontainer 와 같은 source volume 을 공유해서 호스트 경로 노출 없이
-        # scripts 에 도달. VSCode 가 volume 을 /workspaces 에 mount 하고 그 안
-        # ${COMPOSE_PROJECT_NAME}/ 서브폴더에 clone 하므로 target 도 /workspaces.
         volumes:
-            - source:/workspaces:ro
+            - ./scripts:/scripts:ro
         entrypoint: ['/bin/sh']
-        command: '/workspaces/${COMPOSE_PROJECT_NAME}/.devcontainer/infra/temporal/scripts/setup-postgres.sh'
+        command: '/scripts/setup-postgres.sh'
 
     temporal:
         extends: { file: ../compose.common.yml, service: common-options }
@@ -50,25 +46,20 @@ services:
             POSTGRES_PWD: temporal
             POSTGRES_SEEDS: temporal-postgresql
             BIND_ON_IP: 0.0.0.0
-            # source volume 안의 파일을 절대경로로 직접 지정 — 별도 mount path
-            # 마련하지 않고 source volume 그대로 활용.
-            DYNAMIC_CONFIG_FILE_PATH: /workspaces/${COMPOSE_PROJECT_NAME}/.devcontainer/infra/temporal/dynamicconfig/development-sql.yaml
+            DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
         volumes:
-            - source:/workspaces:ro
+            - ./dynamicconfig:/etc/temporal/config/dynamicconfig:ro
         healthcheck:
             test: ['CMD-SHELL', 'nc -z localhost 7233']
             interval: 5s
             start_period: 30s
-        # 1g 에서 증설 — sustained test load 에서 `docker stats` 로 보면
-        # temporal server 가 1g cap 의 99.99% 에 고정돼 Go runtime 이
-        # thrashing GC 에 빠지고 persistence 호출이 timeout 됐다 (transfer-queue
-        # 와 timer-queue 태스크에서 계속 보이던 "context deadline exceeded" 실패).
+        # 한도 1g 에서 transfer-queue / timer-queue 가 "context deadline
+        # exceeded" 로 깨지는 것을 보고 3g 로 올렸다.
         deploy: { resources: { limits: { memory: 3g } } }
         shm_size: '16m'
 
-    # auto-setup 이 자동으로 만들던 default namespace — server only 는 안
-    # 만들어주므로 admin-tools 의 `temporal operator namespace create` 로
-    # one-shot. 이미 존재하면 idempotent.
+    # auto-setup 이미지는 default namespace 를 만들어 줬지만 server 전용
+    # 이미지는 그렇지 않다. admin-tools 로 한 번 만든다 (이미 있으면 통과).
     temporal-create-namespace:
         extends: { file: ../compose.common.yml, service: common-options }
         image: $TEMPORAL_ADMIN_TOOLS_IMAGE
@@ -78,17 +69,9 @@ services:
             TEMPORAL_ADDRESS: temporal:7233
             DEFAULT_NAMESPACE: default
         volumes:
-            - source:/workspaces:ro
+            - ./scripts:/scripts:ro
         entrypoint: ['/bin/sh']
-        command: '/workspaces/${COMPOSE_PROJECT_NAME}/.devcontainer/infra/temporal/scripts/create-namespace.sh'
+        command: '/scripts/create-namespace.sh'
 
 volumes:
     temporal_pgdata: {}
-    # VSCode 의 "Clone Repository in Named Container Volume" 으로 만들어진
-    # source volume. 사용자가 prompt 에 입력한 volume name (= ${COMPOSE_PROJECT_NAME})
-    # 으로 만들어지고, devcontainer 가 /workspaces 에 mount + 그 안
-    # ${COMPOSE_PROJECT_NAME}/ 에 git clone. 호스트 파일시스템 노출 없이 모든
-    # 컨테이너가 같은 코드를 본다.
-    source:
-        name: ${COMPOSE_PROJECT_NAME}
-        external: true

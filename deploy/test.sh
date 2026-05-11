@@ -21,19 +21,6 @@ trap cleanup EXIT
 
 . "${WORKSPACE_ROOT}/ensure-deps-image.sh"
 
-tar c \
-    --exclude='./node_modules' \
-    --exclude='./.git' \
-    --exclude='**/node_modules' \
-    --exclude='**/_output' \
-    --exclude='**/__tests__' \
-    -C "${WORKSPACE_ROOT}" . | \
-    docker build \
-        -f apps/api/Dockerfile \
-        --build-arg DEPS_TAG="${DEPS_TAG}" \
-        -t api \
-        -
-
-docker compose --env-file "$ENV_FILE" up -d --wait
+docker compose --env-file "$ENV_FILE" up -d --build --wait
 
 SERVER_URL=http://nginx:80 bash "${APP_DIR}/api-docs/run.sh"

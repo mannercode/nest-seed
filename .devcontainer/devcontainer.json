@@ -13,21 +13,15 @@
         "--network=${localWorkspaceFolderBasename}"
     ],
     "remoteUser": "node",
-    // 시드 프로젝트라 다른 이름으로 fork 됐을 때도 그대로 동작하도록 workspace
-    // basename 을 COMPOSE_PROJECT_NAME 에 직접 inject. docker compose 표준
-    // 변수라 compose 파일/스크립트 모두 이것만 참조하면 됨 — network 이름,
-    // volume 이름, compose project 이름이 모두 같은 값으로 통일.
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
         "COMPOSE_PROJECT_NAME": "${containerWorkspaceFolderBasename}"
     },
-    // 호스트 파일시스템 노출 없이 source code 자체를 named volume 에 둔다.
-    // dod 환경에서 다른 컨테이너 (compose 서비스, build context 등) 가 같은
-    // volume 을 mount 하면 호스트 경로 없이 같은 코드를 본다. 첫 부팅은 VSCode
-    // 명령 팔레트의 "Dev Containers: Clone Repository in Named Container Volume"
-    // 으로 volume name (= nest-seed) 지정해서 git clone — 그 명령이 알아서
-    // workspaceMount 를 inject 하므로 여기 명시하지 않는다.
-    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+    // dod 환경에서 호스트 docker 가 컨테이너 안 path 를 그대로 인식해야 compose
+    // 의 bind mount / build context 가 표준으로 동작. 그래서 source/target 을
+    // 같은 호스트 path 로 둔다.
+    "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
+    "workspaceFolder": "${localWorkspaceFolder}",
     "mounts": [
         "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind",
         "source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind",
@@ -38,11 +32,11 @@
         "prepare-files": "touch ${localEnv:HOME}/.claude.json",
         "prepare-network": "docker network create ${localWorkspaceFolderBasename} 2>/dev/null || true"
     },
-    // "postCreateCommand": { "husky": "husky", "install": "npm install" },
-    // "postStartCommand": {
-    //     "infra": "bash .devcontainer/infra/reset.sh",
-    //     "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null"
-    // },
+    "postCreateCommand": { "husky": "husky", "install": "npm install" },
+    "postStartCommand": {
+        "infra": "bash .devcontainer/infra/reset.sh",
+        "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null"
+    },
     // "waitFor": "postStartCommand",
     "forwardPorts": [5010, 5020, 9001],
     "customizations": {
