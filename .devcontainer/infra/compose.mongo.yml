@@ -6,56 +6,39 @@ x-mongo-base: &mongo-base
     # 떨어졌음. 메모리 증설로 cache 한도를 함께 끌어올린다.
     deploy: { resources: { limits: { memory: 2g } } }
     shm_size: '8m'
-    environment: { MONGO_INITDB_ROOT_USERNAME: mongouser, MONGO_INITDB_ROOT_PASSWORD: mongopass }
     # "Too many open files" 에러 방지
     ulimits: { nofile: { soft: 65536, hard: 65536 } }
-    # 27016 포트로 변경하는 이유
-    # - MONGO_INITDB_* 또는 /docker-entrypoint-initdb.d 스크립트가 있으면 엔트리포인트가 127.0.0.1:27017로
-    #   초기화용 임시 mongod를 실행해 admin/root 사용자 생성 등 초기화를 수행한다.
-    # - 초기화가 끝나면 임시 mongod를 종료하고 서비스용 mongod를 다시 실행한다.
-    # - 이 전환 과정에서 27017 포트 충돌로 "Address already in use"가 간헐적으로 발생할 수 있어,
-    #   서비스용 mongod 포트를 27016으로 변경한다.
+    # auth 와 keyFile 모두 제거 — replica set 멤버 간 inter-cluster auth 가 빠짐.
+    # 의도: dev/test devcontainer 와 CI 만 사용하는 환경 + 운영은 어차피 매니지드
+    # 서비스 (DocumentDB 등) 라 keyFile 흉내가 의미 없음. 이 단순화로
+    # mongo-key-generator 컨테이너와 mongodb_key 볼륨이 통째로 빠진다.
+    # 27016 포트 trick 은 그대로 — initdb 임시 mongod 와의 충돌 회피용.
     command: >
         --replSet mongo
-        --keyFile /etc/mongodb/mongodb.key
         --bind_ip_all
         --port 27016
         --wiredTigerCacheSizeGB 1.0
-    volumes: ['mongodb_key:/etc/mongodb']
-    depends_on: ['mongo-key-generator']
 
 services:
-    mongo-key-generator:
-        extends: { file: ./compose.common.yml, service: common-options }
-        image: $MONGO_IMAGE
-        command: |
-            sh -euc '
-            openssl rand -base64 768 > mongodb.key &&
-            chmod 400 mongodb.key &&
-            chown mongodb:mongodb mongodb.key
-            '
-        volumes: ['mongodb_key:/mongodb_key']
-        working_dir: /mongodb_key
-
     mongo1:
         <<: *mongo-base
         healthcheck:
             test: >
-                mongosh "mongodb://mongouser:mongopass@localhost:27016/?authSource=admin&directConnection=true"
+                mongosh "mongodb://localhost:27016/?directConnection=true"
                 --eval "db.adminCommand('ping')"
 
     mongo2:
         <<: *mongo-base
         healthcheck:
             test: >
-                mongosh "mongodb://mongouser:mongopass@localhost:27016/?authSource=admin&directConnection=true"
+                mongosh "mongodb://localhost:27016/?directConnection=true"
                 --eval "db.adminCommand('ping')"
 
     mongo3:
         <<: *mongo-base
         healthcheck:
             test: >
-                mongosh "mongodb://mongouser:mongopass@localhost:27016/?authSource=admin&directConnection=true"
+                mongosh "mongodb://localhost:27016/?directConnection=true"
                 --eval "db.adminCommand('ping')"
 
     mongo-setup:
@@ -70,9 +53,9 @@ services:
         command: |
             sh -eucx '
                 # rs.initiate 의 host 는 client 가 다시 접속할 때 쓰는 advertise 주소.
-                # devcontainer 도 같은 nest-seed-infra 네트워크에 join 하므로
-                # service name (mongo1/mongo2/mongo3) 으로 도달 가능하다.
-                url="mongodb://mongouser:mongopass@mongo1:27016/?authSource=admin&directConnection=true"
+                # devcontainer 도 같은 nest-seed 네트워크에 join 하므로 service
+                # name (mongo1/mongo2/mongo3) 으로 도달 가능하다.
+                url="mongodb://mongo1:27016/?directConnection=true"
 
                 mongosh $$url --eval "
                     rs.initiate({
@@ -95,6 +78,3 @@ services:
                     sleep 1
                 done
             '
-
-volumes:
-    mongodb_key: {}
