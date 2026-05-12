@@ -5,7 +5,7 @@ const Redis = require('ioredis')
 
 process.loadEnvFile('.env')
 
-module.exports = createGlobalTeardown({
+const globalTeardown = createGlobalTeardown({
     connectMongo: async () => {
         const client = new MongoClient(process.env.MONGO_URI)
         await client.connect()
@@ -31,3 +31,5 @@ module.exports = createGlobalTeardown({
             { host: process.env.REDIS_HOST6, port: Number(process.env.REDIS_PORT6) }
         ])
 })
+
+module.exports = globalTeardown

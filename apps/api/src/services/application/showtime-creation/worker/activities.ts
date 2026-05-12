@@ -1,6 +1,6 @@
 import { CacheService, getByPath, InjectCache, JsonUtil } from '@mannercode/common'
 import { Injectable, Logger } from '@nestjs/common'
-import { ShowtimesService, TicketsService } from 'core'
+import { ShowtimeDto, ShowtimesService, TicketsService } from 'core'
 import {
     ShowtimeBulkCreatorService,
     ShowtimeBulkValidatorService,
@@ -8,7 +8,11 @@ import {
     ShowtimeCreationStatus
 } from '../internal'
 import { ShowtimeCreationEvents } from '../showtime-creation.events'
-import { ShowtimeCreationWorkflowInput, ValidateAndCreateResult } from './types'
+import { ShowtimeCreationWorkflowInput } from './types'
+
+export type ValidateAndCreateResult =
+    | { kind: 'failed'; conflictingShowtimes: ShowtimeDto[] }
+    | { kind: 'succeeded'; createdShowtimeCount: number; createdTicketCount: number }
 
 const VALIDATE_CREATE_LOCK_KEY = 'validate-and-create'
 const VALIDATE_CREATE_LOCK_TTL_MS = 5 * 60 * 1000

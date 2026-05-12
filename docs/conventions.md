@@ -51,6 +51,17 @@ SearchShowtimesDto
 
 응답 타입은 꼭 필요할 때만 따로 만듭니다. 서비스 내부 모델을 그대로 반환해도 충분하다면 새 타입을 늘리지 않습니다.
 
+### 1.4. 경로 변수 접미사
+
+파일 이름까지 포함하는 경로는 `Path`, 디렉터리만 가리키는 경로는 `Dir`로 끝맺습니다. 변수 이름만 보고 호출 측에서 `path.join`을 더 붙여야 하는지 바로 판단할 수 있어야 합니다.
+
+```ts
+workflowBundleDir = '_output/dist'                              // 디렉터리
+workflowBundlePath = '_output/dist/showtime-creation.bundle.js' // 파일까지 포함
+```
+
+환경 변수와 설정 키에도 같은 규칙을 적용합니다 (`WORKFLOW_BUNDLE_DIR`, `LOG_DIR` 등).
+
 ---
 
 ## 2. 에러 규칙

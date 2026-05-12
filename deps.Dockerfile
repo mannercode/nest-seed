@@ -5,6 +5,7 @@ FROM node:24-slim
 
 WORKDIR /workspace
 COPY package.json package-lock.json ./
+COPY libs/temporal-sandbox/package.json libs/temporal-sandbox/
 COPY libs/common/package.json libs/common/
 COPY libs/testing/package.json libs/testing/
 COPY apps/api/package.json apps/api/

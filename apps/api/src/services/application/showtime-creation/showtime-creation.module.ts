@@ -2,7 +2,6 @@ import { CacheModule, NatsPubSubModule, TemporalWorkerService } from '@mannercod
 import { Module } from '@nestjs/common'
 import { AppConfigService, getProjectId, NATS_CONNECTION_NAME, REDIS_CONNECTION_NAME } from 'config'
 import { MoviesModule, ShowtimesModule, TheatersModule, TicketsModule } from 'core'
-import path from 'path'
 import {
     ShowtimeBulkCreatorService,
     ShowtimeBulkValidatorService,
@@ -10,8 +9,9 @@ import {
 } from './internal'
 import { ShowtimeCreationEvents } from './showtime-creation.events'
 import { ShowtimeCreationService } from './showtime-creation.service'
-import { ShowtimeCreationActivities } from './temporal/activities'
-import { getShowtimeCreationTaskQueue } from './temporal/types'
+import { ShowtimeCreationActivities } from './worker/activities'
+import { showtimeCreationBundle } from './worker/bundle'
+import { getShowtimeCreationTaskQueue } from './worker/types'
 
 @Module({
     exports: [ShowtimeCreationService, ShowtimeCreationEvents],
@@ -46,15 +46,7 @@ import { getShowtimeCreationTaskQueue } from './temporal/types'
                     address: config.temporal.address,
                     namespace: config.temporal.namespace,
                     taskQueue: getShowtimeCreationTaskQueue(),
-                    // 운영 환경에서는 빌드 단계의 `scripts/bundle-workflows.js`
-                    // 가 만든 번들이 `dist/index.js` 옆에 놓입니다. dev와
-                    // 테스트에서는 그 파일이 없으므로, 서비스가
-                    // `workflowsPath`를 보고 그 자리에서 번들을 만듭니다.
-                    workflowBundlePath: path.join(
-                        __dirname,
-                        'showtime-creation-workflow-bundle.js'
-                    ),
-                    workflowsPath: require.resolve('./temporal/workflows')
+                    workflowBundlePath: showtimeCreationBundle.bundlePath
                 })
         }
     ]

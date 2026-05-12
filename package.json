@@ -7,6 +7,7 @@
         ]
     },
     "workspaces": [
+        "libs/temporal-sandbox",
         "libs/common",
         "libs/testing",
         "tools/dev-tools",
@@ -16,7 +17,7 @@
     ],
     "scripts": {
         "build": "npm run build --workspaces --if-present",
-        "build:libs": "npm run build -w libs/common -w libs/testing",
+        "build:libs": "npm run build -w libs/temporal-sandbox -w libs/common -w libs/testing",
         "clean": "npm run clean --workspaces --if-present && docker compose --env-file apps/api/.env -f deploy/compose.yml down -v -t 0 && git clean -fdX",
         "lint": "npm run lint --workspaces --if-present",
         "format": "npm run format --workspaces --if-present",

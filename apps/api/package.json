@@ -4,13 +4,14 @@
     "private": true,
     "scripts": {
         "start": "node _output/dist/index.js",
-        "build": "nest build -b webpack && node scripts/bundle-workflows.js",
         "clean": "docker compose --env-file .env -f ../../deploy/compose.yml down -v -t 0 && jest --clearCache",
-        "predev": "free-port 3000",
-        "dev": "nest start --watch",
-        "test": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
         "format": "eslint src/ --fix && prettier --write src/",
         "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
+        "build": "nest build -b webpack && npm run bundle-workflows",
+        "bundle-workflows": "ts-node --transpile-only scripts/bundle-workflows.ts",
+        "predev": "free-port 3000 && npm run bundle-workflows",
+        "dev": "nest start --watch",
+        "test": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
         "atoz": "npm run clean && npm run lint && npm test && bash ../../deploy/test.sh"
     },
     "dependencies": {
@@ -18,6 +19,7 @@
         "@aws-sdk/s3-presigned-post": "3.1045.0",
         "@aws-sdk/s3-request-presigner": "3.1045.0",
         "@mannercode/common": "*",
+        "@mannercode/temporal-sandbox": "*",
         "@nestjs/common": "11.1.19",
         "@nestjs/config": "4.0.4",
         "@nestjs/core": "11.1.19",

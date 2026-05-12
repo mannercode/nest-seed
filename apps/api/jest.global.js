@@ -1,8 +1,11 @@
+const { execFileSync } = require('child_process')
 const fs = require('fs')
-
-process.loadEnvFile('.env')
+const path = require('path')
 
 module.exports = async function globalSetup() {
-    const dirPath = process.env.LOG_DIRECTORY
-    fs.mkdirSync(dirPath, { recursive: true })
+    process.loadEnvFile(path.resolve(__dirname, '.env'))
+
+    fs.mkdirSync(process.env.LOG_DIRECTORY, { recursive: true })
+
+    execFileSync('npm', ['run', 'bundle-workflows'], { cwd: __dirname, stdio: 'inherit' })
 }

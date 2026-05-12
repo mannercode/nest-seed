@@ -1,5 +1,8 @@
 import type { Client, Connection } from '@temporalio/client'
 import { withTestId } from '@mannercode/testing'
+import * as fs from 'fs'
+import * as os from 'os'
+import * as path from 'path'
 import type { TemporalClientConfig } from '../temporal.types'
 
 // 이 파일 전체가 공유하는 단일 Connection + Client.
@@ -7,6 +10,7 @@ import type { TemporalClientConfig } from '../temporal.types'
 // SUT 모듈에 새로운 클래스 identity를 부여하고, 살아 있는 인프라 핸들만 재사용합니다.
 let connection: Connection
 let client: Client
+let bundlePath: string
 
 const config = (): TemporalClientConfig => ({
     address: process.env.TESTLIB_TEMPORAL_ADDRESS as string,
@@ -15,13 +19,19 @@ const config = (): TemporalClientConfig => ({
 
 beforeAll(async () => {
     const { Client, Connection } = await import('@temporalio/client')
+    const { bundleWorkflowCode } = await import('@temporalio/worker')
     const { address, namespace } = config()
     connection = await Connection.connect({ address })
     client = new Client({ connection, namespace })
+
+    const { code } = await bundleWorkflowCode({ workflowsPath: require.resolve('./workflows') })
+    bundlePath = path.join(os.tmpdir(), `temporal-worker-bundle-${process.pid}.js`)
+    fs.writeFileSync(bundlePath, code)
 }, 60_000)
 
 afterAll(async () => {
     await connection.close()
+    fs.unlinkSync(bundlePath)
 })
 
 describe('InjectTemporalClient', () => {
@@ -146,7 +156,7 @@ describe('TemporalClientModule.forRootAsync', () => {
 })
 
 describe('TemporalWorkerService', () => {
-    it('워커가 connect→bundle→run을 거쳐 workflow를 실행하고 정상 종료한다', async () => {
+    it('워커가 번들 파일을 읽어 workflow를 실행하고 정상 종료한다', async () => {
         const { TemporalWorkerService } = await import('../temporal-worker.service')
         const taskQueue = withTestId('worker')
         const calls: string[] = []
@@ -162,7 +172,7 @@ describe('TemporalWorkerService', () => {
             address,
             namespace,
             taskQueue,
-            workflowsPath: require.resolve('./workflows')
+            workflowBundlePath: bundlePath
         })
 
         await service.onModuleInit()
@@ -188,51 +198,12 @@ describe('TemporalWorkerService', () => {
             address: 'unused:0',
             namespace: 'default',
             taskQueue: 'unused',
-            workflowsPath: require.resolve('./workflows')
+            workflowBundlePath: bundlePath
         })
         await expect(service.onModuleDestroy()).resolves.toBeUndefined()
     })
 
-    it('workflowBundlePath가 있으면 그 파일을 그대로 워커에 주입한다', async () => {
-        const { TemporalWorkerService } = await import('../temporal-worker.service')
-        const { bundleWorkflowCode } = await import('@temporalio/worker')
-        const fs = await import('fs')
-        const path = await import('path')
-        const os = await import('os')
-
-        const taskQueue = withTestId('worker-bundle')
-        const { address, namespace } = config()
-
-        // 미리 번들해 임시 파일로 저장한다(프로덕션 빌드 단계가 만들어 두는 형태와 동일).
-        const { code } = await bundleWorkflowCode({ workflowsPath: require.resolve('./workflows') })
-        const bundlePath = path.join(os.tmpdir(), `${withTestId('wf-bundle')}.js`)
-        fs.writeFileSync(bundlePath, code)
-
-        const service = new TemporalWorkerService({
-            activities: { echo: async (msg: string) => `echo:${msg}` },
-            address,
-            namespace,
-            taskQueue,
-            workflowBundlePath: bundlePath
-        })
-
-        await service.onModuleInit()
-
-        try {
-            const { echoWorkflow } = await import('./workflows')
-            const result = await client.workflow.execute(echoWorkflow, {
-                args: ['from-bundle'],
-                taskQueue,
-                workflowId: withTestId('wf')
-            })
-            expect(result).toBe('echo:from-bundle')
-        } finally {
-            await service.onModuleDestroy()
-            fs.unlinkSync(bundlePath)
-        }
-    }, 120_000)
-
-    it('workflowsPath와 workflowBundlePath가 모두 없으면 예외를 던진다', async () => {
+    it('workflowBundlePath 파일이 없으면 init에서 ENOENT를 던진다', async () => {
         const { TemporalWorkerService } = await import('../temporal-worker.service')
         const { address, namespace } = config()
 
@@ -240,13 +211,11 @@ describe('TemporalWorkerService', () => {
             activities: {},
             address,
             namespace,
-            taskQueue: withTestId('worker-no-bundle')
-            // 둘 다 누락
+            taskQueue: withTestId('worker-missing-bundle'),
+            workflowBundlePath: '/tmp/this-file-definitely-does-not-exist.js'
         })
 
-        await expect(service.onModuleInit()).rejects.toThrow(
-            /neither workflowBundlePath.*nor workflowsPath/
-        )
+        await expect(service.onModuleInit()).rejects.toThrow(/ENOENT/)
         await service.onModuleDestroy()
     })
 
@@ -260,7 +229,7 @@ describe('TemporalWorkerService', () => {
             address,
             namespace,
             taskQueue,
-            workflowsPath: require.resolve('./workflows')
+            workflowBundlePath: bundlePath
         })
 
         await service.onModuleInit()
@@ -286,7 +255,7 @@ describe('TemporalWorkerService', () => {
             address,
             namespace,
             taskQueue,
-            workflowsPath: require.resolve('./workflows')
+            workflowBundlePath: bundlePath
         })
 
         await service.onModuleInit()
@@ -312,69 +281,10 @@ describe('TemporalWorkerService', () => {
             address: 'unused:0',
             namespace: 'default',
             taskQueue: 'unused',
-            workflowsPath: require.resolve('./workflows')
+            workflowBundlePath: bundlePath
         })
 
         await expect(service.onModuleDestroy()).resolves.toBeUndefined()
         await expect(service.onModuleDestroy()).resolves.toBeUndefined()
     })
-
-    it('workflowBundlePath 파일이 없으면 런타임에 번들로 대체된다', async () => {
-        const { TemporalWorkerService } = await import('../temporal-worker.service')
-        const taskQueue = withTestId('worker-missing-bundle')
-        const { address, namespace } = config()
-
-        const service = new TemporalWorkerService({
-            activities: { echo: async (msg: string) => `echo:${msg}` },
-            address,
-            namespace,
-            taskQueue,
-            // 존재하지 않는 경로 + workflowsPath fallback.
-            workflowBundlePath: '/tmp/this-file-definitely-does-not-exist.js',
-            workflowsPath: require.resolve('./workflows')
-        })
-
-        await service.onModuleInit()
-
-        try {
-            const { echoWorkflow } = await import('./workflows')
-            const result = await client.workflow.execute(echoWorkflow, {
-                args: ['runtime-bundle'],
-                taskQueue,
-                workflowId: withTestId('wf')
-            })
-            expect(result).toBe('echo:runtime-bundle')
-        } finally {
-            await service.onModuleDestroy()
-        }
-    }, 120_000)
-
-    it('workflowBundlePath가 빈 문자열이면 런타임에 번들로 대체된다', async () => {
-        const { TemporalWorkerService } = await import('../temporal-worker.service')
-        const taskQueue = withTestId('worker-empty-bundle')
-        const { address, namespace } = config()
-
-        const service = new TemporalWorkerService({
-            activities: { echo: async (msg: string) => `echo:${msg}` },
-            address,
-            namespace,
-            taskQueue,
-            workflowBundlePath: '',
-            workflowsPath: require.resolve('./workflows')
-        })
-
-        await service.onModuleInit()
-
-        try {
-            const { echoWorkflow } = await import('./workflows')
-            const result = await client.workflow.execute(echoWorkflow, {
-                args: ['empty-bundle'],
-                taskQueue,
-                workflowId: withTestId('wf')
-            })
-            expect(result).toBe('echo:empty-bundle')
-        } finally {
-            await service.onModuleDestroy()
-        }
-    }, 120_000)
 })

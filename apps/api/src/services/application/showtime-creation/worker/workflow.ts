@@ -1,7 +1,6 @@
-import { proxyActivities } from '@temporalio/workflow'
+import { extractRootMessage, proxyActivities } from '@mannercode/temporal-sandbox'
 import type { ShowtimeCreationActivities } from './activities'
 import type { ShowtimeCreationWorkflowInput } from './types'
-import { extractRootMessage } from './extract-root-message'
 
 const { compensate, emitStatusChanged, validateAndCreate } = proxyActivities<
     ReturnType<ShowtimeCreationActivities['bind']>

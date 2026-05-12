@@ -1,10 +1,14 @@
-import { getTemporalClientToken, newObjectIdString } from '@mannercode/common'
+import {
+    Client,
+    getTemporalClientToken,
+    newObjectIdString,
+    WorkflowIdReusePolicy
+} from '@mannercode/common'
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { Client, WorkflowIdReusePolicy } from '@temporalio/client'
 import { TEMPORAL_CLIENT_NAME } from 'config'
 import { BulkCreateShowtimesDto } from '../dtos'
 import { ShowtimeCreationEvents } from '../showtime-creation.events'
-import { getShowtimeCreationTaskQueue, SHOWTIME_CREATION_WORKFLOW } from '../temporal'
+import { getShowtimeCreationTaskQueue } from '../worker'
 import { ShowtimeCreationStatus } from './types'
 
 @Injectable()
@@ -26,7 +30,7 @@ export class ShowtimeCreationOrchestratorService {
         // `workflowId`를 `sagaId`와 같게 두어 Temporal 실행 기록과 API 응답의
         // saga 식별자를 연결합니다. 같은 ID로 두 번 시작하려는 요청은
         // `REJECT_DUPLICATE` 옵션이 막으므로 별도 중복 방지 키가 필요 없습니다.
-        await this.temporal.workflow.start(SHOWTIME_CREATION_WORKFLOW, {
+        await this.temporal.workflow.start('showtimeCreationWorkflow', {
             args: [{ createDto, sagaId }],
             taskQueue: getShowtimeCreationTaskQueue(),
             workflowId: sagaId,
