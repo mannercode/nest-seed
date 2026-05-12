@@ -5,4 +5,4 @@ set -Eeuo pipefail
 # 명령은 쓰지 않습니다. 같은 일을 `reset.sh`가 compose 단위 안에서 처리합니다.
 bash .devcontainer/infra/reset.sh
 
-npm test -w apps
+npm test -w apps --if-present
