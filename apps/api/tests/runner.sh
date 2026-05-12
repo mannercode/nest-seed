@@ -18,8 +18,7 @@ fi
 cd "$COMPOSE_DIR"
 
 ENV_FILE="${ENV_FILE:-${APP_DIR}/.env}"
-LISTEN_PORT="${LISTEN_PORT:-3000}"
-SERVER_URL="http://localhost:${LISTEN_PORT}"
+SERVER_URL="${SERVER_URL:-http://nginx}"
 
 if [ ! -f "$ENV_FILE" ]; then
     echo "Error: $ENV_FILE not found."
