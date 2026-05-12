@@ -68,7 +68,7 @@ function post(path, body) {
 }
 
 function dockerReplicaIds() {
-    const out = execSync('docker compose ps -q app', { encoding: 'utf8' }).trim()
+    const out = execSync('docker compose ps -q api', { encoding: 'utf8' }).trim()
     return out ? out.split('\n') : []
 }
 
