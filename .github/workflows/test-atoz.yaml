@@ -9,6 +9,7 @@ on:
         # 주기적으로 통과하는지 확인해, 의존성이나 인프라 변경으로 생긴
         # 회귀를 조기에 검출합니다.
         - cron: '17 */6 * * *'
+    workflow_dispatch:
 permissions:
     contents: read
 concurrency:
