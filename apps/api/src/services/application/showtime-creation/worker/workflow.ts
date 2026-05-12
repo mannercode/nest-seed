@@ -2,18 +2,20 @@ import { extractRootMessage, proxyActivities } from '@mannercode/temporal-sandbo
 import type { ShowtimeCreationActivities } from './activities'
 import type { ShowtimeCreationWorkflowInput } from './types'
 
-const { compensate, emitStatusChanged, validateAndCreate } = proxyActivities<
-    ReturnType<ShowtimeCreationActivities['bind']>
->({
-    // 검증·삽입 락은 해제될 때까지 최대 10분(`waitMs`)을 기다립니다. 액티비티
-    // 타임아웃을 그보다 길게 설정해야, 락 대기 중에 Temporal이 액티비티를 먼저
-    // 끊지 않습니다.
+// 검증·삽입은 idempotent하지 않으므로 재시도 비활성. 검증·삽입 락이 해제될
+// 때까지 최대 10분(`waitMs`)을 기다리므로 타임아웃을 그보다 길게 둡니다.
+const { validateAndCreate } = proxyActivities<ReturnType<ShowtimeCreationActivities['bind']>>({
     startToCloseTimeout: '15 minutes',
-    // 자동 재시도는 비활성화합니다. 액티비티가 실패하면 워크플로우의 catch 블록이
-    // 보상 액티비티를 부르고 실패 이벤트를 발행합니다. 재시도하면 같은 부수
-    // 효과가 두 번 일어납니다.
     retry: { maximumAttempts: 1 }
 })
+
+// NATS publish와 보상 삭제는 멱등합니다(같은 sagaId의 같은 status 이벤트를
+// 두 번 받아도 SSE 검증은 some()으로 첫 매치를 보고, deleteBySagaIds는 두 번
+// 호출해도 결과가 같음). Temporal 워커의 일시적 task pickup 지연이 5분 짜리
+// SSE deadline 안에서 회복되도록, 짧은 타임아웃 + 빠른 재시도로 둡니다.
+const { compensate, emitStatusChanged } = proxyActivities<
+    ReturnType<ShowtimeCreationActivities['bind']>
+>({ startToCloseTimeout: '30 seconds', retry: { maximumAttempts: 3, initialInterval: '1 second' } })
 
 export async function showtimeCreationWorkflow(
     input: ShowtimeCreationWorkflowInput
