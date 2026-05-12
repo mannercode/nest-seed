@@ -7,8 +7,8 @@ const tsconfigPath = path.resolve(appDir, 'tsconfig.json')
 const tsconfig = require(tsconfigPath)
 const tsJestPreset = createDefaultPreset({ tsconfig: tsconfigPath })
 const { compilerOptions } = tsconfig
-const maxWorkers = process.env.JEST_MAX_WORKERS ?? 2
-const workerIdleMemoryLimit = process.env.JEST_WORKER_IDLE_MEMORY_LIMIT ?? '1500MB'
+// const maxWorkers = process.env.JEST_MAX_WORKERS ?? 2
+// const workerIdleMemoryLimit = process.env.JEST_WORKER_IDLE_MEMORY_LIMIT ?? '1500MB'
 
 module.exports = {
     ...baseConfig,
@@ -17,11 +17,11 @@ module.exports = {
     // 연결과 coverage 계측을 함께 올립니다. 기본값(코어 수 - 1)은 이 환경에서
     // 15개 워커를 띄워 총 RSS를 크게 키우므로, 기본 병렬도를 보수적으로 둡니다.
     // 여유 있는 머신에서는 `JEST_MAX_WORKERS=4 npm test`처럼 올릴 수 있습니다.
-    maxWorkers,
+    // maxWorkers,
     // 긴 실행에서 한 워커가 여러 통합 테스트를 처리하며 쌓는 heap/RSS는
     // 누수 진단을 가리지 않는 선에서 재시작합니다. 루트 설정의 1MB처럼 모든
     // 테스트 파일마다 워커를 갈아치우는 값은 피하고, API 스위트에만 둡니다.
-    workerIdleMemoryLimit,
+    // workerIdleMemoryLimit,
     globalSetup: path.resolve(__dirname, 'jest.global.js'),
     globalTeardown: path.resolve(__dirname, 'jest.teardown.js'),
     setupFilesAfterEnv: [path.resolve(__dirname, 'jest.setup.js')],
