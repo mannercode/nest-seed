@@ -1,6 +1,6 @@
 # 테스트
 
-이 시드의 테스트는 mock 객체를 거의 사용하지 않는다. 대신 Testcontainers로 MongoDB Replica Set, Redis Cluster, MinIO를 시작하고 그 위에서 검증한다. 그래야 인덱스, 트랜잭션, 레이스 컨디션처럼 mock 객체로 놓치기 쉬운 문제를 실제 환경에 가깝게 확인할 수 있다.
+이 시드의 테스트는 mock 객체를 거의 사용하지 않는다. `apps/api` 통합 테스트는 devcontainer가 띄운 MongoDB Replica Set, Redis Cluster, MinIO, NATS, Temporal을 재사용하고, `libs/common` 테스트는 Testcontainers와 Temporal local test environment로 필요한 인프라를 직접 시작한다. 콘솔 e2e는 Playwright가 API와 Next.js dev 서버를 띄운 뒤 브라우저에서 흐름을 검증한다. 그래야 인덱스, 트랜잭션, 레이스 컨디션, 브라우저 연동처럼 mock 객체로 놓치기 쉬운 문제를 실제 환경에 가깝게 확인할 수 있다.
 
 ---
 
@@ -68,11 +68,11 @@ PATCH나 DELETE처럼 상태를 바꾸는 API는 두 가지를 확인한다. 하
 
 ## 3. 동적 가져오기 — 왜 필요한가
 
-테스트마다 격리된 환경을 만들기 위해 각 테스트는 고유한 `TEST_ID`를 받는다. 그 ID로 MongoDB 데이터베이스와 S3 버킷을 따로 만든다. 따라서 픽스처는 테스트가 시작될 때마다 새로운 `TEST_ID`를 읽어야 한다.
+테스트마다 격리된 논리 네임스페이스를 만들기 위해 각 테스트는 고유한 `TEST_ID`를 받는다. `apps/api` 테스트에서는 이 값으로 `PROJECT_ID`를 새로 만들고, 그 값이 Redis/cache prefix, NATS subject, Temporal task queue 이름에 반영된다. MongoDB 데이터베이스와 S3 버킷은 Jest worker별로 만들고, 각 테스트가 끝날 때 컬렉션과 버킷 내용을 비운다.
 
-문제는 일반적인 가져오기 방식이다. 파일 맨 위에 `import { createUsersFixture } from './users.fixture'`라고 쓰면, 그 모듈은 처음 한 번만 평가된다. 그때 읽은 `process.env.TEST_ID`가 계속 남아 모든 테스트가 같은 DB를 보게 된다.
+문제는 일반적인 가져오기 방식이다. 파일 맨 위에 `import { createUsersFixture } from './users.fixture'`라고 쓰면, 그 모듈은 처음 한 번만 평가된다. 그때 읽은 `process.env.PROJECT_ID`나 `process.env.TEST_ID`에서 cache prefix, NATS subject, Temporal queue 같은 값이 만들어지면 다음 테스트에서도 같은 값을 계속 쓰게 된다.
 
-이 문제를 피하려고 Jest 설정에 `resetModules: true`를 켠다. 그리고 픽스처는 **`beforeEach` 안에서 `await import`로 동적으로 가져온다**. 이렇게 하면 테스트마다 모듈이 새로 평가되고, 그 시점의 `TEST_ID`가 픽스처에 반영된다.
+이 문제를 피하려고 Jest 설정에 `resetModules: true`를 켠다. 그리고 픽스처는 **`beforeEach` 안에서 `await import`로 동적으로 가져온다**. 이렇게 하면 테스트마다 모듈이 새로 평가되고, 그 시점의 `TEST_ID`와 `PROJECT_ID`가 픽스처와 앱 모듈에 반영된다.
 
 IDE 자동 완성과 타입 체크는 유지하고 싶다. 그래서 타입은 `import type`으로 정적으로 가져온다. 타입 가져오기는 런타임 코드를 만들지 않는다.
 
@@ -93,16 +93,22 @@ describe('Users', () => {
 
 ## 4. 테스트 인프라
 
-테스트 인프라는 세 단계로 동작한다.
+Jest 기반 테스트 인프라는 세 단계로 동작한다.
 
 ```
-jest.global.js   Testcontainers로 MongoDB · Redis · MinIO를 1회 기동
-jest.setup.js    beforeEach마다 TEST_ID 발급, 전용 DB·버킷 생성
-                  afterEach에서 전용 DB·버킷 삭제
+jest.global.js   workspace별 전역 준비
+                  - apps/api: .env 로드, workflow bundle 생성
+                  - libs/common: Testcontainers로 MongoDB · Redis · MinIO · NATS 기동,
+                    Temporal local test environment 생성
+jest.setup.js    worker별 DB·버킷 준비
+                  beforeEach마다 TEST_ID 발급
+                  afterEach에서 컬렉션과 버킷 내용 정리
 *.spec.ts        개별 테스트가 픽스처로 위 자원 사용
 ```
 
-`apps/api`의 통합 테스트는 devcontainer가 시작해 둔 공용 인프라(Mongo / Redis / MinIO 컨테이너)를 재사용한다. `libs/*`의 단위 테스트는 외부 의존을 줄이기 위해 Testcontainers로 자체 인프라를 시작한다.
+`apps/api`의 통합 테스트는 devcontainer가 시작해 둔 공용 인프라(Mongo / Redis / MinIO / NATS / Temporal 컨테이너)를 재사용한다. `libs/common`은 외부 의존을 줄이기 위해 Testcontainers로 자체 인프라를 시작한다. `libs/testing`과 `libs/temporal-sandbox`는 인프라 없는 단위 테스트로 돈다.
+
+콘솔 e2e는 `tests/console-e2e`의 Playwright 설정이 `apps/api`와 `apps/console` dev 서버를 시작한 뒤 브라우저에서 가입, 로그인, 영화 등록 흐름을 검증한다. 이미 서버가 떠 있으면 로컬에서는 재사용한다.
 
 ---
 
@@ -116,7 +122,7 @@ jest.setup.js    beforeEach마다 TEST_ID 발급, 전용 DB·버킷 생성
 | -------------------------- | -------------------------------------------------------------------------- |
 | `sse.js`                   | SSE 이벤트가 모든 API 컨테이너의 클라이언트에게 빠짐없이 전달되는가        |
 | `user-race.js`             | 같은 이메일 동시 가입 → unique index로 1개만 201, 나머지는 409             |
-| `ticket-holding-race.js`   | 같은 좌석 동시 선점 → Redis SET NX로 1개만 204, 나머지는 409               |
+| `ticket-holding-race.js`   | 같은 좌석 동시 선점 → Redis Lua script로 1개만 204, 나머지는 409           |
 | `showtime-overlap-race.js` | 겹치는 시간대 사가 동시 요청 → 분산 락으로 1개 성공, 1개 실패              |
 | `purchase-double-spend.js` | 같은 티켓 묶음 동시 구매 → 1개만 201, 나머지는 409, 결제는 1건             |
 | `replica-chaos.js`         | API 컨테이너 4개 중 1개 종료 → NGINX 우회 처리로 5xx 1% 미만 유지          |
@@ -128,4 +134,4 @@ jest.setup.js    beforeEach마다 TEST_ID 발급, 전용 DB·버킷 생성
 bash apps/api/tests/runner.sh <scenario>
 ```
 
-CI는 [test-stability.yaml](../.github/workflows/test-stability.yaml)에서 같은 시나리오를 50회 반복 실행한다. 레이스 코드는 한 번 통과했다고 안전하다고 보기 어렵다. 그래서 결과가 얼마나 흔들리는지 누적으로 확인한다.
+CI는 [test-stability.yaml](../.github/workflows/test-stability.yaml)의 `scenario` job에서 각 분산 시나리오를 50회 반복 실행한다. 같은 워크플로 안에서 단위/통합 테스트는 75회, 부팅 검증은 50회 반복한다. 레이스 코드는 한 번 통과했다고 안전하다고 보기 어렵다. 그래서 결과가 얼마나 흔들리는지 누적으로 확인한다.

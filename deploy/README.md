@@ -2,15 +2,15 @@
 
 Docker Compose로 API 컨테이너를 여러 개 띄우고 NGINX로 요청을 나눈다. Node.js는 기본적으로 한 프로세스가 한 이벤트 루프를 쓰기 때문에, 컨테이너를 나누어 여러 CPU 코어를 활용한다.
 
-MongoDB, Redis 같은 인프라는 이미 실행 중이라고 가정한다.
+MongoDB, Redis, MinIO, NATS, Temporal 같은 인프라는 이미 실행 중이라고 가정한다.
 
 ## 구성
 
-| 파일          | 설명                                                                          |
-| ------------- | ----------------------------------------------------------------------------- |
-| `compose.yml` | API 컨테이너 N개 + NGINX 로드밸런서                                           |
-| `nginx.conf`  | `least_conn` 방식 리버스 프록시, upstream 정보 액세스 로그                    |
-| `test.sh`     | compose up → [../apps/api/api-docs/run.sh](../apps/api/api-docs/) 실행 → down |
+| 파일          | 설명                                                                                |
+| ------------- | ----------------------------------------------------------------------------------- |
+| `compose.yml` | API 컨테이너 N개 + NGINX 로드밸런서                                                 |
+| `nginx.conf`  | `least_conn` 방식 리버스 프록시, upstream 정보 액세스 로그                          |
+| `test.sh`     | compose up → [../apps/api/api-docs/run.sh](../apps/api/api-docs/run.sh) 실행 → down |
 
 인프라 설정 외에 함께 볼 만한 리소스는 다음과 같다.
 
@@ -19,11 +19,17 @@ MongoDB, Redis 같은 인프라는 이미 실행 중이라고 가정한다.
 
 ## 주요 설정
 
-| 변수       | 기본값 | 설명              |
-| ---------- | ------ | ----------------- |
-| `REPLICAS` | 4      | API 컨테이너 개수 |
+| 변수                   | 기본값                                | 설명                                            |
+| ---------------------- | ------------------------------------- | ----------------------------------------------- |
+| `COMPOSE_PROJECT_NAME` | 필수 (devcontainer: workspace 폴더명) | API와 개발 인프라가 공유할 Docker 네트워크 이름 |
+| `LISTEN_PORT`          | 3000                                  | 호스트에 노출할 NGINX 포트                      |
+| `REPLICAS`             | 4                                     | API 컨테이너 개수                               |
 
-인프라 연결은 `nest-seed-infra` Docker 네트워크에 붙은 뒤, 서비스 이름(`mongo1`, `redis1`, `nats`, `temporal`, `minio` 등)으로 접근한다.
+인프라 연결은 `${COMPOSE_PROJECT_NAME}` Docker 네트워크에 붙은 뒤, 서비스 이름(`mongo1`, `redis1`, `nats`, `temporal`, `minio` 등)으로 접근한다. devcontainer에서는 이 값이 workspace 폴더명으로 설정되어 `.devcontainer/infra` compose와 `deploy/compose.yml`이 같은 네트워크를 공유한다.
+
+인프라 접속 값은 `apps/api/.env`와 `.devcontainer/infra/.env`를 함께 본다. `deploy/compose.yml`은 `apps/api/.env`를 읽고, 실제 인프라 컨테이너 이름과 포트는 `.devcontainer/infra/.env`와 compose 파일들이 정한다.
+
+`test.sh`는 devcontainer 환경 변수인 `WORKSPACE_ROOT`를 사용한다. devcontainer 밖에서 직접 실행할 때는 저장소 루트 경로로 `WORKSPACE_ROOT`를 먼저 지정한다.
 
 ## `x-replica-id` 응답 헤더
 
