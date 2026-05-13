@@ -11,7 +11,7 @@
         "atoz": "npm run clean && npm run lint && CI=1 playwright test"
     },
     "devDependencies": {
-        "@playwright/test": "1.59.1",
+        "@playwright/test": "1.60.0",
         "@types/node": "24",
         "typescript": "6.0.3"
     }
