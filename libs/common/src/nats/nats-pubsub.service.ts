@@ -11,8 +11,9 @@ type SubscriptionState = { sub: Subscription; handlers: Set<MessageHandler> }
  * NATS 기반 pub/sub 서비스입니다. 복제본 사이에 휘발성 메시지를 전달하는 경로
  * (SSE 연결, 캐시 무효화 등)를 맡습니다.
  *
- * 같은 subject의 핸들러는 등록된 순서대로 호출됩니다. 한 핸들러가 예외를
- * 던져도 뒤따르는 핸들러는 정상적으로 실행됩니다.
+ * 같은 subject의 핸들러는 등록된 순서대로 호출됩니다. 핸들러는 예외를 던지면
+ * 안 됩니다 — 예외가 올라오면 소비 루프가 멈추고 해당 subject의 후속 메시지가
+ * 더는 전달되지 않습니다.
  */
 @Injectable()
 export class NatsPubSubService implements OnModuleDestroy {
@@ -75,21 +76,16 @@ export class NatsPubSubService implements OnModuleDestroy {
     private startConsumeLoop(subject: string, state: SubscriptionState) {
         // `sub.unsubscribe()`가 호출되면 이터레이터가 정상 종료합니다. `for await`가
         // 정상적으로 종료되므로 따로 취소 신호를 다룰 필요가 없습니다.
-        // 서버 연결 끊김이나 프로토콜 오류로 이터레이터가 예외를 던지면 소비 루프가
+        // 서버 연결 끊김·프로토콜 오류·핸들러 예외 등으로 이터레이터가 던지면 소비 루프가
         // 멈춥니다. 로그가 없으면 단순히 트래픽이 없는 상황과 구분하기 어려우므로
-        // 구독 중단을 오류 로그로 남깁니다.
+        // 구독 중단을 오류 로그로 남깁니다. (외곽 catch는 fire-and-forget IIFE의
+        // unhandled rejection을 막기 위한 boundary입니다.)
         void (async () => {
             try {
                 for await (const msg of state.sub) {
                     const text = this.codec.decode(msg.data)
-                    // 한 핸들러가 던진 예외가 같은 메시지를 받는 다른 핸들러까지
-                    // 막지 않도록, 핸들러별로 try/catch로 격리합니다.
                     for (const handler of state.handlers) {
-                        try {
-                            handler(text)
-                        } catch {
-                            // 핸들러가 자체적으로 에러를 보고할 책임이 있다고 보고 여기서는 무시합니다.
-                        }
+                        handler(text)
                     }
                 }
             } catch (err) {

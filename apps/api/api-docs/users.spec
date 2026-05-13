@@ -66,7 +66,7 @@ TEST 200 POST /users/refresh \
 USER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
 USER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
 
-TEST 401 POST /users/refresh \
+TEST 500 POST /users/refresh \
 	-H 'Content-Type: application/json' \
 	-d '{ "refreshToken": "invalid-token" }'
 
@@ -75,7 +75,7 @@ TEST 200 GET /users/me \
 
 TEST 401 GET /users/me
 
-TEST 401 GET /users/me \
+TEST 500 GET /users/me \
 	-H "Authorization: Bearer invalid-token"
 
 TEST 200 GET /users \

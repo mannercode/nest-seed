@@ -14,7 +14,7 @@ RUN set -Eeu; \
     $SHELL_FORMATTER; \
     rm -rf /var/lib/apt/lists/*; \
     curl -fsSL "https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar" -o /opt/plantuml.jar; \
-    npm i -g npm-check-updates husky @commitlint/cli @anthropic-ai/claude-code playwright@1.59.1; \
+    npm i -g npm-check-updates husky @commitlint/cli @anthropic-ai/claude-code playwright@1.60.0; \
     npm cache clean --force
 
 # 브라우저 바이너리는 이미지 빌드 중 root 권한으로 설치되지만, 테스트는 node

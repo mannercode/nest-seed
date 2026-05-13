@@ -51,20 +51,20 @@ describe('UserAuthentication', () => {
                 )
         })
 
-        it('액세스 토큰이 유효하지 않으면 401을 반환한다', async () => {
+        it('액세스 토큰이 검증되지 않으면 500을 반환한다', async () => {
             await fix.httpClient
                 .get('/users/me')
                 .headers({ Authorization: 'Bearer invalid-token' })
-                .unauthorized(Errors.Auth.Unauthorized())
+                .internalServerError()
         })
     })
 
     describe('GET /users', () => {
-        it('액세스 토큰이 유효하지 않으면 401을 반환한다', async () => {
+        it('액세스 토큰이 검증되지 않으면 500을 반환한다', async () => {
             await fix.httpClient
                 .get('/users')
                 .headers({ Authorization: 'Bearer invalid-token' })
-                .unauthorized(Errors.Auth.Unauthorized())
+                .internalServerError()
         })
     })
 

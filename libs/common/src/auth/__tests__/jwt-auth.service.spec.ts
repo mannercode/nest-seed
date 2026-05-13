@@ -86,11 +86,11 @@ describe('JwtAuthService', () => {
             await expect(promise).rejects.toThrow('jwt malformed')
         })
 
-        it('만료된 토큰은 jwt expired로 거부된다', async () => {
+        it('만료된 토큰은 401(token expired)로 거부된다', async () => {
             // 픽스처 TTL(3000ms)보다 길게 기다려 부하 환경에서도 만료를 보장합니다.
             await sleep(4000)
             const promise = fix.jwtService.refreshAuthTokens(refreshToken)
-            await expect(promise).rejects.toThrow('jwt expired')
+            await expect(promise).rejects.toThrow('token expired')
         })
 
         it('이미 회전한 토큰을 다시 쓰면 재사용으로 보고 토큰 묶음 전체를 폐기한다', async () => {
@@ -275,8 +275,21 @@ describe('JwtAuthService', () => {
             )
         })
 
-        it('잘못되거나 만료된 토큰을 폐기해도 예외를 던지지 않는다', async () => {
-            await expect(fix.jwtService.revokeRefreshToken('garbage')).resolves.toBeUndefined()
+        it('형식이 깨진 토큰을 폐기하면 검증 예외가 그대로 전파된다', async () => {
+            await expect(fix.jwtService.revokeRefreshToken('garbage')).rejects.toThrow(
+                'jwt malformed'
+            )
+            // emitOnFailure=false 경로라 verify.failed 이벤트는 발생하지 않습니다.
+            expect(fix.events.find((e) => e.type === 'verify.failed')).toBeUndefined()
+        })
+
+        it('만료된 토큰을 폐기하면 401(token expired)이 전파된다', async () => {
+            const { refreshToken } = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
+            await sleep(4000)
+            await expect(fix.jwtService.revokeRefreshToken(refreshToken)).rejects.toThrow(
+                'token expired'
+            )
+            expect(fix.events.find((e) => e.type === 'verify.failed')).toBeUndefined()
         })
 
         it('familyId가 없는 토큰을 폐기해도 아무 일도 일어나지 않는다', async () => {
@@ -417,28 +430,14 @@ describe('JwtAuthService', () => {
             expect(issued?.context).toEqual(ctx)
         })
 
-        it('logger.error가 예외를 던지면 generateAuthTokens도 실패한다', async () => {
-            // emit이 훅 실패를 잡은 뒤 logger.error를 호출합니다. 이 logger.error가
-            // 다시 예외를 던져도 generateAuthTokens 흐름이 손상되면 안 됩니다.
-            const events = (fix as any).events as any[]
-            const realPush = events.push.bind(events)
-            let calls = 0
-            jest.spyOn(events, 'push').mockImplementation((...args: any[]) => {
-                calls++
-                if (calls === 1) throw new Error('hook failure')
-                return realPush(...args)
+        it('이벤트 훅이 예외를 던지면 generateAuthTokens도 실패한다', async () => {
+            // emit은 훅 실패를 숨기지 않습니다. 훅이 던지면 호출 흐름이 그대로 무너집니다.
+            jest.spyOn(fix.events, 'push').mockImplementationOnce(() => {
+                throw new Error('hook failure')
             })
 
-            const { Logger } = await import('@nestjs/common')
-            jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {
-                throw new Error('logger boom')
-            })
-
-            // emit의 catch 안에서 logger.error가 예외를 던지면 그 예외는 그대로 올라갑니다.
-            // 이는 현재 구현의 한계입니다. todo는 이상적 동작을 설명하지만, 코드는 logger 실패를
-            // 별도로 보호하지 않습니다. 따라서 예외가 전파되는 것을 단언합니다.
             await expect(fix.jwtService.generateAuthTokens({ sub: 'u1' })).rejects.toThrow(
-                'logger boom'
+                'hook failure'
             )
         })
     })

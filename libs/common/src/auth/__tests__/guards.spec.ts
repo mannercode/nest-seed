@@ -25,11 +25,23 @@ describe('Auth Guards', () => {
             await fix.httpClient.get('/jwt/protected').unauthorized()
         })
 
-        it('잘못된 토큰으로 접근하면 500을 반환한다', async () => {
+        it('형식이 깨진 토큰으로 접근하면 500을 반환한다', async () => {
             await fix.httpClient
                 .get('/jwt/protected')
                 .headers({ Authorization: 'Bearer invalid-token' })
                 .internalServerError()
+        })
+
+        it('만료된 토큰으로 접근하면 401을 반환한다', async () => {
+            const expired = await fix.jwtService.signAsync(
+                { userId: 'user-1' },
+                { expiresIn: '-1s' }
+            )
+
+            await fix.httpClient
+                .get('/jwt/protected')
+                .headers({ Authorization: `Bearer ${expired}` })
+                .unauthorized()
         })
 
         it('Bearer 방식이 아니면 401을 반환한다', async () => {
@@ -117,11 +129,23 @@ describe('Auth Guards', () => {
                 .ok()
         })
 
-        it('잘못된 토큰이어도 접근할 수 있다', async () => {
+        it('형식이 깨진 토큰이면 500을 반환한다', async () => {
             await fix.httpClient
                 .get('/optional')
                 .headers({ Authorization: 'Bearer invalid-token' })
-                .ok()
+                .internalServerError()
+        })
+
+        it('만료된 토큰이면 401을 반환한다', async () => {
+            const expired = await fix.jwtService.signAsync(
+                { userId: 'user-1' },
+                { expiresIn: '-1s' }
+            )
+
+            await fix.httpClient
+                .get('/optional')
+                .headers({ Authorization: `Bearer ${expired}` })
+                .unauthorized()
         })
 
         it('@Public이 붙은 라우트는 토큰 없이 접근할 수 있다', async () => {

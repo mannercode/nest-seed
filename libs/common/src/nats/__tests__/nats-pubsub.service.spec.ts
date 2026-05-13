@@ -106,7 +106,10 @@ describe('NatsPubSubService', () => {
         expect(receivedA.length + receivedB.length).toBe(1)
     })
 
-    it('핸들러 하나가 예외를 던져도 나머지 핸들러에 전달이 막히지 않는다', async () => {
+    it('핸들러가 예외를 던지면 소비 루프가 종료되고 이후 메시지는 전달되지 않는다', async () => {
+        const { Logger: NestLogger } = await import('@nestjs/common')
+        const errorSpy = jest.spyOn(NestLogger.prototype, 'error').mockImplementation()
+
         const received: string[] = []
 
         await fix.pubSubB.subscribe(subject, () => {
@@ -116,8 +119,14 @@ describe('NatsPubSubService', () => {
 
         await fix.pubSubA.publish(subject, 'after-throw')
 
-        await waitFor(() => received.length > 0)
-        expect(received).toEqual(['after-throw'])
+        await waitFor(() => errorSpy.mock.calls.some((c) => String(c[0]).includes(subject)))
+
+        // 루프가 종료됐으므로 후속 메시지도 도달하지 않습니다.
+        await fix.pubSubA.publish(subject, 'next')
+        await new Promise((r) => setTimeout(r, 100))
+
+        expect(received).toEqual([])
+        errorSpy.mockRestore()
     })
 
     describe('소비 루프의 이터레이터가 예외를 던지면', () => {

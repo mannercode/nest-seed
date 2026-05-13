@@ -54,41 +54,4 @@ describe('HttpUtil', () => {
             expect(contentDisposition).toEqual(`attachment; filename="file"; filename*=UTF-8''`)
         })
     })
-
-    describe('extractContentDisposition', () => {
-        it('따옴표로 감싼 filename을 추출한다', () => {
-            const contentDisposition = `attachment; filename="ascii-name.txt"`
-            expect(HttpUtil.extractContentDisposition(contentDisposition)).toBe('ascii-name.txt')
-        })
-
-        it('따옴표 없는 filename도 추출한다', () => {
-            const contentDisposition = `inline; filename=bare-name.csv`
-            expect(HttpUtil.extractContentDisposition(contentDisposition)).toBe('bare-name.csv')
-        })
-
-        it('유효하지 않거나 비어있는 헤더에서는 "unknown"을 반환한다', () => {
-            expect(HttpUtil.extractContentDisposition('')).toBe('unknown')
-            expect(HttpUtil.extractContentDisposition('attachment')).toBe('unknown')
-            expect(HttpUtil.extractContentDisposition('inline; foo=bar')).toBe('unknown')
-            expect(HttpUtil.extractContentDisposition('attachment; noequals')).toBe('unknown')
-        })
-
-        it("filename*에 ''(인코딩 마커)가 없으면 따옴표 filename으로 대체한다", () => {
-            const cd = `attachment; filename*=noencoding; filename="fallback.txt"`
-            expect(HttpUtil.extractContentDisposition(cd)).toBe('fallback.txt')
-        })
-
-        it('filename* 디코딩이 실패하면 따옴표 또는 일반 filename으로 대체한다', () => {
-            const badStar = `attachment; filename*=UTF-8''%E0%A4%ZZ; filename="safe-fallback.txt"`
-            expect(HttpUtil.extractContentDisposition(badStar)).toBe('safe-fallback.txt')
-
-            const badStarNoQuoted = `attachment; filename*=UTF-8''%E0%A4%ZZ; filename=bare-fallback.txt`
-            expect(HttpUtil.extractContentDisposition(badStarNoQuoted)).toBe('bare-fallback.txt')
-        })
-
-        it('filename* 값이 빈 문자열이면 따옴표 filename으로 대체한다', () => {
-            const cd = `attachment; filename*=; filename="fallback.txt"`
-            expect(HttpUtil.extractContentDisposition(cd)).toBe('fallback.txt')
-        })
-    })
 })

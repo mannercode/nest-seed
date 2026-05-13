@@ -43,10 +43,19 @@ export abstract class JwtAuthGuard implements CanActivate {
             throw new UnauthorizedException()
         }
 
-        const payload = await this.jwtService.verifyAsync(token, this.verifyOptions())
-        request.user = payload
-
+        request.user = await this.verifyToken(token)
         return true
+    }
+
+    // 만료는 정상 흐름의 일부라 사전 디코드로 잡아 401을 돌려줍니다.
+    // 서명 위조/구조 깨짐 같은 비정상은 verifyAsync가 던지게 두어 위로 전파됩니다.
+    protected async verifyToken(token: string): Promise<unknown> {
+        const decoded = this.jwtService.decode<Record<string, unknown> | null>(token)
+        const exp = decoded?.exp
+        if (typeof exp === 'number' && exp < Date.now() / 1000) {
+            throw new UnauthorizedException('token expired')
+        }
+        return this.jwtService.verifyAsync(token, this.verifyOptions())
     }
 
     protected isPublicRoute(context: ExecutionContext): boolean {
@@ -78,6 +87,8 @@ export abstract class JwtAuthGuard implements CanActivate {
 
 @Injectable()
 export abstract class OptionalJwtAuthGuard extends JwtAuthGuard {
+    // 토큰 부재만 허용합니다. 토큰을 보냈다면 반드시 유효해야 합니다
+    // (만료 → 401, 위조/깨짐 → 500). best-effort 검증이 아닙니다.
     async canActivate(context: ExecutionContext): Promise<boolean> {
         if (this.isPublicRoute(context)) {
             return true
@@ -91,13 +102,7 @@ export abstract class OptionalJwtAuthGuard extends JwtAuthGuard {
             return true
         }
 
-        try {
-            const payload = await this.jwtService.verifyAsync(token, this.verifyOptions())
-            request.user = payload
-        } catch {
-            request.user = null
-        }
-
+        request.user = await this.verifyToken(token)
         return true
     }
 }

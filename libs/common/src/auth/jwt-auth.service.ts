@@ -258,6 +258,22 @@ export class JwtAuthService {
     }
 
     private async getAuthTokenPayload(token: string, context?: EventContext, emitOnFailure = true) {
+        // 만료는 정상 흐름의 일부라 사전 디코드로 잡아 401을 돌려줍니다.
+        // 서명 위조/구조 깨짐 같은 비정상은 verifyAsync가 던지게 두어 위로 전파됩니다.
+        const peek = this.jwtService.decode<Record<string, unknown> | null>(token)
+        const exp = peek?.exp
+        if (typeof exp === 'number' && exp < Date.now() / 1000) {
+            if (emitOnFailure) {
+                await this.emit({
+                    type: 'verify.failed',
+                    reason: 'token expired',
+                    at: new Date(),
+                    context
+                })
+            }
+            throw new UnauthorizedException('token expired')
+        }
+
         try {
             const decoded = await this.jwtService.verifyAsync(token, {
                 algorithms: [JWT_ALGORITHM],
@@ -268,7 +284,7 @@ export class JwtAuthService {
             return omit(decoded, ['aud', 'exp', 'iat', 'iss', 'jti'])
         } catch (error) {
             if (emitOnFailure) {
-                const message = error instanceof Error ? error.message : String(error)
+                const { message } = error as Error
                 await this.emit({ type: 'verify.failed', reason: message, at: new Date(), context })
             }
             throw error

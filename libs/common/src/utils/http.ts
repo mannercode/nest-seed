@@ -1,26 +1,3 @@
-class ContentDispositionParser {
-    static parse(cd: string): Map<string, string> {
-        const params = new Map<string, string>()
-        const parts = cd.split(';')
-
-        for (const part of parts.slice(1)) {
-            const eqIdx = part.indexOf('=')
-            if (eqIdx < 0) continue
-
-            const key = part.slice(0, eqIdx).trim().toLowerCase()
-            let value = part.slice(eqIdx + 1).trim()
-
-            if (value.startsWith('"') && value.endsWith('"')) {
-                value = value.slice(1, -1)
-            }
-
-            params.set(key, value)
-        }
-
-        return params
-    }
-}
-
 export class HttpUtil {
     static buildContentDisposition(filename: string): string {
         const asciiFallbackRaw = filename
@@ -34,35 +11,5 @@ export class HttpUtil {
             .replace(/%20/g, '+')
 
         return `attachment; filename="${asciiFallback}"; filename*=UTF-8''${utf8Star}`
-    }
-
-    static extractContentDisposition(cd: string): string {
-        const params = ContentDispositionParser.parse(cd)
-
-        // RFC 5987의 `filename*=UTF-8''...` 형식을 먼저 봅니다. 비-ASCII를
-        // 안전하게 표현하므로 우선 처리합니다.
-        const starValue = params.get('filename*')
-
-        if (starValue) {
-            const sepIdx = starValue.indexOf("''")
-
-            if (sepIdx >= 0) {
-                try {
-                    const encoded = starValue.slice(sepIdx + 2)
-                    const normalized = encoded.replace(/\+/g, '%20')
-                    return decodeURIComponent(normalized)
-                } catch {
-                    /* noop */
-                }
-            }
-        }
-
-        // 위 형식이 없거나 디코딩이 실패하면 일반 `filename=...` 값을
-        // 마지막 수단으로 사용합니다.
-        const filename = params.get('filename')
-
-        if (filename) return filename
-
-        return 'unknown'
     }
 }
