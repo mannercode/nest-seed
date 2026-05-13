@@ -106,6 +106,30 @@ describe('NatsPubSubService', () => {
         expect(receivedA.length + receivedB.length).toBe(1)
     })
 
+    it('같은 subject에 브로드캐스트 구독과 큐 구독을 함께 둘 수 있다', async () => {
+        const broadcastReceived: string[] = []
+        const queueReceivedA: string[] = []
+        const queueReceivedB: string[] = []
+        const queue = withTestId('mixed-queue-group')
+
+        await fix.pubSubB.subscribe(subject, (msg) => broadcastReceived.push(msg))
+        await fix.pubSubB.subscribe(subject, (msg) => queueReceivedB.push(msg), { queue })
+        await fix.pubSubA.subscribe(subject, (msg) => queueReceivedA.push(msg), { queue })
+
+        await fix.pubSubA.publish(subject, 'mixed')
+
+        await waitFor(
+            () =>
+                broadcastReceived.length === 1 &&
+                queueReceivedA.length + queueReceivedB.length === 1
+        )
+        // 중복 전달이 있었다면 도달했을 시간만큼 잠깐 기다린다.
+        await new Promise((r) => setTimeout(r, 50))
+
+        expect(broadcastReceived).toEqual(['mixed'])
+        expect(queueReceivedA.length + queueReceivedB.length).toBe(1)
+    })
+
     it('핸들러가 예외를 던지면 소비 루프가 종료되고 이후 메시지는 전달되지 않는다', async () => {
         const { Logger: NestLogger } = await import('@nestjs/common')
         const errorSpy = jest.spyOn(NestLogger.prototype, 'error').mockImplementation()
@@ -171,7 +195,9 @@ describe('NatsPubSubService', () => {
             const { errorSubject } = await setupErroringSubscription()
 
             // 위 설정 이후 추가 핸들러를 등록해도 fakeSub에서는 메시지가 오지 않는다.
-            const state = (fix.pubSubB as any).subscriptions.get(errorSubject)
+            const state = [...(fix.pubSubB as any).subscriptions.values()].find(
+                (s: any) => s.subject === errorSubject
+            )
             state?.handlers.add((msg: string) => received.push(msg))
 
             await fix.pubSubA.publish(errorSubject, 'after-throw')

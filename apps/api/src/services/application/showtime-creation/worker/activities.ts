@@ -4,8 +4,7 @@ import { ShowtimeDto, ShowtimesService, TicketsService } from 'core'
 import {
     ShowtimeBulkCreatorService,
     ShowtimeBulkValidatorService,
-    ShowtimeCreationEvent,
-    ShowtimeCreationStatus
+    ShowtimeCreationEvent
 } from '../internal'
 import { ShowtimeCreationEvents } from '../showtime-creation.events'
 import { ShowtimeCreationWorkflowInput } from './types'
@@ -94,10 +93,4 @@ export class ShowtimeCreationActivities {
             sagaId
         })
     }
-
-    // 워크플로가 상태 값을 쓸 때 enum 객체를 직접 가져오지 않게 한다.
-    // 워크플로 코드는 샌드박스 안에서 실행되는데, 바깥의 NestJS 모듈을
-    // 가져오면 번들이 실패한다. 이 클래스를 통해 한 곳에서만 enum을
-    // 노출한다.
-    static readonly Status = ShowtimeCreationStatus
 }

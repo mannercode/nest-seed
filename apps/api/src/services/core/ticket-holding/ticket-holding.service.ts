@@ -3,6 +3,8 @@ import { Injectable, Logger } from '@nestjs/common'
 import { AppConfigService } from 'config'
 import { HoldTicketsDto } from './dtos'
 
+// Redis Cluster에서 Lua 스크립트의 모든 KEYS는 같은 hash slot에 있어야 한다.
+// `{showtimeId}` hash tag로 한 상영의 사용자 키와 티켓 키를 같은 slot에 묶는다.
 const getUserKey = (showtimeId: string, userId: string) => `User:{${showtimeId}}:${userId}`
 const getTicketKey = (showtimeId: string, ticketId: string) => `Ticket:{${showtimeId}}:${ticketId}`
 
