@@ -5,9 +5,7 @@
         "declarationMap": true,
         "noEmit": true,
         "baseUrl": ".",
-        "paths": {
-            "@mannercode/testing": ["../testing/src"]
-        }
+        "paths": { "@mannercode/testing": ["../testing/src"] }
     },
     "include": ["src/**/*"]
 }

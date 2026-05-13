@@ -39,11 +39,7 @@
             "id": "testCommand",
             "type": "pickString",
             "description": "test",
-            "options": [
-                "npm run dev",
-                "npm test",
-                "npm run atoz",
-            ]
+            "options": ["npm run dev", "npm test", "npm run atoz"]
         }
     ]
 }

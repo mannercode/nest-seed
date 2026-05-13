@@ -6,9 +6,10 @@
     "scripts": {
         "test": "playwright test",
         "test:ui": "playwright test --ui",
-        "lint": "tsc --noEmit",
+        "format": "eslint tests/ playwright.config.ts --fix && prettier --write tests/ playwright.config.ts",
+        "lint": "tsc --noEmit && eslint tests/ playwright.config.ts --max-warnings=0 && prettier --check tests/ playwright.config.ts",
         "clean": "rm -rf _output",
-        "atoz": "npm run clean && npm run lint && CI=1 playwright test"
+        "atoz": "npm run lint && CI=1 playwright test"
     },
     "devDependencies": {
         "@playwright/test": "1.60.0",

@@ -27,10 +27,7 @@ module.exports = [
     {
         files: ['src/**/*.ts'],
         plugins: { allowed: allowedDependenciesPlugin },
-        rules: {
-            'default-case': 'off',
-            'allowed/dependencies': ['warn', sourceDependencyOptions]
-        }
+        rules: { 'default-case': 'off', 'allowed/dependencies': ['warn', sourceDependencyOptions] }
     },
     {
         files: ['src/**/__tests__/**/*.ts', 'src/development.ts'],
@@ -98,12 +95,7 @@ module.exports = [
                                 'Use relative imports within core to avoid ancestor barrel cycles.'
                         },
                         {
-                            group: [
-                                'gateway',
-                                'gateway/**',
-                                'application',
-                                'application/**'
-                            ],
+                            group: ['gateway', 'gateway/**', 'application', 'application/**'],
                             message:
                                 'Layering rule: core must not depend on gateway or application.'
                         }

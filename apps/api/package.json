@@ -12,7 +12,7 @@
         "predev": "free-port 3000 && npm run bundle-workflows",
         "dev": "nest start --watch",
         "test": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
-        "atoz": "npm run clean && npm run lint && npm test && bash ../../deploy/test.sh"
+        "atoz": "npm run lint && npm test && bash ../../deploy/test.sh"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "3.1045.0",

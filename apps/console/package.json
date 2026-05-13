@@ -10,8 +10,9 @@
         "prestart": "free-port 3100",
         "start": "next start -p 3100",
         "clean": "rm -rf .next",
-        "lint": "tsc --noEmit",
-        "atoz": "npm run clean && npm run lint && npm run build"
+        "format": "eslint src/ --fix && prettier --write src/",
+        "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
+        "atoz": "npm run lint && npm run build"
     },
     "dependencies": {
         "next": "16.2.6",
