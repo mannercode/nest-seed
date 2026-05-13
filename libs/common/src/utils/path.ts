@@ -67,7 +67,7 @@ export class PathUtil {
 
     static async move(src: string, dest: string): Promise<void> {
         // 두 경로가 서로 다른 파일 시스템에 있으면 `rename`이 EXDEV로
-        // 실패합니다. 그 경우에는 복사 후 원본을 지우는 방식으로 처리합니다.
+        // 실패한다. 그 경우에는 복사 후 원본을 지우는 방식으로 처리한다.
         try {
             await fs.rename(src, dest)
         } catch (error: unknown) {

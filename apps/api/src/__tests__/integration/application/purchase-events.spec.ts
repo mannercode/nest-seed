@@ -19,7 +19,7 @@ describe('PurchaseEvents 구독자', () => {
         fix = await createAppTestContext()
         events = fix.module.get(PurchaseEvents)
         // `resetModules: true` 환경에서는 감시 대상 Logger가 구독자 Logger와
-        // 같은 실행 영역에 있어야 합니다. 그래서 같은 모듈 그래프에서 동적으로 가져옵니다.
+        // 같은 실행 영역에 있어야 한다. 그래서 같은 모듈 그래프에서 동적으로 가져온다.
         const { Logger } = await import('@nestjs/common')
         logSpy = jest.spyOn(Logger.prototype, 'log')
     })
@@ -52,7 +52,7 @@ describe('PurchaseEvents 구독자', () => {
 
         await waitFor(() => countLogCalls(logSpy, CANCELED_LOG) > 0)
 
-        // 알림 구독자는 대기 시간이 끝날 때까지 한 번도 호출되지 않아야 합니다.
+        // 알림 구독자는 대기 시간이 끝날 때까지 한 번도 호출되지 않아야 한다.
         await new Promise((r) => setTimeout(r, 100))
         expect(countLogCalls(logSpy, CANCELED_LOG)).toBe(1)
         expect(countLogCalls(logSpy, NOTIFICATION_LOG)).toBe(0)

@@ -1,16 +1,16 @@
 /**
- * 여러 티켓 묶음을 동시에 선점하려는 경쟁을 복제본 너머로 재현하는 부하 테스트입니다.
+ * 여러 티켓 묶음을 동시에 선점하려는 경쟁을 복제본 너머로 재현하는 부하 테스트이다.
  *
  * 한 회차는 새 상영을 하나 만들고, 거기 들어가는 티켓을 서로 겹치지 않는 쌍 여러 개로
- * 나눕니다. 각 쌍마다 같은 사용자 그룹이 동시에 선점을 시도하고, 다른 그룹도 같은 시점에
- * 각자의 쌍으로 요청을 보냅니다. 그룹 한 개당 결과는 정확히 한 사용자가 204를 받고,
- * 나머지는 409입니다.
+ * 나눈다. 각 쌍마다 같은 사용자 그룹이 동시에 선점을 시도하고, 다른 그룹도 같은 시점에
+ * 각자의 쌍으로 요청을 보낸다. 그룹 한 개당 결과는 정확히 한 사용자가 204를 받고,
+ * 나머지는 409이다.
  *
- * 사용자 계정은 처음 한 번 만들어 회차 사이에 그대로 다시 사용합니다. 이미 선점된 티켓은
- * 같은 락 키로 다시 경쟁시킬 수 없으므로 매 회차마다 새 티켓만 만듭니다.
+ * 사용자 계정은 처음 한 번 만들어 회차 사이에 그대로 다시 사용한다. 이미 선점된 티켓은
+ * 같은 락 키로 다시 경쟁시킬 수 없으므로 매 회차마다 새 티켓만 만든다.
  *
  * 어떤 그룹의 204 응답 수가 1이 아니거나, 5xx가 발생하거나, 응답한 복제본 수가 둘보다
- * 적으면 실패로 봅니다.
+ * 적으면 실패로 본다.
  */
 
 const http = require('http')
@@ -146,7 +146,7 @@ async function setupMovieTheater() {
         throw new Error(`publish: ${publish.status}`)
     }
 
-    // 큰 좌석 배치도입니다. 1 block × 1 row × 20 tickets라 최대 10개 그룹까지 충분합니다.
+    // 큰 좌석 배치도이다. 1 block × 1 row × 20 tickets라 최대 10개 그룹까지 충분하다.
     const theater = await requestRaw('POST', '/theaters', {
         body: {
             name: 'hold-race',
@@ -186,7 +186,7 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
         throw new Error(`tickets: need ${TICKET_GROUPS * 2}, got ${tickets.body.length}`)
     }
 
-    // TICKET_GROUPS개의 서로 겹치지 않는 티켓 쌍으로 나눕니다.
+    // TICKET_GROUPS개의 서로 겹치지 않는 티켓 쌍으로 나눈다.
     const groups = Array.from({ length: TICKET_GROUPS }, (_, g) => [
         tickets.body[g * 2].id,
         tickets.body[g * 2 + 1].id
@@ -216,8 +216,8 @@ async function runInner(iteration, movieId, theaterId, tokens, startTimeOffsetMs
         startTimeOffsetMs
     )
 
-    // 각 (group, user) 쌍마다 자기 그룹의 티켓 쌍을 선점합니다.
-    // TICKET_GROUPS × USERS_PER_GROUP개의 요청을 한 Promise.all로 동시에 보냅니다.
+    // 각 (group, user) 쌍마다 자기 그룹의 티켓 쌍을 선점한다.
+    // TICKET_GROUPS × USERS_PER_GROUP개의 요청을 한 Promise.all로 동시에 보낸다.
     const attempts = []
     for (let g = 0; g < TICKET_GROUPS; g++) {
         const ticketIds = groups[g]

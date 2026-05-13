@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Jest spec 파일에서 describe/it 트리를 추출해 출력합니다.
- * 테스트 구조를 확인할 때 씁니다. TypeScript compiler API로 AST를 읽으므로
- * 여러 줄 문자열, template literal, it.each도 안전하게 다룹니다.
+ * Jest spec 파일에서 describe/it 트리를 추출해 출력한다.
+ * 테스트 구조를 확인할 때 쓴다. TypeScript compiler API로 AST를 읽으므로
+ * 여러 줄 문자열, template literal, it.each도 안전하게 다룬다.
  *
  *   node tools/dev-tools/list-tests.js                       # 기본값: libs/ 트리
  *   node tools/dev-tools/list-tests.js apps/api              # 다른 경로
@@ -56,7 +56,7 @@ function findSpecFiles(dirs) {
     return specs.sort()
 }
 
-// Jest 전역 함수와 변형(each, todo, skip, only)을 구분합니다.
+// Jest 전역 함수와 변형(each, todo, skip, only)을 구분한다.
 function classifyCallExpression(node, sourceFile) {
     const callee = node.expression
 
@@ -74,10 +74,15 @@ function classifyCallExpression(node, sourceFile) {
         const prop = callee.name.text
         if (!ts.isIdentifier(obj)) return null
         const base =
-            obj.text === 'describe' ? 'describe' : obj.text === 'it' || obj.text === 'test' ? 'it' : null
+            obj.text === 'describe'
+                ? 'describe'
+                : obj.text === 'it' || obj.text === 'test'
+                  ? 'it'
+                  : null
         if (!base) return null
         if (prop === 'todo') return 'it.todo' // describe.todo는 Jest에 없음
-        if (prop === 'each' || prop === 'concurrent' || prop === 'skip' || prop === 'only') return base
+        if (prop === 'each' || prop === 'concurrent' || prop === 'skip' || prop === 'only')
+            return base
         return null
     }
 
@@ -101,7 +106,7 @@ function classifyCallExpression(node, sourceFile) {
 function descriptionFromArg(arg, sourceFile) {
     if (!arg) return ''
     if (ts.isStringLiteral(arg) || ts.isNoSubstitutionTemplateLiteral(arg)) return arg.text
-    // 값이 끼어든 template literal은 원문을 그대로 보여 줍니다.
+    // 값이 끼어든 template literal은 원문을 그대로 보여 준다.
     if (ts.isTemplateExpression(arg)) {
         return sourceFile.text.slice(arg.getStart(sourceFile), arg.getEnd())
     }
@@ -126,7 +131,7 @@ function parseSpecFile(filePath) {
                     stack.pop()
                     return
                 }
-                // it과 it.todo의 함수 본문은 더 내려가지 않습니다.
+                // it과 it.todo의 함수 본문은 더 내려가지 않는다.
                 return
             }
         }
@@ -148,7 +153,7 @@ function filterTree(tree) {
         } else if (item.kind === 'it.todo') {
             if (!noTodos) out.push(item)
         } else {
-            // 일반 it입니다.
+            // 일반 it이다.
             if (!todosOnly) out.push(item)
         }
     }
@@ -172,7 +177,12 @@ function summarize(tree, acc = { it: 0, todo: 0, describe: 0 }) {
 function renderTree(tree, indent = 1, lines = []) {
     for (const item of tree) {
         const prefix = '  '.repeat(indent)
-        const tag = item.kind === 'describe' ? 'describe' : item.kind === 'it.todo' ? 'todo    ' : 'it      '
+        const tag =
+            item.kind === 'describe'
+                ? 'describe'
+                : item.kind === 'it.todo'
+                  ? 'todo    '
+                  : 'it      '
         lines.push(`${prefix}${tag} ${item.description}`)
         if (item.children.length > 0) renderTree(item.children, indent + 1, lines)
     }
@@ -352,7 +362,7 @@ details[open] > summary::before { transform: rotate(90deg); }
 </header>
 <main id="tree">
 ${fileBlocks}
-<div id="empty" class="empty-state hidden">검색 결과가 없습니다.</div>
+<div id="empty" class="empty-state hidden">검색 결과가 없다.</div>
 </main>
 <script>
 (function () {
@@ -426,7 +436,7 @@ ${fileBlocks}
         const wantTodo = showTodo.checked
         let visibleLeaves = 0
 
-        // 1차: leaf 노드를 먼저 거릅니다.
+        // 1차: leaf 노드를 먼저 거른다.
         tree.querySelectorAll('.node-leaf').forEach((leaf) => {
             const isTodo = leaf.classList.contains('node-todo')
             const typeOk = isTodo ? wantTodo : wantIt
@@ -437,7 +447,7 @@ ${fileBlocks}
             if (visible) visibleLeaves++
         })
 
-        // 2차: describe는 자식이 보이거나 자기 설명이 검색어와 맞으면 보입니다.
+        // 2차: describe는 자식이 보이거나 자기 설명이 검색어와 맞으면 보인다.
         const describes = Array.from(tree.querySelectorAll('details.node-describe')).reverse()
         describes.forEach((d) => {
             const ownText = d.querySelector(':scope > summary > .desc').textContent.toLowerCase()
@@ -448,7 +458,7 @@ ${fileBlocks}
             if (needle !== '' && visible) d.open = true
         })
 
-        // 3차: 파일 노드를 거릅니다.
+        // 3차: 파일 노드를 거른다.
         let visibleFiles = 0
         tree.querySelectorAll('details.node-file').forEach((f) => {
             const fileText = f.querySelector(':scope > summary > .desc').textContent.toLowerCase()
@@ -472,7 +482,7 @@ ${fileBlocks}
     showIt.addEventListener('change', applyFilter)
     showTodo.addEventListener('change', applyFilter)
 
-    // '/' 키로 검색창에 바로 포커스합니다.
+    // '/' 키로 검색창에 바로 포커스한다.
     document.addEventListener('keydown', (e) => {
         if (e.key === '/' && document.activeElement !== q) {
             e.preventDefault()
@@ -538,7 +548,9 @@ if (renderMarkdown) {
             process.stdout.write(`${line}\n`)
         }
     }
-    process.stdout.write(`\n---\n\n**합계**: ${totalIt} test, ${totalTodo} todo, ${totalDescribe} describe (across ${collected.length} files)\n`)
+    process.stdout.write(
+        `\n---\n\n**합계**: ${totalIt} test, ${totalTodo} todo, ${totalDescribe} describe (across ${collected.length} files)\n`
+    )
 } else {
     for (const { file, tree } of collected) {
         const stat = summarize(tree)

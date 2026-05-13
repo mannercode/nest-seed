@@ -54,7 +54,7 @@ describe('TicketHoldingService', () => {
                 })
                 await ticketHoldingService.holdTickets(newHoldDto)
 
-                // 이전에 선점되어 있던 티켓을 다른 고객이 새로 선점할 수 있어야 합니다.
+                // 이전에 선점되어 있던 티켓을 다른 고객이 새로 선점할 수 있어야 한다.
                 const otherHold = buildHoldTicketsDto({ userId: oid(0xc2), ticketIds })
                 const isHeld = await ticketHoldingService.holdTickets(otherHold)
 
@@ -181,7 +181,7 @@ describe('TicketHoldingService', () => {
             jest.spyOn(cacheService, 'delete').mockImplementation((key: any) => {
                 calls++
                 // 첫 호출(티켓 키 하나)만 실패시키고, 나머지(다른 티켓 키와
-                // 사용자 키)는 정상 동작시킵니다.
+                // 사용자 키)는 정상 동작시킨다.
                 if (calls === 1) return Promise.reject(new Error('delete failed'))
                 return realDelete(key)
             })

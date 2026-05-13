@@ -45,14 +45,14 @@ export class TicketsService {
         const result = await this.repository.updateStatusMany(ticketIds, status)
 
         // 매칭된 문서 수가 입력 개수보다 적으면, 호출자가 없는 ticketId를
-        // 넘긴 것입니다.
+        // 넘긴 것이다.
         Require.equals(
             result.matchedCount,
             ticketIds.length,
             'All ticket IDs must match existing documents.'
         )
-        // 필터에는 걸렸지만 수정되지 않은 티켓이 있으면 이미 목표 상태였다는 뜻입니다.
-        // 이 메서드는 멱등 갱신이 아니라 상태 전이를 검증하므로 그런 요청은 거절합니다.
+        // 필터에는 걸렸지만 수정되지 않은 티켓이 있으면 이미 목표 상태였다는 뜻이다.
+        // 이 메서드는 멱등 갱신이 아니라 상태 전이를 검증하므로 그런 요청은 거절한다.
         Require.equals(
             result.matchedCount,
             result.modifiedCount,

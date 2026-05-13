@@ -23,12 +23,12 @@ import {
 import { UserJwtAuthGuard, UserLocalAuthGuard, Public } from './guards'
 import { UserAuthRequest } from './types'
 
-// 인가: 클래스 수준 JWT 가드 외에는 소유자/관리자 검사를 비워 두었습니다.
+// 인가: 클래스 수준 JWT 가드 외에는 소유자/관리자 검사를 비워 두었다.
 // 지금 상태에서는 로그인한 사용자가 다른 사용자 ID의 데이터를 읽고
-// 바꾸고 지울 수 있습니다. 목록 조회도 모든 사용자의 개인 정보를 그대로
-// 반환합니다. 포크해서 쓸 때는 본인만 접근하는 핸들러에
+// 바꾸고 지울 수 있다. 목록 조회도 모든 사용자의 개인 정보를 그대로
+// 반환한다. 포크해서 쓸 때는 본인만 접근하는 핸들러에
 // `req.user.sub === userId` 검사를, 관리자 전용 핸들러에는 관리자 가드를
-// 붙입니다. 자세한 안내는 README "5. 인가" 절에 있습니다.
+// 붙인다. 자세한 안내는 README "5. 인가" 절에 있다.
 @Controller('users')
 @UseGuards(UserJwtAuthGuard)
 export class UsersHttpController {

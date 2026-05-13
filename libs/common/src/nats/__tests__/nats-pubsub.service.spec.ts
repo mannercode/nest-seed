@@ -2,9 +2,9 @@ import { withTestId } from '@mannercode/testing'
 import type { NatsPubSubServiceFixture } from './nats-pubsub.service.fixture'
 
 /**
- * 픽스처가 연결을 flush해 두므로 측정 구간에는 순수 메시지 왕복만 들어옵니다.
+ * 픽스처가 연결을 flush해 두므로 측정 구간에는 순수 메시지 왕복만 들어온다.
  * NatsPubSubService.subscribe()도 flush 후 반환하므로 구독과 발행 사이의
- * 경합도 없습니다. 500ms 초과는 실제 지연 회귀 신호로 봅니다.
+ * 경합도 없다. 500ms 초과는 실제 지연 회귀 신호로 본다.
  */
 async function waitFor(predicate: () => boolean, timeoutMs = 500) {
     const start = Date.now()
@@ -64,8 +64,8 @@ describe('NatsPubSubService', () => {
         await fix.pubSubB.unsubscribe(subject, handler)
 
         await fix.pubSubA.publish(subject, 'after-unsub')
-        // "아무 메시지도 오지 않음"을 보장할 신호가 없어 잠깐 대기 후 검사합니다.
-        // 부하 시 50ms는 부족하므로 200ms 여유를 둡니다.
+        // "아무 메시지도 오지 않음"을 보장할 신호가 없어 잠깐 대기 후 검사한다.
+        // 부하 시 50ms는 부족하므로 200ms 여유를 둔다.
         await new Promise((r) => setTimeout(r, 200))
 
         expect(received).toEqual(['before-unsub'])
@@ -100,7 +100,7 @@ describe('NatsPubSubService', () => {
 
         await fix.pubSubA.publish(subject, 'queued')
         await waitFor(() => receivedA.length + receivedB.length > 0)
-        // 중복 전달이 있었다면 도달했을 시간만큼 잠깐 기다립니다.
+        // 중복 전달이 있었다면 도달했을 시간만큼 잠깐 기다린다.
         await new Promise((r) => setTimeout(r, 50))
 
         expect(receivedA.length + receivedB.length).toBe(1)
@@ -121,7 +121,7 @@ describe('NatsPubSubService', () => {
 
         await waitFor(() => errorSpy.mock.calls.some((c) => String(c[0]).includes(subject)))
 
-        // 루프가 종료됐으므로 후속 메시지도 도달하지 않습니다.
+        // 루프가 종료됐으므로 후속 메시지도 도달하지 않는다.
         await fix.pubSubA.publish(subject, 'next')
         await new Promise((r) => setTimeout(r, 100))
 
@@ -130,7 +130,7 @@ describe('NatsPubSubService', () => {
     })
 
     describe('소비 루프의 이터레이터가 예외를 던지면', () => {
-        // 이터레이터를 강제로 실패시키는 도우미입니다. 같은 실행 영역의 Logger를 감시합니다.
+        // 이터레이터를 강제로 실패시키는 도우미이다. 같은 실행 영역의 Logger를 감시한다.
         async function setupErroringSubscription() {
             const { Logger: NestLogger } = await import('@nestjs/common')
             const errorSpy = jest.spyOn(NestLogger.prototype, 'error').mockImplementation()
@@ -151,7 +151,7 @@ describe('NatsPubSubService', () => {
 
             await fix.pubSubB.subscribe(errorSubject, () => {})
 
-            // 이터레이터가 한 번의 이벤트 루프 안에서 거부되고 catch 블록이 실행될 시간을 줍니다.
+            // 이터레이터가 한 번의 이벤트 루프 안에서 거부되고 catch 블록이 실행될 시간을 준다.
             await waitFor(() => errorSpy.mock.calls.length > 0)
 
             return { errorSpy, errorSubject, fakeError, fakeSub, subscribeSpy }
@@ -170,12 +170,12 @@ describe('NatsPubSubService', () => {
             const received: string[] = []
             const { errorSubject } = await setupErroringSubscription()
 
-            // 위 설정 이후 추가 핸들러를 등록해도 fakeSub에서는 메시지가 오지 않습니다.
+            // 위 설정 이후 추가 핸들러를 등록해도 fakeSub에서는 메시지가 오지 않는다.
             const state = (fix.pubSubB as any).subscriptions.get(errorSubject)
             state?.handlers.add((msg: string) => received.push(msg))
 
             await fix.pubSubA.publish(errorSubject, 'after-throw')
-            // 도달할 가능성을 충분히 줘도 비어 있어야 합니다.
+            // 도달할 가능성을 충분히 줘도 비어 있어야 한다.
             await new Promise((r) => setTimeout(r, 100))
 
             expect(received).toEqual([])
@@ -221,7 +221,7 @@ describe('NatsPubSubService', () => {
         const received: string[] = []
 
         await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
-        // subscribe()가 flush까지 기다리므로 직후 발행한 메시지는 누락 없이 도달합니다.
+        // subscribe()가 flush까지 기다리므로 직후 발행한 메시지는 누락 없이 도달한다.
         await fix.pubSubA.publish(subject, 'immediate')
 
         await waitFor(() => received.length > 0)

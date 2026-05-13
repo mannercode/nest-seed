@@ -28,8 +28,8 @@ export class ShowtimeCreationOrchestratorService {
         await this.events.emitStatusChanged({ sagaId, status: ShowtimeCreationStatus.Waiting })
 
         // `workflowId`를 `sagaId`와 같게 두어 Temporal 실행 기록과 API 응답의
-        // 사가 식별자를 연결합니다. 같은 ID로 두 번 시작하려는 요청은
-        // `REJECT_DUPLICATE` 옵션이 막으므로 별도 중복 방지 키가 필요 없습니다.
+        // 사가 식별자를 연결한다. 같은 ID로 두 번 시작하려는 요청은
+        // `REJECT_DUPLICATE` 옵션이 막으므로 별도 중복 방지 키가 필요 없다.
         await this.temporal.workflow.start('showtimeCreationWorkflow', {
             args: [{ createDto, sagaId }],
             taskQueue: getShowtimeCreationTaskQueue(),

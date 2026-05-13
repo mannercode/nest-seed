@@ -50,7 +50,7 @@ class TestController {
 
     @Get('string-response')
     getStringResponse() {
-        // HttpException.getResponse()가 string을 반환하는 경로입니다.
+        // HttpException.getResponse()가 string을 반환하는 경로이다.
         throw new HttpException('plain string body', HttpStatus.BAD_REQUEST)
     }
 

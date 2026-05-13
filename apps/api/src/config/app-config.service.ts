@@ -47,12 +47,12 @@ export class AppConfigService extends BaseConfigService {
         S3_SECRET_KEY: Joi.string().required(),
 
         // `PROJECT_ID`는 모듈 평가 시점에 `getProjectId()`가 `process.env`에서
-        // 직접 읽습니다. 이 시점에는 NestJS DI와 Joi 검증이 아직 실행되지 않았으므로,
-        // `NestFactory.create` 단계에서도 같은 값을 다시 검증합니다.
+        // 직접 읽는다. 이 시점에는 NestJS DI와 Joi 검증이 아직 실행되지 않았으므로,
+        // `NestFactory.create` 단계에서도 같은 값을 다시 검증한다.
         PROJECT_ID: Joi.string().required(),
 
-        // 도메인 정책 값입니다. `.env`에서 비워 두면 아래 기본값으로 동작합니다.
-        // 운영 환경에서 조정할 일이 있을 때만 `.env`로 덮어씁니다.
+        // 도메인 정책 값이다. `.env`에서 비워 두면 아래 기본값으로 동작한다.
+        // 운영 환경에서 조정할 일이 있을 때만 `.env`로 덮어쓴다.
         ASSET_UPLOAD_EXPIRES_SEC: Joi.number().default(60 * 60),
         ASSET_DOWNLOAD_EXPIRES_SEC: Joi.number().default(60 * 60),
         TICKET_HOLD_DURATION_MS: Joi.number().default(10 * 60 * 1000),

@@ -1,17 +1,17 @@
 /**
- * `/users/refresh` 경로에 지속 부하를 걸어 측정하는 하네스입니다.
+ * `/users/refresh` 경로에 지속 부하를 걸어 측정하는 하네스이다.
  *
- * 이 경로는 호출마다 Redis를 두 번 칩니다. 이전 리프레시 토큰을 GET으로 읽고,
- * 새 액세스·리프레시 JWT를 만들어 TTL이 붙은 SET으로 저장합니다. bcrypt는 없고,
- * 토큰을 위해 DB를 읽는 일도 없습니다. JWT 검증도 메모리 안에서 끝납니다.
- * 그래서 ioredis 클러스터 처리량을 가장 명확하게 측정합니다.
+ * 이 경로는 호출마다 Redis를 두 번 친다. 이전 리프레시 토큰을 GET으로 읽고,
+ * 새 액세스·리프레시 JWT를 만들어 TTL이 붙은 SET으로 저장한다. bcrypt는 없고,
+ * 토큰을 위해 DB를 읽는 일도 없다. JWT 검증도 메모리 안에서 끝난다.
+ * 그래서 ioredis 클러스터 처리량을 가장 명확하게 측정한다.
  *
- * 측정 전 워커마다 한 번씩 가입과 로그인을 끝내고, 받은 토큰으로 리프레시를 반복합니다.
+ * 측정 전 워커마다 한 번씩 가입과 로그인을 끝내고, 받은 토큰으로 리프레시를 반복한다.
  * 워커마다 각자의 토큰을 들고 있어, 같은 토큰을 여러 워커가 동시에 회전시키며 무효화를
- * 부르는 경합이 일어나지 않습니다. 리프레시 한 번은 저장된 토큰 하나를 원자적으로
- * 회전시킵니다.
+ * 부르는 경합이 일어나지 않는다. 리프레시 한 번은 저장된 토큰 하나를 원자적으로
+ * 회전시킨다.
  *
- * 환경 변수는 `harness.js`와 같습니다: `SERVER_URL`, `CONCURRENCY`,
+ * 환경 변수는 `harness.js`와 같다: `SERVER_URL`, `CONCURRENCY`,
  * `DURATION_MS`, `WARMUP_MS`, `LABEL`.
  */
 
@@ -109,13 +109,13 @@ async function workerLoop(workerId, state, stopAt, samplesRef, statusesRef, repl
             statusesRef.map.set(result.status, (statusesRef.map.get(result.status) || 0) + 1)
             if (result.replicaId) replicasRef.set.add(result.replicaId)
         }
-        // 측정 구간이 끝난 뒤에도 저장된 토큰이 어긋나지 않도록 회전은 계속합니다.
+        // 측정 구간이 끝난 뒤에도 저장된 토큰이 어긋나지 않도록 회전은 계속한다.
         if (result.status === 200 && result.body && result.body.refreshToken) {
             state.refreshToken = result.body.refreshToken
         } else if (result.status !== 200) {
-            // 토큰이 무효가 된 경우입니다. 워커가 서로 격리돼 있으면 일어나지 않아야
-            // 하지만, 같은 사용자에 대해 동시 리프레시가 들어오면 발생합니다.
-            // 이 워커는 여기서 끝냅니다.
+            // 토큰이 무효가 된 경우이다. 워커가 서로 격리돼 있으면 일어나지 않아야
+            // 하지만, 같은 사용자에 대해 동시 리프레시가 들어오면 발생한다.
+            // 이 워커는 여기서 끝낸다.
             return
         }
     }
@@ -148,7 +148,7 @@ async function main() {
         `[perf-refresh] server=${SERVER_URL} concurrency=${CONCURRENCY} warmup=${WARMUP_MS}ms duration=${DURATION_MS}ms label=${LABEL || '(none)'}`
     )
 
-    // 측정 전 준비 단계. 워커마다 각자의 사용자를 만들고 로그인합니다.
+    // 측정 전 준비 단계. 워커마다 각자의 사용자를 만들고 로그인한다.
     const seed = Date.now()
     console.error(`[perf-refresh] setting up ${CONCURRENCY} users...`)
     const setupT0 = Date.now()

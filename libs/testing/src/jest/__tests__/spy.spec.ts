@@ -1,6 +1,6 @@
 import * as Module from './spy.fixture'
 
-// Jest.spyOn은 객체 메서드를 감시하면서 기존 구현을 유지하거나 mock 구현으로 바꿉니다.
+// Jest.spyOn은 객체 메서드를 감시하면서 기존 구현을 유지하거나 mock 구현으로 바꾼다.
 describe('jest.spyOn', () => {
     it('모듈 함수에 감시자를 건다', () => {
         const mockFunc = jest.spyOn(Module, 'getGreeting')

@@ -154,9 +154,9 @@ describe('createWinstonLogger', () => {
 
         const { getOutput } = spyConsoleTransport(consoleLogger)
 
-        // service 포맷 경로입니다.
+        // service 포맷 경로이다.
         consoleLogger.info('Foo.bar', { contextType: 'service', x: 1 })
-        // contextType이 없는 기본 포맷 경로입니다.
+        // contextType이 없는 기본 포맷 경로이다.
         consoleLogger.info('plain message', { other: 'value' })
         await sleep(200)
 

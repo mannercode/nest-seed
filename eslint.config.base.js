@@ -21,9 +21,9 @@ const restrictedSyntaxBase = [
 const escapeForRegex = (value) => value.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&')
 
 /**
- * allowed-dependencies 규칙은 import 문자열을 정규식으로 검사합니다. Node.js
+ * allowed-dependencies 규칙은 import 문자열을 정규식으로 검사한다. Node.js
  * 내장 모듈은 `fs`, `node:fs/promises`처럼 표기 방식이 섞여 있으므로, 접두사와
- * 하위 경로를 모두 허용하는 패턴을 미리 만듭니다.
+ * 하위 경로를 모두 허용하는 패턴을 미리 만든다.
  */
 const nodeBuiltinModulePattern = `^(?:node:)?(?:${[
     ...new Set(builtinModules.map((moduleName) => moduleName.replace(/^node:/, '').split('/')[0]))
@@ -93,9 +93,9 @@ const baseRules = {
     ],
     '@typescript-eslint/no-non-null-assertion': 'warn',
     'no-duplicate-imports': 'warn',
-    // 실제 재선언은 TypeScript가 이미 검출합니다. 이 규칙은 `as const` enum
+    // 실제 재선언은 TypeScript가 이미 검출한다. 이 규칙은 `as const` enum
     // 대체 패턴(같은 이름의 const와 type alias 한 쌍)도 재선언으로 판단하므로,
-    // 타입스크립트 프로젝트에서 흔한 패턴을 허용하기 위해 비활성화합니다.
+    // 타입스크립트 프로젝트에서 흔한 패턴을 허용하기 위해 비활성화한다.
     '@typescript-eslint/no-redeclare': 'off',
     '@typescript-eslint/adjacent-overload-signatures': 'warn'
 }

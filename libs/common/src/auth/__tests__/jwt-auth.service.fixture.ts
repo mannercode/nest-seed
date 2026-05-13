@@ -74,7 +74,7 @@ export async function createJwtAuthServiceFixtureWithShortTtl() {
                     return {
                         auth: {
                             accessSecret: 'accessSecret',
-                            // 1초 미만 TTL은 내림 후 0초가 되어 즉시 만료됩니다.
+                            // 1초 미만 TTL은 내림 후 0초가 되어 즉시 만료된다.
                             accessTokenTtlMs: 500,
                             audience: TEST_AUTH_AUDIENCE,
                             issuer: TEST_AUTH_ISSUER,

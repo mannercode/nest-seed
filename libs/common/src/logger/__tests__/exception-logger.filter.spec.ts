@@ -54,7 +54,7 @@ describe('HttpExceptionLoggerFilter', () => {
             )
         })
 
-        // 마스킹 자체는 redact.spec.ts에서 자세히 검증합니다.
+        // 마스킹 자체는 redact.spec.ts에서 자세히 검증한다.
         it('요청 본문에 password가 있으면 [REDACTED]로 마스킹한다', async () => {
             await fix.httpClient.post('/exception').body({ password: 'secret' }).notFound()
 
@@ -85,7 +85,7 @@ describe('HttpExceptionLoggerFilter', () => {
         it('@Catch(Error)는 문자열처럼 Error가 아닌 값은 처리하지 않는다', async () => {
             await fix.httpClient.get('/throw-string').internalServerError()
 
-            // 이 필터는 @Catch(Error)이므로 문자열 throw는 처리하지 않아야 합니다.
+            // 이 필터는 @Catch(Error)이므로 문자열 throw는 처리하지 않아야 한다.
             expect(fix.spyError).not.toHaveBeenCalledWith('error', expect.anything())
             expect(fix.spyWarn).not.toHaveBeenCalledWith('fail', expect.anything())
         })
@@ -106,7 +106,7 @@ describe('HttpExceptionLoggerFilter', () => {
             try {
                 filter.catch(new Error('boom'), fakeHost)
             } catch {
-                // super.catch가 예외를 던질 수 있지만 이 단언과는 무관합니다.
+                // super.catch가 예외를 던질 수 있지만 이 단언과는 무관하다.
             }
 
             expect(fix.spyError).toHaveBeenCalledWith(
@@ -116,7 +116,7 @@ describe('HttpExceptionLoggerFilter', () => {
         })
     })
 
-    // 성공 인터셉터 없이 필터만 등록한 경우입니다.
+    // 성공 인터셉터 없이 필터만 등록한 경우이다.
     describe('HttpSuccessLoggerInterceptor 없이', () => {
         let solo: ExceptionLoggerFilterFixture
 

@@ -16,10 +16,10 @@ import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
                     bufferCommands: true,
                     dbName,
                     // 부하 테스트가 복제본 4개에 동시에 요청 500건을 보내면,
-                    // 복제본 한 대가 125건을 받습니다. 최대 연결 수가 50이면
+                    // 복제본 한 대가 125건을 받는다. 최대 연결 수가 50이면
                     // 모자라서 일부 요청이 대기 시간 5초를 넘기고
-                    // `MongoWaitQueueTimeoutError`로 끝납니다. 200으로 두면
-                    // 이 구간에서 대기가 거의 발생하지 않습니다.
+                    // `MongoWaitQueueTimeoutError`로 끝난다. 200으로 두면
+                    // 이 구간에서 대기가 거의 발생하지 않는다.
                     minPoolSize: 50,
                     maxPoolSize: 200,
                     uri,

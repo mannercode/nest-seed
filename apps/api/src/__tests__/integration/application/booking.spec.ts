@@ -143,8 +143,8 @@ describe('BookingService', () => {
     })
 
     describe('GET /booking/movies/:movieId/theaters/:theaterId/showdates/:showdate/showtimes', () => {
-        // `parseShowdate`는 형식이 다르거나 달력에 없는 날짜일 때 거절합니다.
-        // 두 경우 모두 400으로 응답하는지 확인합니다.
+        // `parseShowdate`는 형식이 다르거나 달력에 없는 날짜일 때 거절한다.
+        // 두 경우 모두 400으로 응답하는지 확인한다.
         const movieId = nullObjectId
         const theaterId = nullObjectId
 
@@ -159,9 +159,9 @@ describe('BookingService', () => {
         })
 
         it('형식은 맞지만 실제 달력에 없는 날짜이면 400을 반환한다', async () => {
-            // 20240230은 2월 30일이라 달력에 없습니다. `Date.UTC`는 이 값을
+            // 20240230은 2월 30일이라 달력에 없다. `Date.UTC`는 이 값을
             // 조용히 다음 달로 넘기므로, 컨트롤러가 날짜를 다시 문자열로 바꿔
-            // 비교할 때 잘못된 값임을 확인합니다.
+            // 비교할 때 잘못된 값임을 확인한다.
             await fix.httpClient
                 .get(
                     `/booking/movies/${movieId}/theaters/${theaterId}/showdates/20240230/showtimes`

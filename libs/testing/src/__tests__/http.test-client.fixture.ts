@@ -23,7 +23,7 @@ export type HttpTestClientFixture = { httpClient: HttpTestClient; teardown: () =
 
 @Controller()
 class HttpTestClientController {
-    // 64비트 정수가 원본 JSON으로 그대로 전달되도록 직접 응답을 작성합니다.
+    // 64비트 정수가 원본 JSON으로 그대로 전달되도록 직접 응답을 작성한다.
     @Get('big-int')
     @Header('Content-Type', 'application/json')
     getBigInt(@Res() res: Response) {
@@ -45,7 +45,7 @@ class HttpTestClientController {
         return body
     }
 
-    // multipart 등 임의 요청 검증용입니다. 본문 파싱 없이 원본 스트림을 모아 반환합니다.
+    // multipart 등 임의 요청 검증용이다. 본문 파싱 없이 원본 스트림을 모아 반환한다.
     @Post('inspect')
     async inspect(@Headers('content-type') contentType: string, @Req() req: Request) {
         const chunks: Buffer[] = []
@@ -106,7 +106,7 @@ class HttpTestClientController {
 
     @Get('not-found-text')
     notFoundText(@Res() res: Response) {
-        // SSE 클라이언트가 비-SSE 응답(한 줄 JSON)을 받는 시나리오입니다.
+        // SSE 클라이언트가 비-SSE 응답(한 줄 JSON)을 받는 시나리오이다.
         res.status(404).json({ error: 'Not Found', message: 'Cannot GET' })
     }
 }

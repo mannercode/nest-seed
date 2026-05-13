@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * 개발 서버를 다시 시작하기 전에 TCP 포트를 비우는 도구입니다. 해당 포트의
- * 리스너를 SIGKILL로 종료한 뒤, 새 listen()이 성공할 때까지 확인합니다.
- * Linux devcontainer에 기본 설치된 `ss`만 사용합니다.
+ * 개발 서버를 다시 시작하기 전에 TCP 포트를 비우는 도구이다. 해당 포트의
+ * 리스너를 SIGKILL로 종료한 뒤, 새 listen()이 성공할 때까지 확인한다.
+ * Linux devcontainer에 기본 설치된 `ss`만 사용한다.
  *
  *   node tools/dev-tools/free-port.js 3000
  */
@@ -46,7 +46,7 @@ function killHolders(p) {
         try {
             process.kill(pid, 'SIGKILL')
         } catch {
-            // 조회 직후 프로세스가 종료된 경우는 무시합니다.
+            // 조회 직후 프로세스가 종료된 경우는 무시한다.
         }
     }
 }

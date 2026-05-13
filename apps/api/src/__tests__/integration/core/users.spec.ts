@@ -75,8 +75,8 @@ describe('UsersService', () => {
             const { UsersService } = await import('core')
             const service = fix.module.get(UsersService)
 
-            // `birthDate`에 잘못된 형식을 넣어 Mongoose의 CastError를 일으킵니다.
-            // 컨트롤러의 class-validator가 먼저 검출하지 않도록 서비스를 직접 호출합니다.
+            // `birthDate`에 잘못된 형식을 넣어 Mongoose의 CastError를 일으킨다.
+            // 컨트롤러의 class-validator가 먼저 검출하지 않도록 서비스를 직접 호출한다.
             const invalidDto = buildCreateUserDto({ birthDate: 'not-a-date' as unknown as Date })
 
             await expect(service.create(invalidDto)).rejects.toThrow()

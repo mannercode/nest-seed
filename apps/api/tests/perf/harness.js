@@ -1,10 +1,10 @@
 /**
- * 복제본 4대 환경의 API 스택에 지속 부하를 걸어 측정하는 하네스입니다.
+ * 복제본 4대 환경의 API 스택에 지속 부하를 걸어 측정하는 하네스이다.
  *
- * 지정한 동시성 수준에서 시나리오별 처리량과 응답 시간 분위수를 측정합니다.
+ * 지정한 동시성 수준에서 시나리오별 처리량과 응답 시간 분위수를 측정한다.
  * 결과는 stdout 마지막 줄에 JSON 한 줄로 출력하고, 사람이 읽을 요약은 stderr에
- * 출력합니다. 튜닝 사이클마다 반복해서 사용하는 도구이고, 원본 결과는
- * `_output/perf/<scenario>-<timestamp>.json`에 저장합니다.
+ * 출력한다. 튜닝 사이클마다 반복해서 사용하는 도구이고, 원본 결과는
+ * `_output/perf/<scenario>-<timestamp>.json`에 저장한다.
  *
  * 환경 변수:
  * SERVER_URL: 대상 서버(기본 http://localhost:3000)
@@ -29,9 +29,9 @@ const LABEL = process.env.LABEL || ''
 const ACCEPT_GZIP = process.env.ACCEPT_GZIP === '1'
 
 const url = new URL(SERVER_URL)
-// `keepAlive: true`로 NGINX keep-alive 풀을 그대로 사용합니다. 워커마다 각자의
-// Agent를 따로 두어 소켓 경합을 피합니다. 그래야 측정 대상인 ioredis와
-// NGINX 풀의 큐 동작이 가려지지 않습니다. TCP 계층이 병목이 되어선 안 됩니다.
+// `keepAlive: true`로 NGINX keep-alive 풀을 그대로 사용한다. 워커마다 각자의
+// Agent를 따로 두어 소켓 경합을 피한다. 그래야 측정 대상인 ioredis와
+// NGINX 풀의 큐 동작이 가려지지 않는다. TCP 계층이 병목이 되어선 안 된다.
 function makeAgent() {
     return new http.Agent({ keepAlive: true, maxSockets: 4 })
 }
@@ -55,14 +55,14 @@ function buildRequestFactory(scenario) {
         })
     }
     if (scenario === 'user-read') {
-        // `GET /users`는 JWT가 필요합니다. 이 시나리오가 재는 것은 Mongo 읽기
-        // 처리량이 아니라 인증 실패 응답의 처리량입니다. 인증 없이 Mongo 읽기를
-        // 측정하고 싶으면 `theater-read`나 `movie-read` 시나리오를 사용합니다.
+        // `GET /users`는 JWT가 필요하다. 이 시나리오가 재는 것은 Mongo 읽기
+        // 처리량이 아니라 인증 실패 응답의 처리량이다. 인증 없이 Mongo 읽기를
+        // 측정하고 싶으면 `theater-read`나 `movie-read` 시나리오를 사용한다.
         return () => ({ method: 'GET', path: '/users?take=50', body: null, expectStatus: 200 })
     }
     if (scenario === 'theater-write') {
-        // `POST /theaters`는 가드가 없습니다. 순수 Mongo 쓰기 + majority commit
-        // 비용만 잽니다. 본문은 작지만 중첩 검증이 있어서 무시할 수준은 아닙니다.
+        // `POST /theaters`는 가드가 없다. 순수 Mongo 쓰기 + majority commit
+        // 비용만 잰다. 본문은 작지만 중첩 검증이 있어서 무시할 수준은 아니다.
         return (workerId, seq) => ({
             method: 'POST',
             path: '/theaters',
@@ -86,7 +86,7 @@ function buildRequestFactory(scenario) {
     }
     if (scenario === 'theater-read') {
         // 페이지네이션은 `take` / `skip`이 아니라 `PaginationDto`의
-        // `page` / `size`로 받습니다.
+        // `page` / `size`로 받는다.
         return () => ({
             method: 'GET',
             path: '/theaters?page=1&size=50',
@@ -103,9 +103,9 @@ function buildRequestFactory(scenario) {
         })
     }
     if (scenario === 'theater-read-name-filter') {
-        // 검색어를 좁게 설정해 매치 수를 거의 0에 맞춥니다. 부분 문자열
-        // 정규식은 일반 인덱스를 활용하지 못해 컬렉션 전체를 스캔합니다. 그 비용을
-        // 단독으로 측정하기 위한 시나리오입니다.
+        // 검색어를 좁게 설정해 매치 수를 거의 0에 맞춘다. 부분 문자열
+        // 정규식은 일반 인덱스를 활용하지 못해 컬렉션 전체를 스캔한다. 그 비용을
+        // 단독으로 측정하기 위한 시나리오이다.
         return () => ({
             method: 'GET',
             path: '/theaters?page=1&size=50&name=perf-theater-17769404',
@@ -123,7 +123,7 @@ function buildRequestFactory(scenario) {
     }
     if (scenario === 'movie-write') {
         // 순수 Mongo 쓰기(bcrypt 없음). 필터 측정 전에 데이터를 채워 두는
-        // 용도입니다.
+        // 용도이다.
         return (workerId, seq) => ({
             method: 'POST',
             path: '/movies',
@@ -134,9 +134,9 @@ function buildRequestFactory(scenario) {
         })
     }
     if (scenario === 'movie-read-title-filter') {
-        // 검색어를 좁게 설정해 매치 수를 거의 0에 맞춥니다. 부분 문자열
-        // 정규식은 일반 인덱스를 활용하지 못해 컬렉션 전체를 스캔합니다. 그 비용을
-        // 단독으로 측정하기 위한 시나리오입니다.
+        // 검색어를 좁게 설정해 매치 수를 거의 0에 맞춘다. 부분 문자열
+        // 정규식은 일반 인덱스를 활용하지 못해 컬렉션 전체를 스캔한다. 그 비용을
+        // 단독으로 측정하기 위한 시나리오이다.
         return () => ({
             method: 'GET',
             path: '/movies?page=1&size=50&title=perf-movie-17769404',
@@ -254,7 +254,7 @@ async function main() {
         console.error(`[perf] warmup done, measuring for ${DURATION_MS}ms`)
     }, WARMUP_MS)
 
-    // 측정 구간 안에 같은 간격으로 통계 스냅숏 세 개를 기록합니다.
+    // 측정 구간 안에 같은 간격으로 통계 스냅숏 세 개를 기록한다.
     const statsSnapshots = []
     for (let i = 1; i <= 3; i++) {
         setTimeout(
@@ -306,7 +306,7 @@ async function main() {
         `[perf] RPS=${summary.rps}  p50=${summary.latencyMs.p50}ms  p95=${summary.latencyMs.p95}ms  p99=${summary.latencyMs.p99}ms  max=${summary.latencyMs.max}ms  samples=${summary.totalSamples}  statuses=${JSON.stringify(summary.statusCodes)}  replicas=${summary.replicasSeen}`
     )
     console.error(`[perf] wrote ${file}`)
-    // 파이프로 받아 처리하기 쉽도록 stdout에 한 줄짜리 JSON으로 출력합니다.
+    // 파이프로 받아 처리하기 쉽도록 stdout에 한 줄짜리 JSON으로 출력한다.
     console.log(JSON.stringify(summary))
 }
 

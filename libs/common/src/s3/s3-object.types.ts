@@ -37,9 +37,9 @@ export type S3ObjectSummary = { eTag?: string; key: string; lastModified?: Date;
 export type S3PresignDownloadOptions = {
     /** 다운로드할 때 강제로 쓸 파일 이름. */
     filename?: string
-    /** `Content-Disposition` 헤더를 직접 지정합니다. */
+    /** `Content-Disposition` 헤더를 직접 지정한다. */
     responseContentDisposition?: string
-    /** 다운로드 응답의 `Content-Type`을 덮어 씁니다. */
+    /** 다운로드 응답의 `Content-Type`을 덮어쓴다. */
     responseContentType?: string
 } & S3PresignUrlOptions
 

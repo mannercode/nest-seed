@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# API 스택용 읽기/쓰기 혼합 부하 행렬입니다.
+# API 스택용 읽기/쓰기 혼합 부하 행렬이다.
 #
 # 각 케이스는 theater-read와 theater-write 프로세스를 (거의) 동시에 시작해 측정 창을
-# 공유시킵니다. 같은 LABEL을 쓰므로 결과 JSON을 사후에 짝지을 수 있습니다.
+# 공유시킨다. 같은 LABEL을 쓰므로 결과 JSON을 사후에 짝지을 수 있다.
 #
-# 사전 조건: API 스택이 떠 있어야 합니다(REPLICAS=8 권장). theaters도 미리 시드되어
-# 있어야 합니다(약 50K 이상).
+# 사전 조건: API 스택이 떠 있어야 한다(REPLICAS=8 권장). theaters도 미리 시드되어
+# 있어야 한다(약 50K 이상).
 #
 # 사용법: bash apps/api/tests/perf/mixed-runner.sh
 

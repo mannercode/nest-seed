@@ -30,7 +30,7 @@ describe('LatLong', () => {
 
             const distance = LatLong.distanceInMeters(northPole, southPole)
 
-            // 지구 반지름 × π는 약 20015km로, 측지선 길이의 절반입니다.
+            // 지구 반지름 × π는 약 20015km로, 측지선 길이의 절반이다.
             expect(distance).toBeCloseTo(Math.PI * 6_371_000, -3)
         })
 
@@ -103,7 +103,7 @@ describe('LatLong', () => {
         })
 
         it('"37."처럼 점으로 끝나는 좌표도 37로 파싱한다', async () => {
-            // 정규식의 \d+(?:\.\d*)? 분기가 "37."을 받아주므로 정상 파싱됩니다.
+            // 정규식의 \d+(?:\.\d*)? 분기가 "37."을 받아주므로 정상 파싱된다.
             await fix.httpClient
                 .get('/latLong')
                 .query({ location: '37.,127' })
@@ -111,7 +111,7 @@ describe('LatLong', () => {
         })
 
         it('20자인 좌표는 길이 검사를 통과한다', async () => {
-            // 길이 검사는 통과하지만 값이 90을 초과해 범위 검증에서 거부됩니다.
+            // 길이 검사는 통과하지만 값이 90을 초과해 범위 검증에서 거부된다.
             const lat = '12345678901234567.89' // 20자
             await fix.httpClient
                 .get('/latLong')
@@ -120,7 +120,7 @@ describe('LatLong', () => {
         })
 
         it('지수 표기법(1.23e-5)은 형식 오류로 거부된다', async () => {
-            // 정규식이 e를 허용하지 않으므로 거부됩니다.
+            // 정규식이 e를 허용하지 않으므로 거부된다.
             await fix.httpClient
                 .get('/latLong')
                 .query({ location: '1.23e-5,127' })

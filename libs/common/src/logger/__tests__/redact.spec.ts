@@ -54,13 +54,13 @@ describe('redactSensitive', () => {
     })
 
     it('서로 다른 위치에서 같은 객체를 참조하면 양쪽 모두 [CIRCULAR]로 치환한다', () => {
-        // 구현이 WeakSet으로 방문을 추적하므로 DAG에서 두 번째 방문도 [CIRCULAR]가 됩니다.
+        // 구현이 WeakSet으로 방문을 추적하므로 DAG에서 두 번째 방문도 [CIRCULAR]가 된다.
         const shared = { name: 'shared' }
         const root = { a: shared, b: shared }
 
         const result = redactSensitive(root) as any
 
-        // 첫 방문은 정상 처리하고, 두 번째 방문은 [CIRCULAR]로 축약합니다.
+        // 첫 방문은 정상 처리하고, 두 번째 방문은 [CIRCULAR]로 축약한다.
         const visitedAsObject = result.a !== '[CIRCULAR]' ? result.a : result.b
         const visitedAsCircular = result.a === '[CIRCULAR]' ? result.a : result.b
 
@@ -85,7 +85,7 @@ describe('redactSensitive', () => {
     })
 
     it('정확히 일치하지 않는 변형 키(pwd, userSecret, apiToken 등)는 마스킹하지 않는다', () => {
-        // 'secret', 'apikey'는 SENSITIVE_FIELDS에 있지만 'userSecret', 'apiToken'은 부분 일치라 통과합니다.
+        // 'secret', 'apikey'는 SENSITIVE_FIELDS에 있지만 'userSecret', 'apiToken'은 부분 일치라 통과한다.
         const result = redactSensitive({
             pwd: 'p1',
             userSecret: 's1',
@@ -102,7 +102,7 @@ describe('redactSensitive', () => {
     })
 
     it('prototype 체인으로 상속된 민감 필드는 마스킹하지 않는다', () => {
-        // Object.entries는 own enumerable만 봅니다.
+        // Object.entries는 own enumerable만 본다.
         const proto = { password: 'should-leak' }
         const obj = Object.create(proto)
         obj.name = 'x'

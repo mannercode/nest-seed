@@ -1,15 +1,15 @@
 /**
  * 시간이 겹치는 상영 생성 사가들이 동시에 들어왔을 때 분산 락이 한 건만 통과시키는지
- * 검증하는 부하 테스트입니다.
+ * 검증하는 부하 테스트이다.
  *
- * 한 회차는 사가 요청 여러 건을 한꺼번에 보냅니다. 각 요청의 시작 시각을 어긋나게 두면서
- * 길이를 충분히 길게 설정해, 어떤 두 요청을 골라도 시간이 겹치게 만듭니다. 복제본마다
+ * 한 회차는 사가 요청 여러 건을 한꺼번에 보낸다. 각 요청의 시작 시각을 어긋나게 두면서
+ * 길이를 충분히 길게 설정해, 어떤 두 요청을 골라도 시간이 겹치게 만든다. 복제본마다
  * Temporal 워커가 한 대씩 실행 중이어서 여러 워크플로가 동시에 실행되지만,
- * 검증·삽입 분산 락을 획득한 사가 한 건만 성공합니다. 기대 결과는 정확히 한 건이
- * succeeded, 나머지는 failed입니다.
+ * 검증·삽입 분산 락을 획득한 사가 한 건만 성공한다. 기대 결과는 정확히 한 건이
+ * succeeded, 나머지는 failed이다.
  *
  * 둘 이상이 succeeded이거나, 아무도 성공하지 못하거나, 시간 안에 사가가 종료 상태에
- * 도달하지 못하면 실패로 봅니다.
+ * 도달하지 못하면 실패로 본다.
  */
 
 const http = require('http')
@@ -151,11 +151,11 @@ async function setupFixture() {
 }
 
 async function runInner(iteration, movieId, theaterId, sse, baseOffsetMs) {
-    // N개의 사가를 만들고, startTime은 10분씩 어긋나며 각 길이는 120분입니다.
-    // 즉 사가들은 base, base+10m, base+20m, ..., base+(N-1)×10m에 위치합니다.
-    // 마지막 사가는 base + (N-1)×10m + 120m에 끝납니다.
-    // 모든 쌍이 겹칩니다. 인접 쌍은 110m 겹치고, 처음/끝 쌍은
-    // 120m - (N-1)×10m만큼 겹칩니다(N <= 13이면 양수).
+    // N개의 사가를 만들고, startTime은 10분씩 어긋나며 각 길이는 120분이다.
+    // 즉 사가들은 base, base+10m, base+20m, ..., base+(N-1)×10m에 위치한다.
+    // 마지막 사가는 base + (N-1)×10m + 120m에 끝난다.
+    // 모든 쌍이 겹친다. 인접 쌍은 110m 겹치고, 처음/끝 쌍은
+    // 120m - (N-1)×10m만큼 겹친다(N <= 13이면 양수).
     const base = new Date(Date.now() + 24 * 60 * 60 * 1000 + baseOffsetMs)
     base.setUTCSeconds(0, 0)
     base.setUTCMinutes(0)
@@ -224,8 +224,8 @@ async function main() {
     const sse = openSseCollector()
     await sse.connected
 
-    // 각 회차는 대략 OVERLAP_COUNT × 10min + 120min 길이의 시간 범위를 사용합니다.
-    // 회차 간격을 12h로 설정해 성공한 상영이 다음 회차와 충돌하지 않게 합니다.
+    // 각 회차는 대략 OVERLAP_COUNT × 10min + 120min 길이의 시간 범위를 사용한다.
+    // 회차 간격을 12h로 설정해 성공한 상영이 다음 회차와 충돌하지 않게 한다.
     const spacingMs = 12 * 60 * 60 * 1000
 
     try {

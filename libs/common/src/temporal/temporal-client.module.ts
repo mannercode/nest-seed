@@ -20,9 +20,9 @@ export function InjectTemporalClient(name?: string): ParameterDecorator {
 
 /**
  * `forRootAsync`가 만든 Temporal 연결을 모두 모아 두고, `onModuleDestroy`
- * 시점에 한꺼번에 닫습니다. 한 프로세스 안에 여러 NestJS 앱이 실행 중이어도 (예:
+ * 시점에 한꺼번에 닫는다. 한 프로세스 안에 여러 NestJS 앱이 실행 중이어도 (예:
  * 병렬 테스트) 이 레지스트리가 앱마다 제공자로 인스턴스화되므로 연결이
- * 서로 섞이지 않습니다.
+ * 서로 섞이지 않는다.
  */
 @Injectable()
 export class TemporalConnectionRegistry implements OnModuleDestroy {

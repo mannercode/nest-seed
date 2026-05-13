@@ -1,7 +1,7 @@
 export class TimeUtil {
     /**
-     * 밀리초 값을 `1d2h3m4s5ms`처럼 큰 단위부터 이어 붙인 문자열로 변환합니다.
-     * 0은 `0ms`, 음수는 전체 결과 앞에 `-`를 붙여 표현합니다.
+     * 밀리초 값을 `1d2h3m4s5ms`처럼 큰 단위부터 이어 붙인 문자열로 변환한다.
+     * 0은 `0ms`, 음수는 전체 결과 앞에 `-`를 붙여 표현한다.
      */
     static fromMs(milliseconds: number): string {
         if (milliseconds === 0) {
@@ -31,8 +31,8 @@ export class TimeUtil {
     }
 
     /**
-     * `1d 2h`, `30m`, `500ms` 같은 시간 표현식을 밀리초로 변환합니다. 단위는
-     * `ms`, `s`, `m`, `h`, `d`만 허용하며, 형식이 맞지 않으면 예외를 던집니다.
+     * `1d 2h`, `30m`, `500ms` 같은 시간 표현식을 밀리초로 변환한다. 단위는
+     * `ms`, `s`, `m`, `h`, `d`만 허용하며, 형식이 맞지 않으면 예외를 던진다.
      */
     static toMs(timeExpression: string): number {
         const timeUnitMap: { [key: string]: number } = {

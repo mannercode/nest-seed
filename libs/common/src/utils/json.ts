@@ -5,17 +5,17 @@ function isDateString(value: unknown): value is string {
 
 export class JsonUtil {
     /**
-     * JSON 문자열을 파싱하며 64비트 정수를 문자열로, 날짜 문자열을 Date 객체로 변환합니다.
+     * JSON 문자열을 파싱하며 64비트 정수를 문자열로, 날짜 문자열을 Date 객체로 변환한다.
      */
     static parse(text: string): any {
         return JSON.parse(JsonUtil.quoteIntegers(text), JsonUtil.dateReviver)
     }
 
     /**
-     * JSON 형태의 객체를 재귀적으로 순회하며 날짜 문자열을 Date 객체로 변환합니다.
+     * JSON 형태의 객체를 재귀적으로 순회하며 날짜 문자열을 Date 객체로 변환한다.
      *
      * @param {any} input 변환할 객체 또는 값.
-     * @returns {any} 변환된 객체. 날짜 문자열은 Date 객체가 됩니다.
+     * @returns {any} 변환된 객체. 날짜 문자열은 Date 객체가 된다.
      */
     static reviveDates(input: any): any {
         if (isDateString(input)) {
@@ -58,7 +58,7 @@ export class JsonUtil {
     }
 
     /**
-     * JSON 문자열 안의 64비트 정수를 문자열로 감싸 정밀도를 유지합니다.
+     * JSON 문자열 안의 64비트 정수를 문자열로 감싸 정밀도를 유지한다.
      */
     private static quoteIntegers(text: string): string {
         const maxInt64 = 9223372036854775807n

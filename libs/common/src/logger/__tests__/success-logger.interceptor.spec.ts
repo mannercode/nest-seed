@@ -25,7 +25,7 @@ describe('HttpSuccessLoggerInterceptor', () => {
             })
         })
 
-        // redact의 본격 검증은 redact.spec.ts에 있습니다. 여기서는 호출 여부만 확인합니다.
+        // redact의 본격 검증은 redact.spec.ts에 있다. 여기서는 호출 여부만 확인한다.
         it('요청 본문의 민감 필드를 [REDACTED]로 마스킹한다', async () => {
             await fix.httpClient
                 .post('/success')
@@ -73,7 +73,7 @@ describe('HttpSuccessLoggerInterceptor', () => {
 
             await fix.httpClient.get('/exclude-path').ok({ result: 'success' })
 
-            // 빈 제외 배열이면 모든 경로가 로깅됩니다.
+            // 빈 제외 배열이면 모든 경로가 로깅된다.
             expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
         })
 

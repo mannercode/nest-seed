@@ -305,7 +305,7 @@ describe('S3ObjectService', () => {
 
             await expect(fix.s3Service.isUploadComplete({ key: 'k' })).rejects.toThrow('transient')
 
-            // 다음 호출은 mock 구현이 풀려 정상 동작합니다.
+            // 다음 호출은 mock 구현이 풀려 정상 동작한다.
             const isCompleted = await fix.s3Service.isUploadComplete({ key: created.key })
             expect(isCompleted).toBe(true)
         })
@@ -438,7 +438,7 @@ describe('S3ObjectService', () => {
     })
 
     it('putObject가 생성하는 키 10000개에 중복이 없다', async () => {
-        // putObject 내부에서 randomUUID로 키를 생성합니다. 여기서는 키 생성기를 직접 검증합니다.
+        // putObject 내부에서 randomUUID로 키를 생성한다. 여기서는 키 생성기를 직접 검증한다.
         const { randomUUID } = await import('crypto')
         const ids = new Set<string>()
         for (let i = 0; i < 10000; i++) ids.add(randomUUID())

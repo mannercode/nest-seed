@@ -1,11 +1,11 @@
 /**
- * 사용자 이름 필터 전용 성능 하네스입니다.
+ * 사용자 이름 필터 전용 성능 하네스이다.
  *
  * GET /users가 JWT로 보호되므로 워커마다 자체 계정을 가입하고 로그인한 뒤,
- * 액세스 토큰을 받아 `?name=<filter>` 쿼리를 반복 실행합니다.
+ * 액세스 토큰을 받아 `?name=<filter>` 쿼리를 반복 실행한다.
  *
- * 부분 문자열 정규식은 일반 인덱스를 활용하지 못해 컬렉션 전체를 스캔합니다.
- * 검색어를 좁게 설정해 매치 수를 거의 0으로 맞추고, 그 비용을 단독으로 측정합니다.
+ * 부분 문자열 정규식은 일반 인덱스를 활용하지 못해 컬렉션 전체를 스캔한다.
+ * 검색어를 좁게 설정해 매치 수를 거의 0으로 맞추고, 그 비용을 단독으로 측정한다.
  *
  * 환경 변수: SERVER_URL, CONCURRENCY, DURATION_MS, WARMUP_MS, LABEL, FILTER_PREFIX
  */
@@ -20,8 +20,8 @@ const CONCURRENCY = Number(process.env.CONCURRENCY || 100)
 const DURATION_MS = Number(process.env.DURATION_MS || 30_000)
 const WARMUP_MS = Number(process.env.WARMUP_MS || 3_000)
 const LABEL = process.env.LABEL || ''
-// 부분 문자열을 좁게 설정해 매치 수를 거의 0으로 맞춥니다. 그래야 기준값
-// 측정이 회차마다 같은 조건에서 나옵니다.
+// 부분 문자열을 좁게 설정해 매치 수를 거의 0으로 맞춘다. 그래야 기준값
+// 측정이 회차마다 같은 조건에서 나온다.
 const FILTER_PREFIX = process.env.FILTER_PREFIX || 'perf-user-17769404'
 
 const url = new URL(SERVER_URL)
@@ -81,7 +81,7 @@ async function setupWorker(workerId, seed) {
         birthDate: '1990-01-01T00:00:00.000Z'
     })
     if (create.status !== 201) {
-        // 이메일이 중복되면 무시하고 로그인으로 진행합니다.
+        // 이메일이 중복되면 무시하고 로그인으로 진행한다.
         if (create.status !== 409) {
             agent.destroy()
             throw new Error(`worker ${workerId} create returned ${create.status}`)

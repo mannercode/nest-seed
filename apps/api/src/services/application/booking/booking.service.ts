@@ -48,9 +48,9 @@ export class BookingService {
     }
 
     async searchShowdates({ movieId, theaterId }: BookingSearchShowdatesDto) {
-        // 끝난 상영은 노출하지 않으려고 `endTime > now`로 거릅니다. 추천과
-        // 상영 생성 화면도 같은 방식으로 미래 상영만 조회합니다. 결제 마감 시간은
-        // 결제 시점에서 따로 확인합니다.
+        // 끝난 상영은 노출하지 않으려고 `endTime > now`로 거른다. 추천과
+        // 상영 생성 화면도 같은 방식으로 미래 상영만 조회한다. 결제 마감 시간은
+        // 결제 시점에서 따로 확인한다.
         return this.showtimesService.searchShowdates({
             endTimeRange: { start: new Date() },
             movieIds: [movieId],
@@ -59,10 +59,10 @@ export class BookingService {
     }
 
     async searchShowtimes({ movieId, showdate, theaterId }: BookingSearchShowtimesDto) {
-        // `showdate`는 YYYYMMDD로 들어옵니다. 짝이 되는 `searchShowdates`는
-        // Mongo `$dateToString`의 UTC 결과를 그대로 반환합니다. 이 경로도 UTC
+        // `showdate`는 YYYYMMDD로 들어온다. 짝이 되는 `searchShowdates`는
+        // Mongo `$dateToString`의 UTC 결과를 그대로 반환한다. 이 경로도 UTC
         // 자정 기준으로 범위를 설정해야 두 API 결과가 호스트 시간대와 상관없이
-        // 맞습니다.
+        // 일치한다.
         const startOfDay = new Date(showdate)
         startOfDay.setUTCHours(0, 0, 0, 0)
 

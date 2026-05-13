@@ -63,7 +63,7 @@ describe('expectEqualUnsorted', () => {
     })
 
     it('NaN만 들어 있는 두 배열을 같다고 판정한다', () => {
-        // JSON.stringify(NaN)은 "null"이라 정렬 키가 같아집니다.
+        // JSON.stringify(NaN)은 "null"이라 정렬 키가 같아진다.
         expect(() => expectEqualUnsorted([{ v: NaN }], [{ v: NaN }])).not.toThrow()
     })
 
