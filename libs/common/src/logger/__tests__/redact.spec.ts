@@ -54,13 +54,13 @@ describe('redactSensitive', () => {
     })
 
     it('서로 다른 위치에서 같은 객체를 참조하면 양쪽 모두 [CIRCULAR]로 치환한다', () => {
-        // 구현이 WeakSet으로 방문을 추적하므로, DAG에서 두 번째 방문도 [CIRCULAR]가 됩니다.
+        // 구현이 WeakSet으로 방문을 추적하므로 DAG에서 두 번째 방문도 [CIRCULAR]가 됩니다.
         const shared = { name: 'shared' }
         const root = { a: shared, b: shared }
 
         const result = redactSensitive(root) as any
 
-        // 첫 방문은 정상 처리, 두 번째는 [CIRCULAR].
+        // 첫 방문은 정상 처리하고, 두 번째 방문은 [CIRCULAR]로 축약합니다.
         const visitedAsObject = result.a !== '[CIRCULAR]' ? result.a : result.b
         const visitedAsCircular = result.a === '[CIRCULAR]' ? result.a : result.b
 

@@ -3,8 +3,8 @@ import superagent, { type Response } from 'superagent'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
 
-// libs/testing에서 @mannercode/common에 대한 production dependency를
-// 없애기 위해 인라인. 이전엔 JsonUtil.parse를 여기서만 사용했습니다.
+// libs/testing이 @mannercode/common을 런타임 의존성으로 갖지 않도록 인라인으로 둡니다.
+// 이전에는 여기서만 JsonUtil.parse를 사용했습니다.
 function parseJsonResponse(text: string): unknown {
     return JSON.parse(quoteUnsafeIntegers(text), (_key, value) => {
         if (typeof value === 'string' && ISO_DATE.test(value)) {
@@ -14,8 +14,8 @@ function parseJsonResponse(text: string): unknown {
     })
 }
 
-// JS Number-safe 범위를 벗어난 정수만 따옴표로 감싸 precision을 보존합니다.
-// (test client는 server가 검증한 입력만 받으므로 int64 boundary는 검사 안 함.)
+// JS Number 안전 범위를 벗어난 정수만 문자열로 감싸 정밀도 손실을 막습니다.
+// 테스트 클라이언트는 서버가 검증한 입력만 받으므로 int64 경계는 따로 검사하지 않습니다.
 function quoteUnsafeIntegers(text: string): string {
     const SAFE = BigInt(Number.MAX_SAFE_INTEGER)
     return text.replace(/([:[,])(\s*)(-?\d+)(?=\s*[,\}\]])/g, (match, prefix, space, raw) => {
@@ -127,14 +127,13 @@ export class HttpTestClient {
         return response
     }
     /**
-     * 응답 상태를 따로 단언하지 않고 보냅니다. 호출자가 `response.status`
-     * 를 직접 확인합니다. 같은 요청을 동시에 여러 번 보낼 때처럼, 요청마다 응답
+     * 응답 상태를 따로 단언하지 않고 보냅니다. 호출자가 `response.status`를
+     * 직접 확인합니다. 같은 요청을 동시에 여러 번 보낼 때처럼, 요청마다 응답
      * 상태가 달라도 정상으로 보는 시나리오에 사용합니다.
      */
     async sendRaw(): Promise<superagent.Response> {
         // `ok(() => true)`를 제외하면 superagent가 400 이상 상태에서 예외를
-        // 던집니다. 호출자가 직접 상태를 확인하도록 모든 상태를 OK로 표시
-        // 합니다.
+        // 던집니다. 호출자가 직접 상태를 확인하도록 모든 상태를 OK로 표시합니다.
         const response = await this.agent.ok(() => true)
 
         if (response.type === 'application/json') {
@@ -154,10 +153,9 @@ export class HttpTestClient {
                     const lines = chunkText.trim().split('\n')
 
                     if (1 < lines.length) {
-                        /**
-                         * id: 1
-                         * data: {"sagaId":"6712d234a78adbff65ae552d","status":"processing"}
-                         */
+                        // 예:
+                        // id: 1
+                        // data: {"sagaId":"6712d234a78adbff65ae552d","status":"processing"}
                         const message = this.parseEventMessage(chunkText)
 
                         if (message.event !== 'error' && message.data) {
@@ -166,9 +164,8 @@ export class HttpTestClient {
                             errorHandler(message)
                         }
                     } else if (0 < lines[0].length) {
-                        /**
-                         * {"message":"Cannot GET /showtime-creation/events2","error":"Not Found","statusCode":404}
-                         */
+                        // 예:
+                        // {"message":"Cannot GET /showtime-creation/events2","error":"Not Found","statusCode":404}
                         errorHandler(chunkText)
                     }
                 })

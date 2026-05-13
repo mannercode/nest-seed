@@ -39,7 +39,7 @@ export type S3PresignDownloadOptions = {
     filename?: string
     /** `Content-Disposition` 헤더를 직접 지정합니다. */
     responseContentDisposition?: string
-    /** 다운로드 응답의 `Content-Type`을 덮어사용합니다. */
+    /** 다운로드 응답의 `Content-Type`을 덮어 씁니다. */
     responseContentType?: string
 } & S3PresignUrlOptions
 

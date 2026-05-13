@@ -6,7 +6,7 @@ random_email() {
 	printf 'test.%s.%s@example.com\n' "${epoch_ns}" "${RANDOM}"
 }
 
-USER_NAME="user name"
+USER_NAME="사용자 이름"
 USER_BIRTHDATE="1990-01-01T00:00:00.000Z"
 USER_PASSWORD="testpassword"
 USER_EMAIL="user@example.com"
@@ -44,12 +44,12 @@ create_movie() {
 	SETUP POST /movies \
 		-H 'Content-Type: application/json' \
 		-d '{
-				"title": "movie title",
+				"title": "영화 제목",
 				"genres": ["action", "drama"],
 				"releaseDate": "2024-01-01T00:00:00.000Z",
-				"plot": "movie plot for e2e flow",
+				"plot": "API 문서 흐름 검증용 줄거리",
 				"durationInSeconds": 7200,
-				"director": "e2e director",
+				"director": "감독 이름",
 				"rating": "PG",
 				"assetIds": []
 			}'
@@ -65,7 +65,7 @@ create_theater() {
 	SETUP POST /theaters \
 		-H 'Content-Type: application/json' \
 		-d '{
-				"name": "theater name",
+				"name": "극장 이름",
 				"location": { "latitude": 37.5665, "longitude": 126.9780 },
 				"seatmap": {
 					"blocks": [
@@ -117,13 +117,13 @@ wait_for_showtime() {
 		sleep 1
 	done
 
-	LOG_LINE "# Setup failed: showtime creation did not finish in ${attempts} seconds"
+	LOG_LINE "# 준비 실패: ${attempts}초 안에 상영 시간이 생성되지 않았습니다"
 	LOG_LINE "RES='setup-timeout'"
 	LOG_JSON "${BODY}"
 	LOG_LINE "'"
 	LOG_LINE ""
-	echo "[FAIL] SETUP wait_for_showtime: timed out after ${attempts}s (movieId=${MOVIE_ID}, theaterId=${THEATER_ID})"
-	echo "  last response: ${BODY}" | head -5
+	echo "[FAIL] SETUP wait_for_showtime: ${attempts}초 동안 기다렸지만 상영 시간이 생성되지 않았습니다 (movieId=${MOVIE_ID}, theaterId=${THEATER_ID})"
+	echo "  마지막 응답: ${BODY}" | head -5
 	exit 2
 }
 
@@ -146,13 +146,13 @@ wait_for_tickets() {
 		sleep 1
 	done
 
-	LOG_LINE "# Setup failed: tickets were not created in ${attempts} seconds"
+	LOG_LINE "# 준비 실패: ${attempts}초 안에 티켓이 생성되지 않았습니다"
 	LOG_LINE "RES='setup-timeout'"
 	LOG_JSON "${BODY}"
 	LOG_LINE "'"
 	LOG_LINE ""
-	echo "[FAIL] SETUP wait_for_tickets: timed out after ${attempts}s (showtimeId=${SHOWTIME_ID}, ticketCount=${ticketCount})"
-	echo "  last response: ${BODY}" | head -5
+	echo "[FAIL] SETUP wait_for_tickets: ${attempts}초 동안 기다렸지만 티켓이 생성되지 않았습니다 (showtimeId=${SHOWTIME_ID}, ticketCount=${ticketCount})"
+	echo "  마지막 응답: ${BODY}" | head -5
 	exit 2
 }
 
@@ -180,7 +180,7 @@ upload_presigned_post() {
 	CURL "${METHOD}" "${URL}" "${formArgs[@]}"
 
 	if [[ "${STATUS}" -ge 300 ]]; then
-		LOG_LINE "# Upload failed"
+		LOG_LINE "# 업로드 실패"
 		LOG_LINE "RES='${STATUS}"
 		LOG_JSON "${BODY}"
 		LOG_LINE "'"

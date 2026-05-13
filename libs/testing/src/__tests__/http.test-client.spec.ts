@@ -10,13 +10,13 @@ describe('HttpTestClient', () => {
     afterEach(() => fix.teardown())
 
     describe('JSON 응답 파싱', () => {
-        it('64비트 정수를 string으로 보존해 정밀도 손실을 막는다', async () => {
+        it('64비트 정수를 문자열로 보존해 정밀도 손실을 막는다', async () => {
             const { body } = await fix.httpClient.get('/big-int').ok()
 
             expect(body.v).toBe('9223372036854775807')
         })
 
-        it('ISO 8601 형식의 timestamp를 Date 객체로 되살린다', async () => {
+        it('ISO 8601 형식의 타임스탬프를 Date 객체로 되살린다', async () => {
             const { body } = await fix.httpClient.get('/timestamp').ok()
 
             expect(body.at).toBeInstanceOf(Date)
@@ -48,7 +48,7 @@ describe('HttpTestClient', () => {
         })
     })
 
-    describe('체이닝 setter', () => {
+    describe('체인 메서드', () => {
         it('body()를 두 번 호출하면 두 번째 호출까지 결과에 포함된다', async () => {
             const { body } = await fix.httpClient
                 .post('/echo')
@@ -56,8 +56,8 @@ describe('HttpTestClient', () => {
                 .body({ second: true })
                 .created()
 
-            // superagent.send는 같은 contentType이면 두 번째 호출 시 object를 머지합니다.
-            // 핵심은 두 번째 호출이 무시되지 않는다는 것.
+            // superagent.send는 같은 contentType이면 두 번째 호출의 객체를 병합합니다.
+            // 여기서는 두 번째 호출이 무시되지 않는지만 확인합니다.
             expect(body).toEqual(expect.objectContaining({ second: true }))
         })
     })

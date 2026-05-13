@@ -5,9 +5,11 @@ import * as os from 'os'
 import * as path from 'path'
 import type { TemporalClientConfig } from '../temporal.types'
 
-// 이 파일 전체가 공유하는 단일 Connection + Client.
-// 각 `it` 안의 `await import`(프로젝트 컨벤션: resetModules: true)는
-// SUT 모듈에 새로운 클래스 identity를 부여하고, 살아 있는 인프라 핸들만 재사용합니다.
+/**
+ * 이 파일 전체가 공유하는 단일 Connection과 Client입니다.
+ * 각 `it` 안의 `await import`(프로젝트 컨벤션: resetModules: true)는
+ * SUT 모듈에 새로운 클래스 정체성을 부여하고, 살아 있는 인프라 핸들만 재사용합니다.
+ */
 let connection: Connection
 let client: Client
 let bundlePath: string
@@ -83,7 +85,7 @@ describe('TemporalClientModule.forRootAsync', () => {
         }
     })
 
-    it('inject로 지정한 provider가 useFactory의 인자로 전달된다', async () => {
+    it('inject로 지정한 제공자를 useFactory 인자로 전달한다', async () => {
         const { Global, Module } = await import('@nestjs/common')
         const { TemporalClientModule } = await import('../temporal-client.module')
         const { Test } = await import('@nestjs/testing')
@@ -92,7 +94,7 @@ describe('TemporalClientModule.forRootAsync', () => {
         const calls: string[] = []
         const { address, namespace } = config()
 
-        // forRootAsync의 dynamic module은 global이지만 inject 토큰은 어딘가에서
+        // forRootAsync의 동적 모듈은 global이지만 inject 토큰은 어딘가에서
         // 해석되어야 합니다. 그래서 @Global() 헬퍼 모듈로 ADDRESS_TOKEN을 노출합니다.
         @Global()
         @Module({
@@ -118,15 +120,15 @@ describe('TemporalClientModule.forRootAsync', () => {
         }).compile()
 
         try {
-            // useFactory는 두 provider(connection, client)에 연결되어 있어
-            // 같은 주입 address로 두 번 실행됩니다.
+            // useFactory는 두 제공자(connection, client)에 연결되어 있어
+            // 같은 주입 주소로 두 번 실행됩니다.
             expect(calls).toEqual([address, address])
         } finally {
             await moduleRef.close()
         }
     })
 
-    it('모듈 종료 시 connection을 닫고, 닫기 실패는 무시한다', async () => {
+    it('모듈 종료 시 연결을 닫고, 닫기 실패는 무시한다', async () => {
         const { TemporalClientModule, TemporalConnectionRegistry } =
             await import('../temporal-client.module')
         const { Test } = await import('@nestjs/testing')
@@ -137,7 +139,7 @@ describe('TemporalClientModule.forRootAsync', () => {
             ]
         }).compile()
 
-        // close()가 reject하는 가짜 connection을 registry에 추가해
+        // close()가 거부되는 mock 연결을 레지스트리에 추가해
         // onModuleDestroy의 .catch(() => undefined) 분기를 커버합니다.
         const fakeConnection = {
             close: jest.fn(async () => {
@@ -150,13 +152,13 @@ describe('TemporalClientModule.forRootAsync', () => {
         await expect(moduleRef.close()).resolves.toBeUndefined()
 
         expect(fakeConnection.close).toHaveBeenCalled()
-        // 종료 후 registry도 비워집니다.
+        // 종료 후 레지스트리도 비워집니다.
         expect(registry.list()).toEqual([])
     })
 })
 
 describe('TemporalWorkerService', () => {
-    it('워커가 번들 파일을 읽어 workflow를 실행하고 정상 종료한다', async () => {
+    it('워커가 번들 파일을 읽어 워크플로를 실행하고 정상 종료한다', async () => {
         const { TemporalWorkerService } = await import('../temporal-worker.service')
         const taskQueue = withTestId('worker')
         const calls: string[] = []
@@ -245,7 +247,7 @@ describe('TemporalWorkerService', () => {
         expect(fakeConnection.close).toHaveBeenCalled()
     }, 120_000)
 
-    it('onModuleDestroy는 worker 종료를 기다린 뒤에 connection을 닫는다', async () => {
+    it('onModuleDestroy는 워커 종료를 기다린 뒤에 연결을 닫는다', async () => {
         const { TemporalWorkerService } = await import('../temporal-worker.service')
         const taskQueue = withTestId('worker-shutdown-order')
         const { address, namespace } = config()

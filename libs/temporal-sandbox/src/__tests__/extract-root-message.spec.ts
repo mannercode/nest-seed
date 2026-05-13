@@ -1,18 +1,18 @@
 import { extractRootMessage } from '../extract-root-message'
 
 describe('extractRootMessage', () => {
-    it('일반 Error는 자기 message를 그대로 반환한다', () => {
+    it('일반 Error 객체는 자신의 메시지를 그대로 반환한다', () => {
         expect(extractRootMessage(new Error('plain'))).toBe('plain')
     })
 
-    it('cause 체인을 따라 끝의 message를 반환한다', () => {
+    it('cause 체인을 따라 가장 안쪽 메시지를 반환한다', () => {
         const root = new Error('root cause')
         const wrapped = new Error('wrapper', { cause: root })
         const outer = new Error('Activity task failed', { cause: wrapped })
         expect(extractRootMessage(outer)).toBe('root cause')
     })
 
-    it('SuppressedError가 있으면 suppressed의 message를 우선한다', () => {
+    it('SuppressedError가 있으면 suppressed 메시지를 우선한다', () => {
         const original = new Error('movie not found')
         const disposal = new Error('Connection is closed')
         // ESM SuppressedError 흉내. 실제 런타임이 같은 형태의 객체를 만듭니다.
@@ -39,13 +39,13 @@ describe('extractRootMessage', () => {
         expect(extractRootMessage(self)).toBe('self')
     })
 
-    it('Error가 아닌 값은 String()으로 변환한다', () => {
+    it('Error 객체가 아닌 값은 String() 결과로 변환한다', () => {
         expect(extractRootMessage('boom')).toBe('boom')
         expect(extractRootMessage(42)).toBe('42')
         expect(extractRootMessage(null)).toBe('null')
     })
 
-    it('Error의 message가 빈 문자열이고 체인이 없으면 String()으로 대체한다', () => {
+    it('Error 메시지가 비어 있고 체인이 없으면 String() 결과를 쓴다', () => {
         const blank = new Error('')
         expect(extractRootMessage(blank)).toBe(String(blank))
     })

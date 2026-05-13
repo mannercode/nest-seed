@@ -4,7 +4,7 @@ import { DateTimeRange, PartialDateTimeRange } from '../date-time-range'
 
 describe('DateTimeRange', () => {
     describe('검증', () => {
-        it('유효한 날짜 문자열을 Date로 변환하고 검증을 통과한다', () => {
+        it('유효한 날짜 문자열을 Date 객체로 변환하고 검증을 통과한다', () => {
             const plainData = { end: '2023-01-02T00:00:00Z', start: '2023-01-01T00:00:00Z' }
 
             const instance = plainToInstance(DateTimeRange, plainData)

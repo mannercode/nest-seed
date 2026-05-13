@@ -47,7 +47,7 @@ describe('PaymentsService', () => {
     })
 
     describe('getMany', () => {
-        it('주어진 paymentIds에 해당하는 결제를 반환한다', async () => {
+        it('결제 ID 목록에 해당하는 결제를 반환한다', async () => {
             const payments = await Promise.all([
                 createPayment(fix),
                 createPayment(fix),
@@ -59,7 +59,7 @@ describe('PaymentsService', () => {
             expect(fetchedPayments).toEqual(expect.arrayContaining(payments))
         })
 
-        it('paymentIds 중 하나라도 없으면 404를 던진다', async () => {
+        it('결제 ID 목록 중 하나라도 없으면 404를 던진다', async () => {
             const promise = paymentsService.getMany([nullObjectId])
 
             await expect(promise).rejects.toMatchObject({

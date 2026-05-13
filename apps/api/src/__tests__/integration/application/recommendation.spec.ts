@@ -56,7 +56,7 @@ describe('RecommendationService', () => {
                 ])
         })
 
-        it('게스트에게는 releaseDate 내림차순으로 기본 추천을 반환한다', async () => {
+        it('게스트에게는 개봉일 내림차순 기본 추천을 반환한다', async () => {
             await fix.httpClient.get('/movies/recommended').ok([
                 dramaMovie, // 2900-05-01
                 actionMovie, // 2900-04-01

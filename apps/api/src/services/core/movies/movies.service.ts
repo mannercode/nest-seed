@@ -97,8 +97,8 @@ export class MoviesService {
             owner: { entityId: movieId, service: 'movies' }
         })
 
-        // movie 문서가 자산을 참조한 뒤 pending 목록에서 제거해야 재시도가 가능합니다.
-        // 순서를 바꾸면 `addAsset` 실패 뒤 자산 소유자만 movie로 바뀌고, movie와
+        // 영화 문서가 자산을 참조한 뒤 pending 목록에서 제거해야 재시도할 수 있습니다.
+        // 순서를 바꾸면 `addAsset` 실패 뒤 자산 소유자만 영화로 바뀌고, 영화와
         // pending 목록 어디에도 복구 단서가 남지 않습니다.
         await this.moviesRepository.addAsset(movieId, assetId)
         await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)

@@ -16,7 +16,7 @@ describe('getNatsConnectionToken', () => {
 })
 
 describe('NatsModule', () => {
-    it('forRoot는 connection을 글로벌 provider로 노출한다', async () => {
+    it('forRoot는 연결을 전역 제공자로 노출한다', async () => {
         const ctx = await createTestContext({
             imports: [
                 NatsModule.forRoot(
@@ -34,7 +34,7 @@ describe('NatsModule', () => {
         }
     })
 
-    it('forRootAsync는 useFactory의 반환값으로 connection을 만든다', async () => {
+    it('forRootAsync는 useFactory의 반환값으로 연결을 만든다', async () => {
         const ctx = await createTestContext({
             imports: [
                 NatsModule.forRootAsync(

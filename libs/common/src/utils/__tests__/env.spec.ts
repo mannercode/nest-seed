@@ -23,7 +23,7 @@ describe('Env', () => {
             delete process.env.TEST_NUMBER
         })
 
-        it('숫자 문자열을 number로 변환한다', () => {
+        it('숫자 문자열을 숫자로 변환한다', () => {
             process.env.TEST_NUMBER = '123'
             expect(Env.getNumber('TEST_NUMBER')).toBe(123)
         })

@@ -51,8 +51,8 @@ export class AppConfigService extends BaseConfigService {
         // `NestFactory.create` 단계에서도 같은 값을 다시 검증합니다.
         PROJECT_ID: Joi.string().required(),
 
-        // 도메인 정책 값. `.env`에서 비워 두면 아래 기본값으로 동작합니다.
-        // 운영 환경에서 튜닝할 일이 있을 때만 `.env`에 덮어사용합니다.
+        // 도메인 정책 값입니다. `.env`에서 비워 두면 아래 기본값으로 동작합니다.
+        // 운영 환경에서 조정할 일이 있을 때만 `.env`로 덮어씁니다.
         ASSET_UPLOAD_EXPIRES_SEC: Joi.number().default(60 * 60),
         ASSET_DOWNLOAD_EXPIRES_SEC: Joi.number().default(60 * 60),
         TICKET_HOLD_DURATION_MS: Joi.number().default(10 * 60 * 1000),

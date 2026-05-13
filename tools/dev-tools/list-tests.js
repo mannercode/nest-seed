@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
  * Jest spec 파일에서 describe/it 트리를 추출해 출력합니다.
- * 테스트 작성 현황 / 구조 파악용. TypeScript compiler API로 AST를 읽으므로
- * 다중 라인 string, template literal, it.each 등도 안전하게 다룹니다.
+ * 테스트 구조를 확인할 때 씁니다. TypeScript compiler API로 AST를 읽으므로
+ * 여러 줄 문자열, template literal, it.each도 안전하게 다룹니다.
  *
- *   node tools/dev-tools/list-tests.js                       # 기본: libs/ 트리
+ *   node tools/dev-tools/list-tests.js                       # 기본값: libs/ 트리
  *   node tools/dev-tools/list-tests.js apps/api              # 다른 경로
- *   node tools/dev-tools/list-tests.js --md > tests.md       # markdown으로 출력
+ *   node tools/dev-tools/list-tests.js --md > tests.md       # Markdown으로 출력
  *   node tools/dev-tools/list-tests.js --html > tests.html   # 브라우저용 (펼치기/접기/검색)
  *   node tools/dev-tools/list-tests.js --todos-only          # it.todo만
  *   node tools/dev-tools/list-tests.js --no-todos            # 구현된 it만
- *   node tools/dev-tools/list-tests.js --json                # 기계 읽기 용
+ *   node tools/dev-tools/list-tests.js --json                # 기계가 읽는 형식
  */
 const fs = require('fs')
 const path = require('path')
@@ -56,11 +56,11 @@ function findSpecFiles(dirs) {
     return specs.sort()
 }
 
-// Jest 전역의 describe / it / test와 그 변형 (each / todo / skip / only)
+// Jest 전역 함수와 변형(each, todo, skip, only)을 구분합니다.
 function classifyCallExpression(node, sourceFile) {
     const callee = node.expression
 
-    // 1) Identifier callee: describe / it / test / xdescribe / fdescribe ...
+    // 1) Identifier 호출: describe, it, test, xdescribe, fdescribe 등.
     if (ts.isIdentifier(callee)) {
         const n = callee.text
         if (n === 'describe' || n === 'xdescribe' || n === 'fdescribe') return 'describe'
@@ -68,7 +68,7 @@ function classifyCallExpression(node, sourceFile) {
         return null
     }
 
-    // 2) PropertyAccess callee: describe.skip / it.todo / it.only / it.each(...)
+    // 2) PropertyAccess 호출: describe.skip, it.todo, it.only, it.each 등.
     if (ts.isPropertyAccessExpression(callee)) {
         const obj = callee.expression
         const prop = callee.name.text
@@ -81,7 +81,7 @@ function classifyCallExpression(node, sourceFile) {
         return null
     }
 
-    // 3) CallExpression callee: describe.each([...])(...) / it.each([...])(...)
+    // 3) CallExpression 호출: describe.each([...])(...), it.each([...])(...).
     if (ts.isCallExpression(callee)) {
         const inner = callee.expression
         if (ts.isPropertyAccessExpression(inner)) {
@@ -101,7 +101,7 @@ function classifyCallExpression(node, sourceFile) {
 function descriptionFromArg(arg, sourceFile) {
     if (!arg) return ''
     if (ts.isStringLiteral(arg) || ts.isNoSubstitutionTemplateLiteral(arg)) return arg.text
-    // template literal with substitutions (예: `${x} returns ${y}`) — raw 그대로
+    // 값이 끼어든 template literal은 원문을 그대로 보여 줍니다.
     if (ts.isTemplateExpression(arg)) {
         return sourceFile.text.slice(arg.getStart(sourceFile), arg.getEnd())
     }
@@ -126,7 +126,7 @@ function parseSpecFile(filePath) {
                     stack.pop()
                     return
                 }
-                // it / it.todo: do not recurse into the body
+                // it과 it.todo의 함수 본문은 더 내려가지 않습니다.
                 return
             }
         }
@@ -148,7 +148,7 @@ function filterTree(tree) {
         } else if (item.kind === 'it.todo') {
             if (!noTodos) out.push(item)
         } else {
-            // 'it'
+            // 일반 it입니다.
             if (!todosOnly) out.push(item)
         }
     }
@@ -426,7 +426,7 @@ ${fileBlocks}
         const wantTodo = showTodo.checked
         let visibleLeaves = 0
 
-        // First pass: leaves
+        // 1차: leaf 노드를 먼저 거릅니다.
         tree.querySelectorAll('.node-leaf').forEach((leaf) => {
             const isTodo = leaf.classList.contains('node-todo')
             const typeOk = isTodo ? wantTodo : wantIt
@@ -437,7 +437,7 @@ ${fileBlocks}
             if (visible) visibleLeaves++
         })
 
-        // Second pass: describe — visible if any descendant leaf visible OR own description matches
+        // 2차: describe는 자식이 보이거나 자기 설명이 검색어와 맞으면 보입니다.
         const describes = Array.from(tree.querySelectorAll('details.node-describe')).reverse()
         describes.forEach((d) => {
             const ownText = d.querySelector(':scope > summary > .desc').textContent.toLowerCase()
@@ -448,7 +448,7 @@ ${fileBlocks}
             if (needle !== '' && visible) d.open = true
         })
 
-        // Third pass: files
+        // 3차: 파일 노드를 거릅니다.
         let visibleFiles = 0
         tree.querySelectorAll('details.node-file').forEach((f) => {
             const fileText = f.querySelector(':scope > summary > .desc').textContent.toLowerCase()
@@ -472,7 +472,7 @@ ${fileBlocks}
     showIt.addEventListener('change', applyFilter)
     showTodo.addEventListener('change', applyFilter)
 
-    // Keyboard: '/' focuses search
+    // '/' 키로 검색창에 바로 포커스합니다.
     document.addEventListener('keydown', (e) => {
         if (e.key === '/' && document.activeElement !== q) {
             e.preventDefault()

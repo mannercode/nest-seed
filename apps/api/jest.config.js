@@ -22,14 +22,14 @@ module.exports = {
     collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
     coveragePathIgnorePatterns: [
         '__tests__',
-        // `src` 바로 아래의 `.ts` 파일은 진입점이나 모듈 wiring입니다.
+        // `src` 바로 아래의 `.ts` 파일은 진입점이나 모듈 연결 코드입니다.
         // (`development`, `bootstrap`, `app.module`, `project-id` 등.)
         // 커버리지를 따로 잴 의미가 없습니다.
         '/src/[^/]+\\.ts$',
         '/index\\.ts$',
         '\\.module\\.ts$',
-        // Temporal 워크플로우 본문은 `bundleWorkflowCode`가 만든 샌드박스
-        // 안에서 실행됩니다. 그 안에서는 Jest의 istanbul 계측이 닿지 않으므로,
+        // Temporal 워크플로 본문은 `bundleWorkflowCode`가 만든 샌드박스
+        // 안에서 실행됩니다. 그 안에서는 Jest의 Istanbul 계측이 닿지 않으므로,
         // 통합 테스트를 실행해도 0%로 기록됩니다. 순수 로직은 옆 파일로 분리해
         // 단위 테스트로 따로 덮습니다.
         '/worker/workflow\\.ts$'

@@ -2,7 +2,7 @@ import { IsNotEmpty, IsNumber, IsString } from 'class-validator'
 
 /**
  * 티켓이 가리키는 좌석의 좌표. Theater의 `Seatmap`에 논리적으로 묶이지만
- * 코드 의존은 두지 않습니다. core 안의 도메인끼리는 서로 import 하지 않는
+ * 코드 의존은 두지 않습니다. core 안의 도메인끼리는 서로 가져오지 않는
  * 규칙을 따릅니다.
  *
  * `Theater.Seat`와 자료 구조가 같지만 의미가 다릅니다. 해당 모델은 시간이 지나며

@@ -183,7 +183,7 @@ describe('CrudRepository', () => {
 
             const { items, total } = await fix.repository.findWithPagination({ pagination: {} })
 
-            // total은 estimatedDocumentCount로 모든 row(삭제 포함)를 셉니다.
+            // total은 estimatedDocumentCount로 모든 행(삭제 포함)을 셉니다.
             expect(total).toBeGreaterThanOrEqual(samples.length + 1)
             // items에는 삭제된 문서가 안 들어갑니다.
             expect(toDtos(items).find((d) => d.name === 'soft-deleted')).toBeUndefined()

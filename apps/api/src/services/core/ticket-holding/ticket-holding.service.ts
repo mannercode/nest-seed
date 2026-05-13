@@ -77,11 +77,11 @@ export class TicketHoldingService {
     async releaseTickets(showtimeId: string, userId: string): Promise<void> {
         const tickets = await this.searchHeldTicketIds(showtimeId, userId)
 
-        // ticket 키 하나를 삭제하지 못해도 나머지 키와 user 키 정리는 계속합니다.
+        // 티켓 키 하나를 삭제하지 못해도 나머지 티켓 키와 사용자 키 정리는 계속합니다.
         // 부분 실패가 영구 잠금으로 이어지지 않는 이유는 두 가지입니다.
-        // 첫째, hold에 걸린 TTL이 끝나면 남은 키가 사라집니다.
-        // 둘째, 다음 `holdTickets`가 user 키를 다시 읽어 같은 사용자의 잔여
-        // ticket 키를 정리합니다.
+        // 첫째, 선점에 걸린 TTL이 끝나면 남은 키가 사라집니다.
+        // 둘째, 다음 `holdTickets`가 사용자 키를 다시 읽어 같은 사용자의 남은
+        // 티켓 키를 정리합니다.
         const results = await Promise.allSettled(
             tickets.map((ticketId) => this.cacheService.delete(getTicketKey(showtimeId, ticketId)))
         )

@@ -34,9 +34,9 @@ import { getShowtimeCreationTaskQueue } from './worker/types'
         ShowtimeBulkValidatorService,
         ShowtimeBulkCreatorService,
         ShowtimeCreationActivities,
-        // worker provider를 이 모듈에 직접 두어 `ShowtimeCreationActivities`를
-        // 같은 provider 범위에서 주입받습니다. 별도 자식 모듈로 감싸면 factory가
-        // 이 모듈의 provider를 볼 수 없습니다.
+        // 워커 제공자를 이 모듈에 직접 두어 `ShowtimeCreationActivities`를
+        // 같은 제공자 범위에서 주입받습니다. 별도 자식 모듈로 감싸면 factory가
+        // 이 모듈의 제공자를 볼 수 없습니다.
         {
             inject: [AppConfigService, ShowtimeCreationActivities],
             provide: TemporalWorkerService,

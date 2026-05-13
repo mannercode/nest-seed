@@ -30,7 +30,7 @@ describe('LatLong', () => {
 
             const distance = LatLong.distanceInMeters(northPole, southPole)
 
-            // 지구 반지름 × π = 약 20015 km. 측지선 길이의 절반.
+            // 지구 반지름 × π는 약 20015km로, 측지선 길이의 절반입니다.
             expect(distance).toBeCloseTo(Math.PI * 6_371_000, -3)
         })
 
@@ -102,7 +102,7 @@ describe('LatLong', () => {
                 .badRequest(LatLongErrors.InvalidFormat())
         })
 
-        it('"37."처럼 끝에 점이 붙은 좌표는 Number("37.") = 37로 파싱된다', async () => {
+        it('"37."처럼 점으로 끝나는 좌표도 37로 파싱한다', async () => {
             // 정규식의 \d+(?:\.\d*)? 분기가 "37."을 받아주므로 정상 파싱됩니다.
             await fix.httpClient
                 .get('/latLong')
@@ -110,8 +110,8 @@ describe('LatLong', () => {
                 .ok({ latitude: 37, longitude: 127 })
         })
 
-        it('정확히 20자(MAX_COORDINATE_LENGTH 경계)인 좌표는 길이 체크를 통과한다', async () => {
-            // 길이 체크는 통과하지만 값이 90 초과라 범위 검증에서 거부됩니다.
+        it('20자인 좌표는 길이 검사를 통과한다', async () => {
+            // 길이 검사는 통과하지만 값이 90을 초과해 범위 검증에서 거부됩니다.
             const lat = '12345678901234567.89' // 20자
             await fix.httpClient
                 .get('/latLong')

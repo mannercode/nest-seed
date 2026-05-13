@@ -228,7 +228,7 @@ describe('isEqual', () => {
     })
 
     it('두 Date는 시각이 달라도 같다고 판정된다 (얕은 비교 한계)', () => {
-        // Date는 own enumerable 키가 없으므로 둘 다 Object.keys = []. 같다고 판정됩니다.
+        // Date는 own enumerable 키가 없으므로 둘 다 Object.keys = []입니다. 그래서 같다고 판정됩니다.
         expect(isEqual(new Date(0), new Date(1))).toBe(true)
     })
 

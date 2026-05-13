@@ -57,7 +57,7 @@ describe('expectEqualUnsorted', () => {
         expect(() => expectEqualUnsorted(actual, expected)).toThrow()
     })
 
-    it('actual이나 expected가 undefined이면 예외를 던진다', () => {
+    it('actual이나 expected가 없으면 예외를 던진다', () => {
         expect(() => expectEqualUnsorted(undefined, [])).toThrow('actual or expected undefined')
         expect(() => expectEqualUnsorted([], undefined)).toThrow('actual or expected undefined')
     })

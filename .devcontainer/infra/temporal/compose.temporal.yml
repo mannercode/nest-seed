@@ -15,7 +15,7 @@ services:
 
     # server 전용 이미지는 DB 스키마를 만들지 않습니다. admin-tools에서
     # `temporal`과 `temporal_visibility` 스키마를 적용하고, 이미 생성된 DB에서도
-    # versioned schema update는 계속 실행되게 둡니다.
+    # versioned schema update를 매번 실행합니다.
     temporal-setup:
         extends: { file: ../compose.common.yml, service: common-options }
         image: $TEMPORAL_ADMIN_TOOLS_IMAGE
@@ -60,7 +60,7 @@ services:
         deploy: { resources: { limits: { memory: 3g } } }
         shm_size: '16m'
 
-    # server 전용 이미지는 default namespace를 생성하지 않습니다. 서버가 healthy가
+    # server 전용 이미지는 default namespace를 만들지 않습니다. 서버가 healthy가
     # 된 뒤 admin-tools에서 namespace를 보장합니다.
     temporal-create-namespace:
         extends: { file: ../compose.common.yml, service: common-options }

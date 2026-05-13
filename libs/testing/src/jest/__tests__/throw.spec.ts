@@ -1,12 +1,12 @@
 describe('예외 처리', () => {
     describe('async 함수', () => {
-        it('값으로 resolve된다', async () => {
+        it('값으로 성공 완료된다', async () => {
             const returnValue = async () => 'ok'
 
             await expect(returnValue()).resolves.toEqual('ok')
         })
 
-        it('예외로 reject된다', async () => {
+        it('예외로 거부된다', async () => {
             const throwException = async () => {
                 throw new Error('error')
             }
@@ -14,7 +14,7 @@ describe('예외 처리', () => {
             await expect(throwException()).rejects.toThrow('error')
         })
 
-        it('reject된 예외를 포착한다', async () => {
+        it('거부된 예외를 포착한다', async () => {
             const throwException = async () => {
                 throw new Error('error')
             }

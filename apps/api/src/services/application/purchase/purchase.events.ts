@@ -7,9 +7,9 @@ import { getProjectId } from 'config'
  *
  * subject 이름 앞에 `PROJECT_ID`를 붙여 병렬 테스트 워커의 이벤트 공간을 분리합니다.
  *
- * NATS pub/sub의 기본 동작은 broadcast입니다. 구독 중인 모든 복제본이 각
+ * NATS pub/sub의 기본 동작은 브로드캐스트입니다. 구독 중인 모든 복제본이 각
  * 메시지를 한 번씩 받습니다. 같은 이벤트를 서비스 단위로 정확히 한 번만 처리
- * 해야 한다면 `subscribe(..., { queue })`로 NATS queue group에 등록합니다.
+ * 해야 한다면 `subscribe(..., { queue })`로 NATS 큐 그룹에 등록합니다.
  */
 @Injectable()
 export class PurchaseEvents {

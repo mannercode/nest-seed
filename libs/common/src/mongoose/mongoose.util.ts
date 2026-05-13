@@ -8,7 +8,7 @@ export const objectId = (id: string) => new Types.ObjectId(id)
 export const objectIds = (ids: string[]) => ids.map((id) => objectId(id))
 
 /**
- * MongoDB의 중복 키 에러(E11000) 인지 판별합니다. unique 인덱스 충돌이 발생했을 때
+ * MongoDB의 중복 키 에러(E11000)인지 판별합니다. unique 인덱스 충돌이 발생했을 때
  * 안전하게 409 Conflict로 매핑하기 위해 사용합니다.
  */
 export function isDuplicateKeyError(error: unknown): boolean {
@@ -72,11 +72,11 @@ export class QueryBuilder<T> {
         options?: { caseSensitive?: boolean; prefix?: boolean }
     ): this {
         if (value) {
-            // 기본값(부분 문자열 + 대소문자 무시) 은 인덱스를 활용하지 못합니다. 컬렉션
+            // 기본값(부분 문자열 + 대소문자 무시)은 인덱스를 활용하지 못합니다. 컬렉션
             // 전체 스캔이 됩니다. 인덱스를 활용하려면 두 옵션을 함께 켭니다.
-            // - `prefix: true`로 `^value`를 붙여 prefix 범위 스캔 후보로 만듭니다.
+            // - `prefix: true`로 `^value`를 붙여 접두어 범위 스캔 후보로 만듭니다.
             // - `caseSensitive: true`로 `i` 플래그를 제외해 일반 오름차순
-            //   인덱스를 쓸 수 있게 합니다. mongoose 기본 인덱스는 바이너리
+            //   인덱스를 쓸 수 있게 합니다. Mongoose 기본 인덱스는 바이너리
             //   비교라 대소문자 무시 모드와는 맞물리지 않습니다.
             const pattern = options?.prefix ? '^' + escapeRegExp(value) : escapeRegExp(value)
             this.query[field] = options?.caseSensitive

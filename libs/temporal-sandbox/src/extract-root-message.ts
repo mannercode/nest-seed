@@ -4,7 +4,7 @@
  * 일반 문구가 되고, 우리가 만든 도메인 메시지는 안쪽 `cause`에 들어 있어서, 사용자에게
  * 보여줄 메시지를 결정할 때 끝까지 따라가야 합니다.
  *
- * `await using`의 disposer가 다시 던지는 경우엔 원래 에러가 `suppressed` 슬롯으로
+ * `await using`의 disposer가 다시 던지는 경우에는 원래 에러가 `suppressed` 슬롯으로
  * 밀려나므로 그 슬롯을 먼저 봅니다. 자기 자신을 참조하는 순환 구조는 한 번만 보고 끊습니다.
  */
 export function extractRootMessage(error: unknown): string {

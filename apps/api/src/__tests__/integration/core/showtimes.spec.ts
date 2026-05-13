@@ -17,7 +17,7 @@ describe('ShowtimesService', () => {
     afterEach(() => fix.teardown())
 
     describe('deleteBySagaIds', () => {
-        it('sagaIds에 해당하는 상영 시간을 삭제한다', async () => {
+        it('사가 식별자 목록에 해당하는 상영 시간을 삭제한다', async () => {
             const sagaId = oid(0x1)
 
             await showtimesService.createMany([buildCreateShowtimeDto({ sagaId })])
@@ -40,7 +40,7 @@ describe('ShowtimesService', () => {
     })
 
     describe('getMany', () => {
-        it('주어진 showtimeIds에 해당하는 상영 시간을 반환한다', async () => {
+        it('주어진 상영 시간 ID 목록에 해당하는 상영 시간을 반환한다', async () => {
             const showtimes = await createShowtimes(fix, [
                 { startTime: new Date('2000-01-01T12:00') },
                 { startTime: new Date('2000-01-01T14:00') }
@@ -51,7 +51,7 @@ describe('ShowtimesService', () => {
             expect(fetchedShowtimes).toEqual(expect.arrayContaining(showtimes))
         })
 
-        it('showtimeIds 중 하나라도 없으면 404를 던진다', async () => {
+        it('상영 시간 ID 목록 중 하나라도 없으면 404를 던진다', async () => {
             const promise = showtimesService.getMany([nullObjectId])
 
             await expect(promise).rejects.toMatchObject({
@@ -90,25 +90,25 @@ describe('ShowtimesService', () => {
                 showtimeInRangeB = createdShowtimes[4]
             })
 
-            it('sagaIds로 필터링한다', async () => {
+            it('사가 식별자 목록으로 필터링한다', async () => {
                 const showtimes = await showtimesService.search({ sagaIds: [sagaId] })
 
                 expect(showtimes).toEqual([showtimeForSaga])
             })
 
-            it('movieIds로 필터링한다', async () => {
+            it('영화 ID 목록으로 필터링한다', async () => {
                 const showtimes = await showtimesService.search({ movieIds: [movieId] })
 
                 expect(showtimes).toEqual([showtimeForMovie])
             })
 
-            it('theaterIds로 필터링한다', async () => {
+            it('극장 ID 목록으로 필터링한다', async () => {
                 const showtimes = await showtimesService.search({ theaterIds: [theaterId] })
 
                 expect(showtimes).toEqual([showtimeForTheater])
             })
 
-            it('startTimeRange로 필터링한다', async () => {
+            it('상영 시작 범위로 필터링한다', async () => {
                 const showtimes = await showtimesService.search({
                     startTimeRange: {
                         end: new Date('2020-01-02T12:00'),
@@ -143,7 +143,7 @@ describe('ShowtimesService', () => {
             ])
         })
 
-        it('startTimeRange로 필터링한 movieIds를 반환한다', async () => {
+        it('상영 시작 범위로 필터링한 영화 ID 목록을 반환한다', async () => {
             const movieIds = await showtimesService.searchMovieIds({
                 startTimeRange: { start: new Date() }
             })
@@ -161,7 +161,7 @@ describe('ShowtimesService', () => {
             ])
         })
 
-        it('movieIds로 필터링한 theaterIds를 반환한다', async () => {
+        it('영화 ID 목록으로 필터링한 극장 ID 목록을 반환한다', async () => {
             const theaterIds = await showtimesService.searchTheaterIds({ movieIds: [oid(0xaa)] })
 
             expect(theaterIds).toEqual([oid(0xb1), oid(0xb2)])
@@ -177,7 +177,7 @@ describe('ShowtimesService', () => {
             ])
         })
 
-        it('movieIds와 theaterIds로 필터링한 상영 날짜를 반환한다', async () => {
+        it('영화 ID 목록과 극장 ID 목록으로 필터링한 상영 날짜를 반환한다', async () => {
             const showdates = await showtimesService.searchShowdates({
                 movieIds: [oid(0xa1)],
                 theaterIds: [oid(0xb1)]

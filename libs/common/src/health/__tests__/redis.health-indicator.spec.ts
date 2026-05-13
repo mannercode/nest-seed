@@ -16,21 +16,21 @@ describe('RedisHealthIndicator', () => {
             expect(healthStatus).toEqual({ key: { status: 'up' } })
         })
 
-        it('ping이 Error를 던지면 메시지와 함께 down 상태를 반환한다', async () => {
+        it('ping이 Error 객체를 던지면 메시지와 함께 down 상태를 반환한다', async () => {
             jest.spyOn(fix.redis, 'ping').mockRejectedValueOnce(new Error('error'))
 
             const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
             expect(healthStatus).toEqual({ key: { reason: 'error', status: 'down' } })
         })
 
-        it('ping이 Error가 아닌 값을 던지면 원시 값을 reason으로 반환한다', async () => {
+        it('ping이 Error 객체가 아닌 값을 던지면 원시 값을 reason으로 반환한다', async () => {
             jest.spyOn(fix.redis, 'ping').mockRejectedValueOnce('unknown error')
 
             const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
             expect(healthStatus).toEqual({ key: { reason: 'unknown error', status: 'down' } })
         })
 
-        it('message 속성이 없는 객체를 던지면 String(value)를 reason으로 기록한다', async () => {
+        it('message가 없는 객체를 던지면 String(value)를 reason에 기록한다', async () => {
             jest.spyOn(fix.redis, 'ping').mockRejectedValueOnce({ code: 'X' })
 
             const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)

@@ -15,7 +15,7 @@ describe('MovieRecommender', () => {
             title: `MovieTitle#${id}`
         })
 
-        it('시청 기록이 없으면 releaseDate 기준으로 정렬된 영화를 반환한다', () => {
+        it('시청 기록이 없으면 개봉일 기준으로 정렬된 영화를 반환한다', () => {
             const showingMovies = [
                 createDto('1', [MovieGenre.Action], new Date('2023-09-01')),
                 createDto('2', [MovieGenre.Drama], new Date('2023-10-01')),

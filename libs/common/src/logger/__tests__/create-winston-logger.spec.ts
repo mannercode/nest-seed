@@ -144,7 +144,7 @@ describe('createWinstonLogger', () => {
         consoleLogger.close()
     })
 
-    it('contextType이 service면 SERVICE 라벨이, 아니면 generic 포맷이 적용된다', async () => {
+    it('contextType이 service이면 SERVICE 라벨을 쓰고 아니면 기본 포맷을 쓴다', async () => {
         const consoleLogger = createWinstonLogger({
             consoleLogLevel: 'info',
             daysToKeepLogs: '1d',
@@ -154,9 +154,9 @@ describe('createWinstonLogger', () => {
 
         const { getOutput } = spyConsoleTransport(consoleLogger)
 
-        // service formatter 경로
+        // service 포맷 경로입니다.
         consoleLogger.info('Foo.bar', { contextType: 'service', x: 1 })
-        // generic formatter 경로 (contextType 없음)
+        // contextType이 없는 기본 포맷 경로입니다.
         consoleLogger.info('plain message', { other: 'value' })
         await sleep(200)
 

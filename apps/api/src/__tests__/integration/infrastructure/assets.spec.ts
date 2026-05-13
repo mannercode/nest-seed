@@ -90,7 +90,7 @@ describe('AssetsService', () => {
         })
     })
 
-    describe('finalizeUpload', () => {
+    describe('업로드 완료 처리', () => {
         describe('업로드가 완료된 에셋', () => {
             let assetId: string
 
@@ -135,14 +135,14 @@ describe('AssetsService', () => {
                 await sleep(1500)
             })
 
-            it('finalize 시 404를 던진다', async () => {
+            it('완료 처리 시 404를 던진다', async () => {
                 const finalizeDto = buildFinalizeAssetDto()
                 await expect(
                     assetsService.finalizeUpload(assetId, finalizeDto)
                 ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
             })
 
-            it('finalize 실패 후에는 에셋이 조회되지 않는다', async () => {
+            it('완료 처리 실패 후에는 에셋이 조회되지 않는다', async () => {
                 const finalizeDto = buildFinalizeAssetDto()
                 await expect(assetsService.finalizeUpload(assetId, finalizeDto)).rejects.toThrow()
 
@@ -165,7 +165,7 @@ describe('AssetsService', () => {
                 ])
             })
 
-            it('assetIds에 해당하는 다운로드 정보가 포함된 에셋을 반환한다', async () => {
+            it('에셋 ID 목록에 해당하는 에셋과 다운로드 정보를 반환한다', async () => {
                 const fetchedAssets = await assetsService.getMany(pickIds(assets))
 
                 expect(fetchedAssets).toEqual(
@@ -188,7 +188,7 @@ describe('AssetsService', () => {
             })
         })
 
-        it('assetIds 중 하나라도 없으면 404를 던진다', async () => {
+        it('에셋 ID 목록 중 하나라도 없으면 404를 던진다', async () => {
             await expect(assetsService.getMany([nullObjectId])).rejects.toMatchObject({
                 status: HttpStatus.NOT_FOUND
             })
@@ -228,7 +228,7 @@ describe('AssetsService', () => {
             })
         })
 
-        it('assetIds 중 존재하지 않는 id가 있어도 예외 없이 끝난다', async () => {
+        it('에셋 ID 목록에 없는 ID가 섞여 있어도 예외 없이 끝난다', async () => {
             await expect(assetsService.deleteMany([nullObjectId])).resolves.toBeUndefined()
         })
 
@@ -236,7 +236,7 @@ describe('AssetsService', () => {
             await expect(assetsService.deleteMany([])).resolves.toBeUndefined()
         })
 
-        it('S3 객체 일부 삭제가 실패하면 경고 로그를 남기고 첫 실패를 던진다 (DB 행은 보존)', async () => {
+        it('S3 객체 일부를 삭제하지 못하면 경고를 남기고 첫 오류를 던진다', async () => {
             const asset = await uploadAndFinalizeAsset(fix, file)
             const s3Service = (assetsService as any).s3Service
             jest.spyOn(s3Service, 'deleteObject').mockRejectedValueOnce(new Error('s3 down'))
@@ -250,8 +250,8 @@ describe('AssetsService', () => {
                 'partial S3 delete failure; DB rows retained for retry',
                 expect.objectContaining({ failedCount: 1 })
             )
-            // DB 행은 그대로 남습니다. 다음 cleanup 회차가 같은 자산을 다시
-            // 들고 와 재시도할 수 있습니다.
+            // DB 행은 그대로 남습니다. 다음 정리 작업이 같은 자산을 다시 가져와
+            // 재시도할 수 있습니다.
             await expect(assetsService.getMany([asset.id])).resolves.toBeDefined()
         })
     })

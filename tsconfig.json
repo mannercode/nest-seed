@@ -1,11 +1,10 @@
 {
     "compilerOptions": {
         "module": "commonjs",
-        // "node10" and "baseUrl" (set in each project's tsconfig) are both
-        // deprecated and will be removed in TypeScript 7. ignoreDeprecations
-        // silences the warning. When upgrading to TS 7, switch moduleResolution
-        // to "bundler" or "node16" and drop baseUrl (paths are resolved
-        // relative to the tsconfig by default now).
+        // "node10"과 각 프로젝트 tsconfig의 "baseUrl"은 TypeScript 7에서 제거될
+        // 예정입니다. 지금은 ignoreDeprecations로 경고만 숨깁니다. TypeScript 7로
+        // 올릴 때는 moduleResolution을 "bundler" 또는 "node16"으로 바꾸고 baseUrl을
+        // 제거합니다. 현재 TypeScript는 paths를 tsconfig 기준으로 해석합니다.
         "moduleResolution": "node10",
         "ignoreDeprecations": "6.0",
         "target": "ESNext",
@@ -13,8 +12,7 @@
         "types": ["node", "jest"],
 
         "strict": true,
-        // NestJS DI relies on constructor parameter initialization through the
-        // container, so property initializers are not required.
+        // NestJS DI는 컨테이너가 생성자 파라미터를 주입하므로, 프로퍼티 초기화가 없어도 됩니다.
         "strictPropertyInitialization": false,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,

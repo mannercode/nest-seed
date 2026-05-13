@@ -57,7 +57,7 @@ export class ShowtimeBulkValidatorService {
         const timeslotsByTheater = await this.generateTimeslotMapByTheater(createDto)
 
         // 여러 새 시작 시각이 같은 기존 상영과 겹칠 수 있습니다. 같은 충돌을
-        // 여러 번 보고하지 않도록 showtime id를 기준으로 중복을 제거합니다.
+        // 여러 번 보고하지 않도록 상영 ID를 기준으로 중복을 제거합니다.
         const conflictsById = new Map<string, ShowtimeDto>()
 
         for (const theaterId of theaterIds) {
@@ -94,7 +94,7 @@ export class ShowtimeBulkValidatorService {
         const timeslotsByTheater = new Map<string, TimeslotMap>()
 
         for (const theaterId of theaterIds) {
-            // 새 상영 윈도우보다 일찍 시작한 기존 상영도 끝 시각이 윈도우 안에
+            // 새 상영 범위보다 일찍 시작한 기존 상영도 끝 시각이 범위 안에
             // 들어오면 충돌입니다. 예를 들어 새 상영이 10:00-12:00이고 기존
             // 상영이 09:00-11:00이면 11:00까지 시간이 겹칩니다.
             const fetchedShowtimes = await this.showtimesService.search({

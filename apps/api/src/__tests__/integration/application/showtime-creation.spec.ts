@@ -50,7 +50,7 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('POST /showtime-creation/showtimes/search', () => {
-        it('theaterIds로 극장의 상영 시간을 반환한다', async () => {
+        it('극장 ID 목록으로 상영 시간을 조회한다', async () => {
             const showtimes = await createShowtimes(
                 fix,
                 [
@@ -83,7 +83,7 @@ describe('ShowtimeCreationService', () => {
                     .accepted()
             })
 
-            it('sagaId를 반환한다', async () => {
+            it('사가 식별자를 반환한다', async () => {
                 const { body } = await createPromise
                 expect(body).toEqual(expect.objectContaining({ sagaId: expect.any(String) }))
             })
@@ -133,7 +133,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('영화가 없으면 error 상태를 보고한다', async () => {
+        it('영화가 없으면 오류 상태를 전송한다', async () => {
             const completionPromise = waitForCompletion(fix, 'error')
 
             const { body } = await fix.httpClient
@@ -153,7 +153,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('극장이 없으면 error 상태를 보고한다', async () => {
+        it('극장이 없으면 오류 상태를 전송한다', async () => {
             const completionPromise = waitForCompletion(fix, 'error')
 
             const { body } = await fix.httpClient
@@ -173,7 +173,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('기존 상영 시간과 겹치면 충돌 목록과 함께 failed를 보고한다', async () => {
+        it('기존 상영 시간과 겹치면 충돌 목록과 함께 실패 상태를 전송한다', async () => {
             const initialShowtimes = await createShowtimes(
                 fix,
                 [
@@ -204,8 +204,8 @@ describe('ShowtimeCreationService', () => {
                 })
                 .accepted()
 
-            // 새 12:00-12:30은 기존 12:00-13:30 과 시간이 겹치므로 충돌입니다.
-            // 새 16:00-16:30 과 기존 16:30-18:00, 새 20:00-20:30 과 기존
+            // 새 12:00-12:30은 기존 12:00-13:30과 시간이 겹치므로 충돌입니다.
+            // 새 16:00-16:30과 기존 16:30-18:00, 새 20:00-20:30과 기존
             // 18:30-20:00은 한 상영이 끝나는 시각에 다른 상영이 시작합니다. 끝
             // 시각을 포함하지 않는 정책이라 충돌로 보지 않습니다.
             const conflictingShowtimes = [initialShowtimes[0]]
@@ -217,7 +217,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('한 기존 상영 시간이 여러 새 startTime과 모두 충돌해도 결과에 한 번만 들어간다', async () => {
+        it('한 기존 상영 시간이 여러 새 시작 시각과 겹쳐도 결과에는 한 번만 들어간다', async () => {
             // 기존 12:00-13:30(90분) 하나가 새 12:00, 12:30, 13:00 세 시작
             // 시각 모두의 첫 슬롯에 걸립니다. 중복 제거가 빠지면 같은 상영이
             // 세 번 결과에 들어갑니다.
@@ -253,8 +253,8 @@ describe('ShowtimeCreationService', () => {
         })
 
         it('기존 상영 시간이 새 범위보다 먼저 시작했어도 끝이 겹치면 충돌로 보고한다', async () => {
-            // 기존 09:00-11:00은 새 요청의 시작 시각(10:00) 보다 일찍 시작
-            // 했습니다. 시작 시각만 보면 새 범위 바깥이지만, 끝 시각이 새 범위와
+            // 기존 09:00-11:00은 새 요청의 시작 시각(10:00)보다 일찍 시작했습니다.
+            // 시작 시각만 보면 새 범위 바깥이지만, 끝 시각이 새 범위와
             // 겹치므로 충돌로 봐야 합니다.
             const [initialShowtime] = await createShowtimes(fix, [
                 {

@@ -1,9 +1,11 @@
 import { withTestId } from '@mannercode/testing'
 import type { NatsPubSubServiceFixture } from './nats-pubsub.service.fixture'
 
-// fixture가 연결을 flush해 두므로 측정 구간에는 순수 메시지 왕복만 들어옵니다.
-// NatsPubSubService.subscribe()도 flush 후 리턴하므로 subscribe→publish 간 경합도 없습니다.
-// 500ms 초과는 진짜 지연 회귀 신호로 봅니다.
+/**
+ * 픽스처가 연결을 flush해 두므로 측정 구간에는 순수 메시지 왕복만 들어옵니다.
+ * NatsPubSubService.subscribe()도 flush 후 반환하므로 구독과 발행 사이의
+ * 경합도 없습니다. 500ms 초과는 실제 지연 회귀 신호로 봅니다.
+ */
 async function waitFor(predicate: () => boolean, timeoutMs = 500) {
     const start = Date.now()
     while (!predicate()) {
@@ -25,7 +27,7 @@ describe('NatsPubSubService', () => {
     })
     afterEach(() => fix.teardown())
 
-    it('두 replica가 같은 NATS를 공유하면 한쪽의 publish가 다른 쪽 subscriber에 도달한다', async () => {
+    it('두 복제본이 같은 NATS를 공유하면 한쪽에서 발행한 메시지가 다른 쪽 구독자에게 도달한다', async () => {
         const received: string[] = []
         await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
 
@@ -35,7 +37,7 @@ describe('NatsPubSubService', () => {
         expect(received).toEqual(['hello'])
     })
 
-    it('한 subject에 여러 subscriber가 있으면 모두 메시지를 받는다', async () => {
+    it('한 subject에 구독자가 여러 명 있으면 모두 메시지를 받는다', async () => {
         const received1: string[] = []
         const received2: string[] = []
 
@@ -50,7 +52,7 @@ describe('NatsPubSubService', () => {
         expect(received2).toEqual(['payload'])
     })
 
-    it('unsubscribe된 handler에는 더 이상 메시지가 오지 않는다', async () => {
+    it('구독 해제된 핸들러에는 더 이상 메시지가 오지 않는다', async () => {
         const received: string[] = []
         const handler = (msg: string) => received.push(msg)
 
@@ -69,11 +71,11 @@ describe('NatsPubSubService', () => {
         expect(received).toEqual(['before-unsub'])
     })
 
-    it('구독한 적 없는 subject에 unsubscribe해도 아무 일도 일어나지 않는다', async () => {
+    it('구독한 적 없는 subject를 구독 해제해도 아무 일도 일어나지 않는다', async () => {
         await expect(fix.pubSubB.unsubscribe('never-subscribed', () => {})).resolves.toBeUndefined()
     })
 
-    it('여러 handler 중 하나만 제거해도 NATS 구독은 유지된다', async () => {
+    it('여러 핸들러 중 하나만 제거해도 NATS 구독은 유지된다', async () => {
         const received: string[] = []
         const firstHandler = () => {}
         const secondHandler = (msg: string) => received.push(msg)
@@ -88,7 +90,7 @@ describe('NatsPubSubService', () => {
         expect(received).toEqual(['still-listening'])
     })
 
-    it('queue 그룹을 지정하면 같은 그룹에서 인스턴스 하나만 메시지를 받는다', async () => {
+    it('큐 그룹을 지정하면 같은 그룹에서 인스턴스 하나만 메시지를 받는다', async () => {
         const receivedA: string[] = []
         const receivedB: string[] = []
         const queue = withTestId('queue-group')
@@ -98,13 +100,13 @@ describe('NatsPubSubService', () => {
 
         await fix.pubSubA.publish(subject, 'queued')
         await waitFor(() => receivedA.length + receivedB.length > 0)
-        // 중복 전달이 있었다면 도달했을 시간만큼 잠깐 대기.
+        // 중복 전달이 있었다면 도달했을 시간만큼 잠깐 기다립니다.
         await new Promise((r) => setTimeout(r, 50))
 
         expect(receivedA.length + receivedB.length).toBe(1)
     })
 
-    it('handler 하나가 예외를 던져도 나머지 handler에 전달이 막히지 않는다', async () => {
+    it('핸들러 하나가 예외를 던져도 나머지 핸들러에 전달이 막히지 않는다', async () => {
         const received: string[] = []
 
         await fix.pubSubB.subscribe(subject, () => {
@@ -119,7 +121,7 @@ describe('NatsPubSubService', () => {
     })
 
     describe('소비 루프의 이터레이터가 예외를 던지면', () => {
-        // 이터레이터를 강제로 실패시키는 도우미. 같은 realm의 Logger를 대상으로 spy를 겁니다.
+        // 이터레이터를 강제로 실패시키는 도우미입니다. 같은 실행 영역의 Logger를 감시합니다.
         async function setupErroringSubscription() {
             const { Logger: NestLogger } = await import('@nestjs/common')
             const errorSpy = jest.spyOn(NestLogger.prototype, 'error').mockImplementation()
@@ -140,13 +142,13 @@ describe('NatsPubSubService', () => {
 
             await fix.pubSubB.subscribe(errorSubject, () => {})
 
-            // 이터레이터가 한 tick 안에 reject하고 catch 블록이 실행될 시간을 줍니다.
+            // 이터레이터가 한 번의 이벤트 루프 안에서 거부되고 catch 블록이 실행될 시간을 줍니다.
             await waitFor(() => errorSpy.mock.calls.length > 0)
 
             return { errorSpy, errorSubject, fakeError, fakeSub, subscribeSpy }
         }
 
-        it('logger.error를 한 번 호출하고 루프를 조용히 종료한다', async () => {
+        it('logger.error를 한 번 호출하고 수신 루프를 조용히 종료한다', async () => {
             const { errorSpy, errorSubject } = await setupErroringSubscription()
 
             const errorCalls = errorSpy.mock.calls.filter((call) =>
@@ -155,23 +157,23 @@ describe('NatsPubSubService', () => {
             expect(errorCalls).toHaveLength(1)
         })
 
-        it('이후의 publish는 더 이상 handler에 전달되지 않는다', async () => {
+        it('이후에 발행한 메시지는 더 이상 핸들러에 전달되지 않는다', async () => {
             const received: string[] = []
             const { errorSubject } = await setupErroringSubscription()
 
-            // 위 setup이후 추가 handler를 등록(같은 entry에 add)해도 fakeSub에서는 메시지가 안 옴.
+            // 위 설정 이후 추가 핸들러를 등록해도 fakeSub에서는 메시지가 오지 않습니다.
             const state = (fix.pubSubB as any).subscriptions.get(errorSubject)
             state?.handlers.add((msg: string) => received.push(msg))
 
             await fix.pubSubA.publish(errorSubject, 'after-throw')
-            // 도달 가능성을 충분히 줘도 비어 있어야 합니다.
+            // 도달할 가능성을 충분히 줘도 비어 있어야 합니다.
             await new Promise((r) => setTimeout(r, 100))
 
             expect(received).toEqual([])
         })
     })
 
-    it('subject의 모든 handler를 해제한 뒤 다시 구독하면 publish가 정상 도달한다', async () => {
+    it('subject의 모든 핸들러를 해제한 뒤 다시 구독하면 발행한 메시지가 정상 도달한다', async () => {
         const handler1 = () => {}
         await fix.pubSubB.subscribe(subject, handler1)
         await fix.pubSubB.unsubscribe(subject, handler1)
@@ -185,7 +187,7 @@ describe('NatsPubSubService', () => {
         expect(received).toEqual(['after-resubscribe'])
     })
 
-    it('이미 제거된 handler를 다시 unsubscribe해도 예외를 던지지 않는다', async () => {
+    it('이미 제거된 핸들러를 다시 구독 해제해도 예외를 던지지 않는다', async () => {
         const handler = () => {}
         await fix.pubSubB.subscribe(subject, handler)
         await fix.pubSubB.unsubscribe(subject, handler)
@@ -193,7 +195,7 @@ describe('NatsPubSubService', () => {
         await expect(fix.pubSubB.unsubscribe(subject, handler)).resolves.toBeUndefined()
     })
 
-    it('같은 subject에 등록된 여러 handler는 등록 순서대로 호출된다', async () => {
+    it('같은 subject에 등록된 여러 핸들러는 등록 순서대로 호출된다', async () => {
         const order: string[] = []
 
         await fix.pubSubB.subscribe(subject, () => order.push('first'))
@@ -206,11 +208,11 @@ describe('NatsPubSubService', () => {
         expect(order).toEqual(['first', 'second', 'third'])
     })
 
-    it('subscribe 직후 publish한 메시지도 handler에 도달한다', async () => {
+    it('구독 직후 발행한 메시지도 핸들러에 도달한다', async () => {
         const received: string[] = []
 
         await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
-        // subscribe()가 flush를 await하므로 직후 publish는 누락 없이 도달합니다.
+        // subscribe()가 flush까지 기다리므로 직후 발행한 메시지는 누락 없이 도달합니다.
         await fix.pubSubA.publish(subject, 'immediate')
 
         await waitFor(() => received.length > 0)
@@ -231,7 +233,7 @@ describe('InjectNatsPubSub', () => {
 })
 
 describe('NatsPubSubModule.register', () => {
-    it('기본 옵션으로 DynamicModule을 생성한다', async () => {
+    it('기본 옵션으로 동적 모듈을 생성한다', async () => {
         const { NatsPubSubModule } = await import('../nats-pubsub.service')
         const dynamicModule = NatsPubSubModule.register()
         expect(dynamicModule.module).toBe(NatsPubSubModule)

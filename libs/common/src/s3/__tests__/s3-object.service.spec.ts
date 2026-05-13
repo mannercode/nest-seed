@@ -92,7 +92,7 @@ describe('S3ObjectService', () => {
             expect(badResponse.ok).toBe(false)
         })
 
-        describe('contentLength 제약이 걸린 프리사인드 POST', () => {
+        describe('업로드 크기 제한이 있는 프리사인드 POST', () => {
             let presigned: { fields: Record<string, string>; url: string }
             const uploadBody = Buffer.from('hello')
 
@@ -152,7 +152,7 @@ describe('S3ObjectService', () => {
                 await uploadObject(fix.s3Service, key, body)
             })
 
-            it('downloadUrl을 반환한다', async () => {
+            it('다운로드 URL을 반환한다', async () => {
                 const downloadUrl = await fix.s3Service.presignDownloadUrl({
                     expiresInSec: 60,
                     key
@@ -160,7 +160,7 @@ describe('S3ObjectService', () => {
                 expect(downloadUrl).toEqual(expect.any(String))
             })
 
-            it('downloadUrl로 다운로드할 수 있다', async () => {
+            it('다운로드 URL로 객체를 받을 수 있다', async () => {
                 const downloadUrl = await fix.s3Service.presignDownloadUrl({
                     expiresInSec: 60,
                     key
@@ -175,7 +175,7 @@ describe('S3ObjectService', () => {
                 expect(buffer.toString('utf8')).toBe(body)
             })
 
-            it('filename을 지정하면 Content-Disposition을 덮어쓴다', async () => {
+            it('파일 이름을 지정하면 Content-Disposition을 덮어쓴다', async () => {
                 const filename = 'report.txt'
                 const downloadUrl = await fix.s3Service.presignDownloadUrl({
                     expiresInSec: 60,
@@ -305,7 +305,7 @@ describe('S3ObjectService', () => {
 
             await expect(fix.s3Service.isUploadComplete({ key: 'k' })).rejects.toThrow('transient')
 
-            // 다음 호출은 mock이 풀려 정상 동작.
+            // 다음 호출은 mock 구현이 풀려 정상 동작합니다.
             const isCompleted = await fix.s3Service.isUploadComplete({ key: created.key })
             expect(isCompleted).toBe(true)
         })
@@ -363,14 +363,14 @@ describe('S3ObjectService', () => {
             ])
         })
 
-        it('prefix를 지정하면 해당 prefix로 시작하는 객체만 반환한다', async () => {
+        it('접두어를 지정하면 해당 접두어로 시작하는 객체만 반환한다', async () => {
             const { contents } = await fix.s3Service.listObjects({ prefix: 'b/' })
             const listedKeys = contents.map((object) => object.key)
             expect(listedKeys).toEqual(expect.arrayContaining(['b/c.txt', 'b/d.txt']))
             expect(listedKeys).not.toContain('a.txt')
         })
 
-        it('prefix와 일치하는 객체가 없으면 빈 contents를 반환한다', async () => {
+        it('접두어와 일치하는 객체가 없으면 빈 contents를 반환한다', async () => {
             const { contents } = await fix.s3Service.listObjects({ prefix: 'nonexistent' })
 
             expect(contents).toHaveLength(0)
@@ -438,7 +438,7 @@ describe('S3ObjectService', () => {
     })
 
     it('putObject가 생성하는 키 10000개에 중복이 없다', async () => {
-        // putObject 내부에서 randomUUID로 키를 생성합니다. 여기서는 키 생성기를 직접 검증.
+        // putObject 내부에서 randomUUID로 키를 생성합니다. 여기서는 키 생성기를 직접 검증합니다.
         const { randomUUID } = await import('crypto')
         const ids = new Set<string>()
         for (let i = 0; i < 10000; i++) ids.add(randomUUID())

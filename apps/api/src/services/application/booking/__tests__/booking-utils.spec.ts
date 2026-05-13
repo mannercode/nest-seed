@@ -10,11 +10,11 @@ describe('generateShowtimesForBooking', () => {
         theaterId: 'th1'
     }
 
-    it('showtime의 ticketSales 정보가 누락되면 예외를 던진다', () => {
+    it('상영 시간의 ticketSales 정보가 누락되면 예외를 던진다', () => {
         expect(() => generateShowtimesForBooking([showtime], [])).toThrow(/sh1/)
     })
 
-    it('모든 showtime에 ticketSales가 있으면 매핑된 결과를 반환한다', () => {
+    it('모든 상영 시간에 ticketSales가 있으면 매핑된 결과를 반환한다', () => {
         const sales: TicketSalesForShowtimeDto = {
             available: 5,
             showtimeId: 'sh1',

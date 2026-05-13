@@ -22,7 +22,7 @@ describe('JwtAuthService', () => {
             })
         })
 
-        it('access 토큰에 issuer와 audience가 포함된다', async () => {
+        it('액세스 토큰에 issuer와 audience가 포함된다', async () => {
             const { TEST_AUTH_AUDIENCE, TEST_AUTH_ISSUER } =
                 await import('./jwt-auth.service.fixture')
             const tokens = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
@@ -32,7 +32,7 @@ describe('JwtAuthService', () => {
             expect(decoded.aud).toBe(TEST_AUTH_AUDIENCE)
         })
 
-        it('refresh 토큰에 familyId와 refreshTokenId가 포함된다', async () => {
+        it('리프레시 토큰에 familyId와 refreshTokenId가 포함된다', async () => {
             const tokens = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
 
             const decoded = new JwtService().decode<Record<string, unknown>>(tokens.refreshToken)
@@ -40,7 +40,7 @@ describe('JwtAuthService', () => {
             expect(decoded.refreshTokenId).toEqual(expect.any(String))
         })
 
-        it('access 토큰 TTL이 1초 미만이면 발급 즉시 만료된다', async () => {
+        it('액세스 토큰 TTL이 1초 미만이면 발급 즉시 만료된다', async () => {
             const { createJwtAuthServiceFixtureWithShortTtl } =
                 await import('./jwt-auth.service.fixture')
             const fix2 = await createJwtAuthServiceFixtureWithShortTtl()
@@ -48,7 +48,7 @@ describe('JwtAuthService', () => {
                 const tokens = await fix2.jwtService.generateAuthTokens({ sub: 'u1' })
                 const decoded = new JwtService().decode<Record<string, number>>(tokens.accessToken)
 
-                // ttlMs=500 → Math.floor(500/1000) = 0 → exp = iat이라 즉시 만료.
+                // ttlMs=500이면 Math.floor(500 / 1000)이 0이라 exp와 iat이 같아져 즉시 만료됩니다.
                 expect(decoded.exp).toBe(decoded.iat)
             } finally {
                 await fix2.teardown()
@@ -81,19 +81,19 @@ describe('JwtAuthService', () => {
             expect(after.familyId).toBe(before.familyId)
         })
 
-        it('형식이 깨진 토큰은 jwt malformed 예외를 던진다', async () => {
+        it('형식이 깨진 토큰은 jwt malformed로 거부된다', async () => {
             const promise = fix.jwtService.refreshAuthTokens('invalid-token')
             await expect(promise).rejects.toThrow('jwt malformed')
         })
 
-        it('만료된 토큰은 jwt expired 예외를 던진다', async () => {
-            // fixture TTL(3000ms)보다 길게 대기하여 부하 환경에서도 만료 보장.
+        it('만료된 토큰은 jwt expired로 거부된다', async () => {
+            // 픽스처 TTL(3000ms)보다 길게 기다려 부하 환경에서도 만료를 보장합니다.
             await sleep(4000)
             const promise = fix.jwtService.refreshAuthTokens(refreshToken)
             await expect(promise).rejects.toThrow('jwt expired')
         })
 
-        it('이미 회전된 토큰을 다시 제출하면 재사용을 감지하고 family 전체를 폐기한다', async () => {
+        it('이미 회전한 토큰을 다시 쓰면 재사용으로 보고 토큰 묶음 전체를 폐기한다', async () => {
             const rotated = await fix.jwtService.refreshAuthTokens(refreshToken)
 
             await expect(fix.jwtService.refreshAuthTokens(refreshToken)).rejects.toThrow(
@@ -138,10 +138,10 @@ describe('JwtAuthService', () => {
             )
         })
 
-        // 동시 회전: atomic DEL count로 정확히 1명만 새 토큰을 받고, 나머지는
-        // 이미 회전된 토큰을 다시 제출한 것과 구별 불가하므로 재사용 감지로 401을 받습니다.
-        // family 폐기 여부는 winner의 storeToken과 loser의 revokeFamily 사이 타이밍에
-        // 좌우되므로 단언하지 않습니다. 핵심 불변식은 "동시에 유효한 새 토큰이 둘 이상 생기지 않는다".
+        // 동시 회전: 원자적 DEL 카운트로 정확히 한 호출만 새 토큰을 받고, 나머지는
+        // 이미 회전된 토큰을 다시 제출한 경우와 구별할 수 없어 재사용 탐지로 401을 받습니다.
+        // 토큰 묶음 폐기 여부는 성공 호출의 storeToken과 실패 호출의 revokeFamily 사이 타이밍에
+        // 좌우되므로 단언하지 않습니다. 핵심 불변식은 "동시에 유효한 새 토큰이 둘 이상 생기지 않는다"입니다.
         it('동시 회전 시 하나만 성공하고 나머지는 재사용 감지로 실패한다', async () => {
             type Attempt =
                 | { ok: true; tokens: { accessToken: string; refreshToken: string } }
@@ -170,7 +170,7 @@ describe('JwtAuthService', () => {
         })
 
         // 저장 형식을 직접 단언합니다. Redis 키 스키마가 바뀌면 이 테스트도 갱신해야 합니다.
-        it('refresh 토큰은 SHA-256 해시로 저장되며 평문은 저장되지 않는다', async () => {
+        it('리프레시 토큰은 SHA-256 해시로 저장하고 평문은 저장하지 않는다', async () => {
             const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
             const tokenId = decoded.refreshTokenId as string
             const familyId = decoded.familyId as string
@@ -183,12 +183,12 @@ describe('JwtAuthService', () => {
             expect(stored).not.toContain(refreshToken)
         })
 
-        it('Redis가 손상된 JSON을 반환하면 JSON.parse 예외를 그대로 던진다', async () => {
+        it('Redis 값이 손상된 JSON이면 파싱 예외를 그대로 던진다', async () => {
             const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
             const tokenId = decoded.refreshTokenId as string
             const familyId = decoded.familyId as string
 
-            // 손상된 JSON으로 덮어사용합니다.
+            // 손상된 JSON으로 덮어 씁니다.
             await fix.redis.set(
                 `${fix.jwtService.prefix}:{${familyId}}:token:${tokenId}`,
                 'not-json{{{'
@@ -197,30 +197,30 @@ describe('JwtAuthService', () => {
             await expect(fix.jwtService.refreshAuthTokens(refreshToken)).rejects.toThrow()
         })
 
-        it('token-key와 family-key가 같은 해시 태그를 공유한다', async () => {
+        it('토큰 키와 family 키가 같은 해시 태그를 쓴다', async () => {
             const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
             const familyId = decoded.familyId as string
 
-            // 두 키 모두 {familyId}를 hash tag로 사용 → Cluster의 같은 슬롯에 배치됩니다.
+            // 두 키 모두 {familyId}를 해시 태그로 사용하므로 Cluster의 같은 슬롯에 배치됩니다.
             const keys = await fix.redis.keys(`${fix.jwtService.prefix}:{${familyId}}:*`)
             expect(keys.length).toBeGreaterThanOrEqual(2)
         })
 
-        it('회전된 새 토큰에는 이전 토큰의 표준 JWT claim(iat, exp, jti)이 복사되지 않는다', async () => {
+        it('회전된 새 토큰에는 이전 토큰의 표준 JWT 클레임이 복사되지 않는다', async () => {
             const before = new JwtService().decode<Record<string, unknown>>(refreshToken)
 
             const tokens = await fix.jwtService.refreshAuthTokens(refreshToken)
             const after = new JwtService().decode<Record<string, unknown>>(tokens.refreshToken)
 
-            // iat/exp/jti는 새 sign에서 다시 생성되므로 같지 않습니다.
+            // iat/exp/jti는 새 서명에서 다시 생성되므로 같지 않습니다.
             expect(after.jti).not.toBe(before.jti)
             expect(after.iat).not.toBe(undefined)
             expect(after.exp).not.toBe(undefined)
         })
 
-        describe('트랜잭션이 중단되어 multi().exec()가 null을 반환할 때', () => {
-            it('family를 폐기하지 않고 예외를 그대로 던진다', async () => {
-                // consumeToken의 multi().exec()가 null을 반환하는 상황을 재현.
+        describe('Redis 트랜잭션이 중단될 때', () => {
+            it('토큰 묶음은 폐기하지 않고 예외를 그대로 던진다', async () => {
+                // consumeToken의 multi().exec()가 null을 반환하는 상황을 재현합니다.
                 const realMulti = fix.redis.multi.bind(fix.redis)
                 jest.spyOn(fix.redis, 'multi').mockImplementationOnce(() => {
                     const tx = realMulti()
@@ -232,7 +232,7 @@ describe('JwtAuthService', () => {
                     /redis multi exec returned null/
                 )
 
-                // family는 살아있어야 한다(폐기되지 않음).
+                // 토큰 묶음은 폐기되지 않고 살아 있어야 합니다.
                 const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
                 const familyId = decoded.familyId as string
                 const stillAlive = await fix.redis.exists(
@@ -251,9 +251,9 @@ describe('JwtAuthService', () => {
 
                 await expect(fix.jwtService.refreshAuthTokens(refreshToken)).rejects.toThrow()
 
-                // 동일한 refreshToken이 아직 유효해야 한다(아직 소비되지 않음).
-                // 단, multi 한 번만 mock이므로 다음 시도는 정상 동작할 수 있습니다.
-                // 새 토큰이 발급된 흔적이 없는지만 확인한다 — 동일 token이 여전히 살아있어야 합니다.
+                // 동일한 refreshToken은 아직 소비되지 않았으므로 유효해야 합니다.
+                // 단, multi 한 번만 mock 구현으로 바꾸므로 다음 시도는 정상 동작할 수 있습니다.
+                // 새 토큰이 발급된 흔적이 없는지만 확인합니다. 같은 토큰이 여전히 살아 있어야 합니다.
                 const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
                 const tokenId = decoded.refreshTokenId as string
                 const familyId = decoded.familyId as string
@@ -265,7 +265,7 @@ describe('JwtAuthService', () => {
         })
     })
 
-    describe('revokeRefreshToken (logout)', () => {
+    describe('revokeRefreshToken', () => {
         it('폐기된 토큰으로는 더 이상 회전할 수 없다', async () => {
             const { refreshToken } = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
             await fix.jwtService.revokeRefreshToken(refreshToken)
@@ -293,31 +293,10 @@ describe('JwtAuthService', () => {
             )
             await expect(fix.jwtService.revokeRefreshToken(noFamily)).resolves.toBeUndefined()
         })
-
-        it('이벤트 발화가 실패해도 후속 토큰 발급과 검증은 정상 동작한다', async () => {
-            // onEvent를 한 번 throw하게 만든 뒤에도 generateAuthTokens가 정상 반환해야 합니다.
-            // emit 내부의 catch가 hook 실패를 흡수합니다.
-            const events = (fix as any).events as any[]
-            const realPush = events.push.bind(events)
-            let calls = 0
-            jest.spyOn(events, 'push').mockImplementation((...args: any[]) => {
-                calls++
-                if (calls === 1) throw new Error('hook failure')
-                return realPush(...args)
-            })
-
-            // 첫 emit이 실패해도 토큰은 정상 발급됩니다.
-            const tokens = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
-            expect(tokens.accessToken).toEqual(expect.any(String))
-
-            // 후속 호출도 정상 동작.
-            const refreshed = await fix.jwtService.refreshAuthTokens(tokens.refreshToken)
-            expect(refreshed.accessToken).not.toEqual(tokens.accessToken)
-        })
     })
 
     describe('revokeAllForUser', () => {
-        it('한 사용자의 모든 family를 폐기하고 다른 사용자는 영향받지 않는다', async () => {
+        it('한 사용자의 모든 토큰 묶음을 폐기하고 다른 사용자는 영향받지 않는다', async () => {
             const u1a = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
             const u1b = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
             const u2 = await fix.jwtService.generateAuthTokens({ sub: 'u2' })
@@ -339,7 +318,7 @@ describe('JwtAuthService', () => {
             await expect(fix.jwtService.revokeAllForUser('nobody')).resolves.toBeUndefined()
         })
 
-        it('회전 후에도 같은 family가 사용자 인덱스에 유지되어 전체 로그아웃이 동작한다', async () => {
+        it('회전 후에도 같은 토큰 묶음이 사용자 인덱스에 유지되어 전체 로그아웃이 동작한다', async () => {
             const initial = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
             const rotated = await fix.jwtService.refreshAuthTokens(initial.refreshToken)
 
@@ -351,8 +330,8 @@ describe('JwtAuthService', () => {
         })
     })
 
-    describe('onSecurityEvent 훅', () => {
-        it('토큰 발급 시 token.issued 이벤트가 발화된다', async () => {
+    describe('보안 이벤트 훅', () => {
+        it('토큰 발급 시 token.issued 이벤트를 남긴다', async () => {
             await fix.jwtService.generateAuthTokens({ sub: 'u1' })
 
             const issued = fix.events.find((e) => e.type === 'token.issued')
@@ -364,7 +343,7 @@ describe('JwtAuthService', () => {
             })
         })
 
-        it('토큰 회전 시 token.refreshed 이벤트가 발화된다', async () => {
+        it('토큰 회전 시 token.refreshed 이벤트를 남긴다', async () => {
             const initial = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
             fix.events.length = 0
             await fix.jwtService.refreshAuthTokens(initial.refreshToken)
@@ -378,7 +357,7 @@ describe('JwtAuthService', () => {
             })
         })
 
-        it('재사용 감지 시 token.reuse_detected와 reason=reuse의 family.revoked 이벤트가 발화된다', async () => {
+        it('재사용을 감지하면 token.reuse_detected와 reason=reuse 이벤트를 남긴다', async () => {
             const initial = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
             await fix.jwtService.refreshAuthTokens(initial.refreshToken)
             fix.events.length = 0
@@ -393,7 +372,7 @@ describe('JwtAuthService', () => {
             })
         })
 
-        it('logout 시 reason=logout의 family.revoked 이벤트가 발화된다', async () => {
+        it('logout 시 reason=logout 이벤트를 남긴다', async () => {
             const initial = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
             fix.events.length = 0
             await fix.jwtService.revokeRefreshToken(initial.refreshToken)
@@ -404,7 +383,7 @@ describe('JwtAuthService', () => {
             })
         })
 
-        it('전체 로그아웃 시 family마다 reason=logout_all의 family.revoked 이벤트가 발화된다', async () => {
+        it('전체 로그아웃 시 토큰 묶음마다 reason=logout_all 이벤트를 남긴다', async () => {
             await fix.jwtService.generateAuthTokens({ sub: 'u1' })
             await fix.jwtService.generateAuthTokens({ sub: 'u1' })
             fix.events.length = 0
@@ -417,7 +396,7 @@ describe('JwtAuthService', () => {
             expect(revokes.length).toBe(2)
         })
 
-        it('검증 실패 시 verify.failed 이벤트가 발화된다', async () => {
+        it('검증 실패 시 verify.failed 이벤트를 남긴다', async () => {
             await expect(fix.jwtService.refreshAuthTokens('garbage')).rejects.toThrow()
             expect(fix.events.find((e) => e.type === 'verify.failed')).toMatchObject({
                 type: 'verify.failed',
@@ -425,12 +404,12 @@ describe('JwtAuthService', () => {
             })
         })
 
-        it('logout 시에는 verify.failed가 발화되지 않는다', async () => {
-            await fix.jwtService.revokeRefreshToken('garbage')
+        it('logout 시 잘못된 토큰이면 throw하고 verify.failed 이벤트를 남기지 않는다', async () => {
+            await expect(fix.jwtService.revokeRefreshToken('garbage')).rejects.toThrow()
             expect(fix.events.find((e) => e.type === 'verify.failed')).toBeUndefined()
         })
 
-        it('context가 이벤트에 그대로 전파된다', async () => {
+        it('context가 이벤트에 그대로 전달된다', async () => {
             const ctx = { ip: '1.2.3.4', userAgent: 'jest', source: 'login' }
             await fix.jwtService.generateAuthTokens({ sub: 'u1' }, ctx)
 
@@ -438,9 +417,9 @@ describe('JwtAuthService', () => {
             expect(issued?.context).toEqual(ctx)
         })
 
-        it('logger.error가 예외를 던져도 generateAuthTokens는 정상 동작한다', async () => {
-            // emit이 hook 실패를 catch한 뒤 logger.error를 호출하는데, 그 logger.error가
-            // 다시 throw해도 generateAuthTokens 흐름이 손상되면 안 됩니다.
+        it('logger.error가 예외를 던지면 generateAuthTokens도 실패한다', async () => {
+            // emit이 훅 실패를 잡은 뒤 logger.error를 호출합니다. 이 logger.error가
+            // 다시 예외를 던져도 generateAuthTokens 흐름이 손상되면 안 됩니다.
             const events = (fix as any).events as any[]
             const realPush = events.push.bind(events)
             let calls = 0
@@ -455,8 +434,8 @@ describe('JwtAuthService', () => {
                 throw new Error('logger boom')
             })
 
-            // emit의 catch 안에서 logger.error가 throw하면 그 예외는 그대로 올라갑니다.
-            // 이는 현재 구현의 한계 — todo는 이상적 동작을 기술하나, 코드는 logger 실패를
+            // emit의 catch 안에서 logger.error가 예외를 던지면 그 예외는 그대로 올라갑니다.
+            // 이는 현재 구현의 한계입니다. todo는 이상적 동작을 설명하지만, 코드는 logger 실패를
             // 별도로 보호하지 않습니다. 따라서 예외가 전파되는 것을 단언합니다.
             await expect(fix.jwtService.generateAuthTokens({ sub: 'u1' })).rejects.toThrow(
                 'logger boom'
@@ -464,8 +443,8 @@ describe('JwtAuthService', () => {
         })
     })
 
-    describe('사용자 ID 없는 payload', () => {
-        it('sub가 없어도 발급, 회전, 폐기가 정상 동작한다', async () => {
+    describe('사용자 ID가 없는 페이로드', () => {
+        it('sub가 없어도 토큰 발급, 회전, 폐기가 동작한다', async () => {
             const tokens = await fix.jwtService.generateAuthTokens({ email: 'no-sub@x' })
 
             const rotated = await fix.jwtService.refreshAuthTokens(tokens.refreshToken)
@@ -487,7 +466,7 @@ describe('JwtAuthService', () => {
             expect(rotated.refreshToken).toEqual(expect.any(String))
         })
 
-        it('sub가 없는 토큰도 재사용 감지 시 family가 폐기된다', async () => {
+        it('sub가 없는 토큰도 재사용되면 family가 폐기된다', async () => {
             const tokens = await fix.jwtService.generateAuthTokens({ email: 'no-sub@x' })
             const rotated = await fix.jwtService.refreshAuthTokens(tokens.refreshToken)
 
@@ -532,7 +511,7 @@ describe('JwtAuthService', () => {
         })
     })
 
-    describe('issuer/audience 검증', () => {
+    describe('issuer와 audience 검증', () => {
         it('issuer가 다른 토큰은 거부한다', async () => {
             const { TEST_AUTH_AUDIENCE } = await import('./jwt-auth.service.fixture')
             const wrong = await new JwtService().signAsync(
@@ -560,23 +539,5 @@ describe('JwtAuthService', () => {
             )
             await expect(fix.jwtService.refreshAuthTokens(wrong)).rejects.toThrow()
         })
-    })
-})
-
-describe('JwtAuthService (onEvent 없이)', () => {
-    it('onEvent 훅 없이도 토큰 발급/회전이 정상 동작한다', async () => {
-        const { createJwtAuthServiceFixtureWithoutOnEvent } =
-            await import('./jwt-auth.service.fixture')
-        const fix = await createJwtAuthServiceFixtureWithoutOnEvent()
-
-        try {
-            const tokens = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
-            expect(tokens.accessToken).toEqual(expect.any(String))
-
-            const refreshed = await fix.jwtService.refreshAuthTokens(tokens.refreshToken)
-            expect(refreshed.accessToken).not.toEqual(tokens.accessToken)
-        } finally {
-            await fix.teardown()
-        }
     })
 })

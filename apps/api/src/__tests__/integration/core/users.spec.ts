@@ -71,13 +71,12 @@ describe('UsersService', () => {
                 .badRequest(Errors.RequestValidation.Failed(expect.any(Array)))
         })
 
-        it('중복 키가 아닌 저장 오류는 ConflictException으로 변환하지 않고 그대로 전파한다', async () => {
+        it('중복 키가 아닌 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
             const { UsersService } = await import('core')
             const service = fix.module.get(UsersService)
 
-            // `birthDate`에 잘못된 형식을 넣어 Mongoose의 CastError를
-            // 일으킵니다. 컨트롤러 단의 class-validator가 먼저 검출하지 않게,
-            // 서비스를 직접 호출합니다.
+            // `birthDate`에 잘못된 형식을 넣어 Mongoose의 CastError를 일으킵니다.
+            // 컨트롤러의 class-validator가 먼저 검출하지 않도록 서비스를 직접 호출합니다.
             const invalidDto = buildCreateUserDto({ birthDate: 'not-a-date' as unknown as Date })
 
             await expect(service.create(invalidDto)).rejects.toThrow()
@@ -85,13 +84,13 @@ describe('UsersService', () => {
     })
 
     describe('GET /users/:id', () => {
-        it('id에 해당하는 고객을 반환한다', async () => {
+        it('ID에 해당하는 고객을 반환한다', async () => {
             const user = await createUser(fix)
 
             await fix.httpClient.get(`/users/${user.id}`).ok(user)
         })
 
-        it('id에 해당하는 고객이 없으면 404를 반환한다', async () => {
+        it('ID에 해당하는 고객이 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .get(`/users/${nullObjectId}`)
                 .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
@@ -114,14 +113,14 @@ describe('UsersService', () => {
                 .ok({ ...user, ...updateDto })
         })
 
-        it('수정 내용이 영속된다', async () => {
+        it('수정 내용이 DB에 저장된다', async () => {
             const updateDto = { name: 'update-name' }
             await fix.httpClient.patch(`/users/${user.id}`).body(updateDto).ok()
 
             await fix.httpClient.get(`/users/${user.id}`).ok({ ...user, ...updateDto })
         })
 
-        it('id에 해당하는 고객이 없으면 404를 반환한다', async () => {
+        it('ID에 해당하는 고객이 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .patch(`/users/${nullObjectId}`)
                 .body({})

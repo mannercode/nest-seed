@@ -29,9 +29,9 @@ export class PurchaseService {
             .map((item) => item.itemId)
         const lockKey = `tickets:${[...ticketIds].sort().join(',')}`
 
-        // hold는 결제가 끝난 뒤에도 바로 해제되지 않으므로, 같은 티켓 묶음에 대한
-        // 동시 결제를 직렬화해야 합니다. 락 안에서 가용성을 다시 확인하면, 첫 결제가
-        // 티켓을 `Sold`로 바꾼 뒤 들어온 결제는 결제 레코드를 만들기 전에 거절됩니다.
+        // 선점은 결제가 끝난 뒤에도 바로 해제되지 않으므로, 같은 티켓 묶음에 대한
+        // 동시 결제를 직렬화해야 합니다. 락 안에서 가용성을 다시 확인하면 첫 결제가
+        // 티켓을 `Sold`로 바꾼 뒤 들어온 결제는 결제 기록을 만들기 전에 거절됩니다.
         return this.cache.withLockBlocking(
             lockKey,
             PURCHASE_LOCK_TTL_MS,

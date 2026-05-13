@@ -30,13 +30,13 @@ describe('TheatersService', () => {
     })
 
     describe('GET /theaters/:id', () => {
-        it('id에 해당하는 극장을 반환한다', async () => {
+        it('ID에 해당하는 극장을 반환한다', async () => {
             const theater = await createTheater(fix)
 
             await fix.httpClient.get(`/theaters/${theater.id}`).ok(theater)
         })
 
-        it('id에 해당하는 극장이 없으면 404를 반환한다', async () => {
+        it('ID에 해당하는 극장이 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .get(`/theaters/${nullObjectId}`)
                 .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
@@ -62,14 +62,14 @@ describe('TheatersService', () => {
                 .ok({ ...theater, ...updateDto })
         })
 
-        it('수정 내용이 영속된다', async () => {
+        it('수정 내용이 DB에 저장된다', async () => {
             const updateDto = { name: 'update-name' }
             await fix.httpClient.patch(`/theaters/${theater.id}`).body(updateDto).ok()
 
             await fix.httpClient.get(`/theaters/${theater.id}`).ok({ ...theater, ...updateDto })
         })
 
-        it('id에 해당하는 극장이 없으면 404를 반환한다', async () => {
+        it('ID에 해당하는 극장이 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .patch(`/theaters/${nullObjectId}`)
                 .body({})

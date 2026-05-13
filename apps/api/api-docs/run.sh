@@ -1,6 +1,6 @@
 #!/bin/bash
 set -Eeuo pipefail
-trap 'echo "[ERR] ${BASH_SOURCE[0]}:${LINENO} (exit code: $?)" >&2' ERR
+trap 'echo "[ERR] ${BASH_SOURCE[0]}:${LINENO} (종료 코드: $?)" >&2' ERR
 cd "$(dirname "$0")"
 . ./.env
 
@@ -54,7 +54,7 @@ CURL() {
 
 	if [[ "${curl_exit}" -ne 0 ]]; then
 		printf '%b %s %s\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "${url}"
-		printf '  curl exit code: %d, response: %s\n' "${curl_exit}" "${response}"
+		printf '  curl 종료 코드: %d, 응답: %s\n' "${curl_exit}" "${response}"
 		exit 1
 	fi
 
@@ -137,9 +137,9 @@ TEST() {
 
 	if [[ "${STATUS}" -ne "${expected_status}" ]]; then
 		FAILED_TESTS=$((FAILED_TESTS + 1))
-		LOG_LINE "RES='${STATUS}(expected:${expected_status})"
+		LOG_LINE "RES='${STATUS}(기대:${expected_status})"
 
-		printf '%b %s %s → got %s, expected %s\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")" "$(format_response "${STATUS}" "${BODY}")" "${expected_status}"
+		printf '%b %s %s → 실제 %s, 기대 %s\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")" "$(format_response "${STATUS}" "${BODY}")" "${expected_status}"
 	else
 		PASSED_TESTS=$((PASSED_TESTS + 1))
 		LOG_LINE "RES='${STATUS}"
@@ -157,7 +157,7 @@ SETUP() {
 	local endpoint=$2
 	shift 2
 
-	LOG_LINE "# Setup"
+	LOG_LINE "# 준비 요청"
 	LOG_COMMAND "${method}" "${SERVER_URL}${endpoint}" "$@"
 
 	CURL "${method}" "${SERVER_URL}${endpoint}" "$@"
@@ -168,8 +168,8 @@ SETUP() {
 	LOG_LINE ""
 
 	if [[ "${STATUS}" -ge 400 ]]; then
-		LOG_LINE "# Setup failed"
-		printf '%b SETUP %s %s (status %s)\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")" "${STATUS}"
+		LOG_LINE "# 준비 요청 실패"
+		printf '%b SETUP %s %s (상태 %s)\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")" "${STATUS}"
 		printf '  %s\n' "${BODY}" | head -5
 		exit 2
 	fi
@@ -200,9 +200,9 @@ for spepath in "${specs[@]}"; do
 done
 
 echo ""
-echo -e "${BOLD}logs${RESET}   : ${CYAN}${LOG_DIR}${RESET}"
-echo -e "${BOLD}passed${RESET} : ${GREEN}${PASSED_TESTS}${RESET}"
-echo -e "${BOLD}failed${RESET} : ${RED}${FAILED_TESTS}${RESET}"
+echo -e "${BOLD}로그${RESET} : ${CYAN}${LOG_DIR}${RESET}"
+echo -e "${BOLD}성공${RESET} : ${GREEN}${PASSED_TESTS}${RESET}"
+echo -e "${BOLD}실패${RESET} : ${RED}${FAILED_TESTS}${RESET}"
 
 if [[ "${FAILED_TESTS}" -gt 0 ]]; then
 	exit 3

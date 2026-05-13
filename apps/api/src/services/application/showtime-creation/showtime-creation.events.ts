@@ -7,8 +7,8 @@ import type { ShowtimeCreationEvent } from './internal/types'
 /**
  * Temporal 워커와 SSE 클라이언트를 복제본 경계 너머로 연결합니다.
  *
- * 워크플로우를 실행하는 워커와 SSE 응답을 가진 컨트롤러가 서로 다른 복제본에
- * 있을 수 있습니다. 상태 변화는 NATS subject로 publish 하고, 각 복제본은 받은
+ * 워크플로를 실행하는 워커와 SSE 응답을 가진 컨트롤러가 서로 다른 복제본에
+ * 있을 수 있습니다. 상태 변화는 NATS subject로 발행하고, 각 복제본은 받은
  * 메시지를 로컬 RxJS Subject에 전달합니다. 컨트롤러는 `observeStatusChanged`로
  * 그 Subject를 구독해 SSE 본문을 만듭니다.
  *

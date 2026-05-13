@@ -43,7 +43,7 @@ describe('PurchaseService', () => {
                     })
             })
 
-            it('구매 생성 시 결제 기록이 생성된다', async () => {
+            it('구매하면 결제 기록이 생성된다', async () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
                 const { body: purchaseRecord } = await fix.httpClient
                     .post('/purchases')
@@ -55,7 +55,7 @@ describe('PurchaseService', () => {
                 expect(payments[0].amount).toEqual(purchaseRecord.totalPrice)
             })
 
-            it('구매 생성 시 티켓 상태가 Sold로 바뀐다', async () => {
+            it('구매하면 티켓 상태가 판매 완료로 바뀐다', async () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
                 await fix.httpClient.post('/purchases').body(createDto).created()
 
@@ -98,17 +98,15 @@ describe('PurchaseService', () => {
                     )
             })
 
-            describe('내부 오류로 completePurchase가 실패할 때', () => {
-                // `completePurchase`가 처음 기록하는 로그를 트리거로 사용해 그
-                // 안에서 예외를 던집니다. 그러면 `PurchaseService`의 catch
-                // 블록이 실행되면서 결제 취소, 구매 기록 삭제, 티켓 롤백이
-                // 함께 실행됩니다. 특정 메서드 호출을 직접 가로채는 대신
-                // 관측 가능한 로그를 트리거로 사용해, 테스트가 구현 세부에
-                // 묶이지 않게 합니다.
+            describe('completePurchase 중 내부 오류가 날 때', () => {
+                // `completePurchase`가 처음 기록하는 로그를 기준으로 예외를 던집니다.
+                // 그러면 `PurchaseService`의 catch 블록이 실행되어 결제 취소, 구매 기록 삭제,
+                // 티켓 롤백이 함께 실행됩니다. 특정 메서드 호출을 직접 가로채지 않고 관측 가능한
+                // 로그를 기준으로 삼아, 테스트가 구현 세부에 지나치게 묶이지 않게 합니다.
                 beforeEach(async () => {
-                    // `resetModules: true` 환경에서는 spy 대상 Logger가 운영
-                    // 코드가 쓰는 Logger와 같은 realm이어야 합니다. 그래서
-                    // 동적 import로 같은 모듈 그래프에서 가져옵니다.
+                    // `resetModules: true` 환경에서는 감시 대상 Logger가 운영 코드의
+                    // Logger와 같은 실행 영역에 있어야 합니다. 그래서 같은 모듈 그래프에서
+                    // 동적으로 가져옵니다.
                     const { Logger } = await import('@nestjs/common')
                     jest.spyOn(Logger.prototype, 'log').mockImplementation(((message: any) => {
                         if (message === 'completePurchase') {
@@ -117,7 +115,7 @@ describe('PurchaseService', () => {
                     }) as any)
                 })
 
-                it('구매한 티켓을 Available로 되돌린다', async () => {
+                it('구매한 티켓을 구매 가능 상태로 되돌린다', async () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
                     await fix.httpClient.post('/purchases').body(createDto).internalServerError()

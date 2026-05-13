@@ -42,7 +42,7 @@ describe('MoviesService', () => {
     })
 
     describe('GET /movies/:id', () => {
-        it('id에 해당하는 영화를 반환한다', async () => {
+        it('ID에 해당하는 영화를 반환한다', async () => {
             const movie = await createMovie(fix)
 
             await fix.httpClient.get(`/movies/${movie.id}`).ok(movie)
@@ -59,7 +59,7 @@ describe('MoviesService', () => {
             expect(testAssets.image.checksum).toEqual(Checksum.fromBuffer(buffer))
         })
 
-        it('id에 해당하는 영화가 없으면 404를 반환한다', async () => {
+        it('ID에 해당하는 영화가 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .get(`/movies/${nullObjectId}`)
                 .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
@@ -90,14 +90,14 @@ describe('MoviesService', () => {
                 .ok({ ...movie, ...omit(updateDto, ['assetIds']) })
         })
 
-        it('수정 내용이 영속된다', async () => {
+        it('수정 내용이 DB에 저장된다', async () => {
             const updateDto = { title: 'update title' }
             await fix.httpClient.patch(`/movies/${movie.id}`).body(updateDto).ok()
 
             await fix.httpClient.get(`/movies/${movie.id}`).ok({ ...movie, ...updateDto })
         })
 
-        it('id에 해당하는 영화가 없으면 404를 반환한다', async () => {
+        it('ID에 해당하는 영화가 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .patch(`/movies/${nullObjectId}`)
                 .body({})
@@ -228,7 +228,7 @@ describe('MoviesService', () => {
                 .ok(buildExpectedPage([movieA2, movieB1]))
         })
 
-        it('releaseDate로 필터링한다', async () => {
+        it('개봉일로 필터링한다', async () => {
             await fix.httpClient
                 .get('/movies')
                 .query({ releaseDate: new Date('2000-01-02') })

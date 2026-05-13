@@ -67,9 +67,8 @@ describe('BaseConfigService', () => {
             )
         })
 
-        // ConfigService가 schema coercion 없이 string으로 반환해도 BaseConfigService
-        // 가 자체 변환을 책임진다는 contract 검증.
-        it('coercion 없이 들어온 숫자 문자열도 number 로 변환한다', () => {
+        // ConfigService가 문자열을 그대로 넘겨도 BaseConfigService가 직접 변환합니다.
+        it('ConfigService가 숫자 문자열을 그대로 넘겨도 숫자로 변환한다', () => {
             const service = createServiceWithConfig({ N: '42' })
             expect(service.getNumber('N')).toBe(42)
         })
@@ -97,19 +96,19 @@ describe('BaseConfigService', () => {
             )
         })
 
-        it('coercion 없이 들어온 "true" / "false" 문자열도 변환한다', () => {
+        it('ConfigService가 "true"와 "false"를 그대로 넘겨도 불리언으로 변환한다', () => {
             const service = createServiceWithConfig({ T: 'true', F: 'false' })
             expect(service.getBoolean('T')).toBe(true)
             expect(service.getBoolean('F')).toBe(false)
         })
 
-        it('대소문자 / 공백 변형도 받아준다', () => {
+        it('대소문자와 앞뒤 공백이 달라도 변환한다', () => {
             const service = createServiceWithConfig({ T: '  TRUE  ', F: 'False' })
             expect(service.getBoolean('T')).toBe(true)
             expect(service.getBoolean('F')).toBe(false)
         })
 
-        it('true / false 가 아닌 문자열이면 boolean 메시지로 예외를 던진다', () => {
+        it('"true"나 "false"가 아닌 문자열이면 boolean 메시지로 예외를 던진다', () => {
             const service = createServiceWithConfig({ B: 'maybe' })
             expect(() => service.getBoolean('B')).toThrow("Key 'B' is not a boolean: 'maybe'")
         })

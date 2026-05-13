@@ -20,37 +20,37 @@ describe('AppLoggerService', () => {
         appLoggerService.onModuleDestroy()
     })
 
-    it('log()는 winstonLogger.info()로 위임한다', () => {
+    it('log()는 winstonLogger.info()에 위임한다', () => {
         const spy = jest.spyOn(winstonLogger, 'info')
         appLoggerService.log(message)
         expect(spy).toHaveBeenCalledWith(message)
     })
 
-    it('error()는 winstonLogger.error()로 위임한다', () => {
+    it('error()는 winstonLogger.error()에 위임한다', () => {
         const spy = jest.spyOn(winstonLogger, 'error')
         appLoggerService.error(message)
         expect(spy).toHaveBeenCalledWith(message)
     })
 
-    it('warn()는 winstonLogger.warn()로 위임한다', () => {
+    it('warn()은 winstonLogger.warn()에 위임한다', () => {
         const spy = jest.spyOn(winstonLogger, 'warn')
         appLoggerService.warn(message)
         expect(spy).toHaveBeenCalledWith(message)
     })
 
-    it('debug()는 winstonLogger.debug()로 위임한다', () => {
+    it('debug()는 winstonLogger.debug()에 위임한다', () => {
         const spy = jest.spyOn(winstonLogger, 'debug')
         appLoggerService.debug(message)
         expect(spy).toHaveBeenCalledWith(message)
     })
 
-    it('verbose()는 winstonLogger.verbose()로 위임한다', () => {
+    it('verbose()는 winstonLogger.verbose()에 위임한다', () => {
         const spy = jest.spyOn(winstonLogger, 'verbose')
         appLoggerService.verbose(message)
         expect(spy).toHaveBeenCalledWith(message)
     })
 
-    it('fatal()은 winstonLogger.error()로 매핑된다', () => {
+    it('fatal()은 winstonLogger.error()에 위임한다', () => {
         const spy = jest.spyOn(winstonLogger, 'error')
         appLoggerService.fatal(message)
         expect(spy).toHaveBeenCalledWith(message)

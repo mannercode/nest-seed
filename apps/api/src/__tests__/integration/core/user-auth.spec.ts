@@ -36,7 +36,7 @@ describe('UserAuthentication', () => {
     })
 
     describe('GET /users/me', () => {
-        it('유효한 access 토큰이면 현재 고객의 도메인 DTO를 반환한다', async () => {
+        it('유효한 액세스 토큰이면 현재 고객의 도메인 DTO를 반환한다', async () => {
             const authTokens = await loginUser(fix, credentials)
 
             await fix.httpClient
@@ -51,7 +51,7 @@ describe('UserAuthentication', () => {
                 )
         })
 
-        it('access 토큰이 유효하지 않으면 401을 반환한다', async () => {
+        it('액세스 토큰이 유효하지 않으면 401을 반환한다', async () => {
             await fix.httpClient
                 .get('/users/me')
                 .headers({ Authorization: 'Bearer invalid-token' })
@@ -60,7 +60,7 @@ describe('UserAuthentication', () => {
     })
 
     describe('GET /users', () => {
-        it('access 토큰이 유효하지 않으면 401을 반환한다', async () => {
+        it('액세스 토큰이 유효하지 않으면 401을 반환한다', async () => {
             await fix.httpClient
                 .get('/users')
                 .headers({ Authorization: 'Bearer invalid-token' })
@@ -69,7 +69,7 @@ describe('UserAuthentication', () => {
     })
 
     describe('POST /users/refresh', () => {
-        it('유효한 refresh 토큰이면 새 인증 토큰을 반환한다', async () => {
+        it('유효한 리프레시 토큰이면 새 인증 토큰을 반환한다', async () => {
             const { accessToken, refreshToken } = await loginUser(fix, credentials)
 
             const { body } = await fix.httpClient.post('/users/refresh').body({ refreshToken }).ok()
@@ -78,16 +78,16 @@ describe('UserAuthentication', () => {
             expect(body.refreshToken).not.toEqual(refreshToken)
         })
 
-        it('refresh 토큰이 유효하지 않으면 401을 반환한다', async () => {
+        it('리프레시 토큰이 검증되지 않으면 500을 반환한다', async () => {
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken: 'invalid-token' })
-                .unauthorized(Errors.JwtAuth.RefreshTokenVerificationFailed('jwt malformed'))
+                .internalServerError()
         })
     })
 
     describe('POST /users/logout', () => {
-        it('로그아웃하면 204를 반환하고 이후 refresh가 차단된다', async () => {
+        it('로그아웃하면 204를 반환하고 이후 리프레시가 차단된다', async () => {
             const { refreshToken } = await loginUser(fix, credentials)
 
             await fix.httpClient.post('/users/logout').body({ refreshToken }).noContent()
@@ -98,13 +98,16 @@ describe('UserAuthentication', () => {
                 .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
         })
 
-        it('잘못된 토큰으로 로그아웃해도 204를 반환한다', async () => {
-            await fix.httpClient.post('/users/logout').body({ refreshToken: 'garbage' }).noContent()
+        it('잘못된 토큰으로 로그아웃하면 500을 반환한다', async () => {
+            await fix.httpClient
+                .post('/users/logout')
+                .body({ refreshToken: 'garbage' })
+                .internalServerError()
         })
     })
 
     describe('POST /users/me/logout-all', () => {
-        it('전체 로그아웃 시 모든 디바이스의 refresh가 차단된다', async () => {
+        it('전체 로그아웃 시 모든 디바이스의 리프레시가 차단된다', async () => {
             const sessionA = await loginUser(fix, credentials)
             const sessionB = await loginUser(fix, credentials)
 

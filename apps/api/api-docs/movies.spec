@@ -4,12 +4,12 @@
 TEST 201 POST /movies \
 	-H 'Content-Type: application/json' \
 	-d '{
-			"title": "movie title",
+			"title": "영화 제목",
 			"genres": ["action", "drama"],
 			"releaseDate": "2024-01-01T00:00:00.000Z",
-			"plot": "movie plot for e2e flow",
+			"plot": "API 문서 흐름 검증용 줄거리",
 			"durationInSeconds": 7200,
-			"director": "e2e director",
+			"director": "감독 이름",
 			"rating": "PG",
 			"assetIds": []
 		}'
@@ -27,8 +27,8 @@ TEST 404 GET /movies/000000000000000000000000
 TEST 200 PATCH /movies/${MOVIE_ID} \
 	-H 'Content-Type: application/json' \
 	-d '{
-			"plot": "updated movie plot",
-			"director": "updated e2e director"
+			"plot": "수정된 영화 줄거리",
+			"director": "수정된 감독 이름"
 		}'
 
 TEST 404 PATCH /movies/000000000000000000000000 \
@@ -51,7 +51,7 @@ TEST 201 POST /movies/${MOVIE_ID}/assets \
 
 ASSET_ID=$(echo "${BODY}" | jq -r '.assetId')
 
-LOG_LINE "# Presigned post upload"
+LOG_LINE "# 프리사인드 POST 업로드"
 upload_presigned_post "${ASSET_IMAGE_PATH}" "${BODY}"
 LOG_LINE ""
 

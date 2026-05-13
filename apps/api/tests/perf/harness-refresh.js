@@ -1,17 +1,19 @@
-// `/users/refresh` 경로에 지속 부하를 걸어 측정하는 하네스입니다.
-//
-// 이 경로는 호출마다 Redis를 두 번 칩니다. 이전 refresh 토큰을 GET으로 읽고,
-// 새 access·refresh JWT를 만들어 TTL이 붙은 SET으로 저장합니다. bcrypt는
-// 없고, 토큰을 위해 DB를 읽는 일도 없습니다. JWT 검증도 메모리 안에서 끝납니다.
-// 그래서 ioredis 클러스터 처리량을 가장 명확하게 측정합니다.
-//
-// 측정 전 준비는 이렇게 합니다. 워커마다 한 번씩 가입과 로그인을 끝내고, 받은
-// 토큰으로 refresh를 반복합니다. 워커마다 각자의 토큰을 들고 있어, 같은 토큰을
-// 여러 워커가 동시에 회전시키며 무효화를 부르는 경합이 일어나지 않습니다.
-// refresh 한 번은 저장된 토큰 하나를 원자적으로 회전시킵니다.
-//
-// 환경 변수는 `harness.js`와 같다: `SERVER_URL`, `CONCURRENCY`,
-// `DURATION_MS`, `WARMUP_MS`, `LABEL`.
+/**
+ * `/users/refresh` 경로에 지속 부하를 걸어 측정하는 하네스입니다.
+ *
+ * 이 경로는 호출마다 Redis를 두 번 칩니다. 이전 리프레시 토큰을 GET으로 읽고,
+ * 새 액세스·리프레시 JWT를 만들어 TTL이 붙은 SET으로 저장합니다. bcrypt는 없고,
+ * 토큰을 위해 DB를 읽는 일도 없습니다. JWT 검증도 메모리 안에서 끝납니다.
+ * 그래서 ioredis 클러스터 처리량을 가장 명확하게 측정합니다.
+ *
+ * 측정 전 워커마다 한 번씩 가입과 로그인을 끝내고, 받은 토큰으로 리프레시를 반복합니다.
+ * 워커마다 각자의 토큰을 들고 있어, 같은 토큰을 여러 워커가 동시에 회전시키며 무효화를
+ * 부르는 경합이 일어나지 않습니다. 리프레시 한 번은 저장된 토큰 하나를 원자적으로
+ * 회전시킵니다.
+ *
+ * 환경 변수는 `harness.js`와 같습니다: `SERVER_URL`, `CONCURRENCY`,
+ * `DURATION_MS`, `WARMUP_MS`, `LABEL`.
+ */
 
 const http = require('http')
 const fs = require('fs')
@@ -112,7 +114,7 @@ async function workerLoop(workerId, state, stopAt, samplesRef, statusesRef, repl
             state.refreshToken = result.body.refreshToken
         } else if (result.status !== 200) {
             // 토큰이 무효가 된 경우입니다. 워커가 서로 격리돼 있으면 일어나지 않아야
-            // 하지만, 같은 사용자에 대해 동시 refresh가 들어오면 발생합니다.
+            // 하지만, 같은 사용자에 대해 동시 리프레시가 들어오면 발생합니다.
             // 이 워커는 여기서 끝냅니다.
             return
         }

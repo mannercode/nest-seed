@@ -25,8 +25,8 @@ describe('HttpSuccessLoggerInterceptor', () => {
             })
         })
 
-        // redact의 본격 검증은 redact.spec.ts에 있습니다. 여기선 호출 여부만 확인.
-        it('body의 민감 필드를 [REDACTED]로 마스킹한다', async () => {
+        // redact의 본격 검증은 redact.spec.ts에 있습니다. 여기서는 호출 여부만 확인합니다.
+        it('요청 본문의 민감 필드를 [REDACTED]로 마스킹한다', async () => {
             await fix.httpClient
                 .post('/success')
                 .body({ password: 'secret' })

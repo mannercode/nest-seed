@@ -22,14 +22,11 @@ export abstract class AppendOnlyRepository<Doc> implements OnModuleInit {
     constructor(protected readonly model: Model<Doc>) {}
 
     async onModuleInit() {
-        /**
-         * `document.save()`가 내부에서 `createCollection()`을 부릅니다.
-         * 같은 시점에 `save()`가 여러 곳에서 동시에 호출되면 Mongo가 같은
-         * 컬렉션을 동시에 만들려 들면서 "Collection namespace is already in
-         * use" 에러를 냅니다. 단위 테스트처럼 빠르게 초기화를 반복하는 환경에서
-         * 자주 보이는 증상입니다. 모듈 초기화 시점에 미리 만들어 두면
-         * 경합이 사라집니다.
-         */
+        // `document.save()`가 내부에서 `createCollection()`을 부릅니다.
+        // 같은 시점에 `save()`가 여러 곳에서 동시에 호출되면 Mongo가 같은
+        // 컬렉션을 동시에 만들려 들면서 "Collection namespace is already in use"
+        // 에러를 냅니다. 단위 테스트처럼 빠르게 초기화를 반복하는 환경에서 자주
+        // 보이는 증상입니다. 모듈 초기화 시점에 미리 만들어 두면 경합이 사라집니다.
         await this.model.createCollection()
         await this.model.createIndexes()
     }

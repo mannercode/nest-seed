@@ -6,7 +6,7 @@ USER_EMAIL=$(random_email)
 TEST 201 POST /users \
 	-H 'Content-Type: application/json' \
 	-d '{
-			"name": "user name",
+			"name": "사용자 이름",
 			"birthDate": "1990-01-01T00:00:00.000Z",
 			"email": "'${USER_EMAIL}'",
 			"password": "password"
@@ -17,7 +17,7 @@ USER_ID=$(echo "${BODY}" | jq -r '.id')
 TEST 409 POST /users \
 	-H 'Content-Type: application/json' \
 	-d '{
-			"name": "user name",
+			"name": "사용자 이름",
 			"birthDate": "1990-01-01T00:00:00.000Z",
 			"email": "'${USER_EMAIL}'",
 			"password": "password"
@@ -30,7 +30,7 @@ TEST 400 POST /users \
 TEST 400 POST /users \
 	-H 'Content-Type: application/json' \
 	-d '{
-			"name": "user name",
+			"name": "사용자 이름",
 			"birthDate": "1990-01-01T00:00:00.000Z",
 			"email": "not-an-email",
 			"password": "password"
@@ -39,7 +39,7 @@ TEST 400 POST /users \
 TEST 400 POST /users \
 	-H 'Content-Type: application/json' \
 	-d '{
-			"name": "user name",
+			"name": "사용자 이름",
 			"birthDate": "1990-01-01T00:00:00.000Z",
 			"email": "'$(random_email)'"
 		}'
@@ -92,12 +92,12 @@ TEST 404 GET /users/000000000000000000000000 \
 TEST 200 PATCH /users/${USER_ID} \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}" \
 	-H "Content-Type: application/json" \
-	-d '{ "name": "new name", "birthDate": "2000-01-01T00:00:00.000Z" }'
+	-d '{ "name": "수정된 사용자 이름", "birthDate": "2000-01-01T00:00:00.000Z" }'
 
 TEST 404 PATCH /users/000000000000000000000000 \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}" \
 	-H "Content-Type: application/json" \
-	-d '{ "name": "new name" }'
+	-d '{ "name": "수정된 사용자 이름" }'
 
 TEST 204 POST /users/logout \
 	-H 'Content-Type: application/json' \

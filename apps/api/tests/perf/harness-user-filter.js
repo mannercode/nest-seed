@@ -1,12 +1,14 @@
-// User filter 전용 perf 하네스.
-//
-// GET /users가 JWT 보호이므로 worker마다 자체 계정으로 register + login
-// 하고 access token을 받아 `?name=<filter>` 쿼리를 루프 실행.
-//
-// 부분 문자열 정규식은 일반 인덱스를 활용하지 못해 컬렉션 전체를 스캔합니다.
-// 검색어를 좁게 설정해 매치 수를 거의 0으로 맞추고, 그 비용을 단독으로 측정합니다.
-//
-// Env: SERVER_URL, CONCURRENCY, DURATION_MS, WARMUP_MS, LABEL, FILTER_PREFIX
+/**
+ * 사용자 이름 필터 전용 성능 하네스입니다.
+ *
+ * GET /users가 JWT로 보호되므로 워커마다 자체 계정을 가입하고 로그인한 뒤,
+ * 액세스 토큰을 받아 `?name=<filter>` 쿼리를 반복 실행합니다.
+ *
+ * 부분 문자열 정규식은 일반 인덱스를 활용하지 못해 컬렉션 전체를 스캔합니다.
+ * 검색어를 좁게 설정해 매치 수를 거의 0으로 맞추고, 그 비용을 단독으로 측정합니다.
+ *
+ * 환경 변수: SERVER_URL, CONCURRENCY, DURATION_MS, WARMUP_MS, LABEL, FILTER_PREFIX
+ */
 
 const http = require('http')
 const fs = require('fs')
@@ -79,7 +81,7 @@ async function setupWorker(workerId, seed) {
         birthDate: '1990-01-01T00:00:00.000Z'
     })
     if (create.status !== 201) {
-        // email 중복 시 무시하고 login 진행
+        // 이메일이 중복되면 무시하고 로그인으로 진행합니다.
         if (create.status !== 409) {
             agent.destroy()
             throw new Error(`worker ${workerId} create returned ${create.status}`)

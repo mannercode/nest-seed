@@ -1,11 +1,10 @@
 import { expect, test } from '@playwright/test'
 
 /**
- * 가입 → 로그인 → 영화 등록 → 목록 노출까지 한 번에 통과하는 스모크
- * 테스트. 매 실행마다 이메일을 새로 만들어, DB에 이전 데이터가 남아
- * 있어도 영향을 받지 않게 합니다.
+ * 가입, 로그인, 영화 등록, 목록 노출을 한 흐름으로 확인하는 스모크 테스트입니다.
+ * 매번 새 이메일을 만들어 DB에 남은 이전 데이터와 충돌하지 않게 합니다.
  */
-test('signup → login → create movie → list shows it', async ({ page }) => {
+test('가입 후 로그인하고 새 영화를 등록하면 목록에 표시된다', async ({ page }) => {
     const stamp = Date.now()
     const email = `e2e-${stamp}@mail.com`
     const password = 'password123'

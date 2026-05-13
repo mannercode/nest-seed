@@ -78,7 +78,7 @@ describe('HttpUtil', () => {
             expect(HttpUtil.extractContentDisposition(cd)).toBe('fallback.txt')
         })
 
-        it('filename* 디코딩이 실패하면 따옴표 또는 bare filename으로 대체한다', () => {
+        it('filename* 디코딩이 실패하면 따옴표 또는 일반 filename으로 대체한다', () => {
             const badStar = `attachment; filename*=UTF-8''%E0%A4%ZZ; filename="safe-fallback.txt"`
             expect(HttpUtil.extractContentDisposition(badStar)).toBe('safe-fallback.txt')
 

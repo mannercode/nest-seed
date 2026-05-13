@@ -51,25 +51,25 @@ describe('TicketsService', () => {
                 ticketForShowtime = createdTickets[3]
             })
 
-            it('sagaIds로 필터링한다', async () => {
+            it('사가 식별자 목록으로 필터링한다', async () => {
                 const tickets = await ticketsService.search({ sagaIds: [sagaId] })
 
                 expect(tickets).toEqual([ticketForSaga])
             })
 
-            it('movieIds로 필터링한다', async () => {
+            it('영화 ID 목록으로 필터링한다', async () => {
                 const tickets = await ticketsService.search({ movieIds: [movieId] })
 
                 expect(tickets).toEqual([ticketForMovie])
             })
 
-            it('theaterIds로 필터링한다', async () => {
+            it('극장 ID 목록으로 필터링한다', async () => {
                 const tickets = await ticketsService.search({ theaterIds: [theaterId] })
 
                 expect(tickets).toEqual([ticketForTheater])
             })
 
-            it('showtimeIds로 필터링한다', async () => {
+            it('상영 시간 ID 목록으로 필터링한다', async () => {
                 const tickets = await ticketsService.search({ showtimeIds: [showtimeId] })
 
                 expect(tickets).toEqual([ticketForShowtime])
@@ -104,7 +104,7 @@ describe('TicketsService', () => {
     })
 
     describe('aggregateSales', () => {
-        it('showtimeIds에 대한 판매 통계를 반환한다', async () => {
+        it('상영 시간 ID 목록에 대한 판매 통계를 반환한다', async () => {
             const showtimeId = oid(0x10)
             const totalCount = 50
             const soldCount = 5

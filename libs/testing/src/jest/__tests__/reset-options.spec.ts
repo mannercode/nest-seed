@@ -1,8 +1,8 @@
 import { getCounter, incrementCounter } from './reset-options.fixture'
 
-describe('Jest reset options', () => {
+describe('Jest 초기화 옵션', () => {
     describe('resetModules가 활성화되었을 때', () => {
-        describe('정적으로 import할 때', () => {
+        describe('정적으로 가져올 때', () => {
             it('카운터를 증가시킨다', () => {
                 expect(getCounter()).toBe(0)
                 incrementCounter()
@@ -14,7 +14,7 @@ describe('Jest reset options', () => {
             })
         })
 
-        describe('동적으로 import할 때', () => {
+        describe('동적으로 가져올 때', () => {
             it('카운터를 증가시킨다', async () => {
                 const { getCounter: getCounterDynamic, incrementCounter: incrementCounterDynamic } =
                     await import('./reset-options.fixture')
@@ -34,18 +34,18 @@ describe('Jest reset options', () => {
     const sharedMock = jest.fn()
 
     describe('resetMocks가 활성화되었을 때', () => {
-        it('mock 호출을 기록한다', () => {
+        it('mock 함수 호출을 기록한다', () => {
             sharedMock('first')
             expect(sharedMock).toHaveBeenCalledTimes(1)
         })
 
-        it('테스트 사이에 mock 호출 횟수를 초기화한다', () => {
+        it('테스트 사이에 mock 함수 호출 횟수를 초기화한다', () => {
             expect(sharedMock).toHaveBeenCalledTimes(0)
         })
     })
 
     describe('restoreMocks가 활성화되었을 때', () => {
-        it('Date.now를 오버라이드한다', () => {
+        it('Date.now를 임시로 바꾼다', () => {
             jest.spyOn(Date, 'now').mockReturnValue(42)
             expect(Date.now()).toBe(42)
         })

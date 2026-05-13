@@ -183,7 +183,7 @@ describe('PathUtil', () => {
             )
         })
 
-        it('getSize는 파일 크기를 byte로 반환한다', async () => {
+        it('getSize는 파일 크기를 바이트로 반환한다', async () => {
             const filePath = PathUtil.join(tempDir, 'original.txt')
             await fs.writeFile(filePath, 'Hello, World!')
 

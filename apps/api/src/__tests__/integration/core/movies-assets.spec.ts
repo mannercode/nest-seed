@@ -64,7 +64,7 @@ describe('MoviesAssets', () => {
             expect(response.ok).toBe(true)
         })
 
-        it('지원하지 않는 mime 타입이면 400을 반환한다', async () => {
+        it('지원하지 않는 MIME 타입이면 400을 반환한다', async () => {
             const createDto = buildCreateAssetDto(testAssets.json)
 
             await fix.httpClient
@@ -122,7 +122,7 @@ describe('MoviesAssets', () => {
     })
 
     describe('POST /movies/:movieId/assets/:assetId/finalize', () => {
-        describe('업로드까지 마친 에셋을 finalize할 때', () => {
+        describe('업로드까지 마친 에셋을 완료 처리할 때', () => {
             let movie: MovieDto
             let upload: AssetPresignedUploadDto
 
@@ -150,7 +150,7 @@ describe('MoviesAssets', () => {
                     .ok(expect.objectContaining({ imageUrls: [expect.any(String)] }))
             })
 
-            it('두 번 호출해도 204를 반환한다 (멱등)', async () => {
+            it('두 번 호출해도 같은 204 응답을 반환한다', async () => {
                 await fix.httpClient
                     .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
                     .noContent()
@@ -161,7 +161,7 @@ describe('MoviesAssets', () => {
             })
         })
 
-        it('업로드 전 에셋을 finalize하면 422를 반환한다', async () => {
+        it('업로드 전 에셋을 완료 처리하면 422를 반환한다', async () => {
             const movie = await createUnpublishedMovie(fix)
             const upload = await createMovieAsset(fix, movie.id, testAssets.image)
 

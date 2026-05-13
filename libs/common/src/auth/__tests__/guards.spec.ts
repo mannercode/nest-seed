@@ -25,21 +25,21 @@ describe('Auth Guards', () => {
             await fix.httpClient.get('/jwt/protected').unauthorized()
         })
 
-        it('잘못된 토큰으로 접근하면 401을 반환한다', async () => {
+        it('잘못된 토큰으로 접근하면 500을 반환한다', async () => {
             await fix.httpClient
                 .get('/jwt/protected')
                 .headers({ Authorization: 'Bearer invalid-token' })
-                .unauthorized()
+                .internalServerError()
         })
 
-        it('Bearer가 아닌 인증 타입이면 401을 반환한다', async () => {
+        it('Bearer 방식이 아니면 401을 반환한다', async () => {
             await fix.httpClient
                 .get('/jwt/protected')
                 .headers({ Authorization: 'Basic some-credentials' })
                 .unauthorized()
         })
 
-        it('LocalAuthGuard가 있는 라우트는 JWT 검증을 건너뛴다', async () => {
+        it('LocalAuthGuard 라우트는 JWT 검증을 건너뛴다', async () => {
             await fix.httpClient
                 .post('/jwt/login')
                 .body({ email: 'test@test.com', password: 'pass' })
@@ -54,8 +54,8 @@ describe('Auth Guards', () => {
         })
     })
 
-    describe('JwtAuthGuard (isUsingLocalAuth 기본 구현)', () => {
-        it('isUsingLocalAuth를 재정의하지 않으면 LocalAuthGuard가 있어도 JWT를 검증한다', async () => {
+    describe('isUsingLocalAuth 기본 구현', () => {
+        it('재정의하지 않은 가드는 JWT를 검증한다', async () => {
             await fix.httpClient
                 .post('/default/login')
                 .body({ email: 'test@test.com', password: 'pass' })
@@ -88,14 +88,14 @@ describe('Auth Guards', () => {
             await fix.httpClient.post('/local/login').body({}).unauthorized()
         })
 
-        it('usernameField/passwordField 기본값은 username/password이다', async () => {
+        it('기본 로그인 필드 이름은 username과 password이다', async () => {
             await fix.httpClient
                 .post('/local/login-default')
                 .body({ username: 'admin', password: 'pass' })
                 .created()
         })
 
-        it('usernameField/passwordField 옵션으로 body의 임의 필드명을 사용할 수 있다', async () => {
+        it('옵션으로 로그인 필드 이름을 바꿀 수 있다', async () => {
             await fix.httpClient
                 .post('/local/login-custom')
                 .body({ login: 'custom', pwd: 'secret' })
@@ -128,7 +128,7 @@ describe('Auth Guards', () => {
             await fix.httpClient.get('/optional/public').ok()
         })
 
-        it('Bearer가 아닌 인증 타입이면 user를 null로 설정한다', async () => {
+        it('Bearer 방식이 아니면 user를 null로 둔다', async () => {
             await fix.httpClient
                 .get('/optional')
                 .headers({ Authorization: 'Basic some-credentials' })

@@ -4,7 +4,7 @@
 TEST 201 POST /theaters \
 	-H 'Content-Type: application/json' \
 	-d '{
-			"name": "theater name",
+			"name": "극장 이름",
 			"location": { "latitude": 37.5665, "longitude": 126.9780 },
 			"seatmap": {
 				"blocks": [
@@ -27,7 +27,7 @@ TEST 404 GET /theaters/000000000000000000000000
 
 TEST 200 PATCH /theaters/${THEATER_ID} \
 	-H 'Content-Type: application/json' \
-	-d '{ "name": "theater name updated" }'
+	-d '{ "name": "수정된 극장 이름" }'
 
 TEST 404 PATCH /theaters/000000000000000000000000 \
 	-H 'Content-Type: application/json' \

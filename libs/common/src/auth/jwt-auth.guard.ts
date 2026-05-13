@@ -12,9 +12,9 @@ export type JwtAuthGuardOptions = {
      * 혼동 공격(`none`으로 바꾸기, HS↔RS 교체)을 막습니다.
      */
     algorithms?: JwtVerifyOptions['algorithms']
-    /** 필수 `aud` 클레임. audience가 다른 토큰은 거절합니다. */
+    /** 필수 `aud` 클레임. 값이 맞지 않는 토큰은 거절합니다. */
     audience?: string
-    /** 필수 `iss` 클레임. issuer가 다른 토큰은 거절합니다. */
+    /** 필수 `iss` 클레임. 값이 맞지 않는 토큰은 거절합니다. */
     issuer?: string
     secret: string
 }
@@ -43,12 +43,8 @@ export abstract class JwtAuthGuard implements CanActivate {
             throw new UnauthorizedException()
         }
 
-        try {
-            const payload = await this.jwtService.verifyAsync(token, this.verifyOptions())
-            request.user = payload
-        } catch {
-            throw new UnauthorizedException()
-        }
+        const payload = await this.jwtService.verifyAsync(token, this.verifyOptions())
+        request.user = payload
 
         return true
     }

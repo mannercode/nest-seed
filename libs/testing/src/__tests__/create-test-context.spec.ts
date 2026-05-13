@@ -9,7 +9,7 @@ describe('createTestContext', () => {
     })
     afterEach(() => fix.teardown())
 
-    it('오버라이드된 provider는 mock 서비스로 대체된다', async () => {
+    it('대체 지정한 제공자는 mock 서비스로 바뀐다', async () => {
         const message = fix.sampleService.getMessage()
         expect(message).toEqual({ message: 'This is Mock' })
     })

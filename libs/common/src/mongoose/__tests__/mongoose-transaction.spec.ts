@@ -51,7 +51,7 @@ describe('Mongoose Transaction', () => {
         })
 
         it('rollback() 호출 시 커밋이 아닌 중단으로 종료된다', async () => {
-            // session.abortTransaction이 호출되고 commitTransaction은 호출되지 않는지 확인.
+            // session.abortTransaction이 호출되고 commitTransaction은 호출되지 않는지 확인합니다.
             const fakeSession = {
                 abortTransaction: jest.fn().mockResolvedValue(undefined),
                 commitTransaction: jest.fn().mockResolvedValue(undefined),
@@ -88,7 +88,7 @@ describe('Mongoose Transaction', () => {
     })
 
     describe('에러 처리', () => {
-        it('startSession이 예외를 던지면 예외를 전파한다', async () => {
+        it('startSession이 예외를 던지면 그대로 다시 던진다', async () => {
             jest.spyOn(fix.model, 'startSession').mockImplementation(() => {
                 throw new Error()
             })
@@ -98,7 +98,7 @@ describe('Mongoose Transaction', () => {
             await expect(promise).rejects.toThrow()
         })
 
-        it('startTransaction이 예외를 던지면 예외를 전파한다', async () => {
+        it('startTransaction이 예외를 던지면 그대로 다시 던진다', async () => {
             jest.spyOn(fix.model, 'startSession').mockResolvedValue({
                 inTransaction: jest.fn().mockReturnValue(false),
                 startTransaction: jest.fn().mockImplementation(() => {

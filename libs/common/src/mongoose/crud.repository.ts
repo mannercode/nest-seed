@@ -36,7 +36,7 @@ export function leanToPublic<T extends { _id?: unknown }>(doc: T): T {
 
 // `lean()` 결과를 공개 타입으로 바꾸는 두 헬퍼입니다. mongoose의 `LeanDocument<T>`
 // 타입이 `T extends { _id?: unknown }` 제약과 바로 맞물리지 않아서, 호출 지점마다
-// 같은 cast를 반복하던 부분을 한 곳으로 모았습니다.
+// 같은 형 변환을 반복하던 부분을 한 곳으로 모았습니다.
 //
 // `leanToPublic`을 그대로 부르므로, 입력 문서들도 그 자리에서 같이 바뀝니다.
 export function leanArrayToPublic<T>(docs: unknown): T[] {
@@ -138,13 +138,13 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
         queryHelper.lean(defaultLeanOptions)
 
         // 페이지네이션은 조회와 카운트를 함께 실행합니다. 필터가 비어 있을 때
-        // 카운트가 조회보다 몇 배는 느리게 관측됐습니다. `CrudSchema`의 pre-hook
-        // 이 포함되면서 `countDocuments`가 사실상 `{ deletedAt: null }` 카운트로
+        // 카운트가 조회보다 몇 배는 느리게 관측됐습니다. `CrudSchema`의 pre hook이
+        // 포함되면서 `countDocuments`가 사실상 `{ deletedAt: null }` 카운트로
         // 바뀌고, 삭제되지 않은 모든 행에 대한 인덱스 스캔이 되기 때문입니다.
         // `estimatedDocumentCount`는 컬렉션 메타데이터만 읽으므로 즉시
         // 반환됩니다. 그래서 필터가 빈 경로에서는 이 경로를 사용합니다.
         //
-        // 한 가지 한계가 있습니다. `estimatedDocumentCount`는 soft-delete 된
+        // 한 가지 한계가 있습니다. `estimatedDocumentCount`는 소프트 삭제된
         // 행까지 포함한 전체 수를 반환합니다. 응답의 `total`이 실제로 페이지에
         // 표시되는 행보다 커질 수 있습니다. 마지막 페이지에 빈자리가 생길
         // 수는 있지만 정렬은 일관되게 유지되므로, 이 서비스에서는 받아들일
@@ -198,14 +198,11 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
     }
 
     async onModuleInit() {
-        /**
-         * `document.save()`가 내부적으로 `createCollection()`을 부릅니다.
-         * 같은 시점에 여러 곳에서 `save()`가 호출되면, Mongo가 같은
-         * 컬렉션을 동시에 만들려 들면서 "Collection namespace is already in
-         * use" 에러를 냅니다. 단위 테스트처럼 빠르게 초기화를 반복하는 환경에서
-         * 자주 나타나는 증상입니다. 모듈 초기화 시점에 컬렉션과 인덱스를
-         * 미리 만들어 두면 이 경합이 사라집니다.
-         */
+        // `document.save()`가 내부적으로 `createCollection()`을 부릅니다.
+        // 같은 시점에 여러 곳에서 `save()`가 호출되면 Mongo가 같은 컬렉션을 동시에
+        // 만들려 들면서 "Collection namespace is already in use" 에러를 냅니다.
+        // 단위 테스트처럼 빠르게 초기화를 반복하는 환경에서 자주 나타나는 증상입니다.
+        // 모듈 초기화 시점에 컬렉션과 인덱스를 미리 만들어 두면 이 경합이 사라집니다.
         await this.model.createCollection()
         await this.model.createIndexes()
     }

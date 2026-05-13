@@ -41,7 +41,7 @@ describe('step', () => {
         await expect(promise).rejects.toThrow(/step "bad step" failed.*inner failure/)
     })
 
-    it('원본 에러를 cause로 유지한다', async () => {
+    it('원본 에러를 cause 속성으로 유지한다', async () => {
         const original = new Error('original')
         let caught: unknown
         try {
@@ -69,7 +69,7 @@ describe('withTestId', () => {
         }
     })
 
-    it('TEST_ID가 있으면 prefix-TEST_ID 형태로 반환한다', async () => {
+    it('TEST_ID가 있으면 prefix-TEST_ID 형식으로 반환한다', async () => {
         const { withTestId } = await import('../utils')
         process.env.TEST_ID = 'abc123'
         expect(withTestId('foo')).toBe('foo-abc123')
@@ -77,12 +77,12 @@ describe('withTestId', () => {
 })
 
 describe('oid', () => {
-    it('oid(1)은 24자리 16진수 "000000000000000000000001"로 패딩된다', async () => {
+    it('oid(1)은 24자리 16진수 "000000000000000000000001"로 채워진다', async () => {
         const { oid } = await import('../utils')
         expect(oid(1)).toBe('000000000000000000000001')
     })
 
-    it('oid(0xff)는 16진수 변환된 24자리 문자열로 패딩된다', async () => {
+    it('oid(0xff)는 24자리 16진수 문자열로 채워진다', async () => {
         const { oid } = await import('../utils')
         expect(oid(0xff)).toBe('0000000000000000000000ff')
     })

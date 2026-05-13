@@ -86,7 +86,7 @@ describe('QueryBuilder', () => {
             expect(builder.build({ allowEmpty: true })).toEqual({})
         })
 
-        it('0/false/""처럼 falsy하지만 null/undefined가 아닌 값은 조건에 추가된다', () => {
+        it('0, false, 빈 문자열처럼 null이나 undefined가 아닌 값은 조건에 추가된다', () => {
             builder.addEquals('name', 0 as any)
             expect(builder.build({})).toEqual({ name: 0 })
 
@@ -143,12 +143,12 @@ describe('QueryBuilder', () => {
             expect(builder.build({ allowEmpty: true })).toEqual({})
         })
 
-        it('prefix:true이면 정규식을 시작 위치에 고정한다', () => {
+        it('prefix:true이면 정규식을 문자열 시작 위치에 고정한다', () => {
             builder.addRegex('name', 'hello', { prefix: true })
             expect(builder.build({})).toEqual({ name: new RegExp('^hello', 'i') })
         })
 
-        it('prefix:true이면 정규식 메타문자를 escape한다', () => {
+        it('prefix:true이면 정규식 메타문자를 이스케이프한다', () => {
             builder.addRegex('name', 'a.b*', { prefix: true })
             expect(builder.build({})).toEqual({ name: new RegExp('^a\\.b\\*', 'i') })
         })
@@ -165,11 +165,11 @@ describe('QueryBuilder', () => {
 
         it('정규식 메타문자가 포함된 값도 escape되어 정규식 주입을 차단한다', () => {
             builder.addRegex('name', '.*')
-            // .* 메타문자가 그대로 들어가면 모든 값에 매칭되겠지만 escape되어 리터럴로 처리됩니다.
+            // .* 메타문자가 그대로 들어가면 모든 값에 매칭되겠지만, escape되어 리터럴로 처리됩니다.
             expect(builder.build({})).toEqual({ name: new RegExp('\\.\\*', 'i') })
         })
 
-        it('prefix:true와 정규식 메타문자가 결합되어도 escape된 채 시작 위치 고정이 적용된다', () => {
+        it('prefix:true와 정규식 메타문자를 함께 써도 이스케이프한 뒤 시작 위치에 고정한다', () => {
             builder.addRegex('name', '.*', { prefix: true })
             expect(builder.build({})).toEqual({ name: new RegExp('^\\.\\*', 'i') })
         })
@@ -243,7 +243,7 @@ describe('mapDocToDto', () => {
     const sampleSchema = createCrudSchema(Sample)
     const SampleModel = model<Sample>('SampleForTest', sampleSchema)
 
-    it('lean 객체를 DTO로 매핑한다', () => {
+    it('lean 결과 객체를 DTO로 매핑한다', () => {
         const doc = new SampleModel({ name: 'name', optional: undefined }).toJSON()
 
         const dto = mapDocToDto(doc, SampleDto, ['id', 'name', 'optional'])
@@ -251,7 +251,7 @@ describe('mapDocToDto', () => {
         expect(dto).toEqual({ id: expect.any(String), name: 'name', optional: undefined })
     })
 
-    it('keys에 없는 필드는 DTO에 포함되지 않는다', () => {
+    it('keys 목록에 없는 필드는 DTO에 포함되지 않는다', () => {
         const doc = new SampleModel({ name: 'name', optional: true }).toJSON()
 
         const dto = mapDocToDto(doc, SampleDto, ['id', 'name'])

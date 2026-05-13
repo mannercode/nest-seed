@@ -25,7 +25,7 @@ describe('PaginationDto', () => {
             await fix.httpClient.get('/pagination').query(query).ok(expectedResponse)
         })
 
-        it('orderby name="0"처럼 falsy하지만 유효한 문자열도 정상 처리된다', async () => {
+        it('orderby name="0"처럼 비어 있지 않은 문자열은 정상 처리된다', async () => {
             await fix.httpClient
                 .get('/pagination')
                 .query({ orderby: '0:asc' })
