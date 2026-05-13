@@ -16,7 +16,7 @@ const iterateTimeslots = (
     onTimeslot: (timeslot: number) => boolean | void
 ) => {
     // 끝 시각은 포함하지 않는다. A가 12:00에 끝나면 12:00 시작하는 B와
-    // 곧바로 이어져도 충돌이 아니다. 청소 시간 같은 간격이 필요하면
+    // 곧바로 이어져도 충돌로 보지 않는다. 청소 시간 같은 간격이 필요하면
     // 호출자가 입력 단계에서 그 간격을 설정해야 한다.
     const endMs = timeRange.end.getTime()
     for (let timeslot = timeRange.start.getTime(); timeslot < endMs; timeslot += TIMESLOT_STEP_MS) {

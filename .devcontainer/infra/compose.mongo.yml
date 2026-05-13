@@ -2,17 +2,17 @@ x-mongo-base: &mongo-base
     extends: { file: ./compose.common.yml, service: common-options }
     image: $MONGO_IMAGE
     # 시드 데이터가 커지면 WiredTiger 캐시 압박 때문에 읽기 성능이 급격히
-    # 낮아집니다. 컨테이너 메모리와 `wiredTigerCacheSizeGB`를 함께 늘려,
-    # 수십만 행 규모의 테스트 데이터가 메모리 캐시에 머물도록 합니다.
+    # 낮아진다. 컨테이너 메모리와 `wiredTigerCacheSizeGB`를 함께 늘려,
+    # 수십만 행 규모의 테스트 데이터가 메모리 캐시에 머물도록 한다.
     deploy: { resources: { limits: { memory: 2g } } }
     shm_size: '8m'
     # Replica Set 초기화와 병렬 테스트 중 파일 descriptor 한도에 걸리지 않도록
-    # 기본값보다 여유 있게 둡니다.
+    # 기본값보다 여유 있게 둔다.
     ulimits: { nofile: { soft: 65536, hard: 65536 } }
-    # dev/test 전용 Replica Set입니다. 운영은 매니지드 MongoDB를 전제로 하므로
-    # 여기서는 keyFile 인증보다 테스트 속도와 단순성을 우선합니다.
+    # dev/test 전용 Replica Set이다. 운영은 매니지드 MongoDB를 전제로 하므로
+    # 여기서는 keyFile 인증보다 테스트 속도와 단순성을 우선한다.
     # Mongo 이미지가 init 단계에서 임시 mongod를 27017에 시작하므로, 실제 Replica
-    # Set은 27016을 사용해 포트 충돌을 피합니다.
+    # Set은 27016을 사용해 포트 충돌을 피한다.
     command: >
         --replSet mongo
         --bind_ip_all
@@ -53,8 +53,8 @@ services:
         command: |
             sh -eucx '
                 # `rs.initiate`에 등록한 host는 드라이버가 이후 Replica Set 멤버를
-                # 찾아갈 때 그대로 사용합니다. devcontainer도 같은 compose 네트워크에
-                # 있으므로 서비스 이름(mongo1/mongo2/mongo3)을 등록합니다.
+                # 찾아갈 때 그대로 사용한다. devcontainer도 같은 compose 네트워크에
+                # 있으므로 서비스 이름(mongo1/mongo2/mongo3)을 등록한다.
                 url="mongodb://mongo1:27016/?directConnection=true"
 
                 mongosh $$url --eval "

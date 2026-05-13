@@ -88,7 +88,7 @@ export abstract class JwtAuthGuard implements CanActivate {
 @Injectable()
 export abstract class OptionalJwtAuthGuard extends JwtAuthGuard {
     // 토큰 부재만 허용한다. 토큰을 보냈다면 반드시 유효해야 한다
-    // (만료 → 401, 위조/깨짐 → 500). best-effort 검증이 아니다.
+    // (만료 → 401, 위조/깨짐 → 500). best-effort 검증으로 보지 않는다.
     async canActivate(context: ExecutionContext): Promise<boolean> {
         if (this.isPublicRoute(context)) {
             return true

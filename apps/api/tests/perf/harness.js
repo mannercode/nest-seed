@@ -62,7 +62,7 @@ function buildRequestFactory(scenario) {
     }
     if (scenario === 'theater-write') {
         // `POST /theaters`는 가드가 없다. 순수 Mongo 쓰기 + majority commit
-        // 비용만 잰다. 본문은 작지만 중첩 검증이 있어서 무시할 수준은 아니다.
+        // 비용만 잰다. 본문은 작지만 중첩 검증이 있어서 무시할 수준으로 보기 어렵다.
         return (workerId, seq) => ({
             method: 'POST',
             path: '/theaters',

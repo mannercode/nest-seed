@@ -1,7 +1,7 @@
 #!/bin/sh
-# `temporalio/server` 이미지는 namespace를 자동 생성하지 않습니다. 서버가
+# `temporalio/server` 이미지는 namespace를 자동 생성하지 않는다. 서버가
 # 준비된 뒤 admin-tools에서 default namespace를 한 번 등록해, 이후 워커와
-# 클라이언트가 같은 namespace로 연결되도록 합니다.
+# 클라이언트가 같은 namespace로 연결되도록 한다.
 set -eu
 
 NAMESPACE=${DEFAULT_NAMESPACE:-default}

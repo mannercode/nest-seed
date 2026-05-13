@@ -117,12 +117,12 @@ wait_for_showtime() {
 		sleep 1
 	done
 
-	LOG_LINE "# 준비 실패: ${attempts}초 안에 상영 시간이 생성되지 않았습니다"
+	LOG_LINE "# 준비 실패: ${attempts}초 안에 상영 시간이 생성되지 않았다"
 	LOG_LINE "RES='setup-timeout'"
 	LOG_JSON "${BODY}"
 	LOG_LINE "'"
 	LOG_LINE ""
-	echo "[FAIL] SETUP wait_for_showtime: ${attempts}초 동안 기다렸지만 상영 시간이 생성되지 않았습니다 (movieId=${MOVIE_ID}, theaterId=${THEATER_ID})"
+	echo "[FAIL] SETUP wait_for_showtime: ${attempts}초 동안 기다렸지만 상영 시간이 생성되지 않았다 (movieId=${MOVIE_ID}, theaterId=${THEATER_ID})"
 	echo "  마지막 응답: ${BODY}" | head -5
 	exit 2
 }
@@ -146,12 +146,12 @@ wait_for_tickets() {
 		sleep 1
 	done
 
-	LOG_LINE "# 준비 실패: ${attempts}초 안에 티켓이 생성되지 않았습니다"
+	LOG_LINE "# 준비 실패: ${attempts}초 안에 티켓이 생성되지 않았다"
 	LOG_LINE "RES='setup-timeout'"
 	LOG_JSON "${BODY}"
 	LOG_LINE "'"
 	LOG_LINE ""
-	echo "[FAIL] SETUP wait_for_tickets: ${attempts}초 동안 기다렸지만 티켓이 생성되지 않았습니다 (showtimeId=${SHOWTIME_ID}, ticketCount=${ticketCount})"
+	echo "[FAIL] SETUP wait_for_tickets: ${attempts}초 동안 기다렸지만 티켓이 생성되지 않았다 (showtimeId=${SHOWTIME_ID}, ticketCount=${ticketCount})"
 	echo "  마지막 응답: ${BODY}" | head -5
 	exit 2
 }

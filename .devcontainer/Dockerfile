@@ -18,7 +18,7 @@ RUN set -Eeu; \
     npm cache clean --force
 
 # 브라우저 바이너리는 이미지 빌드 중 root 권한으로 설치되지만, 테스트는 node
-# 사용자로 실행됩니다. 기본 경로(`/root/.cache/ms-playwright`) 대신 두 사용자가
-# 모두 접근할 수 있는 `/opt/playwright`에 설치합니다.
+# 사용자로 실행된다. 기본 경로(`/root/.cache/ms-playwright`) 대신 두 사용자가
+# 모두 접근할 수 있는 `/opt/playwright`에 설치한다.
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
 RUN playwright install --with-deps chromium

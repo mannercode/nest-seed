@@ -74,7 +74,7 @@ export default function MoviesPage() {
 
             {movies === null && !error && <p className="text-sm text-slate-500">불러오는 중…</p>}
             {movies && movies.length === 0 && (
-                <p className="text-sm text-slate-500">등록된 영화가 없습니다.</p>
+                <p className="text-sm text-slate-500">등록된 영화 없음</p>
             )}
             {movies && movies.length > 0 && (
                 <ul data-testid="movie-list" className="space-y-3">
