@@ -1,6 +1,11 @@
 name: Test Stability
 on:
     workflow_dispatch:
+    schedule:
+        # 매주 일요일 UTC 03:47에 한 번 실행한다. test-atoz가 6시간마다
+        # 회귀를 잡는다면, 이 워크플로는 같은 시나리오를 누적 반복해
+        # "한 번은 통과하지만 흔들리는" 코드를 드러내는 용도이다.
+        - cron: '47 3 * * 0'
 permissions:
     contents: read
 concurrency:
@@ -60,7 +65,7 @@ jobs:
                       set -Eeuo pipefail
                       echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
                       npm run build
-                      bash .github/scripts/repeat.sh 50 bash .github/scripts/bootup-test.sh
+                      bash .github/scripts/repeat.sh 50 bash tests/bootup-test.sh
     scenario:
         strategy:
             fail-fast: false
