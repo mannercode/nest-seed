@@ -75,6 +75,20 @@ describe('NatsPubSubService', () => {
         await expect(fix.pubSubB.unsubscribe('never-subscribed', () => {})).resolves.toBeUndefined()
     })
 
+    it('다른 subject에 구독이 있을 때 본인 subject 해제는 다른 구독에 영향이 없다', async () => {
+        const otherSubject = withTestId('other')
+        const received: string[] = []
+
+        await fix.pubSubB.subscribe(otherSubject, (msg) => received.push(msg))
+
+        // 가입한 적 없는 subject에 대해 해제를 호출해도 otherSubject 구독은 살아 있어야 한다.
+        await fix.pubSubB.unsubscribe(subject, () => {})
+
+        await fix.pubSubA.publish(otherSubject, 'survived')
+        await waitFor(() => received.length > 0)
+        expect(received).toEqual(['survived'])
+    })
+
     it('여러 핸들러 중 하나만 제거해도 NATS 구독은 유지된다', async () => {
         const received: string[] = []
         const firstHandler = () => {}
