@@ -9,3 +9,5 @@ package-lock.json
 *.tsbuildinfo
 # Next.js 자동 생성 파일이라 직접 손대지 않는다.
 apps/console/next-env.d.ts
+# devcontainers/ci 액션이 빌드 시 자동 생성하는 lock 파일이다.
+.devcontainer/devcontainer-lock.json
