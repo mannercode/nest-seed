@@ -35,7 +35,7 @@ setupJestLifecycle({
     },
     afterMongoConnect: (client) =>
         // TTL 인덱스를 다루는 테스트가 빨리 완료되도록 TTL 감시 주기를 1초로
-        // 줄이다. 기본값은 60초라 테스트 안에서 만료를 기다리기 어렵다.
+        // 줄인다. 기본값은 60초라 테스트 안에서 만료를 기다리기 어렵다.
         client.db('admin').command({ setParameter: 1, ttlMonitorSleepSecs: 1 }),
     createS3Client: () => {
         process.env.TESTLIB_S3_REGION = 'us-east-1'

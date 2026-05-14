@@ -21,8 +21,8 @@ function getSubscriptionKey(subject: string, queue?: string) {
  * (SSE 연결, 캐시 무효화 등)를 맡는다.
  *
  * 같은 subject와 queue 설정을 공유하는 핸들러는 등록된 순서대로 호출된다.
- * 핸들러는 예외를 던지면 안 된다 — 예외가 올라오면 해당 구독의 소비 루프가
- * 멈추고 후속 메시지가 더는 전달되지 않는다.
+ * 핸들러가 예외를 던지면 해당 구독의 소비 루프가 멈추고, 후속 메시지가
+ * 더는 전달되지 않는다.
  */
 @Injectable()
 export class NatsPubSubService implements OnModuleDestroy {
@@ -45,8 +45,8 @@ export class NatsPubSubService implements OnModuleDestroy {
 
     async publish(subject: string, message: string): Promise<void> {
         this.connection.publish(subject, this.codec.encode(message))
-        // 호출자가 `await`로 결과를 기다린 시점에는 메시지가 서버까지
-        // 빠져나가 있어야 한다. 그래서 `flush`로 확인한다.
+        // 호출자가 `await` 결과를 받는 시점에는 메시지가 서버로 전송되어 있어야 한다.
+        // 그래서 `flush`로 확인한다.
         await this.connection.flush()
     }
 
@@ -62,7 +62,7 @@ export class NatsPubSubService implements OnModuleDestroy {
             state = { handlers: new Set(), queue: options.queue, sub, subject }
             this.subscriptions.set(key, state)
             this.startConsumeLoop(state)
-            // SUB 메시지는 클라이언트에서 서버로 비동기로 흘러간다. `flush`로
+            // SUB 메시지는 클라이언트에서 서버로 비동기로 전송된다. `flush`로
             // 서버 응답까지 받아야 "이제 발행한 메시지가 이 구독에 도달한다"가
             // 보장된다. 이 단계를 건너뛰면 구독 직후 발행한 메시지가
             // 가끔 누락된다.
@@ -90,7 +90,7 @@ export class NatsPubSubService implements OnModuleDestroy {
         // 서버 연결 끊김·프로토콜 오류·핸들러 예외 등으로 이터레이터가 던지면 소비 루프가
         // 멈춘다. 로그가 없으면 단순히 트래픽이 없는 상황과 구분하기 어려우므로
         // 구독 중단을 오류 로그로 남긴다. (외곽 catch는 fire-and-forget IIFE의
-        // unhandled rejection을 막기 위한 boundary이다.)
+        // unhandled rejection을 막기 위한 경계이다.)
         void (async () => {
             try {
                 for await (const msg of state.sub) {
