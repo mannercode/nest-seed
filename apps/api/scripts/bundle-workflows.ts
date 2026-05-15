@@ -13,7 +13,7 @@ async function bundleWorkflows(): Promise<void> {
     }
 }
 
-bundleWorkflows().catch((err) => {
+bundleWorkflows().catch((err: unknown) => {
     console.error(err)
     process.exit(1)
 })

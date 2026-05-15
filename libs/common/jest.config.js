@@ -3,7 +3,7 @@ const { createDefaultPreset, pathsToModuleNameMapper } = require('ts-jest')
 const baseConfig = require('../../jest.config.base')
 const tsconfig = require('./tsconfig.json')
 
-const tsconfigPath = join(__dirname, 'tsconfig.json')
+const tsconfigPath = join(__dirname, 'tsconfig.jest.json')
 const tsJestPreset = createDefaultPreset({ tsconfig: tsconfigPath })
 
 module.exports = {

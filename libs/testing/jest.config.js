@@ -2,7 +2,7 @@ const { join } = require('path')
 const { createDefaultPreset } = require('ts-jest')
 const baseConfig = require('../../jest.config.base')
 
-const tsconfigPath = join(__dirname, 'tsconfig.json')
+const tsconfigPath = join(__dirname, 'tsconfig.jest.json')
 const tsJestPreset = createDefaultPreset({ tsconfig: tsconfigPath })
 
 // libs/testing은 인프라 의존성이 없어 globalSetup, globalTeardown,

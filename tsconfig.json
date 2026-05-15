@@ -9,7 +9,7 @@
         "ignoreDeprecations": "6.0",
         "target": "ESNext",
         "lib": ["ESNext"],
-        "types": ["node", "jest"],
+        "types": ["node"],
 
         "strict": true,
         // NestJS DI는 컨테이너가 생성자 파라미터를 주입하므로, 프로퍼티 초기화가 없어도 된다.

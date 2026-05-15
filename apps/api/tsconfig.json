@@ -13,5 +13,6 @@
             "gateway": ["src/services/gateway/index"]
         }
     },
-    "include": ["src/**/*"]
+    "include": ["src/**/*", "scripts/**/*"],
+    "exclude": ["src/**/__tests__/**"]
 }

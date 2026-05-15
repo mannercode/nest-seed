@@ -7,5 +7,6 @@
         "baseUrl": ".",
         "paths": { "@mannercode/testing": ["../testing/src"] }
     },
-    "include": ["src/**/*"]
+    "include": ["src/**/*"],
+    "exclude": ["src/**/__tests__/**"]
 }

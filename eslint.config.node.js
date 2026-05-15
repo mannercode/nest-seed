@@ -100,14 +100,21 @@ const baseRules = {
     '@typescript-eslint/adjacent-overload-signatures': 'warn'
 }
 
-function createBaseConfigs({ tsconfigRootDir, srcGlob = 'src/**' }) {
+function createBaseConfigs({ tsconfigRootDir, srcGlob = 'src/**', parserOptions = {} }) {
+    const typeAwareParserOptions = {
+        sourceType: 'module',
+        tsconfigRootDir,
+        ...(parserOptions.project ? { projectService: false } : { projectService: true }),
+        ...parserOptions
+    }
+
     return [
         {
             files: [`${srcGlob}/*.ts`],
             linterOptions: { reportUnusedDisableDirectives: true },
             languageOptions: {
                 parser: tseslint.parser,
-                parserOptions: { sourceType: 'module', projectService: true, tsconfigRootDir },
+                parserOptions: typeAwareParserOptions,
                 globals: { ...baseGlobals }
             },
             plugins: { ...basePlugins },

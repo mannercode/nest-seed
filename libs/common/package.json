@@ -7,7 +7,7 @@
         "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
         "clean": "jest --clearCache",
         "test": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
-        "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
+        "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.jest.json && eslint src/ --max-warnings=0 && prettier --check src/",
         "format": "eslint src/ --fix && prettier --write src/",
         "atoz": "npm run build && npm run lint && npm test"
     },

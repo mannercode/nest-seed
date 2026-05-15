@@ -5,8 +5,8 @@
     "scripts": {
         "start": "node _output/dist/index.js",
         "clean": "docker compose --env-file .env -f ../../deploy/compose.yml down -v -t 0 && jest --clearCache",
-        "format": "eslint src/ --fix && prettier --write src/",
-        "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
+        "format": "eslint src/ scripts/ --fix && prettier --write src/ scripts/",
+        "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.jest.json && eslint src/ scripts/ --max-warnings=0 && prettier --check src/ scripts/",
         "build": "nest build -b webpack && npm run bundle-workflows",
         "bundle-workflows": "ts-node --transpile-only scripts/bundle-workflows.ts",
         "predev": "free-port 3000 && npm run bundle-workflows",

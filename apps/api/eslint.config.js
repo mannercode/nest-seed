@@ -6,7 +6,7 @@ const {
     barrelImportPatterns,
     nodeBuiltinModulePattern,
     createBaseConfigs
-} = require('../../eslint.config.base')
+} = require('../../eslint.config.node')
 
 const internalAliasPattern = '^(?:application|gateway|core|infrastructure|config)$'
 const dependencyIgnorePatterns = [
@@ -23,12 +23,17 @@ const sourceDependencyOptions = {
 const testDependencyOptions = { ...sourceDependencyOptions, development: true }
 
 module.exports = [
-    ...createBaseConfigs({ tsconfigRootDir: __dirname }),
+    ...createBaseConfigs({
+        tsconfigRootDir: __dirname,
+        srcGlob: '{src,scripts}/**',
+        parserOptions: { project: ['./tsconfig.json', './tsconfig.jest.json'] }
+    }),
     {
-        files: ['src/**/*.ts'],
+        files: ['src/**/*.ts', 'scripts/**/*.ts'],
         plugins: { allowed: allowedDependenciesPlugin },
         rules: { 'default-case': 'off', 'allowed/dependencies': ['warn', sourceDependencyOptions] }
     },
+    { files: ['scripts/**/*.ts'], rules: { 'no-restricted-imports': 'off' } },
     {
         files: ['src/**/__tests__/**/*.ts', 'src/development.ts'],
         languageOptions: { globals: { ...baseGlobals, ...globals.jest } },
