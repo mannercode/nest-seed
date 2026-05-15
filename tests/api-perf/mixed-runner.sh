@@ -7,7 +7,7 @@
 # 사전 조건: API 스택이 떠 있어야 한다(REPLICAS=8 권장). theaters도 미리 시드되어
 # 있어야 한다(약 50K 이상).
 #
-# 사용법: bash apps/api/tests/perf/mixed-runner.sh
+# 사용법: bash tests/api-perf/mixed-runner.sh
 
 set -euo pipefail
 

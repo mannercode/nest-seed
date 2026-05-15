@@ -45,7 +45,7 @@ curl http://localhost:3000/movies
 이 테스트는 인프라 비용이 크다. 기본 `npm test`에는 넣지 않고, 필요할 때 셸에서 직접 실행한다.
 
 ```bash
-bash apps/api/tests/runner.sh <scenario>
+bash tests/api-race/runner.sh <scenario>
 # scenario: sse | user-race | ticket-holding-race | showtime-overlap-race | purchase-double-spend | replica-chaos | jwt-refresh-race
 ```
 
@@ -70,12 +70,14 @@ nest-seed/
 │   │   ├── config/              환경 변수, 외부 자원 진입점
 │   │   ├── modules/             NestJS 모듈 연결 (AppConfig, Global, Health, *-setup)
 │   │   └── bootstrap.ts         앱 부팅 진입점
-│   ├── api-docs/                실행 가능한 API 문서 (curl 기반)
-│   └── tests/                   분산 레이스 시나리오, 성능 테스트 도구
+│   └── api-docs/                실행 가능한 API 문서 (curl 기반)
 │
 ├── apps/console/            ← Next.js 관리 콘솔 (로컬 기본 3100 포트)
 │
-├── tests/console-e2e/       ← Playwright 콘솔 e2e 테스트
+├── tests/
+│   ├── api-race/            ← 배포된 API 스택 대상 분산 레이스 시나리오
+│   ├── api-perf/            ← 배포된 API 스택 대상 성능 측정 도구
+│   └── console-e2e/         ← Playwright 콘솔 e2e 테스트
 │
 ├── deploy/                  ← Docker Compose, NGINX (앱 진입점)
 │

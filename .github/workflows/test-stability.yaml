@@ -100,4 +100,4 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
                       echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-                      bash .github/scripts/repeat.sh 50 bash apps/api/tests/runner.sh ${{ matrix.scenario }}
+                      bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh ${{ matrix.scenario }}

@@ -131,7 +131,7 @@ jest.setup.js    worker별 DB·버킷 준비
 각 스크립트는 요청마다 별도 `http.Agent({keepAlive:false})`를 만든다. NGINX의 `least_conn`이 실제로 여러 컨테이너로 요청을 나누도록 keep-alive 풀을 공유하지 않기 위해서다. 응답의 `x-replica-id` 헤더로 요청이 여러 컨테이너에 분산되었는지도 확인한다. 이렇게 해서 “사실은 한 컨테이너에만 갔는데 통과한” 거짓 성공을 막는다.
 
 ```bash
-bash apps/api/tests/runner.sh <scenario>
+bash tests/api-race/runner.sh <scenario>
 ```
 
 CI는 [test-stability.yaml](../.github/workflows/test-stability.yaml)의 `scenario` job에서 각 분산 시나리오를 50회 반복 실행한다. 같은 워크플로 안에서 단위/통합 테스트는 75회, 부팅 검증은 50회 반복한다. 레이스 코드는 한 번 통과했다고 안전하다고 보기 어렵다. 그래서 결과가 얼마나 흔들리는지 누적으로 확인한다.
