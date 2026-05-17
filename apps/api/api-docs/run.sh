@@ -13,6 +13,17 @@ YELLOW='\033[33m'
 MAGENTA='\033[35m'
 PURPLE=$'\033[1;35m'
 
+RUN_ID="$(date '+%Y%m%d_%H%M%S')"
+OUTPUT_ROOT="$(pwd)/_output"
+LOG_DIR="${OUTPUT_ROOT}/logs/${RUN_ID}"
+DOC_DIR="${OUTPUT_ROOT}/docs"
+SUMMARY_MD="${DOC_DIR}/summary.md"
+SUMMARY_JSON="${DOC_DIR}/summary.json"
+SUMMARY_JSONL="${DOC_DIR}/summary.jsonl"
+
+CURRENT_GROUP=''
+CURRENT_SPEC=''
+
 LOG_LINE() {
 	echo "$*" >>"${LOG_FILE}"
 }
@@ -125,11 +136,95 @@ format_response() {
 	fi
 }
 
+markdown_escape() {
+	local value=${1:-}
+	value="${value//$'\n'/ }"
+	value="${value//|/\\|}"
+	printf '%s' "${value}"
+}
+
+init_summary() {
+	mkdir -p "${DOC_DIR}"
+	: >"${SUMMARY_JSONL}"
+
+	{
+		printf '# API 문서\n\n'
+		printf '실행 가능한 curl spec에서 생성한 최신 API 호출 목록이다.\n\n'
+		printf -- '- 생성 시각: `%s`\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+		printf -- '- 서버: `%s`\n' "${SERVER_URL}"
+		printf -- '- 상세 로그: [%s](../logs/%s/)\n\n' "${RUN_ID}" "${RUN_ID}"
+		printf '| 그룹 | 설명 | Method | Endpoint | 기대 | 실제 | 결과 | 상세 |\n'
+		printf '| --- | --- | --- | --- | ---: | ---: | --- | --- |\n'
+	} >"${SUMMARY_MD}"
+}
+
+record_summary() {
+	local description=$1
+	local expected_status=$2
+	local method=$3
+	local endpoint=$4
+	local group=${CURRENT_GROUP:-일반}
+	local display_endpoint
+	local log_path
+	local result
+
+	display_endpoint=$(format_endpoint "${endpoint}")
+	log_path="${LOG_FILE#${OUTPUT_ROOT}/}"
+
+	if [[ "${STATUS}" -eq "${expected_status}" ]]; then
+		result='PASS'
+	else
+		result='FAIL'
+	fi
+
+	printf '| %s | %s | `%s` | `%s` | `%s` | `%s` | `%s` | [로그](../%s) |\n' \
+		"$(markdown_escape "${group}")" \
+		"$(markdown_escape "${description}")" \
+		"${method}" \
+		"$(markdown_escape "${display_endpoint}")" \
+		"${expected_status}" \
+		"${STATUS}" \
+		"${result}" \
+		"${log_path}" >>"${SUMMARY_MD}"
+
+	jq -cn \
+		--arg runId "${RUN_ID}" \
+		--arg spec "${CURRENT_SPEC}" \
+		--arg group "${group}" \
+		--arg description "${description}" \
+		--arg method "${method}" \
+		--arg endpoint "${display_endpoint}" \
+		--arg actualEndpoint "${endpoint}" \
+		--arg expectedStatus "${expected_status}" \
+		--arg actualStatus "${STATUS}" \
+		--arg result "${result}" \
+		--arg log "../${log_path}" \
+		'{
+			runId: $runId,
+			spec: $spec,
+			group: $group,
+			description: $description,
+			method: $method,
+			endpoint: $endpoint,
+			actualEndpoint: $actualEndpoint,
+			expectedStatus: ($expectedStatus | tonumber),
+			actualStatus: ($actualStatus | tonumber),
+			result: $result,
+			log: $log
+		}' >>"${SUMMARY_JSONL}"
+}
+
+finalize_summary() {
+	jq -s '.' "${SUMMARY_JSONL}" >"${SUMMARY_JSON}"
+	rm -f "${SUMMARY_JSONL}"
+}
+
 TEST() {
-	local expected_status=$1
-	local method=$2
-	local endpoint=$3
-	shift 3
+	local description=$1
+	local expected_status=$2
+	local method=$3
+	local endpoint=$4
+	shift 4
 
 	LOG_COMMAND "${method}" "${SERVER_URL}${endpoint}" "$@"
 
@@ -150,6 +245,8 @@ TEST() {
 	LOG_JSON "${BODY}"
 	LOG_LINE "'"
 	LOG_LINE ""
+
+	record_summary "${description}" "${expected_status}" "${method}" "${endpoint}"
 }
 
 SETUP() {
@@ -187,10 +284,13 @@ fi
 PASSED_TESTS=0
 FAILED_TESTS=0
 LOG_FILE=''
-LOG_DIR="$(pwd)/_output/logs/$(date '+%Y%m%d_%H%M%S')"
+
+init_summary
 
 for spepath in "${specs[@]}"; do
 	LOG_FILE="${LOG_DIR}/${spepath#./}.log"
+	CURRENT_SPEC="${spepath#./}"
+	CURRENT_GROUP="$(basename "${spepath}" .spec)"
 	mkdir -p "$(dirname "${LOG_FILE}")"
 	: >"${LOG_FILE}"
 
@@ -199,8 +299,12 @@ for spepath in "${specs[@]}"; do
 	popd >/dev/null
 done
 
+finalize_summary
+
 echo ""
 echo -e "${BOLD}로그${RESET} : ${CYAN}${LOG_DIR}${RESET}"
+echo -e "${BOLD}문서${RESET} : ${CYAN}${SUMMARY_MD}${RESET}"
+echo -e "${BOLD}JSON${RESET} : ${CYAN}${SUMMARY_JSON}${RESET}"
 echo -e "${BOLD}성공${RESET} : ${GREEN}${PASSED_TESTS}${RESET}"
 echo -e "${BOLD}실패${RESET} : ${RED}${FAILED_TESTS}${RESET}"
 

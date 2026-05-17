@@ -10,7 +10,8 @@ SETUP POST /booking/showtimes/${SHOWTIME_ID}/tickets/hold \
 	-H 'Content-Type: application/json' \
 	-d '{ "ticketIds": ["'${TICKET_ID_1}'", "'${TICKET_ID_2}'"] }'
 
-TEST 201 POST /purchases \
+TEST "선점한 티켓 묶음을 구매한다" \
+	201 POST /purchases \
 	-H 'Content-Type: application/json' \
 	-d '{
 			"userId": "'${USER_ID}'",
@@ -23,4 +24,5 @@ TEST 201 POST /purchases \
 
 PURCHASE_ID=$(echo "${BODY}" | jq -r '.id')
 
-TEST 200 GET /purchases/${PURCHASE_ID}
+TEST "구매 기록을 조회한다" \
+	200 GET /purchases/${PURCHASE_ID}
