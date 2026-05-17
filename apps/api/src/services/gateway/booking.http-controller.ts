@@ -11,7 +11,7 @@ import {
     UseGuards
 } from '@nestjs/common'
 import { BookingService, HoldTicketsBodyDto } from 'application'
-import { UserJwtAuthGuard } from './guards'
+import { UserAuthGuard } from './guards'
 import { ParseShowdatePipe } from './pipes'
 import { UserAuthRequest } from './types'
 
@@ -26,7 +26,7 @@ export class BookingHttpController {
 
     @HttpCode(HttpStatus.NO_CONTENT)
     @Post('showtimes/:showtimeId/tickets/hold')
-    @UseGuards(UserJwtAuthGuard)
+    @UseGuards(UserAuthGuard)
     async holdTickets(
         @Param('showtimeId') showtimeId: string,
         @Body() body: HoldTicketsBodyDto,

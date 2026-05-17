@@ -40,6 +40,20 @@ REPLICAS="${REPLICAS:-4}" docker compose --env-file "$ENV_FILE" up -d --build --
 echo ""
 docker compose --env-file "$ENV_FILE" ps
 
+# race 시나리오의 setupFixture는 admin 보호 엔드포인트(POST /movies, /theaters,
+# /showtime-creation/*)를 호출한다. dev seed admin으로 로그인해 토큰을 받아
+# 환경변수로 전달한다(deploy compose는 NODE_ENV=production이지만
+# SEED_DEV_ADMIN=true가 같이 켜져 있어 시드가 생성된다).
+LOGIN_RESPONSE=$(curl -sS -X POST "${SERVER_URL}/admins/login" \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"admin@nest-seed.local","password":"DevPass1!"}')
+ADMIN_ACCESS_TOKEN=$(echo "${LOGIN_RESPONSE}" | jq -r '.accessToken // empty')
+if [ -z "${ADMIN_ACCESS_TOKEN}" ]; then
+    echo "Error: admin login failed: ${LOGIN_RESPONSE}"
+    exit 1
+fi
+export ADMIN_ACCESS_TOKEN
+
 echo ""
 echo "=== ${TEST_NAME} ==="
 if SERVER_URL="${SERVER_URL}" node "${TEST_SCRIPT}"; then

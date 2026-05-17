@@ -11,6 +11,23 @@ USER_BIRTHDATE="1990-01-01T00:00:00.000Z"
 USER_PASSWORD="testpassword"
 USER_EMAIL="user@example.com"
 
+# admin은 부팅 시 dev seed가 만들어 두는 시드 1명만 존재한다.
+# `CURRENT_AUTH_TOKEN`이 세팅돼 있으면 run.sh의 CURL이 모든 호출에 자동으로
+# Authorization 헤더를 붙인다. admin → user로 전환할 때는 다시 login_user를 호출한다.
+ADMIN_EMAIL="admin@nest-seed.local"
+ADMIN_PASSWORD="DevPass1!"
+ADMIN_ACCESS_TOKEN=""
+CURRENT_AUTH_TOKEN=""
+
+login_admin() {
+	SETUP POST /admins/login \
+		-H 'Content-Type: application/json' \
+		-d '{ "email": "'"${ADMIN_EMAIL}"'", "password": "'"${ADMIN_PASSWORD}"'" }'
+
+	ADMIN_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
+	CURRENT_AUTH_TOKEN="${ADMIN_ACCESS_TOKEN}"
+}
+
 create_user() {
 	USER_EMAIL=$(random_email)
 
@@ -33,6 +50,7 @@ login_user() {
 
 	USER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
 	USER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
+	CURRENT_AUTH_TOKEN="${USER_ACCESS_TOKEN}"
 }
 
 create_and_login_user() {

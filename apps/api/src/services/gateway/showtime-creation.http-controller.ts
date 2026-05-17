@@ -8,7 +8,8 @@ import {
     HttpStatus,
     Post,
     Query,
-    Sse
+    Sse,
+    UseGuards
 } from '@nestjs/common'
 import {
     BulkCreateShowtimesDto,
@@ -17,12 +18,12 @@ import {
     ShowtimeCreationService
 } from 'application'
 import { map, Observable } from 'rxjs'
+import { AdminAuthGuard } from './guards'
 
-// 인가: 이 컨트롤러도 인가 검사를 비워 둔다. SSE 스트림은 다른 사용자가
-// 만든 saga의 진행 상황까지 그대로 노출하므로 특히 주의한다. 포크할 때는
-// `@UseGuards(UserJwtAuthGuard)` 또는 관리자 가드를 도메인 정책에 맞게
-// 붙인다. 자세한 안내는 README "5. 인가" 절에 있다.
+// 인가: 상영 등록 흐름은 콘솔 운영자(admin) 전용이다. 조회/SSE까지 같은
+// 신뢰 영역으로 묶어 클래스 레벨로 가드를 건다.
 @Controller('showtime-creation')
+@UseGuards(AdminAuthGuard)
 export class ShowtimeCreationHttpController {
     constructor(
         private readonly showtimeCreationService: ShowtimeCreationService,

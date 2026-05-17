@@ -16,13 +16,12 @@ import {
 import { RecommendationService } from 'application'
 import { MoviesService, SearchMoviesPageDto, UpsertMovieDto } from 'core'
 import { CreateAssetDto } from 'infrastructure'
-import { UserOptionalJwtAuthGuard } from './guards'
+import { AdminAuthGuard, UserOptionalAuthGuard } from './guards'
 import { UserOptionalAuthRequest } from './types'
 
-// 인가: 이 컨트롤러는 인가 검사를 일부러 비워 둔다. 도메인마다 필요한 정책이
-// 다르기 때문이다. 포크해서 쓸 때는 `@UseGuards(UserJwtAuthGuard)` 같은
-// 가드와 관리자/소유자 검사를 직접 붙인다. 자세한 안내는 README "5. 인가"
-// 절에 있다.
+// 인가: 변경 핸들러(create/update/delete/asset 관리/publish)는 admin 전용,
+// 조회는 공개로 둔다. 추천은 게스트도 호출하되 로그인 시 개인화하므로
+// optional 사용자 가드를 단다.
 @Controller('movies')
 export class MoviesHttpController {
     constructor(
@@ -31,35 +30,40 @@ export class MoviesHttpController {
     ) {}
 
     @Post()
+    @UseGuards(AdminAuthGuard)
     async create(@Body() upsertDto: UpsertMovieDto) {
         return this.moviesService.create(upsertDto)
     }
 
     @Post(':movieId/assets')
+    @UseGuards(AdminAuthGuard)
     createAsset(@Param('movieId') movieId: string, @Body() createDto: CreateAssetDto) {
         return this.moviesService.createAsset(movieId, createDto)
     }
 
     @Delete(':movieId')
     @HttpCode(HttpStatus.NO_CONTENT)
+    @UseGuards(AdminAuthGuard)
     async delete(@Param('movieId') movieId: string) {
         await this.moviesService.deleteMany([movieId])
     }
 
     @Delete(':movieId/assets/:assetId')
     @HttpCode(HttpStatus.NO_CONTENT)
+    @UseGuards(AdminAuthGuard)
     async deleteAsset(@Param('movieId') movieId: string, @Param('assetId') assetId: string) {
         await this.moviesService.deleteAsset(movieId, assetId)
     }
 
     @HttpCode(HttpStatus.NO_CONTENT)
     @Post(':movieId/assets/:assetId/finalize')
+    @UseGuards(AdminAuthGuard)
     async finalizeUpload(@Param('movieId') movieId: string, @Param('assetId') assetId: string) {
         await this.moviesService.finalizeUpload(movieId, assetId)
     }
 
     @Get('recommended')
-    @UseGuards(UserOptionalJwtAuthGuard)
+    @UseGuards(UserOptionalAuthGuard)
     async searchRecommendedMovies(@Req() req: UserOptionalAuthRequest) {
         const userId = defaultTo(req.user?.sub, null)
 
@@ -74,6 +78,7 @@ export class MoviesHttpController {
 
     @HttpCode(HttpStatus.OK)
     @Post(':movieId/publish')
+    @UseGuards(AdminAuthGuard)
     publish(@Param('movieId') movieId: string) {
         return this.moviesService.publish(movieId)
     }
@@ -84,6 +89,7 @@ export class MoviesHttpController {
     }
 
     @Patch(':movieId')
+    @UseGuards(AdminAuthGuard)
     async update(@Param('movieId') movieId: string, @Body() upsertDto: UpsertMovieDto) {
         return this.moviesService.update(movieId, upsertDto)
     }

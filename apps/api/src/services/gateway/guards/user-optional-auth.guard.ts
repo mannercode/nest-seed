@@ -5,7 +5,7 @@ import { JwtService } from '@nestjs/jwt'
 import { AppConfigService } from 'config'
 
 @Injectable()
-export class UserOptionalJwtAuthGuard extends OptionalJwtAuthGuard {
+export class UserOptionalAuthGuard extends OptionalJwtAuthGuard {
     constructor(jwtService: JwtService, reflector: Reflector, config: AppConfigService) {
         super(jwtService, reflector, {
             audience: config.auth.audience,

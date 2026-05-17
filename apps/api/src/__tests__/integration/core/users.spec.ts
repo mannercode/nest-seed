@@ -8,8 +8,8 @@ describe('UsersService', () => {
 
     beforeEach(async () => {
         const { createAppTestContext } = await import('../helpers')
-        const { UserJwtAuthGuard } = await import('gateway')
-        fix = await createAppTestContext({ ignoreGuards: [UserJwtAuthGuard] })
+        const { UserAuthGuard } = await import('gateway')
+        fix = await createAppTestContext({ ignoreGuards: [UserAuthGuard] })
     })
     afterEach(() => fix.teardown())
 

@@ -38,6 +38,9 @@ function requestJson(method, path, body) {
                 method,
                 headers: {
                     'content-type': 'application/json',
+                    ...(process.env.ADMIN_ACCESS_TOKEN
+                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
+                        : {}),
                     ...(payload ? { 'content-length': Buffer.byteLength(payload) } : {})
                 }
             },
@@ -76,7 +79,12 @@ function openSseClient(clientId) {
                 port: url.port,
                 path: url.pathname,
                 method: 'GET',
-                headers: { accept: 'text/event-stream' }
+                headers: {
+                    accept: 'text/event-stream',
+                    ...(process.env.ADMIN_ACCESS_TOKEN
+                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
+                        : {})
+                }
             },
             (res) => {
                 if (res.statusCode !== 200) {

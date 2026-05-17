@@ -1,3 +1,4 @@
+export * from './admins.utils'
 export * from './assets.utils'
 export * from './movies.utils'
 export * from './payments.utils'

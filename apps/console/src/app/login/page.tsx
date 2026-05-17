@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { ApiError, api } from '@/lib/api-client'
@@ -27,7 +26,7 @@ export default function LoginPage() {
         setError(null)
         setBusy(true)
         try {
-            const tokens = await api.post<LoginResponse>('/users/login', {
+            const tokens = await api.post<LoginResponse>('/admins/login', {
                 body: { email, password }
             })
             saveSession(tokens.accessToken, email)
@@ -46,7 +45,11 @@ export default function LoginPage() {
                 onSubmit={onSubmit}
                 className="w-full max-w-md space-y-5 rounded-xl bg-white p-8 shadow"
             >
-                <h1 className="text-xl font-semibold">로그인</h1>
+                <h1 className="text-xl font-semibold">관리자 로그인</h1>
+                <p className="text-sm text-slate-500">
+                    콘솔은 운영자(admin) 전용이다. 가입 페이지가 없는 이유는 시드된 1명으로만
+                    동작하기 때문이다.
+                </p>
                 <label className="block text-sm font-medium text-slate-700">
                     이메일
                     <input
@@ -79,12 +82,6 @@ export default function LoginPage() {
                 >
                     {busy ? '로그인 중…' : '로그인'}
                 </button>
-                <p className="text-sm text-slate-500">
-                    계정이 없다면{' '}
-                    <Link href="/signup" className="underline">
-                        가입
-                    </Link>
-                </p>
             </form>
         </main>
     )

@@ -9,6 +9,10 @@ export class AppConfigService extends BaseConfigService {
         AUTH_ACCESS_SECRET: Joi.string().required(),
 
         AUTH_ACCESS_TOKEN_EXPIRATION: Joi.string().required(),
+        AUTH_ADMIN_ACCESS_SECRET: Joi.string().required(),
+        AUTH_ADMIN_ACCESS_TOKEN_EXPIRATION: Joi.string().required(),
+        AUTH_ADMIN_REFRESH_SECRET: Joi.string().required(),
+        AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
         AUTH_AUDIENCE: Joi.string().required(),
         AUTH_ISSUER: Joi.string().required(),
         AUTH_REFRESH_SECRET: Joi.string().required(),
@@ -68,6 +72,19 @@ export class AppConfigService extends BaseConfigService {
             issuer: this.getString('AUTH_ISSUER'),
             refreshSecret: this.getString('AUTH_REFRESH_SECRET'),
             refreshTokenExpiration: this.getString('AUTH_REFRESH_TOKEN_EXPIRATION')
+        }
+    }
+
+    // admin은 사용자(user)와 토큰 신뢰 영역을 분리한다. 같은 secret을 쓰면
+    // user 토큰으로 admin API에 접근할 수 있어 권한 경계가 깨진다.
+    get adminAuth() {
+        return {
+            accessSecret: this.getString('AUTH_ADMIN_ACCESS_SECRET'),
+            accessTokenExpiration: this.getString('AUTH_ADMIN_ACCESS_TOKEN_EXPIRATION'),
+            audience: this.getString('AUTH_AUDIENCE'),
+            issuer: this.getString('AUTH_ISSUER'),
+            refreshSecret: this.getString('AUTH_ADMIN_REFRESH_SECRET'),
+            refreshTokenExpiration: this.getString('AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION')
         }
     }
 

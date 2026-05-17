@@ -20,7 +20,8 @@ describe('MoviesAssets', () => {
     beforeEach(async () => {
         const { createAppTestContext } = await import('../helpers')
         const { AssetsService } = await import('infrastructure')
-        fix = await createAppTestContext()
+        const { AdminAuthGuard } = await import('gateway')
+        fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
         assetsService = fix.module.get(AssetsService)
     })
     afterEach(() => fix.teardown())

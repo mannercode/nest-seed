@@ -1,8 +1,11 @@
 #!/bin/bash
 . ./common.fixture
 
-create_and_login_user
+# admin 흐름으로 setup, 이후 user로 전환해 본 TEST를 진행한다.
+login_admin
 setup_showtime_resources
+
+create_and_login_user
 
 TEST "영화 주변 극장을 거리순으로 조회한다" \
 	200 GET "/booking/movies/${MOVIE_ID}/theaters?latLong=37.5665,126.9780"

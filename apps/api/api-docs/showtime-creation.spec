@@ -1,6 +1,7 @@
 #!/bin/bash
 . ./common.fixture
 
+login_admin
 create_movie
 publish_movie
 create_theater

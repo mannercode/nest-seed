@@ -1,6 +1,8 @@
 #!/bin/bash
 . ./common.fixture
 
+login_admin
+
 TEST "극장을 생성한다" \
 	201 POST /theaters \
 	-H 'Content-Type: application/json' \

@@ -7,7 +7,7 @@ import { AppConfigService } from 'config'
 import { UserLocalAuthGuard } from './user-local-auth.guard'
 
 @Injectable()
-export class UserJwtAuthGuard extends JwtAuthGuard {
+export class UserAuthGuard extends JwtAuthGuard {
     constructor(jwtService: JwtService, reflector: Reflector, config: AppConfigService) {
         super(jwtService, reflector, {
             audience: config.auth.audience,

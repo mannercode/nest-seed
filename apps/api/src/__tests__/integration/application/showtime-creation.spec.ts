@@ -14,7 +14,8 @@ describe('ShowtimeCreationService', () => {
     beforeEach(async () => {
         const { createAppTestContext } = await import('../helpers')
         const { ShowtimesService, TicketsService } = await import('core')
-        fix = await createAppTestContext()
+        const { AdminAuthGuard } = await import('gateway')
+        fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
         showtimesService = fix.module.get(ShowtimesService)
         ticketsService = fix.module.get(TicketsService)
 

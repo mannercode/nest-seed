@@ -8,6 +8,7 @@ import {
     ShowtimeCreationModule
 } from 'application'
 import {
+    AdminsModule,
     MoviesModule,
     PurchaseRecordsModule,
     ShowtimesModule,
@@ -18,18 +19,23 @@ import {
     WatchRecordsModule
 } from 'core'
 import {
+    AdminAuthGuard,
+    AdminLocalAuthGuard,
+    AdminsHttpController,
     BookingHttpController,
     MoviesHttpController,
     PurchaseHttpController,
     RequestValidationPipe,
     ShowtimeCreationHttpController,
     TheatersHttpController,
-    UserJwtAuthGuard,
+    UserAuthGuard,
+    UserHomeViewHttpController,
     UserLocalAuthGuard,
-    UserOptionalJwtAuthGuard,
+    UserOptionalAuthGuard,
     UsersHttpController
 } from 'gateway'
 import { AssetsModule, PaymentsModule } from 'infrastructure'
+import { UserHomeViewModule } from 'view'
 import { AppConfigModule, GlobalModule, HealthModule } from './modules'
 
 @Module({
@@ -37,6 +43,7 @@ import { AppConfigModule, GlobalModule, HealthModule } from './modules'
         GlobalModule,
         AppConfigModule,
         HealthModule,
+        AdminsModule,
         UsersModule,
         MoviesModule,
         TheatersModule,
@@ -50,20 +57,25 @@ import { AppConfigModule, GlobalModule, HealthModule } from './modules'
         BookingModule,
         PurchaseModule,
         RecommendationModule,
-        ShowtimeCreationModule
+        ShowtimeCreationModule,
+        UserHomeViewModule
     ],
     controllers: [
+        AdminsHttpController,
         BookingHttpController,
         UsersHttpController,
         MoviesHttpController,
         PurchaseHttpController,
         ShowtimeCreationHttpController,
-        TheatersHttpController
+        TheatersHttpController,
+        UserHomeViewHttpController
     ],
     providers: [
-        UserJwtAuthGuard,
+        AdminAuthGuard,
+        AdminLocalAuthGuard,
+        UserAuthGuard,
         UserLocalAuthGuard,
-        UserOptionalJwtAuthGuard,
+        UserOptionalAuthGuard,
         { provide: APP_PIPE, useClass: RequestValidationPipe },
         { provide: APP_FILTER, useClass: HttpExceptionLoggerFilter },
         { provide: APP_INTERCEPTOR, useClass: HttpSuccessLoggerInterceptor }

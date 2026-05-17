@@ -9,7 +9,8 @@ describe('MoviesPublish', () => {
     beforeEach(async () => {
         const { createAppTestContext } = await import('../helpers')
         const { MoviesService } = await import('core')
-        fix = await createAppTestContext()
+        const { AdminAuthGuard } = await import('gateway')
+        fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
         moviesService = fix.module.get(MoviesService)
     })
     afterEach(() => fix.teardown())

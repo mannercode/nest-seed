@@ -20,7 +20,7 @@ import {
     UpdateUserDto,
     UsersService
 } from 'core'
-import { UserJwtAuthGuard, UserLocalAuthGuard, Public } from './guards'
+import { UserAuthGuard, UserLocalAuthGuard, Public } from './guards'
 import { UserAuthRequest } from './types'
 
 // 인가: 클래스 수준 JWT 가드 외에는 소유자/관리자 검사를 비워 두었다.
@@ -30,7 +30,7 @@ import { UserAuthRequest } from './types'
 // `req.user.sub === userId` 검사를, 관리자 전용 핸들러에는 관리자 가드를
 // 붙인다. 자세한 안내는 README "5. 인가" 절에 있다.
 @Controller('users')
-@UseGuards(UserJwtAuthGuard)
+@UseGuards(UserAuthGuard)
 export class UsersHttpController {
     constructor(private readonly usersService: UsersService) {}
 

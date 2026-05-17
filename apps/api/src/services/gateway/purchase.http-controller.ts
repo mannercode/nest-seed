@@ -4,7 +4,7 @@ import { PurchaseRecordsService } from 'core'
 
 // 인가: 이 컨트롤러도 인가 검사를 비워 둔다. 지금은 본문에 들어오는 어떤
 // 사용자 ID로도 결제가 가능하고, 구매 기록도 인증 없이 조회할 수 있다.
-// 포크해서 쓸 때는 `@UseGuards(UserJwtAuthGuard)`를 걸고, 본문의 사용자 ID를
+// 포크해서 쓸 때는 `@UseGuards(UserAuthGuard)`를 걸고, 본문의 사용자 ID를
 // 무시한 뒤 `req.user.sub`에서 가져오도록 바꾼다. 구매 기록 조회에는 소유자
 // 검사를 더한다. 자세한 안내는 README "5. 인가" 절에 있다.
 @Controller('purchases')

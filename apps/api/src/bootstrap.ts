@@ -1,15 +1,44 @@
-import { AppLoggerService, PathUtil } from '@mannercode/common'
+import { AppLoggerService, isDuplicateKeyError, PathUtil } from '@mannercode/common'
 import { NestFactory } from '@nestjs/core'
 import compression from 'compression'
 import { AppConfigService } from 'config'
+import { AdminsService } from 'core'
 import express from 'express'
 import { hostname } from 'os'
 import { exit } from 'process'
 import { AppModule } from './app.module'
 
+// dev 환경 부팅 시 콘솔 진입용 시드 admin을 만들어 둔다. 운영 빌드에서는
+// 절대 동작하면 안 되므로 NODE_ENV로 막는다. 이미 같은 이메일이 있으면
+// Mongo의 unique 제약이 duplicate-key 에러를 돌려주므로 그대로 무시한다.
+// 사전 조회 + 생성보다 race-safe.
+const DEV_ADMIN_EMAIL = 'admin@nest-seed.local'
+const DEV_ADMIN_NAME = 'Dev Admin'
+const DEV_ADMIN_PASSWORD = 'DevPass1!'
+
+async function seedDevAdmin(adminsService: AdminsService) {
+    try {
+        await adminsService.create({
+            email: DEV_ADMIN_EMAIL,
+            name: DEV_ADMIN_NAME,
+            password: DEV_ADMIN_PASSWORD
+        })
+    } catch (error) {
+        if (isDuplicateKeyError(error)) return
+        throw error
+    }
+}
+
 export async function bootstrap() {
     const app = await NestFactory.create(AppModule)
     const { http, log } = app.get(AppConfigService)
+
+    // dev seed는 NODE_ENV가 production이 아닐 때 자동, production에서도 `SEED_DEV_ADMIN=true`로
+    // 명시한 환경에서만 동작한다. api-docs(deploy/compose.yml)처럼 production 모드로 띄우되 admin
+    // 로그인이 필요한 환경을 위해 둔 가드다.
+    if (process.env.NODE_ENV !== 'production' || process.env.SEED_DEV_ADMIN === 'true') {
+        await seedDevAdmin(app.get(AdminsService))
+    }
 
     await PathUtil.mkdir(log.directory)
 

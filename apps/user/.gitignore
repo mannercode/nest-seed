@@ -1,0 +1,8 @@
+.next/
+_output/
+node_modules/
+next-env.d.ts
+# 개발자마다 다른 환경 변수를 두는 파일이다. 커밋되는 기본값은 `.env`에 있고,
+# Next.js가 그것을 먼저 읽는다.
+.env*.local
+*.tsbuildinfo

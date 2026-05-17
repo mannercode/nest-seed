@@ -60,14 +60,38 @@ CURL() {
 	local url=$2
 	shift 2
 
+	local -a args=("$@")
+
+	# 가장 최근에 로그인한 주체(admin 또는 user)의 토큰을 자동 주입한다.
+	# 호출자가 이미 Authorization 헤더를 명시했다면 그것을 우선한다.
+	# spec은 `login_admin` / `login_user`로 `CURRENT_AUTH_TOKEN`을 갈아끼우며 흐름을 표현한다.
+	# presigned upload처럼 외부 storage로 가는 호출은 자기 인증 방식이 따로 있으므로
+	# `SERVER_URL` 접두사로 시작하는 API 호출에만 자동 주입한다.
+	if [[ -n "${CURRENT_AUTH_TOKEN:-}" && "${url}" == "${SERVER_URL}"* ]]; then
+		local has_auth=0
+		local arg
+		for arg in "${args[@]}"; do
+			if [[ "${arg}" == "Authorization: "* ]]; then
+				has_auth=1
+				break
+			fi
+		done
+		if [[ "${has_auth}" -eq 0 ]]; then
+			args+=(-H "Authorization: Bearer ${CURRENT_AUTH_TOKEN}")
+		fi
+	fi
+
 	local curl_exit=0
-	response=$(curl -sSX "${method}" -w "%{http_code}" "${url}" "$@") || curl_exit=$?
+	response=$(curl -sSX "${method}" -w "%{http_code}" "${url}" "${args[@]}") || curl_exit=$?
 
 	if [[ "${curl_exit}" -ne 0 ]]; then
 		printf '%b %s %s\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "${url}"
 		printf '  curl 종료 코드: %d, 응답: %s\n' "${curl_exit}" "${response}"
 		exit 1
 	fi
+
+	# 로그도 자동 주입된 헤더를 포함해 실제 호출 그대로 남긴다.
+	LOG_COMMAND "${method}" "${url}" "${args[@]}"
 
 	STATUS="${response:${#response}-3}"
 	BODY="${response:0:${#response}-3}"
@@ -226,8 +250,6 @@ TEST() {
 	local endpoint=$4
 	shift 4
 
-	LOG_COMMAND "${method}" "${SERVER_URL}${endpoint}" "$@"
-
 	CURL "${method}" "${SERVER_URL}${endpoint}" "$@"
 
 	if [[ "${STATUS}" -ne "${expected_status}" ]]; then
@@ -255,7 +277,6 @@ SETUP() {
 	shift 2
 
 	LOG_LINE "# 준비 요청"
-	LOG_COMMAND "${method}" "${SERVER_URL}${endpoint}" "$@"
 
 	CURL "${method}" "${SERVER_URL}${endpoint}" "$@"
 

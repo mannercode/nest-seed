@@ -15,7 +15,8 @@ describe('MoviesService', () => {
 
     beforeEach(async () => {
         const { createAppTestContext } = await import('../helpers')
-        fix = await createAppTestContext()
+        const { AdminAuthGuard } = await import('gateway')
+        fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
     })
     afterEach(() => fix.teardown())
 

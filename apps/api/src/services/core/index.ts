@@ -1,3 +1,4 @@
+export * from './admins'
 export * from './errors'
 export * from './movies'
 export * from './purchase-records'

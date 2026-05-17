@@ -1,26 +1,16 @@
 import { expect, test } from '@playwright/test'
 
 /**
- * 가입, 로그인, 영화 등록까지를 한 흐름으로 확인하는 스모크 테스트이다.
- * 매번 새 이메일을 만들어 DB에 남은 이전 데이터와 충돌하지 않게 한다.
- * 등록한 영화의 사용자 노출은 별도 사용자 앱 e2e에서 검증한다.
+ * 시드 admin으로 로그인해 새 영화를 등록하는 스모크 테스트이다.
+ * admin 계정은 `apps/api/src/bootstrap.ts`의 dev seed가 만든다.
  */
-test('가입 후 로그인하고 새 영화를 등록한다', async ({ page }) => {
+test('admin으로 로그인하고 새 영화를 등록한다', async ({ page }) => {
     const stamp = Date.now()
-    const email = `e2e-${stamp}@mail.com`
-    const password = 'password123'
     const title = `E2E 영화 ${stamp}`
 
-    await page.goto('/signup')
-    await page.getByRole('textbox', { name: '이메일' }).fill(email)
-    await page.getByRole('textbox', { name: '이름' }).fill('e2e-user')
-    await page.getByLabel('비밀번호').fill(password)
-    await page.getByRole('button', { name: '가입하기' }).click()
-
-    await expect(page).toHaveURL(/\/login$/)
-
-    await page.getByRole('textbox', { name: '이메일' }).fill(email)
-    await page.getByLabel('비밀번호').fill(password)
+    await page.goto('/login')
+    await page.getByRole('textbox', { name: '이메일' }).fill('admin@nest-seed.local')
+    await page.getByLabel('비밀번호').fill('DevPass1!')
     await page.getByRole('button', { name: '로그인' }).click()
 
     await expect(page).toHaveURL(/\/movies\/new$/)

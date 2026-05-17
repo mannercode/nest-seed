@@ -1,6 +1,8 @@
 #!/bin/bash
 . ./common.fixture
 
+login_admin
+
 TEST "영화를 생성한다" \
 	201 POST /movies \
 	-H 'Content-Type: application/json' \
@@ -74,6 +76,10 @@ TEST "영화 에셋을 삭제한다" \
 
 TEST "영화를 삭제한다" \
 	204 DELETE /movies/${MOVIE_ID}
+
+# 추천 엔드포인트는 user-optional 가드라 admin 토큰을 보내면 신뢰 영역이
+# 어긋나 500이 된다. 게스트 호출을 보이려고 자동 주입을 비활성한다.
+CURRENT_AUTH_TOKEN=""
 
 TEST "추천 영화를 조회한다" \
 	200 GET /movies/recommended

@@ -1,8 +1,10 @@
 #!/bin/bash
 . ./common.fixture
 
-create_and_login_user
+login_admin
 setup_showtime_resources
+
+create_and_login_user
 wait_for_tickets
 
 SETUP POST /booking/showtimes/${SHOWTIME_ID}/tickets/hold \

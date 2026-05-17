@@ -46,6 +46,9 @@ function postJson(path, body) {
                 method: 'POST',
                 headers: {
                     'content-type': 'application/json',
+                    ...(process.env.ADMIN_ACCESS_TOKEN
+                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
+                        : {}),
                     'content-length': Buffer.byteLength(payload)
                 }
             },

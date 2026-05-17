@@ -35,6 +35,9 @@ function requestRaw(method, path, { body, headers } = {}) {
                 method,
                 headers: {
                     'content-type': 'application/json',
+                    ...(process.env.ADMIN_ACCESS_TOKEN
+                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
+                        : {}),
                     ...(payload ? { 'content-length': Buffer.byteLength(payload) } : {}),
                     ...(headers || {})
                 }
@@ -81,7 +84,12 @@ function waitForSagaSuccess(sagaId) {
                 port: url.port,
                 path: url.pathname,
                 method: 'GET',
-                headers: { accept: 'text/event-stream' }
+                headers: {
+                    accept: 'text/event-stream',
+                    ...(process.env.ADMIN_ACCESS_TOKEN
+                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
+                        : {})
+                }
             },
             (res) => {
                 let buffer = ''
