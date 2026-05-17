@@ -1,6 +1,6 @@
 export * from './app-config.module'
 export * from './global.module'
-export * from './health.module'
+export * from './health'
 export * from './mongoose-setup.module'
 export * from './nats-setup.module'
 export * from './redis-setup.module'

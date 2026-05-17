@@ -1,7 +1,10 @@
+import type { PaymentStatus } from '../models'
+
 export class PaymentDto {
     amount: number
     createdAt: Date
-    userId: string
     id: string
+    status: PaymentStatus
     updatedAt: Date
+    userId: string
 }

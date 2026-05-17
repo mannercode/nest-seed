@@ -101,6 +101,23 @@ describe('TicketsService', () => {
 
             expect(updatedTickets.every((t) => t.status === TicketStatus.Sold)).toBe(true)
         })
+
+        it('일부 티켓이 이미 목표 상태이면 409로 거절한다', async () => {
+            const [first, second] = await createTickets(fix, [
+                { status: TicketStatus.Available },
+                { status: TicketStatus.Sold }
+            ])
+
+            const promise = ticketsService.updateStatusMany(
+                [first.id, second.id],
+                TicketStatus.Sold
+            )
+
+            await expect(promise).rejects.toMatchObject({
+                response: { code: 'ERR_TICKET_STATUS_TRANSITION_FAILED' },
+                status: 409
+            })
+        })
     })
 
     describe('aggregateSales', () => {

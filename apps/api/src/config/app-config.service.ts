@@ -141,6 +141,9 @@ export class AppConfigService extends BaseConfigService {
         }
     }
 
+    // NestJS DI는 child class에 명시적 constructor가 없으면 부모 constructor
+    // 파라미터의 메타데이터를 읽지 못한다. 빈 위임처럼 보이지만 DI 동작에
+    // 꼭 필요하다.
     constructor(configService: ConfigService) {
         super(configService)
     }

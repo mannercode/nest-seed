@@ -1,7 +1,7 @@
 import { bundleWorkflowCode } from '@temporalio/worker'
 import fs from 'fs'
 import path from 'path'
-import { showtimeCreationBundle } from '../src/workflows'
+import { showtimeCreationBundle } from '../src/services/application/showtime-creation/worker/bundle'
 
 const workflows = [showtimeCreationBundle]
 

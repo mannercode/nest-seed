@@ -1,5 +1,5 @@
-import { mapDocToDto, Require } from '@mannercode/common'
-import { Injectable } from '@nestjs/common'
+import { mapDocToDto } from '@mannercode/common'
+import { ConflictException, Injectable } from '@nestjs/common'
 import {
     AggregateTicketSalesDto,
     CreateTicketDto,
@@ -7,6 +7,7 @@ import {
     SearchTicketsDto,
     TicketDto
 } from './dtos'
+import { TicketErrors } from './errors'
 import { Ticket, TicketStatus } from './models'
 import { TicketsRepository } from './tickets.repository'
 
@@ -42,22 +43,20 @@ export class TicketsService {
     }
 
     async updateStatusMany(ticketIds: string[], status: TicketStatus) {
-        const result = await this.repository.updateStatusMany(ticketIds, status)
+        // 사전 검사로 두 가지 충돌을 분리한다.
+        // 1) 누락된 ticketId — `getByIds`가 404로 던진다.
+        // 2) 이미 목표 상태인 티켓 — 도메인 충돌이므로 409로 거절한다.
+        // Mongoose 버전에 따라 `updateMany`의 `modifiedCount`가 같은 값으로
+        // set한 도큐먼트를 다르게 계산해 결과만으로는 판정이 흔들린다.
+        const existing = await this.repository.getByIds(ticketIds)
+        const alreadyAtTarget = existing
+            .filter((ticket) => ticket.status === status)
+            .map((ticket) => ticket.id)
+        if (alreadyAtTarget.length > 0) {
+            throw new ConflictException(TicketErrors.StatusTransitionFailed(alreadyAtTarget))
+        }
 
-        // 매칭된 문서 수가 입력 개수보다 적으면, 호출자가 없는 ticketId를
-        // 넘긴 것이다.
-        Require.equals(
-            result.matchedCount,
-            ticketIds.length,
-            'All ticket IDs must match existing documents.'
-        )
-        // 필터에는 걸렸지만 수정되지 않은 티켓이 있으면 이미 목표 상태였다는 뜻이다.
-        // 이 메서드는 멱등 갱신이 아니라 상태 전이를 검증하므로 그런 요청은 거절한다.
-        Require.equals(
-            result.matchedCount,
-            result.modifiedCount,
-            'The status of all tickets must be changed.'
-        )
+        await this.repository.updateStatusMany(ticketIds, status)
 
         const tickets = await this.repository.getByIds(ticketIds)
 

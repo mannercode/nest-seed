@@ -30,7 +30,14 @@ export class PaymentsService {
 
     private toDtos(payments: Payment[]) {
         return payments.map((payment) =>
-            mapDocToDto(payment, PaymentDto, ['id', 'userId', 'amount', 'createdAt', 'updatedAt'])
+            mapDocToDto(payment, PaymentDto, [
+                'id',
+                'userId',
+                'amount',
+                'status',
+                'createdAt',
+                'updatedAt'
+            ])
         )
     }
 }

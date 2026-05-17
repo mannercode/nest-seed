@@ -53,7 +53,16 @@ export class TicketPurchaseService {
             ticketCount: ticketIds.length
         })
 
-        await this.ticketsService.updateStatusMany(ticketIds, TicketStatus.Available)
+        // 보상 흐름은 어디서 멈췄는지에 따라 티켓이 이미 Available일 수 있다.
+        // `updateStatusMany`는 동일 상태로의 전이를 충돌로 보므로 Sold인 티켓만
+        // 골라 되돌린다.
+        const tickets = await this.ticketsService.getMany(ticketIds)
+        const soldTicketIds = tickets
+            .filter((ticket) => ticket.status === TicketStatus.Sold)
+            .map((ticket) => ticket.id)
+        if (soldTicketIds.length > 0) {
+            await this.ticketsService.updateStatusMany(soldTicketIds, TicketStatus.Available)
+        }
 
         await this.events.emitTicketPurchaseCanceled({ userId: createDto.userId, ticketIds })
     }
@@ -85,15 +94,12 @@ export class TicketPurchaseService {
         showtimes: ShowtimeDto[],
         ticketItems: PurchaseItemDto[]
     ) {
-        const heldTicketIds: string[] = []
-
-        for (const showtime of showtimes) {
-            const ticketIds = await this.ticketHoldingService.searchHeldTicketIds(
-                showtime.id,
-                userId
+        const heldByShowtime = await Promise.all(
+            showtimes.map((showtime) =>
+                this.ticketHoldingService.searchHeldTicketIds(showtime.id, userId)
             )
-            heldTicketIds.push(...ticketIds)
-        }
+        )
+        const heldTicketIds = heldByShowtime.flat()
 
         const areAllTicketsHeld = ticketItems.every((ticketItem) =>
             heldTicketIds.includes(ticketItem.itemId)

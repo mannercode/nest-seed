@@ -17,16 +17,16 @@ describe('PaymentsService', () => {
     afterEach(() => fix.teardown())
 
     describe('cancel', () => {
-        it('결제를 취소한다', async () => {
+        it('결제 행을 지우지 않고 status를 cancelled로 전이한다', async () => {
             const payment = await createPayment(fix)
 
             await paymentsService.cancel(payment.id)
 
-            const promise = paymentsService.getMany([payment.id])
-
-            await expect(promise).rejects.toMatchObject({
-                message: Errors.Mongoose.MultipleDocumentsNotFound([payment.id]).message,
-                status: HttpStatus.NOT_FOUND
+            const [cancelled] = await paymentsService.getMany([payment.id])
+            expect(cancelled).toEqual({
+                ...payment,
+                status: 'cancelled',
+                updatedAt: expect.any(Date)
             })
         })
     })
@@ -41,6 +41,7 @@ describe('PaymentsService', () => {
                 ...createDto,
                 createdAt: expect.any(Date),
                 id: expect.any(String),
+                status: 'completed',
                 updatedAt: expect.any(Date)
             })
         })

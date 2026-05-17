@@ -25,8 +25,6 @@ export class ShowtimeCreationOrchestratorService {
 
         this.logger.log('enqueueShowtimeCreationJob', { sagaId })
 
-        await this.events.emitStatusChanged({ sagaId, status: ShowtimeCreationStatus.Waiting })
-
         // `workflowId`를 `sagaId`와 같게 두어 Temporal 실행 기록과 API 응답의
         // 사가 식별자를 연결한다. 같은 ID로 두 번 시작하려는 요청은
         // `REJECT_DUPLICATE` 옵션이 막으므로 별도 중복 방지 키가 필요 없다.
@@ -36,6 +34,11 @@ export class ShowtimeCreationOrchestratorService {
             workflowId: sagaId,
             workflowIdReusePolicy: WorkflowIdReusePolicy.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE
         })
+
+        // Waiting은 워크플로 시작에 성공한 뒤에 발행한다. 순서가 반대면
+        // 시작 실패 시에도 SSE 구독자가 Waiting을 받고 그 뒤 어떤 이벤트도
+        // 받지 못해 sagaId가 영원히 미완료 상태로 보인다.
+        await this.events.emitStatusChanged({ sagaId, status: ShowtimeCreationStatus.Waiting })
 
         return sagaId
     }

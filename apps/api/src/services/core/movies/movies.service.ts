@@ -43,10 +43,17 @@ export class MoviesService {
     }
 
     async deleteAsset(movieId: string, assetId: string): Promise<void> {
-        if (!(await this.allExist([movieId]))) {
+        const movie = await this.moviesRepository.findById(movieId)
+
+        if (!movie) {
             throw new NotFoundException(MovieErrors.NotFound(movieId))
         }
 
+        // 자산을 먼저 끊은 뒤 실제 데이터를 지운다. 순서를 뒤집으면 자산이
+        // 사라진 뒤에도 영화나 pending 목록에 dangling reference가 남는다.
+        if (movie.assetIds.includes(assetId)) {
+            await this.moviesRepository.removeAsset(movieId, assetId)
+        }
         await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
         await this.assetsService.deleteMany([assetId])
     }
@@ -150,7 +157,15 @@ export class MoviesService {
     }
 
     private async toDtos(movies: Movie[]): Promise<MovieDto[]> {
-        const dtos = movies.map((movie) => {
+        const assetIds = uniq(movies.flatMap((movie) => movie.assetIds))
+        const assetUrlById = new Map<string, string>()
+
+        if (0 < assetIds.length) {
+            const assets = await this.assetsService.findMany(assetIds)
+            assets.forEach((asset) => assetUrlById.set(asset.id, ensure(asset.download).url))
+        }
+
+        return movies.map((movie) => {
             const dto = mapDocToDto(movie, MovieDto, [
                 'id',
                 'title',
@@ -161,29 +176,10 @@ export class MoviesService {
                 'director',
                 'rating'
             ])
-            dto.imageUrls = []
-
+            dto.imageUrls = movie.assetIds
+                .map((assetId) => assetUrlById.get(assetId))
+                .filter((url): url is string => url !== undefined)
             return dto
         })
-
-        const assetIds = uniq(movies.flatMap((movie) => movie.assetIds))
-
-        if (0 < assetIds.length) {
-            const assets = await this.assetsService.findMany(assetIds)
-
-            const assetUrlById = new Map<string, string>()
-
-            assets.forEach((asset) => {
-                assetUrlById.set(asset.id, ensure(asset.download).url)
-            })
-
-            movies.forEach((movie, index) => {
-                dtos[index].imageUrls = movie.assetIds
-                    .filter((assetId) => assetUrlById.has(assetId))
-                    .map((assetId) => ensure(assetUrlById.get(assetId)))
-            })
-        }
-
-        return dtos
     }
 }

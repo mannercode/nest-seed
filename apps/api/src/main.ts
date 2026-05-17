@@ -1,3 +1,6 @@
 import { bootstrap } from './bootstrap'
 
-void bootstrap()
+bootstrap().catch((err: unknown) => {
+    console.error(err)
+    process.exit(1)
+})

@@ -252,6 +252,36 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
+        it('시작 분이 10분 단위로 정렬되지 않은 새 상영도 겹치면 충돌로 보고한다', async () => {
+            // 기존 10:00-12:00과 새 10:05-11:05는 55분이 겹친다. 슬롯 격자로
+            // 비교하면 시작 분이 다를 때 키 교집합이 비어 충돌을 놓친다.
+            const [initialShowtime] = await createShowtimes(fix, [
+                {
+                    endTime: new Date('2013-01-31T12:00'),
+                    startTime: new Date('2013-01-31T10:00'),
+                    theaterId: theater.id
+                }
+            ])
+
+            const completionPromise = waitForCompletion(fix, 'failed')
+
+            await fix.httpClient
+                .post('/showtime-creation/showtimes')
+                .body({
+                    durationInMinutes: 60,
+                    movieId: movie.id,
+                    startTimes: [new Date('2013-01-31T10:05')],
+                    theaterIds: [theater.id]
+                })
+                .accepted()
+
+            await expect(completionPromise).resolves.toEqual({
+                conflictingShowtimes: [initialShowtime],
+                sagaId: expect.any(String),
+                status: 'failed'
+            })
+        })
+
         it('기존 상영 시간이 새 범위보다 먼저 시작했어도 끝이 겹치면 충돌로 보고한다', async () => {
             // 기존 09:00-11:00은 새 요청의 시작 시각(10:00)보다 일찍 시작했다.
             // 시작 시각만 보면 새 범위 바깥이지만, 끝 시각이 새 범위와

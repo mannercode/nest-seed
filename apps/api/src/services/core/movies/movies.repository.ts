@@ -26,6 +26,12 @@ export class MoviesRepository extends CrudRepository<Movie> {
         await movie.save()
     }
 
+    async removeAsset(movieId: string, assetId: string) {
+        const movie = await this.getDocumentById(movieId)
+        movie.assetIds = movie.assetIds.filter((id) => id !== assetId)
+        await movie.save()
+    }
+
     async create(upsertDto: UpsertMovieDto) {
         const movie = this.newDocument()
 
