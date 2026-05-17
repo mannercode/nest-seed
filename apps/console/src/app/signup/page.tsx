@@ -5,11 +5,18 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { ApiError, api } from '@/lib/api-client'
 
+// dev에서 가입 폼도 같은 환경변수로 채운다. 로그인과 짝을 맞춰 한 번 가입한
+// 뒤 같은 값으로 바로 로그인할 수 있게 한다. 프로덕션 빌드에서는 빈 값.
+const isDev = process.env.NODE_ENV !== 'production'
+const DEV_EMAIL = isDev ? (process.env.NEXT_PUBLIC_DEV_LOGIN_EMAIL ?? '') : ''
+const DEV_PASSWORD = isDev ? (process.env.NEXT_PUBLIC_DEV_LOGIN_PASSWORD ?? '') : ''
+const DEV_NAME = isDev ? (process.env.NEXT_PUBLIC_DEV_SIGNUP_NAME ?? '') : ''
+
 export default function SignupPage() {
     const router = useRouter()
-    const [email, setEmail] = useState('')
-    const [name, setName] = useState('')
-    const [password, setPassword] = useState('')
+    const [email, setEmail] = useState(DEV_EMAIL)
+    const [name, setName] = useState(DEV_NAME)
+    const [password, setPassword] = useState(DEV_PASSWORD)
     const [birthDate, setBirthDate] = useState('1990-01-01')
     const [error, setError] = useState<string | null>(null)
     const [busy, setBusy] = useState(false)

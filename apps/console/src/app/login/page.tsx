@@ -8,10 +8,17 @@ import { saveSession } from '@/lib/session'
 
 type LoginResponse = { accessToken: string; refreshToken: string }
 
+// dev에서 매번 입력하지 않도록 NEXT_PUBLIC_DEV_LOGIN_* 값을 초기값으로 채운다.
+// 프로덕션 빌드에는 환경변수가 없으면 빈 문자열이라 영향이 없다.
+const DEV_EMAIL =
+    process.env.NODE_ENV !== 'production' ? (process.env.NEXT_PUBLIC_DEV_LOGIN_EMAIL ?? '') : ''
+const DEV_PASSWORD =
+    process.env.NODE_ENV !== 'production' ? (process.env.NEXT_PUBLIC_DEV_LOGIN_PASSWORD ?? '') : ''
+
 export default function LoginPage() {
     const router = useRouter()
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
+    const [email, setEmail] = useState(DEV_EMAIL)
+    const [password, setPassword] = useState(DEV_PASSWORD)
     const [error, setError] = useState<string | null>(null)
     const [busy, setBusy] = useState(false)
 
@@ -24,7 +31,7 @@ export default function LoginPage() {
                 body: { email, password }
             })
             saveSession(tokens.accessToken, email)
-            router.push('/movies')
+            router.push('/movies/new')
         } catch (err) {
             const message = err instanceof ApiError ? err.message : '로그인 실패'
             setError(message)

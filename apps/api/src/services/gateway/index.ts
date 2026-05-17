@@ -1,5 +1,4 @@
 export * from './booking.http-controller'
-export * from './console-view.http-controller'
 export * from './errors'
 export * from './guards'
 export * from './movies.http-controller'

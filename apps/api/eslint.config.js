@@ -8,7 +8,7 @@ const {
     createBaseConfigs
 } = require('../../eslint.config.node')
 
-const internalAliasPattern = '^(?:application|gateway|core|infrastructure|config|view)$'
+const internalAliasPattern = '^(?:application|gateway|core|infrastructure|config)$'
 const dependencyIgnorePatterns = [
     '^\\.',
     nodeBuiltinModulePattern,
@@ -78,9 +78,8 @@ module.exports = [
                                 'Use relative imports within application to avoid ancestor barrel cycles.'
                         },
                         {
-                            group: ['gateway', 'gateway/**', 'view', 'view/**'],
-                            message:
-                                'Layering rule: application must not depend on gateway or view.'
+                            group: ['gateway', 'gateway/**'],
+                            message: 'Layering rule: application must not depend on gateway.'
                         }
                     ]
                 }
@@ -101,16 +100,9 @@ module.exports = [
                                 'Use relative imports within core to avoid ancestor barrel cycles.'
                         },
                         {
-                            group: [
-                                'gateway',
-                                'gateway/**',
-                                'application',
-                                'application/**',
-                                'view',
-                                'view/**'
-                            ],
+                            group: ['gateway', 'gateway/**', 'application', 'application/**'],
                             message:
-                                'Layering rule: core must not depend on gateway, application, or view.'
+                                'Layering rule: core must not depend on gateway or application.'
                         }
                     ]
                 }
@@ -137,42 +129,10 @@ module.exports = [
                                 'application',
                                 'application/**',
                                 'core',
-                                'core/**',
-                                'view',
-                                'view/**'
+                                'core/**'
                             ],
                             message:
-                                'Layering rule: infrastructure must not depend on gateway, application, core, or view.'
-                        }
-                    ]
-                }
-            ]
-        }
-    },
-    {
-        files: ['src/services/view/**/*.ts'],
-        rules: {
-            'no-restricted-imports': [
-                'warn',
-                {
-                    patterns: [
-                        ...barrelImportPatterns,
-                        {
-                            group: ['view', 'view/**'],
-                            message:
-                                'Use relative imports within view to avoid ancestor barrel cycles.'
-                        },
-                        {
-                            group: [
-                                'gateway',
-                                'gateway/**',
-                                'application',
-                                'application/**',
-                                'infrastructure',
-                                'infrastructure/**'
-                            ],
-                            message:
-                                'Layering rule: view is a read model layer and must not depend on gateway, application, or infrastructure.'
+                                'Layering rule: infrastructure must not depend on gateway, application, or core.'
                         }
                     ]
                 }
@@ -201,9 +161,7 @@ module.exports = [
                                 'core',
                                 'core/**',
                                 'infrastructure',
-                                'infrastructure/**',
-                                'view',
-                                'view/**'
+                                'infrastructure/**'
                             ],
                             message: 'config must not depend on app layers.'
                         }
@@ -229,9 +187,7 @@ module.exports = [
                                 'core',
                                 'core/**',
                                 'infrastructure',
-                                'infrastructure/**',
-                                'view',
-                                'view/**'
+                                'infrastructure/**'
                             ],
                             message: 'modules must not depend on app layers.'
                         }
