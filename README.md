@@ -31,25 +31,7 @@ curl http://localhost:3000/movies
 # console: http://localhost:3100
 ```
 
-### 3. 분산 레이스 테스트
-
-단일 프로세스 테스트만으로는 여러 API 컨테이너가 동시에 같은 자원에 접근하는 문제를 찾기 어렵다. 그래서 API 컨테이너 4개를 Docker Compose로 시작하고, 외부에서 HTTP 요청을 동시에 보내는 테스트를 따로 둔다.
-
-이 테스트는 다음 상황을 확인한다.
-
-- SSE 이벤트가 모든 API 컨테이너의 클라이언트에게 빠짐없이 전달되는지
-- 같은 이메일로 동시에 가입할 때 요청 하나만 성공하는지
-- 같은 좌석을 동시에 잡으려 할 때 요청 하나만 성공하는지
-- 같은 티켓 묶음이 두 번 결제되지 않는지
-
-이 테스트는 인프라 비용이 크다. 기본 `npm test`에는 넣지 않고, 필요할 때 셸에서 직접 실행한다.
-
-```bash
-bash tests/api-race/runner.sh <scenario>
-# scenario: sse | user-race | ticket-holding-race | showtime-overlap-race | purchase-double-spend | replica-chaos | jwt-refresh-race
-```
-
-자세한 동작과 검증 방식은 [docs/testing.md](docs/testing.md#5-분산-테스트-복제본-간-레이스)에서 설명한다.
+`bash deploy/test.sh`는 curl 기반 API 문서를 실행하고, 최신 API 목록을 `apps/api/api-docs/_output/docs/summary.md`와 `summary.json`으로 만든다. 실제 요청과 응답은 `apps/api/api-docs/_output/logs/`에 남는다.
 
 ## 프로젝트 구조
 
@@ -145,5 +127,6 @@ npm run atoz
 
 - [아키텍처](docs/architecture.md) — SoLA 계층 분리와 분산 협력(락, NATS, Temporal)
 - [컨벤션](docs/conventions.md) — 네이밍, 에러, 가져오기, REST API 설계
-- [테스트](docs/testing.md) — 한글 메시지 규칙, 픽스처, 동적 가져오기, 분산 레이스 테스트
+- [테스트](docs/testing.md) — 한글 메시지 규칙, 픽스처, 동적 가져오기, 실행 가능한 API 문서, 분산 레이스 테스트
+- [환경 변수](docs/environment.md) — Dev Container, API, API 문서, console의 환경 변수 흐름
 - [설계 결정](docs/decisions.md) — 분산 도구 선택 기준과 쓰지 않기로 한 대안

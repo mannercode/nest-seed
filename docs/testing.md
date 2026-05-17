@@ -108,11 +108,44 @@ jest.setup.js    worker별 DB·버킷 준비
 
 `apps/api`의 통합 테스트는 devcontainer가 시작해 둔 공용 인프라(Mongo / Redis / MinIO / NATS / Temporal 컨테이너)를 재사용한다. `libs/common`은 외부 의존을 줄이기 위해 Testcontainers로 자체 인프라를 시작한다. `libs/testing`과 `libs/temporal-sandbox`는 인프라 없는 단위 테스트로 돈다.
 
-콘솔 e2e는 `tests/console-e2e`의 Playwright 설정이 `apps/api`와 `apps/console` dev 서버를 시작한 뒤 브라우저에서 가입, 로그인, 영화 등록 흐름을 검증한다. 이미 서버가 떠 있으면 로컬에서는 재사용한다.
+콘솔 e2e는 `tests/console-e2e`의 Playwright 설정이 `apps/api`와 `apps/console` dev 서버를 시작한 뒤 브라우저에서 가입, 로그인, 영화 등록 흐름을 검증한다. 개발 중 이미 서버가 떠 있으면 재사용한다.
 
 ---
 
-## 5. 분산 테스트 (복제본 간 레이스)
+## 5. 실행 가능한 API 문서
+
+`apps/api/api-docs/*.spec`는 bash와 curl로 작성한 실행 가능한 API 문서이다. 문서를 따로 손으로 관리하지 않고, 실제 요청을 보내는 spec을 실행해 API 목록과 상세 요청/응답 로그를 만든다.
+
+spec에는 사람이 읽을 설명을 `DOC`로 붙인다. `DOC`는 바로 다음 `TEST`에 연결된다. 여러 요청을 묶을 때는 `GROUP`을 사용한다.
+
+```bash
+GROUP "Movies"
+
+DOC "영화를 생성한다"
+TEST 201 POST /movies \
+    -H 'Content-Type: application/json' \
+    -d '{ ... }'
+```
+
+`SETUP`은 시나리오 준비 요청이다. 실패하면 문서 실행을 중단하지만, API 목록에는 넣지 않는다. 목록은 검증 대상인 `TEST`만 기록한다.
+
+실행 결과는 `apps/api/api-docs/_output/` 아래에 남는다.
+
+| 경로                     | 내용                                                                         |
+| ------------------------ | ---------------------------------------------------------------------------- |
+| `logs/<timestamp>/*.log` | spec별 실제 curl 명령, 응답 상태, 응답 본문                                  |
+| `docs/summary.md`        | 최신 실행의 API 목록. 설명, method, endpoint, 기대/실제 상태, 상세 로그 링크 |
+| `docs/summary.json`      | 같은 내용을 도구가 읽기 쉬운 JSON 배열로 저장                                |
+
+```bash
+bash deploy/test.sh
+# 또는 API가 이미 떠 있다면
+cd apps/api/api-docs && bash run.sh
+```
+
+---
+
+## 6. 분산 테스트 (복제본 간 레이스)
 
 한 프로세스 안에서 실행하는 테스트만으로는 여러 API 컨테이너가 동시에 같은 자원에 접근할 때 생기는 레이스를 재현하기 어렵다. 이런 문제는 API 컨테이너 4개를 Docker Compose로 시작하고, 외부에서 HTTP 요청을 동시에 보내야 확인할 수 있다.
 
