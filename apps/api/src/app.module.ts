@@ -27,9 +27,11 @@ import {
     UserJwtAuthGuard,
     UserLocalAuthGuard,
     UserOptionalJwtAuthGuard,
-    UsersHttpController
+    UsersHttpController,
+    ConsoleViewHttpController
 } from 'gateway'
 import { AssetsModule, PaymentsModule } from 'infrastructure'
+import { ConsoleViewModule } from 'view'
 import { AppConfigModule, GlobalModule, HealthModule } from './modules'
 
 @Module({
@@ -50,7 +52,8 @@ import { AppConfigModule, GlobalModule, HealthModule } from './modules'
         BookingModule,
         PurchaseModule,
         RecommendationModule,
-        ShowtimeCreationModule
+        ShowtimeCreationModule,
+        ConsoleViewModule
     ],
     controllers: [
         BookingHttpController,
@@ -58,7 +61,8 @@ import { AppConfigModule, GlobalModule, HealthModule } from './modules'
         MoviesHttpController,
         PurchaseHttpController,
         ShowtimeCreationHttpController,
-        TheatersHttpController
+        TheatersHttpController,
+        ConsoleViewHttpController
     ],
     providers: [
         UserJwtAuthGuard,

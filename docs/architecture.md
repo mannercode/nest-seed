@@ -63,7 +63,30 @@ export class ShowtimesHttpController {
 }
 ```
 
-### 1.4. 왜 모놀리스에 SoLA를 쓰는가
+### 1.4. View Service는 화면 단위 읽기 조립에만 쓴다
+
+콘솔이나 사용자 앱처럼 화면이 여러 Core 데이터를 한 번에 필요로 할 때는 `view`
+계층에 read model 조립용 서비스를 둔다. 예를 들어 콘솔의 영화 목록 화면은
+영화, 상영시간, 극장 이름을 함께 보여 줘야 하므로 `ConsoleViewService`가
+`MoviesService`, `ShowtimesService`, `TheatersService`를 읽어 화면 응답을 만든다.
+
+View Service는 **읽기 전용**이다. DB write, 결제, 상태 전이, 락, saga 같은 command
+흐름은 Application 또는 Core에 둔다. 컨트롤러는 화면용 조회 API에서는 View를
+호출하고, 상태를 바꾸는 API에서는 Application/Core를 호출한다.
+
+```ts
+@Controller('views/console')
+export class ConsoleViewHttpController {
+    constructor(private readonly consoleView: ConsoleViewService) {}
+
+    @Get('movies')
+    async movies(@Query() query: SearchMoviesPageDto) {
+        return this.consoleView.getMovies(query)
+    }
+}
+```
+
+### 1.5. 왜 모놀리스에 SoLA를 쓰는가
 
 SoLA는 원래 마이크로서비스를 염두에 둔 원칙이다. 마이크로서비스에서는 서비스가 서로 다른 프로세스로 실행된다. 같은 계층끼리 직접 부르기 어렵고, 여러 서비스를 묶는 일은 그 위의 오케스트레이터나 게이트웨이가 맡는다.
 
