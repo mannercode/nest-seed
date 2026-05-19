@@ -32,7 +32,7 @@
         "dev:testing": "npm run dev -w libs/testing",
         "dev:api": "npm run dev -w apps/api",
         "dev:console": "npm run dev -w apps/console",
-        "dev:user": "npm run dev -w apps/user",
+        "dev:web": "npm run dev -w apps/web",
         "list-tests:html": "mkdir -p _output && node tools/dev-tools/list-tests.js libs apps/api --html > _output/test-list.html"
     },
     "devDependencies": {
