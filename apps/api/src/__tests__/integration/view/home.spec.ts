@@ -18,9 +18,9 @@ describe('UserHomeView', () => {
 
     afterEach(() => fix.teardown())
 
-    describe('GET /views/user/home', () => {
+    describe('GET /views/user-app/home', () => {
         it('상영 예정이 없으면 빈 목록을 반환한다', async () => {
-            const { body } = await fix.httpClient.get('/views/user/home').ok()
+            const { body } = await fix.httpClient.get('/views/user-app/home').ok()
 
             expect(body).toEqual({ movies: [] })
         })
@@ -28,7 +28,7 @@ describe('UserHomeView', () => {
         it('상영 예정이 없는 영화는 카드에서 제외한다', async () => {
             await createMovie(fix, { title: 'Home Only Movie' })
 
-            const { body } = await fix.httpClient.get('/views/user/home').ok()
+            const { body } = await fix.httpClient.get('/views/user-app/home').ok()
 
             expect(body).toEqual({ movies: [] })
         })
@@ -61,7 +61,7 @@ describe('UserHomeView', () => {
                 { movieId: movie.id, startTime: t4, theaterId: theaterB.id }
             ])
 
-            const { body } = await fix.httpClient.get('/views/user/home').ok()
+            const { body } = await fix.httpClient.get('/views/user-app/home').ok()
             const home = body as HomeResponse
 
             expect(home.movies).toHaveLength(1)

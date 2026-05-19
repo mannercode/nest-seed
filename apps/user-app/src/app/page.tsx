@@ -20,7 +20,7 @@ export default function HomePage() {
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        getJson<HomeView>('/views/user/home')
+        getJson<HomeView>('/views/user-app/home')
             .then(setHome)
             .catch((err) => {
                 const message =
