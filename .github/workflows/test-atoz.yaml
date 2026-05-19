@@ -5,10 +5,10 @@ on:
     push:
         branches: ['main']
     schedule:
-        # UTC 기준 6 시간마다 매시 :17에 실행한다. 새 커밋이 없어도 main이
+        # UTC 기준 3 시간마다 정각에 실행한다. 새 커밋이 없어도 main이
         # 주기적으로 통과하는지 확인해, 의존성이나 인프라 변경으로 생긴
         # 회귀를 조기에 검출한다.
-        - cron: '17 */6 * * *'
+        - cron: '0 */3 * * *'
     workflow_dispatch:
 permissions:
     contents: read
