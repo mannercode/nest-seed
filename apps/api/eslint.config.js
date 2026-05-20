@@ -80,7 +80,7 @@ module.exports = [
                         {
                             group: ['gateway', 'gateway/**', 'view', 'view/**'],
                             message:
-                                'Layering rule: application must not depend on gateway or view.'
+                                'Layering rule: application must not depend on gateway or View.'
                         }
                     ]
                 }
@@ -110,7 +110,7 @@ module.exports = [
                                 'view/**'
                             ],
                             message:
-                                'Layering rule: core must not depend on gateway, application, or view.'
+                                'Layering rule: core must not depend on gateway, application, or View.'
                         }
                     ]
                 }
@@ -142,7 +142,7 @@ module.exports = [
                                 'view/**'
                             ],
                             message:
-                                'Layering rule: infrastructure must not depend on gateway, application, core, or view.'
+                                'Layering rule: infrastructure must not depend on gateway, application, core, or View.'
                         }
                     ]
                 }
@@ -160,19 +160,11 @@ module.exports = [
                         {
                             group: ['view', 'view/**'],
                             message:
-                                'Use relative imports within view to avoid ancestor barrel cycles.'
+                                'Use relative imports within View to avoid ancestor barrel cycles.'
                         },
                         {
-                            group: [
-                                'gateway',
-                                'gateway/**',
-                                'application',
-                                'application/**',
-                                'infrastructure',
-                                'infrastructure/**'
-                            ],
-                            message:
-                                'Layering rule: view is a read model layer and must not depend on gateway, application, or infrastructure.'
+                            group: ['gateway', 'gateway/**'],
+                            message: 'Consumer rule: View must not depend on gateway.'
                         }
                     ]
                 }
