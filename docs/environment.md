@@ -12,6 +12,7 @@
 | `apps/api/.env`            | `apps/api/jest.global.js`, `deploy/compose.yml` 실행 경로 | API 런타임의 앱 설정. `PROJECT_ID`, HTTP, 인증, 로그 값을 둔다.                                         |
 | `apps/api/api-docs/.env`   | `apps/api/api-docs/run.sh`                                | curl 기반 API 문서 실행 설정. 기본 `SERVER_URL`과 업로드 fixture 값을 둔다.                             |
 | `apps/console/.env`        | Next.js console                                           | 관리 콘솔이 호출할 API 기준 URL을 둔다.                                                                 |
+| `apps/user-app/.env`       | Next.js user-app                                          | 사용자 앱이 호출할 API 기준 URL을 둔다.                                                                 |
 
 `.env` 파일은 역할별로 분리한다. API 설정 파일 하나에 모든 값을 몰아넣지 않고, 인프라가 소유한 값은 `.devcontainer/infra/.env`에 둔다.
 
@@ -60,5 +61,6 @@ apps/api/api-docs/run.sh
 | `.devcontainer/infra/.env` | `MONGO_DATABASE`, `S3_BUCKET`, `TEMPORAL_NAMESPACE` |
 | `deploy/compose.yml`       | API image 이름, 필요하면 replica 기본값             |
 | `apps/console/.env`        | `API_BASE_URL`                                      |
+| `apps/user-app/.env`       | `API_BASE_URL`                                      |
 
 개발용 `.env`의 인증 secret은 시드 실행을 위한 값이다. 운영 secret은 저장소에 커밋하지 않고 배포 환경의 secret 관리 경로에서 주입한다.

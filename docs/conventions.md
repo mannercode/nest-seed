@@ -100,9 +100,9 @@ export const UserErrors = {
 자기보다 위에 있는 폴더를 가져올 때는 상대 경로를 사용한다. 절대 경로 별칭으로 상위 폴더를 가져오면, 상위 폴더의 배럴 파일이 다시 하위 모듈을 가져오면서 순환 참조가 생기기 쉽다.
 
 ```ts
-/* core/users/users.service.ts */
-import { AuthService } from '../auth' // O
-import { AuthService } from 'core' // X — core의 하위 모듈이 core 배럴을 다시 참조하므로 위험
+/* core/users/internal/user-authentication.service.ts */
+import { UsersRepository } from '../users.repository' // O
+import { UsersRepository } from 'core' // X — core 배럴이 users를 재참조해 순환이 생긴다
 ```
 
 ### 3.2. 상위 경로에 속하지 않는 폴더는 절대 경로로 가져온다
