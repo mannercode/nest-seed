@@ -1,6 +1,8 @@
 # 테스트
 
-이 시드의 테스트는 mock 객체를 거의 사용하지 않는다. `apps/api` 통합 테스트는 devcontainer가 띄운 MongoDB Replica Set, Redis Cluster, MinIO, NATS, Temporal을 재사용하고, `libs/common` 테스트는 Testcontainers와 Temporal local test environment로 필요한 인프라를 직접 시작한다. 콘솔 e2e는 Playwright가 API와 Next.js dev 서버를 띄운 뒤 브라우저에서 흐름을 검증한다. 그래야 인덱스, 트랜잭션, 레이스 컨디션, 브라우저 연동처럼 mock 객체로 놓치기 쉬운 문제를 실제 환경에 가깝게 확인할 수 있다.
+이 시드의 테스트는 mock 객체를 거의 사용하지 않는다. 인덱스, 트랜잭션, 레이스 컨디션, 브라우저 연동처럼 mock으로는 놓치기 쉬운 문제를 실제 환경에 가깝게 확인하기 위해서다.
+
+`apps/api` 통합 테스트는 devcontainer가 띄운 MongoDB Replica Set, Redis Cluster, MinIO, NATS, Temporal을 재사용한다. `libs/common` 테스트는 Testcontainers와 Temporal local test environment로 필요한 인프라를 직접 시작한다. 콘솔 e2e는 Playwright가 API와 Next.js dev 서버를 띄운 뒤 브라우저에서 흐름을 검증한다.
 
 ---
 
@@ -68,7 +70,7 @@ PATCH나 DELETE처럼 상태를 바꾸는 API는 두 가지를 확인한다. 하
 
 ## 3. 동적 가져오기 — 왜 필요한가
 
-테스트마다 격리된 논리 네임스페이스를 만들기 위해 각 테스트는 고유한 `TEST_ID`를 받는다. `apps/api` 테스트에서는 이 값으로 `PROJECT_ID`를 새로 만들고, 그 값이 Redis/cache prefix, NATS subject, Temporal task queue 이름에 반영된다. MongoDB 데이터베이스와 S3 버킷은 Jest worker별로 만들고, 각 테스트가 끝날 때 컬렉션과 버킷 내용을 비운다.
+각 테스트가 다른 테스트와 부딪히지 않도록, 테스트마다 고유한 `TEST_ID`를 받는다. `apps/api` 테스트에서는 이 값으로 `PROJECT_ID`를 새로 만들고, 그 값이 Redis/cache prefix, NATS subject, Temporal task queue 이름에 반영된다. MongoDB 데이터베이스와 S3 버킷은 Jest worker별로 만들고, 각 테스트가 끝날 때 컬렉션과 버킷 내용을 비운다.
 
 문제는 일반적인 가져오기 방식이다. 파일 맨 위에 `import { createUsersFixture } from './users.fixture'`라고 쓰면, 그 모듈은 처음 한 번만 평가된다. 그때 읽은 `process.env.PROJECT_ID`나 `process.env.TEST_ID`에서 cache prefix, NATS subject, Temporal queue 같은 값이 만들어지면 다음 테스트에서도 같은 값을 계속 쓰게 된다.
 

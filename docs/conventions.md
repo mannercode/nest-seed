@@ -97,12 +97,12 @@ export const UserErrors = {
 
 ### 3.1. 상위 폴더는 상대 경로로 가져온다
 
-자기보다 위에 있는 폴더를 가져올 때는 상대 경로를 사용한다. 절대 경로 별칭으로 상위 폴더를 가져오면, 상위 폴더의 배럴 파일이 다시 하위 모듈을 가져오면서 순환 참조가 생기기 쉽다.
+자기보다 위에 있는 폴더를 가져올 때는 상대 경로를 사용한다. 절대 경로 별칭으로 상위 폴더를 가져오면, 상위 폴더의 `index.ts`(폴더의 공개 내보내기를 모은 파일, 보통 배럴이라고 부른다)가 다시 하위 모듈을 가져오면서 순환 참조가 생기기 쉽다.
 
 ```ts
 /* core/users/internal/user-authentication.service.ts */
 import { UsersRepository } from '../users.repository' // O
-import { UsersRepository } from 'core' // X — core 배럴이 users를 재참조해 순환이 생긴다
+import { UsersRepository } from 'core' // X — core의 index.ts가 users를 재참조해 순환이 생긴다
 ```
 
 ### 3.2. 상위 경로에 속하지 않는 폴더는 절대 경로로 가져온다
@@ -196,7 +196,7 @@ POST /showtimes/search
 
 ## 6. Type vs Interface
 
-기본은 `type`이다. `interface`는 클래스가 `implements`해야 하거나, 선언 병합으로 외부에서 확장될 수 있는 자리에만 사용한다.
+기본은 `type`이다. `interface`는 클래스가 `implements`해야 하거나, 같은 이름으로 다시 선언해 필드를 더할 수 있어야 하는(선언 병합) 자리에만 사용한다.
 
 ---
 
