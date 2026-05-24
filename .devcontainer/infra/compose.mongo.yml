@@ -1,18 +1,16 @@
 x-mongo-base: &mongo-base
     extends: { file: ./compose.common.yml, service: common-options }
     image: $MONGO_IMAGE
-    # 시드 데이터가 커지면 WiredTiger 캐시 압박 때문에 읽기 성능이 급격히
-    # 낮아진다. 컨테이너 메모리와 `wiredTigerCacheSizeGB`를 함께 늘려,
-    # 수십만 행 규모의 테스트 데이터가 메모리 캐시에 머물도록 한다.
+    # 테스트 데이터가 많으면 MongoDB 메모리 캐시가 부족해 조회가 느려진다.
+    # 데이터를 메모리에 더 오래 둘 수 있도록 컨테이너와 캐시 용량을 늘린다.
     deploy: { resources: { limits: { memory: 2g } } }
     shm_size: '8m'
-    # Replica Set 초기화와 병렬 테스트 중 파일 descriptor 한도에 걸리지 않도록
-    # 기본값보다 여유 있게 둔다.
+    # MongoDB 복제 묶음을 만들고 테스트를 동시에 돌릴 때 열 수 있는 파일 수가
+    # 부족하지 않도록 한도를 넉넉하게 둔다.
     ulimits: { nofile: { soft: 65536, hard: 65536 } }
-    # dev/test 전용 Replica Set이다. 운영은 매니지드 MongoDB를 전제로 하므로
-    # 여기서는 keyFile 인증보다 테스트 속도와 단순성을 우선한다.
-    # Mongo 이미지가 init 단계에서 임시 mongod를 27017에 시작하므로, 실제 Replica
-    # Set은 27016을 사용해 포트 충돌을 피한다.
+    # 개발 및 테스트용 MongoDB 복제 묶음(Replica Set)이다. 운영용 보안
+    # 설정보다는 테스트 속도와 설정 단순성을 우선한다.
+    # 초기화 중에는 27017 포트가 이미 쓰이므로 실제 서버는 27016을 사용한다.
     command: >
         --replSet mongo
         --bind_ip_all

@@ -5,9 +5,8 @@ import { AdminAuthPayload, AdminCredentialsDto, AdminDto, CreateAdminDto } from 
 import { AdminAuthenticationService } from './internal'
 import { Admin } from './models'
 
-// admin은 외부 가입 엔드포인트 없이 dev seed로만 생성된다. unique 위반은
-// 호출자(`bootstrap.ts`)가 mongoose의 duplicate-key 신호를 보고 무시하므로
-// 이 서비스는 변환 없이 그대로 propagate한다.
+// admin은 가입 API 없이 개발용 초기 데이터로만 만든다. 같은 admin을 다시
+// 만들 때 생기는 중복 오류는 `bootstrap.ts`가 무시하므로 여기서는 그대로 넘긴다.
 @Injectable()
 export class AdminsService {
     constructor(

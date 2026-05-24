@@ -6,9 +6,9 @@ services:
             POSTGRES_USER: temporal
             POSTGRES_PASSWORD: temporal
             POSTGRES_DB: temporal
-        # 디폴트 shared_buffers(128MB)/work_mem(4MB)에서는 saga 워크플로가 수천 건
-        # 쌓이면 transfer-queue 스캔이 느려져 액티비티 태스크가 데드라인을 넘긴다.
-        # 2GB 메모리 한도 안에서 안전한 비율로 올려 둔다.
+        # 상영 생성 작업 기록이 많이 쌓이면 기본 메모리 설정으로는 DB 조회가
+        # 느려져 작업 처리가 시간 안에 끝나지 않는다. 2GB 한도 안에서
+        # DB가 사용할 메모리를 늘린다.
         command:
             - postgres
             - -c
@@ -24,17 +24,15 @@ services:
         deploy: { resources: { limits: { memory: 2g } } }
         shm_size: '256m'
 
-    # server 전용 이미지는 DB 스키마를 만들지 않는다. admin-tools에서
-    # `temporal`과 `temporal_visibility` 스키마를 적용하고, 이미 생성된 DB에서도
-    # versioned schema update를 매번 실행한다.
+    # 서버 이미지는 필요한 DB 구조를 직접 만들지 않는다. 준비 컨테이너가
+    # `temporal`과 `temporal_visibility` DB 구조를 만들고 변경 사항을 반영한다.
     temporal-setup:
         extends: { file: ../compose.common.yml, service: common-options }
         image: $TEMPORAL_ADMIN_TOOLS_IMAGE
         depends_on:
             temporal-postgresql: { condition: service_healthy }
         environment:
-            # temporal-sql-tool은 SQL_PASSWORD를, 일부 Temporal 도구는 POSTGRES_PWD를
-            # 읽는다. 두 변수에 같은 값을 넣어 도구별 환경 변수 차이를 흡수한다.
+            # Temporal 도구마다 비밀번호를 읽는 변수 이름이 달라 같은 값을 둘 다 넣는다.
             DB: postgres12
             DB_PORT: '5432'
             POSTGRES_USER: temporal
@@ -65,14 +63,13 @@ services:
             test: ['CMD-SHELL', 'nc -z localhost 7233']
             interval: 5s
             start_period: 30s
-        # 1GB 제한에서는 devcontainer 부팅 직후 transfer-queue와 timer-queue가
-        # "context deadline exceeded"로 초기화에 실패했다. 테스트 환경의
-        # 안정성을 위해 서버 컨테이너에 3GB를 배정한다.
+        # 서버 메모리가 1GB일 때는 개발 환경 시작 직후 내부 작업 준비가
+        # 시간 안에 끝나지 않았다. 테스트가 안정적으로 시작되도록 3GB를 준다.
         deploy: { resources: { limits: { memory: 3g } } }
         shm_size: '16m'
 
-    # server 전용 이미지는 default namespace를 만들지 않는다. 서버가 healthy가
-    # 된 뒤 admin-tools에서 namespace를 보장한다.
+    # 서버 이미지는 기본 작업 공간(namespace)을 만들지 않는다.
+    # 서버 준비가 끝난 뒤 별도 컨테이너가 기본 작업 공간을 만든다.
     temporal-create-namespace:
         extends: { file: ../compose.common.yml, service: common-options }
         image: $TEMPORAL_ADMIN_TOOLS_IMAGE

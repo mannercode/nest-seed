@@ -1,9 +1,8 @@
 x-api-base: &api-base
     environment:
         - NODE_ENV=production
-        # libuv thread pool: bcrypt와 fs 연산이 여기서 실행된다. 기본값 4는
-        # password hashing 폭주 (POST /users, login)로 금방 포화돼 요청
-        # 완료를 막고 upstream reset을 유발한다.
+        # 비밀번호 암호화(bcrypt)와 파일 작업은 같은 작업 스레드를 사용한다.
+        # 기본 4개로는 요청이 몰릴 때 부족하므로 16개로 늘린다.
         - UV_THREADPOOL_SIZE=16
         - PROJECT_ID=${PROJECT_ID}
         - HTTP_PORT=${HTTP_PORT:-3000}

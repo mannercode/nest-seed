@@ -300,13 +300,9 @@ export class JwtAuthService {
         return createHash('sha256').update(token).digest('hex')
     }
 
-    // 두 키 모두 `{familyId}`를 Redis Cluster 해시 태그로 사용한다. 같은
-    // `familyId`의 키가 같은 슬롯에 모이게 만들기 위해서다. `token` 키와
-    // `family` 키를 한 MULTI 파이프라인 안에서 함께 다루는데, Redis Cluster는 슬롯이
-    // 다른 키를 한 트랜잭션에 묶으면 `CROSSSLOT`으로 거절한다.
-    //
-    // 사용자별 인덱스는 별도 트랜잭션에서 다루므로 `{userId}`로 해시 태그를
-    // 넣는다.
+    // Redis Cluster에서 한 번에 처리할 `token`과 `family` 키는 같은 저장 구역에
+    // 있어야 한다. 두 키에 같은 `{familyId}`를 넣어 함께 처리할 수 있게 만든다.
+    // 사용자별 목록은 따로 처리하므로 `{userId}`를 사용한다.
     private tokenKey(tokenId: string, familyId: string) {
         return `${this.prefix}:{${familyId}}:token:${tokenId}`
     }

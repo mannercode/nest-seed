@@ -49,8 +49,8 @@ export class MoviesService {
             throw new NotFoundException(MovieErrors.NotFound(movieId))
         }
 
-        // 자산을 먼저 끊은 뒤 실제 데이터를 지운다. 순서를 뒤집으면 자산이
-        // 사라진 뒤에도 영화나 pending 목록에 dangling reference가 남는다.
+        // 파일을 먼저 영화와 대기 목록에서 제거한 뒤 실제 저장소에서 삭제한다.
+        // 순서를 바꾸면 이미 삭제된 파일을 계속 가리키는 기록이 남을 수 있다.
         if (movie.assetIds.includes(assetId)) {
             await this.moviesRepository.removeAsset(movieId, assetId)
         }
@@ -104,9 +104,8 @@ export class MoviesService {
             owner: { entityId: movieId, service: 'movies' }
         })
 
-        // 영화 문서가 자산을 참조한 뒤 pending 목록에서 제거해야 재시도할 수 있다.
-        // 순서를 바꾸면 `addAsset` 실패 뒤 자산 소유자만 영화로 바뀌고, 영화와
-        // pending 목록 어디에도 복구 단서가 남지 않는다.
+        // 업로드한 파일을 영화에 연결한 뒤 대기 목록에서 제거한다.
+        // 연결 중 실패하더라도 대기 목록이 남아 있어 다시 처리할 수 있다.
         await this.moviesRepository.addAsset(movieId, assetId)
         await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
     }
