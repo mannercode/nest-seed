@@ -6,8 +6,7 @@ x-redis-base: &redis-base
     deploy: { resources: { limits: { memory: 512m } } }
     shm_size: '8m'
     # Redis 노드는 클라이언트에게 다음에 접속할 주소를 알려 준다.
-    # 컨테이너끼리는 서비스 이름(redis1/2/3)과 내부 포트 6379로 통신하므로,
-    # 각 노드가 그 주소를 알리게 한다.
+    # 컨테이너끼리는 서비스 이름(redis1/2/3)과 내부 포트 6379로 통신하므로, 각 노드가 그 주소를 알리게 한다.
     command: |
         sh -euc '
           redis-server --port 6379 \

@@ -8,8 +8,8 @@ export type AuthConfig = {
 }
 
 /**
- * 보안 이벤트와 함께 전달하는 부가 정보이다. 감사 로그, SIEM, 알림 같은
- * 후속 소비자가 어떤 요청에서 일어난 일인지 추적할 수 있게 한다.
+ * 보안 이벤트와 함께 전달하는 부가 정보이다.
+ * 감사 로그, SIEM, 알림 같은 후속 소비자가 어떤 요청에서 일어난 일인지 추적할 수 있게 한다.
  * `JwtAuthService`는 이 값을 들여다보지 않고 그대로 전달만 한다.
  */
 export type EventContext = { ip?: string; userAgent?: string; source?: string }

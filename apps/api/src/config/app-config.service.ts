@@ -50,9 +50,8 @@ export class AppConfigService extends BaseConfigService {
         S3_REGION: Joi.string().required(),
         S3_SECRET_KEY: Joi.string().required(),
 
-        // `PROJECT_ID`는 모듈 평가 시점에 `getProjectId()`가 `process.env`에서
-        // 직접 읽는다. 이 시점에는 NestJS DI와 Joi 검증이 아직 실행되지 않았으므로,
-        // `NestFactory.create` 단계에서도 같은 값을 다시 검증한다.
+        // `PROJECT_ID`는 모듈 평가 시점에 `getProjectId()`가 `process.env`에서 직접 읽는다.
+        // 이 시점에는 NestJS DI와 Joi 검증이 아직 실행되지 않았으므로, `NestFactory.create` 단계에서도 같은 값을 다시 검증한다.
         PROJECT_ID: Joi.string().required(),
 
         // 도메인 정책 값이다. `.env`에서 비워 두면 아래 기본값으로 동작한다.
@@ -75,8 +74,8 @@ export class AppConfigService extends BaseConfigService {
         }
     }
 
-    // admin은 사용자(user)와 토큰 신뢰 영역을 분리한다. 같은 secret을 쓰면
-    // user 토큰으로 admin API에 접근할 수 있어 권한 경계가 깨진다.
+    // admin은 사용자(user)와 토큰 신뢰 영역을 분리한다.
+    // 같은 secret을 쓰면 user 토큰으로 admin API에 접근할 수 있어 권한 경계가 깨진다.
     get adminAuth() {
         return {
             accessSecret: this.getString('AUTH_ADMIN_ACCESS_SECRET'),
@@ -158,9 +157,8 @@ export class AppConfigService extends BaseConfigService {
         }
     }
 
-    // NestJS DI는 child class에 명시적 constructor가 없으면 부모 constructor
-    // 파라미터의 메타데이터를 읽지 못한다. 빈 위임처럼 보이지만 DI 동작에
-    // 꼭 필요하다.
+    // NestJS DI는 child class에 명시적 constructor가 없으면 부모 constructor 파라미터의 메타데이터를 읽지 못한다.
+    // 빈 위임처럼 보이지만 DI 동작에 꼭 필요하다.
     constructor(configService: ConfigService) {
         super(configService)
     }

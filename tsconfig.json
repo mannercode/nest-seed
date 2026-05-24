@@ -1,10 +1,10 @@
 {
     "compilerOptions": {
         "module": "commonjs",
-        // "node10"과 각 프로젝트 tsconfig의 "baseUrl"은 TypeScript 7에서 제거될
-        // 예정이다. 지금은 ignoreDeprecations로 경고만 숨긴다. TypeScript 7로
-        // 올릴 때는 moduleResolution을 "bundler" 또는 "node16"으로 바꾸고 baseUrl을
-        // 제거한다. 현재 TypeScript는 paths를 tsconfig 기준으로 해석한다.
+        // "node10"과 각 프로젝트 tsconfig의 "baseUrl"은 TypeScript 7에서 제거될 예정이다.
+        // 지금은 ignoreDeprecations로 경고만 숨긴다.
+        // TypeScript 7로 올릴 때는 moduleResolution을 "bundler" 또는 "node16"으로 바꾸고 baseUrl을 제거한다.
+        // 현재 TypeScript는 paths를 tsconfig 기준으로 해석한다.
         "moduleResolution": "node10",
         "ignoreDeprecations": "6.0",
         "target": "ESNext",

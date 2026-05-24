@@ -52,9 +52,8 @@ type JwtExpiresIn = NonNullable<JwtSignOptionsArg>['expiresIn']
  */
 @Injectable()
 export class JwtAuthService {
-    // `userIdField`에는 일부러 기본값을 두지 않는다. `JwtAuthModule.register`가
-    // 호출하기 전에 `defaultTo(userIdField, DEFAULT_USER_ID_FIELD)`로 값을 채워
-    // 주므로, 여기 기본값을 둬도 그 분기는 절대 실행되지 않는다.
+    // `userIdField`에는 일부러 기본값을 두지 않는다.
+    // `JwtAuthModule.register`가 호출하기 전에 `defaultTo(userIdField, DEFAULT_USER_ID_FIELD)`로 값을 채워 주므로, 여기 기본값을 둬도 그 분기는 절대 실행되지 않는다.
     // 이 클래스를 직접 `new`로 만든다면 `userIdField`를 반드시 명시한다.
     constructor(
         private readonly jwtService: JwtService,
@@ -143,12 +142,10 @@ export class JwtAuthService {
             throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
         }
 
-        // 새 토큰을 발급하기 전에 지금 토큰을 먼저 소비한다. 그래야 같은
-        // 토큰 하나로 동시에 들어온 리프레시 두 건이 모두 통과하는 일이
-        // 방지된다. 원자적 DEL이 반환하는 카운트로, 같은 토큰을 동시에 쓴
-        // 호출 가운데 이 호출이 먼저 지웠는지 알 수 있다. 이 경쟁에서
-        // 실패한 호출은 이미 회전된 토큰을 다시 제출한 경우와 구분할 수 없으므로,
-        // 재사용 탐지가 토큰 묶음 전체를 무효화한다.
+        // 새 토큰을 발급하기 전에 지금 토큰을 먼저 소비한다.
+        // 그래야 같은 토큰 하나로 동시에 들어온 리프레시 두 건이 모두 통과하는 일이 방지된다.
+        // 원자적 DEL이 반환하는 카운트로, 같은 토큰을 동시에 쓴 호출 가운데 이 호출이 먼저 지웠는지 알 수 있다.
+        // 이 경쟁에서 실패한 호출은 이미 회전된 토큰을 다시 제출한 경우와 구분할 수 없으므로, 재사용 탐지가 토큰 묶음 전체를 무효화한다.
         const consumed = await this.consumeToken(tokenId, familyId)
         if (!consumed) {
             const loserUserId = this.getUserId(payload)
@@ -300,8 +297,8 @@ export class JwtAuthService {
         return createHash('sha256').update(token).digest('hex')
     }
 
-    // Redis Cluster에서 한 번에 처리할 `token`과 `family` 키는 같은 저장 구역에
-    // 있어야 한다. 두 키에 같은 `{familyId}`를 넣어 함께 처리할 수 있게 만든다.
+    // Redis Cluster에서 한 번에 처리할 `token`과 `family` 키는 같은 저장 구역에 있어야 한다.
+    // 두 키에 같은 `{familyId}`를 넣어 함께 처리할 수 있게 만든다.
     // 사용자별 목록은 따로 처리하므로 `{userId}`를 사용한다.
     private tokenKey(tokenId: string, familyId: string) {
         return `${this.prefix}:{${familyId}}:token:${tokenId}`
@@ -349,16 +346,15 @@ export class JwtAuthService {
     }
 
     private async consumeToken(tokenId: string, familyId: string): Promise<boolean> {
-        // 결과의 첫 항목이 DEL 응답이다(`[err, count]`). 카운트가 1 이상이면
-        // 동시에 들어온 소비자 중 이 호출이 먼저 지웠다는 뜻이다. 0이면 다른
-        // 워커가 이미 지운 뒤이다.
+        // 결과의 첫 항목이 DEL 응답이다(`[err, count]`).
+        // 카운트가 1 이상이면 동시에 들어온 소비자 중 이 호출이 먼저 지웠다는 뜻이다.
+        // 0이면 다른 워커가 이미 지운 뒤이다.
         //
-        // ioredis의 `multi().exec()`는 트랜잭션이 중단되면(예: 연결
-        // 끊김) `null`을 반환한다. 이 경우에는 DEL이 실제로 실행됐는지
-        // 알 수 없다. 그래서 짐작하지 않고 그대로 예외를 던진다. false를 반환하면
-        // 일시 오류였을 때도 토큰 묶음 전체를 무효화하고, true를 반환하면 같은 토큰에서
-        // 유효한 새 토큰이 두 개 발급될 수 있다. 예외를 던지면 5xx가 되어
-        // 클라이언트가 다시 시도하고, 토큰 묶음은 그대로 남는다.
+        // ioredis의 `multi().exec()`는 트랜잭션이 중단되면(예: 연결 끊김) `null`을 반환한다.
+        // 이 경우에는 DEL이 실제로 실행됐는지 알 수 없다.
+        // 그래서 짐작하지 않고 그대로 예외를 던진다.
+        // false를 반환하면 일시 오류였을 때도 토큰 묶음 전체를 무효화하고, true를 반환하면 같은 토큰에서 유효한 새 토큰이 두 개 발급될 수 있다.
+        // 예외를 던지면 5xx가 되어 클라이언트가 다시 시도하고, 토큰 묶음은 그대로 남는다.
         const result = await this.redis
             .multi()
             .del(this.tokenKey(tokenId, familyId))

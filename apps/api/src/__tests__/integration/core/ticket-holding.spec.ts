@@ -180,8 +180,7 @@ describe('TicketHoldingService', () => {
             let calls = 0
             jest.spyOn(cacheService, 'delete').mockImplementation((key: any) => {
                 calls++
-                // 첫 호출(티켓 키 하나)만 실패시키고, 나머지(다른 티켓 키와
-                // 사용자 키)는 정상 동작시킨다.
+                // 첫 호출(티켓 키 하나)만 실패시키고, 나머지(다른 티켓 키와 사용자 키)는 정상 동작시킨다.
                 if (calls === 1) return Promise.reject(new Error('delete failed'))
                 return realDelete(key)
             })

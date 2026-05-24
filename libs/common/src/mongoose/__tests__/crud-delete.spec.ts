@@ -284,8 +284,7 @@ describe('Crud Delete', () => {
             })
 
             it('insertOne은 변환되지 않고 그대로 삽입된다', async () => {
-                // bulkWrite의 insertOne은 소프트 삭제 미들웨어 변환 대상이 아니라
-                // 정상적으로 새 문서를 추가한다.
+                // bulkWrite의 insertOne은 소프트 삭제 미들웨어 변환 대상이 아니라 정상적으로 새 문서를 추가한다.
                 await fix.model.bulkWrite([{ insertOne: { document: { name: 'inserted' } } }])
 
                 const inserted = await fix.model.findOne({ name: 'inserted' })

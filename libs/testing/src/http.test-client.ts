@@ -127,13 +127,13 @@ export class HttpTestClient {
         return response
     }
     /**
-     * 응답 상태를 따로 단언하지 않고 보낸다. 호출자가 `response.status`를
-     * 직접 확인한다. 같은 요청을 동시에 여러 번 보낼 때처럼, 요청마다 응답
-     * 상태가 달라도 정상으로 보는 시나리오에 사용한다.
+     * 응답 상태를 따로 단언하지 않고 보낸다.
+     * 호출자가 `response.status`를 직접 확인한다.
+     * 같은 요청을 동시에 여러 번 보낼 때처럼, 요청마다 응답 상태가 달라도 정상으로 보는 시나리오에 사용한다.
      */
     async sendRaw(): Promise<superagent.Response> {
-        // `ok(() => true)`를 제외하면 superagent가 400 이상 상태에서 예외를
-        // 던진다. 호출자가 직접 상태를 확인하도록 모든 상태를 OK로 표시한다.
+        // `ok(() => true)`를 제외하면 superagent가 400 이상 상태에서 예외를 던진다.
+        // 호출자가 직접 상태를 확인하도록 모든 상태를 OK로 표시한다.
         const response = await this.agent.ok(() => true)
 
         if (response.type === 'application/json') {

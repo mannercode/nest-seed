@@ -29,9 +29,8 @@ export class PurchaseService {
             .map((item) => item.itemId)
         const lockKey = `tickets:${ticketIds.sort().join(',')}`
 
-        // 선점은 결제가 끝난 뒤에도 바로 해제되지 않으므로, 같은 티켓 묶음에 대한
-        // 동시 결제를 직렬화해야 한다. 락 안에서 가용성을 다시 확인하면 첫 결제가
-        // 티켓을 `Sold`로 바꾼 뒤 들어온 결제는 결제 기록을 만들기 전에 거절된다.
+        // 선점은 결제가 끝난 뒤에도 바로 해제되지 않으므로, 같은 티켓 묶음에 대한 동시 결제를 직렬화해야 한다.
+        // 락 안에서 가용성을 다시 확인하면 첫 결제가 티켓을 `Sold`로 바꾼 뒤 들어온 결제는 결제 기록을 만들기 전에 거절된다.
         return this.cache.withLockBlocking(
             lockKey,
             PURCHASE_LOCK_TTL_MS,
@@ -81,10 +80,9 @@ export class PurchaseService {
                 'processPurchase compensation: rollbackPurchase, deletePurchaseRecord, cancelPayment',
                 { paymentId: payment.id, purchaseRecordId: purchaseRecord.id }
             )
-            // 보상 단계 하나가 실패해도 뒤따르는 단계는 계속 시도해야 부분 정리
-            // 상태가 줄어든다. 실패한 보상은 로그로 남겨 운영자가 수동 정리할
-            // 수 있게 하고, 원래 오류는 그대로 호출자에게 던진다. 정합성이 더
-            // 중요한 흐름은 Temporal 사가(`showtime-creation`)를 참고한다.
+            // 보상 단계 하나가 실패해도 뒤따르는 단계는 계속 시도해야 부분 정리 상태가 줄어든다.
+            // 실패한 보상은 로그로 남겨 운영자가 수동 정리할 수 있게 하고, 원래 오류는 그대로 호출자에게 던진다.
+            // 정합성이 더 중요한 흐름은 Temporal 사가(`showtime-creation`)를 참고한다.
             await this.tryCompensate('rollbackPurchase', () =>
                 this.ticketPurchaseService.rollbackPurchase(createDto)
             )

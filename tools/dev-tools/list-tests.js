@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Jest spec 파일에서 describe/it 트리를 추출해 출력한다.
- * 테스트 구조를 확인할 때 쓴다. TypeScript compiler API로 AST를 읽으므로
- * 여러 줄 문자열, template literal, it.each도 안전하게 다룬다.
+ * 테스트 구조를 확인할 때 쓴다.
+ * TypeScript compiler API로 AST를 읽으므로 여러 줄 문자열, template literal, it.each도 안전하게 다룬다.
  *
  *   node tools/dev-tools/list-tests.js                       # 기본값: libs/ 트리
  *   node tools/dev-tools/list-tests.js apps/api              # 다른 경로

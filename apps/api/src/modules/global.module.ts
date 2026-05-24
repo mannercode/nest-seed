@@ -5,8 +5,8 @@ import { ScheduleModule } from '@nestjs/schedule'
 import { AppConfigService } from 'config'
 
 /**
- * 어디서나 주입할 수 있는 공용 제공자를 모은다. `AppConfigService`와
- * `*-setup` 모듈은 `AppConfigModule`이 이미 `@Global`이라 여기 다시 넣지 않는다.
+ * 어디서나 주입할 수 있는 공용 제공자를 모은다.
+ * `AppConfigService`와 `*-setup` 모듈은 `AppConfigModule`이 이미 `@Global`이라 여기 다시 넣지 않는다.
  *
  * - `ScheduleModule`: `@Cron`을 쓰는 서비스가 의존하는 `SchedulerRegistry`를
  *   모듈 그래프에 등록한다.

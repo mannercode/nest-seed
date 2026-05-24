@@ -8,8 +8,8 @@ const DEFAULT_ALGORITHMS: JwtVerifyOptions['algorithms'] = ['HS256']
 
 export type JwtAuthGuardOptions = {
     /**
-     * 허용할 서명 알고리즘 목록. 기본값은 `['HS256']`. 고정해 두면 알고리즘
-     * 혼동 공격(`none`으로 바꾸기, HS↔RS 교체)을 막는다.
+     * 허용할 서명 알고리즘 목록.
+     * 기본값은 `['HS256']`. 고정해 두면 알고리즘 혼동 공격(`none`으로 바꾸기, HS↔RS 교체)을 막는다.
      */
     algorithms?: JwtVerifyOptions['algorithms']
     /** 필수 `aud` 클레임. 값이 맞지 않는 토큰은 거절한다. */
@@ -87,8 +87,9 @@ export abstract class JwtAuthGuard implements CanActivate {
 
 @Injectable()
 export abstract class OptionalJwtAuthGuard extends JwtAuthGuard {
-    // 토큰 부재만 허용한다. 토큰을 보냈다면 반드시 유효해야 한다
-    // (만료 → 401, 위조/깨짐 → 500). best-effort 검증으로 보지 않는다.
+    // 토큰 부재만 허용한다.
+    // 토큰을 보냈다면 반드시 유효해야 한다 (만료 → 401, 위조/깨짐 → 500).
+    // best-effort 검증으로 보지 않는다.
     async canActivate(context: ExecutionContext): Promise<boolean> {
         if (this.isPublicRoute(context)) {
             return true

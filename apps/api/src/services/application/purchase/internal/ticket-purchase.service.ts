@@ -54,8 +54,7 @@ export class TicketPurchaseService {
         })
 
         // 보상 흐름은 어디서 멈췄는지에 따라 티켓이 이미 Available일 수 있다.
-        // `updateStatusMany`는 동일 상태로의 전이를 충돌로 보므로 Sold인 티켓만
-        // 골라 되돌린다.
+        // `updateStatusMany`는 동일 상태로의 전이를 충돌로 보므로 Sold인 티켓만 골라 되돌린다.
         const tickets = await this.ticketsService.getMany(ticketIds)
         const soldTicketIds = tickets
             .filter((ticket) => ticket.status === TicketStatus.Sold)

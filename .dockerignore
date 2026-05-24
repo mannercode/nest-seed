@@ -25,8 +25,8 @@
 !/tools/
 !/tools/*/
 
-# `tests/*`도 npm 작업 공간에 포함된다. 실제 앱 이미지에는 넣지 않더라도,
-# 의존성을 설치할 때는 각 `package.json`이 있어야 한다.
+# `tests/*`도 npm 작업 공간에 포함된다.
+# 실제 앱 이미지에는 넣지 않더라도, 의존성을 설치할 때는 각 `package.json`이 있어야 한다.
 !/tests/*/package.json
 
 **/node_modules

@@ -14,9 +14,8 @@ import { User } from './models'
 import { UsersRepository } from './users.repository'
 
 /**
- * 인증 세부 구현은 `UserAuthenticationService`에 두되, 외부 진입점은
- * `UsersService`로 유지한다. 컨트롤러가 이 클래스만 의존하면 사용자 도메인의
- * 공개 API가 한곳에 모이고, 인증 구현을 교체해도 컨트롤러 계층은 바뀌지 않는다.
+ * 인증 세부 구현은 `UserAuthenticationService`에 두되, 외부 진입점은 `UsersService`로 유지한다.
+ * 컨트롤러가 이 클래스만 의존하면 사용자 도메인의 공개 API가 한곳에 모이고, 인증 구현을 교체해도 컨트롤러 계층은 바뀌지 않는다.
  */
 @Injectable()
 export class UsersService {

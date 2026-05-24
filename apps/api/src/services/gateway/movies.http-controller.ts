@@ -19,9 +19,8 @@ import { CreateAssetDto } from 'infrastructure'
 import { AdminAuthGuard, UserOptionalAuthGuard } from './guards'
 import { UserOptionalAuthRequest } from './types'
 
-// 인가: 변경 핸들러(create/update/delete/asset 관리/publish)는 admin 전용,
-// 조회는 공개로 둔다. 추천은 게스트도 호출하되 로그인 시 개인화하므로
-// optional 사용자 가드를 단다.
+// 인가: 변경 핸들러(create/update/delete/asset 관리/publish)는 admin 전용, 조회는 공개로 둔다.
+// 추천은 게스트도 호출하되 로그인 시 개인화하므로 optional 사용자 가드를 단다.
 @Controller('movies')
 export class MoviesHttpController {
     constructor(

@@ -5,8 +5,7 @@ import { useEffect, useState } from 'react'
 import { ApiError, api } from '@/lib/api-client'
 import { clearSession, readToken } from '@/lib/session'
 
-// seatmap은 실제 운영에선 평면도 편집기로 입력하지만 시드 콘솔에서는 한
-// 블록·한 행·N개 좌석으로 단순화해서 등록 흐름만 보여준다.
+// seatmap은 실제 운영에선 평면도 편집기로 입력하지만 시드 콘솔에서는 한 블록·한 행·N개 좌석으로 단순화해서 등록 흐름만 보여준다.
 function buildDefaultSeatmap(seatCount: number) {
     return {
         blocks: [{ name: 'A', rows: [{ name: '1', layout: 'O'.repeat(Math.max(1, seatCount)) }] }]

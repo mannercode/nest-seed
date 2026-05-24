@@ -12,8 +12,7 @@ export type NatsPubSubServiceFixture = {
 
 /**
  * 같은 NATS 서버를 함께 쓰는 `NatsPubSubService` 인스턴스 두 개를 시작한다.
- * 한 인스턴스가 발행하고 다른 인스턴스가 구독하는 방식으로, 복제본 사이로 메시지가
- * 흐르는 시나리오를 재현하기 위한 픽스처이다.
+ * 한 인스턴스가 발행하고 다른 인스턴스가 구독하는 방식으로, 복제본 사이로 메시지가 흐르는 시나리오를 재현하기 위한 픽스처이다.
  */
 export async function createNatsPubSubServiceFixture(): Promise<NatsPubSubServiceFixture> {
     const contextA = await createTestContext({
@@ -43,8 +42,7 @@ export async function createNatsPubSubServiceFixture(): Promise<NatsPubSubServic
     const ncB = contextB.module.get<NatsConnection>(getNatsConnectionToken('replicaB'))
 
     // 두 연결이 서버와 왕복 가능한 상태인지 확인한다.
-    // 이후 테스트의 timeout 범위에는 컨테이너 콜드 스타트나 TCP 핸드셰이크
-    // 비용이 포함되지 않고, 순수 메시지 왕복 시간만 들어간다.
+    // 이후 테스트의 timeout 범위에는 컨테이너 콜드 스타트나 TCP 핸드셰이크 비용이 포함되지 않고, 순수 메시지 왕복 시간만 들어간다.
     await Promise.all([ncA.flush(), ncB.flush()])
 
     const teardown = async () => {

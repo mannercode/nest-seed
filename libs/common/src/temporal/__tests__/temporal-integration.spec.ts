@@ -7,8 +7,7 @@ import type { TemporalClientConfig } from '../temporal.types'
 
 /**
  * 이 파일 전체가 공유하는 단일 Connection과 Client이다.
- * 각 `it` 안의 `await import`(프로젝트 컨벤션: resetModules: true)는
- * SUT 모듈에 새로운 클래스 정체성을 부여하고, 살아 있는 인프라 핸들만 재사용한다.
+ * 각 `it` 안의 `await import`(프로젝트 컨벤션: resetModules: true)는 SUT 모듈에 새로운 클래스 정체성을 부여하고, 살아 있는 인프라 핸들만 재사용한다.
  */
 let connection: Connection
 let client: Client
@@ -94,8 +93,8 @@ describe('TemporalClientModule.forRootAsync', () => {
         const calls: string[] = []
         const { address, namespace } = config()
 
-        // forRootAsync의 동적 모듈은 global이지만 inject 토큰은 어딘가에서
-        // 해석되어야 한다. 그래서 @Global() 헬퍼 모듈로 ADDRESS_TOKEN을 노출한다.
+        // forRootAsync의 동적 모듈은 global이지만 inject 토큰은 어딘가에서 해석되어야 한다.
+        // 그래서 @Global() 헬퍼 모듈로 ADDRESS_TOKEN을 노출한다.
         @Global()
         @Module({
             providers: [{ provide: ADDRESS_TOKEN, useValue: address }],
@@ -120,8 +119,7 @@ describe('TemporalClientModule.forRootAsync', () => {
         }).compile()
 
         try {
-            // useFactory는 두 제공자(connection, client)에 연결되어 있어
-            // 같은 주입 주소로 두 번 실행된다.
+            // useFactory는 두 제공자(connection, client)에 연결되어 있어 같은 주입 주소로 두 번 실행된다.
             expect(calls).toEqual([address, address])
         } finally {
             await moduleRef.close()
@@ -139,8 +137,7 @@ describe('TemporalClientModule.forRootAsync', () => {
             ]
         }).compile()
 
-        // close()가 거부되는 mock 연결을 레지스트리에 추가해
-        // onModuleDestroy의 .catch(() => undefined) 분기를 커버한다.
+        // close()가 거부되는 mock 연결을 레지스트리에 추가해 onModuleDestroy의 .catch(() => undefined) 분기를 커버한다.
         const fakeConnection = {
             close: jest.fn(async () => {
                 throw new Error('boom')

@@ -71,9 +71,7 @@ async function dropMatchingBuckets(s3Client, pattern) {
 
 /**
  * 각 Jest 워커가 Mongo, S3 픽스처를 준비하고 정리하는 공통 흐름이다.
- * 워크스페이스마다 환경 변수 이름과 연결 방식이 다르므로, 연결 생성 함수는
- * 호출부가 넘기고 이 헬퍼는 순서(연결 → 준비 확인 → 정리 → 종료)만
- * 책임진다.
+ * 워크스페이스마다 환경 변수 이름과 연결 방식이 다르므로, 연결 생성 함수는 호출부가 넘기고 이 헬퍼는 순서(연결 → 준비 확인 → 정리 → 종료)만 책임진다.
  */
 function setupJestLifecycle({
     connectMongo, // (workerId) => Promise<{ client, dbName }>
@@ -119,9 +117,7 @@ function setupJestLifecycle({
 
 /**
  * 전체 Jest 워커 풀이 종료된 뒤 한 번 실행되는 공통 정리 함수이다.
- * 각 워크스페이스가 Mongo/S3/Redis 연결 생성 함수를 넘기고, `extra`에는
- * 해당 워크스페이스에만 필요한 정리 작업(예: in-process Temporal 서버 종료)을
- * 넣는다.
+ * 각 워크스페이스가 Mongo/S3/Redis 연결 생성 함수를 넘기고, `extra`에는 해당 워크스페이스에만 필요한 정리 작업(예: in-process Temporal 서버 종료)을 넣는다.
  */
 function createGlobalTeardown({
     connectMongo, // () => Promise<MongoClient>

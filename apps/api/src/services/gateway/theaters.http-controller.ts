@@ -14,8 +14,7 @@ import {
 import { CreateTheaterDto, SearchTheatersPageDto, TheatersService, UpdateTheaterDto } from 'core'
 import { AdminAuthGuard } from './guards'
 
-// 인가: 변경 핸들러(create/update/delete)는 admin 전용, 조회(get/searchPage)는
-// 공개로 둔다.
+// 인가: 변경 핸들러(create/update/delete)는 admin 전용, 조회(get/searchPage)는 공개로 둔다.
 @Controller('theaters')
 export class TheatersHttpController {
     constructor(private readonly theatersService: TheatersService) {}

@@ -17,10 +17,9 @@
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
         "COMPOSE_PROJECT_NAME": "${containerWorkspaceFolderBasename}"
     },
-    // Docker-outside-of-Docker에서는 컨테이너 안에서 실행한 docker compose도
-    // 호스트 파일 시스템 경로를 기준으로 bind mount와 build context를 해석한다.
-    // 컨테이너 경로와 호스트 경로를 맞춰 compose 설정이 두 환경에서 같은
-    // 경로를 가리키게 한다.
+    // 컨테이너 안에서 `docker compose`를 실행해도 실제 작업은 호스트 Docker가 한다.
+    // 호스트가 `compose.yml`의 경로를 그대로 찾을 수 있도록,
+    // 작업 폴더를 컨테이너와 호스트에서 같은 경로로 연결한다.
     "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
     "workspaceFolder": "${localWorkspaceFolder}",
     "mounts": [

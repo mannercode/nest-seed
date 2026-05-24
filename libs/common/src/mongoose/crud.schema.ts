@@ -4,8 +4,8 @@ import { SchemaFactory } from '@nestjs/mongoose'
 import { defaultTo } from '../utils'
 
 /**
- * `toObject`와 `toJSON`의 차이는 `flattenMaps` 기본값뿐이다. `toJSON`은
- * 기본이 true라서 Map을 일반 객체로 변환한다.
+ * `toObject`와 `toJSON`의 차이는 `flattenMaps` 기본값뿐이다.
+ * `toJSON`은 기본이 true라서 Map을 일반 객체로 변환한다.
  *
  * @Schema()
  * export class Sample {
@@ -21,12 +21,11 @@ import { defaultTo } from '../utils'
  */
 
 /**
- * 보통의 도메인 엔티티(생성·조회·수정·삭제 모두 가능)에 쓰는 스키마 기반
- * 클래스이다. 기본 동작은 소프트 삭제이다. 특정 모델에서 완전 삭제가 필요하면
- * `@HardDelete()` 데코레이터를 그 모델에 붙인다.
+ * 보통의 도메인 엔티티(생성·조회·수정·삭제 모두 가능)에 쓰는 스키마 기반 클래스이다.
+ * 기본 동작은 소프트 삭제이다.
+ * 특정 모델에서 완전 삭제가 필요하면 `@HardDelete()` 데코레이터를 그 모델에 붙인다.
  *
- * 감사 로그처럼 추가만 일어나는 도메인은 이 기반이 아니라 `AppendOnlySchema`와
- * `createAppendOnlySchema`를 사용한다.
+ * 감사 로그처럼 추가만 일어나는 도메인은 이 기반이 아니라 `AppendOnlySchema`와 `createAppendOnlySchema`를 사용한다.
  */
 export abstract class CrudSchema {
     createdAt: Date
@@ -54,8 +53,7 @@ export function createCrudSchema<T>(cls: Type<T>): Schema<T> {
     const isHardDelete = defaultTo(Reflect.getMetadata(HARD_DELETE_KEY, cls), false)
     if (isHardDelete === false) {
         schema.add({ deletedAt: { default: null, type: Date } } as any)
-        // 소프트 삭제가 활성화된 모든 조회는 `deletedAt: null` 필터를 자동으로
-        // 포함하므로, 이 필드 인덱스 하나로 거의 모든 경로가 빨라진다.
+        // 소프트 삭제가 활성화된 모든 조회는 `deletedAt: null` 필터를 자동으로 포함하므로, 이 필드 인덱스 하나로 거의 모든 경로가 빨라진다.
         schema.index({ deletedAt: 1 })
 
         schema.pre('find', excludeDeletedMiddleware)
@@ -105,9 +103,8 @@ export function createCrudSchema<T>(cls: Type<T>): Schema<T> {
             this.deletedAt = new Date()
             return this.save(options)
         }
-        // `bulkWrite`는 소프트 삭제 미들웨어를 거치지 않는다. 그래서 각
-        // 연산의 필터에 `deletedAt: null`을 직접 추가하고, 삭제 계열
-        // 연산은 update로 바꿔서 같은 효과를 낸다.
+        // `bulkWrite`는 소프트 삭제 미들웨어를 거치지 않는다.
+        // 그래서 각 연산의 필터에 `deletedAt: null`을 직접 추가하고, 삭제 계열 연산은 update로 바꿔서 같은 효과를 낸다.
         schema.pre('bulkWrite', function (ops) {
             for (const op of ops) {
                 if ('updateOne' in op) {

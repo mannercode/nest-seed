@@ -24,5 +24,5 @@ export class Theater extends CrudSchema {
 }
 export const TheaterSchema = createCrudSchema(Theater)
 
-// 현재 검색은 부분 문자열 정규식이라 일반 인덱스를 활용하지 못한다. 접두 일치나
-// 정확 일치 검색으로 바뀌면 그때 인덱스를 다시 검토한다.
+// 현재 검색은 부분 문자열 정규식이라 일반 인덱스를 활용하지 못한다.
+// 접두 일치나 정확 일치 검색으로 바뀌면 그때 인덱스를 다시 검토한다.

@@ -5,8 +5,7 @@ const baseConfig = require('../../jest.config.base')
 const tsconfigPath = join(__dirname, 'tsconfig.jest.json')
 const tsJestPreset = createDefaultPreset({ tsconfig: tsconfigPath })
 
-// libs/testing은 인프라 의존성이 없어 globalSetup, globalTeardown,
-// setupFilesAfterEnv를 쓰지 않는다.
+// libs/testing은 인프라 의존성이 없어 globalSetup, globalTeardown, setupFilesAfterEnv를 쓰지 않는다.
 // 헬퍼의 순수 단위 테스트라 Mongo/Redis/S3/NATS/Temporal 없이 실행된다.
 module.exports = {
     ...baseConfig,

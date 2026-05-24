@@ -82,8 +82,7 @@ export class TicketHoldingService {
         // 티켓 키 하나를 삭제하지 못하더라도 나머지 티켓 키와 사용자 키 정리는 계속한다.
         // 부분 실패가 영구 잠금으로 이어지지 않는 이유는 두 가지이다.
         // 첫째, 선점에 걸린 TTL이 끝나면 남은 키가 사라진다.
-        // 둘째, 다음 `holdTickets`가 사용자 키를 다시 읽어 같은 사용자의 남은
-        // 티켓 키를 정리한다.
+        // 둘째, 다음 `holdTickets`가 사용자 키를 다시 읽어 같은 사용자의 남은 티켓 키를 정리한다.
         const results = await Promise.allSettled(
             tickets.map((ticketId) => this.cacheService.delete(getTicketKey(showtimeId, ticketId)))
         )

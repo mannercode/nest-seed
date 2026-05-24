@@ -22,8 +22,8 @@ export class Showtime extends CrudSchema {
 }
 export const ShowtimeSchema = createCrudSchema(Showtime)
 
-// 예매 화면은 "한 극장의 특정 시간대 상영"을 반복해서 조회한다. 이 스키마는
-// 완전 삭제를 쓰므로 다른 도메인과 달리 `deletedAt` 필터가 붙지 않는다.
+// 예매 화면은 "한 극장의 특정 시간대 상영"을 반복해서 조회한다.
+// 이 스키마는 완전 삭제를 쓰므로 다른 도메인과 달리 `deletedAt` 필터가 붙지 않는다.
 // theaterId와 startTime만으로 접근 경로를 만든다.
 ShowtimeSchema.index({ theaterId: 1, startTime: 1 })
 // showtime-creation 보상 처리에서 사가가 만든 상영을 한 번에 찾는 경로이다.

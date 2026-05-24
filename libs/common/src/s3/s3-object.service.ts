@@ -195,9 +195,9 @@ export class S3ObjectService implements OnModuleDestroy {
 }
 
 /**
- * Content-Type 비교는 기본 타입만 본다. `; charset=utf-8` 같은 부가 파라미터는
- * 무시한다. 예: `application/json`과 `application/json; charset=utf-8`은
- * 같다고 본다.
+ * Content-Type 비교는 기본 타입만 본다.
+ * `; charset=utf-8` 같은 부가 파라미터는 무시한다.
+ * 예: `application/json`과 `application/json; charset=utf-8`은 같다고 본다.
  */
 function normalizeContentType(v?: string) {
     return v?.split(';', 1)[0].trim().toLowerCase()

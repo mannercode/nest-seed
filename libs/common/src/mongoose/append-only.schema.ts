@@ -3,11 +3,12 @@ import type { Schema } from 'mongoose'
 import { SchemaFactory } from '@nestjs/mongoose'
 
 /**
- * 추가만 일어나는 도메인용 스키마 기반 클래스이다. 감사 로그, 이벤트 로그,
- * 변경 불가 이력처럼 수정·삭제가 일어나지 않는 모델에 사용한다.
+ * 추가만 일어나는 도메인용 스키마 기반 클래스이다.
+ * 감사 로그, 이벤트 로그, 변경 불가 이력처럼 수정·삭제가 일어나지 않는 모델에 사용한다.
  *
- * `CrudSchema`와 달리 `updatedAt`과 `deletedAt` 필드가 없다. append-only에서는
- * 의미가 없는 값이라서다. `createdAt`만 노출한다.
+ * `CrudSchema`와 달리 `updatedAt`과 `deletedAt` 필드가 없다.
+ * append-only에서는 의미가 없는 값이라서다.
+ * `createdAt`만 노출한다.
  *
  * `createAppendOnlySchema`가 스키마 단계에서 모든 수정·삭제 연산을 예외로 막는다.
  * 모델 메서드를 직접 부르는 우회 경로까지 같이 차단된다.

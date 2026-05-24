@@ -1,6 +1,7 @@
 /**
- * 로그인에서 받은 액세스 토큰을 `sessionStorage`에 둔다. 시드 수준이라
- * 리프레시 토큰은 다루지 않는다. 만료되면 다시 로그인한다.
+ * 로그인에서 받은 액세스 토큰을 `sessionStorage`에 둔다.
+ * 시드 수준이라 리프레시 토큰은 다루지 않는다.
+ * 만료되면 다시 로그인한다.
  */
 
 const TOKEN_KEY = 'console:access-token'

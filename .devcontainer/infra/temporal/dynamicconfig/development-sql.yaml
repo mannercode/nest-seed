@@ -9,9 +9,7 @@ system.forceSearchAttributesCacheRefreshOnRead:
 system.minRetentionDays:
     - value: 0
       constraints: {}
-# 지속 부하 시 transfer-queue가 정체돼 `TransferActivityTask`가
-# 10초 context를 초과하던 패턴을 줄이기 위해 poll 한도를 디폴트(20/샤드)에서
-# 50/샤드로 올리고, 배치 크기도 디폴트(100)에서 200으로 늘려 드레인 속도를 높인다.
+# 지속 부하 시 transfer-queue가 정체돼 `TransferActivityTask`가 10초 context를 초과하던 패턴을 줄이기 위해 poll 한도를 디폴트(20/샤드)에서 50/샤드로 올리고, 배치 크기도 디폴트(100)에서 200으로 늘려 드레인 속도를 높인다.
 history.transferProcessorMaxPollRPS:
     - value: 50
       constraints: {}

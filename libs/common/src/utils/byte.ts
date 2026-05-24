@@ -1,7 +1,7 @@
 export class ByteUtil {
     /**
-     * `10MB`, `2GB`, `-500KB` 같은 크기 표현식을 바이트 수로 변환한다. 여러
-     * 단위는 공백으로 구분할 수 있고, 형식이 맞지 않으면 예외를 던진다.
+     * `10MB`, `2GB`, `-500KB` 같은 크기 표현식을 바이트 수로 변환한다.
+     * 여러 단위는 공백으로 구분할 수 있고, 형식이 맞지 않으면 예외를 던진다.
      */
     static fromString(sizeExpression: string): number {
         const sizeUnitMap: { [key: string]: number } = {

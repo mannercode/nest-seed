@@ -46,8 +46,7 @@ export class TicketsService {
         // 사전 검사로 두 가지 충돌을 분리한다.
         // 1) 누락된 ticketId — `getByIds`가 404로 던진다.
         // 2) 이미 목표 상태인 티켓 — 도메인 충돌이므로 409로 거절한다.
-        // Mongoose 버전에 따라 `updateMany`의 `modifiedCount`가 같은 값으로
-        // set한 도큐먼트를 다르게 계산해 결과만으로는 판정이 흔들린다.
+        // Mongoose 버전에 따라 `updateMany`의 `modifiedCount`가 같은 값으로 set한 도큐먼트를 다르게 계산해 결과만으로는 판정이 흔들린다.
         const existing = await this.repository.getByIds(ticketIds)
         const alreadyAtTarget = existing
             .filter((ticket) => ticket.status === status)

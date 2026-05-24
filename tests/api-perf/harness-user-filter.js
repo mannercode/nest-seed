@@ -1,8 +1,7 @@
 /**
  * 사용자 이름 필터 전용 성능 하네스이다.
  *
- * GET /users가 JWT로 보호되므로 워커마다 자체 계정을 가입하고 로그인한 뒤,
- * 액세스 토큰을 받아 `?name=<filter>` 쿼리를 반복 실행한다.
+ * GET /users가 JWT로 보호되므로 워커마다 자체 계정을 가입하고 로그인한 뒤, 액세스 토큰을 받아 `?name=<filter>` 쿼리를 반복 실행한다.
  *
  * 부분 문자열 정규식은 일반 인덱스를 활용하지 못해 컬렉션 전체를 스캔한다.
  * 검색어를 좁게 설정해 매치 수를 거의 0으로 맞추고, 그 비용을 단독으로 측정한다.
@@ -20,8 +19,8 @@ const CONCURRENCY = Number(process.env.CONCURRENCY || 100)
 const DURATION_MS = Number(process.env.DURATION_MS || 30_000)
 const WARMUP_MS = Number(process.env.WARMUP_MS || 3_000)
 const LABEL = process.env.LABEL || ''
-// 부분 문자열을 좁게 설정해 매치 수를 거의 0으로 맞춘다. 그래야 기준값
-// 측정이 회차마다 같은 조건에서 나온다.
+// 부분 문자열을 좁게 설정해 매치 수를 거의 0으로 맞춘다.
+// 그래야 기준값 측정이 회차마다 같은 조건에서 나온다.
 const FILTER_PREFIX = process.env.FILTER_PREFIX || 'perf-user-17769404'
 
 const url = new URL(SERVER_URL)

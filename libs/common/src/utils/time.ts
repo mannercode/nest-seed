@@ -31,8 +31,8 @@ export class TimeUtil {
     }
 
     /**
-     * `1d 2h`, `30m`, `500ms` 같은 시간 표현식을 밀리초로 변환한다. 단위는
-     * `ms`, `s`, `m`, `h`, `d`만 허용하며, 형식이 맞지 않으면 예외를 던진다.
+     * `1d 2h`, `30m`, `500ms` 같은 시간 표현식을 밀리초로 변환한다.
+     * 단위는 `ms`, `s`, `m`, `h`, `d`만 허용하며, 형식이 맞지 않으면 예외를 던진다.
      */
     static toMs(timeExpression: string): number {
         const timeUnitMap: { [key: string]: number } = {

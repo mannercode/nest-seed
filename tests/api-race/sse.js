@@ -1,18 +1,15 @@
 /**
- * 높은 부하 조건에서 SSE 이벤트가 여러 복제본에 걸쳐 모든 구독자에게 전달되는지
- * 검증하는 부하 테스트이다.
+ * 높은 부하 조건에서 SSE 이벤트가 여러 복제본에 걸쳐 모든 구독자에게 전달되는지 검증하는 부하 테스트이다.
  *
- * 한 회차는 여러 복제본에 SSE 연결을 여러 개 연다. 그다음 시작 시각이 서로 어긋난
- * 사가 생성 요청 여러 건을 동시에 보낸다. 모든 SSE 클라이언트가 모든 사가의
- * succeeded 이벤트를 받아야 통과이다. 받아야 할 총 이벤트 수는 클라이언트 수와
- * 사가 수의 곱이다.
+ * 한 회차는 여러 복제본에 SSE 연결을 여러 개 연다.
+ * 그다음 시작 시각이 서로 어긋난 사가 생성 요청 여러 건을 동시에 보낸다.
+ * 모든 SSE 클라이언트가 모든 사가의 succeeded 이벤트를 받아야 통과이다.
+ * 받아야 할 총 이벤트 수는 클라이언트 수와 사가 수의 곱이다.
  *
- * 한 회차는 NATS 메시지를 수천 개씩 만든다. 각 사가의 상태 변화
- * (Waiting → Processing → Succeeded)를 복제본마다 발행하고, 모든 구독자가 각 복제본
- * 내부 Subject로 전달하기 때문이다.
+ * 한 회차는 NATS 메시지를 수천 개씩 만든다.
+ * 각 사가의 상태 변화 (Waiting → Processing → Succeeded)를 복제본마다 발행하고, 모든 구독자가 각 복제본 내부 Subject로 전달하기 때문이다.
  *
- * 어떤 클라이언트가 어떤 사가의 succeeded 이벤트를 놓치거나, SSE 클라이언트들이
- * 한 복제본에만 연결되어 복제본 사이 전달이 검증되지 않으면 실패로 본다.
+ * 어떤 클라이언트가 어떤 사가의 succeeded 이벤트를 놓치거나, SSE 클라이언트들이 한 복제본에만 연결되어 복제본 사이 전달이 검증되지 않으면 실패로 본다.
  */
 
 const http = require('http')
@@ -177,8 +174,8 @@ async function runInner(movieId, theaterId, iteration, baseOffsetMs) {
         )
     }
 
-    // SAGAS_PER_INNER개의 saga를 동시에 보낸다. validator가 거부하지 않도록
-    // 각각 서로 겹치지 않는 startTime을 사용한다.
+    // SAGAS_PER_INNER개의 saga를 동시에 보낸다.
+    // validator가 거부하지 않도록 각각 서로 겹치지 않는 startTime을 사용한다.
     const sagaSpacingMs = 3 * 60 * 60 * 1000 // 3h
     const sagaPromises = Array.from({ length: SAGAS_PER_INNER }, (_, i) => {
         const startTime = new Date(

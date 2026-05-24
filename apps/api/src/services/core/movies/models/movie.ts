@@ -94,5 +94,4 @@ export class Movie extends CrudSchema {
 export const MovieSchema = createCrudSchema(Movie)
 
 // 현재 검색은 부분 문자열 정규식이라 일반 인덱스를 활용하지 못한다.
-// `isPublished` 단독 인덱스도 시드 규모(수만 행)에서는 선택도가 낮아 효과가
-// 거의 없어 두지 않는다.
+// `isPublished` 단독 인덱스도 시드 규모(수만 행)에서는 선택도가 낮아 효과가 거의 없어 두지 않는다.

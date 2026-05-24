@@ -3,8 +3,8 @@ import type { NatsPubSubServiceFixture } from './nats-pubsub.service.fixture'
 
 /**
  * 픽스처가 연결을 flush해 두므로 측정 구간에는 순수 메시지 왕복만 들어온다.
- * NatsPubSubService.subscribe()도 flush 후 반환하므로 구독과 발행 사이의
- * 경합도 없다. 500ms 초과는 실제 지연 회귀 신호로 본다.
+ * NatsPubSubService.subscribe()도 flush 후 반환하므로 구독과 발행 사이의 경합도 없다.
+ * 500ms 초과는 실제 지연 회귀 신호로 본다.
  */
 async function waitFor(predicate: () => boolean, timeoutMs = 500) {
     const start = Date.now()

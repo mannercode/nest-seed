@@ -31,9 +31,8 @@ export class ShowtimeCreationActivities {
     ) {}
 
     /**
-     * `TemporalWorkerService`에 등록할 액티비티 묶음을 반환한다. Temporal은
-     * 일반 함수로 호출하므로 각 메서드를 `bind`해 `this`를 잃지 않게
-     * 한다.
+     * `TemporalWorkerService`에 등록할 액티비티 묶음을 반환한다.
+     * Temporal은 일반 함수로 호출하므로 각 메서드를 `bind`해 `this`를 잃지 않게 한다.
      */
     bind() {
         return {
@@ -52,10 +51,9 @@ export class ShowtimeCreationActivities {
     ): Promise<ValidateAndCreateResult> {
         const { createDto, sagaId } = JsonUtil.reviveDates(input)
 
-        // 검증과 삽입은 복제본 경계를 넘어 원자적으로 취급해야 한다. 두 워커가
-        // 같은 시간대의 사가를 동시에 검증하면, 아직 삽입되지 않은 서로의 결과를
-        // 보지 못해 둘 다 통과할 수 있다. 분산 락 안에서 검증과 삽입을 함께
-        // 실행해 같은 시간대는 한 사가씩 처리한다.
+        // 검증과 삽입은 복제본 경계를 넘어 원자적으로 취급해야 한다.
+        // 두 워커가 같은 시간대의 사가를 동시에 검증하면, 아직 삽입되지 않은 서로의 결과를 보지 못해 둘 다 통과할 수 있다.
+        // 분산 락 안에서 검증과 삽입을 함께 실행해 같은 시간대는 한 사가씩 처리한다.
         let result!: ValidateAndCreateResult
         await this.cache.withLockBlocking(
             VALIDATE_CREATE_LOCK_KEY,

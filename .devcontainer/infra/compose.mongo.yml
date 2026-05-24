@@ -5,11 +5,10 @@ x-mongo-base: &mongo-base
     # 데이터를 메모리에 더 오래 둘 수 있도록 컨테이너와 캐시 용량을 늘린다.
     deploy: { resources: { limits: { memory: 2g } } }
     shm_size: '8m'
-    # MongoDB 복제 묶음을 만들고 테스트를 동시에 돌릴 때 열 수 있는 파일 수가
-    # 부족하지 않도록 한도를 넉넉하게 둔다.
+    # MongoDB 복제 묶음을 만들고 테스트를 동시에 돌릴 때 열 수 있는 파일 수가 부족하지 않도록 한도를 넉넉하게 둔다.
     ulimits: { nofile: { soft: 65536, hard: 65536 } }
-    # 개발 및 테스트용 MongoDB 복제 묶음(Replica Set)이다. 운영용 보안
-    # 설정보다는 테스트 속도와 설정 단순성을 우선한다.
+    # 개발 및 테스트용 MongoDB 복제 묶음(Replica Set)이다.
+    # 운영용 보안 설정보다는 테스트 속도와 설정 단순성을 우선한다.
     # 초기화 중에는 27017 포트가 이미 쓰이므로 실제 서버는 27016을 사용한다.
     command: >
         --replSet mongo
@@ -50,9 +49,8 @@ services:
             }
         command: |
             sh -eucx '
-                # `rs.initiate`에 등록한 host는 드라이버가 이후 Replica Set 멤버를
-                # 찾아갈 때 그대로 사용한다. devcontainer도 같은 compose 네트워크에
-                # 있으므로 서비스 이름(mongo1/mongo2/mongo3)을 등록한다.
+                # `rs.initiate`에 등록한 host는 드라이버가 이후 Replica Set 멤버를 찾아갈 때 그대로 사용한다.
+                # devcontainer도 같은 compose 네트워크에 있으므로 서비스 이름(mongo1/mongo2/mongo3)을 등록한다.
                 url="mongodb://mongo1:27016/?directConnection=true"
 
                 mongosh $$url --eval "

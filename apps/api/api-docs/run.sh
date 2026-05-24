@@ -65,8 +65,7 @@ CURL() {
 	# 가장 최근에 로그인한 주체(admin 또는 user)의 토큰을 자동 주입한다.
 	# 호출자가 이미 Authorization 헤더를 명시했다면 그것을 우선한다.
 	# spec은 `login_admin` / `login_user`로 `CURRENT_AUTH_TOKEN`을 갈아끼우며 흐름을 표현한다.
-	# presigned upload처럼 외부 storage로 가는 호출은 자기 인증 방식이 따로 있으므로
-	# `SERVER_URL` 접두사로 시작하는 API 호출에만 자동 주입한다.
+	# presigned upload처럼 외부 storage로 가는 호출은 자기 인증 방식이 따로 있으므로 `SERVER_URL` 접두사로 시작하는 API 호출에만 자동 주입한다.
 	if [[ -n "${CURRENT_AUTH_TOKEN:-}" && "${url}" == "${SERVER_URL}"* ]]; then
 		local has_auth=0
 		local arg

@@ -6,9 +6,8 @@ services:
             POSTGRES_USER: temporal
             POSTGRES_PASSWORD: temporal
             POSTGRES_DB: temporal
-        # 상영 생성 작업 기록이 많이 쌓이면 기본 메모리 설정으로는 DB 조회가
-        # 느려져 작업 처리가 시간 안에 끝나지 않는다. 2GB 한도 안에서
-        # DB가 사용할 메모리를 늘린다.
+        # 상영 생성 작업 기록이 많이 쌓이면 기본 메모리 설정으로는 DB 조회가 느려져 작업 처리가 시간 안에 끝나지 않는다.
+        # 2GB 한도 안에서 DB가 사용할 메모리를 늘린다.
         command:
             - postgres
             - -c
@@ -24,8 +23,8 @@ services:
         deploy: { resources: { limits: { memory: 2g } } }
         shm_size: '256m'
 
-    # 서버 이미지는 필요한 DB 구조를 직접 만들지 않는다. 준비 컨테이너가
-    # `temporal`과 `temporal_visibility` DB 구조를 만들고 변경 사항을 반영한다.
+    # 서버 이미지는 필요한 DB 구조를 직접 만들지 않는다.
+    # 준비 컨테이너가 `temporal`과 `temporal_visibility` DB 구조를 만들고 변경 사항을 반영한다.
     temporal-setup:
         extends: { file: ../compose.common.yml, service: common-options }
         image: $TEMPORAL_ADMIN_TOOLS_IMAGE
@@ -63,8 +62,8 @@ services:
             test: ['CMD-SHELL', 'nc -z localhost 7233']
             interval: 5s
             start_period: 30s
-        # 서버 메모리가 1GB일 때는 개발 환경 시작 직후 내부 작업 준비가
-        # 시간 안에 끝나지 않았다. 테스트가 안정적으로 시작되도록 3GB를 준다.
+        # 서버 메모리가 1GB일 때는 개발 환경 시작 직후 내부 작업 준비가 시간 안에 끝나지 않았다.
+        # 테스트가 안정적으로 시작되도록 3GB를 준다.
         deploy: { resources: { limits: { memory: 3g } } }
         shm_size: '16m'
 

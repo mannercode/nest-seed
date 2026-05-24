@@ -1,6 +1,6 @@
-// 브라우저에서 NestJS API로 보내는 fetch 래퍼이다. next.config.mjs의 `/api/*` rewrite를
-// 거치므로 호출자는 호스트 주소 없이 경로만 넘긴다. 사용자 앱 홈은 게스트 접근이라
-// 인증 토큰은 다루지 않는다.
+// 브라우저에서 NestJS API로 보내는 fetch 래퍼이다.
+// next.config.mjs의 `/api/*` rewrite를 거치므로 호출자는 호스트 주소 없이 경로만 넘긴다.
+// 사용자 앱 홈은 게스트 접근이라 인증 토큰은 다루지 않는다.
 
 export class ApiError extends Error {
     readonly status: number

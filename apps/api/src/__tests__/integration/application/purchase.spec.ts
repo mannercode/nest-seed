@@ -100,13 +100,11 @@ describe('PurchaseService', () => {
 
             describe('completePurchase 중 내부 오류가 날 때', () => {
                 // `completePurchase`가 처음 기록하는 로그를 기준으로 예외를 던진다.
-                // 그러면 `PurchaseService`의 catch 블록이 실행되어 결제 취소, 구매 기록 삭제,
-                // 티켓 롤백이 함께 실행된다. 특정 메서드 호출을 직접 가로채지 않고 관측 가능한
-                // 로그를 기준으로 삼아, 테스트가 구현 세부에 지나치게 묶이지 않게 한다.
+                // 그러면 `PurchaseService`의 catch 블록이 실행되어 결제 취소, 구매 기록 삭제, 티켓 롤백이 함께 실행된다.
+                // 특정 메서드 호출을 직접 가로채지 않고 관측 가능한 로그를 기준으로 삼아, 테스트가 구현 세부에 지나치게 묶이지 않게 한다.
                 beforeEach(async () => {
-                    // `resetModules: true` 환경에서는 감시 대상 Logger가 운영 코드의
-                    // Logger와 같은 실행 영역에 있어야 한다. 그래서 같은 모듈 그래프에서
-                    // 동적으로 가져온다.
+                    // `resetModules: true` 환경에서는 감시 대상 Logger가 운영 코드의 Logger와 같은 실행 영역에 있어야 한다.
+                    // 그래서 같은 모듈 그래프에서 동적으로 가져온다.
                     const { Logger } = await import('@nestjs/common')
                     jest.spyOn(Logger.prototype, 'log').mockImplementation(((message: any) => {
                         if (message === 'completePurchase') {
@@ -146,9 +144,7 @@ describe('PurchaseService', () => {
 
             describe('티켓이 Sold로 전이된 뒤 이벤트 발행이 실패할 때', () => {
                 // 보상 흐름이 실제로 Sold→Available 전이를 수행하는 경로를 검증한다.
-                // 위의 시나리오는 `completePurchase` 시작점에서 던지므로 티켓이
-                // Available로 남아 보상은 no-op이지만, 여기는 전이 이후에 던져
-                // 보상이 진짜 되돌리기를 하도록 만든다.
+                // 위의 시나리오는 `completePurchase` 시작점에서 던지므로 티켓이 Available로 남아 보상은 no-op이지만, 여기는 전이 이후에 던져 보상이 진짜 되돌리기를 하도록 만든다.
                 beforeEach(async () => {
                     const { PurchaseEvents } = await import('application')
                     const events = fix.module.get(PurchaseEvents)
@@ -170,9 +166,8 @@ describe('PurchaseService', () => {
             })
 
             describe('보상 단계가 실패해도', () => {
-                // 보상 체인은 best-effort라 한 단계가 실패해도 다음 단계를 계속
-                // 시도해야 한다. `paymentsService.cancel`이 던지더라도 `deleteMany`와
-                // 티켓 롤백은 그대로 수행되는지를 본다.
+                // 보상 체인은 best-effort라 한 단계가 실패해도 다음 단계를 계속 시도해야 한다.
+                // `paymentsService.cancel`이 던지더라도 `deleteMany`와 티켓 롤백은 그대로 수행되는지를 본다.
                 beforeEach(async () => {
                     const { PurchaseEvents } = await import('application')
                     const { PaymentsService } = await import('infrastructure')
