@@ -10,5 +10,8 @@ package-lock.json
 # Next.js 자동 생성 파일이라 직접 손대지 않는다.
 apps/console/next-env.d.ts
 apps/user-app/next-env.d.ts
+# `next dev`가 실행될 때마다 include 항목을 추가·재배치한다. CI에서 stale check를 끄기 위해 ignore한다.
+apps/console/tsconfig.json
+apps/user-app/tsconfig.json
 # devcontainers/ci 액션이 빌드 시 자동 생성하는 lock 파일이다.
 .devcontainer/devcontainer-lock.json
