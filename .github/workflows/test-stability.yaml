@@ -64,7 +64,7 @@ jobs:
                       set -Eeuo pipefail
                       echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
                       npm run build
-                      bash .github/scripts/repeat.sh 50 bash tests/bootup-test.sh
+                      bash .github/scripts/repeat.sh 50 bash infra/reset.sh
     scenario:
         strategy:
             fail-fast: false
