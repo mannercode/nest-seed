@@ -26,6 +26,7 @@ import {
     MoviesHttpController,
     PurchaseHttpController,
     RequestValidationPipe,
+    RootAuthGuard,
     ShowtimeCreationHttpController,
     TheatersHttpController,
     UserAuthGuard,
@@ -73,6 +74,7 @@ import { AppConfigModule, GlobalModule, HealthModule } from './modules'
     providers: [
         AdminAuthGuard,
         AdminLocalAuthGuard,
+        RootAuthGuard,
         UserAuthGuard,
         UserLocalAuthGuard,
         UserOptionalAuthGuard,

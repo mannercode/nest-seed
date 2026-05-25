@@ -23,4 +23,9 @@ trap cleanup EXIT
 
 docker compose --env-file "$ENV_FILE" up -d --build --wait
 
+# api-docs/.env가 ROOT_PASSWORD를 fail-fast로 요구한다. host shell에 export해 둔다.
+set -a
+. "$ENV_FILE"
+set +a
+
 SERVER_URL=http://nginx:80 bash "${APP_DIR}/api-docs/run.sh"

@@ -75,6 +75,8 @@ export class HttpTestClient {
         return this
     }
 
+    forbidden = (expected?: any) => this.send(HttpStatus.FORBIDDEN, expected)
+
     get(url: string): this {
         this.agent = superagent.get(`${this.serverUrl}${url}`)
         return this

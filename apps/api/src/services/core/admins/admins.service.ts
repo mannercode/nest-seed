@@ -5,8 +5,9 @@ import { AdminAuthPayload, AdminCredentialsDto, AdminDto, CreateAdminDto } from 
 import { AdminAuthenticationService } from './internal'
 import { Admin } from './models'
 
-// admin은 가입 API 없이 개발용 초기 데이터로만 만든다.
-// 같은 admin을 다시 만들 때 생기는 중복 오류는 `bootstrap.ts`가 무시하므로 여기서는 그대로 넘긴다.
+// admin 도큐먼트는 root가 `POST /admins`로 만들고 `DELETE /admins/:id`로 지운다.
+// 같은 이메일을 다시 만들면 `findByEmailWithPassword`의 unique 인덱스가 E11000을 던지고
+// HTTP 계층에서 ConflictException으로 변환된다.
 @Injectable()
 export class AdminsService {
     constructor(
@@ -20,9 +21,17 @@ export class AdminsService {
         return this.toDto(created)
     }
 
+    async remove(id: string) {
+        await this.repository.deleteById(id)
+    }
+
     async findAdminByCredentials(credentials: AdminCredentialsDto) {
         const admin = await this.authenticationService.findAdminByCredentials(credentials)
         return admin ? this.toDto(admin) : null
+    }
+
+    async validateRoot(password: string) {
+        return this.authenticationService.validateRoot(password)
     }
 
     async generateAuthTokens(payload: AdminAuthPayload) {

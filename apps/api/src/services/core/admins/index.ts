@@ -1,4 +1,5 @@
 export * from './admins.module'
 export * from './admins.service'
 export * from './dtos'
+export { ROOT_EMAIL, ROOT_SUB } from './internal'
 export * from './models'

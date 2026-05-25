@@ -17,6 +17,7 @@ export class AppConfigService extends BaseConfigService {
         AUTH_ISSUER: Joi.string().required(),
         AUTH_REFRESH_SECRET: Joi.string().required(),
         AUTH_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
+        ROOT_PASSWORD: Joi.string().required(),
         HTTP_PAGINATION_DEFAULT_SIZE: Joi.number().required(),
 
         HTTP_PORT: Joi.number().required(),
@@ -85,6 +86,12 @@ export class AppConfigService extends BaseConfigService {
             refreshSecret: this.getString('AUTH_ADMIN_REFRESH_SECRET'),
             refreshTokenExpiration: this.getString('AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION')
         }
+    }
+
+    // root는 DB 도큐먼트 없이 env 자격증명으로 인증되며 admin CRUD 권한만 가진다.
+    // 콘텐츠 endpoint는 일반 admin만 통과한다.
+    get root() {
+        return { password: this.getString('ROOT_PASSWORD') }
     }
 
     get http() {

@@ -1,13 +1,27 @@
-import { Require } from '@mannercode/common'
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common'
-import { AdminRefreshTokenBodyDto, AdminsService } from 'core'
-import { AdminAuthGuard, AdminLocalAuthGuard, Public } from './guards'
+import { isDuplicateKeyError, Require } from '@mannercode/common'
+import {
+    Body,
+    ConflictException,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    HttpStatus,
+    NotFoundException,
+    Param,
+    Post,
+    Req,
+    UseGuards
+} from '@nestjs/common'
+import { AdminRefreshTokenBodyDto, AdminsService, CreateAdminDto, ROOT_SUB } from 'core'
+import { AdminAuthGuard, AdminLocalAuthGuard, AllowRoot, Public, RootAuthGuard } from './guards'
 import { AdminAuthRequest } from './types'
 
-// admin은 시드 1명으로 운영하므로 가입/수정/삭제 엔드포인트는 두지 않는다.
-// 자기 정보 조회와 토큰 수명 관리만 노출한다.
+// 인증/권한 분리:
+// - login/refresh/logout: 공개 (LocalAuthGuard가 자격증명 검증)
+// - GET /me: 일반 admin 자기 정보. AllowRoot로 root 토큰도 가드를 통과시키지만 컨트롤러가 NotFoundException으로 처리한다(root는 도큐먼트가 없음).
+// - POST /, DELETE /:id: root 전용. admin CRUD 권한은 root만 가진다.
 @Controller('admins')
-@UseGuards(AdminAuthGuard)
 export class AdminsHttpController {
     constructor(private readonly adminsService: AdminsService) {}
 
@@ -36,8 +50,33 @@ export class AdminsHttpController {
     }
 
     @Get('me')
+    @UseGuards(AdminAuthGuard)
+    @AllowRoot()
     async getMe(@Req() req: AdminAuthRequest) {
+        if (req.user.sub === ROOT_SUB) {
+            throw new NotFoundException()
+        }
         const [admin] = await this.adminsService.getMany([req.user.sub])
         return admin
+    }
+
+    @Post()
+    @UseGuards(RootAuthGuard)
+    async create(@Body() body: CreateAdminDto) {
+        try {
+            return await this.adminsService.create(body)
+        } catch (error) {
+            if (isDuplicateKeyError(error)) {
+                throw new ConflictException()
+            }
+            throw error
+        }
+    }
+
+    @Delete(':id')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @UseGuards(RootAuthGuard)
+    async remove(@Param('id') id: string) {
+        await this.adminsService.remove(id)
     }
 }
