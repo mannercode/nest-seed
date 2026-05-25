@@ -296,7 +296,10 @@ async function main() {
         dockerStatsSnapshots: statsSnapshots
     }
 
-    const outDir = path.resolve(__dirname, '../../../../_output/perf')
+    if (!process.env.WORKSPACE_ROOT) {
+        throw new Error('WORKSPACE_ROOT must be set')
+    }
+    const outDir = path.resolve(process.env.WORKSPACE_ROOT, '_output/perf')
     fs.mkdirSync(outDir, { recursive: true })
     const stamp = new Date().toISOString().replace(/[:.]/g, '-')
     const file = path.join(outDir, `${SCENARIO}-${stamp}${LABEL ? '-' + LABEL : ''}.json`)
