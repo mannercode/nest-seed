@@ -24,7 +24,7 @@
         "format": "npm run format --workspaces --if-present && prettier --write .",
         "pretest": "npm run build:libs",
         "test": "npm test --workspaces --if-present",
-        "atoz": "npm run clean && npm ci && npm run lint:root && npm run atoz --workspaces --if-present && bash tests/bootup-test.sh",
+        "atoz": "npm run clean && npm ci && npm run lint:root && npm run atoz --workspaces --if-present && bash deploy/test.sh",
         "postatoz": "echo '✅ ATOZ PASS'",
         "predev": "npm run build:libs",
         "dev": "concurrently 'npm:dev:*'",
