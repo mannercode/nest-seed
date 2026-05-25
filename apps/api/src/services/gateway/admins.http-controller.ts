@@ -1,4 +1,4 @@
-import { isDuplicateKeyError, Require } from '@mannercode/common'
+import { isDuplicateKeyError } from '@mannercode/common'
 import {
     Body,
     ConflictException,
@@ -12,40 +12,45 @@ import {
     Patch,
     Post,
     Req,
+    UnauthorizedException,
     UseGuards
 } from '@nestjs/common'
-import { AdminRefreshTokenBodyDto, AdminsService, CreateAdminDto, UpdateAdminDto } from 'core'
-import { AdminAuthGuard, AdminLocalAuthGuard, Public, RootAuthGuard } from './guards'
+import {
+    AdminCredentialsDto,
+    AdminRefreshTokenBodyDto,
+    AdminsService,
+    CreateAdminDto,
+    UpdateAdminDto
+} from 'core'
+import { AdminAuthGuard, AuthErrors, RootAuthGuard } from './guards'
 import { AdminAuthRequest } from './types'
 
 // 권한 분리:
-// - login/refresh/logout: 공개 (LocalAuthGuard가 자격증명 검증)
-// - GET/PATCH /admins/me: admin 자신의 정보 (AdminAuthGuard)
-// - POST /admins, DELETE /admins/:id: admin lifecycle 관리 (RootAuthGuard, Basic Auth)
+// - login/refresh/logout: 가드 없음. 컨트롤러가 자격증명을 직접 검증해 토큰을 발급한다.
+// - GET/PATCH /admins/me: admin 자신의 정보 (AdminAuthGuard, Bearer)
+// - POST /admins, DELETE /admins/:id: admin lifecycle 관리 (RootAuthGuard, Basic)
 @Controller('admins')
 export class AdminsHttpController {
     constructor(private readonly adminsService: AdminsService) {}
 
     @HttpCode(HttpStatus.OK)
     @Post('login')
-    @Public()
-    @UseGuards(AdminLocalAuthGuard)
-    async login(@Req() req: AdminAuthRequest) {
-        Require.defined(req.user, 'req.user must be returned in LocalStrategy.validate')
-
-        return this.adminsService.generateAuthTokens(req.user)
+    async login(@Body() body: AdminCredentialsDto) {
+        const admin = await this.adminsService.findAdminByCredentials(body)
+        if (!admin) {
+            throw new UnauthorizedException(AuthErrors.Unauthorized())
+        }
+        return this.adminsService.generateAuthTokens({ sub: admin.id, email: admin.email })
     }
 
     @HttpCode(HttpStatus.OK)
     @Post('refresh')
-    @Public()
     async refreshToken(@Body() body: AdminRefreshTokenBodyDto) {
         return this.adminsService.refreshAuthTokens(body.refreshToken)
     }
 
     @HttpCode(HttpStatus.NO_CONTENT)
     @Post('logout')
-    @Public()
     async logout(@Body() body: AdminRefreshTokenBodyDto) {
         await this.adminsService.revokeRefreshToken(body.refreshToken)
     }

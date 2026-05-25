@@ -31,14 +31,14 @@ export default defineConfig({
             command: 'npm run dev -w apps/api',
             url: `http://localhost:${API_PORT}/health`,
             reuseExistingServer: !process.env.CI,
-            timeout: 120_000,
+            timeout: 240_000,
             cwd: WORKSPACE_ROOT
         },
         {
             command: 'npm run dev -w apps/console',
             url: BASE_URL,
             reuseExistingServer: !process.env.CI,
-            timeout: 120_000,
+            timeout: 240_000,
             cwd: WORKSPACE_ROOT
         }
     ]

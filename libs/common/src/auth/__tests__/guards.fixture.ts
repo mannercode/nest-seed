@@ -1,65 +1,59 @@
 import { createHttpTestContext, HttpTestClient } from '@mannercode/testing'
-import { Controller, Get, Injectable, Post, UseGuards } from '@nestjs/common'
-import { GUARDS_METADATA } from '@nestjs/common/constants'
+import { Controller, Get, Injectable, UseGuards } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { JwtModule, JwtService } from '@nestjs/jwt'
-import { defaultTo } from '../../utils'
-import { JwtAuthGuard, OptionalJwtAuthGuard } from '../jwt-auth.guard'
-import { LocalAuthGuard } from '../local-auth.guard'
+import { AuthGuard } from '../auth.guard'
+import { OptionalAuth } from '../optional-auth.decorator'
 import { Public } from '../public.decorator'
 
 const TEST_SECRET = 'test-secret'
 
 @Injectable()
-class TestLocalAuthGuard extends LocalAuthGuard {
-    constructor() {
-        super({
-            passwordField: 'password',
-            usernameField: 'email',
-            validate: async (email: string, password: string) => {
-                if (email === 'test@test.com' && password === 'pass') {
-                    return { email, userId: 'user-1' }
+class BearerOnlyGuard extends AuthGuard {
+    constructor(jwtService: JwtService, reflector: Reflector) {
+        super(jwtService, reflector, { bearer: { secret: TEST_SECRET } })
+    }
+}
+
+@Injectable()
+class BasicOnlyGuard extends AuthGuard {
+    constructor(jwtService: JwtService, reflector: Reflector) {
+        super(jwtService, reflector, {
+            basic: {
+                validate: async (username, password) => {
+                    if (username === 'admin' && password === 'pass') {
+                        return { kind: 'admin', name: username }
+                    }
+                    return null
                 }
-                return null
             }
         })
     }
 }
 
 @Injectable()
-class TestJwtAuthGuardDefault extends JwtAuthGuard {
+class BearerAndBasicGuard extends AuthGuard {
     constructor(jwtService: JwtService, reflector: Reflector) {
-        super(jwtService, reflector, { secret: TEST_SECRET })
+        super(jwtService, reflector, {
+            bearer: { secret: TEST_SECRET },
+            basic: {
+                validate: async (username, password) =>
+                    username === 'root' && password === 'pass' ? { kind: 'root' } : null
+            }
+        })
     }
 }
 
 @Injectable()
-class TestJwtAuthGuard extends JwtAuthGuard {
+class OptionalBearerGuard extends AuthGuard {
     constructor(jwtService: JwtService, reflector: Reflector) {
-        super(jwtService, reflector, { secret: TEST_SECRET })
-    }
-
-    protected isUsingLocalAuth(context: any): boolean {
-        const handler = context.getHandler()
-        const classRef = context.getClass()
-        const guards =
-            this.reflector.get<any[] | null>(GUARDS_METADATA, handler) ??
-            this.reflector.get<any[] | null>(GUARDS_METADATA, classRef)
-
-        return defaultTo(guards, []).some((g: any) => g === TestLocalAuthGuard)
+        super(jwtService, reflector, { bearer: { secret: TEST_SECRET }, optional: true })
     }
 }
 
-@Injectable()
-class TestOptionalJwtAuthGuard extends OptionalJwtAuthGuard {
-    constructor(jwtService: JwtService, reflector: Reflector) {
-        super(jwtService, reflector, { secret: TEST_SECRET })
-    }
-}
-
-@Controller('jwt')
-@UseGuards(TestJwtAuthGuard)
-class JwtTestController {
+@Controller('bearer')
+@UseGuards(BearerOnlyGuard)
+class BearerController {
     @Get('protected')
     getProtected() {
         return { message: 'ok' }
@@ -71,87 +65,43 @@ class JwtTestController {
         return { message: 'public' }
     }
 
-    @UseGuards(TestLocalAuthGuard)
-    @Post('login')
-    login() {
-        return { message: 'logged in' }
+    @OptionalAuth()
+    @Get('optional-route')
+    getOptionalRoute() {
+        return { message: 'optional route' }
     }
 }
 
-@Controller('default')
-@UseGuards(TestJwtAuthGuardDefault)
-class DefaultTestController {
-    @UseGuards(TestLocalAuthGuard)
-    @Post('login')
-    login() {
-        return { message: 'logged in' }
+@Controller('basic')
+@UseGuards(BasicOnlyGuard)
+class BasicController {
+    @Get('protected')
+    getProtected() {
+        return { message: 'ok' }
+    }
+}
+
+@Controller('mixed')
+@UseGuards(BearerAndBasicGuard)
+class MixedController {
+    @Get('protected')
+    getProtected() {
+        return { message: 'ok' }
     }
 }
 
 @Controller('optional')
-class OptionalTestController {
-    @UseGuards(TestOptionalJwtAuthGuard)
+@UseGuards(OptionalBearerGuard)
+class OptionalController {
     @Get('')
     getOptional() {
         return { message: 'optional' }
     }
 
     @Public()
-    @UseGuards(TestOptionalJwtAuthGuard)
     @Get('public')
     getPublicOptional() {
         return { message: 'public optional' }
-    }
-}
-
-@Injectable()
-class TestLocalAuthGuardDefault extends LocalAuthGuard {
-    constructor() {
-        super({
-            validate: async (username: string, password: string) => {
-                if (username === 'admin' && password === 'pass') {
-                    return { userId: 'user-1' }
-                }
-                return null
-            }
-        })
-    }
-}
-
-@Injectable()
-class TestLocalAuthGuardCustomFields extends LocalAuthGuard {
-    constructor() {
-        super({
-            passwordField: 'pwd',
-            usernameField: 'login',
-            validate: async (login: string, pwd: string) => {
-                if (login === 'custom' && pwd === 'secret') {
-                    return { userId: 'user-1' }
-                }
-                return null
-            }
-        })
-    }
-}
-
-@Controller('local')
-class LocalTestController {
-    @UseGuards(TestLocalAuthGuard)
-    @Post('login')
-    login() {
-        return { message: 'logged in' }
-    }
-
-    @UseGuards(TestLocalAuthGuardDefault)
-    @Post('login-default')
-    loginDefault() {
-        return { message: 'logged in' }
-    }
-
-    @UseGuards(TestLocalAuthGuardCustomFields)
-    @Post('login-custom')
-    loginCustom() {
-        return { message: 'logged in' }
     }
 }
 
@@ -163,24 +113,16 @@ export type GuardsFixture = {
 
 export async function createGuardsFixture(): Promise<GuardsFixture> {
     const testContext = await createHttpTestContext({
-        controllers: [
-            JwtTestController,
-            DefaultTestController,
-            OptionalTestController,
-            LocalTestController
-        ],
+        controllers: [BearerController, BasicController, MixedController, OptionalController],
         imports: [JwtModule.register({ secret: TEST_SECRET })],
-        providers: [
-            TestJwtAuthGuard,
-            TestJwtAuthGuardDefault,
-            TestOptionalJwtAuthGuard,
-            TestLocalAuthGuard,
-            TestLocalAuthGuardDefault,
-            TestLocalAuthGuardCustomFields
-        ]
+        providers: [BearerOnlyGuard, BasicOnlyGuard, BearerAndBasicGuard, OptionalBearerGuard]
     })
 
     const jwtService = testContext.module.get(JwtService)
 
     return { httpClient: testContext.httpClient, jwtService, teardown: testContext.close }
+}
+
+export function basicHeader(username: string, password: string) {
+    return 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64')
 }

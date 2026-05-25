@@ -16,7 +16,7 @@ import {
 import { RecommendationService } from 'application'
 import { MoviesService, SearchMoviesPageDto, UpsertMovieDto } from 'core'
 import { CreateAssetDto } from 'infrastructure'
-import { AdminAuthGuard, UserOptionalAuthGuard } from './guards'
+import { AdminAuthGuard, OptionalAuth, UserAuthGuard } from './guards'
 import { UserOptionalAuthRequest } from './types'
 
 // 인가: 변경 핸들러(create/update/delete/asset 관리/publish)는 admin 전용, 조회는 공개로 둔다.
@@ -62,7 +62,8 @@ export class MoviesHttpController {
     }
 
     @Get('recommended')
-    @UseGuards(UserOptionalAuthGuard)
+    @OptionalAuth()
+    @UseGuards(UserAuthGuard)
     async searchRecommendedMovies(@Req() req: UserOptionalAuthRequest) {
         const userId = defaultTo(req.user?.sub, null)
 

@@ -1,4 +1,3 @@
-import { Require } from '@mannercode/common'
 import {
     Body,
     Controller,
@@ -11,6 +10,7 @@ import {
     Post,
     Query,
     Req,
+    UnauthorizedException,
     UseGuards
 } from '@nestjs/common'
 import {
@@ -18,9 +18,10 @@ import {
     RefreshTokenBodyDto,
     SearchUsersPageDto,
     UpdateUserDto,
+    UserCredentialsDto,
     UsersService
 } from 'core'
-import { UserAuthGuard, UserLocalAuthGuard, Public } from './guards'
+import { AuthErrors, Public, UserAuthGuard } from './guards'
 import { UserAuthRequest } from './types'
 
 // 인가: 클래스 수준 JWT 가드 외에는 소유자/관리자 검사를 비워 두었다.
@@ -47,11 +48,13 @@ export class UsersHttpController {
 
     @HttpCode(HttpStatus.OK)
     @Post('login')
-    @UseGuards(UserLocalAuthGuard)
-    async login(@Req() req: UserAuthRequest) {
-        Require.defined(req.user, 'req.user must be returned in LocalStrategy.validate')
-
-        return this.usersService.generateAuthTokens(req.user)
+    @Public()
+    async login(@Body() body: UserCredentialsDto) {
+        const user = await this.usersService.findUserByCredentials(body)
+        if (!user) {
+            throw new UnauthorizedException(AuthErrors.Unauthorized())
+        }
+        return this.usersService.generateAuthTokens({ sub: user.id, email: user.email })
     }
 
     @HttpCode(HttpStatus.OK)

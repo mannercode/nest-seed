@@ -20,7 +20,6 @@ import {
 } from 'core'
 import {
     AdminAuthGuard,
-    AdminLocalAuthGuard,
     AdminsHttpController,
     BookingHttpController,
     MoviesHttpController,
@@ -31,8 +30,6 @@ import {
     TheatersHttpController,
     UserAuthGuard,
     UserHomeViewHttpController,
-    UserLocalAuthGuard,
-    UserOptionalAuthGuard,
     UsersHttpController
 } from 'gateway'
 import { AssetsModule, PaymentsModule } from 'infrastructure'
@@ -73,11 +70,8 @@ import { AppConfigModule, GlobalModule, HealthModule } from './modules'
     ],
     providers: [
         AdminAuthGuard,
-        AdminLocalAuthGuard,
         RootAuthGuard,
         UserAuthGuard,
-        UserLocalAuthGuard,
-        UserOptionalAuthGuard,
         { provide: APP_PIPE, useClass: RequestValidationPipe },
         { provide: APP_FILTER, useClass: HttpExceptionLoggerFilter },
         { provide: APP_INTERCEPTOR, useClass: HttpSuccessLoggerInterceptor }

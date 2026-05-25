@@ -1,23 +1,20 @@
-import { defaultTo, JwtAuthGuard } from '@mannercode/common'
-import { ExecutionContext, Injectable } from '@nestjs/common'
-import { GUARDS_METADATA } from '@nestjs/common/constants'
+import { AuthGuard } from '@mannercode/common'
+import { Injectable } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 import { AppConfigService } from 'config'
-import { AdminLocalAuthGuard } from './admin-local-auth.guard'
+import { AuthErrors } from './errors'
 
 @Injectable()
-export class AdminAuthGuard extends JwtAuthGuard {
+export class AdminAuthGuard extends AuthGuard {
     constructor(jwtService: JwtService, reflector: Reflector, config: AppConfigService) {
         super(jwtService, reflector, {
-            audience: config.adminAuth.audience,
-            issuer: config.adminAuth.issuer,
-            secret: config.adminAuth.accessSecret
+            bearer: {
+                audience: config.adminAuth.audience,
+                issuer: config.adminAuth.issuer,
+                secret: config.adminAuth.accessSecret
+            },
+            errorBody: AuthErrors.Unauthorized()
         })
-    }
-
-    protected isUsingLocalAuth(context: ExecutionContext): boolean {
-        const guards = this.reflector.get<any[] | null>(GUARDS_METADATA, context.getHandler())
-        return defaultTo(guards, []).some((guard) => guard === AdminLocalAuthGuard)
     }
 }
