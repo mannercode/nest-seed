@@ -2,9 +2,6 @@ require('reflect-metadata')
 const { S3Client } = require('@aws-sdk/client-s3')
 const { setupJestLifecycle } = require('@mannercode/jest-helpers')
 const { MongoClient } = require('mongodb')
-const path = require('path')
-
-process.loadEnvFile(path.resolve(__dirname, '.env'))
 
 setupJestLifecycle({
     connectMongo: async (workerId) => {

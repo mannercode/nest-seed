@@ -8,7 +8,9 @@
     },
     "runArgs": [
         "--env-file",
-        "infra/.env",
+        ".env.infra",
+        "--env-file",
+        ".env.api",
         "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
         "--network=${localWorkspaceFolderBasename}"
     ],

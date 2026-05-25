@@ -2,9 +2,6 @@ const { S3Client } = require('@aws-sdk/client-s3')
 const { createGlobalTeardown } = require('@mannercode/jest-helpers')
 const { MongoClient } = require('mongodb')
 const Redis = require('ioredis')
-const path = require('path')
-
-process.loadEnvFile(path.resolve(__dirname, '.env'))
 
 const globalTeardown = createGlobalTeardown({
     connectMongo: async () => {

@@ -17,26 +17,20 @@ fi
 
 cd "$COMPOSE_DIR"
 
-ENV_FILE="${APP_DIR}/.env"
 SERVER_URL="http://nginx"
-
-if [ ! -f "$ENV_FILE" ]; then
-    echo "Error: $ENV_FILE not found."
-    exit 1
-fi
 
 cleanup() {
     echo ""
     echo "Tearing down..."
-    docker compose --env-file "$ENV_FILE" down -v -t 0
+    docker compose down -v -t 0
 }
 trap cleanup EXIT
 
 dump_diagnostics() {
     echo ""
     echo "=== container diagnostics ==="
-    docker compose --env-file "$ENV_FILE" ps -a || true
-    for cid in $(docker compose --env-file "$ENV_FILE" ps -aq 2>/dev/null); do
+    docker compose ps -a || true
+    for cid in $(docker compose ps -aq 2>/dev/null); do
         cname=$(docker inspect --format '{{.Name}} ({{.State.Status}})' "$cid" 2>/dev/null || echo "$cid")
         echo "--- logs ${cname} (last 200) ---"
         docker logs --tail 200 "$cid" 2>&1 || true
@@ -47,20 +41,20 @@ dump_diagnostics() {
 echo "Building and deploying 4-replica api stack..."
 . "${WORKSPACE_ROOT}/ensure-deps-image.sh"
 
-if ! docker compose --env-file "$ENV_FILE" up -d --build --wait; then
+if ! docker compose up -d --build --wait; then
     echo "[FAIL] compose up failed before ${TEST_NAME} could start"
     dump_diagnostics
     exit 1
 fi
 
 echo ""
-docker compose --env-file "$ENV_FILE" ps
+docker compose ps
 
-# race 시나리오의 setupFixture는 admin 보호 엔드포인트(POST /movies, /theaters, /showtime-creation/*)를 호출한다.
+# race 시나리오의 setupFixture는 admin 보호 endpoint(POST /movies, /theaters, /showtime-creation/*)를 호출한다.
 # root는 env 자격증명으로 인증되며 admin CRUD 권한만 가진다. 콘텐츠 endpoint는 일반 admin만 통과한다.
 # 따라서 root로 로그인해 새 admin을 만들고, 그 admin으로 다시 로그인해 토큰을 받는다.
 set -a
-. "$ENV_FILE"
+. "${WORKSPACE_ROOT}/.env.api"
 set +a
 
 ADMIN_EMAIL="seeded-admin@nest-seed.local"

@@ -1,47 +1,14 @@
 x-api-base: &api-base
+    env_file:
+        - ../.env.infra
+        - ../.env.api
     environment:
-        - NODE_ENV=production
+        # deploy 시에는 .env.api의 NODE_ENV=test와 LOG_DIRECTORY=./_output/logs를 덮어쓴다.
         # 비밀번호 암호화(bcrypt)와 파일 작업은 같은 작업 스레드를 사용한다.
         # 기본 4개로는 요청이 몰릴 때 부족하므로 16개로 늘린다.
+        - NODE_ENV=production
         - UV_THREADPOOL_SIZE=16
-        - PROJECT_ID=${PROJECT_ID}
-        - HTTP_PORT=${HTTP_PORT}
-        - HTTP_REQUEST_PAYLOAD_LIMIT=${HTTP_REQUEST_PAYLOAD_LIMIT}
-        - HTTP_PAGINATION_DEFAULT_SIZE=${HTTP_PAGINATION_DEFAULT_SIZE}
-        - AUTH_ACCESS_SECRET=${AUTH_ACCESS_SECRET}
-        - AUTH_ACCESS_TOKEN_EXPIRATION=${AUTH_ACCESS_TOKEN_EXPIRATION}
-        - AUTH_REFRESH_SECRET=${AUTH_REFRESH_SECRET}
-        - AUTH_REFRESH_TOKEN_EXPIRATION=${AUTH_REFRESH_TOKEN_EXPIRATION}
-        - AUTH_ADMIN_ACCESS_SECRET=${AUTH_ADMIN_ACCESS_SECRET}
-        - AUTH_ADMIN_ACCESS_TOKEN_EXPIRATION=${AUTH_ADMIN_ACCESS_TOKEN_EXPIRATION}
-        - AUTH_ADMIN_REFRESH_SECRET=${AUTH_ADMIN_REFRESH_SECRET}
-        - AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION=${AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION}
-        - AUTH_ISSUER=${AUTH_ISSUER}
-        - AUTH_AUDIENCE=${AUTH_AUDIENCE}
-        - ROOT_PASSWORD=${ROOT_PASSWORD}
-        - MONGO_URI=${MONGO_URI}
-        - MONGO_DATABASE=${MONGO_DATABASE}
-        - REDIS_HOST1=${REDIS_HOST1}
-        - REDIS_PORT1=${REDIS_PORT1}
-        - REDIS_HOST2=${REDIS_HOST2}
-        - REDIS_PORT2=${REDIS_PORT2}
-        - REDIS_HOST3=${REDIS_HOST3}
-        - REDIS_PORT3=${REDIS_PORT3}
-        - NATS_HOST=${NATS_HOST}
-        - NATS_PORT=${NATS_PORT}
-        - TEMPORAL_HOST=${TEMPORAL_HOST}
-        - TEMPORAL_PORT=${TEMPORAL_PORT}
-        - TEMPORAL_NAMESPACE=${TEMPORAL_NAMESPACE}
-        - S3_ENDPOINT=${S3_ENDPOINT}
-        - S3_REGION=${S3_REGION}
-        - S3_BUCKET=${S3_BUCKET}
-        - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-        - S3_SECRET_KEY=${S3_SECRET_KEY}
-        - S3_FORCE_PATH_STYLE=${S3_FORCE_PATH_STYLE}
         - LOG_DIRECTORY=/app/logs
-        - LOG_DAYS_TO_KEEP=${LOG_DAYS_TO_KEEP}
-        - LOG_FILE_LEVEL=${LOG_FILE_LEVEL}
-        - LOG_CONSOLE_LEVEL=${LOG_CONSOLE_LEVEL}
     logging: { options: { max-size: '10m', max-file: '3' } }
     healthcheck:
         retries: 5
