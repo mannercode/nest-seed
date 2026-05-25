@@ -5,17 +5,17 @@ x-api-base: &api-base
         # 기본 4개로는 요청이 몰릴 때 부족하므로 16개로 늘린다.
         - UV_THREADPOOL_SIZE=16
         - PROJECT_ID=${PROJECT_ID}
-        - HTTP_PORT=${HTTP_PORT:-3000}
-        - HTTP_REQUEST_PAYLOAD_LIMIT=${HTTP_REQUEST_PAYLOAD_LIMIT:-50mb}
-        - HTTP_PAGINATION_DEFAULT_SIZE=${HTTP_PAGINATION_DEFAULT_SIZE:-50}
+        - HTTP_PORT=${HTTP_PORT}
+        - HTTP_REQUEST_PAYLOAD_LIMIT=${HTTP_REQUEST_PAYLOAD_LIMIT}
+        - HTTP_PAGINATION_DEFAULT_SIZE=${HTTP_PAGINATION_DEFAULT_SIZE}
         - AUTH_ACCESS_SECRET=${AUTH_ACCESS_SECRET}
-        - AUTH_ACCESS_TOKEN_EXPIRATION=${AUTH_ACCESS_TOKEN_EXPIRATION:-30m}
+        - AUTH_ACCESS_TOKEN_EXPIRATION=${AUTH_ACCESS_TOKEN_EXPIRATION}
         - AUTH_REFRESH_SECRET=${AUTH_REFRESH_SECRET}
-        - AUTH_REFRESH_TOKEN_EXPIRATION=${AUTH_REFRESH_TOKEN_EXPIRATION:-7d}
+        - AUTH_REFRESH_TOKEN_EXPIRATION=${AUTH_REFRESH_TOKEN_EXPIRATION}
         - AUTH_ADMIN_ACCESS_SECRET=${AUTH_ADMIN_ACCESS_SECRET}
-        - AUTH_ADMIN_ACCESS_TOKEN_EXPIRATION=${AUTH_ADMIN_ACCESS_TOKEN_EXPIRATION:-30m}
+        - AUTH_ADMIN_ACCESS_TOKEN_EXPIRATION=${AUTH_ADMIN_ACCESS_TOKEN_EXPIRATION}
         - AUTH_ADMIN_REFRESH_SECRET=${AUTH_ADMIN_REFRESH_SECRET}
-        - AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION=${AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION:-7d}
+        - AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION=${AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION}
         - AUTH_ISSUER=${AUTH_ISSUER}
         - AUTH_AUDIENCE=${AUTH_AUDIENCE}
         - ROOT_PASSWORD=${ROOT_PASSWORD}
@@ -39,16 +39,16 @@ x-api-base: &api-base
         - S3_SECRET_KEY=${S3_SECRET_KEY}
         - S3_FORCE_PATH_STYLE=${S3_FORCE_PATH_STYLE}
         - LOG_DIRECTORY=/app/logs
-        - LOG_DAYS_TO_KEEP=${LOG_DAYS_TO_KEEP:-3d}
-        - LOG_FILE_LEVEL=${LOG_FILE_LEVEL:-verbose}
-        - LOG_CONSOLE_LEVEL=${LOG_CONSOLE_LEVEL:-info}
+        - LOG_DAYS_TO_KEEP=${LOG_DAYS_TO_KEEP}
+        - LOG_FILE_LEVEL=${LOG_FILE_LEVEL}
+        - LOG_CONSOLE_LEVEL=${LOG_CONSOLE_LEVEL}
     logging: { options: { max-size: '10m', max-file: '3' } }
     healthcheck:
         retries: 5
         start_period: 10s
         interval: 10s
         timeout: 5s
-        test: 'curl -fsS http://localhost:${HTTP_PORT:-3000}/health'
+        test: 'curl -fsS http://localhost:${HTTP_PORT}/health'
 
 services:
     api:
@@ -57,14 +57,14 @@ services:
             context: ..
             dockerfile: apps/api/Dockerfile
             args:
-                DEPS_TAG: ${DEPS_TAG:-}
+                DEPS_TAG: ${DEPS_TAG:?DEPS_TAG must be set}
         image: nest-seed-api
         deploy:
-            replicas: ${REPLICAS:-4}
+            replicas: 4
 
     nginx:
         image: nginx:alpine
-        ports: ['${LISTEN_PORT:-3000}:80']
+        ports: ['3000:80']
         volumes: ['./nginx.conf:/etc/nginx/nginx.conf:ro']
         depends_on:
             api: { condition: service_healthy }

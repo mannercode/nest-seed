@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_DIR="${WORKSPACE_ROOT}/apps/api"
 cd "$SCRIPT_DIR"
 
-ENV_FILE="${ENV_FILE:-${APP_DIR}/.env}"
+ENV_FILE="${APP_DIR}/.env"
 
 if [ ! -f "$ENV_FILE" ]; then
     echo "Error: $ENV_FILE not found."
