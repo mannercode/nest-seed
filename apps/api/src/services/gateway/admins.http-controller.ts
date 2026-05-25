@@ -9,18 +9,19 @@ import {
     HttpStatus,
     NotFoundException,
     Param,
+    Patch,
     Post,
     Req,
     UseGuards
 } from '@nestjs/common'
-import { AdminRefreshTokenBodyDto, AdminsService, CreateAdminDto, ROOT_SUB } from 'core'
-import { AdminAuthGuard, AdminLocalAuthGuard, AllowRoot, Public, RootAuthGuard } from './guards'
+import { AdminRefreshTokenBodyDto, AdminsService, CreateAdminDto, UpdateAdminDto } from 'core'
+import { AdminAuthGuard, AdminLocalAuthGuard, Public, RootAuthGuard } from './guards'
 import { AdminAuthRequest } from './types'
 
-// 인증/권한 분리:
+// 권한 분리:
 // - login/refresh/logout: 공개 (LocalAuthGuard가 자격증명 검증)
-// - GET /me: 일반 admin 자기 정보. AllowRoot로 root 토큰도 가드를 통과시키지만 컨트롤러가 NotFoundException으로 처리한다(root는 도큐먼트가 없음).
-// - POST /, DELETE /:id: root 전용. admin CRUD 권한은 root만 가진다.
+// - GET/PATCH /admins/me: admin 자신의 정보 (AdminAuthGuard)
+// - POST /admins, DELETE /admins/:id: admin lifecycle 관리 (RootAuthGuard, Basic Auth)
 @Controller('admins')
 export class AdminsHttpController {
     constructor(private readonly adminsService: AdminsService) {}
@@ -51,13 +52,26 @@ export class AdminsHttpController {
 
     @Get('me')
     @UseGuards(AdminAuthGuard)
-    @AllowRoot()
     async getMe(@Req() req: AdminAuthRequest) {
-        if (req.user.sub === ROOT_SUB) {
-            throw new NotFoundException()
-        }
         const [admin] = await this.adminsService.getMany([req.user.sub])
         return admin
+    }
+
+    @Patch('me')
+    @UseGuards(AdminAuthGuard)
+    async updateMe(@Req() req: AdminAuthRequest, @Body() body: UpdateAdminDto) {
+        try {
+            const updated = await this.adminsService.update(req.user.sub, body)
+            if (!updated) {
+                throw new NotFoundException()
+            }
+            return updated
+        } catch (error) {
+            if (isDuplicateKeyError(error)) {
+                throw new ConflictException()
+            }
+            throw error
+        }
     }
 
     @Post()

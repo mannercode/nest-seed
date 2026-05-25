@@ -1,16 +1,11 @@
 import { defaultTo, JwtAuthGuard } from '@mannercode/common'
-import { ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common'
+import { ExecutionContext, Injectable } from '@nestjs/common'
 import { GUARDS_METADATA } from '@nestjs/common/constants'
 import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 import { AppConfigService } from 'config'
-import { ROOT_SUB } from 'core'
 import { AdminLocalAuthGuard } from './admin-local-auth.guard'
-import { ADMIN_AUTH_ALLOW_ROOT } from './allow-root.decorator'
-import { AuthErrors } from './errors'
 
-// 일반 admin(DB 도큐먼트) 전용 가드. root는 admin CRUD만 가지므로 콘텐츠 endpoint에서는 거부한다.
-// `@AllowRoot()` 메타데이터가 붙은 라우트는 예외적으로 root를 통과시키고 컨트롤러가 직접 분기한다.
 @Injectable()
 export class AdminAuthGuard extends JwtAuthGuard {
     constructor(jwtService: JwtService, reflector: Reflector, config: AppConfigService) {
@@ -19,18 +14,6 @@ export class AdminAuthGuard extends JwtAuthGuard {
             issuer: config.adminAuth.issuer,
             secret: config.adminAuth.accessSecret
         })
-    }
-
-    async canActivate(context: ExecutionContext): Promise<boolean> {
-        // super.canActivate는 통과 시 true, 실패 시 throw이므로 결과를 따로 분기할 필요가 없다.
-        await super.canActivate(context)
-
-        const allowRoot = this.reflector.get<boolean>(ADMIN_AUTH_ALLOW_ROOT, context.getHandler())
-        const request = context.switchToHttp().getRequest<{ user?: { sub?: string } }>()
-        if (request.user?.sub === ROOT_SUB && !allowRoot) {
-            throw new ForbiddenException(AuthErrors.Forbidden())
-        }
-        return true
     }
 
     protected isUsingLocalAuth(context: ExecutionContext): boolean {

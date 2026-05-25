@@ -36,4 +36,16 @@ export class AdminsRepository extends CrudRepository<Admin> {
 
         return leanOneToPublic<Admin>(admin)
     }
+
+    async updateById(id: string, patch: Partial<Pick<Admin, 'email' | 'name' | 'password'>>) {
+        const doc = await this.findDocumentById(id)
+        if (!doc) return null
+
+        if (patch.email !== undefined) doc.email = patch.email
+        if (patch.name !== undefined) doc.name = patch.name
+        if (patch.password !== undefined) doc.password = patch.password
+
+        await doc.save()
+        return doc.toJSON()
+    }
 }

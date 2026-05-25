@@ -55,24 +55,15 @@ echo ""
 docker compose ps
 
 # race 시나리오의 setupFixture는 admin 보호 endpoint(POST /movies, /theaters, /showtime-creation/*)를 호출한다.
-# root는 env 자격증명으로 인증되며 admin CRUD 권한만 가진다. 콘텐츠 endpoint는 일반 admin만 통과한다.
-# 따라서 root로 로그인해 새 admin을 만들고, 그 admin으로 다시 로그인해 토큰을 받는다.
+# root는 env 자격증명으로 Basic Auth 인증되며 admin lifecycle만 책임진다. 콘텐츠 endpoint는 admin 토큰만 통과한다.
+# 따라서 root Basic Auth로 admin을 만들고, 그 admin으로 로그인해 토큰을 받는다.
 ADMIN_EMAIL="seeded-admin@nest-seed.local"
 ADMIN_PASSWORD="DevPass1!"
 ADMIN_NAME="Seeded Admin"
 
-ROOT_LOGIN_RESPONSE=$(curl -sS -X POST "${SERVER_URL}/admins/login" \
-    -H 'Content-Type: application/json' \
-    -d "{\"email\":\"root\",\"password\":\"${ROOT_PASSWORD}\"}")
-ROOT_ACCESS_TOKEN=$(echo "${ROOT_LOGIN_RESPONSE}" | jq -r '.accessToken // empty')
-if [ -z "${ROOT_ACCESS_TOKEN}" ]; then
-    echo "Error: root login failed: ${ROOT_LOGIN_RESPONSE}"
-    exit 1
-fi
-
 CREATE_ADMIN_RESPONSE=$(curl -sS -X POST "${SERVER_URL}/admins" \
+    -u "root:${ROOT_PASSWORD}" \
     -H 'Content-Type: application/json' \
-    -H "Authorization: Bearer ${ROOT_ACCESS_TOKEN}" \
     -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\",\"name\":\"${ADMIN_NAME}\"}")
 if ! echo "${CREATE_ADMIN_RESPONSE}" | jq -e '.id' >/dev/null; then
     echo "Error: admin creation failed: ${CREATE_ADMIN_RESPONSE}"

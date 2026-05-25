@@ -11,18 +11,17 @@ USER_BIRTHDATE="1990-01-01T00:00:00.000Z"
 USER_PASSWORD="testpassword"
 USER_EMAIL="user@example.com"
 
-# root는 env 자격증명으로 인증되며 admin CRUD 권한만 가진다.
-# admin은 root가 POST /admins로 만들고, 이후 콘텐츠 spec은 admin 토큰으로 진행한다.
-# `CURRENT_AUTH_TOKEN`이 세팅돼 있으면 run.sh의 CURL이 모든 호출에 자동으로
-# Authorization 헤더를 붙인다. admin → user로 전환할 때는 다시 login_user를 호출한다.
+# root는 env 자격증명으로 Basic Auth 인증되며 admin lifecycle(생성/삭제)만 책임진다.
+# admin은 root가 POST /admins로 만든 DB 도큐먼트이고, 이후 콘텐츠 spec은 admin 토큰으로 진행한다.
+# `CURRENT_AUTH_TOKEN`이 세팅돼 있으면 run.sh의 CURL이 모든 호출에 자동으로 Bearer 헤더를 붙인다.
+# admin → user로 전환할 때는 다시 login_user를 호출한다.
 #
-# ROOT/ADMIN access token은 `:=`로 spec 사이에 유지한다(첫 spec이 만든 admin 도큐먼트와
-# 토큰을 다음 spec이 재사용해 root 로그인·admin 생성을 반복하지 않는다).
+# ADMIN_ACCESS_TOKEN은 `:=`로 spec 사이에 유지한다(첫 spec이 만든 admin 도큐먼트와 토큰을
+# 다음 spec이 재사용해 root Basic Auth + admin 생성을 반복하지 않는다).
 # 반면 CURRENT_AUTH_TOKEN은 매 spec에서 빈 값으로 리셋해야 user spec의 "인증 없이" 케이스가
 # 이전 spec의 admin 토큰을 자동 주입받아 500이 되는 일을 막는다.
-ROOT_EMAIL="root"
 : "${ROOT_PASSWORD:?ROOT_PASSWORD must be set}"
-: "${ROOT_ACCESS_TOKEN:=}"
+ROOT_BASIC_AUTH="Basic $(printf 'root:%s' "${ROOT_PASSWORD}" | base64)"
 
 ADMIN_EMAIL="seeded-admin@nest-seed.local"
 ADMIN_PASSWORD="DevPass1!"
@@ -30,21 +29,14 @@ ADMIN_NAME="Seeded Admin"
 : "${ADMIN_ACCESS_TOKEN:=}"
 CURRENT_AUTH_TOKEN=""
 
-login_root() {
-	SETUP POST /admins/login \
-		-H 'Content-Type: application/json' \
-		-d '{ "email": "'"${ROOT_EMAIL}"'", "password": "'"${ROOT_PASSWORD}"'" }'
-
-	ROOT_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
-	CURRENT_AUTH_TOKEN="${ROOT_ACCESS_TOKEN}"
-}
-
-# admin 도큐먼트가 이미 있으면 409. spec 재실행이나 다음 spec에서 무해하게 넘긴다.
+# root는 token 발급 없는 stateless 인증. admin 도큐먼트가 이미 있으면 409가 떨어지는데
+# spec 재실행이나 다음 spec에서 무해하게 넘긴다.
 create_admin() {
-	LOG_LINE "# 준비 요청: admin 생성(이미 있으면 409 무시)"
+	LOG_LINE "# 준비 요청: admin 생성(root Basic Auth, 이미 있으면 409 무시)"
 
 	CURL POST "${SERVER_URL}/admins" \
 		-H 'Content-Type: application/json' \
+		-H "Authorization: ${ROOT_BASIC_AUTH}" \
 		-d '{ "email": "'"${ADMIN_EMAIL}"'", "password": "'"${ADMIN_PASSWORD}"'", "name": "'"${ADMIN_NAME}"'" }'
 
 	LOG_LINE "RES='${STATUS}"
@@ -60,7 +52,6 @@ create_admin() {
 
 login_admin() {
 	if [ -z "${ADMIN_ACCESS_TOKEN}" ]; then
-		login_root
 		create_admin
 	fi
 

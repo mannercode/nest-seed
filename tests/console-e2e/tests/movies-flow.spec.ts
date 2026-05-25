@@ -7,22 +7,15 @@ const ADMIN_PASSWORD = 'DevPass1!'
 const ADMIN_NAME = 'Admin'
 
 // 시드 admin으로 로그인해 새 영화를 등록하는 스모크 테스트이다.
-// admin은 API가 부팅 시 만들지 않으므로 테스트 시작 전에 root token으로 한 번 생성한다.
+// admin은 API가 부팅 시 만들지 않으므로 테스트 시작 전에 root Basic Auth로 한 번 생성한다.
 // 이미 있으면 409가 떨어지는데 무해하게 넘긴다.
 test.beforeAll(async () => {
     const ctx = await request.newContext()
     try {
-        const loginRes = await ctx.post(`${API_BASE_URL}/admins/login`, {
-            data: { email: 'root', password: ROOT_PASSWORD }
-        })
-        if (!loginRes.ok()) {
-            throw new Error(`root login failed: ${loginRes.status()} ${await loginRes.text()}`)
-        }
-        const { accessToken } = await loginRes.json()
-
+        const rootAuth = `Basic ${Buffer.from(`root:${ROOT_PASSWORD}`).toString('base64')}`
         const createRes = await ctx.post(`${API_BASE_URL}/admins`, {
             data: { email: ADMIN_EMAIL, name: ADMIN_NAME, password: ADMIN_PASSWORD },
-            headers: { Authorization: `Bearer ${accessToken}` }
+            headers: { Authorization: rootAuth }
         })
         if (!createRes.ok() && createRes.status() !== 409) {
             throw new Error(
