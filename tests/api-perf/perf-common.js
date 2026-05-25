@@ -190,9 +190,7 @@ async function runPerf({
     const statuses = new Map()
     const replicas = new Set()
 
-    const startAt = Date.now()
-    const warmupEndAt = startAt + opts.warmupMs
-    const measureEndAt = warmupEndAt + opts.durationMs
+    const measureEndAt = Date.now() + opts.warmupMs + opts.durationMs
 
     setTimeout(() => {
         samples.sampling = true
