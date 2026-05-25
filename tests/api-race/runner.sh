@@ -3,6 +3,10 @@ set -Eeuo pipefail
 
 : "${WORKSPACE_ROOT:?}"
 
+# infra compose와 docker network를 공유하므로 docker compose가 infra 컨테이너를 orphan으로 표시한다.
+# 의미적으로 별개의 묶음이라 경고만 끄고 reap은 하지 않는다.
+export COMPOSE_IGNORE_ORPHANS=True
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_DIR="${WORKSPACE_ROOT}/apps/api"
 COMPOSE_DIR="${WORKSPACE_ROOT}/deploy"
@@ -53,10 +57,6 @@ docker compose ps
 # race 시나리오의 setupFixture는 admin 보호 endpoint(POST /movies, /theaters, /showtime-creation/*)를 호출한다.
 # root는 env 자격증명으로 인증되며 admin CRUD 권한만 가진다. 콘텐츠 endpoint는 일반 admin만 통과한다.
 # 따라서 root로 로그인해 새 admin을 만들고, 그 admin으로 다시 로그인해 토큰을 받는다.
-set -a
-. "${WORKSPACE_ROOT}/.env.api"
-set +a
-
 ADMIN_EMAIL="seeded-admin@nest-seed.local"
 ADMIN_PASSWORD="DevPass1!"
 ADMIN_NAME="Seeded Admin"

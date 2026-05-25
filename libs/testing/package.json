@@ -5,7 +5,6 @@
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
-        "clean": "jest --clearCache",
         "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.jest.json && eslint src/ --max-warnings=0 && prettier --check src/",
         "format": "eslint src/ --fix && prettier --write src/",
         "test": "NODE_OPTIONS='--experimental-vm-modules' jest",

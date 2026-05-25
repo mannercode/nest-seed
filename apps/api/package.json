@@ -4,7 +4,6 @@
     "private": true,
     "scripts": {
         "start": "node _output/dist/index.js",
-        "clean": "jest --clearCache",
         "format": "eslint src/ scripts/ --fix && prettier --write src/ scripts/",
         "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.jest.json && eslint src/ scripts/ --max-warnings=0 && prettier --check src/ scripts/",
         "build": "nest build -b webpack && npm run bundle-workflows",
