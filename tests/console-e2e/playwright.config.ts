@@ -7,7 +7,7 @@ const BASE_URL = `http://localhost:${CONSOLE_PORT}`
 /**
  * API와 console dev 서버를 시작한 뒤 테스트를 실행한다.
  * 이미 `npm run dev` 로 실행 중이면 그대로 재사용한다.
- * Mongo, Redis, NATS, Temporal 같은 인프라는 `.devcontainer/infra`가 먼저 시작해 두어야 한다.
+ * Mongo, Redis, NATS, Temporal 같은 인프라는 `infra`가 먼저 시작해 두어야 한다.
  */
 export default defineConfig({
     testDir: './tests',

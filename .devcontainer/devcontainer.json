@@ -8,7 +8,7 @@
     },
     "runArgs": [
         "--env-file",
-        ".devcontainer/infra/.env",
+        "infra/.env",
         "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
         "--network=${localWorkspaceFolderBasename}"
     ],
@@ -35,7 +35,7 @@
     },
     "postCreateCommand": { "husky": "husky", "install": "npm install" },
     "postStartCommand": {
-        "infra": "bash .devcontainer/infra/reset.sh",
+        "infra": "bash infra/reset.sh",
         "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null"
     },
     "waitFor": "postStartCommand",

@@ -8,27 +8,27 @@
 
 | 파일                       | 읽는 곳                                                   | 역할                                                                                                    |
 | -------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `.devcontainer/infra/.env` | Dev Container `runArgs`, `.devcontainer/infra` compose    | 개발 인프라 이미지 태그와 접속 값. MongoDB, Redis, MinIO, NATS, Temporal 서비스 이름과 포트를 정의한다. |
+| `infra/.env`               | Dev Container `runArgs`, `infra` compose                  | 개발 인프라 이미지 태그와 접속 값. MongoDB, Redis, MinIO, NATS, Temporal 서비스 이름과 포트를 정의한다. |
 | `apps/api/.env`            | `apps/api/jest.global.js`, `deploy/compose.yml` 실행 경로 | API 런타임의 앱 설정. `PROJECT_ID`, HTTP, 인증, 로그 값을 둔다.                                         |
 | `apps/api/api-docs/.env`   | `apps/api/api-docs/run.sh`                                | curl 기반 API 문서 실행 설정. 기본 `SERVER_URL`과 업로드 fixture 값을 둔다.                             |
 | `apps/console/.env`        | Next.js console                                           | 관리 콘솔이 호출할 API 기준 URL을 둔다.                                                                 |
 | `apps/user-app/.env`       | Next.js user-app                                          | 사용자 앱이 호출할 API 기준 URL을 둔다.                                                                 |
 
-`.env` 파일은 역할별로 분리한다. API 설정 파일 하나에 모든 값을 몰아넣지 않고, 인프라가 소유한 값은 `.devcontainer/infra/.env`에 둔다.
+`.env` 파일은 역할별로 분리한다. API 설정 파일 하나에 모든 값을 몰아넣지 않고, 인프라가 소유한 값은 `infra/.env`에 둔다.
 
 ---
 
 ## 2. 값 흐름
 
-Dev Container가 시작될 때 `.devcontainer/devcontainer.json`은 `.devcontainer/infra/.env`를 컨테이너 환경으로 주입하고, `WORKSPACE_ROOT`, `COMPOSE_PROJECT_NAME`도 함께 세팅한다.
+Dev Container가 시작될 때 `.devcontainer/devcontainer.json`은 `infra/.env`를 컨테이너 환경으로 주입하고, `WORKSPACE_ROOT`, `COMPOSE_PROJECT_NAME`도 함께 세팅한다.
 
 ```
 Dev Container
-  -> .devcontainer/infra/.env
+  -> infra/.env
   -> process.env 안의 MONGO_*, REDIS_*, S3_*, NATS_*, TEMPORAL_*
 ```
 
-`postStartCommand`는 `.devcontainer/infra/reset.sh`를 실행한다. 이 스크립트는 `.devcontainer/infra`의 compose 파일들로 MongoDB Replica Set, Redis Cluster, MinIO, NATS, Temporal을 시작한다.
+`postStartCommand`는 `infra/reset.sh`를 실행한다. 이 스크립트는 `infra`의 compose 파일들로 MongoDB Replica Set, Redis Cluster, MinIO, NATS, Temporal을 시작한다.
 
 API는 Nest `ConfigModule`에서 `.env` 파일을 직접 읽지 않는다. `ignoreEnvFile: true`로 두고, 실행 경로가 준비한 `process.env`만 검증한다. 그래서 테스트와 배포 실행기는 각각 필요한 값을 먼저 환경에 올린다.
 
@@ -58,7 +58,7 @@ apps/api/api-docs/run.sh
 | -------------------------- | --------------------------------------------------- |
 | `package.json`             | `name`                                              |
 | `apps/api/.env`            | `PROJECT_ID`, `AUTH_ISSUER`, `AUTH_AUDIENCE`        |
-| `.devcontainer/infra/.env` | `MONGO_DATABASE`, `S3_BUCKET`, `TEMPORAL_NAMESPACE` |
+| `infra/.env` | `MONGO_DATABASE`, `S3_BUCKET`, `TEMPORAL_NAMESPACE` |
 | `deploy/compose.yml`       | API image 이름, 필요하면 replica 기본값             |
 | `apps/console/.env`        | `API_BASE_URL`                                      |
 | `apps/user-app/.env`       | `API_BASE_URL`                                      |
