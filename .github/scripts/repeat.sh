@@ -23,7 +23,7 @@ start_ts=$(date +%s)
 # 초기화하지 않으면 완료된 워크플로우 기록이 수백 회차 동안 쌓여 transfer-queue-processor가 멈출 수 있다.
 # 초기화 한 번은 약 30초 걸린다.
 RESET_EVERY="${RESET_EVERY:-10}"
-RESET_SCRIPT="$(cd "$(dirname "$0")/../../infra" && pwd)/reset.sh"
+RESET_SCRIPT="${WORKSPACE_ROOT:?WORKSPACE_ROOT must be set}/infra/reset.sh"
 
 for ((i = 1; i <= repeat_count; i++)); do
     echo "[Run ${i}/${repeat_count} | $(($(date +%s) - start_ts))s]"

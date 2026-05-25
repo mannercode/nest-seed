@@ -4,6 +4,11 @@ const API_PORT = 3000
 const CONSOLE_PORT = 3100
 const BASE_URL = `http://localhost:${CONSOLE_PORT}`
 
+if (!process.env.WORKSPACE_ROOT) {
+    throw new Error('WORKSPACE_ROOT must be set')
+}
+const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT
+
 /**
  * API와 console dev 서버를 시작한 뒤 테스트를 실행한다.
  * 이미 `npm run dev` 로 실행 중이면 그대로 재사용한다.
@@ -27,14 +32,14 @@ export default defineConfig({
             url: `http://localhost:${API_PORT}/health`,
             reuseExistingServer: !process.env.CI,
             timeout: 120_000,
-            cwd: '../..'
+            cwd: WORKSPACE_ROOT
         },
         {
             command: 'npm run dev -w apps/console',
             url: BASE_URL,
             reuseExistingServer: !process.env.CI,
             timeout: 120_000,
-            cwd: '../..'
+            cwd: WORKSPACE_ROOT
         }
     ]
 })

@@ -4,7 +4,7 @@
     "private": true,
     "scripts": {
         "start": "node _output/dist/index.js",
-        "clean": "docker compose --env-file .env -f ../../deploy/compose.yml down -v -t 0 && jest --clearCache",
+        "clean": "jest --clearCache",
         "format": "eslint src/ scripts/ --fix && prettier --write src/ scripts/",
         "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.jest.json && eslint src/ scripts/ --max-warnings=0 && prettier --check src/ scripts/",
         "build": "nest build -b webpack && npm run bundle-workflows",
