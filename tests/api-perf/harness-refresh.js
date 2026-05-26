@@ -11,6 +11,7 @@
  * 환경 변수는 harness.js와 같다: SERVER_URL, CONCURRENCY, DURATION_MS, WARMUP_MS, LABEL.
  */
 
+import { sleep } from 'k6'
 import http from 'k6/http'
 import { Counter, Trend } from 'k6/metrics'
 import {
@@ -76,8 +77,17 @@ export function setup() {
 
 // VU별 회전 상태. 모듈 초기화는 VU마다 따로 일어나므로 격리된다.
 let myRefreshToken = null
+// 토큰이 무효화된 VU는 더 진행 불가다. 노드 하네스의 "워커 종료"에 대응한다.
+// k6는 VU를 도중에 멈출 수 없으니 플래그로 막아 추가 요청을 보내지 않는다.
+let exhausted = false
 
 export default function (data) {
+    if (exhausted) {
+        // CPU 폭주를 막기 위해 100ms씩 쉬며 측정 종료를 기다린다.
+        sleep(0.1)
+        return
+    }
+
     if (!myRefreshToken) {
         myRefreshToken = data.accounts[__VU - 1].refreshToken
     }
@@ -95,11 +105,13 @@ export default function (data) {
 
     if (res.status === 200) {
         const next = res.json('refreshToken')
-        if (next) myRefreshToken = next
+        if (next) {
+            myRefreshToken = next
+            return
+        }
     }
-    // 200이 아니면 토큰이 무효화된 경우다. 다음 회차에서 401이 누적된다.
-    // 노드 하네스의 "해당 워커 종료" 동작은 k6에서 1회 회차 단위로는 흉내내기 번거롭다.
-    // statusCodes에 401이 잡히므로 측정 결과로 확인 가능하다.
+    // 200이 아니거나 새 토큰이 없으면 이후 회차는 의미가 없다. 표본에서 빼고 멈춘다.
+    exhausted = true
 }
 
 export function handleSummary(data) {
