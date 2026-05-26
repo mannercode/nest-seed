@@ -11,11 +11,16 @@
 
 set -euo pipefail
 
+: "${WORKSPACE_ROOT:?}"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 HARNESS="${SCRIPT_DIR}/harness.js"
 
 DURATION_MS="${DURATION_MS:-30000}"
 WARMUP_MS="${WARMUP_MS:-3000}"
+
+# k6는 handleSummary 반환 파일을 쓸 때 디렉토리는 만들지 않는다. 미리 만든다.
+mkdir -p "${WORKSPACE_ROOT}/_output/perf"
 
 run_case() {
     local label="$1"
@@ -30,15 +35,23 @@ run_case() {
     local pids=()
 
     if [ "$read_c" -gt 0 ]; then
-        SCENARIO=theater-read CONCURRENCY="$read_c" \
-            DURATION_MS="$DURATION_MS" WARMUP_MS="$WARMUP_MS" \
-            LABEL="$label" node "$HARNESS" &
+        k6 run \
+            --env SCENARIO=theater-read \
+            --env CONCURRENCY="$read_c" \
+            --env DURATION_MS="$DURATION_MS" \
+            --env WARMUP_MS="$WARMUP_MS" \
+            --env LABEL="$label" \
+            "$HARNESS" &
         pids+=("$!")
     fi
     if [ "$write_c" -gt 0 ]; then
-        SCENARIO=theater-write CONCURRENCY="$write_c" \
-            DURATION_MS="$DURATION_MS" WARMUP_MS="$WARMUP_MS" \
-            LABEL="$label" node "$HARNESS" &
+        k6 run \
+            --env SCENARIO=theater-write \
+            --env CONCURRENCY="$write_c" \
+            --env DURATION_MS="$DURATION_MS" \
+            --env WARMUP_MS="$WARMUP_MS" \
+            --env LABEL="$label" \
+            "$HARNESS" &
         pids+=("$!")
     fi
 

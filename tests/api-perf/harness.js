@@ -1,49 +1,68 @@
 /**
- * API 스택에 지속 부하를 걸어 시나리오별 처리량과 응답 시간 분위수를 측정하는 하네스이다.
+ * API 스택에 지속 부하를 걸어 시나리오별 처리량과 응답 시간 분위수를 측정하는 k6 하네스다.
  *
  * 결과는 stdout 마지막 줄에 JSON 한 줄로 출력하고, 사람이 읽을 요약은 stderr에 출력한다.
  * 원본 결과는 `_output/perf/<scenario>-<timestamp>.json`에 저장한다.
  *
- * 환경 변수:
+ * 환경 변수 (k6는 `--env` 또는 `K6_` 접두사로 전달):
  *  SERVER_URL    - 대상 서버 (기본 http://localhost:3000)
  *  SCENARIO      - user-write | user-read | theater-write | theater-read | ... (기본 user-write)
- *  CONCURRENCY   - 동시 요청 수 (기본 100)
+ *  CONCURRENCY   - 동시 VU 수 (기본 100)
  *  DURATION_MS   - 측정 시간 ms (기본 30000)
  *  WARMUP_MS     - 워밍업 시간 ms (기본 3000)
  *  LABEL         - 결과에 같이 저장할 자유 태그 (기본 '')
  *  ACCEPT_GZIP   - '1'이면 `Accept-Encoding: gzip` 헤더 추가 (기본 미설정)
+ *
+ * 실행:
+ *   mkdir -p _output/perf  # k6는 출력 디렉토리를 만들지 않는다
+ *   k6 run --env SCENARIO=user-write tests/api-perf/harness.js
  */
 
-const { runPerf, readOptions } = require('./perf-common')
+import http from 'k6/http'
+import { Counter, Trend } from 'k6/metrics'
+import {
+    buildScenarioOptions,
+    buildSummary,
+    measurementStart,
+    readOptions,
+    summaryReturn
+} from './perf-common.js'
 
-const SCENARIO = process.env.SCENARIO || 'user-write'
+const opts = readOptions()
+const scenario = __ENV.SCENARIO || 'user-write'
+const startAt = measurementStart(opts)
 
-function uniqueEmail(workerId, seq) {
-    return `perf.${Date.now()}.${workerId}.${seq}.${Math.random().toString(36).slice(2, 8)}@example.com`
+// 표준 k6 메트릭은 워밍업까지 포함하므로, 워밍업을 제외한 별도 측정용 메트릭을 둔다.
+const latency = new Trend('measured_latency', true)
+const statusCounter = new Counter('measured_status')
+
+export const options = buildScenarioOptions(opts)
+
+function uniqueEmail(vu, iter) {
+    return `perf.${Date.now()}.${vu}.${iter}.${Math.random().toString(36).slice(2, 8)}@example.com`
 }
 
 const SCENARIOS = {
-    'user-write': (workerId, seq) => ({
+    'user-write': (vu, iter) => ({
         method: 'POST',
         path: '/users',
         body: {
-            name: `perf-${workerId}-${seq}`,
-            email: uniqueEmail(workerId, seq),
+            name: `perf-${vu}-${iter}`,
+            email: uniqueEmail(vu, iter),
             password: 'perfpassword',
             birthDate: '1990-01-01T00:00:00.000Z'
         }
     }),
-    // `GET /users`는 JWT가 필요하다.
-    // 이 시나리오가 재는 것은 인증 실패 응답의 처리량이다.
+    // `GET /users`는 JWT가 필요하다. 이 시나리오가 재는 것은 인증 실패 응답의 처리량이다.
     // 인증 없이 Mongo 읽기를 측정하고 싶으면 theater-read나 movie-read 시나리오를 쓴다.
     'user-read': () => ({ method: 'GET', path: '/users?take=50' }),
     // `POST /theaters`는 가드가 없어서 순수 Mongo 쓰기 + majority commit 비용만 잰다.
     // 본문은 작지만 중첩 검증이 있어서 무시할 비용은 아니다.
-    'theater-write': (workerId, seq) => ({
+    'theater-write': (vu, iter) => ({
         method: 'POST',
         path: '/theaters',
         body: {
-            name: `perf-theater-${Date.now()}-${workerId}-${seq}-${Math.random().toString(36).slice(2, 8)}`,
+            name: `perf-theater-${Date.now()}-${vu}-${iter}-${Math.random().toString(36).slice(2, 8)}`,
             location: { latitude: 37.5, longitude: 127.0 },
             seatmap: {
                 blocks: [
@@ -63,18 +82,17 @@ const SCENARIOS = {
     'theater-read-size1': () => ({ method: 'GET', path: '/theaters?page=1&size=1' }),
     // 검색어를 좁게 잡아 매치 수를 거의 0으로 맞춘다.
     // 부분 문자열 정규식은 일반 인덱스를 활용하지 못해 컬렉션 전체를 스캔한다.
-    // 그 비용을 단독으로 측정하는 시나리오이다.
     'theater-read-name-filter': () => ({
         method: 'GET',
         path: '/theaters?page=1&size=50&name=perf-theater-17769404'
     }),
     'movie-read': () => ({ method: 'GET', path: '/movies?page=1&size=50' }),
     // 순수 Mongo 쓰기 (bcrypt 없음). 필터 측정 전에 데이터를 채워 두는 용도.
-    'movie-write': (workerId, seq) => ({
+    'movie-write': (vu, iter) => ({
         method: 'POST',
         path: '/movies',
         body: {
-            title: `perf-movie-${Date.now()}-${workerId}-${seq}-${Math.random().toString(36).slice(2, 8)}`
+            title: `perf-movie-${Date.now()}-${vu}-${iter}-${Math.random().toString(36).slice(2, 8)}`
         }
     }),
     'movie-read-title-filter': () => ({
@@ -84,24 +102,32 @@ const SCENARIOS = {
     health: () => ({ method: 'GET', path: '/health' })
 }
 
-const opts = readOptions()
-const factory = SCENARIOS[SCENARIO]
+const factory = SCENARIOS[scenario]
 if (!factory) {
-    console.error(`[perf] unknown scenario: ${SCENARIO}`)
-    process.exit(1)
+    throw new Error(`[perf] unknown scenario: ${scenario}`)
 }
 
-const acceptGzipHeaders = opts.acceptGzip ? { 'accept-encoding': 'gzip' } : undefined
+const baseHeaders = { accept: 'application/json' }
+if (opts.acceptGzip) baseHeaders['Accept-Encoding'] = 'gzip'
 
-runPerf({
-    scenario: SCENARIO,
-    logTag: 'perf',
-    options: opts,
-    perRequest: (_state, workerId, seq) => {
-        const req = factory(workerId, seq)
-        return { ...req, headers: acceptGzipHeaders }
+export default function () {
+    const spec = factory(__VU, __ITER)
+    const headers = { ...baseHeaders }
+    let body = null
+    if (spec.body != null) {
+        body = JSON.stringify(spec.body)
+        headers['content-type'] = 'application/json'
     }
-}).catch((e) => {
-    console.error('[perf] error:', e)
-    process.exit(1)
-})
+
+    const res = http.request(spec.method, `${opts.serverUrl}${spec.path}`, body, { headers })
+
+    if (Date.now() >= startAt) {
+        latency.add(res.timings.duration)
+        statusCounter.add(1, { status: String(res.status) })
+    }
+}
+
+export function handleSummary(data) {
+    const summary = buildSummary({ data, scenario, opts })
+    return summaryReturn({ summary, logTag: 'perf' })
+}

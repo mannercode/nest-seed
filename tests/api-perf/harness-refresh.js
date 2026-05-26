@@ -1,73 +1,108 @@
 /**
- * `/users/refresh` 경로에 지속 부하를 걸어 측정하는 하네스이다.
+ * `/users/refresh` 경로에 지속 부하를 걸어 측정하는 k6 하네스다.
  *
  * 이 경로는 호출마다 Redis를 두 번 친다(이전 토큰 GET + 새 토큰 SET).
  * bcrypt도, 토큰 검증을 위한 DB 조회도 없고, JWT 검증은 메모리 안에서 끝난다.
  * 그래서 ioredis 클러스터 처리량을 가장 명확하게 측정한다.
  *
- * 워커마다 측정 전 한 번씩 가입·로그인을 끝내고, 이후 자기 토큰을 회전한다.
- * 같은 토큰을 여러 워커가 동시에 회전시키면 무효화 경합이 일어나므로 토큰은 워커 단위로 분리한다.
+ * VU마다 setup 단계에서 한 번씩 가입·로그인을 끝내고, 이후 자기 토큰을 회전한다.
+ * 같은 토큰을 여러 VU가 동시에 회전시키면 무효화 경합이 일어나므로 토큰은 VU 단위로 분리한다.
  *
  * 환경 변수는 harness.js와 같다: SERVER_URL, CONCURRENCY, DURATION_MS, WARMUP_MS, LABEL.
  */
 
-const { runPerf, readOptions, doRequest } = require('./perf-common')
+import http from 'k6/http'
+import { Counter, Trend } from 'k6/metrics'
+import {
+    buildScenarioOptions,
+    buildSummary,
+    measurementStart,
+    readOptions,
+    summaryReturn
+} from './perf-common.js'
 
-function uniqueEmail(workerId, seed) {
-    return `perf-refresh.${seed}.${workerId}.${Math.random().toString(36).slice(2, 8)}@example.com`
+const opts = readOptions()
+const startAt = measurementStart(opts)
+
+const latency = new Trend('measured_latency', true)
+const statusCounter = new Counter('measured_status')
+
+export const options = buildScenarioOptions(opts)
+
+const JSON_HEADERS = { 'content-type': 'application/json', accept: 'application/json' }
+
+function uniqueEmail(vu, seed) {
+    return `perf-refresh.${seed}.${vu}.${Math.random().toString(36).slice(2, 8)}@example.com`
 }
 
-async function setupWorker({ workerId, seed, urlObj, agent }) {
-    const email = uniqueEmail(workerId, seed)
-    const password = 'refreshpass'
+/**
+ * VU 수만큼 계정을 가입·로그인해 refresh token을 받아 둔다.
+ * 결과 배열의 i번째 원소는 VU=i+1가 사용한다.
+ */
+export function setup() {
+    const seed = Date.now()
+    const accounts = []
+    for (let vu = 1; vu <= opts.concurrency; vu++) {
+        const email = uniqueEmail(vu, seed)
+        const password = 'refreshpass'
 
-    const create = await doRequest({
-        agent,
-        urlObj,
-        method: 'POST',
-        requestPath: '/users',
-        body: { name: `r${workerId}`, email, password, birthDate: '1990-01-01T00:00:00.000Z' }
-    })
-    if (create.status !== 201) {
-        agent.destroy()
-        throw new Error(`worker ${workerId} setup: create returned ${create.status}`)
-    }
-
-    const login = await doRequest({
-        agent,
-        urlObj,
-        method: 'POST',
-        requestPath: '/users/login',
-        body: { email, password }
-    })
-    if (login.status !== 200 || !login.body || !login.body.refreshToken) {
-        agent.destroy()
-        throw new Error(`worker ${workerId} setup: login returned ${login.status}`)
-    }
-
-    return { agent, refreshToken: login.body.refreshToken }
-}
-
-runPerf({
-    scenario: 'user-refresh',
-    logTag: 'perf-refresh',
-    options: readOptions(),
-    setupWorker,
-    perRequest: (state) => ({
-        method: 'POST',
-        path: '/users/refresh',
-        body: { refreshToken: state.refreshToken }
-    }),
-    onResponse: (state, result) => {
-        if (result.status === 200 && result.body && result.body.refreshToken) {
-            state.refreshToken = result.body.refreshToken
-            return false
+        const create = http.post(
+            `${opts.serverUrl}/users`,
+            JSON.stringify({
+                name: `r${vu}`,
+                email,
+                password,
+                birthDate: '1990-01-01T00:00:00.000Z'
+            }),
+            { headers: JSON_HEADERS }
+        )
+        if (create.status !== 201) {
+            throw new Error(`vu ${vu} setup: create returned ${create.status}`)
         }
-        // 토큰이 무효화된 경우. 워커가 서로 격리되면 일어나지 않아야 하지만,
-        // 같은 사용자 토큰에 동시 리프레시가 들어오면 발생한다. 이 워커는 종료한다.
-        return result.status !== 200
+
+        const login = http.post(
+            `${opts.serverUrl}/users/login`,
+            JSON.stringify({ email, password }),
+            { headers: JSON_HEADERS }
+        )
+        const refreshToken = login.json('refreshToken')
+        if (login.status !== 200 || !refreshToken) {
+            throw new Error(`vu ${vu} setup: login returned ${login.status}`)
+        }
+        accounts.push({ refreshToken })
     }
-}).catch((e) => {
-    console.error('[perf-refresh] error:', e)
-    process.exit(1)
-})
+    return { accounts }
+}
+
+// VU별 회전 상태. 모듈 초기화는 VU마다 따로 일어나므로 격리된다.
+let myRefreshToken = null
+
+export default function (data) {
+    if (!myRefreshToken) {
+        myRefreshToken = data.accounts[__VU - 1].refreshToken
+    }
+
+    const res = http.post(
+        `${opts.serverUrl}/users/refresh`,
+        JSON.stringify({ refreshToken: myRefreshToken }),
+        { headers: JSON_HEADERS }
+    )
+
+    if (Date.now() >= startAt) {
+        latency.add(res.timings.duration)
+        statusCounter.add(1, { status: String(res.status) })
+    }
+
+    if (res.status === 200) {
+        const next = res.json('refreshToken')
+        if (next) myRefreshToken = next
+    }
+    // 200이 아니면 토큰이 무효화된 경우다. 다음 회차에서 401이 누적된다.
+    // 노드 하네스의 "해당 워커 종료" 동작은 k6에서 1회 회차 단위로는 흉내내기 번거롭다.
+    // statusCodes에 401이 잡히므로 측정 결과로 확인 가능하다.
+}
+
+export function handleSummary(data) {
+    const summary = buildSummary({ data, scenario: 'user-refresh', opts })
+    return summaryReturn({ summary, logTag: 'perf-refresh' })
+}
