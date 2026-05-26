@@ -38,37 +38,47 @@ function uniqueEmail(vu, seed) {
 
 /**
  * VU 수만큼 계정을 가입·로그인해 refresh token을 받아 둔다.
+ * `http.batch`로 가입과 로그인을 각각 한 번에 보낸다. CONCURRENCY=100이면 가입 100건을
+ * 병렬로 처리하고 결과를 모은 뒤 로그인 100건을 다시 병렬로 보낸다.
  * 결과 배열의 i번째 원소는 VU=i+1가 사용한다.
  */
 export function setup() {
     const seed = Date.now()
-    const accounts = []
+    const creds = []
     for (let vu = 1; vu <= opts.concurrency; vu++) {
-        const email = uniqueEmail(vu, seed)
-        const password = 'refreshpass'
+        creds.push({ vu, email: uniqueEmail(vu, seed), password: 'refreshpass' })
+    }
 
-        const create = http.post(
-            `${opts.serverUrl}/users`,
-            JSON.stringify({
-                name: `r${vu}`,
-                email,
-                password,
-                birthDate: '1990-01-01T00:00:00.000Z'
-            }),
-            { headers: JSON_HEADERS }
-        )
-        if (create.status !== 201) {
-            throw new Error(`vu ${vu} setup: create returned ${create.status}`)
+    const createReqs = creds.map(({ vu, email, password }) => ({
+        method: 'POST',
+        url: `${opts.serverUrl}/users`,
+        body: JSON.stringify({
+            name: `r${vu}`,
+            email,
+            password,
+            birthDate: '1990-01-01T00:00:00.000Z'
+        }),
+        params: { headers: JSON_HEADERS }
+    }))
+    const createResponses = http.batch(createReqs)
+    for (let i = 0; i < creds.length; i++) {
+        if (createResponses[i].status !== 201) {
+            throw new Error(`vu ${creds[i].vu} setup: create returned ${createResponses[i].status}`)
         }
+    }
 
-        const login = http.post(
-            `${opts.serverUrl}/users/login`,
-            JSON.stringify({ email, password }),
-            { headers: JSON_HEADERS }
-        )
-        const refreshToken = login.json('refreshToken')
-        if (login.status !== 200 || !refreshToken) {
-            throw new Error(`vu ${vu} setup: login returned ${login.status}`)
+    const loginReqs = creds.map(({ email, password }) => ({
+        method: 'POST',
+        url: `${opts.serverUrl}/users/login`,
+        body: JSON.stringify({ email, password }),
+        params: { headers: JSON_HEADERS }
+    }))
+    const loginResponses = http.batch(loginReqs)
+    const accounts = []
+    for (let i = 0; i < creds.length; i++) {
+        const refreshToken = loginResponses[i].json('refreshToken')
+        if (loginResponses[i].status !== 200 || !refreshToken) {
+            throw new Error(`vu ${creds[i].vu} setup: login returned ${loginResponses[i].status}`)
         }
         accounts.push({ refreshToken })
     }

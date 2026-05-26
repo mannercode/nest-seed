@@ -37,34 +37,47 @@ const JSON_HEADERS = { 'content-type': 'application/json', accept: 'application/
 
 export function setup() {
     const seed = Date.now()
-    const accounts = []
+    const creds = []
     for (let vu = 1; vu <= opts.concurrency; vu++) {
-        const email = `perf-user-filter.${seed}.${vu}@example.com`
-        const password = 'filterprobepass'
+        creds.push({
+            vu,
+            email: `perf-user-filter.${seed}.${vu}@example.com`,
+            password: 'filterprobepass'
+        })
+    }
 
-        const create = http.post(
-            `${opts.serverUrl}/users`,
-            JSON.stringify({
-                name: `probe-${vu}`,
-                email,
-                password,
-                birthDate: '1990-01-01T00:00:00.000Z'
-            }),
-            { headers: JSON_HEADERS }
-        )
+    const createReqs = creds.map(({ vu, email, password }) => ({
+        method: 'POST',
+        url: `${opts.serverUrl}/users`,
+        body: JSON.stringify({
+            name: `probe-${vu}`,
+            email,
+            password,
+            birthDate: '1990-01-01T00:00:00.000Z'
+        }),
+        params: { headers: JSON_HEADERS }
+    }))
+    const createResponses = http.batch(createReqs)
+    for (let i = 0; i < creds.length; i++) {
         // 409는 이전 회차에서 만든 계정이 남아 있는 경우라 그대로 진행한다.
-        if (create.status !== 201 && create.status !== 409) {
-            throw new Error(`vu ${vu} create returned ${create.status}`)
+        const s = createResponses[i].status
+        if (s !== 201 && s !== 409) {
+            throw new Error(`vu ${creds[i].vu} create returned ${s}`)
         }
+    }
 
-        const login = http.post(
-            `${opts.serverUrl}/users/login`,
-            JSON.stringify({ email, password }),
-            { headers: JSON_HEADERS }
-        )
-        const accessToken = login.json('accessToken')
-        if (login.status !== 200 || !accessToken) {
-            throw new Error(`vu ${vu} login returned ${login.status}`)
+    const loginReqs = creds.map(({ email, password }) => ({
+        method: 'POST',
+        url: `${opts.serverUrl}/users/login`,
+        body: JSON.stringify({ email, password }),
+        params: { headers: JSON_HEADERS }
+    }))
+    const loginResponses = http.batch(loginReqs)
+    const accounts = []
+    for (let i = 0; i < creds.length; i++) {
+        const accessToken = loginResponses[i].json('accessToken')
+        if (loginResponses[i].status !== 200 || !accessToken) {
+            throw new Error(`vu ${creds[i].vu} login returned ${loginResponses[i].status}`)
         }
         accounts.push({ authHeader: `Bearer ${accessToken}` })
     }

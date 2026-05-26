@@ -18,13 +18,23 @@
 // 클라이언트 에러(연결 실패)는 k6가 0으로 보고한다.
 const TRACKED_STATUSES = [0, 200, 201, 204, 400, 401, 403, 404, 409, 422, 500, 502, 503]
 
-/** 공통 환경 변수를 읽어 옵션 객체로 만든다. */
+function readPositiveInt(name, defaultValue) {
+    const raw = __ENV[name]
+    if (raw === undefined || raw === '') return defaultValue
+    const n = parseInt(raw, 10)
+    if (!Number.isFinite(n) || n <= 0 || String(n) !== raw.trim()) {
+        throw new Error(`${name}는 양의 정수여야 한다. 받은 값: ${JSON.stringify(raw)}`)
+    }
+    return n
+}
+
+/** 공통 환경 변수를 읽어 옵션 객체로 만든다. 정수형은 잘못된 값이면 fail-fast로 던진다. */
 export function readOptions() {
     return {
         serverUrl: __ENV.SERVER_URL || 'http://localhost:3000',
-        concurrency: parseInt(__ENV.CONCURRENCY || '100', 10),
-        durationMs: parseInt(__ENV.DURATION_MS || '30000', 10),
-        warmupMs: parseInt(__ENV.WARMUP_MS || '3000', 10),
+        concurrency: readPositiveInt('CONCURRENCY', 100),
+        durationMs: readPositiveInt('DURATION_MS', 30_000),
+        warmupMs: readPositiveInt('WARMUP_MS', 3_000),
         label: __ENV.LABEL || '',
         acceptGzip: __ENV.ACCEPT_GZIP === '1'
     }
@@ -50,6 +60,10 @@ export function buildScenarioOptions(opts) {
         discardResponseBodies: false,
         // 기본값엔 p(99)/p(50)이 없어 buildSummary와 어긋난다. 명시한다.
         summaryTrendStats: ['min', 'avg', 'med', 'max', 'p(50)', 'p(90)', 'p(95)', 'p(99)'],
+        // setup()의 http.batch가 VU 수만큼 병렬 실행되도록 막혀 있는 기본 한도를 푼다.
+        // 측정 구간의 개별 http 호출은 영향받지 않는다(이 옵션은 batch 전용).
+        batch: opts.concurrency,
+        batchPerHost: opts.concurrency,
         thresholds
     }
 }
