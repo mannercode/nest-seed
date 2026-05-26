@@ -24,6 +24,10 @@ class BasicOnlyGuard extends AuthGuard {
                     if (username === 'admin' && password === 'pass') {
                         return { kind: 'admin', name: username }
                     }
+                    // 콜론 포함 비밀번호 분리 검증 전용 계정.
+                    if (username === 'colon' && password === 'pa:ss:word') {
+                        return { kind: 'colon', name: username }
+                    }
                     return null
                 }
             }

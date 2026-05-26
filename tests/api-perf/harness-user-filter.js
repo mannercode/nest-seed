@@ -59,10 +59,10 @@ export function setup() {
     }))
     const createResponses = http.batch(createReqs)
     for (let i = 0; i < creds.length; i++) {
-        // 409는 이전 회차에서 만든 계정이 남아 있는 경우라 그대로 진행한다.
-        const s = createResponses[i].status
-        if (s !== 201 && s !== 409) {
-            throw new Error(`vu ${creds[i].vu} create returned ${s}`)
+        // seed가 매 회차마다 다르므로(`Date.now()`) 이메일은 항상 unique하다.
+        // 409가 떴다면 무언가 비정상(같은 ms에 두 번 시작 등)이라 그대로 던진다.
+        if (createResponses[i].status !== 201) {
+            throw new Error(`vu ${creds[i].vu} create returned ${createResponses[i].status}`)
         }
     }
 

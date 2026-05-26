@@ -54,7 +54,13 @@ export abstract class AuthGuard implements CanActivate {
         protected readonly jwtService: JwtService,
         protected readonly reflector: Reflector,
         protected readonly options: AuthGuardOptions
-    ) {}
+    ) {
+        // bearer/basic 둘 다 비어 있으면 모든 요청이 자동 401이 된다(silent misconfig).
+        // 부팅 시 즉시 거절해서 잘못된 설정이 런타임까지 새지 않게 한다.
+        if (!options.bearer && !options.basic) {
+            throw new Error('AuthGuard requires at least one of `bearer` or `basic` options')
+        }
+    }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         if (this.isPublicRoute(context)) return true

@@ -1,3 +1,6 @@
+import { Reflector } from '@nestjs/core'
+import { JwtService } from '@nestjs/jwt'
+import { AuthGuard } from '../auth.guard'
 import { basicHeader, createGuardsFixture, type GuardsFixture } from './guards.fixture'
 
 describe('AuthGuard', () => {
@@ -9,6 +12,18 @@ describe('AuthGuard', () => {
 
     afterEach(async () => {
         await fix.teardown()
+    })
+
+    describe('생성자 검증', () => {
+        // 잘못 설정된 가드를 런타임까지 끌고 가지 않도록 부팅 시 즉시 거절한다.
+        it('bearer/basic 둘 다 없으면 즉시 에러를 던진다', () => {
+            class EmptyGuard extends AuthGuard {
+                constructor() {
+                    super(new JwtService({}), new Reflector(), {})
+                }
+            }
+            expect(() => new EmptyGuard()).toThrow(/at least one of `bearer` or `basic`/)
+        })
     })
 
     describe('Bearer 전용', () => {
@@ -124,13 +139,14 @@ describe('AuthGuard', () => {
                 .unauthorized()
         })
 
-        it('비밀번호에 콜론이 포함되어도 정상 분리한다', async () => {
-            // basic-only 가드는 'pass'만 통과시키므로 콜론 포함 검증은 별도 가드에서.
-            // 여기서는 분리 자체가 깨지지 않는지를 401 응답으로 확인한다(잘못된 비번 → 401).
+        it('비밀번호에 콜론이 포함되어도 첫 ":"만 기준으로 분리한다', async () => {
+            // 픽스처에 'colon'/'pa:ss:word' 계정을 두고 .ok()를 기대한다.
+            // 콜론마다 분리하면 password가 'pa'나 'ss:word' 등으로 바뀌어 검증이 실패하므로,
+            // 200이 떨어진다는 것은 첫 ':'만 기준으로 끊었다는 증거다.
             await fix.httpClient
                 .get('/basic/protected')
-                .headers({ Authorization: basicHeader('admin', 'pa:ss:word') })
-                .unauthorized()
+                .headers({ Authorization: basicHeader('colon', 'pa:ss:word') })
+                .ok()
         })
     })
 
