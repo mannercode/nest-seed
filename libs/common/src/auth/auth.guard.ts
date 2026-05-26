@@ -1,18 +1,16 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import { JwtService, JwtVerifyOptions } from '@nestjs/jwt'
-import { defaultTo } from '../utils'
+import { JwtService } from '@nestjs/jwt'
 import { IS_OPTIONAL_AUTH_KEY } from './optional-auth.decorator'
 import { IS_PUBLIC_KEY } from './public.decorator'
 
-const DEFAULT_ALGORITHMS: JwtVerifyOptions['algorithms'] = ['HS256']
+// 서명 알고리즘은 JwtAuthService가 발급할 때와 동일하게 HS256으로 고정한다.
+// 옵션으로 받지 않는 이유는 알고리즘 혼동 공격(`none`으로 바꾸기, HS↔RS 교체)을
+// 막기 위함과, "기본값이 silent하게 채워지는" fallback을 만들지 않기 위함이다.
+// RS256 등 다른 알고리즘을 쓰려면 이 상수와 JwtAuthService의 JWT_ALGORITHM을 함께 바꾼다.
+const ACCEPTED_ALGORITHMS = ['HS256'] as const
 
 export type BearerAuthOptions = {
-    /**
-     * 허용할 서명 알고리즘 목록.
-     * 기본값은 `['HS256']`. 고정해 두면 알고리즘 혼동 공격(`none`으로 바꾸기, HS↔RS 교체)을 막는다.
-     */
-    algorithms?: JwtVerifyOptions['algorithms']
     /** 필수 `aud` 클레임. 값이 맞지 않는 토큰은 거절한다. */
     audience?: string
     /** 필수 `iss` 클레임. 값이 맞지 않는 토큰은 거절한다. */
@@ -72,9 +70,13 @@ export abstract class AuthGuard implements CanActivate {
             throw new UnauthorizedException(this.options.errorBody)
         }
 
+        // RFC 7235: 스킴과 값은 공백으로 구분된다. 공백이 없으면 형식 오류로 즉시 거절한다.
         const sep = authorization.indexOf(' ')
-        const scheme = sep === -1 ? authorization : authorization.slice(0, sep)
-        const value = sep === -1 ? '' : authorization.slice(sep + 1).trim()
+        if (sep === -1) {
+            throw new UnauthorizedException(this.options.errorBody)
+        }
+        const scheme = authorization.slice(0, sep)
+        const value = authorization.slice(sep + 1).trim()
 
         // RFC 7235에 따라 인증 스킴 비교는 대소문자를 가리지 않는다.
         const lower = scheme.toLowerCase()
@@ -93,9 +95,8 @@ export abstract class AuthGuard implements CanActivate {
 
     // 만료는 정상 흐름의 일부라 사전 디코드로 잡아 401을 돌려준다.
     // 서명 위조/구조 깨짐 같은 비정상은 verifyAsync가 던지게 두어 위로 전파된다.
+    // canActivate에서 공백 분리가 끝난 뒤에만 호출되므로 token은 비어 있을 수 없다.
     protected async verifyBearer(token: string, bearer: BearerAuthOptions): Promise<unknown> {
-        if (!token) throw new UnauthorizedException(this.options.errorBody)
-
         const decoded = this.jwtService.decode<Record<string, unknown> | null>(token)
         const exp = decoded?.exp
         if (typeof exp === 'number' && exp < Date.now() / 1000) {
@@ -103,7 +104,7 @@ export abstract class AuthGuard implements CanActivate {
         }
 
         return this.jwtService.verifyAsync(token, {
-            algorithms: defaultTo(bearer.algorithms, DEFAULT_ALGORITHMS),
+            algorithms: [...ACCEPTED_ALGORITHMS],
             audience: bearer.audience,
             issuer: bearer.issuer,
             secret: bearer.secret
@@ -111,8 +112,7 @@ export abstract class AuthGuard implements CanActivate {
     }
 
     protected async verifyBasic(value: string, basic: BasicAuthOptions): Promise<unknown> {
-        if (!value) throw new UnauthorizedException(this.options.errorBody)
-
+        // canActivate에서 공백 분리가 끝난 뒤에만 호출되므로 value는 비어 있을 수 없다.
         const decoded = Buffer.from(value, 'base64').toString('utf-8')
         // password에 ':'가 포함될 수 있으므로 첫 번째 ':'만 분리한다.
         const idx = decoded.indexOf(':')

@@ -51,7 +51,9 @@ describe('AuthGuard', () => {
                 .unauthorized()
         })
 
-        it('"Bearer "만 있고 토큰이 비어 있으면 401을 반환한다', async () => {
+        it('스킴 뒤 공백/토큰이 비어 있으면 401을 반환한다', async () => {
+            // HTTP 헤더의 trailing whitespace는 Node http 파서가 trim해서 가드 입장에서는
+            // "Bearer" 한 단어로 보인다(공백 분리 실패 → 즉시 401).
             await fix.httpClient
                 .get('/bearer/protected')
                 .headers({ Authorization: 'Bearer ' })
@@ -114,7 +116,8 @@ describe('AuthGuard', () => {
                 .unauthorized()
         })
 
-        it('"Basic "만 있고 값이 비어 있으면 401을 반환한다', async () => {
+        it('스킴 뒤 공백/값이 비어 있으면 401을 반환한다', async () => {
+            // trailing whitespace는 Node http 파서가 trim한다("Basic" → 공백 분리 실패).
             await fix.httpClient
                 .get('/basic/protected')
                 .headers({ Authorization: 'Basic ' })

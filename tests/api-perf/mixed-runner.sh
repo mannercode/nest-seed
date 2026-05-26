@@ -8,6 +8,8 @@
 # theaters도 미리 시드되어 있어야 한다(약 50K 이상).
 #
 # 사용법: bash tests/api-perf/mixed-runner.sh
+#   재정의: DURATION_MS=60000 WARMUP_MS=5000 bash tests/api-perf/mixed-runner.sh
+#   재정의가 없으면 perf-common.js의 기본값(30000/3000)이 그대로 쓰인다.
 
 set -euo pipefail
 
@@ -16,11 +18,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 HARNESS="${SCRIPT_DIR}/harness.js"
 
-DURATION_MS="${DURATION_MS:-30000}"
-WARMUP_MS="${WARMUP_MS:-3000}"
-
 # k6는 handleSummary 반환 파일을 쓸 때 디렉토리는 만들지 않는다. 미리 만든다.
 mkdir -p "${WORKSPACE_ROOT}/_output/perf"
+
+# 셸에서 기본값을 박지 않는다(이중 기본은 두 곳을 동시에 바꿔야 하는 함정).
+# 호출자가 환경변수를 지정한 경우에만 --env로 k6에 넘겨준다.
+extra_env=()
+[ -n "${DURATION_MS:-}" ] && extra_env+=(--env "DURATION_MS=$DURATION_MS")
+[ -n "${WARMUP_MS:-}" ] && extra_env+=(--env "WARMUP_MS=$WARMUP_MS")
 
 run_case() {
     local label="$1"
@@ -36,21 +41,19 @@ run_case() {
 
     if [ "$read_c" -gt 0 ]; then
         k6 run \
-            --env SCENARIO=theater-read \
-            --env CONCURRENCY="$read_c" \
-            --env DURATION_MS="$DURATION_MS" \
-            --env WARMUP_MS="$WARMUP_MS" \
-            --env LABEL="$label" \
+            --env "SCENARIO=theater-read" \
+            --env "CONCURRENCY=$read_c" \
+            --env "LABEL=$label" \
+            "${extra_env[@]}" \
             "$HARNESS" &
         pids+=("$!")
     fi
     if [ "$write_c" -gt 0 ]; then
         k6 run \
-            --env SCENARIO=theater-write \
-            --env CONCURRENCY="$write_c" \
-            --env DURATION_MS="$DURATION_MS" \
-            --env WARMUP_MS="$WARMUP_MS" \
-            --env LABEL="$label" \
+            --env "SCENARIO=theater-write" \
+            --env "CONCURRENCY=$write_c" \
+            --env "LABEL=$label" \
+            "${extra_env[@]}" \
             "$HARNESS" &
         pids+=("$!")
     fi

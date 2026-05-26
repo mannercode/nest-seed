@@ -1,4 +1,4 @@
-import { CrudRepository, leanOneToPublic } from '@mannercode/common'
+import { assignIfDefined, CrudRepository, leanOneToPublic } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
@@ -41,9 +41,9 @@ export class AdminsRepository extends CrudRepository<Admin> {
         // getDocumentById는 없으면 NotFoundException을 던진다. service 쪽 try/catch에서 통과시켜 그대로 404가 된다.
         const doc = await this.getDocumentById(id)
 
-        if (patch.email !== undefined) doc.email = patch.email
-        if (patch.name !== undefined) doc.name = patch.name
-        if (patch.password !== undefined) doc.password = patch.password
+        assignIfDefined(doc, patch, 'email')
+        assignIfDefined(doc, patch, 'name')
+        assignIfDefined(doc, patch, 'password')
 
         await doc.save()
         return doc.toJSON()

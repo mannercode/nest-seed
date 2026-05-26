@@ -37,11 +37,9 @@ export class AdminsService {
     }
 
     async update(id: string, updateDto: UpdateAdminDto) {
-        const patch: Partial<Pick<Admin, 'email' | 'name' | 'password'>> = {}
-        if (updateDto.email !== undefined) patch.email = updateDto.email
-        if (updateDto.name !== undefined) patch.name = updateDto.name
-        if (updateDto.password !== undefined) {
-            patch.password = await this.authenticationService.hash(updateDto.password)
+        const patch: Partial<Pick<Admin, 'email' | 'name' | 'password'>> = { ...updateDto }
+        if (patch.password !== undefined) {
+            patch.password = await this.authenticationService.hash(patch.password)
         }
 
         try {
