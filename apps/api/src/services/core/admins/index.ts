@@ -1,4 +1,6 @@
 export * from './admins.module'
+export * from './admins.repository'
 export * from './admins.service'
 export * from './dtos'
+export * from './errors'
 export * from './models'

@@ -1,13 +1,10 @@
-import { isDuplicateKeyError } from '@mannercode/common'
 import {
     Body,
-    ConflictException,
     Controller,
     Delete,
     Get,
     HttpCode,
     HttpStatus,
-    NotFoundException,
     Param,
     Patch,
     Post,
@@ -65,31 +62,13 @@ export class AdminsHttpController {
     @Patch('me')
     @UseGuards(AdminAuthGuard)
     async updateMe(@Req() req: AdminAuthRequest, @Body() body: UpdateAdminDto) {
-        try {
-            const updated = await this.adminsService.update(req.user.sub, body)
-            if (!updated) {
-                throw new NotFoundException()
-            }
-            return updated
-        } catch (error) {
-            if (isDuplicateKeyError(error)) {
-                throw new ConflictException()
-            }
-            throw error
-        }
+        return this.adminsService.update(req.user.sub, body)
     }
 
     @Post()
     @UseGuards(RootAuthGuard)
     async create(@Body() body: CreateAdminDto) {
-        try {
-            return await this.adminsService.create(body)
-        } catch (error) {
-            if (isDuplicateKeyError(error)) {
-                throw new ConflictException()
-            }
-            throw error
-        }
+        return this.adminsService.create(body)
     }
 
     @Delete(':id')

@@ -37,9 +37,9 @@ export class AdminsRepository extends CrudRepository<Admin> {
         return leanOneToPublic<Admin>(admin)
     }
 
-    async updateById(id: string, patch: Partial<Pick<Admin, 'email' | 'name' | 'password'>>) {
-        const doc = await this.findDocumentById(id)
-        if (!doc) return null
+    async update(id: string, patch: Partial<Pick<Admin, 'email' | 'name' | 'password'>>) {
+        // getDocumentById는 없으면 NotFoundException을 던진다. service 쪽 try/catch에서 통과시켜 그대로 404가 된다.
+        const doc = await this.getDocumentById(id)
 
         if (patch.email !== undefined) doc.email = patch.email
         if (patch.name !== undefined) doc.name = patch.name

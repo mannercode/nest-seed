@@ -1,5 +1,5 @@
-import { mapDocToDto } from '@mannercode/common'
-import { Injectable } from '@nestjs/common'
+import { isDuplicateKeyError, mapDocToDto } from '@mannercode/common'
+import { ConflictException, Injectable } from '@nestjs/common'
 import { AdminsRepository } from './admins.repository'
 import {
     AdminAuthPayload,
@@ -8,13 +8,13 @@ import {
     CreateAdminDto,
     UpdateAdminDto
 } from './dtos'
+import { AdminErrors } from './errors'
 import { AdminAuthenticationService } from './internal'
 import { Admin } from './models'
 
 // admin 도큐먼트는 root가 `POST /admins`로 만들고 `DELETE /admins/:id`로 지운다.
 // admin 자신은 `PATCH /admins/me`로 자기 정보를 수정한다.
-// 같은 이메일을 다시 만들면 `findByEmailWithPassword`의 unique 인덱스가 E11000을 던지고
-// HTTP 계층에서 ConflictException으로 변환된다.
+// 같은 이메일을 다시 만들면 unique 인덱스가 E11000을 던지므로 ConflictException으로 변환한다.
 @Injectable()
 export class AdminsService {
     constructor(
@@ -24,8 +24,16 @@ export class AdminsService {
 
     async create(createDto: CreateAdminDto) {
         const password = await this.authenticationService.hash(createDto.password)
-        const created = await this.repository.create({ ...createDto, password })
-        return this.toDto(created)
+
+        try {
+            const created = await this.repository.create({ ...createDto, password })
+            return this.toDto(created)
+        } catch (error) {
+            if (isDuplicateKeyError(error)) {
+                throw new ConflictException(AdminErrors.EmailAlreadyExists(createDto.email))
+            }
+            throw error
+        }
     }
 
     async update(id: string, updateDto: UpdateAdminDto) {
@@ -36,8 +44,15 @@ export class AdminsService {
             patch.password = await this.authenticationService.hash(updateDto.password)
         }
 
-        const updated = await this.repository.updateById(id, patch)
-        return updated ? this.toDto(updated) : null
+        try {
+            const updated = await this.repository.update(id, patch)
+            return this.toDto(updated)
+        } catch (error) {
+            if (isDuplicateKeyError(error) && updateDto.email) {
+                throw new ConflictException(AdminErrors.EmailAlreadyExists(updateDto.email))
+            }
+            throw error
+        }
     }
 
     async remove(id: string) {

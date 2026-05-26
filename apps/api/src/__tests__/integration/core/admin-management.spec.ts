@@ -60,16 +60,15 @@ describe('Root + Admin lifecycle', () => {
                 .conflict()
         })
 
-        it('중복 키 외의 오류는 그대로 전파한다', async () => {
+        it('중복 키 외의 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
             const { AdminsService } = await import('core')
             const service = fix.module.get(AdminsService)
-            jest.spyOn(service, 'create').mockRejectedValueOnce(new Error('boom'))
 
-            await fix.httpClient
-                .post('/admins')
-                .headers({ Authorization: rootBasic })
-                .body({ email: 'x@y.com', name: 'x', password: 'password' })
-                .internalServerError()
+            // required 필드를 null로 보내 Mongoose ValidatorError를 유도한다.
+            // class-validator는 컨트롤러에만 붙어 있으므로 service를 직접 호출한다.
+            const invalidDto = { email: 'x@y.com', name: null as unknown as string, password: 'p' }
+
+            await expect(service.create(invalidDto)).rejects.toThrow()
         })
     })
 
@@ -192,19 +191,15 @@ describe('Root + Admin lifecycle', () => {
                 .notFound()
         })
 
-        it('중복 키 외의 오류는 그대로 전파한다', async () => {
-            await createAdmin(fix, adminCredentials)
-            const { accessToken } = await loginAdmin(fix, adminCredentials)
+        it('중복 키 외의 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
+            const created = await createAdmin(fix, adminCredentials)
 
-            const { AdminsService } = await import('core')
+            const { AdminsRepository, AdminsService } = await import('core')
             const service = fix.module.get(AdminsService)
-            jest.spyOn(service, 'update').mockRejectedValueOnce(new Error('boom'))
+            const repo = fix.module.get(AdminsRepository)
+            jest.spyOn(repo, 'update').mockRejectedValueOnce(new Error('boom'))
 
-            await fix.httpClient
-                .patch('/admins/me')
-                .headers({ Authorization: `Bearer ${accessToken}` })
-                .body({ name: 'x' })
-                .internalServerError()
+            await expect(service.update(created.id, { name: 'x' })).rejects.toThrow('boom')
         })
     })
 
