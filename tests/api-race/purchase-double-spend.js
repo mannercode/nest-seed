@@ -12,59 +12,12 @@
  */
 
 const http = require('http')
+const { readPositiveInt, request, SERVER_URL } = require('./race-common')
 
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000'
-const USER_GROUPS = Number(process.env.PURCHASE_USER_GROUPS || 5)
-const PURCHASES_PER_GROUP = Number(process.env.PURCHASE_CLIENT_COUNT || 50)
-const INNER_ITERATIONS = Number(process.env.INNER_ITERATIONS || 150)
-const SHOWTIME_DEADLINE_MS = Number(process.env.SHOWTIME_DEADLINE_MS || 60_000)
-
-function requestRaw(method, path, { body, headers } = {}) {
-    const url = new URL(path, SERVER_URL)
-    const payload = body === undefined ? undefined : JSON.stringify(body)
-    const agent = new http.Agent({ keepAlive: false })
-    return new Promise((resolve, reject) => {
-        const req = http.request(
-            {
-                agent,
-                hostname: url.hostname,
-                port: url.port,
-                path: url.pathname + url.search,
-                method,
-                headers: {
-                    'content-type': 'application/json',
-                    ...(process.env.ADMIN_ACCESS_TOKEN
-                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
-                        : {}),
-                    ...(payload ? { 'content-length': Buffer.byteLength(payload) } : {}),
-                    ...(headers || {})
-                }
-            },
-            (res) => {
-                const chunks = []
-                res.on('data', (c) => chunks.push(c))
-                res.on('end', () => {
-                    const raw = Buffer.concat(chunks).toString('utf8')
-                    let parsed = null
-                    try {
-                        parsed = raw ? JSON.parse(raw) : null
-                    } catch {
-                        parsed = raw
-                    }
-                    resolve({
-                        status: res.statusCode,
-                        body: parsed,
-                        replicaId: res.headers['x-replica-id']
-                    })
-                    agent.destroy()
-                })
-            }
-        )
-        req.on('error', reject)
-        if (payload) req.write(payload)
-        req.end()
-    })
-}
+const USER_GROUPS = readPositiveInt('PURCHASE_USER_GROUPS', 5)
+const PURCHASES_PER_GROUP = readPositiveInt('PURCHASE_CLIENT_COUNT', 50)
+const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 150)
+const SHOWTIME_DEADLINE_MS = readPositiveInt('SHOWTIME_DEADLINE_MS', 60_000)
 
 function waitForSagaSuccess(sagaId) {
     const url = new URL('/showtime-creation/event-stream', SERVER_URL)
@@ -131,7 +84,7 @@ function waitForSagaSuccess(sagaId) {
 }
 
 async function setupMovieTheater() {
-    const movie = await requestRaw('POST', '/movies', {
+    const movie = await request('POST', '/movies', {
         body: {
             title: 'purchase-race',
             genres: ['action'],
@@ -145,13 +98,13 @@ async function setupMovieTheater() {
     })
     if (movie.status !== 201) throw new Error(`movie: ${movie.status}`)
 
-    const publish = await requestRaw('POST', `/movies/${movie.body.id}/publish`)
+    const publish = await request('POST', `/movies/${movie.body.id}/publish`)
     if (publish.status !== 200 && publish.status !== 201) {
         throw new Error(`publish: ${publish.status}`)
     }
 
     // USER_GROUPS만큼 서로 겹치지 않는 티켓 쌍을 만들 수 있도록 큰 좌석 배치도를 쓴다.
-    const theater = await requestRaw('POST', '/theaters', {
+    const theater = await request('POST', '/theaters', {
         body: {
             name: 'purchase-race',
             location: { latitude: 37.5665, longitude: 126.978 },
@@ -167,13 +120,13 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
     const startTime = new Date(Date.now() + 24 * 60 * 60 * 1000 + startTimeOffsetMs)
         .toISOString()
         .replace(/\.\d{3}Z$/, '.000Z')
-    const created = await requestRaw('POST', '/showtime-creation/showtimes', {
+    const created = await request('POST', '/showtime-creation/showtimes', {
         body: { movieId, theaterIds: [theaterId], durationInMinutes: 120, startTimes: [startTime] }
     })
     if (created.status !== 202) throw new Error(`showtime: ${created.status}`)
     await waitForSagaSuccess(created.body.sagaId)
 
-    const search = await requestRaw('POST', '/showtime-creation/showtimes/search', {
+    const search = await request('POST', '/showtime-creation/showtimes/search', {
         body: { theaterIds: [theaterId] }
     })
     if (search.status !== 200 || !Array.isArray(search.body) || search.body.length === 0) {
@@ -182,7 +135,7 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
     const showtime = search.body.find((s) => s.startTime === startTime) ?? search.body.at(-1)
     const showtimeId = showtime.id
 
-    const tickets = await requestRaw('GET', `/booking/showtimes/${showtimeId}/tickets`)
+    const tickets = await request('GET', `/booking/showtimes/${showtimeId}/tickets`)
     if (tickets.status !== 200 || !Array.isArray(tickets.body)) {
         throw new Error(`tickets: ${tickets.status}`)
     }
@@ -200,12 +153,12 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
 async function createAndLoginUser(index) {
     const email = `purchase.${Date.now()}.${index}.${Math.random().toString(36).slice(2)}@example.com`
     const password = 'purchasepass'
-    const create = await requestRaw('POST', '/users', {
+    const create = await request('POST', '/users', {
         body: { name: `pur-${index}`, birthDate: '1990-01-01T00:00:00.000Z', email, password }
     })
     if (create.status !== 201) throw new Error(`user create ${index}: ${create.status}`)
 
-    const login = await requestRaw('POST', '/users/login', { body: { email, password } })
+    const login = await request('POST', '/users/login', { body: { email, password } })
     if (login.status !== 200 && login.status !== 201) {
         throw new Error(`user login ${index}: ${login.status}`)
     }
@@ -222,7 +175,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
     // 각 사용자가 자기 그룹의 티켓 쌍을 선점한다.
     await Promise.all(
         users.map(async (cust, g) => {
-            const hold = await requestRaw('POST', `/booking/showtimes/${showtimeId}/tickets/hold`, {
+            const hold = await request('POST', `/booking/showtimes/${showtimeId}/tickets/hold`, {
                 body: { ticketIds: groups[g] },
                 headers: { authorization: `Bearer ${cust.accessToken}` }
             })
@@ -240,7 +193,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
         const totalPrice = groups[g].length * 1000
         for (let c = 0; c < PURCHASES_PER_GROUP; c++) {
             attempts.push(
-                requestRaw('POST', '/purchases', {
+                request('POST', '/purchases', {
                     body: { userId: cust.userId, purchaseItems, totalPrice }
                 }).then((r) => ({ ...r, group: g }))
             )

@@ -17,57 +17,17 @@
  * 전체 구간 합산 에러율이 1%를 넘거나, 재시작 뒤 60초 안에 healthy가 되지 않거나, 복구 후 구간에서 응답한 복제본 수가 4보다 적으면 실패로 본다.
  */
 
-const http = require('http')
 const { execSync } = require('child_process')
+const { readPositiveInt, request } = require('./race-common')
 
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000'
-const KILL_AT_MS = Number(process.env.CHAOS_KILL_AT_MS || 30_000)
-const RESTART_AFTER_MS = Number(process.env.CHAOS_RESTART_AFTER_MS || 30_000)
-const POST_RECOVERY_MS = Number(process.env.CHAOS_POST_RECOVERY_MS || 60_000)
-const HEALTH_TIMEOUT_MS = Number(process.env.CHAOS_HEALTH_TIMEOUT_MS || 60_000)
-const PARALLELISM = Number(process.env.CHAOS_PARALLELISM || 8)
+const KILL_AT_MS = readPositiveInt('CHAOS_KILL_AT_MS', 30_000)
+const RESTART_AFTER_MS = readPositiveInt('CHAOS_RESTART_AFTER_MS', 30_000)
+const POST_RECOVERY_MS = readPositiveInt('CHAOS_POST_RECOVERY_MS', 60_000)
+const HEALTH_TIMEOUT_MS = readPositiveInt('CHAOS_HEALTH_TIMEOUT_MS', 60_000)
+const PARALLELISM = readPositiveInt('CHAOS_PARALLELISM', 8)
 
 function sleep(ms) {
     return new Promise((r) => setTimeout(r, ms))
-}
-
-function post(path, body) {
-    const url = new URL(path, SERVER_URL)
-    const payload = JSON.stringify(body)
-    const agent = new http.Agent({ keepAlive: false })
-    return new Promise((resolve, reject) => {
-        const req = http.request(
-            {
-                agent,
-                hostname: url.hostname,
-                port: url.port,
-                path: url.pathname,
-                method: 'POST',
-                headers: {
-                    'content-type': 'application/json',
-                    ...(process.env.ADMIN_ACCESS_TOKEN
-                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
-                        : {}),
-                    'content-length': Buffer.byteLength(payload)
-                }
-            },
-            (res) => {
-                const chunks = []
-                res.on('data', (c) => chunks.push(c))
-                res.on('end', () => {
-                    resolve({
-                        status: res.statusCode,
-                        replicaId: res.headers['x-replica-id'],
-                        body: Buffer.concat(chunks).toString('utf8')
-                    })
-                    agent.destroy()
-                })
-            }
-        )
-        req.on('error', reject)
-        req.write(payload)
-        req.end()
-    })
 }
 
 function dockerReplicaIds() {
@@ -95,11 +55,13 @@ async function trafficWorker(workerId, state) {
     while (!state.stop) {
         const email = `chaos.${Date.now()}.${workerId}.${Math.random().toString(36).slice(2)}@example.com`
         try {
-            const r = await post('/users', {
-                name: 'chaos',
-                birthDate: '1990-01-01T00:00:00.000Z',
-                email,
-                password: 'chaospassword'
+            const r = await request('POST', '/users', {
+                body: {
+                    name: 'chaos',
+                    birthDate: '1990-01-01T00:00:00.000Z',
+                    email,
+                    password: 'chaospassword'
+                }
             })
             const b = bucketFor(state)
             b.total++

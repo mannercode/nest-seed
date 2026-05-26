@@ -12,61 +12,14 @@
  */
 
 const http = require('http')
+const { readPositiveInt, request, SERVER_URL } = require('./race-common')
 
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000'
-const TICKET_GROUPS = Number(process.env.HOLD_TICKET_GROUPS || 5)
-const USERS_PER_GROUP = Number(process.env.HOLD_CLIENT_COUNT || 50)
-const INNER_ITERATIONS = Number(process.env.INNER_ITERATIONS || 200)
-const SHOWTIME_DEADLINE_MS = Number(process.env.SHOWTIME_DEADLINE_MS || 60_000)
+const TICKET_GROUPS = readPositiveInt('HOLD_TICKET_GROUPS', 5)
+const USERS_PER_GROUP = readPositiveInt('HOLD_CLIENT_COUNT', 50)
+const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 200)
+const SHOWTIME_DEADLINE_MS = readPositiveInt('SHOWTIME_DEADLINE_MS', 60_000)
 
 const TOTAL_USERS = TICKET_GROUPS * USERS_PER_GROUP
-
-function requestRaw(method, path, { body, headers } = {}) {
-    const url = new URL(path, SERVER_URL)
-    const payload = body === undefined ? undefined : JSON.stringify(body)
-    const agent = new http.Agent({ keepAlive: false })
-    return new Promise((resolve, reject) => {
-        const req = http.request(
-            {
-                agent,
-                hostname: url.hostname,
-                port: url.port,
-                path: url.pathname + url.search,
-                method,
-                headers: {
-                    'content-type': 'application/json',
-                    ...(process.env.ADMIN_ACCESS_TOKEN
-                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
-                        : {}),
-                    ...(payload ? { 'content-length': Buffer.byteLength(payload) } : {}),
-                    ...(headers || {})
-                }
-            },
-            (res) => {
-                const chunks = []
-                res.on('data', (c) => chunks.push(c))
-                res.on('end', () => {
-                    const raw = Buffer.concat(chunks).toString('utf8')
-                    let parsed = null
-                    try {
-                        parsed = raw ? JSON.parse(raw) : null
-                    } catch {
-                        parsed = raw
-                    }
-                    resolve({
-                        status: res.statusCode,
-                        body: parsed,
-                        replicaId: res.headers['x-replica-id']
-                    })
-                    agent.destroy()
-                })
-            }
-        )
-        req.on('error', reject)
-        if (payload) req.write(payload)
-        req.end()
-    })
-}
 
 function waitForSagaSuccess(sagaId) {
     const url = new URL('/showtime-creation/event-stream', SERVER_URL)
@@ -133,7 +86,7 @@ function waitForSagaSuccess(sagaId) {
 }
 
 async function setupMovieTheater() {
-    const movie = await requestRaw('POST', '/movies', {
+    const movie = await request('POST', '/movies', {
         body: {
             title: 'hold-race',
             genres: ['action'],
@@ -147,13 +100,13 @@ async function setupMovieTheater() {
     })
     if (movie.status !== 201) throw new Error(`movie: ${movie.status}`)
 
-    const publish = await requestRaw('POST', `/movies/${movie.body.id}/publish`)
+    const publish = await request('POST', `/movies/${movie.body.id}/publish`)
     if (publish.status !== 200 && publish.status !== 201) {
         throw new Error(`publish: ${publish.status}`)
     }
 
     // 큰 좌석 배치도이다. 1 block × 1 row × 20 tickets라 최대 10개 그룹까지 충분하다.
-    const theater = await requestRaw('POST', '/theaters', {
+    const theater = await request('POST', '/theaters', {
         body: {
             name: 'hold-race',
             location: { latitude: 37.5665, longitude: 126.978 },
@@ -169,13 +122,13 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
     const startTime = new Date(Date.now() + 24 * 60 * 60 * 1000 + startTimeOffsetMs)
         .toISOString()
         .replace(/\.\d{3}Z$/, '.000Z')
-    const created = await requestRaw('POST', '/showtime-creation/showtimes', {
+    const created = await request('POST', '/showtime-creation/showtimes', {
         body: { movieId, theaterIds: [theaterId], durationInMinutes: 120, startTimes: [startTime] }
     })
     if (created.status !== 202) throw new Error(`showtime: ${created.status}`)
     await waitForSagaSuccess(created.body.sagaId)
 
-    const search = await requestRaw('POST', '/showtime-creation/showtimes/search', {
+    const search = await request('POST', '/showtime-creation/showtimes/search', {
         body: { theaterIds: [theaterId] }
     })
     if (search.status !== 200 || !Array.isArray(search.body) || search.body.length === 0) {
@@ -184,7 +137,7 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
     const showtime = search.body.find((s) => s.startTime === startTime) ?? search.body.at(-1)
     const showtimeId = showtime.id
 
-    const tickets = await requestRaw('GET', `/booking/showtimes/${showtimeId}/tickets`)
+    const tickets = await request('GET', `/booking/showtimes/${showtimeId}/tickets`)
     if (tickets.status !== 200 || !Array.isArray(tickets.body)) {
         throw new Error(`tickets: ${tickets.status}`)
     }
@@ -203,12 +156,12 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
 async function createAndLoginUser(index) {
     const email = `hold.${Date.now()}.${index}.${Math.random().toString(36).slice(2)}@example.com`
     const password = 'holdpassword'
-    const create = await requestRaw('POST', '/users', {
+    const create = await request('POST', '/users', {
         body: { name: `hold-${index}`, birthDate: '1990-01-01T00:00:00.000Z', email, password }
     })
     if (create.status !== 201) throw new Error(`user create ${index}: ${create.status}`)
 
-    const login = await requestRaw('POST', '/users/login', { body: { email, password } })
+    const login = await request('POST', '/users/login', { body: { email, password } })
     if (login.status !== 200 && login.status !== 201) {
         throw new Error(`user login ${index}: ${login.status}`)
     }
@@ -230,7 +183,7 @@ async function runInner(iteration, movieId, theaterId, tokens, startTimeOffsetMs
         for (let c = 0; c < USERS_PER_GROUP; c++) {
             const token = tokens[g * USERS_PER_GROUP + c]
             attempts.push(
-                requestRaw('POST', `/booking/showtimes/${showtimeId}/tickets/hold`, {
+                request('POST', `/booking/showtimes/${showtimeId}/tickets/hold`, {
                     body: { ticketIds },
                     headers: { authorization: `Bearer ${token}` }
                 }).then((r) => ({ ...r, group: g }))

@@ -9,52 +9,11 @@
  * 어떤 그룹의 201 응답 수가 1이 아니거나, 5xx나 예상하지 못한 상태 코드가 나오거나, 모든 응답이 한 복제본에서만 오면 실패로 본다.
  */
 
-const http = require('http')
+const { readPositiveInt, request, SERVER_URL } = require('./race-common')
 
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000'
-const EMAIL_GROUPS = Number(process.env.RACE_EMAIL_GROUPS || 10)
-const CLIENTS_PER_GROUP = Number(process.env.RACE_CLIENT_COUNT || 50)
-const INNER_ITERATIONS = Number(process.env.INNER_ITERATIONS || 30)
-
-function post(path, body) {
-    const url = new URL(path, SERVER_URL)
-    const payload = JSON.stringify(body)
-    const agent = new http.Agent({ keepAlive: false })
-
-    return new Promise((resolve, reject) => {
-        const req = http.request(
-            {
-                agent,
-                hostname: url.hostname,
-                port: url.port,
-                path: url.pathname,
-                method: 'POST',
-                headers: {
-                    'content-type': 'application/json',
-                    ...(process.env.ADMIN_ACCESS_TOKEN
-                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
-                        : {}),
-                    'content-length': Buffer.byteLength(payload)
-                }
-            },
-            (res) => {
-                const chunks = []
-                res.on('data', (c) => chunks.push(c))
-                res.on('end', () => {
-                    resolve({
-                        status: res.statusCode,
-                        replicaId: res.headers['x-replica-id'],
-                        body: Buffer.concat(chunks).toString('utf8')
-                    })
-                    agent.destroy()
-                })
-            }
-        )
-        req.on('error', reject)
-        req.write(payload)
-        req.end()
-    })
-}
+const EMAIL_GROUPS = readPositiveInt('RACE_EMAIL_GROUPS', 10)
+const CLIENTS_PER_GROUP = readPositiveInt('RACE_CLIENT_COUNT', 50)
+const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 30)
 
 async function runInner(iteration) {
     // EMAIL_GROUPS × CLIENTS_PER_GROUP개의 요청을 구성해 동시에 보낸다.
@@ -66,11 +25,13 @@ async function runInner(iteration) {
 
     const requests = emails.flatMap((email) =>
         Array.from({ length: CLIENTS_PER_GROUP }, () =>
-            post('/users', {
-                name: 'race',
-                birthDate: '1990-01-01T00:00:00.000Z',
-                email,
-                password: 'racepassword'
+            request('POST', '/users', {
+                body: {
+                    name: 'race',
+                    birthDate: '1990-01-01T00:00:00.000Z',
+                    email,
+                    password: 'racepassword'
+                }
             }).then((r) => ({ ...r, email }))
         )
     )
@@ -99,7 +60,7 @@ async function runInner(iteration) {
             const sameEmail = results.filter((r) => r.email === email)
             for (const [idx, r] of sameEmail.entries()) {
                 console.error(
-                    `  [${idx}] status=${r.status} replica=${r.replicaId} body=${(r.body || '').slice(0, 120)}`
+                    `  [${idx}] status=${r.status} replica=${r.replicaId} body=${JSON.stringify(r.body).slice(0, 120)}`
                 )
             }
             throw new Error(`iter ${iteration}: email ${email} had ${g.created} × 201`)

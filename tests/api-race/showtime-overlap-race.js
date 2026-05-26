@@ -10,51 +10,11 @@
  */
 
 const http = require('http')
+const { readPositiveInt, request, SERVER_URL } = require('./race-common')
 
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000'
-const OVERLAP_COUNT = Number(process.env.OVERLAP_COUNT || 5)
-const INNER_ITERATIONS = Number(process.env.INNER_ITERATIONS || 300)
-const SAGA_DEADLINE_MS = Number(process.env.SAGA_DEADLINE_MS || 300_000)
-
-function requestJson(method, path, body) {
-    const url = new URL(path, SERVER_URL)
-    const payload = body === undefined ? undefined : JSON.stringify(body)
-    const agent = new http.Agent({ keepAlive: false })
-    return new Promise((resolve, reject) => {
-        const req = http.request(
-            {
-                agent,
-                hostname: url.hostname,
-                port: url.port,
-                path: url.pathname,
-                method,
-                headers: {
-                    'content-type': 'application/json',
-                    ...(process.env.ADMIN_ACCESS_TOKEN
-                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
-                        : {}),
-                    ...(payload ? { 'content-length': Buffer.byteLength(payload) } : {})
-                }
-            },
-            (res) => {
-                const chunks = []
-                res.on('data', (c) => chunks.push(c))
-                res.on('end', () => {
-                    const raw = Buffer.concat(chunks).toString('utf8')
-                    resolve({
-                        status: res.statusCode,
-                        body: raw ? JSON.parse(raw) : null,
-                        replicaId: res.headers['x-replica-id']
-                    })
-                    agent.destroy()
-                })
-            }
-        )
-        req.on('error', reject)
-        if (payload) req.write(payload)
-        req.end()
-    })
-}
+const OVERLAP_COUNT = readPositiveInt('OVERLAP_COUNT', 5)
+const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 300)
+const SAGA_DEADLINE_MS = readPositiveInt('SAGA_DEADLINE_MS', 300_000)
 
 function openSseCollector() {
     const url = new URL('/showtime-creation/event-stream', SERVER_URL)
@@ -128,27 +88,31 @@ async function waitUntil(predicate, { timeoutMs, intervalMs = 100 } = {}) {
 }
 
 async function setupFixture() {
-    const movie = await requestJson('POST', '/movies', {
-        title: 'overlap',
-        genres: ['action'],
-        releaseDate: '2024-01-01T00:00:00.000Z',
-        plot: 'overlap plot',
-        durationInSeconds: 7200,
-        director: 'overlap',
-        rating: 'PG',
-        assetIds: []
+    const movie = await request('POST', '/movies', {
+        body: {
+            title: 'overlap',
+            genres: ['action'],
+            releaseDate: '2024-01-01T00:00:00.000Z',
+            plot: 'overlap plot',
+            durationInSeconds: 7200,
+            director: 'overlap',
+            rating: 'PG',
+            assetIds: []
+        }
     })
     if (movie.status !== 201) throw new Error(`movie: ${movie.status}`)
 
-    const publish = await requestJson('POST', `/movies/${movie.body.id}/publish`)
+    const publish = await request('POST', `/movies/${movie.body.id}/publish`)
     if (publish.status !== 200 && publish.status !== 201) {
         throw new Error(`publish: ${publish.status}`)
     }
 
-    const theater = await requestJson('POST', '/theaters', {
-        name: 'overlap',
-        location: { latitude: 37.5665, longitude: 126.978 },
-        seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', layout: 'OOOOOOOO' }] }] }
+    const theater = await request('POST', '/theaters', {
+        body: {
+            name: 'overlap',
+            location: { latitude: 37.5665, longitude: 126.978 },
+            seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', layout: 'OOOOOOOO' }] }] }
+        }
     })
     if (theater.status !== 201) throw new Error(`theater: ${theater.status}`)
 
@@ -172,11 +136,13 @@ async function runInner(iteration, movieId, theaterId, sse, baseOffsetMs) {
 
     const posts = await Promise.all(
         startTimes.map((startTime) =>
-            requestJson('POST', '/showtime-creation/showtimes', {
-                movieId,
-                theaterIds: [theaterId],
-                durationInMinutes: 120,
-                startTimes: [startTime]
+            request('POST', '/showtime-creation/showtimes', {
+                body: {
+                    movieId,
+                    theaterIds: [theaterId],
+                    durationInMinutes: 120,
+                    startTimes: [startTime]
+                }
             })
         )
     )

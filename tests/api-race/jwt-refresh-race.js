@@ -22,77 +22,33 @@
  * 위 조건을 어기거나, 응답을 처리한 복제본이 하나뿐이라 복제본 사이 분산이 확인되지 않으면 테스트를 실패로 본다.
  */
 
-const http = require('http')
+const { readPositiveInt, request, SERVER_URL } = require('./race-common')
 
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000'
-const USER_GROUPS = Number(process.env.RACE_USER_GROUPS || 5)
-const CLIENTS_PER_USER = Number(process.env.RACE_CLIENT_COUNT || 20)
-const INNER_ITERATIONS = Number(process.env.INNER_ITERATIONS || 30)
-
-function postJson(path, body) {
-    const url = new URL(path, SERVER_URL)
-    const payload = JSON.stringify(body)
-    const agent = new http.Agent({ keepAlive: false })
-
-    return new Promise((resolve, reject) => {
-        const req = http.request(
-            {
-                agent,
-                hostname: url.hostname,
-                port: url.port,
-                path: url.pathname,
-                method: 'POST',
-                headers: {
-                    'content-type': 'application/json',
-                    ...(process.env.ADMIN_ACCESS_TOKEN
-                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
-                        : {}),
-                    'content-length': Buffer.byteLength(payload)
-                }
-            },
-            (res) => {
-                const chunks = []
-                res.on('data', (c) => chunks.push(c))
-                res.on('end', () => {
-                    resolve({
-                        status: res.statusCode,
-                        replicaId: res.headers['x-replica-id'],
-                        body: Buffer.concat(chunks).toString('utf8')
-                    })
-                    agent.destroy()
-                })
-            }
-        )
-        req.on('error', reject)
-        req.write(payload)
-        req.end()
-    })
-}
+const USER_GROUPS = readPositiveInt('RACE_USER_GROUPS', 5)
+const CLIENTS_PER_USER = readPositiveInt('RACE_CLIENT_COUNT', 20)
+const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 30)
 
 async function createAndLogin(suffix) {
     const email = `race.${Date.now()}.${suffix}.${Math.random().toString(36).slice(2)}@example.com`
     const password = 'racepassword'
 
-    const created = await postJson('/users', {
-        name: 'race',
-        birthDate: '1990-01-01T00:00:00.000Z',
-        email,
-        password
+    const created = await request('POST', '/users', {
+        body: { name: 'race', birthDate: '1990-01-01T00:00:00.000Z', email, password }
     })
     if (created.status !== 201) {
         throw new Error(
-            `setup: create user expected 201, got ${created.status} body=${(created.body || '').slice(0, 200)}`
+            `setup: create user expected 201, got ${created.status} body=${JSON.stringify(created.body).slice(0, 200)}`
         )
     }
 
-    const loggedIn = await postJson('/users/login', { email, password })
+    const loggedIn = await request('POST', '/users/login', { body: { email, password } })
     if (loggedIn.status !== 200) {
         throw new Error(
-            `setup: login expected 200, got ${loggedIn.status} body=${(loggedIn.body || '').slice(0, 200)}`
+            `setup: login expected 200, got ${loggedIn.status} body=${JSON.stringify(loggedIn.body).slice(0, 200)}`
         )
     }
 
-    return JSON.parse(loggedIn.body).refreshToken
+    return loggedIn.body.refreshToken
 }
 
 async function runInner(iteration) {
@@ -106,7 +62,10 @@ async function runInner(iteration) {
     // 모든 그룹이 같은 시점에 보내지므로, NGINX는 그룹 수 × 사용자당 요청 수 만큼의 동시 요청을 복제본들에 분산해서 받는다.
     const requests = tokens.flatMap((token, g) =>
         Array.from({ length: CLIENTS_PER_USER }, () =>
-            postJson('/users/refresh', { refreshToken: token }).then((r) => ({ ...r, group: g }))
+            request('POST', '/users/refresh', { body: { refreshToken: token } }).then((r) => ({
+                ...r,
+                group: g
+            }))
         )
     )
 
@@ -129,7 +88,7 @@ async function runInner(iteration) {
             throw new Error(
                 `iter ${iteration} group ${groupIdx}: ${g.other.length} unexpected, ` +
                     `e.g., status=${sample.status} replica=${sample.replicaId} ` +
-                    `body=${(sample.body || '').slice(0, 120)}`
+                    `body=${JSON.stringify(sample.body).slice(0, 120)}`
             )
         }
         if (g.ok.length === 0) {
@@ -142,9 +101,9 @@ async function runInner(iteration) {
         // 회전이 안전한지 확인한다.
         // 새로 받은 토큰 가운데 다시 리프레시가 통과하는 토큰은 최대 한 건이어야 한다.
         // 회전이 정확히 한 토큰만 만들고 나머지는 재사용 탐지로 401이거나, 토큰 묶음 전체가 무효화돼 후속 호출이 전부 401이거나 둘 중 하나이다.
-        const newTokens = g.ok.map((r) => JSON.parse(r.body).refreshToken)
+        const newTokens = g.ok.map((r) => r.body.refreshToken)
         const followups = await Promise.all(
-            newTokens.map((t) => postJson('/users/refresh', { refreshToken: t }))
+            newTokens.map((t) => request('POST', '/users/refresh', { body: { refreshToken: t } }))
         )
         const stillValid = followups.filter((r) => r.status === 200).length
         if (stillValid > 1) {
@@ -158,7 +117,7 @@ async function runInner(iteration) {
             const sample = followupOther[0]
             throw new Error(
                 `iter ${iteration} group ${groupIdx}: followup unexpected status=${sample.status} ` +
-                    `body=${(sample.body || '').slice(0, 120)}`
+                    `body=${JSON.stringify(sample.body).slice(0, 120)}`
             )
         }
     }
