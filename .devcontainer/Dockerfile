@@ -26,7 +26,8 @@ RUN ARCH=$(dpkg --print-architecture) \
     -o /usr/local/lib/docker/cli-plugins/docker-buildx \
     && chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
 
-# k6: tests/api-perf 부하 테스트 러너. 공식 apt 저장소는 GPG 키 셋업이 번거로워 바이너리를 바로 설치한다.
+# k6: tests/api-perf 부하 테스트 러너. 공식 GitHub release에서 v1.4.1을 고정해 받는다.
+# (dl.k6.io apt 저장소도 있지만 그쪽은 stable 최신만 제공해 seed 사용자 간 버전이 어긋날 수 있다.)
 RUN ARCH=$(dpkg --print-architecture) \
     && curl -fsSL "https://github.com/grafana/k6/releases/download/v1.4.1/k6-v1.4.1-linux-${ARCH}.tar.gz" \
     -o /tmp/k6.tar.gz \
