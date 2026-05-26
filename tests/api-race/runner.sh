@@ -74,16 +74,22 @@ bring_up_stack() {
 
 # admin은 API가 부팅 시 만들지 않는다. root Basic Auth로 직접 만들고 그 admin으로 로그인한다.
 # 콘텐츠 endpoint(POST /movies, /theaters, /showtime-creation/*)는 admin token만 통과한다.
+# repeat.sh가 같은 시나리오를 여러 회 돌릴 때 mongo(infra)는 회차 간 살아 있어서
+# 1회차에 만든 seed admin이 그대로 남는다. 따라서 2회차부터는 201 대신 409가 나오는데,
+# 같은 패스워드로 로그인 결과는 동일하므로 둘 다 인정한다. 그 외 코드는 실제 오류로 본다.
 seed_admin_and_login() {
-    local create_res
-    create_res=$(curl -sS -X POST "${SERVER_URL}/admins" \
+    local create_body create_status
+    create_body=$(mktemp)
+    create_status=$(curl -sS -o "${create_body}" -w '%{http_code}' -X POST "${SERVER_URL}/admins" \
         -u "root:${ROOT_PASSWORD}" \
         -H 'Content-Type: application/json' \
         -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\",\"name\":\"${ADMIN_NAME}\"}")
-    if ! echo "${create_res}" | jq -e '.id' >/dev/null; then
-        echo "Error: admin creation failed: ${create_res}"
+    if [ "${create_status}" != "201" ] && [ "${create_status}" != "409" ]; then
+        echo "Error: admin creation returned HTTP ${create_status}: $(cat "${create_body}")"
+        rm -f "${create_body}"
         exit 1
     fi
+    rm -f "${create_body}"
 
     local login_res
     login_res=$(curl -sS -X POST "${SERVER_URL}/admins/login" \
