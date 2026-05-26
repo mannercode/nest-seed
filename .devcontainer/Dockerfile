@@ -24,6 +24,12 @@ RUN mkdir -p /usr/local/lib/docker/cli-plugins \
     -o /usr/local/lib/docker/cli-plugins/docker-buildx \
     && chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
 
+# k6: tests/api-perf 부하 테스트 러너. 공식 apt 저장소는 GPG 키 셋업이 번거로워 바이너리를 바로 설치한다.
+RUN curl -fsSL "https://github.com/grafana/k6/releases/download/v1.4.1/k6-v1.4.1-linux-amd64.tar.gz" \
+    | tar -xz -C /tmp \
+    && mv /tmp/k6-v1.4.1-linux-amd64/k6 /usr/local/bin/k6 \
+    && rm -rf /tmp/k6-v1.4.1-linux-amd64
+
 # 브라우저 바이너리는 이미지 빌드 중 root 권한으로 설치되지만, 테스트는 node 사용자로 실행된다.
 # 기본 경로(`/root/.cache/ms-playwright`) 대신 두 사용자가 모두 접근할 수 있는 `/opt/playwright`에 설치한다.
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
