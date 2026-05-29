@@ -1,5 +1,7 @@
+const path = require('path')
 const globals = require('globals')
 const allowedDependenciesPlugin = require('eslint-plugin-allowed-dependencies').default
+const boundariesPlugin = require('eslint-plugin-boundaries')
 const jestPlugin = require('eslint-plugin-jest')
 const {
     baseGlobals,
@@ -226,6 +228,103 @@ module.exports = [
                                 'view/**'
                             ],
                             message: 'modules must not depend on app layers.'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        // SoLA 레이어 의존을 import 경로 해석으로 강제한다.
+        // 위 no-restricted-imports는 alias 기반 위반만 막아, `../theaters`처럼 형제 도메인을
+        // 상대경로로 참조하면 빠져나간다. boundaries는 import를 실제 파일로 해석해 element
+        // 타입(레이어·도메인)을 판정하므로 상대경로 우회까지 막는다.
+        files: ['src/services/**/*.ts'],
+        ignores: ['src/services/**/__tests__/**'],
+        plugins: { boundaries: boundariesPlugin },
+        settings: {
+            'boundaries/elements': [
+                { mode: 'folder', pattern: 'src/services/gateway', type: 'gateway' },
+                { mode: 'folder', pattern: 'src/services/view', type: 'view' },
+                {
+                    capture: ['domain'],
+                    mode: 'folder',
+                    pattern: 'src/services/application/*',
+                    type: 'application'
+                },
+                {
+                    capture: ['domain'],
+                    mode: 'folder',
+                    pattern: 'src/services/core/*',
+                    type: 'core'
+                },
+                {
+                    capture: ['domain'],
+                    mode: 'folder',
+                    pattern: 'src/services/infrastructure/*',
+                    type: 'infrastructure'
+                }
+            ],
+            'boundaries/ignore': ['**/__tests__/**'],
+            'import/resolver': { typescript: { project: path.resolve(__dirname, 'tsconfig.json') } }
+        },
+        rules: {
+            'boundaries/dependencies': [
+                'warn',
+                {
+                    default: 'disallow',
+                    rules: [
+                        {
+                            allow: {
+                                to: {
+                                    type: [
+                                        'gateway',
+                                        'view',
+                                        'application',
+                                        'core',
+                                        'infrastructure'
+                                    ]
+                                }
+                            },
+                            from: { type: 'gateway' }
+                        },
+                        {
+                            allow: {
+                                to: { type: ['view', 'application', 'core', 'infrastructure'] }
+                            },
+                            from: { type: 'view' }
+                        },
+                        {
+                            allow: { to: { type: ['core', 'infrastructure'] } },
+                            from: { type: 'application' }
+                        },
+                        {
+                            allow: {
+                                to: {
+                                    captured: { domain: '{{ from.captured.domain }}' },
+                                    type: 'application'
+                                }
+                            },
+                            from: { type: 'application' }
+                        },
+                        { allow: { to: { type: 'infrastructure' } }, from: { type: 'core' } },
+                        {
+                            allow: {
+                                to: {
+                                    captured: { domain: '{{ from.captured.domain }}' },
+                                    type: 'core'
+                                }
+                            },
+                            from: { type: 'core' }
+                        },
+                        {
+                            allow: {
+                                to: {
+                                    captured: { domain: '{{ from.captured.domain }}' },
+                                    type: 'infrastructure'
+                                }
+                            },
+                            from: { type: 'infrastructure' }
                         }
                     ]
                 }
