@@ -44,9 +44,7 @@ export class S3ObjectService implements OnModuleDestroy {
             new DeleteObjectCommand({ Bucket: this.bucket, Key: key })
         )
 
-        // S3 삭제 성공 응답은 204 No Content이다.
-        // SDK가 status를 비워 보내는 드문 경우에도 200 같은 엉뚱한 값을 지어내지 않도록 204로 채운다.
-        return { key, status: defaultTo($metadata.httpStatusCode, 204) }
+        return { key, status: defaultTo($metadata.httpStatusCode, 200) }
     }
 
     async isUploadComplete(options: S3UploadCompleteOptions): Promise<boolean> {
