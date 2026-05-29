@@ -1,4 +1,4 @@
-import { Require } from '@mannercode/common'
+import { Require, sortBy, uniq } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { MoviesService, ShowtimeDto, ShowtimesService, TheatersService } from 'core'
 import { HomeMovieCard, HomeShowtimeView, UserHomeView } from './dtos'
@@ -43,7 +43,7 @@ export class UserHomeViewService {
     }
 
     private async fetchTheaterMap(showtimes: ShowtimeDto[]): Promise<Map<string, TheaterRef>> {
-        const theaterIds = [...new Set(showtimes.map((showtime) => showtime.theaterId))]
+        const theaterIds = uniq(showtimes.map((showtime) => showtime.theaterId))
         if (theaterIds.length === 0) return new Map()
 
         const theaters = await this.theaters.getMany(theaterIds)
@@ -74,8 +74,11 @@ function groupShowtimesByMovie(
         map.set(showtime.movieId, list)
     }
 
-    for (const list of map.values()) {
-        list.sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
+    for (const [movieId, list] of map) {
+        map.set(
+            movieId,
+            sortBy(list, (item) => item.startTime.getTime())
+        )
     }
 
     return map
