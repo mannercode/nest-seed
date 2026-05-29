@@ -1,4 +1,4 @@
-import { ensure, pickIds } from '@mannercode/common'
+import { ensure, pickIds, Require } from '@mannercode/common'
 import { TicketStatus, type TicketDto } from 'core'
 import { PaymentStatus } from 'infrastructure'
 import {
@@ -133,8 +133,8 @@ describe('PurchaseService', () => {
 
                     // 보상으로 결제와 구매 기록이 정리되므로 그 식별자를 알 수 없다.
                     // 그래서 생성 시점에 실제 반환값을 그대로 통과시키며 id만 가로채 둔다.
-                    let paymentId: string
-                    let purchaseRecordId: string
+                    let paymentId: string | undefined
+                    let purchaseRecordId: string | undefined
                     const createPayment = paymentsService.create.bind(paymentsService)
                     jest.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
                         const payment = await createPayment(dto)
@@ -155,13 +155,16 @@ describe('PurchaseService', () => {
 
                     await fix.httpClient.post('/purchases').body(createDto).internalServerError()
 
-                    const payments = await getPayments(fix, [paymentId!])
+                    Require.defined(paymentId)
+                    Require.defined(purchaseRecordId)
+
+                    const payments = await getPayments(fix, [paymentId])
                     expect(ensure(payments[0]).status).toBe(PaymentStatus.Cancelled)
 
                     // 삭제된 구매 기록은 더 이상 조회되지 않으므로 getMany가 NotFound로 거부된다.
-                    const deleted = purchaseRecordsService.getMany([purchaseRecordId!])
+                    const deleted = purchaseRecordsService.getMany([purchaseRecordId])
                     await expect(deleted).rejects.toMatchObject({
-                        message: Errors.Mongoose.MultipleDocumentsNotFound([purchaseRecordId!])
+                        message: Errors.Mongoose.MultipleDocumentsNotFound([purchaseRecordId])
                             .message
                     })
                 })
@@ -242,7 +245,7 @@ describe('PurchaseService', () => {
                     throw new Error('record creation failed')
                 })
                 // 보상으로 결제가 취소될 뿐 행은 남으므로, 생성된 결제 id를 가로채 상태를 확인한다.
-                let paymentId: string
+                let paymentId: string | undefined
                 const createPayment = paymentsService.create.bind(paymentsService)
                 jest.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
                     const payment = await createPayment(dto)
@@ -254,7 +257,8 @@ describe('PurchaseService', () => {
 
                 await fix.httpClient.post('/purchases').body(createDto).internalServerError()
 
-                const payments = await getPayments(fix, [paymentId!])
+                Require.defined(paymentId)
+                const payments = await getPayments(fix, [paymentId])
                 expect(ensure(payments[0]).status).toBe(PaymentStatus.Cancelled)
             })
         })
